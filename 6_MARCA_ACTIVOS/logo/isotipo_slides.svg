@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="1.61 0.25 150.78 126.00" role="img" aria-label="Isotipo AUNEA slides">
+<title>Isotipo AUNEA</title>
+<desc>Reconstruccion geometrica ajustada sobre la lamina Solutions 1 (coincidencia 86.4 por ciento). Eje x=77, patas a 26,1 grados de la vertical, trazo 11.5, arco exterior R=32, arco interior R=2.6.</desc>
+<g fill="none" stroke="#1D3B70" stroke-linecap="butt">
+  <path d="M 8.01,121.00 L 62.91,9.27 A 32.00,32.00 0 0 1 91.09,9.27 L 145.99,121.00" stroke-width="11.5"/>
+  <path d="M 45.51,121.00 L 75.86,58.27 A 2.60,2.60 0 0 1 78.14,58.27 L 108.49,121.00" stroke-width="12"/>
+</g>
+<circle cx="77" cy="114" r="12.25" fill="#D4AF37"/>
+</svg>

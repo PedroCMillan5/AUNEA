@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diagnóstico Operativo — AUNEA Advisory</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --carbon:#1E1E1E; --bronce:#B87333; --bronced:#8C5322; --beige:#F7EEE6;
+    --blanco:#FAFAF8; --perla:#E6E6E6; --dorado:#D4AF37; --gris:#6B6B6B;
+    --f:"Inter","Segoe UI",Arial,Helvetica,sans-serif;
+    --fh:"Sora","Segoe UI",Arial,Helvetica,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:#111;font-family:var(--f);color:var(--carbon)}
+  .deck{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px}
+  .slide{
+    position:relative;width:min(96vw,1280px);aspect-ratio:16/9;background:var(--blanco);
+    border-radius:10px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.45);
+    padding:4.2% 5.2%;display:none;flex-direction:column;
+  }
+  .slide.on{display:flex}
+  .slide.dark{background:var(--carbon);color:#fff}
+  .blob{position:absolute;border-radius:50%;pointer-events:none}
+
+  h1{font-family:var(--fh);font-size:clamp(26px,3.4vw,44px);line-height:1.08;margin:0;font-weight:700}
+  h2{font-family:var(--fh);font-size:clamp(19px,2.5vw,32px);line-height:1.1;margin:0;font-weight:700}
+  .hd{display:flex;align-items:center;gap:16px;margin-bottom:3.2%}
+  .num{flex:0 0 auto;width:clamp(30px,2.8vw,40px);height:clamp(30px,2.8vw,40px);border-radius:50%;
+       background:var(--bronced);color:#fff;display:grid;place-items:center;font-weight:700;
+       font-size:clamp(13px,1.1vw,15px)}
+  .eyebrow{color:var(--dorado);font-size:clamp(10px,.95vw,13px);font-weight:700;letter-spacing:.22em;margin-bottom:14px}
+  .body{flex:1;display:flex;flex-direction:column;min-height:0}
+
+  .cards{display:grid;gap:2.2%;flex:1}
+  .c3{grid-template-columns:repeat(3,1fr)}
+  .c4{grid-template-columns:repeat(4,1fr)}
+  .c2{grid-template-columns:repeat(2,1fr)}
+  .card{background:var(--beige);border-radius:9px;padding:4.5% 5%;display:flex;flex-direction:column;
+        font-size:clamp(11px,1.02vw,14px);line-height:1.45}
+  .card.grey{background:var(--perla)}
+  .card.dk{background:var(--carbon);color:#fff}
+  .card h3{font-family:var(--fh);margin:0 0 .6em;font-size:clamp(13px,1.32vw,18px);color:var(--bronced)}
+  .card.grey h3,.card.dk h3{color:inherit}
+  .card.dk h3{color:#fff}
+  .pill{width:clamp(24px,2.2vw,32px);height:clamp(24px,2.2vw,32px);border-radius:50%;background:var(--bronce);
+        color:var(--carbon);display:grid;place-items:center;font-weight:700;margin-bottom:.9em;
+        font-size:clamp(11px,.95vw,13px)}
+  .quote{color:var(--bronced);font-style:italic;margin-top:auto}
+  .metric{font-weight:700;margin-top:.8em}
+  .letter{font-family:var(--fh);font-size:clamp(24px,3vw,38px);font-weight:700;color:var(--bronced);line-height:1}
+  .card.dk .letter{color:var(--dorado)}
+  .price{font-weight:700;color:var(--bronced);margin:.5em 0 .7em;font-size:clamp(12px,1.15vw,16px)}
+  .card.dk .price{color:var(--dorado)}
+
+  table{width:100%;border-collapse:collapse;font-size:clamp(10px,1vw,14px)}
+  th{background:var(--bronced);color:#fff;text-align:left;padding:.72em .9em;font-weight:700}
+  td{padding:.62em .9em;border-bottom:1px solid var(--perla)}
+  tr.hi td{background:var(--beige);font-weight:700}
+  tr.tot td{background:var(--carbon);color:#fff;font-weight:700}
+  tr.tot td.g{color:var(--dorado)}
+  tr.off td{color:var(--gris)}
+  .r{text-align:right}
+  .band{background:var(--beige);border-radius:9px;padding:2.4% 3%;margin-top:auto;
+        font-size:clamp(11px,1.05vw,15px);line-height:1.45}
+  .band.dk{background:var(--carbon);color:#fff;font-weight:700}
+  .band.br{background:var(--bronced);color:#fff}
+  .band.grey{background:var(--perla)}
+  ul{margin:0;padding-left:1.1em}
+  li{margin-bottom:.65em}
+
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:3%;margin:2% 0 auto}
+  .stat .big{font-family:var(--fh);font-size:clamp(34px,5.2vw,72px);font-weight:700;color:var(--dorado);line-height:1}
+  .stat .lab{font-weight:700;font-size:clamp(13px,1.35vw,19px);margin-top:.35em}
+  .stat .sub{color:var(--perla);font-size:clamp(10px,.95vw,13px);margin-top:.3em}
+
+  .foot{display:flex;justify-content:space-between;font-size:clamp(9px,.78vw,11px);color:var(--gris);
+        margin-top:2.2%;letter-spacing:.08em}
+  .dark .foot{color:var(--perla)}
+  .tip{font-size:clamp(9px,.85vw,12px);font-style:italic;color:var(--gris);margin-top:1.4%}
+
+  [contenteditable]{outline:none;border-radius:3px}
+  [contenteditable]:hover{background:rgba(184,115,51,.14)}
+  [contenteditable]:focus{background:rgba(184,115,51,.22)}
+
+  .nav{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:10px;
+       align-items:center;background:rgba(30,30,30,.9);color:#fff;padding:8px 14px;border-radius:999px;
+       font-size:12px;z-index:50}
+  .nav button{background:none;border:1px solid #555;color:#fff;border-radius:999px;width:26px;height:26px;
+              cursor:pointer;font-size:13px;line-height:1}
+  .nav button:hover{background:#333}
+  .nav .hint{color:#999}
+
+  @media print{
+    body{background:#fff}
+    .deck{display:block;padding:0;min-height:0}
+    .nav{display:none}
+    .slide{display:flex!important;width:100%;border-radius:0;box-shadow:none;
+           page-break-after:always;break-after:page}
+    @page{size:A4 landscape;margin:0}
+  }
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+<!-- 1 -->
+<section class="slide dark on">
+  <div class="blob" style="width:38%;aspect-ratio:1;background:#8C5322;opacity:.5;right:-6%;top:-24%"></div>
+  <div class="blob" style="width:19%;aspect-ratio:1;background:#B87333;opacity:.3;right:-4%;bottom:-14%"></div>
+  <div class="body" style="justify-content:center">
+    <div class="eyebrow">DIAGNÓSTICO OPERATIVO</div>
+    <h1 contenteditable>[Nombre del proceso]</h1>
+    <p style="font-size:clamp(14px,1.6vw,22px);color:var(--perla);margin:1.1em 0 2.4em" contenteditable>[Nombre de la empresa]</p>
+    <p style="font-size:clamp(11px,1vw,14px);color:var(--perla);line-height:1.7;margin:0">
+      Preparado para <span contenteditable>[Nombre y cargo]</span><br>
+      <strong>Pedro Carrasco · AUNEA Advisory</strong><br>
+      <span contenteditable>[dd/mm/aaaa]</span>
+    </p>
+  </div>
+  <div class="foot"><span style="font-style:italic">Soluciones que optimizan. Valor que trasciende.</span><span></span></div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <div class="hd"><div class="num">1</div><h1>Qué hemos mirado, y qué no</h1></div>
+  <div class="body">
+    <div class="cards c3" style="flex:0 0 auto;margin-bottom:2.2%">
+      <div class="card"><h3>Qué se ha analizado</h3><div contenteditable>El proceso de [nombre], desde [evento de inicio] hasta [evento de fin].</div></div>
+      <div class="card"><h3>Qué NO se ha analizado</h3><div contenteditable>[Otros procesos mencionados]. Quedan fuera de este diagnóstico.</div></div>
+      <div class="card"><h3>Cómo</h3><div contenteditable>Sesión de 90 minutos el [fecha] con [nombres y cargos], recorriendo el proceso paso a paso tal y como se ejecuta en la práctica.</div></div>
+    </div>
+    <div class="band grey"><strong>Limitaciones.</strong> Las cifras de volumen y tiempo proceden de la estimación de los participantes, no de una medición instrumentada. Son suficientes para priorizar, no para contabilizar.</div>
+  </div>
+  <div class="foot"><span>AUNEA ADVISORY</span><span contenteditable>[Empresa] · [dd/mm/aaaa]</span></div>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <div class="hd"><div class="num">2</div><h1>El proceso hoy</h1></div>
+  <div class="body">
+    <table>
+      <tr><th style="width:6%">#</th><th>Paso</th><th style="width:18%">Quién</th><th style="width:20%">Herramienta</th><th class="r" style="width:12%">Minutos</th></tr>
+      <tr><td>1</td><td contenteditable>[Paso]</td><td contenteditable>[Quién]</td><td contenteditable>[Herramienta]</td><td class="r" contenteditable>[ ]</td></tr>
+      <tr><td>2</td><td contenteditable>[Paso]</td><td contenteditable>[Quién]</td><td contenteditable>[Herramienta]</td><td class="r" contenteditable>[ ]</td></tr>
+      <tr><td>3</td><td contenteditable>[Paso]</td><td contenteditable>[Quién]</td><td contenteditable>[Herramienta]</td><td class="r" contenteditable>[ ]</td></tr>
+      <tr><td>4</td><td contenteditable>[Paso]</td><td contenteditable>[Quién]</td><td contenteditable>[Herramienta]</td><td class="r" contenteditable>[ ]</td></tr>
+      <tr><td>5</td><td contenteditable>[Paso]</td><td contenteditable>[Quién]</td><td contenteditable>[Herramienta]</td><td class="r" contenteditable>[ ]</td></tr>
+      <tr class="hi"><td></td><td>Total</td><td></td><td></td><td class="r" contenteditable>[ ] min</td></tr>
+    </table>
+    <div class="band" style="color:var(--bronced);font-style:italic" contenteditable>[La frase que resume lo que has visto. Ej.: el proceso atraviesa cuatro herramientas que no se hablan entre sí, y la continuidad la sostiene una persona.]</div>
+  </div>
+  <div class="foot"><span>AUNEA ADVISORY</span><span contenteditable>[Empresa] · [dd/mm/aaaa]</span></div>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <div class="hd"><div class="num">3</div><h1>Dónde se pierde valor</h1></div>
+  <div class="body">
+    <div class="cards c3">
+      <div class="card"><div class="pill">1</div><h3 style="color:var(--carbon)" contenteditable>[Título del hallazgo 1]</h3><div contenteditable>[Qué ocurre, en dos frases.]</div><div class="quote" contenteditable>«[cita literal de la sesión]»</div><div class="metric" contenteditable>[X] veces/mes · [Y] h/mes</div></div>
+      <div class="card"><div class="pill">2</div><h3 style="color:var(--carbon)" contenteditable>[Título del hallazgo 2]</h3><div contenteditable>[Qué ocurre, en dos frases.]</div><div class="quote" contenteditable>«[cita literal de la sesión]»</div><div class="metric" contenteditable>[X] veces/mes · [Y] h/mes</div></div>
+      <div class="card"><div class="pill">3</div><h3 style="color:var(--carbon)" contenteditable>[Título del hallazgo 3]</h3><div contenteditable>[Qué ocurre, en dos frases.]</div><div class="quote" contenteditable>«[cita literal de la sesión]»</div><div class="metric" contenteditable>[X] veces/mes · [Y] h/mes</div></div>
+    </div>
+    <div class="tip">Un hallazgo sin número es una opinión. Cada tarjeta lleva su cita y su cifra.</div>
+  </div>
+  <div class="foot"><span>AUNEA ADVISORY</span><span contenteditable>[Empresa] · [dd/mm/aaaa]</span></div>
+</section>
+
+<!-- 5 -->
+<section class="slide dark">
+  <div class="blob" style="width:26%;aspect-ratio:1;background:#8C5322;opacity:.45;left:-10%;bottom:-18%"></div>
+  <div class="body">
+    <div class="eyebrow">EL NÚMERO</div>
+    <div class="stats">
+      <div class="stat"><div class="big" contenteditable>[X]</div><div class="lab">horas al mes</div><div class="sub">que consume el proceso</div></div>
+      <div class="stat"><div class="big" contenteditable>[Y] €</div><div class="lab">al año</div><div class="sub">en coste de personal</div></div>
+      <div class="stat"><div class="big" contenteditable>[Z] €</div><div class="lab">al año</div><div class="sub">recuperables de forma realista</div></div>
+    </div>
+    <div class="band br">Aplico un factor de recuperación del <span contenteditable>[40-70]</span> %, porque <span contenteditable>[motivo concreto]</span>. Nunca es el 100 %: quedan las excepciones, la revisión y el tiempo de supervisar la propia herramienta.</div>
+  </div>
+  <div class="foot"><span>AUNEA ADVISORY</span><span contenteditable>[Empresa] · [dd/mm/aaaa]</span></div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <div class="hd"><div class="num">4</div><h1>Cómo sale ese número</h1></div>
+  <div class="body">
+    <table>
+      <tr><th>Concepto</th><th class="r" style="width:16%">Valor</th><th style="width:40%">De dónde sale</th></tr>
+      <tr><td>Veces al mes</td><td class="r" contenteditable>[ ]</td><td contenteditable>Estimación de [nombre] en la sesión</td></tr>
+      <tr><td>Minutos por vez y persona</td><td class="r" contenteditable>[ ]</td><td>Suma de los pasos de la lámina 2</td></tr>
+      <tr><td>Personas por caso</td><td class="r" contenteditable>[ ]</td><td>Indicado en la sesión</td></tr>
+      <tr class="hi"><td>Horas al mes</td><td class="r" contenteditable>[ ]</td><td>(veces × minutos × personas) ÷ 60</td></tr>
+      <tr><td>Coste empresa por hora</td><td class="r" contenteditable>[ ] €</td><td>bruto × 1,32 ÷ 1.720 h</td></tr>
+      <tr class="hi"><td>Coste anual del proceso</td><td class="r" contenteditable>[ ] €</td><td>horas/mes × 12 × coste/hora</td></tr>
+      <tr><td>Factor de recuperación</td><td class="r" contenteditable>[ ] %</td><td contenteditable>[motivo]</td></tr>
+      <tr class="tot"><td>Ahorro anual realista</td><td class="r g" contenteditable>[ ] €</td><td>coste anual × factor</td></tr>
+    </table>
+    <div class="tip">La aritmética a la vista es lo que distingue un diagnóstico de una opinión cara.</div>
+  </div>
+  <div class="foot"><span>AUNEA ADVISORY</span><span contenteditable>[Empresa] · [dd/mm/aaaa]</span></div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <div class="hd"><div class="num">5</div><h1>Qué se puede resolver y qué no</h1></div>
+  <div class="body">
+    <div class="cards c2">
+      <div class="card"><h3>Automatizable con fiabilidad</h3>
+        <ul><li contenteditable>[Paso] — reglas claras y datos estructurados · [ ] h/mes</li>
+            <li contenteditable>[Paso] — se repite igual siempre · [ ] h/mes</li>
+            <li contenteditable>[Paso] — el dato ya existe en otro sitio · [ ] h/mes</li></ul></div>
+      <div class="card grey"><h3>No automatizable, o no conviene</h3>
+        <ul><li contenteditable>[Paso] — requiere criterio profesional sobre casos particulares</li>
+            <li contenteditable>[Paso] — el volumen no justifica construirlo ni mantenerlo</li>
+            <li contenteditable>[Paso] — depende de un tercero que no expone integración</li>
+            <li>Facturación, cobros y nóminas quedan fuera por política</li></ul></div>
+    </div>
+    <div class="tip">La columna de la derecha es la que vende. Todo el mundo dice qué se puede automatizar; casi nadie dice qué no.</div>
+  </div>
+  <div class="foot"><span>AUNEA ADVISORY</span><span contenteditable>[Empresa] · [dd/mm/aaaa]</span></div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <div class="hd"><div class="num">6</div><h1>Recomendación priorizada</h1></div>
+  <div class="body">
+    <table>
+      <tr><th style="width:12%">Prioridad</th><th>Acción</th><th style="width:12%">Impacto</th><th style="width:12%">Esfuerzo</th><th style="width:18%">Cuándo</th></tr>
+      <tr class="hi"><td>1</td><td contenteditable>[Acción]</td><td>Alto</td><td>Bajo</td><td>Inmediato</td></tr>
+      <tr><td>2</td><td contenteditable>[Acción]</td><td>Alto</td><td>Medio</td><td>1-2 meses</td></tr>
+      <tr><td>3</td><td contenteditable>[Acción]</td><td>Medio</td><td>Medio</td><td>3-6 meses</td></tr>
+      <tr class="off"><td>—</td><td contenteditable>[Acción descartada]</td><td>Bajo</td><td>Alto</td><td><strong>No recomendado</strong></td></tr>
+    </table>
+    <div class="band dk">Si solo se hace una cosa: <span contenteditable>[la acción de prioridad 1, en una frase, con su impacto en horas y euros]</span>.</div>
+    <div class="tip">La fila «no recomendado» es obligatoria. Demuestra que has descartado con criterio.</div>
+  </div>
+  <div class="foot"><span>AUNEA ADVISORY</span><span contenteditable>[Empresa] · [dd/mm/aaaa]</span></div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+  <div class="hd"><div class="num">7</div><h1>Cuatro caminos, y los cuatro son legítimos</h1></div>
+  <div class="body">
+    <div class="cards c4">
+      <div class="card grey"><div class="letter">A</div><h3>No hacer nada por ahora</h3><div class="price">0 €</div>
+        <div>El proceso no llega al umbral y no se espera crecimiento. Esperar es una decisión razonable: este informe seguirá siendo válido dentro de un año.</div></div>
+      <div class="card"><div class="letter">A+</div><h3 style="color:var(--carbon)">Ordenar y medir</h3><div class="price">1.200 €</div>
+        <div>La automatización no compensa todavía. Ponemos orden, el proceso deja rastro, y en seis meses decidimos con datos reales en vez de estimaciones.</div></div>
+      <div class="card"><div class="letter">B</div><h3 style="color:var(--carbon)">Rediseñar primero</h3><div class="price">1.800 €</div>
+        <div>Mapa completo, rediseño y secuencia de implantación. Recomendado si <span contenteditable>[hay varios procesos conectados o problemas de fondo]</span>.</div></div>
+      <div class="card dk"><div class="letter">C</div><h3>Construir la solución</h3><div class="price">3.000 - 5.700 €</div>
+        <div>Implantación, traspaso documentado y formación. El nivel lo decide el umbral, no el entusiasmo de la reunión.</div></div>
+    </div>
+    <div class="band" style="color:var(--bronced);font-weight:700">La mitad del diagnóstico se descuenta de la opción A+, B o C si se contrata en los próximos 60 días.</div>
+  </div>
+  <div class="foot"><span>AUNEA ADVISORY</span><span contenteditable>[Empresa] · [dd/mm/aaaa]</span></div>
+</section>
+
+<!-- 10 -->
+<section class="slide dark">
+  <div class="blob" style="width:34%;aspect-ratio:1;background:#8C5322;opacity:.5;right:-8%;bottom:-30%"></div>
+  <div class="body" style="justify-content:center">
+    <div class="eyebrow">MI RECOMENDACIÓN</div>
+    <h1 contenteditable>[A / B / C]</h1>
+    <p style="font-size:clamp(13px,1.4vw,19px);color:var(--perla);margin:.7em 0 2.2em" contenteditable>porque [una frase, mojándote].</p>
+    <p style="margin:0;font-size:clamp(11px,1.05vw,15px)">
+      <strong style="color:var(--dorado)">Siguiente paso</strong><br>
+      <span contenteditable>[Qué pasa ahora y en qué fecha. Concreto, con día.]</span>
+    </p>
+    <p style="margin:2.4em 0 0;font-size:clamp(10px,.95vw,13px);color:var(--perla);line-height:1.7">
+      <strong>Pedro Carrasco · AUNEA Advisory</strong><br>
+      <span contenteditable>[email] · [LinkedIn]</span><br>
+      <span style="font-style:italic;color:var(--gris)">Soluciones que optimizan. Valor que trasciende.</span>
+    </p>
+  </div>
+</section>
+
+</div>
+
+<div class="nav">
+  <button id="prev" aria-label="Anterior">‹</button>
+  <span id="pos">1 / 10</span>
+  <button id="next" aria-label="Siguiente">›</button>
+  <span class="hint">· ← → para navegar · haz clic en el texto para editar · Ctrl+P para PDF</span>
+</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  let i = 0;
+  const pos = document.getElementById('pos');
+  function show(n){
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, k) => s.classList.toggle('on', k === i));
+    pos.textContent = (i + 1) + ' / ' + slides.length;
+  }
+  document.getElementById('next').onclick = () => show(i + 1);
+  document.getElementById('prev').onclick = () => show(i - 1);
+  document.addEventListener('keydown', e => {
+    if (e.target.isContentEditable) return;
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); show(i + 1); }
+    if (e.key === 'ArrowLeft'  || e.key === 'PageUp')  { e.preventDefault(); show(i - 1); }
+    if (e.key === 'Home') show(0);
+    if (e.key === 'End')  show(slides.length - 1);
+  });
+  show(0);
+</script>
+</body>
+</html>
