@@ -28,7 +28,23 @@ class PainEngine:
     def run(self, ctx: EngineContext) -> list[PainResult]:
         evidence = {e.evidence_id: e for e in ctx.engagement.evidence}
         out: list[PainResult] = []
-        for p in ctx.engagement.pains:
+        observations = list(ctx.engagement.pains)
+        # Structured signals are captured by the diagnostic form; the browser does not decide the pain state.
+        for s in ctx.engagement.pain_signals:
+            if s.exclusion_condition_present or s.direct_mechanism_present is False:
+                state = "NOT_DETECTED"
+            elif s.direct_mechanism_present is True and s.concrete_evidence_present:
+                state = "CONFIRMED"
+            elif s.direct_mechanism_present is True and s.signal_present:
+                state = "INDICATED"
+            else:
+                state = "INSUFFICIENT_EVIDENCE"
+            from .models import PainObservation
+            observations.append(PainObservation(pain_id=s.pain_id,state=state,evidence_ids=s.evidence_ids,rationale=s.rationale))
+        dedup = {}
+        for p in observations:
+            dedup[p.pain_id] = p
+        for p in dedup.values():
             confs = [CONFIDENCE_ORDER.get(evidence[eid].type, "UNKNOWN") for eid in p.evidence_ids if eid in evidence]
             confidence = "UNKNOWN"
             if "HIGH" in confs: confidence = "HIGH"
