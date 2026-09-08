@@ -27,6 +27,15 @@ class Evidence(BaseModel):
     description: str | None = None
     source: str | None = None
 
+class PainSignalInput(BaseModel):
+    pain_id: str
+    direct_mechanism_present: bool | None = None
+    concrete_evidence_present: bool = False
+    exclusion_condition_present: bool = False
+    signal_present: bool = False
+    evidence_ids: list[str] = Field(default_factory=list)
+    rationale: str | None = None
+
 class PainObservation(BaseModel):
     pain_id: str
     state: PainState
@@ -83,6 +92,8 @@ class EngagementInput(BaseModel):
     process_name: str
     evidence: list[Evidence] = Field(default_factory=list)
     pains: list[PainObservation] = Field(default_factory=list)
+    pain_signals: list[PainSignalInput] = Field(default_factory=list)
+    questionnaire_answers: dict[str, Any] = Field(default_factory=dict)
     economics: list[EconomicInput] = Field(default_factory=list)
     risks: list[RiskInput] = Field(default_factory=list)
     existing_tool_can_cover: bool = False
