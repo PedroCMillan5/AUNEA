@@ -1,0 +1,17 @@
+[project]
+name = "aunea-backend"
+version = "0.8.0"
+description = "Deterministic backend for AUNEA Internal diagnostic, recommendation, pricing and scenario engines"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.115",
+  "pydantic>=2.8",
+  "uvicorn>=0.30"
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8.0", "httpx>=0.27"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
