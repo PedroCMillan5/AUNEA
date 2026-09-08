@@ -1,7 +1,7 @@
 [project]
 name = "aunea-backend"
-version = "0.8.0"
-description = "Deterministic backend for AUNEA Internal diagnostic, recommendation, pricing and scenario engines"
+version = "1.1.0"
+description = "Deterministic backend for AUNEA Internal diagnostic, recommendation, pricing, scenario, deliverables, specification and system builder engines"
 requires-python = ">=3.11"
 dependencies = [
   "fastapi>=0.115",
