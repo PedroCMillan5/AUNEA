@@ -4,12 +4,13 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from .models import EngagementInput, ScenarioRequest, DiagnosticOutput
 from .deliverable_models import DeliverableRequest
-from .solution_models import SolutionSpecificationRequest
+from .solution_models import SolutionSpecificationRequest, SolutionSpecification
+from .system_builder_models import SystemBuilderRequest
 from .orchestrator import Orchestrator
 from .registry import rule_bundle_version, load_registry
 from .store import SQLiteStore
 
-app = FastAPI(title="AUNEA Internal Backend", version="1.0.0")
+app = FastAPI(title="AUNEA Internal Backend", version="1.1.0")
 store = SQLiteStore(os.environ.get("AUNEA_DB_PATH","aunea_runtime.db"))
 engine = Orchestrator(store=store)
 
@@ -21,14 +22,9 @@ class DeliverPayload(BaseModel):
     diagnostic: dict | None = None
     request: DeliverableRequest = DeliverableRequest()
 
-class SolutionSpecPayload(BaseModel):
-    engagement: EngagementInput
-    diagnostic: DiagnosticOutput
-    request: SolutionSpecificationRequest = SolutionSpecificationRequest()
-
 @app.get("/health")
 def health():
-    return {"status":"ok","backend_version":"1.0.0","rule_bundle_version":rule_bundle_version()}
+    return {"status":"ok","backend_version":"1.1.0","rule_bundle_version":rule_bundle_version()}
 
 @app.get("/registry/status")
 def registry_status():
@@ -86,6 +82,11 @@ def generate_saved_deliverables(engagement_id: str, request: DeliverableRequest 
     except ValueError as exc:
         raise HTTPException(404, str(exc))
 
+class SolutionSpecPayload(BaseModel):
+    engagement: EngagementInput
+    diagnostic: DiagnosticOutput
+    request: SolutionSpecificationRequest = SolutionSpecificationRequest()
+
 @app.post("/v1/solution-specifications/generate")
 def generate_solution_specification(payload: SolutionSpecPayload):
     return engine.generate_solution_specification(payload.engagement, payload.diagnostic, payload.request)
@@ -96,3 +97,15 @@ def generate_saved_solution_specification(engagement_id: str, request: SolutionS
         return engine.generate_solution_specification_for_saved(engagement_id, request)
     except ValueError as exc:
         raise HTTPException(404, str(exc))
+
+class SystemBuilderPayload(BaseModel):
+    specification: SolutionSpecification
+    request: SystemBuilderRequest = SystemBuilderRequest()
+
+@app.post("/v1/system-builder/plan")
+def generate_system_build_plan(payload: SystemBuilderPayload):
+    return engine.generate_system_build_plan(payload.specification, payload.request)
+
+@app.post("/v1/system-builder/package")
+def generate_system_build_package(payload: SystemBuilderPayload):
+    return engine.generate_system_build_package(payload.specification, payload.request)
