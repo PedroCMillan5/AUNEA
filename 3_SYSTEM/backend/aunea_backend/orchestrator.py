@@ -5,6 +5,8 @@ from typing import Any
 from .models import EngagementInput, DiagnosticOutput, ScenarioRequest, ScenarioResult
 from .deliverable_models import DeliverableRequest, DeliverablePack
 from .solution_models import SolutionSpecificationRequest, SolutionSpecification
+from .system_builder_models import SystemBuilderRequest, SystemBuildPlan, SystemBuildPackage
+from .system_builder import SystemBuilderEngine
 from .engines import EngineContext, PainEngine, EconomicsEngine, RiskEngine, RecommendationEngine, PricingEngine, ScenarioComparator
 from .registry import rule_bundle_version
 from .utils import stable_hash
@@ -28,7 +30,7 @@ class InMemoryAuditStore:
 class Orchestrator:
     def __init__(self, store: SQLiteStore | None = None):
         self.pain=PainEngine(); self.econ=EconomicsEngine(); self.risk=RiskEngine(); self.rec=RecommendationEngine(); self.price=PricingEngine(); self.scenario=ScenarioComparator(self.price,self.risk)
-        self.deliverables=DeliverablesEngine(); self.solution_spec=SolutionSpecificationEngine(); self.audit=InMemoryAuditStore(); self.store=store
+        self.deliverables=DeliverablesEngine(); self.solution_spec=SolutionSpecificationEngine(); self.system_builder=SystemBuilderEngine(); self.audit=InMemoryAuditStore(); self.store=store
 
     def _run(self, engagement_id: str, engine: str, inp: Any, out: Any):
         ih,oh=stable_hash(inp),stable_hash(out)
@@ -83,3 +85,13 @@ class Orchestrator:
         if not diagnostic:
             raise ValueError("diagnostic not found")
         return self.generate_solution_specification(engagement, diagnostic, request)
+
+    def generate_system_build_plan(self, specification: SolutionSpecification, request: SystemBuilderRequest | None = None) -> SystemBuildPlan:
+        plan=self.system_builder.plan(specification, request)
+        self._run(specification.engagement_id, "SystemBuilder.Plan", {"specification":specification.model_dump(mode="json"),"request":request.model_dump(mode="json") if request else None}, plan.model_dump(mode="json"))
+        return plan
+
+    def generate_system_build_package(self, specification: SolutionSpecification, request: SystemBuilderRequest | None = None) -> SystemBuildPackage:
+        package=self.system_builder.package(specification, request)
+        self._run(specification.engagement_id, "SystemBuilder.Package", {"specification":specification.model_dump(mode="json"),"request":request.model_dump(mode="json") if request else None}, package.model_dump(mode="json"))
+        return package
