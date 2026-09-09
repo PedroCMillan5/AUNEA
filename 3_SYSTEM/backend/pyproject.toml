@@ -1,6 +1,6 @@
 [project]
 name = "aunea-backend"
-version = "1.1.0"
+version = "1.1.1"
 description = "Deterministic backend for AUNEA Internal diagnostic, recommendation, pricing, scenario, deliverables, specification and system builder engines"
 requires-python = ">=3.11"
 dependencies = [
@@ -15,3 +15,6 @@ test = ["pytest>=8.0", "httpx>=0.27"]
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+
+[tool.setuptools]
+packages = ["aunea_backend"]
