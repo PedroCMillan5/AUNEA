@@ -1,55 +1,35 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#171c20" />
-  <title>AUNEA Internal v1.0</title>
-  <link rel="stylesheet" href="styles.css" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#171c20">
+<title>AUNEA Internal v1.0.4 REVIEW</title>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="app-shell">
-    <aside class="sidebar">
-      <div class="brand">
-        <div class="brand-mark">A</div>
-        <div>
-          <strong>AUNEA</strong>
-          <span>INTERNAL · v1.0</span>
-        </div>
-      </div>
-      <nav id="nav"></nav>
-      <div class="sidebar-foot">
-        <div class="rule-pill">CANONICAL CAPTURE</div>
-        <p>Diagnostic Master v1</p>
-        <small>Datos → reglas → interfaz → entregables</small>
-      </div>
-    </aside>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand"><div class="brand-mark">A</div><div><strong>AUNEA</strong><span>INTERNAL · v1.0.4</span></div></div>
+    <nav id="nav"></nav>
+    <div class="sidebar-foot"><div class="rule-pill">CANONICAL CAPTURE</div><p>Diagnostic Master v1</p><small>Datos → reglas → interfaz → entregables</small></div>
+  </aside>
+  <main class="main">
+    <header class="topbar">
+      <div class="topbar-left"><button id="mobileMenu" class="icon-btn mobile-only" aria-label="Abrir menú">☰</button><div><div class="topline">AUNEA INTERNAL</div><div id="breadcrumb" class="breadcrumb">Cockpit de consultoría</div></div></div>
+      <div class="topbar-right"><div id="backendBadge" class="backend-badge offline"><span></span> Backend sin comprobar</div><div id="saveState" class="save-state">Sin cambios</div><button id="saveBtn" class="btn btn-outline" title="Guarda empresas, contactos y estudios en este navegador">Guardar</button></div>
+    </header>
+    <section id="content" class="content"><div class="loading-card">Cargando AUNEA Internal v1.0.4…</div></section>
+  </main>
+</div>
+<div id="toast" class="toast"></div><div id="modalRoot"></div>
 
-    <main class="main">
-      <header class="topbar">
-        <div class="topbar-left">
-          <button id="mobileMenu" class="icon-btn mobile-only" aria-label="Abrir menú">☰</button>
-          <div>
-            <div class="topline">AUNEA INTERNAL</div>
-            <div id="breadcrumb" class="breadcrumb">Cockpit de consultoría</div>
-          </div>
-        </div>
-        <div class="topbar-right">
-          <div id="backendBadge" class="backend-badge offline"><span></span> Backend sin comprobar</div>
-          <div id="saveState" class="save-state">Sin cambios</div>
-          <button id="saveBtn" class="btn btn-outline" title="Guarda empresas, contactos y estudios en este navegador">Guardar</button>
-        </div>
-      </header>
 
-      <section id="content" class="content">
-        <div class="loading-card">Cargando AUNEA Internal v1.0…</div>
-      </section>
-    </main>
-  </div>
-
-  <div id="toast" class="toast"></div>
-  <div id="modalRoot"></div>
-
-  <script src="app.js"></script>
+<script src="app-core.js" defer></script>
+<script src="app-diagnostic-fields.js" defer></script>
+<script src="app-process-editor.js" defer></script>
+<script src="app-results.js" defer></script>
+<script src="app-shell.js" defer></script>
+<script src="app.js" defer></script>
 </body>
 </html>

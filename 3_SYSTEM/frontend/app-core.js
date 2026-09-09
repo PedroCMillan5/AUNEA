@@ -1,3 +1,10 @@
+// [AUNEA-FE-CORE-STATE-020] START — Estado, CRM y navegación
+// PURPOSE: Estado, CRM y navegación.
+// SOURCE: v1.0.4 aceptada, SHA256 a9fb7400b000d6289224610c88d4b7dc51f75f8ae97e20e4c3873a3a8e01d6e7; Diagnostic Master v1; DEC-034/038/040.
+// INPUTS: schema canónico, estado de engagement y acciones del usuario.
+// OUTPUTS: estado y vistas de captura/revisión.
+// SIDE_EFFECTS: DOM, almacenamiento local y solicitudes HTTP según responsabilidad.
+// CHANGE_RISK: HIGH.
 const STORAGE_KEY = 'aunea_internal_v1';
 const API_DEFAULT = 'http://localhost:8000';
 const NAV = [
@@ -14,7 +21,7 @@ let state = loadState();
 
 function blankState(){
   return {
-    version:'1.0',activePage:'inicio',activeEngagementId:null,dirty:false,
+    version:'1.0.1',activePage:'inicio',activeEngagementId:null,dirty:false,
     backendUrl:API_DEFAULT,backendOnline:false,
     companies:[],contacts:[],opportunities:[],engagements:[],projects:[],audit:[]
   };
@@ -43,12 +50,16 @@ function normalizeArray(v){if(Array.isArray(v))return v;if(v===null||v===undefin
 
 async function init(){
   try{
-    const res=await fetch('data/diagnostic-master.min.json',{cache:'no-store'});
-    if(!res.ok)throw new Error(`HTTP ${res.status}`);
-    schema=await res.json();
-    render();checkBackend();
+      const res=await fetch('data/diagnostic-master.min.json',{cache:'no-store'});
+      if(!res.ok)throw new Error(`HTTP ${res.status}`);
+      schema=await res.json();
+    if(!schema || !schema.flow || !schema.option_sets) throw new Error('Diagnostic Master v1 incompleto o no válido');
+    render();
+    checkBackend();
   }catch(err){
-    document.getElementById('content').innerHTML=`<div class="card card-pad"><h2>No se ha podido cargar Diagnostic Master v1</h2><p class="subtitle">${esc(err.message)}</p><p>Ejecuta la carpeta mediante <b>run.bat</b> o <code>python -m http.server 5180</code>.</p></div>`;
+    const node=document.getElementById('content');
+    if(node) node.innerHTML=`<div class="card card-pad"><h2>No se ha podido iniciar AUNEA Internal v1.0.4</h2><p class="subtitle">${esc(err.message||err)}</p><p>Esta release incorpora el Diagnostic Master dentro del propio HTML. Si ves este mensaje, copia el texto exacto para diagnóstico.</p></div>`;
+    console.error('AUNEA_INIT_ERROR',err);
   }
 }
 async function checkBackend(){
@@ -69,15 +80,15 @@ function updateHeader(){
 function renderNav(){
   const n=document.getElementById('nav');n.innerHTML=NAV.map(x=>x.length===1?`<div class="nav-group">${x[0]}</div>`:`<button class="nav-item ${state.activePage===x[0]?'active':''}" data-page="${x[0]}"><span class="nav-icon">${x[1]}</span>${x[2]}</button>`).join('')
 }
-function render(){renderNav();updateHeader();const fn=pages[state.activePage]||pages.inicio;document.getElementById('content').innerHTML=fn();bindCommon()}
+function render(){renderNav();updateHeader();const fn=pages[state.activePage]||pages.inicio;document.getElementById('content').innerHTML=fn();bindCommon();postBind()}
 function setPage(page){
   if(['diagnostico','proceso','resultados','recomendacion','escenarios','quote'].includes(page)&&!currentEng()){toast('Abre o crea un estudio antes.');state.activePage='estudios';render();return}
   state.activePage=page;render()
 }
-function top(title,subtitle,actions=''){return `<div class="page-head"><div><div class="eyebrow">AUNEA INTERNAL · V1.0</div><h1>${esc(title)}</h1><p class="subtitle">${subtitle}</p></div><div class="head-actions">${actions}</div></div>`}
+function pageTop(title,subtitle,actions=''){return `<div class="page-head"><div><div class="eyebrow">AUNEA INTERNAL · V1.0.4</div><h1>${esc(title)}</h1><p class="subtitle">${subtitle}</p></div><div class="head-actions">${actions}</div></div>`}
 function section(title,sub,body,actions=''){return `<div class="card card-pad section"><div class="section-title"><div><h2>${esc(title)}</h2>${sub?`<p>${sub}</p>`:''}</div><div class="section-actions">${actions}</div></div>${body}</div>`}
 function statusClass(s=''){const z=s.toLowerCase();if(z.includes('confirm')||z.includes('listo')||z.includes('ganado'))return'green';if(z.includes('diagn')||z.includes('reun'))return'amber';if(z.includes('propuesta')||z.includes('resultado'))return'blue';if(z.includes('perdido')||z.includes('bloq'))return'red';return''}
-function status(s){return `<span class="status ${statusClass(s)}">${esc(s||'Borrador')}</span>`}
+function statusBadge(s){return `<span class="status ${statusClass(s)}">${esc(s||'Borrador')}</span>`}
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(window.__toast);window.__toast=setTimeout(()=>t.classList.remove('show'),2600)}
 
 function bindCommon(){
@@ -131,6 +142,7 @@ function newStudy(){
   openModal('Nuevo estudio',`<div class="form-grid"><div class="field full"><label>Contacto principal</label><select id="mStudyContact">${opts}</select></div><div class="field full"><label>Nombre del estudio</label><input id="mStudyTitle" placeholder="Ej. Diagnóstico de intake comercial"></div></div>`,()=>{const ct=contactById(document.getElementById('mStudyContact').value);createStudyFromContact(ct.id);const e=currentEng(),title=document.getElementById('mStudyTitle')?.value?.trim();if(title)e.title=title;closeModal();render()})
 }
 
+
 function createProjectFromEngagement(){
   const e=currentEng(); if(!e)return;
   const existing=state.projects.find(p=>p.engagementId===e.id);
@@ -144,3 +156,4 @@ function openModal(title,body,onSave,saveLabel='Guardar'){
   document.getElementById('modalClose').onclick=closeModal;document.getElementById('modalCancel').onclick=closeModal;document.getElementById('modalSave').onclick=onSave
 }
 function closeModal(){document.getElementById('modalRoot').innerHTML=''}
+// [AUNEA-FE-CORE-STATE-020] END

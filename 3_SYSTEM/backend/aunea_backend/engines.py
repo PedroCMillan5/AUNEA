@@ -254,10 +254,19 @@ class ScenarioComparator:
             out[p.pain_id]=CoverageState.RESOLVED if present==len(needed) else CoverageState.PARTIAL if present else CoverageState.UNRESOLVED
         return out
 
+    # [AUNEA-BE-SCEN-CALC-020] START — Cálculo y nombre de escenario
+    # PURPOSE: Conservar nombre y valorar capacidad por sus horas y tarifa de origen.
+    # SOURCE: baseline aceptada v1.0.4/backend v1.1.1; RULE_SCENARIO_ECONOMICS.
+    # INPUTS: baseline, assumptions, coverage, EngineContext.
+    # OUTPUTS: EconomicResult y ScenarioResult.
+    # SIDE_EFFECTS: UUID de escenario; sin escritura persistente.
+    # CHANGE_RISK: CRITICAL.
     def _scenario_econ(self, baseline: EconomicResult, assumptions: list[ScenarioAssumption], coverage: dict[str,CoverageState], ctx: EngineContext) -> EconomicResult:
         by_pain={a.pain_id:a for a in assumptions}
         recovered_active=recovered_wait=avoided_loss=cash=0.0
+        recovered_capacity_value=0.0
         has_active=False
+        has_capacity_rate=False
         pain_econ=defaultdict(list)
         for e in ctx.engagement.economics:
             if e.pain_id: pain_econ[e.pain_id].append(e)
@@ -268,28 +277,35 @@ class ScenarioComparator:
             for e in pain_econ.get(pid,[]):
                 if e.annual_active_hours is not None:
                     if a.future_active_hours is not None:
-                        recovered_active += max(0,e.annual_active_hours-a.future_active_hours); has_active=True
+                        recovered = max(0,e.annual_active_hours-a.future_active_hours); recovered_active += recovered; has_active=True
+                        if e.capacity_cost_rate_eur_hour is not None:
+                            recovered_capacity_value += recovered * e.capacity_cost_rate_eur_hour; has_capacity_rate=True
                     elif a.explicit_reduction_factor is not None:
-                        recovered_active += max(0,e.annual_active_hours*a.explicit_reduction_factor); has_active=True
+                        recovered = max(0,e.annual_active_hours*a.explicit_reduction_factor); recovered_active += recovered; has_active=True
+                        if e.capacity_cost_rate_eur_hour is not None:
+                            recovered_capacity_value += recovered * e.capacity_cost_rate_eur_hour; has_capacity_rate=True
                 if e.annual_wait_hours is not None and a.future_wait_hours is not None:
                     recovered_wait += max(0,e.annual_wait_hours-a.future_wait_hours)
                 if e.direct_loss_eur_annual is not None and a.preventable_loss_fraction is not None:
                     avoided_loss += max(0,e.direct_loss_eur_annual*a.preventable_loss_fraction)
             cash += a.realized_cash_saving_eur_annual or 0
-        ccrs=[e.capacity_cost_rate_eur_hour for e in ctx.engagement.economics if e.capacity_cost_rate_eur_hour is not None]
-        cap=round(recovered_active*(sum(ccrs)/len(ccrs)),2) if has_active and ccrs else None
+        # Capacity value is calculated row-by-row using the same recovered hours and rate pair.
+        # This keeps scenario arithmetic consistent with baseline EconomicsEngine and never infers cash.
+        cap=round(recovered_capacity_value,2) if has_active and has_capacity_rate else None
         status="COMPLETE" if assumptions else "NOT_CALCULATED"
         return EconomicResult(annual_active_hours=round(recovered_active,2),annual_wait_hours=round(recovered_wait,2),capacity_value_eur_annual=cap,direct_loss_eur_annual=round(avoided_loss,2),current_tool_cost_eur_annual=baseline.current_tool_cost_eur_annual,realized_cash_saving_eur_annual=round(cash,2),status=status)
 
     def create(self, ctx: EngineContext, pain_results: list[PainResult], baseline_econ: EconomicResult, baseline_risk: RiskResult, optimal_rec: Recommendation, optimal_quote: Quote, req: ScenarioRequest | None = None, optimal: ScenarioResult | None = None) -> ScenarioResult:
         if req is None:
-            action=optimal_rec.action_id; n=optimal_rec.functional_level_id; i=optimal_rec.ai_level_id; stype="OPTIMAL"; assumptions=[]; scope=None
+            action=optimal_rec.action_id; n=optimal_rec.functional_level_id; i=optimal_rec.ai_level_id; name="Optimal"; stype="OPTIMAL"; assumptions=[]; scope=None
         else:
-            action=req.action_id or optimal_rec.action_id; n=req.functional_level_id if req.functional_level_id is not None else optimal_rec.functional_level_id; i=req.ai_level_id if req.ai_level_id is not None else optimal_rec.ai_level_id; stype="OVERRIDE"; assumptions=req.assumptions; scope=req.commercial_scope
+            action=req.action_id or optimal_rec.action_id; n=req.functional_level_id if req.functional_level_id is not None else optimal_rec.functional_level_id; i=req.ai_level_id if req.ai_level_id is not None else optimal_rec.ai_level_id; name=req.scenario_name; stype="OVERRIDE"; assumptions=req.assumptions; scope=req.commercial_scope
+        # Build rec variant but retain capability requirement basis.
         rec=Recommendation(action_id=action,functional_level_id=n,ai_level_id=i,capabilities=optimal_rec.capabilities,confidence=optimal_rec.confidence,rationale=list(optimal_rec.rationale))
         included, blocked=self._caps_for(rec,n,i)
         coverage=self._coverage(pain_results,rec,included)
-        econ=self._scenario_econ(baseline_econ, assumptions, coverage, ctx)
+        econ=self._scenario_econ(baseline_econ, assumptions, coverage, ctx) if req is not None else self._scenario_econ(baseline_econ, [], coverage, ctx)
+        # Risk: preserve for identical control/authority; otherwise require reassessment.
         risk=baseline_risk
         status="COMPUTED"
         if req is not None and i != optimal_rec.ai_level_id:
@@ -312,4 +328,5 @@ class ScenarioComparator:
             }
         cap_delta["included"]=sorted(included); cap_delta["blocked"]=sorted(blocked)
         if i == "I3": status="BLOCKED"
-        return ScenarioResult(scenario_id=str(uuid.uuid4()),scenario_type=stype,action_id=action,functional_level_id=n,ai_level_id=i,coverage_by_pain=coverage,capability_delta=cap_delta,economics=econ,risk=risk,quote=quote,delta_vs_optimal=delta,status=status)
+        return ScenarioResult(scenario_id=str(uuid.uuid4()),scenario_name=name,scenario_type=stype,action_id=action,functional_level_id=n,ai_level_id=i,coverage_by_pain=coverage,capability_delta=cap_delta,economics=econ,risk=risk,quote=quote,delta_vs_optimal=delta,status=status)
+    # [AUNEA-BE-SCEN-CALC-020] END

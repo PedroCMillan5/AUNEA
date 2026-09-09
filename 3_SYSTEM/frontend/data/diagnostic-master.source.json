@@ -1,0 +1,8 @@
+{
+  "source_drive_id": "1f0WPb0BMElYbwB5oDBv-ypiyGKvURv4V",
+  "source_name": "AUNEA_DIAGNOSTIC_DATABASE_v0.9_DIAGNOSTIC_MASTER_V1.xlsx",
+  "source_status": "CANONICAL",
+  "field_count": 100,
+  "projection_sha256": "8fc966fdd958028acbfcd26dd6a69979c9785523a742a1444df95a70e46c925d",
+  "validation": "100/100 fields, flow, process, friction and mapping compared to current Drive extraction; NR13 empty exception aligned to Drive"
+}

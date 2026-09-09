@@ -1,3 +1,10 @@
+// [AUNEA-FE-DIAG-CONTROL-030] START — Captura Diagnostic Master v1
+// PURPOSE: Captura Diagnostic Master v1.
+// SOURCE: v1.0.4 aceptada, SHA256 a9fb7400b000d6289224610c88d4b7dc51f75f8ae97e20e4c3873a3a8e01d6e7; Diagnostic Master v1; DEC-034/038/040.
+// INPUTS: schema canónico, estado de engagement y acciones del usuario.
+// OUTPUTS: estado y vistas de captura/revisión.
+// SIDE_EFFECTS: DOM, almacenamiento local y solicitudes HTTP según responsabilidad.
+// CHANGE_RISK: HIGH.
 function fieldOptions(setId){return schema?.option_sets?.[setId]?.options||[]}
 function questionVisible(f,e){
   if(['CAPTURE_IN_PROCESS_STEP','CONDITIONAL_IN_STEP'].includes(f.Ask_Mode))return false;
@@ -65,8 +72,9 @@ function stagePage(){
   const answered=schema.fields.filter(f=>{const v=derivedValue(f.Field_ID,e);return !(v===undefined||v===null||v===''||(Array.isArray(v)&&!v.length))}).length;
   const pct=Math.round(answered/schema.fields.length*100);
   const stageIndex=schema.flow.findIndex(x=>x.Stage_ID===stage.Stage_ID);
-  return top('Diagnóstico guiado','Cuestionario canónico en español, generado desde Diagnostic Master v1. Una información se captura una vez y se reutiliza después.',`<button class="btn" data-page="proceso">Ver mapa AS-IS</button><button class="btn btn-primary" id="runDiag">Recalcular</button>`) +
+  return pageTop('Diagnóstico guiado','Cuestionario canónico en español, generado desde Diagnostic Master v1. Una información se captura una vez y se reutiliza después.',`<button class="btn" data-page="proceso">Ver mapa AS-IS</button><button class="btn btn-primary" id="runDiag">Recalcular</button>`) +
   `<div class="stage-layout"><aside class="card stage-nav">${schema.flow.map((s,i)=>`<button class="stage-btn ${s.Stage_ID===stage.Stage_ID?'active':''}" data-stage="${s.Stage_ID}"><span class="stage-num">${i+1}</span><span><b>${esc(s.Stage_ES)}</b><small>${esc(s.Objetivo)}</small></span><span class="stage-time">${s.Minutos_objetivo}m</span></button>`).join('')}</aside><div><div class="card stage-card"><div class="section-title"><div><h2>${stageIndex+1}. ${esc(stage.Stage_ES)}</h2><p>${esc(stage.Objetivo)}</p></div><div class="chip gold">${stage.Minutos_objetivo} min objetivo</div></div><div class="stage-meta"><span class="chip">Salida: ${esc(stage.Salida)}</span><span class="chip">Criterio: ${esc(stage.Criterio_de_salida)}</span></div><div class="notice"><strong>Hilo conductor:</strong> ${esc(stage.Interacción_principal)}. ${esc(stage.Regla_de_tiempo)}</div><div style="margin-top:12px">${fields.map(f=>renderQuestion(f,e)).join('')}</div>${stage.Stage_ID==='S04'?processPrompt(e):''}${stage.Stage_ID==='S05'?frictionPrompt(e):''}${stage.Stage_ID==='S06'?riskBuilder(e):''}${stage.Stage_ID==='S07'?economicBuilder(e):''}<div class="stage-footer"><button class="btn" id="prevStage" ${stageIndex===0?'disabled':''}>← Anterior</button><div style="min-width:200px"><div class="progress"><span style="width:${pct}%"></span></div><div class="field-help">${answered}/100 campos con dato o derivación disponible</div></div><button class="btn btn-primary" id="nextStage" ${stageIndex===schema.flow.length-1?'disabled':''}>Siguiente →</button></div></div></div></div>`
 }
 function processPrompt(e){return `<div class="notice info"><strong>Mapa AS-IS:</strong> los campos DF031–DF055 se capturan principalmente en el editor visual. Actualmente hay <b>${e.processSteps.filter(x=>x.status!=='SUPERSEDED').length}</b> pasos. <button class="btn btn-small" data-page="proceso">Abrir editor</button></div>`}
 function frictionPrompt(e){return `<div class="notice info"><strong>Fricciones:</strong> DF056–DF065 se capturan vinculando cada fricción a uno o varios pasos. Actualmente hay <b>${e.frictions.filter(x=>x.status!=='SUPERSEDED').length}</b> fricciones. <button class="btn btn-small" data-page="proceso">Abrir fricciones</button></div>`}
+// [AUNEA-FE-DIAG-CONTROL-030] END

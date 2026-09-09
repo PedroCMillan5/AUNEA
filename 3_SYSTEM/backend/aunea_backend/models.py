@@ -158,8 +158,16 @@ class ScenarioRequest(BaseModel):
     assumptions: list[ScenarioAssumption] = Field(default_factory=list)
     commercial_scope: CommercialScope | None = None
 
+# [AUNEA-BE-SCEN-MODEL-010] START — Contrato de resultado de escenario
+# PURPOSE: Mantener el nombre del escenario en la respuesta tipada.
+# SOURCE: RT_SCENARIO.Scenario_Name; baseline aceptada v1.0.4.
+# INPUTS: ScenarioComparator.
+# OUTPUTS: ScenarioResult.
+# SIDE_EFFECTS: ninguna.
+# CHANGE_RISK: HIGH.
 class ScenarioResult(BaseModel):
     scenario_id: str
+    scenario_name: str
     scenario_type: str
     action_id: str
     functional_level_id: str | None
@@ -171,6 +179,8 @@ class ScenarioResult(BaseModel):
     quote: Quote
     delta_vs_optimal: dict[str, Any] = Field(default_factory=dict)
     status: str = "COMPUTED"
+
+# [AUNEA-BE-SCEN-MODEL-010] END
 
 class DiagnosticOutput(BaseModel):
     engagement_id: str
