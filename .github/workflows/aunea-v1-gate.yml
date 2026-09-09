@@ -16,8 +16,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Install backend
-        run: python -m pip install -e 3_SYSTEM/backend
+      - name: Install backend and test dependencies
+        run: python -m pip install -e 3_SYSTEM/backend pytest httpx
       - name: Backend regression and canonical UAT
         working-directory: 3_SYSTEM/backend
         run: python -m pytest -q
