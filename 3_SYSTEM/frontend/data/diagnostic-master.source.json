@@ -1,8 +1,12 @@
 {
-  "source_drive_id": "1f0WPb0BMElYbwB5oDBv-ypiyGKvURv4V",
-  "source_name": "AUNEA_DIAGNOSTIC_DATABASE_v0.9_DIAGNOSTIC_MASTER_V1.xlsx",
+  "source_drive_id": "1qKjbJviEvUQnHOGCHy4VkIx0dbdkoJj1",
+  "source_name": "AUNEA_DIAGNOSTIC_DATABASE_v0.9.1_DIAGNOSTIC_MASTER_V1.1.xlsx",
   "source_status": "CANONICAL",
   "field_count": 100,
-  "projection_sha256": "8fc966fdd958028acbfcd26dd6a69979c9785523a742a1444df95a70e46c925d",
-  "validation": "100/100 fields, flow, process, friction and mapping compared to current Drive extraction; NR13 empty exception aligned to Drive"
+  "canonical_file_sha256": "70ccce1b77b0bf864ccb02f62c1b1d73b38823d980840ac8cec06b9ddc43dc05",
+  "base_projection_sha256": "8fc966fdd958028acbfcd26dd6a69979c9785523a742a1444df95a70e46c925d",
+  "runtime_strategy": "accepted v0.9 projection plus governed v1.1 delta adapter",
+  "effective_runtime": "Diagnostic Master v1.1",
+  "validated_counts": {"fields": 100, "domains": 25, "countries": 249, "process_step_attributes": 20},
+  "adapter_block_id": "AUNEA-DATA-DIAG-ADAPTER-010"
 }
