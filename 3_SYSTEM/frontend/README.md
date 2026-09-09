@@ -1,62 +1,45 @@
-# AUNEA Internal Frontend
+# AUNEA Internal v1.0
 
-Status: PROTOTYPE / UX refinement  
-Historical prototype version: v0.3.1  
-Next product version: v1.0  
+Status: REVIEW / frontend funcional local  
 Date: 2026-09-09
 
-## Source-of-truth rule
+## Fuente de verdad
 
-Frontend code belongs in GitHub. Business rules do not.
+El frontend vive en GitHub. Las reglas de negocio no.
 
-The historical prototype artifact has been preserved in Drive as a development reference:
-`09_OPERACION_INTERNA/06_AUNEA_INTERNAL/01_DOCUMENTACION_FUNCIONAL/AUNEA_INTERNAL_FRONTEND_v0.3.1_PROTOTYPE_REFERENCE.zip`
-Drive file ID: `1eeaj_5Agjv2f_gr3TviEtDpEda3aCQhV`.
+La captura canónica procede de:
+`AUNEA_DIAGNOSTIC_DATABASE_v0.9_DIAGNOSTIC_MASTER_V1.xlsx`
 
-This ZIP is a reference artifact, not a canonical rule source.
+Drive conserva el workbook canónico y el artefacto ZIP de revisión. El frontend consume una exportación estructurada del Diagnostic Master para construir la UI, pero no define preguntas, pricing, recommendation, economics ni risk rules.
 
-## AUNEA Internal v1.0
+## Qué incluye v1.0
 
-v1.0 is the first integrated functional product version of AUNEA Internal. It must consume the canonical diagnostic/data model rather than carrying provisional questionnaire logic from the prototype.
+- CRM local de revisión: empresas, contactos y estado comercial.
+- Estudios/engagements históricos por contacto y empresa.
+- Biblioteca de proyectos vinculados a engagements.
+- Diagnóstico de 90 minutos schema-driven.
+- 100 campos canónicos en español con objetivo, control, ejemplo, requiredness y reutilización.
+- Editor estructurado de pasos del proceso.
+- Fricciones vinculadas a uno o varios pasos.
+- Revisión visual del AS-IS con edición in situ y confirmación.
+- Captura estructurada de riesgos e inputs económicos.
+- Results / Recommendation / Scenarios / Quote preparados para consumir backend v1.1.
+- Guardado local explícito y auditoría básica de cambios.
 
-v1.0 is built against:
-- `AUNEA_DIAGNOSTIC_DATABASE_v0.9_DIAGNOSTIC_MASTER_V1.xlsx`
-- backend contracts under `3_SYSTEM/backend/` (backend v1.1)
-- `PROJECT_RULES.md`
+## Regla de cálculo
 
-No question, field, branching rule, recommendation, pricing rule or scenario rule may be introduced in the browser without a canonical data/rule source.
+El navegador no replica los motores de negocio. Pain, Economics, Risk, Recommendation, Scenario y Pricing oficiales sólo se muestran cuando se reciben de AUNEA Backend.
 
-## v1.0 core acceptance scope
-
-- Home / Cockpit
-- Companies / Contacts / Interactions / Opportunities
-- Engagements / Studies
-- Diagnostic 90m schema-driven
-- Process-step structured capture
-- Frictions linked to process steps
-- Editable process + friction review with the client
-- Results
-- Recommendation and meeting recap
-- Scenario Comparator
-- Quote
-- Save/persistence contract prepared for AUNEA Operations
-- Admin / Audit
-
-Client View publishing, final PPTX automation and email handoff consume the same Engagement snapshot and may continue as the next L8 delivery increment after the v1.0 internal flow is stable.
-
-## Version semantics
-
-- `v0.3.1`: historical prototype/reference only.
-- `v1.0`: first integrated functional version.
-- `PILOT`: v1.0 can be used in controlled real diagnostics before empirical calibration is complete.
-- `PRODUCTION`: only after applicable validation, persistence/security/deployment controls and real-use QA are complete.
-
-## Development preview
-
-A local build may be served with:
+## Ejecutar localmente
 
 ```bash
-python -m http.server 5173
+python -m http.server 5180
 ```
 
-The historical prototype is not production and must not be treated as a source of business logic.
+Abrir `http://localhost:5180`.
+
+En el paquete distribuido existe también `run.bat` para Windows.
+
+## Estado
+
+v1.0 es `REVIEW`, no `PRODUCTION`. Falta QA funcional con usuario, conexión completa del contrato de captura al backend, persistencia productiva/AUNEA Operations, autenticación y pilotaje real de los 90 minutos.
