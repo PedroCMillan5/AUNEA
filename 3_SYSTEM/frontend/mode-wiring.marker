@@ -1,1 +1,0 @@
-B6 mode wiring requires app-mode-v1.js to load after app-shell.js and before app.js.
