@@ -10,6 +10,7 @@ from .system_builder_models import SystemBuilderRequest
 from .orchestrator import Orchestrator
 from .registry import rule_bundle_version, load_registry
 from .store import SQLiteStore
+from .uat import run_canonical_uat
 
 app = FastAPI(title="AUNEA Internal Backend", version="1.1.1")
 app.add_middleware(
@@ -38,6 +39,12 @@ def health():
 def registry_status():
     reg=load_registry()
     return {"version":reg.get("version"),"tables":len(reg.get("tables",{})),"rows":sum(len(x) for x in reg.get("tables",{}).values())}
+
+# [AUNEA-UAT-API-010] START — Visible isolated UAT endpoint
+@app.post("/v1/uat/run")
+def run_uat():
+    return run_canonical_uat()
+# [AUNEA-UAT-API-010] END
 
 @app.put("/v1/engagements/{engagement_id}")
 def save_engagement(engagement_id: str, payload: EngagementInput):
@@ -76,7 +83,6 @@ def compare(payload: ComparePayload):
 def audit_runs(engagement_id: str | None=None):
     return store.list_runs(engagement_id)
 
-
 @app.post("/v1/deliverables/generate")
 def generate_deliverables(payload: DeliverPayload):
     from .models import DiagnosticOutput
@@ -91,7 +97,6 @@ def generate_saved_deliverables(engagement_id: str, request: DeliverableRequest 
         return engine.generate_deliverables_for_saved(engagement_id, request or DeliverableRequest())
     except ValueError as exc:
         raise HTTPException(404, str(exc))
-
 
 class SolutionSpecPayload(BaseModel):
     engagement: EngagementInput
@@ -108,7 +113,6 @@ def generate_saved_solution_specification(engagement_id: str, request: SolutionS
         return engine.generate_solution_specification_for_saved(engagement_id, request or SolutionSpecificationRequest())
     except ValueError as exc:
         raise HTTPException(404, str(exc))
-
 
 class SystemBuilderPayload(BaseModel):
     specification: SolutionSpecification
