@@ -1,3 +1,10 @@
+# [AUNEA-UAT-GATE-010] START — V1 acceptance gate
+# PURPOSE: Run backend regression/canonical UAT and frontend modular/runtime UX tests on the same commit.
+# SOURCE: PROJECT_RULES.md; REQ-UAT-001/002/003; V1 acceptance criteria.
+# INPUTS: repository head.
+# OUTPUTS: independent backend/frontend PASS/FAIL checks.
+# SIDE_EFFECTS: GitHub Actions only; no production data.
+# CHANGE_RISK: CRITICAL.
 name: AUNEA V1 Acceptance Gate
 
 on:
@@ -38,3 +45,4 @@ jobs:
         run: npm ci
       - name: Frontend modular runtime and UX regression
         run: npm test
+# [AUNEA-UAT-GATE-010] END
