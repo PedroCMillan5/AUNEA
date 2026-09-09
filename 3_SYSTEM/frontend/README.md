@@ -1,71 +1,71 @@
-# AUNEA Internal — reconciliación modular de v1.0.4
+# AUNEA Internal V1 — candidato funcional en REVIEW
 
-Status: REVIEW / reconciliación técnica; V1 funcional pendiente
-Date: 2026-09-09
+Status: REVIEW / automated acceptance PASS; native browser/Windows UAT pending
+Date: 2026-09-10
 
 ## Fuente de verdad
 
-El frontend vive en GitHub. Las reglas de negocio no.
+El frontend y el backend ejecutables viven en GitHub. La interfaz no gobierna reglas de negocio.
 
-La captura canónica procede de:
-`AUNEA_DIAGNOSTIC_DATABASE_v0.9_DIAGNOSTIC_MASTER_V1.xlsx`
+La captura canónica vigente procede de:
+`AUNEA_DIAGNOSTIC_DATABASE_v0.9.1_DIAGNOSTIC_MASTER_V1.1.xlsx`
 
-Drive conserva el workbook canónico y el artefacto ZIP de revisión. El frontend consume una exportación estructurada del Diagnostic Master para construir la UI, pero no define preguntas, pricing, recommendation, economics ni risk rules.
+Drive ID: `1qKjbJviEvUQnHOGCHy4VkIx0dbdkoJj1`
 
-## Qué incluye v1.0
+El runtime efectivo conserva la proyección aceptada y aplica únicamente el delta gobernado de Master v1.1 mediante `app-schema-v11.js`. El resultado validado contiene 100 campos, 25 dominios, 249 países y 20 atributos de Process Step, incluido `communication_channels`.
 
-- CRM local de revisión: empresas, contactos y estado comercial.
-- Estudios/engagements históricos por contacto y empresa.
-- Biblioteca de proyectos vinculados a engagements.
-- Diagnóstico de 90 minutos schema-driven.
-- 100 campos canónicos en español con objetivo, control, ejemplo, requiredness y reutilización.
-- Editor estructurado de pasos del proceso.
-- Fricciones vinculadas a uno o varios pasos.
-- Revisión visual del AS-IS con edición in situ y confirmación.
+## Qué incluye esta rama
+
+- CRM local de revisión: empresas y contactos vinculados a engagements y proyectos.
+- Diagnóstico de 90 minutos schema-driven en español.
+- Renderer canónico para controles estructurados; un control estructurado desconocido no degrada silenciosamente a texto libre.
+- No-Reask NR01–NR15: CRM, roles, herramientas, artefactos, canales, tiempos, aprobaciones, excepciones y fricciones se reutilizan o derivan cuando corresponde.
+- Editor AS-IS con los 20 atributos canónicos de Process Step.
+- Tiempo activo, espera y retrabajo separados.
+- Fricciones vinculadas obligatoriamente a al menos un paso; Pain_ID derivado internamente.
 - Captura estructurada de riesgos e inputs económicos.
-- Results / Recommendation / Scenarios / Quote preparados para consumir backend v1.1.
-- Guardado local explícito y auditoría básica de cambios.
+- Adapter frontend → backend sin cálculo oficial de negocio en JavaScript.
+- Secuencia server-owned: Pain → Economics → Risk → Recommendation → Pricing → Scenario.
+- Modo Sesión y Modo Interno sobre el mismo estado y la misma lógica.
+- Persistencia local recuperable, autosave y backup/restauración JSON.
+- UAT visible one-click con 5 fixtures canónicos y 26 assertions expected/actual/PASS/FAIL/refs, ejecutadas de forma aislada.
 
 ## Regla de cálculo
 
-El navegador no replica los motores de negocio. Pain, Economics, Risk, Recommendation, Scenario y Pricing oficiales sólo se muestran cuando se reciben de AUNEA Backend.
+Pain, Economics, Risk, Recommendation, Pricing y Scenario oficiales se calculan exclusivamente en AUNEA Backend. El navegador prepara inputs, llama al backend y representa outputs. La recomendación óptima no se sobrescribe al comparar escenarios.
 
 ## Ejecutar localmente
 
-```bash
-python -m http.server 5180
-```
-
-Abrir `http://localhost:5180`.
-
-En el paquete distribuido existe también `run.bat` para Windows.
-
-## Estado
-
-v1.0 es `REVIEW`, no `PRODUCTION`. Falta QA funcional con usuario, conexión completa del contrato de captura al backend, persistencia productiva/AUNEA Operations, autenticación y pilotaje real de los 90 minutos.
-
-## Runtime vigente de esta rama
-
-`index.html` carga en orden `app-core.js`, `app-diagnostic-fields.js`, `app-process-editor.js`, `app-results.js`, `app-shell.js` y el arranque mínimo `app.js`. No hay JS ni schema embebidos en HTML. El único Diagnostic Master runtime es `data/diagnostic-master.min.json`, contrastado con el activo CANONICAL de Drive.
-
-Se conservan las correcciones `pageTop`/`statusBadge` y el bloqueo de Recommendation/Pricing de la baseline aceptada. La reconciliación no equivale al cierre de REQ-DIAG/UX/UAT ni cambia el master a v1.1.
-
-Desde la raíz del repositorio, en un terminal:
+Desde la raíz del repositorio, instalar y arrancar backend:
 
 ```sh
-cd 3_SYSTEM/backend
-python -m pip install -e ".[test]"
+python -m pip install -e 3_SYSTEM/backend
 python -m uvicorn aunea_backend.api:app --host 127.0.0.1 --port 8000
 ```
 
-En otro terminal desde la raíz:
+En otro terminal, desde la raíz:
 
 ```sh
 python -m http.server 5180 --bind 127.0.0.1 --directory 3_SYSTEM/frontend
 ```
 
-Abrir `http://localhost:5180`. Crear empresa en Contactos, crear contacto y pulsar Crear estudio.
+Abrir `http://localhost:5180`.
 
-Pruebas: `python -m pytest -q` en backend; `npm ci && npm test` en frontend. La prueba frontend ejecuta los recursos HTTP, las once páginas, CRM, pasos, fricciones y guardado en un DOM aislado. No sustituye Chromium ni UAT integral.
+Recorrido mínimo: Contactos → empresa → contacto → crear estudio → Diagnóstico → Proceso y fricciones → Resultados. Desde la cabecera se puede alternar entre Modo Sesión y Modo Interno. La página `UAT / QA` sólo aparece en Modo Interno.
 
-Bloqueo de datos verificado: NR03/DF050 exige derivar canales desde pasos, pero Process Step Model v1 no incluye ese atributo; DF005 referencia REF_COUNTRY_ISO3166 ausente. Requirements OPEN_GAPS los sitúa en el candidato v0.9.1/Master v1.1 pendiente de publicación/promoción. No se activa ese candidato como canónico de forma implícita.
+## QA automatizada vigente
+
+El workflow `AUNEA V1 Acceptance Gate` ejecuta backend y frontend sobre el mismo commit.
+
+Último gate automatizado antes de esta actualización documental:
+
+- Frontend: 23/23 PASS.
+- Backend: 22/22 PASS.
+- UAT canónica incluida en backend: 5 fixtures / 26 assertions / 26 PASS / 0 FAIL.
+- Runtime frontend: carga HTTP de módulos, CRM, No-Reask, cambio Sesión/Interno, Process Steps, Frictions, Pain derivado, persistencia y recovery snapshot.
+
+Los tests DOM/HTTP no sustituyen una comprobación visual real en Chromium/Edge ni la prueba nativa final en Windows.
+
+## Estado de promoción
+
+Esta rama permanece en `REVIEW`. No se debe fusionar a `main` ni declarar `PRODUCTION` hasta completar el gate visual/nativo final de la nueva V1. El histórico Windows-validado de v1.0.4 demuestra la baseline anterior, pero no sustituye la validación visual de los módulos incorporados ahora.
