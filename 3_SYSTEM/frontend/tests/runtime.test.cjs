@@ -53,7 +53,8 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   click('#addContact');fill('#mContactName','UAT Contacto');fill('#mContactEmail','uat@example.invalid');click('#modalSave');
   click('[data-contact-study]');
   assert.match(d.querySelector('#breadcrumb').textContent,/UAT Runtime empresa/);
-  const q=d.querySelector('[data-answer="DF001"]');assert.equal(q.value,'UAT Runtime empresa');
+  const reused=[...d.querySelectorAll('.reuse-context')].find(x=>x.textContent.includes('UAT Runtime empresa'));
+  assert.ok(reused,'DF001 debe mostrarse como contexto CRM reutilizado, no como pregunta vacía');
   for(const page of ['inicio','contactos','estudios','proyectos','diagnostico','proceso','resultados','recomendacion','escenarios','quote','uat','admin']){click(`[data-page="${page}"]`);assert.ok(d.querySelector('h1'),page);}
   click('[data-page="proceso"]');click('#addStep');fill('#step_step_name','Validar solicitud');fill('#step_step_type','ST02');fill('#step_actor','OPERATIONS');
   if(!d.querySelector('#step_actor').value) d.querySelector('#step_actor').selectedIndex=1;
