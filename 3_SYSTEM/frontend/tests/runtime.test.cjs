@@ -41,7 +41,7 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   await until(()=>d.querySelector('h1'));
   assert.match(d.querySelector('h1').textContent,/Cockpit/);
   assert.equal(d.querySelectorAll('script:not([src])').length,0);
-  for(const file of ['app-core.js','app-schema-v11.js','app-diagnostic-fields.js','app-renderer-v1.js','app-no-reask-v1.js','app-process-editor.js','app-results.js','app-process-v1.js','app-engine-adapter-v1.js','app-shell.js','app-mode-v1.js','app-persistence-uat-v1.js','app.js','styles.css','data/diagnostic-master.min.json'])assert.ok(requests.includes(file),file);
+  for(const file of ['app-core.js','app-schema-v11.js','app-diagnostic-fields.js','app-renderer-v1.js','app-no-reask-v1.js','app-no-reask-capacity-v1.js','app-process-editor.js','app-results.js','app-process-v1.js','app-engine-adapter-v1.js','app-shell.js','app-mode-v1.js','app-persistence-uat-v1.js','app.js','styles.css','data/diagnostic-master.min.json'])assert.ok(requests.includes(file),file);
   const schema=await (await fetch(url+'data/diagnostic-master.min.json')).json();
   assert.equal(new Set(schema.fields.map(f=>f.Field_ID)).size,100);
   assert.equal(schema.no_reask_rules.length,15);
@@ -56,20 +56,20 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   const reused=[...d.querySelectorAll('.reuse-context')].find(x=>x.textContent.includes('UAT Runtime empresa'));
   assert.ok(reused,'DF001 debe mostrarse como contexto CRM reutilizado, no como pregunta vacía');
   for(const page of ['inicio','contactos','estudios','proyectos','diagnostico','proceso','resultados','recomendacion','escenarios','quote','uat','admin']){click(`[data-page="${page}"]`);assert.ok(d.querySelector('h1'),page);}
-  click('[data-page="proceso"]');click('#addStep');fill('#step_step_name','Validar solicitud');fill('#step_step_type','ST02');fill('#step_actor','OPERATIONS');
-  if(!d.querySelector('#step_actor').value) d.querySelector('#step_actor').selectedIndex=1;
-  fill('#step_active_time','12');fill('#step_wait_time','60');fill('#step_rework_time','3');click('#modalSave');
+  click('[data-page="proceso"]');click('#addStep');fill('#step_name','Validar solicitud');fill('#step_type','ST02');fill('#step_actor','OPERATIONS');
+  fill('#step_active','12');fill('#step_wait','60');fill('#step_rework','3');click('#modalSave');
   assert.equal(d.querySelector('#modalSave'),null);
   click('[data-process-tab="fricciones"]');click('#addFriction');d.querySelector('#fr_type').selectedIndex=1;fill('#fr_signal','UAT: faltan datos en la solicitud');click('#modalSave');
-  assert.ok(d.querySelector('#modalSave'),'La fricción sin paso debe seguir abierta');
-  d.querySelector('[data-fr-step]').checked=true;click('#modalSave');assert.equal(d.querySelector('#modalSave'),null);
+  assert.ok(d.querySelector('#modalSave'),'La fricción sin paso ni causa debe seguir abierta');
+  const stepChoice=d.querySelector('[data-v1-multi="fr_steps"]'),causeChoice=d.querySelector('[data-v1-multi="fr_causes"]');assert.ok(stepChoice);assert.ok(causeChoice);stepChoice.checked=true;causeChoice.checked=true;click('#modalSave');assert.equal(d.querySelector('#modalSave'),null);
   click('[data-process-tab="revision"]');click('#confirmAsIs');click('#saveBtn');
   const saved=JSON.parse(w.localStorage.getItem('aunea_internal_v1'));
   assert.equal(saved.companies.length,1);assert.equal(saved.contacts.length,1);assert.equal(saved.engagements.length,1);
-  assert.equal(saved.engagements[0].processSteps[0].active_time,'12');
-  assert.equal(saved.engagements[0].processSteps[0].wait_time,'60');
-  assert.equal(saved.engagements[0].processSteps[0].rework_time,'3');
+  assert.equal(saved.engagements[0].processSteps[0].active_time,12);
+  assert.equal(saved.engagements[0].processSteps[0].wait_time,60);
+  assert.equal(saved.engagements[0].processSteps[0].rework_time,3);
   assert.equal(saved.engagements[0].frictions[0].affected_steps.length,1);
+  assert.ok(saved.engagements[0].frictions[0].derived_pain_id,'La fricción debe persistir Pain derivado');
   assert.equal(saved.engagements[0].confirmedAsIs,true);
   assert.equal(saved.recoveryMeta.version,'AUNEA_INTERNAL_V1');
   click('[data-page="contactos"]');click('[data-contact-study]');click('#saveBtn');
