@@ -1,0 +1,40 @@
+name: AUNEA V1 Acceptance Gate
+
+on:
+  push:
+    branches:
+      - reconcile/frontend-v1.0.4-source
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install backend
+        run: python -m pip install -e 3_SYSTEM/backend
+      - name: Backend regression and canonical UAT
+        working-directory: 3_SYSTEM/backend
+        run: python -m pytest -q
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: 3_SYSTEM/frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: 3_SYSTEM/frontend/package-lock.json
+      - name: Install frontend test runtime
+        run: npm ci
+      - name: Frontend modular runtime and UX regression
+        run: npm test
