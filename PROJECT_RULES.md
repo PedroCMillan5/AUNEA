@@ -1,7 +1,7 @@
 # AUNEA — Project Rules
 
 Status: ACTIVE  
-Version: 1.0  
+Version: 1.1  
 Date: 2026-09-09
 
 This file is the repository-side operating contract for future work on AUNEA Internal.
@@ -35,6 +35,8 @@ The UI represents business logic; it does not define it.
 8. The optimal recommendation is immutable; consultant changes create governed alternatives/overrides.
 9. Do not present demos as paid client cases.
 10. Never store credentials or secrets in Drive or GitHub.
+11. Every meaningful code responsibility must have a stable Block_ID and START/END markers according to `CODE_CONVENTIONS.md`.
+12. Existing runtime code is tagged only on the reconciled current version; do not add maintenance comments to stale/superseded copies and then treat them as current.
 
 ## Diagnostic contract
 
@@ -59,6 +61,19 @@ Every diagnostic field must define, where applicable:
 
 Every friction must link to one or more process steps. The client describes/selects the friction; AUNEA derives the internal Pain mapping.
 
+## Code identification contract
+
+Detailed rules are maintained in `CODE_CONVENTIONS.md`.
+
+Block identifier format:
+`AUNEA-<LAYER>-<COMPONENT>-<TYPE>-<NNN>`
+
+The identifier describes a responsibility, not a line range or version. A responsibility keeps its Block_ID when moved or refactored. Retired Block_IDs are never reused for another responsibility.
+
+For HIGH/CRITICAL blocks, comments must identify purpose, canonical source/contract, inputs, outputs, side effects and change risk. Business Field_IDs, Rule_IDs, Error_IDs and code Block_IDs remain separate namespaces.
+
+The practical goal is targeted maintenance: future work should be able to locate a Block_ID, fetch only the relevant code region, inspect its dependency contract and apply a controlled change without rereading unrelated files.
+
 ## Change classification
 
 Before implementing, classify the change:
@@ -80,6 +95,8 @@ A change is closed only when:
 - no contradictory duplicate rule remains;
 - applicable tests/QA pass;
 - frontend/backend contracts remain coherent;
+- new/materially changed code responsibilities have Block_ID comments and a maintained block-index entry;
+- relevant UAT/regression coverage is linked for HIGH/CRITICAL blocks;
 - superseded versions are archived when needed;
 - the Master Index is updated if version/location/status changed;
 - DECISIONES_AUNEA is updated if a rule/architecture decision changed;
@@ -96,15 +113,17 @@ Before changing AUNEA:
 3. Open the current canonical asset for that layer.
 4. Review related active decisions.
 5. Define acceptance criteria before implementation.
+6. Locate affected Block_IDs or assign them before materially changing code.
 
 ## Required session close
 
 1. Run QA/tests.
 2. Confirm one source of truth.
-3. Update version/status.
-4. Update Master Index.
-5. Update Decision/State/Roadmap/Bitacora when applicable.
-6. Archive superseded artifacts.
+3. Confirm Block_ID/index consistency for changed code.
+4. Update version/status.
+5. Update Master Index.
+6. Update Decision/State/Roadmap/Bitacora when applicable.
+7. Archive superseded artifacts.
 
 ## Status vocabulary
 
