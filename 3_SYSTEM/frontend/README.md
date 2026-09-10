@@ -29,6 +29,13 @@ El runtime efectivo conserva la proyección aceptada y aplica únicamente el del
 - Modo Sesión y Modo Interno sobre el mismo estado y la misma lógica.
 - Persistencia local recuperable, autosave y backup/restauración JSON.
 - UAT visible one-click con 5 fixtures canónicos y 26 assertions expected/actual/PASS/FAIL/refs, ejecutadas de forma aislada.
+- Design System AUNEA (Solutions skin) con tokens exactos de `TOKENS_AUNEA`/`DESIGN_SYSTEM_AUNEA` y labels ES gobernados para los enums que devuelve el backend.
+- Modelo de completitud compuesto (`app-completion-model-v1.js`): jerarquía etapas revisadas → obligatorios aplicables completos → pendientes concretos → evidencia pendiente → listo para calcular, sin denominador fijo de 100 campos.
+- Procedencia "Tomado de: <origen>" con enlace a editar la fuente, sin fugas técnicas de No-Reask/Reuse_From crudo.
+- CRM con pestañas Contactos/Empresas, filtro "ocultar perdidos" y edición de contacto con histórico derivado del log de auditoría existente.
+- Reordenación de pasos del mapa AS-IS (posición visual) sin alterar `normal_next_step`, rutas de excepción ni fricciones vinculadas.
+- Pantalla de cierre real en la última etapa: resumen factual de proceso/fricciones/riesgos/economics/obligatorios/siguiente paso, con CTA único `CALCULAR DIAGNÓSTICO Y RECOMENDACIÓN` cuando la captura está completa.
+- Auditoría automática de gobernanza de Block_ID sobre todo el runtime vigente (frontend, backend, build/launcher, CI) — `tests/block-id-audit.test.cjs`.
 
 ## Regla de cálculo
 
@@ -57,10 +64,10 @@ Recorrido mínimo: Contactos → empresa → contacto → crear estudio → Diag
 
 El workflow `AUNEA V1 Acceptance Gate` ejecuta backend y frontend sobre el mismo commit.
 
-Último gate automatizado antes de esta actualización documental:
+Último gate automatizado tras el refactor UX/funcional (Bloques A-L):
 
-- Frontend: 23/23 PASS.
-- Backend: 22/22 PASS.
+- Frontend: 81/81 PASS (incluye la auditoría de Block_ID sobre todo el runtime vigente).
+- Backend: 27/27 PASS.
 - UAT canónica incluida en backend: 5 fixtures / 26 assertions / 26 PASS / 0 FAIL.
 - Runtime frontend: carga HTTP de módulos, CRM, No-Reask, cambio Sesión/Interno, Process Steps, Frictions, Pain derivado, persistencia y recovery snapshot.
 
