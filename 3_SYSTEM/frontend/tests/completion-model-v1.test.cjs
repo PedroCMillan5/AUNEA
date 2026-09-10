@@ -38,6 +38,9 @@ function makeCtx(){
     normalizeArray:v=>Array.isArray(v)?v:(v==null||v===''?[]:[v]),
     setAnswer:()=>{},bindForms:()=>{},markDirty:()=>{},render:()=>{},setPage:()=>{},
     openModal:()=>{},closeModal:()=>{},toast:()=>{},now:()=>'',runDiagnosis:()=>{},
+    answerDetails:e=>{e.answerDetails=e.answerDetails||{};return e.answerDetails},audit:()=>{},
+    numberParts:v=>(v&&typeof v==='object'?v:{value:v??'',unit:'',period:'',mode:''}),
+    renderQuestion:()=>'<QUESTION>',
     esc:v=>String(v??''),attr:v=>String(v??''),
     section:(title,sub,body)=>body,pageTop:()=>'',
     state:{backendOnline:true,returnTo:null},
@@ -111,6 +114,16 @@ test('stagePage no longer renders the fixed answered/100 denominator or a global
   assert.match(diagSrc,/engagementCompletion\(e\)/);
   assert.match(diagSrc,/completion-summary/);
   assert.match(diagSrc,/readyToCalculate/);
+});
+
+test('UAT-VIS-023/024: volume fields are one habitual interaction and peak volume explicitly captures cases per period without changing Field_IDs',()=>{
+  assert.match(diagFieldsCode,/function habitualVolumeBlock\(f21,f22,e\)/);
+  assert.match(diagFieldsCode,/data-number-value="\$\{f21\.Field_ID\}"/);
+  assert.match(diagFieldsCode,/data-answer="\$\{f22\.Field_ID\}"/);
+  assert.match(diagFieldsCode,/casos por/);
+  assert.match(diagFieldsCode,/function peakVolumeBlock\(f,e\)/);
+  assert.match(diagFieldsCode,/data-number-period="\$\{f\.Field_ID\}"/);
+  assert.match(diagFieldsCode,/if\(f\.Field_ID==='DF022'&&fields\.some\(x=>x\.Field_ID==='DF021'\)\)continue/);
 });
 
 test('state.returnTo round-trips: leaving a stage for the process map remembers it, and returning restores stageId and clears returnTo',()=>{
