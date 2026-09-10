@@ -41,6 +41,14 @@ function now(){return new Date().toISOString()}
 function esc(v){return String(v??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
 function attr(v){return esc(v).replace(/'/g,'&#39;')}
 function fmtDate(v){if(!v)return '—';try{return new Date(v).toLocaleString('es-ES',{dateStyle:'short',timeStyle:'short'})}catch{return v}}
+function formatDateEs(v){
+  if(!v)return '—';
+  try{
+    const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(v);
+    const d=m?new Date(Number(m[1]),Number(m[2])-1,Number(m[3])):new Date(v);
+    return d.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'});
+  }catch{return v}
+}
 function currentEng(){return state.engagements.find(x=>x.id===state.activeEngagementId)||null}
 function companyById(id){return state.companies.find(x=>x.id===id)||null}
 function contactById(id){return state.contacts.find(x=>x.id===id)||null}

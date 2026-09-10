@@ -9,6 +9,9 @@ test('engineLabel maps every backend enum value to a Spanish string',()=>{
   assert.equal(ctx.engineLabel('risk_level','R3'),'Riesgo crítico');
   assert.equal(ctx.engineLabel('risk_status','CONTROL_GAP'),'Brecha de control');
   assert.equal(ctx.engineLabel('quote_status','BLOCKED'),'Bloqueada');
+  assert.equal(ctx.engineLabel('evidence_quality','MEASURED'),'Medido');
+  assert.equal(ctx.engineLabel('evidence_quality','CLIENT_DECLARED'),'Declarado por cliente');
+  assert.equal(ctx.engineLabel('evidence_quality','SPECIFIC_BENCHMARK'),'Benchmark específico');
 });
 
 test('engineLabel unwraps {value} shaped enums (e.g. Literal-backed pydantic fields serialized as plain strings still pass through)',()=>{

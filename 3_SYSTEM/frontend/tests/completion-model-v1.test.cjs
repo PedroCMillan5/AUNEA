@@ -8,6 +8,8 @@ const root=path.join(__dirname,'..');
 const noReaskCode=fs.readFileSync(path.join(root,'app-no-reask-v1.js'),'utf8');
 const engineAdapterCode=fs.readFileSync(path.join(root,'app-engine-adapter-v1.js'),'utf8');
 const completionCode=fs.readFileSync(path.join(root,'app-completion-model-v1.js'),'utf8');
+const i18nCode=fs.readFileSync(path.join(root,'app-i18n-labels-v1.js'),'utf8');
+const diagFieldsCode=fs.readFileSync(path.join(root,'app-diagnostic-fields.js'),'utf8');
 
 const schema={
   flow:[
@@ -37,7 +39,8 @@ function makeCtx(){
     setAnswer:()=>{},bindForms:()=>{},markDirty:()=>{},render:()=>{},setPage:()=>{},
     openModal:()=>{},closeModal:()=>{},toast:()=>{},now:()=>'',runDiagnosis:()=>{},
     esc:v=>String(v??''),attr:v=>String(v??''),
-    state:{backendOnline:true},
+    section:(title,sub,body)=>body,pageTop:()=>'',
+    state:{backendOnline:true,returnTo:null},
     document:{querySelectorAll:()=>[],getElementById:()=>null}
   };
   ctx.currentEng=()=>ctx.__eng;
@@ -45,6 +48,8 @@ function makeCtx(){
   vm.runInContext(noReaskCode,ctx);
   vm.runInContext(engineAdapterCode,ctx);
   vm.runInContext(completionCode,ctx);
+  vm.runInContext(i18nCode,ctx);
+  vm.runInContext(diagFieldsCode,ctx);
   return ctx;
 }
 
@@ -118,5 +123,35 @@ test('state.returnTo round-trips: leaving a stage for the process map remembers 
   assert.match(diagSrc,/data-goto-process/);
   const processSrc=fs.readFileSync(path.join(root,'app-process-v1.js'),'utf8');
   assert.match(processSrc,/id="returnToStage"/);
+});
+
+test('validationSummary (last-stage closing screen) uses only factual language — "con evidencia/controles registrados", never "revisada"/"confirmado" except the real e.confirmedAsIs state',()=>{
+  const ctx=makeCtx();
+  const e={confirmedAsIs:false,processSteps:[{id:'s1',status:'ACTIVE'}],frictions:[{id:'f1',status:'ACTIVE',evidence_type:'EV02'},{id:'f2',status:'ACTIVE',evidence_type:''}],risks:[{controls_present:true},{controls_present:false}],economicInputs:[{driver_id:'D1',evidence_type:'MEASURED'}],answers:{}};
+  const completion={readyToCalculate:false,missing:[{type:'FIELD',id:'DF900',label:'Empresa',stage:'S01',navigationTarget:'diagnostico'}],blockers:[{type:'FIELD',id:'DF900',label:'Empresa',stage:'S01',navigationTarget:'diagnostico'}]};
+  const html=ctx.validationSummary(e,completion);
+  assert.match(html,/1 con evidencia registrada/);
+  assert.match(html,/1 con controles registrados/);
+  assert.match(html,/1 Medido/);
+  assert.doesNotMatch(html,/revisada/i);
+  assert.doesNotMatch(html,/\bconfirmado\b/i,'only the literal e.confirmedAsIs state may use this word, and it is false here');
+  assert.match(html,/data-goto-stage="S01"/);
+  assert.doesNotMatch(html,/id="runDiag"/,'the CALCULAR button must not appear while blockers remain');
+});
+
+test('validationSummary shows the single CALCULAR CTA (and nothing else) once readyToCalculate is true',()=>{
+  const ctx=makeCtx();
+  const e={confirmedAsIs:true,processSteps:[{id:'s1',status:'ACTIVE'}],frictions:[],risks:[],economicInputs:[],answers:{DF098:'Solicitar evidencias — Pedro — 12/09/2026'}};
+  const completion={readyToCalculate:true,missing:[],blockers:[]};
+  const html=ctx.validationSummary(e,completion);
+  assert.match(html,/id="runDiag">CALCULAR DIAGNÓSTICO Y RECOMENDACIÓN/);
+  assert.doesNotMatch(html,/blocker-list/);
+  assert.match(html,/Solicitar evidencias — Pedro — 12\/09\/2026/);
+});
+
+test('the last stage renders validationSummary and never a "Siguiente →" button (no stage 10)',()=>{
+  assert.match(diagFieldsCode,/isLastStage\?validationSummary\(e,completion\):''/);
+  assert.match(diagFieldsCode,/isLastStage\?''/);
+  assert.doesNotMatch(diagFieldsCode,/stageIndex===schema\.flow\.length-1\?'disabled':''/,'the old disabled-but-present Siguiente button must be gone, not just disabled');
 });
 // [AUNEA-UAT-COMPLETION-010] END

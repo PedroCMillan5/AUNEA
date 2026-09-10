@@ -106,4 +106,12 @@ test('Contactos/Empresas are separate subtabs and neither Contact nor Company ga
   assert.doesNotMatch(coreCode,/\.archived\s*=/);
   assert.doesNotMatch(coreCode,/\.history\s*=\s*\[/);
 });
+
+test('formatDateEs renders dd/mm/aaaa for both a bare date-only string (as produced by <input type="date">) and a full ISO timestamp, without a timezone off-by-one',()=>{
+  const ctx=makeCtx();
+  assert.equal(ctx.formatDateEs('2026-09-12'),'12/09/2026');
+  assert.equal(ctx.formatDateEs('2026-01-05T12:00:00.000Z'),'05/01/2026');
+  assert.equal(ctx.formatDateEs(''),'—');
+  assert.equal(ctx.formatDateEs(null),'—');
+});
 // [AUNEA-UAT-CRM-010] END

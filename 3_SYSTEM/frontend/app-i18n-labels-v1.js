@@ -37,6 +37,13 @@ const I18N_LABELS_ES = Object.freeze({
     PROVISIONAL: 'Provisional',
     MANUAL_REVIEW: 'Revisión manual',
     BLOCKED: 'Bloqueada'
+  },
+  evidence_quality: {
+    MEASURED: 'Medido',
+    CLIENT_DECLARED: 'Declarado por cliente',
+    AUNEA_ESTIMATE: 'Estimación AUNEA',
+    SPECIFIC_BENCHMARK: 'Benchmark específico',
+    HYPOTHESIS: 'Hipótesis'
   }
 });
 

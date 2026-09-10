@@ -102,6 +102,33 @@ function frictionPriority(fid,e,val){
 }
 function structuredRedirect(label,page){return `<div class="notice info"><strong>${esc(label)}</strong><br>Se gestiona en su editor estructurado para conservar trazabilidad. <button type="button" class="btn btn-small" data-page="${page}">Abrir editor</button></div>`}
 
+// DF098 (Next_Step): DROPDOWN_WITH_OWNER_DATE confirms the acción+owner+fecha UX, but the confirmed
+// physical contract (deliverable_models.py: next_step: str | None) expects a plain string, not an
+// object — so this composes 3 sub-controls (dedicated data-nextstep-* attributes, not the generic
+// data-answer/data-detail-answer binders, to avoid them fighting over the same field) but serializes to
+// the canonical "<acción> — <owner> — <fecha dd/mm/aaaa>" string (matching Ejemplo_ES) only once all
+// three pieces are present. Nothing is written to answers.DF098 while incomplete.
+function nextStepWithOwnerDate(f,opts,e){
+  const fid=f.Field_ID,d=answerDetails(e);
+  const actionValue=d[`${fid}__action`]||'',owner=d[`${fid}__owner`]||'',dateVal=d[`${fid}__date`]||'',otherDetail=d[`${fid}__other`]||'';
+  const actionSelect=canonicalSelect(`${fid}__action`,opts,actionValue,`data-nextstep-action="${fid}"`);
+  const otherBox=actionValue==='OTHER'?`<input class="detail-input" data-nextstep-other="${fid}" value="${attr(otherDetail)}" placeholder="Detalle corto de la acción">`:'';
+  return `<div class="compound-control">${actionSelect}${otherBox}</div><div class="compound-control"><input class="detail-input" data-nextstep-owner="${fid}" value="${attr(owner)}" placeholder="Owner / responsable"><input type="date" data-nextstep-date="${fid}" value="${attr(dateVal)}"></div>`;
+}
+function nextStepActionText(fid,e){
+  const d=answerDetails(e),actionValue=d[`${fid}__action`]||'';
+  if(!actionValue)return '';
+  if(actionValue==='OTHER')return d[`${fid}__other`]||'';
+  const el=document.querySelector(`[data-nextstep-action="${fid}"]`);
+  return el&&el.selectedIndex>=0?el.options[el.selectedIndex].textContent:actionValue;
+}
+function syncNextStep(fid){
+  const e=currentEng();if(!e)return;
+  const d=answerDetails(e),actionText=nextStepActionText(fid,e),owner=d[`${fid}__owner`]||'',dateVal=d[`${fid}__date`]||'';
+  const dateEs=dateVal?formatDateEs(dateVal):'';
+  setAnswer(fid,(actionText&&owner&&dateEs)?`${actionText} — ${owner} — ${dateEs}`:'');
+}
+
 function renderControl(f,val,opts,e){
   const c=String(f.Control_UI||'').toUpperCase(),fid=f.Field_ID;
   if(c==='CRM_REFERENCE_OR_TEXT')return canonicalSelect(fid,state.companies.map(x=>({value:x.name,label:x.name})),val);
@@ -111,7 +138,7 @@ function renderControl(f,val,opts,e){
   if(c==='SEARCHABLE_DROPDOWN')return searchableSelect(f,val,opts);
   if(c==='DROPDOWN')return canonicalSelect(fid,opts,val);
   if(c==='DROPDOWN_WITH_DETAIL')return canonicalSelect(fid,opts,val)+detailInput(fid,'Detalle si aplica');
-  if(c==='DROPDOWN_WITH_OWNER_DATE')return canonicalSelect(fid,opts,val)+`<div class="compound-control">${detailInput(fid,'Owner / responsable')}<input type="date" data-detail-date="${fid}" value="${attr(answerDetails(e)[`${fid}__date`]||'')}"></div>`;
+  if(c==='DROPDOWN_WITH_OWNER_DATE')return nextStepWithOwnerDate(f,opts,e);
   if(c==='DROPDOWN_WITH_STEP_LINK')return canonicalSelect(fid,opts,val)+stepSingle(`${fid}__step`,e,answerDetails(e)[`${fid}__step`]||'');
   if(c==='COMBOBOX_WITH_DETAIL')return canonicalSelect(fid,opts,val)+detailInput(fid,'Detalle / nombre concreto');
   if(c==='COMBOBOX_REFERENCE')return canonicalSelect(fid,opts,val)+detailInput(fid,'Nueva referencia sólo si no existe');
@@ -140,7 +167,10 @@ function renderControl(f,val,opts,e){
 
 function bindCanonicalRenderer(){
   document.querySelectorAll('[data-detail-answer]').forEach(el=>el.addEventListener('input',()=>setAnswerDetail(el.dataset.detailAnswer,el.value)));
-  document.querySelectorAll('[data-detail-date]').forEach(el=>el.addEventListener('change',()=>{const e=currentEng();answerDetails(e)[`${el.dataset.detailDate}__date`]=el.value;markDirty(`Fecha detalle ${el.dataset.detailDate} actualizada`)}));
+  document.querySelectorAll('[data-nextstep-action]').forEach(el=>el.addEventListener('change',()=>{const fid=el.dataset.nextstepAction;answerDetails(currentEng())[`${fid}__action`]=el.value;syncNextStep(fid);render()}));
+  document.querySelectorAll('[data-nextstep-other]').forEach(el=>el.addEventListener('input',()=>{const fid=el.dataset.nextstepOther;answerDetails(currentEng())[`${fid}__other`]=el.value;syncNextStep(fid)}));
+  document.querySelectorAll('[data-nextstep-owner]').forEach(el=>el.addEventListener('input',()=>{const fid=el.dataset.nextstepOwner;answerDetails(currentEng())[`${fid}__owner`]=el.value;syncNextStep(fid)}));
+  document.querySelectorAll('[data-nextstep-date]').forEach(el=>el.addEventListener('change',()=>{const fid=el.dataset.nextstepDate;answerDetails(currentEng())[`${fid}__date`]=el.value;syncNextStep(fid)}));
   document.querySelectorAll('[data-search-answer]').forEach(el=>el.addEventListener('change',()=>{const setId=el.dataset.optionSet,opts=fieldOptions(setId),typed=el.value.trim(),match=opts.find(o=>String(o.label).toLowerCase()===typed.toLowerCase()||String(o.value).toLowerCase()===typed.toLowerCase());if(match){el.value=match.label;setAnswer(el.dataset.searchAnswer,match.value)}else if(el.dataset.allowOther==='1'){setAnswer(el.dataset.searchAnswer,typed)}else{el.value='';setAnswer(el.dataset.searchAnswer,'');toast('Selecciona una opción del catálogo canónico.')}}));
   const numberFids=[...new Set([...document.querySelectorAll('[data-number-value],[data-number-unit],[data-number-period],[data-number-mode]')].map(x=>x.dataset.numberValue||x.dataset.numberUnit||x.dataset.numberPeriod||x.dataset.numberMode))];
   numberFids.forEach(fid=>{const sync=()=>{const value=document.querySelector(`[data-number-value="${fid}"]`)?.value??'',unit=document.querySelector(`[data-number-unit="${fid}"]`)?.value??'',period=document.querySelector(`[data-number-period="${fid}"]`)?.value??'',mode=document.querySelector(`[data-number-mode="${fid}"]`)?.value??'';setAnswer(fid,{value:value===''?'':Number(value),unit,period,mode})};document.querySelectorAll(`[data-number-value="${fid}"],[data-number-unit="${fid}"],[data-number-period="${fid}"],[data-number-mode="${fid}"]`).forEach(el=>el.addEventListener(el.tagName==='SELECT'?'change':'input',sync))});

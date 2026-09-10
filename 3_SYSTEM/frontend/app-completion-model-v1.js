@@ -30,8 +30,8 @@ function completionEngineGates(e){
 }
 
 function completionBlockers(missing,gateSummary){
-  const blockers=missing.map(m=>({type:m.type,id:m.id,label:m.label,stage:m.stage}));
-  gateSummary.unresolved.forEach(g=>blockers.push({type:'GATE',id:g.id,label:g.label,stage:null}));
+  const blockers=missing.map(m=>({type:m.type,id:m.id,label:m.label,stage:m.stage,navigationTarget:m.navigationTarget}));
+  gateSummary.unresolved.forEach(g=>blockers.push({type:'GATE',id:g.id,label:g.label,stage:null,navigationTarget:null}));
   return blockers;
 }
 
