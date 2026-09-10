@@ -22,7 +22,7 @@ let state = loadState();
 function blankState(){
   return {
     version:'1.0.1',activePage:'inicio',activeEngagementId:null,dirty:false,
-    backendUrl:API_DEFAULT,backendOnline:false,
+    backendUrl:API_DEFAULT,backendOnline:false,returnTo:null,
     companies:[],contacts:[],opportunities:[],engagements:[],projects:[],audit:[]
   };
 }
@@ -85,6 +85,15 @@ function setPage(page){
   if(['diagnostico','proceso','resultados','recomendacion','escenarios','quote'].includes(page)&&!currentEng()){toast('Abre o crea un estudio antes.');state.activePage='estudios';render();return}
   state.activePage=page;render()
 }
+function goToProcessFromStage(){
+  const e=currentEng();if(e)state.returnTo={page:'diagnostico',stageId:e.stageId};
+  setPage('proceso');
+}
+function returnToStage(){
+  const e=currentEng(),rt=state.returnTo;
+  if(e&&rt)e.stageId=rt.stageId;
+  state.returnTo=null;setPage('diagnostico');
+}
 function pageTop(title,subtitle,actions=''){return `<div class="page-head"><div><div class="eyebrow">AUNEA INTERNAL · V1.0.4</div><h1>${esc(title)}</h1><p class="subtitle">${subtitle}</p></div><div class="head-actions">${actions}</div></div>`}
 function section(title,sub,body,actions=''){return `<div class="card card-pad section"><div class="section-title"><div><h2>${esc(title)}</h2>${sub?`<p>${sub}</p>`:''}</div><div class="section-actions">${actions}</div></div>${body}</div>`}
 function statusClass(s=''){const z=s.toLowerCase();if(z.includes('confirm')||z.includes('listo')||z.includes('ganado'))return'green';if(z.includes('diagn')||z.includes('reun'))return'amber';if(z.includes('propuesta')||z.includes('resultado'))return'blue';if(z.includes('perdido')||z.includes('bloq'))return'red';return''}
@@ -117,6 +126,7 @@ function bindForms(){
   document.querySelectorAll('[data-edit-friction]').forEach(b=>b.onclick=()=>openFrictionModal(b.dataset.editFriction));
   document.querySelectorAll('[data-delete-friction]').forEach(b=>b.onclick=()=>supersedeFriction(b.dataset.deleteFriction));
   document.querySelectorAll('[data-process-tab]').forEach(b=>b.onclick=()=>{currentEng().processTab=b.dataset.processTab;render()});
+  document.querySelectorAll('[data-goto-process]').forEach(b=>b.onclick=()=>goToProcessFromStage());
 }
 
 function addCompany(){

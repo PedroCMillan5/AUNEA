@@ -67,6 +67,8 @@ AUNEA Internal V1 está en `REVIEW` con runtime Master v1.1, renderer, No-Reask,
 | AUNEA-FE-STYLE-RESPONSIVE-010 | 3_SYSTEM/frontend/styles.css | Breakpoints responsive y print. | TOKENS_AUNEA grid.web.* | n/a | DOM styling | DOM styling | MEDIUM | style-tokens.test.cjs | REVIEW |
 | AUNEA-UAT-I18N-010 | 3_SYSTEM/frontend/tests/i18n-labels-v1.test.cjs | Regresión de engineLabel(). | n/a | fixture | assertions | none | LOW | node test | REVIEW |
 | AUNEA-UAT-STYLE-010 | 3_SYSTEM/frontend/tests/style-tokens.test.cjs | Regresión de tokens de diseño. | n/a | fixture | assertions | none | MEDIUM | node test | REVIEW |
+| AUNEA-FE-DIAG-COMPLETION-070 | 3_SYSTEM/frontend/app-completion-model-v1.js | Modelo de completitud compuesto (etapas revisadas, obligatorios aplicables, pendientes concretos, gates de motor, listo para calcular). | canonicalMissingRequired/unresolvedEngineGates; corrección post-revisión #7 | engagement + schema | engagementCompletion(e) | none | HIGH | completion-model-v1.test.cjs | REVIEW |
+| AUNEA-UAT-COMPLETION-010 | 3_SYSTEM/frontend/tests/completion-model-v1.test.cjs | Regresión del modelo de completitud y navegación de retorno Proceso↔Etapa. | n/a | fixture | assertions | none | HIGH | node test | REVIEW |
 
 ## Retired Block_IDs (do not reuse)
 
