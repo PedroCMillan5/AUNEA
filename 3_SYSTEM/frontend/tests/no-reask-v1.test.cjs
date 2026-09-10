@@ -44,4 +44,11 @@ test('DF020/DF029 render a UI-only disambiguation hint (route vs treatment) with
   assert.match(html020,/RUTA del proceso/);
   assert.match(html029,/TRATAMIENTO operativo/);
 });
+
+test('DF052 clarifies it is a single process-level version-control question, never per-document (UAT-VIS-042 stays BLOQUEADO — no per-artifact cardinality exists in the canonical model)',()=>{
+  const df052={Field_ID:'DF052',Pregunta_o_etiqueta_ES:'Método para identificar la versión correcta de documentos/datos',Objetivo_concreto:'',Requiredness:'CONDITIONAL_90M',Ask_Mode:'CONDITIONAL_ASK',Reask_Policy:'NO_REASK',Branch_Rule_ID:'BR-BASE',Reuse_From:null,Option_Set_ID:'OS_CONTROL_TYPE',Validation:'',Ejemplo_ES:''};
+  const html=ctx.renderQuestion(df052,eng);
+  assert.match(html,/método general de control de versión del proceso/);
+  assert.match(html,/no a versionar cada documento/);
+});
 // [AUNEA-UAT-NOREASK-010] END

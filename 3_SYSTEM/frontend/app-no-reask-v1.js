@@ -147,9 +147,14 @@ function reuseSourceInfo(f){
 // (Service_Priority → RT_PROCESS.Service_Priority, Engine_Consumers: Pain/Economics) are canonically
 // distinct fields with distinct Write_Targets — never merge them. This is a UI-only disambiguation
 // hint grounded in that existing difference; it adds no new Field_ID/Option_Set_ID/Write_Target.
+// DF052 (Version_Control → RT_FINDING, Entity_Scope: Process) is a single process-level question
+// ("método para identificar la versión correcta") — the canonical model has no per-artifact
+// cardinality, so it never asks about each document individually (UAT-VIS-042 stays BLOQUEADO for
+// that reason; this is copy-only, no Field_ID/Write_Target change).
 const FIELD_CLARIFICATION_ES=Object.freeze({
   DF020:'A diferencia de DF029: esto son variantes que cambian la RUTA del proceso (pasos distintos), no sólo cómo se trata un caso.',
-  DF029:'A diferencia de DF020: esto son clases que cambian el TRATAMIENTO operativo o económico de un caso, sin cambiar la ruta del proceso en sí.'
+  DF029:'A diferencia de DF020: esto son clases que cambian el TRATAMIENTO operativo o económico de un caso, sin cambiar la ruta del proceso en sí.',
+  DF052:'Se refiere al método general de control de versión del proceso (¿cómo se sabe cuál es la versión correcta?), no a versionar cada documento o artefacto por separado.'
 });
 function renderQuestion(f,e){
   const val=effectiveValue(f,e),opts=fieldOptions(f.Option_Set_ID),required=f.Requiredness==='REQUIRED_90M',mode=String(f.Ask_Mode||'');
