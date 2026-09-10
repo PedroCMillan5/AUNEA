@@ -11,6 +11,11 @@ function activeSteps(e){return (e.processSteps||[]).filter(x=>x.status!=='SUPERS
 function activeFrictions(e){return (e.frictions||[]).filter(x=>x.status!=='SUPERSEDED')}
 function unique(values){return [...new Set(values.filter(v=>v!==undefined&&v!==null&&v!==''))]}
 function scalarNumber(v){if(v&&typeof v==='object'){if(v.mode==='UNKNOWN'||v.mode==='NONE')return 0;return Number(v.value||0)}return Number(v||0)}
+// Provenance for DF078 (active-time aggregate) — the step names that actually contributed, so the
+// economics builder can show "Calculado desde: <pasos>" as informational context. This is NOT a new
+// derivation: DF078 itself (reusedValue below) already aggregates these same steps; no annualization
+// (minutes/caso -> horas/año) is computed here or anywhere, since no governed conversion rule exists.
+function activeTimeContributors(e){return activeSteps(e).filter(x=>scalarNumber(x.active_time)>0).map(x=>x.step_name||x.id)}
 function canonicalValueFromLabel(setId,value){if(value===undefined||value===null||value==='')return value;const opts=fieldOptions(setId),m=opts.find(o=>String(o.value)===String(value)||String(o.label).toLowerCase()===String(value).toLowerCase());return m?m.value:value}
 function reaskState(e){e.reaskOverrides=e.reaskOverrides||{};return e.reaskOverrides}
 function explicitReaskAllowed(fid,e){return !!reaskState(e)[fid]}

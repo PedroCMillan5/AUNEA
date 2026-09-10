@@ -70,6 +70,7 @@ AUNEA Internal V1 está en `REVIEW` con runtime Master v1.1, renderer, No-Reask,
 | AUNEA-FE-DIAG-COMPLETION-070 | 3_SYSTEM/frontend/app-completion-model-v1.js | Modelo de completitud compuesto (etapas revisadas, obligatorios aplicables, pendientes concretos, gates de motor, listo para calcular). | canonicalMissingRequired/unresolvedEngineGates; corrección post-revisión #7 | engagement + schema | engagementCompletion(e) | none | HIGH | completion-model-v1.test.cjs | REVIEW |
 | AUNEA-UAT-COMPLETION-010 | 3_SYSTEM/frontend/tests/completion-model-v1.test.cjs | Regresión del modelo de completitud y navegación de retorno Proceso↔Etapa. | n/a | fixture | assertions | none | HIGH | node test | REVIEW |
 | AUNEA-UAT-CRM-010 | 3_SYSTEM/frontend/tests/crm-v1.test.cjs | Regresión de CRM: editContact, historial derivado de state.audit, filtros de contactos, subtabs Contactos/Empresas. | DEC-006/007 | fixture | assertions | none | HIGH | node test | REVIEW |
+| AUNEA-UAT-ECON-010 | 3_SYSTEM/frontend/tests/economic-builder-v1.test.cjs | Regresión de copy/etiquetas del builder económico (evidence_quality, driver→Name, provenance informativa DF078, guardrails de no-anualización). | I18N_LABELS_ES; REF_ECON_DRIVER | fixture | assertions | none | MEDIUM | node test | REVIEW |
 
 ## Retired Block_IDs (do not reuse)
 
