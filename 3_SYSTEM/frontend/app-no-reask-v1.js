@@ -112,20 +112,58 @@ function contextOnly(f,e,val){
   if(!valuePresent(val))return false;
   return ['NO_REASK','CONFIRM_ONLY_IF_CHANGED','DERIVE_THEN_CONFIRM'].includes(policy)||['PREFILL_CONFIRM','DERIVE_AND_CONFIRM'].includes(mode);
 }
+
+// Provenance UI — "Tomado de: <label>" + "Editar en <página>" replacing the raw No-Reask/Reuse_From leak.
+// The human label is DERIVED, not hand-authored per field: a one-time reverse index (Write_Target -> Field)
+// resolves Reuse_From values shaped like "RT_ENTITY.Column" to the canonical Pregunta_o_etiqueta_ES of the
+// field that owns that Write_Target. ENTITY_PAGE_MAP is the only hand-authored table here, and it is pure UI
+// routing (which page owns which entity), not business semantics.
+let __reuseWriteTargetIndex=null;
+function reuseWriteTargetIndex(){
+  if(__reuseWriteTargetIndex)return __reuseWriteTargetIndex;
+  __reuseWriteTargetIndex={};
+  (schema?.fields||[]).forEach(f=>{if(f.Write_Target)__reuseWriteTargetIndex[f.Write_Target]=f});
+  return __reuseWriteTargetIndex;
+}
+const ENTITY_PAGE_MAP=Object.freeze({
+  RT_COMPANY:'contactos',
+  RT_CONTACT:'contactos',
+  RT_PROCESS_STEP:'proceso',
+  RT_FRICTION:'proceso'
+});
+const PAGE_LABEL_ES=Object.freeze({contactos:'Contactos',proceso:'Proceso y fricciones'});
+function pageLabelEs(page){return PAGE_LABEL_ES[page]||page}
+function reuseSourceInfo(f){
+  const raw=String(f.Reuse_From||'');
+  if(!raw)return {label:'un dato ya capturado en el estudio',page:null};
+  const m=raw.match(/^(RT_[A-Z_]+)\.([A-Za-z0-9_]+)/);
+  if(!m)return {label:'un dato ya capturado en el estudio',page:null};
+  const srcField=reuseWriteTargetIndex()[`${m[1]}.${m[2]}`];
+  const page=Object.prototype.hasOwnProperty.call(ENTITY_PAGE_MAP,m[1])?ENTITY_PAGE_MAP[m[1]]:null;
+  return {label:srcField?srcField.Pregunta_o_etiqueta_ES:'un dato ya capturado en el estudio',page};
+}
+
 function renderQuestion(f,e){
   const val=effectiveValue(f,e),opts=fieldOptions(f.Option_Set_ID),required=f.Requiredness==='REQUIRED_90M',mode=String(f.Ask_Mode||'');
   const systemOnly=['DERIVED','SYSTEM_GENERATED'].includes(mode)||String(f.Control_UI).startsWith('DERIVED')||String(f.Control_UI).startsWith('SYSTEM_GENERATED');
   const meta=`<span class="canonical-id">${f.Field_ID}</span>${required?'<span class="required-dot" title="Obligatoria"></span>':''}${f.Requiredness==='CONDITIONAL_90M'?'<span class="conditional-tag">condicional</span>':''}`;
   let body='';
   if(systemOnly)body=`<div class="readonly-box">${esc(formatContextValue(f,val)||'Se completará automáticamente cuando existan datos suficientes.')}</div>`;
-  else if(contextOnly(f,e,val))body=`<div class="reuse-context"><div><span class="context-label">Dato reutilizado</span><strong>${esc(formatContextValue(f,val))}</strong><small>${esc(f.Reuse_From||'Información ya capturada')}</small></div><button type="button" class="btn btn-small" data-edit-context="${f.Field_ID}">Corregir / ampliar</button></div>`;
+  else if(contextOnly(f,e,val)){
+    const src=reuseSourceInfo(f);
+    const editBtn=src.page
+      ?`<button type="button" class="btn btn-small" data-goto-source="${attr(src.page)}">Editar en ${esc(pageLabelEs(src.page))}</button><div class="field-help">Este cambio actualizará el dato en todo el diagnóstico.</div>`
+      :`<button type="button" class="btn btn-small" data-edit-context="${f.Field_ID}">Editar aquí</button>`;
+    body=`<div class="reuse-context"><div><span class="context-label">Dato reutilizado</span><strong>${esc(formatContextValue(f,val))}</strong><small>Tomado de: ${esc(src.label)}</small></div>${editBtn}</div>`;
+  }
   else body=`${renderControl(f,val,opts,e)}${explicitReaskAllowed(f.Field_ID,e)?`<div class="field-help"><button type="button" class="link-btn" data-close-context="${f.Field_ID}">Cerrar edición y volver a reutilizar el dato</button></div>`:''}`;
-  return `<div class="question-card"><div class="question-head"><div><div class="question-title">${esc(f.Pregunta_o_etiqueta_ES)}</div><div class="question-purpose">${esc(f.Objetivo_concreto||'')}</div></div><div class="question-meta">${meta}</div></div><div class="question-body">${body}</div>${f.Reuse_From?`<div class="reuse-note"><b>No-Reask:</b> ${esc(f.Reuse_From)} · ${esc(f.Reask_Policy||'')}</div>`:''}<div class="field-help"><b>Ejemplo:</b> ${esc(f.Ejemplo_ES||'—')} · <b>Validación:</b> ${esc(f.Validation||'—')}</div></div>`;
+  return `<div class="question-card"><div class="question-head"><div><div class="question-title">${esc(f.Pregunta_o_etiqueta_ES)}</div><div class="question-purpose">${esc(f.Objetivo_concreto||'')}</div></div><div class="question-meta">${meta}</div></div><div class="question-body">${body}</div><div class="field-help"><b>Ejemplo:</b> ${esc(f.Ejemplo_ES||'—')} · <b>Validación:</b> ${esc(f.Validation||'—')}</div></div>`;
 }
 
 function bindNoReask(){
   document.querySelectorAll('[data-edit-context]').forEach(b=>b.onclick=()=>{const e=currentEng();reaskState(e)[b.dataset.editContext]=true;markDirty(`Edición explícita habilitada ${b.dataset.editContext}`);render()});
   document.querySelectorAll('[data-close-context]').forEach(b=>b.onclick=()=>{const e=currentEng();delete reaskState(e)[b.dataset.closeContext];markDirty(`Edición explícita cerrada ${b.dataset.closeContext}`);render()});
+  document.querySelectorAll('[data-goto-source]').forEach(b=>b.onclick=()=>setPage(b.dataset.gotoSource));
 }
 const __auneaRendererBindForms=bindForms;
 bindForms=function(){__auneaRendererBindForms();bindNoReask();};
