@@ -37,9 +37,10 @@ async function probeAuneaBackend(baseUrl, timeoutMs=1100){
 
 checkBackend = async function(){
   const previousUrl = state.backendUrl;
-  for(const candidate of auneaBackendCandidates()){
-    const hit = await probeAuneaBackend(candidate);
-    if(!hit) continue;
+  const candidates = auneaBackendCandidates();
+  const probes = await Promise.all(candidates.map(candidate=>probeAuneaBackend(candidate)));
+  const hit = probes.find(Boolean);
+  if(hit){
     state.backendUrl = hit.baseUrl;
     state.backendOnline = true;
     state.backendVersion = hit.payload.backend_version;
