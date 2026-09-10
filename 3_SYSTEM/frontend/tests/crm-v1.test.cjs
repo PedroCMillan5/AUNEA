@@ -114,4 +114,19 @@ test('formatDateEs renders dd/mm/aaaa for both a bare date-only string (as produ
   assert.equal(ctx.formatDateEs(''),'—');
   assert.equal(ctx.formatDateEs(null),'—');
 });
+
+test('UAT-VIS-008 company cards render canonical sector/country labels and keep raw codes internal-only',()=>{
+  const ctx=makeCtx();
+  loadShell(ctx);
+  ctx.schema.option_sets={
+    REF_DOMAIN:{options:[{value:'D25',label:'Professional Services Delivery'}]},
+    REF_COUNTRY_ISO3166:{options:[{value:'ES',label:'España'}]}
+  };
+  ctx.state.companies.push({id:'c1',name:'ACME',sector:'D25',country:'ES',createdAt:ctx.now()});
+  ctx.state.crmTab='empresas';
+  const html=ctx.pages.contactos();
+  assert.match(html,/Professional Services Delivery/);
+  assert.match(html,/España/);
+  assert.match(html,/class="internal-only"> · D25 · ES/);
+});
 // [AUNEA-UAT-CRM-010] END
