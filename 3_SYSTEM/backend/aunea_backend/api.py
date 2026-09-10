@@ -1,3 +1,10 @@
+# [AUNEA-BE-API-CORE-010] START — HTTP API surface
+# PURPOSE: FastAPI app wiring (CORS, store/orchestrator instances) and all REST endpoints for engagements, diagnose, scenarios, audit, deliverables, solution specifications and system builder.
+# SOURCE: REQ-ENGN-001/REC-001/SCEN-001; DEC-034.
+# INPUTS: HTTP requests (EngagementInput, ScenarioRequest, DeliverableRequest, SolutionSpecificationRequest, SystemBuilderRequest payloads).
+# OUTPUTS: HTTP responses (DiagnosticOutput, ScenarioResult, DeliverablePack, SolutionSpecification, SystemBuildPlan/Package).
+# SIDE_EFFECTS: SQLite persistence via store; in-memory audit runs.
+# CHANGE_RISK: CRITICAL.
 from __future__ import annotations
 import os
 from fastapi import FastAPI, HTTPException, Body
@@ -125,3 +132,4 @@ def generate_system_build_plan(payload: SystemBuilderPayload):
 @app.post("/v1/system-builder/package")
 def generate_system_build_package(payload: SystemBuilderPayload):
     return engine.generate_system_build_package(payload.specification, payload.request)
+# [AUNEA-BE-API-CORE-010] END

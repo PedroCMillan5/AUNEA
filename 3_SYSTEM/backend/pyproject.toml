@@ -1,3 +1,6 @@
+# [AUNEA-BUILD-BACKEND-PYPROJECT-010] START — Backend package/build config
+# PURPOSE: Define package metadata, runtime/test dependencies and pytest discovery for aunea_backend.
+# CHANGE_RISK: LOW.
 [project]
 name = "aunea-backend"
 version = "1.1.1"
@@ -18,3 +21,4 @@ testpaths = ["tests"]
 
 [tool.setuptools]
 packages = ["aunea_backend"]
+# [AUNEA-BUILD-BACKEND-PYPROJECT-010] END

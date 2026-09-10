@@ -1,3 +1,10 @@
+# [AUNEA-BE-STORE-010] START — SQLite persistence adapter
+# PURPOSE: Persist engagements, diagnostic outputs and engine runs so recovery/audit survives process restarts. Replaceable adapter behind the same interface used by Orchestrator.
+# SOURCE: REQ-ENG-001; DEC-034.
+# INPUTS: EngagementInput, DiagnosticOutput, engine run metadata.
+# OUTPUTS: stored/retrieved EngagementInput/DiagnosticOutput; list of engine_runs rows.
+# SIDE_EFFECTS: SQLite file writes (engagements, diagnostic_outputs, engine_runs tables).
+# CHANGE_RISK: HIGH.
 from __future__ import annotations
 import json, sqlite3
 from pathlib import Path
@@ -76,3 +83,4 @@ class SQLiteStore:
             else:
                 rows=con.execute('SELECT * FROM engine_runs ORDER BY id').fetchall()
         return [dict(r) for r in rows]
+# [AUNEA-BE-STORE-010] END

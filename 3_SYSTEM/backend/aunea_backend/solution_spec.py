@@ -1,3 +1,10 @@
+# [AUNEA-BE-SOLUTION-SPEC-010] START — Solution Specification Engine
+# PURPOSE: Turn a selected ScenarioResult + EngagementInput into a Solution Specification (capabilities, business rules, integrations, roles, AI/security/error-handling requirements, acceptance tests) bridging diagnosis to buildable engineering requirements. Never mutates recommendation/economics/risk/pricing.
+# SOURCE: DEC-034; L9 System Delivery & Learning.
+# INPUTS: EngagementInput, DiagnosticOutput, SolutionSpecificationRequest.
+# OUTPUTS: SolutionSpecification.
+# SIDE_EFFECTS: none.
+# CHANGE_RISK: HIGH.
 from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -193,3 +200,4 @@ class SolutionSpecificationEngine:
                 "generator_version":"v1.0",
             },
         )
+# [AUNEA-BE-SOLUTION-SPEC-010] END

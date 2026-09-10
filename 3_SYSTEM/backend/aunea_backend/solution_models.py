@@ -1,3 +1,10 @@
+# [AUNEA-BE-SOLUTION-MODEL-010] START — Solution Specification data contract
+# PURPOSE: Pydantic models for the Solution Specification (integrations, roles, data entities, business rules, acceptance tests) that bridges a selected ScenarioResult to buildable engineering requirements.
+# SOURCE: DEC-034; L9 System Delivery & Learning.
+# INPUTS: n/a (type definitions).
+# OUTPUTS: n/a (type definitions).
+# SIDE_EFFECTS: none.
+# CHANGE_RISK: HIGH.
 from __future__ import annotations
 from typing import Any, Literal
 from pydantic import BaseModel, Field
@@ -94,3 +101,4 @@ class SolutionSpecification(BaseModel):
     handover_support: dict[str, Any] = Field(default_factory=dict)
     missing_information: list[str] = Field(default_factory=list)
     source_trace: dict[str, Any] = Field(default_factory=dict)
+# [AUNEA-BE-SOLUTION-MODEL-010] END

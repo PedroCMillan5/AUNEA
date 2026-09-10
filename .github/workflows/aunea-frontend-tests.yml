@@ -1,3 +1,6 @@
+# [AUNEA-BUILD-CI-FRONTEND-010] START — Frontend CI
+# PURPOSE: Run frontend node --test suite on every push/PR touching 3_SYSTEM/frontend.
+# CHANGE_RISK: LOW.
 name: AUNEA Frontend Tests
 
 on:
@@ -25,3 +28,4 @@ jobs:
           cache-dependency-path: 3_SYSTEM/frontend/package-lock.json
       - run: npm ci
       - run: npm test
+# [AUNEA-BUILD-CI-FRONTEND-010] END

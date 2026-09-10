@@ -1,3 +1,10 @@
+# [AUNEA-BE-MODEL-CORE-010] START — Engine I/O data contract
+# PURPOSE: Pydantic models for every engine input/output type (Evidence, PainSignalInput/Observation, EconomicInput/Result, RiskInput/Result, CommercialScope, EngagementInput, Recommendation, Quote, ScenarioRequest, DiagnosticOutput) shared across Pain/Economics/Risk/Recommendation/Pricing/Scenario and the API layer.
+# SOURCE: DEC-034; MAP_QUESTION_ENGINE_INPUT.
+# INPUTS: n/a (type definitions).
+# OUTPUTS: n/a (type definitions).
+# SIDE_EFFECTS: none.
+# CHANGE_RISK: CRITICAL.
 from __future__ import annotations
 from enum import Enum
 from typing import Any, Literal
@@ -192,3 +199,4 @@ class DiagnosticOutput(BaseModel):
     recommendation: Recommendation
     quote: Quote
     optimal_scenario: ScenarioResult
+# [AUNEA-BE-MODEL-CORE-010] END

@@ -1,3 +1,10 @@
+# [AUNEA-BE-COMPONENT-LIB-010] START — Seed component library
+# PURPOSE: Conservative seed catalog of reusable build components (maturity DEMO_VERIFIED/DEMO_PARTIAL/DESIGN_SEED) consumed by System Builder to map capabilities to buildable pieces.
+# SOURCE: Component Library seed v1.1; ASSET-S-DEMO-001 (Client Intake demo).
+# INPUTS: none (static seed data).
+# OUTPUTS: list[ComponentDefinition] via component_library().
+# SIDE_EFFECTS: none.
+# CHANGE_RISK: MEDIUM.
 from __future__ import annotations
 from .system_builder_models import ComponentDefinition
 
@@ -28,3 +35,4 @@ COMPONENTS = [
 
 def component_library() -> list[ComponentDefinition]:
     return list(COMPONENTS)
+# [AUNEA-BE-COMPONENT-LIB-010] END

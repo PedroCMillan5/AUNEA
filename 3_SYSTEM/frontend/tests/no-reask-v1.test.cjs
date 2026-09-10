@@ -1,3 +1,4 @@
+// [AUNEA-UAT-NOREASK-010] START — No-Reask regression
 const test=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
@@ -15,3 +16,4 @@ test('tool branch activates from two tools',()=>{assert.equal(ctx.branchActive('
 test('wait branch activates from step wait',()=>{assert.equal(ctx.branchActive('BR-WAIT',eng),true);});
 test('existing CRM value renders as reused context rather than blank question',()=>{const f={Field_ID:'DF001',Pregunta_o_etiqueta_ES:'Empresa',Objetivo_concreto:'',Requiredness:'REQUIRED_90M',Ask_Mode:'PREFILL_CONFIRM',Reask_Policy:'CONFIRM_ONLY_IF_CHANGED',Branch_Rule_ID:'BR-BASE',Reuse_From:'RT_COMPANY.Company_Name',Option_Set_ID:null,Validation:'',Ejemplo_ES:''};const html=ctx.renderQuestion(f,eng);assert.match(html,/Dato reutilizado/);assert.match(html,/ACME/);assert.doesNotMatch(html,/<CONTROL>/);});
 test('required gaps use effective reused values and AS-IS gates',()=>{const gaps=Array.from(ctx.canonicalMissingRequired(eng));assert.ok(!gaps.includes('DF001'));assert.ok(gaps.includes('Confirmación AS-IS'));});
+// [AUNEA-UAT-NOREASK-010] END

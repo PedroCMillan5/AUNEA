@@ -1,3 +1,10 @@
+# [AUNEA-BE-SYSBUILD-MODEL-010] START — System Builder data contract
+# PURPOSE: Pydantic models for build components, component decisions, build tasks/plan/package (the artifacts System Builder produces from a SolutionSpecification).
+# SOURCE: DEC-034; L9 System Delivery & Learning; Component Library.
+# INPUTS: n/a (type definitions).
+# OUTPUTS: n/a (type definitions).
+# SIDE_EFFECTS: none.
+# CHANGE_RISK: HIGH.
 from __future__ import annotations
 from typing import Any, Literal
 from pydantic import BaseModel, Field
@@ -60,3 +67,4 @@ class SystemBuildPackage(BaseModel):
     scaffold_files: dict[str, str] = Field(default_factory=dict)
     component_library_version: str
     generator_version: str = "v1.1"
+# [AUNEA-BE-SYSBUILD-MODEL-010] END

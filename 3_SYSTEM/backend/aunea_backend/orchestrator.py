@@ -14,6 +14,13 @@ from .store import SQLiteStore
 from .deliverables import DeliverablesEngine
 from .solution_spec import SolutionSpecificationEngine
 
+# [AUNEA-BE-ORCH-DIAG-010] START — Deterministic diagnostic orchestration
+# PURPOSE: Execute Pain → Economics → Risk → Recommendation → Pricing → Scenario in the fixed, deterministic order; record an in-memory/persisted audit run per engine step.
+# SOURCE: DEC-034 / runtime contracts.
+# INPUTS: EngagementInput; ScenarioRequest for compare().
+# OUTPUTS: DiagnosticOutput; (DiagnosticOutput, ScenarioResult) tuple for compare().
+# SIDE_EFFECTS: audit/store writes when a SQLiteStore is configured.
+# CHANGE_RISK: CRITICAL.
 @dataclass
 class EngineRun:
     engine: str
@@ -56,7 +63,15 @@ class Orchestrator:
         compared=self.scenario.create(ctx,base.pain_results,base.economic_result,base.risk_result,base.recommendation,base.quote,request,base.optimal_scenario)
         self._run(engagement.engagement_id,"ScenarioComparator.Override", request.model_dump(), compared.model_dump())
         return base, compared
+    # [AUNEA-BE-ORCH-DIAG-010] END
 
+    # [AUNEA-BE-ORCH-DELIVERY-010] START — Downstream generation dispatch
+    # PURPOSE: Dispatch a computed DiagnosticOutput/EngagementInput to the Deliverables, Solution Specification and System Builder engines (L8/L9), recording an audit run per call.
+    # SOURCE: DEC-034; Deliverables Engine / Solution Specification / System Builder contracts.
+    # INPUTS: DiagnosticOutput/EngagementInput/SolutionSpecification plus optional request objects; store-backed variants load saved engagement/diagnostic by id.
+    # OUTPUTS: DeliverablePack / SolutionSpecification / SystemBuildPlan / SystemBuildPackage.
+    # SIDE_EFFECTS: audit/store writes when a SQLiteStore is configured; raises ValueError if a *_for_saved() call has no store or no saved record.
+    # CHANGE_RISK: HIGH.
     def generate_deliverables(self, diagnostic: DiagnosticOutput, request: DeliverableRequest | None = None) -> DeliverablePack:
         pack = self.deliverables.generate(diagnostic, request)
         self._run(diagnostic.engagement_id, "DeliverablesEngine", {"diagnostic": diagnostic.model_dump(mode="json"), "request": request.model_dump(mode="json") if request else None}, pack.model_dump(mode="json"))
@@ -95,3 +110,4 @@ class Orchestrator:
         package=self.system_builder.package(specification, request)
         self._run(specification.engagement_id, "SystemBuilder.Package", {"specification":specification.model_dump(mode="json"),"request":request.model_dump(mode="json") if request else None}, package.model_dump(mode="json"))
         return package
+    # [AUNEA-BE-ORCH-DELIVERY-010] END

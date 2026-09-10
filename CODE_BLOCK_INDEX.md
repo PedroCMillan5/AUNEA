@@ -1,6 +1,6 @@
 # Índice de bloques de AUNEA Internal
 
-AUNEA Internal V1 está en `REVIEW` con runtime Master v1.1, renderer, No-Reask, AS-IS/fricciones, adapter oficial a motores, modos Sesión/Interno, persistencia recuperable, UAT visible y descubrimiento robusto del backend local implementados. Pain → Economics → Risk → Recommendation → Pricing → Scenario permanece server-owned. El acceptance gate automatizado pasa; la promoción a `main` queda condicionada al UAT visual/nativo final.
+AUNEA Internal V1 está en `REVIEW` con runtime Master v1.1, renderer, No-Reask, AS-IS/fricciones, adapter oficial a motores, modos Sesión/Interno, persistencia recuperable, UAT visible y descubrimiento robusto del backend local implementados. Pain → Economics → Risk → Recommendation → Pricing → Scenario permanece server-owned. El acceptance gate automatizado pasa; la promoción a `main` queda condicionada al UAT visual/nativo final. Desde el refactor UX/funcional en curso, este índice cubre el runtime vigente completo (frontend + backend + build/launcher) y se audita automáticamente con `3_SYSTEM/frontend/tests/block-id-audit.test.cjs`.
 
 | Block_ID | Archivo | Responsabilidad | Fuente | Inputs | Outputs | Efectos | Riesgo | Regresión | Estado |
 |---|---|---|---|---|---|---|---|---|---|
@@ -26,3 +26,37 @@ AUNEA Internal V1 está en `REVIEW` con runtime Master v1.1, renderer, No-Reask,
 | AUNEA-UAT-PROC-010 | 3_SYSTEM/frontend/tests/process-v1.test.cjs | Process/friction. | REQ-PROC/FRIC | fixture | assertions | none | HIGH | node test | REVIEW |
 | AUNEA-UAT-ENGINE-020 | 3_SYSTEM/frontend/tests/engine-adapter-v1.test.cjs | Adapter/guardrail. | DEC-034 | fixture | assertions | none | CRITICAL | node test | REVIEW |
 | AUNEA-UAT-GATE-010 | .github/workflows/aunea-v1-gate.yml | Gate conjunto backend/frontend sobre el mismo commit. | PROJECT_RULES / acceptance criteria | repo head | CI status | GitHub Actions | CRITICAL | 27 backend + 26 frontend | REVIEW |
+| AUNEA-UAT-BLOCK-INDEX-010 | 3_SYSTEM/frontend/tests/block-id-audit.test.cjs | Auditoría repo-wide de marcadores Block_ID vs este índice. | CODE_CONVENTIONS.md §5-7 | runtime vigente | pass/fail + diagnóstico | none | HIGH | node test | REVIEW |
+| AUNEA-FE-CORE-STATE-020 | 3_SYSTEM/frontend/app-core.js | Estado global, CRM local y navegación compartida. | baseline v1.0.4 | user actions | state/DOM | localStorage/DOM | HIGH | runtime.test.cjs | REVIEW |
+| AUNEA-FE-DIAG-CONTROL-030 | 3_SYSTEM/frontend/app-diagnostic-fields.js | Shell de navegación por etapas y prompts de proceso/fricción. | Master v1.1 | schema/state | stage UI | DOM | HIGH | runtime.test.cjs | REVIEW |
+| AUNEA-FE-PROC-STEP-010 | 3_SYSTEM/frontend/app-process-editor.js | Risk/economic builders, confirmación AS-IS y archivado (supersede) de pasos/fricciones. | Process/Friction Models | engagement | RT records | state | HIGH | process-v1.test.cjs | REVIEW |
+| AUNEA-FE-RESULTS-VIEW-010 | 3_SYSTEM/frontend/app-results.js | Resultados, recomendación, escenarios y cotización — vistas de sólo lectura sobre DiagnosticOutput. | DEC-034 | DiagnosticOutput | UI | DOM | HIGH | runtime.test.cjs | REVIEW |
+| AUNEA-UAT-RUNTIME-FIXTURE-020 | 3_SYSTEM/frontend/app-uat-fixtures-v1.js | Fixtures UAT aisladas visibles en Modo Interno. | TEST_E2E fixtures | none | fixture defs | none | MEDIUM | uat-runtime-fixture-v1.test.cjs | REVIEW |
+| AUNEA-BE-ENGINE-PAIN-010 | 3_SYSTEM/backend/aunea_backend/engines.py | Pain Engine. | DEC-034 | EngagementInput | PainResult[] | none | CRITICAL | test_e2e.py | REVIEW |
+| AUNEA-BE-ENGINE-ECON-010 | 3_SYSTEM/backend/aunea_backend/engines.py | Economics Engine. | DEC-034 | EngagementInput | EconomicResult | none | CRITICAL | test_e2e.py | REVIEW |
+| AUNEA-BE-ENGINE-RISK-010 | 3_SYSTEM/backend/aunea_backend/engines.py | Risk Engine. | DEC-034 | EngagementInput | RiskResult | none | CRITICAL | test_e2e.py | REVIEW |
+| AUNEA-BE-ENGINE-RECOMMEND-010 | 3_SYSTEM/backend/aunea_backend/engines.py | Recommendation Engine. | DEC-034 | pain/risk results | Recommendation | none | CRITICAL | test_e2e.py | REVIEW |
+| AUNEA-BE-ENGINE-PRICING-010 | 3_SYSTEM/backend/aunea_backend/engines.py | Pricing Engine. | DEC-034 | Recommendation/Risk | Quote | none | CRITICAL | test_e2e.py | REVIEW |
+| AUNEA-BE-ORCH-DIAG-010 | 3_SYSTEM/backend/aunea_backend/orchestrator.py | Orquestación determinista Pain→Economics→Risk→Recommendation→Pricing→Scenario. | DEC-034 | EngagementInput | DiagnosticOutput | store/audit writes | CRITICAL | test_e2e.py | REVIEW |
+| AUNEA-BE-ORCH-DELIVERY-010 | 3_SYSTEM/backend/aunea_backend/orchestrator.py | Dispatch a Deliverables/Solution Spec/System Builder. | DEC-034 | DiagnosticOutput/spec | packs/plans | store/audit writes | HIGH | test_deliverables.py + test_solution_spec.py + test_system_builder.py | REVIEW |
+| AUNEA-BE-API-CORE-010 | 3_SYSTEM/backend/aunea_backend/api.py | Superficie HTTP (resto de endpoints fuera de UAT). | REQ-ENGN-001/REC-001/SCEN-001 | HTTP requests | HTTP responses | store/HTTP | CRITICAL | test_api.py | REVIEW |
+| AUNEA-BE-STORE-010 | 3_SYSTEM/backend/aunea_backend/store.py | Adaptador de persistencia SQLite. | REQ-ENG-001 | EngagementInput/DiagnosticOutput | filas persistidas | SQLite writes | HIGH | test_store.py | REVIEW |
+| AUNEA-BE-REGISTRY-010 | 3_SYSTEM/backend/aunea_backend/registry.py | Carga/caché del registry y lookups por tabla. | data/registry_v08.json.gz.b64 | none | tablas/rule_bundle_version | lru_cache | HIGH | test_e2e.py | REVIEW |
+| AUNEA-BE-UTILS-010 | 3_SYSTEM/backend/aunea_backend/utils.py | Hash canónico y ranking de niveles. | n/a | valores | hash/rank | none | LOW | test_e2e.py | REVIEW |
+| AUNEA-BE-BOOT-INIT-010 | 3_SYSTEM/backend/aunea_backend/main.py | Entry point ASGI. | n/a | none | app instance | none | LOW | test_api.py | REVIEW |
+| AUNEA-BE-MODEL-CORE-010 | 3_SYSTEM/backend/aunea_backend/models.py | Contrato de datos de entrada/salida de motores. | DEC-034 | n/a | n/a | none | CRITICAL | test_e2e.py | REVIEW |
+| AUNEA-BE-COMPONENT-LIB-010 | 3_SYSTEM/backend/aunea_backend/component_library.py | Biblioteca semilla de componentes reutilizables. | Component Library seed v1.1 | none | ComponentDefinition[] | none | MEDIUM | test_system_builder.py | REVIEW |
+| AUNEA-BE-DELIVERABLES-MODEL-010 | 3_SYSTEM/backend/aunea_backend/deliverable_models.py | Contrato de datos de Deliverables. | DEC-034 | n/a | n/a | none | HIGH | test_deliverables.py | REVIEW |
+| AUNEA-BE-DELIVERABLES-010 | 3_SYSTEM/backend/aunea_backend/deliverables.py | Deliverables Engine. | DEC-034 | DiagnosticOutput | DeliverablePack | none | HIGH | test_deliverables.py | REVIEW |
+| AUNEA-BE-SOLUTION-MODEL-010 | 3_SYSTEM/backend/aunea_backend/solution_models.py | Contrato de datos de Solution Specification. | DEC-034 | n/a | n/a | none | HIGH | test_solution_spec.py | REVIEW |
+| AUNEA-BE-SOLUTION-SPEC-010 | 3_SYSTEM/backend/aunea_backend/solution_spec.py | Solution Specification Engine. | DEC-034 | EngagementInput/DiagnosticOutput | SolutionSpecification | none | HIGH | test_solution_spec.py | REVIEW |
+| AUNEA-BE-SYSBUILD-MODEL-010 | 3_SYSTEM/backend/aunea_backend/system_builder_models.py | Contrato de datos de System Builder. | DEC-034 | n/a | n/a | none | HIGH | test_system_builder.py | REVIEW |
+| AUNEA-BE-SYSTEM-BUILDER-010 | 3_SYSTEM/backend/aunea_backend/system_builder.py | System Builder Engine. | DEC-034 | SolutionSpecification | SystemBuildPlan/Package | none | HIGH | test_system_builder.py | REVIEW |
+| AUNEA-BUILD-BACKEND-DOCKER-010 | 3_SYSTEM/backend/Dockerfile | Imagen de contenedor del backend. | n/a | n/a | imagen | none | LOW | block-id-audit.test.cjs | REVIEW |
+| AUNEA-BUILD-BACKEND-PYPROJECT-010 | 3_SYSTEM/backend/pyproject.toml | Config de paquete/build del backend. | n/a | n/a | paquete instalable | none | LOW | block-id-audit.test.cjs | REVIEW |
+| AUNEA-BUILD-CI-BACKEND-010 | .github/workflows/aunea-backend-tests.yml | CI del backend (pytest en push/PR). | n/a | repo head | CI status | GitHub Actions | LOW | block-id-audit.test.cjs | REVIEW |
+| AUNEA-BUILD-CI-FRONTEND-010 | .github/workflows/aunea-frontend-tests.yml | CI del frontend (node --test en push/PR). | n/a | repo head | CI status | GitHub Actions | LOW | block-id-audit.test.cjs | REVIEW |
+
+## Retired Block_IDs (do not reuse)
+
+_(vacío — ningún Block_ID ha sido retirado todavía en este refactor)_
