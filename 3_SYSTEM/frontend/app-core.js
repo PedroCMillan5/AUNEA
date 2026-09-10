@@ -23,6 +23,7 @@ function blankState(){
   return {
     version:'1.0.1',activePage:'inicio',activeEngagementId:null,dirty:false,
     backendUrl:API_DEFAULT,backendOnline:false,returnTo:null,
+    crmTab:'contactos',contactFilters:{status:'',hideLost:true},
     companies:[],contacts:[],opportunities:[],engagements:[],projects:[],audit:[]
   };
 }
@@ -120,7 +121,11 @@ function bindForms(){
   document.querySelectorAll('[data-segment]').forEach(b=>b.onclick=()=>{setAnswer(b.dataset.segment,b.dataset.value);render()});
   document.querySelectorAll('[data-remove-company]').forEach(b=>b.onclick=()=>removeCompany(b.dataset.removeCompany));
   document.querySelectorAll('[data-remove-contact]').forEach(b=>b.onclick=()=>removeContact(b.dataset.removeContact));
+  document.querySelectorAll('[data-edit-contact]').forEach(b=>b.onclick=()=>editContact(b.dataset.editContact));
   document.querySelectorAll('[data-contact-study]').forEach(b=>b.onclick=()=>createStudyFromContact(b.dataset.contactStudy));
+  document.querySelectorAll('[data-crm-tab]').forEach(b=>b.onclick=()=>{state.crmTab=b.dataset.crmTab;render()});
+  document.querySelectorAll('[data-crm-status-filter]').forEach(el=>el.addEventListener('change',()=>{state.contactFilters.status=el.value;render()}));
+  document.querySelectorAll('[data-crm-hide-lost]').forEach(el=>el.addEventListener('change',()=>{state.contactFilters.hideLost=el.checked;render()}));
   document.querySelectorAll('[data-edit-step]').forEach(b=>b.onclick=()=>openStepModal(b.dataset.editStep));
   document.querySelectorAll('[data-delete-step]').forEach(b=>b.onclick=()=>supersedeStep(b.dataset.deleteStep));
   document.querySelectorAll('[data-edit-friction]').forEach(b=>b.onclick=()=>openFrictionModal(b.dataset.editFriction));
@@ -143,8 +148,32 @@ function addContact(){
 }
 function removeCompany(idv){if(!confirm('¿Archivar esta empresa del prototipo local?'))return;state.companies=state.companies.filter(x=>x.id!==idv);state.contacts=state.contacts.filter(x=>x.companyId!==idv);markDirty('Empresa archivada');render()}
 function removeContact(idv){if(!confirm('¿Archivar este contacto del prototipo local?'))return;state.contacts=state.contacts.filter(x=>x.id!==idv);markDirty('Contacto archivado');render()}
+function contactHistory(ct){return state.audit.filter(a=>a.message.includes(ct.id)||a.message.includes(ct.name)).slice(0,20)}
+function editContact(contactId){
+  const ct=contactById(contactId);if(!ct)return;
+  const statuses=['Nuevo','Contactado','Reunión','Oportunidad','Diagnóstico','Propuesta','Ganado','Perdido','En pausa'];
+  const sources=['Red personal','Referido','Inbound','Cliente existente','Otro'];
+  const companyOpts=state.companies.map(c=>`<option value="${c.id}" ${c.id===ct.companyId?'selected':''}>${esc(c.name)}</option>`).join('');
+  const history=contactHistory(ct);
+  const body=`<div class="form-grid"><div class="field"><label>Empresa</label><select id="mContactCompany">${companyOpts}</select></div><div class="field"><label>Nombre</label><input id="mContactName" value="${attr(ct.name)}"></div><div class="field"><label>Cargo / rol</label><input id="mContactRole" value="${attr(ct.role||'')}"></div><div class="field"><label>Email</label><input id="mContactEmail" type="email" value="${attr(ct.email||'')}"></div><div class="field"><label>Teléfono</label><input id="mContactPhone" value="${attr(ct.phone||'')}"></div><div class="field"><label>Estado del contacto</label><select id="mContactStatus">${statuses.map(s=>`<option ${s===ct.status?'selected':''}>${s}</option>`).join('')}</select></div><div class="field"><label>Origen</label><select id="mContactSource">${sources.map(s=>`<option ${s===ct.source?'selected':''}>${s}</option>`).join('')}</select></div><div class="field full"><label>Próxima acción</label><input id="mNextAction" value="${attr(ct.nextAction||'')}" placeholder="Ej. Agendar llamada"></div></div><div class="field-help" style="margin-top:10px"><b>Histórico</b></div>${history.length?history.map(a=>`<div class="audit-line"><b>${fmtDate(a.ts)}</b> · ${esc(a.message)}</div>`).join(''):'<div class="empty"><p>Sin cambios registrados todavía para este contacto.</p></div>'}`;
+  openModal('Editar contacto',body,()=>{
+    const before={...ct};
+    ct.companyId=document.getElementById('mContactCompany').value;
+    ct.name=document.getElementById('mContactName').value.trim()||ct.name;
+    ct.role=document.getElementById('mContactRole').value;
+    ct.email=document.getElementById('mContactEmail').value;
+    ct.phone=document.getElementById('mContactPhone').value;
+    ct.status=document.getElementById('mContactStatus').value;
+    ct.source=document.getElementById('mContactSource').value;
+    ct.nextAction=document.getElementById('mNextAction').value;
+    [['name','Nombre'],['role','Cargo'],['email','Email'],['phone','Teléfono'],['status','Estado'],['source','Origen'],['nextAction','Próxima acción']].forEach(([k,label])=>{
+      if((before[k]||'')!==(ct[k]||''))audit(`Contacto ${ct.name} editado: ${label} "${before[k]||'—'}"→"${ct[k]||'—'}"`);
+    });
+    markDirty();closeModal();render();
+  },'Guardar cambios');
+}
 function createStudyFromContact(contactId){
-  const ct=contactById(contactId),cp=companyById(ct.companyId);const e={id:id('ENG'),companyId:cp.id,contactIds:[ct.id],title:`Diagnóstico · ${cp.name}`,processName:'',status:'En preparación',stageId:'S01',answers:{DF001:cp.name,DF002:cp.sector||'',DF005:cp.country||'',DF006:ct.id},processSteps:[],frictions:[],risks:[],economicInputs:[],processTab:'pasos',confirmedAsIs:false,diagnosticOutput:null,scenarioResults:[],selectedScenario:null,createdAt:now(),updatedAt:now()};state.engagements.unshift(e);state.activeEngagementId=e.id;state.activePage='diagnostico';markDirty('Engagement creado desde contacto');render()
+  const ct=contactById(contactId),cp=companyById(ct.companyId);const e={id:id('ENG'),companyId:cp.id,contactIds:[ct.id],title:`Diagnóstico · ${cp.name}`,processName:'',status:'En preparación',stageId:'S01',answers:{DF001:cp.name,DF002:cp.sector||'',DF005:cp.country||'',DF006:ct.id},processSteps:[],frictions:[],risks:[],economicInputs:[],processTab:'pasos',confirmedAsIs:false,diagnosticOutput:null,scenarioResults:[],selectedScenario:null,createdAt:now(),updatedAt:now()};state.engagements.unshift(e);ct.lastInteraction=now();state.activeEngagementId=e.id;state.activePage='diagnostico';markDirty('Engagement creado desde contacto');render()
 }
 function newStudy(){
   if(!state.contacts.length)return toast('Crea primero un contacto.');
