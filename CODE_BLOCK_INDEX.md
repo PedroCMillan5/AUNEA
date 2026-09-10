@@ -56,6 +56,17 @@ AUNEA Internal V1 está en `REVIEW` con runtime Master v1.1, renderer, No-Reask,
 | AUNEA-BUILD-BACKEND-PYPROJECT-010 | 3_SYSTEM/backend/pyproject.toml | Config de paquete/build del backend. | n/a | n/a | paquete instalable | none | LOW | block-id-audit.test.cjs | REVIEW |
 | AUNEA-BUILD-CI-BACKEND-010 | .github/workflows/aunea-backend-tests.yml | CI del backend (pytest en push/PR). | n/a | repo head | CI status | GitHub Actions | LOW | block-id-audit.test.cjs | REVIEW |
 | AUNEA-BUILD-CI-FRONTEND-010 | .github/workflows/aunea-frontend-tests.yml | CI del frontend (node --test en push/PR). | n/a | repo head | CI status | GitHub Actions | LOW | block-id-audit.test.cjs | REVIEW |
+| AUNEA-FE-I18N-LABELS-010 | 3_SYSTEM/frontend/app-i18n-labels-v1.js | Traducción ES de enums del backend (Pain/Risk/Quote) para vistas de sólo lectura. | aunea_backend/models.py | category+raw | label ES | none | LOW | i18n-labels-v1.test.cjs | REVIEW |
+| AUNEA-FE-STYLE-TOKENS-010 | 3_SYSTEM/frontend/styles.css | Tokens de diseño AUNEA (color/tipografía/espaciado/radios) + reset. | TOKENS_AUNEA v1.0; DESIGN_SYSTEM_AUNEA v1.0 | n/a | CSS custom properties | DOM styling | MEDIUM | style-tokens.test.cjs | REVIEW |
+| AUNEA-FE-STYLE-SHELL-010 | 3_SYSTEM/frontend/styles.css | Chrome de shell (sidebar/topbar/content) y primitivas compartidas (card/btn/grid/table/status). | CATALOGO_COMPONENTES_AUNEA DS-004/005/008/019 | n/a | DOM styling | DOM styling | MEDIUM | style-tokens.test.cjs | REVIEW |
+| AUNEA-FE-STYLE-FORMS-010 | 3_SYSTEM/frontend/styles.css | Controles de formulario compartidos (DS-020). | CATALOGO_COMPONENTES_AUNEA DS-020 | n/a | DOM styling | DOM styling | MEDIUM | style-tokens.test.cjs | REVIEW |
+| AUNEA-FE-STYLE-STAGE-010 | 3_SYSTEM/frontend/styles.css | Navegación de etapas, question-card y progreso. | DESIGN_SYSTEM_AUNEA v1.0 | n/a | DOM styling | DOM styling | MEDIUM | style-tokens.test.cjs | REVIEW |
+| AUNEA-FE-STYLE-PROCESS-010 | 3_SYSTEM/frontend/styles.css | Lista de pasos y flow canvas AS-IS (DS-012). | CATALOGO_COMPONENTES_AUNEA DS-012 | n/a | DOM styling | DOM styling | MEDIUM | style-tokens.test.cjs | REVIEW |
+| AUNEA-FE-STYLE-RESULTS-010 | 3_SYSTEM/frontend/styles.css | Resultados/escenarios/empty-state (DS-005/DS-010). | CATALOGO_COMPONENTES_AUNEA DS-005/010 | n/a | DOM styling | DOM styling | MEDIUM | style-tokens.test.cjs | REVIEW |
+| AUNEA-FE-STYLE-MODAL-010 | 3_SYSTEM/frontend/styles.css | Modal y toast. | n/a | n/a | DOM styling | DOM styling | LOW | style-tokens.test.cjs | REVIEW |
+| AUNEA-FE-STYLE-RESPONSIVE-010 | 3_SYSTEM/frontend/styles.css | Breakpoints responsive y print. | TOKENS_AUNEA grid.web.* | n/a | DOM styling | DOM styling | MEDIUM | style-tokens.test.cjs | REVIEW |
+| AUNEA-UAT-I18N-010 | 3_SYSTEM/frontend/tests/i18n-labels-v1.test.cjs | Regresión de engineLabel(). | n/a | fixture | assertions | none | LOW | node test | REVIEW |
+| AUNEA-UAT-STYLE-010 | 3_SYSTEM/frontend/tests/style-tokens.test.cjs | Regresión de tokens de diseño. | n/a | fixture | assertions | none | MEDIUM | node test | REVIEW |
 
 ## Retired Block_IDs (do not reuse)
 
