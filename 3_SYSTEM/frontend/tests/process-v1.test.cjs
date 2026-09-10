@@ -38,6 +38,19 @@ test('reorder buttons are wired to moveStep in both directions',()=>{
   assert.match(code,/moveStep\(b\.dataset\.moveStepDown,1\)/);
 });
 
+test('processPage defaults to "Revisión con cliente" once steps exist (UAT-VIS-039), and to "Pasos" when the process is still empty',()=>{
+  eng.processSteps=[{id:'s1',status:'ACTIVE',step_name:'Alta'}];
+  eng.frictions=[];
+  eng.processTab='';
+  eng.confirmedAsIs=false;
+  let html=ctx.processPage();
+  assert.match(html.match(/<button class="subtab[^"]*" data-process-tab="revision">/)[0],/active/);
+  assert.doesNotMatch(html.match(/<button class="subtab[^"]*" data-process-tab="pasos">/)[0],/active/);
+  eng.processSteps=[];
+  html=ctx.processPage();
+  assert.match(html.match(/<button class="subtab[^"]*" data-process-tab="pasos">/)[0],/active/);
+});
+
 test('fr_cause_other and fr_workaround_other are collapsed behind a "+ Otro" toggle by default, matching the Bloque B pattern',()=>{
   assert.match(code,/data-fr-other-toggle="fr_cause_other"/);
   assert.match(code,/data-fr-other-toggle="fr_workaround_other"/);

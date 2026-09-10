@@ -35,4 +35,25 @@ test('Ninguno/No-existe exclusivity is only wired for the two curated Field_IDs,
   const ordinary=ctx.renderControl({Field_ID:'DF008',Control_UI:'MULTISELECT_WITH_OTHER'},['A'],ctx.schema.option_sets.OS_X.options,e);
   assert.doesNotMatch(ordinary,/data-exclusive/);
 });
+
+test('DF054 STEP_SYSTEM_PAIR_SELECTOR builds a neutral candidate list from tool changes, channels and manual actions — never asserting a "gap" itself',()=>{
+  const eng={processSteps:[
+    {id:'s1',status:'ACTIVE',step_name:'Alta',tool:'CRM',communication_channels:['CH1'],manual_actions:[]},
+    {id:'s2',status:'ACTIVE',step_name:'Aprobación',tool:'EXCEL',manual_actions:['REKEY']},
+    {id:'s3',status:'SUPERSEDED',step_name:'Viejo',tool:'OLD'}
+  ]};
+  const html=ctx.renderControl({Field_ID:'DF054',Control_UI:'STEP_SYSTEM_PAIR_SELECTOR'},[],[],eng);
+  assert.match(html,/pair:s1:s2/);
+  assert.match(html,/channel:s1/);
+  assert.match(html,/manual:s2/);
+  assert.doesNotMatch(html,/<label[^>]*>[^<]*\bgap\b/i,'no individual candidate label may assert a gap — only the disclaimer notice may mention the word');
+  assert.doesNotMatch(html,/checked/,'no candidate may come pre-checked; only an explicit consultant confirmation may select one');
+  assert.doesNotMatch(html,/s3/,'SUPERSEDED steps must not produce candidates');
+});
+
+test('DF054 only persists the candidate ids the consultant explicitly confirms, via the same shared checkbox mechanism as any other multiselect',()=>{
+  const eng={processSteps:[{id:'s1',status:'ACTIVE',step_name:'Alta',tool:'CRM'},{id:'s2',status:'ACTIVE',step_name:'Aprobación',tool:'EXCEL'}]};
+  const html=ctx.renderControl({Field_ID:'DF054',Control_UI:'STEP_SYSTEM_PAIR_SELECTOR'},['pair:s1:s2'],[],eng);
+  assert.match(html,/value="pair:s1:s2"[^>]*data-multi="DF054"[^>]*checked/);
+});
 // [AUNEA-UAT-RENDER-010] END

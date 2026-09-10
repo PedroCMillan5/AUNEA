@@ -173,7 +173,7 @@ function editContact(contactId){
   },'Guardar cambios');
 }
 function createStudyFromContact(contactId){
-  const ct=contactById(contactId),cp=companyById(ct.companyId);const e={id:id('ENG'),companyId:cp.id,contactIds:[ct.id],title:`Diagnóstico · ${cp.name}`,processName:'',status:'En preparación',stageId:'S01',answers:{DF001:cp.name,DF002:cp.sector||'',DF005:cp.country||'',DF006:ct.id},processSteps:[],frictions:[],risks:[],economicInputs:[],processTab:'pasos',confirmedAsIs:false,diagnosticOutput:null,scenarioResults:[],selectedScenario:null,createdAt:now(),updatedAt:now()};state.engagements.unshift(e);ct.lastInteraction=now();state.activeEngagementId=e.id;state.activePage='diagnostico';markDirty('Engagement creado desde contacto');render()
+  const ct=contactById(contactId),cp=companyById(ct.companyId);const e={id:id('ENG'),companyId:cp.id,contactIds:[ct.id],title:`Diagnóstico · ${cp.name}`,processName:'',status:'En preparación',stageId:'S01',answers:{DF001:cp.name,DF002:cp.sector||'',DF005:cp.country||'',DF006:ct.id},processSteps:[],frictions:[],risks:[],economicInputs:[],processTab:'',confirmedAsIs:false,diagnosticOutput:null,scenarioResults:[],selectedScenario:null,createdAt:now(),updatedAt:now()};state.engagements.unshift(e);ct.lastInteraction=now();state.activeEngagementId=e.id;state.activePage='diagnostico';markDirty('Engagement creado desde contacto');render()
 }
 function newStudy(){
   if(!state.contacts.length)return toast('Crea primero un contacto.');

@@ -73,8 +73,29 @@ function stepPair(fid,e,val){
   const p=(val&&typeof val==='object')?val:{};const opts=stepOptions(e);
   return `<div class="compound-control">${canonicalSelect(`${fid}__from`,opts,p.from||'','data-pair-part="from" data-pair-field="'+fid+'"')}${canonicalSelect(`${fid}__to`,opts,p.to||'','data-pair-part="to" data-pair-field="'+fid+'"')}</div>`;
 }
-function stepSystemPair(fid,e,val){
-  const p=(val&&typeof val==='object')?val:{};return `<div class="compound-control">${canonicalSelect(`${fid}__step`,stepOptions(e),p.step||'','data-step-system-part="step" data-step-system-field="'+fid+'"')}<input data-step-system-part="system" data-step-system-field="${fid}" value="${attr(p.system||'')}" placeholder="Sistema / integración"></div>`;
+// DF054 (Integration_Gaps): SYSTEM_SUGGEST_THEN_CONFIRM authorizes the suggest+confirm interaction
+// pattern, not any inference algorithm — the canonical Reuse_From only names the SOURCES (tools per
+// step, handoffs/communication channels, manual actions/copy-rekey), not a gap-detection rule. This
+// builds a NEUTRAL candidate list from exactly those sources; it never labels a pair a "gap" itself —
+// only the consultant's checkbox confirmation writes into DF054 (an array of confirmed candidate ids,
+// re-describable from live process-step data — no new stored object shape).
+function stepSystemHandoffCandidates(e){
+  const steps=(e.processSteps||[]).filter(x=>x.status!=='SUPERSEDED');
+  const items=[];
+  for(let i=0;i<steps.length-1;i++){
+    const a=steps[i],b=steps[i+1];
+    if(a.tool&&b.tool&&String(a.tool)!==String(b.tool))items.push({value:`pair:${a.id}:${b.id}`,label:`"${a.step_name||a.id}" (${optionLabel('OS_TOOL_CATEGORY',a.tool)}) → "${b.step_name||b.id}" (${optionLabel('OS_TOOL_CATEGORY',b.tool)})`});
+  }
+  steps.forEach(s=>{
+    if(normalizeArray(s.communication_channels).length)items.push({value:`channel:${s.id}`,label:`"${s.step_name||s.id}" — canal registrado: ${normalizeArray(s.communication_channels).map(c=>optionLabel('OS_COMM_CHANNEL',c)).join(', ')}`});
+    if(normalizeArray(s.manual_actions).length)items.push({value:`manual:${s.id}`,label:`"${s.step_name||s.id}" — acción manual registrada: ${normalizeArray(s.manual_actions).map(m=>optionLabel('OS_MANUAL_ACTION',m)).join(', ')}`});
+  });
+  return items;
+}
+function stepSystemPairSelector(fid,e,val){
+  const items=stepSystemHandoffCandidates(e);
+  if(!items.length)return '<div class="empty"><p>Sin pares candidatos todavía: registra herramienta, canal de comunicación o acción manual en los pasos del proceso.</p></div>';
+  return `<div class="notice info">Marca sólo los pares o pasos donde exista intercambio o reintroducción manual real de datos entre sistemas. Esta lista es neutral: no afirma por sí sola que haya un gap.</div>${multiChoices(fid,items,val)}`;
 }
 function frictionPriority(fid,e,val){
   const items=e.frictions.filter(x=>x.status!=='SUPERSEDED').map(x=>({value:x.id,label:labelFrom('OS_FRICTION_TYPE',x.friction_type)}));return multiChoices(fid,items,val);
@@ -102,7 +123,7 @@ function renderControl(f,val,opts,e){
   if(c==='STEP_MULTISELECT_VISUAL'||c==='STEP_MULTISELECT_WITH_FRICTION')return stepMulti(fid,e,val);
   if(c==='STEP_REFERENCE_SINGLE')return stepSingle(fid,e,val);
   if(c==='STEP_PAIR_SELECTOR')return stepPair(fid,e,val);
-  if(c==='STEP_SYSTEM_PAIR_SELECTOR')return stepSystemPair(fid,e,val);
+  if(c==='STEP_SYSTEM_PAIR_SELECTOR')return stepSystemPairSelector(fid,e,val);
   if(c==='FRICTION_MULTISELECT_PRIORITY')return frictionPriority(fid,e,val);
   if(c==='BOOLEAN_UNKNOWN'||c==='BOOLEAN_UNKNOWN_WITH_SCOPE'||c==='SEGMENTED'||c==='SEGMENTED_SCALE')return segmented(fid,opts,val)+(c.includes('SCOPE')?detailInput(fid,'Alcance / condición'): '');
   if(c==='DATE_WITH_UNKNOWN')return `<div class="compound-control"><input type="date" data-answer="${fid}" value="${attr(val||'')}"><button type="button" class="btn btn-small" data-set-unknown="${fid}">No disponible</button></div>`;
@@ -125,7 +146,6 @@ function bindCanonicalRenderer(){
   numberFids.forEach(fid=>{const sync=()=>{const value=document.querySelector(`[data-number-value="${fid}"]`)?.value??'',unit=document.querySelector(`[data-number-unit="${fid}"]`)?.value??'',period=document.querySelector(`[data-number-period="${fid}"]`)?.value??'',mode=document.querySelector(`[data-number-mode="${fid}"]`)?.value??'';setAnswer(fid,{value:value===''?'':Number(value),unit,period,mode})};document.querySelectorAll(`[data-number-value="${fid}"],[data-number-unit="${fid}"],[data-number-period="${fid}"],[data-number-mode="${fid}"]`).forEach(el=>el.addEventListener(el.tagName==='SELECT'?'change':'input',sync))});
   document.querySelectorAll('[data-set-unknown]').forEach(b=>b.onclick=()=>{setAnswer(b.dataset.setUnknown,'UNKNOWN');render()});
   const pairFids=[...new Set([...document.querySelectorAll('[data-pair-field]')].map(x=>x.dataset.pairField))];pairFids.forEach(fid=>document.querySelectorAll(`[data-pair-field="${fid}"]`).forEach(el=>el.addEventListener('change',()=>{const p={};document.querySelectorAll(`[data-pair-field="${fid}"]`).forEach(x=>p[x.dataset.pairPart]=x.value);setAnswer(fid,p)})));
-  const ssFids=[...new Set([...document.querySelectorAll('[data-step-system-field]')].map(x=>x.dataset.stepSystemField))];ssFids.forEach(fid=>document.querySelectorAll(`[data-step-system-field="${fid}"]`).forEach(el=>el.addEventListener(el.tagName==='SELECT'?'change':'input',()=>{const p={};document.querySelectorAll(`[data-step-system-field="${fid}"]`).forEach(x=>p[x.dataset.stepSystemPart]=x.value);setAnswer(fid,p)})));
   document.querySelectorAll('[data-other-toggle]').forEach(el=>el.addEventListener('change',()=>{
     const fid=el.dataset.otherToggle,wrap=document.querySelector(`[data-detail-wrap="${fid}"]`);
     if(!wrap)return;
