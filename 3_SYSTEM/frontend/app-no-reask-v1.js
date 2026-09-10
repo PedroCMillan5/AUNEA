@@ -3,7 +3,7 @@
 // SOURCE: Diagnostic Master v1.1 00_NO_REASK_RULES_V1; RULE_QUESTION_BRANCHING; REQ-DIAG-004/006; DEC-040.
 // INPUTS: Company/Contact/Engagement answers, Process Steps, Frictions, risks and evidence-tagged economics.
 // OUTPUTS: effective values, branch visibility, contextual rendering and branch-aware required gaps.
-// SIDE_EFFECTS: explicit corrections write through to the owning CRM/engagement source; no engine outputs are calculated.
+// SIDE_EFFECTS: explicit corrections write through to the owning CRM/engagement source; derived confirmations are audit/UI metadata only; no engine outputs are calculated.
 // CHANGE_RISK: HIGH.
 
 const NO_REASK_RULE_IDS=Object.freeze(['NR01','NR02','NR03','NR04','NR05','NR06','NR07','NR08','NR09','NR10','NR11','NR12','NR13','NR14','NR15']);
@@ -117,8 +117,18 @@ function contextOnly(f,e,val){
   if(!valuePresent(val))return false;
   return ['NO_REASK','CONFIRM_ONLY_IF_CHANGED','DERIVE_THEN_CONFIRM'].includes(policy)||['PREFILL_CONFIRM','DERIVE_AND_CONFIRM'].includes(mode);
 }
+function requiresDerivedConfirmation(f){return String(f.Ask_Mode||'')==='DERIVE_AND_CONFIRM'||String(f.Reask_Policy||'')==='DERIVE_THEN_CONFIRM'}
+function derivedFingerprint(v){try{return JSON.stringify(v)}catch{return String(v)}}
+function derivedConfirmation(f,e,reuse=reusedValue(f.Field_ID,e)){return answerDetails(e)[`${f.Field_ID}__derived_confirmation`]||null}
+function isDerivedConfirmed(f,e,reuse=reusedValue(f.Field_ID,e)){const m=derivedConfirmation(f,e,reuse);return !!m&&m.fingerprint===derivedFingerprint(reuse)}
+function confirmDerivedValue(fid){
+  const e=currentEng(),f=schema?.fields?.find(x=>x.Field_ID===fid);if(!e||!f)return;
+  const reuse=reusedValue(fid,e);if(!valuePresent(reuse))return toast('No hay un valor derivado que confirmar.');
+  answerDetails(e)[`${fid}__derived_confirmation`]={fingerprint:derivedFingerprint(reuse),confirmedAt:now()};
+  audit(`Valor derivado confirmado ${fid}`);markDirty(`Confirmación derivada ${fid}`);render();
+}
 
-// Provenance UI — "Tomado de: <label>" + "Editar en <página>" replacing the raw No-Reask/Reuse_From leak.
+// Provenance UI — human-readable in normal use, full technical contract only in Internal mode.
 // The human label is DERIVED, not hand-authored per field: a one-time reverse index (Write_Target -> Field)
 // resolves Reuse_From values shaped like "RT_ENTITY.Column" to the canonical Pregunta_o_etiqueta_ES of the
 // field that owns that Write_Target. ENTITY_PAGE_MAP is the only hand-authored table here, and it is pure UI
@@ -148,15 +158,13 @@ function reuseSourceInfo(f){
   return {label:srcField?srcField.Pregunta_o_etiqueta_ES:'un dato ya capturado en el estudio',page};
 }
 
-// DF020 (Known_Variants → RT_PROCESS.Known_Variants, Engine_Consumers incl. Risk) and DF029
-// (Service_Priority → RT_PROCESS.Service_Priority, Engine_Consumers: Pain/Economics) are canonically
-// distinct fields with distinct Write_Targets — never merge them. This is a UI-only disambiguation
-// hint grounded in that existing difference; it adds no new Field_ID/Option_Set_ID/Write_Target.
-// DF052 (Version_Control → RT_FINDING, Entity_Scope: Process) is a single process-level question
-// ("método para identificar la versión correcta") — the canonical model has no per-artifact
-// cardinality, so it never asks about each document individually (UAT-VIS-042 stays BLOQUEADO for
-// that reason; this is copy-only, no Field_ID/Write_Target change).
+// UI-only clarifications grounded in the current Diagnostic Master field objective/validation and option sets.
+// They do not alter Field_ID, Write_Target, branching or engine consumers.
 const FIELD_CLARIFICATION_ES=Object.freeze({
+  DF010:'Incluye restricciones de presupuesto, seguridad, plataforma o herramientas, plazo, compliance, residencia de datos, ownership, recursos, compras o adopción. Se capturan aquí una sola vez para acotar la solución y evitar recomendaciones incompatibles con los límites conocidos.',
+  DF014:'Indica dónde empieza exactamente lo que vamos a analizar. Debe ser coherente con el evento que inicia el proceso y con el primer paso del mapa.',
+  DF015:'Indica dónde termina exactamente lo que vamos a analizar. Debe ser coherente con el resultado final esperado y con el último paso del mapa.',
+  DF016:'Este es el responsable end-to-end del proceso. Puede coincidir o no con el interlocutor principal de la sesión o con quien aprueba la inversión; selecciona una persona existente o indica el rol si aún no se conoce.',
   DF020:'A diferencia de DF029: esto son variantes que cambian la RUTA del proceso (pasos distintos), no sólo cómo se trata un caso.',
   DF029:'A diferencia de DF020: esto son clases que cambian el TRATAMIENTO operativo o económico de un caso, sin cambiar la ruta del proceso en sí.',
   DF052:'Se refiere al método general de control de versión del proceso (¿cómo se sabe cuál es la versión correcta?), no a versionar cada documento o artefacto por separado.'
@@ -168,11 +176,13 @@ function renderQuestion(f,e){
   let body='';
   if(systemOnly)body=`<div class="readonly-box">${esc(formatContextValue(f,val)||'Se completará automáticamente cuando existan datos suficientes.')}</div>`;
   else if(contextOnly(f,e,val)){
-    const src=reuseSourceInfo(f);
+    const src=reuseSourceInfo(f),needsConfirm=requiresDerivedConfirmation(f),confirmed=needsConfirm&&isDerivedConfirmed(f,e);
     const editBtn=src.page
       ?`<button type="button" class="btn btn-small" data-goto-source="${attr(src.page)}">Editar en ${esc(pageLabelEs(src.page))}</button><div class="field-help">Este cambio actualizará el dato en todo el diagnóstico.</div>`
       :`<button type="button" class="btn btn-small" data-edit-context="${f.Field_ID}">Editar aquí</button>`;
-    body=`<div class="reuse-context"><div><span class="context-label">Dato reutilizado</span><strong>${esc(formatContextValue(f,val))}</strong><small>Tomado de: ${esc(src.label)}</small></div>${editBtn}</div>`;
+    const confirmUi=needsConfirm?(confirmed?'<span class="status green">Derivación confirmada</span>':`<button type="button" class="btn btn-small btn-primary" data-confirm-derived="${f.Field_ID}">Confirmar valor</button>`):'';
+    const technical=`<div class="field-help internal-only technical-provenance"><b>Reuse_From:</b> ${esc(f.Reuse_From||'—')} · <b>Reask_Policy:</b> ${esc(f.Reask_Policy||'—')}</div>`;
+    body=`<div class="reuse-context"><div><span class="context-label internal-only">Dato reutilizado</span><strong>${esc(formatContextValue(f,val))}</strong><small class="internal-only">Tomado de: ${esc(src.label)}</small>${technical}</div><div class="row-actions">${confirmUi}${editBtn}</div></div>`;
   }
   else body=`${renderControl(f,val,opts,e)}${explicitReaskAllowed(f.Field_ID,e)?`<div class="field-help"><button type="button" class="link-btn" data-close-context="${f.Field_ID}">Cerrar edición y volver a reutilizar el dato</button></div>`:''}`;
   const clarification=FIELD_CLARIFICATION_ES[f.Field_ID];
@@ -183,6 +193,7 @@ function bindNoReask(){
   document.querySelectorAll('[data-edit-context]').forEach(b=>b.onclick=()=>{const e=currentEng();reaskState(e)[b.dataset.editContext]=true;markDirty(`Edición explícita habilitada ${b.dataset.editContext}`);render()});
   document.querySelectorAll('[data-close-context]').forEach(b=>b.onclick=()=>{const e=currentEng();delete reaskState(e)[b.dataset.closeContext];markDirty(`Edición explícita cerrada ${b.dataset.closeContext}`);render()});
   document.querySelectorAll('[data-goto-source]').forEach(b=>b.onclick=()=>setPage(b.dataset.gotoSource));
+  document.querySelectorAll('[data-confirm-derived]').forEach(b=>b.onclick=()=>confirmDerivedValue(b.dataset.confirmDerived));
 }
 const __auneaRendererBindForms=bindForms;
 bindForms=function(){__auneaRendererBindForms();bindNoReask();};
