@@ -66,6 +66,9 @@ function numberCompound(f,val){
   const special=[];if(c.includes('UNKNOWN'))special.push(['UNKNOWN','No disponible']);if(c.includes('NONE'))special.push(['NONE','No aplica']);if(c.includes('ZERO'))special.push(['ZERO','0']);
   return `<div class="compound-control"><input type="number" step="any" min="0" data-number-value="${fid}" value="${attr(p.value)}" placeholder="Valor">${units.length?`<select data-number-unit="${fid}"><option value="">Unidad…</option>${units.map(([v,l])=>`<option value="${v}" ${String(p.unit)===v?'selected':''}>${l}</option>`).join('')}</select>`:''}${periodNeeded?`<select data-number-period="${fid}"><option value="">Periodo…</option><option value="case" ${p.period==='case'?'selected':''}>por caso</option><option value="day" ${p.period==='day'?'selected':''}>por día</option><option value="week" ${p.period==='week'?'selected':''}>por semana</option><option value="month" ${p.period==='month'?'selected':''}>por mes</option><option value="year" ${p.period==='year'?'selected':''}>por año</option></select>`:''}${special.length?`<select data-number-mode="${fid}"><option value="">Dato disponible</option>${special.map(([v,l])=>`<option value="${v}" ${p.mode===v?'selected':''}>${l}</option>`).join('')}</select>`:''}</div>`;
 }
+// Excludes contacts marked 'Perdido' from reference pickers (DF007/DF016), reusing the same criterion
+// as the CRM's own "ocultar perdidos" filter — not a new archived flag, just consistent status reuse.
+function referenceableContacts(e){return state.contacts.filter(x=>x.companyId===e.companyId&&x.status!=='Perdido')}
 function stepOptions(e,exclude=''){return e.processSteps.filter(x=>x.status!=='SUPERSEDED'&&x.id!==exclude).map(x=>({value:x.id,label:x.step_name||x.id}))}
 function stepMulti(fid,e,val){return multiChoices(fid,stepOptions(e),val)}
 function stepSingle(fid,e,val){return canonicalSelect(fid,stepOptions(e),val)}
@@ -132,9 +135,9 @@ function syncNextStep(fid){
 function renderControl(f,val,opts,e){
   const c=String(f.Control_UI||'').toUpperCase(),fid=f.Field_ID;
   if(c==='CRM_REFERENCE_OR_TEXT')return canonicalSelect(fid,state.companies.map(x=>({value:x.name,label:x.name})),val);
-  if(c==='CONTACT_REFERENCE')return canonicalSelect(fid,state.contacts.filter(x=>x.companyId===e.companyId).map(x=>({value:x.id,label:`${x.name}${x.role?' · '+x.role:''}`})),val);
-  if(c==='CONTACT_MULTISELECT')return multiChoices(fid,state.contacts.filter(x=>x.companyId===e.companyId).map(x=>({value:x.id,label:`${x.name}${x.role?' · '+x.role:''}`})),val);
-  if(c==='CONTACT_OR_ROLE_REFERENCE')return `<div class="compound-control">${canonicalSelect(fid,state.contacts.filter(x=>x.companyId===e.companyId).map(x=>({value:x.id,label:`${x.name}${x.role?' · '+x.role:''}`})),val)}${detailInput(fid,'Rol si aún no se conoce la persona')}</div>`;
+  if(c==='CONTACT_REFERENCE')return canonicalSelect(fid,referenceableContacts(e).map(x=>({value:x.id,label:`${x.name}${x.role?' · '+x.role:''}`})),val);
+  if(c==='CONTACT_MULTISELECT')return multiChoices(fid,referenceableContacts(e).map(x=>({value:x.id,label:`${x.name}${x.role?' · '+x.role:''}`})),val);
+  if(c==='CONTACT_OR_ROLE_REFERENCE')return `<div class="compound-control">${canonicalSelect(fid,referenceableContacts(e).map(x=>({value:x.id,label:`${x.name}${x.role?' · '+x.role:''}`})),val)}${detailInput(fid,'Rol si aún no se conoce la persona')}</div>`;
   if(c==='SEARCHABLE_DROPDOWN')return searchableSelect(f,val,opts);
   if(c==='DROPDOWN')return canonicalSelect(fid,opts,val);
   if(c==='DROPDOWN_WITH_DETAIL')return canonicalSelect(fid,opts,val)+detailInput(fid,'Detalle si aplica');

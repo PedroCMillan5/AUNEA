@@ -6,7 +6,7 @@ const vm=require('node:vm');
 const path=require('node:path');
 const code=fs.readFileSync(path.join(__dirname,'..','app-renderer-v1.js'),'utf8');
 const e={companyId:'c1',answers:{},answerDetails:{},processSteps:[{id:'s1',status:'ACTIVE',step_name:'Inicio'}],frictions:[{id:'f1',status:'ACTIVE',friction_type:'P01'}]};
-const ctx={console,schema:{option_sets:{OS_X:{options:[{value:'A',label:'Alpha'},{value:'B',label:'Beta'}]},OS_WORKAROUND:{options:[{value:'CHASE',label:'Seguimiento manual'},{value:'NO_WORKAROUND',label:'No existe'}]},OS_SENSITIVE_DATA:{options:[{value:'PERSONAL',label:'Datos personales'},{value:'NONE',label:'Ninguno'}]}}},state:{companies:[{id:'c1',name:'ACME'}],contacts:[{id:'p1',companyId:'c1',name:'Ana',role:'Ops'}]},currentEng:()=>e,normalizeArray:v=>Array.isArray(v)?v:(v==null||v===''?[]:[v]),esc:v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'),attr:v=>String(v??'').replaceAll('"','&quot;'),labelFrom:(s,v)=>v,bindForms:()=>{},setAnswer:(fid,v)=>{e.answers[fid]=v},now:()=>'',markDirty:()=>{},toast:()=>{},render:()=>{},formatDateEs:()=>'12/09/2026',document:{querySelectorAll:()=>[],querySelector:()=>null}};
+const ctx={console,schema:{option_sets:{OS_X:{options:[{value:'A',label:'Alpha'},{value:'B',label:'Beta'}]},OS_WORKAROUND:{options:[{value:'CHASE',label:'Seguimiento manual'},{value:'NO_WORKAROUND',label:'No existe'}]},OS_SENSITIVE_DATA:{options:[{value:'PERSONAL',label:'Datos personales'},{value:'NONE',label:'Ninguno'}]}}},state:{companies:[{id:'c1',name:'ACME'}],contacts:[{id:'p1',companyId:'c1',name:'Ana',role:'Ops',status:'Contactado'},{id:'p2',companyId:'c1',name:'Beto',role:'IT',status:'Perdido'}]},currentEng:()=>e,normalizeArray:v=>Array.isArray(v)?v:(v==null||v===''?[]:[v]),esc:v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'),attr:v=>String(v??'').replaceAll('"','&quot;'),labelFrom:(s,v)=>v,bindForms:()=>{},setAnswer:(fid,v)=>{e.answers[fid]=v},now:()=>'',markDirty:()=>{},toast:()=>{},render:()=>{},formatDateEs:()=>'12/09/2026',document:{querySelectorAll:()=>[],querySelector:()=>null}};
 vm.createContext(ctx);vm.runInContext(code,ctx);
 test('searchable dropdown remains catalog-backed',()=>{const html=ctx.renderControl({Field_ID:'DF002',Control_UI:'SEARCHABLE_DROPDOWN',Option_Set_ID:'OS_X',Validation:'permitir Otro'},'A',ctx.schema.option_sets.OS_X.options,e);assert.match(html,/data-search-answer="DF002"/);assert.match(html,/datalist/);});
 test('number+unit is structured',()=>{const html=ctx.renderControl({Field_ID:'DF021',Control_UI:'NUMBER_WITH_UNIT'},'',[],e);assert.match(html,/data-number-value="DF021"/);assert.match(html,/data-number-unit="DF021"/);});
@@ -77,6 +77,13 @@ test('DF098 DROPDOWN_WITH_OWNER_DATE serializes to a plain "<acción> — <owner
   assert.equal(e.answers.DF098,'Beta — Pedro — 12/09/2026');
   ctx.document=savedDoc;
   e.answerDetails={};e.answers={};
+});
+
+test('DF007/DF016 contact reference pickers exclude contacts marked Perdido, reusing the CRM status field (no new archived flag)',()=>{
+  const single=ctx.renderControl({Field_ID:'DF006',Control_UI:'CONTACT_REFERENCE'},'',[],e);
+  const multi=ctx.renderControl({Field_ID:'DF007',Control_UI:'CONTACT_MULTISELECT'},[],[],e);
+  const orRole=ctx.renderControl({Field_ID:'DF016',Control_UI:'CONTACT_OR_ROLE_REFERENCE'},'',[],e);
+  [single,multi,orRole].forEach(html=>{assert.match(html,/Ana/);assert.doesNotMatch(html,/Beto/)});
 });
 
 test('TEXT_LONG_INTERNAL never renders the literal string "off" and stays internal-only',()=>{
