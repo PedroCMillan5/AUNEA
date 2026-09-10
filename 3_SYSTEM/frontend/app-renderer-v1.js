@@ -27,9 +27,28 @@ function searchableSelect(f,val,opts){
   const id=dataListId(f.Field_ID),label=opts.find(x=>String(x.value)===String(val))?.label||(isOtherAllowed(f)?String(val||''):'');
   return `<div class="compound-control"><input data-search-answer="${f.Field_ID}" data-option-set="${attr(f.Option_Set_ID||'')}" data-allow-other="${isOtherAllowed(f)?'1':'0'}" list="${id}" value="${attr(label)}" placeholder="Buscar o seleccionar…"><datalist id="${id}">${opts.map(x=>`<option value="${attr(x.label)}" data-value="${attr(x.value)}"></option>`).join('')}</datalist></div>`;
 }
+// Ninguno/No-existe exclusivity is NOT derived by parsing Validation prose at runtime — it is a small,
+// hand-curated table citing the exact canonical Validation text for each entry. Extend this table only
+// after confirming the corresponding Field_ID's Validation in the Diagnostic Master v1.1; never generalize
+// with a regex over Validation text.
+const EXCLUSIVE_OPTION_BY_FIELD=Object.freeze({
+  DF065:{value:'NO_WORKAROUND'}, // OS_WORKAROUND — Validation: "0..N; 'No existe' excluye el resto."
+  DF073:{value:'NONE'} // OS_SENSITIVE_DATA — Validation: "'Ninguno' excluye otras opciones."
+});
+function exclusiveValueFor(fid){return EXCLUSIVE_OPTION_BY_FIELD[fid]?.value}
 function multiChoices(fid,items,val,{detail=false,other=false}={}){
-  const arr=selectedValues(val);const html=items.map(x=>`<div class="choice"><input type="checkbox" id="${fid}_${attr(x.value)}" value="${attr(x.value)}" data-multi="${fid}" ${arr.includes(String(x.value))?'checked':''}><label for="${fid}_${attr(x.value)}">${esc(x.label)}</label></div>`).join('');
-  return `<div class="choice-grid">${html}</div>${other?detailInput(fid,'Otro / detalle no cubierto por el catálogo'):detail?detailInput(fid,'Detalle / condición relevante'):''}`;
+  const arr=selectedValues(val);
+  const exclusiveValue=exclusiveValueFor(fid);
+  const html=items.map(x=>{
+    const isExclusive=exclusiveValue!==undefined&&String(x.value)===String(exclusiveValue);
+    return `<div class="choice"><input type="checkbox" id="${fid}_${attr(x.value)}" value="${attr(x.value)}" data-multi="${fid}" ${isExclusive?'data-exclusive="1"':''} ${arr.includes(String(x.value))?'checked':''}><label for="${fid}_${attr(x.value)}">${esc(x.label)}</label></div>`;
+  }).join('');
+  const otherOpen=other&&!!getAnswerDetail(fid);
+  const otherToggle=other?`<div class="choice"><input type="checkbox" id="${fid}__other_toggle" data-other-toggle="${fid}" ${otherOpen?'checked':''}><label for="${fid}__other_toggle">+ Otro</label></div>`:'';
+  const detailBox=other
+    ?`<div class="detail-wrap" data-detail-wrap="${fid}"${otherOpen?'':' style="display:none"'}>${detailInput(fid,'Otro / detalle no cubierto por el catálogo')}</div>`
+    :(detail?detailInput(fid,'Detalle / condición relevante'):'');
+  return `<div class="choice-grid">${html}${otherToggle}</div>${detailBox}`;
 }
 function segmented(fid,opts,val){
   const items=opts.length?opts:[{value:'YES',label:'Sí'},{value:'NO',label:'No'},{value:'UNKNOWN',label:'No sabe'}];
@@ -107,6 +126,23 @@ function bindCanonicalRenderer(){
   document.querySelectorAll('[data-set-unknown]').forEach(b=>b.onclick=()=>{setAnswer(b.dataset.setUnknown,'UNKNOWN');render()});
   const pairFids=[...new Set([...document.querySelectorAll('[data-pair-field]')].map(x=>x.dataset.pairField))];pairFids.forEach(fid=>document.querySelectorAll(`[data-pair-field="${fid}"]`).forEach(el=>el.addEventListener('change',()=>{const p={};document.querySelectorAll(`[data-pair-field="${fid}"]`).forEach(x=>p[x.dataset.pairPart]=x.value);setAnswer(fid,p)})));
   const ssFids=[...new Set([...document.querySelectorAll('[data-step-system-field]')].map(x=>x.dataset.stepSystemField))];ssFids.forEach(fid=>document.querySelectorAll(`[data-step-system-field="${fid}"]`).forEach(el=>el.addEventListener(el.tagName==='SELECT'?'change':'input',()=>{const p={};document.querySelectorAll(`[data-step-system-field="${fid}"]`).forEach(x=>p[x.dataset.stepSystemPart]=x.value);setAnswer(fid,p)})));
+  document.querySelectorAll('[data-other-toggle]').forEach(el=>el.addEventListener('change',()=>{
+    const fid=el.dataset.otherToggle,wrap=document.querySelector(`[data-detail-wrap="${fid}"]`);
+    if(!wrap)return;
+    wrap.style.display=el.checked?'':'none';
+    if(!el.checked)setAnswerDetail(fid,'');
+  }));
+  document.querySelectorAll('[data-multi][data-exclusive]').forEach(el=>el.addEventListener('change',()=>{
+    const fid=el.dataset.multi;
+    if(el.checked)document.querySelectorAll(`[data-multi="${fid}"]`).forEach(other=>{if(other!==el)other.checked=false});
+    setAnswer(fid,[...document.querySelectorAll(`[data-multi="${fid}"]:checked`)].map(x=>x.value));
+  }));
+  document.querySelectorAll('[data-multi]:not([data-exclusive])').forEach(el=>el.addEventListener('change',()=>{
+    const fid=el.dataset.multi,exclusiveEl=document.querySelector(`[data-multi="${fid}"][data-exclusive]`);
+    if(!el.checked||!exclusiveEl||!exclusiveEl.checked)return;
+    exclusiveEl.checked=false;
+    setAnswer(fid,[...document.querySelectorAll(`[data-multi="${fid}"]:checked`)].map(x=>x.value));
+  }));
 }
 const __auneaBaseBindForms=bindForms;
 bindForms=function(){__auneaBaseBindForms();bindCanonicalRenderer();};
