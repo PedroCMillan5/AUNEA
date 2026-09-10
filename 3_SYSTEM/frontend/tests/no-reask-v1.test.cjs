@@ -36,4 +36,12 @@ test('provenance falls back to a generic label and inline edit when Reuse_From d
   assert.doesNotMatch(html,/data-goto-source/);
   delete eng.answers.DF054;
 });
+
+test('DF020/DF029 render a UI-only disambiguation hint (route vs treatment) without touching Field_ID/Option_Set_ID/Write_Target',()=>{
+  const df020={Field_ID:'DF020',Pregunta_o_etiqueta_ES:'¿Qué variantes materiales cambian el recorrido del proceso?',Objetivo_concreto:'',Requiredness:'CONDITIONAL_90M',Ask_Mode:'CONDITIONAL_ASK',Reask_Policy:'NO_REASK',Branch_Rule_ID:'BR-BASE',Reuse_From:null,Option_Set_ID:'OS_VARIANT_DIMENSION',Validation:'',Ejemplo_ES:''};
+  const df029={Field_ID:'DF029',Pregunta_o_etiqueta_ES:'Clases de servicio o prioridad que cambian el tratamiento',Objetivo_concreto:'',Requiredness:'OPTIONAL_90M',Ask_Mode:'CONDITIONAL_ASK',Reask_Policy:'NO_REASK',Branch_Rule_ID:'BR-BASE',Reuse_From:null,Option_Set_ID:'OS_PRIORITY_CLASS',Validation:'',Ejemplo_ES:''};
+  const html020=ctx.renderQuestion(df020,eng),html029=ctx.renderQuestion(df029,eng);
+  assert.match(html020,/RUTA del proceso/);
+  assert.match(html029,/TRATAMIENTO operativo/);
+});
 // [AUNEA-UAT-NOREASK-010] END

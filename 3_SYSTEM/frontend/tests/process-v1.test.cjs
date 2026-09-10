@@ -37,4 +37,12 @@ test('reorder buttons are wired to moveStep in both directions',()=>{
   assert.match(code,/moveStep\(b\.dataset\.moveStepUp,-1\)/);
   assert.match(code,/moveStep\(b\.dataset\.moveStepDown,1\)/);
 });
+
+test('fr_cause_other and fr_workaround_other are collapsed behind a "+ Otro" toggle by default, matching the Bloque B pattern',()=>{
+  assert.match(code,/data-fr-other-toggle="fr_cause_other"/);
+  assert.match(code,/data-fr-other-toggle="fr_workaround_other"/);
+  assert.match(code,/data-fr-other-wrap="fr_cause_other"\$\{f\._details\.cause\?'':' style="display:none"'\}/);
+  assert.match(code,/data-fr-other-wrap="fr_workaround_other"\$\{f\._details\.workaround\?'':' style="display:none"'\}/);
+  assert.match(code,/\[data-fr-other-toggle\]/);
+});
 // [AUNEA-UAT-PROC-010] END

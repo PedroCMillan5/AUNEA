@@ -143,6 +143,14 @@ function reuseSourceInfo(f){
   return {label:srcField?srcField.Pregunta_o_etiqueta_ES:'un dato ya capturado en el estudio',page};
 }
 
+// DF020 (Known_Variants → RT_PROCESS.Known_Variants, Engine_Consumers incl. Risk) and DF029
+// (Service_Priority → RT_PROCESS.Service_Priority, Engine_Consumers: Pain/Economics) are canonically
+// distinct fields with distinct Write_Targets — never merge them. This is a UI-only disambiguation
+// hint grounded in that existing difference; it adds no new Field_ID/Option_Set_ID/Write_Target.
+const FIELD_CLARIFICATION_ES=Object.freeze({
+  DF020:'A diferencia de DF029: esto son variantes que cambian la RUTA del proceso (pasos distintos), no sólo cómo se trata un caso.',
+  DF029:'A diferencia de DF020: esto son clases que cambian el TRATAMIENTO operativo o económico de un caso, sin cambiar la ruta del proceso en sí.'
+});
 function renderQuestion(f,e){
   const val=effectiveValue(f,e),opts=fieldOptions(f.Option_Set_ID),required=f.Requiredness==='REQUIRED_90M',mode=String(f.Ask_Mode||'');
   const systemOnly=['DERIVED','SYSTEM_GENERATED'].includes(mode)||String(f.Control_UI).startsWith('DERIVED')||String(f.Control_UI).startsWith('SYSTEM_GENERATED');
@@ -157,7 +165,8 @@ function renderQuestion(f,e){
     body=`<div class="reuse-context"><div><span class="context-label">Dato reutilizado</span><strong>${esc(formatContextValue(f,val))}</strong><small>Tomado de: ${esc(src.label)}</small></div>${editBtn}</div>`;
   }
   else body=`${renderControl(f,val,opts,e)}${explicitReaskAllowed(f.Field_ID,e)?`<div class="field-help"><button type="button" class="link-btn" data-close-context="${f.Field_ID}">Cerrar edición y volver a reutilizar el dato</button></div>`:''}`;
-  return `<div class="question-card"><div class="question-head"><div><div class="question-title">${esc(f.Pregunta_o_etiqueta_ES)}</div><div class="question-purpose">${esc(f.Objetivo_concreto||'')}</div></div><div class="question-meta">${meta}</div></div><div class="question-body">${body}</div><div class="field-help"><b>Ejemplo:</b> ${esc(f.Ejemplo_ES||'—')} · <b>Validación:</b> ${esc(f.Validation||'—')}</div></div>`;
+  const clarification=FIELD_CLARIFICATION_ES[f.Field_ID];
+  return `<div class="question-card"><div class="question-head"><div><div class="question-title">${esc(f.Pregunta_o_etiqueta_ES)}</div><div class="question-purpose">${esc(f.Objetivo_concreto||'')}</div></div><div class="question-meta">${meta}</div></div><div class="question-body">${body}</div><div class="field-help"><b>Ejemplo:</b> ${esc(f.Ejemplo_ES||'—')} · <b>Validación:</b> ${esc(f.Validation||'—')}</div>${clarification?`<div class="field-help clarification-note">${esc(clarification)}</div>`:''}</div>`;
 }
 
 function bindNoReask(){
