@@ -1,6 +1,6 @@
 # [AUNEA-BE-DELIVERABLES-MODEL-010] START — Deliverable data contract
 # PURPOSE: Pydantic models for deliverable generation requests/artifacts/packs (client-facing PPT/report/proposal outputs derived from a selected ScenarioResult).
-# SOURCE: DEC-034; L8 Client Experience & Deliverables.
+# SOURCE: DEC-034; DEC-041; L8 Client Experience & Deliverables.
 # INPUTS: n/a (type definitions).
 # OUTPUTS: n/a (type definitions).
 # SIDE_EFFECTS: none.
@@ -15,7 +15,8 @@ class DeliverableRequest(BaseModel):
     client_name: str | None = None
     process_name: str | None = None
     next_step: str | None = None
-    include_internal_appendix: bool = True
+    # Client-facing deliverables are clean by default. Internal trace is explicit opt-in only.
+    include_internal_appendix: bool = False
 
 class DeliverableArtifact(BaseModel):
     name: str
