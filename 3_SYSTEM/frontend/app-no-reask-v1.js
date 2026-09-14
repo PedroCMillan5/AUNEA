@@ -64,7 +64,6 @@ function effectiveValue(f,e){
   if(valuePresent(reuse))return reuse;
   return explicit??'';
 }
-function derivedValue(fid,e){const f=schema?.fields?.find(x=>x.Field_ID===fid);return f?effectiveValue(f,e):(e.answers?.[fid]??'')}
 
 function branchActive(ruleId,e){
   const steps=activeSteps(e),fr=activeFrictions(e),answers=e.answers||{},tools=unique(steps.map(x=>x.tool)),frTypes=new Set(fr.map(x=>x.friction_type));
