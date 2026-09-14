@@ -16,9 +16,10 @@ from .pdf_export import PDFExporter
 from .solution_spec import SolutionSpecificationEngine
 
 # [AUNEA-BE-ORCH-DIAG-010] START — Deterministic diagnostic orchestration
-# PURPOSE: Execute Pain → Economics → Risk → Recommendation → Pricing → Scenario in the fixed, deterministic order; record an in-memory/persisted audit run per engine step.
-# SOURCE: DEC-034 / runtime contracts.
-# INPUTS: EngagementInput; ScenarioRequest for compare().
+# PURPOSE: Execute Pain → Economics → Risk → Recommendation → Pricing → Scenario in the fixed,
+# deterministic order; compare governed alternatives against an explicit immutable DiagnosticOutput snapshot.
+# SOURCE: DEC-034; DEC-041; runtime contracts.
+# INPUTS: EngagementInput; ScenarioRequest; optional explicit DiagnosticOutput for compare().
 # OUTPUTS: DiagnosticOutput; (DiagnosticOutput, ScenarioResult) tuple for compare().
 # SIDE_EFFECTS: audit/store writes when a SQLiteStore is configured.
 # CHANGE_RISK: CRITICAL.
@@ -58,11 +59,23 @@ class Orchestrator:
         if self.store: self.store.save_output(result)
         return result
 
-    def compare(self, engagement: EngagementInput, request: ScenarioRequest) -> tuple[DiagnosticOutput, ScenarioResult]:
-        base=self.diagnose(engagement)
+    def compare(self, engagement: EngagementInput, request: ScenarioRequest, base: DiagnosticOutput | None = None) -> tuple[DiagnosticOutput, ScenarioResult]:
+        # Legacy/internal callers may omit base and obtain a fresh deterministic diagnostic. External API
+        # callers pass the already-shown DiagnosticOutput so an alternative can never silently shift the
+        # optimal baseline. The hash + rule-bundle checks make stale inputs explicit.
+        if base is None:
+            base=self.diagnose(engagement)
+        else:
+            expected_hash=stable_hash(engagement.model_dump())
+            if base.engagement_id != engagement.engagement_id:
+                raise ValueError("diagnostic engagement does not match scenario engagement")
+            if base.input_snapshot_hash != expected_hash:
+                raise ValueError("diagnostic snapshot is stale for the current engagement input")
+            if base.rule_bundle_version != rule_bundle_version():
+                raise ValueError("diagnostic rule bundle is stale")
         ctx=EngineContext(engagement)
         compared=self.scenario.create(ctx,base.pain_results,base.economic_result,base.risk_result,base.recommendation,base.quote,request,base.optimal_scenario)
-        self._run(engagement.engagement_id,"ScenarioComparator.Override", request.model_dump(), compared.model_dump())
+        self._run(engagement.engagement_id,"ScenarioComparator.Override", {"scenario":request.model_dump(),"base_input_snapshot_hash":base.input_snapshot_hash,"base_rule_bundle_version":base.rule_bundle_version}, compared.model_dump())
         return base, compared
     # [AUNEA-BE-ORCH-DIAG-010] END
 
