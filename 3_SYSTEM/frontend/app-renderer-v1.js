@@ -25,7 +25,7 @@ function canonicalSelect(fid,opts,val,extra=''){
 }
 function searchableSelect(f,val,opts){
   const id=dataListId(f.Field_ID),label=opts.find(x=>String(x.value)===String(val))?.label||(isOtherAllowed(f)?String(val||''):'');
-  return `<div class="compound-control"><input data-search-answer="${f.Field_ID}" data-option-set="${attr(f.Option_Set_ID||'')}" data-allow-other="${isOtherAllowed(f)?'1':'0'}" list="${id}" value="${attr(label)}" placeholder="Buscar o seleccionar…"><datalist id="${id}">${opts.map(x=>`<option value="${attr(x.label)}" data-value="${attr(x.value)}"></option>`).join('')}</datalist></div>`;
+  return `<div class="compound-control"><div class="combo-wrap"><input data-search-answer="${f.Field_ID}" data-option-set="${attr(f.Option_Set_ID||'')}" data-allow-other="${isOtherAllowed(f)?'1':'0'}" list="${id}" value="${attr(label)}" placeholder="Buscar o seleccionar…"><datalist id="${id}">${opts.map(x=>`<option value="${attr(x.label)}" data-value="${attr(x.value)}"></option>`).join('')}</datalist></div></div>`;
 }
 // Ninguno/No-existe exclusivity is NOT derived by parsing Validation prose at runtime — it is a small,
 // hand-curated table citing the exact canonical Validation text for each entry. Extend this table only
@@ -50,9 +50,13 @@ function multiChoices(fid,items,val,{detail=false,other=false}={}){
     :(detail?detailInput(fid,'Detalle / condición relevante'):'');
   return `<div class="choice-grid">${html}${otherToggle}</div>${detailBox}`;
 }
-function segmented(fid,opts,val){
+// attrName lets a caller reuse this markup outside the generic answers-writing [data-segment] binder
+// (app-core.js) — e.g. the Process Step modal's automation_state, which must write to the step object,
+// not e.answers, and keeps its own [data-step-auto] binder. Sharing this one render function is what
+// consolidates the two segmented-control implementations; the different write targets stay separate.
+function segmented(fid,opts,val,attrName='data-segment'){
   const items=opts.length?opts:[{value:'YES',label:'Sí'},{value:'NO',label:'No'},{value:'UNKNOWN',label:'No sabe'}];
-  return `<div class="segmented">${items.map(x=>`<button type="button" class="segment ${String(val)===String(x.value)?'active':''}" data-segment="${fid}" data-value="${attr(x.value)}">${esc(x.label)}</button>`).join('')}</div>`;
+  return `<div class="segmented">${items.map(x=>`<button type="button" class="segment ${String(val)===String(x.value)?'active':''}" ${attrName}="${fid}" data-value="${attr(x.value)}">${esc(x.label)}</button>`).join('')}</div>`;
 }
 function numberParts(val){return (val&&typeof val==='object')?val:{value:val??'',unit:'',period:'',mode:''}}
 function numberCompound(f,val){

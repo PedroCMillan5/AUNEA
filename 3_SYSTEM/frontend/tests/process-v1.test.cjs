@@ -51,6 +51,19 @@ test('processPage defaults to "Revisión con cliente" once steps exist (UAT-VIS-
   assert.match(html.match(/<button class="subtab[^"]*" data-process-tab="pasos">/)[0],/active/);
 });
 
+test('automation_state reuses the shared segmented() renderer instead of a second hand-duplicated button-list template, keeping its own data-step-auto write target (the step object, not e.answers)',()=>{
+  assert.match(code,/segmented\('step_auto',auto,s\.automation_state,'data-step-auto'\)/);
+  assert.doesNotMatch(code,/auto\.map\(o=>`<button/,'the old duplicated inline template must be gone');
+  assert.match(code,/s\.automation_state=b\.dataset\.value/,'the local binder reads the same data-value attribute the shared renderer emits');
+});
+
+test('datalistControl carries the same combo-wrap dropdown affordance as searchableSelect, so a datalist-backed input never looks like a plain text field',()=>{
+  const html=ctx.datalistControl('step_actor','OS_ACTOR_ROLE','','Rol existente o nuevo');
+  assert.match(html,/class="combo-wrap"/);
+  assert.match(html,/list="dl_step_actor"/);
+  assert.match(html,/<datalist id="dl_step_actor"/);
+});
+
 test('fr_cause_other and fr_workaround_other are collapsed behind a "+ Otro" toggle by default, matching the Bloque B pattern',()=>{
   assert.match(code,/data-fr-other-toggle="fr_cause_other"/);
   assert.match(code,/data-fr-other-toggle="fr_workaround_other"/);
