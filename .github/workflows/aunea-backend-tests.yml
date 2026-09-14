@@ -1,3 +1,6 @@
+# [AUNEA-BUILD-CI-BACKEND-010] START — Backend CI
+# PURPOSE: Run backend pytest suite on every push/PR touching 3_SYSTEM/backend.
+# CHANGE_RISK: LOW.
 name: AUNEA Backend Tests
 
 on:
@@ -23,3 +26,4 @@ jobs:
           python-version: '3.12'
       - run: pip install '.[test]'
       - run: pytest -q
+# [AUNEA-BUILD-CI-BACKEND-010] END

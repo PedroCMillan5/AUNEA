@@ -1,0 +1,80 @@
+// [AUNEA-UAT-RUNTIME-TEST-010] START — Regresión de arranque modular
+// PURPOSE: Ejecutar recursos reales y recorrido de captura en un DOM aislado.
+// SOURCE: REQ-CRM-002, REQ-DIAG-002, REQ-FRIC-001, REQ-UX-001, REQ-UAT-001 y baseline v1.0.4.
+// INPUTS: frontend servido por HTTP; fixtures sintéticos locales.
+// OUTPUTS: assertions ejecutadas; no equivale a validación visual en Chromium.
+// SIDE_EFFECTS: servidores efímeros y almacenamiento de prueba en memoria.
+// CHANGE_RISK: HIGH.
+const {test} = require('node:test');
+const assert = require('node:assert/strict');
+const {JSDOM, VirtualConsole} = require('jsdom');
+const {createServer} = require('node:http');
+const fs = require('node:fs/promises');
+const path = require('node:path');
+const root = path.resolve(__dirname, '..');
+
+test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistencia aislada', async t => {
+  const requests=[], errors=[];
+  const server=createServer(async(req,res)=>{
+    const name=req.url==='/'?'index.html':req.url.slice(1);
+    requests.push(name);
+    try { const bytes=await fs.readFile(path.join(root,name));
+      res.setHeader('Content-Type',name.endsWith('.js')?'text/javascript':name.endsWith('.json')?'application/json':name.endsWith('.css')?'text/css':'text/html');
+      res.end(bytes);
+    } catch {res.statusCode=404;res.end('missing');}
+  });
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  t.after(()=>new Promise(resolve=>server.close(resolve)));
+  const url=`http://127.0.0.1:${server.address().port}/`;
+  const console=new VirtualConsole();console.on('jsdomError',e=>errors.push(e.message));
+  const dom=await JSDOM.fromURL(url,{resources:'usable',runScripts:'dangerously',virtualConsole:console,beforeParse(w){
+    w.structuredClone=structuredClone;
+    w.fetch=(input,options)=>fetch(new URL(input,url),options);
+    w.confirm=()=>true;
+    w.URL.createObjectURL=()=> 'blob:uat';w.URL.revokeObjectURL=()=>{};
+  }});
+  t.after(()=>dom.window.close());
+  const w=dom.window,d=w.document;
+  async function until(fn){const end=Date.now()+5000;while(!fn()){if(Date.now()>end)throw Error('Timeout: '+d.body.textContent.slice(-1000));await new Promise(r=>setTimeout(r,20));}}
+  const click=s=>{const el=d.querySelector(s);assert.ok(el,s);el.click();};
+  const fill=(s,v)=>{const el=d.querySelector(s);assert.ok(el,s);el.value=v;el.dispatchEvent(new w.Event('change',{bubbles:true}));};
+  await until(()=>d.querySelector('h1'));
+  assert.match(d.querySelector('h1').textContent,/Cockpit/);
+  assert.equal(d.querySelectorAll('script:not([src])').length,0);
+  for(const file of ['app-core.js','app-schema-v11.js','app-diagnostic-fields.js','app-renderer-v1.js','app-no-reask-v1.js','app-no-reask-capacity-v1.js','app-process-editor.js','app-results.js','app-process-v1.js','app-engine-adapter-v1.js','app-completion-model-v1.js','app-shell.js','app-mode-v1.js','app-persistence-uat-v1.js','app.js','styles.css','data/diagnostic-master.min.json'])assert.ok(requests.includes(file),file);
+  const schema=await (await fetch(url+'data/diagnostic-master.min.json')).json();
+  assert.equal(new Set(schema.fields.map(f=>f.Field_ID)).size,100);
+  assert.equal(schema.no_reask_rules.length,15);
+  assert.equal(typeof w.top,'object');assert.equal(typeof w.status,'string');
+  assert.ok(d.querySelector('#uiModeToggle'));
+  click('#uiModeToggle');assert.ok(d.body.classList.contains('mode-session'));assert.equal(d.querySelector('[data-page="admin"]'),null);
+  click('#uiModeToggle');assert.ok(d.body.classList.contains('mode-internal'));
+  click('[data-page="contactos"]');click('#addCompany');fill('#mCompany','UAT Runtime empresa');click('#modalSave');
+  click('#addContact');fill('#mContactName','UAT Contacto');fill('#mContactEmail','uat@example.invalid');click('#modalSave');
+  click('[data-contact-study]');
+  assert.match(d.querySelector('#breadcrumb').textContent,/UAT Runtime empresa/);
+  const reused=[...d.querySelectorAll('.reuse-context')].find(x=>x.textContent.includes('UAT Runtime empresa'));
+  assert.ok(reused,'DF001 debe mostrarse como contexto CRM reutilizado, no como pregunta vacía');
+  for(const page of ['inicio','contactos','estudios','proyectos','diagnostico','proceso','resultados','recomendacion','escenarios','quote','uat','admin']){click(`[data-page="${page}"]`);assert.ok(d.querySelector('h1'),page);}
+  click('[data-page="proceso"]');click('#addStep');fill('#step_name','Validar solicitud');fill('#step_type','ST02');fill('#step_actor','OPERATIONS');
+  fill('#step_active','12');fill('#step_wait','60');fill('#step_rework','3');click('#modalSave');
+  assert.equal(d.querySelector('#modalSave'),null);
+  click('[data-process-tab="fricciones"]');click('#addFriction');d.querySelector('#fr_type').selectedIndex=1;fill('#fr_signal','UAT: faltan datos en la solicitud');click('#modalSave');
+  assert.ok(d.querySelector('#modalSave'),'La fricción sin paso ni causa debe seguir abierta');
+  const stepChoice=d.querySelector('[data-v1-multi="fr_steps"]'),causeChoice=d.querySelector('[data-v1-multi="fr_causes"]');assert.ok(stepChoice);assert.ok(causeChoice);stepChoice.checked=true;causeChoice.checked=true;click('#modalSave');assert.equal(d.querySelector('#modalSave'),null);
+  click('[data-process-tab="revision"]');click('#confirmAsIs');click('#saveBtn');
+  const saved=JSON.parse(w.localStorage.getItem('aunea_internal_v1'));
+  assert.equal(saved.companies.length,1);assert.equal(saved.contacts.length,1);assert.equal(saved.engagements.length,1);
+  assert.equal(saved.engagements[0].processSteps[0].active_time,12);
+  assert.equal(saved.engagements[0].processSteps[0].wait_time,60);
+  assert.equal(saved.engagements[0].processSteps[0].rework_time,3);
+  assert.equal(saved.engagements[0].frictions[0].affected_steps.length,1);
+  assert.ok(saved.engagements[0].frictions[0].derived_pain_id,'La fricción debe persistir Pain derivado');
+  assert.equal(saved.engagements[0].confirmedAsIs,true);
+  assert.equal(saved.recoveryMeta.version,'AUNEA_INTERNAL_V1');
+  click('[data-page="contactos"]');click('[data-contact-study]');click('#saveBtn');
+  const saved2=JSON.parse(w.localStorage.getItem('aunea_internal_v1'));
+  assert.equal(saved2.companies.length,1);assert.equal(saved2.contacts.length,1);assert.equal(saved2.engagements.length,2);
+  assert.deepEqual(errors,[]);
+});
+// [AUNEA-UAT-RUNTIME-TEST-010] END

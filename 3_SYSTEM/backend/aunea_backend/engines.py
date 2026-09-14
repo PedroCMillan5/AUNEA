@@ -24,6 +24,13 @@ CONFIDENCE_ORDER = {
 class EngineContext:
     engagement: EngagementInput
 
+# [AUNEA-BE-ENGINE-PAIN-010] START — Pain Engine
+# PURPOSE: Classify pain state (CONFIRMED/INDICATED/INSUFFICIENT_EVIDENCE/NOT_DETECTED) and confidence from structured signals and evidence, never from browser-side inference.
+# SOURCE: DEC-034; RULE_RECOMMENDATION precondition chain.
+# INPUTS: EngineContext (EngagementInput.pains, pain_signals, evidence).
+# OUTPUTS: list[PainResult].
+# SIDE_EFFECTS: none.
+# CHANGE_RISK: CRITICAL.
 class PainEngine:
     def run(self, ctx: EngineContext) -> list[PainResult]:
         evidence = {e.evidence_id: e for e in ctx.engagement.evidence}
@@ -54,7 +61,15 @@ class PainEngine:
                 confidence = "LOW"
             out.append(PainResult(pain_id=p.pain_id, state=p.state, confidence=confidence, rationale=p.rationale or p.mechanism))
         return out
+# [AUNEA-BE-ENGINE-PAIN-010] END
 
+# [AUNEA-BE-ENGINE-ECON-010] START — Economics Engine
+# PURPOSE: Aggregate/deduplicate already-captured EconomicInput rows into active/wait hours, capacity value, direct loss, tool cost and realized cash saving. Never derives a formula from process-step times.
+# SOURCE: DEC-034; PROJECT_RULES economics discipline (waiting time is not active labour; released capacity is not cash saving).
+# INPUTS: EngineContext (EngagementInput.economics).
+# OUTPUTS: EconomicResult.
+# SIDE_EFFECTS: none.
+# CHANGE_RISK: CRITICAL.
 class EconomicsEngine:
     def run(self, ctx: EngineContext) -> EconomicResult:
         seen: set[str] = set()
@@ -81,7 +96,15 @@ class EconomicsEngine:
             direct_loss_eur_annual=round(direct, 2), current_tool_cost_eur_annual=round(tool, 2),
             realized_cash_saving_eur_annual=round(cash, 2), status=status
         )
+# [AUNEA-BE-ENGINE-ECON-010] END
 
+# [AUNEA-BE-ENGINE-RISK-010] START — Risk Engine
+# PURPOSE: Classify inherent/residual risk level (R0-R3) from already-entered RiskInput rows; never suggests which risks to add.
+# SOURCE: DEC-034; RULE_RECOMMENDATION risk gating.
+# INPUTS: EngineContext (EngagementInput.risks).
+# OUTPUTS: RiskResult.
+# SIDE_EFFECTS: none.
+# CHANGE_RISK: CRITICAL.
 class RiskEngine:
     def _level(self, r) -> str:
         if r.critical_trigger or (r.sensitive_or_high_impact and r.impact_1_5 >= 4): return "R3"
@@ -99,7 +122,15 @@ class RiskEngine:
         controls_ok = all(r.controls_present for r in ctx.engagement.risks)
         residual = inherent if controls_ok else ("R3" if inherent == "R3" else "R2" if rank[inherent] < 2 else inherent)
         return RiskResult(inherent_level=inherent, residual_level=residual, status="ASSESSED" if controls_ok else "CONTROL_GAP", rationale=f"Highest contextual risk={inherent}; controls_present={controls_ok}.")
+# [AUNEA-BE-ENGINE-RISK-010] END
 
+# [AUNEA-BE-ENGINE-RECOMMEND-010] START — Recommendation Engine
+# PURPOSE: Map confirmed/indicated pains to CapabilityRequirements via MAP_PAIN_CAPABILITY, then select ACT00-ACT06 action and functional/AI level.
+# SOURCE: DEC-034; RULE_RECOMMENDATION RR-01..RR-07.
+# INPUTS: EngineContext, pain_results, risk (RiskResult); registry tables MAP_PAIN_CAPABILITY, REF_CAPABILITY.
+# OUTPUTS: Recommendation.
+# SIDE_EFFECTS: none.
+# CHANGE_RISK: CRITICAL.
 class RecommendationEngine:
     def __init__(self):
         self.map_rows = table("MAP_PAIN_CAPABILITY")
@@ -156,7 +187,15 @@ class RecommendationEngine:
         if action in {"ACT01","ACT06","ACT00"}: n = None
         if action == "ACT02" and n is None: n = "N1"
         return Recommendation(action_id=action, functional_level_id=n, ai_level_id=ai if action in {"ACT03","ACT04","ACT05","ACT02"} else None, capabilities=caps, confidence="HIGH" if confirmed else "MEDIUM", rationale=rationale)
+# [AUNEA-BE-ENGINE-RECOMMEND-010] END
 
+# [AUNEA-BE-ENGINE-PRICING-010] START — Pricing Engine
+# PURPOSE: Turn action/level + commercial scope into a Quote (one-off/recurring/TCO, QuoteStatus), using registry pricing tables.
+# SOURCE: DEC-034; CFG_PRICING_POLICY, REF_PRICING, MAP_ACTION_PRODUCT, REF_PRODUCT_OPTION registry tables.
+# INPUTS: EngineContext, Recommendation, RiskResult, commercial scope override.
+# OUTPUTS: Quote.
+# SIDE_EFFECTS: none.
+# CHANGE_RISK: CRITICAL.
 class PricingEngine:
     def __init__(self):
         self.ref_price = by_id("REF_PRICING", "Pricing_ID")
@@ -221,7 +260,15 @@ class PricingEngine:
             tco_12m_eur=round(one+12*(recurring+tools),2), tco_36m_eur=round(one+36*(recurring+tools),2),
             status=status, pricing_confidence="HIGH" if status==QuoteStatus.READY else "MEDIUM", notes=notes
         )
+# [AUNEA-BE-ENGINE-PRICING-010] END
 
+# [AUNEA-BE-SCEN-CALC-020] START — Scenario Comparator
+# PURPOSE: Build optimal/override scenarios, coverage-by-pain, capability delta, scenario economics, delta-vs-optimal. Scenario Comparator.
+# SOURCE: DEC-034; RULE_SCENARIO_ECONOMICS.
+# INPUTS: EngineContext, pain_results, baseline economics/risk, optimal Recommendation/Quote, optional ScenarioRequest/optimal ScenarioResult.
+# OUTPUTS: ScenarioResult.
+# SIDE_EFFECTS: scenario UUID; no persistent writes.
+# CHANGE_RISK: CRITICAL.
 class ScenarioComparator:
     def __init__(self, pricing: PricingEngine, risk_engine: RiskEngine):
         self.pricing=pricing; self.risk_engine=risk_engine
@@ -257,7 +304,9 @@ class ScenarioComparator:
     def _scenario_econ(self, baseline: EconomicResult, assumptions: list[ScenarioAssumption], coverage: dict[str,CoverageState], ctx: EngineContext) -> EconomicResult:
         by_pain={a.pain_id:a for a in assumptions}
         recovered_active=recovered_wait=avoided_loss=cash=0.0
+        recovered_capacity_value=0.0
         has_active=False
+        has_capacity_rate=False
         pain_econ=defaultdict(list)
         for e in ctx.engagement.economics:
             if e.pain_id: pain_econ[e.pain_id].append(e)
@@ -268,28 +317,35 @@ class ScenarioComparator:
             for e in pain_econ.get(pid,[]):
                 if e.annual_active_hours is not None:
                     if a.future_active_hours is not None:
-                        recovered_active += max(0,e.annual_active_hours-a.future_active_hours); has_active=True
+                        recovered = max(0,e.annual_active_hours-a.future_active_hours); recovered_active += recovered; has_active=True
+                        if e.capacity_cost_rate_eur_hour is not None:
+                            recovered_capacity_value += recovered * e.capacity_cost_rate_eur_hour; has_capacity_rate=True
                     elif a.explicit_reduction_factor is not None:
-                        recovered_active += max(0,e.annual_active_hours*a.explicit_reduction_factor); has_active=True
+                        recovered = max(0,e.annual_active_hours*a.explicit_reduction_factor); recovered_active += recovered; has_active=True
+                        if e.capacity_cost_rate_eur_hour is not None:
+                            recovered_capacity_value += recovered * e.capacity_cost_rate_eur_hour; has_capacity_rate=True
                 if e.annual_wait_hours is not None and a.future_wait_hours is not None:
                     recovered_wait += max(0,e.annual_wait_hours-a.future_wait_hours)
                 if e.direct_loss_eur_annual is not None and a.preventable_loss_fraction is not None:
                     avoided_loss += max(0,e.direct_loss_eur_annual*a.preventable_loss_fraction)
             cash += a.realized_cash_saving_eur_annual or 0
-        ccrs=[e.capacity_cost_rate_eur_hour for e in ctx.engagement.economics if e.capacity_cost_rate_eur_hour is not None]
-        cap=round(recovered_active*(sum(ccrs)/len(ccrs)),2) if has_active and ccrs else None
+        # Capacity value is calculated row-by-row using the same recovered hours and rate pair.
+        # This keeps scenario arithmetic consistent with baseline EconomicsEngine and never infers cash.
+        cap=round(recovered_capacity_value,2) if has_active and has_capacity_rate else None
         status="COMPLETE" if assumptions else "NOT_CALCULATED"
         return EconomicResult(annual_active_hours=round(recovered_active,2),annual_wait_hours=round(recovered_wait,2),capacity_value_eur_annual=cap,direct_loss_eur_annual=round(avoided_loss,2),current_tool_cost_eur_annual=baseline.current_tool_cost_eur_annual,realized_cash_saving_eur_annual=round(cash,2),status=status)
 
     def create(self, ctx: EngineContext, pain_results: list[PainResult], baseline_econ: EconomicResult, baseline_risk: RiskResult, optimal_rec: Recommendation, optimal_quote: Quote, req: ScenarioRequest | None = None, optimal: ScenarioResult | None = None) -> ScenarioResult:
         if req is None:
-            action=optimal_rec.action_id; n=optimal_rec.functional_level_id; i=optimal_rec.ai_level_id; stype="OPTIMAL"; assumptions=[]; scope=None
+            action=optimal_rec.action_id; n=optimal_rec.functional_level_id; i=optimal_rec.ai_level_id; name="Optimal"; stype="OPTIMAL"; assumptions=[]; scope=None
         else:
-            action=req.action_id or optimal_rec.action_id; n=req.functional_level_id if req.functional_level_id is not None else optimal_rec.functional_level_id; i=req.ai_level_id if req.ai_level_id is not None else optimal_rec.ai_level_id; stype="OVERRIDE"; assumptions=req.assumptions; scope=req.commercial_scope
+            action=req.action_id or optimal_rec.action_id; n=req.functional_level_id if req.functional_level_id is not None else optimal_rec.functional_level_id; i=req.ai_level_id if req.ai_level_id is not None else optimal_rec.ai_level_id; name=req.scenario_name; stype="OVERRIDE"; assumptions=req.assumptions; scope=req.commercial_scope
+        # Build rec variant but retain capability requirement basis.
         rec=Recommendation(action_id=action,functional_level_id=n,ai_level_id=i,capabilities=optimal_rec.capabilities,confidence=optimal_rec.confidence,rationale=list(optimal_rec.rationale))
         included, blocked=self._caps_for(rec,n,i)
         coverage=self._coverage(pain_results,rec,included)
-        econ=self._scenario_econ(baseline_econ, assumptions, coverage, ctx)
+        econ=self._scenario_econ(baseline_econ, assumptions, coverage, ctx) if req is not None else self._scenario_econ(baseline_econ, [], coverage, ctx)
+        # Risk: preserve for identical control/authority; otherwise require reassessment.
         risk=baseline_risk
         status="COMPUTED"
         if req is not None and i != optimal_rec.ai_level_id:
@@ -312,4 +368,5 @@ class ScenarioComparator:
             }
         cap_delta["included"]=sorted(included); cap_delta["blocked"]=sorted(blocked)
         if i == "I3": status="BLOCKED"
-        return ScenarioResult(scenario_id=str(uuid.uuid4()),scenario_type=stype,action_id=action,functional_level_id=n,ai_level_id=i,coverage_by_pain=coverage,capability_delta=cap_delta,economics=econ,risk=risk,quote=quote,delta_vs_optimal=delta,status=status)
+        return ScenarioResult(scenario_id=str(uuid.uuid4()),scenario_name=name,scenario_type=stype,action_id=action,functional_level_id=n,ai_level_id=i,coverage_by_pain=coverage,capability_delta=cap_delta,economics=econ,risk=risk,quote=quote,delta_vs_optimal=delta,status=status)
+    # [AUNEA-BE-SCEN-CALC-020] END

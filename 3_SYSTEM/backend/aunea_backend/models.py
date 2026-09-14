@@ -1,3 +1,10 @@
+# [AUNEA-BE-MODEL-CORE-010] START — Engine I/O data contract
+# PURPOSE: Pydantic models for every engine input/output type (Evidence, PainSignalInput/Observation, EconomicInput/Result, RiskInput/Result, CommercialScope, EngagementInput, Recommendation, Quote, ScenarioRequest, DiagnosticOutput) shared across Pain/Economics/Risk/Recommendation/Pricing/Scenario and the API layer.
+# SOURCE: DEC-034; MAP_QUESTION_ENGINE_INPUT.
+# INPUTS: n/a (type definitions).
+# OUTPUTS: n/a (type definitions).
+# SIDE_EFFECTS: none.
+# CHANGE_RISK: CRITICAL.
 from __future__ import annotations
 from enum import Enum
 from typing import Any, Literal
@@ -158,8 +165,16 @@ class ScenarioRequest(BaseModel):
     assumptions: list[ScenarioAssumption] = Field(default_factory=list)
     commercial_scope: CommercialScope | None = None
 
+# [AUNEA-BE-SCEN-MODEL-010] START — Contrato de resultado de escenario
+# PURPOSE: Mantener el nombre del escenario en la respuesta tipada.
+# SOURCE: RT_SCENARIO.Scenario_Name; baseline aceptada v1.0.4.
+# INPUTS: ScenarioComparator.
+# OUTPUTS: ScenarioResult.
+# SIDE_EFFECTS: ninguna.
+# CHANGE_RISK: HIGH.
 class ScenarioResult(BaseModel):
     scenario_id: str
+    scenario_name: str
     scenario_type: str
     action_id: str
     functional_level_id: str | None
@@ -172,6 +187,8 @@ class ScenarioResult(BaseModel):
     delta_vs_optimal: dict[str, Any] = Field(default_factory=dict)
     status: str = "COMPUTED"
 
+# [AUNEA-BE-SCEN-MODEL-010] END
+
 class DiagnosticOutput(BaseModel):
     engagement_id: str
     rule_bundle_version: str
@@ -182,3 +199,4 @@ class DiagnosticOutput(BaseModel):
     recommendation: Recommendation
     quote: Quote
     optimal_scenario: ScenarioResult
+# [AUNEA-BE-MODEL-CORE-010] END

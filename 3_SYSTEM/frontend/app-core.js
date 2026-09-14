@@ -1,3 +1,10 @@
+// [AUNEA-FE-CORE-STATE-020] START — Estado, CRM y navegación
+// PURPOSE: Estado, CRM y navegación.
+// SOURCE: v1.0.4 aceptada, SHA256 a9fb7400b000d6289224610c88d4b7dc51f75f8ae97e20e4c3873a3a8e01d6e7; Diagnostic Master v1; DEC-034/038/040.
+// INPUTS: schema canónico, estado de engagement y acciones del usuario.
+// OUTPUTS: estado y vistas de captura/revisión.
+// SIDE_EFFECTS: DOM, almacenamiento local y solicitudes HTTP según responsabilidad.
+// CHANGE_RISK: HIGH.
 const STORAGE_KEY = 'aunea_internal_v1';
 const API_DEFAULT = 'http://localhost:8000';
 const NAV = [
@@ -14,8 +21,9 @@ let state = loadState();
 
 function blankState(){
   return {
-    version:'1.0',activePage:'inicio',activeEngagementId:null,dirty:false,
-    backendUrl:API_DEFAULT,backendOnline:false,
+    version:'1.0.1',activePage:'inicio',activeEngagementId:null,dirty:false,
+    backendUrl:API_DEFAULT,backendOnline:false,returnTo:null,
+    crmTab:'contactos',contactFilters:{status:'',hideLost:true},
     companies:[],contacts:[],opportunities:[],engagements:[],projects:[],audit:[]
   };
 }
@@ -32,7 +40,20 @@ function id(prefix){return `${prefix}-${Date.now()}-${Math.random().toString(36)
 function now(){return new Date().toISOString()}
 function esc(v){return String(v??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
 function attr(v){return esc(v).replace(/'/g,'&#39;')}
+// Obligatoriedad: never color-only, never an unexplained symbol on its own — a shaped mark (asterisk,
+// not a bare dot) plus a real title tooltip, always paired with the one-line legend openModal()/
+// stagePage() inject so the mark is explained in context, not just hoverable trivia.
+function requiredMark(){return '<span class="required-mark" tabindex="0" title="Campo obligatorio" aria-label="Campo obligatorio">*</span>'}
+const REQUIRED_LEGEND_HTML='<div class="field-help required-legend">Los campos marcados con '+requiredMark()+' son obligatorios.</div>';
 function fmtDate(v){if(!v)return '—';try{return new Date(v).toLocaleString('es-ES',{dateStyle:'short',timeStyle:'short'})}catch{return v}}
+function formatDateEs(v){
+  if(!v)return '—';
+  try{
+    const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(v);
+    const d=m?new Date(Number(m[1]),Number(m[2])-1,Number(m[3])):new Date(v);
+    return d.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'});
+  }catch{return v}
+}
 function currentEng(){return state.engagements.find(x=>x.id===state.activeEngagementId)||null}
 function companyById(id){return state.companies.find(x=>x.id===id)||null}
 function contactById(id){return state.contacts.find(x=>x.id===id)||null}
@@ -43,12 +64,16 @@ function normalizeArray(v){if(Array.isArray(v))return v;if(v===null||v===undefin
 
 async function init(){
   try{
-    const res=await fetch('data/diagnostic-master.min.json',{cache:'no-store'});
-    if(!res.ok)throw new Error(`HTTP ${res.status}`);
-    schema=await res.json();
-    render();checkBackend();
+      const res=await fetch('data/diagnostic-master.min.json',{cache:'no-store'});
+      if(!res.ok)throw new Error(`HTTP ${res.status}`);
+      schema=await res.json();
+    if(!schema || !schema.flow || !schema.option_sets) throw new Error('Diagnostic Master v1 incompleto o no válido');
+    render();
+    checkBackend();
   }catch(err){
-    document.getElementById('content').innerHTML=`<div class="card card-pad"><h2>No se ha podido cargar Diagnostic Master v1</h2><p class="subtitle">${esc(err.message)}</p><p>Ejecuta la carpeta mediante <b>run.bat</b> o <code>python -m http.server 5180</code>.</p></div>`;
+    const node=document.getElementById('content');
+    if(node) node.innerHTML=`<div class="card card-pad"><h2>No se ha podido iniciar AUNEA Internal v1.0.4</h2><p class="subtitle">${esc(err.message||err)}</p><p>Esta release incorpora el Diagnostic Master dentro del propio HTML. Si ves este mensaje, copia el texto exacto para diagnóstico.</p></div>`;
+    console.error('AUNEA_INIT_ERROR',err);
   }
 }
 async function checkBackend(){
@@ -69,15 +94,24 @@ function updateHeader(){
 function renderNav(){
   const n=document.getElementById('nav');n.innerHTML=NAV.map(x=>x.length===1?`<div class="nav-group">${x[0]}</div>`:`<button class="nav-item ${state.activePage===x[0]?'active':''}" data-page="${x[0]}"><span class="nav-icon">${x[1]}</span>${x[2]}</button>`).join('')
 }
-function render(){renderNav();updateHeader();const fn=pages[state.activePage]||pages.inicio;document.getElementById('content').innerHTML=fn();bindCommon()}
+function render(){renderNav();updateHeader();const fn=pages[state.activePage]||pages.inicio;document.getElementById('content').innerHTML=fn();bindCommon();postBind()}
 function setPage(page){
   if(['diagnostico','proceso','resultados','recomendacion','escenarios','quote'].includes(page)&&!currentEng()){toast('Abre o crea un estudio antes.');state.activePage='estudios';render();return}
   state.activePage=page;render()
 }
-function top(title,subtitle,actions=''){return `<div class="page-head"><div><div class="eyebrow">AUNEA INTERNAL · V1.0</div><h1>${esc(title)}</h1><p class="subtitle">${subtitle}</p></div><div class="head-actions">${actions}</div></div>`}
+function goToProcessFromStage(){
+  const e=currentEng();if(e)state.returnTo={page:'diagnostico',stageId:e.stageId};
+  setPage('proceso');
+}
+function returnToStage(){
+  const e=currentEng(),rt=state.returnTo;
+  if(e&&rt)e.stageId=rt.stageId;
+  state.returnTo=null;setPage('diagnostico');
+}
+function pageTop(title,subtitle,actions=''){return `<div class="page-head"><div><div class="eyebrow">AUNEA INTERNAL · V1.0.4</div><h1>${esc(title)}</h1><p class="subtitle">${subtitle}</p></div><div class="head-actions">${actions}</div></div>`}
 function section(title,sub,body,actions=''){return `<div class="card card-pad section"><div class="section-title"><div><h2>${esc(title)}</h2>${sub?`<p>${sub}</p>`:''}</div><div class="section-actions">${actions}</div></div>${body}</div>`}
 function statusClass(s=''){const z=s.toLowerCase();if(z.includes('confirm')||z.includes('listo')||z.includes('ganado'))return'green';if(z.includes('diagn')||z.includes('reun'))return'amber';if(z.includes('propuesta')||z.includes('resultado'))return'blue';if(z.includes('perdido')||z.includes('bloq'))return'red';return''}
-function status(s){return `<span class="status ${statusClass(s)}">${esc(s||'Borrador')}</span>`}
+function statusBadge(s){return `<span class="status ${statusClass(s)}">${esc(s||'Borrador')}</span>`}
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(window.__toast);window.__toast=setTimeout(()=>t.classList.remove('show'),2600)}
 
 function bindCommon(){
@@ -100,12 +134,17 @@ function bindForms(){
   document.querySelectorAll('[data-segment]').forEach(b=>b.onclick=()=>{setAnswer(b.dataset.segment,b.dataset.value);render()});
   document.querySelectorAll('[data-remove-company]').forEach(b=>b.onclick=()=>removeCompany(b.dataset.removeCompany));
   document.querySelectorAll('[data-remove-contact]').forEach(b=>b.onclick=()=>removeContact(b.dataset.removeContact));
+  document.querySelectorAll('[data-edit-contact]').forEach(b=>b.onclick=()=>editContact(b.dataset.editContact));
   document.querySelectorAll('[data-contact-study]').forEach(b=>b.onclick=()=>createStudyFromContact(b.dataset.contactStudy));
+  document.querySelectorAll('[data-crm-tab]').forEach(b=>b.onclick=()=>{state.crmTab=b.dataset.crmTab;render()});
+  document.querySelectorAll('[data-crm-status-filter]').forEach(el=>el.addEventListener('change',()=>{state.contactFilters.status=el.value;render()}));
+  document.querySelectorAll('[data-crm-hide-lost]').forEach(el=>el.addEventListener('change',()=>{state.contactFilters.hideLost=el.checked;render()}));
   document.querySelectorAll('[data-edit-step]').forEach(b=>b.onclick=()=>openStepModal(b.dataset.editStep));
   document.querySelectorAll('[data-delete-step]').forEach(b=>b.onclick=()=>supersedeStep(b.dataset.deleteStep));
   document.querySelectorAll('[data-edit-friction]').forEach(b=>b.onclick=()=>openFrictionModal(b.dataset.editFriction));
   document.querySelectorAll('[data-delete-friction]').forEach(b=>b.onclick=()=>supersedeFriction(b.dataset.deleteFriction));
   document.querySelectorAll('[data-process-tab]').forEach(b=>b.onclick=()=>{currentEng().processTab=b.dataset.processTab;render()});
+  document.querySelectorAll('[data-goto-process]').forEach(b=>b.onclick=()=>goToProcessFromStage());
 }
 
 function addCompany(){
@@ -122,14 +161,39 @@ function addContact(){
 }
 function removeCompany(idv){if(!confirm('¿Archivar esta empresa del prototipo local?'))return;state.companies=state.companies.filter(x=>x.id!==idv);state.contacts=state.contacts.filter(x=>x.companyId!==idv);markDirty('Empresa archivada');render()}
 function removeContact(idv){if(!confirm('¿Archivar este contacto del prototipo local?'))return;state.contacts=state.contacts.filter(x=>x.id!==idv);markDirty('Contacto archivado');render()}
+function contactHistory(ct){return state.audit.filter(a=>a.message.includes(ct.id)||a.message.includes(ct.name)).slice(0,20)}
+function editContact(contactId){
+  const ct=contactById(contactId);if(!ct)return;
+  const statuses=['Nuevo','Contactado','Reunión','Oportunidad','Diagnóstico','Propuesta','Ganado','Perdido','En pausa'];
+  const sources=['Red personal','Referido','Inbound','Cliente existente','Otro'];
+  const companyOpts=state.companies.map(c=>`<option value="${c.id}" ${c.id===ct.companyId?'selected':''}>${esc(c.name)}</option>`).join('');
+  const history=contactHistory(ct);
+  const body=`<div class="form-grid"><div class="field"><label>Empresa</label><select id="mContactCompany">${companyOpts}</select></div><div class="field"><label>Nombre</label><input id="mContactName" value="${attr(ct.name)}"></div><div class="field"><label>Cargo / rol</label><input id="mContactRole" value="${attr(ct.role||'')}"></div><div class="field"><label>Email</label><input id="mContactEmail" type="email" value="${attr(ct.email||'')}"></div><div class="field"><label>Teléfono</label><input id="mContactPhone" value="${attr(ct.phone||'')}"></div><div class="field"><label>Estado del contacto</label><select id="mContactStatus">${statuses.map(s=>`<option ${s===ct.status?'selected':''}>${s}</option>`).join('')}</select></div><div class="field"><label>Origen</label><select id="mContactSource">${sources.map(s=>`<option ${s===ct.source?'selected':''}>${s}</option>`).join('')}</select></div><div class="field full"><label>Próxima acción</label><input id="mNextAction" value="${attr(ct.nextAction||'')}" placeholder="Ej. Agendar llamada"></div></div><div class="field-help" style="margin-top:10px"><b>Histórico</b></div>${history.length?history.map(a=>`<div class="audit-line"><b>${fmtDate(a.ts)}</b> · ${esc(a.message)}</div>`).join(''):'<div class="empty"><p>Sin cambios registrados todavía para este contacto.</p></div>'}`;
+  openModal('Editar contacto',body,()=>{
+    const before={...ct};
+    ct.companyId=document.getElementById('mContactCompany').value;
+    ct.name=document.getElementById('mContactName').value.trim()||ct.name;
+    ct.role=document.getElementById('mContactRole').value;
+    ct.email=document.getElementById('mContactEmail').value;
+    ct.phone=document.getElementById('mContactPhone').value;
+    ct.status=document.getElementById('mContactStatus').value;
+    ct.source=document.getElementById('mContactSource').value;
+    ct.nextAction=document.getElementById('mNextAction').value;
+    [['name','Nombre'],['role','Cargo'],['email','Email'],['phone','Teléfono'],['status','Estado'],['source','Origen'],['nextAction','Próxima acción']].forEach(([k,label])=>{
+      if((before[k]||'')!==(ct[k]||''))audit(`Contacto ${ct.name} editado: ${label} "${before[k]||'—'}"→"${ct[k]||'—'}"`);
+    });
+    markDirty();closeModal();render();
+  },'Guardar cambios');
+}
 function createStudyFromContact(contactId){
-  const ct=contactById(contactId),cp=companyById(ct.companyId);const e={id:id('ENG'),companyId:cp.id,contactIds:[ct.id],title:`Diagnóstico · ${cp.name}`,processName:'',status:'En preparación',stageId:'S01',answers:{DF001:cp.name,DF002:cp.sector||'',DF005:cp.country||'',DF006:ct.id},processSteps:[],frictions:[],risks:[],economicInputs:[],processTab:'pasos',confirmedAsIs:false,diagnosticOutput:null,scenarioResults:[],selectedScenario:null,createdAt:now(),updatedAt:now()};state.engagements.unshift(e);state.activeEngagementId=e.id;state.activePage='diagnostico';markDirty('Engagement creado desde contacto');render()
+  const ct=contactById(contactId),cp=companyById(ct.companyId);const e={id:id('ENG'),companyId:cp.id,contactIds:[ct.id],title:`Diagnóstico · ${cp.name}`,processName:'',status:'En preparación',stageId:'S01',answers:{DF001:cp.name,DF002:cp.sector||'',DF005:cp.country||'',DF006:ct.id},processSteps:[],frictions:[],risks:[],economicInputs:[],processTab:'',confirmedAsIs:false,diagnosticOutput:null,scenarioResults:[],selectedScenario:null,createdAt:now(),updatedAt:now()};state.engagements.unshift(e);ct.lastInteraction=now();state.activeEngagementId=e.id;state.activePage='diagnostico';markDirty('Engagement creado desde contacto');render()
 }
 function newStudy(){
   if(!state.contacts.length)return toast('Crea primero un contacto.');
   const opts=state.contacts.map(c=>`<option value="${c.id}">${esc(companyById(c.companyId)?.name||'')} · ${esc(c.name)}</option>`).join('');
   openModal('Nuevo estudio',`<div class="form-grid"><div class="field full"><label>Contacto principal</label><select id="mStudyContact">${opts}</select></div><div class="field full"><label>Nombre del estudio</label><input id="mStudyTitle" placeholder="Ej. Diagnóstico de intake comercial"></div></div>`,()=>{const ct=contactById(document.getElementById('mStudyContact').value);createStudyFromContact(ct.id);const e=currentEng(),title=document.getElementById('mStudyTitle')?.value?.trim();if(title)e.title=title;closeModal();render()})
 }
+
 
 function createProjectFromEngagement(){
   const e=currentEng(); if(!e)return;
@@ -140,7 +204,9 @@ function createProjectFromEngagement(){
 }
 
 function openModal(title,body,onSave,saveLabel='Guardar'){
-  document.getElementById('modalRoot').innerHTML=`<div class="modal-backdrop"><div class="modal"><div class="modal-head"><h2>${esc(title)}</h2><button class="icon-btn" id="modalClose">×</button></div><div class="modal-body">${body}</div><div class="modal-foot"><button class="btn" id="modalCancel">Cancelar</button><button class="btn btn-primary" id="modalSave">${esc(saveLabel)}</button></div></div></div>`;
+  const legend=body.includes('required-mark')?REQUIRED_LEGEND_HTML:'';
+  document.getElementById('modalRoot').innerHTML=`<div class="modal-backdrop"><div class="modal"><div class="modal-head"><h2>${esc(title)}</h2><button class="icon-btn" id="modalClose">×</button></div><div class="modal-body">${legend}${body}</div><div class="modal-foot"><button class="btn" id="modalCancel">Cancelar</button><button class="btn btn-primary" id="modalSave">${esc(saveLabel)}</button></div></div></div>`;
   document.getElementById('modalClose').onclick=closeModal;document.getElementById('modalCancel').onclick=closeModal;document.getElementById('modalSave').onclick=onSave
 }
 function closeModal(){document.getElementById('modalRoot').innerHTML=''}
+// [AUNEA-FE-CORE-STATE-020] END

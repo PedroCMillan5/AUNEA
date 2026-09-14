@@ -1,3 +1,10 @@
+# [AUNEA-BE-DELIVERABLES-010] START — Deliverables Engine
+# PURPOSE: Render a selected ScenarioResult + DiagnosticOutput into client-facing markdown/HTML/JSON artifacts (summary, report, proposal, appendix) with a readiness/blocking status. Never recomputes engine results, only formats already-computed output.
+# SOURCE: DEC-034; L8 Client Experience & Deliverables.
+# INPUTS: DiagnosticOutput, DeliverableRequest.
+# OUTPUTS: DeliverablePack (artifacts, status, issues).
+# SIDE_EFFECTS: none (pure formatting).
+# CHANGE_RISK: HIGH.
 from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -168,3 +175,4 @@ Missing evidence remains a follow-up item and is never silently converted into a
             DeliverableArtifact(name="deliverable_snapshot.json",media_type="application/json",content=__import__('json').dumps(snapshot,ensure_ascii=False,indent=2)),
         ]
         return DeliverablePack(pack_id=f"DEL-{stable_hash({'engagement_id':diagnostic.engagement_id,'scenario_id':scenario.scenario_id,'status':status})[:12]}",engagement_id=diagnostic.engagement_id,selected_scenario_id=scenario.scenario_id,status=status,rule_bundle_version=rule_bundle_version(),created_at=datetime.now(timezone.utc).isoformat(),issues=issues,artifacts=artifacts)
+# [AUNEA-BE-DELIVERABLES-010] END
