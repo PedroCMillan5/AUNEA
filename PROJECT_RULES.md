@@ -1,8 +1,8 @@
 # AUNEA — Project Rules
 
 Status: ACTIVE  
-Version: 1.1  
-Date: 2026-09-09
+Version: 1.2  
+Date: 2026-09-15
 
 This file is the repository-side operating contract for future work on AUNEA Internal.
 
@@ -44,7 +44,10 @@ The canonical diagnostic is maintained in Drive under:
 `02_NEGOCIO_CATALOGO/01_MAPA_OFERTA/00_DIAGNOSTIC_CANONICO`.
 
 Current canonical asset at this version of the rules:
-`AUNEA_DIAGNOSTIC_DATABASE_v0.9_DIAGNOSTIC_MASTER_V1.xlsx`.
+`AUNEA_DIAGNOSTIC_DATABASE_v0.9.1_DIAGNOSTIC_MASTER_V1.1.xlsx`  
+Drive ID: `1qKjbJviEvUQnHOGCHy4VkIx0dbdkoJj1`.
+
+The previous `AUNEA_DIAGNOSTIC_DATABASE_v0.9_DIAGNOSTIC_MASTER_V1` is ARCHIVED and no longer governs new capture. Legacy runtime/storage snapshot names do not change the human canonical source.
 
 Every diagnostic field must define, where applicable:
 - canonical ID;
