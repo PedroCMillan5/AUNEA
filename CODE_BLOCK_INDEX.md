@@ -72,6 +72,8 @@ AUNEA Internal V1 está en `REVIEW` con runtime Master v1.1, renderer, No-Reask,
 | AUNEA-UAT-CRM-010 | 3_SYSTEM/frontend/tests/crm-v1.test.cjs | Regresión de CRM: editContact, historial derivado de state.audit, filtros de contactos, subtabs Contactos/Empresas. | DEC-006/007 | fixture | assertions | none | HIGH | node test | REVIEW |
 | AUNEA-UAT-ECON-010 | 3_SYSTEM/frontend/tests/economic-builder-v1.test.cjs | Regresión de copy/etiquetas del builder económico (evidence_quality, driver→Name, provenance informativa DF078, guardrails de no-anualización). | I18N_LABELS_ES; REF_ECON_DRIVER | fixture | assertions | none | MEDIUM | node test | REVIEW |
 | AUNEA-UAT-RESULTS-010 | 3_SYSTEM/frontend/tests/results-v1.test.cjs | Regresión de Resultados/Recomendación/Escenarios/Cotización: ausencia de código muerto, traducción ES de enums de riesgo/pain/quote. | I18N_LABELS_ES | fixture | assertions | none | HIGH | node test | REVIEW |
+| AUNEA-FE-PROC-HELP-025 | 3_SYSTEM/frontend/app-process-help-v1.js | Ayuda contextual canónica del editor de Process Step (Objetivo/Validación/Ejemplo del Process Step Model + campo diagnóstico coincidente); presentación únicamente, no cambia semántica ni estado. | Diagnostic Master v1.1 00_PROCESS_STEP_MODEL_V1; UAT-VIS-031 | schema.process_step_model + DOM del modal de paso | bloques de ayuda anexados | DOM (post-render de openStepModal) | MEDIUM | process-help-v1.test.cjs | REVIEW |
+| AUNEA-UAT-PROC-HELP-015 | 3_SYSTEM/frontend/tests/process-help-v1.test.cjs | Regresión de la ayuda contextual del Process Step (contenido derivado, sin inventar objetivo, no interfiere con openStepModal). | n/a | fixture | assertions | none | MEDIUM | node test | REVIEW |
 
 ## Retired Block_IDs (do not reuse)
 
