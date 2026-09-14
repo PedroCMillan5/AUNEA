@@ -1,15 +1,16 @@
-# [AUNEA-UAT-GATE-010] START — V1 acceptance gate
-# PURPOSE: Run backend regression/canonical UAT and frontend modular/runtime UX tests on the same commit.
-# SOURCE: PROJECT_RULES.md; REQ-UAT-001/002/003; V1 acceptance criteria.
+# [AUNEA-UAT-GATE-010] START — AUNEA Internal V2 REVIEW acceptance gate
+# PURPOSE: Run backend regression/canonical UAT and frontend modular/runtime UX tests on the same commit before any promotion decision.
+# SOURCE: PROJECT_RULES.md; REQ-UAT-001/002/003; AUNEA Internal v2.0.0 REVIEW acceptance criteria.
 # INPUTS: repository head.
-# OUTPUTS: independent backend/frontend PASS/FAIL checks.
+# OUTPUTS: independent backend/frontend PASS/FAIL jobs in one gate.
 # SIDE_EFFECTS: GitHub Actions only; no production data.
 # CHANGE_RISK: CRITICAL.
-name: AUNEA V1 Acceptance Gate
+name: AUNEA Internal V2 REVIEW Acceptance Gate
 
 on:
   push:
     branches:
+      - cleanup/v2.0.0-core
       - reconcile/frontend-v1.0.4-source
   pull_request:
     branches:
