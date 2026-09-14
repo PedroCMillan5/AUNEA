@@ -32,7 +32,7 @@ const pages={
 function postBind(){
   const by=id=>document.getElementById(id);
   if(by('newStudy'))by('newStudy').onclick=newStudy;if(by('homeNewContact'))by('homeNewContact').onclick=addContact;if(by('addCompany'))by('addCompany').onclick=addCompany;if(by('addContact'))by('addContact').onclick=addContact;
-  if(by('addStep'))by('addStep').onclick=()=>openStepModal();if(by('addFriction'))by('addFriction').onclick=()=>openFrictionModal();if(by('confirmAsIs'))by('confirmAsIs').onclick=confirmAsIs;
+  if(by('addStep'))by('addStep').onclick=()=>openStepModal();if(by('addMultipleSteps'))by('addMultipleSteps').onclick=addMultipleSteps;if(by('addFriction'))by('addFriction').onclick=()=>openFrictionModal();if(by('confirmAsIs'))by('confirmAsIs').onclick=confirmAsIs;
   if(by('addRisk'))by('addRisk').onclick=addRisk;if(by('addEconomic'))by('addEconomic').onclick=addEconomic;if(by('runDiag'))by('runDiag').onclick=runDiagnosis;if(by('runDiagHeader'))by('runDiagHeader').onclick=runDiagnosis;
   if(by('prevStage'))by('prevStage').onclick=()=>{const e=currentEng(),i=schema.flow.findIndex(x=>x.Stage_ID===e.stageId);if(i>0){e.stageId=schema.flow[i-1].Stage_ID;markDirty();render()}};
   if(by('nextStage'))by('nextStage').onclick=()=>{const e=currentEng(),i=schema.flow.findIndex(x=>x.Stage_ID===e.stageId);if(i<schema.flow.length-1){e.stageId=schema.flow[i+1].Stage_ID;markDirty();render()}};
