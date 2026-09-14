@@ -85,7 +85,7 @@ function branchActive(ruleId,e){
     case 'BR-RISK':return (e.risks||[]).length>0||['4','5',4,5].includes(answers.DF018)||valuePresent(answers.DF073)||valuePresent(answers.DF074)||valuePresent(answers.DF090);
     case 'BR-AI':return valuePresent(answers.DF088)||normalizeArray(answers.DF008).some(v=>/AI|IA/i.test(String(v)));
     case 'BR-AGENT':return valuePresent(answers.DF075)&&valuePresent(answers.DF088);
-    case 'BR-CAPACITY':return valuePresent(answers.DF076)||valuePresent(answers.DF077)||(e.economicInputs||[]).some(x=>scalarNumber(x.capacity_rate_eur_hour)>0);
+    case 'BR-CAPACITY':return valuePresent(answers.DF076)||valuePresent(answers.DF077)||(e.economicInputs||[]).some(x=>scalarNumber(x.capacity_cost_rate_eur_hour)>0);
     case 'BR-DIRECTLOSS':return valuePresent(answers.DF063)||fr.some(x=>scalarNumber(x.direct_loss)>0)||(e.economicInputs||[]).some(x=>scalarNumber(x.direct_loss_eur_annual)>0);
     case 'BR-TOOLCOST':return valuePresent(answers.DF083)||(e.economicInputs||[]).some(x=>scalarNumber(x.current_tool_cost_eur_annual)>0);
     case 'BR-REVENUE':return valuePresent(answers.DF084);
