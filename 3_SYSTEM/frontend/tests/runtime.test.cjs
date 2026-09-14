@@ -1,6 +1,6 @@
 // [AUNEA-UAT-RUNTIME-TEST-010] START — Regresión de arranque modular
 // PURPOSE: Ejecutar recursos reales y recorrido de captura en un DOM aislado.
-// SOURCE: REQ-CRM-002, REQ-DIAG-002, REQ-FRIC-001, REQ-UX-001, REQ-UAT-001 y baseline v1.0.4.
+// SOURCE: REQ-CRM-002, REQ-DIAG-002, REQ-FRIC-001, REQ-UX-001, REQ-UAT-001; baseline v1.0.4 + V2.0.0 REVIEW runtime.
 // INPUTS: frontend servido por HTTP; fixtures sintéticos locales.
 // OUTPUTS: assertions ejecutadas; no equivale a validación visual en Chromium.
 // SIDE_EFFECTS: servidores efímeros y almacenamiento de prueba en memoria.
@@ -40,8 +40,11 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   const fill=(s,v)=>{const el=d.querySelector(s);assert.ok(el,s);el.value=v;el.dispatchEvent(new w.Event('change',{bubbles:true}));};
   await until(()=>d.querySelector('h1'));
   assert.match(d.querySelector('h1').textContent,/Cockpit/);
+  assert.match(d.title,/AUNEA Internal v2\.0\.0 REVIEW/);
+  assert.match(d.querySelector('.brand span').textContent,/V2\.0\.0 · REVIEW/);
   assert.equal(d.querySelectorAll('script:not([src])').length,0);
-  for(const file of ['app-core.js','app-schema-v11.js','app-diagnostic-fields.js','app-renderer-v1.js','app-no-reask-v1.js','app-no-reask-capacity-v1.js','app-process-editor.js','app-results.js','app-process-v1.js','app-engine-adapter-v1.js','app-completion-model-v1.js','app-shell.js','app-mode-v1.js','app-persistence-uat-v1.js','app.js','styles.css','data/diagnostic-master.min.json'])assert.ok(requests.includes(file),file);
+  for(const file of ['app-core.js','app-i18n-labels-v1.js','app-backend-discovery-v1.js','app-schema-v11.js','app-diagnostic-fields.js','app-renderer-v1.js','app-no-reask-v1.js','app-process-editor.js','app-results.js','app-process-v1.js','app-process-help-v1.js','app-engine-adapter-v1.js','app-completion-model-v1.js','app-shell.js','app-mode-v1.js','app-persistence-uat-v1.js','app-uat-fixtures-v1.js','app.js','styles.css','data/diagnostic-master.min.json'])assert.ok(requests.includes(file),file);
+  assert.ok(!requests.includes('app-no-reask-capacity-v1.js'),'retired capacity wrapper must not be part of the runtime');
   const schema=await (await fetch(url+'data/diagnostic-master.min.json')).json();
   assert.equal(new Set(schema.fields.map(f=>f.Field_ID)).size,100);
   assert.equal(schema.no_reask_rules.length,15);
