@@ -1,7 +1,7 @@
-# AUNEA Internal V1 — candidato funcional en REVIEW
+# AUNEA Internal V2.0 REVIEW — CORE
 
 Status: REVIEW / automated acceptance PASS; native browser/Windows UAT pending
-Date: 2026-09-10
+Date: 2026-09-14
 
 ## Fuente de verdad
 
@@ -37,6 +37,19 @@ El runtime efectivo conserva la proyección aceptada y aplica únicamente el del
 - Pantalla de cierre real en la última etapa: resumen factual de proceso/fricciones/riesgos/economics/obligatorios/siguiente paso, con CTA único `CALCULAR DIAGNÓSTICO Y RECOMENDACIÓN` cuando la captura está completa.
 - Auditoría automática de gobernanza de Block_ID sobre todo el runtime vigente (frontend, backend, build/launcher, CI) — `tests/block-id-audit.test.cjs`.
 
+### V2.0 CORE (esta iteración)
+
+- Progressive disclosure en los editores de Process Step (6 grupos), Fricción/Riesgo/Economics (2 capas cada uno) — mismos campos canónicos, sólo presentación.
+- "Añadir varios pasos" (bulk, técnico/vacío) distinto de "+ Crear nuevo paso como siguiente" (enlaza `normal_next_step` retroactivamente); ambos coexisten.
+- Ayuda contextual discreta (icono + popover) sobre `process_step_model`/`friction_model` — nunca un bloque de texto siempre visible.
+- Modo Sesión reforzado: códigos técnicos (Pain_ID, Action_ID, N/I) nunca protagonistas; se resuelven siempre contra `REF_ACTION`/`REF_LEVEL_FUNC`/`REF_LEVEL_AI`.
+- **PDF real**: `aunea_backend/pdf_export.py` (reportlab) genera un `application/pdf` AUNEA-branded desde el mismo `DiagnosticOutput`/`ScenarioResult` ya calculado — nunca recalcula reglas (DEC-041). El botón "Descargar PDF" sustituye por completo el antiguo `window.print()`.
+- **Sistema temporal de UAT** (exclusivamente Modo Interno, página `UAT / QA`): catálogo de 15 casos sintéticos cargables (`UAT-01`…`UAT-15`, prefijo `UAT-` en toda la jerarquía), "Limpiar datos UAT" (elimina sólo entidades `UAT-`, nunca datos reales) y una herramienta de stress "Generar N pasos UAT" (10/25/50, probado en navegador real hasta 70 pasos totales sin errores).
+
+## Sistema de plantillas — diferido
+
+Process/Step/Friction/Risk/Economics Templates, Pattern Library, Template Contract, `Template_ID`/`Template_Version` y la procedencia sourced-from-template quedan explícitamente **fuera de alcance** de V2.0 CORE. Llegarán mediante una especificación funcional separada. Su ausencia no bloquea este candidato.
+
 ## Regla de cálculo
 
 Pain, Economics, Risk, Recommendation, Pricing y Scenario oficiales se calculan exclusivamente en AUNEA Backend. El navegador prepara inputs, llama al backend y representa outputs. La recomendación óptima no se sobrescribe al comparar escenarios.
@@ -64,15 +77,16 @@ Recorrido mínimo: Contactos → empresa → contacto → crear estudio → Diag
 
 El workflow `AUNEA V1 Acceptance Gate` ejecuta backend y frontend sobre el mismo commit.
 
-Último gate automatizado tras el refactor UX/funcional (Bloques A-L):
+Último gate automatizado tras V2.0 CORE (Fases 0-9):
 
-- Frontend: 81/81 PASS (incluye la auditoría de Block_ID sobre todo el runtime vigente).
-- Backend: 27/27 PASS.
+- Frontend: 136/136 PASS (incluye la auditoría de Block_ID sobre todo el runtime vigente).
+- Backend: 34/34 PASS (incluye 7 tests dedicados de exportación PDF).
 - UAT canónica incluida en backend: 5 fixtures / 26 assertions / 26 PASS / 0 FAIL.
 - Runtime frontend: carga HTTP de módulos, CRM, No-Reask, cambio Sesión/Interno, Process Steps, Frictions, Pain derivado, persistencia y recovery snapshot.
+- Catálogo UAT-01…15: verificado contra el Diagnostic Master real que UAT-12/13 son genuinamente `readyToCalculate` (cero obligatorios pendientes, cinco engine gates resueltos) sin precargar `diagnosticOutput`.
 
 Los tests DOM/HTTP no sustituyen una comprobación visual real en Chromium/Edge ni la prueba nativa final en Windows.
 
 ## Estado de promoción
 
-Esta rama permanece en `REVIEW`. No se debe fusionar a `main` ni declarar `PRODUCTION` hasta completar el gate visual/nativo final de la nueva V1. El histórico Windows-validado de v1.0.4 demuestra la baseline anterior, pero no sustituye la validación visual de los módulos incorporados ahora.
+Esta rama permanece en `REVIEW` como **AUNEA Internal V2.0 REVIEW — CORE** (nunca `PRODUCTION`). No se debe fusionar a `main` ni declarar `PRODUCTION` hasta completar el gate visual/nativo final (Windows/Chrome/Edge) — ese paso lo realiza el usuario, no Claude Code. El histórico Windows-validado de v1.0.4 demuestra la baseline anterior, pero no sustituye la validación visual de los módulos incorporados ahora. `main` no ha sido tocado en ningún momento de esta iteración.
