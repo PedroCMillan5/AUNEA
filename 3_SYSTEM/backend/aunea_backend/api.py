@@ -1,7 +1,7 @@
 # [AUNEA-BE-API-CORE-010] START — HTTP API surface
 # PURPOSE: FastAPI app wiring (CORS, store/orchestrator instances) and all REST endpoints for engagements, diagnose, scenarios, audit, deliverables, solution specifications and system builder.
-# SOURCE: REQ-ENGN-001/REC-001/SCEN-001; DEC-034.
-# INPUTS: HTTP requests (EngagementInput, ScenarioRequest, DeliverableRequest, SolutionSpecificationRequest, SystemBuilderRequest payloads).
+# SOURCE: REQ-ENGN-001/REC-001/SCEN-001; DEC-034; DEC-041.
+# INPUTS: HTTP requests (EngagementInput, DiagnosticOutput, ScenarioRequest, DeliverableRequest, SolutionSpecificationRequest, SystemBuilderRequest payloads).
 # OUTPUTS: HTTP responses (DiagnosticOutput, ScenarioResult, DeliverablePack, SolutionSpecification, SystemBuildPlan/Package).
 # SIDE_EFFECTS: SQLite persistence via store; in-memory audit runs.
 # CHANGE_RISK: CRITICAL.
@@ -32,6 +32,7 @@ engine = Orchestrator(store=store)
 
 class ComparePayload(BaseModel):
     engagement: EngagementInput
+    diagnostic: DiagnosticOutput
     scenario: ScenarioRequest
 
 class DeliverPayload(BaseModel):
@@ -83,8 +84,11 @@ def latest_diagnostic(engagement_id: str):
 
 @app.post("/v1/scenarios/compare")
 def compare(payload: ComparePayload):
-    optimal, compared = engine.compare(payload.engagement,payload.scenario)
-    return {"optimal":optimal.optimal_scenario,"compared":compared,"recommendation":optimal.recommendation}
+    try:
+        optimal, compared = engine.compare(payload.engagement,payload.scenario,payload.diagnostic)
+    except ValueError as exc:
+        raise HTTPException(409, str(exc))
+    return {"optimal":optimal.optimal_scenario,"compared":compared,"recommendation":optimal.recommendation,"input_snapshot_hash":optimal.input_snapshot_hash,"rule_bundle_version":optimal.rule_bundle_version}
 
 @app.get("/v1/audit/runs")
 def audit_runs(engagement_id: str | None=None):
@@ -92,7 +96,6 @@ def audit_runs(engagement_id: str | None=None):
 
 @app.post("/v1/deliverables/generate")
 def generate_deliverables(payload: DeliverPayload):
-    from .models import DiagnosticOutput
     if not payload.diagnostic:
         raise HTTPException(400,"diagnostic payload required")
     diagnostic = DiagnosticOutput.model_validate(payload.diagnostic)
@@ -110,7 +113,6 @@ def generate_saved_deliverables(engagement_id: str, request: DeliverableRequest 
 # DiagnosticOutput, never recalculates. Returns a real application/pdf file, never window.print().
 @app.post("/v1/deliverables/pdf")
 def generate_deliverables_pdf(payload: DeliverPayload):
-    from .models import DiagnosticOutput
     if not payload.diagnostic:
         raise HTTPException(400, "diagnostic payload required")
     diagnostic = DiagnosticOutput.model_validate(payload.diagnostic)
