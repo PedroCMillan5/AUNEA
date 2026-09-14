@@ -158,6 +158,13 @@ function renderControl(f,val,opts,e){
   if(c==='BOOLEAN_UNKNOWN'||c==='BOOLEAN_UNKNOWN_WITH_SCOPE'||c==='SEGMENTED'||c==='SEGMENTED_SCALE')return segmented(fid,opts,val)+(c.includes('SCOPE')?detailInput(fid,'Alcance / condición'): '');
   if(c==='DATE_WITH_UNKNOWN')return `<div class="compound-control"><input type="date" data-answer="${fid}" value="${attr(val||'')}"><button type="button" class="btn btn-small" data-set-unknown="${fid}">No disponible</button></div>`;
   if(c.startsWith('NUMBER')||c.startsWith('PERCENT'))return numberCompound(f,val);
+  // DF080/DF081: Ask_Mode:CONDITIONAL_ASK means "ask when it can't be derived and it's material" — no
+  // governed formula aggregates manual_actions=CHASE/REPORT or friction types P06/P07/P09/P12/P14/P18
+  // into hours (same class of gap already documented for wait_time annualization), so this stays a
+  // manual entry. It reuses the existing NUMBER_WITH_TIME_UNIT widget (min/h/día/semana), the same one
+  // already canonical for equivalent time-quantification fields — Validation/Ejemplo_ES below the
+  // control already state the case/period convention, so no new unit vocabulary is introduced.
+  if(c==='DERIVED_OR_CONDITIONAL')return numberCompound({...f,Control_UI:'NUMBER_WITH_TIME_UNIT'},val);
   if(c==='REFERENCE_OR_SHORT_TEXT'||c==='TEXT_SHORT')return `<input data-answer="${fid}" value="${attr(val||'')}" maxlength="200" placeholder="Respuesta breve">`;
   if(c==='TEXT_LONG_INTERNAL')return `<textarea data-answer="${fid}" class="internal-only" placeholder="Notas internas; no se muestran en Modo Sesión">${esc(val||'')}</textarea>`;
   if(c==='CLIENT_CONFIRMATION_WITH_INLINE_EDIT')return `<div class="notice ${e.confirmedAsIs?'good':'warn'}">${e.confirmedAsIs?'Flujo AS-IS confirmado.':'Pendiente de confirmar el AS-IS.'} <button type="button" class="btn btn-small" data-page="proceso">Revisar / editar</button></div>`;

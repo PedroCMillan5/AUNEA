@@ -35,8 +35,20 @@ function completionBlockers(missing,gateSummary){
   return blockers;
 }
 
+// "Reviewed" used to require EVERY visible field of the stage — required, conditional and optional
+// alike — to carry a value. OPTIONAL_90M/CONDITIONAL_90M fields are, by the schema's own Requiredness
+// taxonomy, legitimately left blank (canonicalMissingRequired/readyToCalculate never enforce them
+// either), so a genuinely complete, already-calculated case — every REQUIRED_90M field answered, AS-IS
+// confirmed, gates resolved — could still sit at "5/9 etapas" forever just because some optional
+// question had nothing to add. That mismatch, not a hardcoded "if calculated then 9/9", was the real
+// cause: "reviewed" must track the same REQUIRED_90M tier that already gates readyToCalculate, at
+// stage granularity instead of the global count requiredComplete/requiredApplicable already reports.
+// A stage whose REQUIRED_90M fields are all captured elsewhere (e.g. inside the Process Step/Friction/
+// Risk/Economics builders, via Ask_Mode CAPTURE_IN_*, already excluded by questionVisible) has none left
+// to check here and falls back to e.confirmedAsIs — the one real signal that the consultant reviewed
+// that captured picture with the client — rather than inventing a new per-stage flag.
 function completionStageReviewed(s,e){
-  const fields=(schema?.fields||[]).filter(f=>f.Stage_ID===s.Stage_ID&&questionVisible(f,e));
+  const fields=(schema?.fields||[]).filter(f=>f.Stage_ID===s.Stage_ID&&f.Requiredness==='REQUIRED_90M'&&questionVisible(f,e));
   if(fields.length)return fields.every(f=>valuePresent(effectiveValue(f,e)));
   return !!e.confirmedAsIs;
 }
@@ -45,14 +57,14 @@ function completionStageReviewed(s,e){
 function completionStageStats(e){
   const out={};
   (schema?.flow||[]).forEach(s=>{
-    const fields=(schema?.fields||[]).filter(f=>f.Stage_ID===s.Stage_ID&&questionVisible(f,e));
+    const fields=(schema?.fields||[]).filter(f=>f.Stage_ID===s.Stage_ID&&!COMPLETION_SKIP_FIELDS.has(f.Field_ID)&&questionVisible(f,e));
     const answered=fields.filter(f=>valuePresent(effectiveValue(f,e))).length;
     out[s.Stage_ID]={applicable:fields.length,answered,pct:fields.length?Math.round(answered/fields.length*100):100};
   });
   return out;
 }
 function completionOverallStats(e){
-  const fields=(schema?.fields||[]).filter(f=>questionVisible(f,e));
+  const fields=(schema?.fields||[]).filter(f=>!COMPLETION_SKIP_FIELDS.has(f.Field_ID)&&questionVisible(f,e));
   const answered=fields.filter(f=>valuePresent(effectiveValue(f,e))).length;
   return {applicable:fields.length,answered,pct:fields.length?Math.round(answered/fields.length*100):100};
 }

@@ -16,6 +16,10 @@ function scalarNumber(v){if(v&&typeof v==='object'){if(v.mode==='UNKNOWN'||v.mod
 // derivation: DF078 itself (reusedValue below) already aggregates these same steps; no annualization
 // (minutes/caso -> horas/año) is computed here or anywhere, since no governed conversion rule exists.
 function activeTimeContributors(e){return activeSteps(e).filter(x=>scalarNumber(x.active_time)>0).map(x=>x.step_name||x.id)}
+// Same informational-provenance pattern for wait_time — there is no governed aggregate for it (unlike
+// DF078/DF079, no Field_ID derives a total from wait_time), so this only surfaces which steps recorded
+// wait_time as evidence; it never sums or annualizes it.
+function waitTimeContributors(e){return activeSteps(e).filter(x=>scalarNumber(x.wait_time)>0).map(x=>x.step_name||x.id)}
 function canonicalValueFromLabel(setId,value){if(value===undefined||value===null||value==='')return value;const opts=fieldOptions(setId),m=opts.find(o=>String(o.value)===String(value)||String(o.label).toLowerCase()===String(value).toLowerCase());return m?m.value:value}
 function reaskState(e){e.reaskOverrides=e.reaskOverrides||{};return e.reaskOverrides}
 function explicitReaskAllowed(fid,e){return !!reaskState(e)[fid]}
@@ -163,16 +167,30 @@ const FIELD_CLARIFICATION_ES=Object.freeze({
 });
 function renderQuestion(f,e){
   const val=effectiveValue(f,e),opts=fieldOptions(f.Option_Set_ID),required=f.Requiredness==='REQUIRED_90M',mode=String(f.Ask_Mode||'');
-  const systemOnly=['DERIVED','SYSTEM_GENERATED'].includes(mode)||String(f.Control_UI).startsWith('DERIVED')||String(f.Control_UI).startsWith('SYSTEM_GENERATED');
+  // A Control_UI starting with "DERIVED" (e.g. DERIVED_OR_CONDITIONAL) only means system-generated when
+  // Ask_Mode itself says so. DF080/DF081 are Ask_Mode:CONDITIONAL_ASK — the canonical contract is
+  // "derive when possible, otherwise ask" — so the broad prefix match must not force them read-only:
+  // that silently made a genuinely askable field permanently unanswerable.
+  const systemOnly=['DERIVED','SYSTEM_GENERATED'].includes(mode)||(String(f.Control_UI).startsWith('DERIVED')&&mode!=='CONDITIONAL_ASK')||String(f.Control_UI).startsWith('SYSTEM_GENERATED');
   const meta=`<span class="canonical-id">${f.Field_ID}</span>${required?'<span class="required-dot" title="Obligatoria"></span>':''}${f.Requiredness==='CONDITIONAL_90M'?'<span class="conditional-tag">condicional</span>':''}`;
   let body='';
   if(systemOnly)body=`<div class="readonly-box">${esc(formatContextValue(f,val)||'Se completará automáticamente cuando existan datos suficientes.')}</div>`;
   else if(contextOnly(f,e,val)){
-    const src=reuseSourceInfo(f);
-    const editBtn=src.page
-      ?`<button type="button" class="btn btn-small" data-goto-source="${attr(src.page)}">Editar en ${esc(pageLabelEs(src.page))}</button><div class="field-help">Este cambio actualizará el dato en todo el diagnóstico.</div>`
-      :`<button type="button" class="btn btn-small" data-edit-context="${f.Field_ID}">Editar aquí</button>`;
-    body=`<div class="reuse-context"><div><span class="context-label">Dato reutilizado</span><strong>${esc(formatContextValue(f,val))}</strong><small>Tomado de: ${esc(src.label)}</small></div>${editBtn}</div>`;
+    if(!f.Reuse_From){
+      // Reask_Policy=NO_REASK only means "don't re-ask this session" — it does NOT mean the value
+      // came from elsewhere (Reuse_From is empty: this is the field's own first-hand answer). Collapsing
+      // it to a "Tomado de" box invented a source that doesn't exist and hid a control that, for
+      // multi-step compound fields like DF098, needs 3 separate interactions to complete — the very
+      // next unrelated render() made it vanish behind a small "Editar aquí" link. Keep it fully
+      // editable; just mark visibly that it already has a value.
+      body=`<div class="answered-inline"><span class="answered-badge">✓ Guardado</span>${renderControl(f,val,opts,e)}</div>`;
+    } else {
+      const src=reuseSourceInfo(f);
+      const editBtn=src.page
+        ?`<button type="button" class="btn btn-small" data-goto-source="${attr(src.page)}">Editar en ${esc(pageLabelEs(src.page))}</button><div class="field-help">Este cambio actualizará el dato en todo el diagnóstico.</div>`
+        :`<button type="button" class="btn btn-small" data-edit-context="${f.Field_ID}">Editar aquí</button>`;
+      body=`<div class="reuse-context"><div><span class="context-label">Dato reutilizado</span><strong>${esc(formatContextValue(f,val))}</strong><small>Tomado de: ${esc(src.label)}</small></div>${editBtn}</div>`;
+    }
   }
   else body=`${renderControl(f,val,opts,e)}${explicitReaskAllowed(f.Field_ID,e)?`<div class="field-help"><button type="button" class="link-btn" data-close-context="${f.Field_ID}">Cerrar edición y volver a reutilizar el dato</button></div>`:''}`;
   const clarification=FIELD_CLARIFICATION_ES[f.Field_ID];

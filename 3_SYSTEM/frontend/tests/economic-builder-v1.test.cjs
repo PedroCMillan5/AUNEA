@@ -11,11 +11,12 @@ const i18nCode=fs.readFileSync(path.join(root,'app-i18n-labels-v1.js'),'utf8');
 function makeCtx(){
   const domFields={};
   const schema={tables:{REF_ECON_DRIVER:[{Economic_Driver_ID:'ED01',Name:'Manual execution time'},{Economic_Driver_ID:'ED02',Name:'Duplicate entry time'}]}};
-  const eng={economicInputs:[],risks:[],processSteps:[],__contributors:[]};
+  const eng={economicInputs:[],risks:[],processSteps:[],__contributors:[],__waitContributors:[]};
   const ctx={
     console,schema,
     currentEng:()=>eng,
     activeTimeContributors:e=>e.__contributors||[],
+    waitTimeContributors:e=>e.__waitContributors||[],
     esc:v=>String(v??''),attr:v=>String(v??''),
     section:(title,sub,body,actions)=>`${body}${actions||''}`,
     openModal:(title,body,onSave)=>{ctx.__lastBody=body;ctx.__lastOnSave=onSave},
@@ -31,20 +32,46 @@ function makeCtx(){
   return ctx;
 }
 
-test('addEconomic translates the driver-picker label to Spanish and shows an informational, non-prefilling "Calculado desde: <pasos>" note only when process steps contributed to DF078',()=>{
+test('addEconomic translates the driver-picker label to Spanish and shows an informational, non-prefilling "Pasos con tiempo activo/espera registrado" note only when process steps contributed evidence, always paired with an explicit manual-entry instruction',()=>{
   const ctx=makeCtx();
   ctx.__eng.__contributors=['Alta','Aprobación'];
+  ctx.__eng.__waitContributors=['Aprobación'];
   ctx.addEconomic();
   assert.match(ctx.__lastBody,/Concepto económico/);
   assert.doesNotMatch(ctx.__lastBody,/<label>Driver<\/label>/);
-  assert.match(ctx.__lastBody,/Calculado desde: Alta, Aprobación/);
+  assert.match(ctx.__lastBody,/Pasos con tiempo activo registrado: Alta, Aprobación/);
+  assert.match(ctx.__lastBody,/Pasos con tiempo de espera registrado: Aprobación/);
+  assert.match((ctx.__lastBody.match(/Introduce tú el total anual/g)||[]).join(''),/Introduce tú el total anual/,'both hours fields must carry the explicit manual-entry instruction');
+  assert.equal((ctx.__lastBody.match(/Introduce tú el total anual/g)||[]).length,2);
   assert.doesNotMatch(ctx.__lastBody,/id="econActive"[^>]*value=/,'the active-hours field must stay manual entry, never auto-prefilled from the unannualized minutes/case figure');
+  assert.doesNotMatch(ctx.__lastBody,/id="econWait"[^>]*value=/,'the wait-hours field must stay manual entry too');
 });
 
-test('addEconomic omits the "Calculado desde" note when no process step has active_time captured yet',()=>{
+test('addEconomic still shows the manual-entry instruction (but no "Pasos con..." provenance) when no process step has active_time/wait_time captured yet',()=>{
   const ctx=makeCtx();
   ctx.addEconomic();
-  assert.doesNotMatch(ctx.__lastBody,/Calculado desde/);
+  assert.doesNotMatch(ctx.__lastBody,/Pasos con tiempo/);
+  assert.match(ctx.__lastBody,/Introduce tú el total anual/);
+});
+
+test('addEconomic warns (without blocking the save) when active/wait hours are saved as 0 despite Proceso having recorded time in those steps, and stays silent when there is no such evidence',()=>{
+  const ctx=makeCtx();
+  ctx.__eng.__contributors=['Alta'];
+  ctx.addEconomic();
+  ctx.__domFields.econDriver={value:'ED01'};ctx.__domFields.econActive={value:'0'};ctx.__domFields.econWait={value:'0'};ctx.__domFields.econEvidence={value:'MEASURED'};
+  let warned='';ctx.toast=msg=>{warned=msg};
+  ctx.__lastOnSave();
+  assert.match(warned,/trabajo activo/);
+  assert.doesNotMatch(warned,/espera/,'no wait-time evidence exists in this fixture, so the warning must not mention it');
+  assert.equal(ctx.__eng.economicInputs.length,1,'the save itself must never be blocked by the warning');
+  assert.equal(ctx.__eng.economicInputs[0].annual_active_hours,0);
+
+  const ctx2=makeCtx();
+  ctx2.addEconomic();
+  ctx2.__domFields.econDriver={value:'ED01'};ctx2.__domFields.econActive={value:'5'};ctx2.__domFields.econWait={value:'0'};ctx2.__domFields.econEvidence={value:'MEASURED'};
+  let warned2='';ctx2.toast=msg=>{warned2=msg};
+  ctx2.__lastOnSave();
+  assert.equal(warned2,'','no contributors and a non-zero active value: nothing to warn about');
 });
 
 test('evidence-quality options are the governed Spanish labels (I18N_LABELS_ES), not a second hand-duplicated copy nor the raw backend code',()=>{

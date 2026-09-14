@@ -39,7 +39,8 @@ function makeCtx(){
     setAnswer:()=>{},bindForms:()=>{},markDirty:()=>{},render:()=>{},setPage:()=>{},
     openModal:()=>{},closeModal:()=>{},toast:()=>{},now:()=>'',runDiagnosis:()=>{},
     esc:v=>String(v??''),attr:v=>String(v??''),
-    section:(title,sub,body)=>body,pageTop:()=>'',
+    section:(title,sub,body)=>body,pageTop:(title,sub,actions)=>actions||'',
+    renderControl:()=>'<input class="stub">',
     state:{backendOnline:true,returnTo:null},
     document:{querySelectorAll:()=>[],getElementById:()=>null}
   };
@@ -153,5 +154,133 @@ test('the last stage renders validationSummary and never a "Siguiente →" butto
   assert.match(diagFieldsCode,/isLastStage\?validationSummary\(e,completion\):''/);
   assert.match(diagFieldsCode,/isLastStage\?''/);
   assert.doesNotMatch(diagFieldsCode,/stageIndex===schema\.flow\.length-1\?'disabled':''/,'the old disabled-but-present Siguiente button must be gone, not just disabled');
+});
+
+test('the diagnóstico header CTA (#runDiagHeader) shows "Calcular diagnóstico y recomendación" before any DiagnosticOutput exists and "Recalcular" only after, and never collides with the last-stage CALCULAR CTA (#runDiag) that validationSummary renders alongside it',()=>{
+  const ctx=makeCtx();
+  const e=makeEngagement();
+  e.answers={DF900:'ACME',DF010:'Reducir tiempos de espera'};
+  e.processSteps=[{id:'s1',status:'ACTIVE'}];
+  e.confirmedAsIs=true;
+  e.engineGates={process_design_first:'NO',existing_tool_can_close:'NO',unstructured_interpretation_need:'NO',bounded_action_space:'NO',management_visibility_need:'NO'};
+  ctx.__eng=e;
+
+  e.stageId='S01';
+  let html=ctx.stagePage();
+  assert.match(html,/id="runDiagHeader">Calcular diagnóstico y recomendación</);
+  assert.doesNotMatch(html,/id="runDiagHeader">Recalcular/);
+
+  e.diagnosticOutput={recommendation:{}};
+  html=ctx.stagePage();
+  assert.match(html,/id="runDiagHeader">Recalcular/);
+
+  e.stageId='S03'; // last stage in this synthetic 3-stage flow
+  html=ctx.stagePage();
+  assert.equal((html.match(/id="runDiagHeader"/g)||[]).length,1);
+  assert.equal((html.match(/id="runDiag"/g)||[]).length,1,'the validationSummary CALCULAR CTA must keep its own distinct id, never colliding with the header button');
+  assert.match(html,/id="runDiag">CALCULAR DIAGNÓSTICO Y RECOMENDACIÓN/);
+});
+
+// --- Bug "5/9 etapas revisadas" on a fully worked, already-calculated case — real canonical schema ---
+// completionStageReviewed() used to require EVERY visible field of a stage (required AND optional AND
+// conditional) to carry a value. Two independent, real defects made that unreachable even on a genuinely
+// complete case: (1) DF094/DF095 (S09) are SYSTEM_GENERATED checklists whose own reusedValue() is
+// canonicalMissingRequired(e) itself — an array that reads as absent exactly when the case IS complete,
+// a self-referential paradox; (2) DF080/DF081 (S07) had Control_UI:DERIVED_OR_CONDITIONAL, which the
+// renderer's "starts with DERIVED => read-only" heuristic swallowed even though their Ask_Mode is
+// CONDITIONAL_ASK — a genuinely askable field that could never actually be answered from the UI. The
+// real, deeper fix is that "reviewed" now tracks the same REQUIRED_90M tier that already gates
+// readyToCalculate/canonicalMissingRequired, so a stage full of legitimately-blank optional/conditional
+// fields does not get stuck forever. These fixtures use the REAL diagnostic-master.min.json, not a
+// synthetic schema, so the assertions are about the actual shipped Diagnostic Master v1.1.
+const realSchema=require('../data/diagnostic-master.min.json');
+function firstOpt(setId){return realSchema.option_sets[setId].options[0].value}
+function makeRealCtx(){
+  const ctx={
+    console,schema:realSchema,
+    companyById:()=>({id:'c1',name:'ACME'}),
+    fieldOptions:id=>(realSchema.option_sets[id]||{}).options||[],
+    labelFrom:(setId,v)=>v,
+    normalizeArray:v=>Array.isArray(v)?v:(v==null||v===''?[]:[v]),
+    setAnswer:()=>{},bindForms:()=>{},markDirty:()=>{},render:()=>{},setPage:()=>{},
+    openModal:()=>{},closeModal:()=>{},toast:()=>{},now:()=>'',runDiagnosis:()=>{},
+    esc:v=>String(v??''),attr:v=>String(v??''),
+    state:{backendOnline:true,returnTo:null},
+    document:{querySelectorAll:()=>[],getElementById:()=>null}
+  };
+  ctx.currentEng=()=>ctx.__eng;
+  vm.createContext(ctx);
+  vm.runInContext(noReaskCode,ctx);
+  vm.runInContext(engineAdapterCode,ctx);
+  vm.runInContext(completionCode,ctx);
+  return ctx;
+}
+function fullyWorkedEngagement(){
+  return {
+    companyId:'c1',contactIds:['p1'],
+    answers:{
+      DF001:'ACME',DF006:'p1',
+      DF008:[firstOpt('OS_SESSION_OBJECTIVE')],
+      DF011:'Proceso de aprobación de facturas',
+      DF012:firstOpt('OS_TRIGGER_TYPE'),DF013:firstOpt('OS_OUTCOME_TYPE'),
+      DF021:{value:10,unit:'case',period:'',mode:''},DF022:firstOpt('OS_PERIOD'),
+      DF086:[firstOpt('OS_FUTURE_OUTCOME')],
+      DF098:'Enviar resumen — Ana — 12/09/2026'
+    },
+    processSteps:[{id:'s1',status:'ACTIVE',step_name:'Alta',actor:'A1',tool:'T1',active_time:10,occurrences_per_case:1}],
+    frictions:[{id:'f1',status:'ACTIVE',friction_type:'P07',evidence_type:'EV02'}],
+    risks:[{controls_present:true}],
+    economicInputs:[{driver_id:'D1',evidence_type:'MEASURED'}],
+    confirmedAsIs:true,
+    engineGates:{process_design_first:'NO',existing_tool_can_close:'NO',unstructured_interpretation_need:'NO',bounded_action_space:'NO',management_visibility_need:'NO'}
+  };
+}
+
+test('a fully worked, already-calculable case (every REQUIRED_90M field answered, AS-IS confirmed, gates resolved) shows every applicable stage as reviewed — never stuck below stagesTotal',()=>{
+  const ctx=makeRealCtx();const e=fullyWorkedEngagement();ctx.__eng=e;
+  const c=ctx.engagementCompletion(e);
+  assert.equal(c.stagesReviewed,c.stagesTotal,`esperaba ${c.stagesTotal}/${c.stagesTotal}, obtuve ${c.stagesReviewed}/${c.stagesTotal} — pendientes: ${JSON.stringify(c.missing)}`);
+  assert.equal(c.missing.length,0);
+  assert.equal(c.readyToCalculate,true);
+  assert.equal(c.requiredComplete,c.requiredApplicable);
+});
+
+test('DF094/DF095 (S09 system-generated checklist) never block S09 from being reviewed once the case is genuinely complete, despite their own self-referential reusedValue()',()=>{
+  const ctx=makeRealCtx();const e=fullyWorkedEngagement();ctx.__eng=e;
+  const s09=realSchema.flow.find(s=>s.Stage_ID==='S09');
+  assert.equal(ctx.completionStageReviewed(s09,e),true);
+  assert.equal(ctx.reusedValue('DF094',e).length,0,'canonicalMissingRequired ya está vacío: DF094 se auto-referencia y nunca podría satisfacer valuePresent');
+});
+
+test('DF080/DF081 (S07, Ask_Mode CONDITIONAL_ASK, Control_UI DERIVED_OR_CONDITIONAL) render a real editable number+unit control, never the read-only "se completará automáticamente" box that made them permanently unanswerable',()=>{
+  const rendererCode=fs.readFileSync(path.join(root,'app-renderer-v1.js'),'utf8');
+  const ctx={console,schema:realSchema,state:{companies:[]},
+    fieldOptions:id=>(realSchema.option_sets[id]||{}).options||[],
+    esc:v=>String(v??''),attr:v=>String(v??''),
+    answerDetails:()=>({}),normalizeArray:v=>Array.isArray(v)?v:(v==null?[]:[v]),
+    labelFrom:()=>'',referenceableContacts:()=>[],document:{querySelectorAll:()=>[]},
+    formatDateEs:()=>'',bindForms:()=>{}
+  };
+  vm.createContext(ctx);vm.runInContext(rendererCode,ctx);
+  const df080=realSchema.fields.find(f=>f.Field_ID==='DF080');
+  const html=ctx.renderControl(df080,'',[],{processSteps:[],frictions:[]});
+  assert.match(html,/data-number-value="DF080"/);
+  assert.doesNotMatch(html,/readonly-box/);
+  assert.doesNotMatch(html,/control-error/);
+});
+
+test('an incomplete case (one required field missing in one stage) correctly names that exact stage as not-reviewed, and every other applicable stage still shows reviewed',()=>{
+  const ctx=makeRealCtx();const e=fullyWorkedEngagement();ctx.__eng=e;
+  delete e.answers.DF013; // S02 required field left blank
+  const c=ctx.engagementCompletion(e);
+  assert.equal(c.stagesReviewed,c.stagesTotal-1,`sólo S02 debía quedar pendiente; pendientes: ${JSON.stringify(c.missing)}`);
+  const s02=realSchema.flow.find(s=>s.Stage_ID==='S02');
+  assert.equal(ctx.completionStageReviewed(s02,e),false);
+  assert.ok(c.missing.some(m=>m.id==='DF013'&&m.stage==='S02'));
+  ['S01','S03','S04','S05','S06','S07','S08','S09'].forEach(sid=>{
+    const s=realSchema.flow.find(x=>x.Stage_ID===sid);
+    assert.equal(ctx.completionStageReviewed(s,e),true,`${sid} debía seguir revisada`);
+  });
+  assert.equal(c.readyToCalculate,false);
 });
 // [AUNEA-UAT-COMPLETION-010] END
