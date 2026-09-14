@@ -68,8 +68,13 @@ class SQLiteStore:
               VALUES(?,?,?,?)''',(out.engagement_id,out.input_snapshot_hash,out.rule_bundle_version,payload))
 
     def latest_output(self, engagement_id: str) -> DiagnosticOutput | None:
+        # CURRENT_TIMESTAMP has second-level precision in SQLite. Multiple diagnoses can be persisted
+        # in the same second, so created_at alone is not a deterministic recency key. rowid reflects
+        # the actual insertion/replacement order for this table and breaks those ties without changing
+        # the persisted business contract or introducing a schema migration.
         with self._connect() as con:
-            row=con.execute('SELECT output_json FROM diagnostic_outputs WHERE engagement_id=? ORDER BY created_at DESC LIMIT 1',(engagement_id,)).fetchone()
+            row=con.execute('''SELECT output_json FROM diagnostic_outputs
+              WHERE engagement_id=? ORDER BY created_at DESC, rowid DESC LIMIT 1''',(engagement_id,)).fetchone()
         return DiagnosticOutput.model_validate_json(row['output_json']) if row else None
 
     def add_run(self, engagement_id: str | None, engine: str, input_hash: str, output_hash: str, status: str="COMPLETED"):
