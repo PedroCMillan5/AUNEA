@@ -132,6 +132,38 @@ test('the internal product/level/action library is never a dominant element in f
   assert.match(quoteHtml,/<div class="internal-only">[\s\S]*Diagnóstico Operativo[\s\S]*<\/div>/);
 });
 
+test('downloadQuotePdf fetches a real application/pdf file from the backend and triggers a real file download — never window.print()',async()=>{
+  const ctx=makeCtx();
+  ctx.__eng.diagnosticOutput={optimal_scenario:{action_id:'A1',functional_level_id:'N1',ai_level_id:'I0',quote:{}},quote:{}};
+  ctx.__eng.answers={DF011:'Alta de cliente',DF098:'Enviar resumen — Ana — 12/09/2026'};
+  ctx.__eng.selectedScenarioIndex=0;
+  let fetchArgs=null;
+  const fakeBlob={__isBlob:true};
+  ctx.fetch=async(url,opts)=>{fetchArgs={url,opts};return {ok:true,blob:async()=>fakeBlob};};
+  const createdAnchors=[];
+  ctx.document.createElement=tag=>{const el={tag,clicked:false,click(){this.clicked=true},remove(){}};if(tag==='a')createdAnchors.push(el);return el;};
+  ctx.document.body={appendChild:()=>{}};
+  ctx.URL={createObjectURL:blob=>{assert.equal(blob,fakeBlob);return 'blob:fake-url'},revokeObjectURL:()=>{}};
+  ctx.setTimeout=()=>{};
+  let toasted='';ctx.toast=msg=>{toasted=msg};
+  await ctx.downloadQuotePdf();
+  assert.match(fetchArgs.url,/\/v1\/deliverables\/pdf$/);
+  const body=JSON.parse(fetchArgs.opts.body);
+  assert.deepEqual(body.diagnostic,ctx.__eng.diagnosticOutput);
+  assert.equal(body.request.client_name,'ACME');
+  assert.equal(body.request.process_name,'Alta de cliente');
+  assert.equal(body.request.next_step,'Enviar resumen — Ana — 12/09/2026');
+  assert.equal(createdAnchors.length,1);
+  assert.equal(createdAnchors[0].href,'blob:fake-url');
+  assert.match(createdAnchors[0].download,/^AUNEA_.*\.pdf$/);
+  assert.equal(createdAnchors[0].clicked,true);
+  assert.match(toasted,/descargado/i);
+  const codeWithoutComments=code.split('\n').filter(l=>!l.trim().startsWith('//')).join('\n');
+  assert.doesNotMatch(codeWithoutComments,/window\.print\(\)/,'the old window.print() anti-pattern must be fully gone from live code (comments referencing the old behavior are fine)');
+  const shellCode=fs.readFileSync(path.join(root,'app-shell.js'),'utf8');
+  assert.match(shellCode,/printQuote['"]?\)?\.onclick\s*=\s*downloadQuotePdf/,'the printQuote button must be wired to the real PDF download, not window.print()');
+});
+
 test('createScenario\'s level/action dropdowns show resolved business names as option text, keeping the raw code only as the option value',()=>{
   const ctx=makeCtx();
   ctx.openModal=(title,body)=>{ctx.__lastBody=body};

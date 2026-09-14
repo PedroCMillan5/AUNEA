@@ -39,7 +39,7 @@ function postBind(){
   if(by('saveRecap'))by('saveRecap').onclick=()=>{currentEng().meetingRecap=by('meetingRecap').value;markDirty('Resumen final de reunión actualizado');toast('Resumen guardado en el estudio.')};
   if(by('newScenario'))by('newScenario').onclick=createScenario;
   if(by('quoteScenario'))by('quoteScenario').onchange=()=>{currentEng().selectedScenarioIndex=+by('quoteScenario').value;markDirty('Escenario de cotización seleccionado');render()};
-  if(by('printQuote'))by('printQuote').onclick=()=>window.print();if(by('createProject'))by('createProject').onclick=createProjectFromEngagement;
+  if(by('printQuote'))by('printQuote').onclick=downloadQuotePdf;if(by('createProject'))by('createProject').onclick=createProjectFromEngagement;
   if(by('checkBackend'))by('checkBackend').onclick=async()=>{await checkBackend();render();toast(state.backendOnline?'Backend disponible.':'Backend no disponible en '+state.backendUrl)};
   if(by('returnToStage'))by('returnToStage').onclick=returnToStage;
   if(by('clearLocal'))by('clearLocal').onclick=()=>{if(confirm('¿Eliminar toda la base local de AUNEA Internal v1.0.4 de este navegador?')){localStorage.removeItem(STORAGE_KEY);state=blankState();render();toast('Datos locales eliminados.')}};

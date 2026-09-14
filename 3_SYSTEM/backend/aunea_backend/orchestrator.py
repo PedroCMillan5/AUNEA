@@ -12,6 +12,7 @@ from .registry import rule_bundle_version
 from .utils import stable_hash
 from .store import SQLiteStore
 from .deliverables import DeliverablesEngine
+from .pdf_export import PDFExporter
 from .solution_spec import SolutionSpecificationEngine
 
 # [AUNEA-BE-ORCH-DIAG-010] START — Deterministic diagnostic orchestration
@@ -37,7 +38,7 @@ class InMemoryAuditStore:
 class Orchestrator:
     def __init__(self, store: SQLiteStore | None = None):
         self.pain=PainEngine(); self.econ=EconomicsEngine(); self.risk=RiskEngine(); self.rec=RecommendationEngine(); self.price=PricingEngine(); self.scenario=ScenarioComparator(self.price,self.risk)
-        self.deliverables=DeliverablesEngine(); self.solution_spec=SolutionSpecificationEngine(); self.system_builder=SystemBuilderEngine(); self.audit=InMemoryAuditStore(); self.store=store
+        self.deliverables=DeliverablesEngine(); self.deliverables_pdf=PDFExporter(); self.solution_spec=SolutionSpecificationEngine(); self.system_builder=SystemBuilderEngine(); self.audit=InMemoryAuditStore(); self.store=store
 
     def _run(self, engagement_id: str, engine: str, inp: Any, out: Any):
         ih,oh=stable_hash(inp),stable_hash(out)
@@ -84,6 +85,19 @@ class Orchestrator:
         if not diagnostic:
             raise ValueError("diagnostic not found")
         return self.generate_deliverables(diagnostic, request)
+
+    def export_deliverable_pdf(self, diagnostic: DiagnosticOutput, request: DeliverableRequest | None = None) -> bytes:
+        pdf_bytes = self.deliverables_pdf.export(diagnostic, request)
+        self._run(diagnostic.engagement_id, "PDFExporter", {"diagnostic": diagnostic.model_dump(mode="json"), "request": request.model_dump(mode="json") if request else None}, {"bytes": len(pdf_bytes)})
+        return pdf_bytes
+
+    def export_deliverable_pdf_for_saved(self, engagement_id: str, request: DeliverableRequest | None = None) -> bytes:
+        if not self.store:
+            raise ValueError("Store is required to load saved diagnostics.")
+        diagnostic = self.store.latest_output(engagement_id)
+        if not diagnostic:
+            raise ValueError("diagnostic not found")
+        return self.export_deliverable_pdf(diagnostic, request)
 
     def generate_solution_specification(self, engagement: EngagementInput, diagnostic: DiagnosticOutput, request: SolutionSpecificationRequest | None = None) -> SolutionSpecification:
         spec = self.solution_spec.generate(engagement, diagnostic, request)

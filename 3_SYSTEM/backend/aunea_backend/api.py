@@ -7,7 +7,7 @@
 # CHANGE_RISK: CRITICAL.
 from __future__ import annotations
 import os
-from fastapi import FastAPI, HTTPException, Body
+from fastapi import FastAPI, HTTPException, Body, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from .models import EngagementInput, ScenarioRequest, DiagnosticOutput
@@ -104,6 +104,29 @@ def generate_saved_deliverables(engagement_id: str, request: DeliverableRequest 
         return engine.generate_deliverables_for_saved(engagement_id, request or DeliverableRequest())
     except ValueError as exc:
         raise HTTPException(404, str(exc))
+
+# [AUNEA-BE-DELIVERABLES-PDF-API-010] START — Real PDF download endpoints
+# Same DEC-041 contract as the JSON deliverables endpoints above: consumes an already-computed
+# DiagnosticOutput, never recalculates. Returns a real application/pdf file, never window.print().
+@app.post("/v1/deliverables/pdf")
+def generate_deliverables_pdf(payload: DeliverPayload):
+    from .models import DiagnosticOutput
+    if not payload.diagnostic:
+        raise HTTPException(400, "diagnostic payload required")
+    diagnostic = DiagnosticOutput.model_validate(payload.diagnostic)
+    pdf_bytes = engine.export_deliverable_pdf(diagnostic, payload.request)
+    filename = f"AUNEA_{diagnostic.engagement_id}.pdf"
+    return Response(content=pdf_bytes, media_type="application/pdf", headers={"Content-Disposition": f'attachment; filename="{filename}"'})
+
+@app.post("/v1/engagements/{engagement_id}/deliverables/pdf")
+def generate_saved_deliverables_pdf(engagement_id: str, request: DeliverableRequest | None = Body(default=None)):
+    try:
+        pdf_bytes = engine.export_deliverable_pdf_for_saved(engagement_id, request or DeliverableRequest())
+    except ValueError as exc:
+        raise HTTPException(404, str(exc))
+    filename = f"AUNEA_{engagement_id}.pdf"
+    return Response(content=pdf_bytes, media_type="application/pdf", headers={"Content-Disposition": f'attachment; filename="{filename}"'})
+# [AUNEA-BE-DELIVERABLES-PDF-API-010] END
 
 class SolutionSpecPayload(BaseModel):
     engagement: EngagementInput
