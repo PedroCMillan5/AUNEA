@@ -180,7 +180,7 @@ function renderQuestion(f,e){
   // "derive when possible, otherwise ask" — so the broad prefix match must not force them read-only:
   // that silently made a genuinely askable field permanently unanswerable.
   const systemOnly=['DERIVED','SYSTEM_GENERATED'].includes(mode)||(String(f.Control_UI).startsWith('DERIVED')&&mode!=='CONDITIONAL_ASK')||String(f.Control_UI).startsWith('SYSTEM_GENERATED');
-  const meta=`<span class="canonical-id">${f.Field_ID}</span>${required?'<span class="required-dot" title="Obligatoria"></span>':''}${f.Requiredness==='CONDITIONAL_90M'?'<span class="conditional-tag">condicional</span>':''}`;
+  const meta=`<span class="canonical-id">${f.Field_ID}</span>${required?requiredMark():''}${f.Requiredness==='CONDITIONAL_90M'?'<span class="conditional-tag">condicional</span>':''}`;
   let body='';
   if(systemOnly)body=`<div class="readonly-box">${esc(formatContextValue(f,val)||'Se completará automáticamente cuando existan datos suficientes.')}</div>`;
   else if(contextOnly(f,e,val)){

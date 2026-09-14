@@ -40,6 +40,11 @@ function id(prefix){return `${prefix}-${Date.now()}-${Math.random().toString(36)
 function now(){return new Date().toISOString()}
 function esc(v){return String(v??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
 function attr(v){return esc(v).replace(/'/g,'&#39;')}
+// Obligatoriedad: never color-only, never an unexplained symbol on its own — a shaped mark (asterisk,
+// not a bare dot) plus a real title tooltip, always paired with the one-line legend openModal()/
+// stagePage() inject so the mark is explained in context, not just hoverable trivia.
+function requiredMark(){return '<span class="required-mark" tabindex="0" title="Campo obligatorio" aria-label="Campo obligatorio">*</span>'}
+const REQUIRED_LEGEND_HTML='<div class="field-help required-legend">Los campos marcados con '+requiredMark()+' son obligatorios.</div>';
 function fmtDate(v){if(!v)return '—';try{return new Date(v).toLocaleString('es-ES',{dateStyle:'short',timeStyle:'short'})}catch{return v}}
 function formatDateEs(v){
   if(!v)return '—';
@@ -199,7 +204,8 @@ function createProjectFromEngagement(){
 }
 
 function openModal(title,body,onSave,saveLabel='Guardar'){
-  document.getElementById('modalRoot').innerHTML=`<div class="modal-backdrop"><div class="modal"><div class="modal-head"><h2>${esc(title)}</h2><button class="icon-btn" id="modalClose">×</button></div><div class="modal-body">${body}</div><div class="modal-foot"><button class="btn" id="modalCancel">Cancelar</button><button class="btn btn-primary" id="modalSave">${esc(saveLabel)}</button></div></div></div>`;
+  const legend=body.includes('required-mark')?REQUIRED_LEGEND_HTML:'';
+  document.getElementById('modalRoot').innerHTML=`<div class="modal-backdrop"><div class="modal"><div class="modal-head"><h2>${esc(title)}</h2><button class="icon-btn" id="modalClose">×</button></div><div class="modal-body">${legend}${body}</div><div class="modal-foot"><button class="btn" id="modalCancel">Cancelar</button><button class="btn btn-primary" id="modalSave">${esc(saveLabel)}</button></div></div></div>`;
   document.getElementById('modalClose').onclick=closeModal;document.getElementById('modalCancel').onclick=closeModal;document.getElementById('modalSave').onclick=onSave
 }
 function closeModal(){document.getElementById('modalRoot').innerHTML=''}

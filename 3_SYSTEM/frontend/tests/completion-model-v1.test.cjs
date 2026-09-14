@@ -44,6 +44,8 @@ function makeCtx(){
     esc:v=>String(v??''),attr:v=>String(v??''),
     section:(title,sub,body)=>body,pageTop:(title,sub,actions)=>actions||'',
     renderControl:()=>'<input class="stub">',
+    requiredMark:()=>'<span class="required-mark" title="Campo obligatorio">*</span>',
+    REQUIRED_LEGEND_HTML:'<div class="field-help required-legend">Los campos marcados con <span class="required-mark" title="Campo obligatorio">*</span> son obligatorios.</div>',
     state:{backendOnline:true,returnTo:null},
     document:{querySelectorAll:()=>[],getElementById:()=>null}
   };
