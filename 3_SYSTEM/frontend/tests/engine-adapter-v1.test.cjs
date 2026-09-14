@@ -6,14 +6,13 @@ test('the Engine Gates review is framed as "Confirmación del consultor antes de
   assert.match(code,/Confirmar y calcular/);
 });
 
-test('addRisk groups riskCat/riskDesc/riskLike/riskImpact into an open layer-1 group and the rest into a collapsed layer-2 group, same field ids and RiskInput shape as before',()=>{
-  const groups=[...code.matchAll(/<details class="step-group"( open)?><summary>([^<]+)<\/summary>/g)];
-  assert.equal(groups.length,2);
-  assert.equal(groups[0][1],' open','layer 1 (Riesgo) must be open by default');
-  assert.equal(groups[0][2],'Riesgo');
-  assert.equal(groups[1][1],undefined,'layer 2 (controles y resto) must start collapsed');
-  ['riskCat','riskDesc','riskLike','riskImpact','riskRev','riskControls','riskSensitive','riskMat','riskCritical'].forEach(fid=>{
-    assert.match(code,new RegExp(`id="${fid}"`),`${fid} must still exist`);
+// The adapter owns state→payload conversion, HTTP and structured outputs — never capture UI.
+// Risk capture UI lives in app-risk-v1.js and is covered by risk-capture-v1.test.cjs.
+test('the engine adapter contains no capture UI: no risk/economic modal markup, no capture field ids',()=>{
+  assert.doesNotMatch(code,/<details class="step-group"/,'capture modals must not live in the adapter');
+  ['riskCat','riskDesc','riskLike','riskImpact','econDriver','econActive'].forEach(fid=>{
+    assert.doesNotMatch(code,new RegExp(`id="${fid}"`),`${fid} is capture UI and must not live in the adapter`);
   });
+  assert.doesNotMatch(code,/function addRisk\(|function addEconomic\(/,'capture entry points belong to their own modules');
 });
 // [AUNEA-UAT-ENGINE-020] END

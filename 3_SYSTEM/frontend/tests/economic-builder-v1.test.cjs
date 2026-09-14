@@ -5,7 +5,7 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 const path=require('node:path');
 const root=path.join(__dirname,'..');
-const code=fs.readFileSync(path.join(root,'app-process-editor.js'),'utf8');
+const code=fs.readFileSync(path.join(root,'app-economics-v1.js'),'utf8');
 const i18nCode=fs.readFileSync(path.join(root,'app-i18n-labels-v1.js'),'utf8');
 
 function makeCtx(){

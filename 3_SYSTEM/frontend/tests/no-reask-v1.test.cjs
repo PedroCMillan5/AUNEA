@@ -171,7 +171,7 @@ test('DF098 real interaction (jsdom, real runtime): action+owner+date consolidat
       assert.equal(d.querySelector('[data-nextstep-owner="DF098"]').value,'Ana');
       assert.equal(d.querySelector('[data-nextstep-date="DF098"]').value,'2026-09-12');
       assert.deepEqual(errors,[]);
-      // Deja que el autosave debounced (350ms, app-persistence-uat-v1.js) termine de disparar mientras
+      // Deja que el autosave debounced (350ms, app-persistence-v1.js) termine de disparar mientras
       // el documento sigue vivo — cerrar la ventana con ese timer aún pendiente lo hace fallar contra
       // un document ya destruido, lo cual es un artefacto de limpieza del test, no del runtime real.
       await new Promise(r=>setTimeout(r,500));

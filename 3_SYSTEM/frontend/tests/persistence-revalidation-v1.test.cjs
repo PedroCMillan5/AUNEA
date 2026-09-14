@@ -8,7 +8,7 @@ const path=require('node:path');
 const root=path.join(__dirname,'..');
 const persistCode=fs.readFileSync(path.join(root,'app-persistence-v1.js'),'utf8');
 const processV1Code=fs.readFileSync(path.join(root,'app-process-v1.js'),'utf8');
-const processEditorCode=fs.readFileSync(path.join(root,'app-process-editor.js'),'utf8');
+const economicsCode=fs.readFileSync(path.join(root,'app-economics-v1.js'),'utf8');
 const engineAdapterCode=fs.readFileSync(path.join(root,'app-engine-adapter-v1.js'),'utf8');
 
 function makeCtx(){
@@ -64,7 +64,7 @@ test('recovery format is independent from product SemVer and legacy AUNEA_INTERN
 });
 
 test('the <details class="step-group"> progressive-disclosure accordion is purely ephemeral DOM',()=>{
-  [processV1Code,processEditorCode,engineAdapterCode].forEach(code=>{
+  [processV1Code,economicsCode,engineAdapterCode].forEach(code=>{
     assert.doesNotMatch(code,/step-group[^`]*\.open\b/s);
     assert.doesNotMatch(code,/querySelector(?:All)?\(['"]\.step-group['"]\)/);
     assert.doesNotMatch(code,/hasAttribute\(['"]open['"]\)/);

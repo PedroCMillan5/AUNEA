@@ -43,9 +43,10 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   assert.match(d.title,/AUNEA Internal v2\.0\.0 REVIEW/);
   assert.match(d.querySelector('.brand span').textContent,/V2\.0\.0 · REVIEW/);
   assert.equal(d.querySelectorAll('script:not([src])').length,0);
-  for(const file of ['app-core.js','app-i18n-labels-v1.js','app-backend-discovery-v1.js','app-schema-v11.js','app-diagnostic-fields.js','app-renderer-v1.js','app-no-reask-v1.js','app-process-editor.js','app-results.js','app-process-v1.js','app-process-help-v1.js','app-engine-adapter-v1.js','app-completion-model-v1.js','app-shell.js','app-mode-v1.js','app-persistence-v1.js','app-uat-visible-v1.js','app-uat-fixtures-v1.js','app.js','styles.css','data/diagnostic-master.min.json'])assert.ok(requests.includes(file),file);
+  for(const file of ['app-core.js','app-i18n-labels-v1.js','app-backend-discovery-v1.js','app-schema-v11.js','app-diagnostic-fields.js','app-renderer-v1.js','app-no-reask-v1.js','app-risk-v1.js','app-economics-v1.js','app-process-lifecycle-v1.js','app-results.js','app-process-v1.js','app-process-help-v1.js','app-engine-adapter-v1.js','app-completion-model-v1.js','app-shell.js','app-mode-v1.js','app-persistence-v1.js','app-uat-visible-v1.js','app-uat-fixtures-v1.js','app.js','styles.css','data/diagnostic-master.min.json'])assert.ok(requests.includes(file),file);
   assert.ok(!requests.includes('app-no-reask-capacity-v1.js'),'retired capacity wrapper must not be part of the runtime');
   assert.ok(!requests.includes('app-persistence-uat-v1.js'),'retired mixed persistence/UAT module must not be part of the runtime');
+  assert.ok(!requests.includes('app-process-editor.js'),'retired mixed risk/economics/lifecycle module must not be part of the runtime');
   const schema=await (await fetch(url+'data/diagnostic-master.min.json')).json();
   assert.equal(new Set(schema.fields.map(f=>f.Field_ID)).size,100);
   assert.equal(schema.no_reask_rules.length,15);
