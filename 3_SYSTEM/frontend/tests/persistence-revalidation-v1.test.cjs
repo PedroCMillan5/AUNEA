@@ -51,9 +51,11 @@ test('normalizeRecoveredState self-heals legacy engagements missing newer array 
 
 test('recovery format is independent from product SemVer and legacy AUNEA_INTERNAL_V1 remains explicitly recognized',()=>{
   const ctx=makeCtx();
-  assert.equal(ctx.RECOVERY_FORMAT_VERSION,'AUNEA_INTERNAL_STATE_V1');
-  assert.equal(ctx.LEGACY_RECOVERY_FORMAT_VERSION,'AUNEA_INTERNAL_V1');
-  assert.notEqual(ctx.RECOVERY_FORMAT_VERSION,'2.0.0');
+  const recoveryFormat=vm.runInContext('RECOVERY_FORMAT_VERSION',ctx);
+  const legacyFormat=vm.runInContext('LEGACY_RECOVERY_FORMAT_VERSION',ctx);
+  assert.equal(recoveryFormat,'AUNEA_INTERNAL_STATE_V1');
+  assert.equal(legacyFormat,'AUNEA_INTERNAL_V1');
+  assert.notEqual(recoveryFormat,'2.0.0');
   ctx.persistRecoverySnapshot('test');
   const saved=JSON.parse(ctx.localStorage.store.aunea_internal_v1);
   assert.equal(saved.recoveryMeta.format,'AUNEA_INTERNAL_STATE_V1');
