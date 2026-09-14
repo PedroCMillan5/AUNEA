@@ -25,7 +25,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install backend and test dependencies
-        run: python -m pip install -e 3_SYSTEM/backend pytest httpx
+        run: python -m pip install -e '3_SYSTEM/backend[test]'
       - name: Backend regression and canonical UAT
         working-directory: 3_SYSTEM/backend
         run: python -m pytest -q

@@ -5,10 +5,18 @@ name: AUNEA Frontend Tests
 
 on:
   push:
+    # The Acceptance Gate already runs this suite on the gated branches and on PRs to main.
+    # Excluding them here keeps the fast path-filtered feedback everywhere else without
+    # running the identical suite twice on the same commit.
+    branches-ignore:
+      - 'cleanup/v2.0.0-core'
+      - 'reconcile/frontend-v1.0.4-source'
     paths:
       - '3_SYSTEM/frontend/**'
       - '.github/workflows/aunea-frontend-tests.yml'
   pull_request:
+    branches-ignore:
+      - 'main'
     paths:
       - '3_SYSTEM/frontend/**'
       - '.github/workflows/aunea-frontend-tests.yml'
