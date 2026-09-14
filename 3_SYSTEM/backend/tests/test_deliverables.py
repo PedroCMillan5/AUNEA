@@ -13,21 +13,40 @@ def fixture_engagement():
     )
 
 
-def test_deliverables_pack_contains_core_artifacts():
+def test_default_deliverables_pack_contains_only_client_safe_core_artifacts():
     orch=Orchestrator(); diagnostic=orch.diagnose(fixture_engagement())
     pack=orch.generate_deliverables(diagnostic,DeliverableRequest(client_name="Northstar",process_name="Client Intake"))
     names={a.name for a in pack.artifacts}
-    assert {"executive_summary.md","diagnostic_report.md","proposal_draft.md","deliverable_snapshot.json"}.issubset(names)
+    assert {"executive_summary.md","diagnostic_report.md","proposal_draft.md","diagnostic_report.html","proposal_draft.html"}.issubset(names)
+    assert "deliverable_snapshot.json" not in names
+    assert "internal_trace_appendix.md" not in names
+    client_text="\n".join(a.content for a in pack.artifacts)
+    for internal in (diagnostic.engagement_id, diagnostic.input_snapshot_hash, diagnostic.rule_bundle_version, diagnostic.optimal_scenario.scenario_id):
+        assert internal not in client_text
+
+
+def test_internal_trace_is_explicit_opt_in_only():
+    orch=Orchestrator(); diagnostic=orch.diagnose(fixture_engagement())
+    pack=orch.generate_deliverables(diagnostic,DeliverableRequest(include_internal_appendix=True))
+    names={a.name for a in pack.artifacts}
+    assert "deliverable_snapshot.json" in names
+    assert "internal_trace_appendix.md" in names
+    appendix=next(a.content for a in pack.artifacts if a.name=="internal_trace_appendix.md")
+    assert diagnostic.engagement_id in appendix
+    assert diagnostic.input_snapshot_hash in appendix
 
 
 def test_deliverables_do_not_recalculate_economics_from_coverage():
-    orch=Orchestrator(); diagnostic=orch.diagnose(fixture_engagement()); pack=orch.generate_deliverables(diagnostic)
+    orch=Orchestrator(); diagnostic=orch.diagnose(fixture_engagement()); before=diagnostic.model_dump(mode="json")
+    pack=orch.generate_deliverables(diagnostic)
     report=next(a.content for a in pack.artifacts if a.name=="diagnostic_report.md")
-    assert "capacity value" in report.lower() and "single universal saving" in report.lower()
+    assert "Valor de capacidad" in report
+    assert "no se agregan como un único ahorro universal" in report
+    assert diagnostic.model_dump(mode="json") == before
 
 
 def test_deliverables_with_override_scenario():
-    orch=Orchestrator(); engagement=fixture_engagement()
-    optimal,compared=orch.compare(engagement,ScenarioRequest(scenario_name="Lower scope",functional_level_id="N1",ai_level_id="I0"))
+    orch=Orchestrator(); engagement=fixture_engagement(); diagnostic=orch.diagnose(engagement)
+    optimal,compared=orch.compare(engagement,ScenarioRequest(scenario_name="Lower scope",functional_level_id="N1",ai_level_id="I0"),diagnostic)
     pack=orch.generate_deliverables(optimal,DeliverableRequest(selected_scenario=compared,client_name="Northstar"))
     assert pack.selected_scenario_id==compared.scenario_id
