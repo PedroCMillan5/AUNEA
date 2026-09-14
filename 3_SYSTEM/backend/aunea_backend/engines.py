@@ -190,12 +190,15 @@ class RecommendationEngine:
 # [AUNEA-BE-ENGINE-RECOMMEND-010] END
 
 # [AUNEA-BE-ENGINE-PRICING-010] START — Pricing Engine
-# PURPOSE: Turn action/level + commercial scope into a Quote (one-off/recurring/TCO, QuoteStatus), using registry pricing tables.
-# SOURCE: DEC-034; CFG_PRICING_POLICY, REF_PRICING, MAP_ACTION_PRODUCT, REF_PRODUCT_OPTION registry tables.
+# PURPOSE: Turn action/level + commercial scope into a Quote using only canonical registry pricing.
+# SOURCE: DEC-026; DEC-034; CFG_PRICING_POLICY, REF_PRICING, MAP_ACTION_PRODUCT, REF_PRODUCT_OPTION.
 # INPUTS: EngineContext, Recommendation, RiskResult, commercial scope override.
-# OUTPUTS: Quote.
+# OUTPUTS: Quote. Missing/invalid canonical commercial values fail closed as BLOCKED; no numeric fallback.
 # SIDE_EFFECTS: none.
 # CHANGE_RISK: CRITICAL.
+class PricingConfigurationError(RuntimeError):
+    pass
+
 class PricingEngine:
     def __init__(self):
         self.ref_price = by_id("REF_PRICING", "Pricing_ID")
@@ -203,22 +206,43 @@ class PricingEngine:
         self.options = table("REF_PRODUCT_OPTION")
         self.cfg = {str(r.get("Policy_ID")):r for r in table("CFG_PRICING_POLICY")}
 
-    def _cfg_num(self, pid: str, default: float) -> float:
-        try: return float(self.cfg.get(pid,{}).get("Value", default))
-        except Exception: return default
+    def _required_num(self, source: dict, row_id: str, *fields: str) -> float:
+        row=source.get(row_id)
+        if not row:
+            raise PricingConfigurationError(f"Canonical pricing row missing: {row_id}")
+        for field in fields:
+            value=row.get(field)
+            if value not in (None, ""):
+                try:
+                    return float(value)
+                except (TypeError, ValueError) as exc:
+                    raise PricingConfigurationError(f"Canonical pricing value invalid: {row_id}.{field}") from exc
+        raise PricingConfigurationError(f"Canonical pricing value missing: {row_id}")
+
+    def _cfg_num(self, pid: str) -> float:
+        return self._required_num(self.cfg,pid,"Value")
 
     def _base(self, n: str | None) -> float:
         mapping={"N1":"PR-S01","N2":"PR-S02","N3":"PR-S03","N4":"PR-S04"}
         rid=mapping.get(n or "")
-        if not rid: return 0
-        try: return float(self.ref_price.get(rid,{}).get("Reference_Price") or self.ref_price.get(rid,{}).get("Value") or 0)
-        except Exception: return 0
+        if not rid:
+            raise PricingConfigurationError(f"No canonical System pricing mapping for functional level: {n or 'NONE'}")
+        return self._required_num(self.ref_price,rid,"Reference_Price","Value")
 
     def _option(self, n: str | None, i: str | None) -> str | None:
         for r in self.options:
             if r.get("Product_ID") == "PROD-S-GEN" and r.get("Functional_Level_ID") == n and r.get("AI_Level_ID") == i:
                 return str(r.get("Product_Option_ID"))
         return None
+
+    def _blocked_configuration_quote(self, product: str | None, rec: Recommendation, exc: PricingConfigurationError) -> Quote:
+        return Quote(
+            product_id=product,
+            product_option_id=self._option(rec.functional_level_id,rec.ai_level_id),
+            status=QuoteStatus.BLOCKED,
+            pricing_confidence="LOW",
+            notes=[str(exc),"Canonical pricing is unavailable; no fallback price was applied."],
+        )
 
     def run(self, ctx: EngineContext, rec: Recommendation, risk: RiskResult, scope_override=None) -> Quote:
         scope=scope_override or ctx.engagement.commercial_scope
@@ -229,17 +253,19 @@ class PricingEngine:
             return Quote(product_id=None,status=QuoteStatus.READY,notes=["No implementation product required."])
         if rec.action_id == "ACT06":
             product = product or "PROD-A-P0"
-        if product == "PROD-A-P0":
-            one=self._cfg_num("CFG-P04",900)
-        elif product == "PROD-A-P1":
-            try: one=float(self.ref_price.get("PR-A02",{}).get("Reference_Price") or 1800)
-            except Exception: one=1800
-        elif product == "PROD-A-P2":
-            one=scope.additional_effort_days*self._cfg_num("CFG-P02",400)
-            if one <= 0: notes.append("Optimization effort must be explicitly estimated.")
-        else:
-            one=self._base(rec.functional_level_id)
-        day_rate=self._cfg_num("CFG-P02",400)
+        try:
+            if product == "PROD-A-P0":
+                one=self._cfg_num("CFG-P04")
+            elif product == "PROD-A-P1":
+                one=self._required_num(self.ref_price,"PR-A02","Reference_Price","Value")
+            elif product == "PROD-A-P2":
+                one=scope.additional_effort_days*self._cfg_num("CFG-P02")
+                if one <= 0: notes.append("Optimization effort must be explicitly estimated.")
+            else:
+                one=self._base(rec.functional_level_id)
+            day_rate=self._cfg_num("CFG-P02")
+        except PricingConfigurationError as exc:
+            return self._blocked_configuration_quote(product,rec,exc)
         one += scope.additional_effort_days*day_rate + scope.external_one_off_eur
         if rec.ai_level_id == "I1": one += scope.ai_effort_days*day_rate
         one -= scope.discount_or_credit_eur
