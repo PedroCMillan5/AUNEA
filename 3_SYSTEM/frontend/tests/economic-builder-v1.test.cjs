@@ -90,6 +90,18 @@ test('economicBuilder resolves driver_id to its REF_ECON_DRIVER Name and transla
   assert.doesNotMatch(html,/>ED01</);
 });
 
+test('addEconomic groups driver/valor-activo/evidencia into an open layer-1 group and the rest into a collapsed layer-2 group, same field ids and EconomicInput shape as before',()=>{
+  const ctx=makeCtx();
+  ctx.addEconomic();
+  const groups=[...ctx.__lastBody.matchAll(/<details class="step-group"( open)?><summary>([^<]+)<\/summary>/g)];
+  assert.equal(groups.length,2);
+  assert.equal(groups[0][1],' open','layer 1 (driver/valor/evidencia) must be open by default');
+  assert.equal(groups[1][1],undefined,'layer 2 (resto) must start collapsed');
+  ['econDriver','econActive','econEvidence','econWait','econRate','econDirect','econTool','econCash'].forEach(fid=>{
+    assert.match(ctx.__lastBody,new RegExp(`id="${fid}"`),`${fid} must still exist`);
+  });
+});
+
 test('the economics builder never infers a direct-loss figure or an hours-per-year formula that is not governed — server-owned Economics remains the only source of derived totals',()=>{
   assert.doesNotMatch(code,/annual_wait_hours\s*=.*(occurrences|active_time)/);
   assert.doesNotMatch(code,/direct_loss.*=.*active_time.*error_rate/);
