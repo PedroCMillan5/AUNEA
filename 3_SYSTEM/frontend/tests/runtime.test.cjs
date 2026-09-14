@@ -43,8 +43,9 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   assert.match(d.title,/AUNEA Internal v2\.0\.0 REVIEW/);
   assert.match(d.querySelector('.brand span').textContent,/V2\.0\.0 · REVIEW/);
   assert.equal(d.querySelectorAll('script:not([src])').length,0);
-  for(const file of ['app-core.js','app-i18n-labels-v1.js','app-backend-discovery-v1.js','app-schema-v11.js','app-diagnostic-fields.js','app-renderer-v1.js','app-no-reask-v1.js','app-process-editor.js','app-results.js','app-process-v1.js','app-process-help-v1.js','app-engine-adapter-v1.js','app-completion-model-v1.js','app-shell.js','app-mode-v1.js','app-persistence-uat-v1.js','app-uat-fixtures-v1.js','app.js','styles.css','data/diagnostic-master.min.json'])assert.ok(requests.includes(file),file);
+  for(const file of ['app-core.js','app-i18n-labels-v1.js','app-backend-discovery-v1.js','app-schema-v11.js','app-diagnostic-fields.js','app-renderer-v1.js','app-no-reask-v1.js','app-process-editor.js','app-results.js','app-process-v1.js','app-process-help-v1.js','app-engine-adapter-v1.js','app-completion-model-v1.js','app-shell.js','app-mode-v1.js','app-persistence-v1.js','app-uat-visible-v1.js','app-uat-fixtures-v1.js','app.js','styles.css','data/diagnostic-master.min.json'])assert.ok(requests.includes(file),file);
   assert.ok(!requests.includes('app-no-reask-capacity-v1.js'),'retired capacity wrapper must not be part of the runtime');
+  assert.ok(!requests.includes('app-persistence-uat-v1.js'),'retired mixed persistence/UAT module must not be part of the runtime');
   const schema=await (await fetch(url+'data/diagnostic-master.min.json')).json();
   assert.equal(new Set(schema.fields.map(f=>f.Field_ID)).size,100);
   assert.equal(schema.no_reask_rules.length,15);
@@ -74,7 +75,8 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   assert.equal(saved.engagements[0].frictions[0].affected_steps.length,1);
   assert.ok(saved.engagements[0].frictions[0].derived_pain_id,'La fricción debe persistir Pain derivado');
   assert.equal(saved.engagements[0].confirmedAsIs,true);
-  assert.equal(saved.recoveryMeta.version,'AUNEA_INTERNAL_V1');
+  assert.equal(saved.recoveryMeta.format,'AUNEA_INTERNAL_STATE_V1');
+  assert.equal(saved.recoveryMeta.productVersion,'2.0.0');
   click('[data-page="contactos"]');click('[data-contact-study]');click('#saveBtn');
   const saved2=JSON.parse(w.localStorage.getItem('aunea_internal_v1'));
   assert.equal(saved2.companies.length,1);assert.equal(saved2.contacts.length,1);assert.equal(saved2.engagements.length,2);
