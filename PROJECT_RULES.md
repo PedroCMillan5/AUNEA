@@ -1,7 +1,7 @@
 # AUNEA — Project Rules
 
 Status: ACTIVE  
-Version: 1.4  
+Version: 1.5  
 Date: 2026-09-15
 
 This file is the repository-side operating contract for future work on AUNEA Internal.
@@ -24,6 +24,20 @@ Within `3_SYSTEM`, technical implementations are classified by purpose:
 The active System simulator is classified as a **Herramienta** and lives under `3_SYSTEM/02_HERRAMIENTAS/simulador/`. Superseded technical versions belong under `3_SYSTEM/99_ARCHIVO_TECNICO/`.
 
 Human/commercial documentation and business assets remain governed in Google Drive; GitHub stores only the corresponding technical implementation, schemas, components and executable artifacts.
+
+## System simulator functional contract
+
+The human canonical contract for the AUNEA System simulator is maintained in Google Drive:
+
+`AUNEA_SYSTEM_SIMULATOR_CANONICAL`  
+Drive ID: `1l_RorZjsKztsCErnGzRdIevrPya5-kuQ3CFvPOIbbtI`  
+Location: `04_SYSTEM/01_METODOLOGIA`.
+
+The Diagnostic Master remains authoritative for DF001–DF100 semantics, requiredness, branching, option sets, evidence behavior, write targets and engine consumers. The simulator canonical governs orchestration: pages, navigation, field placement, Internal/Client/Deliverable surfaces, AS-IS → diagnosis → TO-BE → solution → scenarios → deliverables, and Template System behavior.
+
+The technical simulator implementation in GitHub must conform to that contract; HTML/frontend code does not define or override the business contract.
+
+Process, Step, Friction, Risk and Economic Impact templates may prefill, suggest, derive candidates or instantiate drafts, but must never auto-confirm client reality. Confirmation must come from a governed source or explicit engagement validation under the No-Reask rules.
 
 ## Mandatory build order
 
