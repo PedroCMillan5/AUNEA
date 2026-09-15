@@ -1,7 +1,7 @@
 # AUNEA — Project Rules
 
 Status: ACTIVE  
-Version: 1.3  
+Version: 1.4  
 Date: 2026-09-15
 
 This file is the repository-side operating contract for future work on AUNEA Internal.
@@ -48,6 +48,7 @@ The UI represents business logic; it does not define it.
 10. Never store credentials or secrets in Drive or GitHub.
 11. Every meaningful code responsibility must have a stable Block_ID and START/END markers according to `CODE_CONVENTIONS.md`.
 12. Existing runtime code is tagged only on the reconciled current version; do not add maintenance comments to stale/superseded copies and then treat them as current.
+13. Internal technical names, identifiers, entities and code may remain in English, but every user-visible surface for consultant or client must be presented in Spanish: page titles, labels, questions, help text, states, messages, errors, controls, explanations, results and deliverables. Internal codes may be exposed only when needed for traceability and never replace Spanish wording.
 
 ## Diagnostic contract
 
