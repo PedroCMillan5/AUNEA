@@ -1,7 +1,7 @@
 # AUNEA — Project Rules
 
 Status: ACTIVE  
-Version: 1.2  
+Version: 1.3  
 Date: 2026-09-15
 
 This file is the repository-side operating contract for future work on AUNEA Internal.
@@ -13,6 +13,17 @@ This file is the repository-side operating contract for future work on AUNEA Int
 - **Airtable**: live AUNEA operations.
 - **Client environment**: client production data, credentials and systems.
 - **AUNEA Internal**: UI only; never a fourth source of truth.
+
+## AUNEA System repository taxonomy
+
+Within `3_SYSTEM`, technical implementations are classified by purpose:
+
+- **Producto = se vende.** A product is a System solution intended for commercialization and client implementation.
+- **Herramienta = se usa.** A tool is executable software used by AUNEA to analyze, operate, calculate, demonstrate, configure or deliver work; it is not a sellable product unless a canonical source explicitly promotes it.
+
+The active System simulator is classified as a **Herramienta** and lives under `3_SYSTEM/02_HERRAMIENTAS/simulador/`. Superseded technical versions belong under `3_SYSTEM/99_ARCHIVO_TECNICO/`.
+
+Human/commercial documentation and business assets remain governed in Google Drive; GitHub stores only the corresponding technical implementation, schemas, components and executable artifacts.
 
 ## Mandatory build order
 
