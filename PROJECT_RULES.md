@@ -30,7 +30,7 @@ Human/commercial documentation and business assets remain governed in Google Dri
 The human canonical contract for the AUNEA System simulator is maintained in Google Drive:
 
 `AUNEA_SYSTEM_SIMULATOR_CANONICAL`  
-Drive ID: `1l_RorZjsKztsCErnGzRdIevrPya5-kuQ3CFvPOIbbtI`  
+Drive ID: `1aPc5BIKBxvhsxJQIt-MkgQPEJWUX9PaJuxU2h2bh3SM`  
 Location: `04_SYSTEM/01_METODOLOGIA`.
 
 The Diagnostic Master remains authoritative for DF001–DF100 semantics, requiredness, branching, option sets, evidence behavior, write targets and engine consumers. The simulator canonical governs orchestration: pages, navigation, field placement, Internal/Client/Deliverable surfaces, AS-IS → diagnosis → TO-BE → solution → scenarios → deliverables, and Template System behavior.
