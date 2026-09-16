@@ -68,8 +68,12 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   assert.match(d.querySelector('#topbarContext').textContent,/Consola interna/);
   assert.match(d.querySelector('.rail-context').textContent,/UAT Runtime empresa/);
   assert.match(d.querySelector('#stepProgress').textContent,/Paso 1 de 9/);
-  const reused=[...d.querySelectorAll('.reuse-context')].find(x=>x.textContent.includes('UAT Runtime empresa'));
-  assert.ok(reused,'DF001 debe mostrarse como contexto CRM reutilizado, no como pregunta vacía');
+  // DF001 arrives prefilled from the Company and carries its provenance chip — an ordinary filled
+  // control, as the references show, not a blank question and not a read-only panel.
+  const df001=d.querySelector('.field[data-field="DF001"]');
+  assert.ok(df001,'DF001 debe renderizarse en la etapa de contexto');
+  assert.ok(df001.innerHTML.includes('UAT Runtime empresa'),'DF001 llega prerrellenado desde la empresa');
+  assert.ok(df001.querySelector('.prefill-chip'),'y declara de dónde viene');
   // The rail no longer carries a single "Diagnóstico" entry: the approved references replace it with
   // the nine numbered session steps, so step 1 is how the diagnostic surface is reached.
   click('[data-stage-nav="S01"]');assert.ok(d.querySelector('h1'),'diagnostico');

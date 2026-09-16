@@ -86,7 +86,15 @@ function invalidateDerivedState(e,reason='Cambio en inputs del diagnóstico'){
   if(hadDerived)audit(`Resultados derivados invalidados: ${reason}`);
   return hadDerived;
 }
-function setAnswer(fid,value){const e=currentEng();if(!e)return;e.answers[fid]=value;e.updatedAt=now();invalidateDerivedState(e,`respuesta ${fid} actualizada`);markDirty(`Respuesta ${fid} actualizada`)}
+function setAnswer(fid,value){
+  const e=currentEng();if(!e)return;
+  e.answers[fid]=value;e.updatedAt=now();
+  // A reused value corrected here must reach its owner, not become a second copy (DEC-050). The
+  // engagement still keeps the snapshot of the value it used. Guarded because the No-Reask module
+  // that owns the mapping loads after this one.
+  if(typeof writeThroughToOwner==='function')writeThroughToOwner(fid,value,e);
+  invalidateDerivedState(e,`respuesta ${fid} actualizada`);markDirty(`Respuesta ${fid} actualizada`);
+}
 function normalizeArray(v){if(Array.isArray(v))return v;if(v===null||v===undefined||v==='')return [];return [v]}
 
 // Pages that belong to the 90-minute session. On these the top bar shows the private-console marker
@@ -100,7 +108,9 @@ function currentStageIndex(){const e=currentEng(),f=stageList();if(!e||!f.length
 // never a hardcoded schedule. Stage 1 of the shipped flow yields 00:00 – 06:00, as the references show.
 function stageWindow(i){
   const f=stageList();if(i<0||!f.length)return '';
-  const mins=n=>`${String(Math.floor(n/60)).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`;
+  // Minutes:seconds elapsed within the session, as the references show it: a 6-minute first stage
+  // reads 00:00 – 06:00, not 00:06.
+  const mins=n=>`${String(n).padStart(2,'0')}:00`;
   let start=0;for(let k=0;k<i;k++)start+=Number(f[k].Minutos_objetivo)||0;
   return `${mins(start)} – ${mins(start+(Number(f[i].Minutos_objetivo)||0))}`;
 }

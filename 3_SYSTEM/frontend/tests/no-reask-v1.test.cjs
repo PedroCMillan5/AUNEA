@@ -8,24 +8,55 @@ const code=fs.readFileSync(path.join(__dirname,'..','domain/no-reask.js'),'utf8'
 const company={id:'c1',name:'ACME',sector:'D25',country:'España'};
 const eng={companyId:'c1',contactIds:['p1'],answers:{DF011:'Proceso'},answerDetails:{},processSteps:[{id:'s1',status:'ACTIVE',step_name:'Alta',actor:'A1',tool:'T1',active_time:10,rework_time:2,occurrences_per_case:1,communication_channels:['CH1'],inputs:['AR1'],outputs:['AR2']},{id:'s2',status:'ACTIVE',step_name:'Aprobación',step_type:'ST05',actor:'A2',tool:'T2',wait_time:60,decision_criteria:['DC1'],communication_channels:['CH2']}],frictions:[{id:'f1',status:'ACTIVE',friction_type:'P07',evidence_type:'EV02'}],risks:[],economicInputs:[],confirmedAsIs:false};
 const opts={REF_COUNTRY_ISO3166:[{value:'ES',label:'España'}],REF_DOMAIN:[{value:'D25',label:'Professional Services Delivery'}],OS_COMM_CHANNEL:[{value:'CH1',label:'Email'},{value:'CH2',label:'Teams'},{value:'CH3',label:'Portal'}],OS_TOOL_CATEGORY:[],OS_ACTOR_ROLE:[],OS_ARTIFACT_TYPE:[],OS_FRICTION_TYPE:[{value:'P07',label:'Cuello'}]};
-const ctx={console,schema:{fields:[{Field_ID:'DF001',Requiredness:'REQUIRED_90M',Ask_Mode:'PREFILL_CONFIRM',Reask_Policy:'CONFIRM_ONLY_IF_CHANGED',Branch_Rule_ID:'BR-BASE',Option_Set_ID:null,Write_Target:'RT_COMPANY.Company_Name',Pregunta_o_etiqueta_ES:'Nombre de la empresa'},{Field_ID:'DF050',Pregunta_o_etiqueta_ES:'Canales de comunicación utilizados',Objetivo_concreto:'',Requiredness:'CONDITIONAL_90M',Ask_Mode:'DERIVE_AND_CONFIRM',Reask_Policy:'DERIVE_THEN_CONFIRM',Branch_Rule_ID:'BR-TOOLS',Reuse_From:'RT_PROCESS_STEP.Communication_Channels',Option_Set_ID:'OS_COMM_CHANNEL',Validation:'0..N.',Ejemplo_ES:'Email; Teams'},{Field_ID:'DF094',Requiredness:'CONDITIONAL_90M',Ask_Mode:'SYSTEM_GENERATED',Branch_Rule_ID:'BR-CLOSE'}]},currentEng:()=>eng,companyById:()=>company,fieldOptions:id=>opts[id]||[],labelFrom:(id,v)=>(opts[id]||[]).find(o=>String(o.value)===String(v))?.label||v,normalizeArray:v=>Array.isArray(v)?v:(v==null||v===''?[]:[v]),setAnswer:(fid,v)=>{eng.answers[fid]=v},setPage:()=>{},now:()=>new Date(0).toISOString(),markDirty:()=>{},audit:()=>{},answerDetails:e=>{e.answerDetails=e.answerDetails||{};return e.answerDetails},bindForms:()=>{},renderControl:()=>'<CONTROL>',render:()=>{},openModal:()=>{},id:p=>p,closeModal:()=>{},toast:()=>{},state:{companies:[company]},document:{querySelectorAll:()=>[],getElementById:()=>({})},esc:v=>String(v??''),attr:v=>String(v??''),requiredMark:()=>'<span class="required-mark" title="Campo obligatorio">*</span>'};
+const ctx={console,schema:{fields:[{Field_ID:'DF001',Requiredness:'REQUIRED_90M',Ask_Mode:'PREFILL_CONFIRM',Reask_Policy:'CONFIRM_ONLY_IF_CHANGED',Branch_Rule_ID:'BR-BASE',Option_Set_ID:null,Write_Target:'RT_COMPANY.Company_Name',Pregunta_o_etiqueta_ES:'Nombre de la empresa'},{Field_ID:'DF050',Pregunta_o_etiqueta_ES:'Canales de comunicación utilizados',Objetivo_concreto:'',Requiredness:'CONDITIONAL_90M',Ask_Mode:'DERIVE_AND_CONFIRM',Reask_Policy:'DERIVE_THEN_CONFIRM',Branch_Rule_ID:'BR-TOOLS',Reuse_From:'RT_PROCESS_STEP.Communication_Channels',Option_Set_ID:'OS_COMM_CHANNEL',Validation:'0..N.',Ejemplo_ES:'Email; Teams'},{Field_ID:'DF094',Requiredness:'CONDITIONAL_90M',Ask_Mode:'SYSTEM_GENERATED',Branch_Rule_ID:'BR-CLOSE'}]},currentEng:()=>eng,companyById:()=>company,fieldOptions:id=>opts[id]||[],labelFrom:(id,v)=>(opts[id]||[]).find(o=>String(o.value)===String(v))?.label||v,normalizeArray:v=>Array.isArray(v)?v:(v==null||v===''?[]:[v]),setAnswer:(fid,v)=>{eng.answers[fid]=v},setPage:()=>{},now:()=>new Date(0).toISOString(),markDirty:()=>{},audit:()=>{},answerDetails:e=>{e.answerDetails=e.answerDetails||{};return e.answerDetails},bindForms:()=>{},renderControl:(f,val)=>'<CONTROL value="'+(Array.isArray(val)?val.join(','):(val==null?'':val))+'">',render:()=>{},openModal:()=>{},id:p=>p,closeModal:()=>{},toast:()=>{},state:{companies:[company]},document:{querySelectorAll:()=>[],getElementById:()=>({})},esc:v=>String(v??''),attr:v=>String(v??''),requiredMark:()=>'<span class="required-mark" title="Campo obligatorio">*</span>'};
+ctx.prefillChip=s=>s?'<span class="prefill-chip">Prerrellenado desde '+s+'</span>':'';
 vm.createContext(ctx);vm.runInContext(code,ctx);
 test('NR03 derives channels from process steps',()=>{assert.deepEqual(Array.from(ctx.reusedValue('DF050',eng)),['CH1','CH2']);});
 test('legacy country label is canonicalized to ISO option value',()=>{assert.equal(ctx.reusedValue('DF005',eng),'ES');});
 test('tool branch activates from two tools',()=>{assert.equal(ctx.branchActive('BR-TOOLS',eng),true);});
 test('wait branch activates from step wait',()=>{assert.equal(ctx.branchActive('BR-WAIT',eng),true);});
-test('existing CRM value renders as reused context rather than blank question',()=>{const f={Field_ID:'DF001',Pregunta_o_etiqueta_ES:'Empresa',Objetivo_concreto:'',Requiredness:'REQUIRED_90M',Ask_Mode:'PREFILL_CONFIRM',Reask_Policy:'CONFIRM_ONLY_IF_CHANGED',Branch_Rule_ID:'BR-BASE',Reuse_From:'RT_COMPANY.Company_Name',Option_Set_ID:null,Validation:'',Ejemplo_ES:''};const html=ctx.renderQuestion(f,eng);assert.match(html,/Dato reutilizado/);assert.match(html,/ACME/);assert.doesNotMatch(html,/<CONTROL>/);});
+test('an existing CRM value is prefilled into the real control, never a blank question',()=>{
+  const f={Field_ID:'DF001',Pregunta_o_etiqueta_ES:'Empresa',Objetivo_concreto:'',Requiredness:'REQUIRED_90M',Ask_Mode:'PREFILL_CONFIRM',Reask_Policy:'CONFIRM_ONLY_IF_CHANGED',Branch_Rule_ID:'BR-BASE',Reuse_From:'RT_COMPANY.Company_Name',Write_Target:'RT_COMPANY.Company_Name',Option_Set_ID:null,Validation:'',Ejemplo_ES:''};
+  const html=ctx.renderQuestion(f,eng);
+  // The references show a prefilled value as an ordinary filled control with a provenance chip, not a
+  // read-only panel. The value must still be there, and it must still be attributed.
+  assert.match(html,/ACME/,'the reused value is present');
+  assert.match(html,/prefill-chip/,'and is attributed to where it came from');
+  assert.doesNotMatch(html,/reuse-context/,'a Company-owned value is edited in place and written through, not shown as a panel');
+});
 test('required gaps use effective reused values and AS-IS gates',()=>{const gaps=Array.from(ctx.canonicalMissingRequired(eng));assert.ok(!gaps.includes('DF001'));assert.ok(gaps.includes('Confirmación AS-IS'));});
 
 test('human provenance is unobtrusive while technical Reuse_From/Reask_Policy is explicitly internal-only',()=>{
-  const f={Field_ID:'DF001',Pregunta_o_etiqueta_ES:'Empresa',Objetivo_concreto:'',Requiredness:'REQUIRED_90M',Ask_Mode:'PREFILL_CONFIRM',Reask_Policy:'CONFIRM_ONLY_IF_CHANGED',Branch_Rule_ID:'BR-BASE',Reuse_From:'RT_COMPANY.Company_Name',Option_Set_ID:null,Validation:'',Ejemplo_ES:''};
+  const f={Field_ID:'DF001',Pregunta_o_etiqueta_ES:'Empresa',Objetivo_concreto:'',Requiredness:'REQUIRED_90M',Ask_Mode:'PREFILL_CONFIRM',Reask_Policy:'CONFIRM_ONLY_IF_CHANGED',Branch_Rule_ID:'BR-BASE',Reuse_From:'RT_COMPANY.Company_Name',Write_Target:'RT_COMPANY.Company_Name',Option_Set_ID:null,Validation:'',Ejemplo_ES:''};
   const html=ctx.renderQuestion(f,eng);
-  assert.match(html,/class="context-label internal-only">Dato reutilizado/);
-  assert.match(html,/class="internal-only">Tomado de: Nombre de la empresa/);
-  assert.match(html,/class="field-help internal-only technical-provenance"/);
+  // Human-readable provenance is the chip beside the label; the technical mapping stays internal-only,
+  // now inside the discreet help popover rather than printed under every field.
+  assert.match(html,/prefill-chip">Prerrellenado desde Nombre de la empresa/);
+  assert.match(html,/class="internal-only technical-provenance"/);
   assert.match(html,/Reuse_From:<\/b> RT_COMPANY\.Company_Name/);
   assert.match(html,/Reask_Policy:<\/b> CONFIRM_ONLY_IF_CHANGED/);
-  assert.match(html,/data-goto-source="contactos"/);
+});
+
+test('write-through exists once, driven by the schema, with no hardcoded field list',()=>{
+  const src=fs.readFileSync(path.join(__dirname,'..','domain/no-reask.js'),'utf8');
+  // A hardcoded setAnswer wrapper used to own this for DF001/DF002/DF005. Two mechanisms writing the
+  // same record is the divergence DEC-050 exists to prevent, so the mapping comes from Write_Target.
+  assert.doesNotMatch(src,/if\(fid==='DF002'&&c\)c\.sector=value/,'the hardcoded company write-through must stay retired');
+  assert.doesNotMatch(src,/setAnswer=function\(fid,value\)/,'setAnswer must not be wrapped for write-through');
+  assert.match(src,/COMPANY_WRITE_THROUGH\[String\(f\.Write_Target/,'the owner is read from the canonical write target');
+});
+
+test('correcting a reused Company value writes through to the Company, never a parallel copy',()=>{
+  // DEC-050: a secondary surface either writes through to the owner or navigates to it.
+  const target=ctx.writeThroughTarget({Field_ID:'DF001',Reuse_From:'RT_COMPANY.Company_Name',Write_Target:'RT_COMPANY.Company_Name'});
+  assert.equal(target&&target.kind,'company');
+  assert.equal(target&&target.attr,'name');
+  // The owner is the Write_Target, not the Reuse_From: DF002 is prefilled from Domain_ID but owned by
+  // RT_COMPANY.Sector, and keying off the origin would have silently skipped it.
+  const sector=ctx.writeThroughTarget({Field_ID:'DF002',Reuse_From:'RT_COMPANY.Domain_ID',Write_Target:'RT_COMPANY.Sector'});
+  assert.equal(sector&&sector.attr,'sector');
+  // A field with no unambiguous Company owner gets no write-through — it navigates instead.
+  assert.equal(ctx.writeThroughTarget({Field_ID:'DF007',Reuse_From:'RT_CONTACT + stakeholders',Write_Target:'RT_CONTACT.Decision_Role'}),null);
 });
 
 test('provenance falls back to a generic label and inline edit when Reuse_From does not resolve to a single owning field',()=>{
@@ -112,8 +143,10 @@ test('DF098 real interaction (jsdom, real runtime): action+owner+date consolidat
       click('[data-page="contactos"]');click('#addCompanyBtn');fill('#cCoLegal','DF098 UAT empresa');click('#modalSave');
       click('#addContactBtn');fill('#cContactFirst','DF098 UAT contacto');fill('#cContactEmail','df098@example.invalid');click('#modalSave');
       click('[data-contact-study]');
-      await until(()=>d.querySelector('[data-stage="S09"]'));
-      click('[data-stage="S09"]');
+      // Stage navigation moved to the rail with the reference reconciliation: the in-page stage list
+      // was the same navigation a second time, so it is gone.
+      await until(()=>d.querySelector('[data-stage-nav="S09"]'));
+      click('[data-stage-nav="S09"]');
       await until(()=>d.querySelector('[data-nextstep-action="DF098"]'));
 
       const actionSel=d.querySelector('[data-nextstep-action="DF098"]');
@@ -133,9 +166,11 @@ test('DF098 real interaction (jsdom, real runtime): action+owner+date consolidat
 
       // El siguiente click es un render() DELIBERADAMENTE no relacionado con DF098 (repite la misma
       // etapa): reproduce la secuencia reportada donde el control se escondía tras "Editar aquí".
-      click('[data-stage="S09"]');
+      click('[data-stage-nav="S09"]');
       await until(()=>d.querySelector('[data-nextstep-owner="DF098"]'));
-      const df098Card=[...d.querySelectorAll('.question-card')].find(c=>c.querySelector('[data-nextstep-action="DF098"]'));
+      // The question wrapper is now the shared .field primitive the references use; the invariant it
+      // guards is unchanged — DF098 must stay a real editable control, never a "Tomado de" box.
+      const df098Card=[...d.querySelectorAll('.field[data-field]')].find(c=>c.querySelector('[data-nextstep-action="DF098"]'));
       assert.ok(df098Card,'DF098 sigue siendo un control editable real tras el render() no relacionado, nunca una caja "Tomado de"');
       assert.doesNotMatch(df098Card.innerHTML,/reuse-context/);
       assert.match(df098Card.innerHTML,/answered-badge/);
@@ -165,8 +200,10 @@ test('DF098 real interaction (jsdom, real runtime): action+owner+date consolidat
       click('[data-page="estudios"]');
       await until(()=>d.querySelector('[data-open-eng]'));
       click('[data-open-eng]');
-      await until(()=>d.querySelector('[data-stage="S09"]'));
-      click('[data-stage="S09"]');
+      // Stage navigation moved to the rail with the reference reconciliation: the in-page stage list
+      // was the same navigation a second time, so it is gone.
+      await until(()=>d.querySelector('[data-stage-nav="S09"]'));
+      click('[data-stage-nav="S09"]');
       await until(()=>d.querySelector('[data-nextstep-owner="DF098"]'));
       assert.equal(d.querySelector('[data-nextstep-owner="DF098"]').value,'Ana');
       assert.equal(d.querySelector('[data-nextstep-date="DF098"]').value,'2026-09-12');

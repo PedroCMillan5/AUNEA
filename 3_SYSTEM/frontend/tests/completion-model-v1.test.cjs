@@ -50,7 +50,13 @@ function makeCtx(){
     document:{querySelectorAll:()=>[],getElementById:()=>null}
   };
   ctx.currentEng=()=>ctx.__eng;
-  vm.createContext(ctx);
+    // Shared page primitives the stage page composes with (defined in core/state.js at runtime).
+  ctx.insCard=(title,body,opts)=>'<div class="ins-card">'+(title?'<h3>'+title+'</h3>':'')+body+'</div>';
+  ctx.workspace=(main,inspector)=>'<div class="workspace"><div>'+main+'</div><aside class="inspector">'+inspector+'</aside></div>';
+  ctx.kvRows=rows=>'<dl class="kv">'+rows.map(r=>'<dt>'+r[0]+'</dt><dd>'+r[1]+'</dd>').join('')+'</dl>';
+  ctx.actionBar=(l,r)=>'<div class="action-bar">'+(l||'')+'<div class="ab-right">'+(r||'')+'</div></div>';
+  ctx.prefillChip=s=>s?'<span class="prefill-chip">Prerrellenado desde '+s+'</span>':'';
+vm.createContext(ctx);
   vm.runInContext(noReaskCode,ctx);
   vm.runInContext(engineAdapterCode,ctx);
   vm.runInContext(completionCode,ctx);
@@ -115,8 +121,11 @@ test('stagePage no longer renders the fixed answered/100 denominator or a global
   assert.doesNotMatch(diagSrc,/\/100 campos/);
   assert.doesNotMatch(diagSrc,/overall\.pct/);
   assert.match(diagSrc,/engagementCompletion\(e\)/);
-  assert.match(diagSrc,/completion-summary/);
+  // Progress moved from an in-page headline to the stage inspector, but it is still derived from the
+  // composite completion model rather than a field count.
+  assert.match(diagSrc,/Progreso de la captura/);
   assert.match(diagSrc,/readyToCalculate/);
+  assert.doesNotMatch(diagSrc,/stage-nav/,'the nine steps live in the rail; a second stage list in the page is the same navigation twice');
 });
 
 test('UAT-VIS-023/024: volume fields are one habitual interaction and peak volume explicitly captures cases per period without changing Field_IDs',()=>{
@@ -167,11 +176,11 @@ test('validationSummary shows the single CALCULAR CTA (and nothing else) once re
 
 test('the last stage renders validationSummary and never a "Siguiente →" button (no stage 10)',()=>{
   assert.match(diagFieldsCode,/isLastStage\?validationSummary\(e,completion\):''/);
-  assert.match(diagFieldsCode,/isLastStage\?''/);
+  assert.match(diagFieldsCode,/isLastStage\?'':`<button class="btn btn-primary" id="nextStage"/,'the last stage offers no Continuar: there is no stage 10');
   assert.doesNotMatch(diagFieldsCode,/stageIndex===schema\.flow\.length-1\?'disabled':''/,'the old disabled-but-present Siguiente button must be gone, not just disabled');
 });
 
-test('the diagnóstico header CTA (#runDiagHeader) shows "Calcular diagnóstico y recomendación" before any DiagnosticOutput exists and "Recalcular" only after, and never collides with the last-stage CALCULAR CTA (#runDiag) that validationSummary renders alongside it',()=>{
+test('exactly one calculate CTA exists, it lives with the closing summary, and it reads Calcular before a DiagnosticOutput exists and Recalcular after',()=>{
   const ctx=makeCtx();
   const e=makeEngagement();
   e.answers={DF900:'ACME',DF010:'Reducir tiempos de espera'};
@@ -180,20 +189,22 @@ test('the diagnóstico header CTA (#runDiagHeader) shows "Calcular diagnóstico 
   e.engineGates={process_design_first:'NO',existing_tool_can_close:'NO',unstructured_interpretation_need:'NO',bounded_action_space:'NO',management_visibility_need:'NO'};
   ctx.__eng=e;
 
+  // The references put one action on a screen. Before the closing stage there is no calculate button
+  // at all: the primary action is to continue.
   e.stageId='S01';
   let html=ctx.stagePage();
-  assert.match(html,/id="runDiagHeader">Calcular diagnóstico y recomendación</);
-  assert.doesNotMatch(html,/id="runDiagHeader">Recalcular/);
-
-  e.diagnosticOutput={recommendation:{}};
-  html=ctx.stagePage();
-  assert.match(html,/id="runDiagHeader">Recalcular/);
+  assert.equal((html.match(/id="runDiag"/g)||[]).length,0,'no calculate CTA before the closing stage');
+  assert.match(html,/id="nextStage"/);
 
   e.stageId='S03'; // last stage in this synthetic 3-stage flow
   html=ctx.stagePage();
-  assert.equal((html.match(/id="runDiagHeader"/g)||[]).length,1);
-  assert.equal((html.match(/id="runDiag"/g)||[]).length,1,'the validationSummary CALCULAR CTA must keep its own distinct id, never colliding with the header button');
+  assert.equal((html.match(/id="runDiag"/g)||[]).length,1,'exactly one calculate CTA, owned by validationSummary');
+  assert.doesNotMatch(html,/id="nextStage"/,'there is no stage 10 to continue to');
   assert.match(html,/id="runDiag">CALCULAR DIAGNÓSTICO Y RECOMENDACIÓN/);
+
+  e.diagnosticOutput={recommendation:{}};
+  html=ctx.stagePage();
+  assert.match(html,/id="runDiag">RECALCULAR DIAGNÓSTICO Y RECOMENDACIÓN/,'once an output exists the CTA says recalculate');
 });
 
 // --- Bug "5/9 etapas revisadas" on a fully worked, already-calculated case — real canonical schema ---

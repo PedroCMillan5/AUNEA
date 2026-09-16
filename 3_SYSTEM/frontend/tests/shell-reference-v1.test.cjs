@@ -83,6 +83,27 @@ test('pageTop accepts the reference screen identifier', () => {
   assert.match(stateJs, /class="screen-id"/);
 });
 
+test('the stage clock reproduces the windows the UI spec states', () => {
+  // Derived cumulatively from the canonical per-stage minutes. The spec puts I90-01 at 0–6 and I90-03
+  // at 12–16, and the references render that as mm:ss.
+  const flow = [{Minutos_objetivo:6},{Minutos_objetivo:6},{Minutos_objetivo:4}];
+  const mins = n => `${String(n).padStart(2,'0')}:00`;
+  const win = i => { let s=0; for(let k=0;k<i;k++) s+=flow[k].Minutos_objetivo; return `${mins(s)} – ${mins(s+flow[i].Minutos_objetivo)}`; };
+  assert.equal(win(0), '00:00 – 06:00');
+  assert.equal(win(2), '12:00 – 16:00');
+  assert.match(stateJs, /function stageWindow\(i\)/);
+  assert.match(stateJs, /String\(n\)\.padStart\(2,'0'\)/, 'the clock is mm:ss, not hh:mm');
+});
+
+test('each stage declares the approved reference it reproduces', () => {
+  const diag = fs.readFileSync(path.join(root, 'pages/diagnostic-stages.js'), 'utf8');
+  assert.match(diag, /STAGE_REFERENCE\s*=\s*\{S01:'I90-01'/);
+  for (let n = 1; n <= 9; n++) assert.ok(diag.includes(`'I90-0${n}'`), `stage ${n} must name its reference`);
+  // The client state per stage is the UI spec's, not a per-page invention.
+  assert.match(diag, /STAGE_CLIENT_STATE/);
+  assert.match(diag, /C90-00/); assert.match(diag, /C90-04/);
+});
+
 test('wrappers over pageTop forward every argument', () => {
   // A fixed-arity wrapper silently swallows the screenId and drops the reference identifier from every
   // page. Any module that decorates pageTop must pass its arguments through untouched.

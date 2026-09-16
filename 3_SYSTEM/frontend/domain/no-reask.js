@@ -25,16 +25,10 @@ function reaskState(e){e.reaskOverrides=e.reaskOverrides||{};return e.reaskOverr
 function explicitReaskAllowed(fid,e){return !!reaskState(e)[fid]}
 function valuePresent(v){if(v===undefined||v===null||v==='')return false;if(Array.isArray(v))return v.length>0;if(typeof v==='object')return Object.values(v).some(valuePresent);return true}
 
-const __auneaBaseSetAnswer=setAnswer;
-setAnswer=function(fid,value){
-  const e=currentEng();if(!e)return;
-  const c=companyById(e.companyId);
-  if(fid==='DF001'&&c)c.name=value;
-  if(fid==='DF002'&&c)c.sector=value;
-  if(fid==='DF005'&&c)c.country=value;
-  if(fid==='DF006'&&value){e.contactIds=[value,...(e.contactIds||[]).filter(x=>x!==value)];}
-  __auneaBaseSetAnswer(fid,value);
-};
+// The write-through that used to live here as a hardcoded wrapper over setAnswer, listing DF001/DF002/
+// DF005 by hand, is now derived from each field's canonical Write_Target in writeThroughToOwner below
+// and called from setAnswer itself. One mechanism, and it covers every Company-owned field rather than
+// the three someone remembered to add.
 
 function reusedValue(fid,e){
   const steps=activeSteps(e),fr=activeFrictions(e),c=companyById(e.companyId);
@@ -153,12 +147,48 @@ const PAGE_LABEL_ES=Object.freeze({contactos:'Contactos',proceso:'Proceso y fric
 function pageLabelEs(page){return PAGE_LABEL_ES[page]||page}
 function reuseSourceInfo(f){
   const raw=String(f.Reuse_From||'');
-  if(!raw)return {label:'un dato ya capturado en el estudio',page:null};
+  if(!raw)return {label:'un dato ya capturado en el estudio',page:null,entity:null,attribute:null};
   const m=raw.match(/^(RT_[A-Z_]+)\.([A-Za-z0-9_]+)/);
-  if(!m)return {label:'un dato ya capturado en el estudio',page:null};
+  if(!m)return {label:'un dato ya capturado en el estudio',page:null,entity:null,attribute:null};
   const srcField=reuseWriteTargetIndex()[`${m[1]}.${m[2]}`];
   const page=Object.prototype.hasOwnProperty.call(ENTITY_PAGE_MAP,m[1])?ENTITY_PAGE_MAP[m[1]]:null;
-  return {label:srcField?srcField.Pregunta_o_etiqueta_ES:'un dato ya capturado en el estudio',page};
+  return {label:srcField?srcField.Pregunta_o_etiqueta_ES:'un dato ya capturado en el estudio',page,entity:m[1],attribute:m[2]};
+}
+
+// DEC-050 allows a secondary surface to correct a reused value in exactly two ways: write through to
+// the owner, or navigate to the owner. Never a parallel editable copy. These are the Company
+// attributes whose owner is unambiguous, so editing them from the diagnostic writes straight to the
+// Company master; the engagement keeps its own snapshot of the value it used, which DEC-050 requires.
+// Keyed on Write_Target, not Reuse_From: the Diagnostic Master's write target IS the canonical owner
+// of the value, while Reuse_From only says where the prefill came from. DF002 reuses
+// RT_COMPANY.Domain_ID but writes to RT_COMPANY.Sector, so only the write target identifies the owner.
+const COMPANY_WRITE_THROUGH=Object.freeze({
+  'RT_COMPANY.Company_Name':'name','RT_COMPANY.Sector':'sector','RT_COMPANY.Country':'country',
+  'RT_COMPANY.Employee_Count':'employeeCount','RT_COMPANY.Revenue_Band':'revenueBand'
+});
+function writeThroughTarget(f){
+  if(!f||!f.Reuse_From)return null;
+  const attr=COMPANY_WRITE_THROUGH[String(f.Write_Target||'')];
+  return attr?{kind:'company',attr,label:reuseSourceInfo(f).label}:null;
+}
+// Called by setAnswer. Returns true when the edit was propagated to the owning record.
+function writeThroughToOwner(fid,value,e){
+  if(!e)return false;
+  // DF006 is a relation, not an attribute: confirming the session's main contact reorders the
+  // engagement's participants rather than overwriting a field on anything (DEC-051).
+  if(fid==='DF006'&&value){e.contactIds=[value,...(e.contactIds||[]).filter(x=>x!==value)];return true}
+  const f=(schema?.fields||[]).find(x=>x.Field_ID===fid);
+  if(!f)return false;
+  const target=writeThroughTarget(f);
+  if(!target||target.kind!=='company')return false;
+  const co=companyById(e.companyId);
+  if(!co)return false;
+  const before=co[target.attr];
+  const next=target.attr==='employeeCount'?(value===''||value==null?null:Number(value)):value;
+  if(String(before??'')===String(next??''))return false;
+  co[target.attr]=next;
+  audit(`Empresa ${co.name}: ${esc(f.Pregunta_o_etiqueta_ES||fid)} actualizado desde el diagnóstico "${before??'—'}"→"${next??'—'}"`);
+  return true;
 }
 
 // UI-only clarifications grounded in the current Diagnostic Master field objective/validation and option sets.
@@ -179,7 +209,11 @@ function renderQuestion(f,e){
   // "derive when possible, otherwise ask" — so the broad prefix match must not force them read-only:
   // that silently made a genuinely askable field permanently unanswerable.
   const systemOnly=['DERIVED','SYSTEM_GENERATED'].includes(mode)||(String(f.Control_UI).startsWith('DERIVED')&&mode!=='CONDITIONAL_ASK')||String(f.Control_UI).startsWith('SYSTEM_GENERATED');
-  const meta=`<span class="canonical-id">${f.Field_ID}</span>${required?requiredMark():''}${f.Requiredness==='CONDITIONAL_90M'?'<span class="conditional-tag">condicional</span>':''}`;
+  // The references put the requiredness mark and the provenance chip beside the label, and show no
+  // Field_ID on the field itself — coverage is stated once, in the stage inspector.
+  const source=f.Reuse_From?reuseSourceInfo(f):null;
+  const chip=(source&&val!=null&&val!==''&&!(Array.isArray(val)&&!val.length))?prefillChip(source.label):'';
+  const meta=`${required?requiredMark():''}${f.Requiredness==='CONDITIONAL_90M'?'<span class="conditional-tag">condicional</span>':''}${chip}`;
   let body='';
   if(systemOnly)body=`<div class="readonly-box">${esc(formatContextValue(f,val)||'Se completará automáticamente cuando existan datos suficientes.')}</div>`;
   else if(contextOnly(f,e,val)){
@@ -193,17 +227,34 @@ function renderQuestion(f,e){
       body=`<div class="answered-inline"><span class="answered-badge">✓ Guardado</span>${renderControl(f,val,opts,e)}</div>`;
     } else {
       const src=reuseSourceInfo(f),needsConfirm=requiresDerivedConfirmation(f),confirmed=needsConfirm&&isDerivedConfirmed(f,e);
-      const editBtn=src.page
-        ?`<button type="button" class="btn btn-small" data-goto-source="${attr(src.page)}">Editar en ${esc(pageLabelEs(src.page))}</button><div class="field-help">Este cambio actualizará el dato en todo el diagnóstico.</div>`
-        :`<button type="button" class="btn btn-small" data-edit-context="${f.Field_ID}">Editar aquí</button>`;
       const confirmUi=needsConfirm?(confirmed?'<span class="status green">Derivación confirmada</span>':`<button type="button" class="btn btn-small btn-primary" data-confirm-derived="${f.Field_ID}">Confirmar valor</button>`):'';
-      const technical=`<div class="field-help internal-only technical-provenance"><b>Reuse_From:</b> ${esc(f.Reuse_From||'—')} · <b>Reask_Policy:</b> ${esc(f.Reask_Policy||'—')}</div>`;
-      body=`<div class="reuse-context"><div><span class="context-label internal-only">Dato reutilizado</span><strong>${esc(formatContextValue(f,val))}</strong><small class="internal-only">Tomado de: ${esc(src.label)}</small>${technical}</div><div class="row-actions">${confirmUi}${editBtn}</div></div>`;
+      if(writeThroughTarget(f)){
+        // The references render a prefilled value as an ordinary filled control carrying a provenance
+        // chip, not a read-only panel. Editing it writes through to the owning record, so this is a
+        // single owner being edited from a second surface — not a parallel copy (DEC-050).
+        body=`${renderControl(f,val,opts,e)}${confirmUi?`<div class="detail-wrap">${confirmUi}</div>`:''}`;
+      } else {
+        const editBtn=src.page
+          ?`<button type="button" class="btn btn-small" data-goto-source="${attr(src.page)}">Editar en ${esc(pageLabelEs(src.page))}</button>`
+          :`<button type="button" class="btn btn-small" data-edit-context="${f.Field_ID}">Editar aquí</button>`;
+        // No unambiguous owner attribute to write through to, so the only DEC-050-safe correction is
+        // to navigate to the owner.
+        body=`<div class="reuse-context"><div><strong>${esc(formatContextValue(f,val))}</strong><small>Tomado de: ${esc(src.label)}</small></div><div class="row-actions">${confirmUi}${editBtn}</div></div>`;
+      }
     }
   }
   else body=`${renderControl(f,val,opts,e)}${explicitReaskAllowed(f.Field_ID,e)?`<div class="field-help"><button type="button" class="link-btn" data-close-context="${f.Field_ID}">Cerrar edición y volver a reutilizar el dato</button></div>`:''}`;
   const clarification=FIELD_CLARIFICATION_ES[f.Field_ID];
-  return `<div class="question-card"><div class="question-head"><div><div class="question-title">${esc(f.Pregunta_o_etiqueta_ES)}</div><div class="question-purpose">${esc(f.Objetivo_concreto||'')}</div></div><div class="question-meta">${meta}</div></div><div class="question-body">${body}</div><div class="field-help"><b>Ejemplo:</b> ${esc(f.Ejemplo_ES||'—')} · <b>Validación:</b> ${esc(f.Validation||'—')}</div>${clarification?`<div class="field-help clarification-note">${esc(clarification)}</div>`:''}</div>`;
+  // Example and validation stay available — they are canonical guidance — but behind the existing
+  // discreet help popover, because the reference shows a single explanatory line under the control.
+  const detail=[f.Ejemplo_ES?`<div><b>Ejemplo:</b> ${esc(f.Ejemplo_ES)}</div>`:'',
+                f.Validation?`<div><b>Validación:</b> ${esc(f.Validation)}</div>`:'',
+                `<div class="internal-only"><b>${esc(f.Field_ID)}</b> · ${esc(f.Write_Target||'—')}</div>`,
+                f.Reuse_From?`<div class="internal-only technical-provenance"><b>Reuse_From:</b> ${esc(f.Reuse_From)} · <b>Reask_Policy:</b> ${esc(f.Reask_Policy||'—')}</div>`:''].join('');
+  const popId=`help_${f.Field_ID}`;
+  const help=detail?`<button type="button" class="help-icon" data-help-toggle="${attr(popId)}" aria-expanded="false" aria-controls="${attr(popId)}" title="Ayuda">?</button><div class="help-popover" id="${attr(popId)}" role="tooltip">${detail}</div>`:'';
+  const wide=['TEXT_LONG_INTERNAL','MULTISELECT','MULTISELECT_WITH_OTHER','MULTISELECT_WITH_DETAIL','MULTISELECT_WITH_PRIORITY','FRICTION_MULTISELECT_PRIORITY','RISK_BUILDER','CLIENT_CONFIRMATION_WITH_INLINE_EDIT','STEP_PAIR_SELECTOR','STEP_SYSTEM_PAIR_SELECTOR','DROPDOWN_WITH_OWNER_DATE'].includes(String(f.Control_UI));
+  return `<div class="field${wide?' full':''}" data-field="${attr(f.Field_ID)}"><label>${esc(f.Pregunta_o_etiqueta_ES)}${meta}${help}</label>${body}<div class="field-help">${esc(f.Objetivo_concreto||'')}</div>${clarification?`<div class="field-help clarification-note">${esc(clarification)}</div>`:''}</div>`;
 }
 
 function bindNoReask(){
