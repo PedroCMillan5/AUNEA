@@ -136,15 +136,13 @@ test('B03 VR-01B keeps DF004 and DF007-DF010 in a governed progressive-disclosur
   assert.match(diagJs, /stage\.Stage_ID==='S01'\?pg01CanonicalDisclosure\(fields,e\):''/,'the disclosure exists only on PG01');
 });
 
-test('B03 auto-opens the folded block only while an active required field inside it is missing', () => {
+test('B03 auto-opens from the Diagnostic Master requiredness instead of duplicating a required-field list', () => {
   assert.match(diagJs, /f\.Requiredness==='REQUIRED_90M'&&questionVisible\(f,e\)&&!valuePresent\(effectiveValue\(f,e\)\)/);
   assert.match(diagJs, /open=pending\.length\?' open':''/);
-  const pg01 = diagnosticSchema.fields.filter(f => f.Stage_ID === 'S01');
-  assert.equal(pg01.find(f=>f.Field_ID==='DF004').Requiredness,'OPTIONAL_90M');
-  assert.equal(pg01.find(f=>f.Field_ID==='DF007').Requiredness,'OPTIONAL_90M');
-  assert.equal(pg01.find(f=>f.Field_ID==='DF008').Requiredness,'REQUIRED_90M');
-  assert.equal(pg01.find(f=>f.Field_ID==='DF009').Requiredness,'REQUIRED_90M');
-  assert.equal(pg01.find(f=>f.Field_ID==='DF010').Requiredness,'OPTIONAL_90M');
+  const foldedIds=['DF004','DF007','DF008','DF009','DF010'];
+  const folded=diagnosticSchema.fields.filter(f=>f.Stage_ID==='S01'&&foldedIds.includes(f.Field_ID));
+  assert.equal(folded.length,5,'all five governed S01 remainder fields must come from the runtime Diagnostic Master');
+  assert.ok(folded.some(f=>f.Requiredness==='REQUIRED_90M'),'the current Diagnostic Master must drive at least one required folded field');
 });
 
 test('wrappers over pageTop forward every argument', () => {
