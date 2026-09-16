@@ -1,8 +1,13 @@
 # DRIVE_CLEANUP_RECOMMENDATIONS
 
-Status: RECOMMENDATIONS — no Drive action taken
-Date: 2026-09-14
+Status: RECOMMENDATIONS — no Drive action taken · §1 CLOSED
+Date: 2026-09-14 · §1 revisited 2026-09-16 with Drive access
 Scope: AUNEA Internal v2.0.0 REVIEW — cleanup baseline
+
+> **Nota de revisión (2026-09-16).** Este manifiesto se escribió sin acceso a Drive. Desde entonces
+> el acceso existe y se ha usado para cerrar §1 contra las fuentes reales. Las secciones §2–§7 siguen
+> siendo inferencias del repositorio y conservan su estado `VERIFY` / `NEEDS_REVIEW`: no se han
+> reverificado en esta revisión y Drive sigue sin declararse limpio.
 
 ## What this is, and what it is not
 
@@ -18,31 +23,26 @@ Actions use: **KEEP** · **ARCHIVE** · **REMOVE_DUPLICATE** · **VERIFY**.
 
 ---
 
-## 1. Canonical Diagnostic Master — three conflicting version pointers (highest priority)
+## 1. Canonical Diagnostic Master — RESOLVED, no longer an open finding
 
-**VERIFY.** The repository points at three different versions of the canonical diagnostic asset.
-The live runtime is self-consistent; the governance documents are not.
+**CLOSED.** When this manifest was written the repository pointed at three different versions of the
+canonical diagnostic asset. That conflict has since been resolved in Drive and reconciled in the
+repository by commits `3c996ba`, `8f33542` and `a38edc1`, under DEC-044.
 
-| Source in repo | Version claimed | Drive ID |
-|---|---|---|
-| `docs/AUNEA_INTERNAL_MASTER_INDEX.md` (lines 12-14) | v0.9 / DIAGNOSTIC_MASTER_V1 | `1f0WPb0BMElYbwB5oDBv-ypiyGKvURv4V` |
-| `PROJECT_RULES.md` (line 47) | v0.9 / DIAGNOSTIC_MASTER_V1 | — |
-| `3_SYSTEM/backend/README.md` (line 6) | v0.8 | — |
-| `3_SYSTEM/frontend/app-schema-v11.js` (lines 3, 10) | v0.9.1 / MASTER_V1.1 | `1qKjbJviEvUQnHOGCHy4VkIx0dbdkoJj1` |
-| `3_SYSTEM/frontend/data/diagnostic-master.source.json` (line 2) | v0.9.1 / MASTER_V1.1 | `1qKjbJviEvUQnHOGCHy4VkIx0dbdkoJj1` |
-| `3_SYSTEM/frontend/README.md` (line 13) | v0.9.1 / MASTER_V1.1 | `1qKjbJviEvUQnHOGCHy4VkIx0dbdkoJj1` |
-| `3_SYSTEM/frontend/tests/schema-v11.test.cjs` (line 15) | asserts `1qKjb…` | `1qKjbJviEvUQnHOGCHy4VkIx0dbdkoJj1` |
+Verified at the current head — all four governance documents agree:
 
-**Evidence:** the shipped runtime loads and CI asserts the v0.9.1 / Master v1.1 ID; the 100-field,
-25-domain, 249-country projection in `data/diagnostic-master.min.json` corresponds to it.
+| Source in repo | Version |
+|---|---|
+| `docs/AUNEA_INTERNAL_MASTER_INDEX.md` | v0.9.1 / MASTER_V1.1 · `1qKjbJviEvUQnHOGCHy4VkIx0dbdkoJj1` |
+| `PROJECT_RULES.md` v1.5 | v0.9.1 / MASTER_V1.1 · `1qKjbJviEvUQnHOGCHy4VkIx0dbdkoJj1` |
+| `3_SYSTEM/backend/README.md` | v0.9.1 / MASTER_V1.1 · `1qKjbJviEvUQnHOGCHy4VkIx0dbdkoJj1` |
+| `3_SYSTEM/frontend/README.md`, `app-schema-v11.js`, `data/diagnostic-master.source.json`, `tests/schema-v11.test.cjs` | v0.9.1 / MASTER_V1.1 · `1qKjbJviEvUQnHOGCHy4VkIx0dbdkoJj1` |
 
-**Recommended action:** confirm in Drive which asset is CANONICAL today, then align
-`docs/AUNEA_INTERNAL_MASTER_INDEX.md`, `PROJECT_RULES.md` and `3_SYSTEM/backend/README.md`
-in a single change set — as the mirror's own `## Rule` section already requires.
+v0.9 is ARCHIVED (`1f0WPb0BMElYbwB5oDBv-ypiyGKvURv4V`) and v0.8 remains archived under
+`00_DIAGNOSTIC_CANONICO/99_ARCHIVO`. The legacy `registry_v08` snapshot name is a runtime/storage
+artefact and does not reopen this question.
 
-**Deliberately not done here:** correcting these pointers unilaterally would mean rewriting a
-canonical-source reference in an ACTIVE governance document from repository inference alone.
-That is exactly the class of change this cleanup was instructed not to invent.
+No action remains. This section is kept as history, not as a pending item.
 
 ---
 
