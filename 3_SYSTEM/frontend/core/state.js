@@ -1,6 +1,6 @@
 // [AUNEA-FE-CORE-STATE-020] START — Estado, CRM y navegación
 // PURPOSE: Estado, CRM y navegación, incluyendo invalidación única de outputs derivados cuando cambia captura.
-// SOURCE: v1.0.4 aceptada; Diagnostic Master v1.1; DEC-034/040/041/043.
+// SOURCE: v1.0.4 aceptada; Diagnostic Master v1.1; DEC-034/040/041/043/048/051/052; B01 VR-02.
 // INPUTS: schema canónico, estado de engagement y acciones del usuario.
 // OUTPUTS: estado y vistas de captura/revisión.
 // SIDE_EFFECTS: DOM y almacenamiento local según responsabilidad.
@@ -10,19 +10,28 @@ const AUNEA_PRODUCT_STATUS='REVIEW';
 const STORAGE_SCHEMA_VERSION='1';
 const STORAGE_KEY = 'aunea_internal_v1'; // clave histórica conservada para no perder snapshots locales existentes
 const API_DEFAULT = 'http://localhost:8000';
-// Rail structure per the approved references (IMG90-00-01 / IMG90-00-02 / IMG90-01): a standalone
-// entry, then CRM, then the nine numbered session steps, then the internal work that follows PG09.
-// '__STAGES__' is expanded at render time from the canonical flow — the nine steps are Diagnostic
-// Master data, not a list maintained here.
-const NAV = [
-  ['inicio','⌂','Inicio'],
+// VR-02: derive the rail context from the current page, not from a second persisted state or lifecycle.
+// Keep the existing destinations and labels. Session steps still come only from Diagnostic Master.
+const HOME_NAV = ['inicio','⌂','Inicio'];
+const CRM_NAV = [
+  HOME_NAV,
   ['CRM'],
-  ['empresas','▦','Empresas'],['contactos','◉','Contactos'],['interacciones','◷','Interacciones'],['oportunidades','◈','Oportunidades'],['estudios','▤','Estudios'],['proyectos','▣','Proyectos'],
+  ['empresas','▦','Empresas'],['contactos','◉','Contactos'],['interacciones','◷','Interacciones'],['oportunidades','◈','Oportunidades'],['estudios','▤','Estudios'],['proyectos','▣','Proyectos']
+];
+// SESSION_NAV is already the legacy mode menu in ui/mode.js. Use an explicit context name here.
+const SESSION_CONTEXT_NAV = [
+  HOME_NAV,
   ['Diagnóstico 90 min'],
   ['__STAGES__'],
-  ['proceso','⇢','Editor del mapa AS-IS'],
+  ['proceso','⇢','Editor del mapa AS-IS']
+];
+const INTERNAL_WORK_NAV = [
+  HOME_NAV,
+  ['diagnostico','◎','Diagnóstico 90 min'],
   ['Trabajo interno'],
-  ['resultados','▥','Diagnóstico'],['recomendacion','≋','Solución'],['escenarios','▦','Escenarios'],['quote','▧','Entregables'],
+  ['resultados','▥','Diagnóstico'],['recomendacion','≋','Solución'],['escenarios','▦','Escenarios'],['quote','▧','Entregables']
+];
+const SYSTEM_NAV = [
   ['Sistema'],
   ['admin','⚙','Configuración']
 ];
@@ -103,6 +112,11 @@ const SESSION_SURFACE_PAGES=new Set(['diagnostico','proceso']);
 const CRM_SURFACE_PAGES=new Set(['inicio','empresas','contactos','interacciones','oportunidades','estudios','proyectos']);
 
 function stageList(){return (schema&&schema.flow)||[]}
+function contextualNav(){
+  if(SESSION_SURFACE_PAGES.has(state.activePage))return SESSION_CONTEXT_NAV;
+  const internal=INTERNAL_WORK_NAV.some(x=>x.length>1&&x[0]===state.activePage&&x!==HOME_NAV);
+  return [...(internal?INTERNAL_WORK_NAV:CRM_NAV),...SYSTEM_NAV];
+}
 function currentStageIndex(){const e=currentEng(),f=stageList();if(!e||!f.length)return -1;return f.findIndex(s=>s.Stage_ID===(e.stageId||'S01'))}
 // The stage clock is the cumulative window of the canonical per-stage minutes — derived from the flow,
 // never a hardcoded schedule. Stage 1 of the shipped flow yields 00:00 – 06:00, as the references show.
@@ -122,7 +136,7 @@ function updateHeader(){
   if(crumb){
     // CRM surfaces are titled by where you are (IMG90-00-01 "CRM · Empresas"); session surfaces by the
     // session itself, with the open study identified in the rail rather than repeated in the top bar.
-    const navLabel=(NAV.find(x=>x.length>1&&x[0]===state.activePage)||[])[2];
+    const navLabel=(contextualNav().find(x=>x.length>1&&x[0]===state.activePage)||[])[2];
     crumb.textContent=inSession
       ? 'Sesión de diagnóstico · 90 min'
       : CRM_SURFACE_PAGES.has(state.activePage)
@@ -160,7 +174,7 @@ function renderNav(){
   const n=document.getElementById('nav');if(!n)return;
   const e=currentEng(),flow=stageList(),active=currentStageIndex();
   const out=[];
-  for(const x of NAV){
+  for(const x of contextualNav()){
     if(x[0]==='__STAGES__'){
       // Nine numbered steps straight from the canonical flow. Without an open study they stay visible
       // but inert, so the session structure is legible before one is selected.
@@ -211,7 +225,7 @@ function bindCommon(){
   document.querySelectorAll('[data-stage-nav]').forEach(b=>b.onclick=()=>{const e=currentEng();if(!e){toast('Abre o crea un estudio antes.');setPage('estudios');return}e.stageId=b.dataset.stageNav;setPage('diagnostico')});
   document.getElementById('saveBtn').onclick=()=>saveState();
   const mm=document.getElementById('mobileMenu');if(mm)mm.onclick=()=>document.querySelector('.sidebar').classList.toggle('open');
-  document.querySelectorAll('[data-open-eng]').forEach(b=>b.onclick=()=>{state.activeEngagementId=b.dataset.openEng;state.activePage='diagnostico';render()});
+  document.querySelectorAll('[data-open-eng]').forEach(b=>b.onclick=()=>{state.activeEngagementId=b.dataset.openEng;setPage(b.dataset.openEngPage==='resultados'?'resultados':'diagnostico')});
   document.querySelectorAll('[data-stage]').forEach(b=>b.onclick=()=>{const e=currentEng();e.stageId=b.dataset.stage;markDirty();render()});
   bindForms();
 }

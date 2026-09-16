@@ -77,9 +77,77 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   // The rail no longer carries a single "Diagnóstico" entry: the approved references replace it with
   // the nine numbered session steps, so step 1 is how the diagnostic surface is reached.
   click('[data-stage-nav="S01"]');assert.ok(d.querySelector('h1'),'diagnostico');
-  for(const page of ['inicio','contactos','estudios','proyectos','proceso','resultados','recomendacion','escenarios','quote','uat','admin']){click(`[data-page="${page}"]`);assert.ok(d.querySelector('h1'),page);}
-  // Every one of the nine canonical stages is reachable from the rail.
-  for(const s of ['S01','S02','S03','S04','S05','S06','S07','S08','S09'])assert.ok(d.querySelector(`[data-stage-nav="${s}"]`),s);
+  // B01 / VR-02: exercise the rendered navigation and its real click handlers in every context.
+  const railPages=()=>Array.from(d.querySelectorAll('#nav [data-page]'),el=>el.dataset.page);
+  const railStages=()=>Array.from(d.querySelectorAll('#nav [data-stage-nav]'),el=>el.dataset.stageNav);
+  const crmPages=['inicio','empresas','contactos','interacciones','oportunidades','estudios','proyectos'];
+  const internalPages=['resultados','recomendacion','escenarios','quote'];
+  const reached=new Set(['diagnostico']);
+  await t.test('VR-02 CRM keeps all relationship pages reachable with an open engagement',()=>{
+    click('#nav [data-page="inicio"]');
+    for(const page of [...crmPages,'uat','admin']){
+      click(`#nav [data-page="${page}"]`);reached.add(page);
+      for(const target of crmPages)assert.ok(railPages().includes(target),`${page} -> ${target}`);
+      assert.deepEqual(railStages(),[],'CRM must not mix in the diagnostic questionnaire');
+      assert.ok(d.querySelector('h1'),page);
+    }
+    assert.match(d.querySelector('#breadcrumb').textContent,/UAT Runtime empresa/);
+    click('#nav [data-page="contactos"]');
+    assert.equal(d.querySelector('#breadcrumb').textContent,'CRM · Contactos');
+  });
+  await t.test('VR-02 Studies opens internal work for the selected engagement and keeps every output reachable',()=>{
+    click('#nav [data-page="estudios"]');
+    const engagementBefore=w.eval('JSON.stringify(currentEng())');
+    click('[data-open-eng-page="resultados"]');
+    for(const page of internalPages){
+      click(`#nav [data-page="${page}"]`);reached.add(page);
+      assert.ok(d.querySelector('h1'),page);
+      for(const target of internalPages)assert.ok(railPages().includes(target),`${page} -> ${target}`);
+      assert.ok(!railPages().includes('interacciones'));
+      assert.ok(!railPages().includes('oportunidades'));
+      assert.deepEqual(railStages(),[]);
+    }
+    assert.equal(w.eval('JSON.stringify(currentEng())'),engagementBefore,'navigation must not mutate capture, lifecycle, snapshots or outputs');
+    click('#nav [data-page="diagnostico"]');
+  });
+  await t.test('VR-02 PG01–PG09 keep nine schema steps and exclude CRM/internal work in both legacy modes',()=>{
+    assert.equal(schema.flow.length,9);
+    const ids=schema.flow.map(s=>s.Stage_ID);
+    for(const mode of ['INTERNAL','SESSION']){
+      if(w.eval('state.uiMode')!==mode)click('#uiModeToggle');
+      for(const stage of schema.flow){
+        click(`#nav [data-stage-nav="${stage.Stage_ID}"]`);
+        assert.deepEqual(railStages(),ids,`${mode} / ${stage.Stage_ID}`);
+        assert.deepEqual(railPages(),['inicio','proceso']);
+        assert.doesNotMatch(d.querySelector('#nav').textContent,/Interacciones|Oportunidades|Trabajo interno|UAT|Configuración/);
+        assert.equal(d.querySelector('#nav .nav-step.active').dataset.stageNav,stage.Stage_ID);
+        assert.equal(w.eval('currentEng().stageId'),stage.Stage_ID);
+        assert.ok(d.querySelector('h1'));
+      }
+      click('#nav [data-page="proceso"]');reached.add('proceso');
+      assert.deepEqual(railPages(),['inicio','proceso']);
+      assert.deepEqual(railStages(),ids);
+      click(`#nav [data-stage-nav="${ids[0]}"]`);
+    }
+    click('#uiModeToggle');
+  });
+  await t.test('VR-02 stage labels and order react to schema changes without a second list',()=>{
+    w.eval('window.__flowBefore=schema.flow; schema.flow=schema.flow.slice().reverse().map((s,i)=>i===0?{...s,Stage_ES:"Etapa de prueba del schema"}:s); render()');
+    try{
+      assert.deepEqual(railStages(),schema.flow.map(s=>s.Stage_ID).reverse());
+      assert.match(d.querySelector('#nav .nav-step').textContent,/Etapa de prueba del schema/);
+    }finally{w.eval('schema.flow=window.__flowBefore; delete window.__flowBefore; render()');}
+  });
+  await t.test('VR-02 session can return to CRM and reopen the same study without losing its stage',()=>{
+    click('#nav [data-stage-nav="S04"]');
+    const before=w.eval('JSON.stringify(currentEng())');
+    click('#nav [data-page="inicio"]');
+    click('#nav [data-page="estudios"]');
+    click('[data-open-eng]:not([data-open-eng-page])');
+    assert.equal(w.eval('JSON.stringify(currentEng())'),before);
+    assert.equal(d.querySelector('#nav .nav-step.active').dataset.stageNav,'S04');
+    assert.deepEqual([...reached].sort(),Array.from(w.eval('Object.keys(pages)')).sort(),'every registered Console page was reached by real navigation');
+  });
   click('[data-page="proceso"]');click('#addStep');fill('#step_name','Validar solicitud');fill('#step_type','ST02');fill('#step_actor','OPERATIONS');
   fill('#step_active','12');fill('#step_wait','60');fill('#step_rework','3');click('#modalSave');
   assert.equal(d.querySelector('#modalSave'),null);
@@ -97,7 +165,7 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   assert.equal(saved.engagements[0].confirmedAsIs,true);
   assert.equal(saved.recoveryMeta.format,'AUNEA_INTERNAL_STATE_V1');
   assert.equal(saved.recoveryMeta.productVersion,'2.0.0');
-  click('[data-page="contactos"]');click('[data-contact-study]');click('#saveBtn');
+  click('#nav [data-page="inicio"]');click('[data-page="contactos"]');click('[data-contact-study]');click('#saveBtn');
   const saved2=JSON.parse(w.localStorage.getItem('aunea_internal_v1'));
   assert.equal(saved2.companies.length,1);assert.equal(saved2.contacts.length,1);assert.equal(saved2.engagements.length,2);
   assert.deepEqual(errors,[]);

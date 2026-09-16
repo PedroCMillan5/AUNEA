@@ -5,7 +5,7 @@
 // OUTPUTS: visible expected/actual PASS/FAIL view stored in state.uatLastRun.
 // SIDE_EFFECTS: isolated backend UAT HTTP call and QA-only state update.
 // CHANGE_RISK: HIGH.
-if(!NAV.some(x=>x.length>1&&x[0]==='uat')){const i=NAV.findIndex(x=>x.length>1&&x[0]==='admin');NAV.splice(i<0?NAV.length:i,0,['uat','✓','UAT / QA'])}
+if(!SYSTEM_NAV.some(x=>x.length>1&&x[0]==='uat')){const i=SYSTEM_NAV.findIndex(x=>x.length>1&&x[0]==='admin');SYSTEM_NAV.splice(i<0?SYSTEM_NAV.length:i,0,['uat','✓','UAT / QA'])}
 function uatStatusBadge(ok){return `<span class="status ${ok?'green':'red'}">${ok?'PASS':'FAIL'}</span>`}
 function uatPage(){
   const u=state.uatLastRun;

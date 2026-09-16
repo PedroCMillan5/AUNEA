@@ -197,6 +197,7 @@ test('DF098 real interaction (jsdom, real runtime): action+owner+date consolidat
 
       // Cerrar el caso (salir a Estudios) y reabrirlo (no crear otro estudio): los valores deben
       // recuperarse solos, sin ninguna intervención manual.
+      click('#nav [data-page="inicio"]');
       click('[data-page="estudios"]');
       await until(()=>d.querySelector('[data-open-eng]'));
       click('[data-open-eng]');

@@ -13,7 +13,8 @@ if(!['SESSION','INTERNAL'].includes(state.uiMode))state.uiMode='INTERNAL';
 
 const __auneaRenderNavInternal=renderNav;
 renderNav=function(){
-  if(state.uiMode!=='SESSION')return __auneaRenderNavInternal();
+  // VR-02 applies to PG01–PG09 and their AS-IS editor even when the legacy mode is selected.
+  if(state.uiMode!=='SESSION'||SESSION_SURFACE_PAGES.has(state.activePage))return __auneaRenderNavInternal();
   const n=document.getElementById('nav');if(!n)return;
   n.innerHTML=SESSION_NAV.map(x=>x.length===1?`<div class="nav-group">${x[0]}</div>`:`<button class="nav-item ${state.activePage===x[0]?'active':''}" data-page="${x[0]}"><span class="nav-icon">${x[1]}</span>${x[2]}</button>`).join('');
 };
