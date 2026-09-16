@@ -7,22 +7,7 @@
 // CHANGE_RISK: HIGH.
 const pages={
   inicio(){const active=currentEng();return pageTop('Cockpit de consultoría','Punto de entrada limpio a CRM, estudios y diagnóstico. No se cargan datos ficticios automáticamente.',`<button class="btn btn-primary" id="newStudy">Nuevo estudio</button>`) + `<div class="hero-actions"><button class="hero-action primary" id="homeNewContact"><b>Nuevo contacto</b><p>Registra persona + empresa y conserva la relación a lo largo del tiempo.</p><span class="arrow">→</span></button><button class="hero-action" data-page="estudios"><b>Abrir estudios</b><p>Consulta diagnósticos históricos y continúa desde el punto guardado.</p><span class="arrow">→</span></button><button class="hero-action" data-page="diagnostico"><b>Continuar diagnóstico</b><p>${active?'Retoma '+esc(active.title):'Abre primero un estudio.'}</p><span class="arrow">→</span></button></div><div class="grid g4 section"><div class="card metric"><small>Empresas</small><strong>${state.companies.length}</strong></div><div class="card metric"><small>Contactos</small><strong>${state.contacts.length}</strong></div><div class="card metric"><small>Estudios</small><strong>${state.engagements.length}</strong></div><div class="card metric"><small>Proyectos</small><strong>${state.projects.length}</strong></div></div>`+section('Cómo funciona','El mismo Engagement Record acompaña todo el recorrido.',`<div class="grid g4"><div class="notice"><b>1. Relación</b><br>Empresa → contacto → oportunidad</div><div class="notice"><b>2. Diagnóstico</b><br>Contexto → AS-IS → fricciones → evidencia</div><div class="notice"><b>3. Decisión</b><br>Economics → riesgo → recomendación → escenarios</div><div class="notice"><b>4. Salida</b><br>Quote → entregables → proyecto</div></div>`)},
-  contactos(){
-    const tab=state.crmTab||'contactos';
-    const filters=state.contactFilters||{status:'',hideLost:true};
-    const statuses=['Nuevo','Contactado','Reunión','Oportunidad','Diagnóstico','Propuesta','Ganado','Perdido','En pausa'];
-    const filteredContacts=state.contacts.filter(c=>{if(filters.hideLost&&c.status==='Perdido')return false;if(filters.status&&c.status!==filters.status)return false;return true});
-    const tabs=`<div class="subtabs"><button class="subtab ${tab==='contactos'?'active':''}" data-crm-tab="contactos">Contactos (${state.contacts.length})</button><button class="subtab ${tab==='empresas'?'active':''}" data-crm-tab="empresas">Empresas (${state.companies.length})</button></div>`;
-    let body='';
-    if(tab==='empresas'){
-      body=section('Empresas','Company es la entidad empresarial única.',state.companies.length?`<div class="grid g3">${state.companies.map(c=>{const sector=c.sector?labelFrom('REF_DOMAIN',c.sector):'Sin sector',country=c.country?labelFrom('REF_COUNTRY_ISO3166',c.country):'';const codes=[c.sector,c.country].filter(Boolean).join(' · ');return `<div class="card card-pad"><b>${esc(c.name)}</b><p class="field-help">${esc(sector)}${country?' · '+esc(country):''}${codes?`<span class="internal-only"> · ${esc(codes)}</span>`:''}</p><div class="row-actions"><span class="chip">${state.contacts.filter(x=>x.companyId===c.id).length} contactos</span><span class="chip">${state.engagements.filter(x=>x.companyId===c.id).length} estudios</span></div></div>`}).join('')}</div>`:'<div class="empty"><p>Sin empresas.</p></div>');
-    } else {
-      const filterRow=`<div class="filter-row"><select data-crm-status-filter><option value="">Todos los estados</option>${statuses.map(s=>`<option value="${s}" ${filters.status===s?'selected':''}>${s}</option>`).join('')}</select><label class="checkbox-inline"><input type="checkbox" data-crm-hide-lost ${filters.hideLost?'checked':''}> Ocultar perdidos</label></div>`;
-      const table=filteredContacts.length?`<div class="table-wrap"><table class="data-table"><thead><tr><th>Empresa</th><th>Contacto</th><th>Rol</th><th>Estado</th><th>Origen</th><th>Última interacción</th><th>Próxima acción</th><th></th></tr></thead><tbody>${filteredContacts.map(c=>`<tr><td>${esc(companyById(c.companyId)?.name||'—')}</td><td><b>${esc(c.name)}</b><br><small>${esc(c.email||'')}</small></td><td>${esc(c.role||'—')}</td><td>${statusBadge(c.status)}</td><td>${esc(c.source||'—')}</td><td>${fmtDate(c.lastInteraction)}</td><td>${esc(c.nextAction||'—')}</td><td><div class="row-actions"><button class="btn btn-small" data-edit-contact="${c.id}">Editar</button><button class="btn btn-small btn-primary" data-contact-study="${c.id}">Crear estudio</button><button class="btn btn-small btn-danger" data-remove-contact="${c.id}">Archivar</button></div></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty"><h2>Sin contactos con estos filtros</h2><p>Ajusta el filtro de estado o crea un contacto nuevo.</p></div>';
-      body=section('Contactos y estado comercial',`Los registros vivos migrarán a AUNEA Operations; esta build ${esc(AUNEA_PRODUCT_STATUS)} usa almacenamiento local para depuración.`,filterRow+table);
-    }
-    return pageTop('Contactos','CRM local de prototipo: una persona puede participar en múltiples estudios y proyectos a lo largo del tiempo.',`<button class="btn" id="addCompany">Nueva empresa</button><button class="btn btn-primary" id="addContact">Nuevo contacto</button>`) + tabs + body;
-  },
+  empresas:companiesPage,contactos:contactsPage,interacciones:interactionsPage,oportunidades:opportunitiesPage,
   estudios(){return pageTop('Estudios','Biblioteca histórica de engagements. Un contacto puede tener varios estudios y proyectos.',`<button class="btn btn-primary" id="newStudy">Nuevo estudio</button>`) + section('Histórico',`${state.engagements.length} estudio(s) guardados en este navegador.`,state.engagements.length?`<div class="table-wrap"><table class="data-table"><thead><tr><th>Empresa</th><th>Estudio</th><th>Contacto</th><th>Proceso</th><th>Estado</th><th>Actualizado</th><th></th></tr></thead><tbody>${state.engagements.map(e=>`<tr><td>${esc(companyById(e.companyId)?.name||'—')}</td><td><b>${esc(e.title)}</b></td><td>${esc(e.contactIds.map(x=>contactById(x)?.name).filter(Boolean).join(', '))}</td><td>${esc(e.answers?.DF011||'Pendiente')}</td><td>${statusBadge(e.status)}</td><td>${fmtDate(e.updatedAt)}</td><td><button class="btn btn-small btn-primary" data-open-eng="${e.id}">Abrir</button></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty"><h2>No hay estudios</h2><p>Crea uno desde un contacto para mantener trazabilidad de la relación.</p></div>')},
   proyectos(){return pageTop('Proyectos','Biblioteca histórica de proyectos vinculados a empresas, contactos y engagements.','') + section('Histórico de proyectos','Un mismo contacto puede participar en varios proyectos a lo largo del tiempo.',state.projects.length?`<div class="table-wrap"><table class="data-table"><thead><tr><th>Empresa</th><th>Proyecto</th><th>Contactos</th><th>Estudio origen</th><th>Estado</th><th>Creado</th></tr></thead><tbody>${state.projects.map(p=>{const e=state.engagements.find(x=>x.id===p.engagementId);return `<tr><td>${esc(companyById(p.companyId)?.name||'—')}</td><td><b>${esc(p.name)}</b></td><td>${esc((p.contactIds||[]).map(x=>contactById(x)?.name).filter(Boolean).join(', '))}</td><td>${esc(e?.title||'—')}</td><td>${statusBadge(p.status)}</td><td>${fmtDate(p.createdAt)}</td></tr>`}).join('')}</tbody></table></div>`:'<div class="empty"><h2>Aún no hay proyectos</h2><p>Un contacto o una oportunidad no son un proyecto. El proyecto se crea cuando un engagement/escenario se confirma para ejecución.</p></div>')},
   diagnostico:stagePage,proceso:processPage,resultados:resultsPage,recomendacion:recommendationPage,escenarios:scenariosPage,quote:quotePage,
@@ -31,7 +16,10 @@ const pages={
 
 function postBind(){
   const by=id=>document.getElementById(id);
-  if(by('newStudy'))by('newStudy').onclick=newStudy;if(by('homeNewContact'))by('homeNewContact').onclick=addContact;if(by('addCompany'))by('addCompany').onclick=addCompany;if(by('addContact'))by('addContact').onclick=addContact;
+  if(by('newStudy'))by('newStudy').onclick=newStudy;if(by('homeNewContact'))by('homeNewContact').onclick=addContact;
+  if(by('addCompanyBtn'))by('addCompanyBtn').onclick=addCompany;if(by('addContactBtn'))by('addContactBtn').onclick=addContact;
+  if(by('addInteractionBtn'))by('addInteractionBtn').onclick=addInteraction;if(by('addOpportunityBtn'))by('addOpportunityBtn').onclick=addOpportunity;
+  bindCrm();
   if(by('addStep'))by('addStep').onclick=()=>openStepModal();if(by('addMultipleSteps'))by('addMultipleSteps').onclick=addMultipleSteps;if(by('addFriction'))by('addFriction').onclick=()=>openFrictionModal();if(by('confirmAsIs'))by('confirmAsIs').onclick=confirmAsIs;
   if(by('addRisk'))by('addRisk').onclick=addRisk;if(by('addEconomic'))by('addEconomic').onclick=addEconomic;if(by('runDiag'))by('runDiag').onclick=runDiagnosis;if(by('runDiagHeader'))by('runDiagHeader').onclick=runDiagnosis;
   if(by('prevStage'))by('prevStage').onclick=()=>{const e=currentEng(),i=schema.flow.findIndex(x=>x.Stage_ID===e.stageId);if(i>0){e.stageId=schema.flow[i-1].Stage_ID;markDirty();render()}};
@@ -43,5 +31,41 @@ function postBind(){
   if(by('checkBackend'))by('checkBackend').onclick=async()=>{await checkBackend();render();toast(state.backendOnline?'Backend disponible.':'Backend no disponible en '+state.backendUrl)};
   if(by('returnToStage'))by('returnToStage').onclick=returnToStage;
   if(by('clearLocal'))by('clearLocal').onclick=()=>{if(confirm(`¿Eliminar toda la base local de AUNEA Internal v${AUNEA_PRODUCT_VERSION} ${AUNEA_PRODUCT_STATUS} de este navegador?`)){localStorage.removeItem(STORAGE_KEY);state=blankState();render();toast('Datos locales eliminados.')}};
+}
+
+// CRM interactions. Selection is state, not DOM: the inspector always shows the selected record and
+// never keeps a second copy of it (DEC-050).
+function bindCrm(){
+  const on=(sel,fn)=>document.querySelectorAll(sel).forEach(el=>el.onclick=e=>{e.stopPropagation();fn(el)});
+  const live=(sel,fn)=>document.querySelectorAll(sel).forEach(el=>el.onchange=()=>fn(el));
+
+  document.querySelectorAll('[data-company-tab]').forEach(b=>b.onclick=()=>{state.companyTab=b.dataset.companyTab;state.selectedCompanyId=null;render()});
+  document.querySelectorAll('[data-select-company]').forEach(r=>r.onclick=()=>{state.selectedCompanyId=r.dataset.selectCompany;render()});
+  on('[data-edit-company]',el=>editCompany(el.dataset.editCompany));
+  document.querySelectorAll('[data-company-ins-tab]').forEach(b=>b.onclick=()=>{state.companyInspectorTab=b.dataset.companyInsTab;render()});
+  live('[data-company-filter]',el=>{state.companyFilters={...state.companyFilters,[el.dataset.companyFilter]:el.value};render()});
+  if(document.getElementById('clearCompanyFilters'))document.getElementById('clearCompanyFilters').onclick=()=>{state.companyFilters={sector:'',size:'',status:'',country:''};state.companySearch='';render()};
+  const cs=document.getElementById('companySearch');if(cs)cs.oninput=()=>{state.companySearch=cs.value;clearTimeout(window.__companySearch);window.__companySearch=setTimeout(render,220)};
+  on('[data-company-contacts]',el=>{state.selectedCompanyId=el.dataset.companyContacts;setPage('contactos')});
+  on('[data-company-contact-new]',el=>{state.selectedCompanyId=el.dataset.companyContactNew;addContact()});
+  on('[data-company-opportunity]',el=>{state.selectedCompanyId=el.dataset.companyOpportunity;addOpportunity()});
+  on('[data-company-interaction]',el=>{state.selectedCompanyId=el.dataset.companyInteraction;addInteraction()});
+
+  document.querySelectorAll('[data-select-contact]').forEach(r=>r.onclick=()=>{state.selectedContactId=r.dataset.selectContact;render()});
+  on('[data-edit-contact]',el=>editContact(el.dataset.editContact));
+  on('[data-delete-contact]',el=>{if(deleteContact(el.dataset.deleteContact))render()});
+  // The star writes through to Company.primaryContactId — it never sets a field on the contact.
+  on('[data-primary-contact]',el=>{const ct=contactById(el.dataset.primaryContact);if(ct){setPrimaryContact(ct.companyId,ct.id);render()}});
+  on('[data-contact-history]',el=>{state.selectedContactId=el.dataset.contactHistory;setPage('interacciones')});
+  on('[data-contact-project]',()=>toast('Un proyecto nace de una decisión de implementación sobre un estudio (DEC-054).'));
+  live('[data-contact-filter]',el=>{state.contactFilters={...state.contactFilters,[el.dataset.contactFilter]:el.value};render()});
+  if(document.getElementById('clearContactFilters'))document.getElementById('clearContactFilters').onclick=()=>{state.contactFilters={role:'',status:'',language:''};state.contactSearch='';render()};
+  const ks=document.getElementById('contactSearch');if(ks)ks.oninput=()=>{state.contactSearch=ks.value;clearTimeout(window.__contactSearch);window.__contactSearch=setTimeout(render,220)};
+  const cp=document.getElementById('contactsCompanyPicker');if(cp)cp.onchange=()=>{state.selectedCompanyId=cp.value;state.selectedContactId=null;render()};
+
+  on('[data-edit-interaction]',el=>editInteraction(el.dataset.editInteraction));
+  on('[data-delete-interaction]',el=>deleteInteraction(el.dataset.deleteInteraction));
+  on('[data-edit-opportunity]',el=>editOpportunity(el.dataset.editOpportunity));
+  on('[data-opportunity-study]',el=>createStudyFromOpportunity(el.dataset.opportunityStudy));
 }
 // [AUNEA-FE-SHELL-NAV-010] END

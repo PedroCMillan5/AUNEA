@@ -17,6 +17,26 @@ const DIAGNOSTIC_MASTER_V11 = Object.freeze({
   df050:{"Field_ID":"DF050","Canonical_Section_ID":"DS05","Stage_ID":"S04","Stage_ES":"Mapa AS-IS","Entity_Scope":"Process","Field_Name":"Communication_Channels","Pregunta_o_etiqueta_ES":"Canales de comunicación utilizados","Objetivo_concreto":"Consolidar comunicaciones para detectar fragmentación y necesidades de seguimiento.","Control_UI":"MULTISELECT","Option_Set_ID":"OS_COMM_CHANNEL","Ask_Mode":"DERIVE_AND_CONFIRM","Requiredness":"CONDITIONAL_90M","Branch_Rule_ID":"BR-TOOLS","Cardinality":"1","Write_Target":"RT_PROCESS.Communication_Channels","Engine_Consumers":"Pain; Recommendation","Reuse_From":"RT_PROCESS_STEP.Communication_Channels","Reask_Policy":"DERIVE_THEN_CONFIRM","Reask_Trigger":null,"Validation":"0..N.","Evidence_Expected":"NO","Evidence_Fallback":"WHEN_MATERIAL","Ejemplo_ES":"Email; Teams; portal","Estimated_Sec":20,"Client_Visible":"YES","Source_ID":"SRC-EXT-ISO15489-001; SRC-EXT-ISO9001-001","Grounding_Status":"QUESTION_PURPOSE_GROUNDED","UI_Design_Status":"AUNEA_UI_V1_DEFINED","Timing_Status":"PILOT_CALIBRATION_PENDING","Coverage_Status":"MAPPED","Notas":"NR03 reconciled: communication channels are captured per process step and consolidated here."}
 });
 
+// ISO 639-1 language codes. DEC-057 names this standard for Contact.Idioma, so the catalogue is the
+// standard's own code list — not an AUNEA option set and not a subset chosen here. The Spanish display
+// names come from the platform's CLDR data via Intl.DisplayNames, so no language name is hand-written.
+const REF_LANGUAGE_ISO6391_CODES = Object.freeze(('aa ab ae af ak am an ar as av ay az ba be bg bh bi bm bn bo br bs ca ce ch co cr cs cu cv cy '
+ +'da de dv dz ee el en eo es et eu fa ff fi fj fo fr fy ga gd gl gn gu gv ha he hi ho hr ht hu hy hz ia id ie ig ii ik io is it iu '
+ +'ja jv ka kg ki kj kk kl km kn ko kr ks ku kv kw ky la lb lg li ln lo lt lu lv mg mh mi mk ml mn mr ms mt my na nb nd ne ng nl nn no nr nv ny '
+ +'oc oj om or os pa pi pl ps pt qu rm rn ro ru rw sa sc sd se sg si sk sl sm sn so sq sr ss st su sv sw '
+ +'ta te tg th ti tk tl tn to tr ts tt tw ty ug uk ur uz ve vi vo wa wo xh yi yo za zh zu').split(' '));
+
+function languageOptions(){
+  let names=null;
+  try{names=new Intl.DisplayNames(['es'],{type:'language'})}catch{/* no Intl data: fall back to the code */}
+  const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+  return {options:REF_LANGUAGE_ISO6391_CODES.map(code=>{
+    let label=code;
+    try{label=names?cap(names.of(code)||code):code}catch{label=code}
+    return {value:code,label};
+  }).sort((a,b)=>a.label.localeCompare(b.label,'es'))};
+}
+
 function canonicalOptions(pairs){return {options:pairs.map(([value,label])=>({value,label}))};}
 function applyDiagnosticMasterV11(base){
   if(!base||!Array.isArray(base.fields)||!Array.isArray(base.process_step_model)) throw new Error('Runtime base Diagnostic Master no válido');
@@ -26,10 +46,12 @@ function applyDiagnosticMasterV11(base){
   out.option_sets=out.option_sets||{};
   out.option_sets.REF_DOMAIN=canonicalOptions(DIAGNOSTIC_MASTER_V11.domains);
   out.option_sets.REF_COUNTRY_ISO3166=canonicalOptions(DIAGNOSTIC_MASTER_V11.countries);
+  out.option_sets.REF_LANGUAGE_ISO6391=languageOptions();
   const f50=out.fields.findIndex(f=>f.Field_ID==='DF050');if(f50<0) throw new Error('DF050 no existe en runtime base');out.fields[f50]={...out.fields[f50],...DIAGNOSTIC_MASTER_V11.df050};
   const idx=out.process_step_model.findIndex(f=>f.Field_Key==='communication_channels');if(idx>=0) out.process_step_model[idx]={...out.process_step_model[idx],...DIAGNOSTIC_MASTER_V11.communicationChannelField};else out.process_step_model.push(DIAGNOSTIC_MASTER_V11.communicationChannelField);
   if(out.option_sets.REF_DOMAIN.options.length!==25) throw new Error('REF_DOMAIN incompleto');
   if(out.option_sets.REF_COUNTRY_ISO3166.options.length!==249) throw new Error('REF_COUNTRY_ISO3166 incompleto');
+  if(out.option_sets.REF_LANGUAGE_ISO6391.options.length!==REF_LANGUAGE_ISO6391_CODES.length) throw new Error('REF_LANGUAGE_ISO6391 incompleto');
   if(out.process_step_model.length!==20) throw new Error(`Process Step Model: ${out.process_step_model.length} atributos; se esperaban 20`);
   if(!out.process_step_model.some(f=>f.Field_Key==='communication_channels')) throw new Error('Process Step Communication_Channels ausente');
   return out;

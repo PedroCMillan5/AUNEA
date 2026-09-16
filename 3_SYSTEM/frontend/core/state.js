@@ -17,7 +17,7 @@ const API_DEFAULT = 'http://localhost:8000';
 const NAV = [
   ['inicio','⌂','Inicio'],
   ['CRM'],
-  ['contactos','◉','Contactos'],['estudios','▤','Estudios'],['proyectos','▣','Proyectos'],
+  ['empresas','▦','Empresas'],['contactos','◉','Contactos'],['interacciones','◷','Interacciones'],['oportunidades','◈','Oportunidades'],['estudios','▤','Estudios'],['proyectos','▣','Proyectos'],
   ['Diagnóstico 90 min'],
   ['__STAGES__'],
   ['proceso','⇢','Editor del mapa AS-IS'],
@@ -35,13 +35,28 @@ function blankState(){
     version:AUNEA_PRODUCT_VERSION,productVersion:AUNEA_PRODUCT_VERSION,productStatus:AUNEA_PRODUCT_STATUS,storageSchemaVersion:STORAGE_SCHEMA_VERSION,
     activePage:'inicio',activeEngagementId:null,dirty:false,
     backendUrl:API_DEFAULT,backendOnline:false,returnTo:null,
-    crmTab:'contactos',contactFilters:{status:'',hideLost:true},
-    companies:[],contacts:[],opportunities:[],engagements:[],projects:[],audit:[]
+    selectedCompanyId:null,selectedContactId:null,
+    companyTab:'Todas',companySearch:'',companyFilters:{sector:'',size:'',status:'',country:''},
+    contactSearch:'',contactFilters:{role:'',status:'',language:''},
+    companyInspectorTab:'Resumen',
+    companies:[],contacts:[],interactions:[],opportunities:[],engagements:[],projects:[],audit:[]
   };
 }
 function loadState(){
-  try{return {...blankState(),...JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}'),productVersion:AUNEA_PRODUCT_VERSION,productStatus:AUNEA_PRODUCT_STATUS,storageSchemaVersion:STORAGE_SCHEMA_VERSION}}
-  catch(e){return blankState()}
+  let raw;
+  try{raw=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')}catch(e){return blankState()}
+  const s={...blankState(),...raw,productVersion:AUNEA_PRODUCT_VERSION,productStatus:AUNEA_PRODUCT_STATUS,storageSchemaVersion:STORAGE_SCHEMA_VERSION};
+  if(!Array.isArray(s.interactions))s.interactions=[];
+  if(!Array.isArray(s.opportunities))s.opportunities=[];
+  return s;
+}
+// Records captured before the CRM contracts closed are upgraded in place rather than discarded. This
+// cannot run inside loadState: state is built by the first module, and each migration lives with the
+// entity that owns its schema, several modules later. Boot calls it once everything is defined.
+function migrateLoadedState(){
+  const moved={companies:migrateCompaniesToCrmRecord(state.companies),contacts:migrateContactsToDec057(state.contacts)};
+  if(moved.companies||moved.contacts)audit(`Migración de almacenamiento: ${moved.companies} empresa(s) y ${moved.contacts} contacto(s) actualizados al contrato CRM vigente`);
+  return moved;
 }
 function saveState(reason='Guardado manual'){
   localStorage.setItem(STORAGE_KEY,JSON.stringify(state));state.dirty=false;
@@ -77,7 +92,7 @@ function normalizeArray(v){if(Array.isArray(v))return v;if(v===null||v===undefin
 // Pages that belong to the 90-minute session. On these the top bar shows the private-console marker
 // and the step progress instead of the CRM chrome (IMG90-00-02 / IMG90-01).
 const SESSION_SURFACE_PAGES=new Set(['diagnostico','proceso']);
-const CRM_SURFACE_PAGES=new Set(['inicio','contactos','estudios','proyectos']);
+const CRM_SURFACE_PAGES=new Set(['inicio','empresas','contactos','interacciones','oportunidades','estudios','proyectos']);
 
 function stageList(){return (schema&&schema.flow)||[]}
 function currentStageIndex(){const e=currentEng(),f=stageList();if(!e||!f.length)return -1;return f.findIndex(s=>s.Stage_ID===(e.stageId||'S01'))}
@@ -186,8 +201,6 @@ function bindForms(){
   document.querySelectorAll('[data-multi]').forEach(el=>el.addEventListener('change',()=>{const fid=el.dataset.multi;const vals=[...document.querySelectorAll(`[data-multi="${fid}"]:checked`)].map(x=>x.value);setAnswer(fid,vals)}));
   document.querySelectorAll('[data-segment]').forEach(b=>b.onclick=()=>{setAnswer(b.dataset.segment,b.dataset.value);render()});
   document.querySelectorAll('[data-remove-company]').forEach(b=>b.onclick=()=>removeCompany(b.dataset.removeCompany));
-  document.querySelectorAll('[data-remove-contact]').forEach(b=>b.onclick=()=>removeContact(b.dataset.removeContact));
-  document.querySelectorAll('[data-edit-contact]').forEach(b=>b.onclick=()=>editContact(b.dataset.editContact));
   document.querySelectorAll('[data-contact-study]').forEach(b=>b.onclick=()=>createStudyFromContact(b.dataset.contactStudy));
   document.querySelectorAll('[data-crm-tab]').forEach(b=>b.onclick=()=>{state.crmTab=b.dataset.crmTab;render()});
   document.querySelectorAll('[data-crm-status-filter]').forEach(el=>el.addEventListener('change',()=>{state.contactFilters.status=el.value;render()}));
@@ -202,17 +215,13 @@ function bindForms(){
 
 // addCompany lives in app-no-reask-v1.js: the canonical version drives Sector/País from
 // REF_DOMAIN / REF_COUNTRY_ISO3166 instead of free text (PROJECT_RULES: prefer structured controls).
-function addContact(){if(!state.companies.length)return toast('Crea primero una empresa.');const opts=state.companies.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');openModal('Nuevo contacto',`<div class="form-grid"><div class="field"><label>Empresa</label><select id="mContactCompany">${opts}</select></div><div class="field"><label>Nombre</label><input id="mContactName"></div><div class="field"><label>Cargo / rol</label><input id="mContactRole"></div><div class="field"><label>Email</label><input id="mContactEmail" type="email"></div><div class="field"><label>Teléfono</label><input id="mContactPhone"></div><div class="field"><label>Estado del contacto</label><select id="mContactStatus"><option>Nuevo</option><option>Contactado</option><option>Reunión</option><option>Oportunidad</option><option>Diagnóstico</option><option>Propuesta</option><option>Ganado</option><option>Perdido</option><option>En pausa</option></select></div><div class="field"><label>Origen</label><select id="mContactSource"><option>Red personal</option><option>Referido</option><option>Inbound</option><option>Cliente existente</option><option>Otro</option></select></div><div class="field"><label>Próxima acción</label><input id="mNextAction" placeholder="Ej. Agendar llamada"></div></div>`,()=>{const name=document.getElementById('mContactName').value.trim();if(!name)return toast('Indica el nombre.');state.contacts.push({id:id('CON'),companyId:document.getElementById('mContactCompany').value,name,role:document.getElementById('mContactRole').value,email:document.getElementById('mContactEmail').value,phone:document.getElementById('mContactPhone').value,status:document.getElementById('mContactStatus').value,source:document.getElementById('mContactSource').value,nextAction:document.getElementById('mNextAction').value,lastInteraction:now(),createdAt:now()});markDirty('Contacto creado');closeModal();render()})}
-function removeCompany(idv){if(!confirm('¿Archivar esta empresa del prototipo local?'))return;state.companies=state.companies.filter(x=>x.id!==idv);state.contacts=state.contacts.filter(x=>x.companyId!==idv);markDirty('Empresa archivada');render()}
-function removeContact(idv){if(!confirm('¿Archivar este contacto del prototipo local?'))return;state.contacts=state.contacts.filter(x=>x.id!==idv);markDirty('Contacto archivado');render()}
-function contactHistory(ct){return state.audit.filter(a=>a.message.includes(ct.id)||a.message.includes(ct.name)).slice(0,20)}
-function editContact(contactId){
-  const ct=contactById(contactId);if(!ct)return;const statuses=['Nuevo','Contactado','Reunión','Oportunidad','Diagnóstico','Propuesta','Ganado','Perdido','En pausa'];const sources=['Red personal','Referido','Inbound','Cliente existente','Otro'];const companyOpts=state.companies.map(c=>`<option value="${c.id}" ${c.id===ct.companyId?'selected':''}>${esc(c.name)}</option>`).join('');const history=contactHistory(ct);
-  const body=`<div class="form-grid"><div class="field"><label>Empresa</label><select id="mContactCompany">${companyOpts}</select></div><div class="field"><label>Nombre</label><input id="mContactName" value="${attr(ct.name)}"></div><div class="field"><label>Cargo / rol</label><input id="mContactRole" value="${attr(ct.role||'')}"></div><div class="field"><label>Email</label><input id="mContactEmail" type="email" value="${attr(ct.email||'')}"></div><div class="field"><label>Teléfono</label><input id="mContactPhone" value="${attr(ct.phone||'')}"></div><div class="field"><label>Estado del contacto</label><select id="mContactStatus">${statuses.map(s=>`<option ${s===ct.status?'selected':''}>${s}</option>`).join('')}</select></div><div class="field"><label>Origen</label><select id="mContactSource">${sources.map(s=>`<option ${s===ct.source?'selected':''}>${s}</option>`).join('')}</select></div><div class="field full"><label>Próxima acción</label><input id="mNextAction" value="${attr(ct.nextAction||'')}" placeholder="Ej. Agendar llamada"></div></div><div class="field-help" style="margin-top:10px"><b>Histórico</b></div>${history.length?history.map(a=>`<div class="audit-line"><b>${fmtDate(a.ts)}</b> · ${esc(a.message)}</div>`).join(''):'<div class="empty"><p>Sin cambios registrados todavía para este contacto.</p></div>'}`;
-  openModal('Editar contacto',body,()=>{const before={...ct};ct.companyId=document.getElementById('mContactCompany').value;ct.name=document.getElementById('mContactName').value.trim()||ct.name;ct.role=document.getElementById('mContactRole').value;ct.email=document.getElementById('mContactEmail').value;ct.phone=document.getElementById('mContactPhone').value;ct.status=document.getElementById('mContactStatus').value;ct.source=document.getElementById('mContactSource').value;ct.nextAction=document.getElementById('mNextAction').value;[['name','Nombre'],['role','Cargo'],['email','Email'],['phone','Teléfono'],['status','Estado'],['source','Origen'],['nextAction','Próxima acción']].forEach(([k,label])=>{if((before[k]||'')!==(ct[k]||''))audit(`Contacto ${ct.name} editado: ${label} "${before[k]||'—'}"→"${ct[k]||'—'}"`)});markDirty();closeModal();render()},'Guardar cambios');
-}
-function createStudyFromContact(contactId){const ct=contactById(contactId),cp=companyById(ct.companyId);const e={id:id('ENG'),companyId:cp.id,contactIds:[ct.id],title:`Diagnóstico · ${cp.name}`,processName:'',status:'En preparación',stageId:'S01',answers:{DF001:cp.name,DF002:cp.sector||'',DF005:cp.country||'',DF006:ct.id},processSteps:[],frictions:[],risks:[],economicInputs:[],processTab:'',confirmedAsIs:false,diagnosticOutput:null,scenarioResults:[],selectedScenario:null,selectedScenarioIndex:0,createdAt:now(),updatedAt:now()};state.engagements.unshift(e);ct.lastInteraction=now();state.activeEngagementId=e.id;state.activePage='diagnostico';markDirty('Engagement creado desde contacto');render()}
-function newStudy(){if(!state.contacts.length)return toast('Crea primero un contacto.');const opts=state.contacts.map(c=>`<option value="${c.id}">${esc(companyById(c.companyId)?.name||'')} · ${esc(c.name)}</option>`).join('');openModal('Nuevo estudio',`<div class="form-grid"><div class="field full"><label>Contacto principal</label><select id="mStudyContact">${opts}</select></div><div class="field full"><label>Nombre del estudio</label><input id="mStudyTitle" placeholder="Ej. Diagnóstico de intake comercial"></div></div>`,()=>{const ct=contactById(document.getElementById('mStudyContact').value);createStudyFromContact(ct.id);const e=currentEng(),title=document.getElementById('mStudyTitle')?.value?.trim();if(title)e.title=title;closeModal();render()})}
+function createStudyFromContact(contactId){const ct=contactById(contactId),cp=companyById(ct.companyId);const e={id:id('ENG'),companyId:cp.id,contactIds:[ct.id],title:`Diagnóstico · ${cp.name}`,processName:'',status:'En preparación',stageId:'S01',answers:{DF001:cp.name,DF002:cp.sector||'',DF005:cp.country||'',DF006:ct.id},processSteps:[],frictions:[],risks:[],economicInputs:[],processTab:'',confirmedAsIs:false,diagnosticOutput:null,scenarioResults:[],selectedScenario:null,selectedScenarioIndex:0,createdAt:now(),updatedAt:now()};state.engagements.unshift(e);state.activeEngagementId=e.id;state.activePage='diagnostico';markDirty('Engagement creado desde contacto');render()}
+// Company, Contact, Interaction and Opportunity records moved to their own domain modules when the
+// CRM contracts closed (DEC-051/057/058). addContact, editContact, removeContact, removeCompany and
+// contactHistory lived here and are retired: the first three are owned by domain/contact.js, company
+// archiving by domain/company.js, and contact history is now derived from domain/interaction.js
+// instead of being pattern-matched out of the audit log.
+function newStudy(){if(!state.contacts.length)return toast('Crea primero un contacto.');const opts=state.contacts.map(c=>`<option value="${c.id}">${esc(companyById(c.companyId)?.name||'')} · ${esc(contactFullName(c))}</option>`).join('');openModal('Nuevo estudio',`<div class="form-grid"><div class="field full"><label>Contacto principal</label><select id="mStudyContact">${opts}</select></div><div class="field full"><label>Nombre del estudio</label><input id="mStudyTitle" placeholder="Ej. Diagnóstico de intake comercial"></div></div>`,()=>{const ct=contactById(document.getElementById('mStudyContact').value);createStudyFromContact(ct.id);const e=currentEng(),title=document.getElementById('mStudyTitle')?.value?.trim();if(title)e.title=title;closeModal();render()})}
 
 function createProjectFromEngagement(){const e=currentEng();if(!e)return;const existing=state.projects.find(p=>p.engagementId===e.id);if(existing){toast('Este estudio ya tiene un proyecto vinculado.');state.activePage='proyectos';render();return}const p={id:id('PRJ'),engagementId:e.id,companyId:e.companyId,contactIds:[...(e.contactIds||[])],name:e.answers.DF011||e.title,status:'Preparación',selectedScenarioIndex:e.selectedScenarioIndex??0,createdAt:now(),updatedAt:now()};state.projects.unshift(p);e.projectId=p.id;e.status='Convertido en proyecto';markDirty('Proyecto creado desde engagement');state.activePage='proyectos';render();toast('Proyecto creado y vinculado al histórico del contacto.')}
 

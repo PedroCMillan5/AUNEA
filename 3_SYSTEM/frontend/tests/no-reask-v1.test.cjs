@@ -109,8 +109,8 @@ test('DF098 real interaction (jsdom, real runtime): action+owner+date consolidat
       const click=s=>{const el=d.querySelector(s);assert.ok(el,s);el.click()};
       const fill=(s,v)=>{const el=d.querySelector(s);assert.ok(el,s);el.value=v;el.dispatchEvent(new w.Event('change',{bubbles:true}))};
       await until(()=>d.querySelector('h1'));
-      click('[data-page="contactos"]');click('#addCompany');fill('#mCompany','DF098 UAT empresa');click('#modalSave');
-      click('#addContact');fill('#mContactName','DF098 UAT contacto');fill('#mContactEmail','df098@example.invalid');click('#modalSave');
+      click('[data-page="contactos"]');click('#addCompanyBtn');fill('#cCoLegal','DF098 UAT empresa');click('#modalSave');
+      click('#addContactBtn');fill('#cContactFirst','DF098 UAT contacto');fill('#cContactEmail','df098@example.invalid');click('#modalSave');
       click('[data-contact-study]');
       await until(()=>d.querySelector('[data-stage="S09"]'));
       click('[data-stage="S09"]');

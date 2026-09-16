@@ -82,4 +82,12 @@ test('pageTop accepts the reference screen identifier', () => {
   assert.match(stateJs, /function pageTop\(title,subtitle,actions='',screenId=''\)/);
   assert.match(stateJs, /class="screen-id"/);
 });
+
+test('wrappers over pageTop forward every argument', () => {
+  // A fixed-arity wrapper silently swallows the screenId and drops the reference identifier from every
+  // page. Any module that decorates pageTop must pass its arguments through untouched.
+  const modeJs = fs.readFileSync(path.join(root, 'ui/mode.js'), 'utf8');
+  assert.match(modeJs, /pageTop=function\(\.\.\.args\)/, 'the mode wrapper must be variadic');
+  assert.match(modeJs, /__auneaPageTopModeBase\(\.\.\.args\)/, 'and must spread them into the base');
+});
 // [AUNEA-UAT-SHELL-REFERENCE-010] END

@@ -23,8 +23,12 @@ setPage=function(page){
   return __auneaSetPageModeBase(page);
 };
 const __auneaPageTopModeBase=pageTop;
-pageTop=function(title,subtitle,actions=''){
-  if(state.uiMode!=='SESSION')return __auneaPageTopModeBase(title,subtitle,actions);
+// Forwards every argument: pageTop gained a screenId, and a fixed-arity wrapper would silently swallow
+// it, dropping the reference identifier from every page in Internal mode.
+pageTop=function(...args){
+  const [title,subtitle,actions='']=args;
+  if(state.uiMode!=='SESSION')return __auneaPageTopModeBase(...args);
+  // The client-facing surface never shows the internal reference identifier.
   return `<div class="page-head session-page-head"><div><div class="eyebrow">AUNEA · SESIÓN CON CLIENTE</div><h1>${esc(title)}</h1><p class="subtitle">${subtitle}</p></div><div class="head-actions">${actions}</div></div>`;
 };
 const __auneaUpdateHeaderModeBase=updateHeader;

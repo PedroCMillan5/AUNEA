@@ -59,8 +59,8 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   assert.ok(d.querySelector('#uiModeToggle'));
   click('#uiModeToggle');assert.ok(d.body.classList.contains('mode-session'));assert.equal(d.querySelector('[data-page="admin"]'),null);
   click('#uiModeToggle');assert.ok(d.body.classList.contains('mode-internal'));
-  click('[data-page="contactos"]');click('#addCompany');fill('#mCompany','UAT Runtime empresa');click('#modalSave');
-  click('#addContact');fill('#mContactName','UAT Contacto');fill('#mContactEmail','uat@example.invalid');click('#modalSave');
+  click('[data-page="contactos"]');click('#addCompanyBtn');fill('#cCoLegal','UAT Runtime empresa');click('#modalSave');
+  click('#addContactBtn');fill('#cContactFirst','UAT Contacto');fill('#cContactEmail','uat@example.invalid');click('#modalSave');
   click('[data-contact-study]');
   // Opening a study lands on the session surface: the top bar switches to the session context and
   // the private-console marker, and the open study is identified in the rail context card.

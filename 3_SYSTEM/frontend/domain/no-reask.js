@@ -215,8 +215,6 @@ function bindNoReask(){
 const __auneaRendererBindForms=bindForms;
 bindForms=function(){__auneaRendererBindForms();bindNoReask();};
 
-function addCompany(){
-  const sectors=fieldOptions('REF_DOMAIN'),countries=fieldOptions('REF_COUNTRY_ISO3166');
-  openModal('Nueva empresa',`<div class="form-grid"><div class="field full"><label>Empresa</label><input id="mCompany" placeholder="Ej. ACME Servicios"></div><div class="field"><label>Sector</label><select id="mSector"><option value="">Selecciona…</option>${sectors.map(o=>`<option value="${attr(o.value)}">${esc(o.label)}</option>`).join('')}<option value="OTHER">Otro</option></select></div><div class="field"><label>País</label><select id="mCountry"><option value="">Selecciona…</option>${countries.map(o=>`<option value="${attr(o.value)}" ${o.value==='ES'?'selected':''}>${esc(o.label)}</option>`).join('')}</select></div><div class="field full"><label>Notas</label><input id="mCompanyNotes" placeholder="Opcional"></div></div>`,()=>{const name=document.getElementById('mCompany').value.trim();if(!name)return toast('Indica la empresa.');state.companies.push({id:id('CMP'),name,sector:document.getElementById('mSector').value,country:document.getElementById('mCountry').value,notes:document.getElementById('mCompanyNotes').value,createdAt:now()});markDirty('Empresa creada');closeModal();render()});
-}
+// addCompany moved to domain/company.js: creating a Company is Company's responsibility, not
+// No-Reask's. The reference-driven form there captures the full CRM record.
 // [AUNEA-FE-DIAG-NOREASK-050] END
