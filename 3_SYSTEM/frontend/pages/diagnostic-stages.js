@@ -1,6 +1,6 @@
 // [AUNEA-FE-DIAG-CONTROL-030] START — Stage navigation shell and process/friction capture prompts
 // PURPOSE: Stage navigation shell and process/friction capture prompts for the guided diagnostic flow. Option-set lookup helper.
-// SOURCE: v1.0.4 aceptada, SHA256 a9fb7400b000d6289224610c88d4b7dc51f75f8ae97e20e4c3873a3a8e01d6e7; Diagnostic Master v1; DEC-034/038/040.
+// SOURCE: v1.0.4 aceptada; Diagnostic Master v1.1; DEC-034/040/050/051/056/059; IMG90-01.
 // INPUTS: schema canónico, estado de engagement y acciones del usuario.
 // OUTPUTS: estado y vistas de captura/revisión.
 // SIDE_EFFECTS: DOM, almacenamiento local y solicitudes HTTP según responsabilidad.
@@ -29,6 +29,69 @@ function renderStageFields(fields,e){
     out.push(renderQuestion(f,e));
   }
   return out.join('');
+}
+
+// B02 / VR-01A: IMG90-01 governs the twelve top-level visible fields of PG01. The Diagnostic Master
+// still governs S01 semantics (DF001-DF010). DEC-059 fixes the bridge: visible CRM/context fields write
+// to their single owner; DF004 and DF007-DF010 remain canonical and are NOT implemented here as the
+// folded/progressive block reserved for B03.
+const PG01_PRIORITY=Object.freeze(['Baja','Media','Alta','Crítica']);
+function pg01Prefill(source){return `<span class="prefill-chip">Prellenado desde ${esc(source)}</span>`}
+function pg01Field(label,control,help,{source='',required=true,full=false}={}){
+  return `<div class="field${full?' full':''}" data-pg01-visible="${attr(label)}"><label>${esc(label)}${required?requiredMark():''}${source?pg01Prefill(source):''}</label>${control}<div class="field-help">${esc(help)}</div></div>`;
+}
+function pg01Select(options,value,attrs=''){
+  return `<select ${attrs}><option value="">Selecciona…</option>${options.map(o=>`<option value="${attr(o.value)}" ${String(o.value)===String(value)?'selected':''}>${esc(o.label)}</option>`).join('')}</select>`;
+}
+function pg01ContextFields(e){
+  const co=companyById(e.companyId)||{};
+  const contacts=state.contacts.filter(c=>c.companyId===e.companyId&&c.status!=='Inactivo');
+  const selected=contactById(e.contactIds?.[0])||contacts[0]||null;
+  if(e.priority===undefined)e.priority='';
+  if(e.contextSummary===undefined)e.contextSummary='';
+  // DF003 is Company-owned. Reuse the existing master value in the Engagement snapshot so the
+  // canonical completion contract sees the same value without creating another editable size field.
+  if((e.answers?.DF003===undefined||e.answers?.DF003==='')&&Number.isFinite(Number(co.employeeCount))&&Number(co.employeeCount)>0)e.answers.DF003=Number(co.employeeCount);
+  const contactOpts=contacts.map(c=>({value:c.id,label:contactFullName(c)}));
+  const sectorOpts=fieldOptions('REF_DOMAIN');
+  const countryOpts=fieldOptions('REF_COUNTRY_ISO3166');
+  const orgOpts=(typeof COMPANY_ORG_TYPE!=='undefined'?COMPANY_ORG_TYPE:[]).map(v=>({value:v,label:v}));
+  const channelOpts=(typeof COMPANY_ENTRY_CHANNEL!=='undefined'?COMPANY_ENTRY_CHANNEL:[]).map(v=>({value:v,label:v}));
+  const size=companySizeBand(co);
+  return [
+    pg01Field('Empresa',`<input data-pg01-company="name" data-pg01-df="DF001" value="${attr(co.name||'')}">`,'Nombre legal o comercial de la empresa.',{source:'Empresas'}),
+    pg01Field('Persona de contacto',pg01Select(contactOpts,selected?.id||'',`data-pg01-contact-ref="1"`),'Principal interlocutor de la sesión.',{source:'Contactos'}),
+    pg01Field('Cargo',`<input data-pg01-contact="role" value="${attr(selected?.role||'')}">`,'Cargo o rol en la empresa.',{source:'Contactos'}),
+    pg01Field('Email',`<input type="email" data-pg01-contact="email" value="${attr(selected?.email||'')}">`,'Email de contacto para comunicaciones posteriores.',{source:'Contactos'}),
+    pg01Field('Teléfono',`<input data-pg01-contact="phone" value="${attr(selected?.phone||'')}">`,'Teléfono de contacto (opcional).',{source:'Contactos',required:false}),
+    pg01Field('Sector',pg01Select(sectorOpts,co.sector||'',`data-pg01-company="sector" data-pg01-df="DF002"`),'Selecciona el sector principal de la empresa.',{source:'Empresas'}),
+    pg01Field('Tamaño de empresa',`<select data-pg01-company-size="1" disabled><option>${esc(size==='—'?'Sin indicar':`${size} empleados`)}</option></select>`,'Rango aproximado de empleados. Se deriva del número registrado en Empresas.',{source:'Empresas'}),
+    pg01Field('País / alcance',pg01Select(countryOpts,co.country||'',`data-pg01-company="country" data-pg01-df="DF005"`),'País principal o alcance de la operación.',{source:'Empresas'}),
+    pg01Field('Tipo de organización',pg01Select(orgOpts,co.orgType||'',`data-pg01-company="orgType"`),'Estructura de la organización.',{source:'Empresas'}),
+    pg01Field('Prioridad',`<div class="segmented">${PG01_PRIORITY.map(v=>`<button type="button" class="segment ${e.priority===v?'active':''}" data-pg01-engagement="priority" data-value="${attr(v)}">${esc(v)}</button>`).join('')}</div>`,'Nivel de urgencia percibido por el cliente.'),
+    pg01Field('Canal de entrada',pg01Select(channelOpts,co.entryChannel||'',`data-pg01-company="entryChannel"`),'Cómo ha llegado el cliente a AUNEA System.',{source:'Empresas'}),
+    pg01Field('Resumen del contexto',`<textarea maxlength="500" data-pg01-engagement="contextSummary">${esc(e.contextSummary||'')}</textarea>`,'Breve descripción de la situación actual y principales motivaciones.',{full:false})
+  ].join('');
+}
+function bindPg01Context(){
+  document.querySelectorAll('[data-pg01-company]').forEach(el=>{const event=el.tagName==='SELECT'?'change':'input';el.addEventListener(event,()=>{
+    const e=currentEng(),co=e&&companyById(e.companyId);if(!e||!co)return;
+    const key=el.dataset.pg01Company,fid=el.dataset.pg01Df||'';
+    if(fid){setAnswer(fid,el.value);return}
+    const before=co[key];if(String(before??'')===String(el.value??''))return;
+    co[key]=el.value;e.updatedAt=now();audit(`Empresa ${co.name}: ${key} actualizado desde PG01`);markDirty(`PG01 actualizado: ${key}`);
+  })});
+  document.querySelectorAll('[data-pg01-contact]').forEach(el=>el.addEventListener('input',()=>{
+    const e=currentEng(),ct=e&&contactById(e.contactIds?.[0]);if(!e||!ct)return;
+    const key=el.dataset.pg01Contact,before=ct[key];if(String(before??'')===String(el.value??''))return;
+    ct[key]=el.value;e.updatedAt=now();audit(`Contacto ${contactFullName(ct)}: ${key} actualizado desde PG01`);markDirty(`PG01 actualizado: contacto ${key}`);
+  }));
+  document.querySelectorAll('[data-pg01-contact-ref]').forEach(el=>el.addEventListener('change',()=>{if(el.value)setAnswer('DF006',el.value);render()}));
+  document.querySelectorAll('[data-pg01-engagement]').forEach(el=>{
+    const key=el.dataset.pg01Engagement;
+    if(el.tagName==='BUTTON')el.onclick=()=>{const e=currentEng();if(!e)return;e[key]=el.dataset.value||'';e.updatedAt=now();markDirty(`PG01 actualizado: ${key}`);render()};
+    else el.addEventListener('input',()=>{const e=currentEng();if(!e)return;e[key]=el.value;e.updatedAt=now();markDirty(`PG01 actualizado: ${key}`)});
+  });
 }
 
 // Which approved reference each stage reproduces, and what the client is looking at while it is
@@ -75,11 +138,12 @@ function stagePage(){
   const stageStat=completion.stage[stage.Stage_ID]||{applicable:0,answered:0,pct:100};
   const next=schema.flow[stageIndex+1];
 
-  // The nine steps live in the rail now, exactly as the references show. A second stage list inside the
-  // page would be the same navigation twice.
+  // B02 special-cases only PG01's approved reference composition. Every other stage remains schema-driven.
+  // The folded canonical S01 remainder is intentionally absent until B03.
+  const stageFields=stage.Stage_ID==='S01'?pg01ContextFields(e):renderStageFields(fields,e);
   const main=`<div class="card stage-card">
-      ${fields.some(f=>f.Requiredness==='REQUIRED_90M')?REQUIRED_LEGEND_HTML:''}
-      <div class="form-grid">${renderStageFields(fields,e)}</div>
+      ${stage.Stage_ID==='S01'?REQUIRED_LEGEND_HTML:(fields.some(f=>f.Requiredness==='REQUIRED_90M')?REQUIRED_LEGEND_HTML:'')}
+      <div class="form-grid">${stageFields}</div>
       ${stage.Stage_ID==='S04'?processPrompt(e):''}${stage.Stage_ID==='S05'?frictionPrompt(e):''}
       ${stage.Stage_ID==='S06'?riskBuilder(e):''}${stage.Stage_ID==='S07'?economicBuilder(e):''}
       ${isLastStage?validationSummary(e,completion):''}
@@ -101,7 +165,9 @@ function stagePage(){
     `<button class="btn" id="prevStage" ${stageIndex===0?'disabled':''}>Volver</button>`
     +(isLastStage?'':`<button class="btn btn-primary" id="nextStage">Continuar a ${esc(String(next.Stage_ES).toLowerCase())} →</button>`));
 
-  return pageTop(stage.Stage_ES,stage.Objetivo,'',STAGE_REFERENCE[stage.Stage_ID]||'')
+  const pageTitle=stage.Stage_ID==='S01'?'Contexto del cliente':stage.Stage_ES;
+  const pageSubtitle=stage.Stage_ID==='S01'?'Recogemos la base operativa y empresarial antes de entrar en el flujo.':stage.Objetivo;
+  return pageTop(pageTitle,pageSubtitle,'',STAGE_REFERENCE[stage.Stage_ID]||'')
     + workspace(main,inspector) + bar;
 }
 function processPrompt(e){return `<div class="notice info"><strong>Mapa AS-IS:</strong> los campos DF031–DF055 se capturan principalmente en el editor visual. Actualmente hay <b>${e.processSteps.filter(x=>x.status!=='SUPERSEDED').length}</b> pasos. <button class="btn btn-small" data-goto-process="1">Abrir editor</button></div>`}
@@ -143,6 +209,7 @@ function validationSummary(e,completion){
 const __auneaDiagFieldsBindForms=bindForms;
 bindForms=function(){
   __auneaDiagFieldsBindForms();
+  bindPg01Context();
   document.querySelectorAll('[data-goto-stage]').forEach(b=>b.onclick=()=>{const e=currentEng();if(e)e.stageId=b.dataset.gotoStage;render()});
   document.querySelectorAll('[data-open-gate-review]').forEach(b=>b.onclick=()=>openEngineGateReview());
   const sd=document.getElementById('saveDraft');if(sd)sd.onclick=()=>saveState('Borrador guardado');
