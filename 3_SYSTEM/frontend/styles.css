@@ -107,6 +107,19 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}a{color:inherit}
 /* Sticky action bar: destructive on the left, primary on the right (every reference). */
 .action-bar{position:sticky;bottom:0;z-index:15;margin:18px -30px -70px;padding:14px 30px;background:#fff;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .action-bar .ab-right{display:flex;gap:9px;flex-wrap:wrap;margin-left:auto}
+/* Session Display: the shared window has no rail and no console chrome — it is a presentation
+   surface, so the canvas gets the room and the reading distance a screen share needs. */
+body.session-display .app-shell{display:block}
+body.session-display .sidebar,body.session-display .topbar{display:none}
+body.session-display .content{max-width:none;padding:28px 34px;min-height:100vh}
+body.session-display h1{font-size:var(--font-h1)}
+body.session-display .flow-step{width:240px}
+body.session-display .flow-step h4{font-size:var(--font-body)}
+body.session-display .flow-step p{font-size:var(--font-small)}
+.session-display-head{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:18px}
+.session-sync{flex:none}
+.session-idle{margin-top:12vh}
+.flow-step.is-decision{border-style:dashed}
 /* [AUNEA-FE-STYLE-WORKSPACE-010] END */
 
 /* [AUNEA-FE-STYLE-FORMS-010] START — Form controls, choices and notices

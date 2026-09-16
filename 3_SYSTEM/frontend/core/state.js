@@ -176,7 +176,17 @@ function renderNav(){
   }
   n.innerHTML=out.join('');
 }
-function render(){renderNav();updateHeader();const fn=pages[state.activePage]||pages.inicio;document.getElementById('content').innerHTML=fn();bindCommon();postBind()}
+function render(){
+  renderNav();updateHeader();
+  const fn=pages[state.activePage]||pages.inicio;
+  document.getElementById('content').innerHTML=fn();
+  bindCommon();postBind();
+  // Republish the client-safe projection on every render. Navigating between stages changes what the
+  // client should be seeing but never goes through markDirty, so relying on autosave alone left the
+  // shared window frozen on whichever stage it was opened at. The spec is explicit that a manual
+  // refresh must not be the pattern of use (90MIN UI SPEC §3.3).
+  if(typeof publishSessionSnapshot==='function')publishSessionSnapshot(currentEng());
+}
 function setPage(page){if(['diagnostico','proceso','resultados','recomendacion','escenarios','quote'].includes(page)&&!currentEng()){toast('Abre o crea un estudio antes.');state.activePage='estudios';render();return}state.activePage=page;render()}
 function goToProcessFromStage(){const e=currentEng();if(e)state.returnTo={page:'diagnostico',stageId:e.stageId};setPage('proceso')}
 function returnToStage(){const e=currentEng(),rt=state.returnTo;if(e&&rt)e.stageId=rt.stageId;state.returnTo=null;setPage('diagnostico')}

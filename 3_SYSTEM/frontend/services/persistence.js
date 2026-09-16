@@ -28,7 +28,9 @@ function persistRecoverySnapshot(reason='recovery'){
 }
 let __auneaRecoveryTimer=null;
 const __auneaMarkDirtyPersistBase=markDirty;
-markDirty=function(reason){__auneaMarkDirtyPersistBase(reason);clearTimeout(__auneaRecoveryTimer);__auneaRecoveryTimer=setTimeout(()=>persistRecoverySnapshot('autosave'),350)};
+markDirty=function(reason){__auneaMarkDirtyPersistBase(reason);clearTimeout(__auneaRecoveryTimer);__auneaRecoveryTimer=setTimeout(()=>{persistRecoverySnapshot('autosave');// The shared window has no access to this one's memory: republishing the client-safe projection
+  // is what keeps both surfaces on the same snapshot (DEC-041/049).
+  if(typeof publishSessionSnapshot==='function')publishSessionSnapshot(currentEng());},350)};
 const __auneaSaveStatePersistBase=saveState;
 saveState=function(reason='Guardado manual'){
   state.recoveryMeta={format:RECOVERY_FORMAT_VERSION,productVersion:typeof AUNEA_PRODUCT_VERSION!=='undefined'?AUNEA_PRODUCT_VERSION:null,schemaVersion:typeof STORAGE_SCHEMA_VERSION!=='undefined'?STORAGE_SCHEMA_VERSION:null,diagnosticSchema:schema?.version||'1.1',savedAt:now(),reason};

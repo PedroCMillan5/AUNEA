@@ -7,6 +7,8 @@
 // OUTPUTS: primera pantalla y estado del backend.
 // SIDE_EFFECTS: carga de schema canónico efectivo y comprobación HTTP.
 // CHANGE_RISK: HIGH.
-migrateLoadedState();
-initCanonicalV11();
+// A window opened at #session is the client-facing surface: it renders the published projection and
+// nothing else. It deliberately does not boot the Console, so the engagement never reaches it.
+if(location.hash==='#session'){bootSessionDisplay();}
+else{migrateLoadedState();initCanonicalV11();}
 // [AUNEA-FE-BOOT-INIT-010] END

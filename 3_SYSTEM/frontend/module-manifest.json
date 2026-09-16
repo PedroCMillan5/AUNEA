@@ -70,107 +70,119 @@
     {
       "order": 12,
       "layer": "domain",
+      "path": "domain/session-snapshot.js",
+      "block_id": "AUNEA-FE-SESSION-SNAPSHOT-010"
+    },
+    {
+      "order": 13,
+      "layer": "domain",
       "path": "domain/risk.js",
       "block_id": "AUNEA-FE-RISK-CAPTURE-030"
     },
     {
-      "order": 13,
+      "order": 14,
       "layer": "domain",
       "path": "domain/economics.js",
       "block_id": "AUNEA-FE-ECON-CAPTURE-030"
     },
     {
-      "order": 14,
+      "order": 15,
       "layer": "domain",
       "path": "domain/process-lifecycle.js",
       "block_id": "AUNEA-FE-PROC-LIFECYCLE-030"
     },
     {
-      "order": 15,
+      "order": 16,
       "layer": "pages",
       "path": "pages/results.js",
       "block_id": "AUNEA-FE-RESULTS-VIEW-010"
     },
     {
-      "order": 16,
+      "order": 17,
       "layer": "pages",
       "path": "pages/crm-companies.js",
       "block_id": "AUNEA-FE-PAGE-COMPANIES-010"
     },
     {
-      "order": 17,
+      "order": 18,
       "layer": "pages",
       "path": "pages/crm-contacts.js",
       "block_id": "AUNEA-FE-PAGE-CONTACTS-010"
     },
     {
-      "order": 18,
+      "order": 19,
       "layer": "pages",
       "path": "pages/crm-interactions.js",
       "block_id": "AUNEA-FE-PAGE-INTERACTIONS-010"
     },
     {
-      "order": 19,
+      "order": 20,
       "layer": "pages",
       "path": "pages/crm-opportunities.js",
       "block_id": "AUNEA-FE-PAGE-OPPORTUNITIES-010"
     },
     {
-      "order": 20,
+      "order": 21,
+      "layer": "pages",
+      "path": "pages/session-display.js",
+      "block_id": "AUNEA-FE-PAGE-SESSION-DISPLAY-010"
+    },
+    {
+      "order": 22,
       "layer": "domain",
       "path": "domain/process.js",
       "block_id": "AUNEA-FE-PROC-EDITOR-020"
     },
     {
-      "order": 21,
+      "order": 23,
       "layer": "ui",
       "path": "ui/process-help.js",
       "block_id": "AUNEA-FE-PROC-HELP-025"
     },
     {
-      "order": 22,
+      "order": 24,
       "layer": "services",
       "path": "services/engine-adapter.js",
       "block_id": "AUNEA-FE-ENGINE-ADAPTER-020"
     },
     {
-      "order": 23,
+      "order": 25,
       "layer": "domain",
       "path": "domain/completion.js",
       "block_id": "AUNEA-FE-DIAG-COMPLETION-070"
     },
     {
-      "order": 24,
+      "order": 26,
       "layer": "ui",
       "path": "ui/shell.js",
       "block_id": "AUNEA-FE-SHELL-NAV-010"
     },
     {
-      "order": 25,
+      "order": 27,
       "layer": "ui",
       "path": "ui/mode.js",
       "block_id": "AUNEA-FE-UX-MODE-040"
     },
     {
-      "order": 26,
+      "order": 28,
       "layer": "services",
       "path": "services/persistence.js",
       "block_id": "AUNEA-FE-PERSIST-050"
     },
     {
-      "order": 27,
+      "order": 29,
       "layer": "uat",
       "path": "uat/visible.js",
       "block_id": "AUNEA-FE-UAT-VISIBLE-055"
     },
     {
-      "order": 28,
+      "order": 30,
       "layer": "uat",
       "path": "uat/fixtures.js",
       "block_id": "AUNEA-UAT-RUNTIME-FIXTURE-020"
     },
     {
-      "order": 29,
+      "order": 31,
       "layer": "boot",
       "path": "boot.js",
       "block_id": "AUNEA-FE-BOOT-INIT-010"

@@ -96,7 +96,8 @@ function stagePage(){
   // The last stage carries no second calculate button: validationSummary owns that CTA, together with
   // the blockers that explain why it is or is not available. Two of them was one too many.
   const bar=actionBar(
-    `<button class="btn" id="saveDraft">Guardar borrador</button>`,
+    `<button class="btn" id="saveDraft">Guardar borrador</button>`
+    +`<button class="btn btn-outline" id="openSessionDisplay">Abrir vista de sesión</button>`,
     `<button class="btn" id="prevStage" ${stageIndex===0?'disabled':''}>Volver</button>`
     +(isLastStage?'':`<button class="btn btn-primary" id="nextStage">Continuar a ${esc(String(next.Stage_ES).toLowerCase())} →</button>`));
 

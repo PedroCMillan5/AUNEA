@@ -18,6 +18,7 @@ function postBind(){
   const by=id=>document.getElementById(id);
   if(by('newStudy'))by('newStudy').onclick=newStudy;if(by('homeNewContact'))by('homeNewContact').onclick=addContact;
   if(by('addCompanyBtn'))by('addCompanyBtn').onclick=addCompany;if(by('addContactBtn'))by('addContactBtn').onclick=addContact;
+  if(by('openSessionDisplay'))by('openSessionDisplay').onclick=openSessionDisplay;
   if(by('addInteractionBtn'))by('addInteractionBtn').onclick=addInteraction;if(by('addOpportunityBtn'))by('addOpportunityBtn').onclick=addOpportunity;
   bindCrm();
   if(by('addStep'))by('addStep').onclick=()=>openStepModal();if(by('addMultipleSteps'))by('addMultipleSteps').onclick=addMultipleSteps;if(by('addFriction'))by('addFriction').onclick=()=>openFrictionModal();if(by('confirmAsIs'))by('confirmAsIs').onclick=confirmAsIs;
