@@ -2,7 +2,7 @@
 // PURPOSE: Hold the shell to the layout language the approved reference set defines — System skin, rail
 //          structure, contextual top bar, workspace/inspector split, action bar and No-Reask provenance chip.
 // SOURCE: Approved reference set 21+2 (IMG90-00-01, IMG90-00-02, IMG90-01) under DEC-056;
-//         AUNEA_SYSTEM_90MIN_UI_SPEC_REVIEW_v1 §§3,5,11,17; DEC-040/044/048/049/050/051/056; B02 VR-01A reconciliation.
+//         AUNEA_SYSTEM_90MIN_UI_SPEC_REVIEW_v1 §§3,5,11,17; DEC-040/044/048/049/050/051/056/059.
 // INPUTS: styles.css, index.html, core/state.js, pages/diagnostic-stages.js, domain/no-reask.js, Diagnostic Master runtime schema.
 // OUTPUTS: pass/fail assertions.
 // SIDE_EFFECTS: none (read-only).
@@ -29,7 +29,6 @@ test('the System line palette from UI Spec §11 is declared as tokens', () => {
 });
 
 test('TOKENS_AUNEA stays the base palette alongside the System line', () => {
-  // Both sources are canonical. Adding the System line must not drop the Drive design tokens.
   for (const [tok, hex] of Object.entries({ '--ink': '#1E1E1E', '--gold': '#D4AF37', '--bg': '#FAFAF8' })) {
     assert.match(css, new RegExp(`${tok}:${hex}`), `${tok} must still equal ${hex}`);
   }
@@ -54,7 +53,6 @@ test('the shell exposes the reference regions', () => {
 });
 
 test('the rail carries no product version string', () => {
-  // The references show brand and signature only; the version belongs on Configuración/Admin.
   const rail = html.slice(html.indexOf('<aside class="sidebar">'), html.indexOf('</aside>'));
   assert.doesNotMatch(rail, /2\.0\.0|REVIEW/i);
 });
@@ -62,7 +60,6 @@ test('the rail carries no product version string', () => {
 test('the nine session steps come from the canonical flow, not a hardcoded rail list', () => {
   assert.match(stateJs, /'__STAGES__'/, 'the rail expands the stage group from schema.flow');
   assert.match(stateJs, /function stageList\(\)\{return \(schema&&schema\.flow\)/);
-  // A literal list of nine Spanish stage names in the nav would be a second source of truth.
   assert.doesNotMatch(stateJs, /\[\s*'diagnostico'\s*,\s*'◎'\s*,\s*'Diagnóstico 90m'\s*\]/);
 });
 
@@ -87,8 +84,6 @@ test('pageTop accepts the reference screen identifier', () => {
 });
 
 test('the stage clock reproduces the windows the UI spec states', () => {
-  // Derived cumulatively from the canonical per-stage minutes. The spec puts I90-01 at 0–6 and I90-03
-  // at 12–16, and the references render that as mm:ss.
   const flow = [{Minutos_objetivo:6},{Minutos_objetivo:6},{Minutos_objetivo:4}];
   const mins = n => `${String(n).padStart(2,'0')}:00`;
   const win = i => { let s=0; for(let k=0;k<i;k++) s+=flow[k].Minutos_objetivo; return `${mins(s)} – ${mins(s+flow[i].Minutos_objetivo)}`; };
@@ -101,47 +96,46 @@ test('the stage clock reproduces the windows the UI spec states', () => {
 test('each stage declares the approved reference it reproduces', () => {
   assert.match(diagJs, /STAGE_REFERENCE\s*=\s*\{S01:'I90-01'/);
   for (let n = 1; n <= 9; n++) assert.ok(diagJs.includes(`'I90-0${n}'`), `stage ${n} must name its reference`);
-  // The client state per stage is the UI spec's, not a per-page invention.
   assert.match(diagJs, /STAGE_CLIENT_STATE/);
   assert.match(diagJs, /C90-00/); assert.match(diagJs, /C90-04/);
 });
 
-test('B02 VR-01A keeps PG01 on canonical DF001-DF010 and the current owner model', () => {
-  // The reconciled UI Spec §17 explicitly supersedes the old IMG90-01 field substitutions:
-  // I90-01 is DF001–DF010 from Diagnostic Master + screen matrix. Do not reintroduce Cargo/Email/
-  // Teléfono/Canal/Prioridad/Resumen as substitute PG01 questions just because an obsolete visual shows them.
+test('B02 VR-01A reproduces the twelve IMG90-01 visible fields in order', () => {
+  const labels=['Empresa','Persona de contacto','Cargo','Email','Teléfono','Sector','Tamaño de empresa','País / alcance','Tipo de organización','Prioridad','Canal de entrada','Resumen del contexto'];
+  let cursor=-1;
+  for(const label of labels){
+    const i=diagJs.indexOf(`pg01Field('${label}'`);
+    assert.ok(i>cursor, `${label} must exist once and after the previous IMG90-01 field`);
+    cursor=i;
+  }
+  assert.equal((diagJs.match(/pg01Field\('/g)||[]).length,12,'PG01 must define exactly twelve top-level visible fields');
+  assert.match(diagJs, /stage\.Stage_ID==='S01'\?pg01ContextFields\(e\):renderStageFields\(fields,e\)/,'only PG01 gets the reference-specific composition');
+});
+
+test('B02 owner bindings are single-owner and keep canonical S01 semantics intact', () => {
   const pg01 = diagnosticSchema.fields.filter(f => f.Stage_ID === 'S01');
   assert.deepEqual(pg01.map(f => f.Field_ID), ['DF001','DF002','DF003','DF004','DF005','DF006','DF007','DF008','DF009','DF010']);
-
-  // I90-01 remains schema-driven; there is no second hand-maintained PG01 question list in the page.
-  assert.match(diagJs, /schema\.fields\.filter\(f=>f\.Stage_ID===stage\.Stage_ID&&questionVisible\(f,e\)\)/);
-  assert.match(diagJs, /renderStageFields\(fields,e\)/);
-
-  // DEC-050: DF001–DF005 correct Company through the canonical Write_Target mapping.
-  for (const [target, attrName] of [
-    ['RT_COMPANY.Company_Name','name'],
-    ['RT_COMPANY.Sector','sector'],
-    ['RT_COMPANY.Employee_Count','employeeCount'],
-    ['RT_COMPANY.Revenue_Band','revenueBand'],
-    ['RT_COMPANY.Country','country']
-  ]) {
-    assert.ok(noReaskJs.includes(`'${target}':'${attrName}'`), `${target} must write through to Company.${attrName}`);
-  }
-
-  // DEC-051: DF006 is a contextual Engagement participant reference, not a Contact-master overwrite.
+  assert.match(diagJs, /data-pg01-company="name" data-pg01-df="DF001"/);
+  assert.match(diagJs, /data-pg01-company="sector" data-pg01-df="DF002"/);
+  assert.match(diagJs, /data-pg01-company-size="1" disabled/,'company size is derived from employeeCount, never a second editable copy');
+  assert.match(diagJs, /data-pg01-company="country" data-pg01-df="DF005"/);
+  assert.match(diagJs, /data-pg01-company="orgType"/);
+  assert.match(diagJs, /data-pg01-company="entryChannel"/);
+  assert.match(diagJs, /data-pg01-contact-ref="1"/);
+  for(const field of ['role','email','phone'])assert.ok(diagJs.includes(`data-pg01-contact="${field}"`),`${field} must write to Contact`);
+  assert.match(diagJs, /data-pg01-engagement="priority"/);
+  assert.match(diagJs, /data-pg01-engagement="contextSummary"/);
+  assert.match(diagJs, /setAnswer\('DF006',el\.value\)/,'primary session contact stays the canonical Engagement participant reference');
   assert.match(noReaskJs, /if\(fid==='DF006'&&value\)\{e\.contactIds=\[value,/);
-  // Everything that is not an explicit owner write-through remains captured on the Engagement answer map.
-  assert.match(stateJs, /e\.answers\[fid\]=value/);
-  for (const fid of ['DF008','DF009','DF010']) {
-    const field = pg01.find(f => f.Field_ID === fid);
-    assert.ok(field, fid);
-    assert.match(String(field.Write_Target||''), /^RT_ENGAGEMENT\./, `${fid} must remain Engagement-owned`);
-  }
+});
+
+test('B02 does not implement B03 progressive disclosure', () => {
+  const b02 = diagJs.slice(diagJs.indexOf('// B02 / VR-01A:'), diagJs.indexOf('// Which approved reference'));
+  assert.doesNotMatch(b02, /<details|auto.?expand|progressive/i);
+  for(const fid of ['DF004','DF007','DF008','DF009','DF010'])assert.doesNotMatch(b02,new RegExp(`data-answer=.["']${fid}`));
 });
 
 test('wrappers over pageTop forward every argument', () => {
-  // A fixed-arity wrapper silently swallows the screenId and drops the reference identifier from every
-  // page. Any module that decorates pageTop must pass its arguments through untouched.
   const modeJs = fs.readFileSync(path.join(root, 'ui/mode.js'), 'utf8');
   assert.match(modeJs, /pageTop=function\(\.\.\.args\)/, 'the mode wrapper must be variadic');
   assert.match(modeJs, /__auneaPageTopModeBase\(\.\.\.args\)/, 'and must spread them into the base');
