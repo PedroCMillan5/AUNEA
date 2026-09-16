@@ -2,7 +2,7 @@
 // PURPOSE: Hold the shell to the layout language the approved reference set defines — System skin, rail
 //          structure, contextual top bar, workspace/inspector split, action bar and No-Reask provenance chip.
 // SOURCE: Approved reference set 21+2 (IMG90-00-01, IMG90-00-02, IMG90-01) under DEC-056;
-//         AUNEA_SYSTEM_90MIN_UI_SPEC_REVIEW_v1 §§3,5,11,17; DEC-040/044/048/049/050/051/056/059.
+//         AUNEA_SYSTEM_90MIN_UI_SPEC_REVIEW_v1 §§3,5,11,17; DEC-040/044/048/049/050/051/056/059; B03 VR-01B.
 // INPUTS: styles.css, index.html, core/state.js, pages/diagnostic-stages.js, domain/no-reask.js, Diagnostic Master runtime schema.
 // OUTPUTS: pass/fail assertions.
 // SIDE_EFFECTS: none (read-only).
@@ -129,10 +129,22 @@ test('B02 owner bindings are single-owner and keep canonical S01 semantics intac
   assert.match(noReaskJs, /if\(fid==='DF006'&&value\)\{e\.contactIds=\[value,/);
 });
 
-test('B02 does not implement B03 progressive disclosure', () => {
-  const b02 = diagJs.slice(diagJs.indexOf('// B02 / VR-01A:'), diagJs.indexOf('// Which approved reference'));
-  assert.doesNotMatch(b02, /<details|auto.?expand|progressive/i);
-  for(const fid of ['DF004','DF007','DF008','DF009','DF010'])assert.doesNotMatch(b02,new RegExp(`data-answer=.["']${fid}`));
+test('B03 VR-01B keeps DF004 and DF007-DF010 in a governed progressive-disclosure block', () => {
+  assert.match(diagJs, /PG01_DISCLOSURE_IDS=Object\.freeze\(\['DF004','DF007','DF008','DF009','DF010'\]\)/);
+  assert.match(diagJs, /<details class="step-group pg01-disclosure"\$\{open\}>/,'the canonical remainder reuses the existing progressive-disclosure primitive');
+  assert.match(diagJs, /renderStageFields\(folded,e\)/,'folded questions still use the canonical renderer, never duplicate controls');
+  assert.match(diagJs, /stage\.Stage_ID==='S01'\?pg01CanonicalDisclosure\(fields,e\):''/,'the disclosure exists only on PG01');
+});
+
+test('B03 auto-opens the folded block only while an active required field inside it is missing', () => {
+  assert.match(diagJs, /f\.Requiredness==='REQUIRED_90M'&&questionVisible\(f,e\)&&!valuePresent\(effectiveValue\(f,e\)\)/);
+  assert.match(diagJs, /open=pending\.length\?' open':''/);
+  const pg01 = diagnosticSchema.fields.filter(f => f.Stage_ID === 'S01');
+  assert.equal(pg01.find(f=>f.Field_ID==='DF004').Requiredness,'OPTIONAL_90M');
+  assert.equal(pg01.find(f=>f.Field_ID==='DF007').Requiredness,'OPTIONAL_90M');
+  assert.equal(pg01.find(f=>f.Field_ID==='DF008').Requiredness,'REQUIRED_90M');
+  assert.equal(pg01.find(f=>f.Field_ID==='DF009').Requiredness,'REQUIRED_90M');
+  assert.equal(pg01.find(f=>f.Field_ID==='DF010').Requiredness,'OPTIONAL_90M');
 });
 
 test('wrappers over pageTop forward every argument', () => {
