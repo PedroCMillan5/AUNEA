@@ -2,8 +2,8 @@
 // PURPOSE: Hold the shell to the layout language the approved reference set defines — System skin, rail
 //          structure, contextual top bar, workspace/inspector split, action bar and No-Reask provenance chip.
 // SOURCE: Approved reference set 21+2 (IMG90-00-01, IMG90-00-02, IMG90-01) under DEC-056;
-//         AUNEA_SYSTEM_90MIN_UI_SPEC_REVIEW_v1 §§3,5,11,17; DEC-040/048/049/050.
-// INPUTS: styles.css, index.html, core/state.js.
+//         AUNEA_SYSTEM_90MIN_UI_SPEC_REVIEW_v1 §§3,5,11,17; DEC-040/044/048/049/050/051/056; B02 VR-01A reconciliation.
+// INPUTS: styles.css, index.html, core/state.js, pages/diagnostic-stages.js, domain/no-reask.js, Diagnostic Master runtime schema.
 // OUTPUTS: pass/fail assertions.
 // SIDE_EFFECTS: none (read-only).
 // CHANGE_RISK: MEDIUM.
@@ -16,6 +16,9 @@ const root = path.join(__dirname, '..');
 const css = fs.readFileSync(path.join(root, 'styles.css'), 'utf8');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const stateJs = fs.readFileSync(path.join(root, 'core/state.js'), 'utf8');
+const diagJs = fs.readFileSync(path.join(root, 'pages/diagnostic-stages.js'), 'utf8');
+const noReaskJs = fs.readFileSync(path.join(root, 'domain/no-reask.js'), 'utf8');
+const diagnosticSchema = JSON.parse(fs.readFileSync(path.join(root, 'data/diagnostic-master.min.json'), 'utf8'));
 
 test('the System line palette from UI Spec §11 is declared as tokens', () => {
   for (const [tok, hex] of Object.entries({
@@ -96,12 +99,44 @@ test('the stage clock reproduces the windows the UI spec states', () => {
 });
 
 test('each stage declares the approved reference it reproduces', () => {
-  const diag = fs.readFileSync(path.join(root, 'pages/diagnostic-stages.js'), 'utf8');
-  assert.match(diag, /STAGE_REFERENCE\s*=\s*\{S01:'I90-01'/);
-  for (let n = 1; n <= 9; n++) assert.ok(diag.includes(`'I90-0${n}'`), `stage ${n} must name its reference`);
+  assert.match(diagJs, /STAGE_REFERENCE\s*=\s*\{S01:'I90-01'/);
+  for (let n = 1; n <= 9; n++) assert.ok(diagJs.includes(`'I90-0${n}'`), `stage ${n} must name its reference`);
   // The client state per stage is the UI spec's, not a per-page invention.
-  assert.match(diag, /STAGE_CLIENT_STATE/);
-  assert.match(diag, /C90-00/); assert.match(diag, /C90-04/);
+  assert.match(diagJs, /STAGE_CLIENT_STATE/);
+  assert.match(diagJs, /C90-00/); assert.match(diagJs, /C90-04/);
+});
+
+test('B02 VR-01A keeps PG01 on canonical DF001-DF010 and the current owner model', () => {
+  // The reconciled UI Spec §17 explicitly supersedes the old IMG90-01 field substitutions:
+  // I90-01 is DF001–DF010 from Diagnostic Master + screen matrix. Do not reintroduce Cargo/Email/
+  // Teléfono/Canal/Prioridad/Resumen as substitute PG01 questions just because an obsolete visual shows them.
+  const pg01 = diagnosticSchema.fields.filter(f => f.Stage_ID === 'S01');
+  assert.deepEqual(pg01.map(f => f.Field_ID), ['DF001','DF002','DF003','DF004','DF005','DF006','DF007','DF008','DF009','DF010']);
+
+  // I90-01 remains schema-driven; there is no second hand-maintained PG01 question list in the page.
+  assert.match(diagJs, /schema\.fields\.filter\(f=>f\.Stage_ID===stage\.Stage_ID&&questionVisible\(f,e\)\)/);
+  assert.match(diagJs, /renderStageFields\(fields,e\)/);
+
+  // DEC-050: DF001–DF005 correct Company through the canonical Write_Target mapping.
+  for (const [target, attrName] of [
+    ['RT_COMPANY.Company_Name','name'],
+    ['RT_COMPANY.Sector','sector'],
+    ['RT_COMPANY.Employee_Count','employeeCount'],
+    ['RT_COMPANY.Revenue_Band','revenueBand'],
+    ['RT_COMPANY.Country','country']
+  ]) {
+    assert.ok(noReaskJs.includes(`'${target}':'${attrName}'`), `${target} must write through to Company.${attrName}`);
+  }
+
+  // DEC-051: DF006 is a contextual Engagement participant reference, not a Contact-master overwrite.
+  assert.match(noReaskJs, /if\(fid==='DF006'&&value\)\{e\.contactIds=\[value,/);
+  // Everything that is not an explicit owner write-through remains captured on the Engagement answer map.
+  assert.match(stateJs, /e\.answers\[fid\]=value/);
+  for (const fid of ['DF008','DF009','DF010']) {
+    const field = pg01.find(f => f.Field_ID === fid);
+    assert.ok(field, fid);
+    assert.match(String(field.Write_Target||''), /^RT_ENGAGEMENT\./, `${fid} must remain Engagement-owned`);
+  }
 });
 
 test('wrappers over pageTop forward every argument', () => {
