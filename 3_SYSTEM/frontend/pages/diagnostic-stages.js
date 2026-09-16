@@ -33,31 +33,32 @@ function renderStageFields(fields,e){
 
 // B02 / VR-01A: IMG90-01 governs the twelve top-level visible fields of PG01. The Diagnostic Master
 // still governs S01 semantics (DF001-DF010). DEC-059 fixes the bridge: visible CRM/context fields write
-// to their single owner; DF004 and DF007-DF010 remain canonical and are NOT implemented here as the
-// folded/progressive block reserved for B03.
+// to their single owner; DF004 and DF007-DF010 remain canonical and are reserved for B03.
 const PG01_PRIORITY=Object.freeze(['Baja','Media','Alta','Crítica']);
 function pg01Prefill(source){return `<span class="prefill-chip">Prellenado desde ${esc(source)}</span>`}
 function pg01Field(label,control,help,{source='',required=true,full=false}={}){
-  return `<div class="field${full?' full':''}" data-pg01-visible="${attr(label)}"><label>${esc(label)}${required?requiredMark():''}${source?pg01Prefill(source):''}</label>${control}<div class="field-help">${esc(help)}</div></div>`;
+  const canonical=(String(control).match(/data-pg01-df="(DF\d+)"/)||[])[1]||'';
+  return `<div class="field${full?' full':''}"${canonical?` data-field="${canonical}"`:''} data-pg01-visible="${attr(label)}"><label>${esc(label)}${required?requiredMark():''}${source?pg01Prefill(source):''}</label>${control}<div class="field-help">${esc(help)}</div></div>`;
 }
 function pg01Select(options,value,attrs=''){
   return `<select ${attrs}><option value="">Selecciona…</option>${options.map(o=>`<option value="${attr(o.value)}" ${String(o.value)===String(value)?'selected':''}>${esc(o.label)}</option>`).join('')}</select>`;
 }
 function pg01ContextFields(e){
   const co=companyById(e.companyId)||{};
-  const contacts=state.contacts.filter(c=>c.companyId===e.companyId&&c.status!=='Inactivo');
-  const selected=contactById(e.contactIds?.[0])||contacts[0]||null;
+  const contacts=(state.contacts||[]).filter(c=>c.companyId===e.companyId&&c.status!=='Inactivo');
+  const selected=(typeof contactById==='function'?contactById(e.contactIds?.[0]):null)||contacts[0]||null;
+  e.answers=e.answers||{};
   if(e.priority===undefined)e.priority='';
   if(e.contextSummary===undefined)e.contextSummary='';
   // DF003 is Company-owned. Reuse the existing master value in the Engagement snapshot so the
   // canonical completion contract sees the same value without creating another editable size field.
-  if((e.answers?.DF003===undefined||e.answers?.DF003==='')&&Number.isFinite(Number(co.employeeCount))&&Number(co.employeeCount)>0)e.answers.DF003=Number(co.employeeCount);
-  const contactOpts=contacts.map(c=>({value:c.id,label:contactFullName(c)}));
+  if((e.answers.DF003===undefined||e.answers.DF003==='')&&Number.isFinite(Number(co.employeeCount))&&Number(co.employeeCount)>0)e.answers.DF003=Number(co.employeeCount);
+  const contactOpts=contacts.map(c=>({value:c.id,label:typeof contactFullName==='function'?contactFullName(c):(c.name||c.email||c.id)}));
   const sectorOpts=fieldOptions('REF_DOMAIN');
   const countryOpts=fieldOptions('REF_COUNTRY_ISO3166');
   const orgOpts=(typeof COMPANY_ORG_TYPE!=='undefined'?COMPANY_ORG_TYPE:[]).map(v=>({value:v,label:v}));
   const channelOpts=(typeof COMPANY_ENTRY_CHANNEL!=='undefined'?COMPANY_ENTRY_CHANNEL:[]).map(v=>({value:v,label:v}));
-  const size=companySizeBand(co);
+  const size=typeof companySizeBand==='function'?companySizeBand(co):'—';
   return [
     pg01Field('Empresa',`<input data-pg01-company="name" data-pg01-df="DF001" value="${attr(co.name||'')}">`,'Nombre legal o comercial de la empresa.',{source:'Empresas'}),
     pg01Field('Persona de contacto',pg01Select(contactOpts,selected?.id||'',`data-pg01-contact-ref="1"`),'Principal interlocutor de la sesión.',{source:'Contactos'}),
