@@ -37,11 +37,10 @@ function setUIMode(mode){
 }
 function applyModeChrome(){
   const session=state.uiMode==='SESSION';document.body.classList.toggle('mode-session',session);document.body.classList.toggle('mode-internal',!session);
-  const top=document.querySelector('.topbar-right');if(top&&!document.getElementById('uiModeToggle')){const b=document.createElement('button');b.id='uiModeToggle';b.className='btn btn-dark mode-toggle';top.prepend(b)}
+  const top=document.querySelector('.topbar-right');if(top&&!document.getElementById('uiModeToggle')){const b=document.createElement('button');b.id='uiModeToggle';b.className='btn btn-outline mode-toggle';top.prepend(b)}
   const toggle=document.getElementById('uiModeToggle');if(toggle){toggle.textContent=session?'Cambiar a Modo Interno':'Abrir Modo Sesión';toggle.onclick=()=>setUIMode(session?'INTERNAL':'SESSION')}
-  const line=document.querySelector('.topline');if(line)line.textContent=session?'AUNEA · SESIÓN':'AUNEA INTERNAL';
-  const foot=document.querySelector('.sidebar-foot .rule-pill');if(foot)foot.textContent=session?'MODO SESIÓN':'CANONICAL CAPTURE';
-  const fp=document.querySelector('.sidebar-foot p');if(fp)fp.textContent=session?'Vista para compartir pantalla':'Diagnostic Master v1.1';
+  // The rail brand and signature are fixed by the approved references and are not mode chrome, so this
+  // no longer rewrites them. (This module is replaced by the real Session Display surface in a later phase.)
 }
 (function injectModeStyles(){if(document.getElementById('auneaModeStyles'))return;const s=document.createElement('style');s.id='auneaModeStyles';s.textContent=`
 .mode-session .backend-badge,.mode-session .save-state{display:none}.mode-session .canonical-id{display:none!important}.mode-session .internal-only,.mode-session .internal-tag{display:none!important}.mode-session .question-purpose{font-size:12px;line-height:1.55}.mode-session .question-title{font-size:15px}.mode-session .question-card{padding:18px;margin:14px 0}.mode-session .field label{font-size:13px}.mode-session .field input,.mode-session .field select,.mode-session .field textarea{font-size:14px;padding:12px}.mode-session .choice label,.mode-session .segment{font-size:12px;padding:10px 12px}.mode-session .btn{font-size:13px;padding:10px 14px}.mode-session .content{max-width:1450px;padding-top:28px}.mode-session h1{font-size:40px}.mode-session .subtitle{font-size:16px}.mode-session .stage-btn b{font-size:13px}.mode-session .stage-btn small{font-size:10px}.mode-session .stage-layout{grid-template-columns:285px minmax(0,1fr)}.mode-session .flow-step{width:240px}.mode-session .flow-step h4{font-size:14px}.mode-session .flow-step p{font-size:11px}.mode-session .sidebar-foot small{display:none}.mode-session .question-meta{display:none}.mode-session .field-help .canonical-id{display:none!important}.mode-toggle{white-space:nowrap}

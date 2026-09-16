@@ -41,7 +41,12 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   await until(()=>d.querySelector('h1'));
   assert.match(d.querySelector('h1').textContent,/Cockpit/);
   assert.match(d.title,/AUNEA Internal v2\.0\.0 REVIEW/);
-  assert.match(d.querySelector('.brand span').textContent,/V2\.0\.0 · REVIEW/);
+  // The rail carries the AUNEA SYSTEM brand, per the approved references. The product version is
+  // not shown there and is surfaced on Configuración/Admin instead, so this checks both: the rail
+  // reproduces the reference, and the version is still reachable rather than quietly dropped.
+  assert.match(d.querySelector('.brand strong').textContent,/AUNEA/);
+  assert.match(d.querySelector('.brand span').textContent,/SYSTEM/);
+  assert.doesNotMatch(d.querySelector('.sidebar').textContent,/v?2\.0\.0/i,'the rail must not carry a product version string');
   assert.equal(d.querySelectorAll('script:not([src])').length,0);
   for(const file of ['core/state.js','core/i18n.js','services/backend-client.js','services/schema.js','pages/diagnostic-stages.js','ui/renderer.js','domain/no-reask.js','domain/risk.js','domain/economics.js','domain/process-lifecycle.js','pages/results.js','domain/process.js','ui/process-help.js','services/engine-adapter.js','domain/completion.js','ui/shell.js','ui/mode.js','services/persistence.js','uat/visible.js','uat/fixtures.js','boot.js','styles.css','data/diagnostic-master.min.json'])assert.ok(requests.includes(file),file);
   assert.ok(!requests.includes('app-no-reask-capacity-v1.js'),'retired capacity wrapper must not be part of the runtime');
@@ -57,10 +62,20 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   click('[data-page="contactos"]');click('#addCompany');fill('#mCompany','UAT Runtime empresa');click('#modalSave');
   click('#addContact');fill('#mContactName','UAT Contacto');fill('#mContactEmail','uat@example.invalid');click('#modalSave');
   click('[data-contact-study]');
-  assert.match(d.querySelector('#breadcrumb').textContent,/UAT Runtime empresa/);
+  // Opening a study lands on the session surface: the top bar switches to the session context and
+  // the private-console marker, and the open study is identified in the rail context card.
+  assert.match(d.querySelector('#breadcrumb').textContent,/Sesión de diagnóstico/);
+  assert.match(d.querySelector('#topbarContext').textContent,/Consola interna/);
+  assert.match(d.querySelector('.rail-context').textContent,/UAT Runtime empresa/);
+  assert.match(d.querySelector('#stepProgress').textContent,/Paso 1 de 9/);
   const reused=[...d.querySelectorAll('.reuse-context')].find(x=>x.textContent.includes('UAT Runtime empresa'));
   assert.ok(reused,'DF001 debe mostrarse como contexto CRM reutilizado, no como pregunta vacía');
-  for(const page of ['inicio','contactos','estudios','proyectos','diagnostico','proceso','resultados','recomendacion','escenarios','quote','uat','admin']){click(`[data-page="${page}"]`);assert.ok(d.querySelector('h1'),page);}
+  // The rail no longer carries a single "Diagnóstico" entry: the approved references replace it with
+  // the nine numbered session steps, so step 1 is how the diagnostic surface is reached.
+  click('[data-stage-nav="S01"]');assert.ok(d.querySelector('h1'),'diagnostico');
+  for(const page of ['inicio','contactos','estudios','proyectos','proceso','resultados','recomendacion','escenarios','quote','uat','admin']){click(`[data-page="${page}"]`);assert.ok(d.querySelector('h1'),page);}
+  // Every one of the nine canonical stages is reachable from the rail.
+  for(const s of ['S01','S02','S03','S04','S05','S06','S07','S08','S09'])assert.ok(d.querySelector(`[data-stage-nav="${s}"]`),s);
   click('[data-page="proceso"]');click('#addStep');fill('#step_name','Validar solicitud');fill('#step_type','ST02');fill('#step_actor','OPERATIONS');
   fill('#step_active','12');fill('#step_wait','60');fill('#step_rework','3');click('#modalSave');
   assert.equal(d.querySelector('#modalSave'),null);

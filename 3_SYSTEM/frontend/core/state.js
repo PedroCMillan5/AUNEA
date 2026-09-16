@@ -10,13 +10,21 @@ const AUNEA_PRODUCT_STATUS='REVIEW';
 const STORAGE_SCHEMA_VERSION='1';
 const STORAGE_KEY = 'aunea_internal_v1'; // clave histórica conservada para no perder snapshots locales existentes
 const API_DEFAULT = 'http://localhost:8000';
+// Rail structure per the approved references (IMG90-00-01 / IMG90-00-02 / IMG90-01): a standalone
+// entry, then CRM, then the nine numbered session steps, then the internal work that follows PG09.
+// '__STAGES__' is expanded at render time from the canonical flow — the nine steps are Diagnostic
+// Master data, not a list maintained here.
 const NAV = [
-  ['GENERAL'],
-  ['inicio','⌂','Inicio'],['contactos','◉','Contactos'],['estudios','▤','Estudios'],['proyectos','▣','Proyectos'],
-  ['CONSULTORÍA'],
-  ['diagnostico','◎','Diagnóstico 90m'],['proceso','⇢','Proceso y fricciones'],['resultados','▥','Resultados'],['recomendacion','≋','Recomendación'],['escenarios','▦','Escenarios'],['quote','▧','Cotización'],
-  ['SISTEMA'],
-  ['admin','⚙','Admin / Auditoría']
+  ['inicio','⌂','Inicio'],
+  ['CRM'],
+  ['contactos','◉','Contactos'],['estudios','▤','Estudios'],['proyectos','▣','Proyectos'],
+  ['Diagnóstico 90 min'],
+  ['__STAGES__'],
+  ['proceso','⇢','Editor del mapa AS-IS'],
+  ['Trabajo interno'],
+  ['resultados','▥','Diagnóstico'],['recomendacion','≋','Solución'],['escenarios','▦','Escenarios'],['quote','▧','Entregables'],
+  ['Sistema'],
+  ['admin','⚙','Configuración']
 ];
 
 let schema = null;
@@ -66,18 +74,98 @@ function invalidateDerivedState(e,reason='Cambio en inputs del diagnóstico'){
 function setAnswer(fid,value){const e=currentEng();if(!e)return;e.answers[fid]=value;e.updatedAt=now();invalidateDerivedState(e,`respuesta ${fid} actualizada`);markDirty(`Respuesta ${fid} actualizada`)}
 function normalizeArray(v){if(Array.isArray(v))return v;if(v===null||v===undefined||v==='')return [];return [v]}
 
+// Pages that belong to the 90-minute session. On these the top bar shows the private-console marker
+// and the step progress instead of the CRM chrome (IMG90-00-02 / IMG90-01).
+const SESSION_SURFACE_PAGES=new Set(['diagnostico','proceso']);
+const CRM_SURFACE_PAGES=new Set(['inicio','contactos','estudios','proyectos']);
+
+function stageList(){return (schema&&schema.flow)||[]}
+function currentStageIndex(){const e=currentEng(),f=stageList();if(!e||!f.length)return -1;return f.findIndex(s=>s.Stage_ID===(e.stageId||'S01'))}
+// The stage clock is the cumulative window of the canonical per-stage minutes — derived from the flow,
+// never a hardcoded schedule. Stage 1 of the shipped flow yields 00:00 – 06:00, as the references show.
+function stageWindow(i){
+  const f=stageList();if(i<0||!f.length)return '';
+  const mins=n=>`${String(Math.floor(n/60)).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`;
+  let start=0;for(let k=0;k<i;k++)start+=Number(f[k].Minutos_objetivo)||0;
+  return `${mins(start)} – ${mins(start+(Number(f[i].Minutos_objetivo)||0))}`;
+}
+
 function updateHeader(){
   const e=currentEng(),c=e?companyById(e.companyId):null;
-  const crumb=document.getElementById('breadcrumb');if(crumb)crumb.textContent=e?`${c?.name||'Empresa'} · ${e.title||e.processName||'Estudio'}`:'Cockpit de consultoría';
+  const inSession=SESSION_SURFACE_PAGES.has(state.activePage)&&!!e;
+  const crumb=document.getElementById('breadcrumb');
+  if(crumb){
+    // CRM surfaces are titled by where you are (IMG90-00-01 "CRM · Empresas"); session surfaces by the
+    // session itself, with the open study identified in the rail rather than repeated in the top bar.
+    const navLabel=(NAV.find(x=>x.length>1&&x[0]===state.activePage)||[])[2];
+    crumb.textContent=inSession
+      ? 'Sesión de diagnóstico · 90 min'
+      : CRM_SURFACE_PAGES.has(state.activePage)
+        ? `CRM · ${navLabel||'Inicio'}`
+        : (e?`${c?.name||'Empresa'} · ${e.title||e.processName||'Estudio'}`:'Cockpit de consultoría');
+  }
+  // The console marker is not decoration: it is the standing reminder that this surface is private and
+  // is not what the client is looking at (DEC-048/049).
+  const ctx=document.getElementById('topbarContext');
+  if(ctx)ctx.innerHTML=inSession?'<span class="console-chip">🔒 Consola interna</span>':'';
+  const sp=document.getElementById('stepProgress');
+  if(sp){
+    const flow=stageList(),i=currentStageIndex();
+    sp.innerHTML=(inSession&&flow.length&&i>=0)
+      ? `<div class="step-progress"><small>Paso ${i+1} de ${flow.length}</small><div class="step-dots">${flow.map((_,k)=>`<i class="${k<i?'on':k===i?'now':''}"></i>`).join('')}</div></div>`
+        +`<span class="stage-clock">◷ ${stageWindow(i)}</span>`
+      : '';
+  }
   const ss=document.getElementById('saveState');if(ss)ss.textContent=state.dirty?'Cambios sin guardar':'Guardado local';
   const bb=document.getElementById('backendBadge');if(bb){bb.className=`backend-badge ${state.backendOnline?'online':'offline'}`;bb.innerHTML=`<span></span>${state.backendOnline?`Backend ${esc(state.backendVersion||'online')}`:'Backend no conectado'}`}
+  renderRailHead();
 }
-function renderNav(){const n=document.getElementById('nav');n.innerHTML=NAV.map(x=>x.length===1?`<div class="nav-group">${x[0]}</div>`:`<button class="nav-item ${state.activePage===x[0]?'active':''}" data-page="${x[0]}"><span class="nav-icon">${x[1]}</span>${x[2]}</button>`).join('')}
+
+// The rail header is the brand block until a study is open, then the selected-project card (IMG90-01).
+function renderRailHead(){
+  const host=document.getElementById('railHead');if(!host)return;
+  const e=currentEng(),c=e?companyById(e.companyId):null;
+  host.innerHTML=e
+    ? `<div class="brand"><div class="brand-mark">A</div><div><strong>AUNEA</strong><span>SYSTEM</span></div></div>`
+      +`<div class="rail-context"><span class="rc-icon">▦</span><div><small>Proyecto seleccionado</small><b>${esc(c?.name||'Empresa')}</b><em>${esc(e.title||e.processName||'Diagnóstico')}</em></div></div>`
+    : `<div class="brand"><div class="brand-mark">A</div><div><strong>AUNEA</strong><span>SYSTEM</span></div></div>`;
+}
+
+function renderNav(){
+  const n=document.getElementById('nav');if(!n)return;
+  const e=currentEng(),flow=stageList(),active=currentStageIndex();
+  const out=[];
+  for(const x of NAV){
+    if(x[0]==='__STAGES__'){
+      // Nine numbered steps straight from the canonical flow. Without an open study they stay visible
+      // but inert, so the session structure is legible before one is selected.
+      flow.forEach((s,i)=>{
+        const on=e&&state.activePage==='diagnostico'&&i===active;
+        out.push(`<button class="nav-item nav-step ${on?'active':''} ${e&&i<active?'done':''}" data-stage-nav="${s.Stage_ID}"><span class="nav-num">${i+1}</span>${esc(s.Stage_ES)}</button>`);
+      });
+      continue;
+    }
+    out.push(x.length===1
+      ? `<div class="nav-group">${esc(x[0])}</div>`
+      : `<button class="nav-item ${state.activePage===x[0]?'active':''}" data-page="${x[0]}"><span class="nav-icon">${x[1]}</span>${esc(x[2])}</button>`);
+  }
+  n.innerHTML=out.join('');
+}
 function render(){renderNav();updateHeader();const fn=pages[state.activePage]||pages.inicio;document.getElementById('content').innerHTML=fn();bindCommon();postBind()}
 function setPage(page){if(['diagnostico','proceso','resultados','recomendacion','escenarios','quote'].includes(page)&&!currentEng()){toast('Abre o crea un estudio antes.');state.activePage='estudios';render();return}state.activePage=page;render()}
 function goToProcessFromStage(){const e=currentEng();if(e)state.returnTo={page:'diagnostico',stageId:e.stageId};setPage('proceso')}
 function returnToStage(){const e=currentEng(),rt=state.returnTo;if(e&&rt)e.stageId=rt.stageId;state.returnTo=null;setPage('diagnostico')}
-function pageTop(title,subtitle,actions=''){return `<div class="page-head"><div><div class="eyebrow">AUNEA INTERNAL · V${esc(AUNEA_PRODUCT_VERSION)} · ${esc(AUNEA_PRODUCT_STATUS)}</div><h1>${esc(title)}</h1><p class="subtitle">${subtitle}</p></div><div class="head-actions">${actions}</div></div>`}
+// screenId is the approved reference a screen must reproduce (e.g. "I90-00-01"). It is internal
+// traceability shown above the title, exactly as the references do, and carries no business meaning.
+function pageTop(title,subtitle,actions='',screenId=''){return `<div class="page-head"><div>${screenId?`<div class="screen-id">${esc(screenId)}</div>`:''}<h1>${esc(title)}</h1><p class="subtitle">${subtitle}</p></div><div class="head-actions">${actions}</div></div>`}
+// Main column plus persistent inspector, and the sticky action bar. Both come from the reference set:
+// every approved screen is built from these two shapes.
+function workspace(main,inspector,opts={}){return `<div class="workspace${opts.wide?' wide-inspector':''}"><div>${main}</div><aside class="inspector">${inspector}</aside></div>`}
+function insCard(title,body,opts={}){return `<div class="ins-card${opts.accent?' accent':''}">${title?`<div class="ins-head"><h3>${opts.icon?`${opts.icon} `:''}${esc(title)}</h3>${opts.action||''}</div>`:''}${body}</div>`}
+function kvRows(rows){return `<dl class="kv">${rows.map(([k,v])=>`<dt>${esc(k)}</dt><dd>${v}</dd>`).join('')}</dl>`}
+function actionBar(left,right){return `<div class="action-bar">${left||''}<div class="ab-right">${right||''}</div></div>`}
+// Provenance chip for a value that was reused instead of re-asked (DEC-040/050).
+function prefillChip(source){return source?`<span class="prefill-chip">Prerrellenado desde ${esc(source)}</span>`:''}
 function section(title,sub,body,actions=''){return `<div class="card card-pad section"><div class="section-title"><div><h2>${esc(title)}</h2>${sub?`<p>${sub}</p>`:''}</div><div class="section-actions">${actions}</div></div>${body}</div>`}
 function statusClass(s=''){const z=s.toLowerCase();if(z.includes('confirm')||z.includes('listo')||z.includes('ganado'))return'green';if(z.includes('diagn')||z.includes('reun'))return'amber';if(z.includes('propuesta')||z.includes('resultado'))return'blue';if(z.includes('perdido')||z.includes('bloq'))return'red';return''}
 function statusBadge(s){return `<span class="status ${statusClass(s)}">${esc(s||'Borrador')}</span>`}
@@ -85,6 +173,7 @@ function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t
 
 function bindCommon(){
   document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>setPage(b.dataset.page));
+  document.querySelectorAll('[data-stage-nav]').forEach(b=>b.onclick=()=>{const e=currentEng();if(!e){toast('Abre o crea un estudio antes.');setPage('estudios');return}e.stageId=b.dataset.stageNav;setPage('diagnostico')});
   document.getElementById('saveBtn').onclick=()=>saveState();
   const mm=document.getElementById('mobileMenu');if(mm)mm.onclick=()=>document.querySelector('.sidebar').classList.toggle('open');
   document.querySelectorAll('[data-open-eng]').forEach(b=>b.onclick=()=>{state.activeEngagementId=b.dataset.openEng;state.activePage='diagnostico';render()});
