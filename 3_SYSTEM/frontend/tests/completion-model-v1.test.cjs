@@ -5,11 +5,11 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 const path=require('node:path');
 const root=path.join(__dirname,'..');
-const noReaskCode=fs.readFileSync(path.join(root,'app-no-reask-v1.js'),'utf8');
-const engineAdapterCode=fs.readFileSync(path.join(root,'app-engine-adapter-v1.js'),'utf8');
-const completionCode=fs.readFileSync(path.join(root,'app-completion-model-v1.js'),'utf8');
-const i18nCode=fs.readFileSync(path.join(root,'app-i18n-labels-v1.js'),'utf8');
-const diagFieldsCode=fs.readFileSync(path.join(root,'app-diagnostic-fields.js'),'utf8');
+const noReaskCode=fs.readFileSync(path.join(root,'domain/no-reask.js'),'utf8');
+const engineAdapterCode=fs.readFileSync(path.join(root,'services/engine-adapter.js'),'utf8');
+const completionCode=fs.readFileSync(path.join(root,'domain/completion.js'),'utf8');
+const i18nCode=fs.readFileSync(path.join(root,'core/i18n.js'),'utf8');
+const diagFieldsCode=fs.readFileSync(path.join(root,'pages/diagnostic-stages.js'),'utf8');
 
 const schema={
   flow:[
@@ -111,7 +111,7 @@ test('evidencePending surfaces frictions/economics without evidence_type without
 });
 
 test('stagePage no longer renders the fixed answered/100 denominator or a global pct as the stage headline',()=>{
-  const diagSrc=fs.readFileSync(path.join(root,'app-diagnostic-fields.js'),'utf8');
+  const diagSrc=fs.readFileSync(path.join(root,'pages/diagnostic-stages.js'),'utf8');
   assert.doesNotMatch(diagSrc,/\/100 campos/);
   assert.doesNotMatch(diagSrc,/overall\.pct/);
   assert.match(diagSrc,/engagementCompletion\(e\)/);
@@ -130,14 +130,14 @@ test('UAT-VIS-023/024: volume fields are one habitual interaction and peak volum
 });
 
 test('state.returnTo round-trips: leaving a stage for the process map remembers it, and returning restores stageId and clears returnTo',()=>{
-  const coreSrc=fs.readFileSync(path.join(root,'app-core.js'),'utf8');
+  const coreSrc=fs.readFileSync(path.join(root,'core/state.js'),'utf8');
   assert.match(coreSrc,/function goToProcessFromStage\(\)/);
   assert.match(coreSrc,/function returnToStage\(\)/);
   assert.match(coreSrc,/state\.returnTo=\{page:'diagnostico',stageId:e\.stageId\}/);
   assert.match(coreSrc,/state\.returnTo=null/);
-  const diagSrc=fs.readFileSync(path.join(root,'app-diagnostic-fields.js'),'utf8');
+  const diagSrc=fs.readFileSync(path.join(root,'pages/diagnostic-stages.js'),'utf8');
   assert.match(diagSrc,/data-goto-process/);
-  const processSrc=fs.readFileSync(path.join(root,'app-process-v1.js'),'utf8');
+  const processSrc=fs.readFileSync(path.join(root,'domain/process.js'),'utf8');
   assert.match(processSrc,/id="returnToStage"/);
 });
 
@@ -268,7 +268,7 @@ test('DF094/DF095 (S09 system-generated checklist) never block S09 from being re
 });
 
 test('DF080/DF081 (S07, Ask_Mode CONDITIONAL_ASK, Control_UI DERIVED_OR_CONDITIONAL) render a real editable number+unit control, never the read-only "se completará automáticamente" box that made them permanently unanswerable',()=>{
-  const rendererCode=fs.readFileSync(path.join(root,'app-renderer-v1.js'),'utf8');
+  const rendererCode=fs.readFileSync(path.join(root,'ui/renderer.js'),'utf8');
   const ctx={console,schema:realSchema,state:{companies:[]},
     fieldOptions:id=>(realSchema.option_sets[id]||{}).options||[],
     esc:v=>String(v??''),attr:v=>String(v??''),

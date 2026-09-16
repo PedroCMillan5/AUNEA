@@ -1,6 +1,6 @@
 // [AUNEA-UAT-I18N-010] START — Spanish enum label map regression
 const test=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const vm=require('node:vm');const path=require('node:path');
-const code=fs.readFileSync(path.join(__dirname,'..','app-i18n-labels-v1.js'),'utf8');
+const code=fs.readFileSync(path.join(__dirname,'..','core/i18n.js'),'utf8');
 const ctx={console};vm.createContext(ctx);vm.runInContext(code,ctx);
 
 test('engineLabel maps every backend enum value to a Spanish string',()=>{

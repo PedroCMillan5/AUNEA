@@ -4,7 +4,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
 const path=require('node:path');
-const code=fs.readFileSync(path.join(__dirname,'..','app-schema-v11.js'),'utf8');
+const code=fs.readFileSync(path.join(__dirname,'..','services/schema.js'),'utf8');
 const ctx={console};vm.createContext(ctx);vm.runInContext(code,ctx);
 
 test('projects canonical Diagnostic Master v1.1 deltas over accepted base',()=>{

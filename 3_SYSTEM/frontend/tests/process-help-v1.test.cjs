@@ -4,7 +4,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
 const path=require('node:path');
-const code=fs.readFileSync(path.join(__dirname,'..','app-process-help-v1.js'),'utf8');
+const code=fs.readFileSync(path.join(__dirname,'..','ui/process-help.js'),'utf8');
 
 function makeCtx(){
   let openStepCalls=0,openFrictionCalls=0;

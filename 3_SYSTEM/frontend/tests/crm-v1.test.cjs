@@ -5,8 +5,8 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 const path=require('node:path');
 const root=path.join(__dirname,'..');
-const coreCode=fs.readFileSync(path.join(root,'app-core.js'),'utf8');
-const shellCode=fs.readFileSync(path.join(root,'app-shell.js'),'utf8');
+const coreCode=fs.readFileSync(path.join(root,'core/state.js'),'utf8');
+const shellCode=fs.readFileSync(path.join(root,'ui/shell.js'),'utf8');
 
 function makeCtx(){
   const domFields={};
@@ -23,7 +23,7 @@ function makeCtx(){
   vm.runInContext(coreCode,ctx);
   // `let state`/`schema` are lexical top-level bindings, not sandbox-global properties — bridge them explicitly.
   vm.runInContext('globalThis.state=state;globalThis.schema=schema;',ctx);
-  ctx.render=()=>{}; // app-shell.js's `pages` is not loaded for the editContact/createStudyFromContact tests
+  ctx.render=()=>{}; // ui/shell.js's `pages` is not loaded for the editContact/createStudyFromContact tests
   ctx.__domFields=domFields;
   return ctx;
 }

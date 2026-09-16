@@ -9,9 +9,9 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 const path=require('node:path');
 const root=path.join(__dirname,'..');
-const noReaskCode=fs.readFileSync(path.join(root,'app-no-reask-v1.js'),'utf8');
-const engineAdapterCode=fs.readFileSync(path.join(root,'app-engine-adapter-v1.js'),'utf8');
-const uatFixturesCode=fs.readFileSync(path.join(root,'app-uat-fixtures-v1.js'),'utf8');
+const noReaskCode=fs.readFileSync(path.join(root,'domain/no-reask.js'),'utf8');
+const engineAdapterCode=fs.readFileSync(path.join(root,'services/engine-adapter.js'),'utf8');
+const uatFixturesCode=fs.readFileSync(path.join(root,'uat/fixtures.js'),'utf8');
 const realSchema=require('../data/diagnostic-master.min.json');
 
 function makeCtx(){

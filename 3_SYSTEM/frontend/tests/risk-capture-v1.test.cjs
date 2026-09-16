@@ -1,16 +1,16 @@
 // [AUNEA-UAT-RISK-CAPTURE-030] START — Risk capture regression
-// Covers AUNEA-FE-RISK-CAPTURE-030 (app-risk-v1.js). Risk capture UI was deliberately separated from the
+// Covers AUNEA-FE-RISK-CAPTURE-030 (domain/risk.js). Risk capture UI was deliberately separated from the
 // engine adapter; these assertions target the module that owns the responsibility, not its former location.
 const test=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
 const root=path.join(__dirname,'..');
-const code=fs.readFileSync(path.join(root,'app-risk-v1.js'),'utf8');
+const code=fs.readFileSync(path.join(root,'domain/risk.js'),'utf8');
 const indexHtml=fs.readFileSync(path.join(root,'index.html'),'utf8');
 
 test('risk capture is wired into the runtime',()=>{
-  assert.match(indexHtml,/<script src="app-risk-v1\.js"/,'app-risk-v1.js must be loaded by index.html');
+  assert.match(indexHtml,/<script src="domain\/risk\.js"/,'domain/risk.js must be loaded by index.html');
 });
 
 test('addRisk and riskBuilder are defined in the risk module',()=>{

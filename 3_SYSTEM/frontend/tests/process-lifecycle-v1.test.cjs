@@ -1,5 +1,5 @@
 // [AUNEA-UAT-PROC-LIFECYCLE-030] START — AS-IS lifecycle regression
-// Covers AUNEA-FE-PROC-LIFECYCLE-030 (app-process-lifecycle-v1.js): supersede-instead-of-delete and
+// Covers AUNEA-FE-PROC-LIFECYCLE-030 (domain/process-lifecycle.js): supersede-instead-of-delete and
 // AS-IS confirmation. Archiving must never physically drop a step/friction (traceability contract).
 const test=require('node:test');
 const assert=require('node:assert/strict');
@@ -7,7 +7,7 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 const path=require('node:path');
 const root=path.join(__dirname,'..');
-const code=fs.readFileSync(path.join(root,'app-process-lifecycle-v1.js'),'utf8');
+const code=fs.readFileSync(path.join(root,'domain/process-lifecycle.js'),'utf8');
 const indexHtml=fs.readFileSync(path.join(root,'index.html'),'utf8');
 
 function makeCtx(engagement){
@@ -29,7 +29,7 @@ function makeCtx(engagement){
 const engagement=()=>({processSteps:[{id:'S1',status:'ACTIVE'},{id:'S2',status:'ACTIVE'}],frictions:[{id:'F1',status:'ACTIVE'}],answers:{},confirmedAsIs:false});
 
 test('process lifecycle is wired into the runtime',()=>{
-  assert.match(indexHtml,/<script src="app-process-lifecycle-v1\.js"/);
+  assert.match(indexHtml,/<script src="domain\/process-lifecycle\.js"/);
 });
 
 test('supersedeStep marks SUPERSEDED without physically removing the step, and reopens AS-IS',()=>{

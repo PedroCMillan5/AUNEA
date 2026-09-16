@@ -3,7 +3,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
 const root=path.resolve(__dirname,'..');
-const src=fs.readFileSync(path.join(root,'app-no-reask-v1.js'),'utf8');
+const src=fs.readFileSync(path.join(root,'domain/no-reask.js'),'utf8');
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 
 test('BR-CAPACITY reads canonical EconomicInput capacity field directly in the canonical No-Reask module',()=>{

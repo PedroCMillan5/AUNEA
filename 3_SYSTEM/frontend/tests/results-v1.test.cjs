@@ -5,9 +5,9 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 const path=require('node:path');
 const root=path.join(__dirname,'..');
-const code=fs.readFileSync(path.join(root,'app-results.js'),'utf8');
-const coreCode=fs.readFileSync(path.join(root,'app-core.js'),'utf8');
-const i18nCode=fs.readFileSync(path.join(root,'app-i18n-labels-v1.js'),'utf8');
+const code=fs.readFileSync(path.join(root,'pages/results.js'),'utf8');
+const coreCode=fs.readFileSync(path.join(root,'core/state.js'),'utf8');
+const i18nCode=fs.readFileSync(path.join(root,'core/i18n.js'),'utf8');
 
 test('the dead shadowed duplicates (processPage/flowReview/buildBackendPayload/evidenceTypeBackend/runDiagnosis and the obsolete recommendation-adapter guardrail) are gone from this file',()=>{
   assert.doesNotMatch(code,/unresolvedRecommendationAdapter/);
@@ -60,7 +60,7 @@ test('downloadQuotePdf requests a client-safe PDF and never window.print()',asyn
   let fetchArgs=null;const fakeBlob={__isBlob:true};ctx.fetch=async(url,opts)=>{fetchArgs={url,opts};return {ok:true,blob:async()=>fakeBlob}};
   const createdAnchors=[];ctx.document.createElement=tag=>{const el={tag,clicked:false,click(){this.clicked=true},remove(){}};if(tag==='a')createdAnchors.push(el);return el};ctx.document.body={appendChild:()=>{}};ctx.URL={createObjectURL:()=> 'blob:fake-url',revokeObjectURL:()=>{}};ctx.setTimeout=()=>{};let toasted='';ctx.toast=msg=>{toasted=msg};
   await ctx.downloadQuotePdf();const body=JSON.parse(fetchArgs.opts.body);assert.match(fetchArgs.url,/\/v1\/deliverables\/pdf$/);assert.deepEqual(body.diagnostic,ctx.__eng.diagnosticOutput);assert.equal(body.request.client_name,'ACME');assert.equal(body.request.process_name,'Alta de cliente');assert.equal(body.request.next_step,'Enviar resumen — Ana — 12/09/2026');assert.equal(body.request.include_internal_appendix,false);assert.equal(createdAnchors[0].href,'blob:fake-url');assert.match(createdAnchors[0].download,/^AUNEA_.*\.pdf$/);assert.equal(createdAnchors[0].clicked,true);assert.match(toasted,/descargado/i);
-  const codeWithoutComments=code.split('\n').filter(l=>!l.trim().startsWith('//')).join('\n');assert.doesNotMatch(codeWithoutComments,/window\.print\(\)/);const shellCode=fs.readFileSync(path.join(root,'app-shell.js'),'utf8');assert.match(shellCode,/printQuote['"]?\)?\.onclick\s*=\s*downloadQuotePdf/);
+  const codeWithoutComments=code.split('\n').filter(l=>!l.trim().startsWith('//')).join('\n');assert.doesNotMatch(codeWithoutComments,/window\.print\(\)/);const shellCode=fs.readFileSync(path.join(root,'ui/shell.js'),'utf8');assert.match(shellCode,/printQuote['"]?\)?\.onclick\s*=\s*downloadQuotePdf/);
 });
 
 test('createScenario shows business names and requires an existing diagnostic snapshot',()=>{const ctx=makeCtx();ctx.openModal=(title,body)=>{ctx.__lastBody=body};ctx.__eng.diagnosticOutput={input_snapshot_hash:'H1',rule_bundle_version:'v0.8',optimal_scenario:{}};ctx.createScenario();assert.match(ctx.__lastBody,/<option value="A1">Redesign<\/option>/);assert.match(ctx.__lastBody,/<option value="N2">Standardize<\/option>/);assert.match(ctx.__lastBody,/<option value="I1">Assisted<\/option>/);assert.doesNotMatch(ctx.__lastBody,/<option>N1<\/option>|<option>I0<\/option>/)});

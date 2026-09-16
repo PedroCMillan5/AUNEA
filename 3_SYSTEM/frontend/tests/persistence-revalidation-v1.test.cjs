@@ -6,10 +6,10 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 const path=require('node:path');
 const root=path.join(__dirname,'..');
-const persistCode=fs.readFileSync(path.join(root,'app-persistence-v1.js'),'utf8');
-const processV1Code=fs.readFileSync(path.join(root,'app-process-v1.js'),'utf8');
-const economicsCode=fs.readFileSync(path.join(root,'app-economics-v1.js'),'utf8');
-const engineAdapterCode=fs.readFileSync(path.join(root,'app-engine-adapter-v1.js'),'utf8');
+const persistCode=fs.readFileSync(path.join(root,'services/persistence.js'),'utf8');
+const processV1Code=fs.readFileSync(path.join(root,'domain/process.js'),'utf8');
+const economicsCode=fs.readFileSync(path.join(root,'domain/economics.js'),'utf8');
+const engineAdapterCode=fs.readFileSync(path.join(root,'services/engine-adapter.js'),'utf8');
 
 function makeCtx(){
   const ctx={

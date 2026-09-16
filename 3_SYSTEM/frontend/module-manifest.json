@@ -1,0 +1,131 @@
+{
+  "note": "Load order is a contract: later modules deliberately extend earlier ones. index.html is generated from this list.",
+  "modules": [
+    {
+      "order": 1,
+      "layer": "core",
+      "path": "core/state.js",
+      "block_id": "AUNEA-FE-CORE-STATE-020"
+    },
+    {
+      "order": 2,
+      "layer": "core",
+      "path": "core/i18n.js",
+      "block_id": "AUNEA-FE-I18N-LABELS-010"
+    },
+    {
+      "order": 3,
+      "layer": "services",
+      "path": "services/backend-client.js",
+      "block_id": "AUNEA-FE-BACKEND-DISCOVERY-060"
+    },
+    {
+      "order": 4,
+      "layer": "services",
+      "path": "services/schema.js",
+      "block_id": "AUNEA-DATA-DIAG-ADAPTER-010"
+    },
+    {
+      "order": 5,
+      "layer": "pages",
+      "path": "pages/diagnostic-stages.js",
+      "block_id": "AUNEA-FE-DIAG-CONTROL-030"
+    },
+    {
+      "order": 6,
+      "layer": "ui",
+      "path": "ui/renderer.js",
+      "block_id": "AUNEA-FE-DIAG-RENDER-040"
+    },
+    {
+      "order": 7,
+      "layer": "domain",
+      "path": "domain/no-reask.js",
+      "block_id": "AUNEA-FE-DIAG-NOREASK-050"
+    },
+    {
+      "order": 8,
+      "layer": "domain",
+      "path": "domain/risk.js",
+      "block_id": "AUNEA-FE-RISK-CAPTURE-030"
+    },
+    {
+      "order": 9,
+      "layer": "domain",
+      "path": "domain/economics.js",
+      "block_id": "AUNEA-FE-ECON-CAPTURE-030"
+    },
+    {
+      "order": 10,
+      "layer": "domain",
+      "path": "domain/process-lifecycle.js",
+      "block_id": "AUNEA-FE-PROC-LIFECYCLE-030"
+    },
+    {
+      "order": 11,
+      "layer": "pages",
+      "path": "pages/results.js",
+      "block_id": "AUNEA-FE-RESULTS-VIEW-010"
+    },
+    {
+      "order": 12,
+      "layer": "domain",
+      "path": "domain/process.js",
+      "block_id": "AUNEA-FE-PROC-EDITOR-020"
+    },
+    {
+      "order": 13,
+      "layer": "ui",
+      "path": "ui/process-help.js",
+      "block_id": "AUNEA-FE-PROC-HELP-025"
+    },
+    {
+      "order": 14,
+      "layer": "services",
+      "path": "services/engine-adapter.js",
+      "block_id": "AUNEA-FE-ENGINE-ADAPTER-020"
+    },
+    {
+      "order": 15,
+      "layer": "domain",
+      "path": "domain/completion.js",
+      "block_id": "AUNEA-FE-DIAG-COMPLETION-070"
+    },
+    {
+      "order": 16,
+      "layer": "ui",
+      "path": "ui/shell.js",
+      "block_id": "AUNEA-FE-SHELL-NAV-010"
+    },
+    {
+      "order": 17,
+      "layer": "ui",
+      "path": "ui/mode.js",
+      "block_id": "AUNEA-FE-UX-MODE-040"
+    },
+    {
+      "order": 18,
+      "layer": "services",
+      "path": "services/persistence.js",
+      "block_id": "AUNEA-FE-PERSIST-050"
+    },
+    {
+      "order": 19,
+      "layer": "uat",
+      "path": "uat/visible.js",
+      "block_id": "AUNEA-FE-UAT-VISIBLE-055"
+    },
+    {
+      "order": 20,
+      "layer": "uat",
+      "path": "uat/fixtures.js",
+      "block_id": "AUNEA-UAT-RUNTIME-FIXTURE-020"
+    },
+    {
+      "order": 21,
+      "layer": "boot",
+      "path": "boot.js",
+      "block_id": "AUNEA-FE-BOOT-INIT-010"
+    }
+  ]
+}

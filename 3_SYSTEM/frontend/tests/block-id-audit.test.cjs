@@ -1,7 +1,7 @@
 // [AUNEA-UAT-BLOCK-INDEX-010] START — Repo-wide Block_ID / CODE_BLOCK_INDEX.md audit
 // PURPOSE: Scan the full vigent runtime (frontend JS/CSS/HTML, frontend tests, backend Python, build/launcher configs, CI workflows) for [AUNEA-...] START/END markers and cross-check them against CODE_BLOCK_INDEX.md, catching unbalanced markers, cross-file duplicate IDs, unindexed code IDs and orphaned index rows.
 // SOURCE: CODE_CONVENTIONS.md §5-7; PROJECT_RULES.md Rule 11.
-// INPUTS: 3_SYSTEM/frontend/*.js + styles.css + index.html + tests/*.test.cjs; 3_SYSTEM/backend/aunea_backend/*.py + Dockerfile + pyproject.toml; .github/workflows/*.yml; CODE_BLOCK_INDEX.md.
+// INPUTS: 3_SYSTEM/frontend/**/*.js + styles.css + index.html + tests/*.test.cjs; 3_SYSTEM/backend/aunea_backend/*.py + Dockerfile + pyproject.toml; .github/workflows/*.yml; CODE_BLOCK_INDEX.md.
 // OUTPUTS: pass/fail assertions with file+line diagnostics.
 // SIDE_EFFECTS: none (read-only).
 // CHANGE_RISK: HIGH.
@@ -18,11 +18,21 @@ const indexPath = path.join(repoRoot, 'CODE_BLOCK_INDEX.md');
 
 const MARKER_RE = /\[(AUNEA-[A-Z0-9-]+)\]\s*(START|END)/g;
 
-function listScanFiles() {
-  const files = [];
-  for (const f of fs.readdirSync(frontendDir)) {
-    if (f.endsWith('.js') && fs.statSync(path.join(frontendDir, f)).isFile()) files.push(path.join(frontendDir, f));
+// The runtime is organised in layers (core/services/domain/ui/pages/uat), so this walks the
+// frontend tree instead of a flat directory. Block_IDs survive the move; their file column does not.
+function listFrontendJs(dir) {
+  const out = [];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (entry.name === 'node_modules' || entry.name === 'tests' || entry.name === 'data') continue;
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) out.push(...listFrontendJs(full));
+    else if (entry.name.endsWith('.js')) out.push(full);
   }
+  return out;
+}
+
+function listScanFiles() {
+  const files = listFrontendJs(frontendDir);
   files.push(path.join(frontendDir, 'styles.css'));
   files.push(path.join(frontendDir, 'index.html'));
   const testsDir = path.join(frontendDir, 'tests');

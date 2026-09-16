@@ -5,7 +5,7 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 const path=require('node:path');
 const root=path.join(__dirname,'..');
-const coreCode=fs.readFileSync(path.join(root,'app-core.js'),'utf8');
+const coreCode=fs.readFileSync(path.join(root,'core/state.js'),'utf8');
 
 function makeCtx(){
   const domFields={};

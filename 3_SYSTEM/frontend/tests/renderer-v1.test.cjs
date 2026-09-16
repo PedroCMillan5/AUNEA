@@ -4,7 +4,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
 const path=require('node:path');
-const code=fs.readFileSync(path.join(__dirname,'..','app-renderer-v1.js'),'utf8');
+const code=fs.readFileSync(path.join(__dirname,'..','ui/renderer.js'),'utf8');
 const e={companyId:'c1',answers:{},answerDetails:{},processSteps:[{id:'s1',status:'ACTIVE',step_name:'Inicio'}],frictions:[{id:'f1',status:'ACTIVE',friction_type:'P01'}]};
 const ctx={console,schema:{option_sets:{OS_X:{options:[{value:'A',label:'Alpha'},{value:'B',label:'Beta'}]},OS_WORKAROUND:{options:[{value:'CHASE',label:'Seguimiento manual'},{value:'NO_WORKAROUND',label:'No existe'}]},OS_SENSITIVE_DATA:{options:[{value:'PERSONAL',label:'Datos personales'},{value:'NONE',label:'Ninguno'}]}}},state:{companies:[{id:'c1',name:'ACME'}],contacts:[{id:'p1',companyId:'c1',name:'Ana',role:'Ops',status:'Contactado'},{id:'p2',companyId:'c1',name:'Beto',role:'IT',status:'Perdido'}]},currentEng:()=>e,normalizeArray:v=>Array.isArray(v)?v:(v==null||v===''?[]:[v]),esc:v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'),attr:v=>String(v??'').replaceAll('"','&quot;'),labelFrom:(s,v)=>v,bindForms:()=>{},setAnswer:(fid,v)=>{e.answers[fid]=v},now:()=>'',markDirty:()=>{},toast:()=>{},render:()=>{},formatDateEs:()=>'12/09/2026',document:{querySelectorAll:()=>[],querySelector:()=>null}};
 vm.createContext(ctx);vm.runInContext(code,ctx);

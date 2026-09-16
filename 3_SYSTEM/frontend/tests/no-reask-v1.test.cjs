@@ -4,7 +4,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
 const path=require('node:path');
-const code=fs.readFileSync(path.join(__dirname,'..','app-no-reask-v1.js'),'utf8');
+const code=fs.readFileSync(path.join(__dirname,'..','domain/no-reask.js'),'utf8');
 const company={id:'c1',name:'ACME',sector:'D25',country:'España'};
 const eng={companyId:'c1',contactIds:['p1'],answers:{DF011:'Proceso'},answerDetails:{},processSteps:[{id:'s1',status:'ACTIVE',step_name:'Alta',actor:'A1',tool:'T1',active_time:10,rework_time:2,occurrences_per_case:1,communication_channels:['CH1'],inputs:['AR1'],outputs:['AR2']},{id:'s2',status:'ACTIVE',step_name:'Aprobación',step_type:'ST05',actor:'A2',tool:'T2',wait_time:60,decision_criteria:['DC1'],communication_channels:['CH2']}],frictions:[{id:'f1',status:'ACTIVE',friction_type:'P07',evidence_type:'EV02'}],risks:[],economicInputs:[],confirmedAsIs:false};
 const opts={REF_COUNTRY_ISO3166:[{value:'ES',label:'España'}],REF_DOMAIN:[{value:'D25',label:'Professional Services Delivery'}],OS_COMM_CHANNEL:[{value:'CH1',label:'Email'},{value:'CH2',label:'Teams'},{value:'CH3',label:'Portal'}],OS_TOOL_CATEGORY:[],OS_ACTOR_ROLE:[],OS_ARTIFACT_TYPE:[],OS_FRICTION_TYPE:[{value:'P07',label:'Cuello'}]};
@@ -171,7 +171,7 @@ test('DF098 real interaction (jsdom, real runtime): action+owner+date consolidat
       assert.equal(d.querySelector('[data-nextstep-owner="DF098"]').value,'Ana');
       assert.equal(d.querySelector('[data-nextstep-date="DF098"]').value,'2026-09-12');
       assert.deepEqual(errors,[]);
-      // Deja que el autosave debounced (350ms, app-persistence-v1.js) termine de disparar mientras
+      // Deja que el autosave debounced (350ms, services/persistence.js) termine de disparar mientras
       // el documento sigue vivo — cerrar la ventana con ese timer aún pendiente lo hace fallar contra
       // un document ya destruido, lo cual es un artefacto de limpieza del test, no del runtime real.
       await new Promise(r=>setTimeout(r,500));
