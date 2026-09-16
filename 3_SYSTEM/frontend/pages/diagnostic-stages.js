@@ -33,7 +33,7 @@ function renderStageFields(fields,e){
 
 // B02 / VR-01A: IMG90-01 governs the twelve top-level visible fields of PG01. The Diagnostic Master
 // still governs S01 semantics (DF001-DF010). DEC-059 fixes the bridge: visible CRM/context fields write
-// to their single owner; DF004 and DF007-DF010 remain canonical and are reserved for B03.
+// to their single owner. B03 adds the canonical S01 remainder as progressive disclosure below them.
 const PG01_PRIORITY=Object.freeze(['Baja','Media','Alta','Crítica']);
 function pg01Prefill(source){return `<span class="prefill-chip">Prellenado desde ${esc(source)}</span>`}
 function pg01Field(label,control,help,{source='',required=true,full=false}={}){
@@ -74,6 +74,21 @@ function pg01ContextFields(e){
     pg01Field('Resumen del contexto',`<textarea maxlength="500" data-pg01-engagement="contextSummary">${esc(e.contextSummary||'')}</textarea>`,'Breve descripción de la situación actual y principales motivaciones.',{full:false})
   ].join('');
 }
+
+// B03 / VR-01B: the five canonical S01 fields not present in IMG90-01's twelve-field composition stay
+// in PG01, but behind progressive disclosure. They use the existing renderer and therefore preserve
+// Diagnostic Master controls, option sets, branching, write targets and No-Reask. The block auto-opens
+// only while an active REQUIRED_90M field inside it is still missing; open/closed state itself is DOM-only.
+const PG01_DISCLOSURE_IDS=Object.freeze(['DF004','DF007','DF008','DF009','DF010']);
+function pg01DisclosureFields(fields){return PG01_DISCLOSURE_IDS.map(fid=>fields.find(f=>f.Field_ID===fid)).filter(Boolean)}
+function pg01DisclosurePending(fields,e){return pg01DisclosureFields(fields).filter(f=>f.Requiredness==='REQUIRED_90M'&&questionVisible(f,e)&&!valuePresent(effectiveValue(f,e)))}
+function pg01CanonicalDisclosure(fields,e){
+  const folded=pg01DisclosureFields(fields);if(!folded.length)return '';
+  const pending=pg01DisclosurePending(fields,e),open=pending.length?' open':'';
+  const status=pending.length?`${pending.length} obligatorio${pending.length===1?'':'s'} pendiente${pending.length===1?'':'s'}`:'Completo';
+  return `<details class="step-group pg01-disclosure"${open}><summary><span>Más contexto y objetivos de la sesión</span><span class="conditional-tag">${esc(status)}</span></summary><div class="form-grid">${renderStageFields(folded,e)}</div></details>`;
+}
+
 function bindPg01Context(){
   document.querySelectorAll('[data-pg01-company]').forEach(el=>{const event=el.tagName==='SELECT'?'change':'input';el.addEventListener(event,()=>{
     const e=currentEng(),co=e&&companyById(e.companyId);if(!e||!co)return;
@@ -139,12 +154,14 @@ function stagePage(){
   const stageStat=completion.stage[stage.Stage_ID]||{applicable:0,answered:0,pct:100};
   const next=schema.flow[stageIndex+1];
 
-  // B02 special-cases only PG01's approved reference composition. Every other stage remains schema-driven.
-  // The folded canonical S01 remainder is intentionally absent until B03.
+  // PG01 has the approved IMG90-01 twelve-field composition plus B03's folded canonical remainder.
+  // Every other stage remains schema-driven.
   const stageFields=stage.Stage_ID==='S01'?pg01ContextFields(e):renderStageFields(fields,e);
+  const pg01Disclosure=stage.Stage_ID==='S01'?pg01CanonicalDisclosure(fields,e):'';
   const main=`<div class="card stage-card">
       ${stage.Stage_ID==='S01'?REQUIRED_LEGEND_HTML:(fields.some(f=>f.Requiredness==='REQUIRED_90M')?REQUIRED_LEGEND_HTML:'')}
       <div class="form-grid">${stageFields}</div>
+      ${pg01Disclosure}
       ${stage.Stage_ID==='S04'?processPrompt(e):''}${stage.Stage_ID==='S05'?frictionPrompt(e):''}
       ${stage.Stage_ID==='S06'?riskBuilder(e):''}${stage.Stage_ID==='S07'?economicBuilder(e):''}
       ${isLastStage?validationSummary(e,completion):''}
