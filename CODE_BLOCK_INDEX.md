@@ -7,6 +7,7 @@
 | AUNEA-BE-SCEN-CALC-020 | 3_SYSTEM/backend/aunea_backend/engines.py | Scenario Comparator. | DEC-034 | backend | scenario | none | CRITICAL | test_e2e.py | REVIEW |
 | AUNEA-BE-SCEN-MODEL-010 | 3_SYSTEM/backend/aunea_backend/models.py | Contrato escenario. | runtime contract | request | result | none | HIGH | test_regression_v101.py | REVIEW |
 | AUNEA-DATA-DIAG-ADAPTER-010 | 3_SYSTEM/frontend/services/schema.js | Master v1.1 runtime. | Master v1.1 | base | schema | init | HIGH | schema-v11.test.cjs | REVIEW |
+| AUNEA-FE-OUTPUT-REVIEW-010 | 3_SYSTEM/frontend/domain/output-review.js | Versioned human review of engine output and scenario | DEC-041/053/055 | Confirmed AS-IS, TO-BE, output | Approved immutable source version | Engagement history | HIGH | output-review-v1.test.cjs | ACTIVE |
 | AUNEA-FE-DIAG-RENDER-040 | 3_SYSTEM/frontend/ui/renderer.js | Renderer canónico. | REQ-DIAG-005 | schema | controls | state | HIGH | renderer-v1.test.cjs | REVIEW |
 | AUNEA-FE-DIAG-NOREASK-050 | 3_SYSTEM/frontend/domain/no-reask.js | NR01–NR15/branching, incluido BR-CAPACITY sobre `capacity_cost_rate_eur_hour`. | DEC-040; EconomicInput / DF076-077 | engagement | effective values / branch state | state | HIGH | no-reask-v1.test.cjs + capacity-branch-v1.test.cjs | REVIEW |
 | AUNEA-FE-PROC-EDITOR-020 | 3_SYSTEM/frontend/domain/process.js | AS-IS y fricciones. | Process/Friction Models | engagement | RT records | state | HIGH | process-v1.test.cjs | REVIEW |

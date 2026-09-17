@@ -17,7 +17,7 @@ test('C06 publishes only after confirmed snapshot, approved TO-BE and diagnostic
   assert.match(page,/confirmedSnapshot/);
   assert.match(page,/APPROVED_FOR_CLIENT/);
   assert.match(page,/PUBLISHED/);
-  assert.match(page,/diagnosticOutput/);
+  assert.match(page,/approvedOutputReview/);
   assert.match(page,/Falta snapshot confirmado, TO-BE aprobado o diagnóstico oficial/);
 });
 

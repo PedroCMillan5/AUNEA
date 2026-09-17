@@ -17,7 +17,7 @@ test('C04 PG11 TO-BE is a versioned DRAFT based on the confirmed snapshot',()=>{
 test('C04 PG11 requires human review before client approval',()=>{
   assert.match(src,/\['DRAFT','REVIEWED','APPROVED_FOR_CLIENT','PUBLISHED'\]/);
   assert.match(src,/Define el estado de transformación de todos los pasos antes de enviar a revisión/);
-  assert.match(src,/Listo para resultados/);
+  assert.match(fs.readFileSync(path.join(root,'domain/output-review.js'),'utf8'),/Listo para resultados/);
 });
 
 test('C04 PG12 is derived and refuses unsupported future metrics',()=>{

@@ -108,7 +108,7 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   const railPages=()=>Array.from(d.querySelectorAll('#nav [data-page]'),el=>el.dataset.page);
   const railStages=()=>Array.from(d.querySelectorAll('#nav [data-stage-nav]'),el=>el.dataset.stageNav);
   const crmPages=['inicio','empresas','contactos','interacciones','oportunidades','estudios','proyectos'];
-  const internalPages=['resultados','recomendacion','escenarios','quote'];
+  const internalPages=['resultados','tobe','comparacion','recomendacion','escenarios','quote','revision','modoresultados'];
   const reached=new Set(['diagnostico']);
   await t.test('VR-02 CRM keeps all relationship pages reachable with an open engagement',()=>{
     click('#nav [data-page="inicio"]');

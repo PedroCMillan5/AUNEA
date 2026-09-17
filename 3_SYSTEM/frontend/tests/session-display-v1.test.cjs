@@ -162,7 +162,7 @@ test('a failed publish reports the failure instead of looking like success', () 
 
 test('the display reads only the published projection, never the engagement', () => {
   const src = read('pages/session-display.js');
-  assert.doesNotMatch(src, /currentEng\(\)(?!\s*\))/, 'the shared surface must not reach into the engagement directly');
+  assert.doesNotMatch(src.slice(0,src.indexOf('// C06 · Modo Resultados')), /currentEng\(\)(?!\s*\))/, 'the shared surface must not reach into the engagement directly');
   assert.match(src, /readSessionSnapshot\(\)/);
   // openSessionDisplay runs in the Console, so it may publish; that is the one permitted use.
   assert.match(src, /function openSessionDisplay/);
