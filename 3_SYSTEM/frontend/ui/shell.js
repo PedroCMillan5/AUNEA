@@ -14,7 +14,17 @@ const pages={
   admin(){const e=currentEng();return pageTop('Admin / Auditoría','Estado del frontend, fuente canónica, persistencia y trazabilidad de cambios.',`<button class="btn" id="checkBackend">Comprobar backend</button><button class="btn btn-danger" id="clearLocal">Limpiar datos locales</button>`) + `<div class="grid g4"><div class="card metric"><small>Frontend</small><strong>v${esc(AUNEA_PRODUCT_VERSION)}</strong><span>${esc(AUNEA_PRODUCT_STATUS)}</span></div><div class="card metric"><small>Diagnostic Master</small><strong>100</strong><span>campos canónicos</span></div><div class="card metric"><small>Option sets</small><strong>${Object.keys(schema.option_sets).length}</strong><span>380 opciones</span></div><div class="card metric"><small>Backend</small><strong>${state.backendOnline?'OK':'—'}</strong><span>${esc(state.backendVersion||'no conectado')}</span></div></div>`+section('Fuente canónica','La UI no gobierna reglas.',`<div class="notice good"><strong>Diagnostic Master v1.1:</strong> ${esc(schema.source)}<br>100/100 campos con control UI, objetivo, validación, ejemplo, Source_ID y mapping a engine.</div>`)+section('Auditoría local','Últimos cambios en esta sesión.',state.audit.length?state.audit.slice(0,40).map(a=>`<div class="audit-line"><b>${fmtDate(a.ts)}</b> · ${esc(a.message)}</div>`).join(''):'<div class="empty"><p>Sin cambios registrados todavía.</p></div>')}
 };
 
+function ensureAuneaRailLogo(){
+  const brand=document.querySelector('#railHead .brand');
+  if(brand&&!brand.querySelector('.aunea-brand-logo'))brand.insertAdjacentHTML('beforeend','<img class="aunea-brand-logo" src="./assets/brand/Logo.png" alt="AUNEA System">');
+}
+function bindRailContextActions(){
+  document.querySelectorAll('[data-open-context]').forEach(b=>b.onclick=()=>{const e=state.engagements.find(x=>x.id===b.dataset.openContext)||currentEng();if(!e)return;state.activeEngagementId=e.id;state.activePage='diagnostico';render()});
+  document.querySelectorAll('[data-change-context]').forEach(b=>b.onclick=()=>{state.activeEngagementId=null;state.activePage='estudios';render()});
+  document.querySelectorAll('[data-clear-context]').forEach(b=>b.onclick=()=>{state.activeEngagementId=null;state.activePage='inicio';render()});
+}
 function postBind(){
+  ensureAuneaRailLogo();bindRailContextActions();
   bindProjectPages();
   const by=id=>document.getElementById(id);
   if(by('newStudy'))by('newStudy').onclick=newStudy;if(by('homeNewContact'))by('homeNewContact').onclick=addContact;
