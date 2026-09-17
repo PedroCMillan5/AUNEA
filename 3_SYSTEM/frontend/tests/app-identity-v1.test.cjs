@@ -12,21 +12,25 @@ test('shared shell uses the official logo and Pedro Carrasco consultant identity
   assert.match(html,/id="globalSearch"/);
 });
 
-test('workspace palette follows the AUNEA corporate pearl and System light-green accents',()=>{
-  assert.match(css,/\.content\{[^}]*background:#E6E6E6/);
-  assert.match(css,/\.hero-action\.primary\{background:#EAF2ED/);
-  assert.match(css,/\.hero-action \.arrow\{color:#EAF2ED\}/);
+test('workspace pearl covers both main and content surfaces without white outer gutters',()=>{
+  assert.match(css,/\.main\{background:#E6E6E6\}/);
+  assert.match(css,/\.content\{[^}]*max-width:none[^}]*background:#E6E6E6/);
 });
 
-test('select styling is centralized, rectilinear and preserves rounded text fields',()=>{
+test('content actions use a unified white button treatment',()=>{
+  assert.match(css,/\.content \.btn[^\{]*\{background:#fff;color:var\(--ink\);border-color:var\(--line\)\}/);
+  assert.match(css,/\.content \.hero-action \.arrow[^\{]*\{color:var\(--ink\)\}/);
+});
+
+test('select styling is centralized and all form controls preserve rounded geometry',()=>{
   assert.match(css,/select,\.field select,\.filter-row select,\.compound-control select,\.entity-picker select/);
-  assert.match(css,/border-radius:0/);
+  assert.match(css,/border-radius:var\(--radius-sm\)/);
   assert.match(css,/select:hover/);
   assert.match(css,/select:focus/);
   assert.match(css,/select:disabled/);
   assert.match(css,/select option/);
   assert.match(css,/\.field-pending select/);
-  assert.match(css,/\.field input,\.field textarea\{border-radius:var\(--radius-sm\)\}/);
+  assert.match(css,/\.field input,\.field textarea,\.filter-row input,\.compound-control input,\.entity-picker input\{border-radius:var\(--radius-sm\)\}/);
 });
 
 test('project creation persists the AUNEA owner independently from client contacts',()=>{
