@@ -7,52 +7,7 @@
     <meta name="theme-color" content="#0F3B2E">
     <title>AUNEA Internal v2.0.0 REVIEW</title>
     <link rel="stylesheet" href="styles.css">
-    <style>
-        #railHead .brand {
-            height: 74px;
-            padding: 0 14px;
-            background: #0F3B2E;
-            border-bottom: 1px solid rgba(255, 255, 255, .14);
-            display: flex;
-            align-items: center;
-            justify-content: center
-        }
-
-        #railHead .brand>* {
-            display: none !important
-        }
-
-        #railHead .brand>.aunea-brand-logo {
-            display: block !important;
-            width: 190px;
-            height: 64px;
-            object-fit: contain
-        }
-
-        .sidebar-foot {
-            min-height: 72px;
-            padding: 12px 14px;
-            background: #0F3B2E;
-            display: flex;
-            align-items: center;
-            justify-content: center
-        }
-
-        .sidebar-foot>* {
-            display: none !important
-        }
-
-        .sidebar-foot>.aunea-brand-logo {
-            display: block !important;
-            width: 185px;
-            height: 60px;
-            object-fit: contain
-        }
-
-        .rail-context-actions .btn {
-            min-height: 34px
-        }
-    </style>
+    <link rel="stylesheet" href="ui-system.css">
 </head>
 
 <body>
@@ -60,23 +15,32 @@
         <aside class="sidebar">
             <div id="railHead"></div>
             <nav id="nav"></nav>
-            <div class="sidebar-foot"><img class="aunea-brand-logo" src="./assets/brand/Logo.png"
-                    alt="AUNEA System"></div>
+            <div class="sidebar-foot">
+                <img class="aunea-brand-logo" src="./assets/brand/Logo.png" alt="AUNEA System">
+                <div class="sidebar-signature"><p>AUNEA SYSTEM</p><small>SISTEMAS QUE<br>OPTIMIZAN TU NEGOCIO.</small></div>
+            </div>
         </aside>
         <main class="main">
             <header class="topbar">
-                <div class="topbar-left"><button id="mobileMenu" class="icon-btn mobile-only">☰</button>
-                    <div id="breadcrumb" class="breadcrumb">Cockpit de consultoría</div>
-                    <div id="topbarContext"></div>
+                <div class="topbar-left">
+                    <button id="mobileMenu" class="icon-btn mobile-only" aria-label="Abrir menú">☰</button>
+                    <div class="topbar-location">
+                        <div id="breadcrumb" class="breadcrumb">Cockpit de consultoría</div>
+                        <div id="topbarContext"></div>
+                    </div>
+                </div>
+                <div class="topbar-center" aria-label="Búsqueda global">
+                    <span class="topbar-search-icon" aria-hidden="true">⌕</span>
+                    <input id="globalSearch" type="search" placeholder="Buscar en AUNEA" autocomplete="off" aria-label="Buscar en AUNEA">
                 </div>
                 <div class="topbar-right">
                     <div id="stepProgress"></div>
                     <div id="backendBadge" class="backend-badge offline"><span></span> Backend sin comprobar</div>
-                    <div id="saveState" class="save-state">Sin cambios</div><button id="saveBtn"
-                        class="btn btn-outline">Guardar</button>
-                    <div class="user-chip">
-                        <div class="avatar">AC</div>
-                        <div><b>AUNEA</b><small>Consultor</small></div>
+                    <div id="saveState" class="save-state">Sin cambios</div>
+                    <button id="saveBtn" class="btn btn-outline">Guardar</button>
+                    <div class="user-chip" aria-label="Usuario AUNEA">
+                        <div class="avatar">PC</div>
+                        <div><b>Pedro Carrasco</b><small>Consultor</small></div>
                     </div>
                 </div>
             </header>
@@ -121,7 +85,42 @@
     <script src="uat/visible.js" defer></script>
     <script src="uat/fixtures.js" defer></script>
     <script src="boot.js" defer></script>
-    <script>function ensureAuneaRailLogo() { const brand = document.querySelector('#railHead .brand'); if (brand && !brand.querySelector('.aunea-brand-logo')) brand.insertAdjacentHTML('beforeend', '<img class="aunea-brand-logo" src="./assets/brand/aunea-system-dark.jpg" alt="AUNEA System">') } const rail = document.getElementById('railHead'); if (rail) new MutationObserver(ensureAuneaRailLogo).observe(rail, { childList: true, subtree: true }); document.addEventListener('DOMContentLoaded', ensureAuneaRailLogo); document.addEventListener('click', function (ev) { const open = ev.target.closest('[data-open-context]'), change = ev.target.closest('[data-change-context]'), clear = ev.target.closest('[data-clear-context]'); if (!open && !change && !clear) return; ev.preventDefault(); ev.stopImmediatePropagation(); if (open) { const e = state.engagements.find(x => x.id === open.dataset.openContext) || currentEng(); if (!e) return; state.activeEngagementId = e.id; state.activePage = 'diagnostico'; render(); return } if (change) { state.activeEngagementId = null; state.activePage = 'estudios'; render(); return } if (clear) { state.activeEngagementId = null; state.activePage = 'inicio'; render() } }, true);</script>
+    <script>
+        function ensureAuneaRailLogo() {
+            const brand = document.querySelector('#railHead .brand');
+            if (brand && !brand.querySelector('.aunea-brand-logo')) {
+                brand.insertAdjacentHTML('beforeend', '<img class="aunea-brand-logo" src="./assets/brand/Logo.png" alt="AUNEA System">');
+            }
+        }
+        const rail = document.getElementById('railHead');
+        if (rail) new MutationObserver(ensureAuneaRailLogo).observe(rail, { childList: true, subtree: true });
+        document.addEventListener('DOMContentLoaded', ensureAuneaRailLogo);
+        document.addEventListener('click', function (ev) {
+            const open = ev.target.closest('[data-open-context]'), change = ev.target.closest('[data-change-context]'), clear = ev.target.closest('[data-clear-context]');
+            if (!open && !change && !clear) return;
+            ev.preventDefault();
+            ev.stopImmediatePropagation();
+            if (open) {
+                const e = state.engagements.find(x => x.id === open.dataset.openContext) || currentEng();
+                if (!e) return;
+                state.activeEngagementId = e.id;
+                state.activePage = 'diagnostico';
+                render();
+                return;
+            }
+            if (change) {
+                state.activeEngagementId = null;
+                state.activePage = 'estudios';
+                render();
+                return;
+            }
+            if (clear) {
+                state.activeEngagementId = null;
+                state.activePage = 'inicio';
+                render();
+            }
+        }, true);
+    </script>
 </body>
 
 </html>
