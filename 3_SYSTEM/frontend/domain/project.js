@@ -1,10 +1,11 @@
 // [AUNEA-FE-PROJECT-LINK-010] START — Project, Actuals and Outcomes
 // PURPOSE: Create projects from explicit implementation decisions and preserve historical references.
-// SOURCE: DEC-025/054/055; Architecture Contract v1.3 P06/SPEC/LL.
+// SOURCE: DEC-025/054/055; Architecture Contract v1.3 P06/SPEC.
 // INPUTS: approved output review, approved TO-BE and backend Solution Specification.
 // OUTPUTS: Project references, actual execution records and derived estimate/actual comparisons.
 // SIDE_EFFECTS: state.projects, Engagement lifecycle and audit; no deterministic engine execution.
 // CHANGE_RISK: HIGH.
+const AUNEA_DEFAULT_PROJECT_OWNER=Object.freeze({id:'pedro-carrasco',name:'Pedro Carrasco',role:'Consultor'});
 function projectById(projectId){return state.projects.find(p=>p.id===projectId)||null}
 function projectSource(p){const e=state.engagements.find(e=>e.id===p.engagementId);return {engagement:e,review:e?.outputReviews?.find(r=>r.id===p.scenarioRef?.reviewId),tobe:e?.tobeProposals?.find(t=>t.version===p.tobeRef?.version),spec:e?.solutionSpecifications?.find(s=>s.id===p.solutionSpecificationRef?.id)}}
 function approvedSpecification(e,review){return [...(e?.solutionSpecifications||[])].reverse().find(s=>s.sourceReviewId===review?.id&&['APPROVED_FOR_CLIENT','PUBLISHED'].includes(s.status))||null}
@@ -21,7 +22,7 @@ function recordImplementationDecision(e){
   const existing=state.projects.find(p=>p.engagementId===e?.id);if(existing)return {ok:true,project:existing,existing:true};
   const ready=projectDecisionReadiness(e);if(!ready.ok)return ready;
   const {review,tobe,spec}=ready;
-  const p={id:id('PRJ'),engagementId:e.id,companyId:e.companyId,contactIds:[...(e.contactIds||[])],name:confirmedSnapshot(e)?.answers?.DF011||e.title,status:'Preparación',scenarioRef:{reviewId:review.id,scenarioId:review.sources.scenario.scenario_id},tobeRef:{version:tobe.version,snapshotVersion:tobe.sourceSnapshotVersion},solutionSpecificationRef:{id:spec.id,version:spec.version},actuals:[],outcomes:[],decision:{type:'IMPLEMENT',at:now()},createdAt:now(),updatedAt:now()};
+  const p={id:id('PRJ'),engagementId:e.id,companyId:e.companyId,contactIds:[...(e.contactIds||[])],auneaOwner:{...AUNEA_DEFAULT_PROJECT_OWNER},name:confirmedSnapshot(e)?.answers?.DF011||e.title,status:'Preparación',scenarioRef:{reviewId:review.id,scenarioId:review.sources.scenario.scenario_id},tobeRef:{version:tobe.version,snapshotVersion:tobe.sourceSnapshotVersion},solutionSpecificationRef:{id:spec.id,version:spec.version},actuals:[],outcomes:[],decision:{type:'IMPLEMENT',at:now()},createdAt:now(),updatedAt:now()};
   if(!advanceEngagementTo(e,'Cerrado','decisión de implementación'))return {ok:false,error:'El estudio ya no está en sesión de resultados.'};
   state.projects.unshift(p);e.projectId=p.id;markDirty('Decisión de implementación registrada; proyecto vinculado');return {ok:true,project:p};
 }
