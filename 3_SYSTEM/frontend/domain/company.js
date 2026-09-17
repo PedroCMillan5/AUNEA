@@ -3,24 +3,43 @@
 //          canonical DF001–DF005 write targets, the primary-contact relation and the derived counters.
 //          Every other surface reuses this record read-only or writes through to it (DEC-050).
 // SOURCE: DEC-007 (one Company per company); DEC-050 (single owner / single capture);
-//         reference IMG90-00-01 (visible fields, states, order); Architecture Contract v1.2 row P01;
-//         Diagnostic Master DF001–DF005 write targets RT_COMPANY.*.
+//         reference IMG90-00-01 (visible fields, states, order); Architecture Contract v1.3 row P01;
+//         Diagnostic Master DF001–DF005 write targets RT_COMPANY.*; PROJECT_RULES v1.5 Spanish-visible rule.
 // INPUTS: state.companies plus the canonical REF_DOMAIN / REF_COUNTRY_ISO3166 catalogues.
 // OUTPUTS: Company records and derived projections used across CRM, PG01 and deliverables.
 // SIDE_EFFECTS: state mutation and audit entries.
 // CHANGE_RISK: HIGH.
 
-// Operational states taken from the approved reference itself: its tabs are Todas / Clientes /
-// Prospectos / Colaboradores / Archivadas and its badges read Cliente, Prospecto and En pausa.
 const COMPANY_STATUS = ['Cliente', 'Prospecto', 'Colaborador', 'En pausa', 'Archivada'];
 const COMPANY_ORG_TYPE = ['Empresa privada', 'Empresa pública', 'Autónomo', 'Asociación', 'Sector público'];
 const COMPANY_ENTRY_CHANNEL = ['Recomendación', 'Contacto directo', 'Red personal', 'Inbound', 'Cliente existente'];
-// Employee bands shown by the references. The stored value stays the canonical DF003 employee count;
-// the band is derived for display so there is never a second editable copy of company size (DEC-050).
 const COMPANY_SIZE_BANDS = [
   { max: 10, label: '1–10' }, { max: 50, label: '10–50' }, { max: 250, label: '50–250' },
   { max: 500, label: '250–500' }, { max: 1000, label: '500–1.000' }, { max: Infinity, label: '> 1.000' }
 ];
+
+// REF_DOMAIN may keep stable English/internal labels. The visible CRM surface is Spanish by contract;
+// this projection changes presentation only and never rewrites the stored canonical value.
+const COMPANY_SECTOR_LABEL_ES = Object.freeze({
+  'professional services':'Servicios profesionales','financial services':'Servicios financieros','banking':'Banca',
+  'insurance':'Seguros','retail':'Comercio minorista','wholesale':'Comercio mayorista','manufacturing':'Industria / fabricación',
+  'healthcare':'Salud','health care':'Salud','education':'Educación','technology':'Tecnología','software':'Software',
+  'telecommunications':'Telecomunicaciones','logistics':'Logística','transportation':'Transporte','hospitality':'Hostelería',
+  'real estate':'Inmobiliario','construction':'Construcción','energy':'Energía','utilities':'Servicios públicos',
+  'public sector':'Sector público','government':'Administración pública','nonprofit':'Tercer sector','non-profit':'Tercer sector',
+  'media':'Medios','marketing & advertising':'Marketing y publicidad','marketing and advertising':'Marketing y publicidad',
+  'consulting':'Consultoría','legal services':'Servicios jurídicos','accounting':'Contabilidad','human resources':'Recursos humanos',
+  'automotive':'Automoción','agriculture':'Agricultura','food & beverage':'Alimentación y bebidas','food and beverage':'Alimentación y bebidas',
+  'travel & tourism':'Viajes y turismo','travel and tourism':'Viajes y turismo','other':'Otro'
+});
+function companySectorLabel(value) {
+  const raw = labelFrom('REF_DOMAIN', value);
+  const key = String(raw || value || '').trim().toLowerCase();
+  return COMPANY_SECTOR_LABEL_ES[key] || raw || value || '—';
+}
+function companySectorOptions() {
+  return fieldOptions('REF_DOMAIN').map(o => ({ ...o, label: companySectorLabel(o.value) }));
+}
 function companySizeBand(company) {
   const n = Number(company?.employeeCount);
   if (!Number.isFinite(n) || n <= 0) return '—';
@@ -46,7 +65,7 @@ function companyFormBody(co = {}) {
     <div class="field"><label>Nombre legal</label><input id="cCoLegal" value="${attr(co.name || '')}"><div class="field-help">DF001 · RT_COMPANY.Company_Name</div></div>
     <div class="field"><label>Nombre comercial</label><input id="cCoTrade" value="${attr(co.tradeName || '')}"></div>
     <div class="field"><label>CIF / identificador fiscal</label><input id="cCoTaxId" value="${attr(co.taxId || '')}"></div>
-    <div class="field"><label>Sector</label><select id="cCoSector"><option value="">Sin indicar</option>${opt(fieldOptions('REF_DOMAIN'), co.sector || '')}</select><div class="field-help">DF002 · catálogo REF_DOMAIN</div></div>
+    <div class="field"><label>Sector</label><select id="cCoSector"><option value="">Sin indicar</option>${opt(companySectorOptions(), co.sector || '')}</select><div class="field-help">DF002 · catálogo REF_DOMAIN</div></div>
     <div class="field"><label>Número de empleados</label><input id="cCoEmployees" type="number" min="1" value="${attr(co.employeeCount || '')}"><div class="field-help">DF003 · el tramo mostrado se deriva de este número</div></div>
     <div class="field"><label>País</label><select id="cCoCountry"><option value="">Sin indicar</option>${opt(fieldOptions('REF_COUNTRY_ISO3166'), co.country || '')}</select><div class="field-help">DF005 · catálogo REF_COUNTRY_ISO3166</div></div>
     <div class="field"><label>Tipo de organización</label><select id="cCoOrgType"><option value="">Sin indicar</option>${plain(COMPANY_ORG_TYPE, co.orgType || '')}</select></div>
@@ -89,8 +108,6 @@ function editCompany(companyId) {
   }, 'Guardar cambios');
 }
 
-// Archiving, not deleting. DEC-055 keeps related records out of ordinary destructive UI operations, and
-// a company with history is exactly the case that rule exists for.
 function archiveCompany(companyId) {
   const co = companyById(companyId);
   if (!co) return;
@@ -101,8 +118,6 @@ function archiveCompany(companyId) {
   render();
 }
 
-// Companies captured before the CRM record was closed only had a name/sector/country. Fill in the
-// structural fields so the reference layout has something coherent to render, without inventing values.
 function migrateCompaniesToCrmRecord(companies) {
   let changed = 0;
   for (const co of companies || []) {
