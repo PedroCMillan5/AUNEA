@@ -170,10 +170,15 @@ function updateHeader(){
 function renderRailHead(){
   const host=document.getElementById('railHead');if(!host)return;
   const e=currentEng(),c=e?companyById(e.companyId):null;
-  host.innerHTML=e
-    ? `<div class="brand"><div class="brand-mark">A</div><div><strong>AUNEA</strong><span>SYSTEM</span></div></div>`
-      +`<div class="rail-context"><span class="rc-icon">▦</span><div><small>Proyecto seleccionado</small><b>${esc(c?.name||'Empresa')}</b><em>${esc(e.title||e.processName||'Diagnóstico')}</em></div></div>`
-    : `<div class="brand"><div class="brand-mark">A</div><div><strong>AUNEA</strong><span>SYSTEM</span></div></div>`;
+  const activeStatus=e?`<div class="rail-context-status">${statusBadge(engagementStatus(e))}</div>`:'';
+  const actions=e?`
+    <div class="rail-context-actions">
+      <button class="btn btn-small btn-primary" data-open-context="${esc(e.id)}">Abrir / Continuar</button>
+      <button class="btn btn-small" data-change-context="1">Cambiar</button>
+      <button class="btn btn-small" data-clear-context="1">Quitar selección</button>
+    </div>`:'';
+  host.innerHTML=`<div class="brand"><div class="brand-mark">A</div><div><strong>AUNEA</strong><span>SYSTEM</span></div></div>`
+    +(e?`<div class="rail-context"><span class="rc-icon">▦</span><div><small>Contexto activo</small><b>${esc(c?.name||'Empresa')}</b><em>${esc(e.title||e.processName||'Diagnóstico')}</em>${activeStatus}</div></div>${actions}`:'');
 }
 
 function renderNav(){
@@ -232,6 +237,9 @@ function bindCommon(){
   document.getElementById('saveBtn').onclick=()=>saveState();
   const mm=document.getElementById('mobileMenu');if(mm)mm.onclick=()=>document.querySelector('.sidebar').classList.toggle('open');
   document.querySelectorAll('[data-open-eng]').forEach(b=>b.onclick=()=>{state.activeEngagementId=b.dataset.openEng;setPage(b.dataset.openEngPage==='resultados'?'resultados':'diagnostico')});
+  document.querySelectorAll('[data-open-context]').forEach(b=>b.onclick=()=>{const e=state.engagements.find(x=>x.id===b.dataset.openContext)||currentEng(); if(!e)return; state.activeEngagementId=e.id; state.activePage='diagnostico'; render();});
+  document.querySelectorAll('[data-change-context]').forEach(b=>b.onclick=()=>{state.activeEngagementId=null; state.activePage='estudios'; render();});
+  document.querySelectorAll('[data-clear-context]').forEach(b=>b.onclick=()=>{state.activeEngagementId=null; state.activePage='inicio'; render();});
   // P05 is where the Engagement lifecycle is driven by hand. The button only ever offers the one
   // state that legitimately follows, so the UI cannot produce a status the contract does not define.
   document.querySelectorAll('[data-advance-eng]').forEach(b=>b.onclick=()=>{
