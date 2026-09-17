@@ -122,7 +122,9 @@ test('B02 owner bindings are single-owner and keep canonical S01 semantics intac
   assert.match(diagJs, /data-pg01-company="orgType"/);
   assert.match(diagJs, /data-pg01-company="entryChannel"/);
   assert.match(diagJs, /data-pg01-contact-ref="1"/);
-  for(const field of ['role','email','phone'])assert.ok(diagJs.includes(`data-pg01-contact="${field}"`),`${field} must write to Contact`);
+  for(const field of ['role','email'])assert.ok(diagJs.includes(`data-pg01-contact="${field}"`),`${field} must write to Contact`);
+  assert.match(diagJs, /data-pg01-phone="prefix"[\s\S]*data-pg01-phone="number"/,'Teléfono is the compound the reference draws');
+  assert.match(diagJs, /ct\.phone=next/,'and both boxes still write the one Contact.Teléfono field DEC-057 closes');
   assert.match(diagJs, /data-pg01-engagement="priority"/);
   assert.match(diagJs, /data-pg01-engagement="contextSummary"/);
   assert.match(diagJs, /setAnswer\('DF006',el\.value\)/,'primary session contact stays the canonical Engagement participant reference');
@@ -149,5 +151,23 @@ test('wrappers over pageTop forward every argument', () => {
   const modeJs = fs.readFileSync(path.join(root, 'ui/mode.js'), 'utf8');
   assert.match(modeJs, /pageTop=function\(\.\.\.args\)/, 'the mode wrapper must be variadic');
   assert.match(modeJs, /__auneaPageTopModeBase\(\.\.\.args\)/, 'and must spread them into the base');
+});
+test('C01 closes PG01 interaction detail: compound phone, canonical fold title and a real advance gate', () => {
+  // The fold carries the name the session actually uses for DF004/DF007-DF010.
+  assert.match(diagJs, /PG01_DISCLOSURE_TITLE='Objetivo, criterios y restricciones de la sesión'/);
+  // Phone parses and rejoins around the single stored string, so a round-trip never loses the prefix.
+  const parts = new Function(diagJs.match(/function phoneParts\(v\)\{[\s\S]*?\n\}/)[0] + ';return phoneParts;')();
+  const join = new Function(diagJs.match(/function phoneJoin\(prefix,number\)\{[^\n]*\}/)[0] + ';return phoneJoin;')();
+  assert.deepEqual(parts('+34 612 345 678'), { prefix: '+34', number: '612 345 678' });
+  assert.deepEqual(parts('612 345 678'), { prefix: '', number: '612 345 678' });
+  assert.equal(join('+34', '612 345 678'), '+34 612 345 678');
+  assert.equal(join('', '612 345 678'), '612 345 678');
+  // The gate reads requiredness and branch activity from the Diagnostic Master, decides nothing itself,
+  // and is wired into the Continuar button rather than living beside it.
+  assert.match(diagJs, /function blockStageAdvance\(e\)/);
+  assert.match(diagJs, /f\.Stage_ID===sid&&f\.Requiredness==='REQUIRED_90M'&&questionVisible\(f,e\)&&!valuePresent\(effectiveValue\(f,e\)\)/);
+  assert.match(diagJs, /const fold=host\.closest&&host\.closest\('details\.pg01-disclosure'\);\s*\n\s*if\(fold\)fold\.open=true/);
+  const shellJs = fs.readFileSync(path.join(root, 'ui/shell.js'), 'utf8');
+  assert.match(shellJs, /blockStageAdvance\(e\)\)return;if\(i<schema\.flow\.length-1\)/, 'Continuar must consult the gate before advancing');
 });
 // [AUNEA-UAT-SHELL-REFERENCE-010] END

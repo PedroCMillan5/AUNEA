@@ -43,6 +43,20 @@ function pg01Field(label,control,help,{source='',required=true,full=false}={}){
 function pg01Select(options,value,attrs=''){
   return `<select ${attrs}><option value="">Selecciona…</option>${options.map(o=>`<option value="${attr(o.value)}" ${String(o.value)===String(value)?'selected':''}>${esc(o.label)}</option>`).join('')}</select>`;
 }
+// IMG90-01 draws the phone as a prefix box plus a number box. DEC-057 keeps Contact.Teléfono as one
+// field, so the two boxes are a presentation of the same stored string, not a second attribute. The
+// prefix stays free text because no canonical catalogue of dialling codes exists to populate a list.
+function phoneParts(v){
+  const s=String(v??'').trim(),m=/^(\+\d{1,4})[\s-]*(.*)$/.exec(s);
+  return m?{prefix:m[1],number:m[2].trim()}:{prefix:'',number:s};
+}
+function phoneJoin(prefix,number){return [String(prefix||'').trim(),String(number||'').trim()].filter(Boolean).join(' ')}
+function pg01PhoneCompound(value){
+  const p=phoneParts(value);
+  return `<div class="compound-control phone-compound">`
+    +`<input class="phone-prefix" data-pg01-phone="prefix" value="${attr(p.prefix)}" placeholder="+34" aria-label="Prefijo internacional">`
+    +`<input data-pg01-phone="number" value="${attr(p.number)}" placeholder="612 345 678" aria-label="Número de teléfono"></div>`;
+}
 function pg01ContextFields(e){
   const co=companyById(e.companyId)||{};
   const contacts=(state.contacts||[]).filter(c=>c.companyId===e.companyId&&c.status!=='Inactivo');
@@ -61,10 +75,10 @@ function pg01ContextFields(e){
   const size=typeof companySizeBand==='function'?companySizeBand(co):'—';
   return [
     pg01Field('Empresa',`<input data-pg01-company="name" data-pg01-df="DF001" value="${attr(co.name||'')}">`,'Nombre legal o comercial de la empresa.',{source:'Empresas'}),
-    pg01Field('Persona de contacto',pg01Select(contactOpts,selected?.id||'',`data-pg01-contact-ref="1"`),'Principal interlocutor de la sesión.',{source:'Contactos'}),
+    pg01Field('Persona de contacto',pg01Select(contactOpts,selected?.id||'',`data-pg01-contact-ref="1" data-pg01-df="DF006"`),'Principal interlocutor de la sesión.',{source:'Contactos'}),
     pg01Field('Cargo',`<input data-pg01-contact="role" value="${attr(selected?.role||'')}">`,'Cargo o rol en la empresa.',{source:'Contactos'}),
     pg01Field('Email',`<input type="email" data-pg01-contact="email" value="${attr(selected?.email||'')}">`,'Email de contacto para comunicaciones posteriores.',{source:'Contactos'}),
-    pg01Field('Teléfono',`<input data-pg01-contact="phone" value="${attr(selected?.phone||'')}">`,'Teléfono de contacto (opcional).',{source:'Contactos',required:false}),
+    pg01Field('Teléfono',pg01PhoneCompound(selected?.phone||''),'Teléfono de contacto (opcional).',{source:'Contactos',required:false}),
     pg01Field('Sector',pg01Select(sectorOpts,co.sector||'',`data-pg01-company="sector" data-pg01-df="DF002"`),'Selecciona el sector principal de la empresa.',{source:'Empresas'}),
     pg01Field('Tamaño de empresa',`<select data-pg01-company-size="1" disabled><option>${esc(size==='—'?'Sin indicar':`${size} empleados`)}</option></select>`,'Rango aproximado de empleados. Se deriva del número registrado en Empresas.',{source:'Empresas'}),
     pg01Field('País / alcance',pg01Select(countryOpts,co.country||'',`data-pg01-company="country" data-pg01-df="DF005"`),'País principal o alcance de la operación.',{source:'Empresas'}),
@@ -80,13 +94,44 @@ function pg01ContextFields(e){
 // Diagnostic Master controls, option sets, branching, write targets and No-Reask. The block auto-opens
 // only while an active REQUIRED_90M field inside it is still missing; open/closed state itself is DOM-only.
 const PG01_DISCLOSURE_IDS=Object.freeze(['DF004','DF007','DF008','DF009','DF010']);
+const PG01_DISCLOSURE_TITLE='Objetivo, criterios y restricciones de la sesión';
 function pg01DisclosureFields(fields){return PG01_DISCLOSURE_IDS.map(fid=>fields.find(f=>f.Field_ID===fid)).filter(Boolean)}
 function pg01DisclosurePending(fields,e){return pg01DisclosureFields(fields).filter(f=>f.Requiredness==='REQUIRED_90M'&&questionVisible(f,e)&&!valuePresent(effectiveValue(f,e)))}
 function pg01CanonicalDisclosure(fields,e){
   const folded=pg01DisclosureFields(fields);if(!folded.length)return '';
   const pending=pg01DisclosurePending(fields,e),open=pending.length?' open':'';
   const status=pending.length?`${pending.length} obligatorio${pending.length===1?'':'s'} pendiente${pending.length===1?'':'s'}`:'Completo';
-  return `<details class="step-group pg01-disclosure"${open}><summary><span>Más contexto y objetivos de la sesión</span><span class="conditional-tag">${esc(status)}</span></summary><div class="form-grid">${renderStageFields(folded,e)}</div></details>`;
+  return `<details class="step-group pg01-disclosure"${open}><summary><span>${esc(PG01_DISCLOSURE_TITLE)}</span><span class="conditional-tag">${esc(status)}</span></summary><div class="form-grid">${renderStageFields(folded,e)}</div></details>`;
+}
+
+// Continuar never skips a canonical obligation. Requiredness and branch activity are read from the
+// Diagnostic Master, so nothing here decides what is mandatory: it only refuses to advance and points
+// at the first field still missing, unfolding the progressive-disclosure block when it hides one.
+function stagePendingRequired(e,stageId){
+  const sid=stageId||e?.stageId||'S01';
+  return (schema?.fields||[]).filter(f=>f.Stage_ID===sid&&f.Requiredness==='REQUIRED_90M'&&questionVisible(f,e)&&!valuePresent(effectiveValue(f,e)));
+}
+function focusPendingField(fid){
+  const host=document.querySelector(`.field[data-field="${fid}"]`);
+  if(!host)return false;
+  const fold=host.closest&&host.closest('details.pg01-disclosure');
+  if(fold)fold.open=true;
+  host.classList.add('field-pending');
+  const control=host.querySelector('input,select,textarea,button');
+  if(control&&typeof control.focus==='function')control.focus();
+  if(typeof host.scrollIntoView==='function')host.scrollIntoView({block:'center'});
+  return true;
+}
+// PG01 only: the reference composition folds DF008 away, so advancing without it would hide a
+// REQUIRED_90M capture behind a closed block. Later stages keep their existing behaviour.
+function blockStageAdvance(e){
+  if(!e||(e.stageId||'S01')!=='S01')return false;
+  const pending=stagePendingRequired(e,'S01');
+  if(!pending.length)return false;
+  const first=pending[0];
+  focusPendingField(first.Field_ID);
+  toast(`Falta un campo obligatorio: ${first.Pregunta_o_etiqueta_ES||first.Field_ID}`);
+  return true;
 }
 
 function bindPg01Context(){
@@ -101,6 +146,14 @@ function bindPg01Context(){
     const e=currentEng(),ct=e&&contactById(e.contactIds?.[0]);if(!e||!ct)return;
     const key=el.dataset.pg01Contact,before=ct[key];if(String(before??'')===String(el.value??''))return;
     ct[key]=el.value;e.updatedAt=now();audit(`Contacto ${contactFullName(ct)}: ${key} actualizado desde PG01`);markDirty(`PG01 actualizado: contacto ${key}`);
+  }));
+  // Both boxes of the phone compound write the single Contact.Teléfono value.
+  document.querySelectorAll('[data-pg01-phone]').forEach(el=>el.addEventListener('input',()=>{
+    const e=currentEng(),ct=e&&contactById(e.contactIds?.[0]);if(!e||!ct)return;
+    const part=p=>document.querySelector(`[data-pg01-phone="${p}"]`)?.value||'';
+    const next=phoneJoin(part('prefix'),part('number'));
+    if(String(ct.phone??'')===next)return;
+    ct.phone=next;e.updatedAt=now();audit(`Contacto ${contactFullName(ct)}: phone actualizado desde PG01`);markDirty('PG01 actualizado: contacto phone');
   }));
   document.querySelectorAll('[data-pg01-contact-ref]').forEach(el=>el.addEventListener('change',()=>{if(el.value)setAnswer('DF006',el.value);render()}));
   document.querySelectorAll('[data-pg01-engagement]').forEach(el=>{

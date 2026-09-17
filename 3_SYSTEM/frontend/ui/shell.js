@@ -24,7 +24,7 @@ function postBind(){
   if(by('addStep'))by('addStep').onclick=()=>openStepModal();if(by('addMultipleSteps'))by('addMultipleSteps').onclick=addMultipleSteps;if(by('addFriction'))by('addFriction').onclick=()=>openFrictionModal();if(by('confirmAsIs'))by('confirmAsIs').onclick=confirmAsIs;
   if(by('addRisk'))by('addRisk').onclick=addRisk;if(by('addEconomic'))by('addEconomic').onclick=addEconomic;if(by('runDiag'))by('runDiag').onclick=runDiagnosis;if(by('runDiagHeader'))by('runDiagHeader').onclick=runDiagnosis;
   if(by('prevStage'))by('prevStage').onclick=()=>{const e=currentEng(),i=schema.flow.findIndex(x=>x.Stage_ID===e.stageId);if(i>0){e.stageId=schema.flow[i-1].Stage_ID;markDirty();render()}};
-  if(by('nextStage'))by('nextStage').onclick=()=>{const e=currentEng(),i=schema.flow.findIndex(x=>x.Stage_ID===e.stageId);if(i<schema.flow.length-1){e.stageId=schema.flow[i+1].Stage_ID;markDirty();render()}};
+  if(by('nextStage'))by('nextStage').onclick=()=>{const e=currentEng(),i=schema.flow.findIndex(x=>x.Stage_ID===e.stageId);if(typeof blockStageAdvance==='function'&&blockStageAdvance(e))return;if(i<schema.flow.length-1){e.stageId=schema.flow[i+1].Stage_ID;markDirty();render()}};
   if(by('saveRecap'))by('saveRecap').onclick=()=>{currentEng().meetingRecap=by('meetingRecap').value;markDirty('Resumen final de reunión actualizado');toast('Resumen guardado en el estudio.')};
   if(by('newScenario'))by('newScenario').onclick=createScenario;
   if(by('quoteScenario'))by('quoteScenario').onchange=()=>{currentEng().selectedScenarioIndex=+by('quoteScenario').value;markDirty('Escenario de cotización seleccionado');render()};

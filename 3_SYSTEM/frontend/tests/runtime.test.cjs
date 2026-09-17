@@ -74,6 +74,33 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   assert.ok(df001,'DF001 debe renderizarse en la etapa de contexto');
   assert.ok(df001.innerHTML.includes('UAT Runtime empresa'),'DF001 llega prerrellenado desde la empresa');
   assert.ok(df001.querySelector('.prefill-chip'),'y declara de dónde viene');
+  // C01: Teléfono is the prefix+number compound IMG90-01 shows, and both boxes write the single
+  // Contact.Teléfono value that DEC-057 closes — not a second attribute.
+  await t.test('C01 PG01 phone compound writes one Contact field',()=>{
+    const prefix=d.querySelector('[data-pg01-phone="prefix"]'),number=d.querySelector('[data-pg01-phone="number"]');
+    assert.ok(prefix&&number,'Teléfono se compone de prefijo y número');
+    const type=(el,v)=>{el.value=v;el.dispatchEvent(new w.Event('input',{bubbles:true}))};
+    type(prefix,'+34');type(number,'612 345 678');
+    assert.equal(w.eval('state.contacts[0].phone'),'+34 612 345 678');
+    assert.equal(w.eval('typeof state.contacts[0].phonePrefix'),'undefined','no second phone attribute is created');
+  });
+  // C01: Continuar refuses to skip a REQUIRED_90M field of S01 and unfolds the block hiding it.
+  await t.test('C01 Continuar stops on a pending required field and opens the folded block',()=>{
+    const fold=d.querySelector('details.pg01-disclosure');
+    assert.ok(fold,'PG01 mantiene el bloque plegado');
+    assert.match(fold.querySelector('summary').textContent,/Objetivo, criterios y restricciones de la sesión/);
+    fold.open=false;
+    assert.equal(w.eval('currentEng().stageId'),'S01');
+    click('#nextStage');
+    assert.equal(w.eval('currentEng().stageId'),'S01','no avanza mientras falte un obligatorio');
+    assert.ok(d.querySelector('details.pg01-disclosure').open,'el bloque plegado se abre para mostrarlo');
+    assert.ok(d.querySelector('.field-pending'),'y el campo pendiente queda señalado');
+    // With every S01 obligation answered, Continuar advances.
+    w.eval(`(()=>{const e=currentEng();(schema.fields||[]).filter(f=>f.Stage_ID==='S01'&&f.Requiredness==='REQUIRED_90M').forEach(f=>{e.answers[f.Field_ID]=e.answers[f.Field_ID]||(f.Control_UI&&String(f.Control_UI).includes('MULTISELECT')?['__uat__']:'__uat__')});render()})()`);
+    click('#nextStage');
+    assert.equal(w.eval('currentEng().stageId'),'S02','con los obligatorios resueltos sí avanza');
+    w.eval(`(()=>{const e=currentEng();e.stageId='S01';render()})()`);
+  });
   // The rail no longer carries a single "Diagnóstico" entry: the approved references replace it with
   // the nine numbered session steps, so step 1 is how the diagnostic surface is reached.
   click('[data-stage-nav="S01"]');assert.ok(d.querySelector('h1'),'diagnostico');
