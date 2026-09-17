@@ -63,8 +63,8 @@ function loadState(){
 // cannot run inside loadState: state is built by the first module, and each migration lives with the
 // entity that owns its schema, several modules later. Boot calls it once everything is defined.
 function migrateLoadedState(){
-  const moved={companies:migrateCompaniesToCrmRecord(state.companies),contacts:migrateContactsToDec057(state.contacts)};
-  if(moved.companies||moved.contacts)audit(`Migración de almacenamiento: ${moved.companies} empresa(s) y ${moved.contacts} contacto(s) actualizados al contrato CRM vigente`);
+  const moved={companies:migrateCompaniesToCrmRecord(state.companies),contacts:migrateContactsToDec057(state.contacts),engagements:migrateEngagementsToLifecycle(state.engagements)};
+  if(moved.companies||moved.contacts||moved.engagements)audit(`Migración de almacenamiento: ${moved.companies} empresa(s), ${moved.contacts} contacto(s) y ${moved.engagements} estudio(s) actualizados al contrato vigente`);
   return moved;
 }
 function saveState(reason='Guardado manual'){
@@ -102,6 +102,9 @@ function setAnswer(fid,value){
   // engagement still keeps the snapshot of the value it used. Guarded because the No-Reask module
   // that owns the mapping loads after this one.
   if(typeof writeThroughToOwner==='function')writeThroughToOwner(fid,value,e);
+  // Capturing an answer is what starts Sesión 1 — an action, not a screen being open. The helper is a
+  // no-op unless the engagement is exactly one step behind, so this never skips or rewrites a state.
+  if(typeof advanceEngagementTo==='function')advanceEngagementTo(e,'Sesión 1','primera captura de la sesión');
   invalidateDerivedState(e,`respuesta ${fid} actualizada`);markDirty(`Respuesta ${fid} actualizada`);
 }
 function normalizeArray(v){if(Array.isArray(v))return v;if(v===null||v===undefined||v==='')return [];return [v]}
@@ -216,7 +219,7 @@ function actionBar(left,right){return `<div class="action-bar">${left||''}<div c
 // Provenance chip for a value that was reused instead of re-asked (DEC-040/050).
 function prefillChip(source){return source?`<span class="prefill-chip">Prerrellenado desde ${esc(source)}</span>`:''}
 function section(title,sub,body,actions=''){return `<div class="card card-pad section"><div class="section-title"><div><h2>${esc(title)}</h2>${sub?`<p>${sub}</p>`:''}</div><div class="section-actions">${actions}</div></div>${body}</div>`}
-function statusClass(s=''){const z=s.toLowerCase();if(z.includes('confirm')||z.includes('listo')||z.includes('ganado'))return'green';if(z.includes('diagn')||z.includes('reun'))return'amber';if(z.includes('propuesta')||z.includes('resultado'))return'blue';if(z.includes('perdido')||z.includes('bloq'))return'red';return''}
+function statusClass(s=''){const z=s.toLowerCase();if(z.includes('cerrado')||z.includes('confirm')||z.includes('listo')||z.includes('ganado'))return'green';if(z.includes('sesión')||z.includes('sesion')||z.includes('diagn')||z.includes('reun'))return'amber';if(z.includes('trabajo interno')||z.includes('propuesta')||z.includes('resultado'))return'blue';if(z.includes('perdido')||z.includes('bloq'))return'red';return''}
 function statusBadge(s){return `<span class="status ${statusClass(s)}">${esc(s||'Borrador')}</span>`}
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(window.__toast);window.__toast=setTimeout(()=>t.classList.remove('show'),2600)}
 
@@ -226,6 +229,13 @@ function bindCommon(){
   document.getElementById('saveBtn').onclick=()=>saveState();
   const mm=document.getElementById('mobileMenu');if(mm)mm.onclick=()=>document.querySelector('.sidebar').classList.toggle('open');
   document.querySelectorAll('[data-open-eng]').forEach(b=>b.onclick=()=>{state.activeEngagementId=b.dataset.openEng;setPage(b.dataset.openEngPage==='resultados'?'resultados':'diagnostico')});
+  // P05 is where the Engagement lifecycle is driven by hand. The button only ever offers the one
+  // state that legitimately follows, so the UI cannot produce a status the contract does not define.
+  document.querySelectorAll('[data-advance-eng]').forEach(b=>b.onclick=()=>{
+    const e=state.engagements.find(x=>x.id===b.dataset.advanceEng);
+    if(!setEngagementStatus(e,nextEngagementStatus(e),'avance manual desde Estudios'))return toast('Ese estado no es el siguiente del ciclo de vida.');
+    render();
+  });
   document.querySelectorAll('[data-stage]').forEach(b=>b.onclick=()=>{const e=currentEng();e.stageId=b.dataset.stage;markDirty();render()});
   bindForms();
 }
@@ -249,7 +259,7 @@ function bindForms(){
 
 // addCompany lives in app-no-reask-v1.js: the canonical version drives Sector/País from
 // REF_DOMAIN / REF_COUNTRY_ISO3166 instead of free text (PROJECT_RULES: prefer structured controls).
-function createStudyFromContact(contactId){const ct=contactById(contactId),cp=companyById(ct.companyId);const e={id:id('ENG'),companyId:cp.id,contactIds:[ct.id],title:`Diagnóstico · ${cp.name}`,processName:'',status:'En preparación',stageId:'S01',answers:{DF001:cp.name,DF002:cp.sector||'',DF005:cp.country||'',DF006:ct.id},processSteps:[],frictions:[],risks:[],economicInputs:[],processTab:'',confirmedAsIs:false,diagnosticOutput:null,scenarioResults:[],selectedScenario:null,selectedScenarioIndex:0,createdAt:now(),updatedAt:now()};state.engagements.unshift(e);state.activeEngagementId=e.id;state.activePage='diagnostico';markDirty('Engagement creado desde contacto');render()}
+function createStudyFromContact(contactId){const ct=contactById(contactId),cp=companyById(ct.companyId);const e={id:id('ENG'),companyId:cp.id,contactIds:[ct.id],title:`Diagnóstico · ${cp.name}`,processName:'',status:ENGAGEMENT_LIFECYCLE[0],lifecycleLog:[],stageId:'S01',answers:{DF001:cp.name,DF002:cp.sector||'',DF005:cp.country||'',DF006:ct.id},processSteps:[],frictions:[],risks:[],economicInputs:[],processTab:'',confirmedAsIs:false,diagnosticOutput:null,scenarioResults:[],selectedScenario:null,selectedScenarioIndex:0,createdAt:now(),updatedAt:now()};state.engagements.unshift(e);state.activeEngagementId=e.id;state.activePage='diagnostico';markDirty('Engagement creado desde contacto');render()}
 // Company, Contact, Interaction and Opportunity records moved to their own domain modules when the
 // CRM contracts closed (DEC-051/057/058). addContact, editContact, removeContact, removeCompany and
 // contactHistory lived here and are retired: the first three are owned by domain/contact.js, company
@@ -257,7 +267,11 @@ function createStudyFromContact(contactId){const ct=contactById(contactId),cp=co
 // instead of being pattern-matched out of the audit log.
 function newStudy(){if(!state.contacts.length)return toast('Crea primero un contacto.');const opts=state.contacts.map(c=>`<option value="${c.id}">${esc(companyById(c.companyId)?.name||'')} · ${esc(contactFullName(c))}</option>`).join('');openModal('Nuevo estudio',`<div class="form-grid"><div class="field full"><label>Contacto principal</label><select id="mStudyContact">${opts}</select></div><div class="field full"><label>Nombre del estudio</label><input id="mStudyTitle" placeholder="Ej. Diagnóstico de intake comercial"></div></div>`,()=>{const ct=contactById(document.getElementById('mStudyContact').value);createStudyFromContact(ct.id);const e=currentEng(),title=document.getElementById('mStudyTitle')?.value?.trim();if(title)e.title=title;closeModal();render()})}
 
-function createProjectFromEngagement(){const e=currentEng();if(!e)return;const existing=state.projects.find(p=>p.engagementId===e.id);if(existing){toast('Este estudio ya tiene un proyecto vinculado.');state.activePage='proyectos';render();return}const p={id:id('PRJ'),engagementId:e.id,companyId:e.companyId,contactIds:[...(e.contactIds||[])],name:e.answers.DF011||e.title,status:'Preparación',selectedScenarioIndex:e.selectedScenarioIndex??0,createdAt:now(),updatedAt:now()};state.projects.unshift(p);e.projectId=p.id;e.status='Convertido en proyecto';markDirty('Proyecto creado desde engagement');state.activePage='proyectos';render();toast('Proyecto creado y vinculado al histórico del contacto.')}
+function createProjectFromEngagement(){const e=currentEng();if(!e)return;const existing=state.projects.find(p=>p.engagementId===e.id);if(existing){toast('Este estudio ya tiene un proyecto vinculado.');state.activePage='proyectos';render();return}const p={id:id('PRJ'),engagementId:e.id,companyId:e.companyId,contactIds:[...(e.contactIds||[])],name:e.answers.DF011||e.title,status:'Preparación',selectedScenarioIndex:e.selectedScenarioIndex??0,createdAt:now(),updatedAt:now()};state.projects.unshift(p);e.projectId=p.id;
+  // The decision closes the engagement when it has reached Sesión 2; it never writes a status
+  // outside the governed lifecycle (DEC-051).
+  advanceEngagementTo(e,'Cerrado','decisión de implementación');
+  markDirty('Proyecto creado desde engagement');state.activePage='proyectos';render();toast('Proyecto creado y vinculado al histórico del contacto.')}
 
 function openModal(title,body,onSave,saveLabel='Guardar'){const legend=body.includes('required-mark')?REQUIRED_LEGEND_HTML:'';document.getElementById('modalRoot').innerHTML=`<div class="modal-backdrop"><div class="modal"><div class="modal-head"><h2>${esc(title)}</h2><button class="icon-btn" id="modalClose">×</button></div><div class="modal-body">${legend}${body}</div><div class="modal-foot"><button class="btn" id="modalCancel">Cancelar</button><button class="btn btn-primary" id="modalSave">${esc(saveLabel)}</button></div></div></div>`;document.getElementById('modalClose').onclick=closeModal;document.getElementById('modalCancel').onclick=closeModal;document.getElementById('modalSave').onclick=onSave}
 function closeModal(){document.getElementById('modalRoot').innerHTML=''}

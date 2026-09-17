@@ -42,7 +42,7 @@ function uatBundle(n,title){
   const cid=`UAT-CMP-${n}`,pid=`UAT-CON-${n}`,eid=`UAT-ENG-${n}`;
   const company={id:cid,name:`${title} · Empresa UAT-${n}`,sector:'Servicios profesionales',country:'España',notes:'Caso sintético UAT — no es un cliente real.',createdAt:now()};
   const contact={id:pid,companyId:cid,name:'Contacto UAT',role:'Operaciones',email:'',phone:'',status:'Diagnóstico',source:'Otro',nextAction:'',lastInteraction:now(),createdAt:now()};
-  const engagement={id:eid,companyId:cid,contactIds:[pid],title:`UAT-${String(n).padStart(2,'0')} · ${title}`,processName:'',status:'En preparación',stageId:'S01',answers:{DF001:company.name,DF002:company.sector,DF005:company.country,DF006:pid},answerDetails:{},processSteps:[],frictions:[],risks:[],economicInputs:[],processTab:'',confirmedAsIs:false,diagnosticOutput:null,scenarioResults:[],selectedScenario:null,selectedScenarioIndex:0,engineGates:{},createdAt:now(),updatedAt:now()};
+  const engagement={id:eid,companyId:cid,contactIds:[pid],title:`UAT-${String(n).padStart(2,'0')} · ${title}`,processName:'',status:ENGAGEMENT_LIFECYCLE[0],lifecycleLog:[],stageId:'S01',answers:{DF001:company.name,DF002:company.sector,DF005:company.country,DF006:pid},answerDetails:{},processSteps:[],frictions:[],risks:[],economicInputs:[],processTab:'',confirmedAsIs:false,diagnosticOutput:null,scenarioResults:[],selectedScenario:null,selectedScenarioIndex:0,engineGates:{},createdAt:now(),updatedAt:now()};
   return {company,contact,engagement};
 }
 function uatStep(suffix,overrides={}){

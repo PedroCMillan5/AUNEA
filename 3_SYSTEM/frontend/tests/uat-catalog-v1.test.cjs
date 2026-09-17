@@ -12,6 +12,8 @@ const root=path.join(__dirname,'..');
 const noReaskCode=fs.readFileSync(path.join(root,'domain/no-reask.js'),'utf8');
 const engineAdapterCode=fs.readFileSync(path.join(root,'services/engine-adapter.js'),'utf8');
 const uatFixturesCode=fs.readFileSync(path.join(root,'uat/fixtures.js'),'utf8');
+// Fixtures build real Engagements, so they need the module that owns the governed lifecycle.
+const engagementCode=fs.readFileSync(path.join(root,'domain/engagement.js'),'utf8');
 const realSchema=require('../data/diagnostic-master.min.json');
 
 function makeCtx(){
@@ -43,6 +45,7 @@ function makeCtx(){
   };
   ctx.currentEng=()=>state.engagements.find(x=>x.id===state.activeEngagementId)||null;
   vm.createContext(ctx);
+  vm.runInContext(engagementCode,ctx);
   vm.runInContext(noReaskCode,ctx);
   vm.runInContext(engineAdapterCode,ctx);
   vm.runInContext(uatFixturesCode,ctx);
