@@ -1,12 +1,13 @@
-// [AUNEA-FE-PAGE-SESSION-DISPLAY-010] START — Session Display (C90-00 … C90-04)
-// PURPOSE: The surface the client looks at during the 90-minute session. One persistent AS-IS canvas
-//          that gains confirmed frictions, then risks, then impact, and closes with a compact
-//          validation panel. It renders only the client-safe projection and never reads the engagement.
-// SOURCE: DEC-048/049; 90MIN UI SPEC §§3.2, 3.3, 5; Architecture Contract v1.2 (Session Display).
-// INPUTS: the published projection from AUNEA-FE-SESSION-SNAPSHOT-010.
-// OUTPUTS: page markup for the shared window.
-// SIDE_EFFECTS: none beyond the DOM of the display window.
+// [AUNEA-FE-PAGE-SESSION-DISPLAY-010] START — Session Display (C90-00 … C90-04) + Session 2 Results Mode
+// PURPOSE: Client-facing surfaces. Session Display shows the live client-safe AS-IS projection during
+//          the 90-minute session; Results Mode shows only confirmed + approved outputs in Session 2.
+// SOURCE: DEC-048/049/053/055; 90MIN UI SPEC §§3.2,3.3,5; Architecture Contract v1.3 Session Display/S2.
+// INPUTS: published client-safe projections only. Neither shared surface reads live editable engagement state.
+// OUTPUTS: read-only client markup for Session 1 and Session 2.
+// SIDE_EFFECTS: localStorage publication channel and DOM of the display windows.
 // CHANGE_RISK: HIGH.
+
+const RESULTS_DISPLAY_KEY='aunea_results_display_v1';
 
 function sessionCanvas(snap) {
   if (!snap.steps.length) {
@@ -61,7 +62,6 @@ function sessionDisplayPage() {
       <div id="sessionSync" class="session-sync"></div>
     </div>`;
 
-  // C90-00: PG01–PG03 are Console-only. The client is not shown a substitute screen (DEC-048).
   if (!snap.shared) {
     return head + `<div class="empty session-idle"><h2>La sesión empieza en un momento</h2>
       <p>Estamos preparando el contexto. En cuanto empecemos a dibujar el proceso, aparecerá aquí.</p></div>`;
@@ -74,8 +74,6 @@ function sessionDisplayPage() {
   return head + workspace(`<div class="card card-pad">${sessionCanvas(snap)}</div>`, panels);
 }
 
-// The shared window renders nothing but the projection. It re-renders when the Console publishes a new
-// one, and says so plainly when what is on screen is no longer the last saved state (UI Spec §3.3).
 function renderSessionDisplay() {
   const host = document.getElementById('content');
   if (!host) return;
@@ -90,7 +88,6 @@ function renderSessionDisplay() {
 function bootSessionDisplay() {
   document.body.classList.add('session-display');
   renderSessionDisplay();
-  // A second window cannot share memory with the Console, so the published projection is the channel.
   window.addEventListener('storage', ev => { if (ev.key === SESSION_DISPLAY_KEY) renderSessionDisplay(); });
 }
 
@@ -100,4 +97,33 @@ function openSessionDisplay() {
   const w = window.open(`${location.pathname}#session`, 'aunea_session_display');
   if (!w) toast('El navegador ha bloqueado la ventana. Permite ventanas emergentes para compartir la sesión.');
 }
+
+// C06 · Modo Resultados. Projection is created in the Console from confirmed/approved sources and then
+// stored as plain client-safe data. The second window never recalculates, edits or opens discovery.
+function approvedTobeForClient(e){const h=e?.tobeProposals||[];return [...h].reverse().find(x=>x.status==='APPROVED_FOR_CLIENT'||x.status==='PUBLISHED')||null}
+function painLabelForClient(p){const ref=(schema?.tables?.REF_PAIN||[]).find(x=>String(x.Pain_ID)===String(p?.pain_id));return ref?.Pain_Name||ref?.Label_ES||ref?.Pain_Pattern||'Hallazgo confirmado'}
+function buildResultsProjection(e){
+  const snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null,tobe=approvedTobeForClient(e),o=e?.diagnosticOutput;if(!snap||!tobe||!o)return null;
+  const rec=o.recommendation||{},econ=o.economic_result||{},risk=o.risk_result||{},scenarios=[o.optimal_scenario,...(e.scenarioResults||[])].filter(Boolean),selected=scenarios[e.selectedScenarioIndex??0]||scenarios[0]||null;
+  return {version:1,publishedAt:now(),company:snap.company?.name||companyById(e.companyId)?.name||'',process:snap.answers?.DF011||e.title||'',asis:{steps:(snap.processSteps||[]).filter(x=>x.status!=='SUPERSEDED').map((s,i)=>({n:i+1,name:s.name||s.step_name||`Paso ${i+1}`,actor:s.actor||'',tool:s.tool||''})),frictions:(snap.frictions||[]).filter(x=>x.status!=='SUPERSEDED').map(f=>({label:labelFrom('OS_FRICTION_TYPE',f.friction_type)||'Fricción',signal:f.observable_signal||''})),risks:(snap.risks||[]).map(r=>({label:labelFrom('OS_RISK_CATEGORY',r.category)||r.category||'Riesgo',description:r.description||''}))},findings:(o.pain_results||[]).filter(x=>x.state==='CONFIRMED').map(p=>({label:painLabelForClient(p),confidence:p.confidence?engineLabel('confidence',p.confidence):''})),impact:{activeHours:econ.annual_active_hours??null,waitHours:econ.annual_wait_hours??null,capacityValue:econ.capacity_value_eur_annual??null,directLoss:econ.direct_loss_eur_annual??null,residualRisk:risk.residual_level?engineLabel('risk_level',risk.residual_level):null},tobe:{version:tobe.version,items:(tobe.items||[]).map(x=>({step:x.sourceStepName||'',transformation:x.transformation||'',problemResolved:x.problemResolved||'',futureActor:x.futureActor||'',tool:x.tool||'',automationAi:x.automationAi||'',humanSupervision:x.humanSupervision||'',controlsRisk:x.controlsRisk||''}))},recommendation:{action:actionLabel(rec.action_id),functionalLevel:funcLevelLabel(rec.functional_level_id),aiLevel:aiLevelLabel(rec.ai_level_id)},businessCase:selected?{scenario:selected.scenario_name||'Escenario seleccionado',oneOff:selected.quote?.one_off_eur??o.quote?.one_off_eur??null,recurring:selected.quote?.recurring_monthly_eur??o.quote?.recurring_monthly_eur??null,tco12:selected.quote?.tco_12m_eur??o.quote?.tco_12m_eur??null}:null,nextStep:snap.answers?.DF098||''};
+}
+function publishResultsProjection(e){const projection=buildResultsProjection(e);if(!projection)return {ok:false,error:'Falta snapshot confirmado, TO-BE aprobado o diagnóstico oficial.'};localStorage.setItem(RESULTS_DISPLAY_KEY,JSON.stringify(projection));return {ok:true,projection}}
+function readResultsProjection(){try{return JSON.parse(localStorage.getItem(RESULTS_DISPLAY_KEY)||'null')}catch{return null}}
+function resultsMoney(v){return v===null||v===undefined?'No disponible':Number(v).toLocaleString('es-ES',{style:'currency',currency:'EUR',maximumFractionDigits:0})}
+function resultsModePage(){
+  const p=readResultsProjection();if(!p)return `<div class="empty session-idle"><h2>Resultados todavía no publicados</h2><p>El consultor debe aprobar y compartir los resultados desde AUNEA Internal.</p></div>`;
+  const head=`<div class="session-display-head"><div><div class="screen-id">MODO RESULTADOS · SESSION 2</div><h1>${esc(p.process||'Resultados')}</h1><p class="subtitle">${esc(p.company||'')}</p></div><div class="session-sync"><span class="badge ok">Publicado ${esc(formatDateEs(p.publishedAt))}</span></div></div>`;
+  const asis=`<div class="flow-canvas"><div class="flow-track">${(p.asis.steps||[]).map((s,i)=>`${i?'<div class="flow-connector"></div>':''}<div class="flow-step confirmed"><h4>${s.n}. ${esc(s.name)}</h4><p>${esc([s.actor,s.tool].filter(Boolean).join(' · ')||'—')}</p></div>`).join('')}</div></div>`;
+  const findings=(p.findings||[]).map(x=>`<div class="result-item"><b>${esc(x.label)}</b><p>${x.confidence?`Confianza: ${esc(x.confidence)}`:''}</p></div>`).join('')||'<div class="empty"><p>Sin hallazgos adicionales publicados.</p></div>';
+  const frictions=(p.asis.frictions||[]).map(x=>`<div class="result-item"><b>${esc(x.label)}</b>${x.signal?`<p>${esc(x.signal)}</p>`:''}</div>`).join('');
+  const tobe=(p.tobe.items||[]).map((x,i)=>`<div class="result-item"><b>${i+1}. ${esc(x.step)} · ${esc(x.transformation)}</b><p>${esc([x.problemResolved,x.futureActor,x.tool,x.automationAi,x.humanSupervision,x.controlsRisk].filter(Boolean).join(' · '))}</p></div>`).join('');
+  const comparison=(p.tobe.items||[]).map(x=>`<tr><td>${esc(x.step)}</td><td>${esc(x.transformation||'—')}</td><td>${esc(x.futureActor||'No disponible')}</td><td>${esc(x.tool||'No disponible')}</td><td>${esc(x.automationAi||'No disponible')}</td></tr>`).join('');
+  const business=p.businessCase?`<div class="grid g3"><div class="notice"><b>Escenario</b><br>${esc(p.businessCase.scenario)}</div><div class="notice"><b>Inversión inicial</b><br>${resultsMoney(p.businessCase.oneOff)}</div><div class="notice"><b>TCO 12 meses</b><br>${resultsMoney(p.businessCase.tco12)}</div></div>`:'<div class="notice">Business case no disponible.</div>';
+  return head+section('1. AS-IS confirmado','El proceso que validamos juntos.',`<div class="card card-pad">${asis}</div>`)+section('2. Qué detectamos y por qué','Hallazgos, fricciones, riesgos e impacto publicados.',`<div class="result-list">${findings}${frictions}</div><div class="grid g3" style="margin-top:12px"><div class="notice"><b>Trabajo activo anual</b><br>${p.impact.activeHours??'No disponible'}</div><div class="notice"><b>Espera anual</b><br>${p.impact.waitHours??'No disponible'}</div><div class="notice"><b>Riesgo residual</b><br>${esc(p.impact.residualRisk||'No disponible')}</div></div>`)+section('3. TO-BE aprobado','Cómo proponemos que funcione el proceso.',`<div class="result-list">${tobe}</div>`)+section('4. AS-IS vs TO-BE','Qué cambia, sin abrir una nueva captura.',`<div class="table-wrap"><table class="data-table"><thead><tr><th>Paso</th><th>Cambio</th><th>Responsable futuro</th><th>Herramienta</th><th>Automatización / IA</th></tr></thead><tbody>${comparison}</tbody></table></div>`)+section('5. Solución recomendada','Salida de los engines canónicos aprobada para esta devolución.',`<div class="grid g3"><div class="notice"><b>Acción</b><br>${esc(p.recommendation.action||'No disponible')}</div><div class="notice"><b>Nivel funcional</b><br>${esc(p.recommendation.functionalLevel||'No disponible')}</div><div class="notice"><b>IA</b><br>${esc(p.recommendation.aiLevel||'No disponible')}</div></div>`)+section('6. Escenario y business case','Datos procedentes del escenario seleccionado y Pricing Engine.',business)+section('7. Siguientes pasos','Cierre de la devolución.',`<div class="notice good"><b>Siguiente paso acordado</b><br>${esc(p.nextStep||'Pendiente de acordar')}</div>`);
+}
+function renderResultsMode(){const host=document.getElementById('content');if(host)host.innerHTML=resultsModePage()}
+function bootResultsMode(){document.body.classList.add('session-display');renderResultsMode();window.addEventListener('storage',ev=>{if(ev.key===RESULTS_DISPLAY_KEY)renderResultsMode()})}
+function openResultsMode(){const e=currentEng(),res=publishResultsProjection(e);if(!res.ok)return toast(res.error);advanceEngagementTo(e,'Sesión 2','apertura de Modo Resultados');saveState('Modo Resultados publicado para Session 2');const w=window.open(`${location.pathname}#results`,'aunea_results_mode');if(!w)toast('El navegador ha bloqueado la ventana. Permite ventanas emergentes para mostrar resultados.')}
+function resultsModeLauncherPage(){const e=currentEng(),ready=!!buildResultsProjection(e);return pageTop('Modo Resultados','Superficie separada y de sólo lectura para la segunda sesión con cliente.',ready?'<button class="btn btn-primary" id="openResultsMode">Abrir Modo Resultados</button>':'')+section('Publication gate','La vista cliente sólo consume snapshot confirmado + outputs aprobados.',`<div class="notice ${ready?'good':'warn'}">${ready?'Listo para Session 2. No se recalculará nada al abrir la vista.':'Falta snapshot confirmado, TO-BE APPROVED_FOR_CLIENT/PUBLISHED o diagnóstico oficial.'}</div>`)}
+function registerResultsModeLauncher(){if(typeof pages==='undefined'||registerResultsModeLauncher.done)return;registerResultsModeLauncher.done=true;pages.modoresultados=resultsModeLauncherPage;if(!INTERNAL_WORK_NAV.some(x=>x[0]==='modoresultados'))INTERNAL_WORK_NAV.push(['modoresultados','▤','Modo Resultados']);const originalPostBind=postBind;postBind=function(){originalPostBind();const b=document.getElementById('openResultsMode');if(b)b.onclick=openResultsMode}}
 // [AUNEA-FE-PAGE-SESSION-DISPLAY-010] END
