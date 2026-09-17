@@ -24,9 +24,9 @@
 .main{background:#E6E6E6}
 .content{min-height:calc(100vh - 76px);max-width:none;background:#E6E6E6}
 
-/* Content actions use one neutral treatment: white surface and standard AUNEA text colour. */
-.content .btn,.content .btn-primary,.content .btn-dark,.content .btn-outline,.content .hero-action,.content .hero-action.primary{background:#fff;color:var(--ink);border-color:var(--line)}
-.content .btn:hover,.content .btn-primary:hover,.content .btn-dark:hover,.content .btn-outline:hover,.content .hero-action:hover,.content .hero-action.primary:hover{background:#fff;filter:brightness(.985)}
+/* Homepage tiles stay neutral, while real actions keep the canonical AUNEA System button hierarchy. */
+.content .hero-action,.content .hero-action.primary{background:#fff;color:var(--ink);border-color:var(--line)}
+.content .hero-action:hover,.content .hero-action.primary:hover{background:#fff;filter:brightness(.985)}
 .content .hero-action p,.content .hero-action.primary p{color:var(--muted)}
 .content .hero-action .arrow,.content .hero-action.primary .arrow{color:var(--ink)}
 
