@@ -8,7 +8,7 @@
 function reviewSources(e) {
   const snap=confirmedSnapshot(e),tobe=approvedTobeForClient(e),output=e?.diagnosticOutput;
   const scenario=[output?.optimal_scenario,...(e?.scenarioResults||[])][e?.selectedScenarioIndex??0];
-  if(!snap||!tobe||tobe.sourceSnapshotVersion!==snap.version||!output||!scenario) return null;
+  if(!snap||!tobe||tobe.sourceSnapshotVersion!==snap.version||e.lastEngineSnapshotVersion!==snap.version||!output||!scenario) return null;
   return {snapshotVersion:snap.version,tobeVersion:tobe.version,output,scenario};
 }
 function reviewFingerprint(sources){return JSON.stringify(sources)}
@@ -29,7 +29,7 @@ function advanceOutputReview(e,includePrice=false){
   const next={DRAFT:'REVIEWED',REVIEWED:'APPROVED_FOR_CLIENT'}[r.status];if(!next)return false;
   r.status=next;r.reviewedAt=now();
   if(next==='APPROVED_FOR_CLIENT'){
-    r.approvedAt=now();r.includePrice=includePrice===true;
+    r.approvedAt=now();r.includePrice=includePrice===true&&r.sources.scenario.quote?.status==='READY';
     advanceEngagementTo(e,'Listo para resultados','resultados revisados y aprobados por el consultor');
   }
   markDirty('Revisión humana de resultados: '+next);return true;

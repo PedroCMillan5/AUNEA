@@ -190,7 +190,7 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   assert.equal(saved.recoveryMeta.format,'AUNEA_INTERNAL_STATE_V1');
   assert.equal(saved.recoveryMeta.productVersion,'2.0.0');
   await t.test('C07 internal review → results → decision → Project → Actuals/Outcomes',async()=>{
-    w.eval(`(()=>{const e=currentEng();e.diagnosticOutput={optimal_scenario:{scenario_id:'SC-UAT',scenario_name:'Escenario UAT',economics:{annual_active_hours:12}},recommendation:{},economic_result:{},risk_result:{},pain_results:[]};state.activePage='tobe';render()})()`);
+    w.eval(`(()=>{const e=currentEng();e.lastEngineSnapshotVersion=confirmedSnapshot(e).version;e.diagnosticOutput={optimal_scenario:{scenario_id:'SC-UAT',scenario_name:'Escenario UAT',economics:{annual_active_hours:12}},recommendation:{},economic_result:{},risk_result:{},pain_results:[]};state.activePage='tobe';render()})()`);
     click('#createTobeDraft');
     const tobeBefore=w.eval('JSON.stringify(confirmedSnapshot(currentEng()))');
     d.querySelectorAll('[data-tobe-field="transformation"]').forEach(el=>el.value='Se mantiene');

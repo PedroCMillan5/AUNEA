@@ -247,7 +247,7 @@ function frictionPrompt(e){return `<div class="notice info"><strong>Fricciones:<
 // Real closing screen for the last stage (UAT-VIS-063/064/066/067): factual summary, never a proxy
 // state ("revisada"/"confirmado") that the data model does not actually have (correction #3) — only
 // e.confirmedAsIs is a real confirmed state; frictions/risks only ever report "con evidencia/controles
-// registrados". CTA mirrors runDiagnosis()'s own gate exactly via completion.readyToCalculate.
+// registrados". PG09 ends by confirming the AS-IS; engines belong exclusively to internal work.
 function validationSummary(e,completion){
   const steps=activeSteps(e),fr=activeFrictions(e),risks=e.risks||[],econ=e.economicInputs||[];
   const frWithEvidence=fr.filter(x=>!!x.evidence_type).length;
@@ -258,15 +258,9 @@ function validationSummary(e,completion){
   const nextStep=e.answers?.DF098||'',notes=e.answers?.DF100||'';
   // The sealed record internal work will read. It appears here because PG09 is where it is created.
   const snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;
-  const cta=completion.readyToCalculate
-    ?`<button class="btn btn-primary" id="runDiag">${e.diagnosticOutput?'RECALCULAR DIAGNÓSTICO Y RECOMENDACIÓN':'CALCULAR DIAGNÓSTICO Y RECOMENDACIÓN'}</button>`
-    :`<div class="blocker-list">${completion.blockers.map(b=>{
-        const action=b.type==='GATE'?'<button type="button" class="btn btn-small" data-open-gate-review="1">Confirmar</button>'
-          :(b.navigationTarget==='proceso'?'<button type="button" class="btn btn-small" data-goto-process="1">Ir a completar</button>'
-          :`<button type="button" class="btn btn-small" data-goto-stage="${attr(b.stage||'')}">Ir a completar</button>`);
-        return `<div class="notice warn"><span>${esc(b.label)}</span>${action}</div>`;
-      }).join('')}</div>`;
-  return section('Resumen antes de calcular','Revisión factual del estudio; ningún estado se afirma más allá de lo realmente capturado.',
+  const captureBlockers=(completion.blockers||[]).filter(b=>b.type!=='GATE'&&b.id!=='ASIS');
+  const cta=(snap&&e.confirmedAsIs?'<button class="btn btn-primary" data-page="resultados">Continuar a Trabajo interno</button>':'<button class="btn btn-primary" id="confirmAsIs">Confirmar AS-IS</button>')+(captureBlockers.length?`<div class="blocker-list">${captureBlockers.map(b=>`<div class="notice warn"><span>${esc(b.label)}</span>${b.navigationTarget==='proceso'?'<button class="btn btn-small" data-goto-process="1">Ir a completar</button>':`<button class="btn btn-small" data-goto-stage="${attr(b.stage||'')}">Ir a completar</button>`}</div>`).join('')}</div>`:'');
+  return section('Confirmación del AS-IS','Revisión factual del estudio; ningún estado se afirma más allá de lo realmente capturado.',
     `<div class="grid g3">
       <div class="notice"><b>Proceso</b><br>${steps.length} paso(s) activo(s) · ${e.confirmedAsIs?'AS-IS confirmado':'AS-IS pendiente de confirmar'}</div>
       <div class="notice"><b>Fricciones</b><br>${fr.length} detectada(s), ${frWithEvidence} con evidencia registrada</div>

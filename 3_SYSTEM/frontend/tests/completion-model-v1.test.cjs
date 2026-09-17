@@ -164,12 +164,13 @@ test('validationSummary (last-stage closing screen) uses only factual language �
   assert.doesNotMatch(html,/id="runDiag"/,'the CALCULAR button must not appear while blockers remain');
 });
 
-test('validationSummary shows the single CALCULAR CTA (and nothing else) once readyToCalculate is true',()=>{
+test('PG09 confirms AS-IS and never offers engines even when internal calculation is ready',()=>{
   const ctx=makeCtx();
   const e={confirmedAsIs:true,processSteps:[{id:'s1',status:'ACTIVE'}],frictions:[],risks:[],economicInputs:[],answers:{DF098:'Solicitar evidencias — Pedro — 12/09/2026'}};
   const completion={readyToCalculate:true,missing:[],blockers:[]};
   const html=ctx.validationSummary(e,completion);
-  assert.match(html,/id="runDiag">CALCULAR DIAGNÓSTICO Y RECOMENDACIÓN/);
+  assert.match(html,/id="confirmAsIs">Confirmar AS-IS/);
+  assert.doesNotMatch(html,/id="runDiag"/);
   assert.doesNotMatch(html,/blocker-list/);
   assert.match(html,/Solicitar evidencias — Pedro — 12\/09\/2026/);
 });
@@ -180,7 +181,7 @@ test('the last stage renders validationSummary and never a "Siguiente →" butto
   assert.doesNotMatch(diagFieldsCode,/stageIndex===schema\.flow\.length-1\?'disabled':''/,'the old disabled-but-present Siguiente button must be gone, not just disabled');
 });
 
-test('exactly one calculate CTA exists, it lives with the closing summary, and it reads Calcular before a DiagnosticOutput exists and Recalcular after',()=>{
+test('PG01–PG09 never calculate or recalculate recommendation',()=>{
   const ctx=makeCtx();
   const e=makeEngagement();
   e.answers={DF900:'ACME',DF010:'Reducir tiempos de espera'};
@@ -198,13 +199,14 @@ test('exactly one calculate CTA exists, it lives with the closing summary, and i
 
   e.stageId='S03'; // last stage in this synthetic 3-stage flow
   html=ctx.stagePage();
-  assert.equal((html.match(/id="runDiag"/g)||[]).length,1,'exactly one calculate CTA, owned by validationSummary');
+  assert.equal((html.match(/id="runDiag"/g)||[]).length,0,'PG09 only confirms AS-IS');
   assert.doesNotMatch(html,/id="nextStage"/,'there is no stage 10 to continue to');
-  assert.match(html,/id="runDiag">CALCULAR DIAGNÓSTICO Y RECOMENDACIÓN/);
+  assert.match(html,/id="confirmAsIs">Confirmar AS-IS/);
+  assert.doesNotMatch(html,/id="runDiag"/);
 
   e.diagnosticOutput={recommendation:{}};
   html=ctx.stagePage();
-  assert.match(html,/id="runDiag">RECALCULAR DIAGNÓSTICO Y RECOMENDACIÓN/,'once an output exists the CTA says recalculate');
+  assert.doesNotMatch(html,/id="runDiag"|RECALCULAR/,'existing output never introduces engines into Session 1');
 });
 
 // --- Bug "5/9 etapas revisadas" on a fully worked, already-calculated case — real canonical schema ---

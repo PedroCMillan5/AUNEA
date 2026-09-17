@@ -133,7 +133,7 @@ function companiesPage() {
     ${companyFilterRow()}
     ${companyTable(rows)}`;
   return pageTop('Empresas', 'Gestiona las empresas con las que trabaja AUNEA.',
-      `<button class="btn btn-primary" id="addCompanyBtn">+ Nueva empresa</button>`, 'I90-00-01')
+    `<button class="btn btn-primary" id="addCompanyBtn">+ Nueva empresa</button>`, 'I90-00-01')
     + workspace(main, companyInspector(co), { wide: true });
 }
 // [AUNEA-FE-PAGE-COMPANIES-010] END
