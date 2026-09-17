@@ -85,42 +85,6 @@
     <script src="uat/visible.js" defer></script>
     <script src="uat/fixtures.js" defer></script>
     <script src="boot.js" defer></script>
-    <script>
-        function ensureAuneaRailLogo() {
-            const brand = document.querySelector('#railHead .brand');
-            if (brand && !brand.querySelector('.aunea-brand-logo')) {
-                brand.insertAdjacentHTML('beforeend', '<img class="aunea-brand-logo" src="./assets/brand/Logo.png" alt="AUNEA System">');
-            }
-        }
-        const rail = document.getElementById('railHead');
-        if (rail) new MutationObserver(ensureAuneaRailLogo).observe(rail, { childList: true, subtree: true });
-        document.addEventListener('DOMContentLoaded', ensureAuneaRailLogo);
-        document.addEventListener('click', function (ev) {
-            const open = ev.target.closest('[data-open-context]'), change = ev.target.closest('[data-change-context]'), clear = ev.target.closest('[data-clear-context]');
-            if (!open && !change && !clear) return;
-            ev.preventDefault();
-            ev.stopImmediatePropagation();
-            if (open) {
-                const e = state.engagements.find(x => x.id === open.dataset.openContext) || currentEng();
-                if (!e) return;
-                state.activeEngagementId = e.id;
-                state.activePage = 'diagnostico';
-                render();
-                return;
-            }
-            if (change) {
-                state.activeEngagementId = null;
-                state.activePage = 'estudios';
-                render();
-                return;
-            }
-            if (clear) {
-                state.activeEngagementId = null;
-                state.activePage = 'inicio';
-                render();
-            }
-        }, true);
-    </script>
 </body>
 
 </html>
