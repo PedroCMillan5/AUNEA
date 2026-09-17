@@ -147,11 +147,7 @@ test('B03 auto-opens from the Diagnostic Master requiredness instead of duplicat
   assert.ok(folded.some(f=>f.Requiredness==='REQUIRED_90M'),'the current Diagnostic Master must drive at least one required folded field');
 });
 
-test('wrappers over pageTop forward every argument', () => {
-  const modeJs = fs.readFileSync(path.join(root, 'ui/mode.js'), 'utf8');
-  assert.match(modeJs, /pageTop=function\(\.\.\.args\)/, 'the mode wrapper must be variadic');
-  assert.match(modeJs, /__auneaPageTopModeBase\(\.\.\.args\)/, 'and must spread them into the base');
-});
+test('Console keeps the reference identifier without a legacy mode wrapper',()=>{assert.match(stateJs,/function pageTop\(title,subtitle,actions='',screenId=''\)/);assert.doesNotMatch(html,/ui\/mode\.js/)});
 test('C01 closes PG01 interaction detail: compound phone, canonical fold title and a real advance gate', () => {
   // The fold carries the name the session actually uses for DF004/DF007-DF010.
   assert.match(diagJs, /PG01_DISCLOSURE_TITLE='Objetivo, criterios y restricciones de la sesión'/);

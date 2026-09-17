@@ -8,19 +8,11 @@ AUNEA System organiza sus activos técnicos por uso real.
 - `02_HERRAMIENTAS/` — **Herramienta = se usa.** Software que AUNEA utiliza para analizar, operar, calcular, demostrar, configurar o entregar trabajo.
 - `99_ARCHIVO_TECNICO/` — versiones técnicas sustituidas que se conservan únicamente como histórico.
 
-## Simulador
-
-El simulador AUNEA System es una **Herramienta**. La versión técnica vigente está en:
-
-`3_SYSTEM/02_HERRAMIENTAS/simulador/AUNEA_System_Simulador_v3.html`
-
-Las versiones v1 y v2 están en:
-
-`3_SYSTEM/99_ARCHIVO_TECNICO/simulador/`
-
 ## AUNEA Internal
 
-El runtime actual de AUNEA Internal (`backend/`, `frontend/` y `reconciliation/`) mantiene temporalmente sus rutas técnicas existentes para no romper CI, Block_ID, launchers ni referencias de la release REVIEW durante esta reorganización. Su clasificación/migración física se hará como cambio técnico separado y trazado; no altera la regla Producto/Herramienta de AUNEA System.
+El único runtime frontend vigente está en [`frontend/`](frontend/README.md). Los motores deterministas permanecen en `backend/`.
+
+Los simuladores v1–v3 y `interface-review` se conservan sólo como histórico en `99_ARCHIVO_TECNICO/simulador/`.
 
 ## Fuente de verdad
 

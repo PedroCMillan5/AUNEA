@@ -56,7 +56,7 @@ Mapa de la reorganización (movimientos byte a byte, sin cambio de contenido):
 | `app-renderer-v1.js` | `ui/renderer.js` | `AUNEA-FE-DIAG-RENDER-040` |
 | `app-process-help-v1.js` | `ui/process-help.js` | `AUNEA-FE-PROC-HELP-025` |
 | `app-shell.js` | `ui/shell.js` | `AUNEA-FE-SHELL-NAV-010` |
-| `app-mode-v1.js` | `ui/mode.js` | `AUNEA-FE-UX-MODE-040` |
+| `app-mode-v1.js` | Archivado: Session Display y Modo Resultados lo sustituyen | `AUNEA-FE-UX-MODE-040` (retirado) |
 | `app-diagnostic-fields.js` | `pages/diagnostic-stages.js` | `AUNEA-FE-DIAG-CONTROL-030` |
 | `app-results.js` | `pages/results.js` | `AUNEA-FE-RESULTS-VIEW-010` |
 | `app-uat-visible-v1.js` | `uat/visible.js` | `AUNEA-FE-UAT-VISIBLE-055` |

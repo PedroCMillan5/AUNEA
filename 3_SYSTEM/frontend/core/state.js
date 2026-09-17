@@ -18,7 +18,7 @@ const CRM_NAV = [
   ['CRM'],
   ['empresas','▦','Empresas'],['contactos','◉','Contactos'],['interacciones','◷','Interacciones'],['oportunidades','◈','Oportunidades'],['estudios','▤','Estudios'],['proyectos','▣','Proyectos']
 ];
-// SESSION_NAV is already the legacy mode menu in ui/mode.js. Use an explicit context name here.
+// Session navigation is the Console capture context; the client reads a separate projection.
 const SESSION_CONTEXT_NAV = [
   HOME_NAV,
   ['Diagnóstico 90 min'],
@@ -37,7 +37,9 @@ const SYSTEM_NAV = [
 ];
 
 let schema = null;
-let state = loadState();
+function isClientDisplay(){return typeof location!=='undefined'&&['#session','#results'].includes(location.hash)}
+let state = isClientDisplay()?blankState():loadState();
+state.uiMode='INTERNAL';
 
 function blankState(){
   return {
@@ -68,6 +70,7 @@ function migrateLoadedState(){
   return moved;
 }
 function saveState(reason='Guardado manual'){
+  if(isClientDisplay())return false;
   localStorage.setItem(STORAGE_KEY,JSON.stringify(state));state.dirty=false;
   audit(reason);updateHeader();toast('Guardado localmente en este navegador.');
 }

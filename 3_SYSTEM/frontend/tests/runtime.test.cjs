@@ -48,7 +48,7 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   assert.match(d.querySelector('.brand span').textContent,/SYSTEM/);
   assert.doesNotMatch(d.querySelector('.sidebar').textContent,/v?2\.0\.0/i,'the rail must not carry a product version string');
   assert.equal(d.querySelectorAll('script:not([src])').length,0);
-  for(const file of ['core/state.js','core/i18n.js','services/backend-client.js','services/schema.js','pages/diagnostic-stages.js','ui/renderer.js','domain/no-reask.js','domain/risk.js','domain/economics.js','domain/process-lifecycle.js','pages/results.js','domain/process.js','ui/process-help.js','services/engine-adapter.js','domain/completion.js','ui/shell.js','ui/mode.js','services/persistence.js','uat/visible.js','uat/fixtures.js','boot.js','styles.css','data/diagnostic-master.min.json'])assert.ok(requests.includes(file),file);
+  for(const file of ['core/state.js','core/i18n.js','services/backend-client.js','services/schema.js','pages/diagnostic-stages.js','ui/renderer.js','domain/no-reask.js','domain/risk.js','domain/economics.js','domain/process-lifecycle.js','pages/results.js','domain/process.js','ui/process-help.js','services/engine-adapter.js','domain/completion.js','ui/shell.js','services/persistence.js','uat/visible.js','uat/fixtures.js','boot.js','styles.css','data/diagnostic-master.min.json'])assert.ok(requests.includes(file),file);
   assert.ok(!requests.includes('app-no-reask-capacity-v1.js'),'retired capacity wrapper must not be part of the runtime');
   assert.ok(!requests.includes('app-persistence-uat-v1.js'),'retired mixed persistence/UAT module must not be part of the runtime');
   assert.ok(!requests.includes('app-process-editor.js'),'retired mixed risk/economics/lifecycle module must not be part of the runtime');
@@ -56,9 +56,8 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   assert.equal(new Set(schema.fields.map(f=>f.Field_ID)).size,100);
   assert.equal(schema.no_reask_rules.length,15);
   assert.equal(typeof w.top,'object');assert.equal(typeof w.status,'string');
-  assert.ok(d.querySelector('#uiModeToggle'));
-  click('#uiModeToggle');assert.ok(d.body.classList.contains('mode-session'));assert.equal(d.querySelector('[data-page="admin"]'),null);
-  click('#uiModeToggle');assert.ok(d.body.classList.contains('mode-internal'));
+  assert.equal(d.querySelector('#uiModeToggle'),null);
+  assert.ok(d.body.classList.contains('mode-internal'));
   click('[data-page="contactos"]');click('#addCompanyBtn');fill('#cCoLegal','UAT Runtime empresa');click('#modalSave');
   click('#addContactBtn');fill('#cContactFirst','UAT Contacto');fill('#cContactEmail','uat@example.invalid');click('#modalSave');
   click('[data-contact-study]');
@@ -137,11 +136,10 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
     assert.equal(w.eval('JSON.stringify(currentEng())'),engagementBefore,'navigation must not mutate capture, lifecycle, snapshots or outputs');
     click('#nav [data-page="diagnostico"]');
   });
-  await t.test('VR-02 PG01–PG09 keep nine schema steps and exclude CRM/internal work in both legacy modes',()=>{
+  await t.test('VR-02 PG01–PG09 keep nine schema steps and exclude CRM/internal work in the Console',()=>{
     assert.equal(schema.flow.length,9);
     const ids=schema.flow.map(s=>s.Stage_ID);
-    for(const mode of ['INTERNAL','SESSION']){
-      if(w.eval('state.uiMode')!==mode)click('#uiModeToggle');
+    for(const mode of ['INTERNAL']){
       for(const stage of schema.flow){
         click(`#nav [data-stage-nav="${stage.Stage_ID}"]`);
         assert.deepEqual(railStages(),ids,`${mode} / ${stage.Stage_ID}`);
@@ -156,7 +154,6 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
       assert.deepEqual(railStages(),ids);
       click(`#nav [data-stage-nav="${ids[0]}"]`);
     }
-    click('#uiModeToggle');
   });
   await t.test('VR-02 stage labels and order react to schema changes without a second list',()=>{
     w.eval('window.__flowBefore=schema.flow; schema.flow=schema.flow.slice().reverse().map((s,i)=>i===0?{...s,Stage_ES:"Etapa de prueba del schema"}:s); render()');
@@ -215,6 +212,25 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   click('#nav [data-page="inicio"]');click('[data-page="contactos"]');click('[data-contact-study]');click('#saveBtn');
   const saved2=JSON.parse(w.localStorage.getItem('aunea_internal_v1'));
   assert.equal(saved2.companies.length,1);assert.equal(saved2.contacts.length,1);assert.equal(saved2.engagements.length,2);
+  await t.test('client windows boot read-only without loading or saving Console records',async()=>{
+    for(const hash of ['#session','#results']){
+      const reads=[],writes=[],calls=[],clientErrors=[],vc=new VirtualConsole();vc.on('jsdomError',e=>clientErrors.push(e.message));
+      const client=await JSDOM.fromURL(url+hash,{resources:'usable',runScripts:'dangerously',virtualConsole:vc,beforeParse(c){
+        c.localStorage.setItem('aunea_internal_v1',JSON.stringify({companies:[{id:'SECRET',name:'Internal only'}]}));
+        for(const key of ['aunea_session_display_v1','aunea_results_display_v1']){const value=w.localStorage.getItem(key);if(value)c.localStorage.setItem(key,value)}
+        const proto=c.Storage.prototype,get=proto.getItem,set=proto.setItem;proto.getItem=function(k){reads.push(k);return get.call(this,k)};proto.setItem=function(k,v){writes.push(k);return set.call(this,k,v)};
+        c.fetch=(...args)=>{calls.push(args);throw Error('Client must never call backend')};
+      }});
+      try{
+        await new Promise(resolve=>client.window.addEventListener('load',resolve));
+        const cd=client.window.document;
+        assert.ok(cd.querySelector('h1,h2'));assert.equal(cd.querySelector('.sidebar,.topbar,input,select,textarea,button'),null);
+        assert.equal(client.window.eval('state.companies.length'),0);assert.ok(!reads.includes('aunea_internal_v1'));
+        cd.dispatchEvent(new client.window.Event('visibilitychange'));client.window.dispatchEvent(new client.window.Event('beforeunload'));
+        assert.deepEqual(writes,[]);assert.deepEqual(calls,[]);assert.deepEqual(clientErrors,[]);
+      }finally{client.window.close()}
+    }
+  });
   assert.deepEqual(errors,[]);
 });
 // [AUNEA-UAT-RUNTIME-TEST-010] END

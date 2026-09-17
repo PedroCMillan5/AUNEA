@@ -10,5 +10,5 @@
 // Shared windows deliberately do not boot the Console.
 if(location.hash==='#session'){bootSessionDisplay();}
 else if(location.hash==='#results'){bootResultsMode();}
-else{INTERNAL_WORK_NAV.push(['implementacion','✓','Decisión e implementación']);if(typeof registerInternalWorkPages==='function')registerInternalWorkPages();if(typeof registerResultsModeLauncher==='function')registerResultsModeLauncher();migrateLoadedState();initCanonicalV11();}
+else{document.body.classList.add('mode-internal');INTERNAL_WORK_NAV.push(['implementacion','✓','Decisión e implementación']);if(typeof registerInternalWorkPages==='function')registerInternalWorkPages();if(typeof registerResultsModeLauncher==='function')registerResultsModeLauncher();migrateLoadedState();initCanonicalV11();}
 // [AUNEA-FE-BOOT-INIT-010] END

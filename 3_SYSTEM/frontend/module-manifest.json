@@ -183,30 +183,24 @@
     },
     {
       "order": 31,
-      "layer": "ui",
-      "path": "ui/mode.js",
-      "block_id": "AUNEA-FE-UX-MODE-040"
-    },
-    {
-      "order": 32,
       "layer": "services",
       "path": "services/persistence.js",
       "block_id": "AUNEA-FE-PERSIST-050"
     },
     {
-      "order": 33,
+      "order": 32,
       "layer": "uat",
       "path": "uat/visible.js",
       "block_id": "AUNEA-FE-UAT-VISIBLE-055"
     },
     {
-      "order": 34,
+      "order": 33,
       "layer": "uat",
       "path": "uat/fixtures.js",
       "block_id": "AUNEA-UAT-RUNTIME-FIXTURE-020"
     },
     {
-      "order": 35,
+      "order": 34,
       "layer": "boot",
       "path": "boot.js",
       "block_id": "AUNEA-FE-BOOT-INIT-010"
