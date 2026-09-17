@@ -256,6 +256,8 @@ function validationSummary(e,completion){
   econ.forEach(x=>{const t=evidenceTypeBackend(x.evidence_type);econByType[t]=(econByType[t]||0)+1});
   const econLine=Object.keys(econByType).length?Object.entries(econByType).map(([k,v])=>`${v} ${engineLabel('evidence_quality',k)}`).join(', '):'Sin inputs económicos registrados';
   const nextStep=e.answers?.DF098||'',notes=e.answers?.DF100||'';
+  // The sealed record internal work will read. It appears here because PG09 is where it is created.
+  const snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;
   const cta=completion.readyToCalculate
     ?`<button class="btn btn-primary" id="runDiag">${e.diagnosticOutput?'RECALCULAR DIAGNÓSTICO Y RECOMENDACIÓN':'CALCULAR DIAGNÓSTICO Y RECOMENDACIÓN'}</button>`
     :`<div class="blocker-list">${completion.blockers.map(b=>{
@@ -272,6 +274,7 @@ function validationSummary(e,completion){
       <div class="notice"><b>Economics</b><br>${econ.length} input(s) — ${esc(econLine)}</div>
       <div class="notice"><b>Obligatorios</b><br>${completion.missing.length===0?'✓ completos':`${completion.missing.length} pendiente(s)`}</div>
       <div class="notice"><b>Siguiente paso</b><br>${nextStep?esc(nextStep):'Pendiente de acordar (DF098)'}</div>
+      <div class="notice"><b>Snapshot sellado</b><br>${snap?`v${snap.version} · ${esc(formatDateEs(snap.sealedAt))}`:'Se sella al confirmar el AS-IS'}</div>
     </div>
     <div class="field-help internal-only" style="margin-top:10px"><b>Notas internas del consultor:</b> ${notes?esc(notes):'—'}</div>
     <div style="margin-top:16px">${cta}</div>`

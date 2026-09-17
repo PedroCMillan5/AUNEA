@@ -8,6 +8,8 @@ const vm=require('node:vm');
 const path=require('node:path');
 const root=path.join(__dirname,'..');
 const code=fs.readFileSync(path.join(root,'domain/process-lifecycle.js'),'utf8');
+// Confirming the AS-IS closes PG09, and closing PG09 seals the confirmed snapshot.
+const engagementCode=fs.readFileSync(path.join(root,'domain/engagement.js'),'utf8');
 const indexHtml=fs.readFileSync(path.join(root,'index.html'),'utf8');
 
 function makeCtx(engagement){
@@ -19,9 +21,15 @@ function makeCtx(engagement){
     markDirty:r=>{if(r)dirty.push(r)},
     render:()=>{},
     toast:m=>{toasts.push(m)},
-    now:()=>'2026-09-14T00:00:00.000Z'
+    now:()=>'2026-09-14T00:00:00.000Z',
+    audit:()=>{},schema:{version:'1.1',source:'test'},
+    state:{engagements:[],companies:[],contacts:[]},
+    companyById:()=>null,contactById:()=>null,contactFullName:c=>c&&c.name||'',
+    activeSteps:e=>(e.processSteps||[]).filter(x=>x.status!=='SUPERSEDED'),
+    activeFrictions:e=>(e.frictions||[]).filter(x=>x.status!=='SUPERSEDED')
   };
   vm.createContext(ctx);
+  vm.runInContext(engagementCode,ctx);
   vm.runInContext(code,ctx);
   ctx.__toasts=toasts;ctx.__dirty=dirty;
   return ctx;

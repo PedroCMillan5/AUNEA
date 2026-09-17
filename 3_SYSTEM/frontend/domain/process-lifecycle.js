@@ -23,7 +23,9 @@ function confirmAsIs(){
   const e=currentEng();
   if(!e.processSteps.filter(x=>x.status!=='SUPERSEDED').length)return toast('Añade al menos un paso.');
   e.confirmedAsIs=true;e.answers.DF093='YES';e.asIsConfirmedAt=now();
-  markDirty('AS-IS confirmado por revisión');render();
+  // Confirming is what closes PG09, so it is what seals the historic record internal work runs on.
+  const sealed=sealConfirmedSnapshot(e,'confirmación del AS-IS con el cliente');
+  markDirty(sealed?`AS-IS confirmado por revisión · snapshot v${sealed.version}`:'AS-IS confirmado por revisión');render();
   toast('Flujo AS-IS confirmado. Si se edita después, volverá a quedar pendiente.');
 }
 // [AUNEA-FE-PROC-LIFECYCLE-030] END
