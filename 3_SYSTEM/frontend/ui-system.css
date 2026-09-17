@@ -39,7 +39,6 @@ select option{background:#fff;color:var(--ink)}
 .field-pending select{border-color:var(--red);box-shadow:0 0 0 3px var(--red-soft)}
 .field input,.field textarea,.filter-row input,.compound-control input,.entity-picker input{border-radius:var(--radius-sm)}
 
-/* Empresas: rows are explicitly interactive and actions stay discoverable without fighting row selection. */
 .company-table .company-row{cursor:pointer}
 .company-table .company-row:hover td{background:#f7faf8}
 .company-table .company-row .row-menu{cursor:default;position:relative;display:inline-block}
@@ -50,8 +49,19 @@ select option{background:#fff;color:var(--ink)}
 .row-menu-popover button{width:100%;border:0;background:#fff;color:var(--ink);text-align:left;padding:9px 10px;border-radius:var(--radius-xs);font:inherit;cursor:pointer}
 .row-menu-popover button:hover{background:var(--system-soft)}
 .row-menu-popover .danger-text{color:var(--red)}
-.ins-head-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+
+.company-ins-head{align-items:flex-start;gap:12px}.company-ins-head h3{min-width:0;flex:1;overflow-wrap:anywhere;word-break:break-word}.ins-head-actions{display:flex;gap:6px;flex:0 0 auto;flex-wrap:nowrap;justify-content:flex-end;white-space:nowrap}
+.result-item-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.result-item-head>div:first-child{min-width:0;flex:1}.result-actions{display:flex;gap:6px;flex-wrap:nowrap;flex:0 0 auto}
+
+/* AUNEA custom select: unlike the native OS popup, the opened panel is owned by the product and keeps
+   the same rounded geometry, border, spacing and hover behaviour on every supported browser. */
+.filter-group .aunea-select{position:relative;min-width:150px}
+.aunea-select summary{list-style:none;min-height:40px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 11px;background:#fff;border:1px solid #d6d1c8;border-radius:var(--radius-sm);color:var(--ink);cursor:pointer;user-select:none}
+.aunea-select summary::-webkit-details-marker{display:none}.aunea-select summary:hover{border-color:#aebdb4;background:#fcfdfc}.aunea-select[open] summary{border-color:var(--sage);box-shadow:0 0 0 3px rgba(111,168,133,.18)}
+.aunea-select summary i{width:8px;height:8px;border-right:2px solid #67717A;border-bottom:2px solid #67717A;transform:rotate(45deg) translateY(-2px);transform-origin:center;transition:transform .15s ease}.aunea-select[open] summary i{transform:rotate(225deg) translate(-1px,-1px)}
+.aunea-select-menu{position:absolute;left:0;top:calc(100% + 6px);z-index:70;min-width:100%;max-height:280px;overflow:auto;padding:6px;background:#fff;border:1px solid #d6d1c8;border-radius:var(--radius-md);box-shadow:var(--shadow)}
+.aunea-select-menu button{display:block;width:100%;border:0;background:#fff;color:var(--ink);text-align:left;padding:9px 10px;border-radius:var(--radius-xs);font:inherit;cursor:pointer;white-space:nowrap}.aunea-select-menu button:hover,.aunea-select-menu button.selected{background:var(--system-soft);color:var(--system)}
 
 @media(max-width:1180px){.topbar{grid-template-columns:minmax(190px,1fr) minmax(220px,380px) auto}.topbar .backend-badge,.topbar .save-state{display:none}.breadcrumb{max-width:300px}}
-@media(max-width:900px){.topbar{display:flex;height:auto;min-height:70px;flex-wrap:wrap;padding:12px 16px}.topbar-center{order:3;flex:1 0 100%}.topbar-right{margin-left:auto}.topbar .step-progress{display:none}.content{min-height:calc(100vh - 70px)}}
+@media(max-width:900px){.topbar{display:flex;height:auto;min-height:70px;flex-wrap:wrap;padding:12px 16px}.topbar-center{order:3;flex:1 0 100%}.topbar-right{margin-left:auto}.topbar .step-progress{display:none}.content{min-height:calc(100vh - 70px)}.result-item-head{flex-direction:column}.result-actions{flex-wrap:wrap}.ins-head-actions{flex-wrap:wrap}}
 /* [AUNEA-FE-STYLE-APP-IDENTITY-010] END */
