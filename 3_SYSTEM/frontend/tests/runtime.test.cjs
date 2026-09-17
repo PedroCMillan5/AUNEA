@@ -108,7 +108,7 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   const railPages=()=>Array.from(d.querySelectorAll('#nav [data-page]'),el=>el.dataset.page);
   const railStages=()=>Array.from(d.querySelectorAll('#nav [data-stage-nav]'),el=>el.dataset.stageNav);
   const crmPages=['inicio','empresas','contactos','interacciones','oportunidades','estudios','proyectos'];
-  const internalPages=['resultados','tobe','comparacion','recomendacion','escenarios','quote','revision','modoresultados'];
+  const internalPages=['resultados','tobe','comparacion','recomendacion','escenarios','quote','revision','modoresultados','implementacion'];
   const reached=new Set(['diagnostico']);
   await t.test('VR-02 CRM keeps all relationship pages reachable with an open engagement',()=>{
     click('#nav [data-page="inicio"]');
@@ -192,6 +192,26 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   assert.equal(saved.engagements[0].confirmedAsIs,true);
   assert.equal(saved.recoveryMeta.format,'AUNEA_INTERNAL_STATE_V1');
   assert.equal(saved.recoveryMeta.productVersion,'2.0.0');
+  await t.test('C07 internal review → results → decision → Project → Actuals/Outcomes',async()=>{
+    w.eval(`(()=>{const e=currentEng();e.diagnosticOutput={optimal_scenario:{scenario_id:'SC-UAT',scenario_name:'Escenario UAT',economics:{annual_active_hours:12}},recommendation:{},economic_result:{},risk_result:{},pain_results:[]};state.activePage='tobe';render()})()`);
+    click('#createTobeDraft');
+    const tobeBefore=w.eval('JSON.stringify(confirmedSnapshot(currentEng()))');
+    d.querySelectorAll('[data-tobe-field="transformation"]').forEach(el=>el.value='Se mantiene');
+    click('#advanceTobe');click('#advanceTobe');
+    assert.equal(w.eval('JSON.stringify(confirmedSnapshot(currentEng()))'),tobeBefore);
+    click('#nav [data-page="revision"]');click('#createOutputReview');click('#advanceOutputReview');click('#advanceOutputReview');
+    assert.equal(w.eval('engagementStatus(currentEng())'),'Listo para resultados');
+    w.open=()=>({});click('#nav [data-page="modoresultados"]');click('#openResultsMode');
+    assert.equal(w.eval('engagementStatus(currentEng())'),'Sesión 2');
+    const originalFetch=w.fetch;
+    w.fetch=async(input,options)=>{if(String(input).includes('/v1/solution-specifications/generate')){const body=JSON.parse(options.body);assert.equal(body.request.selected_scenario.scenario_id,'SC-UAT');return {ok:true,json:async()=>({specification_id:'SPEC-UAT',engagement_id:body.engagement.engagement_id,source_scenario_id:'SC-UAT',status:'BLOCKED_NOT_SYSTEM',outputs:[]})}}return originalFetch(input,options)};
+    click('#nav [data-page="implementacion"]');click('#generateSpecification');await until(()=>d.querySelector('#approveSpecification'));click('#approveSpecification');click('#approveSpecification');click('#decideImplementation');
+    assert.equal(w.eval('state.projects.length'),1);assert.equal(w.eval('engagementStatus(currentEng())'),'Cerrado');
+    click('[data-project-actual]');fill('#actualPhase','Entrega');fill('#actualHours','2');fill('#actualEvidence','Parte de trabajo UAT');click('#modalSave');
+    click('[data-project-outcome]');fill('#outcomeValue','10');fill('#outcomePeriod','2026');fill('#outcomeEvidence','Medición anual UAT');click('#modalSave');
+    assert.equal(w.eval('state.projects[0].actuals[0].hours'),2);assert.equal(w.eval('projectLearning(state.projects[0])[0].delta'),-2);
+    assert.match(d.querySelector('#content').textContent,/Estimado frente a real/);w.fetch=originalFetch;
+  });
   click('#nav [data-page="inicio"]');click('[data-page="contactos"]');click('[data-contact-study]');click('#saveBtn');
   const saved2=JSON.parse(w.localStorage.getItem('aunea_internal_v1'));
   assert.equal(saved2.companies.length,1);assert.equal(saved2.contacts.length,1);assert.equal(saved2.engagements.length,2);

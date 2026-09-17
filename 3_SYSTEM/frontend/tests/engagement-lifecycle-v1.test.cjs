@@ -99,7 +99,7 @@ test('no surface writes an Engagement status outside the lifecycle', () => {
     assert.doesNotMatch(src, /'Convertido en proyecto'|'Resultados calculados'/, `${f} must not carry a retired status`);
   }
   // Creating the Project is a decision, and the decision is what closes the engagement.
-  assert.match(read('core/state.js'), /advanceEngagementTo\(e,'Cerrado','decisión de implementación'\)/);
+  assert.match(read('domain/project.js'), /advanceEngagementTo\(e,'Cerrado','decisión de implementación'\)/);
   // The first capture of the session is what starts Sesión 1 — not a page being open.
   assert.match(read('core/state.js'), /advanceEngagementTo\(e,'Sesión 1','primera captura de la sesión'\)/);
   // Estudios drives the lifecycle by hand and can only ever offer the next governed state.

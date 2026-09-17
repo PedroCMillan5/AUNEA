@@ -204,7 +204,7 @@ function render(){
   // refresh must not be the pattern of use (90MIN UI SPEC §3.3).
   if(typeof publishSessionSnapshot==='function')publishSessionSnapshot(currentEng());
 }
-function setPage(page){if(['diagnostico','proceso','resultados','recomendacion','escenarios','quote'].includes(page)&&!currentEng()){toast('Abre o crea un estudio antes.');state.activePage='estudios';render();return}state.activePage=page;render()}
+function setPage(page){if(['diagnostico','proceso','resultados','tobe','comparacion','revision','modoresultados','implementacion','recomendacion','escenarios','quote'].includes(page)&&!currentEng()){toast('Abre o crea un estudio antes.');state.activePage='estudios';render();return}state.activePage=page;render()}
 function goToProcessFromStage(){const e=currentEng();if(e)state.returnTo={page:'diagnostico',stageId:e.stageId};setPage('proceso')}
 function returnToStage(){const e=currentEng(),rt=state.returnTo;if(e&&rt)e.stageId=rt.stageId;state.returnTo=null;setPage('diagnostico')}
 // screenId is the approved reference a screen must reproduce (e.g. "I90-00-01"). It is internal
@@ -267,11 +267,7 @@ function createStudyFromContact(contactId){const ct=contactById(contactId),cp=co
 // instead of being pattern-matched out of the audit log.
 function newStudy(){if(!state.contacts.length)return toast('Crea primero un contacto.');const opts=state.contacts.map(c=>`<option value="${c.id}">${esc(companyById(c.companyId)?.name||'')} · ${esc(contactFullName(c))}</option>`).join('');openModal('Nuevo estudio',`<div class="form-grid"><div class="field full"><label>Contacto principal</label><select id="mStudyContact">${opts}</select></div><div class="field full"><label>Nombre del estudio</label><input id="mStudyTitle" placeholder="Ej. Diagnóstico de intake comercial"></div></div>`,()=>{const ct=contactById(document.getElementById('mStudyContact').value);createStudyFromContact(ct.id);const e=currentEng(),title=document.getElementById('mStudyTitle')?.value?.trim();if(title)e.title=title;closeModal();render()})}
 
-function createProjectFromEngagement(){const e=currentEng();if(!e)return;const existing=state.projects.find(p=>p.engagementId===e.id);if(existing){toast('Este estudio ya tiene un proyecto vinculado.');state.activePage='proyectos';render();return}const p={id:id('PRJ'),engagementId:e.id,companyId:e.companyId,contactIds:[...(e.contactIds||[])],name:e.answers.DF011||e.title,status:'Preparación',selectedScenarioIndex:e.selectedScenarioIndex??0,createdAt:now(),updatedAt:now()};state.projects.unshift(p);e.projectId=p.id;
-  // The decision closes the engagement when it has reached Sesión 2; it never writes a status
-  // outside the governed lifecycle (DEC-051).
-  advanceEngagementTo(e,'Cerrado','decisión de implementación');
-  markDirty('Proyecto creado desde engagement');state.activePage='proyectos';render();toast('Proyecto creado y vinculado al histórico del contacto.')}
+function createProjectFromEngagement(){const e=currentEng();if(!e)return;const result=recordImplementationDecision(e);if(!result.ok){toast(result.error);state.activePage='implementacion';render();return}state.activePage='proyectos';render();toast(result.existing?'Este estudio ya tiene un proyecto vinculado.':'Proyecto creado con referencias a las versiones aprobadas.')}
 
 function openModal(title,body,onSave,saveLabel='Guardar'){const legend=body.includes('required-mark')?REQUIRED_LEGEND_HTML:'';document.getElementById('modalRoot').innerHTML=`<div class="modal-backdrop"><div class="modal"><div class="modal-head"><h2>${esc(title)}</h2><button class="icon-btn" id="modalClose">×</button></div><div class="modal-body">${legend}${body}</div><div class="modal-foot"><button class="btn" id="modalCancel">Cancelar</button><button class="btn btn-primary" id="modalSave">${esc(saveLabel)}</button></div></div></div>`;document.getElementById('modalClose').onclick=closeModal;document.getElementById('modalCancel').onclick=closeModal;document.getElementById('modalSave').onclick=onSave}
 function closeModal(){document.getElementById('modalRoot').innerHTML=''}
