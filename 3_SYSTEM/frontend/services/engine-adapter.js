@@ -1,8 +1,8 @@
 // [AUNEA-FE-ENGINE-ADAPTER-020] START — Canonical frontend → backend adapter
 // PURPOSE: Convert captured facts and explicit consultant confirmations into EngagementInput; never calculate Pain/Economics/Risk/Recommendation/Pricing/Scenario in the browser.
-// SOURCE: MAP_QUESTION_ENGINE_INPUT; RULE_RECOMMENDATION RR-03..RR-07; DEC-034; REQ-ENGN-001/REC-001/SCEN-001.
+// SOURCE: MAP_QUESTION_ENGINE_INPUT; RULE_RECOMMENDATION RR-03..RR-07; DEC-034/052; REQ-ENGN-001/REC-001/SCEN-001.
 // INPUTS: Engagement capture, Process Steps, Frictions, evidence/economic/risk inputs and canonical internal gates.
-// OUTPUTS: EngagementInput JSON for /v1/diagnose and /v1/scenarios/compare.
+// OUTPUTS: EngagementInput JSON for /v1/diagnose and /v1/scenarios/compare; optional AI orchestration contract.
 // SIDE_EFFECTS: HTTP to AUNEA backend; stores returned structured outputs only.
 // CHANGE_RISK: CRITICAL.
 
@@ -18,16 +18,10 @@ function gateResolved(g){return g==='YES'||g==='NO'}
 function gateBool(g){return g==='YES'}
 function inferGateSuggestion(contract,e){const fr=new Set(activeFrictions(e).map(x=>x.friction_type)),out=new Set(normalizeArray(e.answers?.DF086));if(contract.key==='process_design_first'&&(fr.has('P04')||fr.has('P10')))return'YES';if(contract.key==='management_visibility_need'&&(out.has('VISIBILITY')||fr.has('P09')||fr.has('P14')||fr.has('P17')))return'YES';return''}
 function unresolvedEngineGates(e){const g=engineGates(e);return ENGINE_GATE_CONTRACT.filter(c=>!gateResolved(g[c.key]))}
-// Framed as "confirmación del consultor antes de calcular", never as another discovery section: these
-// five inputs are already governed by the canonical contract (MAP_QUESTION_ENGINE_INPUT/RULE_LEVEL_AI/
-// RULE_LEVEL_FUNC), not new questions to invent — the consultant confirms what capture already implies
-// (or corrects it), nothing is asked to the client here.
 function openEngineGateReview(){const e=currentEng(),g=engineGates(e);const body=`<div class="notice info"><strong>Confirmación del consultor antes de calcular</strong><br>Estas respuestas son inputs del contrato canónico ya gobernado; no son preguntas al cliente ni resultados calculados por el navegador.</div><div class="form-grid">${ENGINE_GATE_CONTRACT.map(c=>{const suggested=inferGateSuggestion(c,e);return `<div class="field full"><label>${esc(c.label)}</label><select data-engine-gate="${c.key}"><option value="">Pendiente de confirmar</option><option value="YES" ${(g[c.key]||suggested)==='YES'?'selected':''}>Sí</option><option value="NO" ${(g[c.key]||suggested)==='NO'?'selected':''}>No</option></select><div class="field-help"><span class="canonical-id">${c.id}</span> ${esc(c.source)}${suggested&&!g[c.key]?' · sugerencia desde captura; requiere confirmación':''}</div></div>`}).join('')}</div>`;openModal('Confirmación del consultor antes de calcular',body,()=>{document.querySelectorAll('[data-engine-gate]').forEach(x=>g[x.dataset.engineGate]=x.value);if(unresolvedEngineGates(e).length)return toast('Confirma los cinco inputs canónicos antes de calcular.');e.updatedAt=now();markDirty('Inputs canónicos de Recommendation confirmados por el consultor');closeModal();runDiagnosis();},'Confirmar y calcular')}
 function evidenceTypeBackend(v){return ({EV01:'MEASURED',EV02:'CLIENT_DECLARED',EV03:'AUNEA_ESTIMATE',EV04:'HYPOTHESIS',EV05:'SPECIFIC_BENCHMARK',EV06:'AUNEA_ESTIMATE',EV07:'AUNEA_ESTIMATE',MEASURED:'MEASURED',CLIENT_DECLARED:'CLIENT_DECLARED',AUNEA_ESTIMATE:'AUNEA_ESTIMATE',SPECIFIC_BENCHMARK:'SPECIFIC_BENCHMARK',HYPOTHESIS:'HYPOTHESIS'})[v]||'CLIENT_DECLARED'}
 function normalizeEconomicInputs(e){return (e.economicInputs||[]).map(x=>({pain_id:x.pain_id||null,driver_id:x.driver_id,annual_active_hours:x.annual_active_hours==null?null:Number(x.annual_active_hours),annual_wait_hours:x.annual_wait_hours==null?null:Number(x.annual_wait_hours),capacity_cost_rate_eur_hour:x.capacity_cost_rate_eur_hour==null?null:Number(x.capacity_cost_rate_eur_hour),direct_loss_eur_annual:x.direct_loss_eur_annual==null?null:Number(x.direct_loss_eur_annual),current_tool_cost_eur_annual:x.current_tool_cost_eur_annual==null?null:Number(x.current_tool_cost_eur_annual),realized_cash_saving_eur_annual:x.realized_cash_saving_eur_annual==null?null:Number(x.realized_cash_saving_eur_annual),evidence_type:evidenceTypeBackend(x.evidence_type),deduplication_key:x.deduplication_key||null})).filter(x=>x.driver_id)}
 function normalizeRiskInputs(e){return (e.risks||[]).map(r=>({category:r.category||'RC01',likelihood_1_5:Math.max(1,Math.min(5,Number(r.likelihood_1_5||1))),impact_1_5:Math.max(1,Math.min(5,Number(r.impact_1_5||1))),reversible:r.reversible!==false,sensitive_or_high_impact:!!r.sensitive_or_high_impact,material_financial_or_compliance:!!r.material_financial_or_compliance,critical_trigger:!!r.critical_trigger,controls_present:r.controls_present!==false,description:r.description||null}))}
-// Internal work runs on the confirmed snapshot once PG09 has sealed one, so editing a Company or a
-// Contact afterwards cannot change what a diagnosis was calculated from (DEC-041).
 function buildBackendPayload(engagement){
   const e=typeof engagementOfRecord==='function'?engagementOfRecord(engagement):engagement;
   const evidence=[],painSignals=[],fmap=Object.fromEntries(schema.friction_pain_map.map(x=>[x.Friction_Type_ID,x.Pain_ID]));
@@ -39,4 +33,24 @@ function buildBackendPayload(engagement){
 async function runDiagnosis(){const e=currentEng();if(!e)return;if(!state.backendOnline){state.activePage='resultados';render();toast('Backend no conectado: no se publican resultados oficiales.');return}const gaps=canonicalMissingRequired(e);if(gaps.length){state.activePage='resultados';render();toast(`Captura incompleta: ${gaps.slice(0,5).join(', ')}`);return}if(unresolvedEngineGates(e).length){openEngineGateReview();return}
   ['runDiag','runDiagHeader'].forEach(bid=>{const b=document.getElementById(bid);if(b){b.disabled=true;b.textContent='Calculando…'}});
   try{const r=await fetch(`${state.backendUrl}/v1/diagnose`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(buildBackendPayload(e))});if(!r.ok)throw new Error(await r.text());const out=await r.json();if(!out.recommendation||!out.quote||!out.optimal_scenario)throw new Error('Respuesta backend incompleta: faltan Recommendation/Pricing/Scenario');e.diagnosticOutput=out;e.updatedAt=now();e.lastEngineRunAt=now();markDirty('Pain → Economics → Risk → Recommendation → Pricing → Scenario calculados por backend');state.activePage='resultados';render();toast('Resultados oficiales actualizados por backend.')}catch(err){toast('No se pudo ejecutar el backend: '+err.message);render()}}
+
+// C05 · Optional internal AI orchestration. No provider is configured by canonical source today, so
+// the default capability is explicitly UNAVAILABLE. This service never falls back to templates/rules
+// presented as AI and never owns deterministic Pain/Economics/Risk/Recommendation/Pricing/Scenario.
+let __aiAgentProvider=null;
+const AiAgentService=Object.freeze({
+  status(){return __aiAgentProvider?'AVAILABLE':'UNAVAILABLE'},
+  available(){return !!__aiAgentProvider},
+  provider(){return __aiAgentProvider?.name||null},
+  register(provider){if(!provider||typeof provider.propose!=='function')throw new Error('Proveedor IA inválido: debe implementar propose(request).');__aiAgentProvider=provider;return this.status()},
+  clear(){__aiAgentProvider=null;return this.status()},
+  async propose(kind,engagement=currentEng(),context={}){
+    if(!__aiAgentProvider)return {status:'UNAVAILABLE',kind,proposal:null,reason:'No hay proveedor IA gobernado/configurado.'};
+    const record=typeof engagementOfRecord==='function'?engagementOfRecord(engagement):engagement;
+    const allowed=new Set(['SUMMARY','EVIDENCE_ORGANIZATION','EXPLANATION','TOBE_DRAFT','MISSING_INFORMATION','DRAFT_TEXT']);
+    if(!allowed.has(kind))throw new Error('Capacidad IA fuera del contrato de AUNEA Internal.');
+    const response=await __aiAgentProvider.propose({kind,engagement:record,context});
+    return {status:'DRAFT',kind,proposal:response,provider:this.provider(),requiresHumanReview:true};
+  }
+});
 // [AUNEA-FE-ENGINE-ADAPTER-020] END
