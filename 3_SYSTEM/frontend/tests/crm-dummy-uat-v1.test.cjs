@@ -22,13 +22,13 @@ test('CRM UAT catalogue contains exactly 40 CRM cases',()=>{
 test('CRM dummy seed contains only the four CRM collections',()=>{
   const c=context(),d=vm.runInContext('crmDummySeed()',c);
   assert.deepEqual(Object.keys(d).sort(),['companies','contacts','interactions','opportunities']);
-  assert.equal(d.companies.length,7);assert.equal(d.contacts.length,12);assert.equal(d.interactions.length,11);assert.equal(d.opportunities.length,8);
+  assert.equal(d.companies.length,8);assert.equal(d.contacts.length,12);assert.equal(d.interactions.length,11);assert.equal(d.opportunities.length,8);
   for(const group of Object.values(d))for(const row of group)assert.match(row.id,/^DUMMY-CRM-/);
 });
 test('loading CRM dummy data never creates engagements or projects',()=>{
   const c=context();vm.runInContext('loadCrmDummyData()',c);
   assert.deepEqual(c.state.engagements,[{id:'REAL-ENG'}]);assert.deepEqual(c.state.projects,[{id:'REAL-PRJ'}]);
-  assert.equal(c.state.companies.length,7);assert.equal(c.state.contacts.length,12);assert.equal(c.state.interactions.length,11);assert.equal(c.state.opportunities.length,8);
+  assert.equal(c.state.companies.length,8);assert.equal(c.state.contacts.length,12);assert.equal(c.state.interactions.length,11);assert.equal(c.state.opportunities.length,8);
 });
 test('dummy relations are referentially coherent',()=>{
   const c=context(),d=vm.runInContext('crmDummySeed()',c);
@@ -60,6 +60,7 @@ test('full CRM UAT catalogue covers Company, Contact, Interaction, Opportunity, 
 test('expanded dummy includes the required edge-case fixtures',()=>{
   const c=context(),d=vm.runInContext('crmDummySeed()',c);
   assert.ok(d.companies.some(x=>x.id==='DUMMY-CRM-CMP-006'&&!d.contacts.some(ct=>ct.companyId===x.id)));
+  assert.ok(d.companies.some(x=>x.id==='DUMMY-CRM-CMP-008'&&x.status==='Archivada'));
   assert.ok(d.contacts.some(x=>x.id==='DUMMY-CRM-CON-011'&&!x.email&&!x.phone));
   assert.ok(d.contacts.some(x=>x.id==='DUMMY-CRM-CON-012'&&/Ñ|ñ/.test(x.lastName)));
   assert.ok(d.interactions.some(x=>x.id==='DUMMY-CRM-INT-009'&&x.contactIds.length===0));
