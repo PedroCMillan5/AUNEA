@@ -59,5 +59,8 @@ test('no acepta un /health que no sea AUNEA Backend', async () => {
 test('expone monitor de reconexión para mantener vivo el enlace frontend-backend', () => {
   assert.match(source, /function startBackendMonitor\(intervalMs=5000\)/);
   assert.match(source, /addEventListener\('focus'/);
-  assert.match(source, /setInterval\(\(\)=>\{checkBackend\(\);\},intervalMs\)/);
+  assert.match(source, /window\.setInterval\(\(\)=>\{if\(document\?\.getElementById\)checkBackend\(\);\},intervalMs\)/);
+  assert.match(source, /function stopBackendMonitor\(\)/);
+  assert.match(source, /addEventListener\('pagehide',stopBackendMonitor/);
+  assert.match(source, /addEventListener\('unload',stopBackendMonitor/);
 });
