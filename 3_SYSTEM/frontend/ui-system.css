@@ -55,7 +55,7 @@ select option{background:#fff;color:var(--ink)}
 .contact-form-select .aunea-select-menu{width:100%;min-width:100%;box-sizing:border-box}
 .contact-form-select .aunea-select-menu button{white-space:normal}
 .entity-picker-select{flex:0 1 300px;min-width:220px}
-.entity-picker-select .aunea-select-menu{min-width:240px;right:0;left:auto}
+.entity-picker-select .aunea-select-menu{min-width:240px;left:0;right:auto}
 .filter-check{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:0 4px;font-size:var(--font-small);color:var(--ink);white-space:nowrap}
 .filter-check input{width:16px;height:16px;accent-color:var(--system)}
 .company-form-select{position:relative;width:100%}
