@@ -28,19 +28,30 @@ function contactFilterControl(key,label,options,current,placeholder='Todos'){
   const selected=normalized.find(o=>String(o.value)===String(current));
   return `<div class="filter-group"><span>${esc(label)}</span><details class="aunea-select" data-contact-filter-box="${attr(key)}"><summary><span>${esc(selected?.label||placeholder)}</span><i aria-hidden="true"></i></summary><div class="aunea-select-menu" role="listbox" aria-label="${attr(label)}"><button type="button" role="option" data-contact-filter-option="${attr(key)}" data-value="">${esc(placeholder)}</button>${normalized.map(o=>`<button type="button" role="option" class="${String(current)===String(o.value)?'selected':''}" data-contact-filter-option="${attr(key)}" data-value="${attr(o.value)}">${esc(o.label)}</button>`).join('')}</div></details></div>`;
 }
-function contactFilterRow(companyId) {
+function contactFilterRow(companyId=null) {
   const f = state.contactFilters || {};
-  const pool = state.contacts.filter(c => c.companyId === companyId);
-  const sel = (key, label, options) => `<div class="filter-group"><span>${esc(label)}</span><select data-contact-filter="${key}"><option value="">Todos</option>${options.map(o => `<option value="${attr(o.value)}" ${f[key] === o.value ? 'selected' : ''}>${esc(o.label)}</option>`).join('')}</select></div>`;
-  const present = get => [...new Set(pool.map(get).filter(Boolean))];
+  const pool = state.contacts.filter(c => !companyId || c.companyId === companyId);
+  const presentRoles=[...new Set(pool.map(c=>c.role).filter(Boolean))];
+  const roleOptions=[...CONTACT_ROLE_OPTIONS];
+  presentRoles.filter(v=>!roleOptions.includes(v)).forEach(v=>roleOptions.unshift(v));
   return `<div class="filter-row">
-    ${sel('role', 'Cargo', present(c => c.role).map(v => ({ value: v, label: v })))}
-    ${sel('status', 'Estado', CONTACT_STATUS.map(v => ({ value: v, label: v })))}
-    ${sel('language', 'Idioma', present(c => c.language).map(v => ({ value: v, label: labelFrom('REF_LANGUAGE_ISO6391', v) || v })))}
+    ${contactFilterControl('role','Cargo',roleOptions,f.role||'')}
+    ${contactFilterControl('status','Estado',CONTACT_STATUS,f.status||'')}
+    <label class="filter-check"><input type="checkbox" id="includeInactiveContacts" ${f.includeInactive?'checked':''}><span>Incluir inactivos</span></label>
     <button class="link-btn" id="clearContactFilters">Limpiar filtros</button>
   </div>`;
 }
-
+function contactCompanyPicker(co){
+  const current=co?.id||'',label=co?.name||'Todas las empresas';
+  return `<div class="entity-picker"><div class="ep-icon">▦</div><div class="ep-grow"><small>Empresa</small><b>${esc(label)}</b></div>
+    <details class="aunea-select entity-picker-select" data-contact-company-box="1"><summary><span>${esc(label)}</span><i aria-hidden="true"></i></summary><div class="aunea-select-menu" role="listbox" aria-label="Empresa">
+      <button type="button" role="option" data-contact-company-option="" class="${!current?'selected':''}">Todas las empresas</button>
+      ${state.companies.map(c=>`<button type="button" role="option" data-contact-company-option="${attr(c.id)}" class="${c.id===current?'selected':''}">${esc(c.name)}</button>`).join('')}
+    </div></details>
+    ${current?'<button class="btn btn-small" id="clearContactCompany">Quitar empresa</button>':''}
+    ${current?'<button class="btn btn-small" data-page="empresas">Abrir empresa</button>':''}
+  </div>`;
+}
 function contactStatusClass(status) {
   return status === 'Activo' ? 'ok' : status === 'Pendiente' ? 'wait' : status === 'Inactivo' ? 'off' : '';
 }
