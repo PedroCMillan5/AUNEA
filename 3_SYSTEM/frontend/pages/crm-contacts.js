@@ -43,13 +43,14 @@ function contactFilterRow(companyId=null) {
 }
 function contactCompanyPicker(co){
   const current=co?.id||'',label=co?.name||'Todas las empresas';
-  return `<div class="entity-picker"><div class="ep-icon">▦</div><div class="ep-grow"><small>Empresa</small><b>${esc(label)}</b></div>
-    <details class="aunea-select entity-picker-select" data-contact-company-box="1"><summary><span>${esc(label)}</span><i aria-hidden="true"></i></summary><div class="aunea-select-menu" role="listbox" aria-label="Empresa">
-      <button type="button" role="option" data-contact-company-option="" class="${!current?'selected':''}">Todas las empresas</button>
-      ${state.companies.map(c=>`<button type="button" role="option" data-contact-company-option="${attr(c.id)}" class="${c.id===current?'selected':''}">${esc(c.name)}</button>`).join('')}
-    </div></details>
-    ${current?'<button class="btn btn-small" id="clearContactCompany">Quitar empresa</button>':''}
-    ${current?'<button class="btn btn-small" data-page="empresas">Abrir empresa</button>':''}
+  return `<div class="entity-picker contact-company-picker"><div class="ep-icon">▦</div>
+    <div class="contact-company-control"><small>Empresa</small>
+      <details class="aunea-select entity-picker-select" data-contact-company-box="1"><summary><span>${esc(label)}</span><i aria-hidden="true"></i></summary><div class="aunea-select-menu" role="listbox" aria-label="Empresa">
+        <button type="button" role="option" data-contact-company-option="" class="${!current?'selected':''}">Todas las empresas</button>
+        ${state.companies.map(c=>`<button type="button" role="option" data-contact-company-option="${attr(c.id)}" class="${c.id===current?'selected':''}">${esc(c.name)}</button>`).join('')}
+      </div></details>
+    </div>
+    <div class="contact-company-actions">${current?'<button class="btn btn-small" id="clearContactCompany">Quitar empresa</button>':''}${current?'<button class="btn btn-small" data-page="empresas">Abrir empresa</button>':''}</div>
   </div>`;
 }
 function contactStatusClass(status) {
