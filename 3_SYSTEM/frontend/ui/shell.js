@@ -41,6 +41,17 @@ function postBind(){
   if(by('clearLocal'))by('clearLocal').onclick=()=>{if(confirm(`¿Eliminar toda la base local de AUNEA Internal v${AUNEA_PRODUCT_VERSION} ${AUNEA_PRODUCT_STATUS} de este navegador?`)){localStorage.removeItem(STORAGE_KEY);state=blankState();render();toast('Datos locales eliminados.')}};
 }
 
+function closeOtherAuneaSelects(target){
+  if(typeof document==='undefined')return;
+  const inside=target?.closest?.('details.aunea-select')||null;
+  document.querySelectorAll('details.aunea-select[open]').forEach(box=>{if(box!==inside)box.open=false});
+}
+if(typeof window!=='undefined'&&!window.__auneaSelectDismissBound){
+  window.__auneaSelectDismissBound=true;
+  document.addEventListener('click',e=>closeOtherAuneaSelects(e.target),true);
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('details.aunea-select[open]').forEach(box=>box.open=false)});
+}
+
 // CRM interactions. Selection is state, not DOM: the inspector always shows the selected record and
 // never keeps a second copy of it (DEC-050).
 function bindCrm(){
@@ -61,15 +72,18 @@ function bindCrm(){
 
   document.querySelectorAll('[data-select-contact]').forEach(r=>r.onclick=()=>{state.selectedContactId=r.dataset.selectContact;render()});
   on('[data-edit-contact]',el=>editContact(el.dataset.editContact));
-  on('[data-delete-contact]',el=>{if(deleteContact(el.dataset.deleteContact))render()});
+  on('[data-inactivate-contact]',el=>{if(inactivateContact(el.dataset.inactivateContact))render()});
+  on('[data-reactivate-contact]',el=>{if(reactivateContact(el.dataset.reactivateContact))render()});
   // The star writes through to Company.primaryContactId — it never sets a field on the contact.
   on('[data-primary-contact]',el=>{const ct=contactById(el.dataset.primaryContact);if(ct){setPrimaryContact(ct.companyId,ct.id);render()}});
   on('[data-contact-history]',el=>{state.selectedContactId=el.dataset.contactHistory;setPage('interacciones')});
-  on('[data-contact-project]',()=>toast('Un proyecto nace de una decisión de implementación sobre un estudio (DEC-054).'));
-  live('[data-contact-filter]',el=>{state.contactFilters={...state.contactFilters,[el.dataset.contactFilter]:el.value};render()});
-  if(document.getElementById('clearContactFilters'))document.getElementById('clearContactFilters').onclick=()=>{state.contactFilters={role:'',status:'',language:''};state.contactSearch='';render()};
+  on('[data-contact-interaction]',el=>{const ct=contactById(el.dataset.contactInteraction);if(ct)addInteraction({companyId:ct.companyId,contactIds:[ct.id]})});
+  document.querySelectorAll('[data-contact-filter-option]').forEach(el=>el.onclick=e=>{e.stopPropagation();const key=el.dataset.contactFilterOption,val=el.dataset.value||'';state.contactFilters={...state.contactFilters,[key]:val};if(key==='status'&&val==='Inactivo')state.contactFilters.includeInactive=true;render()});
+  if(document.getElementById('includeInactiveContacts'))document.getElementById('includeInactiveContacts').onchange=e=>{state.contactFilters={...state.contactFilters,includeInactive:e.target.checked};if(!e.target.checked&&state.contactFilters.status==='Inactivo')state.contactFilters.status='';render()};
+  if(document.getElementById('clearContactFilters'))document.getElementById('clearContactFilters').onclick=()=>{state.contactFilters={role:'',status:'',includeInactive:false};state.contactSearch='';render()};
   const ks=document.getElementById('contactSearch');if(ks)ks.oninput=()=>{state.contactSearch=ks.value;clearTimeout(window.__contactSearch);window.__contactSearch=setTimeout(render,220)};
-  const cp=document.getElementById('contactsCompanyPicker');if(cp)cp.onchange=()=>{state.selectedCompanyId=cp.value;state.selectedContactId=null;render()};
+  document.querySelectorAll('[data-contact-company-option]').forEach(el=>el.onclick=e=>{e.stopPropagation();state.selectedCompanyId=el.dataset.contactCompanyOption||null;state.selectedContactId=null;render()});
+  if(document.getElementById('clearContactCompany'))document.getElementById('clearContactCompany').onclick=()=>{state.selectedCompanyId=null;state.selectedContactId=null;render()};
 
   on('[data-edit-interaction]',el=>editInteraction(el.dataset.editInteraction));
   on('[data-delete-interaction]',el=>deleteInteraction(el.dataset.deleteInteraction));
