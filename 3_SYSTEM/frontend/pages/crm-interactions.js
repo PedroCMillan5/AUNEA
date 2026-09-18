@@ -1,7 +1,7 @@
 // [AUNEA-FE-PAGE-INTERACTIONS-010] START — P03 Interacciones
 // PURPOSE: Render the relationship timeline and the pending follow-up. Company and Contact are shown by
 //          reference; their master data is never re-asked here (DEC-058).
-// SOURCE: DEC-058 (functional contract); DEC-050/051; Architecture Contract v1.2 row P03.
+// SOURCE: DEC-058 (functional contract); DEC-050/051; Architecture Contract v1.5 row P03.
 // INPUTS: state.interactions, state.companies, state.contacts.
 // OUTPUTS: page markup only. Interaction data is owned by AUNEA-FE-CRM-INTERACTION-010.
 // SIDE_EFFECTS: none beyond reading state.
@@ -9,6 +9,29 @@
 //
 // VISUAL: no approved reference exists for P03 in the 21+2 set, so this uses the global AUNEA System
 // visual language. The functional contract is closed by DEC-058 and is fully implemented.
+
+function interactionFilterControl(key,label,options,current,placeholder='Todos',disabled=false){
+  const selected=options.find(o=>String(o.value)===String(current));
+  return `<div class="filter-group"><span>${esc(label)}</span><details class="aunea-select ${disabled?'is-disabled':''}" data-interaction-filter-box="${attr(key)}" ${disabled?'data-disabled="1"':''}><summary><span>${esc(selected?.label||placeholder)}</span><i aria-hidden="true"></i></summary><div class="aunea-select-menu" role="listbox" aria-label="${attr(label)}">${disabled?'':`<button type="button" role="option" data-interaction-filter-option="${attr(key)}" data-value="">${esc(placeholder)}</button>${options.map(o=>`<button type="button" role="option" class="${String(current)===String(o.value)?'selected':''}" data-interaction-filter-option="${attr(key)}" data-value="${attr(o.value)}">${esc(o.label)}</button>`).join('')}`}</div></details></div>`;
+}
+function interactionFilterRow(){
+  const f=state.interactionFilters||{companyId:'',contactId:''};
+  const companies=state.companies.map(c=>({value:c.id,label:c.name})).sort((a,b)=>a.label.localeCompare(b.label,'es'));
+  const contacts=f.companyId?state.contacts.filter(c=>c.companyId===f.companyId).map(c=>({value:c.id,label:contactFullName(c)})).sort((a,b)=>a.label.localeCompare(b.label,'es')):[];
+  return `<div class="filter-row">
+    ${interactionFilterControl('companyId','Empresa',companies,f.companyId||'','Todas las empresas')}
+    ${interactionFilterControl('contactId','Contacto',contacts,f.contactId||'',f.companyId?'Todos los contactos':'Selecciona empresa',!f.companyId)}
+    <button class="link-btn" id="clearInteractionFilters">Limpiar filtros</button>
+  </div>`;
+}
+function visibleInteractions(){
+  const f=state.interactionFilters||{};
+  return allInteractionsSorted().filter(i=>{
+    if(f.companyId&&i.companyId!==f.companyId)return false;
+    if(f.contactId&&!(i.contactIds||[]).includes(f.contactId))return false;
+    return true;
+  });
+}
 
 function interactionRow(i) {
   const co = companyById(i.companyId);
@@ -26,14 +49,15 @@ function interactionRow(i) {
 }
 
 function interactionsPage() {
-  const all = allInteractionsSorted();
-  const upcoming = pendingFollowUp();
-  const main = all.length
+  const all = visibleInteractions();
+  const f=state.interactionFilters||{};
+  const upcoming = pendingFollowUp({companyId:f.companyId||null,contactId:f.contactId||null});
+  const main = interactionFilterRow() + (all.length
     ? `<div class="table-wrap"><table class="data-table"><thead><tr>
         <th>Fecha</th><th>Asunto</th><th>Empresa</th><th>Contactos</th><th>Tipo</th><th>Resultado</th><th>Próximo seguimiento</th><th></th>
       </tr></thead><tbody>${all.map(interactionRow).join('')}</tbody></table></div>
       <div class="table-foot"><span>${all.length} interacción(es) registradas</span></div>`
-    : `<div class="empty"><h2>Sin interacciones registradas</h2><p>Cada reunión, llamada o email se captura una sola vez aquí. Empresa, contacto y oportunidad muestran la última interacción y el próximo seguimiento como proyección, sin guardar una segunda copia.</p></div>`;
+    : `<div class="empty"><h2>Sin interacciones con estos filtros</h2><p>Ajusta Empresa/Contacto o registra una nueva interacción.</p></div>`);
 
   const inspector =
     insCard('Qué gobierna esta página', `<p><b>Interaction</b> es el dueño del evento de relación y de la fecha de seguimiento que ese evento genera. Empresa, contacto y oportunidad lo reutilizan en modo lectura.</p>`, { accent: true, icon: '◷' })
