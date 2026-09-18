@@ -1,7 +1,7 @@
 // [AUNEA-FE-PAGE-COMPANIES-010] START — P01 Empresas
 // PURPOSE: Reproduce the approved Empresas reference and expose governed CRM actions: search, filters,
 //          company table, archive/edit actions, notes/history popups and related-entity inspector tabs.
-// SOURCE: IMG90-00-01; Architecture Contract v1.3 P01; DEC-007/050/051/054/055/058; PROJECT_RULES v1.5.
+// SOURCE: IMG90-00-01; Architecture Contract v1.4 P01; DEC-007/050/051/054/055/058; PROJECT_RULES v1.6.
 // INPUTS: state.companies plus related contacts/opportunities/engagements/projects/interactions.
 // OUTPUTS: page markup and company-specific UI events. Company data remains owned by AUNEA-FE-CRM-COMPANY-010.
 // SIDE_EFFECTS: delegated UI actions call governed domain operations; no duplicate business state.
@@ -107,8 +107,9 @@ if(!window.__auneaCompanyActionsBound){
     if(!e.target.closest('#companyFloatingMenu'))closeCompanyFloatingMenu();
     const filter=e.target.closest('[data-company-filter-option]');
     if(filter){e.preventDefault();e.stopPropagation();const key=filter.dataset.companyFilterOption;state.companyFilters={...state.companyFilters,[key]:filter.dataset.value||''};render();return}
-    const action=e.target.closest('[data-archive-company],[data-company-notes-popup],[data-company-history-popup],[data-company-open-contact],[data-company-edit-opportunity],[data-company-study-opportunity],[data-company-open-study]');if(!action)return;
+    const action=e.target.closest('[data-edit-company],[data-archive-company],[data-company-notes-popup],[data-company-history-popup],[data-company-open-contact],[data-company-edit-opportunity],[data-company-study-opportunity],[data-company-open-study]');if(!action)return;
     e.preventDefault();e.stopPropagation();closeCompanyFloatingMenu();
+    if(action.dataset.editCompany!==undefined){editCompany(action.dataset.editCompany);return}
     if(action.dataset.archiveCompany!==undefined){archiveCompany(action.dataset.archiveCompany);return}
     if(action.dataset.companyNotesPopup!==undefined){const co=companyById(action.dataset.companyNotesPopup);if(co)companyNotesPopup(co);return}
     if(action.dataset.companyHistoryPopup!==undefined){const co=companyById(action.dataset.companyHistoryPopup);if(co)companyHistoryPopup(co);return}
