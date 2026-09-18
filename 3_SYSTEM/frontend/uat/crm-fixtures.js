@@ -146,6 +146,51 @@ function loadCrmDummyData(){
   render();
   toast(`CRM dummy cargado: ${d.companies.length} empresas · ${d.contacts.length} contactos · ${d.interactions.length} interacciones · ${d.opportunities.length} oportunidades · 40 UATs disponibles.`);
 }
+function runCrmAutomaticUat(){
+  const d=crmDummySeed(),assertions=[];
+  const add=(id,label,expected,actual,pass)=>assertions.push({assertion_id:id,label,expected,actual,pass:!!pass});
+  const companyIds=new Set(d.companies.map(x=>x.id)),contactIds=new Set(d.contacts.map(x=>x.id)),oppIds=new Set(d.opportunities.map(x=>x.id));
+  const all=[...d.companies,...d.contacts,...d.interactions,...d.opportunities];
+  add('CRM-AUTO-01','40 UATs manuales registrados',40,CRM_UAT_CATALOG.length,CRM_UAT_CATALOG.length===40);
+  add('CRM-AUTO-02','8 empresas dummy',8,d.companies.length,d.companies.length===8);
+  add('CRM-AUTO-03','12 contactos dummy',12,d.contacts.length,d.contacts.length===12);
+  add('CRM-AUTO-04','11 interacciones dummy',11,d.interactions.length,d.interactions.length===11);
+  add('CRM-AUTO-05','8 oportunidades dummy',8,d.opportunities.length,d.opportunities.length===8);
+  add('CRM-AUTO-06','Todos los IDs están aislados','DUMMY-CRM-*',all.every(x=>isCrmDummyId(x.id))?'todos':'hay IDs fuera del prefijo',all.every(x=>isCrmDummyId(x.id)));
+  add('CRM-AUTO-07','Seed CRM no contiene Engagements/Projects','solo 4 colecciones',Object.keys(d).sort().join(','),Object.keys(d).sort().join(',')==='companies,contacts,interactions,opportunities');
+  add('CRM-AUTO-08','Contact.Company_ID válido',true,d.contacts.every(x=>companyIds.has(x.companyId)),d.contacts.every(x=>companyIds.has(x.companyId)));
+  add('CRM-AUTO-09','Primary Contact pertenece a su Company',true,d.companies.filter(x=>x.primaryContactId).every(co=>d.contacts.some(ct=>ct.id===co.primaryContactId&&ct.companyId===co.id)),d.companies.filter(x=>x.primaryContactId).every(co=>d.contacts.some(ct=>ct.id===co.primaryContactId&&ct.companyId===co.id)));
+  add('CRM-AUTO-10','Opportunity.Company_ID válido',true,d.opportunities.every(x=>companyIds.has(x.companyId)),d.opportunities.every(x=>companyIds.has(x.companyId)));
+  add('CRM-AUTO-11','Opportunity Contact refs válidas',true,d.opportunities.every(x=>(x.contactIds||[]).every(id=>contactIds.has(id))),d.opportunities.every(x=>(x.contactIds||[]).every(id=>contactIds.has(id))));
+  add('CRM-AUTO-12','Interaction.Company_ID válido',true,d.interactions.every(x=>companyIds.has(x.companyId)),d.interactions.every(x=>companyIds.has(x.companyId)));
+  add('CRM-AUTO-13','Interaction Contact refs válidas',true,d.interactions.every(x=>(x.contactIds||[]).every(id=>contactIds.has(id))),d.interactions.every(x=>(x.contactIds||[]).every(id=>contactIds.has(id))));
+  add('CRM-AUTO-14','Interaction Opportunity refs válidas',true,d.interactions.every(x=>!x.opportunityId||oppIds.has(x.opportunityId)),d.interactions.every(x=>!x.opportunityId||oppIds.has(x.opportunityId)));
+  add('CRM-AUTO-15','Existe empresa sin contactos',true,d.companies.some(co=>!d.contacts.some(ct=>ct.companyId===co.id)),d.companies.some(co=>!d.contacts.some(ct=>ct.companyId===co.id)));
+  add('CRM-AUTO-16','Existe empresa archivada',true,d.companies.some(x=>x.status==='Archivada'),d.companies.some(x=>x.status==='Archivada'));
+  add('CRM-AUTO-17','Existe contacto inactivo',true,d.contacts.some(x=>x.status==='Inactivo'),d.contacts.some(x=>x.status==='Inactivo'));
+  add('CRM-AUTO-18','Existe contacto sin email/teléfono',true,d.contacts.some(x=>!x.email&&!x.phone),d.contacts.some(x=>!x.email&&!x.phone));
+  add('CRM-AUTO-19','Existe caso con caracteres especiales',true,d.contacts.some(x=>/Ñ|ñ|ó|é|á|í|ú|'/u.test((x.firstName||'')+' '+(x.lastName||''))),d.contacts.some(x=>/Ñ|ñ|ó|é|á|í|ú|'/u.test((x.firstName||'')+' '+(x.lastName||''))));
+  add('CRM-AUTO-20','Existe Interaction solo Company',true,d.interactions.some(x=>(x.contactIds||[]).length===0),d.interactions.some(x=>(x.contactIds||[]).length===0));
+  add('CRM-AUTO-21','Existe follow-up futuro',true,d.interactions.some(x=>x.nextFollowUpAt&&x.nextFollowUpAt>crmDummyNow(0)),d.interactions.some(x=>x.nextFollowUpAt&&x.nextFollowUpAt>crmDummyNow(0)));
+  add('CRM-AUTO-22','Existe follow-up vencido',true,d.interactions.some(x=>x.nextFollowUpAt&&x.nextFollowUpAt<crmDummyNow(0)),d.interactions.some(x=>x.nextFollowUpAt&&x.nextFollowUpAt<crmDummyNow(0)));
+  add('CRM-AUTO-23','Existe Opportunity sin Contacts',true,d.opportunities.some(x=>(x.contactIds||[]).length===0),d.opportunities.some(x=>(x.contactIds||[]).length===0));
+  add('CRM-AUTO-24','Sectores dummy usan CNAE-2025',true,d.companies.every(x=>/^CNAE25-[A-V]$/.test(x.sector)),d.companies.every(x=>/^CNAE25-[A-V]$/.test(x.sector)));
+  add('CRM-AUTO-25','Estados Contact válidos',true,d.contacts.every(x=>CONTACT_STATUS.includes(x.status)),d.contacts.every(x=>CONTACT_STATUS.includes(x.status)));
+  add('CRM-AUTO-26','Cargos Contact gobernados',true,d.contacts.every(x=>CONTACT_ROLE_OPTIONS.includes(x.role)),d.contacts.every(x=>CONTACT_ROLE_OPTIONS.includes(x.role)));
+  add('CRM-AUTO-27','Stages Opportunity válidos',true,d.opportunities.every(x=>OPPORTUNITY_STAGE.includes(x.stage)),d.opportunities.every(x=>OPPORTUNITY_STAGE.includes(x.stage)));
+  add('CRM-AUTO-28','Tipos Interaction válidos',true,d.interactions.every(x=>INTERACTION_TYPE.includes(x.type)),d.interactions.every(x=>INTERACTION_TYPE.includes(x.type)));
+  add('CRM-AUTO-29','Canales Interaction válidos',true,d.interactions.every(x=>INTERACTION_CHANNEL.includes(x.channel)),d.interactions.every(x=>INTERACTION_CHANNEL.includes(x.channel)));
+  add('CRM-AUTO-30','Resultados Interaction válidos',true,d.interactions.every(x=>INTERACTION_OUTCOME.includes(x.outcome)),d.interactions.every(x=>INTERACTION_OUTCOME.includes(x.outcome)));
+  add('CRM-AUTO-31','Inactivación reversible implementada',true,typeof inactivateContact==='function'&&typeof reactivateContact==='function',typeof inactivateContact==='function'&&typeof reactivateContact==='function');
+  add('CRM-AUTO-32','Crear estudio desde Opportunity exige función gobernada',true,typeof createStudyFromOpportunity==='function',typeof createStudyFromOpportunity==='function');
+  const passCount=assertions.filter(x=>x.pass).length;
+  return {suite:'CRM_AUTOMATIC_V1',assertion_count:assertions.length,pass_count:passCount,fail_count:assertions.length-passCount,pass:passCount===assertions.length,assertions};
+}
+function crmAutomaticHtml(r){
+  if(!r)return '<div class="empty"><p>Aún no ejecutado. El botón superior “Ejecutar UATs automáticos” ejecuta backend + CRM.</p></div>';
+  return `${uatStatusBadge(r.pass)} <span class="field-help">${esc(r.suite)} · ${r.pass_count}/${r.assertion_count}</span><div class="table-wrap" style="margin-top:12px"><table class="data-table"><thead><tr><th>Assertion</th><th>Control</th><th>Expected</th><th>Actual</th><th>Estado</th></tr></thead><tbody>${r.assertions.map(a=>`<tr><td><b>${esc(a.assertion_id)}</b></td><td>${esc(a.label)}</td><td>${esc(JSON.stringify(a.expected))}</td><td>${esc(JSON.stringify(a.actual))}</td><td>${uatStatusBadge(a.pass)}</td></tr>`).join('')}</tbody></table></div>`;
+}
+
 function crmUatHtml(){
   const n=crmDummyCounts();
   const groups=[
@@ -160,7 +205,7 @@ function crmUatHtml(){
     const rows=CRM_UAT_CATALOG.filter(([id])=>num(id)>=num(from)&&num(id)<=num(to));
     return `<div class="result-item"><h3>${esc(title)} · ${rows.length} UATs</h3><div class="result-list">${rows.map(([id,t,steps,expected])=>`<div class="result-item"><b>${esc(id)} · ${esc(t)}</b><p><strong>Prueba:</strong> ${esc(steps)}</p><p><strong>Esperado:</strong> ${esc(expected)}</p></div>`).join('')}</div></div>`;
   }).join('');
-  return section('CRM · 40 UATs + datos dummy','Suite completa de 40 casos enfocada en P01–P04, relaciones, persistencia y edge cases. El seed nunca crea estudios ni proyectos y todos sus IDs empiezan por DUMMY-CRM-.',
+  return section('CRM automático','32 assertions automáticas CRM ejecutadas junto al backend desde el botón superior.',crmAutomaticHtml(state.uatLastRun?.crm_automatic)) + section('CRM · 40 UATs manuales + datos dummy','Suite completa de 40 casos enfocada en P01–P04, relaciones, persistencia y edge cases. El seed nunca crea estudios ni proyectos y todos sus IDs empiezan por DUMMY-CRM-.',
     `<div class="notice good"><b>Dataset actual:</b> ${n.companies} empresas · ${n.contacts} contactos · ${n.interactions} interacciones · ${n.opportunities} oportunidades.</div>
     <div class="coverage-chips" style="margin-top:12px"><span class="chip">10 Empresas</span><span class="chip">12 Contactos</span><span class="chip">9 Interacciones</span><span class="chip">6 Oportunidades</span><span class="chip">3 Integración/robustez</span></div>
     <div class="result-list" style="margin-top:12px">${groupHtml}</div>`,
@@ -168,6 +213,20 @@ function crmUatHtml(){
 }
 const __auneaUatPageBeforeCrmDummy=pages.uat;
 pages.uat=function(){return __auneaUatPageBeforeCrmDummy()+crmUatHtml()};
+const __auneaRunVisibleUatBeforeCrmAutomatic=runVisibleUAT;
+runVisibleUAT=async function(){
+  await __auneaRunVisibleUatBeforeCrmAutomatic();
+  if(!state.uatLastRun)return;
+  const before={companies:state.companies.length,contacts:state.contacts.length,interactions:(state.interactions||[]).length,opportunities:(state.opportunities||[]).length,engagements:state.engagements.length,projects:state.projects.length};
+  state.uatLastRun.crm_automatic=runCrmAutomaticUat();
+  const after={companies:state.companies.length,contacts:state.contacts.length,interactions:(state.interactions||[]).length,opportunities:(state.opportunities||[]).length,engagements:state.engagements.length,projects:state.projects.length};
+  state.uatLastRun.crm_operational_collections_unchanged=JSON.stringify(before)===JSON.stringify(after);
+  state.uatLastRun.combined_pass=!!state.uatLastRun.pass&&!!state.uatLastRun.crm_automatic.pass&&state.uatLastRun.crm_operational_collections_unchanged;
+  persistRecoverySnapshot('uat-backend-plus-crm');
+  audit(`UAT combinada ${state.uatLastRun.combined_pass?'PASS':'FAIL'} · backend ${state.uatLastRun.pass_count}/${state.uatLastRun.assertion_count} · CRM ${state.uatLastRun.crm_automatic.pass_count}/${state.uatLastRun.crm_automatic.assertion_count}`);
+  render();
+  toast(state.uatLastRun.combined_pass?`UAT automática PASS: backend ${state.uatLastRun.pass_count}/${state.uatLastRun.assertion_count} + CRM ${state.uatLastRun.crm_automatic.pass_count}/${state.uatLastRun.crm_automatic.assertion_count}.`:'UAT automática con fallos: revisa Backend y CRM.');
+};
 const __auneaPostBindBeforeCrmDummy=postBind;
 postBind=function(){
   __auneaPostBindBeforeCrmDummy();
