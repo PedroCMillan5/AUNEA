@@ -144,7 +144,10 @@ function renderControl(f,val,opts,e){
   const c=String(f.Control_UI||'').toUpperCase(),fid=f.Field_ID;
   if(c==='CRM_REFERENCE_OR_TEXT')return canonicalSelect(fid,state.companies.map(x=>({value:x.name,label:x.name})),val);
   if(c==='CONTACT_REFERENCE')return canonicalSelect(fid,referenceableContacts(e).map(x=>({value:x.id,label:`${referenceContactLabel(x)}${x.role?' · '+x.role:''}`})),val);
-  if(c==='CONTACT_MULTISELECT')return multiChoices(fid,referenceableContacts(e).map(x=>({value:x.id,label:`${referenceContactLabel(x)}${x.role?' · '+x.role:''}`})),val);
+  if(c==='CONTACT_MULTISELECT'){
+    const choices=multiChoices(fid,referenceableContacts(e).map(x=>({value:x.id,label:`${referenceContactLabel(x)}${x.role?' · '+x.role:''}`})),val);
+    return choices+(fid==='DF007'?'<div class="detail-wrap"><button type="button" class="btn btn-small" data-create-contact-for-field="DF007">Crear contacto y añadirlo</button></div>':'');
+  }
   if(c==='CONTACT_OR_ROLE_REFERENCE'){
     const ownerOpts=referenceableContacts(e).map(x=>({value:x.id,label:`${referenceContactLabel(x)}${x.role?' · '+x.role:''}`}));
     ownerOpts.push({value:'OTHER',label:'Otro'});
@@ -160,7 +163,7 @@ function renderControl(f,val,opts,e){
   if(c==='COMBOBOX_REFERENCE')return canonicalSelect(fid,opts,val)+detailInput(fid,'Nueva referencia sólo si no existe');
   if(c==='MULTISELECT'||c==='MULTICHECK'||c==='MULTISELECT_REFERENCE'||c==='SYSTEM_GENERATED_MULTISELECT')return multiChoices(fid,opts,val);
   if(c==='MULTISELECT_WITH_OTHER'||c==='MULTICHECK_WITH_OTHER')return multiChoices(fid,opts,val,{other:true});
-  if(c==='MULTISELECT_WITH_DETAIL'||c==='MULTICHECK_WITH_DETAIL'||c==='MULTISELECT_WITH_REFERENCE')return multiChoices(fid,opts,val,{detail:true});
+  if(c==='MULTISELECT_WITH_DETAIL'||c==='MULTICHECK_WITH_DETAIL'||c==='MULTISELECT_WITH_REFERENCE')return fid==='DF010'?multiChoices(fid,opts,val,{other:true}):multiChoices(fid,opts,val,{detail:true});
   if(c==='MULTISELECT_WITH_PRIORITY')return multiChoices(fid,opts,val,{detail:true});
   if(c==='MULTISELECT_WITH_STEP_LINK'||c==='MULTISELECT_WITH_STEP_REFERENCE'||c==='STEP_ACTION_MULTISELECT')return multiChoices(fid,opts,val,{detail:true})+stepMulti(`${fid}__steps`,e,answerDetails(e)[`${fid}__steps`]||[]);
   if(c==='STEP_MULTISELECT_VISUAL'||c==='STEP_MULTISELECT_WITH_FRICTION')return stepMulti(fid,e,val);
@@ -189,6 +192,10 @@ function renderControl(f,val,opts,e){
 }
 
 function bindCanonicalRenderer(){
+  document.querySelectorAll('[data-create-contact-for-field]').forEach(btn=>btn.addEventListener('click',()=>{
+    if(typeof addContactForEngagementField==='function')addContactForEngagementField(btn.dataset.createContactForField);
+  }));
+
   document.querySelectorAll('[data-owner-reference]').forEach(el=>el.addEventListener('change',()=>{
     const fid=el.dataset.ownerReference,wrap=document.querySelector(`[data-owner-other-wrap="${fid}"]`);
     if(wrap)wrap.style.display=el.value==='OTHER'?'':'none';
