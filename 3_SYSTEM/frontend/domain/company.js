@@ -1,0 +1,178 @@
+// [AUNEA-FE-CRM-COMPANY-010] START — Company master (P01)
+// PURPOSE: Own the Company record: the CRM fields the approved Empresas reference makes visible, the
+//          canonical DF001–DF005 write targets, the primary-contact relation and the derived counters.
+//          Every other surface reuses this record read-only or writes through to it (DEC-050).
+// SOURCE: DEC-007 (one Company per company); DEC-050 (single owner / single capture);
+//         reference IMG90-00-01 (visible fields, states, order); Architecture Contract v1.4 row P01;
+//         Diagnostic Master DF001–DF005 write targets RT_COMPANY.*; PROJECT_RULES v1.6 Spanish-visible rule.
+// INPUTS: state.companies plus REF_INDUSTRY_CNAE25 and the canonical Company context catalogues.
+// OUTPUTS: Company records and derived projections used across CRM, PG01 and deliverables.
+// SIDE_EFFECTS: state mutation and audit entries.
+// CHANGE_RISK: HIGH.
+
+const COMPANY_STATUS = ['Cliente', 'Prospecto', 'Colaborador', 'En pausa', 'Archivada'];
+const COMPANY_ORG_TYPE = ['Empresa privada', 'Empresa pública', 'Autónomo', 'Asociación', 'Sector público'];
+const COMPANY_ENTRY_CHANNEL = ['Recomendación', 'Contacto directo', 'Red personal', 'Inbound', 'Cliente existente'];
+const COMPANY_SIZE_BANDS = [
+  { max: 10, label: '1–10' }, { max: 50, label: '11–50' }, { max: 250, label: '51–250' },
+  { max: 500, label: '251–500' }, { max: 1000, label: '501–1.000' }, { max: Infinity, label: 'Más de 1.000' }
+];
+
+// Company.Sector uses the official CNAE-2025 section catalogue. REF_DOMAIN is reserved for engagement/process area context.
+function companySectorLabel(value) {
+  if(!value)return '—';
+  const label=labelFrom('REF_INDUSTRY_CNAE25',value);
+  if(label!==value)return label;
+  if(/^D\d{2}$/i.test(String(value)))return 'Pendiente de actualizar';
+  return String(value);
+}
+function companySectorOptions() {
+  return fieldOptions('REF_INDUSTRY_CNAE25');
+}
+function companySizeBand(company) {
+  const n = Number(company?.employeeCount);
+  if (!Number.isFinite(n) || n <= 0) return '—';
+  return (COMPANY_SIZE_BANDS.find(b => n <= b.max) || COMPANY_SIZE_BANDS[COMPANY_SIZE_BANDS.length - 1]).label;
+}
+function companyStatusLabel(status) {
+  return status === 'Prospecto' ? 'Potencial cliente' : status || '—';
+}
+function companyStatusOptions() {
+  return COMPANY_STATUS.map(value => ({value,label:companyStatusLabel(value)}));
+}
+function companyStatusClass(status) {
+  return status === 'Cliente' ? 'ok' : status === 'Prospecto' ? 'wait' : status === 'Archivada' ? 'off' : '';
+}
+function companyCounters(companyId) {
+  return {
+    contacts: state.contacts.filter(c => c.companyId === companyId).length,
+    engagements: state.engagements.filter(e => e.companyId === companyId).length,
+    projects: state.projects.filter(p => p.companyId === companyId).length,
+    opportunities: (state.opportunities || []).filter(o => o.companyId === companyId).length,
+    interactions: (state.interactions || []).filter(i => i.companyId === companyId).length
+  };
+}
+
+function currentAuneaOwnerName() {
+  const visible = document.querySelector('.user-chip b')?.textContent?.trim();
+  if (visible) return visible;
+  if (typeof AUNEA_DEFAULT_PROJECT_OWNER !== 'undefined') return AUNEA_DEFAULT_PROJECT_OWNER.name;
+  return 'Pedro Carrasco';
+}
+function companySelectControl(id,label,options,current,placeholder='Sin indicar',help='') {
+  const selected=options.find(o=>String(o.value)===String(current));
+  return `<div class="field"><label>${esc(label)}</label><input type="hidden" id="${attr(id)}" value="${attr(current||'')}"><details class="aunea-select company-form-select"><summary><span data-company-select-label="${attr(id)}">${esc(selected?.label||placeholder)}</span><i aria-hidden="true"></i></summary><div class="aunea-select-menu" role="listbox" aria-label="${attr(label)}"><button type="button" role="option" data-company-select-option="${attr(id)}" data-value="">${esc(placeholder)}</button>${options.map(o=>`<button type="button" role="option" class="${String(o.value)===String(current)?'selected':''}" data-company-select-option="${attr(id)}" data-value="${attr(o.value)}">${esc(o.label)}</button>`).join('')}</div></details>${help?`<div class="field-help">${esc(help)}</div>`:''}</div>`;
+}
+const COMPANY_EMPLOYEE_RANGE_OPTIONS = Object.freeze([
+  {value:'10',label:'1–10'},
+  {value:'50',label:'11–50'},
+  {value:'250',label:'51–250'},
+  {value:'500',label:'251–500'},
+  {value:'1000',label:'501–1.000'},
+  {value:'1001',label:'Más de 1.000'}
+]);
+function companyEmployeeRangeValue(count) {
+  const n=Number(count);
+  if(!Number.isFinite(n)||n<=0)return '';
+  if(n<=10)return '10';
+  if(n<=50)return '50';
+  if(n<=250)return '250';
+  if(n<=500)return '500';
+  if(n<=1000)return '1000';
+  return '1001';
+}
+function companyFormBody(co = {}) {
+  const owner=currentAuneaOwnerName();
+  const employeeValue=companyEmployeeRangeValue(co.employeeCount);
+  return `<div class="form-grid">
+    <div class="field"><label>Nombre comercial</label><input id="cCoName" value="${attr(co.tradeName || co.name || '')}"><div class="field-help">DF001 · RT_COMPANY.Company_Name</div></div>
+    <div class="field"><label>CIF / identificador fiscal</label><input id="cCoTaxId" value="${attr(co.taxId || '')}"></div>
+    ${companySelectControl('cCoSector','Sector',companySectorOptions(),co.sector||'','Sin indicar','DF002 · CNAE-2025')}
+    ${companySelectControl('cCoEmployees','Número de empleados',COMPANY_EMPLOYEE_RANGE_OPTIONS,employeeValue,'Sin indicar','DF003 · rango aproximado')}
+    ${companySelectControl('cCoOrgType','Tipo de organización',COMPANY_ORG_TYPE.map(value=>({value,label:value})),co.orgType||'')}
+    <div class="field"><label>Sitio web</label><input id="cCoWebsite" value="${attr(co.website || '')}" placeholder="www.ejemplo.com"></div>
+    ${companySelectControl('cCoStatus','Estado',companyStatusOptions(),co.status||'Prospecto','Potencial cliente')}
+    ${companySelectControl('cCoChannel','Canal de entrada',COMPANY_ENTRY_CHANNEL.map(value=>({value,label:value})),co.entryChannel||'')}
+    <div class="field"><label>Responsable AUNEA</label><input id="cCoOwner" value="${attr(owner)}" readonly></div>
+    <input type="hidden" id="cCoCountry" value="${attr(co.country || 'ES')}">
+    <div class="field full"><label>Notas generales</label><textarea id="cCoNotes" maxlength="500">${esc(co.notes || '')}</textarea></div>
+  </div>`;
+}
+function readCompanyForm() {
+  const v = id => (document.getElementById(id)?.value || '').trim();
+  const name=v('cCoName');
+  return {
+    name, tradeName: '', taxId: v('cCoTaxId'), sector: v('cCoSector'),
+    employeeCount: v('cCoEmployees') ? Number(v('cCoEmployees')) : null, country: v('cCoCountry') || 'ES',
+    orgType: v('cCoOrgType'), website: v('cCoWebsite'), status: v('cCoStatus') || 'Prospecto',
+    entryChannel: v('cCoChannel'), owner: currentAuneaOwnerName(), notes: v('cCoNotes').slice(0, 500)
+  };
+}
+if(typeof window!=='undefined'&&!window.__auneaCompanyFormSelectBound){
+  window.__auneaCompanyFormSelectBound=true;
+  document.addEventListener('click',e=>{
+    const option=e.target.closest('[data-company-select-option]');if(!option)return;
+    e.preventDefault();e.stopPropagation();
+    const target=document.getElementById(option.dataset.companySelectOption);if(!target)return;
+    target.value=option.dataset.value||'';
+    const box=option.closest('.aunea-select'),label=box?.querySelector('[data-company-select-label]');
+    if(label)label.textContent=option.textContent.trim();
+    box?.querySelectorAll('[data-company-select-option]').forEach(btn=>btn.classList.toggle('selected',btn===option));
+    if(box)box.open=false;
+  },true);
+}
+
+function addCompany() {
+  openModal('Nueva empresa', companyFormBody(), () => {
+    const data = readCompanyForm();
+    if (!data.name) return toast('Indica el nombre comercial.');
+    const co = { id: id('CMP'), ...data, primaryContactId: null, createdAt: now() };
+    state.companies.push(co);
+    state.selectedCompanyId = co.id;
+    markDirty(`Empresa creada: ${co.name}`);
+    closeModal(); render();
+  });
+}
+function editCompany(companyId) {
+  const co = companyById(companyId);
+  if (!co) return;
+  openModal('Editar empresa', companyFormBody(co), () => {
+    const before = { ...co }, data = readCompanyForm();
+    if (!data.name) return toast('Indica el nombre comercial.');
+    Object.assign(co, data);
+    Object.keys(data).forEach(k => { if (String(before[k] ?? '') !== String(co[k] ?? '')) audit(`Empresa ${co.name} editada: ${k} "${before[k] ?? '—'}"→"${co[k] ?? '—'}"`); });
+    markDirty(); closeModal(); render();
+  }, 'Guardar cambios');
+}
+
+function archiveCompany(companyId) {
+  const co = companyById(companyId);
+  if (!co) return;
+  const n = companyCounters(companyId);
+  if (!confirm(`¿Archivar ${co.name}? Sus ${n.contacts} contacto(s), ${n.engagements} estudio(s) y ${n.projects} proyecto(s) se conservan.`)) return;
+  co.status = 'Archivada';
+  markDirty(`Empresa archivada: ${co.name}`);
+  render();
+}
+
+function migrateCompaniesToCrmRecord(companies) {
+  let changed = 0;
+  for (const co of companies || []) {
+    let touched=false;
+    // Antes de Master v1.2, DF002 usaba REF_DOMAIN (D01–D25), que describe áreas/procesos,
+    // no sectores empresariales. Se conserva el valor histórico pero no se inventa una equivalencia CNAE.
+    if(/^D\d{2}$/i.test(String(co.sector||''))){
+      if(co.legacyBusinessDomainId===undefined)co.legacyBusinessDomainId=co.sector;
+      co.sector='';
+      touched=true;
+    }
+    if (co.status === undefined) {co.status = 'Prospecto';touched=true}
+    if (co.primaryContactId === undefined) {co.primaryContactId = null;touched=true}
+    for (const k of ['tradeName', 'taxId', 'orgType', 'website', 'entryChannel', 'owner', 'notes']) if (co[k] === undefined) {co[k] = '';touched=true}
+    if (co.employeeCount === undefined) {co.employeeCount = null;touched=true}
+    if (!co.createdAt) {co.createdAt = now();touched=true}
+    if(touched)changed++;
+  }
+  return changed;
+}
+// [AUNEA-FE-CRM-COMPANY-010] END

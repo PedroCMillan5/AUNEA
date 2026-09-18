@@ -1,3 +1,10 @@
+# [AUNEA-BE-STORE-010] START — SQLite persistence adapter
+# PURPOSE: Persist engagements, diagnostic outputs and engine runs so recovery/audit survives process restarts. Replaceable adapter behind the same interface used by Orchestrator.
+# SOURCE: REQ-ENG-001; DEC-034.
+# INPUTS: EngagementInput, DiagnosticOutput, engine run metadata.
+# OUTPUTS: stored/retrieved EngagementInput/DiagnosticOutput; list of engine_runs rows.
+# SIDE_EFFECTS: SQLite file writes (engagements, diagnostic_outputs, engine_runs tables).
+# CHANGE_RISK: HIGH.
 from __future__ import annotations
 import json, sqlite3
 from pathlib import Path
@@ -61,8 +68,13 @@ class SQLiteStore:
               VALUES(?,?,?,?)''',(out.engagement_id,out.input_snapshot_hash,out.rule_bundle_version,payload))
 
     def latest_output(self, engagement_id: str) -> DiagnosticOutput | None:
+        # CURRENT_TIMESTAMP has second-level precision in SQLite. Multiple diagnoses can be persisted
+        # in the same second, so created_at alone is not a deterministic recency key. rowid reflects
+        # the actual insertion/replacement order for this table and breaks those ties without changing
+        # the persisted business contract or introducing a schema migration.
         with self._connect() as con:
-            row=con.execute('SELECT output_json FROM diagnostic_outputs WHERE engagement_id=? ORDER BY created_at DESC LIMIT 1',(engagement_id,)).fetchone()
+            row=con.execute('''SELECT output_json FROM diagnostic_outputs
+              WHERE engagement_id=? ORDER BY created_at DESC, rowid DESC LIMIT 1''',(engagement_id,)).fetchone()
         return DiagnosticOutput.model_validate_json(row['output_json']) if row else None
 
     def add_run(self, engagement_id: str | None, engine: str, input_hash: str, output_hash: str, status: str="COMPLETED"):
@@ -76,3 +88,4 @@ class SQLiteStore:
             else:
                 rows=con.execute('SELECT * FROM engine_runs ORDER BY id').fetchall()
         return [dict(r) for r in rows]
+# [AUNEA-BE-STORE-010] END

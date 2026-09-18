@@ -1,18 +1,19 @@
 # AUNEA Internal — Master Index
 
 Status: ACTIVE  
-Version: 1.0  
-Date: 2026-09-09
+Version: 1.1  
+Date: 2026-09-15
 
 This repository document mirrors the Drive master index sufficiently to orient code work. Drive remains the human documentation source of truth; this file is a navigation aid for repository work.
 
 ## Current canonical assets
 
 ### Diagnostic / rules
-- Drive canonical: `AUNEA_DIAGNOSTIC_DATABASE_v0.9_DIAGNOSTIC_MASTER_V1.xlsx`
+- Drive canonical: `AUNEA_DIAGNOSTIC_DATABASE_v0.9.1_DIAGNOSTIC_MASTER_V1.1.xlsx`
 - Drive path: `02_NEGOCIO_CATALOGO/01_MAPA_OFERTA/00_DIAGNOSTIC_CANONICO`
-- Drive file ID: `1f0WPb0BMElYbwB5oDBv-ypiyGKvURv4V`
-- Previous v0.8 moved to `00_DIAGNOSTIC_CANONICO/99_ARCHIVO`.
+- Drive file ID: `1qKjbJviEvUQnHOGCHy4VkIx0dbdkoJj1`
+- Previous v0.9 is ARCHIVED as `AUNEA_DIAGNOSTIC_DATABASE_v0.9_ARCHIVED_DIAGNOSTIC_MASTER_V1.xlsx`, Drive ID `1f0WPb0BMElYbwB5oDBv-ypiyGKvURv4V`.
+- Previous v0.8 remains archived under `00_DIAGNOSTIC_CANONICO/99_ARCHIVO`.
 
 ### Backend
 - Path: `3_SYSTEM/backend/`
@@ -28,7 +29,7 @@ This repository document mirrors the Drive master index sufficiently to orient c
 
 - L1 CRM & Relationships — target model defined; Airtable Operations consolidation pending.
 - L2 Engagement & History — conceptual model defined; live persistence consolidation pending.
-- L3 Diagnostic Capture — Diagnostic Master v1 canonical.
+- L3 Diagnostic Capture — Diagnostic Master v1.1 canonical.
 - L4 Process & Friction Model — Process Step Model v1 + Friction Model v1 canonical.
 - L5 Evidence & Economics — rules/backend implemented; real calibration pending.
 - L6 Decision Engines — implemented.
