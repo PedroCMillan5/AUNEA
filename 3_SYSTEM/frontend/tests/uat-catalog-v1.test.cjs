@@ -189,3 +189,27 @@ test('uatCatalogHtml/uatCleanupHtml/uatStressHtml render without throwing and li
   assert.doesNotThrow(()=>ctx.uatCleanupHtml());
   assert.doesNotThrow(()=>ctx.uatStressHtml());
 });
+
+
+const studySuiteCode=fs.readFileSync(path.join(root,'uat/study-suite.js'),'utf8');
+
+test('Study UAT suite contains exactly STUDY-UAT-001..120 grouped across PG01-PG15, S2 and E2E',()=>{
+  const state={studyUatResults:{}},ctx={state,console,pages:{uat:()=>''},postBind:()=>{},now:()=>new Date().toISOString(),markDirty:()=>{},persistRecoverySnapshot:()=>{},render:()=>{},confirm:()=>true,esc:v=>String(v??''),section:(a,b,c,d)=>c+(d||''),document:{querySelectorAll:()=>[],getElementById:()=>null}};
+  vm.createContext(ctx);vm.runInContext(studySuiteCode,ctx);
+  const ids=vm.runInContext('STUDY_UAT_CATALOG.map(x=>x.id)',ctx);
+  assert.equal(ids.length,120);
+  assert.deepEqual([...ids],Array.from({length:120},(_,i)=>`STUDY-UAT-${String(i+1).padStart(3,'0')}`));
+  const groups=vm.runInContext('STUDY_UAT_GROUPS.map(g=>g.id)',ctx);
+  assert.deepEqual([...groups],['PG01','PG02','PG03','PG04','PG05','PG06','PG07','PG08','PG09','PG10','PG11','PG12','PG13','PG14','PG15','S2','E2E']);
+});
+
+test('Study UAT progress is QA-only and does not mutate operational collections',()=>{
+  const state={studyUatResults:{},companies:[{id:'REAL-C'}],contacts:[{id:'REAL-CT'}],interactions:[{id:'REAL-I'}],opportunities:[{id:'REAL-O'}],engagements:[{id:'REAL-E'}],projects:[{id:'REAL-P'}]};
+  const before=JSON.stringify({companies:state.companies,contacts:state.contacts,interactions:state.interactions,opportunities:state.opportunities,engagements:state.engagements,projects:state.projects});
+  const ctx={state,console,pages:{uat:()=>''},postBind:()=>{},now:()=>new Date().toISOString(),markDirty:()=>{},persistRecoverySnapshot:()=>{},render:()=>{},confirm:()=>true,esc:v=>String(v??''),section:(a,b,c,d)=>c+(d||''),document:{querySelectorAll:()=>[],getElementById:()=>null}};
+  vm.createContext(ctx);vm.runInContext(studySuiteCode,ctx);
+  vm.runInContext("studyUatSet('STUDY-UAT-001','PASS')",ctx);
+  assert.equal(state.studyUatResults['STUDY-UAT-001'].status,'PASS');
+  const after=JSON.stringify({companies:state.companies,contacts:state.contacts,interactions:state.interactions,opportunities:state.opportunities,engagements:state.engagements,projects:state.projects});
+  assert.equal(after,before);
+});
