@@ -242,4 +242,13 @@ test('AUNEA dropdowns close when focus moves outside or to another selector',()=
   assert.match(shell,/e\.key==='Escape'/);
 });
 
+test('Contactos company picker is one anchored AUNEA control, not duplicated text plus selector',()=>{
+  const page=read('pages/crm-contacts.js'),css=read('ui-system.css');
+  assert.match(page,/contact-company-control/);
+  assert.match(page,/class="aunea-select entity-picker-select"/);
+  assert.doesNotMatch(page,/ep-grow"><small>Empresa<\/small><b>\$\{esc\(label\)\}<\/b><\/div>\s*<details class="aunea-select entity-picker-select"/);
+  assert.match(css,/\.contact-company-control\{position:relative;flex:1/);
+  assert.match(css,/\.entity-picker-select \.aunea-select-menu\{width:100%;min-width:100%;left:0;right:auto/);
+});
+
 // [AUNEA-UAT-CRM-010] END
