@@ -69,23 +69,21 @@ function pg01ContextFields(e){
   if((e.answers.DF003===undefined||e.answers.DF003==='')&&Number.isFinite(Number(co.employeeCount))&&Number(co.employeeCount)>0)e.answers.DF003=Number(co.employeeCount);
   const contactOpts=contacts.map(c=>({value:c.id,label:typeof contactFullName==='function'?contactFullName(c):(c.name||c.email||c.id)}));
   const sectorOpts=fieldOptions('REF_INDUSTRY_CNAE25');
-  const countryOpts=fieldOptions('REF_COUNTRY_ISO3166');
   const orgOpts=(typeof COMPANY_ORG_TYPE!=='undefined'?COMPANY_ORG_TYPE:[]).map(v=>({value:v,label:v}));
   const channelOpts=(typeof COMPANY_ENTRY_CHANNEL!=='undefined'?COMPANY_ENTRY_CHANNEL:[]).map(v=>({value:v,label:v}));
   const size=typeof companySizeBand==='function'?companySizeBand(co):'—';
   return [
-    pg01Field('Empresa',`<input data-pg01-company="name" data-pg01-df="DF001" value="${attr(co.name||'')}">`,'Nombre legal o comercial de la empresa.',{source:'Empresas'}),
-    pg01Field('Persona de contacto',pg01Select(contactOpts,selected?.id||'',`data-pg01-contact-ref="1" data-pg01-df="DF006"`),'Principal interlocutor de la sesión.',{source:'Contactos'}),
-    pg01Field('Cargo',`<input data-pg01-contact="role" value="${attr(selected?.role||'')}">`,'Cargo o rol en la empresa.',{source:'Contactos'}),
-    pg01Field('Email',`<input type="email" data-pg01-contact="email" value="${attr(selected?.email||'')}">`,'Email de contacto para comunicaciones posteriores.',{source:'Contactos'}),
-    pg01Field('Teléfono',pg01PhoneCompound(selected?.phone||''),'Teléfono de contacto (opcional).',{source:'Contactos',required:false}),
-    pg01Field('Sector',pg01Select(sectorOpts,co.sector||'',`data-pg01-company="sector" data-pg01-df="DF002"`),'Selecciona el sector principal de la empresa.',{source:'Empresas'}),
-    pg01Field('Tamaño de empresa',`<select data-pg01-company-size="1" disabled><option>${esc(size==='—'?'Sin indicar':`${size} empleados`)}</option></select>`,'Rango aproximado de empleados. Se deriva del número registrado en Empresas.',{source:'Empresas'}),
-    pg01Field('País / alcance',pg01Select(countryOpts,co.country||'',`data-pg01-company="country" data-pg01-df="DF005"`),'País principal o alcance de la operación.',{source:'Empresas'}),
-    pg01Field('Tipo de organización',pg01Select(orgOpts,co.orgType||'',`data-pg01-company="orgType"`),'Estructura de la organización.',{source:'Empresas'}),
-    pg01Field('Prioridad',`<div class="segmented">${PG01_PRIORITY.map(v=>`<button type="button" class="segment ${e.priority===v?'active':''}" data-pg01-engagement="priority" data-value="${attr(v)}">${esc(v)}</button>`).join('')}</div>`,'Nivel de urgencia percibido por el cliente.'),
-    pg01Field('Canal de entrada',pg01Select(channelOpts,co.entryChannel||'',`data-pg01-company="entryChannel"`),'Cómo ha llegado el cliente a AUNEA System.',{source:'Empresas'}),
-    pg01Field('Resumen del contexto',`<textarea maxlength="500" data-pg01-engagement="contextSummary">${esc(e.contextSummary||'')}</textarea>`,'Breve descripción de la situación actual y principales motivaciones.',{full:false})
+    pg01Field('Empresa',`<input data-pg01-company="name" data-pg01-df="DF001" value="${attr(co.name||'')}">`,'Empresa sobre la que se realiza el estudio. Si detectas un error, corrígelo aquí y se actualizará su ficha maestra.',{source:'Empresas'}),
+    pg01Field('Persona de contacto',pg01Select(contactOpts,selected?.id||'',`data-pg01-contact-ref="1" data-pg01-df="DF006"`),'Persona que participa como interlocutor principal en esta sesión. Solo se muestran contactos activos de la empresa.',{source:'Contactos'}),
+    pg01Field('Cargo',`<input data-pg01-contact="role" value="${attr(selected?.role||'')}">`,'Rol profesional de la persona seleccionada. Se reutiliza desde Contactos y cualquier corrección actualiza su ficha.',{source:'Contactos'}),
+    pg01Field('Email',`<input type="email" data-pg01-contact="email" value="${attr(selected?.email||'')}">`,'Correo de la persona seleccionada para seguimiento del estudio y comunicaciones posteriores.',{source:'Contactos'}),
+    pg01Field('Teléfono',pg01PhoneCompound(selected?.phone||''),'Teléfono de la persona seleccionada. Es opcional y se guarda en su ficha de Contacto.',{source:'Contactos',required:false}),
+    pg01Field('Sector',pg01Select(sectorOpts,co.sector||'',`data-pg01-company="sector" data-pg01-df="DF002"`),'Actividad económica principal de la empresa según el catálogo CNAE-2025.',{source:'Empresas'}),
+    pg01Field('Tamaño de empresa',`<select data-pg01-company-size="1" disabled><option>${esc(size==='—'?'Sin indicar':`${size} empleados`)}</option></select>`,'Tamaño derivado automáticamente del número de empleados registrado en Empresas; no se edita desde el estudio.',{source:'Empresas'}),
+    pg01Field('Tipo de organización',pg01Select(orgOpts,co.orgType||'',`data-pg01-company="orgType"`),'Tipo de organización registrado para la empresa; se reutiliza para contextualizar el diagnóstico.',{source:'Empresas'}),
+    pg01Field('Prioridad',`<div class="segmented">${PG01_PRIORITY.map(v=>`<button type="button" class="segment ${e.priority===v?'active':''}" data-pg01-engagement="priority" data-value="${attr(v)}">${esc(v)}</button>`).join('')}</div>`,'Urgencia del estudio para priorizar el trabajo y el siguiente paso; no altera por sí sola la recomendación.'),
+    pg01Field('Canal de entrada',pg01Select(channelOpts,co.entryChannel||'',`data-pg01-company="entryChannel"`),'Origen comercial de la relación con AUNEA; se conserva como dato de la empresa.',{source:'Empresas'}),
+    pg01Field('Resumen del contexto',`<textarea maxlength="500" data-pg01-engagement="contextSummary">${esc(e.contextSummary||'')}</textarea>`,'Resume por qué se abre este estudio, qué situación se quiere entender y qué motivación existe para actuar.',{full:false})
   ].join('');
 }
 
@@ -99,9 +97,9 @@ function pg01DisclosureFields(fields){return PG01_DISCLOSURE_IDS.map(fid=>fields
 function pg01DisclosurePending(fields,e){return pg01DisclosureFields(fields).filter(f=>f.Requiredness==='REQUIRED_90M'&&questionVisible(f,e)&&!valuePresent(effectiveValue(f,e)))}
 function pg01CanonicalDisclosure(fields,e){
   const folded=pg01DisclosureFields(fields);if(!folded.length)return '';
-  const pending=pg01DisclosurePending(fields,e),open=pending.length?' open':'';
+  const pending=pg01DisclosurePending(fields,e);
   const status=pending.length?`${pending.length} obligatorio${pending.length===1?'':'s'} pendiente${pending.length===1?'':'s'}`:'Completo';
-  return `<details class="step-group pg01-disclosure"${open}><summary><span>${esc(PG01_DISCLOSURE_TITLE)}</span><span class="conditional-tag">${esc(status)}</span></summary><div class="form-grid">${renderStageFields(folded,e)}</div></details>`;
+  return `<section class="step-group pg01-disclosure pg01-disclosure-open"><div class="pg01-disclosure-head"><span>${esc(PG01_DISCLOSURE_TITLE)}</span><span class="conditional-tag">${esc(status)}</span></div><div class="form-grid">${renderStageFields(folded,e)}</div></section>`;
 }
 
 // Continuar never skips a canonical obligation. Requiredness and branch activity are read from the
@@ -114,8 +112,6 @@ function stagePendingRequired(e,stageId){
 function focusPendingField(fid){
   const host=document.querySelector(`.field[data-field="${fid}"]`);
   if(!host)return false;
-  const fold=host.closest&&host.closest('details.pg01-disclosure');
-  if(fold)fold.open=true;
   host.classList.add('field-pending');
   const control=host.querySelector('input,select,textarea,button');
   if(control&&typeof control.focus==='function')control.focus();
@@ -140,12 +136,12 @@ function bindPg01Context(){
     const key=el.dataset.pg01Company,fid=el.dataset.pg01Df||'';
     if(fid){setAnswer(fid,el.value);return}
     const before=co[key];if(String(before??'')===String(el.value??''))return;
-    co[key]=el.value;e.updatedAt=now();audit(`Empresa ${co.name}: ${key} actualizado desde PG01`);markDirty(`PG01 actualizado: ${key}`);
+    co[key]=el.value;e.updatedAt=now();audit(`Empresa ${co.name}: ${key} actualizado desde PG01`);markDirty(`PG01 actualizado: ${key}`);refreshCaptureProgress();
   })});
   document.querySelectorAll('[data-pg01-contact]').forEach(el=>el.addEventListener('input',()=>{
     const e=currentEng(),ct=e&&contactById(e.contactIds?.[0]);if(!e||!ct)return;
     const key=el.dataset.pg01Contact,before=ct[key];if(String(before??'')===String(el.value??''))return;
-    ct[key]=el.value;e.updatedAt=now();audit(`Contacto ${contactFullName(ct)}: ${key} actualizado desde PG01`);markDirty(`PG01 actualizado: contacto ${key}`);
+    ct[key]=el.value;e.updatedAt=now();audit(`Contacto ${contactFullName(ct)}: ${key} actualizado desde PG01`);markDirty(`PG01 actualizado: contacto ${key}`);refreshCaptureProgress();
   }));
   // Both boxes of the phone compound write the single Contact.Teléfono value.
   document.querySelectorAll('[data-pg01-phone]').forEach(el=>el.addEventListener('input',()=>{
@@ -153,13 +149,13 @@ function bindPg01Context(){
     const part=p=>document.querySelector(`[data-pg01-phone="${p}"]`)?.value||'';
     const next=phoneJoin(part('prefix'),part('number'));
     if(String(ct.phone??'')===next)return;
-    ct.phone=next;e.updatedAt=now();audit(`Contacto ${contactFullName(ct)}: phone actualizado desde PG01`);markDirty('PG01 actualizado: contacto phone');
+    ct.phone=next;e.updatedAt=now();audit(`Contacto ${contactFullName(ct)}: phone actualizado desde PG01`);markDirty('PG01 actualizado: contacto phone');refreshCaptureProgress();
   }));
   document.querySelectorAll('[data-pg01-contact-ref]').forEach(el=>el.addEventListener('change',()=>{if(el.value)setAnswer('DF006',el.value);render()}));
   document.querySelectorAll('[data-pg01-engagement]').forEach(el=>{
     const key=el.dataset.pg01Engagement;
     if(el.tagName==='BUTTON')el.onclick=()=>{const e=currentEng();if(!e)return;e[key]=el.dataset.value||'';e.updatedAt=now();markDirty(`PG01 actualizado: ${key}`);render()};
-    else el.addEventListener('input',()=>{const e=currentEng();if(!e)return;e[key]=el.value;e.updatedAt=now();markDirty(`PG01 actualizado: ${key}`)});
+    else el.addEventListener('input',()=>{const e=currentEng();if(!e)return;e[key]=el.value;e.updatedAt=now();markDirty(`PG01 actualizado: ${key}`);refreshCaptureProgress()});
   });
 }
 
@@ -211,6 +207,18 @@ function stageClientCard(stage){
     {accent:true,icon:c.shared?'◉':'◌'});
 }
 
+function captureProgressHtml(e,stage){
+  const completion=engagementCompletion(e);
+  const stat=completion.stage[stage.Stage_ID]||{applicable:0,answered:0,pct:100};
+  return `<div class="completion-headline" style="margin-bottom:8px">${completion.readyToCalculate?'<span class="status green">Listo para calcular</span>':`<span class="status amber">${completion.missing.length} pendiente${completion.missing.length===1?'':'s'}</span>`}</div>`
+    +kvRows([['En esta etapa',`${stat.answered} de ${stat.applicable} campo(s) con dato`],['Etapas revisadas',`${completion.stagesReviewed} de ${completion.stagesTotal}`],['Obligatorios',`${completion.requiredComplete} de ${completion.requiredApplicable}`],['Evidencia pendiente',String(completion.evidencePending.length)]]);
+}
+function refreshCaptureProgress(){
+  const e=currentEng(),host=document.getElementById('captureProgressLive');if(!e||!host)return;
+  const stage=schema.flow.find(x=>x.Stage_ID===(e.stageId||'S01'))||schema.flow[0];
+  host.innerHTML=captureProgressHtml(e,stage);
+}
+
 function stagePage(){
   const e=currentEng(),stage=schema.flow.find(x=>x.Stage_ID===(e.stageId||'S01'))||schema.flow[0];
   const fields=schema.fields.filter(f=>f.Stage_ID===stage.Stage_ID&&questionVisible(f,e));
@@ -234,12 +242,7 @@ function stagePage(){
     </div>`;
 
   const inspector=stageClientCard(stage)+stagePurposeCard(stage)+stageCoverageCard(stage,fields)
-    +insCard('Progreso de la captura',
-      `<div class="completion-headline" style="margin-bottom:8px">${completion.readyToCalculate?'<span class="status green">Listo para calcular</span>':`<span class="status amber">${completion.missing.length} pendiente${completion.missing.length===1?'':'s'}</span>`}</div>`
-      +kvRows([['En esta etapa',`${stageStat.answered} de ${stageStat.applicable} campo(s) con dato`],
-               ['Etapas revisadas',`${completion.stagesReviewed} de ${completion.stagesTotal}`],
-               ['Obligatorios',`${completion.requiredComplete} de ${completion.requiredApplicable}`],
-               ['Evidencia pendiente',String(completion.evidencePending.length)]]),{icon:'▥'});
+    +insCard('Progreso de la captura',`<div id="captureProgressLive">${captureProgressHtml(e,stage)}</div>`,{icon:'▥'});
 
   // The last stage carries no second calculate button: validationSummary owns that CTA, together with
   // the blockers that explain why it is or is not available. Two of them was one too many.
