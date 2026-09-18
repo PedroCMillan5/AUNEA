@@ -46,6 +46,12 @@ test('company table actions open in a floating layer above the table',()=>{
   assert.match(css,/\.company-table \.company-row\{cursor:pointer\}/);
 });
 
+test('company floating-menu Edit is handled by the delegated listener created after render',()=>{
+  assert.match(page,/closest\('\[data-edit-company\],\[data-archive-company\]/);
+  assert.match(page,/action\.dataset\.editCompany!==undefined/);
+  assert.match(page,/editCompany\(action\.dataset\.editCompany\)/);
+});
+
 test('company inspector related records provide direct governed navigation',()=>{
   assert.match(page,/data-company-open-contact/);
   assert.match(page,/data-company-edit-opportunity/);
