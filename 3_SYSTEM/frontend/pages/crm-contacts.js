@@ -67,7 +67,7 @@ function contactInspector(ct) {
   if(!ct)return intro+insCard('Datos del contacto','<div class="empty"><p>Selecciona un contacto de la tabla.</p></div>');
   const last=lastInteractionOf(ct.id),co=companyById(ct.companyId);
   const data=insCard('Datos del contacto',kvRows([['Empresa',esc(co?.name||'—')],['Nombre',esc(ct.firstName||'—')],['Apellidos',esc(ct.lastName||'—')],['Cargo',esc(ct.role||'—')],['Email',esc(ct.email||'—')],['Teléfono',esc(ct.phone||'—')],['Estado',`<span class="badge ${contactStatusClass(ct.status)}">${esc(ct.status||'—')}</span>`],['Contacto principal',`<button class="star-toggle ${isPrimaryContact(ct)?'on':''}" data-primary-contact="${attr(ct.id)}">${isPrimaryContact(ct)?'★':'☆'}</button> ${isPrimaryContact(ct)?'Sí':'No'}`],['Notas',`<div class="kv-box">${esc(ct.notes||'—')}<span class="char-count">${(ct.notes||'').length}/${CONTACT_NOTES_MAX}</span></div>`],['Última interacción',last?`${esc(formatDateEs(last.occurredAt))} · <button class="link-btn" data-contact-history="${attr(ct.id)}">Ver historial →</button>`:'—']]),{icon:'▤',action:`<button class="btn btn-small" data-edit-contact="${attr(ct.id)}">Editar</button>`});
-  return intro+data+insCard('Acciones rápidas',`<div class="quick-actions"><button class="btn btn-small" data-contact-interaction="${attr(ct.id)}">Registrar interacción</button><button class="btn btn-small btn-primary" data-contact-study="${attr(ct.id)}">Iniciar diagnóstico</button></div>`);
+  return intro+data;
 }
 function contactsPage() {
   const co=contactsPageCompany(),rows=visibleContacts(co?.id||null),selected=contactById(state.selectedContactId);
