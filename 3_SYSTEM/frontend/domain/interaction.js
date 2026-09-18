@@ -3,7 +3,7 @@
 //          Opportunity read the timeline, the last interaction and the pending follow-up as derived
 //          projections; none of them keeps a second editable copy (DEC-050/058).
 // SOURCE: DEC-058 (Interaction owns the event and Next_Followup_At); DEC-051 (entities stay separate);
-//         DEC-050 (single owner / single capture); Architecture Contract v1.2 row P03.
+//         DEC-050 (single owner / single capture); Architecture Contract v1.5 row P03.
 // INPUTS: state.interactions, state.companies, state.contacts, state.opportunities, state.engagements.
 // OUTPUTS: Interaction records and the timeline/last-interaction/next-follow-up projections.
 // SIDE_EFFECTS: state mutation and audit entries.
@@ -72,9 +72,10 @@ function readInteractionForm() {
     evidenceRef: v('iEvidence')
   };
 }
-function addInteraction() {
+function addInteraction(seed={}) {
   if (!state.companies.length) return toast('Crea primero una empresa.');
-  openModal('Nueva interacción', interactionFormBody(), () => {
+  const draft={companyId:seed.companyId||state.selectedCompanyId||state.companies[0]?.id||'',contactIds:seed.contactIds||[]};
+  openModal('Nueva interacción', interactionFormBody(draft), () => {
     const data = readInteractionForm();
     if (!data.subject) return toast('Indica el asunto.');
     state.interactions.push({ id: id('INT'), ...data, createdAt: now() });
