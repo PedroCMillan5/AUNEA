@@ -290,4 +290,21 @@ test('Oportunidades has nested Company then Contact filters',()=>{
   assert.match(shell,/if\(key==='companyId'\)state\.opportunityFilters\.contactId=''/);
 });
 
+test('Contact modal has one Active option and Contact rows use row click without checkbox',()=>{
+  const domain=read('domain/contact.js'),page=read('pages/crm-contacts.js'),css=read('ui-system.css');
+  assert.match(domain,/contactSelectControl\('cContactStatus','Estado',CONTACT_STATUS,ct\.status\|\|'Activo','Selecciona estado'\)/);
+  assert.doesNotMatch(page,/aria-label="Seleccionar \$\{attr\(contactFullName\(c\)\)\}"/);
+  assert.doesNotMatch(page,/<th><\/th><th>Nombre<\/th>/);
+  assert.match(page,/class="contact-row \$\{c\.id===sel\?'row-selected':''\}"/);
+  assert.match(css,/\.contact-row\{cursor:pointer\}/);
+});
+
+test('Interaction outcome badge sizes to text and never wraps',()=>{
+  const page=read('pages/crm-interactions.js'),css=read('ui-system.css');
+  assert.match(page,/class="interaction-outcome-cell"/);
+  assert.match(page,/badge interaction-outcome/);
+  assert.match(css,/\.interaction-outcome-cell\{width:1%;white-space:nowrap\}/);
+  assert.match(css,/\.interaction-outcome\{display:inline-flex;width:max-content;max-width:none;white-space:nowrap\}/);
+});
+
 // [AUNEA-UAT-CRM-010] END
