@@ -201,6 +201,12 @@
     },
     {
       "order": 34,
+      "layer": "uat",
+      "path": "uat/crm-fixtures.js",
+      "block_id": "AUNEA-UAT-CRM-DUMMY-030"
+    },
+    {
+      "order": 35,
       "layer": "boot",
       "path": "boot.js",
       "block_id": "AUNEA-FE-BOOT-INIT-010"
