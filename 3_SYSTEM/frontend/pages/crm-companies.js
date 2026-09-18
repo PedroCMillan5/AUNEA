@@ -10,7 +10,6 @@
 const COMPANY_TABS=['Todas','Clientes','Potenciales clientes','Colaboradores','Archivadas'];
 const COMPANY_TAB_STATUS={Clientes:'Cliente','Potenciales clientes':'Prospecto',Colaboradores:'Colaborador',Archivadas:'Archivada'};
 const visibleKey=v=>String(v||'').trim().toLocaleLowerCase('es');
-const countryLabel=v=>labelFrom('REF_COUNTRY_ISO3166',v)||v||'—';
 
 function visibleCompanies(){
   const f=state.companyFilters||{},q=(state.companySearch||'').toLowerCase().trim(),wanted=COMPANY_TAB_STATUS[state.companyTab];
@@ -18,9 +17,8 @@ function visibleCompanies(){
     if(wanted?c.status!==wanted:c.status==='Archivada')return false;
     if(f.sector&&visibleKey(companySectorLabel(c.sector))!==visibleKey(f.sector))return false;
     if(f.status&&c.status!==f.status)return false;
-    if(f.country&&visibleKey(countryLabel(c.country))!==visibleKey(f.country))return false;
     if(f.size&&companySizeBand(c)!==f.size)return false;
-    if(q&&![c.name,c.tradeName,companySectorLabel(c.sector),countryLabel(c.country)].some(v=>String(v||'').toLowerCase().includes(q)))return false;
+    if(q&&![c.name,c.tradeName,companySectorLabel(c.sector)].some(v=>String(v||'').toLowerCase().includes(q)))return false;
     return true;
   });
 }
@@ -41,7 +39,6 @@ function companyFilterRow(){
     ${companyFilterControl('sector','Sector',uniqueVisibleOptions(present(c=>c.sector),companySectorLabel))}
     ${companyFilterControl('size','Tamaño',[...new Set(present(c=>companySizeBand(c)).filter(v=>v!=='—'))].map(v=>({value:v,label:v})))}
     ${companyFilterControl('status','Estado',statuses)}
-    ${companyFilterControl('country','País',uniqueVisibleOptions(present(c=>c.country),countryLabel))}
     <button class="link-btn" id="clearCompanyFilters">Limpiar</button>
   </div>`;
 }
@@ -73,9 +70,9 @@ function companyActionMenu(c){return `<button type="button" class="kebab-btn" da
 function companyTable(rows){
   if(!rows.length)return `<div class="empty"><h2>Sin empresas con estos criterios</h2><p>Ajusta la búsqueda o los filtros, o crea una empresa nueva.</p></div>`;
   const sel=state.selectedCompanyId;
-  return `<div class="table-wrap"><table class="data-table company-table"><thead><tr><th>Empresa</th><th>Sector</th><th>Tamaño</th><th>País</th><th>Estado</th><th>Contacto principal</th><th>Fecha de alta</th><th>Acciones</th></tr></thead><tbody>${rows.map(c=>{
+  return `<div class="table-wrap"><table class="data-table company-table"><thead><tr><th>Empresa</th><th>Sector</th><th>Tamaño</th><th>Estado</th><th>Contacto principal</th><th>Fecha de alta</th><th>Acciones</th></tr></thead><tbody>${rows.map(c=>{
     const primary=contactById(c.primaryContactId);
-    return `<tr class="company-row ${c.id===sel?'row-selected':''}" data-select-company="${attr(c.id)}"><td><b>${esc(c.name)}</b>${c.tradeName?`<br><small>${esc(c.tradeName)}</small>`:''}</td><td>${esc(companySectorLabel(c.sector))}</td><td>${esc(companySizeBand(c))}</td><td>${esc(countryLabel(c.country))}</td><td><span class="badge ${companyStatusClass(c.status)}">${esc(companyStatusLabel(c.status))}</span></td><td>${primary?`<b>${esc(contactFullName(primary))}</b><br><small>${esc(primary.role||'')}</small>`:'<small>Sin asignar</small>'}</td><td>${esc(formatDateEs(c.createdAt))}</td><td>${companyActionMenu(c)}</td></tr>`;
+    return `<tr class="company-row ${c.id===sel?'row-selected':''}" data-select-company="${attr(c.id)}"><td><b>${esc(c.name)}</b>${c.tradeName?`<br><small>${esc(c.tradeName)}</small>`:''}</td><td>${esc(companySectorLabel(c.sector))}</td><td>${esc(companySizeBand(c))}</td><td><span class="badge ${companyStatusClass(c.status)}">${esc(companyStatusLabel(c.status))}</span></td><td>${primary?`<b>${esc(contactFullName(primary))}</b><br><small>${esc(primary.role||'')}</small>`:'<small>Sin asignar</small>'}</td><td>${esc(formatDateEs(c.createdAt))}</td><td>${companyActionMenu(c)}</td></tr>`;
   }).join('')}</tbody></table></div><div class="table-foot"><span>Mostrando ${rows.length} de ${state.companies.length} empresas</span></div>`;
 }
 
@@ -124,7 +121,7 @@ if(!window.__auneaCompanyActionsBound){
 
 function companiesPage(){
   const rows=visibleCompanies(),co=selectedCompany();if(co&&state.selectedCompanyId!==co.id)state.selectedCompanyId=co.id;
-  const main=`<div class="tabs">${COMPANY_TABS.map(t=>`<button class="tab ${t===(state.companyTab||'Todas')?'active':''}" data-company-tab="${attr(t)}">${esc(t)}</button>`).join('')}</div><div class="search-bar"><input id="companySearch" value="${attr(state.companySearch||'')}" placeholder="Buscar empresa, sector o ubicación..."></div>${companyFilterRow()}${companyTable(rows)}`;
+  const main=`<div class="tabs">${COMPANY_TABS.map(t=>`<button class="tab ${t===(state.companyTab||'Todas')?'active':''}" data-company-tab="${attr(t)}">${esc(t)}</button>`).join('')}</div><div class="search-bar"><input id="companySearch" value="${attr(state.companySearch||'')}" placeholder="Buscar empresa o sector..."></div>${companyFilterRow()}${companyTable(rows)}`;
   return pageTop('Empresas','Gestiona las empresas con las que trabaja AUNEA.',`<button class="btn btn-primary" id="addCompanyBtn">+ Nueva empresa</button>`,'I90-00-01')+workspace(main,companyInspector(co),{wide:true});
 }
 // [AUNEA-FE-PAGE-COMPANIES-010] END
