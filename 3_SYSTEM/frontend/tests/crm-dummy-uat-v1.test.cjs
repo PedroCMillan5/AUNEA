@@ -1,4 +1,4 @@
-// [AUNEA-UAT-CRM-DUMMY-030] START — CRM-only seed contract
+// [AUNEA-UAT-CRM-DUMMY-040] START — CRM-only seed contract
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const root=path.join(__dirname,'..');
 const src=fs.readFileSync(path.join(root,'uat/crm-fixtures.js'),'utf8');
@@ -50,4 +50,4 @@ test('UAT page exposes explicit load and cleanup actions',()=>{
   assert.match(src,/id="loadCrmDummy"/);assert.match(src,/id="clearCrmDummy"/);
   assert.match(src,/Cargar datos CRM de prueba/);assert.match(src,/Limpiar datos CRM de prueba/);
 });
-// [AUNEA-UAT-CRM-DUMMY-030] END
+// [AUNEA-UAT-CRM-DUMMY-040] END
