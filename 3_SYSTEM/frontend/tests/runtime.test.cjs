@@ -58,7 +58,7 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   assert.equal(typeof w.top,'object');assert.equal(typeof w.status,'string');
   assert.equal(d.querySelector('#uiModeToggle'),null);
   assert.ok(d.body.classList.contains('mode-internal'));
-  click('[data-page="contactos"]');click('#addCompanyBtn');fill('#cCoLegal','UAT Runtime empresa');click('#modalSave');
+  click('[data-page="contactos"]');click('#addCompanyBtn');fill('#cCoName','UAT Runtime empresa');click('#modalSave');
   click('#addContactBtn');fill('#cContactFirst','UAT Contacto');fill('#cContactEmail','uat@example.invalid');click('#modalSave');
   click('[data-contact-study]');
   // Opening a study lands on the session surface: the top bar switches to the session context and
