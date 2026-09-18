@@ -4,10 +4,11 @@ const page=fs.readFileSync(path.join(root,'pages/crm-companies.js'),'utf8');
 const domain=fs.readFileSync(path.join(root,'domain/company.js'),'utf8');
 const css=fs.readFileSync(path.join(root,'ui-system.css'),'utf8');
 
-test('Empresas projects sector labels to Spanish without rewriting canonical values',()=>{
-  assert.match(domain,/COMPANY_SECTOR_LABEL_ES/);
-  assert.match(domain,/professional services':'Servicios profesionales/);
-  assert.match(domain,/function companySectorLabel/);
+test('Empresas uses the CNAE-2025 business-sector catalogue and never treats REF_DOMAIN as sector',()=>{
+  assert.match(domain,/labelFrom\('REF_INDUSTRY_CNAE25',value\)/);
+  assert.match(domain,/fieldOptions\('REF_INDUSTRY_CNAE25'\)/);
+  assert.doesNotMatch(domain,/COMPANY_SECTOR_LABEL_ES/);
+  assert.match(domain,/legacyBusinessDomainId/);
   assert.match(page,/companySectorLabel\(c\.sector\)/);
 });
 
@@ -66,8 +67,8 @@ test('company inspector header keeps actions inline while company name may wrap'
 test('company modal uses one commercial name, Spanish sectors, range dropdowns and current AUNEA owner',()=>{
   assert.match(domain,/<label>Nombre comercial<\/label><input id="cCoName"/);
   assert.doesNotMatch(domain,/<label>Nombre legal<\/label>/);
-  assert.match(domain,/strategy & governance':'Estrategia y gobierno/);
-  assert.match(domain,/professional services delivery':'Prestación de servicios profesionales/);
+  assert.match(domain,/companySectorOptions\(\)/);
+  assert.match(domain,/fieldOptions\('REF_INDUSTRY_CNAE25'\)/);
   assert.match(domain,/COMPANY_EMPLOYEE_RANGE_OPTIONS/);
   assert.match(domain,/label:'1–10'/);
   assert.match(domain,/label:'Más de 1\.000'/);
