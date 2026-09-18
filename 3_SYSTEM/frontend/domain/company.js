@@ -58,12 +58,14 @@ const COMPANY_SECTOR_LABEL_ES = Object.freeze({
   'travel & tourism':'Viajes y turismo','travel and tourism':'Viajes y turismo','other':'Otro'
 });
 function companySectorLabel(value) {
-  const raw = labelFrom('REF_DOMAIN', value);
-  const key = String(raw || value || '').trim().toLowerCase();
-  return COMPANY_SECTOR_LABEL_ES[key] || raw || value || '—';
+  if(!value)return '—';
+  const label=labelFrom('REF_INDUSTRY_CNAE25',value);
+  if(label!==value)return label;
+  if(/^D\d{2}$/i.test(String(value)))return 'Pendiente de actualizar';
+  return String(value);
 }
 function companySectorOptions() {
-  return fieldOptions('REF_DOMAIN').map(o => ({ ...o, label: companySectorLabel(o.value) }));
+  return fieldOptions('REF_INDUSTRY_CNAE25');
 }
 function companySizeBand(company) {
   const n = Number(company?.employeeCount);
@@ -194,13 +196,20 @@ function archiveCompany(companyId) {
 function migrateCompaniesToCrmRecord(companies) {
   let changed = 0;
   for (const co of companies || []) {
-    if (co.status !== undefined && co.primaryContactId !== undefined) continue;
-    if (co.status === undefined) co.status = 'Prospecto';
-    if (co.primaryContactId === undefined) co.primaryContactId = null;
-    for (const k of ['tradeName', 'taxId', 'orgType', 'website', 'entryChannel', 'owner', 'notes']) if (co[k] === undefined) co[k] = '';
-    if (co.employeeCount === undefined) co.employeeCount = null;
-    if (!co.createdAt) co.createdAt = now();
-    changed++;
+    let touched=false;
+    // Antes de Master v1.2, DF002 usaba REF_DOMAIN (D01–D25), que describe áreas/procesos,
+    // no sectores empresariales. Se conserva el valor histórico pero no se inventa una equivalencia CNAE.
+    if(/^D\d{2}$/i.test(String(co.sector||''))){
+      if(co.legacyBusinessDomainId===undefined)co.legacyBusinessDomainId=co.sector;
+      co.sector='';
+      touched=true;
+    }
+    if (co.status === undefined) {co.status = 'Prospecto';touched=true}
+    if (co.primaryContactId === undefined) {co.primaryContactId = null;touched=true}
+    for (const k of ['tradeName', 'taxId', 'orgType', 'website', 'entryChannel', 'owner', 'notes']) if (co[k] === undefined) {co[k] = '';touched=true}
+    if (co.employeeCount === undefined) {co.employeeCount = null;touched=true}
+    if (!co.createdAt) {co.createdAt = now();touched=true}
+    if(touched)changed++;
   }
   return changed;
 }
