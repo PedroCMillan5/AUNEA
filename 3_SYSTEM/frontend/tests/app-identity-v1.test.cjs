@@ -3,6 +3,8 @@ const root=path.join(__dirname,'..');
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const css=fs.readFileSync(path.join(root,'ui-system.css'),'utf8');
 const project=fs.readFileSync(path.join(root,'domain/project.js'),'utf8');
+const state=fs.readFileSync(path.join(root,'core/state.js'),'utf8');
+const shell=fs.readFileSync(path.join(root,'ui/shell.js'),'utf8');
 
 test('shared shell uses the official logo and Pedro Carrasco consultant identity',()=>{
   assert.match(html,/assets\/brand\/Logo\.png/);
@@ -17,9 +19,10 @@ test('workspace pearl covers both main and content surfaces without white outer 
   assert.match(css,/\.content\{[^}]*max-width:none[^}]*background:#E6E6E6/);
 });
 
-test('content actions use a unified white button treatment',()=>{
-  assert.match(css,/\.content \.btn[^\{]*\{background:#fff;color:var\(--ink\);border-color:var\(--line\)\}/);
-  assert.match(css,/\.content \.hero-action \.arrow[^\{]*\{color:var\(--ink\)\}/);
+test('home navigation tiles stay white without overriding standard primary buttons',()=>{
+  assert.match(css,/\.content \.hero-action,\.content \.hero-action\.primary\{background:#fff;color:var\(--ink\);border-color:var\(--line\)\}/);
+  assert.match(css,/\.content \.hero-action \.arrow,\.content \.hero-action\.primary \.arrow\{color:var\(--ink\)\}/);
+  assert.doesNotMatch(css,/\.content \.btn[^\{]*\{background:#fff/);
 });
 
 test('select styling is centralized and all form controls preserve rounded geometry',()=>{
