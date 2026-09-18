@@ -7,7 +7,15 @@ function context(){
   const state={companies:[],contacts:[],interactions:[],opportunities:[],engagements:[{id:'REAL-ENG'}],projects:[{id:'REAL-PRJ'}],selectedCompanyId:null,selectedContactId:null,activePage:'uat'};
   const ctx={
     state,console,
-    pages:{uat:()=>''},postBind:()=>{},
+    pages:{uat:()=>''},postBind:()=>{},runVisibleUAT:async()=>{},
+    CONTACT_STATUS:['Activo','Pendiente','Inactivo'],
+    CONTACT_ROLE_OPTIONS:['Dirección general','Operaciones','Administración / Finanzas','Comercial / Ventas','Marketing','Personas / RR. HH.','Tecnología / IT','Producto','Compras','Legal / Compliance','Atención al cliente','Project Management / PMO','Responsable de área','Técnico / Especialista','Otro'],
+    OPPORTUNITY_STAGE:['Nueva','Contactada','Reunión','Diagnóstico','Propuesta','Ganada','Perdida','En pausa'],
+    INTERACTION_TYPE:['Reunión','Llamada','Email','Mensaje','Evento','Nota interna'],
+    INTERACTION_CHANNEL:['Presencial','Videollamada','Teléfono','Email','LinkedIn','Otro'],
+    INTERACTION_OUTCOME:['Sin resultado aún','Avanza','Requiere seguimiento','Bloqueado','Cerrado'],
+    inactivateContact:()=>true,reactivateContact:()=>true,createStudyFromOpportunity:()=>true,
+    uatStatusBadge:ok=>ok?'PASS':'FAIL',
     now:()=>new Date('2026-09-18T10:00:00Z').toISOString(),
     markDirty:()=>{},persistRecoverySnapshot:()=>{},render:()=>{},toast:()=>{},confirm:()=>true,
     esc:v=>String(v??''),section:()=>'',document:{getElementById:()=>null}
