@@ -307,4 +307,15 @@ test('Interaction outcome badge sizes to text and never wraps',()=>{
   assert.match(css,/\.interaction-outcome\{display:inline-flex;width:max-content;max-width:none;white-space:nowrap\}/);
 });
 
+test('Nuevo estudio uses nested Company then Contact selectors',()=>{
+  const core=read('core/state.js');
+  assert.match(core,/studyModalSelect\('mStudyCompany','Empresa'/);
+  assert.match(core,/studyModalSelect\('mStudyContact','Contacto principal'/);
+  assert.match(core,/if\(id==='mStudyCompany'\)/);
+  assert.match(core,/state\.contacts\.filter\(c=>c\.companyId===companyId&&c\.status!=='Inactivo'\)/);
+  assert.match(core,/Selecciona primero una empresa/);
+  assert.match(core,/El contacto debe pertenecer a la empresa seleccionada/);
+  assert.doesNotMatch(core,/Empresa UAT|\$\{esc\(companyById\(c\.companyId\)\?\.name\|\|''\)\} · \$\{esc\(contactFullName\(c\)\)\}/);
+});
+
 // [AUNEA-UAT-CRM-010] END
