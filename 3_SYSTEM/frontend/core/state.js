@@ -48,7 +48,7 @@ function blankState(){
     backendUrl:API_DEFAULT,backendOnline:false,returnTo:null,
     selectedCompanyId:null,selectedContactId:null,
     companyTab:'Todas',companySearch:'',companyFilters:{sector:'',size:'',status:''},
-    contactSearch:'',contactFilters:{role:'',status:'',language:''},
+    contactSearch:'',contactFilters:{role:'',status:'',includeInactive:false},
     companyInspectorTab:'Resumen',
     companies:[],contacts:[],interactions:[],opportunities:[],engagements:[],projects:[],audit:[]
   };
@@ -65,7 +65,7 @@ function loadState(){
 // cannot run inside loadState: state is built by the first module, and each migration lives with the
 // entity that owns its schema, several modules later. Boot calls it once everything is defined.
 function migrateLoadedState(){
-  const moved={companies:migrateCompaniesToCrmRecord(state.companies),contacts:migrateContactsToDec057(state.contacts),engagements:migrateEngagementsToLifecycle(state.engagements)};
+  const moved={companies:migrateCompaniesToCrmRecord(state.companies),contacts:migrateContactsToCurrentContract(state.contacts),engagements:migrateEngagementsToLifecycle(state.engagements)};
   if(moved.companies||moved.contacts||moved.engagements)audit(`Migración de almacenamiento: ${moved.companies} empresa(s), ${moved.contacts} contacto(s) y ${moved.engagements} estudio(s) actualizados al contrato vigente`);
   return moved;
 }
