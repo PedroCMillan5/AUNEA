@@ -3,7 +3,7 @@
 //          principal as a Company-owned relation, a real delete guarded by referential integrity,
 //          last interaction derived rather than stored, and the pipeline living on the case.
 // SOURCE: DEC-007/042/050/051/055/057/058; references IMG90-00-01 and IMG90-00-02 under DEC-056;
-//         Architecture Contract v1.2 rows P01–P04.
+//         Architecture Contract v1.4 rows P01–P04.
 // INPUTS: the CRM domain modules executed in an isolated vm context.
 // OUTPUTS: pass/fail assertions.
 // SIDE_EFFECTS: none (read-only, in-memory context).
@@ -25,7 +25,7 @@ function ctxWith(seed = {}) {
       companies: [], contacts: [], interactions: [], opportunities: [], engagements: [], projects: [], audit: [],
       selectedCompanyId: null, selectedContactId: null, ...seed
     },
-    schema: { option_sets: { REF_LANGUAGE_ISO6391: { options: [{ value: 'es', label: 'Español' }] }, REF_COUNTRY_ISO3166: { options: [{ value: 'ES', label: 'España' }] }, REF_DOMAIN: { options: [{ value: 'D08', label: 'Service Delivery' }] } } },
+    schema: { option_sets: { REF_LANGUAGE_ISO6391: { options: [{ value: 'es', label: 'Español' }] }, REF_COUNTRY_ISO3166: { options: [{ value: 'ES', label: 'España' }] }, REF_DOMAIN: { options: [{ value: 'D08', label: 'Prestación del servicio y gestión del trabajo' }] }, REF_INDUSTRY_CNAE25: { options: [{ value: 'CNAE25-N', label: 'Actividades profesionales, científicas y técnicas' }] } } },
     esc: v => String(v ?? ''), attr: v => String(v ?? ''),
     toast: () => {}, audit: m => ctx.state.audit.push({ m }), markDirty: () => {}, render: () => {},
     openModal: () => {}, closeModal: () => {}, confirm: () => true,
@@ -170,8 +170,8 @@ test('the next follow-up belongs to the interaction that scheduled it', () => {
 
 test('the company size band is derived from the canonical employee count', () => {
   const ctx = ctxWith();
-  assert.equal(ctx.companySizeBand({ employeeCount: 420 }), '250–500');
-  assert.equal(ctx.companySizeBand({ employeeCount: 5000 }), '> 1.000');
+  assert.equal(ctx.companySizeBand({ employeeCount: 420 }), '251–500');
+  assert.equal(ctx.companySizeBand({ employeeCount: 5000 }), 'Más de 1.000');
   assert.equal(ctx.companySizeBand({}), '—', 'an unknown size reads as unknown, never as a guess');
 });
 
@@ -210,6 +210,6 @@ test('Empresas reproduces the visible columns of IMG90-00-01, in order', () => {
   const src = read('pages/crm-companies.js');
   const head = src.slice(src.indexOf('<thead>'), src.indexOf('</thead>'));
   const cols = [...head.matchAll(/<th>([^<]*)<\/th>/g)].map(m => m[1].trim()).filter(Boolean);
-  assert.deepEqual(cols, ['Empresa', 'Sector', 'Tamaño', 'País', 'Estado', 'Contacto principal', 'Fecha de alta']);
+  assert.deepEqual(cols, ['Empresa', 'Sector', 'Tamaño', 'Estado', 'Contacto principal', 'Fecha de alta']);
 });
 // [AUNEA-UAT-CRM-010] END
