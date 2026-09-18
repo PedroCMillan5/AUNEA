@@ -11,11 +11,12 @@ test('Empresas projects sector labels to Spanish without rewriting canonical val
   assert.match(page,/companySectorLabel\(c\.sector\)/);
 });
 
-test('Empresas filter options are deduplicated by visible labels and archived is not duplicated in status filter',()=>{
-  assert.match(page,/function uniqueVisibleOptions/);
-  assert.match(page,/uniqueVisibleOptions\(present\(c=>c\.country\),countryLabel\)/);
-  assert.match(page,/visibleKey\(countryLabel\(c\.country\)\)/);
+test('Empresas omits country from filters, search and table while keeping archived out of status filter',()=>{
   assert.match(page,/COMPANY_STATUS\.filter\(v=>v!=='Archivada'\)/);
+  assert.doesNotMatch(page,/companyFilterControl\('country'/);
+  assert.doesNotMatch(page,/<th>País<\/th>/);
+  assert.doesNotMatch(page,/countryLabel\(c\.country\)/);
+  assert.match(page,/placeholder="Buscar empresa o sector\.\.\."/);
 });
 
 test('Empresas uses product-owned rounded dropdowns for its filters',()=>{
