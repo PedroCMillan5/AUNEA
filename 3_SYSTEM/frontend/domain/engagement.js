@@ -99,6 +99,7 @@ function buildConfirmedSnapshot(e) {
     })),
     priority: e.priority || '',
     contextSummary: e.contextSummary || '',
+    businessAreaId: e.businessAreaId || '',
     processName: e.answers?.DF011 || e.processName || '',
     answers: { ...(e.answers || {}) },
     answerDetails: { ...(e.answerDetails || {}) },
@@ -152,6 +153,7 @@ function engagementOfRecord(e) {
     frictions: snap.frictions,
     risks: snap.risks,
     economicInputs: snap.economicInputs,
+    businessAreaId: snap.businessAreaId || '',
     confirmedAsIs: true,
     confirmedSnapshotVersion: snap.version
   };
@@ -161,8 +163,11 @@ function engagementOfRecord(e) {
 function migrateEngagementsToLifecycle(list = state.engagements) {
   let moved = 0;
   (list || []).forEach(e => {
+    let touched=false;
     const mapped = engagementStatus(e);
-    if (e.status !== mapped) { e.status = mapped; moved++; }
+    if (e.status !== mapped) { e.status = mapped; touched=true; }
+    if(e.businessAreaId===undefined){e.businessAreaId='';touched=true}
+    if(touched)moved++;
   });
   return moved;
 }
