@@ -101,14 +101,14 @@ test('each stage declares the approved reference it reproduces', () => {
 });
 
 test('B02 VR-01A reproduces the twelve IMG90-01 visible fields in order', () => {
-  const labels=['Empresa','Persona de contacto','Cargo','Email','Teléfono','Sector','Tamaño de empresa','País / alcance','Tipo de organización','Prioridad','Canal de entrada','Resumen del contexto'];
+  const labels=['Empresa','Persona de contacto','Cargo','Email','Teléfono','Sector','Tamaño de empresa','Tipo de organización','Prioridad','Canal de entrada','Resumen del contexto'];
   let cursor=-1;
   for(const label of labels){
     const i=diagJs.indexOf(`pg01Field('${label}'`);
     assert.ok(i>cursor, `${label} must exist once and after the previous IMG90-01 field`);
     cursor=i;
   }
-  assert.equal((diagJs.match(/pg01Field\('/g)||[]).length,12,'PG01 must define exactly twelve top-level visible fields');
+  assert.equal((diagJs.match(/pg01Field\('/g)||[]).length,11,'PG01 must define exactly eleven top-level visible fields after País is removed from the visible composition');
   assert.match(diagJs, /stage\.Stage_ID==='S01'\?pg01ContextFields\(e\):renderStageFields\(fields,e\)/,'only PG01 gets the reference-specific composition');
 });
 
@@ -118,7 +118,7 @@ test('B02 owner bindings are single-owner and keep canonical S01 semantics intac
   assert.match(diagJs, /data-pg01-company="name" data-pg01-df="DF001"/);
   assert.match(diagJs, /data-pg01-company="sector" data-pg01-df="DF002"/);
   assert.match(diagJs, /data-pg01-company-size="1" disabled/,'company size is derived from employeeCount, never a second editable copy');
-  assert.match(diagJs, /data-pg01-company="country" data-pg01-df="DF005"/);
+  assert.doesNotMatch(diagJs, /data-pg01-company="country"|País \/ alcance/,'DF005 remains canonical but is not visible on PG01');
   assert.match(diagJs, /data-pg01-company="orgType"/);
   assert.match(diagJs, /data-pg01-company="entryChannel"/);
   assert.match(diagJs, /data-pg01-contact-ref="1"/);
@@ -131,16 +131,15 @@ test('B02 owner bindings are single-owner and keep canonical S01 semantics intac
   assert.match(noReaskJs, /if\(fid==='DF006'&&value\)\{e\.contactIds=\[value,/);
 });
 
-test('B03 VR-01B keeps DF004 and DF007-DF010 in a governed progressive-disclosure block', () => {
+test('B03 VR-01B keeps DF004 and DF007-DF010 in an always-open governed block', () => {
   assert.match(diagJs, /PG01_DISCLOSURE_IDS=Object\.freeze\(\['DF004','DF007','DF008','DF009','DF010'\]\)/);
-  assert.match(diagJs, /<details class="step-group pg01-disclosure"\$\{open\}>/,'the canonical remainder reuses the existing progressive-disclosure primitive');
+  assert.match(diagJs, /<section class="step-group pg01-disclosure pg01-disclosure-open">/,'the canonical remainder is always visible');
   assert.match(diagJs, /renderStageFields\(folded,e\)/,'folded questions still use the canonical renderer, never duplicate controls');
   assert.match(diagJs, /stage\.Stage_ID==='S01'\?pg01CanonicalDisclosure\(fields,e\):''/,'the disclosure exists only on PG01');
 });
 
-test('B03 auto-opens from the Diagnostic Master requiredness instead of duplicating a required-field list', () => {
+test('B03 status is driven by Diagnostic Master requiredness without duplicating a required-field list', () => {
   assert.match(diagJs, /f\.Requiredness==='REQUIRED_90M'&&questionVisible\(f,e\)&&!valuePresent\(effectiveValue\(f,e\)\)/);
-  assert.match(diagJs, /open=pending\.length\?' open':''/);
   const foldedIds=['DF004','DF007','DF008','DF009','DF010'];
   const folded=diagnosticSchema.fields.filter(f=>f.Stage_ID==='S01'&&foldedIds.includes(f.Field_ID));
   assert.equal(folded.length,5,'all five governed S01 remainder fields must come from the runtime Diagnostic Master');
@@ -162,7 +161,7 @@ test('C01 closes PG01 interaction detail: compound phone, canonical fold title a
   // and is wired into the Continuar button rather than living beside it.
   assert.match(diagJs, /function blockStageAdvance\(e\)/);
   assert.match(diagJs, /f\.Stage_ID===sid&&f\.Requiredness==='REQUIRED_90M'&&questionVisible\(f,e\)&&!valuePresent\(effectiveValue\(f,e\)\)/);
-  assert.match(diagJs, /const fold=host\.closest&&host\.closest\('details\.pg01-disclosure'\);\s*\n\s*if\(fold\)fold\.open=true/);
+  assert.doesNotMatch(diagJs, /closest\('details\.pg01-disclosure'\)/,'the block is no longer collapsible');
   const shellJs = fs.readFileSync(path.join(root, 'ui/shell.js'), 'utf8');
   assert.match(shellJs, /blockStageAdvance\(e\)\)return;if\(i<schema\.flow\.length-1\)/, 'Continuar must consult the gate before advancing');
 });
