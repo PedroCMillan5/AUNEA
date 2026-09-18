@@ -277,7 +277,44 @@ function createStudyFromContact(contactId){const ct=contactById(contactId),cp=co
 // contactHistory lived here and are retired: the first three are owned by domain/contact.js, company
 // archiving by domain/company.js, and contact history is now derived from domain/interaction.js
 // instead of being pattern-matched out of the audit log.
-function newStudy(){if(!state.contacts.length)return toast('Crea primero un contacto.');const opts=state.contacts.map(c=>`<option value="${c.id}">${esc(companyById(c.companyId)?.name||'')} · ${esc(contactFullName(c))}</option>`).join('');openModal('Nuevo estudio',`<div class="form-grid"><div class="field full"><label>Contacto principal</label><select id="mStudyContact">${opts}</select></div><div class="field full"><label>Nombre del estudio</label><input id="mStudyTitle" placeholder="Ej. Diagnóstico de intake comercial"></div></div>`,()=>{const ct=contactById(document.getElementById('mStudyContact').value);createStudyFromContact(ct.id);const e=currentEng(),title=document.getElementById('mStudyTitle')?.value?.trim();if(title)e.title=title;closeModal();render()})}
+function studyModalSelect(id,label,options,placeholder,disabled=false){
+  return `<div class="field full"><label>${esc(label)}</label><input type="hidden" id="${attr(id)}" value=""><details class="aunea-select contact-form-select ${disabled?'is-disabled':''}" data-study-select="${attr(id)}"><summary><span data-study-select-label="${attr(id)}">${esc(placeholder)}</span><i aria-hidden="true"></i></summary><div class="aunea-select-menu" role="listbox" aria-label="${attr(label)}">${disabled?'':options.map(o=>`<button type="button" role="option" data-study-select-option="${attr(id)}" data-value="${attr(o.value)}">${esc(o.label)}</button>`).join('')}</div></details></div>`;
+}
+function studyContactOptions(companyId){
+  return state.contacts.filter(c=>c.companyId===companyId&&c.status!=='Inactivo').map(c=>({value:c.id,label:contactFullName(c)})).sort((a,b)=>a.label.localeCompare(b.label,'es'));
+}
+function bindNewStudyNestedSelectors(){
+  document.querySelectorAll('[data-study-select-option]').forEach(btn=>btn.onclick=e=>{
+    e.preventDefault();e.stopPropagation();
+    const id=btn.dataset.studySelectOption,val=btn.dataset.value||'',input=document.getElementById(id);if(!input)return;
+    input.value=val;
+    const box=btn.closest('details.aunea-select'),label=box?.querySelector(`[data-study-select-label="${id}"]`);
+    if(label)label.textContent=btn.textContent.trim();if(box)box.open=false;
+    if(id==='mStudyCompany'){
+      const wrap=document.getElementById('mStudyContactWrap'),contacts=studyContactOptions(val);
+      if(wrap)wrap.innerHTML=studyModalSelect('mStudyContact','Contacto principal',contacts,contacts.length?'Selecciona contacto':'No hay contactos activos',!contacts.length);
+      bindNewStudyNestedSelectors();
+    }
+  });
+}
+function newStudy(){
+  if(!state.companies.length)return toast('Crea primero una empresa.');
+  const companies=state.companies.filter(c=>c.status!=='Archivada').map(c=>({value:c.id,label:c.name})).sort((a,b)=>a.label.localeCompare(b.label,'es'));
+  if(!companies.length)return toast('No hay empresas activas disponibles.');
+  openModal('Nuevo estudio',`<div class="form-grid">
+    ${studyModalSelect('mStudyCompany','Empresa',companies,'Selecciona empresa')}
+    <div id="mStudyContactWrap">${studyModalSelect('mStudyContact','Contacto principal',[],'Selecciona primero una empresa',true)}</div>
+    <div class="field full"><label>Nombre del estudio</label><input id="mStudyTitle" placeholder="Ej. Diagnóstico de intake comercial"></div>
+  </div>`,()=>{
+    const companyId=document.getElementById('mStudyCompany')?.value||'',contactId=document.getElementById('mStudyContact')?.value||'';
+    if(!companyId)return toast('Selecciona una empresa.');
+    if(!contactId)return toast('Selecciona un contacto de esa empresa.');
+    const ct=contactById(contactId);if(!ct||ct.companyId!==companyId)return toast('El contacto debe pertenecer a la empresa seleccionada.');
+    createStudyFromContact(ct.id);
+    const e=currentEng(),title=document.getElementById('mStudyTitle')?.value?.trim();if(title)e.title=title;closeModal();render();
+  });
+  bindNewStudyNestedSelectors();
+}
 
 function createProjectFromEngagement(){const e=currentEng();if(!e)return;const result=recordImplementationDecision(e);if(!result.ok){toast(result.error);state.activePage='implementacion';render();return}state.activePage='proyectos';render();toast(result.existing?'Este estudio ya tiene un proyecto vinculado.':'Proyecto creado con referencias a las versiones aprobadas.')}
 
