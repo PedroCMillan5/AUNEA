@@ -1,6 +1,6 @@
 // [AUNEA-UAT-STUDY-SUITE-050] START — 120-case full Study UAT suite
 // PURPOSE: Manual acceptance suite for the complete Engagement/Study lifecycle PG01–PG15, Session 2 and E2E robustness.
-// SOURCE: Diagnostic Master v1.2; AUNEA_SYSTEM_SIMULATOR_CANONICAL v1.10; Architecture Contract v1.5; DEC-050/051/052/053/054/055/059/060.
+// SOURCE: Diagnostic Master v1.2; AUNEA_SYSTEM_SIMULATOR_CANONICAL v1.11; Architecture Contract v1.6; DEC-050/051/052/053/054/055/059/060.
 // INPUTS: current UI/runtime; tester actions. This catalogue does not create business data by itself.
 // OUTPUTS: STUDY-UAT-001..120 catalogue and QA-only PASS/FAIL/PENDING progress.
 // SIDE_EFFECTS: QA progress only in state.studyUatResults; no CRM/business mutation.
