@@ -88,3 +88,16 @@ select option{background:#fff;color:var(--ink)}
 .contact-row:hover td{background:var(--system-soft)}
 .interaction-outcome-cell{width:1%;white-space:nowrap}
 .interaction-outcome{display:inline-flex;width:max-content;max-width:none;white-space:nowrap}
+
+
+/* PG01/session QA refinements */
+.required-mark{color:var(--red)!important}
+.nav-step.locked,.nav-step:disabled{background:rgba(255,255,255,.035)!important;color:rgba(219,232,225,.38)!important;cursor:not-allowed;opacity:.78}
+.nav-step.locked .nav-num,.nav-step:disabled .nav-num{border-color:rgba(255,255,255,.14);color:rgba(207,224,215,.38);background:rgba(255,255,255,.03)}
+.nav-step.locked:hover,.nav-step:disabled:hover{background:rgba(255,255,255,.035)!important;color:rgba(219,232,225,.38)!important}
+.pg01-disclosure-open{margin-top:18px;padding-top:18px;border-top:1px solid var(--line)}
+.pg01-disclosure-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;font-family:Sora,"Segoe UI",Arial,sans-serif;font-size:var(--font-h3);font-weight:700;color:var(--ink)}
+.topbar{grid-template-columns:minmax(180px,.75fr) minmax(220px,360px) minmax(0,1.45fr)}
+.topbar-right{min-width:0;gap:10px}
+.topbar-right #stepProgress{flex:0 0 auto;display:flex;align-items:center;gap:10px}
+.topbar-center{max-width:360px;justify-self:center}
