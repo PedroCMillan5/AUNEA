@@ -1,7 +1,7 @@
 # AUNEA — Project Rules
 
 Status: ACTIVE  
-Version: 1.6  
+Version: 1.7  
 Date: 2026-09-18
 
 This file is the repository-side operating contract for future work on AUNEA Internal.
@@ -74,6 +74,8 @@ Current canonical asset at this version of the rules:
 Drive ID: `1HRlB30kpziDc3WNPxMVj0HfXuRUdOgbW`.
 
 The previous `AUNEA_DIAGNOSTIC_DATABASE_v0.9_DIAGNOSTIC_MASTER_V1` is ARCHIVED and no longer governs new capture. Legacy runtime/storage snapshot names do not change the human canonical source.
+
+`Contact` operational scope is Spain-only in the initial Internal release: do not capture Country or Language on Contact. Contact role/title uses the governed generic role catalogue from DEC-061, Contact lifecycle is `Activo / Pendiente / Inactivo`, and ordinary UI inactivates/reactivates rather than hard-deleting. Inactive contacts remain historically referencable and are excluded from ordinary lists by default unless `Incluir inactivos` is enabled. Project creation is never owned by Contact; it remains downstream of an approved Engagement implementation decision under DEC-054.
 
 Sector/area ownership is explicit: `Company.Sector` / DF002 uses `REF_INDUSTRY_CNAE25` (CNAE-2025 section level). `REF_DOMAIN` represents functional/process domains and may be referenced by `RT_ENGAGEMENT.Business_Area_ID`; business area belongs to each Engagement and must never be duplicated as a Company attribute. Projects may inherit/reference the Engagement area. No engine may use Business_Area_ID unless a canonical rule explicitly declares it as a consumer.
 
