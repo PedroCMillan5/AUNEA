@@ -90,8 +90,7 @@ function companyInspector(co){
   }else{
     body=`<div class="ins-note" style="margin-bottom:10px"><b>Información general</b></div>`+kvRows([['Nombre comercial',esc(co.name)],['CIF',esc(co.taxId||'—')],['Sector',esc(companySectorLabel(co.sector))],['Tamaño',esc(companySizeBand(co)==='—'?'—':`${companySizeBand(co)} empleados`)],['Tipo de organización',esc(co.orgType||'—')],['Sitio web',co.website?`<a href="#" class="link-btn">${esc(co.website)}</a>`:'—'],['Estado',`<span class="badge ${companyStatusClass(co.status)}">${esc(companyStatusLabel(co.status))}</span>`],['Canal de entrada',esc(co.entryChannel||'—')],['Fecha de alta',esc(formatDateEs(co.createdAt))],['Responsable AUNEA',esc(co.owner||'—')],['Contacto principal',primary?esc(contactFullName(primary)):'—']]);
   }
-  const quick=insCard('Acciones rápidas',`<div class="quick-actions"><button class="btn btn-small" data-company-contacts="${attr(co.id)}">Ver contactos</button><button class="btn btn-small" data-company-opportunity="${attr(co.id)}">Nueva oportunidad</button><button class="btn btn-small" data-company-contact-new="${attr(co.id)}">Nuevo contacto</button><button class="btn btn-small" data-company-interaction="${attr(co.id)}">Registrar interacción</button></div>`);
-  return `<div class="ins-card">${head}${body}</div>${quick}`;
+  return `<div class="ins-card">${head}${body}</div>`;
 }
 
 // Delegated company actions survive rerenders. The capture listener also prevents the row click from
