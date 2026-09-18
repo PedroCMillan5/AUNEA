@@ -83,3 +83,8 @@ select option{background:#fff;color:var(--ink)}
 @media(max-width:1180px){.topbar{grid-template-columns:minmax(190px,1fr) minmax(220px,380px) auto}.topbar .backend-badge,.topbar .save-state{display:none}.breadcrumb{max-width:300px}}
 @media(max-width:900px){.topbar{display:flex;height:auto;min-height:70px;flex-wrap:wrap;padding:12px 16px}.topbar-center{order:3;flex:1 0 100%}.topbar-right{margin-left:auto}.topbar .step-progress{display:none}.content{min-height:calc(100vh - 70px)}.result-item-head{flex-direction:column}.result-actions{flex-wrap:wrap}.ins-head-actions{flex-wrap:wrap}}
 /* [AUNEA-FE-STYLE-APP-IDENTITY-010] END */
+
+.contact-row{cursor:pointer}
+.contact-row:hover td{background:var(--system-soft)}
+.interaction-outcome-cell{width:1%;white-space:nowrap}
+.interaction-outcome{display:inline-flex;width:max-content;max-width:none;white-space:nowrap}
