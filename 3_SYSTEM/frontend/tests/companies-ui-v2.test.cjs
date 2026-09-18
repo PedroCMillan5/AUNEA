@@ -84,11 +84,11 @@ test('company modal uses one commercial name, Spanish sectors, range dropdowns a
   assert.match(domain,/id="cCoOwner"[^>]*readonly/);
   assert.doesNotMatch(domain,/<label>País<\/label>/);
   assert.match(domain,/id="cCoCountry" value="\$\{attr\(co\.country \|\| 'ES'\)\}"/);
-  assert.match(css,/\.company-form-select\{position:relative;width:100%\}/);
+  assert.match(css,/\.company-form-select,\.contact-form-select\{position:relative;width:100%\}/);
 });
 
 test('Prospecto remains the internal status but is explained as Potencial cliente in the UI',()=>{
   assert.match(domain,/status === 'Prospecto' \? 'Potencial cliente'/);
-  assert.match(page,/Potenciales clientes/);
+  assert.doesNotMatch(page,/COMPANY_TABS|data-company-tab/);
   assert.match(page,/label:companyStatusLabel\(v\)/);
 });
