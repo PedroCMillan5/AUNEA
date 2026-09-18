@@ -12,7 +12,7 @@ function answerDetails(e=currentEng()){
   return e.answerDetails;
 }
 function getAnswerDetail(fid,e=currentEng()){return answerDetails(e)[fid]||''}
-function setAnswerDetail(fid,value){const e=currentEng();if(!e)return;answerDetails(e)[fid]=value;e.updatedAt=now();markDirty(`Detalle ${fid} actualizado`)}
+function setAnswerDetail(fid,value){const e=currentEng();if(!e)return;answerDetails(e)[fid]=value;e.updatedAt=now();markDirty(`Detalle ${fid} actualizado`);if(typeof refreshCaptureProgress==='function')refreshCaptureProgress()}
 function optionLabel(setId,value){return labelFrom(setId,value)}
 function selectedValues(v){return normalizeArray(v).map(String)}
 function isOtherAllowed(f){return /OTHER/i.test(String(f.Control_UI||''))||/Otro/i.test(String(f.Validation||''))}
@@ -39,14 +39,17 @@ function exclusiveValueFor(fid){return EXCLUSIVE_OPTION_BY_FIELD[fid]?.value}
 function multiChoices(fid,items,val,{detail=false,other=false}={}){
   const arr=selectedValues(val);
   const exclusiveValue=exclusiveValueFor(fid);
+  const catalogOther=other?items.find(x=>String(x.value).toUpperCase()==='OTHER'||String(x.label).trim().toLowerCase()==='otro'||String(x.label).trim().toLowerCase()==='otra'):null;
   const html=items.map(x=>{
     const isExclusive=exclusiveValue!==undefined&&String(x.value)===String(exclusiveValue);
-    return `<div class="choice"><input type="checkbox" id="${fid}_${attr(x.value)}" value="${attr(x.value)}" data-multi="${fid}" ${isExclusive?'data-exclusive="1"':''} ${arr.includes(String(x.value))?'checked':''}><label for="${fid}_${attr(x.value)}">${esc(x.label)}</label></div>`;
+    const isOther=!!catalogOther&&x===catalogOther;
+    return `<div class="choice"><input type="checkbox" id="${fid}_${attr(x.value)}" value="${attr(x.value)}" data-multi="${fid}" ${isExclusive?'data-exclusive="1"':''} ${isOther?`data-other-toggle="${fid}"`:''} ${arr.includes(String(x.value))?'checked':''}><label for="${fid}_${attr(x.value)}">${esc(x.label)}</label></div>`;
   }).join('');
-  const otherOpen=other&&!!getAnswerDetail(fid);
-  const otherToggle=other?`<div class="choice"><input type="checkbox" id="${fid}__other_toggle" data-other-toggle="${fid}" ${otherOpen?'checked':''}><label for="${fid}__other_toggle">+ Otro</label></div>`:'';
+  const syntheticOther=other&&!catalogOther;
+  const otherOpen=other&&(catalogOther?arr.includes(String(catalogOther.value)):!!getAnswerDetail(fid));
+  const otherToggle=syntheticOther?`<div class="choice"><input type="checkbox" id="${fid}__other_toggle" data-other-toggle="${fid}" ${otherOpen?'checked':''}><label for="${fid}__other_toggle">Otro</label></div>`:'';
   const detailBox=other
-    ?`<div class="detail-wrap" data-detail-wrap="${fid}"${otherOpen?'':' style="display:none"'}>${detailInput(fid,'Otro / detalle no cubierto por el catálogo')}</div>`
+    ?`<div class="detail-wrap" data-detail-wrap="${fid}"${otherOpen?'':' style="display:none"'}>${detailInput(fid,'Especifica la opción')}</div>`
     :(detail?detailInput(fid,'Detalle / condición relevante'):'');
   return `<div class="choice-grid">${html}${otherToggle}</div>${detailBox}`;
 }
@@ -72,7 +75,8 @@ function numberCompound(f,val){
 }
 // Excludes contacts marked 'Perdido' from reference pickers (DF007/DF016), reusing the same criterion
 // as the CRM's own "ocultar perdidos" filter — not a new archived flag, just consistent status reuse.
-function referenceableContacts(e){return state.contacts.filter(x=>x.companyId===e.companyId&&x.status!=='Perdido')}
+function referenceableContacts(e){return state.contacts.filter(x=>x.companyId===e.companyId&&x.status!=='Inactivo')}
+function referenceContactLabel(x){return typeof contactFullName==='function'?contactFullName(x):(x?.name||x?.email||x?.id||'Contacto')}
 function stepOptions(e,exclude=''){return e.processSteps.filter(x=>x.status!=='SUPERSEDED'&&x.id!==exclude).map(x=>({value:x.id,label:x.step_name||x.id}))}
 function stepMulti(fid,e,val){return multiChoices(fid,stepOptions(e),val)}
 function stepSingle(fid,e,val){return canonicalSelect(fid,stepOptions(e),val)}
@@ -139,9 +143,14 @@ function syncNextStep(fid){
 function renderControl(f,val,opts,e){
   const c=String(f.Control_UI||'').toUpperCase(),fid=f.Field_ID;
   if(c==='CRM_REFERENCE_OR_TEXT')return canonicalSelect(fid,state.companies.map(x=>({value:x.name,label:x.name})),val);
-  if(c==='CONTACT_REFERENCE')return canonicalSelect(fid,referenceableContacts(e).map(x=>({value:x.id,label:`${x.name}${x.role?' · '+x.role:''}`})),val);
-  if(c==='CONTACT_MULTISELECT')return multiChoices(fid,referenceableContacts(e).map(x=>({value:x.id,label:`${x.name}${x.role?' · '+x.role:''}`})),val);
-  if(c==='CONTACT_OR_ROLE_REFERENCE')return `<div class="compound-control">${canonicalSelect(fid,referenceableContacts(e).map(x=>({value:x.id,label:`${x.name}${x.role?' · '+x.role:''}`})),val)}${detailInput(fid,'Rol si aún no se conoce la persona')}</div>`;
+  if(c==='CONTACT_REFERENCE')return canonicalSelect(fid,referenceableContacts(e).map(x=>({value:x.id,label:`${referenceContactLabel(x)}${x.role?' · '+x.role:''}`})),val);
+  if(c==='CONTACT_MULTISELECT')return multiChoices(fid,referenceableContacts(e).map(x=>({value:x.id,label:`${referenceContactLabel(x)}${x.role?' · '+x.role:''}`})),val);
+  if(c==='CONTACT_OR_ROLE_REFERENCE'){
+    const ownerOpts=referenceableContacts(e).map(x=>({value:x.id,label:`${referenceContactLabel(x)}${x.role?' · '+x.role:''}`}));
+    ownerOpts.push({value:'OTHER',label:'Otro'});
+    const otherSelected=String(val)==='OTHER';
+    return `<div class="compound-control owner-reference-control">${canonicalSelect(fid,ownerOpts,val,`data-owner-reference="${fid}"`)}</div><div class="detail-wrap" data-owner-other-wrap="${fid}"${otherSelected?'':' style="display:none"'}>${detailInput(fid,'Nombre o rol del responsable del proceso')}</div>`;
+  }
   if(c==='SEARCHABLE_DROPDOWN')return searchableSelect(f,val,opts);
   if(c==='DROPDOWN')return canonicalSelect(fid,opts,val);
   if(c==='DROPDOWN_WITH_DETAIL')return canonicalSelect(fid,opts,val)+detailInput(fid,'Detalle si aplica');
@@ -180,6 +189,13 @@ function renderControl(f,val,opts,e){
 }
 
 function bindCanonicalRenderer(){
+  document.querySelectorAll('[data-owner-reference]').forEach(el=>el.addEventListener('change',()=>{
+    const fid=el.dataset.ownerReference,wrap=document.querySelector(`[data-owner-other-wrap="${fid}"]`);
+    if(wrap)wrap.style.display=el.value==='OTHER'?'':'none';
+    if(el.value!=='OTHER')setAnswerDetail(fid,'');
+    if(typeof refreshCaptureProgress==='function')refreshCaptureProgress();
+  }));
+
   document.querySelectorAll('[data-detail-answer]').forEach(el=>el.addEventListener('input',()=>setAnswerDetail(el.dataset.detailAnswer,el.value)));
   document.querySelectorAll('[data-nextstep-action]').forEach(el=>el.addEventListener('change',()=>{const fid=el.dataset.nextstepAction;answerDetails(currentEng())[`${fid}__action`]=el.value;syncNextStep(fid);render()}));
   document.querySelectorAll('[data-nextstep-other]').forEach(el=>el.addEventListener('input',()=>{const fid=el.dataset.nextstepOther;answerDetails(currentEng())[`${fid}__other`]=el.value;syncNextStep(fid)}));
