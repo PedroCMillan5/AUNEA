@@ -93,7 +93,7 @@ function contactFormBody(ct = {}) {
     <div class="field"><label>Apellidos</label><input id="cContactLast" value="${attr(ct.lastName || '')}"></div>
     <div class="field"><label>Email</label><input id="cContactEmail" type="email" value="${attr(ct.email || '')}"></div>
     <div class="field"><label>Teléfono</label><input id="cContactPhone" value="${attr(ct.phone || '')}"></div>
-    ${contactSelectControl('cContactStatus','Estado',CONTACT_STATUS,ct.status||'Activo','Activo')}
+    ${contactSelectControl('cContactStatus','Estado',CONTACT_STATUS,ct.status||'Activo','Selecciona estado')}
     <div class="field full"><label>Notas</label><textarea id="cContactNotes" maxlength="${CONTACT_NOTES_MAX}">${esc(ct.notes || '')}</textarea><div class="field-help">Máximo ${CONTACT_NOTES_MAX} caracteres.</div></div>
   </div>`;
 }
