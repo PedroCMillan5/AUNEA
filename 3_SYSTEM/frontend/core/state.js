@@ -49,6 +49,7 @@ function blankState(){
     selectedCompanyId:null,selectedContactId:null,
     companyTab:'Todas',companySearch:'',companyFilters:{sector:'',size:'',status:''},
     contactSearch:'',contactFilters:{role:'',status:'',includeInactive:false},
+    interactionFilters:{companyId:'',contactId:''},opportunityFilters:{companyId:'',contactId:''},
     companyInspectorTab:'Resumen',
     companies:[],contacts:[],interactions:[],opportunities:[],engagements:[],projects:[],audit:[]
   };
