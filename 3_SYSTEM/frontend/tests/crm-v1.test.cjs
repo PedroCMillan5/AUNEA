@@ -210,6 +210,6 @@ test('Empresas reproduces the visible columns of IMG90-00-01, in order', () => {
   const src = read('pages/crm-companies.js');
   const head = src.slice(src.indexOf('<thead>'), src.indexOf('</thead>'));
   const cols = [...head.matchAll(/<th>([^<]*)<\/th>/g)].map(m => m[1].trim()).filter(Boolean);
-  assert.deepEqual(cols, ['Empresa', 'Sector', 'Tamaño', 'Estado', 'Contacto principal', 'Fecha de alta']);
+  assert.deepEqual(cols, ['Empresa', 'Sector', 'Tamaño', 'Estado', 'Contacto principal', 'Fecha de alta', 'Acciones']);
 });
 // [AUNEA-UAT-CRM-010] END
