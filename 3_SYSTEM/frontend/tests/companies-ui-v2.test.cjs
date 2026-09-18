@@ -12,8 +12,8 @@ test('Empresas uses the CNAE-2025 business-sector catalogue and never treats REF
   assert.match(page,/companySectorLabel\(c\.sector\)/);
 });
 
-test('Empresas omits country from filters, search and table while keeping archived out of status filter',()=>{
-  assert.match(page,/COMPANY_STATUS\.filter\(v=>v!=='Archivada'\)/);
+test('Empresas omits country from filters, search and table and uses the status filter for archived records',()=>{
+  assert.match(page,/const statuses=COMPANY_STATUS\.map/);
   assert.doesNotMatch(page,/companyFilterControl\('country'/);
   assert.doesNotMatch(page,/<th>País<\/th>/);
   assert.doesNotMatch(page,/countryLabel\(c\.country\)/);
