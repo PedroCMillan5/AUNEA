@@ -1,6 +1,6 @@
 // [AUNEA-FE-DIAG-NOREASK-050] START — No-Reask, reuse and canonical branching
 // PURPOSE: Apply NR01–NR15 so previously captured/derived information is reused, contextualized and only reopened for an allowed reason.
-// SOURCE: Diagnostic Master v1.1 00_NO_REASK_RULES_V1; RULE_QUESTION_BRANCHING; REQ-DIAG-004/006; DEC-040.
+// SOURCE: Diagnostic Master v1.2 00_NO_REASK_RULES_V1; RULE_QUESTION_BRANCHING; REQ-DIAG-004/006; DEC-040.
 // INPUTS: Company/Contact/Engagement answers, Process Steps, Frictions, risks and evidence-tagged economics.
 // OUTPUTS: effective values, branch visibility, contextual rendering and branch-aware required gaps.
 // SIDE_EFFECTS: explicit corrections write through to the owning CRM/engagement source; derived confirmations are audit/UI metadata only; no engine outputs are calculated.
@@ -33,7 +33,7 @@ function valuePresent(v){if(v===undefined||v===null||v==='')return false;if(Arra
 function reusedValue(fid,e){
   const steps=activeSteps(e),fr=activeFrictions(e),c=companyById(e.companyId);
   if(fid==='DF001')return c?.name||e.answers?.DF001||'';
-  if(fid==='DF002')return canonicalValueFromLabel('REF_DOMAIN',c?.sector||e.answers?.DF002||'');
+  if(fid==='DF002')return canonicalValueFromLabel('REF_INDUSTRY_CNAE25',c?.sector||e.answers?.DF002||'');
   if(fid==='DF005')return canonicalValueFromLabel('REF_COUNTRY_ISO3166',c?.country||e.answers?.DF005||'');
   if(fid==='DF006')return e.contactIds?.[0]||e.answers?.DF006||'';
   if(fid==='DF017')return unique(steps.map(x=>x.actor));
@@ -160,8 +160,7 @@ function reuseSourceInfo(f){
 // attributes whose owner is unambiguous, so editing them from the diagnostic writes straight to the
 // Company master; the engagement keeps its own snapshot of the value it used, which DEC-050 requires.
 // Keyed on Write_Target, not Reuse_From: the Diagnostic Master's write target IS the canonical owner
-// of the value, while Reuse_From only says where the prefill came from. DF002 reuses
-// RT_COMPANY.Domain_ID but writes to RT_COMPANY.Sector, so only the write target identifies the owner.
+// of the value, while Reuse_From only says where the prefill came from. DF002 now reuses and writes RT_COMPANY.Sector, so only the write target identifies the owner.
 const COMPANY_WRITE_THROUGH=Object.freeze({
   'RT_COMPANY.Company_Name':'name','RT_COMPANY.Sector':'sector','RT_COMPANY.Country':'country',
   'RT_COMPANY.Employee_Count':'employeeCount','RT_COMPANY.Revenue_Band':'revenueBand'
