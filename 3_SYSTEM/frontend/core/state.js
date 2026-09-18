@@ -177,7 +177,7 @@ function renderRailHead(){
       <button class="btn btn-small" data-change-context="1">Cambiar</button>
       <button class="btn btn-small" data-clear-context="1">Quitar selección</button>
     </div>`:'';
-  host.innerHTML=`<div class="brand"><div class="brand-mark">A</div><div><strong>AUNEA</strong><span>SYSTEM</span></div></div>`
+  host.innerHTML=`<div class="brand"><img class="aunea-brand-logo" src="./assets/brand/Logo.png" alt="AUNEA System"></div>`
     +(e?`<div class="rail-context"><span class="rc-icon">▦</span><div><small>Contexto activo</small><b>${esc(c?.name||'Empresa')}</b><em>${esc(e.title||e.processName||'Diagnóstico')}</em>${activeStatus}</div></div>${actions}`:'');
 }
 
