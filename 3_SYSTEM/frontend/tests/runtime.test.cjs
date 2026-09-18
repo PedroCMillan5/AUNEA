@@ -84,6 +84,30 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
     assert.equal(w.eval('state.contacts[0].phone'),'+34 612 345 678');
     assert.equal(w.eval('typeof state.contacts[0].phonePrefix'),'undefined','no second phone attribute is created');
   });
+  await t.test('PG01 contextual Contact creation, conditional Otra and help popovers work in the real DOM',()=>{
+    const contactsBefore=w.eval('state.contacts.length');
+    const create=d.querySelector('[data-create-contact-for-field="DF007"]');assert.ok(create,'DF007 ofrece crear contacto');
+    create.click();
+    fill('#cContactFirst','Nueva decisora');
+    fill('#cContactEmail','decision@example.invalid');
+    click('#modalSave');
+    assert.equal(w.eval('state.contacts.length'),contactsBefore+1,'el contacto se crea en CRM');
+    const newId=w.eval('state.contacts[state.contacts.length-1].id');
+    assert.ok(Array.from(w.currentEng().answers.DF007||[]).includes(newId),'y queda seleccionado en DF007');
+
+    const other=d.querySelector('[data-multi="DF010"][value="OTHER"]');assert.ok(other,'DF010 incluye Otra');
+    const detail=d.querySelector('[data-detail-wrap="DF010"]');assert.ok(detail);
+    assert.equal(detail.style.display,'none','el detalle de Otra empieza oculto');
+    other.checked=true;other.dispatchEvent(new w.Event('change',{bubbles:true}));
+    assert.notEqual(detail.style.display,'none','el detalle aparece al seleccionar Otra');
+
+    const help=d.querySelector('.field[data-field="DF008"] [data-help-toggle]');assert.ok(help,'DF008 tiene ayuda');
+    const pop=d.getElementById(help.dataset.helpToggle);assert.ok(pop);
+    help.click();
+    assert.ok(pop.classList.contains('open'),'la ayuda se abre');
+    assert.match(pop.textContent,/Para qué sirve:/);
+  });
+
   // C01: Continuar refuses to skip a REQUIRED_90M field of S01; the canonical block is always visible.
   await t.test('C01 Continuar stops on a pending required field in the always-open block',()=>{
     const block=d.querySelector('section.pg01-disclosure');
