@@ -140,7 +140,7 @@ test('DF098 real interaction (jsdom, real runtime): action+owner+date consolidat
       const click=s=>{const el=d.querySelector(s);assert.ok(el,s);el.click()};
       const fill=(s,v)=>{const el=d.querySelector(s);assert.ok(el,s);el.value=v;el.dispatchEvent(new w.Event('change',{bubbles:true}))};
       await until(()=>d.querySelector('h1'));
-      click('[data-page="contactos"]');click('#addCompanyBtn');fill('#cCoLegal','DF098 UAT empresa');click('#modalSave');
+      click('[data-page="contactos"]');click('#addCompanyBtn');fill('#cCoName','DF098 UAT empresa');click('#modalSave');
       click('#addContactBtn');fill('#cContactFirst','DF098 UAT contacto');fill('#cContactEmail','df098@example.invalid');click('#modalSave');
       click('[data-contact-study]');
       // Stage navigation moved to the rail with the reference reconciliation: the in-page stage list
