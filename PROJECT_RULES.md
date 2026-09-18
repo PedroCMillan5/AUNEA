@@ -1,8 +1,8 @@
 # AUNEA — Project Rules
 
 Status: ACTIVE  
-Version: 1.5  
-Date: 2026-09-15
+Version: 1.6  
+Date: 2026-09-18
 
 This file is the repository-side operating contract for future work on AUNEA Internal.
 
@@ -70,10 +70,12 @@ The canonical diagnostic is maintained in Drive under:
 `02_NEGOCIO_CATALOGO/01_MAPA_OFERTA/00_DIAGNOSTIC_CANONICO`.
 
 Current canonical asset at this version of the rules:
-`AUNEA_DIAGNOSTIC_DATABASE_v0.9.1_DIAGNOSTIC_MASTER_V1.1.xlsx`  
-Drive ID: `1qKjbJviEvUQnHOGCHy4VkIx0dbdkoJj1`.
+`AUNEA_DIAGNOSTIC_DATABASE_v0.9.2_DIAGNOSTIC_MASTER_V1.2.xlsx`  
+Drive ID: `1HRlB30kpziDc3WNPxMVj0HfXuRUdOgbW`.
 
 The previous `AUNEA_DIAGNOSTIC_DATABASE_v0.9_DIAGNOSTIC_MASTER_V1` is ARCHIVED and no longer governs new capture. Legacy runtime/storage snapshot names do not change the human canonical source.
+
+Sector/area ownership is explicit: `Company.Sector` / DF002 uses `REF_INDUSTRY_CNAE25` (CNAE-2025 section level). `REF_DOMAIN` represents functional/process domains and may be referenced by `RT_ENGAGEMENT.Business_Area_ID`; business area belongs to each Engagement and must never be duplicated as a Company attribute. Projects may inherit/reference the Engagement area. No engine may use Business_Area_ID unless a canonical rule explicitly declares it as a consumer.
 
 Every diagnostic field must define, where applicable:
 - canonical ID;
