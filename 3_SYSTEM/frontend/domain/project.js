@@ -22,7 +22,7 @@ function recordImplementationDecision(e){
   const existing=state.projects.find(p=>p.engagementId===e?.id);if(existing)return {ok:true,project:existing,existing:true};
   const ready=projectDecisionReadiness(e);if(!ready.ok)return ready;
   const {review,tobe,spec}=ready;
-  const p={id:id('PRJ'),engagementId:e.id,companyId:e.companyId,contactIds:[...(e.contactIds||[])],auneaOwner:{...AUNEA_DEFAULT_PROJECT_OWNER},name:confirmedSnapshot(e)?.answers?.DF011||e.title,status:'Preparación',scenarioRef:{reviewId:review.id,scenarioId:review.sources.scenario.scenario_id},tobeRef:{version:tobe.version,snapshotVersion:tobe.sourceSnapshotVersion},solutionSpecificationRef:{id:spec.id,version:spec.version},actuals:[],outcomes:[],decision:{type:'IMPLEMENT',at:now()},createdAt:now(),updatedAt:now()};
+  const p={id:id('PRJ'),engagementId:e.id,companyId:e.companyId,contactIds:[...(e.contactIds||[])],businessAreaId:e.businessAreaId||'',auneaOwner:{...AUNEA_DEFAULT_PROJECT_OWNER},name:confirmedSnapshot(e)?.answers?.DF011||e.title,status:'Preparación',scenarioRef:{reviewId:review.id,scenarioId:review.sources.scenario.scenario_id},tobeRef:{version:tobe.version,snapshotVersion:tobe.sourceSnapshotVersion},solutionSpecificationRef:{id:spec.id,version:spec.version},actuals:[],outcomes:[],decision:{type:'IMPLEMENT',at:now()},createdAt:now(),updatedAt:now()};
   if(!advanceEngagementTo(e,'Cerrado','decisión de implementación'))return {ok:false,error:'El estudio ya no está en sesión de resultados.'};
   state.projects.unshift(p);e.projectId=p.id;markDirty('Decisión de implementación registrada; proyecto vinculado');return {ok:true,project:p};
 }
