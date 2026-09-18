@@ -18,45 +18,7 @@ const COMPANY_SIZE_BANDS = [
   { max: 500, label: '251–500' }, { max: 1000, label: '501–1.000' }, { max: Infinity, label: 'Más de 1.000' }
 ];
 
-// REF_DOMAIN may keep stable English/internal labels. The visible CRM surface is Spanish by contract;
-// this projection changes presentation only and never rewrites the stored canonical value.
-const COMPANY_SECTOR_LABEL_ES = Object.freeze({
-  'strategy & governance':'Estrategia y gobierno',
-  'marketing planning & content':'Planificación de marketing y contenidos',
-  'lead generation & inbound':'Generación de leads e inbound',
-  'sales & crm':'Ventas y CRM',
-  'proposal, contracting & commercial admin':'Propuestas, contratación y administración comercial',
-  'client intake & onboarding':'Alta y onboarding de clientes',
-  'project setup & planning':'Configuración y planificación de proyectos',
-  'service delivery & work management':'Prestación del servicio y gestión del trabajo',
-  'approvals, qa & exceptions':'Aprobaciones, calidad y excepciones',
-  'client communication & support':'Comunicación y soporte al cliente',
-  'customer success, renewal & retention':'Éxito del cliente, renovación y retención',
-  'billing, invoicing & collections':'Facturación y cobros',
-  'finance, accounting & management reporting':'Finanzas, contabilidad y reporting de gestión',
-  'procurement & vendor management':'Compras y gestión de proveedores',
-  'recruitment & hiring':'Reclutamiento y contratación',
-  'employee onboarding, hr ops & offboarding':'Onboarding, operaciones de RR. HH. y bajas',
-  'knowledge & document management':'Gestión del conocimiento y documental',
-  'data, reporting & bi':'Datos, reporting y BI',
-  'it, access, assets & security':'TI, accesos, activos y seguridad',
-  'compliance, legal & risk':'Cumplimiento, legal y riesgo',
-  'capacity, resource & scheduling':'Capacidad, recursos y planificación',
-  'training, events & community':'Formación, eventos y comunidad',
-  'field service & appointment operations':'Servicio de campo y gestión de citas',
-  'creative, agency & production operations':'Operaciones creativas, de agencia y producción',
-  'professional services delivery':'Prestación de servicios profesionales',
-  'professional services':'Servicios profesionales','financial services':'Servicios financieros','banking':'Banca',
-  'insurance':'Seguros','retail':'Comercio minorista','wholesale':'Comercio mayorista','manufacturing':'Industria / fabricación',
-  'healthcare':'Salud','health care':'Salud','education':'Educación','technology':'Tecnología','software':'Software',
-  'telecommunications':'Telecomunicaciones','logistics':'Logística','transportation':'Transporte','hospitality':'Hostelería',
-  'real estate':'Inmobiliario','construction':'Construcción','energy':'Energía','utilities':'Servicios públicos',
-  'public sector':'Sector público','government':'Administración pública','nonprofit':'Tercer sector','non-profit':'Tercer sector',
-  'media':'Medios','marketing & advertising':'Marketing y publicidad','marketing and advertising':'Marketing y publicidad',
-  'consulting':'Consultoría','legal services':'Servicios jurídicos','accounting':'Contabilidad','human resources':'Recursos humanos',
-  'automotive':'Automoción','agriculture':'Agricultura','food & beverage':'Alimentación y bebidas','food and beverage':'Alimentación y bebidas',
-  'travel & tourism':'Viajes y turismo','travel and tourism':'Viajes y turismo','other':'Otro'
-});
+// Company.Sector uses the official CNAE-2025 section catalogue. REF_DOMAIN is reserved for engagement/process area context.
 function companySectorLabel(value) {
   if(!value)return '—';
   const label=labelFrom('REF_INDUSTRY_CNAE25',value);
