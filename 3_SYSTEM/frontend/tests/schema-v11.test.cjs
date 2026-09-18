@@ -1,4 +1,4 @@
-// [AUNEA-UAT-SCHEMA-V12-010] START — Schema v1.2 regression
+// [AUNEA-UAT-SCHEMA-V11-010] START — Schema v1.2 regression
 const test=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
@@ -25,4 +25,4 @@ test('projects canonical Diagnostic Master v1.2 deltas over accepted base',()=>{
   assert.equal(out.process_step_model.length,20);
   assert.ok(out.process_step_model.some(x=>x.Field_Key==='communication_channels'));
 });
-// [AUNEA-UAT-SCHEMA-V12-010] END
+// [AUNEA-UAT-SCHEMA-V11-010] END
