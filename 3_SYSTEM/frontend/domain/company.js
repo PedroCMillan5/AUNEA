@@ -14,8 +14,8 @@ const COMPANY_STATUS = ['Cliente', 'Prospecto', 'Colaborador', 'En pausa', 'Arch
 const COMPANY_ORG_TYPE = ['Empresa privada', 'Empresa pública', 'Autónomo', 'Asociación', 'Sector público'];
 const COMPANY_ENTRY_CHANNEL = ['Recomendación', 'Contacto directo', 'Red personal', 'Inbound', 'Cliente existente'];
 const COMPANY_SIZE_BANDS = [
-  { max: 10, label: '1–10' }, { max: 50, label: '10–50' }, { max: 250, label: '50–250' },
-  { max: 500, label: '250–500' }, { max: 1000, label: '500–1.000' }, { max: Infinity, label: '> 1.000' }
+  { max: 10, label: '1–10' }, { max: 50, label: '11–50' }, { max: 250, label: '51–250' },
+  { max: 500, label: '251–500' }, { max: 1000, label: '501–1.000' }, { max: Infinity, label: 'Más de 1.000' }
 ];
 
 // REF_DOMAIN may keep stable English/internal labels. The visible CRM surface is Spanish by contract;
@@ -107,9 +107,19 @@ const COMPANY_EMPLOYEE_RANGE_OPTIONS = Object.freeze([
   {value:'1000',label:'501–1.000'},
   {value:'1001',label:'Más de 1.000'}
 ]);
+function companyEmployeeRangeValue(count) {
+  const n=Number(count);
+  if(!Number.isFinite(n)||n<=0)return '';
+  if(n<=10)return '10';
+  if(n<=50)return '50';
+  if(n<=250)return '250';
+  if(n<=500)return '500';
+  if(n<=1000)return '1000';
+  return '1001';
+}
 function companyFormBody(co = {}) {
   const owner=currentAuneaOwnerName();
-  const employeeValue=co.employeeCount?String((COMPANY_SIZE_BANDS.find(b=>Number(co.employeeCount)<=b.max)||{}).max||1001):'';
+  const employeeValue=companyEmployeeRangeValue(co.employeeCount);
   return `<div class="form-grid">
     <div class="field"><label>Nombre comercial</label><input id="cCoName" value="${attr(co.tradeName || co.name || '')}"><div class="field-help">DF001 · RT_COMPANY.Company_Name</div></div>
     <div class="field"><label>CIF / identificador fiscal</label><input id="cCoTaxId" value="${attr(co.taxId || '')}"></div>
