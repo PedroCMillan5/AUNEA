@@ -3,9 +3,9 @@
 //          canonical DF001–DF005 write targets, the primary-contact relation and the derived counters.
 //          Every other surface reuses this record read-only or writes through to it (DEC-050).
 // SOURCE: DEC-007 (one Company per company); DEC-050 (single owner / single capture);
-//         reference IMG90-00-01 (visible fields, states, order); Architecture Contract v1.3 row P01;
-//         Diagnostic Master DF001–DF005 write targets RT_COMPANY.*; PROJECT_RULES v1.5 Spanish-visible rule.
-// INPUTS: state.companies plus the canonical REF_DOMAIN / REF_COUNTRY_ISO3166 catalogues.
+//         reference IMG90-00-01 (visible fields, states, order); Architecture Contract v1.4 row P01;
+//         Diagnostic Master DF001–DF005 write targets RT_COMPANY.*; PROJECT_RULES v1.6 Spanish-visible rule.
+// INPUTS: state.companies plus REF_INDUSTRY_CNAE25 and the canonical Company context catalogues.
 // OUTPUTS: Company records and derived projections used across CRM, PG01 and deliverables.
 // SIDE_EFFECTS: state mutation and audit entries.
 // CHANGE_RISK: HIGH.
@@ -87,7 +87,7 @@ function companyFormBody(co = {}) {
   return `<div class="form-grid">
     <div class="field"><label>Nombre comercial</label><input id="cCoName" value="${attr(co.tradeName || co.name || '')}"><div class="field-help">DF001 · RT_COMPANY.Company_Name</div></div>
     <div class="field"><label>CIF / identificador fiscal</label><input id="cCoTaxId" value="${attr(co.taxId || '')}"></div>
-    ${companySelectControl('cCoSector','Sector',companySectorOptions(),co.sector||'','Sin indicar','DF002 · catálogo REF_DOMAIN')}
+    ${companySelectControl('cCoSector','Sector',companySectorOptions(),co.sector||'','Sin indicar','DF002 · CNAE-2025')}
     ${companySelectControl('cCoEmployees','Número de empleados',COMPANY_EMPLOYEE_RANGE_OPTIONS,employeeValue,'Sin indicar','DF003 · rango aproximado')}
     ${companySelectControl('cCoOrgType','Tipo de organización',COMPANY_ORG_TYPE.map(value=>({value,label:value})),co.orgType||'')}
     <div class="field"><label>Sitio web</label><input id="cCoWebsite" value="${attr(co.website || '')}" placeholder="www.ejemplo.com"></div>
@@ -108,7 +108,7 @@ function readCompanyForm() {
     entryChannel: v('cCoChannel'), owner: currentAuneaOwnerName(), notes: v('cCoNotes').slice(0, 500)
   };
 }
-if(!window.__auneaCompanyFormSelectBound){
+if(typeof window!=='undefined'&&!window.__auneaCompanyFormSelectBound){
   window.__auneaCompanyFormSelectBound=true;
   document.addEventListener('click',e=>{
     const option=e.target.closest('[data-company-select-option]');if(!option)return;
