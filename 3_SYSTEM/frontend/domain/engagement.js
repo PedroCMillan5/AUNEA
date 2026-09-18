@@ -65,7 +65,7 @@ function engagementAtLeast(e, status) {
 // Session Display reads live during the 90 minutes, and it is rebuilt on every render. This one is
 // the sealed record of what was actually confirmed when PG09 closed. Internal work reads it, so a
 // later edit to the Company or Contact master cannot silently change what the diagnosis was run on.
-const ENGAGEMENT_SNAPSHOT_SCHEMA = 1;
+const ENGAGEMENT_SNAPSHOT_SCHEMA = 2;
 
 function deepFreeze(o) {
   if (o && typeof o === 'object' && !Object.isFrozen(o)) {
