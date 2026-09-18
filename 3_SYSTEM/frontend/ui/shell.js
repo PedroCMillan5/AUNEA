@@ -85,6 +85,21 @@ function bindCrm(){
   document.querySelectorAll('[data-contact-company-option]').forEach(el=>el.onclick=e=>{e.stopPropagation();state.selectedCompanyId=el.dataset.contactCompanyOption||null;state.selectedContactId=null;render()});
   if(document.getElementById('clearContactCompany'))document.getElementById('clearContactCompany').onclick=()=>{state.selectedCompanyId=null;state.selectedContactId=null;render()};
 
+  document.querySelectorAll('[data-interaction-filter-option]').forEach(el=>el.onclick=e=>{
+    e.stopPropagation();const key=el.dataset.interactionFilterOption,val=el.dataset.value||'';
+    state.interactionFilters={...state.interactionFilters,[key]:val};
+    if(key==='companyId')state.interactionFilters.contactId='';
+    render();
+  });
+  if(document.getElementById('clearInteractionFilters'))document.getElementById('clearInteractionFilters').onclick=()=>{state.interactionFilters={companyId:'',contactId:''};render()};
+  document.querySelectorAll('[data-opportunity-filter-option]').forEach(el=>el.onclick=e=>{
+    e.stopPropagation();const key=el.dataset.opportunityFilterOption,val=el.dataset.value||'';
+    state.opportunityFilters={...state.opportunityFilters,[key]:val};
+    if(key==='companyId')state.opportunityFilters.contactId='';
+    render();
+  });
+  if(document.getElementById('clearOpportunityFilters'))document.getElementById('clearOpportunityFilters').onclick=()=>{state.opportunityFilters={companyId:'',contactId:''};render()};
+
   on('[data-edit-interaction]',el=>editInteraction(el.dataset.editInteraction));
   on('[data-delete-interaction]',el=>deleteInteraction(el.dataset.deleteInteraction));
   on('[data-edit-opportunity]',el=>editOpportunity(el.dataset.editOpportunity));
