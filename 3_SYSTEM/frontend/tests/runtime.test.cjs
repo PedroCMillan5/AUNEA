@@ -44,8 +44,9 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   // The rail carries the AUNEA SYSTEM brand, per the approved references. The product version is
   // not shown there and is surfaced on Configuración/Admin instead, so this checks both: the rail
   // reproduces the reference, and the version is still reachable rather than quietly dropped.
-  assert.match(d.querySelector('.brand strong').textContent,/AUNEA/);
-  assert.match(d.querySelector('.brand span').textContent,/SYSTEM/);
+  const railLogo=d.querySelector('#railHead .aunea-brand-logo');
+  assert.ok(railLogo,'el rail usa el logo oficial');
+  assert.match(railLogo.getAttribute('src'),/assets\/brand\/Logo\.png/);
   assert.doesNotMatch(d.querySelector('.sidebar').textContent,/v?2\.0\.0/i,'the rail must not carry a product version string');
   assert.equal(d.querySelectorAll('script:not([src])').length,0);
   for(const file of ['core/state.js','core/i18n.js','services/backend-client.js','services/schema.js','pages/diagnostic-stages.js','ui/renderer.js','domain/no-reask.js','domain/risk.js','domain/economics.js','domain/process-lifecycle.js','pages/results.js','domain/process.js','ui/process-help.js','services/engine-adapter.js','domain/completion.js','ui/shell.js','services/persistence.js','uat/visible.js','uat/fixtures.js','boot.js','styles.css','data/diagnostic-master.min.json'])assert.ok(requests.includes(file),file);
