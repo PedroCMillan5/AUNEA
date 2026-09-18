@@ -246,7 +246,7 @@ function renderQuestion(f,e){
   const clarification=FIELD_CLARIFICATION_ES[f.Field_ID];
   // Example and validation stay available — they are canonical guidance — but behind the existing
   // discreet help popover, because the reference shows a single explanatory line under the control.
-  const detail=[f.Ejemplo_ES?`<div><b>Ejemplo:</b> ${esc(f.Ejemplo_ES)}</div>`:'',
+  const detail=[f.Objetivo_concreto?`<div><b>Para qué sirve:</b> ${esc(f.Objetivo_concreto)}</div>`:'',f.Ejemplo_ES?`<div><b>Ejemplo:</b> ${esc(f.Ejemplo_ES)}</div>`:'',
                 f.Validation?`<div><b>Validación:</b> ${esc(f.Validation)}</div>`:'',
                 `<div class="internal-only"><b>${esc(f.Field_ID)}</b> · ${esc(f.Write_Target||'—')}</div>`,
                 f.Reuse_From?`<div class="internal-only technical-provenance"><b>Reuse_From:</b> ${esc(f.Reuse_From)} · <b>Reask_Policy:</b> ${esc(f.Reask_Policy||'—')}</div>`:''].join('');
@@ -261,6 +261,7 @@ function bindNoReask(){
   document.querySelectorAll('[data-close-context]').forEach(b=>b.onclick=()=>{const e=currentEng();delete reaskState(e)[b.dataset.closeContext];markDirty(`Edición explícita cerrada ${b.dataset.closeContext}`);render()});
   document.querySelectorAll('[data-goto-source]').forEach(b=>b.onclick=()=>setPage(b.dataset.gotoSource));
   document.querySelectorAll('[data-confirm-derived]').forEach(b=>b.onclick=()=>confirmDerivedValue(b.dataset.confirmDerived));
+  if(typeof bindHelpToggles==='function')bindHelpToggles();
 }
 const __auneaRendererBindForms=bindForms;
 bindForms=function(){__auneaRendererBindForms();bindNoReask();};
