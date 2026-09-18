@@ -42,7 +42,7 @@ function interactionRow(i) {
     <td>${esc(co?.name || '—')}</td>
     <td>${people.length ? esc(people.join(', ')) : '<small>—</small>'}</td>
     <td>${esc(i.type || '—')}<br><small>${esc(i.channel || '')} · ${esc(i.direction || '')}</small></td>
-    <td><span class="badge ${i.outcome === 'Avanza' ? 'ok' : i.outcome === 'Bloqueado' ? 'off' : i.outcome === 'Requiere seguimiento' ? 'wait' : ''}">${esc(i.outcome || '—')}</span></td>
+    <td class="interaction-outcome-cell"><span class="badge interaction-outcome ${i.outcome === 'Avanza' ? 'ok' : i.outcome === 'Bloqueado' ? 'off' : i.outcome === 'Requiere seguimiento' ? 'wait' : ''}">${esc(i.outcome || '—')}</span></td>
     <td>${i.nextFollowUpAt ? esc(formatDateEs(i.nextFollowUpAt)) : '—'}</td>
     <td><div class="row-actions"><button class="btn btn-small" data-edit-interaction="${attr(i.id)}">Editar</button><button class="btn btn-small btn-danger" data-delete-interaction="${attr(i.id)}">Eliminar</button></div></td>
   </tr>`;
@@ -54,7 +54,7 @@ function interactionsPage() {
   const upcoming = pendingFollowUp({companyId:f.companyId||null,contactId:f.contactId||null});
   const main = interactionFilterRow() + (all.length
     ? `<div class="table-wrap"><table class="data-table"><thead><tr>
-        <th>Fecha</th><th>Asunto</th><th>Empresa</th><th>Contactos</th><th>Tipo</th><th>Resultado</th><th>Próximo seguimiento</th><th></th>
+        <th>Fecha</th><th>Asunto</th><th>Empresa</th><th>Contactos</th><th>Tipo</th><th class="interaction-outcome-cell">Resultado</th><th>Próximo seguimiento</th><th></th>
       </tr></thead><tbody>${all.map(interactionRow).join('')}</tbody></table></div>
       <div class="table-foot"><span>${all.length} interacción(es) registradas</span></div>`
     : `<div class="empty"><h2>Sin interacciones con estos filtros</h2><p>Ajusta Empresa/Contacto o registra una nueva interacción.</p></div>`);
