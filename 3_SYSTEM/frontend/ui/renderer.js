@@ -1,6 +1,6 @@
 // [AUNEA-FE-DIAG-RENDER-040] START — Canonical control renderer
 // PURPOSE: Render Diagnostic Master controls without degrading structured semantics to generic text.
-// SOURCE: Diagnostic Master v1.1 CANONICAL; REQ-DIAG-003/005/006; DEC-040.
+// SOURCE: Diagnostic Master v1.2 CANONICAL; REQ-DIAG-003/005/006; DEC-040/061/062.
 // INPUTS: field contract, canonical option sets, engagement state.
 // OUTPUTS: HTML controls bound to canonical Field_ID values and structured detail metadata.
 // SIDE_EFFECTS: DOM listeners write engagement.answers / engagement.answerDetails only.
