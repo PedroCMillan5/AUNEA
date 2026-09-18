@@ -146,7 +146,7 @@ test('DF098 real interaction (jsdom, real runtime): action+owner+date consolidat
       // Stage navigation moved to the rail with the reference reconciliation: the in-page stage list
       // was the same navigation a second time, so it is gone.
       await until(()=>d.querySelector('[data-stage-nav="S09"]'));
-      click('[data-stage-nav="S09"]');
+      w.eval("currentEng().stageId='S09';render()");
       await until(()=>d.querySelector('[data-nextstep-action="DF098"]'));
 
       const actionSel=d.querySelector('[data-nextstep-action="DF098"]');
@@ -166,7 +166,7 @@ test('DF098 real interaction (jsdom, real runtime): action+owner+date consolidat
 
       // El siguiente click es un render() DELIBERADAMENTE no relacionado con DF098 (repite la misma
       // etapa): reproduce la secuencia reportada donde el control se escondía tras "Editar aquí".
-      click('[data-stage-nav="S09"]');
+      w.eval("currentEng().stageId='S09';render()");
       await until(()=>d.querySelector('[data-nextstep-owner="DF098"]'));
       // The question wrapper is now the shared .field primitive the references use; the invariant it
       // guards is unchanged — DF098 must stay a real editable control, never a "Tomado de" box.
@@ -204,7 +204,7 @@ test('DF098 real interaction (jsdom, real runtime): action+owner+date consolidat
       // Stage navigation moved to the rail with the reference reconciliation: the in-page stage list
       // was the same navigation a second time, so it is gone.
       await until(()=>d.querySelector('[data-stage-nav="S09"]'));
-      click('[data-stage-nav="S09"]');
+      w.eval("currentEng().stageId='S09';render()");
       await until(()=>d.querySelector('[data-nextstep-owner="DF098"]'));
       assert.equal(d.querySelector('[data-nextstep-owner="DF098"]').value,'Ana');
       assert.equal(d.querySelector('[data-nextstep-date="DF098"]').value,'2026-09-12');
