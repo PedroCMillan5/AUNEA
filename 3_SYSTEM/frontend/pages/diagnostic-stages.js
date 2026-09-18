@@ -68,7 +68,7 @@ function pg01ContextFields(e){
   // canonical completion contract sees the same value without creating another editable size field.
   if((e.answers.DF003===undefined||e.answers.DF003==='')&&Number.isFinite(Number(co.employeeCount))&&Number(co.employeeCount)>0)e.answers.DF003=Number(co.employeeCount);
   const contactOpts=contacts.map(c=>({value:c.id,label:typeof contactFullName==='function'?contactFullName(c):(c.name||c.email||c.id)}));
-  const sectorOpts=fieldOptions('REF_DOMAIN');
+  const sectorOpts=fieldOptions('REF_INDUSTRY_CNAE25');
   const countryOpts=fieldOptions('REF_COUNTRY_ISO3166');
   const orgOpts=(typeof COMPANY_ORG_TYPE!=='undefined'?COMPANY_ORG_TYPE:[]).map(v=>({value:v,label:v}));
   const channelOpts=(typeof COMPANY_ENTRY_CHANNEL!=='undefined'?COMPANY_ENTRY_CHANNEL:[]).map(v=>({value:v,label:v}));
@@ -163,6 +163,18 @@ function bindPg01Context(){
   });
 }
 
+function engagementBusinessAreaBlock(e){
+  const options=fieldOptions('REF_DOMAIN');
+  return `<div class="field full engagement-business-area" data-runtime-field="RT_ENGAGEMENT.Business_Area_ID">
+    <label>Área de la empresa <span class="prefill-chip">Propio de este estudio</span></label>
+    <select data-engagement-business-area="1">
+      <option value="">Selecciona el área principal del estudio…</option>
+      ${options.map(o=>`<option value="${attr(o.value)}" ${String(e.businessAreaId||'')===String(o.value)?'selected':''}>${esc(o.label)}</option>`).join('')}
+    </select>
+    <div class="field-help">Área o dominio funcional sobre el que se realiza este diagnóstico. Puede ser distinta en otros estudios de la misma empresa.</div>
+  </div>`;
+}
+
 // Which approved reference each stage reproduces, and what the client is looking at while it is
 // being captured. Both come from the 90-min UI Spec (§5 client states, §17 inventory), not from here.
 const STAGE_REFERENCE = {S01:'I90-01',S02:'I90-02',S03:'I90-03',S04:'I90-04',S05:'I90-05',S06:'I90-06',S07:'I90-07',S08:'I90-08',S09:'I90-09'};
@@ -211,9 +223,10 @@ function stagePage(){
   // Every other stage remains schema-driven.
   const stageFields=stage.Stage_ID==='S01'?pg01ContextFields(e):renderStageFields(fields,e);
   const pg01Disclosure=stage.Stage_ID==='S01'?pg01CanonicalDisclosure(fields,e):'';
+  const engagementArea=stage.Stage_ID==='S02'?engagementBusinessAreaBlock(e):'';
   const main=`<div class="card stage-card">
       ${stage.Stage_ID==='S01'?REQUIRED_LEGEND_HTML:(fields.some(f=>f.Requiredness==='REQUIRED_90M')?REQUIRED_LEGEND_HTML:'')}
-      <div class="form-grid">${stageFields}</div>
+      <div class="form-grid">${engagementArea}${stageFields}</div>
       ${pg01Disclosure}
       ${stage.Stage_ID==='S04'?processPrompt(e):''}${stage.Stage_ID==='S05'?frictionPrompt(e):''}
       ${stage.Stage_ID==='S06'?riskBuilder(e):''}${stage.Stage_ID==='S07'?economicBuilder(e):''}
@@ -278,6 +291,13 @@ const __auneaDiagFieldsBindForms=bindForms;
 bindForms=function(){
   __auneaDiagFieldsBindForms();
   bindPg01Context();
+  document.querySelectorAll('[data-engagement-business-area]').forEach(el=>el.onchange=()=>{
+    const e=currentEng();if(!e)return;
+    const before=e.businessAreaId||'',next=el.value||'';if(before===next)return;
+    e.businessAreaId=next;e.updatedAt=now();
+    invalidateDerivedState(e,'área del estudio actualizada');
+    markDirty('Área del estudio actualizada');
+  });
   document.querySelectorAll('[data-goto-stage]').forEach(b=>b.onclick=()=>{const e=currentEng();if(e)e.stageId=b.dataset.gotoStage;render()});
   document.querySelectorAll('[data-open-gate-review]').forEach(b=>b.onclick=()=>openEngineGateReview());
   const sd=document.getElementById('saveDraft');if(sd)sd.onclick=()=>saveState('Borrador guardado');
