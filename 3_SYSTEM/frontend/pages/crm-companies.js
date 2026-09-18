@@ -7,14 +7,11 @@
 // SIDE_EFFECTS: delegated UI actions call governed domain operations; no duplicate business state.
 // CHANGE_RISK: MEDIUM.
 
-const COMPANY_TABS=['Todas','Clientes','Potenciales clientes','Colaboradores','Archivadas'];
-const COMPANY_TAB_STATUS={Clientes:'Cliente','Potenciales clientes':'Prospecto',Colaboradores:'Colaborador',Archivadas:'Archivada'};
 const visibleKey=v=>String(v||'').trim().toLocaleLowerCase('es');
 
 function visibleCompanies(){
-  const f=state.companyFilters||{},q=(state.companySearch||'').toLowerCase().trim(),wanted=COMPANY_TAB_STATUS[state.companyTab];
+  const f=state.companyFilters||{},q=(state.companySearch||'').toLowerCase().trim();
   return state.companies.filter(c=>{
-    if(wanted?c.status!==wanted:c.status==='Archivada')return false;
     if(f.sector&&visibleKey(companySectorLabel(c.sector))!==visibleKey(f.sector))return false;
     if(f.status&&c.status!==f.status)return false;
     if(f.size&&companySizeBand(c)!==f.size)return false;
@@ -34,7 +31,7 @@ function companyFilterControl(key,label,options){
 }
 function companyFilterRow(){
   const present=get=>state.companies.map(get).filter(Boolean);
-  const statuses=COMPANY_STATUS.filter(v=>v!=='Archivada').map(v=>({value:v,label:companyStatusLabel(v)}));
+  const statuses=COMPANY_STATUS.map(v=>({value:v,label:companyStatusLabel(v)}));
   return `<div class="filter-row">
     ${companyFilterControl('sector','Sector',uniqueVisibleOptions(present(c=>c.sector),companySectorLabel))}
     ${companyFilterControl('size','Tamaño',[...new Set(present(c=>companySizeBand(c)).filter(v=>v!=='—'))].map(v=>({value:v,label:v})))}
@@ -122,7 +119,9 @@ if(!window.__auneaCompanyActionsBound){
 
 function companiesPage(){
   const rows=visibleCompanies(),co=selectedCompany();if(co&&state.selectedCompanyId!==co.id)state.selectedCompanyId=co.id;
-  const main=`<div class="tabs">${COMPANY_TABS.map(t=>`<button class="tab ${t===(state.companyTab||'Todas')?'active':''}" data-company-tab="${attr(t)}">${esc(t)}</button>`).join('')}</div><div class="search-bar"><input id="companySearch" value="${attr(state.companySearch||'')}" placeholder="Buscar empresa o sector..."></div>${companyFilterRow()}${companyTable(rows)}`;
-  return pageTop('Empresas','Gestiona las empresas con las que trabaja AUNEA.',`<button class="btn btn-primary" id="addCompanyBtn">+ Nueva empresa</button>`,'I90-00-01')+workspace(main,companyInspector(co),{wide:true});
+  const main=`<div class="search-bar"><input id="companySearch" value="${attr(state.companySearch||'')}" placeholder="Buscar empresa o sector..."></div>${companyFilterRow()}${companyTable(rows)}`;
+  const left=co&&co.status!=='Archivada'?`<button class="btn btn-danger" data-archive-company="${attr(co.id)}">Archivar empresa</button>`:'';
+  const right=co?`<button class="btn" data-edit-company="${attr(co.id)}">Editar empresa</button><button class="btn" data-company-contacts="${attr(co.id)}">Ver contactos</button><button class="btn" data-company-contact-new="${attr(co.id)}">Nuevo contacto</button><button class="btn" data-company-opportunity="${attr(co.id)}">Nueva oportunidad</button><button class="btn btn-primary" data-company-interaction="${attr(co.id)}">Registrar interacción</button>`:'';
+  return pageTop('Empresas','Gestiona las empresas con las que trabaja AUNEA.',`<button class="btn btn-primary" id="addCompanyBtn">+ Nueva empresa</button>`,'I90-00-01')+workspace(main,companyInspector(co),{wide:true})+actionBar(left,right);
 }
 // [AUNEA-FE-PAGE-COMPANIES-010] END
