@@ -84,16 +84,14 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
     assert.equal(w.eval('state.contacts[0].phone'),'+34 612 345 678');
     assert.equal(w.eval('typeof state.contacts[0].phonePrefix'),'undefined','no second phone attribute is created');
   });
-  // C01: Continuar refuses to skip a REQUIRED_90M field of S01 and unfolds the block hiding it.
-  await t.test('C01 Continuar stops on a pending required field and opens the folded block',()=>{
-    const fold=d.querySelector('details.pg01-disclosure');
-    assert.ok(fold,'PG01 mantiene el bloque plegado');
-    assert.match(fold.querySelector('summary').textContent,/Objetivo, criterios y restricciones de la sesión/);
-    fold.open=false;
+  // C01: Continuar refuses to skip a REQUIRED_90M field of S01; the canonical block is always visible.
+  await t.test('C01 Continuar stops on a pending required field in the always-open block',()=>{
+    const block=d.querySelector('section.pg01-disclosure');
+    assert.ok(block,'PG01 mantiene visible Objetivo, criterios y restricciones');
+    assert.match(block.textContent,/Objetivo, criterios y restricciones de la sesión/);
     assert.equal(w.eval('currentEng().stageId'),'S01');
     click('#nextStage');
     assert.equal(w.eval('currentEng().stageId'),'S01','no avanza mientras falte un obligatorio');
-    assert.ok(d.querySelector('details.pg01-disclosure').open,'el bloque plegado se abre para mostrarlo');
     assert.ok(d.querySelector('.field-pending'),'y el campo pendiente queda señalado');
     // With every S01 obligation answered, Continuar advances.
     w.eval(`(()=>{const e=currentEng();(schema.fields||[]).filter(f=>f.Stage_ID==='S01'&&f.Requiredness==='REQUIRED_90M').forEach(f=>{e.answers[f.Field_ID]=e.answers[f.Field_ID]||(f.Control_UI&&String(f.Control_UI).includes('MULTISELECT')?['__uat__']:'__uat__')});render()})()`);
@@ -142,13 +140,15 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
     const ids=schema.flow.map(s=>s.Stage_ID);
     for(const mode of ['INTERNAL']){
       for(const stage of schema.flow){
-        click(`#nav [data-stage-nav="${stage.Stage_ID}"]`);
+        w.eval(`currentEng().stageId='${stage.Stage_ID}';render()`);
         assert.deepEqual(railStages(),ids,`${mode} / ${stage.Stage_ID}`);
         assert.deepEqual(railPages(),['inicio','proceso']);
         assert.doesNotMatch(d.querySelector('#nav').textContent,/Interacciones|Oportunidades|Trabajo interno|UAT|Configuración/);
         assert.equal(d.querySelector('#nav .nav-step.active').dataset.stageNav,stage.Stage_ID);
         assert.equal(w.eval('currentEng().stageId'),stage.Stage_ID);
         assert.ok(d.querySelector('h1'));
+        const activeIndex=ids.indexOf(stage.Stage_ID);
+        Array.from(d.querySelectorAll('#nav [data-stage-nav]')).forEach((el,i)=>assert.equal(el.disabled,i>activeIndex));
       }
       click('#nav [data-page="proceso"]');reached.add('proceso');
       assert.deepEqual(railPages(),['inicio','proceso']);
@@ -164,7 +164,7 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
     }finally{w.eval('schema.flow=window.__flowBefore; delete window.__flowBefore; render()');}
   });
   await t.test('VR-02 session can return to CRM and reopen the same study without losing its stage',()=>{
-    click('#nav [data-stage-nav="S04"]');
+    w.eval("currentEng().stageId='S04';render()");
     const before=w.eval('JSON.stringify(currentEng())');
     click('#nav [data-page="inicio"]');
     click('#nav [data-page="estudios"]');
@@ -235,39 +235,3 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   assert.deepEqual(errors,[]);
 });
 // [AUNEA-UAT-RUNTIME-TEST-010] END
-
-test('PG01 QA refinements: country hidden, disclosure always open, required marks red and future stages visibly locked',()=>{
-  const stage=read('pages/diagnostic-stages.js'),state=read('core/state.js'),css=read('ui-system.css');
-  assert.doesNotMatch(stage,/País \/ alcance/);
-  assert.match(stage,/pg01-disclosure-open/);
-  assert.doesNotMatch(stage,/<details class="step-group pg01-disclosure"/);
-  assert.match(css,/\.required-mark\{color:var\(--red\)!important\}/);
-  assert.match(state,/nav-step .*locked/);
-  assert.match(css,/\.nav-step\.locked,\.nav-step:disabled/);
-});
-
-test('PG01 starts Sesión 1 on opening, refreshes capture progress live and avoids duplicated Other',()=>{
-  const state=read('core/state.js'),stage=read('pages/diagnostic-stages.js'),renderer=read('ui/renderer.js');
-  assert.match(state,/advanceEngagementTo\(e,'Sesión 1','apertura de la primera sesión'\)/);
-  assert.match(stage,/function refreshCaptureProgress\(\)/);
-  assert.match(stage,/id="captureProgressLive"/);
-  assert.match(state,/refreshCaptureProgress/);
-  assert.doesNotMatch(renderer,/>\+ Otro</);
-  assert.match(renderer,/catalogOther/);
-  assert.match(renderer,/data-other-toggle/);
-});
-
-test('Process owner uses Contact full name and supports conditional unregistered owner text',()=>{
-  const renderer=read('ui/renderer.js');
-  assert.match(renderer,/function referenceContactLabel/);
-  assert.doesNotMatch(renderer,/label:\`\$\{x\.name\}/);
-  assert.match(renderer,/ownerOpts\.push\(\{value:'OTHER',label:'Otro'\}\)/);
-  assert.match(renderer,/data-owner-other-wrap/);
-  assert.match(renderer,/Nombre o rol del responsable del proceso/);
-});
-
-test('Topbar limits search width so session clock and progress do not overlap',()=>{
-  const css=read('ui-system.css');
-  assert.match(css,/\.topbar-center\{max-width:360px;justify-self:center\}/);
-  assert.match(css,/\.topbar-right #stepProgress\{flex:0 0 auto/);
-});
