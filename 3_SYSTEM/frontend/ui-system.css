@@ -49,6 +49,11 @@ select option{background:#fff;color:var(--ink)}
 .row-menu-popover button{width:100%;border:0;background:#fff;color:var(--ink);text-align:left;padding:9px 10px;border-radius:var(--radius-xs);font:inherit;cursor:pointer}
 .row-menu-popover button:hover{background:var(--system-soft)}
 .row-menu-popover .danger-text{color:var(--red)}
+.company-floating-menu{position:fixed;z-index:5000;right:auto;bottom:auto}
+.company-form-select{position:relative;width:100%}
+.company-form-select summary{width:100%;box-sizing:border-box}
+.company-form-select .aunea-select-menu{width:100%;min-width:100%;box-sizing:border-box}
+.company-form-select .aunea-select-menu button{white-space:normal}
 
 .company-ins-head{align-items:flex-start;gap:12px}.company-ins-head h3{min-width:0;flex:1;overflow-wrap:anywhere;word-break:break-word}.ins-head-actions{display:flex;gap:6px;flex:0 0 auto;flex-wrap:nowrap;justify-content:flex-end;white-space:nowrap}
 .result-item-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.result-item-head>div:first-child{min-width:0;flex:1}.result-actions{display:flex;gap:6px;flex-wrap:nowrap;flex:0 0 auto}
