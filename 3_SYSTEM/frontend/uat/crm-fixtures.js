@@ -60,13 +60,14 @@ function crmDummyNow(offsetDays=0,hour=10){
 }
 function crmDummySeed(){
   const companies=[
-    {id:'DUMMY-CRM-CMP-001',name:'Nexo Consultoría',tradeName:'',taxId:'B10000001',sector:'CNAE25-N',employeeCount:32,country:'ES',orgType:'Empresa privada',website:'https://nexo.example',status:'Cliente',entryChannel:'Referido',owner:'Pedro Carrasco',notes:'DUMMY CRM · servicios profesionales',primaryContactId:'DUMMY-CRM-CON-001',createdAt:crmDummyNow(-120)},
+    {id:'DUMMY-CRM-CMP-001',name:'Nexo Consultoría',tradeName:'',taxId:'B10000001',sector:'CNAE25-N',employeeCount:32,country:'ES',orgType:'Empresa privada',website:'https://nexo.example',status:'Cliente',entryChannel:'Recomendación',owner:'Pedro Carrasco',notes:'DUMMY CRM · servicios profesionales',primaryContactId:'DUMMY-CRM-CON-001',createdAt:crmDummyNow(-120)},
     {id:'DUMMY-CRM-CMP-002',name:'Levante Retail',tradeName:'',taxId:'B10000002',sector:'CNAE25-G',employeeCount:180,country:'ES',orgType:'Empresa privada',website:'https://levante.example',status:'Prospecto',entryChannel:'Red personal',owner:'Pedro Carrasco',notes:'DUMMY CRM · comercio',primaryContactId:'DUMMY-CRM-CON-003',createdAt:crmDummyNow(-80)},
     {id:'DUMMY-CRM-CMP-003',name:'Murcia Logística',tradeName:'',taxId:'B10000003',sector:'CNAE25-H',employeeCount:420,country:'ES',orgType:'Empresa privada',website:'https://logistica.example',status:'Prospecto',entryChannel:'Inbound',owner:'Pedro Carrasco',notes:'DUMMY CRM · transporte',primaryContactId:'DUMMY-CRM-CON-005',createdAt:crmDummyNow(-45)},
     {id:'DUMMY-CRM-CMP-004',name:'Costa Salud',tradeName:'',taxId:'B10000004',sector:'CNAE25-R',employeeCount:75,country:'ES',orgType:'Empresa privada',website:'https://salud.example',status:'Cliente',entryChannel:'Cliente existente',owner:'Pedro Carrasco',notes:'DUMMY CRM · salud',primaryContactId:'DUMMY-CRM-CON-007',createdAt:crmDummyNow(-200)},
     {id:'DUMMY-CRM-CMP-005',name:'Estudio Sur Creativo',tradeName:'',taxId:'B10000005',sector:'CNAE25-N',employeeCount:9,country:'ES',orgType:'Empresa privada',website:'https://surcreativo.example',status:'Colaborador',entryChannel:'Contacto directo',owner:'Pedro Carrasco',notes:'DUMMY CRM · colaboración',primaryContactId:null,createdAt:crmDummyNow(-30)},
     {id:'DUMMY-CRM-CMP-006',name:'Empresa Vacía QA',tradeName:'',taxId:'B10000006',sector:'CNAE25-O',employeeCount:14,country:'ES',orgType:'Empresa privada',website:'',status:'Prospecto',entryChannel:'Inbound',owner:'Pedro Carrasco',notes:'DUMMY CRM · empresa sin contactos para empty states',primaryContactId:null,createdAt:crmDummyNow(-14)},
-    {id:'DUMMY-CRM-CMP-007',name:'Peña & Hijos — Innovación Ñ',tradeName:'',taxId:'B10000007',sector:'CNAE25-K',employeeCount:55,country:'ES',orgType:'Autónomo',website:'',status:'En pausa',entryChannel:'Recomendación',owner:'Pedro Carrasco',notes:'DUMMY CRM · caracteres especiales y textos largos',primaryContactId:'DUMMY-CRM-CON-012',createdAt:crmDummyNow(-22)}
+    {id:'DUMMY-CRM-CMP-007',name:'Peña & Hijos — Innovación Ñ',tradeName:'',taxId:'B10000007',sector:'CNAE25-K',employeeCount:55,country:'ES',orgType:'Autónomo',website:'',status:'En pausa',entryChannel:'Recomendación',owner:'Pedro Carrasco',notes:'DUMMY CRM · caracteres especiales y textos largos',primaryContactId:'DUMMY-CRM-CON-012',createdAt:crmDummyNow(-22)},
+    {id:'DUMMY-CRM-CMP-008',name:'Archivo Histórico QA',tradeName:'',taxId:'B10000008',sector:'CNAE25-F',employeeCount:260,country:'ES',orgType:'Empresa privada',website:'',status:'Archivada',entryChannel:'Contacto directo',owner:'Pedro Carrasco',notes:'DUMMY CRM · empresa archivada para UAT independiente',primaryContactId:null,createdAt:crmDummyNow(-300)}
   ];
   const contacts=[
     {id:'DUMMY-CRM-CON-001',companyId:'DUMMY-CRM-CMP-001',firstName:'Laura',lastName:'Martínez',role:'Dirección general',email:'laura.martinez@example.invalid',phone:'+34 600 100 001',status:'Activo',notes:'Contacto principal dummy.',createdAt:crmDummyNow(-120)},
@@ -147,9 +148,22 @@ function loadCrmDummyData(){
 }
 function crmUatHtml(){
   const n=crmDummyCounts();
+  const groups=[
+    ['Empresas','CRM-UAT-01','CRM-UAT-10'],
+    ['Contactos','CRM-UAT-11','CRM-UAT-22'],
+    ['Interacciones','CRM-UAT-23','CRM-UAT-31'],
+    ['Oportunidades','CRM-UAT-32','CRM-UAT-37'],
+    ['Relaciones, persistencia y aislamiento','CRM-UAT-38','CRM-UAT-40']
+  ];
+  const num=id=>Number(String(id).slice(-2));
+  const groupHtml=groups.map(([title,from,to])=>{
+    const rows=CRM_UAT_CATALOG.filter(([id])=>num(id)>=num(from)&&num(id)<=num(to));
+    return `<div class="result-item"><h3>${esc(title)} · ${rows.length} UATs</h3><div class="result-list">${rows.map(([id,t,steps,expected])=>`<div class="result-item"><b>${esc(id)} · ${esc(t)}</b><p><strong>Prueba:</strong> ${esc(steps)}</p><p><strong>Esperado:</strong> ${esc(expected)}</p></div>`).join('')}</div></div>`;
+  }).join('');
   return section('CRM · 40 UATs + datos dummy','Suite completa de 40 casos enfocada en P01–P04, relaciones, persistencia y edge cases. El seed nunca crea estudios ni proyectos y todos sus IDs empiezan por DUMMY-CRM-.',
     `<div class="notice good"><b>Dataset actual:</b> ${n.companies} empresas · ${n.contacts} contactos · ${n.interactions} interacciones · ${n.opportunities} oportunidades.</div>
-    <div class="result-list" style="margin-top:12px">${CRM_UAT_CATALOG.map(([id,title,steps,expected])=>`<div class="result-item"><b>${esc(id)} · ${esc(title)}</b><p><strong>Prueba:</strong> ${esc(steps)}</p><p><strong>Esperado:</strong> ${esc(expected)}</p></div>`).join('')}</div>`,
+    <div class="coverage-chips" style="margin-top:12px"><span class="chip">10 Empresas</span><span class="chip">12 Contactos</span><span class="chip">9 Interacciones</span><span class="chip">6 Oportunidades</span><span class="chip">3 Integración/robustez</span></div>
+    <div class="result-list" style="margin-top:12px">${groupHtml}</div>`,
     '<button class="btn btn-primary" id="loadCrmDummy">Cargar datos CRM de prueba</button><button class="btn btn-outline" id="clearCrmDummy">Limpiar datos CRM de prueba</button>');
 }
 const __auneaUatPageBeforeCrmDummy=pages.uat;
