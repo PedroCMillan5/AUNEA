@@ -4,7 +4,7 @@
 // Objetivo_concreto — never inventing new copy or semantics. Presented as a discreet info icon next to
 // each field's label with a keyboard-accessible popover, so the newly-reorganized progressive-disclosure
 // forms (Fase 3/4) stay uncluttered instead of always showing a text block under every field.
-// SOURCE: Diagnostic Master v1.1 00_PROCESS_STEP_MODEL_V1 / 00_FRICTION_MODEL_V1 plus matching
+// SOURCE: Diagnostic Master v1.2 00_PROCESS_STEP_MODEL_V1 / 00_FRICTION_MODEL_V1 plus matching
 // Diagnostic Field Objetivo_concreto when Canonical_Field_ID exists; UAT-VIS-031; DEC-040.
 // INPUTS: schema.process_step_model, schema.friction_model, schema.fields and the already-rendered
 // Process Step / Friction modal DOM.
