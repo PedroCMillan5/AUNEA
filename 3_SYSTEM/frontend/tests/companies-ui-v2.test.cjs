@@ -22,7 +22,7 @@ test('Empresas omits country from filters, search and table while keeping archiv
 
 test('Empresas uses product-owned rounded dropdowns for its filters',()=>{
   assert.match(page,/function companyFilterControl/);
-  assert.match(page,/class=\\"aunea-select\\"/);
+  assert.match(page,/class="aunea-select"/);
   assert.match(page,/data-company-filter-option/);
   assert.match(css,/\.aunea-select-menu\{/);
   assert.match(css,/border-radius:var\(--radius-md\)/);
@@ -38,7 +38,7 @@ test('Empresas exposes governed actions and relationship inspector tabs',()=>{
 });
 
 test('company table actions open in a floating layer above the table',()=>{
-  assert.match(page,/class=\\"company-row/);
+  assert.match(page,/class="company-row/);
   assert.match(page,/data-company-actions/);
   assert.match(page,/function openCompanyActionMenu/);
   assert.match(page,/document\.body\.appendChild\(menu\)/);
