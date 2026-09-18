@@ -251,4 +251,43 @@ test('Contactos company picker is one anchored AUNEA control, not duplicated tex
   assert.match(css,/\.entity-picker-select \.aunea-select-menu\{width:100%;min-width:100%;left:0;right:auto/);
 });
 
+test('Empresas uses Status only as a filter and moves actions to the bottom bar',()=>{
+  const page=read('pages/crm-companies.js');
+  assert.doesNotMatch(page,/COMPANY_TABS|data-company-tab/);
+  assert.match(page,/const statuses=COMPANY_STATUS\.map/);
+  assert.doesNotMatch(page,/Acciones rápidas/);
+  assert.match(page,/actionBar\(left,right\)/);
+  assert.match(page,/data-company-contact-new/);
+  assert.match(page,/data-company-opportunity/);
+  assert.match(page,/data-company-interaction/);
+});
+
+test('Contactos keeps actions only in the bottom bar, not duplicated in inspector',()=>{
+  const page=read('pages/crm-contacts.js');
+  assert.doesNotMatch(page,/insCard\('Acciones rápidas'/);
+  assert.match(page,/actionBar\(left,right\)/);
+  assert.match(page,/data-contact-interaction/);
+  assert.match(page,/data-contact-study/);
+});
+
+test('Interacciones has nested Company then Contact filters',()=>{
+  const page=read('pages/crm-interactions.js'),shell=read('ui/shell.js');
+  assert.match(page,/function interactionFilterRow/);
+  assert.match(page,/interactionFilterControl\('companyId','Empresa'/);
+  assert.match(page,/interactionFilterControl\('contactId','Contacto'/);
+  assert.match(page,/f\.companyId\?state\.contacts\.filter\(c=>c\.companyId===f\.companyId\)/);
+  assert.match(page,/if\(f\.contactId&&!\(i\.contactIds\|\|\[\]\)\.includes\(f\.contactId\)\)return false/);
+  assert.match(shell,/if\(key==='companyId'\)state\.interactionFilters\.contactId=''/);
+});
+
+test('Oportunidades has nested Company then Contact filters',()=>{
+  const page=read('pages/crm-opportunities.js'),shell=read('ui/shell.js');
+  assert.match(page,/function opportunityFilterRow/);
+  assert.match(page,/opportunityFilterControl\('companyId','Empresa'/);
+  assert.match(page,/opportunityFilterControl\('contactId','Contacto'/);
+  assert.match(page,/f\.companyId\?state\.contacts\.filter\(c=>c\.companyId===f\.companyId\)/);
+  assert.match(page,/if\(f\.contactId&&!\(o\.contactIds\|\|\[\]\)\.includes\(f\.contactId\)\)return false/);
+  assert.match(shell,/if\(key==='companyId'\)state\.opportunityFilters\.contactId=''/);
+});
+
 // [AUNEA-UAT-CRM-010] END
