@@ -53,4 +53,11 @@ test('no acepta un /health que no sea AUNEA Backend', async () => {
   const ok = await context.checkBackend();
   assert.equal(ok, false);
   assert.equal(context.state.backendOnline, false);
+  assert.equal(context.state.backendVersion, null);
+});
+
+test('expone monitor de reconexión para mantener vivo el enlace frontend-backend', () => {
+  assert.match(source, /function startBackendMonitor\(intervalMs=5000\)/);
+  assert.match(source, /addEventListener\('focus'/);
+  assert.match(source, /setInterval\(\(\)=>\{checkBackend\(\);\},intervalMs\)/);
 });
