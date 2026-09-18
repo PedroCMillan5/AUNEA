@@ -2,7 +2,7 @@
 // PURPOSE: Hold the Engagement to the six governed states and to forward, one-step transitions, and
 //          prove no surface writes a status outside them.
 // SOURCE: DEC-051 (Preparación → Sesión 1 → Trabajo interno → Listo para resultados → Sesión 2 →
-//         Cerrado); Architecture Contract v1.2 row P05.
+//         Cerrado); Architecture Contract v1.4 row P05.
 // INPUTS: domain/engagement.js in an isolated vm context, plus the callers that move the lifecycle.
 // OUTPUTS: pass/fail assertions.
 // SIDE_EFFECTS: none.
@@ -20,7 +20,7 @@ let clock = 0;
 function makeCtx() {
   const ctx = {
     console, state: { engagements: [], companies: [], contacts: [] }, dirty: [], audited: [],
-    schema: { version: '1.1', source: 'AUNEA_DIAGNOSTIC_DATABASE_v0.9.1_DIAGNOSTIC_MASTER_V1.1.xlsx' },
+    schema: { version: '1.2', source: 'AUNEA_DIAGNOSTIC_DATABASE_v0.9.2_DIAGNOSTIC_MASTER_V1.2.xlsx' },
     // Distinct stamps per call, so an identical capture is proven to dedupe on content and not on time.
     now: () => `2026-09-17T09:00:${String(clock++).padStart(2, '0')}.000Z`,
     markDirty(reason) { ctx.dirty.push(reason); },
@@ -84,7 +84,7 @@ test('statuses written before the contract closed are migrated, not reinterprete
   const ctx = makeCtx();
   const list = [{ status: 'En preparación' }, { status: 'Resultados calculados' },
     { status: 'Convertido en proyecto' }, { status: 'Sesión 2' }, {}];
-  assert.equal(ctx.migrateEngagementsToLifecycle(list), 4);
+  assert.equal(ctx.migrateEngagementsToLifecycle(list), 5);
   assert.deepEqual(list.map(x => x.status),
     ['Preparación', 'Trabajo interno', 'Cerrado', 'Sesión 2', 'Preparación']);
   assert.equal(ctx.migrateEngagementsToLifecycle(list), 0, 'migration is idempotent');
@@ -114,10 +114,10 @@ test('migration runs on boot so stored engagements reach the contract', () => {
 
 function sealedFixture() {
   const ctx = makeCtx();
-  ctx.state.companies.push({ id: 'CO1', name: 'Nordia Retail', sector: 'D04', country: 'ES', employeeCount: 420, orgType: 'Empresa privada', entryChannel: 'Inbound' });
+  ctx.state.companies.push({ id: 'CO1', name: 'Nordia Retail', sector: 'CNAE25-G', country: 'ES', employeeCount: 420, orgType: 'Empresa privada', entryChannel: 'Inbound' });
   ctx.state.contacts.push({ id: 'CT1', companyId: 'CO1', firstName: 'Laura', lastName: 'Gómez', role: 'Directora de Operaciones', email: 'laura@nordia.invalid', phone: '+34 612 345 678' });
   const e = {
-    id: 'E1', title: 'Estudio', status: 'Sesión 1', companyId: 'CO1', contactIds: ['CT1'],
+    id: 'E1', title: 'Estudio', status: 'Sesión 1', companyId: 'CO1', contactIds: ['CT1'], businessAreaId: 'D04',
     priority: 'Alta', contextSummary: 'Crecimiento',
     answers: { DF011: 'Gestión de pedidos online', DF093: 'YES' }, answerDetails: {},
     processSteps: [{ id: 'S1', status: 'ACTIVE', step_name: 'Recepción', active_time: 3 },
@@ -134,13 +134,14 @@ test('C03 sealing PG09 records what was confirmed, versioned, and opens internal
   const { ctx, e } = sealedFixture();
   const snap = ctx.sealConfirmedSnapshot(e, 'test');
   assert.equal(snap.version, 1);
-  assert.equal(snap.schemaVersion, 1);
+  assert.equal(snap.schemaVersion, 2);
   assert.equal(snap.stageId, 'S09');
   assert.equal(snap.company.name, 'Nordia Retail');
   assert.equal(snap.contacts[0].role, 'Directora de Operaciones');
-  assert.equal(snap.diagnosticMaster.version, '1.1', 'the snapshot names the Diagnostic Master it was captured under');
+  assert.equal(snap.diagnosticMaster.version, '1.2', 'the snapshot names the Diagnostic Master it was captured under');
   assert.equal(snap.processSteps.length, 1, 'superseded steps are not part of the confirmed AS-IS');
   assert.equal(snap.priority, 'Alta');
+  assert.equal(snap.businessAreaId, 'D04');
   // Sealing PG09 is what moves the engagement into internal work.
   assert.equal(e.status, 'Trabajo interno');
 });
