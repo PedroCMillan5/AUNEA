@@ -1,6 +1,6 @@
 // [AUNEA-FE-CORE-STATE-020] START — Estado, CRM y navegación
 // PURPOSE: Estado, CRM y navegación, incluyendo invalidación única de outputs derivados cuando cambia captura.
-// SOURCE: v1.0.4 aceptada; Diagnostic Master v1.1; DEC-034/040/041/043/048/051/052; B01 VR-02.
+// SOURCE: v1.0.4 aceptada; Diagnostic Master v1.2; DEC-034/040/041/043/048/051/052; B01 VR-02.
 // INPUTS: schema canónico, estado de engagement y acciones del usuario.
 // OUTPUTS: estado y vistas de captura/revisión.
 // SIDE_EFFECTS: DOM y almacenamiento local según responsabilidad.
