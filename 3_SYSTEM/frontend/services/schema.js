@@ -57,7 +57,7 @@ function applyDiagnosticMasterV11(base){
   return out;
 }
 async function initCanonicalV11(){
-  try{const res=await fetch('data/diagnostic-master.min.json',{cache:'no-store'});if(!res.ok) throw new Error(`HTTP ${res.status} al cargar Diagnostic Master base`);schema=applyDiagnosticMasterV11(await res.json());render();checkBackend();}
+  try{const res=await fetch('data/diagnostic-master.min.json',{cache:'no-store'});if(!res.ok) throw new Error(`HTTP ${res.status} al cargar Diagnostic Master base`);schema=applyDiagnosticMasterV11(await res.json());render();await checkBackend();if(typeof startBackendMonitor==='function')startBackendMonitor();}
   catch(err){const node=document.getElementById('content');if(node) node.innerHTML=`<div class="card card-pad"><h2>No se ha podido iniciar AUNEA Internal</h2><p class="subtitle">${esc(err.message||err)}</p><p>El runtime se detiene si la proyección no coincide con Diagnostic Master v1.1 CANONICAL.</p></div>`;console.error('AUNEA_SCHEMA_V11_ERROR',err);}
 }
 // [AUNEA-DATA-DIAG-ADAPTER-010] END
