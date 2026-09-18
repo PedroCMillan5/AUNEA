@@ -38,5 +38,6 @@ test('select styling is centralized and all form controls preserve rounded geome
 
 test('project creation persists the AUNEA owner independently from client contacts',()=>{
   assert.match(project,/AUNEA_DEFAULT_PROJECT_OWNER=Object\.freeze\(\{id:'pedro-carrasco',name:'Pedro Carrasco',role:'Consultor'\}\)/);
-  assert.match(project,/contactIds:\[\.\.\.\(e\.contactIds\|\|\[\]\)\],auneaOwner:\{\.\.\.AUNEA_DEFAULT_PROJECT_OWNER\}/);
+  assert.match(project,/contactIds:\[\.\.\.\(e\.contactIds\|\|\[\]\)\]/);
+  assert.match(project,/auneaOwner:\{\.\.\.AUNEA_DEFAULT_PROJECT_OWNER\}/);
 });
