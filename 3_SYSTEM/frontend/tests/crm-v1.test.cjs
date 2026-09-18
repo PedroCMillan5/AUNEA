@@ -1,9 +1,9 @@
 // [AUNEA-UAT-CRM-010] START — CRM contracts: Company, Contact, Interaction, Opportunity
-// PURPOSE: Hold the four CRM domains to the decisions that closed them — the DEC-057 contact schema,
-//          principal as a Company-owned relation, a real delete guarded by referential integrity,
+// PURPOSE: Hold the four CRM domains to the decisions that closed them — the DEC-061 Contact contract,
+//          principal as a Company-owned relation, reversible inactivation, structured roles,
 //          last interaction derived rather than stored, and the pipeline living on the case.
-// SOURCE: DEC-007/042/050/051/055/057/058; references IMG90-00-01 and IMG90-00-02 under DEC-056;
-//         Architecture Contract v1.4 rows P01–P04.
+// SOURCE: DEC-007/042/050/051/054/055/058/061; references IMG90-00-01 and IMG90-00-02 under DEC-056;
+//         Architecture Contract v1.5 rows P01–P04.
 // INPUTS: the CRM domain modules executed in an isolated vm context.
 // OUTPUTS: pass/fail assertions.
 // SIDE_EFFECTS: none (read-only, in-memory context).
@@ -47,14 +47,16 @@ function ctxWith(seed = {}) {
   return ctx;
 }
 
-test('the Contact schema is exactly what DEC-057 closes', () => {
+test('the Contact schema is exactly what DEC-061 closes', () => {
   const src = read('domain/contact.js');
-  for (const f of ['firstName', 'lastName', 'role', 'email', 'phone', 'language', 'country', 'status', 'notes', 'companyId']) {
-    assert.ok(src.includes(f), `Contact must carry ${f}`);
+  for (const field of ['firstName', 'lastName', 'role', 'email', 'phone', 'status', 'notes', 'companyId']) {
+    assert.ok(src.includes(field), `Contact must carry ${field}`);
   }
+  assert.doesNotMatch(src, /id="cContactLanguage"|id="cContactCountry"/, 'Spain-only Contact capture has no Language/Country controls');
   const ctx = ctxWith();
-  assert.deepEqual([...ctx.$('CONTACT_STATUS')], ['Activo', 'Pendiente', 'Inactivo'],
-    'Contact status is operational, not the commercial pipeline');
+  assert.deepEqual([...ctx.$('CONTACT_STATUS')], ['Activo', 'Pendiente', 'Inactivo']);
+  assert.ok(ctx.$('CONTACT_ROLE_OPTIONS').includes('Dirección general'));
+  assert.ok(ctx.$('CONTACT_ROLE_OPTIONS').includes('Project Management / PMO'));
   assert.equal(ctx.$('CONTACT_NOTES_MAX'), 500);
 });
 
@@ -102,38 +104,38 @@ test('last interaction is derived from the Interaction log, never stored on the 
   assert.doesNotMatch(read('domain/contact.js'), /lastInteraction\s*=/);
 });
 
-test('deleting a contact is blocked while history would be destroyed', () => {
+test('inactivating a contact preserves the record and all historical references', () => {
   const ctx = ctxWith();
   ctx.state.companies.push({ id: 'CO1', name: 'Nordia', primaryContactId: 'C1' });
-  ctx.state.contacts.push({ id: 'C1', companyId: 'CO1', firstName: 'Laura' });
+  ctx.state.contacts.push({ id: 'C1', companyId: 'CO1', firstName: 'Laura', status:'Activo' });
   ctx.state.engagements.push({ id: 'E1', companyId: 'CO1', contactIds: ['C1'], title: 'Diagnóstico' });
-  assert.ok(ctx.contactDeletionBlockers('C1').length, 'an engagement snapshot must block the delete');
-  assert.equal(ctx.deleteContact('C1'), false);
-  assert.ok(ctx.contactById('C1'), 'the contact survives');
+  ctx.state.projects.push({ id:'P1', companyId:'CO1', contactIds:['C1'] });
+  assert.equal(ctx.inactivateContact('C1'), true);
+  assert.equal(ctx.contactById('C1').status, 'Inactivo');
+  assert.equal(ctx.companyById('CO1').primaryContactId, null);
+  assert.equal(ctx.state.engagements[0].contactIds[0], 'C1');
+  assert.equal(ctx.state.projects[0].contactIds[0], 'C1');
 });
 
-test('deleting a contact with no dependencies is a real delete and releases the relation', () => {
+test('an inactive contact can be reactivated without recreating identity', () => {
   const ctx = ctxWith();
-  ctx.state.companies.push({ id: 'CO1', name: 'Nordia', primaryContactId: 'C1' });
-  ctx.state.contacts.push({ id: 'C1', companyId: 'CO1', firstName: 'Laura' });
-  // Arrays built inside the vm realm are never reference-equal to one built here, so assert length.
-  assert.equal(ctx.contactDeletionBlockers('C1').length, 0);
-  assert.equal(ctx.deleteContact('C1'), true);
-  assert.equal(ctx.contactById('C1'), null, 'DEC-057 makes this a real delete, not an archive');
-  assert.equal(ctx.companyById('CO1').primaryContactId, null, 'the company no longer points at a missing contact');
+  ctx.state.contacts.push({ id:'C1', companyId:'CO1', firstName:'Laura', status:'Inactivo' });
+  assert.equal(ctx.reactivateContact('C1'), true);
+  assert.equal(ctx.contactById('C1').status, 'Activo');
+  assert.equal(ctx.state.contacts.length, 1);
 });
 
 test('no destructive cascade deletes a company along with its contacts', () => {
   const src = read('domain/company.js');
   assert.ok(src.includes('function archiveCompany'), 'companies are archived, not deleted');
   assert.doesNotMatch(src, /state\.contacts\s*=\s*state\.contacts\.filter\(x\s*=>\s*x\.companyId\s*!==/,
-    'removing a company must never cascade into its contacts (DEC-057/055)');
+    'removing a company must never cascade into its contacts (DEC-061/055)');
 });
 
-test('the pre-DEC-057 contact shape migrates without losing anything', () => {
+test('legacy Contact shapes migrate to DEC-061 without losing anything', () => {
   const ctx = ctxWith();
   const legacy = [{ id: 'C1', companyId: 'CO1', name: 'Laura Martínez Ruiz', role: 'Directora', status: 'Perdido', source: 'Referido', nextAction: 'Llamar' }];
-  assert.equal(ctx.migrateContactsToDec057(legacy), 1);
+  assert.equal(ctx.migrateContactsToCurrentContract(legacy), 1);
   const ct = legacy[0];
   assert.equal(ct.firstName, 'Laura');
   assert.equal(ct.lastName, 'Martínez Ruiz');
@@ -144,8 +146,13 @@ test('the pre-DEC-057 contact shape migrates without losing anything', () => {
   assert.equal(ct._legacy.source, 'Referido');
   assert.equal(ct._legacy.nextAction, 'Llamar');
   assert.equal(ct.name, undefined);
+  // Country/language are legacy-only under the Spain-only operating contract.
+  ct.language='es';ct.country='ES';
+  assert.equal(ctx.migrateContactsToCurrentContract(legacy),1);
+  assert.equal(ct.language,undefined);assert.equal(ct.country,undefined);
+  assert.equal(ct._legacy.language,'es');assert.equal(ct._legacy.country,'ES');
   // Running it twice must not re-split an already migrated record.
-  assert.equal(ctx.migrateContactsToDec057(legacy), 0);
+  assert.equal(ctx.migrateContactsToCurrentContract(legacy), 0);
 });
 
 test('the commercial pipeline lives on the Opportunity, not on the person', () => {
@@ -203,7 +210,7 @@ test('Contactos reproduces the visible columns of IMG90-00-02, in order', () => 
   const src = read('pages/crm-contacts.js');
   const head = src.slice(src.indexOf('<thead>'), src.indexOf('</thead>'));
   const cols = [...head.matchAll(/<th>([^<]*)<\/th>/g)].map(m => m[1].trim()).filter(Boolean);
-  assert.deepEqual(cols, ['Nombre', 'Cargo', 'Email', 'Teléfono', 'Estado', 'Principal', 'Última interacción']);
+  assert.deepEqual(cols, ['Nombre', 'Empresa', 'Cargo', 'Email', 'Teléfono', 'Estado', 'Principal', 'Última interacción']);
 });
 
 test('Empresas reproduces the visible columns of IMG90-00-01, in order', () => {
@@ -212,4 +219,27 @@ test('Empresas reproduces the visible columns of IMG90-00-01, in order', () => {
   const cols = [...head.matchAll(/<th>([^<]*)<\/th>/g)].map(m => m[1].trim()).filter(Boolean);
   assert.deepEqual(cols, ['Empresa', 'Sector', 'Tamaño', 'Estado', 'Contacto principal', 'Fecha de alta', 'Acciones']);
 });
+test('Contactos supports all-company scope, AUNEA filters, interactions and no direct Project creation',()=>{
+  const page=read('pages/crm-contacts.js'),shell=read('ui/shell.js'),domain=read('domain/contact.js');
+  assert.match(page,/return companyById\(state\.selectedCompanyId\) \|\| null/);
+  assert.match(page,/Todas las empresas/);
+  assert.match(page,/Quitar empresa/);
+  assert.match(page,/Incluir inactivos/);
+  assert.match(page,/data-contact-filter-option/);
+  assert.match(page,/data-contact-interaction/);
+  assert.match(page,/data-contact-study/);
+  assert.doesNotMatch(page,/data-contact-project|Crear proyecto/);
+  assert.match(domain,/contactSelectControl\('cContactRole'/);
+  assert.match(domain,/contactSelectControl\('cContactStatus'/);
+  assert.match(shell,/addInteraction\(\{companyId:ct\.companyId,contactIds:\[ct\.id\]\}\)/);
+});
+
+test('AUNEA dropdowns close when focus moves outside or to another selector',()=>{
+  const shell=read('ui/shell.js');
+  assert.match(shell,/function closeOtherAuneaSelects/);
+  assert.match(shell,/details\.aunea-select\[open\]/);
+  assert.match(shell,/if\(box!==inside\)box\.open=false/);
+  assert.match(shell,/e\.key==='Escape'/);
+});
+
 // [AUNEA-UAT-CRM-010] END
