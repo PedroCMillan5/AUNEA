@@ -52,7 +52,7 @@ function bindCrm(){
   on('[data-edit-company]',el=>editCompany(el.dataset.editCompany));
   document.querySelectorAll('[data-company-ins-tab]').forEach(b=>b.onclick=()=>{state.companyInspectorTab=b.dataset.companyInsTab;render()});
   live('[data-company-filter]',el=>{state.companyFilters={...state.companyFilters,[el.dataset.companyFilter]:el.value};render()});
-  if(document.getElementById('clearCompanyFilters'))document.getElementById('clearCompanyFilters').onclick=()=>{state.companyFilters={sector:'',size:'',status:'',country:''};state.companySearch='';render()};
+  if(document.getElementById('clearCompanyFilters'))document.getElementById('clearCompanyFilters').onclick=()=>{state.companyFilters={sector:'',size:'',status:''};state.companySearch='';render()};
   const cs=document.getElementById('companySearch');if(cs)cs.oninput=()=>{state.companySearch=cs.value;clearTimeout(window.__companySearch);window.__companySearch=setTimeout(render,220)};
   on('[data-company-contacts]',el=>{state.selectedCompanyId=el.dataset.companyContacts;setPage('contactos')});
   on('[data-company-contact-new]',el=>{state.selectedCompanyId=el.dataset.companyContactNew;addContact()});
