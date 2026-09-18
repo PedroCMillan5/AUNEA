@@ -7,8 +7,8 @@
 // SIDE_EFFECTS: delegated UI actions call governed domain operations; no duplicate business state.
 // CHANGE_RISK: MEDIUM.
 
-const COMPANY_TABS=['Todas','Clientes','Prospectos','Colaboradores','Archivadas'];
-const COMPANY_TAB_STATUS={Clientes:'Cliente',Prospectos:'Prospecto',Colaboradores:'Colaborador',Archivadas:'Archivada'};
+const COMPANY_TABS=['Todas','Clientes','Potenciales clientes','Colaboradores','Archivadas'];
+const COMPANY_TAB_STATUS={Clientes:'Cliente','Potenciales clientes':'Prospecto',Colaboradores:'Colaborador',Archivadas:'Archivada'};
 const visibleKey=v=>String(v||'').trim().toLocaleLowerCase('es');
 const countryLabel=v=>labelFrom('REF_COUNTRY_ISO3166',v)||v||'—';
 
@@ -36,7 +36,7 @@ function companyFilterControl(key,label,options){
 }
 function companyFilterRow(){
   const present=get=>state.companies.map(get).filter(Boolean);
-  const statuses=COMPANY_STATUS.filter(v=>v!=='Archivada').map(v=>({value:v,label:v}));
+  const statuses=COMPANY_STATUS.filter(v=>v!=='Archivada').map(v=>({value:v,label:companyStatusLabel(v)}));
   return `<div class="filter-row">
     ${companyFilterControl('sector','Sector',uniqueVisibleOptions(present(c=>c.sector),companySectorLabel))}
     ${companyFilterControl('size','Tamaño',[...new Set(present(c=>companySizeBand(c)).filter(v=>v!=='—'))].map(v=>({value:v,label:v})))}
@@ -52,19 +52,30 @@ function companyHistoryMarkup(co){
 function companyNotesPopup(co){openModal(`Notas · ${co.name}`,co.notes?`<div class="kv-box">${esc(co.notes)}</div>`:'<div class="empty"><p>Sin notas generales.</p></div>',()=>closeModal(),'Cerrar')}
 function companyHistoryPopup(co){openModal(`Historial · ${co.name}`,companyHistoryMarkup(co),()=>closeModal(),'Cerrar')}
 
-function companyActionMenu(c){return `<details class="row-menu"><summary class="kebab-btn" aria-label="Acciones de ${attr(c.name)}">•••</summary><div class="row-menu-popover">
-  <button type="button" data-edit-company="${attr(c.id)}">Editar</button>
-  <button type="button" data-company-notes-popup="${attr(c.id)}">Notas</button>
-  <button type="button" data-company-history-popup="${attr(c.id)}">Historial</button>
-  ${c.status!=='Archivada'?`<button type="button" class="danger-text" data-archive-company="${attr(c.id)}">Archivar</button>`:''}
-</div></details>`}
+function closeCompanyFloatingMenu(){document.getElementById('companyFloatingMenu')?.remove()}
+function openCompanyActionMenu(button,companyId){
+  closeCompanyFloatingMenu();
+  const co=companyById(companyId);if(!co)return;
+  const menu=document.createElement('div');menu.id='companyFloatingMenu';menu.className='row-menu-popover company-floating-menu';
+  menu.innerHTML=`<button type="button" data-edit-company="${attr(co.id)}">Editar</button>
+    <button type="button" data-company-notes-popup="${attr(co.id)}">Notas</button>
+    <button type="button" data-company-history-popup="${attr(co.id)}">Historial</button>
+    ${co.status!=='Archivada'?`<button type="button" class="danger-text" data-archive-company="${attr(co.id)}">Archivar</button>`:''}`;
+  document.body.appendChild(menu);
+  const r=button.getBoundingClientRect(),gap=6;
+  let left=Math.min(window.innerWidth-menu.offsetWidth-8,Math.max(8,r.right-menu.offsetWidth));
+  let top=r.bottom+gap;
+  if(top+menu.offsetHeight>window.innerHeight-8)top=Math.max(8,r.top-menu.offsetHeight-gap);
+  menu.style.left=`${left}px`;menu.style.top=`${top}px`;
+}
+function companyActionMenu(c){return `<button type="button" class="kebab-btn" data-company-actions="${attr(c.id)}" aria-label="Acciones de ${attr(c.name)}">•••</button>`}
 
 function companyTable(rows){
   if(!rows.length)return `<div class="empty"><h2>Sin empresas con estos criterios</h2><p>Ajusta la búsqueda o los filtros, o crea una empresa nueva.</p></div>`;
   const sel=state.selectedCompanyId;
   return `<div class="table-wrap"><table class="data-table company-table"><thead><tr><th>Empresa</th><th>Sector</th><th>Tamaño</th><th>País</th><th>Estado</th><th>Contacto principal</th><th>Fecha de alta</th><th>Acciones</th></tr></thead><tbody>${rows.map(c=>{
     const primary=contactById(c.primaryContactId);
-    return `<tr class="company-row ${c.id===sel?'row-selected':''}" data-select-company="${attr(c.id)}"><td><b>${esc(c.name)}</b>${c.tradeName?`<br><small>${esc(c.tradeName)}</small>`:''}</td><td>${esc(companySectorLabel(c.sector))}</td><td>${esc(companySizeBand(c))}</td><td>${esc(countryLabel(c.country))}</td><td><span class="badge ${companyStatusClass(c.status)}">${esc(c.status||'—')}</span></td><td>${primary?`<b>${esc(contactFullName(primary))}</b><br><small>${esc(primary.role||'')}</small>`:'<small>Sin asignar</small>'}</td><td>${esc(formatDateEs(c.createdAt))}</td><td>${companyActionMenu(c)}</td></tr>`;
+    return `<tr class="company-row ${c.id===sel?'row-selected':''}" data-select-company="${attr(c.id)}"><td><b>${esc(c.name)}</b>${c.tradeName?`<br><small>${esc(c.tradeName)}</small>`:''}</td><td>${esc(companySectorLabel(c.sector))}</td><td>${esc(companySizeBand(c))}</td><td>${esc(countryLabel(c.country))}</td><td><span class="badge ${companyStatusClass(c.status)}">${esc(companyStatusLabel(c.status))}</span></td><td>${primary?`<b>${esc(contactFullName(primary))}</b><br><small>${esc(primary.role||'')}</small>`:'<small>Sin asignar</small>'}</td><td>${esc(formatDateEs(c.createdAt))}</td><td>${companyActionMenu(c)}</td></tr>`;
   }).join('')}</tbody></table></div><div class="table-foot"><span>Mostrando ${rows.length} de ${state.companies.length} empresas</span></div>`;
 }
 
@@ -72,7 +83,7 @@ function inspectorAction(label,attrs,primary=false){return `<button type="button
 function companyInspector(co){
   if(!co)return insCard('Vista de la empresa','<p>Selecciona una empresa para ver su ficha y sus relaciones.</p>',{accent:true,icon:'▦'});
   const n=companyCounters(co.id),tabs=['Resumen',`Contactos (${n.contacts})`,`Oportunidades (${n.opportunities})`,`Estudios (${n.engagements})`,`Proyectos (${n.projects})`],active=state.companyInspectorTab||'Resumen',primary=contactById(co.primaryContactId);
-  const head=`<div class="ins-head company-ins-head"><h3>${esc(co.name)}</h3><div class="ins-head-actions"><button class="btn btn-small" data-edit-company="${attr(co.id)}">Editar</button>${co.status!=='Archivada'?`<button class="btn btn-small" data-archive-company="${attr(co.id)}">Archivar</button>`:''}</div></div><div style="margin-bottom:12px"><span class="badge ${companyStatusClass(co.status)}">${esc(co.status||'—')}</span></div><div class="tabs">${tabs.map(t=>`<button class="tab ${t.split(' (')[0]===active?'active':''}" data-company-ins-tab="${attr(t.split(' (')[0])}">${esc(t)}</button>`).join('')}</div>`;
+  const head=`<div class="ins-head company-ins-head"><h3>${esc(co.name)}</h3><div class="ins-head-actions"><button class="btn btn-small" data-edit-company="${attr(co.id)}">Editar</button>${co.status!=='Archivada'?`<button class="btn btn-small" data-archive-company="${attr(co.id)}">Archivar</button>`:''}</div></div><div style="margin-bottom:12px"><span class="badge ${companyStatusClass(co.status)}">${esc(companyStatusLabel(co.status))}</span></div><div class="tabs">${tabs.map(t=>`<button class="tab ${t.split(' (')[0]===active?'active':''}" data-company-ins-tab="${attr(t.split(' (')[0])}">${esc(t)}</button>`).join('')}</div>`;
   let body='';
   if(active==='Contactos'){
     const list=contactsOfCompany(co.id);body=list.length?`<div class="result-list">${list.map(c=>`<div class="result-item"><div class="result-item-head"><div><b>${esc(contactFullName(c))}</b>${isPrimaryContact(c)?' <span class="badge system">Principal</span>':''}<p>${esc(c.role||'Sin cargo')} · ${esc(c.email||'sin email')}</p></div>${inspectorAction('Ir a contacto',`data-company-open-contact="${attr(c.id)}"`)}</div></div>`).join('')}</div>`:'<div class="empty"><p>Esta empresa no tiene contactos registrados.</p></div>';
@@ -83,7 +94,7 @@ function companyInspector(co){
   }else if(active==='Proyectos'){
     const list=state.projects.filter(p=>p.companyId===co.id);body=list.length?`<div class="result-list">${list.map(p=>`<div class="result-item"><b>${esc(p.name)}</b><p>${esc(p.status||'—')} · ${esc(formatDateEs(p.createdAt))}</p></div>`).join('')}</div>`:'<div class="empty"><p>Sin proyectos. Un proyecto nace de una decisión de implementación.</p></div>';
   }else{
-    body=`<div class="ins-note" style="margin-bottom:10px"><b>Información general</b></div>`+kvRows([['Nombre legal',esc(co.name)],['Nombre comercial',esc(co.tradeName||'—')],['CIF',esc(co.taxId||'—')],['Sector',esc(companySectorLabel(co.sector))],['Tamaño',esc(companySizeBand(co)==='—'?'—':`${companySizeBand(co)} empleados`)],['País',esc(countryLabel(co.country))],['Tipo de organización',esc(co.orgType||'—')],['Sitio web',co.website?`<a href="#" class="link-btn">${esc(co.website)}</a>`:'—'],['Estado',`<span class="badge ${companyStatusClass(co.status)}">${esc(co.status||'—')}</span>`],['Canal de entrada',esc(co.entryChannel||'—')],['Fecha de alta',esc(formatDateEs(co.createdAt))],['Responsable AUNEA',esc(co.owner||'—')],['Contacto principal',primary?esc(contactFullName(primary)):'—']]);
+    body=`<div class="ins-note" style="margin-bottom:10px"><b>Información general</b></div>`+kvRows([['Nombre comercial',esc(co.name)],['CIF',esc(co.taxId||'—')],['Sector',esc(companySectorLabel(co.sector))],['Tamaño',esc(companySizeBand(co)==='—'?'—':`${companySizeBand(co)} empleados`)],['Tipo de organización',esc(co.orgType||'—')],['Sitio web',co.website?`<a href="#" class="link-btn">${esc(co.website)}</a>`:'—'],['Estado',`<span class="badge ${companyStatusClass(co.status)}">${esc(companyStatusLabel(co.status))}</span>`],['Canal de entrada',esc(co.entryChannel||'—')],['Fecha de alta',esc(formatDateEs(co.createdAt))],['Responsable AUNEA',esc(co.owner||'—')],['Contacto principal',primary?esc(contactFullName(primary)):'—']]);
   }
   const quick=insCard('Acciones rápidas',`<div class="quick-actions"><button class="btn btn-small" data-company-contacts="${attr(co.id)}">Ver contactos</button><button class="btn btn-small" data-company-opportunity="${attr(co.id)}">Nueva oportunidad</button><button class="btn btn-small" data-company-contact-new="${attr(co.id)}">Nuevo contacto</button><button class="btn btn-small" data-company-interaction="${attr(co.id)}">Registrar interacción</button></div>`);
   return `<div class="ins-card">${head}${body}</div>${quick}`;
@@ -94,11 +105,13 @@ function companyInspector(co){
 if(!window.__auneaCompanyActionsBound){
   window.__auneaCompanyActionsBound=true;
   document.addEventListener('click',e=>{
-    if(e.target.closest('.row-menu'))e.stopPropagation();
+    const trigger=e.target.closest('[data-company-actions]');
+    if(trigger){e.preventDefault();e.stopPropagation();openCompanyActionMenu(trigger,trigger.dataset.companyActions);return}
+    if(!e.target.closest('#companyFloatingMenu'))closeCompanyFloatingMenu();
     const filter=e.target.closest('[data-company-filter-option]');
     if(filter){e.preventDefault();e.stopPropagation();const key=filter.dataset.companyFilterOption;state.companyFilters={...state.companyFilters,[key]:filter.dataset.value||''};render();return}
     const action=e.target.closest('[data-archive-company],[data-company-notes-popup],[data-company-history-popup],[data-company-open-contact],[data-company-edit-opportunity],[data-company-study-opportunity],[data-company-open-study]');if(!action)return;
-    e.preventDefault();e.stopPropagation();
+    e.preventDefault();e.stopPropagation();closeCompanyFloatingMenu();
     if(action.dataset.archiveCompany!==undefined){archiveCompany(action.dataset.archiveCompany);return}
     if(action.dataset.companyNotesPopup!==undefined){const co=companyById(action.dataset.companyNotesPopup);if(co)companyNotesPopup(co);return}
     if(action.dataset.companyHistoryPopup!==undefined){const co=companyById(action.dataset.companyHistoryPopup);if(co)companyHistoryPopup(co);return}
