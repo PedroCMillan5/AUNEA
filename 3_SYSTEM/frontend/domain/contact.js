@@ -120,17 +120,32 @@ if(typeof window!=='undefined'&&!window.__auneaContactFormSelectBound){
   },true);
 }
 
-function addContact() {
+function addContact(options={}) {
   if (!state.companies.length) return toast('Crea primero una empresa.');
-  const defaultCompany=companyById(state.selectedCompanyId)?.id||state.companies[0].id;
+  const requestedCompany=companyById(options.companyId)?.id||null;
+  const defaultCompany=requestedCompany||companyById(state.selectedCompanyId)?.id||state.companies[0].id;
   openModal('Nuevo contacto', contactFormBody({ companyId: defaultCompany, status:'Activo' }), () => {
     const data = readContactForm();
     if (!data.firstName) return toast('Indica el nombre.');
+    if(options.lockCompanyId&&requestedCompany&&data.companyId!==requestedCompany)return toast('El contacto debe pertenecer a la empresa de este estudio.');
     const ct = { id: id('CON'), ...data, createdAt: now() };
     state.contacts.push(ct);
     state.selectedContactId = ct.id;
+    if(typeof options.onCreated==='function')options.onCreated(ct);
     markDirty(`Contacto creado: ${contactFullName(ct)}`);
     closeModal(); render();
+  });
+}
+function addContactForEngagementField(fieldId='DF007'){
+  const e=currentEng();if(!e)return toast('Abre un estudio antes de crear el contacto.');
+  addContact({
+    companyId:e.companyId,
+    lockCompanyId:true,
+    onCreated(ct){
+      const current=normalizeArray(e.answers?.[fieldId]).filter(Boolean);
+      setAnswer(fieldId,[...new Set([...current,ct.id])]);
+      audit(`Contacto ${contactFullName(ct)} creado desde ${fieldId} y añadido al estudio`);
+    }
   });
 }
 function editContact(contactId) {
