@@ -35,10 +35,12 @@ test('Empresas exposes governed actions and relationship inspector tabs',()=>{
   assert.doesNotMatch(page,/`Notas`,\s*'Historial'/);
 });
 
-test('company table menu no longer loses its click to row selection',()=>{
+test('company table actions open in a floating layer above the table',()=>{
   assert.match(page,/class=\\"company-row/);
-  assert.match(page,/class=\\"kebab-btn/);
-  assert.match(page,/if\(e\.target\.closest\('\.row-menu'\)\)e\.stopPropagation\(\)/);
+  assert.match(page,/data-company-actions/);
+  assert.match(page,/function openCompanyActionMenu/);
+  assert.match(page,/document\.body\.appendChild\(menu\)/);
+  assert.match(css,/\.company-floating-menu\{position:fixed;z-index:5000/);
   assert.match(css,/\.company-table \.company-row\{cursor:pointer\}/);
 });
 
@@ -57,4 +59,28 @@ test('company inspector header keeps actions inline while company name may wrap'
   assert.match(page,/company-ins-head/);
   assert.match(css,/\.company-ins-head h3\{[^}]*overflow-wrap:anywhere/);
   assert.match(css,/\.ins-head-actions\{[^}]*flex-wrap:nowrap/);
+});
+
+
+test('company modal uses one commercial name, Spanish sectors, range dropdowns and current AUNEA owner',()=>{
+  assert.match(domain,/<label>Nombre comercial<\/label><input id="cCoName"/);
+  assert.doesNotMatch(domain,/<label>Nombre legal<\/label>/);
+  assert.match(domain,/strategy & governance':'Estrategia y gobierno/);
+  assert.match(domain,/professional services delivery':'Prestación de servicios profesionales/);
+  assert.match(domain,/COMPANY_EMPLOYEE_RANGE_OPTIONS/);
+  assert.match(domain,/label:'1–10'/);
+  assert.match(domain,/label:'Más de 1\.000'/);
+  assert.match(domain,/companySelectControl\('cCoEmployees'/);
+  assert.match(domain,/currentAuneaOwnerName\(\)/);
+  assert.match(domain,/document\.querySelector\('\.user-chip b'\)/);
+  assert.match(domain,/id="cCoOwner"[^>]*readonly/);
+  assert.doesNotMatch(domain,/<label>País<\/label>/);
+  assert.match(domain,/id="cCoCountry" value="\$\{attr\(co\.country \|\| 'ES'\)\}"/);
+  assert.match(css,/\.company-form-select\{position:relative;width:100%\}/);
+});
+
+test('Prospecto remains the internal status but is explained as Potencial cliente in the UI',()=>{
+  assert.match(domain,/status === 'Prospecto' \? 'Potencial cliente'/);
+  assert.match(page,/Potenciales clientes/);
+  assert.match(page,/label:companyStatusLabel\(v\)/);
 });
