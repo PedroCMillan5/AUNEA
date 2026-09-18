@@ -10,20 +10,24 @@
 // CHANGE_RISK: MEDIUM.
 
 function contactsPageCompany() {
-  return companyById(state.selectedCompanyId) || state.companies[0] || null;
+  return companyById(state.selectedCompanyId) || null;
 }
-function visibleContacts(companyId) {
+function visibleContacts(companyId=null) {
   const f = state.contactFilters || {}, q = (state.contactSearch || '').toLowerCase().trim();
   return state.contacts.filter(c => {
-    if (c.companyId !== companyId) return false;
+    if (companyId && c.companyId !== companyId) return false;
+    if (!f.includeInactive && c.status === 'Inactivo') return false;
     if (f.role && c.role !== f.role) return false;
     if (f.status && c.status !== f.status) return false;
-    if (f.language && c.language !== f.language) return false;
-    if (q && ![contactFullName(c), c.role, c.email, c.phone].some(v => String(v || '').toLowerCase().includes(q))) return false;
+    if (q && ![contactFullName(c), c.role, c.email, c.phone, companyById(c.companyId)?.name].some(v => String(v || '').toLowerCase().includes(q))) return false;
     return true;
   });
 }
-
+function contactFilterControl(key,label,options,current,placeholder='Todos'){
+  const normalized=options.map(o=>typeof o==='string'?{value:o,label:o}:o);
+  const selected=normalized.find(o=>String(o.value)===String(current));
+  return `<div class="filter-group"><span>${esc(label)}</span><details class="aunea-select" data-contact-filter-box="${attr(key)}"><summary><span>${esc(selected?.label||placeholder)}</span><i aria-hidden="true"></i></summary><div class="aunea-select-menu" role="listbox" aria-label="${attr(label)}"><button type="button" role="option" data-contact-filter-option="${attr(key)}" data-value="">${esc(placeholder)}</button>${normalized.map(o=>`<button type="button" role="option" class="${String(current)===String(o.value)?'selected':''}" data-contact-filter-option="${attr(key)}" data-value="${attr(o.value)}">${esc(o.label)}</button>`).join('')}</div></details></div>`;
+}
 function contactFilterRow(companyId) {
   const f = state.contactFilters || {};
   const pool = state.contacts.filter(c => c.companyId === companyId);
