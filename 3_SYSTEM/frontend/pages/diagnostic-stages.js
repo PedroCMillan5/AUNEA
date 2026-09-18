@@ -214,6 +214,7 @@ function captureProgressHtml(e,stage){
     +kvRows([['En esta etapa',`${stat.answered} de ${stat.applicable} campo(s) con dato`],['Etapas revisadas',`${completion.stagesReviewed} de ${completion.stagesTotal}`],['Obligatorios',`${completion.requiredComplete} de ${completion.requiredApplicable}`],['Evidencia pendiente',String(completion.evidencePending.length)]]);
 }
 function refreshCaptureProgress(){
+  if(typeof document==='undefined')return;
   const e=currentEng(),host=document.getElementById('captureProgressLive');if(!e||!host)return;
   const stage=schema.flow.find(x=>x.Stage_ID===(e.stageId||'S01'))||schema.flow[0];
   host.innerHTML=captureProgressHtml(e,stage);
