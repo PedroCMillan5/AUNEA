@@ -50,7 +50,18 @@ checkBackend = async function(){
     return true;
   }
   state.backendOnline = false;
+  state.backendVersion = null;
   updateHeader();
   return false;
 };
+
+let __auneaBackendMonitor=null;
+function startBackendMonitor(intervalMs=5000){
+  if(typeof window==='undefined'||__auneaBackendMonitor)return;
+  __auneaBackendMonitor=window.setInterval(()=>{checkBackend();},intervalMs);
+  if(!window.__auneaBackendFocusBound){
+    window.__auneaBackendFocusBound=true;
+    window.addEventListener('focus',()=>{checkBackend();});
+  }
+}
 // [AUNEA-FE-BACKEND-DISCOVERY-060] END
