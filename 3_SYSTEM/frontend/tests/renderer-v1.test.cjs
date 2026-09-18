@@ -93,4 +93,21 @@ test('TEXT_LONG_INTERNAL never renders the literal string "off" and stays intern
   assert.doesNotMatch(filled,/>off</);
   assert.match(empty,/class="internal-only"/);
 });
+
+test('DF010 Otra behaves like other conditional Other controls',()=>{
+  e.answerDetails={};
+  const opts=[{value:'BUDGET',label:'Presupuesto'},{value:'OTHER',label:'Otra'}];
+  const hidden=ctx.renderControl({Field_ID:'DF010',Control_UI:'MULTISELECT_WITH_DETAIL'},[],opts,e);
+  assert.match(hidden,/value="OTHER"[^>]*data-other-toggle="DF010"/);
+  assert.match(hidden,/data-detail-wrap="DF010"[^>]*style="display:none"/);
+  const shown=ctx.renderControl({Field_ID:'DF010',Control_UI:'MULTISELECT_WITH_DETAIL'},['OTHER'],opts,e);
+  assert.doesNotMatch(shown,/data-detail-wrap="DF010"[^>]*style="display:none"/);
+  e.answerDetails={};
+});
+
+test('DF007 offers inline creation of a real Contact',()=>{
+  const html=ctx.renderControl({Field_ID:'DF007',Control_UI:'CONTACT_MULTISELECT'},[],[],e);
+  assert.match(html,/data-create-contact-for-field="DF007"/);
+  assert.match(html,/Crear contacto y añadirlo/);
+});
 // [AUNEA-UAT-RENDER-010] END
