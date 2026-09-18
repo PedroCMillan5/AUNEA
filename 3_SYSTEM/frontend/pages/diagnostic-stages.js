@@ -1,6 +1,6 @@
 // [AUNEA-FE-DIAG-CONTROL-030] START — Stage navigation shell and process/friction capture prompts
 // PURPOSE: Stage navigation shell and process/friction capture prompts for the guided diagnostic flow. Option-set lookup helper.
-// SOURCE: v1.0.4 aceptada; Diagnostic Master v1.1; DEC-034/040/050/051/056/059; IMG90-01.
+// SOURCE: v1.0.4 aceptada; Diagnostic Master v1.2; DEC-034/040/050/051/056/059/060; IMG90-01.
 // INPUTS: schema canónico, estado de engagement y acciones del usuario.
 // OUTPUTS: estado y vistas de captura/revisión.
 // SIDE_EFFECTS: DOM, almacenamiento local y solicitudes HTTP según responsabilidad.
