@@ -1,5 +1,5 @@
 // [AUNEA-UAT-CRM-DUMMY-030] START — CRM-only dummy seed + 15 UAT scenarios
-// PURPOSE: Provide explicit, reversible CRM-only test data and a 15-case manual UAT catalogue.
+// PURPOSE: Provide explicit, reversible CRM-only test data and a 40-case manual UAT catalogue.
 // SOURCE: DEC-050/051/055/058/061; Architecture Contract v1.5 P01–P04; PROJECT_RULES v1.7.
 // INPUTS: state.companies/contacts/interactions/opportunities and existing CRM domain contracts.
 // OUTPUTS: DUMMY-CRM-* records only; UAT checklist rendered on internal UAT/QA page.
@@ -7,21 +7,50 @@
 // CHANGE_RISK: MEDIUM.
 
 const CRM_UAT_CATALOG = Object.freeze([
-  ['CRM-UAT-01','Empresas · edición desde tabla','Abrir Empresas → Acciones → Editar sobre una empresa dummy.','Se abre el modal correcto y guarda sin cambiar el ID.'],
-  ['CRM-UAT-02','Empresas · filtros','Probar Sector, Tamaño y Estado sobre los datos dummy.','La tabla filtra sin duplicados ni País.'],
-  ['CRM-UAT-03','Empresas · contacto principal','Cambiar la estrella de contacto principal de una empresa.','Company.Primary_Contact_ID cambia; Contact no duplica el atributo.'],
-  ['CRM-UAT-04','Contactos · todas las empresas','Entrar en Contactos sin empresa seleccionada.','Se muestran contactos de todas las empresas y la columna Empresa identifica el origen.'],
-  ['CRM-UAT-05','Contactos · filtro por empresa','Seleccionar una empresa y después pulsar Quitar empresa.','Primero limita el listado y después vuelve a mostrar todos.'],
-  ['CRM-UAT-06','Contactos · dropdowns AUNEA','Abrir Empresa/Cargo/Estado y después clicar fuera u otro selector.','Solo permanece abierto el selector activo; click fuera y Escape cierran.'],
-  ['CRM-UAT-07','Contactos · cargo estructurado','Editar un contacto y cambiar Cargo/Rol.','Se guarda uno de los cargos genéricos sin País ni Idioma.'],
-  ['CRM-UAT-08','Contactos · estado','Editar un contacto Activo y pasarlo a Pendiente/Inactivo.','El estado se persiste y es visible en tabla/inspector.'],
-  ['CRM-UAT-09','Contactos · inactivar/reactivar','Inactivar un contacto dummy y activar Incluir inactivos; después reactivarlo.','No se borra el registro ni su histórico; reaparece al incluir inactivos.'],
-  ['CRM-UAT-10','Contactos · principal al inactivar','Inactivar el contacto principal de una empresa dummy.','Se libera Primary_Contact_ID sin borrar ninguna relación histórica.'],
-  ['CRM-UAT-11','Interacciones · alta desde Contacto','Desde un contacto pulsar Registrar interacción.','Empresa y contacto llegan preseleccionados; se guarda un único Interaction.'],
-  ['CRM-UAT-12','Interacciones · última interacción','Crear una interacción más reciente para un contacto.','Última interacción se deriva del log y cambia sin copiar datos al Contact.'],
-  ['CRM-UAT-13','Interacciones · próximo seguimiento','Registrar una interacción con Próximo seguimiento futuro.','El seguimiento queda en Interaction y se proyecta como vigente.'],
-  ['CRM-UAT-14','Oportunidades · pipeline y relaciones','Editar una oportunidad dummy y moverla por Nueva/Reunión/Propuesta/Ganada/Perdida.','El pipeline vive en Opportunity; Company/Contacts solo se referencian.'],
-  ['CRM-UAT-15','CRM-only · aislamiento','Revisar Estudios y Proyectos después de cargar el seed CRM.','El seed no crea Engagements ni Projects; solo Company/Contact/Interaction/Opportunity.']
+  ['CRM-UAT-01','Empresas · crear','Crear una empresa nueva con nombre comercial, CIF, CNAE, tamaño, tipo, estado, canal y owner.','Se crea una única Company con owner Pedro Carrasco y sin País visible.'],
+  ['CRM-UAT-02','Empresas · editar desde tabla','Acciones → Editar sobre una empresa dummy y modificar varios campos.','Se abre el modal correcto, guarda y conserva el mismo Company_ID.'],
+  ['CRM-UAT-03','Empresas · filtros combinados','Combinar Sector, Tamaño y Estado.','Solo aparecen empresas que cumplen todos los criterios; no existe filtro País.'],
+  ['CRM-UAT-04','Empresas · búsqueda','Buscar por nombre y por sector empresarial.','La búsqueda encuentra coincidencias y no usa País como criterio.'],
+  ['CRM-UAT-05','Empresas · rangos de empleados','Editar empresas en varios tramos: 1–10, 11–50, 51–250, 251–500.','El dropdown guarda el valor representativo y la tabla muestra el rango correcto.'],
+  ['CRM-UAT-06','Empresas · sector CNAE','Cambiar Sector en una empresa.','Solo aparecen sectores empresariales CNAE-2025, no áreas/departamentos.'],
+  ['CRM-UAT-07','Empresas · contacto principal','Cambiar la estrella de contacto principal.','Company.Primary_Contact_ID cambia; Contact no duplica el atributo.'],
+  ['CRM-UAT-08','Empresas · sin contactos','Abrir DUMMY-CRM-CMP-006.','La empresa funciona sin contacto principal y las vistas relacionadas muestran empty state correcto.'],
+  ['CRM-UAT-09','Empresas · archivar','Archivar una empresa dummy con histórico relacionado.','Company pasa a Archivada sin borrar Contacts, Interactions ni Opportunities.'],
+  ['CRM-UAT-10','Empresas · archivadas','Abrir pestaña/filtro Archivadas tras CRM-UAT-09.','La empresa archivada aparece solo donde corresponde y las relaciones siguen accesibles.'],
+
+  ['CRM-UAT-11','Contactos · crear','Crear contacto para una empresa dummy.','Se crea Contact con Company_ID, cargo estructurado, estado y sin País/Idioma.'],
+  ['CRM-UAT-12','Contactos · todas las empresas','Entrar en Contactos sin empresa seleccionada.','Se muestran contactos de todas las empresas y la columna Empresa identifica su origen.'],
+  ['CRM-UAT-13','Contactos · filtro por empresa','Seleccionar empresa y después Quitar empresa.','Primero limita el listado y después vuelve a todos los contactos.'],
+  ['CRM-UAT-14','Contactos · dropdowns AUNEA','Abrir Empresa/Cargo/Estado y después clicar fuera, otro campo u otro selector.','Solo queda abierto el selector activo; click fuera y Escape cierran.'],
+  ['CRM-UAT-15','Contactos · cargo estructurado','Editar Cargo/Rol.','Se guarda un cargo genérico y se preserva cualquier valor histórico no catalogado.'],
+  ['CRM-UAT-16','Contactos · estado Pendiente','Cambiar un contacto Activo a Pendiente.','El estado se persiste y se refleja en tabla e inspector.'],
+  ['CRM-UAT-17','Contactos · inactivar/reactivar','Inactivar un contacto, activar Incluir inactivos y reactivarlo.','No se borra identidad ni histórico y vuelve a Activo.'],
+  ['CRM-UAT-18','Contactos · principal al inactivar','Inactivar el contacto principal de una empresa.','Se libera Primary_Contact_ID y se mantienen todas las referencias históricas.'],
+  ['CRM-UAT-19','Contactos · sin email/teléfono','Abrir DUMMY-CRM-CON-011.','La ficha y tabla soportan datos opcionales vacíos sin romper layout ni búsqueda.'],
+  ['CRM-UAT-20','Contactos · caracteres especiales','Abrir DUMMY-CRM-CON-012 y buscar por su nombre.','Acentos, ñ, apóstrofes y nombre largo se renderizan y buscan correctamente.'],
+  ['CRM-UAT-21','Contactos · cambiar de empresa','Editar un contacto y asignarlo a otra Company.','Contact.Company_ID cambia; si era principal de la anterior, esa relación se libera.'],
+  ['CRM-UAT-22','Contactos · filtros combinados','Combinar Empresa + Cargo + Estado + Incluir inactivos.','La lista aplica todos los filtros de forma coherente y Limpiar filtros restaura la vista.'],
+
+  ['CRM-UAT-23','Interacciones · alta desde Contacto','Desde un Contact pulsar Registrar interacción.','Empresa y Contact llegan preseleccionados y se guarda un único Interaction.'],
+  ['CRM-UAT-24','Interacciones · alta solo Empresa','Crear interacción para DUMMY-CRM-CMP-006 sin seleccionar Contact.','Se guarda el evento con Company_ID y contactIds vacío.'],
+  ['CRM-UAT-25','Interacciones · varios contactos','Crear/revisar una interacción con dos contactos de la misma empresa.','Los contactos se referencian sin duplicar datos maestros.'],
+  ['CRM-UAT-26','Interacciones · oportunidad opcional','Crear una interacción con Opportunity y otra sin ella.','Opportunity_ID es opcional y la timeline funciona en ambos casos.'],
+  ['CRM-UAT-27','Interacciones · última interacción','Crear una interacción más reciente para un Contact.','Última interacción se deriva cronológicamente y no se copia a Contact.'],
+  ['CRM-UAT-28','Interacciones · seguimiento futuro','Registrar Próximo seguimiento futuro.','pendingFollowUp proyecta el seguimiento vigente desde Interaction.'],
+  ['CRM-UAT-29','Interacciones · seguimiento pasado','Revisar DUMMY-CRM-INT-010 con follow-up ya vencido.','No se presenta como próximo seguimiento vigente.'],
+  ['CRM-UAT-30','Interacciones · editar','Editar asunto, resultado, canal y seguimiento de un evento dummy.','Se actualiza el mismo Interaction_ID sin crear duplicado.'],
+  ['CRM-UAT-31','Interacciones · eliminar evento','Eliminar una interacción dummy tras confirmar.','Solo desaparece ese evento; Company, Contact y Opportunity permanecen.'],
+
+  ['CRM-UAT-32','Oportunidades · crear','Crear una oportunidad para una empresa dummy.','Se crea Opportunity separada de Contact con stage Nueva por defecto.'],
+  ['CRM-UAT-33','Oportunidades · sin contactos','Abrir DUMMY-CRM-OPP-007.','La oportunidad puede existir sin contactos; Crear estudio queda bloqueado hasta asociar al menos uno.'],
+  ['CRM-UAT-34','Oportunidades · varios contactos','Abrir DUMMY-CRM-OPP-001 y revisar Contactos implicados.','Una Opportunity referencia varios Contacts sin copiarlos.'],
+  ['CRM-UAT-35','Oportunidades · pipeline completo','Mover una oportunidad por Nueva, Contactada, Reunión, Diagnóstico, Propuesta, Ganada, Perdida y En pausa.','Stage vive en Opportunity; los cambios no alteran el estado del Contact.'],
+  ['CRM-UAT-36','Oportunidades · cerradas','Revisar Ganada y Perdida.','Se conserva histórico y no aparece Crear estudio en oportunidades cerradas.'],
+  ['CRM-UAT-37','Oportunidades · crear estudio','Desde una oportunidad abierta con contacto asociado pulsar Crear estudio.','Se crea Engagement referenciando Opportunity; no se crea Project y no se copian datos maestros.'],
+
+  ['CRM-UAT-38','Relaciones · cadena CRM','Recorrer Company → Contact → Interaction → Opportunity y volver a Company.','Todas las referencias resuelven al registro correcto y ninguna entidad sustituye a otra.'],
+  ['CRM-UAT-39','Persistencia · recarga/backup','Con dummy cargado editar varios registros, recargar y probar exportar/restaurar backup.','El CRM se recupera con IDs y relaciones intactas.'],
+  ['CRM-UAT-40','Aislamiento y limpieza','Limpiar datos CRM de prueba.','Se eliminan exclusivamente DUMMY-CRM-*; datos reales, Engagements y Projects no se modifican.']
 ]);
 
 function crmDummyNow(offsetDays=0,hour=10){
@@ -109,7 +138,7 @@ function loadCrmDummyData(){
 }
 function crmUatHtml(){
   const n=crmDummyCounts();
-  return section('CRM · 15 UATs + datos dummy','Suite manual enfocada exclusivamente en P01–P04. El seed nunca crea estudios ni proyectos y todos sus IDs empiezan por DUMMY-CRM-.',
+  return section('CRM · 40 UATs + datos dummy','Suite completa de 40 casos enfocada en P01–P04, relaciones, persistencia y edge cases. El seed nunca crea estudios ni proyectos y todos sus IDs empiezan por DUMMY-CRM-.',
     `<div class="notice good"><b>Dataset actual:</b> ${n.companies} empresas · ${n.contacts} contactos · ${n.interactions} interacciones · ${n.opportunities} oportunidades.</div>
     <div class="result-list" style="margin-top:12px">${CRM_UAT_CATALOG.map(([id,title,steps,expected])=>`<div class="result-item"><b>${esc(id)} · ${esc(title)}</b><p><strong>Prueba:</strong> ${esc(steps)}</p><p><strong>Esperado:</strong> ${esc(expected)}</p></div>`).join('')}</div>`,
     '<button class="btn btn-primary" id="loadCrmDummy">Cargar datos CRM de prueba</button><button class="btn btn-outline" id="clearCrmDummy">Limpiar datos CRM de prueba</button>');
