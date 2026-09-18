@@ -235,3 +235,39 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   assert.deepEqual(errors,[]);
 });
 // [AUNEA-UAT-RUNTIME-TEST-010] END
+
+test('PG01 QA refinements: country hidden, disclosure always open, required marks red and future stages visibly locked',()=>{
+  const stage=read('pages/diagnostic-stages.js'),state=read('core/state.js'),css=read('ui-system.css');
+  assert.doesNotMatch(stage,/País \/ alcance/);
+  assert.match(stage,/pg01-disclosure-open/);
+  assert.doesNotMatch(stage,/<details class="step-group pg01-disclosure"/);
+  assert.match(css,/\.required-mark\{color:var\(--red\)!important\}/);
+  assert.match(state,/nav-step .*locked/);
+  assert.match(css,/\.nav-step\.locked,\.nav-step:disabled/);
+});
+
+test('PG01 starts Sesión 1 on opening, refreshes capture progress live and avoids duplicated Other',()=>{
+  const state=read('core/state.js'),stage=read('pages/diagnostic-stages.js'),renderer=read('ui/renderer.js');
+  assert.match(state,/advanceEngagementTo\(e,'Sesión 1','apertura de la primera sesión'\)/);
+  assert.match(stage,/function refreshCaptureProgress\(\)/);
+  assert.match(stage,/id="captureProgressLive"/);
+  assert.match(state,/refreshCaptureProgress/);
+  assert.doesNotMatch(renderer,/>\+ Otro</);
+  assert.match(renderer,/catalogOther/);
+  assert.match(renderer,/data-other-toggle/);
+});
+
+test('Process owner uses Contact full name and supports conditional unregistered owner text',()=>{
+  const renderer=read('ui/renderer.js');
+  assert.match(renderer,/function referenceContactLabel/);
+  assert.doesNotMatch(renderer,/label:\`\$\{x\.name\}/);
+  assert.match(renderer,/ownerOpts\.push\(\{value:'OTHER',label:'Otro'\}\)/);
+  assert.match(renderer,/data-owner-other-wrap/);
+  assert.match(renderer,/Nombre o rol del responsable del proceso/);
+});
+
+test('Topbar limits search width so session clock and progress do not overlap',()=>{
+  const css=read('ui-system.css');
+  assert.match(css,/\.topbar-center\{max-width:360px;justify-self:center\}/);
+  assert.match(css,/\.topbar-right #stepProgress\{flex:0 0 auto/);
+});
