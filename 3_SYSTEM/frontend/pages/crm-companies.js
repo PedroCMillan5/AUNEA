@@ -1,7 +1,7 @@
 // [AUNEA-FE-PAGE-COMPANIES-010] START — P01 Empresas
 // PURPOSE: Reproduce the approved Empresas reference and expose governed CRM actions: search, filters,
 //          company table, archive/edit actions, notes/history popups and related-entity inspector tabs.
-// SOURCE: IMG90-00-01; Architecture Contract v1.4 P01; DEC-007/050/051/054/055/058; PROJECT_RULES v1.6.
+// SOURCE: IMG90-00-01; Architecture Contract v1.5 P01; DEC-007/050/051/054/055/058; PROJECT_RULES v1.7.
 // INPUTS: state.companies plus related contacts/opportunities/engagements/projects/interactions.
 // OUTPUTS: page markup and company-specific UI events. Company data remains owned by AUNEA-FE-CRM-COMPANY-010.
 // SIDE_EFFECTS: delegated UI actions call governed domain operations; no duplicate business state.
