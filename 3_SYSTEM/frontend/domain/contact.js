@@ -105,6 +105,21 @@ function readContactForm() {
     status: v('cContactStatus') || 'Activo', notes: v('cContactNotes').slice(0, CONTACT_NOTES_MAX)
   };
 }
+if(typeof window!=='undefined'&&!window.__auneaContactFormSelectBound){
+  window.__auneaContactFormSelectBound=true;
+  document.addEventListener('click',e=>{
+    const option=e.target.closest('[data-contact-select-option]');if(!option)return;
+    e.preventDefault();e.stopPropagation();
+    const target=document.getElementById(option.dataset.contactSelectOption);if(!target)return;
+    target.value=option.dataset.value||'';
+    const box=option.closest('details.aunea-select');
+    const label=box?.querySelector(`[data-contact-select-label="${option.dataset.contactSelectOption}"]`);
+    if(label)label.textContent=option.textContent.trim();
+    box?.querySelectorAll('[data-contact-select-option]').forEach(btn=>btn.classList.toggle('selected',btn===option));
+    if(box)box.open=false;
+  },true);
+}
+
 function addContact() {
   if (!state.companies.length) return toast('Crea primero una empresa.');
   const defaultCompany=companyById(state.selectedCompanyId)?.id||state.companies[0].id;
@@ -125,6 +140,14 @@ function editContact(contactId) {
     const before = { ...ct }, data = readContactForm();
     if (!data.firstName) return toast('Indica el nombre.');
     Object.assign(ct, data);
+    if(before.companyId!==ct.companyId){
+      const oldCompany=companyById(before.companyId);
+      if(oldCompany?.primaryContactId===ct.id)oldCompany.primaryContactId=null;
+    }
+    if(ct.status==='Inactivo'){
+      const ownerCompany=companyById(ct.companyId);
+      if(ownerCompany?.primaryContactId===ct.id)ownerCompany.primaryContactId=null;
+    }
     [['firstName', 'Nombre'], ['lastName', 'Apellidos'], ['role', 'Cargo'], ['email', 'Email'], ['phone', 'Teléfono'],
      ['status', 'Estado'], ['notes', 'Notas'], ['companyId', 'Empresa']]
       .forEach(([k, label]) => { if ((before[k] || '') !== (ct[k] || '')) audit(`Contacto ${contactFullName(ct)} editado: ${label} "${before[k] || '—'}"→"${ct[k] || '—'}"`); });
