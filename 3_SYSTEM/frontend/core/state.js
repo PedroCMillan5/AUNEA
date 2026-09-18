@@ -47,7 +47,7 @@ function blankState(){
     activePage:'inicio',activeEngagementId:null,dirty:false,
     backendUrl:API_DEFAULT,backendOnline:false,returnTo:null,
     selectedCompanyId:null,selectedContactId:null,
-    companyTab:'Todas',companySearch:'',companyFilters:{sector:'',size:'',status:'',country:''},
+    companyTab:'Todas',companySearch:'',companyFilters:{sector:'',size:'',status:''},
     contactSearch:'',contactFilters:{role:'',status:'',language:''},
     companyInspectorTab:'Resumen',
     companies:[],contacts:[],interactions:[],opportunities:[],engagements:[],projects:[],audit:[]
