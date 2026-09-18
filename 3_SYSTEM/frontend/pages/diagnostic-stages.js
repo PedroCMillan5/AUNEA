@@ -87,10 +87,9 @@ function pg01ContextFields(e){
   ].join('');
 }
 
-// B03 / VR-01B: the five canonical S01 fields not present in IMG90-01's twelve-field composition stay
-// in PG01, but behind progressive disclosure. They use the existing renderer and therefore preserve
-// Diagnostic Master controls, option sets, branching, write targets and No-Reask. The block auto-opens
-// only while an active REQUIRED_90M field inside it is still missing; open/closed state itself is DOM-only.
+// B03 / VR-01B: the five canonical S01 fields not present in the principal PG01 composition stay
+// in PG01 as a second always-visible block separated only by a horizontal rule. They reuse the existing
+// renderer and preserve Diagnostic Master controls, option sets, branching, write targets and No-Reask.
 const PG01_DISCLOSURE_IDS=Object.freeze(['DF004','DF007','DF008','DF009','DF010']);
 const PG01_DISCLOSURE_TITLE='Objetivo, criterios y restricciones de la sesión';
 function pg01DisclosureFields(fields){return PG01_DISCLOSURE_IDS.map(fid=>fields.find(f=>f.Field_ID===fid)).filter(Boolean)}
@@ -99,7 +98,7 @@ function pg01CanonicalDisclosure(fields,e){
   const folded=pg01DisclosureFields(fields);if(!folded.length)return '';
   const pending=pg01DisclosurePending(fields,e);
   const status=pending.length?`${pending.length} obligatorio${pending.length===1?'':'s'} pendiente${pending.length===1?'':'s'}`:'Completo';
-  return `<section class="step-group pg01-disclosure pg01-disclosure-open"><div class="pg01-disclosure-head"><span>${esc(PG01_DISCLOSURE_TITLE)}</span><span class="conditional-tag">${esc(status)}</span></div><div class="form-grid">${renderStageFields(folded,e)}</div></section>`;
+  return `<section class="pg01-disclosure pg01-disclosure-open"><div class="pg01-disclosure-head"><span>${esc(PG01_DISCLOSURE_TITLE)}</span><span class="conditional-tag">${esc(status)}</span></div><div class="form-grid">${renderStageFields(folded,e)}</div></section>`;
 }
 
 // Continuar never skips a canonical obligation. Requiredness and branch activity are read from the
