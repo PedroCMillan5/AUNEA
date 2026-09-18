@@ -66,4 +66,16 @@ test('expanded dummy includes the required edge-case fixtures',()=>{
   assert.ok(d.interactions.some(x=>x.id==='DUMMY-CRM-INT-009'&&x.contactIds.length===0));
   assert.ok(d.opportunities.some(x=>x.id==='DUMMY-CRM-OPP-007'&&x.contactIds.length===0));
 });
+
+test('visible UAT button is extended with a 32-assertion automatic CRM suite',()=>{
+  assert.match(src,/function runCrmAutomaticUat\(\)/);
+  assert.match(src,/CRM_AUTOMATIC_V1/);
+  assert.match(src,/CRM-AUTO-32/);
+  assert.match(src,/const __auneaRunVisibleUatBeforeCrmAutomatic=runVisibleUAT/);
+  assert.match(src,/state\.uatLastRun\.crm_automatic=runCrmAutomaticUat\(\)/);
+  assert.match(src,/state\.uatLastRun\.combined_pass/);
+  const c=context(),r=vm.runInContext('runCrmAutomaticUat()',c);
+  assert.equal(r.assertion_count,32);
+  assert.equal(r.pass,true);
+});
 // [AUNEA-UAT-CRM-DUMMY-040] END
