@@ -14,21 +14,21 @@ function context(){
   };
   vm.createContext(ctx);vm.runInContext(src,ctx);return ctx;
 }
-test('CRM UAT catalogue contains exactly 15 CRM cases',()=>{
-  const c=context();assert.equal(vm.runInContext('CRM_UAT_CATALOG.length',c),15);
+test('CRM UAT catalogue contains exactly 40 CRM cases',()=>{
+  const c=context();assert.equal(vm.runInContext('CRM_UAT_CATALOG.length',c),40);
   const ids=vm.runInContext('CRM_UAT_CATALOG.map(x=>x[0])',c);
-  assert.deepEqual([...ids],Array.from({length:15},(_,i)=>`CRM-UAT-${String(i+1).padStart(2,'0')}`));
+  assert.deepEqual([...ids],Array.from({length:40},(_,i)=>`CRM-UAT-${String(i+1).padStart(2,'0')}`));
 });
 test('CRM dummy seed contains only the four CRM collections',()=>{
   const c=context(),d=vm.runInContext('crmDummySeed()',c);
   assert.deepEqual(Object.keys(d).sort(),['companies','contacts','interactions','opportunities']);
-  assert.equal(d.companies.length,5);assert.equal(d.contacts.length,10);assert.equal(d.interactions.length,8);assert.equal(d.opportunities.length,6);
+  assert.equal(d.companies.length,7);assert.equal(d.contacts.length,12);assert.equal(d.interactions.length,11);assert.equal(d.opportunities.length,8);
   for(const group of Object.values(d))for(const row of group)assert.match(row.id,/^DUMMY-CRM-/);
 });
 test('loading CRM dummy data never creates engagements or projects',()=>{
   const c=context();vm.runInContext('loadCrmDummyData()',c);
   assert.deepEqual(c.state.engagements,[{id:'REAL-ENG'}]);assert.deepEqual(c.state.projects,[{id:'REAL-PRJ'}]);
-  assert.equal(c.state.companies.length,5);assert.equal(c.state.contacts.length,10);assert.equal(c.state.interactions.length,8);assert.equal(c.state.opportunities.length,6);
+  assert.equal(c.state.companies.length,7);assert.equal(c.state.contacts.length,12);assert.equal(c.state.interactions.length,11);assert.equal(c.state.opportunities.length,8);
 });
 test('dummy relations are referentially coherent',()=>{
   const c=context(),d=vm.runInContext('crmDummySeed()',c);
@@ -49,5 +49,20 @@ test('clear CRM dummy removes only DUMMY-CRM records',()=>{
 test('UAT page exposes explicit load and cleanup actions',()=>{
   assert.match(src,/id="loadCrmDummy"/);assert.match(src,/id="clearCrmDummy"/);
   assert.match(src,/Cargar datos CRM de prueba/);assert.match(src,/Limpiar datos CRM de prueba/);
+});
+
+test('full CRM UAT catalogue covers Company, Contact, Interaction, Opportunity, relations and persistence',()=>{
+  const c=context(),rows=vm.runInContext('CRM_UAT_CATALOG',c);
+  const titles=[...rows].map(x=>x[1]).join(' | ');
+  for(const area of ['Empresas','Contactos','Interacciones','Oportunidades','Relaciones','Persistencia','Aislamiento'])assert.match(titles,new RegExp(area));
+  assert.equal(rows.filter(x=>x[0].startsWith('CRM-UAT-')).length,40);
+});
+test('expanded dummy includes the required edge-case fixtures',()=>{
+  const c=context(),d=vm.runInContext('crmDummySeed()',c);
+  assert.ok(d.companies.some(x=>x.id==='DUMMY-CRM-CMP-006'&&!d.contacts.some(ct=>ct.companyId===x.id)));
+  assert.ok(d.contacts.some(x=>x.id==='DUMMY-CRM-CON-011'&&!x.email&&!x.phone));
+  assert.ok(d.contacts.some(x=>x.id==='DUMMY-CRM-CON-012'&&/Ñ|ñ/.test(x.lastName)));
+  assert.ok(d.interactions.some(x=>x.id==='DUMMY-CRM-INT-009'&&x.contactIds.length===0));
+  assert.ok(d.opportunities.some(x=>x.id==='DUMMY-CRM-OPP-007'&&x.contactIds.length===0));
 });
 // [AUNEA-UAT-CRM-DUMMY-040] END
