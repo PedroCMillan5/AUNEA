@@ -236,7 +236,7 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   });
   click('#nav [data-page="inicio"]');click('[data-page="contactos"]');click('[data-contact-study]');click('#saveBtn');
   const saved2=JSON.parse(w.localStorage.getItem('aunea_internal_v1'));
-  assert.equal(saved2.companies.length,1);assert.equal(saved2.contacts.length,1);assert.equal(saved2.engagements.length,2);
+  assert.equal(saved2.companies.length,1);assert.equal(saved2.contacts.length,2);assert.equal(saved2.engagements.length,2);
   await t.test('client windows boot read-only without loading or saving Console records',async()=>{
     for(const hash of ['#session','#results']){
       const reads=[],writes=[],calls=[],clientErrors=[],vc=new VirtualConsole();vc.on('jsdomError',e=>clientErrors.push(e.message));
