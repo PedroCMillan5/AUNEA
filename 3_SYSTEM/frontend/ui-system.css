@@ -103,5 +103,5 @@ select option{background:#fff;color:var(--ink)}
 .topbar-center{max-width:360px;justify-self:center}
 
 
-.pg01-disclosure-open{background:transparent;border:0;border-top:1px solid var(--line);border-radius:0;box-shadow:none;padding:20px 2px 0;margin-top:20px}
+.pg01-disclosure-open{background:#fff;border:0;border-top:1px solid var(--line);border-radius:0;box-shadow:none;padding:20px 22px 24px;margin-top:0}
 .pg01-disclosure-open>.form-grid{padding:0}
