@@ -38,6 +38,7 @@ const SYSTEM_NAV = [
 
 let schema = null;
 function isClientDisplay(){return typeof location!=='undefined'&&['#session','#results'].includes(location.hash)}
+function isProcessEditorWindow(){return typeof location!=='undefined'&&location.hash==='#process-editor'}
 let state = isClientDisplay()?blankState():loadState();
 state.uiMode='INTERNAL';
 
