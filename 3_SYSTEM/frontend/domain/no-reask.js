@@ -112,11 +112,9 @@ function contextOnly(f,e,val){
   const policy=String(f.Reask_Policy||''),mode=String(f.Ask_Mode||'');
   if(explicitReaskAllowed(f.Field_ID,e))return false;
   if(!valuePresent(val))return false;
-  // Confirmation UX only applies to a real reused/derived value. A value the consultant has just
-  // entered must remain an ordinary editable answer even when the field contract supports derivation.
-  if(['DERIVE_THEN_CONFIRM','PREFILL_CONFIRM','DERIVE_AND_CONFIRM'].includes(policy)||['PREFILL_CONFIRM','DERIVE_AND_CONFIRM'].includes(mode)){
-    if(!valuePresent(reusedValue(f.Field_ID,e)))return false;
-  }
+  // A Reuse_From declaration describes where a prefill may come from; it does not make a manual
+  // answer "reused". Only collapse to contextual/prefill UX when a real reused value exists.
+  if(f.Reuse_From&&!valuePresent(reusedValue(f.Field_ID,e)))return false;
   return ['NO_REASK','CONFIRM_ONLY_IF_CHANGED','DERIVE_THEN_CONFIRM'].includes(policy)||['PREFILL_CONFIRM','DERIVE_AND_CONFIRM'].includes(mode);
 }
 function requiresDerivedConfirmation(f){return String(f.Ask_Mode||'')==='DERIVE_AND_CONFIRM'||String(f.Reask_Policy||'')==='DERIVE_THEN_CONFIRM'}
@@ -215,8 +213,8 @@ function renderQuestion(f,e){
   const systemOnly=['DERIVED','SYSTEM_GENERATED'].includes(mode)||(String(f.Control_UI).startsWith('DERIVED')&&mode!=='CONDITIONAL_ASK')||String(f.Control_UI).startsWith('SYSTEM_GENERATED');
   // The references put the requiredness mark and the provenance chip beside the label, and show no
   // Field_ID on the field itself — coverage is stated once, in the stage inspector.
-  const source=f.Reuse_From?reuseSourceInfo(f):null;
-  const chip=(source&&val!=null&&val!==''&&!(Array.isArray(val)&&!val.length))?prefillChip(source.label):'';
+  const source=f.Reuse_From?reuseSourceInfo(f):null,reuse=reusedValue(f.Field_ID,e);
+  const chip=(source&&valuePresent(reuse))?prefillChip(source.label):'';
   const meta=`${required?requiredMark():''}${f.Requiredness==='CONDITIONAL_90M'?'<span class="conditional-tag">condicional</span>':''}${chip}`;
   let body='';
   if(systemOnly)body=`<div class="readonly-box">${esc(formatContextValue(f,val)||'Se completará automáticamente cuando existan datos suficientes.')}</div>`;
