@@ -21,7 +21,7 @@ function supersedeFriction(frId){
 
 function confirmAsIs(){
   const e=currentEng();
-  const start=e.answers?.DF014,finish=e.answers?.DF015;if(!start||!finish)return toast('Completa los límites inicial y final antes de confirmar el flujo.');
+  const start=e.answers?.DF014,finish=e.answers?.DF015,hasActive=(e.processSteps||[]).some(x=>x.status!=='SUPERSEDED');if((!start||!finish)&&!hasActive)return toast('Define los límites inicial y final o añade al menos un paso antes de confirmar el flujo.');
   e.confirmedAsIs=true;e.answers.DF093='YES';e.asIsConfirmedAt=now();
   // Confirming is what closes PG09, so it is what seals the historic record internal work runs on.
   const sealed=sealConfirmedSnapshot(e,'confirmación del AS-IS con el cliente');
