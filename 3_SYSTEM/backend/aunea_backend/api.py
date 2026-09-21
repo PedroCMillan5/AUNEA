@@ -22,7 +22,7 @@ from .uat import run_canonical_uat
 app = FastAPI(title="AUNEA Internal Backend", version="1.1.1")
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"^(https?://(localhost|127\\.0\\.0\\.1)(:\\d+)?|https://[A-Za-z0-9.-]+\\.app\\.github\\.dev)$",
+    allow_origin_regex=r"^(https?://(localhost|127\.0\.0\.1)(:\d+)?|https://[A-Za-z0-9.-]+\.app\.github\.dev)$",
     allow_credentials=False,
     allow_methods=["GET","POST","PUT","OPTIONS"],
     allow_headers=["Content-Type"],
