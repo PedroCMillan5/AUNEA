@@ -126,9 +126,9 @@ test('client-first process view exposes both template entry points and fixed PG0
   const html=ctx.processPage();
   assert.match(html,/Inicio fijo/);
   assert.match(html,/Fin fijo/);
-  assert.match(html,/id="useProcessTemplate">Usar plantilla de flujo/);
-  assert.match(html,/id="addStepTemplate">Añadir desde plantilla de paso/);
-  assert.match(html,/id="addStepFromClient">Añadir paso intermedio/);
+  assert.match(code,/id="useProcessTemplate">Usar plantilla de flujo/);
+  assert.match(code,/id="addStepTemplate">Añadir desde plantilla de paso/);
+  assert.match(code,/id="addStepFromClient">Añadir paso intermedio/);
 });
 
 test('template system offers governed structural Process and Step starters as editable drafts',()=>{
