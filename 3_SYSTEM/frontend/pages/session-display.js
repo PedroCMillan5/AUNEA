@@ -60,9 +60,8 @@ function sessionClosurePanel(snap) {
 
 function sessionDisplayPage() {
   const snap = readSessionSnapshot() || { state: 'C90-00', shared: false, steps: [], frictions: [], risks: [], impacts: [] };
-  const head = `<div class="session-display-head">
-      <div><div class="screen-id">${esc(snap.state)}</div><h1>${esc(snap.process || 'Proceso actual')}</h1>
-      <p class="subtitle">${esc(snap.company || '')}</p></div>
+  const head = `<div class="session-display-head session-client-topbar" data-session-state="${attr(snap.state||'')}">
+      <div class="session-client-brand"><img src="./assets/brand/Logo.png" alt="AUNEA"><div><span>${esc(snap.company || 'Empresa')}</span><h1>${esc(snap.process || 'Proceso actual')}</h1></div></div>
       <div id="sessionSync" class="session-sync"></div>
     </div>`;
 
