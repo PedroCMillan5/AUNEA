@@ -9,7 +9,7 @@ function supersedeStep(stepId){
   const e=currentEng(),x=e.processSteps.find(s=>s.id===stepId);
   if(!x)return;
   if(!confirm('¿Eliminar este paso del flujo? Se retirará inmediatamente del mapa.'))return;
-  x.status='SUPERSEDED';e.confirmedAsIs=false;markDirty(`Paso ${stepId} eliminado del flujo`);render();
+  x.status='SUPERSEDED';invalidateProcessLayers(e,'map');markDirty(`Paso ${stepId} eliminado del flujo`);render();
 }
 
 function supersedeFriction(frId){
