@@ -266,7 +266,7 @@ function clientProcessView(e,steps,fr){
   const workspace=`${clientBar}<div class="client-process-workspace">${layerRail}<div class="client-process-main">${flow}${confirm}</div></div>`;
   return section('Vista con cliente','La sesión se conduce sobre un único mapa. Inicio y fin proceden del alcance ya definido; aquí sólo se añaden actividades intermedias.',
     workspace,
-    `<button class="btn btn-outline" id="openSessionDisplayFromProcess">Abrir pantalla cliente</button><button class="btn btn-outline" id="useProcessTemplate">Elegir plantilla de flujo</button><button class="btn btn-outline" id="addStepTemplate">Plantilla de paso</button><button class="btn btn-primary" id="addStepFromClient">Añadir paso intermedio</button>`);
+    `<button class="btn btn-outline" id="openSessionDisplayFromProcess">Abrir pantalla cliente</button><button class="btn btn-outline" id="useProcessTemplate">Usar plantilla de flujo</button><button class="btn btn-outline" id="addStepTemplate">Añadir desde plantilla de paso</button><button class="btn btn-primary" id="addStepFromClient">Añadir paso intermedio</button>`);
 }
 function stepsEditor(e,steps,fr){
   const discrepancies=stepOrderDiscrepancies(steps);
