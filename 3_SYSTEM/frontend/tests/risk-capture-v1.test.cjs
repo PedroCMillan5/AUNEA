@@ -25,7 +25,7 @@ test('addRisk groups riskCat/riskDesc/riskLike/riskImpact into an open layer-1 g
   assert.equal(groups[0][2],'Riesgo');
   assert.equal(groups[1][1],undefined,'layer 2 (controles y resto) must start collapsed');
   ['riskCat','riskDesc','riskLike','riskImpact','riskRev','riskControls','riskSensitive','riskMat','riskCritical'].forEach(fid=>{
-    assert.match(code,new RegExp(`id="${fid}"`),`${fid} must still exist`);
+    assert.match(code,new RegExp(`id="${fid}"|'\${fid}'`),`${fid} must still exist either as a direct input or through the shared dropdown helper`);
   });
 });
 
