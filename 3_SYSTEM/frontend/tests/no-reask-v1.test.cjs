@@ -241,4 +241,15 @@ test('DF098 real interaction (jsdom, real runtime): action+owner+date consolidat
     }finally{dom.window.close()}
   }finally{await new Promise(resolve=>server.close(resolve))}
 });
+
+test('readiness accepts a boundary-only AS-IS map and does not invent an intermediate-step requirement',()=>{
+  const s14={Field_ID:'DF014',Requiredness:'CONDITIONAL_90M',Ask_Mode:'CONDITIONAL_ASK',Reask_Policy:'NO_REASK',Branch_Rule_ID:'BR-BASE'};
+  const s15={Field_ID:'DF015',Requiredness:'CONDITIONAL_90M',Ask_Mode:'CONDITIONAL_ASK',Reask_Policy:'NO_REASK',Branch_Rule_ID:'BR-BASE'};
+  const oldFields=ctx.schema.fields;
+  ctx.schema.fields=[...oldFields.filter(x=>!['DF014','DF015'].includes(x.Field_ID)),s14,s15];
+  eng.processSteps=[];eng.answers.DF014='Inicio';eng.answers.DF015='Fin';
+  assert.ok(!Array.from(ctx.canonicalMissingRequired(eng)).includes('Mapa AS-IS'));
+  delete eng.answers.DF014;delete eng.answers.DF015;eng.processSteps=[{id:'s1',status:'ACTIVE',step_name:'Alta',actor:'A1',tool:'T1',active_time:10,rework_time:2,occurrences_per_case:1,communication_channels:['CH1'],inputs:['AR1'],outputs:['AR2']},{id:'s2',status:'ACTIVE',step_name:'Aprobación',step_type:'ST05',actor:'A2',tool:'T2',wait_time:60,decision_criteria:['DC1'],communication_channels:['CH2']}];
+  ctx.schema.fields=oldFields;
+});
 // [AUNEA-UAT-NOREASK-010] END
