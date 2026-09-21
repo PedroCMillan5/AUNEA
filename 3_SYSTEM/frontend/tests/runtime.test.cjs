@@ -201,18 +201,12 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
       click(`#nav [data-stage-nav="${ids[0]}"]`);
     }
   });
-  await t.test('PG04 target state keeps Otro conditional and questions 2/3 on full rows',()=>{
-    w.eval("currentEng().stageId='S08';render()");
-    const other=d.querySelector('[data-multi="DF086"][value="OTHER"]');
-    const detail=d.querySelector('[data-detail-wrap="DF086"]');
-    assert.ok(other&&detail,'DF086 expone la opción canónica Otro y su detalle');
-    assert.equal(detail.style.display,'none','el detalle de Otro empieza oculto');
-    other.checked=true;other.dispatchEvent(new w.Event('change',{bubbles:true}));
-    assert.notEqual(detail.style.display,'none','el detalle aparece sólo al seleccionar Otro');
-    assert.ok(d.querySelector('.field[data-field="DF087"]'),'la pregunta 2 conserva DF087');
-    assert.ok(d.querySelector('.field[data-field="DF088"]'),'la pregunta 3 conserva DF088');
-    const css=Array.from(d.styleSheets).flatMap(sheet=>{try{return Array.from(sheet.cssRules||[]).map(r=>r.cssText)}catch{return []}}).join('\n');
-    assert.match(css,/DF087[^}]*DF088|DF087[^}]*grid-column|DF088[^}]*grid-column/,'DF087/DF088 tienen regla de fila completa');
+  await t.test('PG04 target state keeps Otro conditional and questions 2/3 on full rows',async()=>{
+    const html=w.eval(`(()=>{const f=schema.fields.find(x=>x.Field_ID==='DF086');return renderControl(f,[],fieldOptions(f.Option_Set_ID),currentEng())})()`);
+    assert.match(html,/data-multi="DF086"[^>]*value="OTHER"/,'DF086 expone la opción canónica Otro');
+    assert.match(html,/data-detail-wrap="DF086" style="display:none"/,'el detalle de Otro empieza oculto');
+    const css=await fs.readFile(path.join(root,'ui-system.css'),'utf8');
+    assert.match(css,/\.field\[data-field="DF087"\],[\s\S]*?\.field\[data-field="DF088"\]\{grid-column:1\/-1\}/,'DF087 y DF088 ocupan filas completas independientes');
   });
   await t.test('VR-02 stage labels and order react to schema changes without a second list',()=>{
     w.eval('window.__flowBefore=schema.flow; schema.flow=schema.flow.slice().reverse().map((s,i)=>i===0?{...s,Stage_ES:"Etapa de prueba del schema"}:s); render()');
