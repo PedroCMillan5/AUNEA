@@ -89,8 +89,8 @@ function buildSessionSnapshot(e) {
   if (!shared) return { state: st, shared: false, stageId, steps: [], frictions: [], risks: [], impacts: [], publishedAt: now() };
   const steps = activeSteps(e).map(clientStep);
   const company = companyById(e.companyId);
-  const startBoundary=(e.answers?.DF014!==undefined&&e.answers?.DF014!==null&&String(e.answers.DF014).trim()!=='')?String(e.answers.DF014):'';
-  const endBoundary=(e.answers?.DF015!==undefined&&e.answers?.DF015!==null&&String(e.answers.DF015).trim()!=='')?String(e.answers.DF015):'';
+  const startBoundary=(e.answers?.DF014!==undefined&&e.answers?.DF014!==null&&String(e.answers.DF014).trim()!=='')?String(e.answers.DF014):((e.answers?.DF012!==undefined&&e.answers?.DF012!==null&&String(e.answers.DF012).trim()!=='')?String(e.answers.DF012):'');
+  const endBoundary=(e.answers?.DF015!==undefined&&e.answers?.DF015!==null&&String(e.answers.DF015).trim()!=='')?String(e.answers.DF015):((e.answers?.DF013!==undefined&&e.answers?.DF013!==null&&String(e.answers.DF013).trim()!=='')?String(e.answers.DF013):'');
   const snap = {
     state: st,
     shared,
