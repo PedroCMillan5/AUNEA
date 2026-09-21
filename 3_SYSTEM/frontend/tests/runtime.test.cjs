@@ -209,13 +209,13 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
     assert.equal(d.querySelector('#nav .nav-step.active').dataset.stageNav,'S04');
     assert.deepEqual([...reached].sort(),Array.from(w.eval('Object.keys(pages)')).sort(),'every registered Console page was reached by real navigation');
   });
-  click('[data-page="proceso"]');click('#addStep');fill('#step_name','Validar solicitud');fill('#step_type','ST02');fill('#step_actor','OPERATIONS');
+  click('[data-page="proceso"]');click('#addStepFromClient');fill('#step_name','Validar solicitud');fill('#step_type','ST02');fill('#step_actor','OPERATIONS');
   fill('#step_active','12');fill('#step_wait','60');fill('#step_rework','3');click('#modalSave');
   assert.equal(d.querySelector('#modalSave'),null);
   click('[data-process-tab="fricciones"]');click('#addFriction');d.querySelector('#fr_type').selectedIndex=1;fill('#fr_signal','UAT: faltan datos en la solicitud');click('#modalSave');
   assert.ok(d.querySelector('#modalSave'),'La fricción sin paso ni causa debe seguir abierta');
   const stepChoice=d.querySelector('[data-v1-multi="fr_steps"]'),causeChoice=d.querySelector('[data-v1-multi="fr_causes"]');assert.ok(stepChoice);assert.ok(causeChoice);stepChoice.checked=true;causeChoice.checked=true;click('#modalSave');assert.equal(d.querySelector('#modalSave'),null);
-  click('[data-process-tab="revision"]');click('#confirmAsIs');click('#saveBtn');
+  click('[data-process-tab="cliente"]');click('#confirmAsIs');click('#saveBtn');
   const saved=JSON.parse(w.localStorage.getItem('aunea_internal_v1'));
   assert.equal(saved.companies.length,1);assert.equal(saved.contacts.length,2);assert.equal(saved.engagements.length,1);
   assert.equal(saved.engagements[0].processSteps[0].active_time,12);
