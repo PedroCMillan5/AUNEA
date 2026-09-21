@@ -39,17 +39,14 @@ test('reorder buttons are wired to moveStep in both directions',()=>{
   assert.match(code,/moveStep\(b\.dataset\.moveStepDown,1\)/);
 });
 
-test('processPage defaults to "Revisión con cliente" once steps exist (UAT-VIS-039), and to "Pasos" when the process is still empty',()=>{
+test('processPage always defaults to the client-friendly canvas when opened',()=>{
   eng.processSteps=[{id:'s1',status:'ACTIVE',step_name:'Alta'}];
-  eng.frictions=[];
-  eng.processTab='';
-  eng.confirmedAsIs=false;
+  eng.frictions=[];eng.risks=[];eng.economicInputs=[];
+  eng.processTab='';eng.confirmedAsIs=false;eng.answers={DF014:'Inicio acordado',DF015:'Fin acordado'};
   let html=ctx.processPage();
-  assert.match(html.match(/<button class="subtab[^"]*" data-process-tab="revision">/)[0],/active/);
-  assert.doesNotMatch(html.match(/<button class="subtab[^"]*" data-process-tab="pasos">/)[0],/active/);
-  eng.processSteps=[];
-  html=ctx.processPage();
-  assert.match(html.match(/<button class="subtab[^"]*" data-process-tab="pasos">/)[0],/active/);
+  assert.match(html.match(/<button class="subtab[^"]*" data-process-tab="cliente">/)[0],/active/);
+  assert.match(html,/Inicio acordado/);assert.match(html,/Fin acordado/);
+  assert.match(html,/Fricciones y evidencia/);assert.match(html,/Riesgo y controles/);assert.match(html,/Impacto económico/);
 });
 
 test('addMultipleSteps creates exactly N steps carrying only technical id/status/empty-collection defaults — never an invented name/actor/type/tool/time/routing — each individually editable afterward',()=>{
