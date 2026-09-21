@@ -10,18 +10,22 @@
 const RESULTS_DISPLAY_KEY='aunea_results_display_v1';
 
 function sessionCanvas(snap) {
-  if (!snap.steps.length) {
-    return `<div class="empty"><h2>Construyendo el mapa</h2><p>Estamos representando el proceso tal y como funciona hoy.</p></div>`;
-  }
   const badgesFor = id => snap.frictions.filter(f => f.steps.includes(id));
-  return `<div class="flow-canvas"><div class="flow-track">${snap.steps.map((s, i) => `
-    ${i ? '<div class="flow-connector"></div>' : ''}
+  const start=snap.boundaries?.start||'Límite inicial pendiente',end=snap.boundaries?.end||'Límite final pendiente';
+  const middle=(snap.steps||[]).map((s, i) => `
+    <div class="flow-connector"></div>
     <div class="flow-step ${snap.confirmedAsIs ? 'confirmed' : ''} ${s.isDecision ? 'is-decision' : ''}" data-session-step="${attr(s.id)}">
       <h4>${s.n}. ${esc(s.name)}</h4>
       <p>${esc([s.actor, s.tool].filter(Boolean).join(' · ') || '—')}</p>
       <p>${s.activeMin ? `${s.activeMin} min de trabajo` : ''}${s.activeMin && s.waitMin ? ' · ' : ''}${s.waitMin ? `${s.waitMin} min de espera` : ''}</p>
       <div class="friction-badges">${badgesFor(s.id).map(f => `<span class="friction-badge">${esc(f.label)}</span>`).join('')}</div>
-    </div>`).join('')}</div></div>`;
+    </div>`).join('');
+  return `<div class="flow-canvas"><div class="flow-track">
+    <div class="flow-step flow-boundary start"><span class="boundary-kicker">Inicio</span><h4>${esc(start)}</h4><p>Límite acordado</p></div>
+    ${middle}
+    <div class="flow-connector"></div>
+    <div class="flow-step flow-boundary end"><span class="boundary-kicker">Fin</span><h4>${esc(end)}</h4><p>Límite acordado</p></div>
+  </div></div>`;
 }
 
 function sessionLayerPanels(snap) {
