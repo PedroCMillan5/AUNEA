@@ -8,8 +8,8 @@
 function supersedeStep(stepId){
   const e=currentEng(),x=e.processSteps.find(s=>s.id===stepId);
   if(!x)return;
-  if(!confirm('El paso no se borrará físicamente: quedará SUPERSEDED para conservar trazabilidad. ¿Continuar?'))return;
-  x.status='SUPERSEDED';e.confirmedAsIs=false;markDirty(`Paso ${stepId} superseded`);render();
+  if(!confirm('¿Eliminar este paso del flujo? Dejará de aparecer en el mapa y se conservará únicamente la trazabilidad interna del cambio.'))return;
+  x.status='SUPERSEDED';e.confirmedAsIs=false;markDirty(`Paso ${stepId} eliminado del flujo`);render();
 }
 
 function supersedeFriction(frId){
