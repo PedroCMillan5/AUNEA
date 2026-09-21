@@ -48,6 +48,14 @@ function completionBlockers(missing,gateSummary){
 // to check here and falls back to e.confirmedAsIs — the one real signal that the consultant reviewed
 // that captured picture with the client — rather than inventing a new per-stage flag.
 function completionStageReviewed(s,e){
+  if(['S04','S05','S06','S07','S09'].includes(s.Stage_ID)&&typeof processLayerConfirmations==='function'){
+    const x=processLayerConfirmations(e);
+    if(s.Stage_ID==='S04')return !!x.map;
+    if(s.Stage_ID==='S05')return !!x.frictions;
+    if(s.Stage_ID==='S06')return !!x.risks;
+    if(s.Stage_ID==='S07')return !!x.impact;
+    if(s.Stage_ID==='S09')return typeof allProcessLayersConfirmed==='function'&&allProcessLayersConfirmed(e);
+  }
   const fields=(schema?.fields||[]).filter(f=>f.Stage_ID===s.Stage_ID&&f.Requiredness==='REQUIRED_90M'&&questionVisible(f,e));
   if(fields.length)return fields.every(f=>valuePresent(effectiveValue(f,e)));
   return !!e.confirmedAsIs;
