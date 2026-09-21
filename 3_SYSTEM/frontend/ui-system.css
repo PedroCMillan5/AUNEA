@@ -142,3 +142,15 @@ select option{background:#fff;color:var(--ink)}
 .session-client-brand>div{min-width:0}.session-client-brand span{display:block;font-size:var(--font-caption);color:#c8dbd1;text-transform:uppercase;letter-spacing:.06em}.session-client-brand h1{margin:2px 0 0;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .session-client-topbar .session-sync .badge{border-color:rgba(255,255,255,.25)}
 @media(max-width:640px){.client-process-layer-rail{grid-template-columns:1fr}.client-process-topbar{grid-template-columns:1fr}.client-process-topbar img{width:130px}.client-process-context b{white-space:normal}.session-client-brand{align-items:flex-start;flex-direction:column;gap:8px}.session-client-brand img{width:130px}.session-client-brand h1{white-space:normal}}
+
+.mode-process-editor .sidebar,.mode-process-editor .topbar{display:none!important}
+.mode-process-editor .main{margin-left:0!important;width:100%!important}
+.mode-process-editor .content{padding:0!important;max-width:none!important}
+.mode-process-editor .client-process-topbar{position:sticky;top:0;z-index:20}
+.process-node-links{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.risk-badge,.economic-badge{display:inline-flex;align-items:center;border-radius:999px;padding:3px 8px;font-size:11px;font-weight:700}
+.risk-badge{background:#fff4e8;border:1px solid #e4b273;color:#7c4d12}
+.economic-badge{background:#eef5ff;border:1px solid #a9c8ef;color:#214f83}
+.process-node-actions{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+.process-node-actions button{border:1px solid var(--line);background:#fff;border-radius:6px;padding:4px 7px;font-size:10px;cursor:pointer}
+.process-node-actions button:hover{border-color:var(--system);background:var(--system-soft)}
