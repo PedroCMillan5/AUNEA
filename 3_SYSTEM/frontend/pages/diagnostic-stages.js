@@ -181,7 +181,7 @@ const STAGE_CLIENT_STATE = {
   S05:{id:'C90-03',shared:true,text:'El mismo AS-IS, ahora con las fricciones confirmadas superpuestas sobre los pasos afectados.'},
   S06:{id:'C90-03',shared:true,text:'El mismo AS-IS con los riesgos confirmados en lenguaje de negocio. El scoring y la categoría interna no salen de esta consola.'},
   S07:{id:'C90-03',shared:true,text:'El mismo AS-IS con los impactos confirmados. No se muestra business case, ROI ni ahorro final durante la sesión.'},
-  S08:{id:'C90-03',shared:true,text:'El cliente mantiene el AS-IS enriquecido. El estado objetivo y las restricciones se capturan aquí, en privado.'},
+  S08:{id:'C90-00',shared:false,text:'El estado objetivo y las restricciones se capturan en la consola antes de construir el mapa. Esta pantalla no se comparte con el cliente.'},
   S09:{id:'C90-04',shared:true,text:'Validación final del AS-IS enriquecido más un cierre compacto junto al flujo.'}
 };
 
