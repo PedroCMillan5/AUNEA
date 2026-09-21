@@ -70,6 +70,20 @@ test('a manual answer with descriptive Reuse_From stays editable when no actual 
 });
 
 
+
+test('DF016 manual process owner stays as the normal selector and never exposes an internal Contact id',()=>{
+  const f={Field_ID:'DF016',Pregunta_o_etiqueta_ES:'Responsable end-to-end del proceso',Objetivo_concreto:'Establecer accountability.',Requiredness:'CONDITIONAL_90M',Ask_Mode:'CONDITIONAL_ASK',Reask_Policy:'NO_REASK',Branch_Rule_ID:'BR-BASE',Reuse_From:'RT_CONTACT / roles ya seleccionados',Option_Set_ID:null,Validation:'Un owner principal.',Ejemplo_ES:'Directora de Operaciones'};
+  eng.answers.DF016='p1';
+  const originalRender=ctx.renderControl;
+  ctx.renderControl=(field,val)=>field.Field_ID==='DF016'?'<OWNER_SELECT value="'+val+'">':originalRender(field,val);
+  const html=ctx.renderQuestion(f,eng);
+  assert.match(html,/OWNER_SELECT value="p1"/);
+  assert.doesNotMatch(html,/reuse-context|Tomado de:|prefill-chip/);
+  assert.doesNotMatch(html,/><strong>p1<\/strong>/);
+  ctx.renderControl=originalRender;
+  delete eng.answers.DF016;
+});
+
 test('PG02 manual answers never collapse into a meaningless derived-confirmation panel',()=>{
   const f={Field_ID:'DF014',Pregunta_o_etiqueta_ES:'Límite inicial del alcance',Objetivo_concreto:'Delimitar el proceso.',Requiredness:'CONDITIONAL_90M',Ask_Mode:'CONDITIONAL_ASK',Reask_Policy:'DERIVE_THEN_CONFIRM',Branch_Rule_ID:'BR-BASE',Reuse_From:'DF012.Trigger + primer paso del mapa',Option_Set_ID:null,Validation:'Coherente',Ejemplo_ES:'Empieza al recibir solicitud'};
   eng.answers.DF014='Recepción de solicitud';
