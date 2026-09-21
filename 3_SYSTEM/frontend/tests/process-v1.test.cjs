@@ -19,7 +19,7 @@ test('moveStep changes the visible order and relinks the normal route to the new
 });
 
 test('visual order is now the normal flow source, so no discrepancy warning is produced',()=>{
-  assert.deepEqual(ctx.stepOrderDiscrepancies([]),[]);
+  assert.equal(JSON.stringify(ctx.stepOrderDiscrepancies([])),'[]');
   assert.match(code,/function relinkNormalFlow/);
   assert.match(code,/reorderStepBefore/);
 });
