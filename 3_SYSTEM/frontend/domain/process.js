@@ -175,7 +175,7 @@ const STEP_STARTER_TEMPLATES=Object.freeze([
 function processBoundaryValue(e,fid,fallback){
   const f=schema?.fields?.find(x=>x.Field_ID===fid);
   const v=f&&typeof effectiveValue==='function'?effectiveValue(f,e):e.answers?.[fid];
-  return valuePresent(v)?String(v):fallback;
+  return (v!==undefined&&v!==null&&String(v).trim()!=='')?String(v):fallback;
 }
 function processDraftStep(data={},templateMeta=null){
   return stepMeta({
