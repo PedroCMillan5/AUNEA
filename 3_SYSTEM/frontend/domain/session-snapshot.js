@@ -89,6 +89,8 @@ function buildSessionSnapshot(e) {
   if (!shared) return { state: st, shared: false, stageId, steps: [], frictions: [], risks: [], impacts: [], publishedAt: now() };
   const steps = activeSteps(e).map(clientStep);
   const company = companyById(e.companyId);
+  const startBoundary=valuePresent(e.answers?.DF014)?String(e.answers.DF014):'';
+  const endBoundary=valuePresent(e.answers?.DF015)?String(e.answers.DF015):'';
   const snap = {
     state: st,
     shared,
@@ -96,6 +98,7 @@ function buildSessionSnapshot(e) {
     // Identity the client already knows; nothing commercial and no internal metadata.
     company: company ? company.name : '',
     process: e.answers?.DF011 || e.processName || '',
+    boundaries:{start:startBoundary,end:endBoundary},
     steps,
     frictions: layers.includes('frictions') ? activeFrictions(e).map(clientFriction) : [],
     risks: layers.includes('risks') ? (e.risks || []).map(clientRisk) : [],
