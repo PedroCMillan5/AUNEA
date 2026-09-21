@@ -24,9 +24,10 @@ test('addRisk groups riskCat/riskDesc/riskLike/riskImpact into an open layer-1 g
   assert.equal(groups[0][1],' open','layer 1 (Riesgo) must be open by default');
   assert.equal(groups[0][2],'Riesgo');
   assert.equal(groups[1][1],undefined,'layer 2 (controles y resto) must start collapsed');
-  ['riskCat','riskDesc','riskLike','riskImpact','riskRev','riskControls','riskSensitive','riskMat','riskCritical'].forEach(fid=>{
-    assert.match(code,new RegExp(`id="${fid}"|'\${fid}'`),`${fid} must still exist either as a direct input or through the shared dropdown helper`);
+  ['riskCat','riskLike','riskImpact','riskRev','riskControls','riskSensitive','riskMat','riskCritical'].forEach(fid=>{
+    assert.match(code,new RegExp(`riskDropdown\\('${fid}'`),`${fid} must still be rendered through the shared dropdown helper`);
   });
+  assert.match(code,/id="riskDesc"/,'riskDesc remains a direct text input');
 });
 
 test('the risk level stays backend-owned: the module never derives R0-R3 locally',()=>{
