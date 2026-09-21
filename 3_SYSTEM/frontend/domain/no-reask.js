@@ -215,6 +215,7 @@ function renderQuestion(f,e){
   const meta=`${required?requiredMark():''}${f.Requiredness==='CONDITIONAL_90M'?'<span class="conditional-tag">condicional</span>':''}${chip}`;
   let body='';
   if(systemOnly)body=`<div class="readonly-box">${esc(formatContextValue(f,val)||'Se completará automáticamente cuando existan datos suficientes.')}</div>`;
+  else if(f.Field_ID==='DF007')body=renderControl(f,val,opts,e);
   else if(contextOnly(f,e,val)){
     if(!f.Reuse_From){
       // Reask_Policy=NO_REASK only means "don't re-ask this session" — it does NOT mean the value
