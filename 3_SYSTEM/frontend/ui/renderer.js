@@ -191,11 +191,26 @@ function renderControl(f,val,opts,e){
   return `<div class="notice warn control-error"><strong>Control canónico no renderizado:</strong> ${esc(c||'SIN_CONTROL')} · ${esc(fid)}. No se degrada a texto libre.</div>`;
 }
 
-function bindCanonicalRenderer(){
-  document.querySelectorAll('[data-create-contact-for-field]').forEach(btn=>btn.addEventListener('click',()=>{
+if(typeof document!=='undefined'&&!document.__auneaCanonicalDelegatedBound){
+  document.__auneaCanonicalDelegatedBound=true;
+  document.addEventListener('click',ev=>{
+    const btn=ev.target.closest?.('[data-create-contact-for-field]');
+    if(!btn)return;
+    ev.preventDefault();ev.stopPropagation();
     if(typeof addContactForEngagementField==='function')addContactForEngagementField(btn.dataset.createContactForField);
-  }));
+  });
+  document.addEventListener('change',ev=>{
+    const el=ev.target.closest?.('[data-other-toggle]');
+    if(!el)return;
+    const fid=el.dataset.otherToggle,wrap=document.querySelector(`[data-detail-wrap="${fid}"]`);
+    if(!wrap)return;
+    wrap.hidden=!el.checked;
+    wrap.style.display=el.checked?'':'none';
+    if(!el.checked)setAnswerDetail(fid,'');
+  });
+}
 
+function bindCanonicalRenderer(){
   document.querySelectorAll('[data-owner-reference]').forEach(el=>el.addEventListener('change',()=>{
     const fid=el.dataset.ownerReference,wrap=document.querySelector(`[data-owner-other-wrap="${fid}"]`);
     if(wrap)wrap.style.display=el.value==='OTHER'?'':'none';
@@ -213,12 +228,6 @@ function bindCanonicalRenderer(){
   numberFids.forEach(fid=>{const sync=()=>{const value=document.querySelector(`[data-number-value="${fid}"]`)?.value??'',unit=document.querySelector(`[data-number-unit="${fid}"]`)?.value??'',period=document.querySelector(`[data-number-period="${fid}"]`)?.value??'',mode=document.querySelector(`[data-number-mode="${fid}"]`)?.value??'';setAnswer(fid,{value:value===''?'':Number(value),unit,period,mode})};document.querySelectorAll(`[data-number-value="${fid}"],[data-number-unit="${fid}"],[data-number-period="${fid}"],[data-number-mode="${fid}"]`).forEach(el=>el.addEventListener(el.tagName==='SELECT'?'change':'input',sync))});
   document.querySelectorAll('[data-set-unknown]').forEach(b=>b.onclick=()=>{setAnswer(b.dataset.setUnknown,'UNKNOWN');render()});
   const pairFids=[...new Set([...document.querySelectorAll('[data-pair-field]')].map(x=>x.dataset.pairField))];pairFids.forEach(fid=>document.querySelectorAll(`[data-pair-field="${fid}"]`).forEach(el=>el.addEventListener('change',()=>{const p={};document.querySelectorAll(`[data-pair-field="${fid}"]`).forEach(x=>p[x.dataset.pairPart]=x.value);setAnswer(fid,p)})));
-  document.querySelectorAll('[data-other-toggle]').forEach(el=>el.addEventListener('change',()=>{
-    const fid=el.dataset.otherToggle,wrap=document.querySelector(`[data-detail-wrap="${fid}"]`);
-    if(!wrap)return;
-    wrap.style.display=el.checked?'':'none';
-    if(!el.checked)setAnswerDetail(fid,'');
-  }));
   document.querySelectorAll('[data-multi][data-exclusive]').forEach(el=>el.addEventListener('change',()=>{
     const fid=el.dataset.multi;
     if(el.checked)document.querySelectorAll(`[data-multi="${fid}"]`).forEach(other=>{if(other!==el)other.checked=false});
