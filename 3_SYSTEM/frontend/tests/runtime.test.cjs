@@ -85,7 +85,7 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
     assert.equal(w.eval('typeof state.contacts[0].phonePrefix'),'undefined','no second phone attribute is created');
   });
   await t.test('active context survives Inicio and Abrir / Continuar returns to the open diagnostic',()=>{
-    setPage('diagnostico');
+    w.eval("setPage('diagnostico')");
     const engId=w.eval('currentEng().id');
     click('#nav [data-page="inicio"]');
     assert.equal(w.eval('state.activePage'),'inicio');
