@@ -191,7 +191,7 @@ function renderControl(f,val,opts,e){
   return `<div class="notice warn control-error"><strong>Control canónico no renderizado:</strong> ${esc(c||'SIN_CONTROL')} · ${esc(fid)}. No se degrada a texto libre.</div>`;
 }
 
-if(typeof document!=='undefined'&&!document.__auneaCanonicalDelegatedBound){
+if(typeof document!=='undefined'&&typeof document.addEventListener==='function'&&!document.__auneaCanonicalDelegatedBound){
   document.__auneaCanonicalDelegatedBound=true;
   document.addEventListener('click',ev=>{
     const btn=ev.target.closest?.('[data-create-contact-for-field]');
