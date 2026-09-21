@@ -213,7 +213,7 @@ function render(){
   // refresh must not be the pattern of use (90MIN UI SPEC §3.3).
   if(typeof publishSessionSnapshot==='function')publishSessionSnapshot(currentEng());
 }
-function setPage(page){if(['diagnostico','proceso','resultados','tobe','comparacion','revision','modoresultados','implementacion','recomendacion','escenarios','quote'].includes(page)&&!currentEng()){toast('Abre o crea un estudio antes.');state.activePage='estudios';render();return}const e=currentEng();if(page==='diagnostico'&&e&&typeof advanceEngagementTo==='function')advanceEngagementTo(e,'Sesión 1','apertura de la primera sesión');state.activePage=page;render()}
+function setPage(page){if(['diagnostico','proceso','resultados','tobe','comparacion','revision','modoresultados','implementacion','recomendacion','escenarios','quote'].includes(page)&&!currentEng()){toast('Abre o crea un estudio antes.');state.activePage='estudios';render();return}const e=currentEng(),previousPage=state.activePage;if(page==='diagnostico'&&e&&typeof advanceEngagementTo==='function')advanceEngagementTo(e,'Sesión 1','apertura de la primera sesión');if(page==='proceso'&&e&&previousPage!=='proceso')e.processTab='cliente';state.activePage=page;render()}
 function goToProcessFromStage(){const e=currentEng();if(e){state.returnTo={page:'diagnostico',stageId:e.stageId};e.processTab='cliente'}setPage('proceso')}
 function returnToStage(){const e=currentEng(),rt=state.returnTo;if(e&&rt)e.stageId=rt.stageId;state.returnTo=null;setPage('diagnostico')}
 // screenId is the approved reference a screen must reproduce (e.g. "I90-00-01"). It is internal
