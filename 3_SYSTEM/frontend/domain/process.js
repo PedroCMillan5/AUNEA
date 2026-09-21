@@ -206,7 +206,7 @@ function openProcessTemplatePicker(){
   const body=`<div class="field full"><label>Plantilla de flujo</label><select id="processTemplateSelect">
     ${PROCESS_STARTER_TEMPLATES.map(x=>`<option value="${attr(x.id)}">${esc(x.name)} · v${x.version}</option>`).join('')}
   </select><div class="field-help">La plantilla crea pasos intermedios como borrador. Los límites inicial y final proceden de PG02 y no se sustituyen.</div></div>
-  <div class="template-catalog">${PROCESS_STARTER_TEMPLATES.map(x=>`<div class="notice"><b>${esc(x.name)}</b><br>${esc(x.description)}</div>`).join('')}</div>`;
+  <div class="template-catalog">${PROCESS_STARTER_TEMPLATES.map(x=>`<div class="notice template-preview"><b>${esc(x.name)}</b><br>${esc(x.description)}<div class="field-help">${x.steps.map(s=>esc(s.step_name)).join(' → ')}</div></div>`).join('')}</div>`;
   openModal('Usar plantilla de flujo',body,()=>instantiateProcessTemplate(document.getElementById('processTemplateSelect').value),'Usar plantilla');
 }
 function openStepTemplatePicker(){
@@ -241,7 +241,7 @@ function clientProcessView(e,steps,fr){
   const confirm=`<div class="flow-confirm"><div><b>${e.confirmedAsIs?'AS-IS confirmado':'Confirmación pendiente'}</b><div class="field-help">${e.confirmedAsIs?`Confirmado ${fmtDate(e.asIsConfirmedAt)}`:'La confirmación se invalida si cambia el mapa.'}</div></div><button class="btn ${e.confirmedAsIs?'btn-outline':'btn-primary'}" id="confirmAsIs">${e.confirmedAsIs?'Reconfirmar flujo':'Confirmar flujo AS-IS'}</button></div>`;
   return section('Vista con cliente','Este es el canvas de trabajo compartible. Los límites vienen de PG02 y los elementos internos se editan desde las capas inferiores.',
     flow+layers+confirm,
-    `<button class="btn btn-outline" id="openSessionDisplayFromProcess">Abrir pantalla cliente</button><button class="btn btn-primary" id="addStepFromClient">Añadir paso intermedio</button>`);
+    `<button class="btn btn-outline" id="openSessionDisplayFromProcess">Abrir pantalla cliente</button><button class="btn btn-outline" id="useProcessTemplate">Usar plantilla de flujo</button><button class="btn btn-outline" id="addStepTemplate">Añadir desde plantilla de paso</button><button class="btn btn-primary" id="addStepFromClient">Añadir paso intermedio</button>`);
 }
 function stepsEditor(e,steps,fr){
   const discrepancies=stepOrderDiscrepancies(steps);
