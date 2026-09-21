@@ -16,6 +16,9 @@ function displayDuration(minutes,unit='min'){
 function stepMeta(s){s._ui=s._ui||{};s._details=s._details||{};return s}
 function frictionMeta(f){f._ui=f._ui||{};f._details=f._details||{};return f}
 function painForFriction(type){return schema.friction_pain_map.find(x=>String(x.Friction_Type_ID)===String(type))?.Pain_ID||null}
+function processLayerState(e){return typeof processLayerConfirmations==='function'?processLayerConfirmations(e):(e.layerConfirmations||(e.layerConfirmations={map:false,frictions:false,risks:false,impact:false}))}
+function processLayerKeySafe(tab){return typeof processLayerKey==='function'?processLayerKey(tab):(tab==='fricciones'?'frictions':tab==='riesgos'?'risks':tab==='impacto'?'impact':'map')}
+function invalidateProcessLayersSafe(e,from='map'){if(typeof invalidateProcessLayers==='function')return invalidateProcessLayers(e,from);e.confirmedAsIs=false;e.answers.DF093=''}
 function selectedHtml(id,opts,selected){const arr=normalizeArray(selected).map(String);return `<div class="choice-grid">${opts.map(o=>`<div class="choice"><input type="checkbox" id="${id}_${attr(o.value)}" value="${attr(o.value)}" data-v1-multi="${id}" ${arr.includes(String(o.value))?'checked':''}><label for="${id}_${attr(o.value)}">${esc(o.label)}</label></div>`).join('')}</div>`}
 function catalogOtherOption(opts){return (opts||[]).find(o=>String(o.value).toUpperCase()==='OTHER'||['otro','otra'].includes(String(o.label||'').trim().toLowerCase()))||null}
 function auneaDropdownControl(id,opts,value='',placeholder='Selecciona…',extra=''){
@@ -109,7 +112,7 @@ function openStepModal(stepId=null,linkFromStepId=null,preset=null){
     const nextVal=document.getElementById('step_next').value;s.normal_next_step=nextVal==='__NEW__'?'':nextVal;
     const et=document.getElementById('step_exc_type').value,ec=document.getElementById('step_exc_condition').value.trim(),ed=document.getElementById('step_exc_dest').value,eo=resolveCatalogInput(document.getElementById('step_exc_owner'));s.exception_path=hasDecisionNow&&(et||ec||ed||eo)?{type:et,condition:ec,destination_step:ed,owner:eo}:null;s.notes=document.getElementById('step_notes').value.trim();
     if(!s.step_name||s.step_name.length<3||!s.step_type||!s.actor)return toast('Nombre (mín. 3 caracteres), tipo y responsable son obligatorios.');
-    if(existing){Object.assign(existing,s);audit(`Paso editado ${existing.id}`)}else{e.processSteps.push(s);audit(`Paso creado ${s.id}`);if(linkFromStepId){const origin=e.processSteps.find(x=>x.id===linkFromStepId);if(origin)origin.normal_next_step=s.id}}if(typeof advanceEngagementTo==='function')advanceEngagementTo(e,'Sesión 1','captura de proceso');invalidateProcessLayers(e,'map');e.diagnosticOutput=null;e.updatedAt=now();markDirty();closeModal();
+    if(existing){Object.assign(existing,s);audit(`Paso editado ${existing.id}`)}else{e.processSteps.push(s);audit(`Paso creado ${s.id}`);if(linkFromStepId){const origin=e.processSteps.find(x=>x.id===linkFromStepId);if(origin)origin.normal_next_step=s.id}}if(typeof advanceEngagementTo==='function')advanceEngagementTo(e,'Sesión 1','captura de proceso');invalidateProcessLayersSafe(e,'map');e.diagnosticOutput=null;e.updatedAt=now();markDirty();closeModal();
     if(nextVal==='__NEW__'){render();openStepModal(null,s.id)}else{render()}
   },existing?'Guardar cambios':'Añadir paso');
   document.querySelectorAll('[data-step-auto]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-step-auto]').forEach(x=>x.classList.remove('active'));b.classList.add('active');s.automation_state=b.dataset.value});
@@ -155,7 +158,7 @@ function openFrictionModal(frId=null,preselectedSteps=[]){
   </div>`;
   openModal(existing?'Editar fricción':'Añadir fricción',body,()=>{const collect=k=>[...document.querySelectorAll(`[data-v1-multi="${k}"]:checked`)].map(x=>x.value);f.friction_type=document.getElementById('fr_type').value;f.affected_steps=collect('fr_steps');f.cause=collect('fr_causes');f._details.cause=document.getElementById('fr_cause_other').value.trim();f.observable_signal=document.getElementById('fr_signal').value.trim();f.frequency={value:Number(document.getElementById('fr_frequency').value||0),mode:document.getElementById('fr_frequency_mode').value,period:document.getElementById('fr_frequency_period').value};f.impact=document.getElementById('fr_impact').value;
     const atUnit=document.getElementById('fr_active_unit').value,wtUnit=document.getElementById('fr_wait_unit').value;f.active_time_loss={value:minutesFrom(document.getElementById('fr_active').value,atUnit),unit:'min',source_unit:atUnit,mode:document.getElementById('fr_active_mode').value};f.wait_time_loss={value:minutesFrom(document.getElementById('fr_wait').value,wtUnit),unit:'min',source_unit:wtUnit,mode:document.getElementById('fr_wait_mode').value};f.direct_loss={value:Number(document.getElementById('fr_direct').value||0),unit:'EUR',period:document.getElementById('fr_direct_period').value,mode:document.getElementById('fr_direct_mode').value};f.non_time_impact=collect('fr_non_time');f.workaround=collect('fr_workaround');f._details.workaround=document.getElementById('fr_workaround_other').value.trim();f.evidence_type=document.getElementById('fr_evidence_type').value||'EV02';f.priority_client=Number(document.getElementById('fr_priority').value||0)||null;f.client_label=document.getElementById('fr_label').value.trim();f.notes=document.getElementById('fr_notes').value.trim();f.derived_pain_id=painForFriction(f.friction_type);
-    if(!f.friction_type||!f.affected_steps.length||!f.cause.length&&!f._details.cause||!f.observable_signal)return toast('Tipo, al menos un paso, causa y señal observable son obligatorios.');if(existing){Object.assign(existing,f);audit(`Fricción editada ${existing.id}`)}else{e.frictions.push(f);audit(`Fricción creada ${f.id}`)}if(typeof advanceEngagementTo==='function')advanceEngagementTo(e,'Sesión 1','captura de proceso');invalidateProcessLayers(e,'frictions');e.diagnosticOutput=null;e.updatedAt=now();markDirty();closeModal();render();},existing?'Guardar cambios':'Añadir fricción');
+    if(!f.friction_type||!f.affected_steps.length||!f.cause.length&&!f._details.cause||!f.observable_signal)return toast('Tipo, al menos un paso, causa y señal observable son obligatorios.');if(existing){Object.assign(existing,f);audit(`Fricción editada ${existing.id}`)}else{e.frictions.push(f);audit(`Fricción creada ${f.id}`)}if(typeof advanceEngagementTo==='function')advanceEngagementTo(e,'Sesión 1','captura de proceso');invalidateProcessLayersSafe(e,'frictions');e.diagnosticOutput=null;e.updatedAt=now();markDirty();closeModal();render();},existing?'Guardar cambios':'Añadir fricción');
 }
 
 // "Añadir varios pasos" is a normal-use convenience over the SAME model openStepModal uses for a new
@@ -168,7 +171,7 @@ function addMultipleSteps(){
     const e=currentEng(),n=Math.max(1,Math.min(50,Number(document.getElementById('bulk_step_count').value||0)));
     if(!n)return toast('Indica un número de pasos válido (1-50).');
     for(let i=0;i<n;i++)e.processSteps.push({id:id('STEP'),status:'ACTIVE',occurrences_per_case:1,inputs:[],outputs:[],manual_actions:[],decision_criteria:[],communication_channels:[],evidence:[],active_time:0,wait_time:0,rework_time:0});
-    audit(`${n} paso(s) vacío(s) añadidos en bloque`);if(typeof advanceEngagementTo==='function')advanceEngagementTo(e,'Sesión 1','captura de proceso');invalidateProcessLayers(e,'map');e.diagnosticOutput=null;e.updatedAt=now();markDirty();closeModal();render();
+    audit(`${n} paso(s) vacío(s) añadidos en bloque`);if(typeof advanceEngagementTo==='function')advanceEngagementTo(e,'Sesión 1','captura de proceso');invalidateProcessLayersSafe(e,'map');e.diagnosticOutput=null;e.updatedAt=now();markDirty();closeModal();render();
     toast(`${n} paso(s) añadidos. Edita cada uno para completarlo.`);
   },'Crear pasos');
 }
@@ -181,7 +184,7 @@ function removeStepFromFlow(stepId){
     step.status='SUPERSEDED';
     e.processSteps.filter(x=>x.status!=='SUPERSEDED').forEach(x=>{if(x.normal_next_step===stepId)x.normal_next_step='';if(x.exception_path?.destination_step===stepId)x.exception_path={...x.exception_path,destination_step:''}});
     linkedFrictions.forEach(f=>{f.affected_steps=normalizeArray(f.affected_steps).filter(id=>id!==stepId);if(!f.affected_steps.length)f.status='SUPERSEDED'});
-    invalidateProcessLayers(e,'map');e.diagnosticOutput=null;e.updatedAt=now();
+    invalidateProcessLayersSafe(e,'map');e.diagnosticOutput=null;e.updatedAt=now();
     audit(`Paso eliminado del flujo ${stepId}`);markDirty('Paso eliminado del flujo');closeModal();render();
   },'Eliminar del flujo');
 }
@@ -195,14 +198,14 @@ function moveStep(stepId,direction){
   if(i<0||j<0||j>=active.length)return;
   const ai=e.processSteps.indexOf(active[i]),aj=e.processSteps.indexOf(active[j]);
   [e.processSteps[ai],e.processSteps[aj]]=[e.processSteps[aj],e.processSteps[ai]];
-  relinkNormalFlow(e);invalidateProcessLayers(e,'map');markDirty(`Paso ${stepId} reordenado`);render();
+  relinkNormalFlow(e);invalidateProcessLayersSafe(e,'map');markDirty(`Paso ${stepId} reordenado`);render();
 }
 function reorderStepBefore(stepId,targetId){
   const e=currentEng(),step=e.processSteps.find(x=>x.id===stepId),target=e.processSteps.find(x=>x.id===targetId);
   if(!step||!target||step===target||step.status==='SUPERSEDED'||target.status==='SUPERSEDED')return;
   const from=e.processSteps.indexOf(step),to=e.processSteps.indexOf(target);
   e.processSteps.splice(from,1);e.processSteps.splice(from<to?to-1:to,0,step);
-  relinkNormalFlow(e);invalidateProcessLayers(e,'map');markDirty(`Paso ${stepId} reordenado por arrastre`);render();
+  relinkNormalFlow(e);invalidateProcessLayersSafe(e,'map');markDirty(`Paso ${stepId} reordenado por arrastre`);render();
 }
 function addDecisionStep(){
   openStepModal(null,null,{step_name:'Decisión',step_type:'ST04',_ui:{has_decision:true}});
@@ -246,7 +249,7 @@ function flowIntermediateNodes(e,steps,fr){
     const stepFr=fr.filter(x=>normalizeArray(x.affected_steps).includes(s.id));
     const stepRisks=risks.filter(x=>normalizeArray(x.step_ids).includes(s.id));
     const stepEcon=economics.filter(x=>normalizeArray(x.step_ids).includes(s.id));
-    return `<div class="flow-connector"><button type="button" class="flow-insert" data-add-after="${i?steps[i-1]?.id||'':''}" aria-label="Añadir paso aquí">+</button></div><div class="flow-step ${decision?'is-decision':''} ${processLayerConfirmations(e).map?'confirmed':''}" draggable="true" data-drag-step="${s.id}" data-edit-step="${s.id}">
+    return `<div class="flow-connector"><button type="button" class="flow-insert" data-add-after="${i?steps[i-1]?.id||'':''}" aria-label="Añadir paso aquí">+</button></div><div class="flow-step ${decision?'is-decision':''} ${processLayerState(e).map?'confirmed':''}" draggable="true" data-drag-step="${s.id}" data-edit-step="${s.id}">
       <div class="flow-step-tools"><button type="button" data-move-step-up="${s.id}" ${i===0?'disabled':''}>←</button><button type="button" data-move-step-down="${s.id}" ${i===steps.length-1?'disabled':''}>→</button><button type="button" data-edit-step="${s.id}">Editar</button></div>
       <span class="boundary-kicker">${decision?'Decisión':`Paso ${i+1}`}</span><h4>${esc(s.step_name||'Paso sin nombre')}</h4>
       <p>${esc(labelFrom('OS_ACTOR_ROLE',s.actor)||'—')} · ${esc(labelFrom('OS_TOOL_CATEGORY',s.tool)||'—')}</p>
@@ -277,7 +280,7 @@ function clientProcessView(e,steps,fr,tab='cliente'){
     <button class="client-rail-item ${tab==='fricciones'?'active':''}" data-process-tab="fricciones"><b>Fricciones y evidencia</b><span>${fr.length}</span></button>
     <button class="client-rail-item ${tab==='riesgos'?'active':''}" data-process-tab="riesgos"><b>Riesgos y controles</b><span>${riskCount}</span></button>
     <button class="client-rail-item ${tab==='impacto'?'active':''}" data-process-tab="impacto"><b>Impacto económico</b><span>${econCount}</span></button></aside>`;
-  const key=processLayerKey(tab),layer=processLayerConfirmations(e),labels={map:'mapa AS-IS',frictions:'fricciones y evidencia',risks:'riesgos y controles',impact:'impacto económico'},done=!!layer[key];
+  const key=processLayerKeySafe(tab),layer=processLayerState(e),labels={map:'mapa AS-IS',frictions:'fricciones y evidencia',risks:'riesgos y controles',impact:'impacto económico'},done=!!layer[key];
   const confirm=`<div class="flow-confirm"><div><b>${done?'Capa confirmada':'Confirmación pendiente'}</b><div class="field-help">${esc(labels[key])}</div></div><button class="btn ${done?'btn-outline':'btn-primary'}" id="confirmAsIs">${done?'Reconfirmar':'Confirmar'} ${esc(labels[key])}</button></div>`;
   return section('Editor con cliente','Mapa, fricciones, riesgos e impacto se editan sobre el mismo contexto.',clientBar+`<div class="client-process-workspace">${layerRail}<div class="client-process-main">${clientLayerBody(e,steps,fr,tab)}${confirm}</div></div>`);
 }
