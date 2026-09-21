@@ -8,7 +8,7 @@
 function supersedeStep(stepId){
   const e=currentEng(),x=e.processSteps.find(s=>s.id===stepId);
   if(!x)return;
-  if(!confirm('¿Eliminar este paso del flujo? Dejará de aparecer en el mapa y se conservará únicamente la trazabilidad interna del cambio.'))return;
+  if(!confirm('¿Eliminar este paso del flujo? Se retirará inmediatamente del mapa.'))return;
   x.status='SUPERSEDED';e.confirmedAsIs=false;markDirty(`Paso ${stepId} eliminado del flujo`);render();
 }
 
@@ -21,7 +21,7 @@ function supersedeFriction(frId){
 
 function confirmAsIs(){
   const e=currentEng();
-  if(!e.processSteps.filter(x=>x.status!=='SUPERSEDED').length)return toast('Añade al menos un paso.');
+  const start=e.answers?.DF014,finish=e.answers?.DF015;if(!start||!finish)return toast('Completa los límites inicial y final antes de confirmar el flujo.');
   e.confirmedAsIs=true;e.answers.DF093='YES';e.asIsConfirmedAt=now();
   // Confirming is what closes PG09, so it is what seals the historic record internal work runs on.
   const sealed=sealConfirmedSnapshot(e,'confirmación del AS-IS con el cliente');
