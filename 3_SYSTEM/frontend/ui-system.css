@@ -154,3 +154,9 @@ select option{background:#fff;color:var(--ink)}
 .process-node-actions{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
 .process-node-actions button{border:1px solid var(--line);background:#fff;border-radius:6px;padding:4px 7px;font-size:10px;cursor:pointer}
 .process-node-actions button:hover{border-color:var(--system);background:var(--system-soft)}
+
+/* PG04 visible page 4 — Estado objetivo y restricciones
+   DF087 and DF088 are deliberate full-row questions so they follow the same vertical rhythm as
+   the first and fourth questions without changing Diagnostic Master ownership or semantics. */
+.field[data-field="DF087"],
+.field[data-field="DF088"]{grid-column:1/-1}
