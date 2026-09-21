@@ -95,11 +95,22 @@ test('automation_state reuses the shared segmented() renderer instead of a secon
   assert.match(code,/s\.automation_state=b\.dataset\.value/,'the local binder reads the same data-value attribute the shared renderer emits');
 });
 
-test('datalistControl carries the same combo-wrap dropdown affordance as searchableSelect, so a datalist-backed input never looks like a plain text field',()=>{
+test('actor/tool reference controls use the shared select affordance and keep an explicit Other detail path',()=>{
   const html=ctx.datalistControl('step_actor','OS_ACTOR_ROLE','','Rol existente o nuevo');
-  assert.match(html,/class="combo-wrap"/);
-  assert.match(html,/list="dl_step_actor"/);
-  assert.match(html,/<datalist id="dl_step_actor"/);
+  assert.match(html,/catalog-reference-control combo-wrap/);
+  assert.match(html,/<select id="step_actor"/);
+  assert.match(html,/data-catalog-reference="step_actor"/);
+  assert.match(html,/data-catalog-other-wrap="step_actor"/);
+  assert.doesNotMatch(html,/<datalist/);
+});
+
+test('decision detail is hidden unless canonical Other is selected, and step deletion is a confirmed remove-from-flow action',()=>{
+  assert.match(code,/data-step-decision-other-wrap/);
+  assert.match(code,/decisionOtherBox\.checked\?'':'none'/);
+  assert.match(code,/function removeStepFromFlow\(stepId\)/);
+  assert.match(code,/openModal\('Eliminar paso del flujo'/);
+  assert.match(code,/step\.status='SUPERSEDED'/);
+  assert.match(code,/data-delete-step/);
 });
 
 test('the Friction modal groups fields into layer 1 (tipo/pasos/señal/contexto-impacto, open) and layer 2 (causa/workaround/evidencia/resto, collapsed), same field ids, no Friction Model change',()=>{
