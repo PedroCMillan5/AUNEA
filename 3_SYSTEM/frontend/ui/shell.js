@@ -14,6 +14,23 @@ const pages={
   admin(){const e=currentEng();return pageTop('Admin / Auditoría','Estado del frontend, fuente canónica, persistencia y trazabilidad de cambios.',`<button class="btn" id="checkBackend">Comprobar backend</button><button class="btn btn-danger" id="clearLocal">Limpiar datos locales</button>`) + `<div class="grid g4"><div class="card metric"><small>Frontend</small><strong>v${esc(AUNEA_PRODUCT_VERSION)}</strong><span>${esc(AUNEA_PRODUCT_STATUS)}</span></div><div class="card metric"><small>Diagnostic Master</small><strong>100</strong><span>campos canónicos</span></div><div class="card metric"><small>Option sets</small><strong>${Object.keys(schema.option_sets).length}</strong><span>${Object.values(schema.option_sets).reduce((n,s)=>n+(s.options?.length||0),0)} opciones</span></div><div class="card metric"><small>Backend</small><strong>${state.backendOnline?'OK':'—'}</strong><span>${esc(state.backendVersion||'no conectado')}</span></div></div>`+section('Fuente canónica','La UI no gobierna reglas.',`<div class="notice good"><strong>Diagnostic Master v1.2:</strong> ${esc(schema.source)}<br>100/100 campos con control UI, objetivo, validación, ejemplo, Source_ID y mapping a engine.</div>`)+section('Auditoría local','Últimos cambios en esta sesión.',state.audit.length?state.audit.slice(0,40).map(a=>`<div class="audit-line"><b>${fmtDate(a.ts)}</b> · ${esc(a.message)}</div>`).join(''):'<div class="empty"><p>Sin cambios registrados todavía.</p></div>')}
 };
 
+if(typeof document!=='undefined'&&!document.__auneaContextDelegatedBound){
+  document.__auneaContextDelegatedBound=true;
+  document.addEventListener('click',ev=>{
+    const open=ev.target.closest?.('[data-open-context]');
+    if(open){
+      ev.preventDefault();ev.stopPropagation();
+      const e=state.engagements.find(x=>x.id===open.dataset.openContext)||currentEng();
+      if(!e)return;
+      state.activeEngagementId=e.id;setPage('diagnostico');return;
+    }
+    const change=ev.target.closest?.('[data-change-context]');
+    if(change){ev.preventDefault();ev.stopPropagation();state.activeEngagementId=null;setPage('estudios');return}
+    const clear=ev.target.closest?.('[data-clear-context]');
+    if(clear){ev.preventDefault();ev.stopPropagation();state.activeEngagementId=null;setPage('inicio')}
+  });
+}
+
 function bindRailContextActions(){
   document.querySelectorAll('[data-open-context]').forEach(b=>b.onclick=()=>{const e=state.engagements.find(x=>x.id===b.dataset.openContext)||currentEng();if(!e)return;state.activeEngagementId=e.id;state.activePage='diagnostico';render()});
   document.querySelectorAll('[data-change-context]').forEach(b=>b.onclick=()=>{state.activeEngagementId=null;state.activePage='estudios';render()});
