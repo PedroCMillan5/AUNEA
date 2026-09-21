@@ -69,6 +69,17 @@ test('provenance falls back to a generic label and inline edit when Reuse_From d
   delete eng.answers.DF054;
 });
 
+
+test('PG02 manual answers never collapse into a meaningless derived-confirmation panel',()=>{
+  const f={Field_ID:'DF014',Pregunta_o_etiqueta_ES:'Límite inicial del alcance',Objetivo_concreto:'Delimitar el proceso.',Requiredness:'CONDITIONAL_90M',Ask_Mode:'CONDITIONAL_ASK',Reask_Policy:'DERIVE_THEN_CONFIRM',Branch_Rule_ID:'BR-BASE',Reuse_From:'DF012.Trigger + primer paso del mapa',Option_Set_ID:null,Validation:'Coherente',Ejemplo_ES:'Empieza al recibir solicitud'};
+  eng.answers.DF014='Recepción de solicitud';
+  const html=ctx.renderQuestion(f,eng);
+  assert.match(html,/CONTROL value="Recepción de solicitud"/,'the consultant answer stays in the editable control');
+  assert.doesNotMatch(html,/data-confirm-derived="DF014"/);
+  assert.doesNotMatch(html,/reuse-context/);
+  delete eng.answers.DF014;
+});
+
 test('DERIVE_AND_CONFIRM requires an explicit confirmation and invalidates it automatically when the derived source changes',()=>{
   const f=ctx.schema.fields.find(x=>x.Field_ID==='DF050');
   let html=ctx.renderQuestion(f,eng);
