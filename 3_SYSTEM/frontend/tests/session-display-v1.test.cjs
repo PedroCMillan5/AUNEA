@@ -186,5 +186,5 @@ test('the shared window renders no console chrome', () => {
 test('PG04 client snapshot carries fixed start/end boundaries from PG02',()=>{
   const eng=fullEngagement('S04');eng.answers.DF014='Solicitud recibida';eng.answers.DF015='Resultado entregado';
   const ctx=makeCtx(eng),snap=ctx.buildSessionSnapshot(eng);
-  assert.deepEqual(snap.boundaries,{start:'Solicitud recibida',end:'Resultado entregado'});
+  assert.equal(JSON.stringify(snap.boundaries),JSON.stringify({start:'Solicitud recibida',end:'Resultado entregado'}));
 });
