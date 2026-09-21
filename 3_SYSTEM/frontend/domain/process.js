@@ -188,7 +188,7 @@ function processDraftStep(data={},templateMeta=null){
 function instantiateProcessTemplate(templateId){
   const e=currentEng(),tpl=PROCESS_STARTER_TEMPLATES.find(x=>x.id===templateId);if(!e||!tpl)return;
   const active=activeSteps(e);
-  if(active.length&&!confirm('Ya existen pasos intermedios. ¿Sustituirlos por esta plantilla de flujo? Los pasos actuales dejarán de mostrarse, conservando sólo su trazabilidad interna.'))return;
+  if(active.length&&!confirm('Ya existen pasos intermedios. ¿Sustituirlos por esta plantilla de flujo? Los pasos actuales se eliminarán del flujo visible.'))return;
   active.forEach(x=>x.status='SUPERSEDED');
   const created=tpl.steps.map(x=>processDraftStep(x,tpl));
   created.forEach((x,i)=>x.normal_next_step=created[i+1]?.id||'');
