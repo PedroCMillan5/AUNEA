@@ -110,4 +110,24 @@ test('DF007 offers inline creation of a real Contact',()=>{
   assert.match(html,/data-create-contact-for-field="DF007"/);
   assert.match(html,/Crear contacto y añadirlo/);
 });
+
+test('PG02 DF017 Otro reveals detail only when selected',()=>{
+  e.answerDetails={};
+  const opts=[{value:'OPERATIONS',label:'Operaciones'},{value:'OTHER',label:'Otro'}];
+  const hidden=ctx.renderControl({Field_ID:'DF017',Control_UI:'MULTISELECT_REFERENCE'},[],opts,e);
+  assert.match(hidden,/value="OTHER"[^>]*data-other-toggle="DF017"/);
+  assert.match(hidden,/data-detail-wrap="DF017"[^>]*hidden[^>]*style="display:none"/);
+  const shown=ctx.renderControl({Field_ID:'DF017',Control_UI:'MULTISELECT_REFERENCE'},['OTHER'],opts,e);
+  assert.doesNotMatch(shown,/data-detail-wrap="DF017"[^>]*hidden/);
+});
+
+test('PG02 DF020 Otra reveals detail only when selected',()=>{
+  e.answerDetails={};
+  const opts=[{value:'SERVICE',label:'Servicio / producto'},{value:'OTHER',label:'Otra'}];
+  const hidden=ctx.renderControl({Field_ID:'DF020',Control_UI:'MULTISELECT_WITH_DETAIL'},[],opts,e);
+  assert.match(hidden,/value="OTHER"[^>]*data-other-toggle="DF020"/);
+  assert.match(hidden,/data-detail-wrap="DF020"[^>]*hidden[^>]*style="display:none"/);
+  const shown=ctx.renderControl({Field_ID:'DF020',Control_UI:'MULTISELECT_WITH_DETAIL'},['OTHER'],opts,e);
+  assert.doesNotMatch(shown,/data-detail-wrap="DF020"[^>]*hidden/);
+});
 // [AUNEA-UAT-RENDER-010] END
