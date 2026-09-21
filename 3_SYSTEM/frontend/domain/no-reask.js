@@ -112,6 +112,11 @@ function contextOnly(f,e,val){
   const policy=String(f.Reask_Policy||''),mode=String(f.Ask_Mode||'');
   if(explicitReaskAllowed(f.Field_ID,e))return false;
   if(!valuePresent(val))return false;
+  // Confirmation UX only applies to a real reused/derived value. A value the consultant has just
+  // entered must remain an ordinary editable answer even when the field contract supports derivation.
+  if(['DERIVE_THEN_CONFIRM','PREFILL_CONFIRM','DERIVE_AND_CONFIRM'].includes(policy)||['PREFILL_CONFIRM','DERIVE_AND_CONFIRM'].includes(mode)){
+    if(!valuePresent(reusedValue(f.Field_ID,e)))return false;
+  }
   return ['NO_REASK','CONFIRM_ONLY_IF_CHANGED','DERIVE_THEN_CONFIRM'].includes(policy)||['PREFILL_CONFIRM','DERIVE_AND_CONFIRM'].includes(mode);
 }
 function requiresDerivedConfirmation(f){return String(f.Ask_Mode||'')==='DERIVE_AND_CONFIRM'||String(f.Reask_Policy||'')==='DERIVE_THEN_CONFIRM'}
