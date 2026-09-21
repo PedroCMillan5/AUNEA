@@ -56,6 +56,14 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   const schema=await (await fetch(url+'data/diagnostic-master.min.json')).json();
   assert.equal(new Set(schema.fields.map(f=>f.Field_ID)).size,100);
   assert.equal(schema.no_reask_rules.length,15);
+  assert.equal(
+    w.eval("auneaWorkspaceBackendCandidate({protocol:'https:',hostname:'sample-space-5500.app.github.dev'})"),
+    'https://sample-space-8000.app.github.dev'
+  );
+  assert.equal(
+    w.eval("auneaWorkspaceBackendCandidate({protocol:'http:',hostname:'127.0.0.1'})"),
+    ''
+  );
   assert.equal(typeof w.top,'object');assert.equal(typeof w.status,'string');
   assert.equal(d.querySelector('#uiModeToggle'),null);
   assert.ok(d.body.classList.contains('mode-internal'));
