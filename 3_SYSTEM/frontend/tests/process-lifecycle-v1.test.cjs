@@ -57,14 +57,20 @@ test('supersedeFriction marks SUPERSEDED without physically removing the frictio
   assert.equal(e.frictions[0].status,'SUPERSEDED');
 });
 
-test('confirmAsIs requires at least one active step and records DF093',()=>{
-  const empty={processSteps:[{id:'S1',status:'SUPERSEDED'}],frictions:[],answers:{},confirmedAsIs:false};
-  const ctxEmpty=makeCtx(empty);
-  ctxEmpty.confirmAsIs();
-  assert.equal(empty.confirmedAsIs,false,'an AS-IS with no active step cannot be confirmed');
-  assert.match(ctxEmpty.__toasts.at(-1),/Añade al menos un paso/);
+test('confirmAsIs treats fixed PG02 boundaries as the minimum valid map and records DF093',()=>{
+  const missing={processSteps:[],frictions:[],answers:{DF014:'Inicio'},confirmedAsIs:false};
+  const ctxMissing=makeCtx(missing);
+  ctxMissing.confirmAsIs();
+  assert.equal(missing.confirmedAsIs,false);
+  assert.match(ctxMissing.__toasts.at(-1),/límites inicial y final/);
 
-  const e=engagement();
+  const boundaryOnly={processSteps:[],frictions:[],answers:{DF014:'Inicio',DF015:'Fin'},confirmedAsIs:false};
+  const ctxBoundary=makeCtx(boundaryOnly);
+  ctxBoundary.confirmAsIs();
+  assert.equal(boundaryOnly.confirmedAsIs,true,'Inicio → Fin is a valid minimum map without invented intermediate steps');
+  assert.equal(boundaryOnly.answers.DF093,'YES');
+
+  const e=engagement();e.answers.DF014='Inicio';e.answers.DF015='Fin';
   const ctx=makeCtx(e);
   ctx.confirmAsIs();
   assert.equal(e.confirmedAsIs,true);
