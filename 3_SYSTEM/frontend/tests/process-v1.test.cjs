@@ -4,31 +4,29 @@ const eng={processSteps:[],frictions:[],answers:{}};
 const domFields={};
 const ctx={console,schema:{friction_pain_map:[{Friction_Type_ID:'P07',Pain_ID:'P07'}]},state:{returnTo:null},fieldOptions:()=>[],normalizeArray:v=>Array.isArray(v)?v:(v==null||v===''?[]:[v]),currentEng:()=>eng,activeSteps:e=>(e.processSteps||[]).filter(x=>x.status!=='SUPERSEDED'),activeFrictions:e=>(e.frictions||[]).filter(x=>x.status!=='SUPERSEDED'),bindForms:()=>{},markDirty:()=>{},render:()=>{},attr:v=>String(v??''),esc:v=>String(v??''),labelFrom:(s,v)=>v,num:v=>String(v||0),pageTop:()=>'',section:(t,s,body)=>body,fmtDate:()=>'',requiredMark:()=>'<span class="required-mark">*</span>',audit:()=>{},id:p=>`${p}-${Math.random().toString(36).slice(2,7)}`,now:()=>'',toast:()=>{},closeModal:()=>{},openModal:(title,body,onSave)=>{ctx.__lastBody=body;ctx.__lastOnSave=onSave},document:{querySelectorAll:()=>[],getElementById:(elId)=>{if(!domFields[elId])domFields[elId]={};return domFields[elId]}}};vm.createContext(ctx);vm.runInContext(code,ctx);test('duration normalization keeps active/wait/rework comparable',()=>{assert.equal(ctx.minutesFrom(2,'h'),120);assert.equal(ctx.minutesFrom(1,'day'),1440)});test('friction pain is derived, not selected',()=>{assert.equal(ctx.painForFriction('P07'),'P07');assert.doesNotMatch(code,/id="fr_pain"/)});test('v1.1 editor includes communication channels',()=>{assert.match(code,/OS_COMM_CHANNEL/);assert.match(code,/communication_channels/)});test('friction UI enforces affected step selection before save',()=>{assert.match(code,/!f\.affected_steps\.length/)});
 
-test('moveStep swaps only array position with the nearest ACTIVE neighbor, skipping SUPERSEDED steps, and never touches normal_next_step/exception_path/affected_steps',()=>{
+test('moveStep changes the visible order and relinks the normal route to the new sequence while preserving friction anchors',()=>{
   eng.processSteps=[
-    {id:'S1',status:'ACTIVE',normal_next_step:'S2',exception_path:{destination_step:'S3'}},
+    {id:'S1',status:'ACTIVE',normal_next_step:'S3',exception_path:{destination_step:'S3'}},
     {id:'S2',status:'SUPERSEDED',normal_next_step:'S3'},
-    {id:'S3',status:'ACTIVE',normal_next_step:null}
+    {id:'S3',status:'ACTIVE',normal_next_step:''}
   ];
   eng.frictions=[{id:'F1',status:'ACTIVE',affected_steps:['S1','S3']}];
   ctx.moveStep('S1',1);
-  assert.deepEqual(eng.processSteps.map(x=>x.id),['S3','S2','S1'],'S1 must swap with the nearest ACTIVE neighbor (S3), jumping over the SUPERSEDED S2');
-  assert.equal(eng.processSteps.find(x=>x.id==='S1').normal_next_step,'S2','normal_next_step must survive reordering untouched');
-  assert.deepEqual(eng.processSteps.find(x=>x.id==='S1').exception_path,{destination_step:'S3'},'exception_path must survive reordering untouched');
-  assert.deepEqual(eng.frictions[0].affected_steps,['S1','S3'],'friction affected_steps must survive reordering untouched');
+  assert.deepEqual(eng.processSteps.map(x=>x.id),['S3','S2','S1']);
+  assert.equal(eng.processSteps.find(x=>x.id==='S3').normal_next_step,'S1','normal route follows the new visual order');
+  assert.equal(eng.processSteps.find(x=>x.id==='S1').normal_next_step,'','last active step ends the normal route');
+  assert.deepEqual(eng.frictions[0].affected_steps,['S1','S3'],'friction anchors survive reordering');
 });
 
-test('stepOrderDiscrepancies flags when the visual order no longer matches normal_next_step, without correcting it',()=>{
-  const steps=[{id:'A',step_name:'Alta',normal_next_step:'C'},{id:'B',step_name:'Revisión',normal_next_step:null},{id:'C',step_name:'Cierre',normal_next_step:null}];
-  const gaps=ctx.stepOrderDiscrepancies(steps);
-  assert.equal(gaps.length,1);
-  assert.equal(gaps[0].from.id,'A');
-  assert.equal(gaps[0].to.id,'C');
+test('visual order is now the normal flow source, so no discrepancy warning is produced',()=>{
+  assert.deepEqual(ctx.stepOrderDiscrepancies([]),[]);
+  assert.match(code,/function relinkNormalFlow/);
+  assert.match(code,/reorderStepBefore/);
 });
 
 test('"+ Crear nuevo paso como siguiente" links back to the origin step id without inventing a new normal_next_step shape',()=>{
   assert.match(code,/\+ Crear nuevo paso como siguiente/);
-  assert.match(code,/function openStepModal\(stepId=null,linkFromStepId=null\)/);
+  assert.match(code,/function openStepModal\(stepId=null,linkFromStepId=null,preset=null\)/);
   assert.match(code,/if\(linkFromStepId\)\{const origin=e\.processSteps\.find\(x=>x\.id===linkFromStepId\);if\(origin\)origin\.normal_next_step=s\.id\}/);
 });
 
@@ -39,14 +37,16 @@ test('reorder buttons are wired to moveStep in both directions',()=>{
   assert.match(code,/moveStep\(b\.dataset\.moveStepDown,1\)/);
 });
 
-test('processPage always defaults to the client-friendly canvas when opened',()=>{
+test('processPage defaults to one editable client workspace with the four diagnostic layers',()=>{
   eng.processSteps=[{id:'s1',status:'ACTIVE',step_name:'Alta'}];
   eng.frictions=[];eng.risks=[];eng.economicInputs=[];
   eng.processTab='';eng.confirmedAsIs=false;eng.answers={DF014:'Inicio acordado',DF015:'Fin acordado'};
-  let html=ctx.processPage();
-  assert.match(html.match(/<button class="subtab[^"]*" data-process-tab="cliente">/)[0],/active/);
+  const html=ctx.processPage();
+  assert.match(html,/client-process-workspace/);
+  assert.match(html,/data-process-tab="cliente"/);
   assert.match(html,/Inicio acordado/);assert.match(html,/Fin acordado/);
-  assert.match(html,/Fricciones y evidencia/);assert.match(html,/Riesgo y controles/);assert.match(html,/Impacto económico/);
+  assert.match(html,/Fricciones y evidencia/);assert.match(html,/Riesgos y controles/);assert.match(html,/Impacto económico/);
+  assert.match(html,/id="addStepFromClient"/);assert.match(html,/id="addDecisionFromClient"/);
 });
 
 test('addMultipleSteps creates exactly N steps carrying only technical id/status/empty-collection defaults — never an invented name/actor/type/tool/time/routing — each individually editable afterward',()=>{
@@ -95,11 +95,12 @@ test('automation_state reuses the shared segmented() renderer instead of a secon
   assert.match(code,/s\.automation_state=b\.dataset\.value/,'the local binder reads the same data-value attribute the shared renderer emits');
 });
 
-test('actor/tool reference controls use the shared select affordance and keep an explicit Other detail path',()=>{
+test('actor/tool reference controls use the same AUNEA details dropdown pattern as Empresa and keep an explicit Other path',()=>{
   const html=ctx.datalistControl('step_actor','OS_ACTOR_ROLE','','Rol existente o nuevo');
-  assert.match(html,/catalog-reference-control combo-wrap/);
-  assert.match(html,/<select id="step_actor"/);
-  assert.match(html,/data-catalog-reference="step_actor"/);
+  assert.match(html,/catalog-reference-control/);
+  assert.match(html,/class="aunea-select"/);
+  assert.match(html,/id="step_actor"/);
+  assert.match(html,/data-process-select-option="step_actor"/);
   assert.match(html,/data-catalog-other-wrap="step_actor"/);
   assert.doesNotMatch(html,/<datalist/);
 });
@@ -132,25 +133,22 @@ test('fr_cause_other and fr_workaround_other are collapsed behind a "+ Otro" tog
   assert.match(code,/\[data-fr-other-toggle\]/);
 });
 
-test('client-first process view exposes both template entry points and fixed PG02 boundaries',()=>{
+test('client-first process view keeps fixed PG02 boundaries and exposes editable map actions',()=>{
   eng.processSteps=[];eng.frictions=[];eng.risks=[];eng.economicInputs=[];eng.processTab='cliente';eng.answers={DF014:'Inicio fijo',DF015:'Fin fijo'};
   const html=ctx.processPage();
   assert.match(html,/Inicio fijo/);
   assert.match(html,/Fin fijo/);
-  assert.match(code,/id="useProcessTemplate">Usar plantilla de flujo/);
-  assert.match(code,/id="addStepTemplate">Añadir desde plantilla de paso/);
-  assert.match(code,/id="addStepFromClient">Añadir paso intermedio/);
+  assert.match(html,/id="useProcessTemplate">Casos de referencia/);
+  assert.match(html,/id="addStepFromClient">Añadir paso/);
+  assert.match(html,/id="addDecisionFromClient">Añadir decisión/);
 });
 
-test('template system offers governed structural Process and Step starters as editable drafts',()=>{
-  assert.match(code,/TPL-PROC-LINEAR-001/);
-  assert.match(code,/TPL-PROC-APPROVAL-001/);
-  assert.match(code,/TPL-PROC-DECISION-001/);
-  assert.match(code,/TPL-STEP-TASK-001/);
-  assert.match(code,/TPL-STEP-DECISION-001/);
-  assert.match(code,/TPL-STEP-APPROVAL-001/);
-  assert.match(code,/template_provenance:templateMeta\?/);
+test('reference templates accept only validated real cases; generic starters and hypothesis inventory are not offered',()=>{
+  assert.match(code,/VALIDATED_CASE_TEMPLATES=Object\.freeze\(\[\]\)/);
+  assert.match(code,/Aún no hay casos reales validados disponibles/);
+  assert.match(code,/source_case_id/);
   assert.match(code,/state:'DRAFT'/);
-  assert.match(code,/Los pasos actuales se eliminarán del flujo visible/);
+  assert.doesNotMatch(code,/TPL-PROC-LINEAR-001/);
+  assert.doesNotMatch(code,/TPL-STEP-TASK-001/);
 });
 // [AUNEA-UAT-PROC-010] END
