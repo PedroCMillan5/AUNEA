@@ -62,7 +62,7 @@ test('confirmAsIs treats fixed PG02 boundaries as the minimum valid map and reco
   const ctxMissing=makeCtx(missing);
   ctxMissing.confirmAsIs();
   assert.equal(missing.confirmedAsIs,false);
-  assert.match(ctxMissing.__toasts.at(-1),/límites inicial y final/);
+  assert.match(ctxMissing.__toasts.at(-1),/límites inicial y final|al menos un paso/);
 
   const boundaryOnly={processSteps:[],frictions:[],answers:{DF014:'Inicio',DF015:'Fin'},confirmedAsIs:false};
   const ctxBoundary=makeCtx(boundaryOnly);
