@@ -63,10 +63,23 @@ function modelObjective(contract){
   if(!contract?.Canonical_Field_ID)return '';
   return (schema?.fields||[]).find(x=>x.Field_ID===contract.Canonical_Field_ID)?.Objetivo_concreto||'';
 }
+function visibleHelpText(fieldKey,objective,validation,example){
+  if(fieldKey==='wait_time')return [
+    'Tiempo en el que el caso está parado o esperando antes de poder continuar.',
+    'Se mantiene separado del tiempo de trabajo activo y no se monetiza como trabajo.',
+    example?`Ejemplo: ${example}`:''
+  ].filter(Boolean);
+  const clean=x=>String(x||'')
+    .replace(/elapsed wait/gi,'tiempo transcurrido de espera')
+    .replace(/ownership/gi,'responsabilidad')
+    .replace(/workflow/gi,'flujo')
+    .replace(/workaround/gi,'solución temporal');
+  return [clean(objective),validation?`Qué se espera: ${clean(validation)}`:'',example?`Ejemplo: ${clean(example)}`:''].filter(Boolean);
+}
 function helpContent(modelKey,fieldKey){
   const c=modelContract(modelKey,fieldKey);if(!c)return null;
   const objective=modelObjective(c),validation=c.Validacion||'',example=c.Ejemplo||'';
-  const visible=[objective,validation?`Qué se espera: ${validation}`:'',example?`Ejemplo: ${example}`:''].filter(Boolean);
+  const visible=visibleHelpText(fieldKey,objective,validation,example);
   const internal=[c.Canonical_Field_ID?`Campo ${c.Canonical_Field_ID}`:'',c.Engine_Use?`Uso: ${c.Engine_Use}`:''].filter(Boolean).join(' · ');
   if(!visible.length&&!internal)return null;
   return {visible,internal};
