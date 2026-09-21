@@ -10,5 +10,17 @@
 // Shared windows deliberately do not boot the Console.
 if(location.hash==='#session'){bootSessionDisplay();}
 else if(location.hash==='#results'){bootResultsMode();}
-else{document.body.classList.add('mode-internal');INTERNAL_WORK_NAV.push(['implementacion','✓','Decisión e implementación']);if(typeof registerInternalWorkPages==='function')registerInternalWorkPages();if(typeof registerResultsModeLauncher==='function')registerResultsModeLauncher();migrateLoadedState();initCanonicalV12();}
+else{
+  document.body.classList.add(isProcessEditorWindow()?'mode-process-editor':'mode-internal');
+  INTERNAL_WORK_NAV.push(['implementacion','✓','Decisión e implementación']);
+  if(typeof registerInternalWorkPages==='function')registerInternalWorkPages();
+  if(typeof registerResultsModeLauncher==='function')registerResultsModeLauncher();
+  migrateLoadedState();
+  if(isProcessEditorWindow()){
+    const requested=new URLSearchParams(location.search).get('engagement');
+    if(requested&&state.engagements.some(e=>e.id===requested))state.activeEngagementId=requested;
+    state.activePage='proceso';state.uiMode='CLIENT_EDITOR';
+  }
+  initCanonicalV12();
+}
 // [AUNEA-FE-BOOT-INIT-010] END
