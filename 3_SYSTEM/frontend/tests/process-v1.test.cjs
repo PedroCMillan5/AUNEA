@@ -120,4 +120,26 @@ test('fr_cause_other and fr_workaround_other are collapsed behind a "+ Otro" tog
   assert.match(code,/data-fr-other-wrap="fr_workaround_other"\$\{f\._details\.workaround\?'':' style="display:none"'\}/);
   assert.match(code,/\[data-fr-other-toggle\]/);
 });
+
+test('client-first process view exposes both template entry points and fixed PG02 boundaries',()=>{
+  eng.processSteps=[];eng.frictions=[];eng.risks=[];eng.economicInputs=[];eng.processTab='cliente';eng.answers={DF014:'Inicio fijo',DF015:'Fin fijo'};
+  const html=ctx.processPage();
+  assert.match(html,/Inicio fijo/);
+  assert.match(html,/Fin fijo/);
+  assert.match(html,/id="useProcessTemplate">Usar plantilla de flujo/);
+  assert.match(html,/id="addStepTemplate">Añadir desde plantilla de paso/);
+  assert.match(html,/id="addStepFromClient">Añadir paso intermedio/);
+});
+
+test('template system offers governed structural Process and Step starters as editable drafts',()=>{
+  assert.match(code,/TPL-PROC-LINEAR-001/);
+  assert.match(code,/TPL-PROC-APPROVAL-001/);
+  assert.match(code,/TPL-PROC-DECISION-001/);
+  assert.match(code,/TPL-STEP-TASK-001/);
+  assert.match(code,/TPL-STEP-DECISION-001/);
+  assert.match(code,/TPL-STEP-APPROVAL-001/);
+  assert.match(code,/template_provenance:templateMeta\?/);
+  assert.match(code,/state:'DRAFT'/);
+  assert.match(code,/Los pasos actuales se eliminarán del flujo visible/);
+});
 // [AUNEA-UAT-PROC-010] END
