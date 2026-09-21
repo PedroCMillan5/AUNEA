@@ -39,6 +39,31 @@ saveState=function(reason='Guardado manual'){
 };
 window.addEventListener('beforeunload',()=>persistRecoverySnapshot('beforeunload'));
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')persistRecoverySnapshot('visibility-hidden')});
+window.addEventListener('storage',ev=>{
+  if(ev.key!==STORAGE_KEY||!ev.newValue||isClientDisplay())return;
+  try{
+    const incoming=normalizeRecoveredState(JSON.parse(ev.newValue));
+    const localUi={
+      activePage:state.activePage,
+      activeEngagementId:state.activeEngagementId,
+      uiMode:state.uiMode,
+      returnTo:state.returnTo,
+      selectedCompanyId:state.selectedCompanyId,
+      selectedContactId:state.selectedContactId,
+      companyTab:state.companyTab,
+      companySearch:state.companySearch,
+      companyFilters:state.companyFilters,
+      contactSearch:state.contactSearch,
+      contactFilters:state.contactFilters,
+      interactionFilters:state.interactionFilters,
+      opportunityFilters:state.opportunityFilters,
+      companyInspectorTab:state.companyInspectorTab
+    };
+    state={...incoming,...localUi};
+    if(isProcessEditorWindow())state.activePage='proceso';
+    render();
+  }catch(err){console.error('AUNEA_CROSS_TAB_SYNC_ERROR',err)}
+});
 function exportStateBackup(){
   persistRecoverySnapshot('backup');
   const payload={format:RECOVERY_FORMAT_VERSION,productVersion:typeof AUNEA_PRODUCT_VERSION!=='undefined'?AUNEA_PRODUCT_VERSION:null,exportedAt:now(),schemaSource:schema?.source||null,state};
