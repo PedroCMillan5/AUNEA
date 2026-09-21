@@ -172,8 +172,9 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
     click('#nav [data-page="diagnostico"]');
   });
   await t.test('VR-02 PG01–PG09 keep nine schema steps and exclude CRM/internal work in the Console',()=>{
-    assert.equal(schema.flow.length,9);
-    const ids=schema.flow.map(s=>s.Stage_ID);
+    const ids=Array.from(w.eval('schema.flow.map(s=>s.Stage_ID)'));
+    assert.equal(ids.length,9);
+    assert.deepEqual(ids,['S01','S02','S03','S08','S04','S05','S06','S07','S09']);
     for(const mode of ['INTERNAL']){
       for(const stage of schema.flow){
         w.eval(`currentEng().stageId='${stage.Stage_ID}';render()`);
@@ -195,7 +196,7 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   await t.test('VR-02 stage labels and order react to schema changes without a second list',()=>{
     w.eval('window.__flowBefore=schema.flow; schema.flow=schema.flow.slice().reverse().map((s,i)=>i===0?{...s,Stage_ES:"Etapa de prueba del schema"}:s); render()');
     try{
-      assert.deepEqual(railStages(),schema.flow.map(s=>s.Stage_ID).reverse());
+      assert.deepEqual(railStages(),Array.from(w.eval('schema.flow.map(s=>s.Stage_ID)')));
       assert.match(d.querySelector('#nav .nav-step').textContent,/Etapa de prueba del schema/);
     }finally{w.eval('schema.flow=window.__flowBefore; delete window.__flowBefore; render()');}
   });
@@ -215,7 +216,11 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   click('[data-process-tab="fricciones"]');click('#addFriction');click('[data-process-select-option="fr_type"]:not([data-value=""])');fill('#fr_signal','UAT: faltan datos en la solicitud');click('#modalSave');
   assert.ok(d.querySelector('#modalSave'),'La fricción sin paso ni causa debe seguir abierta');
   const stepChoice=d.querySelector('[data-v1-multi="fr_steps"]'),causeChoice=d.querySelector('[data-v1-multi="fr_causes"]');assert.ok(stepChoice);assert.ok(causeChoice);stepChoice.checked=true;causeChoice.checked=true;click('#modalSave');assert.equal(d.querySelector('#modalSave'),null);
-  click('[data-process-tab="cliente"]');click('#confirmAsIs');click('#saveBtn');
+  click('[data-process-tab="cliente"]');click('#confirmAsIs');
+  click('[data-process-tab="fricciones"]');click('#confirmAsIs');
+  click('[data-process-tab="riesgos"]');click('#confirmAsIs');
+  click('[data-process-tab="impacto"]');click('#confirmAsIs');
+  click('#saveBtn');
   const saved=JSON.parse(w.localStorage.getItem('aunea_internal_v1'));
   assert.equal(saved.companies.length,1);assert.equal(saved.contacts.length,2);assert.equal(saved.engagements.length,1);
   assert.equal(saved.engagements[0].processSteps[0].active_time,12);
