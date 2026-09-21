@@ -238,8 +238,9 @@ function clientProcessView(e,steps,fr){
     <button class="client-layer-card" data-process-tab="riesgos"><b>Riesgo y controles</b><span>${riskCount} registrado(s)</span></button>
     <button class="client-layer-card" data-process-tab="impacto"><b>Impacto económico</b><span>${econCount} input(s)</span></button>
   </div>`;
+  const confirm=`<div class="flow-confirm"><div><b>${e.confirmedAsIs?'AS-IS confirmado':'Confirmación pendiente'}</b><div class="field-help">${e.confirmedAsIs?`Confirmado ${fmtDate(e.asIsConfirmedAt)}`:'La confirmación se invalida si cambia el mapa.'}</div></div><button class="btn ${e.confirmedAsIs?'btn-outline':'btn-primary'}" id="confirmAsIs">${e.confirmedAsIs?'Reconfirmar flujo':'Confirmar flujo AS-IS'}</button></div>`;
   return section('Vista con cliente','Este es el canvas de trabajo compartible. Los límites vienen de PG02 y los elementos internos se editan desde las capas inferiores.',
-    flow+layers,
+    flow+layers+confirm,
     `<button class="btn btn-outline" id="openSessionDisplayFromProcess">Abrir pantalla cliente</button><button class="btn btn-primary" id="addStepFromClient">Añadir paso intermedio</button>`);
 }
 function stepsEditor(e,steps,fr){
@@ -253,7 +254,7 @@ function stepsEditor(e,steps,fr){
     <div class="row-actions"><button class="btn btn-small" data-move-step-up="${s.id}" ${i===0?'disabled':''}>↑</button><button class="btn btn-small" data-move-step-down="${s.id}" ${i===steps.length-1?'disabled':''}>↓</button><button class="btn btn-small" data-add-friction-step="${s.id}">+ Fricción</button><button class="btn btn-small" data-edit-step="${s.id}">Editar</button><button class="btn btn-small btn-danger" data-delete-step="${s.id}">Eliminar</button></div>
   </div>`).join('')}</div>`:'<div class="empty"><h2>Sin pasos intermedios</h2><p>Los límites inicial y final ya forman el marco del flujo. Añade sólo las actividades que ocurren entre ambos.</p></div>';
   return section('Pasos intermedios',`${start} → … → ${finish}`,discNotice+rows,
-    '<button class="btn btn-primary" id="addStep">Añadir paso</button><button class="btn btn-outline" id="addStepTemplate">Plantilla de paso</button><button class="btn btn-outline" id="useProcessTemplate">Plantilla de flujo</button>');
+    '<button class="btn btn-primary" id="addStep">Añadir paso</button><button class="btn btn-outline" id="addMultipleSteps">+ Añadir varios pasos</button><button class="btn btn-outline" id="addStepTemplate">Plantilla de paso</button><button class="btn btn-outline" id="useProcessTemplate">Plantilla de flujo</button>');
 }
 function frictionsEditor(e,steps,fr){
   return section('Fricciones y evidencia','El cliente describe el problema observable; AUNEA registra causa, evidencia e impacto sin mostrar Pain_ID.',
@@ -290,6 +291,7 @@ bindForms=function(){
   const pTpl=document.getElementById('useProcessTemplate');if(pTpl)pTpl.onclick=openProcessTemplatePicker;
   const sTpl=document.getElementById('addStepTemplate');if(sTpl)sTpl.onclick=openStepTemplatePicker;
   const addClient=document.getElementById('addStepFromClient');if(addClient)addClient.onclick=()=>openStepModal();
+  const addMany=document.getElementById('addMultipleSteps');if(addMany)addMany.onclick=()=>addMultipleSteps();
   const share=document.getElementById('openSessionDisplayFromProcess');if(share)share.onclick=()=>openSessionDisplay();
 };
 // [AUNEA-FE-PROC-EDITOR-020] END
