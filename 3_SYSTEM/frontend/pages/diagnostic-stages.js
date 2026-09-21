@@ -232,10 +232,15 @@ function stagePage(){
   const stageFields=stage.Stage_ID==='S01'?pg01ContextFields(e):renderStageFields(fields,e);
   const pg01Disclosure=stage.Stage_ID==='S01'?pg01CanonicalDisclosure(fields,e):'';
   const engagementArea=stage.Stage_ID==='S02'?engagementBusinessAreaBlock(e):'';
-  const main=`<div class="card stage-card">
-      ${stage.Stage_ID==='S01'?REQUIRED_LEGEND_HTML:(fields.some(f=>f.Requiredness==='REQUIRED_90M')?REQUIRED_LEGEND_HTML:'')}
+  const main=stage.Stage_ID==='S01'
+    ? `<div class="card stage-card">
+        ${REQUIRED_LEGEND_HTML}
+        <div class="form-grid">${stageFields}</div>
+      </div>
+      ${pg01Disclosure}`
+    : `<div class="card stage-card">
+      ${fields.some(f=>f.Requiredness==='REQUIRED_90M')?REQUIRED_LEGEND_HTML:''}
       <div class="form-grid">${engagementArea}${stageFields}</div>
-      ${pg01Disclosure}
       ${stage.Stage_ID==='S04'?processPrompt(e):''}${stage.Stage_ID==='S05'?frictionPrompt(e):''}
       ${stage.Stage_ID==='S06'?riskBuilder(e):''}${stage.Stage_ID==='S07'?economicBuilder(e):''}
       ${isLastStage?validationSummary(e,completion):''}
