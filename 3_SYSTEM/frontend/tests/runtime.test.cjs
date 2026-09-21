@@ -84,6 +84,18 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
     assert.equal(w.eval('state.contacts[0].phone'),'+34 612 345 678');
     assert.equal(w.eval('typeof state.contacts[0].phonePrefix'),'undefined','no second phone attribute is created');
   });
+  await t.test('active context survives Inicio and Abrir / Continuar returns to the open diagnostic',()=>{
+    setPage('diagnostico');
+    const engId=w.eval('currentEng().id');
+    click('#nav [data-page="inicio"]');
+    assert.equal(w.eval('state.activePage'),'inicio');
+    const open=d.querySelector(`[data-open-context="${engId}"]`);assert.ok(open,'el contexto activo ofrece Abrir / Continuar');
+    open.click();
+    assert.equal(w.eval('state.activeEngagementId'),engId);
+    assert.equal(w.eval('state.activePage'),'diagnostico');
+    assert.ok(d.querySelector('[data-field="DF008"]'),'PG01 vuelve a renderizarse');
+  });
+
   await t.test('PG01 contextual Contact creation, conditional Otra and help popovers work in the real DOM',()=>{
     const contactsBefore=w.eval('state.contacts.length');
     const create=d.querySelector('[data-create-contact-for-field="DF007"]');assert.ok(create,'DF007 ofrece crear contacto');
