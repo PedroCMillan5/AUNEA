@@ -271,6 +271,7 @@ function bindForms(){
   document.querySelectorAll('[data-delete-friction]').forEach(b=>b.onclick=()=>supersedeFriction(b.dataset.deleteFriction));
   document.querySelectorAll('[data-process-tab]').forEach(b=>b.onclick=()=>{currentEng().processTab=b.dataset.processTab;render()});
   document.querySelectorAll('[data-goto-process]').forEach(b=>b.onclick=()=>goToProcessFromStage());
+  document.querySelectorAll('[data-open-process-editor]').forEach(b=>b.onclick=()=>openProcessEditorWindow());
 }
 
 // addCompany lives in app-no-reask-v1.js: the canonical version drives Sector/País from
