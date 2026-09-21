@@ -28,6 +28,22 @@ function datalistControl(id,setId,value,placeholder){
   return `<div class="catalog-reference-control">${auneaDropdownControl(id,all,selectedValue,placeholder,`data-model-set="${attr(setId||'')}" data-other-value="${attr(otherValue)}"`)}<div class="detail-wrap" data-catalog-other-wrap="${id}"${isOther?'':' style="display:none"'}><input id="${id}_other" value="${attr(isCustom?value:'')}" placeholder="Especifica el valor"></div></div>`;
 }
 function resolveCatalogInput(el){if(!el)return '';const opts=fieldOptions(el.dataset.modelSet),raw=String(el.value||''),otherValue=String(el.dataset.otherValue||'__OTHER__');if(raw===otherValue)return document.getElementById(`${el.id}_other`)?.value.trim()||raw;const m=opts.find(o=>String(o.value)===raw);return m?.value||raw}
+function bindProcessDropdownDelegation(){
+  if(typeof document==='undefined'||document.__auneaProcessDropdownBound)return;
+  document.__auneaProcessDropdownBound=true;
+  document.addEventListener('click',ev=>{
+    const option=ev.target.closest?.('[data-process-select-option]');if(!option)return;
+    ev.preventDefault();ev.stopPropagation();
+    const id=option.dataset.processSelectOption,input=document.getElementById(id),box=option.closest('details.aunea-select');
+    if(!input)return;
+    input.value=option.dataset.value||'';
+    box?.querySelectorAll('[data-process-select-option]').forEach(x=>x.classList.toggle('selected',x===option));
+    const label=box?.querySelector('summary span');if(label)label.textContent=option.dataset.label||option.textContent||'';
+    if(box)box.open=false;
+    input.dispatchEvent(new Event('change',{bubbles:true}));
+  });
+}
+bindProcessDropdownDelegation();
 function timeControl(id,minutes,unit='min',allowSpecial=false){
   const units=[{value:'min',label:'min'},{value:'h',label:'h'},{value:'day',label:'días'},{value:'week',label:'semanas'}],modes=[{value:'',label:'Dato disponible'},{value:'UNKNOWN',label:'No disponible'},{value:'ZERO',label:'Cero'}];
   return `<div class="compound-control"><input id="${id}" type="number" min="0" step="any" value="${attr(displayDuration(minutes,unit))}" placeholder="0">${auneaDropdownControl(id+'_unit',units,unit,'Unidad')}${allowSpecial?auneaDropdownControl(id+'_mode',modes,'','Estado'):''}</div>`;
