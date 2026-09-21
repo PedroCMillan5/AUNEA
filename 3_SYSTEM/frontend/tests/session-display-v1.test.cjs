@@ -181,3 +181,10 @@ test('the shared window renders no console chrome', () => {
   assert.match(css, /body\.session-display \.sidebar,body\.session-display \.topbar\{display:none\}/);
 });
 // [AUNEA-UAT-SESSION-DISPLAY-010] END
+
+
+test('PG04 client snapshot carries fixed start/end boundaries from PG02',()=>{
+  eng.stageId='S04';eng.answers.DF014='Solicitud recibida';eng.answers.DF015='Resultado entregado';
+  const snap=ctx.buildSessionSnapshot(eng);
+  assert.deepEqual(snap.boundaries,{start:'Solicitud recibida',end:'Resultado entregado'});
+});
