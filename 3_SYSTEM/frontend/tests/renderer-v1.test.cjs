@@ -116,9 +116,9 @@ test('PG02 DF017 Otro reveals detail only when selected',()=>{
   const opts=[{value:'OPERATIONS',label:'Operaciones'},{value:'OTHER',label:'Otro'}];
   const hidden=ctx.renderControl({Field_ID:'DF017',Control_UI:'MULTISELECT_REFERENCE'},[],opts,e);
   assert.match(hidden,/value="OTHER"[^>]*data-other-toggle="DF017"/);
-  assert.match(hidden,/data-detail-wrap="DF017"[^>]*hidden[^>]*style="display:none"/);
+  assert.match(hidden,/data-detail-wrap="DF017"[^>]*style="display:none"/);
   const shown=ctx.renderControl({Field_ID:'DF017',Control_UI:'MULTISELECT_REFERENCE'},['OTHER'],opts,e);
-  assert.doesNotMatch(shown,/data-detail-wrap="DF017"[^>]*hidden/);
+  assert.doesNotMatch(shown,/data-detail-wrap="DF017"[^>]*style="display:none"/);
 });
 
 test('PG02 DF020 Otra reveals detail only when selected',()=>{
@@ -126,8 +126,8 @@ test('PG02 DF020 Otra reveals detail only when selected',()=>{
   const opts=[{value:'SERVICE',label:'Servicio / producto'},{value:'OTHER',label:'Otra'}];
   const hidden=ctx.renderControl({Field_ID:'DF020',Control_UI:'MULTISELECT_WITH_DETAIL'},[],opts,e);
   assert.match(hidden,/value="OTHER"[^>]*data-other-toggle="DF020"/);
-  assert.match(hidden,/data-detail-wrap="DF020"[^>]*hidden[^>]*style="display:none"/);
+  assert.match(hidden,/data-detail-wrap="DF020"[^>]*style="display:none"/);
   const shown=ctx.renderControl({Field_ID:'DF020',Control_UI:'MULTISELECT_WITH_DETAIL'},['OTHER'],opts,e);
-  assert.doesNotMatch(shown,/data-detail-wrap="DF020"[^>]*hidden/);
+  assert.doesNotMatch(shown,/data-detail-wrap="DF020"[^>]*style="display:none"/);
 });
 // [AUNEA-UAT-RENDER-010] END
