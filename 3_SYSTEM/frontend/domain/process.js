@@ -180,93 +180,49 @@ function removeStepFromFlow(stepId){
   },'Eliminar del flujo');
 }
 
+function relinkNormalFlow(e){
+  const steps=activeSteps(e);
+  steps.forEach((s,i)=>{s.normal_next_step=steps[i+1]?.id||''});
+}
 function moveStep(stepId,direction){
-  const e=currentEng(),idx=e.processSteps.findIndex(x=>x.id===stepId);
-  if(idx===-1||e.processSteps[idx].status==='SUPERSEDED')return;
-  let j=idx+direction;
-  while(j>=0&&j<e.processSteps.length&&e.processSteps[j].status==='SUPERSEDED')j+=direction;
-  if(j<0||j>=e.processSteps.length)return;
-  [e.processSteps[idx],e.processSteps[j]]=[e.processSteps[j],e.processSteps[idx]];
-  markDirty(`Paso ${stepId} reordenado`);render();
+  const e=currentEng(),active=activeSteps(e),i=active.findIndex(x=>x.id===stepId),j=i+direction;
+  if(i<0||j<0||j>=active.length)return;
+  const ai=e.processSteps.indexOf(active[i]),aj=e.processSteps.indexOf(active[j]);
+  [e.processSteps[ai],e.processSteps[aj]]=[e.processSteps[aj],e.processSteps[ai]];
+  relinkNormalFlow(e);e.confirmedAsIs=false;e.answers.DF093='';markDirty(`Paso ${stepId} reordenado`);render();
 }
-// Visual order (array position) is independent of normal_next_step/exception_path routing — moveStep never
-// writes either. This only flags when they drift apart so a consultant can notice, never auto-corrects.
-function stepOrderDiscrepancies(steps){
-  const out=[];
-  steps.forEach((s,i)=>{
-    if(!s.normal_next_step)return;
-    const expected=steps[i+1];
-    if(!expected||expected.id!==s.normal_next_step)out.push({from:s,to:steps.find(x=>x.id===s.normal_next_step)||null});
-  });
-  return out;
+function reorderStepBefore(stepId,targetId){
+  const e=currentEng(),step=e.processSteps.find(x=>x.id===stepId),target=e.processSteps.find(x=>x.id===targetId);
+  if(!step||!target||step===target||step.status==='SUPERSEDED'||target.status==='SUPERSEDED')return;
+  const from=e.processSteps.indexOf(step),to=e.processSteps.indexOf(target);
+  e.processSteps.splice(from,1);e.processSteps.splice(from<to?to-1:to,0,step);
+  relinkNormalFlow(e);e.confirmedAsIs=false;e.answers.DF093='';markDirty(`Paso ${stepId} reordenado por arrastre`);render();
 }
+function addDecisionStep(){
+  openStepModal(null,null,{step_name:'Decisión',step_type:'ST04',actor:'OPERATIONS',_ui:{has_decision:true}});
+}
+function stepOrderDiscrepancies(){return []}
 
-const PROCESS_STARTER_TEMPLATES=Object.freeze([
-  {id:'TPL-PROC-LINEAR-001',version:1,name:'Flujo lineal',description:'Dos actividades intermedias entre los límites ya definidos.',steps:[
-    {step_name:'Actividad principal',step_type:'ST02',actor:'OPERATIONS'},
-    {step_name:'Validación',step_type:'ST02',actor:'OPERATIONS'}
-  ]},
-  {id:'TPL-PROC-APPROVAL-001',version:1,name:'Flujo con aprobación',description:'Preparación, revisión y aprobación antes del límite final.',steps:[
-    {step_name:'Preparar',step_type:'ST02',actor:'OPERATIONS'},
-    {step_name:'Revisar',step_type:'ST02',actor:'OPERATIONS'},
-    {step_name:'Aprobar',step_type:'ST05',actor:'MANAGER'}
-  ]},
-  {id:'TPL-PROC-DECISION-001',version:1,name:'Flujo con decisión',description:'Actividad, decisión y ejecución posterior.',steps:[
-    {step_name:'Preparar información',step_type:'ST02',actor:'OPERATIONS'},
-    {step_name:'Decidir',step_type:'ST04',actor:'MANAGER'},
-    {step_name:'Ejecutar decisión',step_type:'ST02',actor:'OPERATIONS'}
-  ]}
-]);
-const STEP_STARTER_TEMPLATES=Object.freeze([
-  {id:'TPL-STEP-TASK-001',version:1,name:'Tarea operativa',step:{step_name:'Nueva actividad',step_type:'ST02',actor:'OPERATIONS'}},
-  {id:'TPL-STEP-DECISION-001',version:1,name:'Decisión',step:{step_name:'Tomar decisión',step_type:'ST04',actor:'MANAGER'}},
-  {id:'TPL-STEP-APPROVAL-001',version:1,name:'Aprobación',step:{step_name:'Aprobar',step_type:'ST05',actor:'MANAGER'}}
-]);
-
-function processBoundaryValue(e,fid,fallback,secondaryFid=''){
-  const valueFor=id=>{const f=schema?.fields?.find(x=>x.Field_ID===id);return f&&typeof effectiveValue==='function'?effectiveValue(f,e):e.answers?.[id]};
-  const primary=valueFor(fid);if(primary!==undefined&&primary!==null&&String(primary).trim()!=='')return String(primary);
-  if(secondaryFid){const secondary=valueFor(secondaryFid);if(secondary!==undefined&&secondary!==null&&String(secondary).trim()!=='')return String(secondary)}
-  return fallback;
-}
+const VALIDATED_CASE_TEMPLATES=Object.freeze([]);
 function processDraftStep(data={},templateMeta=null){
-  return stepMeta({
-    id:id('STEP'),status:'ACTIVE',occurrences_per_case:1,inputs:[],outputs:[],manual_actions:[],
-    decision_criteria:[],communication_channels:[],evidence:[],active_time:0,wait_time:0,rework_time:0,
-    ...data,
-    template_provenance:templateMeta?{template_id:templateMeta.id,template_version:templateMeta.version,instantiated_at:now(),state:'DRAFT'}:null
-  });
+  return stepMeta({id:id('STEP'),status:'ACTIVE',occurrences_per_case:1,inputs:[],outputs:[],manual_actions:[],decision_criteria:[],communication_channels:[],evidence:[],active_time:0,wait_time:0,rework_time:0,...data,template_provenance:templateMeta?{template_id:templateMeta.id,template_version:templateMeta.version,source_case_id:templateMeta.source_case_id,instantiated_at:now(),state:'DRAFT'}:null});
 }
-function instantiateProcessTemplate(templateId){
-  const e=currentEng(),tpl=PROCESS_STARTER_TEMPLATES.find(x=>x.id===templateId);if(!e||!tpl)return;
+function instantiateValidatedCase(templateId){
+  const e=currentEng(),tpl=VALIDATED_CASE_TEMPLATES.find(x=>x.id===templateId);if(!e||!tpl)return;
   const active=activeSteps(e);
-  if(active.length&&!confirm('Ya existen pasos intermedios. ¿Sustituirlos por esta plantilla de flujo? Los pasos actuales se eliminarán del flujo visible.'))return;
+  if(active.length&&!confirm('Ya existen pasos intermedios. ¿Sustituirlos por este caso de referencia validado?'))return;
   active.forEach(x=>x.status='SUPERSEDED');
-  const created=tpl.steps.map(x=>processDraftStep(x,tpl));
-  created.forEach((x,i)=>x.normal_next_step=created[i+1]?.id||'');
-  e.processSteps.push(...created);e.confirmedAsIs=false;e.answers.DF093='';e.processTab='cliente';
-  audit(`Plantilla de flujo ${tpl.id} v${tpl.version} instanciada como borrador`);
-  markDirty('Plantilla de flujo instanciada como borrador');closeModal();render();
-}
-function instantiateStepTemplate(templateId){
-  const e=currentEng(),tpl=STEP_STARTER_TEMPLATES.find(x=>x.id===templateId);if(!e||!tpl)return;
-  e.processSteps.push(processDraftStep(tpl.step,tpl));e.confirmedAsIs=false;e.answers.DF093='';
-  audit(`Plantilla de paso ${tpl.id} v${tpl.version} instanciada como borrador`);
-  markDirty('Plantilla de paso instanciada como borrador');closeModal();render();
+  const created=tpl.steps.map(x=>processDraftStep(x,tpl));e.processSteps.push(...created);relinkNormalFlow(e);
+  e.confirmedAsIs=false;e.answers.DF093='';e.processTab='cliente';audit(`Caso validado ${tpl.id} instanciado como borrador`);markDirty('Caso de referencia instanciado como borrador');closeModal();render();
 }
 function openProcessTemplatePicker(){
-  const body=`<div class="field full"><label>Plantilla de flujo</label><select id="processTemplateSelect">
-    ${PROCESS_STARTER_TEMPLATES.map(x=>`<option value="${attr(x.id)}">${esc(x.name)} · v${x.version}</option>`).join('')}
-  </select><div class="field-help">La plantilla crea pasos intermedios como borrador. Los límites inicial y final proceden de PG02 y no se sustituyen.</div></div>
-  <div class="template-catalog">${PROCESS_STARTER_TEMPLATES.map(x=>`<div class="notice template-preview"><b>${esc(x.name)}</b><br>${esc(x.description)}<div class="field-help">${x.steps.map(s=>esc(s.step_name)).join(' → ')}</div></div>`).join('')}</div>`;
-  openModal('Usar plantilla de flujo',body,()=>instantiateProcessTemplate(document.getElementById('processTemplateSelect').value),'Usar plantilla');
+  if(!VALIDATED_CASE_TEMPLATES.length){
+    return openModal('Casos de referencia',`<div class="empty"><h2>Aún no hay casos reales validados disponibles</h2><p>El inventario interno de procesos y las demos no se usan como casos reales. Cuando exista un engagement validado y autorizado para reutilización, podrá aparecer aquí anonimizado para precompletar el borrador y revisarlo con el cliente.</p></div>`,null,'Cerrar');
+  }
+  const body=`<div class="template-catalog">${VALIDATED_CASE_TEMPLATES.map(x=>`<button type="button" class="client-layer-card" data-validated-case="${attr(x.id)}"><b>${esc(x.name)}</b><span>${esc(x.description||'Caso real validado')}</span></button>`).join('')}</div>`;
+  openModal('Casos de referencia',body,null,'Cerrar');
 }
-function openStepTemplatePicker(){
-  const body=`<div class="field full"><label>Plantilla de paso</label><select id="stepTemplateSelect">
-    ${STEP_STARTER_TEMPLATES.map(x=>`<option value="${attr(x.id)}">${esc(x.name)} · v${x.version}</option>`).join('')}
-  </select><div class="field-help">Se añade como borrador editable entre los límites del proceso.</div></div>`;
-  openModal('Añadir paso desde plantilla',body,()=>instantiateStepTemplate(document.getElementById('stepTemplateSelect').value),'Añadir paso');
-}
+function openStepTemplatePicker(){openProcessTemplatePicker()}
 
 function flowBoundaryNode(kind,label){
   return `<div class="flow-step flow-boundary ${kind}"><span class="boundary-kicker">${kind==='start'?'Inicio':'Fin'}</span><h4>${esc(label)}</h4><p>Límite definido en Alcance del proceso</p></div>`;
