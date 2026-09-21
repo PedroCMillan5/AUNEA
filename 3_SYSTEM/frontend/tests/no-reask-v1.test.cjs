@@ -59,13 +59,13 @@ test('correcting a reused Company value writes through to the Company, never a p
   assert.equal(ctx.writeThroughTarget({Field_ID:'DF007',Reuse_From:'RT_CONTACT + stakeholders',Write_Target:'RT_CONTACT.Decision_Role'}),null);
 });
 
-test('provenance falls back to a generic label and inline edit when Reuse_From does not resolve to a single owning field',()=>{
+test('a manual answer with descriptive Reuse_From stays editable when no actual reused value exists',()=>{
   const f={Field_ID:'DF054',Pregunta_o_etiqueta_ES:'Integraciones manuales',Objetivo_concreto:'',Requiredness:'CONDITIONAL_90M',Ask_Mode:'PREFILL_CONFIRM',Reask_Policy:'CONFIRM_ONLY_IF_CHANGED',Branch_Rule_ID:'BR-BASE',Reuse_From:'Herramientas por paso + handoffs + copy/rekey',Option_Set_ID:null,Validation:'',Ejemplo_ES:''};
   eng.answers.DF054='Salesforce -> Excel';
   const html=ctx.renderQuestion(f,eng);
-  assert.match(html,/Tomado de: un dato ya capturado en el estudio/);
-  assert.match(html,/data-edit-context="DF054"/);
-  assert.doesNotMatch(html,/data-goto-source/);
+  assert.match(html,/CONTROL value="Salesforce -> Excel"/);
+  assert.doesNotMatch(html,/Tomado de:/);
+  assert.doesNotMatch(html,/data-edit-context="DF054"/);
   delete eng.answers.DF054;
 });
 
