@@ -120,6 +120,9 @@ select option{background:#fff;color:var(--ink)}
 .client-layer-card span{font-size:12px;color:var(--muted)}
 .template-catalog{display:grid;gap:10px;margin-top:14px}
 .catalog-reference-control{display:grid;gap:8px}
+.process-aunea-select{position:relative;min-width:0}.process-aunea-select .aunea-select{width:100%}.process-aunea-select .aunea-select summary{width:100%;box-sizing:border-box}.process-aunea-select .aunea-select-menu{width:100%;min-width:100%;box-sizing:border-box}
+.field[data-field="DF017"] .reuse-context{border-color:var(--system-line);background:var(--system-soft)}.field[data-field="DF017"] .reuse-context small,.field[data-field="DF017"] .context-label{color:var(--system)}
+.flow-step{cursor:grab}.flow-step:active{cursor:grabbing}.flow-step-tools{display:flex;gap:4px;justify-content:flex-end;margin:-4px -4px 7px}.flow-step-tools button,.flow-insert{border:1px solid var(--line);background:#fff;border-radius:6px;min-width:26px;height:26px;font-size:11px;cursor:pointer}.flow-step-tools button:hover,.flow-insert:hover{border-color:var(--system);background:var(--system-soft)}.flow-step.is-decision{border-color:var(--system);background:#fbfdfc}.flow-step.is-decision .boundary-kicker{color:var(--system)}.decision-route-label{color:var(--system)!important;font-weight:700}.flow-connector{position:relative}.flow-insert{position:absolute;left:50%;top:-12px;transform:translateX(-50%);z-index:2;border-radius:50%}.client-map-actions{display:flex;gap:8px;flex-wrap:wrap;padding:12px 8px 18px}.client-process-main>.card{box-shadow:none;border-left:0;border-right:0;border-radius:0}
 .catalog-reference-control .detail-wrap{margin-top:0}
 .client-process-topbar{min-height:70px;background:var(--system);color:#fff;border-radius:12px 12px 0 0;padding:12px 16px;display:grid;grid-template-columns:170px minmax(0,1fr) auto;align-items:center;gap:18px}
 .client-process-topbar img{width:150px;height:44px;object-fit:contain;object-position:left center}
