@@ -228,34 +228,36 @@ function flowBoundaryNode(kind,label){
   return `<div class="flow-step flow-boundary ${kind}"><span class="boundary-kicker">${kind==='start'?'Inicio':'Fin'}</span><h4>${esc(label)}</h4><p>Límite definido en Alcance del proceso</p></div>`;
 }
 function flowIntermediateNodes(e,steps,fr){
-  return steps.map((s,i)=>`<div class="flow-connector"></div><div class="flow-step ${e.confirmedAsIs?'confirmed':''}" data-edit-step="${s.id}">
-    <h4>${i+1}. ${esc(s.step_name||'Paso sin nombre')}</h4>
-    <p>${esc(labelFrom('OS_ACTOR_ROLE',s.actor)||'—')} · ${esc(labelFrom('OS_TOOL_CATEGORY',s.tool)||'—')}</p>
-    <p>${num(s.active_time)?`${num(s.active_time)} min trabajo`:''}${num(s.wait_time)?` · ${num(s.wait_time)} min espera`:''}</p>
-    <div class="friction-badges">${fr.filter(x=>normalizeArray(x.affected_steps).includes(s.id)).map(x=>`<span class="friction-badge" data-edit-friction="${x.id}">${esc(labelFrom('OS_FRICTION_TYPE',x.friction_type))}</span>`).join('')}</div>
-  </div>`).join('');
+  return steps.map((s,i)=>{
+    const decision=s._ui?.has_decision===true||['ST04','ST05'].includes(String(s.step_type||''))||normalizeArray(s.decision_criteria).length>0;
+    return `<div class="flow-connector"><button type="button" class="flow-insert" data-add-after="${i?steps[i-1]?.id||'':''}" aria-label="Añadir paso aquí">+</button></div><div class="flow-step ${decision?'is-decision':''} ${e.confirmedAsIs?'confirmed':''}" draggable="true" data-drag-step="${s.id}" data-edit-step="${s.id}">
+      <div class="flow-step-tools"><button type="button" data-move-step-up="${s.id}" ${i===0?'disabled':''}>←</button><button type="button" data-move-step-down="${s.id}" ${i===steps.length-1?'disabled':''}>→</button><button type="button" data-edit-step="${s.id}">Editar</button></div>
+      <span class="boundary-kicker">${decision?'Decisión':`Paso ${i+1}`}</span><h4>${esc(s.step_name||'Paso sin nombre')}</h4>
+      <p>${esc(labelFrom('OS_ACTOR_ROLE',s.actor)||'—')} · ${esc(labelFrom('OS_TOOL_CATEGORY',s.tool)||'—')}</p>
+      <p>${num(s.active_time)?`${num(s.active_time)} min trabajo`:''}${num(s.wait_time)?` · ${num(s.wait_time)} min espera`:''}</p>
+      ${decision?'<p class="decision-route-label">Ruta normal + alternativa configurable</p>':''}
+      <div class="friction-badges">${fr.filter(x=>normalizeArray(x.affected_steps).includes(s.id)).map(x=>`<span class="friction-badge" data-edit-friction="${x.id}">${esc(labelFrom('OS_FRICTION_TYPE',x.friction_type))}</span>`).join('')}</div>
+    </div>`;
+  }).join('');
 }
-function clientProcessView(e,steps,fr){
-  const start=processBoundaryValue(e,'DF014','Límite inicial pendiente','DF012');
-  const finish=processBoundaryValue(e,'DF015','Límite final pendiente','DF013');
-  const riskCount=(e.risks||[]).length,econCount=(e.economicInputs||[]).length;
-  const company=(typeof companyById==='function'?companyById(e.companyId)?.name:'')||e.answers?.DF001||'Empresa';
-  const processName=e.answers?.DF011||e.processName||'Proceso sin nombre';
-  const clientBar=`<div class="client-process-topbar"><img src="./assets/brand/Logo.png" alt="AUNEA"><div class="client-process-context"><span>${esc(company)}</span><b>${esc(processName)}</b></div><div class="client-process-state"><span>Sesión de diagnóstico</span><b>AS-IS compartido</b></div></div>`;
-  const flow=`<div class="flow-canvas client-process-canvas"><div class="flow-track">${flowBoundaryNode('start',start)}${flowIntermediateNodes(e,steps,fr)}<div class="flow-connector"></div>${flowBoundaryNode('end',finish)}</div></div>`;
-  const layerRail=`<aside class="client-process-layer-rail" aria-label="Capas del diagnóstico">
-    <div class="client-rail-title">Capas del diagnóstico</div>
-    <button class="client-rail-item active" data-process-tab="cliente"><b>Mapa del proceso</b><span>${steps.length} paso(s) intermedio(s)</span></button>
-    <button class="client-rail-item" data-process-tab="fricciones"><b>Fricciones y evidencia</b><span>${fr.length} registrada(s)</span></button>
-    <button class="client-rail-item" data-process-tab="riesgos"><b>Riesgos y controles</b><span>${riskCount} registrado(s)</span></button>
-    <button class="client-rail-item" data-process-tab="impacto"><b>Impacto económico</b><span>${econCount} input(s)</span></button>
-    <div class="client-rail-note">El cliente ve siempre el mismo AS-IS. Cambia la capa, no el proceso.</div>
-  </aside>`;
-  const confirm=`<div class="flow-confirm"><div><b>${e.confirmedAsIs?'AS-IS confirmado':'Confirmación pendiente'}</b><div class="field-help">${e.confirmedAsIs?`Confirmado ${fmtDate(e.asIsConfirmedAt)}`:'La confirmación se invalida si cambia el mapa.'}</div></div><button class="btn ${e.confirmedAsIs?'btn-outline':'btn-primary'}" id="confirmAsIs">${e.confirmedAsIs?'Reconfirmar flujo':'Confirmar flujo AS-IS'}</button></div>`;
-  const workspace=`${clientBar}<div class="client-process-workspace">${layerRail}<div class="client-process-main">${flow}${confirm}</div></div>`;
-  return section('Vista con cliente','La sesión se conduce sobre un único mapa. Inicio y fin proceden del alcance ya definido; aquí sólo se añaden actividades intermedias.',
-    workspace,
-    `<button class="btn btn-outline" id="openSessionDisplayFromProcess">Abrir pantalla cliente</button><button class="btn btn-outline" id="useProcessTemplate">Usar plantilla de flujo</button><button class="btn btn-outline" id="addStepTemplate">Añadir desde plantilla de paso</button><button class="btn btn-primary" id="addStepFromClient">Añadir paso intermedio</button>`);
+function clientLayerBody(e,steps,fr,tab){
+  const start=processBoundaryValue(e,'DF014','Límite inicial pendiente','DF012'),finish=processBoundaryValue(e,'DF015','Límite final pendiente','DF013');
+  const flow=`<div class="flow-canvas client-process-canvas"><div class="flow-track">${flowBoundaryNode('start',start)}${flowIntermediateNodes(e,steps,fr)}<div class="flow-connector"><button type="button" class="flow-insert" data-add-after="${steps.at(-1)?.id||''}">+</button></div>${flowBoundaryNode('end',finish)}</div></div>`;
+  if(tab==='fricciones')return flow+frictionsEditor(e,steps,fr);
+  if(tab==='riesgos')return flow+riskBuilder(e);
+  if(tab==='impacto')return flow+economicBuilder(e);
+  return flow+`<div class="client-map-actions"><button class="btn btn-primary" id="addStepFromClient">Añadir paso</button><button class="btn btn-outline" id="addDecisionFromClient">Añadir decisión</button><button class="btn btn-outline" id="useProcessTemplate">Casos de referencia</button></div>`;
+}
+function clientProcessView(e,steps,fr,tab='cliente'){
+  const riskCount=(e.risks||[]).length,econCount=(e.economicInputs||[]).length,company=(typeof companyById==='function'?companyById(e.companyId)?.name:'')||e.answers?.DF001||'Empresa',processName=e.answers?.DF011||e.processName||'Proceso sin nombre';
+  const clientBar=`<div class="client-process-topbar"><img src="./assets/brand/Logo.png" alt="AUNEA"><div class="client-process-context"><span>${esc(company)}</span><b>${esc(processName)}</b></div><div class="client-process-state"><span>Sesión de diagnóstico</span><b>Editor compartido</b></div></div>`;
+  const layerRail=`<aside class="client-process-layer-rail" aria-label="Capas del diagnóstico"><div class="client-rail-title">Capas del diagnóstico</div>
+    <button class="client-rail-item ${tab==='cliente'?'active':''}" data-process-tab="cliente"><b>Mapa del proceso</b><span>${steps.length} paso(s)</span></button>
+    <button class="client-rail-item ${tab==='fricciones'?'active':''}" data-process-tab="fricciones"><b>Fricciones y evidencia</b><span>${fr.length}</span></button>
+    <button class="client-rail-item ${tab==='riesgos'?'active':''}" data-process-tab="riesgos"><b>Riesgos y controles</b><span>${riskCount}</span></button>
+    <button class="client-rail-item ${tab==='impacto'?'active':''}" data-process-tab="impacto"><b>Impacto económico</b><span>${econCount}</span></button></aside>`;
+  const confirm=`<div class="flow-confirm"><div><b>${e.confirmedAsIs?'AS-IS confirmado':'Confirmación pendiente'}</b></div><button class="btn ${e.confirmedAsIs?'btn-outline':'btn-primary'}" id="confirmAsIs">${e.confirmedAsIs?'Reconfirmar flujo':'Confirmar flujo AS-IS'}</button></div>`;
+  return section('Editor con cliente','Mapa, fricciones, riesgos e impacto se editan sobre el mismo contexto.',clientBar+`<div class="client-process-workspace">${layerRail}<div class="client-process-main">${clientLayerBody(e,steps,fr,tab)}${confirm}</div></div>`);
 }
 function stepsEditor(e,steps,fr){
   const discrepancies=stepOrderDiscrepancies(steps);
@@ -277,21 +279,8 @@ function frictionsEditor(e,steps,fr){
 }
 function processPage(){
   const e=currentEng(),steps=activeSteps(e),fr=activeFrictions(e),tab=e.processTab||'cliente';
-  const tabs=`<div class="subtabs process-workspace-tabs">
-    <button class="subtab ${tab==='cliente'?'active':''}" data-process-tab="cliente">Vista con cliente</button>
-    <button class="subtab ${tab==='pasos'?'active':''}" data-process-tab="pasos">Pasos (${steps.length})</button>
-    <button class="subtab ${tab==='fricciones'?'active':''}" data-process-tab="fricciones">Fricciones y evidencia (${fr.length})</button>
-    <button class="subtab ${tab==='riesgos'?'active':''}" data-process-tab="riesgos">Riesgo y controles (${(e.risks||[]).length})</button>
-    <button class="subtab ${tab==='impacto'?'active':''}" data-process-tab="impacto">Impacto económico (${(e.economicInputs||[]).length})</button>
-  </div>`;
-  let body=tab==='pasos'?stepsEditor(e,steps,fr)
-    :tab==='fricciones'?frictionsEditor(e,steps,fr)
-    :tab==='riesgos'?riskBuilder(e)
-    :tab==='impacto'?economicBuilder(e)
-    :clientProcessView(e,steps,fr);
   const returnBtn=state.returnTo?`<button class="btn btn-primary" id="returnToStage">← Volver a ${esc(schema.flow.find(x=>x.Stage_ID===state.returnTo.stageId)?.Stage_ES||state.returnTo.stageId)}</button>`:'';
-  return pageTop('Editor del proceso','Trabaja el AS-IS con el cliente sobre un único flujo; las capas de detalle se editan sin abandonar el contexto.',
-    `${returnBtn}<button class="btn" data-page="diagnostico">Volver al cuestionario</button>`) + tabs + body;
+  return pageTop('Editor del proceso','Experiencia compartida y editable sobre el mismo AS-IS.',`${returnBtn}<button class="btn" data-page="diagnostico">Volver al cuestionario</button>`)+clientProcessView(e,steps,fr,tab);
 }
 function flowReview(e,steps,fr){return clientProcessView(e,steps,fr)}
 
