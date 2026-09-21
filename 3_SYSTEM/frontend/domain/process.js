@@ -17,8 +17,9 @@ function stepMeta(s){s._ui=s._ui||{};s._details=s._details||{};return s}
 function frictionMeta(f){f._ui=f._ui||{};f._details=f._details||{};return f}
 function painForFriction(type){return schema.friction_pain_map.find(x=>String(x.Friction_Type_ID)===String(type))?.Pain_ID||null}
 function selectedHtml(id,opts,selected){const arr=normalizeArray(selected).map(String);return `<div class="choice-grid">${opts.map(o=>`<div class="choice"><input type="checkbox" id="${id}_${attr(o.value)}" value="${attr(o.value)}" data-v1-multi="${id}" ${arr.includes(String(o.value))?'checked':''}><label for="${id}_${attr(o.value)}">${esc(o.label)}</label></div>`).join('')}</div>`}
-function datalistControl(id,setId,value,placeholder){const opts=fieldOptions(setId),list=`dl_${id}`;const label=opts.find(o=>String(o.value)===String(value))?.label||value||'';return `<div class="combo-wrap"><input id="${id}" list="${list}" value="${attr(label)}" data-model-set="${attr(setId||'')}" placeholder="${attr(placeholder||'Selecciona…')}"><datalist id="${list}">${opts.map(o=>`<option value="${attr(o.label)}"></option>`).join('')}</datalist></div>`}
-function resolveCatalogInput(el){if(!el)return '';const opts=fieldOptions(el.dataset.modelSet),typed=el.value.trim(),m=opts.find(o=>String(o.label).toLowerCase()===typed.toLowerCase()||String(o.value).toLowerCase()===typed.toLowerCase());return m?.value||typed}
+function catalogOtherOption(opts){return (opts||[]).find(o=>String(o.value).toUpperCase()==='OTHER'||['otro','otra'].includes(String(o.label||'').trim().toLowerCase()))||null}
+function datalistControl(id,setId,value,placeholder){const opts=fieldOptions(setId),match=opts.find(o=>String(o.value)===String(value)),other=catalogOtherOption(opts),isCustom=!!value&&!match;return `<div class="catalog-reference-control"><select id="${id}" data-model-set="${attr(setId||'')}" data-catalog-reference="${id}" data-other-target="${id}_other"><option value="">${attr(placeholder||'Selecciona…')}</option>${opts.map(o=>`<option value="${attr(o.value)}" ${String(value)===String(o.value)?'selected':''}>${esc(o.label)}</option>`).join('')}${other?'':`<option value="__OTHER__" ${isCustom?'selected':''}>Otro / nuevo…</option>`}</select><div class="detail-wrap" data-catalog-other-wrap="${id}"${isCustom?'':' style="display:none"'}><input id="${id}_other" value="${attr(isCustom?value:'')}" placeholder="Especifica el valor"></div></div>`}
+function resolveCatalogInput(el){if(!el)return '';const opts=fieldOptions(el.dataset.modelSet),raw=String(el.value||'');if(raw==='__OTHER__')return document.getElementById(`${el.id}_other`)?.value.trim()||'';const m=opts.find(o=>String(o.value)===raw);return m?.value||raw}
 function timeControl(id,minutes,unit='min',allowSpecial=false){return `<div class="compound-control"><input id="${id}" type="number" min="0" step="any" value="${attr(displayDuration(minutes,unit))}" placeholder="0"><select id="${id}_unit"><option value="min" ${unit==='min'?'selected':''}>min</option><option value="h" ${unit==='h'?'selected':''}>h</option><option value="day" ${unit==='day'?'selected':''}>días</option><option value="week" ${unit==='week'?'selected':''}>semanas</option></select>${allowSpecial?`<select id="${id}_mode"><option value="">Dato disponible</option><option value="UNKNOWN">No disponible</option><option value="ZERO">Cero</option></select>`:''}</div>`}
 function appliesControl(s){const a=s.applies_to&&typeof s.applies_to==='object'?s.applies_to:{mode:s.applies_to||'ALL',value:'',condition:''};return `<div class="compound-control"><select id="step_applies_mode"><option value="ALL" ${a.mode==='ALL'?'selected':''}>Todos los casos</option><option value="PERCENT" ${a.mode==='PERCENT'?'selected':''}>Porcentaje de casos</option><option value="CONDITION" ${a.mode==='CONDITION'?'selected':''}>Sólo si se cumple una condición</option></select><input id="step_applies_value" value="${attr(a.value||a.condition||'')}" placeholder="100% / condición breve"></div>`}
 function exceptionControl(s,e){const x=s.exception_path&&typeof s.exception_path==='object'?s.exception_path:{};const types=fieldOptions('OS_EXCEPTION_TYPE');return `<div class="form-grid nested"><div class="field"><label>Tipo</label><select id="step_exc_type"><option value="">Sin excepción</option>${types.map(o=>`<option value="${attr(o.value)}" ${String(x.type)===String(o.value)?'selected':''}>${esc(o.label)}</option>`).join('')}</select></div><div class="field"><label>Condición</label><input id="step_exc_condition" value="${attr(x.condition||'')}" placeholder="Cuándo ocurre"></div><div class="field"><label>Destino</label><select id="step_exc_dest"><option value="">Fin / por definir</option>${activeSteps(e).filter(z=>z.id!==s.id).map(z=>`<option value="${z.id}" ${x.destination_step===z.id?'selected':''}>${esc(z.step_name||z.id)}</option>`).join('')}</select></div><div class="field"><label>Owner</label>${datalistControl('step_exc_owner','OS_ACTOR_ROLE',x.owner||'','Rol responsable')}</div></div>`}
@@ -27,6 +28,7 @@ function openStepModal(stepId=null,linkFromStepId=null){
   const e=currentEng(),existing=stepId?e.processSteps.find(x=>x.id===stepId):null;
   const s=stepMeta(existing?structuredClone(existing):{id:id('STEP'),status:'ACTIVE',occurrences_per_case:1,inputs:[],outputs:[],manual_actions:[],decision_criteria:[],communication_channels:[],evidence:[],active_time:0,wait_time:0,rework_time:0});
   const stepTypes=fieldOptions('OS_STEP_TYPE'),artifacts=fieldOptions('OS_ARTIFACT_TYPE'),decisions=fieldOptions('OS_DECISION_CRITERIA'),manual=fieldOptions('OS_MANUAL_ACTION'),auto=fieldOptions('OS_AUTOMATION_STATE'),channels=fieldOptions('OS_COMM_CHANNEL'),evid=fieldOptions('OS_EVIDENCE_TYPE');
+  const decisionOther=catalogOtherOption(decisions),decisionOtherOpen=!!decisionOther&&normalizeArray(s.decision_criteria).map(String).includes(String(decisionOther.value));
   // Progressive disclosure over the same 20 canonical Process Step attributes — no schema change, just
   // grouped presentation. Group A (info básica) starts open; the rest collapse behind <summary> so the
   // editor reads as "3 essentials, then detail on demand" instead of one 20-field wall of inputs. The
@@ -45,12 +47,12 @@ function openStepModal(stepId=null,linkFromStepId=null){
   </div></details>
   <details class="step-group"><summary>C. Tiempo y rendimiento</summary><div class="form-grid">
     <div class="field"><label>Tiempo activo típico</label>${timeControl('step_active',s.active_time,s._ui.active_unit||'min')}</div>
-    <div class="field"><label>Tiempo de espera</label>${timeControl('step_wait',s.wait_time,s._ui.wait_unit||'min')}</div>
+    <div class="field"><label>Tiempo de espera</label>${timeControl('step_wait',s.wait_time,s._ui.wait_unit||'min')}<div class="field-help">Tiempo en el que el caso está parado o esperando antes de poder continuar. Se mantiene separado del trabajo activo y no se monetiza como trabajo.</div></div>
     <div class="field"><label>Tiempo de retrabajo</label>${timeControl('step_rework',s.rework_time,s._ui.rework_unit||'min')}</div>
     <div class="field"><label>Error / repetición</label><div class="compound-control"><input id="step_error" type="number" min="0" step="any" value="${attr(s.error_rate&&typeof s.error_rate==='object'?s.error_rate.value:(s.error_rate||''))}" placeholder="5"><select id="step_error_mode"><option value="percent" ${(s.error_rate?.mode||'percent')==='percent'?'selected':''}>%</option><option value="count" ${s.error_rate?.mode==='count'?'selected':''}>casos</option></select><select id="step_error_period"><option value="case">por caso</option><option value="month" ${s.error_rate?.period==='month'?'selected':''}>por mes</option><option value="year" ${s.error_rate?.period==='year'?'selected':''}>por año</option></select></div></div>
   </div></details>
   <details class="step-group"><summary>D. Decisiones y routing</summary><div class="form-grid">
-    <div class="field full"><label>Criterios de decisión</label>${selectedHtml('step_decisions',decisions,s.decision_criteria)}<input id="step_decisions_detail" value="${attr(s._details.decision_criteria||'')}" placeholder="Regla concreta, si aplica"></div>
+    <div class="field full"><label>Criterios de decisión</label>${selectedHtml('step_decisions',decisions,s.decision_criteria)}<div class="detail-wrap" data-step-decision-other-wrap${decisionOtherOpen?'':' style="display:none"'}><input id="step_decisions_detail" value="${attr(decisionOtherOpen?(s._details.decision_criteria||''):'')}" placeholder="Especifica el criterio sólo al seleccionar Otro"></div></div>
     <div class="field full"><label>Siguiente paso normal</label><select id="step_next"><option value="">Fin / por definir</option><option value="__NEW__">+ Crear nuevo paso como siguiente</option>${activeSteps(e).filter(x=>x.id!==s.id).map(x=>`<option value="${x.id}" ${s.normal_next_step===x.id?'selected':''}>${esc(x.step_name||x.id)}</option>`).join('')}</select></div>
     <div class="field full"><label>Ruta de excepción</label>${exceptionControl(s,e)}</div>
   </div></details>
@@ -69,7 +71,7 @@ function openStepModal(stepId=null,linkFromStepId=null){
     s.step_name=document.getElementById('step_name').value.trim();s.step_type=document.getElementById('step_type').value;s.actor=resolveCatalogInput(document.getElementById('step_actor'));s.tool=resolveCatalogInput(document.getElementById('step_tool'));s.occurrences_per_case=Math.max(0,Number(document.getElementById('step_occ').value||1));
     const am=document.getElementById('step_applies_mode').value,av=document.getElementById('step_applies_value').value.trim();s.applies_to={mode:am,value:am==='PERCENT'?av:'',condition:am==='CONDITION'?av:''};
     const collect=k=>[...document.querySelectorAll(`[data-v1-multi="${k}"]:checked`)].map(x=>x.value);s.inputs=collect('step_inputs');s.outputs=collect('step_outputs');s.decision_criteria=collect('step_decisions');s.manual_actions=collect('step_manual');s.communication_channels=collect('step_channels');s.evidence=collect('step_evidence');
-    s._details.inputs=document.getElementById('step_inputs_detail').value.trim();s._details.outputs=document.getElementById('step_outputs_detail').value.trim();s._details.decision_criteria=document.getElementById('step_decisions_detail').value.trim();s._details.communication_channels=document.getElementById('step_channels_other').value.trim();
+    s._details.inputs=document.getElementById('step_inputs_detail').value.trim();s._details.outputs=document.getElementById('step_outputs_detail').value.trim();const decisionOtherSelected=decisionOther&&s.decision_criteria.map(String).includes(String(decisionOther.value));s._details.decision_criteria=decisionOtherSelected?document.getElementById('step_decisions_detail').value.trim():'';s._details.communication_channels=document.getElementById('step_channels_other').value.trim();
     s._ui.active_unit=document.getElementById('step_active_unit').value;s._ui.wait_unit=document.getElementById('step_wait_unit').value;s._ui.rework_unit=document.getElementById('step_rework_unit').value;s.active_time=minutesFrom(document.getElementById('step_active').value,s._ui.active_unit);s.wait_time=minutesFrom(document.getElementById('step_wait').value,s._ui.wait_unit);s.rework_time=minutesFrom(document.getElementById('step_rework').value,s._ui.rework_unit);
     s.error_rate={value:Number(document.getElementById('step_error').value||0),mode:document.getElementById('step_error_mode').value,period:document.getElementById('step_error_period').value};
     const nextVal=document.getElementById('step_next').value;s.normal_next_step=nextVal==='__NEW__'?'':nextVal;
@@ -79,6 +81,9 @@ function openStepModal(stepId=null,linkFromStepId=null){
     if(nextVal==='__NEW__'){render();openStepModal(null,s.id)}else{render()}
   },existing?'Guardar cambios':'Añadir paso');
   document.querySelectorAll('[data-step-auto]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-step-auto]').forEach(x=>x.classList.remove('active'));b.classList.add('active');s.automation_state=b.dataset.value});
+  document.querySelectorAll('[data-catalog-reference]').forEach(el=>el.addEventListener('change',()=>{const wrap=document.querySelector(`[data-catalog-other-wrap="${el.dataset.catalogReference}"]`);if(wrap)wrap.style.display=el.value==='__OTHER__'?'':'none';if(el.value!=='__OTHER__'){const other=document.getElementById(`${el.id}_other`);if(other)other.value=''}}));
+  const decisionOtherBox=decisionOther?document.querySelector(`[data-v1-multi="step_decisions"][value="${CSS.escape(String(decisionOther.value))}"]`):null;
+  if(decisionOtherBox)decisionOtherBox.addEventListener('change',()=>{const wrap=document.querySelector('[data-step-decision-other-wrap]');if(wrap)wrap.style.display=decisionOtherBox.checked?'':'none';if(!decisionOtherBox.checked){const input=document.getElementById('step_decisions_detail');if(input)input.value=''}});
 }
 
 function frictionNumberControl(id,obj,kind='number'){const p=obj&&typeof obj==='object'?obj:{value:obj||'',unit:'',period:'',mode:''};if(kind==='time')return timeControl(id,p.value||0,p.unit||'min',true);if(kind==='money')return `<div class="compound-control"><input id="${id}" type="number" min="0" step="any" value="${attr(p.value||'')}" placeholder="0"><span class="unit-label">€</span><select id="${id}_period"><option value="case">por caso</option><option value="month" ${p.period==='month'?'selected':''}>por mes</option><option value="year" ${p.period==='year'?'selected':''}>por año</option></select><select id="${id}_mode"><option value="">Dato disponible</option><option value="NONE" ${p.mode==='NONE'?'selected':''}>No aplica</option><option value="UNKNOWN" ${p.mode==='UNKNOWN'?'selected':''}>No disponible</option></select></div>`;return `<div class="compound-control"><input id="${id}" type="number" min="0" step="any" value="${attr(p.value||'')}" placeholder="0"><select id="${id}_mode"><option value="percent" ${p.mode==='percent'?'selected':''}>%</option><option value="count" ${p.mode==='count'?'selected':''}>casos</option></select><select id="${id}_period"><option value="case">por caso</option><option value="month" ${p.period==='month'?'selected':''}>por mes</option><option value="year" ${p.period==='year'?'selected':''}>por año</option></select></div>`}
@@ -129,6 +134,19 @@ function addMultipleSteps(){
   },'Crear pasos');
 }
 
+function removeStepFromFlow(stepId){
+  const e=currentEng(),step=e?.processSteps?.find(x=>x.id===stepId&&x.status!=='SUPERSEDED');if(!step)return;
+  const linkedFrictions=activeFrictions(e).filter(f=>normalizeArray(f.affected_steps).includes(stepId));
+  const body=`<div class="notice warn"><b>¿Eliminar “${esc(step.step_name||'este paso')}” del flujo?</b><p>Dejará de aparecer en el mapa. La trazabilidad histórica se conservará internamente. Las rutas que apunten a este paso quedarán pendientes de redefinir${linkedFrictions.length?` y ${linkedFrictions.length} fricción(es) perderán este vínculo`:''}.</p></div>`;
+  openModal('Eliminar paso del flujo',body,()=>{
+    step.status='SUPERSEDED';
+    e.processSteps.filter(x=>x.status!=='SUPERSEDED').forEach(x=>{if(x.normal_next_step===stepId)x.normal_next_step='';if(x.exception_path?.destination_step===stepId)x.exception_path={...x.exception_path,destination_step:''}});
+    linkedFrictions.forEach(f=>{f.affected_steps=normalizeArray(f.affected_steps).filter(id=>id!==stepId);if(!f.affected_steps.length)f.status='SUPERSEDED'});
+    e.confirmedAsIs=false;e.answers.DF093='';e.diagnosticOutput=null;e.updatedAt=now();
+    audit(`Paso eliminado del flujo ${stepId}`);markDirty('Paso eliminado del flujo');closeModal();render();
+  },'Eliminar del flujo');
+}
+
 function moveStep(stepId,direction){
   const e=currentEng(),idx=e.processSteps.findIndex(x=>x.id===stepId);
   if(idx===-1||e.processSteps[idx].status==='SUPERSEDED')return;
@@ -172,10 +190,11 @@ const STEP_STARTER_TEMPLATES=Object.freeze([
   {id:'TPL-STEP-APPROVAL-001',version:1,name:'Aprobación',step:{step_name:'Aprobar',step_type:'ST05',actor:'MANAGER'}}
 ]);
 
-function processBoundaryValue(e,fid,fallback){
-  const f=schema?.fields?.find(x=>x.Field_ID===fid);
-  const v=f&&typeof effectiveValue==='function'?effectiveValue(f,e):e.answers?.[fid];
-  return (v!==undefined&&v!==null&&String(v).trim()!=='')?String(v):fallback;
+function processBoundaryValue(e,fid,fallback,secondaryFid=''){
+  const valueFor=id=>{const f=schema?.fields?.find(x=>x.Field_ID===id);return f&&typeof effectiveValue==='function'?effectiveValue(f,e):e.answers?.[id]};
+  const primary=valueFor(fid);if(primary!==undefined&&primary!==null&&String(primary).trim()!=='')return String(primary);
+  if(secondaryFid){const secondary=valueFor(secondaryFid);if(secondary!==undefined&&secondary!==null&&String(secondary).trim()!=='')return String(secondary)}
+  return fallback;
 }
 function processDraftStep(data={},templateMeta=null){
   return stepMeta({
@@ -228,25 +247,31 @@ function flowIntermediateNodes(e,steps,fr){
   </div>`).join('');
 }
 function clientProcessView(e,steps,fr){
-  const start=processBoundaryValue(e,'DF014','Límite inicial pendiente');
-  const finish=processBoundaryValue(e,'DF015','Límite final pendiente');
+  const start=processBoundaryValue(e,'DF014','Límite inicial pendiente','DF012');
+  const finish=processBoundaryValue(e,'DF015','Límite final pendiente','DF013');
   const riskCount=(e.risks||[]).length,econCount=(e.economicInputs||[]).length;
+  const company=companyById(e.companyId)?.name||e.answers?.DF001||'Empresa';
+  const processName=e.answers?.DF011||e.processName||'Proceso sin nombre';
+  const clientBar=`<div class="client-process-topbar"><img src="./assets/brand/Logo.png" alt="AUNEA"><div class="client-process-context"><span>${esc(company)}</span><b>${esc(processName)}</b></div><div class="client-process-state"><span>Sesión de diagnóstico</span><b>AS-IS compartido</b></div></div>`;
   const flow=`<div class="flow-canvas client-process-canvas"><div class="flow-track">${flowBoundaryNode('start',start)}${flowIntermediateNodes(e,steps,fr)}<div class="flow-connector"></div>${flowBoundaryNode('end',finish)}</div></div>`;
-  const layers=`<div class="client-layer-summary">
-    <button class="client-layer-card" data-process-tab="pasos"><b>Pasos</b><span>${steps.length} intermedio(s)</span></button>
-    <button class="client-layer-card" data-process-tab="fricciones"><b>Fricciones y evidencia</b><span>${fr.length} registrada(s)</span></button>
-    <button class="client-layer-card" data-process-tab="riesgos"><b>Riesgo y controles</b><span>${riskCount} registrado(s)</span></button>
-    <button class="client-layer-card" data-process-tab="impacto"><b>Impacto económico</b><span>${econCount} input(s)</span></button>
-  </div>`;
+  const layerRail=`<aside class="client-process-layer-rail" aria-label="Capas del diagnóstico">
+    <div class="client-rail-title">Capas del diagnóstico</div>
+    <button class="client-rail-item active" data-process-tab="cliente"><b>Mapa del proceso</b><span>${steps.length} paso(s) intermedio(s)</span></button>
+    <button class="client-rail-item" data-process-tab="fricciones"><b>Fricciones y evidencia</b><span>${fr.length} registrada(s)</span></button>
+    <button class="client-rail-item" data-process-tab="riesgos"><b>Riesgos y controles</b><span>${riskCount} registrado(s)</span></button>
+    <button class="client-rail-item" data-process-tab="impacto"><b>Impacto económico</b><span>${econCount} input(s)</span></button>
+    <div class="client-rail-note">El cliente ve siempre el mismo AS-IS. Cambia la capa, no el proceso.</div>
+  </aside>`;
   const confirm=`<div class="flow-confirm"><div><b>${e.confirmedAsIs?'AS-IS confirmado':'Confirmación pendiente'}</b><div class="field-help">${e.confirmedAsIs?`Confirmado ${fmtDate(e.asIsConfirmedAt)}`:'La confirmación se invalida si cambia el mapa.'}</div></div><button class="btn ${e.confirmedAsIs?'btn-outline':'btn-primary'}" id="confirmAsIs">${e.confirmedAsIs?'Reconfirmar flujo':'Confirmar flujo AS-IS'}</button></div>`;
-  return section('Vista con cliente','Este es el canvas de trabajo compartible. Los límites vienen de PG02 y los elementos internos se editan desde las capas inferiores.',
-    flow+layers+confirm,
-    `<button class="btn btn-outline" id="openSessionDisplayFromProcess">Abrir pantalla cliente</button><button class="btn btn-outline" id="useProcessTemplate">Usar plantilla de flujo</button><button class="btn btn-outline" id="addStepTemplate">Añadir desde plantilla de paso</button><button class="btn btn-primary" id="addStepFromClient">Añadir paso intermedio</button>`);
+  const workspace=`${clientBar}<div class="client-process-workspace">${layerRail}<div class="client-process-main">${flow}${confirm}</div></div>`;
+  return section('Vista con cliente','La sesión se conduce sobre un único mapa. Inicio y fin proceden del alcance ya definido; aquí sólo se añaden actividades intermedias.',
+    workspace,
+    `<button class="btn btn-outline" id="openSessionDisplayFromProcess">Abrir pantalla cliente</button><button class="btn btn-outline" id="useProcessTemplate">Elegir plantilla de flujo</button><button class="btn btn-outline" id="addStepTemplate">Plantilla de paso</button><button class="btn btn-primary" id="addStepFromClient">Añadir paso intermedio</button>`);
 }
 function stepsEditor(e,steps,fr){
   const discrepancies=stepOrderDiscrepancies(steps);
   const discNotice=discrepancies.length?`<div class="notice warn"><strong>Orden visual distinto del flujo real:</strong> ${discrepancies.map(d=>`"${esc(d.from.step_name)}" enruta a "${esc(d.to?d.to.step_name:'Fin')}"`).join('; ')}.</div>`:'';
-  const start=processBoundaryValue(e,'DF014','Límite inicial pendiente'),finish=processBoundaryValue(e,'DF015','Límite final pendiente');
+  const start=processBoundaryValue(e,'DF014','Límite inicial pendiente','DF012'),finish=processBoundaryValue(e,'DF015','Límite final pendiente','DF013');
   const rows=steps.length?`<div class="process-list">${steps.map((s,i)=>`<div class="process-row">
     <div class="process-index">${i+1}</div><div><b>${esc(s.step_name)||'<span class="internal-tag">Sin nombre — editar</span>'}</b>
     <p>${esc(labelFrom('OS_STEP_TYPE',s.step_type))||'Sin tipo'} · ${esc(labelFrom('OS_ACTOR_ROLE',s.actor))} · ${esc(labelFrom('OS_TOOL_CATEGORY',s.tool)||'Sin herramienta')}</p>
@@ -293,5 +318,6 @@ bindForms=function(){
   const addClient=document.getElementById('addStepFromClient');if(addClient)addClient.onclick=()=>openStepModal();
   const addMany=document.getElementById('addMultipleSteps');if(addMany)addMany.onclick=()=>addMultipleSteps();
   const share=document.getElementById('openSessionDisplayFromProcess');if(share)share.onclick=()=>openSessionDisplay();
+  document.querySelectorAll('[data-delete-step]').forEach(b=>b.onclick=()=>removeStepFromFlow(b.dataset.deleteStep));
 };
 // [AUNEA-FE-PROC-EDITOR-020] END
