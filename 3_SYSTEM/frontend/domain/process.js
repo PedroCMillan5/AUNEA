@@ -29,7 +29,7 @@ function datalistControl(id,setId,value,placeholder){
 }
 function resolveCatalogInput(el){if(!el)return '';const opts=fieldOptions(el.dataset.modelSet),raw=String(el.value||''),otherValue=String(el.dataset.otherValue||'__OTHER__');if(raw===otherValue)return document.getElementById(`${el.id}_other`)?.value.trim()||raw;const m=opts.find(o=>String(o.value)===raw);return m?.value||raw}
 function bindProcessDropdownDelegation(){
-  if(typeof document==='undefined'||document.__auneaProcessDropdownBound)return;
+  if(typeof document==='undefined'||typeof document.addEventListener!=='function'||document.__auneaProcessDropdownBound)return;
   document.__auneaProcessDropdownBound=true;
   document.addEventListener('click',ev=>{
     const option=ev.target.closest?.('[data-process-select-option]');if(!option)return;
@@ -205,11 +205,17 @@ function reorderStepBefore(stepId,targetId){
   relinkNormalFlow(e);e.confirmedAsIs=false;e.answers.DF093='';markDirty(`Paso ${stepId} reordenado por arrastre`);render();
 }
 function addDecisionStep(){
-  openStepModal(null,null,{step_name:'Decisión',step_type:'ST04',actor:'OPERATIONS',_ui:{has_decision:true}});
+  openStepModal(null,null,{step_name:'Decisión',step_type:'ST04',_ui:{has_decision:true}});
 }
 function stepOrderDiscrepancies(){return []}
 
 const VALIDATED_CASE_TEMPLATES=Object.freeze([]);
+function processBoundaryValue(e,fid,fallback,secondaryFid=''){
+  const valueFor=id=>{const f=schema?.fields?.find(x=>x.Field_ID===id);return f&&typeof effectiveValue==='function'?effectiveValue(f,e):e.answers?.[id]};
+  const primary=valueFor(fid);if(primary!==undefined&&primary!==null&&String(primary).trim()!=='')return String(primary);
+  if(secondaryFid){const secondary=valueFor(secondaryFid);if(secondary!==undefined&&secondary!==null&&String(secondary).trim()!=='')return String(secondary)}
+  return fallback;
+}
 function processDraftStep(data={},templateMeta=null){
   return stepMeta({id:id('STEP'),status:'ACTIVE',occurrences_per_case:1,inputs:[],outputs:[],manual_actions:[],decision_criteria:[],communication_channels:[],evidence:[],active_time:0,wait_time:0,rework_time:0,...data,template_provenance:templateMeta?{template_id:templateMeta.id,template_version:templateMeta.version,source_case_id:templateMeta.source_case_id,instantiated_at:now(),state:'DRAFT'}:null});
 }
@@ -223,7 +229,7 @@ function instantiateValidatedCase(templateId){
 }
 function openProcessTemplatePicker(){
   if(!VALIDATED_CASE_TEMPLATES.length){
-    return openModal('Casos de referencia',`<div class="empty"><h2>Aún no hay casos reales validados disponibles</h2><p>El inventario interno de procesos y las demos no se usan como casos reales. Cuando exista un engagement validado y autorizado para reutilización, podrá aparecer aquí anonimizado para precompletar el borrador y revisarlo con el cliente.</p></div>`,null,'Cerrar');
+    return openModal('Casos de referencia',`<div class="empty"><h2>Aún no hay casos reales validados disponibles</h2><p>El inventario interno de procesos y las demos no se usan como casos reales. Cuando exista un engagement validado y autorizado para reutilización, podrá aparecer aquí anonimizado para precompletar el borrador y revisarlo con el cliente.</p></div>`,()=>closeModal(),'Cerrar');
   }
   const body=`<div class="template-catalog">${VALIDATED_CASE_TEMPLATES.map(x=>`<button type="button" class="client-layer-card" data-validated-case="${attr(x.id)}"><b>${esc(x.name)}</b><span>${esc(x.description||'Caso real validado')}</span></button>`).join('')}</div>`;
   openModal('Casos de referencia',body,null,'Cerrar');
