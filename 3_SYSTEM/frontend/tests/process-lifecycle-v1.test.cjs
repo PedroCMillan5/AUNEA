@@ -57,23 +57,23 @@ test('supersedeFriction marks SUPERSEDED without physically removing the frictio
   assert.equal(e.frictions[0].status,'SUPERSEDED');
 });
 
-test('confirmAsIs treats fixed PG02 boundaries as the minimum valid map and records DF093',()=>{
-  const missing={processSteps:[],frictions:[],answers:{DF014:'Inicio'},confirmedAsIs:false};
+test('layer confirmations require map, frictions, risks and impact before sealing DF093',()=>{
+  const missing={processSteps:[],frictions:[],risks:[],economicInputs:[],answers:{DF014:'Inicio'},confirmedAsIs:false,processTab:'cliente'};
   const ctxMissing=makeCtx(missing);
   ctxMissing.confirmAsIs();
   assert.equal(missing.confirmedAsIs,false);
   assert.match(ctxMissing.__toasts.at(-1),/límites inicial y final|al menos un paso/);
 
-  const boundaryOnly={processSteps:[],frictions:[],answers:{DF014:'Inicio',DF015:'Fin'},confirmedAsIs:false};
-  const ctxBoundary=makeCtx(boundaryOnly);
-  ctxBoundary.confirmAsIs();
-  assert.equal(boundaryOnly.confirmedAsIs,true,'Inicio → Fin is a valid minimum map without invented intermediate steps');
-  assert.equal(boundaryOnly.answers.DF093,'YES');
-
-  const e=engagement();e.answers.DF014='Inicio';e.answers.DF015='Fin';
+  const e={processSteps:[],frictions:[],risks:[],economicInputs:[],answers:{DF014:'Inicio',DF015:'Fin'},confirmedAsIs:false,processTab:'cliente'};
   const ctx=makeCtx(e);
   ctx.confirmAsIs();
-  assert.equal(e.confirmedAsIs,true);
+  assert.equal(e.layerConfirmations.map,true,'Inicio → Fin is a valid minimum map');
+  assert.equal(e.confirmedAsIs,false,'map alone must not seal the full AS-IS');
+  e.processTab='fricciones';ctx.confirmAsIs();assert.equal(e.layerConfirmations.frictions,true);
+  e.processTab='riesgos';ctx.confirmAsIs();assert.equal(e.layerConfirmations.risks,true);
+  e.processTab='impacto';ctx.confirmAsIs();
+  assert.equal(e.layerConfirmations.impact,true);
+  assert.equal(e.confirmedAsIs,true,'all four confirmed layers seal the shared AS-IS');
   assert.equal(e.answers.DF093,'YES');
   assert.ok(e.asIsConfirmedAt);
 });
