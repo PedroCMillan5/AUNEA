@@ -44,6 +44,11 @@ function applyDiagnosticMasterV12(base){
   if(base.fields.length!==DIAGNOSTIC_MASTER_V12.expected.fields) throw new Error(`Runtime base: ${base.fields.length} campos; se esperaban 100`);
   const out=base;
   out.version='1.2';out.source=DIAGNOSTIC_MASTER_V12.sourceName;out.source_drive_id=DIAGNOSTIC_MASTER_V12.sourceDriveId;out.source_status=DIAGNOSTIC_MASTER_V12.sourceStatus;
+  // DEC-065: orchestration-only reorder. Field ownership/Stage_ID values remain unchanged in the Diagnostic Master.
+  // Visible session order: S01 → S02 → S03 → S08 → S04 → S05 → S06 → S07 → S09.
+  const sessionOrder=['S01','S02','S03','S08','S04','S05','S06','S07','S09'];
+  out.flow=sessionOrder.map(id=>out.flow.find(s=>s.Stage_ID===id)).filter(Boolean);
+  if(out.flow.length!==9)throw new Error('Orden de sesión DEC-065 incompleto');
   out.option_sets=out.option_sets||{};
   out.option_sets.REF_DOMAIN=canonicalOptions(DIAGNOSTIC_MASTER_V12.domains);
   out.option_sets.REF_INDUSTRY_CNAE25=canonicalOptions(DIAGNOSTIC_MASTER_V12.industries);
