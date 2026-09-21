@@ -193,90 +193,90 @@ function instantiateProcessTemplate(templateId){
   const created=tpl.steps.map(x=>processDraftStep(x,tpl));
   created.forEach((x,i)=>x.normal_next_step=created[i+1]?.id||'');
   e.processSteps.push(...created);e.confirmedAsIs=false;e.answers.DF093='';e.processTab='cliente';
-  audit(\`Plantilla de flujo \${tpl.id} v\${tpl.version} instanciada como borrador\`);
+  audit(`Plantilla de flujo ${tpl.id} v${tpl.version} instanciada como borrador`);
   markDirty('Plantilla de flujo instanciada como borrador');closeModal();render();
 }
 function instantiateStepTemplate(templateId){
   const e=currentEng(),tpl=STEP_STARTER_TEMPLATES.find(x=>x.id===templateId);if(!e||!tpl)return;
   e.processSteps.push(processDraftStep(tpl.step,tpl));e.confirmedAsIs=false;e.answers.DF093='';
-  audit(\`Plantilla de paso \${tpl.id} v\${tpl.version} instanciada como borrador\`);
+  audit(`Plantilla de paso ${tpl.id} v${tpl.version} instanciada como borrador`);
   markDirty('Plantilla de paso instanciada como borrador');closeModal();render();
 }
 function openProcessTemplatePicker(){
-  const body=\`<div class="field full"><label>Plantilla de flujo</label><select id="processTemplateSelect">
-    \${PROCESS_STARTER_TEMPLATES.map(x=>\`<option value="\${attr(x.id)}">\${esc(x.name)} · v\${x.version}</option>\`).join('')}
+  const body=`<div class="field full"><label>Plantilla de flujo</label><select id="processTemplateSelect">
+    ${PROCESS_STARTER_TEMPLATES.map(x=>`<option value="${attr(x.id)}">${esc(x.name)} · v${x.version}</option>`).join('')}
   </select><div class="field-help">La plantilla crea pasos intermedios como borrador. Los límites inicial y final proceden de PG02 y no se sustituyen.</div></div>
-  <div class="template-catalog">\${PROCESS_STARTER_TEMPLATES.map(x=>\`<div class="notice"><b>\${esc(x.name)}</b><br>\${esc(x.description)}</div>\`).join('')}</div>\`;
+  <div class="template-catalog">${PROCESS_STARTER_TEMPLATES.map(x=>`<div class="notice"><b>${esc(x.name)}</b><br>${esc(x.description)}</div>`).join('')}</div>`;
   openModal('Usar plantilla de flujo',body,()=>instantiateProcessTemplate(document.getElementById('processTemplateSelect').value),'Usar plantilla');
 }
 function openStepTemplatePicker(){
-  const body=\`<div class="field full"><label>Plantilla de paso</label><select id="stepTemplateSelect">
-    \${STEP_STARTER_TEMPLATES.map(x=>\`<option value="\${attr(x.id)}">\${esc(x.name)} · v\${x.version}</option>\`).join('')}
-  </select><div class="field-help">Se añade como borrador editable entre los límites del proceso.</div></div>\`;
+  const body=`<div class="field full"><label>Plantilla de paso</label><select id="stepTemplateSelect">
+    ${STEP_STARTER_TEMPLATES.map(x=>`<option value="${attr(x.id)}">${esc(x.name)} · v${x.version}</option>`).join('')}
+  </select><div class="field-help">Se añade como borrador editable entre los límites del proceso.</div></div>`;
   openModal('Añadir paso desde plantilla',body,()=>instantiateStepTemplate(document.getElementById('stepTemplateSelect').value),'Añadir paso');
 }
 
 function flowBoundaryNode(kind,label){
-  return \`<div class="flow-step flow-boundary \${kind}"><span class="boundary-kicker">\${kind==='start'?'Inicio':'Fin'}</span><h4>\${esc(label)}</h4><p>Límite definido en Alcance del proceso</p></div>\`;
+  return `<div class="flow-step flow-boundary ${kind}"><span class="boundary-kicker">${kind==='start'?'Inicio':'Fin'}</span><h4>${esc(label)}</h4><p>Límite definido en Alcance del proceso</p></div>`;
 }
 function flowIntermediateNodes(e,steps,fr){
-  return steps.map((s,i)=>\`<div class="flow-connector"></div><div class="flow-step \${e.confirmedAsIs?'confirmed':''}" data-edit-step="\${s.id}">
-    <h4>\${i+1}. \${esc(s.step_name||'Paso sin nombre')}</h4>
-    <p>\${esc(labelFrom('OS_ACTOR_ROLE',s.actor)||'—')} · \${esc(labelFrom('OS_TOOL_CATEGORY',s.tool)||'—')}</p>
-    <p>\${num(s.active_time)?\`\${num(s.active_time)} min trabajo\`:''}\${num(s.wait_time)?\` · \${num(s.wait_time)} min espera\`:''}</p>
-    <div class="friction-badges">\${fr.filter(x=>normalizeArray(x.affected_steps).includes(s.id)).map(x=>\`<span class="friction-badge" data-edit-friction="\${x.id}">\${esc(labelFrom('OS_FRICTION_TYPE',x.friction_type))}</span>\`).join('')}</div>
-  </div>\`).join('');
+  return steps.map((s,i)=>`<div class="flow-connector"></div><div class="flow-step ${e.confirmedAsIs?'confirmed':''}" data-edit-step="${s.id}">
+    <h4>${i+1}. ${esc(s.step_name||'Paso sin nombre')}</h4>
+    <p>${esc(labelFrom('OS_ACTOR_ROLE',s.actor)||'—')} · ${esc(labelFrom('OS_TOOL_CATEGORY',s.tool)||'—')}</p>
+    <p>${num(s.active_time)?`${num(s.active_time)} min trabajo`:''}${num(s.wait_time)?` · ${num(s.wait_time)} min espera`:''}</p>
+    <div class="friction-badges">${fr.filter(x=>normalizeArray(x.affected_steps).includes(s.id)).map(x=>`<span class="friction-badge" data-edit-friction="${x.id}">${esc(labelFrom('OS_FRICTION_TYPE',x.friction_type))}</span>`).join('')}</div>
+  </div>`).join('');
 }
 function clientProcessView(e,steps,fr){
   const start=processBoundaryValue(e,'DF014','Límite inicial pendiente');
   const finish=processBoundaryValue(e,'DF015','Límite final pendiente');
   const riskCount=(e.risks||[]).length,econCount=(e.economicInputs||[]).length;
-  const flow=\`<div class="flow-canvas client-process-canvas"><div class="flow-track">\${flowBoundaryNode('start',start)}\${flowIntermediateNodes(e,steps,fr)}<div class="flow-connector"></div>\${flowBoundaryNode('end',finish)}</div></div>\`;
-  const layers=\`<div class="client-layer-summary">
-    <button class="client-layer-card" data-process-tab="pasos"><b>Pasos</b><span>\${steps.length} intermedio(s)</span></button>
-    <button class="client-layer-card" data-process-tab="fricciones"><b>Fricciones y evidencia</b><span>\${fr.length} registrada(s)</span></button>
-    <button class="client-layer-card" data-process-tab="riesgos"><b>Riesgo y controles</b><span>\${riskCount} registrado(s)</span></button>
-    <button class="client-layer-card" data-process-tab="impacto"><b>Impacto económico</b><span>\${econCount} input(s)</span></button>
-  </div>\`;
+  const flow=`<div class="flow-canvas client-process-canvas"><div class="flow-track">${flowBoundaryNode('start',start)}${flowIntermediateNodes(e,steps,fr)}<div class="flow-connector"></div>${flowBoundaryNode('end',finish)}</div></div>`;
+  const layers=`<div class="client-layer-summary">
+    <button class="client-layer-card" data-process-tab="pasos"><b>Pasos</b><span>${steps.length} intermedio(s)</span></button>
+    <button class="client-layer-card" data-process-tab="fricciones"><b>Fricciones y evidencia</b><span>${fr.length} registrada(s)</span></button>
+    <button class="client-layer-card" data-process-tab="riesgos"><b>Riesgo y controles</b><span>${riskCount} registrado(s)</span></button>
+    <button class="client-layer-card" data-process-tab="impacto"><b>Impacto económico</b><span>${econCount} input(s)</span></button>
+  </div>`;
   return section('Vista con cliente','Este es el canvas de trabajo compartible. Los límites vienen de PG02 y los elementos internos se editan desde las capas inferiores.',
     flow+layers,
-    \`<button class="btn btn-outline" id="openSessionDisplayFromProcess">Abrir pantalla cliente</button><button class="btn btn-primary" id="addStepFromClient">Añadir paso intermedio</button>\`);
+    `<button class="btn btn-outline" id="openSessionDisplayFromProcess">Abrir pantalla cliente</button><button class="btn btn-primary" id="addStepFromClient">Añadir paso intermedio</button>`);
 }
 function stepsEditor(e,steps,fr){
   const discrepancies=stepOrderDiscrepancies(steps);
-  const discNotice=discrepancies.length?\`<div class="notice warn"><strong>Orden visual distinto del flujo real:</strong> \${discrepancies.map(d=>\`"\${esc(d.from.step_name)}" enruta a "\${esc(d.to?d.to.step_name:'Fin')}"\`).join('; ')}.</div>\`:'';
+  const discNotice=discrepancies.length?`<div class="notice warn"><strong>Orden visual distinto del flujo real:</strong> ${discrepancies.map(d=>`"${esc(d.from.step_name)}" enruta a "${esc(d.to?d.to.step_name:'Fin')}"`).join('; ')}.</div>`:'';
   const start=processBoundaryValue(e,'DF014','Límite inicial pendiente'),finish=processBoundaryValue(e,'DF015','Límite final pendiente');
-  const rows=steps.length?\`<div class="process-list">\${steps.map((s,i)=>\`<div class="process-row">
-    <div class="process-index">\${i+1}</div><div><b>\${esc(s.step_name)||'<span class="internal-tag">Sin nombre — editar</span>'}</b>
-    <p>\${esc(labelFrom('OS_STEP_TYPE',s.step_type))||'Sin tipo'} · \${esc(labelFrom('OS_ACTOR_ROLE',s.actor))} · \${esc(labelFrom('OS_TOOL_CATEGORY',s.tool)||'Sin herramienta')}</p>
-    <p><b>Activo:</b> \${num(s.active_time)} min · <b>Espera:</b> \${num(s.wait_time)} min · <b>Retrabajo:</b> \${num(s.rework_time)} min</p></div>
-    <div class="row-actions"><button class="btn btn-small" data-move-step-up="\${s.id}" \${i===0?'disabled':''}>↑</button><button class="btn btn-small" data-move-step-down="\${s.id}" \${i===steps.length-1?'disabled':''}>↓</button><button class="btn btn-small" data-add-friction-step="\${s.id}">+ Fricción</button><button class="btn btn-small" data-edit-step="\${s.id}">Editar</button><button class="btn btn-small btn-danger" data-delete-step="\${s.id}">Eliminar</button></div>
-  </div>\`).join('')}</div>\`:'<div class="empty"><h2>Sin pasos intermedios</h2><p>Los límites inicial y final ya forman el marco del flujo. Añade sólo las actividades que ocurren entre ambos.</p></div>';
-  return section('Pasos intermedios',\`\${start} → … → \${finish}\`,discNotice+rows,
+  const rows=steps.length?`<div class="process-list">${steps.map((s,i)=>`<div class="process-row">
+    <div class="process-index">${i+1}</div><div><b>${esc(s.step_name)||'<span class="internal-tag">Sin nombre — editar</span>'}</b>
+    <p>${esc(labelFrom('OS_STEP_TYPE',s.step_type))||'Sin tipo'} · ${esc(labelFrom('OS_ACTOR_ROLE',s.actor))} · ${esc(labelFrom('OS_TOOL_CATEGORY',s.tool)||'Sin herramienta')}</p>
+    <p><b>Activo:</b> ${num(s.active_time)} min · <b>Espera:</b> ${num(s.wait_time)} min · <b>Retrabajo:</b> ${num(s.rework_time)} min</p></div>
+    <div class="row-actions"><button class="btn btn-small" data-move-step-up="${s.id}" ${i===0?'disabled':''}>↑</button><button class="btn btn-small" data-move-step-down="${s.id}" ${i===steps.length-1?'disabled':''}>↓</button><button class="btn btn-small" data-add-friction-step="${s.id}">+ Fricción</button><button class="btn btn-small" data-edit-step="${s.id}">Editar</button><button class="btn btn-small btn-danger" data-delete-step="${s.id}">Eliminar</button></div>
+  </div>`).join('')}</div>`:'<div class="empty"><h2>Sin pasos intermedios</h2><p>Los límites inicial y final ya forman el marco del flujo. Añade sólo las actividades que ocurren entre ambos.</p></div>';
+  return section('Pasos intermedios',`${start} → … → ${finish}`,discNotice+rows,
     '<button class="btn btn-primary" id="addStep">Añadir paso</button><button class="btn btn-outline" id="addStepTemplate">Plantilla de paso</button><button class="btn btn-outline" id="useProcessTemplate">Plantilla de flujo</button>');
 }
 function frictionsEditor(e,steps,fr){
   return section('Fricciones y evidencia','El cliente describe el problema observable; AUNEA registra causa, evidencia e impacto sin mostrar Pain_ID.',
-    fr.length?\`<div class="process-list">\${fr.map(x=>\`<div class="process-row"><div class="process-index">!</div><div><b>\${esc(x.client_label||labelFrom('OS_FRICTION_TYPE',x.friction_type))}</b><p>\${esc(x.observable_signal)} · Pasos: \${normalizeArray(x.affected_steps).map(id=>steps.find(s=>s.id===id)?.step_name).filter(Boolean).map(esc).join(', ')}</p><p>Evidencia: \${esc(labelFrom('OS_EVIDENCE_TYPE',x.evidence_type))}</p></div><div class="row-actions"><button class="btn btn-small" data-edit-friction="\${x.id}">Editar</button><button class="btn btn-small btn-danger" data-delete-friction="\${x.id}">Eliminar</button></div></div>\`).join('')}</div>\`:'<div class="empty"><h2>Sin fricciones registradas</h2><p>Añade problemas observables sobre los pasos del flujo.</p></div>',
+    fr.length?`<div class="process-list">${fr.map(x=>`<div class="process-row"><div class="process-index">!</div><div><b>${esc(x.client_label||labelFrom('OS_FRICTION_TYPE',x.friction_type))}</b><p>${esc(x.observable_signal)} · Pasos: ${normalizeArray(x.affected_steps).map(id=>steps.find(s=>s.id===id)?.step_name).filter(Boolean).map(esc).join(', ')}</p><p>Evidencia: ${esc(labelFrom('OS_EVIDENCE_TYPE',x.evidence_type))}</p></div><div class="row-actions"><button class="btn btn-small" data-edit-friction="${x.id}">Editar</button><button class="btn btn-small btn-danger" data-delete-friction="${x.id}">Eliminar</button></div></div>`).join('')}</div>`:'<div class="empty"><h2>Sin fricciones registradas</h2><p>Añade problemas observables sobre los pasos del flujo.</p></div>',
     '<button class="btn btn-primary" id="addFriction">Añadir fricción</button>');
 }
 function processPage(){
   const e=currentEng(),steps=activeSteps(e),fr=activeFrictions(e),tab=e.processTab||'cliente';
-  const tabs=\`<div class="subtabs process-workspace-tabs">
-    <button class="subtab \${tab==='cliente'?'active':''}" data-process-tab="cliente">Vista con cliente</button>
-    <button class="subtab \${tab==='pasos'?'active':''}" data-process-tab="pasos">Pasos (\${steps.length})</button>
-    <button class="subtab \${tab==='fricciones'?'active':''}" data-process-tab="fricciones">Fricciones y evidencia (\${fr.length})</button>
-    <button class="subtab \${tab==='riesgos'?'active':''}" data-process-tab="riesgos">Riesgo y controles (\${(e.risks||[]).length})</button>
-    <button class="subtab \${tab==='impacto'?'active':''}" data-process-tab="impacto">Impacto económico (\${(e.economicInputs||[]).length})</button>
-  </div>\`;
+  const tabs=`<div class="subtabs process-workspace-tabs">
+    <button class="subtab ${tab==='cliente'?'active':''}" data-process-tab="cliente">Vista con cliente</button>
+    <button class="subtab ${tab==='pasos'?'active':''}" data-process-tab="pasos">Pasos (${steps.length})</button>
+    <button class="subtab ${tab==='fricciones'?'active':''}" data-process-tab="fricciones">Fricciones y evidencia (${fr.length})</button>
+    <button class="subtab ${tab==='riesgos'?'active':''}" data-process-tab="riesgos">Riesgo y controles (${(e.risks||[]).length})</button>
+    <button class="subtab ${tab==='impacto'?'active':''}" data-process-tab="impacto">Impacto económico (${(e.economicInputs||[]).length})</button>
+  </div>`;
   let body=tab==='pasos'?stepsEditor(e,steps,fr)
     :tab==='fricciones'?frictionsEditor(e,steps,fr)
     :tab==='riesgos'?riskBuilder(e)
     :tab==='impacto'?economicBuilder(e)
     :clientProcessView(e,steps,fr);
-  const returnBtn=state.returnTo?\`<button class="btn btn-primary" id="returnToStage">← Volver a \${esc(schema.flow.find(x=>x.Stage_ID===state.returnTo.stageId)?.Stage_ES||state.returnTo.stageId)}</button>\`:'';
+  const returnBtn=state.returnTo?`<button class="btn btn-primary" id="returnToStage">← Volver a ${esc(schema.flow.find(x=>x.Stage_ID===state.returnTo.stageId)?.Stage_ES||state.returnTo.stageId)}</button>`:'';
   return pageTop('Editor del proceso','Trabaja el AS-IS con el cliente sobre un único flujo; las capas de detalle se editan sin abandonar el contexto.',
-    \`\${returnBtn}<button class="btn" data-page="diagnostico">Volver al cuestionario</button>\`) + tabs + body;
+    `${returnBtn}<button class="btn" data-page="diagnostico">Volver al cuestionario</button>`) + tabs + body;
 }
 function flowReview(e,steps,fr){return clientProcessView(e,steps,fr)}
 
@@ -286,7 +286,7 @@ bindForms=function(){
   document.querySelectorAll('[data-add-friction-step]').forEach(b=>b.onclick=()=>openFrictionModal(null,[b.dataset.addFrictionStep]));
   document.querySelectorAll('[data-move-step-up]').forEach(b=>b.onclick=()=>moveStep(b.dataset.moveStepUp,-1));
   document.querySelectorAll('[data-move-step-down]').forEach(b=>b.onclick=()=>moveStep(b.dataset.moveStepDown,1));
-  document.querySelectorAll('[data-fr-other-toggle]').forEach(el=>el.addEventListener('change',()=>{const targetId=el.dataset.frOtherToggle,wrap=document.querySelector(\`[data-fr-other-wrap="\${targetId}"]\`);if(!wrap)return;wrap.style.display=el.checked?'':'none';if(!el.checked){const input=document.getElementById(targetId);if(input)input.value=''}}));
+  document.querySelectorAll('[data-fr-other-toggle]').forEach(el=>el.addEventListener('change',()=>{const targetId=el.dataset.frOtherToggle,wrap=document.querySelector(`[data-fr-other-wrap="${targetId}"]`);if(!wrap)return;wrap.style.display=el.checked?'':'none';if(!el.checked){const input=document.getElementById(targetId);if(input)input.value=''}}));
   const pTpl=document.getElementById('useProcessTemplate');if(pTpl)pTpl.onclick=openProcessTemplatePicker;
   const sTpl=document.getElementById('addStepTemplate');if(sTpl)sTpl.onclick=openStepTemplatePicker;
   const addClient=document.getElementById('addStepFromClient');if(addClient)addClient.onclick=()=>openStepModal();
