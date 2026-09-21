@@ -192,7 +192,10 @@ function renderNav(){
       // but inert, so the session structure is legible before one is selected.
       flow.forEach((s,i)=>{
         const on=e&&state.activePage==='diagnostico'&&i===active;
-        const locked=!!e&&active>=0&&i>active;out.push(`<button class="nav-item nav-step ${on?'active':''} ${e&&i<active?'done':''} ${locked?'locked':''}" data-stage-nav="${s.Stage_ID}" ${locked?'disabled aria-disabled="true"':''}><span class="nav-num">${i+1}</span>${esc(s.Stage_ES)}</button>`);
+        const reviewed=!!e&&typeof completionStageReviewed==='function'&&completionStageReviewed(s,e);
+        const available=!!e&&(i<=active||reviewed);
+        const locked=!!e&&!available;
+        out.push(`<button class="nav-item nav-step ${on?'active':''} ${reviewed?'done':''} ${locked?'locked':''}" data-stage-nav="${s.Stage_ID}" ${locked?'disabled aria-disabled="true"':''}><span class="nav-num">${i+1}</span>${esc(s.Stage_ES)}</button>`);
       });
       continue;
     }
