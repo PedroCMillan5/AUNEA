@@ -1,9 +1,9 @@
 // [AUNEA-FE-BACKEND-DISCOVERY-060] START — Descubrimiento robusto del backend local
-// PURPOSE: Encontrar una instancia real de AUNEA Backend cuando el puerto 8000 está ocupado o reservado en Windows.
-// SOURCE: REQ-UAT-003; baseline Windows v1.0.4; contrato /health del backend v1.1.1.
-// INPUTS: state.backendUrl, /health local, puertos locales permitidos.
+// PURPOSE: Encontrar una instancia real de AUNEA Backend tanto en ejecución local Windows como en workspaces remotos con puertos reenviados.
+// SOURCE: REQ-UAT-003; baseline Windows v1.0.4; contrato /health del backend v1.1.1; PROJECT_RULES v1.7.
+// INPUTS: state.backendUrl, window.location, /health y puertos locales/remotos permitidos.
 // OUTPUTS: state.backendUrl/backendOnline/backendVersion coherentes con una instancia AUNEA real.
-// SIDE_EFFECTS: peticiones HTTP locales y persistencia del endpoint encontrado en localStorage.
+// SIDE_EFFECTS: peticiones HTTP al backend y persistencia del endpoint encontrado en localStorage.
 // CHANGE_RISK: HIGH.
 const AUNEA_BACKEND_LOCAL_CANDIDATES = [
   'http://localhost:8000',
@@ -14,9 +14,20 @@ const AUNEA_BACKEND_LOCAL_CANDIDATES = [
   'http://127.0.0.1:8020'
 ];
 
+function auneaWorkspaceBackendCandidate(loc=(typeof window!=='undefined'?window.location:null)){
+  if(!loc) return '';
+  const protocol=String(loc.protocol||'');
+  const hostname=String(loc.hostname||'');
+  if(protocol!=='https:'||!hostname.endsWith('.app.github.dev')) return '';
+  const match=hostname.match(/^(.*)-\d+\.app\.github\.dev$/);
+  if(!match) return '';
+  return `https://${match[1]}-8000.app.github.dev`;
+}
+
 function auneaBackendCandidates(){
   const preferred = typeof state?.backendUrl === 'string' ? state.backendUrl.trim() : '';
-  return [...new Set([preferred, ...AUNEA_BACKEND_LOCAL_CANDIDATES].filter(Boolean))];
+  const workspace = auneaWorkspaceBackendCandidate();
+  return [...new Set([preferred, workspace, ...AUNEA_BACKEND_LOCAL_CANDIDATES].filter(Boolean))];
 }
 
 async function probeAuneaBackend(baseUrl, timeoutMs=1100){
