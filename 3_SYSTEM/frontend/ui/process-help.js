@@ -97,7 +97,7 @@ function toggleHelpPopover(btn){
   if(!wasOpen){pop.classList.add('open');btn.setAttribute('aria-expanded','true')}
 }
 function bindHelpToggles(){
-  if(typeof document==='undefined'||document.__auneaHelpDelegatedBound)return;
+  if(typeof document==='undefined'||typeof document.addEventListener!=='function'||document.__auneaHelpDelegatedBound)return;
   document.__auneaHelpDelegatedBound=true;
   document.addEventListener('click',ev=>{
     const btn=ev.target.closest?.('[data-help-toggle]');
