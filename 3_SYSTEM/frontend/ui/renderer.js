@@ -36,6 +36,7 @@ const EXCLUSIVE_OPTION_BY_FIELD=Object.freeze({
   DF073:{value:'NONE'} // OS_SENSITIVE_DATA — Validation: "'Ninguno' excluye otras opciones."
 });
 function exclusiveValueFor(fid){return EXCLUSIVE_OPTION_BY_FIELD[fid]?.value}
+function hasCanonicalOtherOption(items){return (items||[]).some(x=>String(x.value).toUpperCase()==='OTHER'||['otro','otra'].includes(String(x.label||'').trim().toLowerCase()))}
 function multiChoices(fid,items,val,{detail=false,other=false}={}){
   const arr=selectedValues(val);
   const exclusiveValue=exclusiveValueFor(fid);
@@ -161,9 +162,9 @@ function renderControl(f,val,opts,e){
   if(c==='DROPDOWN_WITH_STEP_LINK')return canonicalSelect(fid,opts,val)+stepSingle(`${fid}__step`,e,answerDetails(e)[`${fid}__step`]||'');
   if(c==='COMBOBOX_WITH_DETAIL')return canonicalSelect(fid,opts,val)+detailInput(fid,'Detalle / nombre concreto');
   if(c==='COMBOBOX_REFERENCE')return canonicalSelect(fid,opts,val)+detailInput(fid,'Nueva referencia sólo si no existe');
-  if(c==='MULTISELECT'||c==='MULTICHECK'||c==='MULTISELECT_REFERENCE'||c==='SYSTEM_GENERATED_MULTISELECT')return multiChoices(fid,opts,val);
+  if(c==='MULTISELECT'||c==='MULTICHECK'||c==='MULTISELECT_REFERENCE'||c==='SYSTEM_GENERATED_MULTISELECT')return multiChoices(fid,opts,val,{other:hasCanonicalOtherOption(opts)});
   if(c==='MULTISELECT_WITH_OTHER'||c==='MULTICHECK_WITH_OTHER')return multiChoices(fid,opts,val,{other:true});
-  if(c==='MULTISELECT_WITH_DETAIL'||c==='MULTICHECK_WITH_DETAIL'||c==='MULTISELECT_WITH_REFERENCE')return fid==='DF010'?multiChoices(fid,opts,val,{other:true}):multiChoices(fid,opts,val,{detail:true});
+  if(c==='MULTISELECT_WITH_DETAIL'||c==='MULTICHECK_WITH_DETAIL'||c==='MULTISELECT_WITH_REFERENCE')return hasCanonicalOtherOption(opts)?multiChoices(fid,opts,val,{other:true}):multiChoices(fid,opts,val,{detail:true});
   if(c==='MULTISELECT_WITH_PRIORITY')return multiChoices(fid,opts,val,{detail:true});
   if(c==='MULTISELECT_WITH_STEP_LINK'||c==='MULTISELECT_WITH_STEP_REFERENCE'||c==='STEP_ACTION_MULTISELECT')return multiChoices(fid,opts,val,{detail:true})+stepMulti(`${fid}__steps`,e,answerDetails(e)[`${fid}__steps`]||[]);
   if(c==='STEP_MULTISELECT_VISUAL'||c==='STEP_MULTISELECT_WITH_FRICTION')return stepMulti(fid,e,val);
