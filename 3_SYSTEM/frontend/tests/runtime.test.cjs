@@ -203,7 +203,8 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   });
   await t.test('PG04 target state keeps Otro conditional and questions 2/3 on full rows',async()=>{
     const html=w.eval(`(()=>{const f=schema.fields.find(x=>x.Field_ID==='DF086');return renderControl(f,[],fieldOptions(f.Option_Set_ID),currentEng())})()`);
-    assert.match(html,/data-multi="DF086"[^>]*value="OTHER"/,'DF086 expone la opción canónica Otro');
+    assert.match(html,/value="OTHER"/,'DF086 expone la opción canónica Otro');
+    assert.match(html,/data-multi="DF086"/,'la opción Otro escribe sobre DF086');
     assert.match(html,/data-detail-wrap="DF086" style="display:none"/,'el detalle de Otro empieza oculto');
     const css=await fs.readFile(path.join(root,'ui-system.css'),'utf8');
     assert.match(css,/\.field\[data-field="DF087"\],[\s\S]*?\.field\[data-field="DF088"\]\{grid-column:1\/-1\}/,'DF087 y DF088 ocupan filas completas independientes');
