@@ -49,33 +49,21 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   assert.match(railLogo.getAttribute('src'),/assets\/brand\/Logo\.png/);
   assert.doesNotMatch(d.querySelector('.sidebar').textContent,/v?2\.0\.0/i,'the rail must not carry a product version string');
   assert.equal(d.querySelectorAll('script:not([src])').length,0);
-  for(const file of ['core/state.js','core/i18n.js','services/backend-client.js','services/schema.js','pages/diagnostic-stages.js','ui/renderer.js','domain/no-reask.js','domain/risk.js','domain/economics.js','domain/process-lifecycle.js','pages/results.js','domain/process.js','ui/process-help.js','services/engine-adapter.js','domain/completion.js','ui/shell.js','services/persistence.js','uat/visible.js','uat/fixtures.js','uat/asis-suite.js','boot.js','styles.css','data/diagnostic-master.min.json'])assert.ok(requests.includes(file),file);
+  for(const file of ['core/state.js','core/i18n.js','services/backend-client.js','services/schema.js','pages/diagnostic-stages.js','ui/renderer.js','domain/no-reask.js','domain/risk.js','domain/economics.js','domain/process-lifecycle.js','pages/results.js','domain/process.js','ui/process-help.js','services/engine-adapter.js','domain/completion.js','ui/shell.js','services/persistence.js','uat/visible.js','uat/crm-fixtures.js','boot.js','styles.css','data/diagnostic-master.min.json'])assert.ok(requests.includes(file),file);
+  for(const retired of ['uat/fixtures.js','uat/asis-suite.js','uat/study-suite.js'])assert.ok(!requests.includes(retired),retired+' must be retired from the runtime after the UAT reset');
   assert.ok(!requests.includes('app-no-reask-capacity-v1.js'),'retired capacity wrapper must not be part of the runtime');
   assert.ok(!requests.includes('app-persistence-uat-v1.js'),'retired mixed persistence/UAT module must not be part of the runtime');
   assert.ok(!requests.includes('app-process-editor.js'),'retired mixed risk/economics/lifecycle module must not be part of the runtime');
   const schema=await (await fetch(url+'data/diagnostic-master.min.json')).json();
   assert.equal(new Set(schema.fields.map(f=>f.Field_ID)).size,100);
   assert.equal(schema.no_reask_rules.length,15);
-  assert.equal(w.eval('ASIS_UAT_STUDIES.length'),25,'la suite AS-IS contiene exactamente 25 estudios');
-  const asisCoverage=w.eval('asisUatCoverageReport()');
-  assert.equal(asisCoverage.studies,25);
-  assert.equal(asisCoverage.complete_studies,25,'los 25 estudios deben estar completos individualmente: '+JSON.stringify(asisCoverage.incomplete_studies));
-  assert.deepEqual(Array.from(asisCoverage.incomplete_studies),[],'ningún estudio puede dejar gaps en DF031–DF085 o en sus cuatro capas');
-  const asisStudies=w.eval('ASIS_UAT_STUDIES.map(x=>asisUatStudyBundle(x.id))');
-  assert.equal(asisStudies.length,25);
-  for(const b of asisStudies){
-    assert.ok(b.engagement.processSteps.length>=4,'cada estudio tiene mapa AS-IS');
-    assert.ok(b.engagement.frictions.length>=2,'cada estudio tiene fricciones');
-    assert.ok(b.engagement.risks.length>=2,'cada estudio tiene riesgos');
-    assert.ok(b.engagement.economicInputs.length>=2,'cada estudio tiene impacto económico');
-    const report=w.eval(`asisUatStudyCoverage(asisUatStudyBundle(${b.engagement.uatAsisProfile.id}))`);
-    assert.deepEqual(Array.from(report.missing_dfs),[],`${b.engagement.id} cubre DF031–DF085`);
-    assert.deepEqual(Array.from(report.step_gaps),[],`${b.engagement.id} no deja campos aplicables de ProcessStep vacíos`);
-    assert.deepEqual(Array.from(report.friction_gaps),[],`${b.engagement.id} no deja campos de Friction vacíos`);
-    assert.deepEqual(Array.from(report.risk_gaps),[],`${b.engagement.id} no deja campos de RiskInput vacíos`);
-    assert.deepEqual(Array.from(report.economic_gaps),[],`${b.engagement.id} no deja campos de EconomicInput vacíos`);
-    assert.equal(b.engagement.confirmedAsIs,false,'los estudios llegan editables y sin auto-confirmar');
-  }
+  const phase1=JSON.parse(w.eval('JSON.stringify(phase1CrmSeed())'));
+  assert.equal(phase1.companies.length,12,'Fase 1 UAT genera 12 empresas completas');
+  assert.equal(phase1.contacts.length,24,'Fase 1 UAT genera 24 contactos completos');
+  assert.equal(phase1.interactions.length,24,'Fase 1 UAT genera 24 interacciones completas');
+  assert.equal(phase1.opportunities.length,16,'Fase 1 UAT genera 16 oportunidades completas');
+  assert.equal('engagements' in phase1,false,'Fase 1 UAT no genera estudios');
+  assert.equal('projects' in phase1,false,'Fase 1 UAT no genera proyectos');
   assert.equal(
     w.eval("auneaWorkspaceBackendCandidate({protocol:'https:',hostname:'sample-space-5500.app.github.dev'})"),
     'https://sample-space-8000.app.github.dev'
