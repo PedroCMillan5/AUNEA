@@ -234,3 +234,5 @@ select option{background:#fff;color:var(--ink)}
 html.page-companies,body.page-companies{height:100%;max-height:100%;overflow:hidden!important}
 body.page-companies .app-shell{height:100vh;min-height:0;overflow:hidden}
 body.page-companies .main{height:100vh;min-height:0;overflow:hidden}
+
+.opportunity-linked-studies{display:grid;gap:8px}
