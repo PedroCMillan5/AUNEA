@@ -207,6 +207,9 @@ function renderNav(){
   n.innerHTML=out.join('');
 }
 function render(){
+  const companiesViewport=state.activePage==='empresas';
+  document.documentElement.classList.toggle('page-companies',companiesViewport);
+  document.body.classList.toggle('page-companies',companiesViewport);
   renderNav();updateHeader();
   const fn=pages[state.activePage]||pages.inicio;
   document.getElementById('content').innerHTML=fn();
