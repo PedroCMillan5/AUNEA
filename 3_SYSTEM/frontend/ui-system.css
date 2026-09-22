@@ -78,7 +78,18 @@ select option{background:#fff;color:var(--ink)}
 .aunea-select summary::-webkit-details-marker{display:none}.aunea-select.is-disabled>summary{opacity:.55;cursor:not-allowed;pointer-events:none}.aunea-select.is-disabled .aunea-select-menu{display:none}.aunea-select summary:hover{border-color:#aebdb4;background:#fcfdfc}.aunea-select[open] summary{border-color:var(--sage);box-shadow:0 0 0 3px rgba(111,168,133,.18)}
 .aunea-select summary i{width:8px;height:8px;border-right:2px solid #67717A;border-bottom:2px solid #67717A;transform:rotate(45deg) translateY(-2px);transform-origin:center;transition:transform .15s ease}.aunea-select[open] summary i{transform:rotate(225deg) translate(-1px,-1px)}
 .aunea-select-menu{position:absolute;left:0;top:calc(100% + 6px);z-index:70;min-width:100%;max-height:280px;overflow:auto;padding:6px;background:#fff;border:1px solid #d6d1c8;border-radius:var(--radius-md);box-shadow:var(--shadow)}
-.aunea-select{position:relative;width:100%;min-width:0}.aunea-select summary{width:100%;min-width:0;box-sizing:border-box}.aunea-select summary span{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.aunea-select summary i{flex:0 0 8px;margin-left:8px;margin-right:2px}.aunea-select-menu{width:100%;min-width:100%;max-width:100%;box-sizing:border-box;overflow-x:hidden}.aunea-select-menu button{display:block;width:100%;max-width:100%;border:0;background:#fff;color:var(--ink);text-align:left;padding:9px 10px;border-radius:var(--radius-xs);font:inherit;cursor:pointer;white-space:normal;overflow-wrap:anywhere;word-break:normal}.aunea-select-menu button:hover,.aunea-select-menu button.selected{background:var(--system-soft);color:var(--system)}.compound-control>.process-aunea-select{flex:1 1 0;min-width:0}.modal .process-aunea-select,.modal .aunea-select,.modal .aunea-select-menu{max-width:100%}
+/* IMMUTABLE AUNEA SELECT CONTRACT — single dropdown visual primitive for the whole product.
+   Do not create page-specific dropdown skins. All canonical, CRM and process dropdowns must reuse .aunea-select. */
+.canonical-aunea-select,.process-aunea-select{position:relative;width:100%;min-width:0}
+.compound-control>.canonical-aunea-select,.compound-control>.process-aunea-select{flex:1 1 0;min-width:0}
+.aunea-select{position:relative;width:100%;min-width:0}
+.aunea-select summary{width:100%;min-width:0;min-height:40px;box-sizing:border-box}
+.aunea-select summary span{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.aunea-select summary i{flex:0 0 8px;margin-left:8px;margin-right:2px}
+.aunea-select-menu{width:100%;min-width:100%;max-width:100%;box-sizing:border-box;overflow-x:hidden}
+.aunea-select-search{padding:4px 4px 7px;position:sticky;top:0;background:#fff;z-index:1}
+.aunea-select-search input{width:100%;min-height:36px;box-sizing:border-box;border:1px solid #d6d1c8;border-radius:var(--radius-sm);padding:7px 9px;background:#fff;color:var(--ink);outline:none}
+.aunea-select-search input:focus{border-color:var(--sage);box-shadow:0 0 0 3px rgba(111,168,133,.18)}.aunea-select-menu button{display:block;width:100%;max-width:100%;border:0;background:#fff;color:var(--ink);text-align:left;padding:9px 10px;border-radius:var(--radius-xs);font:inherit;cursor:pointer;white-space:normal;overflow-wrap:anywhere;word-break:normal}.aunea-select-menu button:hover,.aunea-select-menu button.selected{background:var(--system-soft);color:var(--system)}.compound-control>.process-aunea-select{flex:1 1 0;min-width:0}.modal .process-aunea-select,.modal .aunea-select,.modal .aunea-select-menu{max-width:100%}
 
 @media(max-width:1180px){.topbar{grid-template-columns:minmax(190px,1fr) minmax(220px,380px) auto}.topbar .backend-badge,.topbar .save-state{display:none}.breadcrumb{max-width:300px}}
 @media(max-width:900px){.topbar{display:flex;height:auto;min-height:70px;flex-wrap:wrap;padding:12px 16px}.topbar-center{order:3;flex:1 0 100%}.topbar-right{margin-left:auto}.topbar .step-progress{display:none}.content{min-height:calc(100vh - 70px)}.result-item-head{flex-direction:column}.result-actions{flex-wrap:wrap}.ins-head-actions{flex-wrap:wrap}}
@@ -160,3 +171,5 @@ select option{background:#fff;color:var(--ink)}
    the first and fourth questions without changing Diagnostic Master ownership or semantics. */
 .field[data-field="DF087"],
 .field[data-field="DF088"]{grid-column:1/-1}
+
+.mode-process-editor .action-bar{left:0}
