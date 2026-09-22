@@ -59,11 +59,8 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   assert.equal(w.eval('ASIS_UAT_STUDIES.length'),25,'la suite AS-IS contiene exactamente 25 estudios');
   const asisCoverage=w.eval('asisUatCoverageReport()');
   assert.equal(asisCoverage.studies,25);
-  assert.deepEqual(Array.from(asisCoverage.missing_dfs),[],'DF031–DF085 quedan cubiertos por la suite');
-  assert.deepEqual(Array.from(asisCoverage.missing_process_fields),[],'todos los atributos ProcessStep quedan ejercitados');
-  assert.deepEqual(Array.from(asisCoverage.missing_friction_fields),[],'todos los atributos Friction quedan ejercitados');
-  assert.deepEqual(Array.from(asisCoverage.missing_risk_fields),[],'todos los atributos RiskInput quedan ejercitados');
-  assert.deepEqual(Array.from(asisCoverage.missing_economic_fields),[],'todos los atributos EconomicInput quedan ejercitados');
+  assert.equal(asisCoverage.complete_studies,25,'los 25 estudios deben estar completos individualmente');
+  assert.deepEqual(Array.from(asisCoverage.incomplete_studies),[],'ningún estudio puede dejar gaps en DF031–DF085 o en sus cuatro capas');
   const asisStudies=w.eval('ASIS_UAT_STUDIES.map(x=>asisUatStudyBundle(x.id))');
   assert.equal(asisStudies.length,25);
   for(const b of asisStudies){
@@ -71,6 +68,12 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
     assert.ok(b.engagement.frictions.length>=2,'cada estudio tiene fricciones');
     assert.ok(b.engagement.risks.length>=2,'cada estudio tiene riesgos');
     assert.ok(b.engagement.economicInputs.length>=2,'cada estudio tiene impacto económico');
+    const report=w.eval(`asisUatStudyCoverage(asisUatStudyBundle(${b.engagement.uatAsisProfile.id}))`);
+    assert.deepEqual(Array.from(report.missing_dfs),[],`${b.engagement.id} cubre DF031–DF085`);
+    assert.deepEqual(Array.from(report.step_gaps),[],`${b.engagement.id} no deja campos aplicables de ProcessStep vacíos`);
+    assert.deepEqual(Array.from(report.friction_gaps),[],`${b.engagement.id} no deja campos de Friction vacíos`);
+    assert.deepEqual(Array.from(report.risk_gaps),[],`${b.engagement.id} no deja campos de RiskInput vacíos`);
+    assert.deepEqual(Array.from(report.economic_gaps),[],`${b.engagement.id} no deja campos de EconomicInput vacíos`);
     assert.equal(b.engagement.confirmedAsIs,false,'los estudios llegan editables y sin auto-confirmar');
   }
   assert.equal(
