@@ -254,7 +254,8 @@ test('Contactos company picker is one anchored AUNEA control, not duplicated tex
 test('Empresas uses Status only as a filter and moves actions to the bottom bar',()=>{
   const page=read('pages/crm-companies.js');
   assert.doesNotMatch(page,/COMPANY_TABS|data-company-tab/);
-  assert.match(page,/const statuses=COMPANY_STATUS\.map/);
+  assert.match(page,/const statuses=COMPANY_STATUS\.filter\(v=>v!=='Archivada'\)\.map/);
+  assert.match(page,/includeArchivedCompanies/);
   assert.doesNotMatch(page,/Acciones rápidas/);
   assert.match(page,/actionBar\(left,right\)/);
   assert.match(page,/data-company-contact-new/);
