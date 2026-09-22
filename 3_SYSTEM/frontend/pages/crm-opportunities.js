@@ -43,11 +43,34 @@ function opportunityPagination(rows){
   return {page,totalPages,rows:rows.slice(start,start+OPPORTUNITY_PAGE_SIZE)};
 }
 
-function opportunityActionMenu(o,engs){
-  return `<details class="study-row-menu"><summary class="kebab-btn" aria-label="Acciones de ${attr(o.title||'oportunidad')}">•••</summary><div class="row-menu-popover study-row-menu-popover">
-    <button type="button" data-edit-opportunity="${attr(o.id)}">Editar</button>
-    ${isOpportunityOpen(o) && !engs.length ? `<button type="button" data-opportunity-study="${attr(o.id)}">Crear estudio</button>` : ''}
-  </div></details>`;
+function closeOpportunityFloatingMenu(){document.getElementById('opportunityFloatingMenu')?.remove()}
+function openOpportunityActionMenu(button,opportunityId){
+  closeOpportunityFloatingMenu();
+  const o=(state.opportunities||[]).find(x=>x.id===opportunityId);if(!o)return;
+  const engs=engagementsOfOpportunity(o.id);
+  const menu=document.createElement('div');menu.id='opportunityFloatingMenu';menu.className='row-menu-popover company-floating-menu';
+  menu.innerHTML=`<button type="button" data-edit-opportunity="${attr(o.id)}">Editar</button>
+    ${isOpportunityOpen(o) && !engs.length ? `<button type="button" data-opportunity-study="${attr(o.id)}">Crear estudio</button>` : ''}`;
+  document.body.appendChild(menu);
+  const r=button.getBoundingClientRect(),gap=6;
+  let left=Math.min(window.innerWidth-menu.offsetWidth-8,Math.max(8,r.right-menu.offsetWidth));
+  let top=r.bottom+gap;
+  if(top+menu.offsetHeight>window.innerHeight-8)top=Math.max(8,r.top-menu.offsetHeight-gap);
+  menu.style.left=`${left}px`;menu.style.top=`${top}px`;
+}
+function opportunityActionMenu(o){return `<button type="button" class="kebab-btn" data-opportunity-actions="${attr(o.id)}" aria-label="Acciones de ${attr(o.title||'oportunidad')}">•••</button>`}
+
+if(!window.__auneaOpportunityActionsBound){
+  window.__auneaOpportunityActionsBound=true;
+  document.addEventListener('click',e=>{
+    const trigger=e.target.closest('[data-opportunity-actions]');
+    if(trigger){e.preventDefault();e.stopPropagation();openOpportunityActionMenu(trigger,trigger.dataset.opportunityActions);return}
+    if(!e.target.closest('#opportunityFloatingMenu'))closeOpportunityFloatingMenu();
+    const action=e.target.closest('[data-edit-opportunity],[data-opportunity-study]');if(!action)return;
+    e.preventDefault();e.stopPropagation();closeOpportunityFloatingMenu();
+    if(action.dataset.editOpportunity!==undefined){editOpportunity(action.dataset.editOpportunity);return}
+    if(action.dataset.opportunityStudy!==undefined){createStudyFromOpportunity(action.dataset.opportunityStudy)}
+  },true);
 }
 function opportunityRow(o) {
   const co = companyById(o.companyId);
@@ -61,7 +84,7 @@ function opportunityRow(o) {
     <td>${esc(o.source || '—')}</td>
     <td>${engs.length ? esc(engs.map(e => e.title).join(', ')) : '<small>Sin estudio</small>'}</td>
     <td>${esc(formatDateEs(o.updatedAt || o.createdAt))}</td>
-    <td>${opportunityActionMenu(o,engs)}</td>
+    <td>${opportunityActionMenu(o)}</td>
   </tr>`;
 }
 
