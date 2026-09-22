@@ -40,6 +40,7 @@ function makeCtx(uiMode){
     missingRequired:()=>[],labelFrom:(s,v)=>v,companyById:()=>({name:'ACME'}),
     buildBackendPayload:()=>({engagement_id:'E1'}),
     esc:v=>String(v??''),attr:v=>String(v??''),pageTop:()=>'',section:(t,s,body,actions)=>`${body}${actions||''}`,
+    auneaSelectControl:(id,opts,val,{extra='',placeholder='Selecciona…'}={})=>`<div class="canonical-aunea-select"><input type="hidden" id="${id}" value="${val||''}" ${extra}><details class="aunea-select"><summary><span>${placeholder}</span><i></i></summary><div class="aunea-select-menu">${(opts||[]).map(o=>`<button data-aunea-select-option="${id}" data-value="${o.value}" data-label="${o.label}">${o.label}</button>`).join('')}</div></details></div>`,
     openModal:()=>{},closeModal:()=>{},markDirty:()=>{},render:()=>{},toast:()=>{},now:()=>'',
     document:{getElementById:()=>null,querySelectorAll:()=>[]}
   };
@@ -63,7 +64,7 @@ test('downloadQuotePdf requests a client-safe PDF and never window.print()',asyn
   const codeWithoutComments=code.split('\n').filter(l=>!l.trim().startsWith('//')).join('\n');assert.doesNotMatch(codeWithoutComments,/window\.print\(\)/);const shellCode=fs.readFileSync(path.join(root,'ui/shell.js'),'utf8');assert.match(shellCode,/printQuote['"]?\)?\.onclick\s*=\s*downloadQuotePdf/);
 });
 
-test('createScenario shows business names and requires an existing diagnostic snapshot',()=>{const ctx=makeCtx();ctx.openModal=(title,body)=>{ctx.__lastBody=body};ctx.__eng.diagnosticOutput={input_snapshot_hash:'H1',rule_bundle_version:'v0.8',optimal_scenario:{}};ctx.createScenario();assert.match(ctx.__lastBody,/<option value="A1">Redesign<\/option>/);assert.match(ctx.__lastBody,/<option value="N2">Standardize<\/option>/);assert.match(ctx.__lastBody,/<option value="I1">Assisted<\/option>/);assert.doesNotMatch(ctx.__lastBody,/<option>N1<\/option>|<option>I0<\/option>/)});
+test('createScenario shows business names and requires an existing diagnostic snapshot',()=>{const ctx=makeCtx();ctx.openModal=(title,body)=>{ctx.__lastBody=body};ctx.__eng.diagnosticOutput={input_snapshot_hash:'H1',rule_bundle_version:'v0.8',optimal_scenario:{}};ctx.createScenario();assert.match(ctx.__lastBody,/data-value="A1"[^>]*>Redesign<\/button>/);assert.match(ctx.__lastBody,/data-value="N2"[^>]*>Standardize<\/button>/);assert.match(ctx.__lastBody,/data-value="I1"[^>]*>Assisted<\/button>/);assert.doesNotMatch(ctx.__lastBody,/<select|<option/)});
 
 test('createScenario posts the exact DiagnosticOutput shown in the UI as the comparison base',async()=>{
   const ctx=makeCtx();const diag={input_snapshot_hash:'HASH-1',rule_bundle_version:'v0.8',optimal_scenario:{}};ctx.__eng.diagnosticOutput=diag;ctx.__eng.scenarioResults=[];
