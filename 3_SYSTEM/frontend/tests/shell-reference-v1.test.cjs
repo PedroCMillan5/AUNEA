@@ -117,7 +117,7 @@ test('B02 owner bindings are single-owner and keep canonical S01 semantics intac
   assert.deepEqual(pg01.map(f => f.Field_ID), ['DF001','DF002','DF003','DF004','DF005','DF006','DF007','DF008','DF009','DF010']);
   assert.match(diagJs, /data-pg01-company="name" data-pg01-df="DF001"/);
   assert.match(diagJs, /data-pg01-company="sector" data-pg01-df="DF002"/);
-  assert.match(diagJs, /data-pg01-company-size="1" disabled/,'company size is derived from employeeCount, never a second editable copy');
+  assert.match(diagJs, /data-pg01-company-size="1"[^>]*disabled/,'company size is derived from employeeCount, never a second editable copy');
   assert.doesNotMatch(diagJs, /data-pg01-company="country"|País \/ alcance/,'DF005 remains canonical but is not visible on PG01');
   assert.match(diagJs, /data-pg01-company="orgType"/);
   assert.match(diagJs, /data-pg01-company="entryChannel"/);
