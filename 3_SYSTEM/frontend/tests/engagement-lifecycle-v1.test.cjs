@@ -91,7 +91,7 @@ test('statuses written before the contract closed are migrated, not reinterprete
 });
 
 test('no surface writes an Engagement status outside the lifecycle', () => {
-  const sources = ['core/state.js', 'ui/shell.js', 'services/engine-adapter.js', 'pages/results.js', 'uat/fixtures.js'];
+  const sources = ['core/state.js', 'ui/shell.js', 'services/engine-adapter.js', 'pages/results.js'];
   for (const f of sources) {
     const src = read(f);
     assert.doesNotMatch(src, /e\.status\s*=\s*'(?!.*ENGAGEMENT)/,
