@@ -77,3 +77,10 @@ test('re-opening the same step/friction/risk/economic modal regenerates the defa
   assert.equal((stepBody.match(/<details class="step-group" open>/g)||[]).length,1);
   assert.ok((stepBody.match(/<details class="step-group">(?!\s*<\/details>)/g)||[]).length>=1);
 });
+
+
+test('cross-tab process synchronization preserves the horizontal map viewport instead of resetting to the left',()=>{
+  assert.match(persistCode,/const flowViewport=flowCanvas\?\{left:flowCanvas\.scrollLeft,top:flowCanvas\.scrollTop\}:null/);
+  assert.match(persistCode,/nextCanvas\.scrollLeft=flowViewport\.left/);
+  assert.match(persistCode,/nextCanvas\.scrollTop=flowViewport\.top/);
+});
