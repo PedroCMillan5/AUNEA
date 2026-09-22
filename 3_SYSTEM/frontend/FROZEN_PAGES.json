@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "frozen_pages": [
     {
       "page_id": "empresas",
@@ -10,6 +10,36 @@
       "source_snapshot": "tests/frozen/companies-page-v1.js.snapshot",
       "style_snapshot": "tests/frozen/companies-style-v1.css.snapshot",
       "gate": "AUNEA-UAT-COMPANIES-FROZEN-010"
+    },
+    {
+      "page_id": "contactos",
+      "screen_id": "I90-00-02",
+      "status": "FROZEN",
+      "frozen_on": "2026-09-22",
+      "rule": "No modificar bajo ningún concepto tras aprobación explícita del usuario.",
+      "source_snapshot": "tests/frozen/contacts-page-v1.js.snapshot",
+      "style_snapshot": "tests/frozen/crm-lists-style-v1.css.snapshot",
+      "gate": "AUNEA-UAT-CRM-FINALIZED-FROZEN-010"
+    },
+    {
+      "page_id": "interacciones",
+      "screen_id": "P03",
+      "status": "FROZEN",
+      "frozen_on": "2026-09-22",
+      "rule": "No modificar bajo ningún concepto tras aprobación explícita del usuario.",
+      "source_snapshot": "tests/frozen/interactions-page-v1.js.snapshot",
+      "style_snapshot": "tests/frozen/crm-lists-style-v1.css.snapshot",
+      "gate": "AUNEA-UAT-CRM-FINALIZED-FROZEN-010"
+    },
+    {
+      "page_id": "oportunidades",
+      "screen_id": "P04",
+      "status": "FROZEN",
+      "frozen_on": "2026-09-22",
+      "rule": "No modificar bajo ningún concepto tras aprobación explícita del usuario.",
+      "source_snapshot": "tests/frozen/opportunities-page-v1.js.snapshot",
+      "style_snapshot": "tests/frozen/crm-lists-style-v1.css.snapshot",
+      "gate": "AUNEA-UAT-CRM-FINALIZED-FROZEN-010"
     }
   ]
 }
