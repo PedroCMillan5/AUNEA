@@ -20,8 +20,13 @@ function dataListId(fid){return `list_${String(fid).replace(/[^a-zA-Z0-9_-]/g,'_
 function detailInput(fid,placeholder='Detalle breve'){
   return `<input class="detail-input" data-detail-answer="${fid}" value="${attr(getAnswerDetail(fid))}" placeholder="${attr(placeholder)}">`;
 }
+function auneaSelectControl(id,opts,val,{extra='',placeholder='Selecciona…',searchable=false}={}){
+  const normalized=(opts||[]).map(x=>({value:String(x.value??''),label:String(x.label??x.value??'')}));
+  const selected=normalized.find(x=>x.value===String(val??'')),shown=selected?.label||placeholder;
+  return `<div class="canonical-aunea-select"><input type="hidden" id="${attr(id)}" value="${attr(val??'')}" ${extra}><details class="aunea-select" data-aunea-select="${attr(id)}"><summary><span>${esc(shown)}</span><i aria-hidden="true"></i></summary><div class="aunea-select-menu" role="listbox">${searchable?`<div class="aunea-select-search"><input type="search" data-aunea-select-search="${attr(id)}" placeholder="Buscar…"></div>`:''}${normalized.map(o=>`<button type="button" role="option" class="${o.value===String(val??'')?'selected':''}" data-aunea-select-option="${attr(id)}" data-value="${attr(o.value)}" data-label="${attr(o.label)}">${esc(o.label)}</button>`).join('')}</div></details></div>`;
+}
 function canonicalSelect(fid,opts,val,extra=''){
-  return `<select data-answer="${fid}" ${extra}><option value="">Selecciona…</option>${opts.map(x=>`<option value="${attr(x.value)}" ${String(val)===String(x.value)?'selected':''}>${esc(x.label)}</option>`).join('')}</select>`;
+  return auneaSelectControl(fid,opts,val,{extra:`data-answer="${fid}" ${extra}`});
 }
 function selectWithConditionalDetail(fid,opts,val,placeholder='Detalle si aplica'){
   const other=opts.find(x=>String(x.value).toUpperCase()==='OTHER'||['otro','otra'].includes(String(x.label||'').trim().toLowerCase()));
@@ -31,8 +36,7 @@ function selectWithConditionalDetail(fid,opts,val,placeholder='Detalle si aplica
     `<div class="detail-wrap" data-detail-wrap="${fid}"${open?'':' style="display:none"'}>${detailInput(fid,placeholder)}</div>`;
 }
 function searchableSelect(f,val,opts){
-  const id=dataListId(f.Field_ID),label=opts.find(x=>String(x.value)===String(val))?.label||(isOtherAllowed(f)?String(val||''):'');
-  return `<div class="compound-control"><div class="combo-wrap"><input data-search-answer="${f.Field_ID}" data-option-set="${attr(f.Option_Set_ID||'')}" data-allow-other="${isOtherAllowed(f)?'1':'0'}" list="${id}" value="${attr(label)}" placeholder="Buscar o seleccionar…"><datalist id="${id}">${opts.map(x=>`<option value="${attr(x.label)}" data-value="${attr(x.value)}"></option>`).join('')}</datalist></div></div>`;
+  return auneaSelectControl(f.Field_ID,opts,val,{extra:`data-answer="${f.Field_ID}" data-option-set="${attr(f.Option_Set_ID||'')}" data-allow-other="${isOtherAllowed(f)?'1':'0'}"`,placeholder:'Buscar o seleccionar…',searchable:true});
 }
 // Ninguno/No-existe exclusivity is NOT derived by parsing Validation prose at runtime — it is a small,
 // hand-curated table citing the exact canonical Validation text for each entry. Extend this table only
@@ -138,8 +142,9 @@ function nextStepActionText(fid,e){
   const d=answerDetails(e),actionValue=d[`${fid}__action`]||'';
   if(!actionValue)return '';
   if(actionValue==='OTHER')return d[`${fid}__other`]||'';
-  const el=document.querySelector(`[data-nextstep-action="${fid}"]`);
-  return el&&el.selectedIndex>=0?el.options[el.selectedIndex].textContent:actionValue;
+  const box=document.querySelector(`[data-aunea-select="${fid}__action"]`);
+  const label=box?.querySelector('summary span')?.textContent?.trim();
+  return label||actionValue;
 }
 function syncNextStep(fid){
   const e=currentEng();if(!e)return;
@@ -202,11 +207,41 @@ function renderControl(f,val,opts,e){
 if(typeof document!=='undefined'&&typeof document.addEventListener==='function'&&!document.__auneaCanonicalDelegatedBound){
   document.__auneaCanonicalDelegatedBound=true;
   document.addEventListener('click',ev=>{
+    const option=ev.target.closest?.('[data-aunea-select-option]');
+    if(option){
+      ev.preventDefault();ev.stopPropagation();
+      const id=option.dataset.auneaSelectOption,input=document.getElementById(id),box=option.closest('details.aunea-select');
+      if(input){
+        input.value=option.dataset.value||'';
+        box?.querySelectorAll('[data-aunea-select-option]').forEach(x=>x.classList.toggle('selected',x===option));
+        const label=box?.querySelector('summary span');if(label)label.textContent=option.dataset.label||option.textContent||'';
+        if(box)box.open=false;
+        input.dispatchEvent(new Event('change',{bubbles:true}));
+      }
+      return;
+    }
     const btn=ev.target.closest?.('[data-create-contact-for-field]');
     if(!btn)return;
     ev.preventDefault();ev.stopPropagation();
     if(typeof addContactForEngagementField==='function')addContactForEngagementField(btn.dataset.createContactForField);
   });
+  document.addEventListener('input',ev=>{
+    const search=ev.target.closest?.('[data-aunea-select-search]');
+    if(!search)return;
+    const box=search.closest('details.aunea-select'),term=search.value.trim().toLocaleLowerCase('es');
+    box?.querySelectorAll('[data-aunea-select-option]').forEach(btn=>{btn.style.display=!term||String(btn.dataset.label||btn.textContent||'').toLocaleLowerCase('es').includes(term)?'':'none'});
+  });
+  document.addEventListener('toggle',ev=>{
+    const box=ev.target?.matches?.('details.aunea-select')?ev.target:null;
+    if(!box||!box.open)return;
+    document.querySelectorAll('details.aunea-select[open]').forEach(other=>{if(other!==box)other.open=false});
+    const search=box.querySelector('[data-aunea-select-search]');if(search){search.value='';box.querySelectorAll('[data-aunea-select-option]').forEach(btn=>btn.style.display='');setTimeout(()=>search.focus(),0)}
+  },true);
+  document.addEventListener('click',ev=>{
+    if(ev.target.closest?.('details.aunea-select'))return;
+    document.querySelectorAll('details.aunea-select[open]').forEach(box=>box.open=false);
+  });
+  document.addEventListener('keydown',ev=>{if(ev.key==='Escape')document.querySelectorAll('details.aunea-select[open]').forEach(box=>box.open=false)});
   document.addEventListener('change',ev=>{
     const el=ev.target.closest?.('[data-other-toggle]');
     if(!el)return;
@@ -240,9 +275,8 @@ function bindCanonicalRenderer(){
   document.querySelectorAll('[data-nextstep-other]').forEach(el=>el.addEventListener('input',()=>{const fid=el.dataset.nextstepOther;answerDetails(currentEng())[`${fid}__other`]=el.value;syncNextStep(fid)}));
   document.querySelectorAll('[data-nextstep-owner]').forEach(el=>el.addEventListener('input',()=>{const fid=el.dataset.nextstepOwner;answerDetails(currentEng())[`${fid}__owner`]=el.value;syncNextStep(fid)}));
   document.querySelectorAll('[data-nextstep-date]').forEach(el=>el.addEventListener('change',()=>{const fid=el.dataset.nextstepDate;answerDetails(currentEng())[`${fid}__date`]=el.value;syncNextStep(fid)}));
-  document.querySelectorAll('[data-search-answer]').forEach(el=>el.addEventListener('change',()=>{const setId=el.dataset.optionSet,opts=fieldOptions(setId),typed=el.value.trim(),match=opts.find(o=>String(o.label).toLowerCase()===typed.toLowerCase()||String(o.value).toLowerCase()===typed.toLowerCase());if(match){el.value=match.label;setAnswer(el.dataset.searchAnswer,match.value)}else if(el.dataset.allowOther==='1'){setAnswer(el.dataset.searchAnswer,typed)}else{el.value='';setAnswer(el.dataset.searchAnswer,'');toast('Selecciona una opción del catálogo canónico.')}}));
   const numberFids=[...new Set([...document.querySelectorAll('[data-number-value],[data-number-unit],[data-number-period],[data-number-mode]')].map(x=>x.dataset.numberValue||x.dataset.numberUnit||x.dataset.numberPeriod||x.dataset.numberMode))];
-  numberFids.forEach(fid=>{const sync=()=>{const value=document.querySelector(`[data-number-value="${fid}"]`)?.value??'',unit=document.querySelector(`[data-number-unit="${fid}"]`)?.value??'',period=document.querySelector(`[data-number-period="${fid}"]`)?.value??'',mode=document.querySelector(`[data-number-mode="${fid}"]`)?.value??'';setAnswer(fid,{value:value===''?'':Number(value),unit,period,mode})};document.querySelectorAll(`[data-number-value="${fid}"],[data-number-unit="${fid}"],[data-number-period="${fid}"],[data-number-mode="${fid}"]`).forEach(el=>el.addEventListener(el.tagName==='SELECT'?'change':'input',sync))});
+  numberFids.forEach(fid=>{const sync=()=>{const value=document.querySelector(`[data-number-value="${fid}"]`)?.value??'',unit=document.querySelector(`[data-number-unit="${fid}"]`)?.value??'',period=document.querySelector(`[data-number-period="${fid}"]`)?.value??'',mode=document.querySelector(`[data-number-mode="${fid}"]`)?.value??'';setAnswer(fid,{value:value===''?'':Number(value),unit,period,mode})};document.querySelectorAll(`[data-number-value="${fid}"]`).forEach(el=>el.addEventListener('input',sync));document.querySelectorAll(`[data-number-unit="${fid}"],[data-number-period="${fid}"],[data-number-mode="${fid}"]`).forEach(el=>el.addEventListener('change',sync))});
   document.querySelectorAll('[data-set-unknown]').forEach(b=>b.onclick=()=>{setAnswer(b.dataset.setUnknown,'UNKNOWN');render()});
   const pairFids=[...new Set([...document.querySelectorAll('[data-pair-field]')].map(x=>x.dataset.pairField))];pairFids.forEach(fid=>document.querySelectorAll(`[data-pair-field="${fid}"]`).forEach(el=>el.addEventListener('change',()=>{const p={};document.querySelectorAll(`[data-pair-field="${fid}"]`).forEach(x=>p[x.dataset.pairPart]=x.value);setAnswer(fid,p)})));
   document.querySelectorAll('[data-multi][data-exclusive]').forEach(el=>el.addEventListener('change',()=>{
