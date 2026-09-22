@@ -30,6 +30,7 @@ function makeCtx(){
     setAnswer:()=>{},bindForms:()=>{},render:()=>{},setPage:()=>{},
     openModal:()=>{},closeModal:()=>{},runDiagnosis:()=>{},
     esc:v=>String(v??''),attr:v=>String(v??''),
+    auneaSelectControl:(id,opts,val,{extra='',placeholder='Selecciona…'}={})=>`<div class="canonical-aunea-select"><input type="hidden" id="${id}" value="${val||''}" ${extra}><details class="aunea-select"><summary><span>${placeholder}</span><i></i></summary><div class="aunea-select-menu">${(opts||[]).map(o=>`<button data-aunea-select-option="${id}" data-value="${o.value}">${o.label}</button>`).join('')}</div></details></div>`,
     section:(title,sub,body,actions)=>`${body}${actions||''}`,
     now:()=>'2026-09-14T00:00:00.000Z',
     formatDateEs:v=>v,
