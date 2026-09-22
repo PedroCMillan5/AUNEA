@@ -117,9 +117,11 @@ function bindCrm(){
     e.stopPropagation();const key=el.dataset.opportunityFilterOption,val=el.dataset.value||'';
     state.opportunityFilters={...state.opportunityFilters,[key]:val};
     if(key==='companyId')state.opportunityFilters.contactId='';
+    state.opportunityPage=1;
     render();
   });
-  if(document.getElementById('clearOpportunityFilters'))document.getElementById('clearOpportunityFilters').onclick=()=>{state.opportunityFilters={companyId:'',contactId:''};render()};
+  if(document.getElementById('clearOpportunityFilters'))document.getElementById('clearOpportunityFilters').onclick=()=>{state.opportunityFilters={companyId:'',contactId:''};state.opportunityPage=1;render()};
+  document.querySelectorAll('[data-opportunity-page]').forEach(el=>el.onclick=e=>{e.preventDefault();e.stopPropagation();if(el.disabled)return;state.opportunityPage=Math.max(1,Number(el.dataset.opportunityPage)||1);render()});
 
   on('[data-edit-interaction]',el=>editInteraction(el.dataset.editInteraction));
   on('[data-delete-interaction]',el=>deleteInteraction(el.dataset.deleteInteraction));
