@@ -197,3 +197,18 @@ select option{background:#fff;color:var(--ink)}
 .company-pagination button.active{border-color:var(--system);background:var(--system-soft);color:var(--system)}
 .company-pagination button:disabled{opacity:.4;cursor:not-allowed}
 @media(max-width:900px){.company-filter-row .filter-group:first-child{min-width:180px;max-width:100%;flex:1 1 220px}.company-table-foot{align-items:flex-start}.company-pagination{flex-wrap:wrap}}
+
+
+/* Empresas viewport contract — the page itself must not create vertical document scroll. */
+.content:has(.companies-screen-marker){height:calc(100vh - 70px);min-height:0;overflow:hidden;box-sizing:border-box;padding-top:18px;padding-bottom:68px}
+.content:has(.companies-screen-marker) .page-head{margin-bottom:12px}
+.content:has(.companies-screen-marker) .workspace{max-height:calc(100vh - 188px);overflow:hidden}
+.content:has(.companies-screen-marker) .inspector{max-height:calc(100vh - 188px);overflow:hidden}
+.content:has(.companies-screen-marker) .ins-card{max-height:100%;overflow:hidden}
+.content:has(.companies-screen-marker) .table-wrap{overflow-x:auto;overflow-y:hidden}
+.company-filter-row .filter-group:first-child .aunea-select-menu button[data-full-label]{position:relative}
+.company-filter-row .filter-group:first-child .aunea-select-menu button[data-full-label]:hover::before{
+  content:attr(data-full-label);position:absolute;left:calc(100% + 8px);top:50%;transform:translateY(-50%);
+  z-index:120;max-width:420px;width:max-content;padding:7px 9px;border:1px solid var(--line);border-radius:8px;
+  background:#fff;color:var(--ink);box-shadow:var(--shadow);white-space:normal;line-height:1.35;font-weight:600;pointer-events:none
+}
