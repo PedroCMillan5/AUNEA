@@ -8,8 +8,20 @@ const code=fs.readFileSync(path.join(__dirname,'..','ui/renderer.js'),'utf8');
 const e={companyId:'c1',answers:{},answerDetails:{},processSteps:[{id:'s1',status:'ACTIVE',step_name:'Inicio'}],frictions:[{id:'f1',status:'ACTIVE',friction_type:'P01'}]};
 const ctx={console,schema:{option_sets:{OS_X:{options:[{value:'A',label:'Alpha'},{value:'B',label:'Beta'}]},OS_WORKAROUND:{options:[{value:'CHASE',label:'Seguimiento manual'},{value:'NO_WORKAROUND',label:'No existe'}]},OS_SENSITIVE_DATA:{options:[{value:'PERSONAL',label:'Datos personales'},{value:'NONE',label:'Ninguno'}]}}},state:{companies:[{id:'c1',name:'ACME'}],contacts:[{id:'p1',companyId:'c1',name:'Ana',role:'Ops',status:'Activo'},{id:'p2',companyId:'c1',name:'Beto',role:'IT',status:'Inactivo'}]},currentEng:()=>e,normalizeArray:v=>Array.isArray(v)?v:(v==null||v===''?[]:[v]),esc:v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'),attr:v=>String(v??'').replaceAll('"','&quot;'),labelFrom:(s,v)=>v,bindForms:()=>{},setAnswer:(fid,v)=>{e.answers[fid]=v},now:()=>'',markDirty:()=>{},toast:()=>{},render:()=>{},formatDateEs:()=>'12/09/2026',document:{querySelectorAll:()=>[],querySelector:()=>null}};
 vm.createContext(ctx);vm.runInContext(code,ctx);
-test('searchable dropdown remains catalog-backed',()=>{const html=ctx.renderControl({Field_ID:'DF002',Control_UI:'SEARCHABLE_DROPDOWN',Option_Set_ID:'OS_X',Validation:'permitir Otro'},'A',ctx.schema.option_sets.OS_X.options,e);assert.match(html,/data-search-answer="DF002"/);assert.match(html,/datalist/);assert.match(html,/class="combo-wrap"/,'a datalist-backed input needs the same dropdown affordance as a <select>, not a plain-looking text field');});
+test('searchable dropdown remains catalog-backed and uses the single AUNEA Select primitive',()=>{const html=ctx.renderControl({Field_ID:'DF002',Control_UI:'SEARCHABLE_DROPDOWN',Option_Set_ID:'OS_X',Validation:'permitir Otro'},'A',ctx.schema.option_sets.OS_X.options,e);assert.match(html,/data-aunea-select="DF002"/);assert.match(html,/data-aunea-select-search="DF002"/);assert.match(html,/data-aunea-select-option="DF002"/);assert.doesNotMatch(html,/<datalist/);assert.doesNotMatch(html,/<select/);});
 test('number+unit is structured',()=>{const html=ctx.renderControl({Field_ID:'DF021',Control_UI:'NUMBER_WITH_UNIT'},'',[],e);assert.match(html,/data-number-value="DF021"/);assert.match(html,/data-number-unit="DF021"/);});
+
+test('all canonical single-select controls share AUNEA Select instead of browser-native dropdowns',()=>{
+  const opts=[{value:'A',label:'Alpha'},{value:'B',label:'Beta'}];
+  for(const control of ['DROPDOWN','CONTACT_REFERENCE','CRM_REFERENCE_OR_TEXT']){
+    const html=ctx.renderControl({Field_ID:'DF004',Control_UI:control},'A',opts,e);
+    assert.match(html,/class="aunea-select"/,control+' must use AUNEA Select');
+    assert.doesNotMatch(html,/<select/,control+' must not render a native select');
+  }
+  const compound=ctx.renderControl({Field_ID:'DF021',Control_UI:'NUMBER_WITH_UNIT'},{value:10,unit:'case'},[],e);
+  assert.match(compound,/class="aunea-select"/,'compound unit dropdown uses same component');
+  assert.doesNotMatch(compound,/<select/);
+});
 test('multiselect keeps choices',()=>{const html=ctx.renderControl({Field_ID:'DF008',Control_UI:'MULTISELECT_WITH_OTHER'},['A'],ctx.schema.option_sets.OS_X.options,e);assert.match(html,/data-multi="DF008"/);assert.match(html,/detail-input/);});
 test('unknown structured controls never degrade to free text',()=>{const html=ctx.renderControl({Field_ID:'DF999',Control_UI:'UNSUPPORTED_STRUCTURED'},'',[],e);assert.match(html,/control-error/);assert.doesNotMatch(html,/data-answer="DF999"/);});
 
