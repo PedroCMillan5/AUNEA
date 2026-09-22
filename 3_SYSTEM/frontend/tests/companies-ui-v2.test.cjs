@@ -61,7 +61,8 @@ test('Empresas table never creates horizontal scroll',()=>{
 
 test('Empresas page is viewport-locked with no vertical document scroll',()=>{
   assert.match(page,/companies-screen-marker/);
-  assert.match(css,/\.content:has\(\.companies-screen-marker\)\{[^}]*height:calc\(100vh - 70px\)[^}]*overflow:hidden/);
+  assert.match(css,/\.main:has\(\.companies-screen-marker\)\{[^}]*height:100vh[^}]*overflow:hidden[^}]*display:flex[^}]*flex-direction:column/);
+  assert.match(css,/\.main:has\(\.companies-screen-marker\)>\.content\{[^}]*flex:1 1 auto[^}]*height:auto[^}]*min-height:0[^}]*overflow:hidden/);
   assert.match(css,/\.content:has\(\.companies-screen-marker\) \.table-wrap\{overflow:hidden\}/);
 });
 
