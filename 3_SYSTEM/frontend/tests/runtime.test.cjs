@@ -59,7 +59,7 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   assert.equal(w.eval('ASIS_UAT_STUDIES.length'),25,'la suite AS-IS contiene exactamente 25 estudios');
   const asisCoverage=w.eval('asisUatCoverageReport()');
   assert.equal(asisCoverage.studies,25);
-  assert.equal(asisCoverage.complete_studies,25,'los 25 estudios deben estar completos individualmente');
+  assert.equal(asisCoverage.complete_studies,25,'los 25 estudios deben estar completos individualmente: '+JSON.stringify(asisCoverage.incomplete_studies));
   assert.deepEqual(Array.from(asisCoverage.incomplete_studies),[],'ningún estudio puede dejar gaps en DF031–DF085 o en sus cuatro capas');
   const asisStudies=w.eval('ASIS_UAT_STUDIES.map(x=>asisUatStudyBundle(x.id))');
   assert.equal(asisStudies.length,25);
