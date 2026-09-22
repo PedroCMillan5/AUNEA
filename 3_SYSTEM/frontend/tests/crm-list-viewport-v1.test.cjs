@@ -58,6 +58,27 @@ test('Interacciones locks vertical document scroll and keeps compact table rows'
   assert.match(css,/\.interaction-table th,\.interaction-table td\{padding-top:7px;padding-bottom:7px\}/);
 });
 
+test('Contactos and Interacciones preserve the original full content width inside the flex viewport',()=>{
+  assert.match(css,/\.main:has\(\.contacts-screen-marker\)>\.content,[\s\S]*\.main:has\(\.interactions-screen-marker\)>\.content,[\s\S]*width:100%;max-width:1620px/);
+});
+
+test('Oportunidades paginates at ten and hides Crear estudio when one is already associated',()=>{
+  const opportunities=read('pages/crm-opportunities.js');
+  assert.match(opportunities,/const OPPORTUNITY_PAGE_SIZE=10/);
+  assert.match(opportunities,/data-opportunity-page/);
+  assert.match(opportunities,/isOpportunityOpen\(o\) && !engs\.length/);
+  assert.match(shell,/state\.opportunityPage=1/);
+  assert.match(shell,/\[data-opportunity-page\]/);
+});
+
+test('Oportunidades uses compact AUNEA entity filters and locks vertical document scroll',()=>{
+  const opportunities=read('pages/crm-opportunities.js');
+  assert.match(opportunities,/opportunity-entity-filter/);
+  assert.match(opportunities,/data-full-label/);
+  assert.match(opportunities,/opportunities-screen-marker/);
+  assert.match(css,/html:has\(\.opportunities-screen-marker\),body:has\(\.opportunities-screen-marker\)[\s\S]*overflow:hidden!important/);
+});
+
 test('Empresas frozen page source is not modified by this CRM list change',()=>{
   assert.equal(read('pages/crm-companies.js'),read('tests/frozen/companies-page-v1.js.snapshot'));
 });
