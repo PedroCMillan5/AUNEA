@@ -86,6 +86,11 @@ function closeOpportunity(opportunityId, stage) {
 function createStudyFromOpportunity(opportunityId){
   const o=(state.opportunities||[]).find(x=>x.id===opportunityId);
   if(!o)return;
+  const existing=engagementsOfOpportunity(o.id);
+  if(existing.length){
+    state.activeEngagementId=existing[0].id;
+    return toast('Esta oportunidad ya tiene un estudio asociado.');
+  }
   const primary=(o.contactIds||[])[0]||state.companies.find(c=>c.id===o.companyId)?.primaryContactId;
   if(!primary)return toast('Asocia al menos un contacto a la oportunidad antes de crear el estudio.');
   createStudyFromContact(primary);
