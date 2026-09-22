@@ -202,20 +202,26 @@
     {
       "order": 34,
       "layer": "uat",
+      "path": "uat/asis-suite.js",
+      "block_id": "AUNEA-UAT-ASIS-SUITE-060"
+    },
+    {
+      "order": 35,
+      "layer": "uat",
       "path": "uat/crm-fixtures.js",
       "block_id": "AUNEA-UAT-CRM-DUMMY-030"
     },
     {
-      "order": 35,
+      "order": 36,
       "layer": "uat",
       "path": "uat/study-suite.js",
       "block_id": "AUNEA-UAT-STUDY-SUITE-050"
     },
     {
-      "order": 36,
+      "order": 37,
       "layer": "boot",
       "path": "boot.js",
       "block_id": "AUNEA-FE-BOOT-INIT-010"
     }
   ]
-}
+}\n
