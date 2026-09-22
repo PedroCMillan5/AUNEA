@@ -26,8 +26,9 @@ for(const [name,source,snapshot] of FINALIZED){
 
 test('FINALIZED CRM list page-specific styles are byte-for-byte frozen',()=>{
   const css=read('ui-system.css');
-  const start='/* [AUNEA-FE-CRM-LIST-VIEWPORT-010] START';
-  const end='/* [AUNEA-FE-CRM-LIST-VIEWPORT-010] END */';
+  const frozenId='AUNEA-FE-'+'CRM-LIST-VIEWPORT-010';
+  const start='/* ['+frozenId+'] START';
+  const end='/* ['+frozenId+'] END */';
   const a=css.indexOf(start),b=css.indexOf(end);
   assert.ok(a>=0&&b>=0,'Frozen CRM list CSS markers must remain present');
   assert.equal(
