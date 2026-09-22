@@ -19,7 +19,12 @@ function painForFriction(type){return schema.friction_pain_map.find(x=>String(x.
 function processLayerState(e){return typeof processLayerConfirmations==='function'?processLayerConfirmations(e):(e.layerConfirmations||(e.layerConfirmations={map:false,frictions:false,risks:false,impact:false}))}
 function processLayerKeySafe(tab){return typeof processLayerKey==='function'?processLayerKey(tab):(tab==='fricciones'?'frictions':tab==='riesgos'?'risks':tab==='impacto'?'impact':'map')}
 function invalidateProcessLayersSafe(e,from='map'){if(typeof invalidateProcessLayers==='function')return invalidateProcessLayers(e,from);e.confirmedAsIs=false;e.answers.DF093=''}
-function selectedHtml(id,opts,selected){const arr=normalizeArray(selected).map(String);return `<div class="choice-grid">${opts.map(o=>`<div class="choice"><input type="checkbox" id="${id}_${attr(o.value)}" value="${attr(o.value)}" data-v1-multi="${id}" ${arr.includes(String(o.value))?'checked':''}><label for="${id}_${attr(o.value)}">${esc(o.label)}</label></div>`).join('')}</div>`}
+function selectedHtml(id,opts,selected,{detailId='',detailValue='',detailPlaceholder='Especifica la opción'}={}){
+  const arr=normalizeArray(selected).map(String),other=catalogOtherOption(opts),otherValue=other?String(other.value):'',otherOpen=!!other&&arr.includes(otherValue);
+  const choices=`<div class="choice-grid">${opts.map(o=>{const isOther=!!other&&String(o.value)===otherValue;return `<div class="choice"><input type="checkbox" id="${id}_${attr(o.value)}" value="${attr(o.value)}" data-v1-multi="${id}" ${isOther?`data-v1-other-toggle="${id}"`:''} ${arr.includes(String(o.value))?'checked':''}><label for="${id}_${attr(o.value)}">${esc(o.label)}</label></div>`}).join('')}</div>`;
+  if(!detailId||!other)return choices;
+  return choices+`<div class="detail-wrap" data-v1-other-wrap="${id}"${otherOpen?'':' style="display:none"'}><input id="${detailId}" value="${attr(otherOpen?detailValue:'')}" placeholder="${attr(detailPlaceholder)}"></div>`;
+}
 function catalogOtherOption(opts){return (opts||[]).find(o=>String(o.value).toUpperCase()==='OTHER'||['otro','otra'].includes(String(o.label||'').trim().toLowerCase()))||null}
 function auneaDropdownControl(id,opts,value='',placeholder='Selecciona…',extra=''){
   const normalized=(opts||[]).map(o=>({value:String(o.value??''),label:String(o.label??o.value??'')}));
@@ -76,8 +81,8 @@ function openStepModal(stepId=null,linkFromStepId=null,preset=null){
   <details class="step-group"><summary>B. Entradas y salidas</summary><div class="form-grid">
     <div class="field full"><label>¿A qué casos aplica?</label>${appliesControl(s)}</div>
     <div class="field"><label>Veces por caso</label><input id="step_occ" type="number" min="0" step="any" value="${attr(s.occurrences_per_case??1)}"></div>
-    <div class="field full"><label>Inputs</label>${selectedHtml('step_inputs',artifacts,s.inputs)}<input id="step_inputs_detail" value="${attr(s._details.inputs||'')}" placeholder="Detalle sólo si el catálogo no basta"></div>
-    <div class="field full"><label>Outputs</label>${selectedHtml('step_outputs',artifacts,s.outputs)}<input id="step_outputs_detail" value="${attr(s._details.outputs||'')}" placeholder="Detalle sólo si el catálogo no basta"></div>
+    <div class="field full"><label>Inputs</label>${selectedHtml('step_inputs',artifacts,s.inputs,{detailId:'step_inputs_detail',detailValue:s._details.inputs||'',detailPlaceholder:'Especifica el input sólo al seleccionar Otro'})}</div>
+    <div class="field full"><label>Outputs</label>${selectedHtml('step_outputs',artifacts,s.outputs,{detailId:'step_outputs_detail',detailValue:s._details.outputs||'',detailPlaceholder:'Especifica el output sólo al seleccionar Otro'})}</div>
   </div></details>
   <details class="step-group"><summary>C. Tiempo y rendimiento</summary><div class="form-grid">
     <div class="field"><label>Tiempo activo típico</label>${timeControl('step_active',s.active_time,s._ui.active_unit||'min')}</div>
@@ -95,7 +100,7 @@ function openStepModal(stepId=null,linkFromStepId=null,preset=null){
     <div class="field"><label>Herramienta / sistema</label>${datalistControl('step_tool','OS_TOOL_CATEGORY',s.tool||'','Herramienta principal')}</div>
     <div class="field full"><label>Acciones manuales</label>${selectedHtml('step_manual',manual,s.manual_actions)}</div>
     <div class="field full"><label>Automatización actual</label>${segmented('step_auto',auto,s.automation_state,'data-step-auto')}</div>
-    <div class="field full"><label>Canal(es) de comunicación</label>${selectedHtml('step_channels',channels,s.communication_channels)}<input id="step_channels_other" value="${attr(s._details.communication_channels||'')}" placeholder="Otro canal sólo si no existe en el catálogo"></div>
+    <div class="field full"><label>Canal(es) de comunicación</label>${selectedHtml('step_channels',channels,s.communication_channels,{detailId:'step_channels_other',detailValue:s._details.communication_channels||'',detailPlaceholder:'Especifica el canal sólo al seleccionar Otro'})}</div>
   </div></details>
   <details class="step-group"><summary>F. Evidencia y notas</summary><div class="form-grid">
     <div class="field full"><label>Evidencia del paso</label>${selectedHtml('step_evidence',evid,s.evidence)}</div>
@@ -106,7 +111,7 @@ function openStepModal(stepId=null,linkFromStepId=null,preset=null){
     s.step_name=document.getElementById('step_name').value.trim();s.step_type=document.getElementById('step_type').value;s.actor=resolveCatalogInput(document.getElementById('step_actor'));s.tool=resolveCatalogInput(document.getElementById('step_tool'));s.occurrences_per_case=Math.max(0,Number(document.getElementById('step_occ').value||1));
     const am=document.getElementById('step_applies_mode').value,av=document.getElementById('step_applies_value').value.trim();s.applies_to={mode:am,value:am==='PERCENT'?av:'',condition:am==='CONDITION'?av:''};
     const collect=k=>[...document.querySelectorAll(`[data-v1-multi="${k}"]:checked`)].map(x=>x.value);s.inputs=collect('step_inputs');s.outputs=collect('step_outputs');s.manual_actions=collect('step_manual');s.communication_channels=collect('step_channels');s.evidence=collect('step_evidence');const hasDecisionNow=s._ui.has_decision===true;s.decision_criteria=hasDecisionNow?collect('step_decisions'):[];
-    s._details.inputs=document.getElementById('step_inputs_detail').value.trim();s._details.outputs=document.getElementById('step_outputs_detail').value.trim();const decisionOtherSelected=decisionOther&&s.decision_criteria.map(String).includes(String(decisionOther.value));s._details.decision_criteria=decisionOtherSelected?document.getElementById('step_decisions_detail').value.trim():'';s._details.communication_channels=document.getElementById('step_channels_other').value.trim();
+    s._details.inputs=document.getElementById('step_inputs_detail')?.value.trim()||'';s._details.outputs=document.getElementById('step_outputs_detail')?.value.trim()||'';const decisionOtherSelected=decisionOther&&s.decision_criteria.map(String).includes(String(decisionOther.value));s._details.decision_criteria=decisionOtherSelected?document.getElementById('step_decisions_detail').value.trim():'';s._details.communication_channels=document.getElementById('step_channels_other')?.value.trim()||'';
     s._ui.active_unit=document.getElementById('step_active_unit').value;s._ui.wait_unit=document.getElementById('step_wait_unit').value;s._ui.rework_unit=document.getElementById('step_rework_unit').value;s.active_time=minutesFrom(document.getElementById('step_active').value,s._ui.active_unit);s.wait_time=minutesFrom(document.getElementById('step_wait').value,s._ui.wait_unit);s.rework_time=minutesFrom(document.getElementById('step_rework').value,s._ui.rework_unit);
     s.error_rate={value:Number(document.getElementById('step_error').value||0),mode:document.getElementById('step_error_mode').value,period:document.getElementById('step_error_period').value};
     const nextVal=document.getElementById('step_next').value;s.normal_next_step=nextVal==='__NEW__'?'':nextVal;
@@ -118,6 +123,12 @@ function openStepModal(stepId=null,linkFromStepId=null,preset=null){
   document.querySelectorAll('[data-step-auto]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-step-auto]').forEach(x=>x.classList.remove('active'));b.classList.add('active');s.automation_state=b.dataset.value});
   document.querySelectorAll('[data-step-decision-flag]').forEach(b=>b.onclick=()=>{s._ui.has_decision=b.dataset.value==='YES';document.querySelectorAll('[data-step-decision-flag]').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('[data-step-decision-area]').forEach(x=>x.style.display=s._ui.has_decision?'':'none')});
   document.querySelectorAll('[data-catalog-reference]').forEach(el=>el.addEventListener('change',()=>{const otherValue=String(el.dataset.otherValue||'__OTHER__'),wrap=document.querySelector(`[data-catalog-other-wrap="${el.dataset.catalogReference}"]`);if(wrap)wrap.style.display=String(el.value)===otherValue?'':'none';if(String(el.value)!==otherValue){const other=document.getElementById(`${el.id}_other`);if(other)other.value=''}}));
+  document.querySelectorAll('[data-v1-other-toggle]').forEach(el=>el.addEventListener('change',()=>{
+    const key=el.dataset.v1OtherToggle,wrap=document.querySelector(`[data-v1-other-wrap="${key}"]`);
+    if(!wrap)return;
+    wrap.style.display=el.checked?'':'none';
+    if(!el.checked){const input=wrap.querySelector('input,textarea');if(input)input.value=''}
+  }));
   const decisionOtherBox=decisionOther?[...document.querySelectorAll('[data-v1-multi="step_decisions"]')].find(x=>String(x.value)===String(decisionOther.value)):null;
   if(decisionOtherBox)decisionOtherBox.addEventListener('change',()=>{const wrap=document.querySelector('[data-step-decision-other-wrap]');if(wrap)wrap.style.display=decisionOtherBox.checked?'':'none';if(!decisionOtherBox.checked){const input=document.getElementById('step_decisions_detail');if(input)input.value=''}});
 }
@@ -144,8 +155,8 @@ function openFrictionModal(frId=null,preselectedSteps=[]){
   <div class="field"><label>Impacto percibido</label>${auneaDropdownControl('fr_impact',[{value:'',label:'—'},...impacts],f.impact||'','—')}</div>
   </div></details>
   <details class="step-group"><summary>Causa, workaround y evidencia</summary><div class="form-grid">
-  <div class="field full"><label>Causa / condición ${requiredMark()}</label>${selectedHtml('fr_causes',causes,f.cause)}<div class="choice"><input type="checkbox" id="fr_cause_other_toggle" data-fr-other-toggle="fr_cause_other" ${f._details.cause?'checked':''}><label for="fr_cause_other_toggle">+ Otro</label></div><div class="detail-wrap" data-fr-other-wrap="fr_cause_other"${f._details.cause?'':' style="display:none"'}><input id="fr_cause_other" value="${attr(f._details.cause||'')}" placeholder="Otro sólo si no existe en catálogo"></div></div>
-  <div class="field full"><label>Cómo se compensa hoy</label>${selectedHtml('fr_workaround',work,f.workaround)}<div class="choice"><input type="checkbox" id="fr_workaround_other_toggle" data-fr-other-toggle="fr_workaround_other" ${f._details.workaround?'checked':''}><label for="fr_workaround_other_toggle">+ Otro</label></div><div class="detail-wrap" data-fr-other-wrap="fr_workaround_other"${f._details.workaround?'':' style="display:none"'}><input id="fr_workaround_other" value="${attr(f._details.workaround||'')}" placeholder="Otro workaround sólo si no existe en catálogo"></div></div>
+  <div class="field full"><label>Causa / condición ${requiredMark()}</label>${selectedHtml('fr_causes',causes,f.cause)}<div class="choice"><input type="checkbox" id="fr_cause_other_toggle" data-fr-other-toggle="fr_cause_other" ${f._details.cause?'checked':''}><label for="fr_cause_other_toggle">Otro</label></div><div class="detail-wrap" data-fr-other-wrap="fr_cause_other"${f._details.cause?'':' style="display:none"'}><input id="fr_cause_other" value="${attr(f._details.cause||'')}" placeholder="Otro sólo si no existe en catálogo"></div></div>
+  <div class="field full"><label>Cómo se compensa hoy</label>${selectedHtml('fr_workaround',work,f.workaround)}<div class="choice"><input type="checkbox" id="fr_workaround_other_toggle" data-fr-other-toggle="fr_workaround_other" ${f._details.workaround?'checked':''}><label for="fr_workaround_other_toggle">Otro</label></div><div class="detail-wrap" data-fr-other-wrap="fr_workaround_other"${f._details.workaround?'':' style="display:none"'}><input id="fr_workaround_other" value="${attr(f._details.workaround||'')}" placeholder="Otro workaround sólo si no existe en catálogo"></div></div>
   <div class="field"><label>Tipo de evidencia principal <span class="internal-tag">interno</span></label>${auneaDropdownControl('fr_evidence_type',evid,f.evidence_type||'EV02','Selecciona…')}</div>
   <div class="field"><label>Trabajo activo adicional</label>${frictionNumberControl('fr_active',f.active_time_loss,'time')}</div>
   <div class="field"><label>Espera / retraso atribuible</label>${frictionNumberControl('fr_wait',f.wait_time_loss,'time')}</div>
