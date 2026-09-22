@@ -62,7 +62,7 @@ test('Empresas table never creates horizontal scroll',()=>{
 test('Empresas page is viewport-locked with no vertical document scroll',()=>{
   assert.match(page,/companies-screen-marker/);
   assert.match(css,/\.content:has\(\.companies-screen-marker\)\{[^}]*height:calc\(100vh - 70px\)[^}]*overflow:hidden/);
-  assert.match(css,/\.table-wrap\{?[^}]*overflow-x:auto;overflow-y:hidden/);
+  assert.match(css,/\.content:has\(\.companies-screen-marker\) \.table-wrap\{overflow:hidden\}/);
 });
 
 test('Sector keeps ellipsis but exposes the full label on hover',()=>{
