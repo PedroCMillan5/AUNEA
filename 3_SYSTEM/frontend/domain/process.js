@@ -27,13 +27,11 @@ function selectedHtml(id,opts,selected,{detailId='',detailValue='',detailPlaceho
 }
 function catalogOtherOption(opts){return (opts||[]).find(o=>String(o.value).toUpperCase()==='OTHER'||['otro','otra'].includes(String(o.label||'').trim().toLowerCase()))||null}
 function auneaDropdownControl(id,opts,value='',placeholder='Selecciona…',extra=''){
-  const normalized=(opts||[]).map(o=>({value:String(o.value??''),label:String(o.label??o.value??'')}));
-  const selected=normalized.find(o=>o.value===String(value??''));const shown=selected?.label||placeholder;
-  return `<div class="process-aunea-select"><input type="hidden" id="${id}" value="${attr(value??'')}" ${extra}><details class="aunea-select" data-process-select-box="${attr(id)}"><summary><span>${esc(shown)}</span><i aria-hidden="true"></i></summary><div class="aunea-select-menu" role="listbox">${normalized.map(o=>`<button type="button" role="option" class="${o.value===String(value??'')?'selected':''}" data-process-select-option="${attr(id)}" data-value="${attr(o.value)}" data-label="${attr(o.label)}">${esc(o.label)}</button>`).join('')}</div></details></div>`;
+  return auneaSelectControl(id,opts,value,{extra,placeholder});
 }
 function datalistControl(id,setId,value,placeholder){
   const opts=fieldOptions(setId),match=opts.find(o=>String(o.value)===String(value)),other=catalogOtherOption(opts),isCustom=!!value&&!match,isOther=!!other&&(String(value)===String(other.value)||isCustom),selectedValue=isCustom&&other?other.value:value,otherValue=other?.value||'__OTHER__',all=other?opts:[...opts,{value:'__OTHER__',label:'Otro / nuevo…'}];
-  return `<div class="catalog-reference-control">${auneaDropdownControl(id,all,selectedValue,placeholder,`data-model-set="${attr(setId||'')}" data-other-value="${attr(otherValue)}"`)}<div class="detail-wrap" data-catalog-other-wrap="${id}"${isOther?'':' style="display:none"'}><input id="${id}_other" value="${attr(isCustom?value:'')}" placeholder="Especifica el valor"></div></div>`;
+  return `<div class="catalog-reference-control">${auneaDropdownControl(id,all,selectedValue,placeholder,`data-model-set="${attr(setId||'')}" data-other-value="${attr(otherValue)}" data-catalog-reference="${attr(id)}"`)}<div class="detail-wrap" data-catalog-other-wrap="${id}"${isOther?'':' style="display:none"'}><input id="${id}_other" value="${attr(isCustom?value:'')}" placeholder="Especifica el valor"></div></div>`;
 }
 function resolveCatalogInput(el){if(!el)return '';const opts=fieldOptions(el.dataset.modelSet),raw=String(el.value||''),otherValue=String(el.dataset.otherValue||'__OTHER__');if(raw===otherValue)return document.getElementById(`${el.id}_other`)?.value.trim()||raw;const m=opts.find(o=>String(o.value)===raw);return m?.value||raw}
 function bindProcessDropdownDelegation(){
