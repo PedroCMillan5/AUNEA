@@ -26,7 +26,7 @@ function studyActionMenu(e){
   return `<details class="study-row-menu"><summary class="kebab-btn" aria-label="Acciones de ${attr(e.title||'estudio')}">•••</summary><div class="row-menu-popover study-row-menu-popover">
     <button type="button" data-open-eng="${attr(e.id)}">Abrir estudio</button>
     <button type="button" data-open-eng="${attr(e.id)}" data-open-eng-page="resultados">Trabajo interno</button>
-    ${next?`<button type="button" data-advance-eng="${attr(e.id)}">Avanzar a ${esc(next)}</button>`:''}
+    ${next?`<button type="button" data-advance-eng="${e.id}">Avanzar a ${esc(next)}</button>`:''}
   </div></details>`;
 }
 function studiesPage(){
