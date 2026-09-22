@@ -37,8 +37,8 @@ test('Contactos locks document vertical scroll only on its own page',()=>{
   assert.match(css,/\.main:has\(\.contacts-screen-marker\)[\s\S]*height:100vh[\s\S]*overflow:hidden/);
 });
 
-test('Interacciones paginates at ten records with numbered navigation',()=>{
-  assert.match(interactions,/const INTERACTION_PAGE_SIZE=10/);
+test('Interacciones paginates at five records with numbered navigation',()=>{
+  assert.match(interactions,/const INTERACTION_PAGE_SIZE=5/);
   assert.match(interactions,/Math\.ceil\(rows\.length\/INTERACTION_PAGE_SIZE\)/);
   assert.match(interactions,/data-interaction-page/);
   assert.match(shell,/state\.interactionPage=1/);
@@ -52,6 +52,14 @@ test('Interacciones Empresa/Contacto filters truncate and expose full value on h
   assert.match(css,/\.interaction-entity-filter \.aunea-select-menu button[\s\S]*text-overflow:ellipsis/);
 });
 
+test('Interacciones uses the Estudios three-dot action menu with only valid interaction actions',()=>{
+  assert.match(interactions,/function interactionActionMenu/);
+  assert.match(interactions,/summary class="kebab-btn"/);
+  assert.match(interactions,/data-edit-interaction/);
+  assert.match(interactions,/data-delete-interaction/);
+  assert.doesNotMatch(interactions,/row-actions"><button class="btn btn-small" data-edit-interaction/);
+});
+
 test('Interacciones locks vertical document scroll and keeps compact table rows',()=>{
   assert.match(interactions,/interactions-screen-marker/);
   assert.match(css,/html:has\(\.interactions-screen-marker\),body:has\(\.interactions-screen-marker\)[\s\S]*overflow:hidden!important/);
@@ -62,13 +70,22 @@ test('Contactos and Interacciones preserve the original full content width insid
   assert.match(css,/\.main:has\(\.contacts-screen-marker\)>\.content,[\s\S]*\.main:has\(\.interactions-screen-marker\)>\.content,[\s\S]*width:100%;max-width:1620px/);
 });
 
-test('Oportunidades paginates at ten and hides Crear estudio when one is already associated',()=>{
+test('Oportunidades paginates at five and hides Crear estudio when one is already associated',()=>{
   const opportunities=read('pages/crm-opportunities.js');
-  assert.match(opportunities,/const OPPORTUNITY_PAGE_SIZE=10/);
+  assert.match(opportunities,/const OPPORTUNITY_PAGE_SIZE=5/);
   assert.match(opportunities,/data-opportunity-page/);
   assert.match(opportunities,/isOpportunityOpen\(o\) && !engs\.length/);
   assert.match(shell,/state\.opportunityPage=1/);
   assert.match(shell,/\[data-opportunity-page\]/);
+});
+
+test('Oportunidades uses the Estudios three-dot action menu and only offers Crear estudio when valid',()=>{
+  const opportunities=read('pages/crm-opportunities.js');
+  assert.match(opportunities,/function opportunityActionMenu/);
+  assert.match(opportunities,/summary class="kebab-btn"/);
+  assert.match(opportunities,/data-edit-opportunity/);
+  assert.match(opportunities,/isOpportunityOpen\(o\) && !engs\.length/);
+  assert.match(opportunities,/data-opportunity-study/);
 });
 
 test('Oportunidades uses compact AUNEA entity filters and locks vertical document scroll',()=>{
