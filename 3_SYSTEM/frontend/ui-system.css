@@ -182,9 +182,9 @@ select option{background:#fff;color:var(--ink)}
 
 /* P01 Empresas — page-specific layout only. Dropdown skin remains the immutable global AUNEA Select. */
 .company-filter-row{align-items:flex-end;gap:12px}
-.company-filter-row .filter-group:first-child{min-width:250px;flex:1 1 280px}
+.company-filter-row .filter-group:first-child{min-width:190px;max-width:220px;flex:0 1 220px}
 .company-filter-row .filter-group:first-child .aunea-select-menu{min-width:100%;width:100%}
-.company-filter-row .filter-group:first-child .aunea-select-menu button{align-items:flex-start;min-height:44px;padding-top:10px;padding-bottom:10px;line-height:1.4}
+.company-filter-row .filter-group:first-child .aunea-select-menu button{display:block;min-height:40px;padding:9px 34px 9px 11px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .company-archive-check{margin-bottom:1px}
 .company-table th:nth-child(4),.company-table td:nth-child(4){white-space:nowrap}
 .company-table td:nth-child(4) .badge{white-space:nowrap;display:inline-flex;width:max-content}
@@ -196,4 +196,4 @@ select option{background:#fff;color:var(--ink)}
 .company-pagination button:hover:not(:disabled){border-color:var(--system);background:var(--system-soft);color:var(--system)}
 .company-pagination button.active{border-color:var(--system);background:var(--system-soft);color:var(--system)}
 .company-pagination button:disabled{opacity:.4;cursor:not-allowed}
-@media(max-width:900px){.company-filter-row .filter-group:first-child{min-width:100%;flex-basis:100%}.company-table-foot{align-items:flex-start}.company-pagination{flex-wrap:wrap}}
+@media(max-width:900px){.company-filter-row .filter-group:first-child{min-width:180px;max-width:100%;flex:1 1 220px}.company-table-foot{align-items:flex-start}.company-pagination{flex-wrap:wrap}}
