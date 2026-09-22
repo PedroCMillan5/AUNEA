@@ -9,6 +9,7 @@
 // SIDE_EFFECTS: none beyond reading state.
 // CHANGE_RISK: MEDIUM.
 
+const CONTACT_PAGE_SIZE=5;
 function contactsPageCompany() {
   return companyById(state.selectedCompanyId) || null;
 }
@@ -26,7 +27,8 @@ function visibleContacts(companyId=null) {
 function contactFilterControl(key,label,options,current,placeholder='Todos'){
   const normalized=options.map(o=>typeof o==='string'?{value:o,label:o}:o);
   const selected=normalized.find(o=>String(o.value)===String(current));
-  return `<div class="filter-group"><span>${esc(label)}</span><details class="aunea-select" data-contact-filter-box="${attr(key)}"><summary><span>${esc(selected?.label||placeholder)}</span><i aria-hidden="true"></i></summary><div class="aunea-select-menu" role="listbox" aria-label="${attr(label)}"><button type="button" role="option" data-contact-filter-option="${attr(key)}" data-value="">${esc(placeholder)}</button>${normalized.map(o=>`<button type="button" role="option" class="${String(current)===String(o.value)?'selected':''}" data-contact-filter-option="${attr(key)}" data-value="${attr(o.value)}">${esc(o.label)}</button>`).join('')}</div></details></div>`;
+  const compact=key==='role';
+  return `<div class="filter-group ${compact?'contact-role-filter':''}"><span>${esc(label)}</span><details class="aunea-select" data-contact-filter-box="${attr(key)}"><summary title="${attr(selected?.label||placeholder)}"><span>${esc(selected?.label||placeholder)}</span><i aria-hidden="true"></i></summary><div class="aunea-select-menu" role="listbox" aria-label="${attr(label)}"><button type="button" role="option" data-contact-filter-option="${attr(key)}" data-value="">${esc(placeholder)}</button>${normalized.map(o=>`<button type="button" role="option" class="${String(current)===String(o.value)?'selected':''}" data-contact-filter-option="${attr(key)}" data-value="${attr(o.value)}" title="${attr(o.label)}" ${compact?`data-full-label="${attr(o.label)}"`:''}>${esc(o.label)}</button>`).join('')}</div></details></div>`;
 }
 function contactFilterRow(companyId=null) {
   const f = state.contactFilters || {};
@@ -57,10 +59,17 @@ function contactStatusClass(status) {
   return status === 'Activo' ? 'ok' : status === 'Pendiente' ? 'wait' : status === 'Inactivo' ? 'off' : '';
 }
 
-function contactTable(rows, companyId=null) {
+function contactPagination(rows){
+  const totalPages=Math.max(1,Math.ceil(rows.length/CONTACT_PAGE_SIZE));
+  const page=Math.min(Math.max(1,Number(state.contactPage)||1),totalPages);
+  state.contactPage=page;
+  const start=(page-1)*CONTACT_PAGE_SIZE;
+  return {page,totalPages,rows:rows.slice(start,start+CONTACT_PAGE_SIZE)};
+}
+function contactTable(rows,totalRows,page,totalPages,companyId=null) {
   if (!rows.length) return `<div class="empty"><h2>Sin contactos con estos criterios</h2><p>Ajusta la búsqueda o los filtros.</p></div>`;
   const sel = state.selectedContactId;
-  return `<div class="table-wrap"><table class="data-table"><thead><tr><th>Nombre</th><th>Empresa</th><th>Cargo</th><th>Email</th><th>Teléfono</th><th>Estado</th><th>Principal</th><th>Última interacción</th></tr></thead><tbody>${rows.map(c=>{const last=lastInteractionOf(c.id),co=companyById(c.companyId);return `<tr class="contact-row ${c.id===sel?'row-selected':''}" data-select-contact="${attr(c.id)}"><td><b>${esc(contactFullName(c))}</b></td><td>${esc(co?.name||'—')}</td><td>${esc(c.role||'—')}</td><td>${esc(c.email||'—')}</td><td>${esc(c.phone||'—')}</td><td><span class="badge ${contactStatusClass(c.status)}">${esc(c.status||'—')}</span></td><td><button class="star-toggle ${isPrimaryContact(c)?'on':''}" data-primary-contact="${attr(c.id)}">${isPrimaryContact(c)?'★':'☆'}</button></td><td>${last?esc(formatDateEs(last.occurredAt)):'—'}</td></tr>`}).join('')}</tbody></table></div><div class="table-foot"><span>Mostrando ${rows.length} contactos</span></div>`;
+  return `<div class="table-wrap"><table class="data-table contact-table"><thead><tr><th>Nombre</th><th>Empresa</th><th>Cargo</th><th>Email</th><th>Teléfono</th><th>Estado</th><th>Principal</th><th>Última interacción</th></tr></thead><tbody>${rows.map(c=>{const last=lastInteractionOf(c.id),co=companyById(c.companyId);return `<tr class="contact-row ${c.id===sel?'row-selected':''}" data-select-contact="${attr(c.id)}"><td><b>${esc(contactFullName(c))}</b></td><td>${esc(co?.name||'—')}</td><td>${esc(c.role||'—')}</td><td>${esc(c.email||'—')}</td><td>${esc(c.phone||'—')}</td><td><span class="badge ${contactStatusClass(c.status)}">${esc(c.status||'—')}</span></td><td><button class="star-toggle ${isPrimaryContact(c)?'on':''}" data-primary-contact="${attr(c.id)}">${isPrimaryContact(c)?'★':'☆'}</button></td><td>${last?esc(formatDateEs(last.occurredAt)):'—'}</td></tr>`}).join('')}</tbody></table></div><div class="table-foot contact-table-foot"><span>Mostrando ${rows.length} de ${totalRows} contactos</span>${totalPages>1?`<nav class="crm-pagination contact-pagination" aria-label="Páginas de contactos"><button type="button" data-contact-page="${page-1}" ${page<=1?'disabled':''} aria-label="Página anterior">‹</button>${Array.from({length:totalPages},(_,i)=>i+1).map(n=>`<button type="button" class="${n===page?'active':''}" data-contact-page="${n}" aria-current="${n===page?'page':'false'}">${n}</button>`).join('')}<button type="button" data-contact-page="${page+1}" ${page>=totalPages?'disabled':''} aria-label="Página siguiente">›</button></nav>`:''}</div>`;
 }
 function contactInspector(ct) {
   const intro=insCard('Vista del contacto',`<p>Consulta la ficha, registra interacciones e inicia un diagnóstico sin duplicar datos maestros.</p>`,{accent:true,icon:'◉'});
@@ -70,11 +79,11 @@ function contactInspector(ct) {
   return intro+data;
 }
 function contactsPage() {
-  const co=contactsPageCompany(),rows=visibleContacts(co?.id||null),selected=contactById(state.selectedContactId);
-  const ct=selected&&(!co||selected.companyId===co.id)&&rows.some(r=>r.id===selected.id)?selected:rows[0]||null;state.selectedContactId=ct?.id||null;
-  const main=contactCompanyPicker(co)+`<div class="search-bar"><input id="contactSearch" value="${attr(state.contactSearch||'')}" placeholder="Buscar contacto, empresa, cargo, email o teléfono..."></div>`+contactFilterRow(co?.id||null)+contactTable(rows,co?.id||null);
+  const co=contactsPageCompany(),filtered=visibleContacts(co?.id||null),paged=contactPagination(filtered),rows=paged.rows,selected=contactById(state.selectedContactId);
+  const ct=selected&&(!co||selected.companyId===co.id)&&filtered.some(r=>r.id===selected.id)?selected:rows[0]||null;state.selectedContactId=ct?.id||null;
+  const main=contactCompanyPicker(co)+`<div class="search-bar"><input id="contactSearch" value="${attr(state.contactSearch||'')}" placeholder="Buscar contacto, empresa, cargo, email o teléfono..."></div>`+contactFilterRow(co?.id||null)+contactTable(rows,filtered.length,paged.page,paged.totalPages,co?.id||null);
   const left=ct?(ct.status==='Inactivo'?`<button class="btn" data-reactivate-contact="${attr(ct.id)}">Reactivar contacto</button>`:`<button class="btn btn-danger" data-inactivate-contact="${attr(ct.id)}">Inactivar contacto</button>`):'';
   const right=(co?'<button class="btn" data-page="empresas">Abrir empresa</button>':'')+(ct?`<button class="btn" data-edit-contact="${attr(ct.id)}">Editar contacto</button><button class="btn" data-contact-interaction="${attr(ct.id)}">Registrar interacción</button><button class="btn btn-primary" data-contact-study="${attr(ct.id)}">Iniciar diagnóstico →</button>`:'');
-  return pageTop('Contactos','Gestiona contactos de todas las empresas o acota la vista a una empresa concreta.',`<button class="btn" id="addCompanyBtn">Nueva empresa</button><button class="btn btn-primary" id="addContactBtn">+ Nuevo contacto</button>`,'I90-00-02')+workspace(main,contactInspector(ct))+actionBar(left,right);
+  return `<span class="contacts-screen-marker" hidden></span>`+pageTop('Contactos','Gestiona contactos de todas las empresas o acota la vista a una empresa concreta.',`<button class="btn" id="addCompanyBtn">Nueva empresa</button><button class="btn btn-primary" id="addContactBtn">+ Nuevo contacto</button>`,'I90-00-02')+workspace(main,contactInspector(ct))+actionBar(left,right);
 }
 // [AUNEA-FE-PAGE-CONTACTS-010] END
