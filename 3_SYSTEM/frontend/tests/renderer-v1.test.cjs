@@ -75,9 +75,9 @@ test('DF098 DROPDOWN_WITH_OWNER_DATE serializes to a plain "<acción> — <owner
   assert.match(html,/data-nextstep-action="DF098"/);
   assert.match(html,/data-nextstep-owner="DF098"/);
   assert.match(html,/data-nextstep-date="DF098"/);
-  const fakeSelect={selectedIndex:1,options:[{textContent:'—'},{textContent:'Beta'}]};
+  const fakeBox={querySelector:sel=>sel==='summary span'?{textContent:'Beta'}:null};
   const savedDoc=ctx.document;
-  ctx.document={querySelector:sel=>sel.includes('data-nextstep-action')?fakeSelect:null,querySelectorAll:()=>[]};
+  ctx.document={querySelector:sel=>sel.includes('data-aunea-select="DF098__action"')?fakeBox:null,querySelectorAll:()=>[]};
   e.answerDetails.DF098__action='B';
   ctx.syncNextStep('DF098');
   assert.equal(e.answers.DF098,'','owner and date are still missing, so no partial string may be written');
