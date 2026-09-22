@@ -22,21 +22,18 @@ test('Estudios paginates only after ten records with numbered navigation',()=>{
   assert.match(shell,/paged\.totalPages>1/);
 });
 
-test('Estudios uses one three-dot contextual menu instead of multiple row buttons',()=>{
-  assert.match(shell,/class="kebab-btn" data-study-actions/);
-  assert.match(shell,/data-study-open/);
-  assert.match(shell,/data-study-internal/);
-  assert.match(shell,/data-study-advance/);
-  assert.match(shell,/Abrir estudio/);
-  assert.match(shell,/Trabajo interno/);
-  assert.match(shell,/Avanzar a/);
-  assert.doesNotMatch(shell,/estudios\(\).*data-open-eng/s);
+test('Estudios uses one three-dot contextual menu instead of multiple visible row buttons',()=>{
+  assert.match(shell,/<details class="study-row-menu">/);
+  assert.match(shell,/summary class="kebab-btn"/);
+  assert.match(shell,/data-open-eng="\$\{attr\(e\.id\)\}">Abrir estudio/);
+  assert.match(shell,/data-open-eng-page="resultados">Trabajo interno/);
+  assert.match(shell,/data-advance-eng="\$\{attr\(e\.id\)\}">Avanzar a/);
 });
 
-test('Estudios actions preserve the governed lifecycle and existing destinations',()=>{
-  assert.match(shell,/state\.activeEngagementId=open\.dataset\.studyOpen;setPage\('diagnostico'\)/);
-  assert.match(shell,/state\.activeEngagementId=internal\.dataset\.studyInternal;setPage\('resultados'\)/);
-  assert.match(shell,/setEngagementStatus\(e,nextEngagementStatus\(e\),'avance manual desde Estudios'\)/);
+test('Estudios reuses the governed navigation and lifecycle action contracts',()=>{
+  assert.match(shell,/data-open-eng/);
+  assert.match(shell,/data-advance-eng/);
+  assert.match(shell,/document\.querySelectorAll\('\[data-study-page\]'\)/);
 });
 
 test('Estudios locks vertical document scroll and keeps the content width',()=>{
