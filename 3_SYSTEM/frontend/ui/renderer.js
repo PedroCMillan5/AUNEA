@@ -23,6 +23,13 @@ function detailInput(fid,placeholder='Detalle breve'){
 function canonicalSelect(fid,opts,val,extra=''){
   return `<select data-answer="${fid}" ${extra}><option value="">Selecciona…</option>${opts.map(x=>`<option value="${attr(x.value)}" ${String(val)===String(x.value)?'selected':''}>${esc(x.label)}</option>`).join('')}</select>`;
 }
+function selectWithConditionalDetail(fid,opts,val,placeholder='Detalle si aplica'){
+  const other=opts.find(x=>String(x.value).toUpperCase()==='OTHER'||['otro','otra'].includes(String(x.label||'').trim().toLowerCase()));
+  if(!other)return canonicalSelect(fid,opts,val)+`<div class="detail-wrap">${detailInput(fid,placeholder)}</div>`;
+  const open=String(val)===String(other.value);
+  return canonicalSelect(fid,opts,val,`data-conditional-other-select="${fid}" data-other-value="${attr(other.value)}"`)+
+    `<div class="detail-wrap" data-detail-wrap="${fid}"${open?'':' style="display:none"'}>${detailInput(fid,placeholder)}</div>`;
+}
 function searchableSelect(f,val,opts){
   const id=dataListId(f.Field_ID),label=opts.find(x=>String(x.value)===String(val))?.label||(isOtherAllowed(f)?String(val||''):'');
   return `<div class="compound-control"><div class="combo-wrap"><input data-search-answer="${f.Field_ID}" data-option-set="${attr(f.Option_Set_ID||'')}" data-allow-other="${isOtherAllowed(f)?'1':'0'}" list="${id}" value="${attr(label)}" placeholder="Buscar o seleccionar…"><datalist id="${id}">${opts.map(x=>`<option value="${attr(x.label)}" data-value="${attr(x.value)}"></option>`).join('')}</datalist></div></div>`;
@@ -157,11 +164,11 @@ function renderControl(f,val,opts,e){
   }
   if(c==='SEARCHABLE_DROPDOWN')return searchableSelect(f,val,opts);
   if(c==='DROPDOWN')return canonicalSelect(fid,opts,val);
-  if(c==='DROPDOWN_WITH_DETAIL')return canonicalSelect(fid,opts,val)+detailInput(fid,'Detalle si aplica');
+  if(c==='DROPDOWN_WITH_DETAIL')return selectWithConditionalDetail(fid,opts,val,'Detalle si aplica');
   if(c==='DROPDOWN_WITH_OWNER_DATE')return nextStepWithOwnerDate(f,opts,e);
   if(c==='DROPDOWN_WITH_STEP_LINK')return canonicalSelect(fid,opts,val)+stepSingle(`${fid}__step`,e,answerDetails(e)[`${fid}__step`]||'');
-  if(c==='COMBOBOX_WITH_DETAIL')return canonicalSelect(fid,opts,val)+detailInput(fid,'Detalle / nombre concreto');
-  if(c==='COMBOBOX_REFERENCE')return canonicalSelect(fid,opts,val)+detailInput(fid,'Nueva referencia sólo si no existe');
+  if(c==='COMBOBOX_WITH_DETAIL')return selectWithConditionalDetail(fid,opts,val,'Detalle / nombre concreto');
+  if(c==='COMBOBOX_REFERENCE')return selectWithConditionalDetail(fid,opts,val,'Nueva referencia sólo si no existe');
   if(c==='MULTISELECT'||c==='MULTICHECK'||c==='MULTISELECT_REFERENCE'||c==='SYSTEM_GENERATED_MULTISELECT')return multiChoices(fid,opts,val,{other:hasCanonicalOtherOption(opts)});
   if(c==='MULTISELECT_WITH_OTHER'||c==='MULTICHECK_WITH_OTHER')return multiChoices(fid,opts,val,{other:true});
   if(c==='MULTISELECT_WITH_DETAIL'||c==='MULTICHECK_WITH_DETAIL'||c==='MULTISELECT_WITH_REFERENCE')return hasCanonicalOtherOption(opts)?multiChoices(fid,opts,val,{other:true}):multiChoices(fid,opts,val,{detail:true});
@@ -208,6 +215,15 @@ if(typeof document!=='undefined'&&typeof document.addEventListener==='function'&
     wrap.hidden=!el.checked;
     wrap.style.display=el.checked?'':'none';
     if(!el.checked)setAnswerDetail(fid,'');
+  });
+  document.addEventListener('change',ev=>{
+    const el=ev.target.closest?.('[data-conditional-other-select]');
+    if(!el)return;
+    const fid=el.dataset.conditionalOtherSelect,wrap=document.querySelector(`[data-detail-wrap="${fid}"]`);
+    if(!wrap)return;
+    const isOther=String(el.value)===String(el.dataset.otherValue||'OTHER');
+    wrap.hidden=!isOther;wrap.style.display=isOther?'':'none';
+    if(!isOther)setAnswerDetail(fid,'');
   });
 }
 
