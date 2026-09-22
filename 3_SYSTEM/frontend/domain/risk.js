@@ -6,8 +6,7 @@
 // SIDE_EFFECTS: modal DOM and engagement state mutation; no risk-level calculation.
 // CHANGE_RISK: HIGH.
 function riskDropdown(id,opts,value='',placeholder='Selecciona…'){
-  if(typeof auneaDropdownControl==='function')return auneaDropdownControl(id,opts,value,placeholder);
-  return `<select id="${id}"><option value="">${esc(placeholder)}</option>${(opts||[]).map(o=>`<option value="${attr(o.value)}" ${String(o.value)===String(value)?'selected':''}>${esc(o.label)}</option>`).join('')}</select>`;
+  return auneaSelectControl(id,opts,value,{placeholder});
 }
 
 function riskBuilder(e){
