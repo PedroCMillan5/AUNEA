@@ -41,7 +41,8 @@ function pg01Field(label,control,help,{source='',required=true,full=false}={}){
   return `<div class="field${full?' full':''}"${canonical?` data-field="${canonical}"`:''} data-pg01-visible="${attr(label)}"><label>${esc(label)}${required?requiredMark():''}${source?pg01Prefill(source):''}</label>${control}<div class="field-help">${esc(help)}</div></div>`;
 }
 function pg01Select(options,value,attrs=''){
-  return auneaSelectControl(`pg01_${Math.random().toString(36).slice(2,8)}`,options,value,{extra:attrs,placeholder:'Selecciona…'});
+  const key=(String(attrs).match(/data-pg01-df="([^"]+)"/)||String(attrs).match(/data-pg01-company="([^"]+)"/)||String(attrs).match(/data-pg01-contact-ref="([^"]+)"/)||[])[1]||'field';
+  return auneaSelectControl(`pg01_${String(key).replace(/[^a-zA-Z0-9_-]/g,'_')}`,options,value,{extra:attrs,placeholder:'Selecciona…'});
 }
 // IMG90-01 draws the phone as a prefix box plus a number box. DEC-057 keeps Contact.Teléfono as one
 // field, so the two boxes are a presentation of the same stored string, not a second attribute. The
