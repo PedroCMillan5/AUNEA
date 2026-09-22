@@ -39,23 +39,22 @@ function pendingFollowUp(scope = {}) {
 
 function interactionFormBody(it = {}) {
   const companyId = it.companyId || state.selectedCompanyId || state.companies[0]?.id || '';
-  const plain = (list, sel) => list.map(s => `<option ${s === sel ? 'selected' : ''}>${s}</option>`).join('');
   const contacts = state.contacts.filter(c => c.companyId === companyId);
   const opps = (state.opportunities || []).filter(o => o.companyId === companyId);
   const engs = state.engagements.filter(e => e.companyId === companyId);
   const isoLocal = v => (v ? String(v).slice(0, 16) : '');
   return `<div class="form-grid">
-    <div class="field"><label>Empresa</label><select id="iCompany">${state.companies.map(c => `<option value="${attr(c.id)}" ${c.id === companyId ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></div>
+    <div class="field"><label>Empresa</label>${auneaSelectControl('iCompany',state.companies.map(c=>({value:c.id,label:c.name})),companyId)}</div>
     <div class="field"><label>Fecha y hora</label><input id="iWhen" type="datetime-local" value="${attr(isoLocal(it.occurredAt || now()))}"></div>
-    <div class="field"><label>Tipo</label><select id="iType">${plain(INTERACTION_TYPE, it.type || 'Reunión')}</select></div>
-    <div class="field"><label>Canal</label><select id="iChannel">${plain(INTERACTION_CHANNEL, it.channel || 'Videollamada')}</select></div>
-    <div class="field"><label>Dirección</label><select id="iDirection">${plain(INTERACTION_DIRECTION, it.direction || 'Saliente')}</select></div>
-    <div class="field"><label>Resultado</label><select id="iOutcome">${plain(INTERACTION_OUTCOME, it.outcome || 'Sin resultado aún')}</select></div>
+    <div class="field"><label>Tipo</label>${auneaSelectControl('iType',INTERACTION_TYPE.map(x=>({value:x,label:x})),it.type||'Reunión')}</div>
+    <div class="field"><label>Canal</label>${auneaSelectControl('iChannel',INTERACTION_CHANNEL.map(x=>({value:x,label:x})),it.channel||'Videollamada')}</div>
+    <div class="field"><label>Dirección</label>${auneaSelectControl('iDirection',INTERACTION_DIRECTION.map(x=>({value:x,label:x})),it.direction||'Saliente')}</div>
+    <div class="field"><label>Resultado</label>${auneaSelectControl('iOutcome',INTERACTION_OUTCOME.map(x=>({value:x,label:x})),it.outcome||'Sin resultado aún')}</div>
     <div class="field full"><label>Contactos participantes</label><div class="choice-grid">${contacts.length ? contacts.map(c => `<span class="choice"><input type="checkbox" id="ic_${attr(c.id)}" data-interaction-contact="${attr(c.id)}" ${(it.contactIds || []).includes(c.id) ? 'checked' : ''}><label for="ic_${attr(c.id)}">${esc(contactFullName(c))}</label></span>`).join('') : '<span class="field-help">Esta empresa no tiene contactos registrados todavía.</span>'}</div><div class="field-help">Se referencian; sus datos maestros no se vuelven a pedir aquí (DEC-058).</div></div>
     <div class="field full"><label>Asunto</label><input id="iSubject" value="${attr(it.subject || '')}"></div>
     <div class="field full"><label>Resumen / notas</label><textarea id="iSummary">${esc(it.summary || '')}</textarea></div>
-    <div class="field"><label>Oportunidad relacionada</label><select id="iOpportunity"><option value="">Ninguna</option>${opps.map(o => `<option value="${attr(o.id)}" ${o.id === it.opportunityId ? 'selected' : ''}>${esc(o.title)}</option>`).join('')}</select></div>
-    <div class="field"><label>Estudio relacionado</label><select id="iEngagement"><option value="">Ninguno</option>${engs.map(e => `<option value="${attr(e.id)}" ${e.id === it.engagementId ? 'selected' : ''}>${esc(e.title)}</option>`).join('')}</select></div>
+    <div class="field"><label>Oportunidad relacionada</label>${auneaSelectControl('iOpportunity',[{value:'',label:'Ninguna'},...opps.map(o=>({value:o.id,label:o.title}))],it.opportunityId||'')}</div>
+    <div class="field"><label>Estudio relacionado</label>${auneaSelectControl('iEngagement',[{value:'',label:'Ninguno'},...engs.map(e=>({value:e.id,label:e.title}))],it.engagementId||'')}</div>
     <div class="field"><label>Próximo seguimiento</label><input id="iFollowUp" type="datetime-local" value="${attr(isoLocal(it.nextFollowUpAt))}"><div class="field-help">Pertenece a este evento. Empresa, contacto y oportunidad lo muestran sin duplicarlo.</div></div>
     <div class="field"><label>Evidencia referenciada</label><input id="iEvidence" value="${attr(it.evidenceRef || '')}" placeholder="Enlace o referencia"></div>
   </div>`;
