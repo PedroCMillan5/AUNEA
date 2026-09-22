@@ -256,7 +256,7 @@ function uatCleanupHtml(){
 }
 function uatStressHtml(){
   const e=currentEng();
-  return section('Generar N pasos UAT (stress test)','Herramienta QA separada de "Añadir varios pasos": genera pasos UAT-STEP-STRESS-N encadenados en el estudio abierto, para probar render, mapa AS-IS, scroll, edición, routing, navegación, rendimiento y persistencia con volumen.',`<div class="notice">${e?`Estudio abierto: ${esc(e.title||e.id)} · Pasos actuales: ${e.processSteps.length}`:'Abre o crea un estudio antes de generar pasos de stress.'}</div>`,`<select id="uatStressCount"><option value="10">10 pasos</option><option value="25">25 pasos</option><option value="50">50 pasos</option></select> <button class="btn btn-outline" id="genUatStress">Generar pasos UAT</button>`);
+  return section('Generar N pasos UAT (stress test)','Herramienta QA separada de "Añadir varios pasos": genera pasos UAT-STEP-STRESS-N encadenados en el estudio abierto, para probar render, mapa AS-IS, scroll, edición, routing, navegación, rendimiento y persistencia con volumen.',`<div class="notice">${e?`Estudio abierto: ${esc(e.title||e.id)} · Pasos actuales: ${e.processSteps.length}`:'Abre o crea un estudio antes de generar pasos de stress.'}</div>`,`${auneaSelectControl('uatStressCount',[{value:'10',label:'10 pasos'},{value:'25',label:'25 pasos'},{value:'50',label:'50 pasos'}],'10',{placeholder:'10 pasos'})} <button class="btn btn-outline" id="genUatStress">Generar pasos UAT</button>`);
 }
 const __auneaUatPageBeforeCatalog=pages.uat;
 pages.uat=function(){return __auneaUatPageBeforeCatalog()+uatCatalogHtml()+uatCleanupHtml()+uatStressHtml()};
