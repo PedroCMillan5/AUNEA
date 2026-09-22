@@ -59,9 +59,17 @@ window.addEventListener('storage',ev=>{
       opportunityFilters:state.opportunityFilters,
       companyInspectorTab:state.companyInspectorTab
     };
+    const flowCanvas=document.querySelector('.flow-canvas');
+    const flowViewport=flowCanvas?{left:flowCanvas.scrollLeft,top:flowCanvas.scrollTop}:null;
     state={...incoming,...localUi};
     if(isProcessEditorWindow())state.activePage='proceso';
     render();
+    if(flowViewport){
+      requestAnimationFrame(()=>{
+        const nextCanvas=document.querySelector('.flow-canvas');
+        if(nextCanvas){nextCanvas.scrollLeft=flowViewport.left;nextCanvas.scrollTop=flowViewport.top}
+      });
+    }
   }catch(err){console.error('AUNEA_CROSS_TAB_SYNC_ERROR',err)}
 });
 function exportStateBackup(){
