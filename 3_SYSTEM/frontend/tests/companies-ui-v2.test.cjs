@@ -53,6 +53,12 @@ test('project-linked opportunities are represented through their linked study an
   assert.match(page,/hasProject\?' · Proyecto creado':hasStudy\?' · Estudio creado'/);
 });
 
+test('Empresas table never creates horizontal scroll',()=>{
+  assert.match(css,/\.content:has\(\.companies-screen-marker\) \.table-wrap\{overflow:hidden\}/);
+  assert.match(css,/\.content:has\(\.companies-screen-marker\) \.company-table\{[^}]*min-width:0[^}]*table-layout:fixed/);
+  assert.match(css,/\.company-table th:nth-child\(7\)\{width:8%\}/);
+});
+
 test('Empresas page is viewport-locked with no vertical document scroll',()=>{
   assert.match(page,/companies-screen-marker/);
   assert.match(css,/\.content:has\(\.companies-screen-marker\)\{[^}]*height:calc\(100vh - 70px\)[^}]*overflow:hidden/);
