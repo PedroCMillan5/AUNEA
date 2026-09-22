@@ -228,3 +228,9 @@ select option{background:#fff;color:var(--ink)}
   z-index:120;max-width:420px;width:max-content;padding:7px 9px;border:1px solid var(--line);border-radius:8px;
   background:#fff;color:var(--ink);box-shadow:var(--shadow);white-space:normal;line-height:1.35;font-weight:600;pointer-events:none
 }
+
+
+/* Empresas root viewport lock — browser/document scrollbar must not exist while CRM Empresas is active. */
+html.page-companies,body.page-companies{height:100%;max-height:100%;overflow:hidden!important}
+body.page-companies .app-shell{height:100vh;min-height:0;overflow:hidden}
+body.page-companies .main{height:100vh;min-height:0;overflow:hidden}
