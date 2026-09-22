@@ -52,12 +52,14 @@ test('Interacciones Empresa/Contacto filters truncate and expose full value on h
   assert.match(css,/\.interaction-entity-filter \.aunea-select-menu button[\s\S]*text-overflow:ellipsis/);
 });
 
-test('Interacciones uses the Estudios three-dot action menu with only valid interaction actions',()=>{
-  assert.match(interactions,/function interactionActionMenu/);
-  assert.match(interactions,/summary class="kebab-btn"/);
+test('Interacciones uses the Empresas floating three-dot menu with only valid actions',()=>{
+  assert.match(interactions,/function openInteractionActionMenu/);
+  assert.match(interactions,/className='row-menu-popover company-floating-menu'/);
+  assert.match(interactions,/data-interaction-actions/);
+  assert.match(interactions,/getBoundingClientRect\(\)/);
+  assert.match(interactions,/if\(top\+menu\.offsetHeight>window\.innerHeight-8\)top=Math\.max\(8,r\.top-menu\.offsetHeight-gap\)/);
   assert.match(interactions,/data-edit-interaction/);
-  assert.match(interactions,/data-delete-interaction/);
-  assert.doesNotMatch(interactions,/row-actions"><button class="btn btn-small" data-edit-interaction/);
+  assert.match(interactions,/class="danger-text" data-delete-interaction/);
 });
 
 test('Interacciones locks vertical document scroll and keeps compact table rows',()=>{
@@ -79,10 +81,13 @@ test('Oportunidades paginates at five and hides Crear estudio when one is alread
   assert.match(shell,/\[data-opportunity-page\]/);
 });
 
-test('Oportunidades uses the Estudios three-dot action menu and only offers Crear estudio when valid',()=>{
+test('Oportunidades uses the Empresas floating three-dot menu and only offers Crear estudio when valid',()=>{
   const opportunities=read('pages/crm-opportunities.js');
-  assert.match(opportunities,/function opportunityActionMenu/);
-  assert.match(opportunities,/summary class="kebab-btn"/);
+  assert.match(opportunities,/function openOpportunityActionMenu/);
+  assert.match(opportunities,/className='row-menu-popover company-floating-menu'/);
+  assert.match(opportunities,/data-opportunity-actions/);
+  assert.match(opportunities,/getBoundingClientRect\(\)/);
+  assert.match(opportunities,/if\(top\+menu\.offsetHeight>window\.innerHeight-8\)top=Math\.max\(8,r\.top-menu\.offsetHeight-gap\)/);
   assert.match(opportunities,/data-edit-opportunity/);
   assert.match(opportunities,/isOpportunityOpen\(o\) && !engs\.length/);
   assert.match(opportunities,/data-opportunity-study/);
