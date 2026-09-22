@@ -130,4 +130,18 @@ test('PG02 DF020 Otra reveals detail only when selected',()=>{
   const shown=ctx.renderControl({Field_ID:'DF020',Control_UI:'MULTISELECT_WITH_DETAIL'},['OTHER'],opts,e);
   assert.doesNotMatch(shown,/data-detail-wrap="DF020"[^>]*style="display:none"/);
 });
+
+
+test('dropdown/combobox detail stays hidden unless canonical Otro is selected',()=>{
+  e.answerDetails={};
+  const opts=[{value:'EMAIL',label:'Email'},{value:'OTHER',label:'Otro'}];
+  const hidden=ctx.renderControl({Field_ID:'DF012',Control_UI:'COMBOBOX_WITH_DETAIL'},'EMAIL',opts,e);
+  assert.match(hidden,/data-conditional-other-select="DF012"/);
+  assert.match(hidden,/data-detail-wrap="DF012"[^>]*style="display:none"/);
+  const shown=ctx.renderControl({Field_ID:'DF012',Control_UI:'COMBOBOX_WITH_DETAIL'},'OTHER',opts,e);
+  assert.doesNotMatch(shown,/data-detail-wrap="DF012"[^>]*style="display:none"/);
+  const noOther=ctx.renderControl({Field_ID:'DF024',Control_UI:'DROPDOWN_WITH_DETAIL'},'SEASONAL',[{value:'SEASONAL',label:'Estacional'}],e);
+  assert.match(noOther,/detail-wrap/,'detail remains available when the canonical set has no Otro branch');
+});
+
 // [AUNEA-UAT-RENDER-010] END
