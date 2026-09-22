@@ -205,7 +205,20 @@ select option{background:#fff;color:var(--ink)}
 .content:has(.companies-screen-marker) .workspace{max-height:calc(100vh - 188px);overflow:hidden}
 .content:has(.companies-screen-marker) .inspector{max-height:calc(100vh - 188px);overflow:hidden}
 .content:has(.companies-screen-marker) .ins-card{max-height:100%;overflow:hidden}
-.content:has(.companies-screen-marker) .table-wrap{overflow-x:auto;overflow-y:hidden}
+.content:has(.companies-screen-marker) .table-wrap{overflow:hidden}
+.content:has(.companies-screen-marker) .company-table{width:100%;min-width:0;max-width:100%;table-layout:fixed}
+.content:has(.companies-screen-marker) .company-table th,
+.content:has(.companies-screen-marker) .company-table td{min-width:0;max-width:0;overflow:hidden;text-overflow:ellipsis}
+.content:has(.companies-screen-marker) .company-table th:nth-child(1){width:18%}
+.content:has(.companies-screen-marker) .company-table th:nth-child(2){width:17%}
+.content:has(.companies-screen-marker) .company-table th:nth-child(3){width:10%}
+.content:has(.companies-screen-marker) .company-table th:nth-child(4){width:15%}
+.content:has(.companies-screen-marker) .company-table th:nth-child(5){width:20%}
+.content:has(.companies-screen-marker) .company-table th:nth-child(6){width:12%}
+.content:has(.companies-screen-marker) .company-table th:nth-child(7){width:8%}
+.content:has(.companies-screen-marker) .company-table td:not(:nth-child(4)){overflow-wrap:anywhere}
+.content:has(.companies-screen-marker) .workspace,
+.content:has(.companies-screen-marker) .workspace>*{min-width:0;max-width:100%}
 .company-filter-row .filter-group:first-child .aunea-select-menu button[data-full-label]{position:relative}
 .company-filter-row .filter-group:first-child .aunea-select-menu button[data-full-label]:hover::before{
   content:attr(data-full-label);position:absolute;left:calc(100% + 8px);top:50%;transform:translateY(-50%);
