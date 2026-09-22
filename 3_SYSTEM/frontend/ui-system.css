@@ -323,3 +323,17 @@ body:has(.studies-screen-marker) .app-shell{height:100vh;min-height:0;overflow:h
 .study-row-menu{position:relative;display:inline-block}.study-row-menu>summary{list-style:none}.study-row-menu>summary::-webkit-details-marker{display:none}.study-row-menu-popover{right:0;left:auto;top:36px;min-width:190px}
 @media(max-width:900px){.studies-table-foot{align-items:flex-start}.studies-pagination{flex-wrap:wrap}}
 /* [AUNEA-FE-STUDIES-LIST-VIEWPORT-010] END */
+
+
+/* [AUNEA-FROZEN-PAGE-HOME-001] START — FINALIZADA / FROZEN
+   CRM Inicio approved after removing document vertical scroll. Do not modify after closure. */
+html:has(.home-screen-marker),body:has(.home-screen-marker){height:100%;max-height:100%;overflow:hidden!important}
+body:has(.home-screen-marker) .app-shell{height:100vh;min-height:0;overflow:hidden}
+.main:has(.home-screen-marker){height:100vh;min-height:0;overflow:hidden;display:flex;flex-direction:column}
+.main:has(.home-screen-marker)>.topbar{flex:0 0 auto}
+.main:has(.home-screen-marker)>.content{flex:1 1 auto;width:100%;max-width:1620px;margin-left:auto;margin-right:auto;height:auto;min-height:0;overflow:hidden;box-sizing:border-box;padding-top:18px;padding-bottom:24px}
+.content:has(.home-screen-marker) .page-head{margin-bottom:12px}
+.content:has(.home-screen-marker) .hero-actions{margin-top:0}
+.content:has(.home-screen-marker) .section{margin-top:12px}
+.content:has(.home-screen-marker) .card-pad.section{padding-top:16px;padding-bottom:16px}
+/* [AUNEA-FROZEN-PAGE-HOME-001] END */
