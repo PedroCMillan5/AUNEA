@@ -12,8 +12,11 @@ test('Empresas uses the CNAE-2025 business-sector catalogue and never treats REF
   assert.match(page,/companySectorLabel\(c\.sector\)/);
 });
 
-test('Empresas omits country from filters, search and table and uses the status filter for archived records',()=>{
-  assert.match(page,/const statuses=COMPANY_STATUS\.map/);
+test('Empresas omits country and keeps Archivada outside the status dropdown behind an explicit checkbox',()=>{
+  assert.match(page,/COMPANY_STATUS\.filter\(v=>v!=='Archivada'\)/);
+  assert.match(page,/id="includeArchivedCompanies"/);
+  assert.match(page,/Incluir archivadas/);
+  assert.match(page,/c\.status==='Archivada'&&!f\.includeArchived/);
   assert.doesNotMatch(page,/companyFilterControl\('country'/);
   assert.doesNotMatch(page,/<th>País<\/th>/);
   assert.doesNotMatch(page,/countryLabel\(c\.country\)/);
@@ -26,6 +29,23 @@ test('Empresas uses product-owned rounded dropdowns for its filters',()=>{
   assert.match(page,/data-company-filter-option/);
   assert.match(css,/\.aunea-select-menu\{/);
   assert.match(css,/border-radius:var\(--radius-md\)/);
+});
+
+test('Empresas paginates the filtered company list at 10 rows and exposes numbered navigation',()=>{
+  assert.match(page,/const COMPANY_PAGE_SIZE=10/);
+  assert.match(page,/Math\.ceil\(rows\.length\/COMPANY_PAGE_SIZE\)/);
+  assert.match(page,/data-company-page/);
+  assert.match(page,/company-pagination/);
+});
+
+test('Empresas prevents status badges from wrapping and gives the right inspector tabs breathing room',()=>{
+  assert.match(css,/\.company-table td:nth-child\(4\) \.badge\{[^}]*white-space:nowrap/);
+  assert.match(css,/\.company-ins-tabs\{[^}]*padding-right:14px/);
+});
+
+test('Empresas sector filter reserves enough width and open options cannot visually overlap',()=>{
+  assert.match(css,/\.company-filter-row \.filter-group:first-child\{[^}]*min-width:250px/);
+  assert.match(css,/\.company-filter-row \.filter-group:first-child \.aunea-select-menu button\{[^}]*min-height:44px[^}]*line-height:1\.4/);
 });
 
 test('Empresas exposes governed actions and relationship inspector tabs',()=>{
