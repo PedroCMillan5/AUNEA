@@ -10,11 +10,11 @@ function fieldOptions(setId){return schema?.option_sets?.[setId]?.options||[]}
 function diagnosticFieldMeta(f){return f.Requiredness==='REQUIRED_90M'?requiredMark():''}
 function habitualVolumeBlock(f21,f22,e){
   const value=numberParts(effectiveValue(f21,e)),period=effectiveValue(f22,e),periods=fieldOptions(f22.Option_Set_ID||'OS_PERIOD');
-  return `<div class="field full volume-pair" data-uat="UAT-VIS-023"><label>Volumen habitual${diagnosticFieldMeta(f21)}</label><div><div class="compound-control volume-sentence"><input type="number" min="0" step="any" data-number-value="${f21.Field_ID}" value="${attr(value.value??'')}" placeholder="120"><input type="hidden" data-number-unit="${f21.Field_ID}" value="case"><span class="unit-label">casos por</span><select data-answer="${f22.Field_ID}"><option value="">periodo…</option>${periods.map(o=>`<option value="${attr(o.value)}" ${String(period)===String(o.value)?'selected':''}>${esc(String(o.label).toLowerCase())}</option>`).join('')}</select></div></div><div class="field-help">${esc(f21.Objetivo_concreto||'')} ${esc(f22.Objetivo_concreto||'')}</div></div>`;
+  return `<div class="field full volume-pair" data-uat="UAT-VIS-023"><label>Volumen habitual${diagnosticFieldMeta(f21)}</label><div><div class="compound-control volume-sentence"><input type="number" min="0" step="any" data-number-value="${f21.Field_ID}" value="${attr(value.value??'')}" placeholder="120"><input type="hidden" data-number-unit="${f21.Field_ID}" value="case"><span class="unit-label">casos por</span>${auneaSelectControl(f22.Field_ID,periods.map(o=>({value:o.value,label:String(o.label).toLowerCase()})),period,{extra:`data-answer="${f22.Field_ID}"`,placeholder:'periodo…'})}</div></div><div class="field-help">${esc(f21.Objetivo_concreto||'')} ${esc(f22.Objetivo_concreto||'')}</div></div>`;
 }
 function peakVolumeBlock(f,e){
   const value=numberParts(effectiveValue(f,e)),periods=fieldOptions('OS_PERIOD');
-  return `<div class="field full volume-pair" data-uat="UAT-VIS-024"><label>${esc(f.Pregunta_o_etiqueta_ES)}${diagnosticFieldMeta(f)}</label><div><div class="compound-control volume-sentence"><input type="number" min="0" step="any" data-number-value="${f.Field_ID}" value="${attr(value.value??'')}" placeholder="200"><input type="hidden" data-number-unit="${f.Field_ID}" value="case"><span class="unit-label">casos por</span><select data-number-period="${f.Field_ID}"><option value="">periodo…</option>${periods.map(o=>`<option value="${attr(o.value)}" ${String(value.period)===String(o.value)?'selected':''}>${esc(String(o.label).toLowerCase())}</option>`).join('')}</select></div></div><div class="field-help">${esc(f.Objetivo_concreto||'')}</div></div>`;
+  return `<div class="field full volume-pair" data-uat="UAT-VIS-024"><label>${esc(f.Pregunta_o_etiqueta_ES)}${diagnosticFieldMeta(f)}</label><div><div class="compound-control volume-sentence"><input type="number" min="0" step="any" data-number-value="${f.Field_ID}" value="${attr(value.value??'')}" placeholder="200"><input type="hidden" data-number-unit="${f.Field_ID}" value="case"><span class="unit-label">casos por</span>${auneaSelectControl(`${f.Field_ID}__period`,periods.map(o=>({value:o.value,label:String(o.label).toLowerCase()})),value.period,{extra:`data-number-period="${f.Field_ID}"`,placeholder:'periodo…'})}</div></div><div class="field-help">${esc(f.Objetivo_concreto||'')}</div></div>`;
 }
 function renderStageFields(fields,e){
   const out=[];
@@ -41,7 +41,7 @@ function pg01Field(label,control,help,{source='',required=true,full=false}={}){
   return `<div class="field${full?' full':''}"${canonical?` data-field="${canonical}"`:''} data-pg01-visible="${attr(label)}"><label>${esc(label)}${required?requiredMark():''}${source?pg01Prefill(source):''}</label>${control}<div class="field-help">${esc(help)}</div></div>`;
 }
 function pg01Select(options,value,attrs=''){
-  return `<select ${attrs}><option value="">Selecciona…</option>${options.map(o=>`<option value="${attr(o.value)}" ${String(o.value)===String(value)?'selected':''}>${esc(o.label)}</option>`).join('')}</select>`;
+  return auneaSelectControl(`pg01_${Math.random().toString(36).slice(2,8)}`,options,value,{extra:attrs,placeholder:'Selecciona…'});
 }
 // IMG90-01 draws the phone as a prefix box plus a number box. DEC-057 keeps Contact.Teléfono as one
 // field, so the two boxes are a presentation of the same stored string, not a second attribute. The
@@ -79,7 +79,7 @@ function pg01ContextFields(e){
     pg01Field('Email',`<input type="email" data-pg01-contact="email" value="${attr(selected?.email||'')}">`,'Correo de la persona seleccionada para seguimiento del estudio y comunicaciones posteriores.',{source:'Contactos'}),
     pg01Field('Teléfono',pg01PhoneCompound(selected?.phone||''),'Teléfono de la persona seleccionada. Es opcional y se guarda en su ficha de Contacto.',{source:'Contactos',required:false}),
     pg01Field('Sector',pg01Select(sectorOpts,co.sector||'',`data-pg01-company="sector" data-pg01-df="DF002"`),'Actividad económica principal de la empresa según el catálogo CNAE-2025.',{source:'Empresas'}),
-    pg01Field('Tamaño de empresa',`<select data-pg01-company-size="1" disabled><option>${esc(size==='—'?'Sin indicar':`${size} empleados`)}</option></select>`,'Tamaño derivado automáticamente del número de empleados registrado en Empresas; no se edita desde el estudio.',{source:'Empresas'}),
+    pg01Field('Tamaño de empresa',`<input data-pg01-company-size="1" value="${attr(size==='—'?'Sin indicar':`${size} empleados`)}" disabled>`,'Tamaño derivado automáticamente del número de empleados registrado en Empresas; no se edita desde el estudio.',{source:'Empresas'}),
     pg01Field('Tipo de organización',pg01Select(orgOpts,co.orgType||'',`data-pg01-company="orgType"`),'Tipo de organización registrado para la empresa; se reutiliza para contextualizar el diagnóstico.',{source:'Empresas'}),
     pg01Field('Prioridad',`<div class="segmented">${PG01_PRIORITY.map(v=>`<button type="button" class="segment ${e.priority===v?'active':''}" data-pg01-engagement="priority" data-value="${attr(v)}">${esc(v)}</button>`).join('')}</div>`,'Urgencia del estudio para priorizar el trabajo y el siguiente paso; no altera por sí sola la recomendación.'),
     pg01Field('Canal de entrada',pg01Select(channelOpts,co.entryChannel||'',`data-pg01-company="entryChannel"`),'Origen comercial de la relación con AUNEA; se conserva como dato de la empresa.',{source:'Empresas'}),
@@ -130,7 +130,7 @@ function blockStageAdvance(e){
 }
 
 function bindPg01Context(){
-  document.querySelectorAll('[data-pg01-company]').forEach(el=>{const event=el.tagName==='SELECT'?'change':'input';el.addEventListener(event,()=>{
+  document.querySelectorAll('[data-pg01-company]').forEach(el=>{const event=el.type==='hidden'?'change':'input';el.addEventListener(event,()=>{
     const e=currentEng(),co=e&&companyById(e.companyId);if(!e||!co)return;
     const key=el.dataset.pg01Company,fid=el.dataset.pg01Df||'';
     if(fid){setAnswer(fid,el.value);return}
@@ -162,10 +162,7 @@ function engagementBusinessAreaBlock(e){
   const options=fieldOptions('REF_DOMAIN');
   return `<div class="field full engagement-business-area" data-runtime-field="RT_ENGAGEMENT.Business_Area_ID">
     <label>Área de la empresa <span class="prefill-chip">Propio de este estudio</span></label>
-    <select data-engagement-business-area="1">
-      <option value="">Selecciona el área principal del estudio…</option>
-      ${options.map(o=>`<option value="${attr(o.value)}" ${String(e.businessAreaId||'')===String(o.value)?'selected':''}>${esc(o.label)}</option>`).join('')}
-    </select>
+    ${auneaSelectControl('engagement_business_area',options,e.businessAreaId||'',{extra:'data-engagement-business-area="1"',placeholder:'Selecciona el área principal del estudio…'})}
     <div class="field-help">Área o dominio funcional sobre el que se realiza este diagnóstico. Puede ser distinta en otros estudios de la misma empresa.</div>
   </div>`;
 }
