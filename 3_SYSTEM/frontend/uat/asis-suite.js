@@ -186,9 +186,9 @@ function asisUatFilled(v){
   if(typeof v==='string')return v.trim()!=='';
   if(Array.isArray(v))return v.length>0&&v.every(asisUatFilled);
   if(v&&typeof v==='object'){
-    if(Object.prototype.hasOwnProperty.call(v,'value'))return Number(v.value)>0||String(v.value||'').trim()!=='';
     if(v.mode==='PERCENT')return String(v.value||'').trim()!=='';
     if(v.mode==='CONDITION')return String(v.condition||'').trim()!=='';
+    if(Object.prototype.hasOwnProperty.call(v,'value'))return Number(v.value)>0||String(v.value||'').trim()!=='';
     return Object.keys(v).length>0;
   }
   return false;
