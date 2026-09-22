@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "frozen_pages": [
+    {
+      "page_id": "empresas",
+      "screen_id": "I90-00-01",
+      "status": "FROZEN",
+      "frozen_on": "2026-09-22",
+      "rule": "No modificar bajo ningún concepto tras aprobación explícita del usuario.",
+      "source_snapshot": "tests/frozen/companies-page-v1.js.snapshot",
+      "style_snapshot": "tests/frozen/companies-style-v1.css.snapshot",
+      "gate": "AUNEA-UAT-COMPANIES-FROZEN-010"
+    }
+  ]
+}
