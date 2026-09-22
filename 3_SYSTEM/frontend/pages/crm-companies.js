@@ -9,7 +9,7 @@
 
 const visibleKey=v=>String(v||'').trim().toLocaleLowerCase('es');
 
-const COMPANY_PAGE_SIZE=10;
+const COMPANY_PAGE_SIZE=5;
 function visibleCompanies(){
   const f=state.companyFilters||{},q=(state.companySearch||'').toLowerCase().trim();
   return state.companies.filter(c=>{
@@ -92,7 +92,7 @@ function companyInspector(co){
   if(active==='Contactos'){
     const list=contactsOfCompany(co.id);body=list.length?`<div class="result-list">${list.map(c=>`<div class="result-item"><div class="result-item-head"><div><b>${esc(contactFullName(c))}</b>${isPrimaryContact(c)?' <span class="badge system">Principal</span>':''}<p>${esc(c.role||'Sin cargo')} · ${esc(c.email||'sin email')}</p></div>${inspectorAction('Ir a contacto',`data-company-open-contact="${attr(c.id)}"`)}</div></div>`).join('')}</div>`:'<div class="empty"><p>Esta empresa no tiene contactos registrados.</p></div>';
   }else if(active==='Oportunidades'){
-    const list=(state.opportunities||[]).filter(o=>o.companyId===co.id);body=list.length?`<div class="result-list">${list.map(o=>`<div class="result-item"><div class="result-item-head"><div><b>${esc(o.title||'Oportunidad')}</b><p>${esc(o.stage||'—')} · ${esc(o.source||'—')}</p></div><div class="result-actions">${inspectorAction('Editar',`data-company-edit-opportunity="${attr(o.id)}"`)}${inspectorAction('Crear estudio',`data-company-study-opportunity="${attr(o.id)}"`,true)}</div></div></div>`).join('')}</div>`:'<div class="empty"><p>Sin oportunidades registradas.</p></div>';
+    const list=(state.opportunities||[]).filter(o=>o.companyId===co.id);body=list.length?`<div class="result-list">${list.map(o=>{const hasProject=state.engagements.some(e=>e.opportunityId===o.id&&state.projects.some(p=>p.engagementId===e.id));return `<div class="result-item"><div class="result-item-head"><div><b>${esc(o.title||'Oportunidad')}</b><p>${esc(o.stage||'—')} · ${esc(o.source||'—')}</p></div><div class="result-actions">${inspectorAction('Editar',`data-company-edit-opportunity="${attr(o.id)}"`)}${hasProject?'':inspectorAction('Crear estudio',`data-company-study-opportunity="${attr(o.id)}"`,true)}</div></div></div>`}).join('')}</div>`:'<div class="empty"><p>Sin oportunidades registradas.</p></div>';
   }else if(active==='Estudios'){
     const list=state.engagements.filter(e=>e.companyId===co.id);body=list.length?`<div class="result-list">${list.map(e=>`<div class="result-item"><div class="result-item-head"><div><b>${esc(e.title||'Estudio')}</b><p>${esc(labelFrom('REF_DOMAIN',e.businessAreaId)||'Área sin indicar')} · ${esc(engagementStatus(e))} · ${esc(formatDateEs(e.updatedAt||e.createdAt))}</p></div>${inspectorAction('Abrir',`data-company-open-study="${attr(e.id)}"`,true)}</div></div>`).join('')}</div>`:'<div class="empty"><p>Sin estudios registrados.</p></div>';
   }else if(active==='Proyectos'){
