@@ -96,20 +96,23 @@ function bindCrm(){
   on('[data-primary-contact]',el=>{const ct=contactById(el.dataset.primaryContact);if(ct){setPrimaryContact(ct.companyId,ct.id);render()}});
   on('[data-contact-history]',el=>{state.selectedContactId=el.dataset.contactHistory;setPage('interacciones')});
   on('[data-contact-interaction]',el=>{const ct=contactById(el.dataset.contactInteraction);if(ct)addInteraction({companyId:ct.companyId,contactIds:[ct.id]})});
-  document.querySelectorAll('[data-contact-filter-option]').forEach(el=>el.onclick=e=>{e.stopPropagation();const key=el.dataset.contactFilterOption,val=el.dataset.value||'';state.contactFilters={...state.contactFilters,[key]:val};if(key==='status'&&val==='Inactivo')state.contactFilters.includeInactive=true;render()});
-  if(document.getElementById('includeInactiveContacts'))document.getElementById('includeInactiveContacts').onchange=e=>{state.contactFilters={...state.contactFilters,includeInactive:e.target.checked};if(!e.target.checked&&state.contactFilters.status==='Inactivo')state.contactFilters.status='';render()};
-  if(document.getElementById('clearContactFilters'))document.getElementById('clearContactFilters').onclick=()=>{state.contactFilters={role:'',status:'',includeInactive:false};state.contactSearch='';render()};
-  const ks=document.getElementById('contactSearch');if(ks)ks.oninput=()=>{state.contactSearch=ks.value;clearTimeout(window.__contactSearch);window.__contactSearch=setTimeout(render,220)};
-  document.querySelectorAll('[data-contact-company-option]').forEach(el=>el.onclick=e=>{e.stopPropagation();state.selectedCompanyId=el.dataset.contactCompanyOption||null;state.selectedContactId=null;render()});
-  if(document.getElementById('clearContactCompany'))document.getElementById('clearContactCompany').onclick=()=>{state.selectedCompanyId=null;state.selectedContactId=null;render()};
+  document.querySelectorAll('[data-contact-filter-option]').forEach(el=>el.onclick=e=>{e.stopPropagation();const key=el.dataset.contactFilterOption,val=el.dataset.value||'';state.contactFilters={...state.contactFilters,[key]:val};if(key==='status'&&val==='Inactivo')state.contactFilters.includeInactive=true;state.contactPage=1;state.selectedContactId=null;render()});
+  if(document.getElementById('includeInactiveContacts'))document.getElementById('includeInactiveContacts').onchange=e=>{state.contactFilters={...state.contactFilters,includeInactive:e.target.checked};if(!e.target.checked&&state.contactFilters.status==='Inactivo')state.contactFilters.status='';state.contactPage=1;state.selectedContactId=null;render()};
+  if(document.getElementById('clearContactFilters'))document.getElementById('clearContactFilters').onclick=()=>{state.contactFilters={role:'',status:'',includeInactive:false};state.contactSearch='';state.contactPage=1;state.selectedContactId=null;render()};
+  const ks=document.getElementById('contactSearch');if(ks)ks.oninput=()=>{state.contactSearch=ks.value;state.contactPage=1;state.selectedContactId=null;clearTimeout(window.__contactSearch);window.__contactSearch=setTimeout(render,220)};
+  document.querySelectorAll('[data-contact-company-option]').forEach(el=>el.onclick=e=>{e.stopPropagation();state.selectedCompanyId=el.dataset.contactCompanyOption||null;state.selectedContactId=null;state.contactPage=1;render()});
+  if(document.getElementById('clearContactCompany'))document.getElementById('clearContactCompany').onclick=()=>{state.selectedCompanyId=null;state.selectedContactId=null;state.contactPage=1;render()};
+  document.querySelectorAll('[data-contact-page]').forEach(el=>el.onclick=e=>{e.preventDefault();e.stopPropagation();if(el.disabled)return;state.contactPage=Math.max(1,Number(el.dataset.contactPage)||1);state.selectedContactId=null;render()});
 
   document.querySelectorAll('[data-interaction-filter-option]').forEach(el=>el.onclick=e=>{
     e.stopPropagation();const key=el.dataset.interactionFilterOption,val=el.dataset.value||'';
     state.interactionFilters={...state.interactionFilters,[key]:val};
     if(key==='companyId')state.interactionFilters.contactId='';
+    state.interactionPage=1;
     render();
   });
-  if(document.getElementById('clearInteractionFilters'))document.getElementById('clearInteractionFilters').onclick=()=>{state.interactionFilters={companyId:'',contactId:''};render()};
+  if(document.getElementById('clearInteractionFilters'))document.getElementById('clearInteractionFilters').onclick=()=>{state.interactionFilters={companyId:'',contactId:''};state.interactionPage=1;render()};
+  document.querySelectorAll('[data-interaction-page]').forEach(el=>el.onclick=e=>{e.preventDefault();e.stopPropagation();if(el.disabled)return;state.interactionPage=Math.max(1,Number(el.dataset.interactionPage)||1);render()});
   document.querySelectorAll('[data-opportunity-filter-option]').forEach(el=>el.onclick=e=>{
     e.stopPropagation();const key=el.dataset.opportunityFilterOption,val=el.dataset.value||'';
     state.opportunityFilters={...state.opportunityFilters,[key]:val};
