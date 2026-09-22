@@ -15,14 +15,15 @@ const fixture=read('uat/crm-fixtures.js');
 const visible=read('uat/visible.js');
 const index=read('index.html');
 
-test('UAT runtime starts from Phase 1 CRM only',()=>{
+test('UAT runtime keeps Phase 1 CRM as the required first phase',()=>{
   assert.match(index,/uat\/visible\.js/);
   assert.match(index,/uat\/crm-fixtures\.js/);
   assert.doesNotMatch(index,/uat\/fixtures\.js/);
   assert.doesNotMatch(index,/uat\/asis-suite\.js/);
   assert.doesNotMatch(index,/uat\/study-suite\.js/);
-  assert.match(visible,/Fase 1 prueba exclusivamente el CRM congelado/);
-  assert.match(visible,/los estudios se generarán en la Fase 2/);
+  assert.match(visible,/primero CRM completo; después Estudios construidos sobre ese CRM ya validado/);
+  assert.match(visible,/Fase 1 · Dataset CRM completo/);
+  assert.match(visible,/Fase 2 · Estudios asociados al CRM validado/);
 });
 
 test('Phase 1 declares the requested CRM volumes and no study/project fixture',()=>{
