@@ -29,12 +29,17 @@ function engagementsOfOpportunity(opportunityId) { return state.engagements.filt
 function opportunityFormBody(o = {}) {
   const companyId = o.companyId || state.selectedCompanyId || state.companies[0]?.id || '';
   const contacts = state.contacts.filter(c => c.companyId === companyId);
+  const linkedStudies=o.id?engagementsOfOpportunity(o.id):[];
+  const studyMarkup=linkedStudies.length
+    ? `<div class="opportunity-linked-studies">${linkedStudies.map(e=>`<div class="kv-box"><b>${esc(e.title||'Estudio')}</b><br><span>${esc(engagementStatus(e))}</span></div>`).join('')}</div>`
+    : '<div class="kv-box">Sin estudio asociado.</div>';
   return `<div class="form-grid">
     <div class="field"><label>Empresa</label>${auneaSelectControl('oCompany',state.companies.map(c=>({value:c.id,label:c.name})),companyId)}</div>
     <div class="field"><label>Estado del pipeline</label>${auneaSelectControl('oStage',OPPORTUNITY_STAGE.map(x=>({value:x,label:x})),o.stage||'Nueva')}</div>
     <div class="field full"><label>Título del caso</label><input id="oTitle" value="${attr(o.title || '')}" placeholder="Ej. Automatización de pedidos"></div>
     <div class="field"><label>Origen</label>${auneaSelectControl('oSource',OPPORTUNITY_SOURCE.map(x=>({value:x,label:x})),o.source||'Red personal')}</div>
     <div class="field"><label>Responsable AUNEA</label><input id="oOwner" value="${attr(o.owner || '')}"></div>
+    ${o.id?`<div class="field full"><label>Estudio asociado</label>${studyMarkup}<div class="field-help">Relación de origen de la oportunidad; se muestra aquí como referencia y no se edita desde este popup.</div></div>`:''}
     <div class="field full"><label>Contactos implicados</label><div class="choice-grid">${contacts.length ? contacts.map(c => `<span class="choice"><input type="checkbox" id="oc_${attr(c.id)}" data-opportunity-contact="${attr(c.id)}" ${(o.contactIds || []).includes(c.id) ? 'checked' : ''}><label for="oc_${attr(c.id)}">${esc(contactFullName(c))}</label></span>`).join('') : '<span class="field-help">Esta empresa no tiene contactos registrados todavía.</span>'}</div><div class="field-help">Se referencian; una misma persona puede participar en varias oportunidades (DEC-042).</div></div>
     <div class="field full"><label>Notas</label><textarea id="oNotes">${esc(o.notes || '')}</textarea></div>
   </div>`;
