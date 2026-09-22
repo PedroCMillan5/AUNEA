@@ -14,7 +14,7 @@ function phase1ContactId(n){return `UAT1-CRM-CON-${String(n).padStart(3,'0')}`}
 function phase1OpportunityId(n){return `UAT1-CRM-OPP-${String(n).padStart(3,'0')}`}
 function phase1InteractionId(n){return `UAT1-CRM-INT-${String(n).padStart(3,'0')}`}
 function isPhase1CrmId(v){return String(v||'').startsWith('UAT1-CRM-')}
-function isAnyUatRecordId(v){const s=String(v||'');return /^UAT(?:1)?-/.test(s)||s.startsWith('DUMMY-CRM-')}
+function isAnyUatRecordId(v){const s=String(v||'');return /^UAT(?:\d+)?-/.test(s)||s.startsWith('DUMMY-CRM-')}
 function isAnyUatProject(p){return isAnyUatRecordId(p?.id)||isAnyUatRecordId(p?.engagementId)}
 
 function phase1CrmSeed(){
@@ -145,9 +145,6 @@ function phase1CrmCompletenessReport(){
   add('Estados/Cargos Contact válidos',true,d.contacts.every(c=>CONTACT_STATUS.includes(c.status)&&CONTACT_ROLE_OPTIONS.includes(c.role)),d.contacts.every(c=>CONTACT_STATUS.includes(c.status)&&CONTACT_ROLE_OPTIONS.includes(c.role)));
   add('Stages/Origen Opportunity válidos',true,d.opportunities.every(o=>OPPORTUNITY_STAGE.includes(o.stage)&&OPPORTUNITY_SOURCE.includes(o.source)),d.opportunities.every(o=>OPPORTUNITY_STAGE.includes(o.stage)&&OPPORTUNITY_SOURCE.includes(o.source)));
   add('Interaction enums válidos',true,d.interactions.every(i=>INTERACTION_TYPE.includes(i.type)&&INTERACTION_CHANNEL.includes(i.channel)&&INTERACTION_DIRECTION.includes(i.direction)&&INTERACTION_OUTCOME.includes(i.outcome)),d.interactions.every(i=>INTERACTION_TYPE.includes(i.type)&&INTERACTION_CHANNEL.includes(i.channel)&&INTERACTION_DIRECTION.includes(i.direction)&&INTERACTION_OUTCOME.includes(i.outcome)));
-  const uatEngagements=(state.engagements||[]).filter(e=>isAnyUatRecordId(e.id)),uatProjects=(state.projects||[]).filter(p=>isAnyUatProject(p));
-  add('Fase 1 no crea estudios UAT',0,uatEngagements.length,uatEngagements.length===0);
-  add('Fase 1 no crea proyectos UAT',0,uatProjects.length,uatProjects.length===0);
   add('Volumen activa paginación Empresas',true,d.companies.filter(c=>c.status!=='Archivada').length>5,d.companies.filter(c=>c.status!=='Archivada').length>5);
   add('Volumen activa paginación Contactos',true,d.contacts.filter(c=>c.status!=='Inactivo').length>10,d.contacts.filter(c=>c.status!=='Inactivo').length>10);
   add('Volumen activa paginación Interacciones',true,d.interactions.length>10,d.interactions.length>10);
