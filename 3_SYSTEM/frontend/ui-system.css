@@ -180,6 +180,8 @@ select option{background:#fff;color:var(--ink)}
 .mode-process-editor .action-bar{left:0}
 
 
+/* [AUNEA-FROZEN-PAGE-COMPANIES-001] START — FINALIZADA / FROZEN
+   User-approved Companies page. Do not modify this block after closure; Acceptance Gate snapshots it. */
 /* P01 Empresas — page-specific layout only. Dropdown skin remains the immutable global AUNEA Select. */
 .company-filter-row{align-items:flex-end;gap:12px}
 .company-filter-row .filter-group:first-child{min-width:190px;max-width:220px;flex:0 1 220px}
@@ -234,5 +236,6 @@ select option{background:#fff;color:var(--ink)}
 html.page-companies,body.page-companies{height:100%;max-height:100%;overflow:hidden!important}
 body.page-companies .app-shell{height:100vh;min-height:0;overflow:hidden}
 body.page-companies .main{height:100vh;min-height:0;overflow:hidden}
+/* [AUNEA-FROZEN-PAGE-COMPANIES-001] END */
 
 .opportunity-linked-studies{display:grid;gap:8px}
