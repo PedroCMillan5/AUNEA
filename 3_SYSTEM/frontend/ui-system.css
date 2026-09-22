@@ -320,6 +320,6 @@ body:has(.studies-screen-marker) .app-shell{height:100vh;min-height:0;overflow:h
 .studies-table th,.studies-table td{padding-top:8px;padding-bottom:8px}
 .studies-table th:last-child,.studies-table td:last-child{width:72px;text-align:center}
 .studies-table-foot{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:10px}
-.study-floating-menu{position:fixed;z-index:5000;right:auto;bottom:auto;min-width:190px}
+.study-row-menu{position:relative;display:inline-block}.study-row-menu>summary{list-style:none}.study-row-menu>summary::-webkit-details-marker{display:none}.study-row-menu-popover{right:0;left:auto;top:36px;min-width:190px}
 @media(max-width:900px){.studies-table-foot{align-items:flex-start}.studies-pagination{flex-wrap:wrap}}
 /* [AUNEA-FE-STUDIES-LIST-VIEWPORT-010] END */
