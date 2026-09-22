@@ -48,9 +48,29 @@ test('Empresas sector filter stays compact and truncates long open options with 
   assert.match(css,/\.company-filter-row \.filter-group:first-child \.aunea-select-menu button\{[^}]*white-space:nowrap[^}]*overflow:hidden[^}]*text-overflow:ellipsis/);
 });
 
-test('project-linked opportunities hide Crear estudio in the company inspector',()=>{
-  assert.match(page,/const hasProject=state\.engagements\.some\(e=>e\.opportunityId===o\.id&&state\.projects\.some\(p=>p\.engagementId===e\.id\)\)/);
-  assert.match(page,/\$\{hasProject\?'':inspectorAction\('Crear estudio'/);
+test('project-linked opportunities are represented through their linked study and show project state',()=>{
+  assert.match(page,/hasProject=linkedStudies\.some\(e=>state\.projects\.some\(p=>p\.engagementId===e\.id\)\)/);
+  assert.match(page,/hasProject\?' · Proyecto creado':hasStudy\?' · Estudio creado'/);
+});
+
+test('Empresas page is viewport-locked with no vertical document scroll',()=>{
+  assert.match(page,/companies-screen-marker/);
+  assert.match(css,/\.content:has\(\.companies-screen-marker\)\{[^}]*height:calc\(100vh - 70px\)[^}]*overflow:hidden/);
+  assert.match(css,/\.table-wrap\{?[^}]*overflow-x:auto;overflow-y:hidden/);
+});
+
+test('Sector keeps ellipsis but exposes the full label on hover',()=>{
+  assert.match(page,/data-full-label/);
+  assert.match(css,/button\[data-full-label\]:hover::before/);
+  assert.match(css,/content:attr\(data-full-label\)/);
+});
+
+test('an opportunity with an existing linked study never offers Crear estudio again',()=>{
+  assert.match(page,/const linkedStudies=state\.engagements\.filter\(e=>e\.opportunityId===o\.id\)/);
+  assert.match(page,/hasStudy=linkedStudies\.length>0/);
+  assert.match(page,/\$\{hasStudy\?'':inspectorAction\('Crear estudio'/);
+  assert.match(page,/Proyecto creado/);
+  assert.match(page,/Estudio creado/);
 });
 
 test('Empresas exposes governed actions and relationship inspector tabs',()=>{
