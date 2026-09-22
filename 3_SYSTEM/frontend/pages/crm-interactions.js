@@ -42,11 +42,33 @@ function interactionPagination(rows){
   return {page,totalPages,rows:rows.slice(start,start+INTERACTION_PAGE_SIZE)};
 }
 
-function interactionActionMenu(i){
-  return `<details class="study-row-menu"><summary class="kebab-btn" aria-label="Acciones de ${attr(i.subject||'interacción')}">•••</summary><div class="row-menu-popover study-row-menu-popover">
-    <button type="button" data-edit-interaction="${attr(i.id)}">Editar</button>
-    <button type="button" data-delete-interaction="${attr(i.id)}">Eliminar</button>
-  </div></details>`;
+function closeInteractionFloatingMenu(){document.getElementById('interactionFloatingMenu')?.remove()}
+function openInteractionActionMenu(button,interactionId){
+  closeInteractionFloatingMenu();
+  const i=(state.interactions||[]).find(x=>x.id===interactionId);if(!i)return;
+  const menu=document.createElement('div');menu.id='interactionFloatingMenu';menu.className='row-menu-popover company-floating-menu';
+  menu.innerHTML=`<button type="button" data-edit-interaction="${attr(i.id)}">Editar</button>
+    <button type="button" class="danger-text" data-delete-interaction="${attr(i.id)}">Eliminar</button>`;
+  document.body.appendChild(menu);
+  const r=button.getBoundingClientRect(),gap=6;
+  let left=Math.min(window.innerWidth-menu.offsetWidth-8,Math.max(8,r.right-menu.offsetWidth));
+  let top=r.bottom+gap;
+  if(top+menu.offsetHeight>window.innerHeight-8)top=Math.max(8,r.top-menu.offsetHeight-gap);
+  menu.style.left=`${left}px`;menu.style.top=`${top}px`;
+}
+function interactionActionMenu(i){return `<button type="button" class="kebab-btn" data-interaction-actions="${attr(i.id)}" aria-label="Acciones de ${attr(i.subject||'interacción')}">•••</button>`}
+
+if(!window.__auneaInteractionActionsBound){
+  window.__auneaInteractionActionsBound=true;
+  document.addEventListener('click',e=>{
+    const trigger=e.target.closest('[data-interaction-actions]');
+    if(trigger){e.preventDefault();e.stopPropagation();openInteractionActionMenu(trigger,trigger.dataset.interactionActions);return}
+    if(!e.target.closest('#interactionFloatingMenu'))closeInteractionFloatingMenu();
+    const action=e.target.closest('[data-edit-interaction],[data-delete-interaction]');if(!action)return;
+    e.preventDefault();e.stopPropagation();closeInteractionFloatingMenu();
+    if(action.dataset.editInteraction!==undefined){editInteraction(action.dataset.editInteraction);return}
+    if(action.dataset.deleteInteraction!==undefined){deleteInteraction(action.dataset.deleteInteraction)}
+  },true);
 }
 function interactionRow(i) {
   const co = companyById(i.companyId);
