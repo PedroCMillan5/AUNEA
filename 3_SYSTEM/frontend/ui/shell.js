@@ -5,10 +5,73 @@
 // OUTPUTS: estado y vistas de captura/revisión.
 // SIDE_EFFECTS: DOM, almacenamiento local y solicitudes HTTP según responsabilidad.
 // CHANGE_RISK: HIGH.
+
+// [AUNEA-FE-PAGE-STUDIES-010] START — P05 Estudios
+// PURPOSE: List Engagement records with 10-row paging and a single contextual action menu per study.
+// SOURCE: DEC-042/050/051/055/066; Architecture Contract P05; user review 2026-09-22.
+// INPUTS: state.engagements plus referenced Company/Contact masters.
+// OUTPUTS: Estudios page markup; actions navigate or advance the existing governed Engagement lifecycle.
+// SIDE_EFFECTS: studyPage navigation state; governed lifecycle transition via setEngagementStatus.
+// CHANGE_RISK: MEDIUM.
+const STUDY_PAGE_SIZE=10;
+function studyPagination(rows){
+  const totalPages=Math.max(1,Math.ceil(rows.length/STUDY_PAGE_SIZE));
+  const page=Math.min(Math.max(1,Number(state.studyPage)||1),totalPages);
+  state.studyPage=page;
+  const start=(page-1)*STUDY_PAGE_SIZE;
+  return {page,totalPages,rows:rows.slice(start,start+STUDY_PAGE_SIZE)};
+}
+function closeStudyFloatingMenu(){document.getElementById('studyFloatingMenu')?.remove()}
+function openStudyActionMenu(button,engagementId){
+  closeStudyFloatingMenu();
+  const e=state.engagements.find(x=>x.id===engagementId);if(!e)return;
+  const next=nextEngagementStatus(e);
+  const menu=document.createElement('div');menu.id='studyFloatingMenu';menu.className='row-menu-popover study-floating-menu';
+  menu.innerHTML=`<button type="button" data-study-open="${attr(e.id)}">Abrir estudio</button>
+    <button type="button" data-study-internal="${attr(e.id)}">Trabajo interno</button>
+    ${next?`<button type="button" data-study-advance="${attr(e.id)}">Avanzar a ${esc(next)}</button>`:''}`;
+  document.body.appendChild(menu);
+  const r=button.getBoundingClientRect(),gap=6;
+  let left=Math.min(window.innerWidth-menu.offsetWidth-8,Math.max(8,r.right-menu.offsetWidth));
+  let top=r.bottom+gap;
+  if(top+menu.offsetHeight>window.innerHeight-8)top=Math.max(8,r.top-menu.offsetHeight-gap);
+  menu.style.left=`${left}px`;menu.style.top=`${top}px`;
+}
+function studyActionMenu(e){return `<button type="button" class="kebab-btn" data-study-actions="${attr(e.id)}" aria-label="Acciones de ${attr(e.title||'estudio')}">•••</button>`}
+function studiesPage(){
+  const all=state.engagements||[],paged=studyPagination(all),rows=paged.rows;
+  const body=all.length?`<div class="table-wrap"><table class="data-table studies-table"><thead><tr><th>Empresa</th><th>Estudio</th><th>Área</th><th>Contacto</th><th>Proceso</th><th>Ciclo de vida</th><th>Actualizado</th><th>Acciones</th></tr></thead><tbody>${rows.map(e=>`<tr><td>${esc(companyById(e.companyId)?.name||'—')}</td><td><b>${esc(e.title)}</b></td><td>${esc(labelFrom('REF_DOMAIN',e.businessAreaId)||'—')}</td><td>${esc(e.contactIds.map(x=>contactById(x)?.name).filter(Boolean).join(', '))}</td><td>${esc(e.answers?.DF011||'Pendiente')}</td><td>${statusBadge(engagementStatus(e))}</td><td>${fmtDate(e.updatedAt)}</td><td>${studyActionMenu(e)}</td></tr>`).join('')}</tbody></table></div>
+    <div class="table-foot studies-table-foot"><span>Mostrando ${rows.length} de ${all.length} estudios</span>${paged.totalPages>1?`<nav class="crm-pagination studies-pagination" aria-label="Páginas de estudios"><button type="button" data-study-page="${paged.page-1}" ${paged.page<=1?'disabled':''} aria-label="Página anterior">‹</button>${Array.from({length:paged.totalPages},(_,i)=>i+1).map(n=>`<button type="button" class="${n===paged.page?'active':''}" data-study-page="${n}" aria-current="${n===paged.page?'page':'false'}">${n}</button>`).join('')}<button type="button" data-study-page="${paged.page+1}" ${paged.page>=paged.totalPages?'disabled':''} aria-label="Página siguiente">›</button></nav>`:''}</div>`
+    :'<div class="empty"><h2>No hay estudios</h2><p>Crea uno desde un contacto para mantener trazabilidad de la relación.</p></div>';
+  return `<span class="studies-screen-marker" hidden></span>`+pageTop('Estudios','Biblioteca histórica de engagements. Un contacto puede tener varios estudios y proyectos.',`<button class="btn btn-primary" id="newStudy">Nuevo estudio</button>`)+section('Histórico',`${all.length} estudio(s) guardados en este navegador.`,body);
+}
+if(typeof window!=='undefined'&&!window.__auneaStudyActionsBound){
+  window.__auneaStudyActionsBound=true;
+  document.addEventListener('click',ev=>{
+    const trigger=ev.target.closest?.('[data-study-actions]');
+    if(trigger){ev.preventDefault();ev.stopPropagation();openStudyActionMenu(trigger,trigger.dataset.studyActions);return}
+    const pageBtn=ev.target.closest?.('[data-study-page]');
+    if(pageBtn&&!pageBtn.disabled){ev.preventDefault();ev.stopPropagation();closeStudyFloatingMenu();state.studyPage=Math.max(1,Number(pageBtn.dataset.studyPage)||1);render();return}
+    const open=ev.target.closest?.('[data-study-open]');
+    if(open){ev.preventDefault();ev.stopPropagation();closeStudyFloatingMenu();state.activeEngagementId=open.dataset.studyOpen;setPage('diagnostico');return}
+    const internal=ev.target.closest?.('[data-study-internal]');
+    if(internal){ev.preventDefault();ev.stopPropagation();closeStudyFloatingMenu();state.activeEngagementId=internal.dataset.studyInternal;setPage('resultados');return}
+    const advance=ev.target.closest?.('[data-study-advance]');
+    if(advance){
+      ev.preventDefault();ev.stopPropagation();closeStudyFloatingMenu();
+      const e=state.engagements.find(x=>x.id===advance.dataset.studyAdvance);
+      if(!e||!setEngagementStatus(e,nextEngagementStatus(e),'avance manual desde Estudios'))return toast('Ese estado no es el siguiente del ciclo de vida.');
+      render();return;
+    }
+    if(!ev.target.closest?.('#studyFloatingMenu'))closeStudyFloatingMenu();
+  },true);
+}
+// [AUNEA-FE-PAGE-STUDIES-010] END
+
 const pages={
   inicio(){const active=currentEng();return pageTop('Cockpit de consultoría','Punto de entrada limpio a CRM, estudios y diagnóstico. No se cargan datos ficticios automáticamente.',`<button class="btn btn-primary" id="newStudy">+ Nuevo estudio</button>`) + `<div class="hero-actions"><button class="hero-action primary" id="homeNewContact"><b>Nuevo contacto</b><p>Registra persona + empresa y conserva la relación a lo largo del tiempo.</p><span class="arrow">→</span></button><button class="hero-action" data-page="estudios"><b>Abrir estudios</b><p>Consulta diagnósticos históricos y continúa desde el punto guardado.</p><span class="arrow">→</span></button><button class="hero-action" data-page="diagnostico"><b>${active?'Retomar contexto activo':'Continuar diagnóstico'}</b><p>${active?'Retoma '+esc(active.title)+'. Continúa desde el contexto activo.':'Abre primero un estudio.'}</p><span class="arrow">→</span></button></div><div class="grid g4 section"><div class="card metric"><small>Empresas</small><strong>${state.companies.length}</strong></div><div class="card metric"><small>Contactos</small><strong>${state.contacts.length}</strong></div><div class="card metric"><small>Estudios</small><strong>${state.engagements.length}</strong></div><div class="card metric"><small>Proyectos</small><strong>${state.projects.length}</strong></div></div>`+section('Cómo funciona','El mismo Engagement Record acompaña todo el recorrido.',`<div class="grid g4"><div class="notice"><b>1. Relación</b><br>Empresa → contacto → oportunidad</div><div class="notice"><b>2. Diagnóstico</b><br>Contexto → AS-IS → fricciones → evidencia</div><div class="notice"><b>3. Decisión</b><br>Economics → riesgo → recomendación → escenarios</div><div class="notice"><b>4. Salida</b><br>Quote → entregables → proyecto</div></div>`)},
   empresas:companiesPage,contactos:contactsPage,interacciones:interactionsPage,oportunidades:opportunitiesPage,
-  estudios(){return pageTop('Estudios','Biblioteca histórica de engagements. Un contacto puede tener varios estudios y proyectos.',`<button class="btn btn-primary" id="newStudy">Nuevo estudio</button>`) + section('Histórico',`${state.engagements.length} estudio(s) guardados en este navegador.`,state.engagements.length?`<div class="table-wrap"><table class="data-table"><thead><tr><th>Empresa</th><th>Estudio</th><th>Área</th><th>Contacto</th><th>Proceso</th><th>Ciclo de vida</th><th>Actualizado</th><th></th></tr></thead><tbody>${state.engagements.map(e=>`<tr><td>${esc(companyById(e.companyId)?.name||'—')}</td><td><b>${esc(e.title)}</b></td><td>${esc(labelFrom('REF_DOMAIN',e.businessAreaId)||'—')}</td><td>${esc(e.contactIds.map(x=>contactById(x)?.name).filter(Boolean).join(', '))}</td><td>${esc(e.answers?.DF011||'Pendiente')}</td><td>${statusBadge(engagementStatus(e))}${nextEngagementStatus(e)?`<button class="btn btn-small" data-advance-eng="${e.id}" title="Avanzar al siguiente estado del ciclo de vida">→ ${esc(nextEngagementStatus(e))}</button>`:''}</td><td>${fmtDate(e.updatedAt)}</td><td><button class="btn btn-small btn-primary" data-open-eng="${e.id}">Abrir</button><button class="btn btn-small" data-open-eng="${e.id}" data-open-eng-page="resultados">Trabajo interno</button></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty"><h2>No hay estudios</h2><p>Crea uno desde un contacto para mantener trazabilidad de la relación.</p></div>')},
+  estudios:studiesPage,
   proyectos:projectsPage,implementacion:implementationPage,
   diagnostico:stagePage,proceso:processPage,resultados:resultsPage,recomendacion:recommendationPage,escenarios:scenariosPage,quote:quotePage,
   admin(){const e=currentEng();return pageTop('Admin / Auditoría','Estado del frontend, fuente canónica, persistencia y trazabilidad de cambios.',`<button class="btn" id="checkBackend">Comprobar backend</button><button class="btn btn-danger" id="clearLocal">Limpiar datos locales</button>`) + `<div class="grid g4"><div class="card metric"><small>Frontend</small><strong>v${esc(AUNEA_PRODUCT_VERSION)}</strong><span>${esc(AUNEA_PRODUCT_STATUS)}</span></div><div class="card metric"><small>Diagnostic Master</small><strong>100</strong><span>campos canónicos</span></div><div class="card metric"><small>Option sets</small><strong>${Object.keys(schema.option_sets).length}</strong><span>${Object.values(schema.option_sets).reduce((n,s)=>n+(s.options?.length||0),0)} opciones</span></div><div class="card metric"><small>Backend</small><strong>${state.backendOnline?'OK':'—'}</strong><span>${esc(state.backendVersion||'no conectado')}</span></div></div>`+section('Fuente canónica','La UI no gobierna reglas.',`<div class="notice good"><strong>Diagnostic Master v1.2:</strong> ${esc(schema.source)}<br>100/100 campos con control UI, objetivo, validación, ejemplo, Source_ID y mapping a engine.</div>`)+section('Auditoría local','Últimos cambios en esta sesión.',state.audit.length?state.audit.slice(0,40).map(a=>`<div class="audit-line"><b>${fmtDate(a.ts)}</b> · ${esc(a.message)}</div>`).join(''):'<div class="empty"><p>Sin cambios registrados todavía.</p></div>')}
