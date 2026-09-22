@@ -18,6 +18,7 @@ function makeCtx(){
     activeTimeContributors:e=>e.__contributors||[],
     waitTimeContributors:e=>e.__waitContributors||[],
     esc:v=>String(v??''),attr:v=>String(v??''),
+    auneaSelectControl:(id,opts,val,{extra='',placeholder='Selecciona…'}={})=>`<div class="canonical-aunea-select"><input type="hidden" id="${id}" value="${val||''}" ${extra}><details class="aunea-select"><summary><span>${placeholder}</span><i></i></summary><div class="aunea-select-menu">${(opts||[]).map(o=>`<button data-aunea-select-option="${id}" data-value="${o.value}">${o.label}</button>`).join('')}</div></details></div>`,
     section:(title,sub,body,actions)=>`${body}${actions||''}`,
     openModal:(title,body,onSave)=>{ctx.__lastBody=body;ctx.__lastOnSave=onSave},
     closeModal:()=>{},markDirty:()=>{},render:()=>{},toast:()=>{},now:()=>'',id:p=>`${p}-1`,
