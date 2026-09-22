@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "frozen_pages": [
     {
       "page_id": "inicio",
@@ -36,20 +36,24 @@
       "screen_id": "P03",
       "status": "FROZEN",
       "frozen_on": "2026-09-22",
-      "rule": "No modificar bajo ningún concepto tras aprobación explícita del usuario.",
+      "rule": "Baseline actualizada por reapertura explícita del propietario: 5 registros por página y menú contextual de tres puntos. No modificar después sin nueva reapertura explícita.",
       "source_snapshot": "tests/frozen/interactions-page-v1.js.snapshot",
       "style_snapshot": "tests/frozen/crm-lists-style-v1.css.snapshot",
-      "gate": "AUNEA-UAT-CRM-FINALIZED-FROZEN-010"
+      "gate": "AUNEA-UAT-CRM-FINALIZED-FROZEN-010",
+      "reopened_on": "2026-09-22",
+      "reapproved_on": "2026-09-22"
     },
     {
       "page_id": "oportunidades",
       "screen_id": "P04",
       "status": "FROZEN",
       "frozen_on": "2026-09-22",
-      "rule": "No modificar bajo ningún concepto tras aprobación explícita del usuario.",
+      "rule": "Baseline actualizada por reapertura explícita del propietario: 5 registros por página y menú contextual de tres puntos. No modificar después sin nueva reapertura explícita.",
       "source_snapshot": "tests/frozen/opportunities-page-v1.js.snapshot",
       "style_snapshot": "tests/frozen/crm-lists-style-v1.css.snapshot",
-      "gate": "AUNEA-UAT-CRM-FINALIZED-FROZEN-010"
+      "gate": "AUNEA-UAT-CRM-FINALIZED-FROZEN-010",
+      "reopened_on": "2026-09-22",
+      "reapproved_on": "2026-09-22"
     }
   ]
 }
