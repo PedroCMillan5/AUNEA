@@ -60,27 +60,53 @@ function asisUatStudyBundle(n){
 
   const stepType=uatOptions('OS_STEP_TYPE'),actors=uatOptions('OS_ACTOR_ROLE'),tools=uatOptions('OS_TOOL_CATEGORY'),artifacts=uatOptions('OS_ARTIFACT_TYPE'),manual=uatOptions('OS_MANUAL_ACTION'),channels=uatOptions('OS_COMM_CHANNEL'),auto=uatOptions('OS_AUTOMATION_STATE'),criteria=uatOptions('OS_DECISION_CRITERIA'),evidence=uatOptions('OS_EVIDENCE_TYPE'),exceptions=uatOptions('OS_EXCEPTION_TYPE');
   const verbs=profile.process.split('→').map(x=>x.trim()).filter(Boolean);while(verbs.length<4)verbs.push(`Paso ${verbs.length+1}`);
-  const steps=verbs.slice(0,n===25?5:4).map((name,i)=>uatStep(`ASIS-${ids.z}-${i+1}`,{
-    step_name:name,step_type:(stepType[(n+i)%Math.max(stepType.length,1)]||stepType[0])?.value||'',
-    actor:(actors[(n+i)%Math.max(actors.length,1)]||actors[0])?.value||'',
-    tool:(tools[(n+i)%Math.max(tools.length,1)]||tools[0])?.value||'',
-    applies_to:i===1&&n%3===0?{mode:'PERCENT',value:String(60+(n%4)*10),condition:''}:i===2&&n%4===0?{mode:'CONDITION',value:'',condition:'Sólo cuando existe excepción material'}:{mode:'ALL',value:'',condition:''},
-    occurrences_per_case:i===1&&n%5===0?2:1,
-    inputs:[(artifacts[(n+i)%Math.max(artifacts.length,1)]||artifacts[0])?.value].filter(Boolean),
-    outputs:[(artifacts[(n+i+1)%Math.max(artifacts.length,1)]||artifacts[0])?.value].filter(Boolean),
-    active_time:5+n+i*3,wait_time:i===1?30+n*4:(i===2&&n%2===0?120+n*3:0),rework_time:i===2?5+(n%7):0,
-    error_rate:{value:i===2?2+(n%12):0,mode:'percent',period:'case'},
-    manual_actions:[(manual[(n+i)%Math.max(manual.length,1)]||manual[0])?.value].filter(Boolean),
-    automation_state:(auto[(n+i)%Math.max(auto.length,1)]||auto[0])?.value||'',
-    communication_channels:[(channels[(n+i)%Math.max(channels.length,1)]||channels[0])?.value].filter(Boolean),
-    evidence:[(evidence[(n+i)%Math.max(evidence.length,1)]||evidence[0])?.value].filter(Boolean),
-    notes:i===0?`UAT-ASIS-${ids.z}: ${profile.focus}`:''
-  }));
+  const steps=verbs.slice(0,n===25?5:4).map((name,i)=>{
+    const inputA=(artifacts[(n+i)%Math.max(artifacts.length,1)]||artifacts[0])?.value||'';
+    const inputB=(artifacts[(n+i+1)%Math.max(artifacts.length,1)]||artifacts[0])?.value||inputA;
+    const outputA=(artifacts[(n+i+2)%Math.max(artifacts.length,1)]||artifacts[0])?.value||'';
+    const outputB=(artifacts[(n+i+3)%Math.max(artifacts.length,1)]||artifacts[0])?.value||outputA;
+    const manualA=(manual[(n+i)%Math.max(manual.length,1)]||manual[0])?.value||'';
+    const manualB=(manual[(n+i+1)%Math.max(manual.length,1)]||manual[0])?.value||manualA;
+    const channelA=(channels[(n+i)%Math.max(channels.length,1)]||channels[0])?.value||'';
+    const channelB=(channels[(n+i+1)%Math.max(channels.length,1)]||channels[0])?.value||channelA;
+    const evidenceA=(evidence[(n+i)%Math.max(evidence.length,1)]||evidence[0])?.value||'';
+    const evidenceB=(evidence[(n+i+1)%Math.max(evidence.length,1)]||evidence[0])?.value||evidenceA;
+    return uatStep(`ASIS-${ids.z}-${i+1}`,{
+      step_name:name,
+      step_type:(stepType[(n+i)%Math.max(stepType.length,1)]||stepType[0])?.value||'',
+      actor:(actors[(n+i)%Math.max(actors.length,1)]||actors[0])?.value||'Responsable UAT',
+      tool:(tools[(n+i)%Math.max(tools.length,1)]||tools[0])?.value||'Herramienta UAT',
+      applies_to:i%2===0?{mode:'PERCENT',value:String(Math.max(55,100-i*10)),condition:''}:{mode:'CONDITION',value:'',condition:`Aplica cuando se cumple condición operativa ${i+1}`},
+      occurrences_per_case:1+(i%2),
+      inputs:[inputA,inputB].filter((x,p,a)=>x&&a.indexOf(x)===p),
+      outputs:[outputA,outputB].filter((x,p,a)=>x&&a.indexOf(x)===p),
+      active_time:8+n+i*4,
+      wait_time:20+n*3+i*15,
+      rework_time:4+(n%6)+i,
+      error_rate:{value:2+((n+i)%12),mode:'percent',period:'case'},
+      manual_actions:[manualA,manualB].filter((x,p,a)=>x&&a.indexOf(x)===p),
+      automation_state:(auto[(n+i)%Math.max(auto.length,1)]||auto[0])?.value||'',
+      communication_channels:[channelA,channelB].filter((x,p,a)=>x&&a.indexOf(x)===p),
+      evidence:[evidenceA,evidenceB].filter((x,p,a)=>x&&a.indexOf(x)===p),
+      notes:`UAT-ASIS-${ids.z} · ${name}: ${profile.focus}`,
+      _details:{
+        inputs:`Detalle de entrada para ${name}`,
+        outputs:`Detalle de salida para ${name}`,
+        decision_criteria:'',
+        communication_channels:`Canal complementario UAT ${ids.z}-${i+1}`
+      },
+      _ui:{has_decision:false,active_unit:'min',wait_unit:'min',rework_unit:'min'}
+    });
+  });
   if(steps.length>=3){
     steps[2].step_type=(stepType.find(x=>['ST04','ST05'].includes(String(x.value)))||stepType[2]||stepType[0])?.value||steps[2].step_type;
-    steps[2].decision_criteria=[(criteria[n%Math.max(criteria.length,1)]||criteria[0])?.value].filter(Boolean);
-    steps[2]._ui={has_decision:true};
-    steps[2].exception_path={type:(exceptions[n%Math.max(exceptions.length,1)]||exceptions[0])?.value||'',condition:`Excepción UAT AS-IS ${ids.z}`,destination_step:steps[0].id,owner:steps[2].actor};
+    steps[2].decision_criteria=[
+      (criteria[n%Math.max(criteria.length,1)]||criteria[0])?.value,
+      (criteria[(n+1)%Math.max(criteria.length,1)]||criteria[0])?.value
+    ].filter((x,p,a)=>x&&a.indexOf(x)===p);
+    steps[2]._ui={...(steps[2]._ui||{}),has_decision:true};
+    steps[2]._details={...(steps[2]._details||{}),decision_criteria:`Criterio adicional UAT AS-IS ${ids.z}`};
+    steps[2].exception_path={type:(exceptions[n%Math.max(exceptions.length,1)]||exceptions[0])?.value||'',condition:`Si falta validación o se supera el umbral del estudio ${ids.z}`,destination_step:steps[0].id,owner:steps[2].actor};
   }
   uatChain(steps);e.processSteps=steps;
 
@@ -101,16 +127,24 @@ function asisUatStudyBundle(n){
     affected_steps:i===0?[steps[1]?.id||steps[0].id]:[steps[2]?.id||steps[0].id,steps[3]?.id||steps.at(-1).id],
     friction_type:(frTypes[(n+i)%Math.max(frTypes.length,1)]||frTypes[0])?.value||'',
     cause:[(frCauses[(n+i)%Math.max(frCauses.length,1)]||frCauses[0])?.value].filter(Boolean),
-    client_label:i===0?`Problema operativo UAT ${ids.z}`:'',
-    observable_signal:i===0?`${15+n}% de casos necesitan seguimiento o corrección`:`Casos con espera superior a ${2+(n%5)} horas`,
+    client_label:`Problema operativo UAT ${ids.z}.${i+1}: ${profile.focus}`,
+    observable_signal:i===0?`${15+n}% de casos necesitan seguimiento o corrección`:`Casos con espera superior a ${2+(n%5)} horas y escalado manual`,
     frequency:{value:i===0?15+n:2+(n%6),mode:i===0?'percent':'count',period:i===0?'case':'month'},
     impact:String(1+((n+i)%5)),active_time_loss:{value:4+n+i,unit:'min',source_unit:'min',mode:''},
     wait_time_loss:{value:30+n*3+i*15,unit:'min',source_unit:'min',mode:''},
-    direct_loss:{value:(n%5===0||i===1)?50+n*10:0,unit:'EUR',period:'month',mode:''},
-    non_time_impact:[(nonTime[(n+i)%Math.max(nonTime.length,1)]||nonTime[0])?.value].filter(Boolean),
-    workaround:[(work[(n+i)%Math.max(work.length,1)]||work[0])?.value].filter(Boolean),
+    direct_loss:{value:50+n*10+i*25,unit:'EUR',period:'month',mode:''},
+    non_time_impact:[
+      (nonTime[(n+i)%Math.max(nonTime.length,1)]||nonTime[0])?.value,
+      (nonTime[(n+i+1)%Math.max(nonTime.length,1)]||nonTime[0])?.value
+    ].filter((x,p,a)=>x&&a.indexOf(x)===p),
+    workaround:[
+      (work[(n+i)%Math.max(work.length,1)]||work[0])?.value,
+      (work[(n+i+1)%Math.max(work.length,1)]||work[0])?.value
+    ].filter((x,p,a)=>x&&a.indexOf(x)===p),
     evidence_ids:[`UAT-ASIS-EV-${ids.z}-${i+1}`],evidence_type:(evidence[(n+i)%Math.max(evidence.length,1)]||evidence[0])?.value||'EV02',
-    confidence:i===0?'MEDIUM':'HIGH',priority_client:i+1,status:'ACTIVE',notes:i===1?'Nota sintética de contraste UAT':''
+    confidence:i===0?'MEDIUM':'HIGH',priority_client:i+1,status:'ACTIVE',
+    notes:`Nota sintética completa de la fricción ${i+1} del estudio UAT-ASIS-${ids.z}`,
+    _details:{cause:`Matiz adicional de causa UAT ${ids.z}-${i+1}`,workaround:`Compensación adicional UAT ${ids.z}-${i+1}`}
   }));
   e.frictions.forEach(f=>{f.derived_pain_id=typeof painForFriction==='function'?painForFriction(f.friction_type):null});
 
@@ -131,44 +165,61 @@ function asisUatStudyBundle(n){
 
   const drivers=schema?.tables?.REF_ECON_DRIVER||[],evidenceQualities=['MEASURED','CLIENT_DECLARED','AUNEA_ESTIMATE','SPECIFIC_BENCHMARK','HYPOTHESIS'];
   e.economicInputs=[
-    uatEconomic({step_ids:[steps[0].id,steps[1]?.id||steps[0].id],driver_id:(drivers[n%Math.max(drivers.length,1)]||drivers[0])?.Economic_Driver_ID||'D1',annual_active_hours:80+n*7,annual_wait_hours:20+n*4,capacity_cost_rate_eur_hour:25+(n%6)*5,direct_loss_eur_annual:n%3===0?600+n*40:0,current_tool_cost_eur_annual:300+n*25,realized_cash_saving_eur_annual:n%4===0?200+n*20:0,evidence_type:evidenceQualities[n%evidenceQualities.length],deduplication_key:`UAT-ASIS-${ids.z}-ECON-A`}),
-    uatEconomic({step_ids:[steps[2]?.id||steps[0].id],driver_id:(drivers[(n+1)%Math.max(drivers.length,1)]||drivers[0])?.Economic_Driver_ID||'D1',annual_active_hours:30+n*3,annual_wait_hours:10+n*2,capacity_cost_rate_eur_hour:35+(n%5)*5,direct_loss_eur_annual:250+n*30,current_tool_cost_eur_annual:n%2===0?900+n*10:0,realized_cash_saving_eur_annual:0,evidence_type:evidenceQualities[(n+1)%evidenceQualities.length],deduplication_key:`UAT-ASIS-${ids.z}-ECON-B`})
+    uatEconomic({step_ids:[steps[0].id,steps[1]?.id||steps[0].id],driver_id:(drivers[n%Math.max(drivers.length,1)]||drivers[0])?.Economic_Driver_ID||'D1',annual_active_hours:80+n*7,annual_wait_hours:20+n*4,capacity_cost_rate_eur_hour:25+(n%6)*5,direct_loss_eur_annual:600+n*40,current_tool_cost_eur_annual:300+n*25,realized_cash_saving_eur_annual:200+n*20,evidence_type:evidenceQualities[n%evidenceQualities.length],deduplication_key:`UAT-ASIS-${ids.z}-ECON-A`}),
+    uatEconomic({step_ids:[steps[2]?.id||steps[0].id],driver_id:(drivers[(n+1)%Math.max(drivers.length,1)]||drivers[0])?.Economic_Driver_ID||'D1',annual_active_hours:30+n*3,annual_wait_hours:10+n*2,capacity_cost_rate_eur_hour:35+(n%5)*5,direct_loss_eur_annual:250+n*30,current_tool_cost_eur_annual:900+n*10,realized_cash_saving_eur_annual:120+n*15,evidence_type:evidenceQualities[(n+1)%evidenceQualities.length],deduplication_key:`UAT-ASIS-${ids.z}-ECON-B`})
   ];
   Object.assign(e.answers,{
     DF076:{value:25+(n%6)*5,unit:'EUR',period:'h',mode:''},DF077:{value:120+n*5,unit:'h',period:'year',mode:''},
     DF078:{value:110+n*8,unit:'h',period:'year',mode:''},DF079:{value:20+n*2,unit:'h',period:'year',mode:''},
     DF080:{value:12+n,unit:'h',period:'year',mode:''},DF081:{value:8+n,unit:'h',period:'year',mode:''},
     DF082:{value:500+n*50,unit:'EUR',period:'year',mode:''},DF083:{value:600+n*25,unit:'EUR',period:'year',mode:''},
-    DF084:{value:n%4===0?1200+n*60:0,unit:'EUR',period:'year',mode:''},DF085:e.economicInputs[0].evidence_type
+    DF084:{value:1200+n*60,unit:'EUR',period:'year',mode:''},DF085:e.economicInputs[0].evidence_type
   });
 
   e.uatAsisProfile={id:profile.id,focus:profile.focus,synthetic:true,coverage:['S04','S05','S06','S07']};
   return b;
 }
 
-function asisUatCoverageReport(){
-  const bundles=ASIS_UAT_STUDIES.map(x=>asisUatStudyBundle(x.id));
-  const stepFields=new Set(),frictionFields=new Set(),riskFields=new Set(),economicFields=new Set(),dfs=new Set();
-  bundles.forEach(b=>{
-    const e=b.engagement;
-    (e.processSteps||[]).forEach(s=>Object.keys(s||{}).forEach(k=>stepFields.add(k)));
-    (e.frictions||[]).forEach(f=>Object.keys(f||{}).forEach(k=>frictionFields.add(k)));
-    (e.risks||[]).forEach(r=>Object.keys(r||{}).forEach(k=>riskFields.add(k)));
-    (e.economicInputs||[]).forEach(x=>Object.keys(x||{}).forEach(k=>economicFields.add(k)));
-    Object.keys(e.answers||{}).filter(k=>/^DF\d{3}$/.test(k)&&Number(k.slice(2))>=31&&Number(k.slice(2))<=85).forEach(k=>dfs.add(k));
-    (schema?.process_step_model||[]).forEach(m=>{if(m.Canonical_Field_ID&&(e.processSteps||[]).some(s=>s[m.Field_Key]!==undefined))dfs.add(m.Canonical_Field_ID)});
-    (schema?.friction_model||[]).forEach(m=>{if(m.Canonical_Field_ID&&(e.frictions||[]).some(f=>f[m.Field_Key]!==undefined))dfs.add(m.Canonical_Field_ID)});
-    if((e.frictions||[]).some(f=>f.derived_pain_id))dfs.add('DF057');
-    if((e.risks||[]).length)dfs.add('DF068');
+function asisUatFilled(v){
+  if(v===false||v===true)return true;
+  if(typeof v==='number')return Number.isFinite(v)&&v>0;
+  if(typeof v==='string')return v.trim()!=='';
+  if(Array.isArray(v))return v.length>0&&v.every(asisUatFilled);
+  if(v&&typeof v==='object'){
+    if(Object.prototype.hasOwnProperty.call(v,'value'))return Number(v.value)>0||String(v.value||'').trim()!=='';
+    if(v.mode==='PERCENT')return String(v.value||'').trim()!=='';
+    if(v.mode==='CONDITION')return String(v.condition||'').trim()!=='';
+    return Object.keys(v).length>0;
+  }
+  return false;
+}
+function asisUatStudyCoverage(bundle){
+  const e=bundle.engagement,dfs=new Set();
+  Object.keys(e.answers||{}).filter(k=>/^DF\d{3}$/.test(k)&&Number(k.slice(2))>=31&&Number(k.slice(2))<=85&&asisUatFilled(e.answers[k])).forEach(k=>dfs.add(k));
+  (schema?.process_step_model||[]).forEach(m=>{if(m.Canonical_Field_ID&&(e.processSteps||[]).some(s=>asisUatFilled(s[m.Field_Key])))dfs.add(m.Canonical_Field_ID)});
+  (schema?.friction_model||[]).forEach(m=>{if(m.Canonical_Field_ID&&(e.frictions||[]).some(f=>asisUatFilled(f[m.Field_Key])))dfs.add(m.Canonical_Field_ID)});
+  if((e.frictions||[]).some(f=>asisUatFilled(f.derived_pain_id)))dfs.add('DF057');
+  if((e.risks||[]).length)dfs.add('DF068');
+  const stepGaps=[];
+  (e.processSteps||[]).forEach((step,i)=>{
+    const required=['step_name','step_type','actor','tool','applies_to','occurrences_per_case','inputs','outputs','active_time','wait_time','rework_time','error_rate','manual_actions','automation_state','communication_channels','evidence','notes'];
+    required.filter(k=>!asisUatFilled(step[k])).forEach(k=>stepGaps.push(`paso ${i+1}:${k}`));
   });
-  return {
-    studies:bundles.length,
-    missing_dfs:ASIS_UAT_REQUIRED_DFS.filter(x=>!dfs.has(x)),
-    missing_process_fields:asisUatProcessFields().filter(x=>!stepFields.has(x)),
-    missing_friction_fields:asisUatFrictionFields().filter(x=>!frictionFields.has(x)),
-    missing_risk_fields:ASIS_UAT_RISK_FIELDS.filter(x=>!riskFields.has(x)),
-    missing_economic_fields:ASIS_UAT_ECONOMIC_FIELDS.filter(x=>!economicFields.has(x))
-  };
+  const decisionStep=(e.processSteps||[]).find(s=>s._ui?.has_decision===true);
+  if(!decisionStep||!asisUatFilled(decisionStep.decision_criteria)||!asisUatFilled(decisionStep.exception_path))stepGaps.push('decisión/excepción');
+  const frictionGaps=[];
+  (e.frictions||[]).forEach((fr,i)=>{
+    const required=['friction_type','client_label','affected_steps','cause','observable_signal','frequency','impact','active_time_loss','wait_time_loss','direct_loss','non_time_impact','workaround','evidence_ids','evidence_type','confidence','priority_client','status','notes'];
+    required.filter(k=>!asisUatFilled(fr[k])).forEach(k=>frictionGaps.push(`fricción ${i+1}:${k}`));
+  });
+  const riskGaps=[];(e.risks||[]).forEach((r,i)=>ASIS_UAT_RISK_FIELDS.filter(k=>!asisUatFilled(r[k])).forEach(k=>riskGaps.push(`riesgo ${i+1}:${k}`)));
+  const economicGaps=[];(e.economicInputs||[]).forEach((x,i)=>ASIS_UAT_ECONOMIC_FIELDS.filter(k=>!asisUatFilled(x[k])).forEach(k=>economicGaps.push(`impacto ${i+1}:${k}`)));
+  return {id:e.id,missing_dfs:ASIS_UAT_REQUIRED_DFS.filter(x=>!dfs.has(x)),step_gaps:stepGaps,friction_gaps:frictionGaps,risk_gaps:riskGaps,economic_gaps:economicGaps};
+}
+function asisUatCoverageReport(){
+  const studies=ASIS_UAT_STUDIES.map(x=>asisUatStudyCoverage(asisUatStudyBundle(x.id)));
+  const incomplete=studies.filter(x=>x.missing_dfs.length||x.step_gaps.length||x.friction_gaps.length||x.risk_gaps.length||x.economic_gaps.length);
+  return {studies:studies.length,incomplete_studies:incomplete,complete_studies:studies.length-incomplete.length};
 }
 
 function removeAsisUatStudyRecords(){
@@ -196,9 +247,9 @@ function loadAllAsisUatStudies(){
   toast('25 estudios UAT AS-IS cargados. Ábrelos desde Estudios para revisar la plataforma.');
 }
 function asisUatSuiteHtml(){
-  const report=asisUatCoverageReport(),ok=!report.missing_dfs.length&&!report.missing_process_fields.length&&!report.missing_friction_fields.length&&!report.missing_risk_fields.length&&!report.missing_economic_fields.length;
+  const report=asisUatCoverageReport(),ok=report.incomplete_studies.length===0;
   return section('Suite UAT AS-IS · 25 estudios','Estudios sintéticos para probar Mapa AS-IS, Fricciones y evidencia, Riesgos y controles e Impacto económico. No son casos reales ni referencias comerciales.',
-    `<div class="notice ${ok?'good':'warn'}"><b>Cobertura:</b> ${report.studies} estudios · DF031–DF085 ${report.missing_dfs.length?'con gaps: '+report.missing_dfs.join(', '):'cubiertos'} · ProcessStep ${report.missing_process_fields.length?'con gaps':'completo'} · Friction ${report.missing_friction_fields.length?'con gaps':'completo'} · RiskInput ${report.missing_risk_fields.length?'con gaps':'completo'} · EconomicInput ${report.missing_economic_fields.length?'con gaps':'completo'}.</div><div class="result-list" style="margin-top:12px">${ASIS_UAT_STUDIES.map(x=>`<div class="result-item"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><b>UAT-ASIS-${String(x.id).padStart(2,'0')} · ${esc(x.title)}</b><p>${esc(x.process)} · ${esc(x.focus)}</p></div><button class="btn btn-outline" data-load-asis-uat="${x.id}">Cargar estudio</button></div></div>`).join('')}</div>`,
+    `<div class="notice ${ok?'good':'warn'}"><b>Completitud:</b> ${report.complete_studies}/${report.studies} estudios completos individualmente · cada estudio cubre DF031–DF085 y llega con todos los campos visibles/aplicables rellenados en ProcessStep, Friction, RiskInput y EconomicInput.${ok?'':` Gaps: ${report.incomplete_studies.map(x=>x.id).join(', ')}`}</div><div class="result-list" style="margin-top:12px">${ASIS_UAT_STUDIES.map(x=>`<div class="result-item"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><b>UAT-ASIS-${String(x.id).padStart(2,'0')} · ${esc(x.title)}</b><p>${esc(x.process)} · ${esc(x.focus)}</p></div><button class="btn btn-outline" data-load-asis-uat="${x.id}">Cargar estudio</button></div></div>`).join('')}</div>`,
     '<button class="btn btn-primary" id="loadAllAsisUat">Cargar los 25 estudios</button>');
 }
 
