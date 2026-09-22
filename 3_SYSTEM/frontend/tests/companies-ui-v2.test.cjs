@@ -59,6 +59,14 @@ test('Empresas table never creates horizontal scroll',()=>{
   assert.match(css,/\.company-table th:nth-child\(7\)\{width:8%\}/);
 });
 
+test('Empresas toggles a root viewport lock so the browser document cannot scroll',()=>{
+  const stateJs=fs.readFileSync(path.join(__dirname,'..','core','state.js'),'utf8');
+  assert.match(stateJs,/document\.documentElement\.classList\.toggle\('page-companies',companiesViewport\)/);
+  assert.match(stateJs,/document\.body\.classList\.toggle\('page-companies',companiesViewport\)/);
+  assert.match(css,/html\.page-companies,body\.page-companies\{[^}]*overflow:hidden!important/);
+  assert.match(css,/body\.page-companies \.app-shell\{[^}]*height:100vh[^}]*overflow:hidden/);
+});
+
 test('Empresas page is viewport-locked with no vertical document scroll',()=>{
   assert.match(page,/companies-screen-marker/);
   assert.match(css,/\.main:has\(\.companies-screen-marker\)\{[^}]*height:100vh[^}]*overflow:hidden[^}]*display:flex[^}]*flex-direction:column/);
