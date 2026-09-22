@@ -23,8 +23,9 @@ test('FINALIZED Empresas page source is byte-for-byte frozen',()=>{
 
 test('FINALIZED Empresas page-specific styles are byte-for-byte frozen',()=>{
   const css=read('ui-system.css');
-  const start='/* [AUNEA-FROZEN-PAGE-COMPANIES-001] START';
-  const end='/* [AUNEA-FROZEN-PAGE-COMPANIES-001] END */';
+  const frozenId='AUNEA-FROZEN-'+'PAGE-COMPANIES-001';
+  const start='/* ['+frozenId+'] START';
+  const end='/* ['+frozenId+'] END */';
   const a=css.indexOf(start),b=css.indexOf(end);
   assert.ok(a>=0&&b>=0,'Frozen Empresas CSS markers must remain present');
   const block=css.slice(a,b+end.length);
