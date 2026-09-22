@@ -1,5 +1,5 @@
 {
-  "version": 4,
+  "version": 5,
   "frozen_pages": [
     {
       "page_id": "inicio",
@@ -36,7 +36,7 @@
       "screen_id": "P03",
       "status": "FROZEN",
       "frozen_on": "2026-09-22",
-      "rule": "Baseline actualizada por reapertura explícita del propietario: 5 registros por página y menú contextual de tres puntos. No modificar después sin nueva reapertura explícita.",
+      "rule": "Baseline actualizada por reapertura explícita del propietario: 5 registros por página y menú flotante de tres puntos idéntico al patrón Empresas. No modificar después sin nueva reapertura explícita.",
       "source_snapshot": "tests/frozen/interactions-page-v1.js.snapshot",
       "style_snapshot": "tests/frozen/crm-lists-style-v1.css.snapshot",
       "gate": "AUNEA-UAT-CRM-FINALIZED-FROZEN-010",
@@ -48,7 +48,7 @@
       "screen_id": "P04",
       "status": "FROZEN",
       "frozen_on": "2026-09-22",
-      "rule": "Baseline actualizada por reapertura explícita del propietario: 5 registros por página y menú contextual de tres puntos. No modificar después sin nueva reapertura explícita.",
+      "rule": "Baseline actualizada por reapertura explícita del propietario: 5 registros por página y menú flotante de tres puntos idéntico al patrón Empresas. No modificar después sin nueva reapertura explícita.",
       "source_snapshot": "tests/frozen/opportunities-page-v1.js.snapshot",
       "style_snapshot": "tests/frozen/crm-lists-style-v1.css.snapshot",
       "gate": "AUNEA-UAT-CRM-FINALIZED-FROZEN-010",
