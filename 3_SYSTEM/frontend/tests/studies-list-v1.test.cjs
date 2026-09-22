@@ -27,7 +27,7 @@ test('Estudios uses one three-dot contextual menu instead of multiple visible ro
   assert.match(shell,/summary class="kebab-btn"/);
   assert.match(shell,/data-open-eng="\$\{attr\(e\.id\)\}">Abrir estudio/);
   assert.match(shell,/data-open-eng-page="resultados">Trabajo interno/);
-  assert.match(shell,/data-advance-eng="\$\{attr\(e\.id\)\}">Avanzar a/);
+  assert.match(shell,/data-advance-eng="\$\{e\.id\}">Avanzar a/);
 });
 
 test('Estudios reuses the governed navigation and lifecycle action contracts',()=>{
