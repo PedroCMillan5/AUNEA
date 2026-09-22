@@ -174,8 +174,9 @@ test('DF098 real interaction (jsdom, real runtime): action+owner+date consolidat
       w.eval("currentEng().stageId='S09';render()");
       await until(()=>d.querySelector('[data-nextstep-action="DF098"]'));
 
-      const actionSel=d.querySelector('[data-nextstep-action="DF098"]');
-      actionSel.selectedIndex=1;actionSel.dispatchEvent(new w.Event('change',{bubbles:true}));
+      const actionOption=d.querySelector('[data-aunea-select-option="DF098__action"]:not([data-value=""])');
+      assert.ok(actionOption,'DF098 action uses the shared AUNEA Select');
+      actionOption.click();
       assert.equal(w.currentEng().answers.DF098,'','sólo con la acción elegida aún faltan owner y fecha: no puede consolidar');
       assert.ok(d.querySelector('[data-nextstep-owner="DF098"]'),'el control compuesto sigue presente tras elegir sólo la acción');
 
