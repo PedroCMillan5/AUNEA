@@ -44,6 +44,7 @@ function makeCtx(){
     esc:v=>String(v??''),attr:v=>String(v??''),
     section:(title,sub,body)=>body,pageTop:(title,sub,actions)=>actions||'',
     renderControl:()=>'<input class="stub">',
+    auneaSelectControl:(id,opts,val,{extra='',placeholder='Selecciona…'}={})=>`<div class="canonical-aunea-select"><input type="hidden" id="${id}" value="${val||''}" ${extra}><details class="aunea-select" data-aunea-select="${id}"><summary><span>${placeholder}</span><i></i></summary><div class="aunea-select-menu">${(opts||[]).map(o=>`<button data-aunea-select-option="${id}" data-value="${o.value}">${o.label}</button>`).join('')}</div></details></div>`,
     requiredMark:()=>'<span class="required-mark" title="Campo obligatorio">*</span>',
     REQUIRED_LEGEND_HTML:'<div class="field-help required-legend">Los campos marcados con <span class="required-mark" title="Campo obligatorio">*</span> son obligatorios.</div>',
     state:{backendOnline:true,returnTo:null},
