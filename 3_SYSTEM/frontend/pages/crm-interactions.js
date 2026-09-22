@@ -10,7 +10,7 @@
 // VISUAL: no approved reference exists for P03 in the 21+2 set, so this uses the global AUNEA System
 // visual language. The functional contract is closed by DEC-058 and is fully implemented.
 
-const INTERACTION_PAGE_SIZE=10;
+const INTERACTION_PAGE_SIZE=5;
 function interactionFilterControl(key,label,options,current,placeholder='Todos',disabled=false){
   const selected=options.find(o=>String(o.value)===String(current));
   return `<div class="filter-group interaction-entity-filter"><span>${esc(label)}</span><details class="aunea-select ${disabled?'is-disabled':''}" data-interaction-filter-box="${attr(key)}" ${disabled?'data-disabled="1"':''}><summary title="${attr(selected?.label||placeholder)}"><span>${esc(selected?.label||placeholder)}</span><i aria-hidden="true"></i></summary><div class="aunea-select-menu" role="listbox" aria-label="${attr(label)}">${disabled?'':`<button type="button" role="option" data-interaction-filter-option="${attr(key)}" data-value="">${esc(placeholder)}</button>${options.map(o=>`<button type="button" role="option" class="${String(current)===String(o.value)?'selected':''}" data-interaction-filter-option="${attr(key)}" data-value="${attr(o.value)}" title="${attr(o.label)}" data-full-label="${attr(o.label)}">${esc(o.label)}</button>`).join('')}`}</div></details></div>`;
@@ -42,6 +42,12 @@ function interactionPagination(rows){
   return {page,totalPages,rows:rows.slice(start,start+INTERACTION_PAGE_SIZE)};
 }
 
+function interactionActionMenu(i){
+  return `<details class="study-row-menu"><summary class="kebab-btn" aria-label="Acciones de ${attr(i.subject||'interacción')}">•••</summary><div class="row-menu-popover study-row-menu-popover">
+    <button type="button" data-edit-interaction="${attr(i.id)}">Editar</button>
+    <button type="button" data-delete-interaction="${attr(i.id)}">Eliminar</button>
+  </div></details>`;
+}
 function interactionRow(i) {
   const co = companyById(i.companyId);
   const people = (i.contactIds || []).map(cid => contactFullName(contactById(cid))).filter(Boolean);
@@ -53,7 +59,7 @@ function interactionRow(i) {
     <td>${esc(i.type || '—')}<br><small>${esc(i.channel || '')} · ${esc(i.direction || '')}</small></td>
     <td class="interaction-outcome-cell"><span class="badge interaction-outcome ${i.outcome === 'Avanza' ? 'ok' : i.outcome === 'Bloqueado' ? 'off' : i.outcome === 'Requiere seguimiento' ? 'wait' : ''}">${esc(i.outcome || '—')}</span></td>
     <td>${i.nextFollowUpAt ? esc(formatDateEs(i.nextFollowUpAt)) : '—'}</td>
-    <td><div class="row-actions"><button class="btn btn-small" data-edit-interaction="${attr(i.id)}">Editar</button><button class="btn btn-small btn-danger" data-delete-interaction="${attr(i.id)}">Eliminar</button></div></td>
+    <td>${interactionActionMenu(i)}</td>
   </tr>`;
 }
 
@@ -64,7 +70,7 @@ function interactionsPage() {
   const upcoming = pendingFollowUp({companyId:f.companyId||null,contactId:f.contactId||null});
   const main = interactionFilterRow() + (all.length
     ? `<div class="table-wrap"><table class="data-table interaction-table"><thead><tr>
-        <th>Fecha</th><th>Asunto</th><th>Empresa</th><th>Contactos</th><th>Tipo</th><th class="interaction-outcome-cell">Resultado</th><th>Próximo seguimiento</th><th></th>
+        <th>Fecha</th><th>Asunto</th><th>Empresa</th><th>Contactos</th><th>Tipo</th><th class="interaction-outcome-cell">Resultado</th><th>Próximo seguimiento</th><th>Acciones</th>
       </tr></thead><tbody>${all.map(interactionRow).join('')}</tbody></table></div>
       <div class="table-foot interaction-table-foot"><span>Mostrando ${all.length} de ${filtered.length} interacciones</span>${paged.totalPages>1?`<nav class="crm-pagination interaction-pagination" aria-label="Páginas de interacciones"><button type="button" data-interaction-page="${paged.page-1}" ${paged.page<=1?'disabled':''} aria-label="Página anterior">‹</button>${Array.from({length:paged.totalPages},(_,i)=>i+1).map(n=>`<button type="button" class="${n===paged.page?'active':''}" data-interaction-page="${n}" aria-current="${n===paged.page?'page':'false'}">${n}</button>`).join('')}<button type="button" data-interaction-page="${paged.page+1}" ${paged.page>=paged.totalPages?'disabled':''} aria-label="Página siguiente">›</button></nav>`:''}</div>`
     : `<div class="empty"><h2>Sin interacciones con estos filtros</h2><p>Ajusta Empresa/Contacto o registra una nueva interacción.</p></div>`);
