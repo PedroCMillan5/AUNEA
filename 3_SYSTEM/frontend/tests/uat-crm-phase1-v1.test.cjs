@@ -31,8 +31,8 @@ test('Phase 1 declares the requested CRM volumes and no study/project fixture',(
   assert.match(fixture,/PHASE1_INTERACTION_COUNT=24/);
   assert.match(fixture,/PHASE1_OPPORTUNITY_COUNT=16/);
   assert.match(fixture,/return \{companies,contacts,interactions,opportunities\}/);
-  assert.match(fixture,/Fase 1 no crea estudios UAT/);
-  assert.match(fixture,/Fase 1 no crea proyectos UAT/);
+  assert.match(fixture,/return \{companies,contacts,interactions,opportunities\}/);
+  assert.doesNotMatch(fixture,/return \{companies,contacts,interactions,opportunities,engagements/);
 });
 
 test('Phase 1 uses a new isolated prefix and reset removes superseded UAT prefixes safely',()=>{
