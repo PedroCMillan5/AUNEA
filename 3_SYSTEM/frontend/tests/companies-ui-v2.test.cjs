@@ -32,7 +32,7 @@ test('Empresas uses product-owned rounded dropdowns for its filters',()=>{
 });
 
 test('Empresas paginates the filtered company list at 10 rows and exposes numbered navigation',()=>{
-  assert.match(page,/const COMPANY_PAGE_SIZE=10/);
+  assert.match(page,/const COMPANY_PAGE_SIZE=5/);
   assert.match(page,/Math\.ceil\(rows\.length\/COMPANY_PAGE_SIZE\)/);
   assert.match(page,/data-company-page/);
   assert.match(page,/company-pagination/);
@@ -43,9 +43,14 @@ test('Empresas prevents status badges from wrapping and gives the right inspecto
   assert.match(css,/\.company-ins-tabs\{[^}]*padding-right:14px/);
 });
 
-test('Empresas sector filter reserves enough width and open options cannot visually overlap',()=>{
-  assert.match(css,/\.company-filter-row \.filter-group:first-child\{[^}]*min-width:250px/);
-  assert.match(css,/\.company-filter-row \.filter-group:first-child \.aunea-select-menu button\{[^}]*min-height:44px[^}]*line-height:1\.4/);
+test('Empresas sector filter stays compact and truncates long open options with ellipsis',()=>{
+  assert.match(css,/\.company-filter-row \.filter-group:first-child\{[^}]*min-width:190px[^}]*max-width:220px/);
+  assert.match(css,/\.company-filter-row \.filter-group:first-child \.aunea-select-menu button\{[^}]*white-space:nowrap[^}]*overflow:hidden[^}]*text-overflow:ellipsis/);
+});
+
+test('project-linked opportunities hide Crear estudio in the company inspector',()=>{
+  assert.match(page,/const hasProject=state\.engagements\.some\(e=>e\.opportunityId===o\.id&&state\.projects\.some\(p=>p\.engagementId===e\.id\)\)/);
+  assert.match(page,/\$\{hasProject\?'':inspectorAction\('Crear estudio'/);
 });
 
 test('Empresas exposes governed actions and relationship inspector tabs',()=>{
