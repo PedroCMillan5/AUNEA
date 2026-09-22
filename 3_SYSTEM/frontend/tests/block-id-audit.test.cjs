@@ -34,6 +34,7 @@ function listFrontendJs(dir) {
 function listScanFiles() {
   const files = listFrontendJs(frontendDir);
   files.push(path.join(frontendDir, 'styles.css'));
+  files.push(path.join(frontendDir, 'ui-system.css'));
   files.push(path.join(frontendDir, 'index.html'));
   const testsDir = path.join(frontendDir, 'tests');
   for (const f of fs.readdirSync(testsDir)) {
