@@ -104,6 +104,17 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   assert.ok(df001.querySelector('.prefill-chip'),'y declara de dónde viene');
   // C01: Teléfono is the prefix+number compound IMG90-01 shows, and both boxes write the single
   // Contact.Teléfono value that DEC-057 closes — not a second attribute.
+  await t.test('PG01 Contexto uses only the shared AUNEA Select and no native dropdowns',()=>{
+    w.eval("currentEng().stageId='S01';render()");
+    const stage=d.querySelector('.stage-card');
+    assert.ok(stage,'PG01 stage card exists');
+    assert.equal(stage.querySelectorAll('select').length,0,'PG01 must not render any browser-native select');
+    for(const selector of ['[data-pg01-contact-ref]','[data-pg01-company="sector"]','[data-pg01-company="orgType"]','[data-pg01-company="entryChannel"]']){
+      const hidden=stage.querySelector(selector);
+      assert.ok(hidden,selector+' exists');
+      assert.ok(hidden.closest('.canonical-aunea-select')?.querySelector('.aunea-select'),'control is wrapped by the single AUNEA Select');
+    }
+  });
   await t.test('C01 PG01 phone compound writes one Contact field',()=>{
     const prefix=d.querySelector('[data-pg01-phone="prefix"]'),number=d.querySelector('[data-pg01-phone="number"]');
     assert.ok(prefix&&number,'Teléfono se compone de prefijo y número');
