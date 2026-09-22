@@ -151,4 +151,29 @@ test('reference templates accept only validated real cases; generic starters and
   assert.doesNotMatch(code,/TPL-PROC-LINEAR-001/);
   assert.doesNotMatch(code,/TPL-STEP-TASK-001/);
 });
+
+
+test('process multiselect details use one generic conditional Otro contract',()=>{
+  const opts=[{value:'DOC',label:'Documento'},{value:'OTHER',label:'Otro'}];
+  let html=ctx.selectedHtml('step_inputs',opts,['DOC'],{detailId:'step_inputs_detail',detailValue:'detalle'});
+  assert.match(html,/data-v1-other-toggle="step_inputs"/);
+  assert.match(html,/data-v1-other-wrap="step_inputs" style="display:none"/);
+  html=ctx.selectedHtml('step_inputs',opts,['OTHER'],{detailId:'step_inputs_detail',detailValue:'detalle'});
+  assert.doesNotMatch(html,/data-v1-other-wrap="step_inputs" style="display:none"/);
+  assert.match(code,/data-v1-other-toggle/);
+  assert.match(code,/step_inputs_detail'\)\?\.value/);
+  assert.match(code,/step_outputs_detail'\)\?\.value/);
+  assert.match(code,/step_channels_other'\)\?\.value/);
+});
+
+test('selectable controls share the Acciones manuales visual contract and modal dropdowns are width-constrained',()=>{
+  const styles=fs.readFileSync(path.join(__dirname,'..','styles.css'),'utf8');
+  const ui=fs.readFileSync(path.join(__dirname,'..','ui-system.css'),'utf8');
+  assert.match(styles,/\.choice label,\.segment\{/);
+  assert.match(styles,/\.choice input:checked\+label,\.segment\.active\{/);
+  assert.match(ui,/\.aunea-select summary span\{[^}]*text-overflow:ellipsis/);
+  assert.match(ui,/\.aunea-select-menu\{[^}]*max-width:100%[^}]*overflow-x:hidden/);
+  assert.match(ui,/\.aunea-select-menu button\{[^}]*white-space:normal/);
+});
+
 // [AUNEA-UAT-PROC-010] END
