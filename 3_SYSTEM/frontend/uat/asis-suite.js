@@ -7,8 +7,8 @@
 // CHANGE_RISK: HIGH.
 
 const ASIS_UAT_REQUIRED_DFS=Object.freeze(Array.from({length:55},(_,i)=>`DF${String(i+31).padStart(3,'0')}`));
-const ASIS_UAT_PROCESS_FIELDS=Object.freeze((schema?.process_step_model||[]).map(x=>x.Field_Key));
-const ASIS_UAT_FRICTION_FIELDS=Object.freeze((schema?.friction_model||[]).map(x=>x.Field_Key));
+function asisUatProcessFields(){return (schema?.process_step_model||[]).map(x=>x.Field_Key)}
+function asisUatFrictionFields(){return (schema?.friction_model||[]).map(x=>x.Field_Key)}
 const ASIS_UAT_RISK_FIELDS=Object.freeze(['step_ids','category','description','likelihood_1_5','impact_1_5','reversible','reversibility','controls_present','sensitive_or_high_impact','material_financial_or_compliance','critical_trigger']);
 const ASIS_UAT_ECONOMIC_FIELDS=Object.freeze(['step_ids','driver_id','annual_active_hours','annual_wait_hours','capacity_cost_rate_eur_hour','direct_loss_eur_annual','current_tool_cost_eur_annual','realized_cash_saving_eur_annual','evidence_type','deduplication_key']);
 
@@ -164,8 +164,8 @@ function asisUatCoverageReport(){
   return {
     studies:bundles.length,
     missing_dfs:ASIS_UAT_REQUIRED_DFS.filter(x=>!dfs.has(x)),
-    missing_process_fields:ASIS_UAT_PROCESS_FIELDS.filter(x=>!stepFields.has(x)),
-    missing_friction_fields:ASIS_UAT_FRICTION_FIELDS.filter(x=>!frictionFields.has(x)),
+    missing_process_fields:asisUatProcessFields().filter(x=>!stepFields.has(x)),
+    missing_friction_fields:asisUatFrictionFields().filter(x=>!frictionFields.has(x)),
     missing_risk_fields:ASIS_UAT_RISK_FIELDS.filter(x=>!riskFields.has(x)),
     missing_economic_fields:ASIS_UAT_ECONOMIC_FIELDS.filter(x=>!economicFields.has(x))
   };
