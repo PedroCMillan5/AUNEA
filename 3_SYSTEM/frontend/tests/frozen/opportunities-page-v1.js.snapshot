@@ -11,7 +11,7 @@
 // VISUAL: no approved reference exists for P04 in the 21+2 set, so this uses the global AUNEA System
 // visual language. The functional contract is closed by DEC-051 and is fully implemented.
 
-const OPPORTUNITY_PAGE_SIZE=10;
+const OPPORTUNITY_PAGE_SIZE=5;
 function opportunityFilterControl(key,label,options,current,placeholder='Todos',disabled=false){
   const selected=options.find(o=>String(o.value)===String(current));
   return `<div class="filter-group opportunity-entity-filter"><span>${esc(label)}</span><details class="aunea-select ${disabled?'is-disabled':''}" data-opportunity-filter-box="${attr(key)}" ${disabled?'data-disabled="1"':''}><summary title="${attr(selected?.label||placeholder)}"><span>${esc(selected?.label||placeholder)}</span><i aria-hidden="true"></i></summary><div class="aunea-select-menu" role="listbox" aria-label="${attr(label)}">${disabled?'':`<button type="button" role="option" data-opportunity-filter-option="${attr(key)}" data-value="">${esc(placeholder)}</button>${options.map(o=>`<button type="button" role="option" class="${String(current)===String(o.value)?'selected':''}" data-opportunity-filter-option="${attr(key)}" data-value="${attr(o.value)}" title="${attr(o.label)}" data-full-label="${attr(o.label)}">${esc(o.label)}</button>`).join('')}`}</div></details></div>`;
@@ -43,6 +43,12 @@ function opportunityPagination(rows){
   return {page,totalPages,rows:rows.slice(start,start+OPPORTUNITY_PAGE_SIZE)};
 }
 
+function opportunityActionMenu(o,engs){
+  return `<details class="study-row-menu"><summary class="kebab-btn" aria-label="Acciones de ${attr(o.title||'oportunidad')}">•••</summary><div class="row-menu-popover study-row-menu-popover">
+    <button type="button" data-edit-opportunity="${attr(o.id)}">Editar</button>
+    ${isOpportunityOpen(o) && !engs.length ? `<button type="button" data-opportunity-study="${attr(o.id)}">Crear estudio</button>` : ''}
+  </div></details>`;
+}
 function opportunityRow(o) {
   const co = companyById(o.companyId);
   const people = (o.contactIds || []).map(cid => contactFullName(contactById(cid))).filter(Boolean);
@@ -55,10 +61,7 @@ function opportunityRow(o) {
     <td>${esc(o.source || '—')}</td>
     <td>${engs.length ? esc(engs.map(e => e.title).join(', ')) : '<small>Sin estudio</small>'}</td>
     <td>${esc(formatDateEs(o.updatedAt || o.createdAt))}</td>
-    <td><div class="row-actions">
-      <button class="btn btn-small" data-edit-opportunity="${attr(o.id)}">Editar</button>
-      ${isOpportunityOpen(o) && !engs.length ? `<button class="btn btn-small btn-primary" data-opportunity-study="${attr(o.id)}">Crear estudio</button>` : ''}
-    </div></td>
+    <td>${opportunityActionMenu(o,engs)}</td>
   </tr>`;
 }
 
@@ -68,7 +71,7 @@ function opportunitiesPage() {
   const paged=opportunityPagination(all),rows=paged.rows;
   const main = opportunityFilterRow() + (all.length
     ? `<div class="table-wrap"><table class="data-table opportunity-table"><thead><tr>
-        <th>Caso</th><th>Empresa</th><th>Contactos</th><th>Estado</th><th>Origen</th><th>Estudio</th><th>Actualizado</th><th></th>
+        <th>Caso</th><th>Empresa</th><th>Contactos</th><th>Estado</th><th>Origen</th><th>Estudio</th><th>Actualizado</th><th>Acciones</th>
       </tr></thead><tbody>${rows.map(opportunityRow).join('')}</tbody></table></div>
       <div class="table-foot opportunity-table-foot"><span>Mostrando ${rows.length} de ${all.length} oportunidades · ${open.length} abierta(s)</span>${paged.totalPages>1?`<nav class="crm-pagination opportunity-pagination" aria-label="Páginas de oportunidades"><button type="button" data-opportunity-page="${paged.page-1}" ${paged.page<=1?'disabled':''} aria-label="Página anterior">‹</button>${Array.from({length:paged.totalPages},(_,i)=>i+1).map(n=>`<button type="button" class="${n===paged.page?'active':''}" data-opportunity-page="${n}" aria-current="${n===paged.page?'page':'false'}">${n}</button>`).join('')}<button type="button" data-opportunity-page="${paged.page+1}" ${paged.page>=paged.totalPages?'disabled':''} aria-label="Página siguiente">›</button></nav>`:''}</div>`
     : `<div class="empty"><h2>Sin oportunidades con estos filtros</h2><p>Ajusta Empresa/Contacto o crea una nueva oportunidad.</p></div>`);
