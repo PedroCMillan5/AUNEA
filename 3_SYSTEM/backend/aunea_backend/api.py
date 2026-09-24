@@ -1,6 +1,13 @@
+# [AUNEA-BE-API-CORE-010] START — HTTP API surface
+# PURPOSE: FastAPI app wiring (CORS, store/orchestrator instances) and all REST endpoints for engagements, diagnose, scenarios, audit, deliverables, solution specifications and system builder.
+# SOURCE: REQ-ENGN-001/REC-001/SCEN-001; DEC-034; DEC-041.
+# INPUTS: HTTP requests (EngagementInput, DiagnosticOutput, ScenarioRequest, DeliverableRequest, SolutionSpecificationRequest, SystemBuilderRequest payloads).
+# OUTPUTS: HTTP responses (DiagnosticOutput, ScenarioResult, DeliverablePack, SolutionSpecification, SystemBuildPlan/Package).
+# SIDE_EFFECTS: SQLite persistence via store; in-memory audit runs.
+# CHANGE_RISK: CRITICAL.
 from __future__ import annotations
 import os
-from fastapi import FastAPI, HTTPException, Body
+from fastapi import FastAPI, HTTPException, Body, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from .models import EngagementInput, ScenarioRequest, DiagnosticOutput
@@ -10,11 +17,12 @@ from .system_builder_models import SystemBuilderRequest
 from .orchestrator import Orchestrator
 from .registry import rule_bundle_version, load_registry
 from .store import SQLiteStore
+from .uat import run_canonical_uat
 
 app = FastAPI(title="AUNEA Internal Backend", version="1.1.1")
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
+    allow_origin_regex=r"^(https?://(localhost|127\.0\.0\.1)(:\d+)?|https://[A-Za-z0-9.-]+\.app\.github\.dev)$",
     allow_credentials=False,
     allow_methods=["GET","POST","PUT","OPTIONS"],
     allow_headers=["Content-Type"],
@@ -24,6 +32,7 @@ engine = Orchestrator(store=store)
 
 class ComparePayload(BaseModel):
     engagement: EngagementInput
+    diagnostic: DiagnosticOutput
     scenario: ScenarioRequest
 
 class DeliverPayload(BaseModel):
@@ -38,6 +47,12 @@ def health():
 def registry_status():
     reg=load_registry()
     return {"version":reg.get("version"),"tables":len(reg.get("tables",{})),"rows":sum(len(x) for x in reg.get("tables",{}).values())}
+
+# [AUNEA-UAT-API-010] START — Visible isolated UAT endpoint
+@app.post("/v1/uat/run")
+def run_uat():
+    return run_canonical_uat()
+# [AUNEA-UAT-API-010] END
 
 @app.put("/v1/engagements/{engagement_id}")
 def save_engagement(engagement_id: str, payload: EngagementInput):
@@ -69,17 +84,18 @@ def latest_diagnostic(engagement_id: str):
 
 @app.post("/v1/scenarios/compare")
 def compare(payload: ComparePayload):
-    optimal, compared = engine.compare(payload.engagement,payload.scenario)
-    return {"optimal":optimal.optimal_scenario,"compared":compared,"recommendation":optimal.recommendation}
+    try:
+        optimal, compared = engine.compare(payload.engagement,payload.scenario,payload.diagnostic)
+    except ValueError as exc:
+        raise HTTPException(409, str(exc))
+    return {"optimal":optimal.optimal_scenario,"compared":compared,"recommendation":optimal.recommendation,"input_snapshot_hash":optimal.input_snapshot_hash,"rule_bundle_version":optimal.rule_bundle_version}
 
 @app.get("/v1/audit/runs")
 def audit_runs(engagement_id: str | None=None):
     return store.list_runs(engagement_id)
 
-
 @app.post("/v1/deliverables/generate")
 def generate_deliverables(payload: DeliverPayload):
-    from .models import DiagnosticOutput
     if not payload.diagnostic:
         raise HTTPException(400,"diagnostic payload required")
     diagnostic = DiagnosticOutput.model_validate(payload.diagnostic)
@@ -92,6 +108,27 @@ def generate_saved_deliverables(engagement_id: str, request: DeliverableRequest 
     except ValueError as exc:
         raise HTTPException(404, str(exc))
 
+# [AUNEA-BE-DELIVERABLES-PDF-API-010] START — Real PDF download endpoints
+# Same DEC-041 contract as the JSON deliverables endpoints above: consumes an already-computed
+# DiagnosticOutput, never recalculates. Returns a real application/pdf file, never window.print().
+@app.post("/v1/deliverables/pdf")
+def generate_deliverables_pdf(payload: DeliverPayload):
+    if not payload.diagnostic:
+        raise HTTPException(400, "diagnostic payload required")
+    diagnostic = DiagnosticOutput.model_validate(payload.diagnostic)
+    pdf_bytes = engine.export_deliverable_pdf(diagnostic, payload.request)
+    filename = f"AUNEA_{diagnostic.engagement_id}.pdf"
+    return Response(content=pdf_bytes, media_type="application/pdf", headers={"Content-Disposition": f'attachment; filename="{filename}"'})
+
+@app.post("/v1/engagements/{engagement_id}/deliverables/pdf")
+def generate_saved_deliverables_pdf(engagement_id: str, request: DeliverableRequest | None = Body(default=None)):
+    try:
+        pdf_bytes = engine.export_deliverable_pdf_for_saved(engagement_id, request or DeliverableRequest())
+    except ValueError as exc:
+        raise HTTPException(404, str(exc))
+    filename = f"AUNEA_{engagement_id}.pdf"
+    return Response(content=pdf_bytes, media_type="application/pdf", headers={"Content-Disposition": f'attachment; filename="{filename}"'})
+# [AUNEA-BE-DELIVERABLES-PDF-API-010] END
 
 class SolutionSpecPayload(BaseModel):
     engagement: EngagementInput
@@ -109,7 +146,6 @@ def generate_saved_solution_specification(engagement_id: str, request: SolutionS
     except ValueError as exc:
         raise HTTPException(404, str(exc))
 
-
 class SystemBuilderPayload(BaseModel):
     specification: SolutionSpecification
     request: SystemBuilderRequest = Field(default_factory=SystemBuilderRequest)
@@ -121,3 +157,4 @@ def generate_system_build_plan(payload: SystemBuilderPayload):
 @app.post("/v1/system-builder/package")
 def generate_system_build_package(payload: SystemBuilderPayload):
     return engine.generate_system_build_package(payload.specification, payload.request)
+# [AUNEA-BE-API-CORE-010] END

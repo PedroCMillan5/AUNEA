@@ -1,0 +1,7 @@
+const test=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const path=require('node:path');const root=path.resolve(__dirname,'..');const src=fs.readFileSync(path.join(root,'uat/fixtures.js'),'utf8');const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+// buildIsolatedRuntimeFixture() (the "Ejecutar UAT" one-click suite) must never insert into operational
+// collections — scoped to that function's own body only. The Fase 8 catalog's loadUatCase()/clearUatData()
+// legitimately push/filter state.companies/contacts/engagements (a user-triggered, UAT--prefixed action,
+// covered separately by tests/uat-catalog-v1.test.cjs), so the guardrail can no longer scan the whole file.
+function fnBody(name){const start=src.indexOf(`function ${name}(`);const braceStart=src.indexOf('{',start);let depth=0,i=braceStart;for(;i<src.length;i++){if(src[i]==='{')depth++;else if(src[i]==='}'){depth--;if(depth===0)break}}return src.slice(braceStart,i+1)}
+test('one-click UAT creates identifiable isolated runtime records without operational inserts',()=>{for(const id of ['UAT-CMP-001','UAT-CON-001','UAT-ENG-001','UAT-STEP-001','UAT-FRI-001'])assert.match(src,new RegExp(id));assert.match(src,/operational_collections_unchanged/);assert.doesNotMatch(fnBody('buildIsolatedRuntimeFixture'),/state\.companies\.push|state\.contacts\.push|state\.engagements\.push|state\.projects\.push/);assert.match(html,/uat\/fixtures\.js/);});

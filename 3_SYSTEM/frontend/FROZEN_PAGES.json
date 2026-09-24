@@ -1,0 +1,99 @@
+{
+  "version": 6,
+  "frozen_pages": [
+    {
+      "page_id": "inicio",
+      "screen_id": "CRM-HOME",
+      "status": "FROZEN",
+      "frozen_on": "2026-09-22",
+      "rule": "No modificar bajo ningún concepto tras aprobación explícita del usuario.",
+      "source_snapshot": "tests/frozen/home-page-v1.js.snapshot",
+      "style_snapshot": "tests/frozen/home-style-v1.css.snapshot",
+      "gate": "AUNEA-UAT-HOME-FROZEN-010"
+    },
+    {
+      "page_id": "empresas",
+      "screen_id": "I90-00-01",
+      "status": "FROZEN",
+      "frozen_on": "2026-09-22",
+      "rule": "No modificar bajo ningún concepto tras aprobación explícita del usuario.",
+      "source_snapshot": "tests/frozen/companies-page-v1.js.snapshot",
+      "style_snapshot": "tests/frozen/companies-style-v1.css.snapshot",
+      "gate": "AUNEA-UAT-COMPANIES-FROZEN-010"
+    },
+    {
+      "page_id": "contactos",
+      "screen_id": "I90-00-02",
+      "status": "FROZEN",
+      "frozen_on": "2026-09-22",
+      "rule": "No modificar bajo ningún concepto tras aprobación explícita del usuario.",
+      "source_snapshot": "tests/frozen/contacts-page-v1.js.snapshot",
+      "style_snapshot": "tests/frozen/crm-lists-style-v1.css.snapshot",
+      "gate": "AUNEA-UAT-CRM-FINALIZED-FROZEN-010"
+    },
+    {
+      "page_id": "interacciones",
+      "screen_id": "P03",
+      "status": "FROZEN",
+      "frozen_on": "2026-09-22",
+      "rule": "Baseline actualizada por reapertura explícita del propietario: 5 registros por página y menú flotante de tres puntos idéntico al patrón Empresas. No modificar después sin nueva reapertura explícita.",
+      "source_snapshot": "tests/frozen/interactions-page-v1.js.snapshot",
+      "style_snapshot": "tests/frozen/crm-lists-style-v1.css.snapshot",
+      "gate": "AUNEA-UAT-CRM-FINALIZED-FROZEN-010",
+      "reopened_on": "2026-09-22",
+      "reapproved_on": "2026-09-22"
+    },
+    {
+      "page_id": "oportunidades",
+      "screen_id": "P04",
+      "status": "FROZEN",
+      "frozen_on": "2026-09-22",
+      "rule": "Baseline actualizada por reapertura explícita del propietario: 5 registros por página y menú flotante de tres puntos idéntico al patrón Empresas. No modificar después sin nueva reapertura explícita.",
+      "source_snapshot": "tests/frozen/opportunities-page-v1.js.snapshot",
+      "style_snapshot": "tests/frozen/crm-lists-style-v1.css.snapshot",
+      "gate": "AUNEA-UAT-CRM-FINALIZED-FROZEN-010",
+      "reopened_on": "2026-09-22",
+      "reapproved_on": "2026-09-22"
+    },
+    {
+      "page_id": "estudios",
+      "screen_id": "P05",
+      "status": "FROZEN",
+      "frozen_on": "2026-09-24",
+      "rule": "Página cerrada por aprobación explícita del propietario. Menú ••• flotante idéntico al patrón Empresas/CRM. No modificar sin reapertura explícita.",
+      "source_snapshot": "tests/frozen/studies-page-v1.js.snapshot",
+      "style_snapshot": "tests/frozen/studies-style-v1.css.snapshot",
+      "gate": "AUNEA-UAT-SESSION-FINALIZED-FROZEN-020"
+    },
+    {
+      "page_id": "contexto-objetivos",
+      "screen_id": "I90-01",
+      "stage_id": "S01",
+      "status": "FROZEN",
+      "frozen_on": "2026-09-24",
+      "rule": "Contexto y objetivos cerrado por aprobación explícita del propietario. No modificar sin reapertura explícita.",
+      "source_snapshot": "tests/frozen/session-s01-v1.js.snapshot",
+      "gate": "AUNEA-UAT-SESSION-FINALIZED-FROZEN-020"
+    },
+    {
+      "page_id": "alcance-proceso",
+      "screen_id": "I90-02",
+      "stage_id": "S02",
+      "status": "FROZEN",
+      "frozen_on": "2026-09-24",
+      "rule": "Alcance del proceso cerrado por aprobación explícita del propietario. No modificar sin reapertura explícita.",
+      "source_snapshot": "tests/frozen/session-s02-v1.js.snapshot",
+      "gate": "AUNEA-UAT-SESSION-FINALIZED-FROZEN-020"
+    },
+    {
+      "page_id": "estado-objetivo-restricciones",
+      "screen_id": "I90-08",
+      "stage_id": "S08",
+      "status": "FROZEN",
+      "frozen_on": "2026-09-24",
+      "rule": "Estado objetivo y restricciones cerrado tras igualar DF089 a ancho completo. No modificar sin reapertura explícita.",
+      "style_snapshot": "tests/frozen/session-s08-v1.css.snapshot",
+      "gate": "AUNEA-UAT-SESSION-FINALIZED-FROZEN-020"
+    }
+  ]
+}

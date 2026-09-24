@@ -1,0 +1,215 @@
+{
+  "note": "Load order is a contract: later modules deliberately extend earlier ones. index.html is generated from this list.",
+  "modules": [
+    {
+      "order": 1,
+      "layer": "core",
+      "path": "core/state.js",
+      "block_id": "AUNEA-FE-CORE-STATE-020"
+    },
+    {
+      "order": 2,
+      "layer": "core",
+      "path": "core/i18n.js",
+      "block_id": "AUNEA-FE-I18N-LABELS-010"
+    },
+    {
+      "order": 3,
+      "layer": "services",
+      "path": "services/backend-client.js",
+      "block_id": "AUNEA-FE-BACKEND-DISCOVERY-060"
+    },
+    {
+      "order": 4,
+      "layer": "services",
+      "path": "services/schema.js",
+      "block_id": "AUNEA-DATA-DIAG-ADAPTER-010"
+    },
+    {
+      "order": 5,
+      "layer": "pages",
+      "path": "pages/diagnostic-stages.js",
+      "block_id": "AUNEA-FE-DIAG-CONTROL-030"
+    },
+    {
+      "order": 6,
+      "layer": "ui",
+      "path": "ui/renderer.js",
+      "block_id": "AUNEA-FE-DIAG-RENDER-040"
+    },
+    {
+      "order": 7,
+      "layer": "domain",
+      "path": "domain/no-reask.js",
+      "block_id": "AUNEA-FE-DIAG-NOREASK-050"
+    },
+    {
+      "order": 8,
+      "layer": "domain",
+      "path": "domain/company.js",
+      "block_id": "AUNEA-FE-CRM-COMPANY-010"
+    },
+    {
+      "order": 9,
+      "layer": "domain",
+      "path": "domain/contact.js",
+      "block_id": "AUNEA-FE-CRM-CONTACT-010"
+    },
+    {
+      "order": 10,
+      "layer": "domain",
+      "path": "domain/interaction.js",
+      "block_id": "AUNEA-FE-CRM-INTERACTION-010"
+    },
+    {
+      "order": 11,
+      "layer": "domain",
+      "path": "domain/opportunity.js",
+      "block_id": "AUNEA-FE-CRM-OPPORTUNITY-010"
+    },
+    {
+      "order": 12,
+      "layer": "domain",
+      "path": "domain/engagement.js",
+      "block_id": "AUNEA-FE-ENG-LIFECYCLE-010"
+    },
+    {
+      "order": 13,
+      "layer": "domain",
+      "path": "domain/session-snapshot.js",
+      "block_id": "AUNEA-FE-SESSION-SNAPSHOT-010"
+    },
+    {
+      "order": 14,
+      "layer": "domain",
+      "path": "domain/risk.js",
+      "block_id": "AUNEA-FE-RISK-CAPTURE-030"
+    },
+    {
+      "order": 15,
+      "layer": "domain",
+      "path": "domain/economics.js",
+      "block_id": "AUNEA-FE-ECON-CAPTURE-030"
+    },
+    {
+      "order": 16,
+      "layer": "domain",
+      "path": "domain/process-lifecycle.js",
+      "block_id": "AUNEA-FE-PROC-LIFECYCLE-030"
+    },
+    {
+      "order": 17,
+      "layer": "pages",
+      "path": "pages/results.js",
+      "block_id": "AUNEA-FE-RESULTS-VIEW-010"
+    },
+    {
+      "layer": "domain",
+      "path": "domain/output-review.js",
+      "block_id": "AUNEA-FE-OUTPUT-REVIEW-010",
+      "order": 18
+    },
+    {
+      "order": 19,
+      "layer": "pages",
+      "path": "pages/crm-companies.js",
+      "block_id": "AUNEA-FE-PAGE-COMPANIES-010"
+    },
+    {
+      "order": 20,
+      "layer": "pages",
+      "path": "pages/crm-contacts.js",
+      "block_id": "AUNEA-FE-PAGE-CONTACTS-010"
+    },
+    {
+      "order": 21,
+      "layer": "pages",
+      "path": "pages/crm-interactions.js",
+      "block_id": "AUNEA-FE-PAGE-INTERACTIONS-010"
+    },
+    {
+      "order": 22,
+      "layer": "pages",
+      "path": "pages/crm-opportunities.js",
+      "block_id": "AUNEA-FE-PAGE-OPPORTUNITIES-010"
+    },
+    {
+      "order": 23,
+      "layer": "pages",
+      "path": "pages/session-display.js",
+      "block_id": "AUNEA-FE-PAGE-SESSION-DISPLAY-010"
+    },
+    {
+      "order": 24,
+      "layer": "domain",
+      "path": "domain/process.js",
+      "block_id": "AUNEA-FE-PROC-EDITOR-020"
+    },
+    {
+      "order": 25,
+      "layer": "ui",
+      "path": "ui/process-help.js",
+      "block_id": "AUNEA-FE-PROC-HELP-025"
+    },
+    {
+      "order": 26,
+      "layer": "services",
+      "path": "services/engine-adapter.js",
+      "block_id": "AUNEA-FE-ENGINE-ADAPTER-020"
+    },
+    {
+      "order": 27,
+      "layer": "domain",
+      "path": "domain/completion.js",
+      "block_id": "AUNEA-FE-DIAG-COMPLETION-070"
+    },
+    {
+      "layer": "domain",
+      "path": "domain/project.js",
+      "block_id": "AUNEA-FE-PROJECT-LINK-010",
+      "order": 28
+    },
+    {
+      "layer": "pages",
+      "path": "pages/projects.js",
+      "block_id": "AUNEA-FE-PAGE-PROJECTS-010",
+      "order": 29
+    },
+    {
+      "order": 30,
+      "layer": "ui",
+      "path": "ui/shell.js",
+      "block_id": "AUNEA-FE-SHELL-NAV-010"
+    },
+    {
+      "order": 31,
+      "layer": "services",
+      "path": "services/persistence.js",
+      "block_id": "AUNEA-FE-PERSIST-050"
+    },
+    {
+      "order": 32,
+      "layer": "uat",
+      "path": "uat/visible.js",
+      "block_id": "AUNEA-FE-UAT-VISIBLE-055"
+    },
+    {
+      "order": 33,
+      "layer": "uat",
+      "path": "uat/crm-fixtures.js",
+      "block_id": "AUNEA-UAT-CRM-PHASE1-070"
+    },
+    {
+      "order": 34,
+      "layer": "uat",
+      "path": "uat/study-fixtures.js",
+      "block_id": "AUNEA-UAT-STUDY-PHASE2-090"
+    },
+    {
+      "order": 35,
+      "layer": "boot",
+      "path": "boot.js",
+      "block_id": "AUNEA-FE-BOOT-INIT-010"
+    }
+  ]
+}

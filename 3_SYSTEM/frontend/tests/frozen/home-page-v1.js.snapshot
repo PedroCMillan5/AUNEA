@@ -1,0 +1,12 @@
+// [AUNEA-FE-PAGE-HOME-010] START — CRM Inicio
+// PURPOSE: Render the CRM landing page without introducing its own business rules.
+// SOURCE: CRM shell baseline; DEC-050/051/066; explicit user closure 2026-09-22.
+// INPUTS: CRM/Engagement/Project collection counts and current Engagement context.
+// OUTPUTS: Inicio page markup only.
+// SIDE_EFFECTS: none; existing navigation handlers own all actions.
+// CHANGE_RISK: CRITICAL once FROZEN.
+function homePage(){
+  const active=currentEng();
+  return `<span class="home-screen-marker" hidden></span>`+pageTop('Cockpit de consultoría','Punto de entrada limpio a CRM, estudios y diagnóstico. No se cargan datos ficticios automáticamente.',`<button class="btn btn-primary" id="newStudy">+ Nuevo estudio</button>`) + `<div class="hero-actions"><button class="hero-action primary" id="homeNewContact"><b>Nuevo contacto</b><p>Registra persona + empresa y conserva la relación a lo largo del tiempo.</p><span class="arrow">→</span></button><button class="hero-action" data-page="estudios"><b>Abrir estudios</b><p>Consulta diagnósticos históricos y continúa desde el punto guardado.</p><span class="arrow">→</span></button><button class="hero-action" data-page="diagnostico"><b>${active?'Retomar contexto activo':'Continuar diagnóstico'}</b><p>${active?'Retoma '+esc(active.title)+'. Continúa desde el contexto activo.':'Abre primero un estudio.'}</p><span class="arrow">→</span></button></div><div class="grid g4 section"><div class="card metric"><small>Empresas</small><strong>${state.companies.length}</strong></div><div class="card metric"><small>Contactos</small><strong>${state.contacts.length}</strong></div><div class="card metric"><small>Estudios</small><strong>${state.engagements.length}</strong></div><div class="card metric"><small>Proyectos</small><strong>${state.projects.length}</strong></div></div>`+section('Cómo funciona','El mismo Engagement Record acompaña todo el recorrido.',`<div class="grid g4"><div class="notice"><b>1. Relación</b><br>Empresa → contacto → oportunidad</div><div class="notice"><b>2. Diagnóstico</b><br>Contexto → AS-IS → fricciones → evidencia</div><div class="notice"><b>3. Decisión</b><br>Economics → riesgo → recomendación → escenarios</div><div class="notice"><b>4. Salida</b><br>Quote → entregables → proyecto</div></div>`);
+}
+// [AUNEA-FE-PAGE-HOME-010] END

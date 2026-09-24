@@ -1,0 +1,407 @@
+/* [AUNEA-FE-STYLE-APP-IDENTITY-010] START — Shared product chrome and form consistency
+   PURPOSE: Apply the approved shared AUNEA System header language, official logo treatment and one visual contract for native selects across Internal.
+   SOURCE: DEC-027/046/056; CATALOGO_COMPONENTES_AUNEA DS-020; approved prototype direction; user identity configuration.
+   INPUTS: existing design tokens from styles.css and the shared shell markup.
+   OUTPUTS: one header treatment and one native select treatment for all Internal pages.
+   SIDE_EFFECTS: visual only.
+   CHANGE_RISK: MEDIUM.
+*/
+#railHead .brand{height:74px;padding:0 14px;background:var(--system);border-bottom:1px solid rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center}
+#railHead .brand>*{display:none!important}
+#railHead .brand>.aunea-brand-logo{display:block!important;width:190px;height:64px;object-fit:contain}
+.sidebar-foot{min-height:96px;padding:12px 14px;background:var(--system);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}
+.sidebar-foot .aunea-brand-logo{display:block;width:170px;height:48px;object-fit:contain}
+.sidebar-signature{text-align:center}.sidebar-signature p{margin:0!important;font-size:9px!important;letter-spacing:1.8px!important}.sidebar-signature small{margin-top:2px!important;font-size:8px!important;line-height:1.25!important;color:#a9c4b6!important}
+.rail-context-actions .btn{min-height:34px}
+
+.topbar{height:76px;background:var(--system);border-bottom:1px solid rgba(255,255,255,.14);padding:0 22px;display:grid;grid-template-columns:minmax(220px,1fr) minmax(260px,560px) minmax(420px,1fr);gap:18px;color:#fff}
+.topbar-left,.topbar-right{min-width:0}.topbar-left{justify-self:start}.topbar-right{justify-self:end;justify-content:flex-end}.topbar-location{min-width:0}.breadcrumb{font-size:17px;color:#fff;max-width:420px}.topbar-center{position:relative;width:100%}.topbar-center input{width:100%;height:40px;border:1px solid rgba(255,255,255,.24);border-radius:var(--radius-sm);background:rgba(255,255,255,.11);color:#fff;padding:0 38px 0 40px;outline:none}.topbar-center input::placeholder{color:#c8dbd1}.topbar-center input:hover{background:rgba(255,255,255,.15)}.topbar-center input:focus{background:#fff;color:var(--ink);border-color:#fff;box-shadow:0 0 0 3px rgba(111,168,133,.32)}.topbar-center input:focus::placeholder{color:var(--muted)}.topbar-search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:18px;color:#c8dbd1;pointer-events:none;z-index:1}
+.topbar .save-state{color:#c8dbd1}.topbar .btn-outline{border-color:rgba(255,255,255,.44);background:transparent;color:#fff}.topbar .btn-outline:hover{background:rgba(255,255,255,.1)}
+.topbar .user-chip{padding-left:13px;border-left:1px solid rgba(255,255,255,.18);white-space:nowrap}.topbar .avatar{background:#fff;color:var(--system)}.topbar .user-chip b{color:#fff}.topbar .user-chip small{color:#b9d1c5}
+.topbar .backend-badge{background:rgba(255,255,255,.11);color:#d7e6de}.topbar .backend-badge.offline{background:rgba(255,255,255,.09);color:#c7d8d0}.topbar .backend-badge.online{background:rgba(111,168,133,.24);color:#ecf6f0}.topbar .console-chip{border-color:rgba(255,255,255,.25);background:rgba(255,255,255,.1);color:#fff}.topbar .step-progress small{color:#c8dbd1}.topbar .step-dots i{background:rgba(255,255,255,.22)}.topbar .step-dots i.on{background:var(--sage)}.topbar .step-dots i.now{background:#fff}.topbar .stage-clock{border-color:rgba(255,255,255,.24);color:#fff}
+
+.main{background:#E6E6E6}
+.content{min-height:calc(100vh - 76px);max-width:none;background:#E6E6E6}
+
+.content .hero-action,.content .hero-action.primary{background:#fff;color:var(--ink);border-color:var(--line)}
+.content .hero-action:hover,.content .hero-action.primary:hover{background:#fff;filter:brightness(.985)}
+.content .hero-action p,.content .hero-action.primary p{color:var(--muted)}
+.content .hero-action .arrow,.content .hero-action.primary .arrow{color:var(--ink)}
+
+select,.field select,.filter-row select,.compound-control select,.entity-picker select{
+  min-height:40px;border:1px solid #d6d1c8;border-radius:var(--radius-sm);background-color:#fff;color:var(--ink);padding:9px 36px 9px 11px;outline:none;appearance:none;-webkit-appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,#67717A 50%),linear-gradient(135deg,#67717A 50%,transparent 50%);background-position:calc(100% - 16px) 17px,calc(100% - 11px) 17px;background-size:5px 5px,5px 5px;background-repeat:no-repeat
+}
+select:hover,.field select:hover,.filter-row select:hover,.compound-control select:hover,.entity-picker select:hover{border-color:#aebdb4;background-color:#fcfdfc}
+select:focus,.field select:focus,.filter-row select:focus,.compound-control select:focus,.entity-picker select:focus{border-color:var(--sage);box-shadow:0 0 0 3px rgba(111,168,133,.25)}
+select:disabled,.field select:disabled,.filter-row select:disabled,.compound-control select:disabled,.entity-picker select:disabled{background-color:#f1f3f2;color:#8a9490;cursor:not-allowed;opacity:1}
+select option{background:#fff;color:var(--ink)}
+.field-pending select{border-color:var(--red);box-shadow:0 0 0 3px var(--red-soft)}
+.field input,.field textarea,.filter-row input,.compound-control input,.entity-picker input{border-radius:var(--radius-sm)}
+
+.company-table .company-row{cursor:pointer}
+.company-table .company-row:hover td{background:#f7faf8}
+.company-table .company-row .row-menu{cursor:default;position:relative;display:inline-block}
+.row-menu summary{list-style:none}.row-menu summary::-webkit-details-marker{display:none}
+.kebab-btn{display:grid;place-items:center;width:34px;height:30px;border:1px solid var(--line);border-radius:var(--radius-sm);background:#fff;color:var(--ink);font-weight:800;letter-spacing:1px;cursor:pointer;user-select:none}
+.kebab-btn:hover{border-color:var(--system-line);background:var(--system-soft)}
+.row-menu-popover{position:absolute;right:0;top:36px;z-index:50;min-width:150px;padding:6px;background:#fff;border:1px solid var(--line);border-radius:var(--radius-md);box-shadow:var(--shadow);overflow:hidden}
+.row-menu-popover button{width:100%;border:0;background:#fff;color:var(--ink);text-align:left;padding:9px 10px;border-radius:var(--radius-xs);font:inherit;cursor:pointer}
+.row-menu-popover button:hover{background:var(--system-soft)}
+.row-menu-popover .danger-text{color:var(--red)}
+.company-floating-menu{position:fixed;z-index:5000;right:auto;bottom:auto}
+.company-form-select,.contact-form-select{position:relative;width:100%}
+.contact-form-select summary{width:100%;box-sizing:border-box}
+.contact-form-select .aunea-select-menu{width:100%;min-width:100%;box-sizing:border-box}
+.contact-form-select .aunea-select-menu button{white-space:normal}
+.contact-company-picker{position:relative}
+.contact-company-control{position:relative;flex:1;min-width:260px}
+.contact-company-control>small{display:block;margin-bottom:5px}
+.entity-picker-select{position:relative;width:min(420px,100%);min-width:260px}
+.entity-picker-select summary{width:100%;box-sizing:border-box}
+.entity-picker-select .aunea-select-menu{width:100%;min-width:100%;left:0;right:auto;top:calc(100% + 6px)}
+.contact-company-actions{margin-left:auto;display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
+.filter-check{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:0 4px;font-size:var(--font-small);color:var(--ink);white-space:nowrap}
+.filter-check input{width:16px;height:16px;accent-color:var(--system)}
+.company-form-select{position:relative;width:100%}
+.company-form-select summary{width:100%;box-sizing:border-box}
+.company-form-select .aunea-select-menu{width:100%;min-width:100%;box-sizing:border-box}
+.company-form-select .aunea-select-menu button{white-space:normal}
+
+.company-ins-head{align-items:flex-start;gap:12px}.company-ins-head h3{min-width:0;flex:1;overflow-wrap:anywhere;word-break:break-word}.ins-head-actions{display:flex;gap:6px;flex:0 0 auto;flex-wrap:nowrap;justify-content:flex-end;white-space:nowrap}
+.result-item-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.result-item-head>div:first-child{min-width:0;flex:1}.result-actions{display:flex;gap:6px;flex-wrap:nowrap;flex:0 0 auto}
+
+/* AUNEA custom select: unlike the native OS popup, the opened panel is owned by the product and keeps
+   the same rounded geometry, border, spacing and hover behaviour on every supported browser. */
+.filter-group .aunea-select{position:relative;min-width:150px}
+.aunea-select summary{list-style:none;min-height:40px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 11px;background:#fff;border:1px solid #d6d1c8;border-radius:var(--radius-sm);color:var(--ink);cursor:pointer;user-select:none}
+.aunea-select summary::-webkit-details-marker{display:none}.aunea-select.is-disabled>summary{opacity:.55;cursor:not-allowed;pointer-events:none}.aunea-select.is-disabled .aunea-select-menu{display:none}.aunea-select summary:hover{border-color:#aebdb4;background:#fcfdfc}.aunea-select[open] summary{border-color:var(--sage);box-shadow:0 0 0 3px rgba(111,168,133,.18)}
+.aunea-select summary i{width:8px;height:8px;border-right:2px solid #67717A;border-bottom:2px solid #67717A;transform:rotate(45deg) translateY(-2px);transform-origin:center;transition:transform .15s ease}.aunea-select[open] summary i{transform:rotate(225deg) translate(-1px,-1px)}
+.aunea-select-menu{position:absolute;left:0;top:calc(100% + 6px);z-index:70;min-width:100%;max-height:280px;overflow:auto;padding:6px;background:#fff;border:1px solid #d6d1c8;border-radius:var(--radius-md);box-shadow:var(--shadow)}
+/* IMMUTABLE AUNEA SELECT CONTRACT — single dropdown visual primitive for the whole product.
+   Do not create page-specific dropdown skins. All canonical, CRM and process dropdowns must reuse .aunea-select. */
+.canonical-aunea-select,.process-aunea-select{position:relative;width:100%;min-width:0}
+.compound-control>.canonical-aunea-select,.compound-control>.process-aunea-select{flex:1 1 0;min-width:0}
+.aunea-select{position:relative;width:100%;min-width:0}
+.aunea-select summary{width:100%;min-width:0;min-height:40px;box-sizing:border-box}
+.aunea-select summary span{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.aunea-select summary i{flex:0 0 8px;margin-left:8px;margin-right:2px}
+.aunea-select-menu{width:100%;min-width:100%;max-width:100%;box-sizing:border-box;overflow-x:hidden;padding:7px;background:#fff;border:1px solid #d8ddd9;border-radius:12px;box-shadow:0 14px 34px rgba(18,39,31,.14);display:flex;flex-direction:column;gap:3px}
+.aunea-select-search{padding:2px 2px 6px;position:sticky;top:0;background:#fff;z-index:1}
+.aunea-select-search input{width:100%;min-height:36px;box-sizing:border-box;border:1px solid #d6d1c8;border-radius:8px;padding:7px 10px;background:#fff;color:var(--ink);outline:none}
+.aunea-select-search input:focus{border-color:var(--sage);box-shadow:0 0 0 3px rgba(111,168,133,.18)}
+.aunea-select-menu button{position:relative;display:flex;align-items:center;width:100%;max-width:100%;min-height:40px;border:0;background:#fff;color:var(--ink);text-align:left;padding:9px 34px 9px 11px;border-radius:8px;font:inherit;font-size:var(--font-small);font-weight:600;line-height:1.35;cursor:pointer;white-space:normal;overflow-wrap:anywhere;word-break:normal;transition:background .12s ease,color .12s ease}
+.aunea-select-menu button:hover{background:#f3f8f5;color:var(--system)}
+.aunea-select-menu button.selected{background:var(--system-soft);color:var(--system);font-weight:700}
+.aunea-select-menu button.selected::after{content:'✓';position:absolute;right:11px;top:50%;transform:translateY(-50%);font-size:13px;font-weight:800;color:var(--system)}
+.aunea-select-menu button:focus-visible{outline:2px solid var(--sage);outline-offset:-2px;background:#f3f8f5}.compound-control>.process-aunea-select{flex:1 1 0;min-width:0}.modal .process-aunea-select,.modal .aunea-select,.modal .aunea-select-menu{max-width:100%}
+
+@media(max-width:1180px){.topbar{grid-template-columns:minmax(190px,1fr) minmax(220px,380px) auto}.topbar .backend-badge,.topbar .save-state{display:none}.breadcrumb{max-width:300px}}
+@media(max-width:900px){.topbar{display:flex;height:auto;min-height:70px;flex-wrap:wrap;padding:12px 16px}.topbar-center{order:3;flex:1 0 100%}.topbar-right{margin-left:auto}.topbar .step-progress{display:none}.content{min-height:calc(100vh - 70px)}.result-item-head{flex-direction:column}.result-actions{flex-wrap:wrap}.ins-head-actions{flex-wrap:wrap}}
+/* [AUNEA-FE-STYLE-APP-IDENTITY-010] END */
+
+.contact-row{cursor:pointer}
+.contact-row:hover td{background:var(--system-soft)}
+.interaction-outcome-cell{width:1%;white-space:nowrap}
+.interaction-outcome{display:inline-flex;width:max-content;max-width:none;white-space:nowrap}
+
+
+/* PG01/session QA refinements */
+.required-mark{color:var(--red)!important}
+.nav-step.locked,.nav-step:disabled{background:rgba(255,255,255,.035)!important;color:rgba(219,232,225,.38)!important;cursor:not-allowed;opacity:.78}
+.nav-step.locked .nav-num,.nav-step:disabled .nav-num{border-color:rgba(255,255,255,.14);color:rgba(207,224,215,.38);background:rgba(255,255,255,.03)}
+.nav-step.locked:hover,.nav-step:disabled:hover{background:rgba(255,255,255,.035)!important;color:rgba(219,232,225,.38)!important}
+.pg01-disclosure-open{margin-top:18px;padding-top:18px;border-top:1px solid var(--line)}
+.pg01-disclosure-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;font-family:Sora,"Segoe UI",Arial,sans-serif;font-size:var(--font-h3);font-weight:700;color:var(--ink)}
+.topbar{grid-template-columns:minmax(180px,.75fr) minmax(220px,360px) minmax(0,1.45fr)}
+.topbar-right{min-width:0;gap:10px}
+.topbar-right #stepProgress{flex:0 0 auto;display:flex;align-items:center;gap:10px}
+.topbar-center{max-width:360px;justify-self:center}
+
+
+.pg01-disclosure-open{background:#fff;border:0;border-top:1px solid var(--line);border-radius:0;box-shadow:none;padding:20px 22px 24px;margin-top:0}
+.pg01-disclosure-open>.form-grid{padding:0}
+
+
+/* Client-friendly process editor */
+.process-workspace-tabs{flex-wrap:wrap}
+.client-process-canvas{background:#fff}
+.flow-boundary{cursor:default;border-style:dashed;background:var(--system-soft)}
+.flow-boundary.start,.flow-boundary.end{min-width:220px}
+.boundary-kicker{display:inline-flex;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--system);margin-bottom:6px}
+.client-layer-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:16px}
+.client-layer-card{appearance:none;border:1px solid var(--line);background:#fff;border-radius:12px;padding:14px 16px;text-align:left;cursor:pointer;color:var(--ink)}
+.client-layer-card:hover{border-color:var(--system);background:var(--system-soft)}
+.client-layer-card b{display:block;margin-bottom:4px}
+.client-layer-card span{font-size:12px;color:var(--muted)}
+.template-catalog{display:grid;gap:10px;margin-top:14px}
+.catalog-reference-control{display:grid;gap:8px}
+.process-aunea-select{position:relative;min-width:0}.process-aunea-select .aunea-select{width:100%}.process-aunea-select .aunea-select summary{width:100%;box-sizing:border-box}.process-aunea-select .aunea-select-menu{width:100%;min-width:100%;box-sizing:border-box}
+.field[data-field="DF017"] .reuse-context{border-color:var(--system-line);background:var(--system-soft)}.field[data-field="DF017"] .reuse-context small,.field[data-field="DF017"] .context-label{color:var(--system)}
+.flow-step{cursor:grab}.flow-step:active{cursor:grabbing}.flow-step-tools{display:flex;gap:4px;justify-content:flex-end;margin:-4px -4px 7px}.flow-step-tools button,.flow-insert{border:1px solid var(--line);background:#fff;border-radius:6px;min-width:26px;height:26px;font-size:11px;cursor:pointer}.flow-step-tools button:hover,.flow-insert:hover{border-color:var(--system);background:var(--system-soft)}.flow-step.is-decision{border-color:var(--system);background:#fbfdfc}.flow-step.is-decision .boundary-kicker{color:var(--system)}.decision-route-label{color:var(--system)!important;font-weight:700}.flow-connector{position:relative}.flow-insert{position:absolute;left:50%;top:-12px;transform:translateX(-50%);z-index:2;border-radius:50%}.client-map-actions{display:flex;gap:8px;flex-wrap:wrap;padding:12px 8px 18px}.client-process-main>.card{box-shadow:none;border-left:0;border-right:0;border-radius:0}
+.catalog-reference-control .detail-wrap{margin-top:0}
+.client-process-topbar{min-height:70px;background:var(--system);color:#fff;border-radius:12px 12px 0 0;padding:12px 16px;display:grid;grid-template-columns:170px minmax(0,1fr) auto;align-items:center;gap:18px}
+.client-process-topbar img{width:150px;height:44px;object-fit:contain;object-position:left center}
+.client-process-context{display:flex;flex-direction:column;min-width:0}.client-process-context span{font-size:11px;color:#c8dbd1;text-transform:uppercase;letter-spacing:.06em}.client-process-context b{font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.client-process-state{text-align:right}.client-process-state span{display:block;font-size:11px;color:#c8dbd1}.client-process-state b{font-size:12px}
+.client-process-workspace{display:grid;grid-template-columns:235px minmax(0,1fr);border:1px solid var(--line);border-top:0;border-radius:0 0 12px 12px;overflow:hidden;background:#fff}
+.client-process-layer-rail{background:#f6f7f5;border-right:1px solid var(--line);padding:14px;display:flex;flex-direction:column;gap:8px}
+.client-rail-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:2px}
+.client-rail-item{appearance:none;border:1px solid transparent;background:transparent;border-radius:9px;text-align:left;padding:11px 12px;cursor:pointer;color:var(--ink)}
+.client-rail-item:hover,.client-rail-item.active{background:#fff;border-color:var(--system-line);box-shadow:0 2px 8px rgba(20,24,28,.04)}
+.client-rail-item b{display:block;font-size:12px}.client-rail-item span{display:block;margin-top:3px;font-size:11px;color:var(--muted)}
+.client-rail-note{margin-top:auto;padding:11px;border-radius:9px;background:var(--system-soft);color:var(--system);font-size:11px;line-height:1.45}
+.client-process-main{min-width:0;padding:4px 12px 0;background:#fff}
+@media(max-width:1000px){.client-layer-summary{grid-template-columns:1fr 1fr}.client-process-workspace{grid-template-columns:1fr}.client-process-layer-rail{border-right:0;border-bottom:1px solid var(--line);display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.client-rail-title,.client-rail-note{grid-column:1/-1}.client-process-topbar{grid-template-columns:130px minmax(0,1fr)}.client-process-state{display:none}.client-process-topbar img{width:120px}}
+.session-client-topbar{background:var(--system);color:#fff;border-radius:12px;padding:13px 16px;align-items:center}
+.session-client-brand{display:flex;align-items:center;gap:18px;min-width:0}.session-client-brand img{width:150px;height:44px;object-fit:contain;object-position:left center;flex:0 0 auto}
+.session-client-brand>div{min-width:0}.session-client-brand span{display:block;font-size:var(--font-caption);color:#c8dbd1;text-transform:uppercase;letter-spacing:.06em}.session-client-brand h1{margin:2px 0 0;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.session-client-topbar .session-sync .badge{border-color:rgba(255,255,255,.25)}
+@media(max-width:640px){.client-process-layer-rail{grid-template-columns:1fr}.client-process-topbar{grid-template-columns:1fr}.client-process-topbar img{width:130px}.client-process-context b{white-space:normal}.session-client-brand{align-items:flex-start;flex-direction:column;gap:8px}.session-client-brand img{width:130px}.session-client-brand h1{white-space:normal}}
+
+.mode-process-editor .sidebar,.mode-process-editor .topbar{display:none!important}
+.mode-process-editor .main{margin-left:0!important;width:100%!important}
+.mode-process-editor .content{padding:0!important;max-width:none!important}
+.mode-process-editor .client-process-topbar{position:sticky;top:0;z-index:20}
+.process-node-links{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.risk-badge,.economic-badge{display:inline-flex;align-items:center;border-radius:999px;padding:3px 8px;font-size:11px;font-weight:700}
+.risk-badge{background:#fff4e8;border:1px solid #e4b273;color:#7c4d12}
+.economic-badge{background:#eef5ff;border:1px solid #a9c8ef;color:#214f83}
+.process-node-actions{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+.process-node-actions button{border:1px solid var(--line);background:#fff;border-radius:6px;padding:4px 7px;font-size:10px;cursor:pointer}
+.process-node-actions button:hover{border-color:var(--system);background:var(--system-soft)}
+
+/* [AUNEA-FE-PROC-CLIENT-040] START — Client process editor viewport + modal layout
+   PURPOSE: One full-height standalone page with no document scroll/blank shell band; modals own their vertical scroll.
+   SOURCE: Diagnostic Master v1.2 Process Step/Friction/Risk/Economics; explicit UAT review 2026-09-24.
+   CHANGE_RISK: HIGH. */
+html:has(body.mode-process-editor),body.mode-process-editor{width:100%;height:100%;max-width:100%;max-height:100%;overflow:hidden!important;background:#fff}
+body.mode-process-editor .app-shell{display:block!important;width:100%;height:100vh;max-width:100%;min-width:0;overflow:hidden!important;background:#fff}
+body.mode-process-editor .main{display:block!important;grid-column:auto!important;margin:0!important;width:100%!important;height:100vh!important;max-width:100%!important;min-width:0;overflow:hidden!important;background:#fff}
+body.mode-process-editor .content{display:block;width:100%!important;height:100vh!important;min-height:0!important;max-width:100%!important;min-width:0;overflow:hidden!important;padding:0!important;margin:0!important;background:#fff}
+body.mode-process-editor .content>.section{height:100vh;min-height:0;margin:0;border:0;border-radius:0;box-shadow:none;padding:0;display:flex;flex-direction:column;background:#fff}
+body.mode-process-editor .content>.section>.section-title{display:none}
+body.mode-process-editor .client-process-topbar{position:relative!important;top:auto!important;flex:0 0 70px;border-radius:0}
+body.mode-process-editor .client-process-workspace{flex:1 1 auto;height:auto;min-height:0;width:100%;max-width:100%;min-width:0;border:0;border-radius:0;overflow:hidden;background:#fff}
+body.mode-process-editor .client-process-layer-rail{min-height:0;overflow-y:auto}
+body.mode-process-editor .client-process-main{height:100%;min-height:0;min-width:0;max-width:100%;overflow-x:hidden;overflow-y:auto;background:#fff}
+body.mode-process-editor .client-process-canvas{width:100%;max-width:100%;overflow-x:hidden}
+body.mode-process-editor .flow-track{width:100%;min-width:0;max-width:100%;flex-wrap:wrap;row-gap:20px}
+body.mode-process-editor .flow-step{flex:1 1 180px;width:auto;min-width:170px;max-width:230px}
+body.mode-process-editor .flow-boundary.start,body.mode-process-editor .flow-boundary.end{min-width:170px}
+body.mode-process-editor .flow-connector{flex:0 0 28px;width:28px}
+
+.modal:has(.process-modal-form){width:min(940px,96vw);max-height:90vh;overflow:hidden;display:flex;flex-direction:column}
+.modal:has(.process-modal-form) .modal-head,.modal:has(.process-modal-form) .modal-foot{flex:0 0 auto}
+.modal:has(.process-modal-form) .modal-body{min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain}
+.process-modal-form{min-width:0}
+.process-modal-form .step-group,.process-modal-form .step-group>.form-grid,.process-modal-form .field{min-width:0}
+.process-modal-form .field:has(.aunea-select[open]){position:relative;z-index:250}
+.process-modal-form .aunea-select[open]{z-index:260}
+.process-modal-form .aunea-select-menu{z-index:270;max-height:220px;overflow-y:auto}
+.process-modal-form .form-grid{align-items:start}
+.process-modal-form .choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.process-modal-form .choice{min-width:0}
+.process-modal-form .choice label{width:100%;height:100%;overflow-wrap:anywhere}
+.process-modal-form .compound-control{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;align-items:center;width:100%;min-width:0}
+.process-modal-form .compound-control>input,.process-modal-form .compound-control>.canonical-aunea-select,.process-modal-form .compound-control>.process-aunea-select{width:100%;min-width:0}
+.process-modal-form .compound-control .unit-label{justify-self:start}
+.process-modal-form .form-grid.nested{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.process-modal-form .economic-time-control{grid-template-columns:minmax(130px,1fr) minmax(125px,.8fr) auto}
+.decision-route-card{border:1px solid var(--system-line);border-radius:10px;background:#fbfdfc;padding:13px;min-width:0}
+.decision-route-card.route-no{margin-top:2px;background:#fff}
+.decision-route-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}
+.decision-route-head b{font-size:var(--font-small);color:var(--system)}
+.decision-route-head span{font-size:var(--font-caption);color:var(--muted);text-align:right}
+.flow-step-tools .danger-text{color:var(--red)}
+@media(max-width:760px){.process-modal-form .choice-grid,.process-modal-form .form-grid.nested,.process-modal-form .compound-control,.process-modal-form .economic-time-control{grid-template-columns:1fr}.decision-route-head{display:block}.decision-route-head span{display:block;text-align:left;margin-top:3px}}
+/* [AUNEA-FE-PROC-CLIENT-040] END */
+
+
+/* [AUNEA-FROZEN-STAGE-S08-001] START — Estado objetivo y restricciones
+   DF087–DF089 use the same full-row width; DF089 is Preferencias o restricciones de plataforma. */
+.field[data-field="DF087"],
+.field[data-field="DF088"]{grid-column:1/-1}
+.field[data-field="DF089"]{grid-column:1/-1}
+/* [AUNEA-FROZEN-STAGE-S08-001] END */
+
+.mode-process-editor .action-bar{left:0}
+
+
+/* [AUNEA-FROZEN-PAGE-COMPANIES-001] START — FINALIZADA / FROZEN
+   User-approved Companies page. Do not modify this block after closure; Acceptance Gate snapshots it. */
+/* P01 Empresas — page-specific layout only. Dropdown skin remains the immutable global AUNEA Select. */
+.company-filter-row{align-items:flex-end;gap:12px}
+.company-filter-row .filter-group:first-child{min-width:190px;max-width:220px;flex:0 1 220px}
+.company-filter-row .filter-group:first-child .aunea-select-menu{min-width:100%;width:100%}
+.company-filter-row .filter-group:first-child .aunea-select-menu button{display:block;min-height:40px;padding:9px 34px 9px 11px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.company-archive-check{margin-bottom:1px}
+.company-table th:nth-child(4),.company-table td:nth-child(4){white-space:nowrap}
+.company-table td:nth-child(4) .badge{white-space:nowrap;display:inline-flex;width:max-content}
+.company-ins-tabs{padding-right:14px;gap:6px}
+.company-ins-tabs .tab:last-child{margin-right:4px}
+.company-table-foot{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.company-pagination{display:flex;align-items:center;gap:5px}
+.company-pagination button{min-width:32px;height:32px;padding:0 9px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);font:inherit;font-size:var(--font-small);font-weight:700;cursor:pointer}
+.company-pagination button:hover:not(:disabled){border-color:var(--system);background:var(--system-soft);color:var(--system)}
+.company-pagination button.active{border-color:var(--system);background:var(--system-soft);color:var(--system)}
+.company-pagination button:disabled{opacity:.4;cursor:not-allowed}
+@media(max-width:900px){.company-filter-row .filter-group:first-child{min-width:180px;max-width:100%;flex:1 1 220px}.company-table-foot{align-items:flex-start}.company-pagination{flex-wrap:wrap}}
+
+
+/* Empresas viewport contract — the page itself must not create vertical document scroll.
+   Main owns exactly one viewport; topbar keeps its natural height and content consumes the remainder. */
+.main:has(.companies-screen-marker){height:100vh;min-height:0;overflow:hidden;display:flex;flex-direction:column}
+.main:has(.companies-screen-marker)>.topbar{flex:0 0 auto}
+.main:has(.companies-screen-marker)>.content{flex:1 1 auto;height:auto;min-height:0;overflow:hidden;box-sizing:border-box;padding-top:18px;padding-bottom:68px}
+.content:has(.companies-screen-marker) .page-head{margin-bottom:12px}
+.content:has(.companies-screen-marker) .workspace{height:100%;min-height:0;max-height:none;overflow:hidden}
+.content:has(.companies-screen-marker) .inspector{max-height:100%;overflow:hidden}
+.content:has(.companies-screen-marker) .ins-card{max-height:100%;overflow:hidden}
+.content:has(.companies-screen-marker) .table-wrap{overflow:hidden}
+.content:has(.companies-screen-marker) .company-table{width:100%;min-width:0;max-width:100%;table-layout:fixed}
+.content:has(.companies-screen-marker) .company-table th,
+.content:has(.companies-screen-marker) .company-table td{min-width:0;max-width:0;overflow:hidden;text-overflow:ellipsis}
+.content:has(.companies-screen-marker) .company-table th:nth-child(1){width:18%}
+.content:has(.companies-screen-marker) .company-table th:nth-child(2){width:17%}
+.content:has(.companies-screen-marker) .company-table th:nth-child(3){width:10%}
+.content:has(.companies-screen-marker) .company-table th:nth-child(4){width:15%}
+.content:has(.companies-screen-marker) .company-table th:nth-child(5){width:20%}
+.content:has(.companies-screen-marker) .company-table th:nth-child(6){width:12%}
+.content:has(.companies-screen-marker) .company-table th:nth-child(7){width:8%}
+.content:has(.companies-screen-marker) .company-table td:not(:nth-child(4)){overflow-wrap:anywhere}
+.content:has(.companies-screen-marker) .workspace,
+.content:has(.companies-screen-marker) .workspace>*{min-width:0;max-width:100%}
+.company-filter-row .filter-group:first-child .aunea-select-menu button[data-full-label]{position:relative}
+.company-filter-row .filter-group:first-child .aunea-select-menu button[data-full-label]:hover::before{
+  content:attr(data-full-label);position:absolute;left:calc(100% + 8px);top:50%;transform:translateY(-50%);
+  z-index:120;max-width:420px;width:max-content;padding:7px 9px;border:1px solid var(--line);border-radius:8px;
+  background:#fff;color:var(--ink);box-shadow:var(--shadow);white-space:normal;line-height:1.35;font-weight:600;pointer-events:none
+}
+
+
+/* Empresas root viewport lock — browser/document scrollbar must not exist while CRM Empresas is active. */
+html.page-companies,body.page-companies{height:100%;max-height:100%;overflow:hidden!important}
+body.page-companies .app-shell{height:100vh;min-height:0;overflow:hidden}
+body.page-companies .main{height:100vh;min-height:0;overflow:hidden}
+/* [AUNEA-FROZEN-PAGE-COMPANIES-001] END */
+
+.opportunity-linked-studies{display:grid;gap:8px}
+
+
+/* [AUNEA-FE-CRM-LIST-VIEWPORT-010] START — Contactos/Interacciones compact list viewport
+   PURPOSE: Keep CRM list pages inside the viewport, paginate instead of vertical scrolling, and preserve compact readable filters.
+   SOURCE: User review 2026-09-22; DEC-050/058/061; shared AUNEA Select contract.
+   INPUTS: contacts-screen-marker, interactions-screen-marker.
+   OUTPUTS: page-scoped viewport, pagination and dropdown option truncation.
+   SIDE_EFFECTS: visual only; Empresas FROZEN selectors are not targeted.
+   CHANGE_RISK: MEDIUM. */
+html:has(.contacts-screen-marker),body:has(.contacts-screen-marker),
+html:has(.interactions-screen-marker),body:has(.interactions-screen-marker),
+html:has(.opportunities-screen-marker),body:has(.opportunities-screen-marker){height:100%;max-height:100%;overflow:hidden!important}
+body:has(.contacts-screen-marker) .app-shell,
+body:has(.interactions-screen-marker) .app-shell,
+body:has(.opportunities-screen-marker) .app-shell{height:100vh;min-height:0;overflow:hidden}
+.main:has(.contacts-screen-marker),
+.main:has(.interactions-screen-marker),
+.main:has(.opportunities-screen-marker){height:100vh;min-height:0;overflow:hidden;display:flex;flex-direction:column}
+.main:has(.contacts-screen-marker)>.topbar,
+.main:has(.interactions-screen-marker)>.topbar,
+.main:has(.opportunities-screen-marker)>.topbar{flex:0 0 auto}
+.main:has(.contacts-screen-marker)>.content,
+.main:has(.interactions-screen-marker)>.content,
+.main:has(.opportunities-screen-marker)>.content{flex:1 1 auto;width:100%;max-width:1620px;margin-left:auto;margin-right:auto;height:auto;min-height:0;overflow:hidden;box-sizing:border-box;padding-top:18px;padding-bottom:68px}
+.content:has(.contacts-screen-marker) .page-head,
+.content:has(.interactions-screen-marker) .page-head,
+.content:has(.opportunities-screen-marker) .page-head{margin-bottom:12px}
+.content:has(.contacts-screen-marker) .workspace,
+.content:has(.interactions-screen-marker) .workspace,
+.content:has(.opportunities-screen-marker) .workspace{min-height:0;max-height:100%;overflow:hidden}
+.content:has(.contacts-screen-marker) .inspector,
+.content:has(.interactions-screen-marker) .inspector,
+.content:has(.opportunities-screen-marker) .inspector{min-height:0;max-height:100%;overflow:hidden}
+.content:has(.contacts-screen-marker) .table-wrap,
+.content:has(.interactions-screen-marker) .table-wrap,
+.content:has(.opportunities-screen-marker) .table-wrap{overflow-x:auto;overflow-y:hidden}
+
+.contact-role-filter{min-width:190px;max-width:230px;flex:0 1 230px}
+.contact-role-filter .aunea-select-menu button,
+.interaction-entity-filter .aunea-select-menu button,
+.opportunity-entity-filter .aunea-select-menu button{display:block;width:100%;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:40px;padding:9px 34px 9px 11px;line-height:1.35}
+.contact-role-filter .aunea-select-menu button[data-full-label],
+.interaction-entity-filter .aunea-select-menu button[data-full-label],
+.opportunity-entity-filter .aunea-select-menu button[data-full-label]{cursor:default}
+
+.interaction-entity-filter,.opportunity-entity-filter{min-width:190px;max-width:245px;flex:0 1 245px}
+.interaction-table th,.interaction-table td{padding-top:7px;padding-bottom:7px}
+.interaction-table td small{line-height:1.2}
+
+.contact-table-foot,.interaction-table-foot,.opportunity-table-foot{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.crm-pagination{display:flex;align-items:center;gap:5px}
+.crm-pagination button{min-width:32px;height:32px;padding:0 9px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);font:inherit;font-size:var(--font-small);font-weight:700;cursor:pointer}
+.crm-pagination button:hover:not(:disabled){border-color:var(--system);background:var(--system-soft);color:var(--system)}
+.crm-pagination button.active{border-color:var(--system);background:var(--system-soft);color:var(--system)}
+.crm-pagination button:disabled{opacity:.4;cursor:not-allowed}
+@media(max-width:900px){
+  .contact-role-filter,.interaction-entity-filter,.opportunity-entity-filter{min-width:180px;max-width:100%;flex:1 1 220px}
+  .contact-table-foot,.interaction-table-foot,.opportunity-table-foot{align-items:flex-start}
+  .crm-pagination{flex-wrap:wrap}
+}
+/* [AUNEA-FE-CRM-LIST-VIEWPORT-010] END */
+
+
+/* [AUNEA-FE-DEMAND-STAGE-030] START — S03 Demanda, volumen y servicio · REVIEW
+   PURPOSE: Keep numeric/compound controls aligned and custom dropdown menus visible above adjacent fields.
+   SOURCE: Diagnostic Master v1.2 DF021–DF029; explicit UAT review 2026-09-24.
+   STATUS: REVIEW — intentionally not frozen. */
+.content:has(.diagnostic-stage-s03) .stage-card,
+.content:has(.diagnostic-stage-s03) .stage-card>.form-grid,
+.content:has(.diagnostic-stage-s03) .field{overflow:visible}
+.content:has(.diagnostic-stage-s03) .stage-card>.form-grid{align-items:start}
+.content:has(.diagnostic-stage-s03) .field:has(.aunea-select[open]){position:relative;z-index:120}
+.content:has(.diagnostic-stage-s03) .aunea-select[open]{z-index:130}
+.content:has(.diagnostic-stage-s03) .aunea-select-menu{z-index:140;max-height:240px}
+.content:has(.diagnostic-stage-s03) .compound-control{width:100%;min-width:0}
+.content:has(.diagnostic-stage-s03) .compound-control>input{min-width:110px}
+.content:has(.diagnostic-stage-s03) .compound-control>.canonical-aunea-select{min-width:150px}
+.content:has(.diagnostic-stage-s03) .volume-sentence{display:grid;grid-template-columns:minmax(130px,.75fr) auto minmax(190px,1fr);gap:10px;align-items:center}
+.content:has(.diagnostic-stage-s03) .volume-sentence>.canonical-aunea-select{min-width:0}
+@media(max-width:980px){.content:has(.diagnostic-stage-s03) .volume-sentence{grid-template-columns:1fr}.content:has(.diagnostic-stage-s03) .volume-sentence .unit-label{white-space:normal}}
+/* [AUNEA-FE-DEMAND-STAGE-030] END */
+
+
+/* [AUNEA-FE-STUDIES-LIST-VIEWPORT-010] START — Estudios list viewport and actions
+   PURPOSE: Keep Estudios inside one viewport, paginate at 10 rows and use a contextual three-dot action menu.
+   SOURCE: User review 2026-09-22; DEC-042/050/051/055/066; Architecture Contract P05.
+   INPUTS: studies-screen-marker and studies page markup.
+   OUTPUTS: page-scoped layout only.
+   SIDE_EFFECTS: none.
+   CHANGE_RISK: MEDIUM. */
+html:has(.studies-screen-marker),body:has(.studies-screen-marker){height:100%;max-height:100%;overflow:hidden!important}
+body:has(.studies-screen-marker) .app-shell{height:100vh;min-height:0;overflow:hidden}
+.main:has(.studies-screen-marker){height:100vh;min-height:0;overflow:hidden;display:flex;flex-direction:column}
+.main:has(.studies-screen-marker)>.topbar{flex:0 0 auto}
+.main:has(.studies-screen-marker)>.content{flex:1 1 auto;width:100%;max-width:1620px;margin-left:auto;margin-right:auto;height:auto;min-height:0;overflow:hidden;box-sizing:border-box;padding-top:18px;padding-bottom:24px}
+.content:has(.studies-screen-marker) .page-head{margin-bottom:12px}
+.content:has(.studies-screen-marker) .section{margin-top:0;min-height:0;overflow:hidden}
+.content:has(.studies-screen-marker) .table-wrap{overflow-x:auto;overflow-y:hidden}
+.studies-table th,.studies-table td{padding-top:8px;padding-bottom:8px}
+.studies-table th:last-child,.studies-table td:last-child{width:72px;text-align:center}
+.studies-table-foot{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:10px}
+.studies-table .kebab-btn{margin:0 auto}
+@media(max-width:900px){.studies-table-foot{align-items:flex-start}.studies-pagination{flex-wrap:wrap}}
+/* [AUNEA-FE-STUDIES-LIST-VIEWPORT-010] END */
+
+
+/* [AUNEA-FROZEN-PAGE-HOME-001] START — FINALIZADA / FROZEN
+   CRM Inicio approved after removing document vertical scroll. Do not modify after closure. */
+html:has(.home-screen-marker),body:has(.home-screen-marker){height:100%;max-height:100%;overflow:hidden!important}
+body:has(.home-screen-marker) .app-shell{height:100vh;min-height:0;overflow:hidden}
+.main:has(.home-screen-marker){height:100vh;min-height:0;overflow:hidden;display:flex;flex-direction:column}
+.main:has(.home-screen-marker)>.topbar{flex:0 0 auto}
+.main:has(.home-screen-marker)>.content{flex:1 1 auto;width:100%;max-width:1620px;margin-left:auto;margin-right:auto;height:auto;min-height:0;overflow:hidden;box-sizing:border-box;padding-top:18px;padding-bottom:24px}
+.content:has(.home-screen-marker) .page-head{margin-bottom:12px}
+.content:has(.home-screen-marker) .hero-actions{margin-top:0}
+.content:has(.home-screen-marker) .section{margin-top:12px}
+.content:has(.home-screen-marker) .card-pad.section{padding-top:16px;padding-bottom:16px}
+/* [AUNEA-FROZEN-PAGE-HOME-001] END */
