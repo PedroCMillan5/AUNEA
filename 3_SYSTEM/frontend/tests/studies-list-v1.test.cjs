@@ -22,17 +22,22 @@ test('Estudios paginates only after ten records with numbered navigation',()=>{
   assert.match(shell,/paged\.totalPages>1/);
 });
 
-test('Estudios uses one three-dot contextual menu instead of multiple visible row buttons',()=>{
-  assert.match(shell,/<details class="study-row-menu">/);
-  assert.match(shell,/summary class="kebab-btn"/);
-  assert.match(shell,/data-open-eng="\$\{attr\(e\.id\)\}">Abrir estudio/);
-  assert.match(shell,/data-open-eng-page="resultados">Trabajo interno/);
-  assert.match(shell,/data-advance-eng="\$\{e\.id\}">Avanzar a/);
+test('Estudios uses the same floating three-dot menu pattern as finalized CRM pages',()=>{
+  assert.match(shell,/function openStudyActionMenu/);
+  assert.match(shell,/className='row-menu-popover company-floating-menu'/);
+  assert.match(shell,/data-study-actions/);
+  assert.match(shell,/getBoundingClientRect\(\)/);
+  assert.match(shell,/if\(top\+menu\.offsetHeight>window\.innerHeight-8\)top=Math\.max\(8,r\.top-menu\.offsetHeight-gap\)/);
+  assert.match(shell,/data-study-menu-open/);
+  assert.match(shell,/data-study-menu-work/);
+  assert.match(shell,/data-study-menu-advance/);
 });
 
-test('Estudios reuses the governed navigation and lifecycle action contracts',()=>{
-  assert.match(shell,/data-open-eng/);
-  assert.match(shell,/data-advance-eng/);
+test('Estudios keeps governed navigation, lifecycle advance and pagination contracts',()=>{
+  assert.match(shell,/state\.activeEngagementId=eng\.id/);
+  assert.match(shell,/state\.activePage='diagnostico'/);
+  assert.match(shell,/state\.activePage='resultados'/);
+  assert.match(shell,/advanceEngagementTo\(eng,next,'avance manual desde Estudios'\)/);
   assert.match(shell,/document\.querySelectorAll\('\[data-study-page\]'\)/);
 });
 

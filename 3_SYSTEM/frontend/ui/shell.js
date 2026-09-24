@@ -7,12 +7,12 @@
 // CHANGE_RISK: HIGH.
 
 // [AUNEA-FE-PAGE-STUDIES-010] START — P05 Estudios
-// PURPOSE: List Engagement records with 10-row paging and a single contextual action menu per study.
+// PURPOSE: List Engagement records with 10-row paging and the same floating three-dot action menu used by the finalized CRM pages.
 // SOURCE: DEC-042/050/051/055/066; Architecture Contract P05; user review 2026-09-22.
 // INPUTS: state.engagements plus referenced Company/Contact masters.
 // OUTPUTS: Estudios page markup; existing governed actions remain data-open-eng / data-advance-eng.
-// SIDE_EFFECTS: studyPage navigation state only; lifecycle/navigation side effects remain in their existing handlers.
-// CHANGE_RISK: MEDIUM.
+// SIDE_EFFECTS: studyPage navigation state plus temporary floating menu DOM; lifecycle/navigation actions remain governed.
+// CHANGE_RISK: CRITICAL once FROZEN.
 const STUDY_PAGE_SIZE=10;
 function studyPagination(rows){
   const totalPages=Math.max(1,Math.ceil(rows.length/STUDY_PAGE_SIZE));
@@ -21,13 +21,40 @@ function studyPagination(rows){
   const start=(page-1)*STUDY_PAGE_SIZE;
   return {page,totalPages,rows:rows.slice(start,start+STUDY_PAGE_SIZE)};
 }
-function studyActionMenu(e){
-  const next=nextEngagementStatus(e);
-  return `<details class="study-row-menu"><summary class="kebab-btn" aria-label="Acciones de ${attr(e.title||'estudio')}">•••</summary><div class="row-menu-popover study-row-menu-popover">
-    <button type="button" data-open-eng="${attr(e.id)}">Abrir estudio</button>
-    <button type="button" data-open-eng="${attr(e.id)}" data-open-eng-page="resultados">Trabajo interno</button>
-    ${next?`<button type="button" data-advance-eng="${e.id}">Avanzar a ${esc(next)}</button>`:''}
-  </div></details>`;
+function closeStudyFloatingMenu(){document.getElementById('studyFloatingMenu')?.remove()}
+function openStudyActionMenu(button,engagementId){
+  closeStudyFloatingMenu();
+  const eng=(state.engagements||[]).find(x=>x.id===engagementId);if(!eng)return;
+  const next=nextEngagementStatus(eng);
+  const menu=document.createElement('div');menu.id='studyFloatingMenu';menu.className='row-menu-popover company-floating-menu';
+  menu.innerHTML=`<button type="button" data-study-menu-open="${attr(eng.id)}">Abrir estudio</button>
+    <button type="button" data-study-menu-work="${attr(eng.id)}">Trabajo interno</button>
+    ${next?`<button type="button" data-study-menu-advance="${attr(eng.id)}">Avanzar a ${esc(next)}</button>`:''}`;
+  document.body.appendChild(menu);
+  const r=button.getBoundingClientRect(),gap=6;
+  let left=Math.min(window.innerWidth-menu.offsetWidth-8,Math.max(8,r.right-menu.offsetWidth));
+  let top=r.bottom+gap;
+  if(top+menu.offsetHeight>window.innerHeight-8)top=Math.max(8,r.top-menu.offsetHeight-gap);
+  menu.style.left=`${left}px`;menu.style.top=`${top}px`;
+}
+function studyActionMenu(e){return `<button type="button" class="kebab-btn" data-study-actions="${attr(e.id)}" aria-label="Acciones de ${attr(e.title||'estudio')}">•••</button>`}
+
+if(!window.__auneaStudyActionsBound){
+  window.__auneaStudyActionsBound=true;
+  document.addEventListener('click',ev=>{
+    const trigger=ev.target.closest('[data-study-actions]');
+    if(trigger){ev.preventDefault();ev.stopPropagation();openStudyActionMenu(trigger,trigger.dataset.studyActions);return}
+    if(!ev.target.closest('#studyFloatingMenu'))closeStudyFloatingMenu();
+    const action=ev.target.closest('[data-study-menu-open],[data-study-menu-work],[data-study-menu-advance]');if(!action)return;
+    ev.preventDefault();ev.stopPropagation();closeStudyFloatingMenu();
+    const eid=action.dataset.studyMenuOpen||action.dataset.studyMenuWork||action.dataset.studyMenuAdvance;
+    const eng=(state.engagements||[]).find(x=>x.id===eid);if(!eng)return;
+    state.activeEngagementId=eng.id;
+    if(action.dataset.studyMenuOpen!==undefined){state.activePage='diagnostico';render();return}
+    if(action.dataset.studyMenuWork!==undefined){state.activePage='resultados';render();return}
+    const next=nextEngagementStatus(eng);
+    if(next&&advanceEngagementTo(eng,next,'avance manual desde Estudios'))render();
+  },true);
 }
 function studiesPage(){
   const all=state.engagements||[],paged=studyPagination(all),rows=paged.rows;

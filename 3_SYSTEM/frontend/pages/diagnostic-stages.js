@@ -9,12 +9,12 @@ function fieldOptions(setId){return schema?.option_sets?.[setId]?.options||[]}
 
 function diagnosticFieldMeta(f){return f.Requiredness==='REQUIRED_90M'?requiredMark():''}
 function habitualVolumeBlock(f21,f22,e){
-  const value=numberParts(effectiveValue(f21,e)),period=effectiveValue(f22,e),periods=fieldOptions(f22.Option_Set_ID||'OS_PERIOD');
-  return `<div class="field full volume-pair" data-uat="UAT-VIS-023"><label>Volumen habitual${diagnosticFieldMeta(f21)}</label><div><div class="compound-control volume-sentence"><input type="number" min="0" step="any" data-number-value="${f21.Field_ID}" value="${attr(value.value??'')}" placeholder="120"><input type="hidden" data-number-unit="${f21.Field_ID}" value="case"><span class="unit-label">casos por</span>${auneaSelectControl(f22.Field_ID,periods.map(o=>({value:o.value,label:String(o.label).toLowerCase()})),period,{extra:`data-answer="${f22.Field_ID}"`,placeholder:'periodo…'})}</div></div><div class="field-help">${esc(f21.Objetivo_concreto||'')} ${esc(f22.Objetivo_concreto||'')}</div></div>`;
+  const raw=effectiveValue(f21,e),value=(raw&&typeof raw==='object')?raw.value:raw,period=effectiveValue(f22,e),periods=fieldOptions(f22.Option_Set_ID||'OS_PERIOD');
+  return `<div class="field full volume-pair demand-volume-primary" data-uat="UAT-VIS-023"><label>Volumen habitual${diagnosticFieldMeta(f21)}</label><div class="compound-control volume-sentence"><input type="number" inputmode="decimal" min="0" step="any" data-scalar-number-value="${f21.Field_ID}" value="${attr(value??'')}" placeholder="120" aria-label="Volumen habitual de casos"><span class="unit-label">casos por</span>${auneaSelectControl(f22.Field_ID,periods.map(o=>({value:o.value,label:String(o.label).toLowerCase()})),period,{extra:`data-answer="${f22.Field_ID}"`,placeholder:'Selecciona periodo…'})}</div><div class="field-help">${esc(f21.Objetivo_concreto||'')} ${esc(f22.Objetivo_concreto||'')}</div></div>`;
 }
 function peakVolumeBlock(f,e){
   const value=numberParts(effectiveValue(f,e)),periods=fieldOptions('OS_PERIOD');
-  return `<div class="field full volume-pair" data-uat="UAT-VIS-024"><label>${esc(f.Pregunta_o_etiqueta_ES)}${diagnosticFieldMeta(f)}</label><div><div class="compound-control volume-sentence"><input type="number" min="0" step="any" data-number-value="${f.Field_ID}" value="${attr(value.value??'')}" placeholder="200"><input type="hidden" data-number-unit="${f.Field_ID}" value="case"><span class="unit-label">casos por</span>${auneaSelectControl(`${f.Field_ID}__period`,periods.map(o=>({value:o.value,label:String(o.label).toLowerCase()})),value.period,{extra:`data-number-period="${f.Field_ID}"`,placeholder:'periodo…'})}</div></div><div class="field-help">${esc(f.Objetivo_concreto||'')}</div></div>`;
+  return `<div class="field full volume-pair demand-volume-peak" data-uat="UAT-VIS-024"><label>${esc(f.Pregunta_o_etiqueta_ES)}${diagnosticFieldMeta(f)}</label><div class="compound-control volume-sentence"><input type="number" inputmode="decimal" min="0" step="any" data-number-value="${f.Field_ID}" value="${attr(value.value??'')}" placeholder="200" aria-label="Volumen de pico"><input type="hidden" data-number-unit="${f.Field_ID}" value="case"><span class="unit-label">casos por</span>${auneaSelectControl(`${f.Field_ID}__period`,periods.map(o=>({value:o.value,label:String(o.label).toLowerCase()})),value.period,{extra:`data-number-period="${f.Field_ID}"`,placeholder:'Selecciona periodo…'})}</div><div class="field-help">${esc(f.Objetivo_concreto||'')}</div></div>`;
 }
 function renderStageFields(fields,e){
   const out=[];
@@ -34,6 +34,7 @@ function renderStageFields(fields,e){
 // B02 / VR-01A: IMG90-01 governs the twelve top-level visible fields of PG01. The Diagnostic Master
 // still governs S01 semantics (DF001-DF010). DEC-059 fixes the bridge: visible CRM/context fields write
 // to their single owner. B03 adds the canonical S01 remainder as progressive disclosure below them.
+// [AUNEA-FROZEN-STAGE-S01-001] START — S01 Contexto y objetivos
 const PG01_PRIORITY=Object.freeze(['Baja','Media','Alta','Crítica']);
 function pg01Prefill(source){return `<span class="prefill-chip">Prellenado desde ${esc(source)}</span>`}
 function pg01Field(label,control,help,{source='',required=true,full=false}={}){
@@ -101,6 +102,7 @@ function pg01CanonicalDisclosure(fields,e){
   const status=pending.length?`${pending.length} obligatorio${pending.length===1?'':'s'} pendiente${pending.length===1?'':'s'}`:'Completo';
   return `<section class="pg01-disclosure pg01-disclosure-open"><div class="pg01-disclosure-head"><span>${esc(PG01_DISCLOSURE_TITLE)}</span><span class="conditional-tag">${esc(status)}</span></div><div class="form-grid">${renderStageFields(folded,e)}</div></section>`;
 }
+// [AUNEA-FROZEN-STAGE-S01-001] END
 
 // Continuar never skips a canonical obligation. Requiredness and branch activity are read from the
 // Diagnostic Master, so nothing here decides what is mandatory: it only refuses to advance and points
@@ -159,6 +161,7 @@ function bindPg01Context(){
   });
 }
 
+// [AUNEA-FROZEN-STAGE-S02-001] START — S02 Alcance del proceso
 function engagementBusinessAreaBlock(e){
   const options=fieldOptions('REF_DOMAIN');
   return `<div class="field full engagement-business-area" data-runtime-field="RT_ENGAGEMENT.Business_Area_ID">
@@ -167,6 +170,7 @@ function engagementBusinessAreaBlock(e){
     <div class="field-help">Área o dominio funcional sobre el que se realiza este diagnóstico. Puede ser distinta en otros estudios de la misma empresa.</div>
   </div>`;
 }
+// [AUNEA-FROZEN-STAGE-S02-001] END
 
 // Which approved reference each stage reproduces, and what the client is looking at while it is
 // being captured. Both come from the 90-min UI Spec (§5 client states, §17 inventory), not from here.
@@ -257,7 +261,8 @@ function stagePage(){
 
   const pageTitle=stage.Stage_ID==='S01'?'Contexto del cliente':stage.Stage_ES;
   const pageSubtitle=stage.Stage_ID==='S01'?'Recogemos la base operativa y empresarial antes de entrar en el flujo.':stage.Objetivo;
-  return pageTop(pageTitle,pageSubtitle,'',STAGE_REFERENCE[stage.Stage_ID]||'')
+  const stageMarker=`<span class="diagnostic-stage-marker diagnostic-stage-${String(stage.Stage_ID).toLowerCase()}" data-diagnostic-stage="${attr(stage.Stage_ID)}" hidden></span>`;
+  return stageMarker+pageTop(pageTitle,pageSubtitle,'',STAGE_REFERENCE[stage.Stage_ID]||'')
     + workspace(main,inspector) + bar;
 }
 function processPrompt(e){return `<div class="notice info"><strong>Mapa AS-IS:</strong> los campos DF031–DF055 se capturan principalmente en el editor visual. Actualmente hay <b>${e.processSteps.filter(x=>x.status!=='SUPERSEDED').length}</b> pasos. <button class="btn btn-small btn-primary" data-open-process-editor="1">Abrir editor con el cliente ↗</button><button class="btn btn-small" data-goto-process="1">Abrir aquí</button></div>`}

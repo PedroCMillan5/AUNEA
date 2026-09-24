@@ -1,0 +1,21 @@
+/* [AUNEA-FE-STUDIES-LIST-VIEWPORT-010] START — Estudios list viewport and actions
+   PURPOSE: Keep Estudios inside one viewport, paginate at 10 rows and use a contextual three-dot action menu.
+   SOURCE: User review 2026-09-22; DEC-042/050/051/055/066; Architecture Contract P05.
+   INPUTS: studies-screen-marker and studies page markup.
+   OUTPUTS: page-scoped layout only.
+   SIDE_EFFECTS: none.
+   CHANGE_RISK: MEDIUM. */
+html:has(.studies-screen-marker),body:has(.studies-screen-marker){height:100%;max-height:100%;overflow:hidden!important}
+body:has(.studies-screen-marker) .app-shell{height:100vh;min-height:0;overflow:hidden}
+.main:has(.studies-screen-marker){height:100vh;min-height:0;overflow:hidden;display:flex;flex-direction:column}
+.main:has(.studies-screen-marker)>.topbar{flex:0 0 auto}
+.main:has(.studies-screen-marker)>.content{flex:1 1 auto;width:100%;max-width:1620px;margin-left:auto;margin-right:auto;height:auto;min-height:0;overflow:hidden;box-sizing:border-box;padding-top:18px;padding-bottom:24px}
+.content:has(.studies-screen-marker) .page-head{margin-bottom:12px}
+.content:has(.studies-screen-marker) .section{margin-top:0;min-height:0;overflow:hidden}
+.content:has(.studies-screen-marker) .table-wrap{overflow-x:auto;overflow-y:hidden}
+.studies-table th,.studies-table td{padding-top:8px;padding-bottom:8px}
+.studies-table th:last-child,.studies-table td:last-child{width:72px;text-align:center}
+.studies-table-foot{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:10px}
+.studies-table .kebab-btn{margin:0 auto}
+@media(max-width:900px){.studies-table-foot{align-items:flex-start}.studies-pagination{flex-wrap:wrap}}
+/* [AUNEA-FE-STUDIES-LIST-VIEWPORT-010] END */

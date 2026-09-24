@@ -171,11 +171,12 @@ select option{background:#fff;color:var(--ink)}
 .process-node-actions button{border:1px solid var(--line);background:#fff;border-radius:6px;padding:4px 7px;font-size:10px;cursor:pointer}
 .process-node-actions button:hover{border-color:var(--system);background:var(--system-soft)}
 
-/* PG04 visible page 4 — Estado objetivo y restricciones
-   DF087 and DF088 are deliberate full-row questions so they follow the same vertical rhythm as
-   the first and fourth questions without changing Diagnostic Master ownership or semantics. */
+/* [AUNEA-FROZEN-STAGE-S08-001] START — Estado objetivo y restricciones
+   DF087–DF089 use the same full-row width; DF089 is Preferencias o restricciones de plataforma. */
 .field[data-field="DF087"],
-.field[data-field="DF088"]{grid-column:1/-1}
+.field[data-field="DF088"],
+.field[data-field="DF089"]{grid-column:1/-1}
+/* [AUNEA-FROZEN-STAGE-S08-001] END */
 
 .mode-process-editor .action-bar{left:0}
 
@@ -302,6 +303,26 @@ body:has(.opportunities-screen-marker) .app-shell{height:100vh;min-height:0;over
 /* [AUNEA-FE-CRM-LIST-VIEWPORT-010] END */
 
 
+/* [AUNEA-FE-DEMAND-STAGE-030] START — S03 Demanda, volumen y servicio · REVIEW
+   PURPOSE: Keep numeric/compound controls aligned and custom dropdown menus visible above adjacent fields.
+   SOURCE: Diagnostic Master v1.2 DF021–DF029; explicit UAT review 2026-09-24.
+   STATUS: REVIEW — intentionally not frozen. */
+.content:has(.diagnostic-stage-s03) .stage-card,
+.content:has(.diagnostic-stage-s03) .stage-card>.form-grid,
+.content:has(.diagnostic-stage-s03) .field{overflow:visible}
+.content:has(.diagnostic-stage-s03) .stage-card>.form-grid{align-items:start}
+.content:has(.diagnostic-stage-s03) .field:has(.aunea-select[open]){position:relative;z-index:120}
+.content:has(.diagnostic-stage-s03) .aunea-select[open]{z-index:130}
+.content:has(.diagnostic-stage-s03) .aunea-select-menu{z-index:140;max-height:240px}
+.content:has(.diagnostic-stage-s03) .compound-control{width:100%;min-width:0}
+.content:has(.diagnostic-stage-s03) .compound-control>input{min-width:110px}
+.content:has(.diagnostic-stage-s03) .compound-control>.canonical-aunea-select{min-width:150px}
+.content:has(.diagnostic-stage-s03) .volume-sentence{display:grid;grid-template-columns:minmax(130px,.75fr) auto minmax(190px,1fr);gap:10px;align-items:center}
+.content:has(.diagnostic-stage-s03) .volume-sentence>.canonical-aunea-select{min-width:0}
+@media(max-width:980px){.content:has(.diagnostic-stage-s03) .volume-sentence{grid-template-columns:1fr}.content:has(.diagnostic-stage-s03) .volume-sentence .unit-label{white-space:normal}}
+/* [AUNEA-FE-DEMAND-STAGE-030] END */
+
+
 /* [AUNEA-FE-STUDIES-LIST-VIEWPORT-010] START — Estudios list viewport and actions
    PURPOSE: Keep Estudios inside one viewport, paginate at 10 rows and use a contextual three-dot action menu.
    SOURCE: User review 2026-09-22; DEC-042/050/051/055/066; Architecture Contract P05.
@@ -320,7 +341,7 @@ body:has(.studies-screen-marker) .app-shell{height:100vh;min-height:0;overflow:h
 .studies-table th,.studies-table td{padding-top:8px;padding-bottom:8px}
 .studies-table th:last-child,.studies-table td:last-child{width:72px;text-align:center}
 .studies-table-foot{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:10px}
-.study-row-menu{position:relative;display:inline-block}.study-row-menu>summary{list-style:none}.study-row-menu>summary::-webkit-details-marker{display:none}.study-row-menu-popover{right:0;left:auto;top:36px;min-width:190px}
+.studies-table .kebab-btn{margin:0 auto}
 @media(max-width:900px){.studies-table-foot{align-items:flex-start}.studies-pagination{flex-wrap:wrap}}
 /* [AUNEA-FE-STUDIES-LIST-VIEWPORT-010] END */
 

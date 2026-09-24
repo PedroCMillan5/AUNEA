@@ -1,0 +1,10 @@
+// [AUNEA-FROZEN-STAGE-S02-001] START — S02 Alcance del proceso
+function engagementBusinessAreaBlock(e){
+  const options=fieldOptions('REF_DOMAIN');
+  return `<div class="field full engagement-business-area" data-runtime-field="RT_ENGAGEMENT.Business_Area_ID">
+    <label>Área de la empresa <span class="prefill-chip">Propio de este estudio</span></label>
+    ${auneaSelectControl('engagement_business_area',options,e.businessAreaId||'',{extra:'data-engagement-business-area="1"',placeholder:'Selecciona el área principal del estudio…'})}
+    <div class="field-help">Área o dominio funcional sobre el que se realiza este diagnóstico. Puede ser distinta en otros estudios de la misma empresa.</div>
+  </div>`;
+}
+// [AUNEA-FROZEN-STAGE-S02-001] END

@@ -278,8 +278,24 @@ function bindCanonicalRenderer(){
   document.querySelectorAll('[data-nextstep-other]').forEach(el=>el.addEventListener('input',()=>{const fid=el.dataset.nextstepOther;answerDetails(currentEng())[`${fid}__other`]=el.value;syncNextStep(fid)}));
   document.querySelectorAll('[data-nextstep-owner]').forEach(el=>el.addEventListener('input',()=>{const fid=el.dataset.nextstepOwner;answerDetails(currentEng())[`${fid}__owner`]=el.value;syncNextStep(fid)}));
   document.querySelectorAll('[data-nextstep-date]').forEach(el=>el.addEventListener('change',()=>{const fid=el.dataset.nextstepDate;answerDetails(currentEng())[`${fid}__date`]=el.value;syncNextStep(fid)}));
+  const safeNumericValue=el=>{
+    if(!el||String(el.value??'').trim()==='')return '';
+    const native=Number(el.valueAsNumber);
+    if(Number.isFinite(native))return native;
+    const fallback=Number(String(el.value).replace(',','.'));
+    return Number.isFinite(fallback)?fallback:null;
+  };
+  document.querySelectorAll('[data-scalar-number-value]').forEach(el=>el.addEventListener('input',()=>{
+    const value=safeNumericValue(el);if(value===null)return;
+    setAnswer(el.dataset.scalarNumberValue,value);
+  }));
   const numberFids=[...new Set([...document.querySelectorAll('[data-number-value],[data-number-unit],[data-number-period],[data-number-mode]')].map(x=>x.dataset.numberValue||x.dataset.numberUnit||x.dataset.numberPeriod||x.dataset.numberMode))];
-  numberFids.forEach(fid=>{const sync=()=>{const value=document.querySelector(`[data-number-value="${fid}"]`)?.value??'',unit=document.querySelector(`[data-number-unit="${fid}"]`)?.value??'',period=document.querySelector(`[data-number-period="${fid}"]`)?.value??'',mode=document.querySelector(`[data-number-mode="${fid}"]`)?.value??'';setAnswer(fid,{value:value===''?'':Number(value),unit,period,mode})};document.querySelectorAll(`[data-number-value="${fid}"]`).forEach(el=>el.addEventListener('input',sync));document.querySelectorAll(`[data-number-unit="${fid}"],[data-number-period="${fid}"],[data-number-mode="${fid}"]`).forEach(el=>el.addEventListener('change',sync))});
+  numberFids.forEach(fid=>{const sync=()=>{
+    const valueEl=document.querySelector(`[data-number-value="${fid}"]`),value=safeNumericValue(valueEl),unit=document.querySelector(`[data-number-unit="${fid}"]`)?.value??'',period=document.querySelector(`[data-number-period="${fid}"]`)?.value??'',mode=document.querySelector(`[data-number-mode="${fid}"]`)?.value??'';
+    if(value===null)return;
+    if(value===''&&!mode){setAnswer(fid,'');return}
+    setAnswer(fid,{value,unit,period,mode});
+  };document.querySelectorAll(`[data-number-value="${fid}"]`).forEach(el=>el.addEventListener('input',sync));document.querySelectorAll(`[data-number-unit="${fid}"],[data-number-period="${fid}"],[data-number-mode="${fid}"]`).forEach(el=>el.addEventListener('change',sync))});
   document.querySelectorAll('[data-set-unknown]').forEach(b=>b.onclick=()=>{setAnswer(b.dataset.setUnknown,'UNKNOWN');render()});
   const pairFids=[...new Set([...document.querySelectorAll('[data-pair-field]')].map(x=>x.dataset.pairField))];pairFids.forEach(fid=>document.querySelectorAll(`[data-pair-field="${fid}"]`).forEach(el=>el.addEventListener('change',()=>{const p={};document.querySelectorAll(`[data-pair-field="${fid}"]`).forEach(x=>p[x.dataset.pairPart]=x.value);setAnswer(fid,p)})));
   document.querySelectorAll('[data-multi][data-exclusive]').forEach(el=>el.addEventListener('change',()=>{
