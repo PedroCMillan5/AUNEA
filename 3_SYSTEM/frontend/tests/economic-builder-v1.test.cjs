@@ -41,7 +41,7 @@ test('addEconomic translates the driver-picker label to Spanish and shows an inf
   assert.match(ctx.__lastBody,/Concepto económico/);
   assert.doesNotMatch(ctx.__lastBody,/<label>Driver<\/label>/);
   assert.match(ctx.__lastBody,/Pasos con tiempo activo registrado: Alta, Aprobación/);
-  assert.match(ctx.__lastBody,/Pasos con tiempo de espera registrado: Aprobación/);
+  assert.match(ctx.__lastBody,/Pasos con espera registrada: Aprobación/);
   assert.match(ctx.__lastBody,/mismo patrón valor \+ unidad/);
   assert.match(ctx.__lastBody,/Tiempo activo atribuible/);
   assert.match(ctx.__lastBody,/Tiempo de espera atribuible/);
