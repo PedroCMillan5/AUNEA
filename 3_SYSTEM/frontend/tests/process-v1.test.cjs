@@ -125,12 +125,12 @@ test('the Friction modal groups fields into layer 1 (tipo/pasos/señal/contexto-
   });
 });
 
-test('fr_cause_other and fr_workaround_other are collapsed behind a "+ Otro" toggle by default, matching the Bloque B pattern',()=>{
-  assert.match(code,/data-fr-other-toggle="fr_cause_other"/);
-  assert.match(code,/data-fr-other-toggle="fr_workaround_other"/);
-  assert.match(code,/data-fr-other-wrap="fr_cause_other"\$\{f\._details\.cause\?'':' style="display:none"'\}/);
-  assert.match(code,/data-fr-other-wrap="fr_workaround_other"\$\{f\._details\.workaround\?'':' style="display:none"'\}/);
-  assert.match(code,/\[data-fr-other-toggle\]/);
+test('friction Other is rendered exactly once per canonical multiselect and detail appears only from that option',()=>{
+  assert.match(code,/selectedHtml\('fr_causes',causes,f\.cause,\{detailId:'fr_cause_other'/);
+  assert.match(code,/selectedHtml\('fr_workaround',work,f\.workaround,\{detailId:'fr_workaround_other'/);
+  assert.doesNotMatch(code,/fr_cause_other_toggle/);
+  assert.doesNotMatch(code,/fr_workaround_other_toggle/);
+  assert.match(code,/data-v1-other-toggle/);
 });
 
 test('client-first process view keeps fixed PG02 boundaries and exposes editable map actions',()=>{
@@ -174,6 +174,49 @@ test('selectable controls share the Acciones manuales visual contract and modal 
   assert.match(ui,/\.aunea-select summary span\{[^}]*text-overflow:ellipsis/);
   assert.match(ui,/\.aunea-select-menu\{[^}]*max-width:100%[^}]*overflow-x:hidden/);
   assert.match(ui,/\.aunea-select-menu button\{[^}]*white-space:normal/);
+});
+
+
+test('standalone client editor removes the blank shell column and horizontal scroll while keeping the process workspace full width',()=>{
+  const ui=fs.readFileSync(path.join(__dirname,'..','ui-system.css'),'utf8');
+  assert.match(ui,/body\.mode-process-editor \.app-shell\{display:block!important;width:100%/);
+  assert.match(ui,/body\.mode-process-editor \.main\{display:block!important;grid-column:auto!important/);
+  assert.match(ui,/body\.mode-process-editor \.client-process-canvas\{[^}]*overflow-x:hidden/);
+  assert.match(ui,/body\.mode-process-editor \.flow-track\{[^}]*flex-wrap:wrap/);
+});
+
+test('client step node actions do not bubble into Editar paso and each node exposes delete',()=>{
+  assert.doesNotMatch(code,/data-drag-step="\$\{s\.id\}" data-edit-step="\$\{s\.id\}"/);
+  assert.match(code,/data-delete-step="\$\{s\.id\}"/);
+  assert.match(code,/data-add-friction-step[^\n]+stopPropagation/);
+  assert.match(code,/data-add-risk-step[^\n]+stopPropagation/);
+  assert.match(code,/data-add-economic-step[^\n]+stopPropagation/);
+  assert.match(code,/data-delete-step[^\n]+stopPropagation/);
+});
+
+test('decision/bifurcation requires explicit YES and NO destinations and can create destinations that do not exist yet',()=>{
+  assert.match(code,/Ruta SÍ \/ afirmativa/);
+  assert.match(code,/Ruta NO \/ alternativa/);
+  assert.match(code,/decisionDestinationOptions/);
+  assert.match(code,/\+ Crear nuevo paso como destino/);
+  assert.match(code,/Una decisión necesita destino para la ruta SÍ y para la ruta NO/);
+  assert.match(code,/blankDecisionDestination/);
+  assert.match(code,/destination_step:noDestination/);
+});
+
+test('Process Step and Friction modal compound controls are structured and open dropdowns rise above adjacent fields',()=>{
+  const ui=fs.readFileSync(path.join(__dirname,'..','ui-system.css'),'utf8');
+  assert.match(ui,/\.modal:has\(\.process-modal-form\)\{width:min\(940px,96vw\)/);
+  assert.match(ui,/\.process-modal-form \.compound-control\{display:grid;grid-template-columns:repeat\(auto-fit,minmax\(120px,1fr\)\)/);
+  assert.match(ui,/\.process-modal-form \.field:has\(\.aunea-select\[open\]\)\{position:relative;z-index:250\}/);
+  assert.match(ui,/\.process-modal-form \.choice-grid\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+});
+
+test('friction client priority is a governed top-3 dropdown instead of an unconstrained numeric field',()=>{
+  assert.match(code,/auneaDropdownControl\('fr_priority'/);
+  assert.match(code,/1 — Prioridad principal/);
+  assert.match(code,/3 — Tercera prioridad/);
+  assert.doesNotMatch(code,/id="fr_priority" type="number"/);
 });
 
 // [AUNEA-UAT-PROC-010] END

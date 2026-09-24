@@ -55,7 +55,17 @@ function timeControl(id,minutes,unit='min',allowSpecial=false){
   return `<div class="compound-control"><input id="${id}" type="number" min="0" step="any" value="${attr(displayDuration(minutes,unit))}" placeholder="0">${auneaDropdownControl(id+'_unit',units,unit,'Unidad')}${allowSpecial?auneaDropdownControl(id+'_mode',modes,'','Estado'):''}</div>`;
 }
 function appliesControl(s){const a=s.applies_to&&typeof s.applies_to==='object'?s.applies_to:{mode:s.applies_to||'ALL',value:'',condition:''};const opts=[{value:'ALL',label:'Todos los casos'},{value:'PERCENT',label:'Porcentaje de casos'},{value:'CONDITION',label:'Sólo si se cumple una condición'}];return `<div class="compound-control">${auneaDropdownControl('step_applies_mode',opts,a.mode||'ALL','Aplicación')}<input id="step_applies_value" value="${attr(a.value||a.condition||'')}" placeholder="100% / condición breve"></div>`}
-function exceptionControl(s,e){const x=s.exception_path&&typeof s.exception_path==='object'?s.exception_path:{},types=[{value:'',label:'Sin excepción'},...fieldOptions('OS_EXCEPTION_TYPE')],dest=[{value:'',label:'Fin / por definir'},...activeSteps(e).filter(z=>z.id!==s.id).map(z=>({value:z.id,label:z.step_name||z.id}))];return `<div class="form-grid nested"><div class="field"><label>Tipo</label>${auneaDropdownControl('step_exc_type',types,x.type||'','Sin excepción')}</div><div class="field"><label>Condición</label><input id="step_exc_condition" value="${attr(x.condition||'')}" placeholder="Cuándo ocurre"></div><div class="field"><label>Destino</label>${auneaDropdownControl('step_exc_dest',dest,x.destination_step||'','Fin / por definir')}</div><div class="field"><label>Owner</label>${datalistControl('step_exc_owner','OS_ACTOR_ROLE',x.owner||'','Rol responsable')}</div></div>`}
+function decisionDestinationOptions(e,s){return [{value:'',label:'Selecciona destino…'},{value:'__NEW__',label:'+ Crear nuevo paso como destino'},...activeSteps(e).filter(z=>z.id!==s.id).map(z=>({value:z.id,label:z.step_name||'Paso sin nombre'}))]}
+function blankDecisionDestination(){return stepMeta({id:id('STEP'),status:'ACTIVE',occurrences_per_case:1,inputs:[],outputs:[],manual_actions:[],decision_criteria:[],communication_channels:[],evidence:[],active_time:0,wait_time:0,rework_time:0})}
+function exceptionControl(s,e){
+  const x=s.exception_path&&typeof s.exception_path==='object'?s.exception_path:{},types=[{value:'',label:'Sin clasificación adicional'},...fieldOptions('OS_EXCEPTION_TYPE')],dest=decisionDestinationOptions(e,s);
+  return `<div class="decision-route-card route-no"><div class="decision-route-head"><b>Ruta NO / alternativa</b><span>Cuando no se cumple la condición principal</span></div><div class="form-grid nested">
+    <div class="field full"><label>Destino de la ruta NO ${requiredMark()}</label>${auneaDropdownControl('step_exc_dest',dest,x.destination_step||'','Selecciona destino…')}</div>
+    <div class="field"><label>Condición / criterio de salida</label><input id="step_exc_condition" value="${attr(x.condition||'')}" placeholder="Ej. No cumple requisitos"></div>
+    <div class="field"><label>Tipo de excepción</label>${auneaDropdownControl('step_exc_type',types,x.type||'','Sin clasificación adicional')}</div>
+    <div class="field full"><label>Responsable de la excepción</label>${datalistControl('step_exc_owner','OS_ACTOR_ROLE',x.owner||'','Rol responsable')}</div>
+  </div></div>`;
+}
 
 function openStepModal(stepId=null,linkFromStepId=null,preset=null){
   const e=currentEng(),existing=stepId?e.processSteps.find(x=>x.id===stepId):null;
@@ -70,7 +80,7 @@ function openStepModal(stepId=null,linkFromStepId=null,preset=null){
   // grouped presentation. Group A (info básica) starts open; the rest collapse behind <summary> so the
   // editor reads as "3 essentials, then detail on demand" instead of one 20-field wall of inputs. The
   // step list row (processPage) already shows a readable per-step summary outside this modal.
-  const body=`<div class="step-groups">
+  const body=`<div class="step-groups process-modal-form">
   <details class="step-group" open><summary>A. Información básica</summary><div class="form-grid">
     <div class="field full"><label>Nombre del paso ${requiredMark()}</label><input id="step_name" maxlength="80" value="${attr(s.step_name||'')}" placeholder="Verbo + objeto, ej. Validar requisitos"></div>
     <div class="field"><label>Tipo de paso ${requiredMark()}</label>${stepTypeControl}</div>
@@ -89,10 +99,10 @@ function openStepModal(stepId=null,linkFromStepId=null,preset=null){
     <div class="field"><label>Error / repetición</label><div class="compound-control"><input id="step_error" type="number" min="0" step="any" value="${attr(s.error_rate&&typeof s.error_rate==='object'?s.error_rate.value:(s.error_rate||''))}" placeholder="5">${auneaDropdownControl('step_error_mode',[{value:'percent',label:'%'},{value:'count',label:'casos'}],s.error_rate?.mode||'percent','Unidad')}${auneaDropdownControl('step_error_period',[{value:'case',label:'por caso'},{value:'month',label:'por mes'},{value:'year',label:'por año'}],s.error_rate?.period||'case','Periodo')}</div></div>
   </div></details>
   <details class="step-group"><summary>D. Flujo y decisiones</summary><div class="form-grid">
-    <div class="field full"><label>Siguiente paso normal</label>${auneaDropdownControl('step_next',[{value:'',label:'Fin / por definir'},{value:'__NEW__',label:'+ Crear nuevo paso como siguiente'},...activeSteps(e).filter(x=>x.id!==s.id).map(x=>({value:x.id,label:x.step_name||x.id}))],s.normal_next_step||'','Fin / por definir')}</div>
-    <div class="field full"><label>¿Este paso incluye una decisión o aprobación?</label><div class="segmented"><button type="button" class="segment ${hasDecision?'active':''}" data-step-decision-flag="1" data-value="YES">Sí</button><button type="button" class="segment ${!hasDecision?'active':''}" data-step-decision-flag="1" data-value="NO">No</button></div></div>
+    <div class="field full"><label>¿Este paso incluye una decisión o bifurcación?</label><div class="segmented"><button type="button" class="segment ${hasDecision?'active':''}" data-step-decision-flag="1" data-value="YES">Sí</button><button type="button" class="segment ${!hasDecision?'active':''}" data-step-decision-flag="1" data-value="NO">No</button></div></div>
+    <div class="field full"><div class="decision-route-card route-yes"><div class="decision-route-head"><b data-step-next-label>${hasDecision?'Ruta SÍ / afirmativa':'Siguiente paso normal'}</b><span>${hasDecision?'Cuando se cumple la condición principal':'Continuación del flujo'}</span></div><label>Destino ${hasDecision?requiredMark():''}</label>${auneaDropdownControl('step_next',decisionDestinationOptions(e,s),s.normal_next_step||'','Selecciona destino…')}</div></div>
     <div class="field full" data-step-decision-area${hasDecision?'':' style="display:none"'}><label>Criterios de decisión</label>${selectedHtml('step_decisions',decisions,s.decision_criteria)}<div class="detail-wrap" data-step-decision-other-wrap${decisionOtherOpen?'':' style="display:none"'}><input id="step_decisions_detail" value="${attr(decisionOtherOpen?(s._details.decision_criteria||''):'')}" placeholder="Especifica el criterio sólo al seleccionar Otro"></div></div>
-    <div class="field full" data-step-decision-area${hasDecision?'':' style="display:none"'}><label>Ruta alternativa / excepción</label>${exceptionControl(s,e)}</div>
+    <div class="field full" data-step-decision-area${hasDecision?'':' style="display:none"'}>${exceptionControl(s,e)}</div>
   </div></details>
   <details class="step-group"><summary>E. Automatización y sistemas</summary><div class="form-grid">
     <div class="field"><label>Herramienta / sistema</label>${datalistControl('step_tool','OS_TOOL_CATEGORY',s.tool||'','Herramienta principal')}</div>
@@ -112,14 +122,22 @@ function openStepModal(stepId=null,linkFromStepId=null,preset=null){
     s._details.inputs=document.getElementById('step_inputs_detail')?.value.trim()||'';s._details.outputs=document.getElementById('step_outputs_detail')?.value.trim()||'';const decisionOtherSelected=decisionOther&&s.decision_criteria.map(String).includes(String(decisionOther.value));s._details.decision_criteria=decisionOtherSelected?document.getElementById('step_decisions_detail').value.trim():'';s._details.communication_channels=document.getElementById('step_channels_other')?.value.trim()||'';
     s._ui.active_unit=document.getElementById('step_active_unit').value;s._ui.wait_unit=document.getElementById('step_wait_unit').value;s._ui.rework_unit=document.getElementById('step_rework_unit').value;s.active_time=minutesFrom(document.getElementById('step_active').value,s._ui.active_unit);s.wait_time=minutesFrom(document.getElementById('step_wait').value,s._ui.wait_unit);s.rework_time=minutesFrom(document.getElementById('step_rework').value,s._ui.rework_unit);
     s.error_rate={value:Number(document.getElementById('step_error').value||0),mode:document.getElementById('step_error_mode').value,period:document.getElementById('step_error_period').value};
-    const nextVal=document.getElementById('step_next').value;s.normal_next_step=nextVal==='__NEW__'?'':nextVal;
-    const et=document.getElementById('step_exc_type').value,ec=document.getElementById('step_exc_condition').value.trim(),ed=document.getElementById('step_exc_dest').value,eo=resolveCatalogInput(document.getElementById('step_exc_owner'));s.exception_path=hasDecisionNow&&(et||ec||ed||eo)?{type:et,condition:ec,destination_step:ed,owner:eo}:null;s.notes=document.getElementById('step_notes').value.trim();
+    const nextVal=document.getElementById('step_next').value;
+    const et=document.getElementById('step_exc_type').value,ec=document.getElementById('step_exc_condition').value.trim(),ed=document.getElementById('step_exc_dest').value,eo=resolveCatalogInput(document.getElementById('step_exc_owner'));
     if(!s.step_name||s.step_name.length<3||!s.step_type||!s.actor)return toast('Nombre (mín. 3 caracteres), tipo y responsable son obligatorios.');
+    if(hasDecisionNow&&(!nextVal||!ed))return toast('Una decisión necesita destino para la ruta SÍ y para la ruta NO. Puedes elegir “Crear nuevo paso como destino”.');
+    let yesDestination=nextVal,noDestination=ed;
+    const createdDestinations=[];
+    if(hasDecisionNow&&yesDestination==='__NEW__'){const draft=blankDecisionDestination();e.processSteps.push(draft);yesDestination=draft.id;createdDestinations.push(draft.id)}
+    if(hasDecisionNow&&noDestination==='__NEW__'){const draft=blankDecisionDestination();e.processSteps.push(draft);noDestination=draft.id;createdDestinations.push(draft.id)}
+    s.normal_next_step=hasDecisionNow?yesDestination:(nextVal==='__NEW__'?'':nextVal);
+    s.exception_path=hasDecisionNow?{type:et,condition:ec,destination_step:noDestination,owner:eo}:null;s.notes=document.getElementById('step_notes').value.trim();
     if(existing){Object.assign(existing,s);audit(`Paso editado ${existing.id}`)}else{e.processSteps.push(s);audit(`Paso creado ${s.id}`);if(linkFromStepId){const origin=e.processSteps.find(x=>x.id===linkFromStepId);if(origin)origin.normal_next_step=s.id}}if(typeof advanceEngagementTo==='function')advanceEngagementTo(e,'Sesión 1','captura de proceso');invalidateProcessLayersSafe(e,'map');e.diagnosticOutput=null;e.updatedAt=now();markDirty();closeModal();
-    if(nextVal==='__NEW__'){render();openStepModal(null,s.id)}else{render()}
+    if(createdDestinations.length)toast(`${createdDestinations.length} destino(s) vacío(s) creados. Edítalos para completar el flujo.`);
+    if(!hasDecisionNow&&nextVal==='__NEW__'){render();openStepModal(null,s.id)}else{render()}
   },existing?'Guardar cambios':'Añadir paso');
   document.querySelectorAll('[data-step-auto]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-step-auto]').forEach(x=>x.classList.remove('active'));b.classList.add('active');s.automation_state=b.dataset.value});
-  document.querySelectorAll('[data-step-decision-flag]').forEach(b=>b.onclick=()=>{s._ui.has_decision=b.dataset.value==='YES';document.querySelectorAll('[data-step-decision-flag]').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('[data-step-decision-area]').forEach(x=>x.style.display=s._ui.has_decision?'':'none')});
+  document.querySelectorAll('[data-step-decision-flag]').forEach(b=>b.onclick=()=>{s._ui.has_decision=b.dataset.value==='YES';document.querySelectorAll('[data-step-decision-flag]').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('[data-step-decision-area]').forEach(x=>x.style.display=s._ui.has_decision?'':'none');const label=document.querySelector('[data-step-next-label]');if(label)label.textContent=s._ui.has_decision?'Ruta SÍ / afirmativa':'Siguiente paso normal'});
   document.querySelectorAll('[data-catalog-reference]').forEach(el=>el.addEventListener('change',()=>{const otherValue=String(el.dataset.otherValue||'__OTHER__'),wrap=document.querySelector(`[data-catalog-other-wrap="${el.dataset.catalogReference}"]`);if(wrap)wrap.style.display=String(el.value)===otherValue?'':'none';if(String(el.value)!==otherValue){const other=document.getElementById(`${el.id}_other`);if(other)other.value=''}}));
   document.querySelectorAll('[data-v1-other-toggle]').forEach(el=>el.addEventListener('change',()=>{
     const key=el.dataset.v1OtherToggle,wrap=document.querySelector(`[data-v1-other-wrap="${key}"]`);
@@ -144,7 +162,7 @@ function openFrictionModal(frId=null,preselectedSteps=[]){
   // Layer 1/2 progressive disclosure: tipo/pasos/señal/contexto-impacto are what a consultant needs to
   // register a friction on the spot; causa/workaround/evidencia/resto stay available but collapsed.
   // Same field ids, same save logic — presentation-only, never a Friction Model change.
-  const body=`<div class="step-groups">
+  const body=`<div class="step-groups process-modal-form friction-modal-form">
   <details class="step-group" open><summary>Fricción</summary><div class="form-grid">
   <div class="field full"><label>Tipo de fricción ${requiredMark()}</label>${auneaDropdownControl('fr_type',[{value:'',label:'Selecciona…'},...types],f.friction_type||'','Selecciona…')}<div class="field-help">Pain_ID se deriva internamente; el cliente no lo selecciona.</div></div>
   <div class="field full"><label>Pasos afectados ${requiredMark()}</label>${selectedHtml('fr_steps',activeSteps(e).map(s=>({value:s.id,label:s.step_name||s.id})),f.affected_steps)}</div>
@@ -153,14 +171,14 @@ function openFrictionModal(frId=null,preselectedSteps=[]){
   <div class="field"><label>Impacto percibido</label>${auneaDropdownControl('fr_impact',[{value:'',label:'—'},...impacts],f.impact||'','—')}</div>
   </div></details>
   <details class="step-group"><summary>Causa, workaround y evidencia</summary><div class="form-grid">
-  <div class="field full"><label>Causa / condición ${requiredMark()}</label>${selectedHtml('fr_causes',causes,f.cause)}<div class="choice"><input type="checkbox" id="fr_cause_other_toggle" data-fr-other-toggle="fr_cause_other" ${f._details.cause?'checked':''}><label for="fr_cause_other_toggle">Otro</label></div><div class="detail-wrap" data-fr-other-wrap="fr_cause_other"${f._details.cause?'':' style="display:none"'}><input id="fr_cause_other" value="${attr(f._details.cause||'')}" placeholder="Otro sólo si no existe en catálogo"></div></div>
-  <div class="field full"><label>Cómo se compensa hoy</label>${selectedHtml('fr_workaround',work,f.workaround)}<div class="choice"><input type="checkbox" id="fr_workaround_other_toggle" data-fr-other-toggle="fr_workaround_other" ${f._details.workaround?'checked':''}><label for="fr_workaround_other_toggle">Otro</label></div><div class="detail-wrap" data-fr-other-wrap="fr_workaround_other"${f._details.workaround?'':' style="display:none"'}><input id="fr_workaround_other" value="${attr(f._details.workaround||'')}" placeholder="Otro workaround sólo si no existe en catálogo"></div></div>
+  <div class="field full"><label>Causa / condición ${requiredMark()}</label>${selectedHtml('fr_causes',causes,f.cause,{detailId:'fr_cause_other',detailValue:f._details.cause||'',detailPlaceholder:'Especifica otra causa sólo al seleccionar Otro'})}</div>
+  <div class="field full"><label>Cómo se compensa hoy</label>${selectedHtml('fr_workaround',work,f.workaround,{detailId:'fr_workaround_other',detailValue:f._details.workaround||'',detailPlaceholder:'Especifica otro workaround sólo al seleccionar Otro'})}</div>
   <div class="field"><label>Tipo de evidencia principal <span class="internal-tag">interno</span></label>${auneaDropdownControl('fr_evidence_type',evid,f.evidence_type||'EV02','Selecciona…')}</div>
   <div class="field"><label>Trabajo activo adicional</label>${frictionNumberControl('fr_active',f.active_time_loss,'time')}</div>
   <div class="field"><label>Espera / retraso atribuible</label>${frictionNumberControl('fr_wait',f.wait_time_loss,'time')}</div>
   <div class="field"><label>Pérdida monetaria directa</label>${frictionNumberControl('fr_direct',f.direct_loss,'money')}</div>
   <div class="field full"><label>Otros impactos</label>${selectedHtml('fr_non_time',nonTime,f.non_time_impact)}</div>
-  <div class="field"><label>Prioridad cliente (cierre)</label><input id="fr_priority" type="number" min="1" max="99" value="${attr(f.priority_client||'')}" placeholder="1, 2, 3…"></div>
+  <div class="field"><label>Prioridad cliente (cierre)</label>${auneaDropdownControl('fr_priority',[{value:'',label:'Sin priorizar'},{value:'1',label:'1 — Prioridad principal'},{value:'2',label:'2 — Segunda prioridad'},{value:'3',label:'3 — Tercera prioridad'}],f.priority_client?String(f.priority_client):'','Sin priorizar')}<div class="field-help">Ranking de cierre; top 3 recomendado por el modelo canónico.</div></div>
   <div class="field full"><label>Cómo lo describe el cliente</label><input id="fr_label" maxlength="160" value="${attr(f.client_label||'')}" placeholder="Opcional"></div>
   <div class="field full"><label>Nota excepcional</label><input id="fr_notes" maxlength="200" value="${attr(f.notes||'')}" placeholder="Sólo si los campos estructurados no bastan"></div>
   </div></details>
@@ -168,6 +186,7 @@ function openFrictionModal(frId=null,preselectedSteps=[]){
   openModal(existing?'Editar fricción':'Añadir fricción',body,()=>{const collect=k=>[...document.querySelectorAll(`[data-v1-multi="${k}"]:checked`)].map(x=>x.value);f.friction_type=document.getElementById('fr_type').value;f.affected_steps=collect('fr_steps');f.cause=collect('fr_causes');f._details.cause=document.getElementById('fr_cause_other').value.trim();f.observable_signal=document.getElementById('fr_signal').value.trim();f.frequency={value:Number(document.getElementById('fr_frequency').value||0),mode:document.getElementById('fr_frequency_mode').value,period:document.getElementById('fr_frequency_period').value};f.impact=document.getElementById('fr_impact').value;
     const atUnit=document.getElementById('fr_active_unit').value,wtUnit=document.getElementById('fr_wait_unit').value;f.active_time_loss={value:minutesFrom(document.getElementById('fr_active').value,atUnit),unit:'min',source_unit:atUnit,mode:document.getElementById('fr_active_mode').value};f.wait_time_loss={value:minutesFrom(document.getElementById('fr_wait').value,wtUnit),unit:'min',source_unit:wtUnit,mode:document.getElementById('fr_wait_mode').value};f.direct_loss={value:Number(document.getElementById('fr_direct').value||0),unit:'EUR',period:document.getElementById('fr_direct_period').value,mode:document.getElementById('fr_direct_mode').value};f.non_time_impact=collect('fr_non_time');f.workaround=collect('fr_workaround');f._details.workaround=document.getElementById('fr_workaround_other').value.trim();f.evidence_type=document.getElementById('fr_evidence_type').value||'EV02';f.priority_client=Number(document.getElementById('fr_priority').value||0)||null;f.client_label=document.getElementById('fr_label').value.trim();f.notes=document.getElementById('fr_notes').value.trim();f.derived_pain_id=painForFriction(f.friction_type);
     if(!f.friction_type||!f.affected_steps.length||!f.cause.length&&!f._details.cause||!f.observable_signal)return toast('Tipo, al menos un paso, causa y señal observable son obligatorios.');if(existing){Object.assign(existing,f);audit(`Fricción editada ${existing.id}`)}else{e.frictions.push(f);audit(`Fricción creada ${f.id}`)}if(typeof advanceEngagementTo==='function')advanceEngagementTo(e,'Sesión 1','captura de proceso');invalidateProcessLayersSafe(e,'frictions');e.diagnosticOutput=null;e.updatedAt=now();markDirty();closeModal();render();},existing?'Guardar cambios':'Añadir fricción');
+  document.querySelectorAll('[data-v1-other-toggle]').forEach(el=>el.addEventListener('change',()=>{const key=el.dataset.v1OtherToggle,wrap=document.querySelector(`[data-v1-other-wrap="${key}"]`);if(!wrap)return;wrap.style.display=el.checked?'':'none';if(!el.checked){const input=wrap.querySelector('input,textarea');if(input)input.value=''}}));
 }
 
 // "Añadir varios pasos" is a normal-use convenience over the SAME model openStepModal uses for a new
@@ -258,8 +277,8 @@ function flowIntermediateNodes(e,steps,fr){
     const stepFr=fr.filter(x=>normalizeArray(x.affected_steps).includes(s.id));
     const stepRisks=risks.filter(x=>normalizeArray(x.step_ids).includes(s.id));
     const stepEcon=economics.filter(x=>normalizeArray(x.step_ids).includes(s.id));
-    return `<div class="flow-connector"><button type="button" class="flow-insert" data-add-after="${i?steps[i-1]?.id||'':''}" aria-label="Añadir paso aquí">+</button></div><div class="flow-step ${decision?'is-decision':''} ${processLayerState(e).map?'confirmed':''}" draggable="true" data-drag-step="${s.id}" data-edit-step="${s.id}">
-      <div class="flow-step-tools"><button type="button" data-move-step-up="${s.id}" ${i===0?'disabled':''}>←</button><button type="button" data-move-step-down="${s.id}" ${i===steps.length-1?'disabled':''}>→</button><button type="button" data-edit-step="${s.id}">Editar</button></div>
+    return `<div class="flow-connector"><button type="button" class="flow-insert" data-add-after="${i?steps[i-1]?.id||'':''}" aria-label="Añadir paso aquí">+</button></div><div class="flow-step ${decision?'is-decision':''} ${processLayerState(e).map?'confirmed':''}" draggable="true" data-drag-step="${s.id}">
+      <div class="flow-step-tools"><button type="button" data-move-step-up="${s.id}" ${i===0?'disabled':''}>←</button><button type="button" data-move-step-down="${s.id}" ${i===steps.length-1?'disabled':''}>→</button><button type="button" data-edit-step="${s.id}">Editar</button><button type="button" class="danger-text" data-delete-step="${s.id}">Eliminar</button></div>
       <span class="boundary-kicker">${decision?'Decisión':`Paso ${i+1}`}</span><h4>${esc(s.step_name||'Paso sin nombre')}</h4>
       <p>${esc(labelFrom('OS_ACTOR_ROLE',s.actor)||'—')} · ${esc(labelFrom('OS_TOOL_CATEGORY',s.tool)||'—')}</p>
       <p>${num(s.active_time)?`${num(s.active_time)} min trabajo`:''}${num(s.wait_time)?` · ${num(s.wait_time)} min espera`:''}</p>
@@ -322,9 +341,9 @@ function flowReview(e,steps,fr){return clientProcessView(e,steps,fr)}
 const __auneaNoReaskBindForms=bindForms;
 bindForms=function(){
   __auneaNoReaskBindForms();
-  document.querySelectorAll('[data-add-friction-step]').forEach(b=>b.onclick=()=>openFrictionModal(null,[b.dataset.addFrictionStep]));
-  document.querySelectorAll('[data-add-risk-step]').forEach(b=>b.onclick=()=>addRisk([b.dataset.addRiskStep]));
-  document.querySelectorAll('[data-add-economic-step]').forEach(b=>b.onclick=()=>addEconomic([b.dataset.addEconomicStep]));
+  document.querySelectorAll('[data-add-friction-step]').forEach(b=>b.onclick=ev=>{ev.preventDefault();ev.stopPropagation();openFrictionModal(null,[b.dataset.addFrictionStep])});
+  document.querySelectorAll('[data-add-risk-step]').forEach(b=>b.onclick=ev=>{ev.preventDefault();ev.stopPropagation();addRisk([b.dataset.addRiskStep])});
+  document.querySelectorAll('[data-add-economic-step]').forEach(b=>b.onclick=ev=>{ev.preventDefault();ev.stopPropagation();addEconomic([b.dataset.addEconomicStep])});
   document.querySelectorAll('[data-move-step-up]').forEach(b=>b.onclick=()=>moveStep(b.dataset.moveStepUp,-1));
   document.querySelectorAll('[data-move-step-down]').forEach(b=>b.onclick=()=>moveStep(b.dataset.moveStepDown,1));
   document.querySelectorAll('[data-fr-other-toggle]').forEach(el=>el.addEventListener('change',()=>{const targetId=el.dataset.frOtherToggle,wrap=document.querySelector(`[data-fr-other-wrap="${targetId}"]`);if(!wrap)return;wrap.style.display=el.checked?'':'none';if(!el.checked){const input=document.getElementById(targetId);if(input)input.value=''}}));
@@ -335,7 +354,7 @@ bindForms=function(){
   const addMany=document.getElementById('addMultipleSteps');if(addMany)addMany.onclick=()=>addMultipleSteps();
   const share=document.getElementById('openSessionDisplayFromProcess');if(share)share.onclick=()=>openSessionDisplay();
   document.querySelectorAll('[data-add-after]').forEach(b=>b.onclick=e=>{e.stopPropagation();openStepModal(null,b.dataset.addAfter||null)});
-  document.querySelectorAll('[data-delete-step]').forEach(b=>b.onclick=()=>removeStepFromFlow(b.dataset.deleteStep));
+  document.querySelectorAll('[data-delete-step]').forEach(b=>b.onclick=ev=>{ev.preventDefault();ev.stopPropagation();removeStepFromFlow(b.dataset.deleteStep)});
   document.querySelectorAll('[data-drag-step]').forEach(el=>{el.ondragstart=ev=>{ev.dataTransfer?.setData('text/plain',el.dataset.dragStep)};el.ondragover=ev=>ev.preventDefault();el.ondrop=ev=>{ev.preventDefault();const source=ev.dataTransfer?.getData('text/plain');if(source)reorderStepBefore(source,el.dataset.dragStep)}});
   document.querySelectorAll('[data-validated-case]').forEach(b=>b.onclick=()=>instantiateValidatedCase(b.dataset.validatedCase));
 };
