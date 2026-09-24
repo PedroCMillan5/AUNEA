@@ -213,7 +213,9 @@ function removeStepFromFlow(stepId){
     e.processSteps.filter(x=>x.status!=='SUPERSEDED').forEach(x=>{if(x.normal_next_step===stepId)x.normal_next_step='';if(x.exception_path?.destination_step===stepId)x.exception_path={...x.exception_path,destination_step:''}});
     linkedFrictions.forEach(f=>{f.affected_steps=normalizeArray(f.affected_steps).filter(id=>id!==stepId);if(!f.affected_steps.length)f.status='SUPERSEDED'});
     invalidateProcessLayersSafe(e,'map');e.diagnosticOutput=null;e.updatedAt=now();
-    audit(`Paso eliminado del flujo ${stepId}`);markDirty('Paso eliminado del flujo');closeModal();render();
+    audit(`Paso eliminado del flujo ${stepId}`);markDirty('Paso eliminado del flujo');
+    if(typeof persistRecoverySnapshot==='function')persistRecoverySnapshot('eliminar-paso');
+    closeModal();render();
   },'Eliminar del flujo');
 }
 
@@ -352,6 +354,9 @@ bindForms=function(){
   const addClient=document.getElementById('addStepFromClient');if(addClient)addClient.onclick=()=>openStepModal();
   const addDecision=document.getElementById('addDecisionFromClient');if(addDecision)addDecision.onclick=addDecisionStep;
   const addMany=document.getElementById('addMultipleSteps');if(addMany)addMany.onclick=()=>addMultipleSteps();
+  const addFriction=document.getElementById('addFriction');if(addFriction)addFriction.onclick=ev=>{ev.preventDefault();ev.stopPropagation();openFrictionModal()};
+  const addRiskBtn=document.getElementById('addRisk');if(addRiskBtn)addRiskBtn.onclick=ev=>{ev.preventDefault();ev.stopPropagation();addRisk()};
+  const addEconomicBtn=document.getElementById('addEconomic');if(addEconomicBtn)addEconomicBtn.onclick=ev=>{ev.preventDefault();ev.stopPropagation();addEconomic()};
   const share=document.getElementById('openSessionDisplayFromProcess');if(share)share.onclick=()=>openSessionDisplay();
   document.querySelectorAll('[data-add-after]').forEach(b=>b.onclick=e=>{e.stopPropagation();openStepModal(null,b.dataset.addAfter||null)});
   document.querySelectorAll('[data-delete-step]').forEach(b=>b.onclick=ev=>{ev.preventDefault();ev.stopPropagation();removeStepFromFlow(b.dataset.deleteStep)});

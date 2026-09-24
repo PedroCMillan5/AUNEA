@@ -178,12 +178,13 @@ test('selectable controls share the Acciones manuales visual contract and modal 
 });
 
 
-test('standalone client editor removes the blank shell column and horizontal scroll while keeping the process workspace full width',()=>{
+test('standalone client editor is one full-height page without document scroll or blank shell area',()=>{
   const ui=fs.readFileSync(path.join(__dirname,'..','ui-system.css'),'utf8');
-  assert.match(ui,/body\.mode-process-editor \.app-shell\{display:block!important;width:100%/);
-  assert.match(ui,/body\.mode-process-editor \.main\{display:block!important;grid-column:auto!important/);
-  assert.match(ui,/body\.mode-process-editor \.client-process-canvas\{[^}]*overflow-x:hidden/);
-  assert.match(ui,/body\.mode-process-editor \.flow-track\{[^}]*flex-wrap:wrap/);
+  assert.match(ui,/body\.mode-process-editor\{[^}]*overflow:hidden!important/);
+  assert.match(ui,/body\.mode-process-editor \.app-shell\{[^}]*height:100vh[^}]*overflow:hidden!important/);
+  assert.match(ui,/body\.mode-process-editor \.content\{[^}]*height:100vh!important[^}]*overflow:hidden!important/);
+  assert.match(ui,/body\.mode-process-editor \.content>\.section>\.section-title\{display:none\}/);
+  assert.match(ui,/body\.mode-process-editor \.client-process-workspace\{[^}]*flex:1 1 auto[^}]*overflow:hidden/);
 });
 
 test('client step node actions do not bubble into Editar paso and each node exposes delete',()=>{
@@ -205,12 +206,12 @@ test('decision/bifurcation requires explicit YES and NO destinations and can cre
   assert.match(code,/destination_step:noDestination/);
 });
 
-test('Process Step and Friction modal compound controls are structured and open dropdowns rise above adjacent fields',()=>{
+test('Process Step, Friction, Risk and Economics modals scroll internally and keep compound/dropdown controls structured',()=>{
   const ui=fs.readFileSync(path.join(__dirname,'..','ui-system.css'),'utf8');
-  assert.match(ui,/\.modal:has\(\.process-modal-form\)\{width:min\(940px,96vw\)/);
+  assert.match(ui,/\.modal:has\(\.process-modal-form\)\{[^}]*max-height:90vh[^}]*overflow:hidden[^}]*display:flex/);
+  assert.match(ui,/\.modal:has\(\.process-modal-form\) \.modal-body\{[^}]*overflow-y:auto/);
   assert.match(ui,/\.process-modal-form \.compound-control\{display:grid;grid-template-columns:repeat\(auto-fit,minmax\(120px,1fr\)\)/);
   assert.match(ui,/\.process-modal-form \.field:has\(\.aunea-select\[open\]\)\{position:relative;z-index:250\}/);
-  assert.match(ui,/\.process-modal-form \.choice-grid\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
 });
 
 test('friction client priority is a governed top-3 dropdown instead of an unconstrained numeric field',()=>{
@@ -218,6 +219,18 @@ test('friction client priority is a governed top-3 dropdown instead of an uncons
   assert.match(code,/1 — Prioridad principal/);
   assert.match(code,/3 — Tercera prioridad/);
   assert.doesNotMatch(code,/id="fr_priority" type="number"/);
+});
+
+test('tab-level Fricción, Riesgo and Input económico buttons are bound in the shared process editor',()=>{
+  assert.match(code,/getElementById\('addFriction'\)/);
+  assert.match(code,/getElementById\('addRisk'\)/);
+  assert.match(code,/getElementById\('addEconomic'\)/);
+  assert.match(code,/addRiskBtn\.onclick=.*addRisk\(\)/);
+  assert.match(code,/addEconomicBtn\.onclick=.*addEconomic\(\)/);
+});
+
+test('step removal persists the superseded state immediately before rerender to avoid cross-tab resurrection',()=>{
+  assert.match(code,/persistRecoverySnapshot\('eliminar-paso'\)/);
 });
 
 // [AUNEA-UAT-PROC-010] END
