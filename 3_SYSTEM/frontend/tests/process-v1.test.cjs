@@ -24,10 +24,11 @@ test('visual order is now the normal flow source, so no discrepancy warning is p
   assert.match(code,/reorderStepBefore/);
 });
 
-test('"+ Crear nuevo paso como siguiente" links back to the origin step id without inventing a new normal_next_step shape',()=>{
-  assert.match(code,/\+ Crear nuevo paso como siguiente/);
+test('creating a new destination keeps the canonical normal_next_step link shape and still supports insert-after',()=>{
+  assert.match(code,/\+ Crear nuevo paso como destino/);
   assert.match(code,/function openStepModal\(stepId=null,linkFromStepId=null,preset=null\)/);
   assert.match(code,/if\(linkFromStepId\)\{const origin=e\.processSteps\.find\(x=>x\.id===linkFromStepId\);if\(origin\)origin\.normal_next_step=s\.id\}/);
+  assert.match(code,/s\.normal_next_step=hasDecisionNow\?yesDestination/);
 });
 
 test('reorder buttons are wired to moveStep in both directions',()=>{
