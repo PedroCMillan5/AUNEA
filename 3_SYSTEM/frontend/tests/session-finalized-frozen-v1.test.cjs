@@ -1,6 +1,7 @@
 // [AUNEA-UAT-SESSION-FINALIZED-FROZEN-020] START — Finalized Estudios/S01/S02/S08
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const root=path.join(__dirname,'..'),read=p=>fs.readFileSync(path.join(root,p),'utf8');
+// Snapshot marker strings are assembled to keep the Block_ID audit focused on live START/END comments.
 function block(text,start,end){const a=text.indexOf(start),b=text.indexOf(end,a);assert.ok(a>=0&&b>=0,'Frozen markers missing: '+start);return text.slice(a,b+end.length)}
 test('FINALIZED Estudios source and scoped styles are frozen',()=>{const s=read('ui/shell.js'),c=read('ui-system.css');assert.equal(block(s,'// ['+'AUNEA-FE-PAGE-STUDIES-010'+'] START','// ['+'AUNEA-FE-PAGE-STUDIES-010'+'] END'),read('tests/frozen/studies-page-v1.js.snapshot'));assert.equal(block(c,'/* ['+'AUNEA-FE-STUDIES-LIST-VIEWPORT-010'+'] START','/* ['+'AUNEA-FE-STUDIES-LIST-VIEWPORT-010'+'] END */'),read('tests/frozen/studies-style-v1.css.snapshot'))});
 test('FINALIZED S01 Contexto y objetivos contract is frozen',()=>{const s=read('pages/diagnostic-stages.js');assert.equal(block(s,'// ['+'AUNEA-FROZEN-STAGE-S01-001'+'] START','// ['+'AUNEA-FROZEN-STAGE-S01-001'+'] END'),read('tests/frozen/session-s01-v1.js.snapshot'));assert.match(s,/S01:'I90-01'/)});
