@@ -1,6 +1,6 @@
 /* [AUNEA-FROZEN-STAGE-S08-001] START — Estado objetivo y restricciones
    DF087–DF089 use the same full-row width; DF089 is Preferencias o restricciones de plataforma. */
 .field[data-field="DF087"],
-.field[data-field="DF088"],
+.field[data-field="DF088"]{grid-column:1/-1}
 .field[data-field="DF089"]{grid-column:1/-1}
 /* [AUNEA-FROZEN-STAGE-S08-001] END */

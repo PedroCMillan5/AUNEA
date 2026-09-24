@@ -285,14 +285,11 @@ function bindCanonicalRenderer(){
     const fallback=Number(String(el.value).replace(',','.'));
     return Number.isFinite(fallback)?fallback:null;
   };
-  document.querySelectorAll('[data-scalar-number-value]').forEach(el=>el.addEventListener('input',()=>{
-    const value=safeNumericValue(el);if(value===null)return;
-    setAnswer(el.dataset.scalarNumberValue,value);
-  }));
   const numberFids=[...new Set([...document.querySelectorAll('[data-number-value],[data-number-unit],[data-number-period],[data-number-mode]')].map(x=>x.dataset.numberValue||x.dataset.numberUnit||x.dataset.numberPeriod||x.dataset.numberMode))];
   numberFids.forEach(fid=>{const sync=()=>{
     const valueEl=document.querySelector(`[data-number-value="${fid}"]`),value=safeNumericValue(valueEl),unit=document.querySelector(`[data-number-unit="${fid}"]`)?.value??'',period=document.querySelector(`[data-number-period="${fid}"]`)?.value??'',mode=document.querySelector(`[data-number-mode="${fid}"]`)?.value??'';
     if(value===null)return;
+    if(fid==='DF021'){setAnswer(fid,value);return}
     if(value===''&&!mode){setAnswer(fid,'');return}
     setAnswer(fid,{value,unit,period,mode});
   };document.querySelectorAll(`[data-number-value="${fid}"]`).forEach(el=>el.addEventListener('input',sync));document.querySelectorAll(`[data-number-unit="${fid}"],[data-number-period="${fid}"],[data-number-mode="${fid}"]`).forEach(el=>el.addEventListener('change',sync))});

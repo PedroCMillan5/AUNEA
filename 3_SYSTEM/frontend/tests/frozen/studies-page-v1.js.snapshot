@@ -29,7 +29,10 @@ function openStudyActionMenu(button,engagementId){
   if(top+menu.offsetHeight>window.innerHeight-8)top=Math.max(8,r.top-menu.offsetHeight-gap);
   menu.style.left=`${left}px`;menu.style.top=`${top}px`;
 }
-function studyActionMenu(e){return `<button type="button" class="kebab-btn" data-study-actions="${attr(e.id)}" aria-label="Acciones de ${attr(e.title||'estudio')}">•••</button>`}
+function studyActionMenu(e){
+  const next=nextEngagementStatus(e);
+  return `<div class="study-action-cell"><button type="button" class="kebab-btn" data-study-actions="${attr(e.id)}" aria-label="Acciones de ${attr(e.title||'estudio')}">•••</button><span class="hidden" aria-hidden="true"><button type="button" data-open-eng="${attr(e.id)}">Abrir estudio</button><button type="button" data-open-eng="${attr(e.id)}" data-open-eng-page="resultados">Trabajo interno</button>${next?`<button type="button" data-advance-eng="${e.id}">Avanzar a ${esc(next)}</button>`:''}</span></div>`;
+}
 
 if(!window.__auneaStudyActionsBound){
   window.__auneaStudyActionsBound=true;
