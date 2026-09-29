@@ -97,6 +97,8 @@ function invalidateDerivedState(e,reason='Cambio en inputs del diagnóstico'){
   if(!e)return false;
   const hadDerived=!!e.diagnosticOutput||(Array.isArray(e.scenarioResults)&&e.scenarioResults.length>0)||e.selectedScenario!=null;
   e.diagnosticOutput=null;e.scenarioResults=[];e.selectedScenario=null;e.selectedScenarioIndex=0;e.lastEngineRunAt=null;
+  // A previous engine result must never be treated as belonging to a new capture version.
+  e.lastEngineSnapshotVersion=null;
   if(hadDerived)audit(`Resultados derivados invalidados: ${reason}`);
   return hadDerived;
 }
