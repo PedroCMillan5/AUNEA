@@ -42,7 +42,7 @@ Cambios de esta rama:
 - `aunea_backend/friction_review.py` revisa DF059–DF063 por fricción sin agregar horas ni pérdidas duplicadas; valida anclajes a pasos activos, id único y denominadores de frecuencia.
 - El endpoint de B01 devuelve `friction_review` con los hallazgos conservadores.
 - `tests/test_friction_review.py` contiene 5 pruebas específicas.
-- Aún NO existe relación canónica de atribución DF039/DF062 ni semántica granular de evidencia; queda bloqueada su agregación hasta aprobar contrato de datos y reglas. No añadir campos desde UI.
+- NOTA HISTÓRICA anterior a DEC-068: entonces no existía atribución aprobada. DEC-068 ya aprobó los tres modos y existe candidatura de Diagnostic Master v1.3 B02 REVIEW, sin sustituir el Master v1.2 CANONICAL. La agregación monetaria oficial continúa bloqueada hasta conciliar ED01/ED05/DF082 con EAR-001–EAR-014. No añadir controles fuera del popup de fricciones REVIEW.
 
 
 Contratos existentes: RULE_ECON_AGGREGATION EAR-001–EAR-014, RULE_PAIN_OVERLAP,
@@ -126,3 +126,16 @@ Comparar HEAD de partida, HEAD de esta rama y cualquier commit posterior de
 Astra; reconciliar sin force push. Actualizar índices/decisiones/estado/roadmap/
 bitácora sólo para cambios aprobados que correspondan. No promover a main ni
 PRODUCTION sin gate y UAT final.
+
+## Estado actualizado de B02 — implementación verificada y gobierno REVIEW
+
+La decisión DEC-068 está aprobada en DECISIONES_AUNEA; se mantienen las opciones Incluido / Desglose / Adicional. Código B02 guardado exclusivamente en la rama de integración `fix/session90-snapshot-invalidation-20260929`, sin fusión a `reconcile/frontend-v1.0.4-source` ni a `main`. Cambios: `backend/aunea_backend/friction_review.py` distingue errores de atribución temporal de alertas de conciliación monetaria; `backend/aunea_backend/session_time.py` proyecta sólo ADDITIONAL válido una sola vez y respeta calendario declarado; tests específicos en `backend/tests/test_friction_review.py` y `test_session_time.py`; documentación de fuente en `frontend/domain/process.js`. El popup original conserva los dropdowns; no se cambió ningún archivo de página FROZEN.
+
+QA automatizada observada: backend 62/62 PASS (una warning pytest; workflow run 36602691208), frontend 351/351 PASS (workflow run 36603263643). Estas cifras describen la regresión de código, no la UAT visual local pendiente.
+
+Candidatos de documentación preparados en Drive, todos REVIEW (sin reemplazar canon):
+- `AUNEA_DIAGNOSTIC_MASTER_V1.3_B02_REVIEW.xlsx` · Drive ID `1sHGwsiOhG4FAOaLLDvKu8AXGQP6N3eBZ`: `Time_Attribution` en RT_FRICTION, selector/catálogo de tres modos y EAR-015 candidato derivado de DEC-068; DF001–DF100 preservados.
+- `AUNEA_SYSTEM_SIMULATOR_REVIEW_v1.15_B02` · Drive ID `1HCsrj75N2Z5AMVcGTEgpYophZanaQkeedoGK-971J5E`: adenda PG05, captura única/propietario y separación temporal/monetaria.
+- `AUNEA_INTERNAL_ARCHITECTURE_CONTRACT_REVIEW_v1.8_B02.xlsx` · Drive ID `1pDIyvYeEE0lkmMB1L5K09LmMkG5skISO`: relación TIME_OWNED_BY, owner único y QA.
+
+Dependencias de cierre B02: conciliar el Economics Engine oficial con EAR-001–EAR-014 cuando coexistían entradas manuales ED01/ED02–ED08/ED05 y un mismo evento monetario DF063/DF082; actualmente `EconomicsEngine.run` sólo de-duplica por `deduplication_key`, mientras el editor crea claves nuevas para cada entrada, por lo que no demuestra unicidad de evento. No inventar claves ni restar importes sin datos verificados; registrar como gap hasta cerrar contrato/reglas e integrar en B03. Además se requiere UAT visual/nativa Windows/Chrome/Edge y revisión de los tres activos REVIEW antes de promocionarlos a CANONICAL. B02 sigue REVIEW; no afirmar beneficio monetario calculado ni promover a main.
