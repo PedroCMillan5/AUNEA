@@ -50,4 +50,30 @@ def test_without_material_impact_and_valid_anchors_no_additional_questions():
     }])
     assert out["status"] == "NO_FINDINGS"
     assert out["findings"] == []
+
+def test_valid_time_attribution_and_pending_money_are_independent():
+    out = review_frictions(STEPS, [{
+        "id": "F_BOTH", "affected_steps": ["S1", "S2"],
+        "frequency": {"mode": "percent", "value": 20, "period": "case"},
+        "active_time_loss": {"value": 5},
+        "time_attribution": {"mode": "ADDITIONAL", "step_id": "S1"},
+        "direct_loss": {"value": 100, "period": "month"},
+    }])
+    assert out["classified"][0]["counted_as_additional"] is True
+    assert out["findings"][0]["blocking_issues"] == []
+    assert out["findings"][0]["attribution_status"] == "VALIDATED"
+    assert out["monetary_reconciliation"][0]["reconciliation_status"] == "PENDING_DF082"
+
+
+def test_direct_money_without_time_has_no_temporal_attribution_requirement():
+    out = review_frictions(STEPS, [{
+        "id": "F_MONEY", "affected_steps": ["S1"],
+        "direct_loss": {"value": 100, "period": "month"},
+        "frequency": {"mode": "count", "value": 3, "period": "month"},
+    }])
+    assert out["findings"][0]["attribution_status"] == "NOT_APPLICABLE"
+    assert out["findings"][0]["blocking_issues"] == []
+    assert out["classified"] == []
+    assert out["monetary_reconciliation"][0]["friction_id"] == "F_MONEY"
+
 # [AUNEA-UAT-FRICTION-REVIEW-071] END
