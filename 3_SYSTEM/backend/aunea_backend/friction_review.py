@@ -25,6 +25,25 @@ def _material(value: Any) -> bool:
         return False
 
 
+ATTRIBUTION_MODES = {"INCLUDED", "BREAKDOWN", "ADDITIONAL"}
+
+
+def _attribution(friction: dict[str, Any], anchors: list[str], errors: list[str]) -> tuple[str | None, str | None]:
+    """One event has one economic owner, even if it affects several steps."""
+    relation = friction.get("time_attribution")
+    if not isinstance(relation, dict):
+        errors.append("DF062: clasificar la relación con el paso: Incluido / Desglose / Adicional.")
+        return None, None
+    mode = str(relation.get("mode") or "").upper()
+    owner = str(relation.get("step_id") or "")
+    if mode not in ATTRIBUTION_MODES:
+        errors.append("DF062: relación inválida; usar Incluido, Desglose o Adicional.")
+    if not owner or owner not in anchors:
+        errors.append("DF062: seleccionar un paso responsable entre los afectados; no multiplicar por todos.")
+    return (mode if mode in ATTRIBUTION_MODES else None,
+            owner if owner in anchors else None)
+
+
 def review_frictions(
     steps: list[dict[str, Any]], frictions: list[dict[str, Any]]
 ) -> dict[str, Any]:
@@ -34,6 +53,7 @@ def review_frictions(
     }
     seen: set[str] = set()
     findings: list[dict[str, Any]] = []
+    classified: list[dict[str, Any]] = []
     for friction in frictions:
         if friction.get("status") == "SUPERSEDED":
             continue
@@ -54,42 +74,50 @@ def review_frictions(
         frequency = friction.get("frequency") or {}
         if not isinstance(frequency, dict):
             frequency = {"value": frequency}
-        if _material(frequency.get("value")):
-            mode = frequency.get("mode")
-            period = frequency.get("period")
-            if mode not in ("percent", "count"):
-                errors.append("DF060: falta denominador de frecuencia (porcentaje o casos).")
-            elif mode == "percent":
-                try:
-                    value = float(frequency["value"])
-                except (ValueError, TypeError):
-                    value = 101
-                if value > 100:
-                    errors.append("DF060: el porcentaje de casos afectados excede el 100 %.")
-            elif period not in ("case", "day", "month", "year"):
-                errors.append("DF060: recuento sin periodo comparable.")
-        elif _material(friction.get("active_time_loss")) or _material(friction.get("direct_loss")):
-            errors.append("DF060: falta frecuencia para cuantificar el impacto declarado.")
         has_effort = _material(friction.get("active_time_loss"))
         has_loss = _material(friction.get("direct_loss"))
+        if has_effort or has_loss:
+            if not _material(frequency.get("value")):
+                errors.append("DF060: falta frecuencia para cuantificar el impacto declarado.")
+            else:
+                mode = frequency.get("mode")
+                period = frequency.get("period")
+                if mode not in ("percent", "count"):
+                    errors.append("DF060: falta denominador de frecuencia (porcentaje o recuento).")
+                elif mode == "percent":
+                    try:
+                        value = float(frequency["value"])
+                    except (ValueError, TypeError):
+                        value = 101
+                    if value > 100:
+                        errors.append("DF060: el porcentaje de casos afectados excede el 100 %.")
+                elif period not in ("case", "day", "month", "year"):
+                    errors.append("DF060: recuento sin periodo comparable.")
+        attribution_mode, owner_step_id = (None, None)
         if has_effort:
-            errors.append(
-                "DF062: relación con DF039 sin atribuir; no sumar al retrabajo del paso."
-            )
+            attribution_mode, owner_step_id = _attribution(friction, anchors, errors)
+            if owner_step_id and owner_step_id not in active_step_ids:
+                errors.append("DF062: el paso responsable ya no está activo.")
         if has_loss:
             errors.append(
-                "DF063: pérdida directa pendiente de conciliación de evento con DF082 y otras fricciones."
+                "DF063: conciliar evento monetario con DF082/otras fricciones; tiempo y dinero no son el mismo sumando."
             )
+        if attribution_mode and owner_step_id:
+            classified.append({
+                "friction_id": friction_id, "owner_step_id": owner_step_id,
+                "mode": attribution_mode,
+                "counted_as_additional": attribution_mode == "ADDITIONAL" and not errors,
+            })
         if errors:
             findings.append({
                 "friction_id": friction_id or None,
-                "step_ids": anchors,
-                "issues": errors,
+                "step_ids": anchors, "issues": errors,
                 "attribution_status": "PENDING",
             })
     return {
         "status": "PENDING_REVIEW" if findings else "NO_FINDINGS",
         "findings": findings,
-        "rule": "Una fricción vinculada a varios pasos representa una observación, no una pérdida por paso.",
+        "classified": classified,
+        "rule": "Una fricción tiene un único paso propietario de su tiempo; otros pasos son vínculos contextuales.",
     }
 # [AUNEA-BE-FRICTION-REVIEW-071] END
