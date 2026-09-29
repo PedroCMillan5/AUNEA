@@ -84,3 +84,47 @@ def test_api_exposes_same_deterministic_server_projection():
     assert response.status_code == 200
     assert response.json()["annual_rework_hours"] == 10
 # [AUNEA-UAT-SESSION-TIME-070] END
+
+
+def test_included_friction_never_adds_existing_rework_twice():
+    f={"id":"F1","affected_steps":["S1"],"active_time_loss":{"value":5},
+       "frequency":{"mode":"percent","value":10},
+       "time_attribution":{"mode":"INCLUDED","step_id":"S1"}}
+    out=project_session_time(TimeProjectionRequest(volume=100,period="MONTH",steps=[STEP],frictions=[f]))
+    assert out["status"]=="CALCULATED"
+    assert out["annual_rework_hours"]==10
+    assert out["annual_friction_additional_hours"]==0
+    assert out["annual_total_active_hours"]==200
+    assert out["frictions_pending_overlap_review"]==[]
+
+
+def test_breakdown_friction_explains_same_minutes_without_adding():
+    f={"id":"F2","affected_steps":["S1"],"active_time_loss":{"value":3},
+       "frequency":{"mode":"percent","value":20},
+       "time_attribution":{"mode":"BREAKDOWN","step_id":"S1"}}
+    out=project_session_time(TimeProjectionRequest(volume=100,period="MONTH",steps=[STEP],frictions=[f]))
+    assert out["status"]=="CALCULATED"
+    assert out["annual_friction_additional_hours"]==0
+    assert out["annual_rework_hours"]==10
+
+
+def test_additional_friction_counts_once_even_if_linked_to_multiple_steps():
+    step_two=dict(STEP,id="S2",active_time=0,wait_time=0,rework_time=0)
+    f={"id":"F3","affected_steps":["S1","S2"],"active_time_loss":{"value":5},
+       "frequency":{"mode":"percent","value":20},
+       "time_attribution":{"mode":"ADDITIONAL","step_id":"S1"}}
+    out=project_session_time(TimeProjectionRequest(volume=100,period="MONTH",steps=[STEP,step_two],frictions=[f]))
+    assert out["status"]=="CALCULATED"
+    assert out["annual_friction_additional_hours"]==20
+    assert out["annual_total_active_hours"]==220
+    assert out["annual_rework_hours"]==10
+
+
+def test_unattributed_or_invalid_owner_does_not_leak_into_totals():
+    f={"id":"F4","affected_steps":["S1"],"active_time_loss":{"value":5},
+       "frequency":{"mode":"percent","value":20},
+       "time_attribution":{"mode":"ADDITIONAL","step_id":"S_UNKNOWN"}}
+    out=project_session_time(TimeProjectionRequest(volume=100,period="MONTH",steps=[STEP],frictions=[f]))
+    assert out["status"]=="INCOMPLETE"
+    assert out["annual_friction_additional_hours"] is None
+    assert out["annual_total_active_hours"] is None
