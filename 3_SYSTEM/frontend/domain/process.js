@@ -1,6 +1,6 @@
 // [AUNEA-FE-PROC-EDITOR-020] START — Process Step + Friction canonical editor v1.1
 // PURPOSE: Build/review the AS-IS with the 20 canonical Process Step attributes and anchored Friction records.
-// SOURCE: Diagnostic Master v1.1 00_PROCESS_STEP_MODEL_V1 / 00_FRICTION_MODEL_V1 / MAP_FRICTION_PAIN_V1; REQ-PROC-001/002; REQ-FRIC-001/002; DEC-040.
+// SOURCE: Diagnostic Master v1.2 CANONICAL (v1.3 B02 REVIEW candidate), Process/Friction/Pain models; REQ-PROC-001/002; REQ-FRIC-001/002; DEC-040/063/068.
 // INPUTS: canonical schema option sets, engagement Process Steps/Frictions and user edits.
 // OUTPUTS: RT_PROCESS_STEP-compatible local records and RT_FRICTION-compatible local records; Pain_ID remains derived.
 // SIDE_EFFECTS: engagement state, AS-IS confirmation invalidation, audit trail.
