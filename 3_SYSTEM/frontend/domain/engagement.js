@@ -133,8 +133,11 @@ function sealConfirmedSnapshot(e, reason = 'AS-IS confirmado en PG09') {
   advanceEngagementTo(e, 'Trabajo interno', 'snapshot confirmado en PG09');
   return sealed;
 }
+// Historical snapshots stay append-only, but only a currently confirmed AS-IS exposes one
+// as the live handoff. Editing any confirmed layer hides the old snapshot until re-confirmation.
 function confirmedSnapshot(e) {
-  const history = e && e.confirmedSnapshots;
+  if (!e || e.confirmedAsIs !== true) return null;
+  const history = e.confirmedSnapshots;
   return (history && history.length) ? history[history.length - 1] : null;
 }
 function hasConfirmedSnapshot(e) { return !!confirmedSnapshot(e); }
