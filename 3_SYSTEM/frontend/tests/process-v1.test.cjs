@@ -96,12 +96,12 @@ test('automation_state reuses the shared segmented() renderer instead of a secon
   assert.match(code,/s\.automation_state=b\.dataset\.value/,'the local binder reads the same data-value attribute the shared renderer emits');
 });
 
-test('actor/tool reference controls retain canonical values and explicit Other while using the process chip style',()=>{
+test('actor/tool reference controls retain canonical dropdowns and explicit Other',()=>{
   const html=ctx.datalistControl('step_actor','OS_ACTOR_ROLE','','Rol existente o nuevo');
   assert.match(html,/catalog-reference-control/);
-  assert.match(html,/process-chip-control/);
+  assert.match(html,/class="aunea-select"/);
   assert.match(html,/id="step_actor"/);
-  assert.match(html,/data-process-chip="step_actor"/);
+  assert.match(html,/data-aunea-select-option="step_actor"/);
   assert.match(html,/data-catalog-other-wrap="step_actor"/);
   assert.doesNotMatch(html,/<datalist/);
 });

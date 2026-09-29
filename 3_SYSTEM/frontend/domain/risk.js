@@ -6,7 +6,7 @@
 // SIDE_EFFECTS: modal DOM and engagement state mutation; no risk-level calculation.
 // CHANGE_RISK: HIGH.
 function riskDropdown(id,opts,value='',placeholder='Selecciona…'){
-  return typeof processChipSelect==='function'?processChipSelect(id,opts,value,placeholder):auneaSelectControl(id,opts,value,{placeholder});
+  return auneaSelectControl(id,opts,value,{placeholder});
 }
 
 function riskRelatedFrictions(e,r){

@@ -257,7 +257,7 @@ body.mode-process-editor .flow-connector{flex:0 0 28px;width:28px}
 .client-process-layer-rail .client-rail-item:not(:last-of-type):after{content:"";position:absolute;left:-8px;top:calc(50% + 7px);width:2px;height:calc(100% + 4px);background:var(--system-line)}
 .client-process-layer-rail .client-rail-item.active:before{background:var(--system)}
 .process-graph-canvas{padding:12px 8px 24px}
-.process-graph-board{position:relative;display:grid;grid-template-columns:repeat(var(--graph-cols),minmax(180px,1fr));grid-auto-rows:minmax(255px,auto);gap:24px 24px;min-width:600px;align-items:center;padding:18px 20px;isolation:isolate}
+.process-graph-board{position:relative;display:grid;grid-template-columns:repeat(var(--graph-cols),minmax(205px,245px));grid-template-rows:repeat(var(--graph-rows),minmax(180px,auto));gap:24px 36px;min-width:max-content;width:max-content;align-items:center;padding:24px 28px;isolation:isolate}
 .process-graph-cell{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;min-width:0;min-height:48px}
 .process-graph-cell .graph-flow-step{width:100%;max-width:260px;cursor:grab}
 .process-graph-cell .flow-boundary{width:100%;min-width:0;max-width:260px;text-align:center}
@@ -276,7 +276,7 @@ body.mode-process-editor .client-process-canvas.process-graph-canvas{overflow-x:
   .client-sequence-stage{padding:0 3px}.client-sequence-stage small{font-size:10px}
   .client-sequence-stage .sequence-number{width:32px;height:32px}
   .client-process-sequence:before{top:16px}
-  .process-graph-board{grid-template-columns:repeat(var(--graph-cols),minmax(170px,1fr))}
+  .process-graph-board{grid-template-columns:repeat(var(--graph-cols),minmax(195px,220px))}
 }
 .client-inherited-context{border:1px solid var(--system-line);background:var(--system-soft);border-radius:9px;padding:12px 14px;margin-bottom:14px}
 .client-inherited-context b{display:block;font-size:12px;color:var(--system);margin-bottom:5px}

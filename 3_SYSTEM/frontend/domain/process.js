@@ -27,24 +27,17 @@ function selectedHtml(id,opts,selected,{detailId='',detailValue='',detailPlaceho
 }
 function catalogOtherOption(opts){return (opts||[]).find(o=>String(o.value).toUpperCase()==='OTHER'||['otro','otra'].includes(String(o.label||'').trim().toLowerCase()))||null}
 
-/* [AUNEA-FE-PROC-CHOICES-025] START — Controls scoped to the four editable process-layer modals.
-   Canonical option values remain unchanged. STEP_REFERENCE retains its original dropdown. */
-function processChipSelect(id,opts,value='',placeholder='Selecciona…',extra=''){
-  return `<div class="process-chip-control" role="group" aria-label="${attr(placeholder)}">
-    <input type="hidden" id="${attr(id)}" value="${attr(value??'')}" ${extra}>
-    <div class="choice-grid process-chip-list">${(opts||[]).map(o=>`<button type="button" class="process-chip${String(o.value)===String(value)?' active':''}" data-process-chip="${attr(id)}" data-value="${attr(o.value)}" aria-pressed="${String(o.value)===String(value)}">${esc(o.label)}</button>`).join('')}</div>
-  </div>`;
-}
+/* [AUNEA-FE-PROC-CHOICES-025] START — Preserve canonical dropdowns.
+   Existing MULTICHECK and MULTISELECT options wrap horizontally; applies-to uses its original dropdown. */
 /* [AUNEA-FE-PROC-CHOICES-025] END */
 function processDecisionStep(s){
-  return s?!!(s._ui?.has_decision===true||['ST04','ST05'].includes(String(s.step_type||''))||normalizeArray(s.decision_criteria).length||s.exception_path):false;
+  return s?(typeof s._ui?.has_decision==='boolean'?s._ui.has_decision:!!(['ST04','ST05'].includes(String(s.step_type||''))||normalizeArray(s.decision_criteria).length||s.exception_path)):false;
 }
 
 function auneaDropdownControl(id,opts,value='',placeholder='Selecciona…',extra=''){
-  // A destination is a reference to another step, including a future step: preserve the
-  // searchable/dropdown reference UX and its existing routing contract.
-  if(id==='step_next'||id==='step_exc_dest')return auneaSelectControl(id,opts,value,{extra,placeholder});
-  return processChipSelect(id,opts,value,placeholder,extra);
+  // All previously single-select/combobox controls remain canonical dropdowns.
+  // Horizontal wrapping belongs exclusively to pre-existing multi-choice controls.
+  return auneaSelectControl(id,opts,value,{extra,placeholder});
 }
 function datalistControl(id,setId,value,placeholder){
   const opts=fieldOptions(setId),match=opts.find(o=>String(o.value)===String(value)),other=catalogOtherOption(opts),isCustom=!!value&&!match,isOther=!!other&&(String(value)===String(other.value)||isCustom),selectedValue=isCustom&&other?other.value:value,otherValue=other?.value||'__OTHER__',all=other?opts:[...opts,{value:'__OTHER__',label:'Otro / nuevo…'}];
@@ -104,7 +97,7 @@ function bindProcessAppliesControl(){
     if(help)help.textContent=m==='ALL'?'Se aplica al 100 % de los casos; el porcentaje está bloqueado.':m==='PERCENT'?'Indica el porcentaje de casos al que aplica.':'Describe la condición observable.';
   });
 }
-function decisionDestinationOptions(e,s){return [{value:'',label:'Selecciona destino…'},{value:'__NEW__',label:'+ Crear nuevo paso como destino'},...activeSteps(e).filter(z=>z.id!==s.id).map(z=>({value:z.id,label:z.step_name||'Paso sin nombre'}))]}
+function decisionDestinationOptions(e,s){return [{value:'',label:'Selecciona destino…'},{value:'__END__',label:'Fin del proceso'},{value:'__NEW__',label:'+ Crear nuevo paso como destino'},...activeSteps(e).filter(z=>z.id!==s.id).map(z=>({value:z.id,label:z.step_name||'Paso sin nombre'}))]}
 function blankDecisionDestination(){return stepMeta({id:id('STEP'),status:'ACTIVE',occurrences_per_case:1,inputs:[],outputs:[],manual_actions:[],decision_criteria:[],communication_channels:[],evidence:[],active_time:0,wait_time:0,rework_time:0})}
 function exceptionControl(s,e){
   const x=s.exception_path&&typeof s.exception_path==='object'?s.exception_path:{},types=[{value:'',label:'Sin clasificación adicional'},...fieldOptions('OS_EXCEPTION_TYPE')],dest=decisionDestinationOptions(e,s);
@@ -122,7 +115,7 @@ function openStepModal(stepId=null,linkFromStepId=null,preset=null){
   const s=stepMeta(existing?structuredClone(existing):{...base,...(preset||{}),_ui:{...(preset?._ui||{})}});
   const stepTypes=fieldOptions('OS_STEP_TYPE'),artifacts=fieldOptions('OS_ARTIFACT_TYPE'),decisions=fieldOptions('OS_DECISION_CRITERIA'),manual=fieldOptions('OS_MANUAL_ACTION'),auto=fieldOptions('OS_AUTOMATION_STATE'),channels=fieldOptions('OS_COMM_CHANNEL'),evid=fieldOptions('OS_EVIDENCE_TYPE');
   const decisionOther=catalogOtherOption(decisions),decisionOtherOpen=!!decisionOther&&normalizeArray(s.decision_criteria).map(String).includes(String(decisionOther.value));
-  const hasDecision=s._ui.has_decision===true||['ST04','ST05'].includes(String(s.step_type||''))||normalizeArray(s.decision_criteria).length>0||!!s.exception_path;
+  const hasDecision=processDecisionStep(s);
   s._ui.has_decision=hasDecision;
   const stepTypeControl=auneaDropdownControl('step_type',[{value:'',label:'Selecciona…'},...stepTypes],s.step_type||'','Selecciona…');
   // Progressive disclosure over the same 20 canonical Process Step attributes — no schema change, just
@@ -175,7 +168,7 @@ function openStepModal(stepId=null,linkFromStepId=null,preset=null){
     const et=document.getElementById('step_exc_type').value,ec=document.getElementById('step_exc_condition').value.trim(),ed=document.getElementById('step_exc_dest').value,eo=resolveCatalogInput(document.getElementById('step_exc_owner'));
     if(!s.step_name||s.step_name.length<3||!s.step_type||!s.actor)return toast('Nombre (mín. 3 caracteres), tipo y responsable son obligatorios.');
     if(am==='PERCENT'&&(av===''||!Number.isFinite(Number(av))||Number(av)<0||Number(av)>100))return toast('Indica un porcentaje válido entre 0 y 100.');
-    if(hasDecisionNow&&(!nextVal||!ed))return toast('Una decisión necesita destino para la ruta SÍ y para la ruta NO. Puedes elegir “Crear nuevo paso como destino”.');
+    if(hasDecisionNow&&(!nextVal||!ed))return toast('Una decisión necesita destino para la ruta SÍ y para la ruta NO. También puedes elegir Fin del proceso.');
     let yesDestination=nextVal,noDestination=ed;
     const createdDestinations=[];
     if(hasDecisionNow&&yesDestination==='__NEW__'){const draft=blankDecisionDestination();e.processSteps.push(draft);yesDestination=draft.id;createdDestinations.push(draft.id)}
@@ -363,37 +356,42 @@ function processGraphData(e,steps){
   steps.forEach((step,i)=>{
     addNode(step.id);
     if(processDecisionStep(step)){
-      const yes=valid(step.normal_next_step)?step.normal_next_step:addNode('__YES__'+step.id,'pending',step.id,'SÍ');
-      const no=valid(step.exception_path?.destination_step)?step.exception_path.destination_step:addNode('__NO__'+step.id,'pending',step.id,'NO');
+      const yes=step.normal_next_step==='__END__'?addNode('__END__','end'):(valid(step.normal_next_step)?step.normal_next_step:addNode('__YES__'+step.id,'pending',step.id,'SÍ'));
+      const no=step.exception_path?.destination_step==='__END__'?addNode('__END__','end'):(valid(step.exception_path?.destination_step)?step.exception_path.destination_step:addNode('__NO__'+step.id,'pending',step.id,'NO'));
       edge(step.id,yes,'SÍ');edge(step.id,no,'NO');
     }else{
-      const next=valid(step.normal_next_step)?step.normal_next_step:
+      const next=step.normal_next_step==='__END__'?addNode('__END__','end'):valid(step.normal_next_step)?step.normal_next_step:
         (step.normal_next_step?addNode('__NEXT__'+step.id,'pending',step.id,'SIGUIENTE'):(steps[i+1]?.id||addNode('__END__','end')));
       edge(step.id,next);
     }
   });
+  // Keep both actual routes and reconvergences, with depth on the horizontal x axis.
+  // A previously visited node is never traversed again, so loops cannot hang layout.
   const depth=new Map([['__START__',0]]),q=['__START__'];
   while(q.length){const from=q.shift(),d=depth.get(from);
     edges.filter(x=>x.from===from).forEach(x=>{if(!depth.has(x.to)){depth.set(x.to,d+1);q.push(x.to)}});
   }
   nodes.forEach(n=>{if(!depth.has(n.id))depth.set(n.id,Math.max(...depth.values())+1)});
-  const rows=new Map();
-  nodes.forEach(n=>{const d=depth.get(n.id);if(!rows.has(d))rows.set(d,[]);rows.get(d).push(n)});
+  const cols=new Map();nodes.forEach(n=>{const d=depth.get(n.id);if(!cols.has(d))cols.set(d,[]);cols.get(d).push(n)});
   const incoming=id=>edges.find(x=>x.to===id)?.label||'';
-  const cols=Math.max(3,...Array.from(rows.values(),a=>a.length));
+  const maxRows=Math.max(3,...Array.from(cols.values(),a=>a.length));
   const positions=new Map();
-  rows.forEach((list,depth)=>{
+  cols.forEach((list,col)=>{
     list.sort((a,b)=>({SÍ:-1,NO:1}[incoming(a.id)]||0)-({SÍ:-1,NO:1}[incoming(b.id)]||0));
-    list.forEach((n,i)=>{const col=list.length===1?Math.ceil(cols/2):Math.round(i*(cols-1)/(list.length-1))+1;positions.set(n.id,{row:depth+1,col})});
+    list.forEach((n,i)=>{const row=list.length===1?Math.ceil(maxRows/2):Math.round(i*(maxRows-1)/(list.length-1))+1;positions.set(n.id,{row,col:col+1})});
   });
-  return {nodes,edges,cols,positions};
+  // Fin is a shared sink even if a branch completes before the other.
+  const end=positions.get('__END__'),endCol=Math.max(...Array.from(positions.entries()).filter(([id])=>id!=='__END__').map(([,p])=>p.col))+1;
+  if(end)positions.set('__END__',{row:Math.ceil(maxRows/2),col:endCol});
+  const maxCols=Math.max(endCol,...Array.from(positions.values(),p=>p.col));
+  return {nodes,edges,cols:maxCols,rows:maxRows,positions};
 }
 function graphNodeCard(e,s,i,fr){
   const decision=processDecisionStep(s),steps=activeSteps(e);
   const frOn=fr.filter(f=>normalizeArray(f.affected_steps).includes(s.id));
   const risks=(e.risks||[]).filter(r=>normalizeArray(r.step_ids).includes(s.id));
   const money=(e.economicInputs||[]).filter(x=>normalizeArray(x.step_ids).includes(s.id));
-  const dest=id=>steps.find(x=>x.id===id)?.step_name||'Definir destino';
+  const dest=id=>id==='__END__'?'Fin del proceso':(steps.find(x=>x.id===id)?.step_name||'Definir destino');
   const actions='<div class="flow-step-tools">'
     +'<button type="button" data-move-step-up="'+attr(s.id)+'" '+(i===0?'disabled':'')+'>←</button>'
     +'<button type="button" data-move-step-down="'+attr(s.id)+'" '+(i===steps.length-1?'disabled':'')+'>→</button>'
@@ -424,7 +422,7 @@ function processGraphHtml(e,steps,fr,start,finish){
     else {const step=steps.find(x=>x.id===n.id);html=graphNodeCard(e,step,steps.indexOf(step),fr);}
     return '<div class="process-graph-cell" '+style+' '+id+'>'+html+'</div>';
   };
-  return '<div class="flow-canvas client-process-canvas process-graph-canvas"><div class="process-graph-board" style="--graph-cols:'+model.cols+'" data-graph-edges="'+attr(JSON.stringify(model.edges))+'">'
+  return '<div class="flow-canvas client-process-canvas process-graph-canvas"><div class="process-graph-board" style="--graph-cols:'+model.cols+';--graph-rows:'+model.rows+'" data-graph-edges="'+attr(JSON.stringify(model.edges))+'">'
     +'<svg class="process-graph-lines" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>'
     +model.nodes.map(cell).join('')+'</div></div>';
 }
@@ -440,14 +438,14 @@ function drawProcessGraph(){
   edges.forEach(edge=>{
     const a=els.get(edge.from),b=els.get(edge.to);if(!a||!b)return;
     const ar=a.getBoundingClientRect(),br=b.getBoundingClientRect();
-    const forward=br.top>ar.bottom+6;
-    let x1=ar.left+ar.width/2-rect.left,y1=ar.bottom-rect.top;
-    let x2=br.left+br.width/2-rect.left,y2=br.top-rect.top;
+    const forward=br.left>ar.right+6;
+    let x1=ar.right-rect.left,y1=ar.top+ar.height/2-rect.top;
+    let x2=br.left-rect.left,y2=br.top+br.height/2-rect.top;
     let d;
-    if(forward){const ym=y1+Math.max(18,(y2-y1)/2);d='M'+x1+' '+y1+'V'+ym+'H'+x2+'V'+(y2-5);}
-    else{const x=Math.max(12,Math.min(x1,x2)-55);y1=ar.top+ar.height/2-rect.top;y2=br.top+br.height/2-rect.top;x1=ar.left-rect.left;x2=br.left-rect.left;d='M'+x1+' '+y1+'H'+x+'V'+y2+'H'+(x2-5);}
+    if(forward){const xm=x1+Math.max(18,(x2-x1)/2);d='M'+x1+' '+y1+'H'+xm+'V'+y2+'H'+(x2-5);}
+    else{const y=Math.max(12,Math.min(y1,y2)-55);x1=ar.left+ar.width/2-rect.left;y1=ar.top-rect.top;x2=br.left+br.width/2-rect.left;y2=br.top-rect.top;d='M'+x1+' '+y1+'V'+y+'H'+x2+'V'+(y2-5);}
     const path=document.createElementNS(ns,'path');path.setAttribute('d',d);path.setAttribute('class','graph-path '+(edge.label==='NO'?'graph-path-alternative':''));path.setAttribute('marker-end','url(#auneaGraphArrow)');svg.appendChild(path);
-    if(edge.label){const text=document.createElementNS(ns,'text');text.textContent=edge.label;text.setAttribute('class','graph-path-label');text.setAttribute('x',String(forward?x1+6:x1-18));text.setAttribute('y',String(forward?y1+14:y1-7));svg.appendChild(text);}
+    if(edge.label){const text=document.createElementNS(ns,'text');text.textContent=edge.label;text.setAttribute('class','graph-path-label');text.setAttribute('x',String(forward?x1+12:x1+9));text.setAttribute('y',String(forward?y1-9:y1-9));svg.appendChild(text);}
   });
 }
 if(typeof window!=='undefined'&&!window.__auneaProcessGraphResize){

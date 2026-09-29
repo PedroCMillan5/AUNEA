@@ -1,4 +1,4 @@
-// [AUNEA-UAT-PROC-LAYERS-045] START — four-layer increment, chip controls, routed graph
+// [AUNEA-UAT-PROC-LAYERS-045] START — four-layer increment, restored dropdowns, horizontal routed graph
 const test=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
@@ -34,20 +34,17 @@ function setup(){
   return {ctx,e,fields,events,label,help};
 }
 
-test('all four modal pickers share adaptive chip patterns without changing canonical option IDs',()=>{
+test('previously single-select controls remain dropdowns while existing multiple choices wrap',()=>{
   const {ctx}=setup();
-  const html=ctx.processChipSelect('category',[{value:'R1',label:'Operativo'},{value:'R2',label:'Legal'}],'R2');
-  assert.match(html,/class="choice-grid process-chip-list"/);
-  assert.match(html,/id="category" value="R2"/);
-  assert.match(html,/data-value="R2" aria-pressed="true"/);
-  assert.match(ctx.auneaDropdownControl('fr_impact',[{value:'1',label:'1'},{value:'2',label:'2'}],'2'),/process-chip-list/);
-  assert.match(ctx.auneaDropdownControl('step_next',[{value:'__NEW__',label:'Crear nuevo'}],'__NEW__'),/id="step_next"/);
-  assert.match(risk,/typeof processChipSelect==='function'\?processChipSelect/);
-  assert.match(econ,/typeof processChipSelect==='function'\?processChipSelect/);
+  assert.match(ctx.auneaDropdownControl('fr_impact',[{value:'1',label:'1'},{value:'2',label:'2'}],'2'),/id="fr_impact"/);
+  assert.doesNotMatch(ctx.auneaDropdownControl('fr_impact',[{value:'1',label:'1'}],'1'),/process-chip-list/);
+  assert.match(ctx.auneaDropdownControl('step_next',[{value:'__END__',label:'Fin del proceso'}],'__END__'),/id="step_next"/);
+  assert.match(ctx.selectedHtml('step_inputs',[{value:'DOC',label:'Documento'}],[],{wrapped:true}),/choice-grid-wrapped/);
+  assert.match(ctx.selectedHtml('fr_steps',[{value:'S',label:'Paso'}],[]),/choice-grid/);
+  assert.match(risk,/return auneaSelectControl\(id,opts,value,\{placeholder\}\)/);
+  assert.match(econ,/return auneaSelectControl\(id,opts,value,\{placeholder\}\)/);
   assert.match(css,/\.process-modal-form \.choice-grid\{display:flex;flex-wrap:wrap/);
-  assert.match(css,/\.process-modal-form \.process-chip\.active/);
 });
-
 test('ALL blocks 100 percent; percentage and conditional modes are editable only in their own mode',()=>{
   const {ctx,fields,label,help}=setup();
   const html=ctx.appliesControl({applies_to:{mode:'ALL',value:''}});
@@ -96,8 +93,9 @@ test('real SÍ/NO routes, merges and unconnected future destinations are visual 
   const yes=graph.edges.find(x=>x.from==='D'&&x.label==='SÍ');
   const no=graph.edges.find(x=>x.from==='D'&&x.label==='NO');
   assert.equal(yes.to,'Y');assert.equal(no.to,'N');
-  assert.equal(graph.positions.get('Y').row,graph.positions.get('N').row);
-  assert.notEqual(graph.positions.get('Y').col,graph.positions.get('N').col);
+  assert.equal(graph.positions.get('Y').col,graph.positions.get('N').col);
+  assert.notEqual(graph.positions.get('Y').row,graph.positions.get('N').row);
+  assert.ok(graph.positions.get('__END__').col>graph.positions.get('M').col);
   assert.equal(graph.edges.filter(x=>x.to==='M').length,2);
   const html=ctx.processGraphHtml(e,e.processSteps,e.frictions,'Inicio','Fin');
   assert.match(html,/process-graph-board/);
@@ -106,6 +104,14 @@ test('real SÍ/NO routes, merges and unconnected future destinations are visual 
   ctx.relinkNormalFlow(e);
   assert.equal(e.processSteps[0].normal_next_step,'Y');
   assert.equal(e.processSteps[0].exception_path.destination_step,'N');
+  e.processSteps[0].normal_next_step='__END__';
+  e.processSteps[0].exception_path={destination_step:'__END__'};
+  const ending=ctx.processGraphData(e,e.processSteps);
+  assert.equal(ending.edges.find(x=>x.from==='D'&&x.label==='SÍ').to,'__END__');
+  assert.equal(ending.edges.find(x=>x.from==='D'&&x.label==='NO').to,'__END__');
+  e.processSteps[0]._ui={has_decision:false};
+  assert.equal(ctx.processDecisionStep(e.processSteps[0]),false,'decision toggle may be disabled without changing step type');
+  e.processSteps[0]._ui={has_decision:true};
   e.processSteps[0].normal_next_step='';
   e.processSteps[0].exception_path={destination_step:''};
   const pending=ctx.processGraphData(e,e.processSteps);
@@ -122,7 +128,8 @@ test('risk inherits confirmed friction locations via existing step_ids; economic
   assert.match(econ,/Contexto reutilizado del AS-IS/);
   assert.match(econ,/linkedFrictions\.length/);
   assert.match(econ,/linkedRisks\.length/);
-  assert.match(econ,/no se calculan automáticamente desde las fricciones o los riesgos/);
+  assert.match(econ,/economicTimeProjection/);
+  assert.match(econ,/no sumar sin comprobar solapamientos/);
   assert.match(css,/\.client-inherited-context\{/);
 });
 // [AUNEA-UAT-PROC-LAYERS-045] END
