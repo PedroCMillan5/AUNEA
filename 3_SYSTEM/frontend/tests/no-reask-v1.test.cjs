@@ -253,4 +253,25 @@ test('readiness accepts a boundary-only AS-IS map and does not invent an interme
   delete eng.answers.DF014;delete eng.answers.DF015;eng.processSteps=[{id:'s1',status:'ACTIVE',step_name:'Alta',actor:'A1',tool:'T1',active_time:10,rework_time:2,occurrences_per_case:1,communication_channels:['CH1'],inputs:['AR1'],outputs:['AR2']},{id:'s2',status:'ACTIVE',step_name:'Aprobación',step_type:'ST05',actor:'A2',tool:'T2',wait_time:60,decision_criteria:['DC1'],communication_channels:['CH2']}];
   ctx.schema.fields=oldFields;
 });
+
+test('S08 renders required outcomes and future constraints before any AS-IS steps',()=>{
+  const empty={...eng,answers:{},processSteps:[],frictions:[],risks:[],economicInputs:[],confirmedAsIs:false};
+  const fields=[
+    ['DF086','BR-FUTURE','ASK','REQUIRED_90M'],
+    ['DF087','BR-FUTURE','CONDITIONAL_ASK','CONDITIONAL_90M'],
+    ['DF088','BR-AI','CONDITIONAL_ASK','CONDITIONAL_90M'],
+    ['DF089','BR-FUTURE','CONDITIONAL_ASK','CONDITIONAL_90M'],
+    ['DF090','BR-RISK','CONDITIONAL_ASK','CONDITIONAL_90M'],
+    ['DF091','BR-FUTURE','CONDITIONAL_ASK','CONDITIONAL_90M'],
+    ['DF092','BR-FUTURE','OPTIONAL_ASK','OPTIONAL_90M']
+  ].map(([Field_ID,Branch_Rule_ID,Ask_Mode,Requiredness])=>({Field_ID,Stage_ID:'S08',Branch_Rule_ID,Ask_Mode,Requiredness}));
+  assert.deepEqual(Array.from(fields.filter(f=>ctx.questionVisible(f,empty)),f=>f.Field_ID),
+    ['DF086','DF087','DF089','DF091','DF092']);
+  assert.equal(ctx.branchActive('BR-FUTURE',empty),false,'generic branch remains unchanged');
+  assert.equal(ctx.questionVisible({...fields[0],Stage_ID:'S04'},empty),false,'no change to other stages');
+  const old=ctx.schema.fields;ctx.schema.fields=fields;
+  try{assert.ok(Array.from(ctx.canonicalMissingRequired(empty)).includes('DF086'));}
+  finally{ctx.schema.fields=old}
+});
+
 // [AUNEA-UAT-NOREASK-010] END
