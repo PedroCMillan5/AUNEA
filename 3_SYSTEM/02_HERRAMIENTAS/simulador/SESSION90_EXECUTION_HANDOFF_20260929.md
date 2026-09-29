@@ -61,6 +61,8 @@ Pruebas de aceptación:
 
 ### Decisión del propietario · 29/09/2026 · ATRIBUCIÓN DF039↔DF062 (aprobada)
 
+Gobierno: registrada como **DEC-068 en DECISIONES_AUNEA v1.27** (Drive), verificada. Sincronización de Master Index y cambios físicos en Diagnostic Master v1.2, Simulator CANONICAL y Architecture Contract pendientes; no presentar B02 como cerrado. QA tras la aprobación: backend 57/57, frontend 351/351. 
+
 Se aprueban tres relaciones de tiempo entre una fricción y su paso propietario:
 
 - **INCLUDED / Incluido:** los minutos de DF062 ya están incluidos en el tiempo capturado del paso y no se agregan.
