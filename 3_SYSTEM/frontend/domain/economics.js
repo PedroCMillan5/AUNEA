@@ -69,6 +69,9 @@ async function economicTimeProjection(e,stepIds=[]){
   });
   if(!response.ok)throw new Error('El backend no pudo normalizar el tiempo del proceso.');
   const output=await response.json();
+  // One backend projection may serve No-Reask DF078/DF079 for the whole process.
+  // Never cache a selected subset as if it were the full AS-IS.
+  if(!stepIds.length)e._sessionTimeProjection={requestKey:JSON.stringify(req),output};
   return {
     available:output.status==='CALCULATED',
     annualCases:output.annual_cases,
