@@ -1,6 +1,6 @@
 // [AUNEA-FE-ECON-CAPTURE-030] START — Captura de inputs económicos
 // PURPOSE: Render and capture explicit EconomicInput records while preserving active/wait/direct-loss/tool/cash categories; never annualize Process Step time or calculate official economics in the browser.
-// SOURCE: DEC-021/033/034/040; REF_ECON_DRIVER; governed evidence labels.
+// SOURCE: Diagnostic Master v1.2 RULE_ECON_AGGREGATION EAR-001/004/006/008/009/013; DEC-021/033/034/040/068; REF_ECON_DRIVER; governed evidence labels.
 // INPUTS: current Engagement, explicit consultant-entered annual values and evidence quality.
 // OUTPUTS: engagement.economicInputs records matching the backend EconomicInput contract.
 // SIDE_EFFECTS: modal DOM and engagement state mutation; no official economics calculation.
@@ -57,7 +57,7 @@ function economicTimeRequest(e,stepIds=[]){
     // No invented operating calendar: weekly/daily projections stay conditional
     // until governed operating weeks/days are captured by their canonical owner.
     steps,frictions:(typeof activeFrictions==='function'?activeFrictions(e):e.frictions||[])
-      .filter(f=>normalizeArray(f.affected_steps).some(id=>selectedIds.has(id)))
+      .filter(f=>{const owner=f.time_attribution?.step_id;return owner?selectedIds.has(owner):normalizeArray(f.affected_steps).some(id=>selectedIds.has(id))})
   };
 }
 async function economicTimeProjection(e,stepIds=[]){
@@ -78,6 +78,9 @@ async function economicTimeProjection(e,stepIds=[]){
     active:output.annual_active_hours,
     wait:output.annual_wait_exposure_hours,
     rework:output.annual_rework_hours,
+    additional:output.annual_friction_additional_hours,
+    totalActive:output.annual_total_active_hours,
+    monetaryPending:output.monetary_reconciliation||[],
     missing:output.gaps||[],
     pendingFrictions:output.frictions_pending_overlap_review||[],
     stepCount:req.steps.length,
@@ -96,6 +99,35 @@ function economicProjectionForDriver(projection,driver){
   return null;
 }
 /* [AUNEA-FE-ECON-DERIVATION-035] END */
+
+// [AUNEA-FE-ECON-OVERLAP-036] START — Conservative pre-save checks under EAR-001/004/006.
+// SOURCE: Diagnostic Master v1.2 RULE_ECON_AGGREGATION; DEC-068 single-source ownership.
+// INPUTS: Current Engagement EconomicInputs, active Frictions and draft EconomicInput.
+// OUTPUTS: Spanish reasons to hold unproven additive entries; no calculations or new fields.
+// SIDE_EFFECTS: None. CHANGE_RISK: HIGH.
+function economicScopeOverlaps(a=[],b=[]){
+  const x=normalizeArray(a),y=normalizeArray(b);
+  return !x.length||!y.length||x.some(id=>y.includes(id));
+}
+function economicCaptureIssues(e,draft){
+  const issues=[],rows=e.economicInputs||[],active=Number(draft.annual_active_hours||0);
+  for(const x of rows){
+    if(!economicScopeOverlaps(x.step_ids,draft.step_ids))continue;
+    const prev=Number(x.annual_active_hours||0);
+    if(active>0&&prev>0&&(x.driver_id===draft.driver_id||x.driver_id==='ED01'||draft.driver_id==='ED01')){
+      issues.push('EAR-001/004: ya existe tiempo activo de este ámbito que puede contener el mismo trabajo. Revisa el registro original; no se suman totales y componentes sin desglose acreditado.');
+      break;
+    }
+  }
+  if(Number(draft.direct_loss_eur_annual||0)>0){
+    const duplicateRows=rows.some(x=>Number(x.direct_loss_eur_annual||0)>0&&economicScopeOverlaps(x.step_ids,draft.step_ids));
+    const matchedFriction=(typeof activeFrictions==='function'?activeFrictions(e):e.frictions||[])
+      .some(f=>Number(f.direct_loss?.value||0)>0&&economicScopeOverlaps(f.affected_steps,draft.step_ids));
+    if(duplicateRows||matchedFriction)issues.push('DF063/DF082: hay una pérdida directa en este ámbito sin conciliación por evento. Verifica su propietario y evita registrarla otra vez.');
+  }
+  return [...new Set(issues)];
+}
+// [AUNEA-FE-ECON-OVERLAP-036] END
 
 function economicBuilder(e){
   const steps=typeof activeSteps==='function'?activeSteps(e):[];
@@ -128,7 +160,7 @@ function addEconomic(preselectedSteps=[]){
       <div class="field full"><label>Concepto económico</label>${econDropdown('econDriver',drivers.map(d=>({value:d.Economic_Driver_ID,label:econDriverLabel(d.Economic_Driver_ID)})),drivers[0]?.Economic_Driver_ID||'','Selecciona…')}</div>
       <div class="field"><label>Tiempo activo atribuible</label>${econAnnualTimeControl('econActive',0,'h')}${activeHelp}</div>
       <div class="field"><label>Tiempo de espera atribuible</label>${econAnnualTimeControl('econWait',0,'h')}${waitHelp}</div>
-      <div class="field full"><label>Tipo de evidencia</label>${econDropdown('econEvidence',Object.entries(I18N_LABELS_ES.evidence_quality).map(([value,label])=>({value,label})),Object.keys(I18N_LABELS_ES.evidence_quality)[0]||'','Selecciona…')}</div>
+      <div class="field full"><label>Tipo de evidencia</label>${econDropdown('econEvidence',Object.entries(I18N_LABELS_ES.evidence_quality).map(([value,label])=>({value,label})),'','Selecciona…')}</div>
     </div></details>
     <details class="step-group" open><summary>Costes, pérdidas y ahorro realizado</summary><div class="form-grid">
       <div class="field"><label>Coste de capacidad por hora</label><div class="compound-control"><input id="econRate" type="number" min="0" step="any" inputmode="decimal" placeholder="0"><span class="unit-label">€/h</span></div><div class="field-help">Valor de capacidad; no equivale por sí solo a ahorro de caja.</div></div>
@@ -142,7 +174,13 @@ function addEconomic(preselectedSteps=[]){
     const projected=serverSelection===selection?economicProjectionForDriver(serverProjection,document.getElementById('econDriver').value):null;
     const activeHours=projected?projected.active:econHoursFrom(document.getElementById('econActive').value,document.getElementById('econActive_unit').value||'h');
     const waitHours=projected?projected.wait:econHoursFrom(document.getElementById('econWait').value,document.getElementById('econWait_unit').value||'h');
-    eng.economicInputs.push({step_ids,driver_id:document.getElementById('econDriver').value,annual_active_hours:activeHours,annual_wait_hours:waitHours,capacity_cost_rate_eur_hour:+document.getElementById('econRate').value||null,direct_loss_eur_annual:+document.getElementById('econDirect').value||0,current_tool_cost_eur_annual:+document.getElementById('econTool').value||0,realized_cash_saving_eur_annual:+document.getElementById('econCash').value||0,evidence_type:document.getElementById('econEvidence').value,derivation_source:projected?'DF021/DF022 + RT_PROCESS_STEP':'MANUAL_VALIDATION',deduplication_key:id('ECON')});
+    const draft={step_ids,driver_id:document.getElementById('econDriver').value,annual_active_hours:activeHours,annual_wait_hours:waitHours,capacity_cost_rate_eur_hour:+document.getElementById('econRate').value||null,direct_loss_eur_annual:+document.getElementById('econDirect').value||0,current_tool_cost_eur_annual:+document.getElementById('econTool').value||0,realized_cash_saving_eur_annual:+document.getElementById('econCash').value||0,evidence_type:document.getElementById('econEvidence').value,derivation_source:projected?'DF021/DF022 + RT_PROCESS_STEP':'MANUAL_VALIDATION',deduplication_key:null};
+    if(!draft.evidence_type)return toast('Selecciona la evidencia correspondiente al dato económico; no se presupone que sea medido.');
+    const overlaps=economicCaptureIssues(eng,draft);
+    if(overlaps.length)return toast(overlaps.join(' '));
+    // Do not generate a random per-row key and pretend it identifies a unique economic event.
+    // Event-level reconciliation is pending; the backend retains an explicit null instead.
+    eng.economicInputs.push(draft);
     if(typeof invalidateProcessLayers==='function')invalidateProcessLayers(eng,'impact');markDirty('Input económico añadido');closeModal();render();
     const zeroWithEvidence=[];if(activeHours===0&&activeContributors.length)zeroWithEvidence.push('trabajo activo');if(waitHours===0&&waitContributors.length)zeroWithEvidence.push('espera');
     if(zeroWithEvidence.length)toast(`Guardado con ${zeroWithEvidence.join(' y ')} anual en 0 aunque Proceso registra tiempo en esos pasos — revisa si falta transcribirlo.`);
@@ -155,7 +193,12 @@ function addEconomic(preselectedSteps=[]){
     const target=document.getElementById('economicDerivedPreview');
     if(target)target.textContent='Consultando el backend…';
     let projection;
-    try{projection=await economicTimeProjection(eng,ids)}
+    try{
+      // Populate DF078/DF079 exclusively from the current full-process backend fingerprint.
+      // A selected subset never masquerades as the global AS-IS projection.
+      if(ids.length){const pair=await Promise.all([economicTimeProjection(eng,ids),economicTimeProjection(eng)]);projection=pair[0]}
+      else projection=await economicTimeProjection(eng);
+    }
     catch(error){projection={available:false,reason:error.message,missing:[error.message]}}
     if(token!==requestSequence||!document.getElementById('economicDerivedPreview'))return;
     const currentIds=typeof document.querySelectorAll==='function'?[...document.querySelectorAll('[data-econ-step]:checked')].map(x=>x.dataset.econStep):[];
@@ -163,7 +206,7 @@ function addEconomic(preselectedSteps=[]){
     serverProjection=projection;serverSelection=selection;
     const suggested=economicProjectionForDriver(projection,document.getElementById('econDriver')?.value);
     if(target)target.textContent=projection.available
-      ?'Según backend: '+preview(projection.active)+' h/año de trabajo activo · '+preview(projection.wait)+' h/año de exposición a espera · '+preview(projection.rework)+' h/año de retrabajo (sin sumar fricciones)'
+      ?'Según backend: '+preview(projection.active)+' h/año de trabajo activo · '+preview(projection.wait)+' h/año de exposición a espera · '+preview(projection.rework)+' h/año de retrabajo; esfuerzo adicional validado de fricciones: '+preview(projection.additional)+' h/año (separado, nunca duplicado)'+(projection.monetaryPending?.length?' · Pérdidas directas pendientes de conciliar con DF082.':'')
       :projection.reason;
     for(const [field,value] of [['econActive',suggested?.active],['econWait',suggested?.wait]]){
       const input=document.getElementById(field),unit=document.getElementById(field+'_unit');
