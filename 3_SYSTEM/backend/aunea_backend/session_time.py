@@ -1,7 +1,7 @@
 # [AUNEA-BE-SESSION-TIME-070] START — Canonical session time normalization
 # PURPOSE: Normalize DF021/DF022 and per-step DF037-DF040 without browser-owned formulas,
 #          unsupported operating-calendar defaults or double-counted friction effort.
-# SOURCE: Diagnostic Master v1.2 RULE_ECON_ANNUALIZE; NR04/NR05; DEC-032/033/050.
+# SOURCE: Diagnostic Master v1.2 RULE_ECON_ANNUALIZE; NR04/NR05; DEC-032/033/050/068.
 # INPUTS: Captured process volume, calendar evidence, active ProcessSteps and Frictions.
 # OUTPUTS: Explanatory baseline time projection with explicit incompleteness, not an
 #          official economic benefit or cash-saving forecast.
@@ -158,7 +158,7 @@ def project_session_time(request: TimeProjectionRequest) -> dict[str, Any]:
     # has a single economic owner and is counted at most once.
     friction_review = review_frictions(request.steps, request.frictions)
     classified = {x["friction_id"]: x for x in friction_review["classified"]}
-    unresolved = {x["friction_id"]: x for x in friction_review["findings"]}
+    unresolved = {x["friction_id"]: x for x in friction_review["findings"] if x.get("blocking_issues")}
     unallocated_frictions: list[str] = []
     extra_per_year_minutes = 0.0
     extra_incomplete = False
@@ -174,8 +174,8 @@ def project_session_time(request: TimeProjectionRequest) -> dict[str, Any]:
             unallocated_frictions.append(fid)
             extra_incomplete = True
             continue
-        relation = friction.get("time_attribution") or {}
-        if relation.get("mode") != "ADDITIONAL":
+        # Trust the validated/normalized relationship, not unvalidated raw client casing.
+        if classified[fid]["mode"] != "ADDITIONAL":
             continue
         frequency = friction.get("frequency") or {}
         freq = _number(frequency.get("value"))
@@ -193,6 +193,8 @@ def project_session_time(request: TimeProjectionRequest) -> dict[str, Any]:
                 events_per_year = freq * annual_cases
             elif period == "day" and request.operating_days_per_year is not None:
                 events_per_year = freq * request.operating_days_per_year
+            elif period == "day" and request.calendar_day_process and request.calendar_year is not None:
+                events_per_year = freq * (366 if isleap(request.calendar_year) else 365)
         if events_per_year is None:
             extra_incomplete = True
             unallocated_frictions.append(fid)
@@ -204,7 +206,8 @@ def project_session_time(request: TimeProjectionRequest) -> dict[str, Any]:
         gaps.append("DF062: falta atribución válida o frecuencia (posible solapamiento con DF039) para: " +
                     ", ".join(dict.fromkeys(unallocated_frictions)))
     for finding in friction_review["findings"]:
-        for issue in finding["issues"]:
+        # Pending monetary reconciliation is reported, never used to invalidate time.
+        for issue in finding.get("blocking_issues", finding["issues"]):
             if issue not in gaps:
                 gaps.append(issue)
 
@@ -229,6 +232,7 @@ def project_session_time(request: TimeProjectionRequest) -> dict[str, Any]:
             else None
         ),
         "friction_review": friction_review,
+        "monetary_reconciliation": friction_review.get("monetary_reconciliation", []),
         "gaps": list(dict.fromkeys(gaps)),
         "status": "INCOMPLETE" if gaps else "CALCULATED",
         "note": "Espera = suma de exposiciones por actividad, no ciclo end-to-end. Trabajo activo y retrabajo no equivalen a ahorro."
