@@ -35,7 +35,14 @@ automáticamente el tiempo de ciclo end-to-end.
 - DF062 nunca se añade al DF039 sin atribución aprobada.
 - No inferir tiempo desperdiciado desde el trabajo activo ni ahorro desde capacidad.
 
-## B02. Atribución de fricciones e impacto — siguiente bloque
+## B02. Atribución de fricciones e impacto — guardrails backend parciales implementados
+
+Cambios de esta rama:
+- `aunea_backend/friction_review.py` revisa DF059–DF063 por fricción sin agregar horas ni pérdidas duplicadas; valida anclajes a pasos activos, id único y denominadores de frecuencia.
+- El endpoint de B01 devuelve `friction_review` con los hallazgos conservadores.
+- `tests/test_friction_review.py` contiene 5 pruebas específicas.
+- Aún NO existe relación canónica de atribución DF039/DF062 ni semántica granular de evidencia; queda bloqueada su agregación hasta aprobar contrato de datos y reglas. No añadir campos desde UI.
+
 
 Contratos existentes: RULE_ECON_AGGREGATION EAR-001–EAR-014, RULE_PAIN_OVERLAP,
 RT_FRICTION y EconomicInput.deduplication_key. Revisar el contrato real antes
