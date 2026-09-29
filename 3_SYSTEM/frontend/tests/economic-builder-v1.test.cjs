@@ -203,6 +203,9 @@ test('B03: an all-in ED01 and a specialized driver cannot be added for overlappi
 test('B03: direct loss repeated across friction and DF082 is held pending reconciliation, without creating event IDs',()=>{
   const ctx=makeCtx(),e=ctx.__eng;
   e.frictions=[{id:'F1',affected_steps:['S1'],direct_loss:{value:100}}];
+  const first=ctx.economicCaptureIssues(e,{driver_id:'ED11',step_ids:['S1'],direct_loss_eur_annual:100});
+  assert.equal(first.length,0,'friction loss is evidence, not a second automatic economic row');
+  e.economicInputs=[{driver_id:'ED11',step_ids:['S1'],direct_loss_eur_annual:100}];
   const problems=ctx.economicCaptureIssues(e,{driver_id:'ED11',step_ids:['S1'],direct_loss_eur_annual:100});
   assert.equal(problems.length,1);
   assert.match(problems[0],/DF063\/DF082/);
