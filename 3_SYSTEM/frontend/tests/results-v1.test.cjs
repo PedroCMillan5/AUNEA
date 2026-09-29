@@ -37,6 +37,7 @@ function makeCtx(uiMode){
   const ctx={
     console,schema,
     currentEng:()=>eng,
+    confirmedSnapshot:()=>eng.confirmedSnapshots[eng.confirmedSnapshots.length-1]||null,
     state:{backendOnline:true,backendUrl:'http://localhost:8000',uiMode:uiMode||'INTERNAL'},
     missingRequired:()=>[],labelFrom:(s,v)=>v,companyById:()=>({name:'ACME'}),
     buildBackendPayload:()=>({engagement_id:'E1'}),
