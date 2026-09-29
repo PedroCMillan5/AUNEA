@@ -59,6 +59,24 @@ Pruebas de aceptación:
 5. Evidencias distintas para frecuencia, duración y pérdida cuando existan.
 6. Sin relación de atribución aprobada, outputs condicionados.
 
+### Decisión del propietario · 29/09/2026 · ATRIBUCIÓN DF039↔DF062 (aprobada)
+
+Se aprueban tres relaciones de tiempo entre una fricción y su paso propietario:
+
+- **INCLUDED / Incluido:** los minutos de DF062 ya están incluidos en el tiempo capturado del paso y no se agregan.
+- **BREAKDOWN / Desglose:** los minutos de DF062 explican una parte del retrabajo DF039 del paso y no se agregan.
+- **ADDITIONAL / Adicional:** los minutos de DF062 describen trabajo no recogido en los tiempos del paso; sólo éstos incrementan el total si la frecuencia y los datos de calendario permiten estimar el número de eventos.
+
+Modelo transitorio para sincronizar con el contrato de datos CANONICAL: `RT_FRICTION.time_attribution={mode: INCLUDED|BREAKDOWN|ADDITIONAL,step_id:<RT_PROCESS_STEP.id>}`. La fricción conserva `affected_steps` para todos los pasos implicados, pero `step_id` determina su único propietario económico; un mismo evento vinculado a varios pasos no se multiplica. Sin relación o propietario válidos, el importe temporal adicional permanece sin cuantificar y se registra un gap. No se altera el formulario de PG04: la selección se ofrece únicamente en el popup de fricción REVIEW, con sus desplegables actuales. Las pérdidas directas monetarias mantienen una conciliación independiente con DF082; clasificar el tiempo no autoriza agregar dinero.
+
+Implementación en esta rama:
+- `backend/aunea_backend/friction_review.py`: valida modos, propietario, frecuencias y anclajes.
+- `backend/aunea_backend/session_time.py`: expone `annual_friction_additional_hours` y `annual_total_active_hours` diferenciados de `annual_rework_hours`, sin sumar INCLUDED/BREAKDOWN.
+- `frontend/domain/process.js`: añade selectores de relación y único paso propietario en el popup de fricción; no modifica pantallas FROZEN.
+- `tests/test_session_time.py` y `frontend/tests/process-layer-v2.test.cjs`: aceptan los tres tipos y la no multiplicación multi-paso.
+
+Pendiente antes de cierre de B02: reconciliar el campo y enum con el Diagnostic Master canónico en Drive; verificar que el motor económico oficial respeta EAR-001–EAR-014 y que no se permite sumar entradas manuales duplicadas ED01/ED05/DF082. El resultado del servicio es una proyección informativa, no beneficio monetario calculado.
+
 ## B03. Conexión del servicio a pantallas REVIEW — Impacto conectado; resto pendiente
 
 Implementado: la vista previa de `domain/economics.js` consulta `POST /v1/diagnostic/time-projection`
