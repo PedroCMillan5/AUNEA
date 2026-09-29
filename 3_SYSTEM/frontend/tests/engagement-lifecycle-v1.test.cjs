@@ -198,6 +198,37 @@ test('C03 internal work reads the sealed capture but keeps the live engagement i
   assert.equal(record.confirmedSnapshotVersion, 1);
 });
 
+test('C03 invalidation hides the historical snapshot from active internal work', () => {
+  const { ctx, e } = sealedFixture();
+  const history = ctx.sealConfirmedSnapshot(e, 'primera');
+  e.confirmedAsIs = false;
+  e.answers.DF093 = '';
+  assert.equal(ctx.confirmedSnapshot(e), null, 'an invalidated snapshot is not the active handoff');
+  assert.equal(ctx.hasConfirmedSnapshot(e), false, 'historical versions cannot open active internal work');
+  assert.equal(ctx.engagementOfRecord(e), e, 'an invalidated record never reads obsolete capture');
+  assert.equal(e.confirmedSnapshots.length, 1, 'the audit history remains append-only');
+  assert.equal(e.confirmedSnapshots[0], history, 'the historical content is preserved');
+  // After confirming the changed capture, it becomes a new version, without rewriting v1.
+  e.processSteps.push({ id: 'S3', status: 'ACTIVE', step_name: 'Nueva validación' });
+  e.confirmedAsIs = true;
+  const latest = ctx.sealConfirmedSnapshot(e, 'segunda');
+  assert.equal(latest.version, 2);
+  assert.equal(ctx.confirmedSnapshot(e).version, 2);
+  assert.equal(history.processSteps.length, 1);
+});
+
+test('C03 results and calculation cannot bypass an invalidated confirmation', () => {
+  const results = read('pages/results.js');
+  const engine = read('services/engine-adapter.js');
+  const lifecycle = read('domain/process-lifecycle.js');
+  const state = read('core/state.js');
+  assert.match(results, /if\(!hasConfirmedEngagementSnapshot\(e\)\) return pageTop\(/);
+  assert.match(results, /e\.lastEngineSnapshotVersion===activeSnapshot\.version/);
+  assert.match(engine, /currentSnapshot\.version!==sourceSnapshot\.version/);
+  assert.match(lifecycle, /invalidateDerivedState\(e,'cambio en capa AS-IS: '\+from\)/);
+  assert.match(state, /e\.lastEngineSnapshotVersion=null/);
+});
+
 test('C03 the confirmed snapshot is a different thing from the Session Display projection', () => {
   const sessionSnapshot = read('domain/session-snapshot.js');
   const engagement = read('domain/engagement.js');
