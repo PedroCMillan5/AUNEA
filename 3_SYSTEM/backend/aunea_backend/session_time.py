@@ -14,6 +14,7 @@ from math import isfinite
 from typing import Any
 
 from pydantic import BaseModel, Field
+from .friction_review import review_frictions
 
 
 class TimeProjectionRequest(BaseModel):
@@ -178,6 +179,7 @@ def project_session_time(request: TimeProjectionRequest) -> dict[str, Any]:
         "annual_wait_exposure_hours": annual_hours(wait_exposure_per_case, missing_wait),
         "annual_rework_hours": annual_hours(rework_per_case, missing_rework),
         "frictions_pending_overlap_review": unallocated_frictions,
+        "friction_review": review_frictions(request.steps, request.frictions),
         "gaps": list(dict.fromkeys(gaps)),
         "status": "INCOMPLETE" if gaps else "CALCULATED",
         "note": "Espera = suma de exposiciones por actividad, no ciclo end-to-end. Trabajo activo y retrabajo no equivalen a ahorro."
