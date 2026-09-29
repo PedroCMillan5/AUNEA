@@ -234,14 +234,14 @@ test('step removal persists the superseded state immediately before rerender to 
 });
 
 
-test('Inputs and Outputs are vertical without changing other multiselects',()=>{
+test('Inputs and Outputs wrap horizontally to popup width without changing other multiselects',()=>{
   const choices=[{value:'DOC',label:'Documento'},{value:'DATA',label:'Datos'}];
-  assert.match(ctx.selectedHtml('step_inputs',choices,[],{stacked:true}),/choice-grid choice-grid-stacked/);
-  assert.match(ctx.selectedHtml('step_outputs',choices,[],{stacked:true}),/choice-grid choice-grid-stacked/);
-  assert.doesNotMatch(ctx.selectedHtml('step_manual',choices,[]),/choice-grid-stacked/);
-  assert.match(code,/selectedHtml\('step_inputs',artifacts,s.inputs,\{stacked:true/);
-  assert.match(code,/selectedHtml\('step_outputs',artifacts,s.outputs,\{stacked:true/);
-  assert.match(fs.readFileSync(path.join(__dirname,'..','ui-system.css'),'utf8'),/\.process-modal-form \.choice-grid-stacked\{grid-template-columns:minmax\(0,1fr\)\}/);
+  assert.match(ctx.selectedHtml('step_inputs',choices,[],{wrapped:true}),/choice-grid choice-grid-wrapped/);
+  assert.match(ctx.selectedHtml('step_outputs',choices,[],{wrapped:true}),/choice-grid choice-grid-wrapped/);
+  assert.doesNotMatch(ctx.selectedHtml('step_manual',choices,[]),/choice-grid-wrapped/);
+  assert.match(code,/selectedHtml\('step_inputs',artifacts,s.inputs,\{wrapped:true/);
+  assert.match(code,/selectedHtml\('step_outputs',artifacts,s.outputs,\{wrapped:true/);
+  assert.match(fs.readFileSync(path.join(__dirname,'..','ui-system.css'),'utf8'),/\.process-modal-form \.choice-grid-wrapped\{display:flex;flex-wrap:wrap/);
 });
 test('step save persists the saved step and selected Inputs/Outputs immediately',()=>{
   const oldQuery=ctx.document.querySelectorAll,oldPersist=ctx.persistRecoverySnapshot,oldToast=ctx.toast,oldSegmented=ctx.segmented,oldClone=ctx.structuredClone,oldFieldOptions=ctx.fieldOptions;
@@ -281,6 +281,17 @@ test('step save persists the saved step and selected Inputs/Outputs immediately'
   }finally{
     ctx.document.querySelectorAll=oldQuery;ctx.persistRecoverySnapshot=oldPersist;ctx.toast=oldToast;ctx.segmented=oldSegmented;ctx.structuredClone=oldClone;ctx.fieldOptions=oldFieldOptions;eng.processSteps=[];
   }
+});
+
+
+test('Otra in Acciones manuales reveals its single conditional text field and persists the detail',()=>{
+  assert.match(code,/selectedHtml\('step_manual',manual,s\.manual_actions,\{detailId:'step_manual_other'/);
+  assert.match(code,/s\._details\.manual_actions=s\.manual_actions\.some/);
+  assert.match(code,/data-v1-other-toggle/);
+  const html=ctx.selectedHtml('step_manual',[{value:'COPY',label:'Copiar'},{value:'OTHER',label:'Otra'}],['OTHER'],{detailId:'step_manual_other',detailValue:'Revisar datos'});
+  assert.match(html,/data-v1-other-wrap="step_manual"/);
+  assert.match(html,/id="step_manual_other" value="Revisar datos"/);
+  assert.doesNotMatch(html,/data-v1-other-wrap="step_manual" style="display:none"/);
 });
 
 // [AUNEA-UAT-PROC-010] END

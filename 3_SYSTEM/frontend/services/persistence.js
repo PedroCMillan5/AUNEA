@@ -61,6 +61,19 @@ window.addEventListener('storage',ev=>{
     };
     const flowCanvas=document.querySelector('.flow-canvas');
     const flowViewport=flowCanvas?{left:flowCanvas.scrollLeft,top:flowCanvas.scrollTop}:null;
+    if(isProcessEditorWindow()){
+      // Preserve the active Engagement object while an edit modal is open. The modal's
+      // save closure writes into this same object; replacing it mid-edit detaches the
+      // newly created/edited ProcessStep from the shared state (DEC-050/065).
+      const localEng=typeof currentEng==='function'?currentEng():null;
+      const i=localEng?incoming.engagements.findIndex(e=>e.id===localEng.id):-1;
+      if(i>=0){
+        const modalOpen=!!document.querySelector('#modalRoot .modal');
+        const localTime=Date.parse(localEng.updatedAt||'')||0;
+        const remoteTime=Date.parse(incoming.engagements[i].updatedAt||'')||0;
+        if(modalOpen||localTime>remoteTime)incoming.engagements[i]=localEng;
+      }
+    }
     state={...incoming,...localUi};
     if(isProcessEditorWindow())state.activePage='proceso';
     render();

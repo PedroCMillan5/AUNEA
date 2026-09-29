@@ -21,7 +21,7 @@ function makeCtx(){
     markDirty:()=>{},saveState:()=>{},audit:()=>{},now:()=>'2026-09-14T00:00:00.000Z',render:()=>{},toast:()=>{},confirm:()=>true,
     document:{getElementById:()=>null,querySelectorAll:()=>[],addEventListener:()=>{},createElement:()=>({click(){}}),visibilityState:'visible'},
     localStorage:{store:{},getItem(k){return this.store[k]??null},setItem(k,v){this.store[k]=v}},
-    window:{addEventListener:()=>{}},clearTimeout:()=>{},setTimeout:()=>0,Blob:function(){},URL:{createObjectURL:()=>'',revokeObjectURL:()=>{}},Date
+    __listeners:{},window:{addEventListener:(name,fn)=>{ctx.__listeners[name]=fn}},clearTimeout:()=>{},setTimeout:()=>0,Blob:function(){},URL:{createObjectURL:()=>'',revokeObjectURL:()=>{}},Date
   };
   vm.createContext(ctx);
   vm.runInContext(persistCode,ctx);
@@ -83,4 +83,37 @@ test('cross-tab process synchronization preserves the horizontal map viewport in
   assert.match(persistCode,/const flowViewport=flowCanvas\?\{left:flowCanvas\.scrollLeft,top:flowCanvas\.scrollTop\}:null/);
   assert.match(persistCode,/nextCanvas\.scrollLeft=flowViewport\.left/);
   assert.match(persistCode,/nextCanvas\.scrollTop=flowViewport\.top/);
+});
+
+test('client editor keeps the live Engagement reference during cross-tab sync with an edit modal open',()=>{
+  const ctx=makeCtx();
+  const local={id:'ENG-1',updatedAt:'2026-09-29T10:00:00.000Z',processSteps:[{id:'STEP-1',step_name:'Anterior'}],answers:{}};
+  ctx.state={...ctx.blankState(),activePage:'proceso',activeEngagementId:'ENG-1',engagements:[local]};
+  ctx.isClientDisplay=()=>false;ctx.isProcessEditorWindow=()=>true;
+  ctx.currentEng=()=>ctx.state.engagements.find(e=>e.id===ctx.state.activeEngagementId);
+  let editing=true,renderCount=0;
+  ctx.document.querySelector=selector=>selector==='#modalRoot .modal'&&editing?{}:null;
+  ctx.render=()=>{renderCount++};
+  const remote={...local,updatedAt:'2026-09-29T11:00:00.000Z',processSteps:[]};
+  ctx.__listeners.storage({key:'aunea_internal_v1',newValue:JSON.stringify({...ctx.state,engagements:[remote]})});
+  assert.equal(ctx.state.engagements[0],local,'open step modal must retain the exact object captured by its save callback');
+  assert.equal(ctx.state.engagements[0].processSteps.length,1);
+  assert.equal(renderCount,1);
+  // After closing the modal, a genuinely newer remote engagement is accepted.
+  editing=false;
+  ctx.__listeners.storage({key:'aunea_internal_v1',newValue:JSON.stringify({...ctx.state,engagements:[remote]})});
+  assert.equal(ctx.state.engagements[0].processSteps.length,0);
+  assert.notEqual(ctx.state.engagements[0],local);
+});
+test('client editor rejects older cross-tab snapshots even with its modal closed',()=>{
+  const ctx=makeCtx();
+  const local={id:'ENG-2',updatedAt:'2026-09-29T11:00:00.000Z',processSteps:[{id:'STEP-1'}],answers:{}};
+  ctx.state={...ctx.blankState(),activeEngagementId:'ENG-2',engagements:[local]};
+  ctx.isClientDisplay=()=>false;ctx.isProcessEditorWindow=()=>true;
+  ctx.currentEng=()=>ctx.state.engagements.find(e=>e.id===ctx.state.activeEngagementId);
+  ctx.document.querySelector=()=>null;
+  const old={...local,updatedAt:'2026-09-29T10:00:00.000Z',processSteps:[]};
+  ctx.__listeners.storage({key:'aunea_internal_v1',newValue:JSON.stringify({...ctx.state,engagements:[old]})});
+  assert.equal(ctx.state.engagements[0],local);
+  assert.equal(ctx.state.engagements[0].processSteps.length,1);
 });
