@@ -132,4 +132,14 @@ test('risk inherits confirmed friction locations via existing step_ids; economic
   assert.match(econ,/sin sumar fricciones/);
   assert.match(css,/\.client-inherited-context\{/);
 });
+test('friction popup captures approved time attribution without changing existing dropdowns',()=>{
+  assert.match(process,/id=['"]?fr_time_mode|auneaDropdownControl\\('fr_time_mode'/);
+  assert.match(process,/auneaDropdownControl\\('fr_time_owner'/);
+  assert.match(process,/INCLUDED/);
+  assert.match(process,/BREAKDOWN/);
+  assert.match(process,/ADDITIONAL/);
+  assert.match(process,/f\\.time_attribution=\\{mode:/);
+  assert.match(process,/f\\.affected_steps\\.includes\\(f\\.time_attribution\\.step_id\\)/);
+  assert.match(process,/Sólo Adicional podrá incrementar/);
+});
 // [AUNEA-UAT-PROC-LAYERS-045] END
