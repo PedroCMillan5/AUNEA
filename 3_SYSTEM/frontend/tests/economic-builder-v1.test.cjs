@@ -95,6 +95,19 @@ test('economicBuilder keeps canonical driver ids internally but all visible driv
   assert.doesNotMatch(html,/>ED01</);
 });
 
+test('Impacto reuses mapped tools and direct-loss friction sources without inventing savings',()=>{
+  const ctx=makeCtx();
+  ctx.__eng.processSteps=[{id:'S1',status:'ACTIVE',tool:'TOOL1',step_name:'Recepción'}];
+  ctx.__eng.frictions=[{id:'F1',status:'ACTIVE',affected_steps:['S1'],client_label:'Duplicación de cobros',direct_loss:{value:100}}];
+  ctx.labelFrom=(set,id)=>set==='OS_TOOL_CATEGORY'?'Herramienta registrada':id;
+  ctx.addEconomic(['S1']);
+  assert.match(ctx.__lastBody,/Herramientas registradas en el mapa \(DF046\)/);
+  assert.match(ctx.__lastBody,/Herramienta registrada/);
+  assert.match(ctx.__lastBody,/coste atribuible/);
+  assert.match(ctx.__lastBody,/Pérdidas directas declaradas en fricciones \(DF063\)/);
+  assert.match(ctx.__lastBody,/DF082 no vuelva a contabilizar/);
+});
+
 test('addEconomic uses clear Spanish sections for time/evidence and costs/losses, both visible while completing the popup',()=>{
   const ctx=makeCtx();
   ctx.addEconomic();
