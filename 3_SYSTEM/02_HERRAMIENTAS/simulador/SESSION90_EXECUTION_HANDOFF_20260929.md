@@ -65,7 +65,7 @@ Implementado: la vista previa de `domain/economics.js` consulta `POST /v1/diagno
 y sólo propone valores automáticos de ED01/ED05/ED13 cuando el backend devuelve `CALCULATED`.
 En caso de calendario, ruta, frecuencia o atribución incompleta muestra el motivo y
 permite captura explícita manual con evidencia; no convierte hipótesis en datos calculados.
-Las pruebas del adaptador y UI mantienen los dos grupos actuales y los dropdowns.
+Las pruebas del adaptador y UI mantienen los dos grupos actuales y los dropdowns. El adaptador conserva caché temporal verificada para DF078/DF079 (minutos por caso); No-Reask rechaza esa caché si ha cambiado cualquier entrada. El popup reutiliza las herramientas registradas en el mapa (DF046) y avisa de pérdidas directas DF063 ya declaradas antes de introducir DF082, sin inventar importes ni añadir un nuevo control.
 
 Pendiente: cerrar atribución canónica DF039↔DF062; evitar que un EconomicInput manual
 duplique ED01/ED02–ED08/ED05 bajo EAR-001/004; integrar coherentemente `DF078/079`
