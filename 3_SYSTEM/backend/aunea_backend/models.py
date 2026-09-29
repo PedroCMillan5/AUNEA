@@ -51,6 +51,8 @@ class PainObservation(BaseModel):
     rationale: str | None = None
 
 class EconomicInput(BaseModel):
+    # DEC-065: optional technical references to existing ProcessSteps, not new capture fields.
+    step_ids: list[str] = Field(default_factory=list)
     pain_id: str | None = None
     driver_id: str
     annual_active_hours: float | None = None
