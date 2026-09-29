@@ -93,6 +93,9 @@ function questionVisible(f,e){
   if(f.Ask_Mode==='CAPTURE_IN_RISK')return false;
   if(f.Stage_ID==='S06'&&['DF068','DF069','DF070','DF071','DF072'].includes(f.Field_ID))return false;
   if(f.Stage_ID==='S07'&&['DF076','DF077','DF082','DF083','DF084'].includes(f.Field_ID))return false;
+  // S08 now precedes the map (DEC-065): show future outcomes/constraints before ProcessSteps exist.
+  // BR-AI and BR-RISK keep their conditional behavior.
+  if(f.Stage_ID==='S08'&&f.Branch_Rule_ID==='BR-FUTURE')return true;
   return branchActive(f.Branch_Rule_ID,e);
 }
 function canonicalMissingRequired(e){
