@@ -132,6 +132,10 @@
 | AUNEA-FE-PROC-STYLE-045 | 3_SYSTEM/frontend/ui-system.css | Chips horizontales adaptativos, barra de progreso y diagrama en rejilla con conexiones SVG; sólo superficies de editor REVIEW. | Referencia visual del propietario 29/09/2026 | process-modal-form / process graph | scoped CSS | DOM style | HIGH | process-layer-v2.test.cjs | REVIEW |
 | AUNEA-UAT-PROC-LAYERS-045 | 3_SYSTEM/frontend/tests/process-layer-v2.test.cjs | QA de restauración de dropdowns, porcentaje ALL, cuatro capas, grafo horizontal, reconvergencias, destinos Fin y herencia sin nuevos campos. | DEC-064/065/066 + Diagnostic Master v1.2 | fuentes frontend | tests | none | HIGH | Acceptance Gate | REVIEW |
 
+| AUNEA-BE-SESSION-TIME-070 | 3_SYSTEM/backend/aunea_backend/session_time.py | Proyección de volumen y tiempos AS-IS desde DF021/DF022 y pasos, calendario operativo explícito y fricciones separadas pendientes de atribución. | Diagnostic Master v1.2 RULE_ECON_ANNUALIZE; DEC-032/033 | TimeProjectionRequest + steps/frictions | horas normalizadas + gaps | Ninguno | HIGH | test_session_time.py | REVIEW · B01 backend |
+| AUNEA-BE-SESSION-TIME-API-070 | 3_SYSTEM/backend/aunea_backend/api.py | Endpoint POST /v1/diagnostic/time-projection para frontend sin fórmulas independientes. | AUNEA-BE-SESSION-TIME-070 | TimeProjectionRequest | Proyección AS-IS | HTTP | HIGH | test_session_time.py | REVIEW · B01 backend |
+| AUNEA-UAT-SESSION-TIME-070 | 3_SYSTEM/backend/tests/test_session_time.py | Regresión de anualización sin defaults, rutas, repeticiones, retrabajo y solapamiento de fricciones. | Diagnostic Master v1.2 RULE_ECON_ANNUALIZE | fixtures y endpoint | tests | Ninguno | HIGH | Backend CI | REVIEW · B01 backend |
+
 ## Retired Block_IDs (do not reuse)
 
 | Block_ID | Motivo | Retirado en |
