@@ -55,7 +55,7 @@ test('addEconomic still shows the manual-entry instruction (but no "Pasos con...
   const ctx=makeCtx();
   ctx.addEconomic();
   assert.doesNotMatch(ctx.__lastBody,/Pasos con tiempo/);
-  assert.match(ctx.__lastBody,/Consultando el backend/);
+  assert.match(ctx.__lastBody,/Comprobando los datos/);
 });
 
 test('addEconomic warns (without blocking the save) when active/wait hours are saved as 0 despite Proceso having recorded time in those steps, and stays silent when there is no such evidence',()=>{
