@@ -42,8 +42,15 @@ function reusedValue(fid,e){
   if(fid==='DF050')return unique(steps.flatMap(x=>normalizeArray(x.communication_channels)));
   if(fid==='DF066')return unique(steps.filter(x=>valuePresent(x.exception_path)).map(x=>typeof x.exception_path==='object'?(x.exception_path.type||x.exception_path.label||JSON.stringify(x.exception_path)):x.exception_path));
   if(fid==='DF067')return unique(steps.filter(x=>x.step_type==='ST05'||normalizeArray(x.decision_criteria).length).map(x=>x.step_name||x.id));
-  if(fid==='DF078')return {value:steps.reduce((s,x)=>s+scalarNumber(x.active_time)*(scalarNumber(x.occurrences_per_case)||1),0),unit:'min',period:'case'};
-  if(fid==='DF079')return {value:steps.reduce((s,x)=>s+scalarNumber(x.rework_time)*(scalarNumber(x.occurrences_per_case)||1),0),unit:'min',period:'case'};
+  if(fid==='DF078'||fid==='DF079'){
+    // DF078/DF079 must be backed by the exact server-calculated AS-IS version.
+    // A missing or stale projection is unknown, never a browser-side sum.
+    const cache=e._sessionTimeProjection;
+    const key=typeof economicTimeRequest==='function'?JSON.stringify(economicTimeRequest(e)):null;
+    if(!cache||!key||cache.requestKey!==key)return undefined;
+    const measure=fid==='DF078'?cache.output.active_minutes_per_case:cache.output.rework_minutes_per_case;
+    return measure==null?undefined:{value:measure,unit:'min',period:'case'};
+  }
   if(fid==='DF085'){const types=unique((e.economicInputs||[]).map(x=>x.evidence_type));return types.length?types:['Sin inputs económicos materiales'];}
   if(fid==='DF093')return e.confirmedAsIs?'YES':'';
   if(fid==='DF057')return 'Se deriva de la fricción registrada; no se pregunta al cliente.';
