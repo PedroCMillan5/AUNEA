@@ -201,7 +201,7 @@ def project_session_time(request: TimeProjectionRequest) -> dict[str, Any]:
             extra_per_year_minutes += minutes * events_per_year
 
     if unallocated_frictions:
-        gaps.append("DF062: falta atribución válida o frecuencia para: " +
+        gaps.append("DF062: falta atribución válida o frecuencia (posible solapamiento con DF039) para: " +
                     ", ".join(dict.fromkeys(unallocated_frictions)))
     for finding in friction_review["findings"]:
         for issue in finding["issues"]:
