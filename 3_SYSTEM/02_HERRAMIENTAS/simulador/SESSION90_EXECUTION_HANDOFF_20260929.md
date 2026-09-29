@@ -73,6 +73,13 @@ duplique ED01/ED02–ED08/ED05 bajo EAR-001/004; integrar coherentemente `DF078/
 reutilización de costes de herramientas desde el mapa, y test visual client-first.
 No se ha añadido ningún campo a páginas FROZEN ni cambiado el diseño general.
 
+### Estado verificable de B01–B03 a 29/09/2026
+- Backend CI: 53/53 pruebas aprobadas para normalización y revisión de fricciones.
+- Frontend CI: 350/350 pruebas aprobadas tras conectar Impacto con el backend, reutilizar DF078/DF079 sólo desde el cache versionado y mostrar procedencia de DF046/DF063.
+- No se ha ejecutado UAT visual en Windows/Edge, por lo que las pantallas REVIEW no pasan a FROZEN.
+- B02/B03 NO se consideran completados: el contrato canónico aún no define la relación de atribución del tiempo DF039↔DF062 ni la evidencia numérica por afirmación, y sigue pendiente la reconciliación oficial de drivers ED01 frente a ED02–ED08/ED05 para cada evento. Estas decisiones deberán aprobarse en DATA + RULES antes de ampliar la interfaz.
+- Nunca deducir semanas o días operativos sin captura canónica; mientras tanto, el backend devuelve estado incompleto y la interfaz permite únicamente declaración manual evidenciada.
+
 ## B04. Editor client-first y Session Display
 
 Mantener dropdowns y MULTICHECK originales; grafo izquierda→derecha, Fin en rutas
