@@ -18,8 +18,9 @@ Archivos:
 - `frontend/tests/engagement-lifecycle-v1.test.cjs` y `results-v1.test.cjs`: regresiones.
 
 Resultados verificados de CI: frontend 347/347, backend 48/48, una advertencia de pytest.
-No hay UAT visual/nativa en Windows o Edge. No se ha conectado aún el editor económico
-al endpoint de proyección, ni se ha retirado `economicTimeProjection()` de frontend.
+No hay UAT visual/nativa en Windows o Edge. El editor de Impacto ya consulta asincrónicamente
+el endpoint de proyección (B03 parcial), sin annualización local ni defaults DAY×365 / WEEK×52.
+`economicTimeProjection()` permanece sólo como adaptador HTTP, no como fórmula.
 El endpoint entrega proyección explicativa de actividad AS-IS, NO beneficio ni
 ahorro de caja. La métrica de espera suma exposición por paso; no representa
 automáticamente el tiempo de ciclo end-to-end.
@@ -58,12 +59,19 @@ Pruebas de aceptación:
 5. Evidencias distintas para frecuencia, duración y pérdida cuando existan.
 6. Sin relación de atribución aprobada, outputs condicionados.
 
-## B03. Conexión del servicio a pantallas REVIEW
+## B03. Conexión del servicio a pantallas REVIEW — Impacto conectado; resto pendiente
 
-Retirar la anualización paralela DAY×365 / WEEK×52 del navegador, que no está
-gobernada. Consumir el endpoint sin defaults de calendario y sin nuevos campos
-en páginas FROZEN. Antes de guardar EconomicInputs derivados, respetar estado
-incompleto y comprobar no duplicar ED01 con ED02–ED08 ni ED05. QA de frontend.
+Implementado: la vista previa de `domain/economics.js` consulta `POST /v1/diagnostic/time-projection`
+y sólo propone valores automáticos de ED01/ED05/ED13 cuando el backend devuelve `CALCULATED`.
+En caso de calendario, ruta, frecuencia o atribución incompleta muestra el motivo y
+permite captura explícita manual con evidencia; no convierte hipótesis en datos calculados.
+Las pruebas del adaptador y UI mantienen los dos grupos actuales y los dropdowns.
+
+Pendiente: cerrar atribución canónica DF039↔DF062; evitar que un EconomicInput manual
+duplique ED01/ED02–ED08/ED05 bajo EAR-001/004; integrar coherentemente `DF078/079`
+(consolidación desde backend o estado pendiente, nunca segunda fórmula del navegador),
+reutilización de costes de herramientas desde el mapa, y test visual client-first.
+No se ha añadido ningún campo a páginas FROZEN ni cambiado el diseño general.
 
 ## B04. Editor client-first y Session Display
 
