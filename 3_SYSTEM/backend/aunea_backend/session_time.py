@@ -153,17 +153,61 @@ def project_session_time(request: TimeProjectionRequest) -> dict[str, Any]:
     if not included_steps:
         gaps.append("PG04: no hay pasos activos")
 
-    # DF062 may duplicate DF039. Until the overlap/ownership relation is formally
-    # governed, it is shown as separate evidence, never added to DF079.
+    # Only ADDITIONAL is additive. INCLUDED and BREAKDOWN explain existing DF039
+    # without increasing the baseline. A friction observed across multiple steps
+    # has a single economic owner and is counted at most once.
+    friction_review = review_frictions(request.steps, request.frictions)
+    assigned = {x["friction_id"]: x for x in friction_review["classified"]
+                if x["counted_as_additional"]}
+    unresolved = {x["friction_id"]: x for x in friction_review["findings"]}
     unallocated_frictions: list[str] = []
+    extra_per_year_minutes = 0.0
+    extra_incomplete = False
+
     for friction in request.frictions:
         if friction.get("status") == "SUPERSEDED":
             continue
-        if (_number(friction.get("active_time_loss")) or 0) > 0:
-            unallocated_frictions.append(str(friction.get("id") or "?"))
+        fid = str(friction.get("id") or "?")
+        minutes = _number(friction.get("active_time_loss"))
+        if not minutes:
+            continue
+        if fid in unresolved or fid not in friction_review["classified"] and fid not in assigned:
+            unallocated_frictions.append(fid)
+            extra_incomplete = True
+            continue
+        relation = friction.get("time_attribution") or {}
+        if relation.get("mode") != "ADDITIONAL":
+            continue
+        frequency = friction.get("frequency") or {}
+        freq = _number(frequency.get("value"))
+        period = frequency.get("period")
+        mode = frequency.get("mode")
+        events_per_year = None
+        if mode == "percent" and freq is not None and annual_cases is not None:
+            events_per_year = annual_cases * freq / 100
+        elif mode == "count" and freq is not None:
+            if period == "year":
+                events_per_year = freq
+            elif period == "month":
+                events_per_year = freq * 12
+            elif period == "case" and annual_cases is not None:
+                events_per_year = freq * annual_cases
+            elif period == "day" and request.operating_days_per_year is not None:
+                events_per_year = freq * request.operating_days_per_year
+        if events_per_year is None:
+            extra_incomplete = True
+            unallocated_frictions.append(fid)
+            gaps.append("DF060: frecuencia/calendario insuficiente para fricción adicional " + fid)
+        else:
+            extra_per_year_minutes += minutes * events_per_year
+
     if unallocated_frictions:
-        gaps.append("DF062: comprobar solapamiento con DF039 antes de agregar fricciones: " +
-                    ", ".join(unallocated_frictions))
+        gaps.append("DF062: falta atribución válida o frecuencia para: " +
+                    ", ".join(dict.fromkeys(unallocated_frictions)))
+    for finding in friction_review["findings"]:
+        for issue in finding["issues"]:
+            if issue not in gaps:
+                gaps.append(issue)
 
     def annual_hours(per_case: float, missing: bool) -> float | None:
         if missing or annual_cases is None or not included_steps:
@@ -178,8 +222,14 @@ def project_session_time(request: TimeProjectionRequest) -> dict[str, Any]:
         "annual_active_hours": annual_hours(active_per_case, missing_active),
         "annual_wait_exposure_hours": annual_hours(wait_exposure_per_case, missing_wait),
         "annual_rework_hours": annual_hours(rework_per_case, missing_rework),
-        "frictions_pending_overlap_review": unallocated_frictions,
-        "friction_review": review_frictions(request.steps, request.frictions),
+        "frictions_pending_overlap_review": list(dict.fromkeys(unallocated_frictions)),
+        "annual_friction_additional_hours": None if extra_incomplete else round(extra_per_year_minutes / 60, 2),
+        "annual_total_active_hours": (
+            round(annual_cases * active_per_case / 60 + extra_per_year_minutes / 60, 2)
+            if not missing_active and annual_cases is not None and included_steps and not extra_incomplete
+            else None
+        ),
+        "friction_review": friction_review,
         "gaps": list(dict.fromkeys(gaps)),
         "status": "INCOMPLETE" if gaps else "CALCULATED",
         "note": "Espera = suma de exposiciones por actividad, no ciclo end-to-end. Trabajo activo y retrabajo no equivalen a ahorro."
