@@ -109,9 +109,13 @@ function addEconomic(preselectedSteps=[]){
   const allFrictions=typeof activeFrictions==='function'?activeFrictions(eng):eng.frictions||[];
   const linkedFrictions=preselectedSteps.length?allFrictions.filter(f=>normalizeArray(f.affected_steps).some(x=>preselectedSteps.includes(x))):allFrictions;
   const linkedRisks=preselectedSteps.length?(eng.risks||[]).filter(r=>normalizeArray(r.step_ids).some(x=>preselectedSteps.includes(x))):(eng.risks||[]);
+  const mappedTools=[...new Set(steps.flatMap(s=>normalizeArray(s.tool)).filter(Boolean))];
+  const attributedLosses=linkedFrictions.filter(f=>Number(f.direct_loss?.value||0)>0);
   const inheritedContext='<div class="client-inherited-context"><b>Contexto reutilizado del AS-IS</b>'
     +'<p>'+steps.length+' pasos · '+linkedFrictions.length+' fricciones · '+linkedRisks.length+' riesgos disponibles como evidencia contextual.</p>'
     +(linkedFrictions.length?'<p>Fricciones: '+linkedFrictions.map(f=>esc(f.client_label||labelFrom('OS_FRICTION_TYPE',f.friction_type))).join(' · ')+'</p>':'')
+    +(mappedTools.length?'<p>Herramientas registradas en el mapa (DF046): '+mappedTools.map(x=>esc(labelFrom('OS_TOOL_CATEGORY',x))).join(' · ')+' · Registra sólo el coste atribuible a este proceso; no presupongas su eliminación.</p>':'')
+    +(attributedLosses.length?'<p>Pérdidas directas declaradas en fricciones (DF063): '+attributedLosses.map(f=>esc(f.client_label||f.id)).join(' · ')+' · Comprueba que DF082 no vuelva a contabilizar el mismo evento.</p>':'')
     +'<small>El cálculo previo reutiliza los tiempos de los pasos y el volumen capturado. La espera no equivale a coste ni el trabajo activo equivale a desperdicio o ahorro.</small></div>';
   let serverProjection=null,serverSelection='',requestSequence=0;
   const preview=value=>Number(value||0).toLocaleString('es-ES',{maximumFractionDigits:2});
