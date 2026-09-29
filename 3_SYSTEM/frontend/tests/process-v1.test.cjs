@@ -233,4 +233,51 @@ test('step removal persists the superseded state immediately before rerender to 
   assert.match(code,/persistRecoverySnapshot\('eliminar-paso'\)/);
 });
 
+
+test('Inputs and Outputs are vertical without changing other multiselects',()=>{
+  const choices=[{value:'DOC',label:'Documento'},{value:'DATA',label:'Datos'}];
+  assert.match(ctx.selectedHtml('step_inputs',choices,[],{stacked:true}),/choice-grid choice-grid-stacked/);
+  assert.match(ctx.selectedHtml('step_outputs',choices,[],{stacked:true}),/choice-grid choice-grid-stacked/);
+  assert.doesNotMatch(ctx.selectedHtml('step_manual',choices,[]),/choice-grid-stacked/);
+  assert.match(code,/selectedHtml\('step_inputs',artifacts,s.inputs,\{stacked:true/);
+  assert.match(code,/selectedHtml\('step_outputs',artifacts,s.outputs,\{stacked:true/);
+  assert.match(fs.readFileSync(path.join(__dirname,'..','ui-system.css'),'utf8'),/\.process-modal-form \.choice-grid-stacked\{grid-template-columns:minmax\(0,1fr\)\}/);
+});
+test('step save persists the saved step and selected Inputs/Outputs immediately',()=>{
+  const oldQuery=ctx.document.querySelectorAll,oldPersist=ctx.persistRecoverySnapshot,oldToast=ctx.toast;
+  const values={
+    step_name:'Recibir solicitud',step_type:'ST01',step_actor:'A1',step_tool:'',
+    step_occ:'1',step_applies_mode:'ALL',step_applies_value:'',
+    step_inputs_detail:'',step_outputs_detail:'',step_decisions_detail:'',step_channels_other:'',
+    step_active_unit:'min',step_wait_unit:'min',step_rework_unit:'min',
+    step_active:'12',step_wait:'30',step_rework:'0',step_error:'0',
+    step_error_mode:'percent',step_error_period:'case',step_next:'',
+    step_exc_type:'',step_exc_condition:'',step_exc_dest:'',step_exc_owner:'',step_notes:''
+  };
+  const saved=[],messages=[];eng.processSteps=[];eng.answers={};
+  for(const [key,value] of Object.entries(values))domFields[key]={value,dataset:{}};
+  ctx.document.querySelectorAll=selector=>{
+    const key=selector.match(/data-v1-multi="([^"]+)"/)?.[1];
+    return ({step_inputs:['DOC'],step_outputs:['DATA']}[key]||[]).map(value=>({value}));
+  };
+  ctx.persistRecoverySnapshot=reason=>{saved.push({reason,steps:JSON.parse(JSON.stringify(eng.processSteps))});return true};
+  ctx.toast=msg=>messages.push(msg);
+  try{
+    ctx.openStepModal();
+    ctx.__lastOnSave();
+    assert.equal(eng.processSteps.length,1);
+    assert.deepEqual(Array.from(eng.processSteps[0].inputs),['DOC']);
+    assert.deepEqual(Array.from(eng.processSteps[0].outputs),['DATA']);
+    assert.equal(eng.processSteps[0].active_time,12);
+    assert.equal(saved[0].reason,'paso-guardado');
+    assert.equal(saved[0].steps[0].step_name,'Recibir solicitud');
+    assert.ok(messages.includes('Paso guardado.'));
+    ctx.openStepModal(eng.processSteps[0].id);
+    assert.match(ctx.__lastBody,/data-v1-multi="step_inputs"[^>]+checked/);
+    assert.match(ctx.__lastBody,/data-v1-multi="step_outputs"[^>]+checked/);
+  }finally{
+    ctx.document.querySelectorAll=oldQuery;ctx.persistRecoverySnapshot=oldPersist;ctx.toast=oldToast;eng.processSteps=[];
+  }
+});
+
 // [AUNEA-UAT-PROC-010] END

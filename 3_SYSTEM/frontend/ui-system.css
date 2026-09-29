@@ -201,6 +201,7 @@ body.mode-process-editor .flow-connector{flex:0 0 28px;width:28px}
 .process-modal-form .aunea-select-menu{z-index:270;max-height:220px;overflow-y:auto}
 .process-modal-form .form-grid{align-items:start}
 .process-modal-form .choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.process-modal-form .choice-grid-stacked{grid-template-columns:minmax(0,1fr)}
 .process-modal-form .choice{min-width:0}
 .process-modal-form .choice label{width:100%;height:100%;overflow-wrap:anywhere}
 .process-modal-form .compound-control{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;align-items:center;width:100%;min-width:0}

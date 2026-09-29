@@ -19,9 +19,9 @@ function painForFriction(type){return schema.friction_pain_map.find(x=>String(x.
 function processLayerState(e){return typeof processLayerConfirmations==='function'?processLayerConfirmations(e):(e.layerConfirmations||(e.layerConfirmations={map:false,frictions:false,risks:false,impact:false}))}
 function processLayerKeySafe(tab){return typeof processLayerKey==='function'?processLayerKey(tab):(tab==='fricciones'?'frictions':tab==='riesgos'?'risks':tab==='impacto'?'impact':'map')}
 function invalidateProcessLayersSafe(e,from='map'){if(typeof invalidateProcessLayers==='function')return invalidateProcessLayers(e,from);e.confirmedAsIs=false;e.answers.DF093=''}
-function selectedHtml(id,opts,selected,{detailId='',detailValue='',detailPlaceholder='Especifica la opción'}={}){
+function selectedHtml(id,opts,selected,{detailId='',detailValue='',detailPlaceholder='Especifica la opción',stacked=false}={}){
   const arr=normalizeArray(selected).map(String),other=catalogOtherOption(opts),otherValue=other?String(other.value):'',otherOpen=!!other&&arr.includes(otherValue);
-  const choices=`<div class="choice-grid">${opts.map(o=>{const isOther=!!other&&String(o.value)===otherValue;return `<div class="choice"><input type="checkbox" id="${id}_${attr(o.value)}" value="${attr(o.value)}" data-v1-multi="${id}" ${isOther?`data-v1-other-toggle="${id}"`:''} ${arr.includes(String(o.value))?'checked':''}><label for="${id}_${attr(o.value)}">${esc(o.label)}</label></div>`}).join('')}</div>`;
+  const choices=`<div class="choice-grid${stacked?' choice-grid-stacked':''}">${opts.map(o=>{const isOther=!!other&&String(o.value)===otherValue;return `<div class="choice"><input type="checkbox" id="${id}_${attr(o.value)}" value="${attr(o.value)}" data-v1-multi="${id}" ${isOther?`data-v1-other-toggle="${id}"`:''} ${arr.includes(String(o.value))?'checked':''}><label for="${id}_${attr(o.value)}">${esc(o.label)}</label></div>`}).join('')}</div>`;
   if(!detailId||!other)return choices;
   return choices+`<div class="detail-wrap" data-v1-other-wrap="${id}"${otherOpen?'':' style="display:none"'}><input id="${detailId}" value="${attr(otherOpen?detailValue:'')}" placeholder="${attr(detailPlaceholder)}"></div>`;
 }
@@ -89,8 +89,8 @@ function openStepModal(stepId=null,linkFromStepId=null,preset=null){
   <details class="step-group"><summary>B. Entradas y salidas</summary><div class="form-grid">
     <div class="field full"><label>¿A qué casos aplica?</label>${appliesControl(s)}</div>
     <div class="field"><label>Veces por caso</label><input id="step_occ" type="number" min="0" step="any" value="${attr(s.occurrences_per_case??1)}"></div>
-    <div class="field full"><label>Inputs</label>${selectedHtml('step_inputs',artifacts,s.inputs,{detailId:'step_inputs_detail',detailValue:s._details.inputs||'',detailPlaceholder:'Especifica el input sólo al seleccionar Otro'})}</div>
-    <div class="field full"><label>Outputs</label>${selectedHtml('step_outputs',artifacts,s.outputs,{detailId:'step_outputs_detail',detailValue:s._details.outputs||'',detailPlaceholder:'Especifica el output sólo al seleccionar Otro'})}</div>
+    <div class="field full"><label>Inputs</label>${selectedHtml('step_inputs',artifacts,s.inputs,{stacked:true,detailId:'step_inputs_detail',detailValue:s._details.inputs||'',detailPlaceholder:'Especifica el input sólo al seleccionar Otro'})}</div>
+    <div class="field full"><label>Outputs</label>${selectedHtml('step_outputs',artifacts,s.outputs,{stacked:true,detailId:'step_outputs_detail',detailValue:s._details.outputs||'',detailPlaceholder:'Especifica el output sólo al seleccionar Otro'})}</div>
   </div></details>
   <details class="step-group"><summary>C. Tiempo y rendimiento</summary><div class="form-grid">
     <div class="field"><label>Tiempo activo típico</label>${timeControl('step_active',s.active_time,s._ui.active_unit||'min')}</div>
@@ -132,9 +132,10 @@ function openStepModal(stepId=null,linkFromStepId=null,preset=null){
     if(hasDecisionNow&&noDestination==='__NEW__'){const draft=blankDecisionDestination();e.processSteps.push(draft);noDestination=draft.id;createdDestinations.push(draft.id)}
     s.normal_next_step=hasDecisionNow?yesDestination:(nextVal==='__NEW__'?'':nextVal);
     s.exception_path=hasDecisionNow?{type:et,condition:ec,destination_step:noDestination,owner:eo}:null;s.notes=document.getElementById('step_notes').value.trim();
-    if(existing){Object.assign(existing,s);audit(`Paso editado ${existing.id}`)}else{e.processSteps.push(s);audit(`Paso creado ${s.id}`);if(linkFromStepId){const origin=e.processSteps.find(x=>x.id===linkFromStepId);if(origin)origin.normal_next_step=s.id}}if(typeof advanceEngagementTo==='function')advanceEngagementTo(e,'Sesión 1','captura de proceso');invalidateProcessLayersSafe(e,'map');e.diagnosticOutput=null;e.updatedAt=now();markDirty();closeModal();
+    if(existing){Object.assign(existing,s);audit(`Paso editado ${existing.id}`)}else{e.processSteps.push(s);audit(`Paso creado ${s.id}`);if(linkFromStepId){const origin=e.processSteps.find(x=>x.id===linkFromStepId);if(origin)origin.normal_next_step=s.id}}if(typeof advanceEngagementTo==='function')advanceEngagementTo(e,'Sesión 1','captura de proceso');invalidateProcessLayersSafe(e,'map');e.diagnosticOutput=null;e.updatedAt=now();markDirty('Paso guardado');const persisted=typeof persistRecoverySnapshot==='function'?persistRecoverySnapshot('paso-guardado'):true;closeModal();
     if(createdDestinations.length)toast(`${createdDestinations.length} destino(s) vacío(s) creados. Edítalos para completar el flujo.`);
     if(!hasDecisionNow&&nextVal==='__NEW__'){render();openStepModal(null,s.id)}else{render()}
+    if(persisted===false)toast('No se ha podido persistir este paso.');else toast(existing?'Cambios del paso guardados.':'Paso guardado.');
   },existing?'Guardar cambios':'Añadir paso');
   document.querySelectorAll('[data-step-auto]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-step-auto]').forEach(x=>x.classList.remove('active'));b.classList.add('active');s.automation_state=b.dataset.value});
   document.querySelectorAll('[data-step-decision-flag]').forEach(b=>b.onclick=()=>{s._ui.has_decision=b.dataset.value==='YES';document.querySelectorAll('[data-step-decision-flag]').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('[data-step-decision-area]').forEach(x=>x.style.display=s._ui.has_decision?'':'none');const label=document.querySelector('[data-step-next-label]');if(label)label.textContent=s._ui.has_decision?'Ruta SÍ / afirmativa':'Siguiente paso normal'});
