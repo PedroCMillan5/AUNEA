@@ -244,7 +244,7 @@ test('Inputs and Outputs are vertical without changing other multiselects',()=>{
   assert.match(fs.readFileSync(path.join(__dirname,'..','ui-system.css'),'utf8'),/\.process-modal-form \.choice-grid-stacked\{grid-template-columns:minmax\(0,1fr\)\}/);
 });
 test('step save persists the saved step and selected Inputs/Outputs immediately',()=>{
-  const oldQuery=ctx.document.querySelectorAll,oldPersist=ctx.persistRecoverySnapshot,oldToast=ctx.toast;
+  const oldQuery=ctx.document.querySelectorAll,oldPersist=ctx.persistRecoverySnapshot,oldToast=ctx.toast,oldSegmented=ctx.segmented,oldClone=ctx.structuredClone;
   const values={
     step_name:'Recibir solicitud',step_type:'ST01',step_actor:'A1',step_tool:'',
     step_occ:'1',step_applies_mode:'ALL',step_applies_value:'',
@@ -262,6 +262,8 @@ test('step save persists the saved step and selected Inputs/Outputs immediately'
   };
   ctx.persistRecoverySnapshot=reason=>{saved.push({reason,steps:JSON.parse(JSON.stringify(eng.processSteps))});return true};
   ctx.toast=msg=>messages.push(msg);
+  ctx.segmented=()=>'<div class="segmented"></div>';
+  ctx.structuredClone=structuredClone;
   try{
     ctx.openStepModal();
     ctx.__lastOnSave();
@@ -276,7 +278,7 @@ test('step save persists the saved step and selected Inputs/Outputs immediately'
     assert.match(ctx.__lastBody,/data-v1-multi="step_inputs"[^>]+checked/);
     assert.match(ctx.__lastBody,/data-v1-multi="step_outputs"[^>]+checked/);
   }finally{
-    ctx.document.querySelectorAll=oldQuery;ctx.persistRecoverySnapshot=oldPersist;ctx.toast=oldToast;eng.processSteps=[];
+    ctx.document.querySelectorAll=oldQuery;ctx.persistRecoverySnapshot=oldPersist;ctx.toast=oldToast;ctx.segmented=oldSegmented;ctx.structuredClone=oldClone;eng.processSteps=[];
   }
 });
 
