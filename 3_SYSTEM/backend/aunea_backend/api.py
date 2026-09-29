@@ -18,6 +18,7 @@ from .orchestrator import Orchestrator
 from .registry import rule_bundle_version, load_registry
 from .store import SQLiteStore
 from .uat import run_canonical_uat
+from .session_time import TimeProjectionRequest, project_session_time
 
 app = FastAPI(title="AUNEA Internal Backend", version="1.1.1")
 app.add_middleware(
@@ -47,6 +48,13 @@ def health():
 def registry_status():
     reg=load_registry()
     return {"version":reg.get("version"),"tables":len(reg.get("tables",{})),"rows":sum(len(x) for x in reg.get("tables",{}).values())}
+
+# [AUNEA-BE-SESSION-TIME-API-070] START — Server-owned diagnostic time projection
+# This projection explains captured AS-IS workload, not future recovery or cash savings.
+@app.post("/v1/diagnostic/time-projection")
+def diagnostic_time_projection(payload: TimeProjectionRequest):
+    return project_session_time(payload)
+# [AUNEA-BE-SESSION-TIME-API-070] END
 
 # [AUNEA-UAT-API-010] START — Visible isolated UAT endpoint
 @app.post("/v1/uat/run")
