@@ -157,8 +157,7 @@ def project_session_time(request: TimeProjectionRequest) -> dict[str, Any]:
     # without increasing the baseline. A friction observed across multiple steps
     # has a single economic owner and is counted at most once.
     friction_review = review_frictions(request.steps, request.frictions)
-    assigned = {x["friction_id"]: x for x in friction_review["classified"]
-                if x["counted_as_additional"]}
+    classified = {x["friction_id"]: x for x in friction_review["classified"]}
     unresolved = {x["friction_id"]: x for x in friction_review["findings"]}
     unallocated_frictions: list[str] = []
     extra_per_year_minutes = 0.0
@@ -171,7 +170,7 @@ def project_session_time(request: TimeProjectionRequest) -> dict[str, Any]:
         minutes = _number(friction.get("active_time_loss"))
         if not minutes:
             continue
-        if fid in unresolved or fid not in friction_review["classified"] and fid not in assigned:
+        if fid in unresolved or fid not in classified:
             unallocated_frictions.append(fid)
             extra_incomplete = True
             continue
