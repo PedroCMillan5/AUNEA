@@ -97,6 +97,8 @@ test('economicBuilder keeps canonical driver ids internally but all visible driv
 
 test('Impacto reuses mapped tools and direct-loss friction sources without inventing savings',()=>{
   const ctx=makeCtx();
+  ctx.activeSteps=e=>e.processSteps.filter(s=>s.status!=='SUPERSEDED');
+  ctx.activeFrictions=e=>e.frictions.filter(f=>f.status!=='SUPERSEDED');
   ctx.__eng.processSteps=[{id:'S1',status:'ACTIVE',tool:'TOOL1',step_name:'Recepción'}];
   ctx.__eng.frictions=[{id:'F1',status:'ACTIVE',affected_steps:['S1'],client_label:'Duplicación de cobros',direct_loss:{value:100}}];
   ctx.labelFrom=(set,id)=>set==='OS_TOOL_CATEGORY'?'Herramienta registrada':id;
