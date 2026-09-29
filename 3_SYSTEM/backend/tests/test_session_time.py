@@ -83,6 +83,53 @@ def test_api_exposes_same_deterministic_server_projection():
     })
     assert response.status_code == 200
     assert response.json()["annual_rework_hours"] == 10
+
+def test_additional_friction_with_monetary_claim_still_projects_validated_time():
+    friction = {
+        "id": "F_BOTH", "affected_steps": ["S1"],
+        "active_time_loss": {"value": 5},
+        "time_attribution": {"mode": "ADDITIONAL", "step_id": "S1"},
+        "frequency": {"mode": "percent", "value": 20, "period": "case"},
+        "direct_loss": {"value": 250, "period": "month"},
+    }
+    out = project_session_time(TimeProjectionRequest(
+        volume=100, period="MONTH", steps=[STEP], frictions=[friction]))
+    assert out["status"] == "CALCULATED"
+    assert out["annual_friction_additional_hours"] == 20
+    assert out["annual_total_active_hours"] == 220
+    assert out["frictions_pending_overlap_review"] == []
+    assert out["monetary_reconciliation"][0]["reconciliation_status"] == "PENDING_DF082"
+    assert all("DF063" not in gap for gap in out["gaps"])
+
+
+def test_additional_count_per_calendar_day_uses_only_declared_calendar():
+    friction = {
+        "id": "F_DAY", "affected_steps": ["S1"],
+        "active_time_loss": {"value": 5},
+        "time_attribution": {"mode": "additional", "step_id": "S1"},
+        "frequency": {"mode": "count", "value": 2, "period": "day"},
+    }
+    out = project_session_time(TimeProjectionRequest(
+        volume=100, period="MONTH", calendar_day_process=True,
+        calendar_year=2028, steps=[STEP], frictions=[friction]))
+    assert out["status"] == "CALCULATED"
+    assert out["annual_friction_additional_hours"] == 61
+    assert out["annual_total_active_hours"] == 261
+
+
+def test_direct_money_without_time_does_not_corrupt_time_projection():
+    friction = {
+        "id": "F_MONEY", "affected_steps": ["S1"],
+        "direct_loss": {"value": 100, "period": "month"},
+        "frequency": {"mode": "count", "value": 3, "period": "month"},
+    }
+    out = project_session_time(TimeProjectionRequest(
+        volume=100, period="MONTH", steps=[STEP], frictions=[friction]))
+    assert out["status"] == "CALCULATED"
+    assert out["annual_friction_additional_hours"] == 0
+    assert out["annual_active_hours"] == 200
+    assert out["monetary_reconciliation"][0]["friction_id"] == "F_MONEY"
+
 # [AUNEA-UAT-SESSION-TIME-070] END
 
 
