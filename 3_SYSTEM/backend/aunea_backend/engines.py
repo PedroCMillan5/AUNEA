@@ -11,6 +11,7 @@ from .models import (
 )
 from .registry import table, by_id
 from .utils import level_rank
+from .economic_overlap import economic_overlap_issues
 
 CONFIDENCE_ORDER = {
     "MEASURED": "HIGH",
@@ -65,13 +66,17 @@ class PainEngine:
 
 # [AUNEA-BE-ENGINE-ECON-010] START — Economics Engine
 # PURPOSE: Aggregate/deduplicate already-captured EconomicInput rows into active/wait hours, capacity value, direct loss, tool cost and realized cash saving. Never derives a formula from process-step times.
-# SOURCE: DEC-034; PROJECT_RULES economics discipline (waiting time is not active labour; released capacity is not cash saving).
+# SOURCE: DEC-034/065/068; Diagnostic Master v1.2 EAR-001/004/006/012; PROJECT_RULES economics discipline (waiting time is not active labour; released capacity is not cash saving).
 # INPUTS: EngineContext (EngagementInput.economics).
 # OUTPUTS: EconomicResult.
 # SIDE_EFFECTS: none.
 # CHANGE_RISK: CRITICAL.
 class EconomicsEngine:
     def run(self, ctx: EngineContext) -> EconomicResult:
+        issues = economic_overlap_issues(ctx.engagement.economics)
+        if issues:
+            # An invalid total must not reach scenario, deliverables or a currency headline.
+            raise ValueError('Revisión económica requerida: ' + ' '.join(issues))
         seen: set[str] = set()
         active = wait = direct = tool = cash = 0.0
         capacity_value = 0.0
