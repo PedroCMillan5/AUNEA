@@ -76,13 +76,19 @@ def get_engagement(engagement_id: str):
 
 @app.post("/v1/diagnose")
 def diagnose(payload: EngagementInput):
-    return engine.diagnose(payload)
+    try:
+        return engine.diagnose(payload)
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
 
 @app.post("/v1/engagements/{engagement_id}/diagnose")
 def diagnose_saved(engagement_id: str):
     item=store.get_engagement(engagement_id)
     if not item: raise HTTPException(404,"engagement not found")
-    return engine.diagnose(item)
+    try:
+        return engine.diagnose(item)
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
 
 @app.get("/v1/engagements/{engagement_id}/diagnostic/latest")
 def latest_diagnostic(engagement_id: str):
