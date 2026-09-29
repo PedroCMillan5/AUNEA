@@ -190,4 +190,71 @@ test('when the backend is offline, economic preview is explicitly unavailable',a
   assert.equal(p.available,false);
   assert.match(p.reason,/Backend no conectado/);
 });
+
+test('B03: an all-in ED01 and a specialized driver cannot be added for overlapping steps without governed decomposition',()=>{
+  const ctx=makeCtx(),e=ctx.__eng;
+  e.economicInputs=[{driver_id:'ED01',step_ids:['S1'],annual_active_hours:100}];
+  const duplicate=ctx.economicCaptureIssues(e,{driver_id:'ED05',step_ids:['S1'],annual_active_hours:20});
+  assert.equal(duplicate.length,1);
+  assert.match(duplicate[0],/EAR-001\/004/);
+  assert.equal(ctx.economicCaptureIssues(e,{driver_id:'ED05',step_ids:['S2'],annual_active_hours:20}).length,0);
+});
+
+test('B03: direct loss repeated across friction and DF082 is held pending reconciliation, without creating event IDs',()=>{
+  const ctx=makeCtx(),e=ctx.__eng;
+  e.frictions=[{id:'F1',affected_steps:['S1'],direct_loss:{value:100}}];
+  const problems=ctx.economicCaptureIssues(e,{driver_id:'ED11',step_ids:['S1'],direct_loss_eur_annual:100});
+  assert.equal(problems.length,1);
+  assert.match(problems[0],/DF063\/DF082/);
+  assert.equal(ctx.economicCaptureIssues(e,{driver_id:'ED11',step_ids:['S2'],direct_loss_eur_annual:100}).length,0);
+  assert.match(code,/deduplication_key:null/);
+});
+
+test('B03: overlapping economics input does not mutate engagement and manual capture demands selected evidence',()=>{
+  const ctx=makeCtx(),e=ctx.__eng;
+  e.economicInputs=[{driver_id:'ED01',annual_active_hours:100,step_ids:['S1']}];
+  e.processSteps=[{id:'S1',step_name:'Inicio',status:'ACTIVE'}];ctx.activeSteps=a=>a.processSteps;
+  let msg='';ctx.toast=x=>{msg=x};
+  ctx.addEconomic(['S1']);
+  Object.assign(ctx.__domFields,{econDriver:{value:'ED05'},econActive:{value:20},econActive_unit:{value:'h'},econWait:{value:0},econWait_unit:{value:'h'},econEvidence:{value:'CLIENT_DECLARED'}});
+  ctx.__lastOnSave();
+  assert.equal(e.economicInputs.length,1);
+  assert.match(msg,/EAR-001\/004/);
+  const ctx2=makeCtx();ctx2.addEconomic();
+  Object.assign(ctx2.__domFields,{econDriver:{value:'ED02'},econActive:{value:20},econActive_unit:{value:'h'},econWait:{value:0},econWait_unit:{value:'h'},econEvidence:{value:''}});
+  let warning='';ctx2.toast=x=>{warning=x};ctx2.__lastOnSave();
+  assert.equal(ctx2.__eng.economicInputs.length,0);
+  assert.match(warning,/Selecciona la evidencia/);
+});
+
+test('B03: backend projected extra effort is shown separately and the full-process fingerprint drives DF078/DF079',async()=>{
+  const ctx=makeCtx(),e=ctx.__eng;
+  e.answers={DF021:100,DF022:'MONTH'};
+  e.processSteps=[
+    {id:'S1',status:'ACTIVE',active_time:10,rework_time:0,wait_time:2},
+    {id:'S2',status:'ACTIVE',active_time:4,rework_time:0,wait_time:0},
+  ];
+  e.frictions=[{id:'F1',status:'ACTIVE',affected_steps:['S1','S2'],time_attribution:{mode:'ADDITIONAL',step_id:'S1'},active_time_loss:{value:3}}];
+  const sent=[];
+  ctx.activeSteps=x=>x.processSteps;
+  ctx.activeFrictions=x=>x.frictions;
+  ctx.fetch=async(_url,options)=>{
+    const req=JSON.parse(options.body);sent.push(req);
+    return {ok:true,json:async()=>({
+      status:'CALCULATED',annual_cases:1200,annual_active_hours:req.steps.length===1?200:280,
+      annual_wait_exposure_hours:40,annual_rework_hours:0,annual_friction_additional_hours:12,
+      annual_total_active_hours:292,active_minutes_per_case:14,rework_minutes_per_case:0,
+      gaps:[],frictions_pending_overlap_review:[],monetary_reconciliation:[{friction_id:'F1',reconciliation_status:'PENDING_DF082'}]
+    })};
+  };
+  const subset=await ctx.economicTimeProjection(e,['S1']);
+  assert.equal(subset.additional,12);
+  assert.equal(subset.monetaryPending.length,1);
+  assert.equal(sent[0].frictions.length,1,'owner belongs to selected step');
+  assert.equal(e._sessionTimeProjection,undefined,'partial subset never overwrites global DF078/DF079');
+  const global=await ctx.economicTimeProjection(e);
+  assert.equal(global.active,280);
+  assert.equal(e._sessionTimeProjection.output.active_minutes_per_case,14);
+});
+
 // [AUNEA-UAT-ECON-010] END
