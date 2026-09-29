@@ -145,7 +145,7 @@ test('economic preview always uses server output, never browser annualization',a
   assert.equal(p.active,200);
   assert.equal(p.wait,400);
   assert.equal(p.rework,10);
-  assert.match(request.url,/\\/v1\\/diagnostic\\/time-projection$/);
+  assert.ok(request.url.endsWith('/v1/diagnostic/time-projection'));
   assert.equal(request.body.volume,100);
   assert.equal(request.body.period,'MONTH');
   assert.equal(request.body.steps.length,1);
