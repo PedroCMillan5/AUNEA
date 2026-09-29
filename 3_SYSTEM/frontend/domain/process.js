@@ -93,8 +93,8 @@ function appliesControl(s){
 }
 function bindProcessAppliesControl(){
   const mode=document.getElementById('step_applies_mode'),input=document.getElementById('step_applies_value');
-  const label=document.querySelector('[data-process-applies-label]'),help=document.querySelector('[data-process-applies-help]');
-  if(!mode||!input)return;
+  const label=typeof document.querySelector==='function'?document.querySelector('[data-process-applies-label]'):null,help=typeof document.querySelector==='function'?document.querySelector('[data-process-applies-help]'):null;
+  if(!mode||!input||typeof mode.addEventListener!=='function')return;
   mode.addEventListener('change',()=>{
     const m=mode.value;input.disabled=m==='ALL';input.type=m==='CONDITION'?'text':'number';
     if(m==='CONDITION'){input.removeAttribute('min');input.removeAttribute('max');input.placeholder='Describe cuándo aplica';}

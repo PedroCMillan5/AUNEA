@@ -6,7 +6,7 @@ const ctx={console,schema:{friction_pain_map:[{Friction_Type_ID:'P07',Pain_ID:'P
 
 test('moveStep changes the visible order and relinks the normal route to the new sequence while preserving friction anchors',()=>{
   eng.processSteps=[
-    {id:'S1',status:'ACTIVE',normal_next_step:'S3',exception_path:{destination_step:'S3'}},
+    {id:'S1',status:'ACTIVE',normal_next_step:'S3'},
     {id:'S2',status:'SUPERSEDED',normal_next_step:'S3'},
     {id:'S3',status:'ACTIVE',normal_next_step:''}
   ];

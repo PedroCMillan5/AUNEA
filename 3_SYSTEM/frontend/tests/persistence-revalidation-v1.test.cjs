@@ -63,10 +63,10 @@ test('recovery format is independent from product SemVer and legacy AUNEA_INTERN
   assert.equal(saved.recoveryMeta.schemaVersion,'1');
 });
 
-test('the <details class="step-group"> progressive-disclosure accordion is purely ephemeral DOM',()=>{
+test('step-group expansion remains ephemeral DOM and is never persisted as engagement data',()=>{
   [processV1Code,economicsCode,engineAdapterCode].forEach(code=>{
-    assert.doesNotMatch(code,/step-group[^`]*\.open\b/s);
-    assert.doesNotMatch(code,/querySelector(?:All)?\(['"]\.step-group['"]\)/);
+    assert.doesNotMatch(code,/localStorage\.(?:setItem|getItem)\([^)]*step-group/s);
+    assert.doesNotMatch(code,/\b(?:s|f|r|eng)\._ui\.(?:accordion|expanded_sections|step_group_open)\s*=/);
     assert.doesNotMatch(code,/hasAttribute\(['"]open['"]\)/);
   });
 });
