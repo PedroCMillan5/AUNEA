@@ -121,9 +121,10 @@ function economicCaptureIssues(e,draft){
   }
   if(Number(draft.direct_loss_eur_annual||0)>0){
     const duplicateRows=rows.some(x=>Number(x.direct_loss_eur_annual||0)>0&&economicScopeOverlaps(x.step_ids,draft.step_ids));
-    const matchedFriction=(typeof activeFrictions==='function'?activeFrictions(e):e.frictions||[])
-      .some(f=>Number(f.direct_loss?.value||0)>0&&economicScopeOverlaps(f.affected_steps,draft.step_ids));
-    if(duplicateRows||matchedFriction)issues.push('DF063/DF082: hay una pérdida directa en este ámbito sin conciliación por evento. Verifica su propietario y evita registrarla otra vez.');
+    // DF063 is contextual evidence, not an automatically aggregated EconomicInput.
+    // One validated DF082 row may therefore represent it, but a second overlapping
+    // monetary EconomicInput with no event identity is held for reconciliation.
+    if(duplicateRows)issues.push('DF063/DF082: ya existe una pérdida directa económica en este ámbito sin conciliación por evento. Verifica su propietario y evita registrarla otra vez.');
   }
   return [...new Set(issues)];
 }
