@@ -31,8 +31,15 @@ function buildBackendPayload(engagement){
   return payload;
 }
 async function runDiagnosis(){const e=currentEng();if(!e)return;if(!hasConfirmedSnapshot(e))return toast('Confirma el AS-IS en PG09 antes de calcular en Trabajo interno.');if(!state.backendOnline&&!(await checkBackend())){state.activePage='resultados';render();toast('Backend no conectado: no se publican resultados oficiales.');return}const gaps=canonicalMissingRequired(e);if(gaps.length){state.activePage='resultados';render();toast(`Captura incompleta: ${gaps.slice(0,5).join(', ')}`);return}if(unresolvedEngineGates(e).length){openEngineGateReview();return}
+  const sourceSnapshot=confirmedSnapshot(e);
+  if(!sourceSnapshot)return toast('El AS-IS debe estar confirmado antes de calcular.');
   ['runDiag','runDiagHeader'].forEach(bid=>{const b=document.getElementById(bid);if(b){b.disabled=true;b.textContent='Calculando…'}});
-  try{const r=await fetch(`${state.backendUrl}/v1/diagnose`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(buildBackendPayload(e))});if(!r.ok)throw new Error(await r.text());const out=await r.json();if(!out.recommendation||!out.quote||!out.optimal_scenario)throw new Error('Respuesta backend incompleta: faltan Recommendation/Pricing/Scenario');e.diagnosticOutput=out;e.lastEngineSnapshotVersion=confirmedSnapshot(e).version;e.scenarioResults=[];e.selectedScenarioIndex=0;e.updatedAt=now();e.lastEngineRunAt=now();markDirty('Pain → Economics → Risk → Recommendation → Pricing → Scenario calculados por backend');state.activePage='resultados';render();toast('Resultados oficiales actualizados por backend.')}catch(err){toast('No se pudo ejecutar el backend: '+err.message);render()}}
+  try{const r=await fetch(`${state.backendUrl}/v1/diagnose`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(buildBackendPayload(e))});if(!r.ok)throw new Error(await r.text());const out=await r.json();if(!out.recommendation||!out.quote||!out.optimal_scenario)throw new Error('Respuesta backend incompleta: faltan Recommendation/Pricing/Scenario');
+    // The request may finish after another tab or the consultant changes the AS-IS.
+    // Never attach an obsolete result to the newly edited capture.
+    const currentSnapshot=confirmedSnapshot(e);
+    if(!currentSnapshot||currentSnapshot.version!==sourceSnapshot.version||e.confirmedAsIs!==true)throw new Error('El AS-IS cambió durante el cálculo. Confirma de nuevo antes de generar resultados.');
+    e.diagnosticOutput=out;e.lastEngineSnapshotVersion=sourceSnapshot.version;e.scenarioResults=[];e.selectedScenarioIndex=0;e.updatedAt=now();e.lastEngineRunAt=now();markDirty('Pain → Economics → Risk → Recommendation → Pricing → Scenario calculados por backend');state.activePage='resultados';render();toast('Resultados oficiales actualizados por backend.')}catch(err){toast('No se pudo ejecutar el backend: '+err.message);render()}}
 
 // C05 · Optional internal AI orchestration. No provider is configured by canonical source today, so
 // the default capability is explicitly UNAVAILABLE. This service never falls back to templates/rules
