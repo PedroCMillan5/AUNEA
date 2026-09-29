@@ -32,7 +32,8 @@ function makeCtx(uiMode){
     REF_LEVEL_AI:[{AI_Level_ID:'I0',Name:'Rules / no AI'},{AI_Level_ID:'I1',Name:'Assisted'}],
     REF_ACTION:[{Action_ID:'ACT00',Name:'No action'},{Action_ID:'A1',Name:'Redesign'}]
   },friction_pain_map:[]};
-  const eng={id:'E1',companyId:'c1',answers:{},processSteps:[],frictions:[],economicInputs:[],risks:[],scenarioResults:[],diagnosticOutput:null,meetingRecap:''};
+  // Results fixtures represent PG09-confirmed captures; an unconfirmed Engagement is deliberately gated.
+  const eng={id:'E1',companyId:'c1',answers:{},processSteps:[],frictions:[],economicInputs:[],risks:[],scenarioResults:[],diagnosticOutput:null,meetingRecap:'',confirmedAsIs:true,confirmedSnapshots:[{version:1}],lastEngineSnapshotVersion:1};
   const ctx={
     console,schema,
     currentEng:()=>eng,
