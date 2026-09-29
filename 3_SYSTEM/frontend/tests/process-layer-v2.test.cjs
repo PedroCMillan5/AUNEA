@@ -129,7 +129,7 @@ test('risk inherits confirmed friction locations via existing step_ids; economic
   assert.match(econ,/linkedFrictions\.length/);
   assert.match(econ,/linkedRisks\.length/);
   assert.match(econ,/economicTimeProjection/);
-  assert.match(econ,/no sumar sin comprobar solapamientos/);
+  assert.match(econ,/sin sumar fricciones/);
   assert.match(css,/\.client-inherited-context\{/);
 });
 // [AUNEA-UAT-PROC-LAYERS-045] END
