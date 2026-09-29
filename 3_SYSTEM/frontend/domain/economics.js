@@ -38,7 +38,7 @@ function econAnnualTimeControl(id,hours=0,unit='h'){
 }
 
 function econDropdown(id,opts,value='',placeholder='Selecciona…'){
-  return auneaSelectControl(id,opts,value,{placeholder});
+  return typeof processChipSelect==='function'?processChipSelect(id,opts,value,placeholder):auneaSelectControl(id,opts,value,{placeholder});
 }
 
 function economicBuilder(e){
@@ -50,9 +50,16 @@ function addEconomic(preselectedSteps=[]){
   const eng=currentEng(),steps=typeof activeSteps==='function'?activeSteps(eng):[];
   const drivers=schema.tables.REF_ECON_DRIVER||[];
   const activeContributors=activeTimeContributors(eng),waitContributors=waitTimeContributors(eng);
+  const allFrictions=typeof activeFrictions==='function'?activeFrictions(eng):eng.frictions||[];
+  const linkedFrictions=preselectedSteps.length?allFrictions.filter(f=>normalizeArray(f.affected_steps).some(x=>preselectedSteps.includes(x))):allFrictions;
+  const linkedRisks=preselectedSteps.length?(eng.risks||[]).filter(r=>normalizeArray(r.step_ids).some(x=>preselectedSteps.includes(x))):(eng.risks||[]);
+  const inheritedContext='<div class="client-inherited-context"><b>Contexto reutilizado del AS-IS</b>'
+    +'<p>'+steps.length+' pasos · '+linkedFrictions.length+' fricciones · '+linkedRisks.length+' riesgos disponibles como evidencia contextual.</p>'
+    +(linkedFrictions.length?'<p>Fricciones: '+linkedFrictions.map(f=>esc(f.client_label||labelFrom('OS_FRICTION_TYPE',f.friction_type))).join(' · ')+'</p>':'')
+    +'<small>Los tiempos y costes económicos se introducen y validan explícitamente; no se calculan automáticamente desde las fricciones o los riesgos.</small></div>';
   const activeHelp=activeContributors.length?`<div class="field-help">Pasos con tiempo activo registrado: ${esc(activeContributors.join(', '))}. Usa el mismo patrón valor + unidad; el total anual se introduce de forma explícita y no se calcula automáticamente.</div>`:'<div class="field-help">Introduce el total anual con valor + unidad. No se deriva automáticamente de los minutos por paso.</div>';
   const waitHelp=waitContributors.length?`<div class="field-help">Pasos con espera registrada: ${esc(waitContributors.join(', '))}. La espera se mantiene separada del trabajo activo y no se monetiza automáticamente.</div>`:'<div class="field-help">Introduce la espera total anual sólo si es material. Se mantiene separada del trabajo activo.</div>';
-  openModal('Añadir input económico',`<div class="step-groups process-modal-form economic-modal-form">
+  openModal('Añadir input económico',`<div class="step-groups process-modal-form economic-modal-form">${inheritedContext}
     <details class="step-group" open><summary>Impacto en tiempo y evidencia</summary><div class="form-grid">
       <div class="field full"><label>Pasos del proceso relacionados</label><div class="choice-grid">${steps.map(s=>`<div class="choice"><input type="checkbox" id="econ_step_${attr(s.id)}" data-econ-step="${attr(s.id)}" ${preselectedSteps.includes(s.id)?'checked':''}><label for="econ_step_${attr(s.id)}">${esc(s.step_name||s.id)}</label></div>`).join('')}</div></div>
       <div class="field full"><label>Concepto económico</label>${econDropdown('econDriver',drivers.map(d=>({value:d.Economic_Driver_ID,label:econDriverLabel(d.Economic_Driver_ID)})),drivers[0]?.Economic_Driver_ID||'','Selecciona…')}</div>

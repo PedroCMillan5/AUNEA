@@ -1,0 +1,128 @@
+// [AUNEA-UAT-PROC-LAYERS-045] START — four-layer increment, chip controls, routed graph
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const vm=require('node:vm');
+const path=require('node:path');
+const root=path.join(__dirname,'..');
+const process=fs.readFileSync(path.join(root,'domain/process.js'),'utf8');
+const risk=fs.readFileSync(path.join(root,'domain/risk.js'),'utf8');
+const econ=fs.readFileSync(path.join(root,'domain/economics.js'),'utf8');
+const css=fs.readFileSync(path.join(root,'ui-system.css'),'utf8');
+function setup(){
+  const e={processSteps:[],frictions:[],risks:[],economicInputs:[],answers:{DF014:'Inicio',DF015:'Fin'},processTab:'cliente'};
+  const fields={},events={},label={textContent:''},help={textContent:''};
+  const document={
+    addEventListener(){},
+    getElementById:id=>fields[id]||null,
+    querySelector:selector=>selector==='[data-process-applies-label]'?label:selector==='[data-process-applies-help]'?help:null,
+    querySelectorAll:()=>[]
+  };
+  const ctx={
+    console,document,state:{returnTo:null},schema:{friction_pain_map:[],flow:[]},
+    bindForms:()=>{},normalizeArray:v=>Array.isArray(v)?v:v==null||v===''?[]:[v],
+    activeSteps:x=>x.processSteps.filter(s=>s.status!=='SUPERSEDED'),
+    activeFrictions:x=>x.frictions.filter(f=>f.status!=='SUPERSEDED'),
+    currentEng:()=>e,fieldOptions:()=>[],labelFrom:(set,v)=>v||'—',
+    section:(title,description,body)=>body,attr:v=>String(v??'').replaceAll('"','&quot;'),esc:v=>String(v??''),
+    num:v=>Number(v||0),pageTop:()=>'',requiredMark:()=>'*',
+    auneaSelectControl:(id,opts,val)=>'<input id="'+id+'" value="'+(val||'')+'">',
+    audit:()=>{},id:p=>p+'-TEST',now:()=>'',markDirty:()=>{},render:()=>{},toast:()=>{},
+    closeModal:()=>{},openModal:()=>{},segmented:()=>'',structuredClone
+  };
+  vm.createContext(ctx);vm.runInContext(process,ctx);
+  return {ctx,e,fields,events,label,help};
+}
+
+test('all four modal pickers share adaptive chip patterns without changing canonical option IDs',()=>{
+  const {ctx}=setup();
+  const html=ctx.processChipSelect('category',[{value:'R1',label:'Operativo'},{value:'R2',label:'Legal'}],'R2');
+  assert.match(html,/class="choice-grid process-chip-list"/);
+  assert.match(html,/id="category" value="R2"/);
+  assert.match(html,/data-value="R2" aria-pressed="true"/);
+  assert.match(ctx.auneaDropdownControl('fr_impact',[{value:'1',label:'1'},{value:'2',label:'2'}],'2'),/process-chip-list/);
+  assert.match(ctx.auneaDropdownControl('step_next',[{value:'__NEW__',label:'Crear nuevo'}],'__NEW__'),/id="step_next"/);
+  assert.match(risk,/typeof processChipSelect==='function'\?processChipSelect/);
+  assert.match(econ,/typeof processChipSelect==='function'\?processChipSelect/);
+  assert.match(css,/\.process-modal-form \.choice-grid\{display:flex;flex-wrap:wrap/);
+  assert.match(css,/\.process-modal-form \.process-chip\.active/);
+});
+
+test('ALL blocks 100 percent; percentage and conditional modes are editable only in their own mode',()=>{
+  const {ctx,fields,label,help}=setup();
+  const html=ctx.appliesControl({applies_to:{mode:'ALL',value:''}});
+  assert.match(html,/id="step_applies_value"[^>]*value="100" disabled/);
+  assert.match(html,/Se aplica al 100 % de los casos/);
+  const mode={value:'ALL',addEventListener(name,fn){this.listener=fn}},input={
+    disabled:true,type:'number',value:'100',placeholder:'',removeAttribute(){}
+  };
+  fields.step_applies_mode=mode;fields.step_applies_value=input;
+  ctx.bindProcessAppliesControl();
+  mode.value='PERCENT';mode.listener();
+  assert.equal(input.disabled,false);assert.equal(input.type,'number');assert.equal(input.value,'');
+  mode.value='CONDITION';mode.listener();
+  assert.equal(input.type,'text');assert.equal(label.textContent,'Condición');
+  mode.value='ALL';mode.listener();
+  assert.equal(input.disabled,true);assert.equal(input.value,'100');
+  assert.match(help.textContent,/bloqueado/);
+});
+
+test('step, friction, risk and impact are one connected, reviewable progression',()=>{
+  const {ctx,e}=setup();
+  e.processSteps=[{id:'A',status:'ACTIVE',step_name:'Recibir'}];
+  e.frictions=[{id:'F',status:'ACTIVE',affected_steps:['A'],client_label:'Demora'}];
+  e.risks=[{step_ids:['A'],description:'Riesgo de retraso'}];
+  e.economicInputs=[{step_ids:['A'],driver_id:'ED01'}];
+  const html=ctx.clientProcessView(e,e.processSteps,e.frictions,'fricciones');
+  assert.match(html,/client-process-sequence/);
+  for(const [tab,title] of [['cliente','Pasos'],['fricciones','Fricciones'],['riesgos','Riesgos'],['impacto','Impacto']]){
+    assert.match(html,new RegExp('data-process-tab="'+tab+'"'));
+    assert.match(html,new RegExp(title));
+  }
+  assert.match(html,/Contexto heredado/);
+  assert.match(html,/data-process-tab="riesgos">Continuar a Riesgos/);
+  assert.match(css,/\.client-process-sequence:before/);
+});
+
+test('real SÍ/NO routes, merges and unconnected future destinations are visual graph edges',()=>{
+  const {ctx,e}=setup();
+  e.processSteps=[
+    {id:'D',status:'ACTIVE',step_name:'Decidir',step_type:'ST04',normal_next_step:'Y',exception_path:{destination_step:'N'}},
+    {id:'Y',status:'ACTIVE',step_name:'Aprobar',normal_next_step:'M'},
+    {id:'N',status:'ACTIVE',step_name:'Solicitar datos',normal_next_step:'M'},
+    {id:'M',status:'ACTIVE',step_name:'Continuar'}
+  ];
+  const graph=ctx.processGraphData(e,e.processSteps);
+  const yes=graph.edges.find(x=>x.from==='D'&&x.label==='SÍ');
+  const no=graph.edges.find(x=>x.from==='D'&&x.label==='NO');
+  assert.equal(yes.to,'Y');assert.equal(no.to,'N');
+  assert.equal(graph.positions.get('Y').row,graph.positions.get('N').row);
+  assert.notEqual(graph.positions.get('Y').col,graph.positions.get('N').col);
+  assert.equal(graph.edges.filter(x=>x.to==='M').length,2);
+  const html=ctx.processGraphHtml(e,e.processSteps,e.frictions,'Inicio','Fin');
+  assert.match(html,/process-graph-board/);
+  assert.match(html,/process-graph-lines/);
+  assert.match(html,/data-graph-edit-route="D"/);
+  ctx.relinkNormalFlow(e);
+  assert.equal(e.processSteps[0].normal_next_step,'Y');
+  assert.equal(e.processSteps[0].exception_path.destination_step,'N');
+  e.processSteps[0].normal_next_step='';
+  e.processSteps[0].exception_path={destination_step:''};
+  const pending=ctx.processGraphData(e,e.processSteps);
+  assert.ok(pending.nodes.some(x=>x.kind==='pending'&&x.route==='SÍ'));
+  assert.ok(pending.nodes.some(x=>x.kind==='pending'&&x.route==='NO'));
+  assert.match(ctx.processGraphHtml(e,e.processSteps,e.frictions,'Inicio','Fin'),/Elegir o crear destino/);
+});
+
+test('risk inherits confirmed friction locations via existing step_ids; economic context reuses upstream without invented costs',()=>{
+  assert.match(risk,/data-risk-friction/);
+  assert.match(risk,/normalizeArray\(f\.affected_steps\)/);
+  assert.match(risk,/riskRelatedFrictions/);
+  assert.doesNotMatch(risk,/friction_ids\s*:/);
+  assert.match(econ,/Contexto reutilizado del AS-IS/);
+  assert.match(econ,/linkedFrictions\.length/);
+  assert.match(econ,/linkedRisks\.length/);
+  assert.match(econ,/no se calculan automáticamente desde las fricciones o los riesgos/);
+  assert.match(css,/\.client-inherited-context\{/);
+});
+// [AUNEA-UAT-PROC-LAYERS-045] END

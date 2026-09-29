@@ -26,8 +26,25 @@ function selectedHtml(id,opts,selected,{detailId='',detailValue='',detailPlaceho
   return choices+`<div class="detail-wrap" data-v1-other-wrap="${id}"${otherOpen?'':' style="display:none"'}><input id="${detailId}" value="${attr(otherOpen?detailValue:'')}" placeholder="${attr(detailPlaceholder)}"></div>`;
 }
 function catalogOtherOption(opts){return (opts||[]).find(o=>String(o.value).toUpperCase()==='OTHER'||['otro','otra'].includes(String(o.label||'').trim().toLowerCase()))||null}
+
+/* [AUNEA-FE-PROC-CHOICES-025] START — Controls scoped to the four editable process-layer modals.
+   Canonical option values remain unchanged. STEP_REFERENCE retains its original dropdown. */
+function processChipSelect(id,opts,value='',placeholder='Selecciona…',extra=''){
+  return `<div class="process-chip-control" role="group" aria-label="${attr(placeholder)}">
+    <input type="hidden" id="${attr(id)}" value="${attr(value??'')}" ${extra}>
+    <div class="choice-grid process-chip-list">${(opts||[]).map(o=>`<button type="button" class="process-chip${String(o.value)===String(value)?' active':''}" data-process-chip="${attr(id)}" data-value="${attr(o.value)}" aria-pressed="${String(o.value)===String(value)}">${esc(o.label)}</button>`).join('')}</div>
+  </div>`;
+}
+/* [AUNEA-FE-PROC-CHOICES-025] END */
+function processDecisionStep(s){
+  return s?!!(s._ui?.has_decision===true||['ST04','ST05'].includes(String(s.step_type||''))||normalizeArray(s.decision_criteria).length||s.exception_path):false;
+}
+
 function auneaDropdownControl(id,opts,value='',placeholder='Selecciona…',extra=''){
-  return auneaSelectControl(id,opts,value,{extra,placeholder});
+  // A destination is a reference to another step, including a future step: preserve the
+  // searchable/dropdown reference UX and its existing routing contract.
+  if(id==='step_next'||id==='step_exc_dest')return auneaSelectControl(id,opts,value,{extra,placeholder});
+  return processChipSelect(id,opts,value,placeholder,extra);
 }
 function datalistControl(id,setId,value,placeholder){
   const opts=fieldOptions(setId),match=opts.find(o=>String(o.value)===String(value)),other=catalogOtherOption(opts),isCustom=!!value&&!match,isOther=!!other&&(String(value)===String(other.value)||isCustom),selectedValue=isCustom&&other?other.value:value,otherValue=other?.value||'__OTHER__',all=other?opts:[...opts,{value:'__OTHER__',label:'Otro / nuevo…'}];
@@ -38,6 +55,16 @@ function bindProcessDropdownDelegation(){
   if(typeof document==='undefined'||typeof document.addEventListener!=='function'||document.__auneaProcessDropdownBound)return;
   document.__auneaProcessDropdownBound=true;
   document.addEventListener('click',ev=>{
+    const chip=ev.target.closest?.('[data-process-chip]');
+    if(chip){
+      ev.preventDefault();ev.stopPropagation();
+      const input=document.getElementById(chip.dataset.processChip);if(!input)return;
+      input.value=chip.dataset.value??'';
+      chip.closest('.process-chip-control')?.querySelectorAll('[data-process-chip]').forEach(x=>{
+        const active=x===chip;x.classList.toggle('active',active);x.setAttribute('aria-pressed',String(active));
+      });
+      input.dispatchEvent(new Event('change',{bubbles:true}));return;
+    }
     const option=ev.target.closest?.('[data-process-select-option]');if(!option)return;
     ev.preventDefault();ev.stopPropagation();
     const id=option.dataset.processSelectOption,input=document.getElementById(id),box=option.closest('details.aunea-select');
@@ -54,7 +81,29 @@ function timeControl(id,minutes,unit='min',allowSpecial=false){
   const units=[{value:'min',label:'min'},{value:'h',label:'h'},{value:'day',label:'días'},{value:'week',label:'semanas'}],modes=[{value:'',label:'Dato disponible'},{value:'UNKNOWN',label:'No disponible'},{value:'ZERO',label:'Cero'}];
   return `<div class="compound-control"><input id="${id}" type="number" min="0" step="any" value="${attr(displayDuration(minutes,unit))}" placeholder="0">${auneaDropdownControl(id+'_unit',units,unit,'Unidad')}${allowSpecial?auneaDropdownControl(id+'_mode',modes,'','Estado'):''}</div>`;
 }
-function appliesControl(s){const a=s.applies_to&&typeof s.applies_to==='object'?s.applies_to:{mode:s.applies_to||'ALL',value:'',condition:''};const opts=[{value:'ALL',label:'Todos los casos'},{value:'PERCENT',label:'Porcentaje de casos'},{value:'CONDITION',label:'Sólo si se cumple una condición'}];return `<div class="compound-control">${auneaDropdownControl('step_applies_mode',opts,a.mode||'ALL','Aplicación')}<input id="step_applies_value" value="${attr(a.value||a.condition||'')}" placeholder="100% / condición breve"></div>`}
+function appliesControl(s){
+  const a=s.applies_to&&typeof s.applies_to==='object'?s.applies_to:{mode:s.applies_to||'ALL',value:'',condition:''};
+  const mode=a.mode||'ALL',opts=[{value:'ALL',label:'Todos los casos'},{value:'PERCENT',label:'Porcentaje de casos'},{value:'CONDITION',label:'Sólo si se cumple una condición'}];
+  const val=mode==='ALL'?'100':(mode==='CONDITION'?(a.condition||''):(a.value||''));
+  return `<div class="process-applies-control">${auneaDropdownControl('step_applies_mode',opts,mode,'Aplicación')}
+    <div class="field process-applies-detail" data-process-applies-detail><label data-process-applies-label>${mode==='CONDITION'?'Condición':'Porcentaje de casos'}</label>
+      <input id="step_applies_value" ${mode==='CONDITION'?'type="text"':'type="number" min="0" max="100" step="any"'} value="${attr(val)}" ${mode==='ALL'?'disabled':''} placeholder="${mode==='CONDITION'?'Describe cuándo aplica':'0–100'}">
+      <span class="field-help" data-process-applies-help>${mode==='ALL'?'Se aplica al 100 % de los casos; el porcentaje está bloqueado.':mode==='PERCENT'?'Indica el porcentaje de casos al que aplica.':'Describe la condición observable.'}</span>
+    </div></div>`;
+}
+function bindProcessAppliesControl(){
+  const mode=document.getElementById('step_applies_mode'),input=document.getElementById('step_applies_value');
+  const label=document.querySelector('[data-process-applies-label]'),help=document.querySelector('[data-process-applies-help]');
+  if(!mode||!input)return;
+  mode.addEventListener('change',()=>{
+    const m=mode.value;input.disabled=m==='ALL';input.type=m==='CONDITION'?'text':'number';
+    if(m==='CONDITION'){input.removeAttribute('min');input.removeAttribute('max');input.placeholder='Describe cuándo aplica';}
+    else{input.min='0';input.max='100';input.placeholder='0–100';}
+    input.value=m==='ALL'?'100':'';
+    if(label)label.textContent=m==='CONDITION'?'Condición':'Porcentaje de casos';
+    if(help)help.textContent=m==='ALL'?'Se aplica al 100 % de los casos; el porcentaje está bloqueado.':m==='PERCENT'?'Indica el porcentaje de casos al que aplica.':'Describe la condición observable.';
+  });
+}
 function decisionDestinationOptions(e,s){return [{value:'',label:'Selecciona destino…'},{value:'__NEW__',label:'+ Crear nuevo paso como destino'},...activeSteps(e).filter(z=>z.id!==s.id).map(z=>({value:z.id,label:z.step_name||'Paso sin nombre'}))]}
 function blankDecisionDestination(){return stepMeta({id:id('STEP'),status:'ACTIVE',occurrences_per_case:1,inputs:[],outputs:[],manual_actions:[],decision_criteria:[],communication_channels:[],evidence:[],active_time:0,wait_time:0,rework_time:0})}
 function exceptionControl(s,e){
@@ -125,6 +174,7 @@ function openStepModal(stepId=null,linkFromStepId=null,preset=null){
     const nextVal=document.getElementById('step_next').value;
     const et=document.getElementById('step_exc_type').value,ec=document.getElementById('step_exc_condition').value.trim(),ed=document.getElementById('step_exc_dest').value,eo=resolveCatalogInput(document.getElementById('step_exc_owner'));
     if(!s.step_name||s.step_name.length<3||!s.step_type||!s.actor)return toast('Nombre (mín. 3 caracteres), tipo y responsable son obligatorios.');
+    if(am==='PERCENT'&&(av===''||!Number.isFinite(Number(av))||Number(av)<0||Number(av)>100))return toast('Indica un porcentaje válido entre 0 y 100.');
     if(hasDecisionNow&&(!nextVal||!ed))return toast('Una decisión necesita destino para la ruta SÍ y para la ruta NO. Puedes elegir “Crear nuevo paso como destino”.');
     let yesDestination=nextVal,noDestination=ed;
     const createdDestinations=[];
@@ -137,6 +187,7 @@ function openStepModal(stepId=null,linkFromStepId=null,preset=null){
     if(!hasDecisionNow&&nextVal==='__NEW__'){render();openStepModal(null,s.id)}else{render()}
     if(persisted===false)toast('No se ha podido persistir este paso.');else toast(existing?'Cambios del paso guardados.':'Paso guardado.');
   },existing?'Guardar cambios':'Añadir paso');
+  bindProcessAppliesControl();
   document.querySelectorAll('[data-step-auto]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-step-auto]').forEach(x=>x.classList.remove('active'));b.classList.add('active');s.automation_state=b.dataset.value});
   document.querySelectorAll('[data-step-decision-flag]').forEach(b=>b.onclick=()=>{s._ui.has_decision=b.dataset.value==='YES';document.querySelectorAll('[data-step-decision-flag]').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('[data-step-decision-area]').forEach(x=>x.style.display=s._ui.has_decision?'':'none');const label=document.querySelector('[data-step-next-label]');if(label)label.textContent=s._ui.has_decision?'Ruta SÍ / afirmativa':'Siguiente paso normal'});
   document.querySelectorAll('[data-catalog-reference]').forEach(el=>el.addEventListener('change',()=>{const otherValue=String(el.dataset.otherValue||'__OTHER__'),wrap=document.querySelector(`[data-catalog-other-wrap="${el.dataset.catalogReference}"]`);if(wrap)wrap.style.display=String(el.value)===otherValue?'':'none';if(String(el.value)!==otherValue){const other=document.getElementById(`${el.id}_other`);if(other)other.value=''}}));
@@ -222,6 +273,8 @@ function removeStepFromFlow(stepId){
 
 function relinkNormalFlow(e){
   const steps=activeSteps(e);
+  // Reordering a branching map must not overwrite SÍ/NO routes or its reconvergences.
+  if(steps.some(processDecisionStep))return;
   steps.forEach((s,i)=>{s.normal_next_step=steps[i+1]?.id||''});
 }
 function moveStep(stepId,direction){
@@ -295,9 +348,116 @@ function flowIntermediateNodes(e,steps,fr){
     </div>`;
   }).join('');
 }
+
+/* [AUNEA-FE-PROC-GRAPH-035] START — Read-only graph projection and direct route editing.
+   Reads DF042 normal_next_step and DF043 exception_path.destination_step; never
+   introduces an independent copy of the routing model or auto-confirms client data. */
+function processGraphData(e,steps){
+  const byId=new Map(steps.map(s=>[s.id,s])),nodes=[{id:'__START__',kind:'start'}],edges=[];
+  const addNode=(id,kind='step',parent='',route='')=>{
+    if(!nodes.some(n=>n.id===id))nodes.push({id,kind,parent,route});return id;
+  };
+  const valid=id=>!!id&&byId.has(id),edge=(from,to,label='')=>edges.push({from,to,label});
+  if(!steps.length)edge('__START__',addNode('__END__','end'));
+  else edge('__START__',steps[0].id);
+  steps.forEach((step,i)=>{
+    addNode(step.id);
+    if(processDecisionStep(step)){
+      const yes=valid(step.normal_next_step)?step.normal_next_step:addNode('__YES__'+step.id,'pending',step.id,'SÍ');
+      const no=valid(step.exception_path?.destination_step)?step.exception_path.destination_step:addNode('__NO__'+step.id,'pending',step.id,'NO');
+      edge(step.id,yes,'SÍ');edge(step.id,no,'NO');
+    }else{
+      const next=valid(step.normal_next_step)?step.normal_next_step:
+        (step.normal_next_step?addNode('__NEXT__'+step.id,'pending',step.id,'SIGUIENTE'):(steps[i+1]?.id||addNode('__END__','end')));
+      edge(step.id,next);
+    }
+  });
+  const depth=new Map([['__START__',0]]),q=['__START__'];
+  while(q.length){const from=q.shift(),d=depth.get(from);
+    edges.filter(x=>x.from===from).forEach(x=>{if(!depth.has(x.to)){depth.set(x.to,d+1);q.push(x.to)}});
+  }
+  nodes.forEach(n=>{if(!depth.has(n.id))depth.set(n.id,Math.max(...depth.values())+1)});
+  const rows=new Map();
+  nodes.forEach(n=>{const d=depth.get(n.id);if(!rows.has(d))rows.set(d,[]);rows.get(d).push(n)});
+  const incoming=id=>edges.find(x=>x.to===id)?.label||'';
+  const cols=Math.max(3,...Array.from(rows.values(),a=>a.length));
+  const positions=new Map();
+  rows.forEach((list,depth)=>{
+    list.sort((a,b)=>({SÍ:-1,NO:1}[incoming(a.id)]||0)-({SÍ:-1,NO:1}[incoming(b.id)]||0));
+    list.forEach((n,i)=>{const col=list.length===1?Math.ceil(cols/2):Math.round(i*(cols-1)/(list.length-1))+1;positions.set(n.id,{row:depth+1,col})});
+  });
+  return {nodes,edges,cols,positions};
+}
+function graphNodeCard(e,s,i,fr){
+  const decision=processDecisionStep(s),steps=activeSteps(e);
+  const frOn=fr.filter(f=>normalizeArray(f.affected_steps).includes(s.id));
+  const risks=(e.risks||[]).filter(r=>normalizeArray(r.step_ids).includes(s.id));
+  const money=(e.economicInputs||[]).filter(x=>normalizeArray(x.step_ids).includes(s.id));
+  const dest=id=>steps.find(x=>x.id===id)?.step_name||'Definir destino';
+  const actions='<div class="flow-step-tools">'
+    +'<button type="button" data-move-step-up="'+attr(s.id)+'" '+(i===0?'disabled':'')+'>←</button>'
+    +'<button type="button" data-move-step-down="'+attr(s.id)+'" '+(i===steps.length-1?'disabled':'')+'>→</button>'
+    +'<button type="button" data-edit-step="'+attr(s.id)+'">Editar</button>'
+    +'<button type="button" class="danger-text" data-delete-step="'+attr(s.id)+'">Eliminar</button></div>';
+  const route=decision?'<div class="graph-route-controls">'
+    +'<button type="button" data-graph-edit-route="'+attr(s.id)+'" data-graph-route-kind="yes">SÍ → '+esc(dest(s.normal_next_step))+'</button>'
+    +'<button type="button" data-graph-edit-route="'+attr(s.id)+'" data-graph-route-kind="no">NO → '+esc(dest(s.exception_path?.destination_step))+'</button></div>':'';
+  return '<div class="flow-step graph-flow-step '+(decision?'is-decision ':'')+(processLayerState(e).map?'confirmed':'')+'" data-drag-step="'+attr(s.id)+'">'
+    +actions+'<span class="boundary-kicker">'+(decision?'Decisión':'Paso '+(i+1))+'</span><h4>'+esc(s.step_name||'Paso sin nombre')+'</h4>'
+    +'<p>'+esc(labelFrom('OS_ACTOR_ROLE',s.actor)||'—')+' · '+esc(labelFrom('OS_TOOL_CATEGORY',s.tool)||'—')+'</p>'
+    +(num(s.active_time)?'<p>'+num(s.active_time)+' min trabajo</p>':'')
+    +route+'<div class="process-node-links">'
+    +frOn.map(f=>'<span class="friction-badge" data-edit-friction="'+attr(f.id)+'">Fricción · '+esc(labelFrom('OS_FRICTION_TYPE',f.friction_type))+'</span>').join('')
+    +risks.map(r=>'<span class="risk-badge">Riesgo · '+esc(r.description||r.category)+'</span>').join('')
+    +money.map(x=>'<span class="economic-badge">Impacto · '+esc(typeof econDriverLabel==='function'?econDriverLabel(x.driver_id):x.driver_id)+'</span>').join('')
+    +'</div><div class="process-node-actions"><button type="button" data-add-friction-step="'+attr(s.id)+'">+ Fricción</button>'
+    +'<button type="button" data-add-risk-step="'+attr(s.id)+'">+ Riesgo</button>'
+    +'<button type="button" data-add-economic-step="'+attr(s.id)+'">+ Impacto</button></div></div>';
+}
+function processGraphHtml(e,steps,fr,start,finish){
+  const model=processGraphData(e,steps),cell=n=>{
+    const p=model.positions.get(n.id),style='style="grid-row:'+p.row+';grid-column:'+p.col+'"',id='data-graph-node="'+attr(n.id)+'"';
+    let html='';
+    if(n.kind==='start')html=flowBoundaryNode('start',start);
+    else if(n.kind==='end')html=flowBoundaryNode('end',finish);
+    else if(n.kind==='pending')html='<button type="button" class="graph-route-pending" data-graph-edit-route="'+attr(n.parent)+'" data-graph-route-kind="'+(n.route==='NO'?'no':'yes')+'">'+esc(n.route)+' · Elegir o crear destino</button>';
+    else {const step=steps.find(x=>x.id===n.id);html=graphNodeCard(e,step,steps.indexOf(step),fr);}
+    return '<div class="process-graph-cell" '+style+' '+id+'>'+html+'</div>';
+  };
+  return '<div class="flow-canvas client-process-canvas process-graph-canvas"><div class="process-graph-board" style="--graph-cols:'+model.cols+'" data-graph-edges="'+attr(JSON.stringify(model.edges))+'">'
+    +'<svg class="process-graph-lines" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>'
+    +model.nodes.map(cell).join('')+'</div></div>';
+}
+function drawProcessGraph(){
+  if(typeof document==='undefined'||typeof document.querySelector!=='function')return;
+  const board=document.querySelector('.process-graph-board');if(!board)return;
+  const svg=board.querySelector('.process-graph-lines');if(!svg)return;
+  const ns='http://www.w3.org/2000/svg',rect=board.getBoundingClientRect(),els=new Map();
+  board.querySelectorAll('[data-graph-node]').forEach(el=>els.set(el.dataset.graphNode,el));
+  const edges=JSON.parse(board.dataset.graphEdges||'[]');
+  svg.setAttribute('viewBox','0 0 '+board.scrollWidth+' '+board.scrollHeight);
+  svg.innerHTML='<defs><marker id="auneaGraphArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#718e80"/></marker></defs>';
+  edges.forEach(edge=>{
+    const a=els.get(edge.from),b=els.get(edge.to);if(!a||!b)return;
+    const ar=a.getBoundingClientRect(),br=b.getBoundingClientRect();
+    const forward=br.top>ar.bottom+6;
+    let x1=ar.left+ar.width/2-rect.left,y1=ar.bottom-rect.top;
+    let x2=br.left+br.width/2-rect.left,y2=br.top-rect.top;
+    let d;
+    if(forward){const ym=y1+Math.max(18,(y2-y1)/2);d='M'+x1+' '+y1+'V'+ym+'H'+x2+'V'+(y2-5);}
+    else{const x=Math.max(12,Math.min(x1,x2)-55);y1=ar.top+ar.height/2-rect.top;y2=br.top+br.height/2-rect.top;x1=ar.left-rect.left;x2=br.left-rect.left;d='M'+x1+' '+y1+'H'+x+'V'+y2+'H'+(x2-5);}
+    const path=document.createElementNS(ns,'path');path.setAttribute('d',d);path.setAttribute('class','graph-path '+(edge.label==='NO'?'graph-path-alternative':''));path.setAttribute('marker-end','url(#auneaGraphArrow)');svg.appendChild(path);
+    if(edge.label){const text=document.createElementNS(ns,'text');text.textContent=edge.label;text.setAttribute('class','graph-path-label');text.setAttribute('x',String(forward?x1+6:x1-18));text.setAttribute('y',String(forward?y1+14:y1-7));svg.appendChild(text);}
+  });
+}
+if(typeof window!=='undefined'&&!window.__auneaProcessGraphResize){
+  window.__auneaProcessGraphResize=true;window.addEventListener('resize',()=>drawProcessGraph());
+}
+
+/* [AUNEA-FE-PROC-GRAPH-035] END */
 function clientLayerBody(e,steps,fr,tab){
   const start=processBoundaryValue(e,'DF014','Límite inicial pendiente','DF012'),finish=processBoundaryValue(e,'DF015','Límite final pendiente','DF013');
-  const flow=`<div class="flow-canvas client-process-canvas"><div class="flow-track">${flowBoundaryNode('start',start)}${flowIntermediateNodes(e,steps,fr)}<div class="flow-connector"><button type="button" class="flow-insert" data-add-after="${steps.at(-1)?.id||''}">+</button></div>${flowBoundaryNode('end',finish)}</div></div>`;
+  const flow=steps.some(processDecisionStep)?processGraphHtml(e,steps,fr,start,finish):`<div class="flow-canvas client-process-canvas"><div class="flow-track">${flowBoundaryNode('start',start)}${flowIntermediateNodes(e,steps,fr)}<div class="flow-connector"><button type="button" class="flow-insert" data-add-after="${steps.at(-1)?.id||''}">+</button></div>${flowBoundaryNode('end',finish)}</div></div>`;
   if(tab==='fricciones')return flow+frictionsEditor(e,steps,fr);
   if(tab==='riesgos')return flow+riskBuilder(e);
   if(tab==='impacto')return flow+economicBuilder(e);
@@ -306,6 +466,24 @@ function clientLayerBody(e,steps,fr,tab){
 function clientProcessView(e,steps,fr,tab='cliente'){
   const riskCount=(e.risks||[]).length,econCount=(e.economicInputs||[]).length,company=(typeof companyById==='function'?companyById(e.companyId)?.name:'')||e.answers?.DF001||'Empresa',processName=e.answers?.DF011||e.processName||'Proceso sin nombre';
   const clientBar=`<div class="client-process-topbar"><img src="./assets/brand/Logo.png" alt="AUNEA"><div class="client-process-context"><span>${esc(company)}</span><b>${esc(processName)}</b></div><div class="client-process-state"><span>Sesión de diagnóstico</span><b>Editor compartido</b></div></div>`;
+  
+  // [AUNEA-FE-PROC-LAYERS-045] START — Continuous client journey on one AS-IS
+  const stages=[
+    {tab:'cliente',title:'Pasos',hint:steps.length+' registrados',done:!!processLayerState(e).map},
+    {tab:'fricciones',title:'Fricciones',hint:fr.length+' vinculadas',done:!!processLayerState(e).frictions},
+    {tab:'riesgos',title:'Riesgos',hint:riskCount+' registrados',done:!!processLayerState(e).risks},
+    {tab:'impacto',title:'Impacto',hint:econCount+' medidos',done:!!processLayerState(e).impact}
+  ];
+  const sequence='<nav class="client-process-sequence" aria-label="Secuencia incremental del diagnóstico">'
+    +stages.map((x,i)=>'<button type="button" class="client-sequence-stage '+(tab===x.tab?'active ':'')+(x.done?'complete':'')+'" data-process-tab="'+x.tab+'" aria-current="'+(tab===x.tab?'step':'false')+'"><span class="sequence-number">'+(i+1)+'</span><span class="sequence-copy"><b>'+x.title+'</b><small>'+x.hint+'</small></span></button>').join('')+'</nav>';
+  const upstream=tab==='fricciones'?steps.length+' pasos disponibles para vincular fricciones':
+    tab==='riesgos'?fr.length+' fricciones registradas · los riesgos se asocian a sus pasos afectados':
+    tab==='impacto'?fr.length+' fricciones y '+riskCount+' riesgos en el mismo mapa; sólo cuantifica importes acreditados':
+    'Construye la secuencia y configura las bifurcaciones reales del proceso';
+  const lineage='<div class="client-process-lineage"><b>Contexto heredado</b><span>'+esc(upstream)+'</span></div>';
+  const nextIndex=stages.findIndex(x=>x.tab===tab)+1,next=stages[nextIndex];
+  const nextAction=next?'<button class="btn btn-outline client-process-next" type="button" data-process-tab="'+next.tab+'">Continuar a '+next.title+' →</button>':'';
+// [AUNEA-FE-PROC-LAYERS-045] END
   const layerRail=`<aside class="client-process-layer-rail" aria-label="Capas del diagnóstico"><div class="client-rail-title">Capas del diagnóstico</div>
     <button class="client-rail-item ${tab==='cliente'?'active':''}" data-process-tab="cliente"><b>Mapa del proceso</b><span>${steps.length} paso(s)</span></button>
     <button class="client-rail-item ${tab==='fricciones'?'active':''}" data-process-tab="fricciones"><b>Fricciones y evidencia</b><span>${fr.length}</span></button>
@@ -313,7 +491,7 @@ function clientProcessView(e,steps,fr,tab='cliente'){
     <button class="client-rail-item ${tab==='impacto'?'active':''}" data-process-tab="impacto"><b>Impacto económico</b><span>${econCount}</span></button></aside>`;
   const key=processLayerKeySafe(tab),layer=processLayerState(e),labels={map:'mapa AS-IS',frictions:'fricciones y evidencia',risks:'riesgos y controles',impact:'impacto económico'},done=!!layer[key];
   const confirm=`<div class="flow-confirm"><div><b>${done?'Capa confirmada':'Confirmación pendiente'}</b><div class="field-help">${esc(labels[key])}</div></div><button class="btn ${done?'btn-outline':'btn-primary'}" id="confirmAsIs">${done?'Reconfirmar':'Confirmar'} ${esc(labels[key])}</button></div>`;
-  return section('Editor con cliente','Mapa, fricciones, riesgos e impacto se editan sobre el mismo contexto.',clientBar+`<div class="client-process-workspace">${layerRail}<div class="client-process-main">${clientLayerBody(e,steps,fr,tab)}${confirm}</div></div>`);
+  return section('Editor con cliente','Mapa, fricciones, riesgos e impacto se editan sobre el mismo contexto.',clientBar+`<div class="client-process-workspace">${layerRail}<div class="client-process-main">${sequence}${lineage}${clientLayerBody(e,steps,fr,tab)}${confirm}${nextAction}</div></div>`);
 }
 function stepsEditor(e,steps,fr){
   const discrepancies=stepOrderDiscrepancies(steps);
@@ -362,6 +540,12 @@ bindForms=function(){
   document.querySelectorAll('[data-add-after]').forEach(b=>b.onclick=e=>{e.stopPropagation();openStepModal(null,b.dataset.addAfter||null)});
   document.querySelectorAll('[data-delete-step]').forEach(b=>b.onclick=ev=>{ev.preventDefault();ev.stopPropagation();removeStepFromFlow(b.dataset.deleteStep)});
   document.querySelectorAll('[data-drag-step]').forEach(el=>{el.ondragstart=ev=>{ev.dataTransfer?.setData('text/plain',el.dataset.dragStep)};el.ondragover=ev=>ev.preventDefault();el.ondrop=ev=>{ev.preventDefault();const source=ev.dataTransfer?.getData('text/plain');if(source)reorderStepBefore(source,el.dataset.dragStep)}});
-  document.querySelectorAll('[data-validated-case]').forEach(b=>b.onclick=()=>instantiateValidatedCase(b.dataset.validatedCase));
+  document.querySelectorAll('[data-graph-edit-route]').forEach(b=>b.onclick=ev=>{
+    ev.preventDefault();ev.stopPropagation();openStepModal(b.dataset.graphEditRoute);
+    const details=[...document.querySelectorAll('.step-group')].find(x=>x.querySelector('summary')?.textContent?.includes('D. Flujo'));
+    if(details){details.open=true;const dest=document.getElementById(b.dataset.graphRouteKind==='no'?'step_exc_dest':'step_next');const target=dest?.closest('.canonical-aunea-select')||details;target.scrollIntoView?.({block:'nearest',behavior:'smooth'});const dropdown=target.querySelector?.('details.aunea-select');if(dropdown)dropdown.open=true;}
+  });
+  if(typeof requestAnimationFrame==='function')requestAnimationFrame(drawProcessGraph);
+    document.querySelectorAll('[data-validated-case]').forEach(b=>b.onclick=()=>instantiateValidatedCase(b.dataset.validatedCase));
 };
 // [AUNEA-FE-PROC-EDITOR-020] END
