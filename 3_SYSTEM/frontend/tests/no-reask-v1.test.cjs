@@ -274,4 +274,23 @@ test('S08 renders required outcomes and future constraints before any AS-IS step
   finally{ctx.schema.fields=old}
 });
 
+test('DF078/DF079 reuse only the current backend per-case projection',()=>{
+  // Exact request fingerprints prevent the caller from reusing an outdated economic baseline.
+  const e={...eng,answers:{DF021:100,DF022:'MONTH'},processSteps:[{
+    id:'S1',status:'ACTIVE',active_time:10,rework_time:5,error_rate:{mode:'percent',value:10}
+  }],frictions:[],economicInputs:[]};
+  ctx.economicTimeRequest=record=>({
+    volume:record.answers.DF021,period:record.answers.DF022,steps:record.processSteps,frictions:record.frictions
+  });
+  e._sessionTimeProjection={
+    requestKey:JSON.stringify(ctx.economicTimeRequest(e)),
+    output:{active_minutes_per_case:10,rework_minutes_per_case:0.5}
+  };
+  assert.equal(ctx.reusedValue('DF078',e).value,10);
+  assert.equal(ctx.reusedValue('DF079',e).value,0.5);
+  e.processSteps[0].error_rate.value=30;
+  assert.equal(ctx.reusedValue('DF078',e),undefined);
+  assert.equal(ctx.reusedValue('DF079',e),undefined);
+});
+
 // [AUNEA-UAT-NOREASK-010] END
