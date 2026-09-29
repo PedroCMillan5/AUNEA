@@ -13,7 +13,9 @@ function makeCtx(){
   const schema={tables:{REF_ECON_DRIVER:[{Economic_Driver_ID:'ED01',Name:'Manual execution time'},{Economic_Driver_ID:'ED02',Name:'Duplicate entry time'}]}};
   const eng={economicInputs:[],risks:[],processSteps:[],__contributors:[],__waitContributors:[]};
   const ctx={
-    console,schema,
+    console,schema,state:{backendOnline:true,backendUrl:'http://backend.test'},
+    checkBackend:async()=>true,normalizeArray:v=>Array.isArray(v)?v:v==null?[]:[v],
+    fetch:async()=>({ok:true,json:async()=>({status:'INCOMPLETE',gaps:['DF021: volumen habitual pendiente'],annual_cases:null})}),
     currentEng:()=>eng,
     activeTimeContributors:e=>e.__contributors||[],
     waitTimeContributors:e=>e.__waitContributors||[],
@@ -53,7 +55,7 @@ test('addEconomic still shows the manual-entry instruction (but no "Pasos con...
   const ctx=makeCtx();
   ctx.addEconomic();
   assert.doesNotMatch(ctx.__lastBody,/Pasos con tiempo/);
-  assert.match(ctx.__lastBody,/Falta volumen y periodo habitual válidos/);
+  assert.match(ctx.__lastBody,/Consultando el backend/);
 });
 
 test('addEconomic warns (without blocking the save) when active/wait hours are saved as 0 despite Proceso having recorded time in those steps, and stays silent when there is no such evidence',()=>{
@@ -129,27 +131,48 @@ test('economic time entry uses the same value plus unit interaction pattern as p
 });
 
 
-test('economic preview annualizes observed activity, wait, rework and friction effort without treating all work as waste',()=>{
+test('economic preview always uses server output, never browser annualization',async()=>{
   const ctx=makeCtx(),e=ctx.__eng;
   e.answers={DF021:100,DF022:'MONTH'};
   e.processSteps=[{id:'S1',status:'ACTIVE',step_name:'Validar',active_time:10,wait_time:20,rework_time:5,occurrences_per_case:1,applies_to:{mode:'ALL'},error_rate:{mode:'percent',value:10}}];
   e.frictions=[{id:'F1',status:'ACTIVE',affected_steps:['S1'],frequency:{mode:'percent',value:20},active_time_loss:{value:2}}];
-  const p=ctx.economicTimeProjection(e);
+  let request=null;ctx.fetch=async(url,options)=>{
+    request={url,body:JSON.parse(options.body)};
+    return {ok:true,json:async()=>({status:'CALCULATED',annual_cases:1200,annual_active_hours:200,annual_wait_exposure_hours:400,annual_rework_hours:10,gaps:[],frictions_pending_overlap_review:[]})};
+  };
+  const p=await ctx.economicTimeProjection(e);
   assert.equal(p.annualCases,1200);
   assert.equal(p.active,200);
   assert.equal(p.wait,400);
   assert.equal(p.rework,10);
-  assert.equal(p.frictionExtra,8);
-  assert.equal(ctx.economicProjectionForDriver(p,'ED01').active,200,'ED01 is total work, not automatically waste');
-  assert.equal(ctx.economicProjectionForDriver(p,'ED05').active,10,'ED05 is weighted rework only');
-  assert.equal(ctx.economicProjectionForDriver(p,'ED13').wait,400,'ED13 is waiting and not paid work');
-  assert.equal(ctx.economicProjectionForDriver(p,'ED02'),null,'unmapped drivers remain manual');
+  assert.match(request.url,/\\/v1\\/diagnostic\\/time-projection$/);
+  assert.equal(request.body.volume,100);
+  assert.equal(request.body.period,'MONTH');
+  assert.equal(request.body.steps.length,1);
+  assert.equal(request.body.frictions.length,1);
+  assert.equal(ctx.economicProjectionForDriver(p,'ED01').active,200);
+  assert.equal(ctx.economicProjectionForDriver(p,'ED05').active,10);
+  assert.equal(ctx.economicProjectionForDriver(p,'ED13').wait,400);
+  assert.equal(ctx.economicProjectionForDriver(p,'ED02'),null);
 });
-test('economic preview refuses conditional step annualization without a verified share',()=>{
+test('frontend cannot invent operating calendar or reuse an incomplete server projection',async()=>{
   const ctx=makeCtx(),e=ctx.__eng;e.answers={DF021:10,DF022:'WEEK'};
   e.processSteps=[{id:'S2',status:'ACTIVE',active_time:8,applies_to:{mode:'CONDITION',condition:'Si excede presupuesto'}}];
-  const p=ctx.economicTimeProjection(e);
-  assert.ok(p.missing.length);
+  let sent=null;ctx.fetch=async(url,options)=>{
+    sent=JSON.parse(options.body);
+    return {ok:true,json:async()=>({status:'INCOMPLETE',annual_cases:null,annual_active_hours:null,gaps:['Se requieren semanas operativas'],frictions_pending_overlap_review:[]})};
+  };
+  const p=await ctx.economicTimeProjection(e);
+  assert.equal(sent.operating_weeks_per_year,undefined);
+  assert.equal(sent.operating_days_per_year,undefined);
+  assert.equal(p.available,false);
   assert.equal(ctx.economicProjectionForDriver(p,'ED01'),null);
+  assert.doesNotMatch(code,/DAY:365|WEEK:52/);
+});
+test('when the backend is offline, economic preview is explicitly unavailable',async()=>{
+  const ctx=makeCtx();ctx.state.backendOnline=false;ctx.checkBackend=async()=>false;
+  const p=await ctx.economicTimeProjection(ctx.__eng);
+  assert.equal(p.available,false);
+  assert.match(p.reason,/Backend no conectado/);
 });
 // [AUNEA-UAT-ECON-010] END
