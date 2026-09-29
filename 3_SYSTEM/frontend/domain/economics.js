@@ -41,57 +41,55 @@ function econDropdown(id,opts,value='',placeholder='Selecciona…'){
   return auneaSelectControl(id,opts,value,{placeholder});
 }
 
-/* [AUNEA-FE-ECON-DERIVATION-035] START — preview of time from captured volume and step timing.
-   SOURCE: Diagnostic Master DF021/DF022, DF037–040; client validates source on Save.
-   Never infer wasted time from all labour, monetary savings, or official server economics. */
-function economicAnnualVolume(e){
-  const raw=e.answers?.DF021,period=String(e.answers?.DF022||'').toUpperCase(),n=Number(raw&&typeof raw==='object'?raw.value:raw);
-  const factor={DAY:365,WEEK:52,MONTH:12,QUARTER:4,YEAR:1}[period];
-  return n>0&&Number.isFinite(n)&&factor?n*factor:null;
+/* [AUNEA-FE-ECON-DERIVATION-035] START — backend-only preview of captured time.
+   SOURCE: Diagnostic Master v1.2 RULE_ECON_ANNUALIZE and DEC-033/034/050.
+   No DAY×365, WEEK×52, branch, rework or friction formulas may live here. */
+function economicTimeRequest(e,stepIds=[]){
+  const raw=e.answers?.DF021;
+  const value=raw&&typeof raw==='object'?raw.value:raw;
+  const selected=new Set(stepIds);
+  const steps=(typeof activeSteps==='function'?activeSteps(e):e.processSteps||[])
+    .filter(s=>!selected.size||selected.has(s.id));
+  const selectedIds=new Set(steps.map(s=>s.id));
+  return {
+    volume:value===null||value===undefined||value===''?null:Number(value),
+    period:e.answers?.DF022||null,
+    // No invented operating calendar: weekly/daily projections stay conditional
+    // until governed operating weeks/days are captured by their canonical owner.
+    steps,frictions:(typeof activeFrictions==='function'?activeFrictions(e):e.frictions||[])
+      .filter(f=>normalizeArray(f.affected_steps).some(id=>selectedIds.has(id)))
+  };
 }
-function economicTimeProjection(e,stepIds=[]){
-  const annualCases=economicAnnualVolume(e);
-  const steps=(typeof activeSteps==='function'?activeSteps(e):e.processSteps||[]).filter(s=>!stepIds.length||stepIds.includes(s.id));
-  if(!annualCases||!steps.length)return {available:false,reason:!annualCases?'Falta volumen y periodo habitual válidos en Demanda, volumen y servicio.':'No hay pasos seleccionados con tiempos.'};
-  let active=0,wait=0,rework=0,hasRework=false,missing=[];
-  steps.forEach(s=>{
-    const a=s.applies_to&&typeof s.applies_to==='object'?s.applies_to:{mode:s.applies_to||'ALL'};
-    const mode=a.mode||'ALL',share=mode==='ALL'?1:mode==='PERCENT'?Number(a.value)/100:NaN;
-    if(!Number.isFinite(share)||share<0||share>1){missing.push('Aplicación de '+(s.step_name||s.id));return}
-    const cases=annualCases*share*Math.max(0,Number(s.occurrences_per_case??1));
-    if(Number.isFinite(Number(s.active_time)))active+=cases*Number(s.active_time)/60;
-    if(Number.isFinite(Number(s.wait_time)))wait+=cases*Number(s.wait_time)/60;
-    const rate=s.error_rate&&typeof s.error_rate==='object'?s.error_rate:{value:s.error_rate||0,mode:'percent'};
-    const rateValue=Number(rate.value);
-    if(Number(s.rework_time)>0&&rate.mode==='percent'&&Number.isFinite(rateValue)&&rateValue>=0&&rateValue<=100){
-      hasRework=true;rework+=cases*Number(s.rework_time)*(rateValue/100)/60;
-    }else if(Number(s.rework_time)>0)missing.push('Frecuencia de retrabajo: '+(s.step_name||s.id));
+async function economicTimeProjection(e,stepIds=[]){
+  const req=economicTimeRequest(e,stepIds);
+  if(!state.backendOnline&&!(await checkBackend()))
+    return {available:false,reason:'Backend no conectado. No se calcularán cifras en el navegador.',missing:['Backend no disponible']};
+  const response=await fetch(`${state.backendUrl}/v1/diagnostic/time-projection`,{
+    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(req)
   });
-  // Friction-specific additional work is shown separately: it may overlap with rework and
-  // must never be silently added to baseline hours or represented as recoverable saving.
-  let frictionExtra=0,hasFrictionExtra=false;
-  const selected=new Set(steps.map(x=>x.id));
-  (typeof activeFrictions==='function'?activeFrictions(e):e.frictions||[]).filter(f=>
-    (Array.isArray(f.affected_steps)?f.affected_steps:[]).some(id=>selected.has(id))
-  ).forEach(f=>{
-    const extra=Number(f.active_time_loss?.value||0),freq=Number(f.frequency?.value||0),
-      mode=String(f.frequency?.mode||'').toLowerCase(),period=String(f.frequency?.period||'').toLowerCase();
-    if(extra<=0||freq<=0)return;
-    let cases=null;
-    if(mode==='percent'&&freq<=100)cases=annualCases*freq/100;
-    else if(mode==='count'){
-      const periods={case:annualCases,day:365,week:52,month:12,year:1};
-      if(periods[period])cases=freq*periods[period];
-    }
-    if(cases!==null){hasFrictionExtra=true;frictionExtra+=extra*cases/60}
-  });
-  return {available:true,annualCases,active,wait,rework,hasRework,frictionExtra,hasFrictionExtra,missing,stepCount:steps.length};
+  if(!response.ok)throw new Error('El backend no pudo normalizar el tiempo del proceso.');
+  const output=await response.json();
+  return {
+    available:output.status==='CALCULATED',
+    annualCases:output.annual_cases,
+    active:output.annual_active_hours,
+    wait:output.annual_wait_exposure_hours,
+    rework:output.annual_rework_hours,
+    missing:output.gaps||[],
+    pendingFrictions:output.frictions_pending_overlap_review||[],
+    stepCount:req.steps.length,
+    status:output.status,
+    reason:(output.gaps||[]).join('; ')||'Cálculo no disponible'
+  };
 }
 function economicProjectionForDriver(projection,driver){
-  if(!projection.available||projection.missing.length)return null;
-  if(driver==='ED01')return {active:projection.active,wait:projection.wait,label:'Tiempo total actual de ejecución y espera'};
-  if(driver==='ED05'&&projection.hasRework)return {active:projection.rework,wait:0,label:'Retrabajo ponderado por tasa de error registrada'};
-  if(driver==='ED13')return {active:0,wait:projection.wait,label:'Espera actual, separada del trabajo'};
+  if(!projection?.available||projection.missing?.length)return null;
+  if(driver==='ED01'&&projection.active!==null)
+    return {active:projection.active,wait:0,label:'Trabajo activo total actual'};
+  if(driver==='ED05'&&projection.rework!==null)
+    return {active:projection.rework,wait:0,label:'Retrabajo ponderado por frecuencia'};
+  if(driver==='ED13'&&projection.wait!==null)
+    return {active:0,wait:projection.wait,label:'Exposición de espera, no ciclo end-to-end'};
   return null;
 }
 /* [AUNEA-FE-ECON-DERIVATION-035] END */
@@ -112,21 +110,17 @@ function addEconomic(preselectedSteps=[]){
     +'<p>'+steps.length+' pasos · '+linkedFrictions.length+' fricciones · '+linkedRisks.length+' riesgos disponibles como evidencia contextual.</p>'
     +(linkedFrictions.length?'<p>Fricciones: '+linkedFrictions.map(f=>esc(f.client_label||labelFrom('OS_FRICTION_TYPE',f.friction_type))).join(' · ')+'</p>':'')
     +'<small>El cálculo previo reutiliza los tiempos de los pasos y el volumen capturado. La espera no equivale a coste ni el trabajo activo equivale a desperdicio o ahorro.</small></div>';
-  const initialProjection=economicTimeProjection(eng,preselectedSteps);
-  const initialDriver=drivers[0]?.Economic_Driver_ID||'';
-  const initialSuggested=economicProjectionForDriver(initialProjection,initialDriver);
-  const preview=(value)=>Number(value||0).toLocaleString('es-ES',{maximumFractionDigits:2});
-  const initialPreview=initialProjection.available
-    ?'Volumen de referencia: '+preview(initialProjection.annualCases)+' casos/año · Trabajo activo '+preview(initialProjection.active)+' h/año · Espera '+preview(initialProjection.wait)+' h/año'+(initialProjection.hasRework?' · Retrabajo '+preview(initialProjection.rework)+' h/año':'')+(initialProjection.hasFrictionExtra?' · Trabajo adicional declarado en fricciones '+preview(initialProjection.frictionExtra)+' h/año (posible solapamiento con retrabajo)':'')
-    :initialProjection.reason;
+  let serverProjection=null,serverSelection='',requestSequence=0;
+  const preview=value=>Number(value||0).toLocaleString('es-ES',{maximumFractionDigits:2});
+  const initialPreview='Comprobando los datos de volumen, tiempo y calendario con el backend…';
   const activeHelp=activeContributors.length?`<div class="field-help">Pasos con tiempo activo registrado: ${esc(activeContributors.join(', '))}. Se reutilizan para obtener un cálculo revisable cuando el volumen y la aplicación están completos.</div>`:'<div class="field-help">Cuando faltan tiempos o volumen, indica el dato anual manualmente con su evidencia.</div>';
   const waitHelp=waitContributors.length?`<div class="field-help">Pasos con espera registrada: ${esc(waitContributors.join(', '))}. Se calcula por separado del trabajo; no constituye por sí misma ahorro económico.</div>`:'<div class="field-help">La espera se registra aparte del trabajo. Si faltan datos, introduce una cifra anual validada.</div>';
   openModal('Añadir input económico',`<div class="step-groups process-modal-form economic-modal-form">${inheritedContext}
-    <details class="step-group" open><summary>Impacto en tiempo y evidencia</summary><div class="form-grid"><div class="field full"><div class="notice info" id="economicDerivedPreview" role="status">${esc(initialPreview)}</div><div class="field-help">Vista previa calculada con DF021/DF022 y los tiempos registrados. El trabajo total no es tiempo desperdiciado; sólo el retrabajo medido se muestra como posible ineficiencia, sin sumar fricciones que pudieran solaparse.</div></div>
+    <details class="step-group" open><summary>Impacto en tiempo y evidencia</summary><div class="form-grid"><div class="field full"><div class="notice info" id="economicDerivedPreview" role="status">${esc(initialPreview)}</div><div class="field-help">Vista previa procedente del backend con DF021/DF022 y los tiempos registrados. El trabajo total no es tiempo desperdiciado; sólo el retrabajo medido se muestra como posible ineficiencia, sin sumar fricciones que pudieran solaparse.</div></div>
       <div class="field full"><label>Pasos del proceso relacionados</label><div class="choice-grid">${steps.map(s=>`<div class="choice"><input type="checkbox" id="econ_step_${attr(s.id)}" data-econ-step="${attr(s.id)}" ${preselectedSteps.includes(s.id)?'checked':''}><label for="econ_step_${attr(s.id)}">${esc(s.step_name||s.id)}</label></div>`).join('')}</div></div>
       <div class="field full"><label>Concepto económico</label>${econDropdown('econDriver',drivers.map(d=>({value:d.Economic_Driver_ID,label:econDriverLabel(d.Economic_Driver_ID)})),drivers[0]?.Economic_Driver_ID||'','Selecciona…')}</div>
-      <div class="field"><label>Tiempo activo atribuible</label>${econAnnualTimeControl('econActive',initialSuggested?.active||0,'h')}${activeHelp}</div>
-      <div class="field"><label>Tiempo de espera atribuible</label>${econAnnualTimeControl('econWait',initialSuggested?.wait||0,'h')}${waitHelp}</div>
+      <div class="field"><label>Tiempo activo atribuible</label>${econAnnualTimeControl('econActive',0,'h')}${activeHelp}</div>
+      <div class="field"><label>Tiempo de espera atribuible</label>${econAnnualTimeControl('econWait',0,'h')}${waitHelp}</div>
       <div class="field full"><label>Tipo de evidencia</label>${econDropdown('econEvidence',Object.entries(I18N_LABELS_ES.evidence_quality).map(([value,label])=>({value,label})),Object.keys(I18N_LABELS_ES.evidence_quality)[0]||'','Selecciona…')}</div>
     </div></details>
     <details class="step-group" open><summary>Costes, pérdidas y ahorro realizado</summary><div class="form-grid">
@@ -137,7 +131,8 @@ function addEconomic(preselectedSteps=[]){
     </div></details>
   </div>`,()=>{
     const step_ids=typeof document.querySelectorAll==='function'?[...document.querySelectorAll('[data-econ-step]:checked')].map(x=>x.dataset.econStep):[];
-    const projected=economicProjectionForDriver(economicTimeProjection(eng,step_ids),document.getElementById('econDriver').value);
+    const selection=JSON.stringify({step_ids,request:economicTimeRequest(eng,step_ids)});
+    const projected=serverSelection===selection?economicProjectionForDriver(serverProjection,document.getElementById('econDriver').value):null;
     const activeHours=projected?projected.active:econHoursFrom(document.getElementById('econActive').value,document.getElementById('econActive_unit').value||'h');
     const waitHours=projected?projected.wait:econHoursFrom(document.getElementById('econWait').value,document.getElementById('econWait_unit').value||'h');
     eng.economicInputs.push({step_ids,driver_id:document.getElementById('econDriver').value,annual_active_hours:activeHours,annual_wait_hours:waitHours,capacity_cost_rate_eur_hour:+document.getElementById('econRate').value||null,direct_loss_eur_annual:+document.getElementById('econDirect').value||0,current_tool_cost_eur_annual:+document.getElementById('econTool').value||0,realized_cash_saving_eur_annual:+document.getElementById('econCash').value||0,evidence_type:document.getElementById('econEvidence').value,derivation_source:projected?'DF021/DF022 + RT_PROCESS_STEP':'MANUAL_VALIDATION',deduplication_key:id('ECON')});
@@ -145,25 +140,35 @@ function addEconomic(preselectedSteps=[]){
     const zeroWithEvidence=[];if(activeHours===0&&activeContributors.length)zeroWithEvidence.push('trabajo activo');if(waitHours===0&&waitContributors.length)zeroWithEvidence.push('espera');
     if(zeroWithEvidence.length)toast(`Guardado con ${zeroWithEvidence.join(' y ')} anual en 0 aunque Proceso registra tiempo en esos pasos — revisa si falta transcribirlo.`);
   });
-  const refresh=()=>{
+  const refresh=async()=>{
     const ids=typeof document.querySelectorAll==='function'?[...document.querySelectorAll('[data-econ-step]:checked')].map(x=>x.dataset.econStep):[];
-    const projection=economicTimeProjection(eng,ids);
-    const suggested=economicProjectionForDriver(projection,document.getElementById('econDriver')?.value);
+    const selection=JSON.stringify({step_ids:ids,request:economicTimeRequest(eng,ids)});
+    const token=++requestSequence;
+    serverProjection=null;serverSelection='';
     const target=document.getElementById('economicDerivedPreview');
+    if(target)target.textContent='Consultando el backend…';
+    let projection;
+    try{projection=await economicTimeProjection(eng,ids)}
+    catch(error){projection={available:false,reason:error.message,missing:[error.message]}}
+    if(token!==requestSequence||!document.getElementById('economicDerivedPreview'))return;
+    const currentIds=typeof document.querySelectorAll==='function'?[...document.querySelectorAll('[data-econ-step]:checked')].map(x=>x.dataset.econStep):[];
+    if(JSON.stringify({step_ids:currentIds,request:economicTimeRequest(eng,currentIds)})!==selection)return;
+    serverProjection=projection;serverSelection=selection;
+    const suggested=economicProjectionForDriver(projection,document.getElementById('econDriver')?.value);
     if(target)target.textContent=projection.available
-      ?'Según pasos y volumen: '+preview(projection.active)+' h/año activas · '+preview(projection.wait)+' h/año de espera'+(projection.hasRework?' · '+preview(projection.rework)+' h/año de retrabajo':'')+(projection.hasFrictionExtra?' · '+preview(projection.frictionExtra)+' h/año de fricciones (no sumar sin comprobar solapamientos)':'')+(projection.missing.length?' · Pendiente: '+projection.missing.join('; '):'')
+      ?'Según backend: '+preview(projection.active)+' h/año de trabajo activo · '+preview(projection.wait)+' h/año de exposición a espera · '+preview(projection.rework)+' h/año de retrabajo (sin sumar fricciones)'
       :projection.reason;
     for(const [field,value] of [['econActive',suggested?.active],['econWait',suggested?.wait]]){
       const input=document.getElementById(field),unit=document.getElementById(field+'_unit');
       if(!input)continue;
       input.disabled=!!suggested;
-      if(suggested){input.value=Number(value||0).toFixed(2);if(unit){unit.value='h';unit.dispatchEvent?.(new Event('change',{bubbles:true}))}}
-      else if(input.dataset?.autoDerived==='true'){input.value='';}
+      if(suggested){input.value=Number(value||0).toFixed(2);if(unit)unit.value='h'}
+      else if(input.dataset?.autoDerived==='true')input.value='';
       if(input.dataset)input.dataset.autoDerived=suggested?'true':'false';
     }
   };
   if(typeof document.querySelectorAll==='function')document.querySelectorAll('[data-econ-step]').forEach(el=>el.addEventListener?.('change',refresh));
-  document.getElementById('econDriver')?.addEventListener?.('change',refresh);
+  document.getElementById('econDriver')?.addEventListener?.('change',()=>{if(serverProjection){const suggestion=economicProjectionForDriver(serverProjection,document.getElementById('econDriver')?.value);for(const [field,value] of [['econActive',suggestion?.active],['econWait',suggestion?.wait]]){const input=document.getElementById(field);if(!input)continue;input.disabled=!!suggestion;if(suggestion)input.value=Number(value||0).toFixed(2);else if(input.dataset?.autoDerived==='true')input.value='';if(input.dataset)input.dataset.autoDerived=suggestion?'true':'false';}}else refresh()});
   refresh();
 }
 // [AUNEA-FE-ECON-CAPTURE-030] END
