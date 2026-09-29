@@ -136,6 +136,9 @@
 | AUNEA-BE-SESSION-TIME-API-070 | 3_SYSTEM/backend/aunea_backend/api.py | Endpoint POST /v1/diagnostic/time-projection para frontend sin fórmulas independientes. | AUNEA-BE-SESSION-TIME-070 | TimeProjectionRequest | Proyección AS-IS | HTTP | HIGH | test_session_time.py | REVIEW · B01 backend |
 | AUNEA-UAT-SESSION-TIME-070 | 3_SYSTEM/backend/tests/test_session_time.py | Regresión de anualización sin defaults, rutas, repeticiones, retrabajo y solapamiento de fricciones. | Diagnostic Master v1.2 RULE_ECON_ANNUALIZE | fixtures y endpoint | tests | Ninguno | HIGH | Backend CI | REVIEW · B01 backend |
 
+| AUNEA-BE-FRICTION-REVIEW-071 | 3_SYSTEM/backend/aunea_backend/friction_review.py | Revisión conservadora de DF059–DF063: anclajes, frecuencias y esfuerzo/pérdidas pendientes de atribución; no agrega impactos. | Diagnostic Master v1.2; EAR-001/004/006/012 | steps/frictions | findings sin sumas | Ninguno | HIGH | test_friction_review.py | REVIEW · B02 parcial |
+| AUNEA-UAT-FRICTION-REVIEW-071 | 3_SYSTEM/backend/tests/test_friction_review.py | Regression de fricciones multipaso, pasos superseded, ids duplicados, frecuencia y pérdida directa. | Diagnostic Master v1.2 | fixtures | tests | Ninguno | HIGH | Backend CI | REVIEW · B02 parcial |
+
 ## Retired Block_IDs (do not reuse)
 
 | Block_ID | Motivo | Retirado en |
