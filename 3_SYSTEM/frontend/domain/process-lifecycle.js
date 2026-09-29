@@ -29,6 +29,8 @@ function invalidateProcessLayers(e,from='map'){
   const x=processLayerConfirmations(e),order=['map','frictions','risks','impact'],i=Math.max(0,order.indexOf(from));
   order.slice(i).forEach(k=>x[k]=false);
   e.confirmedAsIs=false;e.answers.DF093='';e.asIsConfirmedAt=null;e.confirmedSnapshot=null;
+  // Keep immutable snapshot history, but invalidate all outputs derived from the superseded confirmation.
+  if(typeof invalidateDerivedState==='function')invalidateDerivedState(e,'cambio en capa AS-IS: '+from);
 }
 function confirmProcessLayer(tab){
   const e=currentEng();if(!e)return;
