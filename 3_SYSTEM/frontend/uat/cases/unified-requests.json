@@ -1,0 +1,470 @@
+{
+  "key": "INTAKE",
+  "label": "Creación de peticiones unificadas",
+  "company": {
+    "name": "Nexo Gestión Empresarial",
+    "tradeName": "Nexo Gestión Empresarial SL",
+    "taxId": "B70000201",
+    "sector": "CNAE25-O",
+    "employeeCount": 32,
+    "country": "ES",
+    "orgType": "Empresa privada",
+    "website": "https://nexo-gestion.example.invalid",
+    "status": "Prospecto",
+    "entryChannel": "Inbound",
+    "owner": "Pedro Carrasco",
+    "notes": "Organización ficticia de servicios empresariales con solicitudes recibidas por email, teléfono y formulario."
+  },
+  "contacts": [
+    {
+      "firstName": "Marta",
+      "lastName": "Carrasco",
+      "role": "Operaciones",
+      "email": "marta.carrasco@nexo-gestion.example.invalid",
+      "phone": "+34 600 000 201",
+      "notes": "Propietaria operativa de la entrada, clasificación y asignación de peticiones."
+    },
+    {
+      "firstName": "Pablo",
+      "lastName": "Serrano",
+      "role": "Dirección general",
+      "email": "pablo.serrano@nexo-gestion.example.invalid",
+      "phone": "+34 600 000 202",
+      "notes": "Aprueba compromisos presupuestarios excepcionales."
+    }
+  ],
+  "opportunity": {
+    "title": "Entrada unificada y asignación de solicitudes internas",
+    "stage": "Diagnóstico",
+    "source": "Cliente existente",
+    "owner": "Pedro Carrasco",
+    "notes": "110 peticiones mensuales en tres canales; requisitos incompletos y múltiples registros. Se busca una única ficha por petición con tipo, prioridad, owner y comunicación."
+  },
+  "businessAreaId": "D08",
+  "priority": "Alta",
+  "answers": {
+    "DF004": "1M_5M",
+    "DF008": [
+      "UNDERSTAND",
+      "REDESIGN",
+      "INTEGRATE",
+      "VISIBILITY"
+    ],
+    "DF009": [
+      "CLARITY",
+      "PRIORITIES",
+      "ROADMAP",
+      "SCOPE"
+    ],
+    "DF010": [
+      "OWNERSHIP",
+      "RESOURCE",
+      "CHANGE"
+    ],
+    "DF011": "Registro y asignación unificada de peticiones",
+    "DF012": "REQUEST",
+    "DF013": "REGISTERED",
+    "DF014": "Entrada de petición por email, teléfono o formulario",
+    "DF015": "Registro único clasificado y asignado, con comunicación de recepción al solicitante",
+    "DF018": "4",
+    "DF019": "NO",
+    "DF020": [
+      "CHANNEL",
+      "SERVICE",
+      "URGENCY"
+    ],
+    "DF021": 110,
+    "DF022": "MONTH",
+    "DF023": {
+      "value": 145,
+      "unit": "case",
+      "period": "month"
+    },
+    "DF024": "IRREGULAR",
+    "DF025": {
+      "value": 24,
+      "unit": "h"
+    },
+    "DF026": {
+      "value": 40,
+      "unit": "h"
+    },
+    "DF027": {
+      "value": 27,
+      "mode": ""
+    },
+    "DF028": {
+      "value": 18,
+      "unit": "percent",
+      "mode": "percent",
+      "period": "month"
+    },
+    "DF029": [
+      "STANDARD",
+      "URGENT"
+    ],
+    "DF030": "UP_10_25",
+    "DF048": [
+      "MASTER_DATA",
+      "RECORD"
+    ],
+    "DF052": [
+      "LOGGING",
+      "VALIDATION"
+    ],
+    "DF055": [
+      "MISSING",
+      "DUPLICATE",
+      "OUTDATED"
+    ],
+    "DF073": [
+      "PERSONAL",
+      "CONFIDENTIAL"
+    ],
+    "DF074": "REVERSIBLE",
+    "DF075": [
+      "FINAL_DECISION",
+      "CUSTOMER_COMMITMENT",
+      "EXCEPTION"
+    ],
+    "DF080": {
+      "value": 4,
+      "unit": "min",
+      "period": "case"
+    },
+    "DF081": {
+      "value": 2,
+      "unit": "min",
+      "period": "case"
+    },
+    "DF086": [
+      "STANDARDIZE",
+      "FASTER",
+      "VISIBILITY",
+      "LESS_MANUAL"
+    ],
+    "DF087": [
+      "HUMAN_DECISION",
+      "CUSTOMER_CHANNEL"
+    ],
+    "DF088": [
+      "FINAL_DECISION",
+      "CUSTOMER_COMMITMENT",
+      "EXCEPTION"
+    ],
+    "DF089": [
+      "KEEP_EXISTING",
+      "MICROSOFT"
+    ],
+    "DF090": [
+      "RBAC",
+      "AUDIT_LOG"
+    ],
+    "DF091": [
+      "TRAINING",
+      "PHASED",
+      "CHAMPION"
+    ],
+    "DF092": "3K_6K",
+    "DF097": "2026-10-15",
+    "DF099": "YES",
+    "DF100": "Declaración sintética: 110 peticiones por mes; una petición puede llegar por tres canales, pero debe tener un único identificador. El 25% requiere validación presupuestaria. No confundir canales con casos nuevos."
+  },
+  "details": {
+    "DF012": "Solicitud por email, llamada telefónica o formulario procedente de un área interna.",
+    "DF013": "Se asigna un único número, se clasifica el servicio, se designa responsable y se informa al solicitante.",
+    "DF024": "Se producen semanas de carga irregular alrededor del cierre de proyectos",
+    "DF098__action": "FOLLOWUP_MEETING",
+    "DF098__owner": "Marta Carrasco",
+    "DF098__date": "2026-10-15"
+  },
+  "steps": [
+    {
+      "name": "Recibir solicitud desde cualquier canal",
+      "type": "ST02",
+      "actor": "OPERATIONS",
+      "tool": "EMAIL",
+      "inputs": [
+        "EMAIL",
+        "FORM",
+        "TEXT"
+      ],
+      "outputs": [
+        "RECORD"
+      ],
+      "active": 6,
+      "wait": 0,
+      "rework": 0,
+      "error": 0,
+      "manual": [
+        "SEARCH",
+        "COPY",
+        "REKEY"
+      ],
+      "channels": [
+        "EMAIL",
+        "PHONE",
+        "PORTAL"
+      ],
+      "auto": "MANUAL"
+    },
+    {
+      "name": "Completar datos mínimos del solicitante",
+      "type": "ST02",
+      "actor": "OPERATIONS",
+      "tool": "FORM",
+      "inputs": [
+        "RECORD",
+        "EMAIL"
+      ],
+      "outputs": [
+        "RECORD"
+      ],
+      "active": 9,
+      "wait": 120,
+      "rework": 7,
+      "error": 18,
+      "manual": [
+        "CHASE",
+        "CHECK",
+        "REKEY"
+      ],
+      "channels": [
+        "EMAIL",
+        "PHONE"
+      ],
+      "auto": "MANUAL"
+    },
+    {
+      "name": "Clasificar tipo de servicio y ruta",
+      "type": "ST04",
+      "actor": "OPERATIONS",
+      "tool": "SPREADSHEET",
+      "inputs": [
+        "RECORD"
+      ],
+      "outputs": [
+        "RECORD"
+      ],
+      "active": 5,
+      "wait": 0,
+      "rework": 0,
+      "error": 0,
+      "manual": [
+        "CHECK",
+        "UPDATE_STATUS"
+      ],
+      "channels": [
+        "EMAIL"
+      ],
+      "auto": "MANUAL",
+      "decision": [
+        "CATEGORY",
+        "THRESHOLD"
+      ],
+      "yes": 3,
+      "no": 4,
+      "condition": "La petición no compromete gasto superior a 2.000 euros"
+    },
+    {
+      "name": "Validar presupuesto excepcional",
+      "type": "ST05",
+      "actor": "MANAGER",
+      "tool": "EMAIL",
+      "inputs": [
+        "RECORD"
+      ],
+      "outputs": [
+        "APPROVAL"
+      ],
+      "active": 7,
+      "wait": 480,
+      "rework": 0,
+      "error": 0,
+      "share": 25,
+      "manual": [
+        "CHECK",
+        "SEND"
+      ],
+      "channels": [
+        "EMAIL"
+      ],
+      "auto": "MANUAL",
+      "decision": [
+        "AUTHORITY"
+      ],
+      "next": 4
+    },
+    {
+      "name": "Crear registro único y asignar responsable",
+      "type": "ST02",
+      "actor": "OPERATIONS",
+      "tool": "PM",
+      "inputs": [
+        "RECORD",
+        "APPROVAL"
+      ],
+      "outputs": [
+        "RECORD"
+      ],
+      "active": 6,
+      "wait": 0,
+      "rework": 0,
+      "error": 0,
+      "manual": [
+        "REKEY",
+        "UPDATE_STATUS"
+      ],
+      "channels": [
+        "TICKET"
+      ],
+      "auto": "PARTIAL"
+    },
+    {
+      "name": "Notificar referencia y responsable al solicitante",
+      "type": "ST02",
+      "actor": "OPERATIONS",
+      "tool": "EMAIL",
+      "inputs": [
+        "RECORD"
+      ],
+      "outputs": [
+        "EMAIL"
+      ],
+      "active": 4,
+      "wait": 0,
+      "rework": 0,
+      "error": 0,
+      "manual": [
+        "SEND"
+      ],
+      "channels": [
+        "EMAIL"
+      ],
+      "auto": "MANUAL",
+      "next": "END"
+    }
+  ],
+  "frictions": [
+    {
+      "type": "P01",
+      "steps": [
+        0
+      ],
+      "cause": [
+        "MANUAL_HANDOFF",
+        "TOOL_GAP"
+      ],
+      "signal": "El mismo solicitante puede abrir tres hilos cuando reitera la petición por llamada y email.",
+      "frequency": 35,
+      "minutes": 4,
+      "mode": "INCLUDED",
+      "owner": 0,
+      "impact": 4,
+      "nonTime": [
+        "QUALITY",
+        "MANAGEMENT"
+      ],
+      "workaround": [
+        "EMAIL",
+        "EXCEL"
+      ]
+    },
+    {
+      "type": "P02",
+      "steps": [
+        1
+      ],
+      "cause": [
+        "MISSING_INFO",
+        "NO_RULE"
+      ],
+      "signal": "El 18% llega sin servicio, urgencia o resultado esperado claramente definidos.",
+      "frequency": 18,
+      "minutes": 7,
+      "mode": "BREAKDOWN",
+      "owner": 1,
+      "impact": 4,
+      "nonTime": [
+        "CUSTOMER",
+        "EMPLOYEE"
+      ],
+      "workaround": [
+        "CHASE",
+        "EMAIL"
+      ]
+    },
+    {
+      "type": "P04",
+      "steps": [
+        2,
+        4
+      ],
+      "cause": [
+        "NO_OWNER",
+        "NO_VISIBILITY"
+      ],
+      "signal": "En el 20% de peticiones se consulta por correo quién debe asumir el caso.",
+      "frequency": 20,
+      "minutes": 3,
+      "mode": "INCLUDED",
+      "owner": 2,
+      "impact": 4,
+      "nonTime": [
+        "EMPLOYEE",
+        "MANAGEMENT"
+      ],
+      "workaround": [
+        "MEETING",
+        "EMAIL"
+      ]
+    }
+  ],
+  "risks": [
+    {
+      "category": "RC02",
+      "description": "La descripción ambigua ocasiona asignación a un servicio o responsable equivocado.",
+      "steps": [
+        1,
+        2,
+        4
+      ],
+      "likelihood": 4,
+      "impact": 3,
+      "reversibility": "REVERSIBLE",
+      "controls": false,
+      "material": false
+    },
+    {
+      "category": "RC04",
+      "description": "Acceso indebido a peticiones de otras áreas por permisos no segmentados.",
+      "steps": [
+        4,
+        5
+      ],
+      "likelihood": 3,
+      "impact": 4,
+      "reversibility": "PARTIAL",
+      "controls": true,
+      "material": true
+    }
+  ],
+  "economics": {
+    "rate": 24,
+    "toolAnnual": 720,
+    "toolBasis": "Asignación sintética de 60 euros mensuales de la herramienta de tareas a la gestión de peticiones; no supone ahorro al automatizar."
+  },
+  "finding": [
+    0,
+    4
+  ],
+  "search": [
+    1,
+    2
+  ],
+  "integration": [
+    0,
+    4
+  ],
+  "followup": "Agendar reunión de seguimiento — Marta Carrasco — 15/10/2026"
+}
