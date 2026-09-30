@@ -45,8 +45,8 @@ test('addEconomic translates the driver-picker label to Spanish and shows an inf
   assert.match(ctx.__lastBody,/Pasos con tiempo activo registrado: Alta, Aprobación/);
   assert.match(ctx.__lastBody,/Pasos con espera registrada: Aprobación/);
   assert.match(ctx.__lastBody,/Se reutilizan para obtener un cálculo revisable/);
-  assert.match(ctx.__lastBody,/Tiempo activo atribuible/);
-  assert.match(ctx.__lastBody,/Tiempo de espera atribuible/);
+  assert.match(ctx.__lastBody,/¿Cuántas horas de trabajo supone al año\?/);
+  assert.match(ctx.__lastBody,/¿Cuánto tiempo queda esperando el caso\?/);
   assert.match(ctx.__lastBody,/id="econActive_unit"/);
   assert.match(ctx.__lastBody,/id="econWait_unit"/);
 });
@@ -131,7 +131,7 @@ test('the economics builder never infers a direct-loss figure or an hours-per-ye
 test('economic driver dropdown translates all canonical REF_ECON_DRIVER ids used by the UI without changing their values',()=>{
   const ctx=makeCtx();ctx.addEconomic();
   assert.match(ctx.__lastBody,/Tiempo de ejecución manual/);
-  assert.match(ctx.__lastBody,/Tiempo de entrada duplicada/);
+  assert.match(ctx.__lastBody,/Tiempo dedicado a introducir datos dos veces/);
   assert.doesNotMatch(ctx.__lastBody,/Manual execution time|Duplicate entry time/);
 });
 
@@ -227,7 +227,7 @@ test('B03: overlapping economics input does not mutate engagement and manual cap
   Object.assign(ctx2.__domFields,{econDriver:{value:'ED02'},econActive:{value:20},econActive_unit:{value:'h'},econWait:{value:0},econWait_unit:{value:'h'},econEvidence:{value:''}});
   let warning='';ctx2.toast=x=>{warning=x};ctx2.__lastOnSave();
   assert.equal(ctx2.__eng.economicInputs.length,0);
-  assert.match(warning,/Selecciona la evidencia/);
+  assert.match(warning,/Indica de dónde sale este dato/);
 });
 
 test('B03: backend projected extra effort is shown separately and the full-process fingerprint drives DF078/DF079',async()=>{
@@ -282,3 +282,82 @@ test('B03: a stale automatic preview must not be reclassified as manual evidence
   assert.match(warning,/actualiz|cambi/i);
 });
 // [AUNEA-UAT-ECON-010] END
+
+
+test('DF076 offers one cost per existing actor with a required evidence class and no invented default',()=>{
+  const ctx=makeCtx(),e=ctx.__eng;e.answers={};e.processSteps=[
+    {id:'S1',status:'ACTIVE',actor:'ADMIN',step_name:'Recepción'},
+    {id:'S2',status:'ACTIVE',actor:'FIN',step_name:'Validación'},
+    {id:'S3',status:'ACTIVE',actor:'ADMIN',step_name:'Archivo'}
+  ];ctx.activeSteps=x=>x.processSteps.filter(p=>p.status!=='SUPERSEDED');
+  const html=ctx.economicBuilder(e);
+  assert.match(html,/data-economic-role-rates="true"/);
+  assert.equal((html.match(/data-econ-role-row=/g)||[]).length,2,'one row per distinct role');
+  assert.match(html,/¿Cómo sabemos este coste\?/);
+  assert.equal(ctx.economicRoleRateForRole,undefined);
+  assert.equal(ctx.economicRateForRole(e,'ADMIN'),null,'a missing rate must not be fabricated');
+});
+test('a single actor reuses its DF076 rate; mixed actors never receive one blended rate',()=>{
+  const ctx=makeCtx(),e=ctx.__eng;e.answers={DF076:[{role:'ADMIN',eur_hour:24,evidence_type:'CLIENT_DECLARED'},{role:'FIN',eur_hour:32,evidence_type:'MEASURED'}]};
+  e.processSteps=[{id:'S1',actor:'ADMIN',status:'ACTIVE'},{id:'S2',actor:'FIN',status:'ACTIVE'}];
+  ctx.activeSteps=x=>x.processSteps.filter(p=>p.status!=='SUPERSEDED');
+  assert.equal(ctx.economicRateForRole(e,'ADMIN').eur_hour,24);
+  assert.equal(ctx.economicInputRole(e,{step_ids:['S1']}),'ADMIN');
+  assert.equal(ctx.economicInputRole(e,{step_ids:['S1','S2']}),null);
+  assert.equal(ctx.economicRateForRole(e,'OTHER'),null);
+});
+test('a changed DF076 rate detects stale existing cost and updating it does not touch annual hours',()=>{
+  const ctx=makeCtx(),e=ctx.__eng;e.answers={DF076:[{role:'ADMIN',eur_hour:25,evidence_type:'MEASURED'}]};
+  e.processSteps=[{id:'S1',actor:'ADMIN',status:'ACTIVE'}];
+  e.economicInputs=[{step_ids:['S1'],annual_active_hours:120,annual_wait_hours:300,capacity_cost_rate_eur_hour:20,evidence_type:'MEASURED'}];
+  ctx.activeSteps=x=>x.processSteps;
+  assert.equal(ctx.economicRoleRateIssues(e).length,1);
+  ctx.invalidateProcessLayers=()=>{};
+  ctx.applyEconomicRoleRate(0);
+  assert.equal(e.economicInputs[0].capacity_cost_rate_eur_hour,25);
+  assert.equal(e.economicInputs[0].annual_active_hours,120);
+  assert.equal(e.economicInputs[0].annual_wait_hours,300);
+  assert.equal(ctx.economicRoleRateIssues(e).length,0);
+});
+test('the evidence-bearing DF076 table writes rates once to its owner, not a second editable rate',()=>{
+  const ctx=makeCtx(),e=ctx.__eng;e.answers={};e.processSteps=[{id:'S1',actor:'ADMIN',status:'ACTIVE'}];
+  ctx.activeSteps=x=>x.processSteps;
+  let saved=null;ctx.setAnswer=(fid,value)=>{saved={fid,value};e.answers[fid]=value};
+  ctx.document.querySelectorAll=selector=>selector==='[data-econ-role-row]'?[{querySelector:()=>({value:'26'})}]:[];
+  ctx.__domFields.econ_role_evidence_0={value:'CLIENT_DECLARED'};
+  ctx.saveEconomicRoleRates();
+  assert.equal(saved.fid,'DF076');
+  assert.equal(saved.value.length,1);
+  assert.equal(saved.value[0].role,'ADMIN');
+  assert.equal(saved.value[0].eur_hour,26);
+  assert.equal(saved.value[0].evidence_type,'CLIENT_DECLARED');
+});
+
+test('an ED01 row reuses the selected actor rate from DF076 instead of asking for a second editable rate',()=>{
+  const ctx=makeCtx(),e=ctx.__eng;
+  e.answers={DF076:[{role:'ADMIN',eur_hour:27,evidence_type:'MEASURED'}]};
+  e.processSteps=[{id:'S1',status:'ACTIVE',actor:'ADMIN',step_name:'Registrar factura'}];
+  ctx.activeSteps=x=>x.processSteps.filter(p=>p.status!=='SUPERSEDED');
+  ctx.document.querySelectorAll=selector=>selector==='[data-econ-step]:checked'?[{dataset:{econStep:'S1'}}]:[];
+  ctx.addEconomic(['S1']);
+  Object.assign(ctx.__domFields,{econDriver:{value:'ED01'},econActive:{value:'12'},econActive_unit:{value:'h'},econWait:{value:'0'},econWait_unit:{value:'h'},econEvidence:{value:'MEASURED'},econRate:{value:'27'},econDirect:{value:''},econTool:{value:''},econCash:{value:''}});
+  ctx.__lastOnSave();
+  assert.equal(e.economicInputs.length,1);
+  assert.equal(e.economicInputs[0].capacity_cost_rate_eur_hour,27);
+  assert.equal(e.economicInputs[0].annual_active_hours,12);
+  assert.equal(e.economicInputs[0].annual_wait_hours,0);
+  assert.match(ctx.__lastBody,/id="econRate"[^>]*readonly/);
+});
+test('multi-actor inputs may retain their hours but never receive a blended rate',()=>{
+  const ctx=makeCtx(),e=ctx.__eng;
+  e.answers={DF076:[{role:'ADMIN',eur_hour:27,evidence_type:'MEASURED'},{role:'FIN',eur_hour:38,evidence_type:'CLIENT_DECLARED'}]};
+  e.processSteps=[{id:'S1',status:'ACTIVE',actor:'ADMIN'},{id:'S2',status:'ACTIVE',actor:'FIN'}];
+  ctx.activeSteps=x=>x.processSteps.filter(p=>p.status!=='SUPERSEDED');
+  ctx.document.querySelectorAll=selector=>selector==='[data-econ-step]:checked'?[{dataset:{econStep:'S1'}},{dataset:{econStep:'S2'}}]:[];
+  ctx.addEconomic(['S1','S2']);
+  Object.assign(ctx.__domFields,{econDriver:{value:'ED01'},econActive:{value:'22'},econActive_unit:{value:'h'},econWait:{value:'0'},econWait_unit:{value:'h'},econEvidence:{value:'MEASURED'},econRate:{value:''},econDirect:{value:''},econTool:{value:''},econCash:{value:''}});
+  ctx.__lastOnSave();
+  assert.equal(e.economicInputs.length,1);
+  assert.equal(e.economicInputs[0].annual_active_hours,22);
+  assert.equal(e.economicInputs[0].capacity_cost_rate_eur_hour,null);
+});

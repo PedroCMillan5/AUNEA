@@ -77,4 +77,21 @@ test('layer confirmations require map, frictions, risks and impact before sealin
   assert.equal(e.answers.DF093,'YES');
   assert.ok(e.asIsConfirmedAt);
 });
+test('PG09 cannot confirm the last selected layer instead of the four-layer process',()=>{
+  const e={processSteps:[{id:'S1',status:'ACTIVE'}],frictions:[],risks:[],economicInputs:[],answers:{DF014:'Inicio',DF015:'Fin'},confirmedAsIs:false,stageId:'S09',processTab:'impacto'};
+  const ctx=makeCtx(e);ctx.state.activePage='diagnostico';ctx.confirmAsIs();
+  assert.equal(Object.values(e.layerConfirmations).some(x=>x===true),false,'the final button never confirms an unrelated layer');
+  assert.equal(e.confirmedAsIs,false);
+  assert.equal(ctx.state.activePage,'proceso');
+  assert.equal(e.processTab,'cliente');
+  assert.match(ctx.__toasts.at(-1),/revisa y confirma los cuatro apartados/);
+});
+test('a changed per-role rate blocks Impact confirmation until its economic input is reconciled',()=>{
+  const e={processSteps:[{id:'S1',status:'ACTIVE',actor:'ADMIN'}],frictions:[],risks:[],economicInputs:[{step_ids:['S1'],annual_active_hours:10,capacity_cost_rate_eur_hour:20}],answers:{DF014:'Inicio',DF015:'Fin',DF076:[{role:'ADMIN',eur_hour:25,evidence_type:'MEASURED'}]},processTab:'impacto',confirmedAsIs:false,layerConfirmations:{map:true,frictions:true,risks:true,impact:false}};
+  const ctx=makeCtx(e);ctx.economicRoleRateIssues=()=>[{step_ids:['S1']}];
+  ctx.confirmAsIs();
+  assert.equal(e.layerConfirmations.impact,false);
+  assert.equal(e.confirmedAsIs,false);
+  assert.match(ctx.__toasts.at(-1),/coste distinto del perfil actual/);
+});
 // [AUNEA-UAT-PROC-LIFECYCLE-030] END

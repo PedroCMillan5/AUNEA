@@ -242,6 +242,7 @@ function stagePage(){
       ${pg01Disclosure}`
     : `<div class="card stage-card">
       ${fields.some(f=>f.Requiredness==='REQUIRED_90M')?REQUIRED_LEGEND_HTML:''}
+      ${['S04','S05','S06','S07'].includes(stage.Stage_ID)&&typeof processContinuityContext==='function'?processContinuityContext(e):''}
       <div class="form-grid">${engagementArea}${stageFields}</div>
       ${stage.Stage_ID==='S04'?processPrompt(e):''}${stage.Stage_ID==='S05'?frictionPrompt(e):''}
       ${stage.Stage_ID==='S06'?riskBuilder(e):''}${stage.Stage_ID==='S07'?economicBuilder(e):''}
@@ -278,7 +279,7 @@ function validationSummary(e,completion){
   const risksWithControls=risks.filter(x=>x.controls_present===true).length;
   const econByType={};
   econ.forEach(x=>{const t=evidenceTypeBackend(x.evidence_type);econByType[t]=(econByType[t]||0)+1});
-  const econLine=Object.keys(econByType).length?Object.entries(econByType).map(([k,v])=>`${v} ${engineLabel('evidence_quality',k)}`).join(', '):'Sin inputs económicos registrados';
+  const econLine=Object.keys(econByType).length?Object.entries(econByType).map(([k,v])=>`${v} ${engineLabel('evidence_quality',k)}`).join(', '):'Sin datos económicos registrados';
   const nextStep=e.answers?.DF098||'',notes=e.answers?.DF100||'';
   // The sealed record internal work will read. It appears here because PG09 is where it is created.
   const snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;
@@ -289,12 +290,13 @@ function validationSummary(e,completion){
       <div class="notice"><b>Proceso</b><br>${steps.length} paso(s) activo(s) · ${e.confirmedAsIs?'AS-IS confirmado':'AS-IS pendiente de confirmar'}</div>
       <div class="notice"><b>Fricciones</b><br>${fr.length} detectada(s), ${frWithEvidence} con evidencia registrada</div>
       <div class="notice"><b>Riesgos</b><br>${risks.length} registrado(s), ${risksWithControls} con controles registrados</div>
-      <div class="notice"><b>Economics</b><br>${econ.length} input(s) — ${esc(econLine)}</div>
+      <div class="notice"><b>Tiempo y costes</b><br>${econ.length} dato(s) — ${esc(econLine)}</div>
       <div class="notice"><b>Obligatorios</b><br>${completion.missing.length===0?'✓ completos':`${completion.missing.length} pendiente(s)`}</div>
       <div class="notice"><b>Siguiente paso</b><br>${nextStep?esc(nextStep):'Pendiente de acordar (DF098)'}</div>
       <div class="notice"><b>Snapshot sellado</b><br>${snap?`v${snap.version} · ${esc(formatDateEs(snap.sealedAt))}`:'Se sella al confirmar el AS-IS'}</div>
     </div>
     <div class="field-help internal-only" style="margin-top:10px"><b>Notas internas del consultor:</b> ${notes?esc(notes):'—'}</div>
+    ${typeof processReadOnlyJourney==='function'?processReadOnlyJourney(e):''}
     <div style="margin-top:16px">${cta}</div>`
   );
 }

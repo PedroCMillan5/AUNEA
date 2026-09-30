@@ -28,7 +28,7 @@ function setup(){
     num:v=>Number(v||0),pageTop:()=>'',requiredMark:()=>'*',
     auneaSelectControl:(id,opts,val)=>'<input id="'+id+'" value="'+(val||'')+'">',
     audit:()=>{},id:p=>p+'-TEST',now:()=>'',markDirty:()=>{},render:()=>{},toast:()=>{},
-    closeModal:()=>{},openModal:()=>{},segmented:()=>'',structuredClone
+    closeModal:()=>{},openModal:()=>{},segmented:()=>'',riskBuilder:()=>'<div>Riesgos</div>',economicBuilder:()=>'<div>Impacto</div>',structuredClone
   };
   vm.createContext(ctx);vm.runInContext(process,ctx);
   return {ctx,e,fields,events,label,help};
@@ -76,7 +76,7 @@ test('step, friction, risk and impact are one connected, reviewable progression'
     assert.match(html,new RegExp('data-process-tab="'+tab+'"'));
     assert.match(html,new RegExp(title));
   }
-  assert.match(html,/Contexto heredado/);
+  assert.match(html,/Lo que ya sabemos del proceso/);
   assert.match(html,/data-process-tab="riesgos">Continuar a Riesgos/);
   assert.match(css,/\.client-process-sequence:before/);
 });
@@ -129,7 +129,7 @@ test('risk inherits confirmed friction locations via existing step_ids; economic
   assert.match(econ,/linkedFrictions\.length/);
   assert.match(econ,/linkedRisks\.length/);
   assert.match(econ,/economicTimeProjection/);
-  assert.match(econ,/sin sumar fricciones/);
+  assert.match(econ,/No sumaremos dos veces un mismo problema/);
   assert.match(css,/\.client-inherited-context\{/);
 });
 test('friction popup captures approved time attribution without changing existing dropdowns',()=>{
@@ -141,5 +141,46 @@ test('friction popup captures approved time attribution without changing existin
   assert.ok(process.includes("f.time_attribution={mode:"));
   assert.ok(process.includes("f.affected_steps.includes(f.time_attribution.step_id)"));
   assert.ok(process.includes("Sólo Adicional podrá incrementar"));
+});
+test('CF01 continuity: the same declared scope and demand appear on each process layer without editable copies',()=>{
+  const {ctx,e}=setup();
+  Object.assign(e.answers,{DF011:'Factura recibida',DF014:'Correo con factura',DF015:'Registrada y archivada',DF021:160,DF022:'MONTH',DF023:230,DF025:'48 h',DF026:'72 h'});
+  e.processSteps=[{id:'A',status:'ACTIVE',step_name:'Recibir',active_time:3,wait_time:0}];
+  for(const tab of ['cliente','fricciones','riesgos','impacto']){
+    const html=ctx.clientProcessView(e,e.processSteps,[],tab);
+    assert.match(html,/data-process-continuity="true"/);
+    for(const expected of ['Correo con factura','Registrada y archivada','160','MONTH','230','48 h','72 h'])assert.ok(html.includes(expected),tab+' misses '+expected);
+    assert.doesNotMatch(html,/id="DF021"/,'the context is not a second capture');
+  }
+});
+test('CF06 review represents the actual linked steps, frictions, risks and impacts and route gaps',()=>{
+  const {ctx,e}=setup();
+  e.answers={DF011:'Facturas',DF014:'Correo',DF015:'Archivo'};
+  e.processSteps=[{id:'A',status:'ACTIVE',step_name:'Validar',active_time:8,wait_time:90,actor:'Finanzas',normal_next_step:'__END__'}];
+  e.frictions=[{id:'F',status:'ACTIVE',affected_steps:['A'],client_label:'Información incompleta'}];
+  e.risks=[{step_ids:['A'],description:'Pago duplicado'}];e.economicInputs=[{step_ids:['A'],driver_id:'ED01'}];
+  const review=ctx.processReadOnlyJourney(e);
+  for(const expected of ['data-process-review','Validar','Información incompleta','Riesgos:</b> 1','Datos de impacto:</b> 1','Fin del proceso','Correo','Archivo'])assert.ok(review.includes(expected),expected);
+});
+test('deleting a step cannot silently orphan risks, economic input or time ownership',()=>{
+  assert.match(process,/linkedRisks\.length\|\|linkedEconomics\.length/);
+  assert.match(process,/f\.time_attribution\?\.step_id===stepId/);
+  assert.match(process,/Cambia primero esas relaciones/);
+});
+test('CF04: risk problems are read-only step context until canonical individual links exist',()=>{
+  assert.match(risk,/row\.hidden=!selected\.length\|\|!affected\.some\(id=>selected\.includes\(id\)\)/);
+  assert.doesNotMatch(risk,/data-risk-friction="/);
+  assert.doesNotMatch(risk,/step_ids\.push\(id\)/);
+  assert.doesNotMatch(risk,/linked\.checked=true/);
+  assert.match(risk,/Son datos de contexto/);
+});
+test('CF03/CF05: visible questions explain attribution and economic meaning without changing technical IDs',()=>{
+  assert.match(process,/¿Dónde está contabilizado este trabajo extra\?/);
+  assert.match(process,/¿De dónde sale este dato\?/);
+  assert.match(process,/f\.time_attribution=\{mode:/);
+  assert.match(econ,/¿Qué tiempo o coste estamos registrando\?/);
+  assert.match(econ,/¿Qué ahorro real de dinero se ha conseguido ya\?/);
+  assert.match(econ,/economicTimeProjection/);
+  assert.match(econ,/function economicRoleRateTable/);
 });
 // [AUNEA-UAT-PROC-LAYERS-045] END

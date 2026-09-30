@@ -104,7 +104,16 @@ function invalidateDerivedState(e,reason='Cambio en inputs del diagnóstico'){
 }
 function setAnswer(fid,value){
   const e=currentEng();if(!e)return;
+  const previous=e.answers?.[fid];
+  if(JSON.stringify(previous)===JSON.stringify(value))return;
   e.answers[fid]=value;e.updatedAt=now();
+  // Changes to an approved scope/demand baseline cannot leave AS-IS layers or its live
+  // snapshot confirmed against the old inputs; historical sealed versions stay untouched.
+  if(/^DF0(?:1[1-9]|20|2[1-9]|30)$/.test(fid)&&
+      (e.confirmedAsIs||Object.values(e.layerConfirmations||{}).some(x=>x===true))&&
+      typeof invalidateProcessLayers==='function')invalidateProcessLayers(e,'map');
+  if(fid==='DF076'&&typeof invalidateProcessLayers==='function'&&
+      (e.confirmedAsIs||e.layerConfirmations?.impact))invalidateProcessLayers(e,'impact');
   // A reused value corrected here must reach its owner, not become a second copy (DEC-050). The
   // engagement still keeps the snapshot of the value it used. Guarded because the No-Reask module
   // that owns the mapping loads after this one.

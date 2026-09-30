@@ -117,9 +117,9 @@ test('decision detail is hidden unless canonical Other is selected, and step del
 
 test('the Friction modal groups fields into layer 1 (tipo/pasos/señal/contexto-impacto, open) and layer 2 (causa/workaround/evidencia/resto, collapsed), same field ids, no Friction Model change',()=>{
   const groups=[...code.matchAll(/<details class="step-group"( open)?><summary>([^<]+)<\/summary>/g)];
-  const frGroups=groups.filter(g=>/Fricción|Causa, workaround/.test(g[2]));
+  const frGroups=groups.filter(g=>/¿Qué problema ocurre\?|Por qué ocurre y cómo se resuelve hoy/.test(g[2]));
   assert.equal(frGroups.length,2);
-  assert.equal(frGroups[0][1],' open','layer 1 (Fricción) must be open by default');
+  assert.equal(frGroups[0][1],' open','layer 1 (problem) must be open by default');
   assert.equal(frGroups[1][1],undefined,'layer 2 (causa/workaround/evidencia) must start collapsed');
   ['fr_type','fr_steps','fr_signal','fr_frequency','fr_impact','fr_causes','fr_workaround','fr_evidence_type','fr_active','fr_wait','fr_direct','fr_non_time','fr_priority','fr_label','fr_notes'].forEach(fid=>{
     assert.match(code,new RegExp(`id="${fid}"|'${fid}'`),`${fid} must still exist`);

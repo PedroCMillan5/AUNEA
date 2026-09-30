@@ -124,32 +124,32 @@ function openStepModal(stepId=null,linkFromStepId=null,preset=null){
   // step list row (processPage) already shows a readable per-step summary outside this modal.
   const body=`<div class="step-groups process-modal-form">
   <details class="step-group" open><summary>A. Información básica</summary><div class="form-grid">
-    <div class="field full"><label>Nombre del paso ${requiredMark()}</label><input id="step_name" maxlength="80" value="${attr(s.step_name||'')}" placeholder="Verbo + objeto, ej. Validar requisitos"></div>
+    <div class="field full"><label>¿Qué se hace en este paso? ${requiredMark()}</label><input id="step_name" maxlength="80" value="${attr(s.step_name||'')}" placeholder="Verbo + objeto, ej. Validar requisitos"></div>
     <div class="field"><label>Tipo de paso ${requiredMark()}</label>${stepTypeControl}</div>
-    <div class="field"><label>Responsable / actor ${requiredMark()}</label>${datalistControl('step_actor','OS_ACTOR_ROLE',s.actor||'','Rol existente o nuevo')}</div>
+    <div class="field"><label>¿Quién realiza este paso? ${requiredMark()}</label>${datalistControl('step_actor','OS_ACTOR_ROLE',s.actor||'','Rol existente o nuevo')}</div>
   </div></details>
   <details class="step-group"><summary>B. Entradas y salidas</summary><div class="form-grid">
     <div class="field full"><label>¿A qué casos aplica?</label>${appliesControl(s)}</div>
-    <div class="field"><label>Veces por caso</label><input id="step_occ" type="number" min="0" step="any" value="${attr(s.occurrences_per_case??1)}"></div>
-    <div class="field full"><label>Inputs</label>${selectedHtml('step_inputs',artifacts,s.inputs,{wrapped:true,detailId:'step_inputs_detail',detailValue:s._details.inputs||'',detailPlaceholder:'Especifica el input sólo al seleccionar Otro'})}</div>
-    <div class="field full"><label>Outputs</label>${selectedHtml('step_outputs',artifacts,s.outputs,{wrapped:true,detailId:'step_outputs_detail',detailValue:s._details.outputs||'',detailPlaceholder:'Especifica el output sólo al seleccionar Otro'})}</div>
+    <div class="field"><label>¿Cuántas veces se realiza por cada caso?</label><input id="step_occ" type="number" min="0" step="any" value="${attr(s.occurrences_per_case??1)}"></div>
+    <div class="field full"><label>¿Qué información o documentos se necesitan?</label>${selectedHtml('step_inputs',artifacts,s.inputs,{wrapped:true,detailId:'step_inputs_detail',detailValue:s._details.inputs||'',detailPlaceholder:'Especifica el input sólo al seleccionar Otro'})}</div>
+    <div class="field full"><label>¿Qué se obtiene al terminar este paso?</label>${selectedHtml('step_outputs',artifacts,s.outputs,{wrapped:true,detailId:'step_outputs_detail',detailValue:s._details.outputs||'',detailPlaceholder:'Especifica el output sólo al seleccionar Otro'})}</div>
   </div></details>
   <details class="step-group"><summary>C. Tiempo y rendimiento</summary><div class="form-grid">
-    <div class="field"><label>Tiempo activo típico</label>${timeControl('step_active',s.active_time,s._ui.active_unit||'min')}</div>
-    <div class="field"><label>Tiempo de espera</label>${timeControl('step_wait',s.wait_time,s._ui.wait_unit||'min')}<div class="field-help">Tiempo en el que el caso está parado o esperando antes de poder continuar. Se mantiene separado del trabajo activo y no se monetiza como trabajo.</div></div>
-    <div class="field"><label>Tiempo de retrabajo</label>${timeControl('step_rework',s.rework_time,s._ui.rework_unit||'min')}</div>
-    <div class="field"><label>Error / repetición</label><div class="compound-control"><input id="step_error" type="number" min="0" step="any" value="${attr(s.error_rate&&typeof s.error_rate==='object'?s.error_rate.value:(s.error_rate||''))}" placeholder="5">${auneaDropdownControl('step_error_mode',[{value:'percent',label:'%'},{value:'count',label:'casos'}],s.error_rate?.mode||'percent','Unidad')}${auneaDropdownControl('step_error_period',[{value:'case',label:'por caso'},{value:'month',label:'por mes'},{value:'year',label:'por año'}],s.error_rate?.period||'case','Periodo')}</div></div>
+    <div class="field"><label>¿Cuánto tiempo de trabajo requiere normalmente?</label>${timeControl('step_active',s.active_time,s._ui.active_unit||'min')}</div>
+    <div class="field"><label>¿Cuánto tiempo queda esperando antes de continuar?</label>${timeControl('step_wait',s.wait_time,s._ui.wait_unit||'min')}<div class="field-help">Tiempo en el que el caso está parado o esperando antes de poder continuar. Se mantiene separado del trabajo activo y no se monetiza como trabajo.</div></div>
+    <div class="field"><label>Si hay un error, ¿cuánto se tarda en corregirlo?</label>${timeControl('step_rework',s.rework_time,s._ui.rework_unit||'min')}</div>
+    <div class="field"><label>¿Con qué frecuencia hay errores o repeticiones?</label><div class="compound-control"><input id="step_error" type="number" min="0" step="any" value="${attr(s.error_rate&&typeof s.error_rate==='object'?s.error_rate.value:(s.error_rate||''))}" placeholder="5">${auneaDropdownControl('step_error_mode',[{value:'percent',label:'%'},{value:'count',label:'casos'}],s.error_rate?.mode||'percent','Unidad')}${auneaDropdownControl('step_error_period',[{value:'case',label:'por caso'},{value:'month',label:'por mes'},{value:'year',label:'por año'}],s.error_rate?.period||'case','Periodo')}</div></div>
   </div></details>
   <details class="step-group"><summary>D. Flujo y decisiones</summary><div class="form-grid">
     <div class="field full"><label>¿Este paso incluye una decisión o bifurcación?</label><div class="segmented"><button type="button" class="segment ${hasDecision?'active':''}" data-step-decision-flag="1" data-value="YES">Sí</button><button type="button" class="segment ${!hasDecision?'active':''}" data-step-decision-flag="1" data-value="NO">No</button></div></div>
     <div class="field full"><div class="decision-route-card route-yes"><div class="decision-route-head"><b data-step-next-label>${hasDecision?'Ruta SÍ / afirmativa':'Siguiente paso normal'}</b><span>${hasDecision?'Cuando se cumple la condición principal':'Continuación del flujo'}</span></div><label>Destino ${hasDecision?requiredMark():''}</label>${auneaDropdownControl('step_next',decisionDestinationOptions(e,s),s.normal_next_step||'','Selecciona destino…')}</div></div>
-    <div class="field full" data-step-decision-area${hasDecision?'':' style="display:none"'}><label>Criterios de decisión</label>${selectedHtml('step_decisions',decisions,s.decision_criteria)}<div class="detail-wrap" data-step-decision-other-wrap${decisionOtherOpen?'':' style="display:none"'}><input id="step_decisions_detail" value="${attr(decisionOtherOpen?(s._details.decision_criteria||''):'')}" placeholder="Especifica el criterio sólo al seleccionar Otro"></div></div>
+    <div class="field full" data-step-decision-area${hasDecision?'':' style="display:none"'}><label>¿Qué determina el camino que sigue el caso?</label>${selectedHtml('step_decisions',decisions,s.decision_criteria)}<div class="detail-wrap" data-step-decision-other-wrap${decisionOtherOpen?'':' style="display:none"'}><input id="step_decisions_detail" value="${attr(decisionOtherOpen?(s._details.decision_criteria||''):'')}" placeholder="Especifica el criterio sólo al seleccionar Otro"></div></div>
     <div class="field full" data-step-decision-area${hasDecision?'':' style="display:none"'}>${exceptionControl(s,e)}</div>
   </div></details>
   <details class="step-group"><summary>E. Automatización y sistemas</summary><div class="form-grid">
     <div class="field"><label>Herramienta / sistema</label>${datalistControl('step_tool','OS_TOOL_CATEGORY',s.tool||'','Herramienta principal')}</div>
-    <div class="field full"><label>Acciones manuales</label>${selectedHtml('step_manual',manual,s.manual_actions,{detailId:'step_manual_other',detailValue:s._details.manual_actions||'',detailPlaceholder:'Especifica la otra acción manual'})}</div>
-    <div class="field full"><label>Automatización actual</label>${segmented('step_auto',auto,s.automation_state,'data-step-auto')}</div>
+    <div class="field full"><label>¿Qué tareas se hacen manualmente?</label>${selectedHtml('step_manual',manual,s.manual_actions,{detailId:'step_manual_other',detailValue:s._details.manual_actions||'',detailPlaceholder:'Especifica la otra acción manual'})}</div>
+    <div class="field full"><label>¿Hay alguna parte automatizada hoy?</label>${segmented('step_auto',auto,s.automation_state,'data-step-auto')}</div>
     <div class="field full"><label>Canal(es) de comunicación</label>${selectedHtml('step_channels',channels,s.communication_channels,{detailId:'step_channels_other',detailValue:s._details.communication_channels||'',detailPlaceholder:'Especifica el canal sólo al seleccionar Otro'})}</div>
   </div></details>
   <details class="step-group"><summary>F. Evidencia y notas</summary><div class="form-grid">
@@ -208,32 +208,32 @@ function openFrictionModal(frId=null,preselectedSteps=[]){
   // register a friction on the spot; causa/workaround/evidencia/resto stay available but collapsed.
   // Same field ids, same save logic — presentation-only, never a Friction Model change.
   const body=`<div class="step-groups process-modal-form friction-modal-form">
-  <details class="step-group" open><summary>Fricción</summary><div class="form-grid">
-  <div class="field full"><label>Tipo de fricción ${requiredMark()}</label>${auneaDropdownControl('fr_type',[{value:'',label:'Selecciona…'},...types],f.friction_type||'','Selecciona…')}<div class="field-help">Pain_ID se deriva internamente; el cliente no lo selecciona.</div></div>
-  <div class="field full"><label>Pasos afectados ${requiredMark()}</label>${selectedHtml('fr_steps',activeSteps(e).map(s=>({value:s.id,label:s.step_name||s.id})),f.affected_steps)}</div>
-  <div class="field full"><label>Señal observable ${requiredMark()}</label><input id="fr_signal" value="${attr(f.observable_signal||'')}" placeholder="Hecho verificable, ej. casos >48h esperando aprobación"></div>
-  <div class="field"><label>Frecuencia</label>${frictionNumberControl('fr_frequency',f.frequency)}</div>
-  <div class="field"><label>Impacto percibido</label>${auneaDropdownControl('fr_impact',[{value:'',label:'—'},...impacts],f.impact||'','—')}</div>
+  <details class="step-group" open><summary>¿Qué problema ocurre?</summary><div class="form-grid">
+  <div class="field full"><label>¿Qué tipo de problema es? ${requiredMark()}</label>${auneaDropdownControl('fr_type',[{value:'',label:'Selecciona…'},...types],f.friction_type||'','Selecciona…')}<div class="field-help">Elige el tipo de problema observado.</div></div>
+  <div class="field full"><label>¿En qué pasos aparece este problema? ${requiredMark()}</label>${selectedHtml('fr_steps',activeSteps(e).map(s=>({value:s.id,label:s.step_name||s.id})),f.affected_steps)}</div>
+  <div class="field full"><label>¿Qué sucede cuando aparece el problema? ${requiredMark()}</label><input id="fr_signal" value="${attr(f.observable_signal||'')}" placeholder="Ej.: facturas que llevan más de 48 h pendientes de aprobación"></div>
+  <div class="field"><label>¿Con qué frecuencia ocurre?</label>${frictionNumberControl('fr_frequency',f.frequency)}</div>
+  <div class="field"><label>¿Qué importancia tiene este problema para el cliente?</label>${auneaDropdownControl('fr_impact',[{value:'',label:'—'},...impacts],f.impact||'','—')}</div>
   </div></details>
-  <details class="step-group"><summary>Causa, workaround y evidencia</summary><div class="form-grid">
-  <div class="field full"><label>Causa / condición ${requiredMark()}</label>${selectedHtml('fr_causes',causes,f.cause,{detailId:'fr_cause_other',detailValue:f._details.cause||'',detailPlaceholder:'Especifica otra causa sólo al seleccionar Otro'})}</div>
-  <div class="field full"><label>Cómo se compensa hoy</label>${selectedHtml('fr_workaround',work,f.workaround,{detailId:'fr_workaround_other',detailValue:f._details.workaround||'',detailPlaceholder:'Especifica otro workaround sólo al seleccionar Otro'})}</div>
-  <div class="field"><label>Tipo de evidencia principal <span class="internal-tag">interno</span></label>${auneaDropdownControl('fr_evidence_type',evid,f.evidence_type||'EV02','Selecciona…')}</div>
-  <div class="field"><label>Tiempo asociado a la fricción</label>${frictionNumberControl('fr_active',f.active_time_loss,'time')}</div>
-  <div class="field full"><label>Relación con el tiempo del paso</label>${auneaDropdownControl('fr_time_mode',[{value:'',label:'Pendiente de clasificar'},{value:'INCLUDED',label:'Incluido: ya está contabilizado en el paso'},{value:'BREAKDOWN',label:'Desglose: explica una parte del retrabajo'},{value:'ADDITIONAL',label:'Adicional: trabajo no registrado en el paso'}],f.time_attribution?.mode||'','Selecciona relación…')}<div class="field-help">Sólo Adicional podrá incrementar el esfuerzo total tras validar frecuencia y evidencia. Incluido y Desglose no se suman.</div></div>
-  <div class="field full"><label>Paso responsable del tiempo</label>${auneaDropdownControl('fr_time_owner',[{value:'',label:'Selecciona un paso afectado…'},...activeSteps(e).map(s=>({value:s.id,label:s.step_name||s.id}))],f.time_attribution?.step_id||'','Selecciona paso…')}<div class="field-help">Una fricción puede afectar a varios pasos, pero su tiempo sólo tiene un propietario para evitar multiplicarlo.</div></div>
-  <div class="field"><label>Espera / retraso atribuible</label>${frictionNumberControl('fr_wait',f.wait_time_loss,'time')}</div>
-  <div class="field"><label>Pérdida monetaria directa</label>${frictionNumberControl('fr_direct',f.direct_loss,'money')}</div>
-  <div class="field full"><label>Otros impactos</label>${selectedHtml('fr_non_time',nonTime,f.non_time_impact)}</div>
-  <div class="field"><label>Prioridad cliente (cierre)</label>${auneaDropdownControl('fr_priority',[{value:'',label:'Sin priorizar'},{value:'1',label:'1 — Prioridad principal'},{value:'2',label:'2 — Segunda prioridad'},{value:'3',label:'3 — Tercera prioridad'}],f.priority_client?String(f.priority_client):'','Sin priorizar')}<div class="field-help">Ranking de cierre; top 3 recomendado por el modelo canónico.</div></div>
-  <div class="field full"><label>Cómo lo describe el cliente</label><input id="fr_label" maxlength="160" value="${attr(f.client_label||'')}" placeholder="Opcional"></div>
-  <div class="field full"><label>Nota excepcional</label><input id="fr_notes" maxlength="200" value="${attr(f.notes||'')}" placeholder="Sólo si los campos estructurados no bastan"></div>
+  <details class="step-group"><summary>Por qué ocurre y cómo se resuelve hoy</summary><div class="form-grid">
+  <div class="field full"><label>¿Por qué ocurre este problema? ${requiredMark()}</label>${selectedHtml('fr_causes',causes,f.cause,{detailId:'fr_cause_other',detailValue:f._details.cause||'',detailPlaceholder:'Especifica otra causa sólo al seleccionar Otro'})}</div>
+  <div class="field full"><label>¿Qué hacéis hoy para salir del paso?</label>${selectedHtml('fr_workaround',work,f.workaround,{detailId:'fr_workaround_other',detailValue:f._details.workaround||'',detailPlaceholder:'Especifica otro workaround sólo al seleccionar Otro'})}</div>
+  <div class="field"><label>¿De dónde sale este dato? <span class="internal-tag">interno</span></label>${auneaDropdownControl('fr_evidence_type',evid,f.evidence_type||'EV02','Selecciona…')}</div>
+  <div class="field"><label>¿Cuánto trabajo extra provoca este problema?</label>${frictionNumberControl('fr_active',f.active_time_loss,'time')}</div>
+  <div class="field full"><label>¿Dónde está contabilizado este trabajo extra?</label>${auneaDropdownControl('fr_time_mode',[{value:'',label:'Pendiente de clasificar'},{value:'INCLUDED',label:'Sí, ya está contado en el paso'},{value:'BREAKDOWN',label:'Es parte del tiempo de corrección del paso'},{value:'ADDITIONAL',label:'No, es tiempo extra que aún no está contado'}],f.time_attribution?.mode||'','Selecciona relación…')}<div class="field-help">Sólo Adicional podrá incrementar el esfuerzo total tras validar frecuencia y evidencia. Incluido y Desglose no se suman.</div></div>
+  <div class="field full"><label>¿En qué paso vamos a contar este tiempo?</label>${auneaDropdownControl('fr_time_owner',[{value:'',label:'Selecciona un paso afectado…'},...activeSteps(e).map(s=>({value:s.id,label:s.step_name||s.id}))],f.time_attribution?.step_id||'','Selecciona paso…')}<div class="field-help">Aunque afecte a varios pasos, contaremos este tiempo una sola vez.</div></div>
+  <div class="field"><label>¿Cuánto tiempo queda pendiente el caso por este problema?</label>${frictionNumberControl('fr_wait',f.wait_time_loss,'time')}</div>
+  <div class="field"><label>¿Se ha perdido dinero por este problema?</label>${frictionNumberControl('fr_direct',f.direct_loss,'money')}</div>
+  <div class="field full"><label>¿Tiene otras consecuencias?</label>${selectedHtml('fr_non_time',nonTime,f.non_time_impact)}</div>
+  <div class="field"><label>¿Qué importancia tiene resolverlo primero?</label>${auneaDropdownControl('fr_priority',[{value:'',label:'Sin priorizar'},{value:'1',label:'1 — Prioridad principal'},{value:'2',label:'2 — Segunda prioridad'},{value:'3',label:'3 — Tercera prioridad'}],f.priority_client?String(f.priority_client):'','Sin priorizar')}<div class="field-help">Selecciona la prioridad acordada con el cliente, si ya se ha decidido.</div></div>
+  <div class="field full"><label>¿Cómo lo describe el cliente?</label><input id="fr_label" maxlength="160" value="${attr(f.client_label||'')}" placeholder="Opcional"></div>
+  <div class="field full"><label>¿Hay algo importante que todavía no hayamos recogido?</label><input id="fr_notes" maxlength="200" value="${attr(f.notes||'')}" placeholder="Sólo si los campos estructurados no bastan"></div>
   </div></details>
   </div>`;
   openModal(existing?'Editar fricción':'Añadir fricción',body,()=>{const collect=k=>[...document.querySelectorAll(`[data-v1-multi="${k}"]:checked`)].map(x=>x.value);f.friction_type=document.getElementById('fr_type').value;f.affected_steps=collect('fr_steps');f.cause=collect('fr_causes');f._details.cause=document.getElementById('fr_cause_other').value.trim();f.observable_signal=document.getElementById('fr_signal').value.trim();f.frequency={value:Number(document.getElementById('fr_frequency').value||0),mode:document.getElementById('fr_frequency_mode').value,period:document.getElementById('fr_frequency_period').value};f.impact=document.getElementById('fr_impact').value;
     const atUnit=document.getElementById('fr_active_unit').value,wtUnit=document.getElementById('fr_wait_unit').value;f.active_time_loss={value:minutesFrom(document.getElementById('fr_active').value,atUnit),unit:'min',source_unit:atUnit,mode:document.getElementById('fr_active_mode').value};f.time_attribution={mode:document.getElementById('fr_time_mode').value,step_id:document.getElementById('fr_time_owner').value};f.wait_time_loss={value:minutesFrom(document.getElementById('fr_wait').value,wtUnit),unit:'min',source_unit:wtUnit,mode:document.getElementById('fr_wait_mode').value};f.direct_loss={value:Number(document.getElementById('fr_direct').value||0),unit:'EUR',period:document.getElementById('fr_direct_period').value,mode:document.getElementById('fr_direct_mode').value};f.non_time_impact=collect('fr_non_time');f.workaround=collect('fr_workaround');f._details.workaround=document.getElementById('fr_workaround_other').value.trim();f.evidence_type=document.getElementById('fr_evidence_type').value||'EV02';f.priority_client=Number(document.getElementById('fr_priority').value||0)||null;f.client_label=document.getElementById('fr_label').value.trim();f.notes=document.getElementById('fr_notes').value.trim();f.derived_pain_id=painForFriction(f.friction_type);
-    if(!f.friction_type||!f.affected_steps.length||!f.cause.length&&!f._details.cause||!f.observable_signal)return toast('Tipo, al menos un paso, causa y señal observable son obligatorios.');
-    if(f.active_time_loss.value>0&&(!['INCLUDED','BREAKDOWN','ADDITIONAL'].includes(f.time_attribution.mode)||!f.affected_steps.includes(f.time_attribution.step_id)))return toast('Para atribuir el tiempo, selecciona Incluido, Desglose o Adicional y un paso afectado responsable.');if(existing){Object.assign(existing,f);audit(`Fricción editada ${existing.id}`)}else{e.frictions.push(f);audit(`Fricción creada ${f.id}`)}if(typeof advanceEngagementTo==='function')advanceEngagementTo(e,'Sesión 1','captura de proceso');invalidateProcessLayersSafe(e,'frictions');e.diagnosticOutput=null;e.updatedAt=now();markDirty();closeModal();render();},existing?'Guardar cambios':'Añadir fricción');
+    if(!f.friction_type||!f.affected_steps.length||!f.cause.length&&!f._details.cause||!f.observable_signal)return toast('Indica qué problema es, dónde ocurre, qué sucede y por qué.');
+    if(f.active_time_loss.value>0&&(!['INCLUDED','BREAKDOWN','ADDITIONAL'].includes(f.time_attribution.mode)||!f.affected_steps.includes(f.time_attribution.step_id)))return toast('Indica dónde está contado este tiempo y selecciona uno de los pasos afectados para no sumarlo dos veces.');if(existing){Object.assign(existing,f);audit(`Fricción editada ${existing.id}`)}else{e.frictions.push(f);audit(`Fricción creada ${f.id}`)}if(typeof advanceEngagementTo==='function')advanceEngagementTo(e,'Sesión 1','captura de proceso');invalidateProcessLayersSafe(e,'frictions');e.diagnosticOutput=null;e.updatedAt=now();markDirty();closeModal();render();},existing?'Guardar cambios':'Añadir fricción');
   document.querySelectorAll('[data-v1-other-toggle]').forEach(el=>el.addEventListener('change',()=>{const key=el.dataset.v1OtherToggle,wrap=document.querySelector(`[data-v1-other-wrap="${key}"]`);if(!wrap)return;wrap.style.display=el.checked?'':'none';if(!el.checked){const input=wrap.querySelector('input,textarea');if(input)input.value=''}}));
 }
 
@@ -255,6 +255,11 @@ function addMultipleSteps(){
 function removeStepFromFlow(stepId){
   const e=currentEng(),step=e?.processSteps?.find(x=>x.id===stepId&&x.status!=='SUPERSEDED');if(!step)return;
   const linkedFrictions=activeFrictions(e).filter(f=>normalizeArray(f.affected_steps).includes(stepId));
+  const linkedRisks=(e.risks||[]).filter(x=>normalizeArray(x.step_ids).includes(stepId));
+  const linkedEconomics=(e.economicInputs||[]).filter(x=>normalizeArray(x.step_ids).includes(stepId));
+  if(linkedRisks.length||linkedEconomics.length)return toast('Este paso tiene riesgos o datos económicos relacionados. Cambia primero esas relaciones para no perder información.');
+  if(linkedFrictions.some(f=>normalizeArray(f.affected_steps).length===1))return toast('Este paso es el único vinculado a un problema. Cambia primero el paso relacionado para conservarlo.');
+  if(linkedFrictions.some(f=>f.time_attribution?.step_id===stepId))return toast('Este paso es donde se cuenta el tiempo de un problema. Revisa primero esa relación.');
   const body=`<div class="notice warn"><b>¿Eliminar “${esc(step.step_name||'este paso')}” del flujo?</b><p>Dejará de aparecer en el mapa. La trazabilidad histórica se conservará internamente. Las rutas que apunten a este paso quedarán pendientes de redefinir${linkedFrictions.length?` y ${linkedFrictions.length} fricción(es) perderán este vínculo`:''}.</p></div>`;
   openModal('Eliminar paso del flujo',body,()=>{
     step.status='SUPERSEDED';
@@ -464,6 +469,49 @@ function clientLayerBody(e,steps,fr,tab){
   if(tab==='impacto')return flow+economicBuilder(e);
   return flow+`<div class="client-map-actions"><button class="btn btn-primary" id="addStepFromClient">Añadir paso</button><button class="btn btn-outline" id="addDecisionFromClient">Añadir decisión</button><button class="btn btn-outline" id="useProcessTemplate">Casos de referencia</button></div>`;
 }
+/* [AUNEA-FE-PROC-CONTINUITY-046] START — Read-only scope and demand carried into every AS-IS layer.
+   SOURCE: Diagnostic Master v1.2 DF011–DF030; DEC-050/064/065. No extra editable owner. */
+function processContinuityContext(e){
+  const a=e.answers||{},read=(id,empty='Pendiente')=>{const v=a[id];if(v===undefined||v===null||v==='')return empty;const f=(schema?.fields||[]).find(x=>x.Field_ID===id);return typeof formatContextValue==='function'&&f?formatContextValue(f,v):typeof v==='object'?[v.value,v.unit,v.period].filter(x=>x!==undefined&&x!==null&&x!=='').join(' '):String(v)};
+  const period=read('DF022','periodo pendiente'),volume=read('DF021');
+  const metric=(name,value)=>'<span class="chip"><b>'+esc(name)+':</b> '+esc(value)+'</span>';
+  return '<div class="client-process-lineage" data-process-continuity="true"><b>Lo que ya sabemos del proceso</b>'
+    +'<p><b>Proceso:</b> '+esc(read('DF011','Sin nombre'))+'</p>'
+    +'<p><b>Empieza:</b> '+esc(read('DF014',read('DF012')))+'</p>'
+    +'<p><b>Termina:</b> '+esc(read('DF015',read('DF013')))+'</p>'
+    +'<div class="coverage-chips">'
+    +metric('Casos habituales',volume+' / '+period)
+    +metric('En momentos de más trabajo',read('DF023'))
+    +metric('Tiempo objetivo',read('DF025'))
+    +metric('Duración habitual declarada',read('DF026'))
+    +'</div><small>Estos datos vienen de Alcance y Demanda. Para corregirlos, vuelve a su etapa: aquí no se crean copias.</small></div>';
+}
+/* [AUNEA-FE-PROC-CONTINUITY-046] END */
+
+/* [AUNEA-FE-PROC-REVIEW-047] START — PG09 reads the same live process entities, never a duplicate map. */
+function processReadOnlyJourney(e){
+  const steps=activeSteps(e),fr=activeFrictions(e),risks=e.risks||[],economic=e.economicInputs||[];
+  const name=id=>id==='__END__'?'Fin del proceso':steps.find(x=>x.id===id)?.step_name||'Ruta por completar';
+  const entries=steps.map((step,i)=>{
+    const frs=fr.filter(x=>normalizeArray(x.affected_steps).includes(step.id));
+    const rs=risks.filter(x=>normalizeArray(x.step_ids).includes(step.id));
+    const es=economic.filter(x=>normalizeArray(x.step_ids).includes(step.id));
+    const branch=processDecisionStep(step)
+      ?'<p><b>Si se cumple:</b> '+esc(name(step.normal_next_step))+' · <b>Si no:</b> '+esc(name(step.exception_path?.destination_step))+'</p>'
+      :'<p><b>Después:</b> '+esc(name(step.normal_next_step||steps[i+1]?.id||'__END__'))+'</p>';
+    return '<div class="notice" data-review-step="'+attr(step.id)+'"><b>'+(i+1)+'. '+esc(step.step_name||'Paso sin nombre')+'</b>'
+      +'<p>'+esc(labelFrom('OS_ACTOR_ROLE',step.actor)||'Responsable pendiente')+' · '+num(step.active_time)+' min de trabajo · '+num(step.wait_time)+' min de espera</p>'
+      +branch
+      +'<p><b>Problemas:</b> '+(frs.length?frs.map(x=>esc(x.client_label||labelFrom('OS_FRICTION_TYPE',x.friction_type))).join('; '):'Ninguno registrado')
+      +' · <b>Riesgos:</b> '+rs.length+' · <b>Datos de impacto:</b> '+es.length+'</p></div>';
+  }).join('');
+  return '<div data-process-review="true"><h3>Así funciona hoy el proceso</h3>'
+    +processContinuityContext(e)
+    +'<p><b>Recorrido:</b> se muestran los pasos y las relaciones que ya has registrado. Las rutas sin completar quedan identificadas.</p>'
+    +(entries||'<div class="notice warn">Todavía no hay pasos intermedios registrados.</div>')
+    +'</div>';
+}
+/* [AUNEA-FE-PROC-REVIEW-047] END */
 function clientProcessView(e,steps,fr,tab='cliente'){
   const riskCount=(e.risks||[]).length,econCount=(e.economicInputs||[]).length,company=(typeof companyById==='function'?companyById(e.companyId)?.name:'')||e.answers?.DF001||'Empresa',processName=e.answers?.DF011||e.processName||'Proceso sin nombre';
   const clientBar=`<div class="client-process-topbar"><img src="./assets/brand/Logo.png" alt="AUNEA"><div class="client-process-context"><span>${esc(company)}</span><b>${esc(processName)}</b></div><div class="client-process-state"><span>Sesión de diagnóstico</span><b>Editor compartido</b></div></div>`;
@@ -481,7 +529,7 @@ function clientProcessView(e,steps,fr,tab='cliente'){
     tab==='riesgos'?fr.length+' fricciones registradas · los riesgos se asocian a sus pasos afectados':
     tab==='impacto'?fr.length+' fricciones y '+riskCount+' riesgos en el mismo mapa; sólo cuantifica importes acreditados':
     'Construye la secuencia y configura las bifurcaciones reales del proceso';
-  const lineage='<div class="client-process-lineage"><b>Contexto heredado</b><span>'+esc(upstream)+'</span></div>';
+  const lineage=processContinuityContext(e)+'<div class="client-process-lineage"><b>Ahora estamos revisando</b><span>'+esc(upstream)+'</span></div>';
   const nextIndex=stages.findIndex(x=>x.tab===tab)+1,next=stages[nextIndex];
   const nextAction=next?'<button class="btn btn-outline client-process-next" type="button" data-process-tab="'+next.tab+'">Continuar a '+next.title+' →</button>':'';
 // [AUNEA-FE-PROC-LAYERS-045] END

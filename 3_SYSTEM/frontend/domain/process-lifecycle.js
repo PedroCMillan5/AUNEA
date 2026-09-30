@@ -39,6 +39,7 @@ function confirmProcessLayer(tab){
     const start=e.answers?.DF014,finish=e.answers?.DF015,hasActive=(e.processSteps||[]).some(x=>x.status!=='SUPERSEDED');
     if((!start||!finish)&&!hasActive)return toast('Define los límites inicial y final o añade al menos un paso antes de confirmar el mapa.');
   }
+  if(key==='impact'&&typeof economicRoleRateIssues==='function'&&economicRoleRateIssues(e).length)return toast('Algunos registros económicos usan un coste distinto del perfil actual. Revisa y actualiza esos importes antes de confirmar el impacto.');
   const x=processLayerConfirmations(e);x[key]=true;x[key+'_at']=now();
   if(allProcessLayersConfirmed(e)){
     e.confirmedAsIs=true;e.answers.DF093='YES';e.asIsConfirmedAt=now();
@@ -51,7 +52,16 @@ function confirmProcessLayer(tab){
   }
   render();
 }
-function confirmAsIs(){confirmProcessLayer(currentEng()?.processTab||'cliente')}
+function confirmAsIs(){
+  const e=currentEng();if(!e)return;
+  // PG09 must not silently confirm whichever process tab happened to be left selected.
+  // The four layers are confirmed explicitly in the shared editor (DEC-065).
+  if(typeof state!=='undefined'&&state.activePage==='diagnostico'&&e.stageId==='S09'&&!allProcessLayersConfirmed(e)){
+    toast('Antes de cerrar, revisa y confirma los cuatro apartados del proceso: pasos, problemas, riesgos e impacto.');
+    e.processTab='cliente';state.activePage='proceso';render();return;
+  }
+  confirmProcessLayer(e.processTab||'cliente');
+}
 
 function openProcessEditorWindow(){
   const e=currentEng();if(!e)return toast('Abre primero un estudio.');

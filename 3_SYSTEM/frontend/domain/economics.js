@@ -7,18 +7,18 @@
 // CHANGE_RISK: HIGH.
 const ECON_DRIVER_LABELS_ES=Object.freeze({
   ED01:'Tiempo de ejecución manual',
-  ED02:'Tiempo de entrada duplicada',
-  ED03:'Tiempo de búsqueda / recuperación',
-  ED04:'Tiempo de seguimiento',
-  ED05:'Tiempo de retrabajo',
-  ED06:'Tiempo de consolidación de reporting',
-  ED07:'Tiempo de gestión de aprobaciones',
-  ED08:'Tiempo de gestión de traspasos',
+  ED02:'Tiempo dedicado a introducir datos dos veces',
+  ED03:'Tiempo dedicado a buscar información',
+  ED04:'Tiempo dedicado a hacer seguimiento',
+  ED05:'Tiempo dedicado a corregir o repetir tareas',
+  ED06:'Tiempo dedicado a preparar informes',
+  ED07:'Tiempo dedicado a gestionar aprobaciones',
+  ED08:'Tiempo dedicado a pasar trabajo entre personas',
   ED09:'Coste directo de error / defecto',
   ED10:'Facturación perdida / fuga de ingresos',
   ED11:'Penalización / pérdida evitable',
   ED12:'Coste de herramientas',
-  ED13:'Tiempo de espera',
+  ED13:'Tiempo en que el caso queda pendiente',
   ED14:'Coste de capacidad por hora',
   ED15:'Volumen de casos'
 });
@@ -128,9 +128,78 @@ function economicCaptureIssues(e,draft){
 }
 // [AUNEA-FE-ECON-OVERLAP-036] END
 
+/* [AUNEA-FE-ECON-ROLE-RATES-037] START — DF076 is the single owner of role-specific rates.
+   SOURCE: Diagnostic Master v1.2 DF076 ROLE_RATE_TABLE; DEC-050/065, EAR-001/004.
+   Role cost is a capacity valuation input, never realized cash saving. */
+function economicRoleRates(e){return Array.isArray(e?.answers?.DF076)?e.answers.DF076:[]}
+function economicRoles(e){return [...new Set((typeof activeSteps==='function'?activeSteps(e):e.processSteps||[]).map(s=>s.actor).filter(Boolean))]}
+function economicRateForRole(e,role){return economicRoleRates(e).find(x=>x.role===role&&Number(x.eur_hour)>0&&x.evidence_type)||null}
+function economicInputRole(e,item){
+  const steps=typeof activeSteps==='function'?activeSteps(e):e.processSteps||[];
+  const ids=normalizeArray(item.step_ids);
+  const roles=[...new Set(steps.filter(x=>ids.includes(x.id)).map(x=>x.actor).filter(Boolean))];
+  return roles.length===1?roles[0]:null;
+}
+function economicRoleRateMismatch(e,item){
+  const role=economicInputRole(e,item),rate=role?economicRateForRole(e,role):null;
+  return !!(item.capacity_cost_rate_eur_hour!=null&&(!rate||Number(item.capacity_cost_rate_eur_hour)!==Number(rate.eur_hour)));
+}
+function economicRoleRateIssues(e){return (e.economicInputs||[]).filter(x=>economicRoleRateMismatch(e,x))}
+function applyEconomicRoleRate(index){
+  const e=currentEng(),item=e.economicInputs?.[index],role=item&&economicInputRole(e,item);
+  const rate=role?economicRateForRole(e,role):null;
+  if(!item||!rate)return toast('Selecciona pasos de un solo perfil y registra primero su coste y evidencia.');
+  item.capacity_cost_rate_eur_hour=Number(rate.eur_hour);
+  if(typeof invalidateProcessLayers==='function')invalidateProcessLayers(e,'impact');
+  markDirty('Coste económico sincronizado con DF076');render();
+}
+function economicRoleRateTable(e){
+  const roles=economicRoles(e),rates=economicRoleRates(e);
+  const rows=roles.map(role=>{
+    const rate=rates.find(x=>x.role===role)||{},label=typeof labelFrom==='function'?labelFrom('OS_ACTOR_ROLE',role):role;
+    const evidence=Object.entries(I18N_LABELS_ES.evidence_quality).map(([value,text])=>({value,label:text}));
+    return '<div class="form-grid" data-econ-role-row="'+attr(role)+'"><div class="field"><label>¿Cuánto cuesta una hora de '+esc(label)+'?</label>'
+      +'<div class="compound-control"><input type="number" min="0" step="any" data-econ-role-value="'+attr(role)+'" value="'+attr(rate.eur_hour??'')+'" placeholder="Sin dato"><span class="unit-label">€/h</span></div></div>'
+      +'<div class="field"><label>¿Cómo sabemos este coste?</label>'+econDropdown('econ_role_evidence_'+roles.indexOf(role),[{value:'',label:'Pendiente'},...evidence],rate.evidence_type||'','Selecciona evidencia…')+'</div></div>';
+  }).join('');
+  return '<div class="notice info" data-economic-role-rates="true"><b>Coste por perfil</b>'
+    +'<p>Usamos los responsables ya indicados en los pasos. Indica el coste de una hora y su procedencia sólo si existe un dato defendible. La espera no se convierte en coste laboral.</p>'
+    +(rows||'<p>Indica primero quién realiza cada paso del proceso.</p>')
+    +(roles.length?'<button type="button" class="btn btn-outline" id="saveEconomicRoleRates">Guardar costes por perfil</button>':'')
+    +'</div>';
+}
+function saveEconomicRoleRates(){
+  const e=currentEng(),roles=economicRoles(e),rows=[],existing=economicRoleRates(e);
+  for(const [i,role] of roles.entries()){
+    const row=document.querySelectorAll('[data-econ-role-row]')[i];
+    const raw=row?.querySelector('[data-econ-role-value]')?.value??'';
+    const evid=document.getElementById('econ_role_evidence_'+i)?.value||'';
+    if(raw===''){continue}
+    const rate=Number(raw);
+    if(!Number.isFinite(rate)||rate<=0)return toast('Indica un coste por hora válido para cada perfil que quieras valorar.');
+    if(!evid)return toast('Indica de dónde sale el coste por hora de cada perfil.');
+    rows.push({role,eur_hour:rate,evidence_type:evid});
+  }
+  // Reconcile only rate values that were demonstrably derived from the former DF076 owner.
+  // Legacy one-off rates remain visible for explicit review, never silently overwritten.
+  if(JSON.stringify(rows)!==JSON.stringify(existing)){
+    const before=new Map(existing.map(x=>[x.role,Number(x.eur_hour)]));
+    const after=new Map(rows.map(x=>[x.role,Number(x.eur_hour)]));
+    (e.economicInputs||[]).forEach(item=>{
+      const role=economicInputRole(e,item),oldRate=before.get(role);
+      if(role&&oldRate!==undefined&&Number(item.capacity_cost_rate_eur_hour)===oldRate)
+        item.capacity_cost_rate_eur_hour=after.get(role)??null;
+    });
+    setAnswer('DF076',rows);
+    if(typeof invalidateProcessLayers==='function')invalidateProcessLayers(e,'impact');
+  }
+  markDirty('Costes por perfil revisados');render();toast('Costes por perfil guardados.');
+}
+/* [AUNEA-FE-ECON-ROLE-RATES-037] END */
+
 function economicBuilder(e){
   const steps=typeof activeSteps==='function'?activeSteps(e):[];
-  return section('Inputs económicos materiales','Los inputs se mantienen separados: trabajo activo, espera, pérdida directa, herramienta y ahorro de caja realizado. No se inventan porcentajes de recuperación.',`<div class="result-list">${e.economicInputs.length?e.economicInputs.map(x=>`<div class="result-item"><b>${esc(econDriverLabel(x.driver_id))}</b><p>Activo ${x.annual_active_hours||0} h/año · Espera ${x.annual_wait_hours||0} h/año · Pérdida directa ${x.direct_loss_eur_annual||0} €/año · Evidencia: ${esc(engineLabel('evidence_quality',x.evidence_type))}</p><p>Pasos: ${(Array.isArray(x.step_ids)?x.step_ids:(x.step_ids?[x.step_ids]:[])).map(id=>steps.find(s=>s.id===id)?.step_name||id).map(esc).join(', ')||'Sin anclar'}</p></div>`).join(''):'<div class="empty"><p>Sin inputs económicos explícitos añadidos.</p></div>'}</div>`,`<button class="btn btn-outline" id="addEconomic">Añadir input económico</button>`)
+  return section('Tiempo y costes del proceso','Usamos los datos que ya tenemos y preguntamos sólo lo que falta. El trabajo, la espera, las pérdidas y el ahorro real se muestran por separado.',economicRoleRateTable(e)+`<div class="result-list">${e.economicInputs.length?e.economicInputs.map((x,i)=>`<div class="result-item"><b>${esc(econDriverLabel(x.driver_id))}</b>${economicRoleRateMismatch(e,x)?`<p class="notice warn">El coste de este registro no coincide con el perfil actual. ${economicRateForRole(e,economicInputRole(e,x))?`<button type="button" class="btn btn-small" data-econ-apply-rate="${i}">Usar coste del perfil</button>`:'Registra el coste del perfil para poder revisarlo.'}</p>`:''}<p>Activo ${x.annual_active_hours||0} h/año · Espera ${x.annual_wait_hours||0} h/año · Pérdida directa ${x.direct_loss_eur_annual||0} €/año · Evidencia: ${esc(engineLabel('evidence_quality',x.evidence_type))}</p><p>Pasos: ${(Array.isArray(x.step_ids)?x.step_ids:(x.step_ids?[x.step_ids]:[])).map(id=>steps.find(s=>s.id===id)?.step_name||id).map(esc).join(', ')||'Sin anclar'}</p></div>`).join(''):'<div class="empty"><p>Todavía no se han registrado datos económicos.</p></div>'}</div>`,`<button class="btn btn-outline" id="addEconomic">Añadir dato económico</button>`)
 }
 
 function addEconomic(preselectedSteps=[]){
@@ -147,25 +216,25 @@ function addEconomic(preselectedSteps=[]){
     +(linkedFrictions.length?'<p>Fricciones: '+linkedFrictions.map(f=>esc(f.client_label||labelFrom('OS_FRICTION_TYPE',f.friction_type))).join(' · ')+'</p>':'')
     +(mappedTools.length?'<p>Herramientas registradas en el mapa (DF046): '+mappedTools.map(x=>esc(labelFrom('OS_TOOL_CATEGORY',x))).join(' · ')+' · Registra sólo el coste atribuible a este proceso; no presupongas su eliminación.</p>':'')
     +(attributedLosses.length?'<p>Pérdidas directas declaradas en fricciones (DF063): '+attributedLosses.map(f=>esc(f.client_label||f.id)).join(' · ')+' · Comprueba que DF082 no vuelva a contabilizar el mismo evento.</p>':'')
-    +'<small>El cálculo previo reutiliza los tiempos de los pasos y el volumen capturado. La espera no equivale a coste ni el trabajo activo equivale a desperdicio o ahorro.</small></div>';
+    +'<small>El cálculo previo reutiliza los tiempos de los pasos y el volumen capturado. El tiempo de espera no es tiempo trabajado. El trabajo actual no equivale automáticamente a pérdida ni a ahorro.</small></div>';
   let serverProjection=null,serverSelection='',requestSequence=0;
   const preview=value=>Number(value||0).toLocaleString('es-ES',{maximumFractionDigits:2});
   const initialPreview='Comprobando los datos de volumen, tiempo y calendario con el backend…';
   const activeHelp=activeContributors.length?`<div class="field-help">Pasos con tiempo activo registrado: ${esc(activeContributors.join(', '))}. Se reutilizan para obtener un cálculo revisable cuando el volumen y la aplicación están completos.</div>`:'<div class="field-help">Cuando faltan tiempos o volumen, indica el dato anual manualmente con su evidencia.</div>';
-  const waitHelp=waitContributors.length?`<div class="field-help">Pasos con espera registrada: ${esc(waitContributors.join(', '))}. Se calcula por separado del trabajo; no constituye por sí misma ahorro económico.</div>`:'<div class="field-help">La espera se registra aparte del trabajo. Si faltan datos, introduce una cifra anual validada.</div>';
-  openModal('Añadir input económico',`<div class="step-groups process-modal-form economic-modal-form">${inheritedContext}
-    <details class="step-group" open><summary>Impacto en tiempo y evidencia</summary><div class="form-grid"><div class="field full"><div class="notice info" id="economicDerivedPreview" role="status">${esc(initialPreview)}</div><div class="field-help">Vista previa procedente del backend con DF021/DF022 y los tiempos registrados. El trabajo total no es tiempo desperdiciado; sólo el retrabajo medido se muestra como posible ineficiencia, sin sumar fricciones que pudieran solaparse.</div></div>
+  const waitHelp=waitContributors.length?`<div class="field-help">Pasos con espera registrada: ${esc(waitContributors.join(', '))}. Se calcula por separado del trabajo; no constituye por sí misma ahorro económico.</div>`:'<div class="field-help">La espera se cuenta por separado. Si faltan datos, indica una cifra anual que puedas justificar.</div>';
+  openModal('Registrar tiempo o coste',`<div class="step-groups process-modal-form economic-modal-form">${inheritedContext}
+    <details class="step-group" open><summary>Impacto en tiempo y evidencia</summary><div class="form-grid"><div class="field full"><div class="notice info" id="economicDerivedPreview" role="status">${esc(initialPreview)}</div><div class="field-help">Este cálculo usa el volumen y los tiempos ya registrados. El tiempo total de trabajo no es tiempo desperdiciado. No sumaremos dos veces un mismo problema.</div></div>
       <div class="field full"><label>Pasos del proceso relacionados</label><div class="choice-grid">${steps.map(s=>`<div class="choice"><input type="checkbox" id="econ_step_${attr(s.id)}" data-econ-step="${attr(s.id)}" ${preselectedSteps.includes(s.id)?'checked':''}><label for="econ_step_${attr(s.id)}">${esc(s.step_name||s.id)}</label></div>`).join('')}</div></div>
-      <div class="field full"><label>Concepto económico</label>${econDropdown('econDriver',drivers.map(d=>({value:d.Economic_Driver_ID,label:econDriverLabel(d.Economic_Driver_ID)})),drivers[0]?.Economic_Driver_ID||'','Selecciona…')}</div>
-      <div class="field"><label>Tiempo activo atribuible</label>${econAnnualTimeControl('econActive',0,'h')}${activeHelp}</div>
-      <div class="field"><label>Tiempo de espera atribuible</label>${econAnnualTimeControl('econWait',0,'h')}${waitHelp}</div>
-      <div class="field full"><label>Tipo de evidencia</label>${econDropdown('econEvidence',Object.entries(I18N_LABELS_ES.evidence_quality).map(([value,label])=>({value,label})),'','Selecciona…')}</div>
+      <div class="field full"><label>¿Qué tiempo o coste estamos registrando?</label>${econDropdown('econDriver',drivers.map(d=>({value:d.Economic_Driver_ID,label:econDriverLabel(d.Economic_Driver_ID)})),drivers[0]?.Economic_Driver_ID||'','Selecciona…')}</div>
+      <div class="field"><label>¿Cuántas horas de trabajo supone al año?</label>${econAnnualTimeControl('econActive',0,'h')}${activeHelp}</div>
+      <div class="field"><label>¿Cuánto tiempo queda esperando el caso?</label>${econAnnualTimeControl('econWait',0,'h')}${waitHelp}</div>
+      <div class="field full"><label>¿De dónde salen estos datos?</label>${econDropdown('econEvidence',Object.entries(I18N_LABELS_ES.evidence_quality).map(([value,label])=>({value,label})),'','Selecciona…')}</div>
     </div></details>
     <details class="step-group" open><summary>Costes, pérdidas y ahorro realizado</summary><div class="form-grid">
-      <div class="field"><label>Coste de capacidad por hora</label><div class="compound-control"><input id="econRate" type="number" min="0" step="any" inputmode="decimal" placeholder="0"><span class="unit-label">€/h</span></div><div class="field-help">Valor de capacidad; no equivale por sí solo a ahorro de caja.</div></div>
-      <div class="field"><label>Pérdida directa anual</label><div class="compound-control"><input id="econDirect" type="number" min="0" step="any" inputmode="decimal" placeholder="0"><span class="unit-label">€/año</span></div><div class="field-help">Pérdida financiera directa evidenciada y atribuible al proceso.</div></div>
-      <div class="field"><label>Coste actual de herramientas</label><div class="compound-control"><input id="econTool" type="number" min="0" step="any" inputmode="decimal" placeholder="0"><span class="unit-label">€/año</span></div><div class="field-help">Gasto actual atribuible; no se presume eliminable.</div></div>
-      <div class="field"><label>Ahorro de caja ya realizado</label><div class="compound-control"><input id="econCash" type="number" min="0" step="any" inputmode="decimal" placeholder="0"><span class="unit-label">€/año</span></div><div class="field-help">Sólo ahorro real ya materializado; no es una estimación futura.</div></div>
+      <div class="field"><label>Coste por hora del perfil que realiza el trabajo</label><div class="compound-control"><input id="econRate" type="number" min="0" step="any" inputmode="decimal" placeholder="Se reutiliza de DF076" readonly><span class="unit-label">€/h</span></div><div class="field-help" id="econRoleRateHelp">Se reutiliza el coste registrado en este apartado. Para valorar varios perfiles, selecciona y guarda sus pasos por separado. No equivale a ahorro efectivo.</div></div>
+      <div class="field"><label>¿Cuánto dinero se ha perdido directamente al año?</label><div class="compound-control"><input id="econDirect" type="number" min="0" step="any" inputmode="decimal" placeholder="0"><span class="unit-label">€/año</span></div><div class="field-help">Pérdida financiera directa evidenciada y atribuible al proceso.</div></div>
+      <div class="field"><label>¿Cuánto cuestan hoy las herramientas al año?</label><div class="compound-control"><input id="econTool" type="number" min="0" step="any" inputmode="decimal" placeholder="0"><span class="unit-label">€/año</span></div><div class="field-help">Gasto actual atribuible; no se presume eliminable.</div></div>
+      <div class="field"><label>¿Qué ahorro real de dinero se ha conseguido ya?</label><div class="compound-control"><input id="econCash" type="number" min="0" step="any" inputmode="decimal" placeholder="0"><span class="unit-label">€/año</span></div><div class="field-help">Sólo ahorro real ya materializado; no es una estimación futura.</div></div>
     </div></details>
   </div>`,()=>{
     const step_ids=typeof document.querySelectorAll==='function'?[...document.querySelectorAll('[data-econ-step]:checked')].map(x=>x.dataset.econStep):[];
@@ -174,11 +243,15 @@ function addEconomic(preselectedSteps=[]){
     // An automatic value belongs to its exact upstream version. It cannot become
     // a manual declaration merely because an async refresh or another tab changed it.
     if(!projected&&['econActive','econWait'].some(id=>document.getElementById(id)?.dataset?.autoDerived==='true'))
-      return toast('Los datos del proceso han cambiado. Actualiza la vista previa antes de guardar el impacto.');
+      return toast('Han cambiado los datos del proceso. Actualiza el cálculo antes de guardar.');
     const activeHours=projected?projected.active:econHoursFrom(document.getElementById('econActive').value,document.getElementById('econActive_unit').value||'h');
     const waitHours=projected?projected.wait:econHoursFrom(document.getElementById('econWait').value,document.getElementById('econWait_unit').value||'h');
-    const draft={step_ids,driver_id:document.getElementById('econDriver').value,annual_active_hours:activeHours,annual_wait_hours:waitHours,capacity_cost_rate_eur_hour:+document.getElementById('econRate').value||null,direct_loss_eur_annual:+document.getElementById('econDirect').value||0,current_tool_cost_eur_annual:+document.getElementById('econTool').value||0,realized_cash_saving_eur_annual:+document.getElementById('econCash').value||0,evidence_type:document.getElementById('econEvidence').value,derivation_source:projected?'DF021/DF022 + RT_PROCESS_STEP':'MANUAL_VALIDATION',deduplication_key:null};
-    if(!draft.evidence_type)return toast('Selecciona la evidencia correspondiente al dato económico; no se presupone que sea medido.');
+    const selectedRoles=[...new Set(steps.filter(x=>step_ids.includes(x.id)).map(x=>x.actor).filter(Boolean))];
+    if(selectedRoles.length>1&&document.getElementById('econRate')?.value)return toast('Estos pasos tienen responsables distintos. Puedes guardar el tiempo sin coste, o separar los pasos por perfil para valorar cada uno.');
+    const selectedRate=selectedRoles.length===1?economicRateForRole(eng,selectedRoles[0]):null;
+    if(document.getElementById('econRate')?.value&&selectedRoles.length===1&&!selectedRate)return toast('Indica primero el coste y la evidencia de este perfil en Coste por perfil.');
+    const draft={step_ids,driver_id:document.getElementById('econDriver').value,annual_active_hours:activeHours,annual_wait_hours:waitHours,capacity_cost_rate_eur_hour:selectedRate&&activeHours>0?Number(selectedRate.eur_hour):null,direct_loss_eur_annual:+document.getElementById('econDirect').value||0,current_tool_cost_eur_annual:+document.getElementById('econTool').value||0,realized_cash_saving_eur_annual:+document.getElementById('econCash').value||0,evidence_type:document.getElementById('econEvidence').value,derivation_source:projected?'DF021/DF022 + RT_PROCESS_STEP':'MANUAL_VALIDATION',deduplication_key:null};
+    if(!draft.evidence_type)return toast('Indica de dónde sale este dato: no lo trataremos como medido si no lo está.');
     const overlaps=economicCaptureIssues(eng,draft);
     if(overlaps.length)return toast(overlaps.join(' '));
     // Do not generate a random per-row key and pretend it identifies a unique economic event.
@@ -187,6 +260,7 @@ function addEconomic(preselectedSteps=[]){
     if(typeof invalidateProcessLayers==='function')invalidateProcessLayers(eng,'impact');markDirty('Input económico añadido');closeModal();render();
     const zeroWithEvidence=[];if(activeHours===0&&activeContributors.length)zeroWithEvidence.push('trabajo activo');if(waitHours===0&&waitContributors.length)zeroWithEvidence.push('espera');
     if(zeroWithEvidence.length)toast(`Guardado con ${zeroWithEvidence.join(' y ')} anual en 0 aunque Proceso registra tiempo en esos pasos — revisa si falta transcribirlo.`);
+    else if(selectedRoles.length>1&&activeHours>0)toast('Horas guardadas sin coste: hay varios perfiles. Para valorar su tiempo, registra por separado los pasos de cada perfil.');
   });
   const refresh=async()=>{
     const ids=typeof document.querySelectorAll==='function'?[...document.querySelectorAll('[data-econ-step]:checked')].map(x=>x.dataset.econStep):[];
@@ -207,6 +281,11 @@ function addEconomic(preselectedSteps=[]){
     const currentIds=typeof document.querySelectorAll==='function'?[...document.querySelectorAll('[data-econ-step]:checked')].map(x=>x.dataset.econStep):[];
     if(JSON.stringify({step_ids:currentIds,request:economicTimeRequest(eng,currentIds)})!==selection)return;
     serverProjection=projection;serverSelection=selection;
+    const selectedRoles=[...new Set(steps.filter(x=>ids.includes(x.id)).map(x=>x.actor).filter(Boolean))];
+    const rate=selectedRoles.length===1?economicRateForRole(eng,selectedRoles[0]):null;
+    const rateInput=document.getElementById('econRate'),rateHelp=document.getElementById('econRoleRateHelp');
+    if(rateInput)rateInput.value=rate?String(rate.eur_hour):'';
+    if(rateHelp)rateHelp.textContent=selectedRoles.length>1?'Hay varios perfiles. Selecciona sólo los pasos de un perfil para valorar su tiempo.':selectedRoles.length===1?(rate?'Coste reutilizado de DF076 con evidencia '+(I18N_LABELS_ES.evidence_quality[rate.evidence_type]||rate.evidence_type)+'. No es ahorro realizado.':'Coste pendiente para este perfil: puedes guardar las horas sin monetizarlas.'):'Selecciona los pasos de un perfil. Si no existe un coste defendible, el valor monetario quedará pendiente.';
     const suggested=economicProjectionForDriver(projection,document.getElementById('econDriver')?.value);
     if(target)target.textContent=projection.available
       ?'Según backend: '+preview(projection.active)+' h/año de trabajo activo · '+preview(projection.wait)+' h/año de exposición a espera · '+preview(projection.rework)+' h/año de retrabajo; esfuerzo adicional validado de fricciones: '+preview(projection.additional)+' h/año (separado, nunca duplicado)'+(projection.monetaryPending?.length?' · Pérdidas directas pendientes de conciliar con DF082.':'')
@@ -223,5 +302,9 @@ function addEconomic(preselectedSteps=[]){
   if(typeof document.querySelectorAll==='function')document.querySelectorAll('[data-econ-step]').forEach(el=>el.addEventListener?.('change',refresh));
   document.getElementById('econDriver')?.addEventListener?.('change',()=>{if(serverProjection){const suggestion=economicProjectionForDriver(serverProjection,document.getElementById('econDriver')?.value);for(const [field,value] of [['econActive',suggestion?.active],['econWait',suggestion?.wait]]){const input=document.getElementById(field);if(!input)continue;input.disabled=!!suggestion;if(suggestion)input.value=Number(value||0).toFixed(2);else if(input.dataset?.autoDerived==='true')input.value='';if(input.dataset)input.dataset.autoDerived=suggestion?'true':'false';}}else refresh()});
   refresh();
+}
+if(typeof bindForms==='function'){
+  const __auneaEconomicsRateBindForms=bindForms;
+  bindForms=function(){__auneaEconomicsRateBindForms();const button=document.getElementById('saveEconomicRoleRates');if(button)button.onclick=saveEconomicRoleRates;document.querySelectorAll('[data-econ-apply-rate]').forEach(b=>b.onclick=()=>applyEconomicRoleRate(Number(b.dataset.econApplyRate)));};
 }
 // [AUNEA-FE-ECON-CAPTURE-030] END
