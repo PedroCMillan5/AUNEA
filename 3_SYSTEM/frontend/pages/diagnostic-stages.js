@@ -255,7 +255,7 @@ function stagePage(){
   // the blockers that explain why it is or is not available. Two of them was one too many.
   const bar=actionBar(
     `<button class="btn" id="saveDraft">Guardar borrador</button>`
-    +`<button class="btn btn-outline" id="openSessionDisplay" ${CLIENT_DISPLAY_PAUSED?'disabled aria-disabled="true" title="Vista cliente en pausa: revisión de coherencia del flujo"':''}>${CLIENT_DISPLAY_PAUSED?'Vista cliente en pausa':'Abrir vista de sesión'}</button>`,
+    +`<button class="btn btn-outline" id="openSessionDisplay" ${typeof CLIENT_DISPLAY_PAUSED!=='undefined'&&CLIENT_DISPLAY_PAUSED?'disabled aria-disabled="true" title="Vista cliente en pausa: revisión de coherencia del flujo"':''}>${typeof CLIENT_DISPLAY_PAUSED!=='undefined'&&CLIENT_DISPLAY_PAUSED?'Vista cliente en pausa':'Abrir vista de sesión'}</button>`,
     `<button class="btn" id="prevStage" ${stageIndex===0?'disabled':''}>Volver</button>`
     +(isLastStage?'':`<button class="btn btn-primary" id="nextStage">Continuar a ${esc(String(next.Stage_ES).toLowerCase())} →</button>`));
 
