@@ -1,3 +1,10 @@
+# [AUNEA-BE-MODEL-CORE-010] START — Engine I/O data contract
+# PURPOSE: Pydantic models for every engine input/output type (Evidence, PainSignalInput/Observation, EconomicInput/Result, RiskInput/Result, CommercialScope, EngagementInput, Recommendation, Quote, ScenarioRequest, DiagnosticOutput) shared across Pain/Economics/Risk/Recommendation/Pricing/Scenario and the API layer.
+# SOURCE: DEC-034; MAP_QUESTION_ENGINE_INPUT.
+# INPUTS: n/a (type definitions).
+# OUTPUTS: n/a (type definitions).
+# SIDE_EFFECTS: none.
+# CHANGE_RISK: CRITICAL.
 from __future__ import annotations
 from enum import Enum
 from typing import Any, Literal
@@ -44,6 +51,8 @@ class PainObservation(BaseModel):
     rationale: str | None = None
 
 class EconomicInput(BaseModel):
+    # DEC-065: optional technical references to existing ProcessSteps, not new capture fields.
+    step_ids: list[str] = Field(default_factory=list)
     pain_id: str | None = None
     driver_id: str
     annual_active_hours: float | None = None
@@ -56,6 +65,8 @@ class EconomicInput(BaseModel):
     deduplication_key: str | None = None
 
 class RiskInput(BaseModel):
+    # DEC-065: traceability only; risk scoring does not derive from these step IDs.
+    step_ids: list[str] = Field(default_factory=list)
     category: str
     likelihood_1_5: int = Field(ge=1, le=5)
     impact_1_5: int = Field(ge=1, le=5)
@@ -158,8 +169,16 @@ class ScenarioRequest(BaseModel):
     assumptions: list[ScenarioAssumption] = Field(default_factory=list)
     commercial_scope: CommercialScope | None = None
 
+# [AUNEA-BE-SCEN-MODEL-010] START — Contrato de resultado de escenario
+# PURPOSE: Mantener el nombre del escenario en la respuesta tipada.
+# SOURCE: RT_SCENARIO.Scenario_Name; baseline aceptada v1.0.4.
+# INPUTS: ScenarioComparator.
+# OUTPUTS: ScenarioResult.
+# SIDE_EFFECTS: ninguna.
+# CHANGE_RISK: HIGH.
 class ScenarioResult(BaseModel):
     scenario_id: str
+    scenario_name: str
     scenario_type: str
     action_id: str
     functional_level_id: str | None
@@ -172,6 +191,8 @@ class ScenarioResult(BaseModel):
     delta_vs_optimal: dict[str, Any] = Field(default_factory=dict)
     status: str = "COMPUTED"
 
+# [AUNEA-BE-SCEN-MODEL-010] END
+
 class DiagnosticOutput(BaseModel):
     engagement_id: str
     rule_bundle_version: str
@@ -182,3 +203,4 @@ class DiagnosticOutput(BaseModel):
     recommendation: Recommendation
     quote: Quote
     optimal_scenario: ScenarioResult
+# [AUNEA-BE-MODEL-CORE-010] END

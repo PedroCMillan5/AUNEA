@@ -1,0 +1,471 @@
+{
+  "key": "INVOICE",
+  "label": "Recepción, documentación y aprobación condicional de facturas",
+  "company": {
+    "name": "Levante Instalaciones Técnicas",
+    "tradeName": "Levante Instalaciones Técnicas SL",
+    "taxId": "B70000101",
+    "sector": "CNAE25-F",
+    "employeeCount": 46,
+    "country": "ES",
+    "orgType": "Empresa privada",
+    "website": "https://levante-instalaciones.example.invalid",
+    "status": "Prospecto",
+    "entryChannel": "Recomendación",
+    "owner": "Pedro Carrasco",
+    "notes": "Organización ficticia de instalaciones técnicas: compras con pedidos y facturas PDF, archivo documental y control de autorización."
+  },
+  "contacts": [
+    {
+      "firstName": "Elena",
+      "lastName": "Vidal",
+      "role": "Administración / Finanzas",
+      "email": "elena.vidal@levante-instalaciones.example.invalid",
+      "phone": "+34 600 000 101",
+      "notes": "Responsable de registrar y cotejar facturas."
+    },
+    {
+      "firstName": "Marcos",
+      "lastName": "Soto",
+      "role": "Dirección general",
+      "email": "marcos.soto@levante-instalaciones.example.invalid",
+      "phone": "+34 600 000 102",
+      "notes": "Aprueba operaciones que superan el umbral o presentan discrepancias."
+    }
+  ],
+  "opportunity": {
+    "title": "Recepción, registro y aprobación condicional de facturas de proveedor",
+    "stage": "Diagnóstico",
+    "source": "Cliente existente",
+    "owner": "Pedro Carrasco",
+    "notes": "160 facturas PDF/mes; se cotejan contra pedido y albarán; dirección aprueba si importe supera 1.500 euros o existe discrepancia."
+  },
+  "businessAreaId": "D14",
+  "priority": "Alta",
+  "answers": {
+    "DF004": "1M_5M",
+    "DF008": [
+      "UNDERSTAND",
+      "REDUCE_TIME",
+      "CONTROL",
+      "VISIBILITY"
+    ],
+    "DF009": [
+      "CLARITY",
+      "PRIORITIES",
+      "ECONOMIC_CASE",
+      "SCOPE"
+    ],
+    "DF010": [
+      "COMPLIANCE",
+      "OWNERSHIP",
+      "PLATFORM"
+    ],
+    "DF011": "Recepción y registro de facturas de proveedor",
+    "DF012": "DOC_RECEIVED",
+    "DF013": "DATA_UPDATED",
+    "DF014": "Recepción de email con factura PDF adjunta",
+    "DF015": "Factura cotejada, aprobada cuando proceda, registrada en ERP y archivada",
+    "DF018": "4",
+    "DF019": "YES",
+    "DF020": [
+      "AMOUNT",
+      "CASE_TYPE"
+    ],
+    "DF021": 160,
+    "DF022": "MONTH",
+    "DF023": {
+      "value": 230,
+      "unit": "case",
+      "period": "month"
+    },
+    "DF024": "PREDICTABLE",
+    "DF025": {
+      "value": 48,
+      "unit": "h"
+    },
+    "DF026": {
+      "value": 72,
+      "unit": "h"
+    },
+    "DF027": {
+      "value": 38,
+      "mode": ""
+    },
+    "DF028": {
+      "value": 8,
+      "unit": "percent",
+      "mode": "percent",
+      "period": "month"
+    },
+    "DF029": [
+      "STANDARD",
+      "FINANCIAL"
+    ],
+    "DF030": "STABLE",
+    "DF048": [
+      "MASTER_DATA",
+      "RECORD"
+    ],
+    "DF052": [
+      "RECONCILIATION",
+      "APPROVAL",
+      "LOGGING"
+    ],
+    "DF055": [
+      "MISSING",
+      "DUPLICATE"
+    ],
+    "DF073": [
+      "FINANCIAL",
+      "PERSONAL",
+      "CONFIDENTIAL"
+    ],
+    "DF074": "PARTIAL",
+    "DF075": [
+      "FINAL_DECISION",
+      "FINANCIAL_ACTION",
+      "DELETE"
+    ],
+    "DF080": {
+      "value": 2,
+      "unit": "min",
+      "period": "case"
+    },
+    "DF081": {
+      "value": 3,
+      "unit": "min",
+      "period": "case"
+    },
+    "DF086": [
+      "LESS_MANUAL",
+      "TRACEABILITY",
+      "CONTROL",
+      "LESS_WAIT"
+    ],
+    "DF087": [
+      "HUMAN_DECISION",
+      "APPROVAL",
+      "POLICY",
+      "TOOL"
+    ],
+    "DF088": [
+      "FINAL_DECISION",
+      "FINANCIAL_ACTION",
+      "DELETE"
+    ],
+    "DF089": [
+      "KEEP_EXISTING",
+      "CRM_NATIVE"
+    ],
+    "DF090": [
+      "RBAC",
+      "AUDIT_LOG",
+      "MFA"
+    ],
+    "DF091": [
+      "TRAINING",
+      "NO_DOWNTIME"
+    ],
+    "DF092": "6K_15K",
+    "DF097": "2026-10-14",
+    "DF099": "UNKNOWN",
+    "DF100": "Escenario sintético declarado: 160 facturas/mes; 25% requiere aprobación. La decisión financiera sigue siendo humana. Verificar facturas, pedidos, plazos y prorrateo de licencias antes de publicar cifras."
+  },
+  "details": {
+    "DF012": "Factura PDF recibida en buzón de proveedores.",
+    "DF013": "Se registra en ERP y archiva el documento enlazado al pedido; se conserva aprobación cuando es necesaria.",
+    "DF024": "Picos en cierres de mes",
+    "DF098__action": "REQUEST_EVIDENCE",
+    "DF098__owner": "Elena Vidal",
+    "DF098__date": "2026-10-14"
+  },
+  "steps": [
+    {
+      "name": "Recibir factura PDF",
+      "type": "ST02",
+      "actor": "ADMIN",
+      "tool": "EMAIL",
+      "inputs": [
+        "EMAIL",
+        "PDF"
+      ],
+      "outputs": [
+        "PDF"
+      ],
+      "active": 3,
+      "wait": 0,
+      "rework": 0,
+      "error": 0,
+      "manual": [
+        "DOWNLOAD",
+        "RENAME"
+      ],
+      "channels": [
+        "EMAIL"
+      ],
+      "auto": "PARTIAL"
+    },
+    {
+      "name": "Validar emisor, número, CIF e importe",
+      "type": "ST02",
+      "actor": "FINANCE",
+      "tool": "ERP",
+      "inputs": [
+        "PDF",
+        "MASTER_DATA"
+      ],
+      "outputs": [
+        "RECORD"
+      ],
+      "active": 8,
+      "wait": 90,
+      "rework": 10,
+      "error": 8,
+      "manual": [
+        "SEARCH",
+        "CHECK",
+        "COMPARE"
+      ],
+      "channels": [
+        "EMAIL"
+      ],
+      "auto": "MANUAL"
+    },
+    {
+      "name": "Cotejar pedido y albarán",
+      "type": "ST02",
+      "actor": "FINANCE",
+      "tool": "ERP",
+      "inputs": [
+        "PDF",
+        "RECORD",
+        "MASTER_DATA"
+      ],
+      "outputs": [
+        "RECORD"
+      ],
+      "active": 7,
+      "wait": 60,
+      "rework": 15,
+      "error": 6,
+      "manual": [
+        "SEARCH",
+        "COMPARE"
+      ],
+      "channels": [
+        "EMAIL"
+      ],
+      "auto": "MANUAL"
+    },
+    {
+      "name": "Determinar si procede aprobación",
+      "type": "ST04",
+      "actor": "FINANCE",
+      "tool": "ERP",
+      "inputs": [
+        "RECORD"
+      ],
+      "outputs": [
+        "APPROVAL"
+      ],
+      "active": 2,
+      "wait": 0,
+      "rework": 0,
+      "error": 0,
+      "manual": [
+        "CHECK"
+      ],
+      "channels": [
+        "EMAIL"
+      ],
+      "auto": "MANUAL",
+      "decision": [
+        "THRESHOLD",
+        "DOCUMENT"
+      ],
+      "yes": 4,
+      "no": 5,
+      "condition": "Importe superior a 1.500 euros o discrepancia contractual",
+      "exceptionCondition": "Importe de hasta 1.500 euros y sin discrepancia"
+    },
+    {
+      "name": "Aprobar factura por dirección",
+      "type": "ST05",
+      "actor": "MANAGER",
+      "tool": "EMAIL",
+      "inputs": [
+        "PDF",
+        "RECORD"
+      ],
+      "outputs": [
+        "APPROVAL"
+      ],
+      "active": 6,
+      "wait": 720,
+      "rework": 0,
+      "error": 0,
+      "share": 25,
+      "manual": [
+        "CHECK",
+        "SEND"
+      ],
+      "channels": [
+        "EMAIL"
+      ],
+      "auto": "MANUAL",
+      "decision": [
+        "AUTHORITY"
+      ],
+      "next": 5
+    },
+    {
+      "name": "Registrar en ERP y archivar expediente",
+      "type": "ST02",
+      "actor": "ADMIN",
+      "tool": "ERP",
+      "inputs": [
+        "PDF",
+        "RECORD",
+        "APPROVAL"
+      ],
+      "outputs": [
+        "RECORD",
+        "DOC"
+      ],
+      "active": 5,
+      "wait": 0,
+      "rework": 0,
+      "error": 0,
+      "manual": [
+        "REKEY",
+        "UPLOAD",
+        "UPDATE_STATUS"
+      ],
+      "channels": [
+        "EMAIL"
+      ],
+      "auto": "PARTIAL",
+      "next": "END"
+    }
+  ],
+  "frictions": [
+    {
+      "type": "P02",
+      "steps": [
+        1
+      ],
+      "cause": [
+        "MISSING_INFO",
+        "DATA_QUALITY"
+      ],
+      "signal": "El 8% llega sin pedido o CIF correcto; se devuelve al proveedor para completar.",
+      "frequency": 8,
+      "minutes": 10,
+      "mode": "BREAKDOWN",
+      "owner": 1,
+      "impact": 4,
+      "nonTime": [
+        "QUALITY",
+        "EMPLOYEE"
+      ],
+      "workaround": [
+        "EMAIL",
+        "MANUAL_CHECK"
+      ]
+    },
+    {
+      "type": "P07",
+      "steps": [
+        4
+      ],
+      "cause": [
+        "APPROVAL",
+        "NO_VISIBILITY"
+      ],
+      "signal": "El 25% de las facturas queda pendiente de dirección aproximadamente 12 horas.",
+      "frequency": 25,
+      "minutes": 0,
+      "mode": "INCLUDED",
+      "owner": 4,
+      "impact": 4,
+      "nonTime": [
+        "FINANCIAL",
+        "MANAGEMENT"
+      ],
+      "workaround": [
+        "CHASE",
+        "EMAIL"
+      ]
+    },
+    {
+      "type": "P03",
+      "steps": [
+        5
+      ],
+      "cause": [
+        "NO_INTEGRATION",
+        "MANUAL_HANDOFF"
+      ],
+      "signal": "Administración vuelve a teclear en el ERP número, importe y proveedor del PDF.",
+      "frequency": 100,
+      "minutes": 5,
+      "mode": "INCLUDED",
+      "owner": 5,
+      "impact": 3,
+      "nonTime": [
+        "QUALITY",
+        "EMPLOYEE"
+      ],
+      "workaround": [
+        "DOUBLE_ENTRY"
+      ]
+    }
+  ],
+  "risks": [
+    {
+      "category": "RC06",
+      "description": "Pago duplicado de la misma factura por ausencia de control de número de proveedor.",
+      "steps": [
+        1,
+        5
+      ],
+      "likelihood": 3,
+      "impact": 4,
+      "reversibility": "PARTIAL",
+      "controls": true,
+      "material": true
+    },
+    {
+      "category": "RC05",
+      "description": "Factura por encima del umbral registrada sin la autorización exigida.",
+      "steps": [
+        3,
+        4
+      ],
+      "likelihood": 3,
+      "impact": 5,
+      "reversibility": "HARD",
+      "controls": true,
+      "material": true
+    }
+  ],
+  "economics": {
+    "rate": 26,
+    "toolAnnual": 960,
+    "toolBasis": "Licencia existente del ERP: atribución simulada de 80 €/mes a la actividad de registro de facturas. Sin asumir que sea eliminable."
+  },
+  "finding": [
+    1,
+    5
+  ],
+  "search": [
+    1,
+    4
+  ],
+  "integration": [
+    1,
+    5
+  ],
+  "followup": "Solicitar evidencias / datos — Elena Vidal — 14/10/2026"
+}

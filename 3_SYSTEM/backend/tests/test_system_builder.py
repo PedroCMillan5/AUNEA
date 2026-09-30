@@ -1,6 +1,9 @@
 from aunea_backend.orchestrator import Orchestrator
 from aunea_backend.models import EngagementInput, PainSignalInput, EconomicInput, RiskInput, CommercialScope
-from aunea_backend.solution_models import SolutionSpecificationRequest, SolutionSpecRole, SolutionSpecDataEntity, SolutionSpecIntegration
+from aunea_backend.solution_models import (
+    SolutionSpecificationRequest, SolutionSpecRole, SolutionSpecDataEntity,
+    SolutionSpecIntegration, SolutionSpecRule, SolutionSpecAcceptanceTest,
+)
 from aunea_backend.system_builder_models import SystemBuilderRequest
 
 
@@ -11,7 +14,10 @@ def ready_spec():
         economics=[EconomicInput(driver_id="ED01",annual_active_hours=200)],
         risks=[RiskInput(category="ops",likelihood_1_5=2,impact_1_5=2)],
         commercial_scope=CommercialScope(scope_bounded=True,integrations_known=True,tool_tco_current=True),
-        questionnaire_answers={"trigger":"Approved request","inputs":["Request"],"outputs":["Project","Tasks"],"desired_outcome":"Reliable kickoff"},
+        questionnaire_answers={
+            "DF012":"Approved request","DF013":"Project ready","DF086":["Reliable kickoff"],
+            "_process_steps":[{"id":"STEP-001","status":"ACTIVE","inputs":["Request"],"outputs":["Project","Tasks"],"decision_criteria":["Approved"],"exception_path":None}],
+        },
     )
     orch=Orchestrator(); diag=orch.diagnose(eng)
     req=SolutionSpecificationRequest(
@@ -19,12 +25,15 @@ def ready_spec():
         roles=[SolutionSpecRole(role_name="Ops",responsibilities=["Own process"],permissions=["Admin"])],
         data_entities=[SolutionSpecDataEntity(entity_name="Request",key_fields=["request_id"],source_of_truth="Airtable",status="CONFIRMED")],
         integrations=[SolutionSpecIntegration(name="Drive",source_system="Airtable",target_system="Google Drive",method="Make connector",status="CONFIRMED")],
+        business_rules=[SolutionSpecRule(rule_id="BR-001",description="Only approved requests create a project",trigger_or_condition="Approved",action="Create project",status="CONFIRMED")],
+        acceptance_tests=[SolutionSpecAcceptanceTest(test_id="AT-001",requirement="One approved request creates one project",given="An approved request",when="The workflow runs",then="One linked project exists",status="APPROVED")],
     )
     return orch,eng,diag,orch.generate_solution_specification(eng,diag,req)
 
 
 def test_builder_plan_from_ready_spec():
     orch,eng,diag,spec=ready_spec(); plan=orch.generate_system_build_plan(spec)
+    assert spec.status=="READY_FOR_BUILD"
     assert plan.status=="READY_FOR_ENGINEERING"
     assert plan.tasks
     assert plan.component_decisions

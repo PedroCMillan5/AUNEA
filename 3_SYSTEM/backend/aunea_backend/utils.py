@@ -1,3 +1,6 @@
+# [AUNEA-BE-UTILS-010] START — Shared hashing/ranking helpers
+# PURPOSE: Canonical JSON hashing for audit-run input/output fingerprints, and level-string ranking (N#/I# style) used by Recommendation/Scenario engines.
+# CHANGE_RISK: LOW.
 from __future__ import annotations
 import hashlib, json
 from typing import Any
@@ -15,3 +18,4 @@ def level_rank(level: str | None, prefix: str) -> int:
         return int(level[1:])
     except Exception:
         return 0
+# [AUNEA-BE-UTILS-010] END

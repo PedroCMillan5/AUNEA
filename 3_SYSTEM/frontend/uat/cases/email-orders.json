@@ -1,0 +1,469 @@
+{
+  "key": "EMAIL",
+  "label": "Generación de tickets de pedido a partir de correos recibidos",
+  "company": {
+    "name": "Costa Sur Distribución",
+    "tradeName": "Costa Sur Distribución SL",
+    "taxId": "B70000301",
+    "sector": "CNAE25-G",
+    "employeeCount": 74,
+    "country": "ES",
+    "orgType": "Empresa privada",
+    "website": "https://costasur-distribucion.example.invalid",
+    "status": "Prospecto",
+    "entryChannel": "Cliente existente",
+    "owner": "Pedro Carrasco",
+    "notes": "Distribuidora ficticia B2B: los pedidos llegan al buzón comercial y se registran como tickets en ERP con referencia al correo original."
+  },
+  "contacts": [
+    {
+      "firstName": "Sara",
+      "lastName": "Romero",
+      "role": "Comercial / Ventas",
+      "email": "sara.romero@costasur-distribucion.example.invalid",
+      "phone": "+34 600 000 301",
+      "notes": "Responsable de recepción de pedidos y comunicaciones de confirmación."
+    },
+    {
+      "firstName": "David",
+      "lastName": "Marín",
+      "role": "Operaciones",
+      "email": "david.marin@costasur-distribucion.example.invalid",
+      "phone": "+34 600 000 302",
+      "notes": "Responsable de disponibilidad, validación de referencias y alta del ticket."
+    }
+  ],
+  "opportunity": {
+    "title": "Conversión de emails de pedido en tickets operativos trazables",
+    "stage": "Diagnóstico",
+    "source": "Cliente existente",
+    "owner": "Pedro Carrasco",
+    "notes": "310 correos de pedido al mes, 12% con excepción de disponibilidad; se requiere extraer cliente, referencias, unidades y fecha, validar stock, crear ticket único y enviar acuse."
+  },
+  "businessAreaId": "D10",
+  "priority": "Alta",
+  "answers": {
+    "DF004": "5M_25M",
+    "DF008": [
+      "UNDERSTAND",
+      "REDUCE_ERRORS",
+      "INTEGRATE",
+      "VISIBILITY"
+    ],
+    "DF009": [
+      "CLARITY",
+      "PRIORITIES",
+      "ECONOMIC_CASE",
+      "SCOPE"
+    ],
+    "DF010": [
+      "PLATFORM",
+      "SECURITY",
+      "OWNERSHIP"
+    ],
+    "DF011": "Alta de tickets de pedidos a partir de email",
+    "DF012": "REQUEST",
+    "DF013": "REGISTERED",
+    "DF014": "Recepción de email con líneas de pedido en buzón comercial",
+    "DF015": "Ticket único creado con referencia al email original y acuse enviado tras validar disponibilidad",
+    "DF018": "4",
+    "DF019": "YES",
+    "DF020": [
+      "CUSTOMER",
+      "CASE_TYPE",
+      "URGENCY"
+    ],
+    "DF021": 310,
+    "DF022": "MONTH",
+    "DF023": {
+      "value": 420,
+      "unit": "case",
+      "period": "month"
+    },
+    "DF024": "PREDICTABLE",
+    "DF025": {
+      "value": 8,
+      "unit": "h"
+    },
+    "DF026": {
+      "value": 15,
+      "unit": "h"
+    },
+    "DF027": {
+      "value": 44,
+      "mode": ""
+    },
+    "DF028": {
+      "value": 11,
+      "unit": "percent",
+      "mode": "percent",
+      "period": "month"
+    },
+    "DF029": [
+      "STANDARD",
+      "VIP",
+      "URGENT"
+    ],
+    "DF030": "UP_LT10",
+    "DF048": [
+      "MASTER_DATA",
+      "RECORD"
+    ],
+    "DF052": [
+      "RECONCILIATION",
+      "LOGGING"
+    ],
+    "DF055": [
+      "MISSING",
+      "FORMAT",
+      "DUPLICATE"
+    ],
+    "DF073": [
+      "PERSONAL",
+      "CONFIDENTIAL"
+    ],
+    "DF074": "PARTIAL",
+    "DF075": [
+      "CUSTOMER_COMMITMENT",
+      "FINANCIAL_ACTION",
+      "EXCEPTION"
+    ],
+    "DF080": {
+      "value": 3,
+      "unit": "min",
+      "period": "case"
+    },
+    "DF081": {
+      "value": 2,
+      "unit": "min",
+      "period": "case"
+    },
+    "DF086": [
+      "LESS_MANUAL",
+      "QUALITY",
+      "TRACEABILITY",
+      "CUSTOMER"
+    ],
+    "DF087": [
+      "HUMAN_DECISION",
+      "CUSTOMER_CHANNEL",
+      "TOOL"
+    ],
+    "DF088": [
+      "CUSTOMER_COMMITMENT",
+      "FINANCIAL_ACTION",
+      "EXCEPTION"
+    ],
+    "DF089": [
+      "KEEP_EXISTING",
+      "CRM_NATIVE"
+    ],
+    "DF090": [
+      "RBAC",
+      "AUDIT_LOG",
+      "ENCRYPTION"
+    ],
+    "DF091": [
+      "NO_DOWNTIME",
+      "TRAINING"
+    ],
+    "DF092": "6K_15K",
+    "DF097": "2026-10-16",
+    "DF099": "UNKNOWN",
+    "DF100": "Escenario sintético de 310 emails de pedido al mes: 12% requiere resolver referencia o stock. El identificador del hilo original debe vincularse al mismo ticket, no generar tickets duplicados por cada respuesta."
+  },
+  "details": {
+    "DF012": "Email de pedido entrante al buzón comercial con referencias, cantidades y fecha solicitada.",
+    "DF013": "Ticket de pedido registrado después de validar cliente y existencias; acuse de recepción vinculado al email original.",
+    "DF024": "Picos a principio de semana y durante campañas de clientes",
+    "DF098__action": "REQUEST_EVIDENCE",
+    "DF098__owner": "Sara Romero",
+    "DF098__date": "2026-10-16"
+  },
+  "steps": [
+    {
+      "name": "Recibir email y localizar hilo original",
+      "type": "ST02",
+      "actor": "SALES",
+      "tool": "EMAIL",
+      "inputs": [
+        "EMAIL"
+      ],
+      "outputs": [
+        "EMAIL"
+      ],
+      "active": 2,
+      "wait": 0,
+      "rework": 0,
+      "error": 0,
+      "manual": [
+        "SEARCH",
+        "DOWNLOAD"
+      ],
+      "channels": [
+        "EMAIL"
+      ],
+      "auto": "PARTIAL"
+    },
+    {
+      "name": "Extraer cliente, referencias y cantidades",
+      "type": "ST02",
+      "actor": "SALES",
+      "tool": "EMAIL",
+      "inputs": [
+        "EMAIL",
+        "PDF",
+        "SHEET"
+      ],
+      "outputs": [
+        "RECORD"
+      ],
+      "active": 7,
+      "wait": 30,
+      "rework": 6,
+      "error": 11,
+      "manual": [
+        "COPY",
+        "CHECK",
+        "REKEY"
+      ],
+      "channels": [
+        "EMAIL"
+      ],
+      "auto": "MANUAL"
+    },
+    {
+      "name": "Comprobar cliente y disponibilidad",
+      "type": "ST04",
+      "actor": "OPERATIONS",
+      "tool": "ERP",
+      "inputs": [
+        "RECORD",
+        "MASTER_DATA"
+      ],
+      "outputs": [
+        "RECORD"
+      ],
+      "active": 6,
+      "wait": 45,
+      "rework": 0,
+      "error": 0,
+      "manual": [
+        "SEARCH",
+        "COMPARE",
+        "CHECK"
+      ],
+      "channels": [
+        "EMAIL"
+      ],
+      "auto": "MANUAL",
+      "decision": [
+        "STATUS",
+        "DOCUMENT"
+      ],
+      "yes": 3,
+      "no": 5,
+      "condition": "Stock suficiente y referencia correcta",
+      "exceptionCondition": "Stock insuficiente o referencia de cliente inconsistente"
+    },
+    {
+      "name": "Crear ticket único del pedido en ERP",
+      "type": "ST02",
+      "actor": "OPERATIONS",
+      "tool": "ERP",
+      "inputs": [
+        "RECORD"
+      ],
+      "outputs": [
+        "RECORD"
+      ],
+      "active": 5,
+      "wait": 0,
+      "rework": 8,
+      "error": 7,
+      "manual": [
+        "REKEY",
+        "UPDATE_STATUS"
+      ],
+      "channels": [
+        "TICKET"
+      ],
+      "auto": "PARTIAL"
+    },
+    {
+      "name": "Enviar acuse con número de ticket",
+      "type": "ST02",
+      "actor": "SALES",
+      "tool": "EMAIL",
+      "inputs": [
+        "RECORD"
+      ],
+      "outputs": [
+        "EMAIL"
+      ],
+      "active": 3,
+      "wait": 0,
+      "rework": 0,
+      "error": 0,
+      "manual": [
+        "SEND"
+      ],
+      "channels": [
+        "EMAIL"
+      ],
+      "auto": "MANUAL",
+      "next": "END"
+    },
+    {
+      "name": "Resolver excepción de stock o referencia",
+      "type": "ST02",
+      "actor": "OPERATIONS",
+      "tool": "ERP",
+      "inputs": [
+        "RECORD",
+        "EMAIL"
+      ],
+      "outputs": [
+        "RECORD"
+      ],
+      "active": 8,
+      "wait": 240,
+      "rework": 0,
+      "error": 0,
+      "share": 12,
+      "manual": [
+        "CHECK",
+        "CHASE",
+        "UPDATE_STATUS"
+      ],
+      "channels": [
+        "EMAIL",
+        "PHONE"
+      ],
+      "auto": "MANUAL",
+      "next": 3
+    }
+  ],
+  "frictions": [
+    {
+      "type": "P02",
+      "steps": [
+        1
+      ],
+      "cause": [
+        "MISSING_INFO",
+        "DATA_QUALITY"
+      ],
+      "signal": "El 11% de emails presenta referencia o cantidad ambigua y obliga a consultar al cliente.",
+      "frequency": 11,
+      "minutes": 6,
+      "mode": "BREAKDOWN",
+      "owner": 1,
+      "impact": 4,
+      "nonTime": [
+        "CUSTOMER",
+        "QUALITY"
+      ],
+      "workaround": [
+        "EMAIL",
+        "MANUAL_CHECK"
+      ]
+    },
+    {
+      "type": "P03",
+      "steps": [
+        3
+      ],
+      "cause": [
+        "NO_INTEGRATION",
+        "MANUAL_HANDOFF"
+      ],
+      "signal": "Se teclean otra vez en el ticket artículos y unidades identificados previamente en el email.",
+      "frequency": 100,
+      "minutes": 5,
+      "mode": "INCLUDED",
+      "owner": 3,
+      "impact": 4,
+      "nonTime": [
+        "QUALITY",
+        "EMPLOYEE"
+      ],
+      "workaround": [
+        "DOUBLE_ENTRY"
+      ]
+    },
+    {
+      "type": "P06",
+      "steps": [
+        2,
+        5
+      ],
+      "cause": [
+        "EXCEPTION",
+        "NO_VISIBILITY"
+      ],
+      "signal": "El 12% de pedidos queda en espera de stock o referencia, aproximadamente cuatro horas.",
+      "frequency": 12,
+      "minutes": 0,
+      "mode": "INCLUDED",
+      "owner": 5,
+      "impact": 4,
+      "nonTime": [
+        "CUSTOMER",
+        "MANAGEMENT"
+      ],
+      "workaround": [
+        "CHASE",
+        "EMAIL"
+      ]
+    }
+  ],
+  "risks": [
+    {
+      "category": "RC07",
+      "description": "Se confirma un plazo de entrega al cliente sin stock realmente verificado.",
+      "steps": [
+        2,
+        4,
+        5
+      ],
+      "likelihood": 3,
+      "impact": 5,
+      "reversibility": "HARD",
+      "controls": true,
+      "material": true
+    },
+    {
+      "category": "RC02",
+      "description": "Se crea un segundo ticket al recibir una respuesta dentro del mismo hilo de pedido.",
+      "steps": [
+        0,
+        1,
+        3
+      ],
+      "likelihood": 4,
+      "impact": 4,
+      "reversibility": "PARTIAL",
+      "controls": false,
+      "material": false
+    }
+  ],
+  "economics": {
+    "rate": 23,
+    "toolAnnual": 1080,
+    "toolBasis": "Asignación sintética de 90 €/mes del módulo ERP de pedidos a este proceso; no se considera ahorro eliminable."
+  },
+  "finding": [
+    1,
+    3
+  ],
+  "search": [
+    0,
+    2
+  ],
+  "integration": [
+    1,
+    3
+  ],
+  "followup": "Solicitar evidencias / datos — Sara Romero — 16/10/2026"
+}

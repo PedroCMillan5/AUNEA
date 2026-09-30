@@ -1,0 +1,59 @@
+/* [AUNEA-FE-CRM-LIST-VIEWPORT-010] START — Contactos/Interacciones compact list viewport
+   PURPOSE: Keep CRM list pages inside the viewport, paginate instead of vertical scrolling, and preserve compact readable filters.
+   SOURCE: User review 2026-09-22; DEC-050/058/061; shared AUNEA Select contract.
+   INPUTS: contacts-screen-marker, interactions-screen-marker.
+   OUTPUTS: page-scoped viewport, pagination and dropdown option truncation.
+   SIDE_EFFECTS: visual only; Empresas FROZEN selectors are not targeted.
+   CHANGE_RISK: MEDIUM. */
+html:has(.contacts-screen-marker),body:has(.contacts-screen-marker),
+html:has(.interactions-screen-marker),body:has(.interactions-screen-marker),
+html:has(.opportunities-screen-marker),body:has(.opportunities-screen-marker){height:100%;max-height:100%;overflow:hidden!important}
+body:has(.contacts-screen-marker) .app-shell,
+body:has(.interactions-screen-marker) .app-shell,
+body:has(.opportunities-screen-marker) .app-shell{height:100vh;min-height:0;overflow:hidden}
+.main:has(.contacts-screen-marker),
+.main:has(.interactions-screen-marker),
+.main:has(.opportunities-screen-marker){height:100vh;min-height:0;overflow:hidden;display:flex;flex-direction:column}
+.main:has(.contacts-screen-marker)>.topbar,
+.main:has(.interactions-screen-marker)>.topbar,
+.main:has(.opportunities-screen-marker)>.topbar{flex:0 0 auto}
+.main:has(.contacts-screen-marker)>.content,
+.main:has(.interactions-screen-marker)>.content,
+.main:has(.opportunities-screen-marker)>.content{flex:1 1 auto;width:100%;max-width:1620px;margin-left:auto;margin-right:auto;height:auto;min-height:0;overflow:hidden;box-sizing:border-box;padding-top:18px;padding-bottom:68px}
+.content:has(.contacts-screen-marker) .page-head,
+.content:has(.interactions-screen-marker) .page-head,
+.content:has(.opportunities-screen-marker) .page-head{margin-bottom:12px}
+.content:has(.contacts-screen-marker) .workspace,
+.content:has(.interactions-screen-marker) .workspace,
+.content:has(.opportunities-screen-marker) .workspace{min-height:0;max-height:100%;overflow:hidden}
+.content:has(.contacts-screen-marker) .inspector,
+.content:has(.interactions-screen-marker) .inspector,
+.content:has(.opportunities-screen-marker) .inspector{min-height:0;max-height:100%;overflow:hidden}
+.content:has(.contacts-screen-marker) .table-wrap,
+.content:has(.interactions-screen-marker) .table-wrap,
+.content:has(.opportunities-screen-marker) .table-wrap{overflow-x:auto;overflow-y:hidden}
+
+.contact-role-filter{min-width:190px;max-width:230px;flex:0 1 230px}
+.contact-role-filter .aunea-select-menu button,
+.interaction-entity-filter .aunea-select-menu button,
+.opportunity-entity-filter .aunea-select-menu button{display:block;width:100%;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:40px;padding:9px 34px 9px 11px;line-height:1.35}
+.contact-role-filter .aunea-select-menu button[data-full-label],
+.interaction-entity-filter .aunea-select-menu button[data-full-label],
+.opportunity-entity-filter .aunea-select-menu button[data-full-label]{cursor:default}
+
+.interaction-entity-filter,.opportunity-entity-filter{min-width:190px;max-width:245px;flex:0 1 245px}
+.interaction-table th,.interaction-table td{padding-top:7px;padding-bottom:7px}
+.interaction-table td small{line-height:1.2}
+
+.contact-table-foot,.interaction-table-foot,.opportunity-table-foot{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.crm-pagination{display:flex;align-items:center;gap:5px}
+.crm-pagination button{min-width:32px;height:32px;padding:0 9px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);font:inherit;font-size:var(--font-small);font-weight:700;cursor:pointer}
+.crm-pagination button:hover:not(:disabled){border-color:var(--system);background:var(--system-soft);color:var(--system)}
+.crm-pagination button.active{border-color:var(--system);background:var(--system-soft);color:var(--system)}
+.crm-pagination button:disabled{opacity:.4;cursor:not-allowed}
+@media(max-width:900px){
+  .contact-role-filter,.interaction-entity-filter,.opportunity-entity-filter{min-width:180px;max-width:100%;flex:1 1 220px}
+  .contact-table-foot,.interaction-table-foot,.opportunity-table-foot{align-items:flex-start}
+  .crm-pagination{flex-wrap:wrap}
+}
+/* [AUNEA-FE-CRM-LIST-VIEWPORT-010] END */

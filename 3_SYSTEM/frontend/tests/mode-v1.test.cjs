@@ -1,0 +1,4 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const root=path.resolve(__dirname,'..');
+test('C08 retires the Console mode adapter and preserves both standalone client surfaces',()=>{const manifest=JSON.parse(fs.readFileSync(path.join(root,'module-manifest.json'))),boot=fs.readFileSync(path.join(root,'boot.js'),'utf8');assert.ok(!manifest.modules.some(m=>m.path==='ui/mode.js'));assert.match(boot,/bootSessionDisplay/);assert.match(boot,/bootResultsMode/);assert.ok(!fs.existsSync(path.join(root,'ui/mode.js')))});
+test('client windows do not load or persist operational state',()=>{const state=fs.readFileSync(path.join(root,'core/state.js'),'utf8'),persist=fs.readFileSync(path.join(root,'services/persistence.js'),'utf8');assert.match(state,/isClientDisplay\(\)\?blankState\(\):loadState\(\)/);assert.match(persist,/isClientDisplay\(\)\)return false/)});

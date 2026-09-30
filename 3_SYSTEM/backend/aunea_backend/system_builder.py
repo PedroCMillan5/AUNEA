@@ -1,3 +1,10 @@
+# [AUNEA-BE-SYSTEM-BUILDER-010] START — System Builder Engine
+# PURPOSE: Turn a READY/DRAFT SolutionSpecification into an engineering build plan/package — conservative component reuse/adapt/create decisions against the seed Component Library, phased build tasks, build prompt, runbook and scaffold files.
+# SOURCE: DEC-034; L9 System Delivery & Learning; Component Library.
+# INPUTS: SolutionSpecification, SystemBuilderRequest.
+# OUTPUTS: SystemBuildPlan, SystemBuildPackage.
+# SIDE_EFFECTS: none (pure planning/formatting; no filesystem/network writes).
+# CHANGE_RISK: HIGH.
 from __future__ import annotations
 import json
 from dataclasses import dataclass
@@ -113,3 +120,4 @@ class SystemBuilderEngine:
                 ".gitignore": ".env\n.env.*\n*.db\n__pycache__/\n.pytest_cache/\n",
             }
         return SystemBuildPackage(package_id=f"PKG-{stable_hash({'plan':plan.build_plan_id,'spec':spec.specification_id})[:12]}",build_plan=plan,build_prompt_markdown=prompt,runbook_markdown=runbook,scaffold_files=scaffold,component_library_version=COMPONENT_LIBRARY_VERSION)
+# [AUNEA-BE-SYSTEM-BUILDER-010] END

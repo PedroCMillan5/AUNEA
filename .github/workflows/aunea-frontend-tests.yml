@@ -1,0 +1,39 @@
+# [AUNEA-BUILD-CI-FRONTEND-010] START — Frontend CI
+# PURPOSE: Run frontend node --test suite on every push/PR touching 3_SYSTEM/frontend.
+# CHANGE_RISK: LOW.
+name: AUNEA Frontend Tests
+
+on:
+  push:
+    # The Acceptance Gate already runs this suite on the gated branches and on PRs to main.
+    # Excluding them here keeps the fast path-filtered feedback everywhere else without
+    # running the identical suite twice on the same commit.
+    branches-ignore:
+      - 'cleanup/v2.0.0-core'
+      - 'reconcile/frontend-v1.0.4-source'
+    paths:
+      - '3_SYSTEM/frontend/**'
+      - '.github/workflows/aunea-frontend-tests.yml'
+  pull_request:
+    branches-ignore:
+      - 'main'
+    paths:
+      - '3_SYSTEM/frontend/**'
+      - '.github/workflows/aunea-frontend-tests.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: 3_SYSTEM/frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: 3_SYSTEM/frontend/package-lock.json
+      - run: npm ci
+      - run: npm test
+# [AUNEA-BUILD-CI-FRONTEND-010] END

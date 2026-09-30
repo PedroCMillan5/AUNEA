@@ -1,0 +1,57 @@
+/* [AUNEA-FROZEN-PAGE-COMPANIES-001] START — FINALIZADA / FROZEN
+   User-approved Companies page. Do not modify this block after closure; Acceptance Gate snapshots it. */
+/* P01 Empresas — page-specific layout only. Dropdown skin remains the immutable global AUNEA Select. */
+.company-filter-row{align-items:flex-end;gap:12px}
+.company-filter-row .filter-group:first-child{min-width:190px;max-width:220px;flex:0 1 220px}
+.company-filter-row .filter-group:first-child .aunea-select-menu{min-width:100%;width:100%}
+.company-filter-row .filter-group:first-child .aunea-select-menu button{display:block;min-height:40px;padding:9px 34px 9px 11px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.company-archive-check{margin-bottom:1px}
+.company-table th:nth-child(4),.company-table td:nth-child(4){white-space:nowrap}
+.company-table td:nth-child(4) .badge{white-space:nowrap;display:inline-flex;width:max-content}
+.company-ins-tabs{padding-right:14px;gap:6px}
+.company-ins-tabs .tab:last-child{margin-right:4px}
+.company-table-foot{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.company-pagination{display:flex;align-items:center;gap:5px}
+.company-pagination button{min-width:32px;height:32px;padding:0 9px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);font:inherit;font-size:var(--font-small);font-weight:700;cursor:pointer}
+.company-pagination button:hover:not(:disabled){border-color:var(--system);background:var(--system-soft);color:var(--system)}
+.company-pagination button.active{border-color:var(--system);background:var(--system-soft);color:var(--system)}
+.company-pagination button:disabled{opacity:.4;cursor:not-allowed}
+@media(max-width:900px){.company-filter-row .filter-group:first-child{min-width:180px;max-width:100%;flex:1 1 220px}.company-table-foot{align-items:flex-start}.company-pagination{flex-wrap:wrap}}
+
+
+/* Empresas viewport contract — the page itself must not create vertical document scroll.
+   Main owns exactly one viewport; topbar keeps its natural height and content consumes the remainder. */
+.main:has(.companies-screen-marker){height:100vh;min-height:0;overflow:hidden;display:flex;flex-direction:column}
+.main:has(.companies-screen-marker)>.topbar{flex:0 0 auto}
+.main:has(.companies-screen-marker)>.content{flex:1 1 auto;height:auto;min-height:0;overflow:hidden;box-sizing:border-box;padding-top:18px;padding-bottom:68px}
+.content:has(.companies-screen-marker) .page-head{margin-bottom:12px}
+.content:has(.companies-screen-marker) .workspace{height:100%;min-height:0;max-height:none;overflow:hidden}
+.content:has(.companies-screen-marker) .inspector{max-height:100%;overflow:hidden}
+.content:has(.companies-screen-marker) .ins-card{max-height:100%;overflow:hidden}
+.content:has(.companies-screen-marker) .table-wrap{overflow:hidden}
+.content:has(.companies-screen-marker) .company-table{width:100%;min-width:0;max-width:100%;table-layout:fixed}
+.content:has(.companies-screen-marker) .company-table th,
+.content:has(.companies-screen-marker) .company-table td{min-width:0;max-width:0;overflow:hidden;text-overflow:ellipsis}
+.content:has(.companies-screen-marker) .company-table th:nth-child(1){width:18%}
+.content:has(.companies-screen-marker) .company-table th:nth-child(2){width:17%}
+.content:has(.companies-screen-marker) .company-table th:nth-child(3){width:10%}
+.content:has(.companies-screen-marker) .company-table th:nth-child(4){width:15%}
+.content:has(.companies-screen-marker) .company-table th:nth-child(5){width:20%}
+.content:has(.companies-screen-marker) .company-table th:nth-child(6){width:12%}
+.content:has(.companies-screen-marker) .company-table th:nth-child(7){width:8%}
+.content:has(.companies-screen-marker) .company-table td:not(:nth-child(4)){overflow-wrap:anywhere}
+.content:has(.companies-screen-marker) .workspace,
+.content:has(.companies-screen-marker) .workspace>*{min-width:0;max-width:100%}
+.company-filter-row .filter-group:first-child .aunea-select-menu button[data-full-label]{position:relative}
+.company-filter-row .filter-group:first-child .aunea-select-menu button[data-full-label]:hover::before{
+  content:attr(data-full-label);position:absolute;left:calc(100% + 8px);top:50%;transform:translateY(-50%);
+  z-index:120;max-width:420px;width:max-content;padding:7px 9px;border:1px solid var(--line);border-radius:8px;
+  background:#fff;color:var(--ink);box-shadow:var(--shadow);white-space:normal;line-height:1.35;font-weight:600;pointer-events:none
+}
+
+
+/* Empresas root viewport lock — browser/document scrollbar must not exist while CRM Empresas is active. */
+html.page-companies,body.page-companies{height:100%;max-height:100%;overflow:hidden!important}
+body.page-companies .app-shell{height:100vh;min-height:0;overflow:hidden}
+body.page-companies .main{height:100vh;min-height:0;overflow:hidden}
+/* [AUNEA-FROZEN-PAGE-COMPANIES-001] END */

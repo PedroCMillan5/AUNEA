@@ -1,0 +1,9 @@
+# Runtime/build artefacts — never part of the governed runtime.
+node_modules/
+__pycache__/
+*.egg-info/
+.pytest_cache/
+*.pyc
+
+# Local backend runtime database (regenerated on demand; never a source of truth).
+aunea_runtime.db
