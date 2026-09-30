@@ -255,6 +255,11 @@ function addMultipleSteps(){
 function removeStepFromFlow(stepId){
   const e=currentEng(),step=e?.processSteps?.find(x=>x.id===stepId&&x.status!=='SUPERSEDED');if(!step)return;
   const linkedFrictions=activeFrictions(e).filter(f=>normalizeArray(f.affected_steps).includes(stepId));
+  const linkedRisks=(e.risks||[]).filter(x=>normalizeArray(x.step_ids).includes(stepId));
+  const linkedEconomics=(e.economicInputs||[]).filter(x=>normalizeArray(x.step_ids).includes(stepId));
+  if(linkedRisks.length||linkedEconomics.length)return toast('Este paso tiene riesgos o datos económicos relacionados. Cambia primero esas relaciones para no perder información.');
+  if(linkedFrictions.some(f=>normalizeArray(f.affected_steps).length===1))return toast('Este paso es el único vinculado a un problema. Cambia primero el paso relacionado para conservarlo.');
+  if(linkedFrictions.some(f=>f.time_attribution?.step_id===stepId))return toast('Este paso es donde se cuenta el tiempo de un problema. Revisa primero esa relación.');
   const body=`<div class="notice warn"><b>¿Eliminar “${esc(step.step_name||'este paso')}” del flujo?</b><p>Dejará de aparecer en el mapa. La trazabilidad histórica se conservará internamente. Las rutas que apunten a este paso quedarán pendientes de redefinir${linkedFrictions.length?` y ${linkedFrictions.length} fricción(es) perderán este vínculo`:''}.</p></div>`;
   openModal('Eliminar paso del flujo',body,()=>{
     step.status='SUPERSEDED';
@@ -464,6 +469,24 @@ function clientLayerBody(e,steps,fr,tab){
   if(tab==='impacto')return flow+economicBuilder(e);
   return flow+`<div class="client-map-actions"><button class="btn btn-primary" id="addStepFromClient">Añadir paso</button><button class="btn btn-outline" id="addDecisionFromClient">Añadir decisión</button><button class="btn btn-outline" id="useProcessTemplate">Casos de referencia</button></div>`;
 }
+/* [AUNEA-FE-PROC-CONTINUITY-046] START — Read-only scope and demand carried into every AS-IS layer.
+   SOURCE: Diagnostic Master v1.2 DF011–DF030; DEC-050/064/065. No extra editable owner. */
+function processContinuityContext(e){
+  const a=e.answers||{},read=(id,empty='Pendiente')=>a[id]===undefined||a[id]===null||a[id]===''?empty:String(a[id]);
+  const period=read('DF022','periodo pendiente'),volume=read('DF021');
+  const metric=(name,value)=>'<span class="chip"><b>'+esc(name)+':</b> '+esc(value)+'</span>';
+  return '<div class="client-process-lineage" data-process-continuity="true"><b>Lo que ya sabemos del proceso</b>'
+    +'<p><b>Proceso:</b> '+esc(read('DF011','Sin nombre'))+'</p>'
+    +'<p><b>Empieza:</b> '+esc(read('DF014',read('DF012')))+'</p>'
+    +'<p><b>Termina:</b> '+esc(read('DF015',read('DF013')))+'</p>'
+    +'<div class="coverage-chips">'
+    +metric('Casos habituales',volume+' / '+period)
+    +metric('En momentos de más trabajo',read('DF023'))
+    +metric('Tiempo objetivo',read('DF025'))
+    +metric('Duración habitual declarada',read('DF026'))
+    +'</div><small>Estos datos vienen de Alcance y Demanda. Para corregirlos, vuelve a su etapa: aquí no se crean copias.</small></div>';
+}
+/* [AUNEA-FE-PROC-CONTINUITY-046] END */
 function clientProcessView(e,steps,fr,tab='cliente'){
   const riskCount=(e.risks||[]).length,econCount=(e.economicInputs||[]).length,company=(typeof companyById==='function'?companyById(e.companyId)?.name:'')||e.answers?.DF001||'Empresa',processName=e.answers?.DF011||e.processName||'Proceso sin nombre';
   const clientBar=`<div class="client-process-topbar"><img src="./assets/brand/Logo.png" alt="AUNEA"><div class="client-process-context"><span>${esc(company)}</span><b>${esc(processName)}</b></div><div class="client-process-state"><span>Sesión de diagnóstico</span><b>Editor compartido</b></div></div>`;
@@ -481,7 +504,7 @@ function clientProcessView(e,steps,fr,tab='cliente'){
     tab==='riesgos'?fr.length+' fricciones registradas · los riesgos se asocian a sus pasos afectados':
     tab==='impacto'?fr.length+' fricciones y '+riskCount+' riesgos en el mismo mapa; sólo cuantifica importes acreditados':
     'Construye la secuencia y configura las bifurcaciones reales del proceso';
-  const lineage='<div class="client-process-lineage"><b>Contexto heredado</b><span>'+esc(upstream)+'</span></div>';
+  const lineage=processContinuityContext(e)+'<div class="client-process-lineage"><b>Ahora estamos revisando</b><span>'+esc(upstream)+'</span></div>';
   const nextIndex=stages.findIndex(x=>x.tab===tab)+1,next=stages[nextIndex];
   const nextAction=next?'<button class="btn btn-outline client-process-next" type="button" data-process-tab="'+next.tab+'">Continuar a '+next.title+' →</button>':'';
 // [AUNEA-FE-PROC-LAYERS-045] END
