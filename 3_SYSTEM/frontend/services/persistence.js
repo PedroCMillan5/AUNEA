@@ -30,6 +30,8 @@ let __auneaSyncedState=null,__auneaConflictNotified=false;
 function recoveryShared(x){
   const result=recoveryClone(x);
   for(const k of [...RECOVERY_TAB_LOCAL,'dirty','audit','recoveryMeta'])delete result[k];
+  // A selected process layer is per-window navigation, not a shared business edit.
+  (result.engagements||[]).forEach(e=>{delete e.processTab});
   return result;
 }
 function recoveryIds(x){return Array.isArray(x)&&x.every(v=>v&&typeof v==='object'&&!Array.isArray(v)&&typeof v.id==='string')}
@@ -66,6 +68,10 @@ function reconcileRecoveryWithDisk(){
   if(conflicts.length)return {conflicts};
   const merged={...remote,...shared};
   for(const key of RECOVERY_TAB_LOCAL)merged[key]=state[key];
+  for(const e of merged.engagements||[]){
+    const local=(state.engagements||[]).find(x=>x.id===e.id);
+    if(local&&local.processTab)e.processTab=local.processTab;
+  }
   merged.audit=[...new Map([...(remote.audit||[]),...(state.audit||[])].map(x=>[x.ts+'|'+x.message,x])).values()].slice(-250);
   return {merged,conflicts};
 }
@@ -122,8 +128,13 @@ window.addEventListener('storage',ev=>{
     const localUi=Object.fromEntries(RECOVERY_TAB_LOCAL.map(k=>[k,state[k]]));
     const flowCanvas=document.querySelector('.flow-canvas');
     const viewport=flowCanvas?{left:flowCanvas.scrollLeft,top:flowCanvas.scrollTop}:null;
-    state={...incoming,...localUi};
+    // Store the actual accepted remote baseline before applying per-window navigation.
     __auneaSyncedState=recoveryClone(incoming);
+    const selectedEngagement=(state.engagements||[]).find(e=>e.id===state.activeEngagementId);
+    const localProcessTab=selectedEngagement?.processTab;
+    state={...incoming,...localUi};
+    const incomingActive=(state.engagements||[]).find(e=>e.id===state.activeEngagementId);
+    if(incomingActive&&localProcessTab)incomingActive.processTab=localProcessTab;
     if(isProcessEditorWindow())state.activePage='proceso';
     render();
     if(viewport)requestAnimationFrame(()=>{
