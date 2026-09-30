@@ -6,19 +6,19 @@
 // SIDE_EFFECTS: modal DOM and engagement state mutation; no official economics calculation.
 // CHANGE_RISK: HIGH.
 const ECON_DRIVER_LABELS_ES=Object.freeze({
-  ED01:'Tiempo de ejecución manual',
-  ED02:'Tiempo de entrada duplicada',
-  ED03:'Tiempo de búsqueda / recuperación',
-  ED04:'Tiempo de seguimiento',
-  ED05:'Tiempo de retrabajo',
-  ED06:'Tiempo de consolidación de reporting',
-  ED07:'Tiempo de gestión de aprobaciones',
-  ED08:'Tiempo de gestión de traspasos',
+  ED01:'Trabajo realizado por personas',
+  ED02:'Tiempo dedicado a introducir datos dos veces',
+  ED03:'Tiempo dedicado a buscar información',
+  ED04:'Tiempo dedicado a hacer seguimiento',
+  ED05:'Tiempo dedicado a corregir o repetir tareas',
+  ED06:'Tiempo dedicado a preparar informes',
+  ED07:'Tiempo dedicado a gestionar aprobaciones',
+  ED08:'Tiempo dedicado a pasar trabajo entre personas',
   ED09:'Coste directo de error / defecto',
   ED10:'Facturación perdida / fuga de ingresos',
   ED11:'Penalización / pérdida evitable',
   ED12:'Coste de herramientas',
-  ED13:'Tiempo de espera',
+  ED13:'Tiempo en que el caso queda pendiente',
   ED14:'Coste de capacidad por hora',
   ED15:'Volumen de casos'
 });
@@ -222,19 +222,19 @@ function addEconomic(preselectedSteps=[]){
   const initialPreview='Comprobando los datos de volumen, tiempo y calendario con el backend…';
   const activeHelp=activeContributors.length?`<div class="field-help">Pasos con tiempo activo registrado: ${esc(activeContributors.join(', '))}. Se reutilizan para obtener un cálculo revisable cuando el volumen y la aplicación están completos.</div>`:'<div class="field-help">Cuando faltan tiempos o volumen, indica el dato anual manualmente con su evidencia.</div>';
   const waitHelp=waitContributors.length?`<div class="field-help">Pasos con espera registrada: ${esc(waitContributors.join(', '))}. Se calcula por separado del trabajo; no constituye por sí misma ahorro económico.</div>`:'<div class="field-help">La espera se cuenta por separado. Si faltan datos, indica una cifra anual que puedas justificar.</div>';
-  openModal('Añadir input económico',`<div class="step-groups process-modal-form economic-modal-form">${inheritedContext}
+  openModal('Registrar tiempo o coste',`<div class="step-groups process-modal-form economic-modal-form">${inheritedContext}
     <details class="step-group" open><summary>Impacto en tiempo y evidencia</summary><div class="form-grid"><div class="field full"><div class="notice info" id="economicDerivedPreview" role="status">${esc(initialPreview)}</div><div class="field-help">Este cálculo usa el volumen y los tiempos ya registrados. El tiempo total de trabajo no es tiempo desperdiciado. No sumaremos dos veces un mismo problema.</div></div>
       <div class="field full"><label>Pasos del proceso relacionados</label><div class="choice-grid">${steps.map(s=>`<div class="choice"><input type="checkbox" id="econ_step_${attr(s.id)}" data-econ-step="${attr(s.id)}" ${preselectedSteps.includes(s.id)?'checked':''}><label for="econ_step_${attr(s.id)}">${esc(s.step_name||s.id)}</label></div>`).join('')}</div></div>
-      <div class="field full"><label>Concepto económico</label>${econDropdown('econDriver',drivers.map(d=>({value:d.Economic_Driver_ID,label:econDriverLabel(d.Economic_Driver_ID)})),drivers[0]?.Economic_Driver_ID||'','Selecciona…')}</div>
-      <div class="field"><label>Tiempo activo atribuible</label>${econAnnualTimeControl('econActive',0,'h')}${activeHelp}</div>
+      <div class="field full"><label>¿Qué tiempo o coste estamos registrando?</label>${econDropdown('econDriver',drivers.map(d=>({value:d.Economic_Driver_ID,label:econDriverLabel(d.Economic_Driver_ID)})),drivers[0]?.Economic_Driver_ID||'','Selecciona…')}</div>
+      <div class="field"><label>¿Cuántas horas de trabajo supone al año?</label>${econAnnualTimeControl('econActive',0,'h')}${activeHelp}</div>
       <div class="field"><label>¿Cuánto tiempo queda esperando el caso?</label>${econAnnualTimeControl('econWait',0,'h')}${waitHelp}</div>
-      <div class="field full"><label>Tipo de evidencia</label>${econDropdown('econEvidence',Object.entries(I18N_LABELS_ES.evidence_quality).map(([value,label])=>({value,label})),'','Selecciona…')}</div>
+      <div class="field full"><label>¿De dónde salen estos datos?</label>${econDropdown('econEvidence',Object.entries(I18N_LABELS_ES.evidence_quality).map(([value,label])=>({value,label})),'','Selecciona…')}</div>
     </div></details>
     <details class="step-group" open><summary>Costes, pérdidas y ahorro realizado</summary><div class="form-grid">
-      <div class="field"><label>Coste por hora del perfil seleccionado</label><div class="compound-control"><input id="econRate" type="number" min="0" step="any" inputmode="decimal" placeholder="Se reutiliza de DF076" readonly><span class="unit-label">€/h</span></div><div class="field-help" id="econRoleRateHelp">Se reutiliza el coste registrado en este apartado. Para valorar varios perfiles, selecciona y guarda sus pasos por separado. No equivale a ahorro efectivo.</div></div>
-      <div class="field"><label>Pérdida directa anual</label><div class="compound-control"><input id="econDirect" type="number" min="0" step="any" inputmode="decimal" placeholder="0"><span class="unit-label">€/año</span></div><div class="field-help">Pérdida financiera directa evidenciada y atribuible al proceso.</div></div>
-      <div class="field"><label>Coste actual de herramientas</label><div class="compound-control"><input id="econTool" type="number" min="0" step="any" inputmode="decimal" placeholder="0"><span class="unit-label">€/año</span></div><div class="field-help">Gasto actual atribuible; no se presume eliminable.</div></div>
-      <div class="field"><label>Ahorro de caja ya realizado</label><div class="compound-control"><input id="econCash" type="number" min="0" step="any" inputmode="decimal" placeholder="0"><span class="unit-label">€/año</span></div><div class="field-help">Sólo ahorro real ya materializado; no es una estimación futura.</div></div>
+      <div class="field"><label>Coste por hora del perfil que realiza el trabajo</label><div class="compound-control"><input id="econRate" type="number" min="0" step="any" inputmode="decimal" placeholder="Se reutiliza de DF076" readonly><span class="unit-label">€/h</span></div><div class="field-help" id="econRoleRateHelp">Se reutiliza el coste registrado en este apartado. Para valorar varios perfiles, selecciona y guarda sus pasos por separado. No equivale a ahorro efectivo.</div></div>
+      <div class="field"><label>¿Cuánto dinero se ha perdido directamente al año?</label><div class="compound-control"><input id="econDirect" type="number" min="0" step="any" inputmode="decimal" placeholder="0"><span class="unit-label">€/año</span></div><div class="field-help">Pérdida financiera directa evidenciada y atribuible al proceso.</div></div>
+      <div class="field"><label>¿Cuánto cuestan hoy las herramientas al año?</label><div class="compound-control"><input id="econTool" type="number" min="0" step="any" inputmode="decimal" placeholder="0"><span class="unit-label">€/año</span></div><div class="field-help">Gasto actual atribuible; no se presume eliminable.</div></div>
+      <div class="field"><label>¿Qué ahorro real de dinero se ha conseguido ya?</label><div class="compound-control"><input id="econCash" type="number" min="0" step="any" inputmode="decimal" placeholder="0"><span class="unit-label">€/año</span></div><div class="field-help">Sólo ahorro real ya materializado; no es una estimación futura.</div></div>
     </div></details>
   </div>`,()=>{
     const step_ids=typeof document.querySelectorAll==='function'?[...document.querySelectorAll('[data-econ-step]:checked')].map(x=>x.dataset.econStep):[];
