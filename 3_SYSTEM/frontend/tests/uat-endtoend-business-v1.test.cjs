@@ -94,4 +94,16 @@ test('three UAT source files and integration remain distinct from existing Phase
  assert.match(phase1,/PHASE1_COMPANY_COUNT=12/);
  assert.match(phase2,/PHASE2_STUDY_COUNT=12/);
 });
+test('audit makes differences in declared cycle time visible for each scenario and links the human control to the real step',()=>{
+ const ctx=scenario();
+ for(const c of cases){
+  const row=ctx.uat3Seed(c),e=row.engagement;
+  ctx.state.companies.push(row.company);ctx.state.contacts.push(...row.contacts);
+  const audit=ctx.uat3Audit(e);
+  assert.ok(audit.findings.some(x=>x.includes('DF026')&&x.includes(c.key==='INVOICE'?'72 h':c.key==='INTAKE'?'40 h':'15 h')),c.key+': missing cycle-time discrepancy');
+  const control=e.processSteps.find(s=>s.id===e.answerDetails.DF075__steps[0]);
+  assert.ok(control,c.key+': human control must have a real step');
+  assert.equal(control.step_type,c.key==='EMAIL'?'ST02':'ST05',c.key+': wrong protected action');
+ }
+});
  // [AUNEA-UAT-ENDTOEND-120] END
