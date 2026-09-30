@@ -47,4 +47,30 @@ jobs:
         run: npm ci
       - name: Frontend modular runtime and UX regression
         run: npm test
+  browser_uat:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: 3_SYSTEM/frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: 3_SYSTEM/frontend/package-lock.json
+      - name: Install locked browser test runtime
+        run: npm ci
+      - name: Install native Chromium and dependencies
+        run: npx playwright install --with-deps chromium
+      - name: Three scenario Chromium workflow and Impact canvas acceptance
+        run: node tests/uat-browser-smoke.cjs
+      - name: Preserve browser screenshots for review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aunea-uat3-chromium-evidence
+          path: 3_SYSTEM/frontend/tests/browser-evidence/*.png
+          if-no-files-found: ignore
+
 # [AUNEA-UAT-GATE-010] END
