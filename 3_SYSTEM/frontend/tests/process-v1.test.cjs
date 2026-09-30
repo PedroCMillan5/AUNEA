@@ -117,7 +117,7 @@ test('decision detail is hidden unless canonical Other is selected, and step del
 
 test('the Friction modal groups fields into layer 1 (tipo/pasos/señal/contexto-impacto, open) and layer 2 (causa/workaround/evidencia/resto, collapsed), same field ids, no Friction Model change',()=>{
   const groups=[...code.matchAll(/<details class="step-group"( open)?><summary>([^<]+)<\/summary>/g)];
-  const frGroups=groups.filter(g=>/Fricción|Causa, workaround/.test(g[2]));
+  const frGroups=groups.filter(g=>/Fricción|Por qué ocurre y cómo se resuelve hoy/.test(g[2]));
   assert.equal(frGroups.length,2);
   assert.equal(frGroups[0][1],' open','layer 1 (Fricción) must be open by default');
   assert.equal(frGroups[1][1],undefined,'layer 2 (causa/workaround/evidencia) must start collapsed');
