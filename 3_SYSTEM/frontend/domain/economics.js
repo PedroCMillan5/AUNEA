@@ -59,17 +59,21 @@ function economicTimeRequest(e,stepIds=[]){
   };
 }
 async function economicTimeProjection(e,stepIds=[]){
-  const req=economicTimeRequest(e,stepIds);
+  // Capture the exact request before any asynchronous operation: Process Step and Friction
+  // objects are mutable while the consultant edits the same Engagement in another surface.
+  const requestKey=JSON.stringify(economicTimeRequest(e,stepIds));
   if(!state.backendOnline&&!(await checkBackend()))
     return {available:false,reason:'Backend no conectado. No se calcularán cifras en el navegador.',missing:['Backend no disponible']};
   const response=await fetch(`${state.backendUrl}/v1/diagnostic/time-projection`,{
-    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(req)
+    method:'POST',headers:{'Content-Type':'application/json'},body:requestKey
   });
   if(!response.ok)throw new Error('El backend no pudo normalizar el tiempo del proceso.');
   const output=await response.json();
-  // One backend projection may serve No-Reask DF078/DF079 for the whole process.
-  // Never cache a selected subset as if it were the full AS-IS.
-  if(!stepIds.length)e._sessionTimeProjection={requestKey:JSON.stringify(req),output};
+  // Never attribute a response calculated from an earlier input snapshot to a later
+  // version of the AS-IS; a selected subset cannot overwrite the global DF078/DF079 cache.
+  if(JSON.stringify(economicTimeRequest(e,stepIds))!==requestKey)
+    return {available:false,status:'STALE',reason:'Los datos del proceso cambiaron durante el cálculo. Actualiza la vista previa.',missing:['Cálculo anterior invalidado por un cambio en el proceso']};
+  if(!stepIds.length)e._sessionTimeProjection={requestKey,output};
   return {
     available:output.status==='CALCULATED',
     annualCases:output.annual_cases,
@@ -81,7 +85,7 @@ async function economicTimeProjection(e,stepIds=[]){
     monetaryPending:output.monetary_reconciliation||[],
     missing:output.gaps||[],
     pendingFrictions:output.frictions_pending_overlap_review||[],
-    stepCount:req.steps.length,
+    stepCount:JSON.parse(requestKey).steps.length,
     status:output.status,
     reason:(output.gaps||[]).join('; ')||'Cálculo no disponible'
   };

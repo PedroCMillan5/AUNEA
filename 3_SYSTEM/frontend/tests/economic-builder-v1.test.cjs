@@ -281,4 +281,50 @@ test('B03: a stale automatic preview must not be reclassified as manual evidence
   assert.equal(e.economicInputs.length,0);
   assert.match(warning,/actualiz|cambi/i);
 });
+test('No-Reask: changing a step while the HTTP projection is in flight cannot cache or display the old result as current',async()=>{
+  const ctx=makeCtx(),e=ctx.__eng;
+  e.answers={DF021:100,DF022:'MONTH'};
+  e.processSteps=[{id:'S1',status:'ACTIVE',active_time:10,wait_time:0,rework_time:0}];
+  ctx.activeSteps=x=>x.processSteps;
+  let sent,release;
+  ctx.fetch=(_url,options)=>{
+    sent=JSON.parse(options.body);
+    return new Promise(resolve=>{release=()=>resolve({ok:true,json:async()=>({
+      status:'CALCULATED',annual_active_hours:200,active_minutes_per_case:10,rework_minutes_per_case:0,gaps:[]
+    })})});
+  };
+  const pending=ctx.economicTimeProjection(e);
+  assert.equal(sent.steps[0].active_time,10);
+  e.processSteps[0].active_time=20;
+  release();
+  const result=await pending;
+  assert.equal(result.available,false);
+  assert.equal(result.status,'STALE');
+  assert.match(result.reason,/cambiaron durante el cálculo/);
+  assert.equal(e._sessionTimeProjection,undefined,'an old response must not populate the full-process cache');
+  assert.equal(sent.steps[0].active_time,10,'the HTTP request must preserve the original input snapshot');
+  let lastBody;
+  ctx.fetch=async(_url,options)=>{
+    lastBody=JSON.parse(options.body);
+    return {ok:true,json:async()=>({status:'CALCULATED',annual_active_hours:400,active_minutes_per_case:20,rework_minutes_per_case:0,gaps:[]})};
+  };
+  const current=await ctx.economicTimeProjection(e);
+  assert.equal(current.available,true);
+  assert.equal(lastBody.steps[0].active_time,20);
+  assert.equal(e._sessionTimeProjection.output.active_minutes_per_case,20);
+});
+
+test('No-Reask: changing session volume during an in-flight projection invalidates that response',async()=>{
+  const ctx=makeCtx(),e=ctx.__eng;
+  e.answers={DF021:100,DF022:'MONTH'};
+  let release;
+  ctx.fetch=()=>new Promise(resolve=>{release=()=>resolve({ok:true,json:async()=>({status:'CALCULATED',active_minutes_per_case:10,gaps:[]})})});
+  const pending=ctx.economicTimeProjection(e);
+  e.answers.DF021=200;
+  release();
+  const p=await pending;
+  assert.equal(p.available,false);
+  assert.equal(e._sessionTimeProjection,undefined);
+});
+
 // [AUNEA-UAT-ECON-010] END
