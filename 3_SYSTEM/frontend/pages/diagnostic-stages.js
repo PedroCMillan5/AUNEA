@@ -242,6 +242,7 @@ function stagePage(){
       ${pg01Disclosure}`
     : `<div class="card stage-card">
       ${fields.some(f=>f.Requiredness==='REQUIRED_90M')?REQUIRED_LEGEND_HTML:''}
+      ${['S04','S05','S06','S07'].includes(stage.Stage_ID)&&typeof processContinuityContext==='function'?processContinuityContext(e):''}
       <div class="form-grid">${engagementArea}${stageFields}</div>
       ${stage.Stage_ID==='S04'?processPrompt(e):''}${stage.Stage_ID==='S05'?frictionPrompt(e):''}
       ${stage.Stage_ID==='S06'?riskBuilder(e):''}${stage.Stage_ID==='S07'?economicBuilder(e):''}
@@ -295,6 +296,7 @@ function validationSummary(e,completion){
       <div class="notice"><b>Snapshot sellado</b><br>${snap?`v${snap.version} · ${esc(formatDateEs(snap.sealedAt))}`:'Se sella al confirmar el AS-IS'}</div>
     </div>
     <div class="field-help internal-only" style="margin-top:10px"><b>Notas internas del consultor:</b> ${notes?esc(notes):'—'}</div>
+    ${typeof processReadOnlyJourney==='function'?processReadOnlyJourney(e):''}
     <div style="margin-top:16px">${cta}</div>`
   );
 }
