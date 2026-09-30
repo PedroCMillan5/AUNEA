@@ -124,7 +124,8 @@ test('visible Generate click loads all three independent cases without requiring
  assert.equal(ctx.state.companies.length,3);
  assert.equal(ctx.state.contacts.length,6);
  assert.equal(saved,1,'do not persist intermediate empty state');
- assert.match(status.textContent,/Cargados y guardados: 3 estudios/);
+ assert.match(vm.runInContext('uat3LoadStatus',ctx),/Cargados y guardados: 3 estudios/);
+ assert.match(status.textContent,/Leyendo y comprobando/,'the first live status message was shown before rendering');
  assert.equal(load.disabled,false);
 });
 test('Generate click exposes a missing fixture as visible failure and changes no study data',async()=>{
