@@ -261,9 +261,10 @@
         "STATUS",
         "DOCUMENT"
       ],
-      "yes": 5,
-      "no": 3,
-      "condition": "Stock insuficiente o referencia de cliente inconsistente"
+      "yes": 3,
+      "no": 5,
+      "condition": "Stock suficiente y referencia correcta",
+      "exceptionCondition": "Stock insuficiente o referencia de cliente inconsistente"
     },
     {
       "name": "Crear ticket único del pedido en ERP",
