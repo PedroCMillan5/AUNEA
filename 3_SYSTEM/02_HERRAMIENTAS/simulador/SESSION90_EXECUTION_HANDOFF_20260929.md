@@ -153,3 +153,10 @@ QA remoto integrado de GitHub Actions: `AUNEA Internal V2 REVIEW Acceptance Gate
 Documentación: adenda B03 en `AUNEA_SYSTEM_SIMULATOR_REVIEW_v1.15_B02` (ID 1HCsrj75N2Z5AMVcGTEgpYophZanaQkeedoGK-971J5E). Los candidatos B02 de Diagnostic Master v1.3 y Architecture Contract v1.8 siguen REVIEW; sus versiones CANONICAL vigentes no se han reemplazado. DEC-068 continúa aprobada y no se añade una nueva decisión porque B03 aplica EAR-001/004/006/012 y DEC-065/068 existentes.
 
 Pendiente antes de dar B03 por cerrado: UAT de editor client-first en Windows/Chrome/Edge; confirmar la captura real de evidencia y la conciliación de eventos monetarios/allocación ED12 en casos reales; y promover los contratos REVIEW sólo tras superar sus gates específicos. No inferir que las reglas cubren todo posible solapamiento entre ED02–ED08 ni presentar importes no reconciliados como finales. El siguiente bloque secuencial de interfaz es B04, sin adelantarse en esta rama.
+
+## Auditoría B02/B03 · 30/09/2026 · rama aislada
+
+Base remota comprobada: `c4280744f2595decbb859264b46f4fc5573fcaa9`, sin avance. Rama `work/astra-session90-b04`; B04 NO iniciado.
+Se reproduce y corrige exclusivamente B03: solapamientos que la API aceptaba aunque la UI bloqueaba; claves iguales con tasas/costes/caja contradictorios; falso anclaje huérfano al proyectar un subconjunto de pasos; captura automática obsoleta convertida en manual. La proyección conserva el mapa íntegro y aplica `scope_step_ids` sólo como filtro técnico del backend. Commits de corrección `49dad2e` y `ceb1f96`.
+QA: frontend 356/356, backend 76/76 (advertencia TestClient/httpx) e integración DOM real + HTTP backend PASS, con captura de tres modos, persistencia/recarga, propietario único, ED01/ED05/ED13, DF078/079, evidencia manual y ocho casos de paridad UI/API. No se cambia FROZEN, dropdowns, diseño o fuentes CANONICAL. UAT visual local no ejecutada: Chromium ausente y descarga fallida; Windows/Chrome/Edge sigue pendiente de Pedro.
+Informe reproducible completo: `docs/SESSION90_B02_B03_AUDIT_20260930.md`. B02/B03 continúan REVIEW; no merge, force push, promoción o avance de bloque.

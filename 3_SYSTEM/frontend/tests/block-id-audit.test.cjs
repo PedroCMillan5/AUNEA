@@ -33,6 +33,7 @@ function listFrontendJs(dir) {
 
 function listScanFiles() {
   const files = listFrontendJs(frontendDir);
+  files.push(path.join(frontendDir, 'scripts/qa-session90-b02-b03.cjs'));
   files.push(path.join(frontendDir, 'styles.css'));
   files.push(path.join(frontendDir, 'ui-system.css'));
   files.push(path.join(frontendDir, 'index.html'));
