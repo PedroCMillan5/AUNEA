@@ -30,7 +30,7 @@ test('addRisk keeps every saved RiskInput field visibly present; both groups ope
   });
   assert.match(code,/id="riskDesc"/,'riskDesc remains a direct text input');
   assert.match(code,/Categoría \$\{requiredMark\(\)\}/);
-  assert.match(code,/Descripción concreta \$\{requiredMark\(\)\}/);
+  assert.match(code,/¿Qué podría salir mal\? \$\{requiredMark\(\)\}/);
   assert.match(code,/process-modal-form risk-modal-form/);
 });
 
