@@ -97,4 +97,47 @@ test('actual backend payload for all three scenarios derives input from the same
  }
  dom.window.close();
 });
+
+test('three isolated sessions: sequential layer confirmation seals once; upstream edit reopens all four but retains immutable history',()=>{
+ for(const file of ['invoices.json','unified-requests.json','email-orders.json']){
+   const {w,dom,run}=buildRuntime();
+   const row=run('uat3Seed('+JSON.stringify(JSON.parse(read('uat/cases/'+file)))+')');
+   run('state.companies.push('+JSON.stringify(row.company)+');state.contacts.push(...'+JSON.stringify(row.contacts)+');state.engagements.push('+JSON.stringify(row.engagement)+');state.activeEngagementId='+JSON.stringify(row.engagement.id)+';state.activePage="proceso";');
+   for(const [index,tab] of ['cliente','fricciones','riesgos','impacto'].entries()){
+     run('currentEng().processTab='+JSON.stringify(tab)+';render()');
+     assert.ok(w.document.getElementById('confirmAsIs'),file+' '+tab+' missing confirm action');
+     w.document.getElementById('confirmAsIs').onclick();
+     const e=run('currentEng()');
+     assert.equal(e.confirmedAsIs,index===3,file+' cannot seal before all four layers');
+   }
+   const before=run('currentEng()');
+   assert.equal(before.answers.DF093,'YES',file);
+   assert.equal(before.confirmedSnapshots.length,1,file);
+   assert.equal(run('hasConfirmedSnapshot(currentEng())'),true,file);
+   const originalVolume=before.answers.DF021;
+   run('setAnswer("DF021",'+(originalVolume+10)+')');
+   const after=run('currentEng()');
+   assert.equal(after.confirmedAsIs,false,file);
+   assert.equal(after.answers.DF093,'',file);
+   for(const layer of ['map','frictions','risks','impact'])assert.equal(after.layerConfirmations[layer],false,file+' '+layer);
+   assert.equal(run('hasConfirmedSnapshot(currentEng())'),false,file);
+   assert.equal(after.confirmedSnapshots.length,1,file+' lost immutable history');
+   assert.equal(after.confirmedSnapshots[0].answers.DF021,originalVolume,file+' rewrote historical demand');
+   assert.equal(after.diagnosticOutput,null,file+' left an obsolete computed result');
+   dom.window.close();
+ }
+});
+test('real Session Display excludes early capture and internal risks/economics from client projection',()=>{
+ const {run,dom}=buildRuntime();
+ const row=run('uat3Seed('+JSON.stringify(JSON.parse(read('uat/cases/invoices.json')))+')');
+ run('state.companies.push('+JSON.stringify(row.company)+');state.engagements.push('+JSON.stringify(row.engagement)+')');
+ const hidden=run('buildSessionSnapshot(state.engagements[0])');
+ assert.equal(hidden.shared,false);assert.equal(hidden.steps.length,0);
+ run('state.engagements[0].stageId="S07"');
+ const shared=run('buildSessionSnapshot(state.engagements[0])');
+ assert.equal(shared.shared,true);assert.equal(shared.steps.length,6);
+ const raw=JSON.stringify(shared);
+ for(const forbidden of ['likelihood_1_5','capacity_cost_rate_eur_hour','realized_cash_saving_eur_annual','deduplication_key','evidence_type','Pain_ID','pricing'])assert.equal(raw.includes(forbidden),false,forbidden+' leaked to client');
+ dom.window.close();
+});
 // [AUNEA-UAT-RUNTIME-125] END
