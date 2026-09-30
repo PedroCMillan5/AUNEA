@@ -152,7 +152,8 @@ function economicRoleRateTable(e){
 function saveEconomicRoleRates(){
   const e=currentEng(),roles=economicRoles(e),rows=[],existing=economicRoleRates(e);
   for(const [i,role] of roles.entries()){
-    const raw=document.querySelector('[data-econ-role-value="'+role.replace(/"/g,'\\\"')+'"]')?.value||'';
+    const row=document.querySelectorAll('[data-econ-role-row]')[i];
+    const raw=row?.querySelector('[data-econ-role-value]')?.value??'';
     const evid=document.getElementById('econ_role_evidence_'+i)?.value||'';
     if(raw===''){continue}
     const rate=Number(raw);
