@@ -26,7 +26,9 @@ function uat3PhaseSection(){
       '<div class="row" style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0">'+
       '<button class="btn btn-primary" data-uat3-open="'+attr(e.id)+'" data-uat3-page="diagnostico" data-uat3-stage="S01">Abrir diagnóstico completo</button>'+
       '<button class="btn btn-outline" data-uat3-open="'+attr(e.id)+'" data-uat3-page="diagnostico" data-uat3-stage="S03">Ver demanda</button>'+
-      '<button class="btn btn-outline" data-uat3-open="'+attr(e.id)+'" data-uat3-page="proceso" data-uat3-stage="S04">Abrir mapa AS-IS</button></div>'+checks+findings);
+      '<button class="btn btn-outline" data-uat3-open="'+attr(e.id)+'" data-uat3-page="proceso" data-uat3-stage="S04">Abrir mapa AS-IS</button></div>'+
+      '<details class="uat3-stage-access"><summary>Revisar las nueve páginas de captura de este caso (sin confirmar datos automáticamente)</summary><div class="row" style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0">'+
+      [['S01','Contexto'],['S02','Alcance'],['S03','Demanda'],['S08','Estado objetivo'],['S04','Mapa AS-IS'],['S05','Fricciones'],['S06','Riesgos'],['S07','Impacto'],['S09','Cierre']].map(x=>'<button class="btn btn-small btn-outline" type="button" data-uat3-open="'+attr(e.id)+'" data-uat3-page="diagnostico" data-uat3-stage="'+x[0]+'">'+x[1]+'</button>').join('')+'</div></details>'+checks+findings);
   }).join('');
   return section('Fase 3 · Tres estudios integrales y auditoría de coherencia','Extiende, sin sustituir, las actuales UAT de CRM y Estudios. Los tres procesos se almacenan como Engagements visibles y sus respuestas se pueden recorrer y editar en el software.',
     intro+'<div class="grid g4"><div class="card metric"><small>Expedientes</small><strong>'+rows.length+'</strong><span>objetivo 3</span></div><div class="card metric"><small>Pasos</small><strong>'+rows.reduce((n,e)=>n+e.processSteps.length,0)+'</strong></div><div class="card metric"><small>Fricciones</small><strong>'+rows.reduce((n,e)=>n+e.frictions.length,0)+'</strong></div><div class="card metric"><small>Riesgos</small><strong>'+rows.reduce((n,e)=>n+e.risks.length,0)+'</strong></div></div>',
