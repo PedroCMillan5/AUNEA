@@ -41,7 +41,7 @@ function addRisk(preselectedSteps=[]){
     const selected=[...document.querySelectorAll('[data-risk-step]:checked')].map(x=>x.dataset.riskStep);
     document.querySelectorAll('[data-risk-friction-row]').forEach(row=>{
       const affected=String(row.dataset.affectedSteps||'').split('|').filter(Boolean);
-      row.hidden=!selected.length||!affected.some(id=>selected.includes(id));
+      row.hidden=!selected.length||!affected.some(id=>selected.includes(id));row.style.display=row.hidden?'none':'';
       const input=row.querySelector('[data-risk-friction]');if(row.hidden&&input)input.checked=false;
     });
   }
