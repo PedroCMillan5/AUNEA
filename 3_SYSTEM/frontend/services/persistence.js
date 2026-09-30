@@ -23,7 +23,7 @@ function normalizeRecoveredState(raw){
 // [AUNEA-FE-PERSIST-SYNC-051] START — Same-study three-way reconciliation.
 // DEC-050/065: localStorage is shared, but an open editor keeps its own unsaved draft.
 // Compare each edit with the last accepted state; never select an entire Engagement by timestamp.
-const RECOVERY_TAB_LOCAL=['activePage','activeEngagementId','uiMode','returnTo','selectedCompanyId','selectedContactId','companyTab','companySearch','companyFilters','contactSearch','contactFilters','interactionFilters','opportunityFilters','companyInspectorTab'];
+const RECOVERY_TAB_LOCAL=['activePage','activeEngagementId','uiMode','returnTo','selectedCompanyId','selectedContactId','companyTab','companySearch','companyFilters','contactSearch','contactFilters','interactionFilters','opportunityFilters','companyInspectorTab','backendOnline','crmTab'];
 const recoveryClone=x=>x===undefined?undefined:JSON.parse(JSON.stringify(x));
 const recoverySame=(x,y)=>JSON.stringify(x)===JSON.stringify(y);
 let __auneaSyncedState=null,__auneaConflictNotified=false;
@@ -89,6 +89,7 @@ function persistRecoverySnapshot(reason='recovery'){
     state.recoveryMeta={format:RECOVERY_FORMAT_VERSION,productVersion:typeof AUNEA_PRODUCT_VERSION!=='undefined'?AUNEA_PRODUCT_VERSION:null,schemaVersion:typeof STORAGE_SCHEMA_VERSION!=='undefined'?STORAGE_SCHEMA_VERSION:null,diagnosticSchema:schema?.version||'1.1',savedAt:now(),reason};
     localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
     __auneaSyncedState=recoveryClone(state);
+    if(typeof publishSessionSnapshot==='function')publishSessionSnapshot(currentEng());
     updateHeader();
     return true;
   }catch(err){console.error('AUNEA_RECOVERY_WRITE_ERROR',err);return false}
@@ -98,9 +99,7 @@ const __auneaMarkDirtyPersistBase=markDirty;
 markDirty=function(reason){
   __auneaMarkDirtyPersistBase(reason);
   clearTimeout(__auneaRecoveryTimer);
-  __auneaRecoveryTimer=setTimeout(()=>{
-    if(persistRecoverySnapshot('autosave')&&typeof publishSessionSnapshot==='function')publishSessionSnapshot(currentEng());
-  },350);
+  __auneaRecoveryTimer=setTimeout(()=>persistRecoverySnapshot('autosave'),350);
 };
 const __auneaSaveStatePersistBase=saveState;
 saveState=function(reason='Guardado manual'){
@@ -117,6 +116,8 @@ window.addEventListener('storage',ev=>{
     // Do not replace a modal's captured Engagement object, or redraw an unsaved form.
     // Reconcile the complete incoming state during the following explicit/autosave write.
     if(recoveryModalOpen()||state.dirty)return;
+    const latest=localStorage.getItem(STORAGE_KEY);
+    if(latest&&latest!==ev.newValue)return; // A queued older storage event is not current state.
     const incoming=normalizeRecoveredState(JSON.parse(ev.newValue));
     const localUi=Object.fromEntries(RECOVERY_TAB_LOCAL.map(k=>[k,state[k]]));
     const flowCanvas=document.querySelector('.flow-canvas');
