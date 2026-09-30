@@ -30,6 +30,29 @@ function valuePresent(v){if(v===undefined||v===null||v==='')return false;if(Arra
 // and called from setAnswer itself. One mechanism, and it covers every Company-owned field rather than
 // the three someone remembered to add.
 
+// [AUNEA-FE-DIAG-OWNER-053] START — Distinct canonical views over one ProcessStep owner.
+// DF047 records source inputs and structured outputs that can supply downstream data;
+// DF049 records documentary artifacts seen on either side of the same steps.
+// The artifact catalog is shared by both fields; an actual PDF can legitimately appear in both.
+// No invented evidence attachment or second editable Process record is created here.
+const DOCUMENT_ARTIFACT_TYPES=new Set(['FORM','EMAIL','TEXT','PDF','DOC','SHEET','IMAGE']);
+const STRUCTURED_OUTPUT_TYPES=new Set(['RECORD','MASTER_DATA','API']);
+function processDataSources(steps){return unique(steps.flatMap(s=>[
+  ...normalizeArray(s.inputs).filter(x=>x!=='APPROVAL'),
+  ...normalizeArray(s.outputs).filter(x=>STRUCTURED_OUTPUT_TYPES.has(x))
+]));}
+function processDocumentArtifacts(steps){return unique(steps.flatMap(s=>[
+  ...normalizeArray(s.inputs),...normalizeArray(s.outputs)
+].filter(x=>DOCUMENT_ARTIFACT_TYPES.has(x))));}
+function globalFailureReview(e){
+  const global=e.answers?.DF028,steps=activeSteps(e);
+  const granular=steps.filter(x=>x.error_rate&&x.error_rate.value!==undefined&&x.error_rate.value!==null)
+    .map(x=>({name:x.step_name||x.id,value:x.error_rate.value,mode:x.error_rate.mode||'percent'}));
+  if(!granular.length)return '';
+  const globalValue=valuePresent(global)?formatContextValue({Option_Set_ID:null},global):'No declarado';
+  return 'Tasa global declarada: '+globalValue+'. Frecuencias por paso: '+granular.map(x=>x.name+' ('+x.value+(x.mode==='percent'?' %':' '+x.mode)+')').join('; ')+'. No se suman ni sustituyen: una misma incidencia puede afectar a varios pasos y las poblaciones deben verificarse.';
+}
+// [AUNEA-FE-DIAG-OWNER-053] END
 function reusedValue(fid,e){
   const steps=activeSteps(e),fr=activeFrictions(e),c=companyById(e.companyId);
   if(fid==='DF001')return c?.name||e.answers?.DF001||'';
@@ -38,7 +61,8 @@ function reusedValue(fid,e){
   if(fid==='DF006')return e.contactIds?.[0]||e.answers?.DF006||'';
   if(fid==='DF017')return unique(steps.map(x=>x.actor));
   if(fid==='DF046')return unique(steps.map(x=>x.tool));
-  if(fid==='DF047'||fid==='DF049')return unique(steps.flatMap(x=>[...normalizeArray(x.inputs),...normalizeArray(x.outputs)]));
+  if(fid==='DF047')return processDataSources(steps);
+  if(fid==='DF049')return processDocumentArtifacts(steps);
   if(fid==='DF050')return unique(steps.flatMap(x=>normalizeArray(x.communication_channels)));
   if(fid==='DF066')return unique(steps.filter(x=>valuePresent(x.exception_path)).map(x=>typeof x.exception_path==='object'?(x.exception_path.type||x.exception_path.label||JSON.stringify(x.exception_path)):x.exception_path));
   if(fid==='DF067')return unique(steps.filter(x=>x.step_type==='ST05'||normalizeArray(x.decision_criteria).length).map(x=>x.step_name||x.id));
@@ -260,6 +284,7 @@ function renderQuestion(f,e){
   }
   else body=`${renderControl(f,val,opts,e)}${explicitReaskAllowed(f.Field_ID,e)?`<div class="field-help"><button type="button" class="link-btn" data-close-context="${f.Field_ID}">Cerrar edición y volver a reutilizar el dato</button></div>`:''}`;
   const clarification=FIELD_CLARIFICATION_ES[f.Field_ID];
+  const consistencyNote=f.Field_ID==='DF028'?globalFailureReview(e):'';
   // Example and validation stay available — they are canonical guidance — but behind the existing
   // discreet help popover, because the reference shows a single explanatory line under the control.
   const detail=[f.Objetivo_concreto?`<div><b>Para qué sirve:</b> ${esc(f.Objetivo_concreto)}</div>`:'',f.Ejemplo_ES?`<div><b>Ejemplo:</b> ${esc(f.Ejemplo_ES)}</div>`:'',
@@ -269,7 +294,7 @@ function renderQuestion(f,e){
   const popId=`help_${f.Field_ID}`;
   const help=detail?`<button type="button" class="help-icon" data-help-toggle="${attr(popId)}" aria-expanded="false" aria-controls="${attr(popId)}" title="Ayuda">?</button><div class="help-popover" id="${attr(popId)}" role="tooltip">${detail}</div>`:'';
   const wide=['TEXT_LONG_INTERNAL','MULTISELECT','MULTISELECT_WITH_OTHER','MULTISELECT_WITH_DETAIL','MULTISELECT_WITH_PRIORITY','FRICTION_MULTISELECT_PRIORITY','RISK_BUILDER','CLIENT_CONFIRMATION_WITH_INLINE_EDIT','STEP_PAIR_SELECTOR','STEP_SYSTEM_PAIR_SELECTOR','DROPDOWN_WITH_OWNER_DATE'].includes(String(f.Control_UI));
-  return `<div class="field${wide?' full':''}" data-field="${attr(f.Field_ID)}"><label>${esc(f.Pregunta_o_etiqueta_ES)}${meta}${help}</label>${body}<div class="field-help">${esc(f.Objetivo_concreto||'')}</div>${clarification?`<div class="field-help clarification-note">${esc(clarification)}</div>`:''}</div>`;
+  return `<div class="field${wide?' full':''}" data-field="${attr(f.Field_ID)}"><label>${esc(f.Pregunta_o_etiqueta_ES)}${meta}${help}</label>${body}<div class="field-help">${esc(f.Objetivo_concreto||'')}</div>${clarification?`<div class="field-help clarification-note">${esc(clarification)}</div>`:''}${consistencyNote?`<div class="field-help clarification-note" data-global-failure-review="DF028">${esc(consistencyNote)}</div>`:''}</div>`;
 }
 
 function bindNoReask(){
