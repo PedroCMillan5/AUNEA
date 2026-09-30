@@ -6,7 +6,7 @@
 // SIDE_EFFECTS: modal DOM and engagement state mutation; no official economics calculation.
 // CHANGE_RISK: HIGH.
 const ECON_DRIVER_LABELS_ES=Object.freeze({
-  ED01:'Trabajo realizado por personas',
+  ED01:'Tiempo de ejecución manual',
   ED02:'Tiempo dedicado a introducir datos dos veces',
   ED03:'Tiempo dedicado a buscar información',
   ED04:'Tiempo dedicado a hacer seguimiento',
