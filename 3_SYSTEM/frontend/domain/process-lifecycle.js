@@ -54,9 +54,8 @@ function confirmProcessLayer(tab){
 function confirmAsIs(){confirmProcessLayer(currentEng()?.processTab||'cliente')}
 
 function openProcessEditorWindow(){
-  const e=currentEng();if(!e)return toast('Abre primero un estudio.');
-  if(typeof persistRecoverySnapshot==='function')persistRecoverySnapshot('abrir editor con cliente');
-  const u=new URL(location.href);u.searchParams.set('engagement',e.id);u.hash='process-editor';
-  window.open(u.toString(),`aunea_process_editor_${e.id}`);
+  // One consultant map, no second editable "client" window.
+  goToProcessFromStage();
 }
+
 // [AUNEA-FE-PROC-LIFECYCLE-030] END
