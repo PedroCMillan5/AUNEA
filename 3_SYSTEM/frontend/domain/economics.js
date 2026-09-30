@@ -247,7 +247,7 @@ function addEconomic(preselectedSteps=[]){
     const activeHours=projected?projected.active:econHoursFrom(document.getElementById('econActive').value,document.getElementById('econActive_unit').value||'h');
     const waitHours=projected?projected.wait:econHoursFrom(document.getElementById('econWait').value,document.getElementById('econWait_unit').value||'h');
     const selectedRoles=[...new Set(steps.filter(x=>step_ids.includes(x.id)).map(x=>x.actor).filter(Boolean))];
-    if(selectedRoles.length>1)return toast('Hay varios perfiles seleccionados. Guarda el tiempo de cada perfil por separado para aplicar su coste correcto.');
+    if(selectedRoles.length>1&&document.getElementById('econRate')?.value)return toast('Estos pasos tienen responsables distintos. Puedes guardar el tiempo sin coste, o separar los pasos por perfil para valorar cada uno.');
     const selectedRate=selectedRoles.length===1?economicRateForRole(eng,selectedRoles[0]):null;
     if(document.getElementById('econRate')?.value&&selectedRoles.length===1&&!selectedRate)return toast('Indica primero el coste y la evidencia de este perfil en Coste por perfil.');
     const draft={step_ids,driver_id:document.getElementById('econDriver').value,annual_active_hours:activeHours,annual_wait_hours:waitHours,capacity_cost_rate_eur_hour:selectedRate?Number(selectedRate.eur_hour):null,direct_loss_eur_annual:+document.getElementById('econDirect').value||0,current_tool_cost_eur_annual:+document.getElementById('econTool').value||0,realized_cash_saving_eur_annual:+document.getElementById('econCash').value||0,evidence_type:document.getElementById('econEvidence').value,derivation_source:projected?'DF021/DF022 + RT_PROCESS_STEP':'MANUAL_VALIDATION',deduplication_key:null};
@@ -260,6 +260,7 @@ function addEconomic(preselectedSteps=[]){
     if(typeof invalidateProcessLayers==='function')invalidateProcessLayers(eng,'impact');markDirty('Input económico añadido');closeModal();render();
     const zeroWithEvidence=[];if(activeHours===0&&activeContributors.length)zeroWithEvidence.push('trabajo activo');if(waitHours===0&&waitContributors.length)zeroWithEvidence.push('espera');
     if(zeroWithEvidence.length)toast(`Guardado con ${zeroWithEvidence.join(' y ')} anual en 0 aunque Proceso registra tiempo en esos pasos — revisa si falta transcribirlo.`);
+    else if(selectedRoles.length>1&&activeHours>0)toast('Horas guardadas sin coste: hay varios perfiles. Para valorar su tiempo, registra por separado los pasos de cada perfil.');
   });
   const refresh=async()=>{
     const ids=typeof document.querySelectorAll==='function'?[...document.querySelectorAll('[data-econ-step]:checked')].map(x=>x.dataset.econStep):[];
