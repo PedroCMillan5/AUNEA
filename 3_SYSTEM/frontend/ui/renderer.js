@@ -201,7 +201,8 @@ function renderControl(f,val,opts,e){
   if(c==='TEXT_LONG_INTERNAL')return `<textarea data-answer="${fid}" class="internal-only" placeholder="Notas internas; no se muestran en Modo Sesión">${esc(val||'')}</textarea>`;
   if(c==='CLIENT_CONFIRMATION_WITH_INLINE_EDIT')return `<div class="notice ${e.confirmedAsIs?'good':'warn'}">${e.confirmedAsIs?'Flujo AS-IS confirmado.':'Pendiente de confirmar el AS-IS.'} <button type="button" class="btn btn-small" data-page="proceso">Revisar / editar</button></div>`;
   if(c==='RISK_BUILDER')return structuredRedirect('Riesgo estructurado','diagnostico');
-  if(['ROLE_CAPACITY_TABLE','ROLE_RATE_TABLE','MONETARY_EVENT_TABLE','TOOL_COST_TABLE'].includes(c))return structuredRedirect('Input económico estructurado','diagnostico');
+  if(c==='ROLE_RATE_TABLE')return '<div class="readonly-box">Indica el coste y la procedencia de cada perfil en «Coste por perfil», más abajo. No hace falta escribirlo dos veces.</div>';
+  if(['ROLE_CAPACITY_TABLE','MONETARY_EVENT_TABLE','TOOL_COST_TABLE'].includes(c))return structuredRedirect('Dato económico estructurado','diagnostico');
   if(c==='FRICTION_TYPE_SELECT_WITH_CLIENT_LABEL'||c==='EXCEPTION_BUILDER')return structuredRedirect('Registro estructurado','proceso');
   if(c.startsWith('DERIVED')||c.startsWith('SYSTEM_GENERATED'))return `<div class="readonly-box">${esc(val||'Se completará automáticamente cuando existan datos suficientes.')}</div>`;
   return `<div class="notice warn control-error"><strong>Control canónico no renderizado:</strong> ${esc(c||'SIN_CONTROL')} · ${esc(fid)}. No se degrada a texto libre.</div>`;
