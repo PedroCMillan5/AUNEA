@@ -51,7 +51,16 @@ function confirmProcessLayer(tab){
   }
   render();
 }
-function confirmAsIs(){confirmProcessLayer(currentEng()?.processTab||'cliente')}
+function confirmAsIs(){
+  const e=currentEng();if(!e)return;
+  // PG09 must not silently confirm whichever process tab happened to be left selected.
+  // The four layers are confirmed explicitly in the shared editor (DEC-065).
+  if(typeof state!=='undefined'&&state.activePage==='diagnostico'&&e.stageId==='S09'&&!allProcessLayersConfirmed(e)){
+    toast('Antes de cerrar, revisa y confirma los cuatro apartados del proceso: pasos, problemas, riesgos e impacto.');
+    e.processTab='cliente';state.activePage='proceso';render();return;
+  }
+  confirmProcessLayer(e.processTab||'cliente');
+}
 
 function openProcessEditorWindow(){
   const e=currentEng();if(!e)return toast('Abre primero un estudio.');
