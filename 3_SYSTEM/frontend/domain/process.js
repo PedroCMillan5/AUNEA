@@ -124,32 +124,32 @@ function openStepModal(stepId=null,linkFromStepId=null,preset=null){
   // step list row (processPage) already shows a readable per-step summary outside this modal.
   const body=`<div class="step-groups process-modal-form">
   <details class="step-group" open><summary>A. Información básica</summary><div class="form-grid">
-    <div class="field full"><label>Nombre del paso ${requiredMark()}</label><input id="step_name" maxlength="80" value="${attr(s.step_name||'')}" placeholder="Verbo + objeto, ej. Validar requisitos"></div>
+    <div class="field full"><label>¿Qué se hace en este paso? ${requiredMark()}</label><input id="step_name" maxlength="80" value="${attr(s.step_name||'')}" placeholder="Verbo + objeto, ej. Validar requisitos"></div>
     <div class="field"><label>Tipo de paso ${requiredMark()}</label>${stepTypeControl}</div>
-    <div class="field"><label>Responsable / actor ${requiredMark()}</label>${datalistControl('step_actor','OS_ACTOR_ROLE',s.actor||'','Rol existente o nuevo')}</div>
+    <div class="field"><label>¿Quién realiza este paso? ${requiredMark()}</label>${datalistControl('step_actor','OS_ACTOR_ROLE',s.actor||'','Rol existente o nuevo')}</div>
   </div></details>
   <details class="step-group"><summary>B. Entradas y salidas</summary><div class="form-grid">
     <div class="field full"><label>¿A qué casos aplica?</label>${appliesControl(s)}</div>
-    <div class="field"><label>Veces por caso</label><input id="step_occ" type="number" min="0" step="any" value="${attr(s.occurrences_per_case??1)}"></div>
-    <div class="field full"><label>Inputs</label>${selectedHtml('step_inputs',artifacts,s.inputs,{wrapped:true,detailId:'step_inputs_detail',detailValue:s._details.inputs||'',detailPlaceholder:'Especifica el input sólo al seleccionar Otro'})}</div>
-    <div class="field full"><label>Outputs</label>${selectedHtml('step_outputs',artifacts,s.outputs,{wrapped:true,detailId:'step_outputs_detail',detailValue:s._details.outputs||'',detailPlaceholder:'Especifica el output sólo al seleccionar Otro'})}</div>
+    <div class="field"><label>¿Cuántas veces se realiza por cada caso?</label><input id="step_occ" type="number" min="0" step="any" value="${attr(s.occurrences_per_case??1)}"></div>
+    <div class="field full"><label>¿Qué información o documentos se necesitan?</label>${selectedHtml('step_inputs',artifacts,s.inputs,{wrapped:true,detailId:'step_inputs_detail',detailValue:s._details.inputs||'',detailPlaceholder:'Especifica el input sólo al seleccionar Otro'})}</div>
+    <div class="field full"><label>¿Qué se obtiene al terminar este paso?</label>${selectedHtml('step_outputs',artifacts,s.outputs,{wrapped:true,detailId:'step_outputs_detail',detailValue:s._details.outputs||'',detailPlaceholder:'Especifica el output sólo al seleccionar Otro'})}</div>
   </div></details>
   <details class="step-group"><summary>C. Tiempo y rendimiento</summary><div class="form-grid">
-    <div class="field"><label>Tiempo activo típico</label>${timeControl('step_active',s.active_time,s._ui.active_unit||'min')}</div>
-    <div class="field"><label>Tiempo de espera</label>${timeControl('step_wait',s.wait_time,s._ui.wait_unit||'min')}<div class="field-help">Tiempo en el que el caso está parado o esperando antes de poder continuar. Se mantiene separado del trabajo activo y no se monetiza como trabajo.</div></div>
-    <div class="field"><label>Tiempo de retrabajo</label>${timeControl('step_rework',s.rework_time,s._ui.rework_unit||'min')}</div>
-    <div class="field"><label>Error / repetición</label><div class="compound-control"><input id="step_error" type="number" min="0" step="any" value="${attr(s.error_rate&&typeof s.error_rate==='object'?s.error_rate.value:(s.error_rate||''))}" placeholder="5">${auneaDropdownControl('step_error_mode',[{value:'percent',label:'%'},{value:'count',label:'casos'}],s.error_rate?.mode||'percent','Unidad')}${auneaDropdownControl('step_error_period',[{value:'case',label:'por caso'},{value:'month',label:'por mes'},{value:'year',label:'por año'}],s.error_rate?.period||'case','Periodo')}</div></div>
+    <div class="field"><label>¿Cuánto tiempo de trabajo requiere normalmente?</label>${timeControl('step_active',s.active_time,s._ui.active_unit||'min')}</div>
+    <div class="field"><label>¿Cuánto tiempo queda esperando antes de continuar?</label>${timeControl('step_wait',s.wait_time,s._ui.wait_unit||'min')}<div class="field-help">Tiempo en el que el caso está parado o esperando antes de poder continuar. Se mantiene separado del trabajo activo y no se monetiza como trabajo.</div></div>
+    <div class="field"><label>Si hay un error, ¿cuánto se tarda en corregirlo?</label>${timeControl('step_rework',s.rework_time,s._ui.rework_unit||'min')}</div>
+    <div class="field"><label>¿Con qué frecuencia hay errores o repeticiones?</label><div class="compound-control"><input id="step_error" type="number" min="0" step="any" value="${attr(s.error_rate&&typeof s.error_rate==='object'?s.error_rate.value:(s.error_rate||''))}" placeholder="5">${auneaDropdownControl('step_error_mode',[{value:'percent',label:'%'},{value:'count',label:'casos'}],s.error_rate?.mode||'percent','Unidad')}${auneaDropdownControl('step_error_period',[{value:'case',label:'por caso'},{value:'month',label:'por mes'},{value:'year',label:'por año'}],s.error_rate?.period||'case','Periodo')}</div></div>
   </div></details>
   <details class="step-group"><summary>D. Flujo y decisiones</summary><div class="form-grid">
     <div class="field full"><label>¿Este paso incluye una decisión o bifurcación?</label><div class="segmented"><button type="button" class="segment ${hasDecision?'active':''}" data-step-decision-flag="1" data-value="YES">Sí</button><button type="button" class="segment ${!hasDecision?'active':''}" data-step-decision-flag="1" data-value="NO">No</button></div></div>
     <div class="field full"><div class="decision-route-card route-yes"><div class="decision-route-head"><b data-step-next-label>${hasDecision?'Ruta SÍ / afirmativa':'Siguiente paso normal'}</b><span>${hasDecision?'Cuando se cumple la condición principal':'Continuación del flujo'}</span></div><label>Destino ${hasDecision?requiredMark():''}</label>${auneaDropdownControl('step_next',decisionDestinationOptions(e,s),s.normal_next_step||'','Selecciona destino…')}</div></div>
-    <div class="field full" data-step-decision-area${hasDecision?'':' style="display:none"'}><label>Criterios de decisión</label>${selectedHtml('step_decisions',decisions,s.decision_criteria)}<div class="detail-wrap" data-step-decision-other-wrap${decisionOtherOpen?'':' style="display:none"'}><input id="step_decisions_detail" value="${attr(decisionOtherOpen?(s._details.decision_criteria||''):'')}" placeholder="Especifica el criterio sólo al seleccionar Otro"></div></div>
+    <div class="field full" data-step-decision-area${hasDecision?'':' style="display:none"'}><label>¿Qué determina el camino que sigue el caso?</label>${selectedHtml('step_decisions',decisions,s.decision_criteria)}<div class="detail-wrap" data-step-decision-other-wrap${decisionOtherOpen?'':' style="display:none"'}><input id="step_decisions_detail" value="${attr(decisionOtherOpen?(s._details.decision_criteria||''):'')}" placeholder="Especifica el criterio sólo al seleccionar Otro"></div></div>
     <div class="field full" data-step-decision-area${hasDecision?'':' style="display:none"'}>${exceptionControl(s,e)}</div>
   </div></details>
   <details class="step-group"><summary>E. Automatización y sistemas</summary><div class="form-grid">
     <div class="field"><label>Herramienta / sistema</label>${datalistControl('step_tool','OS_TOOL_CATEGORY',s.tool||'','Herramienta principal')}</div>
-    <div class="field full"><label>Acciones manuales</label>${selectedHtml('step_manual',manual,s.manual_actions,{detailId:'step_manual_other',detailValue:s._details.manual_actions||'',detailPlaceholder:'Especifica la otra acción manual'})}</div>
-    <div class="field full"><label>Automatización actual</label>${segmented('step_auto',auto,s.automation_state,'data-step-auto')}</div>
+    <div class="field full"><label>¿Qué tareas se hacen manualmente?</label>${selectedHtml('step_manual',manual,s.manual_actions,{detailId:'step_manual_other',detailValue:s._details.manual_actions||'',detailPlaceholder:'Especifica la otra acción manual'})}</div>
+    <div class="field full"><label>¿Hay alguna parte automatizada hoy?</label>${segmented('step_auto',auto,s.automation_state,'data-step-auto')}</div>
     <div class="field full"><label>Canal(es) de comunicación</label>${selectedHtml('step_channels',channels,s.communication_channels,{detailId:'step_channels_other',detailValue:s._details.communication_channels||'',detailPlaceholder:'Especifica el canal sólo al seleccionar Otro'})}</div>
   </div></details>
   <details class="step-group"><summary>F. Evidencia y notas</summary><div class="form-grid">
@@ -210,14 +210,14 @@ function openFrictionModal(frId=null,preselectedSteps=[]){
   const body=`<div class="step-groups process-modal-form friction-modal-form">
   <details class="step-group" open><summary>Fricción</summary><div class="form-grid">
   <div class="field full"><label>Tipo de fricción ${requiredMark()}</label>${auneaDropdownControl('fr_type',[{value:'',label:'Selecciona…'},...types],f.friction_type||'','Selecciona…')}<div class="field-help">Elige el tipo de problema observado.</div></div>
-  <div class="field full"><label>Pasos afectados ${requiredMark()}</label>${selectedHtml('fr_steps',activeSteps(e).map(s=>({value:s.id,label:s.step_name||s.id})),f.affected_steps)}</div>
-  <div class="field full"><label>Señal observable ${requiredMark()}</label><input id="fr_signal" value="${attr(f.observable_signal||'')}" placeholder="Ej.: facturas que llevan más de 48 h pendientes de aprobación"></div>
-  <div class="field"><label>Frecuencia</label>${frictionNumberControl('fr_frequency',f.frequency)}</div>
+  <div class="field full"><label>¿En qué pasos aparece este problema? ${requiredMark()}</label>${selectedHtml('fr_steps',activeSteps(e).map(s=>({value:s.id,label:s.step_name||s.id})),f.affected_steps)}</div>
+  <div class="field full"><label>¿Qué sucede cuando aparece el problema? ${requiredMark()}</label><input id="fr_signal" value="${attr(f.observable_signal||'')}" placeholder="Ej.: facturas que llevan más de 48 h pendientes de aprobación"></div>
+  <div class="field"><label>¿Con qué frecuencia ocurre?</label>${frictionNumberControl('fr_frequency',f.frequency)}</div>
   <div class="field"><label>Impacto percibido</label>${auneaDropdownControl('fr_impact',[{value:'',label:'—'},...impacts],f.impact||'','—')}</div>
   </div></details>
-  <details class="step-group"><summary>Causa, workaround y evidencia</summary><div class="form-grid">
-  <div class="field full"><label>Causa / condición ${requiredMark()}</label>${selectedHtml('fr_causes',causes,f.cause,{detailId:'fr_cause_other',detailValue:f._details.cause||'',detailPlaceholder:'Especifica otra causa sólo al seleccionar Otro'})}</div>
-  <div class="field full"><label>Cómo se compensa hoy</label>${selectedHtml('fr_workaround',work,f.workaround,{detailId:'fr_workaround_other',detailValue:f._details.workaround||'',detailPlaceholder:'Especifica otro workaround sólo al seleccionar Otro'})}</div>
+  <details class="step-group"><summary>Por qué ocurre y cómo se resuelve hoy</summary><div class="form-grid">
+  <div class="field full"><label>¿Por qué ocurre este problema? ${requiredMark()}</label>${selectedHtml('fr_causes',causes,f.cause,{detailId:'fr_cause_other',detailValue:f._details.cause||'',detailPlaceholder:'Especifica otra causa sólo al seleccionar Otro'})}</div>
+  <div class="field full"><label>¿Qué hacéis hoy para salir del paso?</label>${selectedHtml('fr_workaround',work,f.workaround,{detailId:'fr_workaround_other',detailValue:f._details.workaround||'',detailPlaceholder:'Especifica otro workaround sólo al seleccionar Otro'})}</div>
   <div class="field"><label>Tipo de evidencia principal <span class="internal-tag">interno</span></label>${auneaDropdownControl('fr_evidence_type',evid,f.evidence_type||'EV02','Selecciona…')}</div>
   <div class="field"><label>¿Cuánto trabajo extra provoca este problema?</label>${frictionNumberControl('fr_active',f.active_time_loss,'time')}</div>
   <div class="field full"><label>¿Este tiempo ya está contado en el paso?</label>${auneaDropdownControl('fr_time_mode',[{value:'',label:'Pendiente de clasificar'},{value:'INCLUDED',label:'Sí, ya está contado en el paso'},{value:'BREAKDOWN',label:'Es parte del tiempo de corrección del paso'},{value:'ADDITIONAL',label:'No, es tiempo extra que aún no está contado'}],f.time_attribution?.mode||'','Selecciona relación…')}<div class="field-help">Sólo Adicional podrá incrementar el esfuerzo total tras validar frecuencia y evidencia. Incluido y Desglose no se suman.</div></div>
@@ -225,8 +225,8 @@ function openFrictionModal(frId=null,preselectedSteps=[]){
   <div class="field"><label>¿Cuánto tiempo queda esperando el caso por este problema?</label>${frictionNumberControl('fr_wait',f.wait_time_loss,'time')}</div>
   <div class="field"><label>¿Se ha perdido dinero por este problema?</label>${frictionNumberControl('fr_direct',f.direct_loss,'money')}</div>
   <div class="field full"><label>Otros impactos</label>${selectedHtml('fr_non_time',nonTime,f.non_time_impact)}</div>
-  <div class="field"><label>Prioridad cliente (cierre)</label>${auneaDropdownControl('fr_priority',[{value:'',label:'Sin priorizar'},{value:'1',label:'1 — Prioridad principal'},{value:'2',label:'2 — Segunda prioridad'},{value:'3',label:'3 — Tercera prioridad'}],f.priority_client?String(f.priority_client):'','Sin priorizar')}<div class="field-help">Ranking de cierre; top 3 recomendado por el modelo canónico.</div></div>
-  <div class="field full"><label>Cómo lo describe el cliente</label><input id="fr_label" maxlength="160" value="${attr(f.client_label||'')}" placeholder="Opcional"></div>
+  <div class="field"><label>¿Qué importancia tiene resolverlo primero?</label>${auneaDropdownControl('fr_priority',[{value:'',label:'Sin priorizar'},{value:'1',label:'1 — Prioridad principal'},{value:'2',label:'2 — Segunda prioridad'},{value:'3',label:'3 — Tercera prioridad'}],f.priority_client?String(f.priority_client):'','Sin priorizar')}<div class="field-help">Ranking de cierre; top 3 recomendado por el modelo canónico.</div></div>
+  <div class="field full"><label>¿Cómo lo describe el cliente?</label><input id="fr_label" maxlength="160" value="${attr(f.client_label||'')}" placeholder="Opcional"></div>
   <div class="field full"><label>Nota excepcional</label><input id="fr_notes" maxlength="200" value="${attr(f.notes||'')}" placeholder="Sólo si los campos estructurados no bastan"></div>
   </div></details>
   </div>`;
