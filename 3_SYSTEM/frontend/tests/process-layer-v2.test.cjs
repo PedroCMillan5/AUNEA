@@ -129,7 +129,7 @@ test('risk inherits confirmed friction locations via existing step_ids; economic
   assert.match(econ,/linkedFrictions\.length/);
   assert.match(econ,/linkedRisks\.length/);
   assert.match(econ,/economicTimeProjection/);
-  assert.match(econ,/sin sumar fricciones/);
+  assert.match(econ,/No sumaremos dos veces un mismo problema/);
   assert.match(css,/\.client-inherited-context\{/);
 });
 test('friction popup captures approved time attribution without changing existing dropdowns',()=>{
