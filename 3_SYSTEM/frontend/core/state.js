@@ -228,8 +228,15 @@ function render(){
   document.getElementById('content').innerHTML=fn();
   bindCommon();postBind();
   if(previousViewport){
-    const canvas=document.querySelector('.flow-canvas');
-    if(canvas){canvas.scrollLeft=previousViewport.left;canvas.scrollTop=previousViewport.top;}
+    // The routed graph is measured/drawn in a requestAnimationFrame by process.js.
+    // Restoring before that frame can be clamped to x=0 when Impact replaces the layout.
+    const restore=()=>{
+      if(state.activePage!=='proceso'||currentEng()?.id!==previousWorkspace.dataset.processEngagement)return;
+      const canvas=document.querySelector('.flow-canvas');
+      if(canvas){canvas.scrollLeft=previousViewport.left;canvas.scrollTop=previousViewport.top;}
+    };
+    if(typeof requestAnimationFrame==='function')requestAnimationFrame(()=>requestAnimationFrame(restore));
+    else restore();
   }
   // [AUNEA-FE-PROC-VIEWPORT-052] END
   // Republish the client-safe projection on every render. Navigating between stages changes what the
