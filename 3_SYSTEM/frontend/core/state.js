@@ -112,6 +112,8 @@ function setAnswer(fid,value){
   if(/^DF0(?:1[1-9]|20|2[1-9]|30)$/.test(fid)&&
       (e.confirmedAsIs||Object.values(e.layerConfirmations||{}).some(x=>x===true))&&
       typeof invalidateProcessLayers==='function')invalidateProcessLayers(e,'map');
+  if(fid==='DF076'&&typeof invalidateProcessLayers==='function'&&
+      (e.confirmedAsIs||e.layerConfirmations?.impact))invalidateProcessLayers(e,'impact');
   // A reused value corrected here must reach its owner, not become a second copy (DEC-050). The
   // engagement still keeps the snapshot of the value it used. Guarded because the No-Reask module
   // that owns the mapping loads after this one.
