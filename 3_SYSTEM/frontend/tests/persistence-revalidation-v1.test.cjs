@@ -18,7 +18,7 @@ function makeCtx(){
     schema:{version:'1.1'},
     state:{backendOnline:true},
     blankState:()=>({version:'2.0.0',activePage:'inicio',activeEngagementId:null,dirty:false,companies:[],contacts:[],opportunities:[],engagements:[],projects:[],audit:[]}),
-    markDirty:()=>{},saveState:()=>{},audit:()=>{},now:()=>'2026-09-14T00:00:00.000Z',render:()=>{},toast:()=>{},confirm:()=>true,
+    markDirty:()=>{},saveState:()=>{},updateHeader:()=>{},audit:()=>{},now:()=>'2026-09-14T00:00:00.000Z',render:()=>{},toast:()=>{},confirm:()=>true,
     document:{getElementById:()=>null,querySelectorAll:()=>[],addEventListener:()=>{},createElement:()=>({click(){}}),visibilityState:'visible'},
     localStorage:{store:{},getItem(k){return this.store[k]??null},setItem(k,v){this.store[k]=v}},
     __listeners:{},window:{addEventListener:(name,fn)=>{ctx.__listeners[name]=fn}},clearTimeout:()=>{},setTimeout:()=>0,Blob:function(){},URL:{createObjectURL:()=>'',revokeObjectURL:()=>{}},Date
@@ -79,41 +79,81 @@ test('re-opening the same step/friction/risk/economic modal regenerates the defa
 });
 
 
-test('cross-tab process synchronization preserves the horizontal map viewport instead of resetting to the left',()=>{
-  assert.match(persistCode,/const flowViewport=flowCanvas\?\{left:flowCanvas\.scrollLeft,top:flowCanvas\.scrollTop\}:null/);
-  assert.match(persistCode,/nextCanvas\.scrollLeft=flowViewport\.left/);
-  assert.match(persistCode,/nextCanvas\.scrollTop=flowViewport\.top/);
+test('cross-tab process synchronization preserves horizontal viewport when accepting current shared state',()=>{
+  const ctx=makeCtx(),view={scrollLeft:142,scrollTop:23},next={scrollLeft:0,scrollTop:0};
+  ctx.isClientDisplay=()=>false;ctx.isProcessEditorWindow=()=>true;
+  ctx.document.querySelector=q=>q==='.flow-canvas'?view:null;
+  ctx.requestAnimationFrame=fn=>{ctx.document.querySelector=q=>q==='.flow-canvas'?next:null;fn()};
+  const newer={...ctx.blankState(),engagements:[{id:'E1',answers:{DF021:100}}]};
+  const payload=JSON.stringify(newer);
+  ctx.localStorage.setItem('aunea_internal_v1',payload);
+  ctx.__listeners.storage({key:'aunea_internal_v1',newValue:payload});
+  assert.equal(next.scrollLeft,142);
+  assert.equal(next.scrollTop,23);
 });
 
-test('client editor keeps the live Engagement reference during cross-tab sync with an edit modal open',()=>{
-  const ctx=makeCtx();
-  const local={id:'ENG-1',updatedAt:'2026-09-29T10:00:00.000Z',processSteps:[{id:'STEP-1',step_name:'Anterior'}],answers:{}};
+test('an edit modal holds its captured Engagement object and accepts the latest remote state only after editing',()=>{
+  const ctx=makeCtx(),local={id:'ENG-1',processSteps:[{id:'STEP-1',step_name:'Borrador'}],answers:{}};
   ctx.state={...ctx.blankState(),activePage:'proceso',activeEngagementId:'ENG-1',engagements:[local]};
   ctx.isClientDisplay=()=>false;ctx.isProcessEditorWindow=()=>true;
-  ctx.currentEng=()=>ctx.state.engagements.find(e=>e.id===ctx.state.activeEngagementId);
   let editing=true,renderCount=0;
-  ctx.document.querySelector=selector=>selector==='#modalRoot .modal'&&editing?{}:null;
+  ctx.document.querySelector=q=>q==='#modalRoot .modal'&&editing?{}:null;
   ctx.render=()=>{renderCount++};
-  const remote={...local,updatedAt:'2026-09-29T11:00:00.000Z',processSteps:[]};
-  ctx.__listeners.storage({key:'aunea_internal_v1',newValue:JSON.stringify({...ctx.state,engagements:[remote]})});
-  assert.equal(ctx.state.engagements[0],local,'open step modal must retain the exact object captured by its save callback');
-  assert.equal(ctx.state.engagements[0].processSteps.length,1);
-  assert.equal(renderCount,1);
-  // After closing the modal, a genuinely newer remote engagement is accepted.
+  const remote={...ctx.state,engagements:[{...local,processSteps:[]}]},payload=JSON.stringify(remote);
+  ctx.localStorage.setItem('aunea_internal_v1',payload);
+  ctx.__listeners.storage({key:'aunea_internal_v1',newValue:payload});
+  assert.equal(ctx.state.engagements[0],local,'an open form must retain the referenced object');
+  assert.equal(renderCount,0,'do not redraw and discard unsaved controls');
   editing=false;
-  ctx.__listeners.storage({key:'aunea_internal_v1',newValue:JSON.stringify({...ctx.state,engagements:[remote]})});
+  ctx.__listeners.storage({key:'aunea_internal_v1',newValue:payload});
   assert.equal(ctx.state.engagements[0].processSteps.length,0);
-  assert.notEqual(ctx.state.engagements[0],local);
+  assert.equal(renderCount,1);
 });
-test('client editor rejects older cross-tab snapshots even with its modal closed',()=>{
+
+test('a delayed older storage event never replaces a newer shared record',()=>{
+  const ctx=makeCtx();ctx.isClientDisplay=()=>false;ctx.isProcessEditorWindow=()=>false;
+  const current={...ctx.blankState(),engagements:[{id:'E1',answers:{DF021:200}}]};
+  const older={...ctx.blankState(),engagements:[{id:'E1',answers:{DF021:100}}]};
+  ctx.localStorage.setItem('aunea_internal_v1',JSON.stringify(current));
+  ctx.__listeners.storage({key:'aunea_internal_v1',newValue:JSON.stringify(current)});
+  ctx.__listeners.storage({key:'aunea_internal_v1',newValue:JSON.stringify(older)});
+  assert.equal(ctx.state.engagements[0].answers.DF021,200);
+});
+
+test('two windows updating independent fields on the same study merge without losing either change',()=>{
+  const ctx=makeCtx(),base={...ctx.blankState(),engagements:[{id:'E1',answers:{DF021:100,DF022:'MONTH'},processSteps:[{id:'S1',step_name:'Recepción',active_time:10}]}]};
+  ctx.state=JSON.parse(JSON.stringify(base));
+  ctx.localStorage.setItem('aunea_internal_v1',JSON.stringify(base));
+  vm.runInContext('__auneaSyncedState=JSON.parse(JSON.stringify(state))',ctx);
+  // Console changes case volume; editor independently changes the step duration.
+  const newer=JSON.parse(JSON.stringify(base));newer.engagements[0].answers.DF021=200;
+  ctx.localStorage.setItem('aunea_internal_v1',JSON.stringify(newer));
+  ctx.state.engagements[0].processSteps[0].active_time=20;
+  assert.equal(ctx.persistRecoverySnapshot('test'),true);
+  const shared=JSON.parse(ctx.localStorage.getItem('aunea_internal_v1'));
+  assert.equal(shared.engagements[0].answers.DF021,200);
+  assert.equal(shared.engagements[0].processSteps[0].active_time,20);
+  assert.equal(ctx.state.engagements[0].processSteps[0].active_time,20);
+});
+
+test('same-field concurrent changes never overwrite disk silently',()=>{
+  const ctx=makeCtx(),base={...ctx.blankState(),engagements:[{id:'E1',answers:{DF021:100}}]};
+  ctx.state=JSON.parse(JSON.stringify(base));
+  ctx.localStorage.setItem('aunea_internal_v1',JSON.stringify(base));
+  vm.runInContext('__auneaSyncedState=JSON.parse(JSON.stringify(state))',ctx);
+  ctx.state.engagements[0].answers.DF021=150;
+  const remote=JSON.parse(JSON.stringify(base));remote.engagements[0].answers.DF021=200;
+  const payload=JSON.stringify(remote);
+  ctx.localStorage.setItem('aunea_internal_v1',payload);
+  let warning='';ctx.toast=x=>{warning=x};
+  assert.equal(ctx.persistRecoverySnapshot('test'),false);
+  assert.equal(ctx.localStorage.getItem('aunea_internal_v1'),payload);
+  assert.equal(ctx.state.engagements[0].answers.DF021,150,'unsaved local draft remains available');
+  assert.match(warning,/mismo dato/);
+});
+
+test('booting a second editor does not rewrite shared storage before the user edits',()=>{
   const ctx=makeCtx();
-  const local={id:'ENG-2',updatedAt:'2026-09-29T11:00:00.000Z',processSteps:[{id:'STEP-1'}],answers:{}};
-  ctx.state={...ctx.blankState(),activeEngagementId:'ENG-2',engagements:[local]};
-  ctx.isClientDisplay=()=>false;ctx.isProcessEditorWindow=()=>true;
-  ctx.currentEng=()=>ctx.state.engagements.find(e=>e.id===ctx.state.activeEngagementId);
-  ctx.document.querySelector=()=>null;
-  const old={...local,updatedAt:'2026-09-29T10:00:00.000Z',processSteps:[]};
-  ctx.__listeners.storage({key:'aunea_internal_v1',newValue:JSON.stringify({...ctx.state,engagements:[old]})});
-  assert.equal(ctx.state.engagements[0],local);
-  assert.equal(ctx.state.engagements[0].processSteps.length,1);
+  assert.equal(ctx.localStorage.getItem('aunea_internal_v1'),null);
+  assert.doesNotMatch(persistCode,/persistRecoverySnapshot\('module-init'\)/);
 });
