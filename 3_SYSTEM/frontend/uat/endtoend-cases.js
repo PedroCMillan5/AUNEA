@@ -87,25 +87,63 @@ function clearUat3({ask=true}={}){
   if(ask){render();toast(ok?'Expedientes UAT integrales retirados.':'Hay un conflicto de guardado; comprueba ambas ventanas.')}
   return ok;
 }
+// [AUNEA-UAT-ENDTOEND-115] START — Observable, independently executable Phase 3 loader.
+let uat3LoadStatus='Pulsa Generar para cargar los tres casos independientes.';
+let __uat3Loading=false;
+function uat3ShowStatus(message){
+  uat3LoadStatus=message;
+  const target=document.getElementById('uat3LoadStatus');
+  if(target)target.textContent=message;
+}
 async function loadUat3(){
-  if(!phase1CrmCompletenessReport()?.pass||!phase2StudyAssociationReport()?.pass)
-    return toast('Primero carga y valida la Fase 1 CRM y la Fase 2 Estudios.');
+  if(__uat3Loading)return;
+  __uat3Loading=true;
+  const button=document.getElementById('loadUat3');
+  if(button)button.disabled=true;
+  uat3ShowStatus('Leyendo y comprobando los tres expedientes…');
   try{
-    const fixtures=await Promise.all(UAT3_FILES.map(async path=>{const response=await fetch(path,{cache:'no-store'});if(!response.ok)throw new Error('No se ha podido leer '+path);return response.json()}));
-    // Parse all three first: no partial dataset is committed on a failed download.
+    const fixtures=await Promise.all(UAT3_FILES.map(async file=>{
+      const url=new URL(file,document.baseURI);
+      const response=await fetch(url.href,{cache:'no-store'});
+      if(!response.ok)throw new Error(file+': HTTP '+response.status);
+      return response.json();
+    }));
+    const expected=['INVOICE','INTAKE','EMAIL'];
+    if(fixtures.length!==3||fixtures.some((x,i)=>x.key!==expected[i]||x.steps?.length!==6||x.frictions?.length!==3||x.risks?.length!==2))
+      throw new Error('Los archivos de los tres casos están incompletos o no corresponden a su versión.');
     const records=fixtures.map(uat3Seed);
-    clearUat3({ask:false});
+    // One replacement without a second intermediate write or autosave of an empty dataset.
+    const before=JSON.parse(JSON.stringify(state));
+    for(const key of ['companies','contacts','opportunities','interactions','engagements'])
+      state[key]=(state[key]||[]).filter(x=>!isUat3Id(x.id));
     records.forEach(row=>{
       state.companies.push(row.company);state.contacts.push(...row.contacts);
       state.opportunities.push(row.opportunity);state.interactions.push(row.interaction);state.engagements.push(row.engagement);
     });
+    if(uat3Cases().length!==3){
+      state=before;
+      throw new Error('La carga no ha producido exactamente tres estudios.');
+    }
+    const previousPage=state.activePage;
     state.activePage='uat';state.activeEngagementId=null;
-    markDirty('UAT3: facturas, peticiones unificadas y tickets desde email, todos los owners y relaciones capturados');
-    const ok=persistRecoverySnapshot('uat3-load');
-    if(!ok)return toast('Los estudios están en memoria, pero existe un conflicto de persistencia; no se declara carga guardada.');
-    render();toast('Tres casos integrales guardados; ábrelos desde UAT / QA.');
-  }catch(err){toast('No se han cargado los tres casos: '+err.message)}
+    // Explicit persistence runs once, after all records are ready.
+    if(!persistRecoverySnapshot('uat3-load')){
+      state=before;
+      throw new Error('No se ha podido guardar porque existe una edición simultánea pendiente en otra ventana.');
+    }
+    uat3LoadStatus='Cargados y guardados: 3 estudios, 18 pasos, 9 fricciones y 6 riesgos. Abre cualquiera de las tarjetas inferiores.';
+    render();
+    toast('Tres casos UAT integrales guardados.');
+  }catch(err){
+    uat3ShowStatus('Error al generar los casos: '+(err?.message||String(err))+' Comprueba que estás abriendo AUNEA desde el servidor del proyecto y no como archivo local.');
+    console.error('AUNEA_UAT3_LOAD_ERROR',err);
+  }finally{
+    __uat3Loading=false;
+    const current=document.getElementById('loadUat3');
+    if(current)current.disabled=false;
+  }
 }
+// [AUNEA-UAT-ENDTOEND-115] END
 function uat3Audit(e){
   const c=companyById(e.companyId),steps=(e.processSteps||[]).filter(x=>x.status!=='SUPERSEDED'),
     stepIds=new Set(steps.map(x=>x.id)),checks=[],findings=[];
