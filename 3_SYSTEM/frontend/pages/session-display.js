@@ -7,6 +7,16 @@
 // SIDE_EFFECTS: localStorage publication channel and DOM of the display windows.
 // CHANGE_RISK: HIGH.
 
+// [AUNEA-FE-CLIENT-PAUSE-056] START — Temporary product gate; no data or snapshot deletion.
+const CLIENT_DISPLAY_PAUSED=true;
+const CLIENT_DISPLAY_PAUSE_REASON='Vista cliente temporalmente bloqueada. Se está revisando la coherencia del diagnóstico; utiliza la Consola y el editor AS-IS.';
+function bootPausedClientDisplay(){
+  removeConsoleChrome();
+  document.body.classList.add('session-display');
+  const host=document.getElementById('content');
+  if(host)host.innerHTML='<div class="empty session-idle" role="status"><h2>Vista cliente temporalmente bloqueada</h2><p>'+esc(CLIENT_DISPLAY_PAUSE_REASON)+'</p></div>';
+}
+// [AUNEA-FE-CLIENT-PAUSE-056] END
 const RESULTS_DISPLAY_KEY='aunea_results_display_v1';
 
 function sessionCanvas(snap) {
@@ -97,6 +107,7 @@ function bootSessionDisplay() {
 }
 
 function openSessionDisplay() {
+  if(CLIENT_DISPLAY_PAUSED)return toast(CLIENT_DISPLAY_PAUSE_REASON);
   const res = publishSessionSnapshot(currentEng());
   if (!res.ok) return toast('No se ha podido publicar la vista de sesión: ' + res.error);
   const w = window.open(`${location.pathname}#session`, 'aunea_session_display');
@@ -129,7 +140,7 @@ function resultsModePage(){
 }
 function renderResultsMode(){const host=document.getElementById('content');if(host)host.innerHTML=resultsModePage()}
 function bootResultsMode(){removeConsoleChrome();document.body.classList.add('session-display');renderResultsMode();window.addEventListener('storage',ev=>{if(ev.key===RESULTS_DISPLAY_KEY)renderResultsMode()})}
-function openResultsMode(){const e=currentEng();if(!['Listo para resultados','Sesión 2','Cerrado'].includes(engagementStatus(e)))return toast('Aprueba los resultados antes de iniciar la segunda sesión.');const res=publishResultsProjection(e);if(!res.ok)return toast(res.error);advanceEngagementTo(e,'Sesión 2','apertura de Modo Resultados');saveState('Modo Resultados publicado para Session 2');const w=window.open(`${location.pathname}#results`,'aunea_results_mode');if(!w)toast('El navegador ha bloqueado la ventana. Permite ventanas emergentes para mostrar resultados.')}
-function resultsModeLauncherPage(){const e=currentEng(),ready=!!buildResultsProjection(e);return pageTop('Modo Resultados','Superficie separada y de sólo lectura para la segunda sesión con cliente.',ready?'<button class="btn btn-primary" id="openResultsMode">Abrir Modo Resultados</button>':'<button class="btn" data-page="revision">Revisar resultados</button>')+section('Aprobación y publicación','La vista cliente sólo consume snapshot confirmado + outputs aprobados.',`<div class="notice ${ready?'good':'warn'}">${ready?'Listo para Sesión 2. No se recalculará nada al abrir la vista.':'Falta snapshot confirmado, TO-BE aprobado o revisión humana de resultados.'}</div>`)}
+function openResultsMode(){if(CLIENT_DISPLAY_PAUSED)return toast(CLIENT_DISPLAY_PAUSE_REASON);const e=currentEng();if(!['Listo para resultados','Sesión 2','Cerrado'].includes(engagementStatus(e)))return toast('Aprueba los resultados antes de iniciar la segunda sesión.');const res=publishResultsProjection(e);if(!res.ok)return toast(res.error);advanceEngagementTo(e,'Sesión 2','apertura de Modo Resultados');saveState('Modo Resultados publicado para Session 2');const w=window.open(`${location.pathname}#results`,'aunea_results_mode');if(!w)toast('El navegador ha bloqueado la ventana. Permite ventanas emergentes para mostrar resultados.')}
+function resultsModeLauncherPage(){if(CLIENT_DISPLAY_PAUSED)return pageTop('Modo Resultados','Acceso temporalmente bloqueado durante la revisión del flujo.')+section('Vista cliente en pausa',esc(CLIENT_DISPLAY_PAUSE_REASON),'');const e=currentEng(),ready=!!buildResultsProjection(e);return pageTop('Modo Resultados','Superficie separada y de sólo lectura para la segunda sesión con cliente.',ready?'<button class="btn btn-primary" id="openResultsMode">Abrir Modo Resultados</button>':'<button class="btn" data-page="revision">Revisar resultados</button>')+section('Aprobación y publicación','La vista cliente sólo consume snapshot confirmado + outputs aprobados.',`<div class="notice ${ready?'good':'warn'}">${ready?'Listo para Sesión 2. No se recalculará nada al abrir la vista.':'Falta snapshot confirmado, TO-BE aprobado o revisión humana de resultados.'}</div>`)}
 function registerResultsModeLauncher(){if(typeof pages==='undefined'||registerResultsModeLauncher.done)return;registerResultsModeLauncher.done=true;pages.modoresultados=resultsModeLauncherPage;if(!INTERNAL_WORK_NAV.some(x=>x[0]==='modoresultados'))INTERNAL_WORK_NAV.push(['modoresultados','▤','Modo Resultados']);const originalPostBind=postBind;postBind=function(){originalPostBind();const b=document.getElementById('openResultsMode');if(b)b.onclick=openResultsMode}}
 // [AUNEA-FE-PAGE-SESSION-DISPLAY-010] END
