@@ -59,3 +59,6 @@ Next remaining gate: native visual UAT and explicit publication of reconciled ca
 
 ## Current-branch compatibility note
 The active reconcile branch included a later UAT3 suite and a temporary Client Session Display / Results Mode pause. The isolated older branch was 101 commits behind that baseline at reconciliation; it was deliberately not merged. Legacy evidenced EconomicInput rates remain usable when DF076 has not been populated; only a real disagreement between a known DF076 rate and a rate-bearing input triggers a review. The existing client-view pause is not lifted by this change. No current-branch code other than the scoped DF076 changes is replaced.
+
+## Current integration acceptance result
+Current-branch GitHub Actions frontend run 36721799089 at e74e153f5deb519f889c8c5ec38b654186685fa8: 389/389 tests PASS, 0 FAIL, including the later UAT3 regression and explicit DF076 legacy/evidenced-rate compatibility checks. Newer report-only commits do not change executable code. No native Windows/Chrome/Edge UAT was executed in this integration branch. CANONICAL remains unchanged.
