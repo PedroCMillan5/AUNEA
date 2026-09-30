@@ -156,6 +156,7 @@
 | AUNEA-FE-UX-MODE-040 | Sustituido por Session Display y Modo Resultados; histórico en 3_SYSTEM/99_ARCHIVO_TECNICO/frontend/mode.js. | C08 |
 
 | AUNEA-UAT-ENDTOEND-110 | 3_SYSTEM/frontend/uat/endtoend-cases.js | Fase 3 UAT: tres escenarios empresariales sintéticos completos desde CRM y captura propietaria hasta pasos, fricciones, riesgos, economía y hallazgos de coherencia; no confirma automáticamente el AS-IS. | Diagnostic Master v1.2; Simulator CANONICAL; DEC-041/050/065/068 | Tres JSON UAT3, CRM fases 1 y 2 | 3 Engagements visibles más informe | Modifica sólo UAT3 al ejecutar el botón | HIGH | UAT visual; frontend gates | REVIEW |
+| AUNEA-UAT-ENDTOEND-120 | 3_SYSTEM/frontend/tests/uat-endtoend-business-v1.test.cjs | Ejecuta los tres generadores UAT3 reales, verifica catálogos, owners, rutas afirmativa/negativa, referencias, capturas no duplicadas y auditoría reactiva a divergencias CRM. | Diagnostic Master v1.2; Simulator CANONICAL v1.14; DEC-041/050/065/068 | Tres JSON UAT3 + runtime fixture | Checks de integridad por estudio | node:test/vm, sin servicios externos | HIGH | uat-endtoend-business-v1.test.cjs | REVIEW |
 
 ## QA técnica B02/B03 · 30/09/2026
 
