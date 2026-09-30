@@ -240,6 +240,20 @@ const FIELD_CLARIFICATION_ES=Object.freeze({
   DF029:'A diferencia de DF020: esto son clases que cambian el TRATAMIENTO operativo o económico de un caso, sin cambiar la ruta del proceso en sí.',
   DF052:'Se refiere al método general de control de versión del proceso (¿cómo se sabe cuál es la versión correcta?), no a versionar cada documento o artefacto por separado.'
 });
+// [AUNEA-FE-DIAG-ECON-CONTEXT-054] START — Existing manual time is not an additive benefit.
+function economicConditionalTimeContext(fid,e){
+  if(fid!=='DF080'&&fid!=='DF081')return '';
+  const followup=fid==='DF080',manual=followup?'CHASE':'REPORT';
+  const types=followup?['P06','P07','P12','P18']:['P09','P14'];
+  const steps=activeSteps(e).filter(x=>normalizeArray(x.manual_actions).includes(manual));
+  const frictions=activeFrictions(e).filter(x=>types.includes(x.friction_type));
+  const refs=unique([...steps.map(x=>x.step_name||x.id),...frictions.map(x=>x.client_label||x.id)]);
+  const label=followup?'Seguimiento':'Consolidación/reporting';
+  return refs.length
+    ?label+' ya figura en AS-IS: '+refs.join('; ')+'. Antes de sumar, verifica si el valor declarado está incluido en tiempo activo, retrabajo o fricción y concilia el mismo ámbito. No se considera ahorro ni tiempo adicional por defecto.'
+    :label+': verificar si está cuantificado en pasos o fricciones. Sólo valorar un ámbito adicional material cuando se haya acreditado que no está contabilizado.';
+}
+// [AUNEA-FE-DIAG-ECON-CONTEXT-054] END
 function renderQuestion(f,e){
   const val=effectiveValue(f,e),opts=fieldOptions(f.Option_Set_ID),required=f.Requiredness==='REQUIRED_90M',mode=String(f.Ask_Mode||'');
   // A Control_UI starting with "DERIVED" (e.g. DERIVED_OR_CONDITIONAL) only means system-generated when
@@ -285,6 +299,7 @@ function renderQuestion(f,e){
   else body=`${renderControl(f,val,opts,e)}${explicitReaskAllowed(f.Field_ID,e)?`<div class="field-help"><button type="button" class="link-btn" data-close-context="${f.Field_ID}">Cerrar edición y volver a reutilizar el dato</button></div>`:''}`;
   const clarification=FIELD_CLARIFICATION_ES[f.Field_ID];
   const consistencyNote=f.Field_ID==='DF028'?globalFailureReview(e):'';
+  const economicNote=economicConditionalTimeContext(f.Field_ID,e);
   // Example and validation stay available — they are canonical guidance — but behind the existing
   // discreet help popover, because the reference shows a single explanatory line under the control.
   const detail=[f.Objetivo_concreto?`<div><b>Para qué sirve:</b> ${esc(f.Objetivo_concreto)}</div>`:'',f.Ejemplo_ES?`<div><b>Ejemplo:</b> ${esc(f.Ejemplo_ES)}</div>`:'',
@@ -294,7 +309,7 @@ function renderQuestion(f,e){
   const popId=`help_${f.Field_ID}`;
   const help=detail?`<button type="button" class="help-icon" data-help-toggle="${attr(popId)}" aria-expanded="false" aria-controls="${attr(popId)}" title="Ayuda">?</button><div class="help-popover" id="${attr(popId)}" role="tooltip">${detail}</div>`:'';
   const wide=['TEXT_LONG_INTERNAL','MULTISELECT','MULTISELECT_WITH_OTHER','MULTISELECT_WITH_DETAIL','MULTISELECT_WITH_PRIORITY','FRICTION_MULTISELECT_PRIORITY','RISK_BUILDER','CLIENT_CONFIRMATION_WITH_INLINE_EDIT','STEP_PAIR_SELECTOR','STEP_SYSTEM_PAIR_SELECTOR','DROPDOWN_WITH_OWNER_DATE'].includes(String(f.Control_UI));
-  return `<div class="field${wide?' full':''}" data-field="${attr(f.Field_ID)}"><label>${esc(f.Pregunta_o_etiqueta_ES)}${meta}${help}</label>${body}<div class="field-help">${esc(f.Objetivo_concreto||'')}</div>${clarification?`<div class="field-help clarification-note">${esc(clarification)}</div>`:''}${consistencyNote?`<div class="field-help clarification-note" data-global-failure-review="DF028">${esc(consistencyNote)}</div>`:''}</div>`;
+  return `<div class="field${wide?' full':''}" data-field="${attr(f.Field_ID)}"><label>${esc(f.Pregunta_o_etiqueta_ES)}${meta}${help}</label>${body}<div class="field-help">${esc(f.Objetivo_concreto||'')}</div>${clarification?`<div class="field-help clarification-note">${esc(clarification)}</div>`:''}${consistencyNote?`<div class="field-help clarification-note" data-global-failure-review="DF028">${esc(consistencyNote)}</div>`:''}${economicNote?`<div class="field-help clarification-note" data-economic-overlap-review="${f.Field_ID}">${esc(economicNote)}</div>`:''}</div>`;
 }
 
 function bindNoReask(){
