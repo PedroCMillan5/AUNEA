@@ -466,7 +466,7 @@ function clientLayerBody(e,steps,fr,tab){
 }
 function clientProcessView(e,steps,fr,tab='cliente'){
   const riskCount=(e.risks||[]).length,econCount=(e.economicInputs||[]).length,company=(typeof companyById==='function'?companyById(e.companyId)?.name:'')||e.answers?.DF001||'Empresa',processName=e.answers?.DF011||e.processName||'Proceso sin nombre';
-  const clientBar=`<div class="client-process-topbar"><img src="./assets/brand/Logo.png" alt="AUNEA"><div class="client-process-context"><span>${esc(company)}</span><b>${esc(processName)}</b></div><div class="client-process-state"><span>Sesión de diagnóstico</span><b>Editor compartido</b><button type="button" class="btn btn-outline" id="closeClientProcessEditor">Volver a la consola</button></div></div>`;
+  const clientBar=`<div class="client-process-topbar"><img src="./assets/brand/Logo.png" alt="AUNEA"><div class="client-process-context"><span>${esc(company)}</span><b>${esc(processName)}</b></div><div class="client-process-state"><span>Sesión de diagnóstico</span><b>Editor compartido</b></div></div>`;
   
   // [AUNEA-FE-PROC-LAYERS-045] START — Continuous client journey on one AS-IS
   const stages=[
@@ -485,7 +485,7 @@ function clientProcessView(e,steps,fr,tab='cliente'){
   const nextIndex=stages.findIndex(x=>x.tab===tab)+1,next=stages[nextIndex];
   const nextAction=next?'<button class="btn btn-outline client-process-next" type="button" data-process-tab="'+next.tab+'">Continuar a '+next.title+' →</button>':'';
 // [AUNEA-FE-PROC-LAYERS-045] END
-  const layerRail=`<aside class="client-process-layer-rail" aria-label="Capas del diagnóstico"><div class="client-rail-title">Capas del diagnóstico</div>
+  const layerRail=`<aside class="client-process-layer-rail" aria-label="Capas del diagnóstico"><div class="client-rail-title">Capas del diagnóstico</div><button class="btn btn-outline" type="button" id="closeClientProcessEditor">← Volver a la consola</button>
     <button class="client-rail-item ${tab==='cliente'?'active':''}" data-process-tab="cliente"><b>Mapa del proceso</b><span>${steps.length} paso(s)</span></button>
     <button class="client-rail-item ${tab==='fricciones'?'active':''}" data-process-tab="fricciones"><b>Fricciones y evidencia</b><span>${fr.length}</span></button>
     <button class="client-rail-item ${tab==='riesgos'?'active':''}" data-process-tab="riesgos"><b>Riesgos y controles</b><span>${riskCount}</span></button>
