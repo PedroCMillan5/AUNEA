@@ -282,3 +282,53 @@ test('B03: a stale automatic preview must not be reclassified as manual evidence
   assert.match(warning,/actualiz|cambi/i);
 });
 // [AUNEA-UAT-ECON-010] END
+
+
+test('DF076 offers one cost per existing actor with a required evidence class and no invented default',()=>{
+  const ctx=makeCtx(),e=ctx.__eng;e.answers={};e.processSteps=[
+    {id:'S1',status:'ACTIVE',actor:'ADMIN',step_name:'Recepción'},
+    {id:'S2',status:'ACTIVE',actor:'FIN',step_name:'Validación'},
+    {id:'S3',status:'ACTIVE',actor:'ADMIN',step_name:'Archivo'}
+  ];ctx.activeSteps=x=>x.processSteps.filter(p=>p.status!=='SUPERSEDED');
+  const html=ctx.economicBuilder(e);
+  assert.match(html,/data-economic-role-rates="true"/);
+  assert.equal((html.match(/data-econ-role-row=/g)||[]).length,2,'one row per distinct role');
+  assert.match(html,/¿Cómo sabemos este coste\?/);
+  assert.equal(ctx.economicRoleRateForRole,undefined);
+  assert.equal(ctx.economicRateForRole(e,'ADMIN'),null,'a missing rate must not be fabricated');
+});
+test('a single actor reuses its DF076 rate; mixed actors never receive one blended rate',()=>{
+  const ctx=makeCtx(),e=ctx.__eng;e.answers={DF076:[{role:'ADMIN',eur_hour:24,evidence_type:'CLIENT_DECLARED'},{role:'FIN',eur_hour:32,evidence_type:'MEASURED'}]};
+  e.processSteps=[{id:'S1',actor:'ADMIN',status:'ACTIVE'},{id:'S2',actor:'FIN',status:'ACTIVE'}];
+  ctx.activeSteps=x=>x.processSteps.filter(p=>p.status!=='SUPERSEDED');
+  assert.equal(ctx.economicRateForRole(e,'ADMIN').eur_hour,24);
+  assert.equal(ctx.economicInputRole(e,{step_ids:['S1']}),'ADMIN');
+  assert.equal(ctx.economicInputRole(e,{step_ids:['S1','S2']}),null);
+  assert.equal(ctx.economicRateForRole(e,'OTHER'),null);
+});
+test('a changed DF076 rate detects stale existing cost and updating it does not touch annual hours',()=>{
+  const ctx=makeCtx(),e=ctx.__eng;e.answers={DF076:[{role:'ADMIN',eur_hour:25,evidence_type:'MEASURED'}]};
+  e.processSteps=[{id:'S1',actor:'ADMIN',status:'ACTIVE'}];
+  e.economicInputs=[{step_ids:['S1'],annual_active_hours:120,annual_wait_hours:300,capacity_cost_rate_eur_hour:20,evidence_type:'MEASURED'}];
+  ctx.activeSteps=x=>x.processSteps;
+  assert.equal(ctx.economicRoleRateIssues(e).length,1);
+  ctx.invalidateProcessLayers=()=>{};
+  ctx.applyEconomicRoleRate(0);
+  assert.equal(e.economicInputs[0].capacity_cost_rate_eur_hour,25);
+  assert.equal(e.economicInputs[0].annual_active_hours,120);
+  assert.equal(e.economicInputs[0].annual_wait_hours,300);
+  assert.equal(ctx.economicRoleRateIssues(e).length,0);
+});
+test('the evidence-bearing DF076 table writes rates once to its owner, not a second editable rate',()=>{
+  const ctx=makeCtx(),e=ctx.__eng;e.answers={};e.processSteps=[{id:'S1',actor:'ADMIN',status:'ACTIVE'}];
+  ctx.activeSteps=x=>x.processSteps;
+  let saved=null;ctx.setAnswer=(fid,value)=>{saved={fid,value};e.answers[fid]=value};
+  ctx.document.querySelectorAll=selector=>selector==='[data-econ-role-row]'?[{querySelector:()=>({value:'26'})}]:[];
+  ctx.__domFields.econ_role_evidence_0={value:'CLIENT_DECLARED'};
+  ctx.saveEconomicRoleRates();
+  assert.equal(saved.fid,'DF076');
+  assert.equal(saved.value.length,1);
+  assert.equal(saved.value[0].role,'ADMIN');
+  assert.equal(saved.value[0].eur_hour,26);
+  assert.equal(saved.value[0].evidence_type,'CLIENT_DECLARED');
+});
