@@ -8,7 +8,7 @@
 // CHANGE_RISK: HIGH.
 
 // [AUNEA-FE-CLIENT-PAUSE-056] START — Temporary product gate; no data or snapshot deletion.
-const CLIENT_DISPLAY_PAUSED=true;
+const CLIENT_DISPLAY_PAUSED=false;
 const CLIENT_DISPLAY_PAUSE_REASON='Vista cliente temporalmente bloqueada. Se está revisando la coherencia del diagnóstico; utiliza la Consola y el editor AS-IS.';
 function bootPausedClientDisplay(){
   removeConsoleChrome();
@@ -19,23 +19,33 @@ function bootPausedClientDisplay(){
 // [AUNEA-FE-CLIENT-PAUSE-056] END
 const RESULTS_DISPLAY_KEY='aunea_results_display_v1';
 
+// [AUNEA-FE-CLIENT-STABILITY-073] START — Compact client cards; details never change navigation.
 function sessionCanvas(snap) {
-  const badgesFor = id => snap.frictions.filter(f => f.steps.includes(id));
-  const start=snap.boundaries?.start||'Límite inicial pendiente',end=snap.boundaries?.end||'Límite final pendiente';
-  const middle=(snap.steps||[]).map((s, i) => `
-    <div class="flow-connector"></div>
-    <div class="flow-step ${snap.confirmedAsIs ? 'confirmed' : ''} ${s.isDecision ? 'is-decision' : ''}" data-session-step="${attr(s.id)}">
-      <h4>${s.n}. ${esc(s.name)}</h4>
-      <p>${esc([s.actor, s.tool].filter(Boolean).join(' · ') || '—')}</p>
-      <p>${s.activeMin ? `${s.activeMin} min de trabajo` : ''}${s.activeMin && s.waitMin ? ' · ' : ''}${s.waitMin ? `${s.waitMin} min de espera` : ''}</p>
-      <div class="friction-badges">${badgesFor(s.id).map(f => `<span class="friction-badge">${esc(f.label)}</span>`).join('')}</div>
-    </div>`).join('');
-  return `<div class="flow-canvas"><div class="flow-track">
-    <div class="flow-step flow-boundary start"><span class="boundary-kicker">Inicio</span><h4>${esc(start)}</h4><p>Límite acordado</p></div>
-    ${middle}
-    <div class="flow-connector"></div>
-    <div class="flow-step flow-boundary end"><span class="boundary-kicker">Fin</span><h4>${esc(end)}</h4><p>Límite acordado</p></div>
-  </div></div>`;
+  const start=snap.boundaries?.start||'Inicio pendiente',end=snap.boundaries?.end||'Fin pendiente';
+  const middle=(snap.steps||[]).map(s=>'<div class="flow-connector"></div>'
+    +'<button type="button" class="flow-step session-compact-step '+(snap.confirmedAsIs?'confirmed ':'')+(s.isDecision?'is-decision':'')+'" data-session-step="'+attr(s.id)+'" aria-label="Ver detalles de '+attr(s.name)+'">'
+    +'<span class="boundary-kicker">Paso '+esc(s.n)+'</span><h4>'+esc(s.name)+'</h4>'
+    +'<small>'+esc(s.actor||'Responsable pendiente')+'</small><span class="session-step-more">Ver detalle →</span></button>').join('');
+  return '<div class="flow-canvas session-map-canvas"><div class="flow-track">'
+    +'<div class="flow-step flow-boundary start"><span class="boundary-kicker">Inicio</span><h4>'+esc(start)+'</h4></div>'
+    +middle+'<div class="flow-connector"></div><div class="flow-step flow-boundary end"><span class="boundary-kicker">Fin</span><h4>'+esc(end)+'</h4></div></div></div>';
+}
+function showSessionStepDetails(stepId){
+  const snap=readSessionSnapshot();const s=(snap?.steps||[]).find(x=>x.id===stepId);if(!s)return;
+  const fr=(snap.frictions||[]).filter(f=>(f.steps||[]).includes(s.id));
+  document.getElementById('sessionStepDetails')?.remove();
+  const overlay=document.createElement('div');overlay.id='sessionStepDetails';overlay.className='session-detail-overlay';
+  overlay.innerHTML='<div class="session-detail-dialog" role="dialog" aria-modal="true" aria-label="Detalle del paso">'
+    +'<div class="session-detail-heading"><h2>'+esc(s.n+'. '+s.name)+'</h2><button type="button" data-close-session-detail aria-label="Cerrar">×</button></div>'
+    +'<dl class="kv"><dt>Responsable</dt><dd>'+esc(s.actor||'Pendiente')+'</dd>'
+    +'<dt>Herramienta</dt><dd>'+esc(s.tool||'Pendiente')+'</dd>'
+    +'<dt>Tipo de paso</dt><dd>'+esc(s.type||'Pendiente')+'</dd>'
+    +'<dt>Tiempo de trabajo</dt><dd>'+esc(s.activeMin)+' min</dd>'
+    +'<dt>Tiempo de espera</dt><dd>'+esc(s.waitMin)+' min</dd></dl>'
+    +(fr.length?'<h3>Problemas observados</h3>'+fr.map(f=>'<p><b>'+esc(f.label)+'</b> · '+esc(f.signal||'Sin descripción')+'</p>').join(''):'')
+    +'<div class="session-detail-foot"><button class="btn btn-primary" type="button" data-close-session-detail>Cerrar</button></div></div>';
+  overlay.onclick=ev=>{if(ev.target===overlay||ev.target.closest('[data-close-session-detail]'))overlay.remove()};
+  document.body.appendChild(overlay);overlay.querySelector('[data-close-session-detail]')?.focus();
 }
 
 function sessionLayerPanels(snap) {
@@ -88,30 +98,41 @@ function sessionDisplayPage() {
 }
 
 function renderSessionDisplay() {
-  const host = document.getElementById('content');
-  if (!host) return;
-  host.innerHTML = sessionDisplayPage();
-  const sync = document.getElementById('sessionSync');
-  const snap = readSessionSnapshot();
-  if (sync) sync.innerHTML = snap
-    ? `<span class="badge ok">Actualizado ${esc(formatDateEs(snap.publishedAt))}</span>`
-    : `<span class="badge wait">Esperando a la consola</span>`;
+  const host=document.getElementById('content');if(!host)return;
+  const snap=readSessionSnapshot();
+  // Publication time may change while the data is identical: do not rebuild the page or reset position.
+  const signature=JSON.stringify(snap?{...snap,publishedAt:null}:null);
+  if(host.dataset.sessionSignature===signature)return;
+  const canvas=host.querySelector('.session-map-canvas');
+  const position={windowY:window.scrollY,hostTop:host.scrollTop,canvasLeft:canvas?.scrollLeft||0,canvasTop:canvas?.scrollTop||0};
+  host.innerHTML=sessionDisplayPage();host.dataset.sessionSignature=signature;
+  const sync=document.getElementById('sessionSync');
+  if(sync)sync.innerHTML=snap?'<span class="badge ok">Vista actualizada</span>':'<span class="badge wait">Esperando a la consola</span>';
+  const restore=()=>{
+    const next=host.querySelector('.session-map-canvas');
+    if(next){next.scrollLeft=position.canvasLeft;next.scrollTop=position.canvasTop}
+    host.scrollTop=position.hostTop;window.scrollTo(0,position.windowY);
+  };
+  if(typeof requestAnimationFrame==='function')requestAnimationFrame(()=>requestAnimationFrame(restore));else restore();
 }
-
 function removeConsoleChrome(){document.querySelectorAll('.sidebar,.topbar,#modalRoot,#toast').forEach(el=>el.remove())}
 function bootSessionDisplay() {
-  removeConsoleChrome();
-  document.body.classList.add('session-display');
+  removeConsoleChrome();document.body.classList.add('session-display');
   renderSessionDisplay();
-  window.addEventListener('storage', ev => { if (ev.key === SESSION_DISPLAY_KEY) renderSessionDisplay(); });
+  document.addEventListener('click',ev=>{const step=ev.target.closest?.('[data-session-step]');if(step)showSessionStepDetails(step.dataset.sessionStep)});
+  document.addEventListener('keydown',ev=>{if(ev.key==='Escape')document.getElementById('sessionStepDetails')?.remove()});
+  window.addEventListener('storage',ev=>{if(ev.key===SESSION_DISPLAY_KEY)renderSessionDisplay()});
 }
-
 function openSessionDisplay() {
   if(CLIENT_DISPLAY_PAUSED)return toast(CLIENT_DISPLAY_PAUSE_REASON);
-  const res = publishSessionSnapshot(currentEng());
-  if (!res.ok) return toast('No se ha podido publicar la vista de sesión: ' + res.error);
-  const w = window.open(`${location.pathname}#session`, 'aunea_session_display');
-  if (!w) toast('El navegador ha bloqueado la ventana. Permite ventanas emergentes para compartir la sesión.');
+  const res=publishSessionSnapshot(currentEng());
+  if(!res.ok)return toast('No se ha podido actualizar la vista del cliente: '+res.error);
+  const url=new URL(location.href);url.hash='session';url.searchParams.delete('engagement');
+  const w=window.open('', 'aunea_session_display');
+  if(!w)return toast('Permite las ventanas emergentes para abrir la vista del cliente.');
+  // Never navigate an existing session window again: it would lose its scroll and open detail.
+  if(w.location.pathname!==url.pathname||w.location.hash!=='#session')w.location.replace(url.toString());
+  w.focus();
 }
 
 // C06 · Modo Resultados. Projection is created in the Console from confirmed/approved sources and then
