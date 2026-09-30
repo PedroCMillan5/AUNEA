@@ -512,12 +512,58 @@ function frictionsEditor(e,steps,fr){
     fr.length?`<div class="process-list">${fr.map(x=>`<div class="process-row"><div class="process-index">!</div><div><b>${esc(x.client_label||labelFrom('OS_FRICTION_TYPE',x.friction_type))}</b><p>${esc(x.observable_signal)} · Pasos: ${normalizeArray(x.affected_steps).map(id=>steps.find(s=>s.id===id)?.step_name).filter(Boolean).map(esc).join(', ')}</p><p>Evidencia: ${esc(labelFrom('OS_EVIDENCE_TYPE',x.evidence_type))}</p></div><div class="row-actions"><button class="btn btn-small" data-edit-friction="${x.id}">Editar</button><button class="btn btn-small btn-danger" data-delete-friction="${x.id}">Eliminar</button></div></div>`).join('')}</div>`:'<div class="empty"><h2>Sin fricciones registradas</h2><p>Añade problemas observables sobre los pasos del flujo.</p></div>',
     '<button class="btn btn-primary" id="addFriction">Añadir fricción</button>');
 }
-function processPage(){
-  const e=currentEng(),steps=activeSteps(e),fr=activeFrictions(e),tab=e.processTab||'cliente',standalone=typeof isProcessEditorWindow==='function'&&isProcessEditorWindow();
-  const returnBtn=!standalone&&state.returnTo?`<button class="btn btn-primary" id="returnToStage">← Volver a ${esc(schema.flow.find(x=>x.Stage_ID===state.returnTo.stageId)?.Stage_ES||state.returnTo.stageId)}</button>`:'';
-  const actions=standalone?'':`${returnBtn}<button class="btn" data-page="diagnostico">Volver al cuestionario</button>`;
-  return (standalone?'':pageTop('Editor del proceso','Experiencia compartida y editable sobre el mismo AS-IS.',actions))+clientProcessView(e,steps,fr,tab);
+// [AUNEA-FE-ASIS-UX-072] START — One map and four private consultant lists.
+// This is presentation-only over the same Engagement, Step, Friction, Risk and EconomicInput records.
+// Source: DEC-050/063/064/065/068 and UX simplification 2026-09-30 (REVIEW).
+function asisOverview(e,steps,fr){
+  const ans=e.answers||{},value=(id,unit='')=>ans[id]===undefined||ans[id]===null||ans[id]===''?'Pendiente':esc(typeof ans[id]==='object'?JSON.stringify(ans[id]):String(ans[id]))+unit;
+  return '<div class="asis-facts">'
+    +'<div><small>Proceso</small><b>'+value('DF011')+'</b></div>'
+    +'<div><small>Empieza cuando</small><b>'+value('DF014')+'</b></div>'
+    +'<div><small>Termina cuando</small><b>'+value('DF015')+'</b></div>'
+    +'<div><small>Volumen habitual</small><b>'+value('DF021')+' · '+value('DF022')+'</b></div>'
+    +'<div><small>Volumen máximo declarado</small><b>'+value('DF023')+'</b></div>'
+    +'<div><small>Tiempo objetivo</small><b>'+value('DF025')+'</b></div>'
+    +'<div><small>Duración habitual declarada</small><b>'+value('DF026')+'</b></div>'
+    +'<div><small>Registrados</small><b>'+steps.length+' pasos · '+fr.length+' problemas · '+(e.risks||[]).length+' riesgos · '+(e.economicInputs||[]).length+' impactos</b></div>'
+    +'</div>';
 }
+function asisMapPage(e,steps,fr){
+  const start=processBoundaryValue(e,'DF014','Inicio pendiente','DF012'),finish=processBoundaryValue(e,'DF015','Fin pendiente','DF013');
+  const flow=steps.some(processDecisionStep)?processGraphHtml(e,steps,fr,start,finish):
+    '<div class="flow-canvas client-process-canvas"><div class="flow-track">'
+    +flowBoundaryNode('start',start)+flowIntermediateNodes(e,steps,fr)+flowBoundaryNode('end',finish)+'</div></div>';
+  return '<div data-process-engagement="'+attr(e.id)+'">'+asisOverview(e,steps,fr)
+    +'<div class="asis-map-hint">Este es el proceso que estamos analizando. Para añadir, editar o eliminar elementos, utiliza las cuatro opciones del menú de la izquierda.</div>'
+    +flow+'</div>';
+}
+function processPage(){
+  const e=currentEng();if(!e)return pageTop('Mapa AS-IS','Abre un estudio para ver su proceso.');
+  const steps=activeSteps(e),fr=activeFrictions(e);
+  const top='<button class="btn btn-primary" id="openSessionDisplayFromProcess">Vista del cliente ↗</button>';
+  return pageTop('Mapa AS-IS','Lo que sabemos del proceso actual, todo en un mismo mapa.',top)
+    +asisMapPage(e,steps,fr);
+}
+function consultantLayerPage(title,intro,body,layer){
+  const e=currentEng();if(!e)return pageTop(title,'Abre primero un estudio.');
+  const done=!!processLayerState(e)[layer],tabs={map:'Mapa AS-IS',frictions:'Fricciones',risks:'Riesgos',impact:'Impacto'};
+  const confirm='<div class="flow-confirm"><div><b>'+(done?'Revisión confirmada':'Revisión pendiente')+'</b><div class="field-help">Puedes guardar y continuar sin confirmar todavía.</div></div><button class="btn '+(done?'btn-outline':'btn-primary')+'" data-confirm-process-layer="'+layer+'">'+(done?'Volver a confirmar':'Confirmar')+' '+tabs[layer]+'</button></div>';
+  return pageTop(title,intro,'<button class="btn btn-outline" data-page="proceso">← Ver mapa AS-IS</button>')+body+confirm;
+}
+function consultantStepsPage(){
+  const e=currentEng();return consultantLayerPage('Pasos','Añade, edita o elimina las actividades reales del proceso.',stepsEditor(e,activeSteps(e),activeFrictions(e)),'map');
+}
+function consultantFrictionsPage(){
+  const e=currentEng();return consultantLayerPage('Fricciones','Registra los problemas de los pasos y su evidencia.',frictionsEditor(e,activeSteps(e),activeFrictions(e)),'frictions');
+}
+function consultantRisksPage(){
+  const e=currentEng();return consultantLayerPage('Riesgos','Qué podría salir mal y qué controles existen hoy.',riskBuilder(e),'risks');
+}
+function consultantImpactPage(){
+  const e=currentEng();return consultantLayerPage('Impacto','Consulta los datos existentes y añade sólo los costes o tiempos que falten.',economicBuilder(e),'impact');
+}
+// [AUNEA-FE-ASIS-UX-072] END
+
 function flowReview(e,steps,fr){return clientProcessView(e,steps,fr)}
 
 const __auneaNoReaskBindForms=bindForms;
@@ -538,6 +584,7 @@ bindForms=function(){
   const addRiskBtn=document.getElementById('addRisk');if(addRiskBtn)addRiskBtn.onclick=ev=>{ev.preventDefault();ev.stopPropagation();addRisk()};
   const addEconomicBtn=document.getElementById('addEconomic');if(addEconomicBtn)addEconomicBtn.onclick=ev=>{ev.preventDefault();ev.stopPropagation();addEconomic()};
   const share=document.getElementById('openSessionDisplayFromProcess');if(share)share.onclick=()=>openSessionDisplay();
+  document.querySelectorAll('[data-confirm-process-layer]').forEach(b=>b.onclick=()=>confirmProcessLayer(({map:'cliente',frictions:'fricciones',risks:'riesgos',impact:'impacto'})[b.dataset.confirmProcessLayer]));
   document.querySelectorAll('[data-add-after]').forEach(b=>b.onclick=e=>{e.stopPropagation();openStepModal(null,b.dataset.addAfter||null)});
   document.querySelectorAll('[data-delete-step]').forEach(b=>b.onclick=ev=>{ev.preventDefault();ev.stopPropagation();removeStepFromFlow(b.dataset.deleteStep)});
   document.querySelectorAll('[data-drag-step]').forEach(el=>{el.ondragstart=ev=>{ev.dataTransfer?.setData('text/plain',el.dataset.dragStep)};el.ondragover=ev=>ev.preventDefault();el.ondrop=ev=>{ev.preventDefault();const source=ev.dataTransfer?.getData('text/plain');if(source)reorderStepBefore(source,el.dataset.dragStep)}});
