@@ -583,6 +583,10 @@ bindForms=function(){
   const addFriction=document.getElementById('addFriction');if(addFriction)addFriction.onclick=ev=>{ev.preventDefault();ev.stopPropagation();openFrictionModal()};
   const addRiskBtn=document.getElementById('addRisk');if(addRiskBtn)addRiskBtn.onclick=ev=>{ev.preventDefault();ev.stopPropagation();addRisk()};
   const addEconomicBtn=document.getElementById('addEconomic');if(addEconomicBtn)addEconomicBtn.onclick=ev=>{ev.preventDefault();ev.stopPropagation();addEconomic()};
+  document.querySelectorAll('[data-edit-risk-index]').forEach(b=>b.onclick=()=>addRisk([],Number(b.dataset.editRiskIndex)));
+  document.querySelectorAll('[data-delete-risk-index]').forEach(b=>b.onclick=()=>deleteRisk(Number(b.dataset.deleteRiskIndex)));
+  document.querySelectorAll('[data-edit-economic-index]').forEach(b=>b.onclick=()=>addEconomic([],Number(b.dataset.editEconomicIndex)));
+  document.querySelectorAll('[data-delete-economic-index]').forEach(b=>b.onclick=()=>deleteEconomic(Number(b.dataset.deleteEconomicIndex)));
   const share=document.getElementById('openSessionDisplayFromProcess');if(share)share.onclick=()=>openSessionDisplay();
   document.querySelectorAll('[data-confirm-process-layer]').forEach(b=>b.onclick=()=>confirmProcessLayer(({map:'cliente',frictions:'fricciones',risks:'riesgos',impact:'impacto'})[b.dataset.confirmProcessLayer]));
   document.querySelectorAll('[data-add-after]').forEach(b=>b.onclick=e=>{e.stopPropagation();openStepModal(null,b.dataset.addAfter||null)});
