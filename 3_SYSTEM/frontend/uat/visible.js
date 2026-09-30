@@ -13,7 +13,7 @@ function uatPhaseBadge(ok){return `<span class="status ${ok?'green':'red'}">${ok
 
 function uat3PhaseSection(){
   const rows=typeof uat3Cases==='function'?uat3Cases():[];
-  const ready=typeof phase1CrmCompletenessReport==='function'&&phase1CrmCompletenessReport()?.pass&&typeof phase2StudyAssociationReport==='function'&&phase2StudyAssociationReport()?.pass;
+  // UAT3 has its own Company/Contact/Opportunity owners; it must not depend on UAT1/UAT2.
   const labels=['Facturas recibidas, documentación y aprobación condicional','Creación de peticiones unificadas','Tickets de pedido desde emails'];
   const intro='<div class="notice info"><b>Expedientes sintéticos, no clientes reales.</b> Se registran todos los datos capturables aplicables en sus entidades propietarias. Los DF derivados no se rellenan manualmente y las cuatro capas AS-IS se dejan sin confirmar para probarlas realmente. Cada expediente se puede abrir en sus páginas y mapa, guardar y recargar. Los hallazgos son incidencias a revisar, no correcciones inventadas.</div>';
   const cards=rows.map((e,i)=>{
@@ -30,9 +30,9 @@ function uat3PhaseSection(){
   }).join('');
   return section('Fase 3 · Tres estudios integrales y auditoría de coherencia','Extiende, sin sustituir, las actuales UAT de CRM y Estudios. Los tres procesos se almacenan como Engagements visibles y sus respuestas se pueden recorrer y editar en el software.',
     intro+'<div class="grid g4"><div class="card metric"><small>Expedientes</small><strong>'+rows.length+'</strong><span>objetivo 3</span></div><div class="card metric"><small>Pasos</small><strong>'+rows.reduce((n,e)=>n+e.processSteps.length,0)+'</strong></div><div class="card metric"><small>Fricciones</small><strong>'+rows.reduce((n,e)=>n+e.frictions.length,0)+'</strong></div><div class="card metric"><small>Riesgos</small><strong>'+rows.reduce((n,e)=>n+e.risks.length,0)+'</strong></div></div>',
-    '<button class="btn btn-primary" id="loadUat3" '+(ready?'':'disabled')+'>Generar los tres casos completos</button> '+
+    '<button class="btn btn-primary" id="loadUat3">Generar los tres casos completos</button> '+
     '<button class="btn btn-outline" id="clearUat3" '+(rows.length?'':'disabled')+'>Eliminar sólo estos tres casos</button>'+
-    (!ready?'<span class="field-help"> Antes, valida la Fase 1 CRM y genera la Fase 2 Estudios.</span>':''))+
+    '<div class="field-help">Estos tres casos tienen CRM y diagnóstico propios; puedes generarlos sin reiniciar ni cargar las Fases 1 y 2.</div>'+ '<div id="uat3LoadStatus" class="notice info" role="status" aria-live="polite">'+esc(typeof uat3LoadStatus==='string'?uat3LoadStatus:'Pulsa Generar para cargar los tres casos independientes.')+'</div>')+
     (rows.length?cards:'<div class="empty"><p>Los tres procesos todavía no están cargados en este navegador. Genera la Fase 3 para abrirlos y comprobar la coherencia de principio a fin.</p></div>');
 }
 
