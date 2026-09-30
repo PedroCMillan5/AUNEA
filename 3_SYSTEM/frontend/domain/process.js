@@ -466,7 +466,7 @@ function clientLayerBody(e,steps,fr,tab){
 }
 function clientProcessView(e,steps,fr,tab='cliente'){
   const riskCount=(e.risks||[]).length,econCount=(e.economicInputs||[]).length,company=(typeof companyById==='function'?companyById(e.companyId)?.name:'')||e.answers?.DF001||'Empresa',processName=e.answers?.DF011||e.processName||'Proceso sin nombre';
-  const clientBar=`<div class="client-process-topbar"><img src="./assets/brand/Logo.png" alt="AUNEA"><div class="client-process-context"><span>${esc(company)}</span><b>${esc(processName)}</b></div><div class="client-process-state"><span>Sesión de diagnóstico</span><b>Editor compartido</b></div></div>`;
+  const clientBar=`<div class="client-process-topbar"><img src="./assets/brand/Logo.png" alt="AUNEA"><div class="client-process-context"><span>${esc(company)}</span><b>${esc(processName)}</b></div><div class="client-process-state"><span>Sesión de diagnóstico</span><b>Editor compartido</b><button type="button" class="btn btn-outline" id="closeClientProcessEditor">Volver a la consola</button></div></div>`;
   
   // [AUNEA-FE-PROC-LAYERS-045] START — Continuous client journey on one AS-IS
   const stages=[
@@ -537,7 +537,9 @@ function asisMapPage(e,steps,fr){
 function processPage(){
   const e=currentEng();if(!e)return pageTop('Mapa AS-IS','Abre un estudio para ver su proceso.');
   const steps=activeSteps(e),fr=activeFrictions(e);
-  const top='<button class="btn btn-primary" id="openSessionDisplayFromProcess">Vista del cliente ↗</button>';
+  // The client-first editor is the existing consultant-owned surface, not the read-only #session projection.
+  if(state.uiMode==='CLIENT_EDITOR')return clientProcessView(e,steps,fr,e.processTab||'cliente');
+  const top='<button class="btn btn-primary" id="openSessionDisplayFromProcess">Vista con cliente ↗</button>';
   return pageTop('Mapa AS-IS','Lo que sabemos del proceso actual, todo en un mismo mapa.',top)
     +asisMapPage(e,steps,fr);
 }
@@ -584,7 +586,8 @@ bindForms=function(){
   document.querySelectorAll('[data-delete-risk-index]').forEach(b=>b.onclick=()=>deleteRisk(Number(b.dataset.deleteRiskIndex)));
   document.querySelectorAll('[data-edit-economic-index]').forEach(b=>b.onclick=()=>addEconomic([],Number(b.dataset.editEconomicIndex)));
   document.querySelectorAll('[data-delete-economic-index]').forEach(b=>b.onclick=()=>deleteEconomic(Number(b.dataset.deleteEconomicIndex)));
-  const share=document.getElementById('openSessionDisplayFromProcess');if(share)share.onclick=()=>openSessionDisplay();
+  const share=document.getElementById('openSessionDisplayFromProcess');if(share)share.onclick=()=>openProcessEditorWindow();
+  const closeClient=document.getElementById('closeClientProcessEditor');if(closeClient)closeClient.onclick=()=>closeProcessEditorWindow();
   document.querySelectorAll('[data-confirm-process-layer]').forEach(b=>b.onclick=()=>confirmProcessLayer(({map:'cliente',frictions:'fricciones',risks:'riesgos',impact:'impacto'})[b.dataset.confirmProcessLayer]));
   document.querySelectorAll('[data-add-after]').forEach(b=>b.onclick=e=>{e.stopPropagation();openStepModal(null,b.dataset.addAfter||null)});
   document.querySelectorAll('[data-delete-step]').forEach(b=>b.onclick=ev=>{ev.preventDefault();ev.stopPropagation();removeStepFromFlow(b.dataset.deleteStep)});
