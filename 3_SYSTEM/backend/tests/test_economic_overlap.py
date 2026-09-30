@@ -102,4 +102,31 @@ def test_same_key_cannot_silently_drop_conflicting_economic_amounts(field, value
     one = econ('ED02', 10, ['S1'], key='EVENT-1')
     two = one.model_copy(update={field: value})
     assert economic_overlap_issues([one, two])
+
+def test_three_uat3_economic_claims_are_distinct_declarations_not_fabricated_savings():
+    import json
+    from pathlib import Path
+    directory=Path(__file__).resolve().parents[2]/"frontend"/"uat"/"cases"
+    for filename in ("invoices.json","unified-requests.json","email-orders.json"):
+        case=json.loads((directory/filename).read_text(encoding="utf-8"))
+        cost=case["economics"]["toolAnnual"]
+        rate=case["economics"]["rate"]
+        rows=[
+            EconomicInput(driver_id="ED14", capacity_cost_rate_eur_hour=rate,
+                          annual_active_hours=0, annual_wait_hours=0,
+                          direct_loss_eur_annual=0, realized_cash_saving_eur_annual=0,
+                          evidence_type="CLIENT_DECLARED"),
+            EconomicInput(driver_id="ED12",current_tool_cost_eur_annual=cost,
+                          annual_active_hours=0, annual_wait_hours=0,
+                          direct_loss_eur_annual=0, realized_cash_saving_eur_annual=0,
+                          evidence_type="CLIENT_DECLARED"),
+        ]
+        assert economic_overlap_issues(rows)==[], case["key"]
+        assert sum(x.realized_cash_saving_eur_annual or 0 for x in rows)==0
+        assert sum(x.direct_loss_eur_annual or 0 for x in rows)==0
+        assert sum(x.current_tool_cost_eur_annual or 0 for x in rows)==cost
+        # A hypothetical duplicate financial loss with no event key is not published.
+        duplicate=econ("ED11",steps=["S1"],loss=100)
+        assert economic_overlap_issues([*rows,duplicate,duplicate.model_copy()])
+
 # [AUNEA-UAT-ECON-OVERLAP-075] END
