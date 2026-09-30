@@ -56,7 +56,8 @@ function uat3Seed(c){
     DF051:{from:steps[c.finding[0]].id,to:steps[c.finding[1]].id},
     DF053:c.search.map(n=>steps[n].id),
     DF054:['manual:'+steps[c.integration[1]].id],DF096:frictions.map(x=>x.id),DF098:c.followup};
-  const details={...c.details,DF075__steps:[steps.find(x=>x.step_type==='ST05')?.id||steps[2].id]};
+  const controlStepIndex=c.key==='INVOICE'?4:c.key==='INTAKE'?3:4;
+  const details={...c.details,DF075__steps:[steps[controlStepIndex].id]};
   const economics=[
     {step_ids:[],driver_id:'ED14',annual_active_hours:0,annual_wait_hours:0,capacity_cost_rate_eur_hour:c.economics.rate,
       direct_loss_eur_annual:0,current_tool_cost_eur_annual:0,realized_cash_saving_eur_annual:0,evidence_type:'CLIENT_DECLARED',deduplication_key:null},
@@ -118,6 +119,18 @@ function uat3Audit(e){
   add('No hay falsa confirmación de cierre',!e.confirmedAsIs&&!e.answers.DF093&&!e.confirmedSnapshots?.length,'Las cuatro capas requieren validación real en el editor.');
   for(const fid of ['DF017','DF046','DF047','DF049','DF050','DF057','DF066','DF067','DF078','DF079','DF085','DF093','DF094','DF095'])
     if(Object.prototype.hasOwnProperty.call(e.answers,fid))findings.push(fid+' está indebidamente copiado en answers; debería proceder de su owner.');
+  // Concrete differences between client-declared global figures and owner-level records.
+  const caseKey=String(e.id).includes('INVOICE')?'INVOICE':String(e.id).includes('INTAKE')?'INTAKE':'EMAIL';
+  const headline=caseKey==='INVOICE'
+    ?'Facturas: DF026 declara 72 h end-to-end, pero el mapa registra 90 y 60 min de espera en validación/cotejo y 720 min sólo en el 25 % sujeto a aprobación. Falta explicar o evidenciar el tiempo restante; no se igualan por decreto.'
+    :caseKey==='INTAKE'
+    ?'Peticiones: DF026 declara 40 h end-to-end; el mapa contiene 120 min en completar datos y 480 min sólo para el 25 % que necesita presupuesto. Falta delimitar otras colas o verificar el dato global.'
+    :'Pedidos: DF026 declara 15 h end-to-end; el mapa registra 30 y 45 min de espera y 240 min sólo para el 12 % con excepción. Validar el resto de ciclo antes de anualizar espera.';
+  findings.push(headline);
+  const permission=e.answers?.DF099;
+  if(permission==='YES')findings.push('DF099 figura como permiso afirmativo en un supuesto sintético. No debe interpretarse como consentimiento real; confirmar el permiso en una sesión efectiva.');
+  const protectedStep=(e.answerDetails?.DF075__steps||[]).map(id=>steps.find(x=>x.id===id)?.step_name||id);
+  findings.push('Control humano DF075 asociado al paso: '+protectedStep.join(', ')+'. Comprobar en el editor que la restricción afecta realmente a ese acto.');
   // Findings reflect actual, existing model wiring; they are NOT fixed by the fixture.
   findings.push('Duplicidad estructural: reusedValue(DF047) y reusedValue(DF049) consumen exactamente inputs+outputs de todos los pasos, aunque sus preguntas distinguen fuentes de datos frente a documentos.');
   findings.push('Posible doble captura: DF028 exige proporción global de error y DF040 ya registra frecuencia por paso. No hay reconciliación canónica automática de ambos universos.');
