@@ -157,3 +157,47 @@ test('all three UAT cases declare every applicable REQUIRED_90M field before hum
  dom.window.close();
 });
 // [AUNEA-UAT-RUNTIME-125] END
+
+test('Block 2: all three cases reuse distinct DF047/DF049 projections, explain DF028 vs step rates, and propagate edits without duplicate ownership',()=>{
+ for(const file of ['invoices.json','unified-requests.json','email-orders.json']){
+  const {w,dom,run}=buildRuntime();
+  const fixture=JSON.parse(read('uat/cases/'+file));
+  const row=run('uat3Seed('+JSON.stringify(fixture)+')');
+  run('state.companies.push('+JSON.stringify(row.company)+');state.contacts.push(...'+JSON.stringify(row.contacts)+');state.engagements.push('+JSON.stringify(row.engagement)+');state.activeEngagementId='+JSON.stringify(row.engagement.id)+';state.activePage="diagnostico";currentEng().stageId="S04";render()');
+  const id=row.engagement.id;
+  const sources=Array.from(run("reusedValue('DF047',currentEng())"));
+  const documents=Array.from(run("reusedValue('DF049',currentEng())"));
+  assert.ok(sources.length>0&&documents.length>0,file+': each projection should derive real step artifacts');
+  assert.notDeepEqual(sources,documents,file+': source list cannot simply duplicate the document list');
+  assert.ok(documents.every(v=>['FORM','EMAIL','TEXT','PDF','DOC','SHEET','IMAGE'].includes(v)),file+': documents show only documentary artifact types');
+  assert.equal(run('Object.hasOwn(currentEng().answers,"DF047")'),false);
+  assert.equal(run('Object.hasOwn(currentEng().answers,"DF049")'),false);
+  const field47=run("schema.fields.find(f=>f.Field_ID==='DF047')");
+  const field49=run("schema.fields.find(f=>f.Field_ID==='DF049')");
+  assert.deepEqual(Array.from(run("effectiveValue(schema.fields.find(f=>f.Field_ID==='DF047'),currentEng())")),sources);
+  assert.deepEqual(Array.from(run("effectiveValue(schema.fields.find(f=>f.Field_ID==='DF049'),currentEng())")),documents);
+  const before=run("JSON.stringify(reusedValue('DF047',currentEng()))");
+  run("currentEng().processSteps[0].inputs.push('API');invalidateProcessLayers(currentEng(),'map');");
+  const after=run("JSON.stringify(reusedValue('DF047',currentEng()))");
+  assert.notEqual(after,before,file+': adding a new input is propagated to source projection');
+  assert.ok(Array.from(run("reusedValue('DF047',currentEng())")).includes('API'));
+  assert.equal(run('Object.hasOwn(currentEng().answers,"DF047")'),false,'source view remains derived');
+  // The global percentage is a declared process metric, not the arithmetic sum of step errors.
+  run("currentEng().stageId='S03';render()");
+  const message=w.document.querySelector('[data-global-failure-review="DF028"]')?.textContent||'';
+  assert.match(message,/Tasa global declarada/);
+  assert.match(message,/No se suman ni sustituyen/);
+  assert.ok(message.includes(String(fixture.answers.DF028.value)),file+': preserves the actual client-declared figure');
+  const globalBefore=run('JSON.stringify(currentEng().answers.DF028)');
+  run("currentEng().processSteps[1].error_rate.value=9;invalidateProcessLayers(currentEng(),'map');render()");
+  assert.equal(run('JSON.stringify(currentEng().answers.DF028)'),globalBefore,'a step change never fabricates a process-wide percentage');
+  assert.match(w.document.querySelector('[data-global-failure-review="DF028"]').textContent,/9 %/);
+  const oldCompany=row.company.name;
+  run("setAnswer('DF001','Empresa verificada en la sesión')");
+  assert.equal(run('state.companies.find(c=>c.id===state.engagements[0].companyId).name'),'Empresa verificada en la sesión');
+  assert.equal(run("reusedValue('DF001',currentEng())"),'Empresa verificada en la sesión');
+  assert.equal(run('currentEng().answers.DF001'),'Empresa verificada en la sesión');
+  assert.notEqual(oldCompany,'Empresa verificada en la sesión');
+  dom.window.close();
+ }
+});
