@@ -1,4 +1,6 @@
 # UAT3 — Tres diagnósticos integrales y revisión de continuidad de datos
+
+**ARCHIVED — revisión inicial sustituida por [`UAT3_END_TO_END_AUDIT_12_MILESTONES_20260930.md`](./UAT3_END_TO_END_AUDIT_12_MILESTONES_20260930.md).** Esta versión documenta hallazgos antes de corregir RiskInput.step_ids y antes de ejecutar Chromium nativo; no debe utilizarse como estado vigente.
 Fecha: 2026-09-30 · Estado: REVIEW / PILOT · Código: `reconcile/frontend-v1.0.4-source`
 
 ## Alcance real
