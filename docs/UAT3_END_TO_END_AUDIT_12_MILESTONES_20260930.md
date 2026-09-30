@@ -23,8 +23,8 @@ Los casos de facturas, peticiones unificadas y emails de pedido son **sintético
 ## Hallazgos concretos y estado
 | Clave | Campo / componente | Evidencia | Estado |
 |---|---|---|---|
-| H01 | DF047 y DF049 | `reusedValue` devuelve la misma concatenación de `inputs+outputs` pese a que las preguntas distinguen fuentes de datos de documentos. El Master diferencia sus objetivos y permite documentos/evidencias. | ABIERTO: resolver en la capa owner/derivación sin clasificar arbitrariamente categorías mixtas como SHEET/EMAIL. |
-| H02 | DF028 y DF040 | DF028 es proporción de casos con error; DF040 frecuencia del fallo en cada paso. No se demuestra identidad de universos ni conciliación automática. | ABIERTO: reconciliar población y evidencia, no sumar porcentajes. |
+| H01 | DF047 y DF049 | La copia idéntica `inputs+outputs` se sustituyó por proyecciones diferenciadas del mismo ProcessStep: entradas/orígenes e información estructurada para DF047; artefactos documentales de entradas/salidas para DF049. Tipos como PDF, email y Excel pueden coincidir legítimamente. | MITIGACIÓN VERIFICADA en tres casos; permanece REVIEW la identificación individual/adjuntos y uso real de artefactos mixtos. No se inventan nuevas preguntas ni evidencias. |
+| H02 | DF028 y DF040 | Demanda presenta la tasa global declarada junto a cada DF040 de pasos vigentes, aclara que los casos pueden solaparse y no calcula su suma. Cambiar un DF040 no reemplaza la declaración global. | DIFERENCIACIÓN/PROPAGACIÓN VERIFICADA; conciliación de población/evidencia permanece REVIEW hasta datos de incidencia únicos. |
 | H03 | DF080/081 vs acciones CHASE/REPORT y tiempos de pasos | El Master dice DERIVE_THEN_VALIDATE; los datos ficticios declaran valores, pero no garantizan que sean tiempo adicional. | ABIERTO: no anualizar ni sumar sin deduplicación por evento/scope. |
 | H04 | Risk → ProcessStep → backend | `Risk.step_ids` existía en estudio, pero el adaptador lo omitía y `RiskInput` no lo recibía. DEC-065 aprueba su relación técnica. | **CORREGIDO**: se incluye en frontend y contrato Pydantic, sin alterar Risk Engine ni scoring. Tests de ida/vuelta. |
 | H05 | DF026 frente a mapa | Facturas declara 72 h, peticiones 40 h, pedidos 15 h; los tiempos de espera por paso no acreditan todo ese ciclo end-to-end. | ABIERTO: pedir evidencia de colas/ciclo; no forzar que la suma equivalga. |
@@ -42,3 +42,16 @@ UAT / QA → Fase 3 → Generar los tres casos completos. Cada tarjeta contiene 
 
 ## Criterio de cierre pendiente
 Antes de afirmar que el negocio completo 1–12 funciona, resolver H01–H03/H05 según fuente canónica, ejecutar el diagnóstico final de backend con evidencia/confirmaciones controladas (time-projection de las tres fixtures ya contrastada), revisar los outputs reales, demostrar Client View/TO-BE/entregables con el mismo snapshot y UAT humana de la sesión. Los gates PASS prueban sólo su alcance declarado, no producción ni ventas.
+
+## Bloque 2 — Captura única y propagación, 30/09/2026
+Fuente de contraste: los tres JSON UAT3, Diagnostic Master v1.2 y DEC-050/065. Se comprueba con el runtime de todos los módulos que cada estudio conserva su Company/Contact ID y la corrección de DF001 escribe al owner Company. Añadir una entrada API en el primer paso altera DF047 automáticamente sin introducir otra respuesta DF047 editable; DF049 deriva solamente tipos documentales realmente presentes en el mapa. Cambiar el porcentaje de error de un paso actualiza la comparación contextual en Demanda sin sustituir DF028 ni simular una tasa global.
+
+| Expediente | DF047 Fuentes (derivado) | DF049 Documentos (derivado) | DF028 declarado | DF040 relevantes |
+|---|---|---|---:|---|
+| Facturas | EMAIL, PDF, MASTER_DATA, RECORD | EMAIL, PDF, DOC | 8 % | Validar: 8 %; cotejar: 6 % |
+| Peticiones unificadas | EMAIL, FORM, TEXT, RECORD | EMAIL, FORM, TEXT | 18 % | Completar requisitos: 18 % |
+| Tickets desde email | EMAIL, PDF, SHEET, RECORD, MASTER_DATA | EMAIL, PDF, SHEET | 11 % | Extraer: 11 %; crear ticket: 7 % |
+
+Un artefacto puede aparecer legítimamente en ambas vistas; el objetivo no es una partición excluyente sino **dos finalidades canónicas distintas**. Los códigos del catálogo OS_ARTIFACT_TYPE no representan instancias individuales, origen documental ni adjuntos vinculados; no se declara que H01 esté resuelto para todos los documentos reales. DF028 y DF040 no comparten forzosamente denominador, y una suma de errores por paso podría contar un mismo caso más de una vez: no se fabrica reconciliación ni porcentaje derivado. Se mantiene PG03 en REVIEW, sin modificar su composición FROZEN/otras pantallas ni reglas económicas del Bloque 3.
+
+QA dirigida: nueva prueba del runtime para los tres expedientes que inspecciona las dos proyecciones, los tres DF028, la actualización al cambiar datos de paso y write-through DF001. Gate y captura navegador se consignan sólo tras confirmar el estado final del commit.
