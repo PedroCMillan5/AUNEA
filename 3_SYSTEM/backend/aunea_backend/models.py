@@ -65,6 +65,8 @@ class EconomicInput(BaseModel):
     deduplication_key: str | None = None
 
 class RiskInput(BaseModel):
+    # DEC-065: traceability only; risk scoring does not derive from these step IDs.
+    step_ids: list[str] = Field(default_factory=list)
     category: str
     likelihood_1_5: int = Field(ge=1, le=5)
     impact_1_5: int = Field(ge=1, le=5)
