@@ -1,6 +1,6 @@
 // [AUNEA-UAT-RUNTIME-125] START — Executable UAT with real HTML, full manifest runtime and all three business fixtures.
 // A jsdom browser-surface integration test; does NOT assert real Chromium geometry or substitute client confirmation.
-const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const {JSDOM,VirtualConsole}=require('jsdom');
 const root=path.join(__dirname,'..'),read=p=>fs.readFileSync(path.join(root,p),'utf8');
 const html=read('index.html'),manifest=JSON.parse(read('module-manifest.json')).modules;
@@ -8,7 +8,8 @@ function buildRuntime(storage){
  const errors=[],virtualConsole=new VirtualConsole();
  virtualConsole.on('jsdomError',e=>errors.push(String(e.message||e)));
  const dom=new JSDOM(html,{url:'http://localhost:5500/index.html',runScripts:'outside-only',pretendToBeVisual:true,virtualConsole});
- const w=dom.window;
+ const w=dom.window,context=dom.getInternalVMContext();
+ const run=script=>vm.runInContext(script,context);
  w.console={...console,error:(...args)=>errors.push(args.map(String).join(' '))};
  w.fetch=async url=>{
    const u=new URL(String(url),'http://localhost:5500/index.html');
@@ -25,19 +26,19 @@ function buildRuntime(storage){
  // The source of truth for a reload is exactly the previously persisted JSON.
  if(storage)w.localStorage.setItem('aunea_internal_v1',storage);
  for(const m of manifest.filter(m=>m.path!=='boot.js')){
-   try{w.eval(read(m.path)+'\n//# sourceURL='+m.path)}catch(e){throw Error('Runtime module '+m.path+': '+e.stack)}
+   try{run(read(m.path)+'\n//# sourceURL='+m.path)}catch(e){throw Error('Runtime module '+m.path+': '+e.stack)}
  }
- w.eval('schema=applyDiagnosticMasterV12('+JSON.stringify(JSON.parse(read('data/diagnostic-master.min.json')))+');');
- return {w,dom,errors};
+ run('schema=applyDiagnosticMasterV12('+JSON.stringify(JSON.parse(read('data/diagnostic-master.min.json')))+');');
+ return {w,dom,errors,run};
 }
 test('whole application: UAT3 click creates, navigates and restores three studies without UAT1/UAT2 or dummy confirmation',async()=>{
- const {w,dom,errors}=buildRuntime();
- w.eval("state.activePage='uat';render()");
+ const {w,dom,errors,run}=buildRuntime();
+ run("state.activePage='uat';render()");
  const button=w.document.getElementById('loadUat3');
  assert.ok(button,'Generate must be visible on actual UAT page');
  assert.equal(button.disabled,false,'independent complete cases must not require UAT1/UAT2');
  await button.onclick();
- const rows=w.eval('uat3Cases()');
+ const rows=run('uat3Cases()');
  assert.equal(rows.length,3,'real UI click must create precisely three records');
  assert.match(w.document.getElementById('uat3LoadStatus').textContent,/Cargados y guardados: 3 estudios/);
  assert.equal(rows.reduce((n,e)=>n+e.processSteps.length,0),18);
@@ -48,42 +49,42 @@ test('whole application: UAT3 click creates, navigates and restores three studie
  assert.equal(JSON.parse(saved).engagements.filter(e=>e.id.startsWith('UAT3-CASE-')).length,3);
  for(const e of rows){
    for(const [stage,requiredField] of [['S01','DF008'],['S02','DF011'],['S03','DF021'],['S04','DF031'],['S05','DF056'],['S06','DF066'],['S07','DF076'],['S08','DF086'],['S09','DF093']]){
-     w.eval('state.activeEngagementId='+JSON.stringify(e.id)+';state.activePage="diagnostico";currentEng().stageId='+JSON.stringify(stage)+';render()');
+     run('state.activeEngagementId='+JSON.stringify(e.id)+';state.activePage="diagnostico";currentEng().stageId='+JSON.stringify(stage)+';render()');
      const body=w.document.getElementById('content').textContent;
      assert.ok(body.length>40,e.id+' '+stage+' empty screen');
      assert.doesNotMatch(body,/No se ha podido iniciar AUNEA Internal/);
-     assert.equal(w.eval('currentEng().id'),e.id);
+     assert.equal(run('currentEng().id'),e.id);
    }
-   w.eval('state.activePage="uat";render()');
+   run('state.activePage="uat";render()');
    const open=w.document.querySelector('[data-uat3-open="'+e.id+'"][data-uat3-page="proceso"]');
    assert.ok(open,e.id+' must offer the real map entrypoint');
    open.onclick();
-   assert.equal(w.eval('state.activePage'),'proceso');
+   assert.equal(run('state.activePage'),'proceso');
    assert.equal(w.document.querySelectorAll('[data-graph-node]').length>=8,true,e.id+' lacks routed graph');
    for(const tab of ['cliente','fricciones','riesgos','impacto']){
      const nav=w.document.querySelector('[data-process-tab="'+tab+'"]');
      assert.ok(nav,e.id+' missing '+tab);
      nav.onclick();
-     assert.equal(w.eval('currentEng().processTab'),tab,e.id+' reset layer');
+     assert.equal(run('currentEng().processTab'),tab,e.id+' reset layer');
      assert.ok(w.document.querySelector('.flow-canvas'),e.id+' lost shared canvas in '+tab);
      assert.ok(w.document.querySelector('[data-process-engagement="'+e.id+'"]'));
    }
-   assert.equal(w.eval('currentEng().confirmedAsIs'),false);
-   assert.equal(w.eval('currentEng().confirmedSnapshots.length'),0);
+   assert.equal(run('currentEng().confirmedAsIs'),false);
+   assert.equal(run('currentEng().confirmedSnapshots.length'),0);
  }
  assert.deepEqual(errors.filter(x=>/Error|TypeError|ReferenceError/.test(x)),[],'runtime console errors: '+errors.join(' / '));
  const reloaded=buildRuntime(saved);
- const after=reloaded.w.eval('state.engagements.filter(e=>e.id.startsWith("UAT3-CASE-"))');
+ const after=reloaded.run('state.engagements.filter(e=>e.id.startsWith("UAT3-CASE-"))');
  assert.equal(after.length,3,'all three must survive full app reload');
  for(const e of after)assert.equal(e.processSteps.length,6);
  dom.window.close();reloaded.dom.window.close();
 });
 test('actual backend payload for all three scenarios derives input from the same real engagement, without fake confirmed outputs',()=>{
- const {w,dom}=buildRuntime();
+ const {w,dom,run}=buildRuntime();
  for(const name of ['invoices.json','unified-requests.json','email-orders.json']){
-   const row=w.eval('uat3Seed('+JSON.stringify(JSON.parse(read('uat/cases/'+name)))+')');
-   w.eval('state.engagements.push('+JSON.stringify(row.engagement)+')');
-   const payload=w.eval('buildBackendPayload(state.engagements[state.engagements.length-1])');
+   const row=run('uat3Seed('+JSON.stringify(JSON.parse(read('uat/cases/'+name)))+')');
+   run('state.engagements.push('+JSON.stringify(row.engagement)+')');
+   const payload=run('buildBackendPayload(state.engagements[state.engagements.length-1])');
    assert.equal(payload.engagement_id,row.engagement.id);
    assert.equal(payload.questionnaire_answers.DF021,row.engagement.answers.DF021);
    assert.equal(payload.questionnaire_answers._process_steps.length,6);
