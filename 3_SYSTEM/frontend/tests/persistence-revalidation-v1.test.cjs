@@ -157,3 +157,17 @@ test('booting a second editor does not rewrite shared storage before the user ed
   assert.equal(ctx.localStorage.getItem('aunea_internal_v1'),null);
   assert.doesNotMatch(persistCode,/persistRecoverySnapshot\('module-init'\)/);
 });
+
+test('remote study update retains the selected process layer of the receiving window',()=>{
+  const ctx=makeCtx();ctx.isClientDisplay=()=>false;ctx.isProcessEditorWindow=()=>true;
+  const ours={id:'E1',processTab:'riesgos',answers:{DF021:100},processSteps:[],frictions:[],risks:[],economicInputs:[]};
+  ctx.state={...ctx.blankState(),activePage:'proceso',activeEngagementId:'E1',engagements:[ours]};
+  vm.runInContext('__auneaSyncedState=recoveryClone(state)',ctx);
+  const remote={...ctx.state,engagements:[{...ours,processTab:'cliente',answers:{DF021:200}}]};
+  const raw=JSON.stringify(remote);ctx.localStorage.setItem('aunea_internal_v1',raw);
+  ctx.__listeners.storage({key:'aunea_internal_v1',newValue:raw});
+  assert.equal(ctx.state.engagements[0].processTab,'riesgos');
+  assert.equal(ctx.state.engagements[0].answers.DF021,200);
+  assert.equal(ctx.persistRecoverySnapshot('test'),true,'layer-only navigation must not cause a false business conflict');
+  assert.equal(JSON.parse(ctx.localStorage.getItem('aunea_internal_v1')).engagements[0].processTab,'riesgos');
+});
