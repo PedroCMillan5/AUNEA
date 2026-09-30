@@ -134,6 +134,25 @@ function economicCaptureIssues(e,draft){
 function economicRoleRates(e){return Array.isArray(e?.answers?.DF076)?e.answers.DF076:[]}
 function economicRoles(e){return [...new Set((typeof activeSteps==='function'?activeSteps(e):e.processSteps||[]).map(s=>s.actor).filter(Boolean))]}
 function economicRateForRole(e,role){return economicRoleRates(e).find(x=>x.role===role&&Number(x.eur_hour)>0&&x.evidence_type)||null}
+function economicInputRole(e,item){
+  const steps=typeof activeSteps==='function'?activeSteps(e):e.processSteps||[];
+  const ids=normalizeArray(item.step_ids);
+  const roles=[...new Set(steps.filter(x=>ids.includes(x.id)).map(x=>x.actor).filter(Boolean))];
+  return roles.length===1?roles[0]:null;
+}
+function economicRoleRateMismatch(e,item){
+  const role=economicInputRole(e,item),rate=role?economicRateForRole(e,role):null;
+  return !!(item.capacity_cost_rate_eur_hour!=null&&(!rate||Number(item.capacity_cost_rate_eur_hour)!==Number(rate.eur_hour)));
+}
+function economicRoleRateIssues(e){return (e.economicInputs||[]).filter(x=>economicRoleRateMismatch(e,x))}
+function applyEconomicRoleRate(index){
+  const e=currentEng(),item=e.economicInputs?.[index],role=item&&economicInputRole(e,item);
+  const rate=role?economicRateForRole(e,role):null;
+  if(!item||!rate)return toast('Selecciona pasos de un solo perfil y registra primero su coste y evidencia.');
+  item.capacity_cost_rate_eur_hour=Number(rate.eur_hour);
+  if(typeof invalidateProcessLayers==='function')invalidateProcessLayers(e,'impact');
+  markDirty('Coste económico sincronizado con DF076');render();
+}
 function economicRoleRateTable(e){
   const roles=economicRoles(e),rates=economicRoleRates(e);
   const rows=roles.map(role=>{
@@ -161,15 +180,26 @@ function saveEconomicRoleRates(){
     if(!evid)return toast('Indica de dónde sale el coste por hora de cada perfil.');
     rows.push({role,eur_hour:rate,evidence_type:evid});
   }
-  // A rate is maintained only by DF076. EconomicInput merely receives its documented value for the run.
-  if(JSON.stringify(rows)!==JSON.stringify(existing))setAnswer('DF076',rows);
+  // Reconcile only rate values that were demonstrably derived from the former DF076 owner.
+  // Legacy one-off rates remain visible for explicit review, never silently overwritten.
+  if(JSON.stringify(rows)!==JSON.stringify(existing)){
+    const before=new Map(existing.map(x=>[x.role,Number(x.eur_hour)]));
+    const after=new Map(rows.map(x=>[x.role,Number(x.eur_hour)]));
+    (e.economicInputs||[]).forEach(item=>{
+      const role=economicInputRole(e,item),oldRate=before.get(role);
+      if(role&&oldRate!==undefined&&Number(item.capacity_cost_rate_eur_hour)===oldRate)
+        item.capacity_cost_rate_eur_hour=after.get(role)??null;
+    });
+    setAnswer('DF076',rows);
+    if(typeof invalidateProcessLayers==='function')invalidateProcessLayers(e,'impact');
+  }
   markDirty('Costes por perfil revisados');render();toast('Costes por perfil guardados.');
 }
 /* [AUNEA-FE-ECON-ROLE-RATES-037] END */
 
 function economicBuilder(e){
   const steps=typeof activeSteps==='function'?activeSteps(e):[];
-  return section('Tiempo y costes del proceso','Usamos los datos que ya tenemos y preguntamos sólo lo que falta. El trabajo, la espera, las pérdidas y el ahorro real se muestran por separado.',economicRoleRateTable(e)+`<div class="result-list">${e.economicInputs.length?e.economicInputs.map(x=>`<div class="result-item"><b>${esc(econDriverLabel(x.driver_id))}</b><p>Activo ${x.annual_active_hours||0} h/año · Espera ${x.annual_wait_hours||0} h/año · Pérdida directa ${x.direct_loss_eur_annual||0} €/año · Evidencia: ${esc(engineLabel('evidence_quality',x.evidence_type))}</p><p>Pasos: ${(Array.isArray(x.step_ids)?x.step_ids:(x.step_ids?[x.step_ids]:[])).map(id=>steps.find(s=>s.id===id)?.step_name||id).map(esc).join(', ')||'Sin anclar'}</p></div>`).join(''):'<div class="empty"><p>Todavía no se han registrado datos económicos.</p></div>'}</div>`,`<button class="btn btn-outline" id="addEconomic">Añadir dato económico</button>`)
+  return section('Tiempo y costes del proceso','Usamos los datos que ya tenemos y preguntamos sólo lo que falta. El trabajo, la espera, las pérdidas y el ahorro real se muestran por separado.',economicRoleRateTable(e)+`<div class="result-list">${e.economicInputs.length?e.economicInputs.map((x,i)=>`<div class="result-item"><b>${esc(econDriverLabel(x.driver_id))}</b>${economicRoleRateMismatch(e,x)?`<p class="notice warn">El coste de este registro no coincide con el perfil actual. ${economicRateForRole(e,economicInputRole(e,x))?`<button type="button" class="btn btn-small" data-econ-apply-rate="${i}">Usar coste del perfil</button>`:'Registra el coste del perfil para poder revisarlo.'}</p>`:''}<p>Activo ${x.annual_active_hours||0} h/año · Espera ${x.annual_wait_hours||0} h/año · Pérdida directa ${x.direct_loss_eur_annual||0} €/año · Evidencia: ${esc(engineLabel('evidence_quality',x.evidence_type))}</p><p>Pasos: ${(Array.isArray(x.step_ids)?x.step_ids:(x.step_ids?[x.step_ids]:[])).map(id=>steps.find(s=>s.id===id)?.step_name||id).map(esc).join(', ')||'Sin anclar'}</p></div>`).join(''):'<div class="empty"><p>Todavía no se han registrado datos económicos.</p></div>'}</div>`,`<button class="btn btn-outline" id="addEconomic">Añadir dato económico</button>`)
 }
 
 function addEconomic(preselectedSteps=[]){
@@ -273,5 +303,5 @@ function addEconomic(preselectedSteps=[]){
   refresh();
 }
 const __auneaEconomicsRateBindForms=bindForms;
-bindForms=function(){__auneaEconomicsRateBindForms();const button=document.getElementById('saveEconomicRoleRates');if(button)button.onclick=saveEconomicRoleRates;};
+bindForms=function(){__auneaEconomicsRateBindForms();const button=document.getElementById('saveEconomicRoleRates');if(button)button.onclick=saveEconomicRoleRates;document.querySelectorAll('[data-econ-apply-rate]').forEach(b=>b.onclick=()=>applyEconomicRoleRate(Number(b.dataset.econApplyRate)));};
 // [AUNEA-FE-ECON-CAPTURE-030] END
