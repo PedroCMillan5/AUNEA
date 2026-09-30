@@ -36,15 +36,15 @@ test('addRisk keeps every saved RiskInput field visibly present; both groups ope
 
 test('the risk level stays backend-owned: the module never derives R0-R3 locally',()=>{
   assert.doesNotMatch(code,/residual_level\s*=/,'residual risk level is decided by RiskEngine, never in the browser');
-  assert.match(code,/La evaluación se calcula con las reglas del sistema/);
+  assert.match(code,/AUNEA aplica las reglas de evaluación existentes/);
 });
-test('the friction chooser is scoped to selected process steps and clears hidden choices',()=>{
+test('observed problems are step-scoped read-only context, not nonpersistent selections',()=>{
   assert.match(code,/function refreshRiskFrictionChoices\(/);
   assert.match(code,/data-risk-friction-row/);
   assert.match(code,/data-affected-steps/);
   assert.match(code,/affected\.some\(id=>selected\.includes\(id\)\)/);
-  assert.match(code,/if\(row\.hidden&&input\)input\.checked=false/);
+  assert.doesNotMatch(code,/data-risk-friction="/);
   assert.match(code,/\[data-risk-step\]/);
-  assert.match(code,/\.filter\(x=>!x\.closest\('\[data-risk-friction-row\]'\)\?\.hidden\)/);
+  assert.match(code,/Son datos de contexto/);
 });
 // [AUNEA-UAT-RISK-CAPTURE-030] END
