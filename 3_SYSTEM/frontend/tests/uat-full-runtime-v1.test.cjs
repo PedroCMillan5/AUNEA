@@ -201,3 +201,31 @@ test('Block 2: all three cases reuse distinct DF047/DF049 projections, explain D
   dom.window.close();
  }
 });
+
+
+test('Block 3: each actual business scenario exposes overlap context in S07 without converting declared followup/reporting into cash savings',()=>{
+ for(const file of ['invoices.json','unified-requests.json','email-orders.json']){
+  const {w,dom,run}=buildRuntime(),fixture=JSON.parse(read('uat/cases/'+file));
+  const row=run('uat3Seed('+JSON.stringify(fixture)+')');
+  run('state.companies.push('+JSON.stringify(row.company)+');state.contacts.push(...'+JSON.stringify(row.contacts)+');state.engagements.push('+JSON.stringify(row.engagement)+');state.activeEngagementId='+JSON.stringify(row.engagement.id)+';state.activePage="diagnostico";currentEng().stageId="S07";render()');
+  const e=run('currentEng()');
+  assert.equal(e.frictions.length,3);assert.equal(e.risks.length,2);
+  assert.equal(e.frictions.every(f=>f.affected_steps.includes(f.time_attribution.step_id)),true);
+  assert.equal(e.risks.every(r=>r.step_ids.length&&r.step_ids.every(id=>e.processSteps.some(s=>s.id===id))),true);
+  for(const fid of ['DF080','DF081']){
+    const el=w.document.querySelector('[data-economic-overlap-review="'+fid+'"]');
+    // May be branch-conditional; the same owner-based context must remain available.
+    const context=run('economicConditionalTimeContext('+JSON.stringify(fid)+',currentEng())');
+    assert.match(context,/No se considera ahorro|Sólo valorar un ámbito adicional/);
+    if(el)assert.equal(el.textContent,context);
+    assert.equal(run('currentEng().answers.'+fid+'.value'),fixture.answers[fid].value);
+  }
+  assert.equal(e.economicInputs.every(x=>x.realized_cash_saving_eur_annual===0&&x.direct_loss_eur_annual===0),true);
+  const payload=run('buildBackendPayload(currentEng())');
+  assert.equal(payload.risks.length,2);
+  for(let i=0;i<2;i++)assert.deepEqual(Array.from(payload.risks[i].step_ids),Array.from(e.risks[i].step_ids));
+  assert.equal(payload.economics.every(x=>x.realized_cash_saving_eur_annual===0),true);
+  assert.equal(e.confirmedAsIs,false);
+  dom.window.close();
+ }
+});
