@@ -247,6 +247,6 @@ test('temporary customer-view pause blocks launch and direct session/results URL
  w.location.hash='#process-editor';
  run("state.activePage='proceso';render()");
  assert.notEqual(w.document.getElementById('content').textContent.includes('Vista cliente temporalmente bloqueada'),true,'editable AS-IS must remain available');
- assert.match(read('boot.js'),/CLIENT_DISPLAY_PAUSED\)\{bootPausedClientDisplay\(\)/);
+ assert.ok(read('boot.js').includes('CLIENT_DISPLAY_PAUSED){bootPausedClientDisplay();}'));
  dom.window.close();
 });
