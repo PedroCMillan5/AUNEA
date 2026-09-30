@@ -38,9 +38,16 @@ function clientStep(s, index) {
     actor: labelFrom('OS_ACTOR_ROLE', s.actor) || '',
     tool: labelFrom('OS_TOOL_CATEGORY', s.tool) || '',
     type: labelFrom('OS_STEP_TYPE', s.step_type) || '',
-    activeMin: Number(s.active_time) || 0,
-    waitMin: Number(s.wait_time) || 0,
-    isDecision: String(s.step_type || '').toUpperCase().includes('DECISION'),
+    inputs:normalizeArray(s.inputs).map(x=>labelFrom('OS_ARTIFACT_TYPE',x)),
+    outputs:normalizeArray(s.outputs).map(x=>labelFrom('OS_ARTIFACT_TYPE',x)),
+    decisions:normalizeArray(s.decision_criteria).map(x=>labelFrom('OS_DECISION_CRITERIA',x)),
+    manual:normalizeArray(s.manual_actions).map(x=>labelFrom('OS_MANUAL_ACTION',x)),
+    channels:normalizeArray(s.communication_channels).map(x=>labelFrom('OS_COMM_CHANNEL',x)),
+    automation:s.automation_state?labelFrom('OS_AUTOMATION_STATE',s.automation_state):'',
+    reworkMin:s.rework_time==null||s.rework_time===''?null:Number(s.rework_time),
+    activeMin: s.active_time==null||s.active_time===''?null:Number(s.active_time),
+    waitMin: s.wait_time==null||s.wait_time===''?null:Number(s.wait_time),
+    isDecision: processDecisionStep(s),
     id: s.id
   };
 }
@@ -69,7 +76,7 @@ function clientImpact(x, i) {
     id: x.deduplication_key || `E${i}`,
     // The mechanism and where it happens, never the money: no rate, no direct loss, no tool spend, no
     // realized cash saving, no totals, no business case (DEC-049).
-    label: labelFrom('REF_ECON_DRIVER', x.driver_id) || 'Impacto',
+    label: econDriverLabel(x.driver_id),
     activeHours: active,
     waitHours: wait,
     // Waiting is reported separately and never presented as active labour (DEC-032/033).
@@ -77,9 +84,21 @@ function clientImpact(x, i) {
   };
 }
 
+function clientProcessMap(e){
+  const original=activeSteps(e),graph=processGraphData(e,original);
+  return {
+    boundaries:{start:e.answers?.DF014||'',end:e.answers?.DF015||''},
+    steps:original.map(clientStep),confirmedAsIs:!!e.confirmedAsIs,
+    // Only topology and layout leave the console, never the underlying records.
+    graph:{nodes:graph.nodes.map(n=>({id:n.id,kind:n.kind,route:n.route,...graph.positions.get(n.id)})),edges:graph.edges,cols:graph.cols,rows:graph.rows}
+  };
+}
 function buildSessionSnapshot(e) {
   if (!e) return { state: 'C90-00', shared: false, steps: [], frictions: [], risks: [], impacts: [] };
-  const stageId = e.stageId || 'S01';
+  const pageStage={proceso:'S04',pasos:'S04',fricciones:'S05',riesgos:'S06',impacto:'S07'}[state.activePage];
+  // Visiting private lists must not hide the process already shared for this study.
+  const previous=readSessionSnapshot();
+  const stageId = [e.stageId||'S01',pageStage,previous?.engagementId===e.id?previous.stageId:null].filter(Boolean).sort().at(-1);
   const st = sessionStateFor(stageId);
   const layers = sessionLayersFor(stageId);
   const shared = st !== 'C90-00';
@@ -89,16 +108,15 @@ function buildSessionSnapshot(e) {
   if (!shared) return { state: st, shared: false, stageId, steps: [], frictions: [], risks: [], impacts: [], publishedAt: now() };
   const steps = activeSteps(e).map(clientStep);
   const company = companyById(e.companyId);
-  const startBoundary=(e.answers?.DF014!==undefined&&e.answers?.DF014!==null&&String(e.answers.DF014).trim()!=='')?String(e.answers.DF014):((e.answers?.DF012!==undefined&&e.answers?.DF012!==null&&String(e.answers.DF012).trim()!=='')?String(e.answers.DF012):'');
-  const endBoundary=(e.answers?.DF015!==undefined&&e.answers?.DF015!==null&&String(e.answers.DF015).trim()!=='')?String(e.answers.DF015):((e.answers?.DF013!==undefined&&e.answers?.DF013!==null&&String(e.answers.DF013).trim()!=='')?String(e.answers.DF013):'');
   const snap = {
+    ...clientProcessMap(e),
+    engagementId:e.id,
     state: st,
     shared,
     stageId,
     // Identity the client already knows; nothing commercial and no internal metadata.
     company: company ? company.name : '',
     process: e.answers?.DF011 || e.processName || '',
-    boundaries:{start:startBoundary,end:endBoundary},
     steps,
     frictions: layers.includes('frictions') ? activeFrictions(e).map(clientFriction) : [],
     risks: layers.includes('risks') ? (e.risks || []).map(clientRisk) : [],
@@ -125,7 +143,9 @@ function buildSessionSnapshot(e) {
 // (UI Spec §3.3), so this reports the outcome instead of swallowing it.
 function publishSessionSnapshot(e) {
   try {
-    localStorage.setItem(SESSION_DISPLAY_KEY, JSON.stringify(buildSessionSnapshot(e)));
+    const snapshot=buildSessionSnapshot(e),previous=readSessionSnapshot();
+    if(JSON.stringify({...snapshot,publishedAt:null})!==JSON.stringify({...previous,publishedAt:null}))
+      localStorage.setItem(SESSION_DISPLAY_KEY, JSON.stringify(snapshot));
     return { ok: true };
   } catch (err) {
     return { ok: false, error: String(err && err.message || err) };

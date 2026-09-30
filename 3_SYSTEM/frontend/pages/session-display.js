@@ -20,34 +20,69 @@ function bootPausedClientDisplay(){
 const RESULTS_DISPLAY_KEY='aunea_results_display_v1';
 
 // [AUNEA-FE-CLIENT-STABILITY-073] START — Compact client cards; details never change navigation.
-function sessionCanvas(snap) {
-  const start=snap.boundaries?.start||'Inicio pendiente',end=snap.boundaries?.end||'Fin pendiente';
-  const middle=(snap.steps||[]).map(s=>'<div class="flow-connector"></div>'
-    +'<button type="button" class="flow-step session-compact-step '+(snap.confirmedAsIs?'confirmed ':'')+(s.isDecision?'is-decision':'')+'" data-session-step="'+attr(s.id)+'" aria-label="Ver detalles de '+attr(s.name)+'">'
-    +'<span class="boundary-kicker">Paso '+esc(s.n)+'</span><h4>'+esc(s.name)+'</h4>'
-    +'<small>'+esc(s.actor||'Responsable pendiente')+'</small><span class="session-step-more">Ver detalle →</span></button>').join('');
-  return '<div class="flow-canvas session-map-canvas"><div class="flow-track">'
-    +'<div class="flow-step flow-boundary start"><span class="boundary-kicker">Inicio</span><h4>'+esc(start)+'</h4></div>'
-    +middle+'<div class="flow-connector"></div><div class="flow-step flow-boundary end"><span class="boundary-kicker">Fin</span><h4>'+esc(end)+'</h4></div></div></div>';
+function sessionCanvas(snap,interactive=true) {
+  const graph=snap.graph;if(!graph)return '<div class="flow-canvas session-map-canvas"></div>';
+  const nodes=graph.nodes.map(n=>{
+    const s=(snap.steps||[]).find(s=>s.id===n.id),tag=interactive?'button':'div';
+    const card=s?'<'+tag+(interactive?' type="button" data-session-step="'+attr(s.id)+'"':'')+' class="flow-step session-compact-step '+(s.isDecision?'is-decision ':'')+(snap.confirmedAsIs?'confirmed':'')+'">'
+      +'<span class="boundary-kicker">'+(s.isDecision?'Decisión':'Paso '+esc(s.n))+'</span><h4>'+esc(s.name)+'</h4><small>'+esc(s.actor||'Responsable pendiente')+'</small>'
+      +(interactive?'<span class="session-step-more">Ver detalle →</span>':'')+'</'+tag+'>':
+      n.kind==='pending'?'<div class="graph-route-pending">'+esc(n.route)+' · Destino pendiente</div>':
+      flowBoundaryNode(n.kind,n.kind==='start'?(snap.boundaries?.start||'Inicio pendiente'):(snap.boundaries?.end||'Fin pendiente'));
+    return '<div class="process-graph-cell" data-graph-node="'+attr(n.id)+'" style="grid-row:'+n.row+';grid-column:'+n.col+'">'+card+'</div>';
+  }).join('');
+  return '<div class="flow-canvas session-map-canvas"><div class="process-graph-board" style="--graph-cols:'+graph.cols+';--graph-rows:'+graph.rows+'" data-graph-edges="'+attr(JSON.stringify(graph.edges))+'">'
+    +'<svg class="process-graph-lines" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>'+nodes+'</div></div>';
 }
-function showSessionStepDetails(stepId){
+// Patch data in place: the scroll containers, keyed cards and focused controls keep their identity.
+// No full-page replacement, delayed scroll restoration or forced navigation on storage events.
+function patchSessionNode(current,next){
+  if(current.nodeType===3){if(current.nodeValue!==next.nodeValue)current.nodeValue=next.nodeValue;return}
+  for(const a of [...current.attributes])if(!next.hasAttribute(a.name))current.removeAttribute(a.name);
+  for(const a of [...next.attributes])if(current.getAttribute(a.name)!==a.value)current.setAttribute(a.name,a.value);
+  if(current.matches('.process-graph-lines'))return; // Measured edges are drawn after layout.
+  const key=n=>n.nodeType===1?(n.id||n.getAttribute('data-graph-node')||n.getAttribute('data-session-step')||''):'';
+  const compatible=(a,b)=>a&&a.nodeType===b.nodeType&&a.nodeName===b.nodeName&&key(a)===key(b);
+  let cursor=current.firstChild;
+  for(const desired of [...next.childNodes]){
+    let match=compatible(cursor,desired)?cursor:null;
+    if(!match&&key(desired))match=[...current.childNodes].find(n=>compatible(n,desired));
+    if(!match){match=desired.cloneNode(true);current.insertBefore(match,cursor)}
+    else{if(match!==cursor)current.insertBefore(match,cursor);patchSessionNode(match,desired)}
+    cursor=match.nextSibling;
+  }
+  while(cursor){const nextSibling=cursor.nextSibling;cursor.remove();cursor=nextSibling}
+}
+function patchSessionHtml(host,html){
+  const next=host.cloneNode(false);next.innerHTML=html;patchSessionNode(host,next);
+}
+function showSessionStepDetails(stepId,updateOnly=false){
   const snap=readSessionSnapshot();const s=(snap?.steps||[]).find(x=>x.id===stepId);if(!s)return;
   const fr=(snap.frictions||[]).filter(f=>(f.steps||[]).includes(s.id));
-  document.getElementById('sessionStepDetails')?.remove();
-  const overlay=document.createElement('div');overlay.id='sessionStepDetails';overlay.className='session-detail-overlay';
-  overlay.innerHTML='<div class="session-detail-dialog" role="dialog" aria-modal="true" aria-label="Detalle del paso">'
+  let overlay=document.getElementById('sessionStepDetails');
+  const fresh=!overlay;if(fresh){overlay=document.createElement('div');overlay.id='sessionStepDetails';overlay.className='session-detail-overlay'}
+  overlay.dataset.stepId=stepId;
+  patchSessionHtml(overlay,'<div class="session-detail-dialog" role="dialog" aria-modal="true" aria-label="Detalle del paso">'
     +'<div class="session-detail-heading"><h2>'+esc(s.n+'. '+s.name)+'</h2><button type="button" data-close-session-detail aria-label="Cerrar">×</button></div>'
     +'<dl class="kv"><dt>Responsable</dt><dd>'+esc(s.actor||'Pendiente')+'</dd>'
     +'<dt>Herramienta</dt><dd>'+esc(s.tool||'Pendiente')+'</dd>'
     +'<dt>Tipo de paso</dt><dd>'+esc(s.type||'Pendiente')+'</dd>'
-    +'<dt>Tiempo de trabajo</dt><dd>'+esc(s.activeMin)+' min</dd>'
-    +'<dt>Tiempo de espera</dt><dd>'+esc(s.waitMin)+' min</dd></dl>'
+    +'<dt>Tiempo de trabajo</dt><dd>'+(s.activeMin===null?'Pendiente':esc(s.activeMin)+' min')+'</dd>'
+    +'<dt>Tiempo de espera</dt><dd>'+(s.waitMin===null?'Pendiente':esc(s.waitMin)+' min')+'</dd>'
+    +'<dt>Tiempo de retrabajo</dt><dd>'+(s.reworkMin===null?'Pendiente':esc(s.reworkMin)+' min')+'</dd>'
+    +[['Necesita',s.inputs],['Produce',s.outputs],['Decisiones',s.decisions],['Acciones manuales',s.manual],['Canales',s.channels],['Automatización actual',s.automation?[s.automation]:[]]].filter(([,v])=>v?.length).map(([label,values])=>'<dt>'+label+'</dt><dd>'+values.map(esc).join(', ')+'</dd>').join('')+'</dl>'
+    +'<h3>Continuación del proceso</h3>'+(snap.graph?.edges||[]).filter(edge=>edge.from===s.id).map(edge=>'<p>'+esc((edge.label?edge.label+' → ':'')+(snap.steps.find(step=>step.id===edge.to)?.name||(edge.to==='__END__'?'Fin del proceso':'Destino pendiente')))+'</p>').join('')
     +(fr.length?'<h3>Problemas observados</h3>'+fr.map(f=>'<p><b>'+esc(f.label)+'</b> · '+esc(f.signal||'Sin descripción')+'</p>').join(''):'')
-    +'<div class="session-detail-foot"><button class="btn btn-primary" type="button" data-close-session-detail>Cerrar</button></div></div>';
-  overlay.onclick=ev=>{if(ev.target===overlay||ev.target.closest('[data-close-session-detail]'))overlay.remove()};
-  document.body.appendChild(overlay);overlay.querySelector('[data-close-session-detail]')?.focus();
+    +'<div class="session-detail-foot"><button class="btn btn-primary" type="button" data-close-session-detail>Cerrar</button></div></div>');
+  overlay.onclick=ev=>{if(ev.target===overlay||ev.target.closest('[data-close-session-detail]'))closeSessionStepDetails()};
+  if(fresh)document.body.appendChild(overlay);
+  if(!updateOnly)overlay.querySelector('[data-close-session-detail]')?.focus({preventScroll:true});
 }
 
+function closeSessionStepDetails(){
+  const overlay=document.getElementById('sessionStepDetails'),id=overlay?.dataset.stepId;overlay?.remove();
+  [...document.querySelectorAll('[data-session-step]')].find(el=>el.dataset.sessionStep===id)?.focus({preventScroll:true});
+}
 function sessionLayerPanels(snap) {
   const panels = [];
   if (snap.frictions.length) {
@@ -103,37 +138,39 @@ function renderSessionDisplay() {
   // Publication time may change while the data is identical: do not rebuild the page or reset position.
   const signature=JSON.stringify(snap?{...snap,publishedAt:null}:null);
   if(host.dataset.sessionSignature===signature)return;
-  const canvas=host.querySelector('.session-map-canvas');
-  const position={windowY:window.scrollY,hostTop:host.scrollTop,canvasLeft:canvas?.scrollLeft||0,canvasTop:canvas?.scrollTop||0};
-  host.innerHTML=sessionDisplayPage();host.dataset.sessionSignature=signature;
+  patchSessionHtml(host,sessionDisplayPage());host.dataset.sessionSignature=signature;
   const sync=document.getElementById('sessionSync');
-  if(sync)sync.innerHTML=snap?'<span class="badge ok">Vista actualizada</span>':'<span class="badge wait">Esperando a la consola</span>';
-  const restore=()=>{
-    const next=host.querySelector('.session-map-canvas');
-    if(next){next.scrollLeft=position.canvasLeft;next.scrollTop=position.canvasTop}
-    host.scrollTop=position.hostTop;window.scrollTo(0,position.windowY);
-  };
-  if(typeof requestAnimationFrame==='function')requestAnimationFrame(()=>requestAnimationFrame(restore));else restore();
+  if(sync)sync.textContent=snap?'Vista actualizada':'Esperando a la consola';
+  const detail=document.getElementById('sessionStepDetails');
+  if(detail){
+    if(snap?.steps?.some(s=>s.id===detail.dataset.stepId))showSessionStepDetails(detail.dataset.stepId,true);
+    else closeSessionStepDetails();
+  }
+  requestAnimationFrame(drawProcessGraph);
 }
 function removeConsoleChrome(){document.querySelectorAll('.sidebar,.topbar,#modalRoot,#toast').forEach(el=>el.remove())}
 function bootSessionDisplay() {
   removeConsoleChrome();document.body.classList.add('session-display');
   renderSessionDisplay();
   document.addEventListener('click',ev=>{const step=ev.target.closest?.('[data-session-step]');if(step)showSessionStepDetails(step.dataset.sessionStep)});
-  document.addEventListener('keydown',ev=>{if(ev.key==='Escape')document.getElementById('sessionStepDetails')?.remove()});
-  window.addEventListener('storage',ev=>{if(ev.key===SESSION_DISPLAY_KEY)renderSessionDisplay()});
+  document.addEventListener('keydown',ev=>{if(ev.key==='Escape')closeSessionStepDetails()});
+  window.addEventListener('storage',ev=>{if(ev.storageArea===localStorage&&ev.key===SESSION_DISPLAY_KEY)renderSessionDisplay()});
 }
+let sessionDisplayWindow=null;
 function openSessionDisplay() {
   if(CLIENT_DISPLAY_PAUSED)return toast(CLIENT_DISPLAY_PAUSE_REASON);
   const res=publishSessionSnapshot(currentEng());
   if(!res.ok)return toast('No se ha podido actualizar la vista del cliente: '+res.error);
   const url=new URL(location.href);url.hash='session';url.searchParams.delete('engagement');
-  const w=window.open('', 'aunea_session_display');
+  const w=sessionDisplayWindow&&!sessionDisplayWindow.closed?sessionDisplayWindow:window.open('', 'aunea_session_display');
+  sessionDisplayWindow=w;
   if(!w)return toast('Permite las ventanas emergentes para abrir la vista del cliente.');
   // Never navigate an existing session window again: it would lose its scroll and open detail.
   if(w.location.pathname!==url.pathname||w.location.hash!=='#session')w.location.replace(url.toString());
   w.focus();
 }
+
+// [AUNEA-FE-CLIENT-STABILITY-073] END
 
 // C06 · Modo Resultados. Projection is created in the Console from confirmed/approved sources and then
 // stored as plain client-safe data. The second window never recalculates, edits or opens discovery.

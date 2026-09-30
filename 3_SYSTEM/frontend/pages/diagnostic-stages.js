@@ -222,6 +222,8 @@ function refreshCaptureProgress(){
 }
 
 function stagePage(){
+  const asisPage={S04:processPage,S05:consultantFrictionsPage,S06:consultantRisksPage,S07:consultantImpactPage}[currentEng()?.stageId];
+  if(asisPage)return asisPage();
   const e=currentEng(),stage=schema.flow.find(x=>x.Stage_ID===(e.stageId||'S01'))||schema.flow[0];
   const fields=schema.fields.filter(f=>f.Stage_ID===stage.Stage_ID&&questionVisible(f,e));
   const stageIndex=schema.flow.findIndex(x=>x.Stage_ID===stage.Stage_ID),isLastStage=stageIndex===schema.flow.length-1;

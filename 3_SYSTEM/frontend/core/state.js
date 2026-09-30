@@ -24,7 +24,8 @@ const SESSION_CONTEXT_NAV = [
   ['Diagnóstico 90 min'],
   ['__STAGES__'],
   ['proceso','⇢','Mapa AS-IS'],
-  ['pasos','·','Pasos'],['fricciones','·','Fricciones'],['riesgos','·','Riesgos'],['impacto','·','Impacto']
+  ['pasos','·','Pasos'],['fricciones','·','Fricciones'],['riesgos','·','Riesgos'],['impacto','·','Impacto'],
+  ['__CLOSURE__']
 ];
 const INTERNAL_WORK_NAV = [
   HOME_NAV,
@@ -197,13 +198,14 @@ function renderNav(){
   const e=currentEng(),flow=stageList(),active=currentStageIndex();
   const out=[];
   for(const x of contextualNav()){
-    if(x[0]==='__STAGES__'){
-      // Nine numbered steps straight from the canonical flow. Without an open study they stay visible
-      // but inert, so the session structure is legible before one is selected.
+    if(x[0]==='__STAGES__'||x[0]==='__CLOSURE__'){
+      // Keep context and closure in canonical order; AS-IS stages have one shared menu group.
       flow.forEach((s,i)=>{
+        if(['S04','S05','S06','S07'].includes(s.Stage_ID))return;
+        if((s.Stage_ID==='S09')!==(x[0]==='__CLOSURE__'))return;
         const on=e&&state.activePage==='diagnostico'&&i===active;
         const reviewed=!!e&&typeof completionStageReviewed==='function'&&completionStageReviewed(s,e);
-        const available=!!e&&(i<=active||reviewed);
+        const available=!!e&&(i<=active||reviewed||(s.Stage_ID==='S09'&&e.confirmedAsIs));
         const locked=!!e&&!available;
         out.push(`<button class="nav-item nav-step ${on?'active':''} ${reviewed?'done':''} ${locked?'locked':''}" data-stage-nav="${s.Stage_ID}" ${locked?'disabled aria-disabled="true"':''}><span class="nav-num">${i+1}</span>${esc(s.Stage_ES)}</button>`);
       });
@@ -211,7 +213,7 @@ function renderNav(){
     }
     out.push(x.length===1
       ? `<div class="nav-group">${esc(x[0])}</div>`
-      : `<button class="nav-item ${state.activePage===x[0]?'active':''}" data-page="${x[0]}"><span class="nav-icon">${x[1]}</span>${esc(x[2])}</button>`);
+      : `<button class="nav-item ${['pasos','fricciones','riesgos','impacto'].includes(x[0])?'asis-private-nav':''} ${state.activePage===x[0]?'active':''}" data-page="${x[0]}"><span class="nav-icon">${x[1]}</span>${esc(x[2])}</button>`);
   }
   n.innerHTML=out.join('');
 }

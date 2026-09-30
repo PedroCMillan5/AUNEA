@@ -124,19 +124,19 @@ function openStepModal(stepId=null,linkFromStepId=null,preset=null){
   // step list row (processPage) already shows a readable per-step summary outside this modal.
   const body=`<div class="step-groups process-modal-form">
   <details class="step-group" open><summary>A. Información básica</summary><div class="form-grid">
-    <div class="field full"><label>Nombre del paso ${requiredMark()}</label><input id="step_name" maxlength="80" value="${attr(s.step_name||'')}" placeholder="Verbo + objeto, ej. Validar requisitos"></div>
+    <div class="field full"><label>¿Qué se hace en este paso? ${requiredMark()}</label><input id="step_name" maxlength="80" value="${attr(s.step_name||'')}" placeholder="Verbo + objeto, ej. Validar requisitos"></div>
     <div class="field"><label>Tipo de paso ${requiredMark()}</label>${stepTypeControl}</div>
-    <div class="field"><label>Responsable / actor ${requiredMark()}</label>${datalistControl('step_actor','OS_ACTOR_ROLE',s.actor||'','Rol existente o nuevo')}</div>
+    <div class="field"><label>¿Quién lo realiza? ${requiredMark()}</label>${datalistControl('step_actor','OS_ACTOR_ROLE',s.actor||'','Rol existente o nuevo')}</div>
   </div></details>
   <details class="step-group"><summary>B. Entradas y salidas</summary><div class="form-grid">
     <div class="field full"><label>¿A qué casos aplica?</label>${appliesControl(s)}</div>
     <div class="field"><label>Veces por caso</label><input id="step_occ" type="number" min="0" step="any" value="${attr(s.occurrences_per_case??1)}"></div>
-    <div class="field full"><label>Inputs</label>${selectedHtml('step_inputs',artifacts,s.inputs,{wrapped:true,detailId:'step_inputs_detail',detailValue:s._details.inputs||'',detailPlaceholder:'Especifica el input sólo al seleccionar Otro'})}</div>
-    <div class="field full"><label>Outputs</label>${selectedHtml('step_outputs',artifacts,s.outputs,{wrapped:true,detailId:'step_outputs_detail',detailValue:s._details.outputs||'',detailPlaceholder:'Especifica el output sólo al seleccionar Otro'})}</div>
+    <div class="field full"><label>¿Qué necesita para empezar?</label>${selectedHtml('step_inputs',artifacts,s.inputs,{wrapped:true,detailId:'step_inputs_detail',detailValue:s._details.inputs||'',detailPlaceholder:'Especifica el input sólo al seleccionar Otro'})}</div>
+    <div class="field full"><label>¿Qué produce este paso?</label>${selectedHtml('step_outputs',artifacts,s.outputs,{wrapped:true,detailId:'step_outputs_detail',detailValue:s._details.outputs||'',detailPlaceholder:'Especifica el output sólo al seleccionar Otro'})}</div>
   </div></details>
   <details class="step-group"><summary>C. Tiempo y rendimiento</summary><div class="form-grid">
-    <div class="field"><label>Tiempo activo típico</label>${timeControl('step_active',s.active_time,s._ui.active_unit||'min')}</div>
-    <div class="field"><label>Tiempo de espera</label>${timeControl('step_wait',s.wait_time,s._ui.wait_unit||'min')}<div class="field-help">Tiempo en el que el caso está parado o esperando antes de poder continuar. Se mantiene separado del trabajo activo y no se monetiza como trabajo.</div></div>
+    <div class="field"><label>¿Cuánto tiempo de trabajo requiere?</label>${timeControl('step_active',s.active_time,s._ui.active_unit||'min')}</div>
+    <div class="field"><label>¿Cuánto tiempo queda esperando?</label>${timeControl('step_wait',s.wait_time,s._ui.wait_unit||'min')}<div class="field-help">Tiempo en el que el caso está parado o esperando antes de poder continuar. Se mantiene separado del trabajo activo y no se monetiza como trabajo.</div></div>
     <div class="field"><label>Tiempo de retrabajo</label>${timeControl('step_rework',s.rework_time,s._ui.rework_unit||'min')}</div>
     <div class="field"><label>Error / repetición</label><div class="compound-control"><input id="step_error" type="number" min="0" step="any" value="${attr(s.error_rate&&typeof s.error_rate==='object'?s.error_rate.value:(s.error_rate||''))}" placeholder="5">${auneaDropdownControl('step_error_mode',[{value:'percent',label:'%'},{value:'count',label:'casos'}],s.error_rate?.mode||'percent','Unidad')}${auneaDropdownControl('step_error_period',[{value:'case',label:'por caso'},{value:'month',label:'por mes'},{value:'year',label:'por año'}],s.error_rate?.period||'case','Periodo')}</div></div>
   </div></details>
@@ -211,11 +211,11 @@ function openFrictionModal(frId=null,preselectedSteps=[]){
   <details class="step-group" open><summary>Fricción</summary><div class="form-grid">
   <div class="field full"><label>Tipo de fricción ${requiredMark()}</label>${auneaDropdownControl('fr_type',[{value:'',label:'Selecciona…'},...types],f.friction_type||'','Selecciona…')}<div class="field-help">Pain_ID se deriva internamente; el cliente no lo selecciona.</div></div>
   <div class="field full"><label>Pasos afectados ${requiredMark()}</label>${selectedHtml('fr_steps',activeSteps(e).map(s=>({value:s.id,label:s.step_name||s.id})),f.affected_steps)}</div>
-  <div class="field full"><label>Señal observable ${requiredMark()}</label><input id="fr_signal" value="${attr(f.observable_signal||'')}" placeholder="Hecho verificable, ej. casos >48h esperando aprobación"></div>
+  <div class="field full"><label>¿Qué problema ocurre aquí? ${requiredMark()}</label><input id="fr_signal" value="${attr(f.observable_signal||'')}" placeholder="Hecho verificable, ej. casos >48h esperando aprobación"></div>
   <div class="field"><label>Frecuencia</label>${frictionNumberControl('fr_frequency',f.frequency)}</div>
   <div class="field"><label>Impacto percibido</label>${auneaDropdownControl('fr_impact',[{value:'',label:'—'},...impacts],f.impact||'','—')}</div>
   </div></details>
-  <details class="step-group"><summary>Causa, workaround y evidencia</summary><div class="form-grid">
+  <details class="step-group"><summary>Causa, solución provisional y evidencia</summary><div class="form-grid">
   <div class="field full"><label>Causa / condición ${requiredMark()}</label>${selectedHtml('fr_causes',causes,f.cause,{detailId:'fr_cause_other',detailValue:f._details.cause||'',detailPlaceholder:'Especifica otra causa sólo al seleccionar Otro'})}</div>
   <div class="field full"><label>Cómo se compensa hoy</label>${selectedHtml('fr_workaround',work,f.workaround,{detailId:'fr_workaround_other',detailValue:f._details.workaround||'',detailPlaceholder:'Especifica otro workaround sólo al seleccionar Otro'})}</div>
   <div class="field"><label>Tipo de evidencia principal <span class="internal-tag">interno</span></label>${auneaDropdownControl('fr_evidence_type',evid,f.evidence_type||'EV02','Selecciona…')}</div>
@@ -516,7 +516,7 @@ function frictionsEditor(e,steps,fr){
 // This is presentation-only over the same Engagement, Step, Friction, Risk and EconomicInput records.
 // Source: DEC-050/063/064/065/068 and UX simplification 2026-09-30 (REVIEW).
 function asisOverview(e,steps,fr){
-  const ans=e.answers||{},value=(id,unit='')=>ans[id]===undefined||ans[id]===null||ans[id]===''?'Pendiente':esc(typeof ans[id]==='object'?JSON.stringify(ans[id]):String(ans[id]))+unit;
+  const ans=e.answers||{},value=(id,unit='')=>ans[id]===undefined||ans[id]===null||ans[id]===''?'Pendiente':esc(formatContextValue(schema.fields.find(f=>f.Field_ID===id)||{},ans[id]))+unit;
   return '<div class="asis-facts">'
     +'<div><small>Proceso</small><b>'+value('DF011')+'</b></div>'
     +'<div><small>Empieza cuando</small><b>'+value('DF014')+'</b></div>'
@@ -529,10 +529,7 @@ function asisOverview(e,steps,fr){
     +'</div>';
 }
 function asisMapPage(e,steps,fr){
-  const start=processBoundaryValue(e,'DF014','Inicio pendiente','DF012'),finish=processBoundaryValue(e,'DF015','Fin pendiente','DF013');
-  const flow=steps.some(processDecisionStep)?processGraphHtml(e,steps,fr,start,finish):
-    '<div class="flow-canvas client-process-canvas"><div class="flow-track">'
-    +flowBoundaryNode('start',start)+flowIntermediateNodes(e,steps,fr)+flowBoundaryNode('end',finish)+'</div></div>';
+  const flow=sessionCanvas(clientProcessMap(e),false);
   return '<div data-process-engagement="'+attr(e.id)+'">'+asisOverview(e,steps,fr)
     +'<div class="asis-map-hint">Este es el proceso que estamos analizando. Para añadir, editar o eliminar elementos, utiliza las cuatro opciones del menú de la izquierda.</div>'
     +flow+'</div>';
