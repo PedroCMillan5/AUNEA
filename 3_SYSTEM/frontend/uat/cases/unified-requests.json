@@ -264,7 +264,8 @@
       ],
       "yes": 3,
       "no": 4,
-      "condition": "La petición no compromete gasto superior a 2.000 euros"
+      "condition": "La petición compromete gasto superior a 2.000 euros",
+      "exceptionCondition": "La petición no compromete gasto superior a 2.000 euros"
     },
     {
       "name": "Validar presupuesto excepcional",
