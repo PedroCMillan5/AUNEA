@@ -302,6 +302,8 @@ function addEconomic(preselectedSteps=[]){
   document.getElementById('econDriver')?.addEventListener?.('change',()=>{if(serverProjection){const suggestion=economicProjectionForDriver(serverProjection,document.getElementById('econDriver')?.value);for(const [field,value] of [['econActive',suggestion?.active],['econWait',suggestion?.wait]]){const input=document.getElementById(field);if(!input)continue;input.disabled=!!suggestion;if(suggestion)input.value=Number(value||0).toFixed(2);else if(input.dataset?.autoDerived==='true')input.value='';if(input.dataset)input.dataset.autoDerived=suggestion?'true':'false';}}else refresh()});
   refresh();
 }
-const __auneaEconomicsRateBindForms=bindForms;
-bindForms=function(){__auneaEconomicsRateBindForms();const button=document.getElementById('saveEconomicRoleRates');if(button)button.onclick=saveEconomicRoleRates;document.querySelectorAll('[data-econ-apply-rate]').forEach(b=>b.onclick=()=>applyEconomicRoleRate(Number(b.dataset.econApplyRate)));};
+if(typeof bindForms==='function'){
+  const __auneaEconomicsRateBindForms=bindForms;
+  bindForms=function(){__auneaEconomicsRateBindForms();const button=document.getElementById('saveEconomicRoleRates');if(button)button.onclick=saveEconomicRoleRates;document.querySelectorAll('[data-econ-apply-rate]').forEach(b=>b.onclick=()=>applyEconomicRoleRate(Number(b.dataset.econApplyRate)));};
+}
 // [AUNEA-FE-ECON-CAPTURE-030] END
