@@ -487,6 +487,31 @@ function processContinuityContext(e){
     +'</div><small>Estos datos vienen de Alcance y Demanda. Para corregirlos, vuelve a su etapa: aquí no se crean copias.</small></div>';
 }
 /* [AUNEA-FE-PROC-CONTINUITY-046] END */
+
+/* [AUNEA-FE-PROC-REVIEW-047] START — PG09 reads the same live process entities, never a duplicate map. */
+function processReadOnlyJourney(e){
+  const steps=activeSteps(e),fr=activeFrictions(e),risks=e.risks||[],economic=e.economicInputs||[];
+  const name=id=>id==='__END__'?'Fin del proceso':steps.find(x=>x.id===id)?.step_name||'Ruta por completar';
+  const entries=steps.map((step,i)=>{
+    const frs=fr.filter(x=>normalizeArray(x.affected_steps).includes(step.id));
+    const rs=risks.filter(x=>normalizeArray(x.step_ids).includes(step.id));
+    const es=economic.filter(x=>normalizeArray(x.step_ids).includes(step.id));
+    const branch=processDecisionStep(step)
+      ?'<p><b>Si se cumple:</b> '+esc(name(step.normal_next_step))+' · <b>Si no:</b> '+esc(name(step.exception_path?.destination_step))+'</p>'
+      :'<p><b>Después:</b> '+esc(name(step.normal_next_step||steps[i+1]?.id||'__END__'))+'</p>';
+    return '<div class="notice" data-review-step="'+attr(step.id)+'"><b>'+(i+1)+'. '+esc(step.step_name||'Paso sin nombre')+'</b>'
+      +'<p>'+esc(labelFrom('OS_ACTOR_ROLE',step.actor)||'Responsable pendiente')+' · '+num(step.active_time)+' min de trabajo · '+num(step.wait_time)+' min de espera</p>'
+      +branch
+      +'<p><b>Problemas:</b> '+(frs.length?frs.map(x=>esc(x.client_label||labelFrom('OS_FRICTION_TYPE',x.friction_type))).join('; '):'Ninguno registrado')
+      +' · <b>Riesgos:</b> '+rs.length+' · <b>Datos de impacto:</b> '+es.length+'</p></div>';
+  }).join('');
+  return '<div data-process-review="true"><h3>Así funciona hoy el proceso</h3>'
+    +processContinuityContext(e)
+    +'<p><b>Recorrido:</b> se muestran los pasos y las relaciones que ya has registrado. Las rutas sin completar quedan identificadas.</p>'
+    +(entries||'<div class="notice warn">Todavía no hay pasos intermedios registrados.</div>')
+    +'</div>';
+}
+/* [AUNEA-FE-PROC-REVIEW-047] END */
 function clientProcessView(e,steps,fr,tab='cliente'){
   const riskCount=(e.risks||[]).length,econCount=(e.economicInputs||[]).length,company=(typeof companyById==='function'?companyById(e.companyId)?.name:'')||e.answers?.DF001||'Empresa',processName=e.answers?.DF011||e.processName||'Proceso sin nombre';
   const clientBar=`<div class="client-process-topbar"><img src="./assets/brand/Logo.png" alt="AUNEA"><div class="client-process-context"><span>${esc(company)}</span><b>${esc(processName)}</b></div><div class="client-process-state"><span>Sesión de diagnóstico</span><b>Editor compartido</b></div></div>`;
