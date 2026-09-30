@@ -405,4 +405,13 @@ test('multi-actor inputs may retain their hours but never receive a blended rate
   assert.equal(e.economicInputs[0].capacity_cost_rate_eur_hour,null);
 });
 
+test('legacy evidenced economic rates stay reviewable when no DF076 table has yet been captured',()=>{
+  const ctx=makeCtx(),e=ctx.__eng;e.answers={};
+  e.processSteps=[{id:'S1',status:'ACTIVE',actor:'ADMIN'}];
+  e.economicInputs=[{step_ids:['S1'],annual_active_hours:10,capacity_cost_rate_eur_hour:24,evidence_type:'CLIENT_DECLARED'}];
+  ctx.activeSteps=x=>x.processSteps;
+  assert.equal(ctx.economicRoleRateIssues(e).length,0,'absence of a new role-rate table is not a contradiction');
+  e.answers.DF076=[{role:'ADMIN',eur_hour:26,evidence_type:'MEASURED'}];
+  assert.equal(ctx.economicRoleRateIssues(e).length,1,'a documented conflicting tariff must be explicitly reviewed');
+});
 // [AUNEA-UAT-ECON-010] END
