@@ -492,7 +492,7 @@ function clientProcessView(e,steps,fr,tab='cliente'){
     <button class="client-rail-item ${tab==='impacto'?'active':''}" data-process-tab="impacto"><b>Impacto económico</b><span>${econCount}</span></button></aside>`;
   const key=processLayerKeySafe(tab),layer=processLayerState(e),labels={map:'mapa AS-IS',frictions:'fricciones y evidencia',risks:'riesgos y controles',impact:'impacto económico'},done=!!layer[key];
   const confirm=`<div class="flow-confirm"><div><b>${done?'Capa confirmada':'Confirmación pendiente'}</b><div class="field-help">${esc(labels[key])}</div></div><button class="btn ${done?'btn-outline':'btn-primary'}" id="confirmAsIs">${done?'Reconfirmar':'Confirmar'} ${esc(labels[key])}</button></div>`;
-  return section('Editor con cliente','Mapa, fricciones, riesgos e impacto se editan sobre el mismo contexto.',clientBar+`<div class="client-process-workspace">${layerRail}<div class="client-process-main">${sequence}${lineage}${clientLayerBody(e,steps,fr,tab)}${confirm}${nextAction}</div></div>`);
+  return section('Editor con cliente','Mapa, fricciones, riesgos e impacto se editan sobre el mismo contexto.',clientBar+`<div class="client-process-workspace" data-process-engagement="${attr(e.id)}">${layerRail}<div class="client-process-main">${sequence}${lineage}${clientLayerBody(e,steps,fr,tab)}${confirm}${nextAction}</div></div>`);
 }
 function stepsEditor(e,steps,fr){
   const discrepancies=stepOrderDiscrepancies(steps);
