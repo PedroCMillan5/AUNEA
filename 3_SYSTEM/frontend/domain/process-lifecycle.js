@@ -39,6 +39,7 @@ function confirmProcessLayer(tab){
     const start=e.answers?.DF014,finish=e.answers?.DF015,hasActive=(e.processSteps||[]).some(x=>x.status!=='SUPERSEDED');
     if((!start||!finish)&&!hasActive)return toast('Define los límites inicial y final o añade al menos un paso antes de confirmar el mapa.');
   }
+  if(key==='impact'&&typeof economicRoleRateIssues==='function'&&economicRoleRateIssues(e).length)return toast('Algunos registros económicos usan un coste distinto del perfil actual. Revisa y actualiza esos importes antes de confirmar el impacto.');
   const x=processLayerConfirmations(e);x[key]=true;x[key+'_at']=now();
   if(allProcessLayersConfirmed(e)){
     e.confirmedAsIs=true;e.answers.DF093='YES';e.asIsConfirmedAt=now();
