@@ -151,11 +151,17 @@ test('render retains actual horizontal and vertical map scroll across an in-plac
   const content={set innerHTML(v){canvas={scrollLeft:0,scrollTop:0};workspace={dataset:{processEngagement:'ENG-1'}};this.value=v},get innerHTML(){return this.value}};
   const document={querySelector:q=>q==='.flow-canvas'?canvas:q==='[data-process-engagement]'?workspace:null,
     getElementById:q=>q==='content'?content:null,documentElement:{classList:{toggle(){}}},body:{classList:{toggle(){}}}};
+  const frames=[];
   const ctx={document,state:{activePage:'proceso'},pages:{proceso:()=>'<div>Mapa AS-IS</div>'},
     currentEng:()=>study,renderNav(){},updateHeader(){},bindCommon(){},postBind(){},
-    publishSessionSnapshot(){},toast(){},advanceEngagementTo(){}};
+    requestAnimationFrame:fn=>{frames.push(fn)},publishSessionSnapshot(){},toast(){},advanceEngagementTo(){}};
   vm.createContext(ctx);vm.runInContext(snippet,ctx);
-  ctx.render();
+  // Changing from Risks to Impact must retain the same flow position after graph layout.
+  study.processTab='impacto';ctx.render();
+  assert.equal(canvas.scrollLeft,0,'Impact may create a new canvas before it is measured');
+  assert.equal(frames.length,1);
+  frames.shift()();assert.equal(frames.length,1);
+  frames.shift()();
   assert.equal(canvas.scrollLeft,640);assert.equal(canvas.scrollTop,70);
   assert.equal(study.processTab,'fricciones');
   ctx.state.activePage='diagnostico';ctx.pages.diagnostico=()=>'<div>Diagnóstico</div>';
