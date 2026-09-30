@@ -219,6 +219,9 @@ function renderNav(){
 }
 // [AUNEA-FE-PROC-VIEWPORT-052] START — Keep AS-IS viewport through in-place redraws.
 function render(){
+  // The approved client-first workspace reuses the current Engagement and existing CRUD modals.
+  // Its fullscreen chrome is presentation-only; the read-only #session is unaffected.
+  document.body.classList.toggle('mode-process-editor',state.uiMode==='CLIENT_EDITOR');
   const previousCanvas=document.querySelector('.flow-canvas');
   const previousWorkspace=document.querySelector('[data-process-engagement]');
   const sameProcess=state.activePage==='proceso'&&previousCanvas&&previousWorkspace?.dataset.processEngagement===currentEng()?.id;
