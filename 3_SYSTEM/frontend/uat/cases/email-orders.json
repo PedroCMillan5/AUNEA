@@ -261,8 +261,8 @@
         "STATUS",
         "DOCUMENT"
       ],
-      "yes": 3,
-      "no": 5,
+      "yes": 5,
+      "no": 3,
       "condition": "Stock insuficiente o referencia de cliente inconsistente"
     },
     {
