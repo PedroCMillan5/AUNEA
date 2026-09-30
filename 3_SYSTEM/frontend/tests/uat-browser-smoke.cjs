@@ -44,6 +44,8 @@ async function main(){
    const chosen=await page.evaluate(()=>state.engagements.find(e=>e.id===state.activeEngagementId).processTab);
    assert.equal(chosen,'impacto',id+' switched to Pasos unexpectedly');
    await page.screenshot({path:path.join(outDir,id.toLowerCase()+'.png'),fullPage:true});
+   // Session rail is contextual: return through Inicio before opening system UAT again.
+   await page.locator('[data-page="inicio"]').first().click();
    await page.locator('[data-page="uat"]').click();
   }
   await page.reload({waitUntil:'domcontentloaded'});
