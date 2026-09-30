@@ -77,4 +77,51 @@ test('layer confirmations require map, frictions, risks and impact before sealin
   assert.equal(e.answers.DF093,'YES');
   assert.ok(e.asIsConfirmedAt);
 });
+
+test('changing a real upstream session answer after PG09 reopens the shared AS-IS and preserves its sealed history',()=>{
+  const e={id:'E1',status:'Trabajo interno',answers:{DF014:'Inicio',DF015:'Fin',DF021:100,DF022:'MONTH',DF093:'YES'},
+    processSteps:[{id:'S1',status:'ACTIVE',active_time:10}],frictions:[],risks:[],economicInputs:[],
+    layerConfirmations:{map:true,frictions:true,risks:true,impact:true},confirmedAsIs:true};
+  const ctx=makeCtx(e);
+  const historical=ctx.sealConfirmedSnapshot(e,'primera confirmación');
+  const source=fs.readFileSync(path.join(root,'core/state.js'),'utf8');
+  const match=source.match(/function setAnswer\(fid,value\)\{[\s\S]*?\n\}(?=\nfunction normalizeArray)/);
+  assert.ok(match,'test must exercise the real shared setter, not a mock');
+  let invalidated=0;
+  ctx.invalidateDerivedState=()=>{invalidated++};
+  ctx.refreshCaptureProgress=()=>{};
+  vm.runInContext(match[0],ctx);
+  ctx.setAnswer('DF021',200);
+  assert.equal(e.answers.DF021,200);
+  assert.equal(e.confirmedAsIs,false,'the previous closure cannot remain confirmed after its volume changes');
+  assert.equal(e.answers.DF093,'');
+  for(const layer of ['map','frictions','risks','impact'])
+    assert.equal(e.layerConfirmations[layer],false,layer+' requires renewed confirmation');
+  assert.equal(ctx.hasConfirmedSnapshot(e),false,'historical handoff is not a live one');
+  assert.equal(ctx.engagementOfRecord(e),e,'internal work cannot silently use the old capture');
+  assert.equal(e.confirmedSnapshots.length,1);
+  assert.equal(e.confirmedSnapshots[0],historical,'old version is not replaced');
+  assert.equal(historical.answers.DF021,100,'historical value must remain as confirmed');
+  assert.equal(invalidated>0,true);
+  assert.equal(e.diagnosticOutput,undefined);
+});
+
+test('an unchanged answer leaves existing layer confirmation untouched, while changing a partially confirmed session reopens it',()=>{
+  const e={answers:{DF021:100,DF022:'MONTH',DF093:''},processSteps:[],frictions:[],risks:[],economicInputs:[],
+    layerConfirmations:{map:true,frictions:true,risks:false,impact:false},confirmedAsIs:false};
+  const ctx=makeCtx(e);
+  const source=fs.readFileSync(path.join(root,'core/state.js'),'utf8');
+  const match=source.match(/function setAnswer\(fid,value\)\{[\s\S]*?\n\}(?=\nfunction normalizeArray)/);
+  assert.ok(match);
+  let invalidated=0;ctx.invalidateDerivedState=()=>{invalidated++};ctx.refreshCaptureProgress=()=>{};
+  vm.runInContext(match[0],ctx);
+  ctx.setAnswer('DF021',100);
+  assert.equal(e.layerConfirmations.map,true);
+  assert.equal(e.layerConfirmations.frictions,true);
+  assert.equal(invalidated,0,'repeat events are not new capture changes');
+  ctx.setAnswer('DF021',200);
+  assert.equal(e.layerConfirmations.map,false);
+  assert.equal(e.layerConfirmations.frictions,false);
+  assert.equal(invalidated>0,true);
+});
 // [AUNEA-UAT-PROC-LIFECYCLE-030] END
