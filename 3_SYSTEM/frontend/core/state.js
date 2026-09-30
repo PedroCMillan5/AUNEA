@@ -214,7 +214,12 @@ function renderNav(){
   }
   n.innerHTML=out.join('');
 }
+// [AUNEA-FE-PROC-VIEWPORT-052] START — Keep AS-IS viewport through in-place redraws.
 function render(){
+  const previousCanvas=document.querySelector('.flow-canvas');
+  const previousWorkspace=document.querySelector('[data-process-engagement]');
+  const sameProcess=state.activePage==='proceso'&&previousCanvas&&previousWorkspace?.dataset.processEngagement===currentEng()?.id;
+  const previousViewport=sameProcess?{left:previousCanvas.scrollLeft,top:previousCanvas.scrollTop}:null;
   const companiesViewport=state.activePage==='empresas';
   document.documentElement.classList.toggle('page-companies',companiesViewport);
   document.body.classList.toggle('page-companies',companiesViewport);
@@ -222,13 +227,18 @@ function render(){
   const fn=pages[state.activePage]||pages.inicio;
   document.getElementById('content').innerHTML=fn();
   bindCommon();postBind();
+  if(previousViewport){
+    const canvas=document.querySelector('.flow-canvas');
+    if(canvas){canvas.scrollLeft=previousViewport.left;canvas.scrollTop=previousViewport.top;}
+  }
+  // [AUNEA-FE-PROC-VIEWPORT-052] END
   // Republish the client-safe projection on every render. Navigating between stages changes what the
   // client should be seeing but never goes through markDirty, so relying on autosave alone left the
   // shared window frozen on whichever stage it was opened at. The spec is explicit that a manual
   // refresh must not be the pattern of use (90MIN UI SPEC §3.3).
   if(typeof publishSessionSnapshot==='function')publishSessionSnapshot(currentEng());
 }
-function setPage(page){if(['diagnostico','proceso','resultados','tobe','comparacion','revision','modoresultados','implementacion','recomendacion','escenarios','quote'].includes(page)&&!currentEng()){toast('Abre o crea un estudio antes.');state.activePage='estudios';render();return}const e=currentEng(),previousPage=state.activePage;if(page==='diagnostico'&&e&&typeof advanceEngagementTo==='function')advanceEngagementTo(e,'Sesión 1','apertura de la primera sesión');if(page==='proceso'&&e&&previousPage!=='proceso')e.processTab='cliente';state.activePage=page;render()}
+function setPage(page){if(['diagnostico','proceso','resultados','tobe','comparacion','revision','modoresultados','implementacion','recomendacion','escenarios','quote'].includes(page)&&!currentEng()){toast('Abre o crea un estudio antes.');state.activePage='estudios';render();return}const e=currentEng(),previousPage=state.activePage;if(page==='diagnostico'&&e&&typeof advanceEngagementTo==='function')advanceEngagementTo(e,'Sesión 1','apertura de la primera sesión');if(page==='proceso'&&e&&!['cliente','fricciones','riesgos','impacto'].includes(e.processTab))e.processTab='cliente';state.activePage=page;render()}
 function goToProcessFromStage(){const e=currentEng();if(e){state.returnTo={page:'diagnostico',stageId:e.stageId};e.processTab='cliente'}setPage('proceso')}
 function returnToStage(){const e=currentEng(),rt=state.returnTo;if(e&&rt)e.stageId=rt.stageId;state.returnTo=null;setPage('diagnostico')}
 // screenId is the approved reference a screen must reproduce (e.g. "I90-00-01"). It is internal
