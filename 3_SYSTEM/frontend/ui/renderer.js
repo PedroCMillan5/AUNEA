@@ -48,22 +48,26 @@ const EXCLUSIVE_OPTION_BY_FIELD=Object.freeze({
 });
 function exclusiveValueFor(fid){return EXCLUSIVE_OPTION_BY_FIELD[fid]?.value}
 function hasCanonicalOtherOption(items){return (items||[]).some(x=>String(x.value).toUpperCase()==='OTHER'||['otro','otra'].includes(String(x.label||'').trim().toLowerCase()))}
-function multiChoices(fid,items,val,{detail=false,other=false}={}){
+function multiChoices(fid,items,val,{detail=false,other=false,linkedSteps=null}={}){
   const arr=selectedValues(val);
   const exclusiveValue=exclusiveValueFor(fid);
   const catalogOther=other?items.find(x=>String(x.value).toUpperCase()==='OTHER'||String(x.label).trim().toLowerCase()==='otro'||String(x.label).trim().toLowerCase()==='otra'):null;
-  const html=items.map(x=>{
+  const html=(linkedSteps&&catalogOther?items.filter(x=>x!==catalogOther):items).map(x=>{
     const isExclusive=exclusiveValue!==undefined&&String(x.value)===String(exclusiveValue);
     const isOther=!!catalogOther&&x===catalogOther;
     return `<div class="choice"><input type="checkbox" id="${fid}_${attr(x.value)}" value="${attr(x.value)}" data-multi="${fid}" ${isExclusive?'data-exclusive="1"':''} ${isOther?`data-other-toggle="${fid}"`:''} ${arr.includes(String(x.value))?'checked':''}><label for="${fid}_${attr(x.value)}">${esc(x.label)}</label></div>`;
   }).join('');
+  // DF088 joins the existing process-step checkboxes in the same flex flow, while preserving
+  // their distinct data-multi key / answerDetails write target. Only the visual row is shared.
+  const linkedHtml=linkedSteps?(linkedSteps.items||[]).map(x=>`<div class="choice"><input type="checkbox" id="${linkedSteps.fid}_${attr(x.value)}" value="${attr(x.value)}" data-multi="${linkedSteps.fid}" ${selectedValues(linkedSteps.val).includes(String(x.value))?'checked':''}><label for="${linkedSteps.fid}_${attr(x.value)}">${esc(x.label)}</label></div>`).join(''):'';
+  const relocatedOther=linkedSteps&&catalogOther?`<div class="choice"><input type="checkbox" id="${fid}_${attr(catalogOther.value)}" value="${attr(catalogOther.value)}" data-multi="${fid}" data-other-toggle="${fid}" ${arr.includes(String(catalogOther.value))?'checked':''}><label for="${fid}_${attr(catalogOther.value)}">${esc(catalogOther.label)}</label></div>`:'';
   const syntheticOther=other&&!catalogOther;
   const otherOpen=other&&(catalogOther?arr.includes(String(catalogOther.value)):!!getAnswerDetail(fid));
   const otherToggle=syntheticOther?`<div class="choice"><input type="checkbox" id="${fid}__other_toggle" data-other-toggle="${fid}" ${otherOpen?'checked':''}><label for="${fid}__other_toggle">Otro</label></div>`:'';
   const detailBox=other
     ?`<div class="detail-wrap" data-detail-wrap="${fid}"${otherOpen?'':' style="display:none"'}>${detailInput(fid,'Especifica la opción')}</div>`
     :(detail?detailInput(fid,'Detalle / condición relevante'):'');
-  return `<div class="choice-grid">${html}${otherToggle}</div>${detailBox}`;
+  return `<div class="choice-grid">${html}${linkedHtml}${relocatedOther}${otherToggle}</div>${detailBox}`;
 }
 // attrName lets a caller reuse this markup outside the generic answers-writing [data-segment] binder
 // (app-core.js) — e.g. the Process Step modal's automation_state, which must write to the step object,
@@ -181,6 +185,7 @@ function renderControl(f,val,opts,e){
   if(c==='MULTISELECT_WITH_OTHER'||c==='MULTICHECK_WITH_OTHER')return multiChoices(fid,opts,val,{other:true});
   if(c==='MULTISELECT_WITH_DETAIL'||c==='MULTICHECK_WITH_DETAIL'||c==='MULTISELECT_WITH_REFERENCE')return hasCanonicalOtherOption(opts)?multiChoices(fid,opts,val,{other:true}):multiChoices(fid,opts,val,{detail:true});
   if(c==='MULTISELECT_WITH_PRIORITY')return hasCanonicalOtherOption(opts)?multiChoices(fid,opts,val,{other:true}):multiChoices(fid,opts,val,{detail:true});
+  if(fid==='DF088'&&c==='MULTISELECT_WITH_STEP_REFERENCE')return multiChoices(fid,opts,val,{other:true,linkedSteps:{fid:`${fid}__steps`,items:stepOptions(e),val:answerDetails(e)[`${fid}__steps`]||[]}});
   if(c==='MULTISELECT_WITH_STEP_LINK'||c==='MULTISELECT_WITH_STEP_REFERENCE'||c==='STEP_ACTION_MULTISELECT')return multiChoices(fid,opts,val,hasCanonicalOtherOption(opts)?{other:true}:{detail:true})+stepMulti(`${fid}__steps`,e,answerDetails(e)[`${fid}__steps`]||[]);
   if(c==='STEP_MULTISELECT_VISUAL'||c==='STEP_MULTISELECT_WITH_FRICTION')return stepMulti(fid,e,val);
   if(c==='STEP_REFERENCE_SINGLE')return stepSingle(fid,e,val);
