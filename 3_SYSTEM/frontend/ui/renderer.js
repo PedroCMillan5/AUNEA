@@ -63,7 +63,7 @@ function multiChoices(fid,items,val,{detail=false,other=false}={}){
   const detailBox=other
     ?`<div class="detail-wrap" data-detail-wrap="${fid}"${otherOpen?'':' style="display:none"'}>${detailInput(fid,'Especifica la opción')}</div>`
     :(detail?detailInput(fid,'Detalle / condición relevante'):'');
-  return `<div class="choice-grid">${html}${otherToggle}</div>${detailBox}`;
+  return `<div class="choice-grid"${fid==='DF088'?' data-choice-layout="no-automate"':''}>${html}${otherToggle}</div>${detailBox}`;
 }
 // attrName lets a caller reuse this markup outside the generic answers-writing [data-segment] binder
 // (app-core.js) — e.g. the Process Step modal's automation_state, which must write to the step object,
