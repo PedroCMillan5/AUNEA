@@ -25,7 +25,7 @@ Los casos de facturas, peticiones unificadas y emails de pedido son **sintético
 |---|---|---|---|
 | H01 | DF047 y DF049 | La copia idéntica `inputs+outputs` se sustituyó por proyecciones diferenciadas del mismo ProcessStep: entradas/orígenes e información estructurada para DF047; artefactos documentales de entradas/salidas para DF049. Tipos como PDF, email y Excel pueden coincidir legítimamente. | MITIGACIÓN VERIFICADA en tres casos; permanece REVIEW la identificación individual/adjuntos y uso real de artefactos mixtos. No se inventan nuevas preguntas ni evidencias. |
 | H02 | DF028 y DF040 | Demanda presenta la tasa global declarada junto a cada DF040 de pasos vigentes, aclara que los casos pueden solaparse y no calcula su suma. Cambiar un DF040 no reemplaza la declaración global. | DIFERENCIACIÓN/PROPAGACIÓN VERIFICADA; conciliación de población/evidencia permanece REVIEW hasta datos de incidencia únicos. |
-| H03 | DF080/081 vs acciones CHASE/REPORT y tiempos de pasos | El Master dice DERIVE_THEN_VALIDATE; los datos ficticios declaran valores, pero no garantizan que sean tiempo adicional. | ABIERTO: no anualizar ni sumar sin deduplicación por evento/scope. |
+| H03 | DF080/081 vs acciones CHASE/REPORT y tiempos de pasos | En S07 la UI muestra los pasos y fricciones que ya contienen estos trabajos; UAT3 presenta los valores concretos de cada caso junto al contexto. No se trasladan automáticamente a EconomicInput ni se les atribuye ahorro. | MITIGACIÓN VISIBLE Y PROBADA; reconciliación de ámbito/evidencia antes de cualquier suma permanece REVIEW. |
 | H04 | Risk → ProcessStep → backend | `Risk.step_ids` existía en estudio, pero el adaptador lo omitía y `RiskInput` no lo recibía. DEC-065 aprueba su relación técnica. | **CORREGIDO**: se incluye en frontend y contrato Pydantic, sin alterar Risk Engine ni scoring. Tests de ida/vuelta. |
 | H05 | DF026 frente a mapa | Facturas declara 72 h, peticiones 40 h, pedidos 15 h; los tiempos de espera por paso no acreditan todo ese ciclo end-to-end. | ABIERTO: pedir evidencia de colas/ciclo; no forzar que la suma equivalga. |
 | H06 | ED12/ED14, DF078/079 | Los gastos atribuibles y tasas/hora son entradas sintéticas; no existe ahorro de caja acreditado. La prueba backend consume los tres JSON y anualiza sin doble conteo de fricciones. | Validada proyección temporal de prueba; NO validado ahorro de caja, ROI ni reconciliación financiera por evento. |
@@ -55,3 +55,25 @@ Fuente de contraste: los tres JSON UAT3, Diagnostic Master v1.2 y DEC-050/065. S
 Un artefacto puede aparecer legítimamente en ambas vistas; el objetivo no es una partición excluyente sino **dos finalidades canónicas distintas**. Los códigos del catálogo OS_ARTIFACT_TYPE no representan instancias individuales, origen documental ni adjuntos vinculados; no se declara que H01 esté resuelto para todos los documentos reales. DF028 y DF040 no comparten forzosamente denominador, y una suma de errores por paso podría contar un mismo caso más de una vez: no se fabrica reconciliación ni porcentaje derivado. Se mantiene PG03 en REVIEW, sin modificar su composición FROZEN/otras pantallas ni reglas económicas del Bloque 3.
 
 QA dirigida: nueva prueba del runtime para los tres expedientes que inspecciona las dos proyecciones, los tres DF028, la actualización al cambiar datos de paso y write-through DF001. Gate y captura navegador se consignan sólo tras confirmar el estado final del commit.
+
+## Bloque 3 — Fricciones, riesgos e impacto · 30/09/2026
+
+Se audita contra Diagnostic Master v1.2, Simulator CANONICAL v1.14 y DEC-033/050/065/068. No se modifica el Economics Engine ni se introducen reglas o porcentajes nuevos. Los tres JSON de UAT3 se envían al endpoint REAL de proyección temporal con las seis etapas y las tres fricciones originales de cada uno. A diferencia de la comprobación inicial (no nulo), se contrastan valores numéricos exactos calculados independientemente.
+
+| Caso sintético | Casos/año | Activo de pasos (h/año) | Exposición a espera (h/año) | Retrabajo ponderado, desglose (h/año) | Fricción adicional (h/año) | DF026 declarado (elapsed) |
+|---|---:|---:|---:|---:|---:|---|
+| Facturas | 1.920 | 848,00 | 10.560,00 | 54,40 | 0 | 72 h |
+| Peticiones unificadas | 1.320 | 698,50 | 5.280,00 | 27,72 | 0 | 40 h |
+| Tickets desde email | 3.720 | 1.485,52 | 6.435,60 | 75,64 | 0 | 15 h |
+
+**Interpretación obligatoria:** `annual_total_active_hours` contiene trabajo activo base más fricciones `ADDITIONAL` acreditadas, NO añade de nuevo el retrabajo (es un desglose). Las esperas son exposición acumulada por paso y jamás se identifican con tiempo transcurrido end-to-end DF026 ni con coste de trabajo activo. Los tres ejemplos incluyen únicamente relaciones `INCLUDED`/`BREAKDOWN`; las nueve fricciones no generan horas nuevas. Una fricción puede relacionarse con varios pasos pero sólo un propietario temporal cuenta su evento.
+
+### Trazabilidad y dinero
+- Los seis riesgos de los tres ejemplos mantienen `step_ids` en el Engagement y en `RiskInput` del backend, sin alterar su scoring. Las nueve fricciones conservan `affected_steps` y `time_attribution.step_id`, que pertenece a sus pasos afectados.
+- DF080/DF081 se muestran como declaración sintética y con contexto derivado de los pasos `CHASE`/`REPORT` y fricciones ya capturadas; no se convierten automáticamente en horas `ADDITIONAL`, ahorro o cash saving. La superposición de poblaciones/eventos H03 sigue necesitando evidencia antes de monetizarse.
+- ED14 tarifa/hora de escenario: 26 €/h (facturas), 24 €/h (peticiones), 23 €/h (tickets). ED12 coste atribuible de herramientas declarado: 960 €/año, 720 €/año, 1.080 €/año respectivamente. Son declaraciones SINTÉTICAS separadas, sin `annual_active_hours` monetizados ni beneficio, y no se presume eliminable el coste de software.
+- Prueba de duplicación de pérdida monetaria sin identidad de evento: el backend detecta el solapamiento `EAR-006/012` y no acepta sumar dos entradas como pérdida acreditada. DF063/DF082 permanecen sujetos a conciliación económica específica.
+- H05 continúa ABIERTO: 72/40/15 h declaradas no se sustituyen por la suma de esperas del grafo. Faltan datos observados de cola, concurrencia y distribución de casos para reconciliar duración de ciclo. **No hay ROI ni ahorro de caja validado.**
+
+### Resultado de aceptación del Bloque 3
+La QA dirigida ejecuta el mismo frontend runtime con las tres empresas/estudios, verifica los avisos visibles DF080/DF081, trazabilidad de Risk y que EconomicInput no contiene ahorros inventados. El backend contrasta valores exactos de proyección y las tres entradas ED12/ED14 de escenario y detecta una pérdida monetaria duplicada artificial de control. Permanecen pendientes de evidencia empresarial H03/H05 y la monetización oficial; no son un PASS de diagnóstico final ni cierre de PG09. No se inicia Bloque 4 con este trabajo.
