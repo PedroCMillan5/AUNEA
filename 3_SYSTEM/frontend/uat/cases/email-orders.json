@@ -169,7 +169,7 @@
     ],
     "DF092": "6K_15K",
     "DF097": "2026-10-16",
-    "DF099": "YES",
+    "DF099": "UNKNOWN",
     "DF100": "Escenario sintético de 310 emails de pedido al mes: 12% requiere resolver referencia o stock. El identificador del hilo original debe vincularse al mismo ticket, no generar tickets duplicados por cada respuesta."
   },
   "details": {
