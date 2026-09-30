@@ -12,7 +12,7 @@ function uat3Step(c,step,i){
   const isDecision=step.type==='ST04'||step.type==='ST05';
   const next=step.next==='END'?'__END__':Number.isInteger(step.next)?ids(step.next):ids(i+1);
   let exception_path=null;
-  if(step.type==='ST04')exception_path={type:'OTHER',condition:step.condition||'No cumple la condición afirmativa',destination_step:ids(step.no),owner:step.actor};
+  if(step.type==='ST04')exception_path={type:'OTHER',condition:step.exceptionCondition||'No cumple la condición afirmativa',destination_step:ids(step.no),owner:step.actor};
   if(step.type==='ST05')exception_path={type:'MANUAL_OVERRIDE',condition:'Aprobación denegada o no emitida: cerrar sin ejecutar la operación autorizable',destination_step:'__END__',owner:step.actor};
   return {id,status:'ACTIVE',step_name:step.name,step_type:step.type,actor:step.actor,tool:step.tool,
     inputs:step.inputs,outputs:step.outputs,applies_to:{mode:share===100?'ALL':'PERCENT',value:share,condition:''},occurrences_per_case:1,
