@@ -145,7 +145,7 @@ test('friction popup captures approved time attribution without changing existin
 
 test('render retains actual horizontal and vertical map scroll across an in-place layer redraw',()=>{
   const code=fs.readFileSync(path.join(root,'core/state.js'),'utf8');
-  const snippet=code.slice(code.indexOf('// [AUNEA-FE-PROC-VIEWPORT-052] START'),code.indexOf('function goToProcessFromStage()'));
+  const snippet=code.slice(code.indexOf('// ['+'AUNEA-FE-PROC-VIEWPORT-052'+'] START'),code.indexOf('function goToProcessFromStage()'));
   const study={id:'ENG-1',processTab:'fricciones'};
   let canvas={scrollLeft:640,scrollTop:70},workspace={dataset:{processEngagement:'ENG-1'}};
   const content={set innerHTML(v){canvas={scrollLeft:0,scrollTop:0};workspace={dataset:{processEngagement:'ENG-1'}};this.value=v},get innerHTML(){return this.value}};
