@@ -106,4 +106,39 @@ test('audit makes differences in declared cycle time visible for each scenario a
   assert.equal(control.step_type,c.key==='EMAIL'?'ST02':'ST05',c.key+': wrong protected action');
  }
 });
+test('visible Generate click loads all three independent cases without requiring Phase 1 or Phase 2',async()=>{
+ const ctx=scenario(),load={disabled:false,onclick:null},status={textContent:''};
+ ctx.phase1CrmCompletenessReport=()=>({pass:false});ctx.phase2StudyAssociationReport=()=>({pass:false});
+ ctx.document.baseURI='http://127.0.0.1:5500/index.html';
+ ctx.document.getElementById=id=>id==='loadUat3'?load:id==='uat3LoadStatus'?status:null;
+ ctx.URL=URL;
+ ctx.fetch=async url=>{
+  const fixture=cases.find((_,i)=>url.endsWith(['invoices.json','unified-requests.json','email-orders.json'][i]));
+  return fixture?{ok:true,json:async()=>fixture}:{ok:false,status:404};
+ };
+ let saved=0;ctx.persistRecoverySnapshot=()=>{saved++;return true};
+ vm.runInContext('postBind()',ctx);
+ assert.equal(typeof load.onclick,'function','actual button receives a click handler');
+ await load.onclick();
+ assert.equal(ctx.state.engagements.length,3);
+ assert.equal(ctx.state.companies.length,3);
+ assert.equal(ctx.state.contacts.length,6);
+ assert.equal(saved,1,'do not persist intermediate empty state');
+ assert.match(status.textContent,/Cargados y guardados: 3 estudios/);
+ assert.equal(load.disabled,false);
+});
+test('Generate click exposes a missing fixture as visible failure and changes no study data',async()=>{
+ const ctx=scenario(),load={disabled:false,onclick:null},status={textContent:''};
+ ctx.document.baseURI='http://127.0.0.1:5500/index.html';
+ ctx.document.getElementById=id=>id==='loadUat3'?load:id==='uat3LoadStatus'?status:null;
+ ctx.URL=URL;
+ ctx.fetch=async()=>({ok:false,status:404});
+ ctx.console={error(){}};
+ vm.runInContext('postBind()',ctx);
+ await load.onclick();
+ assert.equal(ctx.state.engagements.length,0);
+ assert.match(status.textContent,/Error al generar/);
+ assert.match(status.textContent,/HTTP 404/);
+ assert.equal(load.disabled,false);
+});
  // [AUNEA-UAT-ENDTOEND-120] END
