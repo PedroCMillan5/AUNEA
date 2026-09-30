@@ -152,7 +152,7 @@ function uat3Audit(e){
   add('Demanda reutilizable',Number(e.answers.DF021)>0&&e.answers.DF022==='MONTH'&&Number(e.answers.DF023?.value)>=Number(e.answers.DF021),'DF021+DF022 sustentan la proyección del backend.');
   add('Mapa coherente',steps.length===6&&steps.every(s=>s.step_name&&s.step_type&&s.actor&&s.tool&&Number.isFinite(s.active_time)&&Number.isFinite(s.wait_time)&&Number.isFinite(s.rework_time)&&(s.normal_next_step==='__END__'||stepIds.has(s.normal_next_step))&&(!s.exception_path||s.exception_path.destination_step==='__END__'||stepIds.has(s.exception_path.destination_step))),'Todas las rutas tienen destino real o fin; hay tiempos separados.');
   add('Fricciones vinculadas una sola vez',e.frictions.length===3&&e.frictions.every(f=>f.affected_steps.length&&f.affected_steps.every(id=>stepIds.has(id))&&f.affected_steps.includes(f.time_attribution?.step_id)&&['INCLUDED','BREAKDOWN','ADDITIONAL'].includes(f.time_attribution?.mode)),'Una fricción tiene un owner temporal y puede afectar a varios pasos.');
-  add('Riesgos asociados al mismo AS-IS',e.risks.length===2&&e.risks.every(r=>r.step_ids?.length&&r.step_ids.every(id=>stepIds.has(id))),'No crea otro mapa de pasos.');
+  add('Riesgos asociados al mismo AS-IS y enviados al backend',e.risks.length===2&&e.risks.every(r=>r.step_ids?.length&&r.step_ids.every(id=>stepIds.has(id)))&&typeof normalizeRiskInputs==='function'&&normalizeRiskInputs(e).every((r,i)=>JSON.stringify(r.step_ids)===JSON.stringify(e.risks[i].step_ids)),'DEC-065: step_ids viaja hasta RiskInput sin crear otro mapa ni cambiar la fórmula de riesgo.');
   add('Costes declarados sin ahorro ficticio',e.economicInputs.length===2&&e.economicInputs.every(x=>x.evidence_type==='CLIENT_DECLARED'&&!x.realized_cash_saving_eur_annual&&!x.direct_loss_eur_annual),'ED12 y ED14 son datos del escenario; DF078/079 pertenecen al backend.');
   add('No hay falsa confirmación de cierre',!e.confirmedAsIs&&!e.answers.DF093&&!e.confirmedSnapshots?.length,'Las cuatro capas requieren validación real en el editor.');
   for(const fid of ['DF017','DF046','DF047','DF049','DF050','DF057','DF066','DF067','DF078','DF079','DF085','DF093','DF094','DF095'])
@@ -166,14 +166,14 @@ function uat3Audit(e){
     :'Pedidos: DF026 declara 15 h end-to-end; el mapa registra 30 y 45 min de espera y 240 min sólo para el 12 % con excepción. Validar el resto de ciclo antes de anualizar espera.';
   findings.push(headline);
   const permission=e.answers?.DF099;
-  if(permission==='YES')findings.push('DF099 figura como permiso afirmativo en un supuesto sintético. No debe interpretarse como consentimiento real; confirmar el permiso en una sesión efectiva.');
+  if(permission!=='UNKNOWN')findings.push('DF099 no puede representar un permiso real en una UAT sintética: debe quedar desconocido hasta verificar su alcance.');
   const protectedStep=(e.answerDetails?.DF075__steps||[]).map(id=>steps.find(x=>x.id===id)?.step_name||id);
   findings.push('Control humano DF075 asociado al paso: '+protectedStep.join(', ')+'. Comprobar en el editor que la restricción afecta realmente a ese acto.');
   // Findings reflect actual, existing model wiring; they are NOT fixed by the fixture.
   findings.push('Duplicidad estructural: reusedValue(DF047) y reusedValue(DF049) consumen exactamente inputs+outputs de todos los pasos, aunque sus preguntas distinguen fuentes de datos frente a documentos.');
   findings.push('Posible doble captura: DF028 exige proporción global de error y DF040 ya registra frecuencia por paso. No hay reconciliación canónica automática de ambos universos.');
   findings.push('DF080/081 preguntan tiempos de seguimiento/reporting aunque los pasos contienen acciones CHASE/REPORT y sus tiempos activos. Debe aclararse el solapamiento antes de sumar.');
-  findings.push('El formulario de riesgos conserva referencias a pasos pero RiskInput del backend no tiene step_ids; verificar trazabilidad de punta a punta en el adapter.');
+  findings.push('Risk.step_ids y RiskInput.step_ids ahora conservan la misma referencia técnica al paso (DEC-065); el scoring no se modifica.');
   findings.push('DF078/079 no se rellenan desde datos de UAT: necesitan proyección real del backend. No se simula ROI, ahorro ni evidencia medida.');
   findings.push('La versión AS-IS sigue pendiente de confirmación humana. Ningún estudio cargado se presenta como histórico validado.');
   return {checks,findings,passed:checks.filter(x=>x.pass).length,total:checks.length};
