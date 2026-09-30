@@ -53,9 +53,21 @@ function confirmProcessLayer(tab){
 }
 function confirmAsIs(){confirmProcessLayer(currentEng()?.processTab||'cliente')}
 
+// [AUNEA-FE-ASIS-CLIENT-EDITOR-074] START — Client-first editor on the single Engagement.
+// SOURCE: DEC-050/063: the consultant edits the owner, while #session stays client-safe/read-only.
+// Keep it in this window: no duplicate mutable state and no cross-window navigation/reset.
 function openProcessEditorWindow(){
-  // One consultant map, no second editable "client" window.
-  goToProcessFromStage();
+  const e=currentEng();if(!e)return;
+  if(!['cliente','fricciones','riesgos','impacto'].includes(e.processTab))e.processTab='cliente';
+  state.uiMode='CLIENT_EDITOR';
+  state.activePage='proceso';
+  render();
 }
+function closeProcessEditorWindow(){
+  state.uiMode='INTERNAL';
+  state.activePage='proceso';
+  render();
+}
+// [AUNEA-FE-ASIS-CLIENT-EDITOR-074] END
 
 // [AUNEA-FE-PROC-LIFECYCLE-030] END
