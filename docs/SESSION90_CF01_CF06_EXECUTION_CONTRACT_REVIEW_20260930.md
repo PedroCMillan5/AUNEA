@@ -77,3 +77,11 @@ Conservar IDs y enums técnicos sólo internamente. Interfaz, ayudas, avisos, er
 
 ## Gate de salida
 No cambiar página FROZEN ni diseño global; no modificar preguntas/fields canónicos desde esta nota. Cualquier nuevo dato requiere gobernanza en DATA primero. Sólo después aplicar cambios al código en ramas REVIEW. Sin aprobación y QA específica no promover a CANONICAL, main ni PRODUCTION.
+
+## Ejecución y QA observados (30/09/2026)
+- Rama aislada: `work/cf01-cf06-functional-language-20260930`; PR borrador #4 hacia `work/astra-session90-b04`, sin merge.
+- Cambio funcional aplicado: selector contextual de fricciones al registrar un riesgo. Las opciones se filtran por pasos elegidos y las selecciones fuera de contexto se limpian. No se persiste una relación Risk↔Friction no aprobada por el esquema: el contexto se deriva de step_ids.
+- Copy aplicado exclusivamente en módulos REVIEW de proceso, riesgo e impacto y síntesis de validación: preguntas sencillas, sin alterar identificadores ni valores técnicos almacenados. Los controles dropdown/multicheck mantienen su tipo.
+- QA GitHub Actions run 36716718401 (commit d78aa8ad9ab2c499d740da4905d9c5302a4d7bd9): 357/357 frontend PASS, 0 FAIL. Comparación con rama base: ocho archivos afectados, cero archivos FROZEN modificados.
+- No hay UAT visual nativa Windows/Chrome/Edge acreditada en esta iteración. No se declara backend reejecutado para este cambio de frontend.
+- Pendientes de gobierno: reconciliación de los tres activos B02 REVIEW y de Risk↔Friction si se desea vínculo persistente; no promover a CANONICAL ni PRODUCTION. CF-05 por perfil y CF-06 conciliación integral siguen definidos contractualmente, pero esta iteración no acredita su implementación end-to-end.
