@@ -167,12 +167,12 @@ test('deleting a step cannot silently orphan risks, economic input or time owner
   assert.match(process,/f\.time_attribution\?\.step_id===stepId/);
   assert.match(process,/Cambia primero esas relaciones/);
 });
-test('CF04: choosing a problem does not silently add unrelated affected steps to a risk',()=>{
+test('CF04: risk problems are read-only step context until canonical individual links exist',()=>{
   assert.match(risk,/row\.hidden=!selected\.length\|\|!affected\.some\(id=>selected\.includes\(id\)\)/);
-  assert.match(risk,/if\(row\.hidden&&input\)input\.checked=false/);
+  assert.doesNotMatch(risk,/data-risk-friction="/);
   assert.doesNotMatch(risk,/step_ids\.push\(id\)/);
   assert.doesNotMatch(risk,/linked\.checked=true/);
-  assert.match(risk,/También puedes registrar un riesgo sin elegir ningún problema/);
+  assert.match(risk,/Son datos de contexto/);
 });
 test('CF03/CF05: visible questions explain attribution and economic meaning without changing technical IDs',()=>{
   assert.match(process,/¿Dónde está contabilizado este trabajo extra\?/);
