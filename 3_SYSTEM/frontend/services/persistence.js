@@ -71,7 +71,7 @@ window.addEventListener('storage',ev=>{
         const modalOpen=!!document.querySelector('#modalRoot .modal');
         const localTime=Date.parse(localEng.updatedAt||'')||0;
         const remoteTime=Date.parse(incoming.engagements[i].updatedAt||'')||0;
-        if(modalOpen||localTime>remoteTime)incoming.engagements[i]=localEng;
+        if(modalOpen||state.dirty||localTime>remoteTime){return;}
       }
     }
     state={...incoming,...localUi};
