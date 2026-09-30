@@ -472,7 +472,7 @@ function clientLayerBody(e,steps,fr,tab){
 /* [AUNEA-FE-PROC-CONTINUITY-046] START — Read-only scope and demand carried into every AS-IS layer.
    SOURCE: Diagnostic Master v1.2 DF011–DF030; DEC-050/064/065. No extra editable owner. */
 function processContinuityContext(e){
-  const a=e.answers||{},read=(id,empty='Pendiente')=>a[id]===undefined||a[id]===null||a[id]===''?empty:String(a[id]);
+  const a=e.answers||{},read=(id,empty='Pendiente')=>{const v=a[id];if(v===undefined||v===null||v==='')return empty;const f=(schema?.fields||[]).find(x=>x.Field_ID===id);return typeof formatContextValue==='function'&&f?formatContextValue(f,v):typeof v==='object'?[v.value,v.unit,v.period].filter(x=>x!==undefined&&x!==null&&x!=='').join(' '):String(v)};
   const period=read('DF022','periodo pendiente'),volume=read('DF021');
   const metric=(name,value)=>'<span class="chip"><b>'+esc(name)+':</b> '+esc(value)+'</span>';
   return '<div class="client-process-lineage" data-process-continuity="true"><b>Lo que ya sabemos del proceso</b>'
