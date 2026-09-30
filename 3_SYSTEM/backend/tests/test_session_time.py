@@ -196,3 +196,43 @@ def test_scoped_projection_preserves_multistep_friction_anchors_and_unique_owner
     assert result['annual_friction_additional_hours'] == 0
     request.scope_step_ids = ['MISSING']
     assert project_session_time(request)['status'] == 'INCOMPLETE'
+
+
+def test_three_uat3_fixtures_project_in_backend_without_double_counting_frictions():
+    import json
+    from pathlib import Path
+    directory = Path(__file__).resolve().parents[2] / "frontend" / "uat" / "cases"
+    for filename, expected_cases in [
+        ("invoices.json", 1920), ("unified-requests.json", 1320), ("email-orders.json", 3720)
+    ]:
+        case = json.loads((directory / filename).read_text(encoding="utf-8"))
+        ids = [f"{case['key']}-S{i}" for i in range(len(case["steps"]))]
+        steps = [
+            {"id": ids[i], "step_name": item["name"], "status": "ACTIVE",
+             "applies_to": {"mode": "PERCENT", "value": item["share"]} if "share" in item else {"mode": "ALL"},
+             "occurrences_per_case": 1, "active_time": item["active"], "wait_time": item["wait"],
+             "rework_time": item["rework"], "error_rate": {"mode": "percent", "value": item["error"]}}
+            for i, item in enumerate(case["steps"])
+        ]
+        frictions = [
+            {"id": f"{case['key']}-F{i}", "status": "ACTIVE",
+             "affected_steps": [ids[n] for n in item["steps"]],
+             "time_attribution": {"mode": item["mode"], "step_id": ids[item["owner"]]},
+             "active_time_loss": {"value": item["minutes"]},
+             "frequency": {"mode": "percent", "value": item["frequency"], "period": "case"}}
+            for i, item in enumerate(case["frictions"])
+        ]
+        response = TestClient(app).post("/v1/diagnostic/time-projection", json={
+            "volume": case["answers"]["DF021"], "period": case["answers"]["DF022"],
+            "steps": steps, "frictions": frictions
+        })
+        assert response.status_code == 200, (case["key"], response.text)
+        out = response.json()
+        assert out["annual_cases"] == expected_cases, case["key"]
+        assert out["annual_active_hours"] is not None, (case["key"], out["gaps"])
+        assert out["annual_wait_exposure_hours"] is not None, (case["key"], out["gaps"])
+        assert out["annual_rework_hours"] is not None, (case["key"], out["gaps"])
+        # All nine scenario frictions are INCLUDED or BREAKDOWN; no extra time is invented.
+        assert out["annual_friction_additional_hours"] == 0, (case["key"], out["gaps"])
+        assert out["frictions_pending_overlap_review"] == [], (case["key"], out["gaps"])
+        assert "realized_cash_saving_eur_annual" not in out
