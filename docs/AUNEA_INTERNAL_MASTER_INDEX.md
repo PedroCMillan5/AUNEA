@@ -18,10 +18,10 @@ Repositorio: PedroCMillan5/AUNEA. Backend `3_SYSTEM/backend/`; frontend `3_SYSTE
 AUNEA Internal v2.0.0 permanece REVIEW; la baseline v1.0.4 no queda sustituida por esta auditoría.
 
 - Base remota exacta: `fix/session90-snapshot-invalidation-20260929` en `c4280744f2595decbb859264b46f4fc5573fcaa9`.
-- Rama aislada: `work/astra-session90-b04`. El nombre no autoriza ejecutar B04.
+- Rama única vigente: `reconcile/frontend-v1.0.4-source`. Contiene todo B01/B02/B03, incluida la auditoría publicada originalmente desde Astra. B04 no iniciado.
 - Alcance: auditar/corregir exclusivamente B02/B03 existentes.
 - Informe: [Auditoría B02/B03](SESSION90_B02_B03_AUDIT_20260930.md).
-- QA local: 356/356 frontend, 76/76 backend, integración DOM + HTTP PASS. No equivale a UAT visual/nativa Windows.
+- QA en la rama única: 356/356 frontend y 76/76 backend PASS en Acceptance Gate run 36688583671. Integración DOM + HTTP PASS como script independiente; no equivale a UAT visual/nativa Windows.
 - Handoff: `3_SYSTEM/02_HERRAMIENTAS/simulador/SESSION90_EXECUTION_HANDOFF_20260929.md`.
 - Sin merge a main ni promoción automática.
 
@@ -36,3 +36,7 @@ AUNEA Internal v2.0.0 permanece REVIEW; la baseline v1.0.4 no queda sustituida p
 FROZEN: Inicio, Empresas, Contactos, Interacciones, Oportunidades, Estudios, S01, S02 y S08. La auditoría no cambia páginas, estilos o snapshots protegidos. S03 y editor client-first permanecen REVIEW.
 
 Datos → reglas → interfaz → entregables. Drive = documentación; GitHub = implementación; Airtable = operación viva; entorno cliente = producción. Revisar las fuentes actuales antes de cada cambio. Actualizar decisiones sólo si cambia una regla, estado si cambia materialmente, roadmap si cambia secuencia/dependencias, y registrar hitos en BITACORA. Ningún resultado de esta auditoría promociona los candidatos REVIEW.
+
+## Consolidación de ramas · 30/09/2026
+
+La rama original `reconcile/frontend-v1.0.4-source` avanzó sin force push desde `0ed29e1` hasta `5b8fbc1` (69 commits, sin divergencia). Un commit de preservación histórica `2d12588a` incorpora como ascendencia la antigua rama `tmp-b03-build` sin cambios en archivos ni runtime. `fix/session90-snapshot-invalidation-20260929`, `work/astra-session90-b04` y `tmp-b03-build` son referencias auxiliares pendientes de eliminación remota; nunca bases futuras. `main` permanece intacta. Master Index gobernante de Drive v1.38, ESTADO y BITACORA sincronizados; sin decisión nueva ni variación del ROADMAP. B02/B03 siguen REVIEW y los tres candidatos documentales no se promocionan.
