@@ -46,7 +46,7 @@ test('addEconomic translates the driver-picker label to Spanish and shows an inf
   assert.match(ctx.__lastBody,/Pasos con espera registrada: Aprobación/);
   assert.match(ctx.__lastBody,/Se reutilizan para obtener un cálculo revisable/);
   assert.match(ctx.__lastBody,/Tiempo activo atribuible/);
-  assert.match(ctx.__lastBody,/Tiempo de espera atribuible/);
+  assert.match(ctx.__lastBody,/¿Cuánto tiempo queda esperando el caso\?/);
   assert.match(ctx.__lastBody,/id="econActive_unit"/);
   assert.match(ctx.__lastBody,/id="econWait_unit"/);
 });
@@ -227,7 +227,7 @@ test('B03: overlapping economics input does not mutate engagement and manual cap
   Object.assign(ctx2.__domFields,{econDriver:{value:'ED02'},econActive:{value:20},econActive_unit:{value:'h'},econWait:{value:0},econWait_unit:{value:'h'},econEvidence:{value:''}});
   let warning='';ctx2.toast=x=>{warning=x};ctx2.__lastOnSave();
   assert.equal(ctx2.__eng.economicInputs.length,0);
-  assert.match(warning,/Selecciona la evidencia/);
+  assert.match(warning,/Indica de dónde sale este dato/);
 });
 
 test('B03: backend projected extra effort is shown separately and the full-process fingerprint drives DF078/DF079',async()=>{
