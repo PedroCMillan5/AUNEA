@@ -28,7 +28,7 @@ function setup(){
     num:v=>Number(v||0),pageTop:()=>'',requiredMark:()=>'*',
     auneaSelectControl:(id,opts,val)=>'<input id="'+id+'" value="'+(val||'')+'">',
     audit:()=>{},id:p=>p+'-TEST',now:()=>'',markDirty:()=>{},render:()=>{},toast:()=>{},
-    closeModal:()=>{},openModal:()=>{},segmented:()=>'',structuredClone
+    closeModal:()=>{},openModal:()=>{},segmented:()=>'',riskBuilder:()=>'<div>Riesgos</div>',economicBuilder:()=>'<div>Impacto</div>',structuredClone
   };
   vm.createContext(ctx);vm.runInContext(process,ctx);
   return {ctx,e,fields,events,label,help};
