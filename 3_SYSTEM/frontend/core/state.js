@@ -109,7 +109,7 @@ function setAnswer(fid,value){
   // DEC-065: if an upstream session answer changes, all four dependent confirmations
   // must be reviewed again. Never mutate an immutable previously sealed snapshot.
   if(fid!=='DF093'&&(e.confirmedAsIs||Object.values(e.layerConfirmations||{}).some(v=>v===true))
-      &&typeof invalidateProcessLayers==='function')invalidateProcessLayers(e,'map');
+      &&typeof invalidateProcessLayers==='function')invalidateProcessLayers(e,fid==='DF076'?'impact':'map');
   e.answers[fid]=value;e.updatedAt=now();
   // A reused value corrected here must reach its owner, not become a second copy (DEC-050). The
   // engagement still keeps the snapshot of the value it used. Guarded because the No-Reask module

@@ -124,4 +124,13 @@ test('an unchanged answer leaves existing layer confirmation untouched, while ch
   assert.equal(e.layerConfirmations.frictions,false);
   assert.equal(invalidated>0,true);
 });
+test('a changed per-role rate blocks Impact confirmation until its economic input is reconciled',()=>{
+  const e={processSteps:[{id:'S1',status:'ACTIVE',actor:'ADMIN'}],frictions:[],risks:[],economicInputs:[{step_ids:['S1'],annual_active_hours:10,capacity_cost_rate_eur_hour:20}],answers:{DF014:'Inicio',DF015:'Fin',DF076:[{role:'ADMIN',eur_hour:25,evidence_type:'MEASURED'}]},processTab:'impacto',confirmedAsIs:false,layerConfirmations:{map:true,frictions:true,risks:true,impact:false}};
+  const ctx=makeCtx(e);ctx.economicRoleRateIssues=()=>[{step_ids:['S1']}];
+  ctx.confirmAsIs();
+  assert.equal(e.layerConfirmations.impact,false);
+  assert.equal(e.confirmedAsIs,false);
+  assert.match(ctx.__toasts.at(-1),/coste distinto del perfil actual/);
+});
+
 // [AUNEA-UAT-PROC-LIFECYCLE-030] END
