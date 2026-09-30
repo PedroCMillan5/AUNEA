@@ -142,4 +142,24 @@ test('friction popup captures approved time attribution without changing existin
   assert.ok(process.includes("f.affected_steps.includes(f.time_attribution.step_id)"));
   assert.ok(process.includes("Sólo Adicional podrá incrementar"));
 });
+
+test('render retains actual horizontal and vertical map scroll across an in-place layer redraw',()=>{
+  const code=fs.readFileSync(path.join(root,'core/state.js'),'utf8');
+  const snippet=code.slice(code.indexOf('// [AUNEA-FE-PROC-VIEWPORT-052] START'),code.indexOf('function goToProcessFromStage()'));
+  const study={id:'ENG-1',processTab:'fricciones'};
+  let canvas={scrollLeft:640,scrollTop:70},workspace={dataset:{processEngagement:'ENG-1'}};
+  const content={set innerHTML(v){canvas={scrollLeft:0,scrollTop:0};workspace={dataset:{processEngagement:'ENG-1'}};this.value=v},get innerHTML(){return this.value}};
+  const document={querySelector:q=>q==='.flow-canvas'?canvas:q==='[data-process-engagement]'?workspace:null,
+    getElementById:q=>q==='content'?content:null,documentElement:{classList:{toggle(){}}},body:{classList:{toggle(){}}}};
+  const ctx={document,state:{activePage:'proceso'},pages:{proceso:()=>'<div>Mapa AS-IS</div>'},
+    currentEng:()=>study,renderNav(){},updateHeader(){},bindCommon(){},postBind(){},
+    publishSessionSnapshot(){},toast(){},advanceEngagementTo(){}};
+  vm.createContext(ctx);vm.runInContext(snippet,ctx);
+  ctx.render();
+  assert.equal(canvas.scrollLeft,640);assert.equal(canvas.scrollTop,70);
+  assert.equal(study.processTab,'fricciones');
+  ctx.state.activePage='diagnostico';ctx.pages.diagnostico=()=>'<div>Diagnóstico</div>';
+  ctx.setPage('proceso');
+  assert.equal(study.processTab,'fricciones','reentering the editor cannot force the Pasos layer');
+});
 // [AUNEA-UAT-PROC-LAYERS-045] END
