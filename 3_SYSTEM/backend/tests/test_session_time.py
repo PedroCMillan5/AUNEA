@@ -175,3 +175,24 @@ def test_unattributed_or_invalid_owner_does_not_leak_into_totals():
     assert out["status"]=="INCOMPLETE"
     assert out["annual_friction_additional_hours"] is None
     assert out["annual_total_active_hours"] is None
+
+
+def test_scoped_projection_preserves_multistep_friction_anchors_and_unique_owner():
+    from aunea_backend.session_time import TimeProjectionRequest, project_session_time
+    request = TimeProjectionRequest(volume=100, period='MONTH', steps=[
+        {'id':'S1','active_time':10,'wait_time':0,'rework_time':0},
+        {'id':'S2','active_time':4,'wait_time':0,'rework_time':0},
+    ], frictions=[{'id':'F1','affected_steps':['S1','S2'],
+        'time_attribution':{'mode':'ADDITIONAL','step_id':'S1'},
+        'frequency':{'mode':'percent','value':20},'active_time_loss':{'value':3}}],
+        scope_step_ids=['S1'])
+    result = project_session_time(request)
+    assert result['status'] == 'CALCULATED'
+    assert result['annual_active_hours'] == 200
+    assert result['annual_friction_additional_hours'] == 12
+    request.scope_step_ids = ['S2']
+    result = project_session_time(request)
+    assert result['annual_active_hours'] == 80
+    assert result['annual_friction_additional_hours'] == 0
+    request.scope_step_ids = ['MISSING']
+    assert project_session_time(request)['status'] == 'INCOMPLETE'

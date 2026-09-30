@@ -26,6 +26,8 @@ class TimeProjectionRequest(BaseModel):
     calendar_day_process: bool = False
     steps: list[dict[str, Any]] = Field(default_factory=list)
     frictions: list[dict[str, Any]] = Field(default_factory=list)
+    # Technical projection scope; retain the complete AS-IS to validate DF059 anchors.
+    scope_step_ids: list[str] | None = None
 
 
 def _number(value: Any) -> float | None:
@@ -111,7 +113,16 @@ def project_session_time(request: TimeProjectionRequest) -> dict[str, Any]:
     missing_active = missing_wait = missing_rework = False
     included_steps = 0
 
-    for step in request.steps:
+    scope = set(request.scope_step_ids) if request.scope_step_ids is not None else None
+    steps = [s for s in request.steps if scope is None or s.get("id") in scope]
+    frictions = [f for f in request.frictions if scope is None
+                 or (f.get("time_attribution") or {}).get("step_id") in scope
+                 or (not (f.get("time_attribution") or {}).get("step_id")
+                     and bool(scope.intersection(f.get("affected_steps") or [])))]
+    if scope is not None and scope - {s.get("id") for s in request.steps if s.get("status") != "SUPERSEDED"}:
+        gaps.append("Ámbito de proyección: hay pasos inexistentes o retirados.")
+
+    for step in steps:
         if step.get("status") == "SUPERSEDED":
             continue
         included_steps += 1
@@ -156,14 +167,14 @@ def project_session_time(request: TimeProjectionRequest) -> dict[str, Any]:
     # Only ADDITIONAL is additive. INCLUDED and BREAKDOWN explain existing DF039
     # without increasing the baseline. A friction observed across multiple steps
     # has a single economic owner and is counted at most once.
-    friction_review = review_frictions(request.steps, request.frictions)
+    friction_review = review_frictions(request.steps, frictions)
     classified = {x["friction_id"]: x for x in friction_review["classified"]}
     unresolved = {x["friction_id"]: x for x in friction_review["findings"] if x.get("blocking_issues")}
     unallocated_frictions: list[str] = []
     extra_per_year_minutes = 0.0
     extra_incomplete = False
 
-    for friction in request.frictions:
+    for friction in frictions:
         if friction.get("status") == "SUPERSEDED":
             continue
         fid = str(friction.get("id") or "?")

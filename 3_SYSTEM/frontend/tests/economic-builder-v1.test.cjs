@@ -244,7 +244,7 @@ test('B03: backend projected extra effort is shown separately and the full-proce
   ctx.fetch=async(_url,options)=>{
     const req=JSON.parse(options.body);sent.push(req);
     return {ok:true,json:async()=>({
-      status:'CALCULATED',annual_cases:1200,annual_active_hours:req.steps.length===1?200:280,
+      status:'CALCULATED',annual_cases:1200,annual_active_hours:req.scope_step_ids?.length===1?200:280,
       annual_wait_exposure_hours:40,annual_rework_hours:0,annual_friction_additional_hours:12,
       annual_total_active_hours:292,active_minutes_per_case:14,rework_minutes_per_case:0,
       gaps:[],frictions_pending_overlap_review:[],monetary_reconciliation:[{friction_id:'F1',reconciliation_status:'PENDING_DF082'}]
@@ -260,4 +260,25 @@ test('B03: backend projected extra effort is shown separately and the full-proce
   assert.equal(e._sessionTimeProjection.output.active_minutes_per_case,14);
 });
 
+
+
+test('B03: a stale automatic preview must not be reclassified as manual evidence on save',async()=>{
+  const ctx=makeCtx(),e=ctx.__eng;
+  e.answers={DF021:100,DF022:'MONTH'};
+  e.processSteps=[{id:'S1',active_time:10,wait_time:0,rework_time:0}];
+  ctx.activeSteps=x=>x.processSteps;
+  ctx.fetch=async()=>({ok:true,json:async()=>({status:'CALCULATED',annual_active_hours:200,annual_wait_exposure_hours:0,annual_rework_hours:0,gaps:[]})});
+  ctx.__domFields.econActive={value:'',dataset:{}};
+  ctx.__domFields.econWait={value:'',dataset:{}};
+  ctx.__domFields.econDriver={value:'ED01'};
+  ctx.addEconomic();
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(ctx.__domFields.econActive.value,'200.00');
+  ctx.__domFields.econEvidence={value:'CLIENT_DECLARED'};
+  e.answers.DF021=200;
+  let warning='';ctx.toast=x=>warning=x;
+  ctx.__lastOnSave();
+  assert.equal(e.economicInputs.length,0);
+  assert.match(warning,/actualiz|cambi/i);
+});
 // [AUNEA-UAT-ECON-010] END

@@ -47,17 +47,15 @@ function econDropdown(id,opts,value='',placeholder='Selecciona…'){
 function economicTimeRequest(e,stepIds=[]){
   const raw=e.answers?.DF021;
   const value=raw&&typeof raw==='object'?raw.value:raw;
-  const selected=new Set(stepIds);
-  const steps=(typeof activeSteps==='function'?activeSteps(e):e.processSteps||[])
-    .filter(s=>!selected.size||selected.has(s.id));
-  const selectedIds=new Set(steps.map(s=>s.id));
+  const steps=typeof activeSteps==='function'?activeSteps(e):e.processSteps||[];
   return {
     volume:value===null||value===undefined||value===''?null:Number(value),
     period:e.answers?.DF022||null,
     // No invented operating calendar: weekly/daily projections stay conditional
     // until governed operating weeks/days are captured by their canonical owner.
-    steps,frictions:(typeof activeFrictions==='function'?activeFrictions(e):e.frictions||[])
-      .filter(f=>{const owner=f.time_attribution?.step_id;return owner?selectedIds.has(owner):normalizeArray(f.affected_steps).some(id=>selectedIds.has(id))})
+    steps,frictions:typeof activeFrictions==='function'?activeFrictions(e):e.frictions||[],
+    // Backend scopes the arithmetic while validating anchors against the complete map.
+    scope_step_ids:stepIds.length?stepIds:null
   };
 }
 async function economicTimeProjection(e,stepIds=[]){
@@ -173,6 +171,10 @@ function addEconomic(preselectedSteps=[]){
     const step_ids=typeof document.querySelectorAll==='function'?[...document.querySelectorAll('[data-econ-step]:checked')].map(x=>x.dataset.econStep):[];
     const selection=JSON.stringify({step_ids,request:economicTimeRequest(eng,step_ids)});
     const projected=serverSelection===selection?economicProjectionForDriver(serverProjection,document.getElementById('econDriver').value):null;
+    // An automatic value belongs to its exact upstream version. It cannot become
+    // a manual declaration merely because an async refresh or another tab changed it.
+    if(!projected&&['econActive','econWait'].some(id=>document.getElementById(id)?.dataset?.autoDerived==='true'))
+      return toast('Los datos del proceso han cambiado. Actualiza la vista previa antes de guardar el impacto.');
     const activeHours=projected?projected.active:econHoursFrom(document.getElementById('econActive').value,document.getElementById('econActive_unit').value||'h');
     const waitHours=projected?projected.wait:econHoursFrom(document.getElementById('econWait').value,document.getElementById('econWait_unit').value||'h');
     const draft={step_ids,driver_id:document.getElementById('econDriver').value,annual_active_hours:activeHours,annual_wait_hours:waitHours,capacity_cost_rate_eur_hour:+document.getElementById('econRate').value||null,direct_loss_eur_annual:+document.getElementById('econDirect').value||0,current_tool_cost_eur_annual:+document.getElementById('econTool').value||0,realized_cash_saving_eur_annual:+document.getElementById('econCash').value||0,evidence_type:document.getElementById('econEvidence').value,derivation_source:projected?'DF021/DF022 + RT_PROCESS_STEP':'MANUAL_VALIDATION',deduplication_key:null};
