@@ -23,7 +23,8 @@ const SESSION_CONTEXT_NAV = [
   HOME_NAV,
   ['Diagnóstico 90 min'],
   ['__STAGES__'],
-  ['proceso','⇢','Editor del mapa AS-IS']
+  ['proceso','⇢','Mapa AS-IS'],
+  ['pasos','·','Pasos'],['fricciones','·','Fricciones'],['riesgos','·','Riesgos'],['impacto','·','Impacto']
 ];
 const INTERNAL_WORK_NAV = [
   HOME_NAV,
@@ -124,7 +125,7 @@ function normalizeArray(v){if(Array.isArray(v))return v;if(v===null||v===undefin
 
 // Pages that belong to the 90-minute session. On these the top bar shows the private-console marker
 // and the step progress instead of the CRM chrome (IMG90-00-02 / IMG90-01).
-const SESSION_SURFACE_PAGES=new Set(['diagnostico','proceso']);
+const SESSION_SURFACE_PAGES=new Set(['diagnostico','proceso','pasos','fricciones','riesgos','impacto']);
 const CRM_SURFACE_PAGES=new Set(['inicio','empresas','contactos','interacciones','oportunidades','estudios','proyectos']);
 
 function stageList(){return (schema&&schema.flow)||[]}
@@ -245,7 +246,7 @@ function render(){
   // refresh must not be the pattern of use (90MIN UI SPEC §3.3).
   if(typeof publishSessionSnapshot==='function')publishSessionSnapshot(currentEng());
 }
-function setPage(page){if(['diagnostico','proceso','resultados','tobe','comparacion','revision','modoresultados','implementacion','recomendacion','escenarios','quote'].includes(page)&&!currentEng()){toast('Abre o crea un estudio antes.');state.activePage='estudios';render();return}const e=currentEng(),previousPage=state.activePage;if(page==='diagnostico'&&e&&typeof advanceEngagementTo==='function')advanceEngagementTo(e,'Sesión 1','apertura de la primera sesión');if(page==='proceso'&&e&&!['cliente','fricciones','riesgos','impacto'].includes(e.processTab))e.processTab='cliente';state.activePage=page;render()}
+function setPage(page){if(['diagnostico','proceso','pasos','fricciones','riesgos','impacto','resultados','tobe','comparacion','revision','modoresultados','implementacion','recomendacion','escenarios','quote'].includes(page)&&!currentEng()){toast('Abre o crea un estudio antes.');state.activePage='estudios';render();return}const e=currentEng(),previousPage=state.activePage;if(page==='diagnostico'&&e&&typeof advanceEngagementTo==='function')advanceEngagementTo(e,'Sesión 1','apertura de la primera sesión');if(page==='proceso'&&e&&!['cliente','fricciones','riesgos','impacto'].includes(e.processTab))e.processTab='cliente';state.activePage=page;render()}
 function goToProcessFromStage(){const e=currentEng();if(e){state.returnTo={page:'diagnostico',stageId:e.stageId};e.processTab='cliente'}setPage('proceso')}
 function returnToStage(){const e=currentEng(),rt=state.returnTo;if(e&&rt)e.stageId=rt.stageId;state.returnTo=null;setPage('diagnostico')}
 // screenId is the approved reference a screen must reproduce (e.g. "I90-00-01"). It is internal
