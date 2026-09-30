@@ -19,7 +19,7 @@ function makeCtx(){
     state:{backendOnline:true},
     blankState:()=>({version:'2.0.0',activePage:'inicio',activeEngagementId:null,dirty:false,companies:[],contacts:[],opportunities:[],engagements:[],projects:[],audit:[]}),
     markDirty:()=>{},saveState:()=>{},updateHeader:()=>{},audit:()=>{},now:()=>'2026-09-14T00:00:00.000Z',render:()=>{},toast:()=>{},confirm:()=>true,
-    document:{getElementById:()=>null,querySelectorAll:()=>[],addEventListener:()=>{},createElement:()=>({click(){}}),visibilityState:'visible'},
+    document:{getElementById:()=>null,querySelector:()=>null,querySelectorAll:()=>[],addEventListener:()=>{},createElement:()=>({click(){}}),visibilityState:'visible'},
     localStorage:{store:{},getItem(k){return this.store[k]??null},setItem(k,v){this.store[k]=v}},
     __listeners:{},window:{addEventListener:(name,fn)=>{ctx.__listeners[name]=fn}},clearTimeout:()=>{},setTimeout:()=>0,Blob:function(){},URL:{createObjectURL:()=>'',revokeObjectURL:()=>{}},Date
   };
