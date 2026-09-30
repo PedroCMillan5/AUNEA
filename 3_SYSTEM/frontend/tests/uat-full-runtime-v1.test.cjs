@@ -90,6 +90,7 @@ test('actual backend payload for all three scenarios derives input from the same
    assert.equal(payload.questionnaire_answers._process_steps.length,6);
    assert.equal(payload.questionnaire_answers._frictions.length,3);
    assert.equal(payload.risks.length,2);
+   assert.deepEqual(Array.from(payload.risks[0].step_ids),Array.from(row.engagement.risks[0].step_ids),'risk-to-step relationship must survive frontend adapter');
    assert.equal(payload.economics.length,2);
    assert.equal(row.engagement.diagnosticOutput,null);
    assert.equal(row.engagement.confirmedAsIs,false);
