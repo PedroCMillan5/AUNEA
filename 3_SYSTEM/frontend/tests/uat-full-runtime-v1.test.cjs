@@ -244,10 +244,13 @@ test('temporary customer-view pause blocks launch and direct session/results URL
    assert.match(w.document.getElementById('content').textContent,/Vista cliente temporalmente bloqueada/);
  }
  assert.equal(w.localStorage.length,writesBefore,'customer pause does not mutate persisted records');
- w.location.hash='#process-editor';
- const row=run('uat3Seed('+JSON.stringify(JSON.parse(read('uat/cases/invoices.json')))+')');
- run('state.companies.push('+JSON.stringify(row.company)+');state.contacts.push(...'+JSON.stringify(row.contacts)+');state.engagements.push('+JSON.stringify(row.engagement)+');state.activeEngagementId='+JSON.stringify(row.engagement.id)+';state.activePage="proceso";render()');
- assert.notEqual(w.document.getElementById('content').textContent.includes('Vista cliente temporalmente bloqueada'),true,'editable AS-IS must remain available');
+ // A client-only display intentionally removes Console chrome; use a fresh editor window.
+ const editor=buildRuntime();
+ editor.w.location.hash='#process-editor';
+ const row=editor.run('uat3Seed('+JSON.stringify(JSON.parse(read('uat/cases/invoices.json')))+')');
+ editor.run('state.companies.push('+JSON.stringify(row.company)+');state.contacts.push(...'+JSON.stringify(row.contacts)+');state.engagements.push('+JSON.stringify(row.engagement)+');state.activeEngagementId='+JSON.stringify(row.engagement.id)+';state.activePage="proceso";render()');
+ assert.notEqual(editor.w.document.getElementById('content').textContent.includes('Vista cliente temporalmente bloqueada'),true,'editable AS-IS must remain available');
+ assert.ok(editor.w.document.querySelector('.flow-canvas'));
  assert.ok(read('boot.js').includes('CLIENT_DISPLAY_PAUSED){bootPausedClientDisplay();}'));
- dom.window.close();
+ editor.dom.window.close();dom.window.close();
 });
