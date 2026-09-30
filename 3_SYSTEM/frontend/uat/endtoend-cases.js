@@ -174,7 +174,10 @@ function uat3Audit(e){
   const documents=typeof reusedValue==='function'?(reusedValue('DF049',e)||[]):[];
   findings.push('DF047 (fuentes): '+sources.map(v=>labelFrom('OS_ARTIFACT_TYPE',v)).join(', ')+'; DF049 (documentos): '+documents.map(v=>labelFrom('OS_ARTIFACT_TYPE',v)).join(', ')+'. Ambas vistas reutilizan ProcessStep, no son copias editables. Tipos mixtos como email, PDF y Excel pueden aparecer en ambas según su uso; verificar documentos concretos/evidencias antes de cerrar H01.');
   findings.push('DF028: tasa global declarada '+(e.answers.DF028?.value??'pendiente')+' %; DF040: '+steps.filter(x=>x.error_rate?.value!=null).map(x=>x.step_name+' '+x.error_rate.value+' %').join('; ')+'. No se suman porcentajes por paso ni se sustituyen automáticamente: los casos pueden solaparse y falta conciliación de población/evidencia.');
-  findings.push('DF080/081 preguntan tiempos de seguimiento/reporting aunque los pasos contienen acciones CHASE/REPORT y sus tiempos activos. Debe aclararse el solapamiento antes de sumar.');
+  for(const fid of ['DF080','DF081']){
+    const declared=e.answers?.[fid],context=typeof economicConditionalTimeContext==='function'?economicConditionalTimeContext(fid,e):'Revisar tiempos de pasos y fricciones antes de agregarlos.';
+    findings.push(fid+': declaración sintética '+(declared?.value??'desconocida')+' '+(declared?.unit||'')+' por '+(declared?.period||'periodo no acreditado')+'. '+context);
+  }
   findings.push('Risk.step_ids y RiskInput.step_ids ahora conservan la misma referencia técnica al paso (DEC-065); el scoring no se modifica.');
   findings.push('DF078/079 no se rellenan desde datos de UAT: necesitan proyección real del backend. No se simula ROI, ahorro ni evidencia medida.');
   findings.push('La versión AS-IS sigue pendiente de confirmación humana. Ningún estudio cargado se presenta como histórico validado.');
