@@ -286,7 +286,8 @@
       ],
       "yes": 4,
       "no": 5,
-      "condition": "Importe <= 1.500 euros y sin discrepancias"
+      "condition": "Importe superior a 1.500 euros o discrepancia contractual",
+      "exceptionCondition": "Importe de hasta 1.500 euros y sin discrepancia"
     },
     {
       "name": "Aprobar factura por dirección",
