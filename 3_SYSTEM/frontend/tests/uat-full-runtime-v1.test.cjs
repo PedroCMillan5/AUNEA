@@ -229,3 +229,24 @@ test('Block 3: each actual business scenario exposes overlap context in S07 with
   dom.window.close();
  }
 });
+
+test('temporary customer-view pause blocks launch and direct session/results URLs, but leaves the AS-IS editor available',()=>{
+ const {w,dom,run}=buildRuntime();
+ assert.equal(run('CLIENT_DISPLAY_PAUSED'),true);
+ let opened=0;w.open=()=>{opened++;return {}};
+ const writesBefore=w.localStorage.length;
+ run('openSessionDisplay();openResultsMode()');
+ assert.equal(opened,0,'no client window may open during flow review');
+ assert.equal(w.localStorage.getItem('aunea_results_display_v1'),null,'never publishes results while paused');
+ for(const hash of ['#session','#results']){
+   w.location.hash=hash;
+   run('bootPausedClientDisplay()');
+   assert.match(w.document.getElementById('content').textContent,/Vista cliente temporalmente bloqueada/);
+ }
+ assert.equal(w.localStorage.length,writesBefore,'customer pause does not mutate persisted records');
+ w.location.hash='#process-editor';
+ run("state.activePage='proceso';render()");
+ assert.notEqual(w.document.getElementById('content').textContent.includes('Vista cliente temporalmente bloqueada'),true,'editable AS-IS must remain available');
+ assert.match(read('boot.js'),/CLIENT_DISPLAY_PAUSED\)\{bootPausedClientDisplay\(\)/);
+ dom.window.close();
+});
