@@ -163,9 +163,9 @@ test('render retains actual horizontal and vertical map scroll across an in-plac
   frames.shift()();assert.equal(frames.length,1);
   frames.shift()();
   assert.equal(canvas.scrollLeft,640);assert.equal(canvas.scrollTop,70);
-  assert.equal(study.processTab,'fricciones');
+  assert.equal(study.processTab,'impacto');
   ctx.state.activePage='diagnostico';ctx.pages.diagnostico=()=>'<div>Diagnóstico</div>';
   ctx.setPage('proceso');
-  assert.equal(study.processTab,'fricciones','reentering the editor cannot force the Pasos layer');
+  assert.equal(study.processTab,'impacto','reentering the editor cannot force the Pasos layer');
 });
 // [AUNEA-UAT-PROC-LAYERS-045] END
