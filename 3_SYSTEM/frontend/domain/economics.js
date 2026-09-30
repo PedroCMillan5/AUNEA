@@ -146,7 +146,7 @@ function economicInputRole(e,item){
 }
 function economicRoleRateMismatch(e,item){
   const role=economicInputRole(e,item),rate=role?economicRateForRole(e,role):null;
-  return !!(item.capacity_cost_rate_eur_hour!=null&&(!rate||Number(item.capacity_cost_rate_eur_hour)!==Number(rate.eur_hour)));
+  return !!(item.capacity_cost_rate_eur_hour!=null&&rate&&Number(item.capacity_cost_rate_eur_hour)!==Number(rate.eur_hour));
 }
 function economicRoleRateIssues(e){return (e.economicInputs||[]).filter(x=>economicRoleRateMismatch(e,x))}
 function applyEconomicRoleRate(index){
