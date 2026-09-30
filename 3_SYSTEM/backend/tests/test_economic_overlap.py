@@ -83,4 +83,23 @@ def test_http_409_preserves_ambiguity_instead_of_publishing_misleading_totals():
     assert response.status_code == 409
     assert "EAR-001/004" in response.json()["detail"]
 
+
+
+@pytest.mark.parametrize('left,right', [('ED02','ED02'), ('ED09','ED11')])
+def test_api_rejects_unidentified_overlap_already_blocked_by_capture(left, right):
+    rows = ([econ(left, 10, ['S1']), econ(right, 10, ['S1'])]
+            if left == 'ED02' else
+            [econ(left, steps=['S1'], loss=100), econ(right, steps=['S1'], loss=100)])
+    response = TestClient(app).post('/v1/diagnose', json=record(*rows).model_dump(mode='json'))
+    assert response.status_code == 409
+
+@pytest.mark.parametrize('field,value', [
+    ('capacity_cost_rate_eur_hour', 25),
+    ('current_tool_cost_eur_annual', 100),
+    ('realized_cash_saving_eur_annual', 50),
+])
+def test_same_key_cannot_silently_drop_conflicting_economic_amounts(field, value):
+    one = econ('ED02', 10, ['S1'], key='EVENT-1')
+    two = one.model_copy(update={field: value})
+    assert economic_overlap_issues([one, two])
 # [AUNEA-UAT-ECON-OVERLAP-075] END

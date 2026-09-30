@@ -14,7 +14,6 @@ from __future__ import annotations
 from .models import EconomicInput
 
 ACTIVE_COMPONENTS = frozenset({"ED02", "ED03", "ED04", "ED05", "ED06", "ED07", "ED08"})
-DIRECT_LOSS_DRIVERS = frozenset({"ED09", "ED10", "ED11"})
 
 
 def _scope_overlap(a: EconomicInput, b: EconomicInput) -> bool:
@@ -37,10 +36,13 @@ def economic_overlap_issues(inputs: list[EconomicInput]) -> list[str]:
         prev = keyed.get(key)
         if prev is not None and (
             item.driver_id != prev.driver_id
-            or item.step_ids != prev.step_ids
+            or set(item.step_ids) != set(prev.step_ids)
             or item.annual_active_hours != prev.annual_active_hours
             or item.direct_loss_eur_annual != prev.direct_loss_eur_annual
             or item.annual_wait_hours != prev.annual_wait_hours
+            or item.capacity_cost_rate_eur_hour != prev.capacity_cost_rate_eur_hour
+            or item.current_tool_cost_eur_annual != prev.current_tool_cost_eur_annual
+            or item.realized_cash_saving_eur_annual != prev.realized_cash_saving_eur_annual
         ):
             issues.append(
                 "EAR-006/012: una misma clave de evento aparece con datos o categorías "
@@ -61,19 +63,19 @@ def economic_overlap_issues(inputs: list[EconomicInput]) -> list[str]:
                         "EAR-001/004: ED01 y un componente especializado/retrabajo "
                         "solapan el mismo ámbito; falta desglose explícito del tiempo residual."
                     )
-                elif one.driver_id == two.driver_id and one.driver_id == "ED01":
+                elif one.driver_id == two.driver_id and (
+                    one.driver_id == "ED01"
+                    or not (one.deduplication_key and two.deduplication_key)
+                ):
                     issues.append(
-                        "EAR-001: dos totales ED01 afectan al mismo ámbito sin un desglose "
-                        "que demuestre que son actividades independientes."
+                        "EAR-001/012: dos registros del mismo trabajo activo afectan al mismo "
+                        "ámbito sin identidad de evento o desglose que acredite su independencia."
                     )
-            if (one.driver_id in DIRECT_LOSS_DRIVERS
-                    and two.driver_id in DIRECT_LOSS_DRIVERS
-                    and one.driver_id == two.driver_id
-                    and _material(one.direct_loss_eur_annual)
+            if (_material(one.direct_loss_eur_annual)
                     and _material(two.direct_loss_eur_annual)
-                    and not one.deduplication_key and not two.deduplication_key):
+                    and not (one.deduplication_key and two.deduplication_key)):
                 issues.append(
-                    "EAR-006/012: existen dos pérdidas del mismo concepto y ámbito "
+                    "EAR-006/012: existen dos pérdidas de un mismo ámbito "
                     "sin identidad de evento; confirmar que no se trata del mismo cargo."
                 )
     return list(dict.fromkeys(issues))
