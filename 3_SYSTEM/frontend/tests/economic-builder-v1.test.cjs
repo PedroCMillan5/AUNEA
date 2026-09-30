@@ -332,3 +332,32 @@ test('the evidence-bearing DF076 table writes rates once to its owner, not a sec
   assert.equal(saved.value[0].eur_hour,26);
   assert.equal(saved.value[0].evidence_type,'CLIENT_DECLARED');
 });
+
+test('an ED01 row reuses the selected actor rate from DF076 instead of asking for a second editable rate',()=>{
+  const ctx=makeCtx(),e=ctx.__eng;
+  e.answers={DF076:[{role:'ADMIN',eur_hour:27,evidence_type:'MEASURED'}]};
+  e.processSteps=[{id:'S1',status:'ACTIVE',actor:'ADMIN',step_name:'Registrar factura'}];
+  ctx.activeSteps=x=>x.processSteps.filter(p=>p.status!=='SUPERSEDED');
+  ctx.document.querySelectorAll=selector=>selector==='[data-econ-step]:checked'?[{dataset:{econStep:'S1'}}]:[];
+  ctx.addEconomic(['S1']);
+  Object.assign(ctx.__domFields,{econDriver:{value:'ED01'},econActive:{value:'12'},econActive_unit:{value:'h'},econWait:{value:'0'},econWait_unit:{value:'h'},econEvidence:{value:'MEASURED'},econRate:{value:'27'},econDirect:{value:''},econTool:{value:''},econCash:{value:''}});
+  ctx.__lastOnSave();
+  assert.equal(e.economicInputs.length,1);
+  assert.equal(e.economicInputs[0].capacity_cost_rate_eur_hour,27);
+  assert.equal(e.economicInputs[0].annual_active_hours,12);
+  assert.equal(e.economicInputs[0].annual_wait_hours,0);
+  assert.match(ctx.__lastBody,/id="econRate"[^>]*readonly/);
+});
+test('multi-actor inputs may retain their hours but never receive a blended rate',()=>{
+  const ctx=makeCtx(),e=ctx.__eng;
+  e.answers={DF076:[{role:'ADMIN',eur_hour:27,evidence_type:'MEASURED'},{role:'FIN',eur_hour:38,evidence_type:'CLIENT_DECLARED'}]};
+  e.processSteps=[{id:'S1',status:'ACTIVE',actor:'ADMIN'},{id:'S2',status:'ACTIVE',actor:'FIN'}];
+  ctx.activeSteps=x=>x.processSteps.filter(p=>p.status!=='SUPERSEDED');
+  ctx.document.querySelectorAll=selector=>selector==='[data-econ-step]:checked'?[{dataset:{econStep:'S1'}},{dataset:{econStep:'S2'}}]:[];
+  ctx.addEconomic(['S1','S2']);
+  Object.assign(ctx.__domFields,{econDriver:{value:'ED01'},econActive:{value:'22'},econActive_unit:{value:'h'},econWait:{value:'0'},econWait_unit:{value:'h'},econEvidence:{value:'MEASURED'},econRate:{value:''},econDirect:{value:''},econTool:{value:''},econCash:{value:''}});
+  ctx.__lastOnSave();
+  assert.equal(e.economicInputs.length,1);
+  assert.equal(e.economicInputs[0].annual_active_hours,22);
+  assert.equal(e.economicInputs[0].capacity_cost_rate_eur_hour,null);
+});
