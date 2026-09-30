@@ -170,8 +170,10 @@ function uat3Audit(e){
   const protectedStep=(e.answerDetails?.DF075__steps||[]).map(id=>steps.find(x=>x.id===id)?.step_name||id);
   findings.push('Control humano DF075 asociado al paso: '+protectedStep.join(', ')+'. Comprobar en el editor que la restricción afecta realmente a ese acto.');
   // Findings reflect actual, existing model wiring; they are NOT fixed by the fixture.
-  findings.push('Duplicidad estructural: reusedValue(DF047) y reusedValue(DF049) consumen exactamente inputs+outputs de todos los pasos, aunque sus preguntas distinguen fuentes de datos frente a documentos.');
-  findings.push('Posible doble captura: DF028 exige proporción global de error y DF040 ya registra frecuencia por paso. No hay reconciliación canónica automática de ambos universos.');
+  const sources=typeof reusedValue==='function'?normalizeArray(reusedValue('DF047',e)):[];
+  const documents=typeof reusedValue==='function'?normalizeArray(reusedValue('DF049',e)):[];
+  findings.push('DF047 (fuentes): '+sources.map(v=>labelFrom('OS_ARTIFACT_TYPE',v)).join(', ')+'; DF049 (documentos): '+documents.map(v=>labelFrom('OS_ARTIFACT_TYPE',v)).join(', ')+'. Ambas vistas reutilizan ProcessStep, no son copias editables. Tipos mixtos como email, PDF y Excel pueden aparecer en ambas según su uso; verificar documentos concretos/evidencias antes de cerrar H01.');
+  findings.push('DF028: tasa global declarada '+(e.answers.DF028?.value??'pendiente')+' %; DF040: '+steps.filter(x=>x.error_rate?.value!=null).map(x=>x.step_name+' '+x.error_rate.value+' %').join('; ')+'. No se suman porcentajes por paso ni se sustituyen automáticamente: los casos pueden solaparse y falta conciliación de población/evidencia.');
   findings.push('DF080/081 preguntan tiempos de seguimiento/reporting aunque los pasos contienen acciones CHASE/REPORT y sus tiempos activos. Debe aclararse el solapamiento antes de sumar.');
   findings.push('Risk.step_ids y RiskInput.step_ids ahora conservan la misma referencia técnica al paso (DEC-065); el scoring no se modifica.');
   findings.push('DF078/079 no se rellenan desde datos de UAT: necesitan proyección real del backend. No se simula ROI, ahorro ni evidencia medida.');
