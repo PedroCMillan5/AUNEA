@@ -140,4 +140,16 @@ test('real Session Display excludes early capture and internal risks/economics f
  for(const forbidden of ['likelihood_1_5','capacity_cost_rate_eur_hour','realized_cash_saving_eur_annual','deduplication_key','evidence_type','Pain_ID','pricing'])assert.equal(raw.includes(forbidden),false,forbidden+' leaked to client');
  dom.window.close();
 });
+
+test('all three UAT cases declare every applicable REQUIRED_90M field before human confirmation',()=>{
+ const {run,dom}=buildRuntime();
+ for(const name of ['invoices.json','unified-requests.json','email-orders.json']){
+   const row=run('uat3Seed('+JSON.stringify(JSON.parse(read('uat/cases/'+name)))+')');
+   run('state.companies.push('+JSON.stringify(row.company)+');state.contacts.push(...'+JSON.stringify(row.contacts)+');state.engagements.push('+JSON.stringify(row.engagement)+')');
+   const missing=run('canonicalMissingRequired(state.engagements[state.engagements.length-1])');
+   const expected=Array.from(missing).filter(x=>!['DF093','Confirmación AS-IS'].includes(x));
+   assert.deepEqual(expected,[],name+' misses required capture fields: '+expected.join(', '));
+ }
+ dom.window.close();
+});
 // [AUNEA-UAT-RUNTIME-125] END
