@@ -275,7 +275,14 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
     assert.equal(w.eval('JSON.stringify(confirmedSnapshot(currentEng()))'),tobeBefore);
     click('#nav [data-page="revision"]');click('#createOutputReview');click('#advanceOutputReview');click('#advanceOutputReview');
     assert.equal(w.eval('engagementStatus(currentEng())'),'Listo para resultados');
-    w.open=()=>({});click('#nav [data-page="modoresultados"]');click('#openResultsMode');
+    w.open=()=>({});click('#nav [data-page="modoresultados"]');
+    if(w.eval('CLIENT_DISPLAY_PAUSED')){
+      assert.match(d.querySelector('#content').textContent,/temporalmente bloquead/);
+      assert.equal(d.querySelector('#openResultsMode'),null,'no client publication while paused');
+      assert.equal(w.eval('engagementStatus(currentEng())'),'Listo para resultados');
+      // Continue this internal-only lifecycle fixture without opening/publishing a client window.
+      w.eval("advanceEngagementTo(currentEng(),'Sesión 2','UAT recorrido interno, vista cliente en pausa');render()");
+    } else click('#openResultsMode');
     assert.equal(w.eval('engagementStatus(currentEng())'),'Sesión 2');
     const originalFetch=w.fetch;
     w.fetch=async(input,options)=>{if(String(input).includes('/v1/solution-specifications/generate')){const body=JSON.parse(options.body);assert.equal(body.request.selected_scenario.scenario_id,'SC-UAT');return {ok:true,json:async()=>({specification_id:'SPEC-UAT',engagement_id:body.engagement.engagement_id,source_scenario_id:'SC-UAT',status:'BLOCKED_NOT_SYSTEM',outputs:[]})}}return originalFetch(input,options)};
