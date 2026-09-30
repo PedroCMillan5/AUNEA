@@ -45,7 +45,7 @@ test('addEconomic translates the driver-picker label to Spanish and shows an inf
   assert.match(ctx.__lastBody,/Pasos con tiempo activo registrado: Alta, Aprobación/);
   assert.match(ctx.__lastBody,/Pasos con espera registrada: Aprobación/);
   assert.match(ctx.__lastBody,/Se reutilizan para obtener un cálculo revisable/);
-  assert.match(ctx.__lastBody,/Tiempo activo atribuible/);
+  assert.match(ctx.__lastBody,/¿Cuántas horas de trabajo supone al año\?/);
   assert.match(ctx.__lastBody,/¿Cuánto tiempo queda esperando el caso\?/);
   assert.match(ctx.__lastBody,/id="econActive_unit"/);
   assert.match(ctx.__lastBody,/id="econWait_unit"/);
@@ -131,7 +131,7 @@ test('the economics builder never infers a direct-loss figure or an hours-per-ye
 test('economic driver dropdown translates all canonical REF_ECON_DRIVER ids used by the UI without changing their values',()=>{
   const ctx=makeCtx();ctx.addEconomic();
   assert.match(ctx.__lastBody,/Tiempo de ejecución manual/);
-  assert.match(ctx.__lastBody,/Tiempo de entrada duplicada/);
+  assert.match(ctx.__lastBody,/Tiempo dedicado a introducir datos dos veces/);
   assert.doesNotMatch(ctx.__lastBody,/Manual execution time|Duplicate entry time/);
 });
 
