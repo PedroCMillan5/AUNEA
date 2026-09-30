@@ -200,3 +200,9 @@ body.session-display .flow-step p{font-size:var(--font-small)}
 @media(max-width:760px){.action-bar{left:0;padding-left:14px;padding-right:14px}.app-shell{display:block}.sidebar{transform:translateX(-100%);transition:.2s;width:250px}.sidebar.open{transform:none}.main{grid-column:auto}.topbar{padding:0 14px}.mobile-only{display:block}.content{padding:22px 14px 60px}.topbar-right .save-state{display:none}.backend-badge{display:none}.page-head{display:block}.head-actions{justify-content:flex-start;margin-top:12px}.g2,.g3,.g4,.hero-actions,.form-grid{grid-template-columns:1fr}.stage-layout{grid-template-columns:1fr}.stage-nav{display:flex;overflow:auto;gap:6px}.stage-btn{min-width:190px;margin:0}.process-layout{grid-template-columns:1fr}.topline{display:none}}
 @media print{.sidebar,.topbar,.head-actions,.section-actions,.stage-nav,.btn,.subtabs{display:none!important}.app-shell{display:block}.main{display:block}.content{padding:0;max-width:none}.card{box-shadow:none}.page-head{margin-top:0}.flow-canvas{overflow:visible}}
 /* [AUNEA-FE-STYLE-RESPONSIVE-010] END */
+
+/* DF088 — nine canonical limits in source order, with Otro occupying the final cell. */
+.choice-grid[data-choice-layout="no-automate"]{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.choice-grid[data-choice-layout="no-automate"] .choice label{height:100%;display:flex;align-items:center;box-sizing:border-box}
+@media(max-width:800px){.choice-grid[data-choice-layout="no-automate"]{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.choice-grid[data-choice-layout="no-automate"]{grid-template-columns:minmax(0,1fr)}}
