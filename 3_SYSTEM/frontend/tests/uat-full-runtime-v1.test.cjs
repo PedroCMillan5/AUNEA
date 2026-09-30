@@ -49,7 +49,11 @@ test('whole application: UAT3 click creates, navigates and restores three studie
  assert.equal(JSON.parse(saved).engagements.filter(e=>e.id.startsWith('UAT3-CASE-')).length,3);
  for(const e of rows){
    for(const [stage,requiredField] of [['S01','DF008'],['S02','DF011'],['S03','DF021'],['S04','DF031'],['S05','DF056'],['S06','DF066'],['S07','DF076'],['S08','DF086'],['S09','DF093']]){
-     run('state.activeEngagementId='+JSON.stringify(e.id)+';state.activePage="diagnostico";currentEng().stageId='+JSON.stringify(stage)+';render()');
+     run('state.activePage="uat";render()');
+     const stageLink=w.document.querySelector('[data-uat3-open="'+e.id+'"][data-uat3-page="diagnostico"][data-uat3-stage="'+stage+'"]');
+     assert.ok(stageLink,e.id+' '+stage+' missing direct audit entrypoint');
+     stageLink.onclick();
+     assert.equal(run('currentEng().stageId'),stage);
      const body=w.document.getElementById('content').textContent;
      assert.ok(body.length>40,e.id+' '+stage+' empty screen');
      assert.doesNotMatch(body,/No se ha podido iniciar AUNEA Internal/);
