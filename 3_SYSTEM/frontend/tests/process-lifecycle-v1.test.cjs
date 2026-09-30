@@ -80,7 +80,7 @@ test('layer confirmations require map, frictions, risks and impact before sealin
 test('PG09 cannot confirm the last selected layer instead of the four-layer process',()=>{
   const e={processSteps:[{id:'S1',status:'ACTIVE'}],frictions:[],risks:[],economicInputs:[],answers:{DF014:'Inicio',DF015:'Fin'},confirmedAsIs:false,stageId:'S09',processTab:'impacto'};
   const ctx=makeCtx(e);ctx.state.activePage='diagnostico';ctx.confirmAsIs();
-  assert.equal(e.layerConfirmations,undefined,'the final button never confirms an unrelated layer');
+  assert.equal(Object.values(e.layerConfirmations).some(x=>x===true),false,'the final button never confirms an unrelated layer');
   assert.equal(e.confirmedAsIs,false);
   assert.equal(ctx.state.activePage,'proceso');
   assert.equal(e.processTab,'cliente');
