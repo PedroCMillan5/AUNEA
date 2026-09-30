@@ -8,7 +8,8 @@
 // SIDE_EFFECTS: carga de schema canónico efectivo y comprobación HTTP sólo en Console.
 // CHANGE_RISK: HIGH.
 // Shared windows deliberately do not boot the Console.
-if(location.hash==='#session'){bootSessionDisplay();}
+if((location.hash==='#session'||location.hash==='#results')&&CLIENT_DISPLAY_PAUSED){bootPausedClientDisplay();}
+else if(location.hash==='#session'){bootSessionDisplay();}
 else if(location.hash==='#results'){bootResultsMode();}
 else{
   document.body.classList.add(isProcessEditorWindow()?'mode-process-editor':'mode-internal');
