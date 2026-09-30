@@ -236,3 +236,19 @@ def test_three_uat3_fixtures_project_in_backend_without_double_counting_friction
         assert out["annual_friction_additional_hours"] == 0, (case["key"], out["gaps"])
         assert out["frictions_pending_overlap_review"] == [], (case["key"], out["gaps"])
         assert "realized_cash_saving_eur_annual" not in out
+        # Independent hand calculation over the *specific* six steps and conditional share.
+        # active/rework/wait are separate; waiting is exposure, not labour or elapsed cycle.
+        expected = {
+            "INVOICE": (848.0, 10560.0, 54.4),
+            "INTAKE": (698.5, 5280.0, 27.72),
+            "EMAIL": (1485.52, 6435.6, 75.64),
+        }
+        active, wait, rework = expected[case["key"]]
+        assert abs(out["annual_active_hours"]-active)<0.011, (case["key"], out)
+        assert abs(out["annual_wait_exposure_hours"]-wait)<0.011, (case["key"], out)
+        assert abs(out["annual_rework_hours"]-rework)<0.011, (case["key"], out)
+        assert abs(out["annual_total_active_hours"]-(active+rework))<0.011, (case["key"], out)
+        # No fabricated end-to-end DF026, ROI, capacity conversion, monetary claims.
+        assert "actual_cycle_time_hours" not in out
+        assert "roi" not in out
+
