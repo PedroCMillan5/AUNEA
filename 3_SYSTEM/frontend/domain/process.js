@@ -616,20 +616,37 @@ function frictionsEditor(e,steps,fr){
 // Source: DEC-050/063/064/065/068 and UX simplification 2026-09-30 (REVIEW).
 function asisOverview(e,steps,fr){
   const ans=e.answers||{},value=(id,unit='')=>ans[id]===undefined||ans[id]===null||ans[id]===''?'Pendiente':esc(formatContextValue(schema.fields.find(f=>f.Field_ID===id)||{},ans[id]))+unit;
+  const peak=ans.DF023;
+  const peakValue=peak&&typeof peak==='object'
+    ?(peak.mode==='NONE'?'No aplica':peak.mode==='UNKNOWN'?'No disponible':(peak.value===undefined||peak.value===null||peak.value==='')?'Pendiente':
+      esc(peak.value)+' '+esc(({case:'casos',item:'elementos',request:'solicitudes',person:'personas'})[peak.unit]||peak.unit||'casos')
+      +(peak.period?' · '+esc(labelFrom('OS_PERIOD',String(peak.period).toUpperCase())):''))
+    :value('DF023');
   return '<div class="asis-facts">'
     +'<div><small>Proceso</small><b>'+value('DF011')+'</b></div>'
     +'<div><small>Empieza cuando</small><b>'+value('DF014')+'</b></div>'
     +'<div><small>Termina cuando</small><b>'+value('DF015')+'</b></div>'
     +'<div><small>Volumen habitual</small><b>'+value('DF021')+' · '+value('DF022')+'</b></div>'
-    +'<div><small>Volumen máximo declarado</small><b>'+value('DF023')+'</b></div>'
+    +'<div><small>Volumen máximo declarado</small><b>'+peakValue+'</b></div>'
     +'<div><small>Tiempo objetivo</small><b>'+value('DF025')+'</b></div>'
     +'<div><small>Duración habitual declarada</small><b>'+value('DF026')+'</b></div>'
     +'<div><small>Registrados</small><b>'+steps.length+' pasos · '+fr.length+' problemas · '+(e.risks||[]).length+' riesgos · '+(e.economicInputs||[]).length+' impactos</b></div>'
     +'</div>';
 }
+function asisVariantCandidates(e){
+  const variants=normalizeArray(e.answers?.DF020).filter(Boolean);
+  if(!variants.length)return '';
+  const detail=answerDetails(e).DF020;
+  const labels=variants.map(v=>{
+    const label=labelFrom('OS_VARIANT_DIMENSION',v)||v;
+    return String(v).toUpperCase()==='OTHER'&&detail?label+' — '+detail:label;
+  });
+  return '<div class="asis-variant-hint" data-asis-variant-candidates="DF020"><b>Variantes detectadas en el alcance</b><span>Pendientes de resolver en el mapa: '+labels.map(esc).join(' · ')+'. Úsalas como recordatorio al definir las decisiones reales; no crean bifurcaciones automáticamente.</span></div>';
+}
 function asisMapPage(e,steps,fr){
   const flow=sessionCanvas(clientProcessMap(e),false);
   return '<div data-process-engagement="'+attr(e.id)+'">'+asisOverview(e,steps,fr)
+    +asisVariantCandidates(e)
     +'<div class="asis-map-hint">Este es el proceso que estamos analizando. Para añadir, editar o eliminar elementos, utiliza las cuatro opciones del menú de la izquierda.</div>'
     +flow+'</div>';
 }
