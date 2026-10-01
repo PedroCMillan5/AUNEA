@@ -300,6 +300,64 @@ body.asis-console-locked .result-list button:disabled{cursor:not-allowed;opacity
 .client-inherited-context b{display:block;font-size:12px;color:var(--system);margin-bottom:5px}
 .client-inherited-context p{font-size:12px;margin:3px 0;color:var(--ink)}
 .client-inherited-context small{display:block;font-size:11px;color:var(--muted);margin-top:6px;line-height:1.5}
+
+/* [AUNEA-FE-PROC-FRIENDLY-FLOW-080] START — AS-IS friendly flow visual layer
+   PURPOSE: Improve only process-map legibility and functional iconography; brand, typography,
+   navigation, data ownership and routing contracts remain unchanged.
+   SOURCE: DEC-069; AUNEA System Simulator CANONICAL v1.14; owner visual approval 2026-10-01.
+   CHANGE_RISK: MEDIUM. */
+.process-graph-canvas{position:relative;border:1px solid var(--line);border-radius:12px;background:#fbfcfb;padding:46px 10px 20px}
+.process-graph-legend{position:absolute;top:11px;right:14px;z-index:4;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.process-graph-legend span{display:inline-flex;align-items:center;gap:6px;padding:5px 8px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:10px;font-weight:700;color:var(--muted)}
+.process-graph-legend i{display:block;width:18px;height:3px;border-radius:999px;background:#4f7563}
+.process-graph-legend .legend-alt i{background:#b9783c}
+.process-graph-board{gap:18px 20px;padding:18px 12px 22px;grid-template-rows:repeat(var(--graph-rows),minmax(126px,auto))}
+.process-graph-cell{align-items:stretch}
+.process-graph-cell .graph-flow-step,
+.process-graph-cell .flow-boundary{display:flex;flex-direction:column;justify-content:flex-start;min-height:118px;border-radius:12px;border:1px solid var(--line);background:#fff;padding:12px;box-shadow:0 3px 12px rgba(20,24,28,.035);text-align:left}
+.process-graph-cell .graph-flow-step:hover{border-color:var(--system-line);box-shadow:0 5px 18px rgba(20,24,28,.06)}
+.process-node-heading{display:flex;align-items:flex-start;gap:9px;min-width:0}
+.process-node-title{min-width:0;flex:1}
+.process-node-title .boundary-kicker{margin-bottom:3px}
+.process-node-title h4{margin:0;line-height:1.25}
+.process-node-icon{display:grid;place-items:center;width:32px;height:32px;min-width:32px;border-radius:9px;background:var(--system-soft);color:var(--system);border:1px solid var(--system-line)}
+.process-node-icon svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.process-node-icon-decision{width:36px;height:36px;min-width:36px;background:#eef5f0}
+.process-node-icon-approval{background:#eef5f0}
+.process-node-icon-system,.process-node-icon-record{background:#f1f4f3}
+.process-node-icon-wait{background:#fff8f1;color:#8b5b2f;border-color:#ead0b6}
+.process-node-meta{margin-top:10px!important;color:var(--muted)!important}
+.graph-flow-step.is-decision{border:2px solid var(--system);background:#fbfdfc;box-shadow:0 5px 18px rgba(42,81,63,.08)}
+.graph-flow-step.step-type-st05{border-color:var(--system-line);background:#fcfefd}
+.flow-boundary.start,.flow-boundary.end{border-style:solid;background:var(--system-soft);border-color:var(--system-line)}
+.flow-boundary.start .process-node-icon,.flow-boundary.end .process-node-icon{border-radius:50%;background:#fff}
+.flow-boundary p{margin-top:auto!important;padding-top:8px;border-top:1px solid rgba(79,117,99,.14)}
+.graph-route-controls{display:flex;gap:6px;margin-top:auto;padding-top:9px;border-top:1px solid var(--line)}
+.graph-route-controls button{display:flex;align-items:center;gap:5px;min-width:0;padding:5px 7px;border-radius:999px}
+.graph-route-controls button b{font-size:9px}.graph-route-controls button span{font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.graph-route-controls .route-yes{background:#eef5f0;border-color:#b7d0c2;color:#355c49}
+.graph-route-controls .route-no{background:#fff7ef;border-color:#e2c09f;color:#7a4e27}
+.process-graph-lines .graph-path{stroke:#4f7563;stroke-width:2.5}
+.process-graph-lines .graph-path-alternative{stroke:#b9783c;stroke-width:2.5;stroke-dasharray:none}
+.process-graph-lines .graph-path-label{font-size:10px;font-weight:900;letter-spacing:.04em;paint-order:stroke;stroke:#fff;stroke-width:5px}
+.process-graph-lines .graph-path-label-main{fill:#355c49}
+.process-graph-lines .graph-path-label-alt{fill:#8a5424}
+.graph-route-pending{min-height:54px;align-self:center;border-width:1.5px;background:#fff}
+body.mode-process-editor .process-graph-cell .flow-step{padding:11px}
+body.mode-process-editor .process-graph-cell .flow-step h4{font-size:12px;line-height:1.28}
+body.mode-process-editor .process-graph-cell .flow-step p{font-size:10px;line-height:1.35}
+@media(max-width:1100px){
+  .process-graph-board{gap:14px 12px}
+  .process-node-icon{width:28px;height:28px;min-width:28px}
+  .process-node-icon svg{width:16px;height:16px}
+  .graph-route-controls button span{display:none}
+}
+@media(max-width:760px){
+  .process-graph-canvas{padding-top:68px}
+  .process-graph-legend{left:10px;right:auto}
+}
+/* [AUNEA-FE-PROC-FRIENDLY-FLOW-080] END */
+
 /* [AUNEA-FE-PROC-STYLE-045] END */
 
 
