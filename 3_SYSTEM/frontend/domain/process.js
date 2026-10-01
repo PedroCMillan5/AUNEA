@@ -380,11 +380,11 @@ function processGraphData(e,steps){
   nodes.forEach(n=>{if(!depth.has(n.id))depth.set(n.id,Math.max(...depth.values())+1)});
   const cols=new Map();nodes.forEach(n=>{const d=depth.get(n.id);if(!cols.has(d))cols.set(d,[]);cols.get(d).push(n)});
   const incoming=id=>edges.find(x=>x.to===id)?.label||'';
-  const maxRows=Math.max(3,...Array.from(cols.values(),a=>a.length));
+  const maxRows=Math.max(1,...Array.from(cols.values(),a=>a.length));
   const positions=new Map();
   cols.forEach((list,col)=>{
     list.sort((a,b)=>({SÍ:-1,NO:1}[incoming(a.id)]||0)-({SÍ:-1,NO:1}[incoming(b.id)]||0));
-    list.forEach((n,i)=>{const row=list.length===1?Math.ceil(maxRows/2):Math.round(i*(maxRows-1)/(list.length-1))+1;positions.set(n.id,{row,col:col+1})});
+    list.forEach((n,i)=>{const row=list.length===1?Math.max(1,Math.ceil(maxRows/2)):Math.round(i*(maxRows-1)/(list.length-1))+1;positions.set(n.id,{row,col:col+1})});
   });
   // Fin is a shared sink even if a branch completes before the other.
   const end=positions.get('__END__'),endCol=Math.max(...Array.from(positions.entries()).filter(([id])=>id!=='__END__').map(([,p])=>p.col))+1;
@@ -543,7 +543,7 @@ function processPage(){
   const e=currentEng();if(!e)return pageTop('Mapa AS-IS','Abre un estudio para ver su proceso.');
   const steps=activeSteps(e),fr=activeFrictions(e);
   // The client-first editor is the existing consultant-owned surface, not the read-only #session projection.
-  if(state.uiMode==='CLIENT_EDITOR')return clientProcessView(e,steps,fr,e.processTab||'cliente');
+  if(isProcessEditorWindow())return clientProcessView(e,steps,fr,e.processTab||'cliente');
   const top='<button class="btn btn-primary" id="openSessionDisplayFromProcess">Vista con cliente ↗</button>';
   return pageTop('Mapa AS-IS','Lo que sabemos del proceso actual, todo en un mismo mapa.',top)
     +asisMapPage(e,steps,fr);
@@ -579,6 +579,7 @@ bindForms=function(){
   document.querySelectorAll('[data-move-step-up]').forEach(b=>b.onclick=()=>moveStep(b.dataset.moveStepUp,-1));
   document.querySelectorAll('[data-move-step-down]').forEach(b=>b.onclick=()=>moveStep(b.dataset.moveStepDown,1));
   document.querySelectorAll('[data-fr-other-toggle]').forEach(el=>el.addEventListener('change',()=>{const targetId=el.dataset.frOtherToggle,wrap=document.querySelector(`[data-fr-other-wrap="${targetId}"]`);if(!wrap)return;wrap.style.display=el.checked?'':'none';if(!el.checked){const input=document.getElementById(targetId);if(input)input.value=''}}));
+  document.querySelectorAll('[data-edit-friction]').forEach(b=>b.onclick=()=>{if(isProcessEditorWindow()){currentEng().processTab='fricciones';render()}openFrictionModal(b.dataset.editFriction)});
   const pTpl=document.getElementById('useProcessTemplate');if(pTpl)pTpl.onclick=openProcessTemplatePicker;
   const sTpl=document.getElementById('addStepTemplate');if(sTpl)sTpl.onclick=openStepTemplatePicker;
   const addClient=document.getElementById('addStepFromClient');if(addClient)addClient.onclick=()=>openStepModal();
@@ -587,9 +588,9 @@ bindForms=function(){
   const addFriction=document.getElementById('addFriction');if(addFriction)addFriction.onclick=ev=>{ev.preventDefault();ev.stopPropagation();openFrictionModal()};
   const addRiskBtn=document.getElementById('addRisk');if(addRiskBtn)addRiskBtn.onclick=ev=>{ev.preventDefault();ev.stopPropagation();addRisk()};
   const addEconomicBtn=document.getElementById('addEconomic');if(addEconomicBtn)addEconomicBtn.onclick=ev=>{ev.preventDefault();ev.stopPropagation();addEconomic()};
-  document.querySelectorAll('[data-edit-risk-index]').forEach(b=>b.onclick=()=>addRisk([],Number(b.dataset.editRiskIndex)));
+  document.querySelectorAll('[data-edit-risk-index]').forEach(b=>b.onclick=()=>{if(isProcessEditorWindow()){currentEng().processTab='riesgos';render()}addRisk([],Number(b.dataset.editRiskIndex))});
   document.querySelectorAll('[data-delete-risk-index]').forEach(b=>b.onclick=()=>deleteRisk(Number(b.dataset.deleteRiskIndex)));
-  document.querySelectorAll('[data-edit-economic-index]').forEach(b=>b.onclick=()=>addEconomic([],Number(b.dataset.editEconomicIndex)));
+  document.querySelectorAll('[data-edit-economic-index]').forEach(b=>b.onclick=()=>{if(isProcessEditorWindow()){currentEng().processTab='impacto';render()}addEconomic([],Number(b.dataset.editEconomicIndex))});
   document.querySelectorAll('[data-delete-economic-index]').forEach(b=>b.onclick=()=>deleteEconomic(Number(b.dataset.deleteEconomicIndex)));
   const share=document.getElementById('openSessionDisplayFromProcess');if(share)share.onclick=()=>openProcessEditorWindow();
   const closeClient=document.getElementById('closeClientProcessEditor');if(closeClient)closeClient.onclick=()=>closeProcessEditorWindow();
