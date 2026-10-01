@@ -34,6 +34,51 @@ function processDecisionStep(s){
   return s?(typeof s._ui?.has_decision==='boolean'?s._ui.has_decision:!!(['ST04','ST05'].includes(String(s.step_type||''))||normalizeArray(s.decision_criteria).length||s.exception_path)):false;
 }
 
+// [AUNEA-FE-PROC-BRANCH-075] START — One-level decision branches.
+// PURPOSE: keep a decision as one main lane plus one temporary alternative lane; nested decisions are
+//          not offered inside either branch until both routes reconverge.
+// SOURCE: explicit owner UAT decision 2026-10-01; DEC-050/063 ownership and ProcessStep routing model.
+// INPUTS: active ProcessSteps and their normal_next_step / exception_path.destination_step.
+// OUTPUTS: branch membership used only by editor constraints and graph layout; no duplicate routing data.
+// SIDE_EFFECTS: none.
+// CHANGE_RISK: HIGH.
+function processBranchStructure(e,steps=activeSteps(e)){
+  const byId=new Map(steps.map(x=>[x.id,x])),order=new Map(steps.map((x,i)=>[x.id,i]));
+  const nextOf=step=>{
+    if(!step)return '__END__';
+    if(step.normal_next_step==='__END__')return '__END__';
+    if(byId.has(step.normal_next_step))return step.normal_next_step;
+    if(processDecisionStep(step))return '';
+    const i=order.get(step.id);return steps[i+1]?.id||'__END__';
+  };
+  const trace=start=>{
+    const out=[],seen=new Set();let id=start,guard=0;
+    while(id&&id!=='__END__'&&byId.has(id)&&!seen.has(id)&&guard++<steps.length+2){
+      out.push(id);seen.add(id);id=nextOf(byId.get(id));
+    }
+    if(id==='__END__')out.push('__END__');
+    return out;
+  };
+  const branches=[],branchStepIds=new Set();
+  steps.filter(processDecisionStep).forEach(decision=>{
+    const yesStart=decision.normal_next_step==='__END__'?'__END__':(byId.has(decision.normal_next_step)?decision.normal_next_step:'');
+    const rawNo=decision.exception_path?.destination_step;
+    const noStart=rawNo==='__END__'?'__END__':(byId.has(rawNo)?rawNo:'');
+    if(!yesStart||!noStart)return;
+    const yesTrace=trace(yesStart),noTrace=trace(noStart),noSet=new Set(noTrace);
+    const merge=yesTrace.find(id=>noSet.has(id))||'__END__';
+    const beforeMerge=arr=>{const i=arr.indexOf(merge);return (i<0?arr:arr.slice(0,i)).filter(id=>id!=='__END__')};
+    const yesSteps=beforeMerge(yesTrace),noSteps=beforeMerge(noTrace);
+    yesSteps.forEach(id=>branchStepIds.add(id));noSteps.forEach(id=>branchStepIds.add(id));
+    branches.push({decisionId:decision.id,yesSteps,noSteps,merge});
+  });
+  return {branches,branchStepIds,nextOf};
+}
+function processStepInsideBranch(e,stepId){
+  return !!stepId&&processBranchStructure(e).branchStepIds.has(stepId);
+}
+// [AUNEA-FE-PROC-BRANCH-075] END
+
 function auneaDropdownControl(id,opts,value='',placeholder='Selecciona…',extra=''){
   // All previously single-select/combobox controls remain canonical dropdowns.
   // Horizontal wrapping belongs exclusively to pre-existing multi-choice controls.
