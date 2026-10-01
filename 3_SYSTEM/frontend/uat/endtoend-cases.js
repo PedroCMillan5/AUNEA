@@ -9,15 +9,14 @@ const uat3Id=(key,type,index=1)=>UAT3_PREFIX+key+'-'+type+'-'+String(index).padS
 const isUat3Id=value=>String(value||'').startsWith(UAT3_PREFIX);
 function uat3Step(c,step,i){
   const id=uat3Id(c.key,'STEP',i+1),ids=n=>uat3Id(c.key,'STEP',n+1),share=step.share??100;
-  const isDecision=step.type==='ST04'||step.type==='ST05';
+  const isDecision=step.type==='ST04'||step.isDecision===true;
   const next=step.next==='END'?'__END__':Number.isInteger(step.next)?ids(step.next):ids(i+1);
   let exception_path=null;
-  if(step.type==='ST04')exception_path={type:'OTHER',condition:step.exceptionCondition||'No cumple la condición afirmativa',destination_step:ids(step.no),owner:step.actor};
-  if(step.type==='ST05')exception_path={type:'MANUAL_OVERRIDE',condition:'Aprobación denegada o no emitida: cerrar sin ejecutar la operación autorizable',destination_step:'__END__',owner:step.actor};
+  if(isDecision&&step.type==='ST04')exception_path={type:'OTHER',condition:step.exceptionCondition||'No cumple la condición afirmativa',destination_step:ids(step.no),owner:step.actor};
   return {id,status:'ACTIVE',step_name:step.name,step_type:step.type,actor:step.actor,tool:step.tool,
     inputs:step.inputs,outputs:step.outputs,applies_to:{mode:share===100?'ALL':'PERCENT',value:share,condition:''},occurrences_per_case:1,
     active_time:step.active,wait_time:step.wait,rework_time:step.rework,error_rate:{mode:'percent',value:step.error,period:'case'},
-    decision_criteria:step.decision|| (step.type==='ST05'?['AUTHORITY']:[]),normal_next_step:step.type==='ST04'?ids(step.yes):next,exception_path,
+    decision_criteria:step.decision||[],normal_next_step:isDecision&&step.type==='ST04'?ids(step.yes):next,exception_path,
     manual_actions:step.manual,automation_state:step.auto,communication_channels:step.channels,evidence:['EV02'],notes:step.condition||'',
     _ui:{has_decision:isDecision,active_unit:'min',wait_unit:'min',rework_unit:'min'},
     _details:{inputs:'',outputs:'',decision_criteria:'',manual_actions:'',communication_channels:''}};
@@ -74,6 +73,22 @@ function uat3Seed(c){
     engineGates:{},createdAt:UAT3_DATE,updatedAt:UAT3_DATE,
     uatProvenance:'Caso sintético, con valores coherentes para revisar el recorrido y encontrar incoherencias; no es evidencia medida.'};
   return {company,contacts,opportunity,interaction,engagement,source:c};
+}
+function reconcileLoadedUat3InvoiceFlow(){
+  const e=(state.engagements||[]).find(x=>x.id===uat3Id('INVOICE','ENG'));
+  if(!e)return false;
+  const approval=e.processSteps?.find(x=>x.id===uat3Id('INVOICE','STEP',5));
+  const register=e.processSteps?.find(x=>x.id===uat3Id('INVOICE','STEP',6));
+  const decision=e.processSteps?.find(x=>x.id===uat3Id('INVOICE','STEP',4));
+  if(!approval||!register||!decision)return false;
+  let changed=false;
+  if(approval._ui?.has_decision!==false){approval._ui={...(approval._ui||{}),has_decision:false};changed=true}
+  if(approval.exception_path){approval.exception_path=null;changed=true}
+  if(approval.normal_next_step!==register.id){approval.normal_next_step=register.id;changed=true}
+  if(decision.normal_next_step!==approval.id){decision.normal_next_step=approval.id;changed=true}
+  if(decision.exception_path?.destination_step!==register.id){decision.exception_path={...(decision.exception_path||{}),destination_step:register.id};changed=true}
+  if(changed)e.updatedAt=now();
+  return changed;
 }
 function uat3Cases(){return (state.engagements||[]).filter(e=>isUat3Id(e.id))}
 function clearUat3({ask=true}={}){
