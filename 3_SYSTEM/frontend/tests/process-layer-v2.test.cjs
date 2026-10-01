@@ -120,6 +120,40 @@ test('real SÍ/NO routes, merges and unconnected future destinations are visual 
   assert.match(ctx.processGraphHtml(e,e.processSteps,e.frictions,'Inicio','Fin'),/Elegir o crear destino/);
 });
 
+test('client layer exposes only the matching per-step add action and linked badges open the owning editor',()=>{
+  const {ctx,e}=setup();
+  e.processSteps=[{id:'A',status:'ACTIVE',step_name:'Recibir'}];
+  e.frictions=[{id:'F',status:'ACTIVE',affected_steps:['A'],friction_type:'P01'}];
+  e.risks=[{step_ids:['A'],description:'Riesgo'}];
+  e.economicInputs=[{step_ids:['A'],driver_id:'ED01'}];
+  const fr=ctx.clientProcessView(e,e.processSteps,e.frictions,'fricciones');
+  assert.match(fr,/data-add-friction-step="A"/);assert.doesNotMatch(fr,/data-add-risk-step="A"/);assert.doesNotMatch(fr,/data-add-economic-step="A"/);
+  const ri=ctx.clientProcessView(e,e.processSteps,e.frictions,'riesgos');
+  assert.match(ri,/data-add-risk-step="A"/);
+  const im=ctx.clientProcessView(e,e.processSteps,e.frictions,'impacto');
+  assert.match(im,/data-add-economic-step="A"/);
+  assert.match(fr,/data-edit-friction="F"/);
+  assert.match(fr,/data-edit-risk-index="0"/);
+  assert.match(fr,/data-edit-economic-index="0"/);
+  assert.match(process,/currentEng\(\)\.processTab='fricciones'/);
+  assert.match(process,/currentEng\(\)\.processTab='riesgos'/);
+  assert.match(process,/currentEng\(\)\.processTab='impacto'/);
+});
+
+test('client graph stays within the editor viewport and decision routes explain their destination',()=>{
+  const {ctx,e}=setup();
+  e.processSteps=[
+    {id:'D',status:'ACTIVE',step_name:'¿Validar?',step_type:'ST04',normal_next_step:'Y',exception_path:{destination_step:'N'}},
+    {id:'Y',status:'ACTIVE',step_name:'Aprobar'},
+    {id:'N',status:'ACTIVE',step_name:'Solicitar datos'}
+  ];
+  const html=ctx.processGraphHtml(e,e.processSteps,[],'Inicio','Fin','cliente');
+  assert.match(html,/SÍ/);assert.match(html,/Continúa en Aprobar/);
+  assert.match(html,/NO/);assert.match(html,/Continúa en Solicitar datos/);
+  assert.match(css,/body\.mode-process-editor \.process-graph-board\{width:100%;min-width:0\}/);
+  assert.match(css,/body\.mode-process-editor \.client-process-canvas\.process-graph-canvas\{overflow-x:hidden/);
+});
+
 test('risk inherits confirmed friction locations via existing step_ids; economic context reuses upstream without invented costs',()=>{
   assert.match(risk,/data-risk-friction/);
   assert.match(risk,/normalizeArray\(f\.affected_steps\)/);
