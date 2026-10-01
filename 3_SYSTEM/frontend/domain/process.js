@@ -415,10 +415,10 @@ function processGraphData(e,steps){
     if(!nodes.some(n=>n.id===id))nodes.push({id,kind,parent,route});return id;
   };
   const valid=id=>!!id&&byId.has(id),edge=(from,to,label='')=>edges.push({from,to,label});
+  steps.forEach(s=>addNode(s.id));
   if(!steps.length)edge('__START__',addNode('__END__','end'));
   else edge('__START__',steps[0].id);
   steps.forEach((step,i)=>{
-    addNode(step.id);
     if(processDecisionStep(step)){
       const yes=step.normal_next_step==='__END__'?addNode('__END__','end'):(valid(step.normal_next_step)?step.normal_next_step:addNode('__YES__'+step.id,'pending',step.id,'SÍ'));
       const no=step.exception_path?.destination_step==='__END__'?addNode('__END__','end'):(valid(step.exception_path?.destination_step)?step.exception_path.destination_step:addNode('__NO__'+step.id,'pending',step.id,'NO'));
@@ -429,26 +429,57 @@ function processGraphData(e,steps){
       edge(step.id,next);
     }
   });
-  // Keep both actual routes and reconvergences, with depth on the horizontal x axis.
-  // A previously visited node is never traversed again, so loops cannot hang layout.
-  const depth=new Map([['__START__',0]]),q=['__START__'];
-  while(q.length){const from=q.shift(),d=depth.get(from);
-    edges.filter(x=>x.from===from).forEach(x=>{if(!depth.has(x.to)){depth.set(x.to,d+1);q.push(x.to)}});
+
+  // The SÍ/normal route is the permanent horizontal lane. A NO route temporarily occupies
+  // one lower lane and must reconverge before another decision can be created.
+  const main=['__START__'],seenMain=new Set(main);let cur='__START__',guard=0;
+  while(guard++<nodes.length+4){
+    const outgoing=edges.filter(x=>x.from===cur);
+    const chosen=outgoing.find(x=>x.label==='SÍ')||outgoing.find(x=>!x.label)||outgoing[0];
+    if(!chosen||seenMain.has(chosen.to))break;
+    main.push(chosen.to);seenMain.add(chosen.to);
+    if(chosen.to==='__END__'||String(chosen.to).startsWith('__YES__')||String(chosen.to).startsWith('__NEXT__'))break;
+    cur=chosen.to;
   }
-  nodes.forEach(n=>{if(!depth.has(n.id))depth.set(n.id,Math.max(...depth.values())+1)});
-  const cols=new Map();nodes.forEach(n=>{const d=depth.get(n.id);if(!cols.has(d))cols.set(d,[]);cols.get(d).push(n)});
-  const incoming=id=>edges.find(x=>x.to===id)?.label||'';
-  const maxRows=Math.max(1,...Array.from(cols.values(),a=>a.length));
-  const positions=new Map();
-  cols.forEach((list,col)=>{
-    list.sort((a,b)=>({SÍ:-1,NO:1}[incoming(a.id)]||0)-({SÍ:-1,NO:1}[incoming(b.id)]||0));
-    list.forEach((n,i)=>{const row=list.length===1?Math.max(1,Math.ceil(maxRows/2)):Math.round(i*(maxRows-1)/(list.length-1))+1;positions.set(n.id,{row,col:col+1})});
+  const mainIndex=new Map(main.map((id,i)=>[id,i])),branchLayouts=[];
+  main.forEach((id,i)=>{
+    const step=byId.get(id);if(!step||!processDecisionStep(step))return;
+    const noEdge=edges.find(x=>x.from===id&&x.label==='NO');if(!noEdge)return;
+    const alt=[],seen=new Set([id]);let target=noEdge.to,branchGuard=0;
+    while(target&&target!=='__END__'&&!mainIndex.has(target)&&!seen.has(target)&&branchGuard++<nodes.length+2){
+      alt.push(target);seen.add(target);
+      if(String(target).startsWith('__NO__')||String(target).startsWith('__NEXT__'))break;
+      const outgoing=edges.filter(x=>x.from===target);
+      const chosen=outgoing.find(x=>x.label==='SÍ')||outgoing.find(x=>!x.label)||outgoing[0];
+      if(!chosen)break;target=chosen.to;
+    }
+    const merge=mainIndex.has(target)?target:(target==='__END__'?'__END__':null);
+    branchLayouts.push({decisionId:id,decisionIndex:i,alt,merge});
   });
-  // Fin is a shared sink even if a branch completes before the other.
-  const end=positions.get('__END__'),endCol=Math.max(...Array.from(positions.entries()).filter(([id])=>id!=='__END__').map(([,p])=>p.col))+1;
-  if(end)positions.set('__END__',{row:Math.ceil(maxRows/2),col:endCol});
-  const maxCols=Math.max(endCol,...Array.from(positions.values(),p=>p.col));
-  return {nodes,edges,cols:maxCols,rows:maxRows,positions};
+
+  const gaps=Array(Math.max(0,main.length-1)).fill(1);
+  branchLayouts.forEach(b=>{
+    const mi=b.merge!=null?mainIndex.get(b.merge):null;
+    if(mi==null||mi<=b.decisionIndex)return;
+    const available=Math.max(0,mi-b.decisionIndex-1),extra=Math.max(0,b.alt.length-available);
+    gaps[b.decisionIndex]=(gaps[b.decisionIndex]||1)+extra;
+  });
+  const positions=new Map();let col=1;
+  main.forEach((id,i)=>{positions.set(id,{row:1,col});if(i<gaps.length)col+=gaps[i]});
+  branchLayouts.forEach(b=>{
+    const origin=positions.get(b.decisionId);if(!origin)return;
+    b.alt.forEach((id,i)=>positions.set(id,{row:2,col:origin.col+i+1}));
+  });
+
+  let maxCol=Math.max(1,...Array.from(positions.values(),p=>p.col)),unplaced=0;
+  nodes.forEach(n=>{
+    if(positions.has(n.id))return;
+    if(n.id==='__END__'){positions.set(n.id,{row:1,col:++maxCol});return}
+    positions.set(n.id,{row:3,col:++maxCol});unplaced++;
+  });
+  const rows=unplaced?3:(branchLayouts.some(b=>b.alt.length)?2:1);
+  const maxCols=Math.max(1,...Array.from(positions.values(),p=>p.col));
+  return {nodes,edges,cols:maxCols,rows,positions,branchLayouts};
 }
 function graphNodeCard(e,s,i,fr,tab='cliente'){
   const decision=processDecisionStep(s),steps=activeSteps(e);
