@@ -322,7 +322,7 @@ function bindCanonicalRenderer(){
     [ordered[from],ordered[to]]=[ordered[to],ordered[from]];
     answerDetails(e)[`${fid}_priority`]=ordered.slice(0,Math.min(3,selected.length));
     e.updatedAt=now();markDirty(`Prioridad ${fid} reordenada`);render();
-  }));
+  });
   document.querySelectorAll('[data-nextstep-action]').forEach(el=>el.addEventListener('change',()=>{const fid=el.dataset.nextstepAction;answerDetails(currentEng())[`${fid}__action`]=el.value;syncNextStep(fid);render()}));
   document.querySelectorAll('[data-nextstep-other]').forEach(el=>el.addEventListener('input',()=>{const fid=el.dataset.nextstepOther;answerDetails(currentEng())[`${fid}__other`]=el.value;syncNextStep(fid)}));
   document.querySelectorAll('[data-nextstep-owner]').forEach(el=>el.addEventListener('input',()=>{const fid=el.dataset.nextstepOwner;answerDetails(currentEng())[`${fid}__owner`]=el.value;syncNextStep(fid)}));
