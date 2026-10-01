@@ -22,6 +22,7 @@ function riskBuilder(e){
     '<button class="btn btn-primary" id="addRisk">Añadir riesgo</button>');
 }
 function addRisk(preselectedSteps=[],editIndex=null){
+  if(typeof guardAsisMutation==='function'&&guardAsisMutation())return;
   const e=currentEng(),existing=Number.isInteger(editIndex)?e.risks?.[editIndex]:null;
   if(existing)preselectedSteps=normalizeArray(existing.step_ids);
   const cats=fieldOptions('OS_RISK_CATEGORY'),rev=fieldOptions('OS_REVERSIBILITY'),
@@ -74,6 +75,7 @@ function addRisk(preselectedSteps=[],editIndex=null){
   refreshRelatedProblems();
 }
 function deleteRisk(index){
+  if(typeof guardAsisMutation==='function'&&guardAsisMutation())return;
   const e=currentEng(),item=e?.risks?.[index];if(!item)return;
   if(!confirm('¿Eliminar este riesgo del estudio? Los informes históricos confirmados no se modificarán.'))return;
   if(typeof persistRecoverySnapshot==='function')persistRecoverySnapshot('eliminar-riesgo');
