@@ -14,20 +14,23 @@ const AUNEA_BACKEND_LOCAL_CANDIDATES = [
   'http://127.0.0.1:8020'
 ];
 
-function auneaWorkspaceBackendCandidate(loc=(typeof window!=='undefined'?window.location:null)){
+function auneaWorkspaceBackendCandidate(loc=(typeof window!=='undefined'?window.location:null),port=8000){
   if(!loc) return '';
   const protocol=String(loc.protocol||'');
   const hostname=String(loc.hostname||'');
   if(protocol!=='https:'||!hostname.endsWith('.app.github.dev')) return '';
   const match=hostname.match(/^(.*)-\d+\.app\.github\.dev$/);
   if(!match) return '';
-  return `https://${match[1]}-8000.app.github.dev`;
+  return `https://${match[1]}-${port}.app.github.dev`;
+}
+function auneaWorkspaceBackendCandidates(loc=(typeof window!=='undefined'?window.location:null)){
+  return [8000,8010,8020].map(port=>auneaWorkspaceBackendCandidate(loc,port)).filter(Boolean);
 }
 
 function auneaBackendCandidates(){
   const preferred = typeof state?.backendUrl === 'string' ? state.backendUrl.trim() : '';
-  const workspace = auneaWorkspaceBackendCandidate();
-  return [...new Set([preferred, workspace, ...AUNEA_BACKEND_LOCAL_CANDIDATES].filter(Boolean))];
+  const workspace = auneaWorkspaceBackendCandidates();
+  return [...new Set([preferred, ...workspace, ...AUNEA_BACKEND_LOCAL_CANDIDATES].filter(Boolean))];
 }
 
 async function probeAuneaBackend(baseUrl, timeoutMs=1100){
