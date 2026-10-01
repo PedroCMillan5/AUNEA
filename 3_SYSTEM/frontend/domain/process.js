@@ -666,7 +666,6 @@ bindForms=function(){
   document.querySelectorAll('[data-add-risk-step]').forEach(b=>b.onclick=ev=>{ev.preventDefault();ev.stopPropagation();addRisk([b.dataset.addRiskStep])});
   document.querySelectorAll('[data-add-economic-step]').forEach(b=>b.onclick=ev=>{ev.preventDefault();ev.stopPropagation();addEconomic([b.dataset.addEconomicStep])});
   document.querySelectorAll('[data-edit-step]').forEach(b=>b.onclick=ev=>{ev.preventDefault();ev.stopPropagation();openStepModal(b.dataset.editStep)});
-  document.querySelectorAll('[data-edit-step]').forEach(b=>b.onclick=ev=>{ev.preventDefault();ev.stopPropagation();openStepModal(b.dataset.editStep)});
   document.querySelectorAll('[data-delete-step]').forEach(b=>b.onclick=ev=>{ev.preventDefault();ev.stopPropagation();removeStepFromFlow(b.dataset.deleteStep)});
   document.querySelectorAll('[data-move-step-up]').forEach(b=>b.onclick=()=>moveStep(b.dataset.moveStepUp,-1));
   document.querySelectorAll('[data-move-step-down]').forEach(b=>b.onclick=()=>moveStep(b.dataset.moveStepDown,1));
@@ -688,7 +687,6 @@ bindForms=function(){
   const closeClient=document.getElementById('closeClientProcessEditor');if(closeClient)closeClient.onclick=()=>closeProcessEditorWindow();
   document.querySelectorAll('[data-confirm-process-layer]').forEach(b=>b.onclick=()=>confirmProcessLayer(({map:'cliente',frictions:'fricciones',risks:'riesgos',impact:'impacto'})[b.dataset.confirmProcessLayer]));
   document.querySelectorAll('[data-add-after]').forEach(b=>b.onclick=e=>{e.stopPropagation();openStepModal(null,b.dataset.addAfter||null)});
-  document.querySelectorAll('[data-delete-step]').forEach(b=>b.onclick=ev=>{ev.preventDefault();ev.stopPropagation();removeStepFromFlow(b.dataset.deleteStep)});
   document.querySelectorAll('[data-drag-step]').forEach(el=>{el.ondragstart=ev=>{ev.dataTransfer?.setData('text/plain',el.dataset.dragStep)};el.ondragover=ev=>ev.preventDefault();el.ondrop=ev=>{ev.preventDefault();const source=ev.dataTransfer?.getData('text/plain');if(source)reorderStepBefore(source,el.dataset.dragStep)}});
   document.querySelectorAll('[data-graph-edit-route]').forEach(b=>b.onclick=ev=>{
     ev.preventDefault();ev.stopPropagation();openStepModal(b.dataset.graphEditRoute);
