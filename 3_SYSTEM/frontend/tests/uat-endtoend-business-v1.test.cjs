@@ -155,3 +155,16 @@ test('Generate click exposes a missing fixture as visible failure and changes no
  assert.equal(load.disabled,false);
 });
  // [AUNEA-UAT-ENDTOEND-120] END
+
+
+test('one-click invoice recovery restores steps 2-4 without replacing step 1',()=>{
+ const src=read('uat/endtoend-cases.js'),ui=read('uat/visible.js');
+ assert.match(src,/function restoreCurrentInvoiceUatSteps234/);
+ assert.match(src,/Validar datos de la factura/);
+ assert.match(src,/Cotejar pedido y albarán/);
+ assert.match(src,/Determinar si procede aprobación/);
+ assert.match(src,/step1\.normal_next_step=s2\.id/);
+ assert.match(src,/s2\.normal_next_step=s3\.id/);
+ assert.match(src,/s3\.normal_next_step=s4\.id/);
+ assert.match(ui,/recoverInvoiceSteps234/);
+});
