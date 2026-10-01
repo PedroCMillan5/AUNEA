@@ -198,12 +198,64 @@ function uat3Audit(e){
   findings.push('La versión AS-IS sigue pendiente de confirmación humana. Ningún estudio cargado se presenta como histórico validado.');
   return {checks,findings,passed:checks.filter(x=>x.pass).length,total:checks.length};
 }
+
+function restoreCurrentInvoiceUatSteps234(){
+  const e=currentEng();
+  if(!e)return toast('Abre primero el estudio que quieres reparar.');
+  const active=(e.processSteps||[]).filter(x=>x.status!=='SUPERSEDED');
+  const step1=active[0];
+  if(!step1)return toast('El estudio actual no conserva el paso 1; no se aplica la recuperación automática.');
+  if(!confirm('Recuperar automáticamente los pasos 2, 3 y 4 del caso de facturas en el estudio actual? El paso 1 se conserva.'))return;
+  const upsert=(name,data)=>{
+    let step=(e.processSteps||[]).find(x=>x.status!=='SUPERSEDED'&&x.step_name===name);
+    if(!step){step={id:id('STEP'),status:'ACTIVE'};e.processSteps.push(step)}
+    Object.assign(step,{
+      status:'ACTIVE',occurrences_per_case:1,applies_to:{mode:'PERCENT',value:'100',condition:''},
+      inputs:[],outputs:[],manual_actions:[],communication_channels:[],evidence:['EV02'],
+      active_time:0,wait_time:0,rework_time:0,error_rate:{value:0,mode:'percent',period:''},
+      automation_state:'MANUAL',decision_criteria:[],exception_path:null,normal_next_step:'',_details:{},_ui:{},
+      ...data
+    });
+    return step;
+  };
+  const s2=upsert('Validar datos de la factura',{
+    step_type:'ST02',actor:'FINANCE',tool:'ERP',
+    inputs:['PDF','MASTER_DATA'],outputs:['RECORD'],
+    active_time:8,wait_time:90,rework_time:10,error_rate:{value:8,mode:'percent',period:''},
+    manual_actions:['SEARCH','CHECK','COMPARE'],communication_channels:['EMAIL']
+  });
+  const s3=upsert('Cotejar pedido y albarán',{
+    step_type:'ST02',actor:'FINANCE',tool:'ERP',
+    inputs:['PDF','RECORD','MASTER_DATA'],outputs:['RECORD'],
+    active_time:7,wait_time:60,rework_time:15,error_rate:{value:6,mode:'percent',period:''},
+    manual_actions:['SEARCH','COMPARE'],communication_channels:['EMAIL']
+  });
+  const s4=upsert('Determinar si procede aprobación',{
+    step_type:'ST04',actor:'FINANCE',tool:'ERP',
+    inputs:['RECORD'],outputs:['APPROVAL'],
+    active_time:2,wait_time:0,rework_time:0,error_rate:{value:0,mode:'percent',period:''},
+    manual_actions:['CHECK'],communication_channels:['EMAIL'],
+    decision_criteria:['THRESHOLD','CATEGORY'],
+    exception_path:{type:'',condition:'Importe ≤ 1.500 € y sin discrepancias',destination_step:'',owner:'FINANCE'},
+    _details:{decision_criteria:'El importe supera 1.500 € o existe una discrepancia'},
+    _ui:{has_decision:true}
+  });
+  step1.normal_next_step=s2.id;s2.normal_next_step=s3.id;s3.normal_next_step=s4.id;
+  s4.normal_next_step='';
+  if(typeof invalidateProcessLayers==='function')invalidateProcessLayers(e,'map');
+  e.updatedAt=now();markDirty('UAT: recuperados pasos 2-4 del flujo de facturas');
+  const ok=typeof persistRecoverySnapshot==='function'?persistRecoverySnapshot('uat-recover-invoice-steps-234'):true;
+  render();
+  toast(ok?'Pasos 2, 3 y 4 recuperados. La decisión queda con destinos pendientes para continuar la UAT.':'Los pasos se han reconstruido en memoria, pero no se pudieron persistir; revisa si hay otra ventana editando.');
+}
+
 const __uat3PostBindBase=postBind;
 postBind=function(){
   __uat3PostBindBase();
-  const load=document.getElementById('loadUat3'),clear=document.getElementById('clearUat3');
+  const load=document.getElementById('loadUat3'),clear=document.getElementById('clearUat3'),recover=document.getElementById('recoverInvoiceSteps234');
   if(load)load.onclick=loadUat3;
   if(clear)clear.onclick=()=>clearUat3({ask:true});
+  if(recover)recover.onclick=restoreCurrentInvoiceUatSteps234;
   document.querySelectorAll('[data-uat3-open]').forEach(button=>button.onclick=()=>{
     const e=state.engagements.find(x=>x.id===button.dataset.uat3Open);if(!e)return;
     state.activeEngagementId=e.id;
