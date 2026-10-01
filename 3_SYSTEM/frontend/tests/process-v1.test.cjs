@@ -312,3 +312,17 @@ test('decision scope reuse and condition capture',()=>{
   assert.ok(code.includes('Condición principal'));
   assert.ok(code.includes('s._details.decision_criteria=hasDecisionNow'));
 });
+
+
+test('friendly AS-IS graph keeps routing owners and adds functional node iconography',()=>{
+  assert.match(code,/function processNodeIconName/);
+  assert.match(code,/function processNodeIconSvg/);
+  assert.match(code,/step-type-/);
+  assert.match(code,/process-graph-legend/);
+  assert.match(code,/Ruta SÍ \/ principal/);
+  assert.match(code,/Ruta NO \/ alternativa/);
+  assert.match(code,/graph-path-label-main/);
+  assert.match(code,/graph-path-label-alt/);
+  assert.match(code,/normal_next_step/);
+  assert.match(code,/exception_path\?\.destination_step/);
+});
