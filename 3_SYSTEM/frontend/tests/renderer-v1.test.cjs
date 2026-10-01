@@ -156,4 +156,33 @@ test('dropdown/combobox detail stays hidden unless canonical Otro is selected',(
   assert.match(noOther,/detail-wrap/,'detail remains available when the canonical set has no Otro branch');
 });
 
+
+test('DF086 MULTISELECT_WITH_PRIORITY shows selected outcomes immediately below the selector and keeps a structured top 3',()=>{
+  e.answerDetails={DF086_priority:['TRACEABILITY','FASTER','QUALITY']};
+  const opts=[
+    {value:'LESS_MANUAL',label:'Reducir trabajo manual'},
+    {value:'FASTER',label:'Reducir tiempo de ciclo'},
+    {value:'QUALITY',label:'Mejorar calidad / reducir errores'},
+    {value:'TRACEABILITY',label:'Mejorar trazabilidad'},
+    {value:'OTHER',label:'Otro'}
+  ];
+  const html=ctx.renderControl({Field_ID:'DF086',Control_UI:'MULTISELECT_WITH_PRIORITY'},['LESS_MANUAL','FASTER','QUALITY','TRACEABILITY'],opts,e);
+  assert.match(html,/data-priority-order="DF086"/);
+  assert.match(html,/Ordena las 3 prioridades principales/);
+  assert.match(html,/1ª prioridad[\s\S]*Mejorar trazabilidad/);
+  assert.match(html,/2ª prioridad[\s\S]*Reducir tiempo de ciclo/);
+  assert.match(html,/3ª prioridad[\s\S]*Mejorar calidad \/ reducir errores/);
+  assert.match(html,/Sin prioridad[\s\S]*Reducir trabajo manual/);
+  assert.match(html,/data-priority-move="DF086"/);
+  e.answerDetails={};
+});
+
+test('DF086 priority block stays hidden until at least two outcomes are selected and renderer enforces a five-result ceiling in its binder',()=>{
+  const opts=[{value:'A',label:'A'},{value:'B',label:'B'},{value:'OTHER',label:'Otro'}];
+  const one=ctx.renderControl({Field_ID:'DF086',Control_UI:'MULTISELECT_WITH_PRIORITY'},['A'],opts,e);
+  assert.doesNotMatch(one,/data-priority-order="DF086"/);
+  assert.match(code,/selected\.length>5/);
+  assert.match(code,/Selecciona como máximo 5 resultados/);
+});
+
 // [AUNEA-UAT-RENDER-010] END
