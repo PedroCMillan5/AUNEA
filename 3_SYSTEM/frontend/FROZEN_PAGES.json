@@ -95,9 +95,11 @@
       "stage_id": "S08",
       "status": "FROZEN",
       "frozen_on": "2026-09-24",
-      "rule": "Estado objetivo y restricciones cerrado tras igualar DF089 a ancho completo. No modificar sin reapertura explícita.",
+      "rule": "Estado objetivo y restricciones reabierto el 01/10/2026 únicamente para completar el comportamiento canónico de DF086 MULTISELECT_WITH_PRIORITY: selección 1–5 y orden top 3 visible justo debajo del control. La prioridad se guarda como detalle estructurado sin alterar answers.DF086 ni sus consumidores. Reaprobado tras QA dirigida; no modificar de nuevo sin reapertura explícita.",
       "style_snapshot": "tests/frozen/session-s08-v1.css.snapshot",
-      "gate": "AUNEA-UAT-SESSION-FINALIZED-FROZEN-020"
+      "gate": "AUNEA-UAT-SESSION-FINALIZED-FROZEN-020",
+      "reopened_on": "2026-10-01",
+      "reapproved_on": "2026-10-01"
     }
   ]
 }
