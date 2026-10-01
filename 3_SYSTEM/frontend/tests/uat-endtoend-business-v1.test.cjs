@@ -78,6 +78,18 @@ test('three decision maps retain explicit positive/negative destinations and do 
   assert.equal(branching[0]._ui.has_decision,true);
  }
 });
+test('invoice case has exactly one bifurcation: YES approves then registers; NO registers directly',()=>{
+  const ctx=scenario(),e=ctx.uat3Seed(cases.find(c=>c.key==='INVOICE')).engagement;
+  const [receive,validate,match,decision,approval,register]=e.processSteps;
+  assert.equal(decision._ui.has_decision,true);
+  assert.equal(decision.normal_next_step,approval.id);
+  assert.equal(decision.exception_path.destination_step,register.id);
+  assert.equal(approval._ui.has_decision,false);
+  assert.equal(approval.exception_path,null);
+  assert.equal(approval.normal_next_step,register.id);
+  assert.equal(register.normal_next_step,'__END__');
+});
+
 test('a same-owner edit remains visible as an audit failure, not hidden by a green fixture check',()=>{
  const ctx=scenario(),r=ctx.uat3Seed(cases[0]),e=r.engagement;
  ctx.state.companies.push(r.company);ctx.state.contacts.push(...r.contacts);
