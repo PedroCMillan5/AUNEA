@@ -433,7 +433,7 @@ function processGraphHtml(e,steps,fr,start,finish,tab='cliente'){
     let html='';
     if(n.kind==='start')html=flowBoundaryNode('start',start);
     else if(n.kind==='end')html=flowBoundaryNode('end',finish);
-    else if(n.kind==='pending')html='<button type="button" class="graph-route-pending" data-graph-edit-route="'+attr(n.parent)+'" data-graph-route-kind="'+(n.route==='NO'?'no':'yes')+'"><b>'+esc(n.route)+'</b><span>Seleccionar el siguiente paso</span></button>';
+    else if(n.kind==='pending')html='<button type="button" class="graph-route-pending" data-graph-edit-route="'+attr(n.parent)+'" data-graph-route-kind="'+(n.route==='NO'?'no':'yes')+'"><b>'+esc(n.route)+'</b><span>Elegir o crear el siguiente paso</span></button>';
     else {const step=steps.find(x=>x.id===n.id);html=graphNodeCard(e,step,steps.indexOf(step),fr,tab);}
     return '<div class="process-graph-cell" '+style+' '+id+'>'+html+'</div>';
   };
