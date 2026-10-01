@@ -38,7 +38,7 @@ function contactFilterRow(companyId=null) {
   presentRoles.filter(v=>!roleOptions.includes(v)).forEach(v=>roleOptions.unshift(v));
   return `<div class="filter-row">
     ${contactFilterControl('role','Cargo',roleOptions,f.role||'')}
-    ${contactFilterControl('status','Estado',CONTACT_STATUS,f.status||'')}
+    ${contactFilterControl('status','Estado',CONTACT_STATUS.filter(value=>value!=='Inactivo'),f.status||'')}
     <label class="filter-check"><input type="checkbox" id="includeInactiveContacts" ${f.includeInactive?'checked':''}><span>Incluir inactivos</span></label>
     <button class="link-btn" id="clearContactFilters">Limpiar filtros</button>
   </div>`;
