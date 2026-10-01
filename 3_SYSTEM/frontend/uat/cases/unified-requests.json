@@ -171,8 +171,6 @@
     "DF100": "Declaración sintética: 110 peticiones por mes; una petición puede llegar por tres canales, pero debe tener un único identificador. El 25% requiere validación presupuestaria. No confundir canales con casos nuevos."
   },
   "details": {
-    "DF012": "Solicitud por email, llamada telefónica o formulario procedente de un área interna.",
-    "DF013": "Se asigna un único número, se clasifica el servicio, se designa responsable y se informa al solicitante.",
     "DF024": "Se producen semanas de carga irregular alrededor del cierre de proyectos",
     "DF098__action": "FOLLOWUP_MEETING",
     "DF098__owner": "Marta Carrasco",
