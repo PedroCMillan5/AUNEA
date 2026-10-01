@@ -538,8 +538,14 @@ function drawProcessGraph(){
     let x1=ar.right-rect.left,y1=ar.top+ar.height/2-rect.top;
     let x2=br.left-rect.left,y2=br.top+br.height/2-rect.top;
     let d;
-    if(forward){const xm=x1+Math.max(18,(x2-x1)/2);d='M'+x1+' '+y1+'H'+xm+'V'+y2+'H'+(x2-5);}
-    else{const y=Math.max(12,Math.min(y1,y2)-55);x1=ar.left+ar.width/2-rect.left;y1=ar.top-rect.top;x2=br.left+br.width/2-rect.left;y2=br.top-rect.top;d='M'+x1+' '+y1+'V'+y+'H'+x2+'V'+(y2-5);}
+    if(forward&&edge.label==='NO'&&Math.abs(y2-y1)<24){
+      const y=Math.max(ar.bottom,br.bottom)-rect.top+30;
+      d='M'+x1+' '+y1+'V'+y+'H'+(x2-10)+'V'+y2+'H'+(x2-5);
+    }else if(forward){
+      const xm=x1+Math.max(18,(x2-x1)/2);d='M'+x1+' '+y1+'H'+xm+'V'+y2+'H'+(x2-5);
+    }else{
+      const y=Math.max(12,Math.min(y1,y2)-55);x1=ar.left+ar.width/2-rect.left;y1=ar.top-rect.top;x2=br.left+br.width/2-rect.left;y2=br.top-rect.top;d='M'+x1+' '+y1+'V'+y+'H'+x2+'V'+(y2-5);
+    }
     const path=document.createElementNS(ns,'path');path.setAttribute('d',d);path.setAttribute('class','graph-path '+(edge.label==='NO'?'graph-path-alternative':''));path.setAttribute('marker-end','url(#auneaGraphArrow)');svg.appendChild(path);
 
   });
