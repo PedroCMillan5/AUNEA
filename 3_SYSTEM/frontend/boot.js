@@ -17,6 +17,9 @@ else{
   if(typeof registerInternalWorkPages==='function')registerInternalWorkPages();
   if(typeof registerResultsModeLauncher==='function')registerResultsModeLauncher();
   migrateLoadedState();
+  if(typeof reconcileLoadedUat3InvoiceFlow==='function'&&reconcileLoadedUat3InvoiceFlow()){
+    if(typeof persistRecoverySnapshot==='function')persistRecoverySnapshot('uat3-invoice-flow-reconciled');
+  }
   if(isProcessEditorWindow()){
     const requested=new URLSearchParams(location.search).get('engagement');
     if(requested&&state.engagements.some(e=>e.id===requested))state.activeEngagementId=requested;
