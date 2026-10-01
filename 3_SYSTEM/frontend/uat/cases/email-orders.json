@@ -173,8 +173,6 @@
     "DF100": "Escenario sintético de 310 emails de pedido al mes: 12% requiere resolver referencia o stock. El identificador del hilo original debe vincularse al mismo ticket, no generar tickets duplicados por cada respuesta."
   },
   "details": {
-    "DF012": "Email de pedido entrante al buzón comercial con referencias, cantidades y fecha solicitada.",
-    "DF013": "Ticket de pedido registrado después de validar cliente y existencias; acuse de recepción vinculado al email original.",
     "DF024": "Picos a principio de semana y durante campañas de clientes",
     "DF098__action": "REQUEST_EVIDENCE",
     "DF098__owner": "Sara Romero",
