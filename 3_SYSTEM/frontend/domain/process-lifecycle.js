@@ -87,7 +87,7 @@ function processEditorToken(){
   return q.get('editorToken')||'';
 }
 function isAsisConsoleLocked(e=currentEng()){
-  if(!e||isProcessEditorWindow())return false;
+  if(!e||(typeof isProcessEditorWindow==='function'&&isProcessEditorWindow()))return false;
   return readProcessEditorLease()?.engagementId===e.id;
 }
 function guardAsisMutation(){
