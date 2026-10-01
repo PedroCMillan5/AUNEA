@@ -92,9 +92,10 @@ test('cross-tab process synchronization preserves horizontal viewport when accep
   assert.equal(next.scrollTop,23);
 });
 
-test('an edit modal holds its captured Engagement object and accepts the latest remote state only after editing',()=>{
+test('an edit modal holds its captured Engagement object and stale remote state cannot hard-delete process steps afterwards',()=>{
   const ctx=makeCtx(),local={id:'ENG-1',processSteps:[{id:'STEP-1',step_name:'Borrador'}],answers:{}};
   ctx.state={...ctx.blankState(),activePage:'proceso',activeEngagementId:'ENG-1',engagements:[local]};
+  vm.runInContext('__auneaSyncedState=recoveryClone(state)',ctx);
   ctx.isClientDisplay=()=>false;ctx.isProcessEditorWindow=()=>true;
   let editing=true,renderCount=0;
   ctx.document.querySelector=q=>q==='#modalRoot .modal'&&editing?{}:null;
@@ -106,7 +107,7 @@ test('an edit modal holds its captured Engagement object and accepts the latest 
   assert.equal(renderCount,0,'do not redraw and discard unsaved controls');
   editing=false;
   ctx.__listeners.storage({key:'aunea_internal_v1',newValue:payload});
-  assert.equal(ctx.state.engagements[0].processSteps.length,0);
+  assert.equal(ctx.state.engagements[0].processSteps.length,1,'process steps use SUPERSEDED lifecycle and must not disappear through stale storage');
   assert.equal(renderCount,1);
 });
 
