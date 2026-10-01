@@ -257,7 +257,7 @@ body.mode-process-editor .flow-connector{flex:0 0 28px;width:28px}
 .client-process-layer-rail .client-rail-item:not(:last-of-type):after{content:"";position:absolute;left:-8px;top:calc(50% + 7px);width:2px;height:calc(100% + 4px);background:var(--system-line)}
 .client-process-layer-rail .client-rail-item.active:before{background:var(--system)}
 .process-graph-canvas{padding:10px 6px 18px}
-.process-graph-board{position:relative;display:grid;grid-template-columns:repeat(var(--graph-cols),minmax(0,1fr));grid-template-rows:repeat(var(--graph-rows),minmax(116px,auto));gap:14px 18px;min-width:0;width:100%;box-sizing:border-box;align-items:center;padding:16px 14px;isolation:isolate}
+.process-graph-board{position:relative;display:grid;grid-template-columns:repeat(var(--graph-cols),minmax(0,1fr));grid-template-rows:repeat(var(--graph-rows),minmax(104px,auto));gap:10px 16px;min-width:0;width:100%;box-sizing:border-box;align-items:center;padding:14px 12px;isolation:isolate}
 .process-graph-cell{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;min-width:0;min-height:42px}
 .process-graph-cell .graph-flow-step{width:100%;max-width:none;min-width:0;cursor:grab}
 .process-graph-cell .flow-boundary{width:100%;min-width:0;max-width:none;text-align:center}
@@ -274,7 +274,11 @@ body.mode-process-editor .flow-connector{flex:0 0 28px;width:28px}
 .graph-route-controls button:hover,.graph-route-pending:hover{border-color:var(--system);background:#e2eee7}
 .graph-route-pending{display:grid;gap:3px;border-style:dashed;max-width:180px}
 .graph-flow-step .flow-step-tools{flex-wrap:wrap}
-.process-node-links button{font:inherit;cursor:pointer}
+.process-node-links button{appearance:none;font-family:inherit;line-height:1.2;cursor:pointer}
+.process-node-links .friction-badge{font-size:10px}
+.process-node-links .risk-badge,.process-node-links .economic-badge{font-size:11px}
+.branch-decision-blocked{display:flex;flex-direction:column;gap:4px;padding:10px 12px;border:1px solid var(--system-line);border-radius:9px;background:var(--system-soft);color:var(--system)}
+.branch-decision-blocked b{font-size:12px}.branch-decision-blocked span{font-size:11px;line-height:1.4;color:var(--muted)}
 body.mode-process-editor .client-process-canvas.process-graph-canvas{overflow-x:hidden;overflow-y:visible;max-width:100%}
 body.mode-process-editor .process-graph-board{width:100%;min-width:0}
 body.mode-process-editor .process-graph-cell .flow-step{padding:10px}
