@@ -35,6 +35,18 @@ function recoveryShared(x){
   return result;
 }
 function recoveryIds(x){return Array.isArray(x)&&x.every(v=>v&&typeof v==='object'&&!Array.isArray(v)&&typeof v.id==='string')}
+function preserveMissingProcessSteps(incoming,baseline){
+  if(!incoming||!baseline)return incoming;
+  const baseByEng=new Map((baseline.engagements||[]).map(e=>[e.id,e]));
+  (incoming.engagements||[]).forEach(e=>{
+    const b=baseByEng.get(e.id);if(!b)return;
+    const current=Array.isArray(e.processSteps)?e.processSteps:[];
+    const seen=new Set(current.map(s=>s?.id).filter(Boolean));
+    const missing=(b.processSteps||[]).filter(s=>s?.id&&!seen.has(s.id));
+    if(missing.length)e.processSteps=[...current,...recoveryClone(missing)];
+  });
+  return incoming;
+}
 function recoveryReconcile(base,local,remote,path,conflicts){
   if(recoverySame(local,remote))return recoveryClone(local);
   if(recoverySame(local,base))return recoveryClone(remote);
@@ -62,7 +74,7 @@ function recoveryReconcile(base,local,remote,path,conflicts){
 function recoveryModalOpen(){return typeof isProcessEditorWindow==='function'&&isProcessEditorWindow()&&!!document.querySelector('#modalRoot .modal')}
 function reconcileRecoveryWithDisk(){
   const disk=localStorage.getItem(STORAGE_KEY);
-  const remote=disk?normalizeRecoveredState(JSON.parse(disk)):recoveryClone(__auneaSyncedState);
+  const remote=disk?preserveMissingProcessSteps(normalizeRecoveredState(JSON.parse(disk)),__auneaSyncedState):recoveryClone(__auneaSyncedState);
   const conflicts=[];
   const shared=recoveryReconcile(recoveryShared(__auneaSyncedState),recoveryShared(state),recoveryShared(remote),'',conflicts);
   if(conflicts.length)return {conflicts};
@@ -124,7 +136,7 @@ window.addEventListener('storage',ev=>{
     if(recoveryModalOpen()||state.dirty)return;
     const latest=localStorage.getItem(STORAGE_KEY);
     if(latest&&latest!==ev.newValue)return; // A queued older storage event is not current state.
-    const incoming=normalizeRecoveredState(JSON.parse(ev.newValue));
+    const incoming=preserveMissingProcessSteps(normalizeRecoveredState(JSON.parse(ev.newValue)),__auneaSyncedState);
     const localUi=Object.fromEntries(RECOVERY_TAB_LOCAL.map(k=>[k,state[k]]));
     const flowCanvas=document.querySelector('.flow-canvas');
     const viewport=flowCanvas?{left:flowCanvas.scrollLeft,top:flowCanvas.scrollTop}:null;
