@@ -302,3 +302,13 @@ test('error/repetition percentage mode has no period; count mode exposes period'
 });
 
 // [AUNEA-UAT-PROC-010] END
+
+
+test('decision scope reuse and condition capture',()=>{
+  assert.ok(code.includes('decisionCriteriaPresetFromScope'));
+  assert.ok(code.includes("AMOUNT:'THRESHOLD'"));
+  assert.ok(code.includes("CASE_TYPE:'CATEGORY'"));
+  assert.ok(code.includes('Preselección sugerida desde las variantes declaradas en Alcance del proceso'));
+  assert.ok(code.includes('Condición principal'));
+  assert.ok(code.includes('s._details.decision_criteria=hasDecisionNow'));
+});
