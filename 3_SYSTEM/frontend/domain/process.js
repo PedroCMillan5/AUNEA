@@ -194,7 +194,7 @@ function openStepModal(stepId=null,linkFromStepId=null,preset=null){
   <details class="step-group"><summary>D. Flujo y decisiones</summary><div class="form-grid">
     <div class="field full"><label>¿Este paso incluye una decisión o bifurcación?</label>${decisionSelector}</div>
     <div class="field full"><div class="decision-route-card route-yes"><div class="decision-route-head"><b data-step-next-label>${hasDecision?'Ruta SÍ / afirmativa':'Siguiente paso normal'}</b><span>${hasDecision?'Cuando se cumple la condición principal':'Continuación del flujo'}</span></div><label>Destino ${hasDecision?requiredMark():''}</label>${auneaDropdownControl('step_next',decisionDestinationOptions(e,s),s.normal_next_step||'','Selecciona destino…')}</div></div>
-    <div class="field full" data-step-decision-area${hasDecision?'':' style="display:none"'}><label>Criterios de decisión</label>${selectedHtml('step_decisions',decisions,s.decision_criteria)}<div class="detail-wrap" data-step-decision-other-wrap${decisionOtherOpen?'':' style="display:none"'}><input id="step_decisions_detail" value="${attr(decisionOtherOpen?(s._details.decision_criteria||''):'')}" placeholder="Especifica el criterio sólo al seleccionar Otro"></div></div>
+    <div class="field full" data-step-decision-area${hasDecision?'':' style="display:none"'}><label>Criterios de decisión</label>${selectedHtml('step_decisions',decisions,s.decision_criteria)}${!existing&&normalizeArray(e.answers?.DF020).length?'<div class="field-help">Preselección sugerida desde las variantes declaradas en Alcance del proceso. Puedes ajustarla durante la validación del AS-IS.</div>':''}<div class="detail-wrap"><label>Condición principal</label><input id="step_decisions_detail" value="${attr(s._details.decision_criteria||'')}" placeholder="Ej. Importe > 1.500 € o existe una discrepancia"><div class="field-help">Regla concreta que activa la ruta SÍ / afirmativa.</div></div></div>
     <div class="field full" data-step-decision-area${hasDecision?'':' style="display:none"'}>${exceptionControl(s,e)}</div>
   </div></details>
   <details class="step-group"><summary>E. Automatización y sistemas</summary><div class="form-grid">
@@ -213,7 +213,7 @@ function openStepModal(stepId=null,linkFromStepId=null,preset=null){
     const am=document.getElementById('step_applies_mode').value,av=document.getElementById('step_applies_value').value.trim();s.applies_to={mode:am,value:am==='PERCENT'?av:'',condition:am==='CONDITION'?av:''};
     if(decisionBlocked&&s._ui.has_decision===true&&!existingDecision)return toast('No se puede crear otra bifurcación dentro de una rama. Une primero las rutas anteriores.');
     const collect=k=>[...document.querySelectorAll(`[data-v1-multi="${k}"]:checked`)].map(x=>x.value);s.inputs=collect('step_inputs');s.outputs=collect('step_outputs');s.manual_actions=collect('step_manual');s.communication_channels=collect('step_channels');s.evidence=collect('step_evidence');const hasDecisionNow=s._ui.has_decision===true;s.decision_criteria=hasDecisionNow?collect('step_decisions'):[];
-    s._details.inputs=document.getElementById('step_inputs_detail')?.value.trim()||'';s._details.outputs=document.getElementById('step_outputs_detail')?.value.trim()||'';const decisionOtherSelected=decisionOther&&s.decision_criteria.map(String).includes(String(decisionOther.value));s._details.decision_criteria=decisionOtherSelected?document.getElementById('step_decisions_detail').value.trim():'';s._details.communication_channels=document.getElementById('step_channels_other')?.value.trim()||'';s._details.manual_actions=s.manual_actions.some(x=>String(x).toUpperCase()==='OTHER')?(document.getElementById('step_manual_other')?.value.trim()||''):'';
+    s._details.inputs=document.getElementById('step_inputs_detail')?.value.trim()||'';s._details.outputs=document.getElementById('step_outputs_detail')?.value.trim()||'';s._details.decision_criteria=hasDecisionNow?(document.getElementById('step_decisions_detail')?.value.trim()||''):'';s._details.communication_channels=document.getElementById('step_channels_other')?.value.trim()||'';s._details.manual_actions=s.manual_actions.some(x=>String(x).toUpperCase()==='OTHER')?(document.getElementById('step_manual_other')?.value.trim()||''):'';
     s._ui.active_unit=document.getElementById('step_active_unit').value;s._ui.wait_unit=document.getElementById('step_wait_unit').value;s._ui.rework_unit=document.getElementById('step_rework_unit').value;s.active_time=minutesFrom(document.getElementById('step_active').value,s._ui.active_unit);s.wait_time=minutesFrom(document.getElementById('step_wait').value,s._ui.wait_unit);s.rework_time=minutesFrom(document.getElementById('step_rework').value,s._ui.rework_unit);
     const errorMode=document.getElementById('step_error_mode').value,errorPeriod=document.getElementById('step_error_period').value;
     s.error_rate={value:Number(document.getElementById('step_error').value||0),mode:errorMode,period:errorMode==='count'?errorPeriod:''};
@@ -248,8 +248,6 @@ function openStepModal(stepId=null,linkFromStepId=null,preset=null){
     wrap.style.display=el.checked?'':'none';
     if(!el.checked){const input=wrap.querySelector('input,textarea');if(input)input.value=''}
   }));
-  const decisionOtherBox=decisionOther?[...document.querySelectorAll('[data-v1-multi="step_decisions"]')].find(x=>String(x.value)===String(decisionOther.value)):null;
-  if(decisionOtherBox)decisionOtherBox.addEventListener('change',()=>{const wrap=document.querySelector('[data-step-decision-other-wrap]');if(wrap)wrap.style.display=decisionOtherBox.checked?'':'none';if(!decisionOtherBox.checked){const input=document.getElementById('step_decisions_detail');if(input)input.value=''}});
 }
 
 function frictionNumberControl(id,obj,kind='number'){
@@ -350,9 +348,14 @@ function reorderStepBefore(stepId,targetId){
   e.processSteps.splice(from,1);e.processSteps.splice(from<to?to-1:to,0,step);
   relinkNormalFlow(e);invalidateProcessLayersSafe(e,'map');markDirty(`Paso ${stepId} reordenado por arrastre`);render();
 }
+function decisionCriteriaPresetFromScope(e){
+  const map={AMOUNT:'THRESHOLD',CASE_TYPE:'CATEGORY',CUSTOMER:'CUSTOMER',REGULATION:'RISK',OTHER:'OTHER'};
+  return [...new Set(normalizeArray(e?.answers?.DF020).map(v=>map[String(v)]).filter(Boolean))];
+}
 function addDecisionStep(){
   if(typeof guardAsisMutation==='function'&&guardAsisMutation())return;
-  openStepModal(null,null,{step_name:'Decisión',step_type:'ST04',_ui:{has_decision:true}});
+  const e=currentEng(),criteria=decisionCriteriaPresetFromScope(e);
+  openStepModal(null,null,{step_name:'Decisión',step_type:'ST04',decision_criteria:criteria,_ui:{has_decision:true}});
 }
 function stepOrderDiscrepancies(){return []}
 
