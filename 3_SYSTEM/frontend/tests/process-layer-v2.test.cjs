@@ -117,7 +117,24 @@ test('real SÍ/NO routes, merges and unconnected future destinations are visual 
   const pending=ctx.processGraphData(e,e.processSteps);
   assert.ok(pending.nodes.some(x=>x.kind==='pending'&&x.route==='SÍ'));
   assert.ok(pending.nodes.some(x=>x.kind==='pending'&&x.route==='NO'));
-  assert.match(ctx.processGraphHtml(e,e.processSteps,e.frictions,'Inicio','Fin'),/Elegir o crear destino/);
+  assert.match(ctx.processGraphHtml(e,e.processSteps,e.frictions,'Inicio','Fin'),/Definir destino/);
+});
+
+test('a decision creates one temporary branch level and nested decisions are blocked until reconvergence',()=>{
+  const {ctx,e}=setup();
+  e.processSteps=[
+    {id:'D',status:'ACTIVE',step_name:'Decidir',_ui:{has_decision:true},normal_next_step:'Y',exception_path:{destination_step:'N'}},
+    {id:'Y',status:'ACTIVE',step_name:'Ruta sí',normal_next_step:'M'},
+    {id:'N',status:'ACTIVE',step_name:'Ruta no',normal_next_step:'M'},
+    {id:'M',status:'ACTIVE',step_name:'Unión'}
+  ];
+  const structure=ctx.processBranchStructure(e,e.processSteps);
+  assert.equal(structure.branchStepIds.has('Y'),true);
+  assert.equal(structure.branchStepIds.has('N'),true);
+  assert.equal(structure.branchStepIds.has('M'),false,'the merge is no longer inside the branch');
+  assert.equal(ctx.processStepInsideBranch(e,'Y'),true);
+  assert.match(process,/branch-decision-blocked/);
+  assert.match(process,/No se puede crear otra bifurcación dentro de una rama/);
 });
 
 test('client layer exposes only the matching per-step add action and linked badges open the owning editor',()=>{
@@ -148,8 +165,8 @@ test('client graph stays within the editor viewport and decision routes explain 
     {id:'N',status:'ACTIVE',step_name:'Solicitar datos'}
   ];
   const html=ctx.processGraphHtml(e,e.processSteps,[],'Inicio','Fin','cliente');
-  assert.match(html,/SÍ/);assert.match(html,/Continúa en Aprobar/);
-  assert.match(html,/NO/);assert.match(html,/Continúa en Solicitar datos/);
+  assert.match(html,/SÍ/);assert.match(html,/→ Aprobar/);
+  assert.match(html,/NO/);assert.match(html,/→ Solicitar datos/);
   assert.match(css,/body\.mode-process-editor \.process-graph-board\{width:100%;min-width:0\}/);
   assert.match(css,/body\.mode-process-editor \.client-process-canvas\.process-graph-canvas\{overflow-x:hidden/);
 });
