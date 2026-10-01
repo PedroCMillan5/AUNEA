@@ -275,8 +275,9 @@ body.mode-process-editor .flow-connector{flex:0 0 28px;width:28px}
 .graph-route-pending{display:grid;gap:3px;border-style:dashed;max-width:180px}
 .graph-flow-step .flow-step-tools{flex-wrap:wrap}
 .process-node-links button{appearance:none;font-family:inherit;line-height:1.2;cursor:pointer}
-.process-node-links .friction-badge{font-size:10px}
-.process-node-links .risk-badge,.process-node-links .economic-badge{font-size:11px}
+.process-node-links .friction-badge,
+.process-node-links .risk-badge,
+.process-node-links .economic-badge{font-size:10px}
 .branch-decision-blocked{display:flex;flex-direction:column;gap:4px;padding:10px 12px;border:1px solid var(--system-line);border-radius:9px;background:var(--system-soft);color:var(--system)}
 .branch-decision-blocked b{font-size:12px}.branch-decision-blocked span{font-size:11px;line-height:1.4;color:var(--muted)}
 body.mode-process-editor .client-process-canvas.process-graph-canvas{overflow-x:hidden;overflow-y:visible;max-width:100%}
@@ -501,9 +502,9 @@ body:has(.home-screen-marker) .app-shell{height:100vh;min-height:0;overflow:hidd
 .asis-facts small{display:block;font-size:11px;color:var(--muted);margin-bottom:5px}
 .asis-facts b{display:block;font-size:13px;overflow-wrap:anywhere;line-height:1.35}
 .asis-map-hint{font-size:12px;color:var(--muted);padding:9px 12px;border-left:3px solid var(--system);margin:0 0 10px;background:var(--system-soft)}
-.content [data-process-engagement] .flow-step-tools,
-.content [data-process-engagement] .process-node-actions,
-.content [data-process-engagement] .flow-insert{display:none!important}
+body:not(.mode-process-editor) .content [data-process-engagement] .flow-step-tools,
+body:not(.mode-process-editor) .content [data-process-engagement] .process-node-actions,
+body:not(.mode-process-editor) .content [data-process-engagement] .flow-insert{display:none!important}
 .content [data-process-engagement] .flow-step{cursor:default}
 .content [data-process-engagement] .flow-canvas{overflow-x:auto;max-width:100%;overscroll-behavior-inline:contain}
 .session-map-canvas{overflow-x:auto;max-width:100%;overscroll-behavior-inline:contain;scroll-behavior:auto}
