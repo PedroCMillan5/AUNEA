@@ -110,6 +110,7 @@ function exceptionControl(s,e){
 }
 
 function openStepModal(stepId=null,linkFromStepId=null,preset=null){
+  if(typeof guardAsisMutation==='function'&&guardAsisMutation())return;
   const e=currentEng(),existing=stepId?e.processSteps.find(x=>x.id===stepId):null;
   const base={id:id('STEP'),status:'ACTIVE',occurrences_per_case:1,inputs:[],outputs:[],manual_actions:[],decision_criteria:[],communication_channels:[],evidence:[],active_time:0,wait_time:0,rework_time:0};
   const s=stepMeta(existing?structuredClone(existing):{...base,...(preset||{}),_ui:{...(preset?._ui||{})}});
@@ -202,6 +203,7 @@ function frictionNumberControl(id,obj,kind='number'){
   return `<div class="compound-control"><input id="${id}" type="number" min="0" step="any" value="${attr(p.value||'')}" placeholder="0">${auneaDropdownControl(id+'_mode',[{value:'percent',label:'%'},{value:'count',label:'casos'}],p.mode||'percent','Unidad')}${auneaDropdownControl(id+'_period',periods,p.period||'case','Periodo')}</div>`;
 }
 function openFrictionModal(frId=null,preselectedSteps=[]){
+  if(typeof guardAsisMutation==='function'&&guardAsisMutation())return;
   const e=currentEng();if(!activeSteps(e).length)return toast('Añade al menos un paso antes de registrar una fricción.');const existing=frId?e.frictions.find(x=>x.id===frId):null;const f=frictionMeta(existing?structuredClone(existing):{id:id('FRI'),status:'ACTIVE',affected_steps:preselectedSteps,friction_type:'',cause:[],non_time_impact:[],workaround:[],evidence_ids:[],evidence_type:'EV02',frequency:{},active_time_loss:{},wait_time_loss:{},direct_loss:{}});
   const types=fieldOptions('OS_FRICTION_TYPE'),causes=fieldOptions('OS_FRICTION_CAUSE'),impacts=fieldOptions('OS_SCALE_1_5'),nonTime=fieldOptions('OS_NON_TIME_IMPACT'),work=fieldOptions('OS_WORKAROUND'),evid=fieldOptions('OS_EVIDENCE_TYPE');
   // Layer 1/2 progressive disclosure: tipo/pasos/señal/contexto-impacto are what a consultant needs to
@@ -243,6 +245,7 @@ function openFrictionModal(frId=null,preselectedSteps=[]){
 // id + array position (= visual numbering in the list) exist until the consultant edits it. Distinct
 // from the Internal/QA stress-test tool (app-uat-fixtures-v1.js), which is not normal use.
 function addMultipleSteps(){
+  if(typeof guardAsisMutation==='function'&&guardAsisMutation())return;
   openModal('Añadir varios pasos',`<div class="form-grid"><div class="field full"><label>Número de pasos ${requiredMark()}</label><input id="bulk_step_count" type="number" min="1" max="50" value="5"><div class="field-help">Crea pasos vacíos, sólo con id técnico y posición. Edítalos individualmente después para darles nombre, tipo, responsable, etc.</div></div></div>`,()=>{
     const e=currentEng(),n=Math.max(1,Math.min(50,Number(document.getElementById('bulk_step_count').value||0)));
     if(!n)return toast('Indica un número de pasos válido (1-50).');
@@ -253,6 +256,7 @@ function addMultipleSteps(){
 }
 
 function removeStepFromFlow(stepId){
+  if(typeof guardAsisMutation==='function'&&guardAsisMutation())return;
   const e=currentEng(),step=e?.processSteps?.find(x=>x.id===stepId&&x.status!=='SUPERSEDED');if(!step)return;
   const linkedFrictions=activeFrictions(e).filter(f=>normalizeArray(f.affected_steps).includes(stepId));
   const body=`<div class="notice warn"><b>¿Eliminar “${esc(step.step_name||'este paso')}” del flujo?</b><p>Dejará de aparecer en el mapa. La trazabilidad histórica se conservará internamente. Las rutas que apunten a este paso quedarán pendientes de redefinir${linkedFrictions.length?` y ${linkedFrictions.length} fricción(es) perderán este vínculo`:''}.</p></div>`;
@@ -274,6 +278,7 @@ function relinkNormalFlow(e){
   steps.forEach((s,i)=>{s.normal_next_step=steps[i+1]?.id||''});
 }
 function moveStep(stepId,direction){
+  if(typeof guardAsisMutation==='function'&&guardAsisMutation())return;
   const e=currentEng(),active=activeSteps(e),i=active.findIndex(x=>x.id===stepId),j=i+direction;
   if(i<0||j<0||j>=active.length)return;
   const ai=e.processSteps.indexOf(active[i]),aj=e.processSteps.indexOf(active[j]);
@@ -281,6 +286,7 @@ function moveStep(stepId,direction){
   relinkNormalFlow(e);invalidateProcessLayersSafe(e,'map');markDirty(`Paso ${stepId} reordenado`);render();
 }
 function reorderStepBefore(stepId,targetId){
+  if(typeof guardAsisMutation==='function'&&guardAsisMutation())return;
   const e=currentEng(),step=e.processSteps.find(x=>x.id===stepId),target=e.processSteps.find(x=>x.id===targetId);
   if(!step||!target||step===target||step.status==='SUPERSEDED'||target.status==='SUPERSEDED')return;
   const from=e.processSteps.indexOf(step),to=e.processSteps.indexOf(target);
@@ -288,6 +294,7 @@ function reorderStepBefore(stepId,targetId){
   relinkNormalFlow(e);invalidateProcessLayersSafe(e,'map');markDirty(`Paso ${stepId} reordenado por arrastre`);render();
 }
 function addDecisionStep(){
+  if(typeof guardAsisMutation==='function'&&guardAsisMutation())return;
   openStepModal(null,null,{step_name:'Decisión',step_type:'ST04',_ui:{has_decision:true}});
 }
 function stepOrderDiscrepancies(){return []}
