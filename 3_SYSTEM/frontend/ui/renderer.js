@@ -69,6 +69,26 @@ function multiChoices(fid,items,val,{detail=false,other=false,linkedSteps=null}=
     :(detail?detailInput(fid,'Detalle / condición relevante'):'');
   return `<div class="choice-grid">${html}${linkedHtml}${relocatedOther}${otherToggle}</div>${detailBox}`;
 }
+function prioritySelectionOrder(fid,val,e=currentEng()){
+  const selected=selectedValues(val);
+  const saved=selectedValues(answerDetails(e)[`${fid}_priority`]).filter(v=>selected.includes(v));
+  return [...saved,...selected.filter(v=>!saved.includes(v))];
+}
+function multiChoicesWithPriority(fid,items,val,e){
+  const base=multiChoices(fid,items,val,{other:hasCanonicalOtherOption(items)});
+  const selected=selectedValues(val);
+  if(selected.length<2)return base;
+  const ordered=prioritySelectionOrder(fid,val,e);
+  const rows=ordered.map((value,index)=>{
+    const item=items.find(x=>String(x.value)===String(value));
+    const rank=index<3?`${index+1}ª prioridad`:'Sin prioridad';
+    const up=index>0?`<button type="button" class="btn btn-small" data-priority-move="${fid}" data-priority-value="${attr(value)}" data-priority-direction="-1" aria-label="Subir ${attr(item?.label||value)}">↑</button>`:'';
+    const down=index<ordered.length-1?`<button type="button" class="btn btn-small" data-priority-move="${fid}" data-priority-value="${attr(value)}" data-priority-direction="1" aria-label="Bajar ${attr(item?.label||value)}">↓</button>`:'';
+    return `<div class="priority-row"><span class="priority-rank">${esc(rank)}</span><strong>${esc(item?.label||value)}</strong><span class="row-actions">${up}${down}</span></div>`;
+  }).join('');
+  return base+`<div class="priority-order" data-priority-order="${fid}"><div class="field-help"><strong>Ordena las 3 prioridades principales</strong></div>${rows}</div>`;
+}
+
 // attrName lets a caller reuse this markup outside the generic answers-writing [data-segment] binder
 // (app-core.js) — e.g. the Process Step modal's automation_state, which must write to the step object,
 // not e.answers, and keeps its own [data-step-auto] binder. Sharing this one render function is what
@@ -184,7 +204,7 @@ function renderControl(f,val,opts,e){
   if(c==='MULTISELECT'||c==='MULTICHECK'||c==='MULTISELECT_REFERENCE'||c==='SYSTEM_GENERATED_MULTISELECT')return multiChoices(fid,opts,val,{other:hasCanonicalOtherOption(opts)});
   if(c==='MULTISELECT_WITH_OTHER'||c==='MULTICHECK_WITH_OTHER')return multiChoices(fid,opts,val,{other:true});
   if(c==='MULTISELECT_WITH_DETAIL'||c==='MULTICHECK_WITH_DETAIL'||c==='MULTISELECT_WITH_REFERENCE')return hasCanonicalOtherOption(opts)?multiChoices(fid,opts,val,{other:true}):multiChoices(fid,opts,val,{detail:true});
-  if(c==='MULTISELECT_WITH_PRIORITY')return hasCanonicalOtherOption(opts)?multiChoices(fid,opts,val,{other:true}):multiChoices(fid,opts,val,{detail:true});
+  if(c==='MULTISELECT_WITH_PRIORITY')return multiChoicesWithPriority(fid,opts,val,e);
   if(fid==='DF088'&&c==='MULTISELECT_WITH_STEP_REFERENCE')return multiChoices(fid,opts,val,{other:true,linkedSteps:{fid:`${fid}__steps`,items:stepOptions(e),val:answerDetails(e)[`${fid}__steps`]||[]}});
   if(c==='MULTISELECT_WITH_STEP_LINK'||c==='MULTISELECT_WITH_STEP_REFERENCE'||c==='STEP_ACTION_MULTISELECT')return multiChoices(fid,opts,val,hasCanonicalOtherOption(opts)?{other:true}:{detail:true})+stepMulti(`${fid}__steps`,e,answerDetails(e)[`${fid}__steps`]||[]);
   if(c==='STEP_MULTISELECT_VISUAL'||c==='STEP_MULTISELECT_WITH_FRICTION')return stepMulti(fid,e,val);
@@ -279,6 +299,30 @@ function bindCanonicalRenderer(){
   }));
 
   document.querySelectorAll('[data-detail-answer]').forEach(el=>el.addEventListener('input',()=>setAnswerDetail(el.dataset.detailAnswer,el.value)));
+  document.querySelectorAll('[data-multi="DF086"]').forEach(el=>el.addEventListener('change',()=>{
+    const fid='DF086';
+    let selected=[...document.querySelectorAll(`[data-multi="${fid}"]:checked`)].map(x=>x.value);
+    if(selected.length>5){
+      el.checked=false;
+      selected=[...document.querySelectorAll(`[data-multi="${fid}"]:checked`)].map(x=>x.value);
+      setAnswer(fid,selected);
+      if(typeof toast==='function')toast('Selecciona como máximo 5 resultados.');
+    }
+    const e=currentEng(),details=answerDetails(e),before=selectedValues(details[`${fid}_priority`]);
+    const ordered=[...before.filter(v=>selected.includes(v)),...selected.filter(v=>!before.includes(v))];
+    const next=ordered.slice(0,Math.min(3,selected.length));
+    if(JSON.stringify(before)!==JSON.stringify(next)){details[`${fid}_priority`]=next;e.updatedAt=now();markDirty('Prioridades DF086 actualizadas');}
+    render();
+  }));
+  document.querySelectorAll('[data-priority-move]').forEach(btn=>btn.onclick=()=>{
+    const fid=btn.dataset.priorityMove,e=currentEng(),selected=selectedValues(e?.answers?.[fid]);
+    const ordered=prioritySelectionOrder(fid,selected,e),value=btn.dataset.priorityValue;
+    const from=ordered.indexOf(value),to=from+Number(btn.dataset.priorityDirection||0);
+    if(from<0||to<0||to>=ordered.length)return;
+    [ordered[from],ordered[to]]=[ordered[to],ordered[from]];
+    answerDetails(e)[`${fid}_priority`]=ordered.slice(0,Math.min(3,selected.length));
+    e.updatedAt=now();markDirty(`Prioridad ${fid} reordenada`);render();
+  }));
   document.querySelectorAll('[data-nextstep-action]').forEach(el=>el.addEventListener('change',()=>{const fid=el.dataset.nextstepAction;answerDetails(currentEng())[`${fid}__action`]=el.value;syncNextStep(fid);render()}));
   document.querySelectorAll('[data-nextstep-other]').forEach(el=>el.addEventListener('input',()=>{const fid=el.dataset.nextstepOther;answerDetails(currentEng())[`${fid}__other`]=el.value;syncNextStep(fid)}));
   document.querySelectorAll('[data-nextstep-owner]').forEach(el=>el.addEventListener('input',()=>{const fid=el.dataset.nextstepOwner;answerDetails(currentEng())[`${fid}__owner`]=el.value;syncNextStep(fid)}));
