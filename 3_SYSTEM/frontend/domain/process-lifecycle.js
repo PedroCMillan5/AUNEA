@@ -92,6 +92,23 @@ function guardAsisMutation(){
   toast('La Vista con cliente está abierta. Edita el AS-IS desde esa pestaña.');
   return true;
 }
+function asisConsoleLockNotice(){
+  return isAsisConsoleLocked()?'<div class="notice info asis-editor-lock-notice"><b>Vista con cliente abierta</b><p>La edición del mapa, fricciones, riesgos e impacto está bloqueada en esta consola. Realiza los cambios en la pestaña del cliente; aquí se sincronizarán automáticamente.</p></div>':'';
+}
+function applyAsisConsoleEditLock(){
+  if(typeof document==='undefined')return;
+  const locked=isAsisConsoleLocked();
+  document.body.classList.toggle('asis-console-locked',locked);
+  const selectors=['#addStep','#addMultipleSteps','#addStepTemplate','#useProcessTemplate','#addFriction','#addRisk','#addEconomic','#confirmAsIs','[data-confirm-process-layer]','[data-edit-step]','[data-delete-step]','[data-move-step-up]','[data-move-step-down]','[data-add-friction-step]','[data-add-risk-step]','[data-add-economic-step]','[data-edit-friction]','[data-delete-friction]','[data-edit-risk-index]','[data-delete-risk-index]','[data-edit-economic-index]','[data-delete-economic-index]','[data-graph-edit-route]','[data-add-after]'];
+  document.querySelectorAll(selectors.join(',')).forEach(el=>{
+    if(locked){
+      if(el.dataset.asisPreviousDisabled===undefined)el.dataset.asisPreviousDisabled=el.disabled?'1':'0';
+      el.disabled=true;el.setAttribute('aria-disabled','true');el.title='Edita desde la Vista con cliente abierta';
+    }else if(el.dataset.asisPreviousDisabled!==undefined){
+      el.disabled=el.dataset.asisPreviousDisabled==='1';delete el.dataset.asisPreviousDisabled;el.removeAttribute('aria-disabled');el.removeAttribute('title');
+    }
+  });
+}
 function releaseProcessEditorLease(token=processEditorToken()){
   const lease=readProcessEditorLease();
   if(!lease||!token||lease.token!==token)return;
