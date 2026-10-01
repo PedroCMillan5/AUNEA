@@ -544,15 +544,15 @@ function processPage(){
   const steps=activeSteps(e),fr=activeFrictions(e);
   // The client-first editor is the existing consultant-owned surface, not the read-only #session projection.
   if(isProcessEditorWindow())return clientProcessView(e,steps,fr,e.processTab||'cliente');
-  const top='<button class="btn btn-primary" id="openSessionDisplayFromProcess">Vista con cliente ↗</button>';
+  const top='<button class="btn btn-primary" id="openSessionDisplayFromProcess">'+(isAsisConsoleLocked(e)?'Vista con cliente abierta ↗':'Vista con cliente ↗')+'</button>';
   return pageTop('Mapa AS-IS','Lo que sabemos del proceso actual, todo en un mismo mapa.',top)
-    +asisMapPage(e,steps,fr);
+    +asisConsoleLockNotice()+asisMapPage(e,steps,fr);
 }
 function consultantLayerPage(title,intro,body,layer){
   const e=currentEng();if(!e)return pageTop(title,'Abre primero un estudio.');
   const done=!!processLayerState(e)[layer],tabs={map:'Mapa AS-IS',frictions:'Fricciones',risks:'Riesgos',impact:'Impacto'};
   const confirm='<div class="flow-confirm"><div><b>'+(done?'Revisión confirmada':'Revisión pendiente')+'</b><div class="field-help">Puedes guardar y continuar sin confirmar todavía.</div></div><button class="btn '+(done?'btn-outline':'btn-primary')+'" data-confirm-process-layer="'+layer+'">'+(done?'Volver a confirmar':'Confirmar')+' '+tabs[layer]+'</button></div>';
-  return pageTop(title,intro,'<button class="btn btn-outline" data-page="proceso">← Ver mapa AS-IS</button>')+body+confirm;
+  return pageTop(title,intro,'<button class="btn btn-outline" data-page="proceso">← Ver mapa AS-IS</button>')+asisConsoleLockNotice()+body+confirm;
 }
 function consultantStepsPage(){
   const e=currentEng();return consultantLayerPage('Pasos','Añade, edita o elimina las actividades reales del proceso.',stepsEditor(e,activeSteps(e),activeFrictions(e)),'map');
