@@ -221,7 +221,7 @@ function renderNav(){
 function render(){
   // The approved client-first workspace reuses the current Engagement and existing CRUD modals.
   // Its fullscreen chrome is presentation-only; the read-only #session is unaffected.
-  document.body.classList.toggle('mode-process-editor',state.uiMode==='CLIENT_EDITOR');
+  document.body.classList.toggle('mode-process-editor',isProcessEditorWindow());
   const previousCanvas=document.querySelector('.flow-canvas');
   const previousWorkspace=document.querySelector('[data-process-engagement]');
   const sameProcess=state.activePage==='proceso'&&previousCanvas&&previousWorkspace?.dataset.processEngagement===currentEng()?.id;
@@ -233,6 +233,7 @@ function render(){
   const fn=pages[state.activePage]||pages.inicio;
   document.getElementById('content').innerHTML=fn();
   bindCommon();postBind();
+  if(typeof applyAsisConsoleEditLock==='function')applyAsisConsoleEditLock();
   if(previousViewport){
     // The routed graph is measured/drawn in a requestAnimationFrame by process.js.
     // Restoring before that frame can be clamped to x=0 when Impact replaces the layout.
