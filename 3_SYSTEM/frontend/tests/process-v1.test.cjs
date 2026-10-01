@@ -38,11 +38,11 @@ test('reorder buttons are wired to moveStep in both directions',()=>{
   assert.match(code,/moveStep\(b\.dataset\.moveStepDown,1\)/);
 });
 
-test('processPage defaults to one editable client workspace with the four diagnostic layers',()=>{
+test('client-first editor remains a separate editable workspace with the four diagnostic layers',()=>{
   eng.processSteps=[{id:'s1',status:'ACTIVE',step_name:'Alta'}];
   eng.frictions=[];eng.risks=[];eng.economicInputs=[];
-  eng.processTab='';eng.confirmedAsIs=false;eng.answers={DF014:'Inicio acordado',DF015:'Fin acordado'};
-  const html=ctx.processPage();
+  eng.processTab='cliente';eng.confirmedAsIs=false;eng.answers={DF014:'Inicio acordado',DF015:'Fin acordado'};
+  const html=ctx.clientProcessView(eng,eng.processSteps,eng.frictions,'cliente');
   assert.match(html,/client-process-workspace/);
   assert.match(html,/data-process-tab="cliente"/);
   assert.match(html,/Inicio acordado/);assert.match(html,/Fin acordado/);
@@ -136,7 +136,7 @@ test('friction Other is rendered exactly once per canonical multiselect and deta
 
 test('client-first process view keeps fixed PG02 boundaries and exposes editable map actions',()=>{
   eng.processSteps=[];eng.frictions=[];eng.risks=[];eng.economicInputs=[];eng.processTab='cliente';eng.answers={DF014:'Inicio fijo',DF015:'Fin fijo'};
-  const html=ctx.processPage();
+  const html=ctx.clientProcessView(eng,eng.processSteps,eng.frictions,'cliente');
   assert.match(html,/Inicio fijo/);
   assert.match(html,/Fin fijo/);
   assert.match(html,/id="useProcessTemplate">Casos de referencia/);
