@@ -128,6 +128,8 @@ test('DF020/DF029 render a UI-only disambiguation hint (route vs treatment) with
   const html020=ctx.renderQuestion(df020,eng),html029=ctx.renderQuestion(df029,eng);
   assert.match(html020,/RUTA del proceso/);
   assert.match(html029,/TRATAMIENTO operativo/);
+  assert.ok(html020.indexOf('RUTA del proceso')<html020.indexOf('choice-grid'),'DF020 clarification must sit directly under the question, before its control');
+  assert.ok(html029.indexOf('TRATAMIENTO operativo')<html029.indexOf('choice-grid'),'DF029 clarification must sit directly under the question, before its control');
 });
 
 test('DF052 clarifies it is a single process-level version-control question, never per-document (UAT-VIS-042 stays BLOQUEADO — no per-artifact cardinality exists in the canonical model)',()=>{
