@@ -26,10 +26,12 @@
       "screen_id": "I90-00-02",
       "status": "FROZEN",
       "frozen_on": "2026-09-22",
-      "rule": "No modificar bajo ningún concepto tras aprobación explícita del usuario.",
+      "rule": "Baseline actualizada por reapertura explícita del propietario: 'Incluir inactivos' controla la visibilidad de contactos inactivos y el desplegable Estado ofrece solo Todos, Activo y Pendiente. No modificar después sin nueva reapertura explícita.",
       "source_snapshot": "tests/frozen/contacts-page-v1.js.snapshot",
       "style_snapshot": "tests/frozen/crm-lists-style-v1.css.snapshot",
-      "gate": "AUNEA-UAT-CRM-FINALIZED-FROZEN-010"
+      "gate": "AUNEA-UAT-CRM-FINALIZED-FROZEN-010",
+      "reopened_on": "2026-10-01",
+      "reapproved_on": "2026-10-01"
     },
     {
       "page_id": "interacciones",
