@@ -6,6 +6,7 @@
 // SIDE_EFFECTS: engagement state mutation, audit/dirty state and DOM re-render.
 // CHANGE_RISK: HIGH.
 function supersedeStep(stepId){
+  if(typeof guardAsisMutation==='function'&&guardAsisMutation())return;
   const e=currentEng(),x=e.processSteps.find(s=>s.id===stepId);
   if(!x)return;
   if(!confirm('¿Eliminar este paso del flujo? Se retirará inmediatamente del mapa.'))return;
@@ -13,6 +14,7 @@ function supersedeStep(stepId){
 }
 
 function supersedeFriction(frId){
+  if(typeof guardAsisMutation==='function'&&guardAsisMutation())return;
   const e=currentEng(),x=e.frictions.find(s=>s.id===frId);
   if(!x)return;
   if(!confirm('La fricción quedará SUPERSEDED para conservar trazabilidad. ¿Continuar?'))return;
@@ -33,6 +35,7 @@ function invalidateProcessLayers(e,from='map'){
   if(typeof invalidateDerivedState==='function')invalidateDerivedState(e,'cambio en capa AS-IS: '+from);
 }
 function confirmProcessLayer(tab){
+  if(typeof guardAsisMutation==='function'&&guardAsisMutation())return;
   const e=currentEng();if(!e)return;
   const key=processLayerKey(tab);
   if(key==='map'){
