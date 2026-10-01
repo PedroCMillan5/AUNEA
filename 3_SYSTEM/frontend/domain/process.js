@@ -493,8 +493,8 @@ function graphNodeCard(e,s,i,fr,tab='cliente'){
     +'<button type="button" data-edit-step="'+attr(s.id)+'">Editar</button>'
     +'<button type="button" class="danger-text" data-delete-step="'+attr(s.id)+'">Eliminar</button></div>';
   const route=decision?'<div class="graph-route-controls">'
-    +'<button type="button" class="route-yes" data-graph-edit-route="'+attr(s.id)+'" data-graph-route-kind="yes"><b>SÍ</b><span>Continúa en '+esc(dest(s.normal_next_step))+'</span></button>'
-    +'<button type="button" class="route-no" data-graph-edit-route="'+attr(s.id)+'" data-graph-route-kind="no"><b>NO</b><span>Continúa en '+esc(dest(s.exception_path?.destination_step))+'</span></button></div>':'';
+    +'<button type="button" class="route-yes" data-graph-edit-route="'+attr(s.id)+'" data-graph-route-kind="yes"><b>SÍ</b><span>→ '+esc(dest(s.normal_next_step))+'</span></button>'
+    +'<button type="button" class="route-no" data-graph-edit-route="'+attr(s.id)+'" data-graph-route-kind="no"><b>NO</b><span>→ '+esc(dest(s.exception_path?.destination_step))+'</span></button></div>':'';
   const layerAction=tab==='fricciones'?'<button type="button" data-add-friction-step="'+attr(s.id)+'">+ Añadir fricción</button>':
     tab==='riesgos'?'<button type="button" data-add-risk-step="'+attr(s.id)+'">+ Añadir riesgo</button>':
     tab==='impacto'?'<button type="button" data-add-economic-step="'+attr(s.id)+'">+ Añadir impacto</button>':'';
@@ -502,7 +502,6 @@ function graphNodeCard(e,s,i,fr,tab='cliente'){
     +actions+'<span class="boundary-kicker">'+(decision?'Decisión':'Paso '+(i+1))+'</span><h4>'+esc(s.step_name||'Paso sin nombre')+'</h4>'
     +'<p>'+esc(labelFrom('OS_ACTOR_ROLE',s.actor)||'—')+' · '+esc(labelFrom('OS_TOOL_CATEGORY',s.tool)||'—')+'</p>'
     +(num(s.active_time)?'<p>'+num(s.active_time)+' min trabajo</p>':'')
-    +(decision?'<p class="decision-route-label">Elige qué ocurre en cada respuesta. Las líneas muestran dónde continúa cada ruta.</p>':'')
     +route+'<div class="process-node-links">'
     +frOn.map(x=>'<button type="button" class="friction-badge" data-edit-friction="'+attr(x.id)+'">Fricción · '+esc(labelFrom('OS_FRICTION_TYPE',x.friction_type))+'</button>').join('')
     +riskOn.map(x=>'<button type="button" class="risk-badge" data-edit-risk-index="'+risks.indexOf(x)+'">Riesgo · '+esc(x.description||x.category)+'</button>').join('')
@@ -515,7 +514,7 @@ function processGraphHtml(e,steps,fr,start,finish,tab='cliente'){
     let html='';
     if(n.kind==='start')html=flowBoundaryNode('start',start);
     else if(n.kind==='end')html=flowBoundaryNode('end',finish);
-    else if(n.kind==='pending')html='<button type="button" class="graph-route-pending" data-graph-edit-route="'+attr(n.parent)+'" data-graph-route-kind="'+(n.route==='NO'?'no':'yes')+'"><b>'+esc(n.route)+'</b><span>Elegir o crear el siguiente paso</span></button>';
+    else if(n.kind==='pending')html='<button type="button" class="graph-route-pending" data-graph-edit-route="'+attr(n.parent)+'" data-graph-route-kind="'+(n.route==='NO'?'no':'yes')+'"><b>'+esc(n.route)+'</b><span>→ Definir destino</span></button>';
     else {const step=steps.find(x=>x.id===n.id);html=graphNodeCard(e,step,steps.indexOf(step),fr,tab);}
     return '<div class="process-graph-cell" '+style+' '+id+'>'+html+'</div>';
   };
@@ -542,7 +541,7 @@ function drawProcessGraph(){
     if(forward){const xm=x1+Math.max(18,(x2-x1)/2);d='M'+x1+' '+y1+'H'+xm+'V'+y2+'H'+(x2-5);}
     else{const y=Math.max(12,Math.min(y1,y2)-55);x1=ar.left+ar.width/2-rect.left;y1=ar.top-rect.top;x2=br.left+br.width/2-rect.left;y2=br.top-rect.top;d='M'+x1+' '+y1+'V'+y+'H'+x2+'V'+(y2-5);}
     const path=document.createElementNS(ns,'path');path.setAttribute('d',d);path.setAttribute('class','graph-path '+(edge.label==='NO'?'graph-path-alternative':''));path.setAttribute('marker-end','url(#auneaGraphArrow)');svg.appendChild(path);
-    if(edge.label){const text=document.createElementNS(ns,'text');text.textContent=edge.label;text.setAttribute('class','graph-path-label');text.setAttribute('x',String(forward?x1+12:x1+9));text.setAttribute('y',String(forward?y1-9:y1-9));svg.appendChild(text);}
+
   });
 }
 if(typeof window!=='undefined'&&!window.__auneaProcessGraphResize){
@@ -666,6 +665,9 @@ bindForms=function(){
   document.querySelectorAll('[data-add-friction-step]').forEach(b=>b.onclick=ev=>{ev.preventDefault();ev.stopPropagation();openFrictionModal(null,[b.dataset.addFrictionStep])});
   document.querySelectorAll('[data-add-risk-step]').forEach(b=>b.onclick=ev=>{ev.preventDefault();ev.stopPropagation();addRisk([b.dataset.addRiskStep])});
   document.querySelectorAll('[data-add-economic-step]').forEach(b=>b.onclick=ev=>{ev.preventDefault();ev.stopPropagation();addEconomic([b.dataset.addEconomicStep])});
+  document.querySelectorAll('[data-edit-step]').forEach(b=>b.onclick=ev=>{ev.preventDefault();ev.stopPropagation();openStepModal(b.dataset.editStep)});
+  document.querySelectorAll('[data-edit-step]').forEach(b=>b.onclick=ev=>{ev.preventDefault();ev.stopPropagation();openStepModal(b.dataset.editStep)});
+  document.querySelectorAll('[data-delete-step]').forEach(b=>b.onclick=ev=>{ev.preventDefault();ev.stopPropagation();removeStepFromFlow(b.dataset.deleteStep)});
   document.querySelectorAll('[data-move-step-up]').forEach(b=>b.onclick=()=>moveStep(b.dataset.moveStepUp,-1));
   document.querySelectorAll('[data-move-step-down]').forEach(b=>b.onclick=()=>moveStep(b.dataset.moveStepDown,1));
   document.querySelectorAll('[data-fr-other-toggle]').forEach(el=>el.addEventListener('change',()=>{const targetId=el.dataset.frOtherToggle,wrap=document.querySelector(`[data-fr-other-wrap="${targetId}"]`);if(!wrap)return;wrap.style.display=el.checked?'':'none';if(!el.checked){const input=document.getElementById(targetId);if(input)input.value=''}}));
