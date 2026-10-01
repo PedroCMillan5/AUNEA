@@ -322,25 +322,28 @@ function openStepTemplatePicker(){openProcessTemplatePicker()}
 function flowBoundaryNode(kind,label){
   return `<div class="flow-step flow-boundary ${kind}"><span class="boundary-kicker">${kind==='start'?'Inicio':'Fin'}</span><h4>${esc(label)}</h4><p>Límite definido en Alcance del proceso</p></div>`;
 }
-function flowIntermediateNodes(e,steps,fr){
+function flowIntermediateNodes(e,steps,fr,tab='cliente'){
   const risks=e.risks||[],economics=e.economicInputs||[];
   return steps.map((s,i)=>{
     const decision=s._ui?.has_decision===true||['ST04','ST05'].includes(String(s.step_type||''))||normalizeArray(s.decision_criteria).length>0;
     const stepFr=fr.filter(x=>normalizeArray(x.affected_steps).includes(s.id));
     const stepRisks=risks.filter(x=>normalizeArray(x.step_ids).includes(s.id));
     const stepEcon=economics.filter(x=>normalizeArray(x.step_ids).includes(s.id));
+    const layerAction=tab==='fricciones'?'<button type="button" data-add-friction-step="'+attr(s.id)+'">+ Añadir fricción</button>':
+      tab==='riesgos'?'<button type="button" data-add-risk-step="'+attr(s.id)+'">+ Añadir riesgo</button>':
+      tab==='impacto'?'<button type="button" data-add-economic-step="'+attr(s.id)+'">+ Añadir impacto</button>':'';
     return `<div class="flow-connector"><button type="button" class="flow-insert" data-add-after="${i?steps[i-1]?.id||'':''}" aria-label="Añadir paso aquí">+</button></div><div class="flow-step ${decision?'is-decision':''} ${processLayerState(e).map?'confirmed':''}" draggable="true" data-drag-step="${s.id}">
       <div class="flow-step-tools"><button type="button" data-move-step-up="${s.id}" ${i===0?'disabled':''}>←</button><button type="button" data-move-step-down="${s.id}" ${i===steps.length-1?'disabled':''}>→</button><button type="button" data-edit-step="${s.id}">Editar</button><button type="button" class="danger-text" data-delete-step="${s.id}">Eliminar</button></div>
       <span class="boundary-kicker">${decision?'Decisión':`Paso ${i+1}`}</span><h4>${esc(s.step_name||'Paso sin nombre')}</h4>
       <p>${esc(labelFrom('OS_ACTOR_ROLE',s.actor)||'—')} · ${esc(labelFrom('OS_TOOL_CATEGORY',s.tool)||'—')}</p>
       <p>${num(s.active_time)?`${num(s.active_time)} min trabajo`:''}${num(s.wait_time)?` · ${num(s.wait_time)} min espera`:''}</p>
-      ${decision?'<p class="decision-route-label">Ruta normal + alternativa configurable</p>':''}
+      ${decision?'<p class="decision-route-label">Este paso decide entre dos continuaciones del flujo.</p>':''}
       <div class="process-node-links">
-        ${stepFr.map(x=>`<span class="friction-badge" data-edit-friction="${x.id}">Fricción · ${esc(labelFrom('OS_FRICTION_TYPE',x.friction_type))}</span>`).join('')}
-        ${stepRisks.map(x=>`<span class="risk-badge">Riesgo · ${esc(x.description||x.category)}</span>`).join('')}
-        ${stepEcon.map(x=>`<span class="economic-badge">Impacto · ${esc(typeof econDriverLabel==='function'?econDriverLabel(x.driver_id):x.driver_id)}</span>`).join('')}
+        ${stepFr.map(x=>`<button type="button" class="friction-badge" data-edit-friction="${attr(x.id)}">Fricción · ${esc(labelFrom('OS_FRICTION_TYPE',x.friction_type))}</button>`).join('')}
+        ${stepRisks.map(x=>`<button type="button" class="risk-badge" data-edit-risk-index="${risks.indexOf(x)}">Riesgo · ${esc(x.description||x.category)}</button>`).join('')}
+        ${stepEcon.map(x=>`<button type="button" class="economic-badge" data-edit-economic-index="${economics.indexOf(x)}">Impacto · ${esc(typeof econDriverLabel==='function'?econDriverLabel(x.driver_id):x.driver_id)}</button>`).join('')}
       </div>
-      <div class="process-node-actions"><button type="button" data-add-friction-step="${s.id}">+ Fricción</button><button type="button" data-add-risk-step="${s.id}">+ Riesgo</button><button type="button" data-add-economic-step="${s.id}">+ Impacto</button></div>
+      ${layerAction?'<div class="process-node-actions">'+layerAction+'</div>':''}
     </div>`;
   }).join('');
 }
@@ -389,40 +392,42 @@ function processGraphData(e,steps){
   const maxCols=Math.max(endCol,...Array.from(positions.values(),p=>p.col));
   return {nodes,edges,cols:maxCols,rows:maxRows,positions};
 }
-function graphNodeCard(e,s,i,fr){
+function graphNodeCard(e,s,i,fr,tab='cliente'){
   const decision=processDecisionStep(s),steps=activeSteps(e);
   const frOn=fr.filter(f=>normalizeArray(f.affected_steps).includes(s.id));
-  const risks=(e.risks||[]).filter(r=>normalizeArray(r.step_ids).includes(s.id));
-  const money=(e.economicInputs||[]).filter(x=>normalizeArray(x.step_ids).includes(s.id));
-  const dest=id=>id==='__END__'?'Fin del proceso':(steps.find(x=>x.id===id)?.step_name||'Definir destino');
+  const risks=(e.risks||[]),riskOn=risks.filter(r=>normalizeArray(r.step_ids).includes(s.id));
+  const economics=e.economicInputs||[],money=economics.filter(x=>normalizeArray(x.step_ids).includes(s.id));
+  const dest=id=>id==='__END__'?'Fin del proceso':(steps.find(x=>x.id===id)?.step_name||'Destino pendiente');
   const actions='<div class="flow-step-tools">'
     +'<button type="button" data-move-step-up="'+attr(s.id)+'" '+(i===0?'disabled':'')+'>←</button>'
     +'<button type="button" data-move-step-down="'+attr(s.id)+'" '+(i===steps.length-1?'disabled':'')+'>→</button>'
     +'<button type="button" data-edit-step="'+attr(s.id)+'">Editar</button>'
     +'<button type="button" class="danger-text" data-delete-step="'+attr(s.id)+'">Eliminar</button></div>';
   const route=decision?'<div class="graph-route-controls">'
-    +'<button type="button" data-graph-edit-route="'+attr(s.id)+'" data-graph-route-kind="yes">SÍ → '+esc(dest(s.normal_next_step))+'</button>'
-    +'<button type="button" data-graph-edit-route="'+attr(s.id)+'" data-graph-route-kind="no">NO → '+esc(dest(s.exception_path?.destination_step))+'</button></div>':'';
+    +'<button type="button" class="route-yes" data-graph-edit-route="'+attr(s.id)+'" data-graph-route-kind="yes"><b>SÍ</b><span>Continúa en '+esc(dest(s.normal_next_step))+'</span></button>'
+    +'<button type="button" class="route-no" data-graph-edit-route="'+attr(s.id)+'" data-graph-route-kind="no"><b>NO</b><span>Continúa en '+esc(dest(s.exception_path?.destination_step))+'</span></button></div>':'';
+  const layerAction=tab==='fricciones'?'<button type="button" data-add-friction-step="'+attr(s.id)+'">+ Añadir fricción</button>':
+    tab==='riesgos'?'<button type="button" data-add-risk-step="'+attr(s.id)+'">+ Añadir riesgo</button>':
+    tab==='impacto'?'<button type="button" data-add-economic-step="'+attr(s.id)+'">+ Añadir impacto</button>':'';
   return '<div class="flow-step graph-flow-step '+(decision?'is-decision ':'')+(processLayerState(e).map?'confirmed':'')+'" data-drag-step="'+attr(s.id)+'">'
     +actions+'<span class="boundary-kicker">'+(decision?'Decisión':'Paso '+(i+1))+'</span><h4>'+esc(s.step_name||'Paso sin nombre')+'</h4>'
     +'<p>'+esc(labelFrom('OS_ACTOR_ROLE',s.actor)||'—')+' · '+esc(labelFrom('OS_TOOL_CATEGORY',s.tool)||'—')+'</p>'
     +(num(s.active_time)?'<p>'+num(s.active_time)+' min trabajo</p>':'')
+    +(decision?'<p class="decision-route-label">Elige qué ocurre en cada respuesta. Las líneas muestran dónde continúa cada ruta.</p>':'')
     +route+'<div class="process-node-links">'
-    +frOn.map(f=>'<span class="friction-badge" data-edit-friction="'+attr(f.id)+'">Fricción · '+esc(labelFrom('OS_FRICTION_TYPE',f.friction_type))+'</span>').join('')
-    +risks.map(r=>'<span class="risk-badge">Riesgo · '+esc(r.description||r.category)+'</span>').join('')
-    +money.map(x=>'<span class="economic-badge">Impacto · '+esc(typeof econDriverLabel==='function'?econDriverLabel(x.driver_id):x.driver_id)+'</span>').join('')
-    +'</div><div class="process-node-actions"><button type="button" data-add-friction-step="'+attr(s.id)+'">+ Fricción</button>'
-    +'<button type="button" data-add-risk-step="'+attr(s.id)+'">+ Riesgo</button>'
-    +'<button type="button" data-add-economic-step="'+attr(s.id)+'">+ Impacto</button></div></div>';
+    +frOn.map(x=>'<button type="button" class="friction-badge" data-edit-friction="'+attr(x.id)+'">Fricción · '+esc(labelFrom('OS_FRICTION_TYPE',x.friction_type))+'</button>').join('')
+    +riskOn.map(x=>'<button type="button" class="risk-badge" data-edit-risk-index="'+risks.indexOf(x)+'">Riesgo · '+esc(x.description||x.category)+'</button>').join('')
+    +money.map(x=>'<button type="button" class="economic-badge" data-edit-economic-index="'+economics.indexOf(x)+'">Impacto · '+esc(typeof econDriverLabel==='function'?econDriverLabel(x.driver_id):x.driver_id)+'</button>').join('')
+    +'</div>'+(layerAction?'<div class="process-node-actions">'+layerAction+'</div>':'')+'</div>';
 }
-function processGraphHtml(e,steps,fr,start,finish){
+function processGraphHtml(e,steps,fr,start,finish,tab='cliente'){
   const model=processGraphData(e,steps),cell=n=>{
     const p=model.positions.get(n.id),style='style="grid-row:'+p.row+';grid-column:'+p.col+'"',id='data-graph-node="'+attr(n.id)+'"';
     let html='';
     if(n.kind==='start')html=flowBoundaryNode('start',start);
     else if(n.kind==='end')html=flowBoundaryNode('end',finish);
-    else if(n.kind==='pending')html='<button type="button" class="graph-route-pending" data-graph-edit-route="'+attr(n.parent)+'" data-graph-route-kind="'+(n.route==='NO'?'no':'yes')+'">'+esc(n.route)+' · Elegir o crear destino</button>';
-    else {const step=steps.find(x=>x.id===n.id);html=graphNodeCard(e,step,steps.indexOf(step),fr);}
+    else if(n.kind==='pending')html='<button type="button" class="graph-route-pending" data-graph-edit-route="'+attr(n.parent)+'" data-graph-route-kind="'+(n.route==='NO'?'no':'yes')+'"><b>'+esc(n.route)+'</b><span>Seleccionar el siguiente paso</span></button>';
+    else {const step=steps.find(x=>x.id===n.id);html=graphNodeCard(e,step,steps.indexOf(step),fr,tab);}
     return '<div class="process-graph-cell" '+style+' '+id+'>'+html+'</div>';
   };
   return '<div class="flow-canvas client-process-canvas process-graph-canvas"><div class="process-graph-board" style="--graph-cols:'+model.cols+';--graph-rows:'+model.rows+'" data-graph-edges="'+attr(JSON.stringify(model.edges))+'">'
@@ -458,7 +463,7 @@ if(typeof window!=='undefined'&&!window.__auneaProcessGraphResize){
 /* [AUNEA-FE-PROC-GRAPH-035] END */
 function clientLayerBody(e,steps,fr,tab){
   const start=processBoundaryValue(e,'DF014','Límite inicial pendiente','DF012'),finish=processBoundaryValue(e,'DF015','Límite final pendiente','DF013');
-  const flow=steps.some(processDecisionStep)?processGraphHtml(e,steps,fr,start,finish):`<div class="flow-canvas client-process-canvas"><div class="flow-track">${flowBoundaryNode('start',start)}${flowIntermediateNodes(e,steps,fr)}<div class="flow-connector"><button type="button" class="flow-insert" data-add-after="${steps.at(-1)?.id||''}">+</button></div>${flowBoundaryNode('end',finish)}</div></div>`;
+  const flow=steps.some(processDecisionStep)?processGraphHtml(e,steps,fr,start,finish,tab):`<div class="flow-canvas client-process-canvas"><div class="flow-track">${flowBoundaryNode('start',start)}${flowIntermediateNodes(e,steps,fr,tab)}<div class="flow-connector"><button type="button" class="flow-insert" data-add-after="${steps.at(-1)?.id||''}">+</button></div>${flowBoundaryNode('end',finish)}</div></div>`;
   if(tab==='fricciones')return flow+frictionsEditor(e,steps,fr);
   if(tab==='riesgos')return flow+riskBuilder(e);
   if(tab==='impacto')return flow+economicBuilder(e);
