@@ -39,6 +39,11 @@ function uat3PhaseSection(){
 }
 
 function uatPhasePage(){
+  const current=typeof currentEng==='function'?currentEng():null;
+  const recoverySection=section('Recuperación puntual del estudio actual','Herramienta UAT para reconstruir los pasos 2, 3 y 4 del flujo de facturas sin volver a introducirlos a mano.',
+    '<div class="notice warn"><b>Sólo UAT.</b> Conserva el paso 1 existente y reconstruye los pasos 2–4 con los valores que acabamos de validar. La decisión se deja con sus destinos pendientes para continuar desde el mapa.</div>',
+    '<button class="btn btn-primary" id="recoverInvoiceSteps234" '+(current?'':'disabled')+'>Recuperar pasos 2–4 del estudio actual</button>'+
+    '<div class="field-help">'+(current?'Estudio actual: '+esc(current.title||current.processName||current.id):'Abre primero el estudio que quieres reparar.')+'</div>');
   const crmCounts=typeof phase1CrmCounts==='function'?phase1CrmCounts():{companies:0,contacts:0,interactions:0,opportunities:0};
   const crmReport=typeof phase1CrmCompletenessReport==='function'?phase1CrmCompletenessReport():null;
   const crmLoaded=crmCounts.companies+crmCounts.contacts+crmCounts.interactions+crmCounts.opportunities>0;
@@ -57,6 +62,7 @@ function uatPhasePage(){
       <div class="notice ${studiesLoaded&&studyReport?.pass?'good':''}" style="margin-top:12px"><b>Estado Estudios:</b> ${!crmReport?.pass?'Fase 1 CRM debe estar en PASS antes de generar Estudios.':studiesLoaded?(studyReport?.pass?'asociaciones completas y coherentes':'estudios cargados con incidencias'):'listo para generar desde el CRM validado'}.</div>`,
       `<button class="btn btn-primary" id="loadPhase2Studies" ${crmReport?.pass?'':'disabled'}>Generar Fase 2 Estudios</button><button class="btn btn-outline" id="clearPhase2Studies" ${studiesLoaded?'':'disabled'}>Limpiar Estudios UAT</button>`)
     +section('Validación automática · Fase 2',studyReport?`${uatPhaseBadge(studyReport.pass)} <span class="field-help">${studyReport.pass_count}/${studyReport.check_count} controles</span><div class="table-wrap" style="margin-top:12px"><table class="data-table"><thead><tr><th>Control</th><th>Esperado</th><th>Actual</th><th>Estado</th></tr></thead><tbody>${studyChecks.map(c=>`<tr><td><b>${esc(c.label)}</b></td><td>${esc(String(c.expected))}</td><td>${esc(String(c.actual))}</td><td>${uatPhaseBadge(c.pass)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty"><p>Genera los Estudios de la Fase 2 cuando la Fase 1 esté en PASS.</p></div>')
+    +recoverySection
     +uat3PhaseSection();
 }
 pages.uat=uatPhasePage;
