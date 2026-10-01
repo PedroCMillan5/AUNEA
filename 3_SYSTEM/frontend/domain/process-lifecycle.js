@@ -129,7 +129,13 @@ function startProcessEditorLease(){
 }
 function startProcessEditorLeaseMonitor(){
   if(typeof window==='undefined'||__auneaProcessEditorMonitor)return;
-  const refresh=()=>{if(typeof applyAsisConsoleEditLock==='function')applyAsisConsoleEditLock()};
+  let lastLocked=isAsisConsoleLocked();
+  const refresh=()=>{
+    const locked=isAsisConsoleLocked(),asisPage=['proceso','pasos','fricciones','riesgos','impacto'].includes(state.activePage);
+    if(locked!==lastLocked&&asisPage){lastLocked=locked;render();return}
+    lastLocked=locked;
+    if(typeof applyAsisConsoleEditLock==='function')applyAsisConsoleEditLock();
+  };
   __auneaProcessEditorMonitor=setInterval(refresh,1800);
   window.addEventListener('storage',ev=>{if(ev.key===PROCESS_EDITOR_LEASE_KEY)refresh()});
 }
