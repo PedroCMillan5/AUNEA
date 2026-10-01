@@ -173,8 +173,6 @@
     "DF100": "Escenario sintético declarado: 160 facturas/mes; 25% requiere aprobación. La decisión financiera sigue siendo humana. Verificar facturas, pedidos, plazos y prorrateo de licencias antes de publicar cifras."
   },
   "details": {
-    "DF012": "Factura PDF recibida en buzón de proveedores.",
-    "DF013": "Se registra en ERP y archiva el documento enlazado al pedido; se conserva aprobación cuando es necesaria.",
     "DF024": "Picos en cierres de mes",
     "DF098__action": "REQUEST_EVIDENCE",
     "DF098__owner": "Elena Vidal",
