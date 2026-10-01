@@ -294,4 +294,11 @@ test('Otra in Acciones manuales reveals its single conditional text field and pe
   assert.doesNotMatch(html,/data-v1-other-wrap="step_manual" style="display:none"/);
 });
 
+
+test('error/repetition percentage mode has no period; count mode exposes period',()=>{
+  assert.match(code,/Con % se interpreta como proporción de casos y no lleva periodo/);
+  assert.match(code,/data-step-error-period-wrap/);
+  assert.match(code,/period:errorMode==='count'\?errorPeriod:''/);
+});
+
 // [AUNEA-UAT-PROC-010] END
