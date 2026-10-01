@@ -622,11 +622,13 @@ function asisOverview(e,steps,fr){
       esc(peak.value)+' '+esc(({case:'casos',item:'elementos',request:'solicitudes',person:'personas'})[peak.unit]||peak.unit||'casos')
       +(peak.period?' · '+esc(labelFrom('OS_PERIOD',String(peak.period).toUpperCase())):''))
     :value('DF023');
+  const habitual=ans.DF021===undefined||ans.DF021===null||ans.DF021===''?'Pendiente':
+    esc(ans.DF021)+' casos'+(ans.DF022?' · '+esc(labelFrom('OS_PERIOD',String(ans.DF022).toUpperCase())):'');
   return '<div class="asis-facts">'
     +'<div><small>Proceso</small><b>'+value('DF011')+'</b></div>'
     +'<div><small>Empieza cuando</small><b>'+value('DF014')+'</b></div>'
     +'<div><small>Termina cuando</small><b>'+value('DF015')+'</b></div>'
-    +'<div><small>Volumen habitual</small><b>'+value('DF021')+' · '+value('DF022')+'</b></div>'
+    +'<div><small>Volumen habitual</small><b>'+habitual+'</b></div>'
     +'<div><small>Volumen máximo declarado</small><b>'+peakValue+'</b></div>'
     +'<div><small>Tiempo objetivo</small><b>'+value('DF025')+'</b></div>'
     +'<div><small>Duración habitual declarada</small><b>'+value('DF026')+'</b></div>'
