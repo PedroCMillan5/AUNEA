@@ -21,7 +21,8 @@ else{
     const requested=new URLSearchParams(location.search).get('engagement');
     if(requested&&state.engagements.some(e=>e.id===requested))state.activeEngagementId=requested;
     state.activePage='proceso';state.uiMode='CLIENT_EDITOR';
-  }
+    if(typeof startProcessEditorLease==='function')startProcessEditorLease();
+  }else if(typeof startProcessEditorLeaseMonitor==='function')startProcessEditorLeaseMonitor();
   initCanonicalV12();
 }
 // [AUNEA-FE-BOOT-INIT-010] END
