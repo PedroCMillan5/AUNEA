@@ -53,20 +53,87 @@ function confirmProcessLayer(tab){
 }
 function confirmAsIs(){confirmProcessLayer(currentEng()?.processTab||'cliente')}
 
-// [AUNEA-FE-ASIS-CLIENT-EDITOR-074] START — Client-first editor on the single Engagement.
-// SOURCE: DEC-050/063: the consultant edits the owner, while #session stays client-safe/read-only.
-// Keep it in this window: no duplicate mutable state and no cross-window navigation/reset.
+// [AUNEA-FE-ASIS-CLIENT-EDITOR-074] START — Independent synchronized client-first editor + single-writer lease.
+// PURPOSE: Open the consultant-owned client-first editor in a separate tab over the same Engagement, keep
+//          Console and editor synchronized through the existing persistence layer, and prevent simultaneous
+//          AS-IS edits from Console while that editor is alive.
+// SOURCE: DEC-050/063; Master Index frontend contract; explicit UAT feedback 2026-10-01.
+// INPUTS: current Engagement, localStorage lease, #process-editor window.
+// OUTPUTS: one editable AS-IS surface at a time; Console remains readable but locked for AS-IS mutation.
+// SIDE_EFFECTS: localStorage ephemeral lease, popup/tab lifecycle, DOM lock state.
+// CHANGE_RISK: HIGH.
+const PROCESS_EDITOR_LEASE_KEY='aunea_process_editor_lease_v1';
+const PROCESS_EDITOR_LEASE_MS=6500;
+let __auneaProcessEditorWindow=null,__auneaProcessEditorHeartbeat=null,__auneaProcessEditorMonitor=null;
+
+function readProcessEditorLease(){
+  try{
+    const raw=localStorage.getItem(PROCESS_EDITOR_LEASE_KEY);if(!raw)return null;
+    const lease=JSON.parse(raw);
+    if(!lease?.engagementId||!lease?.token||Number(lease.expiresAt)<=Date.now())return null;
+    return lease;
+  }catch(_err){return null}
+}
+function writeProcessEditorLease(engagementId,token){
+  const lease={engagementId,token,expiresAt:Date.now()+PROCESS_EDITOR_LEASE_MS};
+  try{localStorage.setItem(PROCESS_EDITOR_LEASE_KEY,JSON.stringify(lease))}catch(_err){}
+  return lease;
+}
+function processEditorToken(){
+  const q=new URLSearchParams(location.search);
+  return q.get('editorToken')||'';
+}
+function isAsisConsoleLocked(e=currentEng()){
+  if(!e||isProcessEditorWindow())return false;
+  return readProcessEditorLease()?.engagementId===e.id;
+}
+function guardAsisMutation(){
+  if(!isAsisConsoleLocked())return false;
+  toast('La Vista con cliente está abierta. Edita el AS-IS desde esa pestaña.');
+  return true;
+}
+function releaseProcessEditorLease(token=processEditorToken()){
+  const lease=readProcessEditorLease();
+  if(!lease||!token||lease.token!==token)return;
+  try{localStorage.removeItem(PROCESS_EDITOR_LEASE_KEY)}catch(_err){}
+}
+function startProcessEditorLease(){
+  if(!isProcessEditorWindow())return;
+  const e=currentEng(),token=processEditorToken();if(!e||!token)return;
+  writeProcessEditorLease(e.id,token);
+  clearInterval(__auneaProcessEditorHeartbeat);
+  __auneaProcessEditorHeartbeat=setInterval(()=>writeProcessEditorLease(e.id,token),2000);
+  const release=()=>releaseProcessEditorLease(token);
+  window.addEventListener('beforeunload',release,{once:true});
+  window.addEventListener('pagehide',release,{once:true});
+}
+function startProcessEditorLeaseMonitor(){
+  if(typeof window==='undefined'||__auneaProcessEditorMonitor)return;
+  const refresh=()=>{if(typeof applyAsisConsoleEditLock==='function')applyAsisConsoleEditLock()};
+  __auneaProcessEditorMonitor=setInterval(refresh,1800);
+  window.addEventListener('storage',ev=>{if(ev.key===PROCESS_EDITOR_LEASE_KEY)refresh()});
+}
 function openProcessEditorWindow(){
   const e=currentEng();if(!e)return;
-  if(!['cliente','fricciones','riesgos','impacto'].includes(e.processTab))e.processTab='cliente';
-  state.uiMode='CLIENT_EDITOR';
-  state.activePage='proceso';
+  if(typeof persistRecoverySnapshot==='function'&&!persistRecoverySnapshot('abrir vista con cliente'))return toast('Guarda o resuelve el cambio pendiente antes de abrir la Vista con cliente.');
+  const current=readProcessEditorLease(),token=current?.engagementId===e.id?current.token:id('EDITOR');
+  const url=new URL(location.href);url.hash='process-editor';url.searchParams.set('engagement',e.id);url.searchParams.set('editorToken',token);
+  const name='aunea_process_editor_'+String(e.id).replace(/[^a-zA-Z0-9_-]/g,'_');
+  const w=__auneaProcessEditorWindow&&!__auneaProcessEditorWindow.closed?__auneaProcessEditorWindow:window.open('',name);
+  if(!w)return toast('El navegador ha bloqueado la pestaña. Permite ventanas emergentes para abrir la Vista con cliente.');
+  __auneaProcessEditorWindow=w;
+  writeProcessEditorLease(e.id,token);
+  try{
+    const same=w.location.hash==='#process-editor'&&new URLSearchParams(w.location.search).get('engagement')===e.id;
+    if(!same)w.location.replace(url.toString());
+  }catch(_err){w.location.replace(url.toString())}
+  w.focus();
   render();
 }
 function closeProcessEditorWindow(){
-  state.uiMode='INTERNAL';
-  state.activePage='proceso';
-  render();
+  if(!isProcessEditorWindow())return;
+  releaseProcessEditorLease();
+  window.close();
 }
 // [AUNEA-FE-ASIS-CLIENT-EDITOR-074] END
 
