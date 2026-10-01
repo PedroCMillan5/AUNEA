@@ -60,7 +60,12 @@ function blankState(){
 function loadState(){
   let raw;
   try{raw=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')}catch(e){return blankState()}
-  const s={...blankState(),...raw,productVersion:AUNEA_PRODUCT_VERSION,productStatus:AUNEA_PRODUCT_STATUS,storageSchemaVersion:STORAGE_SCHEMA_VERSION};
+  const defaults=blankState();
+  const s={...defaults,...raw,productVersion:AUNEA_PRODUCT_VERSION,productStatus:AUNEA_PRODUCT_STATUS,storageSchemaVersion:STORAGE_SCHEMA_VERSION};
+  // UI filters are transient. Inactive contacts are excluded from ordinary lists by default
+  // even when a previous browser session was closed with "Incluir inactivos" enabled.
+  s.contactFilters={...defaults.contactFilters,...(raw.contactFilters||{}),includeInactive:false};
+  if(s.contactFilters.status==='Inactivo')s.contactFilters.status='';
   if(!Array.isArray(s.interactions))s.interactions=[];
   if(!Array.isArray(s.opportunities))s.opportunities=[];
   return s;
