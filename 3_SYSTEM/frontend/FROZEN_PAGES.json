@@ -83,9 +83,11 @@
       "stage_id": "S02",
       "status": "FROZEN",
       "frozen_on": "2026-09-24",
-      "rule": "Alcance del proceso cerrado por aprobación explícita del propietario. No modificar sin reapertura explícita.",
+      "rule": "Alcance del proceso reabierto el 01/10/2026 únicamente para simplificar DF012/DF013: categoría canónica y detalle sólo para 'Otro'; DF014/DF015 mantienen la frontera operativa. Reaprobado tras el cambio; no modificar de nuevo sin reapertura explícita.",
       "source_snapshot": "tests/frozen/session-s02-v1.js.snapshot",
-      "gate": "AUNEA-UAT-SESSION-FINALIZED-FROZEN-020"
+      "gate": "AUNEA-UAT-SESSION-FINALIZED-FROZEN-020",
+      "reopened_on": "2026-10-01",
+      "reapproved_on": "2026-10-01"
     },
     {
       "page_id": "estado-objetivo-restricciones",
