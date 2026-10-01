@@ -138,6 +138,7 @@ function economicBuilder(e){
 }
 
 function addEconomic(preselectedSteps=[],editIndex=null){
+  if(typeof guardAsisMutation==='function'&&guardAsisMutation())return;
   const eng=currentEng(),steps=typeof activeSteps==='function'?activeSteps(eng):[];
   const existing=editIndex===null?null:eng.economicInputs[editIndex];
   if(editIndex!==null&&!existing)return;
@@ -241,6 +242,7 @@ function addEconomic(preselectedSteps=[],editIndex=null){
   refresh();
 }
 function deleteEconomic(index){
+  if(typeof guardAsisMutation==='function'&&guardAsisMutation())return;
   const e=currentEng(),item=e?.economicInputs?.[index];if(!item)return;
   if(!confirm('¿Eliminar este impacto del estudio? Los informes históricos confirmados no se modificarán.'))return;
   if(typeof persistRecoverySnapshot==='function')persistRecoverySnapshot('eliminar-impacto');
