@@ -532,3 +532,16 @@ body:not(.mode-process-editor) .content [data-process-engagement] .flow-insert{d
 @media(max-width:950px){.asis-facts{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.asis-facts{grid-template-columns:1fr}}
 /* [AUNEA-FE-ASIS-UX-072] END */
+
+
+/* [AUNEA-FE-DIAG-PRIORITY-086] START — Ordered top-3 outcome priorities for canonical DF086. */
+.priority-order{margin-top:10px;padding:12px;border:1px solid var(--line);border-radius:9px;background:var(--panel-soft,#f7f8f6)}
+.priority-order>.field-help{margin:0 0 8px}
+.priority-row{display:grid;grid-template-columns:110px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.priority-row:first-of-type{border-top:0}
+.priority-rank{font-size:11px;font-weight:700;color:var(--muted)}
+.priority-row strong{font-size:12px;line-height:1.35}
+.priority-row .row-actions{display:flex;gap:5px}
+.priority-row .btn-small{min-width:30px;padding:4px 8px}
+@media(max-width:700px){.priority-row{grid-template-columns:90px minmax(0,1fr)}.priority-row .row-actions{grid-column:2}}
+/* [AUNEA-FE-DIAG-PRIORITY-086] END */
