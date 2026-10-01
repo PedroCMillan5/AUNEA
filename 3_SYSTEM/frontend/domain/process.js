@@ -387,7 +387,8 @@ function openProcessTemplatePicker(){
 function openStepTemplatePicker(){openProcessTemplatePicker()}
 
 function flowBoundaryNode(kind,label){
-  return `<div class="flow-step flow-boundary ${kind}"><span class="boundary-kicker">${kind==='start'?'Inicio':'Fin'}</span><h4>${esc(label)}</h4><p>Límite definido en Alcance del proceso</p></div>`;
+  const icon=processNodeIconSvg(kind==='start'?'start':'end');
+  return `<div class="flow-step flow-boundary ${kind}"><div class="process-node-heading">${icon}<div class="process-node-title"><span class="boundary-kicker">${kind==='start'?'Inicio':'Fin'}</span><h4>${esc(label)}</h4></div></div><p>Límite definido en Alcance del proceso</p></div>`;
 }
 function flowIntermediateNodes(e,steps,fr,tab='cliente'){
   const risks=e.risks||[],economics=e.economicInputs||[];
@@ -490,8 +491,42 @@ function processGraphData(e,steps){
   const maxCols=Math.max(1,...Array.from(positions.values(),p=>p.col));
   return {nodes,edges,cols:maxCols,rows,positions,branchLayouts};
 }
+function processNodeIconName(s){
+  const type=String(s?.step_type||''),manual=normalizeArray(s?.manual_actions).map(String),inputs=normalizeArray(s?.inputs).map(String),outputs=normalizeArray(s?.outputs).map(String),tool=String(s?.tool||'');
+  if(type==='ST04')return 'decision';
+  if(type==='ST05')return 'approval';
+  if(type==='ST03')return 'system';
+  if(type==='ST06')return 'wait';
+  if(type==='ST07')return 'handoff';
+  if(type==='ST08')return 'subprocess';
+  if(type==='ST01')return 'start';
+  if(type==='ST09')return 'end';
+  if(manual.includes('REKEY')||manual.includes('UPLOAD')||manual.includes('UPDATE_STATUS')||outputs.includes('RECORD')&&tool==='ERP')return 'record';
+  if(manual.includes('COMPARE'))return 'compare';
+  if(manual.includes('CHECK'))return 'check';
+  if(inputs.includes('EMAIL')||inputs.includes('PDF')||tool==='EMAIL')return 'document';
+  return 'task';
+}
+function processNodeIconSvg(name){
+  const icons={
+    start:'<path d="M8 5v14l11-7z"/>',
+    end:'<path d="M6 4v16M7 5h10l-2.5 4L17 13H7"/>',
+    document:'<path d="M7 3h7l4 4v14H7zM14 3v5h5M9.5 12h6M9.5 16h6"/>',
+    check:'<path d="M6 4h12v16H6zM9 9h6M9 13l2 2 4-5"/>',
+    compare:'<path d="M5 7h11M13 4l3 3-3 3M19 17H8M11 14l-3 3 3 3"/>',
+    decision:'<path d="M12 3l8 9-8 9-8-9zM8.5 12h7M12 8.5V15.5"/>',
+    approval:'<path d="M12 3l7 3v5c0 4.5-2.7 8-7 10-4.3-2-7-5.5-7-10V6zM8.5 12l2.2 2.2 4.8-5"/>',
+    system:'<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/>',
+    record:'<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"/>',
+    wait:'<circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/>',
+    handoff:'<path d="M4 8h13M14 5l3 3-3 3M20 16H7M10 13l-3 3 3 3"/>',
+    subprocess:'<rect x="4" y="6" width="16" height="12" rx="2"/><path d="M8 10h8M8 14h8"/>',
+    task:'<path d="M6 5h12v14H6zM9 9h6M9 13h6"/>'
+  };
+  return '<span class="process-node-icon process-node-icon-'+attr(name)+'" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false">'+(icons[name]||icons.task)+'</svg></span>';
+}
 function graphNodeCard(e,s,i,fr,tab='cliente'){
-  const decision=processDecisionStep(s),steps=activeSteps(e);
+  const decision=processDecisionStep(s),steps=activeSteps(e),iconName=processNodeIconName(s),typeClass='step-type-'+String(s.step_type||'generic').toLowerCase();
   const frOn=fr.filter(f=>normalizeArray(f.affected_steps).includes(s.id));
   const risks=(e.risks||[]),riskOn=risks.filter(r=>normalizeArray(r.step_ids).includes(s.id));
   const economics=e.economicInputs||[],money=economics.filter(x=>normalizeArray(x.step_ids).includes(s.id));
@@ -507,9 +542,9 @@ function graphNodeCard(e,s,i,fr,tab='cliente'){
   const layerAction=tab==='fricciones'?'<button type="button" data-add-friction-step="'+attr(s.id)+'">+ Añadir fricción</button>':
     tab==='riesgos'?'<button type="button" data-add-risk-step="'+attr(s.id)+'">+ Añadir riesgo</button>':
     tab==='impacto'?'<button type="button" data-add-economic-step="'+attr(s.id)+'">+ Añadir impacto</button>':'';
-  return '<div class="flow-step graph-flow-step '+(decision?'is-decision ':'')+(processLayerState(e).map?'confirmed':'')+'" data-drag-step="'+attr(s.id)+'">'
-    +actions+'<span class="boundary-kicker">'+(decision?'Decisión':'Paso '+(i+1))+'</span><h4>'+esc(s.step_name||'Paso sin nombre')+'</h4>'
-    +'<p>'+esc(labelFrom('OS_ACTOR_ROLE',s.actor)||'—')+' · '+esc(labelFrom('OS_TOOL_CATEGORY',s.tool)||'—')+'</p>'
+  return '<div class="flow-step graph-flow-step '+typeClass+' '+(decision?'is-decision ':'')+(processLayerState(e).map?'confirmed':'')+'" data-drag-step="'+attr(s.id)+'">'
+    +actions+'<div class="process-node-heading">'+processNodeIconSvg(iconName)+'<div class="process-node-title"><span class="boundary-kicker">'+(decision?'Decisión':'Paso '+(i+1))+'</span><h4>'+esc(s.step_name||'Paso sin nombre')+'</h4></div></div>'
+    +'<p class="process-node-meta">'+esc(labelFrom('OS_ACTOR_ROLE',s.actor)||'—')+' · '+esc(labelFrom('OS_TOOL_CATEGORY',s.tool)||'—')+'</p>'
     +(num(s.active_time)?'<p>'+num(s.active_time)+' min trabajo</p>':'')
     +route+'<div class="process-node-links">'
     +frOn.map(x=>'<button type="button" class="friction-badge" data-edit-friction="'+attr(x.id)+'">Fricción · '+esc(labelFrom('OS_FRICTION_TYPE',x.friction_type))+'</button>').join('')
@@ -527,7 +562,9 @@ function processGraphHtml(e,steps,fr,start,finish,tab='cliente'){
     else {const step=steps.find(x=>x.id===n.id);html=graphNodeCard(e,step,steps.indexOf(step),fr,tab);}
     return '<div class="process-graph-cell" '+style+' '+id+'>'+html+'</div>';
   };
-  return '<div class="flow-canvas client-process-canvas process-graph-canvas"><div class="process-graph-board" style="--graph-cols:'+model.cols+';--graph-rows:'+model.rows+'" data-graph-edges="'+attr(JSON.stringify(model.edges))+'">'
+  const hasBranch=model.edges.some(x=>x.label==='NO');
+  const legend=hasBranch?'<div class="process-graph-legend" aria-label="Leyenda de rutas"><span class="legend-main"><i></i>Ruta SÍ / principal</span><span class="legend-alt"><i></i>Ruta NO / alternativa</span></div>':'';
+  return '<div class="flow-canvas client-process-canvas process-graph-canvas">'+legend+'<div class="process-graph-board" style="--graph-cols:'+model.cols+';--graph-rows:'+model.rows+'" data-graph-edges="'+attr(JSON.stringify(model.edges))+'">'
     +'<svg class="process-graph-lines" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>'
     +model.nodes.map(cell).join('')+'</div></div>';
 }
@@ -539,7 +576,7 @@ function drawProcessGraph(){
   board.querySelectorAll('[data-graph-node]').forEach(el=>els.set(el.dataset.graphNode,el));
   const edges=JSON.parse(board.dataset.graphEdges||'[]');
   svg.setAttribute('viewBox','0 0 '+board.scrollWidth+' '+board.scrollHeight);
-  svg.innerHTML='<defs><marker id="auneaGraphArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#718e80"/></marker></defs>';
+  svg.innerHTML='<defs><marker id="auneaGraphArrowMain" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#4f7563"/></marker><marker id="auneaGraphArrowAlt" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#b9783c"/></marker></defs>';
   edges.forEach(edge=>{
     const a=els.get(edge.from),b=els.get(edge.to);if(!a||!b)return;
     const ar=a.getBoundingClientRect(),br=b.getBoundingClientRect();
@@ -555,8 +592,15 @@ function drawProcessGraph(){
     }else{
       const y=Math.max(12,Math.min(y1,y2)-55);x1=ar.left+ar.width/2-rect.left;y1=ar.top-rect.top;x2=br.left+br.width/2-rect.left;y2=br.top-rect.top;d='M'+x1+' '+y1+'V'+y+'H'+x2+'V'+(y2-5);
     }
-    const path=document.createElementNS(ns,'path');path.setAttribute('d',d);path.setAttribute('class','graph-path '+(edge.label==='NO'?'graph-path-alternative':''));path.setAttribute('marker-end','url(#auneaGraphArrow)');svg.appendChild(path);
-
+    const alternative=edge.label==='NO';
+    const path=document.createElementNS(ns,'path');path.setAttribute('d',d);path.setAttribute('class','graph-path '+(alternative?'graph-path-alternative':'graph-path-main'));path.setAttribute('marker-end',alternative?'url(#auneaGraphArrowAlt)':'url(#auneaGraphArrowMain)');svg.appendChild(path);
+    if(edge.label==='SÍ'||edge.label==='NO'){
+      const label=document.createElementNS(ns,'text');
+      const lx=x1+Math.max(26,Math.min(58,Math.abs(x2-x1)*.22)),ly=alternative?y1+30:y1-12;
+      label.setAttribute('x',String(lx));label.setAttribute('y',String(ly));
+      label.setAttribute('class','graph-path-label '+(alternative?'graph-path-label-alt':'graph-path-label-main'));
+      label.textContent=edge.label;svg.appendChild(label);
+    }
   });
 }
 if(typeof window!=='undefined'&&!window.__auneaProcessGraphResize){
