@@ -47,6 +47,25 @@ test('descubre AUNEA en 8010 cuando 8000 pertenece a otro servicio', async () =>
   assert.ok(writes.length > 0);
 });
 
+test('descubre backend reenviado de Codespaces también en 8010', async () => {
+  const requested = [];
+  const contextLoc = {protocol:'https:', hostname:'sample-space-5500.app.github.dev'};
+  const fetchImpl = async (url) => {
+    requested.push(url);
+    if (url === 'https://sample-space-8010.app.github.dev/health') {
+      return {ok:true, json:async()=>({status:'ok', backend_version:'1.1.1'})};
+    }
+    throw new Error('offline');
+  };
+  const {context} = makeContext(fetchImpl);
+  context.window={location:contextLoc};
+  const ok = await context.checkBackend();
+  assert.equal(ok, true);
+  assert.equal(context.state.backendUrl, 'https://sample-space-8010.app.github.dev');
+  assert.ok(requested.includes('https://sample-space-8000.app.github.dev/health'));
+  assert.ok(requested.includes('https://sample-space-8010.app.github.dev/health'));
+});
+
 test('no acepta un /health que no sea AUNEA Backend', async () => {
   const fetchImpl = async () => ({ok:true, json:async()=>({status:'ok'})});
   const {context} = makeContext(fetchImpl);
