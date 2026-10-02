@@ -416,9 +416,9 @@ function flowIntermediateNodes(e,steps,fr,tab='cliente'){
   }).join('');
 }
 
-/* [AUNEA-FE-PROC-GRAPH-035] START — Read-only graph projection and direct route editing.
-   Reads DF042 normal_next_step and DF043 exception_path.destination_step; never
-   introduces an independent copy of the routing model or auto-confirms client data. */
+/* [AUNEA-FE-PROC-GRAPH-035] START — Owner-safe graph projection with explicit decision convergence.
+   Reads DF042 normal_next_step and DF043 exception_path.destination_step; the gateway, SÍ/NO lanes
+   and solid merge point are presentation-only and never introduce a second routing owner. */
 function processGraphData(e,steps){
   const byId=new Map(steps.map(s=>[s.id,s])),nodes=[{id:'__START__',kind:'start'}],edges=[];
   const addNode=(id,kind='step',parent='',route='')=>{
@@ -465,6 +465,19 @@ function processGraphData(e,steps){
     }
     const merge=mainIndex.has(target)?target:(target==='__END__'?'__END__':null);
     branchLayouts.push({decisionId:id,decisionIndex:i,alt,merge});
+  });
+
+  // Projection-only branch metadata: preserve DF042/DF043 as the owners while making
+  // the NO lane visually continuous and giving each real reconvergence one solid join point.
+  branchLayouts.forEach(b=>{
+    const mergeIndex=b.merge!=null?mainIndex.get(b.merge):null;
+    b.yesPred=mergeIndex!=null&&mergeIndex>0?main[mergeIndex-1]:b.decisionId;
+    b.noPred=b.alt.length?b.alt[b.alt.length-1]:b.decisionId;
+    const noChain=[b.decisionId,...b.alt,b.merge].filter(Boolean);
+    for(let i=0;i<noChain.length-1;i++){
+      const routeEdge=edges.find(x=>x.from===noChain[i]&&x.to===noChain[i+1]);
+      if(routeEdge)routeEdge.route='NO';
+    }
   });
 
   const gaps=Array(Math.max(0,main.length-1)).fill(1);
@@ -542,29 +555,39 @@ function graphNodeCard(e,s,i,fr,tab='cliente'){
   const layerAction=tab==='fricciones'?'<button type="button" data-add-friction-step="'+attr(s.id)+'">+ Añadir fricción</button>':
     tab==='riesgos'?'<button type="button" data-add-risk-step="'+attr(s.id)+'">+ Añadir riesgo</button>':
     tab==='impacto'?'<button type="button" data-add-economic-step="'+attr(s.id)+'">+ Añadir impacto</button>':'';
-  return '<div class="flow-step graph-flow-step '+typeClass+' '+(decision?'is-decision ':'')+(processLayerState(e).map?'confirmed':'')+'" data-drag-step="'+attr(s.id)+'">'
-    +actions+'<div class="process-node-heading">'+processNodeIconSvg(iconName)+'<div class="process-node-title"><span class="boundary-kicker">'+(decision?'Decisión':'Paso '+(i+1))+'</span><h4>'+esc(s.step_name||'Paso sin nombre')+'</h4></div></div>'
-    +'<p class="process-node-meta">'+esc(labelFrom('OS_ACTOR_ROLE',s.actor)||'—')+' · '+esc(labelFrom('OS_TOOL_CATEGORY',s.tool)||'—')+'</p>'
-    +(num(s.active_time)?'<p>'+num(s.active_time)+' min trabajo</p>':'')
-    +route+'<div class="process-node-links">'
+  const links='<div class="process-node-links">'
     +frOn.map(x=>'<button type="button" class="friction-badge" data-edit-friction="'+attr(x.id)+'">Fricción · '+esc(labelFrom('OS_FRICTION_TYPE',x.friction_type))+'</button>').join('')
     +riskOn.map(x=>'<button type="button" class="risk-badge" data-edit-risk-index="'+risks.indexOf(x)+'">Riesgo · '+esc(x.description||x.category)+'</button>').join('')
     +money.map(x=>'<button type="button" class="economic-badge" data-edit-economic-index="'+economics.indexOf(x)+'">Impacto · '+esc(typeof econDriverLabel==='function'?econDriverLabel(x.driver_id):x.driver_id)+'</button>').join('')
-    +'</div>'+(layerAction?'<div class="process-node-actions">'+layerAction+'</div>':'')+'</div>';
+    +'</div>';
+  if(decision){
+    return '<div class="graph-decision-node '+(processLayerState(e).map?'confirmed':'')+'" data-drag-step="'+attr(s.id)+'">'
+      +actions+'<button type="button" class="graph-decision-gateway" data-edit-step="'+attr(s.id)+'" aria-label="Editar decisión">'+processNodeIconSvg('decision')+'</button>'
+      +'<div class="graph-decision-copy"><span class="boundary-kicker">Decisión</span><h4>'+esc(s.step_name||'Decisión sin nombre')+'</h4>'
+      +'<p class="process-node-meta">'+esc(labelFrom('OS_ACTOR_ROLE',s.actor)||'—')+' · '+esc(labelFrom('OS_TOOL_CATEGORY',s.tool)||'—')+'</p>'
+      +(num(s.active_time)?'<p>'+num(s.active_time)+' min trabajo</p>':'')+'</div>'
+      +links+(layerAction?'<div class="process-node-actions">'+layerAction+'</div>':'')+'</div>';
+  }
+  return '<div class="flow-step graph-flow-step '+typeClass+' '+(processLayerState(e).map?'confirmed':'')+'" data-drag-step="'+attr(s.id)+'">'
+    +actions+'<div class="process-node-heading">'+processNodeIconSvg(iconName)+'<div class="process-node-title"><span class="boundary-kicker">Paso '+(i+1)+'</span><h4>'+esc(s.step_name||'Paso sin nombre')+'</h4></div></div>'
+    +'<p class="process-node-meta">'+esc(labelFrom('OS_ACTOR_ROLE',s.actor)||'—')+' · '+esc(labelFrom('OS_TOOL_CATEGORY',s.tool)||'—')+'</p>'
+    +(num(s.active_time)?'<p>'+num(s.active_time)+' min trabajo</p>':'')
+    +links+(layerAction?'<div class="process-node-actions">'+layerAction+'</div>':'')+'</div>';
 }
 function processGraphHtml(e,steps,fr,start,finish,tab='cliente'){
   const model=processGraphData(e,steps),cell=n=>{
-    const p=model.positions.get(n.id),style='style="grid-row:'+p.row+';grid-column:'+p.col+'"',id='data-graph-node="'+attr(n.id)+'"';
+    const p=model.positions.get(n.id),step=n.kind==='step'?steps.find(x=>x.id===n.id):null,spansBranch=!!step&&processDecisionStep(step)&&model.branchLayouts.some(b=>b.decisionId===n.id&&(b.alt.length||b.merge));
+    const style=spansBranch?'style="grid-row:1 / span 2;grid-column:'+p.col+'"':'style="grid-row:'+p.row+';grid-column:'+p.col+'"',id='data-graph-node="'+attr(n.id)+'"';
     let html='';
     if(n.kind==='start')html=flowBoundaryNode('start',start);
     else if(n.kind==='end')html=flowBoundaryNode('end',finish);
     else if(n.kind==='pending')html='<button type="button" class="graph-route-pending" data-graph-edit-route="'+attr(n.parent)+'" data-graph-route-kind="'+(n.route==='NO'?'no':'yes')+'"><b>'+esc(n.route)+'</b><span>→ Definir destino</span></button>';
-    else {const step=steps.find(x=>x.id===n.id);html=graphNodeCard(e,step,steps.indexOf(step),fr,tab);}
-    return '<div class="process-graph-cell" '+style+' '+id+'>'+html+'</div>';
+    else html=graphNodeCard(e,step,steps.indexOf(step),fr,tab);
+    return '<div class="process-graph-cell '+(spansBranch?'process-graph-decision-cell':'')+'" '+style+' '+id+'>'+html+'</div>';
   };
   const hasBranch=model.edges.some(x=>x.label==='NO');
   const legend=hasBranch?'<div class="process-graph-legend" aria-label="Leyenda de rutas"><span class="legend-main"><i></i>Ruta SÍ / principal</span><span class="legend-alt"><i></i>Ruta NO / alternativa</span></div>':'';
-  return '<div class="flow-canvas client-process-canvas process-graph-canvas">'+legend+'<div class="process-graph-board" style="--graph-cols:'+model.cols+';--graph-rows:'+model.rows+'" data-graph-edges="'+attr(JSON.stringify(model.edges))+'">'
+  return '<div class="flow-canvas client-process-canvas process-graph-canvas">'+legend+'<div class="process-graph-board" style="--graph-cols:'+model.cols+';--graph-rows:'+model.rows+'" data-graph-edges="'+attr(JSON.stringify(model.edges))+'" data-graph-branches="'+attr(JSON.stringify(model.branchLayouts))+'">'
     +'<svg class="process-graph-lines" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>'
     +model.nodes.map(cell).join('')+'</div></div>';
 }
@@ -574,33 +597,58 @@ function drawProcessGraph(){
   const svg=board.querySelector('.process-graph-lines');if(!svg)return;
   const ns='http://www.w3.org/2000/svg',rect=board.getBoundingClientRect(),els=new Map();
   board.querySelectorAll('[data-graph-node]').forEach(el=>els.set(el.dataset.graphNode,el));
-  const edges=JSON.parse(board.dataset.graphEdges||'[]');
+  const edges=JSON.parse(board.dataset.graphEdges||'[]'),branches=JSON.parse(board.dataset.graphBranches||'[]');
   svg.setAttribute('viewBox','0 0 '+board.scrollWidth+' '+board.scrollHeight);
   svg.innerHTML='<defs><marker id="auneaGraphArrowMain" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#4f7563"/></marker><marker id="auneaGraphArrowAlt" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#b9783c"/></marker></defs>';
-  edges.forEach(edge=>{
-    const a=els.get(edge.from),b=els.get(edge.to);if(!a||!b)return;
-    const ar=a.getBoundingClientRect(),br=b.getBoundingClientRect();
+  const edgeKey=(from,to)=>String(from)+'>'+String(to);
+  const mergeIncoming=new Set();
+  branches.forEach(b=>{
+    if(!b.merge||!els.has(b.merge))return;
+    if(b.yesPred&&els.has(b.yesPred))mergeIncoming.add(edgeKey(b.yesPred,b.merge));
+    if(b.noPred&&els.has(b.noPred))mergeIncoming.add(edgeKey(b.noPred,b.merge));
+  });
+  const appendPath=(d,alternative=false,arrow=true)=>{
+    const path=document.createElementNS(ns,'path');path.setAttribute('d',d);path.setAttribute('class','graph-path '+(alternative?'graph-path-alternative':'graph-path-main'));
+    if(arrow)path.setAttribute('marker-end',alternative?'url(#auneaGraphArrowAlt)':'url(#auneaGraphArrowMain)');
+    svg.appendChild(path);return path;
+  };
+  const appendLabel=(label,x,y,alternative=false)=>{
+    const textEl=document.createElementNS(ns,'text');textEl.setAttribute('x',String(x));textEl.setAttribute('y',String(y));
+    textEl.setAttribute('class','graph-path-label '+(alternative?'graph-path-label-alt':'graph-path-label-main'));textEl.textContent=label;svg.appendChild(textEl);
+  };
+  const orthogonal=(ar,br)=>{
     const forward=br.left>ar.right+6;
-    let x1=ar.right-rect.left,y1=ar.top+ar.height/2-rect.top;
-    let x2=br.left-rect.left,y2=br.top+br.height/2-rect.top;
-    let d;
-    if(forward&&edge.label==='NO'&&Math.abs(y2-y1)<24){
-      const y=Math.max(ar.bottom,br.bottom)-rect.top+30;
-      d='M'+x1+' '+y1+'V'+y+'H'+(x2-10)+'V'+y2+'H'+(x2-5);
-    }else if(forward){
+    let x1=ar.right-rect.left,y1=ar.top+ar.height/2-rect.top,x2=br.left-rect.left,y2=br.top+br.height/2-rect.top,d;
+    if(forward){
       const xm=x1+Math.max(18,(x2-x1)/2);d='M'+x1+' '+y1+'H'+xm+'V'+y2+'H'+(x2-5);
     }else{
       const y=Math.max(12,Math.min(y1,y2)-55);x1=ar.left+ar.width/2-rect.left;y1=ar.top-rect.top;x2=br.left+br.width/2-rect.left;y2=br.top-rect.top;d='M'+x1+' '+y1+'V'+y+'H'+x2+'V'+(y2-5);
     }
-    const alternative=edge.label==='NO';
-    const path=document.createElementNS(ns,'path');path.setAttribute('d',d);path.setAttribute('class','graph-path '+(alternative?'graph-path-alternative':'graph-path-main'));path.setAttribute('marker-end',alternative?'url(#auneaGraphArrowAlt)':'url(#auneaGraphArrowMain)');svg.appendChild(path);
+    return {d,x1,y1,x2,y2};
+  };
+  edges.forEach(edge=>{
+    if(mergeIncoming.has(edgeKey(edge.from,edge.to)))return;
+    const a=els.get(edge.from),b=els.get(edge.to);if(!a||!b)return;
+    const g=orthogonal(a.getBoundingClientRect(),b.getBoundingClientRect()),alternative=edge.label==='NO'||edge.route==='NO';
+    appendPath(g.d,alternative,true);
     if(edge.label==='SÍ'||edge.label==='NO'){
-      const label=document.createElementNS(ns,'text');
-      const lx=x1+Math.max(26,Math.min(58,Math.abs(x2-x1)*.22)),ly=alternative?y1+30:y1-12;
-      label.setAttribute('x',String(lx));label.setAttribute('y',String(ly));
-      label.setAttribute('class','graph-path-label '+(alternative?'graph-path-label-alt':'graph-path-label-main'));
-      label.textContent=edge.label;svg.appendChild(label);
+      const lx=g.x1+Math.max(26,Math.min(58,Math.abs(g.x2-g.x1)*.22)),ly=alternative?g.y1+30:g.y1-12;
+      appendLabel(edge.label,lx,ly,alternative);
     }
+  });
+  branches.forEach(b=>{
+    if(!b.merge)return;
+    const target=els.get(b.merge),yes=els.get(b.yesPred),no=els.get(b.noPred);if(!target||!yes||!no)return;
+    const tr=target.getBoundingClientRect(),mx=tr.left-rect.left-11,my=tr.top+tr.height/2-rect.top;
+    const connect=(el,alternative,label='')=>{
+      const r=el.getBoundingClientRect(),x1=r.right-rect.left,y1=r.top+r.height/2-rect.top,xm=x1+Math.max(14,(mx-x1)/2);
+      appendPath('M'+x1+' '+y1+'H'+xm+'V'+my+'H'+mx,alternative,false);
+      if(label)appendLabel(label,x1+26,alternative?y1+28:y1-12,alternative);
+    };
+    connect(yes,false,b.yesPred===b.decisionId?'SÍ':'');
+    if(b.noPred!==b.yesPred)connect(no,true,b.noPred===b.decisionId?'NO':'');
+    const dot=document.createElementNS(ns,'circle');dot.setAttribute('cx',String(mx));dot.setAttribute('cy',String(my));dot.setAttribute('r','5.5');dot.setAttribute('class','graph-merge-dot');svg.appendChild(dot);
+    appendPath('M'+(mx+6)+' '+my+'H'+(tr.left-rect.left-5),false,true);
   });
 }
 if(typeof window!=='undefined'&&!window.__auneaProcessGraphResize){
