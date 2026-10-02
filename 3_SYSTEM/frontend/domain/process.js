@@ -454,8 +454,11 @@ function processGraphData(e,steps){
   const mainIndex=new Map(main.map((id,i)=>[id,i])),branchLayouts=[];
   main.forEach((id,i)=>{
     const step=byId.get(id);if(!step||!processDecisionStep(step))return;
+    const yesEdge=edges.find(x=>x.from===id&&x.label==='SÍ');
     const noEdge=edges.find(x=>x.from===id&&x.label==='NO');if(!noEdge)return;
-    const alt=[],seen=new Set([id]);let target=noEdge.to,branchGuard=0;
+    const yesStart=yesEdge?.to||'';
+    const noStart=noEdge.to||'';
+    const alt=[],seen=new Set([id]);let target=noStart,branchGuard=0;
     while(target&&target!=='__END__'&&!mainIndex.has(target)&&!seen.has(target)&&branchGuard++<nodes.length+2){
       alt.push(target);seen.add(target);
       if(String(target).startsWith('__NO__')||String(target).startsWith('__NEXT__'))break;
