@@ -564,11 +564,10 @@ function graphNodeCard(e,s,i,fr,tab='cliente'){
     +money.map(x=>'<button type="button" class="economic-badge" data-edit-economic-index="'+economics.indexOf(x)+'">Impacto · '+esc(typeof econDriverLabel==='function'?econDriverLabel(x.driver_id):x.driver_id)+'</button>').join('')
     +'</div>';
   if(decision){
-    return '<div class="graph-decision-node '+(processLayerState(e).map?'confirmed':'')+'" data-drag-step="'+attr(s.id)+'">'
-      +actions+'<button type="button" class="graph-decision-gateway" data-edit-step="'+attr(s.id)+'" aria-label="Editar decisión">'+processNodeIconSvg('decision')+'</button>'
-      +'<div class="graph-decision-copy"><span class="boundary-kicker">Decisión</span><h4 title="'+attr(s.step_name||'Decisión sin nombre')+'">'+esc(s.step_name||'Decisión sin nombre')+'</h4>'
+    return '<div class="flow-step graph-flow-step graph-decision-card '+typeClass+' is-decision '+(processLayerState(e).map?'confirmed':'')+'" data-drag-step="'+attr(s.id)+'">'
+      +actions+'<div class="process-node-heading">'+processNodeIconSvg('decision')+'<div class="process-node-title"><span class="boundary-kicker">Decisión</span><h4 title="'+attr(s.step_name||'Decisión sin nombre')+'">'+esc(s.step_name||'Decisión sin nombre')+'</h4></div></div>'
       +'<p class="process-node-meta" title="'+attr((labelFrom('OS_ACTOR_ROLE',s.actor)||'—')+' · '+(labelFrom('OS_TOOL_CATEGORY',s.tool)||'—'))+'">'+esc(labelFrom('OS_ACTOR_ROLE',s.actor)||'—')+' · '+esc(labelFrom('OS_TOOL_CATEGORY',s.tool)||'—')+'</p>'
-      +(num(s.active_time)?'<p>'+num(s.active_time)+' min trabajo</p>':'')+'</div>'
+      +(num(s.active_time)?'<p>'+num(s.active_time)+' min trabajo</p>':'')
       +links+(layerAction?'<div class="process-node-actions">'+layerAction+'</div>':'')+'</div>';
   }
   return '<div class="flow-step graph-flow-step '+typeClass+' '+(processLayerState(e).map?'confirmed':'')+'" data-drag-step="'+attr(s.id)+'">'
@@ -602,8 +601,8 @@ function drawProcessGraph(){
   board.querySelectorAll('[data-graph-node]').forEach(el=>els.set(el.dataset.graphNode,el));
   const nodeRect=id=>{
     const cell=els.get(id);if(!cell)return null;
-    const gateway=cell.querySelector?.('.graph-decision-gateway');
-    return (gateway||cell).getBoundingClientRect();
+    const node=cell.querySelector?.('.graph-flow-step,.flow-boundary,.graph-route-pending');
+    return (node||cell).getBoundingClientRect();
   };
   const cellRect=id=>els.get(id)?.getBoundingClientRect?.()||null;
   const edges=JSON.parse(board.dataset.graphEdges||'[]'),branches=JSON.parse(board.dataset.graphBranches||'[]');
