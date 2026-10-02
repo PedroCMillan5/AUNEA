@@ -332,13 +332,13 @@ body.asis-console-locked .result-list button:disabled{cursor:not-allowed;opacity
 .process-node-icon-wait{background:#fff8f1;color:#8b5b2f;border-color:#ead0b6}
 .process-node-meta{margin-top:10px!important;color:var(--muted)!important}
 .process-graph-decision-cell{align-items:center}
-.graph-decision-inline{position:relative;height:190px;min-height:190px;max-height:190px;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:30px 4px 4px;box-sizing:border-box;overflow:visible}
+.graph-decision-inline{position:relative;height:190px;min-height:190px;max-height:190px;display:block;padding:0 4px;box-sizing:border-box;overflow:visible}
 .graph-decision-inline .flow-step-tools{position:absolute;top:0;left:0;right:0;display:flex;gap:4px;flex-wrap:nowrap;justify-content:center;align-items:center;white-space:nowrap}
 .graph-decision-inline .flow-step-tools button{flex:0 0 auto;min-width:24px;height:24px;padding:0 6px;font-size:10px}
-.graph-decision-gateway{display:grid;place-items:center;width:58px;height:58px;min-width:58px;min-height:58px;border:2px solid var(--system);border-radius:7px;background:#eef5f0;transform:rotate(45deg);box-shadow:0 4px 14px rgba(42,81,63,.08)}
+.graph-decision-gateway{position:absolute;top:66px;left:50%;display:grid;place-items:center;width:58px;height:58px;min-width:58px;min-height:58px;margin-left:-29px;border:2px solid var(--system);border-radius:7px;background:#eef5f0;transform:rotate(45deg);box-shadow:0 4px 14px rgba(42,81,63,.08)}
 .graph-decision-gateway-icon{transform:rotate(-45deg)}
 .graph-decision-gateway .process-node-icon{width:30px;height:30px;min-width:30px;border:0;background:transparent}
-.graph-decision-copy{width:160px;margin-top:18px;text-align:center}
+.graph-decision-copy{position:absolute;top:136px;left:50%;width:160px;margin-left:-80px;text-align:center}
 .graph-decision-copy .boundary-kicker{display:block;margin-bottom:2px}
 .graph-decision-copy h4{margin:0;font-size:12px;line-height:1.25;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;text-overflow:ellipsis}
 .graph-decision-copy p{margin:3px 0 0!important;font-size:10px!important;line-height:1.25}
