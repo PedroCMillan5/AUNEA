@@ -606,34 +606,74 @@ function drawProcessGraph(){
     const node=cell.querySelector?.('.graph-decision-gateway,.graph-flow-step,.flow-boundary,.graph-route-pending');
     return (node||cell).getBoundingClientRect();
   };
-  const cellRect=id=>els.get(id)?.getBoundingClientRect?.()||null;
   const edges=JSON.parse(board.dataset.graphEdges||'[]'),branches=JSON.parse(board.dataset.graphBranches||'[]');
   svg.setAttribute('viewBox','0 0 '+board.scrollWidth+' '+board.scrollHeight);
   svg.innerHTML='<defs><marker id="auneaGraphArrowMain" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#4f7563"/></marker><marker id="auneaGraphArrowAlt" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#b9783c"/></marker></defs>';
+
   const edgeKey=(from,to)=>String(from)+'>'+String(to);
   const branchOriginEdges=new Set(),mergeIncoming=new Set();
   branches.forEach(b=>{
-    const dr=nodeRect(b.decisionId);if(!dr)return;
-    const rightX=dr.right-rect.left,centerY=dr.top+dr.height/2-rect.top;
-    const bottomX=dr.left+dr.width*.68-rect.left,bottomY=dr.bottom-rect.top-2;
+    if(b.yesStart)branchOriginEdges.add(edgeKey(b.decisionId,b.yesStart));
+    if(b.noStart)branchOriginEdges.add(edgeKey(b.decisionId,b.noStart));
+    if(b.merge&&b.yesPred)mergeIncoming.add(edgeKey(b.yesPred,b.merge));
+    if(b.merge&&b.noPred)mergeIncoming.add(edgeKey(b.noPred,b.merge));
+  });
 
-    if(!b.merge)return;
+  const appendPath=(d,alternative=false,arrow=true)=>{
+    const path=document.createElementNS(ns,'path');
+    path.setAttribute('d',d);
+    path.setAttribute('class','graph-path '+(alternative?'graph-path-alternative':'graph-path-main'));
+    if(arrow)path.setAttribute('marker-end',alternative?'url(#auneaGraphArrowAlt)':'url(#auneaGraphArrowMain)');
+    svg.appendChild(path);
+    return path;
+  };
+  const appendLabel=(label,x,y,alternative=false)=>{
+    const textEl=document.createElementNS(ns,'text');
+    textEl.setAttribute('x',String(x));textEl.setAttribute('y',String(y));
+    textEl.setAttribute('class','graph-path-label '+(alternative?'graph-path-label-alt':'graph-path-label-main'));
+    textEl.textContent=label;svg.appendChild(textEl);
+  };
+  const orthogonal=(ar,br,alternative=false)=>{
+    const x1=ar.right-rect.left,y1=ar.top+ar.height/2-rect.top;
+    const x2=br.left-rect.left,y2=br.top+br.height/2-rect.top;
+    if(Math.abs(y2-y1)<3)return 'M'+x1+' '+y1+'H'+(x2-5);
+    const xm=x1+Math.max(22,(x2-x1)/2);
+    return 'M'+x1+' '+y1+'H'+xm+'V'+y2+'H'+(x2-5);
+  };
+
+  // Draw every normal connector except the two exits of a decision and the two
+  // segments that converge into its independent merge point.
+  edges.forEach(edge=>{
+    const key=edgeKey(edge.from,edge.to);
+    if(branchOriginEdges.has(key)||mergeIncoming.has(key))return;
+    const ar=nodeRect(edge.from),br=nodeRect(edge.to);if(!ar||!br)return;
+    appendPath(orthogonal(ar,br,edge.route==='NO'),edge.route==='NO',true);
+  });
+
+  branches.forEach(b=>{
+    const dr=nodeRect(b.decisionId);if(!dr||!b.merge)return;
     const tr=nodeRect(b.merge);if(!tr)return;
-    const mainY=tr.top+tr.height/2-rect.top;
-    const mergeX=tr.left-rect.left-28;
-    const lowerY=Math.max(bottomY+62,mainY+92);
 
-    // SÍ branch: right from gateway, up, through the affirmative steps, then down to the merge dot.
+    const rightX=dr.right-rect.left;
+    const centerY=dr.top+dr.height/2-rect.top;
+    const noStartX=dr.right-rect.left-4;
+    const noStartY=dr.bottom-rect.top-8;
+    const mainY=tr.top+tr.height/2-rect.top;
+    const mergeX=tr.left-rect.left-32;
+    const lowerY=Math.max(mainY+94,noStartY+64);
+
+    // SÍ: leaves the gateway to the right, rises to the affirmative card,
+    // then returns vertically to the convergence point.
     if(b.yesStart&&b.yesStart!==b.merge){
       const yr=nodeRect(b.yesStart);
       if(yr){
-        const xTarget=yr.left-rect.left,yTarget=yr.top+yr.height/2-rect.top;
-        appendPath('M'+rightX+' '+centerY+'H'+(rightX+24)+'V'+yTarget+'H'+(xTarget-5),false,true);
-        appendLabel('SÍ',rightX+30,yTarget-12,false);
+        const targetX=yr.left-rect.left,targetY=yr.top+yr.height/2-rect.top;
+        appendPath('M'+rightX+' '+centerY+'H'+(rightX+26)+'V'+targetY+'H'+(targetX-5),false,true);
+        appendLabel('SÍ',rightX+34,targetY-12,false);
       }
     }else{
       appendPath('M'+rightX+' '+centerY+'H'+mergeX,false,false);
-      appendLabel('SÍ',rightX+30,centerY-12,false);
+      appendLabel('SÍ',rightX+34,centerY-12,false);
     }
 
     if(b.yesPred&&b.yesPred!==b.decisionId){
@@ -644,17 +684,18 @@ function drawProcessGraph(){
       }
     }
 
-    // NO branch: diagonal release from the lower-right of the gateway, horizontal lower bypass, rise to dot.
+    // NO: leaves from the lower-right edge of the gateway, descends to the lower
+    // bypass lane, travels horizontally and rises into the same convergence point.
     if(b.noStart&&b.noStart!==b.merge){
       const nr=nodeRect(b.noStart);
       if(nr){
-        const xTarget=nr.left-rect.left,yTarget=nr.top+nr.height/2-rect.top;
-        appendPath('M'+bottomX+' '+bottomY+'L'+(bottomX+42)+' '+lowerY+'H'+(xTarget-18)+'V'+yTarget+'H'+(xTarget-5),true,true);
-        appendLabel('NO',bottomX+56,lowerY-12,true);
+        const targetX=nr.left-rect.left,targetY=nr.top+nr.height/2-rect.top;
+        appendPath('M'+noStartX+' '+noStartY+'L'+(noStartX+44)+' '+lowerY+'H'+(targetX-18)+'V'+targetY+'H'+(targetX-5),true,true);
+        appendLabel('NO',noStartX+58,lowerY-12,true);
       }
     }else{
-      appendPath('M'+bottomX+' '+bottomY+'L'+(bottomX+42)+' '+lowerY+'H'+mergeX+'V'+mainY,true,false);
-      appendLabel('NO',bottomX+58,lowerY-12,true);
+      appendPath('M'+noStartX+' '+noStartY+'L'+(noStartX+44)+' '+lowerY+'H'+mergeX+'V'+mainY,true,false);
+      appendLabel('NO',noStartX+60,lowerY-12,true);
     }
 
     if(b.noPred&&b.noPred!==b.decisionId){
@@ -666,8 +707,11 @@ function drawProcessGraph(){
     }
 
     const dot=document.createElementNS(ns,'circle');
-    dot.setAttribute('cx',String(mergeX));dot.setAttribute('cy',String(mainY));dot.setAttribute('r','10');
-    dot.setAttribute('class','graph-merge-dot');svg.appendChild(dot);
+    dot.setAttribute('cx',String(mergeX));
+    dot.setAttribute('cy',String(mainY));
+    dot.setAttribute('r','10');
+    dot.setAttribute('class','graph-merge-dot');
+    svg.appendChild(dot);
     appendPath('M'+(mergeX+11)+' '+mainY+'H'+(tr.left-rect.left-5),false,true);
   });
 }
