@@ -504,7 +504,7 @@ function processGraphData(e,steps){
     if(n.id==='__END__'){positions.set(n.id,{row:1,col:++maxCol});return}
     positions.set(n.id,{row:3,col:++maxCol});unplaced++;
   });
-  const rows=unplaced?3:(branchLayouts.some(b=>b.alt.length||b.merge)?2:1);
+  const rows=unplaced?3:(branchLayouts.some(b=>b.alt.length)?2:1);
   const maxCols=Math.max(1,...Array.from(positions.values(),p=>p.col));
   return {nodes,edges,cols:maxCols,rows,positions,branchLayouts};
 }
