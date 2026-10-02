@@ -464,7 +464,7 @@ function processGraphData(e,steps){
       if(!chosen)break;target=chosen.to;
     }
     const merge=mainIndex.has(target)?target:(target==='__END__'?'__END__':null);
-    branchLayouts.push({decisionId:id,decisionIndex:i,alt,merge});
+    branchLayouts.push({decisionId:id,decisionIndex:i,yesStart,noStart,alt,merge});
   });
 
   // Projection-only branch metadata: preserve DF042/DF043 as the owners while making
@@ -576,14 +576,14 @@ function graphNodeCard(e,s,i,fr,tab='cliente'){
 }
 function processGraphHtml(e,steps,fr,start,finish,tab='cliente'){
   const model=processGraphData(e,steps),cell=n=>{
-    const p=model.positions.get(n.id),step=n.kind==='step'?steps.find(x=>x.id===n.id):null,spansBranch=!!step&&processDecisionStep(step)&&model.branchLayouts.some(b=>b.decisionId===n.id&&(b.alt.length||b.merge));
-    const style=spansBranch?'style="grid-row:1 / span 2;grid-column:'+p.col+'"':'style="grid-row:'+p.row+';grid-column:'+p.col+'"',id='data-graph-node="'+attr(n.id)+'"';
+    const p=model.positions.get(n.id),step=n.kind==='step'?steps.find(x=>x.id===n.id):null,isDecision=!!step&&processDecisionStep(step);
+    const style='style="grid-row:'+p.row+';grid-column:'+p.col+'"',id='data-graph-node="'+attr(n.id)+'"';
     let html='';
     if(n.kind==='start')html=flowBoundaryNode('start',start);
     else if(n.kind==='end')html=flowBoundaryNode('end',finish);
     else if(n.kind==='pending')html='<button type="button" class="graph-route-pending" data-graph-edit-route="'+attr(n.parent)+'" data-graph-route-kind="'+(n.route==='NO'?'no':'yes')+'"><b>'+esc(n.route)+'</b><span>→ Definir destino</span></button>';
     else html=graphNodeCard(e,step,steps.indexOf(step),fr,tab);
-    return '<div class="process-graph-cell '+(spansBranch?'process-graph-decision-cell':'')+'" '+style+' '+id+'>'+html+'</div>';
+    return '<div class="process-graph-cell '+(isDecision?'process-graph-decision-cell':'')+'" '+style+' '+id+'>'+html+'</div>';
   };
   const hasBranch=model.edges.some(x=>x.label==='NO');
   const legend=hasBranch?'<div class="process-graph-legend" aria-label="Leyenda de rutas"><span class="legend-main"><i></i>Ruta SÍ / principal</span><span class="legend-alt"><i></i>Ruta NO / alternativa</span></div>':'';
@@ -602,70 +602,122 @@ function drawProcessGraph(){
     const gateway=cell.querySelector?.('.graph-decision-gateway');
     return (gateway||cell).getBoundingClientRect();
   };
+  const cellRect=id=>els.get(id)?.getBoundingClientRect?.()||null;
   const edges=JSON.parse(board.dataset.graphEdges||'[]'),branches=JSON.parse(board.dataset.graphBranches||'[]');
   svg.setAttribute('viewBox','0 0 '+board.scrollWidth+' '+board.scrollHeight);
   svg.innerHTML='<defs><marker id="auneaGraphArrowMain" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#4f7563"/></marker><marker id="auneaGraphArrowAlt" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#b9783c"/></marker></defs>';
   const edgeKey=(from,to)=>String(from)+'>'+String(to);
-  const mergeIncoming=new Set();
+  const branchOriginEdges=new Set(),mergeIncoming=new Set();
   branches.forEach(b=>{
-    if(!b.merge||!els.has(b.merge))return;
-    if(b.yesPred&&els.has(b.yesPred))mergeIncoming.add(edgeKey(b.yesPred,b.merge));
-    if(b.noPred&&els.has(b.noPred))mergeIncoming.add(edgeKey(b.noPred,b.merge));
+    if(b.yesStart)branchOriginEdges.add(edgeKey(b.decisionId,b.yesStart));
+    if(b.noStart)branchOriginEdges.add(edgeKey(b.decisionId,b.noStart));
+    if(b.merge&&b.yesPred)mergeIncoming.add(edgeKey(b.yesPred,b.merge));
+    if(b.merge&&b.noPred)mergeIncoming.add(edgeKey(b.noPred,b.merge));
   });
   const appendPath=(d,alternative=false,arrow=true)=>{
-    const path=document.createElementNS(ns,'path');path.setAttribute('d',d);path.setAttribute('class','graph-path '+(alternative?'graph-path-alternative':'graph-path-main'));
+    const path=document.createElementNS(ns,'path');
+    path.setAttribute('d',d);
+    path.setAttribute('class','graph-path '+(alternative?'graph-path-alternative':'graph-path-main'));
     if(arrow)path.setAttribute('marker-end',alternative?'url(#auneaGraphArrowAlt)':'url(#auneaGraphArrowMain)');
-    svg.appendChild(path);return path;
+    svg.appendChild(path);
+    return path;
   };
   const appendLabel=(label,x,y,alternative=false)=>{
-    const textEl=document.createElementNS(ns,'text');textEl.setAttribute('x',String(x));textEl.setAttribute('y',String(y));
-    textEl.setAttribute('class','graph-path-label '+(alternative?'graph-path-label-alt':'graph-path-label-main'));textEl.textContent=label;svg.appendChild(textEl);
+    const textEl=document.createElementNS(ns,'text');
+    textEl.setAttribute('x',String(x));textEl.setAttribute('y',String(y));
+    textEl.setAttribute('class','graph-path-label '+(alternative?'graph-path-label-alt':'graph-path-label-main'));
+    textEl.textContent=label;svg.appendChild(textEl);
   };
   const orthogonal=(ar,br)=>{
     const forward=br.left>ar.right+6;
     let x1=ar.right-rect.left,y1=ar.top+ar.height/2-rect.top,x2=br.left-rect.left,y2=br.top+br.height/2-rect.top,d;
     if(forward){
-      const xm=x1+Math.max(18,(x2-x1)/2);d='M'+x1+' '+y1+'H'+xm+'V'+y2+'H'+(x2-5);
+      const xm=x1+Math.max(18,(x2-x1)/2);
+      d='M'+x1+' '+y1+'H'+xm+'V'+y2+'H'+(x2-5);
     }else{
-      const y=Math.max(12,Math.min(y1,y2)-55);x1=ar.left+ar.width/2-rect.left;y1=ar.top-rect.top;x2=br.left+br.width/2-rect.left;y2=br.top-rect.top;d='M'+x1+' '+y1+'V'+y+'H'+x2+'V'+(y2-5);
+      const y=Math.max(12,Math.min(y1,y2)-55);
+      x1=ar.left+ar.width/2-rect.left;y1=ar.top-rect.top;
+      x2=br.left+br.width/2-rect.left;y2=br.top-rect.top;
+      d='M'+x1+' '+y1+'V'+y+'H'+x2+'V'+(y2-5);
     }
     return {d,x1,y1,x2,y2};
   };
+
+  // Ordinary edges only. Decision exits and merge entrances are rendered below with explicit ports.
   edges.forEach(edge=>{
-    if(mergeIncoming.has(edgeKey(edge.from,edge.to)))return;
-    const a=els.get(edge.from),b=els.get(edge.to),ar=nodeRect(edge.from),br=nodeRect(edge.to);if(!a||!b||!ar||!br)return;
-    const g=orthogonal(ar,br),alternative=edge.label==='NO'||edge.route==='NO';
+    const key=edgeKey(edge.from,edge.to);
+    if(branchOriginEdges.has(key)||mergeIncoming.has(key))return;
+    const ar=nodeRect(edge.from),br=nodeRect(edge.to);if(!ar||!br)return;
+    const g=orthogonal(ar,br),alternative=edge.route==='NO';
     appendPath(g.d,alternative,true);
-    if(edge.label==='SÍ'||edge.label==='NO'){
-      const lx=g.x1+Math.max(26,Math.min(58,Math.abs(g.x2-g.x1)*.22)),ly=alternative?g.y1+30:g.y1-12;
-      appendLabel(edge.label,lx,ly,alternative);
-    }
   });
+
   branches.forEach(b=>{
-    if(!b.merge)return;
-    const target=els.get(b.merge),yes=els.get(b.yesPred),no=els.get(b.noPred),tr=nodeRect(b.merge),yr=nodeRect(b.yesPred),nr=nodeRect(b.noPred),dr=nodeRect(b.decisionId);
-    if(!target||!yes||!no||!tr||!yr||!nr||!dr)return;
-    const mx=tr.left-rect.left-11,my=tr.top+tr.height/2-rect.top;
-    const connectMain=()=>{
-      const x1=yr.right-rect.left,y1=yr.top+yr.height/2-rect.top,xm=x1+Math.max(14,(mx-x1)/2);
-      appendPath('M'+x1+' '+y1+'H'+xm+'V'+my+'H'+mx,false,false);
-      if(b.yesPred===b.decisionId)appendLabel('SÍ',x1+26,y1-12,false);
-    };
-    const connectAlt=()=>{
-      const x1=nr.right-rect.left,y1=nr.top+nr.height/2-rect.top;
-      if(b.noPred===b.decisionId){
-        const lowerY=Math.max(dr.bottom-rect.top+34,my+54);
-        appendPath('M'+x1+' '+y1+'H'+(x1+22)+'V'+lowerY+'H'+mx+'V'+my,true,false);
-        appendLabel('NO',x1+28,y1+28,true);
-      }else{
-        const xm=x1+Math.max(14,(mx-x1)/2);
-        appendPath('M'+x1+' '+y1+'H'+xm+'V'+my+'H'+mx,true,false);
+    const dr=nodeRect(b.decisionId),dc=cellRect(b.decisionId);if(!dr||!dc)return;
+    const rightX=dr.right-rect.left,centerY=dr.top+dr.height/2-rect.top;
+    const bottomX=dr.left+dr.width/2-rect.left,bottomY=dr.bottom-rect.top;
+    const lowerY=Math.min(board.scrollHeight-24,dc.bottom-rect.top+34);
+
+    // SÍ: the gateway and the normal route remain on the same horizontal main line.
+    if(b.yesStart&&b.yesStart!==b.merge){
+      const yr=nodeRect(b.yesStart);
+      if(yr){
+        const yTarget=yr.top+yr.height/2-rect.top,xTarget=yr.left-rect.left;
+        const d=Math.abs(yTarget-centerY)<3
+          ?'M'+rightX+' '+centerY+'H'+(xTarget-5)
+          :'M'+rightX+' '+centerY+'H'+(rightX+18)+'V'+yTarget+'H'+(xTarget-5);
+        appendPath(d,false,true);
+        appendLabel('SÍ',rightX+24,centerY-12,false);
       }
-    };
-    connectMain();
-    if(b.noPred!==b.yesPred)connectAlt();
-    const dot=document.createElementNS(ns,'circle');dot.setAttribute('cx',String(mx));dot.setAttribute('cy',String(my));dot.setAttribute('r','5.5');dot.setAttribute('class','graph-merge-dot');svg.appendChild(dot);
-    appendPath('M'+(mx+6)+' '+my+'H'+(tr.left-rect.left-5),false,true);
+    }
+
+    // NO: always leaves from the bottom port and occupies the lower lane.
+    if(b.noStart&&b.noStart!==b.merge){
+      const nr=nodeRect(b.noStart);
+      if(nr){
+        const xTarget=nr.left-rect.left,yTarget=nr.top+nr.height/2-rect.top;
+        appendPath('M'+bottomX+' '+bottomY+'V'+lowerY+'H'+(xTarget-18)+'V'+yTarget+'H'+(xTarget-5),true,true);
+        appendLabel('NO',bottomX+10,bottomY+24,true);
+      }
+    }
+
+    if(!b.merge)return;
+    const tr=nodeRect(b.merge);if(!tr)return;
+    const mainY=tr.top+tr.height/2-rect.top;
+    const mergeX=tr.left-rect.left-12;
+
+    // Last SÍ segment joins the merge point horizontally on the main line.
+    if(b.yesPred&&b.yesPred===b.decisionId){
+      appendPath('M'+rightX+' '+centerY+'H'+mergeX,false,false);
+      appendLabel('SÍ',rightX+24,centerY-12,false);
+    }else if(b.yesPred){
+      const yr=nodeRect(b.yesPred);
+      if(yr){
+        const x1=yr.right-rect.left,y1=yr.top+yr.height/2-rect.top;
+        const d=Math.abs(y1-mainY)<3
+          ?'M'+x1+' '+y1+'H'+mergeX
+          :'M'+x1+' '+y1+'H'+(x1+16)+'V'+mainY+'H'+mergeX;
+        appendPath(d,false,false);
+      }
+    }
+
+    // Last NO segment comes from below into that same merge point.
+    if(b.noPred&&b.noPred===b.decisionId){
+      appendPath('M'+bottomX+' '+bottomY+'V'+lowerY+'H'+mergeX+'V'+mainY,true,false);
+      appendLabel('NO',bottomX+10,bottomY+24,true);
+    }else if(b.noPred){
+      const nr=nodeRect(b.noPred);
+      if(nr){
+        const x1=nr.right-rect.left,y1=nr.top+nr.height/2-rect.top;
+        const startLower=Math.max(lowerY,y1);
+        appendPath('M'+x1+' '+y1+'H'+(x1+16)+'V'+startLower+'H'+mergeX+'V'+mainY,true,false);
+      }
+    }
+
+    const dot=document.createElementNS(ns,'circle');
+    dot.setAttribute('cx',String(mergeX));dot.setAttribute('cy',String(mainY));dot.setAttribute('r','5.5');
+    dot.setAttribute('class','graph-merge-dot');svg.appendChild(dot);
+    appendPath('M'+(mergeX+6)+' '+mainY+'H'+(tr.left-rect.left-5),false,true);
   });
 }
 if(typeof window!=='undefined'&&!window.__auneaProcessGraphResize){
