@@ -474,7 +474,8 @@ function processGraphData(e,steps){
   // the NO lane visually continuous and giving each real reconvergence one solid join point.
   branchLayouts.forEach(b=>{
     const mergeIndex=b.merge!=null?mainIndex.get(b.merge):null;
-    b.yesPred=mergeIndex!=null&&mergeIndex>0?main[mergeIndex-1]:b.decisionId;
+    b.yesSteps=mergeIndex!=null&&mergeIndex>b.decisionIndex?main.slice(b.decisionIndex+1,mergeIndex):[];
+    b.yesPred=b.yesSteps.length?b.yesSteps[b.yesSteps.length-1]:b.decisionId;
     b.noPred=b.alt.length?b.alt[b.alt.length-1]:b.decisionId;
     const noChain=[b.decisionId,...b.alt,b.merge].filter(Boolean);
     for(let i=0;i<noChain.length-1;i++){
@@ -565,10 +566,10 @@ function graphNodeCard(e,s,i,fr,tab='cliente'){
     +'</div>';
   if(decision){
     return '<div class="graph-decision-inline '+(processLayerState(e).map?'confirmed':'')+'" data-drag-step="'+attr(s.id)+'">'
-      +actions+'<div class="graph-decision-core"><div class="graph-decision-symbol">'+processNodeIconSvg('decision')+'</div>'
+      +actions+'<div class="graph-decision-gateway" aria-hidden="true"><div class="graph-decision-gateway-icon">'+processNodeIconSvg('decision')+'</div></div>'
       +'<div class="graph-decision-copy"><span class="boundary-kicker">Decisión</span><h4 title="'+attr(s.step_name||'Decisión sin nombre')+'">'+esc(s.step_name||'Decisión sin nombre')+'</h4>'
       +'<p class="process-node-meta" title="'+attr((labelFrom('OS_ACTOR_ROLE',s.actor)||'—')+' · '+(labelFrom('OS_TOOL_CATEGORY',s.tool)||'—'))+'">'+esc(labelFrom('OS_ACTOR_ROLE',s.actor)||'—')+' · '+esc(labelFrom('OS_TOOL_CATEGORY',s.tool)||'—')+'</p>'
-      +(num(s.active_time)?'<p>'+num(s.active_time)+' min trabajo</p>':'')+'</div></div>'
+      +(num(s.active_time)?'<p>'+num(s.active_time)+' min trabajo</p>':'')+'</div>'
       +links+(layerAction?'<div class="process-node-actions">'+layerAction+'</div>':'')+'</div>';
   }
   return '<div class="flow-step graph-flow-step '+typeClass+' '+(processLayerState(e).map?'confirmed':'')+'" data-drag-step="'+attr(s.id)+'">'
@@ -578,15 +579,15 @@ function graphNodeCard(e,s,i,fr,tab='cliente'){
     +links+(layerAction?'<div class="process-node-actions">'+layerAction+'</div>':'')+'</div>';
 }
 function processGraphHtml(e,steps,fr,start,finish,tab='cliente'){
-  const model=processGraphData(e,steps),cell=n=>{
-    const p=model.positions.get(n.id),step=n.kind==='step'?steps.find(x=>x.id===n.id):null,isDecision=!!step&&processDecisionStep(step);
+  const model=processGraphData(e,steps),yesBranchIds=new Set(model.branchLayouts.flatMap(b=>b.yesSteps||[])),cell=n=>{
+    const p=model.positions.get(n.id),step=n.kind==='step'?steps.find(x=>x.id===n.id):null,isDecision=!!step&&processDecisionStep(step),isYesBranch=yesBranchIds.has(n.id);
     const style='style="grid-row:'+p.row+';grid-column:'+p.col+'"',id='data-graph-node="'+attr(n.id)+'"';
     let html='';
     if(n.kind==='start')html=flowBoundaryNode('start',start);
     else if(n.kind==='end')html=flowBoundaryNode('end',finish);
     else if(n.kind==='pending')html='<button type="button" class="graph-route-pending" data-graph-edit-route="'+attr(n.parent)+'" data-graph-route-kind="'+(n.route==='NO'?'no':'yes')+'"><b>'+esc(n.route)+'</b><span>→ Definir destino</span></button>';
     else html=graphNodeCard(e,step,steps.indexOf(step),fr,tab);
-    return '<div class="process-graph-cell '+(isDecision?'process-graph-decision-cell':'')+'" '+style+' '+id+'>'+html+'</div>';
+    return '<div class="process-graph-cell '+(isDecision?'process-graph-decision-cell ':'')+(isYesBranch?'process-graph-yes-branch-cell':'')+'" '+style+' '+id+'>'+html+'</div>';
   };
   const hasBranch=model.edges.some(x=>x.label==='NO');
   const legend=hasBranch?'<div class="process-graph-legend" aria-label="Leyenda de rutas"><span class="legend-main"><i></i>Ruta SÍ / principal</span><span class="legend-alt"><i></i>Ruta NO / alternativa</span></div>':'';
@@ -602,7 +603,7 @@ function drawProcessGraph(){
   board.querySelectorAll('[data-graph-node]').forEach(el=>els.set(el.dataset.graphNode,el));
   const nodeRect=id=>{
     const cell=els.get(id);if(!cell)return null;
-    const node=cell.querySelector?.('.graph-decision-core,.graph-flow-step,.flow-boundary,.graph-route-pending');
+    const node=cell.querySelector?.('.graph-decision-gateway,.graph-flow-step,.flow-boundary,.graph-route-pending');
     return (node||cell).getBoundingClientRect();
   };
   const cellRect=id=>els.get(id)?.getBoundingClientRect?.()||null;
@@ -612,122 +613,62 @@ function drawProcessGraph(){
   const edgeKey=(from,to)=>String(from)+'>'+String(to);
   const branchOriginEdges=new Set(),mergeIncoming=new Set();
   branches.forEach(b=>{
-    if(b.yesStart)branchOriginEdges.add(edgeKey(b.decisionId,b.yesStart));
-    if(b.noStart)branchOriginEdges.add(edgeKey(b.decisionId,b.noStart));
-    if(b.merge&&b.yesPred)mergeIncoming.add(edgeKey(b.yesPred,b.merge));
-    if(b.merge&&b.noPred)mergeIncoming.add(edgeKey(b.noPred,b.merge));
-  });
-  const appendPath=(d,alternative=false,arrow=true)=>{
-    const path=document.createElementNS(ns,'path');
-    path.setAttribute('d',d);
-    path.setAttribute('class','graph-path '+(alternative?'graph-path-alternative':'graph-path-main'));
-    if(arrow)path.setAttribute('marker-end',alternative?'url(#auneaGraphArrowAlt)':'url(#auneaGraphArrowMain)');
-    svg.appendChild(path);
-    return path;
-  };
-  const appendLabel=(label,x,y,alternative=false)=>{
-    const group=document.createElementNS(ns,'g');group.setAttribute('class','graph-path-label-group');
-    const rectEl=document.createElementNS(ns,'rect');
-    const width=label==='SÍ'?30:34;
-    rectEl.setAttribute('x',String(x-6));rectEl.setAttribute('y',String(y-15));
-    rectEl.setAttribute('width',String(width));rectEl.setAttribute('height','20');
-    rectEl.setAttribute('rx','8');rectEl.setAttribute('class','graph-path-label-bg '+(alternative?'graph-path-label-bg-alt':'graph-path-label-bg-main'));
-    const textEl=document.createElementNS(ns,'text');
-    textEl.setAttribute('x',String(x+9));textEl.setAttribute('y',String(y));
-    textEl.setAttribute('text-anchor','middle');
-    textEl.setAttribute('class','graph-path-label '+(alternative?'graph-path-label-alt':'graph-path-label-main'));
-    textEl.textContent=label;group.appendChild(rectEl);group.appendChild(textEl);svg.appendChild(group);
-  };
-  const orthogonal=(ar,br)=>{
-    const forward=br.left>ar.right+6;
-    let x1=ar.right-rect.left,y1=ar.top+ar.height/2-rect.top,x2=br.left-rect.left,y2=br.top+br.height/2-rect.top,d;
-    if(forward){
-      const xm=x1+Math.max(18,(x2-x1)/2);
-      d='M'+x1+' '+y1+'H'+xm+'V'+y2+'H'+(x2-5);
-    }else{
-      const y=Math.max(12,Math.min(y1,y2)-55);
-      x1=ar.left+ar.width/2-rect.left;y1=ar.top-rect.top;
-      x2=br.left+br.width/2-rect.left;y2=br.top-rect.top;
-      d='M'+x1+' '+y1+'V'+y+'H'+x2+'V'+(y2-5);
-    }
-    return {d,x1,y1,x2,y2};
-  };
-
-  // Ordinary edges only. Decision exits and merge entrances are rendered below with explicit ports.
-  edges.forEach(edge=>{
-    const key=edgeKey(edge.from,edge.to);
-    if(branchOriginEdges.has(key)||mergeIncoming.has(key))return;
-    const ar=nodeRect(edge.from),br=nodeRect(edge.to);if(!ar||!br)return;
-    const g=orthogonal(ar,br),alternative=edge.route==='NO';
-    appendPath(g.d,alternative,true);
-  });
-
-  branches.forEach(b=>{
-    const dr=nodeRect(b.decisionId),dc=cellRect(b.decisionId);if(!dr||!dc)return;
+    const dr=nodeRect(b.decisionId);if(!dr)return;
     const rightX=dr.right-rect.left,centerY=dr.top+dr.height/2-rect.top;
-    const bottomX=dr.left+dr.width/2-rect.left,bottomY=dr.bottom-rect.top;
-    const lowerY=Math.min(board.scrollHeight-24,dc.bottom-rect.top+34);
-
-    // SÍ: the gateway and the normal route remain on the same horizontal main line.
-    if(b.yesStart&&b.yesStart!==b.merge){
-      const yr=nodeRect(b.yesStart);
-      if(yr){
-        const yTarget=yr.top+yr.height/2-rect.top,xTarget=yr.left-rect.left;
-        const d=Math.abs(yTarget-centerY)<3
-          ?'M'+rightX+' '+centerY+'H'+(xTarget-5)
-          :'M'+rightX+' '+centerY+'H'+(rightX+18)+'V'+yTarget+'H'+(xTarget-5);
-        appendPath(d,false,true);
-        appendLabel('SÍ',rightX+24,centerY-12,false);
-      }
-    }
-
-    // NO: always leaves from the bottom port and occupies the lower lane.
-    if(b.noStart&&b.noStart!==b.merge){
-      const nr=nodeRect(b.noStart);
-      if(nr){
-        const xTarget=nr.left-rect.left,yTarget=nr.top+nr.height/2-rect.top;
-        appendPath('M'+bottomX+' '+bottomY+'V'+lowerY+'H'+(xTarget-18)+'V'+yTarget+'H'+(xTarget-5),true,true);
-        appendLabel('NO',bottomX+10,bottomY+24,true);
-      }
-    }
+    const bottomX=dr.left+dr.width*.68-rect.left,bottomY=dr.bottom-rect.top-2;
 
     if(!b.merge)return;
     const tr=nodeRect(b.merge);if(!tr)return;
     const mainY=tr.top+tr.height/2-rect.top;
-    const mergeX=tr.left-rect.left-12;
+    const mergeX=tr.left-rect.left-28;
+    const lowerY=Math.max(bottomY+62,mainY+92);
 
-    // Last SÍ segment joins the merge point horizontally on the main line.
-    if(b.yesPred&&b.yesPred===b.decisionId){
+    // SÍ branch: right from gateway, up, through the affirmative steps, then down to the merge dot.
+    if(b.yesStart&&b.yesStart!==b.merge){
+      const yr=nodeRect(b.yesStart);
+      if(yr){
+        const xTarget=yr.left-rect.left,yTarget=yr.top+yr.height/2-rect.top;
+        appendPath('M'+rightX+' '+centerY+'H'+(rightX+24)+'V'+yTarget+'H'+(xTarget-5),false,true);
+        appendLabel('SÍ',rightX+30,yTarget-12,false);
+      }
+    }else{
       appendPath('M'+rightX+' '+centerY+'H'+mergeX,false,false);
-      appendLabel('SÍ',rightX+24,centerY-12,false);
-    }else if(b.yesPred){
+      appendLabel('SÍ',rightX+30,centerY-12,false);
+    }
+
+    if(b.yesPred&&b.yesPred!==b.decisionId){
       const yr=nodeRect(b.yesPred);
       if(yr){
         const x1=yr.right-rect.left,y1=yr.top+yr.height/2-rect.top;
-        const d=Math.abs(y1-mainY)<3
-          ?'M'+x1+' '+y1+'H'+mergeX
-          :'M'+x1+' '+y1+'H'+(x1+16)+'V'+mainY+'H'+mergeX;
-        appendPath(d,false,false);
+        appendPath('M'+x1+' '+y1+'H'+mergeX+'V'+mainY,false,false);
       }
     }
 
-    // Last NO segment comes from below into that same merge point.
-    if(b.noPred&&b.noPred===b.decisionId){
-      appendPath('M'+bottomX+' '+bottomY+'V'+lowerY+'H'+mergeX+'V'+mainY,true,false);
-      appendLabel('NO',bottomX+10,bottomY+24,true);
-    }else if(b.noPred){
+    // NO branch: diagonal release from the lower-right of the gateway, horizontal lower bypass, rise to dot.
+    if(b.noStart&&b.noStart!==b.merge){
+      const nr=nodeRect(b.noStart);
+      if(nr){
+        const xTarget=nr.left-rect.left,yTarget=nr.top+nr.height/2-rect.top;
+        appendPath('M'+bottomX+' '+bottomY+'L'+(bottomX+42)+' '+lowerY+'H'+(xTarget-18)+'V'+yTarget+'H'+(xTarget-5),true,true);
+        appendLabel('NO',bottomX+56,lowerY-12,true);
+      }
+    }else{
+      appendPath('M'+bottomX+' '+bottomY+'L'+(bottomX+42)+' '+lowerY+'H'+mergeX+'V'+mainY,true,false);
+      appendLabel('NO',bottomX+58,lowerY-12,true);
+    }
+
+    if(b.noPred&&b.noPred!==b.decisionId){
       const nr=nodeRect(b.noPred);
       if(nr){
         const x1=nr.right-rect.left,y1=nr.top+nr.height/2-rect.top;
-        const startLower=Math.max(lowerY,y1);
-        appendPath('M'+x1+' '+y1+'H'+(x1+16)+'V'+startLower+'H'+mergeX+'V'+mainY,true,false);
+        appendPath('M'+x1+' '+y1+'H'+(x1+18)+'V'+lowerY+'H'+mergeX+'V'+mainY,true,false);
       }
     }
 
     const dot=document.createElementNS(ns,'circle');
-    dot.setAttribute('cx',String(mergeX));dot.setAttribute('cy',String(mainY));dot.setAttribute('r','5.5');
+    dot.setAttribute('cx',String(mergeX));dot.setAttribute('cy',String(mainY));dot.setAttribute('r','10');
     dot.setAttribute('class','graph-merge-dot');svg.appendChild(dot);
-    appendPath('M'+(mergeX+6)+' '+mainY+'H'+(tr.left-rect.left-5),false,true);
+    appendPath('M'+(mergeX+11)+' '+mainY+'H'+(tr.left-rect.left-5),false,true);
   });
 }
 if(typeof window!=='undefined'&&!window.__auneaProcessGraphResize){
