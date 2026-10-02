@@ -564,10 +564,11 @@ function graphNodeCard(e,s,i,fr,tab='cliente'){
     +money.map(x=>'<button type="button" class="economic-badge" data-edit-economic-index="'+economics.indexOf(x)+'">Impacto · '+esc(typeof econDriverLabel==='function'?econDriverLabel(x.driver_id):x.driver_id)+'</button>').join('')
     +'</div>';
   if(decision){
-    return '<div class="flow-step graph-flow-step graph-decision-card '+typeClass+' is-decision '+(processLayerState(e).map?'confirmed':'')+'" data-drag-step="'+attr(s.id)+'">'
-      +actions+'<div class="process-node-heading">'+processNodeIconSvg('decision')+'<div class="process-node-title"><span class="boundary-kicker">Decisión</span><h4 title="'+attr(s.step_name||'Decisión sin nombre')+'">'+esc(s.step_name||'Decisión sin nombre')+'</h4></div></div>'
+    return '<div class="graph-decision-inline '+(processLayerState(e).map?'confirmed':'')+'" data-drag-step="'+attr(s.id)+'">'
+      +actions+'<div class="graph-decision-core"><div class="graph-decision-symbol">'+processNodeIconSvg('decision')+'</div>'
+      +'<div class="graph-decision-copy"><span class="boundary-kicker">Decisión</span><h4 title="'+attr(s.step_name||'Decisión sin nombre')+'">'+esc(s.step_name||'Decisión sin nombre')+'</h4>'
       +'<p class="process-node-meta" title="'+attr((labelFrom('OS_ACTOR_ROLE',s.actor)||'—')+' · '+(labelFrom('OS_TOOL_CATEGORY',s.tool)||'—'))+'">'+esc(labelFrom('OS_ACTOR_ROLE',s.actor)||'—')+' · '+esc(labelFrom('OS_TOOL_CATEGORY',s.tool)||'—')+'</p>'
-      +(num(s.active_time)?'<p>'+num(s.active_time)+' min trabajo</p>':'')
+      +(num(s.active_time)?'<p>'+num(s.active_time)+' min trabajo</p>':'')+'</div></div>'
       +links+(layerAction?'<div class="process-node-actions">'+layerAction+'</div>':'')+'</div>';
   }
   return '<div class="flow-step graph-flow-step '+typeClass+' '+(processLayerState(e).map?'confirmed':'')+'" data-drag-step="'+attr(s.id)+'">'
@@ -601,7 +602,7 @@ function drawProcessGraph(){
   board.querySelectorAll('[data-graph-node]').forEach(el=>els.set(el.dataset.graphNode,el));
   const nodeRect=id=>{
     const cell=els.get(id);if(!cell)return null;
-    const node=cell.querySelector?.('.graph-flow-step,.flow-boundary,.graph-route-pending');
+    const node=cell.querySelector?.('.graph-decision-core,.graph-flow-step,.flow-boundary,.graph-route-pending');
     return (node||cell).getBoundingClientRect();
   };
   const cellRect=id=>els.get(id)?.getBoundingClientRect?.()||null;
@@ -625,10 +626,17 @@ function drawProcessGraph(){
     return path;
   };
   const appendLabel=(label,x,y,alternative=false)=>{
+    const group=document.createElementNS(ns,'g');group.setAttribute('class','graph-path-label-group');
+    const rectEl=document.createElementNS(ns,'rect');
+    const width=label==='SÍ'?30:34;
+    rectEl.setAttribute('x',String(x-6));rectEl.setAttribute('y',String(y-15));
+    rectEl.setAttribute('width',String(width));rectEl.setAttribute('height','20');
+    rectEl.setAttribute('rx','8');rectEl.setAttribute('class','graph-path-label-bg '+(alternative?'graph-path-label-bg-alt':'graph-path-label-bg-main'));
     const textEl=document.createElementNS(ns,'text');
-    textEl.setAttribute('x',String(x));textEl.setAttribute('y',String(y));
+    textEl.setAttribute('x',String(x+9));textEl.setAttribute('y',String(y));
+    textEl.setAttribute('text-anchor','middle');
     textEl.setAttribute('class','graph-path-label '+(alternative?'graph-path-label-alt':'graph-path-label-main'));
-    textEl.textContent=label;svg.appendChild(textEl);
+    textEl.textContent=label;group.appendChild(rectEl);group.appendChild(textEl);svg.appendChild(group);
   };
   const orthogonal=(ar,br)=>{
     const forward=br.left>ar.right+6;
