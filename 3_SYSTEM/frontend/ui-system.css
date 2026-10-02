@@ -304,7 +304,7 @@ body.asis-console-locked .result-list button:disabled{cursor:not-allowed;opacity
 /* [AUNEA-FE-PROC-FRIENDLY-FLOW-080] START — AS-IS friendly flow visual layer
    PURPOSE: Improve only process-map legibility and functional iconography; brand, typography,
    navigation, data ownership and routing contracts remain unchanged.
-   SOURCE: DEC-069; AUNEA System Simulator CANONICAL v1.14; owner visual approval 2026-10-01.
+   SOURCE: DEC-069; AUNEA System Simulator CANONICAL v1.14; owner visual approval 2026-10-01 and gateway/solid-merge refinement approved 2026-10-02.
    CHANGE_RISK: MEDIUM. */
 .process-graph-canvas{position:relative;border:1px solid var(--line);border-radius:12px;background:#fbfcfb;padding:46px 10px 20px}
 .process-graph-legend{position:absolute;top:11px;right:14px;z-index:4;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -327,6 +327,17 @@ body.asis-console-locked .result-list button:disabled{cursor:not-allowed;opacity
 .process-node-icon-system,.process-node-icon-record{background:#f1f4f3}
 .process-node-icon-wait{background:#fff8f1;color:#8b5b2f;border-color:#ead0b6}
 .process-node-meta{margin-top:10px!important;color:var(--muted)!important}
+.process-graph-decision-cell{align-items:center}
+.graph-decision-node{position:relative;width:100%;min-height:184px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px 6px;text-align:center;box-sizing:border-box}
+.graph-decision-node .flow-step-tools{position:absolute;top:0;right:0;display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;z-index:2}
+.graph-decision-node .flow-step-tools button{padding:4px 6px;font-size:9px;background:#fff}
+.graph-decision-gateway{display:grid;place-items:center;width:58px;height:58px;padding:0;border:2px solid var(--system);border-radius:8px;background:#eef5f0;color:var(--system);transform:rotate(45deg);cursor:pointer;box-shadow:0 4px 14px rgba(42,81,63,.08)}
+.graph-decision-gateway:hover{background:#e2eee7;box-shadow:0 6px 18px rgba(42,81,63,.12)}
+.graph-decision-gateway .process-node-icon{width:34px;height:34px;min-width:34px;border:0;background:transparent;transform:rotate(-45deg)}
+.graph-decision-copy{margin-top:18px;max-width:170px}
+.graph-decision-copy h4{margin:3px 0 0;font-size:12px;line-height:1.25}
+.graph-decision-copy p{margin:4px 0 0!important;font-size:10px!important;line-height:1.3}
+.graph-decision-node .process-node-links,.graph-decision-node .process-node-actions{width:100%;margin-top:7px}
 .graph-flow-step.is-decision{border:2px solid var(--system);background:#fbfdfc;box-shadow:0 5px 18px rgba(42,81,63,.08)}
 .graph-flow-step.step-type-st05{border-color:var(--system-line);background:#fcfefd}
 .flow-boundary.start,.flow-boundary.end{border-style:solid;background:var(--system-soft);border-color:var(--system-line)}
@@ -342,6 +353,7 @@ body.asis-console-locked .result-list button:disabled{cursor:not-allowed;opacity
 .process-graph-lines .graph-path-label{font-size:10px;font-weight:900;letter-spacing:.04em;paint-order:stroke;stroke:#fff;stroke-width:5px}
 .process-graph-lines .graph-path-label-main{fill:#355c49}
 .process-graph-lines .graph-path-label-alt{fill:#8a5424}
+.process-graph-lines .graph-merge-dot{fill:var(--system);stroke:#fff;stroke-width:2.5px}
 .graph-route-pending{min-height:54px;align-self:center;border-width:1.5px;background:#fff}
 body.mode-process-editor .process-graph-cell .flow-step{padding:11px}
 body.mode-process-editor .process-graph-cell .flow-step h4{font-size:12px;line-height:1.28}
