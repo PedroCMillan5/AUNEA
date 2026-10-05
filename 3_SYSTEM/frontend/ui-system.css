@@ -209,6 +209,23 @@ body.mode-process-editor .flow-connector{flex:0 0 28px;width:28px}
 .process-modal-form .compound-control{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;align-items:center;width:100%;min-width:0}
 .process-modal-form .compound-control>input,.process-modal-form .compound-control>.canonical-aunea-select,.process-modal-form .compound-control>.process-aunea-select{width:100%;min-width:0}
 .process-modal-form .compound-control .unit-label{justify-self:start}
+
+/* Friction popup: keep compound numeric controls on one aligned row. */
+.friction-modal-form .compound-control{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;width:100%;min-width:0}
+.friction-modal-form .compound-control>input{flex:1 1 90px;min-width:72px;width:auto}
+.friction-modal-form .compound-control>.canonical-aunea-select,
+.friction-modal-form .compound-control>.process-aunea-select,
+.friction-modal-form .compound-control>span[data-fr-frequency-period-wrap]{flex:1 1 118px;min-width:100px;width:auto}
+.friction-modal-form .compound-control>span[data-fr-frequency-period-wrap]>.canonical-aunea-select,
+.friction-modal-form .compound-control>span[data-fr-frequency-period-wrap]>.process-aunea-select{width:100%;min-width:0}
+.friction-modal-form .compound-control>.unit-label{flex:0 0 auto;white-space:nowrap;align-self:center}
+@media(max-width:760px){
+  .friction-modal-form .compound-control{flex-wrap:wrap}
+  .friction-modal-form .compound-control>input,
+  .friction-modal-form .compound-control>.canonical-aunea-select,
+  .friction-modal-form .compound-control>.process-aunea-select,
+  .friction-modal-form .compound-control>span[data-fr-frequency-period-wrap]{flex:1 1 130px}
+}
 .process-modal-form .form-grid.nested{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .process-modal-form .economic-time-control{grid-template-columns:minmax(130px,1fr) minmax(125px,.8fr) auto}
 .decision-route-card{border:1px solid var(--system-line);border-radius:10px;background:#fbfdfc;padding:13px;min-width:0}
