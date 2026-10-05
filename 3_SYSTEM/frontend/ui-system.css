@@ -330,10 +330,10 @@ body.asis-console-locked .result-list button:disabled{cursor:not-allowed;opacity
 .process-graph-legend span{display:inline-flex;align-items:center;gap:6px;padding:5px 8px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:10px;font-weight:700;color:var(--muted)}
 .process-graph-legend i{display:block;width:18px;height:3px;border-radius:999px;background:#4f7563}
 .process-graph-legend .legend-alt i{background:#b9783c}
-.process-graph-board{grid-template-columns:repeat(var(--graph-cols),170px);grid-template-rows:repeat(var(--graph-rows),190px);gap:18px 62px;padding:92px 24px 150px;width:max-content;min-width:max-content}
+.process-graph-board{--graph-card-height:238px;grid-template-columns:repeat(var(--graph-cols),170px);grid-template-rows:repeat(var(--graph-rows),var(--graph-card-height));gap:18px 62px;padding:92px 24px 150px;width:max-content;min-width:max-content}
 .process-graph-cell{align-items:stretch}
 .process-graph-cell .graph-flow-step,
-.process-graph-cell .flow-boundary{display:flex;flex-direction:column;justify-content:flex-start;height:190px;min-height:190px;max-height:190px;overflow:hidden;box-sizing:border-box;border-radius:12px;border:1px solid var(--line);background:#fff;padding:12px;box-shadow:0 3px 12px rgba(20,24,28,.035);text-align:left}
+.process-graph-cell .flow-boundary{display:flex;flex-direction:column;justify-content:flex-start;height:var(--graph-card-height);min-height:var(--graph-card-height);max-height:var(--graph-card-height);overflow:hidden;box-sizing:border-box;border-radius:12px;border:1px solid var(--line);background:#fff;padding:12px;box-shadow:0 3px 12px rgba(20,24,28,.035);text-align:left}
 .process-graph-cell .graph-flow-step:hover{border-color:var(--system-line);box-shadow:0 5px 18px rgba(20,24,28,.06)}
 .process-node-heading{display:flex;align-items:flex-start;gap:9px;min-width:0}
 .process-node-title{min-width:0;flex:1}
@@ -349,23 +349,27 @@ body.asis-console-locked .result-list button:disabled{cursor:not-allowed;opacity
 .process-node-icon-wait{background:#fff8f1;color:#8b5b2f;border-color:#ead0b6}
 .process-node-meta{margin-top:10px!important;color:var(--muted)!important}
 .process-graph-decision-cell{align-items:center}
-.graph-decision-inline{position:relative;height:190px;min-height:190px;max-height:190px;display:block;padding:0 4px;box-sizing:border-box;overflow:visible}
+.graph-decision-inline{position:relative;height:var(--graph-card-height);min-height:var(--graph-card-height);max-height:var(--graph-card-height);display:block;padding:0 4px;box-sizing:border-box;overflow:visible}
 .graph-decision-inline .flow-step-tools{position:absolute;top:0;left:0;right:0;display:flex;gap:4px;flex-wrap:nowrap;justify-content:center;align-items:center;white-space:nowrap}
 .graph-decision-inline .flow-step-tools button{flex:0 0 auto;min-width:24px;height:24px;padding:0 6px;font-size:10px}
 .graph-decision-gateway{position:absolute;top:66px;left:50%;display:grid;place-items:center;width:58px;height:58px;min-width:58px;min-height:58px;margin-left:-29px;border:2px solid var(--system);border-radius:7px;background:#eef5f0;transform:rotate(45deg);box-shadow:0 4px 14px rgba(42,81,63,.08)}
 .graph-decision-gateway-icon{transform:rotate(-45deg)}
 .graph-decision-gateway .process-node-icon{width:30px;height:30px;min-width:30px;border:0;background:transparent}
-.graph-decision-copy{position:absolute;top:136px;left:50%;width:160px;margin-left:-80px;text-align:center}
+.graph-decision-copy{position:absolute;top:132px;left:50%;width:160px;margin-left:-80px;text-align:center}
 .graph-decision-copy .boundary-kicker{display:block;margin-bottom:2px}
 .graph-decision-copy h4{margin:0;font-size:12px;line-height:1.25;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;text-overflow:ellipsis}
 .graph-decision-copy p{margin:3px 0 0!important;font-size:10px!important;line-height:1.25}
-.graph-decision-inline .process-node-links,.graph-decision-inline .process-node-actions{width:100%;margin-top:6px}
+.graph-decision-inline .process-node-links{position:absolute;left:4px;right:4px;top:184px;width:auto;margin:0;display:grid;gap:5px;max-height:28px;overflow:hidden}
+.graph-decision-inline .process-node-actions{position:absolute;left:4px;right:4px;bottom:0;width:auto;margin:0;padding-top:8px;background:#fbfcfb}
 .process-graph-yes-branch-cell{transform:translateY(-62px);z-index:2}
 .graph-flow-step.is-decision{border:2px solid var(--system);background:#fbfdfc;box-shadow:0 5px 18px rgba(42,81,63,.08)}
 .graph-flow-step.step-type-st05{border-color:var(--system-line);background:#fcfefd}
 .flow-boundary.start,.flow-boundary.end{border-style:solid;background:var(--system-soft);border-color:var(--system-line)}
 .flow-boundary.start .process-node-icon,.flow-boundary.end .process-node-icon{border-radius:50%;background:#fff}
 .flow-boundary p{margin-top:auto!important;padding-top:8px;border-top:1px solid rgba(79,117,99,.14)}
+.graph-flow-step>.process-node-links{display:grid;gap:5px;margin-top:8px;min-height:0}
+.graph-flow-step>.process-node-actions{margin-top:auto;padding-top:8px;flex:0 0 auto}
+.graph-flow-step>.process-node-actions button{display:block;width:100%;box-sizing:border-box}
 .graph-route-controls{display:flex;gap:6px;margin-top:auto;padding-top:9px;border-top:1px solid var(--line)}
 .graph-route-controls button{display:flex;align-items:center;gap:5px;min-width:0;padding:5px 7px;border-radius:999px}
 .graph-route-controls button b{font-size:9px}.graph-route-controls button span{font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -381,7 +385,7 @@ body.asis-console-locked .result-list button:disabled{cursor:not-allowed;opacity
 body.mode-process-editor .client-process-main{overflow-x:hidden}
 body.mode-process-editor .client-process-canvas.process-graph-canvas{display:block;width:100%;min-width:0;max-width:100%;overflow-x:auto;overflow-y:visible;box-sizing:border-box;overscroll-behavior-inline:contain}
 body.mode-process-editor .process-graph-board{width:max-content;min-width:max-content}
-body.mode-process-editor .process-graph-cell .flow-step{padding:11px;height:190px;min-height:190px;max-height:190px}
+body.mode-process-editor .process-graph-cell .flow-step{padding:11px;height:var(--graph-card-height);min-height:var(--graph-card-height);max-height:var(--graph-card-height)}
 body.mode-process-editor .process-graph-cell .flow-step h4{font-size:12px;line-height:1.28}
 body.mode-process-editor .process-graph-cell .flow-step p{font-size:10px;line-height:1.35}
 @media(max-width:1100px){
