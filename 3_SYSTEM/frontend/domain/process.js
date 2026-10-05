@@ -704,18 +704,20 @@ function drawProcessGraph(){
       }
     }
 
-    // NO: leaves from the lower-right edge of the gateway, descends to the lower
-    // bypass lane, travels horizontally and rises into the same convergence point.
+    // NO: leaves horizontally from the gateway beyond the decision-copy width, then descends
+    // to the lower bypass lane. This keeps the alternative connector clear of decision text.
     if(b.noStart&&b.noStart!==b.merge){
       const nr=nodeRect(b.noStart);
       if(nr){
         const targetX=nr.left-rect.left,targetY=nr.top+nr.height/2-rect.top;
-        appendPath('M'+noStartX+' '+noStartY+'L'+(noStartX+44)+' '+lowerY+'H'+(targetX-18)+'V'+targetY+'H'+(targetX-5),true,true);
-        appendLabel('NO',noStartX+58,lowerY-12,true);
+        const noLaneX=rightX+72;
+        appendPath('M'+rightX+' '+centerY+'H'+noLaneX+'V'+lowerY+'H'+(targetX-18)+'V'+targetY+'H'+(targetX-5),true,true);
+        appendLabel('NO',noLaneX+8,lowerY-12,true);
       }
     }else{
-      appendPath('M'+noStartX+' '+noStartY+'L'+(noStartX+44)+' '+lowerY+'H'+mergeX+'V'+mainY,true,false);
-      appendLabel('NO',noStartX+60,lowerY-12,true);
+      const noLaneX=rightX+72;
+      appendPath('M'+rightX+' '+centerY+'H'+noLaneX+'V'+lowerY+'H'+mergeX+'V'+mainY,true,false);
+      appendLabel('NO',noLaneX+8,lowerY-12,true);
     }
 
     if(b.noPred&&b.noPred!==b.decisionId){
