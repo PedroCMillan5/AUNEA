@@ -593,7 +593,7 @@ function graphNodeCard(e,s,i,fr,tab='cliente'){
       +'<div class="graph-decision-copy"><span class="boundary-kicker">Decisión</span><h4 title="'+attr(s.step_name||'Decisión sin nombre')+'">'+esc(s.step_name||'Decisión sin nombre')+'</h4>'
       +'<p class="process-node-meta" title="'+attr((labelFrom('OS_ACTOR_ROLE',s.actor)||'—')+' · '+(labelFrom('OS_TOOL_CATEGORY',s.tool)||'—'))+'">'+esc(labelFrom('OS_ACTOR_ROLE',s.actor)||'—')+' · '+esc(labelFrom('OS_TOOL_CATEGORY',s.tool)||'—')+'</p>'
       +(num(s.active_time)?'<p>'+num(s.active_time)+' min trabajo</p>':'')+'</div>'
-      +(linkCount?stack:layerActionHtml)+'</div>';
+      +links+layerActionHtml+'</div>';
   }
   return '<div class="flow-step graph-flow-step '+typeClass+' '+(processLayerState(e).map?'confirmed':'')+'" data-drag-step="'+attr(s.id)+'">'
     +actions+'<div class="process-node-heading">'+processNodeIconSvg(iconName)+'<div class="process-node-title"><span class="boundary-kicker">Paso '+(i+1)+'</span><h4 title="'+attr(s.step_name||'Paso sin nombre')+'">'+esc(s.step_name||'Paso sin nombre')+'</h4></div></div>'
@@ -607,7 +607,7 @@ function processGraphHtml(e,steps,fr,start,finish,tab='cliente'){
     +risks.filter(r=>normalizeArray(r.step_ids).includes(s.id)).length
     +economics.filter(x=>normalizeArray(x.step_ids).includes(s.id)).length;
   const maxLinkCount=steps.reduce((max,s)=>Math.max(max,linkCountForStep(s)),0);
-  const graphCardHeight=maxLinkCount?246+(maxLinkCount*40):238;
+  const graphCardHeight=238+Math.max(0,maxLinkCount-1)*38;
   const yesBranchIds=new Set(model.branchLayouts.flatMap(b=>b.yesSteps||[])),cell=n=>{
     const p=model.positions.get(n.id),step=n.kind==='step'?steps.find(x=>x.id===n.id):null,isDecision=!!step&&processDecisionStep(step),isYesBranch=yesBranchIds.has(n.id);
     const style='style="grid-row:'+p.row+';grid-column:'+p.col+'"',id='data-graph-node="'+attr(n.id)+'"';
