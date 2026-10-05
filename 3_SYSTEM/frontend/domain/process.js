@@ -580,9 +580,9 @@ function graphNodeCard(e,s,i,fr,tab='cliente'){
     tab==='riesgos'?'<button type="button" data-add-risk-step="'+attr(s.id)+'">+ Añadir riesgo</button>':
     tab==='impacto'?'<button type="button" data-add-economic-step="'+attr(s.id)+'">+ Añadir impacto</button>':'';
   const linkItems=
-    frOn.map(x=>'<button type="button" class="friction-badge" data-edit-friction="'+attr(x.id)+'">Fricción · '+esc(labelFrom('OS_FRICTION_TYPE',x.friction_type))+'</button>').join('')
-    +riskOn.map(x=>'<button type="button" class="risk-badge" data-edit-risk-index="'+risks.indexOf(x)+'">Riesgo · '+esc(x.description||x.category)+'</button>').join('')
-    +money.map(x=>'<button type="button" class="economic-badge" data-edit-economic-index="'+economics.indexOf(x)+'">Impacto · '+esc(typeof econDriverLabel==='function'?econDriverLabel(x.driver_id):x.driver_id)+'</button>').join('');
+    frOn.map(x=>{const label='Fricción · '+labelFrom('OS_FRICTION_TYPE',x.friction_type);return '<button type="button" class="friction-badge" data-edit-friction="'+attr(x.id)+'" title="'+attr(label)+'"><span class="process-node-link-text">'+esc(label)+'</span></button>'}).join('')
+    +riskOn.map(x=>{const label='Riesgo · '+(x.description||x.category);return '<button type="button" class="risk-badge" data-edit-risk-index="'+risks.indexOf(x)+'" title="'+attr(label)+'"><span class="process-node-link-text">'+esc(label)+'</span></button>'}).join('')
+    +money.map(x=>{const label='Impacto · '+(typeof econDriverLabel==='function'?econDriverLabel(x.driver_id):x.driver_id);return '<button type="button" class="economic-badge" data-edit-economic-index="'+economics.indexOf(x)+'" title="'+attr(label)+'"><span class="process-node-link-text">'+esc(label)+'</span></button>'}).join('');
   const linkCount=frOn.length+riskOn.length+money.length;
   const links=linkCount?'<div class="process-node-links">'+linkItems+'</div>':'';
   const layerActionHtml=layerAction?'<div class="process-node-actions">'+layerAction+'</div>':'';
