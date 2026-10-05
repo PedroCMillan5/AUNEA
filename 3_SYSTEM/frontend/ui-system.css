@@ -361,8 +361,8 @@ body.asis-console-locked .result-list button:disabled{cursor:not-allowed;opacity
 .process-graph-lines .graph-path-label-alt{fill:#e87518}
 .process-graph-lines .graph-merge-dot{fill:var(--system);stroke:#fff;stroke-width:3px}
 .graph-route-pending{min-height:54px;align-self:center;border-width:1.5px;background:#fff}
-body.mode-process-editor .client-process-main{overflow-x:auto}
-body.mode-process-editor .client-process-canvas.process-graph-canvas{display:inline-block;width:max-content;min-width:0;max-width:none;overflow:visible;box-sizing:border-box}
+body.mode-process-editor .client-process-main{overflow-x:hidden}
+body.mode-process-editor .client-process-canvas.process-graph-canvas{display:block;width:100%;min-width:0;max-width:100%;overflow-x:auto;overflow-y:visible;box-sizing:border-box;overscroll-behavior-inline:contain}
 body.mode-process-editor .process-graph-board{width:max-content;min-width:max-content}
 body.mode-process-editor .process-graph-cell .flow-step{padding:11px;height:190px;min-height:190px;max-height:190px}
 body.mode-process-editor .process-graph-cell .flow-step h4{font-size:12px;line-height:1.28}
