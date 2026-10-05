@@ -360,8 +360,8 @@ body.asis-console-locked .result-list button:disabled{cursor:not-allowed;opacity
 .graph-decision-copy h4{margin:0;font-size:12px;line-height:1.25;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;text-overflow:ellipsis}
 .graph-decision-copy p{margin:3px 0 0!important;font-size:10px!important;line-height:1.25}
 .graph-decision-inline .process-node-links{position:absolute;left:4px;right:4px;top:184px;width:auto;margin:0;display:grid;gap:5px;max-height:28px;overflow:hidden}
-.graph-decision-inline .process-node-actions{position:absolute;top:31px;right:18px;left:auto;bottom:auto;width:82px;margin:0;padding:0;background:transparent;z-index:3}
-.graph-decision-inline .process-node-actions button{display:block;width:100%;box-sizing:border-box;white-space:normal;line-height:1.15;padding:5px 6px}
+.graph-decision-inline .process-node-actions{position:absolute;left:4px;right:4px;bottom:12px;top:auto;width:auto;margin:0;padding:0;background:transparent;z-index:3}
+.graph-decision-inline .process-node-actions button{display:block;width:100%;box-sizing:border-box;white-space:nowrap;line-height:1.2;padding:5px 7px;text-align:center}
 .process-graph-yes-branch-cell{transform:translateY(-62px);z-index:2}
 .graph-flow-step.is-decision{border:2px solid var(--system);background:#fbfdfc;box-shadow:0 5px 18px rgba(42,81,63,.08)}
 .graph-flow-step.step-type-st05{border-color:var(--system-line);background:#fcfefd}
