@@ -254,8 +254,27 @@ function frictionNumberControl(id,obj,kind='number'){
   const p=obj&&typeof obj==='object'?obj:{value:obj||'',unit:'',period:'',mode:''};
   if(kind==='time')return timeControl(id,p.value||0,p.unit||'min',true);
   const periods=[{value:'day',label:'por día'},{value:'week',label:'por semana'},{value:'month',label:'por mes'},{value:'year',label:'por año'}];
-  if(kind==='money')return `<div class="compound-control"><input id="${id}" type="number" min="0" step="any" value="${attr(p.value||'')}" placeholder="0"><span class="unit-label">€</span>${auneaDropdownControl(id+'_period',periods,p.period||'case','Periodo')}${auneaDropdownControl(id+'_mode',[{value:'',label:'Dato disponible'},{value:'NONE',label:'No aplica'},{value:'UNKNOWN',label:'No disponible'}],p.mode||'','Estado')}</div>`;
-  return `<div class="compound-control"><input id="${id}" type="number" min="0" step="any" value="${attr(p.value||'')}" placeholder="0">${auneaDropdownControl(id+'_mode',[{value:'percent',label:'%'},{value:'count',label:'casos'}],p.mode||'percent','Unidad')}${auneaDropdownControl(id+'_period',periods,p.period||'case','Periodo')}</div>`;
+  if(kind==='money')return `<div class="compound-control"><input id="${id}" type="number" min="0" step="any" value="${attr(p.value||'')}" placeholder="0"><span class="unit-label">€</span>${auneaDropdownControl(id+'_period',periods,p.period||'year','Periodo')}${auneaDropdownControl(id+'_mode',[{value:'',label:'Dato disponible'},{value:'NONE',label:'No aplica'},{value:'UNKNOWN',label:'No disponible'}],p.mode||'','Estado')}</div>`;
+  const mode=p.mode||'percent',period=p.period||'month';
+  return `<div class="compound-control friction-frequency-control" data-fr-frequency-control="${id}">
+    <input id="${id}" type="number" min="0" step="any" value="${attr(p.value||'')}" placeholder="0">
+    ${auneaDropdownControl(id+'_mode',[{value:'percent',label:'%'},{value:'count',label:'casos'}],mode,'Unidad')}
+    <span class="unit-label" data-fr-frequency-percent-suffix${mode==='percent'?'':' style="display:none"'}>de los casos</span>
+    <span data-fr-frequency-period-wrap${mode==='count'?'':' style="display:none"'}>${auneaDropdownControl(id+'_period',periods,period,'Periodo')}</span>
+  </div>`;
+}
+function bindFrictionFrequencyControl(id='fr_frequency'){
+  const mode=document.getElementById(id+'_mode'),period=document.getElementById(id+'_period');
+  const box=typeof document.querySelector==='function'?document.querySelector('[data-fr-frequency-control="'+id+'"]'):null;
+  const suffix=box?.querySelector('[data-fr-frequency-percent-suffix]'),periodWrap=box?.querySelector('[data-fr-frequency-period-wrap]');
+  if(!mode||!box||typeof mode.addEventListener!=='function')return;
+  const sync=()=>{
+    const isPercent=mode.value==='percent';
+    if(suffix)suffix.style.display=isPercent?'':'none';
+    if(periodWrap)periodWrap.style.display=isPercent?'none':'';
+    if(!isPercent&&period&&!period.value){period.value='month';period.dispatchEvent(new Event('change',{bubbles:true}));}
+  };
+  mode.addEventListener('change',sync);sync();
 }
 function openFrictionModal(frId=null,preselectedSteps=[]){
   if(typeof guardAsisMutation==='function'&&guardAsisMutation())return;
@@ -287,10 +306,11 @@ function openFrictionModal(frId=null,preselectedSteps=[]){
   <div class="field full"><label>Nota excepcional</label><input id="fr_notes" maxlength="200" value="${attr(f.notes||'')}" placeholder="Sólo si los campos estructurados no bastan"></div>
   </div></details>
   </div>`;
-  openModal(existing?'Editar fricción':'Añadir fricción',body,()=>{const collect=k=>[...document.querySelectorAll(`[data-v1-multi="${k}"]:checked`)].map(x=>x.value);f.friction_type=document.getElementById('fr_type').value;f.affected_steps=collect('fr_steps');f.cause=collect('fr_causes');f._details.cause=document.getElementById('fr_cause_other').value.trim();f.observable_signal=document.getElementById('fr_signal').value.trim();f.frequency={value:Number(document.getElementById('fr_frequency').value||0),mode:document.getElementById('fr_frequency_mode').value,period:document.getElementById('fr_frequency_period').value};f.impact=document.getElementById('fr_impact').value;
+  openModal(existing?'Editar fricción':'Añadir fricción',body,()=>{const collect=k=>[...document.querySelectorAll(`[data-v1-multi="${k}"]:checked`)].map(x=>x.value);f.friction_type=document.getElementById('fr_type').value;f.affected_steps=collect('fr_steps');f.cause=collect('fr_causes');f._details.cause=document.getElementById('fr_cause_other').value.trim();f.observable_signal=document.getElementById('fr_signal').value.trim();const frequencyMode=document.getElementById('fr_frequency_mode').value,frequencyPeriod=document.getElementById('fr_frequency_period').value;f.frequency={value:Number(document.getElementById('fr_frequency').value||0),mode:frequencyMode,period:frequencyMode==='count'?frequencyPeriod:''};f.impact=document.getElementById('fr_impact').value;
     const atUnit=document.getElementById('fr_active_unit').value,wtUnit=document.getElementById('fr_wait_unit').value;f.active_time_loss={value:minutesFrom(document.getElementById('fr_active').value,atUnit),unit:'min',source_unit:atUnit,mode:document.getElementById('fr_active_mode').value};f.time_attribution={mode:document.getElementById('fr_time_mode').value,step_id:document.getElementById('fr_time_owner').value};f.wait_time_loss={value:minutesFrom(document.getElementById('fr_wait').value,wtUnit),unit:'min',source_unit:wtUnit,mode:document.getElementById('fr_wait_mode').value};f.direct_loss={value:Number(document.getElementById('fr_direct').value||0),unit:'EUR',period:document.getElementById('fr_direct_period').value,mode:document.getElementById('fr_direct_mode').value};f.non_time_impact=collect('fr_non_time');f.workaround=collect('fr_workaround');f._details.workaround=document.getElementById('fr_workaround_other').value.trim();f.evidence_type=document.getElementById('fr_evidence_type').value||'EV02';f.priority_client=Number(document.getElementById('fr_priority').value||0)||null;f.client_label=document.getElementById('fr_label').value.trim();f.notes=document.getElementById('fr_notes').value.trim();f.derived_pain_id=painForFriction(f.friction_type);
     if(!f.friction_type||!f.affected_steps.length||!f.cause.length&&!f._details.cause||!f.observable_signal)return toast('Tipo, al menos un paso, causa y señal observable son obligatorios.');
     if(f.active_time_loss.value>0&&(!['INCLUDED','BREAKDOWN','ADDITIONAL'].includes(f.time_attribution.mode)||!f.affected_steps.includes(f.time_attribution.step_id)))return toast('Para atribuir el tiempo, selecciona Incluido, Desglose o Adicional y un paso afectado responsable.');if(existing){Object.assign(existing,f);audit(`Fricción editada ${existing.id}`)}else{e.frictions.push(f);audit(`Fricción creada ${f.id}`)}if(typeof advanceEngagementTo==='function')advanceEngagementTo(e,'Sesión 1','captura de proceso');invalidateProcessLayersSafe(e,'frictions');e.diagnosticOutput=null;e.updatedAt=now();markDirty();closeModal();render();},existing?'Guardar cambios':'Añadir fricción');
+  bindFrictionFrequencyControl('fr_frequency');
   document.querySelectorAll('[data-v1-other-toggle]').forEach(el=>el.addEventListener('change',()=>{const key=el.dataset.v1OtherToggle,wrap=document.querySelector(`[data-v1-other-wrap="${key}"]`);if(!wrap)return;wrap.style.display=el.checked?'':'none';if(!el.checked){const input=wrap.querySelector('input,textarea');if(input)input.value=''}}));
 }
 
