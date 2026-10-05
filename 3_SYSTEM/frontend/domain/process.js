@@ -579,27 +579,36 @@ function graphNodeCard(e,s,i,fr,tab='cliente'){
   const layerAction=tab==='fricciones'?'<button type="button" data-add-friction-step="'+attr(s.id)+'">+ Añadir fricción</button>':
     tab==='riesgos'?'<button type="button" data-add-risk-step="'+attr(s.id)+'">+ Añadir riesgo</button>':
     tab==='impacto'?'<button type="button" data-add-economic-step="'+attr(s.id)+'">+ Añadir impacto</button>':'';
-  const links='<div class="process-node-links">'
-    +frOn.map(x=>'<button type="button" class="friction-badge" data-edit-friction="'+attr(x.id)+'">Fricción · '+esc(labelFrom('OS_FRICTION_TYPE',x.friction_type))+'</button>').join('')
+  const linkItems=
+    frOn.map(x=>'<button type="button" class="friction-badge" data-edit-friction="'+attr(x.id)+'">Fricción · '+esc(labelFrom('OS_FRICTION_TYPE',x.friction_type))+'</button>').join('')
     +riskOn.map(x=>'<button type="button" class="risk-badge" data-edit-risk-index="'+risks.indexOf(x)+'">Riesgo · '+esc(x.description||x.category)+'</button>').join('')
-    +money.map(x=>'<button type="button" class="economic-badge" data-edit-economic-index="'+economics.indexOf(x)+'">Impacto · '+esc(typeof econDriverLabel==='function'?econDriverLabel(x.driver_id):x.driver_id)+'</button>').join('')
-    +'</div>';
+    +money.map(x=>'<button type="button" class="economic-badge" data-edit-economic-index="'+economics.indexOf(x)+'">Impacto · '+esc(typeof econDriverLabel==='function'?econDriverLabel(x.driver_id):x.driver_id)+'</button>').join('');
+  const linkCount=frOn.length+riskOn.length+money.length;
+  const links=linkCount?'<div class="process-node-links">'+linkItems+'</div>':'';
+  const layerActionHtml=layerAction?'<div class="process-node-actions">'+layerAction+'</div>':'';
+  const stack=links||layerActionHtml?'<div class="process-node-stack">'+links+layerActionHtml+'</div>':'';
   if(decision){
-    return '<div class="graph-decision-inline '+(processLayerState(e).map?'confirmed':'')+'" data-drag-step="'+attr(s.id)+'">'
+    return '<div class="graph-decision-inline '+(linkCount?'has-node-links ':'')+(processLayerState(e).map?'confirmed':'')+'" data-drag-step="'+attr(s.id)+'">'
       +actions+'<div class="graph-decision-gateway" aria-hidden="true"><div class="graph-decision-gateway-icon">'+processNodeIconSvg('decision')+'</div></div>'
       +'<div class="graph-decision-copy"><span class="boundary-kicker">Decisión</span><h4 title="'+attr(s.step_name||'Decisión sin nombre')+'">'+esc(s.step_name||'Decisión sin nombre')+'</h4>'
       +'<p class="process-node-meta" title="'+attr((labelFrom('OS_ACTOR_ROLE',s.actor)||'—')+' · '+(labelFrom('OS_TOOL_CATEGORY',s.tool)||'—'))+'">'+esc(labelFrom('OS_ACTOR_ROLE',s.actor)||'—')+' · '+esc(labelFrom('OS_TOOL_CATEGORY',s.tool)||'—')+'</p>'
       +(num(s.active_time)?'<p>'+num(s.active_time)+' min trabajo</p>':'')+'</div>'
-      +links+(layerAction?'<div class="process-node-actions">'+layerAction+'</div>':'')+'</div>';
+      +(linkCount?stack:layerActionHtml)+'</div>';
   }
   return '<div class="flow-step graph-flow-step '+typeClass+' '+(processLayerState(e).map?'confirmed':'')+'" data-drag-step="'+attr(s.id)+'">'
     +actions+'<div class="process-node-heading">'+processNodeIconSvg(iconName)+'<div class="process-node-title"><span class="boundary-kicker">Paso '+(i+1)+'</span><h4 title="'+attr(s.step_name||'Paso sin nombre')+'">'+esc(s.step_name||'Paso sin nombre')+'</h4></div></div>'
     +'<p class="process-node-meta" title="'+attr((labelFrom('OS_ACTOR_ROLE',s.actor)||'—')+' · '+(labelFrom('OS_TOOL_CATEGORY',s.tool)||'—'))+'">'+esc(labelFrom('OS_ACTOR_ROLE',s.actor)||'—')+' · '+esc(labelFrom('OS_TOOL_CATEGORY',s.tool)||'—')+'</p>'
     +(num(s.active_time)?'<p>'+num(s.active_time)+' min trabajo</p>':'')
-    +links+(layerAction?'<div class="process-node-actions">'+layerAction+'</div>':'')+'</div>';
+    +stack+'</div>';
 }
 function processGraphHtml(e,steps,fr,start,finish,tab='cliente'){
-  const model=processGraphData(e,steps),yesBranchIds=new Set(model.branchLayouts.flatMap(b=>b.yesSteps||[])),cell=n=>{
+  const model=processGraphData(e,steps),risks=e.risks||[],economics=e.economicInputs||[];
+  const linkCountForStep=s=>fr.filter(f=>normalizeArray(f.affected_steps).includes(s.id)).length
+    +risks.filter(r=>normalizeArray(r.step_ids).includes(s.id)).length
+    +economics.filter(x=>normalizeArray(x.step_ids).includes(s.id)).length;
+  const maxLinkCount=steps.reduce((max,s)=>Math.max(max,linkCountForStep(s)),0);
+  const graphCardHeight=maxLinkCount?246+(maxLinkCount*40):238;
+  const yesBranchIds=new Set(model.branchLayouts.flatMap(b=>b.yesSteps||[])),cell=n=>{
     const p=model.positions.get(n.id),step=n.kind==='step'?steps.find(x=>x.id===n.id):null,isDecision=!!step&&processDecisionStep(step),isYesBranch=yesBranchIds.has(n.id);
     const style='style="grid-row:'+p.row+';grid-column:'+p.col+'"',id='data-graph-node="'+attr(n.id)+'"';
     let html='';
@@ -611,7 +620,7 @@ function processGraphHtml(e,steps,fr,start,finish,tab='cliente'){
   };
   const hasBranch=model.edges.some(x=>x.label==='NO');
   const legend=hasBranch?'<div class="process-graph-legend" aria-label="Leyenda de rutas"><span class="legend-main"><i></i>Ruta SÍ / principal</span><span class="legend-alt"><i></i>Ruta NO / alternativa</span></div>':'';
-  return '<div class="flow-canvas client-process-canvas process-graph-canvas">'+legend+'<div class="process-graph-board" style="--graph-cols:'+model.cols+';--graph-rows:'+model.rows+'" data-graph-edges="'+attr(JSON.stringify(model.edges))+'" data-graph-branches="'+attr(JSON.stringify(model.branchLayouts))+'">'
+  return '<div class="flow-canvas client-process-canvas process-graph-canvas">'+legend+'<div class="process-graph-board" style="--graph-cols:'+model.cols+';--graph-rows:'+model.rows+';--graph-card-height:'+graphCardHeight+'px" data-graph-edges="'+attr(JSON.stringify(model.edges))+'" data-graph-branches="'+attr(JSON.stringify(model.branchLayouts))+'">'
     +'<svg class="process-graph-lines" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>'
     +model.nodes.map(cell).join('')+'</div></div>';
 }
