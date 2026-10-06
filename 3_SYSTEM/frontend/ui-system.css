@@ -767,3 +767,42 @@ body:not(.mode-process-editor) .content [data-process-engagement] .flow-insert{d
 .content:has(.diagnostic-stage-s09) .closing-impact-item strong{font-size:12px}
 .content:has(.diagnostic-stage-s09) .closing-impact-item small{font-size:11px;color:var(--muted)}
 /* [AUNEA-FE-CLOSE-STAGE-042] END */
+
+/* [AUNEA-FE-INTERNAL-DIAG-043] START — PG10 internal diagnosis workspace.
+   SOURCE: Simulator CANONICAL orchestration PG10; DEC-041/052/053; backend DiagnosticOutput contract.
+   Presentation only: readiness -> engine result -> traceability -> TO-BE handoff. */
+.diagnosis-readiness,.diagnosis-result-kpis{margin-bottom:16px}
+.diagnosis-pipeline{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.diagnosis-pipeline span{border:1px solid var(--line);border-radius:999px;background:#f7f9f8;padding:7px 11px;font-size:12px;font-weight:800}
+.diagnosis-pipeline i{font-style:normal;color:var(--muted)}
+.diagnosis-findings{display:flex;flex-direction:column;gap:12px}
+.diagnosis-finding{border:1px solid var(--line);border-radius:12px;background:#fff;padding:14px 16px}
+.diagnosis-finding-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.diagnosis-finding-head>div:first-child{display:flex;align-items:flex-start;gap:10px;min-width:0}
+.diagnosis-rank{width:28px;height:28px;border-radius:50%;background:#e8f2ed;color:var(--system);display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;flex:0 0 auto}
+.diagnosis-finding h3{margin:1px 0 4px;font-size:15px}
+.diagnosis-finding p{margin:0;color:var(--muted);font-size:12px;line-height:1.45}
+.diagnosis-state{display:flex;flex-direction:column;align-items:flex-end;gap:3px;white-space:nowrap}
+.diagnosis-state span{font-size:11px;font-weight:800;padding:4px 8px;border-radius:999px;background:#edf6f1;color:var(--system)}
+.diagnosis-state small{font-size:10px;color:var(--muted)}
+.diagnosis-trace-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:12px}
+.diagnosis-trace-grid>div{border-top:1px solid var(--line);padding-top:8px;min-width:0}
+.diagnosis-trace-grid small{display:block;font-size:10px;color:var(--muted);margin-bottom:3px}
+.diagnosis-trace-grid b{display:block;font-size:11px;line-height:1.35;overflow-wrap:anywhere}
+.diagnosis-tech{margin-top:10px;font-size:10px;color:var(--muted)}
+.diagnosis-econ-grid .notice,.diagnosis-risk-summary .notice,.diagnosis-rec-grid .notice{min-height:82px}
+.diagnosis-econ-grid .notice small{display:block;margin-top:4px;color:var(--muted);font-size:10px}
+.diagnosis-inputs{margin-top:14px}
+.diagnosis-inputs>div{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin-top:8px}
+.diagnosis-risk-rationale,.diagnosis-rec-rationale{margin-top:10px}
+.diagnosis-risk-list{margin-top:10px}
+.process-graph-readonly .flow-step-tools,.process-graph-readonly .process-node-action{display:none!important}
+@media(max-width:1100px){
+  .diagnosis-trace-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:700px){
+  .diagnosis-finding-head{flex-direction:column}
+  .diagnosis-state{align-items:flex-start}
+  .diagnosis-trace-grid{grid-template-columns:1fr}
+}
+/* [AUNEA-FE-INTERNAL-DIAG-043] END */
