@@ -40,6 +40,10 @@ function makeCtx(uiMode){
     confirmedSnapshot:()=>eng.confirmedSnapshots[eng.confirmedSnapshots.length-1]||null,
     state:{backendOnline:true,backendUrl:'http://localhost:8000',uiMode:uiMode||'INTERNAL'},
     missingRequired:()=>[],labelFrom:(s,v)=>v,companyById:()=>({name:'ACME'}),
+    normalizeArray:v=>Array.isArray(v)?v:(v==null||v===''?[]:[v]),
+    evidenceTypeBackend:v=>v||'CLIENT_DECLARED',
+    econDriverLabel:v=>v,
+    processBoundaryValue:(e,id,fallback)=>e.answers?.[id]||fallback,
     buildBackendPayload:()=>({engagement_id:'E1'}),
     esc:v=>String(v??''),attr:v=>String(v??''),pageTop:()=>'',section:(t,s,body,actions)=>`${body}${actions||''}`,
     auneaSelectControl:(id,opts,val,{extra='',placeholder='Selecciona…'}={})=>`<div class="canonical-aunea-select"><input type="hidden" id="${id}" value="${val||''}" ${extra}><details class="aunea-select"><summary><span>${placeholder}</span><i></i></summary><div class="aunea-select-menu">${(opts||[]).map(o=>`<button data-aunea-select-option="${id}" data-value="${o.value}" data-label="${o.label}">${o.label}</button>`).join('')}</div></details></div>`,
@@ -52,7 +56,7 @@ function makeCtx(uiMode){
 test('resultsPage translates risk.residual_level/risk.status and pain state/confidence to Spanish, never the raw backend code',()=>{const ctx=makeCtx();ctx.__eng.diagnosticOutput={pain_results:[{pain_id:'P01',state:'CONFIRMED',confidence:'HIGH'}],economic_result:{},risk_result:{residual_level:'R2',status:'CONTROL_GAP'}};const html=ctx.resultsPage();assert.match(html,/Riesgo medio/);assert.match(html,/Brecha de control/);assert.match(html,/Confirmado/);assert.match(html,/Alta/);assert.doesNotMatch(html,/>CONTROL_GAP</);assert.doesNotMatch(html,/Estado: CONFIRMED/)});
 test('resultsPage falls back to "—" when risk/pain fields are not yet present',()=>{const ctx=makeCtx();ctx.__eng.diagnosticOutput={pain_results:[],economic_result:{},risk_result:{}};assert.match(ctx.resultsPage(),/<strong>—<\/strong><span><\/span>/)});
 test('scenarioBody and quotePage translate scenario risk level and quote status to Spanish',()=>{const ctx=makeCtx();ctx.__eng.diagnosticOutput={optimal_scenario:{action_id:'A1',risk:{residual_level:'R3'},quote:{status:'BLOCKED'}},quote:{status:'BLOCKED'}};assert.match(ctx.scenarioBody(ctx.__eng.diagnosticOutput.optimal_scenario),/Riesgo crítico/);const html=ctx.quotePage();assert.match(html,/Bloqueada/);assert.doesNotMatch(html,/>BLOCKED</)});
-test('the Pains KPI switches to client language in Session Mode',()=>{const a=makeCtx('INTERNAL');a.__eng.diagnosticOutput={pain_results:[],economic_result:{},risk_result:{}};assert.match(a.resultsPage(),/Pains confirmados/);const b=makeCtx('SESSION');b.__eng.diagnosticOutput={pain_results:[],economic_result:{},risk_result:{}};assert.match(b.resultsPage(),/Hallazgos confirmados/);assert.doesNotMatch(b.resultsPage(),/Pains confirmados/)});
+test('PG10 uses business-facing Hallazgos wording in the internal diagnosis workspace',()=>{const a=makeCtx('INTERNAL');a.__eng.diagnosticOutput={pain_results:[],economic_result:{},risk_result:{},recommendation:{rationale:[]}};assert.match(a.resultsPage(),/Hallazgos confirmados/);assert.doesNotMatch(a.resultsPage(),/Pains confirmados/)});
 test('the raw Pain_ID badge is internal-only',()=>{const ctx=makeCtx();ctx.__eng.diagnosticOutput={pain_results:[{pain_id:'P01',state:'CONFIRMED',confidence:'HIGH'}],economic_result:{},risk_result:{}};assert.match(ctx.resultsPage(),/<span class="code internal-only">P01<\/span>/)});
 test('recommendation/buildRecap/scenario resolve business labels and keep raw codes internal-only',()=>{const ctx=makeCtx();ctx.__eng.diagnosticOutput={recommendation:{action_id:'A1',functional_level_id:'N2',ai_level_id:'I1',rationale:[]},quote:{}};const html=ctx.recommendationPage();assert.match(html,/Redesign/);assert.match(html,/Standardize/);assert.match(html,/Assisted/);assert.match(html,/<span class="internal-tag">A1<\/span>/);const recap=ctx.buildRecap(ctx.__eng,ctx.__eng.diagnosticOutput);assert.match(recap,/Redesign/);assert.match(recap,/Standardize/);assert.match(recap,/Assisted/);assert.doesNotMatch(recap,/\bA1\b|\bN2\b|\bI1\b/);assert.match(ctx.scenarioBody({action_id:'A1',functional_level_id:'N2',ai_level_id:'I1',quote:{}}),/Standardize \/ Assisted/)});
 test('libraryHtml resolves REF_LEVEL_FUNC/REF_LEVEL_AI through Name',()=>{const ctx=makeCtx();ctx.__eng.diagnosticOutput={optimal_scenario:{},quote:{}};const html=ctx.quotePage();assert.match(html,/Register/);assert.match(html,/Rules \/ no AI/);assert.doesNotMatch(html,/>N1</);assert.doesNotMatch(html,/>I0</)});
@@ -74,3 +78,38 @@ test('createScenario posts the exact DiagnosticOutput shown in the UI as the com
   ctx.createScenario();await save();assert.deepEqual(sent.diagnostic,diag);assert.deepEqual(sent.engagement,{engagement_id:'E1'});assert.equal(sent.scenario.scenario_name,'Alt');assert.equal(ctx.__eng.scenarioResults.length,1);
 });
 // [AUNEA-UAT-RESULTS-010] END
+
+test('PG10 readiness exposes an explicit backend execution action instead of a dead readiness screen',()=>{
+  const ctx=makeCtx();ctx.__eng.diagnosticOutput=null;ctx.__eng.lastEngineSnapshotVersion=null;
+  const html=ctx.resultsPage();
+  assert.match(html,/Diagnóstico interno/);
+  assert.match(html,/id="runDiag">Ejecutar diagnóstico/);
+  assert.match(html,/Pain[\s\S]*Economics[\s\S]*Risk[\s\S]*Recommendation[\s\S]*Pricing[\s\S]*Scenario/);
+});
+
+test('PG10 result renders diagnostic sections, traceability and the governed TO-BE handoff',()=>{
+  const ctx=makeCtx();
+  ctx.schema.tables.REF_PAIN=[{Pain_ID:'P01',Pain_Name:'Información incompleta'}];
+  ctx.schema.friction_pain_map=[{Friction_Type_ID:'P01',Pain_ID:'P01'}];
+  ctx.__eng.processSteps=[{id:'S1',step_name:'Validar factura',status:'ACTIVE'}];
+  ctx.__eng.frictions=[{id:'F1',status:'ACTIVE',friction_type:'P01',client_label:'Información incompleta',observable_signal:'Faltan datos',affected_steps:['S1']}];
+  ctx.__eng.economicInputs=[{driver_id:'ED05',step_ids:['S1'],annual_active_hours:19.2,evidence_type:'CLIENT_DECLARED'}];
+  ctx.__eng.risks=[{step_ids:['S1'],description:'Riesgo de error',likelihood_1_5:3,impact_1_5:4,controls_present:true}];
+  ctx.__eng.diagnosticOutput={pain_results:[{pain_id:'P01',state:'CONFIRMED',confidence:'HIGH',rationale:'Se observa retrabajo'}],economic_result:{annual_active_hours:19.2,annual_wait_hours:0,direct_loss_eur_annual:0,current_tool_cost_eur_annual:0,realized_cash_saving_eur_annual:0},risk_result:{inherent_level:'R2',residual_level:'R1',status:'CONTROLLED',rationale:'Controles presentes'},recommendation:{action_id:'A1',functional_level_id:'N2',ai_level_id:'I1',confidence:'HIGH',rationale:['Estandarizar antes de automatizar']}};
+  const html=ctx.resultsPage();
+  assert.match(html,/Mapa AS-IS con contexto de diagnóstico/);
+  assert.match(html,/Información incompleta/);
+  assert.match(html,/Validar factura/);
+  assert.match(html,/19,2 h\/año/);
+  assert.match(html,/Riesgo de error/);
+  assert.match(html,/Recomendación preliminar/);
+  assert.match(html,/Revisado: continuar a TO-BE/);
+});
+
+test('PG11 is blocked until a diagnostic output exists for the current confirmed snapshot',()=>{
+  const ctx=makeCtx();ctx.__eng.diagnosticOutput=null;ctx.__eng.lastEngineSnapshotVersion=null;
+  assert.match(ctx.tobePage(),/Diagnóstico vigente requerido/);
+  ctx.__eng.diagnosticOutput={pain_results:[],economic_result:{},risk_result:{},recommendation:{},optimal_scenario:{}};
+  ctx.__eng.lastEngineSnapshotVersion=1;
+  assert.match(ctx.tobePage(),/Crear borrador desde AS-IS confirmado/);
+});
