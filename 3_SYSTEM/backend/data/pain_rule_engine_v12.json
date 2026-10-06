@@ -1,0 +1,927 @@
+{
+  "source": "AUNEA_DIAGNOSTIC_DATABASE_v0.9.2_DIAGNOSTIC_MASTER_V1.2.xlsx",
+  "drive_id": "1HRlB30kpziDc3WNPxMVj0HfXuRUdOgbW",
+  "extracted_on": "2026-10-06",
+  "purpose": "Generated runtime mirror of RULE_PAIN_ENGINE. Human CANONICAL remains in Drive.",
+  "count": 20,
+  "rows": [
+    {
+      "pain_id": "P01",
+      "pain_name": "Fragmented intake",
+      "definition": "Requests enter through more than one uncontrolled channel or format, requiring manual consolidation before normal work can begin.",
+      "mechanism": "Channel fragmentation creates extra active handling, clarification and transfer work before a usable case record exists.",
+      "examples": "Same request types arrive by email/chat/forms/phone; staff copy details into a tracker; duplicate requests; source channel must be checked to reconstruct context.",
+      "review_questions": [
+        "¿Por qué canales entra este tipo de solicitud?",
+        "¿Hay que copiar/consolidar información antes de empezar?",
+        "¿Se recibe la misma solicitud duplicada o con formatos distintos?"
+      ],
+      "economic_inputs": [
+        "case_volume",
+        "fragmented_cases_or_share",
+        "incremental_intake_handling_min",
+        "clarification_followups_if_not_P02"
+      ],
+      "economic_formula": "Annual active time = affected_cases × incremental_intake_handling_min / 60. Clarification effort is excluded when already attributed to P02.",
+      "economic_drivers": [
+        "ED01",
+        "ED04"
+      ],
+      "solution_refs": [
+        "S01",
+        "S02",
+        "S16"
+      ],
+      "capability_refs": [
+        "CAP001",
+        "CAP004",
+        "CAP018"
+      ],
+      "candidate_rule": "Use MAP_PROCESS_PAIN candidate mapping; instantiate only where fragmentation is observed in the client process.",
+      "overlap_rule": "MUTEX/PRECEDENCE with P02 for clarification time; P03 for re-keying; P15 for cross-tool handoff.",
+      "double_count_rule": "Count only the incremental handling uniquely caused by multi-channel intake. Re-keying goes to P03; missing-information chasing goes to P02.",
+      "direct_condition": "DIRECT condition: >1 uncontrolled intake channel/format AND manual consolidation or channel reconciliation is observed/declared. No universal volume threshold.",
+      "exclusion_condition": "A single controlled intake route exists, equivalent data are normalized automatically, or multiple channels feed the same structured record without manual consolidation.",
+      "sources": [
+        "SRC-EXT-LEAN-001",
+        "SRC-EXT-ISO9001-001",
+        "SRC-EXT-ASQ-PROC-001"
+      ],
+      "evidence_grade": "A2/B1",
+      "status": "RULE_CLOSED_PENDING_PILOT"
+    },
+    {
+      "pain_id": "P02",
+      "pain_name": "Missing / incomplete information",
+      "definition": "Required data, documents, decisions or context are absent when work reaches a point that depends on them.",
+      "mechanism": "Missing inputs trigger active chasing, case suspension and/or rework when work begins on an incomplete basis.",
+      "examples": "Cases put on hold; repeated requests for documents; blank mandatory fields; work returned to requester; repeated clarifications.",
+      "review_questions": [
+        "¿Qué información debe estar completa antes de avanzar?",
+        "¿Cuántos casos llegan incompletos?",
+        "¿Qué hace el equipo cuando falta algo y cuánto tiempo activo dedica?"
+      ],
+      "economic_inputs": [
+        "case_volume",
+        "incomplete_cases_or_share",
+        "followup_events_per_affected_case",
+        "followup_min",
+        "rework_min_if_started",
+        "waiting_delay"
+      ],
+      "economic_formula": "Annual active time = affected_cases × [(followups × followup_min) + rework_min] / 60. Waiting delay is stored separately and is not labor cost.",
+      "economic_drivers": [
+        "ED04",
+        "ED05",
+        "ED13"
+      ],
+      "solution_refs": [
+        "S01",
+        "S04",
+        "S08",
+        "S14"
+      ],
+      "capability_refs": [
+        "CAP001",
+        "CAP003",
+        "CAP010",
+        "CAP016"
+      ],
+      "candidate_rule": "Use MAP_PROCESS_PAIN; especially relevant where inputs/documents are prerequisites.",
+      "overlap_rule": "P01 may cause it but does not duplicate its chase time. P13 covers inconsistent/invalid stored data, not merely absent prerequisite information.",
+      "double_count_rule": "If the same rework event is recorded under P11, do not also count it here; choose the pain representing the causal mechanism and keep the other as linked/non-monetized.",
+      "direct_condition": "DIRECT condition: a required prerequisite is absent/insufficient and causes an observable hold, follow-up or rework event.",
+      "exclusion_condition": "Information is complete at the required decision point, optional information is missing but does not affect flow, or no attributable impact is observed.",
+      "sources": [
+        "SRC-EXT-LEAN-001",
+        "SRC-EXT-ISO9001-001",
+        "SRC-EXT-ASQ-COQ-001"
+      ],
+      "evidence_grade": "A2/B1",
+      "status": "RULE_CLOSED_PENDING_PILOT"
+    },
+    {
+      "pain_id": "P03",
+      "pain_name": "Manual re-entry",
+      "definition": "The same business data are manually re-keyed or copied into another record/system without adding substantive new information.",
+      "mechanism": "Duplicate data entry consumes active execution time and can introduce transcription defects.",
+      "examples": "Copy/paste between email-sheet-CRM-doc; same fields entered twice; staff compare two systems after entry.",
+      "review_questions": [
+        "¿Qué datos se vuelven a introducir en otro sistema?",
+        "¿Cuántas veces por caso?",
+        "¿Cuánto tarda cada reentrada y existe integración?"
+      ],
+      "economic_inputs": [
+        "case_volume",
+        "reentry_occurrences_per_case",
+        "duplicate_entry_min_per_occurrence"
+      ],
+      "economic_formula": "Annual active time = cases × reentry_occurrences_per_case × duplicate_entry_min / 60.",
+      "economic_drivers": [
+        "ED02",
+        "ED01"
+      ],
+      "solution_refs": [
+        "S02",
+        "S12",
+        "S16"
+      ],
+      "capability_refs": [
+        "CAP004",
+        "CAP014",
+        "CAP018"
+      ],
+      "candidate_rule": "Use MAP_PROCESS_PAIN where handoffs/systems exist.",
+      "overlap_rule": "P15 may explain the architecture, but the re-keying minutes belong only to P03. P13 owns correction of bad data caused by re-entry if measured separately.",
+      "double_count_rule": "Do not count the same handoff minute as both ED02 and ED08. Split measured activity or assign to the dominant action.",
+      "direct_condition": "DIRECT condition: identical/equivalent data are manually entered in ≥2 locations in the same process instance.",
+      "exclusion_condition": "Second entry is a genuinely different transformation/analysis step, synchronization is automatic, or manual entry is a one-off exception with no recurring process impact.",
+      "sources": [
+        "SRC-EXT-LEAN-001",
+        "SRC-EXT-ISO9001-001"
+      ],
+      "evidence_grade": "A2/B1",
+      "status": "RULE_CLOSED_PENDING_PILOT"
+    },
+    {
+      "pain_id": "P04",
+      "pain_name": "Unclear ownership",
+      "definition": "The next accountable owner or handoff responsibility is not explicit or reliably known at one or more process states.",
+      "mechanism": "Ambiguous responsibility creates coordination/search effort and may cause queueing between steps.",
+      "examples": "‘Who has this?’ messages; work sits in shared inboxes; repeated reassignment; no owner field; handoffs depend on personal knowledge.",
+      "review_questions": [
+        "¿Quién es responsable de la siguiente acción en cada estado?",
+        "¿Hay casos sin propietario claro?",
+        "¿Cuánto tiempo se dedica a localizar/reasignar al responsable?"
+      ],
+      "economic_inputs": [
+        "ambiguous_handoff_events",
+        "coordination_min_per_event",
+        "waiting_delay"
+      ],
+      "economic_formula": "Annual active time = ambiguous_handoff_events × coordination_min / 60. Elapsed waiting is ED13 only.",
+      "economic_drivers": [
+        "ED08",
+        "ED13"
+      ],
+      "solution_refs": [
+        "S02",
+        "S03",
+        "S05",
+        "S11"
+      ],
+      "capability_refs": [
+        "CAP004",
+        "CAP005",
+        "CAP006",
+        "CAP007",
+        "CAP013"
+      ],
+      "candidate_rule": "Use MAP_PROCESS_PAIN; validate at specific handoff/state.",
+      "overlap_rule": "P05 is classification/routing logic; P04 is responsibility ambiguity. If manual triage chooses an owner correctly but slowly, count P05 not P04.",
+      "double_count_rule": "Do not monetize waiting as owner labor. Count only active coordination/reassignment time unless a direct loss is separately evidenced.",
+      "direct_condition": "DIRECT condition: ownership cannot be determined from the process/state without person-dependent coordination or repeated reassignment.",
+      "exclusion_condition": "Ownership is explicit and consistently applied, or occasional absence is due to temporary capacity/availability rather than responsibility ambiguity.",
+      "sources": [
+        "SRC-EXT-LEAN-001",
+        "SRC-EXT-ISO9001-001"
+      ],
+      "evidence_grade": "A2/B1",
+      "status": "RULE_CLOSED_PENDING_PILOT"
+    },
+    {
+      "pain_id": "P05",
+      "pain_name": "Slow routing / triage",
+      "definition": "Incoming work requires recurring manual classification or routing that delays assignment to the correct queue/owner.",
+      "mechanism": "Active triage effort plus queue delay occurs because routing depends on manual interpretation or non-encoded rules.",
+      "examples": "Shared inbox reviewed periodically; manual categorization; frequent forwarding; queue aging before assignment.",
+      "review_questions": [
+        "¿Cómo se decide a qué persona/cola va cada caso?",
+        "¿Qué reglas se aplican?",
+        "¿Cuánto tiempo activo tarda clasificarlo y cuánto espera antes de asignarse?"
+      ],
+      "economic_inputs": [
+        "case_volume",
+        "manually_triaged_cases_or_share",
+        "triage_min_per_case",
+        "routing_wait_delay"
+      ],
+      "economic_formula": "Annual active time = manually_triaged_cases × triage_min / 60. Routing wait is ED13 and not labor cost.",
+      "economic_drivers": [
+        "ED01",
+        "ED13"
+      ],
+      "solution_refs": [
+        "S03",
+        "S14",
+        "S15"
+      ],
+      "capability_refs": [
+        "CAP006",
+        "CAP016",
+        "CAP017"
+      ],
+      "candidate_rule": "Use MAP_PROCESS_PAIN where routing/priority decisions exist.",
+      "overlap_rule": "P04 is unclear responsibility; P05 assumes a correct destination exists but reaching it is slow/manual.",
+      "double_count_rule": "Count triage minutes once. Forwarding/transfer admin can be P05 or P15/P04, not all simultaneously.",
+      "direct_condition": "DIRECT condition: recurring manual classification/routing is necessary and attributable active effort or queue delay is evidenced.",
+      "exclusion_condition": "Routing is deterministic/automatic, manual judgment is inherently required and not a target for change, or no attributable delay/effort is observed.",
+      "sources": [
+        "SRC-EXT-LEAN-001",
+        "SRC-EXT-BPMN-001",
+        "SRC-EXT-ASQ-PROC-001"
+      ],
+      "evidence_grade": "A2/B1",
+      "status": "RULE_CLOSED_PENDING_PILOT"
+    },
+    {
+      "pain_id": "P06",
+      "pain_name": "Missed deadlines / SLAs",
+      "definition": "Required due dates, SLAs or aging limits are missed or require manual surveillance because control is unreliable.",
+      "mechanism": "Manual reminder/escalation work and/or avoidable direct losses arise when due-date state is not systematically controlled.",
+      "examples": "Overdue cases; spreadsheet/calendar reminders; last-minute escalations; penalties; customer complaints tied to delay.",
+      "review_questions": [
+        "¿Qué fechas/SLA son obligatorios?",
+        "¿Cómo se controla el vencimiento?",
+        "¿Cuántos incumplimientos hay y qué esfuerzo/coste generan?"
+      ],
+      "economic_inputs": [
+        "deadline_cases",
+        "manual_reminder_events",
+        "reminder_min",
+        "breached_cases",
+        "direct_penalty_or_loss",
+        "waiting_delay"
+      ],
+      "economic_formula": "Active time = reminder_events × reminder_min / 60. Direct loss is separate. Elapsed lateness is non-labor unless a specific cost consequence is evidenced.",
+      "economic_drivers": [
+        "ED04",
+        "ED13",
+        "ED11"
+      ],
+      "solution_refs": [
+        "S10",
+        "S05",
+        "S08",
+        "S11"
+      ],
+      "capability_refs": [
+        "CAP012",
+        "CAP007",
+        "CAP010",
+        "CAP013"
+      ],
+      "candidate_rule": "Use MAP_PROCESS_PAIN where due dates/SLA exist.",
+      "overlap_rule": "P12 covers memory-dependent follow-up without a formal deadline; P06 takes precedence when the same reminder exists specifically to protect a deadline/SLA.",
+      "double_count_rule": "Do not convert overdue hours into labor cost. Record penalty/avoidable loss only with client evidence.",
+      "direct_condition": "DIRECT condition: an explicit due date/SLA exists AND breaches/manual surveillance attributable to weak control are observed.",
+      "exclusion_condition": "No relevant deadline/SLA exists, deadlines are reliably controlled without extra effort, or delays are solely caused by external constraints outside the process scope.",
+      "sources": [
+        "SRC-EXT-LEAN-001",
+        "SRC-EXT-ISO9001-001"
+      ],
+      "evidence_grade": "A2/B1",
+      "status": "RULE_CLOSED_PENDING_PILOT"
+    },
+    {
+      "pain_id": "P07",
+      "pain_name": "Approval bottlenecks",
+      "definition": "A required approval path creates avoidable administration or delay because sequence, conditions, approver state or evidence are not controlled clearly.",
+      "mechanism": "Preparing/chasing/recording approvals consumes active time; approvals may also create elapsed waiting.",
+      "examples": "Email chains for approval; unclear approver; repeated chasing; missing evidence; approvals cannot be reconstructed.",
+      "review_questions": [
+        "¿Qué aprobaciones existen y cuándo se disparan?",
+        "¿Quién aprueba y con qué evidencia?",
+        "¿Cuánto tiempo activo se dedica a preparar/perseguir/registrar cada aprobación?"
+      ],
+      "economic_inputs": [
+        "approval_count",
+        "approval_admin_min",
+        "chase_events",
+        "chase_min",
+        "approval_wait_delay"
+      ],
+      "economic_formula": "Annual active time = approvals × approval_admin_min / 60 + chase_events × chase_min / 60. Approval wait is ED13.",
+      "economic_drivers": [
+        "ED07",
+        "ED04",
+        "ED13"
+      ],
+      "solution_refs": [
+        "S06",
+        "S08",
+        "S10",
+        "S17"
+      ],
+      "capability_refs": [
+        "CAP008",
+        "CAP010",
+        "CAP012",
+        "CAP019"
+      ],
+      "candidate_rule": "Use MAP_PROCESS_PAIN for processes with approval gates.",
+      "overlap_rule": "P04 for ownership ambiguity; P16 for historical reconstruction. When approval chasing is counted here, do not also count it as P12.",
+      "double_count_rule": "Split active approval administration from elapsed approval waiting; only active time is capacity-valued.",
+      "direct_condition": "DIRECT condition: approval is required and recurring admin/chasing or avoidable delay attributable to approval control is evidenced.",
+      "exclusion_condition": "Approval is legally/operationally necessary and efficiently executed with no material extra administration, or delay is caused by substantive decision-making rather than workflow control.",
+      "sources": [
+        "SRC-EXT-BPMN-001",
+        "SRC-EXT-ISO9001-001",
+        "SRC-EXT-LEAN-001"
+      ],
+      "evidence_grade": "A2/B1",
+      "status": "RULE_CLOSED_PENDING_PILOT"
+    },
+    {
+      "pain_id": "P08",
+      "pain_name": "Version / document chaos",
+      "definition": "Operational documents/records have competing copies or weak naming, filing, version control or traceability that creates search/reconciliation/rework.",
+      "mechanism": "Users spend active time locating the right artifact, comparing versions or correcting work based on stale information.",
+      "examples": "‘final_v2_final’; local copies; attachments used as master; conflicting documents; time spent searching folders/email.",
+      "review_questions": [
+        "¿Dónde está la versión oficial?",
+        "¿Cómo se sabe cuál es la última?",
+        "¿Cuánto se tarda en localizar/reconciliar documentos y cuántos errores nacen de versiones incorrectas?"
+      ],
+      "economic_inputs": [
+        "search_events",
+        "search_min",
+        "reconciliation_events",
+        "reconciliation_min",
+        "rework_min_from_wrong_version"
+      ],
+      "economic_formula": "Annual active time = search_events×search_min/60 + reconciliation_events×reconciliation_min/60 + unique rework time not counted under P11.",
+      "economic_drivers": [
+        "ED03",
+        "ED05"
+      ],
+      "solution_refs": [
+        "S02",
+        "S07",
+        "S17"
+      ],
+      "capability_refs": [
+        "CAP004",
+        "CAP009",
+        "CAP019",
+        "CAP024"
+      ],
+      "candidate_rule": "Use MAP_PROCESS_PAIN in document-heavy processes.",
+      "overlap_rule": "P16 concerns reconstructing decisions/actions; P20 concerns tacit knowledge. P08 owns document/version retrieval and reconciliation.",
+      "double_count_rule": "If wrong-version correction is recorded in P11, exclude it here and keep P08 as causal finding only.",
+      "direct_condition": "DIRECT condition: users cannot reliably identify/retrieve the current authoritative artifact without search/reconciliation effort.",
+      "exclusion_condition": "A controlled repository/versioning model exists and users can retrieve the authoritative record without recurring reconciliation effort.",
+      "sources": [
+        "SRC-EXT-LEAN-001",
+        "SRC-EXT-ISO15489-001"
+      ],
+      "evidence_grade": "A2/B1",
+      "status": "RULE_CLOSED_PENDING_PILOT"
+    },
+    {
+      "pain_id": "P09",
+      "pain_name": "Low visibility",
+      "definition": "Current status, workload, aging, bottlenecks, exceptions or risk cannot be obtained reliably without manual consolidation.",
+      "mechanism": "Managers/teams spend active time collecting status and constructing operational visibility instead of reading it from maintained records.",
+      "examples": "Manual status meetings; spreadsheet rollups; messaging people for updates; no consistent queue/dashboard; conflicting status reports.",
+      "review_questions": [
+        "¿Cómo sabe hoy el responsable qué está abierto, atrasado o bloqueado?",
+        "¿Qué información se recopila manualmente para tener visibilidad?",
+        "¿Cuánto tarda cada ciclo de status/reporting operativo?"
+      ],
+      "economic_inputs": [
+        "status_collection_cycles",
+        "people_contacted",
+        "collection_min_per_cycle",
+        "ad_hoc_status_requests"
+      ],
+      "economic_formula": "Annual active time = status_collection_cycles × collection_min_per_cycle / 60 + ad_hoc_status_request_time not otherwise counted.",
+      "economic_drivers": [
+        "ED06"
+      ],
+      "solution_refs": [
+        "S11",
+        "S02",
+        "S17"
+      ],
+      "capability_refs": [
+        "CAP013",
+        "CAP004",
+        "CAP019"
+      ],
+      "candidate_rule": "Use MAP_PROCESS_PAIN where multi-case operational management exists.",
+      "overlap_rule": "P14 is recurring analytical/report production; P09 is live operational status visibility. The same reporting cycle belongs to one category only.",
+      "double_count_rule": "Do not count meeting duration plus preparatory status collection if the same participant time is already embedded in the measured cycle; define the measurement boundary.",
+      "direct_condition": "DIRECT condition: operational state cannot be obtained from a maintained source and recurring manual status collection is required.",
+      "exclusion_condition": "Reliable current visibility exists for the decisions required, or requested reporting is analytical/periodic rather than operational (P14).",
+      "sources": [
+        "SRC-EXT-ISO9001-001",
+        "SRC-EXT-APQC-002",
+        "SRC-EXT-ASQ-PROC-001"
+      ],
+      "evidence_grade": "A2/B1",
+      "status": "RULE_CLOSED_PENDING_PILOT"
+    },
+    {
+      "pain_id": "P10",
+      "pain_name": "Exception handling weak",
+      "definition": "Non-normal cases are managed ad hoc without defined exception states, ownership, evidence or reusable resolution logic.",
+      "mechanism": "Each exception triggers repeated diagnosis, coordination and potentially rework because the exception path is not institutionalized.",
+      "examples": "Edge cases handled in chat; same exception re-solved repeatedly; no exception queue/reason codes; cases disappear from normal flow.",
+      "review_questions": [
+        "¿Qué casos no siguen el camino normal?",
+        "¿Cómo se registran, asignan y resuelven?",
+        "¿Se repiten excepciones similares y cuánto esfuerzo exige cada una?"
+      ],
+      "economic_inputs": [
+        "exception_cases",
+        "diagnosis_min",
+        "coordination_min",
+        "unique_rework_min",
+        "waiting_delay"
+      ],
+      "economic_formula": "Annual active time = exception_cases × (diagnosis_min + coordination_min + unique_rework_min) / 60. Exclude rework already in P11.",
+      "economic_drivers": [
+        "ED05",
+        "ED08",
+        "ED13"
+      ],
+      "solution_refs": [
+        "S09",
+        "S05",
+        "S17",
+        "S15"
+      ],
+      "capability_refs": [
+        "CAP011",
+        "CAP007",
+        "CAP019",
+        "CAP017"
+      ],
+      "candidate_rule": "Use MAP_PROCESS_PAIN where exception variants exist.",
+      "overlap_rule": "P11 is defect correction; P10 is governance/handling of legitimate or abnormal exceptions. P20 may be a cause if resolution knowledge is tacit.",
+      "double_count_rule": "If exception is itself a defect and all correction time is in P11, P10 may remain detected but non-monetized for that event.",
+      "direct_condition": "DIRECT condition: recurring exception cases exist AND handling lacks a defined trackable path, causing repeated diagnosis/coordination/delay.",
+      "exclusion_condition": "No meaningful exceptions occur, or exception flow is explicitly modeled, owned, logged and measured with no recurring ad hoc handling.",
+      "sources": [
+        "SRC-EXT-LEAN-001",
+        "SRC-EXT-ISO31000-001",
+        "SRC-EXT-ASQ-PROC-001"
+      ],
+      "evidence_grade": "A2/B1",
+      "status": "RULE_CLOSED_PENDING_PILOT"
+    },
+    {
+      "pain_id": "P11",
+      "pain_name": "Rework / quality defects",
+      "definition": "Work must be corrected, repeated or re-performed because an output fails a requirement or contains an error.",
+      "mechanism": "Defects consume correction time and may generate direct internal/external failure cost.",
+      "examples": "Returned work; corrections after QA/customer review; recurring same error; failed validation; re-performed service.",
+      "review_questions": [
+        "¿Qué errores obligan a repetir/corregir trabajo?",
+        "¿Cuántos ocurren por periodo?",
+        "¿Cuánto tiempo y coste directo exige cada defecto?"
+      ],
+      "economic_inputs": [
+        "defect_count",
+        "rework_min_per_defect",
+        "direct_cost_per_defect"
+      ],
+      "economic_formula": "Annual active time = defects × rework_min / 60. Annual direct defect cost = defects × direct_cost_per_defect, excluding labor if labor is already valued via time.",
+      "economic_drivers": [
+        "ED05",
+        "ED09"
+      ],
+      "solution_refs": [
+        "S19",
+        "S04",
+        "S02",
+        "S17"
+      ],
+      "capability_refs": [
+        "CAP021",
+        "CAP003",
+        "CAP004",
+        "CAP019"
+      ],
+      "candidate_rule": "Use MAP_PROCESS_PAIN; instantiate where output conformity can fail.",
+      "overlap_rule": "P02/P08/P13 may be causes. Count correction minutes in one pain only; causal pains can remain detected without their own duplicate rework value.",
+      "double_count_rule": "Never add labor-valued rework time and a direct-cost estimate that already includes that labor component.",
+      "direct_condition": "DIRECT condition: an output error/nonconformity causes measurable correction/repetition or direct failure cost.",
+      "exclusion_condition": "Variation is acceptable within requirements, correction is planned value-adding iteration, or no attributable error/rework is observed.",
+      "sources": [
+        "SRC-EXT-LEAN-001",
+        "SRC-EXT-ASQ-COQ-001"
+      ],
+      "evidence_grade": "A2/B1",
+      "status": "RULE_CLOSED_PENDING_PILOT"
+    },
+    {
+      "pain_id": "P12",
+      "pain_name": "Follow-up dependent on memory",
+      "definition": "Required future actions, reminders or callbacks are not system-triggered and depend on individuals remembering to act.",
+      "mechanism": "People perform manual reminder/status-check work and actions may be late or missed when personal memory is the control.",
+      "examples": "Personal calendars; flags in inbox; sticky notes; manual ‘check every Friday’; missed callbacks; no next-action date/owner.",
+      "review_questions": [
+        "¿Qué acciones futuras dependen de que alguien se acuerde?",
+        "¿Cómo se recuerda hoy?",
+        "¿Cuántos seguimientos se hacen y cuánto tiempo requieren?"
+      ],
+      "economic_inputs": [
+        "followup_events",
+        "followup_min",
+        "missed_followup_direct_loss_if_evidenced"
+      ],
+      "economic_formula": "Annual active time = followup_events × followup_min / 60. Any missed-opportunity/direct loss is modeled separately only with evidence.",
+      "economic_drivers": [
+        "ED04"
+      ],
+      "solution_refs": [
+        "S08",
+        "S10",
+        "S20"
+      ],
+      "capability_refs": [
+        "CAP010",
+        "CAP012",
+        "CAP022"
+      ],
+      "candidate_rule": "Use MAP_PROCESS_PAIN for follow-up lifecycles.",
+      "overlap_rule": "P06 takes precedence when follow-up exists specifically for formal SLA/deadline protection. P18 takes precedence for customer-facing status communication if the same event is counted there.",
+      "double_count_rule": "One reminder/contact event can contribute time to only one monetized pain bucket.",
+      "direct_condition": "DIRECT condition: a required recurring future action lacks a reliable system/state trigger and depends materially on individual memory/manual checking.",
+      "exclusion_condition": "Follow-up is reliably event/date-triggered, or human judgment at the future point is required but the trigger itself is controlled.",
+      "sources": [
+        "SRC-EXT-LEAN-001",
+        "SRC-EXT-ISO9001-001"
+      ],
+      "evidence_grade": "A2/B1",
+      "status": "RULE_CLOSED_PENDING_PILOT"
+    },
+    {
+      "pain_id": "P13",
+      "pain_name": "Data quality inconsistency",
+      "definition": "Operational data violate required definitions, formats, allowed values, master-data rules or consistency constraints.",
+      "mechanism": "Invalid/inconsistent data require validation, correction or reconciliation and can propagate defects downstream.",
+      "examples": "Different date/status formats; duplicate customer records; inconsistent naming; missing master IDs; manual cleaning before use.",
+      "review_questions": [
+        "¿Qué campos generan más correcciones?",
+        "¿Qué reglas de formato/definición deberían cumplirse?",
+        "¿Cuántos registros se corrigen y cuánto tarda la validación/corrección?"
+      ],
+      "economic_inputs": [
+        "bad_record_count",
+        "validation_min",
+        "correction_min",
+        "direct_error_cost"
+      ],
+      "economic_formula": "Annual active time = bad_records × (validation_min + correction_min) / 60. Direct cost separate if not already included in P11.",
+      "economic_drivers": [
+        "ED05",
+        "ED09"
+      ],
+      "solution_refs": [
+        "S01",
+        "S02",
+        "S12",
+        "S19"
+      ],
+      "capability_refs": [
+        "CAP002",
+        "CAP004",
+        "CAP014",
+        "CAP021"
+      ],
+      "candidate_rule": "Use MAP_PROCESS_PAIN where structured data are produced/consumed.",
+      "overlap_rule": "P02 is absent prerequisite information at the point of work; P13 is invalid/inconsistent data quality. P11 owns final output correction if that is the measured event.",
+      "double_count_rule": "Choose one correction bucket per event. Validation-only time may remain in P13 even when downstream rework is P11.",
+      "direct_condition": "DIRECT condition: a defined data requirement is violated and recurring validation/correction/reconciliation is necessary.",
+      "exclusion_condition": "Differences are legitimate business variants, no common definition is required, or data are valid for their intended use.",
+      "sources": [
+        "SRC-EXT-ASQ-COQ-001",
+        "SRC-EXT-ISO9001-001"
+      ],
+      "evidence_grade": "A2/B1",
+      "status": "RULE_CLOSED_PENDING_PILOT"
+    },
+    {
+      "pain_id": "P14",
+      "pain_name": "Reporting consolidation effort",
+      "definition": "Recurring reports require manual extraction, cleanup, reconciliation, combination or narrative assembly from source data.",
+      "mechanism": "Repeated preparation work consumes active analyst/manager time before the actual interpretation/decision activity.",
+      "examples": "Export CSVs; copy to Excel; clean columns; merge files; paste charts; rebuild same deck/report every cycle.",
+      "review_questions": [
+        "¿Qué reportes se reconstruyen periódicamente?",
+        "¿Qué pasos son extracción/limpieza/consolidación repetitiva?",
+        "¿Cuántas horas exige cada ciclo antes del análisis real?"
+      ],
+      "economic_inputs": [
+        "report_cycles_per_year",
+        "preparation_hours_per_cycle",
+        "analyst_hours_included"
+      ],
+      "economic_formula": "Annual active time = report_cycles × repetitive_preparation_hours_per_cycle. Exclude substantive analysis/decision time unless explicitly in scope as non-value-added repetition.",
+      "economic_drivers": [
+        "ED06"
+      ],
+      "solution_refs": [
+        "S12",
+        "S11",
+        "S07",
+        "S16"
+      ],
+      "capability_refs": [
+        "CAP014",
+        "CAP013",
+        "CAP009",
+        "CAP018"
+      ],
+      "candidate_rule": "Use MAP_PROCESS_PAIN in reporting/data domains.",
+      "overlap_rule": "P09 covers live operational visibility; P14 covers periodic report production. P03 may capture re-keying only if measured separately and excluded from report-prep time.",
+      "double_count_rule": "Define report-preparation boundary so the same export/cleanup minutes are not counted both in P14 and P03/P15.",
+      "direct_condition": "DIRECT condition: the same or substantially similar extraction/cleanup/consolidation steps recur and consume active preparation effort.",
+      "exclusion_condition": "Report creation is primarily new analysis/judgment, source data are already consolidated, or the report is a one-off.",
+      "sources": [
+        "SRC-EXT-APQC-002",
+        "SRC-EXT-ISO9001-001",
+        "SRC-EXT-ASQ-PROC-001"
+      ],
+      "evidence_grade": "A2/B1",
+      "status": "RULE_CLOSED_PENDING_PILOT"
+    },
+    {
+      "pain_id": "P15",
+      "pain_name": "Tool fragmentation",
+      "definition": "The process depends on disconnected tools with unreliable or manual transfer of state, data or context between them.",
+      "mechanism": "Fragmented architecture creates handoff administration, reconciliation, duplicate tool cost and/or integration failure risk.",
+      "examples": "Same case tracked in multiple apps; manual exports/imports; status mismatch; users swivel between tools; duplicate subscriptions.",
+      "review_questions": [
+        "¿Qué herramientas intervienen de principio a fin?",
+        "¿Cómo pasa la información/estado entre ellas?",
+        "¿Qué reconciliación o coste duplicado genera la fragmentación?"
+      ],
+      "economic_inputs": [
+        "cross_tool_handoffs",
+        "handoff_admin_min",
+        "reconciliation_min",
+        "attributable_duplicate_tool_cost"
+      ],
+      "economic_formula": "Annual active time = cross_tool_handoffs × unique handoff/reconciliation min / 60. Duplicate-entry minutes belong to P03. Tool cost is direct and separately evidenced.",
+      "economic_drivers": [
+        "ED02",
+        "ED08",
+        "ED12"
+      ],
+      "solution_refs": [
+        "S16",
+        "S02",
+        "S12"
+      ],
+      "capability_refs": [
+        "CAP018",
+        "CAP004",
+        "CAP014"
+      ],
+      "candidate_rule": "Use MAP_PROCESS_PAIN where multiple systems/tools participate.",
+      "overlap_rule": "P03 owns re-keying time; P08 document versions; P13 data inconsistency. P15 owns architecture-level handoff/reconciliation not already assigned.",
+      "double_count_rule": "Do not count the same minute as both duplicate entry and handoff admin. Tool cost must be incremental/avoidable, not the full stack cost by default.",
+      "direct_condition": "DIRECT condition: ≥2 tools are required in the flow AND state/data/context transfer is manual/unreliable or creates attributable reconciliation/cost.",
+      "exclusion_condition": "Multiple tools are intentionally specialized and integrated reliably, with no material manual handoff/reconciliation or avoidable duplicate cost.",
+      "sources": [
+        "SRC-EXT-LEAN-001",
+        "SRC-EXT-BPMN-001",
+        "SRC-EXT-ASQ-PROC-001"
+      ],
+      "evidence_grade": "A2/B1",
+      "status": "RULE_CLOSED_PENDING_PILOT"
+    },
+    {
+      "pain_id": "P16",
+      "pain_name": "No audit trail",
+      "definition": "The organization cannot reconstruct relevant actions, approvals, decisions, changes or supporting evidence from maintained records.",
+      "mechanism": "Missing traceability creates reconstruction effort and increases control/compliance risk.",
+      "examples": "Searching email/chat to prove who approved; no timestamps; overwritten history; decisions without recorded basis.",
+      "review_questions": [
+        "¿Podéis reconstruir quién hizo/aprobó/cambió qué y cuándo?",
+        "¿Dónde queda la evidencia?",
+        "¿Cuánto esfuerzo exige una reconstrucción típica?"
+      ],
+      "economic_inputs": [
+        "reconstruction_events",
+        "reconstruction_min",
+        "direct_loss_or_penalty_if_evidenced"
+      ],
+      "economic_formula": "Annual active time = reconstruction_events × reconstruction_min / 60. Compliance/penalty cost only if a real attributable event is evidenced.",
+      "economic_drivers": [
+        "ED01"
+      ],
+      "solution_refs": [
+        "S17",
+        "S02",
+        "S06"
+      ],
+      "capability_refs": [
+        "CAP019",
+        "CAP004",
+        "CAP008"
+      ],
+      "candidate_rule": "Use MAP_PROCESS_PAIN where decisions/approvals/regulated evidence matter.",
+      "overlap_rule": "P08 is document/version retrieval; P16 is historical accountability/evidence. Search minutes belong to the dominant purpose.",
+      "double_count_rule": "Do not monetize abstract compliance risk as expected loss unless likelihood/impact model is separately approved in Risk/Economics Engine.",
+      "direct_condition": "DIRECT condition: a relevant past action/decision cannot be reconstructed from maintained records without ad hoc search/reconstruction.",
+      "exclusion_condition": "Traceability is available and proportionate to the process need, or no auditability requirement/relevant decision history exists.",
+      "sources": [
+        "SRC-EXT-ISO15489-001",
+        "SRC-EXT-ISO37301-001"
+      ],
+      "evidence_grade": "A2/B1",
+      "status": "RULE_CLOSED_PENDING_PILOT"
+    },
+    {
+      "pain_id": "P17",
+      "pain_name": "Capacity / workload imbalance",
+      "definition": "Work allocation does not use sufficient workload, priority, skill, due-date or availability information, causing recurring uneven queues or reallocation.",
+      "mechanism": "Imbalance produces queueing, rescheduling/reallocation effort and potentially underused/overloaded capacity.",
+      "examples": "One person has backlog while another is idle; work repeatedly reassigned; priority conflicts; no workload view.",
+      "review_questions": [
+        "¿Cómo se reparte el trabajo?",
+        "¿Se ve carga/capacidad por persona/equipo?",
+        "¿Cuánto esfuerzo se dedica a reasignar/replanificar y qué colas se generan?"
+      ],
+      "economic_inputs": [
+        "reallocation_events",
+        "rescheduling_min",
+        "waiting_delay",
+        "capacity_observations"
+      ],
+      "economic_formula": "Annual active time = reallocation_events × rescheduling_min / 60. Queue/waiting is ED13. Released capacity is not cash saving.",
+      "economic_drivers": [
+        "ED13",
+        "ED01"
+      ],
+      "solution_refs": [
+        "S18",
+        "S11",
+        "S05"
+      ],
+      "capability_refs": [
+        "CAP020",
+        "CAP013",
+        "CAP007"
+      ],
+      "candidate_rule": "Use MAP_PROCESS_PAIN in work queues/resource-managed processes.",
+      "overlap_rule": "P04 concerns unclear ownership; P17 assumes ownership/allocation exists but is poorly balanced. P06 may capture deadline consequences separately.",
+      "double_count_rule": "Do not monetize idle/queued elapsed time as labor saving. Any capacity value must later use ED14 and remain distinct from realized cash saving.",
+      "direct_condition": "DIRECT condition: recurring allocation/reallocation decisions are made with insufficient capacity/priority/skill visibility and observable imbalance or admin effort results.",
+      "exclusion_condition": "Load variation is intentional/temporary, capacity is actively managed with adequate information, or no recurring imbalance/admin burden is observed.",
+      "sources": [
+        "SRC-EXT-ISO21502-001",
+        "SRC-EXT-LEAN-001",
+        "SRC-EXT-TDABC-001"
+      ],
+      "evidence_grade": "A2/B1",
+      "status": "RULE_CLOSED_PENDING_PILOT"
+    },
+    {
+      "pain_id": "P18",
+      "pain_name": "Customer communication gaps",
+      "definition": "Customers/requesters do not receive timely, consistent or contextual acknowledgements, updates or closure information required by the service process.",
+      "mechanism": "Manual status contacts and inbound chasing consume active time; inconsistent communication may also create delay/escalation.",
+      "examples": "Customers ask ‘any update?’; no acknowledgement; different messages by agent; manual update emails; missed closure notice.",
+      "review_questions": [
+        "¿Qué comunicaciones espera el cliente en cada hito?",
+        "¿Cuáles se envían manualmente?",
+        "¿Cuántos contactos entrantes se generan por falta de actualización?"
+      ],
+      "economic_inputs": [
+        "outbound_manual_updates",
+        "outbound_min",
+        "inbound_status_contacts",
+        "inbound_handle_min",
+        "waiting_delay"
+      ],
+      "economic_formula": "Annual active time = outbound_updates×outbound_min/60 + inbound_status_contacts×inbound_handle_min/60, excluding contacts counted under P12.",
+      "economic_drivers": [
+        "ED04",
+        "ED13"
+      ],
+      "solution_refs": [
+        "S08",
+        "S20",
+        "S02"
+      ],
+      "capability_refs": [
+        "CAP010",
+        "CAP022",
+        "CAP004"
+      ],
+      "candidate_rule": "Use MAP_PROCESS_PAIN in client/requester-facing processes.",
+      "overlap_rule": "P12 is generic memory-dependent follow-up; P18 owns customer-facing communication events. P06 owns formal SLA reminder events.",
+      "double_count_rule": "Classify each contact once by primary purpose; do not add customer waiting time to labor cost.",
+      "direct_condition": "DIRECT condition: required/expected process communication is absent/inconsistent/manual and creates observable active handling, chasing or service impact.",
+      "exclusion_condition": "Communication is intentionally high-touch and value-adding, reliably executed without avoidable handling, or no communication requirement exists.",
+      "sources": [
+        "SRC-EXT-ISO20000-001",
+        "SRC-EXT-LEAN-001",
+        "SRC-EXT-ISO9001-001"
+      ],
+      "evidence_grade": "A2/B1",
+      "status": "RULE_CLOSED_PENDING_PILOT"
+    },
+    {
+      "pain_id": "P19",
+      "pain_name": "Cost leakage",
+      "definition": "A process causes direct monetary leakage such as missed billing, duplicate/avoidable tool spend, penalties, write-offs or other attributable losses that are not captured by time valuation.",
+      "mechanism": "Failure to trigger, record, control or reconcile financial events creates direct loss or avoidable spend.",
+      "examples": "Unbilled work; expired claims; penalties; duplicate subscriptions; write-offs linked to process failure.",
+      "review_questions": [
+        "¿Qué dinero se pierde directamente por fallos del proceso?",
+        "¿Cómo se demuestra el evento y su importe?",
+        "¿Está ese coste ya incluido en otra métrica o factura?"
+      ],
+      "economic_inputs": [
+        "missed_billing_amount",
+        "penalties",
+        "writeoffs",
+        "avoidable_duplicate_cost",
+        "event_count",
+        "evidence_reference"
+      ],
+      "economic_formula": "Annual direct loss = sum of evidenced attributable monetary events. No labor-time formula by default; investigation time only if separately measured and not counted elsewhere.",
+      "economic_drivers": [
+        "ED10",
+        "ED11",
+        "ED12"
+      ],
+      "solution_refs": [
+        "S02",
+        "S10",
+        "S16",
+        "S17"
+      ],
+      "capability_refs": [
+        "CAP004",
+        "CAP012",
+        "CAP018",
+        "CAP019"
+      ],
+      "candidate_rule": "Use MAP_PROCESS_PAIN only where monetary events exist; do not infer leakage from inefficiency alone.",
+      "overlap_rule": "P11 may carry defect direct cost; P06 penalties; P15 duplicate tool cost. P19 is an aggregate direct-loss pain only when the monetary event is not already monetized elsewhere.",
+      "double_count_rule": "DIRECT COST MUTEX: every monetary loss event gets one owner pain/driver. P19 must not re-sum losses already attributed to P06/P11/P15.",
+      "direct_condition": "DIRECT condition: a specific attributable monetary leakage event exists with amount/evidence or a reproducible calculation basis.",
+      "exclusion_condition": "Only capacity/time inefficiency exists, loss is hypothetical/unquantified, or the monetary impact is already fully represented under another pain.",
+      "sources": [
+        "SRC-EXT-TDABC-001",
+        "SRC-EXT-ASQ-COQ-001",
+        "SRC-EXT-ISO31000-001"
+      ],
+      "evidence_grade": "A2/B1",
+      "status": "RULE_CLOSED_PENDING_PILOT"
+    },
+    {
+      "pain_id": "P20",
+      "pain_name": "Knowledge trapped in people",
+      "definition": "Required process rules, exception logic or next-step knowledge are tacit, person-dependent and not sufficiently accessible in maintained knowledge/records.",
+      "mechanism": "Users spend time asking experts, searching for undocumented rules or reconstructing prior decisions; continuity risk increases when key people are unavailable.",
+      "examples": "Only one person knows exceptions; new joiners ask repeatedly; undocumented checklists; work stops when expert absent.",
+      "review_questions": [
+        "¿Qué parte del proceso solo sabe hacer una persona?",
+        "¿Qué preguntas se repiten a expertos?",
+        "¿Cuánto tiempo se dedica a buscar/preguntar/reconstruir reglas?"
+      ],
+      "economic_inputs": [
+        "expert_queries",
+        "expert_and_requester_min",
+        "search_events",
+        "search_min",
+        "continuity_observation"
+      ],
+      "economic_formula": "Annual active time = sum of unique expert-query/search minutes attributable to tacit knowledge. Do not double count document-search time owned by P08.",
+      "economic_drivers": [
+        "ED03",
+        "ED05"
+      ],
+      "solution_refs": [
+        "S13",
+        "S05",
+        "S17"
+      ],
+      "capability_refs": [
+        "CAP015",
+        "CAP007",
+        "CAP019"
+      ],
+      "candidate_rule": "Use MAP_PROCESS_PAIN where rules/exceptions/knowledge drive execution.",
+      "overlap_rule": "P08 owns locating/versioning explicit documents; P20 owns absence/inaccessibility of tacit rules. P10 may be an outcome for exception handling.",
+      "double_count_rule": "If the same event is measured as document search in P08, exclude it here. Count both requester and expert time only if both are actually measured and the basis is explicit.",
+      "direct_condition": "DIRECT condition: execution depends materially on person-specific tacit knowledge and recurring consultation/search/reconstruction is observed.",
+      "exclusion_condition": "Knowledge is documented/accessible and kept current, expert involvement is intentional substantive judgment, or no dependency/impact is observed.",
+      "sources": [
+        "SRC-EXT-ISO30401-001",
+        "SRC-EXT-LEAN-001"
+      ],
+      "evidence_grade": "A2/B1",
+      "status": "RULE_CLOSED_PENDING_PILOT"
+    }
+  ]
+}
