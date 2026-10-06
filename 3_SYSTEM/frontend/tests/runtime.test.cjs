@@ -157,7 +157,7 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
     assert.equal(w.eval('currentEng().stageId'),'S01','no avanza mientras falte un obligatorio');
     assert.ok(d.querySelector('.field-pending'),'y el campo pendiente queda señalado');
     // With every S01 obligation answered, Continuar advances.
-    w.eval(`setAnswer('DF008',['UNDERSTAND']);render()`);
+    w.eval(`setAnswer('DF008',['UNDERSTAND']);answerDetails(currentEng()).DF010='Restricción UAT';render()`);
     click('#nextStage');
     assert.equal(w.eval('currentEng().stageId'),'S02','con los obligatorios resueltos sí avanza');
     w.eval(`(()=>{const e=currentEng();e.stageId='S01';render()})()`);
@@ -234,7 +234,7 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
     w.eval('window.__flowBefore=schema.flow; schema.flow=schema.flow.slice().reverse().map((s,i)=>i===0?{...s,Stage_ES:"Etapa de prueba del schema"}:s); render()');
     try{
       assert.deepEqual(railStages(),Array.from(w.eval("[...schema.flow.map(s=>s.Stage_ID).filter(id=>!['S04','S05','S06','S07','S09'].includes(id)),'S09']")));
-      assert.match(d.querySelector('#nav .nav-step').textContent,/Etapa de prueba del schema/);
+      assert.match(d.querySelector('#nav [data-stage-nav="S09"]').textContent,/Etapa de prueba del schema/);
     }finally{w.eval('schema.flow=window.__flowBefore; delete window.__flowBefore; render()');}
   });
   await t.test('VR-02 session can return to CRM and reopen the same study without losing its stage',()=>{
