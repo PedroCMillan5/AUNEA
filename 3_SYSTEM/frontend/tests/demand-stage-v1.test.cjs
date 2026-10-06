@@ -7,3 +7,11 @@ test('numeric capture never persists NaN or an empty unit-only ghost answer',()=
 test('S03 compound controls and dropdown overlays are page-scoped and visible',()=>{assert.match(stages,/diagnostic-stage-\$\{String\(stage\.Stage_ID\)\.toLowerCase\(\)\}/);assert.match(css,/\.content:has\(\.diagnostic-stage-s03\) \.field:has\(\.aunea-select\[open\]\)\{position:relative;z-index:120\}/);assert.match(css,/\.content:has\(\.diagnostic-stage-s03\) \.aunea-select-menu\{z-index:140;max-height:240px\}/);assert.match(css,/\.content:has\(\.diagnostic-stage-s03\) \.volume-sentence\{display:grid;grid-template-columns:/)});
 test('S03 remains REVIEW/open',()=>{const r=JSON.parse(read('FROZEN_PAGES.json'));assert.equal(r.frozen_pages.some(x=>x.page_id==='demanda-volumen-servicio'),false)});
 // [AUNEA-UAT-DEMAND-STAGE-020] END
+
+test('DF025 is always askable in S03 and exposes an explicit no-SLA state',()=>{
+  assert.match(stages,/function slaTargetBlock\(f,e\)/);
+  assert.match(stages,/No existe SLA \/ tiempo objetivo/);
+  assert.match(stages,/data-number-mode="\$\{f\.Field_ID\}"/);
+  const noReask=read('domain/no-reask.js');
+  assert.match(noReask,/f\.Field_ID==='DF025'&&f\.Stage_ID==='S03'\)return true/);
+});
