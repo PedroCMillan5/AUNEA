@@ -79,9 +79,7 @@ function canonicalFieldValidationIssue(f,v,e){
 function canonicalFieldValuePresent(f,v,e){const mode=String(f?.Ask_Mode||''),detail=String(e?.answerDetails?.[f?.Field_ID]||'').trim(),syntheticOther=/WITH_OTHER/.test(String(f?.Control_UI||'').toUpperCase())&&!valuePresent(v)&&!!detail;if(mode==='DERIVE_AND_CONFIRM'){const reuse=reusedValue(f.Field_ID,e);return reuse!==undefined&&!canonicalFieldValidationIssue(f,reuse,e)&&isDerivedConfirmed(f,e,reuse)}const valid=(valuePresent(v)||syntheticOther)&&!canonicalFieldValidationIssue(f,v,e);return !!valid}
 function canonicalFieldRequiredNow(f,e){
   if(!f||!questionVisible(f,e))return false;
-  if(f.Requiredness==='REQUIRED_90M')return !['SYSTEM_GENERATED','DERIVED'].includes(String(f.Ask_Mode||''));
-  if(f.Requiredness!=='CONDITIONAL_90M')return false;
-  return ['ASK','CONDITIONAL_ASK','PREFILL_CONFIRM','CLIENT_CONFIRMATION','DERIVE_AND_CONFIRM'].includes(String(f.Ask_Mode||''));
+  return f.Requiredness==='REQUIRED_90M'&&!['SYSTEM_GENERATED','DERIVED'].includes(String(f.Ask_Mode||''));
 }
 function canonicalFieldIntegrityIssues(e){
   return (schema?.fields||[]).filter(f=>questionVisible(f,e)).map(f=>{
