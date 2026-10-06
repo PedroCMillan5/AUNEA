@@ -11,7 +11,7 @@ test('S03 remains REVIEW/open',()=>{const r=JSON.parse(read('FROZEN_PAGES.json')
 test('DF025 is always askable in S03 and exposes an explicit no-SLA state',()=>{
   assert.match(stages,/function slaTargetBlock\(f,e\)/);
   assert.match(stages,/\{value:'NONE',label:'No existe'\}/);
-  assert.match(stages,/data-number-mode="\$\{f\.Field_ID\}"/);
+  assert.match(stages,/data-sla-mode="\$\{f\.Field_ID\}"/);
   const noReask=read('domain/no-reask.js');
   assert.match(noReask,/f\.Field_ID==='DF025'&&f\.Stage_ID==='S03'\)return true/);
 });
