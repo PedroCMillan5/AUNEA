@@ -130,6 +130,30 @@ function economicScopeOverlaps(a=[],b=[]){
   const x=normalizeArray(a),y=normalizeArray(b);
   return !x.length||!y.length||x.some(id=>y.includes(id));
 }
+function economicMetricShape(driver,row={}){
+  const activeDrivers=new Set(['ED01','ED02','ED03','ED04','ED05','ED06','ED07','ED08']);
+  return {
+    active:activeDrivers.has(driver)?Number(row.annual_active_hours||0):0,
+    wait:driver==='ED13'?Number(row.annual_wait_hours||0):0
+  };
+}
+function economicInputIntegrityIssues(e){
+  const steps=typeof activeSteps==='function'?activeSteps(e):(e?.processSteps||[]).filter(x=>x.status!=='SUPERSEDED');
+  const byId=new Map(steps.map(s=>[s.id,s])),issues=[];
+  (e?.economicInputs||[]).forEach((x,index)=>{
+    const ids=normalizeArray(x.step_ids).filter(Boolean),selected=ids.map(id=>byId.get(id)).filter(Boolean);
+    if(x.driver_id==='ED13'&&Number(x.annual_active_hours||0)>0)
+      issues.push({index,kind:'LEGACY_CROSS_METRIC',message:'Tiempo de espera contiene horas activas heredadas de una versión anterior. Se excluirán del cálculo al recalcular.'});
+    if(['ED01','ED02','ED03','ED04','ED05','ED06','ED07','ED08'].includes(x.driver_id)&&Number(x.annual_wait_hours||0)>0)
+      issues.push({index,kind:'LEGACY_CROSS_METRIC',message:'Un impacto de tiempo activo contiene horas de espera heredadas. Se excluirán del cálculo al recalcular.'});
+    if(x.driver_id==='ED05'&&ids.length&&selected.length&&selected.every(s=>Number(s.rework_time||0)<=0))
+      issues.push({index,kind:'SCOPE_MISMATCH',message:'Tiempo de retrabajo está asociado a un paso sin retrabajo registrado. Revisa el paso relacionado.'});
+    if(x.driver_id==='ED13'&&ids.length&&selected.length&&selected.every(s=>Number(s.wait_time||0)<=0))
+      issues.push({index,kind:'SCOPE_MISMATCH',message:'Tiempo de espera está asociado a un paso sin espera registrada. Revisa el paso relacionado.'});
+  });
+  return issues;
+}
+
 function economicCaptureIssues(e,draft){
   const issues=[],rows=e.economicInputs||[],active=Number(draft.annual_active_hours||0);
   for(const x of rows){
@@ -153,7 +177,23 @@ function economicCaptureIssues(e,draft){
 
 function economicBuilder(e){
   const steps=typeof activeSteps==='function'?activeSteps(e):[];
-  return section('Impactos registrados','Registramos por separado: trabajo activo, espera, pérdida directa, herramienta y ahorro de caja realizado. No se inventan porcentajes de recuperación.',`<div class="result-list">${e.economicInputs.length?e.economicInputs.map((x,i)=>`<div class="result-item"><div class="result-item-head"><div><b>${esc(econDriverLabel(x.driver_id))}</b><p>Activo ${x.annual_active_hours||0} h/año · Espera ${x.annual_wait_hours||0} h/año · Pérdida directa ${x.direct_loss_eur_annual||0} €/año · Evidencia: ${esc(engineLabel('evidence_quality',x.evidence_type))}</p><p>Pasos: ${(Array.isArray(x.step_ids)?x.step_ids:(x.step_ids?[x.step_ids]:[])).map(id=>steps.find(s=>s.id===id)?.step_name||id).map(esc).join(', ')||'Sin anclar'}</p></div><div class="result-actions"><button class="btn btn-small" data-edit-economic-index="${i}">Editar</button><button class="btn btn-small btn-danger" data-delete-economic-index="${i}">Eliminar</button></div></div></div>`).join(''):'<div class="empty"><p>Todavía no hay impactos registrados.</p></div>'}</div>`,`<button type="button" class="btn btn-outline" id="addEconomic" data-add-economic-global>Añadir impacto</button>`)
+  const issues=economicInputIntegrityIssues(e),byIndex=new Map();
+  issues.forEach(x=>{const arr=byIndex.get(x.index)||[];arr.push(x);byIndex.set(x.index,arr)});
+  const metric=x=>{
+    const shape=economicMetricShape(x.driver_id,x);
+    if(x.driver_id==='ED13')return `Espera ${shape.wait} h/año`;
+    if(['ED01','ED02','ED03','ED04','ED05','ED06','ED07','ED08'].includes(x.driver_id))return `Tiempo activo ${shape.active} h/año`;
+    if(x.driver_id==='ED12')return `Herramientas ${Number(x.current_tool_cost_eur_annual||0)} €/año`;
+    if(['ED09','ED10','ED11'].includes(x.driver_id))return `Pérdida directa ${Number(x.direct_loss_eur_annual||0)} €/año`;
+    if(x.driver_id==='ED14')return `Coste de capacidad ${Number(x.capacity_cost_rate_eur_hour||0)} €/h`;
+    return 'Impacto registrado';
+  };
+  return section('Impactos registrados','Cada impacto conserva una sola métrica principal. La espera no se suma como trabajo activo y el tiempo no equivale automáticamente a ahorro.',
+    `<div class="result-list">${e.economicInputs.length?e.economicInputs.map((x,i)=>{
+      const rowIssues=byIndex.get(i)||[];
+      return `<div class="result-item"><div class="result-item-head"><div><b>${esc(econDriverLabel(x.driver_id))}</b><p>${esc(metric(x))} · Evidencia: ${esc(engineLabel('evidence_quality',x.evidence_type))}</p><p>Pasos: ${normalizeArray(x.step_ids).map(id=>steps.find(s=>s.id===id)?.step_name||id).map(esc).join(', ')||'Sin anclar'}</p>${rowIssues.length?`<div class="notice warn economic-row-warning"><b>Revisión necesaria</b><br>${rowIssues.map(v=>esc(v.message)).join(' ')}</div>`:''}</div><div class="result-actions"><button class="btn btn-small" data-edit-economic-index="${i}">Editar</button><button class="btn btn-small btn-danger" data-delete-economic-index="${i}">Eliminar</button></div></div></div>`;
+    }).join(''):'<div class="empty"><p>Todavía no hay impactos registrados.</p></div>'}</div>`,
+    '<button type="button" class="btn btn-outline" id="addEconomic" data-add-economic-global>Añadir impacto</button>')
 }
 
 function addEconomic(preselectedSteps=[],editIndex=null){
@@ -228,6 +268,9 @@ function addEconomic(preselectedSteps=[],editIndex=null){
     const waitHours=projected?projected.wait:capturedHours('econWait','annual_wait_hours');
     const draft={step_ids,driver_id:document.getElementById('econDriver').value,annual_active_hours:activeHours,annual_wait_hours:waitHours,capacity_cost_rate_eur_hour:+document.getElementById('econRate').value||null,direct_loss_eur_annual:+document.getElementById('econDirect').value||0,current_tool_cost_eur_annual:+document.getElementById('econTool').value||0,realized_cash_saving_eur_annual:+document.getElementById('econCash').value||0,evidence_type:document.getElementById('econEvidence').value,derivation_source:projected?'DF021/DF022 + RT_PROCESS_STEP':(preserveCapturedTime&&activeHours===existing?.annual_active_hours&&waitHours===existing?.annual_wait_hours?existing.derivation_source:'MANUAL_VALIDATION'),deduplication_key:existing?.deduplication_key??null};
     if(!draft.evidence_type)return toast('Selecciona la evidencia correspondiente al dato económico; no se presupone que sea medido.');
+    const scopeCheck=economicInputIntegrityIssues({...eng,economicInputs:[draft]}).filter(x=>x.kind==='SCOPE_MISMATCH');
+    if(scopeCheck.length)return toast(scopeCheck.map(x=>x.message).join(' '));
+
     if(existing&&!eng.economicInputs.includes(existing))return toast('Este impacto ya no existe. Cierra el detalle y revisa la lista.');
     const overlaps=economicCaptureIssues({...eng,economicInputs:eng.economicInputs.filter(x=>x!==existing)},draft);
     if(overlaps.length)return toast(overlaps.join(' '));
