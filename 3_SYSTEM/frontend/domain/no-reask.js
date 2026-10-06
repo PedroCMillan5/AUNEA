@@ -160,6 +160,7 @@ function effectiveValue(f,e){
 }
 
 const RISK_DISCOVERY_FIELDS=new Set(['DF073','DF074','DF090']);
+const AI_DISCOVERY_FIELDS=new Set(['DF088']);
 const RISK_RELEVANT_INITIAL_CONSTRAINTS=new Set(['SECURITY','COMPLIANCE','DATA_RESIDENCY','OWNERSHIP']);
 function riskBranchSignal(e,steps,fr,answers){
   const critical=['4','5',4,5].includes(answers.DF018);
@@ -218,11 +219,15 @@ function questionVisible(f,e){
   // Keeping these CONDITIONAL_90M questions available does not make them required and prevents the
   // branch from needing a pre-existing RiskInput (or the answer itself) before the exposure is discoverable.
   if(RISK_DISCOVERY_FIELDS.has(f.Field_ID))return true;
+  // DF088 is the canonical automation/AI boundary. S08 is intentionally before the AS-IS map (DEC-065),
+  // so later evidence cannot be allowed to make this guardrail undiscoverable. Keep it available as a
+  // CONDITIONAL_90M probe without treating mere visibility as proof that BR-AI is active.
+  if(AI_DISCOVERY_FIELDS.has(f.Field_ID))return true;
   if(['CAPTURE_IN_PROCESS_STEP','CONDITIONAL_IN_STEP'].includes(f.Ask_Mode))return false;
   if(['CAPTURE_IN_FRICTION','CONDITIONAL_IN_FRICTION'].includes(f.Ask_Mode))return false;
   if(f.Ask_Mode==='CAPTURE_IN_RISK')return false;
   // S08 now precedes the map (DEC-065): show future outcomes/constraints before ProcessSteps exist.
-  // BR-AI and BR-RISK keep their conditional behavior.
+  // BR-FUTURE stays visible here; BR-RISK and BR-AI have dedicated discovery probes above.
   if(f.Stage_ID==='S08'&&f.Branch_Rule_ID==='BR-FUTURE')return true;
   return branchActive(f.Branch_Rule_ID,e);
 }
