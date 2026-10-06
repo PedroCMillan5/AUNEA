@@ -557,6 +557,34 @@ body:has(.opportunities-screen-marker) .app-shell{height:100vh;min-height:0;over
 .content:has(.diagnostic-stage-s03) .volume-sentence{display:grid;grid-template-columns:minmax(130px,.75fr) auto minmax(190px,1fr);gap:10px;align-items:center}
 .content:has(.diagnostic-stage-s03) .volume-sentence>.canonical-aunea-select{min-width:0}
 @media(max-width:980px){.content:has(.diagnostic-stage-s03) .volume-sentence{grid-template-columns:1fr}.content:has(.diagnostic-stage-s03) .volume-sentence .unit-label{white-space:normal}}
+
+.content:has(.diagnostic-stage-s03) .stage-card{padding:18px 20px}
+.content:has(.diagnostic-stage-s03) .stage-card>.form-grid{gap:18px 14px}
+.content:has(.diagnostic-stage-s03) .field>label{margin-bottom:7px}
+.content:has(.diagnostic-stage-s03) .field-help{margin-top:6px;line-height:1.35}
+.content:has(.diagnostic-stage-s03) .demand-sla-target{
+  border:1px solid var(--line);border-radius:12px;background:#fbfcfb;padding:14px 16px;
+  display:flex;flex-direction:column;gap:12px
+}
+.content:has(.diagnostic-stage-s03) .demand-sla-head{
+  display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:18px;align-items:end
+}
+.content:has(.diagnostic-stage-s03) .demand-sla-head label{display:flex;align-items:center;gap:7px;margin:0}
+.content:has(.diagnostic-stage-s03) .demand-sla-head .field-help{margin:5px 0 0;max-width:780px}
+.content:has(.diagnostic-stage-s03) .demand-sla-exists .canonical-aunea-select{min-width:0;width:100%}
+.content:has(.diagnostic-stage-s03) .demand-sla-value{
+  display:grid;grid-template-columns:150px minmax(160px,260px) 180px;gap:10px;align-items:center;
+  border-top:1px solid var(--line);padding-top:12px
+}
+.content:has(.diagnostic-stage-s03) .demand-sla-value[hidden]{display:none!important}
+.content:has(.diagnostic-stage-s03) .demand-sla-value-label{font-size:12px;font-weight:700;color:var(--muted)}
+.content:has(.diagnostic-stage-s03) .demand-sla-value input{width:100%}
+.content:has(.diagnostic-stage-s03) .demand-sla-value .canonical-aunea-select{min-width:0;width:100%}
+@media(max-width:900px){
+  .content:has(.diagnostic-stage-s03) .demand-sla-head{grid-template-columns:1fr}
+  .content:has(.diagnostic-stage-s03) .demand-sla-value{grid-template-columns:1fr 1fr}
+  .content:has(.diagnostic-stage-s03) .demand-sla-value-label{grid-column:1/-1}
+}
 /* [AUNEA-FE-DEMAND-STAGE-030] END */
 
 
