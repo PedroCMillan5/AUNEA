@@ -851,7 +851,7 @@ function stepsEditor(e,steps,fr){
 function frictionsEditor(e,steps,fr){
   return section('Fricciones y evidencia','El cliente describe el problema observable; AUNEA registra causa, evidencia e impacto sin mostrar Pain_ID.',
     fr.length?`<div class="process-list">${fr.map(x=>`<div class="process-row"><div class="process-index">!</div><div><b>${esc(x.client_label||labelFrom('OS_FRICTION_TYPE',x.friction_type))}</b><p>${esc(x.observable_signal)} · Pasos: ${normalizeArray(x.affected_steps).map(id=>steps.find(s=>s.id===id)?.step_name).filter(Boolean).map(esc).join(', ')}</p><p>Evidencia: ${esc(labelFrom('OS_EVIDENCE_TYPE',x.evidence_type))}</p></div><div class="row-actions"><button class="btn btn-small" data-edit-friction="${x.id}">Editar</button><button class="btn btn-small btn-danger" data-delete-friction="${x.id}">Eliminar</button></div></div>`).join('')}</div>`:'<div class="empty"><h2>Sin fricciones registradas</h2><p>Añade problemas observables sobre los pasos del flujo.</p></div>',
-    '<button class="btn btn-primary" id="addFriction">Añadir fricción</button>');
+    '<button class="btn btn-outline" id="reviewPainCandidates">Revisar posibles fricciones</button><button class="btn btn-primary" id="addFriction">Añadir fricción</button>');
 }
 // [AUNEA-FE-ASIS-UX-072] START — One map and four private consultant lists.
 // This is presentation-only over the same Engagement, Step, Friction, Risk and EconomicInput records.
@@ -979,6 +979,7 @@ bindForms=function(){
   const addClient=document.getElementById('addStepFromClient');if(addClient)addClient.onclick=()=>openStepModal();
   const addDecision=document.getElementById('addDecisionFromClient');if(addDecision)addDecision.onclick=addDecisionStep;
   const addMany=document.getElementById('addMultipleSteps');if(addMany)addMany.onclick=()=>addMultipleSteps();
+  const reviewCandidates=document.getElementById('reviewPainCandidates');if(reviewCandidates)reviewCandidates.onclick=ev=>{ev.preventDefault();ev.stopPropagation();reviewPainCandidates()};
   const addFriction=document.getElementById('addFriction');if(addFriction)addFriction.onclick=ev=>{ev.preventDefault();ev.stopPropagation();openFrictionModal()};
   // Global bottom actions are handled by delegated click binding below so they remain
   // functional after any client-layer re-render. Do not bind per-node onclick here.
