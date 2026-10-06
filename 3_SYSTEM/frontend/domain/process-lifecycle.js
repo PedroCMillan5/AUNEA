@@ -27,6 +27,63 @@ function processLayerConfirmations(e){
 }
 function processLayerKey(tab){return tab==='fricciones'?'frictions':tab==='riesgos'?'risks':tab==='impacto'?'impact':'map'}
 function allProcessLayersConfirmed(e){const x=processLayerConfirmations(e);return !!(x.map&&x.frictions&&x.risks&&x.impact)}
+
+function processLayerIntegrityIssues(e,key){
+  if(!e)return [{layer:key||'map',message:'No hay un estudio activo.'}];
+  const steps=typeof activeSteps==='function'?activeSteps(e):(e.processSteps||[]).filter(x=>x.status!=='SUPERSEDED');
+  const stepIds=new Set(steps.map(x=>x.id)),issues=[];
+  const push=message=>issues.push({layer:key,message});
+  if(key==='map'){
+    steps.forEach((s,i)=>{
+      if(!s.step_name||String(s.step_name).trim().length<3||!s.step_type||!s.actor)push(`Completa nombre, tipo y responsable del paso ${i+1}.`);
+      const checkDest=(dest,label)=>{
+        if(dest&&dest!=='__END__'&&!stepIds.has(dest))push(`${label} de "${s.step_name||'Paso '+(i+1)}" apunta a un paso que ya no está activo.`);
+      };
+      checkDest(s.normal_next_step,'El destino principal');
+      if(s.exception_path)checkDest(s.exception_path.destination_step,'El destino alternativo');
+      if(typeof processDecisionStep==='function'&&processDecisionStep(s)&&(!s.normal_next_step||!s.exception_path?.destination_step))
+        push(`La decisión "${s.step_name||'Paso '+(i+1)}" necesita destino en ambas rutas.`);
+      const er=s.error_rate&&typeof s.error_rate==='object'?s.error_rate:null;
+      if(er?.mode==='percent'&&Number(er.value)>100)push(`El porcentaje de error de "${s.step_name||'Paso '+(i+1)}" debe estar entre 0 y 100.`);
+      if(er?.mode==='count'&&Number(er.value)>0&&!er.period)push(`La frecuencia en casos de "${s.step_name||'Paso '+(i+1)}" necesita periodo.`);
+    });
+  }
+  if(key==='frictions'){
+    (typeof activeFrictions==='function'?activeFrictions(e):(e.frictions||[]).filter(x=>x.status!=='SUPERSEDED')).forEach((fr,i)=>{
+      const ids=normalizeArray(fr.affected_steps).filter(Boolean);
+      if(!fr.friction_type||!ids.length||!normalizeArray(fr.cause).length&&!fr?._details?.cause||!String(fr.observable_signal||'').trim())
+        push(`Completa tipo, pasos, causa y señal observable de la fricción ${i+1}.`);
+      if(ids.some(id=>!stepIds.has(id)))push(`La fricción "${fr.client_label||fr.friction_type||i+1}" referencia un paso que ya no está activo.`);
+      if(Number(fr.active_time_loss?.value||0)>0&&(!['INCLUDED','BREAKDOWN','ADDITIONAL'].includes(fr.time_attribution?.mode)||!ids.includes(fr.time_attribution?.step_id)))
+        push(`El tiempo de la fricción "${fr.client_label||fr.friction_type||i+1}" necesita relación y paso responsable válidos.`);
+      if(fr.frequency?.mode==='percent'&&(Number(fr.frequency?.value)<0||Number(fr.frequency?.value)>100))push(`La frecuencia porcentual de la fricción "${fr.client_label||fr.friction_type||i+1}" debe estar entre 0 y 100.`);
+      if(fr.frequency?.mode==='count'&&Number(fr.frequency?.value)>0&&!fr.frequency?.period)push(`La frecuencia en casos de la fricción "${fr.client_label||fr.friction_type||i+1}" necesita periodo.`);
+    });
+  }
+  if(key==='risks'){
+    (e.risks||[]).forEach((r,i)=>{
+      const like=Number(r.likelihood_1_5),impact=Number(r.impact_1_5);
+      if(!r.category||!String(r.description||'').trim()||!Number.isInteger(like)||like<1||like>5||!Number.isInteger(impact)||impact<1||impact>5)
+        push(`Completa categoría, descripción, probabilidad e impacto del riesgo ${i+1}.`);
+      if(normalizeArray(r.step_ids).some(id=>!stepIds.has(id)))push(`El riesgo "${r.description||i+1}" referencia un paso que ya no está activo.`);
+    });
+  }
+  if(key==='impact'){
+    (e.economicInputs||[]).forEach((x,i)=>{
+      if(!x.driver_id)push(`Selecciona el tipo de impacto del registro ${i+1}.`);
+      if(!x.evidence_type)push(`Selecciona la evidencia del impacto ${i+1}.`);
+      if(normalizeArray(x.step_ids).some(id=>!stepIds.has(id)))push(`El impacto ${i+1} referencia un paso que ya no está activo.`);
+    });
+    if(typeof economicInputIntegrityIssues==='function')economicInputIntegrityIssues(e).forEach(x=>push(x.message));
+  }
+  return issues;
+}
+function captureIntegrityIssues(e){
+  const out=[];
+  ['map','frictions','risks','impact'].forEach(k=>out.push(...processLayerIntegrityIssues(e,k)));
+  if(typeof canonicalFieldIntegrityIssues==='function')out.push(...canonicalFieldIntegrityIssues(e).map(x=>({...x,layer:'fields',message:x.label})));
+  return out;
+}
 function invalidateProcessLayers(e,from='map'){
   const x=processLayerConfirmations(e),order=['map','frictions','risks','impact'],i=Math.max(0,order.indexOf(from));
   order.slice(i).forEach(k=>x[k]=false);
@@ -42,6 +99,7 @@ function confirmProcessLayer(tab){
     const start=e.answers?.DF014,finish=e.answers?.DF015,hasActive=(e.processSteps||[]).some(x=>x.status!=='SUPERSEDED');
     if((!start||!finish)&&!hasActive)return toast('Define los límites inicial y final o añade al menos un paso antes de confirmar el mapa.');
   }
+  const integrity=processLayerIntegrityIssues(e,key);if(integrity.length)return toast('No se puede confirmar: '+integrity[0].message),false;
   const x=processLayerConfirmations(e);x[key]=true;x[key+'_at']=now();
   if(allProcessLayersConfirmed(e)){
     e.confirmedAsIs=true;e.answers.DF093='YES';e.asIsConfirmedAt=now();
@@ -58,11 +116,11 @@ function confirmAsIs(){confirmProcessLayer(currentEng()?.processTab||'cliente')}
 function confirmClosingAsIs(){
   if(typeof guardAsisMutation==='function'&&guardAsisMutation())return;
   const e=currentEng();if(!e)return;
-  const start=e.answers?.DF014,finish=e.answers?.DF015,hasActive=(e.processSteps||[]).some(x=>x.status!=='SUPERSEDED');
-  if((!start||!finish)&&!hasActive)return toast('Define los límites inicial y final o añade al menos un paso antes de confirmar el AS-IS.');
-  const x=processLayerConfirmations(e),ts=now();
-  ['map','frictions','risks','impact'].forEach(k=>{x[k]=true;x[k+'_at']=ts});
-  e.confirmedAsIs=true;e.answers.DF093='YES';e.asIsConfirmedAt=ts;
+  const x=processLayerConfirmations(e),pending=['map','frictions','risks','impact'].filter(k=>!x[k]);
+  if(pending.length)return toast('Confirma primero las cuatro capas del AS-IS: mapa, fricciones, riesgos e impacto.');
+  const integrity=captureIntegrityIssues(e);if(integrity.length)return toast('No se puede cerrar el AS-IS: '+integrity[0].message);
+  const missing=typeof canonicalMissingRequired==='function'?canonicalMissingRequired(e).filter(v=>v!=='Confirmación AS-IS'):[];if(missing.length)return toast('Quedan datos obligatorios pendientes antes de cerrar la sesión.');
+  const ts=now();e.confirmedAsIs=true;e.answers.DF093='YES';e.asIsConfirmedAt=ts;
   const sealed=typeof sealConfirmedSnapshot==='function'?sealConfirmedSnapshot(e,'confirmación final S09 del AS-IS enriquecido'):null;
   markDirty(sealed?`AS-IS confirmado en cierre · snapshot v${sealed.version}`:'AS-IS confirmado en cierre');
   toast('AS-IS completo confirmado y snapshot sellado.');
