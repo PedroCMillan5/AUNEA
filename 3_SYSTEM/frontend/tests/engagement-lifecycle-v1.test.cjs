@@ -223,7 +223,7 @@ test('C03 results and calculation cannot bypass an invalidated confirmation', ()
   const lifecycle = read('domain/process-lifecycle.js');
   const state = read('core/state.js');
   assert.match(results, /if\(!hasConfirmedEngagementSnapshot\(e\)\) return pageTop\(/);
-  assert.match(results, /e\.lastEngineSnapshotVersion===activeSnapshot\.version/);
+  assert.match(results, /e\?\.lastEngineSnapshotVersion===snap\.version\?e\.diagnosticOutput:null/);
   assert.match(engine, /currentSnapshot\.version!==sourceSnapshot\.version/);
   assert.match(lifecycle, /invalidateDerivedState\(e,'cambio en capa AS-IS: '\+from\)/);
   assert.match(state, /e\.lastEngineSnapshotVersion=null/);
