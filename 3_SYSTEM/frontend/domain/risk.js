@@ -9,6 +9,30 @@ function riskRelatedFrictions(e,r){
   return (typeof activeFrictions==='function'?activeFrictions(e):e.frictions||[])
     .filter(f=>normalizeArray(f.affected_steps).some(id=>ids.includes(id)));
 }
+function migrateRiskCaptureIntegrity(engagements=[]){
+  let changed=0;
+  (engagements||[]).forEach(e=>{
+    let engagementChanged=false;
+    (e.risks||[]).forEach(r=>{
+      if(Object.prototype.hasOwnProperty.call(r,'current_controls'))return;
+      r.current_controls=[];
+      r.controls_present=null;
+      r.reversibility='';
+      r.reversible=null;
+      r.sensitive_or_high_impact=null;
+      r.material_financial_or_compliance=null;
+      r.critical_trigger=null;
+      engagementChanged=true;
+    });
+    if(engagementChanged){
+      changed++;
+      if(typeof invalidateProcessLayers==='function')invalidateProcessLayers(e,'risks');
+      else{e.confirmedAsIs=false;if(e.layerConfirmations){e.layerConfirmations.risks=false;e.layerConfirmations.impact=false}}
+      if(typeof invalidateDerivedState==='function')invalidateDerivedState(e,'revisión de riesgos legacy con valores implícitos');
+    }
+  });
+  return changed;
+}
 function riskBuilder(e){
   const steps=typeof activeSteps==='function'?activeSteps(e):[];
   return section('Riesgos','Aquí puedes añadir, editar o eliminar riesgos del estudio.',
