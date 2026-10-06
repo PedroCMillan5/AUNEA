@@ -14,11 +14,7 @@ function hasConfirmedEngagementSnapshot(e){
 
 function currentDiagnosticOutput(e){
   const snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;
-  const record=typeof engagementOfRecord==='function'?engagementOfRecord(e):e;
-  const integrity=typeof economicInputIntegrityIssues==='function'?economicInputIntegrityIssues(record):[];
-  const scopeMismatch=integrity.some(x=>x.kind==='SCOPE_MISMATCH');
-  const legacyNeedsRerun=integrity.some(x=>x.kind==='LEGACY_CROSS_METRIC')&&e?.economicNormalizationVersion!==1;
-  return snap&&e?.lastEngineSnapshotVersion===snap.version&&!scopeMismatch&&!legacyNeedsRerun?e.diagnosticOutput:null;
+  return snap&&e?.lastEngineSnapshotVersion===snap.version?e.diagnosticOutput:null;
 }
 function diagnosisStepName(record,id){
   const step=(record?.processSteps||[]).find(s=>String(s.id)===String(id));
@@ -26,23 +22,20 @@ function diagnosisStepName(record,id){
 }
 function diagnosisPainLabel(painId){
   const ref=(schema.tables.REF_PAIN||[]).find(x=>String(x.Pain_ID)===String(painId));
-  const fallback=ref?.Pain_Name||ref?.Label_ES||ref?.Pain_Pattern||(state.uiMode==='INTERNAL'?painId:'Hallazgo');
-  return typeof businessEngineLabel==='function'?businessEngineLabel('pain',painId,fallback):fallback;
+  return ref?.Pain_Name||ref?.Label_ES||ref?.Pain_Pattern||(state.uiMode==='INTERNAL'?painId:'Hallazgo');
 }
 function diagnosisLinkedFrictions(record,painId){
   const mapping=Object.fromEntries((schema.friction_pain_map||[]).map(x=>[String(x.Friction_Type_ID),String(x.Pain_ID)]));
   return (record?.frictions||[]).filter(x=>x.status!=='SUPERSEDED'&&String(mapping[String(x.friction_type)]||x.derived_pain_id||'')===String(painId));
 }
 function diagnosisImpactMetric(x){
-  const shape=typeof economicMetricShape==='function'?economicMetricShape(x?.driver_id,x):{active:Number(x?.annual_active_hours||0),wait:Number(x?.annual_wait_hours||0)};
-  const active=shape.active,wait=shape.wait,direct=Number(x?.direct_loss_eur_annual||0),tool=Number(x?.current_tool_cost_eur_annual||0),cash=Number(x?.realized_cash_saving_eur_annual||0),rate=Number(x?.capacity_cost_rate_eur_hour||0);
+  const active=Number(x?.annual_active_hours||0),wait=Number(x?.annual_wait_hours||0),direct=Number(x?.direct_loss_eur_annual||0),tool=Number(x?.current_tool_cost_eur_annual||0),cash=Number(x?.realized_cash_saving_eur_annual||0);
   if(wait)return `${num(wait)} h/año de espera`;
-  if(active)return `${num(active)} h/año de tiempo activo cuantificado`;
+  if(active)return `${num(active)} h/año`;
   if(direct)return `${eur(direct)}/año de pérdida directa`;
   if(tool)return `${eur(tool)}/año de herramienta`;
-  if(rate)return `${num(rate)} €/h de coste de capacidad`;
   if(cash)return `${eur(cash)}/año de ahorro realizado`;
-  return 'Registrado sin cuantificación agregable';
+  return 'Registrado sin importe agregado';
 }
 function diagnosisTrace(record,p){
   const frictions=diagnosisLinkedFrictions(record,p.pain_id);
@@ -85,9 +78,9 @@ function diagnosisFindingsHtml(record,pains){
 function diagnosisEconomicsHtml(econ,record){
   const inputs=record?.economicInputs||[];
   return `<div class="grid g3 diagnosis-econ-grid">
-    <div class="notice"><b>Tiempo activo cuantificado</b><br>${num(econ.annual_active_hours)} h/año<small>Suma únicamente horas activas registradas en impactos; no es la duración total del proceso.</small></div>
-    <div class="notice"><b>Espera cuantificada</b><br>${num(econ.annual_wait_hours)} h/año<small>Exposición a espera; no se monetiza como trabajo.</small></div>
-    <div class="notice"><b>Valor de capacidad</b><br>${econ.capacity_value_eur_annual==null?'No disponible':eur(econ.capacity_value_eur_annual)+'/año'}<small>Valor de capacidad asociado a horas activas cuantificadas; no equivale a ahorro de caja.</small></div>
+    <div class="notice"><b>Trabajo activo anual</b><br>${num(econ.annual_active_hours)} h</div>
+    <div class="notice"><b>Espera anual</b><br>${num(econ.annual_wait_hours)} h<small>No se monetiza como trabajo.</small></div>
+    <div class="notice"><b>Valor de capacidad</b><br>${econ.capacity_value_eur_annual==null?'No disponible':eur(econ.capacity_value_eur_annual)+'/año'}<small>No equivale a ahorro de caja.</small></div>
     <div class="notice"><b>Pérdida directa</b><br>${eur(econ.direct_loss_eur_annual)}/año</div>
     <div class="notice"><b>Coste actual de herramientas</b><br>${eur(econ.current_tool_cost_eur_annual)}/año</div>
     <div class="notice"><b>Ahorro de caja realizado</b><br>${eur(econ.realized_cash_saving_eur_annual)}/año</div>
@@ -101,24 +94,18 @@ function diagnosisRisksHtml(risk,record){
       <div class="notice"><b>Riesgo residual</b><br>${risk.residual_level?esc(engineLabel('risk_level',risk.residual_level)):'—'}</div>
       <div class="notice"><b>Estado</b><br>${risk.status?esc(engineLabel('risk_status',risk.status)):'—'}</div>
     </div>
-    ${risk.rationale?`<div class="notice info diagnosis-risk-rationale"><b>Lectura del motor</b><br>${esc(typeof engineRationaleEs==='function'?engineRationaleEs('risk',risk.rationale):risk.rationale)}</div>`:''}
+    ${risk.rationale?`<div class="notice info diagnosis-risk-rationale"><b>Lectura del motor</b><br>${esc(risk.rationale)}</div>`:''}
     ${rows.length?`<div class="result-list diagnosis-risk-list">${rows.map(r=>`<div class="result-item"><b>${esc(r.description||labelFrom('OS_RISK_CATEGORY',r.category))}</b><p>Pasos: ${esc(normalizeArray(r.step_ids).map(id=>diagnosisStepName(record,id)).join(' · ')||'—')} · Probabilidad ${esc(r.likelihood_1_5||'—')}/5 · Impacto ${esc(r.impact_1_5||'—')}/5 · Controles: ${r.controls_present===true?'Sí':r.controls_present===false?'No':'No indicado'}</p></div>`).join('')}</div>`:''}`;
 }
-function diagnosisRecommendationHtml(o,e=currentEng()){
-  const r=o.recommendation||{},g=e?.engineGates||{};
-  const translated=(r.rationale||[]).map(x=>typeof engineRationaleEs==='function'?engineRationaleEs('recommendation',x):x).filter(Boolean);
-  if(!translated.length&&r.action_id==='ACT03'){
-    translated.push('Las capacidades requeridas no se consideran cubiertas por las herramientas actuales; el motor orienta hacia la construcción de un sistema.');
-    if(r.ai_level_id==='I0')translated.push('No se ha confirmado una necesidad que justifique IA en esta recomendación; se mantiene una lógica determinista basada en reglas.');
-  }
-  if(g.management_visibility_need==='YES'&&r.functional_level_id==='N4')translated.push('Se ha confirmado necesidad de visibilidad de gestión sobre carga, esperas, cuellos de botella o excepciones.');
+function diagnosisRecommendationHtml(o){
+  const r=o.recommendation||{};
   return `<div class="grid g4 diagnosis-rec-grid">
     ${codedField('Acción preliminar',r.action_id,actionLabel(r.action_id))}
     ${codedField('Nivel funcional',r.functional_level_id,funcLevelLabel(r.functional_level_id))}
     ${codedField('IA',r.ai_level_id,aiLevelLabel(r.ai_level_id))}
     <div class="notice"><b>Confianza</b><br>${r.confidence?esc(engineLabel('confidence',r.confidence)): '—'}</div>
   </div>
-  <div class="notice info diagnosis-rec-rationale"><b>Por qué lo propone el motor</b><br>${translated.map(esc).join(' · ')||'El backend no ha aportado racional adicional para esta combinación.'}</div>
+  <div class="notice info diagnosis-rec-rationale"><b>Por qué lo propone el motor</b><br>${(r.rationale||[]).map(esc).join(' · ')||'Sin racional adicional.'}</div>
   <div class="field-help">Es una recomendación estructurada del diagnóstico. El diseño concreto del proceso futuro se realiza en TO-BE y requiere revisión humana antes de publicación.</div>`;
 }
 
@@ -127,14 +114,7 @@ function resultsPage(){
   if(!e) return pageTop('Diagnóstico interno','PG09 debe cerrar la captura con AS-IS confirmado antes de entrar en Trabajo interno.',`<button class="btn" data-page="diagnostico">Volver a Sesión 1</button>`) + `<div class="empty"><h2>AS-IS confirmado requerido</h2><p>La Sesión 1 termina en PG09. El diagnóstico interno siempre parte de un snapshot confirmado.</p></div>`;
   if(!hasConfirmedEngagementSnapshot(e)) return pageTop('Diagnóstico interno','PG09 debe cerrar la captura con AS-IS confirmado antes de entrar en Trabajo interno.',`<button class="btn" data-page="diagnostico">Volver a Sesión 1</button>`) + `<div class="empty"><h2>AS-IS confirmado requerido</h2><p>La Sesión 1 termina en PG09. El diagnóstico interno siempre parte de un snapshot confirmado.</p></div>`;
   const activeSnapshot=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;
-  const record=typeof engagementOfRecord==='function'?engagementOfRecord(e):e,integrity=typeof economicInputIntegrityIssues==='function'?economicInputIntegrityIssues(record):[],o=currentDiagnosticOutput(e),miss=missingRequired(e),steps=(record.processSteps||[]).filter(x=>x.status!=='SUPERSEDED'),fr=(record.frictions||[]).filter(x=>x.status!=='SUPERSEDED'),risks=record.risks||[],econInputs=record.economicInputs||[];
-  if(integrity.length){
-    const scope=integrity.filter(x=>x.kind==='SCOPE_MISMATCH'),legacy=integrity.filter(x=>x.kind==='LEGACY_CROSS_METRIC'),legacyNeedsRerun=legacy.length&&e.economicNormalizationVersion!==1;
-    if(scope.length||legacyNeedsRerun)return pageTop('Diagnóstico interno','Antes de recalcular hay que reconciliar los impactos existentes con sus pasos y métricas.',`<button class="btn" data-page="diagnostico">Volver a Sesión 1</button><button class="btn btn-primary" data-page="impacto">Revisar impactos</button>`)
-      +section('Revisión económica necesaria','El diagnóstico anterior no se considera vigente mientras existan inconsistencias de atribución.',
-        `${scope.map(x=>`<div class="notice warn"><b>Impacto ${x.index+1}</b><br>${esc(x.message)}</div>`).join('')}
-         ${legacyNeedsRerun?`<div class="notice info"><b>Datos heredados de una versión anterior</b><br>${legacy.map(x=>esc(x.message)).join(' ')} Al volver a ejecutar, AUNEA enviará al backend únicamente la métrica válida para cada concepto.</div>`:''}`);
-  }
+  const o=currentDiagnosticOutput(e),miss=missingRequired(e),record=typeof engagementOfRecord==='function'?engagementOfRecord(e):e,steps=(record.processSteps||[]).filter(x=>x.status!=='SUPERSEDED'),fr=(record.frictions||[]).filter(x=>x.status!=='SUPERSEDED'),risks=record.risks||[],econInputs=record.economicInputs||[];
   if(!o){
     const unresolved=typeof unresolvedEngineGates==='function'?unresolvedEngineGates(e):[];
     const ready=miss.length===0&&!!activeSnapshot;
@@ -146,14 +126,14 @@ function resultsPage(){
         <div class="card metric"><small>Backend</small><strong>${state.backendOnline?'OK':'—'}</strong><span>${state.backendOnline?'disponible':'se comprobará al ejecutar'}</span></div>
       </div>`
       +section('Preparación del diagnóstico','Comprobaciones previas. Esto todavía no es un resultado del motor.',`<div class="notice ${ready?'good':'warn'}">${ready?'La captura confirmada está preparada para diagnóstico.':'Hay información obligatoria pendiente: '+esc(miss.join(', '))}</div>${unresolved.length?`<div class="notice info" style="margin-top:10px"><b>Inputs internos por confirmar</b><br>${unresolved.length} decisión(es) gobernada(s) del motor se revisarán antes de calcular. No son nuevas preguntas al cliente.</div>`:''}`)
-      +section('Qué ocurrirá al ejecutar','El navegador no calcula ni completa resultados por su cuenta.',`<div class="diagnosis-pipeline"><span>Problemas</span><i>→</i><span>Impacto</span><i>→</i><span>Riesgo</span><i>→</i><span>Recomendación</span><i>→</i><span>Precio</span><i>→</i><span>Escenario</span></div>`);
+      +section('Qué ocurrirá al ejecutar','El navegador no calcula ni completa resultados por su cuenta.',`<div class="diagnosis-pipeline"><span>Pain</span><i>→</i><span>Economics</span><i>→</i><span>Risk</span><i>→</i><span>Recommendation</span><i>→</i><span>Pricing</span><i>→</i><span>Scenario</span></div>`);
   }
   const pains=o.pain_results||[],econ=o.economic_result||{},risk=o.risk_result||{},confirmed=pains.filter(x=>x.state==='CONFIRMED').length;
   const runDate=e.lastEngineRunAt?(typeof formatDateEs==='function'?formatDateEs(e.lastEngineRunAt):String(e.lastEngineRunAt)):'—';
   return pageTop('Diagnóstico interno',`Snapshot v${esc(activeSnapshot?.version||'—')} · diagnóstico backend ${esc(runDate)}. Los resultados están ligados a la versión confirmada del AS-IS.`,`<button class="btn" data-page="diagnostico">Volver a Sesión 1</button><button class="btn" data-page="proceso">Revisar AS-IS</button><button class="btn btn-primary" id="runDiag">Recalcular diagnóstico</button>`)
     +`<div class="grid g4 diagnosis-result-kpis">
       <div class="card metric"><small>Hallazgos confirmados</small><strong>${confirmed}</strong><span>de ${pains.length} evaluados</span></div>
-      <div class="card metric"><small>Tiempo activo cuantificado</small><strong>${num(econ.annual_active_hours)} h/año</strong><span>solo impactos activos registrados</span></div>
+      <div class="card metric"><small>Trabajo activo anual</small><strong>${num(econ.annual_active_hours)} h</strong><span>separado de espera</span></div>
       <div class="card metric"><small>Espera anual</small><strong>${num(econ.annual_wait_hours)} h</strong><span>no monetizada como labor</span></div>
       <div class="card metric"><small>Riesgo residual</small><strong>${risk.residual_level?esc(engineLabel('risk_level',risk.residual_level)):'—'}</strong><span>${risk.status?esc(engineLabel('risk_status',risk.status)):''}</span></div>
     </div>`
@@ -161,18 +141,18 @@ function resultsPage(){
     +section('Hallazgos','Qué ocurre, dónde y con qué trazabilidad. El motor determina estado y confianza; la UI sólo enlaza contexto capturado.',diagnosisFindingsHtml(record,pains))
     +section('Impacto operativo y económico','Trabajo, espera, capacidad, pérdida directa, herramientas y ahorro realizado permanecen separados.',diagnosisEconomicsHtml(econ,record))
     +section('Riesgos','Resultado agregado del motor y riesgos capturados que lo sustentan.',diagnosisRisksHtml(risk,record))
-    +section('Recomendación preliminar','Dirección estructurada calculada por el backend. No sustituye el diseño TO-BE ni constituye todavía una propuesta al cliente.',diagnosisRecommendationHtml(o,e))
+    +section('Recomendación preliminar','Dirección estructurada calculada por el backend. No sustituye el diseño TO-BE ni constituye todavía una propuesta al cliente.',diagnosisRecommendationHtml(o))
     +section('Siguiente paso','El diagnóstico ya existe para el snapshot vigente. El siguiente bloque gobernado es diseñar el TO-BE sobre esta misma versión.',`<div class="notice good"><b>Diagnóstico generado correctamente</b><br>Revisa los hallazgos anteriores antes de diseñar el proceso futuro.</div>`,`<button class="btn btn-primary" data-page="tobe">Revisado: continuar a TO-BE →</button>`);
 }
 function num(x){return Number(x||0).toLocaleString('es-ES',{maximumFractionDigits:1})}
 function eur(x){return Number(x||0).toLocaleString('es-ES',{style:'currency',currency:'EUR',maximumFractionDigits:0})}
-function businessLabel(rows,idField,id,category=''){const hit=(rows||[]).find(x=>String(x[idField])===String(id)),fallback=hit?.Name||(state.uiMode==='INTERNAL'?(id||'—'):'No disponible');return typeof businessEngineLabel==='function'&&category?businessEngineLabel(category,id,fallback):fallback}
-function actionLabel(id){return businessLabel(schema.tables.REF_ACTION,'Action_ID',id,'action')}
-function funcLevelLabel(id){return businessLabel(schema.tables.REF_LEVEL_FUNC,'Functional_Level_ID',id,'functional_level')}
-function aiLevelLabel(id){return businessLabel(schema.tables.REF_LEVEL_AI,'AI_Level_ID',id,'ai_level')}
+function businessLabel(rows,idField,id){const hit=(rows||[]).find(x=>String(x[idField])===String(id));if(hit?.Name)return hit.Name;return state.uiMode==='INTERNAL'?(id||'—'):'No disponible'}
+function actionLabel(id){return businessLabel(schema.tables.REF_ACTION,'Action_ID',id)}
+function funcLevelLabel(id){return businessLabel(schema.tables.REF_LEVEL_FUNC,'Functional_Level_ID',id)}
+function aiLevelLabel(id){return businessLabel(schema.tables.REF_LEVEL_AI,'AI_Level_ID',id)}
 function codedField(label,rawId,resolved){return `<div class="notice"><b>${esc(label)}</b><br>${esc(resolved)}${rawId?`<span class="internal-tag">${esc(rawId)}</span>`:''}</div>`}
 
-function recommendationPage(){const e=currentEng();if(!e)return noOfficial('Recomendación','La recomendación oficial sólo se muestra después de ejecutar el backend.');const o=e.diagnosticOutput;if(!o)return noOfficial('Recomendación','La recomendación oficial sólo se muestra después de ejecutar el backend.');const r=o.recommendation||{},q=o.quote||{},record=typeof engagementOfRecord==='function'?engagementOfRecord(e):e,hot=(record.frictions||[]).filter(x=>x.status!=='SUPERSEDED').sort((a,b)=>Number(b.impact||0)-Number(a.impact||0)).slice(0,5);return pageTop('Recomendación','Recap de la reunión + recomendación estructurada del backend.',`<button class="btn" data-page="resultados">Ver resultados</button>`)+section('Recomendación óptima','La acción óptima no se sobrescribe; las alternativas se crean como escenarios.',`<div class="grid g4">${codedField('Acción',r.action_id,actionLabel(r.action_id))}${codedField('Nivel funcional',r.functional_level_id,funcLevelLabel(r.functional_level_id))}${codedField('IA',r.ai_level_id,aiLevelLabel(r.ai_level_id))}<div class="notice"><b>Precio base</b><br>${eur(q.one_off_eur)}</div></div>${state.uiMode==='INTERNAL'?`<div class="notice info" style="margin-top:12px"><strong>Racional interno:</strong> ${(r.rationale||[]).map(x=>esc(typeof engineRationaleEs==='function'?engineRationaleEs('recommendation',x):x)).join(' · ')||'Sin racional adicional del backend.'}</div>`:''}`)+section('Puntos calientes','Se muestran desde las fricciones capturadas.',`<div class="result-list">${hot.map(x=>`<div class="result-item"><b>${esc(labelFrom('OS_FRICTION_TYPE',x.friction_type))}</b><p>${esc(x.observable_signal)} · Impacto ${esc(x.impact||'—')}/5</p></div>`).join('')||'<div class="empty"><p>Sin fricciones priorizadas.</p></div>'}</div>`)+section('Resumen final de la reunión','Texto de devolución editable para cerrar la conversación sin perder el hilo.',`<textarea id="meetingRecap" style="width:100%;min-height:150px;border:1px solid #d6d1c8;border-radius:8px;padding:12px">${esc(e.meetingRecap||buildRecap(e,o))}</textarea>`,`<button class="btn btn-outline" id="saveRecap">Guardar resumen</button>`)}
+function recommendationPage(){const e=currentEng();if(!e)return noOfficial('Recomendación','La recomendación oficial sólo se muestra después de ejecutar el backend.');const o=e.diagnosticOutput;if(!o)return noOfficial('Recomendación','La recomendación oficial sólo se muestra después de ejecutar el backend.');const r=o.recommendation||{},q=o.quote||{},record=typeof engagementOfRecord==='function'?engagementOfRecord(e):e,hot=(record.frictions||[]).filter(x=>x.status!=='SUPERSEDED').sort((a,b)=>Number(b.impact||0)-Number(a.impact||0)).slice(0,5);return pageTop('Recomendación','Recap de la reunión + recomendación estructurada del backend.',`<button class="btn" data-page="resultados">Ver resultados</button>`)+section('Recomendación óptima','La acción óptima no se sobrescribe; las alternativas se crean como escenarios.',`<div class="grid g4">${codedField('Acción',r.action_id,actionLabel(r.action_id))}${codedField('Nivel funcional',r.functional_level_id,funcLevelLabel(r.functional_level_id))}${codedField('IA',r.ai_level_id,aiLevelLabel(r.ai_level_id))}<div class="notice"><b>Precio base</b><br>${eur(q.one_off_eur)}</div></div>${state.uiMode==='INTERNAL'?`<div class="notice info" style="margin-top:12px"><strong>Racional interno:</strong> ${(r.rationale||[]).map(esc).join(' · ')||'Sin racional adicional.'}</div>`:''}`)+section('Puntos calientes','Se muestran desde las fricciones capturadas.',`<div class="result-list">${hot.map(x=>`<div class="result-item"><b>${esc(labelFrom('OS_FRICTION_TYPE',x.friction_type))}</b><p>${esc(x.observable_signal)} · Impacto ${esc(x.impact||'—')}/5</p></div>`).join('')||'<div class="empty"><p>Sin fricciones priorizadas.</p></div>'}</div>`)+section('Resumen final de la reunión','Texto de devolución editable para cerrar la conversación sin perder el hilo.',`<textarea id="meetingRecap" style="width:100%;min-height:150px;border:1px solid #d6d1c8;border-radius:8px;padding:12px">${esc(e.meetingRecap||buildRecap(e,o))}</textarea>`,`<button class="btn btn-outline" id="saveRecap">Guardar resumen</button>`)}
 function buildRecap(e,o){const record=typeof engagementOfRecord==='function'?engagementOfRecord(e):e,c=companyById(e.companyId),fs=(record.frictions||[]).filter(x=>x.status!=='SUPERSEDED').slice(0,4).map(x=>labelFrom('OS_FRICTION_TYPE',x.friction_type)).join(', ');return `Hemos revisado con ${c?.name||'el cliente'} el proceso ${record.answers?.DF011||e.title}. El flujo actual se ha estructurado en ${(record.processSteps||[]).filter(x=>x.status!=='SUPERSEDED').length} pasos y las principales fricciones identificadas son: ${fs||'pendientes de priorizar'}. La recomendación del motor es ${actionLabel(o.recommendation?.action_id)}, con nivel ${funcLevelLabel(o.recommendation?.functional_level_id)} e inteligencia ${aiLevelLabel(o.recommendation?.ai_level_id)}. Antes de cerrar propuesta deben revisarse las evidencias y gaps indicados.`}
 function noOfficial(title,msg){return pageTop(title,msg,`<button class="btn" data-page="diagnostico">Volver al diagnóstico</button>`)+`<div class="empty"><h2>Resultado oficial pendiente</h2><p>Conecta AUNEA Backend y calcula el diagnóstico. La interfaz no reproduce reglas de negocio en JavaScript.</p></div>`}
 
