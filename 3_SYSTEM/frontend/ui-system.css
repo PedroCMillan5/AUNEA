@@ -585,6 +585,11 @@ body:has(.opportunities-screen-marker) .app-shell{height:100vh;min-height:0;over
   .content:has(.diagnostic-stage-s03) .demand-sla-value{grid-template-columns:1fr 1fr}
   .content:has(.diagnostic-stage-s03) .demand-sla-value-label{grid-column:1/-1}
 }
+.content:has(.diagnostic-stage-s03) .percent-count-control{display:grid;grid-template-columns:minmax(160px,1fr) 150px minmax(170px,.7fr);gap:10px;align-items:center}
+.content:has(.diagnostic-stage-s03) .percent-count-control .number-count-period[hidden]{display:none!important}
+.content:has(.diagnostic-stage-s03) .percent-count-control:has(.number-count-period[hidden]){grid-template-columns:minmax(160px,1fr) 150px}
+.content:has(.diagnostic-stage-s03) .number-count-period,.content:has(.diagnostic-stage-s03) .number-count-period>.canonical-aunea-select{min-width:0;width:100%}
+@media(max-width:900px){.content:has(.diagnostic-stage-s03) .percent-count-control,.content:has(.diagnostic-stage-s03) .percent-count-control:has(.number-count-period[hidden]){grid-template-columns:1fr}}
 /* [AUNEA-FE-DEMAND-STAGE-030] END */
 
 
