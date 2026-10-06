@@ -75,7 +75,7 @@ async function economicTimeProjection(e,stepIds=[]){
     return {available:false,status:'STALE',reason:'Los datos del proceso cambiaron durante el cálculo. Actualiza la vista previa.',missing:['Cálculo anterior invalidado por un cambio en el proceso']};
   if(!stepIds.length)e._sessionTimeProjection={requestKey,output};
   return {
-    available:output.status==='CALCULATED',
+    available:output.status==='CALCULATED'||output.annual_active_hours!==null||output.annual_wait_exposure_hours!==null||output.annual_rework_hours!==null,
     annualCases:output.annual_cases,
     active:output.annual_active_hours,
     wait:output.annual_wait_exposure_hours,
@@ -91,13 +91,16 @@ async function economicTimeProjection(e,stepIds=[]){
   };
 }
 function economicProjectionForDriver(projection,driver){
-  if(!projection?.available||projection.missing?.length)return null;
-  const baseActive=projection.active??0,baseWait=projection.wait??0;
-  if(driver==='ED01')
+  if(!projection?.available)return null;
+  const hasActive=projection.active!==null&&projection.active!==undefined;
+  const hasWait=projection.wait!==null&&projection.wait!==undefined;
+  const hasRework=projection.rework!==null&&projection.rework!==undefined;
+  const baseActive=hasActive?projection.active:0,baseWait=hasWait?projection.wait:0;
+  if(driver==='ED01'&&hasActive)
     return {active:baseActive,wait:baseWait,label:'Trabajo activo actual y espera del ámbito seleccionado'};
-  if(driver==='ED05'&&projection.rework!==null)
+  if(driver==='ED05'&&hasRework)
     return {active:projection.rework,wait:baseWait,label:'Retrabajo ponderado y espera existente del ámbito seleccionado'};
-  if(driver==='ED13')
+  if(driver==='ED13'&&hasWait)
     return {active:baseActive,wait:baseWait,label:'Trabajo activo y exposición de espera del ámbito seleccionado'};
   // For concepts without a governed driver-specific derivation, preserve the objective
   // time context already calculated by the backend instead of clearing known active/wait.
@@ -236,7 +239,7 @@ function addEconomic(preselectedSteps=[],editIndex=null){
     serverProjection=projection;serverSelection=selection;
     const suggested=preserveCapturedTime?null:economicProjectionForDriver(projection,document.getElementById('econDriver')?.value);
     if(target)target.textContent=projection.available
-      ?'Según backend: '+preview(projection.active)+' h/año de trabajo activo · '+preview(projection.wait)+' h/año de exposición a espera · '+preview(projection.rework)+' h/año de retrabajo; esfuerzo adicional validado de fricciones: '+preview(projection.additional)+' h/año (separado, nunca duplicado)'+(projection.monetaryPending?.length?' · Pérdidas directas pendientes de conciliar con DF082.':'')
+      ?'Según backend: '+(projection.active==null?'—':preview(projection.active))+' h/año de trabajo activo · '+(projection.wait==null?'—':preview(projection.wait))+' h/año de exposición a espera · '+(projection.rework==null?'—':preview(projection.rework))+' h/año de retrabajo; esfuerzo adicional validado de fricciones: '+(projection.additional==null?'—':preview(projection.additional))+' h/año (separado, nunca duplicado)'+(projection.missing?.length?' · Datos pendientes: '+projection.missing.join(' · '):'')+(projection.monetaryPending?.length?' · Pérdidas directas pendientes de conciliar con DF082.':'')
       :projection.reason;
     for(const [field,value] of [['econActive',suggested?.active],['econWait',suggested?.wait]]){
       const input=document.getElementById(field),unit=document.getElementById(field+'_unit');
