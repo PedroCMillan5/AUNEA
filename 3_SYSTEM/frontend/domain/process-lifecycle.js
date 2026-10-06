@@ -56,7 +56,6 @@ function processLayerIntegrityIssues(e,key){
   const stepIds=new Set(steps.map(x=>x.id)),issues=[];
   const push=message=>issues.push({layer:key,message});
   if(key==='map'){
-    if(!steps.length)push('Añade al menos un paso real al mapa AS-IS antes de confirmarlo.');
     steps.forEach((s,i)=>{
       if(!s.step_name||String(s.step_name).trim().length<3||!s.step_type||!s.actor)push(`Completa nombre, tipo y responsable del paso ${i+1}.`);
       const checkDest=(dest,label)=>{
@@ -73,7 +72,6 @@ function processLayerIntegrityIssues(e,key){
   }
   if(key==='frictions'){
     const frictions=typeof activeFrictions==='function'?activeFrictions(e):(e.frictions||[]).filter(x=>x.status!=='SUPERSEDED');
-    if(!frictions.length)push('Registra al menos una fricción observable antes de confirmar esta capa.');
     frictions.forEach((fr,i)=>{
       const ids=normalizeArray(fr.affected_steps).filter(Boolean);
       if(!fr.friction_type||!ids.length||!normalizeArray(fr.cause).length&&!fr?._details?.cause||!String(fr.observable_signal||'').trim())
