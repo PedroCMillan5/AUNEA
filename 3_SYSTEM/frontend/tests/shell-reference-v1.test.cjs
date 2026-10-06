@@ -64,7 +64,7 @@ test('the nine session steps come from the canonical flow, not a hardcoded rail 
 });
 
 test('the top bar switches to session chrome on session surfaces only', () => {
-  assert.match(stateJs, /SESSION_SURFACE_PAGES\s*=\s*new Set\(\['diagnostico','proceso'\]\)/);
+  assert.match(stateJs, /SESSION_SURFACE_PAGES\s*=\s*new Set\(\['diagnostico','proceso','pasos','fricciones','riesgos','impacto'\]\)/);
   assert.match(stateJs, /Consola interna/, 'the private-console marker is part of the session chrome (DEC-048/049)');
   assert.match(stateJs, /Paso \$\{i\+1\} de \$\{flow\.length\}/, 'step progress is derived from the flow length');
 });
