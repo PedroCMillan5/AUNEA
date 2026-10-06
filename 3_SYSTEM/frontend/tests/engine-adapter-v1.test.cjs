@@ -16,3 +16,15 @@ test('the engine adapter contains no capture UI: no risk/economic modal markup, 
   assert.doesNotMatch(code,/function addRisk\(|function addEconomic\(/,'capture entry points belong to their own modules');
 });
 // [AUNEA-UAT-ENGINE-020] END
+
+test('economic payload keeps only the metric owned by each driver and removes legacy cross-metric contamination',()=>{
+  const sample={...e,economicInputs:[
+    {driver_id:'ED13',step_ids:['S1'],annual_active_hours:204,annual_wait_hours:5760,evidence_type:'CLIENT_DECLARED'},
+    {driver_id:'ED05',step_ids:['S1'],annual_active_hours:19.2,annual_wait_hours:99,evidence_type:'CLIENT_DECLARED'}
+  ]};
+  const p=ctx.buildBackendPayload(sample);
+  assert.equal(p.economics[0].annual_active_hours,0);
+  assert.equal(p.economics[0].annual_wait_hours,5760);
+  assert.equal(p.economics[1].annual_active_hours,19.2);
+  assert.equal(p.economics[1].annual_wait_hours,0);
+});
