@@ -94,7 +94,7 @@ function processLayerIntegrityIssues(e,key){
         push(`Completa categoría, descripción, probabilidad e impacto del riesgo ${i+1}.`);
       if(!String(r.reversibility||'').trim())push(`Indica la reversibilidad del riesgo "${r.description||i+1}".`);
       if(typeof r.controls_present!=='boolean')push(`Indica si existen controles actuales para el riesgo "${r.description||i+1}".`);
-      if(r.controls_present===true&&!normalizeArray(r.current_controls).length)push(`Selecciona los controles actuales del riesgo "${r.description||i+1}".`);
+      if(r.controls_present===true&&!normalizeArray(r.current_control).length)push(`Selecciona los controles actuales del riesgo "${r.description||i+1}".`);
       if(typeof r.sensitive_or_high_impact!=='boolean'||typeof r.material_financial_or_compliance!=='boolean'||typeof r.critical_trigger!=='boolean')
         push(`Completa las condiciones de sensibilidad, materialidad y criticidad del riesgo "${r.description||i+1}".`);
       if(normalizeArray(r.step_ids).some(id=>!stepIds.has(id)))push(`El riesgo "${r.description||i+1}" referencia un paso que ya no está activo.`);
