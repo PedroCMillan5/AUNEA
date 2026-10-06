@@ -146,7 +146,7 @@ function resultsPage(){
         <div class="card metric"><small>Backend</small><strong>${state.backendOnline?'OK':'—'}</strong><span>${state.backendOnline?'disponible':'se comprobará al ejecutar'}</span></div>
       </div>`
       +section('Preparación del diagnóstico','Comprobaciones previas. Esto todavía no es un resultado del motor.',`<div class="notice ${ready?'good':'warn'}">${ready?'La captura confirmada está preparada para diagnóstico.':'Hay información obligatoria pendiente: '+esc(miss.join(', '))}</div>${unresolved.length?`<div class="notice info" style="margin-top:10px"><b>Inputs internos por confirmar</b><br>${unresolved.length} decisión(es) gobernada(s) del motor se revisarán antes de calcular. No son nuevas preguntas al cliente.</div>`:''}`)
-      +section('Qué ocurrirá al ejecutar','El navegador no calcula ni completa resultados por su cuenta.',`<div class="diagnosis-pipeline"><span>Pain</span><i>→</i><span>Economics</span><i>→</i><span>Risk</span><i>→</i><span>Recommendation</span><i>→</i><span>Pricing</span><i>→</i><span>Scenario</span></div>`);
+      +section('Qué ocurrirá al ejecutar','El navegador no calcula ni completa resultados por su cuenta.',`<div class="diagnosis-pipeline"><span>Problemas</span><i>→</i><span>Impacto</span><i>→</i><span>Riesgo</span><i>→</i><span>Recomendación</span><i>→</i><span>Precio</span><i>→</i><span>Escenario</span></div>`);
   }
   const pains=o.pain_results||[],econ=o.economic_result||{},risk=o.risk_result||{},confirmed=pains.filter(x=>x.state==='CONFIRMED').length;
   const runDate=e.lastEngineRunAt?(typeof formatDateEs==='function'?formatDateEs(e.lastEngineRunAt):String(e.lastEngineRunAt)):'—';
