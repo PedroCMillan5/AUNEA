@@ -39,3 +39,16 @@ test('the risk level stays backend-owned: the module never derives R0-R3 locally
   assert.match(code,/El nivel R0–R3 lo decide el backend/);
 });
 // [AUNEA-UAT-RISK-CAPTURE-030] END
+
+test('risk friction context is reused from selected steps and never captured as a second owner',()=>{
+  assert.match(code,/Problemas observados en los pasos elegidos/);
+  assert.match(code,/No tienes que volver a seleccionarlos ni describirlos/);
+  assert.match(code,/data-risk-friction-row/);
+  assert.match(code,/riskNoRelatedFriction/);
+  assert.doesNotMatch(code,/friction_id\s*:/,'RiskInput must not invent a direct Friction relation');
+});
+
+test('risk category remains an explicit consultant choice; the browser does not auto-recommend one',()=>{
+  assert.match(code,/riskDropdown\('riskCat'/);
+  assert.doesNotMatch(code,/recommendedRisk|suggestedRisk|auto.*riskCat/i);
+});
