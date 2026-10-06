@@ -12,16 +12,137 @@ function hasConfirmedEngagementSnapshot(e){
   return Array.isArray(e.confirmedSnapshots) && e.confirmedSnapshots.length > 0;
 }
 
+function currentDiagnosticOutput(e){
+  const snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;
+  return snap&&e?.lastEngineSnapshotVersion===snap.version?e.diagnosticOutput:null;
+}
+function diagnosisStepName(record,id){
+  const step=(record?.processSteps||[]).find(s=>String(s.id)===String(id));
+  return step?.step_name||step?.name||id||'Paso';
+}
+function diagnosisPainLabel(painId){
+  const ref=(schema.tables.REF_PAIN||[]).find(x=>String(x.Pain_ID)===String(painId));
+  return ref?.Pain_Name||ref?.Label_ES||ref?.Pain_Pattern||(state.uiMode==='INTERNAL'?painId:'Hallazgo');
+}
+function diagnosisLinkedFrictions(record,painId){
+  const mapping=Object.fromEntries((schema.friction_pain_map||[]).map(x=>[String(x.Friction_Type_ID),String(x.Pain_ID)]));
+  return (record?.frictions||[]).filter(x=>x.status!=='SUPERSEDED'&&String(mapping[String(x.friction_type)]||x.derived_pain_id||'')===String(painId));
+}
+function diagnosisImpactMetric(x){
+  const active=Number(x?.annual_active_hours||0),wait=Number(x?.annual_wait_hours||0),direct=Number(x?.direct_loss_eur_annual||0),tool=Number(x?.current_tool_cost_eur_annual||0),cash=Number(x?.realized_cash_saving_eur_annual||0);
+  if(wait)return `${num(wait)} h/año de espera`;
+  if(active)return `${num(active)} h/año`;
+  if(direct)return `${eur(direct)}/año de pérdida directa`;
+  if(tool)return `${eur(tool)}/año de herramienta`;
+  if(cash)return `${eur(cash)}/año de ahorro realizado`;
+  return 'Registrado sin importe agregado';
+}
+function diagnosisTrace(record,p){
+  const frictions=diagnosisLinkedFrictions(record,p.pain_id);
+  const stepIds=[...new Set(frictions.flatMap(f=>normalizeArray(f.affected_steps)).filter(Boolean))];
+  const economics=(record?.economicInputs||[]).filter(x=>{
+    const ids=normalizeArray(x.step_ids).filter(Boolean);
+    return String(x.pain_id||'')===String(p.pain_id)||ids.some(id=>stepIds.includes(id));
+  });
+  const risks=(record?.risks||[]).filter(r=>normalizeArray(r.step_ids).some(id=>stepIds.includes(id)));
+  return {frictions,stepIds,economics,risks};
+}
+function diagnosisReadonlyMap(e,record){
+  if(typeof processGraphHtml!=='function')return '<div class="notice info">Mapa AS-IS confirmado disponible en la captura.</div>';
+  const steps=(record.processSteps||[]).filter(x=>x.status!=='SUPERSEDED'),fr=(record.frictions||[]).filter(x=>x.status!=='SUPERSEDED');
+  const start=typeof processBoundaryValue==='function'?processBoundaryValue(record,'DF014','Límite inicial pendiente','DF012'):(record.answers?.DF014||'Inicio');
+  const finish=typeof processBoundaryValue==='function'?processBoundaryValue(record,'DF015','Límite final pendiente','DF013'):(record.answers?.DF015||'Fin');
+  return processGraphHtml(record,steps,fr,start,finish,'impacto',true);
+}
+function diagnosisFindingsHtml(record,pains){
+  if(!pains.length)return '<div class="empty"><p>El backend no ha devuelto hallazgos para este snapshot.</p></div>';
+  return '<div class="diagnosis-findings">'+pains.map((p,i)=>{
+    const trace=diagnosisTrace(record,p),steps=trace.stepIds.map(id=>diagnosisStepName(record,id));
+    const frictionText=trace.frictions.map(f=>f.client_label||labelFrom('OS_FRICTION_TYPE',f.friction_type)).filter(Boolean);
+    const evidence=trace.frictions.map(f=>f.observable_signal).filter(Boolean);
+    const impacts=trace.economics.map(x=>`${typeof econDriverLabel==='function'?econDriverLabel(x.driver_id):x.driver_id}: ${diagnosisImpactMetric(x)}`);
+    const riskText=trace.risks.map(r=>r.description||labelFrom('OS_RISK_CATEGORY',r.category)).filter(Boolean);
+    return `<article class="diagnosis-finding">
+      <div class="diagnosis-finding-head"><div><span class="diagnosis-rank">${i+1}</span><div><h3>${esc(diagnosisPainLabel(p.pain_id))}</h3><p>${p.rationale?esc(p.rationale):'Hallazgo calculado por el backend a partir de la captura confirmada.'}</p></div></div><div class="diagnosis-state"><span>${p.state?esc(engineLabel('pain_state',p.state)):'—'}</span><small>Confianza: ${p.confidence?esc(engineLabel('confidence',p.confidence)):'—'}</small></div></div>
+      <div class="diagnosis-trace-grid">
+        <div><small>Dónde</small><b>${esc(steps.join(' · ')||'Sin paso trazable')}</b></div>
+        <div><small>Fricción observada</small><b>${esc(frictionText.join(' · ')||'Sin fricción enlazada')}</b></div>
+        <div><small>Evidencia</small><b>${esc(evidence.join(' · ')||'Sin evidencia textual enlazada')}</b></div>
+        <div><small>Impacto relacionado</small><b>${esc(impacts.join(' · ')||'Sin impacto económico/temporal enlazado')}</b></div>
+        <div><small>Riesgos en los mismos pasos</small><b>${esc(riskText.join(' · ')||'Ninguno registrado')}</b></div>
+      </div>
+      <div class="internal-only diagnosis-tech"><span class="code">${esc(p.pain_id)}</span> Trazabilidad presentada desde anclajes capturados; no implica causalidad adicional no calculada.</div>
+    </article>`;
+  }).join('')+'</div>';
+}
+function diagnosisEconomicsHtml(econ,record){
+  const inputs=record?.economicInputs||[];
+  return `<div class="grid g3 diagnosis-econ-grid">
+    <div class="notice"><b>Trabajo activo anual</b><br>${num(econ.annual_active_hours)} h</div>
+    <div class="notice"><b>Espera anual</b><br>${num(econ.annual_wait_hours)} h<small>No se monetiza como trabajo.</small></div>
+    <div class="notice"><b>Valor de capacidad</b><br>${econ.capacity_value_eur_annual==null?'No disponible':eur(econ.capacity_value_eur_annual)+'/año'}<small>No equivale a ahorro de caja.</small></div>
+    <div class="notice"><b>Pérdida directa</b><br>${eur(econ.direct_loss_eur_annual)}/año</div>
+    <div class="notice"><b>Coste actual de herramientas</b><br>${eur(econ.current_tool_cost_eur_annual)}/año</div>
+    <div class="notice"><b>Ahorro de caja realizado</b><br>${eur(econ.realized_cash_saving_eur_annual)}/año</div>
+  </div>
+  ${inputs.length?`<div class="diagnosis-inputs"><b>Inputs que sustentan el cálculo</b><div>${inputs.map(x=>`<span class="closing-impact-item"><strong>${esc(typeof econDriverLabel==='function'?econDriverLabel(x.driver_id):x.driver_id)}</strong><small>${esc(diagnosisImpactMetric(x))} · ${esc(engineLabel('evidence_quality',evidenceTypeBackend(x.evidence_type)))}</small></span>`).join('')}</div></div>`:''}`;
+}
+function diagnosisRisksHtml(risk,record){
+  const rows=record?.risks||[];
+  return `<div class="grid g3 diagnosis-risk-summary">
+      <div class="notice"><b>Riesgo inherente</b><br>${risk.inherent_level?esc(engineLabel('risk_level',risk.inherent_level)):'—'}</div>
+      <div class="notice"><b>Riesgo residual</b><br>${risk.residual_level?esc(engineLabel('risk_level',risk.residual_level)):'—'}</div>
+      <div class="notice"><b>Estado</b><br>${risk.status?esc(engineLabel('risk_status',risk.status)):'—'}</div>
+    </div>
+    ${risk.rationale?`<div class="notice info diagnosis-risk-rationale"><b>Lectura del motor</b><br>${esc(risk.rationale)}</div>`:''}
+    ${rows.length?`<div class="result-list diagnosis-risk-list">${rows.map(r=>`<div class="result-item"><b>${esc(r.description||labelFrom('OS_RISK_CATEGORY',r.category))}</b><p>Pasos: ${esc(normalizeArray(r.step_ids).map(id=>diagnosisStepName(record,id)).join(' · ')||'—')} · Probabilidad ${esc(r.likelihood_1_5||'—')}/5 · Impacto ${esc(r.impact_1_5||'—')}/5 · Controles: ${r.controls_present===true?'Sí':r.controls_present===false?'No':'No indicado'}</p></div>`).join('')}</div>`:''}`;
+}
+function diagnosisRecommendationHtml(o){
+  const r=o.recommendation||{};
+  return `<div class="grid g4 diagnosis-rec-grid">
+    ${codedField('Acción preliminar',r.action_id,actionLabel(r.action_id))}
+    ${codedField('Nivel funcional',r.functional_level_id,funcLevelLabel(r.functional_level_id))}
+    ${codedField('IA',r.ai_level_id,aiLevelLabel(r.ai_level_id))}
+    <div class="notice"><b>Confianza</b><br>${r.confidence?esc(engineLabel('confidence',r.confidence)): '—'}</div>
+  </div>
+  <div class="notice info diagnosis-rec-rationale"><b>Por qué lo propone el motor</b><br>${(r.rationale||[]).map(esc).join(' · ')||'Sin racional adicional.'}</div>
+  <div class="field-help">Es una recomendación estructurada del diagnóstico. El diseño concreto del proceso futuro se realiza en TO-BE y requiere revisión humana antes de publicación.</div>`;
+}
+
 function resultsPage(){
   const e=currentEng();
-  if(!e) return pageTop('Trabajo interno','PG09 debe cerrar la captura con AS-IS confirmado antes de entrar en Trabajo interno. La secuencia válida es PG09 → confirmar AS-IS → snapshot confirmado → Trabajo interno.',`<button class="btn" data-page="diagnostico">Volver a Session 1</button>`) + `<div class="empty"><h2>AS-IS confirmado requerido</h2><p>Session 1 termina en PG09. No se calcula recomendación, TO-BE, pricing ni solución final antes del snapshot confirmado.</p></div>`;
-  if(!hasConfirmedEngagementSnapshot(e)) return pageTop('Trabajo interno','PG09 debe cerrar la captura con AS-IS confirmado antes de entrar en Trabajo interno. La secuencia válida es PG09 → confirmar AS-IS → snapshot confirmado → Trabajo interno.',`<button class="btn" data-page="diagnostico">Volver a Session 1</button>`) + `<div class="empty"><h2>AS-IS confirmado requerido</h2><p>Session 1 termina en PG09. No se calcula recomendación, TO-BE, pricing ni solución final antes del snapshot confirmado.</p></div>`;
-  // Show official results only when the engine run belongs to the current confirmed version.
+  if(!e) return pageTop('Diagnóstico interno','PG09 debe cerrar la captura con AS-IS confirmado antes de entrar en Trabajo interno.',`<button class="btn" data-page="diagnostico">Volver a Sesión 1</button>`) + `<div class="empty"><h2>AS-IS confirmado requerido</h2><p>La Sesión 1 termina en PG09. El diagnóstico interno siempre parte de un snapshot confirmado.</p></div>`;
+  if(!hasConfirmedEngagementSnapshot(e)) return pageTop('Diagnóstico interno','PG09 debe cerrar la captura con AS-IS confirmado antes de entrar en Trabajo interno.',`<button class="btn" data-page="diagnostico">Volver a Sesión 1</button>`) + `<div class="empty"><h2>AS-IS confirmado requerido</h2><p>La Sesión 1 termina en PG09. El diagnóstico interno siempre parte de un snapshot confirmado.</p></div>`;
   const activeSnapshot=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;
-  const o=activeSnapshot&&e.lastEngineSnapshotVersion===activeSnapshot.version?e.diagnosticOutput:null,miss=missingRequired(e),record=typeof engagementOfRecord==='function'?engagementOfRecord(e):e,steps=(record.processSteps||[]).filter(x=>x.status!=='SUPERSEDED'),fr=(record.frictions||[]).filter(x=>x.status!=='SUPERSEDED');
-  if(!o)return pageTop('Resultados','La captura está disponible, pero AUNEA no inventa resultados en el navegador. Pain, Economics, Risk y Recommendation se muestran sólo si los calcula el backend canónico.',`<button class="btn" data-page="diagnostico">Volver a Session 1</button>`) + `<div class="grid g4"><div class="card metric"><small>Pasos</small><strong>${steps.length}</strong><span>AS-IS confirmado</span></div><div class="card metric"><small>Fricciones</small><strong>${fr.length}</strong><span>vinculadas al flujo</span></div><div class="card metric"><small>Gaps</small><strong>${miss.length}</strong><span>requeridos / confirmación</span></div><div class="card metric"><small>Backend</small><strong>${state.backendOnline?'OK':'—'}</strong><span>${state.backendOnline?'disponible':'no conectado'}</span></div></div>`+section('Readiness de captura','Esto no sustituye el resultado de los engines.',`<div class="notice ${miss.length?'warn':'good'}">${miss.length?`Pendiente: ${esc(miss.join(', '))}`:'La captura base no presenta gaps requeridos detectados por la UI.'}</div>`);
-  const pains=o.pain_results||[],econ=o.economic_result||{},risk=o.risk_result||{},painsKpiLabel=state.uiMode==='SESSION'?'Hallazgos confirmados':'Pains confirmados';
-  return pageTop('Resultados del diagnóstico','Resultados estructurados recibidos del backend.',`<button class="btn" data-page="proceso">Revisar AS-IS</button><button class="btn" data-page="tobe">Diseñar TO-BE</button><button class="btn btn-primary" id="runDiag">Recalcular</button>`)+`<div class="grid g4"><div class="card metric"><small>${esc(painsKpiLabel)}</small><strong>${pains.filter(x=>x.state==='CONFIRMED').length}</strong><span>de ${pains.length}</span></div><div class="card metric"><small>Trabajo activo anual</small><strong>${num(econ.annual_active_hours)}h</strong><span>separado de espera</span></div><div class="card metric"><small>Espera anual</small><strong>${num(econ.annual_wait_hours)}h</strong><span>no monetizada como labor</span></div><div class="card metric"><small>Riesgo residual</small><strong>${risk.residual_level?esc(engineLabel('risk_level',risk.residual_level)):'—'}</strong><span>${risk.status?esc(engineLabel('risk_status',risk.status)):''}</span></div></div>`+section('Hallazgos','Descripción + estado + confianza; el código interno queda en Modo Interno.',`<div class="result-list">${pains.map(p=>{const ref=(schema.tables.REF_PAIN||[]).find(x=>String(x.Pain_ID)===String(p.pain_id));const label=ref?.Pain_Name||ref?.Label_ES||ref?.Pain_Pattern||(state.uiMode==='INTERNAL'?p.pain_id:'Hallazgo');return `<div class="result-item"><b><span class="code internal-only">${esc(p.pain_id)}</span> ${esc(label)}</b><p>Estado: ${p.state?esc(engineLabel('pain_state',p.state)):'—'} · Confianza: ${p.confidence?esc(engineLabel('confidence',p.confidence)):'—'}${p.rationale&&state.uiMode==='INTERNAL'?' · '+esc(p.rationale):''}</p></div>`}).join('')||'<div class="empty"><p>Sin hallazgos detectados.</p></div>'}</div>`)+section('Economics','Las categorías permanecen separadas.',`<div class="grid g3"><div class="notice"><b>Capacidad</b><br>${eur(econ.capacity_value_eur_annual)} /año</div><div class="notice"><b>Pérdida directa</b><br>${eur(econ.direct_loss_eur_annual)} /año</div><div class="notice"><b>Ahorro de caja realizado</b><br>${eur(econ.realized_cash_saving_eur_annual)} /año</div></div>`)
+  const o=currentDiagnosticOutput(e),miss=missingRequired(e),record=typeof engagementOfRecord==='function'?engagementOfRecord(e):e,steps=(record.processSteps||[]).filter(x=>x.status!=='SUPERSEDED'),fr=(record.frictions||[]).filter(x=>x.status!=='SUPERSEDED'),risks=record.risks||[],econInputs=record.economicInputs||[];
+  if(!o){
+    const unresolved=typeof unresolvedEngineGates==='function'?unresolvedEngineGates(e):[];
+    const ready=miss.length===0&&!!activeSnapshot;
+    return pageTop('Diagnóstico interno','El snapshot de Sesión 1 está sellado. Ejecuta los motores canónicos para convertir la captura confirmada en diagnóstico.',`<button class="btn" data-page="diagnostico">Volver a Sesión 1</button><button class="btn btn-primary" id="runDiag">${unresolved.length?'Revisar inputs y ejecutar diagnóstico':'Ejecutar diagnóstico'}</button>`)
+      +`<div class="grid g4 diagnosis-readiness">
+        <div class="card metric"><small>Snapshot</small><strong>v${esc(activeSnapshot?.version||'—')}</strong><span>AS-IS confirmado</span></div>
+        <div class="card metric"><small>Pasos</small><strong>${steps.length}</strong><span>${fr.length} fricciones · ${risks.length} riesgos</span></div>
+        <div class="card metric"><small>Impactos</small><strong>${econInputs.length}</strong><span>${miss.length} gap(s) obligatorio(s)</span></div>
+        <div class="card metric"><small>Backend</small><strong>${state.backendOnline?'OK':'—'}</strong><span>${state.backendOnline?'disponible':'se comprobará al ejecutar'}</span></div>
+      </div>`
+      +section('Preparación del diagnóstico','Comprobaciones previas. Esto todavía no es un resultado del motor.',`<div class="notice ${ready?'good':'warn'}">${ready?'La captura confirmada está preparada para diagnóstico.':'Hay información obligatoria pendiente: '+esc(miss.join(', '))}</div>${unresolved.length?`<div class="notice info" style="margin-top:10px"><b>Inputs internos por confirmar</b><br>${unresolved.length} decisión(es) gobernada(s) del motor se revisarán antes de calcular. No son nuevas preguntas al cliente.</div>`:''}`)
+      +section('Qué ocurrirá al ejecutar','El navegador no calcula ni completa resultados por su cuenta.',`<div class="diagnosis-pipeline"><span>Pain</span><i>→</i><span>Economics</span><i>→</i><span>Risk</span><i>→</i><span>Recommendation</span><i>→</i><span>Pricing</span><i>→</i><span>Scenario</span></div>`);
+  }
+  const pains=o.pain_results||[],econ=o.economic_result||{},risk=o.risk_result||{},confirmed=pains.filter(x=>x.state==='CONFIRMED').length;
+  const runDate=e.lastEngineRunAt?formatDateEs(e.lastEngineRunAt):'—';
+  return pageTop('Diagnóstico interno',`Snapshot v${esc(activeSnapshot?.version||'—')} · diagnóstico backend ${esc(runDate)}. Los resultados están ligados a la versión confirmada del AS-IS.`,`<button class="btn" data-page="diagnostico">Volver a Sesión 1</button><button class="btn" data-page="proceso">Revisar AS-IS</button><button class="btn btn-primary" id="runDiag">Recalcular diagnóstico</button>`)
+    +`<div class="grid g4 diagnosis-result-kpis">
+      <div class="card metric"><small>Hallazgos confirmados</small><strong>${confirmed}</strong><span>de ${pains.length} evaluados</span></div>
+      <div class="card metric"><small>Trabajo activo anual</small><strong>${num(econ.annual_active_hours)} h</strong><span>separado de espera</span></div>
+      <div class="card metric"><small>Espera anual</small><strong>${num(econ.annual_wait_hours)} h</strong><span>no monetizada como labor</span></div>
+      <div class="card metric"><small>Riesgo residual</small><strong>${risk.residual_level?esc(engineLabel('risk_level',risk.residual_level)):'—'}</strong><span>${risk.status?esc(engineLabel('risk_status',risk.status)):''}</span></div>
+    </div>`
+    +section('Mapa AS-IS con contexto de diagnóstico','El mismo snapshot confirmado, en lectura, con fricciones, riesgos e impactos anclados a sus pasos.',diagnosisReadonlyMap(e,record))
+    +section('Hallazgos','Qué ocurre, dónde y con qué trazabilidad. El motor determina estado y confianza; la UI sólo enlaza contexto capturado.',diagnosisFindingsHtml(record,pains))
+    +section('Impacto operativo y económico','Trabajo, espera, capacidad, pérdida directa, herramientas y ahorro realizado permanecen separados.',diagnosisEconomicsHtml(econ,record))
+    +section('Riesgos','Resultado agregado del motor y riesgos capturados que lo sustentan.',diagnosisRisksHtml(risk,record))
+    +section('Recomendación preliminar','Dirección estructurada calculada por el backend. No sustituye el diseño TO-BE ni constituye todavía una propuesta al cliente.',diagnosisRecommendationHtml(o))
+    +section('Siguiente paso','El diagnóstico ya existe para el snapshot vigente. El siguiente bloque gobernado es diseñar el TO-BE sobre esta misma versión.',`<div class="notice good"><b>Diagnóstico generado correctamente</b><br>Revisa los hallazgos anteriores antes de diseñar el proceso futuro.</div>`,`<button class="btn btn-primary" data-page="tobe">Revisado: continuar a TO-BE →</button>`);
 }
 function num(x){return Number(x||0).toLocaleString('es-ES',{maximumFractionDigits:1})}
 function eur(x){return Number(x||0).toLocaleString('es-ES',{style:'currency',currency:'EUR',maximumFractionDigits:0})}
@@ -47,7 +168,7 @@ function nextTobeStatus(p){const i=TOBE_PUBLICATION_STATES.indexOf(p?.status);re
 function advanceTobeStatus(e){const p=latestTobe(e),next=nextTobeStatus(p);if(!p||!next)return false;if(p.status==='DRAFT'&&p.items.some(x=>!x.transformation))return toast('Define el estado de transformación de todos los pasos antes de enviar a revisión.'),false;p.status=next;p.updatedAt=now();markDirty(`TO-BE v${p.version}: ${next}`);return true}
 function saveTobeFromDom(e){const p=latestTobe(e);if(!tobeEditable(p))return false;document.querySelectorAll('[data-tobe-item]').forEach(el=>{const item=p.items.find(x=>x.id===el.dataset.tobeItem);if(item)item[el.dataset.tobeField]=el.value});p.updatedAt=now();markDirty(`TO-BE v${p.version} actualizado`);return true}
 function tobeField(item,key,label,value,type='text',disabled=false){return `<div class="field"><label>${esc(label)}</label>${type==='textarea'?`<textarea data-tobe-item="${attr(item.id)}" data-tobe-field="${attr(key)}" ${disabled?'disabled':''}>${esc(value||'')}</textarea>`:`<input data-tobe-item="${attr(item.id)}" data-tobe-field="${attr(key)}" value="${attr(value||'')}" ${disabled?'disabled':''}>`}</div>`}
-function tobePage(){const e=currentEng(),snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;if(!snap)return pageTop('TO-BE','PG11 sólo trabaja sobre un AS-IS confirmado.',`<button class="btn" data-page="diagnostico">Volver a captura</button>`)+`<div class="empty"><h2>AS-IS confirmado requerido</h2><p>Cierra PG09 antes de diseñar el proceso propuesto.</p></div>`;const p=latestTobe(e);if(!p)return pageTop('Diseño TO-BE','Representa cómo funcionaría el proceso propuesto sin abrir una segunda ronda de discovery.',`<button class="btn btn-primary" id="createTobeDraft">Crear borrador desde AS-IS confirmado</button>`)+section('Fuente','El borrador se instancia desde el snapshot confirmado y queda DRAFT hasta revisión humana.',`<div class="notice info">Snapshot confirmado v${snap.version}. Ningún cambio se considera aprobado automáticamente.</div>`);const editable=tobeEditable(p),statusLabel=p.status==='APPROVED_FOR_CLIENT'?'Aprobado para cliente':p.status==='REVIEWED'?'Revisado':p.status==='PUBLISHED'?'Publicado':'Borrador';const cards=p.items.map((it,i)=>`<div class="card card-pad section"><div class="section-title"><div><small>Origen AS-IS · ${esc(it.sourceStepName)}</small><h2>${i+1}. ${esc(it.sourceStepName)}</h2></div><span class="status ${p.status==='DRAFT'?'amber':'green'}">${esc(it.transformation||'Pendiente de diseño')}</span></div><div class="form-grid"><div class="field"><label>Qué cambia</label>${editable?auneaSelectControl(`tobe_${it.id}_transformation`,TOBE_TRANSFORMATIONS.map(v=>({value:v,label:v})),it.transformation||'',{extra:`data-tobe-item="${attr(it.id)}" data-tobe-field="transformation"`,placeholder:'Selecciona…'}):`<input value="${attr(it.transformation||'')}" disabled>`}</div>${tobeField(it,'problemResolved','Qué problema resuelve',it.problemResolved,'text',!editable)}${tobeField(it,'futureActor','Responsable futuro',it.futureActor,'text',!editable)}${tobeField(it,'tool','Herramienta / arquitectura',it.tool,'text',!editable)}${tobeField(it,'inputs','Datos de entrada',it.inputs,'text',!editable)}${tobeField(it,'outputs','Datos de salida',it.outputs,'text',!editable)}${tobeField(it,'automationAi','Automatización e IA',it.automationAi,'text',!editable)}${tobeField(it,'humanSupervision','Supervisión humana',it.humanSupervision,'text',!editable)}${tobeField(it,'controlsRisk','Control / riesgo',it.controlsRisk,'text',!editable)}${tobeField(it,'futureTime','Tiempo futuro',it.futureTime,'text',!editable)}${tobeField(it,'futureTimeAssumption','Supuesto trazable del tiempo futuro',it.futureTimeAssumption,'textarea',!editable)}</div></div>`).join('');const next=nextTobeStatus(p),actions=`<button class="btn" data-page="resultados">Diagnóstico</button><button class="btn" data-page="comparacion">Comparar AS-IS / TO-BE</button>${editable?'<button class="btn" id="saveTobe">Guardar borrador</button>':''}${next?`<button class="btn btn-primary" id="advanceTobe">${next==='REVIEWED'?'Enviar a revisión':next==='APPROVED_FOR_CLIENT'?'Aprobar para cliente':'Publicar'}</button>`:''}`;return pageTop('Diseño TO-BE',`Versión ${p.version} · ${statusLabel}. Cada propuesta conserva el snapshot AS-IS del que parte.`,actions)+cards}
+function tobePage(){const e=currentEng(),snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;if(!snap)return pageTop('TO-BE','PG11 sólo trabaja sobre un AS-IS confirmado.',`<button class="btn" data-page="diagnostico">Volver a captura</button>`)+`<div class="empty"><h2>AS-IS confirmado requerido</h2><p>Cierra PG09 antes de diseñar el proceso propuesto.</p></div>`;if(!currentDiagnosticOutput(e))return pageTop('Diseño TO-BE','La secuencia gobernada es AS-IS → Diagnóstico → TO-BE.',`<button class="btn btn-primary" data-page="resultados">Ir a Diagnóstico</button>`)+`<div class="empty"><h2>Diagnóstico vigente requerido</h2><p>Ejecuta el diagnóstico sobre el snapshot confirmado actual antes de diseñar el proceso propuesto.</p></div>`;const p=latestTobe(e);if(!p)return pageTop('Diseño TO-BE','Representa cómo funcionaría el proceso propuesto sin abrir una segunda ronda de discovery.',`<button class="btn btn-primary" id="createTobeDraft">Crear borrador desde AS-IS confirmado</button>`)+section('Fuente','El borrador se instancia desde el snapshot confirmado y queda DRAFT hasta revisión humana.',`<div class="notice info">Snapshot confirmado v${snap.version}. Ningún cambio se considera aprobado automáticamente.</div>`);const editable=tobeEditable(p),statusLabel=p.status==='APPROVED_FOR_CLIENT'?'Aprobado para cliente':p.status==='REVIEWED'?'Revisado':p.status==='PUBLISHED'?'Publicado':'Borrador';const cards=p.items.map((it,i)=>`<div class="card card-pad section"><div class="section-title"><div><small>Origen AS-IS · ${esc(it.sourceStepName)}</small><h2>${i+1}. ${esc(it.sourceStepName)}</h2></div><span class="status ${p.status==='DRAFT'?'amber':'green'}">${esc(it.transformation||'Pendiente de diseño')}</span></div><div class="form-grid"><div class="field"><label>Qué cambia</label>${editable?auneaSelectControl(`tobe_${it.id}_transformation`,TOBE_TRANSFORMATIONS.map(v=>({value:v,label:v})),it.transformation||'',{extra:`data-tobe-item="${attr(it.id)}" data-tobe-field="transformation"`,placeholder:'Selecciona…'}):`<input value="${attr(it.transformation||'')}" disabled>`}</div>${tobeField(it,'problemResolved','Qué problema resuelve',it.problemResolved,'text',!editable)}${tobeField(it,'futureActor','Responsable futuro',it.futureActor,'text',!editable)}${tobeField(it,'tool','Herramienta / arquitectura',it.tool,'text',!editable)}${tobeField(it,'inputs','Datos de entrada',it.inputs,'text',!editable)}${tobeField(it,'outputs','Datos de salida',it.outputs,'text',!editable)}${tobeField(it,'automationAi','Automatización e IA',it.automationAi,'text',!editable)}${tobeField(it,'humanSupervision','Supervisión humana',it.humanSupervision,'text',!editable)}${tobeField(it,'controlsRisk','Control / riesgo',it.controlsRisk,'text',!editable)}${tobeField(it,'futureTime','Tiempo futuro',it.futureTime,'text',!editable)}${tobeField(it,'futureTimeAssumption','Supuesto trazable del tiempo futuro',it.futureTimeAssumption,'textarea',!editable)}</div></div>`).join('');const next=nextTobeStatus(p),actions=`<button class="btn" data-page="resultados">Diagnóstico</button><button class="btn" data-page="comparacion">Comparar AS-IS / TO-BE</button>${editable?'<button class="btn" id="saveTobe">Guardar borrador</button>':''}${next?`<button class="btn btn-primary" id="advanceTobe">${next==='REVIEWED'?'Enviar a revisión':next==='APPROVED_FOR_CLIENT'?'Aprobar para cliente':'Publicar'}</button>`:''}`;return pageTop('Diseño TO-BE',`Versión ${p.version} · ${statusLabel}. Cada propuesta conserva el snapshot AS-IS del que parte.`,actions)+cards}
 function comparable(v){return v===null||v===undefined||v===''?'No disponible con evidencia suficiente':String(v)}
 function stepMetric(step,key){return step?.[key]??step?.[key.replace(/[A-Z]/g,m=>'_'+m.toLowerCase())]??''}
 function tobeComparisonPage(){const e=currentEng(),snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null,p=latestTobe(e);if(!snap||!p||!['REVIEWED','APPROVED_FOR_CLIENT','PUBLISHED'].includes(p.status))return pageTop('AS-IS vs TO-BE','PG12 deriva la comparación de fuentes versionadas; no captura datos nuevos.',`<button class="btn" data-page="tobe">Volver a TO-BE</button>`)+`<div class="empty"><h2>TO-BE revisado requerido</h2><p>La comparación se habilita cuando el TO-BE ha pasado revisión humana.</p></div>`;const source=(e.confirmedSnapshots||[]).find(s=>s.version===p.sourceSnapshotVersion)||snap;const asis=(source.processSteps||[]).filter(x=>x.status!=='SUPERSEDED');const rows=p.items.map((it,i)=>{const a=asis.find(s=>String(s.id)===String(it.sourceStepId))||asis[i]||{};return `<tr><td>${esc(it.sourceStepName)}</td><td>${esc(comparable(stepMetric(a,'actor')))}</td><td>${esc(comparable(it.futureActor))}</td><td>${esc(comparable(stepMetric(a,'tool')))}</td><td>${esc(comparable(it.tool))}</td><td>${esc(it.transformation||'—')}</td><td>${esc(comparable(it.automationAi))}</td><td>${esc(comparable(it.humanSupervision))}</td><td>${esc(comparable(it.controlsRisk))}</td></tr>`}).join('');const active=asis.reduce((n,s)=>n+(Number(stepMetric(s,'activeTime'))||0),0),wait=asis.reduce((n,s)=>n+(Number(stepMetric(s,'waitTime'))||0),0),rework=asis.reduce((n,s)=>n+(Number(stepMetric(s,'reworkTime'))||0),0);return pageTop('AS-IS vs TO-BE','Comparación derivada del snapshot confirmado y del TO-BE revisado; ninguna métrica se inventa.',`<button class="btn" data-page="tobe">Propuesto</button><button class="btn btn-primary" data-page="comparacion">Comparación</button>`)+section('Qué cambia','Correspondencia de cada paso actual con la propuesta.',`<div class="table-wrap"><table class="data-table"><thead><tr><th>Paso</th><th>Actor actual</th><th>Actor propuesto</th><th>Herramienta actual</th><th>Herramienta propuesta</th><th>Transformación</th><th>Automatización / IA</th><th>Intervención humana</th><th>Control</th></tr></thead><tbody>${rows}</tbody></table></div>`)+section('Métricas comparables','Los valores futuros sólo se muestran cuando existe regla o supuesto trazable.',`<div class="grid g3"><div class="notice"><b>Trabajo activo actual</b><br>${active||'No disponible con evidencia suficiente'}</div><div class="notice"><b>Espera actual</b><br>${wait||'No disponible con evidencia suficiente'}</div><div class="notice"><b>Retrabajo actual</b><br>${rework||'No disponible con evidencia suficiente'}</div><div class="notice"><b>Capacidad liberada</b><br>No disponible con evidencia suficiente</div><div class="notice"><b>Ahorro de caja</b><br>No disponible con evidencia suficiente</div><div class="notice"><b>Riesgo residual futuro</b><br>No disponible con evidencia suficiente</div></div>`)}
