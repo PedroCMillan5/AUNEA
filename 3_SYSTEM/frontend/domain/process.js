@@ -898,8 +898,8 @@ bindForms=function(){
   const addDecision=document.getElementById('addDecisionFromClient');if(addDecision)addDecision.onclick=addDecisionStep;
   const addMany=document.getElementById('addMultipleSteps');if(addMany)addMany.onclick=()=>addMultipleSteps();
   const addFriction=document.getElementById('addFriction');if(addFriction)addFriction.onclick=ev=>{ev.preventDefault();ev.stopPropagation();openFrictionModal()};
-  document.querySelectorAll('#addRisk,[data-add-risk-global]').forEach(b=>b.onclick=ev=>{ev.preventDefault();ev.stopPropagation();addRisk()});
-  document.querySelectorAll('#addEconomic,[data-add-economic-global]').forEach(b=>b.onclick=ev=>{ev.preventDefault();ev.stopPropagation();addEconomic()});
+  // Global bottom actions are handled by delegated click binding below so they remain
+  // functional after any client-layer re-render. Do not bind per-node onclick here.
   document.querySelectorAll('[data-edit-risk-index]').forEach(b=>b.onclick=()=>{if(isProcessEditorWindow()){currentEng().processTab='riesgos';render()}addRisk([],Number(b.dataset.editRiskIndex))});
   document.querySelectorAll('[data-delete-risk-index]').forEach(b=>b.onclick=()=>deleteRisk(Number(b.dataset.deleteRiskIndex)));
   document.querySelectorAll('[data-edit-economic-index]').forEach(b=>b.onclick=()=>{if(isProcessEditorWindow()){currentEng().processTab='impacto';render()}addEconomic([],Number(b.dataset.editEconomicIndex))});
@@ -917,4 +917,24 @@ bindForms=function(){
   if(typeof requestAnimationFrame==='function')requestAnimationFrame(drawProcessGraph);
     document.querySelectorAll('[data-validated-case]').forEach(b=>b.onclick=()=>instantiateValidatedCase(b.dataset.validatedCase));
 };
+
+// Global layer actions live in content that is replaced on every process-tab render.
+// Bind once at document level so "Añadir riesgo" / "Añadir impacto" never depend on
+// the exact render/bindForms timing of the current layer.
+if(typeof document!=='undefined'&&!document.__auneaGlobalLayerActionsBound){
+  document.__auneaGlobalLayerActionsBound=true;
+  document.addEventListener('click',ev=>{
+    const riskButton=ev.target?.closest?.('#addRisk,[data-add-risk-global]');
+    if(riskButton){
+      ev.preventDefault();ev.stopPropagation();
+      addRisk();
+      return;
+    }
+    const economicButton=ev.target?.closest?.('#addEconomic,[data-add-economic-global]');
+    if(economicButton){
+      ev.preventDefault();ev.stopPropagation();
+      addEconomic();
+    }
+  });
+}
 // [AUNEA-FE-PROC-EDITOR-020] END
