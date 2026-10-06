@@ -114,10 +114,8 @@ function confirmProcessLayer(tab){
   const integrity=processLayerIntegrityIssues(e,key);if(integrity.length)return toast('No se puede confirmar: '+integrity[0].message),false;
   const x=processLayerConfirmations(e);x[key]=true;x[key+'_at']=now();
   if(allProcessLayersConfirmed(e)){
-    e.confirmedAsIs=true;e.answers.DF093='YES';e.asIsConfirmedAt=now();
-    const sealed=typeof sealConfirmedSnapshot==='function'?sealConfirmedSnapshot(e,'confirmación de mapa, fricciones, riesgos e impacto'):null;
-    markDirty(sealed?`Capas AS-IS confirmadas · snapshot v${sealed.version}`:'Capas AS-IS confirmadas');
-    toast('Mapa, fricciones, riesgos e impacto confirmados.');
+    markDirty('Mapa, fricciones, riesgos e impacto revisados; cierre PG09 pendiente');
+    toast('Las cuatro capas están revisadas. Completa Validación y cierre para sellar el snapshot.');
   }else{
     markDirty(`Capa ${key} confirmada`);
     toast('Capa confirmada. Puedes continuar con la siguiente.');
@@ -125,6 +123,12 @@ function confirmProcessLayer(tab){
   render();
 }
 function confirmAsIs(){confirmProcessLayer(currentEng()?.processTab||'cliente')}
+function invalidateAsIsClosure(e,reason='cambio en cierre de sesión'){
+  if(!e||!e.confirmedAsIs)return false;
+  e.confirmedAsIs=false;e.answers.DF093='';e.asIsConfirmedAt=null;e.confirmedSnapshot=null;
+  if(typeof invalidateDerivedState==='function')invalidateDerivedState(e,reason);
+  return true;
+}
 function confirmClosingAsIs(){
   if(typeof guardAsisMutation==='function'&&guardAsisMutation())return;
   const e=currentEng();if(!e)return;
