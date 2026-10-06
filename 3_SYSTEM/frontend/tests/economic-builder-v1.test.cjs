@@ -42,11 +42,10 @@ test('addEconomic translates the driver-picker label to Spanish and shows an inf
   ctx.addEconomic();
   assert.match(ctx.__lastBody,/Concepto económico/);
   assert.doesNotMatch(ctx.__lastBody,/<label>Driver<\/label>/);
-  assert.match(ctx.__lastBody,/Pasos con tiempo activo registrado: Alta, Aprobación/);
-  assert.match(ctx.__lastBody,/Pasos con espera registrada: Aprobación/);
-  assert.match(ctx.__lastBody,/Se reutilizan para obtener un cálculo revisable/);
-  assert.match(ctx.__lastBody,/Tiempo activo atribuible/);
-  assert.match(ctx.__lastBody,/Tiempo de espera atribuible/);
+  assert.match(ctx.__lastBody,/Contexto del impacto/);
+  assert.match(ctx.__lastBody,/Los tiempos y el volumen se reutilizan del AS-IS/);
+  assert.match(ctx.__lastBody,/Trabajo anual asociado/);
+  assert.match(ctx.__lastBody,/Espera anual cuantificada/);
   assert.match(ctx.__lastBody,/id="econActive_unit"/);
   assert.match(ctx.__lastBody,/id="econWait_unit"/);
 });
@@ -103,11 +102,11 @@ test('Impacto reuses mapped tools and direct-loss friction sources without inven
   ctx.__eng.frictions=[{id:'F1',status:'ACTIVE',affected_steps:['S1'],client_label:'Duplicación de cobros',direct_loss:{value:100}}];
   ctx.labelFrom=(set,id)=>set==='OS_TOOL_CATEGORY'?'Herramienta registrada':id;
   ctx.addEconomic(['S1']);
-  assert.match(ctx.__lastBody,/Herramientas registradas en el mapa \(DF046\)/);
+  assert.match(ctx.__lastBody,/Herramientas de los pasos seleccionados/);
   assert.match(ctx.__lastBody,/Herramienta registrada/);
-  assert.match(ctx.__lastBody,/coste atribuible/);
-  assert.match(ctx.__lastBody,/Pérdidas directas declaradas en fricciones \(DF063\)/);
-  assert.match(ctx.__lastBody,/DF082 no vuelva a contabilizar/);
+  assert.match(ctx.__lastBody,/Registra sólo el coste atribuible/);
+  assert.match(ctx.__lastBody,/Pérdidas directas ya declaradas en fricciones/);
+  assert.match(ctx.__lastBody,/Evita volver a contabilizar el mismo evento/);
 });
 
 test('addEconomic uses the guided three-step experience while preserving the canonical EconomicInput fields',()=>{
