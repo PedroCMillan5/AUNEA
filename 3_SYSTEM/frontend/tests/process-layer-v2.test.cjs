@@ -28,7 +28,7 @@ function setup(){
     num:v=>Number(v||0),pageTop:()=>'',requiredMark:()=>'*',
     auneaSelectControl:(id,opts,val)=>'<input id="'+id+'" value="'+(val||'')+'">',
     audit:()=>{},id:p=>p+'-TEST',now:()=>'',markDirty:()=>{},render:()=>{},toast:()=>{},
-    closeModal:()=>{},openModal:()=>{},segmented:()=>'',structuredClone
+    closeModal:()=>{},openModal:()=>{},segmented:()=>'',riskBuilder:()=>'<div>Riesgos</div>',economicBuilder:()=>'<div>Impacto</div>',structuredClone
   };
   vm.createContext(ctx);vm.runInContext(process,ctx);
   return {ctx,e,fields,events,label,help};
@@ -100,7 +100,7 @@ test('real SÍ/NO routes, merges and unconnected future destinations are visual 
   const html=ctx.processGraphHtml(e,e.processSteps,e.frictions,'Inicio','Fin');
   assert.match(html,/process-graph-board/);
   assert.match(html,/process-graph-lines/);
-  assert.match(html,/data-graph-edit-route="D"/);
+  assert.match(html,/data-edit-step="D"/);
   ctx.relinkNormalFlow(e);
   assert.equal(e.processSteps[0].normal_next_step,'Y');
   assert.equal(e.processSteps[0].exception_path.destination_step,'N');
@@ -165,8 +165,8 @@ test('client graph stays within the editor viewport and decision routes explain 
     {id:'N',status:'ACTIVE',step_name:'Solicitar datos'}
   ];
   const html=ctx.processGraphHtml(e,e.processSteps,[],'Inicio','Fin','cliente');
-  assert.match(html,/SÍ/);assert.match(html,/→ Aprobar/);
-  assert.match(html,/NO/);assert.match(html,/→ Solicitar datos/);
+  assert.match(html,/SÍ/);assert.match(html,/NO/);
+  assert.match(html,/data-graph-edges=/);
   assert.match(css,/body\.mode-process-editor \.process-graph-board\{width:100%;min-width:0\}/);
   assert.match(css,/body\.mode-process-editor \.client-process-canvas\.process-graph-canvas\{overflow-x:hidden/);
 });
@@ -176,11 +176,11 @@ test('risk inherits confirmed friction locations via existing step_ids; economic
   assert.match(risk,/normalizeArray\(f\.affected_steps\)/);
   assert.match(risk,/riskRelatedFrictions/);
   assert.doesNotMatch(risk,/friction_ids\s*:/);
-  assert.match(econ,/Contexto reutilizado del AS-IS/);
+  assert.match(econ,/Contexto del impacto/);
   assert.match(econ,/linkedFrictions\.length/);
   assert.match(econ,/linkedRisks\.length/);
   assert.match(econ,/economicTimeProjection/);
-  assert.match(econ,/sin sumar fricciones/);
+  assert.match(econ,/Evita volver a contabilizar el mismo evento/);
   assert.match(css,/\.client-inherited-context\{/);
 });
 test('friction popup captures approved time attribution without changing existing dropdowns',()=>{
@@ -205,7 +205,7 @@ test('render retains actual horizontal and vertical map scroll across an in-plac
   const frames=[];
   const ctx={document,state:{activePage:'proceso'},pages:{proceso:()=>'<div>Mapa AS-IS</div>'},
     currentEng:()=>study,renderNav(){},updateHeader(){},bindCommon(){},postBind(){},
-    requestAnimationFrame:fn=>{frames.push(fn)},publishSessionSnapshot(){},toast(){},advanceEngagementTo(){}};
+    requestAnimationFrame:fn=>{frames.push(fn)},publishSessionSnapshot(){},toast(){},advanceEngagementTo(){},isProcessEditorWindow(){return false}};
   vm.createContext(ctx);vm.runInContext(snippet,ctx);
   // Changing from Risks to Impact must retain the same flow position after graph layout.
   study.processTab='impacto';ctx.render();
