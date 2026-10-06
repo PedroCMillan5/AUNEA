@@ -65,14 +65,15 @@ test('whole application: UAT3 click creates, navigates and restores three studie
    open.onclick();
    assert.equal(run('state.activePage'),'proceso');
    assert.equal(w.document.querySelectorAll('[data-graph-node]').length>=8,true,e.id+' lacks routed graph');
-   for(const tab of ['cliente','fricciones','riesgos','impacto']){
-     const nav=w.document.querySelector('[data-process-tab="'+tab+'"]');
-     assert.ok(nav,e.id+' missing '+tab);
+   for(const page of ['pasos','fricciones','riesgos','impacto']){
+     const nav=w.document.querySelector('[data-page="'+page+'"]');
+     assert.ok(nav,e.id+' missing '+page);
      nav.onclick();
-     assert.equal(run('currentEng().processTab'),tab,e.id+' reset layer');
-     assert.ok(w.document.querySelector('.flow-canvas'),e.id+' lost shared canvas in '+tab);
-     assert.ok(w.document.querySelector('[data-process-engagement="'+e.id+'"]'));
+     assert.equal(run('state.activePage'),page,e.id+' wrong AS-IS layer page');
+     assert.ok(w.document.getElementById('content').textContent.length>40,e.id+' empty '+page);
    }
+   run('state.activePage="proceso";render()');
+   assert.ok(w.document.querySelector('[data-process-engagement="'+e.id+'"]'));
    assert.equal(run('currentEng().confirmedAsIs'),false);
    assert.equal(run('currentEng().confirmedSnapshots.length'),0);
  }
@@ -106,11 +107,12 @@ test('three isolated sessions: sequential layer confirmation seals once; upstrea
  for(const file of ['invoices.json','unified-requests.json','email-orders.json']){
    const {w,dom,run}=buildRuntime();
    const row=run('uat3Seed('+JSON.stringify(JSON.parse(read('uat/cases/'+file)))+')');
-   run('state.companies.push('+JSON.stringify(row.company)+');state.contacts.push(...'+JSON.stringify(row.contacts)+');state.engagements.push('+JSON.stringify(row.engagement)+');state.activeEngagementId='+JSON.stringify(row.engagement.id)+';state.activePage="proceso";');
-   for(const [index,tab] of ['cliente','fricciones','riesgos','impacto'].entries()){
-     run('currentEng().processTab='+JSON.stringify(tab)+';render()');
-     assert.ok(w.document.getElementById('confirmAsIs'),file+' '+tab+' missing confirm action');
-     w.document.getElementById('confirmAsIs').onclick();
+   run('state.companies.push('+JSON.stringify(row.company)+');state.contacts.push(...'+JSON.stringify(row.contacts)+');state.engagements.push('+JSON.stringify(row.engagement)+');state.activeEngagementId='+JSON.stringify(row.engagement.id)+';state.activePage="pasos";');
+   for(const [index,page] of ['pasos','fricciones','riesgos','impacto'].entries()){
+     run('state.activePage='+JSON.stringify(page)+';render()');
+     const confirm=w.document.querySelector('[data-confirm-process-layer]');
+     assert.ok(confirm,file+' '+page+' missing confirm action');
+     confirm.onclick();
      const e=run('currentEng()');
      assert.equal(e.confirmedAsIs,index===3,file+' cannot seal before all four layers');
    }
