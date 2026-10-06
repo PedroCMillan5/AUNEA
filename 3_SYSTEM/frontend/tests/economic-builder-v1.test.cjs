@@ -24,7 +24,7 @@ function makeCtx(){
     section:(title,sub,body,actions)=>`${body}${actions||''}`,
     openModal:(title,body,onSave)=>{ctx.__lastBody=body;ctx.__lastOnSave=onSave},
     closeModal:()=>{},markDirty:()=>{},render:()=>{},toast:()=>{},now:()=>'',id:p=>`${p}-1`,
-    document:{getElementById:(elId)=>{if(!domFields[elId])domFields[elId]={style:{},dataset:{},value:'',disabled:false,textContent:'',innerHTML:'',addEventListener(){},removeAttribute(){},setAttribute(){}};return domFields[elId]}},
+    document:{getElementById:(elId)=>{if(!domFields[elId])domFields[elId]={style:{},dataset:{},value:'',disabled:false,textContent:'',innerHTML:'',isConnected:true,addEventListener(){},removeAttribute(){},setAttribute(){}};return domFields[elId]}},
     confirm:()=>true
   };
   ctx.__eng=eng;ctx.__domFields=domFields;
