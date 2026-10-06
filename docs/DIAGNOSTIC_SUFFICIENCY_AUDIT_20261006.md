@@ -167,3 +167,18 @@ AUNEA será diagnósticamente suficiente cuando:
 **QA final:** 464 tests, 464 PASS, 0 FAIL, CI SUCCESS.
 
 **Estado actual: SUFICIENCIA DIAGNÓSTICA = PASS / CERRADA para PG01–PG09 bajo el contrato canónico vigente.**
+
+
+## Hardening PG09 — validación visible de coherencia
+
+Implementado después del cierre de suficiencia para hacer visible al consultor, antes de sellar DF093, la misma coherencia que el runtime ya exigía internamente.
+
+- PG09 muestra una sección **Validación de coherencia** antes del resumen final.
+- **Bloqueante**: capa AS-IS sin confirmar, obligatorio aplicable pendiente o error de integridad Step/Friction/Risk/EconomicInput/campo canónico. Impide confirmar DF093 y ofrece navegación al owner.
+- **Revisar**: discrepancia entre un valor reutilizado y su fuente propietaria, proyección temporal obsoleta o evidencia pendiente. Se muestra explícitamente, pero no se convierte artificialmente en obligatorio.
+- **Información**: cuando no existe ningún hallazgo, se informa de que no se detectan incoherencias estructurales.
+- `confirmClosingAsIs()` consume exactamente `preCloseConsistencyReview()`: la UI y el gate de cierre no mantienen dos reglas distintas.
+- No se añade ningún DF, no se crea un segundo owner, no se persisten overrides y no se modifica Pain/Economics/Risk/Recommendation.
+- Regresión añadida en `process-lifecycle-v1.test.cjs` y Block_ID `AUNEA-FE-ASIS-CONSISTENCY-076`.
+
+Estado: **IMPLEMENTADO EN REVIEW**. La promoción a main mantiene los gates existentes de la rama.
