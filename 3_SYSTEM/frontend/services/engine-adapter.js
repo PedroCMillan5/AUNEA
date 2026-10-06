@@ -29,6 +29,7 @@ function normalizeEconomicInputs(e){
       annual_active_hours:active?(x.annual_active_hours==null?null:Number(x.annual_active_hours)):0,
       annual_wait_hours:wait?(x.annual_wait_hours==null?null:Number(x.annual_wait_hours)):0,
       capacity_cost_rate_eur_hour:x.capacity_cost_rate_eur_hour==null?null:Number(x.capacity_cost_rate_eur_hour),
+      role_or_resource:x.role_or_resource||null,value:x.value==null?null:Number(x.value),unit:x.unit||null,period:x.period||null,
       direct_loss_eur_annual:x.direct_loss_eur_annual==null?null:Number(x.direct_loss_eur_annual),
       current_tool_cost_eur_annual:x.current_tool_cost_eur_annual==null?null:Number(x.current_tool_cost_eur_annual),
       realized_cash_saving_eur_annual:x.realized_cash_saving_eur_annual==null?null:Number(x.realized_cash_saving_eur_annual),
