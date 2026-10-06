@@ -36,7 +36,21 @@ function normalizeEconomicInputs(e){
     };
   }).filter(x=>x.driver_id)
 }
-function normalizeRiskInputs(e){return (e.risks||[]).map(r=>({step_ids:normalizeArray(r.step_ids).filter(Boolean),category:r.category||'RC01',likelihood_1_5:Number(r.likelihood_1_5),impact_1_5:Number(r.impact_1_5),reversible:r.reversible!==false,sensitive_or_high_impact:r.sensitive_or_high_impact===true,material_financial_or_compliance:!!r.material_financial_or_compliance,critical_trigger:!!r.critical_trigger,...(typeof r.controls_present==='boolean'?{controls_present:r.controls_present}:{}),description:r.description||null}))}
+function normalizeRiskInputs(e){
+  const requireBool=(v,label)=>{if(typeof v!=='boolean')throw new Error('Riesgo incompleto: '+label+' debe revisarse antes del diagnóstico.');return v};
+  return (e.risks||[]).map(r=>{
+    const likelihood=Number(r.likelihood_1_5),impact=Number(r.impact_1_5);
+    if(!r.category)throw new Error('Riesgo incompleto: falta la categoría.');
+    if(!Number.isInteger(likelihood)||likelihood<1||likelihood>5||!Number.isInteger(impact)||impact<1||impact>5)throw new Error('Riesgo incompleto: probabilidad e impacto deben estar entre 1 y 5.');
+    return {step_ids:normalizeArray(r.step_ids).filter(Boolean),category:r.category,likelihood_1_5:likelihood,impact_1_5:impact,
+      reversible:requireBool(r.reversible,'reversibilidad'),
+      sensitive_or_high_impact:requireBool(r.sensitive_or_high_impact,'sensibilidad'),
+      material_financial_or_compliance:requireBool(r.material_financial_or_compliance,'materialidad'),
+      critical_trigger:requireBool(r.critical_trigger,'criticidad'),
+      controls_present:requireBool(r.controls_present,'controles actuales'),
+      description:r.description||null};
+  })
+}
 function buildBackendPayload(engagement){
   const e=typeof engagementOfRecord==='function'?engagementOfRecord(engagement):engagement;
   const evidence=[],painSignals=[],fmap=Object.fromEntries(schema.friction_pain_map.map(x=>[x.Friction_Type_ID,x.Pain_ID]));
