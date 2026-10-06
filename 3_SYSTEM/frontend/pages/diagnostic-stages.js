@@ -12,6 +12,21 @@ function habitualVolumeBlock(f21,f22,e){
   const raw=effectiveValue(f21,e),value=(raw&&typeof raw==='object')?raw.value:raw,period=effectiveValue(f22,e),periods=fieldOptions(f22.Option_Set_ID||'OS_PERIOD');
   return `<div class="field full volume-pair demand-volume-primary" data-uat="UAT-VIS-023"><label>Volumen habitual${diagnosticFieldMeta(f21)}</label><div class="compound-control volume-sentence"><input type="number" inputmode="decimal" min="0" step="any" data-number-value="${f21.Field_ID}" value="${attr(value??'')}" placeholder="120" aria-label="Volumen habitual de casos"><span class="unit-label">casos por</span>${auneaSelectControl(f22.Field_ID,periods.map(o=>({value:o.value,label:String(o.label).toLowerCase()})),period,{extra:`data-answer="${f22.Field_ID}"`,placeholder:'Selecciona periodo…'})}</div><div class="field-help">${esc(f21.Objetivo_concreto||'')} ${esc(f22.Objetivo_concreto||'')}</div></div>`;
 }
+function slaTargetBlock(f,e){
+  const p=numberParts(effectiveValue(f,e));
+  const units=[{value:'min',label:'min'},{value:'h',label:'h'},{value:'day',label:'días'},{value:'week',label:'semanas'}];
+  const modeOpts=[{value:'',label:'Sí, existe un tiempo objetivo'},{value:'NONE',label:'No existe SLA / tiempo objetivo'}];
+  return `<div class="field full demand-sla-target" data-field="${attr(f.Field_ID)}" data-uat="UAT-VIS-025">
+    <label>${esc(f.Pregunta_o_etiqueta_ES)}<span class="conditional-tag">condicional</span></label>
+    <div class="compound-control demand-sla-control">
+      <input type="number" inputmode="decimal" min="0" step="any" data-number-value="${f.Field_ID}" value="${attr(p.value??'')}" placeholder="Valor" aria-label="Tiempo objetivo">
+      ${auneaSelectControl(`${f.Field_ID}__unit`,units,p.unit,{extra:`data-number-unit="${f.Field_ID}"`,placeholder:'Unidad…'})}
+      ${auneaSelectControl(`${f.Field_ID}__mode`,modeOpts,p.mode,{extra:`data-number-mode="${f.Field_ID}"`,placeholder:'Indica si existe…'})}
+    </div>
+    <div class="field-help">Si existe un SLA o tiempo objetivo, indica valor y unidad. Si no existe, déjalo declarado explícitamente para no confundirlo con un dato pendiente.</div>
+  </div>`;
+}
+
 function peakVolumeBlock(f,e){
   const value=numberParts(effectiveValue(f,e)),periods=fieldOptions('OS_PERIOD');
   return `<div class="field full volume-pair demand-volume-peak" data-uat="UAT-VIS-024"><label>${esc(f.Pregunta_o_etiqueta_ES)}${diagnosticFieldMeta(f)}</label><div class="compound-control volume-sentence"><input type="number" inputmode="decimal" min="0" step="any" data-number-value="${f.Field_ID}" value="${attr(value.value??'')}" placeholder="200" aria-label="Volumen de pico"><input type="hidden" data-number-unit="${f.Field_ID}" value="case"><span class="unit-label">casos por</span>${auneaSelectControl(`${f.Field_ID}__period`,periods.map(o=>({value:o.value,label:String(o.label).toLowerCase()})),value.period,{extra:`data-number-period="${f.Field_ID}"`,placeholder:'Selecciona periodo…'})}</div><div class="field-help">${esc(f.Objetivo_concreto||'')}</div></div>`;
@@ -26,6 +41,7 @@ function renderStageFields(fields,e){
     }
     if(f.Field_ID==='DF022'&&fields.some(x=>x.Field_ID==='DF021'))continue;
     if(f.Field_ID==='DF023'){out.push(peakVolumeBlock(f,e));continue}
+    if(f.Field_ID==='DF025'){out.push(slaTargetBlock(f,e));continue}
     out.push(renderQuestion(f,e));
   }
   return out.join('');
