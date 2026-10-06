@@ -311,7 +311,7 @@ function validationSummary(e,completion){
   const snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;
   const layers=typeof processLayerConfirmations==='function'?processLayerConfirmations(e):{},layersReady=!!(layers.map&&layers.frictions&&layers.risks&&layers.impact);
   const captureBlockers=(completion.blockers||[]).filter(b=>b.type!=='GATE'&&b.id!=='Confirmación AS-IS');
-  const primaryCta=snap&&e.confirmedAsIs?'<button class="btn btn-primary" data-page="resultados">Continuar a Trabajo interno</button>':!layersReady?'<button class="btn btn-primary" data-goto-process="1">Completar revisiones del AS-IS</button>':captureBlockers.length?'':'<button class="btn btn-primary" id="confirmClosingAsIs">Confirmar AS-IS</button>';
+  const primaryCta=snap&&e.confirmedAsIs&&!captureBlockers.length?'<button class="btn btn-primary" data-page="resultados">Continuar a Trabajo interno</button>':!layersReady?'<button class="btn btn-primary" data-goto-process="1">Completar revisiones del AS-IS</button>':captureBlockers.length?'':'<button class="btn btn-primary" id="confirmClosingAsIs">Confirmar AS-IS</button>';
   const cta=primaryCta+(captureBlockers.length?`<div class="blocker-list">${captureBlockers.map(b=>`<div class="notice warn"><span>${esc(b.label)}</span>${b.navigationTarget==='proceso'?'<button class="btn btn-small" data-goto-process="1">Ir a completar</button>':b.stage?`<button class="btn btn-small" data-goto-stage="${attr(b.stage)}">Ir a completar</button>`:''}</div>`).join('')}</div>`:'');
   return section('Confirmación del AS-IS','Revisión factual del estudio; ningún estado se afirma más allá de lo realmente capturado.',
     `<div class="grid g3">
