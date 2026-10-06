@@ -56,7 +56,7 @@ function completionStageReviewed(s,e){
     if(s.Stage_ID==='S07')return !!x.impact;
     if(s.Stage_ID==='S09')return !!e.confirmedAsIs;
   }
-  const fields=(schema?.fields||[]).filter(f=>f.Stage_ID===s.Stage_ID&&f.Requiredness==='REQUIRED_90M'&&questionVisible(f,e));
+  const fields=(schema?.fields||[]).filter(f=>f.Stage_ID===s.Stage_ID&&(typeof canonicalFieldRequiredNow==='function'?canonicalFieldRequiredNow(f,e):(f.Requiredness==='REQUIRED_90M'&&questionVisible(f,e))));
   if(fields.length)return fields.every(f=>typeof canonicalFieldValuePresent==='function'?canonicalFieldValuePresent(f,effectiveValue(f,e),e):valuePresent(effectiveValue(f,e)));
   return !!e.confirmedAsIs;
 }
@@ -78,7 +78,7 @@ function completionOverallStats(e){
 }
 
 function engagementCompletion(e){
-  const requiredFields=(schema?.fields||[]).filter(f=>f.Requiredness==='REQUIRED_90M'&&!COMPLETION_SKIP_FIELDS.has(f.Field_ID)&&questionVisible(f,e));
+  const requiredFields=(schema?.fields||[]).filter(f=>!COMPLETION_SKIP_FIELDS.has(f.Field_ID)&&(typeof canonicalFieldRequiredNow==='function'?canonicalFieldRequiredNow(f,e):(f.Requiredness==='REQUIRED_90M'&&questionVisible(f,e))));
   const requiredComplete=requiredFields.filter(f=>typeof canonicalFieldValuePresent==='function'?canonicalFieldValuePresent(f,effectiveValue(f,e),e):valuePresent(effectiveValue(f,e))).length;
   const missing=completionMissingDetail(e);
   const integrity=typeof captureIntegrityIssues==='function'?captureIntegrityIssues(e):[];
