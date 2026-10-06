@@ -19,6 +19,7 @@ from .registry import rule_bundle_version, load_registry
 from .store import SQLiteStore
 from .uat import run_canonical_uat
 from .session_time import TimeProjectionRequest, project_session_time
+from .input_coverage import relational_integrity_issues
 
 app = FastAPI(title="AUNEA Internal Backend", version="1.1.1")
 app.add_middleware(
@@ -73,6 +74,12 @@ def get_engagement(engagement_id: str):
     item=store.get_engagement(engagement_id)
     if not item: raise HTTPException(404,"engagement not found")
     return item
+
+@app.post("/v1/diagnostic/coverage")
+def diagnostic_coverage(payload: EngagementInput):
+    coverage=engine.coverage.run(payload)
+    integrity=relational_integrity_issues(payload)
+    return {"coverage":coverage,"integrity_issues":integrity}
 
 @app.post("/v1/diagnose")
 def diagnose(payload: EngagementInput):
