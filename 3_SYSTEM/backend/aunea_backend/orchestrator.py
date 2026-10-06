@@ -8,6 +8,7 @@ from .solution_models import SolutionSpecificationRequest, SolutionSpecification
 from .system_builder_models import SystemBuilderRequest, SystemBuildPlan, SystemBuildPackage
 from .system_builder import SystemBuilderEngine
 from .engines import EngineContext, PainEngine, EconomicsEngine, RiskEngine, RecommendationEngine, PricingEngine, ScenarioComparator
+from .input_coverage import InputCoverageEngine, relational_integrity_issues
 from .registry import rule_bundle_version
 from .utils import stable_hash
 from .store import SQLiteStore
@@ -38,7 +39,7 @@ class InMemoryAuditStore:
 
 class Orchestrator:
     def __init__(self, store: SQLiteStore | None = None):
-        self.pain=PainEngine(); self.econ=EconomicsEngine(); self.risk=RiskEngine(); self.rec=RecommendationEngine(); self.price=PricingEngine(); self.scenario=ScenarioComparator(self.price,self.risk)
+        self.coverage=InputCoverageEngine(); self.pain=PainEngine(); self.econ=EconomicsEngine(); self.risk=RiskEngine(); self.rec=RecommendationEngine(); self.price=PricingEngine(); self.scenario=ScenarioComparator(self.price,self.risk)
         self.deliverables=DeliverablesEngine(); self.deliverables_pdf=PDFExporter(); self.solution_spec=SolutionSpecificationEngine(); self.system_builder=SystemBuilderEngine(); self.audit=InMemoryAuditStore(); self.store=store
 
     def _run(self, engagement_id: str, engine: str, inp: Any, out: Any):
@@ -48,6 +49,13 @@ class Orchestrator:
 
     def diagnose(self, engagement: EngagementInput) -> DiagnosticOutput:
         if self.store: self.store.save_engagement(engagement)
+        integrity=relational_integrity_issues(engagement)
+        if integrity:
+            raise ValueError("Revisión de trazabilidad requerida: " + " ".join(integrity))
+        coverage=self.coverage.run(engagement)
+        self._run(engagement.engagement_id,"InputCoverageEngine", engagement.model_dump(), coverage.model_dump())
+        if coverage.status == "BLOCKED":
+            raise ValueError("Cobertura diagnóstica incompleta. Inputs críticos pendientes: " + ", ".join(coverage.blocking_gaps))
         ctx=EngineContext(engagement)
         pain=self.pain.run(ctx); self._run(engagement.engagement_id,"PainEngine", engagement.model_dump(), [x.model_dump() for x in pain])
         econ=self.econ.run(ctx); self._run(engagement.engagement_id,"EconomicsEngine", engagement.model_dump(), econ.model_dump())
@@ -55,7 +63,7 @@ class Orchestrator:
         rec=self.rec.run(ctx,pain,risk); self._run(engagement.engagement_id,"RecommendationEngine", {"pain":[x.model_dump() for x in pain],"risk":risk.model_dump()}, rec.model_dump())
         quote=self.price.run(ctx,rec,risk); self._run(engagement.engagement_id,"ProductPricingEngine", rec.model_dump(), quote.model_dump())
         optimal=self.scenario.create(ctx,pain,econ,risk,rec,quote); self._run(engagement.engagement_id,"ScenarioComparator", rec.model_dump(), optimal.model_dump())
-        result=DiagnosticOutput(engagement_id=engagement.engagement_id,rule_bundle_version=rule_bundle_version(),input_snapshot_hash=stable_hash(engagement.model_dump()),pain_results=pain,economic_result=econ,risk_result=risk,recommendation=rec,quote=quote,optimal_scenario=optimal)
+        result=DiagnosticOutput(engagement_id=engagement.engagement_id,rule_bundle_version=rule_bundle_version(),input_snapshot_hash=stable_hash(engagement.model_dump()),input_coverage=coverage,pain_results=pain,economic_result=econ,risk_result=risk,recommendation=rec,quote=quote,optimal_scenario=optimal)
         if self.store: self.store.save_output(result)
         return result
 
