@@ -228,7 +228,7 @@ function economicBuilder(e){
       const legacy=x.driver_id==='ED15';
       return '<div class="result-item"><div class="result-item-head"><div><b>'+esc(legacy?'Volumen de casos — registro legacy':econDriverLabel(x.driver_id))+'</b>'
         +(legacy?'<div class="notice warn economic-row-warning"><b>No se usa como impacto económico.</b><br>El volumen pertenece a Demanda (DF021/DF022). Elimina este registro duplicado para mantener un único owner.</div>':'<p>Activo '+esc(fmt(x.annual_active_hours))+' h/año · Espera '+esc(fmt(x.annual_wait_hours))+' h/año · Pérdida directa '+esc(fmt(x.direct_loss_eur_annual))+' €/año · Evidencia: '+esc(engineLabel('evidence_quality',x.evidence_type))+'</p>')
-        +'<p>Pasos: '+normalizeArray(x.step_ids).map(id=>steps.find(s=>s.id===id)?.step_name||id).map(esc).join(', ')+'</p></div>'
+        +'<p>Pasos: '+normalizeArray(x.step_ids).map(id=>steps.find(s=>s.id===id)?.step_name||id).map(esc).join(', ')+'</p>'+(x.driver_id==='ED14'&&x.value!=null?'<p>Rol/recurso: '+esc(labelFrom('OS_ACTOR_ROLE',x.role_or_resource)||x.role_or_resource||'—')+' · Capacidad práctica: '+esc(x.value)+' '+esc(x.unit||'h')+(x.period?' / '+esc(labelFrom('OS_PERIOD',x.period)||x.period):'')+'</p>':'')+'</div>'
         +'<div class="result-actions">'+(legacy?'':'<button class="btn btn-small" data-edit-economic-index="'+i+'">Editar</button>')+'<button class="btn btn-small btn-danger" data-delete-economic-index="'+i+'">Eliminar</button></div></div></div>';
     }).join(''):'<div class="empty"><p>Todavía no hay impactos registrados.</p></div>')+'</div>',
     '<button type="button" class="btn btn-outline" id="addEconomic" data-add-economic-global>Añadir impacto</button>')
@@ -236,6 +236,7 @@ function economicBuilder(e){
 function addEconomic(preselectedSteps=[],editIndex=null,forceSuggestedScope=false){
   if(typeof guardAsisMutation==='function'&&guardAsisMutation())return;
   const eng=currentEng(),steps=typeof activeSteps==='function'?activeSteps(eng):[];
+  const roleOptions=unique(steps.map(s=>s.actor)).map(value=>({value,label:labelFrom('OS_ACTOR_ROLE',value)||value}));
   const existing=editIndex===null?null:eng.economicInputs[editIndex];
   if(editIndex!==null&&!existing)return;
   if(existing?.driver_id==='ED15')return toast('Volumen de casos ya pertenece a Demanda (DF021/DF022). Elimina este registro legacy; no puede editarse como impacto económico.');
@@ -291,6 +292,9 @@ function addEconomic(preselectedSteps=[],editIndex=null,forceSuggestedScope=fals
     </div></details>
     <details class="step-group" open id="economicValueGroup"><summary>3. Valor económico cuando proceda</summary><div class="form-grid">
       <div class="field" data-econ-ui="rate"><label>Coste de capacidad por hora</label><div class="compound-control"><input id="econRate" value="${attr(existing?.capacity_cost_rate_eur_hour??'')}" type="number" min="0" step="any" inputmode="decimal" placeholder="0"><span class="unit-label">€/h</span></div><div class="field-help">Valor de capacidad del perfil. No equivale por sí solo a ahorro de caja.</div></div>
+      <div class="field" data-econ-ui="capacity-meta"><label>Rol / recurso</label>${econDropdown('econRole',[{value:'',label:'Selecciona…'},...roleOptions],existing?.role_or_resource||'','Selecciona…')}</div>
+      <div class="field" data-econ-ui="capacity-meta"><label>Capacidad práctica/productiva del rol</label><div class="compound-control"><input id="econCapacityValue" value="${attr(existing?.value??'')}" type="number" min="0" step="any" inputmode="decimal" placeholder="0"><span class="unit-label">h</span></div><div class="field-help">Horas prácticas disponibles del mismo rol y periodo; no se presupone ningún porcentaje de utilización.</div></div>
+      <div class="field" data-econ-ui="capacity-meta"><label>Periodo de la capacidad práctica</label>${econDropdown('econCapacityPeriod',[{value:'',label:'Selecciona…'},...fieldOptions('OS_PERIOD')],existing?.period||'','Selecciona…')}</div>
       <div class="field" data-econ-ui="direct"><label>Pérdida directa anual</label><div class="compound-control"><input id="econDirect" value="${attr(existing?.direct_loss_eur_annual??'')}" type="number" min="0" step="any" inputmode="decimal" placeholder="0"><span class="unit-label">€/año</span></div><div class="field-help">Pérdida financiera directa evidenciada y atribuible al proceso.</div></div>
       <div class="field" data-econ-ui="tool"><label>Coste actual de herramientas</label><div class="compound-control"><input id="econTool" value="${attr(existing?.current_tool_cost_eur_annual??'')}" type="number" min="0" step="any" inputmode="decimal" placeholder="0"><span class="unit-label">€/año</span></div><div class="field-help">Gasto actual atribuible. No se presume eliminable.</div></div>
       <div class="field" data-econ-ui="cash"><label>Ahorro de caja ya realizado</label><div class="compound-control"><input id="econCash" value="${attr(existing?.realized_cash_saving_eur_annual??'')}" type="number" min="0" step="any" inputmode="decimal" placeholder="0"><span class="unit-label">€/año</span></div><div class="field-help">Sólo ahorro real ya materializado; nunca una estimación futura.</div></div>
@@ -306,11 +310,13 @@ function addEconomic(preselectedSteps=[],editIndex=null,forceSuggestedScope=fals
       return toast('Los datos del proceso han cambiado. Actualiza la vista previa antes de guardar el impacto.');
     const activeHours=projected?projected.active:capturedHours('econActive','annual_active_hours');
     const waitHours=projected?projected.wait:capturedHours('econWait','annual_wait_hours');
-    let draft={step_ids,driver_id:document.getElementById('econDriver').value,annual_active_hours:activeHours,annual_wait_hours:waitHours,capacity_cost_rate_eur_hour:econNullableNumber(document.getElementById('econRate').value),direct_loss_eur_annual:econNullableNumber(document.getElementById('econDirect').value),current_tool_cost_eur_annual:econNullableNumber(document.getElementById('econTool').value),realized_cash_saving_eur_annual:econNullableNumber(document.getElementById('econCash').value),evidence_type:document.getElementById('econEvidence').value,derivation_source:projected?'DF021/DF022 + RT_PROCESS_STEP':(preserveCapturedTime&&activeHours===existing?.annual_active_hours&&waitHours===existing?.annual_wait_hours?existing.derivation_source:'MANUAL_VALIDATION'),deduplication_key:existing?.deduplication_key??null};
+    let draft={step_ids,driver_id:document.getElementById('econDriver').value,annual_active_hours:activeHours,annual_wait_hours:waitHours,capacity_cost_rate_eur_hour:econNullableNumber(document.getElementById('econRate').value),role_or_resource:document.getElementById('econRole')?.value||null,value:econNullableNumber(document.getElementById('econCapacityValue')?.value),unit:document.getElementById('econCapacityValue')?.value!==''?'h':null,period:document.getElementById('econCapacityPeriod')?.value||null,direct_loss_eur_annual:econNullableNumber(document.getElementById('econDirect').value),current_tool_cost_eur_annual:econNullableNumber(document.getElementById('econTool').value),realized_cash_saving_eur_annual:econNullableNumber(document.getElementById('econCash').value),evidence_type:document.getElementById('econEvidence').value,derivation_source:projected?'DF021/DF022 + RT_PROCESS_STEP':(preserveCapturedTime&&activeHours===existing?.annual_active_hours&&waitHours===existing?.annual_wait_hours?existing.derivation_source:'MANUAL_VALIDATION'),deduplication_key:existing?.deduplication_key??null};
     if(!draft.driver_id)return toast('Selecciona el tipo de impacto antes de guardar.');
     if(draft.driver_id==='ED15')return toast('El volumen de casos pertenece a Demanda (DF021/DF022); no se crea un EconomicInput duplicado para ED15.');
     draft=normalizedEconomicDriverRecord(draft);
     if(['annual_active_hours','annual_wait_hours','capacity_cost_rate_eur_hour','direct_loss_eur_annual','current_tool_cost_eur_annual','realized_cash_saving_eur_annual'].some(k=>draft[k]!==null&&draft[k]!==undefined&&(!Number.isFinite(Number(draft[k]))||Number(draft[k])<0)))return toast('Los valores económicos deben ser números iguales o mayores que 0.');
+    if(draft.driver_id!=='ED14'){draft.role_or_resource=null;draft.value=null;draft.unit=null;draft.period=null}
+    if(draft.driver_id==='ED14'&&draft.value!=null&&(!draft.role_or_resource||!draft.period))return toast('Para registrar capacidad práctica, selecciona el rol y el periodo.');
     if(!draft.evidence_type)return toast('Selecciona la evidencia correspondiente al dato económico; no se presupone que sea medido.');
     const scopeCheck=economicInputIntegrityIssues({...eng,economicInputs:[draft]}).filter(x=>x.kind==='SCOPE_MISMATCH');
     if(scopeCheck.length)return toast(scopeCheck.map(x=>x.message).join(' '));
@@ -335,6 +341,7 @@ function addEconomic(preselectedSteps=[],editIndex=null,forceSuggestedScope=fals
       document.querySelectorAll('[data-econ-ui="direct"]').forEach(x=>x.style.display=ui.showDirect?'':'none');
       document.querySelectorAll('[data-econ-ui="tool"]').forEach(x=>x.style.display=ui.showTool?'':'none');
       document.querySelectorAll('[data-econ-ui="cash"]').forEach(x=>x.style.display=ui.showCash?'':'none');
+      document.querySelectorAll('[data-econ-ui="capacity-meta"]').forEach(x=>x.style.display=driver==='ED14'?'':'none');
     }
     const activeLabel=document.getElementById('econActiveLabel');if(activeLabel)activeLabel.textContent=ui.activeLabel;
     const resultTitle=document.getElementById('economicResultTitle');if(resultTitle)resultTitle.textContent=ui.resultTitle;
