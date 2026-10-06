@@ -80,3 +80,14 @@ test('client-ready PDF remains behind the existing OutputReview approval gate',(
   assert.match(body,/approvedOutputReview\(e\)/);
   assert.match(body,/Revisión humana antes de generar un entregable para cliente/);
 });
+
+test('recalculation integrity gate stays on Diagnóstico instead of forcing Impacto',()=>{
+  const engine=fs.readFileSync(path.join(root,'services/engine-adapter.js'),'utf8');
+  const start=engine.indexOf('async function runDiagnosis');
+  const end=engine.indexOf('// C05 · Optional internal AI orchestration',start);
+  const body=engine.slice(start,end);
+  assert.match(body,/economicInputIntegrityIssues/);
+  assert.match(body,/state\.activePage='resultados'/);
+  assert.doesNotMatch(body,/economicIssues\.length\)\{state\.activePage='impacto'/);
+  assert.match(body,/No se ha recalculado: revisa los impactos señalados/);
+});
