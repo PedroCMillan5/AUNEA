@@ -71,7 +71,7 @@ function diagnosisFindingsHtml(record,pains){
         <div><small>Impacto relacionado</small><b>${esc(impacts.join(' · ')||'Sin impacto económico/temporal enlazado')}</b></div>
         <div><small>Riesgos en los mismos pasos</small><b>${esc(riskText.join(' · ')||'Ninguno registrado')}</b></div>
       </div>
-      <div class="internal-only diagnosis-tech"><span class="code">${esc(p.pain_id)}</span> Trazabilidad presentada desde anclajes capturados; no implica causalidad adicional no calculada.</div>
+      <div class="internal-only diagnosis-tech"><span class="code internal-only">${esc(p.pain_id)}</span> Trazabilidad presentada desde anclajes capturados; no implica causalidad adicional no calculada.</div>
     </article>`;
   }).join('')+'</div>';
 }
