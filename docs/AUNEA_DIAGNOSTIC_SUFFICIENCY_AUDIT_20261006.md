@@ -163,3 +163,34 @@ QA realizado en esta iteración:
 - parse JavaScript dirigido: PASS en adapter, lifecycle y tests modificados;
 - tests dirigidos añadidos para backend y frontend;
 - ejecución nativa de pytest/node y UAT visual pendiente del entorno de ejecución/Actions.
+
+
+## Estado de implementación P0-B · 06/10/2026
+
+Implementado en REVIEW:
+
+- Runtime mirror de las 20 reglas `RULE_PAIN_ENGINE` canónicas.
+- `PainCandidateEngine` server-owned.
+- Endpoint `POST /v1/diagnostic/pain-candidates`.
+- El motor sólo genera candidatos desde señales estructuradas suficientemente específicas:
+  - P03 desde DF051 confirmado; una acción REKEY aislada no basta.
+  - P15 desde DF054 confirmado.
+  - P07 desde un paso ST05 con espera o chasing.
+  - P11 desde retrabajo/error registrado en el paso.
+  - P14 desde acción manual REPORT, pendiente de confirmar que es preparación repetitiva.
+  - P13 desde DF055 vinculado a pasos.
+- Un candidato ya cubierto por una Friction del mismo Pain en los mismos pasos se suprime.
+- La pantalla de Fricciones reutiliza el botón existente “Revisar posibles fricciones”.
+- Los candidatos se muestran como señales a revisar y nunca se persisten directamente.
+- “Revisar” abre el builder normal de Friction con tipo/pasos preseleccionados, preguntas canónicas de revisión y aviso explícito de que la señal, causa y evidencia requieren confirmación humana.
+- Guardar la Friction sigue siendo el único acto que confirma la realidad del cliente; PainEngine conserva la clasificación server-owned.
+
+Guardrail deliberado:
+- No se infieren Pains ambiguos cuando la captura no permite distinguir el mecanismo. Por ejemplo, SEARCH no se convierte automáticamente en P09 o P20 y CHASE fuera de aprobación no se convierte automáticamente en P12.
+- No se añade ninguna pregunta al Diagnostic Master.
+- No se modifica PainEngine ni se auto-confirma ningún Pain.
+
+Pendiente:
+- P0-C · reconciliar los 14 IN-R con RecommendationEngine.
+- P0-D · contexto crítico de Risk.
+- P0-E · cobertura económica material.
