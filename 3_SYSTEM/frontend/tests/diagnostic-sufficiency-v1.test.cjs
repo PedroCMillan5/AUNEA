@@ -27,4 +27,14 @@ test('every DF source in the input contract exists in shipped schema',()=>{
 test('every diagnostic field declares engine consumers',()=>{
  assert.deepEqual(schema.fields.filter(x=>!String(x.Engine_Consumers||'').trim()).map(x=>x.Field_ID),[]);
 });
+
+
+test('core engine consumers are explicit: questionnaire context is not mistaken for direct engine arguments',()=>{
+ const engines=fs.readFileSync(path.join(root,'..','backend','aunea_backend','engines.py'),'utf8');
+ assert.match(engines,/PainEngine:[\s\S]*ctx\.engagement\.pain_signals/);
+ assert.match(engines,/EconomicsEngine:[\s\S]*ctx\.engagement\.economics/);
+ assert.match(engines,/RiskEngine:[\s\S]*ctx\.engagement\.risks/);
+ assert.match(engines,/RecommendationEngine:[\s\S]*process_design_preconditions_ok[\s\S]*existing_tool_can_cover[\s\S]*requires_bounded_agent_action[\s\S]*requires_unstructured_ai_assistance[\s\S]*requires_management_visibility/);
+});
+
 // [AUNEA-UAT-DIAG-SUFFICIENCY-010] END
