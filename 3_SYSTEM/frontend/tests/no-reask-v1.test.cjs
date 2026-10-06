@@ -306,7 +306,8 @@ test('S08 renders required outcomes and future constraints before any AS-IS step
     ['DF092','BR-FUTURE','OPTIONAL_ASK','OPTIONAL_90M']
   ].map(([Field_ID,Branch_Rule_ID,Ask_Mode,Requiredness])=>({Field_ID,Stage_ID:'S08',Branch_Rule_ID,Ask_Mode,Requiredness}));
   assert.deepEqual(Array.from(fields.filter(f=>ctx.questionVisible(f,empty)),f=>f.Field_ID),
-    ['DF086','DF087','DF089','DF091','DF092']);
+    ['DF086','DF087','DF089','DF090','DF091','DF092'],
+    'DF090 stays available as the security/risk discovery probe even before BR-RISK is active');
   assert.equal(ctx.branchActive('BR-FUTURE',empty),false,'generic branch remains unchanged');
   assert.equal(ctx.questionVisible({...fields[0],Stage_ID:'S04'},empty),false,'no change to other stages');
   const old=ctx.schema.fields;ctx.schema.fields=fields;
