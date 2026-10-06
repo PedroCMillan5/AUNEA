@@ -27,6 +27,10 @@ function econDriverLabel(driverId){
   const d=drivers.find(x=>x.Economic_Driver_ID===driverId);
   return ECON_DRIVER_LABELS_ES[driverId]||d?.Name||driverId;
 }
+function econNullableNumber(value){
+  if(value===''||value===null||value===undefined)return null;
+  const n=Number(value);return Number.isFinite(n)?n:NaN;
+}
 function econHoursFrom(value,unit='h'){
   if(value===''||value===null||value===undefined)return null;
   const n=Number(value);if(!Number.isFinite(n)||n<0)return NaN;
@@ -218,35 +222,28 @@ function economicCaptureIssues(e,draft){
 
 function economicBuilder(e){
   const steps=typeof activeSteps==='function'?activeSteps(e):[];
-  const issues=economicInputIntegrityIssues(e),byIndex=new Map();
-  issues.forEach(x=>{const arr=byIndex.get(x.index)||[];arr.push(x);byIndex.set(x.index,arr)});
-  const metric=x=>{
-    const shape=economicMetricShape(x.driver_id,x);
-    if(x.driver_id==='ED13')return `Espera ${shape.wait} h/año`;
-    if(['ED01','ED02','ED03','ED04','ED05','ED06','ED07','ED08'].includes(x.driver_id))return `Tiempo activo ${shape.active} h/año`;
-    if(x.driver_id==='ED12')return `Herramientas ${Number(x.current_tool_cost_eur_annual||0)} €/año`;
-    if(['ED09','ED10','ED11'].includes(x.driver_id))return `Pérdida directa ${Number(x.direct_loss_eur_annual||0)} €/año`;
-    if(x.driver_id==='ED14')return `Coste de capacidad ${Number(x.capacity_cost_rate_eur_hour||0)} €/h`;
-    return 'Impacto registrado';
-  };
-  return section('Impactos registrados','Cada impacto conserva una sola métrica principal. La espera no se suma como trabajo activo y el tiempo no equivale automáticamente a ahorro.',
-    `<div class="result-list">${e.economicInputs.length?e.economicInputs.map((x,i)=>{
-      const rowIssues=byIndex.get(i)||[];
-      return `<div class="result-item"><div class="result-item-head"><div><b>${esc(econDriverLabel(x.driver_id))}</b><p>${esc(metric(x))} · Evidencia: ${esc(engineLabel('evidence_quality',x.evidence_type))}</p><p>Pasos: ${normalizeArray(x.step_ids).map(id=>steps.find(s=>s.id===id)?.step_name||id).map(esc).join(', ')||'Sin anclar'}</p>${rowIssues.length?`<div class="notice warn economic-row-warning"><b>Revisión necesaria</b><br>${rowIssues.map(v=>esc(v.message)).join(' ')}${rowIssues.find(v=>v.suggestedStepId)?`<div class="economic-row-fix"><button type="button" class="btn btn-small" data-fix-economic-scope="${i}" data-fix-economic-step="${attr(rowIssues.find(v=>v.suggestedStepId).suggestedStepId)}">Revisar usando ${esc(rowIssues.find(v=>v.suggestedStepId).suggestedStepName)}</button></div>`:''}</div>`:''}</div><div class="result-actions"><button class="btn btn-small" data-edit-economic-index="${i}">Editar</button><button class="btn btn-small btn-danger" data-delete-economic-index="${i}">Eliminar</button></div></div></div>`;
-    }).join(''):'<div class="empty"><p>Todavía no hay impactos registrados.</p></div>'}</div>`,
+  const fmt=v=>v===null||v===undefined||v===''?'—':String(v);
+  return section('Impactos registrados','Añade sólo impactos que no estén ya capturados en Demanda o en el mapa. Cada registro tiene un único concepto y una evidencia.',
+    '<div class="result-list">'+((e.economicInputs||[]).length?e.economicInputs.map((x,i)=>{
+      const legacy=x.driver_id==='ED15';
+      return '<div class="result-item"><div class="result-item-head"><div><b>'+esc(legacy?'Volumen de casos — registro legacy':econDriverLabel(x.driver_id))+'</b>'
+        +(legacy?'<div class="notice warn economic-row-warning"><b>No se usa como impacto económico.</b><br>El volumen pertenece a Demanda (DF021/DF022). Elimina este registro duplicado para mantener un único owner.</div>':'<p>Activo '+esc(fmt(x.annual_active_hours))+' h/año · Espera '+esc(fmt(x.annual_wait_hours))+' h/año · Pérdida directa '+esc(fmt(x.direct_loss_eur_annual))+' €/año · Evidencia: '+esc(engineLabel('evidence_quality',x.evidence_type))+'</p>')
+        +'<p>Pasos: '+normalizeArray(x.step_ids).map(id=>steps.find(s=>s.id===id)?.step_name||id).map(esc).join(', ')+'</p></div>'
+        +'<div class="result-actions">'+(legacy?'':'<button class="btn btn-small" data-edit-economic-index="'+i+'">Editar</button>')+'<button class="btn btn-small btn-danger" data-delete-economic-index="'+i+'">Eliminar</button></div></div></div>';
+    }).join(''):'<div class="empty"><p>Todavía no hay impactos registrados.</p></div>')+'</div>',
     '<button type="button" class="btn btn-outline" id="addEconomic" data-add-economic-global>Añadir impacto</button>')
 }
-
 function addEconomic(preselectedSteps=[],editIndex=null,forceSuggestedScope=false){
   if(typeof guardAsisMutation==='function'&&guardAsisMutation())return;
   const eng=currentEng(),steps=typeof activeSteps==='function'?activeSteps(eng):[];
   const existing=editIndex===null?null:eng.economicInputs[editIndex];
   if(editIndex!==null&&!existing)return;
+  if(existing?.driver_id==='ED15')return toast('Volumen de casos ya pertenece a Demanda (DF021/DF022). Elimina este registro legacy; no puede editarse como impacto económico.');
   const requestedSteps=normalizeArray(preselectedSteps).filter(Boolean),existingSteps=normalizeArray(existing?.step_ids).filter(Boolean);
   const useSuggested=!!existing&&forceSuggestedScope&&requestedSteps.length>0;
   if(existing)preselectedSteps=useSuggested?requestedSteps:existingSteps;
   let preserveCapturedTime=!!existing&&!useSuggested;
-  const drivers=schema.tables.REF_ECON_DRIVER||[],selectableDrivers=drivers.filter(d=>d.Economic_Driver_ID!=='ED15'||existing?.driver_id==='ED15');
+  const drivers=schema.tables.REF_ECON_DRIVER||[],selectableDrivers=drivers.filter(d=>d.Economic_Driver_ID!=='ED15');
   const activeContributors=activeTimeContributors(eng),waitContributors=waitTimeContributors(eng);
   const allFrictions=typeof activeFrictions==='function'?activeFrictions(eng):eng.frictions||[];
   const economicContextHtml=stepIds=>{
@@ -309,7 +306,7 @@ function addEconomic(preselectedSteps=[],editIndex=null,forceSuggestedScope=fals
       return toast('Los datos del proceso han cambiado. Actualiza la vista previa antes de guardar el impacto.');
     const activeHours=projected?projected.active:capturedHours('econActive','annual_active_hours');
     const waitHours=projected?projected.wait:capturedHours('econWait','annual_wait_hours');
-    let draft={step_ids,driver_id:document.getElementById('econDriver').value,annual_active_hours:activeHours,annual_wait_hours:waitHours,capacity_cost_rate_eur_hour:+document.getElementById('econRate').value||null,direct_loss_eur_annual:+document.getElementById('econDirect').value||0,current_tool_cost_eur_annual:+document.getElementById('econTool').value||0,realized_cash_saving_eur_annual:+document.getElementById('econCash').value||0,evidence_type:document.getElementById('econEvidence').value,derivation_source:projected?'DF021/DF022 + RT_PROCESS_STEP':(preserveCapturedTime&&activeHours===existing?.annual_active_hours&&waitHours===existing?.annual_wait_hours?existing.derivation_source:'MANUAL_VALIDATION'),deduplication_key:existing?.deduplication_key??null};
+    let draft={step_ids,driver_id:document.getElementById('econDriver').value,annual_active_hours:activeHours,annual_wait_hours:waitHours,capacity_cost_rate_eur_hour:econNullableNumber(document.getElementById('econRate').value),direct_loss_eur_annual:econNullableNumber(document.getElementById('econDirect').value),current_tool_cost_eur_annual:econNullableNumber(document.getElementById('econTool').value),realized_cash_saving_eur_annual:econNullableNumber(document.getElementById('econCash').value),evidence_type:document.getElementById('econEvidence').value,derivation_source:projected?'DF021/DF022 + RT_PROCESS_STEP':(preserveCapturedTime&&activeHours===existing?.annual_active_hours&&waitHours===existing?.annual_wait_hours?existing.derivation_source:'MANUAL_VALIDATION'),deduplication_key:existing?.deduplication_key??null};
     if(!draft.driver_id)return toast('Selecciona el tipo de impacto antes de guardar.');
     if(draft.driver_id==='ED15')return toast('El volumen de casos pertenece a Demanda (DF021/DF022); no se crea un EconomicInput duplicado para ED15.');
     draft=normalizedEconomicDriverRecord(draft);
