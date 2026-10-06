@@ -35,7 +35,7 @@ function migrateRiskCaptureIntegrity(engagements=[]){
 }
 function riskBuilder(e){
   const steps=typeof activeSteps==='function'?activeSteps(e):[];
-  return section('Riesgos','Aquí puedes añadir, editar o eliminar riesgos del estudio.',
+  return section('Riesgos','Registra qué podría salir mal y en qué pasos. Las fricciones de esos pasos se muestran sólo como contexto para evitar duplicar información.',
     '<div class="process-list">'+((e.risks||[]).length?e.risks.map((r,i)=>
       '<div class="process-row"><div class="process-index">'+(i+1)+'</div><div><b>'+esc(r.description||labelFrom('OS_RISK_CATEGORY',r.category))+'</b>'
       +'<p>'+esc(labelFrom('OS_RISK_CATEGORY',r.category))+' · Probabilidad '+esc(r.likelihood_1_5||'—')+'/5 · Consecuencia '+esc(r.impact_1_5||'—')+'/5</p>'
@@ -58,8 +58,8 @@ function addRisk(preselectedSteps=[],editIndex=null){
     '<div class="step-groups process-modal-form risk-modal-form"><details class="step-group" open><summary>¿Qué podría salir mal?</summary><div class="form-grid">'
     +'<div class="field full"><label>¿En qué pasos podría ocurrir?</label><div class="choice-grid">'
     +steps.map(s=>'<div class="choice"><input type="checkbox" id="risk_step_'+attr(s.id)+'" data-risk-step="'+attr(s.id)+'" '+(preselectedSteps.includes(s.id)?'checked':'')+'><label for="risk_step_'+attr(s.id)+'">'+esc(s.step_name||s.id)+'</label></div>').join('')+'</div></div>'
-    +'<div class="field full"><label>Problemas ya observados en los pasos elegidos</label><div class="field-help">Esta lista es contexto; no añade pasos ni crea una relación que no pueda guardarse.</div><div class="choice-grid">'
-    +frictions.map(f=>'<div class="choice" data-risk-friction-row data-affected-steps="'+attr(normalizeArray(f.affected_steps).join('|'))+'"><span>'+esc(f.client_label||labelFrom('OS_FRICTION_TYPE',f.friction_type))+'</span></div>').join('')+'</div></div>'
+    +'<div class="field full"><label>Problemas observados en los pasos elegidos</label><div class="field-help">Se reutilizan como contexto. No tienes que volver a seleccionarlos ni describirlos.</div><div class="choice-grid">'
+    +frictions.map(f=>'<div class="choice" data-risk-friction-row data-affected-steps="'+attr(normalizeArray(f.affected_steps).join('|'))+'"><span>'+esc(f.client_label||labelFrom('OS_FRICTION_TYPE',f.friction_type))+'</span></div>').join('')+'</div><div class="field-help" id="riskNoRelatedFriction">Selecciona un paso para ver sus problemas ya registrados.</div></div>'
     +'<div class="field"><label>¿De qué tipo es este riesgo? '+requiredMark()+'</label>'+riskDropdown('riskCat',[{value:'',label:'Selecciona…'},...cats],selected.category||'','Selecciona…')+'</div>'
     +'<div class="field"><label>¿Qué podría salir mal? '+requiredMark()+'</label><input id="riskDesc" value="'+attr(selected.description||'')+'" placeholder="Describe qué podría ocurrir"></div>'
     +'<div class="field"><label>¿Qué probabilidad hay de que ocurra? (1–5) '+requiredMark()+'</label>'+riskDropdown('riskLike',[{value:'',label:'Selecciona…'},... [1,2,3,4,5].map(x=>({value:String(x),label:String(x)}))],num(selected.likelihood_1_5),'Selecciona…')+'</div>'
@@ -98,11 +98,15 @@ function addRisk(preselectedSteps=[],editIndex=null){
     },existing?'Guardar cambios':'Añadir riesgo');
   function refreshRelatedProblems(){
     const chosen=[...document.querySelectorAll('[data-risk-step]:checked')].map(x=>x.dataset.riskStep);
+    let visible=0;
     document.querySelectorAll('[data-risk-friction-row]').forEach(row=>{
       const affected=String(row.dataset.affectedSteps||'').split('|').filter(Boolean);
       row.hidden=!chosen.length||!affected.some(id=>chosen.includes(id));
       row.style.display=row.hidden?'none':'';
+      if(!row.hidden)visible++;
     });
+    const empty=document.getElementById('riskNoRelatedFriction');
+    if(empty)empty.textContent=!chosen.length?'Selecciona un paso para ver sus problemas ya registrados.':visible?'':'No hay fricciones registradas en los pasos seleccionados.';
   }
   document.querySelectorAll('[data-risk-step]').forEach(el=>el.addEventListener('change',refreshRelatedProblems));
   document.querySelectorAll('[data-risk-control]').forEach(el=>el.addEventListener('change',()=>{
