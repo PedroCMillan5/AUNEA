@@ -309,8 +309,10 @@ function validationSummary(e,completion){
   const nextStep=e.answers?.DF098||'',notes=e.answers?.DF100||'';
   // The sealed record internal work will read. It appears here because PG09 is where it is created.
   const snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;
-  const captureBlockers=(completion.blockers||[]).filter(b=>b.type!=='GATE'&&b.id!=='ASIS');
-  const cta=(snap&&e.confirmedAsIs?'<button class="btn btn-primary" data-page="resultados">Continuar a Trabajo interno</button>':'<button class="btn btn-primary" id="confirmClosingAsIs">Confirmar AS-IS</button>')+(captureBlockers.length?`<div class="blocker-list">${captureBlockers.map(b=>`<div class="notice warn"><span>${esc(b.label)}</span>${b.navigationTarget==='proceso'?'<button class="btn btn-small" data-goto-process="1">Ir a completar</button>':`<button class="btn btn-small" data-goto-stage="${attr(b.stage||'')}">Ir a completar</button>`}</div>`).join('')}</div>`:'');
+  const layers=typeof processLayerConfirmations==='function'?processLayerConfirmations(e):{},layersReady=!!(layers.map&&layers.frictions&&layers.risks&&layers.impact);
+  const captureBlockers=(completion.blockers||[]).filter(b=>b.type!=='GATE'&&b.id!=='Confirmación AS-IS');
+  const primaryCta=snap&&e.confirmedAsIs?'<button class="btn btn-primary" data-page="resultados">Continuar a Trabajo interno</button>':!layersReady?'<button class="btn btn-primary" data-goto-process="1">Completar revisiones del AS-IS</button>':captureBlockers.length?'':'<button class="btn btn-primary" id="confirmClosingAsIs">Confirmar AS-IS</button>';
+  const cta=primaryCta+(captureBlockers.length?`<div class="blocker-list">${captureBlockers.map(b=>`<div class="notice warn"><span>${esc(b.label)}</span>${b.navigationTarget==='proceso'?'<button class="btn btn-small" data-goto-process="1">Ir a completar</button>':b.stage?`<button class="btn btn-small" data-goto-stage="${attr(b.stage)}">Ir a completar</button>`:''}</div>`).join('')}</div>`:'');
   return section('Confirmación del AS-IS','Revisión factual del estudio; ningún estado se afirma más allá de lo realmente capturado.',
     `<div class="grid g3">
       <div class="notice"><b>Proceso</b><br>${steps.length} paso(s) activo(s) · ${e.confirmedAsIs?'AS-IS confirmado':'AS-IS pendiente de confirmar'}</div>
