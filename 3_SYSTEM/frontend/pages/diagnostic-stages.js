@@ -305,7 +305,7 @@ function validationSummary(e,completion){
   // The sealed record internal work will read. It appears here because PG09 is where it is created.
   const snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;
   const captureBlockers=(completion.blockers||[]).filter(b=>b.type!=='GATE'&&b.id!=='ASIS');
-  const cta=(snap&&e.confirmedAsIs?'<button class="btn btn-primary" data-page="resultados">Continuar a Trabajo interno</button>':'<button class="btn btn-primary" id="confirmAsIs">Confirmar AS-IS</button>')+(captureBlockers.length?`<div class="blocker-list">${captureBlockers.map(b=>`<div class="notice warn"><span>${esc(b.label)}</span>${b.navigationTarget==='proceso'?'<button class="btn btn-small" data-goto-process="1">Ir a completar</button>':`<button class="btn btn-small" data-goto-stage="${attr(b.stage||'')}">Ir a completar</button>`}</div>`).join('')}</div>`:'');
+  const cta=(snap&&e.confirmedAsIs?'<button class="btn btn-primary" data-page="resultados">Continuar a Trabajo interno</button>':'<button class="btn btn-primary" id="confirmClosingAsIs">Confirmar AS-IS</button>')+(captureBlockers.length?`<div class="blocker-list">${captureBlockers.map(b=>`<div class="notice warn"><span>${esc(b.label)}</span>${b.navigationTarget==='proceso'?'<button class="btn btn-small" data-goto-process="1">Ir a completar</button>':`<button class="btn btn-small" data-goto-stage="${attr(b.stage||'')}">Ir a completar</button>`}</div>`).join('')}</div>`:'');
   return section('Confirmación del AS-IS','Revisión factual del estudio; ningún estado se afirma más allá de lo realmente capturado.',
     `<div class="grid g3">
       <div class="notice"><b>Proceso</b><br>${steps.length} paso(s) activo(s) · ${e.confirmedAsIs?'AS-IS confirmado':'AS-IS pendiente de confirmar'}</div>
@@ -315,6 +315,18 @@ function validationSummary(e,completion){
       <div class="notice"><b>Obligatorios</b><br>${completion.missing.length===0?'✓ completos':`${completion.missing.length} pendiente(s)`}</div>
       <div class="notice"><b>Siguiente paso</b><br>${nextStep?esc(nextStep):'Pendiente de acordar (DF098)'}</div>
       <div class="notice"><b>Snapshot sellado</b><br>${snap?`v${snap.version} · ${esc(formatDateEs(snap.sealedAt))}`:'Se sella al confirmar el AS-IS'}</div>
+    </div>
+    <div class="closing-first-readings">
+      <h3>Resumen de la sesión</h3>
+      <p class="field-help">Lecturas objetivas de lo capturado. No son todavía diagnóstico, recomendación, ROI ni propuesta.</p>
+      <div class="grid g3">
+        <div class="notice"><b>Flujo observado</b><br>${steps.length} pasos · ${steps.filter(s=>String(s.step_type||'').toUpperCase()==='DECISION').length} decisión(es)</div>
+        <div class="notice"><b>Problemas registrados</b><br>${fr.length} fricciones · ${risks.length} riesgos</div>
+        <div class="notice"><b>Impactos cuantificados</b><br>${econ.length} registros económicos/temporales</div>
+      </div>
+      ${fr.length?'<div class="closing-reading-list"><b>Fricciones prioritarias declaradas</b><div>'+normalizeArray(e.answers?.DF096).map(id=>fr.find(x=>x.id===id)).filter(Boolean).map(x=>'<span class="chip">'+esc(x.client_label||labelFrom('OS_FRICTION_TYPE',x.friction_type))+'</span>').join('')+'</div></div>':''}
+      ${econ.length?'<div class="closing-reading-list"><b>Impactos registrados</b><div class="closing-impact-list">'+econ.map(x=>{const active=Number(x.annual_active_hours||0),wait=Number(x.annual_wait_hours||0),amount=Number(x.direct_loss_eur_annual||x.current_tool_cost_eur_annual||x.realized_cash_saving_eur_annual||0);const metric=wait?wait+' h/año espera':active?active+' h/año':amount?amount.toLocaleString('es-ES')+' €/año':'Registrado';return '<span class="closing-impact-item"><strong>'+esc(typeof econDriverLabel==='function'?econDriverLabel(x.driver_id):x.driver_id)+'</strong><small>'+esc(metric)+'</small></span>'}).join('')+'</div></div>':''}
+      ${(completion.missing||[]).length?'<div class="notice warn"><b>Pendientes antes de Trabajo interno</b><br>'+completion.missing.map(x=>esc(x.label||x.id||x)).join(' · ')+'</div>':'<div class="notice good"><b>Captura completa</b><br>No quedan obligatorios pendientes en la sesión.</div>'}
     </div>
     <div class="field-help internal-only" style="margin-top:10px"><b>Notas internas del consultor:</b> ${notes?esc(notes):'—'}</div>
     <div style="margin-top:16px">${cta}</div>`
@@ -333,6 +345,7 @@ bindForms=function(){
   });
   document.querySelectorAll('[data-goto-stage]').forEach(b=>b.onclick=()=>{const e=currentEng();if(e)e.stageId=b.dataset.gotoStage;render()});
   document.querySelectorAll('[data-open-gate-review]').forEach(b=>b.onclick=()=>openEngineGateReview());
+  const finalConfirm=document.getElementById('confirmClosingAsIs');if(finalConfirm)finalConfirm.onclick=()=>confirmClosingAsIs();
   const sd=document.getElementById('saveDraft');if(sd)sd.onclick=()=>saveState('Borrador guardado');
 };
 // [AUNEA-FE-DIAG-CONTROL-030] END
