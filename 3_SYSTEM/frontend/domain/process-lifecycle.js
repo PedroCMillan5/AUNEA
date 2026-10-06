@@ -98,6 +98,16 @@ function processLayerIntegrityIssues(e,key){
     });
     if(typeof economicInputIntegrityIssues==='function')economicInputIntegrityIssues(e).forEach(x=>push(x.message));
   }
+  const stageByLayer={map:'S04',frictions:'S05',risks:'S06',impact:'S07'},stageId=stageByLayer[key];
+  if(stageId&&typeof canonicalFieldRequiredNow==='function'){
+    (schema?.fields||[]).filter(f=>f.Stage_ID===stageId&&canonicalFieldRequiredNow(f,e)).forEach(f=>{
+      if(!(typeof canonicalFieldValuePresent==='function'?canonicalFieldValuePresent(f,effectiveValue(f,e),e):valuePresent(effectiveValue(f,e))))
+        push(`Completa "${f.Pregunta_o_etiqueta_ES||f.Field_ID}" antes de confirmar esta capa.`);
+    });
+  }
+  if(stageId&&typeof canonicalFieldIntegrityIssues==='function'){
+    canonicalFieldIntegrityIssues(e).filter(x=>x.stage===stageId).forEach(x=>push(x.label));
+  }
   return issues;
 }
 function captureIntegrityIssues(e){
