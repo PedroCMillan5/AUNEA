@@ -34,6 +34,7 @@ function makeCtx(engagement) {
       OS_RISK_CATEGORY: { COMPLIANCE: 'Cumplimiento' }, REF_ECON_DRIVER: { D1: 'Reentrada de datos' } }[set] || {})[v] || v || '',
     activeSteps: e => (e.processSteps || []).filter(s => s.status !== 'SUPERSEDED'),
     activeFrictions: e => (e.frictions || []).filter(f => f.status !== 'SUPERSEDED'),
+    processDecisionStep: s => ['ST04','ST05'].includes(String(s?.step_type||'')) || (Array.isArray(s?.decision_criteria)&&s.decision_criteria.length>0) || !!s?.exception_path,
     companyById: id => ctx.state.companies.find(c => c.id === id) || null,
     engagementCompletion: () => ({ missing: [] }),
     insCard: (t2, b) => `<div class="ins-card">${t2}${b}</div>`,
