@@ -14,8 +14,8 @@ function migrateRiskCaptureIntegrity(engagements=[]){
   (engagements||[]).forEach(e=>{
     let engagementChanged=false;
     (e.risks||[]).forEach(r=>{
-      if(Object.prototype.hasOwnProperty.call(r,'current_controls'))return;
-      r.current_controls=[];
+      if(Object.prototype.hasOwnProperty.call(r,'current_control'))return;
+      r.current_control=[];
       r.controls_present=null;
       r.reversibility='';
       r.reversible=null;
@@ -53,7 +53,7 @@ function addRisk(preselectedSteps=[],editIndex=null){
     sensitiveRaw=normalizeArray(e.answers?.DF073),sensitive=sensitiveRaw.filter(x=>x!=='NONE'),
     steps=typeof activeSteps==='function'?activeSteps(e):[],
     frictions=typeof activeFrictions==='function'?activeFrictions(e):e.frictions||[];
-  const selected=existing||{},num=v=>v===undefined||v===null?'':String(v),storedControls=normalizeArray(selected.current_controls),otherControl=storedControls.find(x=>String(x).startsWith('OTHER:'))||'',selectedControlIds=storedControls.map(x=>String(x).startsWith('OTHER:')?'OTHER':String(x));
+  const selected=existing||{},num=v=>v===undefined||v===null?'':String(v),storedControls=normalizeArray(selected.current_control),otherControl=storedControls.find(x=>String(x).startsWith('OTHER:'))||'',selectedControlIds=storedControls.map(x=>String(x).startsWith('OTHER:')?'OTHER':String(x));
   openModal(existing?'Editar riesgo':'Añadir riesgo',
     '<div class="step-groups process-modal-form risk-modal-form"><details class="step-group" open><summary>¿Qué podría salir mal?</summary><div class="form-grid">'
     +'<div class="field full"><label>¿En qué pasos podría ocurrir?</label><div class="choice-grid">'
@@ -84,11 +84,11 @@ function addRisk(preselectedSteps=[],editIndex=null){
       if(controls==='1'&&!controlIds.length)return toast('Selecciona al menos un control actual o indica que no existen.');
       if(controls==='0'&&controlIds.length)return toast('Si no existen controles actuales, desmarca los controles seleccionados.');
       if(controlIds.includes('OTHER')&&!otherDetail)return toast('Describe el control indicado como «Otro».');
-      const current_controls=controls==='1'?controlIds.map(x=>x==='OTHER'?'OTHER: '+otherDetail:x):[];
+      const current_control=controls==='1'?controlIds.map(x=>x==='OTHER'?'OTHER: '+otherDetail:x):[];
       const draft={step_ids,category:cat,description,likelihood_1_5:like,
         impact_1_5:impact,
         reversible:!['HARD','IRREVERSIBLE'].includes(rv),reversibility:rv,
-        controls_present:controls==='1',current_controls,
+        controls_present:controls==='1',current_control,
         sensitive_or_high_impact:sensitiveValue==='1',
         material_financial_or_compliance:materialValue==='1',
         critical_trigger:criticalValue==='1'};
