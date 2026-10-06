@@ -751,3 +751,19 @@ body:not(.mode-process-editor) .content [data-process-engagement] .flow-insert{d
   .content:has(.diagnostic-stage-s09) .nextstep-action{grid-column:auto}
 }
 /* [AUNEA-FE-CLOSE-STAGE-041] END */
+
+/* [AUNEA-FE-CLOSE-STAGE-042] START — objective first readings in S09. */
+.content:has(.diagnostic-stage-s09) .closing-first-readings{
+  margin-top:18px;padding-top:16px;border-top:1px solid var(--line)
+}
+.content:has(.diagnostic-stage-s09) .closing-first-readings h3{margin:0 0 4px}
+.content:has(.diagnostic-stage-s09) .closing-first-readings>.grid{margin-top:12px}
+.content:has(.diagnostic-stage-s09) .closing-reading-list{margin-top:14px}
+.content:has(.diagnostic-stage-s09) .closing-reading-list>div{margin-top:7px;display:flex;flex-wrap:wrap;gap:7px}
+.content:has(.diagnostic-stage-s09) .closing-impact-list{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px!important}
+.content:has(.diagnostic-stage-s09) .closing-impact-item{
+  border:1px solid var(--line);border-radius:10px;padding:9px 11px;background:#fafbf9;display:flex;flex-direction:column;gap:2px
+}
+.content:has(.diagnostic-stage-s09) .closing-impact-item strong{font-size:12px}
+.content:has(.diagnostic-stage-s09) .closing-impact-item small{font-size:11px;color:var(--muted)}
+/* [AUNEA-FE-CLOSE-STAGE-042] END */
