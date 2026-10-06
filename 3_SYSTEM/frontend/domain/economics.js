@@ -80,7 +80,7 @@ async function economicTimeProjection(e,stepIds=[]){
     return {available:false,status:'STALE',reason:'Los datos del proceso cambiaron durante el cálculo. Actualiza la vista previa.',missing:['Cálculo anterior invalidado por un cambio en el proceso']};
   if(!stepIds.length)e._sessionTimeProjection={requestKey,output};
   return {
-    available:output.status==='CALCULATED'||output.annual_active_hours!==null||output.annual_wait_exposure_hours!==null||output.annual_rework_hours!==null,
+    available:output.status==='CALCULATED'||output.annual_active_hours!=null||output.annual_wait_exposure_hours!=null||output.annual_rework_hours!=null,
     annualCases:output.annual_cases,
     active:output.annual_active_hours,
     wait:output.annual_wait_exposure_hours,
