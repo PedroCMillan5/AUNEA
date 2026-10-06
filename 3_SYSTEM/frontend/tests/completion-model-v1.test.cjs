@@ -37,7 +37,7 @@ function makeCtx(){
     labelFrom:(setId,v)=>v,
     normalizeArray:v=>Array.isArray(v)?v:(v==null||v===''?[]:[v]),
     setAnswer:()=>{},bindForms:()=>{},markDirty:()=>{},render:()=>{},setPage:()=>{},
-    openModal:()=>{},closeModal:()=>{},toast:()=>{},now:()=>'',runDiagnosis:()=>{},
+    openModal:()=>{},closeModal:()=>{},toast:()=>{},now:()=>'',runDiagnosis:()=>{},processPage:()=>'<PROCESS>',consultantFrictionsPage:()=>'<FRICTIONS>',consultantRisksPage:()=>'<RISKS>',consultantImpactPage:()=>'<IMPACT>',
     answerDetails:e=>{e.answerDetails=e.answerDetails||{};return e.answerDetails},audit:()=>{},
     numberParts:v=>(v&&typeof v==='object'?v:{value:v??'',unit:'',period:'',mode:''}),
     renderQuestion:()=>'<QUESTION>',
@@ -147,8 +147,8 @@ test('state.returnTo round-trips: leaving a stage for the process map remembers 
   assert.match(coreSrc,/state\.returnTo=null/);
   const diagSrc=fs.readFileSync(path.join(root,'pages/diagnostic-stages.js'),'utf8');
   assert.match(diagSrc,/data-goto-process/);
-  const processSrc=fs.readFileSync(path.join(root,'domain/process.js'),'utf8');
-  assert.match(processSrc,/id="returnToStage"/);
+  const shellSrc=fs.readFileSync(path.join(root,'ui/shell.js'),'utf8');
+  assert.match(shellSrc,/returnToStage/);
 });
 
 test('validationSummary (last-stage closing screen) uses only factual language — "con evidencia/controles registrados", never "revisada"/"confirmado" except the real e.confirmedAsIs state',()=>{
