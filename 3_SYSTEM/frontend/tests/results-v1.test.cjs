@@ -45,7 +45,7 @@ function makeCtx(uiMode){
     econDriverLabel:v=>v,
     processBoundaryValue:(e,id,fallback)=>e.answers?.[id]||fallback,
     buildBackendPayload:()=>({engagement_id:'E1'}),
-    esc:v=>String(v??''),attr:v=>String(v??''),pageTop:()=>'',section:(t,s,body,actions)=>`${body}${actions||''}`,
+    esc:v=>String(v??''),attr:v=>String(v??''),pageTop:(title,sub,actions)=>`${title}${actions||''}`,section:(t,s,body,actions)=>`${t}${body}${actions||''}`,
     auneaSelectControl:(id,opts,val,{extra='',placeholder='Selecciona…'}={})=>`<div class="canonical-aunea-select"><input type="hidden" id="${id}" value="${val||''}" ${extra}><details class="aunea-select"><summary><span>${placeholder}</span><i></i></summary><div class="aunea-select-menu">${(opts||[]).map(o=>`<button data-aunea-select-option="${id}" data-value="${o.value}" data-label="${o.label}">${o.label}</button>`).join('')}</div></details></div>`,
     openModal:()=>{},closeModal:()=>{},markDirty:()=>{},render:()=>{},toast:()=>{},now:()=>'',
     document:{getElementById:()=>null,querySelectorAll:()=>[]}
