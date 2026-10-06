@@ -901,6 +901,12 @@ function asisMapPage(e,steps,fr){
     +'<div class="asis-map-hint">Este es el mismo mapa AS-IS trabajado con el cliente. Para modificarlo, utiliza Pasos, Fricciones, Riesgos o Impacto en el menú de la izquierda.</div>'
     +flow+'</div>';
 }
+function layerCanonicalQuestions(e,stageId){
+  if(typeof renderStageFields!=='function')return '';
+  const fields=(schema?.fields||[]).filter(f=>f.Stage_ID===stageId&&typeof questionVisible==='function'&&questionVisible(f,e));
+  if(!fields.length)return '';
+  return section('Datos canónicos de la etapa','Estos datos pertenecen a la misma captura. Se muestran aquí porque esta etapa usa el editor estructurado en lugar del formulario genérico.',`<div class="form-grid">${renderStageFields(fields,e)}</div>`);
+}
 function processPage(){
   const e=currentEng();if(!e)return pageTop('Mapa AS-IS','Abre un estudio para ver su proceso.');
   const steps=activeSteps(e),fr=activeFrictions(e);
@@ -909,25 +915,26 @@ function processPage(){
   const locked=typeof isAsisConsoleLocked==='function'&&isAsisConsoleLocked(e);
   const top='<button class="btn btn-primary" id="openSessionDisplayFromProcess">'+(locked?'Vista con cliente abierta ↗':'Vista con cliente ↗')+'</button>';
   return pageTop('Mapa AS-IS','Lo que sabemos del proceso actual, todo en un mismo mapa.',top)
-    +(typeof asisConsoleLockNotice==='function'?asisConsoleLockNotice():'')+asisMapPage(e,steps,fr);
+    +(typeof asisConsoleLockNotice==='function'?asisConsoleLockNotice():'')+asisMapPage(e,steps,fr)+layerCanonicalQuestions(e,'S04');
 }
-function consultantLayerPage(title,intro,body,layer){
+function consultantLayerPage(title,intro,body,layer,stageId){
   const e=currentEng();if(!e)return pageTop(title,'Abre primero un estudio.');
-  const done=!!processLayerState(e)[layer],tabs={map:'Mapa AS-IS',frictions:'Fricciones',risks:'Riesgos',impact:'Impacto'};
-  const confirm='<div class="flow-confirm"><div><b>'+(done?'Revisión confirmada':'Revisión pendiente')+'</b><div class="field-help">Puedes guardar y continuar sin confirmar todavía.</div></div><button class="btn '+(done?'btn-outline':'btn-primary')+'" data-confirm-process-layer="'+layer+'">'+(done?'Volver a confirmar':'Confirmar')+' '+tabs[layer]+'</button></div>';
-  return pageTop(title,intro,'<button class="btn btn-outline" data-page="proceso">← Ver mapa AS-IS</button>')+(typeof asisConsoleLockNotice==='function'?asisConsoleLockNotice():'')+body+confirm;
+  const integrity=typeof processLayerIntegrityIssues==='function'?processLayerIntegrityIssues(e,layer):[],done=!!processLayerState(e)[layer]&&!integrity.length,tabs={map:'Mapa AS-IS',frictions:'Fricciones',risks:'Riesgos',impact:'Impacto'};
+  const warning=integrity.length?'<div class="notice warn"><b>Revisión necesaria</b><br>'+integrity.map(x=>esc(x.message)).join(' ')+'</div>':'';
+  const confirm=warning+'<div class="flow-confirm"><div><b>'+(done?'Revisión confirmada':integrity.length?'Revisión necesaria':'Revisión pendiente')+'</b><div class="field-help">Puedes guardar y continuar sin confirmar todavía.</div></div><button class="btn '+(done?'btn-outline':'btn-primary')+'" data-confirm-process-layer="'+layer+'">'+(done?'Volver a confirmar':'Confirmar')+' '+tabs[layer]+'</button></div>';
+  return pageTop(title,intro,'<button class="btn btn-outline" data-page="proceso">← Ver mapa AS-IS</button>')+(typeof asisConsoleLockNotice==='function'?asisConsoleLockNotice():'')+body+(stageId?layerCanonicalQuestions(e,stageId):'')+confirm;
 }
 function consultantStepsPage(){
-  const e=currentEng();return consultantLayerPage('Pasos','Añade, edita o elimina las actividades reales del proceso.',stepsEditor(e,activeSteps(e),activeFrictions(e)),'map');
+  const e=currentEng();return consultantLayerPage('Pasos','Añade, edita o elimina las actividades reales del proceso.',stepsEditor(e,activeSteps(e),activeFrictions(e)),'map','S04');
 }
 function consultantFrictionsPage(){
-  const e=currentEng();return consultantLayerPage('Fricciones','Registra los problemas de los pasos y su evidencia.',frictionsEditor(e,activeSteps(e),activeFrictions(e)),'frictions');
+  const e=currentEng();return consultantLayerPage('Fricciones','Registra los problemas de los pasos y su evidencia.',frictionsEditor(e,activeSteps(e),activeFrictions(e)),'frictions','S05');
 }
 function consultantRisksPage(){
-  const e=currentEng();return consultantLayerPage('Riesgos','Qué podría salir mal y qué controles existen hoy.',riskBuilder(e),'risks');
+  const e=currentEng();return consultantLayerPage('Riesgos','Qué podría salir mal y qué controles existen hoy.',riskBuilder(e),'risks','S06');
 }
 function consultantImpactPage(){
-  const e=currentEng();return consultantLayerPage('Impacto','Consulta los datos existentes y añade sólo los costes o tiempos que falten.',economicBuilder(e),'impact');
+  const e=currentEng();return consultantLayerPage('Impacto','Consulta los datos existentes y añade sólo los costes o tiempos que falten.',economicBuilder(e),'impact','S07');
 }
 // [AUNEA-FE-ASIS-UX-072] END
 
