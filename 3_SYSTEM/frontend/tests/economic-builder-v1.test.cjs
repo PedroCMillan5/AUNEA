@@ -388,3 +388,30 @@ test('economic list shows missing captured values as dash, not fabricated zero',
   assert.match(html,/Pérdida directa — €/);
   assert.doesNotMatch(html,/Pérdida directa 0 €/);
 });
+
+
+test('DF077 practical capacity is captured on ED14 with role, hours, period and evidence',()=>{
+  const ctx=makeCtx();
+  ctx.schema.tables.REF_ECON_DRIVER.push({Economic_Driver_ID:'ED14',Name:'Capacity rate'});
+  ctx.fieldOptions=id=>id==='OS_PERIOD'?[{value:'MONTH',label:'Mes'},{value:'YEAR',label:'Año'}]:[];
+  ctx.__eng.processSteps=[{id:'S1',status:'ACTIVE',actor:'OPERATIONS',step_name:'Operación'}];
+  ctx.addEconomic(['S1']);
+  assert.match(ctx.__lastBody,/Capacidad práctica\/productiva del rol/);
+  assert.match(ctx.__lastBody,/id="econCapacityValue"/);
+  assert.match(ctx.__lastBody,/id="econCapacityPeriod"/);
+  assert.match(ctx.__lastBody,/id="econRole"/);
+  Object.assign(ctx.__domFields,{
+    econDriver:{value:'ED14'},econActive:{value:'0'},econActive_unit:{value:'h'},econWait:{value:'0'},econWait_unit:{value:'h'},
+    econRate:{value:'32'},econRole:{value:'OPERATIONS'},econCapacityValue:{value:'125'},econCapacityPeriod:{value:'MONTH'},
+    econDirect:{value:''},econTool:{value:''},econCash:{value:''},econEvidence:{value:'CLIENT_DECLARED'}
+  });
+  ctx.__lastOnSave();
+  assert.equal(ctx.__eng.economicInputs.length,1);
+  const row=ctx.__eng.economicInputs[0];
+  assert.equal(row.driver_id,'ED14');
+  assert.equal(row.role_or_resource,'OPERATIONS');
+  assert.equal(row.value,125);
+  assert.equal(row.unit,'h');
+  assert.equal(row.period,'MONTH');
+  assert.equal(row.capacity_cost_rate_eur_hour,32);
+});
