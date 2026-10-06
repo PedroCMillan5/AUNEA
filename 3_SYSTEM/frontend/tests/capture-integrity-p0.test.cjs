@@ -67,8 +67,10 @@ test('economic records are normalized to the selected canonical driver',()=>{
 test('legacy cross-metric economics are normalized on load without auto-fixing ambiguous scope',()=>{
   assert.match(economics,/function migrateEconomicInputsToDriverShape/);
   assert.match(economics,/invalidateProcessLayers\(e,'impact'\)/);
-  assert.match(economics,/SCOPE_MISMATCH/);
-  assert.doesNotMatch(economics,/suggestedStepId.*Object\.assign/s);
+  assert.match(economics,/kind:'SCOPE_MISMATCH'/);
+  const start=economics.indexOf('function migrateEconomicInputsToDriverShape'),end=economics.indexOf('\nfunction economicInputIntegrityIssues',start);
+  const migration=economics.slice(start,end);
+  assert.doesNotMatch(migration,/suggestedStepId|Object\.assign/);
 });
 
 test('step and friction capture reject invalid percentage and missing Other detail',()=>{
@@ -140,8 +142,8 @@ test('consultant layer status cannot say confirmed while integrity issues exist'
 
 
 test('derived-and-confirm fields are not complete until the current derivation is confirmed',()=>{
-  assert.match(noReask,/Ask_Mode\|\|'\)\)===['"]DERIVE_AND_CONFIRM['"]/);
-  assert.match(noReask,/return isDerivedConfirmed\(f,e\)/);
+  assert.match(noReask,/mode==='DERIVE_AND_CONFIRM'/);
+  assert.match(noReask,/isDerivedConfirmed\(f,e,reuse\)/);
   assert.match(noReask,/DERIVE_AND_CONFIRM/);
   assert.match(noReask,/data-confirm-derived/);
 });
