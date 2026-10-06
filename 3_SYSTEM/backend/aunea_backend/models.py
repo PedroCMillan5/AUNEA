@@ -114,6 +114,25 @@ class EngagementInput(BaseModel):
     requires_management_visibility: bool = False
     commercial_scope: CommercialScope = Field(default_factory=CommercialScope)
 
+class InputCoverageItem(BaseModel):
+    input_id: str
+    engine: str
+    input_name: str
+    criticality: str
+    branch_rule_id: str
+    applicable: bool | None = None
+    present: bool = False
+    blocking: bool = False
+    status: Literal["COVERED","GAP","NOT_APPLICABLE","UNKNOWN_APPLICABILITY"]
+    source_fields: list[str] = Field(default_factory=list)
+    present_sources: list[str] = Field(default_factory=list)
+
+class InputCoverageResult(BaseModel):
+    status: Literal["COMPLETE","PARTIAL","BLOCKED","NOT_EVALUATED"] = "NOT_EVALUATED"
+    items: list[InputCoverageItem] = Field(default_factory=list)
+    blocking_gaps: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+
 class PainResult(BaseModel):
     pain_id: str
     state: PainState
@@ -197,6 +216,7 @@ class DiagnosticOutput(BaseModel):
     engagement_id: str
     rule_bundle_version: str
     input_snapshot_hash: str
+    input_coverage: InputCoverageResult = Field(default_factory=InputCoverageResult)
     pain_results: list[PainResult]
     economic_result: EconomicResult
     risk_result: RiskResult
