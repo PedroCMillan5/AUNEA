@@ -22,6 +22,16 @@ function supersedeStep(stepId){
   });
   (e.risks||[]).forEach(r=>r.step_ids=normalizeArray(r.step_ids).filter(id=>id!==stepId));
   (e.economicInputs||[]).forEach(v=>v.step_ids=normalizeArray(v.step_ids).filter(id=>id!==stepId));
+  const details=e.answerDetails||(e.answerDetails={});
+  Object.keys(details).forEach(k=>{
+    if(/^DF\d{3}__step$/.test(k)&&String(details[k])===String(stepId))details[k]='';
+    if(/^DF\d{3}__steps$/.test(k))details[k]=normalizeArray(details[k]).filter(id=>String(id)!==String(stepId));
+  });
+  Object.keys(e.answers||{}).forEach(fid=>{
+    const f=(schema?.fields||[]).find(x=>x.Field_ID===fid),control=String(f?.Control_UI||'').toUpperCase(),value=e.answers[fid];
+    if(control==='STEP_PAIR_SELECTOR'&&value&&typeof value==='object'&&(String(value.from||'')===String(stepId)||String(value.to||'')===String(stepId)))e.answers[fid]='';
+    if(control==='STEP_SYSTEM_PAIR_SELECTOR')e.answers[fid]=normalizeArray(value).filter(token=>!String(token).split(':').includes(String(stepId)));
+  });
   invalidateProcessLayers(e,'map');markDirty(`Paso ${stepId} eliminado del flujo y referencias activas conciliadas`);render();
 }
 
