@@ -187,15 +187,24 @@ function branchActive(ruleId,e){
   }
 }
 
+function structuredCaptureOwner(f){
+  const target=String(f?.Write_Target||'');
+  if(target.startsWith('RT_PROCESS_STEP.'))return 'PROCESS_STEP';
+  if(target.startsWith('RT_PAIN.'))return 'FRICTION';
+  if(target.startsWith('RT_RISK.'))return 'RISK';
+  if(target==='RT_ECONOMIC_INPUT'||target.startsWith('RT_ECONOMIC_INPUT.'))return 'ECONOMIC';
+  return null;
+}
 function questionVisible(f,e){
+  // Single-owner rule: structured builders own ProcessStep/Friction/RiskInput/EconomicInput.
+  // Their fields must never reappear in a generic stage form, regardless of Ask_Mode.
+  if(structuredCaptureOwner(f))return false;
   // DF025 is itself the canonical question that establishes whether an SLA/target exists.
   // It must remain askable in S03; otherwise BR-SLA creates a circular visibility dependency.
   if(f.Field_ID==='DF025'&&f.Stage_ID==='S03')return true;
   if(['CAPTURE_IN_PROCESS_STEP','CONDITIONAL_IN_STEP'].includes(f.Ask_Mode))return false;
   if(['CAPTURE_IN_FRICTION','CONDITIONAL_IN_FRICTION'].includes(f.Ask_Mode))return false;
   if(f.Ask_Mode==='CAPTURE_IN_RISK')return false;
-  if(f.Stage_ID==='S06'&&['DF068','DF069','DF070','DF071','DF072'].includes(f.Field_ID))return false;
-  if(f.Stage_ID==='S07'&&['DF076','DF077','DF082','DF083','DF084'].includes(f.Field_ID))return false;
   // S08 now precedes the map (DEC-065): show future outcomes/constraints before ProcessSteps exist.
   // BR-AI and BR-RISK keep their conditional behavior.
   if(f.Stage_ID==='S08'&&f.Branch_Rule_ID==='BR-FUTURE')return true;
