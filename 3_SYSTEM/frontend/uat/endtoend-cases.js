@@ -56,7 +56,7 @@ function uat3Seed(c){
     DF053:c.search.map(n=>steps[n].id),
     DF054:['manual:'+steps[c.integration[1]].id],DF096:frictions.map(x=>x.id),DF098:c.followup};
   const controlStepIndex=c.key==='INVOICE'?4:c.key==='INTAKE'?3:4;
-  const details={...c.details,DF075__steps:[steps[controlStepIndex].id]};
+  const details={...c.details,DF066:steps.filter(s=>s.exception_path?.type==='OTHER').map(s=>s.exception_path?.condition).filter(Boolean).join(' · '),DF074__step:steps[controlStepIndex].id,DF075__steps:[steps[controlStepIndex].id]};
   const economics=[
     {step_ids:steps.map(s=>s.id),driver_id:'ED14',annual_active_hours:0,annual_wait_hours:0,capacity_cost_rate_eur_hour:c.economics.rate,
       direct_loss_eur_annual:0,current_tool_cost_eur_annual:0,realized_cash_saving_eur_annual:0,evidence_type:'CLIENT_DECLARED',deduplication_key:null},
