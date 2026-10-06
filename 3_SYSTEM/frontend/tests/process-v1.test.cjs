@@ -326,3 +326,18 @@ test('friendly AS-IS graph keeps routing owners and adds functional node iconogr
   assert.match(code,/normal_next_step/);
   assert.match(code,/exception_path\?\.destination_step/);
 });
+
+test('server-owned Pain candidates remain proposals until human confirmation',()=>{
+  assert.match(code,/async function reviewPainCandidates\(/);
+  assert.match(code,/\/v1\/diagnostic\/pain-candidates/);
+  assert.match(code,/Son candidatos, no diagnósticos/);
+  assert.match(code,/openFrictionModal\(null,candidate\.step_ids,candidate\)/);
+  assert.match(code,/Señal detectada en el mapa — pendiente de confirmar/);
+  assert.doesNotMatch(code,/frictions\.push\(candidate\)/,'candidate review must not persist a Friction directly');
+});
+
+test('Pain candidate review reuses the normal friction builder and requires observable signal cause and evidence review',()=>{
+  assert.match(code,/Completa la señal observable, la causa y la evidencia/);
+  assert.match(code,/guardar esta ficha es la confirmación humana de la fricción/);
+  assert.match(code,/Tipo, al menos un paso, causa y señal observable son obligatorios/);
+});
