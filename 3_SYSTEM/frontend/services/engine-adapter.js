@@ -81,7 +81,7 @@ function handleCoveragePreflight(e,result){
 }
 function questionnaireAnswersForEngine(e){
   const out={...(e.answers||{})};
-  for(const fid of ['DF094','DF095']){
+  for(const fid of ['DF085','DF094','DF095']){
     const field=(schema?.fields||[]).find(x=>x.Field_ID===fid);
     const value=field&&typeof effectiveValue==='function'?effectiveValue(field,e):(typeof reusedValue==='function'?reusedValue(fid,e):undefined);
     if(typeof valuePresent==='function'?valuePresent(value):(value!==undefined&&value!==null&&value!==''))out[fid]=value;
