@@ -149,8 +149,8 @@ function economicInputIntegrityIssues(e){
     if(x.driver_id==='ED05'&&ids.length&&selected.length&&selected.every(s=>Number(s.rework_time||0)<=0)){
       const frictions=typeof activeFrictions==='function'?activeFrictions(e):(e?.frictions||[]).filter(f=>f.status!=='SUPERSEDED');
       const withFriction=new Set(frictions.flatMap(fr=>normalizeArray(fr.affected_steps)));
-      const candidates=steps.filter(s=>Number(s.rework_time||0)>0&&withFriction.has(s.id)).map(s=>s.step_name||s.id);
-      issues.push({index,kind:'SCOPE_MISMATCH',message:'Tiempo de retrabajo está asociado a un paso sin retrabajo registrado. '+(candidates.length?'Revisa el ámbito; pasos con retrabajo y fricción registrada: '+candidates.join(' · ')+'.':'Revisa el paso relacionado.')});
+      const candidateSteps=steps.filter(s=>Number(s.rework_time||0)>0&&withFriction.has(s.id)),candidates=candidateSteps.map(s=>s.step_name||s.id);
+      issues.push({index,kind:'SCOPE_MISMATCH',suggestedStepId:candidateSteps.length===1?candidateSteps[0].id:null,suggestedStepName:candidateSteps.length===1?(candidateSteps[0].step_name||candidateSteps[0].id):null,message:'Tiempo de retrabajo está asociado a un paso sin retrabajo registrado. '+(candidates.length?'Revisa el ámbito; pasos con retrabajo y fricción registrada: '+candidates.join(' · ')+'.':'Revisa el paso relacionado.')});
     }
     if(x.driver_id==='ED13'&&ids.length&&selected.length&&selected.every(s=>Number(s.wait_time||0)<=0)){
       const candidates=steps.filter(s=>Number(s.wait_time||0)>0).map(s=>s.step_name||s.id);
@@ -197,18 +197,20 @@ function economicBuilder(e){
   return section('Impactos registrados','Cada impacto conserva una sola métrica principal. La espera no se suma como trabajo activo y el tiempo no equivale automáticamente a ahorro.',
     `<div class="result-list">${e.economicInputs.length?e.economicInputs.map((x,i)=>{
       const rowIssues=byIndex.get(i)||[];
-      return `<div class="result-item"><div class="result-item-head"><div><b>${esc(econDriverLabel(x.driver_id))}</b><p>${esc(metric(x))} · Evidencia: ${esc(engineLabel('evidence_quality',x.evidence_type))}</p><p>Pasos: ${normalizeArray(x.step_ids).map(id=>steps.find(s=>s.id===id)?.step_name||id).map(esc).join(', ')||'Sin anclar'}</p>${rowIssues.length?`<div class="notice warn economic-row-warning"><b>Revisión necesaria</b><br>${rowIssues.map(v=>esc(v.message)).join(' ')}</div>`:''}</div><div class="result-actions"><button class="btn btn-small" data-edit-economic-index="${i}">Editar</button><button class="btn btn-small btn-danger" data-delete-economic-index="${i}">Eliminar</button></div></div></div>`;
+      return `<div class="result-item"><div class="result-item-head"><div><b>${esc(econDriverLabel(x.driver_id))}</b><p>${esc(metric(x))} · Evidencia: ${esc(engineLabel('evidence_quality',x.evidence_type))}</p><p>Pasos: ${normalizeArray(x.step_ids).map(id=>steps.find(s=>s.id===id)?.step_name||id).map(esc).join(', ')||'Sin anclar'}</p>${rowIssues.length?`<div class="notice warn economic-row-warning"><b>Revisión necesaria</b><br>${rowIssues.map(v=>esc(v.message)).join(' ')}${rowIssues.find(v=>v.suggestedStepId)?`<div class="economic-row-fix"><button type="button" class="btn btn-small" data-fix-economic-scope="${i}" data-fix-economic-step="${attr(rowIssues.find(v=>v.suggestedStepId).suggestedStepId)}">Revisar usando ${esc(rowIssues.find(v=>v.suggestedStepId).suggestedStepName)}</button></div>`:''}</div>`:''}</div><div class="result-actions"><button class="btn btn-small" data-edit-economic-index="${i}">Editar</button><button class="btn btn-small btn-danger" data-delete-economic-index="${i}">Eliminar</button></div></div></div>`;
     }).join(''):'<div class="empty"><p>Todavía no hay impactos registrados.</p></div>'}</div>`,
     '<button type="button" class="btn btn-outline" id="addEconomic" data-add-economic-global>Añadir impacto</button>')
 }
 
-function addEconomic(preselectedSteps=[],editIndex=null){
+function addEconomic(preselectedSteps=[],editIndex=null,forceSuggestedScope=false){
   if(typeof guardAsisMutation==='function'&&guardAsisMutation())return;
   const eng=currentEng(),steps=typeof activeSteps==='function'?activeSteps(eng):[];
   const existing=editIndex===null?null:eng.economicInputs[editIndex];
   if(editIndex!==null&&!existing)return;
-  if(existing)preselectedSteps=normalizeArray(existing.step_ids);
-  let preserveCapturedTime=!!existing;
+  const requestedSteps=normalizeArray(preselectedSteps).filter(Boolean),existingSteps=normalizeArray(existing?.step_ids).filter(Boolean);
+  const useSuggested=!!existing&&forceSuggestedScope&&requestedSteps.length>0;
+  if(existing)preselectedSteps=useSuggested?requestedSteps:existingSteps;
+  let preserveCapturedTime=!!existing&&!useSuggested;
   const drivers=schema.tables.REF_ECON_DRIVER||[];
   const activeContributors=activeTimeContributors(eng),waitContributors=waitTimeContributors(eng);
   const allFrictions=typeof activeFrictions==='function'?activeFrictions(eng):eng.frictions||[];
