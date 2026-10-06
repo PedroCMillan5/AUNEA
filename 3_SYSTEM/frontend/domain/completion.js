@@ -54,7 +54,7 @@ function completionStageReviewed(s,e){
     if(s.Stage_ID==='S05')return !!x.frictions;
     if(s.Stage_ID==='S06')return !!x.risks;
     if(s.Stage_ID==='S07')return !!x.impact;
-    if(s.Stage_ID==='S09')return typeof allProcessLayersConfirmed==='function'&&allProcessLayersConfirmed(e);
+    if(s.Stage_ID==='S09')return !!e.confirmedAsIs;
   }
   const fields=(schema?.fields||[]).filter(f=>f.Stage_ID===s.Stage_ID&&f.Requiredness==='REQUIRED_90M'&&questionVisible(f,e));
   if(fields.length)return fields.every(f=>typeof canonicalFieldValuePresent==='function'?canonicalFieldValuePresent(f,effectiveValue(f,e),e):valuePresent(effectiveValue(f,e)));
