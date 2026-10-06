@@ -114,7 +114,7 @@ function confirmProcessLayer(tab){
   const integrity=processLayerIntegrityIssues(e,key);if(integrity.length)return toast('No se puede confirmar: '+integrity[0].message),false;
   const x=processLayerConfirmations(e),wouldClose=['map','frictions','risks','impact'].every(k=>k===key||!!x[k]);
   if(wouldClose&&typeof canonicalMissingRequired==='function'){
-    const closingMissing=canonicalMissingRequired(e).filter(v=>v!=='Confirmación AS-IS');
+    const closingMissing=canonicalMissingRequired(e).filter(v=>v!=='Confirmación AS-IS'&&v!=='DF093');
     if(closingMissing.length)return toast('Antes de confirmar la última capa, completa Validación y cierre: '+closingMissing.slice(0,3).join(', ')),false;
   }
   x[key]=true;x[key+'_at']=now();
@@ -142,7 +142,7 @@ function confirmClosingAsIs(){
   const x=processLayerConfirmations(e),pending=['map','frictions','risks','impact'].filter(k=>!x[k]);
   if(pending.length)return toast('Confirma primero las cuatro capas del AS-IS: mapa, fricciones, riesgos e impacto.');
   const integrity=captureIntegrityIssues(e);if(integrity.length)return toast('No se puede cerrar el AS-IS: '+integrity[0].message);
-  const missing=typeof canonicalMissingRequired==='function'?canonicalMissingRequired(e).filter(v=>v!=='Confirmación AS-IS'):[];if(missing.length)return toast('Quedan datos obligatorios pendientes antes de cerrar la sesión.');
+  const missing=typeof canonicalMissingRequired==='function'?canonicalMissingRequired(e).filter(v=>v!=='Confirmación AS-IS'&&v!=='DF093'):[];if(missing.length)return toast('Quedan datos obligatorios pendientes antes de cerrar la sesión.');
   const ts=now();e.confirmedAsIs=true;e.answers.DF093='YES';e.asIsConfirmedAt=ts;
   const sealed=typeof sealConfirmedSnapshot==='function'?sealConfirmedSnapshot(e,'confirmación final S09 del AS-IS enriquecido'):null;
   markDirty(sealed?`AS-IS confirmado en cierre · snapshot v${sealed.version}`:'AS-IS confirmado en cierre');
