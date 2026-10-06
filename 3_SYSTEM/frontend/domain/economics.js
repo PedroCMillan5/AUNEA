@@ -236,7 +236,7 @@ function economicBuilder(e){
 function addEconomic(preselectedSteps=[],editIndex=null,forceSuggestedScope=false){
   if(typeof guardAsisMutation==='function'&&guardAsisMutation())return;
   const eng=currentEng(),steps=typeof activeSteps==='function'?activeSteps(eng):[];
-  const roleOptions=unique(steps.map(s=>s.actor)).map(value=>({value,label:labelFrom('OS_ACTOR_ROLE',value)||value}));
+  const roleOptions=[...new Set(steps.map(s=>s.actor).filter(Boolean))].map(value=>({value,label:labelFrom('OS_ACTOR_ROLE',value)||value}));
   const existing=editIndex===null?null:eng.economicInputs[editIndex];
   if(editIndex!==null&&!existing)return;
   if(existing?.driver_id==='ED15')return toast('Volumen de casos ya pertenece a Demanda (DF021/DF022). Elimina este registro legacy; no puede editarse como impacto económico.');
