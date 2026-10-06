@@ -51,6 +51,14 @@ function normalizeRiskInputs(e){
       description:r.description||null};
   })
 }
+async function fetchPainCandidates(e=currentEng()){
+  if(!e)return {candidates:[],evaluated_step_ids:[],note:''};
+  if(!state.backendOnline&&!(await checkBackend()))throw new Error('Backend no conectado.');
+  const payload=buildBackendPayload(e);
+  const r=await fetch(`${state.backendUrl}/v1/diagnostic/pain-candidates`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  if(!r.ok)throw new Error(await r.text());
+  return await r.json();
+}
 async function diagnosticCoveragePreflight(payload){
   const r=await fetch(`${state.backendUrl}/v1/diagnostic/coverage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
   if(!r.ok)throw new Error(await r.text());
