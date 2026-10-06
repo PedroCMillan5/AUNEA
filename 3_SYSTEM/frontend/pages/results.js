@@ -16,7 +16,9 @@ function currentDiagnosticOutput(e){
   const snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;
   const record=typeof engagementOfRecord==='function'?engagementOfRecord(e):e;
   const integrity=typeof economicInputIntegrityIssues==='function'?economicInputIntegrityIssues(record):[];
-  return snap&&e?.lastEngineSnapshotVersion===snap.version&&!integrity.length?e.diagnosticOutput:null;
+  const scopeMismatch=integrity.some(x=>x.kind==='SCOPE_MISMATCH');
+  const legacyNeedsRerun=integrity.some(x=>x.kind==='LEGACY_CROSS_METRIC')&&e?.economicNormalizationVersion!==1;
+  return snap&&e?.lastEngineSnapshotVersion===snap.version&&!scopeMismatch&&!legacyNeedsRerun?e.diagnosticOutput:null;
 }
 function diagnosisStepName(record,id){
   const step=(record?.processSteps||[]).find(s=>String(s.id)===String(id));
