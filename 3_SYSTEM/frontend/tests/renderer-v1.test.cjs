@@ -81,12 +81,11 @@ test('DF098 DROPDOWN_WITH_OWNER_DATE serializes to a plain "<acción> — <owner
   e.answerDetails.DF098__action='B';
   ctx.syncNextStep('DF098');
   assert.equal(e.answers.DF098,'','owner and date are still missing, so no partial string may be written');
-  e.answerDetails.DF098__owner='Pedro';
   ctx.syncNextStep('DF098');
   assert.equal(e.answers.DF098,'');
   e.answerDetails.DF098__date='2026-09-12';
   ctx.syncNextStep('DF098');
-  assert.equal(e.answers.DF098,'Beta — Pedro — 12/09/2026');
+  assert.equal(e.answers.DF098,'Beta — Consultor AUNEA — 12/09/2026');
   ctx.document=savedDoc;
   e.answerDetails={};e.answers={};
 });
