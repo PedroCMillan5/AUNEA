@@ -28,7 +28,8 @@ function econDriverLabel(driverId){
   return ECON_DRIVER_LABELS_ES[driverId]||d?.Name||driverId;
 }
 function econHoursFrom(value,unit='h'){
-  const n=Number(value||0);if(!Number.isFinite(n)||n<0)return 0;
+  if(value===''||value===null||value===undefined)return null;
+  const n=Number(value);if(!Number.isFinite(n)||n<0)return NaN;
   return n*({min:1/60,h:1,day:24,week:168}[unit]||1);
 }
 function econAnnualTimeControl(id,hours=0,unit='h'){
@@ -175,6 +176,7 @@ function economicInputIntegrityIssues(e){
   const byId=new Map(steps.map(s=>[s.id,s])),issues=[];
   (e?.economicInputs||[]).forEach((x,index)=>{
     const ids=normalizeArray(x.step_ids).filter(Boolean),selected=ids.map(id=>byId.get(id)).filter(Boolean);
+    if(x.driver_id==='ED15')issues.push({index,kind:'DUPLICATE_OWNER',message:'Volumen de casos pertenece a Demanda (DF021/DF022). Este registro económico legacy debe revisarse y no se utilizará como segundo owner.'});
     if(x.driver_id==='ED13'&&Number(x.annual_active_hours||0)>0)
       issues.push({index,kind:'LEGACY_CROSS_METRIC',message:'Tiempo de espera contiene horas activas heredadas de una versión anterior. Se excluirán del cálculo al recalcular.'});
     if(['ED01','ED02','ED03','ED04','ED05','ED06','ED07','ED08'].includes(x.driver_id)&&Number(x.annual_wait_hours||0)>0)
@@ -244,7 +246,7 @@ function addEconomic(preselectedSteps=[],editIndex=null,forceSuggestedScope=fals
   const useSuggested=!!existing&&forceSuggestedScope&&requestedSteps.length>0;
   if(existing)preselectedSteps=useSuggested?requestedSteps:existingSteps;
   let preserveCapturedTime=!!existing&&!useSuggested;
-  const drivers=schema.tables.REF_ECON_DRIVER||[];
+  const drivers=schema.tables.REF_ECON_DRIVER||[],selectableDrivers=drivers.filter(d=>d.Economic_Driver_ID!=='ED15'||existing?.driver_id==='ED15');
   const activeContributors=activeTimeContributors(eng),waitContributors=waitTimeContributors(eng);
   const allFrictions=typeof activeFrictions==='function'?activeFrictions(eng):eng.frictions||[];
   const economicContextHtml=stepIds=>{
@@ -284,7 +286,7 @@ function addEconomic(preselectedSteps=[],editIndex=null,forceSuggestedScope=fals
       <div class="field full"><label>Pasos del proceso relacionados</label><div class="choice-grid">${steps.map(s=>`<div class="choice"><input type="checkbox" id="econ_step_${attr(s.id)}" data-econ-step="${attr(s.id)}" ${preselectedSteps.includes(s.id)?'checked':''}><label for="econ_step_${attr(s.id)}">${esc(s.step_name||s.id)}</label></div>`).join('')}</div></div>
     </div></details>
     <details class="step-group" open><summary>2. Qué quieres cuantificar</summary><div class="form-grid">
-      <div class="field full"><label>Concepto económico</label>${econDropdown('econDriver',drivers.map(d=>({value:d.Economic_Driver_ID,label:econDriverLabel(d.Economic_Driver_ID)})),existing?.driver_id||drivers[0]?.Economic_Driver_ID||'','Selecciona…')}</div>
+      <div class="field full"><label>Concepto económico</label>${econDropdown('econDriver',[{value:'',label:'Selecciona…'},...selectableDrivers.map(d=>({value:d.Economic_Driver_ID,label:econDriverLabel(d.Economic_Driver_ID)}))],existing?.driver_id||'','Selecciona…')}</div>
       <div class="field full economic-derived-card"><div class="economic-derived-kicker" id="economicResultTitle">Impacto calculado</div><div class="notice info" id="economicDerivedPreview" role="status">${esc(initialPreview)}</div><div class="field-help" id="economicResultHelp">AUNEA reutiliza volumen y tiempos ya capturados. Los cálculos derivados pertenecen al backend.</div></div>
       <div class="field" data-econ-ui="active"><label id="econActiveLabel">Trabajo anual asociado</label>${econAnnualTimeControl('econActive',existing?.annual_active_hours||0,'h')}<div class="field-help" id="econActiveHelp">Si el backend puede derivarlo, el dato se completa automáticamente. En caso contrario requiere validación manual y evidencia.</div></div>
       <div class="field" data-econ-ui="wait"><label>Espera anual cuantificada</label>${econAnnualTimeControl('econWait',existing?.annual_wait_hours||0,'h')}<div class="field-help">Exposición a espera del proceso. No se monetiza automáticamente como trabajo ni como ahorro.</div></div>
@@ -309,6 +311,7 @@ function addEconomic(preselectedSteps=[],editIndex=null,forceSuggestedScope=fals
     const waitHours=projected?projected.wait:capturedHours('econWait','annual_wait_hours');
     let draft={step_ids,driver_id:document.getElementById('econDriver').value,annual_active_hours:activeHours,annual_wait_hours:waitHours,capacity_cost_rate_eur_hour:+document.getElementById('econRate').value||null,direct_loss_eur_annual:+document.getElementById('econDirect').value||0,current_tool_cost_eur_annual:+document.getElementById('econTool').value||0,realized_cash_saving_eur_annual:+document.getElementById('econCash').value||0,evidence_type:document.getElementById('econEvidence').value,derivation_source:projected?'DF021/DF022 + RT_PROCESS_STEP':(preserveCapturedTime&&activeHours===existing?.annual_active_hours&&waitHours===existing?.annual_wait_hours?existing.derivation_source:'MANUAL_VALIDATION'),deduplication_key:existing?.deduplication_key??null};
     if(!draft.driver_id)return toast('Selecciona el tipo de impacto antes de guardar.');
+    if(draft.driver_id==='ED15')return toast('El volumen de casos pertenece a Demanda (DF021/DF022); no se crea un EconomicInput duplicado para ED15.');
     draft=normalizedEconomicDriverRecord(draft);
     if(['annual_active_hours','annual_wait_hours','capacity_cost_rate_eur_hour','direct_loss_eur_annual','current_tool_cost_eur_annual','realized_cash_saving_eur_annual'].some(k=>draft[k]!==null&&draft[k]!==undefined&&(!Number.isFinite(Number(draft[k]))||Number(draft[k])<0)))return toast('Los valores económicos deben ser números iguales o mayores que 0.');
     if(!draft.evidence_type)return toast('Selecciona la evidencia correspondiente al dato económico; no se presupone que sea medido.');
