@@ -15,3 +15,12 @@ test('DF025 is always askable in S03 and exposes an explicit no-SLA state',()=>{
   const noReask=read('domain/no-reask.js');
   assert.match(noReask,/f\.Field_ID==='DF025'&&f\.Stage_ID==='S03'\)return true/);
 });
+
+test('DF025 uses a compact existence-first SLA layout and hides value controls when SLA does not exist',()=>{
+  assert.match(stages,/class="demand-sla-head"/);
+  assert.match(stages,/data-sla-mode="\$\{f\.Field_ID\}"/);
+  assert.match(stages,/data-sla-value-wrap="\$\{f\.Field_ID\}"/);
+  assert.match(renderer,/document\.querySelectorAll\('\[data-sla-mode\]'\)/);
+  assert.match(css,/\.demand-sla-head\{/);
+  assert.match(css,/\.demand-sla-value\[hidden\]\{display:none!important\}/);
+});
