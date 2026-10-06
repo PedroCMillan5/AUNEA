@@ -100,3 +100,39 @@ test('risk payload no longer fabricates score 1 for missing likelihood or impact
   assert.doesNotMatch(body,/likelihood_1_5:Math\.max\(1/);
   assert.doesNotMatch(body,/impact_1_5:Math\.max\(1/);
 });
+
+
+test('active conditional questions participate in the same completion gate',()=>{
+  assert.match(noReask,/function canonicalFieldRequiredNow/);
+  assert.match(noReask,/Requiredness==='CONDITIONAL_90M'/);
+  assert.match(stages,/canonicalFieldRequiredNow/);
+  assert.match(completion,/canonicalFieldRequiredNow/);
+});
+
+test('structured AS-IS pages expose their remaining canonical stage questions',()=>{
+  assert.match(process,/function layerCanonicalQuestions/);
+  assert.match(process,/layerCanonicalQuestions\(e,'S04'\)/);
+  assert.match(process,/consultantLayerPage\('Riesgos'[\s\S]*'S06'\)/);
+  assert.match(process,/consultantLayerPage\('Impacto'[\s\S]*'S07'\)/);
+});
+
+test('an empty AS-IS map or friction layer cannot be confirmed as complete',()=>{
+  assert.match(lifecycle,/Añade al menos un paso real al mapa AS-IS/);
+  assert.match(lifecycle,/Registra al menos una fricción observable/);
+});
+
+test('risk controls capture the canonical control list and no material condition defaults silently',()=>{
+  assert.match(risk,/current_controls/);
+  assert.match(risk,/OS_CONTROL_TYPE/);
+  assert.match(risk,/no se aplican valores por defecto/);
+  assert.match(lifecycle,/controls_present===true&&!normalizeArray\(r\.current_controls\)\.length/);
+});
+
+test('consultant layer status cannot say confirmed while integrity issues exist',()=>{
+  const start=process.indexOf('function consultantLayerPage');
+  const end=process.indexOf('\nfunction consultantStepsPage',start);
+  const body=process.slice(start,end);
+  assert.match(body,/processLayerIntegrityIssues/);
+  assert.match(body,/done=!!processLayerState\(e\)\[layer\]&&!integrity\.length/);
+  assert.match(body,/Revisión necesaria/);
+});
