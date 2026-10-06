@@ -23,7 +23,7 @@ function makeCtx(engagement){
     toast:m=>{toasts.push(m)},
     now:()=>'2026-09-14T00:00:00.000Z',
     audit:()=>{},schema:{version:'1.1',source:'test'},
-    state:{engagements:[],companies:[],contacts:[]},
+    state:{engagements:[],companies:[],contacts:[]},localStorage:{getItem:()=>null,setItem(){},removeItem(){}},location:{hash:'',search:''},
     companyById:()=>null,contactById:()=>null,contactFullName:c=>c&&c.name||'',
     activeSteps:e=>(e.processSteps||[]).filter(x=>x.status!=='SUPERSEDED'),
     activeFrictions:e=>(e.frictions||[]).filter(x=>x.status!=='SUPERSEDED')
