@@ -95,17 +95,30 @@ function economicProjectionForDriver(projection,driver){
   const hasActive=projection.active!==null&&projection.active!==undefined;
   const hasWait=projection.wait!==null&&projection.wait!==undefined;
   const hasRework=projection.rework!==null&&projection.rework!==undefined;
-  const baseActive=hasActive?projection.active:0,baseWait=hasWait?projection.wait:0;
   if(driver==='ED01'&&hasActive)
-    return {active:baseActive,wait:baseWait,label:'Trabajo activo actual y espera del ámbito seleccionado'};
+    return {active:projection.active,wait:0,label:'Trabajo activo anual'};
   if(driver==='ED05'&&hasRework)
-    return {active:projection.rework,wait:baseWait,label:'Retrabajo ponderado y espera existente del ámbito seleccionado'};
+    return {active:projection.rework,wait:0,label:'Retrabajo anual'};
   if(driver==='ED13'&&hasWait)
-    return {active:baseActive,wait:baseWait,label:'Trabajo activo y exposición de espera del ámbito seleccionado'};
-  // For concepts without a governed driver-specific derivation, preserve the objective
-  // time context already calculated by the backend instead of clearing known active/wait.
-  return {active:baseActive,wait:baseWait,label:'Tiempos existentes del ámbito seleccionado'};
+    return {active:0,wait:projection.wait,label:'Exposición anual a espera'};
+  return null;
 }
+
+function economicDriverUi(driver){
+  const activeTime=new Set(['ED01','ED02','ED03','ED04','ED05','ED06','ED07','ED08']);
+  const directLoss=new Set(['ED09','ED10','ED11']);
+  return {
+    showActive:activeTime.has(driver),
+    showWait:driver==='ED13',
+    showRate:activeTime.has(driver)||driver==='ED14',
+    showDirect:directLoss.has(driver),
+    showTool:driver==='ED12',
+    showCash:directLoss.has(driver)||driver==='ED12',
+    activeLabel:driver==='ED05'?'Retrabajo anual':driver==='ED02'?'Tiempo de entrada duplicada anual':driver==='ED03'?'Tiempo de búsqueda / recuperación anual':driver==='ED04'?'Tiempo de seguimiento anual':driver==='ED06'?'Tiempo de consolidación de reporting anual':driver==='ED07'?'Tiempo de gestión de aprobaciones anual':driver==='ED08'?'Tiempo de gestión de traspasos anual':'Trabajo anual asociado',
+    resultTitle:driver==='ED13'?'Espera anual cuantificada':driver==='ED05'?'Retrabajo anual cuantificado':activeTime.has(driver)?'Tiempo anual cuantificado':driver==='ED12'?'Coste de herramienta':'Impacto económico'
+  };
+}
+
 /* [AUNEA-FE-ECON-DERIVATION-035] END */
 
 // [AUNEA-FE-ECON-OVERLAP-036] START — Conservative pre-save checks under EAR-001/004/006.
@@ -156,16 +169,24 @@ function addEconomic(preselectedSteps=[],editIndex=null){
   const mappedTools=[...new Set(steps.flatMap(s=>normalizeArray(s.tool)).filter(Boolean))];
   const economicContextHtml=stepIds=>{
     const selectedIds=normalizeArray(stepIds);
+    const selectedSteps=selectedIds.length?steps.filter(s=>selectedIds.includes(s.id)):[];
     const linkedFrictions=selectedIds.length?allFrictions.filter(f=>normalizeArray(f.affected_steps).some(x=>selectedIds.includes(x))):allFrictions;
     const linkedRisks=selectedIds.length?(eng.risks||[]).filter(r=>normalizeArray(r.step_ids).some(x=>selectedIds.includes(x))):(eng.risks||[]);
     const attributedLosses=linkedFrictions.filter(f=>Number(f.direct_loss?.value||0)>0);
-    return '<div class="client-inherited-context"><b>Contexto reutilizado del AS-IS</b>'
-      +'<p>'+steps.length+' pasos · '+linkedFrictions.length+' fricciones · '+linkedRisks.length+' riesgos relacionados con la selección actual.</p>'
+    const volume=eng.answers?.DF021,period=eng.answers?.DF022;
+    const volumeText=volume!==undefined&&volume!==null&&volume!==''?esc(volume)+' casos'+(period?' · '+esc(labelFrom('OS_PERIOD',String(period).toUpperCase())||period):''):'Volumen pendiente';
+    const stepSummary=selectedSteps.length
+      ?selectedSteps.map(s=>'<div class="economic-context-step"><b>'+esc(s.step_name||s.id)+'</b><span>'+Number(s.active_time||0)+' min trabajo · '+Number(s.wait_time||0)+' min espera · '+Number(s.rework_time||0)+' min retrabajo</span></div>').join('')
+      :'<div class="economic-context-empty">Selecciona uno o varios pasos para acotar el impacto.</div>';
+    return '<div class="client-inherited-context economic-context-card"><div class="economic-context-head"><div><b>Contexto del impacto</b><span>'+volumeText+'</span></div></div>'
+      +'<div class="economic-context-steps">'+stepSummary+'</div>'
+      +'<div class="economic-context-links">'
       +(linkedFrictions.length?'<p><b>Fricciones relacionadas:</b> '+linkedFrictions.map(f=>esc(f.client_label||labelFrom('OS_FRICTION_TYPE',f.friction_type))).join(' · ')+'</p>':'<p><b>Fricciones relacionadas:</b> Ninguna.</p>')
       +(linkedRisks.length?'<p><b>Riesgos relacionados:</b> '+linkedRisks.map(r=>esc(r.description||labelFrom('OS_RISK_CATEGORY',r.category))).join(' · ')+'</p>':'<p><b>Riesgos relacionados:</b> Ninguno.</p>')
-      +(mappedTools.length?'<p>Herramientas registradas en el mapa (DF046): '+mappedTools.map(x=>esc(labelFrom('OS_TOOL_CATEGORY',x))).join(' · ')+' · Registra sólo el coste atribuible a este proceso; no presupongas su eliminación.</p>':'')
-      +(attributedLosses.length?'<p>Pérdidas directas declaradas en fricciones (DF063): '+attributedLosses.map(f=>esc(f.client_label||f.id)).join(' · ')+' · Comprueba que DF082 no vuelva a contabilizar el mismo evento.</p>':'')
-      +'<small>El cálculo previo reutiliza los tiempos de los pasos y el volumen capturado. La espera no equivale a coste ni el trabajo activo equivale a desperdicio o ahorro.</small></div>';
+      +'</div>'
+      +(mappedTools.length?'<p class="economic-context-meta">Herramientas registradas: '+mappedTools.map(x=>esc(labelFrom('OS_TOOL_CATEGORY',x))).join(' · ')+'. Registra sólo el coste atribuible; no presupongas su eliminación.</p>':'')
+      +(attributedLosses.length?'<p class="economic-context-meta">Pérdidas directas ya declaradas en fricciones: '+attributedLosses.map(f=>esc(f.client_label||f.id)).join(' · ')+'. Evita volver a contabilizar el mismo evento.</p>':'')
+      +'<small>Los tiempos y el volumen se reutilizan del AS-IS. La espera no equivale a coste y el trabajo activo no equivale automáticamente a ahorro.</small></div>';
   };
   const inheritedContext='<div id="economicInheritedContext">'+economicContextHtml(preselectedSteps)+'</div>';
   let serverProjection=null,serverSelection='',requestSequence=0;
@@ -180,18 +201,22 @@ function addEconomic(preselectedSteps=[],editIndex=null){
   const activeHelp=activeContributors.length?`<div class="field-help">Pasos con tiempo activo registrado: ${esc(activeContributors.join(', '))}. Se reutilizan para obtener un cálculo revisable cuando el volumen y la aplicación están completos.</div>`:'<div class="field-help">Cuando faltan tiempos o volumen, indica el dato anual manualmente con su evidencia.</div>';
   const waitHelp=waitContributors.length?`<div class="field-help">Pasos con espera registrada: ${esc(waitContributors.join(', '))}. Se calcula por separado del trabajo; no constituye por sí misma ahorro económico.</div>`:'<div class="field-help">La espera se registra aparte del trabajo. Si faltan datos, introduce una cifra anual validada.</div>';
   openModal(existing?'Editar impacto':'Añadir impacto',`<div class="step-groups process-modal-form economic-modal-form">${inheritedContext}
-    <details class="step-group" open><summary>Impacto en tiempo y evidencia</summary><div class="form-grid"><div class="field full"><div class="notice info" id="economicDerivedPreview" role="status">${esc(initialPreview)}</div><div class="field-help">Vista previa procedente del backend con DF021/DF022 y los tiempos registrados. El trabajo total no es tiempo desperdiciado; sólo el retrabajo medido se muestra como posible ineficiencia, sin sumar fricciones que pudieran solaparse.</div></div>
+    <details class="step-group" open><summary>1. Ámbito del impacto</summary><div class="form-grid">
       <div class="field full"><label>Pasos del proceso relacionados</label><div class="choice-grid">${steps.map(s=>`<div class="choice"><input type="checkbox" id="econ_step_${attr(s.id)}" data-econ-step="${attr(s.id)}" ${preselectedSteps.includes(s.id)?'checked':''}><label for="econ_step_${attr(s.id)}">${esc(s.step_name||s.id)}</label></div>`).join('')}</div></div>
+    </div></details>
+    <details class="step-group" open><summary>2. Qué quieres cuantificar</summary><div class="form-grid">
       <div class="field full"><label>Concepto económico</label>${econDropdown('econDriver',drivers.map(d=>({value:d.Economic_Driver_ID,label:econDriverLabel(d.Economic_Driver_ID)})),existing?.driver_id||drivers[0]?.Economic_Driver_ID||'','Selecciona…')}</div>
-      <div class="field"><label>Tiempo activo atribuible</label>${econAnnualTimeControl('econActive',existing?.annual_active_hours||0,'h')}${activeHelp}</div>
-      <div class="field"><label>Tiempo de espera atribuible</label>${econAnnualTimeControl('econWait',existing?.annual_wait_hours||0,'h')}${waitHelp}</div>
+      <div class="field full economic-derived-card"><div class="economic-derived-kicker" id="economicResultTitle">Impacto calculado</div><div class="notice info" id="economicDerivedPreview" role="status">${esc(initialPreview)}</div><div class="field-help" id="economicResultHelp">AUNEA reutiliza volumen y tiempos ya capturados. Los cálculos derivados pertenecen al backend.</div></div>
+      <div class="field" data-econ-ui="active"><label id="econActiveLabel">Trabajo anual asociado</label>${econAnnualTimeControl('econActive',existing?.annual_active_hours||0,'h')}<div class="field-help" id="econActiveHelp">Si el backend puede derivarlo, el dato se completa automáticamente. En caso contrario requiere validación manual y evidencia.</div></div>
+      <div class="field" data-econ-ui="wait"><label>Espera anual cuantificada</label>${econAnnualTimeControl('econWait',existing?.annual_wait_hours||0,'h')}<div class="field-help">Exposición a espera del proceso. No se monetiza automáticamente como trabajo ni como ahorro.</div></div>
       <div class="field full"><label>Tipo de evidencia</label>${econDropdown('econEvidence',Object.entries(I18N_LABELS_ES.evidence_quality).map(([value,label])=>({value,label})),existing?.evidence_type||'','Selecciona…')}</div>
     </div></details>
-    <details class="step-group" open><summary>Costes, pérdidas y ahorro realizado</summary><div class="form-grid">
-      <div class="field"><label>¿Cuánto cuesta una hora de este perfil?</label><div class="compound-control"><input id="econRate" value="${attr(existing?.capacity_cost_rate_eur_hour??'')}" type="number" min="0" step="any" inputmode="decimal" placeholder="0"><span class="unit-label">€/h</span></div><div class="field-help">Valor de capacidad; no equivale por sí solo a ahorro de caja.</div></div>
-      <div class="field"><label>Pérdida directa anual</label><div class="compound-control"><input id="econDirect" value="${attr(existing?.direct_loss_eur_annual??'')}" type="number" min="0" step="any" inputmode="decimal" placeholder="0"><span class="unit-label">€/año</span></div><div class="field-help">Pérdida financiera directa evidenciada y atribuible al proceso.</div></div>
-      <div class="field"><label>Coste actual de herramientas</label><div class="compound-control"><input id="econTool" value="${attr(existing?.current_tool_cost_eur_annual??'')}" type="number" min="0" step="any" inputmode="decimal" placeholder="0"><span class="unit-label">€/año</span></div><div class="field-help">Gasto actual atribuible; no se presume eliminable.</div></div>
-      <div class="field"><label>Ahorro de caja ya realizado</label><div class="compound-control"><input id="econCash" value="${attr(existing?.realized_cash_saving_eur_annual??'')}" type="number" min="0" step="any" inputmode="decimal" placeholder="0"><span class="unit-label">€/año</span></div><div class="field-help">Sólo ahorro real ya materializado; no es una estimación futura.</div></div>
+    <details class="step-group" open id="economicValueGroup"><summary>3. Valor económico cuando proceda</summary><div class="form-grid">
+      <div class="field" data-econ-ui="rate"><label>Coste de capacidad por hora</label><div class="compound-control"><input id="econRate" value="${attr(existing?.capacity_cost_rate_eur_hour??'')}" type="number" min="0" step="any" inputmode="decimal" placeholder="0"><span class="unit-label">€/h</span></div><div class="field-help">Valor de capacidad del perfil. No equivale por sí solo a ahorro de caja.</div></div>
+      <div class="field" data-econ-ui="direct"><label>Pérdida directa anual</label><div class="compound-control"><input id="econDirect" value="${attr(existing?.direct_loss_eur_annual??'')}" type="number" min="0" step="any" inputmode="decimal" placeholder="0"><span class="unit-label">€/año</span></div><div class="field-help">Pérdida financiera directa evidenciada y atribuible al proceso.</div></div>
+      <div class="field" data-econ-ui="tool"><label>Coste actual de herramientas</label><div class="compound-control"><input id="econTool" value="${attr(existing?.current_tool_cost_eur_annual??'')}" type="number" min="0" step="any" inputmode="decimal" placeholder="0"><span class="unit-label">€/año</span></div><div class="field-help">Gasto actual atribuible. No se presume eliminable.</div></div>
+      <div class="field" data-econ-ui="cash"><label>Ahorro de caja ya realizado</label><div class="compound-control"><input id="econCash" value="${attr(existing?.realized_cash_saving_eur_annual??'')}" type="number" min="0" step="any" inputmode="decimal" placeholder="0"><span class="unit-label">€/año</span></div><div class="field-help">Sólo ahorro real ya materializado; nunca una estimación futura.</div></div>
+      <div class="field full economic-value-empty" id="economicValueEmpty">Este concepto no necesita un importe económico adicional para registrarse.</div>
     </div></details>
   </div>`,()=>{
     const step_ids=typeof document.querySelectorAll==='function'?[...document.querySelectorAll('[data-econ-step]:checked')].map(x=>x.dataset.econStep):[];
@@ -215,6 +240,23 @@ function addEconomic(preselectedSteps=[],editIndex=null){
     const zeroWithEvidence=[];if(activeHours===0&&activeContributors.length)zeroWithEvidence.push('trabajo activo');if(waitHours===0&&waitContributors.length)zeroWithEvidence.push('espera');
     if(zeroWithEvidence.length)toast(`Guardado con ${zeroWithEvidence.join(' y ')} anual en 0 aunque Proceso registra tiempo en esos pasos — revisa si falta transcribirlo.`);
   });
+  const applyEconomicDriverUi=()=>{
+    const driver=document.getElementById('econDriver')?.value||'';
+    const ui=economicDriverUi(driver);
+    if(typeof document.querySelectorAll==='function'){
+      document.querySelectorAll('[data-econ-ui="active"]').forEach(x=>x.style.display=ui.showActive?'':'none');
+      document.querySelectorAll('[data-econ-ui="wait"]').forEach(x=>x.style.display=ui.showWait?'':'none');
+      document.querySelectorAll('[data-econ-ui="rate"]').forEach(x=>x.style.display=ui.showRate?'':'none');
+      document.querySelectorAll('[data-econ-ui="direct"]').forEach(x=>x.style.display=ui.showDirect?'':'none');
+      document.querySelectorAll('[data-econ-ui="tool"]').forEach(x=>x.style.display=ui.showTool?'':'none');
+      document.querySelectorAll('[data-econ-ui="cash"]').forEach(x=>x.style.display=ui.showCash?'':'none');
+    }
+    const activeLabel=document.getElementById('econActiveLabel');if(activeLabel)activeLabel.textContent=ui.activeLabel;
+    const resultTitle=document.getElementById('economicResultTitle');if(resultTitle)resultTitle.textContent=ui.resultTitle;
+    const empty=document.getElementById('economicValueEmpty');
+    if(empty)empty.style.display=(ui.showRate||ui.showDirect||ui.showTool||ui.showCash)?'none':'';
+  };
+  applyEconomicDriverUi();
   capturedTimeFields=Object.fromEntries(['econActive','econWait'].map(id=>[id,document.getElementById(id).value]));
   const refresh=async()=>{
     const ids=typeof document.querySelectorAll==='function'?[...document.querySelectorAll('[data-econ-step]:checked')].map(x=>x.dataset.econStep):[];
@@ -238,23 +280,32 @@ function addEconomic(preselectedSteps=[],editIndex=null){
     if(JSON.stringify({step_ids:currentIds,request:economicTimeRequest(eng,currentIds)})!==selection)return;
     serverProjection=projection;serverSelection=selection;
     const suggested=preserveCapturedTime?null:economicProjectionForDriver(projection,document.getElementById('econDriver')?.value);
-    if(target)target.textContent=projection.available
-      ?'Según backend: '+(projection.active==null?'—':preview(projection.active))+' h/año de trabajo activo · '+(projection.wait==null?'—':preview(projection.wait))+' h/año de exposición a espera · '+(projection.rework==null?'—':preview(projection.rework))+' h/año de retrabajo; esfuerzo adicional validado de fricciones: '+(projection.additional==null?'—':preview(projection.additional))+' h/año (separado, nunca duplicado)'+(projection.missing?.length?' · Datos pendientes: '+projection.missing.join(' · '):'')+(projection.monetaryPending?.length?' · Pérdidas directas pendientes de conciliar con DF082.':'')
-      :projection.reason;
+    if(target){
+      const selectedDriver=document.getElementById('econDriver')?.value||'';
+      const auto=economicProjectionForDriver(projection,selectedDriver);
+      const context='Contexto backend: '+(projection.active==null?'—':preview(projection.active))+' h/año trabajo · '+(projection.wait==null?'—':preview(projection.wait))+' h/año espera · '+(projection.rework==null?'—':preview(projection.rework))+' h/año retrabajo';
+      const chosen=auto?' · Se registrará automáticamente: '+auto.label+' = '+preview(auto.active||auto.wait)+' h/año':' · Este concepto no tiene una derivación automática gobernada; introduce sólo un dato validado cuando corresponda.';
+      target.textContent=projection.available?context+chosen+(projection.missing?.length?' · Datos pendientes: '+projection.missing.join(' · '):''):projection.reason;
+    }
     for(const [field,value] of [['econActive',suggested?.active],['econWait',suggested?.wait]]){
       const input=document.getElementById(field),unit=document.getElementById(field+'_unit');
       if(!input)continue;
-      const isDerived=!!suggested;
+      const ui=economicDriverUi(document.getElementById('econDriver')?.value||'');
+      const relevant=field==='econActive'?ui.showActive:ui.showWait;
+      const isDerived=!!suggested&&relevant;
       input.disabled=isDerived;
-      if(suggested){
+      if(isDerived){
         input.value=Number(value||0).toFixed(2);
+        if(unit)unit.value='h';
+      }else if(!relevant){
+        input.value='0';
         if(unit)unit.value='h';
       }else if(input.dataset?.autoDerived==='true')input.value='';
       if(input.dataset)input.dataset.autoDerived=isDerived?'true':'false';
     }
   };
   if(typeof document.querySelectorAll==='function')document.querySelectorAll('[data-econ-step]').forEach(el=>el.addEventListener?.('change',()=>{preserveCapturedTime=false;refresh()}));
-  document.getElementById('econDriver')?.addEventListener?.('change',()=>{preserveCapturedTime=false;refresh()});
+  document.getElementById('econDriver')?.addEventListener?.('change',()=>{preserveCapturedTime=false;applyEconomicDriverUi();refresh()});
   refresh();
 }
 function deleteEconomic(index){
