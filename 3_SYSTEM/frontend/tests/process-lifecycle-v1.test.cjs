@@ -26,7 +26,7 @@ function makeCtx(engagement){
     state:{engagements:[],companies:[],contacts:[]},localStorage:{getItem:()=>null,setItem(){},removeItem(){}},location:{hash:'',search:''},
     companyById:()=>null,contactById:()=>null,contactFullName:c=>c&&c.name||'',
     activeSteps:e=>(e.processSteps||[]).filter(x=>x.status!=='SUPERSEDED'),
-    activeFrictions:e=>(e.frictions||[]).filter(x=>x.status!=='SUPERSEDED')
+    activeFrictions:e=>(e.frictions||[]).filter(x=>x.status!=='SUPERSEDED'),normalizeArray:v=>Array.isArray(v)?v:(v==null||v===''?[]:[v])
   };
   vm.createContext(ctx);
   vm.runInContext(engagementCode,ctx);
