@@ -125,7 +125,14 @@ function resultsPage(){
   if(!e) return pageTop('Diagnóstico interno','PG09 debe cerrar la captura con AS-IS confirmado antes de entrar en Trabajo interno.',`<button class="btn" data-page="diagnostico">Volver a Sesión 1</button>`) + `<div class="empty"><h2>AS-IS confirmado requerido</h2><p>La Sesión 1 termina en PG09. El diagnóstico interno siempre parte de un snapshot confirmado.</p></div>`;
   if(!hasConfirmedEngagementSnapshot(e)) return pageTop('Diagnóstico interno','PG09 debe cerrar la captura con AS-IS confirmado antes de entrar en Trabajo interno.',`<button class="btn" data-page="diagnostico">Volver a Sesión 1</button>`) + `<div class="empty"><h2>AS-IS confirmado requerido</h2><p>La Sesión 1 termina en PG09. El diagnóstico interno siempre parte de un snapshot confirmado.</p></div>`;
   const activeSnapshot=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;
-  const o=currentDiagnosticOutput(e),miss=missingRequired(e),record=typeof engagementOfRecord==='function'?engagementOfRecord(e):e,steps=(record.processSteps||[]).filter(x=>x.status!=='SUPERSEDED'),fr=(record.frictions||[]).filter(x=>x.status!=='SUPERSEDED'),risks=record.risks||[],econInputs=record.economicInputs||[];
+  const record=typeof engagementOfRecord==='function'?engagementOfRecord(e):e,integrity=typeof economicInputIntegrityIssues==='function'?economicInputIntegrityIssues(record):[],o=currentDiagnosticOutput(e),miss=missingRequired(e),steps=(record.processSteps||[]).filter(x=>x.status!=='SUPERSEDED'),fr=(record.frictions||[]).filter(x=>x.status!=='SUPERSEDED'),risks=record.risks||[],econInputs=record.economicInputs||[];
+  if(integrity.length){
+    const scope=integrity.filter(x=>x.kind==='SCOPE_MISMATCH'),legacy=integrity.filter(x=>x.kind==='LEGACY_CROSS_METRIC');
+    return pageTop('Diagnóstico interno','Antes de recalcular hay que reconciliar los impactos existentes con sus pasos y métricas.',`<button class="btn" data-page="diagnostico">Volver a Sesión 1</button><button class="btn btn-primary" data-page="impacto">Revisar impactos</button>`)
+      +section('Revisión económica necesaria','El diagnóstico anterior no se considera vigente mientras existan inconsistencias de atribución.',
+        `${scope.map(x=>`<div class="notice warn"><b>Impacto ${x.index+1}</b><br>${esc(x.message)}</div>`).join('')}
+         ${legacy.length?`<div class="notice info"><b>Datos heredados de una versión anterior</b><br>${legacy.map(x=>esc(x.message)).join(' ')} Al volver a ejecutar, AUNEA enviará al backend únicamente la métrica válida para cada concepto.</div>`:''}`);
+  }
   if(!o){
     const unresolved=typeof unresolvedEngineGates==='function'?unresolvedEngineGates(e):[];
     const ready=miss.length===0&&!!activeSnapshot;
