@@ -630,7 +630,7 @@ body:has(.home-screen-marker) .app-shell{height:100vh;min-height:0;overflow:hidd
 /* [AUNEA-FROZEN-PAGE-HOME-001] END */
 
 
-/* [AUNEA-FE-ASIS-UX-072] START — Simplified AS-IS consultant overview and compact client display.
+/* [AUNEA-FE-ASIS-UX-CSS-072] START — Simplified AS-IS consultant overview and compact client display.
    Scoped additions only: no changes to FROZEN CRM styles or canonical controls. */
 .asis-private-nav{padding-left:34px!important}
 .session-map-canvas .process-graph-board{grid-template-columns:repeat(var(--graph-cols),142px);grid-template-rows:repeat(var(--graph-rows),minmax(120px,auto));gap:24px 44px}
@@ -672,7 +672,7 @@ body:not(.mode-process-editor) .content [data-process-engagement] .flow-insert{d
 .session-detail-foot{text-align:right;margin-top:18px}
 @media(max-width:950px){.asis-facts{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.asis-facts{grid-template-columns:1fr}}
-/* [AUNEA-FE-ASIS-UX-072] END */
+/* [AUNEA-FE-ASIS-UX-CSS-072] END */
 
 
 /* [AUNEA-FE-DIAG-PRIORITY-086] START — Ordered top-3 outcome priorities for canonical DF086. */
