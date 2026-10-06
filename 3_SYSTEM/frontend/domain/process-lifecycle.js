@@ -134,6 +134,87 @@ function captureIntegrityIssues(e){
   if(typeof canonicalFieldIntegrityIssues==='function')out.push(...canonicalFieldIntegrityIssues(e).map(x=>({...x,layer:'fields',message:x.label})));
   return out;
 }
+
+// [AUNEA-FE-ASIS-CONSISTENCY-076] START — Validación de coherencia previa al cierre de PG09
+// PURPOSE: Surface already-governed capture/integrity contradictions before sealing DF093, grouped as
+//          blockers, review items and information, without creating a second owner or a new diagnostic question.
+// SOURCE: Diagnostic Master v1.2; DEC-049/050/052/065/068; PROJECT_RULES single-owner/no-reask.
+// INPUTS: current Engagement, existing layer integrity, canonical requiredness/completion and reused values.
+// OUTPUTS: ephemeral review items with severity + navigation target; blockers prevent PG09 closure.
+// SIDE_EFFECTS: none. No persistence, no engine calculation and no new business field.
+// CHANGE_RISK: HIGH.
+const CONSISTENCY_LAYER_STAGE=Object.freeze({map:'S04',frictions:'S05',risks:'S06',impact:'S07'});
+function consistencyValueSignature(v){
+  if(Array.isArray(v))return JSON.stringify(v.map(consistencyValueSignature).sort());
+  if(v&&typeof v==='object')return JSON.stringify(Object.keys(v).sort().reduce((o,k)=>(o[k]=consistencyValueSignature(v[k]),o),{}));
+  return JSON.stringify(v);
+}
+function preCloseConsistencyReview(e,completion){
+  const items=[],seen=new Set();
+  const add=(severity,code,message,stage='',navigationTarget='')=>{
+    const text=String(message||'').trim();if(!text)return;
+    const key=severity+'|'+text.toLowerCase();if(seen.has(key))return;
+    seen.add(key);items.push({severity,code,message:text,stage,navigationTarget:navigationTarget||(stage?'stage':'')});
+  };
+  if(!e){
+    add('BLOCKER','NO_ENGAGEMENT','No hay un estudio activo para validar.');
+    return {items,blockers:items,reviews:[],information:[],clear:false};
+  }
+  const layers=typeof processLayerConfirmations==='function'?processLayerConfirmations(e):(e.layerConfirmations||{});
+  Object.entries(CONSISTENCY_LAYER_STAGE).forEach(([layer,stage])=>{
+    if(!layers[layer])add('BLOCKER','LAYER_'+layer.toUpperCase(),'Falta confirmar la capa '+({map:'Mapa AS-IS',frictions:'Fricciones',risks:'Riesgos',impact:'Impacto'}[layer]||layer)+'.',stage);
+  });
+  (typeof captureIntegrityIssues==='function'?captureIntegrityIssues(e):[]).forEach((x,i)=>{
+    const stage=x.stage||CONSISTENCY_LAYER_STAGE[x.layer]||'';
+    add('BLOCKER','INTEGRITY_'+i,x.message||x.label,stage);
+  });
+
+  const comp=completion||(typeof engagementCompletion==='function'?engagementCompletion(e):null);
+  (comp?.blockers||[]).filter(b=>b.type!=='GATE'&&b.id!=='Confirmación AS-IS'&&b.id!=='DF093').forEach((b,i)=>{
+    add('BLOCKER','COMPLETION_'+i,b.label||b.id||'Queda un dato obligatorio pendiente.',b.stage||'',b.navigationTarget||'');
+  });
+  if(!comp&&typeof canonicalMissingRequired==='function'){
+    canonicalMissingRequired(e).filter(id=>id!=='DF093'&&id!=='Confirmación AS-IS').forEach((id,i)=>{
+      const field=(schema?.fields||[]).find(f=>f.Field_ID===id);
+      add('BLOCKER','REQUIRED_'+i,'Falta completar "'+(field?.Pregunta_o_etiqueta_ES||id)+'".',field?.Stage_ID||'');
+    });
+  }
+
+  // Detect stale duplicate answers only where the runtime already owns a reusable/derived source.
+  // It is a review item, not an automatic overwrite: the consultant corrects the canonical owner.
+  if(typeof reusedValue==='function'&&typeof valuePresent==='function'){
+    ['DF017','DF046','DF047','DF049','DF050','DF053','DF066','DF067','DF078','DF079'].forEach(fid=>{
+      const explicit=e.answers?.[fid],reuse=reusedValue(fid,e);
+      if(valuePresent(explicit)&&valuePresent(reuse)&&consistencyValueSignature(explicit)!==consistencyValueSignature(reuse)){
+        const field=(schema?.fields||[]).find(f=>f.Field_ID===fid);
+        add('REVIEW','SOURCE_CONFLICT_'+fid,'"' +(field?.Pregunta_o_etiqueta_ES||fid)+ '" no coincide con la información ya capturada en su fuente propietaria. Revisa el dato antes de cerrar.',field?.Stage_ID||'');
+      }
+    });
+  }
+
+  if(e._sessionTimeProjection&&typeof economicTimeRequest==='function'){
+    const currentKey=JSON.stringify(economicTimeRequest(e));
+    if(e._sessionTimeProjection.requestKey&&e._sessionTimeProjection.requestKey!==currentKey)
+      add('REVIEW','STALE_TIME_PROJECTION','La proyección temporal corresponde a una versión anterior del AS-IS. Recalcula el impacto antes del análisis interno.','S07');
+  }
+
+  if(typeof effectiveValue==='function'){
+    const evidenceField=(schema?.fields||[]).find(f=>f.Field_ID==='DF095');
+    const pending=evidenceField?effectiveValue(evidenceField,e):[];
+    normalizeArray(pending).filter(Boolean).forEach((label,i)=>
+      add('REVIEW','EVIDENCE_'+i,'Evidencia pendiente: '+String(label),'S09'));
+  }
+
+  if(!items.length)add('INFO','CONSISTENT','No se detectan incoherencias estructurales ni datos obligatorios pendientes.');
+  return {
+    items,
+    blockers:items.filter(x=>x.severity==='BLOCKER'),
+    reviews:items.filter(x=>x.severity==='REVIEW'),
+    information:items.filter(x=>x.severity==='INFO'),
+    clear:!items.some(x=>x.severity==='BLOCKER')
+  };
+}
+// [AUNEA-FE-ASIS-CONSISTENCY-076] END
 function invalidateProcessLayers(e,from='map'){
   const x=processLayerConfirmations(e),order=['map','frictions','risks','impact'],i=Math.max(0,order.indexOf(from));
   order.slice(i).forEach(k=>x[k]=false);
@@ -173,15 +254,14 @@ function invalidateAsIsClosure(e,reason='cambio en cierre de sesión'){
 function confirmClosingAsIs(){
   if(typeof guardAsisMutation==='function'&&guardAsisMutation())return;
   const e=currentEng();if(!e)return;
-  const x=processLayerConfirmations(e),pending=['map','frictions','risks','impact'].filter(k=>!x[k]);
-  if(pending.length)return toast('Confirma primero las cuatro capas del AS-IS: mapa, fricciones, riesgos e impacto.');
-  const integrity=captureIntegrityIssues(e);if(integrity.length)return toast('No se puede cerrar el AS-IS: '+integrity[0].message);
-  const missing=typeof canonicalMissingRequired==='function'?canonicalMissingRequired(e).filter(v=>v!=='Confirmación AS-IS'&&v!=='DF093'):[];if(missing.length)return toast('Quedan datos obligatorios pendientes antes de cerrar la sesión.');
+  const review=preCloseConsistencyReview(e);
+  if(review.blockers.length)return toast('No se puede cerrar el AS-IS: '+review.blockers[0].message),false;
   const ts=now();e.confirmedAsIs=true;e.answers.DF093='YES';e.asIsConfirmedAt=ts;
   const sealed=typeof sealConfirmedSnapshot==='function'?sealConfirmedSnapshot(e,'confirmación final S09 del AS-IS enriquecido'):null;
   markDirty(sealed?`AS-IS confirmado en cierre · snapshot v${sealed.version}`:'AS-IS confirmado en cierre');
-  toast('AS-IS completo confirmado y snapshot sellado.');
+  toast(review.reviews.length?'AS-IS confirmado. Quedan observaciones no bloqueantes registradas para Trabajo interno.':'AS-IS completo confirmado y snapshot sellado.');
   render();
+  return true;
 }
 
 // [AUNEA-FE-ASIS-CLIENT-EDITOR-074] START — Independent synchronized client-first editor + single-writer lease.
