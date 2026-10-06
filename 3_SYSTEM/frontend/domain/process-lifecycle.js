@@ -55,6 +55,19 @@ function confirmProcessLayer(tab){
   render();
 }
 function confirmAsIs(){confirmProcessLayer(currentEng()?.processTab||'cliente')}
+function confirmClosingAsIs(){
+  if(typeof guardAsisMutation==='function'&&guardAsisMutation())return;
+  const e=currentEng();if(!e)return;
+  const start=e.answers?.DF014,finish=e.answers?.DF015,hasActive=(e.processSteps||[]).some(x=>x.status!=='SUPERSEDED');
+  if((!start||!finish)&&!hasActive)return toast('Define los límites inicial y final o añade al menos un paso antes de confirmar el AS-IS.');
+  const x=processLayerConfirmations(e),ts=now();
+  ['map','frictions','risks','impact'].forEach(k=>{x[k]=true;x[k+'_at']=ts});
+  e.confirmedAsIs=true;e.answers.DF093='YES';e.asIsConfirmedAt=ts;
+  const sealed=typeof sealConfirmedSnapshot==='function'?sealConfirmedSnapshot(e,'confirmación final S09 del AS-IS enriquecido'):null;
+  markDirty(sealed?`AS-IS confirmado en cierre · snapshot v${sealed.version}`:'AS-IS confirmado en cierre');
+  toast('AS-IS completo confirmado y snapshot sellado.');
+  render();
+}
 
 // [AUNEA-FE-ASIS-CLIENT-EDITOR-074] START — Independent synchronized client-first editor + single-writer lease.
 // PURPOSE: Open the consultant-owned client-first editor in a separate tab over the same Engagement, keep
