@@ -562,13 +562,13 @@ function processNodeIconSvg(name){
   };
   return '<span class="process-node-icon process-node-icon-'+attr(name)+'" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false">'+(icons[name]||icons.task)+'</svg></span>';
 }
-function graphNodeCard(e,s,i,fr,tab='cliente'){
+function graphNodeCard(e,s,i,fr,tab='cliente',readonly=false){
   const decision=processDecisionStep(s),steps=activeSteps(e),iconName=processNodeIconName(s),typeClass='step-type-'+String(s.step_type||'generic').toLowerCase();
   const frOn=fr.filter(f=>normalizeArray(f.affected_steps).includes(s.id));
   const risks=(e.risks||[]),riskOn=risks.filter(r=>normalizeArray(r.step_ids).includes(s.id));
   const economics=e.economicInputs||[],money=economics.filter(x=>normalizeArray(x.step_ids).includes(s.id));
   const dest=id=>id==='__END__'?'Fin del proceso':(steps.find(x=>x.id===id)?.step_name||'Destino pendiente');
-  const actions='<div class="flow-step-tools">'
+  const actions=readonly?'':'<div class="flow-step-tools">'
     +'<button type="button" data-move-step-up="'+attr(s.id)+'" '+(i===0?'disabled':'')+'>←</button>'
     +'<button type="button" data-move-step-down="'+attr(s.id)+'" '+(i===steps.length-1?'disabled':'')+'>→</button>'
     +'<button type="button" data-edit-step="'+attr(s.id)+'">Editar</button>'
@@ -576,32 +576,35 @@ function graphNodeCard(e,s,i,fr,tab='cliente'){
   const route=decision?'<div class="graph-route-controls">'
     +'<button type="button" class="route-yes" data-graph-edit-route="'+attr(s.id)+'" data-graph-route-kind="yes"><b>SÍ</b><span>→ '+esc(dest(s.normal_next_step))+'</span></button>'
     +'<button type="button" class="route-no" data-graph-edit-route="'+attr(s.id)+'" data-graph-route-kind="no"><b>NO</b><span>→ '+esc(dest(s.exception_path?.destination_step))+'</span></button></div>':'';
-  const layerAction=tab==='fricciones'?'<button type="button" data-add-friction-step="'+attr(s.id)+'">+ Añadir fricción</button>':
+  const layerAction=readonly?'':tab==='fricciones'?'<button type="button" data-add-friction-step="'+attr(s.id)+'">+ Añadir fricción</button>':
     tab==='riesgos'?'<button type="button" data-add-risk-step="'+attr(s.id)+'">+ Añadir riesgo</button>':
     tab==='impacto'?'<button type="button" data-add-economic-step="'+attr(s.id)+'">+ Añadir impacto</button>':'';
+  const badge=(kind,label,editAttr)=>readonly
+    ?'<span class="'+kind+'-badge" title="'+attr(label)+'"><span class="process-node-link-text">'+esc(label)+'</span></span>'
+    :'<button type="button" class="'+kind+'-badge" '+editAttr+' title="'+attr(label)+'"><span class="process-node-link-text">'+esc(label)+'</span></button>';
   const linkItems=
-    frOn.map(x=>{const label='Fricción · '+labelFrom('OS_FRICTION_TYPE',x.friction_type);return '<button type="button" class="friction-badge" data-edit-friction="'+attr(x.id)+'" title="'+attr(label)+'"><span class="process-node-link-text">'+esc(label)+'</span></button>'}).join('')
-    +riskOn.map(x=>{const label='Riesgo · '+(x.description||x.category);return '<button type="button" class="risk-badge" data-edit-risk-index="'+risks.indexOf(x)+'" title="'+attr(label)+'"><span class="process-node-link-text">'+esc(label)+'</span></button>'}).join('')
-    +money.map(x=>{const label='Impacto · '+(typeof econDriverLabel==='function'?econDriverLabel(x.driver_id):x.driver_id);return '<button type="button" class="economic-badge" data-edit-economic-index="'+economics.indexOf(x)+'" title="'+attr(label)+'"><span class="process-node-link-text">'+esc(label)+'</span></button>'}).join('');
+    frOn.map(x=>{const label='Fricción · '+labelFrom('OS_FRICTION_TYPE',x.friction_type);return badge('friction',label,'data-edit-friction="'+attr(x.id)+'"')}).join('')
+    +riskOn.map(x=>{const label='Riesgo · '+(x.description||x.category);return badge('risk',label,'data-edit-risk-index="'+risks.indexOf(x)+'"')}).join('')
+    +money.map(x=>{const label='Impacto · '+(typeof econDriverLabel==='function'?econDriverLabel(x.driver_id):x.driver_id);return badge('economic',label,'data-edit-economic-index="'+economics.indexOf(x)+'"')}).join('');
   const linkCount=frOn.length+riskOn.length+money.length;
   const links=linkCount?'<div class="process-node-links">'+linkItems+'</div>':'';
   const layerActionHtml=layerAction?'<div class="process-node-actions">'+layerAction+'</div>':'';
   const stack=links||layerActionHtml?'<div class="process-node-stack">'+links+layerActionHtml+'</div>':'';
   if(decision){
-    return '<div class="graph-decision-inline '+(linkCount?'has-node-links ':'')+(processLayerState(e).map?'confirmed':'')+'" data-drag-step="'+attr(s.id)+'">'
+    return '<div class="graph-decision-inline '+(linkCount?'has-node-links ':'')+(processLayerState(e).map?'confirmed':'')+'" '+(readonly?'':'data-drag-step="'+attr(s.id)+'"')+'>'
       +actions+'<div class="graph-decision-gateway" aria-hidden="true"><div class="graph-decision-gateway-icon">'+processNodeIconSvg('decision')+'</div></div>'
       +'<div class="graph-decision-copy"><span class="boundary-kicker">Decisión</span><h4 title="'+attr(s.step_name||'Decisión sin nombre')+'">'+esc(s.step_name||'Decisión sin nombre')+'</h4>'
       +'<p class="process-node-meta" title="'+attr((labelFrom('OS_ACTOR_ROLE',s.actor)||'—')+' · '+(labelFrom('OS_TOOL_CATEGORY',s.tool)||'—'))+'">'+esc(labelFrom('OS_ACTOR_ROLE',s.actor)||'—')+' · '+esc(labelFrom('OS_TOOL_CATEGORY',s.tool)||'—')+'</p>'
       +(num(s.active_time)?'<p>'+num(s.active_time)+' min trabajo</p>':'')+'</div>'
       +links+layerActionHtml+'</div>';
   }
-  return '<div class="flow-step graph-flow-step '+typeClass+' '+(processLayerState(e).map?'confirmed':'')+'" data-drag-step="'+attr(s.id)+'">'
+  return '<div class="flow-step graph-flow-step '+typeClass+' '+(processLayerState(e).map?'confirmed':'')+'" '+(readonly?'':'data-drag-step="'+attr(s.id)+'"')+'>'
     +actions+'<div class="process-node-heading">'+processNodeIconSvg(iconName)+'<div class="process-node-title"><span class="boundary-kicker">Paso '+(i+1)+'</span><h4 title="'+attr(s.step_name||'Paso sin nombre')+'">'+esc(s.step_name||'Paso sin nombre')+'</h4></div></div>'
     +'<p class="process-node-meta" title="'+attr((labelFrom('OS_ACTOR_ROLE',s.actor)||'—')+' · '+(labelFrom('OS_TOOL_CATEGORY',s.tool)||'—'))+'">'+esc(labelFrom('OS_ACTOR_ROLE',s.actor)||'—')+' · '+esc(labelFrom('OS_TOOL_CATEGORY',s.tool)||'—')+'</p>'
     +(num(s.active_time)?'<p>'+num(s.active_time)+' min trabajo</p>':'')
     +stack+'</div>';
 }
-function processGraphHtml(e,steps,fr,start,finish,tab='cliente'){
+function processGraphHtml(e,steps,fr,start,finish,tab='cliente',readonly=false){
   const model=processGraphData(e,steps),risks=e.risks||[],economics=e.economicInputs||[];
   const linkCountForStep=s=>fr.filter(f=>normalizeArray(f.affected_steps).includes(s.id)).length
     +risks.filter(r=>normalizeArray(r.step_ids).includes(s.id)).length
@@ -614,13 +617,13 @@ function processGraphHtml(e,steps,fr,start,finish,tab='cliente'){
     let html='';
     if(n.kind==='start')html=flowBoundaryNode('start',start);
     else if(n.kind==='end')html=flowBoundaryNode('end',finish);
-    else if(n.kind==='pending')html='<button type="button" class="graph-route-pending" data-graph-edit-route="'+attr(n.parent)+'" data-graph-route-kind="'+(n.route==='NO'?'no':'yes')+'"><b>'+esc(n.route)+'</b><span>→ Definir destino</span></button>';
-    else html=graphNodeCard(e,step,steps.indexOf(step),fr,tab);
+    else if(n.kind==='pending')html=readonly?'<div class="graph-route-pending"><b>'+esc(n.route)+'</b><span>→ Destino pendiente</span></div>':'<button type="button" class="graph-route-pending" data-graph-edit-route="'+attr(n.parent)+'" data-graph-route-kind="'+(n.route==='NO'?'no':'yes')+'"><b>'+esc(n.route)+'</b><span>→ Definir destino</span></button>';
+    else html=graphNodeCard(e,step,steps.indexOf(step),fr,tab,readonly);
     return '<div class="process-graph-cell '+(isDecision?'process-graph-decision-cell ':'')+(isYesBranch?'process-graph-yes-branch-cell':'')+'" '+style+' '+id+'>'+html+'</div>';
   };
   const hasBranch=model.edges.some(x=>x.label==='NO');
   const legend=hasBranch?'<div class="process-graph-legend" aria-label="Leyenda de rutas"><span class="legend-main"><i></i>Ruta SÍ / principal</span><span class="legend-alt"><i></i>Ruta NO / alternativa</span></div>':'';
-  return '<div class="flow-canvas client-process-canvas process-graph-canvas">'+legend+'<div class="process-graph-board" style="--graph-cols:'+model.cols+';--graph-rows:'+model.rows+';--graph-card-height:'+graphCardHeight+'px" data-graph-edges="'+attr(JSON.stringify(model.edges))+'" data-graph-branches="'+attr(JSON.stringify(model.branchLayouts))+'">'
+  return '<div class="flow-canvas client-process-canvas process-graph-canvas '+(readonly?'process-graph-readonly':'')+'">'+legend+'<div class="process-graph-board" style="--graph-cols:'+model.cols+';--graph-rows:'+model.rows+';--graph-card-height:'+graphCardHeight+'px" data-graph-edges="'+attr(JSON.stringify(model.edges))+'" data-graph-branches="'+attr(JSON.stringify(model.branchLayouts))+'">'
     +'<svg class="process-graph-lines" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>'
     +model.nodes.map(cell).join('')+'</div></div>';
 }
@@ -811,23 +814,40 @@ function frictionsEditor(e,steps,fr){
 // This is presentation-only over the same Engagement, Step, Friction, Risk and EconomicInput records.
 // Source: DEC-050/063/064/065/068 and UX simplification 2026-09-30 (REVIEW).
 function asisOverview(e,steps,fr){
-  const ans=e.answers||{},value=(id,unit='')=>ans[id]===undefined||ans[id]===null||ans[id]===''?'Pendiente':esc(formatContextValue(schema.fields.find(f=>f.Field_ID===id)||{},ans[id]))+unit;
-  const peak=ans.DF023;
-  const peakValue=peak&&typeof peak==='object'
+  const field=id=>(schema?.fields||[]).find(f=>f.Field_ID===id);
+  const raw=id=>{
+    const f=field(id);
+    if(!f)return e.answers?.[id];
+    if(typeof questionVisible==='function'&&!questionVisible(f,e))return {__asisState:'NA'};
+    return typeof effectiveValue==='function'?effectiveValue(f,e):e.answers?.[id];
+  };
+  const display=id=>{
+    const f=field(id),v=raw(id);
+    if(v&&v.__asisState==='NA')return 'No aplica';
+    if(typeof valuePresent==='function'&&!valuePresent(v))return 'Pendiente';
+    if(v===undefined||v===null||v==='')return 'Pendiente';
+    return esc(formatContextValue(f||{},v));
+  };
+  const volume=raw('DF021'),period=raw('DF022');
+  const habitual=(volume&&volume.__asisState==='NA')?'No aplica':
+    ((typeof valuePresent==='function'?valuePresent(volume):volume!==undefined&&volume!==null&&volume!=='')
+      ?esc(typeof volume==='object'&&volume!==null&&'value' in volume?volume.value:volume)+' casos'
+        +((period&&!(period.__asisState))?' · '+esc(labelFrom('OS_PERIOD',String(period).toUpperCase())||period):'')
+      :'Pendiente');
+  const peak=raw('DF023');
+  const peakValue=peak&&peak.__asisState==='NA'?'No aplica':peak&&typeof peak==='object'
     ?(peak.mode==='NONE'?'No aplica':peak.mode==='UNKNOWN'?'No disponible':(peak.value===undefined||peak.value===null||peak.value==='')?'Pendiente':
       esc(peak.value)+' '+esc(({case:'casos',item:'elementos',request:'solicitudes',person:'personas'})[peak.unit]||peak.unit||'casos')
       +(peak.period?' · '+esc(labelFrom('OS_PERIOD',String(peak.period).toUpperCase())):''))
-    :value('DF023');
-  const habitual=ans.DF021===undefined||ans.DF021===null||ans.DF021===''?'Pendiente':
-    esc(ans.DF021)+' casos'+(ans.DF022?' · '+esc(labelFrom('OS_PERIOD',String(ans.DF022).toUpperCase())):'');
+    :display('DF023');
   return '<div class="asis-facts">'
-    +'<div><small>Proceso</small><b>'+value('DF011')+'</b></div>'
-    +'<div><small>Empieza cuando</small><b>'+value('DF014')+'</b></div>'
-    +'<div><small>Termina cuando</small><b>'+value('DF015')+'</b></div>'
+    +'<div><small>Proceso</small><b>'+display('DF011')+'</b></div>'
+    +'<div><small>Empieza cuando</small><b>'+display('DF014')+'</b></div>'
+    +'<div><small>Termina cuando</small><b>'+display('DF015')+'</b></div>'
     +'<div><small>Volumen habitual</small><b>'+habitual+'</b></div>'
     +'<div><small>Volumen máximo declarado</small><b>'+peakValue+'</b></div>'
-    +'<div><small>Tiempo objetivo</small><b>'+value('DF025')+'</b></div>'
-    +'<div><small>Duración habitual declarada</small><b>'+value('DF026')+'</b></div>'
+    +'<div><small>Tiempo objetivo</small><b>'+display('DF025')+'</b></div>'
+    +'<div><small>Duración habitual declarada</small><b>'+display('DF026')+'</b></div>'
     +'<div><small>Registrados</small><b>'+steps.length+' pasos · '+fr.length+' problemas · '+(e.risks||[]).length+' riesgos · '+(e.economicInputs||[]).length+' impactos</b></div>'
     +'</div>';
 }
@@ -839,13 +859,18 @@ function asisVariantCandidates(e){
     const label=labelFrom('OS_VARIANT_DIMENSION',v)||v;
     return String(v).toUpperCase()==='OTHER'&&detail?label+' — '+detail:label;
   });
-  return '<div class="asis-variant-hint" data-asis-variant-candidates="DF020"><b>Variantes detectadas en el alcance</b><span>Pendientes de resolver en el mapa: '+labels.map(esc).join(' · ')+'. Úsalas como recordatorio al definir las decisiones reales; no crean bifurcaciones automáticamente.</span></div>';
+  const decisions=activeSteps(e).filter(processDecisionStep).length;
+  const message=decisions
+    ?'Declaradas en Alcance: '+labels.map(esc).join(' · ')+'. El mapa contiene '+decisions+' decisión(es); comprueba que cubren las variantes materiales antes de confirmar.'
+    :'Declaradas en Alcance: '+labels.map(esc).join(' · ')+'. Aún no hay una decisión en el mapa que represente una ruta alternativa.';
+  return '<div class="asis-variant-hint" data-asis-variant-candidates="DF020"><b>Variantes del alcance</b><span>'+message+'</span></div>';
 }
 function asisMapPage(e,steps,fr){
-  const flow=sessionCanvas(clientProcessMap(e),false);
+  const start=processBoundaryValue(e,'DF014','Límite inicial pendiente','DF012'),finish=processBoundaryValue(e,'DF015','Límite final pendiente','DF013');
+  const flow=processGraphHtml(e,steps,fr,start,finish,'impacto',true);
   return '<div data-process-engagement="'+attr(e.id)+'">'+asisOverview(e,steps,fr)
     +asisVariantCandidates(e)
-    +'<div class="asis-map-hint">Este es el proceso que estamos analizando. Para añadir, editar o eliminar elementos, utiliza las cuatro opciones del menú de la izquierda.</div>'
+    +'<div class="asis-map-hint">Este es el mismo mapa AS-IS trabajado con el cliente. Para modificarlo, utiliza Pasos, Fricciones, Riesgos o Impacto en el menú de la izquierda.</div>'
     +flow+'</div>';
 }
 function processPage(){
