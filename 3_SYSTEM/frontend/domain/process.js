@@ -309,7 +309,8 @@ function openFrictionModal(frId=null,preselectedSteps=[],candidate=null){
   // Layer 1/2 progressive disclosure: tipo/pasos/señal/contexto-impacto are what a consultant needs to
   // register a friction on the spot; causa/workaround/evidencia/resto stay available but collapsed.
   // Same field ids, same save logic — presentation-only, never a Friction Model change.
-  const body=`<div class="step-groups process-modal-form friction-modal-form">
+  const candidateNotice=!existing&&candidate?'<div class="notice info pain-candidate-prefill"><b>Señal detectada en el mapa — pendiente de confirmar</b><p>'+esc(candidate.rationale||'')+'</p>'+(normalizeArray(candidate.review_questions).length?'<div class="field-help"><b>Comprueba antes de guardar:</b><br>'+normalizeArray(candidate.review_questions).map(q=>'• '+esc(q)).join('<br>')+'</div>':'')+'<p class="field-help">AUNEA sólo ha preseleccionado el tipo y los pasos. Completa la señal observable, la causa y la evidencia; guardar esta ficha es la confirmación humana de la fricción.</p></div>':'';
+  const body=`<div class="step-groups process-modal-form friction-modal-form">${candidateNotice}
   <details class="step-group" open><summary>Fricción</summary><div class="form-grid">
   <div class="field full"><label>Tipo de fricción ${requiredMark()}</label>${auneaDropdownControl('fr_type',[{value:'',label:'Selecciona…'},...types],f.friction_type||'','Selecciona…')}<div class="field-help">Pain_ID se deriva internamente; el cliente no lo selecciona.</div></div>
   <div class="field full"><label>Pasos afectados ${requiredMark()}</label>${selectedHtml('fr_steps',activeSteps(e).map(s=>({value:s.id,label:s.step_name||s.id})),f.affected_steps)}</div>
