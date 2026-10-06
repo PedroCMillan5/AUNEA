@@ -361,3 +361,31 @@ test('impact integrity detects stale cross-metric values and blocks retrabajo an
   assert.ok(issues.some(x=>x.kind==='SCOPE_MISMATCH'&&/Validar datos/.test(x.message)));
   assert.ok(issues.some(x=>x.kind==='LEGACY_CROSS_METRIC'&&/horas activas heredadas/.test(x.message)));
 });
+
+test('ED15 is never offered as a new or editable EconomicInput because volume belongs to Demand',()=>{
+  const ctx=makeCtx();
+  ctx.schema.tables.REF_ECON_DRIVER.push({Economic_Driver_ID:'ED15',Name:'Case volume'});
+  ctx.addEconomic();
+  assert.doesNotMatch(ctx.__lastBody,/data-value="ED15"/);
+  assert.match(ctx.__lastBody,/Selecciona…/);
+  ctx.__eng.economicInputs=[{driver_id:'ED15',step_ids:[],evidence_type:'CLIENT_DECLARED'}];
+  let msg='';ctx.toast=x=>msg=x;
+  ctx.addEconomic([],0);
+  assert.match(msg,/Demanda \(DF021\/DF022\)/);
+});
+
+test('blank relevant economic inputs stay null instead of silently becoming zero',()=>{
+  const ctx=makeCtx();
+  assert.equal(ctx.econNullableNumber(''),null);
+  assert.equal(ctx.econNullableNumber(null),null);
+  assert.equal(ctx.econNullableNumber('0'),0);
+  assert.equal(ctx.econNullableNumber('12.5'),12.5);
+});
+
+test('economic list shows missing captured values as dash, not fabricated zero',()=>{
+  const ctx=makeCtx();
+  ctx.__eng.economicInputs=[{driver_id:'ED12',step_ids:[],current_tool_cost_eur_annual:null,evidence_type:'CLIENT_DECLARED'}];
+  const html=ctx.economicBuilder(ctx.__eng);
+  assert.match(html,/Pérdida directa — €/);
+  assert.doesNotMatch(html,/Pérdida directa 0 €/);
+});
