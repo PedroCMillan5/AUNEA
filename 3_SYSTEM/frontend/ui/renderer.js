@@ -108,9 +108,13 @@ function numberCompound(f,val){
   const periodNeeded=c.includes('PERIOD')||c.includes('COUNT');
   const special=[];if(c.includes('UNKNOWN'))special.push(['UNKNOWN','No disponible']);if(c.includes('NONE'))special.push(['NONE','No aplica']);if(c.includes('ZERO'))special.push(['ZERO','0']);
   const unitOpts=units.map(([value,label])=>({value,label}));
-  const periodOpts=[{value:'case',label:'por caso'},{value:'day',label:'por día'},{value:'week',label:'por semana'},{value:'month',label:'por mes'},{value:'year',label:'por año'}];
+  const periodOpts=[{value:'day',label:'por día'},{value:'week',label:'por semana'},{value:'month',label:'por mes'},{value:'year',label:'por año'}];
   const modeOpts=[{value:'',label:'Dato disponible'},...special.map(([value,label])=>({value,label}))];
-  return `<div class="compound-control"><input type="number" step="any" min="0" data-number-value="${fid}" value="${attr(p.value)}" placeholder="Valor">${units.length?auneaSelectControl(`${fid}__unit`,unitOpts,p.unit,{extra:`data-number-unit="${fid}"`,placeholder:'Unidad…'}):''}${periodNeeded?auneaSelectControl(`${fid}__period`,periodOpts,p.period,{extra:`data-number-period="${fid}"`,placeholder:'Periodo…'}):''}${special.length?auneaSelectControl(`${fid}__mode`,modeOpts,p.mode,{extra:`data-number-mode="${fid}"`,placeholder:'Dato disponible'}):''}</div>`;
+  const percentOrCount=c==='NUMBER_PERCENT_OR_COUNT';
+  const unitExtra=`data-number-unit="${fid}"${percentOrCount?` data-percent-count-unit="${fid}"`:''}`;
+  const periodControl=periodNeeded?auneaSelectControl(`${fid}__period`,periodOpts,p.period,{extra:`data-number-period="${fid}"`,placeholder:'Periodo…'}):'';
+  const periodHtml=percentOrCount?`<div class="number-count-period" data-count-period-wrap="${fid}"${p.unit==='count'?'':' hidden'}>${periodControl}</div>`:periodControl;
+  return `<div class="compound-control${percentOrCount?' percent-count-control':''}"><input type="number" step="any" min="0" data-number-value="${fid}" value="${attr(p.value)}" placeholder="Valor">${units.length?auneaSelectControl(`${fid}__unit`,unitOpts,p.unit,{extra:unitExtra,placeholder:'Unidad…'}):''}${periodHtml}${special.length?auneaSelectControl(`${fid}__mode`,modeOpts,p.mode,{extra:`data-number-mode="${fid}"`,placeholder:'Dato disponible'}):''}</div>`;
 }
 // Excludes contacts marked 'Perdido' from reference pickers (DF007/DF016), reusing the same criterion
 // as the CRM's own "ocultar perdidos" filter — not a new archived flag, just consistent status reuse.
@@ -346,9 +350,15 @@ function bindCanonicalRenderer(){
       if(unitEl)unitEl.value='';
     }
   }));
+  document.querySelectorAll('[data-percent-count-unit]').forEach(el=>el.addEventListener('change',()=>{
+    const fid=el.dataset.percentCountUnit,wrap=document.querySelector(`[data-count-period-wrap="${fid}"]`),period=document.querySelector(`[data-number-period="${fid}"]`);
+    const count=el.value==='count';
+    if(wrap)wrap.hidden=!count;
+    if(!count&&period)period.value='';
+  }));
   const numberFids=[...new Set([...document.querySelectorAll('[data-number-value],[data-number-unit],[data-number-period],[data-number-mode]')].map(x=>x.dataset.numberValue||x.dataset.numberUnit||x.dataset.numberPeriod||x.dataset.numberMode))];
   numberFids.forEach(fid=>{const sync=()=>{
-    const valueEl=document.querySelector(`[data-number-value="${fid}"]`),value=safeNumericValue(valueEl),unit=document.querySelector(`[data-number-unit="${fid}"]`)?.value??'',period=document.querySelector(`[data-number-period="${fid}"]`)?.value??'',mode=document.querySelector(`[data-number-mode="${fid}"]`)?.value??'';
+    const valueEl=document.querySelector(`[data-number-value="${fid}"]`),value=safeNumericValue(valueEl),unit=document.querySelector(`[data-number-unit="${fid}"]`)?.value??'',rawPeriod=document.querySelector(`[data-number-period="${fid}"]`)?.value??'',period=unit==='percent'?'':rawPeriod,mode=document.querySelector(`[data-number-mode="${fid}"]`)?.value??'';
     if(value===null)return;
     if(fid==='DF021'){setAnswer(fid,value);return}
     if(value===''&&!mode){setAnswer(fid,'');return}
