@@ -58,6 +58,10 @@ class EconomicInput(BaseModel):
     annual_active_hours: float | None = None
     annual_wait_hours: float | None = None
     capacity_cost_rate_eur_hour: float | None = None
+    role_or_resource: str | None = None
+    value: float | None = None
+    unit: str | None = None
+    period: str | None = None
     direct_loss_eur_annual: float | None = None
     current_tool_cost_eur_annual: float | None = None
     realized_cash_saving_eur_annual: float | None = None
