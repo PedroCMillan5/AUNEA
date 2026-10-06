@@ -76,12 +76,12 @@ function canonicalFieldValidationIssue(f,v,e){
   }
   return '';
 }
-function canonicalFieldValuePresent(f,v,e){const detail=String(e?.answerDetails?.[f?.Field_ID]||'').trim(),syntheticOther=/WITH_OTHER/.test(String(f?.Control_UI||'').toUpperCase())&&!valuePresent(v)&&!!detail;return (valuePresent(v)||syntheticOther)&&!canonicalFieldValidationIssue(f,v,e)}
+function canonicalFieldValuePresent(f,v,e){const detail=String(e?.answerDetails?.[f?.Field_ID]||'').trim(),syntheticOther=/WITH_OTHER/.test(String(f?.Control_UI||'').toUpperCase())&&!valuePresent(v)&&!!detail,valid=(valuePresent(v)||syntheticOther)&&!canonicalFieldValidationIssue(f,v,e);if(!valid)return false;if(String(f?.Ask_Mode||'')==='DERIVE_AND_CONFIRM'&&valuePresent(reusedValue(f.Field_ID,e)))return isDerivedConfirmed(f,e);return true}
 function canonicalFieldRequiredNow(f,e){
   if(!f||!questionVisible(f,e))return false;
   if(f.Requiredness==='REQUIRED_90M')return !['SYSTEM_GENERATED','DERIVED'].includes(String(f.Ask_Mode||''));
   if(f.Requiredness!=='CONDITIONAL_90M')return false;
-  return ['ASK','CONDITIONAL_ASK','PREFILL_CONFIRM','CLIENT_CONFIRMATION'].includes(String(f.Ask_Mode||''));
+  return ['ASK','CONDITIONAL_ASK','PREFILL_CONFIRM','CLIENT_CONFIRMATION','DERIVE_AND_CONFIRM'].includes(String(f.Ask_Mode||''));
 }
 function canonicalFieldIntegrityIssues(e){
   return (schema?.fields||[]).filter(f=>questionVisible(f,e)).map(f=>{
@@ -334,7 +334,7 @@ function renderQuestion(f,e){
   // Ask_Mode itself says so. DF080/DF081 are Ask_Mode:CONDITIONAL_ASK — the canonical contract is
   // "derive when possible, otherwise ask" — so the broad prefix match must not force them read-only:
   // that silently made a genuinely askable field permanently unanswerable.
-  const systemOnly=['DERIVED','SYSTEM_GENERATED'].includes(mode)||(String(f.Control_UI).startsWith('DERIVED')&&mode!=='CONDITIONAL_ASK')||String(f.Control_UI).startsWith('SYSTEM_GENERATED');
+  const systemOnly=['DERIVED','SYSTEM_GENERATED'].includes(mode)||(String(f.Control_UI).startsWith('DERIVED')&&!['CONDITIONAL_ASK','DERIVE_AND_CONFIRM'].includes(mode))||(String(f.Control_UI).startsWith('SYSTEM_GENERATED')&&mode!=='DERIVE_AND_CONFIRM');
   // The references put the requiredness mark and the provenance chip beside the label, and show no
   // Field_ID on the field itself — coverage is stated once, in the stage inspector.
   const source=f.Reuse_From?reuseSourceInfo(f):null,reuse=reusedValue(f.Field_ID,e);
