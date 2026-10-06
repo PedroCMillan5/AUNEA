@@ -31,7 +31,15 @@ const INTERNAL_WORK_NAV = [
   HOME_NAV,
   ['diagnostico','◎','Diagnóstico 90 min'],
   ['Trabajo interno'],
-  ['resultados','▥','Diagnóstico'],['recomendacion','≋','Solución'],['escenarios','▦','Escenarios'],['quote','▧','Entregables']
+  ['resultados','▥','Diagnóstico'],
+  ['tobe','⇢','TO-BE'],
+  ['comparacion','⇄','AS-IS vs TO-BE'],
+  ['escenarios','▦','Escenarios'],
+  ['recomendacion','≋','Recomendación / pricing'],
+  ['revision','✓','Revisión humana'],
+  ['quote','▧','Cotización / entregables'],
+  ['modoresultados','▤','Modo Resultados'],
+  ['implementacion','✓','Decisión e implementación']
 ];
 const SYSTEM_NAV = [
   ['Sistema'],
