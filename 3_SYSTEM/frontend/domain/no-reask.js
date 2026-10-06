@@ -208,7 +208,7 @@ function canonicalMissingRequired(e){
   (schema?.fields||[]).filter(f=>!skip.has(f.Field_ID)&&canonicalFieldRequiredNow(f,e)).forEach(f=>{if(!canonicalFieldValuePresent(f,effectiveValue(f,e),e))misses.push(f.Field_ID)});
   const startField=(schema?.fields||[]).find(f=>f.Field_ID==='DF014'),endField=(schema?.fields||[]).find(f=>f.Field_ID==='DF015');
   const hasBoundaries=!!startField&&!!endField&&valuePresent(effectiveValue(startField,e))&&valuePresent(effectiveValue(endField,e));
-  if(!activeSteps(e).length)misses.push('Mapa AS-IS');
+  if(!hasBoundaries&&!activeSteps(e).length)misses.push('Mapa AS-IS');
   if(!e.confirmedAsIs)misses.push('Confirmación AS-IS');
   return unique(misses);
 }
