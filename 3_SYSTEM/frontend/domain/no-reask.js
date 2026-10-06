@@ -78,8 +78,14 @@ function reusedValue(fid,e){
   if(fid==='DF085'){const types=unique((e.economicInputs||[]).map(x=>x.evidence_type));return types.length?types:['Sin inputs económicos materiales'];}
   if(fid==='DF093')return e.confirmedAsIs?'YES':'';
   if(fid==='DF057')return 'Se deriva de la fricción registrada; no se pregunta al cliente.';
-  if(fid==='DF094')return canonicalMissingRequired(e);
-  if(fid==='DF095')return unique(fr.filter(x=>x.evidence_type!=='EV01').map(x=>`Evidencia de ${labelFrom('OS_FRICTION_TYPE',x.friction_type)}`).concat(canonicalMissingRequired(e).map(x=>`Completar ${x}`)));
+  if(fid==='DF094')return canonicalMissingRequired(e).map(x=>{
+    const field=(schema?.fields||[]).find(f=>f.Field_ID===x);
+    return field?.Pregunta_o_etiqueta_ES||x;
+  });
+  if(fid==='DF095')return unique(fr.filter(x=>x.evidence_type!=='EV01').map(x=>`Evidencia de ${labelFrom('OS_FRICTION_TYPE',x.friction_type)}`).concat(canonicalMissingRequired(e).map(x=>{
+    const field=(schema?.fields||[]).find(f=>f.Field_ID===x);
+    return `Completar ${field?.Pregunta_o_etiqueta_ES||x}`;
+  })));
   return undefined;
 }
 function effectiveValue(f,e){
@@ -311,7 +317,7 @@ function renderQuestion(f,e){
                 f.Reuse_From?`<div class="internal-only technical-provenance"><b>Reuse_From:</b> ${esc(f.Reuse_From)} · <b>Reask_Policy:</b> ${esc(f.Reask_Policy||'—')}</div>`:''].join('');
   const popId=`help_${f.Field_ID}`;
   const help=detail?`<button type="button" class="help-icon" data-help-toggle="${attr(popId)}" aria-expanded="false" aria-controls="${attr(popId)}" title="Ayuda">?</button><div class="help-popover" id="${attr(popId)}" role="tooltip">${detail}</div>`:'';
-  const wide=['TEXT_LONG_INTERNAL','MULTISELECT','MULTISELECT_WITH_OTHER','MULTISELECT_WITH_DETAIL','MULTISELECT_WITH_PRIORITY','FRICTION_MULTISELECT_PRIORITY','RISK_BUILDER','CLIENT_CONFIRMATION_WITH_INLINE_EDIT','STEP_PAIR_SELECTOR','STEP_SYSTEM_PAIR_SELECTOR','DROPDOWN_WITH_OWNER_DATE'].includes(String(f.Control_UI));
+  const wide=['TEXT_LONG_INTERNAL','MULTISELECT','MULTISELECT_WITH_OTHER','MULTISELECT_WITH_DETAIL','MULTISELECT_WITH_PRIORITY','FRICTION_MULTISELECT_PRIORITY','RISK_BUILDER','CLIENT_CONFIRMATION_WITH_INLINE_EDIT','STEP_PAIR_SELECTOR','STEP_SYSTEM_PAIR_SELECTOR','DROPDOWN_WITH_OWNER_DATE','BOOLEAN_UNKNOWN_WITH_SCOPE'].includes(String(f.Control_UI));
   const clarificationUnderLabel=['DF020','DF029'].includes(f.Field_ID)&&clarification;
   return `<div class="field${wide?' full':''}" data-field="${attr(f.Field_ID)}"><label>${esc(f.Pregunta_o_etiqueta_ES)}${meta}${help}</label>${clarificationUnderLabel?`<div class="field-help clarification-note">${esc(clarification)}</div>`:''}${body}<div class="field-help">${esc(f.Objetivo_concreto||'')}</div>${clarification&&!clarificationUnderLabel?`<div class="field-help clarification-note">${esc(clarification)}</div>`:''}${consistencyNote?`<div class="field-help clarification-note" data-global-failure-review="DF028">${esc(consistencyNote)}</div>`:''}${economicNote?`<div class="field-help clarification-note" data-economic-overlap-review="${f.Field_ID}">${esc(economicNote)}</div>`:''}</div>`;
 }
