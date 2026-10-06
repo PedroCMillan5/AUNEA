@@ -36,7 +36,7 @@ function uat3Friction(c,fr,i,steps){
 function uat3Risk(c,r,i,steps){
   return {id:uat3Id(c.key,'RISK',i+1),step_ids:r.steps.map(n=>steps[n].id),category:r.category,description:r.description,
     likelihood_1_5:r.likelihood,impact_1_5:r.impact,reversible:!['HARD','IRREVERSIBLE'].includes(r.reversibility),
-    reversibility:r.reversibility,controls_present:r.controls,sensitive_or_high_impact:true,
+    reversibility:r.reversibility,controls_present:r.controls,current_control:r.controls?['OTHER: Control actual declarado en escenario UAT']:[],sensitive_or_high_impact:true,
     material_financial_or_compliance:r.material,critical_trigger:r.impact===5};
 }
 function uat3Seed(c){
