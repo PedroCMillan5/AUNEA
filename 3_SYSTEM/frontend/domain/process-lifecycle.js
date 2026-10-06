@@ -9,8 +9,20 @@ function supersedeStep(stepId){
   if(typeof guardAsisMutation==='function'&&guardAsisMutation())return;
   const e=currentEng(),x=e.processSteps.find(s=>s.id===stepId);
   if(!x)return;
-  if(!confirm('¿Eliminar este paso del flujo? Se retirará inmediatamente del mapa.'))return;
-  x.status='SUPERSEDED';invalidateProcessLayers(e,'map');markDirty(`Paso ${stepId} eliminado del flujo`);render();
+  if(!confirm('¿Eliminar este paso del flujo? Se retirará inmediatamente del mapa y se limpiarán sus referencias activas.'))return;
+  x.status='SUPERSEDED';
+  (e.processSteps||[]).filter(s=>s.status!=='SUPERSEDED').forEach(s=>{
+    if(s.normal_next_step===stepId)s.normal_next_step='';
+    if(s.exception_path?.destination_step===stepId)s.exception_path={...s.exception_path,destination_step:''};
+  });
+  (e.frictions||[]).filter(fr=>fr.status!=='SUPERSEDED').forEach(fr=>{
+    fr.affected_steps=normalizeArray(fr.affected_steps).filter(id=>id!==stepId);
+    if(fr.time_attribution?.step_id===stepId)fr.time_attribution={mode:'',step_id:''};
+    if(!fr.affected_steps.length)fr.status='SUPERSEDED';
+  });
+  (e.risks||[]).forEach(r=>r.step_ids=normalizeArray(r.step_ids).filter(id=>id!==stepId));
+  (e.economicInputs||[]).forEach(v=>v.step_ids=normalizeArray(v.step_ids).filter(id=>id!==stepId));
+  invalidateProcessLayers(e,'map');markDirty(`Paso ${stepId} eliminado del flujo y referencias activas conciliadas`);render();
 }
 
 function supersedeFriction(frId){
@@ -18,7 +30,7 @@ function supersedeFriction(frId){
   const e=currentEng(),x=e.frictions.find(s=>s.id===frId);
   if(!x)return;
   if(!confirm('La fricción quedará SUPERSEDED para conservar trazabilidad. ¿Continuar?'))return;
-  x.status='SUPERSEDED';invalidateProcessLayers(e,'frictions');markDirty(`Fricción ${frId} superseded`);render();
+  x.status='SUPERSEDED';if(Array.isArray(e.answers?.DF096))e.answers.DF096=e.answers.DF096.filter(id=>id!==frId);invalidateProcessLayers(e,'frictions');markDirty(`Fricción ${frId} superseded`);render();
 }
 
 function processLayerConfirmations(e){
