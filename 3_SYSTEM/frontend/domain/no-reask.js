@@ -229,12 +229,12 @@ function contextOnly(f,e,val){
 }
 function requiresDerivedConfirmation(f){return String(f.Ask_Mode||'')==='DERIVE_AND_CONFIRM'||String(f.Reask_Policy||'')==='DERIVE_THEN_CONFIRM'}
 function derivedFingerprint(v){try{return JSON.stringify(v)}catch{return String(v)}}
-function derivedConfirmation(f,e,reuse=reusedValue(f.Field_ID,e)){return answerDetails(e)[`${f.Field_ID}__derived_confirmation`]||null}
+function derivedConfirmation(f,e,reuse=reusedValue(f.Field_ID,e)){const details=e?.answerDetails||{};return details[`${f.Field_ID}__derived_confirmation`]||null}
 function isDerivedConfirmed(f,e,reuse=reusedValue(f.Field_ID,e)){const m=derivedConfirmation(f,e,reuse);return !!m&&m.fingerprint===derivedFingerprint(reuse)}
 function confirmDerivedValue(fid){
   const e=currentEng(),f=schema?.fields?.find(x=>x.Field_ID===fid);if(!e||!f)return;
   const reuse=reusedValue(fid,e);if(reuse===undefined)return toast('No hay una derivación disponible que confirmar.');
-  answerDetails(e)[`${fid}__derived_confirmation`]={fingerprint:derivedFingerprint(reuse),confirmedAt:now()};
+  const details=e.answerDetails||(e.answerDetails={});details[`${fid}__derived_confirmation`]={fingerprint:derivedFingerprint(reuse),confirmedAt:now()};
   audit(`Valor derivado confirmado ${fid}`);markDirty(`Confirmación derivada ${fid}`);render();
 }
 
