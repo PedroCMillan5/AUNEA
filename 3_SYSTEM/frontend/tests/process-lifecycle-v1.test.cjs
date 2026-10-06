@@ -125,3 +125,25 @@ test('an unchanged answer leaves existing layer confirmation untouched, while ch
   assert.equal(invalidated>0,true);
 });
 // [AUNEA-UAT-PROC-LIFECYCLE-030] END
+
+test('risks and impacts cannot float outside the active AS-IS',()=>{
+  const e={processSteps:[{id:'S1',status:'ACTIVE',step_name:'Validar'}],frictions:[],risks:[
+    {step_ids:[],category:'operational',description:'Riesgo',likelihood_1_5:2,impact_1_5:2,reversibility:'EASY',controls_present:false,current_control:[],sensitive_or_high_impact:false,material_financial_or_compliance:false,critical_trigger:false}
+  ],economicInputs:[{step_ids:[],driver_id:'ED05',evidence_type:'EV02'}],answers:{},confirmedAsIs:false};
+  const ctx=makeCtx(e);
+  ctx.normalizeArray=v=>Array.isArray(v)?v:(v==null||v===''?[]:[v]);
+  const risks=ctx.processLayerIntegrityIssues(e,'risks').map(x=>x.message).join(' ');
+  const impacts=ctx.processLayerIntegrityIssues(e,'impact').map(x=>x.message).join(' ');
+  assert.match(risks,/al menos a un paso activo/);
+  assert.match(impacts,/al menos a un paso activo/);
+});
+
+test('an EconomicInput pain link must belong to a friction on the selected step',()=>{
+  const e={processSteps:[{id:'S1',status:'ACTIVE',step_name:'Validar'}],frictions:[
+    {id:'F1',status:'ACTIVE',friction_type:'P02',derived_pain_id:'P02',affected_steps:['S1']}
+  ],risks:[],economicInputs:[{step_ids:['S1'],pain_id:'P07',driver_id:'ED05',evidence_type:'EV02'}],answers:{},confirmedAsIs:false};
+  const ctx=makeCtx(e);
+  ctx.normalizeArray=v=>Array.isArray(v)?v:(v==null||v===''?[]:[v]);
+  const impacts=ctx.processLayerIntegrityIssues(e,'impact').map(x=>x.message).join(' ');
+  assert.match(impacts,/problema que no existe en los pasos seleccionados/);
+});
