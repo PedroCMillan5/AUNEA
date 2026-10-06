@@ -49,6 +49,26 @@ function canonicalFieldValidationIssue(f,v,e){
     if(!(Number(v.value)>0))return 'El tiempo objetivo debe ser mayor que 0 o indicarse que no existe.';
     if(!v.unit)return 'Falta la unidad del tiempo objetivo.';
   }
+  if(e){
+    const steps=typeof activeSteps==='function'?activeSteps(e):(e.processSteps||[]).filter(x=>x.status!=='SUPERSEDED'),stepIds=new Set(steps.map(x=>String(x.id))),control=String(f.Control_UI||'').toUpperCase();
+    const linkedOne=String(e.answerDetails?.[f.Field_ID+'__step']||'');
+    const linkedMany=normalizeArray(e.answerDetails?.[f.Field_ID+'__steps']).map(String);
+    if(control==='DROPDOWN_WITH_STEP_LINK'&&valuePresent(v)&&String(v)!=='UNKNOWN'){
+      if(!linkedOne)return 'Selecciona también el paso afectado.';
+      if(!stepIds.has(linkedOne))return 'El paso vinculado ya no está activo.';
+    }
+    if(['MULTISELECT_WITH_STEP_LINK','MULTISELECT_WITH_STEP_REFERENCE','STEP_ACTION_MULTISELECT'].includes(control)&&linkedMany.some(id=>!stepIds.has(id)))
+      return 'Uno de los pasos vinculados ya no está activo.';
+    if(control==='STEP_PAIR_SELECTOR'&&v&&typeof v==='object'){
+      if((v.from&&!stepIds.has(String(v.from)))||(v.to&&!stepIds.has(String(v.to))))return 'Uno de los pasos seleccionados ya no está activo.';
+    }
+    if(control==='STEP_SYSTEM_PAIR_SELECTOR'){
+      const bad=normalizeArray(v).some(token=>{
+        const m=String(token).match(/^pair:([^:]+):([^:]+)$/);return !!m&&(!stepIds.has(m[1])||!stepIds.has(m[2]));
+      });
+      if(bad)return 'Una relación seleccionada contiene un paso que ya no está activo.';
+    }
+  }
   if(f.Field_ID==='DF023'&&v&&typeof v==='object'&&e){
     const habitual=Number(e.answers?.DF021),period=String(e.answers?.DF022||'');
     if(Number.isFinite(habitual)&&habitual>=0&&v.period&&period&&String(v.period)===period&&Number(v.value)<habitual)
