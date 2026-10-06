@@ -127,6 +127,7 @@ function reusedValue(fid,e){
   if(fid==='DF047')return processDataSources(steps);
   if(fid==='DF049')return processDocumentArtifacts(steps);
   if(fid==='DF050')return unique(steps.flatMap(x=>normalizeArray(x.communication_channels)));
+  if(fid==='DF053')return unique(steps.filter(x=>normalizeArray(x.manual_actions).some(a=>String(a)==='SEARCH')).map(x=>x.id).concat(fr.filter(x=>['P09','P20'].includes(x.friction_type)).flatMap(x=>normalizeArray(x.affected_steps))));
   if(fid==='DF066')return unique(steps.filter(x=>valuePresent(x.exception_path)).map(x=>typeof x.exception_path==='object'?(x.exception_path.type||x.exception_path.label||JSON.stringify(x.exception_path)):x.exception_path));
   if(fid==='DF067')return unique(steps.filter(x=>x.step_type==='ST05'||normalizeArray(x.decision_criteria).length).map(x=>x.step_name||x.id));
   if(fid==='DF078'||fid==='DF079'){
@@ -161,6 +162,7 @@ function effectiveValue(f,e){
 
 const RISK_DISCOVERY_FIELDS=new Set(['DF073','DF074','DF090']);
 const AI_DISCOVERY_FIELDS=new Set(['DF088']);
+const DATA_DISCOVERY_FIELDS=new Set(['DF055']);
 const RISK_RELEVANT_INITIAL_CONSTRAINTS=new Set(['SECURITY','COMPLIANCE','DATA_RESIDENCY','OWNERSHIP']);
 function riskBranchSignal(e,steps,fr,answers){
   const critical=['4','5',4,5].includes(answers.DF018);
@@ -184,9 +186,9 @@ function branchActive(ruleId,e){
     case 'BR-SLA':return valuePresent(answers.DF025)||valuePresent(answers.DF026)||frTypes.has('P06');
     case 'BR-APPROVAL':return steps.some(x=>x.step_type==='ST05'||normalizeArray(x.decision_criteria).length>0)||frTypes.has('P07');
     case 'BR-TOOLS':return tools.length>=2||steps.some(x=>normalizeArray(x.manual_actions).length>0)||valuePresent(answers.DF054);
-    case 'BR-DATA':return valuePresent(answers.DF055)||frTypes.has('P13')||frTypes.has('P03');
+    case 'BR-DATA':return valuePresent(answers.DF055)||valuePresent(answers.DF051)||steps.some(x=>normalizeArray(x.manual_actions).some(a=>['REKEY','COPY'].includes(String(a))))||frTypes.has('P13')||frTypes.has('P03');
     case 'BR-EXCEPTION':return steps.some(x=>valuePresent(x.exception_path));
-    case 'BR-VISIBILITY':return valuePresent(answers.DF027)||valuePresent(answers.DF053)||valuePresent(answers.DF081)||frTypes.has('P09')||frTypes.has('P14');
+    case 'BR-VISIBILITY':return valuePresent(answers.DF027)||valuePresent(answers.DF053)||valuePresent(answers.DF081)||steps.some(x=>normalizeArray(x.manual_actions).some(a=>String(a)==='SEARCH'))||frTypes.has('P09')||frTypes.has('P14')||frTypes.has('P20');
     case 'BR-KNOWLEDGE':return frTypes.has('P20')||answers.DF019==='NO';
     case 'BR-RISK':return riskBranchSignal(e,steps,fr,answers);
     case 'BR-AI':return valuePresent(answers.DF088)||normalizeArray(answers.DF008).some(v=>/AI|IA/i.test(String(v)));
@@ -223,6 +225,12 @@ function questionVisible(f,e){
   // so later evidence cannot be allowed to make this guardrail undiscoverable. Keep it available as a
   // CONDITIONAL_90M probe without treating mere visibility as proof that BR-AI is active.
   if(AI_DISCOVERY_FIELDS.has(f.Field_ID)&&f.Stage_ID==='S08'&&String(f.Write_Target||'')==='RT_PROCESS.Must_Not_Automate')return true;
+  // DF055 is the canonical data-quality discovery question. Leaving it visible as a non-blocking
+  // CONDITIONAL_90M probe prevents BR-DATA from requiring a pre-existing data-quality finding first.
+  if(DATA_DISCOVERY_FIELDS.has(f.Field_ID)&&f.Stage_ID==='S04'&&String(f.Write_Target||'')==='RT_FINDING')return true;
+  // DF052 is only useful when the current map already contains multiple documentary artifacts or an
+  // existing pain signal. This follows its canonical re-ask trigger without opening every BR-PAIN question.
+  if(f.Field_ID==='DF052'&&f.Stage_ID==='S04')return processDocumentArtifacts(activeSteps(e)).length>1||branchActive('BR-PAIN',e)||valuePresent(e.answers?.DF052);
   if(['CAPTURE_IN_PROCESS_STEP','CONDITIONAL_IN_STEP'].includes(f.Ask_Mode))return false;
   if(['CAPTURE_IN_FRICTION','CONDITIONAL_IN_FRICTION'].includes(f.Ask_Mode))return false;
   if(f.Ask_Mode==='CAPTURE_IN_RISK')return false;
