@@ -119,6 +119,9 @@ function branchActive(ruleId,e){
 }
 
 function questionVisible(f,e){
+  // DF025 is itself the canonical question that establishes whether an SLA/target exists.
+  // It must remain askable in S03; otherwise BR-SLA creates a circular visibility dependency.
+  if(f.Field_ID==='DF025'&&f.Stage_ID==='S03')return true;
   if(['CAPTURE_IN_PROCESS_STEP','CONDITIONAL_IN_STEP'].includes(f.Ask_Mode))return false;
   if(['CAPTURE_IN_FRICTION','CONDITIONAL_IN_FRICTION'].includes(f.Ask_Mode))return false;
   if(f.Ask_Mode==='CAPTURE_IN_RISK')return false;
