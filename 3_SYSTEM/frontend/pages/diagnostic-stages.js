@@ -129,7 +129,8 @@ function pg01CanonicalDisclosure(fields,e){
 // at the first field still missing, unfolding the progressive-disclosure block when it hides one.
 function stagePendingRequired(e,stageId){
   const sid=stageId||e?.stageId||'S01';
-  return (schema?.fields||[]).filter(f=>f.Stage_ID===sid&&(typeof canonicalFieldRequiredNow==='function'?canonicalFieldRequiredNow(f,e):(f.Requiredness==='REQUIRED_90M'&&questionVisible(f,e)))&&!(typeof canonicalFieldValuePresent==='function'?canonicalFieldValuePresent(f,effectiveValue(f,e),e):valuePresent(effectiveValue(f,e))));
+  const missing=(schema?.fields||[]).filter(f=>f.Stage_ID===sid&&f.Requiredness==='REQUIRED_90M'&&questionVisible(f,e)&&!valuePresent(effectiveValue(f,e)));
+  return missing.filter(f=>!(typeof canonicalFieldValuePresent==='function'&&canonicalFieldValuePresent(f,effectiveValue(f,e),e)));
 }
 function focusPendingField(fid){
   const host=document.querySelector(`.field[data-field="${fid}"]`);
