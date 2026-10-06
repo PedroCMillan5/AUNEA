@@ -57,7 +57,7 @@ function completionStageReviewed(s,e){
     if(s.Stage_ID==='S09')return typeof allProcessLayersConfirmed==='function'&&allProcessLayersConfirmed(e);
   }
   const fields=(schema?.fields||[]).filter(f=>f.Stage_ID===s.Stage_ID&&f.Requiredness==='REQUIRED_90M'&&questionVisible(f,e));
-  if(fields.length)return fields.every(f=>valuePresent(effectiveValue(f,e)));
+  if(fields.length)return fields.every(f=>typeof canonicalFieldValuePresent==='function'?canonicalFieldValuePresent(f,effectiveValue(f,e),e):valuePresent(effectiveValue(f,e)));
   return !!e.confirmedAsIs;
 }
 
@@ -66,21 +66,22 @@ function completionStageStats(e){
   const out={};
   (schema?.flow||[]).forEach(s=>{
     const fields=(schema?.fields||[]).filter(f=>f.Stage_ID===s.Stage_ID&&!COMPLETION_SKIP_FIELDS.has(f.Field_ID)&&questionVisible(f,e));
-    const answered=fields.filter(f=>valuePresent(effectiveValue(f,e))).length;
+    const answered=fields.filter(f=>typeof canonicalFieldValuePresent==='function'?canonicalFieldValuePresent(f,effectiveValue(f,e),e):valuePresent(effectiveValue(f,e))).length;
     out[s.Stage_ID]={applicable:fields.length,answered,pct:fields.length?Math.round(answered/fields.length*100):100};
   });
   return out;
 }
 function completionOverallStats(e){
   const fields=(schema?.fields||[]).filter(f=>!COMPLETION_SKIP_FIELDS.has(f.Field_ID)&&questionVisible(f,e));
-  const answered=fields.filter(f=>valuePresent(effectiveValue(f,e))).length;
+  const answered=fields.filter(f=>typeof canonicalFieldValuePresent==='function'?canonicalFieldValuePresent(f,effectiveValue(f,e),e):valuePresent(effectiveValue(f,e))).length;
   return {applicable:fields.length,answered,pct:fields.length?Math.round(answered/fields.length*100):100};
 }
 
 function engagementCompletion(e){
   const requiredFields=(schema?.fields||[]).filter(f=>f.Requiredness==='REQUIRED_90M'&&!COMPLETION_SKIP_FIELDS.has(f.Field_ID)&&questionVisible(f,e));
-  const requiredComplete=requiredFields.filter(f=>valuePresent(effectiveValue(f,e))).length;
+  const requiredComplete=requiredFields.filter(f=>typeof canonicalFieldValuePresent==='function'?canonicalFieldValuePresent(f,effectiveValue(f,e),e):valuePresent(effectiveValue(f,e))).length;
   const missing=completionMissingDetail(e);
+  const integrity=typeof captureIntegrityIssues==='function'?captureIntegrityIssues(e):[];
   const engineGatesSummary=completionEngineGates(e);
   const stagesTotal=(schema?.flow||[]).length;
   const stagesReviewed=(schema?.flow||[]).filter(s=>completionStageReviewed(s,e)).length;
@@ -92,8 +93,8 @@ function engagementCompletion(e){
     missing,
     evidencePending:completionEvidencePending(e),
     engineGates:engineGatesSummary,
-    readyToCalculate:missing.length===0&&engineGatesSummary.unresolved.length===0,
-    blockers:completionBlockers(missing,engineGatesSummary),
+    readyToCalculate:missing.length===0&&integrity.length===0&&engineGatesSummary.unresolved.length===0,
+    blockers:[...completionBlockers(missing,engineGatesSummary),...integrity.map((x,i)=>({type:'INTEGRITY',id:`INTEGRITY-${i+1}`,label:x.message||x.label||'Inconsistencia de captura',stage:x.stage||null,navigationTarget:x.layer&&x.layer!=='fields'?'proceso':'diagnostico',layer:x.layer||null}))],
     stage:completionStageStats(e),
     overall:completionOverallStats(e)
   };
