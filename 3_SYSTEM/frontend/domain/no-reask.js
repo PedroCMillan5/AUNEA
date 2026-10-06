@@ -76,7 +76,7 @@ function canonicalFieldValidationIssue(f,v,e){
   }
   return '';
 }
-function canonicalFieldValuePresent(f,v,e){const detail=String(e?.answerDetails?.[f?.Field_ID]||'').trim(),syntheticOther=/WITH_OTHER/.test(String(f?.Control_UI||'').toUpperCase())&&!valuePresent(v)&&!!detail,valid=(valuePresent(v)||syntheticOther)&&!canonicalFieldValidationIssue(f,v,e);if(!valid)return false;if(String(f?.Ask_Mode||'')==='DERIVE_AND_CONFIRM'&&valuePresent(reusedValue(f.Field_ID,e)))return isDerivedConfirmed(f,e);return true}
+function canonicalFieldValuePresent(f,v,e){const mode=String(f?.Ask_Mode||''),detail=String(e?.answerDetails?.[f?.Field_ID]||'').trim(),syntheticOther=/WITH_OTHER/.test(String(f?.Control_UI||'').toUpperCase())&&!valuePresent(v)&&!!detail;if(mode==='DERIVE_AND_CONFIRM'){const reuse=reusedValue(f.Field_ID,e);return reuse!==undefined&&!canonicalFieldValidationIssue(f,reuse,e)&&isDerivedConfirmed(f,e,reuse)}const valid=(valuePresent(v)||syntheticOther)&&!canonicalFieldValidationIssue(f,v,e);return !!valid}
 function canonicalFieldRequiredNow(f,e){
   if(!f||!questionVisible(f,e))return false;
   if(f.Requiredness==='REQUIRED_90M')return !['SYSTEM_GENERATED','DERIVED'].includes(String(f.Ask_Mode||''));
@@ -233,7 +233,7 @@ function derivedConfirmation(f,e,reuse=reusedValue(f.Field_ID,e)){return answerD
 function isDerivedConfirmed(f,e,reuse=reusedValue(f.Field_ID,e)){const m=derivedConfirmation(f,e,reuse);return !!m&&m.fingerprint===derivedFingerprint(reuse)}
 function confirmDerivedValue(fid){
   const e=currentEng(),f=schema?.fields?.find(x=>x.Field_ID===fid);if(!e||!f)return;
-  const reuse=reusedValue(fid,e);if(!valuePresent(reuse))return toast('No hay un valor derivado que confirmar.');
+  const reuse=reusedValue(fid,e);if(reuse===undefined)return toast('No hay una derivación disponible que confirmar.');
   answerDetails(e)[`${fid}__derived_confirmation`]={fingerprint:derivedFingerprint(reuse),confirmedAt:now()};
   audit(`Valor derivado confirmado ${fid}`);markDirty(`Confirmación derivada ${fid}`);render();
 }
@@ -261,11 +261,11 @@ function pageLabelEs(page){return PAGE_LABEL_ES[page]||page}
 function reuseSourceInfo(f){
   const raw=String(f.Reuse_From||'');
   if(!raw)return {label:'un dato ya capturado en el estudio',page:null,entity:null,attribute:null};
-  const m=raw.match(/^(RT_[A-Z_]+)\.([A-Za-z0-9_]+)/);
+  const m=raw.match(/(RT_[A-Z_]+)(?:\.([A-Za-z0-9_]+))?/);
   if(!m)return {label:'un dato ya capturado en el estudio',page:null,entity:null,attribute:null};
-  const srcField=reuseWriteTargetIndex()[`${m[1]}.${m[2]}`];
+  const srcField=m[2]?reuseWriteTargetIndex()[`${m[1]}.${m[2]}`]:null;
   const page=Object.prototype.hasOwnProperty.call(ENTITY_PAGE_MAP,m[1])?ENTITY_PAGE_MAP[m[1]]:null;
-  return {label:srcField?srcField.Pregunta_o_etiqueta_ES:'un dato ya capturado en el estudio',page,entity:m[1],attribute:m[2]};
+  return {label:srcField?srcField.Pregunta_o_etiqueta_ES:'datos ya capturados del proceso',page,entity:m[1],attribute:m[2]||null};
 }
 
 // DEC-050 allows a secondary surface to correct a reused value in exactly two ways: write through to
@@ -341,7 +341,13 @@ function renderQuestion(f,e){
   const chip=(source&&valuePresent(reuse))?prefillChip(source.label):'';
   const meta=`${required?requiredMark():''}${f.Requiredness==='CONDITIONAL_90M'?'<span class="conditional-tag">condicional</span>':''}${chip}`;
   let body='';
-  if(systemOnly)body=`<div class="readonly-box">${esc(formatContextValue(f,val)||'Se completará automáticamente cuando existan datos suficientes.')}</div>`;
+  if(mode==='DERIVE_AND_CONFIRM'){
+    const src=reuseSourceInfo(f),confirmed=isDerivedConfirmed(f,e,reuse),derivedText=valuePresent(reuse)?formatContextValue(f,reuse):'Sin elementos derivados';
+    const confirmUi=confirmed?'<span class="status green">Derivación confirmada</span>':`<button type="button" class="btn btn-small btn-primary" data-confirm-derived="${f.Field_ID}">Confirmar valor</button>`;
+    const editUi=src.page?`<button type="button" class="btn btn-small" data-goto-source="${attr(src.page)}">Revisar en ${esc(pageLabelEs(src.page))}</button>`:'';
+    body=`<div class="reuse-context"><div><strong>${esc(derivedText)}</strong><small>Derivado de: ${esc(src.label)}</small></div><div class="row-actions">${confirmUi}${editUi}</div></div>`;
+  }
+  else if(systemOnly)body=`<div class="readonly-box">${esc(formatContextValue(f,val)||'Se completará automáticamente cuando existan datos suficientes.')}</div>`;
   else if(f.Field_ID==='DF007')body=renderControl(f,val,opts,e);
   else if(contextOnly(f,e,val)){
     if(!f.Reuse_From){
