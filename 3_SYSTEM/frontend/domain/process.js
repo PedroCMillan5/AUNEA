@@ -302,9 +302,9 @@ function bindFrictionFrequencyControl(id='fr_frequency'){
   };
   mode.addEventListener('change',sync);sync();
 }
-function openFrictionModal(frId=null,preselectedSteps=[]){
+function openFrictionModal(frId=null,preselectedSteps=[],candidate=null){
   if(typeof guardAsisMutation==='function'&&guardAsisMutation())return;
-  const e=currentEng();if(!activeSteps(e).length)return toast('Añade al menos un paso antes de registrar una fricción.');const existing=frId?e.frictions.find(x=>x.id===frId):null;const f=frictionMeta(existing?structuredClone(existing):{id:id('FRI'),status:'ACTIVE',affected_steps:preselectedSteps,friction_type:'',cause:[],non_time_impact:[],workaround:[],evidence_ids:[],evidence_type:'',frequency:{},active_time_loss:{},wait_time_loss:{},direct_loss:{}});
+  const e=currentEng();if(!activeSteps(e).length)return toast('Añade al menos un paso antes de registrar una fricción.');const existing=frId?e.frictions.find(x=>x.id===frId):null;const candidateSteps=normalizeArray(candidate?.step_ids||preselectedSteps).filter(Boolean),candidateType=String(candidate?.pain_id||'');const f=frictionMeta(existing?structuredClone(existing):{id:id('FRI'),status:'ACTIVE',affected_steps:candidateSteps,friction_type:candidateType,cause:[],non_time_impact:[],workaround:[],evidence_ids:[],evidence_type:'',frequency:{},active_time_loss:{},wait_time_loss:{},direct_loss:{}});
   const types=fieldOptions('OS_FRICTION_TYPE'),causes=fieldOptions('OS_FRICTION_CAUSE'),impacts=fieldOptions('OS_SCALE_1_5'),nonTime=fieldOptions('OS_NON_TIME_IMPACT'),work=fieldOptions('OS_WORKAROUND'),evid=fieldOptions('OS_EVIDENCE_TYPE');
   // Layer 1/2 progressive disclosure: tipo/pasos/señal/contexto-impacto are what a consultant needs to
   // register a friction on the spot; causa/workaround/evidencia/resto stay available but collapsed.
