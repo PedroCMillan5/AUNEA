@@ -80,3 +80,17 @@ def test_e2e_05_advisory_before_system():
     _, alt=Orchestrator().compare(eng,ScenarioRequest(scenario_name="Force system",action_id="ACT03",functional_level_id="N2",ai_level_id="I0"))
     assert out.optimal_scenario.action_id=="ACT01"
     assert alt.action_id=="ACT03"
+
+
+def test_economic_input_preserves_canonical_practical_capacity():
+    row=EconomicInput(
+        driver_id="ED14", role_or_resource="OPERATIONS", value=125,
+        unit="h", period="MONTH", capacity_cost_rate_eur_hour=32,
+        evidence_type="CLIENT_DECLARED"
+    )
+    payload=row.model_dump()
+    assert payload["role_or_resource"]=="OPERATIONS"
+    assert payload["value"]==125
+    assert payload["unit"]=="h"
+    assert payload["period"]=="MONTH"
+    assert payload["capacity_cost_rate_eur_hour"]==32
