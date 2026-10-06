@@ -28,3 +28,25 @@ test('economic payload keeps only the metric owned by each driver and removes le
   assert.equal(p.economics[1].annual_active_hours,19.2);
   assert.equal(p.economics[1].annual_wait_hours,0);
 });
+
+test('coverage preflight runs before diagnose and remains backend-owned',()=>{
+  assert.match(code,/\/v1\/diagnostic\/coverage/);
+  assert.match(code,/diagnosticCoveragePreflight/);
+  assert.match(code,/handleCoveragePreflight/);
+});
+
+test('blocking coverage gaps send the consultant back to the owning diagnostic stage',()=>{
+  ctx.schema.fields=[{Field_ID:'DF088',Stage_ID:'S08',Pregunta_o_etiqueta_ES:'Qué no debe automatizarse'}];
+  ctx.state.activePage='resultados';
+  const ok=ctx.handleCoveragePreflight(e,{coverage:{items:[{input_id:'IN-R-05',status:'GAP',blocking:true,source_fields:['DF088']}],status:'BLOCKED'},integrity_issues:[]});
+  assert.equal(ok,false);
+  assert.equal(ctx.state.activePage,'diagnostico');
+  assert.equal(e.stageId,'S08');
+});
+
+test('relational integrity preflight returns the consultant to the AS-IS instead of calculating',()=>{
+  ctx.state.activePage='resultados';
+  const ok=ctx.handleCoveragePreflight(e,{coverage:{items:[]},integrity_issues:['El impacto 1 no está vinculado a ningún paso activo.']});
+  assert.equal(ok,false);
+  assert.equal(ctx.state.activePage,'proceso');
+});
