@@ -58,9 +58,9 @@ function uat3Seed(c){
   const controlStepIndex=c.key==='INVOICE'?4:c.key==='INTAKE'?3:4;
   const details={...c.details,DF075__steps:[steps[controlStepIndex].id]};
   const economics=[
-    {step_ids:[],driver_id:'ED14',annual_active_hours:0,annual_wait_hours:0,capacity_cost_rate_eur_hour:c.economics.rate,
+    {step_ids:steps.map(s=>s.id),driver_id:'ED14',annual_active_hours:0,annual_wait_hours:0,capacity_cost_rate_eur_hour:c.economics.rate,
       direct_loss_eur_annual:0,current_tool_cost_eur_annual:0,realized_cash_saving_eur_annual:0,evidence_type:'CLIENT_DECLARED',deduplication_key:null},
-    {step_ids:[],driver_id:'ED12',annual_active_hours:0,annual_wait_hours:0,capacity_cost_rate_eur_hour:null,
+    {step_ids:steps.filter(s=>s.tool).map(s=>s.id),driver_id:'ED12',annual_active_hours:0,annual_wait_hours:0,capacity_cost_rate_eur_hour:null,
       direct_loss_eur_annual:0,current_tool_cost_eur_annual:c.economics.toolAnnual,realized_cash_saving_eur_annual:0,
       evidence_type:'CLIENT_DECLARED',deduplication_key:null}
   ];
