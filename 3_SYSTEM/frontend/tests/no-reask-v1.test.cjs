@@ -166,8 +166,8 @@ test('DF020/DF029 render a UI-only disambiguation hint (route vs treatment) with
   const html020=ctx.renderQuestion(df020,eng),html029=ctx.renderQuestion(df029,eng);
   assert.match(html020,/RUTA del proceso/);
   assert.match(html029,/TRATAMIENTO operativo/);
-  assert.ok(html020.indexOf('RUTA del proceso')<html020.indexOf('choice-grid'),'DF020 clarification must sit directly under the question, before its control');
-  assert.ok(html029.indexOf('TRATAMIENTO operativo')<html029.indexOf('choice-grid'),'DF029 clarification must sit directly under the question, before its control');
+  assert.ok(html020.indexOf('RUTA del proceso')<html020.indexOf('<CONTROL'),'DF020 clarification must sit directly under the question, before its control');
+  assert.ok(html029.indexOf('TRATAMIENTO operativo')<html029.indexOf('<CONTROL'),'DF029 clarification must sit directly under the question, before its control');
 });
 
 test('DF052 clarifies it is a single process-level version-control question, never per-document (UAT-VIS-042 stays BLOQUEADO — no per-artifact cardinality exists in the canonical model)',()=>{
@@ -221,12 +221,13 @@ test('DF098 real interaction (jsdom, real runtime): action+owner+date consolidat
       assert.ok(d.querySelector('[data-nextstep-owner="DF098"]'),'el control compuesto sigue presente tras elegir sólo la acción');
 
       const ownerInput=d.querySelector('[data-nextstep-owner="DF098"]');
-      ownerInput.value='Pedro';ownerInput.dispatchEvent(new w.Event('input',{bubbles:true}));
-      assert.equal(w.currentEng().answers.DF098,'','owner solo tampoco consolida sin fecha');
+      assert.equal(ownerInput.value,'Pedro Carrasco');
+      assert.equal(ownerInput.readOnly,true,'el owner procede del consultor AUNEA seleccionado y no es un segundo dato editable');
+      assert.equal(w.currentEng().answers.DF098,'','sin fecha todavía no puede consolidar');
 
       const dateInput=d.querySelector('[data-nextstep-date="DF098"]');
       dateInput.value='2026-09-12';dateInput.dispatchEvent(new w.Event('change',{bubbles:true}));
-      assert.match(w.currentEng().answers.DF098,/Pedro/);
+      assert.match(w.currentEng().answers.DF098,/Pedro Carrasco/);
       assert.match(w.currentEng().answers.DF098,/12\/09\/2026/,'la fecha se serializa en formato dd/mm/aaaa');
       assert.ok(!w.canonicalMissingRequired(w.currentEng()).includes('DF098'),'DF098 debe desaparecer de Readiness en cuanto consolida');
 
@@ -240,15 +241,11 @@ test('DF098 real interaction (jsdom, real runtime): action+owner+date consolidat
       assert.ok(df098Card,'DF098 sigue siendo un control editable real tras el render() no relacionado, nunca una caja "Tomado de"');
       assert.doesNotMatch(df098Card.innerHTML,/reuse-context/);
       assert.match(df098Card.innerHTML,/answered-badge/);
-      assert.equal(d.querySelector('[data-nextstep-owner="DF098"]').value,'Pedro');
+      assert.equal(d.querySelector('[data-nextstep-owner="DF098"]').value,'Pedro Carrasco');
       assert.equal(d.querySelector('[data-nextstep-date="DF098"]').value,'2026-09-12');
-
-      // Corregir el owner es una interacción DOM normal — nunca requiere la consola.
-      const ownerInput2=d.querySelector('[data-nextstep-owner="DF098"]');
-      ownerInput2.value='Ana';ownerInput2.dispatchEvent(new w.Event('input',{bubbles:true}));
-      assert.match(w.currentEng().answers.DF098,/Ana/);
-      assert.doesNotMatch(w.currentEng().answers.DF098,/Pedro/);
-      assert.equal(w.currentEng().answerDetails.DF098__owner,'Ana');
+      assert.equal(d.querySelector('[data-nextstep-owner="DF098"]').readOnly,true);
+      assert.match(w.currentEng().answers.DF098,/Pedro Carrasco/);
+      assert.equal(w.currentEng().answerDetails.DF098__owner,'Pedro Carrasco');
       assert.equal(w.currentEng().answerDetails.DF098__date,'2026-09-12');
       assert.ok(w.currentEng().answerDetails.DF098__action);
 
@@ -257,7 +254,7 @@ test('DF098 real interaction (jsdom, real runtime): action+owner+date consolidat
       const saved=JSON.parse(w.localStorage.getItem('aunea_internal_v1'));
       const savedEng=saved.engagements.find(x=>x.id===engId);
       assert.equal(savedEng.answers.DF098,w.currentEng().answers.DF098);
-      assert.equal(savedEng.answerDetails.DF098__owner,'Ana');
+      assert.equal(savedEng.answerDetails.DF098__owner,'Pedro Carrasco');
       assert.equal(savedEng.answerDetails.DF098__date,'2026-09-12');
       assert.ok(savedEng.answerDetails.DF098__action);
 
@@ -272,7 +269,7 @@ test('DF098 real interaction (jsdom, real runtime): action+owner+date consolidat
       await until(()=>d.querySelector('[data-stage-nav="S09"]'));
       w.eval("currentEng().stageId='S09';render()");
       await until(()=>d.querySelector('[data-nextstep-owner="DF098"]'));
-      assert.equal(d.querySelector('[data-nextstep-owner="DF098"]').value,'Ana');
+      assert.equal(d.querySelector('[data-nextstep-owner="DF098"]').value,'Pedro Carrasco');
       assert.equal(d.querySelector('[data-nextstep-date="DF098"]').value,'2026-09-12');
       assert.deepEqual(errors,[]);
       // Deja que el autosave debounced (350ms, services/persistence.js) termine de disparar mientras
