@@ -14,7 +14,9 @@ function hasConfirmedEngagementSnapshot(e){
 
 function currentDiagnosticOutput(e){
   const snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;
-  return snap&&e?.lastEngineSnapshotVersion===snap.version?e.diagnosticOutput:null;
+  const record=typeof engagementOfRecord==='function'?engagementOfRecord(e):e;
+  const integrity=typeof economicInputIntegrityIssues==='function'?economicInputIntegrityIssues(record):[];
+  return snap&&e?.lastEngineSnapshotVersion===snap.version&&!integrity.length?e.diagnosticOutput:null;
 }
 function diagnosisStepName(record,id){
   const step=(record?.processSteps||[]).find(s=>String(s.id)===String(id));
@@ -22,20 +24,23 @@ function diagnosisStepName(record,id){
 }
 function diagnosisPainLabel(painId){
   const ref=(schema.tables.REF_PAIN||[]).find(x=>String(x.Pain_ID)===String(painId));
-  return ref?.Pain_Name||ref?.Label_ES||ref?.Pain_Pattern||(state.uiMode==='INTERNAL'?painId:'Hallazgo');
+  const fallback=ref?.Pain_Name||ref?.Label_ES||ref?.Pain_Pattern||(state.uiMode==='INTERNAL'?painId:'Hallazgo');
+  return typeof businessEngineLabel==='function'?businessEngineLabel('pain',painId,fallback):fallback;
 }
 function diagnosisLinkedFrictions(record,painId){
   const mapping=Object.fromEntries((schema.friction_pain_map||[]).map(x=>[String(x.Friction_Type_ID),String(x.Pain_ID)]));
   return (record?.frictions||[]).filter(x=>x.status!=='SUPERSEDED'&&String(mapping[String(x.friction_type)]||x.derived_pain_id||'')===String(painId));
 }
 function diagnosisImpactMetric(x){
-  const active=Number(x?.annual_active_hours||0),wait=Number(x?.annual_wait_hours||0),direct=Number(x?.direct_loss_eur_annual||0),tool=Number(x?.current_tool_cost_eur_annual||0),cash=Number(x?.realized_cash_saving_eur_annual||0);
+  const shape=typeof economicMetricShape==='function'?economicMetricShape(x?.driver_id,x):{active:Number(x?.annual_active_hours||0),wait:Number(x?.annual_wait_hours||0)};
+  const active=shape.active,wait=shape.wait,direct=Number(x?.direct_loss_eur_annual||0),tool=Number(x?.current_tool_cost_eur_annual||0),cash=Number(x?.realized_cash_saving_eur_annual||0),rate=Number(x?.capacity_cost_rate_eur_hour||0);
   if(wait)return `${num(wait)} h/año de espera`;
-  if(active)return `${num(active)} h/año`;
+  if(active)return `${num(active)} h/año de tiempo activo cuantificado`;
   if(direct)return `${eur(direct)}/año de pérdida directa`;
   if(tool)return `${eur(tool)}/año de herramienta`;
+  if(rate)return `${num(rate)} €/h de coste de capacidad`;
   if(cash)return `${eur(cash)}/año de ahorro realizado`;
-  return 'Registrado sin importe agregado';
+  return 'Registrado sin cuantificación agregable';
 }
 function diagnosisTrace(record,p){
   const frictions=diagnosisLinkedFrictions(record,p.pain_id);
@@ -94,7 +99,7 @@ function diagnosisRisksHtml(risk,record){
       <div class="notice"><b>Riesgo residual</b><br>${risk.residual_level?esc(engineLabel('risk_level',risk.residual_level)):'—'}</div>
       <div class="notice"><b>Estado</b><br>${risk.status?esc(engineLabel('risk_status',risk.status)):'—'}</div>
     </div>
-    ${risk.rationale?`<div class="notice info diagnosis-risk-rationale"><b>Lectura del motor</b><br>${esc(risk.rationale)}</div>`:''}
+    ${risk.rationale?`<div class="notice info diagnosis-risk-rationale"><b>Lectura del motor</b><br>${esc(typeof engineRationaleEs==='function'?engineRationaleEs('risk',risk.rationale):risk.rationale)}</div>`:''}
     ${rows.length?`<div class="result-list diagnosis-risk-list">${rows.map(r=>`<div class="result-item"><b>${esc(r.description||labelFrom('OS_RISK_CATEGORY',r.category))}</b><p>Pasos: ${esc(normalizeArray(r.step_ids).map(id=>diagnosisStepName(record,id)).join(' · ')||'—')} · Probabilidad ${esc(r.likelihood_1_5||'—')}/5 · Impacto ${esc(r.impact_1_5||'—')}/5 · Controles: ${r.controls_present===true?'Sí':r.controls_present===false?'No':'No indicado'}</p></div>`).join('')}</div>`:''}`;
 }
 function diagnosisRecommendationHtml(o){
@@ -133,7 +138,7 @@ function resultsPage(){
   return pageTop('Diagnóstico interno',`Snapshot v${esc(activeSnapshot?.version||'—')} · diagnóstico backend ${esc(runDate)}. Los resultados están ligados a la versión confirmada del AS-IS.`,`<button class="btn" data-page="diagnostico">Volver a Sesión 1</button><button class="btn" data-page="proceso">Revisar AS-IS</button><button class="btn btn-primary" id="runDiag">Recalcular diagnóstico</button>`)
     +`<div class="grid g4 diagnosis-result-kpis">
       <div class="card metric"><small>Hallazgos confirmados</small><strong>${confirmed}</strong><span>de ${pains.length} evaluados</span></div>
-      <div class="card metric"><small>Trabajo activo anual</small><strong>${num(econ.annual_active_hours)} h</strong><span>separado de espera</span></div>
+      <div class="card metric"><small>Tiempo activo cuantificado</small><strong>${num(econ.annual_active_hours)} h/año</strong><span>solo impactos activos registrados</span></div>
       <div class="card metric"><small>Espera anual</small><strong>${num(econ.annual_wait_hours)} h</strong><span>no monetizada como labor</span></div>
       <div class="card metric"><small>Riesgo residual</small><strong>${risk.residual_level?esc(engineLabel('risk_level',risk.residual_level)):'—'}</strong><span>${risk.status?esc(engineLabel('risk_status',risk.status)):''}</span></div>
     </div>`
@@ -141,15 +146,15 @@ function resultsPage(){
     +section('Hallazgos','Qué ocurre, dónde y con qué trazabilidad. El motor determina estado y confianza; la UI sólo enlaza contexto capturado.',diagnosisFindingsHtml(record,pains))
     +section('Impacto operativo y económico','Trabajo, espera, capacidad, pérdida directa, herramientas y ahorro realizado permanecen separados.',diagnosisEconomicsHtml(econ,record))
     +section('Riesgos','Resultado agregado del motor y riesgos capturados que lo sustentan.',diagnosisRisksHtml(risk,record))
-    +section('Recomendación preliminar','Dirección estructurada calculada por el backend. No sustituye el diseño TO-BE ni constituye todavía una propuesta al cliente.',diagnosisRecommendationHtml(o))
+    +section('Recomendación preliminar','Dirección estructurada calculada por el backend. No sustituye el diseño TO-BE ni constituye todavía una propuesta al cliente.',diagnosisRecommendationHtml(o,e))
     +section('Siguiente paso','El diagnóstico ya existe para el snapshot vigente. El siguiente bloque gobernado es diseñar el TO-BE sobre esta misma versión.',`<div class="notice good"><b>Diagnóstico generado correctamente</b><br>Revisa los hallazgos anteriores antes de diseñar el proceso futuro.</div>`,`<button class="btn btn-primary" data-page="tobe">Revisado: continuar a TO-BE →</button>`);
 }
 function num(x){return Number(x||0).toLocaleString('es-ES',{maximumFractionDigits:1})}
 function eur(x){return Number(x||0).toLocaleString('es-ES',{style:'currency',currency:'EUR',maximumFractionDigits:0})}
-function businessLabel(rows,idField,id){const hit=(rows||[]).find(x=>String(x[idField])===String(id));if(hit?.Name)return hit.Name;return state.uiMode==='INTERNAL'?(id||'—'):'No disponible'}
-function actionLabel(id){return businessLabel(schema.tables.REF_ACTION,'Action_ID',id)}
-function funcLevelLabel(id){return businessLabel(schema.tables.REF_LEVEL_FUNC,'Functional_Level_ID',id)}
-function aiLevelLabel(id){return businessLabel(schema.tables.REF_LEVEL_AI,'AI_Level_ID',id)}
+function businessLabel(rows,idField,id,category=''){const hit=(rows||[]).find(x=>String(x[idField])===String(id)),fallback=hit?.Name||(state.uiMode==='INTERNAL'?(id||'—'):'No disponible');return typeof businessEngineLabel==='function'&&category?businessEngineLabel(category,id,fallback):fallback}
+function actionLabel(id){return businessLabel(schema.tables.REF_ACTION,'Action_ID',id,'action')}
+function funcLevelLabel(id){return businessLabel(schema.tables.REF_LEVEL_FUNC,'Functional_Level_ID',id,'functional_level')}
+function aiLevelLabel(id){return businessLabel(schema.tables.REF_LEVEL_AI,'AI_Level_ID',id,'ai_level')}
 function codedField(label,rawId,resolved){return `<div class="notice"><b>${esc(label)}</b><br>${esc(resolved)}${rawId?`<span class="internal-tag">${esc(rawId)}</span>`:''}</div>`}
 
 function recommendationPage(){const e=currentEng();if(!e)return noOfficial('Recomendación','La recomendación oficial sólo se muestra después de ejecutar el backend.');const o=e.diagnosticOutput;if(!o)return noOfficial('Recomendación','La recomendación oficial sólo se muestra después de ejecutar el backend.');const r=o.recommendation||{},q=o.quote||{},record=typeof engagementOfRecord==='function'?engagementOfRecord(e):e,hot=(record.frictions||[]).filter(x=>x.status!=='SUPERSEDED').sort((a,b)=>Number(b.impact||0)-Number(a.impact||0)).slice(0,5);return pageTop('Recomendación','Recap de la reunión + recomendación estructurada del backend.',`<button class="btn" data-page="resultados">Ver resultados</button>`)+section('Recomendación óptima','La acción óptima no se sobrescribe; las alternativas se crean como escenarios.',`<div class="grid g4">${codedField('Acción',r.action_id,actionLabel(r.action_id))}${codedField('Nivel funcional',r.functional_level_id,funcLevelLabel(r.functional_level_id))}${codedField('IA',r.ai_level_id,aiLevelLabel(r.ai_level_id))}<div class="notice"><b>Precio base</b><br>${eur(q.one_off_eur)}</div></div>${state.uiMode==='INTERNAL'?`<div class="notice info" style="margin-top:12px"><strong>Racional interno:</strong> ${(r.rationale||[]).map(esc).join(' · ')||'Sin racional adicional.'}</div>`:''}`)+section('Puntos calientes','Se muestran desde las fricciones capturadas.',`<div class="result-list">${hot.map(x=>`<div class="result-item"><b>${esc(labelFrom('OS_FRICTION_TYPE',x.friction_type))}</b><p>${esc(x.observable_signal)} · Impacto ${esc(x.impact||'—')}/5</p></div>`).join('')||'<div class="empty"><p>Sin fricciones priorizadas.</p></div>'}</div>`)+section('Resumen final de la reunión','Texto de devolución editable para cerrar la conversación sin perder el hilo.',`<textarea id="meetingRecap" style="width:100%;min-height:150px;border:1px solid #d6d1c8;border-radius:8px;padding:12px">${esc(e.meetingRecap||buildRecap(e,o))}</textarea>`,`<button class="btn btn-outline" id="saveRecap">Guardar resumen</button>`)}
