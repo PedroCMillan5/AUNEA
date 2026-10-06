@@ -19,12 +19,12 @@ function makeCtx(){
     currentEng:()=>eng,
     activeTimeContributors:e=>e.__contributors||[],
     waitTimeContributors:e=>e.__waitContributors||[],
-    esc:v=>String(v??''),attr:v=>String(v??''),
+    esc:v=>String(v??''),attr:v=>String(v??''),labelFrom:(set,v)=>v||'—',
     auneaSelectControl:(id,opts,val,{extra='',placeholder='Selecciona…'}={})=>`<div class="canonical-aunea-select"><input type="hidden" id="${id}" value="${val||''}" ${extra}><details class="aunea-select"><summary><span>${placeholder}</span><i></i></summary><div class="aunea-select-menu">${(opts||[]).map(o=>`<button data-aunea-select-option="${id}" data-value="${o.value}">${o.label}</button>`).join('')}</div></details></div>`,
     section:(title,sub,body,actions)=>`${body}${actions||''}`,
     openModal:(title,body,onSave)=>{ctx.__lastBody=body;ctx.__lastOnSave=onSave},
     closeModal:()=>{},markDirty:()=>{},render:()=>{},toast:()=>{},now:()=>'',id:p=>`${p}-1`,
-    document:{getElementById:(elId)=>{if(!domFields[elId])domFields[elId]={};return domFields[elId]}},
+    document:{getElementById:(elId)=>{if(!domFields[elId])domFields[elId]={style:{},dataset:{},value:'',disabled:false,textContent:'',innerHTML:'',addEventListener(){},removeAttribute(){},setAttribute(){}};return domFields[elId]}},
     confirm:()=>true
   };
   ctx.__eng=eng;ctx.__domFields=domFields;
@@ -225,7 +225,7 @@ test('B03: direct loss repeated across friction and DF082 is held pending reconc
   assert.equal(problems.length,1);
   assert.match(problems[0],/DF063\/DF082/);
   assert.equal(ctx.economicCaptureIssues(e,{driver_id:'ED11',step_ids:['S2'],direct_loss_eur_annual:100}).length,0);
-  assert.match(code,/deduplication_key:null/);
+  assert.match(code,/deduplication_key:\s*existing\?\.deduplication_key\s*\?\?\s*null/);
 });
 
 test('B03: overlapping economics input does not mutate engagement and manual capture demands selected evidence',()=>{
