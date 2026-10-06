@@ -122,10 +122,10 @@ test('an empty AS-IS map or friction layer cannot be confirmed as complete',()=>
 });
 
 test('risk controls capture the canonical control list and no material condition defaults silently',()=>{
-  assert.match(risk,/current_controls/);
+  assert.match(risk,/current_control/);
   assert.match(risk,/OS_CONTROL_TYPE/);
   assert.match(risk,/no se aplican valores por defecto/);
-  assert.match(lifecycle,/controls_present===true&&!normalizeArray\(r\.current_controls\)\.length/);
+  assert.match(lifecycle,/controls_present===true&&!normalizeArray\(r\.current_control\)\.length/);
 });
 
 test('consultant layer status cannot say confirmed while integrity issues exist',()=>{
@@ -135,4 +135,43 @@ test('consultant layer status cannot say confirmed while integrity issues exist'
   assert.match(body,/processLayerIntegrityIssues/);
   assert.match(body,/done=!!processLayerState\(e\)\[layer\]&&!integrity\.length/);
   assert.match(body,/Revisión necesaria/);
+});
+
+
+test('derived-and-confirm fields are not complete until the current derivation is confirmed',()=>{
+  assert.match(noReask,/Ask_Mode\|\|'\)\)===['"]DERIVE_AND_CONFIRM['"]/);
+  assert.match(noReask,/return isDerivedConfirmed\(f,e\)/);
+  assert.match(noReask,/DERIVE_AND_CONFIRM/);
+  assert.match(noReask,/data-confirm-derived/);
+});
+
+test('linked canonical step references use answerDetails rather than synthetic top-level answers',()=>{
+  const state=read('core/state.js');
+  assert.match(state,/match\(\/\^\(DF\\d\{3\}\)__\(step\|steps\)\$\//);
+  assert.match(state,/details\[fid\]=value/);
+  assert.match(noReask,/El paso vinculado ya no está activo/);
+  assert.match(lifecycle,/DF\\d\{3\}__step/);
+});
+
+test('friction capture never invents evidence type or count period',()=>{
+  assert.doesNotMatch(process,/evidence_type:'EV02'/);
+  assert.doesNotMatch(process,/f\.evidence_type=.*\|\|'EV02'/);
+  assert.doesNotMatch(process,/period\.value='month'/);
+  assert.match(process,/Si registras una pérdida monetaria directa, indica también el periodo/);
+});
+
+test('legacy risks are invalidated instead of trusting old implicit booleans',()=>{
+  assert.match(risk,/function migrateRiskCaptureIntegrity/);
+  assert.match(risk,/r\.controls_present=null/);
+  assert.match(risk,/r\.reversibility=''/);
+  assert.match(risk,/r\.current_control=\[\]/);
+});
+
+test('risk adapter fails closed instead of applying frontend fallback semantics',()=>{
+  const start=engine.indexOf('function normalizeRiskInputs');
+  const end=engine.indexOf('\nfunction buildBackendPayload',start);
+  const body=engine.slice(start,end);
+  assert.match(body,/requireBool/);
+  assert.doesNotMatch(body,/category:r\.category\|\|'RC01'/);
+  assert.doesNotMatch(body,/reversible:r\.reversible!==false/);
 });
