@@ -133,6 +133,20 @@ class InputCoverageResult(BaseModel):
     blocking_gaps: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
 
+class PainCandidate(BaseModel):
+    # DERIVE_CANDIDATE only: never becomes RT_PAIN/RT_FRICTION until consultant confirmation.
+    pain_id: str
+    step_ids: list[str] = Field(default_factory=list)
+    signal_codes: list[str] = Field(default_factory=list)
+    rationale: str
+    review_questions: list[str] = Field(default_factory=list)
+    status: Literal["DERIVE_CANDIDATE"] = "DERIVE_CANDIDATE"
+
+class PainCandidateResult(BaseModel):
+    candidates: list[PainCandidate] = Field(default_factory=list)
+    evaluated_step_ids: list[str] = Field(default_factory=list)
+    note: str = "Las señales son candidatas para revisión humana; no confirman una fricción ni un Pain."
+
 class PainResult(BaseModel):
     pain_id: str
     state: PainState
