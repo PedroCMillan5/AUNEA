@@ -157,7 +157,7 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
     assert.equal(w.eval('currentEng().stageId'),'S01','no avanza mientras falte un obligatorio');
     assert.ok(d.querySelector('.field-pending'),'y el campo pendiente queda señalado');
     // With every S01 obligation answered, Continuar advances.
-    w.eval(`(()=>{const e=currentEng();(schema.fields||[]).filter(f=>f.Stage_ID==='S01'&&f.Requiredness==='REQUIRED_90M').forEach(f=>{e.answers[f.Field_ID]=e.answers[f.Field_ID]||(f.Control_UI&&String(f.Control_UI).includes('MULTISELECT')?['__uat__']:'__uat__')});render()})()`);
+    w.eval(`(()=>{(schema.fields||[]).filter(f=>f.Stage_ID==='S01'&&f.Requiredness==='REQUIRED_90M').forEach(f=>{const v=f.Control_UI&&String(f.Control_UI).includes('MULTISELECT')?['__uat__']:'__uat__';setAnswer(f.Field_ID,v)});render()})()`);
     click('#nextStage');
     assert.equal(w.eval('currentEng().stageId'),'S02','con los obligatorios resueltos sí avanza');
     w.eval(`(()=>{const e=currentEng();e.stageId='S01';render()})()`);
@@ -202,22 +202,24 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
     const ids=Array.from(w.eval('schema.flow.map(s=>s.Stage_ID)'));
     assert.equal(ids.length,9);
     assert.deepEqual(ids,['S01','S02','S03','S08','S04','S05','S06','S07','S09']);
+    const visibleStageIds=ids.filter(id=>!['S04','S05','S06','S07'].includes(id));
+    const sessionPages=['inicio','proceso','pasos','fricciones','riesgos','impacto'];
     for(const mode of ['INTERNAL']){
       for(const stage of schema.flow){
         w.eval(`currentEng().stageId='${stage.Stage_ID}';render()`);
-        assert.deepEqual(railStages(),ids,`${mode} / ${stage.Stage_ID}`);
-        assert.deepEqual(railPages(),['inicio','proceso']);
+        assert.deepEqual(railStages(),visibleStageIds,`${mode} / ${stage.Stage_ID}`);
+        assert.deepEqual(railPages(),sessionPages);
         assert.doesNotMatch(d.querySelector('#nav').textContent,/Interacciones|Oportunidades|Trabajo interno|UAT|Configuración/);
-        assert.equal(d.querySelector('#nav .nav-step.active').dataset.stageNav,stage.Stage_ID);
+        const active=d.querySelector('#nav .nav-step.active');
+        if(visibleStageIds.includes(stage.Stage_ID))assert.equal(active?.dataset.stageNav,stage.Stage_ID);
+        else assert.equal(active,null,'S04-S07 se trabajan en las páginas AS-IS, no como un segundo rail de etapas');
         assert.equal(w.eval('currentEng().stageId'),stage.Stage_ID);
         assert.ok(d.querySelector('h1'));
-        const activeIndex=ids.indexOf(stage.Stage_ID);
-        Array.from(d.querySelectorAll('#nav [data-stage-nav]')).forEach((el,i)=>assert.equal(el.disabled,i>activeIndex));
       }
-      click('#nav [data-page="proceso"]');reached.add('proceso');
-      assert.deepEqual(railPages(),['inicio','proceso']);
-      assert.deepEqual(railStages(),ids);
-      click(`#nav [data-stage-nav="${ids[0]}"]`);
+      for(const page of ['proceso','pasos','fricciones','riesgos','impacto']){click(`#nav [data-page="${page}"]`);reached.add(page);assert.ok(d.querySelector('h1'),page)}
+      assert.deepEqual(railPages(),sessionPages);
+      assert.deepEqual(railStages(),visibleStageIds);
+      click(`#nav [data-stage-nav="${visibleStageIds[0]}"]`);
     }
   });
   await t.test('PG04 target state keeps Otro conditional and questions 2/3 on full rows',async()=>{
@@ -231,7 +233,7 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   await t.test('VR-02 stage labels and order react to schema changes without a second list',()=>{
     w.eval('window.__flowBefore=schema.flow; schema.flow=schema.flow.slice().reverse().map((s,i)=>i===0?{...s,Stage_ES:"Etapa de prueba del schema"}:s); render()');
     try{
-      assert.deepEqual(railStages(),Array.from(w.eval('schema.flow.map(s=>s.Stage_ID)')));
+      assert.deepEqual(railStages(),Array.from(w.eval("schema.flow.map(s=>s.Stage_ID).filter(id=>!['S04','S05','S06','S07'].includes(id))")));
       assert.match(d.querySelector('#nav .nav-step').textContent,/Etapa de prueba del schema/);
     }finally{w.eval('schema.flow=window.__flowBefore; delete window.__flowBefore; render()');}
   });
@@ -242,10 +244,11 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
     click('#nav [data-page="estudios"]');
     click('[data-open-eng]:not([data-open-eng-page])');
     assert.equal(w.eval('JSON.stringify(currentEng())'),before);
-    assert.equal(d.querySelector('#nav .nav-step.active').dataset.stageNav,'S04');
+    assert.equal(w.eval('currentEng().stageId'),'S04');
+    assert.ok(d.querySelector('#nav [data-page="proceso"]'),'S04 se retoma mediante el bloque AS-IS');
     assert.deepEqual([...reached].sort(),Array.from(w.eval('Object.keys(pages)')).sort(),'every registered Console page was reached by real navigation');
   });
-  click('[data-page="proceso"]');click('#addStepFromClient');fill('#step_name','Validar solicitud');fill('#step_type','ST02');fill('#step_actor','OPERATIONS');
+  click('[data-page="pasos"]');click('#addStep');fill('#step_name','Validar solicitud');fill('#step_type','ST02');fill('#step_actor','OPERATIONS');
   fill('#step_active','12');fill('#step_wait','60');fill('#step_rework','3');click('#modalSave');
   assert.equal(d.querySelector('#modalSave'),null);
   click('[data-process-tab="fricciones"]');click('#addFriction');click('[data-aunea-select-option="fr_type"]:not([data-value=""])');fill('#fr_signal','UAT: faltan datos en la solicitud');click('#modalSave');
