@@ -24,6 +24,39 @@ function canonicalValueFromLabel(setId,value){if(value===undefined||value===null
 function reaskState(e){e.reaskOverrides=e.reaskOverrides||{};return e.reaskOverrides}
 function explicitReaskAllowed(fid,e){return !!reaskState(e)[fid]}
 function valuePresent(v){if(v===undefined||v===null||v==='')return false;if(Array.isArray(v))return v.length>0;if(typeof v==='object')return Object.values(v).some(valuePresent);return true}
+function canonicalFieldValidationIssue(f,v,e){
+  if(!f||!valuePresent(v))return '';
+  const control=String(f.Control_UI||'').toUpperCase(),mode=v&&typeof v==='object'?String(v.mode||'').toUpperCase():'';
+  if(['UNKNOWN','NONE'].includes(mode))return '';
+  if(control.includes('NUMBER')&&v&&typeof v==='object'){
+    const raw=v.value;
+    if(raw===''||raw===null||raw===undefined)return 'Falta el valor numérico.';
+    const n=Number(raw);
+    if(!Number.isFinite(n)||n<0)return 'El valor debe ser un número igual o mayor que 0.';
+    if((control.includes('TIME_UNIT')||control==='NUMBER_WITH_UNIT')&&!v.unit)return 'Falta la unidad.';
+    if(control.includes('PERCENT')){
+      if(v.unit==='percent'&&(n<0||n>100))return 'El porcentaje debe estar entre 0 y 100.';
+      if(v.unit==='count'&&!v.period)return 'Cuando se registra un número de casos debe indicarse el periodo.';
+    }
+  }
+  if(f.Field_ID==='DF025'&&v&&typeof v==='object'&&!['NONE','UNKNOWN'].includes(mode)){
+    if(!(Number(v.value)>0))return 'El tiempo objetivo debe ser mayor que 0 o indicarse que no existe.';
+    if(!v.unit)return 'Falta la unidad del tiempo objetivo.';
+  }
+  if(f.Field_ID==='DF023'&&v&&typeof v==='object'&&e){
+    const habitual=Number(e.answers?.DF021),period=String(e.answers?.DF022||'');
+    if(Number.isFinite(habitual)&&habitual>=0&&v.period&&period&&String(v.period)===period&&Number(v.value)<habitual)
+      return 'El volumen máximo no puede ser inferior al volumen habitual cuando usan el mismo periodo.';
+  }
+  return '';
+}
+function canonicalFieldValuePresent(f,v,e){return valuePresent(v)&&!canonicalFieldValidationIssue(f,v,e)}
+function canonicalFieldIntegrityIssues(e){
+  return (schema?.fields||[]).filter(f=>questionVisible(f,e)).map(f=>{
+    const v=effectiveValue(f,e),message=canonicalFieldValidationIssue(f,v,e);
+    return message?{type:'FIELD_INTEGRITY',id:f.Field_ID,label:`${f.Pregunta_o_etiqueta_ES||f.Field_ID}: ${message}`,stage:f.Stage_ID,navigationTarget:'diagnostico'}:null;
+  }).filter(Boolean);
+}
 
 // The write-through that used to live here as a hardcoded wrapper over setAnswer, listing DF001/DF002/
 // DF005 by hand, is now derived from each field's canonical Write_Target in writeThroughToOwner below
@@ -140,7 +173,7 @@ function questionVisible(f,e){
 }
 function canonicalMissingRequired(e){
   const skip=new Set(['DF094','DF095']);const misses=[];
-  (schema?.fields||[]).filter(f=>f.Requiredness==='REQUIRED_90M'&&!skip.has(f.Field_ID)&&questionVisible(f,e)).forEach(f=>{if(!valuePresent(effectiveValue(f,e)))misses.push(f.Field_ID)});
+  (schema?.fields||[]).filter(f=>f.Requiredness==='REQUIRED_90M'&&!skip.has(f.Field_ID)&&questionVisible(f,e)).forEach(f=>{if(!canonicalFieldValuePresent(f,effectiveValue(f,e),e))misses.push(f.Field_ID)});
   const startField=(schema?.fields||[]).find(f=>f.Field_ID==='DF014'),endField=(schema?.fields||[]).find(f=>f.Field_ID==='DF015');
   const hasBoundaries=!!startField&&!!endField&&valuePresent(effectiveValue(startField,e))&&valuePresent(effectiveValue(endField,e));
   if(!hasBoundaries&&!activeSteps(e).length)misses.push('Mapa AS-IS');
