@@ -51,6 +51,34 @@ function normalizeRiskInputs(e){
       description:r.description||null};
   })
 }
+async function diagnosticCoveragePreflight(payload){
+  const r=await fetch(`${state.backendUrl}/v1/diagnostic/coverage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  if(!r.ok)throw new Error(await r.text());
+  return await r.json();
+}
+function coverageItemLabel(item){
+  const fields=normalizeArray(item?.source_fields).map(fid=>(schema?.fields||[]).find(f=>f.Field_ID===fid)?.Pregunta_o_etiqueta_ES).filter(Boolean);
+  return fields.length?fields.join(' · '):(item?.input_id||'input diagnóstico');
+}
+function handleCoveragePreflight(e,result){
+  const integrity=normalizeArray(result?.integrity_issues).filter(Boolean);
+  if(integrity.length){
+    state.activePage='proceso';render();toast('Revisa el AS-IS antes de calcular: '+integrity[0]);
+    return false;
+  }
+  const coverage=result?.coverage||{},items=normalizeArray(coverage.items);
+  const blocking=items.filter(x=>x.status==='GAP'&&x.blocking);
+  e.lastDiagnosticCoverage=coverage;
+  if(blocking.length){
+    const first=blocking[0],firstField=normalizeArray(first.source_fields).find(fid=>(schema?.fields||[]).some(f=>f.Field_ID===fid));
+    const field=(schema?.fields||[]).find(f=>f.Field_ID===firstField);
+    if(field?.Stage_ID)e.stageId=field.Stage_ID;
+    state.activePage='diagnostico';render();
+    toast('Falta información necesaria para calcular: '+coverageItemLabel(first)+'.');
+    return false;
+  }
+  return true;
+}
 function buildBackendPayload(engagement){
   const e=typeof engagementOfRecord==='function'?engagementOfRecord(engagement):engagement;
   const evidence=[],painSignals=[],fmap=Object.fromEntries(schema.friction_pain_map.map(x=>[x.Friction_Type_ID,x.Pain_ID]));
@@ -62,8 +90,13 @@ function buildBackendPayload(engagement){
 async function runDiagnosis(){const e=currentEng();if(!e)return;if(!hasConfirmedSnapshot(e))return toast('Confirma el AS-IS en PG09 antes de calcular en Trabajo interno.');if(!state.backendOnline&&!(await checkBackend())){state.activePage='resultados';render();toast('Backend no conectado: no se publican resultados oficiales.');return}const gaps=canonicalMissingRequired(e);if(gaps.length){state.activePage='resultados';render();toast(`Captura incompleta: ${gaps.slice(0,5).join(', ')}`);return}const captureIssues=typeof captureIntegrityIssues==='function'?captureIntegrityIssues(engagementOfRecord(e)):[];if(captureIssues.length){state.activePage='resultados';render();toast('No se ha recalculado: '+(captureIssues[0].message||captureIssues[0].label||'hay una inconsistencia de captura pendiente.'));return}if(unresolvedEngineGates(e).length){openEngineGateReview();return}
   const sourceSnapshot=confirmedSnapshot(e);
   if(!sourceSnapshot)return toast('El AS-IS debe estar confirmado antes de calcular.');
-  ['runDiag','runDiagHeader'].forEach(bid=>{const b=document.getElementById(bid);if(b){b.disabled=true;b.textContent='Calculando…'}});
-  try{const r=await fetch(`${state.backendUrl}/v1/diagnose`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(buildBackendPayload(e))});if(!r.ok)throw new Error(await r.text());const out=await r.json();if(!out.recommendation||!out.quote||!out.optimal_scenario)throw new Error('Respuesta backend incompleta: faltan Recommendation/Pricing/Scenario');
+  const payload=buildBackendPayload(e);
+  ['runDiag','runDiagHeader'].forEach(bid=>{const b=document.getElementById(bid);if(b){b.disabled=true;b.textContent='Comprobando…'}});
+  try{
+    const preflight=await diagnosticCoveragePreflight(payload);
+    if(!handleCoveragePreflight(e,preflight))return;
+    ['runDiag','runDiagHeader'].forEach(bid=>{const b=document.getElementById(bid);if(b){b.disabled=true;b.textContent='Calculando…'}});
+    const r=await fetch(`${state.backendUrl}/v1/diagnose`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});if(!r.ok)throw new Error(await r.text());const out=await r.json();if(!out.recommendation||!out.quote||!out.optimal_scenario)throw new Error('Respuesta backend incompleta: faltan Recommendation/Pricing/Scenario');
     // The request may finish after another tab or the consultant changes the AS-IS.
     // Never attach an obsolete result to the newly edited capture.
     const currentSnapshot=confirmedSnapshot(e);
