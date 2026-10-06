@@ -192,7 +192,7 @@ test('DF098 uses the selected top-right AUNEA consultant as readonly owner and k
   const html=ctx.renderControl({Field_ID:'DF098',Control_UI:'DROPDOWN_WITH_OWNER_DATE',Option_Set_ID:'OS_X'},'',ctx.schema.option_sets.OS_X.options,e);
   assert.match(html,/class="nextstep-inline"/);
   assert.match(html,/data-nextstep-owner="DF098"[^>]*value="Consultor Seleccionado"[^>]*readonly/);
-  e.answerDetails.DF098__action='A';e.answerDetails.DF098__date='2026-10-13';
+  e.answerDetails={DF098__action:'A',DF098__date:'2026-10-13'};
   ctx.document.querySelector=sel=>sel.includes('data-aunea-select')?{querySelector:()=>({textContent:'Alpha'})}:null;
   ctx.syncNextStep('DF098');
   assert.match(e.answers.DF098,/Alpha — Consultor Seleccionado — 13\/10\/2026/);
