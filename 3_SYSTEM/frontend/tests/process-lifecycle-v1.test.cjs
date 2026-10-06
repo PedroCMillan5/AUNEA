@@ -31,6 +31,7 @@ function makeCtx(engagement){
   vm.createContext(ctx);
   vm.runInContext(engagementCode,ctx);
   vm.runInContext(code,ctx);
+  ctx.guardAsisMutation=()=>false;
   ctx.__toasts=toasts;ctx.__dirty=dirty;
   return ctx;
 }
