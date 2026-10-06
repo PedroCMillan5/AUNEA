@@ -8,7 +8,7 @@
 // CHANGE_RISK: HIGH.
 
 // [AUNEA-FE-CLIENT-PAUSE-056] START — Temporary product gate; no data or snapshot deletion.
-const CLIENT_DISPLAY_PAUSED=false;
+const CLIENT_DISPLAY_PAUSED=true;
 const CLIENT_DISPLAY_PAUSE_REASON='Vista cliente temporalmente bloqueada. Se está revisando la coherencia del diagnóstico; utiliza la Consola y el editor AS-IS.';
 function bootPausedClientDisplay(){
   removeConsoleChrome();
