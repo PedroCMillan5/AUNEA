@@ -139,7 +139,9 @@ function economicMetricShape(driver,row={}){
 }
 
 function normalizedEconomicDriverRecord(row={}){
-  const x={...row},ui=economicDriverUi(x.driver_id||'');
+  const x={...row},knownDrivers=new Set((schema?.tables?.REF_ECON_DRIVER||[]).map(r=>String(r.Economic_Driver_ID||r.Driver_ID||r.id||r.value||'')));
+  if(!x.driver_id||knownDrivers.size&&!knownDrivers.has(String(x.driver_id)))return x;
+  const ui=economicDriverUi(x.driver_id||'');
   const activeDrivers=new Set(['ED01','ED02','ED03','ED04','ED05','ED06','ED07','ED08']);
   if(!activeDrivers.has(x.driver_id))x.annual_active_hours=0;
   if(x.driver_id!=='ED13')x.annual_wait_hours=0;
