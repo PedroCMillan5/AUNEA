@@ -25,8 +25,14 @@ function reaskState(e){e.reaskOverrides=e.reaskOverrides||{};return e.reaskOverr
 function explicitReaskAllowed(fid,e){return !!reaskState(e)[fid]}
 function valuePresent(v){if(v===undefined||v===null||v==='')return false;if(Array.isArray(v))return v.length>0;if(typeof v==='object')return Object.values(v).some(valuePresent);return true}
 function canonicalFieldValidationIssue(f,v,e){
-  if(!f||!valuePresent(v))return '';
-  const control=String(f.Control_UI||'').toUpperCase(),mode=v&&typeof v==='object'?String(v.mode||'').toUpperCase():'';
+  if(!f)return '';
+  const control=String(f.Control_UI||'').toUpperCase(),mode=v&&typeof v==='object'?String(v.mode||'').toUpperCase():'',detail=String(e?.answerDetails?.[f.Field_ID]||'').trim();
+  const opts=typeof fieldOptions==='function'?fieldOptions(f.Option_Set_ID):[],other=(opts||[]).find(o=>String(o.value).toUpperCase()==='OTHER'||['otro','otra'].includes(String(o.label||'').trim().toLowerCase()));
+  const selected=normalizeArray(v).map(String);
+  if(other&&selected.includes(String(other.value))&&!detail)return 'Completa el detalle de la opción «Otro».';
+  if((control==='CONTACT_OR_ROLE_REFERENCE'||control.includes('DROPDOWN_WITH_DETAIL'))&&String(v)==='OTHER'&&!detail)return 'Completa el detalle de la opción «Otro».';
+  if(f.Field_ID==='DF099'&&String(v)==='YES'&&!detail)return 'Indica el alcance o condición del permiso.';
+  if(!valuePresent(v))return '';
   if(['UNKNOWN','NONE'].includes(mode))return '';
   if(control.includes('NUMBER')&&v&&typeof v==='object'){
     const raw=v.value;
@@ -50,7 +56,7 @@ function canonicalFieldValidationIssue(f,v,e){
   }
   return '';
 }
-function canonicalFieldValuePresent(f,v,e){return valuePresent(v)&&!canonicalFieldValidationIssue(f,v,e)}
+function canonicalFieldValuePresent(f,v,e){const detail=String(e?.answerDetails?.[f?.Field_ID]||'').trim(),syntheticOther=/WITH_OTHER/.test(String(f?.Control_UI||'').toUpperCase())&&!valuePresent(v)&&!!detail;return (valuePresent(v)||syntheticOther)&&!canonicalFieldValidationIssue(f,v,e)}
 function canonicalFieldIntegrityIssues(e){
   return (schema?.fields||[]).filter(f=>questionVisible(f,e)).map(f=>{
     const v=effectiveValue(f,e),message=canonicalFieldValidationIssue(f,v,e);
