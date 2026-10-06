@@ -343,3 +343,21 @@ test('No-Reask: changing session volume during an in-flight projection invalidat
 });
 
 // [AUNEA-UAT-ECON-010] END
+
+test('impact integrity detects stale cross-metric values and blocks retrabajo anchored to a step without rework',()=>{
+  const ctx=makeCtx(),eng=ctx.__eng;
+  eng.processSteps=[
+    {id:'S1',status:'ACTIVE',step_name:'Recibir factura',rework_time:0,wait_time:0},
+    {id:'S2',status:'ACTIVE',step_name:'Validar datos',rework_time:10,wait_time:90}
+  ];
+  eng.frictions=[{id:'F1',status:'ACTIVE',affected_steps:['S2']}];
+  ctx.activeSteps=x=>x.processSteps.filter(s=>s.status!=='SUPERSEDED');
+  ctx.activeFrictions=x=>x.frictions.filter(fr=>fr.status!=='SUPERSEDED');
+  eng.economicInputs=[
+    {driver_id:'ED05',step_ids:['S1'],annual_active_hours:0,annual_wait_hours:0},
+    {driver_id:'ED13',step_ids:['S2'],annual_active_hours:12,annual_wait_hours:100}
+  ];
+  const issues=ctx.economicInputIntegrityIssues(eng);
+  assert.ok(issues.some(x=>x.kind==='SCOPE_MISMATCH'&&/Validar datos/.test(x.message)));
+  assert.ok(issues.some(x=>x.kind==='LEGACY_CROSS_METRIC'&&/horas activas heredadas/.test(x.message)));
+});
