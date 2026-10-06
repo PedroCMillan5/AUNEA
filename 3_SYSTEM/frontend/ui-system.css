@@ -653,3 +653,32 @@ body:not(.mode-process-editor) .content [data-process-engagement] .flow-insert{d
 .priority-row .btn-small{min-width:30px;padding:4px 8px}
 @media(max-width:700px){.priority-row{grid-template-columns:90px minmax(0,1fr)}.priority-row .row-actions{grid-column:2}}
 /* [AUNEA-FE-DIAG-PRIORITY-086] END */
+
+
+/* [AUNEA-FE-ECON-GUIDED-040] START — Guided Impact capture over canonical EconomicInput fields.
+   SOURCE: Diagnostic Master v1.2; DEC-068; current EconomicInput contract.
+   Presentation only: context -> concept -> quantified result -> relevant monetary fields. */
+.economic-modal-form{display:flex;flex-direction:column;gap:12px}
+.economic-modal-form .step-group{margin:0}
+.economic-context-card{border:1px solid #cfded5;border-radius:12px;background:#f5faf7;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.economic-context-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.economic-context-head>div{display:flex;flex-direction:column;gap:2px}
+.economic-context-head b{font-size:14px}
+.economic-context-head span{font-size:12px;color:var(--muted)}
+.economic-context-steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px}
+.economic-context-step{border:1px solid #dbe7e0;background:#fff;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:3px}
+.economic-context-step b{font-size:13px}
+.economic-context-step span,.economic-context-empty{font-size:12px;color:var(--muted)}
+.economic-context-links{border-top:1px solid #dbe7e0;padding-top:8px}
+.economic-context-links p,.economic-context-meta{margin:4px 0;font-size:12px;line-height:1.4}
+.economic-context-meta{color:var(--muted)}
+.economic-derived-card{border:1px solid #d6e1eb;border-radius:12px;background:#f7fbff;padding:12px}
+.economic-derived-card .notice{margin:6px 0 0}
+.economic-derived-kicker{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--system)}
+.economic-value-empty{border:1px dashed var(--line);border-radius:10px;padding:12px;color:var(--muted);background:#fafafa}
+.economic-modal-form [data-econ-ui]{transition:opacity .12s ease}
+.economic-modal-form input:disabled{background:#f1f5f3;color:#41574c;border-color:#d4ded8}
+@media(max-width:760px){
+  .economic-context-steps{grid-template-columns:1fr}
+}
+/* [AUNEA-FE-ECON-GUIDED-040] END */
