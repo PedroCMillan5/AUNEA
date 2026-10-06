@@ -300,6 +300,15 @@ function addEconomic(preselectedSteps=[],editIndex=null){
         if(unit)unit.value='h';
       }else if(input.dataset?.autoDerived==='true')input.value='';
       if(input.dataset)input.dataset.autoDerived=isDerived?'true':'false';
+      if(unit){
+        unit.disabled=isDerived;
+        const unitBox=unit.closest?.('.canonical-aunea-select')?.querySelector?.('details.aunea-select');
+        if(unitBox){
+          unitBox.classList.toggle('is-disabled',isDerived);
+          unitBox.dataset.disabled=isDerived?'1':'0';
+          if(isDerived)unitBox.open=false;
+        }
+      }
     }
   };
   if(typeof document.querySelectorAll==='function')document.querySelectorAll('[data-econ-step]').forEach(el=>el.addEventListener?.('change',()=>{preserveCapturedTime=false;refresh()}));
