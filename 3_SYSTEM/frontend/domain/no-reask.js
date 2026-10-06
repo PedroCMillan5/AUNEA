@@ -57,6 +57,12 @@ function canonicalFieldValidationIssue(f,v,e){
   return '';
 }
 function canonicalFieldValuePresent(f,v,e){const detail=String(e?.answerDetails?.[f?.Field_ID]||'').trim(),syntheticOther=/WITH_OTHER/.test(String(f?.Control_UI||'').toUpperCase())&&!valuePresent(v)&&!!detail;return (valuePresent(v)||syntheticOther)&&!canonicalFieldValidationIssue(f,v,e)}
+function canonicalFieldRequiredNow(f,e){
+  if(!f||!questionVisible(f,e))return false;
+  if(f.Requiredness==='REQUIRED_90M')return !['SYSTEM_GENERATED','DERIVED'].includes(String(f.Ask_Mode||''));
+  if(f.Requiredness!=='CONDITIONAL_90M')return false;
+  return ['ASK','CONDITIONAL_ASK','PREFILL_CONFIRM','CLIENT_CONFIRMATION'].includes(String(f.Ask_Mode||''));
+}
 function canonicalFieldIntegrityIssues(e){
   return (schema?.fields||[]).filter(f=>questionVisible(f,e)).map(f=>{
     const v=effectiveValue(f,e),message=canonicalFieldValidationIssue(f,v,e);
@@ -179,7 +185,7 @@ function questionVisible(f,e){
 }
 function canonicalMissingRequired(e){
   const skip=new Set(['DF094','DF095']);const misses=[];
-  (schema?.fields||[]).filter(f=>f.Requiredness==='REQUIRED_90M'&&!skip.has(f.Field_ID)&&questionVisible(f,e)).forEach(f=>{if(!canonicalFieldValuePresent(f,effectiveValue(f,e),e))misses.push(f.Field_ID)});
+  (schema?.fields||[]).filter(f=>!skip.has(f.Field_ID)&&canonicalFieldRequiredNow(f,e)).forEach(f=>{if(!canonicalFieldValuePresent(f,effectiveValue(f,e),e))misses.push(f.Field_ID)});
   const startField=(schema?.fields||[]).find(f=>f.Field_ID==='DF014'),endField=(schema?.fields||[]).find(f=>f.Field_ID==='DF015');
   const hasBoundaries=!!startField&&!!endField&&valuePresent(effectiveValue(startField,e))&&valuePresent(effectiveValue(endField,e));
   if(!hasBoundaries&&!activeSteps(e).length)misses.push('Mapa AS-IS');
