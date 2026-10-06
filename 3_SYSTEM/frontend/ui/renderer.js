@@ -162,12 +162,26 @@ function structuredRedirect(label,page){return `<div class="notice info"><strong
 // data-answer/data-detail-answer binders, to avoid them fighting over the same field) but serializes to
 // the canonical "<acción> — <owner> — <fecha dd/mm/aaaa>" string (matching Ejemplo_ES) only once all
 // three pieces are present. Nothing is written to answers.DF098 while incomplete.
+function currentSelectedConsultantName(){
+  if(typeof currentAuneaOwnerName==='function'){
+    const value=currentAuneaOwnerName();
+    if(value)return value;
+  }
+  const visible=typeof document!=='undefined'?document.querySelector?.('.user-chip b')?.textContent?.trim():'';
+  if(visible)return visible;
+  if(typeof AUNEA_DEFAULT_PROJECT_OWNER!=='undefined'&&AUNEA_DEFAULT_PROJECT_OWNER?.name)return AUNEA_DEFAULT_PROJECT_OWNER.name;
+  return 'Consultor AUNEA';
+}
 function nextStepWithOwnerDate(f,opts,e){
   const fid=f.Field_ID,d=answerDetails(e);
-  const actionValue=d[`${fid}__action`]||'',owner=d[`${fid}__owner`]||'',dateVal=d[`${fid}__date`]||'',otherDetail=d[`${fid}__other`]||'';
+  const actionValue=d[`${fid}__action`]||'',owner=currentSelectedConsultantName(),dateVal=d[`${fid}__date`]||'',otherDetail=d[`${fid}__other`]||'';
   const actionSelect=canonicalSelect(`${fid}__action`,opts,actionValue,`data-nextstep-action="${fid}"`);
-  const otherBox=actionValue==='OTHER'?`<input class="detail-input" data-nextstep-other="${fid}" value="${attr(otherDetail)}" placeholder="Detalle corto de la acción">`:'';
-  return `<div class="compound-control">${actionSelect}${otherBox}</div><div class="compound-control"><input class="detail-input" data-nextstep-owner="${fid}" value="${attr(owner)}" placeholder="Owner / responsable"><input type="date" data-nextstep-date="${fid}" value="${attr(dateVal)}"></div>`;
+  const otherBox=actionValue==='OTHER'?`<div class="nextstep-other-wrap"><input class="detail-input" data-nextstep-other="${fid}" value="${attr(otherDetail)}" placeholder="Detalle corto de la acción"></div>`:'';
+  return `<div class="nextstep-inline" data-nextstep-row="${fid}">
+    <div class="nextstep-cell nextstep-action">${actionSelect}</div>
+    <div class="nextstep-cell nextstep-owner"><span class="nextstep-cell-label">Responsable</span><input class="detail-input" data-nextstep-owner="${fid}" value="${attr(owner)}" readonly aria-readonly="true" title="Consultor AUNEA seleccionado en la cabecera"></div>
+    <div class="nextstep-cell nextstep-date"><span class="nextstep-cell-label">Fecha objetivo</span><input type="date" data-nextstep-date="${fid}" value="${attr(dateVal)}"></div>
+  </div>${otherBox}`;
 }
 function nextStepActionText(fid,e){
   const d=answerDetails(e),actionValue=d[`${fid}__action`]||'';
@@ -179,9 +193,18 @@ function nextStepActionText(fid,e){
 }
 function syncNextStep(fid){
   const e=currentEng();if(!e)return;
-  const d=answerDetails(e),actionText=nextStepActionText(fid,e),owner=d[`${fid}__owner`]||'',dateVal=d[`${fid}__date`]||'';
+  const d=answerDetails(e),actionText=nextStepActionText(fid,e),owner=currentSelectedConsultantName(),dateVal=d[`${fid}__date`]||'';
+  d[`${fid}__owner`]=owner;
   const dateEs=dateVal?formatDateEs(dateVal):'';
   setAnswer(fid,(actionText&&owner&&dateEs)?`${actionText} — ${owner} — ${dateEs}`:'');
+}
+
+function permissionWithScope(fid,opts,val){
+  const yes=String(val)==='YES';
+  return `<div class="permission-inline" data-permission-row="${fid}">
+    <div class="permission-choice">${segmented(fid,opts,val,'data-permission-segment')}</div>
+    <div class="permission-scope" data-permission-scope="${fid}"${yes?'':' hidden'}>${detailInput(fid,'Alcance / condición del permiso')}</div>
+  </div>`;
 }
 
 function renderControl(f,val,opts,e){
@@ -216,7 +239,8 @@ function renderControl(f,val,opts,e){
   if(c==='STEP_PAIR_SELECTOR')return stepPair(fid,e,val);
   if(c==='STEP_SYSTEM_PAIR_SELECTOR')return stepSystemPairSelector(fid,e,val);
   if(c==='FRICTION_MULTISELECT_PRIORITY')return frictionPriority(fid,e,val);
-  if(c==='BOOLEAN_UNKNOWN'||c==='BOOLEAN_UNKNOWN_WITH_SCOPE'||c==='SEGMENTED'||c==='SEGMENTED_SCALE')return segmented(fid,opts,val)+(c.includes('SCOPE')?detailInput(fid,'Alcance / condición'): '');
+  if(c==='BOOLEAN_UNKNOWN_WITH_SCOPE')return permissionWithScope(fid,opts,val);
+  if(c==='BOOLEAN_UNKNOWN'||c==='SEGMENTED'||c==='SEGMENTED_SCALE')return segmented(fid,opts,val);
   if(c==='DATE_WITH_UNKNOWN')return `<div class="compound-control"><input type="date" data-answer="${fid}" value="${attr(val||'')}"><button type="button" class="btn btn-small" data-set-unknown="${fid}">No disponible</button></div>`;
   if(c.startsWith('NUMBER')||c.startsWith('PERCENT'))return numberCompound(f,val);
   // DF080/DF081: Ask_Mode:CONDITIONAL_ASK means "ask when it can't be derived and it's material" — no
@@ -327,9 +351,14 @@ function bindCanonicalRenderer(){
     answerDetails(e)[`${fid}_priority`]=ordered.slice(0,Math.min(3,selected.length));
     e.updatedAt=now();markDirty(`Prioridad ${fid} reordenada`);render();
   });
+  document.querySelectorAll('[data-permission-segment]').forEach(btn=>btn.onclick=()=>{
+    const fid=btn.dataset.permissionSegment,value=btn.dataset.value||'';
+    setAnswer(fid,value);
+    if(value!=='YES')setAnswerDetail(fid,'');
+    render();
+  });
   document.querySelectorAll('[data-nextstep-action]').forEach(el=>el.addEventListener('change',()=>{const fid=el.dataset.nextstepAction;answerDetails(currentEng())[`${fid}__action`]=el.value;syncNextStep(fid);render()}));
   document.querySelectorAll('[data-nextstep-other]').forEach(el=>el.addEventListener('input',()=>{const fid=el.dataset.nextstepOther;answerDetails(currentEng())[`${fid}__other`]=el.value;syncNextStep(fid)}));
-  document.querySelectorAll('[data-nextstep-owner]').forEach(el=>el.addEventListener('input',()=>{const fid=el.dataset.nextstepOwner;answerDetails(currentEng())[`${fid}__owner`]=el.value;syncNextStep(fid)}));
   document.querySelectorAll('[data-nextstep-date]').forEach(el=>el.addEventListener('change',()=>{const fid=el.dataset.nextstepDate;answerDetails(currentEng())[`${fid}__date`]=el.value;syncNextStep(fid)}));
   const safeNumericValue=el=>{
     if(!el||String(el.value??'').trim()==='')return '';
