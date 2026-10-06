@@ -54,7 +54,7 @@ async function runDiagnosis(){const e=currentEng();if(!e)return;if(!hasConfirmed
     // Never attach an obsolete result to the newly edited capture.
     const currentSnapshot=confirmedSnapshot(e);
     if(!currentSnapshot||currentSnapshot.version!==sourceSnapshot.version||e.confirmedAsIs!==true)throw new Error('El AS-IS cambió durante el cálculo. Confirma de nuevo antes de generar resultados.');
-    e.diagnosticOutput=out;e.lastEngineSnapshotVersion=sourceSnapshot.version;e.scenarioResults=[];e.selectedScenarioIndex=0;e.updatedAt=now();e.lastEngineRunAt=now();markDirty('Pain → Economics → Risk → Recommendation → Pricing → Scenario calculados por backend');state.activePage='resultados';render();toast('Resultados oficiales actualizados por backend.')}catch(err){toast('No se pudo ejecutar el backend: '+err.message);render()}}
+    e.diagnosticOutput=out;e.lastEngineSnapshotVersion=sourceSnapshot.version;e.economicNormalizationVersion=1;e.scenarioResults=[];e.selectedScenarioIndex=0;e.updatedAt=now();e.lastEngineRunAt=now();markDirty('Pain → Economics → Risk → Recommendation → Pricing → Scenario calculados por backend con métricas económicas normalizadas por driver');state.activePage='resultados';render();toast('Resultados oficiales actualizados por backend.')}catch(err){toast('No se pudo ejecutar el backend: '+err.message);render()}}
 
 // C05 · Optional internal AI orchestration. No provider is configured by canonical source today, so
 // the default capability is explicitly UNAVAILABLE. This service never falls back to templates/rules
