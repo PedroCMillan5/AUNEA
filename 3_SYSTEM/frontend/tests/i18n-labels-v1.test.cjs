@@ -30,3 +30,19 @@ test('engineLabel never throws on null/undefined',()=>{
   assert.doesNotThrow(()=>ctx.engineLabel('pain_state',undefined));
 });
 // [AUNEA-UAT-I18N-010] END
+
+test('businessEngineLabel translates diagnostic business catalogs without changing ids',()=>{
+  assert.equal(ctx.businessEngineLabel('pain','P02','Missing / incomplete information'),'Información faltante o incompleta');
+  assert.equal(ctx.businessEngineLabel('pain','P07','Approval bottlenecks'),'Cuellos de botella en aprobaciones');
+  assert.equal(ctx.businessEngineLabel('pain','P03','Manual re-entry'),'Reintroducción manual de datos');
+  assert.equal(ctx.businessEngineLabel('action','ACT03','System build'),'Construcción de sistema');
+  assert.equal(ctx.businessEngineLabel('functional_level','N4','Visibility'),'Visibilidad y control');
+  assert.equal(ctx.businessEngineLabel('ai_level','I0','Rules / no AI'),'Reglas / sin IA');
+});
+
+test('engineRationaleEs turns structured backend rationale into Spanish business wording',()=>{
+  const risk=ctx.engineRationaleEs('risk','Highest contextual risk=R3; controls_present=True.');
+  assert.match(risk,/Riesgo crítico/);
+  assert.doesNotMatch(risk,/Highest contextual risk|controls_present/);
+  assert.match(ctx.engineRationaleEs('recommendation','Required capabilities can be supplied by existing owned tooling/configuration.'),/herramientas que el cliente ya posee/);
+});
