@@ -296,3 +296,21 @@ test('DF078/DF079 reuse only the current backend per-case projection',()=>{
 });
 
 // [AUNEA-UAT-NOREASK-010] END
+
+test('single-owner hides every structured builder field from generic stage forms based on Write_Target',()=>{
+  const e={answers:{},processSteps:[],frictions:[],risks:[],economicInputs:[]};
+  const fields=[
+    {Field_ID:'A',Stage_ID:'S04',Write_Target:'RT_PROCESS_STEP.Step_Name',Ask_Mode:'FREE_TEXT',Branch_Rule_ID:'BR-BASE'},
+    {Field_ID:'B',Stage_ID:'S05',Write_Target:'RT_PAIN.Cause',Ask_Mode:'FREE_TEXT',Branch_Rule_ID:'BR-BASE'},
+    {Field_ID:'C',Stage_ID:'S06',Write_Target:'RT_RISK.Description',Ask_Mode:'CONDITIONAL_ASK',Branch_Rule_ID:'BR-BASE'},
+    {Field_ID:'D',Stage_ID:'S07',Write_Target:'RT_ECONOMIC_INPUT',Ask_Mode:'CONDITIONAL_ASK',Branch_Rule_ID:'BR-BASE'},
+    {Field_ID:'E',Stage_ID:'S06',Write_Target:'RT_PROCESS.Sensitive_Data',Ask_Mode:'CONDITIONAL_ASK',Branch_Rule_ID:'BR-BASE'}
+  ];
+  assert.equal(ctx.structuredCaptureOwner(fields[0]),'PROCESS_STEP');
+  assert.equal(ctx.structuredCaptureOwner(fields[1]),'FRICTION');
+  assert.equal(ctx.structuredCaptureOwner(fields[2]),'RISK');
+  assert.equal(ctx.structuredCaptureOwner(fields[3]),'ECONOMIC');
+  assert.equal(ctx.structuredCaptureOwner(fields[4]),null);
+  fields.slice(0,4).forEach(f=>assert.equal(ctx.questionVisible(f,e),false));
+  assert.equal(ctx.questionVisible(fields[4],e),true);
+});
