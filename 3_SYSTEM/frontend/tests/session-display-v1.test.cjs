@@ -37,6 +37,7 @@ function makeCtx(engagement) {
     processDecisionStep: s => ['ST04','ST05'].includes(String(s?.step_type||'')) || (Array.isArray(s?.decision_criteria)&&s.decision_criteria.length>0) || !!s?.exception_path,
     processGraphData: (e,steps) => { const nodes=[{id:'__START__',kind:'start'},...steps.map(s=>({id:s.id,kind:'step'})),{id:'__END__',kind:'end'}],positions=new Map(nodes.map((n,i)=>[n.id,{row:1,col:i+1}])); return {nodes,edges:[],positions,cols:nodes.length,rows:1}; },
     companyById: id => ctx.state.companies.find(c => c.id === id) || null,
+    econDriverLabel: id => ({D1:'Reentrada de datos'}[id]||id),
     engagementCompletion: () => ({ missing: [] }),
     insCard: (t2, b) => `<div class="ins-card">${t2}${b}</div>`,
     workspace: (m, i) => `<div class="workspace">${m}${i}</div>`,
