@@ -86,8 +86,8 @@ test('recalculation integrity gate stays on Diagnóstico instead of forcing Impa
   const start=engine.indexOf('async function runDiagnosis');
   const end=engine.indexOf('// C05 · Optional internal AI orchestration',start);
   const body=engine.slice(start,end);
-  assert.match(body,/economicInputIntegrityIssues/);
+  assert.match(body,/captureIntegrityIssues/);
   assert.match(body,/state\.activePage='resultados'/);
-  assert.doesNotMatch(body,/economicIssues\.length\)\{state\.activePage='impacto'/);
-  assert.match(body,/No se ha recalculado: revisa los impactos señalados/);
+  assert.doesNotMatch(body,/state\.activePage='impacto'/);
+  assert.match(body,/No se ha recalculado:/);
 });
