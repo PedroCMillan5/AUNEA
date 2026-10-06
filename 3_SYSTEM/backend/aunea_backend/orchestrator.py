@@ -9,6 +9,7 @@ from .system_builder_models import SystemBuilderRequest, SystemBuildPlan, System
 from .system_builder import SystemBuilderEngine
 from .engines import EngineContext, PainEngine, EconomicsEngine, RiskEngine, RecommendationEngine, PricingEngine, ScenarioComparator
 from .input_coverage import InputCoverageEngine, relational_integrity_issues
+from .pain_candidates import PainCandidateEngine
 from .registry import rule_bundle_version
 from .utils import stable_hash
 from .store import SQLiteStore
@@ -39,7 +40,7 @@ class InMemoryAuditStore:
 
 class Orchestrator:
     def __init__(self, store: SQLiteStore | None = None):
-        self.coverage=InputCoverageEngine(); self.pain=PainEngine(); self.econ=EconomicsEngine(); self.risk=RiskEngine(); self.rec=RecommendationEngine(); self.price=PricingEngine(); self.scenario=ScenarioComparator(self.price,self.risk)
+        self.coverage=InputCoverageEngine(); self.pain_candidates=PainCandidateEngine(); self.pain=PainEngine(); self.econ=EconomicsEngine(); self.risk=RiskEngine(); self.rec=RecommendationEngine(); self.price=PricingEngine(); self.scenario=ScenarioComparator(self.price,self.risk)
         self.deliverables=DeliverablesEngine(); self.deliverables_pdf=PDFExporter(); self.solution_spec=SolutionSpecificationEngine(); self.system_builder=SystemBuilderEngine(); self.audit=InMemoryAuditStore(); self.store=store
 
     def _run(self, engagement_id: str, engine: str, inp: Any, out: Any):
