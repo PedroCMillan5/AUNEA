@@ -75,6 +75,10 @@ def get_engagement(engagement_id: str):
     if not item: raise HTTPException(404,"engagement not found")
     return item
 
+@app.post("/v1/diagnostic/pain-candidates")
+def diagnostic_pain_candidates(payload: EngagementInput):
+    return engine.pain_candidates.run(payload)
+
 @app.post("/v1/diagnostic/coverage")
 def diagnostic_coverage(payload: EngagementInput):
     coverage=engine.coverage.run(payload)
