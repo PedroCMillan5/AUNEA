@@ -107,8 +107,8 @@ test('actor/tool reference controls retain canonical dropdowns and explicit Othe
 });
 
 test('decision detail is hidden unless canonical Other is selected, and step deletion is a confirmed remove-from-flow action',()=>{
-  assert.match(code,/data-step-decision-other-wrap/);
-  assert.match(code,/decisionOtherBox\.checked\?'':'none'/);
+  assert.match(code,/selectedHtml\('step_decisions',decisions,s\.decision_criteria\)/);
+  assert.match(code,/data-v1-other-toggle/);
   assert.match(code,/function removeStepFromFlow\(stepId\)/);
   assert.match(code,/openModal\('Eliminar paso del flujo'/);
   assert.match(code,/step\.status='SUPERSEDED'/);
@@ -117,7 +117,7 @@ test('decision detail is hidden unless canonical Other is selected, and step del
 
 test('the Friction modal groups fields into layer 1 (tipo/pasos/señal/contexto-impacto, open) and layer 2 (causa/workaround/evidencia/resto, collapsed), same field ids, no Friction Model change',()=>{
   const groups=[...code.matchAll(/<details class="step-group"( open)?><summary>([^<]+)<\/summary>/g)];
-  const frGroups=groups.filter(g=>/Fricción|Causa, workaround/.test(g[2]));
+  const frGroups=groups.filter(g=>/Fricción|Causa, solución provisional y evidencia/.test(g[2]));
   assert.equal(frGroups.length,2);
   assert.equal(frGroups[0][1],' open','layer 1 (Fricción) must be open by default');
   assert.equal(frGroups[1][1],undefined,'layer 2 (causa/workaround/evidencia) must start collapsed');
@@ -223,10 +223,10 @@ test('friction client priority is a governed top-3 dropdown instead of an uncons
 
 test('tab-level Fricción, Riesgo and Input económico buttons are bound in the shared process editor',()=>{
   assert.match(code,/getElementById\('addFriction'\)/);
-  assert.match(code,/getElementById\('addRisk'\)/);
-  assert.match(code,/getElementById\('addEconomic'\)/);
-  assert.match(code,/addRiskBtn\.onclick=.*addRisk\(\)/);
-  assert.match(code,/addEconomicBtn\.onclick=.*addEconomic\(\)/);
+  assert.match(code,/#addRisk,\[data-add-risk-global\]/);
+  assert.match(code,/#addEconomic,\[data-add-economic-global\]/);
+  assert.match(code,/riskButton[\s\S]*addRisk\(\)/);
+  assert.match(code,/economicButton[\s\S]*addEconomic\(\)/);
 });
 
 test('step removal persists the superseded state immediately before rerender to avoid cross-tab resurrection',()=>{
@@ -255,7 +255,7 @@ test('step save persists the saved step and selected Inputs/Outputs immediately'
     step_exc_type:'',step_exc_condition:'',step_exc_dest:'',step_exc_owner:'',step_notes:''
   };
   const saved=[],messages=[];eng.processSteps=[];eng.answers={};
-  for(const [key,value] of Object.entries(values))domFields[key]={value,dataset:{}};
+  for(const [key,value] of Object.entries(values))domFields[key]={value,dataset:{},addEventListener(){}};
   ctx.document.querySelectorAll=selector=>{
     const key=selector.match(/data-v1-multi="([^"]+)"/)?.[1];
     return ({step_inputs:['DOC'],step_outputs:['DATA']}[key]||[]).map(value=>({value}));
@@ -329,7 +329,7 @@ test('friendly AS-IS graph keeps routing owners and adds functional node iconogr
 
 test('server-owned Pain candidates remain proposals until human confirmation',()=>{
   assert.match(code,/async function reviewPainCandidates\(/);
-  assert.match(code,/\/v1\/diagnostic\/pain-candidates/);
+  assert.match(code,/fetchPainCandidates\(e\)/);
   assert.match(code,/Son candidatos, no diagnósticos/);
   assert.match(code,/openFrictionModal\(null,candidate\.step_ids,candidate\)/);
   assert.match(code,/Señal detectada en el mapa — pendiente de confirmar/);
