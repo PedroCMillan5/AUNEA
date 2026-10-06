@@ -928,6 +928,7 @@ bindForms=function(){
   document.querySelectorAll('[data-edit-risk-index]').forEach(b=>b.onclick=()=>{if(isProcessEditorWindow()){currentEng().processTab='riesgos';render()}addRisk([],Number(b.dataset.editRiskIndex))});
   document.querySelectorAll('[data-delete-risk-index]').forEach(b=>b.onclick=()=>deleteRisk(Number(b.dataset.deleteRiskIndex)));
   document.querySelectorAll('[data-edit-economic-index]').forEach(b=>b.onclick=()=>{if(isProcessEditorWindow()){currentEng().processTab='impacto';render()}addEconomic([],Number(b.dataset.editEconomicIndex))});
+  document.querySelectorAll('[data-fix-economic-scope]').forEach(b=>b.onclick=ev=>{ev.preventDefault();ev.stopPropagation();addEconomic([b.dataset.fixEconomicStep],Number(b.dataset.fixEconomicScope),true)});
   document.querySelectorAll('[data-delete-economic-index]').forEach(b=>b.onclick=()=>deleteEconomic(Number(b.dataset.deleteEconomicIndex)));
   const share=document.getElementById('openSessionDisplayFromProcess');if(share)share.onclick=()=>openProcessEditorWindow();
   const closeClient=document.getElementById('closeClientProcessEditor');if(closeClient)closeClient.onclick=()=>closeProcessEditorWindow();
