@@ -113,7 +113,9 @@ test('three isolated sessions: sequential layer confirmation seals once; upstrea
      const confirm=w.document.querySelector('[data-confirm-process-layer]');
      assert.ok(confirm,file+' '+page+' missing confirm action');
      confirm.onclick();
-     const e=run('currentEng()');
+     const e=run('currentEng()'),layer=['map','frictions','risks','impact'][index];
+     const issues=run('processLayerIntegrityIssues(currentEng(),'+JSON.stringify(layer)+')');
+     assert.equal(e.layerConfirmations[layer],true,file+' '+page+' did not confirm: '+issues.map(x=>x.message).join(' | '));
      assert.equal(e.confirmedAsIs,index===3,file+' cannot seal before all four layers');
    }
    const before=run('currentEng()');
