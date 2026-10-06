@@ -148,3 +148,54 @@ test('an EconomicInput pain link must belong to a friction on the selected step'
   const impacts=ctx.processLayerIntegrityIssues(e,'impact').map(x=>x.message).join(' ');
   assert.match(impacts,/problema que no existe en los pasos seleccionados/);
 });
+
+
+// [AUNEA-UAT-ASIS-CONSISTENCY-076] START — PG09 visible pre-close consistency review
+test('pre-close review classifies blockers separately from non-blocking review items',()=>{
+  const e={
+    answers:{DF014:'Inicio',DF015:'Fin'},
+    processSteps:[],frictions:[],
+    risks:[{category:'',description:'',likelihood_1_5:null,impact_1_5:null}],
+    economicInputs:[],
+    layerConfirmations:{map:true,frictions:true,risks:true,impact:true},
+    confirmedAsIs:false
+  };
+  const ctx=makeCtx(e);
+  const review=ctx.preCloseConsistencyReview(e);
+  assert.equal(review.blockers.length>0,true);
+  assert.equal(review.clear,false);
+  assert.match(review.blockers.map(x=>x.message).join(' '),/riesgo/i);
+
+  e.risks=[];
+  e._sessionTimeProjection={requestKey:'stale'};
+  ctx.economicTimeRequest=()=>({volume:100,period:'MONTH'});
+  const reviewOnly=ctx.preCloseConsistencyReview(e);
+  assert.equal(reviewOnly.blockers.length,0);
+  assert.equal(reviewOnly.reviews.some(x=>x.code==='STALE_TIME_PROJECTION'),true);
+  assert.equal(reviewOnly.clear,true,'review items are explicit but do not block closure');
+});
+
+test('PG09 closure is refused when the visible consistency review has blockers',()=>{
+  const e={
+    answers:{DF014:'Inicio',DF015:'Fin'},
+    processSteps:[],frictions:[],
+    risks:[{category:'',description:'',likelihood_1_5:null,impact_1_5:null}],
+    economicInputs:[],
+    layerConfirmations:{map:true,frictions:true,risks:true,impact:true},
+    confirmedAsIs:false
+  };
+  const ctx=makeCtx(e);
+  assert.equal(ctx.confirmClosingAsIs(),false);
+  assert.equal(e.confirmedAsIs,false);
+  assert.equal(e.answers.DF093,undefined);
+  assert.match(ctx.__toasts.at(-1),/No se puede cerrar el AS-IS/);
+});
+
+test('PG09 UI renders the same consistency review that gates confirmation',()=>{
+  const source=fs.readFileSync(path.join(root,'pages/diagnostic-stages.js'),'utf8');
+  assert.match(source,/Validación de coherencia/);
+  assert.match(source,/preCloseConsistencyReview\(e,completion\)/);
+  assert.match(source,/data-consistency-stage/);
+  assert.match(source,/El cierre está bloqueado/);
+});
+// [AUNEA-UAT-ASIS-CONSISTENCY-076] END
