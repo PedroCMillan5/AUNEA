@@ -166,7 +166,6 @@ function addEconomic(preselectedSteps=[],editIndex=null){
   const drivers=schema.tables.REF_ECON_DRIVER||[];
   const activeContributors=activeTimeContributors(eng),waitContributors=waitTimeContributors(eng);
   const allFrictions=typeof activeFrictions==='function'?activeFrictions(eng):eng.frictions||[];
-  const mappedTools=[...new Set(steps.flatMap(s=>normalizeArray(s.tool)).filter(Boolean))];
   const economicContextHtml=stepIds=>{
     const selectedIds=normalizeArray(stepIds);
     const selectedSteps=selectedIds.length?steps.filter(s=>selectedIds.includes(s.id)):[];
@@ -199,8 +198,6 @@ function addEconomic(preselectedSteps=[],editIndex=null){
   };
   const preview=value=>Number(value||0).toLocaleString('es-ES',{maximumFractionDigits:2});
   const initialPreview='Comprobando los datos de volumen, tiempo y calendario con el backend…';
-  const activeHelp=activeContributors.length?`<div class="field-help">Pasos con tiempo activo registrado: ${esc(activeContributors.join(', '))}. Se reutilizan para obtener un cálculo revisable cuando el volumen y la aplicación están completos.</div>`:'<div class="field-help">Cuando faltan tiempos o volumen, indica el dato anual manualmente con su evidencia.</div>';
-  const waitHelp=waitContributors.length?`<div class="field-help">Pasos con espera registrada: ${esc(waitContributors.join(', '))}. Se calcula por separado del trabajo; no constituye por sí misma ahorro económico.</div>`:'<div class="field-help">La espera se registra aparte del trabajo. Si faltan datos, introduce una cifra anual validada.</div>';
   openModal(existing?'Editar impacto':'Añadir impacto',`<div class="step-groups process-modal-form economic-modal-form">${inheritedContext}
     <details class="step-group" open><summary>1. Ámbito del impacto</summary><div class="form-grid">
       <div class="field full"><label>Pasos del proceso relacionados</label><div class="choice-grid">${steps.map(s=>`<div class="choice"><input type="checkbox" id="econ_step_${attr(s.id)}" data-econ-step="${attr(s.id)}" ${preselectedSteps.includes(s.id)?'checked':''}><label for="econ_step_${attr(s.id)}">${esc(s.step_name||s.id)}</label></div>`).join('')}</div></div>
