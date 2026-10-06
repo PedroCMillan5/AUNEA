@@ -24,3 +24,11 @@ test('DF025 uses a compact existence-first SLA layout and hides value controls w
   assert.match(css,/\.demand-sla-head\{/);
   assert.match(css,/\.demand-sla-value\[hidden\]\{display:none!important\}/);
 });
+
+test('DF028 percentage hides period; count reveals a period selector',()=>{
+  assert.match(renderer,/percentOrCount=c==='NUMBER_PERCENT_OR_COUNT'/);
+  assert.match(renderer,/data-percent-count-unit/);
+  assert.match(renderer,/data-count-period-wrap/);
+  assert.match(renderer,/period=unit==='percent'\?'':rawPeriod/);
+  assert.match(css,/\.percent-count-control \.number-count-period\[hidden\]\{display:none!important\}/);
+});
