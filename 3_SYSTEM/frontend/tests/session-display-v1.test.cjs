@@ -35,6 +35,7 @@ function makeCtx(engagement) {
     activeSteps: e => (e.processSteps || []).filter(s => s.status !== 'SUPERSEDED'),
     activeFrictions: e => (e.frictions || []).filter(f => f.status !== 'SUPERSEDED'),
     processDecisionStep: s => ['ST04','ST05'].includes(String(s?.step_type||'')) || (Array.isArray(s?.decision_criteria)&&s.decision_criteria.length>0) || !!s?.exception_path,
+    processGraphData: (e,steps) => { const nodes=[{id:'__START__',kind:'start'},...steps.map(s=>({id:s.id,kind:'step'})),{id:'__END__',kind:'end'}],positions=new Map(nodes.map((n,i)=>[n.id,{row:1,col:i+1}])); return {nodes,edges:[],positions,cols:nodes.length,rows:1}; },
     companyById: id => ctx.state.companies.find(c => c.id === id) || null,
     engagementCompletion: () => ({ missing: [] }),
     insCard: (t2, b) => `<div class="ins-card">${t2}${b}</div>`,
