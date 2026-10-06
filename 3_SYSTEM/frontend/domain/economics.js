@@ -147,16 +147,21 @@ function addEconomic(preselectedSteps=[],editIndex=null){
   const drivers=schema.tables.REF_ECON_DRIVER||[];
   const activeContributors=activeTimeContributors(eng),waitContributors=waitTimeContributors(eng);
   const allFrictions=typeof activeFrictions==='function'?activeFrictions(eng):eng.frictions||[];
-  const linkedFrictions=preselectedSteps.length?allFrictions.filter(f=>normalizeArray(f.affected_steps).some(x=>preselectedSteps.includes(x))):allFrictions;
-  const linkedRisks=preselectedSteps.length?(eng.risks||[]).filter(r=>normalizeArray(r.step_ids).some(x=>preselectedSteps.includes(x))):(eng.risks||[]);
   const mappedTools=[...new Set(steps.flatMap(s=>normalizeArray(s.tool)).filter(Boolean))];
-  const attributedLosses=linkedFrictions.filter(f=>Number(f.direct_loss?.value||0)>0);
-  const inheritedContext='<div class="client-inherited-context"><b>Contexto reutilizado del AS-IS</b>'
-    +'<p>'+steps.length+' pasos · '+linkedFrictions.length+' fricciones · '+linkedRisks.length+' riesgos disponibles como evidencia contextual.</p>'
-    +(linkedFrictions.length?'<p>Fricciones: '+linkedFrictions.map(f=>esc(f.client_label||labelFrom('OS_FRICTION_TYPE',f.friction_type))).join(' · ')+'</p>':'')
-    +(mappedTools.length?'<p>Herramientas registradas en el mapa (DF046): '+mappedTools.map(x=>esc(labelFrom('OS_TOOL_CATEGORY',x))).join(' · ')+' · Registra sólo el coste atribuible a este proceso; no presupongas su eliminación.</p>':'')
-    +(attributedLosses.length?'<p>Pérdidas directas declaradas en fricciones (DF063): '+attributedLosses.map(f=>esc(f.client_label||f.id)).join(' · ')+' · Comprueba que DF082 no vuelva a contabilizar el mismo evento.</p>':'')
-    +'<small>El cálculo previo reutiliza los tiempos de los pasos y el volumen capturado. La espera no equivale a coste ni el trabajo activo equivale a desperdicio o ahorro.</small></div>';
+  const economicContextHtml=stepIds=>{
+    const selectedIds=normalizeArray(stepIds);
+    const linkedFrictions=selectedIds.length?allFrictions.filter(f=>normalizeArray(f.affected_steps).some(x=>selectedIds.includes(x))):allFrictions;
+    const linkedRisks=selectedIds.length?(eng.risks||[]).filter(r=>normalizeArray(r.step_ids).some(x=>selectedIds.includes(x))):(eng.risks||[]);
+    const attributedLosses=linkedFrictions.filter(f=>Number(f.direct_loss?.value||0)>0);
+    return '<div class="client-inherited-context"><b>Contexto reutilizado del AS-IS</b>'
+      +'<p>'+steps.length+' pasos · '+linkedFrictions.length+' fricciones · '+linkedRisks.length+' riesgos relacionados con la selección actual.</p>'
+      +(linkedFrictions.length?'<p><b>Fricciones relacionadas:</b> '+linkedFrictions.map(f=>esc(f.client_label||labelFrom('OS_FRICTION_TYPE',f.friction_type))).join(' · ')+'</p>':'<p><b>Fricciones relacionadas:</b> Ninguna.</p>')
+      +(linkedRisks.length?'<p><b>Riesgos relacionados:</b> '+linkedRisks.map(r=>esc(r.description||labelFrom('OS_RISK_CATEGORY',r.category))).join(' · ')+'</p>':'<p><b>Riesgos relacionados:</b> Ninguno.</p>')
+      +(mappedTools.length?'<p>Herramientas registradas en el mapa (DF046): '+mappedTools.map(x=>esc(labelFrom('OS_TOOL_CATEGORY',x))).join(' · ')+' · Registra sólo el coste atribuible a este proceso; no presupongas su eliminación.</p>':'')
+      +(attributedLosses.length?'<p>Pérdidas directas declaradas en fricciones (DF063): '+attributedLosses.map(f=>esc(f.client_label||f.id)).join(' · ')+' · Comprueba que DF082 no vuelva a contabilizar el mismo evento.</p>':'')
+      +'<small>El cálculo previo reutiliza los tiempos de los pasos y el volumen capturado. La espera no equivale a coste ni el trabajo activo equivale a desperdicio o ahorro.</small></div>';
+  };
+  const inheritedContext='<div id="economicInheritedContext">'+economicContextHtml(preselectedSteps)+'</div>';
   let serverProjection=null,serverSelection='',requestSequence=0;
   let capturedTimeFields={};
   const capturedHours=(id,field)=>{
@@ -207,6 +212,8 @@ function addEconomic(preselectedSteps=[],editIndex=null){
   capturedTimeFields=Object.fromEntries(['econActive','econWait'].map(id=>[id,document.getElementById(id).value]));
   const refresh=async()=>{
     const ids=typeof document.querySelectorAll==='function'?[...document.querySelectorAll('[data-econ-step]:checked')].map(x=>x.dataset.econStep):[];
+    const contextTarget=document.getElementById('economicInheritedContext');
+    if(contextTarget)contextTarget.innerHTML=economicContextHtml(ids);
     const selection=JSON.stringify({step_ids:ids,request:economicTimeRequest(eng,ids)});
     const token=++requestSequence;
     serverProjection=null;serverSelection='';
@@ -231,10 +238,13 @@ function addEconomic(preselectedSteps=[],editIndex=null){
     for(const [field,value] of [['econActive',suggested?.active],['econWait',suggested?.wait]]){
       const input=document.getElementById(field),unit=document.getElementById(field+'_unit');
       if(!input)continue;
-      input.disabled=!!suggested;
-      if(suggested){input.value=Number(value||0).toFixed(2);if(unit)unit.value='h'}
-      else if(input.dataset?.autoDerived==='true')input.value='';
-      if(input.dataset)input.dataset.autoDerived=suggested?'true':'false';
+      const isRelevant=suggested&&Number(value||0)>0;
+      input.disabled=!!isRelevant;
+      if(suggested){
+        input.value=Number(value||0).toFixed(2);
+        if(unit)unit.value='h';
+      }else if(input.dataset?.autoDerived==='true')input.value='';
+      if(input.dataset)input.dataset.autoDerived=isRelevant?'true':'false';
     }
   };
   if(typeof document.querySelectorAll==='function')document.querySelectorAll('[data-econ-step]').forEach(el=>el.addEventListener?.('change',()=>{preserveCapturedTime=false;refresh()}));
