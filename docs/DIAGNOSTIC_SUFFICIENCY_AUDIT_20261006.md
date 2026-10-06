@@ -72,13 +72,17 @@ DF073, DF074 y DF090 usaban BR-RISK. Si estaban vacíos y no existía riesgo pre
 
 **Commits:** `eb190416ad162bcaa727a119f54b2111be531f42`, `2619424d531ab399dfb73f3501baacb3fc1481fe`, `dcd298096b9d1d56a6aaeb61293043731b0e9502`.
 
-### P0-02 — DF088 / BR-AI es auto-referencial
-Runtime:
+### P0-02 — DF088 / BR-AI es auto-referencial — RESUELTO EN RUNTIME
+Runtime auditado originalmente:
 `BR-AI = DF088 ya tiene valor || DF008 contiene AI/IA`.
 
-La pregunta “¿Qué no debe automatizarse o delegarse a IA?” puede ocultarse si el cliente no menciona IA al inicio, aunque después AUNEA valore automatización o IA.
+La pregunta “¿Qué no debe automatizarse o delegarse a IA?” podía ocultarse si el cliente no mencionaba IA al inicio, aunque después AUNEA valorase automatización o IA.
 
-**Impacto:** el guardrail puede no capturarse.
+**Resolución implementada:** el DF088 canónico de S08 (owner `RT_PROCESS.Must_Not_Automate`) permanece disponible como probe de descubrimiento aunque BR-AI todavía sea falso. Sigue siendo `CONDITIONAL_90M`, por lo que su mera visibilidad no lo convierte en obligatorio ni bloquea Readiness. La visibilidad del probe tampoco activa por sí sola BR-AI: se mantiene la separación entre preguntar por el guardrail y afirmar que IA sea adecuada. No se infiere IA sólo por existir documentos, emails u otros artefactos ordinarios.
+
+**QA:** 2 regresiones específicas DF088 PASS. Suite frontend tras el cambio: 424 tests, 371 PASS, 53 FAIL; el baseline previo era 53 FAIL, por lo que este bloque añade 0 regresiones nuevas.
+
+**Commits:** `5823007ac93e200c766725a3827b0215f8664d18`, `cbdce9b51c39d477f72dc4b926aeee126b7e1045`, `23ebaa95313a23d0c2d5cd198098ddeaa5fa583b`, `7e595c26886dece06d56861ac5454fbe3353a6d9`.
 
 ### P0-03 — DF077 no tiene ruta física completa
 Diagnostic Master: DF077 = capacidad práctica/productiva del rol, Write_Target RT_ECONOMIC_INPUT.
