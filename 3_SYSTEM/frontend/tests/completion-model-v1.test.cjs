@@ -322,3 +322,13 @@ test('S09 closure shows objective first readings but never labels them diagnosis
   assert.match(html,/No son todavía diagnóstico, recomendación, ROI ni propuesta/);
   assert.match(html,/id="confirmClosingAsIs"/);
 });
+
+test('CONDITIONAL_90M never blocks merely because visible, and DERIVE_AND_CONFIRM only needs confirmation when a derivation exists',()=>{
+  const ctx=makeCtx();const e=makeEngagement();ctx.__eng=e;
+  e.answers.DF900='ACME';e.answers.DF010='Objetivo';
+  e.processSteps=[{id:'s1',status:'ACTIVE'}];e.confirmedAsIs=true;
+  e.engineGates={process_design_first:'NO',existing_tool_can_close:'NO',unstructured_interpretation_need:'NO',bounded_action_space:'NO',management_visibility_need:'NO'};
+  assert.ok(!ctx.canonicalMissingRequired(e).includes('DF088'),'visible conditional field must not become a blocker');
+  const derived={Field_ID:'DX',Stage_ID:'S01',Requiredness:'CONDITIONAL_90M',Ask_Mode:'DERIVE_AND_CONFIRM',Write_Target:'RT_PROCESS.Tools',Reuse_From:'RT_PROCESS_STEP.Tool',Branch_Rule_ID:'BR-BASE'};
+  assert.equal(ctx.canonicalFieldRequiredNow(derived,e),false);
+});
