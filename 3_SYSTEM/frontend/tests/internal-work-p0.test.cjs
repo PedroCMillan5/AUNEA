@@ -52,7 +52,7 @@ test('preliminary diagnosis recommendation does not expose price',()=>{
   const end=results.indexOf('\nfunction resultsPage',start);
   const body=results.slice(start,end);
   assert.doesNotMatch(body,/one_off_eur|Precio base|TCO|recurring_monthly_eur/);
-  assert.match(body,/internal-tag/);
+  assert.match(results,/function codedField[\s\S]*internal-tag/,'technical ids remain secondary metadata, not the business label');
 });
 
 test('AS-IS/TO-BE comparison does not calculate economics from ProcessStep in frontend',()=>{
