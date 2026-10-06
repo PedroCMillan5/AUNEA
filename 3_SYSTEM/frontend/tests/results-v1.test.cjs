@@ -84,7 +84,7 @@ test('PG10 readiness exposes an explicit backend execution action instead of a d
   const html=ctx.resultsPage();
   assert.match(html,/Diagnóstico interno/);
   assert.match(html,/id="runDiag">Ejecutar diagnóstico/);
-  assert.match(html,/Pain[\s\S]*Economics[\s\S]*Risk[\s\S]*Recommendation[\s\S]*Pricing[\s\S]*Scenario/);
+  assert.match(html,/Problemas[\s\S]*Impacto[\s\S]*Riesgo[\s\S]*Recomendación[\s\S]*Precio[\s\S]*Escenario/);
 });
 
 test('PG10 result renders diagnostic sections, traceability and the governed TO-BE handoff',()=>{
