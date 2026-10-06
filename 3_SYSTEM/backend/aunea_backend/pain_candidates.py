@@ -1,249 +1,132 @@
 from __future__ import annotations
-from collections import defaultdict
+import json
+from functools import lru_cache
+from pathlib import Path
 from typing import Any
+from pydantic import BaseModel, Field
 
-from .models import EngagementInput, PainCandidate, PainCandidateResult
+from .models import EngagementInput
 
-# [AUNEA-BE-PAIN-CANDIDATE-016] START — Pain discovery as DERIVE_CANDIDATE
-# PURPOSE: Detectar señales estructuradas del mapa que justifican REVISAR una fricción canónica.
-# SOURCE: Diagnostic Master v1.2 RULE_PAIN_ENGINE + DIAG_PAIN_QUESTION;
-#         Simulator v1.14 template rule: DERIVE_CANDIDATE allowed, AUTO_CONFIRM forbidden;
-#         DEC-034 server-owned derived logic; DEC-050 single owner.
-# INPUTS: current EngagementInput process-step/friction/economic trace.
-# OUTPUTS: PainCandidateResult only. No RT_FRICTION/RT_PAIN mutation.
-# SIDE_EFFECTS: none.
+# [AUNEA-BE-PAIN-CANDIDATE-020] START — Pain candidates from governed AS-IS signals
+# PURPOSE: Derive neutral, reviewable Friction/Pain candidates from already captured AS-IS signals.
+# SOURCE: Diagnostic Master v1.2 RULE_PAIN_ENGINE + DF051/DF054 SYSTEM_SUGGEST_THEN_CONFIRM +
+#         PROJECT_RULES templates/candidates rule + DEC-034/050/052.
+# GUARDRAIL: candidates never create/confirm Friction/Pain. Human confirmation in the Friction builder remains mandatory.
 # CHANGE_RISK: CRITICAL.
 
-QUESTIONS = {
-    "P01":[
-        "¿Por qué canales entra este tipo de solicitud?",
-        "¿Hay que copiar/consolidar información antes de empezar?",
-        "¿Se recibe la misma solicitud duplicada o con formatos distintos?",
-    ],
-    "P03":[
-        "¿Qué datos se vuelven a introducir en otro sistema?",
-        "¿Cuántas veces por caso?",
-        "¿Cuánto tarda cada reentrada y existe integración?",
-    ],
-    "P05":[
-        "¿Cómo se decide a qué persona/cola va cada caso?",
-        "¿Qué reglas se aplican?",
-        "¿Cuánto tiempo activo tarda clasificarlo y cuánto espera antes de asignarse?",
-    ],
-    "P06":[
-        "¿Qué fechas/SLA son obligatorios?",
-        "¿Cómo se controla el vencimiento?",
-        "¿Cuántos incumplimientos hay y qué esfuerzo/coste generan?",
-    ],
-    "P07":[
-        "¿Qué aprobaciones existen y cuándo se disparan?",
-        "¿Quién aprueba y con qué evidencia?",
-        "¿Cuánto tiempo activo se dedica a preparar/perseguir/registrar cada aprobación?",
-    ],
-    "P08":[
-        "¿Dónde está la versión oficial?",
-        "¿Cómo se sabe cuál es la última?",
-        "¿Cuánto se tarda en localizar/reconciliar documentos y cuántos errores nacen de versiones incorrectas?",
-    ],
-    "P09":[
-        "¿Cómo sabe hoy el responsable qué está abierto, atrasado o bloqueado?",
-        "¿Qué información se recopila manualmente para tener visibilidad?",
-        "¿Cuánto tarda cada ciclo de status/reporting operativo?",
-    ],
-    "P10":[
-        "¿Qué casos no siguen el camino normal?",
-        "¿Cómo se registran, asignan y resuelven?",
-        "¿Se repiten excepciones similares y cuánto esfuerzo exige cada una?",
-    ],
-    "P11":[
-        "¿Qué errores obligan a repetir/corregir trabajo?",
-        "¿Cuántos ocurren por periodo?",
-        "¿Cuánto tiempo y coste directo exige cada defecto?",
-    ],
-    "P12":[
-        "¿Qué acciones futuras dependen de que alguien se acuerde?",
-        "¿Cómo se recuerda hoy?",
-        "¿Cuántos seguimientos se hacen y cuánto tiempo requieren?",
-    ],
-    "P13":[
-        "¿Qué campos generan más correcciones?",
-        "¿Qué reglas de formato/definición deberían cumplirse?",
-        "¿Cuántos registros se corrigen y cuánto tarda la validación/corrección?",
-    ],
-    "P14":[
-        "¿Qué reportes se reconstruyen periódicamente?",
-        "¿Qué pasos son extracción/limpieza/consolidación repetitiva?",
-        "¿Cuántas horas exige cada ciclo antes del análisis real?",
-    ],
-    "P15":[
-        "¿Qué herramientas intervienen de principio a fin?",
-        "¿Cómo pasa la información/estado entre ellas?",
-        "¿Qué reconciliación o coste duplicado genera la fragmentación?",
-    ],
-    "P19":[
-        "¿Qué dinero se pierde directamente por fallos del proceso?",
-        "¿Cómo se demuestra el evento y su importe?",
-        "¿Está ese coste ya incluido en otra métrica o factura?",
-    ],
-}
+ROOT=Path(__file__).resolve().parents[1]
+RULES_PATH=ROOT/"data"/"pain_rule_engine_v12.json"
 
-def _steps(e: EngagementInput) -> list[dict[str, Any]]:
-    rows=e.questionnaire_answers.get("_process_steps") or []
-    return [x for x in rows if isinstance(x,dict) and x.get("status")!="SUPERSEDED"]
+@lru_cache(maxsize=1)
+def pain_rules()->dict[str,dict[str,Any]]:
+    raw=json.loads(RULES_PATH.read_text(encoding="utf-8"))
+    rows=raw.get("rows",[])
+    if len(rows)!=20:
+        raise RuntimeError("Canonical pain-rule runtime mirror is incomplete")
+    return {str(x["pain_id"]):x for x in rows}
 
-def _frictions(e: EngagementInput) -> list[dict[str, Any]]:
-    rows=e.questionnaire_answers.get("_frictions") or []
-    return [x for x in rows if isinstance(x,dict) and x.get("status")!="SUPERSEDED"]
+class PainCandidate(BaseModel):
+    candidate_id: str
+    pain_id: str
+    step_ids: list[str] = Field(default_factory=list)
+    rationale: str
+    review_questions: list[str] = Field(default_factory=list)
+    source_signals: list[str] = Field(default_factory=list)
 
-def _actions(step: dict[str, Any]) -> set[str]:
-    raw=step.get("manual_actions") or []
-    return {str(x) for x in raw if x}
+class PainCandidateResult(BaseModel):
+    candidates: list[PainCandidate] = Field(default_factory=list)
 
-def _positive_error(step: dict[str, Any]) -> bool:
-    raw=step.get("error_rate")
-    if isinstance(raw,dict):
-        try:
-            return float(raw.get("value") or 0)>0
-        except (TypeError,ValueError):
-            return False
-    try:
-        return float(raw or 0)>0
-    except (TypeError,ValueError):
-        return False
+def _steps(e:EngagementInput)->list[dict[str,Any]]:
+    return [x for x in (e.questionnaire_answers.get("_process_steps") or []) if isinstance(x,dict) and x.get("status")!="SUPERSEDED"]
 
-def _positive(value: Any) -> bool:
-    if isinstance(value,dict):
-        value=value.get("value")
-    try:
-        return float(value or 0)>0
-    except (TypeError,ValueError):
-        return False
+def _frictions(e:EngagementInput)->list[dict[str,Any]]:
+    return [x for x in (e.questionnaire_answers.get("_frictions") or []) if isinstance(x,dict) and x.get("status")!="SUPERSEDED"]
 
-def _present(value: Any) -> bool:
-    if value is None or value=="":
-        return False
-    if isinstance(value,(list,tuple,set,dict)):
-        return len(value)>0
-    return True
+def _num(v:Any)->float:
+    if isinstance(v,dict):
+        v=v.get("value")
+    try:return float(v or 0)
+    except (TypeError,ValueError):return 0.0
 
-def _step_label(step: dict[str, Any]) -> str:
-    return str(step.get("step_name") or step.get("id") or "paso")
+def _arr(v:Any)->list[Any]:
+    if v in (None,""):return []
+    return v if isinstance(v,list) else [v]
 
-def _candidate(pain_id: str, steps: list[dict[str, Any]], codes: list[str], rationale: str) -> PainCandidate:
+def _existing(e:EngagementInput,pain_id:str,step_ids:list[str])->bool:
+    target=set(str(x) for x in step_ids)
+    for f in _frictions(e):
+        pid=str(f.get("derived_pain_id") or f.get("friction_type") or "")
+        affected=set(str(x) for x in (f.get("affected_steps") or []))
+        if pid==pain_id and (not target or target.intersection(affected)):
+            return True
+    return False
+
+def _candidate(pain_id:str,steps:list[str],rationale:str,signals:list[str])->PainCandidate:
+    rule=pain_rules()[pain_id]
     return PainCandidate(
-        pain_id=pain_id,
-        step_ids=[str(x.get("id")) for x in steps if x.get("id")],
-        signal_codes=codes,
-        rationale=rationale,
-        review_questions=QUESTIONS.get(pain_id,[]),
+        candidate_id=f"{pain_id}:{'|'.join(sorted(set(steps)))}:{'|'.join(signals)}",
+        pain_id=pain_id,step_ids=list(dict.fromkeys(steps)),rationale=rationale,
+        review_questions=list(rule.get("review_questions") or []),
+        source_signals=signals
     )
 
 class PainCandidateEngine:
-    """
-    Conservative discovery engine.
+    def run(self,e:EngagementInput)->PainCandidateResult:
+        steps=_steps(e); answers=e.questionnaire_answers; out:list[PainCandidate]=[]
 
-    It does NOT implement Pain state detection. It only exposes structured observations that are
-    compatible with a canonical RULE_PAIN_ENGINE mechanism and therefore deserve consultant review.
-    Absence of a candidate never means NOT_DETECTED.
-    """
-    def run(self, e: EngagementInput) -> PainCandidateResult:
-        steps=_steps(e)
-        frictions=_frictions(e)
-        existing={str(f.get("derived_pain_id") or f.get("friction_type") or "") for f in frictions}
-        out: list[PainCandidate]=[]
+        # P03 — RULE_PAIN_ENGINE direct condition requires equivalent data manually entered in >=2 locations.
+        # DF051 is the governed confirmation of exactly that finding; REKEY alone is intentionally insufficient.
+        dup=answers.get("DF051")
+        if isinstance(dup,dict) and dup.get("from") and dup.get("to"):
+            sids=[str(dup["from"]),str(dup["to"])]
+            if not _existing(e,"P03",sids):
+                out.append(_candidate("P03",sids,"El mapa contiene una reintroducción de la misma información confirmada en DF051.",["DF051"]))
+        elif isinstance(dup,list):
+            for item in dup:
+                if isinstance(item,dict) and item.get("from") and item.get("to"):
+                    sids=[str(item["from"]),str(item["to"])]
+                    if not _existing(e,"P03",sids):
+                        out.append(_candidate("P03",sids,"El mapa contiene una reintroducción de la misma información confirmada en DF051.",["DF051"]))
 
-        def add(pain_id: str, matched: list[dict[str,Any]], codes: list[str], rationale: str):
-            if pain_id in existing or not matched:
-                return
-            ids=tuple(sorted(str(x.get("id")) for x in matched if x.get("id")))
-            if not ids:
-                return
-            if any(c.pain_id==pain_id and tuple(sorted(c.step_ids))==ids for c in out):
-                return
-            out.append(_candidate(pain_id,matched,codes,rationale))
+        # P15 — confirmed DF054 means the consultant has identified a manual cross-tool exchange/integration gap.
+        for token in _arr(answers.get("DF054")):
+            token=str(token)
+            sids=[]
+            if token.startswith("pair:"):
+                parts=token.split(":")
+                if len(parts)>=3:sids=[parts[1],parts[2]]
+            elif token.startswith(("manual:","channel:")):
+                parts=token.split(":")
+                if len(parts)>=2:sids=[parts[1]]
+            if sids and not _existing(e,"P15",sids):
+                out.append(_candidate("P15",sids,"Se ha confirmado un intercambio manual o gap de integración en DF054; revisa si cumple la condición de fragmentación de herramientas.",["DF054"]))
 
-        # P01 DIRECT needs >1 uncontrolled channel/format + manual consolidation/reconciliation.
-        channel_steps=[s for s in steps if len(s.get("communication_channels") or [])>1 and _actions(s).intersection({"COPY","REKEY","COMPARE"})]
-        add("P01",channel_steps,["MULTI_CHANNEL","MANUAL_CONSOLIDATION"],
-            "Hay pasos con varios canales y consolidación/reconciliación manual. Revisa si la entrada está fragmentada.")
+        for s in steps:
+            sid=str(s.get("id") or "")
+            if not sid:continue
+            actions={str(x) for x in (s.get("manual_actions") or [])}
+            # P07 — approval gate + recurring administration/chasing or elapsed wait is enough for a candidate, never auto-confirmation.
+            if str(s.get("step_type") or "")=="ST05" and (_num(s.get("wait_time"))>0 or "CHASE" in actions):
+                if not _existing(e,"P07",[sid]):
+                    out.append(_candidate("P07",[sid],"Hay un paso de aprobación con espera o seguimiento manual. Comprueba si el retraso/administración es evitable y atribuible al control de aprobación.",["RT_PROCESS_STEP.step_type=ST05","wait_time/CHASE"]))
+            # P11 — recorded rework/error is a direct signal to review a rework/quality pain.
+            if _num(s.get("rework_time"))>0 or _num(s.get("error_rate"))>0:
+                if not _existing(e,"P11",[sid]):
+                    out.append(_candidate("P11",[sid],"El paso registra retrabajo o errores. Comprueba el defecto concreto, frecuencia y esfuerzo de corrección antes de confirmar.",["RT_PROCESS_STEP.rework_time/error_rate"]))
+            # P14 — REPORT is a governed manual action; it is a candidate only because periodic/repetitive reporting still needs confirmation.
+            if "REPORT" in actions and not _existing(e,"P14",[sid]):
+                out.append(_candidate("P14",[sid],"El paso contiene consolidación/reporting manual. Confirma que es preparación repetitiva y no análisis nuevo antes de guardar la fricción.",["RT_PROCESS_STEP.manual_actions=REPORT"]))
 
-        # P03 DIRECT: same/equivalent data manually entered in >=2 locations.
-        # REKEY is the strongest structured signal; COPY is only raised when the process spans >1 tool.
-        tools={str(s.get("tool")) for s in steps if _present(s.get("tool"))}
-        reentry=[s for s in steps if "REKEY" in _actions(s) or ("COPY" in _actions(s) and len(tools)>1)]
-        add("P03",reentry,["REKEY_OR_CROSS_TOOL_COPY"],
-            "El mapa contiene reintroducción/copia manual entre registros o herramientas. Confirma si se repiten los mismos datos.")
+        # P13 — DF055 is an explicit process-level data-quality finding; reuse its linked steps if available.
+        dq=_arr(answers.get("DF055"))
+        dq_steps=[str(x) for x in _arr((answers.get("_answer_details") or {}).get("DF055__steps"))]
+        if dq and dq_steps and not _existing(e,"P13",dq_steps):
+            out.append(_candidate("P13",dq_steps,"Se han declarado problemas de calidad de datos en DF055 vinculados a estos pasos. Comprueba el problema observable y su impacto antes de confirmar.",["DF055","DF055__steps"]))
 
-        # P05 DIRECT: recurring manual routing + effort/delay. A decision plus manual check/compare and wait is a review signal.
-        routing=[s for s in steps if str(s.get("step_type") or "")=="ST04" and _actions(s).intersection({"CHECK","COMPARE"}) and _positive(s.get("wait_time"))]
-        add("P05",routing,["MANUAL_DECISION","ROUTING_WAIT"],
-            "Hay una decisión manual con comprobación/comparación y espera. Revisa si corresponde a clasificación o routing lento.")
-
-        # P06 DIRECT: SLA/deadline exists + manual surveillance/breach signal.
-        sla_present=any(_present(e.questionnaire_answers.get(fid)) for fid in ("DF025","DF026","DF027"))
-        deadline=[s for s in steps if sla_present and ("CHASE" in _actions(s) or _positive(s.get("wait_time")))]
-        add("P06",deadline,["SLA_PRESENT","MANUAL_SURVEILLANCE_OR_DELAY"],
-            "Existe contexto de SLA/plazo y el mapa muestra seguimiento manual o demora. Revisa si hay incumplimiento o vigilancia manual relevante.")
-
-        # P07 DIRECT: approval required + recurring admin/chasing or avoidable delay.
-        approval=[s for s in steps if str(s.get("step_type") or "")=="ST05" and ("CHASE" in _actions(s) or _positive(s.get("wait_time")))]
-        add("P07",approval,["APPROVAL_STEP","CHASE_OR_WAIT"],
-            "Hay una aprobación con seguimiento manual o espera. Revisa si existe un cuello de botella de aprobación.")
-
-        # P08 DIRECT: users cannot reliably retrieve authoritative artifact without search/reconciliation.
-        docs=[s for s in steps if _actions(s).intersection({"SEARCH","COMPARE"}) and (_present(s.get("inputs")) or _present(s.get("outputs")))]
-        add("P08",docs,["SEARCH_OR_RECONCILE_ARTIFACT"],
-            "El mapa contiene búsqueda o reconciliación manual de información/artefactos. Revisa si hay problemas de versión o documento oficial.")
-
-        # P09 DIRECT: recurring manual status collection. UPDATE_STATUS plus REPORT/SEARCH is a structured review signal.
-        visibility=[s for s in steps if "UPDATE_STATUS" in _actions(s) and _actions(s).intersection({"REPORT","SEARCH","CHECK"})]
-        add("P09",visibility,["MANUAL_STATUS_COLLECTION"],
-            "Hay actualización de estado junto con reporting/búsqueda/comprobación manual. Revisa si falta visibilidad operativa mantenida.")
-
-        # P10 DIRECT: recurring exceptions + ad-hoc handling. Exception paths with manual coordination are review signals only.
-        exceptions=[s for s in steps if _present(s.get("exception_path")) and _actions(s).intersection({"CHASE","CHECK","COMPARE","SEARCH"})]
-        add("P10",exceptions,["EXCEPTION_PATH","MANUAL_COORDINATION"],
-            "Hay rutas de excepción con coordinación/comprobación manual. Revisa si las excepciones se gestionan de forma ad hoc.")
-
-        # P11 DIRECT: output error causes correction/repetition. Positive rework/error rate is direct structured evidence to review.
-        rework=[s for s in steps if _positive(s.get("rework_time")) or _positive_error(s)]
-        add("P11",rework,["REWORK_OR_ERROR_RATE"],
-            "El mapa registra retrabajo o errores. Confirma qué defecto obliga a corregir o repetir trabajo.")
-
-        # P12 DIRECT: future action depends on memory/manual checking. CHASE outside SLA/approval is a candidate.
-        memory=[s for s in steps if "CHASE" in _actions(s) and str(s.get("step_type") or "")!="ST05" and not sla_present]
-        add("P12",memory,["MANUAL_CHASE_WITHOUT_SLA"],
-            "Hay seguimiento manual sin una aprobación/SLA que lo explique. Revisa si depende de que una persona recuerde actuar.")
-
-        # P13 DIRECT: recurring validation/correction for violated data requirements.
-        data_quality=[s for s in steps if _positive_error(s) and _actions(s).intersection({"FORMAT","CHECK","COMPARE"})]
-        add("P13",data_quality,["ERROR_RATE","MANUAL_DATA_VALIDATION"],
-            "Hay errores junto con validación/limpieza/comparación manual. Revisa si existe inconsistencia de datos recurrente.")
-
-        # P14 DIRECT: recurring extraction/cleanup/consolidation. REPORT is the canonical structured manual-action signal.
-        reporting=[s for s in steps if "REPORT" in _actions(s)]
-        add("P14",reporting,["MANUAL_REPORTING"],
-            "El mapa incluye consolidación/reporting manual. Revisa si el mismo trabajo preparatorio se repite en cada ciclo.")
-
-        # P15 DIRECT: >=2 tools + manual/unreliable transfer/reconciliation.
-        fragmentation=[s for s in steps if _actions(s).intersection({"COPY","REKEY","DOWNLOAD","UPLOAD","COMPARE"})]
-        if len(tools)>=2:
-            add("P15",fragmentation,["MULTI_TOOL","MANUAL_TRANSFER_OR_RECONCILIATION"],
-                "El proceso usa varias herramientas y contiene transferencia/reconciliación manual. Revisa si existe fragmentación de herramientas.")
-
-        # P19 DIRECT: attributable monetary leakage event. EconomicInput can expose a review candidate only when linked to steps.
-        loss_steps=defaultdict(list)
-        step_by_id={str(s.get("id")):s for s in steps if s.get("id")}
-        for x in e.economics:
-            if (x.direct_loss_eur_annual or 0)>0:
-                for sid in x.step_ids:
-                    if str(sid) in step_by_id:
-                        loss_steps[str(sid)].append(x)
-        loss_matched=[step_by_id[sid] for sid in loss_steps]
-        add("P19",loss_matched,["EVIDENCED_DIRECT_LOSS_INPUT"],
-            "Existe una pérdida monetaria directa registrada y vinculada a estos pasos. Revisa si representa fuga de coste no atribuida ya a otro Pain.")
-
-        out.sort(key=lambda x:(x.pain_id,x.step_ids))
-        return PainCandidateResult(candidates=out,evaluated_step_ids=[str(s.get("id")) for s in steps if s.get("id")])
-
-# [AUNEA-BE-PAIN-CANDIDATE-016] END
+        # Deterministic deduplication. Same pain+step set appears once even if several signals point to it.
+        dedup={}
+        for x in out:
+            key=(x.pain_id,tuple(sorted(x.step_ids)))
+            dedup[key]=x
+        return PainCandidateResult(candidates=list(dedup.values()))
+# [AUNEA-BE-PAIN-CANDIDATE-020] END
