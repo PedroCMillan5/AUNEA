@@ -119,6 +119,18 @@ function invalidateDerivedState(e,reason='Cambio en inputs del diagnóstico'){
 }
 function setAnswer(fid,value){
   const e=currentEng();if(!e)return;
+  const detailMatch=String(fid||'').match(/^(DF\d{3})__(step|steps)$/);
+  if(detailMatch){
+    const parentFid=detailMatch[1],details=e.answerDetails||(e.answerDetails={});
+    if(JSON.stringify(details[fid])===JSON.stringify(value))return;
+    const fieldStage=(schema?.fields||[]).find(f=>f.Field_ID===parentFid)?.Stage_ID||'',closesSession=fieldStage==='S09';
+    if(!closesSession&&(e.confirmedAsIs||Object.values(e.layerConfirmations||{}).some(v=>v===true))&&typeof invalidateProcessLayers==='function')invalidateProcessLayers(e,'map');
+    if(closesSession&&e.confirmedAsIs&&typeof invalidateAsIsClosure==='function')invalidateAsIsClosure(e,`detalle de cierre ${parentFid} actualizado`);
+    details[fid]=value;e.updatedAt=now();
+    if(typeof advanceEngagementTo==='function')advanceEngagementTo(e,'Sesión 1','captura vinculada a paso');
+    invalidateDerivedState(e,`detalle ${fid} actualizado`);markDirty(`Detalle ${fid} actualizado`);if(typeof refreshCaptureProgress==='function')refreshCaptureProgress();
+    return;
+  }
   // A repeated render/change event is not a new capture version and must not reopen PG09.
   if(JSON.stringify(e.answers?.[fid])===JSON.stringify(value))return;
   // DEC-065: if an upstream session answer changes, all four dependent confirmations
