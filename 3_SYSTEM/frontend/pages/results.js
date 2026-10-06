@@ -129,7 +129,7 @@ function resultsPage(){
       +section('Qué ocurrirá al ejecutar','El navegador no calcula ni completa resultados por su cuenta.',`<div class="diagnosis-pipeline"><span>Pain</span><i>→</i><span>Economics</span><i>→</i><span>Risk</span><i>→</i><span>Recommendation</span><i>→</i><span>Pricing</span><i>→</i><span>Scenario</span></div>`);
   }
   const pains=o.pain_results||[],econ=o.economic_result||{},risk=o.risk_result||{},confirmed=pains.filter(x=>x.state==='CONFIRMED').length;
-  const runDate=e.lastEngineRunAt?formatDateEs(e.lastEngineRunAt):'—';
+  const runDate=e.lastEngineRunAt?(typeof formatDateEs==='function'?formatDateEs(e.lastEngineRunAt):String(e.lastEngineRunAt)):'—';
   return pageTop('Diagnóstico interno',`Snapshot v${esc(activeSnapshot?.version||'—')} · diagnóstico backend ${esc(runDate)}. Los resultados están ligados a la versión confirmada del AS-IS.`,`<button class="btn" data-page="diagnostico">Volver a Sesión 1</button><button class="btn" data-page="proceso">Revisar AS-IS</button><button class="btn btn-primary" id="runDiag">Recalcular diagnóstico</button>`)
     +`<div class="grid g4 diagnosis-result-kpis">
       <div class="card metric"><small>Hallazgos confirmados</small><strong>${confirmed}</strong><span>de ${pains.length} evaluados</span></div>
