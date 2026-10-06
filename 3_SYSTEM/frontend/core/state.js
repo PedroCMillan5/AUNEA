@@ -115,7 +115,9 @@ function setAnswer(fid,value){
   if(JSON.stringify(e.answers?.[fid])===JSON.stringify(value))return;
   // DEC-065: if an upstream session answer changes, all four dependent confirmations
   // must be reviewed again. Never mutate an immutable previously sealed snapshot.
-  if(fid!=='DF093'&&(e.confirmedAsIs||Object.values(e.layerConfirmations||{}).some(v=>v===true))
+  const fieldStage=(schema?.fields||[]).find(f=>f.Field_ID===fid)?.Stage_ID||'';
+  const closesSession=fieldStage==='S09';
+  if(fid!=='DF093'&&!closesSession&&(e.confirmedAsIs||Object.values(e.layerConfirmations||{}).some(v=>v===true))
       &&typeof invalidateProcessLayers==='function')invalidateProcessLayers(e,'map');
   e.answers[fid]=value;e.updatedAt=now();
   // A reused value corrected here must reach its owner, not become a second copy (DEC-050). The
