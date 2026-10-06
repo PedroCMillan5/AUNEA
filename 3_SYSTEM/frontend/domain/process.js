@@ -15,6 +15,26 @@ function displayDuration(minutes,unit='min'){
 }
 function stepMeta(s){s._ui=s._ui||{};s._details=s._details||{};return s}
 function frictionMeta(f){f._ui=f._ui||{};f._details=f._details||{};return f}
+function migrateProcessCaptureIntegrity(engagements=[]){
+  let changed=0;
+  (engagements||[]).forEach(e=>{
+    let engagementChanged=false;
+    (e.frictions||[]).forEach(f=>{
+      const zeroWhen=(obj,modes)=>{if(obj&&modes.includes(String(obj.mode||''))&&Number(obj.value||0)!==0){obj.value=0;engagementChanged=true}};
+      zeroWhen(f.active_time_loss,['UNKNOWN','ZERO']);
+      zeroWhen(f.wait_time_loss,['UNKNOWN','ZERO']);
+      zeroWhen(f.direct_loss,['UNKNOWN','NONE']);
+      if(f.frequency?.mode==='percent'&&f.frequency.period){f.frequency.period='';engagementChanged=true}
+    });
+    if(engagementChanged){
+      changed++;
+      if(typeof invalidateProcessLayers==='function')invalidateProcessLayers(e,'frictions');
+      else{e.confirmedAsIs=false;if(e.layerConfirmations){e.layerConfirmations.frictions=false;e.layerConfirmations.risks=false;e.layerConfirmations.impact=false}}
+      if(typeof invalidateDerivedState==='function')invalidateDerivedState(e,'normalización de fricciones heredadas');
+    }
+  });
+  return changed;
+}
 function painForFriction(type){return schema.friction_pain_map.find(x=>String(x.Friction_Type_ID)===String(type))?.Pain_ID||null}
 function processLayerState(e){return typeof processLayerConfirmations==='function'?processLayerConfirmations(e):(e.layerConfirmations||(e.layerConfirmations={map:false,frictions:false,risks:false,impact:false}))}
 function processLayerKeySafe(tab){return typeof processLayerKey==='function'?processLayerKey(tab):(tab==='fricciones'?'frictions':tab==='riesgos'?'risks':tab==='impacto'?'impact':'map')}
@@ -222,6 +242,7 @@ function openStepModal(stepId=null,linkFromStepId=null,preset=null){
     const et=document.getElementById('step_exc_type').value,ec=document.getElementById('step_exc_condition').value.trim(),ed=document.getElementById('step_exc_dest').value,eo=resolveCatalogInput(document.getElementById('step_exc_owner'));
     if(!s.step_name||s.step_name.length<3||!s.step_type||!s.actor)return toast('Nombre (mín. 3 caracteres), tipo y responsable son obligatorios.');
     if(am==='PERCENT'&&(av===''||!Number.isFinite(Number(av))||Number(av)<0||Number(av)>100))return toast('Indica un porcentaje válido entre 0 y 100.');
+    if(am==='CONDITION'&&!av)return toast('Describe la condición observable cuando el paso no aplica a todos los casos.');
     if(s.error_rate.mode==='percent'&&(s.error_rate.value<0||s.error_rate.value>100))return toast('El porcentaje de error o repetición debe estar entre 0 y 100.');
     if(s.error_rate.mode==='count'&&s.error_rate.value>0&&!s.error_rate.period)return toast('Si el error se registra en casos, indica también el periodo.');
     if(selectedOtherMissingDetail(artifacts,s.inputs,s._details.inputs)||selectedOtherMissingDetail(artifacts,s.outputs,s._details.outputs)||selectedOtherMissingDetail(manual,s.manual_actions,s._details.manual_actions)||selectedOtherMissingDetail(channels,s.communication_channels,s._details.communication_channels))return toast('Completa el detalle de cada opción «Otro» seleccionada.');
