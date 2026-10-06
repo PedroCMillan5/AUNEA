@@ -20,7 +20,22 @@ function inferGateSuggestion(contract,e){const fr=new Set(activeFrictions(e).map
 function unresolvedEngineGates(e){const g=engineGates(e);return ENGINE_GATE_CONTRACT.filter(c=>!gateResolved(g[c.key]))}
 function openEngineGateReview(){const e=currentEng(),g=engineGates(e);const body=`<div class="notice info"><strong>Confirmación del consultor antes de calcular</strong><br>Estas respuestas son inputs del contrato canónico ya gobernado; no son preguntas al cliente ni resultados calculados por el navegador.</div><div class="form-grid">${ENGINE_GATE_CONTRACT.map(c=>{const suggested=inferGateSuggestion(c,e),value=g[c.key]||suggested||'';return `<div class="field full"><label>${esc(c.label)}</label>${auneaSelectControl(`engine_gate_${c.key}`,[{value:'',label:'Pendiente de confirmar'},{value:'YES',label:'Sí'},{value:'NO',label:'No'}],value,{extra:`data-engine-gate="${c.key}"`,placeholder:'Pendiente de confirmar'})}<div class="field-help"><span class="canonical-id">${c.id}</span> ${esc(c.source)}${suggested&&!g[c.key]?' · sugerencia desde captura; requiere confirmación':''}</div></div>`}).join('')}</div>`;openModal('Confirmación del consultor antes de calcular',body,()=>{document.querySelectorAll('[data-engine-gate]').forEach(x=>g[x.dataset.engineGate]=x.value);if(unresolvedEngineGates(e).length)return toast('Confirma los cinco inputs canónicos antes de calcular.');e.updatedAt=now();markDirty('Inputs canónicos de Recommendation confirmados por el consultor');closeModal();runDiagnosis();},'Confirmar y calcular')}
 function evidenceTypeBackend(v){return ({EV01:'MEASURED',EV02:'CLIENT_DECLARED',EV03:'AUNEA_ESTIMATE',EV04:'HYPOTHESIS',EV05:'SPECIFIC_BENCHMARK',EV06:'AUNEA_ESTIMATE',EV07:'AUNEA_ESTIMATE',MEASURED:'MEASURED',CLIENT_DECLARED:'CLIENT_DECLARED',AUNEA_ESTIMATE:'AUNEA_ESTIMATE',SPECIFIC_BENCHMARK:'SPECIFIC_BENCHMARK',HYPOTHESIS:'HYPOTHESIS'})[v]||'CLIENT_DECLARED'}
-function normalizeEconomicInputs(e){return (e.economicInputs||[]).map(x=>({step_ids:normalizeArray(x.step_ids).filter(Boolean),pain_id:x.pain_id||null,driver_id:x.driver_id,annual_active_hours:x.annual_active_hours==null?null:Number(x.annual_active_hours),annual_wait_hours:x.annual_wait_hours==null?null:Number(x.annual_wait_hours),capacity_cost_rate_eur_hour:x.capacity_cost_rate_eur_hour==null?null:Number(x.capacity_cost_rate_eur_hour),direct_loss_eur_annual:x.direct_loss_eur_annual==null?null:Number(x.direct_loss_eur_annual),current_tool_cost_eur_annual:x.current_tool_cost_eur_annual==null?null:Number(x.current_tool_cost_eur_annual),realized_cash_saving_eur_annual:x.realized_cash_saving_eur_annual==null?null:Number(x.realized_cash_saving_eur_annual),evidence_type:evidenceTypeBackend(x.evidence_type),deduplication_key:x.deduplication_key||null})).filter(x=>x.driver_id)}
+function normalizeEconomicInputs(e){
+  const activeDrivers=new Set(['ED01','ED02','ED03','ED04','ED05','ED06','ED07','ED08']);
+  return (e.economicInputs||[]).map(x=>{
+    const driver=x.driver_id,active=activeDrivers.has(driver),wait=driver==='ED13';
+    return {
+      step_ids:normalizeArray(x.step_ids).filter(Boolean),pain_id:x.pain_id||null,driver_id:driver,
+      annual_active_hours:active?(x.annual_active_hours==null?null:Number(x.annual_active_hours)):0,
+      annual_wait_hours:wait?(x.annual_wait_hours==null?null:Number(x.annual_wait_hours)):0,
+      capacity_cost_rate_eur_hour:x.capacity_cost_rate_eur_hour==null?null:Number(x.capacity_cost_rate_eur_hour),
+      direct_loss_eur_annual:x.direct_loss_eur_annual==null?null:Number(x.direct_loss_eur_annual),
+      current_tool_cost_eur_annual:x.current_tool_cost_eur_annual==null?null:Number(x.current_tool_cost_eur_annual),
+      realized_cash_saving_eur_annual:x.realized_cash_saving_eur_annual==null?null:Number(x.realized_cash_saving_eur_annual),
+      evidence_type:evidenceTypeBackend(x.evidence_type),deduplication_key:x.deduplication_key||null
+    };
+  }).filter(x=>x.driver_id)
+}
 function normalizeRiskInputs(e){return (e.risks||[]).map(r=>({step_ids:normalizeArray(r.step_ids).filter(Boolean),category:r.category||'RC01',likelihood_1_5:Math.max(1,Math.min(5,Number(r.likelihood_1_5||1))),impact_1_5:Math.max(1,Math.min(5,Number(r.impact_1_5||1))),reversible:r.reversible!==false,sensitive_or_high_impact:!!r.sensitive_or_high_impact,material_financial_or_compliance:!!r.material_financial_or_compliance,critical_trigger:!!r.critical_trigger,controls_present:r.controls_present!==false,description:r.description||null}))}
 function buildBackendPayload(engagement){
   const e=typeof engagementOfRecord==='function'?engagementOfRecord(engagement):engagement;
@@ -30,7 +45,7 @@ function buildBackendPayload(engagement){
   if(e.commercialScope)payload.commercial_scope={...e.commercialScope};
   return payload;
 }
-async function runDiagnosis(){const e=currentEng();if(!e)return;if(!hasConfirmedSnapshot(e))return toast('Confirma el AS-IS en PG09 antes de calcular en Trabajo interno.');if(!state.backendOnline&&!(await checkBackend())){state.activePage='resultados';render();toast('Backend no conectado: no se publican resultados oficiales.');return}const gaps=canonicalMissingRequired(e);if(gaps.length){state.activePage='resultados';render();toast(`Captura incompleta: ${gaps.slice(0,5).join(', ')}`);return}if(unresolvedEngineGates(e).length){openEngineGateReview();return}
+async function runDiagnosis(){const e=currentEng();if(!e)return;if(!hasConfirmedSnapshot(e))return toast('Confirma el AS-IS en PG09 antes de calcular en Trabajo interno.');if(!state.backendOnline&&!(await checkBackend())){state.activePage='resultados';render();toast('Backend no conectado: no se publican resultados oficiales.');return}const gaps=canonicalMissingRequired(e);if(gaps.length){state.activePage='resultados';render();toast(`Captura incompleta: ${gaps.slice(0,5).join(', ')}`);return}const economicIssues=typeof economicInputIntegrityIssues==='function'?economicInputIntegrityIssues(engagementOfRecord(e)).filter(x=>x.kind==='SCOPE_MISMATCH'):[];if(economicIssues.length){state.activePage='impacto';render();toast('Revisa los impactos antes de recalcular: '+economicIssues.map(x=>x.message).join(' '));return}if(unresolvedEngineGates(e).length){openEngineGateReview();return}
   const sourceSnapshot=confirmedSnapshot(e);
   if(!sourceSnapshot)return toast('El AS-IS debe estar confirmado antes de calcular.');
   ['runDiag','runDiagHeader'].forEach(bid=>{const b=document.getElementById(bid);if(b){b.disabled=true;b.textContent='Calculando…'}});
