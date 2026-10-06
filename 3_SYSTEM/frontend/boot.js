@@ -13,7 +13,6 @@ else if(location.hash==='#session'){bootSessionDisplay();}
 else if(location.hash==='#results'){bootResultsMode();}
 else{
   document.body.classList.add(isProcessEditorWindow()?'mode-process-editor':'mode-internal');
-  INTERNAL_WORK_NAV.push(['implementacion','✓','Decisión e implementación']);
   if(typeof registerInternalWorkPages==='function')registerInternalWorkPages();
   if(typeof registerResultsModeLauncher==='function')registerResultsModeLauncher();
   migrateLoadedState();
