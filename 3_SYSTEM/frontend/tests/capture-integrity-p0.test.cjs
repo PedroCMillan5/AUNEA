@@ -116,9 +116,10 @@ test('structured AS-IS pages expose their remaining canonical stage questions',(
   assert.match(process,/consultantLayerPage\('Impacto'[\s\S]*'S07'\)/);
 });
 
-test('an empty AS-IS map or friction layer cannot be confirmed as complete',()=>{
-  assert.match(lifecycle,/Añade al menos un paso real al mapa AS-IS/);
-  assert.match(lifecycle,/Registra al menos una fricción observable/);
+test('boundary-only AS-IS and zero-friction cases remain valid when their canonical branches permit it',()=>{
+  assert.doesNotMatch(lifecycle,/Añade al menos un paso real al mapa AS-IS/);
+  assert.doesNotMatch(lifecycle,/Registra al menos una fricción observable/);
+  assert.match(noReask,/if\(!hasBoundaries&&!activeSteps\(e\)\.length\)misses\.push\('Mapa AS-IS'\)/);
 });
 
 test('risk controls capture the canonical control list and no material condition defaults silently',()=>{
