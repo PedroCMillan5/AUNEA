@@ -334,6 +334,18 @@ function bindCanonicalRenderer(){
     const fallback=Number(String(el.value).replace(',','.'));
     return Number.isFinite(fallback)?fallback:null;
   };
+  document.querySelectorAll('[data-sla-mode]').forEach(el=>el.addEventListener('change',()=>{
+    const fid=el.dataset.slaMode,wrap=document.querySelector(`[data-sla-value-wrap="${fid}"]`);
+    if(!wrap)return;
+    const none=el.value==='NONE';
+    wrap.hidden=none;
+    if(none){
+      const valueEl=document.querySelector(`[data-number-value="${fid}"]`);
+      const unitEl=document.querySelector(`[data-number-unit="${fid}"]`);
+      if(valueEl)valueEl.value='';
+      if(unitEl)unitEl.value='';
+    }
+  }));
   const numberFids=[...new Set([...document.querySelectorAll('[data-number-value],[data-number-unit],[data-number-period],[data-number-mode]')].map(x=>x.dataset.numberValue||x.dataset.numberUnit||x.dataset.numberPeriod||x.dataset.numberMode))];
   numberFids.forEach(fid=>{const sync=()=>{
     const valueEl=document.querySelector(`[data-number-value="${fid}"]`),value=safeNumericValue(valueEl),unit=document.querySelector(`[data-number-unit="${fid}"]`)?.value??'',period=document.querySelector(`[data-number-period="${fid}"]`)?.value??'',mode=document.querySelector(`[data-number-mode="${fid}"]`)?.value??'';
