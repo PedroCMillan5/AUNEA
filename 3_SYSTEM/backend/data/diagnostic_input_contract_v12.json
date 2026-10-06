@@ -1,0 +1,1107 @@
+{
+  "source": "AUNEA_DIAGNOSTIC_DATABASE_v0.9.2_DIAGNOSTIC_MASTER_V1.2.xlsx",
+  "drive_id": "1HRlB30kpziDc3WNPxMVj0HfXuRUdOgbW",
+  "extracted_on": "2026-10-06",
+  "purpose": "Audit snapshot of MAP_QUESTION_ENGINE_INPUT. Human CANONICAL remains in Drive; this file does not redefine rules.",
+  "count": 55,
+  "rows": [
+    {
+      "row": 0,
+      "Input_ID": "IN-P-01",
+      "Engine": "PainEngine",
+      "Input_Name": "process_scope",
+      "Description": "Defined trigger, outcome and end-to-end boundaries",
+      "Criticality": "CRITICAL",
+      "Source_Fields": [
+        "DF012",
+        "DF013",
+        "DF014",
+        "DF015"
+      ],
+      "Requiredness": "REQUIRED_90M",
+      "Branch_Rule_ID": "BR-BASE",
+      "Evidence": "Client confirmation; process doc optional",
+      "Blocking": "YES",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 1,
+      "Input_ID": "IN-P-02",
+      "Engine": "PainEngine",
+      "Input_Name": "case_volume",
+      "Description": "Representative process volume and cadence",
+      "Criticality": "CRITICAL",
+      "Source_Fields": [
+        "DF021",
+        "DF022",
+        "DF023",
+        "DF024",
+        "DF030"
+      ],
+      "Requiredness": "REQUIRED_90M",
+      "Branch_Rule_ID": "BR-BASE",
+      "Evidence": "System count preferred post-meeting when available",
+      "Blocking": "YES",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 2,
+      "Input_ID": "IN-P-03",
+      "Engine": "PainEngine",
+      "Input_Name": "process_steps",
+      "Description": "Actual step sequence, actor and type",
+      "Criticality": "CRITICAL",
+      "Source_Fields": [
+        "DF031",
+        "DF032",
+        "DF033",
+        "DF042"
+      ],
+      "Requiredness": "REQUIRED_90M",
+      "Branch_Rule_ID": "BR-STEP",
+      "Evidence": "Walkthrough + examples",
+      "Blocking": "YES",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 3,
+      "Input_ID": "IN-P-04",
+      "Engine": "PainEngine",
+      "Input_Name": "active_time",
+      "Description": "Active human effort at step/pain level",
+      "Criticality": "MATERIAL",
+      "Source_Fields": [
+        "DF037",
+        "DF062",
+        "DF078"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-ECON",
+      "Evidence": "Timer/log/sample if available",
+      "Blocking": "NO",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 4,
+      "Input_ID": "IN-P-05",
+      "Engine": "PainEngine",
+      "Input_Name": "wait_time",
+      "Description": "Elapsed waiting/queue delay separated from active labour",
+      "Criticality": "MATERIAL",
+      "Source_Fields": [
+        "DF038",
+        "DF026"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-WAIT",
+      "Evidence": "Timestamp logs preferred",
+      "Blocking": "NO",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 5,
+      "Input_ID": "IN-P-06",
+      "Engine": "PainEngine",
+      "Input_Name": "rework",
+      "Description": "Rework occurrence/frequency and active correction time",
+      "Criticality": "MATERIAL",
+      "Source_Fields": [
+        "DF028",
+        "DF039",
+        "DF040",
+        "DF060",
+        "DF079"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-FAIL",
+      "Evidence": "Quality log / defect records preferred",
+      "Blocking": "NO",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 6,
+      "Input_ID": "IN-P-07",
+      "Engine": "PainEngine",
+      "Input_Name": "manual_actions",
+      "Description": "Manual copy/search/download/rename/send/chase actions",
+      "Criticality": "CRITICAL",
+      "Source_Fields": [
+        "DF044",
+        "DF051",
+        "DF053"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-STEP",
+      "Evidence": "Observed example / screen walkthrough",
+      "Blocking": "NO",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 7,
+      "Input_ID": "IN-P-08",
+      "Engine": "PainEngine",
+      "Input_Name": "fragmented_intake",
+      "Description": "Channels/formats and manual consolidation",
+      "Criticality": "MATERIAL",
+      "Source_Fields": [
+        "DF050",
+        "DF056",
+        "DIAG_PAIN_QUESTION:P01"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-PAIN",
+      "Evidence": "Sample requests/logs",
+      "Blocking": "NO",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 8,
+      "Input_ID": "IN-P-09",
+      "Engine": "PainEngine",
+      "Input_Name": "missing_information",
+      "Description": "Missing prerequisites and follow-up mechanism",
+      "Criticality": "MATERIAL",
+      "Source_Fields": [
+        "DF035",
+        "DF055",
+        "DF056",
+        "DIAG_PAIN_QUESTION:P02"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-PAIN",
+      "Evidence": "Case examples / completeness logs",
+      "Blocking": "NO",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 9,
+      "Input_ID": "IN-P-10",
+      "Engine": "PainEngine",
+      "Input_Name": "duplicate_entry",
+      "Description": "Repeated entry of same business data",
+      "Criticality": "MATERIAL",
+      "Source_Fields": [
+        "DF051",
+        "DF054",
+        "DIAG_PAIN_QUESTION:P03"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-PAIN",
+      "Evidence": "System fields / screenshots",
+      "Blocking": "NO",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 10,
+      "Input_ID": "IN-P-11",
+      "Engine": "PainEngine",
+      "Input_Name": "ownership_handoff",
+      "Description": "Ownership clarity, transfers and reassignment",
+      "Criticality": "MATERIAL",
+      "Source_Fields": [
+        "DF016",
+        "DF033",
+        "DF042",
+        "DF056",
+        "DIAG_PAIN_QUESTION:P04"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-PAIN",
+      "Evidence": "Case history / assignment logs",
+      "Blocking": "NO",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 11,
+      "Input_ID": "IN-P-12",
+      "Engine": "PainEngine",
+      "Input_Name": "routing_logic",
+      "Description": "Routing/triage rules and ambiguity",
+      "Criticality": "MATERIAL",
+      "Source_Fields": [
+        "DF041",
+        "DF067",
+        "DF056",
+        "DIAG_PAIN_QUESTION:P05"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-PAIN",
+      "Evidence": "Routing examples / SOP",
+      "Blocking": "NO",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 12,
+      "Input_ID": "IN-P-13",
+      "Engine": "PainEngine",
+      "Input_Name": "sla_deadline",
+      "Description": "SLA/deadline target and failures",
+      "Criticality": "MATERIAL",
+      "Source_Fields": [
+        "DF025",
+        "DF026",
+        "DF056",
+        "DIAG_PAIN_QUESTION:P06"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-SLA",
+      "Evidence": "SLA reports / timestamps",
+      "Blocking": "NO",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 13,
+      "Input_ID": "IN-P-14",
+      "Engine": "PainEngine",
+      "Input_Name": "approval",
+      "Description": "Approval steps, criteria, chase and waiting",
+      "Criticality": "MATERIAL",
+      "Source_Fields": [
+        "DF032",
+        "DF041",
+        "DF067",
+        "DF075",
+        "DIAG_PAIN_QUESTION:P07"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-APPROVAL",
+      "Evidence": "Approval logs",
+      "Blocking": "NO",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 14,
+      "Input_ID": "IN-P-15",
+      "Engine": "PainEngine",
+      "Input_Name": "version_control",
+      "Description": "Artifact versioning and authoritative source",
+      "Criticality": "MATERIAL",
+      "Source_Fields": [
+        "DF049",
+        "DF052",
+        "DIAG_PAIN_QUESTION:P08"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-PAIN",
+      "Evidence": "Repository/version history",
+      "Blocking": "NO",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 15,
+      "Input_ID": "IN-P-16",
+      "Engine": "PainEngine",
+      "Input_Name": "visibility_reporting",
+      "Description": "Status visibility, backlog and reporting work",
+      "Criticality": "MATERIAL",
+      "Source_Fields": [
+        "DF027",
+        "DF053",
+        "DF081",
+        "DIAG_PAIN_QUESTION:P09",
+        "DIAG_PAIN_QUESTION:P14"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-VISIBILITY",
+      "Evidence": "Dashboard/report extracts",
+      "Blocking": "NO",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 16,
+      "Input_ID": "IN-P-17",
+      "Engine": "PainEngine",
+      "Input_Name": "data_quality",
+      "Description": "Invalid/inconsistent/duplicate stored data",
+      "Criticality": "MATERIAL",
+      "Source_Fields": [
+        "DF055",
+        "DF040",
+        "DIAG_PAIN_QUESTION:P13"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-DATA",
+      "Evidence": "Data-quality sample/report",
+      "Blocking": "NO",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 17,
+      "Input_ID": "IN-P-18",
+      "Engine": "PainEngine",
+      "Input_Name": "tool_fragmentation",
+      "Description": "Systems, integration gaps and cross-tool work",
+      "Criticality": "MATERIAL",
+      "Source_Fields": [
+        "DF034",
+        "DF046",
+        "DF054",
+        "DIAG_PAIN_QUESTION:P15"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-TOOLS",
+      "Evidence": "Architecture/integration inventory",
+      "Blocking": "NO",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 18,
+      "Input_ID": "IN-P-19",
+      "Engine": "PainEngine",
+      "Input_Name": "exceptions",
+      "Description": "Exception types, path and frequency",
+      "Criticality": "MATERIAL",
+      "Source_Fields": [
+        "DF043",
+        "DF066",
+        "DIAG_PAIN_QUESTION:P16"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-EXCEPTION",
+      "Evidence": "Exception queue/case history",
+      "Blocking": "NO",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 19,
+      "Input_ID": "IN-P-20",
+      "Engine": "PainEngine",
+      "Input_Name": "knowledge_dependency",
+      "Description": "Tacit knowledge / SOP dependency",
+      "Criticality": "MATERIAL",
+      "Source_Fields": [
+        "DF019",
+        "DF035",
+        "DF049",
+        "DIAG_PAIN_QUESTION:P20"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-KNOWLEDGE",
+      "Evidence": "SOP / knowledge base evidence",
+      "Blocking": "NO",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 20,
+      "Input_ID": "IN-E-01",
+      "Engine": "EconomicsEngine",
+      "Input_Name": "annual_case_volume",
+      "Description": "Case count annualized from representative period",
+      "Criticality": "CRITICAL",
+      "Source_Fields": [
+        "DF021",
+        "DF022",
+        "DF023",
+        "DF024"
+      ],
+      "Requiredness": "REQUIRED_90M",
+      "Branch_Rule_ID": "BR-BASE",
+      "Evidence": "System count preferred",
+      "Blocking": "YES",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 21,
+      "Input_ID": "IN-E-02",
+      "Engine": "EconomicsEngine",
+      "Input_Name": "active_minutes",
+      "Description": "Unique active minutes for attributable event",
+      "Criticality": "MATERIAL",
+      "Source_Fields": [
+        "DF037",
+        "DF062",
+        "DF078",
+        "DF079",
+        "DF080",
+        "DF081"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-ECON",
+      "Evidence": "Time study/log/sample",
+      "Blocking": "NO",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 22,
+      "Input_ID": "IN-E-03",
+      "Engine": "EconomicsEngine",
+      "Input_Name": "occurrence_count",
+      "Description": "Affected event frequency / cases",
+      "Criticality": "MATERIAL",
+      "Source_Fields": [
+        "DF028",
+        "DF040",
+        "DF060"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-ECON",
+      "Evidence": "Operational logs",
+      "Blocking": "NO",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 23,
+      "Input_ID": "IN-E-04",
+      "Engine": "EconomicsEngine",
+      "Input_Name": "waiting_hours",
+      "Description": "Elapsed waiting kept separate from labour",
+      "Criticality": "MATERIAL",
+      "Source_Fields": [
+        "DF038",
+        "DF026"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-WAIT",
+      "Evidence": "Timestamp logs",
+      "Blocking": "NO",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 24,
+      "Input_ID": "IN-E-05",
+      "Engine": "EconomicsEngine",
+      "Input_Name": "capacity_rate",
+      "Description": "Evidenced role/resource capacity cost rate",
+      "Criticality": "OPTIONAL",
+      "Source_Fields": [
+        "DF076",
+        "DF077"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-CAPACITY",
+      "Evidence": "Finance/HR cost and practical-capacity data",
+      "Blocking": "NO",
+      "Notes": "Absence blocks capacity monetization, not diagnosis.",
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 25,
+      "Input_ID": "IN-E-06",
+      "Engine": "EconomicsEngine",
+      "Input_Name": "direct_loss",
+      "Description": "Attributed non-labour defect/leakage/penalty amount",
+      "Criticality": "OPTIONAL",
+      "Source_Fields": [
+        "DF063",
+        "DF082"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-DIRECTLOSS",
+      "Evidence": "Accounting/transaction/contract evidence",
+      "Blocking": "NO",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 26,
+      "Input_ID": "IN-E-07",
+      "Engine": "EconomicsEngine",
+      "Input_Name": "tool_spend",
+      "Description": "Current attributable tool/platform spend",
+      "Criticality": "OPTIONAL",
+      "Source_Fields": [
+        "DF083",
+        "DF046"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-TOOLCOST",
+      "Evidence": "Invoice/contract",
+      "Blocking": "NO",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 27,
+      "Input_ID": "IN-E-08",
+      "Engine": "EconomicsEngine",
+      "Input_Name": "revenue_impact",
+      "Description": "Causally evidenced missed/protected revenue",
+      "Criticality": "OPTIONAL",
+      "Source_Fields": [
+        "DF084"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-REVENUE",
+      "Evidence": "Accounting/transaction evidence",
+      "Blocking": "NO",
+      "Notes": "Never treated as profit/cash automatically.",
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 28,
+      "Input_ID": "IN-E-09",
+      "Engine": "EconomicsEngine",
+      "Input_Name": "economic_confidence",
+      "Description": "Evidence quality for material economic inputs",
+      "Criticality": "CRITICAL",
+      "Source_Fields": [
+        "DF085",
+        "DF094",
+        "DF095"
+      ],
+      "Requiredness": "REQUIRED_90M",
+      "Branch_Rule_ID": "BR-CLOSE",
+      "Evidence": "Evidence IDs and provenance",
+      "Blocking": "YES",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 29,
+      "Input_ID": "IN-E-10",
+      "Engine": "EconomicsEngine",
+      "Input_Name": "dedup_scope",
+      "Description": "Event/step/role scope sufficient to deduplicate overlapping minutes/costs",
+      "Criticality": "CRITICAL",
+      "Source_Fields": [
+        "DF031",
+        "DF033",
+        "DF059",
+        "DF056"
+      ],
+      "Requiredness": "DERIVED",
+      "Branch_Rule_ID": "BR-STEP",
+      "Evidence": "Derived from scoped process/pain records",
+      "Blocking": "YES",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 30,
+      "Input_ID": "IN-R-01",
+      "Engine": "RecommendationEngine",
+      "Input_Name": "confirmed_pains",
+      "Description": "Pain states and causal mechanisms",
+      "Criticality": "CRITICAL",
+      "Source_Fields": [
+        "DF056",
+        "DF058",
+        "DF059",
+        "DF093"
+      ],
+      "Requiredness": "DERIVED",
+      "Branch_Rule_ID": "BR-PAIN",
+      "Evidence": "Pain Engine output",
+      "Blocking": "YES",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 31,
+      "Input_ID": "IN-R-02",
+      "Engine": "RecommendationEngine",
+      "Input_Name": "existing_tools",
+      "Description": "Owned tools and integration/configuration landscape",
+      "Criticality": "CRITICAL",
+      "Source_Fields": [
+        "DF034",
+        "DF046",
+        "DF054",
+        "DF089"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-TOOLS",
+      "Evidence": "Licence/feature validation post-meeting",
+      "Blocking": "YES",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 32,
+      "Input_ID": "IN-R-03",
+      "Engine": "RecommendationEngine",
+      "Input_Name": "desired_outcome",
+      "Description": "Client-defined future-state objective",
+      "Criticality": "CRITICAL",
+      "Source_Fields": [
+        "DF086",
+        "DF009"
+      ],
+      "Requiredness": "REQUIRED_90M",
+      "Branch_Rule_ID": "BR-FUTURE",
+      "Evidence": "Client confirmation",
+      "Blocking": "YES",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 33,
+      "Input_ID": "IN-R-04",
+      "Engine": "RecommendationEngine",
+      "Input_Name": "must_keep",
+      "Description": "Mandatory policies/process/tool elements to preserve",
+      "Criticality": "MATERIAL",
+      "Source_Fields": [
+        "DF087",
+        "DF010"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-FUTURE",
+      "Evidence": "Policy/SOP evidence where applicable",
+      "Blocking": "NO",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 34,
+      "Input_ID": "IN-R-05",
+      "Engine": "RecommendationEngine",
+      "Input_Name": "must_not_automate",
+      "Description": "Explicit automation/AI boundaries",
+      "Criticality": "CRITICAL",
+      "Source_Fields": [
+        "DF088",
+        "DF075"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-AI",
+      "Evidence": "Policy/legal/risk evidence where applicable",
+      "Blocking": "YES_IF_AI",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 35,
+      "Input_ID": "IN-R-06",
+      "Engine": "RecommendationEngine",
+      "Input_Name": "platform_constraints",
+      "Description": "Preferred/required platforms and architecture constraints",
+      "Criticality": "MATERIAL",
+      "Source_Fields": [
+        "DF089",
+        "DF090",
+        "DF010"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-FUTURE",
+      "Evidence": "IT/security confirmation",
+      "Blocking": "NO",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 36,
+      "Input_ID": "IN-R-07",
+      "Engine": "RecommendationEngine",
+      "Input_Name": "change_constraints",
+      "Description": "Adoption, training and organizational constraints",
+      "Criticality": "MATERIAL",
+      "Source_Fields": [
+        "DF091",
+        "DF017"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-FUTURE",
+      "Evidence": "Stakeholder validation",
+      "Blocking": "NO",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 37,
+      "Input_ID": "IN-R-08",
+      "Engine": "RecommendationEngine",
+      "Input_Name": "budget_context",
+      "Description": "Budget constraint if shared",
+      "Criticality": "OPTIONAL",
+      "Source_Fields": [
+        "DF092",
+        "DF010"
+      ],
+      "Requiredness": "OPTIONAL_90M",
+      "Branch_Rule_ID": "BR-FUTURE",
+      "Evidence": "Commercial confirmation",
+      "Blocking": "NO",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 38,
+      "Input_ID": "IN-R-09",
+      "Engine": "RecommendationEngine",
+      "Input_Name": "deterministic_rules",
+      "Description": "Whether normal-path decisions can be expressed with explicit rules",
+      "Criticality": "CRITICAL",
+      "Source_Fields": [
+        "DF041",
+        "DF042",
+        "DF067"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-LOGIC",
+      "Evidence": "Examples/SOP",
+      "Blocking": "YES",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 39,
+      "Input_ID": "IN-R-10",
+      "Engine": "RecommendationEngine",
+      "Input_Name": "exception_complexity",
+      "Description": "Need for explicit exception queue/branch/review/resource allocation",
+      "Criticality": "MATERIAL",
+      "Source_Fields": [
+        "DF043",
+        "DF066"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-EXCEPTION",
+      "Evidence": "Case examples",
+      "Blocking": "NO",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 40,
+      "Input_ID": "IN-R-11",
+      "Engine": "RecommendationEngine",
+      "Input_Name": "management_visibility_need",
+      "Description": "Need for workload/aging/bottleneck/exception/performance management view",
+      "Criticality": "MATERIAL",
+      "Source_Fields": [
+        "DF027",
+        "DF053",
+        "DF081",
+        "DF086"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-VISIBILITY",
+      "Evidence": "Current reports / target KPI list",
+      "Blocking": "NO",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 41,
+      "Input_ID": "IN-R-12",
+      "Engine": "RecommendationEngine",
+      "Input_Name": "unstructured_interpretation_need",
+      "Description": "Need to interpret/summarize/classify/retrieve/draft from unstructured content",
+      "Criticality": "MATERIAL",
+      "Source_Fields": [
+        "DF035",
+        "DF049",
+        "DF050",
+        "DF086"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-AI",
+      "Evidence": "Representative documents/messages required before AI commitment",
+      "Blocking": "NO",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 42,
+      "Input_ID": "IN-R-13",
+      "Engine": "RecommendationEngine",
+      "Input_Name": "bounded_action_space",
+      "Description": "Allowed/forbidden next actions can be explicitly bounded",
+      "Criticality": "CRITICAL",
+      "Source_Fields": [
+        "DF041",
+        "DF043",
+        "DF074",
+        "DF075",
+        "DF088"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-AGENT",
+      "Evidence": "Representative cases + control review",
+      "Blocking": "YES_IF_I2",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 43,
+      "Input_ID": "IN-R-14",
+      "Engine": "RecommendationEngine",
+      "Input_Name": "human_oversight",
+      "Description": "Human review/override/approval requirements",
+      "Criticality": "CRITICAL",
+      "Source_Fields": [
+        "DF075",
+        "DF088"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-AI",
+      "Evidence": "Risk/legal confirmation where material",
+      "Blocking": "YES_IF_AI",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 44,
+      "Input_ID": "IN-K-01",
+      "Engine": "RiskEngine",
+      "Input_Name": "process_criticality",
+      "Description": "Business criticality and consequence context",
+      "Criticality": "CRITICAL",
+      "Source_Fields": [
+        "DF018",
+        "DF064"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-RISK",
+      "Evidence": "Business owner confirmation",
+      "Blocking": "YES",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 45,
+      "Input_ID": "IN-K-02",
+      "Engine": "RiskEngine",
+      "Input_Name": "risk_description_category",
+      "Description": "Concrete risk and category",
+      "Criticality": "CRITICAL",
+      "Source_Fields": [
+        "DF068",
+        "DF069"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-RISK",
+      "Evidence": "Evidence where material",
+      "Blocking": "YES_IF_RISK",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 46,
+      "Input_ID": "IN-K-03",
+      "Engine": "RiskEngine",
+      "Input_Name": "likelihood_impact",
+      "Description": "Likelihood and impact assessment",
+      "Criticality": "MATERIAL",
+      "Source_Fields": [
+        "DF070",
+        "DF071"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-RISK",
+      "Evidence": "Historical incidents/data where available",
+      "Blocking": "NO",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 47,
+      "Input_ID": "IN-K-04",
+      "Engine": "RiskEngine",
+      "Input_Name": "current_controls",
+      "Description": "Existing controls and their operation",
+      "Criticality": "CRITICAL",
+      "Source_Fields": [
+        "DF072",
+        "DF075"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-RISK",
+      "Evidence": "Control design/effectiveness evidence",
+      "Blocking": "YES_IF_RISK",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 48,
+      "Input_ID": "IN-K-05",
+      "Engine": "RiskEngine",
+      "Input_Name": "sensitive_data",
+      "Description": "Personal/financial/confidential/regulated data exposure",
+      "Criticality": "CRITICAL",
+      "Source_Fields": [
+        "DF073",
+        "DF090"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-RISK",
+      "Evidence": "Data classification/security confirmation",
+      "Blocking": "YES_IF_AI",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 49,
+      "Input_ID": "IN-K-06",
+      "Engine": "RiskEngine",
+      "Input_Name": "irreversibility",
+      "Description": "Actions/outcomes difficult to reverse",
+      "Criticality": "CRITICAL",
+      "Source_Fields": [
+        "DF074"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-RISK",
+      "Evidence": "Case/control confirmation",
+      "Blocking": "YES_IF_I2",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 50,
+      "Input_ID": "IN-K-07",
+      "Engine": "RiskEngine",
+      "Input_Name": "human_approval_required",
+      "Description": "Actions that must retain human approval",
+      "Criticality": "CRITICAL",
+      "Source_Fields": [
+        "DF075",
+        "DF088"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-RISK",
+      "Evidence": "Policy/legal confirmation",
+      "Blocking": "YES_IF_AI",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 51,
+      "Input_ID": "IN-G-01",
+      "Engine": "Governance",
+      "Input_Name": "summary_confirmed",
+      "Description": "Client confirms AS-IS summary before recommendation",
+      "Criticality": "CRITICAL",
+      "Source_Fields": [
+        "DF093"
+      ],
+      "Requiredness": "REQUIRED_90M",
+      "Branch_Rule_ID": "BR-CLOSE",
+      "Evidence": "Client confirmation",
+      "Blocking": "YES",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 52,
+      "Input_ID": "IN-G-02",
+      "Engine": "Governance",
+      "Input_Name": "missing_information",
+      "Description": "Material unknowns explicitly recorded",
+      "Criticality": "CRITICAL",
+      "Source_Fields": [
+        "DF094"
+      ],
+      "Requiredness": "REQUIRED_90M",
+      "Branch_Rule_ID": "BR-CLOSE",
+      "Evidence": null,
+      "Blocking": "YES",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 53,
+      "Input_ID": "IN-G-03",
+      "Engine": "Governance",
+      "Input_Name": "evidence_to_request",
+      "Description": "Post-meeting evidence list created",
+      "Criticality": "CRITICAL",
+      "Source_Fields": [
+        "DF095"
+      ],
+      "Requiredness": "REQUIRED_90M",
+      "Branch_Rule_ID": "BR-CLOSE",
+      "Evidence": null,
+      "Blocking": "YES",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    },
+    {
+      "row": 54,
+      "Input_ID": "IN-G-04",
+      "Engine": "Governance",
+      "Input_Name": "priority_pains",
+      "Description": "Client priority distinguished from engine severity/economics",
+      "Criticality": "MATERIAL",
+      "Source_Fields": [
+        "DF096"
+      ],
+      "Requiredness": "CONDITIONAL_90M",
+      "Branch_Rule_ID": "BR-CLOSE",
+      "Evidence": "Client confirmation",
+      "Blocking": "NO",
+      "Notes": null,
+      "Version": "v0.6",
+      "Status": "ACTIVE"
+    }
+  ]
+}
