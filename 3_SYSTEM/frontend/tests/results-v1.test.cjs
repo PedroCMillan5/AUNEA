@@ -103,7 +103,7 @@ test('PG10 result renders diagnostic sections, traceability and the governed TO-
   assert.match(html,/19,2 h\/año/);
   assert.match(html,/Riesgo de error/);
   assert.match(html,/Recomendación preliminar/);
-  assert.match(html,/Revisado: continuar a TO-BE/);
+  assert.match(html,/Continuar al diseño TO-BE/);
 });
 
 test('PG11 is blocked until a diagnostic output exists for the current confirmed snapshot',()=>{
