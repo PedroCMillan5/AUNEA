@@ -140,17 +140,13 @@ function confirmProcessLayer(tab){
     if((!start||!finish)&&!hasActive)return toast('Define los límites inicial y final o añade al menos un paso antes de confirmar el mapa.');
   }
   const integrity=processLayerIntegrityIssues(e,key);if(integrity.length)return toast('No se puede confirmar: '+integrity[0].message),false;
-  const x=processLayerConfirmations(e),wouldClose=['map','frictions','risks','impact'].every(k=>k===key||!!x[k]);
-  if(wouldClose&&typeof canonicalMissingRequired==='function'){
-    const closingMissing=canonicalMissingRequired(e).filter(v=>v!=='Confirmación AS-IS'&&v!=='DF093');
-    if(closingMissing.length)return toast('Antes de confirmar la última capa, completa Validación y cierre: '+closingMissing.slice(0,3).join(', ')),false;
-  }
+  const x=processLayerConfirmations(e);
   x[key]=true;x[key+'_at']=now();
   if(allProcessLayersConfirmed(e)){
     e.confirmedAsIs=true;e.answers.DF093='YES';e.asIsConfirmedAt=now();
-    const sealed=typeof sealConfirmedSnapshot==='function'?sealConfirmedSnapshot(e,'confirmación de mapa, fricciones, riesgos e impacto con cierre completo'):null;
+    const sealed=typeof sealConfirmedSnapshot==='function'?sealConfirmedSnapshot(e,'confirmación de mapa, fricciones, riesgos e impacto'):null;
     markDirty(sealed?`Capas AS-IS confirmadas · snapshot v${sealed.version}`:'Capas AS-IS confirmadas');
-    toast('Mapa, fricciones, riesgos, impacto y cierre confirmados.');
+    toast('Mapa, fricciones, riesgos e impacto confirmados. Completa el cierre de sesión si quedan datos pendientes.');
   }else{
     markDirty(`Capa ${key} confirmada`);
     toast('Capa confirmada. Puedes continuar con la siguiente.');
