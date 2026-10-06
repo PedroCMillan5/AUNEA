@@ -159,6 +159,18 @@ function effectiveValue(f,e){
   return explicit??'';
 }
 
+const RISK_DISCOVERY_FIELDS=new Set(['DF073','DF074','DF090']);
+const RISK_RELEVANT_INITIAL_CONSTRAINTS=new Set(['SECURITY','COMPLIANCE','DATA_RESIDENCY','OWNERSHIP']);
+function riskBranchSignal(e,steps,fr,answers){
+  const critical=['4','5',4,5].includes(answers.DF018);
+  const knownRiskConstraint=normalizeArray(answers.DF010).some(v=>RISK_RELEVANT_INITIAL_CONSTRAINTS.has(String(v)));
+  const nonTimeImpact=valuePresent(answers.DF064)||fr.some(x=>normalizeArray(x.non_time_impact).length>0);
+  const sensitiveData=normalizeArray(answers.DF073).some(v=>String(v).toUpperCase()!=='NONE');
+  const reversibility=valuePresent(answers.DF074)&&String(answers.DF074).toUpperCase()!=='REVERSIBLE';
+  const securityConstraint=valuePresent(answers.DF090);
+  const existingRisk=(e.risks||[]).some(x=>x.status!=='SUPERSEDED');
+  return existingRisk||critical||knownRiskConstraint||nonTimeImpact||sensitiveData||reversibility||securityConstraint;
+}
 function branchActive(ruleId,e){
   const steps=activeSteps(e),fr=activeFrictions(e),answers=e.answers||{},tools=unique(steps.map(x=>x.tool)),frTypes=new Set(fr.map(x=>x.friction_type));
   switch(ruleId){
@@ -175,7 +187,7 @@ function branchActive(ruleId,e){
     case 'BR-EXCEPTION':return steps.some(x=>valuePresent(x.exception_path));
     case 'BR-VISIBILITY':return valuePresent(answers.DF027)||valuePresent(answers.DF053)||valuePresent(answers.DF081)||frTypes.has('P09')||frTypes.has('P14');
     case 'BR-KNOWLEDGE':return frTypes.has('P20')||answers.DF019==='NO';
-    case 'BR-RISK':return (e.risks||[]).length>0||['4','5',4,5].includes(answers.DF018)||valuePresent(answers.DF073)||valuePresent(answers.DF074)||valuePresent(answers.DF090);
+    case 'BR-RISK':return riskBranchSignal(e,steps,fr,answers);
     case 'BR-AI':return valuePresent(answers.DF088)||normalizeArray(answers.DF008).some(v=>/AI|IA/i.test(String(v)));
     case 'BR-AGENT':return valuePresent(answers.DF075)&&valuePresent(answers.DF088);
     case 'BR-CAPACITY':return valuePresent(answers.DF076)||valuePresent(answers.DF077)||(e.economicInputs||[]).some(x=>scalarNumber(x.capacity_cost_rate_eur_hour)>0);
@@ -202,6 +214,10 @@ function questionVisible(f,e){
   // DF025 is itself the canonical question that establishes whether an SLA/target exists.
   // It must remain askable in S03; otherwise BR-SLA creates a circular visibility dependency.
   if(f.Field_ID==='DF025'&&f.Stage_ID==='S03')return true;
+  // DF073/DF074/DF090 are canonical discovery probes: their answers can reveal that BR-RISK applies.
+  // Keeping these CONDITIONAL_90M questions available does not make them required and prevents the
+  // branch from needing a pre-existing RiskInput (or the answer itself) before the exposure is discoverable.
+  if(RISK_DISCOVERY_FIELDS.has(f.Field_ID))return true;
   if(['CAPTURE_IN_PROCESS_STEP','CONDITIONAL_IN_STEP'].includes(f.Ask_Mode))return false;
   if(['CAPTURE_IN_FRICTION','CONDITIONAL_IN_FRICTION'].includes(f.Ask_Mode))return false;
   if(f.Ask_Mode==='CAPTURE_IN_RISK')return false;
