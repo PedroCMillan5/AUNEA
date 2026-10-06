@@ -104,10 +104,12 @@ test('risk payload no longer fabricates score 1 for missing likelihood or impact
 });
 
 
-test('active conditional questions participate in the same completion gate',()=>{
+test('conditional questions stay non-blocking while required questions keep the completion gate',()=>{
   assert.match(noReask,/function canonicalFieldRequiredNow/);
-  assert.match(noReask,/Requiredness==='CONDITIONAL_90M'/);
-  assert.match(stages,/canonicalFieldRequiredNow/);
+  assert.match(noReask,/Requiredness==='REQUIRED_90M'/);
+  const requiredNow=noReask.slice(noReask.indexOf('function canonicalFieldRequiredNow'),noReask.indexOf('\nfunction',noReask.indexOf('function canonicalFieldRequiredNow')+10));
+  assert.doesNotMatch(requiredNow,/CONDITIONAL_90M/);
+  assert.match(stages,/Requiredness==='REQUIRED_90M'/);
   assert.match(completion,/canonicalFieldRequiredNow/);
 });
 
