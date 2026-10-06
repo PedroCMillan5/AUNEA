@@ -715,3 +715,39 @@ body:not(.mode-process-editor) .content [data-process-engagement] .flow-insert{d
   .economic-context-steps{grid-template-columns:1fr}
 }
 /* [AUNEA-FE-ECON-GUIDED-040] END */
+
+/* [AUNEA-FE-CLOSE-STAGE-041] START — S09 compact validation/closure controls.
+   DF098 keeps the canonical action + consultant + date contract; DF099 keeps canonical yes/no/unknown + scope. */
+.content:has(.diagnostic-stage-s09) .stage-card>.form-grid{gap:16px 14px;align-items:start}
+.content:has(.diagnostic-stage-s09) .field.full{min-width:0}
+.content:has(.diagnostic-stage-s09) .nextstep-inline{
+  display:grid;grid-template-columns:minmax(280px,1.35fr) minmax(210px,.75fr) minmax(180px,.65fr);
+  gap:10px;align-items:end;width:100%
+}
+.content:has(.diagnostic-stage-s09) .nextstep-cell{min-width:0}
+.content:has(.diagnostic-stage-s09) .nextstep-cell>.canonical-aunea-select,
+.content:has(.diagnostic-stage-s09) .nextstep-cell input{width:100%;min-width:0}
+.content:has(.diagnostic-stage-s09) .nextstep-cell-label{
+  display:block;font-size:11px;font-weight:700;color:var(--muted);margin:0 0 5px
+}
+.content:has(.diagnostic-stage-s09) .nextstep-owner input[readonly]{
+  background:#f4f7f5;border-color:#d7e1dc;color:var(--system);font-weight:700;cursor:default
+}
+.content:has(.diagnostic-stage-s09) .nextstep-other-wrap{margin-top:8px;max-width:520px}
+.content:has(.diagnostic-stage-s09) .permission-inline{
+  display:grid;grid-template-columns:max-content minmax(320px,1fr);gap:14px;align-items:center;width:100%
+}
+.content:has(.diagnostic-stage-s09) .permission-choice .segmented{margin:0;white-space:nowrap}
+.content:has(.diagnostic-stage-s09) .permission-scope{min-width:0}
+.content:has(.diagnostic-stage-s09) .permission-scope[hidden]{display:none!important}
+.content:has(.diagnostic-stage-s09) .permission-scope input{width:100%;min-width:0}
+@media(max-width:980px){
+  .content:has(.diagnostic-stage-s09) .nextstep-inline{grid-template-columns:1fr 1fr}
+  .content:has(.diagnostic-stage-s09) .nextstep-action{grid-column:1/-1}
+  .content:has(.diagnostic-stage-s09) .permission-inline{grid-template-columns:1fr}
+}
+@media(max-width:640px){
+  .content:has(.diagnostic-stage-s09) .nextstep-inline{grid-template-columns:1fr}
+  .content:has(.diagnostic-stage-s09) .nextstep-action{grid-column:auto}
+}
+/* [AUNEA-FE-CLOSE-STAGE-041] END */
