@@ -170,7 +170,7 @@ test('PG09 confirms AS-IS and never offers engines even when internal calculatio
   const e={confirmedAsIs:true,processSteps:[{id:'s1',status:'ACTIVE'}],frictions:[],risks:[],economicInputs:[],answers:{DF098:'Solicitar evidencias — Pedro — 12/09/2026'}};
   const completion={readyToCalculate:true,missing:[],blockers:[]};
   const html=ctx.validationSummary(e,completion);
-  assert.match(html,/id="confirmAsIs">Confirmar AS-IS/);
+  assert.match(html,/id="confirmClosingAsIs">Confirmar AS-IS/);
   assert.doesNotMatch(html,/id="runDiag"/);
   assert.doesNotMatch(html,/blocker-list/);
   assert.match(html,/Solicitar evidencias — Pedro — 12\/09\/2026/);
@@ -202,7 +202,7 @@ test('PG01–PG09 never calculate or recalculate recommendation',()=>{
   html=ctx.stagePage();
   assert.equal((html.match(/id="runDiag"/g)||[]).length,0,'PG09 only confirms AS-IS');
   assert.doesNotMatch(html,/id="nextStage"/,'there is no stage 10 to continue to');
-  assert.match(html,/id="confirmAsIs">Confirmar AS-IS/);
+  assert.match(html,/id="confirmClosingAsIs">Confirmar AS-IS/);
   assert.doesNotMatch(html,/id="runDiag"/);
 
   e.diagnosticOutput={recommendation:{}};
@@ -313,3 +313,12 @@ test('an incomplete case (one required field missing in one stage) correctly nam
   assert.equal(c.readyToCalculate,false);
 });
 // [AUNEA-UAT-COMPLETION-010] END
+
+test('S09 closure shows objective first readings but never labels them diagnosis or recommendation',()=>{
+  const ctx=makeCtx();
+  const e={answers:{DF096:[]},processSteps:[{id:'s1',status:'ACTIVE',step_name:'Paso'}],frictions:[],risks:[],economicInputs:[],confirmedAsIs:false,confirmedSnapshots:[]};
+  const html=ctx.validationSummary(e,{missing:[],blockers:[]});
+  assert.match(html,/Resumen de la sesión/);
+  assert.match(html,/No son todavía diagnóstico, recomendación, ROI ni propuesta/);
+  assert.match(html,/id="confirmClosingAsIs"/);
+});
