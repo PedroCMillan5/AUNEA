@@ -157,7 +157,7 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
     assert.equal(w.eval('currentEng().stageId'),'S01','no avanza mientras falte un obligatorio');
     assert.ok(d.querySelector('.field-pending'),'y el campo pendiente queda señalado');
     // With every S01 obligation answered, Continuar advances.
-    w.eval(`(()=>{(schema.fields||[]).filter(f=>f.Stage_ID==='S01'&&f.Requiredness==='REQUIRED_90M').forEach(f=>{const v=f.Control_UI&&String(f.Control_UI).includes('MULTISELECT')?['__uat__']:'__uat__';setAnswer(f.Field_ID,v)});render()})()`);
+    w.eval(`setAnswer('DF008',['UNDERSTAND']);render()`);
     click('#nextStage');
     assert.equal(w.eval('currentEng().stageId'),'S02','con los obligatorios resueltos sí avanza');
     w.eval(`(()=>{const e=currentEng();e.stageId='S01';render()})()`);
@@ -233,7 +233,7 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   await t.test('VR-02 stage labels and order react to schema changes without a second list',()=>{
     w.eval('window.__flowBefore=schema.flow; schema.flow=schema.flow.slice().reverse().map((s,i)=>i===0?{...s,Stage_ES:"Etapa de prueba del schema"}:s); render()');
     try{
-      assert.deepEqual(railStages(),Array.from(w.eval("schema.flow.map(s=>s.Stage_ID).filter(id=>!['S04','S05','S06','S07'].includes(id))")));
+      assert.deepEqual(railStages(),Array.from(w.eval("[...schema.flow.map(s=>s.Stage_ID).filter(id=>!['S04','S05','S06','S07','S09'].includes(id)),'S09']")));
       assert.match(d.querySelector('#nav .nav-step').textContent,/Etapa de prueba del schema/);
     }finally{w.eval('schema.flow=window.__flowBefore; delete window.__flowBefore; render()');}
   });
@@ -251,13 +251,13 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   click('[data-page="pasos"]');click('#addStep');fill('#step_name','Validar solicitud');fill('#step_type','ST02');fill('#step_actor','OPERATIONS');
   fill('#step_active','12');fill('#step_wait','60');fill('#step_rework','3');click('#modalSave');
   assert.equal(d.querySelector('#modalSave'),null);
-  click('[data-process-tab="fricciones"]');click('#addFriction');click('[data-aunea-select-option="fr_type"]:not([data-value=""])');fill('#fr_signal','UAT: faltan datos en la solicitud');click('#modalSave');
+  click('[data-page="fricciones"]');click('#addFriction');click('[data-aunea-select-option="fr_type"]:not([data-value=""])');fill('#fr_signal','UAT: faltan datos en la solicitud');click('#modalSave');
   assert.ok(d.querySelector('#modalSave'),'La fricción sin paso ni causa debe seguir abierta');
   const stepChoice=d.querySelector('[data-v1-multi="fr_steps"]'),causeChoice=d.querySelector('[data-v1-multi="fr_causes"]');assert.ok(stepChoice);assert.ok(causeChoice);stepChoice.checked=true;causeChoice.checked=true;click('#modalSave');assert.equal(d.querySelector('#modalSave'),null);
-  click('[data-process-tab="cliente"]');click('#confirmAsIs');
-  click('[data-process-tab="fricciones"]');click('#confirmAsIs');
-  click('[data-process-tab="riesgos"]');click('#confirmAsIs');
-  click('[data-process-tab="impacto"]');click('#confirmAsIs');
+  click('[data-page="pasos"]');click('[data-confirm-process-layer="map"]');
+  click('[data-page="fricciones"]');click('[data-confirm-process-layer="frictions"]');
+  click('[data-page="riesgos"]');click('[data-confirm-process-layer="risks"]');
+  click('[data-page="impacto"]');click('[data-confirm-process-layer="impact"]');
   click('#saveBtn');
   const saved=JSON.parse(w.localStorage.getItem('aunea_internal_v1'));
   assert.equal(saved.companies.length,1);assert.equal(saved.contacts.length,2);assert.equal(saved.engagements.length,1);
