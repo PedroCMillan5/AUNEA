@@ -92,13 +92,16 @@ async function economicTimeProjection(e,stepIds=[]){
 }
 function economicProjectionForDriver(projection,driver){
   if(!projection?.available||projection.missing?.length)return null;
-  if(driver==='ED01'&&projection.active!==null)
-    return {active:projection.active,wait:0,label:'Trabajo activo total actual'};
+  const baseActive=projection.active??0,baseWait=projection.wait??0;
+  if(driver==='ED01')
+    return {active:baseActive,wait:baseWait,label:'Trabajo activo actual y espera del ámbito seleccionado'};
   if(driver==='ED05'&&projection.rework!==null)
-    return {active:projection.rework,wait:0,label:'Retrabajo ponderado por frecuencia'};
-  if(driver==='ED13'&&projection.wait!==null)
-    return {active:0,wait:projection.wait,label:'Exposición de espera, no ciclo end-to-end'};
-  return null;
+    return {active:projection.rework,wait:baseWait,label:'Retrabajo ponderado y espera existente del ámbito seleccionado'};
+  if(driver==='ED13')
+    return {active:baseActive,wait:baseWait,label:'Trabajo activo y exposición de espera del ámbito seleccionado'};
+  // For concepts without a governed driver-specific derivation, preserve the objective
+  // time context already calculated by the backend instead of clearing known active/wait.
+  return {active:baseActive,wait:baseWait,label:'Tiempos existentes del ámbito seleccionado'};
 }
 /* [AUNEA-FE-ECON-DERIVATION-035] END */
 
@@ -238,13 +241,13 @@ function addEconomic(preselectedSteps=[],editIndex=null){
     for(const [field,value] of [['econActive',suggested?.active],['econWait',suggested?.wait]]){
       const input=document.getElementById(field),unit=document.getElementById(field+'_unit');
       if(!input)continue;
-      const isRelevant=suggested&&Number(value||0)>0;
-      input.disabled=!!isRelevant;
+      const isDerived=!!suggested;
+      input.disabled=isDerived;
       if(suggested){
         input.value=Number(value||0).toFixed(2);
         if(unit)unit.value='h';
       }else if(input.dataset?.autoDerived==='true')input.value='';
-      if(input.dataset)input.dataset.autoDerived=isRelevant?'true':'false';
+      if(input.dataset)input.dataset.autoDerived=isDerived?'true':'false';
     }
   };
   if(typeof document.querySelectorAll==='function')document.querySelectorAll('[data-econ-step]').forEach(el=>el.addEventListener?.('change',()=>{preserveCapturedTime=false;refresh()}));
