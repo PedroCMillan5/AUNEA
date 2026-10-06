@@ -186,3 +186,24 @@ test('DF086 priority block stays hidden until at least two outcomes are selected
 });
 
 // [AUNEA-UAT-RENDER-010] END
+
+test('DF098 uses the selected top-right AUNEA consultant as readonly owner and keeps action/owner/date in one semantic row',()=>{
+  e.answerDetails={};e.answers={};
+  ctx.currentAuneaOwnerName=()=> 'Consultor Seleccionado';
+  const html=ctx.renderControl({Field_ID:'DF098',Control_UI:'DROPDOWN_WITH_OWNER_DATE',Option_Set_ID:'OS_X'},'',ctx.schema.option_sets.OS_X.options,e);
+  assert.match(html,/class="nextstep-inline"/);
+  assert.match(html,/data-nextstep-owner="DF098"[^>]*value="Consultor Seleccionado"[^>]*readonly/);
+  e.answerDetails.DF098__action='A';e.answerDetails.DF098__date='2026-10-13';
+  ctx.document.querySelector=sel=>sel.includes('data-aunea-select')?{querySelector:()=>({textContent:'Alpha'})}:null;
+  ctx.syncNextStep('DF098');
+  assert.match(e.answers.DF098,/Alpha — Consultor Seleccionado — 13\/10\/2026/);
+});
+
+test('DF099 renders permission and scope as one inline control and scope is canonical detail metadata',()=>{
+  e.answerDetails={DF099:'Uso para elaborar diagnóstico'};
+  const html=ctx.renderControl({Field_ID:'DF099',Control_UI:'BOOLEAN_UNKNOWN_WITH_SCOPE'},'YES',[{value:'YES',label:'Sí'},{value:'NO',label:'No'},{value:'UNKNOWN',label:'No sabe'}],e);
+  assert.match(html,/class="permission-inline"/);
+  assert.match(html,/data-permission-segment="DF099"/);
+  assert.match(html,/data-permission-scope="DF099"/);
+  assert.match(html,/data-detail-answer="DF099"/);
+});
