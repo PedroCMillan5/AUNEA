@@ -97,7 +97,7 @@ function pg01ContextFields(e){
   return [
     pg01Field('Empresa',`<input data-pg01-company="name" data-pg01-df="DF001" value="${attr(co.name||'')}">`,'Empresa sobre la que se realiza el estudio. Si detectas un error, corrígelo aquí y se actualizará su ficha maestra.',{source:'Empresas'}),
     pg01Field('Persona de contacto',pg01Select(contactOpts,selected?.id||'',`data-pg01-contact-ref="1" data-pg01-df="DF006"`),'Persona que participa como interlocutor principal en esta sesión. Solo se muestran contactos activos de la empresa.',{source:'Contactos'}),
-    pg01Field('Cargo',pg01Select(typeof contactRoleOptions==='function'?contactRoleOptions(selected?.role||''):[],selected?.role||'',`data-pg01-contact="role"`),'Rol profesional de la persona seleccionada. Se reutiliza desde Contactos y cualquier corrección actualiza su ficha.',{source:'Contactos'}),
+    pg01Field('Cargo',`<input data-pg01-contact="role" value="${attr(selected?.role||'')}">`,'Rol profesional de la persona seleccionada. Se reutiliza desde Contactos y cualquier corrección actualiza su ficha.',{source:'Contactos'}),
     pg01Field('Email',`<input type="email" data-pg01-contact="email" value="${attr(selected?.email||'')}">`,'Correo de la persona seleccionada para seguimiento del estudio y comunicaciones posteriores.',{source:'Contactos'}),
     pg01Field('Teléfono',pg01PhoneCompound(selected?.phone||''),'Teléfono de la persona seleccionada. Es opcional y se guarda en su ficha de Contacto.',{source:'Contactos',required:false}),
     pg01Field('Sector',pg01Select(sectorOpts,co.sector||'',`data-pg01-company="sector" data-pg01-df="DF002"`),'Actividad económica principal de la empresa según el catálogo CNAE-2025.',{source:'Empresas'}),
@@ -165,11 +165,11 @@ function bindPg01Context(){
     const before=co[key];if(String(before??'')===String(el.value??''))return;
     co[key]=el.value;e.updatedAt=now();audit(`Empresa ${co.name}: ${key} actualizado desde PG01`);markDirty(`PG01 actualizado: ${key}`);refreshCaptureProgress();
   })});
-  document.querySelectorAll('[data-pg01-contact]').forEach(el=>{const event=el.type==='hidden'?'change':'input';el.addEventListener(event,()=>{
+  document.querySelectorAll('[data-pg01-contact]').forEach(el=>el.addEventListener('input',()=>{
     const e=currentEng(),ct=e&&contactById(e.contactIds?.[0]);if(!e||!ct)return;
     const key=el.dataset.pg01Contact,before=ct[key];if(String(before??'')===String(el.value??''))return;
     ct[key]=el.value;e.updatedAt=now();audit(`Contacto ${contactFullName(ct)}: ${key} actualizado desde PG01`);markDirty(`PG01 actualizado: contacto ${key}`);refreshCaptureProgress();
-  })});
+  }));
   // Both boxes of the phone compound write the single Contact.Teléfono value.
   document.querySelectorAll('[data-pg01-phone]').forEach(el=>el.addEventListener('input',()=>{
     const e=currentEng(),ct=e&&contactById(e.contactIds?.[0]);if(!e||!ct)return;
