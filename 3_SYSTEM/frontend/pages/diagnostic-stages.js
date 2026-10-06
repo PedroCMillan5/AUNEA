@@ -311,9 +311,9 @@ function validationSummary(e,completion){
   // The sealed record internal work will read. It appears here because PG09 is where it is created.
   const snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;
   const layers=typeof processLayerConfirmations==='function'?processLayerConfirmations(e):{},layersReady=!!(layers.map&&layers.frictions&&layers.risks&&layers.impact);
-  const captureBlockers=(completion.blockers||[]).filter(b=>b.type!=='GATE'&&b.id!=='Confirmación AS-IS');
-  const primaryCta=captureBlockers.length?'':'<button class="btn btn-primary" id="confirmClosingAsIs">Confirmar AS-IS</button>';
-  const cta=primaryCta+(captureBlockers.length?`<div class="blocker-list">${captureBlockers.map(b=>`<div class="notice warn"><span>${esc(b.label)}</span>${b.navigationTarget==='proceso'?'<button class="btn btn-small" data-goto-process="1">Ir a completar</button>':b.stage?`<button class="btn btn-small" data-goto-stage="${attr(b.stage)}">Ir a completar</button>`:''}</div>`).join('')}</div>`:'');
+  const consistency=typeof preCloseConsistencyReview==='function'?preCloseConsistencyReview(e,completion):{items:[],blockers:[],reviews:[],information:[],clear:true};
+  const primaryCta=consistency.blockers.length?'':'<button class="btn btn-primary" id="confirmClosingAsIs">Confirmar AS-IS</button>';
+  const cta=primaryCta+(consistency.blockers.length?'<div class="notice warn"><b>El cierre está bloqueado.</b><br>Resuelve los elementos rojos de la validación de coherencia.</div>':'');
   return section('Confirmación del AS-IS','Revisión factual del estudio; ningún estado se afirma más allá de lo realmente capturado.',
     `<div class="grid g3">
       <div class="notice"><b>Proceso</b><br>${steps.length} paso(s) activo(s) · ${e.confirmedAsIs?'AS-IS confirmado':'AS-IS pendiente de confirmar'}</div>
@@ -323,6 +323,26 @@ function validationSummary(e,completion){
       <div class="notice"><b>Obligatorios</b><br>${completion.missing.length===0?'✓ completos':`${completion.missing.length} pendiente(s)`}</div>
       <div class="notice"><b>Siguiente paso</b><br>${nextStep?esc(nextStep):'Pendiente de acordar (DF098)'}</div>
       <div class="notice"><b>Snapshot sellado</b><br>${snap?`v${snap.version} · ${esc(formatDateEs(snap.sealedAt))}`:'Se sella al confirmar el AS-IS'}</div>
+    </div>
+    <div class="closing-consistency-review" data-consistency-review="1">
+      <h3>Validación de coherencia</h3>
+      <p class="field-help">AUNEA contrasta lo ya capturado antes de sellar el snapshot. No vuelve a preguntar datos ni elige automáticamente entre respuestas incompatibles.</p>
+      <div class="grid g3">
+        <div class="notice ${consistency.blockers.length?'warn':'good'}"><b>Bloqueantes</b><br>${consistency.blockers.length}</div>
+        <div class="notice ${consistency.reviews.length?'info':'good'}"><b>Necesitan revisión</b><br>${consistency.reviews.length}</div>
+        <div class="notice good"><b>Estado</b><br>${consistency.blockers.length?'No se puede cerrar':'Puede cerrarse'}</div>
+      </div>
+      <div class="blocker-list">
+        ${consistency.items.map(item=>{
+          const label=item.severity==='BLOCKER'?'Bloqueante':item.severity==='REVIEW'?'Revisar':'Información';
+          const cls=item.severity==='BLOCKER'?'warn':item.severity==='REVIEW'?'info':'good';
+          const action=item.navigationTarget==='proceso'
+            ?'<button class="btn btn-small" data-goto-process="1">Ir a corregir</button>'
+            :item.stage&&item.stage!=='S09'?`<button class="btn btn-small" data-consistency-stage="${attr(item.stage)}">Ir a corregir</button>`:'';
+          return `<div class="notice ${cls}" data-consistency-severity="${attr(item.severity)}"><b>${label}</b><br><span>${esc(item.message)}</span>${action}</div>`;
+        }).join('')}
+      </div>
+      ${consistency.reviews.length&&!consistency.blockers.length?'<div class="field-help">Las observaciones ámbar no impiden el cierre: permanecen explícitas como incertidumbre/evidencia pendiente para Trabajo interno.</div>':''}
     </div>
     <div class="closing-first-readings">
       <h3>Resumen de la sesión</h3>
@@ -352,6 +372,7 @@ bindForms=function(){
     markDirty('Área del estudio actualizada');
   });
   document.querySelectorAll('[data-goto-stage]').forEach(b=>b.onclick=()=>{const e=currentEng();if(e)e.stageId=b.dataset.gotoStage;render()});
+  document.querySelectorAll('[data-consistency-stage]').forEach(b=>b.onclick=()=>{const e=currentEng();if(!e)return;e.stageId=b.dataset.consistencyStage;render()});
   document.querySelectorAll('[data-open-gate-review]').forEach(b=>b.onclick=()=>openEngineGateReview());
   const finalConfirm=document.getElementById('confirmClosingAsIs');if(finalConfirm)finalConfirm.onclick=()=>confirmClosingAsIs();
   const sd=document.getElementById('saveDraft');if(sd)sd.onclick=()=>saveState('Borrador guardado');
