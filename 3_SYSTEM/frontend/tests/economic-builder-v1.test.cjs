@@ -110,18 +110,33 @@ test('Impacto reuses mapped tools and direct-loss friction sources without inven
   assert.match(ctx.__lastBody,/DF082 no vuelva a contabilizar/);
 });
 
-test('addEconomic uses clear Spanish sections for time/evidence and costs/losses, both visible while completing the popup',()=>{
+test('addEconomic uses the guided three-step experience while preserving the canonical EconomicInput fields',()=>{
   const ctx=makeCtx();
   ctx.addEconomic();
-  const groups=[...ctx.__lastBody.matchAll(/<details class="step-group"( open)?><summary>([^<]+)<\/summary>/g)];
-  assert.equal(groups.length,2);
+  const groups=[...ctx.__lastBody.matchAll(/<details class="step-group"( open)?(?: id="[^"]+")?><summary>([^<]+)<\/summary>/g)];
+  assert.equal(groups.length,3);
   assert.equal(groups[0][1],' open');
-  assert.equal(groups[0][2],'Impacto en tiempo y evidencia');
-  assert.equal(groups[1][1],' open');
-  assert.equal(groups[1][2],'Costes, pérdidas y ahorro realizado');
+  assert.equal(groups[0][2],'1. Ámbito del impacto');
+  assert.equal(groups[1][2],'2. Qué quieres cuantificar');
+  assert.equal(groups[2][2],'3. Valor económico cuando proceda');
+  assert.match(ctx.__lastBody,/Contexto del impacto/);
+  assert.match(ctx.__lastBody,/Fricciones relacionadas:/);
+  assert.match(ctx.__lastBody,/Riesgos relacionados:/);
   ['econDriver','econActive','econEvidence','econWait','econRate','econDirect','econTool','econCash'].forEach(fid=>{
     assert.match(ctx.__lastBody,new RegExp(`id="${fid}"`),`${fid} must still exist`);
   });
+});
+
+test('guided impact UI exposes only fields relevant to each governed driver family',()=>{
+  const ctx=makeCtx();
+  let ui=ctx.economicDriverUi('ED13');
+  assert.equal(ui.showWait,true);assert.equal(ui.showActive,false);assert.equal(ui.showRate,false);
+  ui=ctx.economicDriverUi('ED05');
+  assert.equal(ui.showActive,true);assert.equal(ui.showWait,false);assert.equal(ui.showRate,true);
+  ui=ctx.economicDriverUi('ED12');
+  assert.equal(ui.showTool,true);assert.equal(ui.showDirect,false);
+  ui=ctx.economicDriverUi('ED09');
+  assert.equal(ui.showDirect,true);assert.equal(ui.showCash,true);
 });
 
 test('the economics builder never infers a direct-loss figure or an hours-per-year formula that is not governed — server-owned Economics remains the only source of derived totals',()=>{
