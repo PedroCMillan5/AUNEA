@@ -60,13 +60,17 @@ La captura contiene las dimensiones necesarias, pero **la suficiencia diagnósti
 
 ## P0
 
-### P0-01 — BR-RISK puede ocultar el dato que debería descubrir el riesgo
-Runtime actual:
+### P0-01 — BR-RISK puede ocultar el dato que debería descubrir el riesgo — RESUELTO EN RUNTIME
+Runtime auditado originalmente:
 `BR-RISK = risks.length > 0 || DF018=4/5 || DF073/DF074/DF090 ya tienen valor`.
 
-DF073, DF074 y DF090 usan BR-RISK. Si están vacíos y no existe riesgo previo ni criticidad alta, pueden no aparecer. Es una activación auto-referencial.
+DF073, DF074 y DF090 usaban BR-RISK. Si estaban vacíos y no existía riesgo previo ni criticidad alta, podían no aparecer. Era una activación auto-referencial.
 
-**Impacto:** se puede perder sensibilidad, irreversibilidad o restricción de seguridad antes de crear el riesgo.
+**Resolución implementada:** DF073, DF074 y DF090 permanecen disponibles como probes de descubrimiento sin convertirse en REQUIRED_90M. El bloque BR-RISK se activa después por señales materiales canónicas ya capturadas: criticidad alta DF018, restricciones iniciales de seguridad/compliance/residencia/ownership en DF010, impacto no temporal DF064 almacenado en Friction, dato sensible distinto de NONE, reversibilidad distinta de REVERSIBLE, restricción de seguridad DF090 o RiskInput activo. Las respuestas negativas NONE/REVERSIBLE no generan por sí solas un riesgo.
+
+**QA:** regresiones específicas BR-RISK PASS. Suite frontend tras el cambio: 422 tests, 369 PASS, 53 FAIL; coincide con el baseline previo de 53 fallos ya existentes en la rama, por lo que este bloque no añade regresiones nuevas.
+
+**Commits:** `eb190416ad162bcaa727a119f54b2111be531f42`, `2619424d531ab399dfb73f3501baacb3fc1481fe`, `dcd298096b9d1d56a6aaeb61293043731b0e9502`.
 
 ### P0-02 — DF088 / BR-AI es auto-referencial
 Runtime:
