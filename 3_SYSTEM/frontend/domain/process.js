@@ -907,9 +907,16 @@ function asisMapPage(e,steps,fr){
 }
 function layerCanonicalQuestions(e,stageId){
   if(typeof renderStageFields!=='function')return '';
-  const fields=(schema?.fields||[]).filter(f=>f.Stage_ID===stageId&&typeof questionVisible==='function'&&questionVisible(f,e));
+  const structuredOwners=new Set(['RT_PROCESS_STEP','RT_PAIN','RT_RISK','RT_ECONOMIC_INPUT']);
+  const fields=(schema?.fields||[]).filter(f=>{
+    if(f.Stage_ID!==stageId||typeof questionVisible!=='function'||!questionVisible(f,e))return false;
+    const target=String(f.Write_Target||'').split('.')[0],mode=String(f.Ask_Mode||'');
+    if(structuredOwners.has(target))return false;
+    if(['CAPTURE_IN_PROCESS_STEP','CONDITIONAL_IN_STEP','CAPTURE_IN_FRICTION','CONDITIONAL_IN_FRICTION','CAPTURE_IN_RISK'].includes(mode))return false;
+    return true;
+  });
   if(!fields.length)return '';
-  return section('Datos canónicos de la etapa','Estos datos pertenecen a la misma captura. Se muestran aquí porque esta etapa usa el editor estructurado en lugar del formulario genérico.',`<div class="form-grid">${renderStageFields(fields,e)}</div>`);
+  return section('Datos complementarios de la etapa','Sólo aparecen datos cuyo owner no está ya cubierto por el editor estructurado. No se duplica captura de pasos, fricciones, riesgos ni impactos.',`<div class="form-grid">${renderStageFields(fields,e)}</div>`);
 }
 function processPage(){
   const e=currentEng();if(!e)return pageTop('Mapa AS-IS','Abre un estudio para ver su proceso.');
