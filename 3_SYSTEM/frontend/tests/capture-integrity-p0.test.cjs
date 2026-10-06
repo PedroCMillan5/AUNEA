@@ -1,0 +1,102 @@
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const root=path.resolve(__dirname,'..');
+const read=p=>fs.readFileSync(path.join(root,p),'utf8');
+const stages=read('pages/diagnostic-stages.js');
+const lifecycle=read('domain/process-lifecycle.js');
+const process=read('domain/process.js');
+const risk=read('domain/risk.js');
+const economics=read('domain/economics.js');
+const noReask=read('domain/no-reask.js');
+const renderer=read('ui/renderer.js');
+const completion=read('domain/completion.js');
+const engine=read('services/engine-adapter.js');
+
+test('every session stage uses canonical required-field validation before advancing',()=>{
+  const start=stages.indexOf('function blockStageAdvance');
+  const end=stages.indexOf('\nfunction bindPg01Context',start);
+  const body=stages.slice(start,end);
+  assert.match(body,/stagePendingRequired\(e,sid\)/);
+  assert.doesNotMatch(body,/!==\s*['"]S01['"]/);
+  assert.match(body,/canonicalFieldValidationIssue/);
+});
+
+test('canonical compound validation rejects malformed numeric facts',()=>{
+  assert.match(noReask,/function canonicalFieldValidationIssue/);
+  assert.match(noReask,/porcentaje debe estar entre 0 y 100/i);
+  assert.match(noReask,/número de casos debe indicarse el periodo/i);
+  assert.match(noReask,/volumen máximo no puede ser inferior/i);
+  assert.match(noReask,/canonicalFieldValuePresent/);
+});
+
+test('generic semantic numeric modes cannot retain hidden stale values',()=>{
+  assert.match(renderer,/semanticEmpty=mode==='UNKNOWN'\|\|mode==='NONE'/);
+  assert.match(renderer,/normalizedValue=mode==='ZERO'\?0:semanticEmpty\?'':value/);
+});
+
+test('AS-IS layer confirmation is blocked by derived integrity issues',()=>{
+  assert.match(lifecycle,/function processLayerIntegrityIssues/);
+  assert.match(lifecycle,/const integrity=processLayerIntegrityIssues\(e,key\)/);
+  assert.match(lifecycle,/No se puede confirmar:/);
+});
+
+test('PG09 never fabricates confirmation of the four AS-IS layers',()=>{
+  const start=lifecycle.indexOf('function confirmClosingAsIs');
+  const end=lifecycle.indexOf('// [AUNEA-FE-ASIS-CLIENT-EDITOR',start);
+  const body=lifecycle.slice(start,end);
+  assert.match(body,/pending=\['map','frictions','risks','impact'\]\.filter/);
+  assert.doesNotMatch(body,/forEach\(k=>\{x\[k\]=true/);
+  assert.match(body,/captureIntegrityIssues/);
+});
+
+test('risk scoring is explicit instead of silently defaulting likelihood and impact to 1',()=>{
+  assert.match(risk,/num=v=>v===undefined\|\|v===null\?'':String\(v\)/);
+  assert.match(risk,/Selecciona probabilidad e impacto entre 1 y 5/);
+  assert.doesNotMatch(risk,/num=v=>String\(v\?\?'1'\)/);
+});
+
+test('economic records are normalized to the selected canonical driver',()=>{
+  assert.match(economics,/function normalizedEconomicDriverRecord/);
+  assert.match(economics,/if\(!activeDrivers\.has\(x\.driver_id\)\)x\.annual_active_hours=0/);
+  assert.match(economics,/if\(x\.driver_id!=='ED13'\)x\.annual_wait_hours=0/);
+  assert.match(economics,/if\(!draft\.driver_id\)return toast\('Selecciona el tipo de impacto/);
+});
+
+test('legacy cross-metric economics are normalized on load without auto-fixing ambiguous scope',()=>{
+  assert.match(economics,/function migrateEconomicInputsToDriverShape/);
+  assert.match(economics,/invalidateProcessLayers\(e,'impact'\)/);
+  assert.match(economics,/SCOPE_MISMATCH/);
+  assert.doesNotMatch(economics,/suggestedStepId.*Object\.assign/s);
+});
+
+test('step and friction capture reject invalid percentage and missing Other detail',()=>{
+  assert.match(process,/porcentaje de error o repetición debe estar entre 0 y 100/i);
+  assert.match(process,/frecuencia porcentual debe estar entre 0 y 100/i);
+  assert.match(process,/selectedOtherMissingDetail/);
+});
+
+test('removing a step reconciles all active technical references',()=>{
+  const start=lifecycle.indexOf('function supersedeStep');
+  const end=lifecycle.indexOf('\nfunction supersedeFriction',start);
+  const body=lifecycle.slice(start,end);
+  assert.match(body,/fr\.affected_steps=.*filter/);
+  assert.match(body,/r\.step_ids=.*filter/);
+  assert.match(body,/v\.step_ids=.*filter/);
+  assert.match(body,/normal_next_step===stepId/);
+});
+
+test('completion readiness includes capture-integrity blockers',()=>{
+  assert.match(completion,/captureIntegrityIssues/);
+  assert.match(completion,/integrity\.length===0/);
+  assert.match(completion,/type:'INTEGRITY'/);
+});
+
+test('risk payload no longer fabricates score 1 for missing likelihood or impact',()=>{
+  const start=engine.indexOf('function normalizeRiskInputs');
+  const end=engine.indexOf('\nfunction buildBackendPayload',start);
+  const body=engine.slice(start,end);
+  assert.doesNotMatch(body,/likelihood_1_5:Math\.max\(1/);
+  assert.doesNotMatch(body,/impact_1_5:Math\.max\(1/);
+});
