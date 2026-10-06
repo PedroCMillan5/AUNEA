@@ -71,3 +71,12 @@ test('Diagnóstico keeps the existing AS-IS renderer as its single map reference
   assert.match(body,/processGraphHtml\(/);
   assert.doesNotMatch(body,/new .*Graph|clone|copy/i);
 });
+
+
+test('client-ready PDF remains behind the existing OutputReview approval gate',()=>{
+  const start=results.indexOf('async function downloadQuotePdf');
+  const end=results.indexOf('\nfunction quotePage',start);
+  const body=results.slice(start,end);
+  assert.match(body,/approvedOutputReview\(e\)/);
+  assert.match(body,/Revisión humana antes de generar un entregable para cliente/);
+});
