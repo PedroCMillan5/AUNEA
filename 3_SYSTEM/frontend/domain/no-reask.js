@@ -222,7 +222,7 @@ function questionVisible(f,e){
   // DF088 is the canonical automation/AI boundary. S08 is intentionally before the AS-IS map (DEC-065),
   // so later evidence cannot be allowed to make this guardrail undiscoverable. Keep it available as a
   // CONDITIONAL_90M probe without treating mere visibility as proof that BR-AI is active.
-  if(AI_DISCOVERY_FIELDS.has(f.Field_ID))return true;
+  if(AI_DISCOVERY_FIELDS.has(f.Field_ID)&&f.Stage_ID==='S08'&&String(f.Write_Target||'')==='RT_PROCESS.Must_Not_Automate')return true;
   if(['CAPTURE_IN_PROCESS_STEP','CONDITIONAL_IN_STEP'].includes(f.Ask_Mode))return false;
   if(['CAPTURE_IN_FRICTION','CONDITIONAL_IN_FRICTION'].includes(f.Ask_Mode))return false;
   if(f.Ask_Mode==='CAPTURE_IN_RISK')return false;
