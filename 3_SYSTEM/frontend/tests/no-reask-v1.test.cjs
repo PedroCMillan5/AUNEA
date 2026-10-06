@@ -331,6 +331,23 @@ test('DF078/DF079 reuse only the current backend per-case projection',()=>{
   assert.equal(ctx.reusedValue('DF079',e),undefined);
 });
 
+
+
+test('S04 discovery closes DF052/DF053/DF055 activation gaps without making them required',()=>{
+  const e={companyId:'c1',answers:{},answerDetails:{},processSteps:[
+    {id:'s1',status:'ACTIVE',inputs:['PDF'],outputs:['DOC'],manual_actions:['SEARCH'],actor:'A1'},
+    {id:'s2',status:'ACTIVE',inputs:['EMAIL'],outputs:['RECORD'],manual_actions:['REKEY'],actor:'A2'}
+  ],frictions:[],risks:[],economicInputs:[],confirmedAsIs:false};
+  const df052={Field_ID:'DF052',Stage_ID:'S04',Write_Target:'RT_FINDING',Ask_Mode:'CONDITIONAL_ASK',Requiredness:'CONDITIONAL_90M',Branch_Rule_ID:'BR-PAIN'};
+  const df055={Field_ID:'DF055',Stage_ID:'S04',Write_Target:'RT_FINDING',Ask_Mode:'CONDITIONAL_ASK',Requiredness:'CONDITIONAL_90M',Branch_Rule_ID:'BR-DATA'};
+  assert.equal(ctx.questionVisible(df052,e),true,'multiple documentary artifacts make the version-control probe relevant before a friction exists');
+  assert.equal(ctx.questionVisible(df055,e),true,'data-quality discovery remains available before a P13/P03 friction exists');
+  assert.equal(ctx.canonicalFieldRequiredNow(df055,e),false,'the discovery probe remains non-blocking');
+  assert.equal(ctx.branchActive('BR-VISIBILITY',e),true,'manual SEARCH in ProcessStep activates visibility');
+  assert.deepEqual(Array.from(ctx.reusedValue('DF053',e)),['s1'],'DF053 reuses the SEARCH step instead of asking from scratch');
+  assert.equal(ctx.branchActive('BR-DATA',e),true,'REKEY/COPY evidence can open the data-quality branch before a friction exists');
+});
+
 // [AUNEA-UAT-NOREASK-010] END
 
 test('single-owner hides every structured builder field from generic stage forms based on Write_Target',()=>{
