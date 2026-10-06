@@ -391,7 +391,9 @@ function bindCanonicalRenderer(){
     if(value===null)return;
     if(fid==='DF021'){setAnswer(fid,value);return}
     if(value===''&&!mode){setAnswer(fid,'');return}
-    setAnswer(fid,{value,unit,period,mode});
+    const semanticEmpty=mode==='UNKNOWN'||mode==='NONE',normalizedValue=mode==='ZERO'?0:semanticEmpty?'':value,normalizedUnit=semanticEmpty?'':unit,normalizedPeriod=semanticEmpty?'':period;
+    if(semanticEmpty&&valueEl)valueEl.value='';
+    setAnswer(fid,{value:normalizedValue,unit:normalizedUnit,period:normalizedPeriod,mode});
   };document.querySelectorAll(`[data-number-value="${fid}"]`).forEach(el=>el.addEventListener('input',sync));document.querySelectorAll(`[data-number-unit="${fid}"],[data-number-period="${fid}"],[data-number-mode="${fid}"]`).forEach(el=>el.addEventListener('change',sync))});
   document.querySelectorAll('[data-set-unknown]').forEach(b=>b.onclick=()=>{setAnswer(b.dataset.setUnknown,'UNKNOWN');render()});
   const pairFids=[...new Set([...document.querySelectorAll('[data-pair-field]')].map(x=>x.dataset.pairField))];pairFids.forEach(fid=>document.querySelectorAll(`[data-pair-field="${fid}"]`).forEach(el=>el.addEventListener('change',()=>{const p={};document.querySelectorAll(`[data-pair-field="${fid}"]`).forEach(x=>p[x.dataset.pairPart]=x.value);setAnswer(fid,p)})));
