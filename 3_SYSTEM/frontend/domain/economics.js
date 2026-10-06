@@ -170,8 +170,9 @@ function addEconomic(preselectedSteps=[],editIndex=null){
   const economicContextHtml=stepIds=>{
     const selectedIds=normalizeArray(stepIds);
     const selectedSteps=selectedIds.length?steps.filter(s=>selectedIds.includes(s.id)):[];
-    const linkedFrictions=selectedIds.length?allFrictions.filter(f=>normalizeArray(f.affected_steps).some(x=>selectedIds.includes(x))):allFrictions;
-    const linkedRisks=selectedIds.length?(eng.risks||[]).filter(r=>normalizeArray(r.step_ids).some(x=>selectedIds.includes(x))):(eng.risks||[]);
+    const linkedFrictions=selectedIds.length?allFrictions.filter(f=>normalizeArray(f.affected_steps).some(x=>selectedIds.includes(x))):[];
+    const linkedRisks=selectedIds.length?(eng.risks||[]).filter(r=>normalizeArray(r.step_ids).some(x=>selectedIds.includes(x))):[];
+    const selectedTools=[...new Set(selectedSteps.flatMap(s=>normalizeArray(s.tool)).filter(Boolean))];
     const attributedLosses=linkedFrictions.filter(f=>Number(f.direct_loss?.value||0)>0);
     const volume=eng.answers?.DF021,period=eng.answers?.DF022;
     const volumeText=volume!==undefined&&volume!==null&&volume!==''?esc(volume)+' casos'+(period?' · '+esc(labelFrom('OS_PERIOD',String(period).toUpperCase())||period):''):'Volumen pendiente';
@@ -184,7 +185,7 @@ function addEconomic(preselectedSteps=[],editIndex=null){
       +(linkedFrictions.length?'<p><b>Fricciones relacionadas:</b> '+linkedFrictions.map(f=>esc(f.client_label||labelFrom('OS_FRICTION_TYPE',f.friction_type))).join(' · ')+'</p>':'<p><b>Fricciones relacionadas:</b> Ninguna.</p>')
       +(linkedRisks.length?'<p><b>Riesgos relacionados:</b> '+linkedRisks.map(r=>esc(r.description||labelFrom('OS_RISK_CATEGORY',r.category))).join(' · ')+'</p>':'<p><b>Riesgos relacionados:</b> Ninguno.</p>')
       +'</div>'
-      +(mappedTools.length?'<p class="economic-context-meta">Herramientas registradas: '+mappedTools.map(x=>esc(labelFrom('OS_TOOL_CATEGORY',x))).join(' · ')+'. Registra sólo el coste atribuible; no presupongas su eliminación.</p>':'')
+      +(selectedTools.length?'<p class="economic-context-meta">Herramientas de los pasos seleccionados: '+selectedTools.map(x=>esc(labelFrom('OS_TOOL_CATEGORY',x))).join(' · ')+'. Registra sólo el coste atribuible; no presupongas su eliminación.</p>':'')
       +(attributedLosses.length?'<p class="economic-context-meta">Pérdidas directas ya declaradas en fricciones: '+attributedLosses.map(f=>esc(f.client_label||f.id)).join(' · ')+'. Evita volver a contabilizar el mismo evento.</p>':'')
       +'<small>Los tiempos y el volumen se reutilizan del AS-IS. La espera no equivale a coste y el trabajo activo no equivale automáticamente a ahorro.</small></div>';
   };
