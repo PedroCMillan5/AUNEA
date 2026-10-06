@@ -82,8 +82,8 @@ function loadState(){
 // cannot run inside loadState: state is built by the first module, and each migration lives with the
 // entity that owns its schema, several modules later. Boot calls it once everything is defined.
 function migrateLoadedState(){
-  const moved={companies:migrateCompaniesToCrmRecord(state.companies),contacts:migrateContactsToCurrentContract(state.contacts),engagements:migrateEngagementsToLifecycle(state.engagements)};
-  if(moved.companies||moved.contacts||moved.engagements)audit(`Migración de almacenamiento: ${moved.companies} empresa(s), ${moved.contacts} contacto(s) y ${moved.engagements} estudio(s) actualizados al contrato vigente`);
+  const moved={companies:migrateCompaniesToCrmRecord(state.companies),contacts:migrateContactsToCurrentContract(state.contacts),engagements:migrateEngagementsToLifecycle(state.engagements),economics:typeof migrateEconomicInputsToDriverShape==='function'?migrateEconomicInputsToDriverShape(state.engagements):0};
+  if(moved.companies||moved.contacts||moved.engagements||moved.economics)audit(`Migración de almacenamiento: ${moved.companies} empresa(s), ${moved.contacts} contacto(s), ${moved.engagements} estudio(s) y ${moved.economics} estudio(s) con impactos normalizados`);
   return moved;
 }
 function saveState(reason='Guardado manual'){
