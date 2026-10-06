@@ -137,6 +137,37 @@ function economicMetricShape(driver,row={}){
     wait:driver==='ED13'?Number(row.annual_wait_hours||0):0
   };
 }
+
+function normalizedEconomicDriverRecord(row={}){
+  const x={...row},ui=economicDriverUi(x.driver_id||'');
+  const activeDrivers=new Set(['ED01','ED02','ED03','ED04','ED05','ED06','ED07','ED08']);
+  if(!activeDrivers.has(x.driver_id))x.annual_active_hours=0;
+  if(x.driver_id!=='ED13')x.annual_wait_hours=0;
+  if(!ui.showRate)x.capacity_cost_rate_eur_hour=null;
+  if(!ui.showDirect)x.direct_loss_eur_annual=0;
+  if(!ui.showTool)x.current_tool_cost_eur_annual=0;
+  if(!ui.showCash)x.realized_cash_saving_eur_annual=0;
+  return x;
+}
+function migrateEconomicInputsToDriverShape(engagements=[]){
+  let changed=0;
+  (engagements||[]).forEach(e=>{
+    let engagementChanged=false;
+    (e.economicInputs||[]).forEach(x=>{
+      const normalized=normalizedEconomicDriverRecord(x);
+      for(const key of ['annual_active_hours','annual_wait_hours','capacity_cost_rate_eur_hour','direct_loss_eur_annual','current_tool_cost_eur_annual','realized_cash_saving_eur_annual']){
+        if(JSON.stringify(x[key]??null)!==JSON.stringify(normalized[key]??null)){x[key]=normalized[key];engagementChanged=true}
+      }
+    });
+    if(engagementChanged){
+      changed++;
+      if(typeof invalidateProcessLayers==='function')invalidateProcessLayers(e,'impact');
+      else{e.confirmedAsIs=false;if(e.layerConfirmations)e.layerConfirmations.impact=false}
+      if(typeof invalidateDerivedState==='function')invalidateDerivedState(e,'normalización de impactos heredados');
+    }
+  });
+  return changed;
+}
 function economicInputIntegrityIssues(e){
   const steps=typeof activeSteps==='function'?activeSteps(e):(e?.processSteps||[]).filter(x=>x.status!=='SUPERSEDED');
   const byId=new Map(steps.map(s=>[s.id,s])),issues=[];
@@ -274,7 +305,9 @@ function addEconomic(preselectedSteps=[],editIndex=null,forceSuggestedScope=fals
       return toast('Los datos del proceso han cambiado. Actualiza la vista previa antes de guardar el impacto.');
     const activeHours=projected?projected.active:capturedHours('econActive','annual_active_hours');
     const waitHours=projected?projected.wait:capturedHours('econWait','annual_wait_hours');
-    const draft={step_ids,driver_id:document.getElementById('econDriver').value,annual_active_hours:activeHours,annual_wait_hours:waitHours,capacity_cost_rate_eur_hour:+document.getElementById('econRate').value||null,direct_loss_eur_annual:+document.getElementById('econDirect').value||0,current_tool_cost_eur_annual:+document.getElementById('econTool').value||0,realized_cash_saving_eur_annual:+document.getElementById('econCash').value||0,evidence_type:document.getElementById('econEvidence').value,derivation_source:projected?'DF021/DF022 + RT_PROCESS_STEP':(preserveCapturedTime&&activeHours===existing?.annual_active_hours&&waitHours===existing?.annual_wait_hours?existing.derivation_source:'MANUAL_VALIDATION'),deduplication_key:existing?.deduplication_key??null};
+    let draft={step_ids,driver_id:document.getElementById('econDriver').value,annual_active_hours:activeHours,annual_wait_hours:waitHours,capacity_cost_rate_eur_hour:+document.getElementById('econRate').value||null,direct_loss_eur_annual:+document.getElementById('econDirect').value||0,current_tool_cost_eur_annual:+document.getElementById('econTool').value||0,realized_cash_saving_eur_annual:+document.getElementById('econCash').value||0,evidence_type:document.getElementById('econEvidence').value,derivation_source:projected?'DF021/DF022 + RT_PROCESS_STEP':(preserveCapturedTime&&activeHours===existing?.annual_active_hours&&waitHours===existing?.annual_wait_hours?existing.derivation_source:'MANUAL_VALIDATION'),deduplication_key:existing?.deduplication_key??null};
+    if(!draft.driver_id)return toast('Selecciona el tipo de impacto antes de guardar.');
+    draft=normalizedEconomicDriverRecord(draft);
     if(!draft.evidence_type)return toast('Selecciona la evidencia correspondiente al dato económico; no se presupone que sea medido.');
     const scopeCheck=economicInputIntegrityIssues({...eng,economicInputs:[draft]}).filter(x=>x.kind==='SCOPE_MISMATCH');
     if(scopeCheck.length)return toast(scopeCheck.map(x=>x.message).join(' '));
