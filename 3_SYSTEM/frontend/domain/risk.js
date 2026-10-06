@@ -25,11 +25,11 @@ function addRisk(preselectedSteps=[],editIndex=null){
   if(typeof guardAsisMutation==='function'&&guardAsisMutation())return;
   const e=currentEng(),existing=Number.isInteger(editIndex)?e.risks?.[editIndex]:null;
   if(existing)preselectedSteps=normalizeArray(existing.step_ids);
-  const cats=fieldOptions('OS_RISK_CATEGORY'),rev=fieldOptions('OS_REVERSIBILITY'),
-    sensitive=normalizeArray(e.answers?.DF073).filter(x=>x!=='NONE'),
+  const cats=fieldOptions('OS_RISK_CATEGORY'),rev=fieldOptions('OS_REVERSIBILITY'),controlOptions=fieldOptions('OS_CONTROL_TYPE'),
+    sensitiveRaw=normalizeArray(e.answers?.DF073),sensitive=sensitiveRaw.filter(x=>x!=='NONE'),
     steps=typeof activeSteps==='function'?activeSteps(e):[],
     frictions=typeof activeFrictions==='function'?activeFrictions(e):e.frictions||[];
-  const selected=existing||{},num=v=>v===undefined||v===null?'':String(v);
+  const selected=existing||{},num=v=>v===undefined||v===null?'':String(v),storedControls=normalizeArray(selected.current_controls),otherControl=storedControls.find(x=>String(x).startsWith('OTHER:'))||'',selectedControlIds=storedControls.map(x=>String(x).startsWith('OTHER:')?'OTHER':String(x));
   openModal(existing?'Editar riesgo':'Añadir riesgo',
     '<div class="step-groups process-modal-form risk-modal-form"><details class="step-group" open><summary>¿Qué podría salir mal?</summary><div class="form-grid">'
     +'<div class="field full"><label>¿En qué pasos podría ocurrir?</label><div class="choice-grid">'
@@ -41,11 +41,12 @@ function addRisk(preselectedSteps=[],editIndex=null){
     +'<div class="field"><label>¿Qué probabilidad hay de que ocurra? (1–5) '+requiredMark()+'</label>'+riskDropdown('riskLike',[{value:'',label:'Selecciona…'},... [1,2,3,4,5].map(x=>({value:String(x),label:String(x)}))],num(selected.likelihood_1_5),'Selecciona…')+'</div>'
     +'<div class="field"><label>¿Qué consecuencias tendría? (1–5) '+requiredMark()+'</label>'+riskDropdown('riskImpact',[{value:'',label:'Selecciona…'},... [1,2,3,4,5].map(x=>({value:String(x),label:String(x)}))],num(selected.impact_1_5),'Selecciona…')+'</div></div></details>'
     +'<details class="step-group" open><summary>Controles y condiciones</summary><div class="form-grid">'
-    +'<div class="field"><label>Si ocurre, ¿se puede corregir?</label>'+riskDropdown('riskRev',rev,selected.reversibility||rev[0]?.value||'','Selecciona…')+'</div>'
-    +'<div class="field"><label>¿Existen medidas para evitarlo o detectarlo?</label>'+riskDropdown('riskControls',[{value:'',label:'Sin indicar'},{value:'1',label:'Presentes'},{value:'0',label:'Ausentes / insuficientes'}],existing?(selected.controls_present===true?'1':selected.controls_present===false?'0':''):'','Sin indicar')+'</div>'
-    +'<div class="field"><label>¿Afecta a datos sensibles o de alto impacto?</label>'+riskDropdown('riskSensitive',[{value:'',label:'Sin indicar'},{value:'1',label:sensitive.length?'Sí — reutilizado de DF073':'Sí'},{value:'0',label:'No'}],existing?(selected.sensitive_or_high_impact===true?'1':selected.sensitive_or_high_impact===false?'0':''):(sensitive.length?'1':''),'Sin indicar')+'</div>'
-    +'<div class="field"><label>¿Puede tener consecuencias económicas o de cumplimiento importantes?</label>'+riskDropdown('riskMat',[{value:'0',label:'No'},{value:'1',label:'Sí'}],selected.material_financial_or_compliance?'1':'0','No')+'</div>'
-    +'<div class="field"><label>¿Es un evento crítico?</label>'+riskDropdown('riskCritical',[{value:'0',label:'No'},{value:'1',label:'Sí'}],selected.critical_trigger?'1':'0','No')+'</div></div></details></div>',
+    +'<div class="field"><label>Si ocurre, ¿se puede corregir? '+requiredMark()+'</label>'+riskDropdown('riskRev',[{value:'',label:'Selecciona…'},...rev],selected.reversibility||'','Selecciona…')+'</div>'
+    +'<div class="field"><label>¿Existen controles actuales? '+requiredMark()+'</label>'+riskDropdown('riskControls',[{value:'',label:'Selecciona…'},{value:'1',label:'Sí'},{value:'0',label:'No'}],existing?(selected.controls_present===true?'1':selected.controls_present===false?'0':''):(storedControls.length?'1':''),'Selecciona…')+'</div>'
+    +'<div class="field full"><label>Controles actuales</label><div class="choice-grid">'+controlOptions.map(o=>'<div class="choice"><input type="checkbox" id="risk_control_'+attr(o.value)+'" data-risk-control="'+attr(o.value)+'" '+(selectedControlIds.includes(String(o.value))?'checked':'')+'><label for="risk_control_'+attr(o.value)+'">'+esc(o.label)+'</label></div>').join('')+'</div><div class="detail-wrap" id="riskControlOtherWrap" '+(selectedControlIds.includes('OTHER')?'':'style="display:none"')+'><input id="riskControlOther" value="'+attr(otherControl.replace(/^OTHER:\s*/,''))+'" placeholder="Describe el otro control"></div></div>'
+    +'<div class="field"><label>¿Afecta a datos sensibles o de alto impacto? '+requiredMark()+'</label>'+riskDropdown('riskSensitive',[{value:'',label:'Selecciona…'},{value:'1',label:sensitive.length?'Sí — reutilizado de DF073':'Sí'},{value:'0',label:'No'}],existing?(selected.sensitive_or_high_impact===true?'1':selected.sensitive_or_high_impact===false?'0'):(sensitive.length?'1':sensitiveRaw.includes('NONE')?'0':''),'Selecciona…')+'</div>'
+    +'<div class="field"><label>¿Puede tener consecuencias económicas o de cumplimiento importantes? '+requiredMark()+'</label>'+riskDropdown('riskMat',[{value:'',label:'Selecciona…'},{value:'0',label:'No'},{value:'1',label:'Sí'}],existing?(selected.material_financial_or_compliance===true?'1':selected.material_financial_or_compliance===false?'0':''):'','Selecciona…')+'</div>'
+    +'<div class="field"><label>¿Es un evento crítico? '+requiredMark()+'</label>'+riskDropdown('riskCritical',[{value:'',label:'Selecciona…'},{value:'0',label:'No'},{value:'1',label:'Sí'}],existing?(selected.critical_trigger===true?'1':selected.critical_trigger===false?'0':''):'','Selecciona…')+'</div></div></details></div>',
     ()=>{
       const cat=document.getElementById('riskCat').value,description=document.getElementById('riskDesc').value.trim();
       const step_ids=[...document.querySelectorAll('[data-risk-step]:checked')].map(x=>x.dataset.riskStep);
@@ -53,14 +54,20 @@ function addRisk(preselectedSteps=[],editIndex=null){
       if(!cat||!description)return toast('Indica el tipo de riesgo y explica qué podría ocurrir.');
       if(!Number.isInteger(like)||like<1||like>5||!Number.isInteger(impact)||impact<1||impact>5)return toast('Selecciona probabilidad e impacto entre 1 y 5.');
       if(steps.length&&!step_ids.length)return toast('Selecciona al menos un paso relacionado.');
-      const rv=document.getElementById('riskRev').value,controls=document.getElementById('riskControls').value,sensitiveValue=document.getElementById('riskSensitive').value;
+      const rv=document.getElementById('riskRev').value,controls=document.getElementById('riskControls').value,sensitiveValue=document.getElementById('riskSensitive').value,materialValue=document.getElementById('riskMat').value,criticalValue=document.getElementById('riskCritical').value;
+      if(!rv||controls===''||sensitiveValue===''||materialValue===''||criticalValue==='')return toast('Completa reversibilidad, controles y condiciones del riesgo; no se aplican valores por defecto.');
+      const controlIds=[...document.querySelectorAll('[data-risk-control]:checked')].map(x=>x.dataset.riskControl),otherDetail=(document.getElementById('riskControlOther')?.value||'').trim();
+      if(controls==='1'&&!controlIds.length)return toast('Selecciona al menos un control actual o indica que no existen.');
+      if(controls==='0'&&controlIds.length)return toast('Si no existen controles actuales, desmarca los controles seleccionados.');
+      if(controlIds.includes('OTHER')&&!otherDetail)return toast('Describe el control indicado como «Otro».');
+      const current_controls=controls==='1'?controlIds.map(x=>x==='OTHER'?'OTHER: '+otherDetail:x):[];
       const draft={step_ids,category:cat,description,likelihood_1_5:like,
         impact_1_5:impact,
         reversible:!['HARD','IRREVERSIBLE'].includes(rv),reversibility:rv,
-        controls_present:controls===''?null:controls==='1',
-        sensitive_or_high_impact:sensitiveValue===''?null:sensitiveValue==='1',
-        material_financial_or_compliance:document.getElementById('riskMat').value==='1',
-        critical_trigger:document.getElementById('riskCritical').value==='1'};
+        controls_present:controls==='1',current_controls,
+        sensitive_or_high_impact:sensitiveValue==='1',
+        material_financial_or_compliance:materialValue==='1',
+        critical_trigger:criticalValue==='1'};
       if(existing)Object.assign(existing,draft);else e.risks.push(draft);
       if(typeof invalidateProcessLayers==='function')invalidateProcessLayers(e,'risks');
       markDirty(existing?'Riesgo modificado':'Riesgo añadido');closeModal();render();
@@ -74,6 +81,11 @@ function addRisk(preselectedSteps=[],editIndex=null){
     });
   }
   document.querySelectorAll('[data-risk-step]').forEach(el=>el.addEventListener('change',refreshRelatedProblems));
+  document.querySelectorAll('[data-risk-control]').forEach(el=>el.addEventListener('change',()=>{
+    const other=document.querySelector('[data-risk-control="OTHER"]'),wrap=document.getElementById('riskControlOtherWrap');
+    if(wrap)wrap.style.display=other?.checked?'':'none';
+    if(other&&!other.checked){const input=document.getElementById('riskControlOther');if(input)input.value=''}
+  }));
   refreshRelatedProblems();
 }
 function deleteRisk(index){
