@@ -127,6 +127,7 @@ function setAnswer(fid,value){
   const closesSession=fieldStage==='S09';
   if(fid!=='DF093'&&!closesSession&&(e.confirmedAsIs||Object.values(e.layerConfirmations||{}).some(v=>v===true))
       &&typeof invalidateProcessLayers==='function')invalidateProcessLayers(e,'map');
+  if(fid!=='DF093'&&closesSession&&e.confirmedAsIs&&typeof invalidateAsIsClosure==='function')invalidateAsIsClosure(e,`respuesta de cierre ${fid} actualizada`);
   e.answers[fid]=value;e.updatedAt=now();
   // A reused value corrected here must reach its owner, not become a second copy (DEC-050). The
   // engagement still keeps the snapshot of the value it used. Guarded because the No-Reask module
