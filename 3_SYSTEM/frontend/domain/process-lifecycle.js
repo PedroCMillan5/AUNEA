@@ -95,14 +95,24 @@ function processLayerIntegrityIssues(e,key){
       if(r.controls_present===true&&!normalizeArray(r.current_control).length)push(`Selecciona los controles actuales del riesgo "${r.description||i+1}".`);
       if(typeof r.sensitive_or_high_impact!=='boolean'||typeof r.material_financial_or_compliance!=='boolean'||typeof r.critical_trigger!=='boolean')
         push(`Completa las condiciones de sensibilidad, materialidad y criticidad del riesgo "${r.description||i+1}".`);
-      if(normalizeArray(r.step_ids).some(id=>!stepIds.has(id)))push(`El riesgo "${r.description||i+1}" referencia un paso que ya no está activo.`);
+      const riskSteps=normalizeArray(r.step_ids).filter(Boolean);
+      if(stepIds.size&&!riskSteps.length)push(`El riesgo "${r.description||i+1}" debe estar vinculado al menos a un paso activo.`);
+      if(riskSteps.some(id=>!stepIds.has(id)))push(`El riesgo "${r.description||i+1}" referencia un paso que ya no está activo.`);
     });
   }
   if(key==='impact'){
     (e.economicInputs||[]).forEach((x,i)=>{
       if(!x.driver_id)push(`Selecciona el tipo de impacto del registro ${i+1}.`);
       if(!x.evidence_type)push(`Selecciona la evidencia del impacto ${i+1}.`);
-      if(normalizeArray(x.step_ids).some(id=>!stepIds.has(id)))push(`El impacto ${i+1} referencia un paso que ya no está activo.`);
+      const impactSteps=normalizeArray(x.step_ids).filter(Boolean);
+      if(stepIds.size&&!impactSteps.length)push(`El impacto ${i+1} debe estar vinculado al menos a un paso activo.`);
+      if(impactSteps.some(id=>!stepIds.has(id)))push(`El impacto ${i+1} referencia un paso que ya no está activo.`);
+      if(x.pain_id){
+        const linkedPains=new Set((typeof activeFrictions==='function'?activeFrictions(e):(e.frictions||[]).filter(f=>f.status!=='SUPERSEDED'))
+          .filter(fr=>normalizeArray(fr.affected_steps).some(id=>impactSteps.includes(id)))
+          .map(fr=>String(fr.derived_pain_id||fr.friction_type||'')));
+        if(!linkedPains.has(String(x.pain_id)))push(`El impacto ${i+1} está asociado a un problema que no existe en los pasos seleccionados.`);
+      }
     });
     if(typeof economicInputIntegrityIssues==='function')economicInputIntegrityIssues(e).forEach(x=>push(x.message));
   }
