@@ -15,6 +15,44 @@ test('NR03 derives channels from process steps',()=>{assert.deepEqual(Array.from
 test('legacy country label is canonicalized to ISO option value',()=>{assert.equal(ctx.reusedValue('DF005',eng),'ES');});
 test('tool branch activates from two tools',()=>{assert.equal(ctx.branchActive('BR-TOOLS',eng),true);});
 test('wait branch activates from step wait',()=>{assert.equal(ctx.branchActive('BR-WAIT',eng),true);});
+
+test('BR-RISK discovery probes stay available before a risk exists without making the branch active',()=>{
+  const e={answers:{},answerDetails:{},processSteps:[],frictions:[],risks:[],economicInputs:[],confirmedAsIs:false};
+  const probes=[
+    {Field_ID:'DF073',Stage_ID:'S06',Write_Target:'RT_PROCESS.Sensitive_Data',Ask_Mode:'CONDITIONAL_ASK',Requiredness:'CONDITIONAL_90M',Branch_Rule_ID:'BR-RISK'},
+    {Field_ID:'DF074',Stage_ID:'S06',Write_Target:'RT_PROCESS.Irreversible_Actions',Ask_Mode:'CONDITIONAL_ASK',Requiredness:'CONDITIONAL_90M',Branch_Rule_ID:'BR-RISK'},
+    {Field_ID:'DF090',Stage_ID:'S08',Write_Target:'RT_PROCESS.Security_Constraints',Ask_Mode:'CONDITIONAL_ASK',Requiredness:'CONDITIONAL_90M',Branch_Rule_ID:'BR-RISK'}
+  ];
+  assert.equal(ctx.branchActive('BR-RISK',e),false);
+  probes.forEach(f=>assert.equal(ctx.questionVisible(f,e),true,f.Field_ID+' must remain available as a discovery probe'));
+  probes.forEach(f=>assert.equal(ctx.canonicalFieldRequiredNow(f,e),false,f.Field_ID+' remains conditional, never blocking readiness'));
+});
+
+test('BR-RISK ignores negative screening answers and activates only on material risk signals',()=>{
+  const base=()=>({answers:{},answerDetails:{},processSteps:[],frictions:[],risks:[],economicInputs:[]});
+  const negative=base();
+  negative.answers.DF073=['NONE'];
+  negative.answers.DF074='REVERSIBLE';
+  assert.equal(ctx.branchActive('BR-RISK',negative),false,'Ninguno/Reversible must not create a false risk branch');
+
+  const critical=base();critical.answers.DF018='4';
+  assert.equal(ctx.branchActive('BR-RISK',critical),true,'high process criticality is a canonical risk trigger');
+
+  const constraint=base();constraint.answers.DF010=['SECURITY'];
+  assert.equal(ctx.branchActive('BR-RISK',constraint),true,'a known security constraint from DF010 must be reused to open the risk branch');
+
+  const impact=base();impact.frictions=[{id:'f-risk',status:'ACTIVE',friction_type:'P11',non_time_impact:['COMPLIANCE']}];
+  assert.equal(ctx.branchActive('BR-RISK',impact),true,'DF064 stored on Friction must reach BR-RISK without a duplicate questionnaire answer');
+
+  const sensitive=base();sensitive.answers.DF073=['PERSONAL'];
+  assert.equal(ctx.branchActive('BR-RISK',sensitive),true);
+
+  const irreversible=base();irreversible.answers.DF074='HARD';
+  assert.equal(ctx.branchActive('BR-RISK',irreversible),true);
+
+  const security=base();security.answers.DF090=['AUDIT_LOG'];
+  assert.equal(ctx.branchActive('BR-RISK',security),true);
+});
 test('an existing CRM value is prefilled into the real control, never a blank question',()=>{
   const f={Field_ID:'DF001',Pregunta_o_etiqueta_ES:'Empresa',Objetivo_concreto:'',Requiredness:'REQUIRED_90M',Ask_Mode:'PREFILL_CONFIRM',Reask_Policy:'CONFIRM_ONLY_IF_CHANGED',Branch_Rule_ID:'BR-BASE',Reuse_From:'RT_COMPANY.Company_Name',Write_Target:'RT_COMPANY.Company_Name',Option_Set_ID:null,Validation:'',Ejemplo_ES:''};
   const html=ctx.renderQuestion(f,eng);
