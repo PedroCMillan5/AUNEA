@@ -29,7 +29,7 @@ function addRisk(preselectedSteps=[],editIndex=null){
     sensitive=normalizeArray(e.answers?.DF073).filter(x=>x!=='NONE'),
     steps=typeof activeSteps==='function'?activeSteps(e):[],
     frictions=typeof activeFrictions==='function'?activeFrictions(e):e.frictions||[];
-  const selected=existing||{},num=v=>String(v??'1');
+  const selected=existing||{},num=v=>v===undefined||v===null?'':String(v);
   openModal(existing?'Editar riesgo':'Añadir riesgo',
     '<div class="step-groups process-modal-form risk-modal-form"><details class="step-group" open><summary>¿Qué podría salir mal?</summary><div class="form-grid">'
     +'<div class="field full"><label>¿En qué pasos podría ocurrir?</label><div class="choice-grid">'
@@ -38,25 +38,27 @@ function addRisk(preselectedSteps=[],editIndex=null){
     +frictions.map(f=>'<div class="choice" data-risk-friction-row data-affected-steps="'+attr(normalizeArray(f.affected_steps).join('|'))+'"><span>'+esc(f.client_label||labelFrom('OS_FRICTION_TYPE',f.friction_type))+'</span></div>').join('')+'</div></div>'
     +'<div class="field"><label>¿De qué tipo es este riesgo? '+requiredMark()+'</label>'+riskDropdown('riskCat',[{value:'',label:'Selecciona…'},...cats],selected.category||'','Selecciona…')+'</div>'
     +'<div class="field"><label>¿Qué podría salir mal? '+requiredMark()+'</label><input id="riskDesc" value="'+attr(selected.description||'')+'" placeholder="Describe qué podría ocurrir"></div>'
-    +'<div class="field"><label>¿Qué probabilidad hay de que ocurra? (1–5)</label>'+riskDropdown('riskLike',[1,2,3,4,5].map(x=>({value:String(x),label:String(x)})),num(selected.likelihood_1_5),'1')+'</div>'
-    +'<div class="field"><label>¿Qué consecuencias tendría? (1–5)</label>'+riskDropdown('riskImpact',[1,2,3,4,5].map(x=>({value:String(x),label:String(x)})),num(selected.impact_1_5),'1')+'</div></div></details>'
+    +'<div class="field"><label>¿Qué probabilidad hay de que ocurra? (1–5) '+requiredMark()+'</label>'+riskDropdown('riskLike',[{value:'',label:'Selecciona…'},... [1,2,3,4,5].map(x=>({value:String(x),label:String(x)}))],num(selected.likelihood_1_5),'Selecciona…')+'</div>'
+    +'<div class="field"><label>¿Qué consecuencias tendría? (1–5) '+requiredMark()+'</label>'+riskDropdown('riskImpact',[{value:'',label:'Selecciona…'},... [1,2,3,4,5].map(x=>({value:String(x),label:String(x)}))],num(selected.impact_1_5),'Selecciona…')+'</div></div></details>'
     +'<details class="step-group" open><summary>Controles y condiciones</summary><div class="form-grid">'
     +'<div class="field"><label>Si ocurre, ¿se puede corregir?</label>'+riskDropdown('riskRev',rev,selected.reversibility||rev[0]?.value||'','Selecciona…')+'</div>'
-    +'<div class="field"><label>¿Existen medidas para evitarlo o detectarlo?</label>'+riskDropdown('riskControls',[{value:'1',label:'Presentes'},{value:'0',label:'Ausentes / insuficientes'}],existing?(selected.controls_present?'1':'0'):'1','Selecciona…')+'</div>'
-    +'<div class="field"><label>¿Afecta a datos sensibles o de alto impacto?</label>'+riskDropdown('riskSensitive',[{value:sensitive.length?'1':'0',label:sensitive.length?'Sí — reutilizado de DF073':'No indicado en DF073'},{value:'1',label:'Sí'},{value:'0',label:'No'}],existing?(selected.sensitive_or_high_impact?'1':'0'):(sensitive.length?'1':'0'),'Selecciona…')+'</div>'
+    +'<div class="field"><label>¿Existen medidas para evitarlo o detectarlo?</label>'+riskDropdown('riskControls',[{value:'',label:'Sin indicar'},{value:'1',label:'Presentes'},{value:'0',label:'Ausentes / insuficientes'}],existing?(selected.controls_present===true?'1':selected.controls_present===false?'0':''):'','Sin indicar')+'</div>'
+    +'<div class="field"><label>¿Afecta a datos sensibles o de alto impacto?</label>'+riskDropdown('riskSensitive',[{value:'',label:'Sin indicar'},{value:'1',label:sensitive.length?'Sí — reutilizado de DF073':'Sí'},{value:'0',label:'No'}],existing?(selected.sensitive_or_high_impact===true?'1':selected.sensitive_or_high_impact===false?'0':''):(sensitive.length?'1':''),'Sin indicar')+'</div>'
     +'<div class="field"><label>¿Puede tener consecuencias económicas o de cumplimiento importantes?</label>'+riskDropdown('riskMat',[{value:'0',label:'No'},{value:'1',label:'Sí'}],selected.material_financial_or_compliance?'1':'0','No')+'</div>'
     +'<div class="field"><label>¿Es un evento crítico?</label>'+riskDropdown('riskCritical',[{value:'0',label:'No'},{value:'1',label:'Sí'}],selected.critical_trigger?'1':'0','No')+'</div></div></details></div>',
     ()=>{
       const cat=document.getElementById('riskCat').value,description=document.getElementById('riskDesc').value.trim();
       const step_ids=[...document.querySelectorAll('[data-risk-step]:checked')].map(x=>x.dataset.riskStep);
+      const like=Number(document.getElementById('riskLike').value),impact=Number(document.getElementById('riskImpact').value);
       if(!cat||!description)return toast('Indica el tipo de riesgo y explica qué podría ocurrir.');
+      if(!Number.isInteger(like)||like<1||like>5||!Number.isInteger(impact)||impact<1||impact>5)return toast('Selecciona probabilidad e impacto entre 1 y 5.');
       if(steps.length&&!step_ids.length)return toast('Selecciona al menos un paso relacionado.');
-      const rv=document.getElementById('riskRev').value;
-      const draft={step_ids,category:cat,description,likelihood_1_5:Number(document.getElementById('riskLike').value),
-        impact_1_5:Number(document.getElementById('riskImpact').value),
+      const rv=document.getElementById('riskRev').value,controls=document.getElementById('riskControls').value,sensitiveValue=document.getElementById('riskSensitive').value;
+      const draft={step_ids,category:cat,description,likelihood_1_5:like,
+        impact_1_5:impact,
         reversible:!['HARD','IRREVERSIBLE'].includes(rv),reversibility:rv,
-        controls_present:document.getElementById('riskControls').value==='1',
-        sensitive_or_high_impact:document.getElementById('riskSensitive').value==='1',
+        controls_present:controls===''?null:controls==='1',
+        sensitive_or_high_impact:sensitiveValue===''?null:sensitiveValue==='1',
         material_financial_or_compliance:document.getElementById('riskMat').value==='1',
         critical_trigger:document.getElementById('riskCritical').value==='1'};
       if(existing)Object.assign(existing,draft);else e.risks.push(draft);
