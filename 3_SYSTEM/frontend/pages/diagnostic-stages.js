@@ -14,16 +14,20 @@ function habitualVolumeBlock(f21,f22,e){
 }
 function slaTargetBlock(f,e){
   const p=numberParts(effectiveValue(f,e));
-  const units=[{value:'min',label:'min'},{value:'h',label:'h'},{value:'day',label:'días'},{value:'week',label:'semanas'}];
-  const modeOpts=[{value:'',label:'Sí, existe un tiempo objetivo'},{value:'NONE',label:'No existe SLA / tiempo objetivo'}];
+  const units=[{value:'min',label:'min'},{value:'h',label:'horas'},{value:'day',label:'días'},{value:'week',label:'semanas'}];
+  const modeOpts=[{value:'',label:'Sí, existe'},{value:'NONE',label:'No existe'}];
+  const none=p.mode==='NONE';
   return `<div class="field full demand-sla-target" data-field="${attr(f.Field_ID)}" data-uat="UAT-VIS-025">
-    <label>${esc(f.Pregunta_o_etiqueta_ES)}<span class="conditional-tag">condicional</span></label>
-    <div class="compound-control demand-sla-control">
-      <input type="number" inputmode="decimal" min="0" step="any" data-number-value="${f.Field_ID}" value="${attr(p.value??'')}" placeholder="Valor" aria-label="Tiempo objetivo">
-      ${auneaSelectControl(`${f.Field_ID}__unit`,units,p.unit,{extra:`data-number-unit="${f.Field_ID}"`,placeholder:'Unidad…'})}
-      ${auneaSelectControl(`${f.Field_ID}__mode`,modeOpts,p.mode,{extra:`data-number-mode="${f.Field_ID}"`,placeholder:'Indica si existe…'})}
+    <div class="demand-sla-head">
+      <div><label>${esc(f.Pregunta_o_etiqueta_ES)}<span class="conditional-tag">condicional</span></label>
+      <div class="field-help">Indica si existe un SLA o tiempo objetivo. Si existe, registra el valor; si no, queda cerrado explícitamente como “No existe”.</div></div>
+      <div class="demand-sla-exists">${auneaSelectControl(`${f.Field_ID}__mode`,modeOpts,p.mode,{extra:`data-number-mode="${f.Field_ID}" data-sla-mode="${f.Field_ID}"`,placeholder:'¿Existe?'})}</div>
     </div>
-    <div class="field-help">Si existe un SLA o tiempo objetivo, indica valor y unidad. Si no existe, déjalo declarado explícitamente para no confundirlo con un dato pendiente.</div>
+    <div class="demand-sla-value" data-sla-value-wrap="${f.Field_ID}"${none?' hidden':''}>
+      <span class="demand-sla-value-label">Tiempo objetivo</span>
+      <input type="number" inputmode="decimal" min="0" step="any" data-number-value="${f.Field_ID}" value="${attr(p.value??'')}" placeholder="Ej. 24" aria-label="Tiempo objetivo">
+      ${auneaSelectControl(`${f.Field_ID}__unit`,units,p.unit,{extra:`data-number-unit="${f.Field_ID}"`,placeholder:'Unidad'})}
+    </div>
   </div>`;
 }
 
