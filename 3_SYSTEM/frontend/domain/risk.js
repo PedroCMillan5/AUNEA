@@ -19,7 +19,7 @@ function riskBuilder(e){
       +'<p>Problemas observados en esos pasos: '+riskRelatedFrictions(e,r).map(f=>esc(f.client_label||labelFrom('OS_FRICTION_TYPE',f.friction_type))).join(', ')+'</p></div>'
       +'<div class="row-actions"><button class="btn btn-small" data-edit-risk-index="'+i+'">Editar</button><button class="btn btn-small btn-danger" data-delete-risk-index="'+i+'">Eliminar</button></div></div>'
     ).join(''):'<div class="empty"><p>Todavía no hay riesgos registrados.</p></div>')+'</div>',
-    '<button class="btn btn-primary" id="addRisk">Añadir riesgo</button>');
+    '<button type="button" class="btn btn-primary" id="addRisk" data-add-risk-global>Añadir riesgo</button>');
 }
 function addRisk(preselectedSteps=[],editIndex=null){
   if(typeof guardAsisMutation==='function'&&guardAsisMutation())return;
