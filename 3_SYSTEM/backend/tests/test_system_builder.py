@@ -15,8 +15,10 @@ def ready_spec():
         risks=[RiskInput(step_ids=["STEP-001"],category="ops",likelihood_1_5=2,impact_1_5=2)],
         commercial_scope=CommercialScope(scope_bounded=True,integrations_known=True,tool_tco_current=True),
         questionnaire_answers={
-            "DF012":"Approved request","DF013":"Project ready","DF086":["Reliable kickoff"],
-            "_process_steps":[{"id":"STEP-001","status":"ACTIVE","inputs":["Request"],"outputs":["Project","Tasks"],"decision_criteria":["Approved"],"exception_path":None}],
+            "DF012":"Approved request","DF013":"Project ready","DF018":3,"DF021":120,"DF022":"MONTH",
+            "DF086":["Reliable kickoff"],"DF093":"YES","_coverage_ack":True,
+            "_process_steps":[{"id":"STEP-001","status":"ACTIVE","step_name":"Validate approved request","step_type":"ST02","actor":"Operations",
+                "inputs":["Request"],"outputs":["Project","Tasks"],"decision_criteria":["Approved"],"normal_next_step":"__END__","exception_path":None}],
         },
     )
     orch=Orchestrator(); diag=orch.diagnose(eng)
