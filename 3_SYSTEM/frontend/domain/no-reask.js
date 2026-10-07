@@ -62,6 +62,14 @@ function canonicalFieldValidationIssue(f,v,e){
     if(control==='STEP_PAIR_SELECTOR'&&v&&typeof v==='object'){
       if((v.from&&!stepIds.has(String(v.from)))||(v.to&&!stepIds.has(String(v.to))))return 'Uno de los pasos seleccionados ya no está activo.';
     }
+    if(control==='STEP_PAIR_LIST_SELECTOR'){
+      const rows=Array.isArray(v)?v:(v&&typeof v==='object'?[v]:[]);
+      for(const row of rows){
+        if(!String(row?.data||'').trim()||!row?.from||!row?.to)return 'Cada reintroducción debe indicar la información afectada, el paso de origen y el paso de destino.';
+        if(String(row.from)===String(row.to))return 'El origen y el destino de una reintroducción deben ser pasos distintos.';
+        if(!stepIds.has(String(row.from))||!stepIds.has(String(row.to)))return 'Una reintroducción contiene un paso que ya no está activo.';
+      }
+    }
     if(control==='STEP_SYSTEM_PAIR_SELECTOR'){
       const bad=normalizeArray(v).some(token=>{
         const m=String(token).match(/^pair:([^:]+):([^:]+)$/);return !!m&&(!stepIds.has(m[1])||!stepIds.has(m[2]));
@@ -424,7 +432,7 @@ function renderQuestion(f,e){
                 f.Reuse_From?`<div class="internal-only technical-provenance"><b>Reuse_From:</b> ${esc(f.Reuse_From)} · <b>Reask_Policy:</b> ${esc(f.Reask_Policy||'—')}</div>`:''].join('');
   const popId=`help_${f.Field_ID}`;
   const help=detail?`<button type="button" class="help-icon" data-help-toggle="${attr(popId)}" aria-expanded="false" aria-controls="${attr(popId)}" title="Ayuda">?</button><div class="help-popover" id="${attr(popId)}" role="tooltip">${detail}</div>`:'';
-  const wide=['TEXT_LONG_INTERNAL','MULTISELECT','MULTISELECT_WITH_OTHER','MULTISELECT_WITH_DETAIL','MULTISELECT_WITH_PRIORITY','FRICTION_MULTISELECT_PRIORITY','RISK_BUILDER','CLIENT_CONFIRMATION_WITH_INLINE_EDIT','STEP_PAIR_SELECTOR','STEP_SYSTEM_PAIR_SELECTOR','DROPDOWN_WITH_OWNER_DATE','BOOLEAN_UNKNOWN_WITH_SCOPE'].includes(String(f.Control_UI));
+  const wide=['TEXT_LONG_INTERNAL','MULTISELECT','MULTISELECT_WITH_OTHER','MULTISELECT_WITH_DETAIL','MULTISELECT_WITH_PRIORITY','FRICTION_MULTISELECT_PRIORITY','RISK_BUILDER','CLIENT_CONFIRMATION_WITH_INLINE_EDIT','STEP_PAIR_SELECTOR','STEP_PAIR_LIST_SELECTOR','STEP_SYSTEM_PAIR_SELECTOR','DROPDOWN_WITH_OWNER_DATE','BOOLEAN_UNKNOWN_WITH_SCOPE'].includes(String(f.Control_UI));
   const clarificationUnderLabel=['DF020','DF029'].includes(f.Field_ID)&&clarification;
   return `<div class="field${wide?' full':''}" data-field="${attr(f.Field_ID)}"><label>${esc(f.Pregunta_o_etiqueta_ES)}${meta}${help}</label>${clarificationUnderLabel?`<div class="field-help clarification-note">${esc(clarification)}</div>`:''}${body}<div class="field-help">${esc(f.Objetivo_concreto||'')}</div>${clarification&&!clarificationUnderLabel?`<div class="field-help clarification-note">${esc(clarification)}</div>`:''}${consistencyNote?`<div class="field-help clarification-note" data-global-failure-review="DF028">${esc(consistencyNote)}</div>`:''}${economicNote?`<div class="field-help clarification-note" data-economic-overlap-review="${f.Field_ID}">${esc(economicNote)}</div>`:''}</div>`;
 }
