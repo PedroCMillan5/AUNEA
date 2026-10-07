@@ -29,21 +29,29 @@ async function main(){
   assert.equal(ids.length,1,'The actual UAT click must create exactly one study.');
   for(const id of ids){
    await page.locator('[data-single-uat-stage="S04"]').click();
-   const canvas=page.locator('.flow-canvas');
+   await page.locator('[data-goto-process="1"]').click();
+   await page.locator('#openSessionDisplayFromProcess').waitFor();
+   const popupPromise=page.waitForEvent('popup');
+   await page.locator('#openSessionDisplayFromProcess').click();
+   const editor=await popupPromise;
+   await editor.waitForLoadState('domcontentloaded');
+   await editor.locator('.client-process-sequence').waitFor({timeout:20000});
+   const canvas=editor.locator('.flow-canvas');
    await canvas.waitFor();
-   await page.waitForTimeout(100);
+   await editor.waitForTimeout(100);
    const before=await canvas.evaluate(el=>{el.scrollLeft=Math.min(el.scrollWidth-el.clientWidth,620);el.scrollTop=Math.min(el.scrollHeight-el.clientHeight,35);return {x:el.scrollLeft,width:el.scrollWidth,client:el.clientWidth}});
    assert.ok(before.width>before.client,id+' map is not horizontally navigable');
    assert.ok(before.x>0,id+' map refuses horizontal movement');
-   await page.locator('.client-process-sequence [data-process-tab="fricciones"]').click();
-   await page.locator('.client-process-sequence [data-process-tab="riesgos"]').click();
-   await page.locator('.client-process-sequence [data-process-tab="impacto"]').click();
-   await page.waitForTimeout(120);
-   const after=await page.locator('.flow-canvas').evaluate(el=>({x:el.scrollLeft,width:el.scrollWidth,client:el.clientWidth}));
+   await editor.locator('.client-process-sequence [data-process-tab="fricciones"]').click();
+   await editor.locator('.client-process-sequence [data-process-tab="riesgos"]').click();
+   await editor.locator('.client-process-sequence [data-process-tab="impacto"]').click();
+   await editor.waitForTimeout(120);
+   const after=await editor.locator('.flow-canvas').evaluate(el=>({x:el.scrollLeft,width:el.scrollWidth,client:el.clientWidth}));
    assert.equal(after.x,before.x,id+' Impact must retain the navigated position, not snap to x=0');
-   const chosen=await page.evaluate(()=>state.engagements.find(e=>e.id===state.activeEngagementId).processTab);
+   const chosen=await editor.evaluate(()=>state.engagements.find(e=>e.id===state.activeEngagementId).processTab);
    assert.equal(chosen,'impacto',id+' switched to Pasos unexpectedly');
-   await page.screenshot({path:path.join(outDir,id.toLowerCase()+'.png'),fullPage:true});
+   await editor.screenshot({path:path.join(outDir,id.toLowerCase()+'.png'),fullPage:true});
+   await editor.close();
    // Session rail is contextual: return through Inicio before opening system UAT again.
    await page.locator('[data-page="inicio"]').first().click();
    await page.locator('[data-page="uat"]').click();
