@@ -33,6 +33,47 @@ function migrateRiskCaptureIntegrity(engagements=[]){
   });
   return changed;
 }
+let __auneaRiskCandidates=[];
+function riskIncompleteFields(r){
+  const missing=[];
+  if(!normalizeArray(r.step_ids).length)missing.push('paso relacionado');
+  if(!r.category)missing.push('categoría');
+  if(!String(r.description||'').trim())missing.push('qué podría salir mal');
+  if(!Number.isInteger(Number(r.likelihood_1_5))||Number(r.likelihood_1_5)<1||Number(r.likelihood_1_5)>5)missing.push('probabilidad');
+  if(!Number.isInteger(Number(r.impact_1_5))||Number(r.impact_1_5)<1||Number(r.impact_1_5)>5)missing.push('consecuencia');
+  if(!r.reversibility)missing.push('reversibilidad');
+  if(typeof r.controls_present!=='boolean')missing.push('controles actuales');
+  if(typeof r.sensitive_or_high_impact!=='boolean')missing.push('sensibilidad');
+  if(typeof r.material_financial_or_compliance!=='boolean')missing.push('materialidad');
+  if(typeof r.critical_trigger!=='boolean')missing.push('criticidad');
+  return missing;
+}
+function riskReviewActionPanel(e){
+  const pending=(e.risks||[]).map((r,i)=>({r,i,missing:riskIncompleteFields(r)})).filter(x=>x.missing.length);
+  if(!pending.length)return '';
+  return '<div class="notice warn risk-review-summary"><b>Riesgos que necesitan revisión</b><p>Completa únicamente los datos que faltan en cada riesgo antes de confirmar la capa.</p>'
+    +pending.map(x=>'<div class="risk-review-row"><div><strong>'+esc(x.r.description||labelFrom('OS_RISK_CATEGORY',x.r.category)||'Riesgo sin describir')+'</strong><div class="field-help">'+esc(x.missing.join(' · '))+'</div></div><button type="button" class="btn btn-small btn-primary" data-edit-risk-index="'+x.i+'">Completar riesgo</button></div>').join('')
+    +'</div>';
+}
+async function reviewRiskCandidates(){
+  const e=currentEng();if(!e||typeof fetchRiskCandidates!=='function')return toast('La revisión de posibles riesgos no está disponible.');
+  try{
+    const r=await fetchRiskCandidates(e),steps=typeof activeSteps==='function'?activeSteps(e):[];__auneaRiskCandidates=normalizeArray(r?.candidates);
+    const body=__auneaRiskCandidates.length
+      ?'<div class="notice info"><b>Situaciones que conviene validar con el cliente</b><p>AUNEA ha encontrado señales en el proceso. Son preguntas de revisión: no se crea ni puntúa ningún riesgo hasta que lo confirmes.</p></div><div class="result-list">'
+        +__auneaRiskCandidates.map((x,i)=>{
+          const names=normalizeArray(x.step_ids).map(id=>steps.find(s=>s.id===id)?.step_name||'').filter(Boolean);
+          const qs=normalizeArray(x.review_questions).filter(Boolean);
+          return '<div class="result-item risk-candidate-card"><div class="result-item-head"><div><b>'+esc(x.title||'Posible riesgo')+'</b><p>'+esc(x.rationale||'')+'</p>'
+            +(names.length?'<p><b>Dónde revisar:</b> '+names.map(esc).join(', ')+'</p>':'')
+            +(qs.length?'<div class="field-help"><b>Preguntas para validarlo:</b><br>'+qs.map(q=>'• '+esc(q)).join('<br>')+'</div>':'')
+            +'</div><div class="result-actions"><button type="button" class="btn btn-small btn-primary" data-review-risk-candidate="'+i+'">Revisar con el cliente</button></div></div></div>';
+        }).join('')+'</div>'
+      :'<div class="empty"><h2>No hay nuevas situaciones que revisar</h2><p>Con la información disponible no se ha detectado otro escenario de riesgo material para revisar.</p></div>';
+    openModal('Riesgos que conviene revisar',body,closeModal,'Cerrar');
+    document.querySelectorAll('[data-review-risk-candidate]').forEach(b=>b.onclick=()=>{const x=__auneaRiskCandidates[Number(b.dataset.reviewRiskCandidate)];if(x){closeModal();addRisk(x.step_ids,null,x)}});
+  }catch(err){toast('No se pudieron revisar los posibles riesgos: '+String(err?.message||err))}
+}
 function riskBuilder(e){
   const steps=typeof activeSteps==='function'?activeSteps(e):[];
   return section('Riesgos','Registra qué podría salir mal y en qué pasos. Las fricciones de esos pasos se muestran sólo como contexto para evitar duplicar información.',
