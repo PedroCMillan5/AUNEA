@@ -134,7 +134,8 @@ test('C03 sealing PG09 records what was confirmed, versioned, and opens internal
   const { ctx, e } = sealedFixture();
   const snap = ctx.sealConfirmedSnapshot(e, 'test');
   assert.equal(snap.version, 1);
-  assert.equal(snap.schemaVersion, 2);
+  assert.equal(snap.schemaVersion, 3);
+  assert.equal(snap.finalClosure, true,'only explicit PG09 closure produces an active handoff snapshot');
   assert.equal(snap.stageId, 'S09');
   assert.equal(snap.company.name, 'Nordia Retail');
   assert.equal(snap.contacts[0].role, 'Directora de Operaciones');
@@ -144,6 +145,17 @@ test('C03 sealing PG09 records what was confirmed, versioned, and opens internal
   assert.equal(snap.businessAreaId, 'D04');
   // Sealing PG09 is what moves the engagement into internal work.
   assert.equal(e.status, 'Trabajo interno');
+});
+
+test('C03 legacy pre-PG09 seals are reopened once and cannot remain active handoff snapshots', () => {
+  const { ctx, e } = sealedFixture();
+  e.confirmedSnapshots=[{schemaVersion:2,version:1,sealedAt:'2026-10-07T09:00:00.000Z',confirmedAsIs:true}];
+  e.status='Trabajo interno';e.diagnosticOutput=null;e.scenarioResults=[];
+  assert.equal(ctx.migrateLegacyPrematureClosures([e]),1);
+  assert.equal(e.confirmedAsIs,false);
+  assert.equal(e.answers.DF093,'');
+  assert.equal(e.status,'Sesión 1');
+  assert.equal(ctx.hasConfirmedSnapshot(e),false);
 });
 
 test('C03 the snapshot is immutable and unaffected by later master or capture edits', () => {
