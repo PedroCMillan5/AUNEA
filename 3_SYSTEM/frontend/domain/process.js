@@ -662,12 +662,12 @@ function graphNodeCard(e,s,i,fr,tab='cliente',readonly=false){
   const layerActionHtml=layerAction?'<div class="process-node-actions">'+layerAction+'</div>':'';
   const stack=links||layerActionHtml?'<div class="process-node-stack">'+links+layerActionHtml+'</div>':'';
   if(decision){
-    return '<div class="graph-decision-inline '+(linkCount?'has-node-links ':'')+(processLayerState(e).map?'confirmed':'')+'" '+(readonly?'':'data-drag-step="'+attr(s.id)+'"')+'>'
-      +actions+'<div class="graph-decision-gateway" aria-hidden="true"><div class="graph-decision-gateway-icon">'+processNodeIconSvg('decision')+'</div></div>'
+    return '<div class="graph-decision-inline '+(linkCount?'has-node-links ':'')+(processLayerState(e).map?'confirmed':'')+'" '+(readonly?'':'data-drag-step="'+attr(s.id)+'"')+' style="--decision-link-count:'+linkCount+'">'
+      +actions+layerActionHtml+links
+      +'<div class="graph-decision-gateway" aria-hidden="true"><div class="graph-decision-gateway-icon">'+processNodeIconSvg('decision')+'</div></div>'
       +'<div class="graph-decision-copy"><span class="boundary-kicker">Decisión</span><h4 title="'+attr(s.step_name||'Decisión sin nombre')+'">'+esc(s.step_name||'Decisión sin nombre')+'</h4>'
       +'<p class="process-node-meta" title="'+attr((labelFrom('OS_ACTOR_ROLE',s.actor)||'—')+' · '+(labelFrom('OS_TOOL_CATEGORY',s.tool)||'—'))+'">'+esc(labelFrom('OS_ACTOR_ROLE',s.actor)||'—')+' · '+esc(labelFrom('OS_TOOL_CATEGORY',s.tool)||'—')+'</p>'
-      +(num(s.active_time)?'<p>'+num(s.active_time)+' min trabajo</p>':'')+'</div>'
-      +links+layerActionHtml+'</div>';
+      +(num(s.active_time)?'<p>'+num(s.active_time)+' min trabajo</p>':'')+'</div></div>';
   }
   return '<div class="flow-step graph-flow-step '+typeClass+' '+(processLayerState(e).map?'confirmed':'')+'" '+(readonly?'':'data-drag-step="'+attr(s.id)+'"')+'>'
     +actions+'<div class="process-node-heading">'+processNodeIconSvg(iconName)+'<div class="process-node-title"><span class="boundary-kicker">Paso '+(i+1)+'</span><h4 title="'+attr(s.step_name||'Paso sin nombre')+'">'+esc(s.step_name||'Paso sin nombre')+'</h4></div></div>'
@@ -681,7 +681,8 @@ function processGraphHtml(e,steps,fr,start,finish,tab='cliente',readonly=false){
     +risks.filter(r=>normalizeArray(r.step_ids).includes(s.id)).length
     +economics.filter(x=>normalizeArray(x.step_ids).includes(s.id)).length;
   const maxLinkCount=steps.reduce((max,s)=>Math.max(max,linkCountForStep(s)),0);
-  const graphCardHeight=238+Math.max(0,maxLinkCount-1)*38;
+  const hasLayerAction=['fricciones','riesgos','impacto'].includes(tab);
+  const graphCardHeight=250+Math.max(0,maxLinkCount-1)*42+(hasLayerAction?34:0);
   const yesBranchIds=new Set(model.branchLayouts.flatMap(b=>b.yesSteps||[])),cell=n=>{
     const p=model.positions.get(n.id),step=n.kind==='step'?steps.find(x=>x.id===n.id):null,isDecision=!!step&&processDecisionStep(step),isYesBranch=yesBranchIds.has(n.id);
     const style='style="grid-row:'+p.row+';grid-column:'+p.col+'"',id='data-graph-node="'+attr(n.id)+'"';
@@ -767,7 +768,9 @@ function drawProcessGraph(){
     const noStartY=dr.bottom-rect.top;
     const mainY=tr.top+tr.height/2-rect.top;
     const mergeX=tr.left-rect.left-32;
-    const lowerY=Math.max(mainY+94,noStartY+64);
+    const yesRect=b.yesStart&&b.yesStart!==b.merge?nodeRect(b.yesStart):null;
+    const yesBottom=yesRect?yesRect.bottom-rect.top:mainY;
+    const lowerY=Math.max(mainY+94,noStartY+64,yesBottom+28);
 
     // SÍ: leaves the gateway to the right, rises to the affirmative card,
     // then returns vertically to the convergence point.
