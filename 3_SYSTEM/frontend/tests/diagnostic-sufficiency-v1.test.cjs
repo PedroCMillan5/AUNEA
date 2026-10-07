@@ -29,12 +29,18 @@ test('every diagnostic field declares engine consumers',()=>{
 });
 
 
-test('core engine consumers are explicit: questionnaire context is not mistaken for direct engine arguments',()=>{
+test('core engine consumers use normalized entities plus canonical input coverage',()=>{
  const engines=fs.readFileSync(path.join(root,'..','backend','aunea_backend','engines.py'),'utf8');
  assert.match(engines,/PainEngine:[\s\S]*ctx\.engagement\.pain_signals/);
- assert.match(engines,/EconomicsEngine:[\s\S]*ctx\.engagement\.economics/);
- assert.match(engines,/RiskEngine:[\s\S]*ctx\.engagement\.risks/);
- assert.match(engines,/RecommendationEngine:[\s\S]*process_design_preconditions_ok[\s\S]*existing_tool_can_cover[\s\S]*requires_bounded_agent_action[\s\S]*requires_unstructured_ai_assistance[\s\S]*requires_management_visibility/);
+ assert.match(engines,/EconomicsEngine:[\s\S]*ctx\.engagement\.economics[\s\S]*_covered_input_ids\(coverage, "EconomicsEngine"\)/);
+ assert.match(engines,/RiskEngine:[\s\S]*ctx\.engagement\.risks[\s\S]*_covered_input_ids\(coverage, "RiskEngine"\)/);
+ assert.match(engines,/RecommendationEngine:[\s\S]*_covered_input_ids\(coverage, "RecommendationEngine"\)[\s\S]*process_design_preconditions_ok[\s\S]*existing_tool_can_cover[\s\S]*requires_bounded_agent_action[\s\S]*requires_unstructured_ai_assistance[\s\S]*requires_management_visibility/);
+});
+
+test('DF002 runtime mirror matches canonical sector ownership',()=>{
+ const df=schema.fields.find(x=>x.Field_ID==='DF002');
+ assert.equal(df.Option_Set_ID,'REF_INDUSTRY_CNAE25');
+ assert.equal(df.Reuse_From,'RT_COMPANY.Sector');
 });
 
 // [AUNEA-UAT-DIAG-SUFFICIENCY-010] END
