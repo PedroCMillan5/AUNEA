@@ -77,14 +77,14 @@ async function reviewRiskCandidates(){
 function riskBuilder(e){
   const steps=typeof activeSteps==='function'?activeSteps(e):[];
   return section('Riesgos','Registra qué podría salir mal y en qué pasos. Las fricciones de esos pasos se muestran sólo como contexto para evitar duplicar información.',
-    '<div class="process-list">'+((e.risks||[]).length?e.risks.map((r,i)=>
+    riskReviewActionPanel(e)+'<div class="process-list">+((e.risks||[]).length?e.risks.map((r,i)=>
       '<div class="process-row"><div class="process-index">'+(i+1)+'</div><div><b>'+esc(r.description||labelFrom('OS_RISK_CATEGORY',r.category))+'</b>'
       +'<p>'+esc(labelFrom('OS_RISK_CATEGORY',r.category))+' · Probabilidad '+esc(r.likelihood_1_5||'—')+'/5 · Consecuencia '+esc(r.impact_1_5||'—')+'/5</p>'
       +'<p>Pasos: '+normalizeArray(r.step_ids).map(id=>steps.find(s=>s.id===id)?.step_name||id).map(esc).join(', ')+'</p>'
       +'<p>Problemas observados en esos pasos: '+riskRelatedFrictions(e,r).map(f=>esc(f.client_label||labelFrom('OS_FRICTION_TYPE',f.friction_type))).join(', ')+'</p></div>'
       +'<div class="row-actions"><button class="btn btn-small" data-edit-risk-index="'+i+'">Editar</button><button class="btn btn-small btn-danger" data-delete-risk-index="'+i+'">Eliminar</button></div></div>'
     ).join(''):'<div class="empty"><p>Todavía no hay riesgos registrados.</p></div>')+'</div>',
-    '<button type="button" class="btn btn-primary" id="addRisk" data-add-risk-global>Añadir riesgo</button>');
+    '<button type="button" class="btn btn-outline" id="reviewRiskCandidates">Revisar posibles riesgos</button><button type="button" class="btn btn-primary" id="addRisk" data-add-risk-global>Añadir riesgo</button>');
 }
 function addRisk(preselectedSteps=[],editIndex=null){
   if(typeof guardAsisMutation==='function'&&guardAsisMutation())return;
