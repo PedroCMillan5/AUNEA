@@ -403,20 +403,23 @@ body.asis-console-locked .result-list button:disabled{cursor:not-allowed;opacity
 .process-node-meta{margin-top:10px!important;color:var(--muted)!important}
 .process-graph-decision-cell{align-items:stretch}
 .graph-decision-inline{position:relative;width:100%;min-width:0;height:var(--graph-card-height);min-height:var(--graph-card-height);max-height:none;display:block;padding:0;box-sizing:border-box;overflow:visible}
-.graph-decision-inline .flow-step-tools{position:absolute;top:0;left:0;right:0;display:flex;gap:4px;flex-wrap:nowrap;justify-content:center;align-items:center;white-space:nowrap}
+.graph-decision-inline .flow-step-tools{position:absolute;top:0;left:0;right:0;display:flex;gap:4px;flex-wrap:nowrap;justify-content:center;align-items:center;white-space:nowrap;z-index:4}
 .graph-decision-inline .flow-step-tools button{flex:0 0 auto;min-width:24px;height:24px;padding:0 6px;font-size:10px}
-.graph-decision-gateway{position:absolute;top:calc(74px + (var(--decision-link-count,0) * 36px));left:50%;display:grid;place-items:center;width:58px;height:58px;min-width:58px;min-height:58px;margin-left:-29px;border:2px solid var(--system);border-radius:7px;background:#eef5f0;transform:rotate(45deg);box-shadow:0 4px 14px rgba(42,81,63,.08)}
+.graph-decision-gateway{position:absolute;top:calc(50% - 29px);left:50%;display:grid;place-items:center;width:58px;height:58px;min-width:58px;min-height:58px;margin-left:-29px;border:2px solid var(--system);border-radius:7px;background:#eef5f0;transform:rotate(45deg);box-shadow:0 4px 14px rgba(42,81,63,.08);z-index:2}
 .graph-decision-gateway-icon{transform:rotate(-45deg)}
 .graph-decision-gateway .process-node-icon{width:30px;height:30px;min-width:30px;border:0;background:transparent}
-.graph-decision-copy{position:absolute;top:calc(146px + (var(--decision-link-count,0) * 36px));left:50%;width:160px;margin-left:-80px;text-align:center}
+.graph-decision-copy{position:absolute;top:calc(50% + 43px);left:50%;width:160px;margin-left:-80px;text-align:center;z-index:2}
 .graph-decision-copy .boundary-kicker{display:block;margin-bottom:2px}
 .graph-decision-copy h4{margin:0;font-size:12px;line-height:1.25;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;text-overflow:ellipsis}
 .graph-decision-copy p{margin:3px 0 0!important;font-size:10px!important;line-height:1.25}
-.graph-decision-inline>.process-node-actions{position:absolute;top:31px;left:0;right:0;bottom:auto;width:100%;margin:0;padding:0;background:transparent;z-index:3;display:flex;justify-content:center}
+.graph-decision-inline>.process-node-actions{position:absolute;top:32px;left:0;right:0;bottom:auto;width:100%;margin:0;padding:0;background:transparent;z-index:4;display:flex;justify-content:center}
 .graph-decision-inline>.process-node-actions button{display:inline-flex;width:auto;min-width:0;box-sizing:border-box;white-space:nowrap;line-height:1.2;padding:5px 10px;text-align:center;align-items:center;justify-content:center}
-.graph-decision-inline>.process-node-links{position:absolute;left:0;right:0;top:66px;display:grid;grid-template-columns:1fr;gap:6px;margin:0;width:100%}
+.graph-decision-inline>.process-node-links{position:absolute;left:0;right:0;top:68px;display:grid;grid-template-columns:1fr;gap:6px;margin:0;width:100%;z-index:4}
 .graph-decision-inline>.process-node-links button{display:flex;width:100%;box-sizing:border-box;justify-content:flex-start;text-align:left}
-.process-graph-yes-branch-cell{transform:translateY(-62px);z-index:2}
+.graph-decision-inline.has-node-links{padding-top:0}
+.graph-decision-inline.has-node-links>.process-node-links{max-height:calc(50% - 108px);overflow:visible}
+
+.process-graph-yes-branch-cell{transform:none;z-index:2}
 .graph-flow-step.is-decision{border:2px solid var(--system);background:#fbfdfc;box-shadow:0 5px 18px rgba(42,81,63,.08)}
 .graph-flow-step.step-type-st05{border-color:var(--system-line);background:#fcfefd}
 .flow-boundary.start,.flow-boundary.end{border-style:solid;background:var(--system-soft);border-color:var(--system-line)}
