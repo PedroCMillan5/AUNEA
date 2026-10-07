@@ -115,7 +115,7 @@ test('conditional questions stay non-blocking while required questions keep the 
 
 test('structured AS-IS pages expose their remaining canonical stage questions',()=>{
   assert.match(process,/function layerCanonicalQuestions/);
-  assert.match(process,/layerCanonicalQuestions\(e,'S04'\)/);
+  assert.match(process,/function consultantStepsPage\(\)[\s\S]*'map','S04'\)/);
   assert.match(process,/consultantLayerPage\('Riesgos'[\s\S]*'S06'\)/);
   assert.match(process,/consultantLayerPage\('Impacto'[\s\S]*'S07'\)/);
 });
