@@ -26,6 +26,8 @@ def test_e2e_01_deterministic_intake_n2_i0_and_override():
     assert a.recommendation.functional_level_id=="N2"
     assert a.recommendation.ai_level_id=="I0"
     assert a.input_snapshot_hash==b.input_snapshot_hash
+    assert a.optimal_scenario.scenario_id==b.optimal_scenario.scenario_id
+    assert a.optimal_scenario.model_dump()==b.optimal_scenario.model_dump()
     _, alt=o.compare(eng,ScenarioRequest(scenario_name="N1",functional_level_id="N1",ai_level_id="I0"))
     assert "CAP006" in alt.capability_delta["removed"] or alt.coverage_by_pain["P05"] != CoverageState.RESOLVED
     assert alt.delta_vs_optimal["one_off_eur"] <= 0
@@ -147,3 +149,42 @@ def test_recommendation_consumes_exception_complexity_and_retains_constraints():
     assert len(out.preconditions)>=5
     assert out.missing_information==[]
     assert "IN-R-10" in out.input_ids_used
+
+
+def test_scenario_future_economics_require_explicit_assumption_and_payback_uses_cash_only():
+    eng=EngagementInput(
+        engagement_id="E2E-FUTURE",process_instance_id="P-FUT",process_name="Future economics",
+        evidence=[ev()],
+        pains=[PainObservation(pain_id="P03",state="CONFIRMED",evidence_ids=["E1"])],
+        economics=[EconomicInput(pain_id="P03",driver_id="ED02",annual_active_hours=120,capacity_cost_rate_eur_hour=30,deduplication_key="p03")],
+        risks=[risk()],commercial_scope=base_scope()
+    )
+    o=Orchestrator()
+    base=o.diagnose(eng)
+    assert base.optimal_scenario.economics.status=="NOT_CALCULATED"
+    assert base.optimal_scenario.payback_months is None
+
+    _, capacity_only=o.compare(eng,ScenarioRequest(
+        scenario_name="Capacity only",
+        assumptions=[ScenarioAssumption(
+            pain_id="P03",future_active_hours=60,rationale="TO-BE validated estimate",
+            confidence_type="AUNEA_ESTIMATE",source_or_rule_id="RULE_SCENARIO_ECONOMICS"
+        )]
+    ),base)
+    assert capacity_only.economics.annual_active_hours==60
+    assert capacity_only.economics.capacity_value_eur_annual==1800
+    assert capacity_only.economics.realized_cash_saving_eur_annual==0
+    assert capacity_only.payback_months is None
+
+    _, cash=o.compare(eng,ScenarioRequest(
+        scenario_name="Cash realization",
+        assumptions=[ScenarioAssumption(
+            pain_id="P03",future_active_hours=60,realized_cash_saving_eur_annual=12000,
+            rationale="Finance-valid realization mechanism",confidence_type="CLIENT_DECLARED",
+            source_or_rule_id="RULE_SCENARIO_ECONOMICS"
+        )]
+    ),base)
+    assert cash.economics.realized_cash_saving_eur_annual==12000
+    assert cash.payback_months is not None
+    assert cash.assumption_set_hash
+    assert cash.assumptions[0].rationale=="Finance-valid realization mechanism"
