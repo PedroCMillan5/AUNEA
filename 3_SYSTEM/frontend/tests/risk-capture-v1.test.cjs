@@ -69,3 +69,10 @@ test('risk page exposes actionable incomplete-risk review',()=>{
   assert.match(code,/Completar riesgo/);
   assert.match(code,/Riesgos que necesitan revisión/);
 });
+
+
+test('risk review keeps candidate scoring manual',()=>{
+  assert.match(code,/Revisar posibles riesgos/);
+  assert.match(code,/OS_SCALE_1_5/);
+  assert.doesNotMatch(code,/candidate\.category/);
+});
