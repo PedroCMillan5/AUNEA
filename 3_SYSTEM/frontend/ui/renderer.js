@@ -295,6 +295,12 @@ function renderControl(f,val,opts,e){
   if(c==='MULTISELECT_WITH_DETAIL'||c==='MULTICHECK_WITH_DETAIL'||c==='MULTISELECT_WITH_REFERENCE')return hasCanonicalOtherOption(opts)?multiChoices(fid,opts,val,{other:true}):multiChoices(fid,opts,val,{detail:true});
   if(c==='MULTISELECT_WITH_PRIORITY')return multiChoicesWithPriority(fid,opts,val,e);
   if(fid==='DF088'&&c==='MULTISELECT_WITH_STEP_REFERENCE')return multiChoices(fid,opts,val,{other:true,linkedSteps:{fid:`${fid}__steps`,items:stepOptions(e),val:answerDetails(e)[`${fid}__steps`]||[]}});
+  if(fid==='DF075'&&c==='STEP_ACTION_MULTISELECT'){
+    const choices=multiChoices(fid,opts,val,{other:hasCanonicalOtherOption(opts)});
+    const steps=stepMulti('DF075__steps',e,answerDetails(e).DF075__steps||[]);
+    return '<div class="linked-field-block"><div class="linked-step-label">Acciones que requieren validación humana</div>'+choices
+      +'<div class="linked-step-group"><div class="linked-step-label">Pasos donde aplica</div>'+steps+'</div></div>';
+  }
   if(c==='MULTISELECT_WITH_STEP_LINK'||c==='MULTISELECT_WITH_STEP_REFERENCE'||c==='STEP_ACTION_MULTISELECT'){
     const choices=multiChoices(fid,opts,val,hasCanonicalOtherOption(opts)?{other:true}:{detail:true});
     const showSteps=fid!=='DF055'||valuePresent(val);
