@@ -10,7 +10,7 @@ test('pain candidates are review-only in the friction layer',()=>{
   assert.ok(p.includes('Revisar posibles fricciones'));
   assert.ok(p.includes('Señales para revisar, no fricciones confirmadas.'));
   assert.ok(p.includes('openFrictionModal(frId=null,preselectedSteps=[],candidate=null)'));
-  assert.ok(p.includes('Completa la señal observable, la causa y la evidencia'));
+  assert.ok(p.includes('Confirma la señal observable y completa causa/evidencia cuando estén disponibles'));
 });
 
 test('pain candidates come from the backend endpoint',()=>{
