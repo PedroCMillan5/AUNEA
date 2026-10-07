@@ -237,10 +237,10 @@ function confirmProcessLayer(tab){
   const x=processLayerConfirmations(e);
   x[key]=true;x[key+'_at']=now();
   if(allProcessLayersConfirmed(e)){
-    e.confirmedAsIs=true;e.answers.DF093='YES';e.asIsConfirmedAt=now();
-    const sealed=typeof sealConfirmedSnapshot==='function'?sealConfirmedSnapshot(e,'confirmación de mapa, fricciones, riesgos e impacto'):null;
-    markDirty(sealed?`Capas AS-IS confirmadas · snapshot v${sealed.version}`:'Capas AS-IS confirmadas');
-    toast('Mapa, fricciones, riesgos e impacto confirmados. Completa el cierre de sesión si quedan datos pendientes.');
+    // The four AS-IS layers only unlock PG09. They do not confirm DF093, seal a snapshot or advance lifecycle.
+    e.confirmedAsIs=false;e.answers.DF093='';e.asIsConfirmedAt=null;e.confirmedSnapshot=null;
+    markDirty('Capas AS-IS confirmadas · cierre final pendiente en PG09');
+    toast('Mapa, fricciones, riesgos e impacto confirmados. Continúa a Validación y cierre para confirmar el AS-IS y generar el snapshot.');
   }else{
     markDirty(`Capa ${key} confirmada`);
     toast('Capa confirmada. Puedes continuar con la siguiente.');
