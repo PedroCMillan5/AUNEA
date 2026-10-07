@@ -967,12 +967,15 @@ function processPage(){
   return pageTop('Mapa AS-IS','Lo que sabemos del proceso actual, todo en un mismo mapa.',top)
     +(typeof asisConsoleLockNotice==='function'?asisConsoleLockNotice():'')+asisMapPage(e,steps,fr);
 }
-function consultantLayerPage(title,intro,body,layer,stageId){
+function consultantLayerPage(title,intro,body,layer,stageId,{questionsFirst=false}={}){
   const e=currentEng();if(!e)return pageTop(title,'Abre primero un estudio.');
   const integrity=typeof processLayerIntegrityIssues==='function'?processLayerIntegrityIssues(e,layer):[],done=!!processLayerState(e)[layer]&&!integrity.length,tabs={map:'Mapa AS-IS',frictions:'Fricciones',risks:'Riesgos',impact:'Impacto'};
-  const reviewCopy=integrity.length?(layer==='risks'?'<div class="field-help">Hay elementos pendientes. Usa «Completar riesgo» en los riesgos registrados o revisa los datos complementarios situados arriba antes de confirmar.</div>':'<div class="flow-confirm-issues">'+integrity.map(x=>'<span>'+esc(x.message)+'</span>').join('')+'</div>'):'<div class="field-help">'+(done?'La capa está validada.':'Puedes guardar y continuar sin confirmar todavía.')+'</div>';
-  const confirm='<div class="flow-confirm '+(integrity.length?'flow-confirm-needs-review':'')+'"><div><b>'+(done?'Revisión confirmada':integrity.length?'Revisión necesaria':'Revisión pendiente')+'</b>'+reviewCopy+'</div><button class="btn '+(done?'btn-outline':'btn-primary')+'" data-confirm-process-layer="'+layer+'">'+(done?'Volver a confirmar':'Confirmar')+' '+tabs[layer]+'</button></div>';
-  return pageTop(title,intro,'<button class="btn btn-outline" data-page="proceso">← Ver mapa AS-IS</button>')+(typeof asisConsoleLockNotice==='function'?asisConsoleLockNotice():'')+body+(stageId?layerCanonicalQuestions(e,stageId):'')+confirm;
+  const reviewCopy=integrity.length?(layer==='risks'?'<div class="field-help">Hay datos pendientes que bloquean la confirmación. Completa primero los datos complementarios de la etapa y después únicamente los campos que falten en cada riesgo.</div>':'<div class="flow-confirm-issues">'+integrity.map(x=>'<span>'+esc(x.message)+'</span>').join('')+'</div>'):'<div class="field-help">'+(done?'La capa está validada.':'Puedes guardar y continuar sin confirmar todavía.')+'</div>';
+  const disabled=integrity.length?' disabled aria-disabled="true" title="Completa los elementos pendientes antes de confirmar"':'';
+  const confirm='<div class="flow-confirm '+(integrity.length?'flow-confirm-needs-review':'')+'"><div><b>'+(done?'Revisión confirmada':integrity.length?'Revisión necesaria':'Revisión pendiente')+'</b>'+reviewCopy+'</div><button class="btn '+(done?'btn-outline':'btn-primary')+'" data-confirm-process-layer="'+layer+'"'+disabled+'>'+(done?'Volver a confirmar':'Confirmar')+' '+tabs[layer]+'</button></div>';
+  const questions=stageId?layerCanonicalQuestions(e,stageId):'';
+  const content=questionsFirst?questions+body:body+questions;
+  return pageTop(title,intro,'<button class="btn btn-outline" data-page="proceso">← Ver mapa AS-IS</button>')+(typeof asisConsoleLockNotice==='function'?asisConsoleLockNotice():'')+content+confirm;
 }
 function consultantStepsPage(){
   const e=currentEng();return consultantLayerPage('Pasos','Añade, edita o elimina las actividades reales del proceso.',stepsEditor(e,activeSteps(e),activeFrictions(e)),'map','S04');
@@ -981,7 +984,7 @@ function consultantFrictionsPage(){
   const e=currentEng();return consultantLayerPage('Fricciones','Registra los problemas de los pasos y su evidencia.',frictionsEditor(e,activeSteps(e),activeFrictions(e)),'frictions','S05');
 }
 function consultantRisksPage(){
-  const e=currentEng();return consultantLayerPage('Riesgos','Qué podría salir mal y qué controles existen hoy.',riskBuilder(e),'risks','S06');
+  const e=currentEng();return consultantLayerPage('Riesgos','Qué podría salir mal y qué controles existen hoy.',riskBuilder(e),'risks','S06',{questionsFirst:true});
 }
 function consultantImpactPage(){
   const e=currentEng();return consultantLayerPage('Impacto','Consulta los datos existentes y añade sólo los costes o tiempos que falten.',economicBuilder(e),'impact','S07');
