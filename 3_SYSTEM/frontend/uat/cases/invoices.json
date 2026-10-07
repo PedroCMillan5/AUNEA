@@ -449,9 +449,12 @@
     }
   ],
   "economics": {
-    "rate": 26,
-    "toolAnnual": 960,
-    "toolBasis": "Licencia existente del ERP: atribución simulada de 80 €/mes a la actividad de registro de facturas. Sin asumir que sea eliminable."
+    "rate": 32,
+    "toolAnnual": 4800,
+    "toolBasis": "Licencia existente del ERP: atribución simulada de 80 €/mes a la actividad de registro de facturas. Sin asumir que sea eliminable.",
+    "capacityRole": "FINANCE",
+    "capacityHours": 1600,
+    "capacityPeriod": "YEAR"
   },
   "finding": [
     1,
