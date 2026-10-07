@@ -451,7 +451,10 @@
   "economics": {
     "rate": 24,
     "toolAnnual": 720,
-    "toolBasis": "Asignación sintética de 60 euros mensuales de la herramienta de tareas a la gestión de peticiones; no supone ahorro al automatizar."
+    "toolBasis": "Asignación sintética de 60 euros mensuales de la herramienta de tareas a la gestión de peticiones; no supone ahorro al automatizar.",
+    "capacityRole": "OPERATIONS",
+    "capacityHours": 1600,
+    "capacityPeriod": "YEAR"
   },
   "finding": [
     0,
