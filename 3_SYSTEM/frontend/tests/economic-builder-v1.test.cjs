@@ -381,12 +381,12 @@ test('blank relevant economic inputs stay null instead of silently becoming zero
   assert.equal(ctx.econNullableNumber('12.5'),12.5);
 });
 
-test('economic list shows missing captured values as dash, not fabricated zero',()=>{
+test('economic list shows missing captured values as pending, not fabricated zero',()=>{
   const ctx=makeCtx();
   ctx.__eng.economicInputs=[{driver_id:'ED12',step_ids:[],current_tool_cost_eur_annual:null,evidence_type:'CLIENT_DECLARED'}];
   const html=ctx.economicBuilder(ctx.__eng);
-  assert.match(html,/Pérdida directa — €/);
-  assert.doesNotMatch(html,/Pérdida directa 0 €/);
+  assert.match(html,/Coste pendiente/);
+  assert.doesNotMatch(html,/Coste de herramientas 0|0 €\/año/);
 });
 
 
