@@ -251,11 +251,13 @@ function render(){
   // Its fullscreen chrome is presentation-only; the read-only #session is unaffected.
   document.body.classList.toggle('mode-process-editor',isProcessEditorWindow());
   const previousCanvas=document.querySelector('.flow-canvas');
+  const previousProcessMain=document.querySelector('.client-process-main');
   const previousWorkspace=document.querySelector('[data-process-engagement]');
   const sameProcess=state.activePage==='proceso'&&previousCanvas&&previousWorkspace?.dataset.processEngagement===currentEng()?.id;
   const previousViewport=sameProcess?{
     left:previousCanvas.scrollLeft,
     top:previousCanvas.scrollTop,
+    mainTop:previousProcessMain?.scrollTop||0,
     windowX:typeof window!=='undefined'?window.scrollX:0,
     windowY:typeof window!=='undefined'?window.scrollY:0
   }:null;
@@ -277,11 +279,13 @@ function render(){
     const restore=()=>{
       if(state.activePage!=='proceso'||currentEng()?.id!==previousWorkspace.dataset.processEngagement)return;
       const canvas=document.querySelector('.flow-canvas');
+      const processMain=document.querySelector('.client-process-main');
       if(canvas){
         canvas.scrollLeft=previousViewport.left;
         canvas.scrollTop=previousViewport.top;
       }
-      if(typeof window!=='undefined'&&typeof window.scrollTo==='function'){
+      if(processMain)processMain.scrollTop=previousViewport.mainTop;
+      if(typeof window!=='undefined'&&typeof window.scrollTo==='function'&&!isProcessEditorWindow()){
         window.scrollTo(previousViewport.windowX,previousViewport.windowY);
       }
     };
