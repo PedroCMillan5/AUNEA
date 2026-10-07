@@ -6,10 +6,12 @@
 // SIDE_EFFECTS: peticiones HTTP al backend y persistencia del endpoint encontrado en localStorage.
 // CHANGE_RISK: HIGH.
 const AUNEA_BACKEND_LOCAL_CANDIDATES = [
-  'http://localhost:8000',
-  'http://127.0.0.1:8000',
+  // 8010 is the governed local integration port used by AUNEA QA/dev.
+  // Probe it first so unrelated services on 8000 do not generate CORS/405 noise.
   'http://localhost:8010',
   'http://127.0.0.1:8010',
+  'http://localhost:8000',
+  'http://127.0.0.1:8000',
   'http://localhost:8020',
   'http://127.0.0.1:8020'
 ];
@@ -24,13 +26,17 @@ function auneaWorkspaceBackendCandidate(loc=(typeof window!=='undefined'?window.
   return `https://${match[1]}-${port}.app.github.dev`;
 }
 function auneaWorkspaceBackendCandidates(loc=(typeof window!=='undefined'?window.location:null)){
-  return [8000,8010,8020].map(port=>auneaWorkspaceBackendCandidate(loc,port)).filter(Boolean);
+  return [8010,8000,8020].map(port=>auneaWorkspaceBackendCandidate(loc,port)).filter(Boolean);
 }
 
 function auneaBackendCandidates(){
   const preferred = typeof state?.backendUrl === 'string' ? state.backendUrl.trim() : '';
   const workspace = auneaWorkspaceBackendCandidates();
-  return [...new Set([preferred, ...workspace, ...AUNEA_BACKEND_LOCAL_CANDIDATES].filter(Boolean))];
+  const isLocalUi=typeof window!=='undefined'&&['localhost','127.0.0.1'].includes(String(window.location?.hostname||''));
+  const ordered=isLocalUi
+    ?[...workspace,...AUNEA_BACKEND_LOCAL_CANDIDATES,preferred]
+    :[preferred,...workspace,...AUNEA_BACKEND_LOCAL_CANDIDATES];
+  return [...new Set(ordered.filter(Boolean))];
 }
 
 async function probeAuneaBackend(baseUrl, timeoutMs=1100){
@@ -52,8 +58,11 @@ async function probeAuneaBackend(baseUrl, timeoutMs=1100){
 checkBackend = async function(){
   const previousUrl = state.backendUrl;
   const candidates = auneaBackendCandidates();
-  const probes = await Promise.all(candidates.map(candidate=>probeAuneaBackend(candidate)));
-  const hit = probes.find(Boolean);
+  let hit=null;
+  for(const candidate of candidates){
+    hit=await probeAuneaBackend(candidate);
+    if(hit)break;
+  }
   if(hit){
     state.backendUrl = hit.baseUrl;
     state.backendOnline = true;
@@ -82,7 +91,6 @@ function startBackendMonitor(intervalMs=5000){
     window.__auneaBackendFocusBound=true;
     window.addEventListener('focus',()=>{if(document?.getElementById)checkBackend();});
     window.addEventListener('pagehide',stopBackendMonitor,{once:true});
-    window.addEventListener('unload',stopBackendMonitor,{once:true});
   }
 }
 // [AUNEA-FE-BACKEND-DISCOVERY-060] END
