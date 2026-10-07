@@ -301,10 +301,11 @@ function renderControl(f,val,opts,e){
   if(c==='DROPDOWN_WITH_DETAIL')return selectWithConditionalDetail(fid,opts,val,'Detalle si aplica');
   if(c==='DROPDOWN_WITH_OWNER_DATE')return nextStepWithOwnerDate(f,opts,e);
   if(fid==='DF074'&&c==='DROPDOWN_WITH_STEP_LINK'){
-    const d=answerDetails(e),legacy=normalizeArray(d.DF074__steps||e.answers?.DF074__steps),linked=legacy.length?legacy:(d.DF074__step?[d.DF074__step]:[]);
-    const scope=valuePresent(val)?'<div class="linked-step-group"><div class="linked-step-label">Pasos afectados</div>'+linkedStepMulti('DF074__steps',e,linked)+'</div>':'';
-    return '<div class="linked-field-block risk-reversibility-control"><div class="linked-step-label">Nivel de reversibilidad</div>'+canonicalSelect(fid,opts,val)+scope
-      +'<div class="field-help">Selecciona el nivel y los pasos a los que aplica. La reversibilidad concreta de cada riesgo se confirma después en su ficha.</div></div>';
+    const d=answerDetails(e),selected=String(val??''),validLevel=(opts||[]).some(x=>String(x.value)===selected),shownValue=validLevel?val:'';
+    const legacy=normalizeArray(d.DF074__steps||e.answers?.DF074__steps),linked=legacy.length?legacy:(d.DF074__step?[d.DF074__step]:[]);
+    const scope=validLevel?'<div class="linked-step-group"><div class="linked-step-label">Pasos afectados</div>'+linkedStepMulti('DF074__steps',e,linked)+'</div>':'';
+    return '<div class="linked-field-block risk-reversibility-control"><div class="linked-step-label">Nivel de reversibilidad</div>'+canonicalSelect(fid,opts,shownValue)+scope
+      +'<div class="field-help">'+(validLevel?'Selecciona los pasos a los que aplica este nivel.':'Selecciona primero un nivel de reversibilidad.')+'</div></div>';
   }
   if(c==='DROPDOWN_WITH_STEP_LINK')return canonicalSelect(fid,opts,val)+stepSingle(`${fid}__step`,e,answerDetails(e)[`${fid}__step`]||'');
   if(c==='COMBOBOX_WITH_DETAIL')return selectWithConditionalDetail(fid,opts,val,'Detalle / nombre concreto');
