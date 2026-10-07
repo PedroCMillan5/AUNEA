@@ -150,6 +150,17 @@ function derivedApprovalReview(steps){
     return name+' · Aprobador/decisor: '+actor+' · Criterio: '+criteria+' · Resultado: '+result+' · Evidencia: '+evidence;
   }));
 }
+function derivedRiskIrreversibility(e){
+  const risks=(e?.risks||[]).filter(r=>r&&r.status!=='SUPERSEDED');
+  if(!risks.length)return undefined;
+  if(risks.some(r=>!valuePresent(r.reversibility)))return undefined;
+  const difficult=risks.filter(r=>['HARD','IRREVERSIBLE'].includes(String(r.reversibility||'').toUpperCase()));
+  if(!difficult.length)return 'No se han identificado decisiones o acciones difíciles de revertir en los riesgos registrados.';
+  return difficult.map((r,i)=>{
+    const label=labelFrom('OS_REVERSIBILITY',r.reversibility)||r.reversibility;
+    return (r.description||('Riesgo '+(i+1)))+' — '+label;
+  }).join('; ');
+}
 function reusedValue(fid,e){
   const steps=activeSteps(e),fr=activeFrictions(e),c=companyById(e.companyId);
   if(fid==='DF001')return c?.name||e.answers?.DF001||'';
@@ -164,6 +175,7 @@ function reusedValue(fid,e){
   if(fid==='DF053')return unique(steps.filter(x=>normalizeArray(x.manual_actions).some(a=>String(a)==='SEARCH')).map(x=>x.id).concat(fr.filter(x=>['P09','P20'].includes(x.friction_type)).flatMap(x=>normalizeArray(x.affected_steps))));
   if(fid==='DF066')return derivedExceptionReview(steps);
   if(fid==='DF067')return derivedApprovalReview(steps);
+  if(fid==='DF074')return derivedRiskIrreversibility(e);
   if(fid==='DF078'||fid==='DF079'){
     // DF078/DF079 must be backed by the exact server-calculated AS-IS version.
     // A missing or stale projection is unknown, never a browser-side sum.
@@ -194,7 +206,7 @@ function effectiveValue(f,e){
   return explicit??'';
 }
 
-const RISK_DISCOVERY_FIELDS=new Set(['DF073','DF074','DF090']);
+const RISK_DISCOVERY_FIELDS=new Set(['DF073','DF090']);
 const AI_DISCOVERY_FIELDS=new Set(['DF088']);
 const DATA_DISCOVERY_FIELDS=new Set(['DF055']);
 const RISK_RELEVANT_INITIAL_CONSTRAINTS=new Set(['SECURITY','COMPLIANCE','DATA_RESIDENCY','OWNERSHIP']);
@@ -203,7 +215,7 @@ function riskBranchSignal(e,steps,fr,answers){
   const knownRiskConstraint=normalizeArray(answers.DF010).some(v=>RISK_RELEVANT_INITIAL_CONSTRAINTS.has(String(v)));
   const nonTimeImpact=valuePresent(answers.DF064)||fr.some(x=>normalizeArray(x.non_time_impact).length>0);
   const sensitiveData=normalizeArray(answers.DF073).some(v=>String(v).toUpperCase()!=='NONE');
-  const reversibility=valuePresent(answers.DF074)&&String(answers.DF074).toUpperCase()!=='REVERSIBLE';
+  const reversibility=(e.risks||[]).some(r=>['HARD','IRREVERSIBLE'].includes(String(r?.reversibility||'').toUpperCase()));
   const securityConstraint=valuePresent(answers.DF090);
   const existingRisk=(e.risks||[]).some(x=>x.status!=='SUPERSEDED');
   return existingRisk||critical||knownRiskConstraint||nonTimeImpact||sensitiveData||reversibility||securityConstraint;
@@ -251,7 +263,7 @@ function questionVisible(f,e){
   // DF025 is itself the canonical question that establishes whether an SLA/target exists.
   // It must remain askable in S03; otherwise BR-SLA creates a circular visibility dependency.
   if(f.Field_ID==='DF025'&&f.Stage_ID==='S03')return true;
-  // DF073/DF074/DF090 are canonical discovery probes: their answers can reveal that BR-RISK applies.
+  // DF073/DF090 are discovery probes. DF074 is derived only after RiskInput exists and is never asked separately.
   // Keeping these CONDITIONAL_90M questions available does not make them required and prevents the
   // branch from needing a pre-existing RiskInput (or the answer itself) before the exposure is discoverable.
   if(RISK_DISCOVERY_FIELDS.has(f.Field_ID))return true;
@@ -330,6 +342,7 @@ const PAGE_LABEL_ES=Object.freeze({contactos:'Contactos',proceso:'Proceso y fric
 function pageLabelEs(page){return PAGE_LABEL_ES[page]||page}
 function reuseSourceInfo(f){
   const raw=String(f.Reuse_From||'');
+  if(raw==='RT_RISK.Reversibility')return {label:'riesgos registrados',page:'proceso',entity:'RT_RISK',attribute:'Reversibility'};
   if(!raw)return {label:'un dato ya capturado en el estudio',page:null,entity:null,attribute:null};
   const m=raw.match(/(RT_[A-Z_]+)(?:\.([A-Za-z0-9_]+))?/);
   if(!m)return {label:'un dato ya capturado en el estudio',page:null,entity:null,attribute:null};
@@ -398,14 +411,14 @@ function economicConditionalTimeContext(fid,e){
     :label+': verificar si está cuantificado en pasos o fricciones. Sólo valorar un ámbito adicional material cuando se haya acreditado que no está contabilizado.';
 }
 // [AUNEA-FE-DIAG-ECON-CONTEXT-054] END
-function migrateDf074ToCanonicalText(engagements=[]){
+function migrateDf074ToRiskDerived(engagements=[]){
   const legacyValues=new Set(['REVERSIBLE','PARTIAL','HARD','IRREVERSIBLE','UNKNOWN']);
   let changed=0;
   (engagements||[]).forEach(e=>{
     e.answers=e.answers||{};e.answerDetails=e.answerDetails||{};
     let touched=false;
-    if(legacyValues.has(String(e.answers.DF074||''))){e.answers.DF074='';touched=true;}
-    for(const key of ['DF074__step','DF074__steps']){
+    if(Object.prototype.hasOwnProperty.call(e.answers,'DF074')){delete e.answers.DF074;touched=true;}
+    for(const key of ['DF074__step','DF074__steps','DF074__derived_confirmation']){
       if(Object.prototype.hasOwnProperty.call(e.answerDetails,key)){delete e.answerDetails[key];touched=true;}
       if(Object.prototype.hasOwnProperty.call(e.answers,key)){delete e.answers[key];touched=true;}
     }
