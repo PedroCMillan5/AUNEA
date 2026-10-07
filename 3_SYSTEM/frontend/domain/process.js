@@ -952,6 +952,7 @@ function layerCanonicalQuestions(e,stageId){
     const target=String(f.Write_Target||'').split('.')[0],mode=String(f.Ask_Mode||'');
     if(structuredOwners.has(target))return false;
     if(['CAPTURE_IN_PROCESS_STEP','CONDITIONAL_IN_STEP','CAPTURE_IN_FRICTION','CONDITIONAL_IN_FRICTION','CAPTURE_IN_RISK'].includes(mode))return false;
+    if(stageId==='S06'&&f.Field_ID==='DF074'&&mode==='DERIVED')return false;
     return true;
   });
   if(!fields.length)return '';
