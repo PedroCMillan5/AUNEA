@@ -82,8 +82,8 @@ function loadState(){
 // cannot run inside loadState: state is built by the first module, and each migration lives with the
 // entity that owns its schema, several modules later. Boot calls it once everything is defined.
 function migrateLoadedState(){
-  const moved={companies:migrateCompaniesToCrmRecord(state.companies),contacts:migrateContactsToCurrentContract(state.contacts),engagements:migrateEngagementsToLifecycle(state.engagements),process:typeof migrateProcessCaptureIntegrity==='function'?migrateProcessCaptureIntegrity(state.engagements):0,risks:typeof migrateRiskCaptureIntegrity==='function'?migrateRiskCaptureIntegrity(state.engagements):0,df074:typeof migrateDf074ToRiskDerived==='function'?migrateDf074ToRiskDerived(state.engagements):0,economics:typeof migrateEconomicInputsToDriverShape==='function'?migrateEconomicInputsToDriverShape(state.engagements):0};
-  if(moved.companies||moved.contacts||moved.engagements||moved.process||moved.risks||moved.df074||moved.economics)audit(`Migración de almacenamiento: ${moved.companies} empresa(s), ${moved.contacts} contacto(s), ${moved.engagements} estudio(s), ${moved.process} estudio(s) con fricciones normalizadas, ${moved.risks} estudio(s) con riesgos legacy pendientes de revisión, ${moved.df074} estudio(s) con DF074 convertido en proyección derivada de riesgos y ${moved.economics} estudio(s) con impactos normalizados`);
+  const moved={companies:migrateCompaniesToCrmRecord(state.companies),contacts:migrateContactsToCurrentContract(state.contacts),engagements:migrateEngagementsToLifecycle(state.engagements),process:typeof migrateProcessCaptureIntegrity==='function'?migrateProcessCaptureIntegrity(state.engagements):0,risks:typeof migrateRiskCaptureIntegrity==='function'?migrateRiskCaptureIntegrity(state.engagements):0,df074:typeof migrateDf074ToRiskDerived==='function'?migrateDf074ToRiskDerived(state.engagements):0,economics:typeof migrateEconomicInputsToDriverShape==='function'?migrateEconomicInputsToDriverShape(state.engagements):0,pg09:typeof migrateLegacyPrematureClosures==='function'?migrateLegacyPrematureClosures(state.engagements):0};
+  if(moved.companies||moved.contacts||moved.engagements||moved.process||moved.risks||moved.df074||moved.economics||moved.pg09)audit(`Migración de almacenamiento: ${moved.companies} empresa(s), ${moved.contacts} contacto(s), ${moved.engagements} estudio(s), ${moved.process} estudio(s) con fricciones normalizadas, ${moved.risks} estudio(s) con riesgos legacy pendientes de revisión, ${moved.df074} estudio(s) con DF074 convertido en proyección derivada de riesgos, ${moved.economics} estudio(s) con impactos normalizados y ${moved.pg09} cierre(s) PG09 legacy reabiertos para confirmación final explícita`);
   return moved;
 }
 function saveState(reason='Guardado manual'){
@@ -233,7 +233,7 @@ function renderNav(){
         if((s.Stage_ID==='S09')!==(x[0]==='__CLOSURE__'))return;
         const on=e&&state.activePage==='diagnostico'&&i===active;
         const reviewed=!!e&&typeof completionStageReviewed==='function'&&completionStageReviewed(s,e);
-        const available=!!e&&(i<=active||reviewed||(s.Stage_ID==='S09'&&e.confirmedAsIs));
+        const available=!!e&&(i<=active||reviewed||(s.Stage_ID==='S09'&&((typeof allProcessLayersConfirmed==='function'&&allProcessLayersConfirmed(e))||e.confirmedAsIs)));
         const locked=!!e&&!available;
         out.push(`<button class="nav-item nav-step ${on?'active':''} ${reviewed?'done':''} ${locked?'locked':''}" data-stage-nav="${s.Stage_ID}" ${locked?'disabled aria-disabled="true"':''}><span class="nav-num">${i+1}</span>${esc(s.Stage_ES)}</button>`);
       });
