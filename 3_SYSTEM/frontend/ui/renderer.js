@@ -131,10 +131,21 @@ function stepPair(fid,e,val){
 // DF051 is a repeatable Finding: the governed validation already requires affected datum + source step +
 // destination step. The former two-select renderer could not capture the datum and could only represent
 // one re-entry. Keep suggestions neutral: only explicit Confirmar writes a finding.
-function duplicateEntryRows(val){
+function duplicateEntryRawRows(val){
   if(Array.isArray(val))return val.filter(x=>x&&typeof x==='object');
   if(val&&typeof val==='object'&&(val.from||val.to||val.data))return [val];
   return [];
+}
+function duplicateEntryComplete(x){return !!String(x?.data||'').trim()&&!!x?.from&&!!x?.to}
+function duplicateEntryRows(val){return duplicateEntryRawRows(val).filter(duplicateEntryComplete)}
+function duplicateEntryDraftRows(e,fid,val){
+  const legacy=duplicateEntryRawRows(val).filter(x=>!duplicateEntryComplete(x));
+  const stored=normalizeArray(answerDetails(e)[`${fid}__drafts`]).filter(x=>x&&typeof x==='object');
+  return [...legacy,...stored];
+}
+function saveDuplicateEntryDraftRows(e,fid,rows){
+  answerDetails(e)[`${fid}__drafts`]=rows;
+  e.updatedAt=now();markDirty('Borradores de reintroducción actualizados');
 }
 function duplicateEntryCandidates(e){
   const steps=(e.processSteps||[]).filter(x=>x.status!=='SUPERSEDED'),out=[];
@@ -160,11 +171,12 @@ function duplicateEntryCandidates(e){
   return out;
 }
 function duplicateEntryControl(fid,e,val){
-  const rows=duplicateEntryRows(val),opts=stepOptions(e),d=answerDetails(e),dismissed=new Set(normalizeArray(d[`${fid}__dismissed`])),confirmedKeys=new Set(rows.map(x=>`${x.dataKey||x.data}:${x.from}:${x.to}`));
+  const rows=duplicateEntryRows(val),drafts=duplicateEntryDraftRows(e,fid,val),opts=stepOptions(e),d=answerDetails(e),dismissed=new Set(normalizeArray(d[`${fid}__dismissed`])),confirmedKeys=new Set(rows.map(x=>`${x.dataKey||x.data}:${x.from}:${x.to}`));
   const suggestions=duplicateEntryCandidates(e).filter(x=>!dismissed.has(x.id)&&!confirmedKeys.has(x.id));
-  const suggestionHtml=suggestions.length?`<div class="duplicate-entry-suggestions"><div class="field-help"><b>Posibles reintroducciones detectadas</b> · confirma sólo las que ocurren realmente.</div>${suggestions.map(x=>`<div class="notice info" data-duplicate-suggestion="${attr(x.id)}"><b>${esc(x.data)}</b><br>${esc(stepOptions(e).find(o=>o.value===x.from)?.label||x.from)} → ${esc(stepOptions(e).find(o=>o.value===x.to)?.label||x.to)}<div class="row-actions"><button type="button" class="btn btn-small" data-duplicate-confirm="${attr(x.id)}" data-duplicate-data="${attr(x.data)}" data-duplicate-data-key="${attr(x.dataKey)}" data-duplicate-from="${attr(x.from)}" data-duplicate-to="${attr(x.to)}">Confirmar</button><button type="button" class="btn btn-small" data-duplicate-dismiss="${attr(x.id)}">No es una reintroducción</button></div></div>`).join('')}</div>`:'';
-  const rowHtml=rows.length?rows.map((x,i)=>`<div class="duplicate-entry-row" data-duplicate-row="${i}"><div class="field-help"><b>Reintroducción ${i+1}</b></div><div class="duplicate-entry-fields"><label><span>Información afectada</span><input class="detail-input" data-duplicate-part="data" data-duplicate-index="${i}" value="${attr(x.data||'')}" placeholder="Ej. Datos de la factura"></label><label><span>Disponible originalmente en</span>${canonicalSelect(`${fid}__from_${i}`,opts,x.from||'',`data-duplicate-part="from" data-duplicate-index="${i}"`)}</label><label><span>Se vuelve a introducir en</span>${canonicalSelect(`${fid}__to_${i}`,opts,x.to||'',`data-duplicate-part="to" data-duplicate-index="${i}"`)}</label></div><button type="button" class="btn btn-small" data-duplicate-remove="${i}">Eliminar</button></div>`).join(''):'<div class="empty"><p>No hay reintroducciones confirmadas.</p></div>';
-  return `<div class="duplicate-entry-control" data-duplicate-field="${fid}"><div class="field-help">Registra cada reintroducción por separado: qué información es, dónde está disponible originalmente y dónde se vuelve a introducir manualmente.</div>${suggestionHtml}<div class="duplicate-entry-list">${rowHtml}</div><button type="button" class="btn btn-small" data-duplicate-add="${fid}">+ Añadir reintroducción</button></div>`;
+  const suggestionHtml=suggestions.length?`<div class="duplicate-entry-suggestions"><div class="duplicate-entry-heading"><b>Posibles reintroducciones detectadas</b><span>Confirma sólo las que ocurren realmente.</span></div>${suggestions.map(x=>`<div class="duplicate-entry-suggestion" data-duplicate-suggestion="${attr(x.id)}"><div><b>${esc(x.data)}</b><span>${esc(stepOptions(e).find(o=>o.value===x.from)?.label||x.from)} → ${esc(stepOptions(e).find(o=>o.value===x.to)?.label||x.to)}</span></div><div class="row-actions"><button type="button" class="btn btn-small btn-primary" data-duplicate-confirm="${attr(x.id)}" data-duplicate-data="${attr(x.data)}" data-duplicate-data-key="${attr(x.dataKey)}" data-duplicate-from="${attr(x.from)}" data-duplicate-to="${attr(x.to)}">Confirmar</button><button type="button" class="btn btn-small" data-duplicate-dismiss="${attr(x.id)}">No es una reintroducción</button></div></div>`).join('')}</div>`:'';
+  const rowHtml=rows.length?rows.map((x,i)=>`<div class="duplicate-entry-row" data-duplicate-row="${i}"><div class="duplicate-entry-heading"><b>Reintroducción confirmada ${i+1}</b></div><div class="duplicate-entry-fields"><label><span>Información afectada</span><input class="detail-input" data-duplicate-part="data" data-duplicate-index="${i}" value="${attr(x.data||'')}" placeholder="Ej. Datos de la factura"></label><label><span>Disponible originalmente en</span>${canonicalSelect(`${fid}__from_${i}`,opts,x.from||'',`data-duplicate-part="from" data-duplicate-index="${i}"`)}</label><label><span>Se vuelve a introducir en</span>${canonicalSelect(`${fid}__to_${i}`,opts,x.to||'',`data-duplicate-part="to" data-duplicate-index="${i}"`)}</label></div><button type="button" class="btn btn-small duplicate-entry-remove" data-duplicate-remove="${i}">Eliminar</button></div>`).join(''):'<div class="empty duplicate-entry-empty"><p>No hay reintroducciones confirmadas.</p></div>';
+  const draftHtml=drafts.length?`<div class="duplicate-entry-drafts"><div class="duplicate-entry-heading"><b>Pendientes de confirmar</b><span>Completa los tres datos antes de convertirlos en una reintroducción real.</span></div>${drafts.map((x,i)=>`<div class="duplicate-entry-row duplicate-entry-draft" data-duplicate-draft-row="${i}"><div class="duplicate-entry-fields"><label><span>Información afectada</span><input class="detail-input" data-duplicate-draft-part="data" data-duplicate-draft-index="${i}" value="${attr(x.data||'')}" placeholder="Ej. Datos de la factura"></label><label><span>Disponible originalmente en</span>${canonicalSelect(`${fid}__draft_from_${i}`,opts,x.from||'',`data-duplicate-draft-part="from" data-duplicate-draft-index="${i}"`)}</label><label><span>Se vuelve a introducir en</span>${canonicalSelect(`${fid}__draft_to_${i}`,opts,x.to||'',`data-duplicate-draft-part="to" data-duplicate-draft-index="${i}"`)}</label></div><div class="row-actions duplicate-entry-draft-actions"><button type="button" class="btn btn-small btn-primary" data-duplicate-draft-confirm="${i}" ${duplicateEntryComplete(x)?'':'disabled'}>Confirmar reintroducción</button><button type="button" class="btn btn-small" data-duplicate-draft-remove="${i}">Descartar</button></div></div>`).join('')}</div>`:'';
+  return `<div class="duplicate-entry-control" data-duplicate-field="${fid}"><div class="field-help">Una reintroducción sólo se registra cuando están identificados la información, el origen y el destino. Las detecciones incompletas permanecen como pendientes.</div>${suggestionHtml}${draftHtml}<div class="duplicate-entry-list">${rowHtml}</div><button type="button" class="btn btn-small btn-outline duplicate-entry-add" data-duplicate-add="${fid}">+ Añadir reintroducción</button></div>`;
 }
 // DF054 (Integration_Gaps): SYSTEM_SUGGEST_THEN_CONFIRM authorizes the suggest+confirm interaction
 // pattern, not any inference algorithm — the canonical Reuse_From only names the SOURCES (tools per
@@ -189,7 +201,7 @@ function stepSystemHandoffCandidates(e){
 function stepSystemPairSelector(fid,e,val){
   const items=stepSystemHandoffCandidates(e);
   if(!items.length)return '<div class="empty integration-empty"><p>No hay intercambios manuales entre sistemas distintos pendientes de revisar.</p></div>';
-  return `<div class="notice info integration-guidance">Revisa sólo transferencias manuales entre sistemas distintos. Las reintroducciones del mismo dato se registran en el bloque anterior y no se duplican aquí.</div><div class="integration-candidates">${multiChoices(fid,items,val)}</div>`;
+  return `<div class="notice info integration-guidance"><b>Intercambios entre sistemas detectados</b><br>Selecciona únicamente aquellos en los que hoy una persona tiene que trasladar información manualmente. Las reintroducciones del mismo dato se registran en el bloque anterior y no se duplican aquí.</div><div class="integration-candidates">${multiChoices(fid,items,val)}</div>`;
 }
 function frictionPriority(fid,e,val){
   const items=e.frictions.filter(x=>x.status!=='SUPERSEDED').map(x=>({value:x.id,label:labelFrom('OS_FRICTION_TYPE',x.friction_type)}));return multiChoices(fid,items,val);
@@ -273,7 +285,11 @@ function renderControl(f,val,opts,e){
   if(c==='MULTISELECT_WITH_DETAIL'||c==='MULTICHECK_WITH_DETAIL'||c==='MULTISELECT_WITH_REFERENCE')return hasCanonicalOtherOption(opts)?multiChoices(fid,opts,val,{other:true}):multiChoices(fid,opts,val,{detail:true});
   if(c==='MULTISELECT_WITH_PRIORITY')return multiChoicesWithPriority(fid,opts,val,e);
   if(fid==='DF088'&&c==='MULTISELECT_WITH_STEP_REFERENCE')return multiChoices(fid,opts,val,{other:true,linkedSteps:{fid:`${fid}__steps`,items:stepOptions(e),val:answerDetails(e)[`${fid}__steps`]||[]}});
-  if(c==='MULTISELECT_WITH_STEP_LINK'||c==='MULTISELECT_WITH_STEP_REFERENCE'||c==='STEP_ACTION_MULTISELECT')return multiChoices(fid,opts,val,hasCanonicalOtherOption(opts)?{other:true}:{detail:true})+`<div class="linked-step-group"><div class="linked-step-label">Pasos afectados</div>${stepMulti(`${fid}__steps`,e,answerDetails(e)[`${fid}__steps`]||[])}</div>`;
+  if(c==='MULTISELECT_WITH_STEP_LINK'||c==='MULTISELECT_WITH_STEP_REFERENCE'||c==='STEP_ACTION_MULTISELECT'){
+    const choices=multiChoices(fid,opts,val,hasCanonicalOtherOption(opts)?{other:true}:{detail:true});
+    const showSteps=fid!=='DF055'||valuePresent(val);
+    return choices+(showSteps?`<div class="linked-step-group"><div class="linked-step-label">${fid==='DF055'?'¿En qué pasos ocurre?':'Pasos afectados'}</div>${stepMulti(`${fid}__steps`,e,answerDetails(e)[`${fid}__steps`]||[])}</div>`:'');
+  }
   if(c==='STEP_MULTISELECT_VISUAL'||c==='STEP_MULTISELECT_WITH_FRICTION')return stepMulti(fid,e,val);
   if(c==='STEP_REFERENCE_SINGLE')return stepSingle(fid,e,val);
   if(c==='STEP_PAIR_SELECTOR')return stepPair(fid,e,val);
@@ -438,9 +454,12 @@ function bindCanonicalRenderer(){
   };document.querySelectorAll(`[data-number-value="${fid}"]`).forEach(el=>el.addEventListener('input',sync));document.querySelectorAll(`[data-number-unit="${fid}"],[data-number-period="${fid}"],[data-number-mode="${fid}"]`).forEach(el=>el.addEventListener('change',sync))});
   document.querySelectorAll('[data-set-unknown]').forEach(b=>b.onclick=()=>{setAnswer(b.dataset.setUnknown,'UNKNOWN');render()});
   const pairFids=[...new Set([...document.querySelectorAll('[data-pair-field]')].map(x=>x.dataset.pairField))];pairFids.forEach(fid=>document.querySelectorAll(`[data-pair-field="${fid}"]`).forEach(el=>el.addEventListener('change',()=>{const p={};document.querySelectorAll(`[data-pair-field="${fid}"]`).forEach(x=>p[x.dataset.pairPart]=x.value);setAnswer(fid,p)})));
-  document.querySelectorAll('[data-duplicate-add]').forEach(btn=>btn.onclick=()=>{const fid=btn.dataset.duplicateAdd,e=currentEng(),rows=duplicateEntryRows(e.answers?.[fid]);setAnswer(fid,[...rows,{data:'',from:'',to:''}]);render()});
+  document.querySelectorAll('[data-duplicate-add]').forEach(btn=>btn.onclick=()=>{const fid=btn.dataset.duplicateAdd,e=currentEng(),drafts=duplicateEntryDraftRows(e,fid,e.answers?.[fid]);setAnswer(fid,duplicateEntryRows(e.answers?.[fid]));saveDuplicateEntryDraftRows(e,fid,[...drafts,{data:'',from:'',to:''}]);render()});
   document.querySelectorAll('[data-duplicate-part]').forEach(el=>el.addEventListener(el.tagName==='INPUT'?'input':'change',()=>{const e=currentEng(),fid='DF051',rows=duplicateEntryRows(e.answers?.[fid]),i=Number(el.dataset.duplicateIndex);if(!rows[i])return;rows[i]={...rows[i],[el.dataset.duplicatePart]:el.value};setAnswer(fid,rows)}));
   document.querySelectorAll('[data-duplicate-remove]').forEach(btn=>btn.onclick=()=>{const e=currentEng(),fid='DF051',rows=duplicateEntryRows(e.answers?.[fid]);rows.splice(Number(btn.dataset.duplicateRemove),1);setAnswer(fid,rows);render()});
+  document.querySelectorAll('[data-duplicate-draft-part]').forEach(el=>el.addEventListener(el.tagName==='INPUT'?'input':'change',()=>{const e=currentEng(),fid='DF051',drafts=duplicateEntryDraftRows(e,fid,e.answers?.[fid]),i=Number(el.dataset.duplicateDraftIndex);if(!drafts[i])return;drafts[i]={...drafts[i],[el.dataset.duplicateDraftPart]:el.value};setAnswer(fid,duplicateEntryRows(e.answers?.[fid]));saveDuplicateEntryDraftRows(e,fid,drafts);if(el.tagName!=='INPUT')render()}));
+  document.querySelectorAll('[data-duplicate-draft-confirm]').forEach(btn=>btn.onclick=()=>{const e=currentEng(),fid='DF051',drafts=duplicateEntryDraftRows(e,fid,e.answers?.[fid]),i=Number(btn.dataset.duplicateDraftConfirm),row=drafts[i];if(!duplicateEntryComplete(row))return;const rows=duplicateEntryRows(e.answers?.[fid]);rows.push(row);drafts.splice(i,1);setAnswer(fid,rows);saveDuplicateEntryDraftRows(e,fid,drafts);render()});
+  document.querySelectorAll('[data-duplicate-draft-remove]').forEach(btn=>btn.onclick=()=>{const e=currentEng(),fid='DF051',drafts=duplicateEntryDraftRows(e,fid,e.answers?.[fid]);drafts.splice(Number(btn.dataset.duplicateDraftRemove),1);setAnswer(fid,duplicateEntryRows(e.answers?.[fid]));saveDuplicateEntryDraftRows(e,fid,drafts);render()});
   document.querySelectorAll('[data-duplicate-confirm]').forEach(btn=>btn.onclick=()=>{const e=currentEng(),fid='DF051',rows=duplicateEntryRows(e.answers?.[fid]);rows.push({data:btn.dataset.duplicateData||'',dataKey:btn.dataset.duplicateDataKey||'',from:btn.dataset.duplicateFrom||'',to:btn.dataset.duplicateTo||''});setAnswer(fid,rows);render()});
   document.querySelectorAll('[data-duplicate-dismiss]').forEach(btn=>btn.onclick=()=>{const e=currentEng(),d=answerDetails(e),key='DF051__dismissed',items=new Set(normalizeArray(d[key]));items.add(btn.dataset.duplicateDismiss);d[key]=[...items];e.updatedAt=now();markDirty('Candidato de reintroducción descartado');render()});
   document.querySelectorAll('[data-multi][data-exclusive]').forEach(el=>el.addEventListener('change',()=>{
@@ -450,9 +469,13 @@ function bindCanonicalRenderer(){
   }));
   document.querySelectorAll('[data-multi]:not([data-exclusive])').forEach(el=>el.addEventListener('change',()=>{
     const fid=el.dataset.multi,exclusiveEl=document.querySelector(`[data-multi="${fid}"][data-exclusive]`);
-    if(!el.checked||!exclusiveEl||!exclusiveEl.checked)return;
-    exclusiveEl.checked=false;
-    setAnswer(fid,[...document.querySelectorAll(`[data-multi="${fid}"]:checked`)].map(x=>x.value));
+    if(el.checked&&exclusiveEl&&exclusiveEl.checked){
+      exclusiveEl.checked=false;
+      setAnswer(fid,[...document.querySelectorAll(`[data-multi="${fid}"]:checked`)].map(x=>x.value));
+    }
+    if(fid==='DF055'&&!document.querySelector(`[data-multi="DF055"]:checked`)){
+      const e=currentEng(),d=answerDetails(e);delete d.DF055__steps;e.updatedAt=now();markDirty('Pasos afectados DF055 limpiados');render();
+    }
   }));
 }
 const __auneaBaseBindForms=bindForms;
