@@ -335,7 +335,7 @@ function economicBuilder(e){
       const legacy=x.driver_id==='ED15';
       return '<div class="result-item"><div class="result-item-head"><div><b>'+esc(legacy?'Volumen de casos — registro legacy':econDriverLabel(x.driver_id))+'</b>'
         +(legacy?'<div class="notice warn economic-row-warning"><b>No se usa como impacto económico.</b><br>El volumen pertenece a Demanda (DF021/DF022). Elimina este registro duplicado para mantener un único owner.</div>':'<p>'+esc(economicRecordSummary(x))+'</p>')
-        +'<p>Pasos: '+normalizeArray(x.step_ids).map(id=>steps.find(s=>s.id===id)?.step_name||id).map(esc).join(', ')+'</p>'+(x.driver_id==='ED14'&&x.value!=null?'<p>Rol/recurso: '+esc(labelFrom('OS_ACTOR_ROLE',x.role_or_resource)||x.role_or_resource||'—')+' · Capacidad práctica: '+esc(x.value)+' '+esc(x.unit||'h')+(x.period?' / '+esc(labelFrom('OS_PERIOD',x.period)||x.period):'')+'</p>':'')+'</div>'
+        +'<p>Pasos: '+normalizeArray(x.step_ids).map(id=>steps.find(s=>s.id===id)?.step_name||id).map(esc).join(', ')+'</p></div>'
         +'<div class="result-actions">'+(legacy?'':'<button class="btn btn-small" data-edit-economic-index="'+i+'">Editar</button>')+'<button class="btn btn-small btn-danger" data-delete-economic-index="'+i+'">Eliminar</button></div></div></div>';
     }).join(''):'<div class="empty"><p>Todavía no hay impactos registrados.</p></div>')+'</div>',
     '<button type="button" class="btn btn-outline" id="reviewEconomicCandidates">Revisar posibles impactos</button><button type="button" class="btn btn-primary" id="addEconomic" data-add-economic-global>Añadir impacto</button>')
