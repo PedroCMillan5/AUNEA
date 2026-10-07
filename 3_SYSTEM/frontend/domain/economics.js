@@ -276,6 +276,57 @@ async function reviewEconomicCandidates(){
     if(x){closeModal();addEconomic(x.step_ids,null,false,x)}
   });
 }
+function economicEvidenceLabel(value){
+  const backend=typeof evidenceTypeBackend==='function'?evidenceTypeBackend(value):value;
+  return typeof engineLabel==='function'?engineLabel('evidence_quality',backend):(backend||'—');
+}
+function economicRecordSummary(x){
+  const evidence='Evidencia: '+economicEvidenceLabel(x.evidence_type);
+  const num=v=>Number(v||0).toLocaleString('es-ES',{maximumFractionDigits:2});
+  if(x.driver_id==='ED14'){
+    const role=labelFrom('OS_ACTOR_ROLE',x.role_or_resource)||x.role_or_resource||'Rol pendiente';
+    const capacity=x.value==null?'Capacidad práctica pendiente':num(x.value)+' '+(x.unit||'h')+(x.period?' / '+(labelFrom('OS_PERIOD',x.period)||x.period):'');
+    const rate=x.capacity_cost_rate_eur_hour==null?'Coste/hora pendiente':num(x.capacity_cost_rate_eur_hour)+' €/h';
+    return [rate,'Rol: '+role,capacity,evidence].join(' · ');
+  }
+  if(x.driver_id==='ED12'){
+    const tools=x.current_tool_cost_eur_annual==null?'Coste pendiente':num(x.current_tool_cost_eur_annual)+' €/año';
+    return [tools,evidence].join(' · ');
+  }
+  if(['ED01','ED02','ED03','ED04','ED05','ED06','ED07','ED08'].includes(x.driver_id)){
+    const hours=x.annual_active_hours==null?'Tiempo pendiente':num(x.annual_active_hours)+' h/año';
+    const rate=x.capacity_cost_rate_eur_hour==null?'':num(x.capacity_cost_rate_eur_hour)+' €/h';
+    return [hours,rate,evidence].filter(Boolean).join(' · ');
+  }
+  if(x.driver_id==='ED13'){
+    return [(x.annual_wait_hours==null?'Espera pendiente':num(x.annual_wait_hours)+' h/año de espera'),evidence].join(' · ');
+  }
+  if(['ED09','ED10','ED11'].includes(x.driver_id)){
+    return [(x.direct_loss_eur_annual==null?'Pérdida pendiente':num(x.direct_loss_eur_annual)+' €/año'),evidence].join(' · ');
+  }
+  return evidence;
+}
+function economicRecordCompletenessIssues(x,index=0){
+  const label=econDriverLabel(x.driver_id||'')||('impacto '+(index+1)),issues=[];
+  const finite=v=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v))&&Number(v)>=0;
+  if(!x.driver_id)return ['Selecciona el tipo de impacto del registro '+(index+1)+'.'];
+  if(!x.evidence_type)issues.push('Selecciona la evidencia de "'+label+'".');
+  if(['ED01','ED02','ED03','ED04','ED05','ED06','ED07','ED08'].includes(x.driver_id)&&!finite(x.annual_active_hours))
+    issues.push('Completa el tiempo anual de "'+label+'".');
+  if(x.driver_id==='ED13'&&!finite(x.annual_wait_hours))issues.push('Completa la espera anual de "'+label+'".');
+  if(['ED09','ED10','ED11'].includes(x.driver_id)&&!finite(x.direct_loss_eur_annual))
+    issues.push('Completa la pérdida anual de "'+label+'".');
+  if(x.driver_id==='ED12'&&!finite(x.current_tool_cost_eur_annual))
+    issues.push('Completa el coste anual de herramientas.');
+  if(x.driver_id==='ED14'){
+    if(!finite(x.capacity_cost_rate_eur_hour))issues.push('Completa el coste de capacidad por hora.');
+    if(!x.role_or_resource)issues.push('Selecciona el rol/recurso del coste de capacidad.');
+    if(!finite(x.value))issues.push('Completa la capacidad práctica/productiva del rol.');
+    if(!x.period)issues.push('Selecciona el periodo de la capacidad práctica/productiva.');
+  }
+  return issues;
+}
+
 function economicBuilder(e){
   const steps=typeof activeSteps==='function'?activeSteps(e):[];
   const fmt=v=>v===null||v===undefined||v===''?'—':String(v);
@@ -283,7 +334,7 @@ function economicBuilder(e){
     '<div class="result-list">'+((e.economicInputs||[]).length?e.economicInputs.map((x,i)=>{
       const legacy=x.driver_id==='ED15';
       return '<div class="result-item"><div class="result-item-head"><div><b>'+esc(legacy?'Volumen de casos — registro legacy':econDriverLabel(x.driver_id))+'</b>'
-        +(legacy?'<div class="notice warn economic-row-warning"><b>No se usa como impacto económico.</b><br>El volumen pertenece a Demanda (DF021/DF022). Elimina este registro duplicado para mantener un único owner.</div>':'<p>Activo '+esc(fmt(x.annual_active_hours))+' h/año · Espera '+esc(fmt(x.annual_wait_hours))+' h/año · Pérdida directa '+esc(fmt(x.direct_loss_eur_annual))+' €/año · Evidencia: '+esc(engineLabel('evidence_quality',x.evidence_type))+'</p>')
+        +(legacy?'<div class="notice warn economic-row-warning"><b>No se usa como impacto económico.</b><br>El volumen pertenece a Demanda (DF021/DF022). Elimina este registro duplicado para mantener un único owner.</div>':'<p>'+esc(economicRecordSummary(x))+'</p>')
         +'<p>Pasos: '+normalizeArray(x.step_ids).map(id=>steps.find(s=>s.id===id)?.step_name||id).map(esc).join(', ')+'</p>'+(x.driver_id==='ED14'&&x.value!=null?'<p>Rol/recurso: '+esc(labelFrom('OS_ACTOR_ROLE',x.role_or_resource)||x.role_or_resource||'—')+' · Capacidad práctica: '+esc(x.value)+' '+esc(x.unit||'h')+(x.period?' / '+esc(labelFrom('OS_PERIOD',x.period)||x.period):'')+'</p>':'')+'</div>'
         +'<div class="result-actions">'+(legacy?'':'<button class="btn btn-small" data-edit-economic-index="'+i+'">Editar</button>')+'<button class="btn btn-small btn-danger" data-delete-economic-index="'+i+'">Eliminar</button></div></div></div>';
     }).join(''):'<div class="empty"><p>Todavía no hay impactos registrados.</p></div>')+'</div>',
