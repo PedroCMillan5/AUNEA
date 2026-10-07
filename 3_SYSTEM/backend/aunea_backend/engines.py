@@ -320,41 +320,113 @@ class RecommendationEngine:
             dedup[key]=c
         return list(dedup.values())
 
-    def run(self, ctx: EngineContext, pain_results: list[PainResult], risk: RiskResult) -> Recommendation:
+    def run(
+        self,
+        ctx: EngineContext,
+        pain_results: list[PainResult],
+        risk: RiskResult,
+        coverage: InputCoverageResult | None = None,
+    ) -> Recommendation:
         confirmed = [p for p in pain_results if p.state.value == "CONFIRMED"]
         indicated = [p for p in pain_results if p.state.value == "INDICATED"]
         caps = self.capabilities(pain_results)
-        rationale=[]
+        rationale: list[str] = []
+        q = ctx.engagement.questionnaire_answers
+        used = _covered_input_ids(coverage, "RecommendationEngine")
+        missing_ids = _missing_input_ids(coverage, "RecommendationEngine")
+        missing_information = [f"{input_id} pendiente según cobertura canónica" for input_id in missing_ids]
+
+        # RT_RECOMMENDATION.Preconditions is the governed place for target/constraint inputs that
+        # shape implementation without inventing a new action rule.
+        preconditions = [
+            x for x in (
+                _constraint_text("Debe mantenerse", q.get("DF087")),
+                _constraint_text("No automatizar/delegar a IA", q.get("DF088")),
+                _constraint_text("Plataforma/arquitectura", q.get("DF089")),
+                _constraint_text("Seguridad/acceso/hosting", q.get("DF090")),
+                _constraint_text("Adopción/cambio", q.get("DF091")),
+                _constraint_text("Aprobación humana obligatoria", q.get("DF075")),
+            ) if x
+        ]
+
+        def result(action_id: str, confidence: str, *, functional_level_id=None, ai_level_id=None, why=None):
+            return Recommendation(
+                action_id=action_id,
+                functional_level_id=functional_level_id,
+                ai_level_id=ai_level_id,
+                capabilities=caps if action_id != "ACT00" else [],
+                confidence=confidence,
+                rationale=list(why or rationale),
+                preconditions=preconditions,
+                missing_information=missing_information,
+                input_ids_used=used,
+            )
+
+        if missing_ids:
+            # InputCoverage normally blocks CRITICAL applicable gaps before reaching here. MATERIAL
+            # gaps remain explicit rather than being silently converted into a confident prescription.
+            rationale.append("La recomendación conserva información aplicable pendiente; revisar antes de cerrar propuesta.")
+
         if not confirmed:
             if indicated:
-                return Recommendation(action_id="ACT06", confidence="LOW", capabilities=caps, rationale=["Only indicated/incomplete evidence is available."])
-            return Recommendation(action_id="ACT00", confidence="MEDIUM", capabilities=[], rationale=["No material confirmed pain case."])
+                return result("ACT06", "LOW", why=["Only indicated/incomplete evidence is available."])
+            return result("ACT00", "MEDIUM", why=["No material confirmed pain case."])
         if not ctx.engagement.process_design_preconditions_ok:
-            return Recommendation(action_id="ACT01", confidence="HIGH", capabilities=caps, rationale=["Process/role/control preconditions must be redesigned before technology."])
+            return result("ACT01", "HIGH", why=["Process/role/control preconditions must be redesigned before technology."])
+
         if ctx.engagement.existing_tool_can_cover:
             action="ACT02"; rationale.append("Required capabilities can be supplied by existing owned tooling/configuration.")
         else:
             action="ACT03"
+
         ai="I0"
         if ctx.engagement.requires_bounded_agent_action:
             action="ACT05"; ai="I2"; rationale.append("Bounded contextual action is required.")
         elif ctx.engagement.requires_unstructured_ai_assistance:
             action="ACT04"; ai="I1"; rationale.append("Unstructured interpretation/assistance is required while human retains decision authority.")
+
         if risk.residual_level == "R3" and ai in {"I1","I2"}:
-            return Recommendation(action_id="ACT06", confidence="MEDIUM", capabilities=caps, rationale=["High-impact/critical AI risk requires specialist governance before implementation."])
+            return result("ACT06", "MEDIUM", why=["High-impact/critical AI risk requires specialist governance before implementation."])
 
         max_n = 1
         for c in caps:
-            if not c.required: continue
+            if not c.required:
+                continue
             ref=self.cap_ref.get(c.capability_id,{})
             typical=str(ref.get("Typical_Level_Min") or ref.get("Typical_Level") or ref.get("Typical_N") or "N1")
             max_n=max(max_n, level_rank(typical,"N"))
+
+        # FL-03 consumes IN-R-10: material exception/non-normal paths justify the exception-capable
+        # layer; this does not invent N3 when no exception complexity was captured.
+        steps = q.get("_process_steps") or []
+        has_exception = _present_value(q.get("DF066")) or any(
+            isinstance(step, dict) and _present_value(step.get("exception_path")) for step in steps
+        )
+        if has_exception:
+            max_n=max(max_n,3)
+            rationale.append("Material exception path requires explicit exception-capable operation (FL-03).")
+
         if ctx.engagement.requires_management_visibility:
             max_n=max(max_n,4)
+
         n=f"N{min(max_n,4)}"
-        if action in {"ACT01","ACT06","ACT00"}: n = None
-        if action == "ACT02" and n is None: n = "N1"
-        return Recommendation(action_id=action, functional_level_id=n, ai_level_id=ai if action in {"ACT03","ACT04","ACT05","ACT02"} else None, capabilities=caps, confidence="HIGH" if confirmed else "MEDIUM", rationale=rationale)
+        if action in {"ACT01","ACT06","ACT00"}:
+            n = None
+        if action == "ACT02" and n is None:
+            n = "N1"
+
+        # IN-R-03 is critical and should already be covered by preflight. Keep fail-closed behavior
+        # for direct/legacy engine callers that bypass the orchestrator.
+        if coverage is not None and "IN-R-03" not in used:
+            return result("ACT06", "LOW", why=["Desired future-state outcome is not covered. Further discovery required."])
+
+        return result(
+            action,
+            "HIGH" if confirmed and not missing_ids else "MEDIUM",
+            functional_level_id=n,
+            ai_level_id=ai if action in {"ACT03","ACT04","ACT05","ACT02"} else None,
+        )
+
 # [AUNEA-BE-ENGINE-RECOMMEND-010] END
 
 # [AUNEA-BE-ENGINE-PRICING-010] START — Pricing Engine
