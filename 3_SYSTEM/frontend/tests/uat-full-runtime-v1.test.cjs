@@ -32,9 +32,9 @@ test('single UAT loads complete, traverses PG01-PG09 and hands off to internal w
  assert.equal(rows.length,1,'exactly one UAT study must exist');
  const e=rows[0];
  assert.equal(e.processSteps.length,6);assert.equal(e.frictions.length,3);assert.equal(e.risks.length,2);
- assert.equal(run('currentEng().confirmedAsIs'),true);
- assert.equal(run('hasConfirmedSnapshot(currentEng())'),true);
- assert.deepEqual(Array.from(run('canonicalMissingRequired(currentEng())')),[]);
+ assert.equal(run('currentEng().confirmedAsIs'),false);
+ assert.equal(run('hasConfirmedSnapshot(currentEng())'),false);
+ assert.deepEqual(Array.from(run('canonicalMissingRequired(currentEng())')).filter(x=>x!=='DF093'&&x!=='Confirmación AS-IS'),[]);
  assert.equal(run('unresolvedEngineGates(currentEng()).length'),0);
  assert.match(w.document.getElementById('singleUatLoadStatus').textContent,/UAT completa y guardada: 1 estudio/);
  for(const stage of ['S01','S02','S03','S08','S04','S05','S06','S07','S09']){
@@ -47,6 +47,12 @@ test('single UAT loads complete, traverses PG01-PG09 and hands off to internal w
    assert.ok(body.length>40,'empty stage '+stage);
    assert.doesNotMatch(body,/No se ha podido iniciar AUNEA Internal/);
  }
+ run("state.activePage='diagnostico';currentEng().stageId='S09';render()");
+ const close=w.document.getElementById('confirmClosingAsIs');
+ assert.ok(close,'PG09 final closure CTA must be visible before handoff');
+ close.onclick();
+ assert.equal(run('currentEng().confirmedAsIs'),true);
+ assert.equal(run('hasConfirmedSnapshot(currentEng())'),true);
  run("state.activePage='uat';render()");
  w.document.getElementById('openSingleUatInternal').onclick();
  assert.equal(run('state.activePage'),'resultados');
