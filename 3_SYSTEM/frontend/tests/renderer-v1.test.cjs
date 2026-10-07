@@ -229,35 +229,16 @@ test('DF098 uses the selected top-right AUNEA consultant as readonly owner and k
   assert.match(e.answers.DF098,/Alpha — Consultor Seleccionado — 13\/10\/2026/);
 });
 
-test('DF074 never shows affected steps until a valid reversibility level is selected, and then supports multiple explicit steps',()=>{
+test('DF074 renders the current canonical long-text question with no reversibility dropdown or step selector',()=>{
   const eng={answers:{},answerDetails:{},processSteps:[
     {id:'s1',status:'ACTIVE',step_name:'Recibir factura'},
     {id:'s2',status:'ACTIVE',step_name:'Aprobar factura'}
   ]};
-  const opts=ctx.schema.option_sets.OS_REVERSIBILITY.options;
-
-  const empty=ctx.renderControl({Field_ID:'DF074',Control_UI:'DROPDOWN_WITH_STEP_LINK'},'',opts,eng);
-  assert.match(empty,/Selecciona primero un nivel de reversibilidad/);
-  assert.doesNotMatch(empty,/Pasos afectados/);
-  assert.doesNotMatch(empty,/data-linked-step-multi="DF074__steps"/);
-
-  const stale=ctx.renderControl({Field_ID:'DF074',Control_UI:'DROPDOWN_WITH_STEP_LINK'},'LEGACY_INVALID',opts,eng);
-  assert.match(stale,/Selecciona primero un nivel de reversibilidad/);
-  assert.doesNotMatch(stale,/Pasos afectados/);
-  assert.doesNotMatch(stale,/data-linked-step-multi="DF074__steps"/);
-
-  const selected=ctx.renderControl({Field_ID:'DF074',Control_UI:'DROPDOWN_WITH_STEP_LINK'},'PARTIAL',opts,eng);
-  assert.match(selected,/Pasos afectados/);
-  assert.match(selected,/data-linked-step-multi="DF074__steps"/);
-  assert.match(selected,/Recibir factura/);
-  assert.match(selected,/Aprobar factura/);
-  assert.doesNotMatch(selected,/data-linked-step-multi="DF074__steps"[^>]*checked/,'no step may be preselected without stored scope');
-
-  eng.answerDetails.DF074__steps=['s2'];
-  const scoped=ctx.renderControl({Field_ID:'DF074',Control_UI:'DROPDOWN_WITH_STEP_LINK'},'PARTIAL',opts,eng);
-  assert.match(scoped,/id="DF074__steps_s2"[^>]*checked/);
-  assert.doesNotMatch(scoped,/id="DF074__steps_s1"[^>]*checked/);
-  assert.doesNotMatch(scoped,/Paso donde esta condición es más relevante/);
+  const html=ctx.renderControl({Field_ID:'DF074',Control_UI:'TEXT_LONG'},'',[],eng);
+  assert.match(html,/<textarea[^>]*data-answer="DF074"/);
+  assert.doesNotMatch(html,/data-aunea-select="DF074"/);
+  assert.doesNotMatch(html,/Pasos afectados/);
+  assert.doesNotMatch(html,/data-linked-step/);
 });
 
 test('DF099 renders permission and scope as one inline control and scope is canonical detail metadata',()=>{
