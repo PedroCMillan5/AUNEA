@@ -322,8 +322,19 @@ async function reviewPainCandidates(){
   const e=currentEng();if(!e||typeof fetchPainCandidates!=='function')return toast('La revisión de señales no está disponible.');
   try{
     const r=await fetchPainCandidates(e),steps=activeSteps(e);__auneaPainCandidates=normalizeArray(r?.candidates);
-    const body=__auneaPainCandidates.length?'<div class="notice info"><b>Señales para revisar, no fricciones confirmadas.</b><p>Nada se crea hasta que revises y guardes una fricción.</p></div><div class="result-list">'+__auneaPainCandidates.map((x,i)=>'<div class="result-item"><div class="result-item-head"><div><b>'+esc(labelFrom('OS_FRICTION_TYPE',x.pain_id)||x.pain_id)+'</b><p>'+esc(x.rationale||'')+'</p><p>Pasos: '+normalizeArray(x.step_ids).map(id=>steps.find(s=>s.id===id)?.step_name||id).map(esc).join(', ')+'</p></div><div class="result-actions"><button type="button" class="btn btn-small btn-primary" data-review-pain-candidate="'+i+'">Revisar</button></div></div></div>').join('')+'</div>':'<div class="empty"><h2>No hay señales nuevas</h2><p>El mapa no contiene ahora una señal estructurada suficiente para sugerir otra fricción.</p></div>';
-    openModal('Posibles fricciones detectadas',body,closeModal,'Cerrar');
+    const body=__auneaPainCandidates.length
+      ?'<div class="notice info"><b>Oportunidades para revisar con el cliente</b><p>AUNEA ha detectado señales a partir del proceso ya capturado. Son hipótesis de revisión: no se crea ninguna fricción hasta que la confirmes.</p></div><div class="result-list">'
+        +__auneaPainCandidates.map((x,i)=>{
+          const stepNames=normalizeArray(x.step_ids).map(id=>steps.find(s=>s.id===id)?.step_name||'').filter(Boolean);
+          const questions=normalizeArray(x.review_questions).filter(Boolean);
+          return '<div class="result-item pain-review-card"><div class="result-item-head"><div><b>'+esc(labelFrom('OS_FRICTION_TYPE',x.pain_id)||'Posible fricción')+'</b>'
+            +'<p>'+esc(x.rationale||'')+'</p>'
+            +(stepNames.length?'<p><b>Dónde ocurre:</b> '+stepNames.map(esc).join(', ')+'</p>':'')
+            +(questions.length?'<div class="field-help"><b>Preguntas para validarlo con el cliente:</b><br>'+questions.map(q=>'• '+esc(q)).join('<br>')+'</div>':'')
+            +'</div><div class="result-actions"><button type="button" class="btn btn-small btn-primary" data-review-pain-candidate="'+i+'">Revisar con el cliente</button></div></div></div>';
+        }).join('')+'</div>'
+      :'<div class="empty"><h2>No hay nuevas señales que revisar</h2><p>Con la información disponible no se ha detectado ninguna posible fricción adicional.</p></div>';
+    openModal('Fricciones que conviene revisar',body,closeModal,'Cerrar');
     document.querySelectorAll('[data-review-pain-candidate]').forEach(b=>b.onclick=()=>{const x=__auneaPainCandidates[Number(b.dataset.reviewPainCandidate)];if(x){closeModal();openFrictionModal(null,x.step_ids,x)}});
   }catch(err){toast('No se pudieron revisar las señales del mapa: '+String(err?.message||err))}
 }
