@@ -286,7 +286,8 @@ function renderControl(f,val,opts,e){
   if(c==='DROPDOWN')return canonicalSelect(fid,opts,val);
   if(c==='DROPDOWN_WITH_DETAIL')return selectWithConditionalDetail(fid,opts,val,'Detalle si aplica');
   if(c==='DROPDOWN_WITH_OWNER_DATE')return nextStepWithOwnerDate(f,opts,e);
-  if(fid==='DF074'&&c==='DROPDOWN_WITH_STEP_LINK'){const d=answerDetails(e),legacy=d.DF074__step?[d.DF074__step]:[],linked=normalizeArray(d.DF074__steps).length?d.DF074__steps:legacy;return '<div class="linked-field-block"><div class="linked-step-label">Nivel de reversibilidad</div>'+canonicalSelect(fid,opts,val)+'<div class="linked-step-group"><div class="linked-step-label">¿En qué pasos aplica?</div>'+stepMulti('DF074__steps',e,linked)+'</div></div>';}\n  if(c==='DROPDOWN_WITH_STEP_LINK')return canonicalSelect(fid,opts,val)+stepSingle(`${fid}__step`,e,answerDetails(e)[`${fid}__step`]||'');
+  if(fid==='DF074'&&c==='DROPDOWN_WITH_STEP_LINK'){const d=answerDetails(e),legacy=d.DF074__step?[d.DF074__step]:[],linked=normalizeArray(d.DF074__steps).length?d.DF074__steps:legacy;return '<div class="linked-field-block"><div class="linked-step-label">Nivel de reversibilidad</div>'+canonicalSelect(fid,opts,val)+'<div class="linked-step-group"><div class="linked-step-label">¿En qué pasos aplica?</div>'+stepMulti('DF074__steps',e,linked)+'</div></div>';}
+  if(c==='DROPDOWN_WITH_STEP_LINK')return canonicalSelect(fid,opts,val)+stepSingle(`${fid}__step`,e,answerDetails(e)[`${fid}__step`]||'');
   if(c==='COMBOBOX_WITH_DETAIL')return selectWithConditionalDetail(fid,opts,val,'Detalle / nombre concreto');
   if(c==='COMBOBOX_REFERENCE')return selectWithConditionalDetail(fid,opts,val,'Nueva referencia sólo si no existe');
   if(c==='MULTISELECT'||c==='MULTICHECK'||c==='MULTISELECT_REFERENCE'||c==='SYSTEM_GENERATED_MULTISELECT')return multiChoices(fid,opts,val,{other:hasCanonicalOtherOption(opts)});
