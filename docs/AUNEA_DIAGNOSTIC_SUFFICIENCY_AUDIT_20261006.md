@@ -194,3 +194,30 @@ Pendiente:
 - P0-C · reconciliar los 14 IN-R con RecommendationEngine.
 - P0-D · contexto crítico de Risk.
 - P0-E · cobertura económica material.
+
+
+## Estado de implementación P0-C / P0-D / P0-E + trazabilidad final · 07/10/2026
+
+Implementado en REVIEW:
+
+- P0-C — RecommendationEngine consume la cobertura canónica de IN-R, conserva inputs usados, gaps y precondiciones; desired outcome permanece fail-closed cuando la cobertura está evaluada; exception complexity activa FL-03 sin forzar N3 cuando no existe.
+- P0-D — RiskEngine consume la cobertura canónica de IN-K y conserva trazabilidad de inputs usados/gaps; no degrada silenciosamente riesgos por intención de implementación.
+- P0-E — EconomicsEngine separa EO07/cobertura de la mera existencia de EconomicInput; COMPLETE ya no significa simplemente “hay filas”.
+- La auditoría de EngineRun de Economics/Risk/Recommendation incluye Engagement snapshot + InputCoverage, evitando hashes parciales que omitían dependencias reales.
+- DF002 runtime se reconcilia con Diagnostic Master v1.2: REF_INDUSTRY_CNAE25 / RT_COMPANY.Sector.
+- ScenarioComparator conserva supuestos futuros explícitos con provenance, genera Scenario_ID y Assumption_Set_Hash deterministas y calcula payback únicamente con ahorro de caja realizable según TCO-06/SE-07.
+- La UI de escenarios permite introducir future active/wait, reducción explícita, pérdida evitable y cash realization únicamente como supuestos justificados; no infiere cifras desde texto libre del TO-BE ni desde N/I/coverage.
+- Cada DF001–DF100 dispone de un plan downstream STALE derivado de Engine_Consumers + RULE_RECALC_INVALIDATION. El DiagnosticOutput previo se retira como vigente por cambio de snapshot, pero se conserva qué componentes requieren recalculo.
+- Se añade `docs/AUNEA_FIELD_TRACEABILITY_FINAL_20261007.md` como matriz ejecutable campo→owner→branch→consumidor→recalculo.
+
+QA disponible en esta iteración:
+- parse JavaScript: PASS para `core/state.js`, `pages/results.js` y tests modificados;
+- parse JSON: PASS;
+- 100 Field_ID únicos: PASS;
+- metadata de trazabilidad completa para 100/100: PASS;
+- invalidation plan presente para 100/100: PASS;
+- tests de regresión añadidos para P0-C/P0-D/P0-E, determinismo, future economics, payback y field-level invalidation;
+- ejecución nativa de pytest/node sigue pendiente porque el entorno de ejecución de esta sesión no puede resolver `github.com` y no hay workflow de Actions asociado al commit de rama.
+
+Criterio operativo resultante:
+`CAPTURE → AS-IS → PAIN → BASELINE ECONOMICS/RISK → RECOMMENDATION → TO-BE ASSUMPTIONS → SCENARIO ECONOMICS/RISK/PRICE → DELTA/RESULTS`, con hipótesis futuras explícitas y outputs trazables al snapshot.
