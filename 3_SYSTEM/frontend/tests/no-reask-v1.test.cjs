@@ -367,3 +367,13 @@ test('single-owner hides every structured builder field from generic stage forms
   fields.slice(0,4).forEach(f=>assert.equal(ctx.questionVisible(f,e),false));
   assert.equal(ctx.questionVisible(fields[4],e),true);
 });
+
+
+test('DF051 repeatable findings reject incomplete, same-step and stale-step relations',()=>{
+  const e={answers:{},answerDetails:{},processSteps:[{id:'a',status:'ACTIVE'},{id:'b',status:'ACTIVE'}],frictions:[],risks:[],economicInputs:[]};
+  const field={Field_ID:'DF051',Control_UI:'STEP_PAIR_LIST_SELECTOR'};
+  assert.match(ctx.canonicalFieldValidationIssue(field,[{data:'Factura',from:'a',to:''}],e),/información afectada.*origen.*destino/i);
+  assert.match(ctx.canonicalFieldValidationIssue(field,[{data:'Factura',from:'a',to:'a'}],e),/pasos distintos/i);
+  assert.match(ctx.canonicalFieldValidationIssue(field,[{data:'Factura',from:'a',to:'z'}],e),/ya no está activo/i);
+  assert.equal(ctx.canonicalFieldValidationIssue(field,[{data:'Factura',from:'a',to:'b'}],e),'');
+});
