@@ -52,7 +52,7 @@ function uat3Seed(c){
   const steps=c.steps.map((x,i)=>uat3Step(c,x,i)),frictions=c.frictions.map((x,i)=>uat3Friction(c,x,i,steps)),risks=c.risks.map((x,i)=>uat3Risk(c,x,i,steps));
   const answers={...c.answers,DF001:company.name,DF002:company.sector,DF003:company.employeeCount,DF005:'ES',
     DF006:contactIds[0],DF007:[contactIds[1]],DF016:contactIds[0],
-    DF051:{from:steps[c.finding[0]].id,to:steps[c.finding[1]].id},
+    DF051:[{data:typeof labelFrom==='function'?labelFrom('OS_ARTIFACT_TYPE','RECORD'):'Registro estructurado',dataKey:'RECORD',from:steps[c.finding[0]].id,to:steps[c.finding[1]].id}],
     DF053:c.search.map(n=>steps[n].id),
     DF054:['manual:'+steps[c.integration[1]].id],DF096:frictions.map(x=>x.id),DF098:c.followup};
   const controlStepIndex=c.key==='INVOICE'?4:c.key==='INTAKE'?3:4;
