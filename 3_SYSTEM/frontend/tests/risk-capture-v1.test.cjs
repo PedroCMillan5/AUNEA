@@ -52,3 +52,20 @@ test('risk category remains an explicit consultant choice; the browser does not 
   assert.match(code,/riskDropdown\('riskCat'/);
   assert.doesNotMatch(code,/recommendedRisk|suggestedRisk|auto.*riskCat/i);
 });
+
+
+test('risk review candidates are guided and never auto-classified',()=>{
+  assert.match(code,/function reviewRiskCandidates\(/);
+  assert.match(code,/Revisar posibles riesgos/);
+  assert.match(code,/Revisar con el cliente/);
+  assert.match(code,/Señal para revisar — no es un riesgo confirmado/);
+  assert.match(code,/fieldOptions\('OS_SCALE_1_5'\)/);
+  assert.match(code,/riskDropdown\('riskCat'/);
+  assert.doesNotMatch(code,/candidate\?\.category|candidate\?\.likelihood|candidate\?\.impact/);
+});
+
+test('risk page exposes actionable incomplete-risk review',()=>{
+  assert.match(code,/function riskIncompleteFields\(/);
+  assert.match(code,/Completar riesgo/);
+  assert.match(code,/Riesgos que necesitan revisión/);
+});
