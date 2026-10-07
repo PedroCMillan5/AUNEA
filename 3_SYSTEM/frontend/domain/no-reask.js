@@ -55,18 +55,11 @@ function canonicalFieldValidationIssue(f,v,e){
   }
   if(e){
     const steps=typeof activeSteps==='function'?activeSteps(e):(e.processSteps||[]).filter(x=>x.status!=='SUPERSEDED'),stepIds=new Set(steps.map(x=>String(x.id))),control=String(f.Control_UI||'').toUpperCase();
-    if(f.Field_ID==='DF074'&&valuePresent(v)&&!fieldOptions('OS_REVERSIBILITY').some(x=>String(x.value)===String(v)))return 'Selecciona un nivel de reversibilidad válido.';
     const linkedOne=String(e.answerDetails?.[f.Field_ID+'__step']||'');
     const linkedMany=normalizeArray(e.answerDetails?.[f.Field_ID+'__steps']).map(String);
     if(control==='DROPDOWN_WITH_STEP_LINK'&&valuePresent(v)&&String(v)!=='UNKNOWN'){
-      if(f.Field_ID==='DF074'){
-        const scope=linkedMany.length?linkedMany:(linkedOne?[linkedOne]:[]);
-        if(!scope.length)return 'Selecciona también los pasos afectados.';
-        if(scope.some(id=>!stepIds.has(id)))return 'Uno de los pasos vinculados ya no está activo.';
-      }else{
-        if(!linkedOne)return 'Selecciona también el paso afectado.';
-        if(!stepIds.has(linkedOne))return 'El paso vinculado ya no está activo.';
-      }
+      if(!linkedOne)return 'Selecciona también el paso afectado.';
+      if(!stepIds.has(linkedOne))return 'El paso vinculado ya no está activo.';
     }
     if(['MULTISELECT_WITH_STEP_LINK','MULTISELECT_WITH_STEP_REFERENCE','STEP_ACTION_MULTISELECT'].includes(control)&&linkedMany.some(id=>!stepIds.has(id)))
       return 'Uno de los pasos vinculados ya no está activo.';
@@ -405,6 +398,26 @@ function economicConditionalTimeContext(fid,e){
     :label+': verificar si está cuantificado en pasos o fricciones. Sólo valorar un ámbito adicional material cuando se haya acreditado que no está contabilizado.';
 }
 // [AUNEA-FE-DIAG-ECON-CONTEXT-054] END
+function migrateDf074ToCanonicalText(engagements=[]){
+  const legacyValues=new Set(['REVERSIBLE','PARTIAL','HARD','IRREVERSIBLE','UNKNOWN']);
+  let changed=0;
+  (engagements||[]).forEach(e=>{
+    e.answers=e.answers||{};e.answerDetails=e.answerDetails||{};
+    let touched=false;
+    if(legacyValues.has(String(e.answers.DF074||''))){e.answers.DF074='';touched=true;}
+    for(const key of ['DF074__step','DF074__steps']){
+      if(Object.prototype.hasOwnProperty.call(e.answerDetails,key)){delete e.answerDetails[key];touched=true;}
+      if(Object.prototype.hasOwnProperty.call(e.answers,key)){delete e.answers[key];touched=true;}
+    }
+    if(touched){
+      changed++;
+      if(typeof invalidateProcessLayers==='function')invalidateProcessLayers(e,'risks');
+      else{e.confirmedAsIs=false;if(e.layerConfirmations){e.layerConfirmations.risks=false;e.layerConfirmations.impact=false;}}
+    }
+  });
+  return changed;
+}
+
 function structuredRiskDerivedReviewHtml(fid,e){
   if(!['DF066','DF067'].includes(fid))return '';
   const steps=activeSteps(e);
