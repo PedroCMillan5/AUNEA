@@ -253,7 +253,12 @@ function render(){
   const previousCanvas=document.querySelector('.flow-canvas');
   const previousWorkspace=document.querySelector('[data-process-engagement]');
   const sameProcess=state.activePage==='proceso'&&previousCanvas&&previousWorkspace?.dataset.processEngagement===currentEng()?.id;
-  const previousViewport=sameProcess?{left:previousCanvas.scrollLeft,top:previousCanvas.scrollTop}:null;
+  const previousViewport=sameProcess?{
+    left:previousCanvas.scrollLeft,
+    top:previousCanvas.scrollTop,
+    windowX:typeof window!=='undefined'?window.scrollX:0,
+    windowY:typeof window!=='undefined'?window.scrollY:0
+  }:null;
   const companiesViewport=state.activePage==='empresas';
   document.documentElement.classList.toggle('page-companies',companiesViewport);
   document.body.classList.toggle('page-companies',companiesViewport);
@@ -272,7 +277,13 @@ function render(){
     const restore=()=>{
       if(state.activePage!=='proceso'||currentEng()?.id!==previousWorkspace.dataset.processEngagement)return;
       const canvas=document.querySelector('.flow-canvas');
-      if(canvas){canvas.scrollLeft=previousViewport.left;canvas.scrollTop=previousViewport.top;}
+      if(canvas){
+        canvas.scrollLeft=previousViewport.left;
+        canvas.scrollTop=previousViewport.top;
+      }
+      if(typeof window!=='undefined'&&typeof window.scrollTo==='function'){
+        window.scrollTo(previousViewport.windowX,previousViewport.windowY);
+      }
     };
     if(typeof requestAnimationFrame==='function')requestAnimationFrame(()=>requestAnimationFrame(restore));
     else restore();
