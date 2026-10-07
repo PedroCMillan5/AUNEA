@@ -55,6 +55,7 @@ function canonicalFieldValidationIssue(f,v,e){
   }
   if(e){
     const steps=typeof activeSteps==='function'?activeSteps(e):(e.processSteps||[]).filter(x=>x.status!=='SUPERSEDED'),stepIds=new Set(steps.map(x=>String(x.id))),control=String(f.Control_UI||'').toUpperCase();
+    if(f.Field_ID==='DF074'&&valuePresent(v)&&!fieldOptions('OS_REVERSIBILITY').some(x=>String(x.value)===String(v)))return 'Selecciona un nivel de reversibilidad válido.';
     const linkedOne=String(e.answerDetails?.[f.Field_ID+'__step']||'');
     const linkedMany=normalizeArray(e.answerDetails?.[f.Field_ID+'__steps']).map(String);
     if(control==='DROPDOWN_WITH_STEP_LINK'&&valuePresent(v)&&String(v)!=='UNKNOWN'){
