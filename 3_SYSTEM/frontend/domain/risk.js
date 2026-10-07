@@ -51,8 +51,9 @@ function riskIncompleteFields(r){
 function riskReviewActionPanel(e){
   const pending=(e.risks||[]).map((r,i)=>({r,i,missing:riskIncompleteFields(r)})).filter(x=>x.missing.length);
   if(!pending.length)return '';
-  return '<div class="notice warn risk-review-summary"><b>Riesgos que necesitan revisión</b><p>Completa únicamente los datos que faltan en cada riesgo antes de confirmar la capa.</p>'
-    +pending.map(x=>'<div class="risk-review-row"><div><strong>'+esc(x.r.description||labelFrom('OS_RISK_CATEGORY',x.r.category)||'Riesgo sin describir')+'</strong><div class="field-help">'+esc(x.missing.join(' · '))+'</div></div><button type="button" class="btn btn-small btn-primary" data-edit-risk-index="'+x.i+'">Completar riesgo</button></div>').join('')
+  const count=pending.length;
+  return '<div class="notice warn risk-review-summary"><b>'+count+' riesgo'+(count===1?'':'s')+' pendiente'+(count===1?'':'s')+' de completar</b><p>Este bloque resume únicamente los huecos pendientes; el riesgo completo se mantiene una sola vez en «Riesgos registrados».</p>'
+    +pending.map(x=>'<div class="risk-review-row"><div><strong>Riesgo '+(x.i+1)+'</strong><div class="field-help"><b>Falta:</b> '+esc(x.missing.join(' · '))+'</div></div><button type="button" class="btn btn-small btn-primary" data-edit-risk-index="'+x.i+'">Completar riesgo</button></div>').join('')
     +'</div>';
 }
 async function reviewRiskCandidates(){
