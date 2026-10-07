@@ -102,8 +102,11 @@ function processLayerIntegrityIssues(e,key){
   }
   if(key==='impact'){
     (e.economicInputs||[]).forEach((x,i)=>{
-      if(!x.driver_id)push(`Selecciona el tipo de impacto del registro ${i+1}.`);
-      if(!x.evidence_type)push(`Selecciona la evidencia del impacto ${i+1}.`);
+      if(typeof economicRecordCompletenessIssues==='function')economicRecordCompletenessIssues(x,i).forEach(push);
+      else{
+        if(!x.driver_id)push(`Selecciona el tipo de impacto del registro ${i+1}.`);
+        if(!x.evidence_type)push(`Selecciona la evidencia del impacto ${i+1}.`);
+      }
       const impactSteps=normalizeArray(x.step_ids).filter(Boolean);
       if(stepIds.size&&!impactSteps.length)push(`El impacto ${i+1} debe estar vinculado al menos a un paso activo.`);
       if(impactSteps.some(id=>!stepIds.has(id)))push(`El impacto ${i+1} referencia un paso que ya no está activo.`);
