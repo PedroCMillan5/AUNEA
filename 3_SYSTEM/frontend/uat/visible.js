@@ -106,7 +106,7 @@ function uatPhasePage(){
     '<div class="grid g4" style="margin-top:12px"><div class="card metric"><small>Estudios</small><strong>1</strong></div><div class="card metric"><small>Pasos</small><strong>'+activeSteps(e).length+'</strong></div><div class="card metric"><small>Fricciones</small><strong>'+activeFrictions(e).length+'</strong></div><div class="card metric"><small>Riesgos</small><strong>'+e.risks.length+'</strong></div></div>'+
     '<h3 style="margin-top:16px">Recorrer las 9 pantallas</h3>'+stageButtons+
     '<div style="margin-top:16px">'+checks+'</div>',
-    '<button class="btn btn-primary" id="openSingleUatStart">Abrir desde pantalla 1</button> <button class="btn btn-outline" id="openSingleUatInternal">Ir a Trabajo interno</button> <button class="btn btn-danger" id="clearSingleUat">Eliminar UAT</button>')
+    '<button class="btn btn-primary" id="openSingleUatStart">Abrir desde pantalla 1</button> '+((typeof hasConfirmedSnapshot==='function'&&hasConfirmedSnapshot(e))?'<button class="btn btn-outline" id="openSingleUatInternal">Ir a Trabajo interno</button>':'<button class="btn btn-outline" disabled aria-disabled="true">Trabajo interno pendiente de cierre</button>')+' <button class="btn btn-danger" id="clearSingleUat">Eliminar UAT</button>')
     :'<div class="empty"><h2>No hay UAT cargada</h2><p>Carga un único expediente integral con todo el recorrido precargado.</p></div>';
   return pageTop('UAT / QA','Una sola UAT integral. Sin fases, sin doce estudios y sin tres casos paralelos.',
     '<button class="btn btn-primary" id="loadSingleUat">Cargar UAT completa</button>')
@@ -121,7 +121,7 @@ postBind=function(){
   const load=document.getElementById('loadSingleUat');if(load)load.onclick=loadSingleUat;
   const clear=document.getElementById('clearSingleUat');if(clear)clear.onclick=()=>clearSingleUat({renderAfter:true});
   const start=document.getElementById('openSingleUatStart');if(start)start.onclick=()=>{const e=singleUatEngagement();if(!e)return;state.activeEngagementId=e.id;e.stageId='S01';state.activePage='diagnostico';render()};
-  const internal=document.getElementById('openSingleUatInternal');if(internal)internal.onclick=()=>{const e=singleUatEngagement();if(!e)return;state.activeEngagementId=e.id;state.activePage='resultados';render()};
+  const internal=document.getElementById('openSingleUatInternal');if(internal)internal.onclick=()=>{const e=singleUatEngagement();if(!e||!(typeof hasConfirmedSnapshot==='function'&&hasConfirmedSnapshot(e)))return;state.activeEngagementId=e.id;state.activePage='resultados';render()};
   document.querySelectorAll('[data-single-uat-stage]').forEach(b=>b.onclick=()=>{const e=singleUatEngagement();if(!e)return;state.activeEngagementId=e.id;e.stageId=b.dataset.singleUatStage;state.activePage=['S04','S05','S06','S07'].includes(e.stageId)?'diagnostico':'diagnostico';render()});
 };
 // [AUNEA-FE-UAT-VISIBLE-055] END
