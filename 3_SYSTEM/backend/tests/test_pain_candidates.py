@@ -47,3 +47,9 @@ def test_approval_step_without_wait_or_chasing_is_not_suggested():
     s["wait_time"]=0;s["manual_actions"]=[]
     out=PainCandidateEngine().run(e)
     assert not any(x.pain_id=="P07" and "S3" in x.step_ids for x in out.candidates)
+
+
+def test_candidate_copy_hides_internal_field_codes():
+    out=PainCandidateEngine().run(engagement())
+    assert out.candidates
+    assert all("DF051" not in x.rationale and "DF054" not in x.rationale and "DF055" not in x.rationale for x in out.candidates)
