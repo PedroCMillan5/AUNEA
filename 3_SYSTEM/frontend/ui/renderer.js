@@ -174,21 +174,22 @@ function duplicateEntryControl(fid,e,val){
 // re-describable from live process-step data — no new stored object shape).
 function stepSystemHandoffCandidates(e){
   const steps=(e.processSteps||[]).filter(x=>x.status!=='SUPERSEDED');
+  const duplicatePairs=new Set(duplicateEntryRows(e.answers?.DF051).map(x=>String(x.from)+':'+String(x.to)));
   const items=[];
+  // DF054 is not another duplicate-entry question. Surface only actual cross-system handoffs.
+  // Manual actions/channels are evidence for review, not standalone "integration gaps".
   for(let i=0;i<steps.length-1;i++){
     const a=steps[i],b=steps[i+1];
-    if(a.tool&&b.tool&&String(a.tool)!==String(b.tool))items.push({value:`pair:${a.id}:${b.id}`,label:`"${a.step_name||a.id}" (${optionLabel('OS_TOOL_CATEGORY',a.tool)}) → "${b.step_name||b.id}" (${optionLabel('OS_TOOL_CATEGORY',b.tool)})`});
+    if(!a.tool||!b.tool||String(a.tool)===String(b.tool))continue;
+    if(duplicatePairs.has(String(a.id)+':'+String(b.id)))continue; // already captured by DF051
+    items.push({value:`pair:${a.id}:${b.id}`,label:`${optionLabel('OS_TOOL_CATEGORY',a.tool)} → ${optionLabel('OS_TOOL_CATEGORY',b.tool)} · ${a.step_name||a.id} → ${b.step_name||b.id}`});
   }
-  steps.forEach(s=>{
-    if(normalizeArray(s.communication_channels).length)items.push({value:`channel:${s.id}`,label:`"${s.step_name||s.id}" — canal registrado: ${normalizeArray(s.communication_channels).map(c=>optionLabel('OS_COMM_CHANNEL',c)).join(', ')}`});
-    if(normalizeArray(s.manual_actions).length)items.push({value:`manual:${s.id}`,label:`"${s.step_name||s.id}" — acción manual registrada: ${normalizeArray(s.manual_actions).map(m=>optionLabel('OS_MANUAL_ACTION',m)).join(', ')}`});
-  });
   return items;
 }
 function stepSystemPairSelector(fid,e,val){
   const items=stepSystemHandoffCandidates(e);
-  if(!items.length)return '<div class="empty"><p>Sin pares candidatos todavía: registra herramienta, canal de comunicación o acción manual en los pasos del proceso.</p></div>';
-  return `<div class="notice info">Marca sólo los pares o pasos donde exista intercambio o reintroducción manual real de datos entre sistemas. Esta lista es neutral: no afirma por sí sola que haya un gap.</div>${multiChoices(fid,items,val)}`;
+  if(!items.length)return '<div class="empty integration-empty"><p>No hay intercambios manuales entre sistemas distintos pendientes de revisar.</p></div>';
+  return `<div class="notice info integration-guidance">Revisa sólo transferencias manuales entre sistemas distintos. Las reintroducciones del mismo dato se registran en el bloque anterior y no se duplican aquí.</div><div class="integration-candidates">${multiChoices(fid,items,val)}</div>`;
 }
 function frictionPriority(fid,e,val){
   const items=e.frictions.filter(x=>x.status!=='SUPERSEDED').map(x=>({value:x.id,label:labelFrom('OS_FRICTION_TYPE',x.friction_type)}));return multiChoices(fid,items,val);
@@ -272,7 +273,7 @@ function renderControl(f,val,opts,e){
   if(c==='MULTISELECT_WITH_DETAIL'||c==='MULTICHECK_WITH_DETAIL'||c==='MULTISELECT_WITH_REFERENCE')return hasCanonicalOtherOption(opts)?multiChoices(fid,opts,val,{other:true}):multiChoices(fid,opts,val,{detail:true});
   if(c==='MULTISELECT_WITH_PRIORITY')return multiChoicesWithPriority(fid,opts,val,e);
   if(fid==='DF088'&&c==='MULTISELECT_WITH_STEP_REFERENCE')return multiChoices(fid,opts,val,{other:true,linkedSteps:{fid:`${fid}__steps`,items:stepOptions(e),val:answerDetails(e)[`${fid}__steps`]||[]}});
-  if(c==='MULTISELECT_WITH_STEP_LINK'||c==='MULTISELECT_WITH_STEP_REFERENCE'||c==='STEP_ACTION_MULTISELECT')return multiChoices(fid,opts,val,hasCanonicalOtherOption(opts)?{other:true}:{detail:true})+stepMulti(`${fid}__steps`,e,answerDetails(e)[`${fid}__steps`]||[]);
+  if(c==='MULTISELECT_WITH_STEP_LINK'||c==='MULTISELECT_WITH_STEP_REFERENCE'||c==='STEP_ACTION_MULTISELECT')return multiChoices(fid,opts,val,hasCanonicalOtherOption(opts)?{other:true}:{detail:true})+`<div class="linked-step-group"><div class="linked-step-label">Pasos afectados</div>${stepMulti(`${fid}__steps`,e,answerDetails(e)[`${fid}__steps`]||[])}</div>`;
   if(c==='STEP_MULTISELECT_VISUAL'||c==='STEP_MULTISELECT_WITH_FRICTION')return stepMulti(fid,e,val);
   if(c==='STEP_REFERENCE_SINGLE')return stepSingle(fid,e,val);
   if(c==='STEP_PAIR_SELECTOR')return stepPair(fid,e,val);
