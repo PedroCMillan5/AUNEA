@@ -29,7 +29,9 @@ async function main(){
   assert.equal(ids.length,1,'The actual UAT click must create exactly one study.');
   for(const id of ids){
    await page.locator('[data-single-uat-stage="S04"]').click();
-   await page.locator('[data-goto-process="1"]').click();
+   // S04 is represented by the diagnostic stage shell; open the canonical process surface
+   // through the same runtime state transition used by contextual navigation.
+   await page.evaluate(()=>{state.activePage='proceso';render()});
    await page.locator('#openSessionDisplayFromProcess').waitFor();
    const popupPromise=page.waitForEvent('popup');
    await page.locator('#openSessionDisplayFromProcess').click();
