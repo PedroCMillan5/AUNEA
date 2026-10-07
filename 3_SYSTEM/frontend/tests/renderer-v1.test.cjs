@@ -184,6 +184,28 @@ test('DF086 priority block stays hidden until at least two outcomes are selected
   assert.match(code,/Selecciona como máximo 5 resultados/);
 });
 
+
+
+test('DF051 captures multiple reintroductions with affected data + source + destination and keeps suggestions unconfirmed',()=>{
+  const eng={answers:{DF051:[
+    {data:'Datos de la factura',from:'s1',to:'s3'},
+    {data:'Número de pedido',from:'s2',to:'s3'}
+  ]},answerDetails:{},processSteps:[
+    {id:'s1',status:'ACTIVE',step_name:'Recibir factura',inputs:['PDF'],outputs:['PDF'],manual_actions:[]},
+    {id:'s2',status:'ACTIVE',step_name:'Cotejar pedido',inputs:['RECORD'],outputs:['RECORD'],manual_actions:[]},
+    {id:'s3',status:'ACTIVE',step_name:'Registrar en ERP',inputs:['PDF','RECORD'],manual_actions:['REKEY']}
+  ]};
+  const html=ctx.renderControl({Field_ID:'DF051',Control_UI:'STEP_PAIR_LIST_SELECTOR'},eng.answers.DF051,[],eng);
+  assert.match(html,/Datos de la factura/);
+  assert.match(html,/Número de pedido/);
+  assert.match(html,/data-duplicate-index="0"/);
+  assert.match(html,/data-duplicate-index="1"/);
+  assert.match(html,/\+ Añadir reintroducción/);
+  assert.match(html,/Posibles reintroducciones detectadas/);
+  assert.match(html,/data-duplicate-confirm=/);
+  assert.doesNotMatch(html,/data-duplicate-confirm=[^>]*checked/,'a suggestion is never persisted or preconfirmed by rendering');
+});
+
 // [AUNEA-UAT-RENDER-010] END
 
 test('DF098 uses the selected top-right AUNEA consultant as readonly owner and keeps action/owner/date in one semantic row',()=>{
