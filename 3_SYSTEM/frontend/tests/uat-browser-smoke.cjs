@@ -23,10 +23,10 @@ async function main(){
   page.on('pageerror',err=>failures.push(err.message));
   await page.goto(origin+'/index.html',{waitUntil:'domcontentloaded'});
   await page.locator('[data-page="uat"]').click();
-  await page.locator('#loadUat3').click();
-  await page.locator('#uat3LoadStatus').getByText(/Cargados y guardados: 3 estudios/).waitFor({timeout:20000});
+  await page.locator('#loadSingleUat').click();
+  await page.locator('#singleUatLoadStatus').getByText(/UAT completa y guardada: 1 estudio/).waitFor({timeout:20000});
   const ids=await page.evaluate(()=>state.engagements.filter(e=>e.id.startsWith('UAT3-CASE-')).map(e=>e.id));
-  assert.equal(ids.length,3,'The actual Generate click must create three studies.');
+  assert.equal(ids.length,1,'The actual UAT click must create exactly one study.');
   for(const id of ids){
    await page.locator('[data-uat3-open="'+id+'"][data-uat3-page="proceso"]').click();
    const canvas=page.locator('.flow-canvas');
