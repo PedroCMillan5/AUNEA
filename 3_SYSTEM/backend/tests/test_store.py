@@ -15,7 +15,8 @@ def test_persistence_and_signal_derived_pain(tmp_path):
     assert out.pain_results[0].state==PainState.CONFIRMED
     assert store.get_engagement('SIG-1') is not None
     assert store.latest_output('SIG-1') is not None
-    assert len(store.list_runs('SIG-1'))==7\n    assert store.list_runs('SIG-1')[0]['engine']=='InputCoverageEngine'
+    assert len(store.list_runs('SIG-1'))==7
+    assert store.list_runs('SIG-1')[0]['engine']=='InputCoverageEngine'
 
 
 def test_latest_output_uses_insert_order_when_timestamps_tie(tmp_path):
