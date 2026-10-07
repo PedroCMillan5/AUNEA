@@ -130,6 +130,13 @@ function linkedStepMulti(fid,e,val){
   const arr=selectedValues(val);
   return `<div class="choice-grid">${stepOptions(e).map(x=>`<div class="choice"><input type="checkbox" id="${fid}_${attr(x.value)}" value="${attr(x.value)}" data-linked-step-multi="${fid}" ${arr.includes(String(x.value))?'checked':''}><label for="${fid}_${attr(x.value)}">${esc(x.label)}</label></div>`).join('')}</div>`;
 }
+function linkedStepSingle(fid,e,val){
+  return auneaSelectControl(fid,stepOptions(e),val,{extra:`data-linked-step-single="${fid}"`,placeholder:'Selecciona un paso…'});
+}
+function linkedStepMulti(fid,e,val){
+  const arr=selectedValues(val);
+  return `<div class="choice-grid">${stepOptions(e).map(x=>`<div class="choice"><input type="checkbox" id="${fid}_${attr(x.value)}" value="${attr(x.value)}" data-linked-step-multi="${fid}" ${arr.includes(String(x.value))?'checked':''}><label for="${fid}_${attr(x.value)}">${esc(x.label)}</label></div>`).join('')}</div>`;
+}
 function stepPair(fid,e,val){
   const p=(val&&typeof val==='object')?val:{};const opts=stepOptions(e);
   return `<div class="compound-control">${canonicalSelect(`${fid}__from`,opts,p.from||'','data-pair-part="from" data-pair-field="'+fid+'"')}${canonicalSelect(`${fid}__to`,opts,p.to||'','data-pair-part="to" data-pair-field="'+fid+'"')}</div>`;
@@ -412,6 +419,17 @@ function bindCanonicalRenderer(){
   }));
 
   document.querySelectorAll('[data-detail-answer]').forEach(el=>el.addEventListener('input',()=>setAnswerDetail(el.dataset.detailAnswer,el.value)));
+  document.querySelectorAll('[data-linked-step-single]').forEach(el=>el.addEventListener('change',()=>{
+    const e=currentEng(),fid=el.dataset.linkedStepSingle,d=answerDetails(e);
+    d[fid]=el.value||'';e.updatedAt=now();markDirty('Ámbito de paso actualizado');
+    if(typeof refreshCaptureProgress==='function')refreshCaptureProgress();
+  }));
+  document.querySelectorAll('[data-linked-step-multi]').forEach(el=>el.addEventListener('change',()=>{
+    const e=currentEng(),fid=el.dataset.linkedStepMulti,d=answerDetails(e);
+    d[fid]=[...document.querySelectorAll(`[data-linked-step-multi="${fid}"]:checked`)].map(x=>x.value);
+    e.updatedAt=now();markDirty('Ámbito de pasos actualizado');
+    if(typeof refreshCaptureProgress==='function')refreshCaptureProgress();
+  }));
   document.querySelectorAll('[data-linked-step-single]').forEach(el=>el.addEventListener('change',()=>{
     const e=currentEng(),fid=el.dataset.linkedStepSingle,d=answerDetails(e);
     d[fid]=el.value||'';
