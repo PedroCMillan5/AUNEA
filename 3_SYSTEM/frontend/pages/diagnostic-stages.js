@@ -332,16 +332,16 @@ function validationSummary(e,completion){
         <div class="notice ${consistency.reviews.length?'info':'good'}"><b>Necesitan revisión</b><br>${consistency.reviews.length}</div>
         <div class="notice good"><b>Estado</b><br>${consistency.blockers.length?'No se puede cerrar':'Puede cerrarse'}</div>
       </div>
-      <div class="blocker-list">
+      ${consistency.items.length?`<div class="blocker-list">
         ${consistency.items.map(item=>{
           const label=item.severity==='BLOCKER'?'Bloqueante':item.severity==='REVIEW'?'Revisar':'Información';
           const cls=item.severity==='BLOCKER'?'warn':item.severity==='REVIEW'?'info':'good';
           const action=item.navigationTarget==='proceso'
             ?'<button class="btn btn-small" data-goto-process="1">Ir a corregir</button>'
-            :item.stage&&item.stage!=='S09'?`<button class="btn btn-small" data-consistency-stage="${attr(item.stage)}">Ir a corregir</button>`:'';
+            :item.stage&&item.stage!=='S09'?`<button class="btn btn-small" data-goto-stage="${attr(item.stage)}" data-consistency-stage="${attr(item.stage)}">Ir a corregir</button>`:'';
           return `<div class="notice ${cls}" data-consistency-severity="${attr(item.severity)}"><b>${label}</b><br><span>${esc(item.message)}</span>${action}</div>`;
         }).join('')}
-      </div>
+      </div>`:''}
       ${consistency.reviews.length&&!consistency.blockers.length?'<div class="field-help">Las observaciones ámbar no impiden el cierre: permanecen explícitas como incertidumbre/evidencia pendiente para Trabajo interno.</div>':''}
     </div>
     <div class="closing-first-readings">
