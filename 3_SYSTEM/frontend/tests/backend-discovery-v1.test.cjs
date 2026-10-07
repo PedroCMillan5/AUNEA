@@ -6,7 +6,7 @@ const vm = require('node:vm');
 
 const source = fs.readFileSync(path.join(__dirname, '..', 'services/backend-client.js'), 'utf8');
 
-function makeContext(fetchImpl, initialUrl='http://localhost:8000') {
+function makeContext(fetchImpl, initialUrl='http://localhost:8000', location={hostname:'localhost',protocol:'http:'}) {
   const writes = [];
   const context = {
     state: {backendUrl: initialUrl, backendOnline: false, backendVersion: null},
@@ -19,6 +19,8 @@ function makeContext(fetchImpl, initialUrl='http://localhost:8000') {
     updateHeader(){},
     audit(){},
     checkBackend: async()=>false,
+    window:{location,addEventListener(){},setInterval(){return 1},clearInterval(){}},
+    document:{getElementById:()=>true},
     console
   };
   vm.createContext(context);
@@ -42,8 +44,9 @@ test('descubre AUNEA en 8010 cuando 8000 pertenece a otro servicio', async () =>
   assert.equal(context.state.backendOnline, true);
   assert.equal(context.state.backendVersion, '1.1.1');
   assert.equal(context.state.backendUrl, 'http://127.0.0.1:8010');
-  assert.ok(requested.includes('http://localhost:8000/health'));
-  assert.ok(requested.includes('http://127.0.0.1:8010/health'));
+  assert.deepEqual(requested,['http://localhost:8010/health','http://127.0.0.1:8010/health']);
+  assert.ok(!requested.some(url=>url.includes(':8000/health')),'must stop probing once AUNEA is found on 8010');
+  assert.ok(!requested.some(url=>url.includes(':8020/health')),'must not probe later dead ports after success');
   assert.ok(writes.length > 0);
 });
 
@@ -57,13 +60,11 @@ test('descubre backend reenviado de Codespaces también en 8010', async () => {
     }
     throw new Error('offline');
   };
-  const {context} = makeContext(fetchImpl);
-  context.window={location:contextLoc};
+  const {context} = makeContext(fetchImpl,'http://localhost:8000',contextLoc);
   const ok = await context.checkBackend();
   assert.equal(ok, true);
   assert.equal(context.state.backendUrl, 'https://sample-space-8010.app.github.dev');
-  assert.ok(requested.includes('https://sample-space-8000.app.github.dev/health'));
-  assert.ok(requested.includes('https://sample-space-8010.app.github.dev/health'));
+  assert.deepEqual(requested,['https://sample-space-8010.app.github.dev/health']);
 });
 
 test('no acepta un /health que no sea AUNEA Backend', async () => {
@@ -81,5 +82,5 @@ test('expone monitor de reconexión para mantener vivo el enlace frontend-backen
   assert.match(source, /window\.setInterval\(\(\)=>\{if\(document\?\.getElementById\)checkBackend\(\);\},intervalMs\)/);
   assert.match(source, /function stopBackendMonitor\(\)/);
   assert.match(source, /addEventListener\('pagehide',stopBackendMonitor/);
-  assert.match(source, /addEventListener\('unload',stopBackendMonitor/);
+  assert.doesNotMatch(source, /addEventListener\('unload',stopBackendMonitor/);
 });
