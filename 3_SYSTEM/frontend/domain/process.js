@@ -970,7 +970,7 @@ function processPage(){
 function consultantLayerPage(title,intro,body,layer,stageId){
   const e=currentEng();if(!e)return pageTop(title,'Abre primero un estudio.');
   const integrity=typeof processLayerIntegrityIssues==='function'?processLayerIntegrityIssues(e,layer):[],done=!!processLayerState(e)[layer]&&!integrity.length,tabs={map:'Mapa AS-IS',frictions:'Fricciones',risks:'Riesgos',impact:'Impacto'};
-  const reviewCopy=integrity.length?'<div class="flow-confirm-issues">'+integrity.map(x=>'<span>'+esc(x.message)+'</span>').join('')+'</div>':'<div class="field-help">'+(done?'La capa está validada.':'Puedes guardar y continuar sin confirmar todavía.')+'</div>';
+  const reviewCopy=integrity.length?(layer==='risks'?'<div class="field-help">Hay elementos pendientes. Usa «Completar riesgo» en los riesgos registrados o revisa los datos complementarios situados arriba antes de confirmar.</div>':'<div class="flow-confirm-issues">'+integrity.map(x=>'<span>'+esc(x.message)+'</span>').join('')+'</div>'):'<div class="field-help">'+(done?'La capa está validada.':'Puedes guardar y continuar sin confirmar todavía.')+'</div>';
   const confirm='<div class="flow-confirm '+(integrity.length?'flow-confirm-needs-review':'')+'"><div><b>'+(done?'Revisión confirmada':integrity.length?'Revisión necesaria':'Revisión pendiente')+'</b>'+reviewCopy+'</div><button class="btn '+(done?'btn-outline':'btn-primary')+'" data-confirm-process-layer="'+layer+'">'+(done?'Volver a confirmar':'Confirmar')+' '+tabs[layer]+'</button></div>';
   return pageTop(title,intro,'<button class="btn btn-outline" data-page="proceso">← Ver mapa AS-IS</button>')+(typeof asisConsoleLockNotice==='function'?asisConsoleLockNotice():'')+body+(stageId?layerCanonicalQuestions(e,stageId):'')+confirm;
 }
