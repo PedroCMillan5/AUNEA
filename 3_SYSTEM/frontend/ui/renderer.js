@@ -147,6 +147,15 @@ function saveDuplicateEntryDraftRows(e,fid,rows){
   answerDetails(e)[`${fid}__drafts`]=rows;
   e.updatedAt=now();markDirty('Borradores de reintroducción actualizados');
 }
+function migrateDuplicateEntryDrafts(e,fid='DF051'){
+  const raw=duplicateEntryRawRows(e?.answers?.[fid]),legacy=raw.filter(x=>!duplicateEntryComplete(x));
+  if(!legacy.length)return false;
+  const d=answerDetails(e),stored=normalizeArray(d[`${fid}__drafts`]).filter(x=>x&&typeof x==='object');
+  d[`${fid}__drafts`]=[...legacy,...stored];
+  e.answers[fid]=raw.filter(duplicateEntryComplete);
+  e.updatedAt=now();markDirty('Reintroducciones incompletas migradas a borrador');
+  return true;
+}
 function duplicateEntryCandidates(e){
   const steps=(e.processSteps||[]).filter(x=>x.status!=='SUPERSEDED'),out=[];
   const artifactLabel=v=>optionLabel('OS_ARTIFACT_TYPE',v);
