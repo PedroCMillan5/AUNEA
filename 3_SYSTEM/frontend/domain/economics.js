@@ -220,6 +220,62 @@ function economicCaptureIssues(e,draft){
 }
 // [AUNEA-FE-ECON-OVERLAP-036] END
 
+let __auneaEconomicCandidates=[];
+function economicReviewCandidates(e){
+  const steps=typeof activeSteps==='function'?activeSteps(e):(e.processSteps||[]).filter(x=>x.status!=='SUPERSEDED');
+  const existing=e.economicInputs||[];
+  const existingCovers=(driver,ids)=>{
+    const wanted=new Set(normalizeArray(ids));
+    return existing.some(x=>x.driver_id===driver&&normalizeArray(x.step_ids).some(id=>wanted.has(id)));
+  };
+  const candidates=[];
+  const add=(driver,ids,rationale,questions=[])=>{
+    const stepIds=[...new Set(normalizeArray(ids).filter(Boolean))];
+    if(!stepIds.length||existingCovers(driver,stepIds))return;
+    candidates.push({driver_id:driver,step_ids:stepIds,rationale,review_questions:questions});
+  };
+  const active=steps.filter(s=>Number(s.active_time||0)>0).map(s=>s.id);
+  const wait=steps.filter(s=>Number(s.wait_time||0)>0).map(s=>s.id);
+  const rework=steps.filter(s=>Number(s.rework_time||0)>0).map(s=>s.id);
+  if(active.length)add('ED01',active,'El mapa contiene trabajo manual medido en estos pasos. Conviene revisar si debe cuantificarse como carga anual del proceso, sin asumir que equivale a ahorro.',[
+    '¿Este tiempo representa trabajo real recurrente?','¿El volumen y calendario permiten anualizarlo con evidencia suficiente?'
+  ]);
+  if(rework.length)add('ED05',rework,'El mapa contiene retrabajo en varios pasos. Conviene revisar su impacto anual como un único concepto y evitar contarlo otra vez dentro del tiempo activo general.',[
+    '¿El retrabajo ya está incluido en otro impacto registrado?','¿Qué pasos concentran realmente el retrabajo?'
+  ]);
+  if(wait.length)add('ED13',wait,'El mapa contiene esperas. Conviene cuantificar la exposición anual a espera separadamente del trabajo activo; la espera no se monetiza automáticamente.',[
+    '¿La espera ocurre de forma recurrente?','¿Qué pasos explican la mayor parte del tiempo de espera?'
+  ]);
+  const directLossSteps=[...new Set((typeof activeFrictions==='function'?activeFrictions(e):e.frictions||[])
+    .filter(f=>Number(f.direct_loss?.value||0)>0).flatMap(f=>normalizeArray(f.affected_steps)))];
+  if(directLossSteps.length)add('ED09',directLossSteps,'Hay pérdidas monetarias directas declaradas en fricciones. Conviene revisar si existe un único evento económico validado que deba registrarse, evitando duplicarlo entre fricción e impacto.',[
+    '¿La pérdida está evidenciada y puede anualizarse?','¿Es el mismo evento económico que ya aparece en otra fricción o impacto?'
+  ]);
+  return candidates;
+}
+async function reviewEconomicCandidates(){
+  const e=currentEng();if(!e)return;
+  const steps=typeof activeSteps==='function'?activeSteps(e):[];
+  __auneaEconomicCandidates=economicReviewCandidates(e);
+  const body=__auneaEconomicCandidates.length
+    ?'<div class="notice info"><b>Impactos que conviene revisar con el cliente</b><p>AUNEA reutiliza el mapa, las fricciones y los tiempos ya capturados. Son oportunidades de cuantificación, no resultados económicos confirmados.</p></div><div class="result-list">'
+      +__auneaEconomicCandidates.map((x,i)=>{
+        const names=normalizeArray(x.step_ids).map(id=>steps.find(s=>s.id===id)?.step_name||'').filter(Boolean);
+        const qs=normalizeArray(x.review_questions).filter(Boolean);
+        return '<div class="result-item economic-review-card"><div class="result-item-head"><div><b>'+esc(econDriverLabel(x.driver_id))+'</b>'
+          +'<p>'+esc(x.rationale||'')+'</p>'
+          +(names.length?'<p><b>Dónde revisar:</b> '+names.map(esc).join(', ')+'</p>':'')
+          +(names.length>1?'<p class="field-help">AUNEA ha agrupado el mismo tipo de impacto detectado en varios pasos para evitar recomendaciones repetidas.</p>':'')
+          +(qs.length?'<div class="field-help"><b>Preguntas para validarlo:</b><br>'+qs.map(q=>'• '+esc(q)).join('<br>')+'</div>':'')
+          +'</div><div class="result-actions"><button type="button" class="btn btn-small btn-primary" data-review-economic-candidate="'+i+'">Revisar impacto</button></div></div></div>';
+      }).join('')+'</div>'
+    :'<div class="empty"><h2>No hay nuevos impactos que revisar</h2><p>Los impactos detectables desde el AS-IS ya están registrados o no hay señal suficiente para sugerir otro.</p></div>';
+  openModal('Impactos que conviene revisar',body,closeModal,'Cerrar');
+  document.querySelectorAll('[data-review-economic-candidate]').forEach(b=>b.onclick=()=>{
+    const x=__auneaEconomicCandidates[Number(b.dataset.reviewEconomicCandidate)];
+    if(x){closeModal();addEconomic(x.step_ids,null,false,x)}
+  });
+}
 function economicBuilder(e){
   const steps=typeof activeSteps==='function'?activeSteps(e):[];
   const fmt=v=>v===null||v===undefined||v===''?'—':String(v);
@@ -231,14 +287,15 @@ function economicBuilder(e){
         +'<p>Pasos: '+normalizeArray(x.step_ids).map(id=>steps.find(s=>s.id===id)?.step_name||id).map(esc).join(', ')+'</p>'+(x.driver_id==='ED14'&&x.value!=null?'<p>Rol/recurso: '+esc(labelFrom('OS_ACTOR_ROLE',x.role_or_resource)||x.role_or_resource||'—')+' · Capacidad práctica: '+esc(x.value)+' '+esc(x.unit||'h')+(x.period?' / '+esc(labelFrom('OS_PERIOD',x.period)||x.period):'')+'</p>':'')+'</div>'
         +'<div class="result-actions">'+(legacy?'':'<button class="btn btn-small" data-edit-economic-index="'+i+'">Editar</button>')+'<button class="btn btn-small btn-danger" data-delete-economic-index="'+i+'">Eliminar</button></div></div></div>';
     }).join(''):'<div class="empty"><p>Todavía no hay impactos registrados.</p></div>')+'</div>',
-    '<button type="button" class="btn btn-outline" id="addEconomic" data-add-economic-global>Añadir impacto</button>')
+    '<button type="button" class="btn btn-outline" id="reviewEconomicCandidates">Revisar posibles impactos</button><button type="button" class="btn btn-primary" id="addEconomic" data-add-economic-global>Añadir impacto</button>')
 }
-function addEconomic(preselectedSteps=[],editIndex=null,forceSuggestedScope=false){
+function addEconomic(preselectedSteps=[],editIndex=null,forceSuggestedScope=false,candidate=null){
   if(typeof guardAsisMutation==='function'&&guardAsisMutation())return;
   const eng=currentEng(),steps=typeof activeSteps==='function'?activeSteps(eng):[];
   const roleOptions=[...new Set(steps.map(s=>s.actor).filter(Boolean))].map(value=>({value,label:labelFrom('OS_ACTOR_ROLE',value)||value}));
   const capacityPeriods=typeof fieldOptions==='function'?fieldOptions('OS_PERIOD'):[];
   const existing=editIndex===null?null:eng.economicInputs[editIndex];
+  if(!existing&&candidate?.step_ids?.length&&!preselectedSteps.length)preselectedSteps=normalizeArray(candidate.step_ids);
   if(editIndex!==null&&!existing)return;
   if(existing?.driver_id==='ED15')return toast('Volumen de casos ya pertenece a Demanda (DF021/DF022). Elimina este registro legacy; no puede editarse como impacto económico.');
   const requestedSteps=normalizeArray(preselectedSteps).filter(Boolean),existingSteps=normalizeArray(existing?.step_ids).filter(Boolean);
@@ -280,12 +337,13 @@ function addEconomic(preselectedSteps=[],editIndex=null,forceSuggestedScope=fals
   };
   const preview=value=>Number(value||0).toLocaleString('es-ES',{maximumFractionDigits:2});
   const initialPreview='Comprobando los datos de volumen, tiempo y calendario con el backend…';
-  openModal(existing?'Editar impacto':'Añadir impacto',`<div class="step-groups process-modal-form economic-modal-form">${inheritedContext}
+  const candidateNotice=!existing&&candidate?'<div class="notice info economic-candidate-prefill"><b>Señal para revisar — no es un impacto confirmado</b><p>'+esc(candidate.rationale||'')+'</p>'+(normalizeArray(candidate.review_questions).length?'<div class="field-help"><b>Comprueba antes de guardar:</b><br>'+normalizeArray(candidate.review_questions).map(q=>'• '+esc(q)).join('<br>')+'</div>':'')+'</div>':'';
+  openModal(existing?'Editar impacto':'Añadir impacto',`<div class="step-groups process-modal-form economic-modal-form">${candidateNotice}${inheritedContext}
     <details class="step-group" open><summary>1. Ámbito del impacto</summary><div class="form-grid">
       <div class="field full"><label>Pasos del proceso relacionados</label><div class="choice-grid">${steps.map(s=>`<div class="choice"><input type="checkbox" id="econ_step_${attr(s.id)}" data-econ-step="${attr(s.id)}" ${preselectedSteps.includes(s.id)?'checked':''}><label for="econ_step_${attr(s.id)}">${esc(s.step_name||s.id)}</label></div>`).join('')}</div></div>
     </div></details>
     <details class="step-group" open><summary>2. Qué quieres cuantificar</summary><div class="form-grid">
-      <div class="field full"><label>Concepto económico</label>${econDropdown('econDriver',[{value:'',label:'Selecciona…'},...selectableDrivers.map(d=>({value:d.Economic_Driver_ID,label:econDriverLabel(d.Economic_Driver_ID)}))],existing?.driver_id||'','Selecciona…')}</div>
+      <div class="field full"><label>Concepto económico</label>${econDropdown('econDriver',[{value:'',label:'Selecciona…'},...selectableDrivers.map(d=>({value:d.Economic_Driver_ID,label:econDriverLabel(d.Economic_Driver_ID)}))],existing?.driver_id||candidate?.driver_id||'','Selecciona…')}</div>
       <div class="field full economic-derived-card"><div class="economic-derived-kicker" id="economicResultTitle">Impacto calculado</div><div class="notice info" id="economicDerivedPreview" role="status">${esc(initialPreview)}</div><div class="field-help" id="economicResultHelp">AUNEA reutiliza volumen y tiempos ya capturados. Los cálculos derivados pertenecen al backend.</div></div>
       <div class="field" data-econ-ui="active"><label id="econActiveLabel">Trabajo anual asociado</label>${econAnnualTimeControl('econActive',existing?.annual_active_hours||0,'h')}<div class="field-help" id="econActiveHelp">Si el backend puede derivarlo, el dato se completa automáticamente. En caso contrario requiere validación manual y evidencia.</div></div>
       <div class="field" data-econ-ui="wait"><label>Espera anual cuantificada</label>${econAnnualTimeControl('econWait',existing?.annual_wait_hours||0,'h')}<div class="field-help">Exposición a espera del proceso. No se monetiza automáticamente como trabajo ni como ahorro.</div></div>
