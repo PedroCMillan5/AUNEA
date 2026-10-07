@@ -314,6 +314,7 @@ function validationSummary(e,completion){
   const consistency=typeof preCloseConsistencyReview==='function'?preCloseConsistencyReview(e,completion):{items:[],blockers:[],reviews:[],information:[],clear:true};
   const evidenceField=(schema?.fields||[]).find(f=>f.Field_ID==='DF095');
   const evidencePending=normalizeArray(evidenceField&&typeof effectiveValue==='function'?effectiveValue(evidenceField,e):[]).filter(x=>x&&x!=='No hay evidencias pendientes');
+  const captureMissing=(completion.missing||[]).filter(x=>(x.id||x)!=='DF093'&&(x.id||x)!=='Confirmación AS-IS');
   const primaryCta=snap?'<span class="status green">✓ Cierre confirmado y snapshot generado</span>':(consistency.blockers.length?'':'<button class="btn btn-primary" id="confirmClosingAsIs">Confirmar cierre y generar snapshot</button>');
   const cta=primaryCta+(consistency.blockers.length?'<div class="notice warn"><b>El cierre está bloqueado.</b><br>Resuelve los elementos rojos de la validación de coherencia.</div>':'');
   return section('Confirmación del AS-IS','Revisión factual del estudio; ningún estado se afirma más allá de lo realmente capturado.',
@@ -322,7 +323,7 @@ function validationSummary(e,completion){
       <div class="notice"><b>Fricciones</b><br>${fr.length} detectada(s), ${frWithEvidence} con evidencia registrada</div>
       <div class="notice"><b>Riesgos</b><br>${risks.length} registrado(s), ${risksWithControls} con controles registrados</div>
       <div class="notice"><b>Impactos</b><br>${econ.length} registrado(s) — ${esc(econLine)}</div>
-      <div class="notice"><b>Obligatorios</b><br>${completion.missing.length===0?'✓ completos':`${completion.missing.length} pendiente(s)`}</div>
+      <div class="notice"><b>Obligatorios</b><br>${captureMissing.length===0?'✓ captura completa':`${captureMissing.length} pendiente(s)`}</div>
       <div class="notice"><b>Siguiente paso</b><br>${nextStep?esc(nextStep):'Pendiente de acordar (DF098)'}</div>
       <div class="notice"><b>Snapshot final</b><br>${snap?`v${snap.version} · ${esc(formatDateEs(snap.sealedAt))}`:'Pendiente · se genera al confirmar el cierre'}</div>
     </div>
@@ -359,7 +360,7 @@ function validationSummary(e,completion){
         <div class="notice ${evidencePending.length?'info':'good'}"><b>Evidencias pendientes</b><br>${evidencePending.length}</div>
         <div class="notice"><b>Siguiente acción</b><br>${nextStep?esc(nextStep):'Pendiente de acordar'}</div>
       </div>
-      ${(()=>{const pending=(completion.missing||[]).filter(x=>(x.id||x)!=='DF093'&&(x.id||x)!=='Confirmación AS-IS');return pending.length?'<div class="notice warn"><b>Pendientes antes de Trabajo interno</b><br>'+pending.map(x=>{const label=esc(x.label||x.id||x),stage=x.stage||'';return stage&&stage!=='S09'?'<button class="link-btn" data-goto-stage="'+attr(stage)+'">'+label+'</button>':label}).join(' · ')+'</div>':'<div class="notice good"><b>Captura completa</b><br>No quedan obligatorios pendientes distintos de la confirmación final del cierre.</div>'})()}
+      ${(()=>{const pending=captureMissing;return pending.length?'<div class="notice warn"><b>Pendientes antes de Trabajo interno</b><br>'+pending.map(x=>{const label=esc(x.label||x.id||x),stage=x.stage||'';return stage&&stage!=='S09'?'<button class="link-btn" data-goto-stage="'+attr(stage)+'">'+label+'</button>':label}).join(' · ')+'</div>':'<div class="notice good"><b>Captura completa</b><br>No quedan obligatorios pendientes distintos de la confirmación final del cierre.</div>'})()}
     </div>
     <div class="field-help internal-only" style="margin-top:10px"><b>Notas internas del consultor:</b> ${notes?esc(notes):'—'}</div>
     <div style="margin-top:16px">${cta}</div>`
