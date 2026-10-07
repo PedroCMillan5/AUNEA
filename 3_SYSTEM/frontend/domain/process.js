@@ -955,7 +955,8 @@ function layerCanonicalQuestions(e,stageId){
     return true;
   });
   if(!fields.length)return '';
-  return section('Datos complementarios de la etapa','Sólo aparecen datos cuyo owner no está ya cubierto por el editor estructurado. No se duplica captura de pasos, fricciones, riesgos ni impactos.',`<div class="form-grid">${renderStageFields(fields,e)}</div>`);
+  const block=section('Datos complementarios de la etapa','Sólo aparecen datos cuyo owner no está ya cubierto por el editor estructurado. No se duplica captura de pasos, fricciones, riesgos ni impactos.',`<div class="form-grid">${renderStageFields(fields,e)}</div>`);
+  return stageId==='S06'?'<div class="risk-stage-complementary">'+block+'</div>':block;
 }
 function processPage(){
   const e=currentEng();if(!e)return pageTop('Mapa AS-IS','Abre un estudio para ver su proceso.');
