@@ -165,6 +165,15 @@ test('friction capture never invents evidence type or count period',()=>{
   assert.match(process,/Si registras una pérdida monetaria directa, indica también el periodo/);
 });
 
+test('DF074 follows the Drive canonical long-text contract and removes legacy step-linked metadata',()=>{
+  const schemaSource=read('services/schema.js');
+  assert.match(schemaSource,/df074:\{"Field_ID":"DF074","Pregunta_o_etiqueta_ES":"¿Hay decisiones\/acciones difíciles de revertir\?","Control_UI":"TEXT_LONG"/);
+  assert.match(noReask,/function migrateDf074ToCanonicalText/);
+  assert.match(noReask,/DF074__step/);
+  assert.match(noReask,/DF074__steps/);
+  assert.doesNotMatch(noReask,/Selecciona un nivel de reversibilidad válido/);
+});
+
 test('legacy risks are invalidated instead of trusting old implicit booleans',()=>{
   assert.match(risk,/function migrateRiskCaptureIntegrity/);
   assert.match(risk,/r\.controls_present=null/);
