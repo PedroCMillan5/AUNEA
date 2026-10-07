@@ -135,7 +135,7 @@ class EconomicsEngine:
             item for item in (coverage.items if coverage is not None else [])
             if item.engine == "EconomicsEngine" and item.applicable is True
         ]
-        if coverage is None:
+        if coverage is None or coverage.status == "NOT_EVALUATED":
             coverage_status = "NOT_EVALUATED"
         elif missing:
             coverage_status = "PARTIAL"
@@ -147,6 +147,8 @@ class EconomicsEngine:
         # EO07: row existence is not evidence completeness.
         if coverage_status == "PARTIAL":
             status = "PARTIAL"
+        elif coverage_status == "NOT_EVALUATED":
+            status = "COMPLETE" if ctx.engagement.economics else "INSUFFICIENT"
         elif coverage_status == "NOT_APPLICABLE":
             status = "NOT_APPLICABLE"
         elif ctx.engagement.economics:
@@ -417,7 +419,7 @@ class RecommendationEngine:
 
         # IN-R-03 is critical and should already be covered by preflight. Keep fail-closed behavior
         # for direct/legacy engine callers that bypass the orchestrator.
-        if coverage is not None and "IN-R-03" not in used:
+        if coverage is not None and coverage.status != "NOT_EVALUATED" and "IN-R-03" not in used:
             return result("ACT06", "LOW", why=["Desired future-state outcome is not covered. Further discovery required."])
 
         return result(
