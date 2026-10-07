@@ -1,7 +1,7 @@
 # AUNEA Internal — Auditoría de suficiencia diagnóstica AS-IS
 
 Fecha: 06/10/2026  
-Estado: REVIEW  
+Estado: CLOSED · NATIVE QA PASS  
 Rama: `work/as-is-ux-simplification-20260930`
 
 ## Fuentes
@@ -217,7 +217,23 @@ QA disponible en esta iteración:
 - metadata de trazabilidad completa para 100/100: PASS;
 - invalidation plan presente para 100/100: PASS;
 - tests de regresión añadidos para P0-C/P0-D/P0-E, determinismo, future economics, payback y field-level invalidation;
-- ejecución nativa de pytest/node sigue pendiente porque el entorno de ejecución de esta sesión no puede resolver `github.com` y no hay workflow de Actions asociado al commit de rama.
+- ejecución nativa completada mediante el Acceptance Gate existente, habilitado para esta rama: backend, frontend y Chromium PASS en run 1218 sobre SHA funcional `25ba58e2b6e8336b8cce08b7937991f9f4f4fbbe`.
 
 Criterio operativo resultante:
 `CAPTURE → AS-IS → PAIN → BASELINE ECONOMICS/RISK → RECOMMENDATION → TO-BE ASSUMPTIONS → SCENARIO ECONOMICS/RISK/PRICE → DELTA/RESULTS`, con hipótesis futuras explícitas y outputs trazables al snapshot.
+
+
+## Cierre nativo final · 07/10/2026
+
+Resultado: PASS.
+
+- Se habilitó la rama `work/as-is-ux-simplification-20260930` en el Acceptance Gate canónico; no se creó un sistema paralelo de QA.
+- Backend pytest: PASS.
+- Frontend Node modular/runtime/UX: PASS.
+- Chromium: PASS sobre la UAT única end-to-end y la Vista con cliente real.
+- Durante el QA se detectó y corrigió un defecto real: PG09 sellaba el snapshot pero dependía del autosave diferido; ahora el cierre persiste síncronamente el snapshot antes de permitir Trabajo interno.
+- Se retiraron del runtime los fixtures UAT por fases sustituidos y se archivaron en `9_ARCHIVO/AUNEA_INTERNAL_UAT_PHASED_20260922/`.
+- Los fixtures backend de Solution Specification/System Builder se reconciliaron con el contrato vigente de integridad Step→Risk/EconomicInput y InputCoverage; no se relajó ningún guardrail de producción.
+- Evidencia funcional: Acceptance Gate run 1218 = SUCCESS, SHA `25ba58e2b6e8336b8cce08b7937991f9f4f4fbbe`.
+
+La auditoría P0-A…P0-E queda cerrada a nivel de implementación y QA nativa. La validación empírica con clientes reales sigue siendo una fase posterior y no forma parte de este cierre técnico.
