@@ -1,7 +1,7 @@
 from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Iterable
+from typing import Iterable, Any
 import uuid
 
 from .models import (
@@ -104,12 +104,69 @@ class EconomicsEngine:
 # [AUNEA-BE-ENGINE-ECON-010] END
 
 # [AUNEA-BE-ENGINE-RISK-010] START — Risk Engine
-# PURPOSE: Classify inherent/residual risk level (R0-R3) from already-entered RiskInput rows; never suggests which risks to add.
+# PURPOSE: Own server-side risk responsibilities: review-only S06 candidate discovery plus inherent/residual R0-R3 classification from explicit RiskInput; candidates never classify, score or confirm a risk.
 # SOURCE: DEC-034; RULE_RECOMMENDATION risk gating.
-# INPUTS: EngineContext (EngagementInput.risks).
-# OUTPUTS: RiskResult.
+# INPUTS: EngagementInput AS-IS snapshot for review candidates; EngineContext (EngagementInput.risks) for classification.
+# OUTPUTS: review-only candidate dictionaries; RiskResult.
 # SIDE_EFFECTS: none.
 # CHANGE_RISK: CRITICAL.
+class RiskCandidateEngine:
+    """Review-only S06 candidate discovery; category and score remain explicit RiskInput capture."""
+    @staticmethod
+    def _arr(v: Any) -> list[Any]:
+        if v in (None, ""): return []
+        return v if isinstance(v, list) else [v]
+
+    def run(self, e: EngagementInput) -> dict[str, list[dict[str, Any]]]:
+        answers=e.questionnaire_answers
+        steps=[x for x in self._arr(answers.get("_process_steps")) if isinstance(x,dict) and x.get("status")!="SUPERSEDED"]
+        frictions=[x for x in self._arr(answers.get("_frictions")) if isinstance(x,dict) and x.get("status")!="SUPERSEDED"]
+        risks=[x for x in self._arr(answers.get("_risks")) if isinstance(x,dict)]
+        reviewed={str(x.get("_candidate_id")) for x in risks if x.get("_candidate_id")}
+        out=[]
+
+        def add(cid,title,step_ids,description,rationale,questions,signals):
+            if cid in reviewed:return
+            out.append({"candidate_id":cid,"title":title,"step_ids":list(dict.fromkeys(step_ids)),
+                "suggested_description":description,"rationale":rationale,
+                "review_questions":questions,"source_signals":signals})
+
+        for s in steps:
+            sid=str(s.get("id") or "")
+            if sid and str(s.get("step_type") or "")=="ST05":
+                add(f"APPROVAL:{sid}","Control de aprobación",[sid],
+                    "Una operación podría continuar sin la aprobación requerida o sin que quede correctamente acreditada.",
+                    "El flujo contiene un paso de aprobación. Conviene validar qué ocurriría si la autorización faltara, llegara tarde o no quedara trazada.",
+                    ["¿Qué condición obliga a aprobar?","¿Quién debe aprobar?","¿Qué impide continuar sin aprobación?","¿Qué evidencia queda de la autorización?"],
+                    ["RT_PROCESS_STEP.step_type=ST05"])
+
+        data_types={"P02","P03","P11","P13"}
+        by_step={}
+        for fr in frictions:
+            ftype=str(fr.get("friction_type") or "")
+            if ftype not in data_types:continue
+            for sid in self._arr(fr.get("affected_steps")):
+                by_step.setdefault(str(sid),[]).append(ftype)
+        for sid,types in by_step.items():
+            add(f"DATA:{sid}","Error operativo por datos",[sid],
+                "Un dato incompleto, incorrecto o reintroducido manualmente podría provocar una operación o registro incorrecto.",
+                "En este paso ya hay una fricción confirmada relacionada con información, errores o reintroducción manual. Conviene validar si puede materializarse en una consecuencia de riesgo.",
+                ["¿Qué error concreto podría producirse?","¿Cómo se detectaría?","¿Qué consecuencia tendría si no se detecta?","¿Qué control existe hoy para impedirlo?"],
+                sorted(set(types)))
+
+        for fr in frictions:
+            if str(fr.get("friction_type") or "")!="P15":continue
+            ids=[str(x) for x in self._arr(fr.get("affected_steps")) if x]
+            if ids:
+                add("HANDOFF:"+"|".join(sorted(ids)),"Pérdida de información entre herramientas",ids,
+                    "La información podría perderse, quedar desactualizada o no coincidir al pasar manualmente entre herramientas.",
+                    "Existe una fricción confirmada de herramientas fragmentadas. Conviene validar si el traspaso manual puede generar una consecuencia material.",
+                    ["¿Qué información cambia de herramienta?","¿Cómo se comprueba que ambos sistemas coinciden?","¿Qué ocurre si el traspaso falla o queda incompleto?"],
+                    ["P15"])
+        dedup={}
+        for x in out:dedup[(x["title"],tuple(sorted(x["step_ids"])))]=x
+        return {"candidates":list(dedup.values())}
+
 class RiskEngine:
     def _level(self, r) -> str:
         if r.critical_trigger or (r.sensitive_or_high_impact and r.impact_1_5 >= 4): return "R3"
