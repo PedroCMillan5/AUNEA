@@ -67,10 +67,9 @@ function canonicalFieldValidationIssue(f,v,e){
       if((v.from&&!stepIds.has(String(v.from)))||(v.to&&!stepIds.has(String(v.to))))return 'Uno de los pasos seleccionados ya no está activo.';
     }
     if(control==='STEP_PAIR_LIST_SELECTOR'){
-      // Incomplete rows are UI drafts, not confirmed diagnostic findings. They must not block the
-      // layer or activate downstream logic until datum + source + destination are all present.
-      const rows=(Array.isArray(v)?v:(v&&typeof v==='object'?[v]:[])).filter(row=>!!String(row?.data||'').trim()&&!!row?.from&&!!row?.to);
+      const rows=Array.isArray(v)?v:(v&&typeof v==='object'?[v]:[]);
       for(const row of rows){
+        if(!String(row?.data||'').trim()||!row?.from||!row?.to)return 'Cada reintroducción debe indicar la información afectada, el paso de origen y el paso de destino.';
         if(String(row.from)===String(row.to))return 'El origen y el destino de una reintroducción deben ser pasos distintos.';
         if(!stepIds.has(String(row.from))||!stepIds.has(String(row.to)))return 'Una reintroducción contiene un paso que ya no está activo.';
       }
