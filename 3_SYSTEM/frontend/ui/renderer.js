@@ -255,7 +255,7 @@ function nextStepWithOwnerDate(f,opts,e){
   return `<div class="nextstep-inline" data-nextstep-row="${fid}">
     <div class="nextstep-cell nextstep-action">${actionSelect}</div>
     <div class="nextstep-cell nextstep-owner"><span class="nextstep-cell-label">Responsable</span><input class="detail-input" data-nextstep-owner="${fid}" value="${attr(owner)}" readonly aria-readonly="true" title="Consultor AUNEA seleccionado en la cabecera"></div>
-    <div class="nextstep-cell nextstep-date"><span class="nextstep-cell-label">Fecha objetivo</span><input type="date" data-nextstep-date="${fid}" value="${attr(dateVal)}"></div>
+    <div class="nextstep-cell nextstep-date"><span class="nextstep-cell-label">Fecha objetivo</span><input type="date" lang="es-ES" data-nextstep-date="${fid}" value="${attr(dateVal)}"><small class="date-es-preview" data-nextstep-date-preview="${fid}">${dateVal?esc(formatDateEs(dateVal)):''}</small></div>
   </div>${otherBox}`;
 }
 function nextStepActionText(fid,e){
@@ -271,6 +271,8 @@ function syncNextStep(fid){
   const d=answerDetails(e),actionText=nextStepActionText(fid,e),owner=currentSelectedConsultantName(),dateVal=d[`${fid}__date`]||'';
   d[`${fid}__owner`]=owner;
   const dateEs=dateVal?formatDateEs(dateVal):'';
+  const preview=typeof document!=='undefined'?document.querySelector(`[data-nextstep-date-preview="${fid}"]`):null;
+  if(preview)preview.textContent=dateEs;
   setAnswer(fid,(actionText&&owner&&dateEs)?`${actionText} — ${owner} — ${dateEs}`:'');
 }
 
@@ -328,7 +330,7 @@ function renderControl(f,val,opts,e){
   if(c==='FRICTION_MULTISELECT_PRIORITY')return frictionPriority(fid,e,val);
   if(c==='BOOLEAN_UNKNOWN_WITH_SCOPE')return permissionWithScope(fid,opts,val);
   if(c==='BOOLEAN_UNKNOWN'||c==='SEGMENTED'||c==='SEGMENTED_SCALE')return segmented(fid,opts,val);
-  if(c==='DATE_WITH_UNKNOWN')return `<div class="compound-control"><input type="date" data-answer="${fid}" value="${attr(val||'')}"><button type="button" class="btn btn-small" data-set-unknown="${fid}">No disponible</button></div>`;
+  if(c==='DATE_WITH_UNKNOWN')return `<div class="compound-control date-with-preview"><input type="date" lang="es-ES" data-answer="${fid}" value="${attr(val||'')}"><button type="button" class="btn btn-small" data-set-unknown="${fid}">No disponible</button>${val?'<small class="date-es-preview">'+esc(formatDateEs(val))+'</small>':''}</div>`;
   if(c.startsWith('NUMBER')||c.startsWith('PERCENT'))return numberCompound(f,val);
   // DF080/DF081: Ask_Mode:CONDITIONAL_ASK means "ask when it can't be derived and it's material" — no
   // governed formula aggregates manual_actions=CHASE/REPORT or friction types P06/P07/P09/P12/P14/P18
@@ -344,6 +346,10 @@ function renderControl(f,val,opts,e){
   if(c==='RISK_BUILDER')return structuredRedirect('Riesgo estructurado','diagnostico');
   if(['ROLE_CAPACITY_TABLE','ROLE_RATE_TABLE','MONETARY_EVENT_TABLE','TOOL_COST_TABLE'].includes(c))return structuredRedirect('Input económico estructurado','diagnostico');
   if(c==='FRICTION_TYPE_SELECT_WITH_CLIENT_LABEL'||c==='EXCEPTION_BUILDER')return structuredRedirect('Registro estructurado','proceso');
+  if(c==='SYSTEM_GENERATED_CHECKLIST'){
+    const items=normalizeArray(val).filter(Boolean);
+    return '<div class="readonly-checklist">'+(items.length?items.map(x=>'<div class="readonly-checklist-item">'+esc(x)+'</div>').join(''):'<div class="readonly-checklist-item">Sin elementos pendientes</div>')+'</div>';
+  }
   if(c.startsWith('DERIVED')||c.startsWith('SYSTEM_GENERATED'))return `<div class="readonly-box">${esc(val||'Se completará automáticamente cuando existan datos suficientes.')}</div>`;
   return `<div class="notice warn control-error"><strong>Control canónico no renderizado:</strong> ${esc(c||'SIN_CONTROL')} · ${esc(fid)}. No se degrada a texto libre.</div>`;
 }
