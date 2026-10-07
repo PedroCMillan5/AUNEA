@@ -438,7 +438,10 @@ function renderQuestion(f,e){
   let body='';
   if(mode==='DERIVE_AND_CONFIRM'){
     const src=reuseSourceInfo(f),confirmed=isDerivedConfirmed(f,e,reuse),derivedText=valuePresent(reuse)?formatContextValue(f,reuse):'Sin elementos derivados';
-    const confirmUi=confirmed?'<span class="status green">Derivación confirmada</span>':`<button type="button" class="btn btn-small btn-primary" data-confirm-derived="${f.Field_ID}">Confirmar valor</button>`;
+    const riskDerived=['DF066','DF067'].includes(f.Field_ID);
+    const confirmUi=confirmed
+      ?'<span class="status green">'+(riskDerived?'✓ Confirmado':'Derivación confirmada')+'</span>'
+      :`<button type="button" class="btn btn-small btn-primary" data-confirm-derived="${f.Field_ID}">${riskDerived?'Confirmar información':'Confirmar valor'}</button>`;
     const editUi=src.page?`<button type="button" class="btn btn-small" data-goto-source="${attr(src.page)}">Revisar en ${esc(pageLabelEs(src.page))}</button>`:'';
     const structured=structuredRiskDerivedReviewHtml(f.Field_ID,e);
     body=structured
