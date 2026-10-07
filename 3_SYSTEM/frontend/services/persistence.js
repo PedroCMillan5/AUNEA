@@ -139,7 +139,12 @@ window.addEventListener('storage',ev=>{
     const incoming=preserveMissingProcessSteps(normalizeRecoveredState(JSON.parse(ev.newValue)),__auneaSyncedState);
     const localUi=Object.fromEntries(RECOVERY_TAB_LOCAL.map(k=>[k,state[k]]));
     const flowCanvas=document.querySelector('.flow-canvas');
-    const viewport=flowCanvas?{left:flowCanvas.scrollLeft,top:flowCanvas.scrollTop}:null;
+    const processMain=document.querySelector('.client-process-main');
+    const viewport=flowCanvas?{
+      left:flowCanvas.scrollLeft,
+      top:flowCanvas.scrollTop,
+      mainTop:processMain?.scrollTop||0
+    }:null;
     // Store the actual accepted remote baseline before applying per-window navigation.
     __auneaSyncedState=recoveryClone(incoming);
     const selectedEngagement=(state.engagements||[]).find(e=>e.id===state.activeEngagementId);
@@ -149,10 +154,12 @@ window.addEventListener('storage',ev=>{
     if(incomingActive&&localProcessTab)incomingActive.processTab=localProcessTab;
     if(isProcessEditorWindow())state.activePage='proceso';
     render();
-    if(viewport)requestAnimationFrame(()=>{
+    if(viewport)requestAnimationFrame(()=>requestAnimationFrame(()=>{
       const next=document.querySelector('.flow-canvas');
+      const nextMain=document.querySelector('.client-process-main');
       if(next){next.scrollLeft=viewport.left;next.scrollTop=viewport.top}
-    });
+      if(nextMain)nextMain.scrollTop=viewport.mainTop;
+    }));
   }catch(err){console.error('AUNEA_CROSS_TAB_SYNC_ERROR',err)}
 });
 // [AUNEA-FE-PERSIST-SYNC-051] END
