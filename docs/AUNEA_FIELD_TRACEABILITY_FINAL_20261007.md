@@ -2,7 +2,7 @@
 
 Fecha: 07/10/2026  
 Rama: `work/as-is-ux-simplification-20260930`  
-Estado: IMPLEMENTED / QA STATIC PASS / NATIVE TEST RUN PENDING
+Estado: IMPLEMENTED / NATIVE QA PASS / FUNCTIONAL ACCEPTANCE GATE SUCCESS
 
 ## Criterio de aceptación
 
@@ -123,3 +123,14 @@ Cada Field_ID debe conservar: primera captura/derivación, owner de escritura, r
 - Scenario_ID y Assumption_Set_Hash son deterministas.
 - Payback usa únicamente ahorro de caja realizable explícito; capacidad y espera permanecen separadas.
 - Los cambios por Field_ID conservan el plan downstream STALE; el output oficial del snapshot anterior deja de considerarse vigente.
+
+
+## QA nativa de cierre
+
+- AUNEA Internal V2 REVIEW Acceptance Gate run 1218: SUCCESS.
+- SHA funcional validado: `25ba58e2b6e8336b8cce08b7937991f9f4f4fbbe`.
+- Backend: SUCCESS.
+- Frontend modular/UX regression: SUCCESS.
+- Chromium end-to-end sobre la UAT única y el editor cliente real: SUCCESS.
+- La UAT visible usa un único engagement sintético de recepción/aprobación de facturas; los fixtures phased UAT1/UAT2 han sido retirados del runtime y conservados en `9_ARCHIVO/AUNEA_INTERNAL_UAT_PHASED_20260922/`.
+- PG09 es el único cierre que sella el snapshot; las cuatro capas AS-IS sólo habilitan la validación final. El cierre PG09 persiste el snapshot síncronamente antes de Trabajo interno.
