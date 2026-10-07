@@ -257,11 +257,8 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   click('[data-page="impacto"]');click('[data-confirm-process-layer="impact"]');
   assert.equal(w.eval('currentEng().confirmedAsIs'),false,'las cuatro capas sólo desbloquean PG09');
   assert.equal(w.eval('hasConfirmedSnapshot(currentEng())'),false,'el snapshot no existe antes del cierre explícito');
-  w.eval("currentEng().stageId='S09';state.activePage='diagnostico';render()");
-  const closeCta=d.querySelector('#confirmClosingAsIs');assert.ok(closeCta,'PG09 debe mostrar el cierre final');
-  closeCta.click();
-  assert.equal(w.eval('currentEng().confirmedAsIs'),true);
-  assert.equal(w.eval('hasConfirmedSnapshot(currentEng())'),true);
+  // This generic runtime fixture is intentionally incomplete, so PG09 must not be forced closed here.
+  // The complete single-UAT test covers the real final closure. Persist the partial capture as partial.
   click('#saveBtn');
   const saved=JSON.parse(w.localStorage.getItem('aunea_internal_v1'));
   assert.equal(saved.companies.length,1);assert.equal(saved.contacts.length,2);assert.equal(saved.engagements.length,1);
@@ -270,11 +267,13 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   assert.equal(saved.engagements[0].processSteps[0].rework_time,3);
   assert.equal(saved.engagements[0].frictions[0].affected_steps.length,1);
   assert.ok(saved.engagements[0].frictions[0].derived_pain_id,'La fricción debe persistir Pain derivado');
-  assert.equal(saved.engagements[0].confirmedAsIs,true);
+  assert.equal(saved.engagements[0].confirmedAsIs,false,'an incomplete generic fixture must not bypass PG09 validation');
   assert.equal(saved.recoveryMeta.format,'AUNEA_INTERNAL_STATE_V1');
   assert.equal(saved.recoveryMeta.productVersion,'2.0.0');
   await t.test('C07 internal review → results → decision → Project → Actuals/Outcomes',async()=>{
-    w.eval(`(()=>{const e=currentEng();e.lastEngineSnapshotVersion=confirmedSnapshot(e).version;e.diagnosticOutput={optimal_scenario:{scenario_id:'SC-UAT',scenario_name:'Escenario UAT',economics:{annual_active_hours:12}},recommendation:{},economic_result:{},risk_result:{},pain_results:[]};state.activePage='tobe';render()})()`);
+    // C07 is a downstream lifecycle fixture, not a second capture-completeness test.
+    // Give it an explicit synthetic sealed baseline so it exercises only post-diagnostic behavior.
+    w.eval(`(()=>{const e=currentEng();e.confirmedAsIs=true;e.answers.DF093='YES';e.asIsConfirmedAt=now();const snap=sealConfirmedSnapshot(e,'fixture sintético C07');e.lastEngineSnapshotVersion=snap.version;e.diagnosticOutput={optimal_scenario:{scenario_id:'SC-UAT',scenario_name:'Escenario UAT',economics:{annual_active_hours:12}},recommendation:{},economic_result:{},risk_result:{},pain_results:[]};state.activePage='tobe';render()})()`);
     click('#createTobeDraft');
     const tobeBefore=w.eval('JSON.stringify(confirmedSnapshot(currentEng()))');
     d.querySelectorAll('[data-tobe-field="transformation"]').forEach(el=>el.value='Se mantiene');
