@@ -152,11 +152,12 @@ test('Console keeps the reference identifier without a legacy mode wrapper',()=>
 test('private AS-IS pages defensively keep one layer confirmation bar in runtime',()=>{
   assert.match(stateJs,/function dedupeProcessLayerConfirmations\(\)/);
   assert.match(stateJs,/\['pasos','fricciones','riesgos','impacto'\]\.includes\(state\.activePage\)/);
-  assert.match(stateJs,/querySelectorAll\('\.flow-confirm'\)/);
-  assert.match(stateJs,/bars\.slice\(1\)\.forEach/);
+  assert.match(stateJs,/document\.querySelectorAll\('\[data-confirm-process-layer="'\+layer\+'"\]'\)/);
+  assert.match(stateJs,/buttons\.slice\(1\)\.forEach/);
   assert.match(stateJs,/dedupeProcessLayerConfirmations\(\);/);
   assert.match(stateJs,/function watchProcessLayerConfirmations\(\)/);
   assert.match(stateJs,/MutationObserver/);
+  assert.match(stateJs,/observe\(document\.body,\{childList:true,subtree:true\}\)/);
 });
 test('C01 closes PG01 interaction detail: compound phone, canonical fold title and a real advance gate', () => {
   // The fold carries the name the session actually uses for DF004/DF007-DF010.
