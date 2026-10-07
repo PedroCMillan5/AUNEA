@@ -196,23 +196,11 @@
     {
       "order": 33,
       "layer": "uat",
-      "path": "uat/crm-fixtures.js",
-      "block_id": "AUNEA-UAT-CRM-PHASE1-070"
-    },
-    {
-      "order": 34,
-      "layer": "uat",
-      "path": "uat/study-fixtures.js",
-      "block_id": "AUNEA-UAT-STUDY-PHASE2-090"
-    },
-    {
-      "order": 35,
-      "layer": "uat",
       "path": "uat/endtoend-cases.js",
       "block_id": "AUNEA-UAT-ENDTOEND-110"
     },
     {
-      "order": 36,
+      "order": 34,
       "layer": "boot",
       "path": "boot.js",
       "block_id": "AUNEA-FE-BOOT-INIT-010"
