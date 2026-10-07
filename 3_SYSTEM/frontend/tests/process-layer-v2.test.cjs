@@ -157,6 +157,15 @@ test('client layer exposes only the matching per-step add action and linked badg
   assert.match(process,/currentEng\(\)\.processTab='impacto'/);
 });
 
+test('decision NO route exits from bottom before turning and decision overlays use full card width',()=>{
+  assert.match(process,/const noStartX=dr\.left\+dr\.width\/2-rect\.left/);
+  assert.match(process,/const noStartY=dr\.bottom-rect\.top/);
+  assert.match(process,/appendPath\('M'\+noStartX\+' '\+noStartY\+'V'\+lowerY/);
+  assert.match(css,/\.process-graph-decision-cell\{align-items:stretch\}/);
+  assert.match(css,/\.graph-decision-inline\{position:relative;width:100%;min-width:0/);
+  assert.match(css,/\.graph-decision-inline>\.process-node-links\{[^}]*width:100%/);
+});
+
 test('client graph stays within the editor viewport and decision routes explain their destination',()=>{
   const {ctx,e}=setup();
   e.processSteps=[
