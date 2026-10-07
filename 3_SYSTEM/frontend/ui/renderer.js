@@ -302,8 +302,9 @@ function renderControl(f,val,opts,e){
   if(c==='DROPDOWN_WITH_OWNER_DATE')return nextStepWithOwnerDate(f,opts,e);
   if(fid==='DF074'&&c==='DROPDOWN_WITH_STEP_LINK'){
     const d=answerDetails(e),legacyMulti=normalizeArray(d.DF074__steps||e.answers?.DF074__steps),linked=d.DF074__step||legacyMulti[0]||'';
-    return '<div class="linked-field-block"><div class="linked-step-label">Nivel de reversibilidad</div>'+canonicalSelect(fid,opts,val)
-      +'<div class="linked-step-group"><div class="linked-step-label">¿En qué paso aplica este nivel?</div>'+linkedStepSingle('DF074__step',e,linked)+'</div></div>';
+    return '<div class="linked-field-block risk-reversibility-control"><div class="linked-step-label">Nivel de reversibilidad del proceso</div>'+canonicalSelect(fid,opts,val)
+      +'<div class="linked-step-group"><div class="linked-step-label">Paso donde esta condición es más relevante</div>'+linkedStepSingle('DF074__step',e,linked)+'</div>'
+      +'<div class="field-help">Este dato es una señal global del proceso. La reversibilidad específica de cada riesgo se confirma dentro de su ficha.</div></div>';
   }
   if(c==='DROPDOWN_WITH_STEP_LINK')return canonicalSelect(fid,opts,val)+stepSingle(`${fid}__step`,e,answerDetails(e)[`${fid}__step`]||'');
   if(c==='COMBOBOX_WITH_DETAIL')return selectWithConditionalDetail(fid,opts,val,'Detalle / nombre concreto');
