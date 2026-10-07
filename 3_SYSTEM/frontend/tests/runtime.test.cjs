@@ -258,6 +258,13 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   click('[data-page="fricciones"]');click('[data-confirm-process-layer="frictions"]');
   click('[data-page="riesgos"]');click('[data-confirm-process-layer="risks"]');
   click('[data-page="impacto"]');click('[data-confirm-process-layer="impact"]');
+  assert.equal(w.eval('currentEng().confirmedAsIs'),false,'las cuatro capas sólo desbloquean PG09');
+  assert.equal(w.eval('hasConfirmedSnapshot(currentEng())'),false,'el snapshot no existe antes del cierre explícito');
+  w.eval("currentEng().stageId='S09';state.activePage='diagnostico';render()");
+  const closeCta=d.querySelector('#confirmClosingAsIs');assert.ok(closeCta,'PG09 debe mostrar el cierre final');
+  closeCta.click();
+  assert.equal(w.eval('currentEng().confirmedAsIs'),true);
+  assert.equal(w.eval('hasConfirmedSnapshot(currentEng())'),true);
   click('#saveBtn');
   const saved=JSON.parse(w.localStorage.getItem('aunea_internal_v1'));
   assert.equal(saved.companies.length,1);assert.equal(saved.contacts.length,2);assert.equal(saved.engagements.length,1);
