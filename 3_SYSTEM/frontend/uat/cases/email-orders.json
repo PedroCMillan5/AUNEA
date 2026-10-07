@@ -449,7 +449,10 @@
   "economics": {
     "rate": 23,
     "toolAnnual": 1080,
-    "toolBasis": "Asignación sintética de 90 €/mes del módulo ERP de pedidos a este proceso; no se considera ahorro eliminable."
+    "toolBasis": "Asignación sintética de 90 €/mes del módulo ERP de pedidos a este proceso; no se considera ahorro eliminable.",
+    "capacityRole": "OPERATIONS",
+    "capacityHours": 1600,
+    "capacityPeriod": "YEAR"
   },
   "finding": [
     1,
