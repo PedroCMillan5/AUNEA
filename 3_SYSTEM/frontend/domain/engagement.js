@@ -65,7 +65,7 @@ function engagementAtLeast(e, status) {
 // Session Display reads live during the 90 minutes, and it is rebuilt on every render. This one is
 // the sealed record of what was actually confirmed when PG09 closed. Internal work reads it, so a
 // later edit to the Company or Contact master cannot silently change what the diagnosis was run on.
-const ENGAGEMENT_SNAPSHOT_SCHEMA = 2;
+const ENGAGEMENT_SNAPSHOT_SCHEMA = 3;
 
 function deepFreeze(o) {
   if (o && typeof o === 'object' && !Object.isFrozen(o)) {
@@ -75,6 +75,30 @@ function deepFreeze(o) {
   return o;
 }
 function frozenCopy(v) { return deepFreeze(JSON.parse(JSON.stringify(v ?? null))); }
+function migrateLegacyPrematureClosures(engagements=[]){
+  let changed=0;
+  (engagements||[]).forEach(e=>{
+    const history=e.confirmedSnapshots||[];
+    const hasFinal=history.some(s=>s?.finalClosure===true);
+    const hasLegacySeal=history.length>0&&!hasFinal;
+    if(!hasLegacySeal)return;
+    e.answers=e.answers||{};
+    e.confirmedAsIs=false;
+    e.answers.DF093='';
+    e.asIsConfirmedAt=null;
+    e.confirmedSnapshot=null;
+    // The old implementation advanced the lifecycle when the fourth AS-IS layer was confirmed.
+    // If no internal result exists yet, return that accidental advance to Sesión 1 so PG09 can close it explicitly.
+    if(engagementStatus(e)==='Trabajo interno'&&!e.diagnosticOutput&&!(e.scenarioResults||[]).length){
+      const from=e.status;
+      e.status='Sesión 1';
+      e.lifecycleLog=[...(e.lifecycleLog||[]),{from,to:'Sesión 1',at:now(),reason:'migración: snapshot legacy sellado antes del cierre explícito de PG09'}];
+    }
+    changed++;
+  });
+  return changed;
+}
+
 
 // The data used at that moment, copied because it is history. Company and Contact keep their own
 // live records; what is copied here is only the fields the diagnosis was built on, so the snapshot
@@ -84,6 +108,7 @@ function buildConfirmedSnapshot(e) {
   const contacts = (e.contactIds || []).map(contactById).filter(Boolean);
   return {
     schemaVersion: ENGAGEMENT_SNAPSHOT_SCHEMA,
+    finalClosure: true,
     version: (e.confirmedSnapshots || []).length + 1,
     sealedAt: now(),
     engagementId: e.id,
@@ -137,8 +162,9 @@ function sealConfirmedSnapshot(e, reason = 'AS-IS confirmado en PG09') {
 // as the live handoff. Editing any confirmed layer hides the old snapshot until re-confirmation.
 function confirmedSnapshot(e) {
   if (!e || e.confirmedAsIs !== true) return null;
-  const history = e.confirmedSnapshots;
-  return (history && history.length) ? history[history.length - 1] : null;
+  const history = e.confirmedSnapshots || [];
+  for(let i=history.length-1;i>=0;i--)if(history[i]?.finalClosure===true)return history[i];
+  return null;
 }
 function hasConfirmedSnapshot(e) { return !!confirmedSnapshot(e); }
 // What internal work reads. Identity and everything that happens after PG09 — engine gates, outputs,
