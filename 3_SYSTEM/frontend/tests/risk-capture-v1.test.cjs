@@ -73,6 +73,12 @@ test('risk page exposes incomplete state once, inside each registered risk, with
 });
 
 
+test('risk review groups repeated conceptual recommendations across steps',()=>{
+  assert.match(code,/const grouped=new Map\(\)/);
+  assert.match(code,/AUNEA ha agrupado el mismo escenario detectado en varios pasos/);
+  assert.match(code,/_candidate_ids/);
+});
+
 test('risk review keeps candidate scoring manual',()=>{
   assert.match(code,/Revisar posibles riesgos/);
   assert.match(code,/OS_SCALE_1_5/);
