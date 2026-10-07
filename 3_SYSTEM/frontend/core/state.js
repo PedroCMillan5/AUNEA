@@ -261,6 +261,9 @@ function render(){
   const fn=pages[state.activePage]||pages.inicio;
   document.getElementById('content').innerHTML=fn();
   bindCommon();postBind();
+  // Defensive runtime guard: each private AS-IS layer must expose exactly one confirmation bar.
+  // This removes any duplicate legacy/runtime insertion without changing the layer model or confirmation state.
+  if(typeof dedupeProcessLayerConfirmations==='function')dedupeProcessLayerConfirmations();
   if(typeof applyAsisConsoleEditLock==='function')applyAsisConsoleEditLock();
   if(previousViewport){
     // The routed graph is measured/drawn in a requestAnimationFrame by process.js.
@@ -279,6 +282,17 @@ function render(){
   // shared window frozen on whichever stage it was opened at. The spec is explicit that a manual
   // refresh must not be the pattern of use (90MIN UI SPEC §3.3).
   if(typeof publishSessionSnapshot==='function')publishSessionSnapshot(currentEng());
+}
+function dedupeProcessLayerConfirmations(){
+  if(typeof document==='undefined'||!['pasos','fricciones','riesgos','impacto'].includes(state.activePage))return;
+  const content=document.getElementById('content');if(!content)return;
+  const layer={pasos:'map',fricciones:'frictions',riesgos:'risks',impacto:'impact'}[state.activePage];
+  const buttons=[...content.querySelectorAll('[data-confirm-process-layer="'+layer+'"]')];
+  buttons.slice(1).forEach(button=>{
+    const bar=button.closest('.flow-confirm');
+    if(bar&&bar.parentNode)bar.remove();
+    else button.remove();
+  });
 }
 function setPage(page){if(['diagnostico','proceso','pasos','fricciones','riesgos','impacto','resultados','tobe','comparacion','revision','modoresultados','implementacion','recomendacion','escenarios','quote'].includes(page)&&!currentEng()){toast('Abre o crea un estudio antes.');state.activePage='estudios';render();return}const e=currentEng(),previousPage=state.activePage;if(page==='diagnostico'&&e&&typeof advanceEngagementTo==='function')advanceEngagementTo(e,'Sesión 1','apertura de la primera sesión');if(page==='proceso'&&e&&!['cliente','fricciones','riesgos','impacto'].includes(e.processTab))e.processTab='cliente';state.activePage=page;render()}
 function goToProcessFromStage(){const e=currentEng();if(e){state.returnTo={page:'diagnostico',stageId:e.stageId};e.processTab='cliente'}setPage('proceso')}
