@@ -165,15 +165,17 @@ test('decision gateway and YES card share the main row while NO stays below',()=
   assert.match(process,/yesBottom\+34/);
 });
 
-test('decision NO route exits below the gateway, clears the YES card, and overlays never hide the layer action',()=>{
+test('decision NO route exits below the gateway, clears the YES card, and overlays stay above the gateway',()=>{
   assert.match(process,/const noStartX=dr\.left\+dr\.width\/2-rect\.left/);
   assert.match(process,/const noStartY=dr\.bottom-rect\.top/);
   assert.match(process,/const yesBottom=yesRect\?yesRect\.bottom-rect\.top:mainY/);
-  assert.match(process,/Math\.max\(mainY\+94,noStartY\+64,yesBottom\+28\)/);
+  assert.match(process,/Math\.max\(mainY\+94,noStartY\+64,yesBottom\+34\)/);
   assert.match(process,/appendPath\('M'\+noStartX\+' '\+noStartY\+'V'\+lowerY/);
   assert.match(css,/\.process-graph-decision-cell\{align-items:stretch\}/);
-  assert.match(css,/\.graph-decision-inline>\.process-node-links\{[^}]*top:66px[^}]*width:100%/);
-  assert.match(css,/\.graph-decision-gateway\{[^}]*var\(--decision-link-count,0\)/);
+  assert.match(css,/\.graph-decision-inline \.flow-step-tools\{[^}]*top:-126px/);
+  assert.match(css,/\.graph-decision-inline>\.process-node-actions\{[^}]*top:-94px/);
+  assert.match(css,/\.graph-decision-inline>\.process-node-links\{[^}]*top:-58px[^}]*width:100%/);
+  assert.match(css,/\.graph-decision-gateway\{[^}]*top:calc\(50% - 29px\)/);
   assert.match(css,/body\.mode-process-editor \.process-graph-cell \.flow-step\{[^}]*max-height:none/);
   assert.doesNotMatch(css,/\.process-node-links \.friction-badge:before/);
 });
@@ -224,7 +226,8 @@ test('render retains actual horizontal and vertical map scroll across an in-plac
   const document={querySelector:q=>q==='.flow-canvas'?canvas:q==='[data-process-engagement]'?workspace:null,
     getElementById:q=>q==='content'?content:null,documentElement:{classList:{toggle(){}}},body:{classList:{toggle(){}}}};
   const frames=[];
-  const ctx={document,state:{activePage:'proceso'},pages:{proceso:()=>'<div>Mapa AS-IS</div>'},
+  const window={scrollX:0,scrollY:480,scrollTo(x,y){this.scrollX=x;this.scrollY=y}};
+  const ctx={document,window,state:{activePage:'proceso'},pages:{proceso:()=>'<div>Mapa AS-IS</div>'},
     currentEng:()=>study,renderNav(){},updateHeader(){},bindCommon(){},postBind(){},
     requestAnimationFrame:fn=>{frames.push(fn)},publishSessionSnapshot(){},toast(){},advanceEngagementTo(){},isProcessEditorWindow(){return false}};
   vm.createContext(ctx);vm.runInContext(snippet,ctx);
@@ -235,6 +238,7 @@ test('render retains actual horizontal and vertical map scroll across an in-plac
   frames.shift()();assert.equal(frames.length,1);
   frames.shift()();
   assert.equal(canvas.scrollLeft,640);assert.equal(canvas.scrollTop,70);
+  assert.equal(window.scrollY,480,'document vertical scroll must not jump to the top during map redraw');
   assert.equal(study.processTab,'impacto');
   ctx.state.activePage='diagnostico';ctx.pages.diagnostico=()=>'<div>Diagnóstico</div>';
   ctx.setPage('proceso');
