@@ -942,8 +942,8 @@ function processPage(){
 function consultantLayerPage(title,intro,body,layer,stageId){
   const e=currentEng();if(!e)return pageTop(title,'Abre primero un estudio.');
   const integrity=typeof processLayerIntegrityIssues==='function'?processLayerIntegrityIssues(e,layer):[],done=!!processLayerState(e)[layer]&&!integrity.length,tabs={map:'Mapa AS-IS',frictions:'Fricciones',risks:'Riesgos',impact:'Impacto'};
-  const warning=integrity.length?'<div class="notice warn"><b>Revisión necesaria</b><br>'+integrity.map(x=>esc(x.message)).join(' ')+'</div>':'';
-  const confirm=warning+'<div class="flow-confirm"><div><b>'+(done?'Revisión confirmada':integrity.length?'Revisión necesaria':'Revisión pendiente')+'</b><div class="field-help">Puedes guardar y continuar sin confirmar todavía.</div></div><button class="btn '+(done?'btn-outline':'btn-primary')+'" data-confirm-process-layer="'+layer+'">'+(done?'Volver a confirmar':'Confirmar')+' '+tabs[layer]+'</button></div>';
+  const reviewCopy=integrity.length?'<div class="flow-confirm-issues">'+integrity.map(x=>'<span>'+esc(x.message)+'</span>').join('')+'</div>':'<div class="field-help">'+(done?'La capa está validada.':'Puedes guardar y continuar sin confirmar todavía.')+'</div>';
+  const confirm='<div class="flow-confirm '+(integrity.length?'flow-confirm-needs-review':'')+'"><div><b>'+(done?'Revisión confirmada':integrity.length?'Revisión necesaria':'Revisión pendiente')+'</b>'+reviewCopy+'</div><button class="btn '+(done?'btn-outline':'btn-primary')+'" data-confirm-process-layer="'+layer+'">'+(done?'Volver a confirmar':'Confirmar')+' '+tabs[layer]+'</button></div>';
   return pageTop(title,intro,'<button class="btn btn-outline" data-page="proceso">← Ver mapa AS-IS</button>')+(typeof asisConsoleLockNotice==='function'?asisConsoleLockNotice():'')+body+(stageId?layerCanonicalQuestions(e,stageId):'')+confirm;
 }
 function consultantStepsPage(){
