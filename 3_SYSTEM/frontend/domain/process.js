@@ -278,29 +278,44 @@ function openStepModal(stepId=null,linkFromStepId=null,preset=null){
 }
 
 function frictionNumberControl(id,obj,kind='number'){
-  const p=obj&&typeof obj==='object'?obj:{value:obj||'',unit:'',period:'',mode:''};
+  const p=obj&&typeof obj==='object'?obj:{value:obj??'',unit:'',period:'',mode:''};
   if(kind==='time')return timeControl(id,p.value||0,p.unit||'min',true);
   const periods=[{value:'',label:'Selecciona periodo…'},{value:'day',label:'por día'},{value:'week',label:'por semana'},{value:'month',label:'por mes'},{value:'year',label:'por año'}];
   if(kind==='money')return `<div class="compound-control"><input id="${id}" type="number" min="0" step="any" value="${attr(p.value||'')}" placeholder="0"><span class="unit-label">€</span>${auneaDropdownControl(id+'_period',periods,p.period||'','Periodo')}${auneaDropdownControl(id+'_mode',[{value:'',label:'Dato disponible'},{value:'NONE',label:'No aplica'},{value:'UNKNOWN',label:'No disponible'}],p.mode||'','Estado')}</div>`;
-  const mode=p.mode||'percent',period=p.period||'';
+  const hasValue=p.value!==undefined&&p.value!==null&&String(p.value)!=='';
+  const mode=p.mode||(hasValue?'percent':''),period=p.period||'';
   return `<div class="compound-control friction-frequency-control" data-fr-frequency-control="${id}">
-    <input id="${id}" type="number" min="0" step="any" value="${attr(p.value||'')}" placeholder="0">
-    ${auneaDropdownControl(id+'_mode',[{value:'percent',label:'%'},{value:'count',label:'casos'}],mode,'Unidad')}
+    <input id="${id}" type="number" min="0" step="any" value="${attr(hasValue?p.value:'')}" placeholder="Sin informar">
+    ${auneaDropdownControl(id+'_mode',[{value:'',label:'Sin informar'},{value:'percent',label:'%'},{value:'count',label:'casos'},{value:'UNKNOWN',label:'No se sabe'}],mode,'Unidad')}
     <span class="unit-label" data-fr-frequency-percent-suffix${mode==='percent'?'':' style="display:none"'}>de los casos</span>
     <span data-fr-frequency-period-wrap${mode==='count'?'':' style="display:none"'}>${auneaDropdownControl(id+'_period',periods,period,'Periodo')}</span>
   </div>`;
 }
 function bindFrictionFrequencyControl(id='fr_frequency'){
-  const mode=document.getElementById(id+'_mode'),period=document.getElementById(id+'_period');
+  const mode=document.getElementById(id+'_mode'),input=document.getElementById(id);
   const box=typeof document.querySelector==='function'?document.querySelector('[data-fr-frequency-control="'+id+'"]'):null;
   const suffix=box?.querySelector('[data-fr-frequency-percent-suffix]'),periodWrap=box?.querySelector('[data-fr-frequency-period-wrap]');
   if(!mode||!box||typeof mode.addEventListener!=='function')return;
   const sync=()=>{
-    const isPercent=mode.value==='percent';
+    const isPercent=mode.value==='percent',isCount=mode.value==='count',hasNumericMode=isPercent||isCount;
     if(suffix)suffix.style.display=isPercent?'':'none';
-    if(periodWrap)periodWrap.style.display=isPercent?'none':'';
+    if(periodWrap)periodWrap.style.display=isCount?'':'none';
+    if(input){input.disabled=!hasNumericMode;if(!hasNumericMode)input.value='';}
   };
   mode.addEventListener('change',sync);sync();
+}
+function syncFrictionTimeOwnerOptions(){
+  const selected=new Set([...document.querySelectorAll('[data-v1-multi="fr_steps"]:checked')].map(x=>String(x.value)));
+  const owner=document.getElementById('fr_time_owner'),box=owner?.closest?.('.canonical-aunea-select')?.querySelector?.('details.aunea-select');
+  if(!owner||!box)return;
+  box.querySelectorAll('[data-process-select-option="fr_time_owner"]').forEach(option=>{
+    const value=String(option.dataset.value||''),allowed=!value||selected.has(value);
+    option.hidden=!allowed;option.disabled=!allowed;
+  });
+  if(owner.value&&!selected.has(String(owner.value))){
+    owner.value='';
+    const summary=box.querySelector('summary span');if(summary)summary.textContent='Selecciona paso…';
+  }
 }
 let __auneaPainCandidates=[];
 async function reviewPainCandidates(){
@@ -319,7 +334,7 @@ function openFrictionModal(frId=null,preselectedSteps=[],candidate=null){
   // Layer 1/2 progressive disclosure: tipo/pasos/señal/contexto-impacto are what a consultant needs to
   // register a friction on the spot; causa/workaround/evidencia/resto stay available but collapsed.
   // Same field ids, same save logic — presentation-only, never a Friction Model change.
-  const candidateNotice=!existing&&candidate?'<div class="notice info pain-candidate-prefill"><b>Señal detectada en el mapa — pendiente de confirmar</b><p>'+esc(candidate.rationale||'')+'</p>'+(normalizeArray(candidate.review_questions).length?'<div class="field-help"><b>Comprueba antes de guardar:</b><br>'+normalizeArray(candidate.review_questions).map(q=>'• '+esc(q)).join('<br>')+'</div>':'')+'<p class="field-help">AUNEA sólo ha preseleccionado el tipo y los pasos. Completa la señal observable, la causa y la evidencia; guardar esta ficha es la confirmación humana de la fricción.</p></div>':'';
+  const candidateNotice=!existing&&candidate?'<div class="notice info pain-candidate-prefill"><b>Señal detectada en el mapa — pendiente de confirmar</b><p>'+esc(candidate.rationale||'')+'</p>'+(normalizeArray(candidate.review_questions).length?'<div class="field-help"><b>Comprueba antes de guardar:</b><br>'+normalizeArray(candidate.review_questions).map(q=>'• '+esc(q)).join('<br>')+'</div>':'')+'<p class="field-help">AUNEA sólo ha preseleccionado el tipo y los pasos. Confirma la señal observable y completa causa/evidencia cuando estén disponibles; guardar esta ficha es la confirmación humana de la fricción.</p></div>':'';
   const body=`<div class="step-groups process-modal-form friction-modal-form">${candidateNotice}
   <details class="step-group" open><summary>Fricción</summary><div class="form-grid">
   <div class="field full"><label>Tipo de fricción ${requiredMark()}</label>${auneaDropdownControl('fr_type',[{value:'',label:'Selecciona…'},...types],f.friction_type||'','Selecciona…')}<div class="field-help">Pain_ID se deriva internamente; el cliente no lo selecciona.</div></div>
@@ -329,12 +344,12 @@ function openFrictionModal(frId=null,preselectedSteps=[],candidate=null){
   <div class="field"><label>Impacto percibido</label>${auneaDropdownControl('fr_impact',[{value:'',label:'—'},...impacts],f.impact||'','—')}</div>
   </div></details>
   <details class="step-group"><summary>Causa, solución provisional y evidencia</summary><div class="form-grid">
-  <div class="field full"><label>Causa / condición ${requiredMark()}</label>${selectedHtml('fr_causes',causes,f.cause,{detailId:'fr_cause_other',detailValue:f._details.cause||'',detailPlaceholder:'Especifica otra causa sólo al seleccionar Otro'})}</div>
+  <div class="field full"><label>Causa / condición</label>${selectedHtml('fr_causes',causes,f.cause,{detailId:'fr_cause_other',detailValue:f._details.cause||'',detailPlaceholder:'Especifica otra causa sólo al seleccionar Otro'})}<div class="field-help">Opcional: complétala sólo cuando exista evidencia suficiente. La fricción puede confirmarse antes que su causa.</div></div>
   <div class="field full"><label>Cómo se compensa hoy</label>${selectedHtml('fr_workaround',work,f.workaround,{detailId:'fr_workaround_other',detailValue:f._details.workaround||'',detailPlaceholder:'Especifica otro workaround sólo al seleccionar Otro'})}</div>
   <div class="field"><label>Tipo de evidencia principal <span class="internal-tag">interno</span></label>${auneaDropdownControl('fr_evidence_type',[{value:'',label:'Selecciona…'},...evid],f.evidence_type||'','Selecciona…')}</div>
   <div class="field"><label>Tiempo asociado a la fricción</label>${frictionNumberControl('fr_active',f.active_time_loss,'time')}</div>
   <div class="field full"><label>Relación con el tiempo del paso</label>${auneaDropdownControl('fr_time_mode',[{value:'',label:'Pendiente de clasificar'},{value:'INCLUDED',label:'Incluido: ya está contabilizado en el paso'},{value:'BREAKDOWN',label:'Desglose: explica una parte del retrabajo'},{value:'ADDITIONAL',label:'Adicional: trabajo no registrado en el paso'}],f.time_attribution?.mode||'','Selecciona relación…')}<div class="field-help">Sólo Adicional podrá incrementar el esfuerzo total tras validar frecuencia y evidencia. Incluido y Desglose no se suman.</div></div>
-  <div class="field full"><label>Paso responsable del tiempo</label>${auneaDropdownControl('fr_time_owner',[{value:'',label:'Selecciona un paso afectado…'},...activeSteps(e).map(s=>({value:s.id,label:s.step_name||s.id}))],f.time_attribution?.step_id||'','Selecciona paso…')}<div class="field-help">Una fricción puede afectar a varios pasos, pero su tiempo sólo tiene un propietario para evitar multiplicarlo.</div></div>
+  <div class="field full"><label>Paso responsable del tiempo</label>${auneaDropdownControl('fr_time_owner',[{value:'',label:'Selecciona un paso afectado…'},...activeSteps(e).map(s=>({value:s.id,label:s.step_name||s.id}))],f.time_attribution?.step_id||'','Selecciona paso…')}<div class="field-help">Sólo se muestran como elegibles los pasos marcados arriba como afectados. Una fricción puede afectar a varios pasos, pero su tiempo sólo tiene un propietario para evitar multiplicarlo.</div></div>
   <div class="field"><label>Espera / retraso atribuible</label>${frictionNumberControl('fr_wait',f.wait_time_loss,'time')}</div>
   <div class="field"><label>Pérdida monetaria directa</label>${frictionNumberControl('fr_direct',f.direct_loss,'money')}</div>
   <div class="field full"><label>Otros impactos</label>${selectedHtml('fr_non_time',nonTime,f.non_time_impact,{detailId:'fr_non_time_other',detailValue:f._details.non_time||'',detailPlaceholder:'Especifica el otro impacto'})}</div>
@@ -343,17 +358,19 @@ function openFrictionModal(frId=null,preselectedSteps=[],candidate=null){
   <div class="field full"><label>Nota excepcional</label><input id="fr_notes" maxlength="200" value="${attr(f.notes||'')}" placeholder="Sólo si los campos estructurados no bastan"></div>
   </div></details>
   </div>`;
-  openModal(existing?'Editar fricción':'Añadir fricción',body,()=>{const collect=k=>[...document.querySelectorAll(`[data-v1-multi="${k}"]:checked`)].map(x=>x.value);f.friction_type=document.getElementById('fr_type').value;f.affected_steps=collect('fr_steps');f.cause=collect('fr_causes');f._details.cause=document.getElementById('fr_cause_other').value.trim();f.observable_signal=document.getElementById('fr_signal').value.trim();const frequencyMode=document.getElementById('fr_frequency_mode').value,frequencyPeriod=document.getElementById('fr_frequency_period').value;f.frequency={value:Number(document.getElementById('fr_frequency').value||0),mode:frequencyMode,period:frequencyMode==='count'?frequencyPeriod:''};f.impact=document.getElementById('fr_impact').value;
+  openModal(existing?'Editar fricción':'Añadir fricción',body,()=>{const collect=k=>[...document.querySelectorAll(`[data-v1-multi="${k}"]:checked`)].map(x=>x.value);f.friction_type=document.getElementById('fr_type').value;f.affected_steps=collect('fr_steps');f.cause=collect('fr_causes');f._details.cause=document.getElementById('fr_cause_other').value.trim();f.observable_signal=document.getElementById('fr_signal').value.trim();const frequencyMode=document.getElementById('fr_frequency_mode').value,frequencyPeriod=document.getElementById('fr_frequency_period').value,frequencyRaw=String(document.getElementById('fr_frequency').value||'').trim();f.frequency={value:(frequencyMode==='UNKNOWN'||frequencyRaw==='')?null:Number(frequencyRaw),mode:frequencyMode,period:frequencyMode==='count'&&frequencyRaw!==''?frequencyPeriod:''};f.impact=document.getElementById('fr_impact').value;
     const atUnit=document.getElementById('fr_active_unit').value,wtUnit=document.getElementById('fr_wait_unit').value,activeMode=document.getElementById('fr_active_mode').value,waitMode=document.getElementById('fr_wait_mode').value,directMode=document.getElementById('fr_direct_mode').value;f.active_time_loss={value:['UNKNOWN','ZERO'].includes(activeMode)?0:minutesFrom(document.getElementById('fr_active').value,atUnit),unit:'min',source_unit:atUnit,mode:activeMode};f.time_attribution={mode:document.getElementById('fr_time_mode').value,step_id:document.getElementById('fr_time_owner').value};f.wait_time_loss={value:['UNKNOWN','ZERO'].includes(waitMode)?0:minutesFrom(document.getElementById('fr_wait').value,wtUnit),unit:'min',source_unit:wtUnit,mode:waitMode};f.direct_loss={value:['UNKNOWN','NONE'].includes(directMode)?0:Number(document.getElementById('fr_direct').value||0),unit:'EUR',period:['UNKNOWN','NONE'].includes(directMode)?'':document.getElementById('fr_direct_period').value,mode:directMode};f.non_time_impact=collect('fr_non_time');f._details.non_time=document.getElementById('fr_non_time_other').value.trim();f.workaround=collect('fr_workaround');f._details.workaround=document.getElementById('fr_workaround_other').value.trim();f.evidence_type=document.getElementById('fr_evidence_type').value;f.priority_client=Number(document.getElementById('fr_priority').value||0)||null;f.client_label=document.getElementById('fr_label').value.trim();f.notes=document.getElementById('fr_notes').value.trim();f.derived_pain_id=painForFriction(f.friction_type);
-    if(!f.friction_type||!f.affected_steps.length||(!f.cause.length&&!f._details.cause)||!f.observable_signal)return toast('Tipo, al menos un paso, causa y señal observable son obligatorios.');
-    if(!Number.isFinite(f.frequency.value)||f.frequency.value<0)return toast('La frecuencia debe ser un número igual o mayor que 0.');
+    if(!f.friction_type||!f.affected_steps.length||!f.observable_signal)return toast('Tipo, al menos un paso y señal observable son obligatorios.');
+    if(f.frequency.value!==null&&(!Number.isFinite(f.frequency.value)||f.frequency.value<0))return toast('La frecuencia debe ser un número igual o mayor que 0.');
     if([f.active_time_loss?.value,f.wait_time_loss?.value,f.direct_loss?.value].some(v=>!Number.isFinite(Number(v))||Number(v)<0))return toast('Los tiempos y pérdidas de la fricción deben ser valores iguales o mayores que 0.');
-    if(f.frequency.mode==='percent'&&(f.frequency.value<0||f.frequency.value>100))return toast('La frecuencia porcentual debe estar entre 0 y 100.');
-    if(f.frequency.mode==='count'&&f.frequency.value>0&&!f.frequency.period)return toast('Si la frecuencia se registra en casos, indica también el periodo.');
+    if(f.frequency.mode==='percent'&&f.frequency.value!==null&&(f.frequency.value<0||f.frequency.value>100))return toast('La frecuencia porcentual debe estar entre 0 y 100.');
+    if(f.frequency.mode==='count'&&f.frequency.value!==null&&f.frequency.value>0&&!f.frequency.period)return toast('Si la frecuencia se registra en casos, indica también el periodo.');
     if(f.direct_loss.value>0&&!f.direct_loss.period)return toast('Si registras una pérdida monetaria directa, indica también el periodo.');
     if(selectedOtherMissingDetail(causes,f.cause,f._details.cause)||selectedOtherMissingDetail(nonTime,f.non_time_impact,f._details.non_time)||selectedOtherMissingDetail(work,f.workaround,f._details.workaround))return toast('Completa el detalle de cada opción «Otro» seleccionada.');
     if(f.active_time_loss.value>0&&(!['INCLUDED','BREAKDOWN','ADDITIONAL'].includes(f.time_attribution.mode)||!f.affected_steps.includes(f.time_attribution.step_id)))return toast('Para atribuir el tiempo, selecciona Incluido, Desglose o Adicional y un paso afectado responsable.');if(f.active_time_loss.value===0)f.time_attribution={mode:'',step_id:''};if(existing){Object.assign(existing,f);audit(`Fricción editada ${existing.id}`)}else{e.frictions.push(f);audit(`Fricción creada ${f.id}`)}if(typeof advanceEngagementTo==='function')advanceEngagementTo(e,'Sesión 1','captura de proceso');invalidateProcessLayersSafe(e,'frictions');e.diagnosticOutput=null;e.updatedAt=now();markDirty();closeModal();render();},existing?'Guardar cambios':'Añadir fricción');
   bindFrictionFrequencyControl('fr_frequency');
+  document.querySelectorAll('[data-v1-multi="fr_steps"]').forEach(el=>el.addEventListener('change',syncFrictionTimeOwnerOptions));
+  syncFrictionTimeOwnerOptions();
   document.querySelectorAll('[data-v1-other-toggle]').forEach(el=>el.addEventListener('change',()=>{const key=el.dataset.v1OtherToggle,wrap=document.querySelector(`[data-v1-other-wrap="${key}"]`);if(!wrap)return;wrap.style.display=el.checked?'':'none';if(!el.checked){const input=wrap.querySelector('input,textarea');if(input)input.value=''}}));
 }
 
