@@ -6,7 +6,7 @@ const vm=require('node:vm');
 const path=require('node:path');
 const code=fs.readFileSync(path.join(__dirname,'..','ui/renderer.js'),'utf8');
 const e={companyId:'c1',answers:{},answerDetails:{},processSteps:[{id:'s1',status:'ACTIVE',step_name:'Inicio'}],frictions:[{id:'f1',status:'ACTIVE',friction_type:'P01'}]};
-const ctx={console,schema:{option_sets:{OS_X:{options:[{value:'A',label:'Alpha'},{value:'B',label:'Beta'}]},OS_WORKAROUND:{options:[{value:'CHASE',label:'Seguimiento manual'},{value:'NO_WORKAROUND',label:'No existe'}]},OS_SENSITIVE_DATA:{options:[{value:'PERSONAL',label:'Datos personales'},{value:'NONE',label:'Ninguno'}]}}},state:{companies:[{id:'c1',name:'ACME'}],contacts:[{id:'p1',companyId:'c1',name:'Ana',role:'Ops',status:'Activo'},{id:'p2',companyId:'c1',name:'Beto',role:'IT',status:'Inactivo'}]},currentEng:()=>e,normalizeArray:v=>Array.isArray(v)?v:(v==null||v===''?[]:[v]),esc:v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'),attr:v=>String(v??'').replaceAll('"','&quot;'),labelFrom:(s,v)=>v,bindForms:()=>{},setAnswer:(fid,v)=>{e.answers[fid]=v},now:()=>'',markDirty:()=>{},toast:()=>{},render:()=>{},formatDateEs:v=>{const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?`${m[3]}/${m[2]}/${m[1]}`:String(v||'—')},document:{querySelectorAll:()=>[],querySelector:()=>null}};
+const ctx={console,schema:{option_sets:{OS_X:{options:[{value:'A',label:'Alpha'},{value:'B',label:'Beta'}]},OS_WORKAROUND:{options:[{value:'CHASE',label:'Seguimiento manual'},{value:'NO_WORKAROUND',label:'No existe'}]},OS_SENSITIVE_DATA:{options:[{value:'PERSONAL',label:'Datos personales'},{value:'NONE',label:'Ninguno'}]},OS_REVERSIBILITY:{options:[{value:'EASY',label:'Fácilmente reversible'},{value:'PARTIAL',label:'Parcialmente reversible'},{value:'HARD',label:'Difícil de revertir'}]}}},state:{companies:[{id:'c1',name:'ACME'}],contacts:[{id:'p1',companyId:'c1',name:'Ana',role:'Ops',status:'Activo'},{id:'p2',companyId:'c1',name:'Beto',role:'IT',status:'Inactivo'}]},currentEng:()=>e,normalizeArray:v=>Array.isArray(v)?v:(v==null||v===''?[]:[v]),esc:v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'),attr:v=>String(v??'').replaceAll('"','&quot;'),labelFrom:(s,v)=>v,bindForms:()=>{},setAnswer:(fid,v)=>{e.answers[fid]=v},now:()=>'',markDirty:()=>{},toast:()=>{},render:()=>{},formatDateEs:v=>{const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?`${m[3]}/${m[2]}/${m[1]}`:String(v||'—')},document:{querySelectorAll:()=>[],querySelector:()=>null}};
 vm.createContext(ctx);vm.runInContext(code,ctx);
 test('searchable dropdown remains catalog-backed and uses the single AUNEA Select primitive',()=>{const html=ctx.renderControl({Field_ID:'DF002',Control_UI:'SEARCHABLE_DROPDOWN',Option_Set_ID:'OS_X',Validation:'permitir Otro'},'A',ctx.schema.option_sets.OS_X.options,e);assert.match(html,/data-aunea-select="DF002"/);assert.match(html,/data-aunea-select-search="DF002"/);assert.match(html,/data-aunea-select-option="DF002"/);assert.doesNotMatch(html,/<datalist/);assert.doesNotMatch(html,/<select/);});
 test('number+unit is structured',()=>{const html=ctx.renderControl({Field_ID:'DF021',Control_UI:'NUMBER_WITH_UNIT'},'',[],e);assert.match(html,/data-number-value="DF021"/);assert.match(html,/data-number-unit="DF021"/);});
@@ -227,6 +227,37 @@ test('DF098 uses the selected top-right AUNEA consultant as readonly owner and k
   ctx.document.querySelector=sel=>sel.includes('data-aunea-select')?{querySelector:()=>({textContent:'Alpha'})}:null;
   ctx.syncNextStep('DF098');
   assert.match(e.answers.DF098,/Alpha — Consultor Seleccionado — 13\/10\/2026/);
+});
+
+test('DF074 never shows affected steps until a valid reversibility level is selected, and then supports multiple explicit steps',()=>{
+  const eng={answers:{},answerDetails:{},processSteps:[
+    {id:'s1',status:'ACTIVE',step_name:'Recibir factura'},
+    {id:'s2',status:'ACTIVE',step_name:'Aprobar factura'}
+  ]};
+  const opts=ctx.schema.option_sets.OS_REVERSIBILITY.options;
+
+  const empty=ctx.renderControl({Field_ID:'DF074',Control_UI:'DROPDOWN_WITH_STEP_LINK'},'',opts,eng);
+  assert.match(empty,/Selecciona primero un nivel de reversibilidad/);
+  assert.doesNotMatch(empty,/Pasos afectados/);
+  assert.doesNotMatch(empty,/data-linked-step-multi="DF074__steps"/);
+
+  const stale=ctx.renderControl({Field_ID:'DF074',Control_UI:'DROPDOWN_WITH_STEP_LINK'},'LEGACY_INVALID',opts,eng);
+  assert.match(stale,/Selecciona primero un nivel de reversibilidad/);
+  assert.doesNotMatch(stale,/Pasos afectados/);
+  assert.doesNotMatch(stale,/data-linked-step-multi="DF074__steps"/);
+
+  const selected=ctx.renderControl({Field_ID:'DF074',Control_UI:'DROPDOWN_WITH_STEP_LINK'},'PARTIAL',opts,eng);
+  assert.match(selected,/Pasos afectados/);
+  assert.match(selected,/data-linked-step-multi="DF074__steps"/);
+  assert.match(selected,/Recibir factura/);
+  assert.match(selected,/Aprobar factura/);
+  assert.doesNotMatch(selected,/data-linked-step-multi="DF074__steps"[^>]*checked/,'no step may be preselected without stored scope');
+
+  eng.answerDetails.DF074__steps=['s2'];
+  const scoped=ctx.renderControl({Field_ID:'DF074',Control_UI:'DROPDOWN_WITH_STEP_LINK'},'PARTIAL',opts,eng);
+  assert.match(scoped,/id="DF074__steps_s2"[^>]*checked/);
+  assert.doesNotMatch(scoped,/id="DF074__steps_s1"[^>]*checked/);
+  assert.doesNotMatch(scoped,/Paso donde esta condición es más relevante/);
 });
 
 test('DF099 renders permission and scope as one inline control and scope is canonical detail metadata',()=>{
