@@ -31,8 +31,8 @@ function singleUatAudit(e){
     ['Fricciones completas',(typeof activeFrictions==='function'?activeFrictions(e):e.frictions||[]).length>=1&&!!layers.frictions],
     ['Riesgos completos',risksOk&&!!layers.risks],
     ['Impacto completo',(e.economicInputs||[]).length>=1&&!!layers.impact],
-    ['PG09 lista para confirmación final',e.confirmedAsIs!==true&&requiredBeforeClose.length===0&&!!layers.map&&!!layers.frictions&&!!layers.risks&&!!layers.impact],
-    ['Snapshot pendiente hasta confirmar cierre',typeof hasConfirmedSnapshot==='function'?!hasConfirmedSnapshot(e):true],
+    ['PG09 coherente',requiredBeforeClose.length===0&&!!layers.map&&!!layers.frictions&&!!layers.risks&&!!layers.impact],
+    ['Snapshot coherente con el cierre',typeof hasConfirmedSnapshot==='function'?(e.confirmedAsIs?hasConfirmedSnapshot(e):!hasConfirmedSnapshot(e)):true],
     ['Inputs internos resueltos',typeof unresolvedEngineGates==='function'?unresolvedEngineGates(e).length===0:true]
   ].map(([label,ok])=>({label,ok:!!ok}));
   return {pass:checks.every(x=>x.ok),checks};
