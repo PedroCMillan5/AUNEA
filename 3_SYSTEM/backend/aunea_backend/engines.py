@@ -125,11 +125,28 @@ class RiskCandidateEngine:
         reviewed={str(x.get("_candidate_id")) for x in risks if x.get("_candidate_id")}
         out=[]
 
+        sensitive_values=[str(x) for x in self._arr(answers.get("DF073")) if str(x).upper() not in {"NONE","UNKNOWN",""}]
+        reversibility_value=answers.get("DF074")
+        human_approval_values=[str(x) for x in self._arr(answers.get("DF075")) if str(x).upper() not in {"NONE","UNKNOWN",""}]
+        contextual_questions=[]
+        contextual_signals=[]
+        if sensitive_values:
+            contextual_questions.append("¿El escenario afectaría a los datos sensibles o regulados ya declarados?")
+            contextual_signals.append("DF073")
+        if reversibility_value not in (None,"") and str(reversibility_value).upper() not in {"REVERSIBLE","UNKNOWN","NONE"}:
+            contextual_questions.append("¿Qué ocurriría si la acción no pudiera revertirse de forma sencilla?")
+            contextual_signals.append("DF074")
+        if human_approval_values:
+            contextual_questions.append("¿Afecta este escenario a una acción que debe mantener aprobación humana?")
+            contextual_signals.append("DF075")
+
         def add(cid,title,step_ids,description,rationale,questions,signals):
             if cid in reviewed:return
+            merged_questions=list(dict.fromkeys([*questions,*contextual_questions]))
+            merged_signals=list(dict.fromkeys([*signals,*contextual_signals]))
             out.append({"candidate_id":cid,"title":title,"step_ids":list(dict.fromkeys(step_ids)),
                 "suggested_description":description,"rationale":rationale,
-                "review_questions":questions,"source_signals":signals})
+                "review_questions":merged_questions,"source_signals":merged_signals})
 
         for s in steps:
             sid=str(s.get("id") or "")
