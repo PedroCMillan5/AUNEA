@@ -827,12 +827,13 @@ body:not(.mode-process-editor) .content [data-process-engagement] .flow-insert{d
 
 
 /* [AUNEA-FE-RISK-FINAL-090] START — Final S06 composition and spacing.
-   S06 uses one question per row; risk review blocks keep clear vertical rhythm.
-   No field ownership, requiredness, scoring or engine rule changes. */
+   PURPOSE: One question per row, compact derived context, one risk list and one closure summary.
+   SOURCE: Diagnostic Master v1.2; DEC-009/065; PROJECT_RULES single-owner/no-reask.
+   CHANGE_RISK: MEDIUM. */
 .risk-stage-complementary .stage-card>.form-grid{
   display:grid;
   grid-template-columns:minmax(0,1fr)!important;
-  gap:20px!important;
+  gap:22px!important;
   align-items:start;
 }
 .risk-stage-complementary .field,
@@ -842,60 +843,89 @@ body:not(.mode-process-editor) .content [data-process-engagement] .flow-insert{d
   min-width:0;
 }
 .risk-stage-complementary .field>label{margin-bottom:8px}
+.risk-stage-complementary .field-help{margin-top:7px;line-height:1.45}
 .risk-stage-complementary .reuse-context,
 .risk-stage-complementary .linked-field-block{
   width:100%;
   box-sizing:border-box;
 }
+.risk-stage-complementary .reuse-context-structured{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:14px;
+  align-items:start;
+  padding:12px 14px;
+}
+.risk-stage-complementary .reuse-context-structured>div:first-child{min-width:0}
+.risk-stage-complementary .reuse-context-structured>div:first-child>small{
+  display:block;
+  margin-bottom:8px;
+}
+.risk-stage-complementary .reuse-context-structured .row-actions{
+  align-self:center;
+  margin:0;
+}
+.derived-structured-review{
+  display:grid;
+  gap:7px;
+}
+.derived-structured-row{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:9px;
+  padding:10px 12px;
+  min-width:0;
+}
+.derived-structured-row>strong{
+  display:block;
+  margin-bottom:5px;
+}
+.derived-structured-facts{
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px 18px;
+  color:var(--muted);
+  font-size:var(--font-small);
+  line-height:1.4;
+}
+.derived-structured-facts span{min-width:0}
 .risk-stage-complementary .linked-step-group{
   margin-top:12px;
   padding-top:12px;
   border-top:1px solid var(--line);
 }
-.risk-stage-complementary .field-help{
-  margin-top:7px;
-  line-height:1.45;
+.risk-reversibility-control>.field-help{
+  margin-top:10px;
+  max-width:980px;
 }
 
-.risk-known-context{margin:0 0 18px!important}
-.risk-review-summary{
-  margin:18px 0 22px!important;
-  padding:16px!important;
+.risk-known-context{
+  margin:0 0 22px!important;
+  padding:14px 16px!important;
 }
-.risk-review-summary>p{margin:7px 0 14px}
-.risk-review-row{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:16px;
-  padding:11px 0;
-  border-top:1px solid rgba(109,85,39,.16);
+.risk-records-heading{
+  margin:0 0 10px!important;
 }
-.risk-review-row:first-of-type{border-top:0}
-.risk-review-row .field-help{margin-top:4px}
+.risk-record-list{
+  display:grid;
+  gap:18px;
+}
 .risk-record-row{
-  margin-top:14px!important;
-  padding:16px!important;
+  margin:0!important;
+  padding:17px 18px!important;
 }
-.risk-record-row:first-child{margin-top:8px!important}
 .risk-record-main>p{margin:8px 0 0}
-.risk-record-main .field-help{margin-top:9px}
+.risk-record-main .field-help{margin-top:10px}
 .risk-record-main .coverage-chips{gap:7px}
-.flow-confirm{margin-top:20px}
+.flow-confirm{margin-top:22px}
 .flow-confirm-needs-review button:disabled{
   opacity:.42;
   cursor:not-allowed;
   filter:saturate(.45);
 }
-.risk-reversibility-control>.field-help{
-  margin-top:10px;
-  max-width:900px;
-}
 @media(max-width:760px){
-  .risk-review-row{
-    align-items:flex-start;
-    flex-direction:column;
-  }
-  .risk-review-row .btn{width:100%}
+  .risk-stage-complementary .reuse-context-structured{grid-template-columns:1fr}
+  .risk-stage-complementary .reuse-context-structured .row-actions{justify-self:start}
+  .derived-structured-facts{display:grid;gap:4px}
 }
 /* [AUNEA-FE-RISK-FINAL-090] END */
