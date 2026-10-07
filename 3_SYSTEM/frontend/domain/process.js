@@ -997,6 +997,19 @@ function processPage(){
   return pageTop('Mapa AS-IS','Lo que sabemos del proceso actual, todo en un mismo mapa.',top)
     +(typeof asisConsoleLockNotice==='function'?asisConsoleLockNotice():'')+asisMapPage(e,steps,fr);
 }
+function impactLayerReviewSummary(e,integrity=[]){
+  const rows=e?.economicInputs||[];
+  const withEvidence=rows.filter(x=>!!x.evidence_type).length;
+  const incomplete=rows.filter((x,i)=>typeof economicRecordCompletenessIssues==='function'&&economicRecordCompletenessIssues(x,i).length).length;
+  const issueCount=integrity.length;
+  return '<div class="impact-layer-review-summary grid g3">'
+    +'<div class="notice"><b>Impactos registrados</b><br>'+rows.length+'</div>'
+    +'<div class="notice '+(withEvidence===rows.length&&rows.length?'good':'info')+'"><b>Con evidencia</b><br>'+withEvidence+' de '+rows.length+'</div>'
+    +'<div class="notice '+(issueCount?'warn':'good')+'"><b>Comprobación</b><br>'+(issueCount?issueCount+' pendiente(s)':'Sin inconsistencias pendientes')+'</div>'
+    +(incomplete?'<div class="notice warn"><b>Registros incompletos</b><br>'+incomplete+' impacto(s) necesitan completar los campos aplicables a su concepto.</div>':'')
+    +'</div>';
+}
+
 function consultantLayerPage(title,intro,body,layer,stageId,{questionsFirst=false}={}){
   const e=currentEng();if(!e)return pageTop(title,'Abre primero un estudio.');
   const integrity=typeof processLayerIntegrityIssues==='function'?processLayerIntegrityIssues(e,layer):[],done=!!processLayerState(e)[layer]&&!integrity.length,tabs={map:'Mapa AS-IS',frictions:'Fricciones',risks:'Riesgos',impact:'Impacto'};
@@ -1009,7 +1022,8 @@ function consultantLayerPage(title,intro,body,layer,stageId,{questionsFirst=fals
   const confirm='<div class="flow-confirm '+(integrity.length?'flow-confirm-needs-review':'')+'"><div><b>'+(done?'Revisión confirmada':integrity.length?'Revisión necesaria':'Revisión pendiente')+'</b>'+reviewCopy+'</div><button class="btn '+(done?'btn-outline':'btn-primary')+'" data-confirm-process-layer="'+layer+'"'+disabled+'>'+(done?'Volver a confirmar':'Confirmar')+' '+tabs[layer]+'</button></div>';
   const questions=stageId?layerCanonicalQuestions(e,stageId):'';
   const content=questionsFirst?questions+body:body+questions;
-  return pageTop(title,intro,'<button class="btn btn-outline" data-page="proceso">← Ver mapa AS-IS</button>')+(typeof asisConsoleLockNotice==='function'?asisConsoleLockNotice():'')+content+confirm;
+  const layerSummary=layer==='impact'?impactLayerReviewSummary(e,integrity):'';
+  return pageTop(title,intro,'<button class="btn btn-outline" data-page="proceso">← Ver mapa AS-IS</button>')+(typeof asisConsoleLockNotice==='function'?asisConsoleLockNotice():'')+content+layerSummary+confirm;
 }
 function consultantStepsPage(){
   const e=currentEng();return consultantLayerPage('Pasos','Añade, edita o elimina las actividades reales del proceso.',stepsEditor(e,activeSteps(e),activeFrictions(e)),'map','S04');
