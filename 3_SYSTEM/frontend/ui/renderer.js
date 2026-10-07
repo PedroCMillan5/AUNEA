@@ -482,8 +482,12 @@ function bindCanonicalRenderer(){
       exclusiveEl.checked=false;
       setAnswer(fid,[...document.querySelectorAll(`[data-multi="${fid}"]:checked`)].map(x=>x.value));
     }
-    if(fid==='DF055'&&!document.querySelector(`[data-multi="DF055"]:checked`)){
-      const e=currentEng(),d=answerDetails(e);delete d.DF055__steps;e.updatedAt=now();markDirty('Pasos afectados DF055 limpiados');render();
+    if(fid==='DF055'){
+      const hasSelection=!!document.querySelector('[data-multi="DF055"]:checked');
+      if(!hasSelection){
+        const e=currentEng(),d=answerDetails(e);delete d.DF055__steps;e.updatedAt=now();markDirty('Pasos afectados DF055 limpiados');
+      }
+      render();
     }
   }));
 }
