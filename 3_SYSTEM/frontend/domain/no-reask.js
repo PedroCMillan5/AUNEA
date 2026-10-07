@@ -58,8 +58,14 @@ function canonicalFieldValidationIssue(f,v,e){
     const linkedOne=String(e.answerDetails?.[f.Field_ID+'__step']||'');
     const linkedMany=normalizeArray(e.answerDetails?.[f.Field_ID+'__steps']).map(String);
     if(control==='DROPDOWN_WITH_STEP_LINK'&&valuePresent(v)&&String(v)!=='UNKNOWN'){
-      if(!linkedOne)return 'Selecciona también el paso afectado.';
-      if(!stepIds.has(linkedOne))return 'El paso vinculado ya no está activo.';
+      if(f.Field_ID==='DF074'){
+        const scope=linkedMany.length?linkedMany:(linkedOne?[linkedOne]:[]);
+        if(!scope.length)return 'Selecciona también los pasos afectados.';
+        if(scope.some(id=>!stepIds.has(id)))return 'Uno de los pasos vinculados ya no está activo.';
+      }else{
+        if(!linkedOne)return 'Selecciona también el paso afectado.';
+        if(!stepIds.has(linkedOne))return 'El paso vinculado ya no está activo.';
+      }
     }
     if(['MULTISELECT_WITH_STEP_LINK','MULTISELECT_WITH_STEP_REFERENCE','STEP_ACTION_MULTISELECT'].includes(control)&&linkedMany.some(id=>!stepIds.has(id)))
       return 'Uno de los pasos vinculados ya no está activo.';
@@ -408,7 +414,7 @@ function structuredRiskDerivedReviewHtml(fid,e){
       const type=labelFrom('OS_EXCEPTION_TYPE',ex.type)||ex.label||ex.type||'Excepción sin clasificar';
       const condition=String(ex.condition||'').trim()||'Sin condición adicional registrada';
       const owner=labelFrom('OS_ACTOR_ROLE',ex.owner)||ex.owner||'Sin responsable adicional registrado';
-      return '<div class="result-item"><b>'+esc(s.step_name||s.id)+'</b><p><b>Tipo:</b> '+esc(type)+'</p><p><b>Condición:</b> '+esc(condition)+'</p><p><b>Responsable:</b> '+esc(owner)+'</p></div>';
+      return '<div class="derived-structured-row"><strong>'+esc(s.step_name||s.id)+'</strong><div class="derived-structured-facts"><span><b>Tipo:</b> '+esc(type)+'</span><span><b>Condición:</b> '+esc(condition)+'</span><span><b>Responsable:</b> '+esc(owner)+'</span></div></div>';
     });
   }else{
     rows=steps.filter(s=>s.step_type==='ST05'||normalizeArray(s.decision_criteria).length).map(s=>{
@@ -417,10 +423,10 @@ function structuredRiskDerivedReviewHtml(fid,e){
       const criteria=details||normalizeArray(s.decision_criteria).map(v=>labelFrom('OS_DECISION_CRITERIA',v)||v).filter(Boolean).join(', ')||'Pendiente';
       const evidence=normalizeArray(s.evidence).map(v=>labelFrom('OS_EVIDENCE_TYPE',v)||v).filter(Boolean).join(', ')||'Pendiente';
       const result=s.step_type==='ST05'?'Aprobar o rechazar':'Determinar si requiere aprobación';
-      return '<div class="result-item"><b>'+esc(s.step_name||s.id)+'</b><p><b>Aprobador / decisor:</b> '+esc(actor)+'</p><p><b>Criterio:</b> '+esc(criteria)+'</p><p><b>Resultado:</b> '+esc(result)+'</p><p><b>Evidencia:</b> '+esc(evidence)+'</p></div>';
+      return '<div class="derived-structured-row"><strong>'+esc(s.step_name||s.id)+'</strong><div class="derived-structured-facts"><span><b>Aprobador / decisor:</b> '+esc(actor)+'</span><span><b>Criterio:</b> '+esc(criteria)+'</span><span><b>Resultado:</b> '+esc(result)+'</span><span><b>Evidencia:</b> '+esc(evidence)+'</span></div></div>';
     });
   }
-  return rows.length?'<div class="result-list derived-structured-review">'+rows.join('')+'</div>':'';
+  return rows.length?'<div class="derived-structured-review">'+rows.join('')+'</div>':'';
 }
 
 function renderQuestion(f,e){
