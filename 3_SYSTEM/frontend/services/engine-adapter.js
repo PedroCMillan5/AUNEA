@@ -75,6 +75,29 @@ async function fetchPainCandidates(e=currentEng()){
   if(!r.ok)throw new Error(await r.text());
   return await r.json();
 }
+function buildRiskCandidatePayload(engagement){
+  const e=typeof engagementOfRecord==='function'?engagementOfRecord(engagement):engagement;
+  return {
+    engagement_id:e.id,
+    process_instance_id:`PROC-${e.id}`,
+    process_name:e.answers?.DF011||e.processName||e.title||'',
+    questionnaire_answers:{
+      ...questionnaireAnswersForEngine(e),
+      _answer_details:e.answerDetails||{},
+      _process_steps:activeSteps(e),
+      _frictions:activeFrictions(e),
+      _risks:e.risks||[]
+    }
+  };
+}
+async function fetchRiskCandidates(e=currentEng()){
+  if(!e)return {candidates:[]};
+  if(!state.backendOnline&&!(await checkBackend()))throw new Error('Backend no conectado.');
+  const payload=buildRiskCandidatePayload(e);
+  const r=await fetch(`${state.backendUrl}/v1/diagnostic/risk-candidates`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  if(!r.ok)throw new Error(await r.text());
+  return await r.json();
+}
 async function diagnosticCoveragePreflight(payload){
   const r=await fetch(`${state.backendUrl}/v1/diagnostic/coverage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
   if(!r.ok)throw new Error(await r.text());
