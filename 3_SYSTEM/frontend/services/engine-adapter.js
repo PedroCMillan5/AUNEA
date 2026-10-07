@@ -52,10 +52,25 @@ function normalizeRiskInputs(e){
       description:r.description||null};
   })
 }
+function buildPainCandidatePayload(engagement){
+  const e=typeof engagementOfRecord==='function'?engagementOfRecord(engagement):engagement;
+  return {
+    engagement_id:e.id,
+    process_instance_id:`PROC-${e.id}`,
+    process_name:e.answers?.DF011||e.processName||e.title||'',
+    questionnaire_answers:{
+      ...questionnaireAnswersForEngine(e),
+      _business_area_id:e.businessAreaId||null,
+      _answer_details:e.answerDetails||{},
+      _process_steps:activeSteps(e),
+      _frictions:activeFrictions(e)
+    }
+  };
+}
 async function fetchPainCandidates(e=currentEng()){
   if(!e)return {candidates:[],evaluated_step_ids:[],note:''};
   if(!state.backendOnline&&!(await checkBackend()))throw new Error('Backend no conectado.');
-  const payload=buildBackendPayload(e);
+  const payload=buildPainCandidatePayload(e);
   const r=await fetch(`${state.backendUrl}/v1/diagnostic/pain-candidates`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
   if(!r.ok)throw new Error(await r.text());
   return await r.json();
