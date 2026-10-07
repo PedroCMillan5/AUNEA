@@ -10,7 +10,7 @@ from .models import (
     ScenarioResult, ScenarioAssumption, InputCoverageResult
 )
 from .registry import table, by_id
-from .utils import level_rank
+from .utils import level_rank, stable_hash
 from .economic_overlap import economic_overlap_issues
 
 CONFIDENCE_ORDER = {
@@ -636,5 +636,33 @@ class ScenarioComparator:
             }
         cap_delta["included"]=sorted(included); cap_delta["blocked"]=sorted(blocked)
         if i == "I3": status="BLOCKED"
-        return ScenarioResult(scenario_id=str(uuid.uuid4()),scenario_name=name,scenario_type=stype,action_id=action,functional_level_id=n,ai_level_id=i,coverage_by_pain=coverage,capability_delta=cap_delta,economics=econ,risk=risk,quote=quote,delta_vs_optimal=delta,status=status)
+
+        assumption_payload=[a.model_dump(mode="json") for a in assumptions]
+        assumption_hash=stable_hash(assumption_payload)
+        scenario_key={
+            "engagement": ctx.engagement.model_dump(mode="json"),
+            "scenario_name": name,
+            "scenario_type": stype,
+            "action_id": action,
+            "functional_level_id": n,
+            "ai_level_id": i,
+            "assumptions": assumption_payload,
+            "scope": scope.model_dump(mode="json") if scope is not None else None,
+        }
+        scenario_id="SCN-"+stable_hash(scenario_key)[:20]
+
+        # TCO-06 / SE-07: payback uses only explicit realized cash saving.
+        # Capacity value and waiting are never promoted to cash.
+        payback=None
+        monthly_cash=(econ.realized_cash_saving_eur_annual or 0)/12
+        if monthly_cash > 0 and quote.status in {QuoteStatus.READY, QuoteStatus.PROVISIONAL}:
+            payback=round(quote.one_off_eur/monthly_cash,2)
+
+        return ScenarioResult(
+            scenario_id=scenario_id,scenario_name=name,scenario_type=stype,action_id=action,
+            functional_level_id=n,ai_level_id=i,coverage_by_pain=coverage,capability_delta=cap_delta,
+            economics=econ,risk=risk,quote=quote,assumptions=assumptions,
+            assumption_set_hash=assumption_hash,payback_months=payback,
+            delta_vs_optimal=delta,status=status
+        )
     # [AUNEA-BE-SCEN-CALC-020] END
