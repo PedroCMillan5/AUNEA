@@ -43,6 +43,18 @@ select option{background:#fff;color:var(--ink)}
 .duplicate-entry-fields label>span{font-size:var(--font-xs);font-weight:700;color:var(--muted)}
 .duplicate-entry-fields input,.duplicate-entry-fields select{width:100%;min-width:0;box-sizing:border-box}
 .duplicate-entry-suggestions{display:grid;gap:6px;margin:8px 0}
+.duplicate-entry-row{border:1px solid var(--line);border-left:3px solid var(--system-line);border-radius:var(--radius-sm);background:#fff;padding:12px 14px;margin-top:8px}
+.duplicate-entry-row+.duplicate-entry-row{margin-top:10px}
+.duplicate-entry-control>[data-duplicate-add]{margin-top:12px}
+.duplicate-entry-control .empty{margin:8px 0 0}
+.linked-step-group{margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
+.linked-step-label{font-size:var(--font-caption);font-weight:800;color:var(--muted);margin-bottom:7px}
+.integration-guidance{margin:8px 0 12px}
+.integration-candidates{margin-top:10px}
+.integration-empty{margin-top:8px}
+.flow-confirm-needs-review{margin-top:16px;border:1px solid #ecd5a5;border-radius:var(--radius-sm);background:var(--amber-soft);padding:14px}
+.flow-confirm-issues{display:grid;gap:4px;margin-top:5px;color:#6d5527;font-size:var(--font-small)}
+.flow-confirm-issues span{display:block}
 @media(max-width:900px){.duplicate-entry-fields{grid-template-columns:1fr}}
 
 .company-table .company-row{cursor:pointer}
