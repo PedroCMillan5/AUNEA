@@ -76,14 +76,19 @@ async function reviewRiskCandidates(){
 }
 function riskBuilder(e){
   const steps=typeof activeSteps==='function'?activeSteps(e):[];
-  return section('Riesgos','Registra qué podría salir mal y en qué pasos. Las fricciones de esos pasos se muestran sólo como contexto para evitar duplicar información.',
-    riskReviewActionPanel(e)+'<div class="process-list">+((e.risks||[]).length?e.risks.map((r,i)=>
-      '<div class="process-row"><div class="process-index">'+(i+1)+'</div><div><b>'+esc(r.description||labelFrom('OS_RISK_CATEGORY',r.category))+'</b>'
+  const frictions=typeof activeFrictions==='function'?activeFrictions(e):(e.frictions||[]);
+  const approvalSteps=steps.filter(s=>s.step_type==='ST05'||normalizeArray(s.decision_criteria).length).length;
+  const sensitive=normalizeArray(e.answers?.DF073).filter(x=>x!=='NONE').length;
+  const known='<div class="notice info risk-known-context"><b>Hechos ya conocidos del AS-IS</b><p>'+steps.length+' pasos · '+frictions.length+' fricciones confirmadas · '+approvalSteps+' paso(s) de decisión/aprobación'+(sensitive?' · datos sensibles/regulados declarados':'')+'. AUNEA usa este contexto para revisar riesgos sin volver a preguntar lo ya capturado.</p></div>';
+  const rows=(e.risks||[]).length
+    ?(e.risks||[]).map((r,i)=>'<div class="process-row"><div class="process-index">'+(i+1)+'</div><div><b>'+esc(r.description||labelFrom('OS_RISK_CATEGORY',r.category))+'</b>'
       +'<p>'+esc(labelFrom('OS_RISK_CATEGORY',r.category))+' · Probabilidad '+esc(r.likelihood_1_5||'—')+'/5 · Consecuencia '+esc(r.impact_1_5||'—')+'/5</p>'
       +'<p>Pasos: '+normalizeArray(r.step_ids).map(id=>steps.find(s=>s.id===id)?.step_name||id).map(esc).join(', ')+'</p>'
       +'<p>Problemas observados en esos pasos: '+riskRelatedFrictions(e,r).map(f=>esc(f.client_label||labelFrom('OS_FRICTION_TYPE',f.friction_type))).join(', ')+'</p></div>'
-      +'<div class="row-actions"><button class="btn btn-small" data-edit-risk-index="'+i+'">Editar</button><button class="btn btn-small btn-danger" data-delete-risk-index="'+i+'">Eliminar</button></div></div>'
-    ).join(''):'<div class="empty"><p>Todavía no hay riesgos registrados.</p></div>')+'</div>',
+      +'<div class="row-actions"><button class="btn btn-small" data-edit-risk-index="'+i+'">Editar</button><button class="btn btn-small btn-danger" data-delete-risk-index="'+i+'">Eliminar</button></div></div>').join('')
+    :'<div class="empty"><p>Todavía no hay riesgos registrados.</p></div>';
+  return section('Riesgos','Registra qué podría salir mal y en qué pasos. Las fricciones de esos pasos se muestran sólo como contexto para evitar duplicar información.',
+    known+riskReviewActionPanel(e)+'<div class="field-help"><b>Riesgos registrados</b></div><div class="process-list">'+rows+'</div>',
     '<button type="button" class="btn btn-outline" id="reviewRiskCandidates">Revisar posibles riesgos</button><button type="button" class="btn btn-primary" id="addRisk" data-add-risk-global>Añadir riesgo</button>');
 }
 function addRisk(preselectedSteps=[],editIndex=null,candidate=null){
