@@ -312,17 +312,19 @@ function validationSummary(e,completion){
   const snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;
   const layers=typeof processLayerConfirmations==='function'?processLayerConfirmations(e):{},layersReady=!!(layers.map&&layers.frictions&&layers.risks&&layers.impact);
   const consistency=typeof preCloseConsistencyReview==='function'?preCloseConsistencyReview(e,completion):{items:[],blockers:[],reviews:[],information:[],clear:true};
-  const primaryCta=consistency.blockers.length?'':'<button class="btn btn-primary" id="confirmClosingAsIs">Confirmar AS-IS</button>';
+  const evidenceField=(schema?.fields||[]).find(f=>f.Field_ID==='DF095');
+  const evidencePending=normalizeArray(evidenceField&&typeof effectiveValue==='function'?effectiveValue(evidenceField,e):[]).filter(x=>x&&x!=='No hay evidencias pendientes');
+  const primaryCta=snap?'<span class="status green">✓ Cierre confirmado y snapshot generado</span>':(consistency.blockers.length?'':'<button class="btn btn-primary" id="confirmClosingAsIs">Confirmar cierre y generar snapshot</button>');
   const cta=primaryCta+(consistency.blockers.length?'<div class="notice warn"><b>El cierre está bloqueado.</b><br>Resuelve los elementos rojos de la validación de coherencia.</div>':'');
   return section('Confirmación del AS-IS','Revisión factual del estudio; ningún estado se afirma más allá de lo realmente capturado.',
     `<div class="grid g3">
-      <div class="notice"><b>Proceso</b><br>${steps.length} paso(s) activo(s) · ${e.confirmedAsIs?'AS-IS confirmado':'AS-IS pendiente de confirmar'}</div>
+      <div class="notice"><b>Proceso</b><br>${steps.length} paso(s) activo(s) · ${snap?'AS-IS confirmado':'AS-IS pendiente de cierre'}</div>
       <div class="notice"><b>Fricciones</b><br>${fr.length} detectada(s), ${frWithEvidence} con evidencia registrada</div>
       <div class="notice"><b>Riesgos</b><br>${risks.length} registrado(s), ${risksWithControls} con controles registrados</div>
-      <div class="notice"><b>Economics</b><br>${econ.length} input(s) — ${esc(econLine)}</div>
+      <div class="notice"><b>Impactos</b><br>${econ.length} registrado(s) — ${esc(econLine)}</div>
       <div class="notice"><b>Obligatorios</b><br>${completion.missing.length===0?'✓ completos':`${completion.missing.length} pendiente(s)`}</div>
       <div class="notice"><b>Siguiente paso</b><br>${nextStep?esc(nextStep):'Pendiente de acordar (DF098)'}</div>
-      <div class="notice"><b>Snapshot sellado</b><br>${snap?`v${snap.version} · ${esc(formatDateEs(snap.sealedAt))}`:'Se sella al confirmar el AS-IS'}</div>
+      <div class="notice"><b>Snapshot final</b><br>${snap?`v${snap.version} · ${esc(formatDateEs(snap.sealedAt))}`:'Pendiente · se genera al confirmar el cierre'}</div>
     </div>
     <div class="closing-consistency-review" data-consistency-review="1">
       <h3>Validación de coherencia</h3>
@@ -345,16 +347,19 @@ function validationSummary(e,completion){
       ${consistency.reviews.length&&!consistency.blockers.length?'<div class="field-help">Las observaciones ámbar no impiden el cierre: permanecen explícitas como incertidumbre/evidencia pendiente para Trabajo interno.</div>':''}
     </div>
     <div class="closing-first-readings">
-      <h3>Resumen de la sesión</h3>
-      <p class="field-help">Lecturas objetivas de lo capturado. No son todavía diagnóstico, recomendación, ROI ni propuesta.</p>
+      <h3>Resumen de control antes del cierre</h3>
+      <p class="field-help">Comprobación compacta de lo ya capturado. No añade diagnóstico, recomendación, ROI ni propuesta.</p>
       <div class="grid g3">
-        <div class="notice"><b>Flujo observado</b><br>${steps.length} pasos · ${steps.filter(s=>String(s.step_type||'').toUpperCase()==='DECISION').length} decisión(es)</div>
-        <div class="notice"><b>Problemas registrados</b><br>${fr.length} fricciones · ${risks.length} riesgos</div>
-        <div class="notice"><b>Impactos cuantificados</b><br>${econ.length} registros económicos/temporales</div>
+        <div class="notice"><b>Proceso</b><br>${steps.length} pasos</div>
+        <div class="notice"><b>Fricciones</b><br>${fr.length}</div>
+        <div class="notice"><b>Riesgos</b><br>${risks.length}</div>
+        <div class="notice"><b>Impactos</b><br>${econ.length}</div>
+        <div class="notice ${consistency.blockers.length?'warn':'good'}"><b>Bloqueantes</b><br>${consistency.blockers.length}</div>
+        <div class="notice ${consistency.reviews.length?'info':'good'}"><b>Observaciones</b><br>${consistency.reviews.length}</div>
+        <div class="notice ${evidencePending.length?'info':'good'}"><b>Evidencias pendientes</b><br>${evidencePending.length}</div>
+        <div class="notice"><b>Siguiente acción</b><br>${nextStep?esc(nextStep):'Pendiente de acordar'}</div>
       </div>
-      ${fr.length?'<div class="closing-reading-list"><b>Fricciones prioritarias declaradas</b><div>'+normalizeArray(e.answers?.DF096).map(id=>fr.find(x=>x.id===id)).filter(Boolean).map(x=>'<span class="chip">'+esc(x.client_label||labelFrom('OS_FRICTION_TYPE',x.friction_type))+'</span>').join('')+'</div></div>':''}
-      ${econ.length?'<div class="closing-reading-list"><b>Impactos registrados</b><div class="closing-impact-list">'+econ.map(x=>{const active=Number(x.annual_active_hours||0),wait=Number(x.annual_wait_hours||0),amount=Number(x.direct_loss_eur_annual||x.current_tool_cost_eur_annual||x.realized_cash_saving_eur_annual||0);const metric=wait?wait+' h/año espera':active?active+' h/año':amount?amount.toLocaleString('es-ES')+' €/año':'Registrado';return '<span class="closing-impact-item"><strong>'+esc(typeof econDriverLabel==='function'?econDriverLabel(x.driver_id):x.driver_id)+'</strong><small>'+esc(metric)+'</small></span>'}).join('')+'</div></div>':''}
-      ${(completion.missing||[]).length?'<div class="notice warn"><b>Pendientes antes de Trabajo interno</b><br>'+completion.missing.map(x=>{const label=esc(x.label||x.id||x),stage=x.stage||'';return stage&&stage!=='S09'?'<button class="link-btn" data-goto-stage="'+attr(stage)+'">'+label+'</button>':label}).join(' · ')+'</div>':'<div class="notice good"><b>Captura completa</b><br>No quedan obligatorios pendientes en la sesión.</div>'}
+      ${(()=>{const pending=(completion.missing||[]).filter(x=>(x.id||x)!=='DF093'&&(x.id||x)!=='Confirmación AS-IS');return pending.length?'<div class="notice warn"><b>Pendientes antes de Trabajo interno</b><br>'+pending.map(x=>{const label=esc(x.label||x.id||x),stage=x.stage||'';return stage&&stage!=='S09'?'<button class="link-btn" data-goto-stage="'+attr(stage)+'">'+label+'</button>':label}).join(' · ')+'</div>':'<div class="notice good"><b>Captura completa</b><br>No quedan obligatorios pendientes distintos de la confirmación final del cierre.</div>'})()}
     </div>
     <div class="field-help internal-only" style="margin-top:10px"><b>Notas internas del consultor:</b> ${notes?esc(notes):'—'}</div>
     <div style="margin-top:16px">${cta}</div>`
