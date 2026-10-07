@@ -126,16 +126,16 @@ class RiskCandidateEngine:
         out=[]
 
         sensitive_values=[str(x) for x in self._arr(answers.get("DF073")) if str(x).upper() not in {"NONE","UNKNOWN",""}]
-        reversibility_value=answers.get("DF074")
+        difficult_reversibility=any(str(x.get("reversibility") or "").upper() in {"HARD","IRREVERSIBLE"} for x in risks)
         human_approval_values=[str(x) for x in self._arr(answers.get("DF075")) if str(x).upper() not in {"NONE","UNKNOWN",""}]
         contextual_questions=[]
         contextual_signals=[]
         if sensitive_values:
             contextual_questions.append("¿El escenario afectaría a los datos sensibles o regulados ya declarados?")
             contextual_signals.append("DF073")
-        if reversibility_value not in (None,"") and str(reversibility_value).upper() not in {"REVERSIBLE","UNKNOWN","NONE"}:
+        if difficult_reversibility:
             contextual_questions.append("¿Qué ocurriría si la acción no pudiera revertirse de forma sencilla?")
-            contextual_signals.append("DF074")
+            contextual_signals.append("RT_RISK.Reversibility")
         if human_approval_values:
             contextual_questions.append("¿Afecta este escenario a una acción que debe mantener aprobación humana?")
             contextual_signals.append("DF075")
