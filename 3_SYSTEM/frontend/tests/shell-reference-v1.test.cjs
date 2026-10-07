@@ -149,6 +149,13 @@ test('B03 status is driven by Diagnostic Master requiredness without duplicating
 });
 
 test('Console keeps the reference identifier without a legacy mode wrapper',()=>{assert.match(stateJs,/function pageTop\(title,subtitle,actions='',screenId=''\)/);assert.doesNotMatch(html,/ui\/mode\.js/)});
+test('private AS-IS pages defensively keep one layer confirmation bar in runtime',()=>{
+  assert.match(stateJs,/function dedupeProcessLayerConfirmations\(\)/);
+  assert.match(stateJs,/\['pasos','fricciones','riesgos','impacto'\]\.includes\(state\.activePage\)/);
+  assert.match(stateJs,/querySelectorAll\('\[data-confirm-process-layer="'\+layer\+'"\]'\)/);
+  assert.match(stateJs,/buttons\.slice\(1\)\.forEach/);
+  assert.match(stateJs,/dedupeProcessLayerConfirmations\(\);/);
+});
 test('C01 closes PG01 interaction detail: compound phone, canonical fold title and a real advance gate', () => {
   // The fold carries the name the session actually uses for DF004/DF007-DF010.
   assert.match(diagJs, /PG01_DISCLOSURE_TITLE='Objetivo, criterios y restricciones de la sesión'/);
