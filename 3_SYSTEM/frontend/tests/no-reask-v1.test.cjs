@@ -7,7 +7,7 @@ const path=require('node:path');
 const code=fs.readFileSync(path.join(__dirname,'..','domain/no-reask.js'),'utf8');
 const company={id:'c1',name:'ACME',sector:'D25',country:'España'};
 const eng={companyId:'c1',contactIds:['p1'],answers:{DF011:'Proceso'},answerDetails:{},processSteps:[{id:'s1',status:'ACTIVE',step_name:'Alta',actor:'A1',tool:'T1',active_time:10,rework_time:2,occurrences_per_case:1,communication_channels:['CH1'],inputs:['AR1'],outputs:['AR2']},{id:'s2',status:'ACTIVE',step_name:'Aprobación',step_type:'ST05',actor:'A2',tool:'T2',wait_time:60,decision_criteria:['DC1'],communication_channels:['CH2']}],frictions:[{id:'f1',status:'ACTIVE',friction_type:'P07',evidence_type:'EV02'}],risks:[],economicInputs:[],confirmedAsIs:false};
-const opts={REF_COUNTRY_ISO3166:[{value:'ES',label:'España'}],REF_DOMAIN:[{value:'D25',label:'Professional Services Delivery'}],OS_COMM_CHANNEL:[{value:'CH1',label:'Email'},{value:'CH2',label:'Teams'},{value:'CH3',label:'Portal'}],OS_TOOL_CATEGORY:[],OS_ACTOR_ROLE:[],OS_ARTIFACT_TYPE:[],OS_FRICTION_TYPE:[{value:'P07',label:'Cuello'}]};
+const opts={REF_COUNTRY_ISO3166:[{value:'ES',label:'España'}],REF_DOMAIN:[{value:'D25',label:'Professional Services Delivery'}],OS_COMM_CHANNEL:[{value:'CH1',label:'Email'},{value:'CH2',label:'Teams'},{value:'CH3',label:'Portal'}],OS_REVERSIBILITY:[{value:'REVERSIBLE',label:'Fácilmente reversible'},{value:'PARTIAL',label:'Reversible con coste / intervención'},{value:'HARD',label:'Difícil de revertir'},{value:'IRREVERSIBLE',label:'Prácticamente irreversible'}],OS_TOOL_CATEGORY:[],OS_ACTOR_ROLE:[],OS_ARTIFACT_TYPE:[],OS_FRICTION_TYPE:[{value:'P07',label:'Cuello'}]};
 const ctx={console,schema:{fields:[{Field_ID:'DF001',Requiredness:'REQUIRED_90M',Ask_Mode:'PREFILL_CONFIRM',Reask_Policy:'CONFIRM_ONLY_IF_CHANGED',Branch_Rule_ID:'BR-BASE',Option_Set_ID:null,Write_Target:'RT_COMPANY.Company_Name',Pregunta_o_etiqueta_ES:'Nombre de la empresa'},{Field_ID:'DF050',Pregunta_o_etiqueta_ES:'Canales de comunicación utilizados',Objetivo_concreto:'',Requiredness:'CONDITIONAL_90M',Ask_Mode:'DERIVE_AND_CONFIRM',Reask_Policy:'DERIVE_THEN_CONFIRM',Branch_Rule_ID:'BR-TOOLS',Reuse_From:'RT_PROCESS_STEP.Communication_Channels',Option_Set_ID:'OS_COMM_CHANNEL',Validation:'0..N.',Ejemplo_ES:'Email; Teams'},{Field_ID:'DF094',Requiredness:'CONDITIONAL_90M',Ask_Mode:'SYSTEM_GENERATED',Branch_Rule_ID:'BR-CLOSE'}]},currentEng:()=>eng,companyById:()=>company,fieldOptions:id=>opts[id]||[],labelFrom:(id,v)=>(opts[id]||[]).find(o=>String(o.value)===String(v))?.label||v,normalizeArray:v=>Array.isArray(v)?v:(v==null||v===''?[]:[v]),setAnswer:(fid,v)=>{eng.answers[fid]=v},setPage:()=>{},now:()=>new Date(0).toISOString(),markDirty:()=>{},audit:()=>{},answerDetails:e=>{e.answerDetails=e.answerDetails||{};return e.answerDetails},bindForms:()=>{},renderControl:(f,val)=>'<CONTROL value="'+(Array.isArray(val)?val.join(','):(val==null?'':val))+'">',render:()=>{},openModal:()=>{},id:p=>p,closeModal:()=>{},toast:()=>{},state:{companies:[company]},document:{querySelectorAll:()=>[],getElementById:()=>({})},esc:v=>String(v??''),attr:v=>String(v??''),requiredMark:()=>'<span class="required-mark" title="Campo obligatorio">*</span>'};
 ctx.prefillChip=s=>s?'<span class="prefill-chip">Prerrellenado desde '+s+'</span>':'';
 vm.createContext(ctx);vm.runInContext(code,ctx);
@@ -20,7 +20,6 @@ test('BR-RISK discovery probes stay available before a risk exists without makin
   const e={answers:{},answerDetails:{},processSteps:[],frictions:[],risks:[],economicInputs:[],confirmedAsIs:false};
   const probes=[
     {Field_ID:'DF073',Stage_ID:'S06',Write_Target:'RT_PROCESS.Sensitive_Data',Ask_Mode:'CONDITIONAL_ASK',Requiredness:'CONDITIONAL_90M',Branch_Rule_ID:'BR-RISK'},
-    {Field_ID:'DF074',Stage_ID:'S06',Write_Target:'RT_PROCESS.Irreversible_Actions',Ask_Mode:'CONDITIONAL_ASK',Requiredness:'CONDITIONAL_90M',Branch_Rule_ID:'BR-RISK'},
     {Field_ID:'DF090',Stage_ID:'S08',Write_Target:'RT_PROCESS.Security_Constraints',Ask_Mode:'CONDITIONAL_ASK',Requiredness:'CONDITIONAL_90M',Branch_Rule_ID:'BR-RISK'}
   ];
   assert.equal(ctx.branchActive('BR-RISK',e),false);
@@ -32,8 +31,7 @@ test('BR-RISK ignores negative screening answers and activates only on material 
   const base=()=>({answers:{},answerDetails:{},processSteps:[],frictions:[],risks:[],economicInputs:[]});
   const negative=base();
   negative.answers.DF073=['NONE'];
-  negative.answers.DF074='REVERSIBLE';
-  assert.equal(ctx.branchActive('BR-RISK',negative),false,'Ninguno/Reversible must not create a false risk branch');
+  assert.equal(ctx.branchActive('BR-RISK',negative),false,'Ninguno must not create a false risk branch');
 
   const critical=base();critical.answers.DF018='4';
   assert.equal(ctx.branchActive('BR-RISK',critical),true,'high process criticality is a canonical risk trigger');
@@ -47,12 +45,31 @@ test('BR-RISK ignores negative screening answers and activates only on material 
   const sensitive=base();sensitive.answers.DF073=['PERSONAL'];
   assert.equal(ctx.branchActive('BR-RISK',sensitive),true);
 
-  const irreversible=base();irreversible.answers.DF074='HARD';
+  const irreversible=base();irreversible.risks=[{description:'Envío contractual',reversibility:'HARD'}];
   assert.equal(ctx.branchActive('BR-RISK',irreversible),true);
 
   const security=base();security.answers.DF090=['AUDIT_LOG'];
   assert.equal(ctx.branchActive('BR-RISK',security),true);
 });
+test('DF074 is derived from completed RiskInput reversibility and never owned by a manual questionnaire answer',()=>{
+  const e={answers:{DF074:'texto manual obsoleto'},answerDetails:{},processSteps:[],frictions:[],economicInputs:[],risks:[
+    {description:'Pago irreversible',reversibility:'IRREVERSIBLE'},
+    {description:'Aviso corregible',reversibility:'REVERSIBLE'}
+  ]};
+  assert.equal(ctx.reusedValue('DF074',e),'Pago irreversible — Prácticamente irreversible');
+  const f={Field_ID:'DF074',Pregunta_o_etiqueta_ES:'Decisiones/acciones difíciles de revertir',Ask_Mode:'DERIVED',Reuse_From:'RT_RISK.Reversibility',Reask_Policy:'NO_REASK',Requiredness:'CONDITIONAL_90M',Branch_Rule_ID:'BR-RISK',Control_UI:'TEXT_LONG'};
+  assert.equal(ctx.effectiveValue(f,e),'Pago irreversible — Prácticamente irreversible','derived owner must win over any stale manual answer');
+  assert.equal(ctx.reuseSourceInfo(f).label,'riesgos registrados');
+});
+
+test('DF074 derivation stays unknown until every registered risk has reversibility completed',()=>{
+  const e={answers:{},answerDetails:{},processSteps:[],frictions:[],economicInputs:[],risks:[
+    {description:'Completo',reversibility:'HARD'},
+    {description:'Pendiente',reversibility:''}
+  ]};
+  assert.equal(ctx.reusedValue('DF074',e),undefined);
+});
+
 test('an existing CRM value is prefilled into the real control, never a blank question',()=>{
   const f={Field_ID:'DF001',Pregunta_o_etiqueta_ES:'Empresa',Objetivo_concreto:'',Requiredness:'REQUIRED_90M',Ask_Mode:'PREFILL_CONFIRM',Reask_Policy:'CONFIRM_ONLY_IF_CHANGED',Branch_Rule_ID:'BR-BASE',Reuse_From:'RT_COMPANY.Company_Name',Write_Target:'RT_COMPANY.Company_Name',Option_Set_ID:null,Validation:'',Ejemplo_ES:''};
   const html=ctx.renderQuestion(f,eng);
