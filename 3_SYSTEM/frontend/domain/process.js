@@ -954,7 +954,7 @@ function processPage(){
   const locked=typeof isAsisConsoleLocked==='function'&&isAsisConsoleLocked(e);
   const top='<button class="btn btn-primary" id="openSessionDisplayFromProcess">'+(locked?'Vista con cliente abierta ↗':'Vista con cliente ↗')+'</button>';
   return pageTop('Mapa AS-IS','Lo que sabemos del proceso actual, todo en un mismo mapa.',top)
-    +(typeof asisConsoleLockNotice==='function'?asisConsoleLockNotice():'')+asisMapPage(e,steps,fr)+layerCanonicalQuestions(e,'S04');
+    +(typeof asisConsoleLockNotice==='function'?asisConsoleLockNotice():'')+asisMapPage(e,steps,fr);
 }
 function consultantLayerPage(title,intro,body,layer,stageId){
   const e=currentEng();if(!e)return pageTop(title,'Abre primero un estudio.');
