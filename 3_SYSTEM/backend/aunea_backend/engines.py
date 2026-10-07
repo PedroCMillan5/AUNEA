@@ -134,7 +134,9 @@ class RiskCandidateEngine:
         for s in steps:
             sid=str(s.get("id") or "")
             if sid and str(s.get("step_type") or "")=="ST05":
-                add(f"APPROVAL:{sid}","Control de aprobación",[sid],
+                upstream=[str(x.get("id")) for x in steps if str(x.get("normal_next_step") or "")==sid or str((x.get("exception_path") or {}).get("destination_step") or "")==sid]
+                approval_scope=list(dict.fromkeys([*upstream,sid]))
+                add(f"APPROVAL:{sid}","Control de aprobación",approval_scope,
                     "Una operación podría continuar sin la aprobación requerida o sin que quede correctamente acreditada.",
                     "El flujo contiene un paso de aprobación. Conviene validar qué ocurriría si la autorización faltara, llegara tarde o no quedara trazada.",
                     ["¿Qué condición obliga a aprobar?","¿Quién debe aprobar?","¿Qué impide continuar sin aprobación?","¿Qué evidencia queda de la autorización?"],
