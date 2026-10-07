@@ -165,13 +165,13 @@ test('friction capture never invents evidence type or count period',()=>{
   assert.match(process,/Si registras una pérdida monetaria directa, indica también el periodo/);
 });
 
-test('DF074 follows the Drive canonical long-text contract and removes legacy step-linked metadata',()=>{
+test('DF074 is a risk-owned derived projection, never a second editable S06 question',()=>{
   const schemaSource=read('services/schema.js');
-  assert.match(schemaSource,/df074:\{"Field_ID":"DF074","Pregunta_o_etiqueta_ES":"¿Hay decisiones\/acciones difíciles de revertir\?","Control_UI":"TEXT_LONG"/);
-  assert.match(noReask,/function migrateDf074ToCanonicalText/);
-  assert.match(noReask,/DF074__step/);
-  assert.match(noReask,/DF074__steps/);
-  assert.doesNotMatch(noReask,/Selecciona un nivel de reversibilidad válido/);
+  assert.match(schemaSource,/df074:\{"Field_ID":"DF074","Pregunta_o_etiqueta_ES":"Decisiones\/acciones difíciles de revertir","Control_UI":"TEXT_LONG","Option_Set_ID":null,"Ask_Mode":"DERIVED","Reuse_From":"RT_RISK\.Reversibility"/);
+  assert.match(noReask,/function derivedRiskIrreversibility/);
+  assert.match(noReask,/function migrateDf074ToRiskDerived/);
+  assert.doesNotMatch(noReask,/RISK_DISCOVERY_FIELDS=new Set\(\['DF073','DF074','DF090'\]\)/);
+  assert.match(process,/stageId==='S06'&&f\.Field_ID==='DF074'&&mode==='DERIVED'/);
 });
 
 test('legacy risks are invalidated instead of trusting old implicit booleans',()=>{
