@@ -1,4 +1,4 @@
-// [AUNEA-UAT-BROWSER-130] START — Native Chromium three-case map and reload acceptance.
+// [AUNEA-UAT-BROWSER-130] START — Native Chromium single-UAT map and reload acceptance.
 const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),assert=require('node:assert/strict');
 const {chromium}=require('playwright');
 const root=path.resolve(__dirname,'..'),outDir=path.join(root,'tests','browser-evidence');
@@ -28,7 +28,7 @@ async function main(){
   const ids=await page.evaluate(()=>state.engagements.filter(e=>e.id.startsWith('UAT3-CASE-')).map(e=>e.id));
   assert.equal(ids.length,1,'The actual UAT click must create exactly one study.');
   for(const id of ids){
-   await page.locator('[data-uat3-open="'+id+'"][data-uat3-page="proceso"]').click();
+   await page.locator('[data-single-uat-stage="S04"]').click();
    const canvas=page.locator('.flow-canvas');
    await canvas.waitFor();
    await page.waitForTimeout(100);
@@ -51,10 +51,10 @@ async function main(){
   await page.reload({waitUntil:'domcontentloaded'});
   await page.locator('[data-page="uat"]').click();
   const afterReload=await page.evaluate(()=>state.engagements.filter(e=>e.id.startsWith('UAT3-CASE-')).map(e=>e.id));
-  assert.deepEqual(afterReload,ids,'The three business studies must survive a native browser reload.');
+  assert.deepEqual(afterReload,ids,'The single UAT study must survive a native browser reload.');
   assert.deepEqual(failures,[],'Unhandled browser JS errors: '+failures.join(' / '));
-  process.stdout.write('CHROMIUM_UAT3_PASS: 3 studies generated, navigated, Impact viewport retained and recovered after reload.\n');
+  process.stdout.write('CHROMIUM_UAT_PASS: 1 study generated, navigated and recovered after reload.\n');
  }finally{if(browser)await browser.close();await new Promise(resolve=>server.close(resolve))}
 }
-main().catch(err=>{console.error('CHROMIUM_UAT3_FAIL:',err.stack||err);process.exitCode=1});
+main().catch(err=>{console.error('CHROMIUM_UAT_FAIL:',err.stack||err);process.exitCode=1});
 // [AUNEA-UAT-BROWSER-130] END
