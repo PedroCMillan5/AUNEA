@@ -24,6 +24,10 @@ function canonicalValueFromLabel(setId,value){if(value===undefined||value===null
 function reaskState(e){e.reaskOverrides=e.reaskOverrides||{};return e.reaskOverrides}
 function explicitReaskAllowed(fid,e){return !!reaskState(e)[fid]}
 function valuePresent(v){if(v===undefined||v===null||v==='')return false;if(Array.isArray(v))return v.length>0;if(typeof v==='object')return Object.values(v).some(valuePresent);return true}
+function confirmedDuplicateEntryValuePresent(v){
+  const rows=Array.isArray(v)?v:(v&&typeof v==='object'?[v]:[]);
+  return rows.some(row=>!!String(row?.data||'').trim()&&!!row?.from&&!!row?.to);
+}
 function canonicalFieldValidationIssue(f,v,e){
   if(!f)return '';
   const control=String(f.Control_UI||'').toUpperCase(),mode=v&&typeof v==='object'?String(v.mode||'').toUpperCase():'',detail=String(e?.answerDetails?.[f.Field_ID]||'').trim();
@@ -63,9 +67,10 @@ function canonicalFieldValidationIssue(f,v,e){
       if((v.from&&!stepIds.has(String(v.from)))||(v.to&&!stepIds.has(String(v.to))))return 'Uno de los pasos seleccionados ya no está activo.';
     }
     if(control==='STEP_PAIR_LIST_SELECTOR'){
-      const rows=Array.isArray(v)?v:(v&&typeof v==='object'?[v]:[]);
+      // Incomplete rows are UI drafts, not confirmed diagnostic findings. They must not block the
+      // layer or activate downstream logic until datum + source + destination are all present.
+      const rows=(Array.isArray(v)?v:(v&&typeof v==='object'?[v]:[])).filter(row=>!!String(row?.data||'').trim()&&!!row?.from&&!!row?.to);
       for(const row of rows){
-        if(!String(row?.data||'').trim()||!row?.from||!row?.to)return 'Cada reintroducción debe indicar la información afectada, el paso de origen y el paso de destino.';
         if(String(row.from)===String(row.to))return 'El origen y el destino de una reintroducción deben ser pasos distintos.';
         if(!stepIds.has(String(row.from))||!stepIds.has(String(row.to)))return 'Una reintroducción contiene un paso que ya no está activo.';
       }
@@ -194,7 +199,7 @@ function branchActive(ruleId,e){
     case 'BR-SLA':return valuePresent(answers.DF025)||valuePresent(answers.DF026)||frTypes.has('P06');
     case 'BR-APPROVAL':return steps.some(x=>x.step_type==='ST05'||normalizeArray(x.decision_criteria).length>0)||frTypes.has('P07');
     case 'BR-TOOLS':return tools.length>=2||steps.some(x=>normalizeArray(x.manual_actions).length>0)||valuePresent(answers.DF054);
-    case 'BR-DATA':return valuePresent(answers.DF055)||valuePresent(answers.DF051)||steps.some(x=>normalizeArray(x.manual_actions).some(a=>['REKEY','COPY'].includes(String(a))))||frTypes.has('P13')||frTypes.has('P03');
+    case 'BR-DATA':return valuePresent(answers.DF055)||confirmedDuplicateEntryValuePresent(answers.DF051)||steps.some(x=>normalizeArray(x.manual_actions).some(a=>['REKEY','COPY'].includes(String(a))))||frTypes.has('P13')||frTypes.has('P03');
     case 'BR-EXCEPTION':return steps.some(x=>valuePresent(x.exception_path));
     case 'BR-VISIBILITY':return valuePresent(answers.DF027)||valuePresent(answers.DF053)||valuePresent(answers.DF081)||steps.some(x=>normalizeArray(x.manual_actions).some(a=>String(a)==='SEARCH'))||frTypes.has('P09')||frTypes.has('P14')||frTypes.has('P20');
     case 'BR-KNOWLEDGE':return frTypes.has('P20')||answers.DF019==='NO';
