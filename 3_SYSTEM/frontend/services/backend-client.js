@@ -33,9 +33,9 @@ function auneaBackendCandidates(){
   const preferred = typeof state?.backendUrl === 'string' ? state.backendUrl.trim() : '';
   const workspace = auneaWorkspaceBackendCandidates();
   const isLocalUi=typeof window!=='undefined'&&['localhost','127.0.0.1'].includes(String(window.location?.hostname||''));
-  const ordered=isLocalUi
-    ?[...workspace,...AUNEA_BACKEND_LOCAL_CANDIDATES,preferred]
-    :[preferred,...workspace,...AUNEA_BACKEND_LOCAL_CANDIDATES];
+  const ordered=workspace.length
+    ?[...workspace,preferred,...AUNEA_BACKEND_LOCAL_CANDIDATES]
+    :(isLocalUi?[...AUNEA_BACKEND_LOCAL_CANDIDATES,preferred]:[preferred,...AUNEA_BACKEND_LOCAL_CANDIDATES]);
   return [...new Set(ordered.filter(Boolean))];
 }
 
