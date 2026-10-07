@@ -86,17 +86,18 @@ function riskBuilder(e){
     ).join(''):'<div class="empty"><p>Todavía no hay riesgos registrados.</p></div>')+'</div>',
     '<button type="button" class="btn btn-outline" id="reviewRiskCandidates">Revisar posibles riesgos</button><button type="button" class="btn btn-primary" id="addRisk" data-add-risk-global>Añadir riesgo</button>');
 }
-function addRisk(preselectedSteps=[],editIndex=null){
+function addRisk(preselectedSteps=[],editIndex=null,candidate=null){
   if(typeof guardAsisMutation==='function'&&guardAsisMutation())return;
   const e=currentEng(),existing=Number.isInteger(editIndex)?e.risks?.[editIndex]:null;
   if(existing)preselectedSteps=normalizeArray(existing.step_ids);
-  const cats=fieldOptions('OS_RISK_CATEGORY'),rev=fieldOptions('OS_REVERSIBILITY'),controlOptions=fieldOptions('OS_CONTROL_TYPE'),
+  const cats=fieldOptions('OS_RISK_CATEGORY'),rev=fieldOptions('OS_REVERSIBILITY'),controlOptions=fieldOptions('OS_CONTROL_TYPE'),riskScale=fieldOptions('OS_SCALE_1_5'),
     sensitiveRaw=normalizeArray(e.answers?.DF073),sensitive=sensitiveRaw.filter(x=>x!=='NONE'),
     steps=typeof activeSteps==='function'?activeSteps(e):[],
     frictions=typeof activeFrictions==='function'?activeFrictions(e):e.frictions||[];
-  const selected=existing||{},num=v=>v===undefined||v===null?'':String(v),storedControls=normalizeArray(selected.current_control),otherControl=storedControls.find(x=>String(x).startsWith('OTHER:'))||'',selectedControlIds=storedControls.map(x=>String(x).startsWith('OTHER:')?'OTHER':String(x));
+  const selected=existing||{description:candidate?.suggested_description||'',_candidate_id:candidate?.candidate_id||''},num=v=>v===undefined||v===null?'':String(v),storedControls=normalizeArray(selected.current_control),otherControl=storedControls.find(x=>String(x).startsWith('OTHER:'))||'',selectedControlIds=storedControls.map(x=>String(x).startsWith('OTHER:')?'OTHER':String(x));
+  const candidateNotice=!existing&&candidate?'<div class="notice info risk-candidate-prefill"><b>Señal para revisar — no es un riesgo confirmado</b><p>'+esc(candidate.rationale||'')+'</p>'+(normalizeArray(candidate.review_questions).length?'<div class="field-help"><b>Comprueba antes de guardar:</b><br>'+normalizeArray(candidate.review_questions).map(q=>'• '+esc(q)).join('<br>')+'</div>':'')+'<p class="field-help">AUNEA ha preseleccionado los pasos y una redacción inicial. Tú debes decidir categoría, probabilidad, consecuencia, reversibilidad y controles.</p></div>':'';
   openModal(existing?'Editar riesgo':'Añadir riesgo',
-    '<div class="step-groups process-modal-form risk-modal-form"><details class="step-group" open><summary>¿Qué podría salir mal?</summary><div class="form-grid">'
+    '<div class="step-groups process-modal-form risk-modal-form">'+candidateNotice+'<details class="step-group" open><summary>¿Qué podría salir mal?</summary><div class="form-grid">'
     +'<div class="field full"><label>¿En qué pasos podría ocurrir?</label><div class="choice-grid">'
     +steps.map(s=>'<div class="choice"><input type="checkbox" id="risk_step_'+attr(s.id)+'" data-risk-step="'+attr(s.id)+'" '+(preselectedSteps.includes(s.id)?'checked':'')+'><label for="risk_step_'+attr(s.id)+'">'+esc(s.step_name||s.id)+'</label></div>').join('')+'</div></div>'
     +'<div class="field full"><label>Problemas observados en los pasos elegidos</label><div class="field-help">Se reutilizan como contexto. No tienes que volver a seleccionarlos ni describirlos.</div><div class="choice-grid">'
