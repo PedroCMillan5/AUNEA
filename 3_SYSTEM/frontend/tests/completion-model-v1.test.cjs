@@ -170,7 +170,7 @@ test('PG09 confirms AS-IS and never offers engines even when internal calculatio
   const e={confirmedAsIs:true,processSteps:[{id:'s1',status:'ACTIVE'}],frictions:[],risks:[],economicInputs:[],answers:{DF098:'Solicitar evidencias — Pedro — 12/09/2026'}};
   const completion={readyToCalculate:true,missing:[],blockers:[]};
   const html=ctx.validationSummary(e,completion);
-  assert.match(html,/id="confirmClosingAsIs">Confirmar AS-IS/);
+  assert.match(html,/id="confirmClosingAsIs">Confirmar cierre y generar snapshot/);
   assert.doesNotMatch(html,/id="runDiag"/);
   assert.doesNotMatch(html,/blocker-list/);
   assert.match(html,/Solicitar evidencias — Pedro — 12\/09\/2026/);
@@ -202,7 +202,7 @@ test('PG01–PG09 never calculate or recalculate recommendation',()=>{
   html=ctx.stagePage();
   assert.equal((html.match(/id="runDiag"/g)||[]).length,0,'PG09 only confirms AS-IS');
   assert.doesNotMatch(html,/id="nextStage"/,'there is no stage 10 to continue to');
-  assert.match(html,/id="confirmClosingAsIs">Confirmar AS-IS/);
+  assert.match(html,/id="confirmClosingAsIs">Confirmar cierre y generar snapshot/);
   assert.doesNotMatch(html,/id="runDiag"/);
 
   e.diagnosticOutput={recommendation:{}};
