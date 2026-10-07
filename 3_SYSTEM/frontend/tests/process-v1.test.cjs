@@ -330,7 +330,7 @@ test('friendly AS-IS graph keeps routing owners and adds functional node iconogr
 test('server-owned Pain candidates remain proposals until human confirmation',()=>{
   assert.match(code,/async function reviewPainCandidates\(/);
   assert.match(code,/fetchPainCandidates\(e\)/);
-  assert.match(code,/Señales para revisar, no fricciones confirmadas/);
+  assert.match(code,/Oportunidades para revisar con el cliente/);
   assert.match(code,/openFrictionModal\(null,x\.step_ids,x\)/);
   assert.match(code,/Señal detectada en el mapa — pendiente de confirmar/);
   assert.doesNotMatch(code,/frictions\.push\(candidate\)/,'candidate review must not persist a Friction directly');
