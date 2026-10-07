@@ -79,7 +79,7 @@ def get_engagement(engagement_id: str):
 def diagnostic_pain_candidates(payload: EngagementInput):
     return engine.pain_candidates.run(payload)
 
-@app.post("/v1/diagnostic/coverage")
+@app.post("/v1/diagnostic/risk-candidates")\ndef diagnostic_risk_candidates(payload: EngagementInput):\n    return engine.risk_candidates.run(payload)\n\n@app.post("/v1/diagnostic/coverage")
 def diagnostic_coverage(payload: EngagementInput):
     coverage=engine.coverage.run(payload)
     integrity=relational_integrity_issues(payload)
