@@ -301,10 +301,10 @@ function renderControl(f,val,opts,e){
   if(c==='DROPDOWN_WITH_DETAIL')return selectWithConditionalDetail(fid,opts,val,'Detalle si aplica');
   if(c==='DROPDOWN_WITH_OWNER_DATE')return nextStepWithOwnerDate(f,opts,e);
   if(fid==='DF074'&&c==='DROPDOWN_WITH_STEP_LINK'){
-    const d=answerDetails(e),legacyMulti=normalizeArray(d.DF074__steps||e.answers?.DF074__steps),linked=d.DF074__step||legacyMulti[0]||'';
-    return '<div class="linked-field-block risk-reversibility-control"><div class="linked-step-label">Nivel de reversibilidad del proceso</div>'+canonicalSelect(fid,opts,val)
-      +'<div class="linked-step-group"><div class="linked-step-label">Paso donde esta condición es más relevante</div>'+linkedStepSingle('DF074__step',e,linked)+'</div>'
-      +'<div class="field-help">Este dato es una señal global del proceso. La reversibilidad específica de cada riesgo se confirma dentro de su ficha.</div></div>';
+    const d=answerDetails(e),legacy=normalizeArray(d.DF074__steps||e.answers?.DF074__steps),linked=legacy.length?legacy:(d.DF074__step?[d.DF074__step]:[]);
+    const scope=valuePresent(val)?'<div class="linked-step-group"><div class="linked-step-label">Pasos afectados</div>'+linkedStepMulti('DF074__steps',e,linked)+'</div>':'';
+    return '<div class="linked-field-block risk-reversibility-control"><div class="linked-step-label">Nivel de reversibilidad</div>'+canonicalSelect(fid,opts,val)+scope
+      +'<div class="field-help">Selecciona el nivel y los pasos a los que aplica. La reversibilidad concreta de cada riesgo se confirma después en su ficha.</div></div>';
   }
   if(c==='DROPDOWN_WITH_STEP_LINK')return canonicalSelect(fid,opts,val)+stepSingle(`${fid}__step`,e,answerDetails(e)[`${fid}__step`]||'');
   if(c==='COMBOBOX_WITH_DETAIL')return selectWithConditionalDetail(fid,opts,val,'Detalle / nombre concreto');
@@ -430,6 +430,11 @@ function bindCanonicalRenderer(){
     d[fid]=[...document.querySelectorAll(`[data-linked-step-multi="${fid}"]:checked`)].map(x=>x.value);
     e.updatedAt=now();markDirty('Ámbito de pasos actualizado');
     if(typeof refreshCaptureProgress==='function')refreshCaptureProgress();
+  }));
+  document.querySelectorAll('[data-answer="DF074"]').forEach(el=>el.addEventListener('change',()=>{
+    const e=currentEng(),d=answerDetails(e);
+    if(!el.value){delete d.DF074__steps;delete d.DF074__step;}
+    render();
   }));
   document.querySelectorAll('[data-linked-step-single]').forEach(el=>el.addEventListener('change',()=>{
     const e=currentEng(),fid=el.dataset.linkedStepSingle,d=answerDetails(e);
