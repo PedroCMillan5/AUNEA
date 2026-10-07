@@ -61,6 +61,7 @@ function uat3Seed(c){
   const details={...c.details,DF066:steps.filter(s=>s.exception_path?.type==='OTHER').map(s=>s.exception_path?.condition).filter(Boolean).join(' · '),DF074__step:steps[controlStepIndex].id,DF075__steps:[steps[controlStepIndex].id]};
   const economics=[
     {step_ids:steps.map(s=>s.id),driver_id:'ED14',annual_active_hours:0,annual_wait_hours:0,capacity_cost_rate_eur_hour:c.economics.rate,
+      role_or_resource:c.economics.capacityRole||null,value:c.economics.capacityHours??null,unit:c.economics.capacityHours!=null?'h':null,period:c.economics.capacityPeriod||null,
       direct_loss_eur_annual:0,current_tool_cost_eur_annual:0,realized_cash_saving_eur_annual:0,evidence_type:'CLIENT_DECLARED',deduplication_key:null},
     {step_ids:steps.filter(s=>s.tool).map(s=>s.id),driver_id:'ED12',annual_active_hours:0,annual_wait_hours:0,capacity_cost_rate_eur_hour:null,
       direct_loss_eur_annual:0,current_tool_cost_eur_annual:c.economics.toolAnnual,realized_cash_saving_eur_annual:0,
