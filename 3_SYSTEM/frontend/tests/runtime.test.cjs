@@ -49,21 +49,18 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   assert.match(railLogo.getAttribute('src'),/assets\/brand\/Logo\.png/);
   assert.doesNotMatch(d.querySelector('.sidebar').textContent,/v?2\.0\.0/i,'the rail must not carry a product version string');
   assert.equal(d.querySelectorAll('script:not([src])').length,0);
-  for(const file of ['core/state.js','core/i18n.js','services/backend-client.js','services/schema.js','pages/diagnostic-stages.js','ui/renderer.js','domain/no-reask.js','domain/risk.js','domain/economics.js','domain/process-lifecycle.js','pages/results.js','domain/process.js','ui/process-help.js','services/engine-adapter.js','domain/completion.js','ui/shell.js','services/persistence.js','uat/visible.js','uat/crm-fixtures.js','uat/study-fixtures.js','boot.js','styles.css','data/diagnostic-master.min.json'])assert.ok(requests.includes(file),file);
-  for(const retired of ['uat/fixtures.js','uat/asis-suite.js','uat/study-suite.js'])assert.ok(!requests.includes(retired),retired+' must be retired from the runtime after the UAT reset');
+  for(const file of ['core/state.js','core/i18n.js','services/backend-client.js','services/schema.js','pages/diagnostic-stages.js','ui/renderer.js','domain/no-reask.js','domain/risk.js','domain/economics.js','domain/process-lifecycle.js','pages/results.js','domain/process.js','ui/process-help.js','services/engine-adapter.js','domain/completion.js','ui/shell.js','services/persistence.js','uat/visible.js','uat/endtoend-cases.js','boot.js','styles.css','data/diagnostic-master.min.json'])assert.ok(requests.includes(file),file);
+  for(const retired of ['uat/fixtures.js','uat/asis-suite.js','uat/study-suite.js','uat/crm-fixtures.js','uat/study-fixtures.js'])assert.ok(!requests.includes(retired),retired+' must be retired from the runtime');
   assert.ok(!requests.includes('app-no-reask-capacity-v1.js'),'retired capacity wrapper must not be part of the runtime');
   assert.ok(!requests.includes('app-persistence-uat-v1.js'),'retired mixed persistence/UAT module must not be part of the runtime');
   assert.ok(!requests.includes('app-process-editor.js'),'retired mixed risk/economics/lifecycle module must not be part of the runtime');
   const schema=await (await fetch(url+'data/diagnostic-master.min.json')).json();
   assert.equal(new Set(schema.fields.map(f=>f.Field_ID)).size,100);
   assert.equal(schema.no_reask_rules.length,15);
-  const phase1=JSON.parse(w.eval('JSON.stringify(phase1CrmSeed())'));
-  assert.equal(phase1.companies.length,12,'Fase 1 UAT genera 12 empresas completas');
-  assert.equal(phase1.contacts.length,24,'Fase 1 UAT genera 24 contactos completos');
-  assert.equal(phase1.interactions.length,24,'Fase 1 UAT genera 24 interacciones completas');
-  assert.equal(phase1.opportunities.length,16,'Fase 1 UAT genera 16 oportunidades completas');
-  assert.equal('engagements' in phase1,false,'Fase 1 UAT no genera estudios');
-  assert.equal('projects' in phase1,false,'Fase 1 UAT no genera proyectos');
+  assert.equal(w.eval("typeof loadSingleUat"),'function','the single end-to-end UAT loader is available');
+  assert.equal(w.eval("typeof uat3Seed"),'function','the single UAT reuses the governed end-to-end seed builder');
+  assert.equal(w.eval("typeof phase1CrmSeed"),'undefined','superseded Phase 1 fixture is not runtime-loaded');
+  assert.equal(w.eval("typeof phase2StudySeed"),'undefined','superseded Phase 2 fixture is not runtime-loaded');
   assert.equal(
     w.eval("auneaWorkspaceBackendCandidate({protocol:'https:',hostname:'sample-space-5500.app.github.dev'})"),
     'https://sample-space-8000.app.github.dev'
