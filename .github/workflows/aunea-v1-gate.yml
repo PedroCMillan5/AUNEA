@@ -13,6 +13,7 @@ on:
       - cleanup/v2.0.0-core
       - reconcile/frontend-v1.0.4-source
       - fix/session90-snapshot-invalidation-20260929
+      - work/as-is-ux-simplification-20260930
   pull_request:
     branches:
       - main
