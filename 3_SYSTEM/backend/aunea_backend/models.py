@@ -83,11 +83,15 @@ class RiskInput(BaseModel):
 
 class ScenarioAssumption(BaseModel):
     pain_id: str
-    future_active_hours: float | None = None
-    future_wait_hours: float | None = None
+    future_active_hours: float | None = Field(default=None, ge=0)
+    future_wait_hours: float | None = Field(default=None, ge=0)
     explicit_reduction_factor: float | None = Field(default=None, ge=0, le=1)
     preventable_loss_fraction: float | None = Field(default=None, ge=0, le=1)
-    realized_cash_saving_eur_annual: float | None = None
+    realized_cash_saving_eur_annual: float | None = Field(default=None, ge=0)
+    # RT_SCENARIO_PAIN provenance: future-state assumptions must remain explainable.
+    rationale: str | None = None
+    confidence_type: str = "HYPOTHESIS"
+    source_or_rule_id: str | None = None
 
 class CommercialScope(BaseModel):
     scope_bounded: bool = False
@@ -235,6 +239,9 @@ class ScenarioResult(BaseModel):
     economics: EconomicResult
     risk: RiskResult
     quote: Quote
+    assumptions: list[ScenarioAssumption] = Field(default_factory=list)
+    assumption_set_hash: str | None = None
+    payback_months: float | None = None
     delta_vs_optimal: dict[str, Any] = Field(default_factory=dict)
     status: str = "COMPUTED"
 
