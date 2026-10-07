@@ -80,13 +80,13 @@ class PainCandidateEngine:
         if isinstance(dup,dict) and dup.get("from") and dup.get("to"):
             sids=[str(dup["from"]),str(dup["to"])]
             if not _existing(e,"P03",sids):
-                out.append(_candidate("P03",sids,"El mapa contiene una reintroducción de la misma información confirmada en DF051.",["DF051"]))
+                out.append(_candidate("P03",sids,"La misma información se vuelve a introducir manualmente en otro punto del proceso. Conviene comprobar cuánto trabajo añade y si puede evitarse.",["DF051"]))
         elif isinstance(dup,list):
             for item in dup:
                 if isinstance(item,dict) and item.get("from") and item.get("to"):
                     sids=[str(item["from"]),str(item["to"])]
                     if not _existing(e,"P03",sids):
-                        out.append(_candidate("P03",sids,"El mapa contiene una reintroducción de la misma información confirmada en DF051.",["DF051"]))
+                        out.append(_candidate("P03",sids,"La misma información se vuelve a introducir manualmente en otro punto del proceso. Conviene comprobar cuánto trabajo añade y si puede evitarse.",["DF051"]))
 
         # P15 — confirmed DF054 means the consultant has identified a manual cross-tool exchange/integration gap.
         for token in _arr(answers.get("DF054")):
@@ -99,7 +99,7 @@ class PainCandidateEngine:
                 parts=token.split(":")
                 if len(parts)>=2:sids=[parts[1]]
             if sids and not _existing(e,"P15",sids):
-                out.append(_candidate("P15",sids,"Se ha confirmado un intercambio manual o gap de integración en DF054; revisa si cumple la condición de fragmentación de herramientas.",["DF054"]))
+                out.append(_candidate("P15",sids,"La información pasa manualmente entre herramientas distintas. Conviene comprobar si este traspaso añade trabajo, errores o necesidad de conciliación.",["DF054"]))
 
         for s in steps:
             sid=str(s.get("id") or "")
@@ -108,20 +108,20 @@ class PainCandidateEngine:
             # P07 — approval gate + recurring administration/chasing or elapsed wait is enough for a candidate, never auto-confirmation.
             if str(s.get("step_type") or "")=="ST05" and (_num(s.get("wait_time"))>0 or "CHASE" in actions):
                 if not _existing(e,"P07",[sid]):
-                    out.append(_candidate("P07",[sid],"Hay un paso de aprobación con espera o seguimiento manual. Comprueba si el retraso/administración es evitable y atribuible al control de aprobación.",["RT_PROCESS_STEP.step_type=ST05","wait_time/CHASE"]))
+                    out.append(_candidate("P07",[sid],"Hay una aprobación que genera espera o seguimiento manual. Conviene comprobar cuánto retraso provoca y cuánto trabajo exige perseguir o registrar la aprobación.",["RT_PROCESS_STEP.step_type=ST05","wait_time/CHASE"]))
             # P11 — recorded rework/error is a direct signal to review a rework/quality pain.
             if _num(s.get("rework_time"))>0 or _num(s.get("error_rate"))>0:
                 if not _existing(e,"P11",[sid]):
-                    out.append(_candidate("P11",[sid],"El paso registra retrabajo o errores. Comprueba el defecto concreto, frecuencia y esfuerzo de corrección antes de confirmar.",["RT_PROCESS_STEP.rework_time/error_rate"]))
+                    out.append(_candidate("P11",[sid],"En este paso se registran errores o trabajo que debe repetirse. Conviene identificar qué falla, con qué frecuencia y cuánto cuesta corregirlo.",["RT_PROCESS_STEP.rework_time/error_rate"]))
             # P14 — REPORT is a governed manual action; it is a candidate only because periodic/repetitive reporting still needs confirmation.
             if "REPORT" in actions and not _existing(e,"P14",[sid]):
-                out.append(_candidate("P14",[sid],"El paso contiene consolidación/reporting manual. Confirma que es preparación repetitiva y no análisis nuevo antes de guardar la fricción.",["RT_PROCESS_STEP.manual_actions=REPORT"]))
+                out.append(_candidate("P14",[sid],"En este paso se prepara información o informes manualmente. Conviene comprobar si es trabajo repetitivo de consolidación o si realmente aporta análisis nuevo.",["RT_PROCESS_STEP.manual_actions=REPORT"]))
 
         # P13 — DF055 is an explicit process-level data-quality finding; reuse its linked steps if available.
         dq=_arr(answers.get("DF055"))
         dq_steps=[str(x) for x in _arr((answers.get("_answer_details") or {}).get("DF055__steps"))]
         if dq and dq_steps and not _existing(e,"P13",dq_steps):
-            out.append(_candidate("P13",dq_steps,"Se han declarado problemas de calidad de datos en DF055 vinculados a estos pasos. Comprueba el problema observable y su impacto antes de confirmar.",["DF055","DF055__steps"]))
+            out.append(_candidate("P13",dq_steps,"Se han detectado problemas de calidad de datos en estos pasos. Conviene concretar qué datos fallan y qué correcciones o retrasos provocan.",["DF055","DF055__steps"]))
 
         # Deterministic deduplication. Same pain+step set appears once even if several signals point to it.
         dedup={}
