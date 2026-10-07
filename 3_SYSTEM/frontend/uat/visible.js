@@ -95,7 +95,7 @@ async function loadSingleUat(){
     if(current)current.disabled=false;
   }
 }
-function uatPhasePage(){
+function singleUatPage(){
   const e=singleUatEngagement(),audit=singleUatAudit(e),company=e?companyById(e.companyId):null;
   const stages=[['S01','1 · Contexto'],['S02','2 · Alcance'],['S03','3 · Demanda'],['S08','4 · Estado objetivo'],['S04','5 · Mapa AS-IS'],['S05','6 · Fricciones'],['S06','7 · Riesgos'],['S07','8 · Impacto'],['S09','9 · Validación y cierre']];
   const checks=e?'<div class="table-wrap"><table class="data-table"><thead><tr><th>Control</th><th>Estado</th></tr></thead><tbody>'+audit.checks.map(x=>'<tr><td>'+esc(x.label)+'</td><td>'+uatSingleBadge(x.ok)+'</td></tr>').join('')+'</tbody></table></div>':'';
@@ -114,7 +114,7 @@ function uatPhasePage(){
       '<div id="singleUatLoadStatus" class="notice info" role="status" aria-live="polite">'+esc(singleUatLoadStatus)+'</div>')
     +card;
 }
-pages.uat=uatPhasePage;
+pages.uat=singleUatPage;
 const __singleUatPostBindBase=postBind;
 postBind=function(){
   __singleUatPostBindBase();
