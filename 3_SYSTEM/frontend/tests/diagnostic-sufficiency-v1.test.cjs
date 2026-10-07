@@ -44,3 +44,18 @@ test('DF002 runtime mirror matches canonical sector ownership',()=>{
 });
 
 // [AUNEA-UAT-DIAG-SUFFICIENCY-010] END
+
+
+test('DF001-DF100 form one complete unique traceability contract',()=>{
+ const ids=schema.fields.map(x=>x.Field_ID);
+ assert.equal(ids.length,100);
+ assert.equal(new Set(ids).size,100);
+ assert.deepEqual([...ids].sort(),Array.from({length:100},(_,i)=>'DF'+String(i+1).padStart(3,'0')));
+});
+
+test('every diagnostic field declares capture, ownership, branching, reuse and evidence semantics',()=>{
+ const required=['Ask_Mode','Requiredness','Branch_Rule_ID','Write_Target','Engine_Consumers','Reask_Policy','Validation','Evidence_Expected','Evidence_Fallback'];
+ const gaps=[];
+ for(const f of schema.fields)for(const key of required)if(f[key]===undefined||f[key]===null||String(f[key]).trim()==='')gaps.push(f.Field_ID+':'+key);
+ assert.deepEqual(gaps,[]);
+});
