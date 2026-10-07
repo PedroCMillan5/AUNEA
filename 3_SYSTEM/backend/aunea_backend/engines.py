@@ -7,7 +7,7 @@ import uuid
 from .models import (
     EngagementInput, PainResult, EconomicResult, RiskResult, Recommendation,
     CapabilityRequirement, Quote, QuoteStatus, CoverageState, ScenarioRequest,
-    ScenarioResult, ScenarioAssumption
+    ScenarioResult, ScenarioAssumption, InputCoverageResult
 )
 from .registry import table, by_id
 from .utils import level_rank
@@ -24,6 +24,40 @@ CONFIDENCE_ORDER = {
 @dataclass
 class EngineContext:
     engagement: EngagementInput
+
+def _covered_input_ids(coverage: InputCoverageResult | None, engine: str) -> list[str]:
+    if coverage is None:
+        return []
+    return sorted(
+        item.input_id for item in coverage.items
+        if item.engine == engine and item.applicable is True and item.status == "COVERED"
+    )
+
+def _missing_input_ids(coverage: InputCoverageResult | None, engine: str) -> list[str]:
+    if coverage is None:
+        return []
+    return sorted(
+        item.input_id for item in coverage.items
+        if item.engine == engine and item.applicable is True and item.status == "GAP"
+    )
+
+def _present_value(v: Any) -> bool:
+    if v is None or v == "":
+        return False
+    if isinstance(v, (list, tuple, set, dict)):
+        return bool(v)
+    return True
+
+def _constraint_text(label: str, value: Any) -> str | None:
+    if not _present_value(value):
+        return None
+    if isinstance(value, list):
+        raw=", ".join(str(x) for x in value if x not in (None, ""))
+    elif isinstance(value, dict):
+        raw=", ".join(f"{k}: {v}" for k, v in value.items() if v not in (None, ""))
+    else:
+        raw=str(value)
+    return f"{label}: {raw}" if raw else None
 
 # [AUNEA-BE-ENGINE-PAIN-010] START — Pain Engine
 # PURPOSE: Classify pain state (CONFIRMED/INDICATED/INSUFFICIENT_EVIDENCE/NOT_DETECTED) and confidence from structured signals and evidence, never from browser-side inference.
