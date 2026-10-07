@@ -1003,7 +1003,7 @@ function impactLayerReviewSummary(e,integrity=[]){
   const incomplete=rows.filter((x,i)=>typeof economicRecordCompletenessIssues==='function'&&economicRecordCompletenessIssues(x,i).length).length;
   const issueCount=integrity.length;
   return '<div class="impact-layer-review-summary grid g3">'
-    +'<div class="notice"><b>Impactos registrados</b><br>'+rows.length+'</div>'
+    +'<div class="notice '+(rows.length?'good':'info')+'"><b>Impactos registrados</b><br>'+rows.length+'</div>'
     +'<div class="notice '+(withEvidence===rows.length&&rows.length?'good':'info')+'"><b>Con evidencia</b><br>'+withEvidence+' de '+rows.length+'</div>'
     +'<div class="notice '+(issueCount?'warn':'good')+'"><b>Comprobación</b><br>'+(issueCount?issueCount+' pendiente(s)':'Sin inconsistencias pendientes')+'</div>'
     +(incomplete?'<div class="notice warn"><b>Registros incompletos</b><br>'+incomplete+' impacto(s) necesitan completar los campos aplicables a su concepto.</div>':'')
