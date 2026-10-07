@@ -759,8 +759,11 @@ function drawProcessGraph(){
 
     const rightX=dr.right-rect.left;
     const centerY=dr.top+dr.height/2-rect.top;
-    const noStartX=dr.right-rect.left-4;
-    const noStartY=dr.bottom-rect.top-8;
+    // Give each decision route its own physical exit from the gateway.
+    // SÍ leaves through the right/centre anchor; NO leaves through the lower-right anchor.
+    // Keeping different anchors prevents the brown alternative route from drawing over the green one.
+    const noStartX=dr.right-rect.left-8;
+    const noStartY=dr.top+dr.height*.72-rect.top;
     const mainY=tr.top+tr.height/2-rect.top;
     const mergeX=tr.left-rect.left-32;
     const lowerY=Math.max(mainY+94,noStartY+64);
@@ -794,12 +797,12 @@ function drawProcessGraph(){
       if(nr){
         const targetX=nr.left-rect.left,targetY=nr.top+nr.height/2-rect.top;
         const noLaneX=rightX+72;
-        appendPath('M'+rightX+' '+centerY+'H'+noLaneX+'V'+lowerY+'H'+(targetX-18)+'V'+targetY+'H'+(targetX-5),true,true);
+        appendPath('M'+noStartX+' '+noStartY+'H'+noLaneX+'V'+lowerY+'H'+(targetX-18)+'V'+targetY+'H'+(targetX-5),true,true);
         appendLabel('NO',noLaneX+8,lowerY-12,true);
       }
     }else{
       const noLaneX=rightX+72;
-      appendPath('M'+rightX+' '+centerY+'H'+noLaneX+'V'+lowerY+'H'+mergeX+'V'+mainY,true,false);
+      appendPath('M'+noStartX+' '+noStartY+'H'+noLaneX+'V'+lowerY+'H'+mergeX+'V'+mainY,true,false);
       appendLabel('NO',noLaneX+8,lowerY-12,true);
     }
 
