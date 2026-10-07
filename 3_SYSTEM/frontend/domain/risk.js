@@ -96,7 +96,7 @@ function riskBuilder(e){
     }).join('')
     :'<div class="empty"><p>Todavía no hay riesgos registrados.</p></div>';
   return section('Riesgos','Registra qué podría salir mal y en qué pasos. Las fricciones de esos pasos se muestran sólo como contexto para evitar duplicar información.',
-    known+riskReviewActionPanel(e)+'<div class="field-help"><b>Riesgos registrados</b></div><div class="process-list">'+rows+'</div>',
+    known+'<div class="field-help risk-records-heading"><b>Riesgos registrados</b></div><div class="process-list risk-record-list">'+rows+'</div>',
     '<button type="button" class="btn btn-outline" id="reviewRiskCandidates">Revisar posibles riesgos</button><button type="button" class="btn btn-primary" id="addRisk" data-add-risk-global>Añadir riesgo</button>');
 }
 function addRisk(preselectedSteps=[],editIndex=null,candidate=null){
