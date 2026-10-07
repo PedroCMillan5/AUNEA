@@ -106,7 +106,7 @@ class PainEngine:
 # SIDE_EFFECTS: none.
 # CHANGE_RISK: CRITICAL.
 class EconomicsEngine:
-    def run(self, ctx: EngineContext) -> EconomicResult:
+    def run(self, ctx: EngineContext, coverage: InputCoverageResult | None = None) -> EconomicResult:
         issues = economic_overlap_issues(ctx.engagement.economics)
         if issues:
             # An invalid total must not reach scenario, deliverables or a currency headline.
@@ -128,12 +128,40 @@ class EconomicsEngine:
             if item.annual_active_hours is not None and item.capacity_cost_rate_eur_hour is not None:
                 capacity_value += item.annual_active_hours * item.capacity_cost_rate_eur_hour
                 has_capacity = True
-        status = "COMPLETE" if ctx.engagement.economics else "INSUFFICIENT"
+
+        covered = _covered_input_ids(coverage, "EconomicsEngine")
+        missing = _missing_input_ids(coverage, "EconomicsEngine")
+        applicable = [
+            item for item in (coverage.items if coverage is not None else [])
+            if item.engine == "EconomicsEngine" and item.applicable is True
+        ]
+        if coverage is None:
+            coverage_status = "NOT_EVALUATED"
+        elif missing:
+            coverage_status = "PARTIAL"
+        elif applicable:
+            coverage_status = "COMPLETE"
+        else:
+            coverage_status = "NOT_APPLICABLE"
+
+        # EO07: row existence is not evidence completeness.
+        if coverage_status == "PARTIAL":
+            status = "PARTIAL"
+        elif coverage_status == "NOT_APPLICABLE":
+            status = "NOT_APPLICABLE"
+        elif ctx.engagement.economics:
+            status = "COMPLETE"
+        elif applicable:
+            status = "INSUFFICIENT"
+        else:
+            status = "INSUFFICIENT" if coverage is None else "NOT_APPLICABLE"
+
         return EconomicResult(
             annual_active_hours=round(active, 2), annual_wait_hours=round(wait, 2),
             capacity_value_eur_annual=round(capacity_value, 2) if has_capacity else None,
             direct_loss_eur_annual=round(direct, 2), current_tool_cost_eur_annual=round(tool, 2),
-            realized_cash_saving_eur_annual=round(cash, 2), status=status
+            realized_cash_saving_eur_annual=round(cash, 2), status=status,
+            coverage_status=coverage_status, covered_input_ids=covered, missing_input_ids=missing
         )
 # [AUNEA-BE-ENGINE-ECON-010] END
 
