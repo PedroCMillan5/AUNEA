@@ -221,9 +221,9 @@ test('render retains actual horizontal and vertical map scroll across an in-plac
   const code=fs.readFileSync(path.join(root,'core/state.js'),'utf8');
   const snippet=code.slice(code.indexOf('// ['+'AUNEA-FE-PROC-VIEWPORT-052'+'] START'),code.indexOf('function goToProcessFromStage()'));
   const study={id:'ENG-1',processTab:'fricciones'};
-  let canvas={scrollLeft:640,scrollTop:70},workspace={dataset:{processEngagement:'ENG-1'}};
-  const content={set innerHTML(v){canvas={scrollLeft:0,scrollTop:0};workspace={dataset:{processEngagement:'ENG-1'}};this.value=v},get innerHTML(){return this.value}};
-  const document={querySelector:q=>q==='.flow-canvas'?canvas:q==='[data-process-engagement]'?workspace:null,
+  let canvas={scrollLeft:640,scrollTop:70},processMain={scrollTop:480},workspace={dataset:{processEngagement:'ENG-1'}};
+  const content={set innerHTML(v){canvas={scrollLeft:0,scrollTop:0};processMain={scrollTop:0};workspace={dataset:{processEngagement:'ENG-1'}};this.value=v},get innerHTML(){return this.value}};
+  const document={querySelector:q=>q==='.flow-canvas'?canvas:q==='.client-process-main'?processMain:q==='[data-process-engagement]'?workspace:null,
     getElementById:q=>q==='content'?content:null,documentElement:{classList:{toggle(){}}},body:{classList:{toggle(){}}}};
   const frames=[];
   const window={scrollX:0,scrollY:480,scrollTo(x,y){this.scrollX=x;this.scrollY=y}};
@@ -238,7 +238,7 @@ test('render retains actual horizontal and vertical map scroll across an in-plac
   frames.shift()();assert.equal(frames.length,1);
   frames.shift()();
   assert.equal(canvas.scrollLeft,640);assert.equal(canvas.scrollTop,70);
-  assert.equal(window.scrollY,480,'document vertical scroll must not jump to the top during map redraw');
+  assert.equal(processMain.scrollTop,480,'the actual client-process vertical scroller must not jump to the top during map redraw');
   assert.equal(study.processTab,'impacto');
   ctx.state.activePage='diagnostico';ctx.pages.diagnostico=()=>'<div>Diagnóstico</div>';
   ctx.setPage('proceso');
