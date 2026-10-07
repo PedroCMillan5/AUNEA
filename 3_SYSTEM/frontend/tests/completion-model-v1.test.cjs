@@ -278,7 +278,7 @@ test('DF094/DF095 (S09 system-generated checklist) never block S09 from being re
   const ctx=makeRealCtx();const e=fullyWorkedEngagement();ctx.__eng=e;
   const s09=realSchema.flow.find(s=>s.Stage_ID==='S09');
   assert.equal(ctx.completionStageReviewed(s09,e),true);
-  assert.equal(ctx.reusedValue('DF094',e).length,0,'canonicalMissingRequired ya está vacío: DF094 se auto-referencia y nunca podría satisfacer valuePresent');
+  assert.deepEqual(Array.from(ctx.reusedValue('DF094',e)),['No hay información crítica pendiente']);
 });
 
 test('DF080/DF081 (S07, Ask_Mode CONDITIONAL_ASK, Control_UI DERIVED_OR_CONDITIONAL) render a real editable number+unit control, never the read-only "se completará automáticamente" box that made them permanently unanswerable',()=>{
@@ -318,8 +318,8 @@ test('S09 closure shows objective first readings but never labels them diagnosis
   const ctx=makeCtx();
   const e={answers:{DF096:[]},processSteps:[{id:'s1',status:'ACTIVE',step_name:'Paso'}],frictions:[],risks:[],economicInputs:[],confirmedAsIs:false,confirmedSnapshots:[]};
   const html=ctx.validationSummary(e,{missing:[],blockers:[]});
-  assert.match(html,/Resumen de la sesión/);
-  assert.match(html,/No son todavía diagnóstico, recomendación, ROI ni propuesta/);
+  assert.match(html,/Resumen de control antes del cierre/);
+  assert.match(html,/No añade diagnóstico, recomendación, ROI ni propuesta/);
   assert.match(html,/id="confirmClosingAsIs"/);
 });
 
@@ -331,4 +331,17 @@ test('CONDITIONAL_90M never blocks merely because visible, and DERIVE_AND_CONFIR
   assert.ok(!ctx.canonicalMissingRequired(e).includes('DF088'),'visible conditional field must not become a blocker');
   const derived={Field_ID:'DX',Stage_ID:'S01',Requiredness:'CONDITIONAL_90M',Ask_Mode:'DERIVE_AND_CONFIRM',Write_Target:'RT_PROCESS.Tools',Reuse_From:'RT_PROCESS_STEP.Tool',Branch_Rule_ID:'BR-BASE'};
   assert.equal(ctx.canonicalFieldRequiredNow(derived,e),false);
+});
+
+
+test('PG09 sealed closure offers internal work instead of a second seal action',()=>{
+  const ctx=makeCtx();
+  ctx.confirmedSnapshot=()=>({version:3,sealedAt:'2026-10-07T12:00:00Z'});
+  ctx.formatDateEs=()=> '07/10/2026';
+  const e={confirmedAsIs:true,processSteps:[],frictions:[],risks:[],economicInputs:[],answers:{}};
+  const html=ctx.validationSummary(e,{missing:[],blockers:[]});
+  assert.match(html,/data-page="resultados">Continuar a Trabajo interno/);
+  assert.doesNotMatch(html,/id="confirmClosingAsIs"/);
+  assert.match(html,/Snapshot final/);
+  assert.doesNotMatch(html,/Economics/);
 });

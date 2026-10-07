@@ -204,7 +204,7 @@ function preCloseConsistencyReview(e,completion){
   if(typeof effectiveValue==='function'){
     const evidenceField=(schema?.fields||[]).find(f=>f.Field_ID==='DF095');
     const pending=evidenceField?effectiveValue(evidenceField,e):[];
-    normalizeArray(pending).filter(Boolean).forEach((label,i)=>
+    normalizeArray(pending).filter(label=>label&&label!=='No hay evidencias pendientes').forEach((label,i)=>
       add('REVIEW','EVIDENCE_'+i,'Evidencia pendiente: '+String(label),'S09'));
   }
 
@@ -257,6 +257,7 @@ function invalidateAsIsClosure(e,reason='cambio en cierre de sesión'){
 function confirmClosingAsIs(){
   if(typeof guardAsisMutation==='function'&&guardAsisMutation())return;
   const e=currentEng();if(!e)return;
+  if(e.confirmedAsIs&&typeof confirmedSnapshot==='function'&&confirmedSnapshot(e))return true;
   const pending=['map','frictions','risks','impact'].filter(k=>!processLayerConfirmations(e)[k]);
   if(pending.length)return toast('Completa la confirmación de las cuatro capas AS-IS antes del cierre.'),false;
   const integrity=captureIntegrityIssues(e);

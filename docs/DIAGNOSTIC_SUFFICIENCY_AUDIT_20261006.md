@@ -182,3 +182,19 @@ Implementado después del cierre de suficiencia para hacer visible al consultor,
 - Regresión añadida en `process-lifecycle-v1.test.cjs` y Block_ID `AUNEA-FE-ASIS-CONSISTENCY-076`.
 
 Estado: **IMPLEMENTADO EN REVIEW**. La promoción a main mantiene los gates existentes de la rama.
+
+
+## PG09 — verificación focalizada del cierre (07/10/2026)
+
+Sobre la rama `work/as-is-ux-simplification-20260930`, incorporando la baseline `5a9fccf`:
+
+- La cuarta capa habilita PG09 sin confirmar DF093 ni generar snapshot final.
+- Confirmar cierre genera el snapshot; repetir la acción no añade una versión.
+- Tras el cierre se ofrece acceso a Trabajo interno mediante la navegación existente.
+- El marcador «No hay evidencias pendientes» no produce observaciones ni aumenta el contador.
+- Se conserva el resumen compacto, el checklist separado con seguimiento y las fechas españolas de la baseline vigente.
+- Las pruebas históricas se reconcilian con el snapshot schemaVersion 3 / finalClosure y el nuevo punto de confirmación.
+
+QA: 65/65 PASS en completion-model, process-lifecycle, process-layer, engagement-lifecycle y session-finalized-frozen. `git diff --check` PASS. No se ejecuta la suite completa. UAT visual en el entorno del usuario pendiente; no se promueve a PRODUCTION ni se modifica TO-BE.
+
+Sin nuevas preguntas, fórmulas, catálogo, pricing o secuencia de roadmap en este ajuste. CODE_BLOCK_INDEX actualizado.

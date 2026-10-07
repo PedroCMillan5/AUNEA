@@ -83,6 +83,9 @@ test('layer confirmations unlock PG09 but only final closure seals DF093 and sna
   assert.equal(e.answers.DF093,'YES');
   assert.ok(e.asIsConfirmedAt);
   assert.equal(ctx.hasConfirmedSnapshot(e),true,'only PG09 final closure exposes the handoff snapshot');
+  assert.equal(e.confirmedSnapshots.length,1);
+  assert.equal(ctx.confirmClosingAsIs(),true);
+  assert.equal(e.confirmedSnapshots.length,1,'a repeated final click does not create another snapshot');
 });
 
 test('changing a real upstream session answer after PG09 reopens the shared AS-IS and preserves its sealed history',()=>{
@@ -205,3 +208,13 @@ test('PG09 UI renders the same consistency review that gates confirmation',()=>{
   assert.match(source,/El cierre está bloqueado/);
 });
 // [AUNEA-UAT-ASIS-CONSISTENCY-076] END
+
+
+test('PG09 empty evidence checklist produces no pending-evidence warning',()=>{
+  const e={answers:{},processSteps:[],frictions:[],risks:[],economicInputs:[],layerConfirmations:{map:true,frictions:true,risks:true,impact:true}};
+  const ctx=makeCtx(e);
+  ctx.schema.fields=[{Field_ID:'DF095'}];
+  ctx.effectiveValue=()=>['No hay evidencias pendientes'];
+  const review=ctx.preCloseConsistencyReview(e);
+  assert.equal(review.reviews.length,0);
+});

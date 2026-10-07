@@ -315,7 +315,7 @@ function validationSummary(e,completion){
   const evidenceField=(schema?.fields||[]).find(f=>f.Field_ID==='DF095');
   const evidencePending=normalizeArray(evidenceField&&typeof effectiveValue==='function'?effectiveValue(evidenceField,e):[]).filter(x=>x&&x!=='No hay evidencias pendientes');
   const captureMissing=(completion.missing||[]).filter(x=>(x.id||x)!=='DF093'&&(x.id||x)!=='Confirmación AS-IS');
-  const primaryCta=snap?'<span class="status green">✓ Cierre confirmado y snapshot generado</span>':(consistency.blockers.length?'':'<button class="btn btn-primary" id="confirmClosingAsIs">Confirmar cierre y generar snapshot</button>');
+  const primaryCta=snap?'<span class="status green">✓ Cierre confirmado y snapshot generado</span><button class="btn btn-primary" data-page="resultados">Continuar a Trabajo interno →</button>':(consistency.blockers.length?'':'<button class="btn btn-primary" id="confirmClosingAsIs">Confirmar cierre y generar snapshot</button>');
   const cta=primaryCta+(consistency.blockers.length?'<div class="notice warn"><b>El cierre está bloqueado.</b><br>Resuelve los elementos rojos de la validación de coherencia.</div>':'');
   return section('Confirmación del AS-IS','Revisión factual del estudio; ningún estado se afirma más allá de lo realmente capturado.',
     `<div class="grid g3">
