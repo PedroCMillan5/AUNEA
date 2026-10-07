@@ -662,7 +662,8 @@ function graphNodeCard(e,s,i,fr,tab='cliente',readonly=false){
   const layerActionHtml=layerAction?'<div class="process-node-actions">'+layerAction+'</div>':'';
   const stack=links||layerActionHtml?'<div class="process-node-stack">'+links+layerActionHtml+'</div>':'';
   if(decision){
-    return '<div class="graph-decision-inline '+(linkCount?'has-node-links ':'')+(processLayerState(e).map?'confirmed':'')+'" '+(readonly?'':'data-drag-step="'+attr(s.id)+'"')+' style="--decision-link-count:'+linkCount+'">'
+    const decisionDetailsHeight=(layerAction?34:0)+(linkCount?linkCount*36:0);
+    return '<div class="graph-decision-inline '+(linkCount?'has-node-links ':'')+(processLayerState(e).map?'confirmed':'')+'" '+(readonly?'':'data-drag-step="'+attr(s.id)+'"')+' style="--decision-link-count:'+linkCount+';--decision-details-height:'+decisionDetailsHeight+'px">'
       +actions+layerActionHtml+links
       +'<div class="graph-decision-gateway" aria-hidden="true"><div class="graph-decision-gateway-icon">'+processNodeIconSvg('decision')+'</div></div>'
       +'<div class="graph-decision-copy"><span class="boundary-kicker">Decisión</span><h4 title="'+attr(s.step_name||'Decisión sin nombre')+'">'+esc(s.step_name||'Decisión sin nombre')+'</h4>'
@@ -682,7 +683,7 @@ function processGraphHtml(e,steps,fr,start,finish,tab='cliente',readonly=false){
     +economics.filter(x=>normalizeArray(x.step_ids).includes(s.id)).length;
   const maxLinkCount=steps.reduce((max,s)=>Math.max(max,linkCountForStep(s)),0);
   const hasLayerAction=['fricciones','riesgos','impacto'].includes(tab);
-  const graphCardHeight=250+Math.max(0,maxLinkCount-1)*42+(hasLayerAction?34:0);
+  const graphCardHeight=286+Math.max(0,maxLinkCount-1)*42+(hasLayerAction?34:0);
   const yesBranchIds=new Set(model.branchLayouts.flatMap(b=>b.yesSteps||[])),cell=n=>{
     const p=model.positions.get(n.id),step=n.kind==='step'?steps.find(x=>x.id===n.id):null,isDecision=!!step&&processDecisionStep(step),isYesBranch=yesBranchIds.has(n.id);
     const style='style="grid-row:'+p.row+';grid-column:'+p.col+'"',id='data-graph-node="'+attr(n.id)+'"';
@@ -770,7 +771,7 @@ function drawProcessGraph(){
     const mergeX=tr.left-rect.left-32;
     const yesRect=b.yesStart&&b.yesStart!==b.merge?nodeRect(b.yesStart):null;
     const yesBottom=yesRect?yesRect.bottom-rect.top:mainY;
-    const lowerY=Math.max(mainY+94,noStartY+64,yesBottom+28);
+    const lowerY=Math.max(mainY+94,noStartY+64,yesBottom+34);
 
     // SÍ: leaves the gateway to the right, rises to the affirmative card,
     // then returns vertically to the convergence point.
@@ -778,8 +779,9 @@ function drawProcessGraph(){
       const yr=nodeRect(b.yesStart);
       if(yr){
         const targetX=yr.left-rect.left,targetY=yr.top+yr.height/2-rect.top;
-        appendPath('M'+rightX+' '+centerY+'H'+(rightX+26)+'V'+targetY+'H'+(targetX-5),false,true);
-        appendLabel('SÍ',rightX+34,targetY-12,false);
+        if(Math.abs(targetY-centerY)<4)appendPath('M'+rightX+' '+centerY+'H'+(targetX-5),false,true);
+        else appendPath('M'+rightX+' '+centerY+'H'+(rightX+20)+'V'+targetY+'H'+(targetX-5),false,true);
+        appendLabel('SÍ',rightX+28,centerY-12,false);
       }
     }else{
       appendPath('M'+rightX+' '+centerY+'H'+mergeX,false,false);
