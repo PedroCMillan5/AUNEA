@@ -157,13 +157,17 @@ test('client layer exposes only the matching per-step add action and linked badg
   assert.match(process,/currentEng\(\)\.processTab='impacto'/);
 });
 
-test('decision NO route exits from bottom before turning and decision overlays use full card width',()=>{
+test('decision NO route exits below the gateway, clears the YES card, and overlays never hide the layer action',()=>{
   assert.match(process,/const noStartX=dr\.left\+dr\.width\/2-rect\.left/);
   assert.match(process,/const noStartY=dr\.bottom-rect\.top/);
+  assert.match(process,/const yesBottom=yesRect\?yesRect\.bottom-rect\.top:mainY/);
+  assert.match(process,/Math\.max\(mainY\+94,noStartY\+64,yesBottom\+28\)/);
   assert.match(process,/appendPath\('M'\+noStartX\+' '\+noStartY\+'V'\+lowerY/);
   assert.match(css,/\.process-graph-decision-cell\{align-items:stretch\}/);
-  assert.match(css,/\.graph-decision-inline\{position:relative;width:100%;min-width:0/);
-  assert.match(css,/\.graph-decision-inline>\.process-node-links\{[^}]*width:100%/);
+  assert.match(css,/\.graph-decision-inline>\.process-node-links\{[^}]*top:66px[^}]*width:100%/);
+  assert.match(css,/\.graph-decision-gateway\{[^}]*var\(--decision-link-count,0\)/);
+  assert.match(css,/body\.mode-process-editor \.process-graph-cell \.flow-step\{[^}]*max-height:none/);
+  assert.doesNotMatch(css,/\.process-node-links \.friction-badge:before/);
 });
 
 test('client graph stays within the editor viewport and decision routes explain their destination',()=>{
