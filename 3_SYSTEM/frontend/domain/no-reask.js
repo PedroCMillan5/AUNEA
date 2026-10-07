@@ -296,6 +296,10 @@ function canonicalMissingRequired(e){
 }
 function missingRequired(e){return canonicalMissingRequired(e)}
 function formatContextValue(f,v){
+  if(f?.Field_ID==='DF085'){
+    const values=normalizeArray(v).filter(Boolean);
+    return values.length?values.map(x=>typeof economicEvidenceLabel==='function'?economicEvidenceLabel(x):(typeof engineLabel==='function'?engineLabel('evidence_quality',typeof evidenceTypeBackend==='function'?evidenceTypeBackend(x):x):String(x))).join(', '):'Sin evidencia económica registrada';
+  }
   if(Array.isArray(v))return v.map(x=>labelFrom(f.Option_Set_ID,x)).join(', ')||'—';
   if(v&&typeof v==='object')return [v.value,v.unit,v.period].filter(x=>x!==''&&x!==undefined&&x!==null).join(' ')||'—';
   return f.Option_Set_ID?labelFrom(f.Option_Set_ID,v):String(v??'—');
