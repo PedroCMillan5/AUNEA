@@ -7,10 +7,9 @@ from .deliverable_models import DeliverableRequest, DeliverablePack
 from .solution_models import SolutionSpecificationRequest, SolutionSpecification
 from .system_builder_models import SystemBuilderRequest, SystemBuildPlan, SystemBuildPackage
 from .system_builder import SystemBuilderEngine
-from .engines import EngineContext, PainEngine, EconomicsEngine, RiskEngine, RecommendationEngine, PricingEngine, ScenarioComparator
+from .engines import EngineContext, PainEngine, EconomicsEngine, RiskEngine, RiskCandidateEngine, RecommendationEngine, PricingEngine, ScenarioComparator
 from .input_coverage import InputCoverageEngine, relational_integrity_issues
 from .pain_candidates import PainCandidateEngine
-from .risk_candidates import RiskCandidateEngine
 from .registry import rule_bundle_version
 from .utils import stable_hash
 from .store import SQLiteStore
