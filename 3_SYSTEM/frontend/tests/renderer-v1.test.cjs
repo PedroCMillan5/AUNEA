@@ -48,19 +48,22 @@ test('Ninguno/No-existe exclusivity is only wired for the two curated Field_IDs,
   assert.doesNotMatch(ordinary,/data-exclusive/);
 });
 
-test('DF054 STEP_SYSTEM_PAIR_SELECTOR builds a neutral candidate list from tool changes, channels and manual actions — never asserting a "gap" itself',()=>{
-  const eng={processSteps:[
+test('DF054 STEP_SYSTEM_PAIR_SELECTOR only surfaces cross-system handoffs and does not duplicate DF051',()=>{
+  const eng={answers:{DF051:[]},processSteps:[
     {id:'s1',status:'ACTIVE',step_name:'Alta',tool:'CRM',communication_channels:['CH1'],manual_actions:[]},
     {id:'s2',status:'ACTIVE',step_name:'Aprobación',tool:'EXCEL',manual_actions:['REKEY']},
     {id:'s3',status:'SUPERSEDED',step_name:'Viejo',tool:'OLD'}
   ]};
   const html=ctx.renderControl({Field_ID:'DF054',Control_UI:'STEP_SYSTEM_PAIR_SELECTOR'},[],[],eng);
   assert.match(html,/pair:s1:s2/);
-  assert.match(html,/channel:s1/);
-  assert.match(html,/manual:s2/);
-  assert.doesNotMatch(html,/<label[^>]*>[^<]*\bgap\b/i,'no individual candidate label may assert a gap — only the disclaimer notice may mention the word');
+  assert.doesNotMatch(html,/channel:s1/);
+  assert.doesNotMatch(html,/manual:s2/);
+  assert.match(html,/Las reintroducciones del mismo dato se registran en el bloque anterior/);
   assert.doesNotMatch(html,/checked/,'no candidate may come pre-checked; only an explicit consultant confirmation may select one');
   assert.doesNotMatch(html,/s3/,'SUPERSEDED steps must not produce candidates');
+  eng.answers.DF051=[{data:'Solicitud',from:'s1',to:'s2'}];
+  const deduped=ctx.renderControl({Field_ID:'DF054',Control_UI:'STEP_SYSTEM_PAIR_SELECTOR'},[],[],eng);
+  assert.doesNotMatch(deduped,/pair:s1:s2/,'a handoff already captured as duplicate entry must not be asked again');
 });
 
 test('DF054 only persists the candidate ids the consultant explicitly confirms, via the same shared checkbox mechanism as any other multiselect',()=>{
