@@ -321,7 +321,20 @@ let __auneaPainCandidates=[];
 async function reviewPainCandidates(){
   const e=currentEng();if(!e||typeof fetchPainCandidates!=='function')return toast('La revisión de señales no está disponible.');
   try{
-    const r=await fetchPainCandidates(e),steps=activeSteps(e);__auneaPainCandidates=normalizeArray(r?.candidates);
+    const r=await fetchPainCandidates(e),steps=activeSteps(e);
+    const grouped=new Map();
+    normalizeArray(r?.candidates).forEach(x=>{
+      const key=String(x.pain_id||'');
+      if(!key)return;
+      const current=grouped.get(key)||{...x,step_ids:[],review_questions:[],source_signals:[],_candidate_ids:[]};
+      current.step_ids=[...new Set([...normalizeArray(current.step_ids),...normalizeArray(x.step_ids)])];
+      current.review_questions=[...new Set([...normalizeArray(current.review_questions),...normalizeArray(x.review_questions)])];
+      current.source_signals=[...new Set([...normalizeArray(current.source_signals),...normalizeArray(x.source_signals)])];
+      current._candidate_ids=[...new Set([...normalizeArray(current._candidate_ids),x.candidate_id].filter(Boolean))];
+      if(!current.rationale)current.rationale=x.rationale||'';
+      grouped.set(key,current);
+    });
+    __auneaPainCandidates=[...grouped.values()];
     const body=__auneaPainCandidates.length
       ?'<div class="notice info"><b>Oportunidades para revisar con el cliente</b><p>AUNEA ha detectado señales a partir del proceso ya capturado. Son hipótesis de revisión: no se crea ninguna fricción hasta que la confirmes.</p></div><div class="result-list">'
         +__auneaPainCandidates.map((x,i)=>{
@@ -330,6 +343,7 @@ async function reviewPainCandidates(){
           return '<div class="result-item pain-review-card"><div class="result-item-head"><div><b>'+esc(labelFrom('OS_FRICTION_TYPE',x.pain_id)||'Posible fricción')+'</b>'
             +'<p>'+esc(x.rationale||'')+'</p>'
             +(stepNames.length?'<p><b>Dónde ocurre:</b> '+stepNames.map(esc).join(', ')+'</p>':'')
+            +(stepNames.length>1?'<p class="field-help">AUNEA ha agrupado la misma señal detectada en varios pasos. Confirma si es una única fricción multietapa o desmarca los pasos que correspondan si son incidencias distintas.</p>':'')
             +(questions.length?'<div class="field-help"><b>Preguntas para validarlo con el cliente:</b><br>'+questions.map(q=>'• '+esc(q)).join('<br>')+'</div>':'')
             +'</div><div class="result-actions"><button type="button" class="btn btn-small btn-primary" data-review-pain-candidate="'+i+'">Revisar con el cliente</button></div></div></div>';
         }).join('')+'</div>'
