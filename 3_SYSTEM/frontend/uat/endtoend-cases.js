@@ -55,6 +55,8 @@ function uat3Seed(c){
     DF051:[{data:typeof labelFrom==='function'?labelFrom('OS_ARTIFACT_TYPE','RECORD'):'Registro estructurado',dataKey:'RECORD',from:steps[c.finding[0]].id,to:steps[c.finding[1]].id}],
     DF053:c.search.map(n=>steps[n].id),
     DF054:['manual:'+steps[c.integration[1]].id],DF096:frictions.map(x=>x.id),DF098:c.followup};
+  // DF074 is DERIVED from RT_RISK.Reversibility in the v1.2 runtime projection; never keep a second editable/cached owner in answers.
+  delete answers.DF074;
   const controlStepIndex=c.key==='INVOICE'?4:c.key==='INTAKE'?3:4;
   const details={...c.details,DF066:steps.filter(s=>s.exception_path?.type==='OTHER').map(s=>s.exception_path?.condition).filter(Boolean).join(' · '),DF074__step:steps[controlStepIndex].id,DF075__steps:[steps[controlStepIndex].id]};
   const economics=[
@@ -167,7 +169,9 @@ function uat3Audit(e){
   add('Demanda reutilizable',Number(e.answers.DF021)>0&&e.answers.DF022==='MONTH'&&Number(e.answers.DF023?.value)>=Number(e.answers.DF021),'DF021+DF022 sustentan la proyección del backend.');
   add('Mapa coherente',steps.length===6&&steps.every(s=>s.step_name&&s.step_type&&s.actor&&s.tool&&Number.isFinite(s.active_time)&&Number.isFinite(s.wait_time)&&Number.isFinite(s.rework_time)&&(s.normal_next_step==='__END__'||stepIds.has(s.normal_next_step))&&(!s.exception_path||s.exception_path.destination_step==='__END__'||stepIds.has(s.exception_path.destination_step))),'Todas las rutas tienen destino real o fin; hay tiempos separados.');
   add('Fricciones vinculadas una sola vez',e.frictions.length===3&&e.frictions.every(f=>f.affected_steps.length&&f.affected_steps.every(id=>stepIds.has(id))&&f.affected_steps.includes(f.time_attribution?.step_id)&&['INCLUDED','BREAKDOWN','ADDITIONAL'].includes(f.time_attribution?.mode)),'Una fricción tiene un owner temporal y puede afectar a varios pasos.');
-  add('Riesgos asociados al mismo AS-IS y enviados al backend',e.risks.length===2&&e.risks.every(r=>r.step_ids?.length&&r.step_ids.every(id=>stepIds.has(id)))&&(typeof normalizeRiskInputs!=='function'||normalizeRiskInputs(e).every((r,i)=>JSON.stringify(r.step_ids)===JSON.stringify(e.risks[i].step_ids))),'DEC-065: step_ids viaja hasta RiskInput sin crear otro mapa ni cambiar la fórmula de riesgo.');
+  let normalizedRiskInputs=[];let riskPayloadValid=true;
+  try{normalizedRiskInputs=typeof normalizeRiskInputs==='function'?normalizeRiskInputs(e):[];}catch{riskPayloadValid=false;}
+  add('Riesgos asociados al mismo AS-IS y enviados al backend',riskPayloadValid&&e.risks.length===2&&e.risks.every(r=>r.step_ids?.length&&r.step_ids.every(id=>stepIds.has(id)))&&(typeof normalizeRiskInputs!=='function'||normalizedRiskInputs.every((r,i)=>JSON.stringify(r.step_ids)===JSON.stringify(e.risks[i].step_ids))),'DEC-065: step_ids viaja hasta RiskInput sin crear otro mapa ni cambiar la fórmula de riesgo.');
   add('Costes declarados sin ahorro ficticio',e.economicInputs.length===2&&e.economicInputs.every(x=>x.evidence_type==='CLIENT_DECLARED'&&!x.realized_cash_saving_eur_annual&&!x.direct_loss_eur_annual),'ED12 y ED14 son datos del escenario; DF078/079 pertenecen al backend.');
   add('No hay falsa confirmación de cierre',!e.confirmedAsIs&&!e.answers.DF093&&!e.confirmedSnapshots?.length,'Las cuatro capas requieren validación real en el editor.');
   for(const fid of ['DF017','DF046','DF047','DF049','DF050','DF057','DF066','DF067','DF078','DF079','DF085','DF093','DF094','DF095'])
