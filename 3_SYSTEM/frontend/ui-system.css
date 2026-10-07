@@ -749,6 +749,11 @@ body:not(.mode-process-editor) .content [data-process-engagement] .flow-insert{d
    Presentation only: context -> concept -> quantified result -> relevant monetary fields. */
 .economic-modal-form{display:flex;flex-direction:column;gap:12px}
 .economic-modal-form .step-group{margin:0}
+.impact-evidence-compact{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.impact-evidence-compact>b{font-size:13px}
+.impact-evidence-compact>span{padding:5px 9px;border-radius:999px;background:var(--system-soft);color:var(--system);font-weight:700;font-size:12px}
+.impact-evidence-compact>small{flex-basis:100%;color:var(--muted);line-height:1.35}
+.impact-layer-review-summary{margin:14px 0}
 .economic-context-card{border:1px solid #cfded5;border-radius:12px;background:#f5faf7;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
 .economic-context-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
 .economic-context-head>div{display:flex;flex-direction:column;gap:2px}
