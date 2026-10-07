@@ -108,13 +108,20 @@ function currentEng(){return state.engagements.find(x=>x.id===state.activeEngage
 function companyById(id){return state.companies.find(x=>x.id===id)||null}
 function contactById(id){return state.contacts.find(x=>x.id===id)||null}
 function labelFrom(setId,value){const s=schema?.option_sets?.[setId];return s?.options?.find(o=>String(o.value)===String(value))?.label||value||'—'}
-function invalidateDerivedState(e,reason='Cambio en inputs del diagnóstico'){
+function invalidateDerivedState(e,reason='Cambio en inputs del diagnóstico',sourceFieldId=null){
   if(!e)return false;
   const hadDerived=!!e.diagnosticOutput||(Array.isArray(e.scenarioResults)&&e.scenarioResults.length>0)||e.selectedScenario!=null;
+  const fieldMap=schema?.engine_dependency_graph?.field_invalidation_map||{};
+  const affected=sourceFieldId&&fieldMap[sourceFieldId]
+    ? [...fieldMap[sourceFieldId]]
+    : ['Pain','Economics','Risk','Recommendation','ProductPricing','ScenarioComparator','Deliverables'];
+  // The official DiagnosticOutput is snapshot-bound, so it must not remain current after any upstream edit.
+  // We nevertheless retain the exact dependency plan required by RULE_RECALC_INVALIDATION so backend
+  // recomputation and internal review know what actually became stale instead of treating every engine equally.
+  e.staleDerivedState={sourceFieldId:sourceFieldId||null,reason,affected,markedAt:now()};
   e.diagnosticOutput=null;e.scenarioResults=[];e.selectedScenario=null;e.selectedScenarioIndex=0;e.lastEngineRunAt=null;
-  // A previous engine result must never be treated as belonging to a new capture version.
   e.lastEngineSnapshotVersion=null;
-  if(hadDerived)audit(`Resultados derivados invalidados: ${reason}`);
+  if(hadDerived)audit(`Resultados derivados invalidados: ${reason} · STALE: ${affected.join(' → ')}`);
   return hadDerived;
 }
 function setAnswer(fid,value){
@@ -128,7 +135,7 @@ function setAnswer(fid,value){
     if(closesSession&&e.confirmedAsIs&&typeof invalidateAsIsClosure==='function')invalidateAsIsClosure(e,`detalle de cierre ${parentFid} actualizado`);
     details[fid]=value;e.updatedAt=now();
     if(typeof advanceEngagementTo==='function')advanceEngagementTo(e,'Sesión 1','captura vinculada a paso');
-    invalidateDerivedState(e,`detalle ${fid} actualizado`);markDirty(`Detalle ${fid} actualizado`);if(typeof refreshCaptureProgress==='function')refreshCaptureProgress();
+    invalidateDerivedState(e,`detalle ${fid} actualizado`,parentFid);markDirty(`Detalle ${fid} actualizado`);if(typeof refreshCaptureProgress==='function')refreshCaptureProgress();
     return;
   }
   // A repeated render/change event is not a new capture version and must not reopen PG09.
@@ -148,7 +155,7 @@ function setAnswer(fid,value){
   // Capturing an answer is what starts Sesión 1 — an action, not a screen being open. The helper is a
   // no-op unless the engagement is exactly one step behind, so this never skips or rewrites a state.
   if(typeof advanceEngagementTo==='function')advanceEngagementTo(e,'Sesión 1','primera captura de la sesión');
-  invalidateDerivedState(e,`respuesta ${fid} actualizada`);markDirty(`Respuesta ${fid} actualizada`);if(typeof refreshCaptureProgress==='function')refreshCaptureProgress();
+  invalidateDerivedState(e,`respuesta ${fid} actualizada`,fid);markDirty(`Respuesta ${fid} actualizada`);if(typeof refreshCaptureProgress==='function')refreshCaptureProgress();
 }
 function normalizeArray(v){if(Array.isArray(v))return v;if(v===null||v===undefined||v==='')return [];return [v]}
 
