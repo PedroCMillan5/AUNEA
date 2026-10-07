@@ -352,7 +352,7 @@ test('friction frequency distinguishes not informed from zero and explicitly sup
 
 test('friction time owner is limited in the UI to currently affected steps',()=>{
   assert.match(code,/function syncFrictionTimeOwnerOptions\(\)/);
-  assert.match(code,/data-v1-multi="fr_steps":checked/);
+  assert.match(code,/data-v1-multi="fr_steps"\]:checked/);
   assert.match(code,/selected\.has\(value\)/);
   assert.match(code,/option\.hidden=!allowed;option\.disabled=!allowed/);
   assert.match(code,/addEventListener\('change',syncFrictionTimeOwnerOptions\)/);
