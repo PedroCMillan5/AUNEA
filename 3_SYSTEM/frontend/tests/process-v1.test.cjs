@@ -336,8 +336,30 @@ test('server-owned Pain candidates remain proposals until human confirmation',()
   assert.doesNotMatch(code,/frictions\.push\(candidate\)/,'candidate review must not persist a Friction directly');
 });
 
-test('Pain candidate review reuses the normal friction builder and requires observable signal cause and evidence review',()=>{
-  assert.match(code,/Completa la señal observable, la causa y la evidencia/);
+test('Pain candidate review reuses the normal friction builder without forcing a premature cause',()=>{
+  assert.match(code,/Confirma la señal observable y completa causa\/evidencia cuando estén disponibles/);
   assert.match(code,/guardar esta ficha es la confirmación humana de la fricción/);
-  assert.match(code,/Tipo, al menos un paso, causa y señal observable son obligatorios/);
+  assert.match(code,/Tipo, al menos un paso y señal observable son obligatorios/);
+  assert.doesNotMatch(code,/causa y señal observable son obligatorios/);
+});
+
+test('friction frequency distinguishes not informed from zero and explicitly supports unknown',()=>{
+  assert.match(code,/\{value:'',label:'Sin informar'\}/);
+  assert.match(code,/\{value:'UNKNOWN',label:'No se sabe'\}/);
+  assert.match(code,/frequencyRaw=String\(document\.getElementById\('fr_frequency'\)\.value\|\|''\)\.trim\(\)/);
+  assert.match(code,/frequencyMode==='UNKNOWN'\|\|frequencyRaw===''\)\?null:Number\(frequencyRaw\)/);
+});
+
+test('friction time owner is limited in the UI to currently affected steps',()=>{
+  assert.match(code,/function syncFrictionTimeOwnerOptions\(\)/);
+  assert.match(code,/data-v1-multi="fr_steps":checked/);
+  assert.match(code,/selected\.has\(value\)/);
+  assert.match(code,/option\.hidden=!allowed;option\.disabled=!allowed/);
+  assert.match(code,/addEventListener\('change',syncFrictionTimeOwnerOptions\)/);
+});
+
+test('private Pasos page renders a single map-layer confirmation control',()=>{
+  eng.processSteps=[];eng.frictions=[];eng.answers={};
+  const html=ctx.consultantStepsPage();
+  assert.equal((html.match(/data-confirm-process-layer="map"/g)||[]).length,1);
 });
