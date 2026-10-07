@@ -264,15 +264,32 @@ class RiskEngine:
         if r.impact_1_5 == 1 and r.reversible and not r.sensitive_or_high_impact: return "R0"
         return "UNKNOWN"
 
-    def run(self, ctx: EngineContext) -> RiskResult:
+    def run(self, ctx: EngineContext, coverage: InputCoverageResult | None = None) -> RiskResult:
+        used = _covered_input_ids(coverage, "RiskEngine")
+        missing = _missing_input_ids(coverage, "RiskEngine")
         if not ctx.engagement.risks:
-            return RiskResult(inherent_level="UNKNOWN", residual_level="UNKNOWN", status="UNKNOWN", rationale="No risk assessment supplied.")
+            status = "INPUT_GAP" if missing else "UNKNOWN"
+            return RiskResult(
+                inherent_level="UNKNOWN", residual_level="UNKNOWN", status=status,
+                rationale="No risk assessment supplied." + (f" Missing canonical inputs: {', '.join(missing)}." if missing else ""),
+                input_ids_used=used,
+            )
         levels = [self._level(r) for r in ctx.engagement.risks]
         rank = {"UNKNOWN":-1,"R0":0,"R1":1,"R2":2,"R3":3}
         inherent = max(levels, key=lambda x: rank[x])
         controls_ok = all(r.controls_present for r in ctx.engagement.risks)
         residual = inherent if controls_ok else ("R3" if inherent == "R3" else "R2" if rank[inherent] < 2 else inherent)
-        return RiskResult(inherent_level=inherent, residual_level=residual, status="ASSESSED" if controls_ok else "CONTROL_GAP", rationale=f"Highest contextual risk={inherent}; controls_present={controls_ok}.")
+        status = "ASSESSED" if controls_ok else "CONTROL_GAP"
+        if missing:
+            status = "INPUT_GAP"
+        context = f" Canonical inputs used={','.join(used)}." if used else ""
+        if missing:
+            context += f" Missing={','.join(missing)}."
+        return RiskResult(
+            inherent_level=inherent, residual_level=residual, status=status,
+            rationale=f"Highest contextual risk={inherent}; controls_present={controls_ok}."+context,
+            input_ids_used=used,
+        )
 # [AUNEA-BE-ENGINE-RISK-010] END
 
 # [AUNEA-BE-ENGINE-RECOMMEND-010] START — Recommendation Engine
