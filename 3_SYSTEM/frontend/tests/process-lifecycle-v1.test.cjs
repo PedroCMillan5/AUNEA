@@ -58,7 +58,7 @@ test('supersedeFriction marks SUPERSEDED without physically removing the frictio
   assert.equal(e.frictions[0].status,'SUPERSEDED');
 });
 
-test('layer confirmations require map, frictions, risks and impact before sealing DF093',()=>{
+test('layer confirmations unlock PG09 but only final closure seals DF093 and snapshot',()=>{
   const missing={processSteps:[],frictions:[],risks:[],economicInputs:[],answers:{DF014:'Inicio'},confirmedAsIs:false,processTab:'cliente'};
   const ctxMissing=makeCtx(missing);
   ctxMissing.confirmAsIs();
@@ -74,9 +74,15 @@ test('layer confirmations require map, frictions, risks and impact before sealin
   e.processTab='riesgos';ctx.confirmAsIs();assert.equal(e.layerConfirmations.risks,true);
   e.processTab='impacto';ctx.confirmAsIs();
   assert.equal(e.layerConfirmations.impact,true);
-  assert.equal(e.confirmedAsIs,true,'all four confirmed layers seal the shared AS-IS');
+  assert.equal(e.confirmedAsIs,false,'all four layers only unlock PG09; they must not close it');
+  assert.equal(e.answers.DF093,'');
+  assert.equal(e.asIsConfirmedAt,null);
+  e.status='Sesión 1';
+  assert.equal(ctx.confirmClosingAsIs(),true);
+  assert.equal(e.confirmedAsIs,true,'explicit PG09 closure confirms the shared AS-IS');
   assert.equal(e.answers.DF093,'YES');
   assert.ok(e.asIsConfirmedAt);
+  assert.equal(ctx.hasConfirmedSnapshot(e),true,'only PG09 final closure exposes the handoff snapshot');
 });
 
 test('changing a real upstream session answer after PG09 reopens the shared AS-IS and preserves its sealed history',()=>{
