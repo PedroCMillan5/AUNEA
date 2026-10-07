@@ -191,6 +191,10 @@ class Recommendation(BaseModel):
     capabilities: list[CapabilityRequirement] = Field(default_factory=list)
     confidence: str = "MEDIUM"
     rationale: list[str] = Field(default_factory=list)
+    # RT_RECOMMENDATION canonical contract: retain preconditions and unresolved discovery explicitly.
+    preconditions: list[str] = Field(default_factory=list)
+    missing_information: list[str] = Field(default_factory=list)
+    input_ids_used: list[str] = Field(default_factory=list)
 
 class Quote(BaseModel):
     product_id: str | None = None
