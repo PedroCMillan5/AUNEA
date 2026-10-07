@@ -1008,6 +1008,7 @@ bindForms=function(){
   const addDecision=document.getElementById('addDecisionFromClient');if(addDecision)addDecision.onclick=addDecisionStep;
   const addMany=document.getElementById('addMultipleSteps');if(addMany)addMany.onclick=()=>addMultipleSteps();
   const reviewCandidates=document.getElementById('reviewPainCandidates');if(reviewCandidates)reviewCandidates.onclick=ev=>{ev.preventDefault();ev.stopPropagation();reviewPainCandidates()};
+  const reviewRiskCandidatesBtn=document.getElementById('reviewRiskCandidates');if(reviewRiskCandidatesBtn)reviewRiskCandidatesBtn.onclick=ev=>{ev.preventDefault();ev.stopPropagation();reviewRiskCandidates()};
   const addFriction=document.getElementById('addFriction');if(addFriction)addFriction.onclick=ev=>{ev.preventDefault();ev.stopPropagation();openFrictionModal()};
   // Global bottom actions are handled by delegated click binding below so they remain
   // functional after any client-layer re-render. Do not bind per-node onclick here.
