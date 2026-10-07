@@ -300,13 +300,6 @@ function renderControl(f,val,opts,e){
   if(c==='DROPDOWN')return canonicalSelect(fid,opts,val);
   if(c==='DROPDOWN_WITH_DETAIL')return selectWithConditionalDetail(fid,opts,val,'Detalle si aplica');
   if(c==='DROPDOWN_WITH_OWNER_DATE')return nextStepWithOwnerDate(f,opts,e);
-  if(fid==='DF074'&&c==='DROPDOWN_WITH_STEP_LINK'){
-    const d=answerDetails(e),selected=String(val??''),validLevel=(opts||[]).some(x=>String(x.value)===selected),shownValue=validLevel?val:'';
-    const legacy=normalizeArray(d.DF074__steps||e.answers?.DF074__steps),linked=legacy.length?legacy:(d.DF074__step?[d.DF074__step]:[]);
-    const scope=validLevel?'<div class="linked-step-group"><div class="linked-step-label">Pasos afectados</div>'+linkedStepMulti('DF074__steps',e,linked)+'</div>':'';
-    return '<div class="linked-field-block risk-reversibility-control"><div class="linked-step-label">Nivel de reversibilidad</div>'+canonicalSelect(fid,opts,shownValue)+scope
-      +'<div class="field-help">'+(validLevel?'Selecciona los pasos a los que aplica este nivel.':'Selecciona primero un nivel de reversibilidad.')+'</div></div>';
-  }
   if(c==='DROPDOWN_WITH_STEP_LINK')return canonicalSelect(fid,opts,val)+stepSingle(`${fid}__step`,e,answerDetails(e)[`${fid}__step`]||'');
   if(c==='COMBOBOX_WITH_DETAIL')return selectWithConditionalDetail(fid,opts,val,'Detalle / nombre concreto');
   if(c==='COMBOBOX_REFERENCE')return selectWithConditionalDetail(fid,opts,val,'Nueva referencia sólo si no existe');
@@ -345,6 +338,7 @@ function renderControl(f,val,opts,e){
   // control already state the case/period convention, so no new unit vocabulary is introduced.
   if(c==='DERIVED_OR_CONDITIONAL')return numberCompound({...f,Control_UI:'NUMBER_WITH_TIME_UNIT'},val);
   if(c==='REFERENCE_OR_SHORT_TEXT'||c==='TEXT_SHORT')return `<input data-answer="${fid}" value="${attr(val||'')}" maxlength="200" placeholder="Respuesta breve">`;
+  if(c==='TEXT_LONG')return `<textarea data-answer="${fid}" placeholder="Describe las decisiones o acciones difíciles de revertir">${esc(val||'')}</textarea>`;
   if(c==='TEXT_LONG_INTERNAL')return `<textarea data-answer="${fid}" class="internal-only" placeholder="Notas internas; no se muestran en Modo Sesión">${esc(val||'')}</textarea>`;
   if(c==='CLIENT_CONFIRMATION_WITH_INLINE_EDIT')return `<div class="notice ${e.confirmedAsIs?'good':'warn'}">${e.confirmedAsIs?'Flujo AS-IS confirmado.':'Pendiente de confirmar el AS-IS.'} <button type="button" class="btn btn-small" data-page="proceso">Revisar / editar</button></div>`;
   if(c==='RISK_BUILDER')return structuredRedirect('Riesgo estructurado','diagnostico');
@@ -431,11 +425,6 @@ function bindCanonicalRenderer(){
     d[fid]=[...document.querySelectorAll(`[data-linked-step-multi="${fid}"]:checked`)].map(x=>x.value);
     e.updatedAt=now();markDirty('Ámbito de pasos actualizado');
     if(typeof refreshCaptureProgress==='function')refreshCaptureProgress();
-  }));
-  document.querySelectorAll('[data-answer="DF074"]').forEach(el=>el.addEventListener('change',()=>{
-    const e=currentEng(),d=answerDetails(e);
-    if(!el.value){delete d.DF074__steps;delete d.DF074__step;}
-    render();
   }));
   document.querySelectorAll('[data-linked-step-single]').forEach(el=>el.addEventListener('change',()=>{
     const e=currentEng(),fid=el.dataset.linkedStepSingle,d=answerDetails(e);
