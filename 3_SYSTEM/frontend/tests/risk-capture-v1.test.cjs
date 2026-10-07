@@ -64,10 +64,12 @@ test('risk review candidates are guided and never auto-classified',()=>{
   assert.doesNotMatch(code,/candidate\?\.category|candidate\?\.likelihood|candidate\?\.impact/);
 });
 
-test('risk page exposes actionable incomplete-risk review',()=>{
+test('risk page exposes incomplete state once, inside each registered risk, without a duplicate pending-risk panel',()=>{
   assert.match(code,/function riskIncompleteFields\(/);
-  assert.match(code,/Completar riesgo/);
-  assert.match(code,/Riesgos que necesitan revisión/);
+  assert.match(code,/Completar \/ editar/);
+  assert.match(code,/Falta completar:/);
+  assert.match(code,/Pendiente · /);
+  assert.doesNotMatch(code,/known\+riskReviewActionPanel\(e\)/);
 });
 
 
