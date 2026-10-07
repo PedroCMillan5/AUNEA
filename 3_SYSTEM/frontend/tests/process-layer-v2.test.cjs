@@ -137,6 +137,15 @@ test('a decision creates one temporary branch level and nested decisions are blo
   assert.match(process,/No se puede crear otra bifurcación dentro de una rama/);
 });
 
+test('review recommendations are grouped and Impact exposes its own review action',()=>{
+  assert.match(process,/const grouped=new Map\(\)/);
+  assert.match(process,/AUNEA ha agrupado la misma señal detectada en varios pasos/);
+  assert.match(econ,/function reviewEconomicCandidates\(/);
+  assert.match(econ,/id="reviewEconomicCandidates"/);
+  assert.match(econ,/AUNEA ha agrupado el mismo tipo de impacto detectado en varios pasos/);
+  assert.match(process,/reviewEconomicCandidatesBtn/);
+});
+
 test('client layer exposes only the matching per-step add action and linked badges open the owning editor',()=>{
   const {ctx,e}=setup();
   e.processSteps=[{id:'A',status:'ACTIVE',step_name:'Recibir'}];
