@@ -254,6 +254,10 @@ function invalidateAsIsClosure(e,reason='cambio en cierre de sesión'){
 function confirmClosingAsIs(){
   if(typeof guardAsisMutation==='function'&&guardAsisMutation())return;
   const e=currentEng();if(!e)return;
+  const pending=['map','frictions','risks','impact'].filter(k=>!processLayerConfirmations(e)[k]);
+  if(pending.length)return toast('Completa la confirmación de las cuatro capas AS-IS antes del cierre.'),false;
+  const integrity=captureIntegrityIssues(e);
+  if(integrity.length)return toast('Revisa la coherencia del AS-IS antes del cierre: '+integrity[0].message),false;
   const review=preCloseConsistencyReview(e);
   if(review.blockers.length)return toast('No se puede cerrar el AS-IS: '+review.blockers[0].message),false;
   const ts=now();e.confirmedAsIs=true;e.answers.DF093='YES';e.asIsConfirmedAt=ts;
