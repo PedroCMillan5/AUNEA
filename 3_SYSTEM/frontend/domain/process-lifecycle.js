@@ -268,6 +268,12 @@ function confirmClosingAsIs(){
   const ts=now();e.confirmedAsIs=true;e.answers.DF093='YES';e.asIsConfirmedAt=ts;
   const sealed=typeof sealConfirmedSnapshot==='function'?sealConfirmedSnapshot(e,'confirmación final S09 del AS-IS enriquecido'):null;
   markDirty(sealed?`AS-IS confirmado en cierre · snapshot v${sealed.version}`:'AS-IS confirmado en cierre');
+  // PG09 is a transactional boundary: the sealed snapshot must survive an immediate reload.
+  // Do not rely only on the delayed autosave installed by persistence.js.
+  if(typeof persistRecoverySnapshot==='function'&&!persistRecoverySnapshot('cierre S09 confirmado')){
+    toast('El cierre se ha generado, pero no ha podido persistirse por un conflicto de edición. Revisa la otra ventana antes de continuar.');
+    return false;
+  }
   toast(review.reviews.length?'AS-IS confirmado. Quedan observaciones no bloqueantes registradas para Trabajo interno.':'AS-IS completo confirmado y snapshot sellado.');
   render();
   return true;
