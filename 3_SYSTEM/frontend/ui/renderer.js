@@ -123,6 +123,13 @@ function referenceContactLabel(x){return typeof contactFullName==='function'?con
 function stepOptions(e,exclude=''){return e.processSteps.filter(x=>x.status!=='SUPERSEDED'&&x.id!==exclude).map(x=>({value:x.id,label:x.step_name||x.id}))}
 function stepMulti(fid,e,val){return multiChoices(fid,stepOptions(e),val)}
 function stepSingle(fid,e,val){return canonicalSelect(fid,stepOptions(e),val)}
+function linkedStepSingle(fid,e,val){
+  return auneaSelectControl(fid,stepOptions(e),val,{extra:`data-linked-step-single="${fid}"`,placeholder:'Selecciona un paso…'});
+}
+function linkedStepMulti(fid,e,val){
+  const arr=selectedValues(val);
+  return `<div class="choice-grid">${stepOptions(e).map(x=>`<div class="choice"><input type="checkbox" id="${fid}_${attr(x.value)}" value="${attr(x.value)}" data-linked-step-multi="${fid}" ${arr.includes(String(x.value))?'checked':''}><label for="${fid}_${attr(x.value)}">${esc(x.label)}</label></div>`).join('')}</div>`;
+}
 function stepPair(fid,e,val){
   const p=(val&&typeof val==='object')?val:{};const opts=stepOptions(e);
   return `<div class="compound-control">${canonicalSelect(`${fid}__from`,opts,p.from||'','data-pair-part="from" data-pair-field="'+fid+'"')}${canonicalSelect(`${fid}__to`,opts,p.to||'','data-pair-part="to" data-pair-field="'+fid+'"')}</div>`;
@@ -286,7 +293,11 @@ function renderControl(f,val,opts,e){
   if(c==='DROPDOWN')return canonicalSelect(fid,opts,val);
   if(c==='DROPDOWN_WITH_DETAIL')return selectWithConditionalDetail(fid,opts,val,'Detalle si aplica');
   if(c==='DROPDOWN_WITH_OWNER_DATE')return nextStepWithOwnerDate(f,opts,e);
-  if(fid==='DF074'&&c==='DROPDOWN_WITH_STEP_LINK'){const d=answerDetails(e),legacy=d.DF074__step?[d.DF074__step]:[],linked=normalizeArray(d.DF074__steps).length?d.DF074__steps:legacy;return '<div class="linked-field-block"><div class="linked-step-label">Nivel de reversibilidad</div>'+canonicalSelect(fid,opts,val)+'<div class="linked-step-group"><div class="linked-step-label">¿En qué pasos aplica?</div>'+stepMulti('DF074__steps',e,linked)+'</div></div>';}
+  if(fid==='DF074'&&c==='DROPDOWN_WITH_STEP_LINK'){
+    const d=answerDetails(e),legacyMulti=normalizeArray(d.DF074__steps||e.answers?.DF074__steps),linked=d.DF074__step||legacyMulti[0]||'';
+    return '<div class="linked-field-block"><div class="linked-step-label">Nivel de reversibilidad</div>'+canonicalSelect(fid,opts,val)
+      +'<div class="linked-step-group"><div class="linked-step-label">¿En qué paso aplica este nivel?</div>'+linkedStepSingle('DF074__step',e,linked)+'</div></div>';
+  }
   if(c==='DROPDOWN_WITH_STEP_LINK')return canonicalSelect(fid,opts,val)+stepSingle(`${fid}__step`,e,answerDetails(e)[`${fid}__step`]||'');
   if(c==='COMBOBOX_WITH_DETAIL')return selectWithConditionalDetail(fid,opts,val,'Detalle / nombre concreto');
   if(c==='COMBOBOX_REFERENCE')return selectWithConditionalDetail(fid,opts,val,'Nueva referencia sólo si no existe');
@@ -297,7 +308,8 @@ function renderControl(f,val,opts,e){
   if(fid==='DF088'&&c==='MULTISELECT_WITH_STEP_REFERENCE')return multiChoices(fid,opts,val,{other:true,linkedSteps:{fid:`${fid}__steps`,items:stepOptions(e),val:answerDetails(e)[`${fid}__steps`]||[]}});
   if(fid==='DF075'&&c==='STEP_ACTION_MULTISELECT'){
     const choices=multiChoices(fid,opts,val,{other:hasCanonicalOtherOption(opts)});
-    const steps=stepMulti('DF075__steps',e,answerDetails(e).DF075__steps||[]);
+    const linked=answerDetails(e).DF075__steps||e.answers?.DF075__steps||[];
+    const steps=linkedStepMulti('DF075__steps',e,linked);
     return '<div class="linked-field-block"><div class="linked-step-label">Acciones que requieren validación humana</div>'+choices
       +'<div class="linked-step-group"><div class="linked-step-label">Pasos donde aplica</div>'+steps+'</div></div>';
   }
@@ -400,6 +412,18 @@ function bindCanonicalRenderer(){
   }));
 
   document.querySelectorAll('[data-detail-answer]').forEach(el=>el.addEventListener('input',()=>setAnswerDetail(el.dataset.detailAnswer,el.value)));
+  document.querySelectorAll('[data-linked-step-single]').forEach(el=>el.addEventListener('change',()=>{
+    const e=currentEng(),fid=el.dataset.linkedStepSingle,d=answerDetails(e);
+    d[fid]=el.value||'';
+    if(fid==='DF074__step'){delete d.DF074__steps;delete e.answers?.DF074__steps;}
+    e.updatedAt=now();markDirty('Ámbito de paso actualizado');if(typeof refreshCaptureProgress==='function')refreshCaptureProgress();
+  }));
+  document.querySelectorAll('[data-linked-step-multi]').forEach(el=>el.addEventListener('change',()=>{
+    const e=currentEng(),fid=el.dataset.linkedStepMulti,d=answerDetails(e);
+    d[fid]=[...document.querySelectorAll(`[data-linked-step-multi="${fid}"]:checked`)].map(x=>x.value);
+    if(Object.prototype.hasOwnProperty.call(e.answers||{},fid))delete e.answers[fid];
+    e.updatedAt=now();markDirty('Ámbito de pasos actualizado');if(typeof refreshCaptureProgress==='function')refreshCaptureProgress();
+  }));
   document.querySelectorAll('[data-multi="DF086"]').forEach(el=>el.addEventListener('change',()=>{
     const fid='DF086';
     let selected=[...document.querySelectorAll(`[data-multi="${fid}"]:checked`)].map(x=>x.value);
