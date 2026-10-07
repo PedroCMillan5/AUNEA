@@ -127,6 +127,39 @@ function stepPair(fid,e,val){
   const p=(val&&typeof val==='object')?val:{};const opts=stepOptions(e);
   return `<div class="compound-control">${canonicalSelect(`${fid}__from`,opts,p.from||'','data-pair-part="from" data-pair-field="'+fid+'"')}${canonicalSelect(`${fid}__to`,opts,p.to||'','data-pair-part="to" data-pair-field="'+fid+'"')}</div>`;
 }
+
+// DF051 is a repeatable Finding: the governed validation already requires affected datum + source step +
+// destination step. The former two-select renderer could not capture the datum and could only represent
+// one re-entry. Keep suggestions neutral: only explicit Confirmar writes a finding.
+function duplicateEntryRows(val){
+  if(Array.isArray(val))return val.filter(x=>x&&typeof x==='object');
+  if(val&&typeof val==='object'&&(val.from||val.to||val.data))return [val];
+  return [];
+}
+function duplicateEntryCandidates(e){
+  const steps=(e.processSteps||[]).filter(x=>x.status!=='SUPERSEDED'),out=[];
+  const artifactLabel=v=>optionLabel('OS_ARTIFACT_TYPE',v);
+  for(let j=0;j<steps.length;j++){
+    const dest=steps[j],manual=normalizeArray(dest.manual_actions).map(String);
+    if(!manual.some(x=>x==='REKEY'||x==='COPY'))continue;
+    const destArtifacts=new Set(normalizeArray(dest.inputs).map(String));
+    if(!destArtifacts.size)continue;
+    for(let i=0;i<j;i++){
+      const src=steps[i],available=new Set([...normalizeArray(src.outputs),...normalizeArray(src.inputs)].map(String));
+      [...destArtifacts].filter(x=>available.has(x)).forEach(dataKey=>{
+        out.push({id:`${dataKey}:${src.id}:${dest.id}`,data:artifactLabel(dataKey),dataKey,from:src.id,to:dest.id});
+      });
+    }
+  }
+  return out;
+}
+function duplicateEntryControl(fid,e,val){
+  const rows=duplicateEntryRows(val),opts=stepOptions(e),d=answerDetails(e),dismissed=new Set(normalizeArray(d[`${fid}__dismissed`])),confirmedKeys=new Set(rows.map(x=>`${x.dataKey||x.data}:${x.from}:${x.to}`));
+  const suggestions=duplicateEntryCandidates(e).filter(x=>!dismissed.has(x.id)&&!confirmedKeys.has(x.id));
+  const suggestionHtml=suggestions.length?`<div class="duplicate-entry-suggestions"><div class="field-help"><b>Posibles reintroducciones detectadas</b> · confirma sólo las que ocurren realmente.</div>${suggestions.map(x=>`<div class="notice info" data-duplicate-suggestion="${attr(x.id)}"><b>${esc(x.data)}</b><br>${esc(stepOptions(e).find(o=>o.value===x.from)?.label||x.from)} → ${esc(stepOptions(e).find(o=>o.value===x.to)?.label||x.to)}<div class="row-actions"><button type="button" class="btn btn-small" data-duplicate-confirm="${attr(x.id)}" data-duplicate-data="${attr(x.data)}" data-duplicate-data-key="${attr(x.dataKey)}" data-duplicate-from="${attr(x.from)}" data-duplicate-to="${attr(x.to)}">Confirmar</button><button type="button" class="btn btn-small" data-duplicate-dismiss="${attr(x.id)}">No es una reintroducción</button></div></div>`).join('')}</div>`:'';
+  const rowHtml=rows.length?rows.map((x,i)=>`<div class="notice duplicate-entry-row" data-duplicate-row="${i}"><div class="field-help"><b>Reintroducción ${i+1}</b></div><div class="compound-control"><input class="detail-input" data-duplicate-part="data" data-duplicate-index="${i}" value="${attr(x.data||'')}" placeholder="Información afectada · ej. Datos de la factura">${canonicalSelect(`${fid}__from_${i}`,opts,x.from||'',`data-duplicate-part="from" data-duplicate-index="${i}"`)}${canonicalSelect(`${fid}__to_${i}`,opts,x.to||'',`data-duplicate-part="to" data-duplicate-index="${i}"`)}</div><div class="field-help">Disponible originalmente → se vuelve a introducir manualmente.</div><button type="button" class="btn btn-small" data-duplicate-remove="${i}">Eliminar</button></div>`).join(''):'<div class="empty"><p>No hay reintroducciones confirmadas.</p></div>';
+  return `<div class="duplicate-entry-control" data-duplicate-field="${fid}"><div class="field-help">Registra cada reintroducción por separado: qué información es, dónde está disponible originalmente y dónde se vuelve a introducir manualmente.</div>${suggestionHtml}<div class="duplicate-entry-list">${rowHtml}</div><button type="button" class="btn btn-small" data-duplicate-add="${fid}">+ Añadir reintroducción</button></div>`;
+}
 // DF054 (Integration_Gaps): SYSTEM_SUGGEST_THEN_CONFIRM authorizes the suggest+confirm interaction
 // pattern, not any inference algorithm — the canonical Reuse_From only names the SOURCES (tools per
 // step, handoffs/communication channels, manual actions/copy-rekey), not a gap-detection rule. This
@@ -237,6 +270,7 @@ function renderControl(f,val,opts,e){
   if(c==='STEP_MULTISELECT_VISUAL'||c==='STEP_MULTISELECT_WITH_FRICTION')return stepMulti(fid,e,val);
   if(c==='STEP_REFERENCE_SINGLE')return stepSingle(fid,e,val);
   if(c==='STEP_PAIR_SELECTOR')return stepPair(fid,e,val);
+  if(c==='STEP_PAIR_LIST_SELECTOR')return duplicateEntryControl(fid,e,val);
   if(c==='STEP_SYSTEM_PAIR_SELECTOR')return stepSystemPairSelector(fid,e,val);
   if(c==='FRICTION_MULTISELECT_PRIORITY')return frictionPriority(fid,e,val);
   if(c==='BOOLEAN_UNKNOWN_WITH_SCOPE')return permissionWithScope(fid,opts,val);
@@ -397,6 +431,11 @@ function bindCanonicalRenderer(){
   };document.querySelectorAll(`[data-number-value="${fid}"]`).forEach(el=>el.addEventListener('input',sync));document.querySelectorAll(`[data-number-unit="${fid}"],[data-number-period="${fid}"],[data-number-mode="${fid}"]`).forEach(el=>el.addEventListener('change',sync))});
   document.querySelectorAll('[data-set-unknown]').forEach(b=>b.onclick=()=>{setAnswer(b.dataset.setUnknown,'UNKNOWN');render()});
   const pairFids=[...new Set([...document.querySelectorAll('[data-pair-field]')].map(x=>x.dataset.pairField))];pairFids.forEach(fid=>document.querySelectorAll(`[data-pair-field="${fid}"]`).forEach(el=>el.addEventListener('change',()=>{const p={};document.querySelectorAll(`[data-pair-field="${fid}"]`).forEach(x=>p[x.dataset.pairPart]=x.value);setAnswer(fid,p)})));
+  document.querySelectorAll('[data-duplicate-add]').forEach(btn=>btn.onclick=()=>{const fid=btn.dataset.duplicateAdd,e=currentEng(),rows=duplicateEntryRows(e.answers?.[fid]);setAnswer(fid,[...rows,{data:'',from:'',to:''}]);render()});
+  document.querySelectorAll('[data-duplicate-part]').forEach(el=>el.addEventListener(el.tagName==='INPUT'?'input':'change',()=>{const e=currentEng(),fid='DF051',rows=duplicateEntryRows(e.answers?.[fid]),i=Number(el.dataset.duplicateIndex);if(!rows[i])return;rows[i]={...rows[i],[el.dataset.duplicatePart]:el.value};setAnswer(fid,rows)}));
+  document.querySelectorAll('[data-duplicate-remove]').forEach(btn=>btn.onclick=()=>{const e=currentEng(),fid='DF051',rows=duplicateEntryRows(e.answers?.[fid]);rows.splice(Number(btn.dataset.duplicateRemove),1);setAnswer(fid,rows);render()});
+  document.querySelectorAll('[data-duplicate-confirm]').forEach(btn=>btn.onclick=()=>{const e=currentEng(),fid='DF051',rows=duplicateEntryRows(e.answers?.[fid]);rows.push({data:btn.dataset.duplicateData||'',dataKey:btn.dataset.duplicateDataKey||'',from:btn.dataset.duplicateFrom||'',to:btn.dataset.duplicateTo||''});setAnswer(fid,rows);render()});
+  document.querySelectorAll('[data-duplicate-dismiss]').forEach(btn=>btn.onclick=()=>{const e=currentEng(),d=answerDetails(e),key='DF051__dismissed',items=new Set(normalizeArray(d[key]));items.add(btn.dataset.duplicateDismiss);d[key]=[...items];e.updatedAt=now();markDirty('Candidato de reintroducción descartado');render()});
   document.querySelectorAll('[data-multi][data-exclusive]').forEach(el=>el.addEventListener('change',()=>{
     const fid=el.dataset.multi;
     if(el.checked)document.querySelectorAll(`[data-multi="${fid}"]`).forEach(other=>{if(other!==el)other.checked=false});
