@@ -59,3 +59,23 @@ test('every diagnostic field declares capture, ownership, branching, reuse and e
  for(const f of schema.fields)for(const key of required)if(f[key]===undefined||f[key]===null||String(f[key]).trim()==='')gaps.push(f.Field_ID+':'+key);
  assert.deepEqual(gaps,[]);
 });
+
+
+test('every field has an explicit downstream invalidation plan',()=>{
+ const map=schema.engine_dependency_graph?.field_invalidation_map||{};
+ assert.equal(Object.keys(map).length,100);
+ for(const f of schema.fields){
+   assert.ok(Array.isArray(map[f.Field_ID]),f.Field_ID+' missing invalidation plan');
+   assert.ok(map[f.Field_ID].length>0,f.Field_ID+' empty invalidation plan');
+ }
+ assert.deepEqual(map.DF073,['Risk','Recommendation','ProductPricing','ScenarioComparator','Deliverables']);
+ assert.ok(map.DF021.includes('Economics'));
+ assert.ok(map.DF093.includes('Governance'));
+});
+
+test('state records the source Field_ID and exact stale plan before clearing official snapshot',()=>{
+ const stateJs=fs.readFileSync(path.join(root,'core','state.js'),'utf8');
+ assert.ok(stateJs.includes('e.staleDerivedState={sourceFieldId:sourceFieldId||null,reason,affected,markedAt:now()}'));
+ assert.ok(stateJs.includes('invalidateDerivedState(e,\`respuesta \${fid} actualizada\`,fid)'));
+ assert.ok(stateJs.includes('invalidateDerivedState(e,\`detalle \${fid} actualizado\`,parentFid)'));
+});
