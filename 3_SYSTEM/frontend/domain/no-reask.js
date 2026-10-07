@@ -136,7 +136,7 @@ function derivedExceptionReview(steps){
     const type=labelFrom('OS_EXCEPTION_TYPE',ex.type)||ex.label||ex.type||'Excepción sin clasificar';
     const condition=String(ex.condition||'').trim();
     const owner=labelFrom('OS_ACTOR_ROLE',ex.owner)||ex.owner||'';
-    return (s.step_name||s.id)+' — '+type+(condition?' · '+condition:'')+(owner?' · Responsable: '+owner:'');
+    return (s.step_name||s.id)+' — '+type+(condition?' · '+condition:(String(ex.type||'')==='OTHER'?' · Detalle pendiente':''))+(owner?' · Responsable: '+owner:'');
   }));
 }
 function derivedApprovalReview(steps){
