@@ -94,6 +94,7 @@ function canonicalFieldRequiredNow(f,e){
   return f.Requiredness==='REQUIRED_90M'&&!['SYSTEM_GENERATED','DERIVED'].includes(String(f.Ask_Mode||''));
 }
 function canonicalFieldIntegrityIssues(e){
+  if(typeof migrateDuplicateEntryDrafts==='function')migrateDuplicateEntryDrafts(e,'DF051');
   return (schema?.fields||[]).filter(f=>questionVisible(f,e)).map(f=>{
     const v=effectiveValue(f,e),message=canonicalFieldValidationIssue(f,v,e);
     return message?{type:'FIELD_INTEGRITY',id:f.Field_ID,label:`${f.Pregunta_o_etiqueta_ES||f.Field_ID}: ${message}`,stage:f.Stage_ID,navigationTarget:'diagnostico'}:null;
