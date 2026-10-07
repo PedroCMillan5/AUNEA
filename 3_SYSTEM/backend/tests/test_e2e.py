@@ -1,5 +1,6 @@
 from aunea_backend.models import *
 from aunea_backend.orchestrator import Orchestrator
+from aunea_backend.engines import EngineContext, EconomicsEngine, RiskEngine, RecommendationEngine
 
 
 def base_scope(**kw):
@@ -94,3 +95,55 @@ def test_economic_input_preserves_canonical_practical_capacity():
     assert payload["unit"]=="h"
     assert payload["period"]=="MONTH"
     assert payload["capacity_cost_rate_eur_hour"]==32
+
+
+def coverage_for(engine, covered=(), gaps=()):
+    items=[]
+    for iid in covered:
+        items.append(InputCoverageItem(input_id=iid,engine=engine,input_name=iid,criticality="MATERIAL",branch_rule_id="BR-BASE",applicable=True,present=True,blocking=False,status="COVERED",source_fields=[],present_sources=[]))
+    for iid in gaps:
+        items.append(InputCoverageItem(input_id=iid,engine=engine,input_name=iid,criticality="MATERIAL",branch_rule_id="BR-BASE",applicable=True,present=False,blocking=False,status="GAP",source_fields=[],present_sources=[]))
+    return InputCoverageResult(status="PARTIAL" if gaps else "COMPLETE",items=items)
+
+
+def test_economics_complete_means_canonical_coverage_not_row_existence():
+    eng=EngagementInput(
+        engagement_id="EC-COV",process_instance_id="P",process_name="Economics",
+        economics=[EconomicInput(driver_id="ED02",annual_active_hours=100,evidence_type="CLIENT_DECLARED")]
+    )
+    result=EconomicsEngine().run(EngineContext(eng),coverage_for("EconomicsEngine",covered=["IN-E-01"],gaps=["IN-E-04"]))
+    assert result.status=="PARTIAL"
+    assert result.coverage_status=="PARTIAL"
+    assert result.covered_input_ids==["IN-E-01"]
+    assert result.missing_input_ids==["IN-E-04"]
+
+
+def test_risk_result_retains_canonical_input_trace():
+    eng=EngagementInput(
+        engagement_id="RISK-COV",process_instance_id="P",process_name="Risk",
+        risks=[risk(impact=2)]
+    )
+    result=RiskEngine().run(EngineContext(eng),coverage_for("RiskEngine",covered=["IN-K-01","IN-K-02","IN-K-03"]))
+    assert result.input_ids_used==["IN-K-01","IN-K-02","IN-K-03"]
+    assert "Canonical inputs used=" in result.rationale
+
+
+def test_recommendation_consumes_exception_complexity_and_retains_constraints():
+    eng=EngagementInput(
+        engagement_id="REC-COV",process_instance_id="P",process_name="Exceptions",
+        pains=[PainObservation(pain_id="P03",state="CONFIRMED",evidence_ids=[])],
+        questionnaire_answers={
+            "DF086":["REDUCE_TIME"],"DF087":["CONTROL"],"DF088":["FINAL_DECISION"],
+            "DF089":["CURRENT_STACK"],"DF090":["EU_HOSTING"],"DF091":["TRAINING"],
+            "DF075":["S2"],"DF066":["MANUAL_EXCEPTION"],
+            "_process_steps":[{"id":"S1","exception_path":"Manual review"}],
+        }
+    )
+    cov=coverage_for("RecommendationEngine",covered=[f"IN-R-{i:02d}" for i in range(1,15)])
+    rr=RiskResult(inherent_level="R1",residual_level="R1",status="ASSESSED",rationale="ok")
+    out=RecommendationEngine().run(EngineContext(eng),[PainResult(pain_id="P03",state="CONFIRMED",confidence="MEDIUM")],rr,cov)
+    assert out.action_id=="ACT03"
+    assert out.functional_level_id=="N3"
+    assert len(out.preconditions)>=5
+    assert out.missing_information==[]
+    assert "IN-R-10" in out.input_ids_used
