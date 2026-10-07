@@ -871,6 +871,20 @@ body:not(.mode-process-editor) .content [data-process-engagement] .flow-insert{d
  .content:has(.diagnostic-stage-s09) .blocker-list .notice{grid-template-columns:1fr}
  .content:has(.diagnostic-stage-s09) .blocker-list .notice>.btn{grid-column:1;grid-row:auto;justify-self:start}
 }
+.content:has(.diagnostic-stage-s09) .readonly-checklist-list{margin:0;padding-left:22px;display:grid;gap:12px;list-style:disc}
+.content:has(.diagnostic-stage-s09) .readonly-checklist-item{display:list-item}
+.content:has(.diagnostic-stage-s09) .date-with-preview input:disabled{background:#eef0f2;color:#68717c;cursor:not-allowed}
+.content:has(.diagnostic-stage-s09) .date-with-preview .is-selected{background:#e9eef3;border-color:#758597;color:#263749;font-weight:700}
+.content:has(.diagnostic-stage-s09) .nextstep-inline{align-items:start;grid-template-columns:minmax(0,1.35fr) minmax(0,.75fr) minmax(0,.65fr)}
+.content:has(.diagnostic-stage-s09) .nextstep-cell-label{min-height:18px;margin-bottom:8px}
+.content:has(.diagnostic-stage-s09) .nextstep-cell input,
+.content:has(.diagnostic-stage-s09) .nextstep-cell .aunea-select>summary{height:42px;box-sizing:border-box}
+.content:has(.diagnostic-stage-s09) .date-es-preview{display:block;margin-top:6px}
+.content:has(.diagnostic-stage-s09) .closing-review-actions{grid-column:2;grid-row:1/3;display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+@media(max-width:640px){
+ .content:has(.diagnostic-stage-s09) .nextstep-inline{grid-template-columns:1fr}
+ .content:has(.diagnostic-stage-s09) .closing-review-actions{grid-column:1;grid-row:auto}
+}
 /* [AUNEA-FE-CLOSE-STAGE-042] END */
 
 /* [AUNEA-FE-INTERNAL-DIAG-043] START — PG10 internal diagnosis workspace.

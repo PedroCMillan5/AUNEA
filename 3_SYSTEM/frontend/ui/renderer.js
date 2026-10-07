@@ -253,7 +253,7 @@ function nextStepWithOwnerDate(f,opts,e){
   const actionSelect=canonicalSelect(`${fid}__action`,opts,actionValue,`data-nextstep-action="${fid}"`);
   const otherBox=actionValue==='OTHER'?`<div class="nextstep-other-wrap"><input class="detail-input" data-nextstep-other="${fid}" value="${attr(otherDetail)}" placeholder="Detalle corto de la acción"></div>`:'';
   return `<div class="nextstep-inline" data-nextstep-row="${fid}">
-    <div class="nextstep-cell nextstep-action">${actionSelect}</div>
+    <div class="nextstep-cell nextstep-action"><span class="nextstep-cell-label">Acción acordada</span>${actionSelect}</div>
     <div class="nextstep-cell nextstep-owner"><span class="nextstep-cell-label">Responsable</span><input class="detail-input" data-nextstep-owner="${fid}" value="${attr(owner)}" readonly aria-readonly="true" title="Consultor AUNEA seleccionado en la cabecera"></div>
     <div class="nextstep-cell nextstep-date"><span class="nextstep-cell-label">Fecha objetivo</span><input type="date" lang="es-ES" data-nextstep-date="${fid}" value="${attr(dateVal)}"><small class="date-es-preview" data-nextstep-date-preview="${fid}">${dateVal?esc(formatDateEs(dateVal)):''}</small></div>
   </div>${otherBox}`;
@@ -330,7 +330,10 @@ function renderControl(f,val,opts,e){
   if(c==='FRICTION_MULTISELECT_PRIORITY')return frictionPriority(fid,e,val);
   if(c==='BOOLEAN_UNKNOWN_WITH_SCOPE')return permissionWithScope(fid,opts,val);
   if(c==='BOOLEAN_UNKNOWN'||c==='SEGMENTED'||c==='SEGMENTED_SCALE')return segmented(fid,opts,val);
-  if(c==='DATE_WITH_UNKNOWN')return `<div class="compound-control date-with-preview"><input type="date" lang="es-ES" data-answer="${fid}" value="${attr(val||'')}"><button type="button" class="btn btn-small" data-set-unknown="${fid}">No disponible</button>${val?'<small class="date-es-preview">'+esc(formatDateEs(val))+'</small>':''}</div>`;
+  if(c==='DATE_WITH_UNKNOWN'){
+    const unknown=val==='UNKNOWN';
+    return `<div class="compound-control date-with-preview"><input type="date" lang="es-ES" data-answer="${fid}" value="${attr(unknown?'':val||'')}" ${unknown?'disabled aria-disabled="true"':''}><button type="button" class="btn btn-small ${unknown?'is-selected':''}" aria-pressed="${unknown}" data-set-unknown="${fid}">${unknown?'✓ No disponible':'No disponible'}</button>${val&&!unknown?'<small class="date-es-preview">'+esc(formatDateEs(val))+'</small>':''}</div>`;
+  }
   if(c.startsWith('NUMBER')||c.startsWith('PERCENT'))return numberCompound(f,val);
   // DF080/DF081: Ask_Mode:CONDITIONAL_ASK means "ask when it can't be derived and it's material" — no
   // governed formula aggregates manual_actions=CHASE/REPORT or friction types P06/P07/P09/P12/P14/P18
@@ -349,7 +352,7 @@ function renderControl(f,val,opts,e){
   if(c==='SYSTEM_GENERATED_CHECKLIST'){
     const items=normalizeArray(val).filter(Boolean);
     const followup=fid==='DF095'&&e?.answers?.DF098?'<small class="readonly-checklist-followup"><b>Seguimiento acordado:</b> '+esc(e.answers.DF098)+'</small>':'';
-    return '<div class="readonly-checklist">'+(items.length?items.map(x=>'<div class="readonly-checklist-item">'+esc(x)+'</div>').join(''):'<div class="readonly-checklist-item">Sin elementos pendientes</div>')+followup+'</div>';
+    return '<div class="readonly-checklist">'+(items.length?'<ul class="readonly-checklist-list">'+items.map(x=>'<li class="readonly-checklist-item">'+esc(x)+'</li>').join('')+'</ul>':'<div class="readonly-checklist-item">Sin elementos pendientes</div>')+followup+'</div>';
   }
   if(c.startsWith('DERIVED')||c.startsWith('SYSTEM_GENERATED'))return `<div class="readonly-box">${esc(val||'Se completará automáticamente cuando existan datos suficientes.')}</div>`;
   return `<div class="notice warn control-error"><strong>Control canónico no renderizado:</strong> ${esc(c||'SIN_CONTROL')} · ${esc(fid)}. No se degrada a texto libre.</div>`;
@@ -513,7 +516,7 @@ function bindCanonicalRenderer(){
     if(semanticEmpty&&valueEl)valueEl.value='';
     setAnswer(fid,{value:normalizedValue,unit:normalizedUnit,period:normalizedPeriod,mode});
   };document.querySelectorAll(`[data-number-value="${fid}"]`).forEach(el=>el.addEventListener('input',sync));document.querySelectorAll(`[data-number-unit="${fid}"],[data-number-period="${fid}"],[data-number-mode="${fid}"]`).forEach(el=>el.addEventListener('change',sync))});
-  document.querySelectorAll('[data-set-unknown]').forEach(b=>b.onclick=()=>{setAnswer(b.dataset.setUnknown,'UNKNOWN');render()});
+  document.querySelectorAll('[data-set-unknown]').forEach(b=>b.onclick=()=>{const fid=b.dataset.setUnknown;setAnswer(fid,currentEng()?.answers?.[fid]==='UNKNOWN'?'':'UNKNOWN');render()});
   const pairFids=[...new Set([...document.querySelectorAll('[data-pair-field]')].map(x=>x.dataset.pairField))];pairFids.forEach(fid=>document.querySelectorAll(`[data-pair-field="${fid}"]`).forEach(el=>el.addEventListener('change',()=>{const p={};document.querySelectorAll(`[data-pair-field="${fid}"]`).forEach(x=>p[x.dataset.pairPart]=x.value);setAnswer(fid,p)})));
   document.querySelectorAll('[data-duplicate-add]').forEach(btn=>btn.onclick=()=>{const fid=btn.dataset.duplicateAdd,e=currentEng(),drafts=duplicateEntryDraftRows(e,fid,e.answers?.[fid]);setAnswer(fid,duplicateEntryRows(e.answers?.[fid]));saveDuplicateEntryDraftRows(e,fid,[...drafts,{data:'',from:'',to:''}]);render()});
   document.querySelectorAll('[data-duplicate-part]').forEach(el=>el.addEventListener(el.tagName==='INPUT'?'input':'change',()=>{const e=currentEng(),fid='DF051',rows=duplicateEntryRows(e.answers?.[fid]),i=Number(el.dataset.duplicateIndex);if(!rows[i])return;rows[i]={...rows[i],[el.dataset.duplicatePart]:el.value};setAnswer(fid,rows)}));

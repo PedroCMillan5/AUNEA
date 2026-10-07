@@ -249,3 +249,21 @@ test('DF099 renders permission and scope as one inline control and scope is cano
   assert.match(html,/data-permission-scope="DF099"/);
   assert.match(html,/data-detail-answer="DF099"/);
 });
+
+
+test('date unknown is selected, disables the input and never writes UNKNOWN into a date value',()=>{
+ const html=ctx.renderControl({Field_ID:'DF097',Control_UI:'DATE_WITH_UNKNOWN'},'UNKNOWN',[],e);
+ assert.match(html,/data-answer="DF097" value="" disabled aria-disabled="true"/);
+ assert.match(html,/aria-pressed="true" data-set-unknown="DF097">✓ No disponible/);
+ assert.doesNotMatch(html,/value="UNKNOWN"/);
+ const available=ctx.renderControl({Field_ID:'DF097',Control_UI:'DATE_WITH_UNKNOWN'},'2026-10-14',[],e);
+ assert.match(available,/aria-pressed="false"/);
+ assert.doesNotMatch(available,/disabled/);
+});
+
+test('generated closure checklist uses semantic bullets and preserves the agreed follow-up',()=>{
+ const html=ctx.renderControl({Field_ID:'DF095',Control_UI:'SYSTEM_GENERATED_CHECKLIST'},['Documento de aprobación','Ejemplo de solicitud'],[],{answers:{DF098:'Solicitar soporte — Pedro — 14/10/2026'}});
+ assert.match(html,/<ul class="readonly-checklist-list">/);
+ assert.equal((html.match(/<li class="readonly-checklist-item">/g)||[]).length,2);
+ assert.match(html,/Seguimiento acordado/);
+});

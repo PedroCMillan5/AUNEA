@@ -345,3 +345,12 @@ test('PG09 sealed closure offers internal work instead of a second seal action',
   assert.match(html,/Snapshot final/);
   assert.doesNotMatch(html,/Economics/);
 });
+
+
+test('PG09 pending map exposes both review and the existing layer confirmation action',()=>{
+ const ctx=makeCtx();ctx.preCloseConsistencyReview=()=>({items:[{code:'LAYER_MAP',severity:'BLOCKER',message:'Falta confirmar mapa',stage:'S04'}],blockers:[{}],reviews:[]});
+ const html=ctx.validationSummary({answers:{},processSteps:[],frictions:[],risks:[],economicInputs:[]},{missing:[],blockers:[]});
+ assert.match(html,/data-page="pasos">Revisar mapa AS-IS/);
+ assert.match(html,/data-pg09-confirm-layer="map">Confirmar mapa AS-IS/);
+ assert.doesNotMatch(html,/id="confirmClosingAsIs"/);
+});

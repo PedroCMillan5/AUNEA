@@ -339,7 +339,12 @@ function validationSummary(e,completion){
         ${consistency.items.map(item=>{
           const label=item.severity==='BLOCKER'?'Bloqueante':item.severity==='REVIEW'?'Revisar':'Información';
           const cls=item.severity==='BLOCKER'?'warn':item.severity==='REVIEW'?'info':'good';
-          const action=item.navigationTarget==='proceso'
+          const pendingLayer=String(item.code||'').startsWith('LAYER_')?String(item.code).slice(6).toLowerCase():'';
+          const layerPages={map:'pasos',frictions:'fricciones',risks:'riesgos',impact:'impacto'};
+          const layerLabels={map:'mapa AS-IS',frictions:'fricciones',risks:'riesgos',impact:'impactos'};
+          const action=pendingLayer&&layerPages[pendingLayer]
+            ?`<div class="closing-review-actions"><button type="button" class="btn btn-small" data-page="${layerPages[pendingLayer]}">Revisar ${layerLabels[pendingLayer]}</button><button type="button" class="btn btn-small btn-primary" data-pg09-confirm-layer="${pendingLayer}">Confirmar ${layerLabels[pendingLayer]}</button></div>`
+            :item.navigationTarget==='proceso'
             ?'<button class="btn btn-small" data-goto-process="1">Ir a corregir</button>'
             :item.stage&&item.stage!=='S09'?`<button class="btn btn-small" data-goto-stage="${attr(item.stage)}" data-consistency-stage="${attr(item.stage)}">Ir a corregir</button>`:'';
           return `<div class="notice ${cls}" data-consistency-severity="${attr(item.severity)}"><b>${label}</b><br><span>${esc(item.message)}</span>${action}</div>`;
@@ -380,6 +385,7 @@ bindForms=function(){
   document.querySelectorAll('[data-goto-stage]').forEach(b=>b.onclick=()=>{const e=currentEng();if(e)e.stageId=b.dataset.gotoStage;render()});
   document.querySelectorAll('[data-consistency-stage]').forEach(b=>b.onclick=()=>{const e=currentEng();if(!e)return;e.stageId=b.dataset.consistencyStage;render()});
   document.querySelectorAll('[data-open-gate-review]').forEach(b=>b.onclick=()=>openEngineGateReview());
+  document.querySelectorAll('[data-pg09-confirm-layer]').forEach(b=>b.onclick=()=>confirmProcessLayer(({map:'cliente',frictions:'fricciones',risks:'riesgos',impact:'impacto'})[b.dataset.pg09ConfirmLayer]));
   const finalConfirm=document.getElementById('confirmClosingAsIs');if(finalConfirm)finalConfirm.onclick=()=>confirmClosingAsIs();
   const sd=document.getElementById('saveDraft');if(sd)sd.onclick=()=>saveState('Borrador guardado');
 };

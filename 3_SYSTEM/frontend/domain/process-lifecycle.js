@@ -165,7 +165,7 @@ function preCloseConsistencyReview(e,completion){
   }
   const layers=typeof processLayerConfirmations==='function'?processLayerConfirmations(e):(e.layerConfirmations||{});
   Object.entries(CONSISTENCY_LAYER_STAGE).forEach(([layer,stage])=>{
-    if(!layers[layer])add('BLOCKER','LAYER_'+layer.toUpperCase(),'Falta confirmar la capa '+({map:'Mapa AS-IS',frictions:'Fricciones',risks:'Riesgos',impact:'Impacto'}[layer]||layer)+'.',stage);
+    if(!layers[layer])add('BLOCKER','LAYER_'+layer.toUpperCase(),'Falta confirmar la capa '+({map:'Mapa AS-IS',frictions:'Fricciones',risks:'Riesgos',impact:'Impacto'}[layer]||layer)+'. Revisa los registros y pulsa Confirmar en esta página. La confirmación valida la capa; el snapshot se genera al confirmar el cierre final.',stage);
   });
   (typeof captureIntegrityIssues==='function'?captureIntegrityIssues(e):[]).forEach((x,i)=>{
     const stage=x.stage||CONSISTENCY_LAYER_STAGE[x.layer]||'';
@@ -190,7 +190,8 @@ function preCloseConsistencyReview(e,completion){
       const explicit=e.answers?.[fid],reuse=reusedValue(fid,e);
       if(valuePresent(explicit)&&valuePresent(reuse)&&consistencyValueSignature(explicit)!==consistencyValueSignature(reuse)){
         const field=(schema?.fields||[]).find(f=>f.Field_ID===fid);
-        add('REVIEW','SOURCE_CONFLICT_'+fid,'"' +(field?.Pregunta_o_etiqueta_ES||fid)+ '" no coincide con la información ya capturada en su fuente propietaria. Revisa el dato antes de cerrar.',field?.Stage_ID||'');
+        const describe=v=>typeof formatContextValue==='function'&&field?formatContextValue(field,v):normalizeArray(v).map(x=>typeof x==='object'?JSON.stringify(x):String(x)).join(', ');
+        add('REVIEW','SOURCE_CONFLICT_'+fid,'"'+(field?.Pregunta_o_etiqueta_ES||fid)+'": la respuesta guardada indica «'+describe(explicit)+'»; la fuente reutilizada indica «'+describe(reuse)+'». Revisa esa sección y corrige el dato de origen para que ambas representen el mismo proceso.',field?.Stage_ID||'');
       }
     });
   }
@@ -205,7 +206,7 @@ function preCloseConsistencyReview(e,completion){
     const evidenceField=(schema?.fields||[]).find(f=>f.Field_ID==='DF095');
     const pending=evidenceField?effectiveValue(evidenceField,e):[];
     normalizeArray(pending).filter(label=>label&&label!=='No hay evidencias pendientes').forEach((label,i)=>
-      add('REVIEW','EVIDENCE_'+i,'Evidencia pendiente: '+String(label),'S09'));
+      add('REVIEW','EVIDENCE_'+i,'Evidencia pendiente: '+String(label)+'. Solicita el soporte y vincúlalo al registro correspondiente. Se puede cerrar la sesión, pero el análisis conserva la incertidumbre hasta recibirlo.','S09'));
   }
 
   if(!items.length)add('INFO','CONSISTENT','No se detectan incoherencias estructurales ni datos obligatorios pendientes.');
