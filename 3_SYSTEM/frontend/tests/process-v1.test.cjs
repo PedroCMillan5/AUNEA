@@ -363,3 +363,9 @@ test('private Pasos page renders a single map-layer confirmation control',()=>{
   const html=ctx.consultantStepsPage();
   assert.equal((html.match(/data-confirm-process-layer="map"/g)||[]).length,1);
 });
+
+test('Mapa AS-IS is read-only for S04 complementary capture; Pasos is the single editing surface',()=>{
+  assert.match(code,/function processPage\(\)[\s\S]*?\+asisMapPage\(e,steps,fr\);/);
+  assert.doesNotMatch(code,/function processPage\(\)[\s\S]*?asisMapPage\(e,steps,fr\)\+layerCanonicalQuestions\(e,'S04'\)/);
+  assert.match(code,/function consultantStepsPage\(\)[\s\S]*?'map','S04'\)/);
+});
