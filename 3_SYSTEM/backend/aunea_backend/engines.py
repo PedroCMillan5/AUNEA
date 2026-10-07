@@ -142,6 +142,14 @@ class RiskCandidateEngine:
 
         def add(cid,title,step_ids,description,rationale,questions,signals):
             if cid in reviewed:return
+            candidate_steps={str(x) for x in step_ids if x}
+            # A grouped review may confirm one conceptual risk over several steps.
+            # Suppress only the covered steps on later reviews; if the consultant removed a step,
+            # that uncovered location remains reviewable.
+            for existing in risks:
+                existing_steps={str(x) for x in self._arr(existing.get("step_ids")) if x}
+                if str(existing.get("description") or "").strip()==str(description or "").strip() and candidate_steps.intersection(existing_steps):
+                    return
             merged_questions=list(dict.fromkeys([*questions,*contextual_questions]))
             merged_signals=list(dict.fromkeys([*signals,*contextual_signals]))
             out.append({"candidate_id":cid,"title":title,"step_ids":list(dict.fromkeys(step_ids)),
