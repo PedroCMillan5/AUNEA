@@ -157,6 +157,14 @@ test('client layer exposes only the matching per-step add action and linked badg
   assert.match(process,/currentEng\(\)\.processTab='impacto'/);
 });
 
+test('decision gateway and YES card share the main row while NO stays below',()=>{
+  assert.match(css,/\.process-graph-yes-branch-cell\{transform:none/);
+  assert.match(css,/\.graph-decision-gateway\{[^}]*top:calc\(50% - 29px\)/);
+  assert.match(css,/\.graph-decision-copy\{[^}]*top:calc\(50% \+ 43px\)/);
+  assert.match(process,/if\(Math\.abs\(targetY-centerY\)<4\)appendPath\('M'\+rightX\+' '\+centerY\+'H'\+\(targetX-5\)/);
+  assert.match(process,/yesBottom\+34/);
+});
+
 test('decision NO route exits below the gateway, clears the YES card, and overlays never hide the layer action',()=>{
   assert.match(process,/const noStartX=dr\.left\+dr\.width\/2-rect\.left/);
   assert.match(process,/const noStartY=dr\.bottom-rect\.top/);
