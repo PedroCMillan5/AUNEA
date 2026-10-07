@@ -137,6 +137,16 @@ test('a decision creates one temporary branch level and nested decisions are blo
   assert.match(process,/No se puede crear otra bifurcación dentro de una rama/);
 });
 
+test('Impact page summarizes the applicable driver values and blocks incomplete records',()=>{
+  assert.match(econ,/function economicRecordSummary\(/);
+  assert.match(econ,/function economicRecordCompletenessIssues\(/);
+  assert.match(econ,/Coste de capacidad por hora/);
+  assert.match(econ,/Coste anual de herramientas|coste anual de herramientas/i);
+  assert.match(process,/function impactLayerReviewSummary\(/);
+  assert.match(process,/Evidencia económica/);
+  assert.match(process,/Sin inconsistencias pendientes/);
+});
+
 test('review recommendations are grouped and Impact exposes its own review action',()=>{
   assert.match(process,/const grouped=new Map\(\)/);
   assert.match(process,/AUNEA ha agrupado la misma señal detectada en varios pasos/);
