@@ -188,14 +188,20 @@ function reusedValue(fid,e){
   if(fid==='DF085'){const types=unique((e.economicInputs||[]).map(x=>x.evidence_type));return types.length?types:['Sin inputs económicos materiales'];}
   if(fid==='DF093')return e.confirmedAsIs?'YES':'';
   if(fid==='DF057')return 'Se deriva de la fricción registrada; no se pregunta al cliente.';
-  if(fid==='DF094')return canonicalMissingRequired(e).map(x=>{
-    const field=(schema?.fields||[]).find(f=>f.Field_ID===x);
-    return field?.Pregunta_o_etiqueta_ES||x;
-  });
-  if(fid==='DF095')return unique(fr.filter(x=>x.evidence_type!=='EV01').map(x=>`Evidencia de ${labelFrom('OS_FRICTION_TYPE',x.friction_type)}`).concat(canonicalMissingRequired(e).map(x=>{
-    const field=(schema?.fields||[]).find(f=>f.Field_ID===x);
-    return `Completar ${field?.Pregunta_o_etiqueta_ES||x}`;
-  })));
+  if(fid==='DF094'){
+    const missing=canonicalMissingRequired(e).filter(x=>x!=='DF093'&&x!=='Confirmación AS-IS').map(x=>{
+      const field=(schema?.fields||[]).find(f=>f.Field_ID===x);
+      return field?.Pregunta_o_etiqueta_ES||x;
+    });
+    return missing.length?missing:['No hay información crítica pendiente'];
+  }
+  if(fid==='DF095'){
+    const evidence=unique(fr.filter(x=>x.evidence_type!=='EV01').map(x=>`Evidencia de ${labelFrom('OS_FRICTION_TYPE',x.friction_type)}`).concat(canonicalMissingRequired(e).filter(x=>x!=='DF093'&&x!=='Confirmación AS-IS').map(x=>{
+      const field=(schema?.fields||[]).find(f=>f.Field_ID===x);
+      return `Completar ${field?.Pregunta_o_etiqueta_ES||x}`;
+    })));
+    return evidence.length?evidence:['No hay evidencias pendientes'];
+  }
   return undefined;
 }
 function effectiveValue(f,e){
