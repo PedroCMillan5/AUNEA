@@ -398,6 +398,31 @@ function economicConditionalTimeContext(fid,e){
     :label+': verificar si está cuantificado en pasos o fricciones. Sólo valorar un ámbito adicional material cuando se haya acreditado que no está contabilizado.';
 }
 // [AUNEA-FE-DIAG-ECON-CONTEXT-054] END
+function structuredRiskDerivedReviewHtml(fid,e){
+  if(!['DF066','DF067'].includes(fid))return '';
+  const steps=activeSteps(e);
+  let rows=[];
+  if(fid==='DF066'){
+    rows=steps.filter(s=>valuePresent(s.exception_path)).map(s=>{
+      const ex=s.exception_path&&typeof s.exception_path==='object'?s.exception_path:{label:String(s.exception_path||'')};
+      const type=labelFrom('OS_EXCEPTION_TYPE',ex.type)||ex.label||ex.type||'Excepción sin clasificar';
+      const condition=String(ex.condition||'').trim()||'Sin condición adicional registrada';
+      const owner=labelFrom('OS_ACTOR_ROLE',ex.owner)||ex.owner||'Sin responsable adicional registrado';
+      return '<div class="result-item"><b>'+esc(s.step_name||s.id)+'</b><p><b>Tipo:</b> '+esc(type)+'</p><p><b>Condición:</b> '+esc(condition)+'</p><p><b>Responsable:</b> '+esc(owner)+'</p></div>';
+    });
+  }else{
+    rows=steps.filter(s=>s.step_type==='ST05'||normalizeArray(s.decision_criteria).length).map(s=>{
+      const actor=labelFrom('OS_ACTOR_ROLE',s.actor)||s.actor||'Pendiente';
+      const details=String(s?._details?.decision_criteria||'').trim();
+      const criteria=details||normalizeArray(s.decision_criteria).map(v=>labelFrom('OS_DECISION_CRITERIA',v)||v).filter(Boolean).join(', ')||'Pendiente';
+      const evidence=normalizeArray(s.evidence).map(v=>labelFrom('OS_EVIDENCE_TYPE',v)||v).filter(Boolean).join(', ')||'Pendiente';
+      const result=s.step_type==='ST05'?'Aprobar o rechazar':'Determinar si requiere aprobación';
+      return '<div class="result-item"><b>'+esc(s.step_name||s.id)+'</b><p><b>Aprobador / decisor:</b> '+esc(actor)+'</p><p><b>Criterio:</b> '+esc(criteria)+'</p><p><b>Resultado:</b> '+esc(result)+'</p><p><b>Evidencia:</b> '+esc(evidence)+'</p></div>';
+    });
+  }
+  return rows.length?'<div class="result-list derived-structured-review">'+rows.join('')+'</div>':'';
+}
+
 function renderQuestion(f,e){
   const val=effectiveValue(f,e),opts=fieldOptions(f.Option_Set_ID),required=f.Requiredness==='REQUIRED_90M',mode=String(f.Ask_Mode||'');
   // A Control_UI starting with "DERIVED" (e.g. DERIVED_OR_CONDITIONAL) only means system-generated when
@@ -415,7 +440,10 @@ function renderQuestion(f,e){
     const src=reuseSourceInfo(f),confirmed=isDerivedConfirmed(f,e,reuse),derivedText=valuePresent(reuse)?formatContextValue(f,reuse):'Sin elementos derivados';
     const confirmUi=confirmed?'<span class="status green">Derivación confirmada</span>':`<button type="button" class="btn btn-small btn-primary" data-confirm-derived="${f.Field_ID}">Confirmar valor</button>`;
     const editUi=src.page?`<button type="button" class="btn btn-small" data-goto-source="${attr(src.page)}">Revisar en ${esc(pageLabelEs(src.page))}</button>`:'';
-    body=`<div class="reuse-context"><div><strong>${esc(derivedText)}</strong><small>Derivado de: ${esc(src.label)}</small></div><div class="row-actions">${confirmUi}${editUi}</div></div>`;
+    const structured=structuredRiskDerivedReviewHtml(f.Field_ID,e);
+    body=structured
+      ?`<div class="reuse-context reuse-context-structured"><div><small>Derivado de: ${esc(src.label)}</small>${structured}</div><div class="row-actions">${confirmUi}${editUi}</div></div>`
+      :`<div class="reuse-context"><div><strong>${esc(derivedText)}</strong><small>Derivado de: ${esc(src.label)}</small></div><div class="row-actions">${confirmUi}${editUi}</div></div>`;
   }
   else if(systemOnly)body=`<div class="readonly-box">${esc(formatContextValue(f,val)||'Se completará automáticamente cuando existan datos suficientes.')}</div>`;
   else if(f.Field_ID==='DF007')body=renderControl(f,val,opts,e);
