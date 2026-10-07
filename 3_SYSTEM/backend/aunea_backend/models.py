@@ -165,12 +165,18 @@ class EconomicResult(BaseModel):
     current_tool_cost_eur_annual: float = 0
     realized_cash_saving_eur_annual: float = 0
     status: str = "COMPLETE"
+    # EO07 / P0-E: baseline evidence completeness is separate from the existence of rows.
+    coverage_status: str = "NOT_EVALUATED"
+    covered_input_ids: list[str] = Field(default_factory=list)
+    missing_input_ids: list[str] = Field(default_factory=list)
 
 class RiskResult(BaseModel):
     inherent_level: Literal["R0","R1","R2","R3","UNKNOWN"]
     residual_level: Literal["R0","R1","R2","R3","UNKNOWN"]
     status: str
     rationale: str
+    # P0-D: auditable MAP_QUESTION_ENGINE_INPUT inputs actually available to RiskEngine.
+    input_ids_used: list[str] = Field(default_factory=list)
 
 class CapabilityRequirement(BaseModel):
     pain_id: str
