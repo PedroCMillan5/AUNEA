@@ -129,6 +129,27 @@ function globalFailureReview(e){
   return 'Tasa global declarada: '+globalValue+'. Frecuencias por paso: '+granular.map(x=>x.name+' ('+x.value+(x.mode==='percent'?' %':' '+x.mode)+')').join('; ')+'. No se suman ni sustituyen: una misma incidencia puede afectar a varios pasos y las poblaciones deben verificarse.';
 }
 // [AUNEA-FE-DIAG-OWNER-053] END
+function derivedExceptionReview(steps){
+  return unique(steps.filter(x=>valuePresent(x.exception_path)).map(s=>{
+    const ex=s.exception_path;
+    if(!ex||typeof ex!=='object')return (s.step_name||s.id)+' — '+String(ex);
+    const type=labelFrom('OS_EXCEPTION_TYPE',ex.type)||ex.label||ex.type||'Excepción sin clasificar';
+    const condition=String(ex.condition||'').trim();
+    const owner=labelFrom('OS_ACTOR_ROLE',ex.owner)||ex.owner||'';
+    return (s.step_name||s.id)+' — '+type+(condition?' · '+condition:'')+(owner?' · Responsable: '+owner:'');
+  }));
+}
+function derivedApprovalReview(steps){
+  return unique(steps.filter(s=>s.step_type==='ST05'||normalizeArray(s.decision_criteria).length).map(s=>{
+    const name=s.step_name||s.id;
+    const actor=labelFrom('OS_ACTOR_ROLE',s.actor)||s.actor||'Pendiente';
+    const details=String(s?._details?.decision_criteria||'').trim();
+    const criteria=details||normalizeArray(s.decision_criteria).map(v=>labelFrom('OS_DECISION_CRITERIA',v)||v).filter(Boolean).join(', ')||'Pendiente';
+    const evidence=normalizeArray(s.evidence).map(v=>labelFrom('OS_EVIDENCE_TYPE',v)||v).filter(Boolean).join(', ')||'Pendiente';
+    const result=s.step_type==='ST05'?'Aprobar o rechazar':'Determinar si requiere aprobación';
+    return name+' · Aprobador/decisor: '+actor+' · Criterio: '+criteria+' · Resultado: '+result+' · Evidencia: '+evidence;
+  }));
+}
 function reusedValue(fid,e){
   const steps=activeSteps(e),fr=activeFrictions(e),c=companyById(e.companyId);
   if(fid==='DF001')return c?.name||e.answers?.DF001||'';
@@ -141,8 +162,8 @@ function reusedValue(fid,e){
   if(fid==='DF049')return processDocumentArtifacts(steps);
   if(fid==='DF050')return unique(steps.flatMap(x=>normalizeArray(x.communication_channels)));
   if(fid==='DF053')return unique(steps.filter(x=>normalizeArray(x.manual_actions).some(a=>String(a)==='SEARCH')).map(x=>x.id).concat(fr.filter(x=>['P09','P20'].includes(x.friction_type)).flatMap(x=>normalizeArray(x.affected_steps))));
-  if(fid==='DF066')return unique(steps.filter(x=>valuePresent(x.exception_path)).map(x=>typeof x.exception_path==='object'?(x.exception_path.type||x.exception_path.label||JSON.stringify(x.exception_path)):x.exception_path));
-  if(fid==='DF067')return unique(steps.filter(x=>x.step_type==='ST05'||normalizeArray(x.decision_criteria).length).map(x=>x.step_name||x.id));
+  if(fid==='DF066')return derivedExceptionReview(steps);
+  if(fid==='DF067')return derivedApprovalReview(steps);
   if(fid==='DF078'||fid==='DF079'){
     // DF078/DF079 must be backed by the exact server-calculated AS-IS version.
     // A missing or stale projection is unknown, never a browser-side sum.
