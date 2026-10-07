@@ -979,6 +979,11 @@ function layerCanonicalQuestions(e,stageId){
     return true;
   });
   if(!fields.length)return '';
+  if(stageId==='S07'&&fields.length===1&&fields[0].Field_ID==='DF085'){
+    const evidence=normalizeArray(typeof effectiveValue==='function'?effectiveValue(fields[0],e):[]).filter(Boolean);
+    const labels=evidence.map(x=>typeof economicEvidenceLabel==='function'?economicEvidenceLabel(x):String(x));
+    return section('Evidencia económica','Procedencia de los datos económicos registrados en esta etapa.','<div class="impact-evidence-compact"><b>Calidad de evidencia económica</b><span>'+(labels.length?labels.map(esc).join(' · '):'Sin evidencia económica registrada')+'</span><small>Se deriva de la evidencia de cada impacto; no se vuelve a preguntar.</small></div>');
+  }
   const block=section('Datos complementarios de la etapa','Sólo aparecen datos cuyo owner no está ya cubierto por el editor estructurado. No se duplica captura de pasos, fricciones, riesgos ni impactos.',`<div class="form-grid">${renderStageFields(fields,e)}</div>`);
   return stageId==='S06'?'<div class="risk-stage-complementary">'+block+'</div>':block;
 }
