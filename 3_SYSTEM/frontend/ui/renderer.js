@@ -348,7 +348,8 @@ function renderControl(f,val,opts,e){
   if(c==='FRICTION_TYPE_SELECT_WITH_CLIENT_LABEL'||c==='EXCEPTION_BUILDER')return structuredRedirect('Registro estructurado','proceso');
   if(c==='SYSTEM_GENERATED_CHECKLIST'){
     const items=normalizeArray(val).filter(Boolean);
-    return '<div class="readonly-checklist">'+(items.length?items.map(x=>'<div class="readonly-checklist-item">'+esc(x)+'</div>').join(''):'<div class="readonly-checklist-item">Sin elementos pendientes</div>')+'</div>';
+    const followup=fid==='DF095'&&e?.answers?.DF098?'<small class="readonly-checklist-followup"><b>Seguimiento acordado:</b> '+esc(e.answers.DF098)+'</small>':'';
+    return '<div class="readonly-checklist">'+(items.length?items.map(x=>'<div class="readonly-checklist-item">'+esc(x)+'</div>').join(''):'<div class="readonly-checklist-item">Sin elementos pendientes</div>')+followup+'</div>';
   }
   if(c.startsWith('DERIVED')||c.startsWith('SYSTEM_GENERATED'))return `<div class="readonly-box">${esc(val||'Se completará automáticamente cuando existan datos suficientes.')}</div>`;
   return `<div class="notice warn control-error"><strong>Control canónico no renderizado:</strong> ${esc(c||'SIN_CONTROL')} · ${esc(fid)}. No se degrada a texto libre.</div>`;
