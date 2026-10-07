@@ -287,17 +287,18 @@ function render(){
 let __auneaProcessLayerConfirmObserver=null;
 function dedupeProcessLayerConfirmations(){
   if(typeof document==='undefined'||!['pasos','fricciones','riesgos','impacto'].includes(state.activePage))return;
-  const content=document.getElementById('content');if(!content)return;
   const layer={pasos:'map',fricciones:'frictions',riesgos:'risks',impacto:'impact'}[state.activePage];
-  const bars=[...content.querySelectorAll('.flow-confirm')].filter(bar=>bar.querySelector('[data-confirm-process-layer="'+layer+'"]'));
-  bars.slice(1).forEach(bar=>bar.remove());
+  const buttons=[...document.querySelectorAll('[data-confirm-process-layer="'+layer+'"]')];
+  buttons.slice(1).forEach(button=>{
+    const bar=button.closest('.flow-confirm');
+    if(bar)bar.remove();else button.remove();
+  });
 }
 function watchProcessLayerConfirmations(){
-  if(typeof MutationObserver==='undefined'||typeof document==='undefined')return;
-  const content=document.getElementById('content');if(!content)return;
+  if(typeof MutationObserver==='undefined'||typeof document==='undefined'||!document.body)return;
   if(__auneaProcessLayerConfirmObserver)__auneaProcessLayerConfirmObserver.disconnect();
   __auneaProcessLayerConfirmObserver=new MutationObserver(()=>dedupeProcessLayerConfirmations());
-  __auneaProcessLayerConfirmObserver.observe(content,{childList:true,subtree:true});
+  __auneaProcessLayerConfirmObserver.observe(document.body,{childList:true,subtree:true});
 }
 function setPage(page){if(['diagnostico','proceso','pasos','fricciones','riesgos','impacto','resultados','tobe','comparacion','revision','modoresultados','implementacion','recomendacion','escenarios','quote'].includes(page)&&!currentEng()){toast('Abre o crea un estudio antes.');state.activePage='estudios';render();return}const e=currentEng(),previousPage=state.activePage;if(page==='diagnostico'&&e&&typeof advanceEngagementTo==='function')advanceEngagementTo(e,'Sesión 1','apertura de la primera sesión');if(page==='proceso'&&e&&!['cliente','fricciones','riesgos','impacto'].includes(e.processTab))e.processTab='cliente';state.activePage=page;render()}
 function goToProcessFromStage(){const e=currentEng();if(e){state.returnTo={page:'diagnostico',stageId:e.stageId};e.processTab='cliente'}setPage('proceso')}
