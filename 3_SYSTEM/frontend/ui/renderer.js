@@ -328,6 +328,11 @@ function s08ChangeDetailControl(fid,items,val,e){
 function renderControl(f,val,opts,e){
   const c=String(f.Control_UI||'').toUpperCase(),fid=f.Field_ID;
   if(fid==='DF087')return s08ReferenceControl(fid,opts,val,e);
+  if(fid==='DF088'){
+    const base=multiChoices(fid,opts,val,{other:true,linkedSteps:{fid:`${fid}__steps`,items:stepOptions(e),val:answerDetails(e)[`${fid}__steps`]||[]}});
+    const pending=stepOptions(e).length?'':'<div class="field-help clarification-note">El límite queda capturado ahora; la referencia a pasos/acciones se completa después de construir el mapa AS-IS.</div>';
+    return base+s08PriorContext(e)+pending;
+  }
   if(fid==='DF089')return s08PreferenceControl(fid,opts,val,e,[['REQUIRED','Obligatorio'],['PREFERRED','Preferido'],['INDIFFERENT','Indiferente']]);
   if(fid==='DF090')return s08PreferenceControl(fid,opts,val,e,[['REQUIRED','Obligatorio'],['PREFERRED','Preferido']]);
   if(fid==='DF091')return s08ChangeDetailControl(fid,opts,val,e);
@@ -361,7 +366,6 @@ function renderControl(f,val,opts,e){
   if(c==='MULTISELECT_WITH_OTHER'||c==='MULTICHECK_WITH_OTHER')return multiChoices(fid,opts,val,{other:true});
   if(c==='MULTISELECT_WITH_DETAIL'||c==='MULTICHECK_WITH_DETAIL'||c==='MULTISELECT_WITH_REFERENCE')return hasCanonicalOtherOption(opts)?multiChoices(fid,opts,val,{other:true}):multiChoices(fid,opts,val,{detail:true});
   if(c==='MULTISELECT_WITH_PRIORITY')return multiChoicesWithPriority(fid,opts,val,e);
-  if(fid==='DF088'&&c==='MULTISELECT_WITH_STEP_REFERENCE')return multiChoices(fid,opts,val,{other:true,linkedSteps:{fid:`${fid}__steps`,items:stepOptions(e),val:answerDetails(e)[`${fid}__steps`]||[]}});
   if(fid==='DF075'&&c==='STEP_ACTION_MULTISELECT'){
     const choices=multiChoices(fid,opts,val,{other:hasCanonicalOtherOption(opts)});
     const linked=answerDetails(e).DF075__steps||e.answers?.DF075__steps||[];
