@@ -71,3 +71,5 @@ test('accepted provenance is stored separately from confirmed field values',()=>
   assert.equal(s._suggestion_trace[0].rule_id,'PSR-007');
   assert.equal(s._suggestion_trace[0].accepted,true);
 });
+
+// QA trigger after Block_ID index alignment
