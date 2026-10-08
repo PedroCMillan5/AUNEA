@@ -16,6 +16,22 @@ test('legacy country label is canonicalized to ISO option value',()=>{assert.equ
 test('tool branch activates from two tools',()=>{assert.equal(ctx.branchActive('BR-TOOLS',eng),true);});
 test('wait branch activates from step wait',()=>{assert.equal(ctx.branchActive('BR-WAIT',eng),true);});
 
+test('S03 backlog and rework probes remain discoverable without making their conditional branches active',()=>{
+  const e={answers:{},answerDetails:{},processSteps:[],frictions:[],risks:[],economicInputs:[],confirmedAsIs:false};
+  const fields=[
+    {Field_ID:'DF027',Stage_ID:'S03',Write_Target:'RT_PROCESS.Backlog',Ask_Mode:'CONDITIONAL_ASK',Requiredness:'CONDITIONAL_90M',Branch_Rule_ID:'BR-VISIBILITY'},
+    {Field_ID:'DF028',Stage_ID:'S03',Write_Target:'RT_PROCESS.Failure_Rate',Ask_Mode:'CONDITIONAL_ASK',Requiredness:'CONDITIONAL_90M',Branch_Rule_ID:'BR-FAIL'}
+  ];
+  assert.equal(ctx.branchActive('BR-VISIBILITY',e),false);
+  assert.equal(ctx.branchActive('BR-FAIL',e),false);
+  fields.forEach(field=>{
+    assert.equal(ctx.questionVisible(field,e),true,field.Field_ID+' must remain available as a discovery probe');
+    assert.equal(ctx.canonicalFieldRequiredNow(field,e),false,field.Field_ID+' stays conditional and non-blocking');
+  });
+  const cycle={Field_ID:'DF026',Stage_ID:'S03',Write_Target:'RT_PROCESS.Baseline_Cycle_Time',Ask_Mode:'CONDITIONAL_ASK',Requiredness:'CONDITIONAL_90M',Branch_Rule_ID:'BR-WAIT'};
+  assert.equal(ctx.questionVisible(cycle,e),false,'DF026 must remain derivation-first until wait/cycle evidence exists');
+});
+
 test('BR-RISK discovery probes stay available before a risk exists without making the branch active',()=>{
   const e={answers:{},answerDetails:{},processSteps:[],frictions:[],risks:[],economicInputs:[],confirmedAsIs:false};
   const probes=[
