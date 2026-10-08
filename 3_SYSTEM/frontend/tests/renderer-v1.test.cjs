@@ -210,9 +210,9 @@ test('S08 keeps one simple pattern after DF086: options plus yellow context, wit
     assert.match(html,/Contexto previo/);
     assert.match(html,/Recomendación/);
     assert.doesNotMatch(html,/linked-field-block/);
-    assert.doesNotMatch(html,/Clasificación de cada restricción/);
-    assert.doesNotMatch(html,/referencia concreta/);
-    assert.doesNotMatch(html,/detalle si cambia el plan/);
+    assert.doesNotMatch(html,/data-s08-reference/);
+    assert.doesNotMatch(html,/data-s08-preference/);
+    assert.doesNotMatch(html,/data-s08-change-detail/);
   }
   e.answers.DF010=undefined;
 });
