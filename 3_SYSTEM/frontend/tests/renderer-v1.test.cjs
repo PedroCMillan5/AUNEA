@@ -166,8 +166,8 @@ test('S08 separates drill-down rationale from yellow context box',()=>{
   assert.match(noReask,/S08_DUPLICATION_WHY/);
   assert.match(noReask,/Aunque en Contexto ya identificamos restricciones generales/);
   assert.match(noReask,/s08-duplication-why/);
-  assert.match(renderer,/Opciones marcadas/);
   assert.match(renderer,/Recomendación/);
+  assert.doesNotMatch(renderer,/Opciones marcadas/);
   assert.match(renderer,/Contexto previo/);
   assert.doesNotMatch(renderer,/s08-context-explanation/);
 });
