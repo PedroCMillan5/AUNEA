@@ -269,6 +269,12 @@ function questionVisible(f,e){
   // DF025 is itself the canonical question that establishes whether an SLA/target exists.
   // It must remain askable in S03; otherwise BR-SLA creates a circular visibility dependency.
   if(f.Field_ID==='DF025'&&f.Stage_ID==='S03')return true;
+  // DF027/DF028 are also discovery probes in S03. Hiding them behind BR-VISIBILITY/BR-FAIL would
+  // require a pre-existing backlog/rework signal (or the answer itself) before the consultant could
+  // discover whether the condition exists. Keep them visible as non-blocking CONDITIONAL_90M fields.
+  // DF026 is intentionally excluded: its contract is DERIVE_THEN_VALIDATE from the mapped process
+  // whenever possible, and should only be asked when the wait/cycle-time branch is materially active.
+  if(['DF027','DF028'].includes(f.Field_ID)&&f.Stage_ID==='S03')return true;
   // DF073/DF090 are discovery probes. DF074 is derived only after RiskInput exists and is never asked separately.
   // Keeping these CONDITIONAL_90M questions available does not make them required and prevents the
   // branch from needing a pre-existing RiskInput (or the answer itself) before the exposure is discoverable.
