@@ -174,6 +174,14 @@ test('private AS-IS pages defensively keep one layer confirmation bar in runtime
   assert.match(stateJs,/MutationObserver/);
   assert.match(stateJs,/observe\(document\.body,\{childList:true,subtree:true\}\)/);
 });
+test('pending required highlight clears after valid capture without forcing a scroll jump', () => {
+  assert.match(stateJs,/function refreshPendingFieldVisual\(fid,e=currentEng\(\)\)/);
+  assert.match(stateJs,/host\.classList\.remove\('field-pending'\)/);
+  assert.match(stateJs,/refreshPendingFieldVisual\(fid,e\)/);
+  assert.match(stateJs,/const x=typeof window!=='undefined'\?window\.scrollX:0,y=typeof window!=='undefined'\?window\.scrollY:0/);
+  assert.match(stateJs,/window\.scrollTo\(x,y\)/);
+});
+
 test('C01 closes PG01 interaction detail: compound phone, canonical fold title and a real advance gate', () => {
   // The fold carries the name the session actually uses for DF004/DF007-DF010.
   assert.match(diagJs, /PG01_DISCLOSURE_TITLE='Objetivo, criterios y restricciones de la sesión'/);
