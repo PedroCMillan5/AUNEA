@@ -57,9 +57,11 @@ function renderStageFields(fields,e){
 // [AUNEA-FROZEN-STAGE-S01-001] START — S01 Contexto y objetivos
 const PG01_PRIORITY=Object.freeze(['Baja','Media','Alta','Crítica']);
 function pg01Prefill(source){return `<span class="prefill-chip">Prellenado desde ${esc(source)}</span>`}
-function pg01Field(label,control,help,{source='',required=true,full=false}={}){
+function pg01Field(label,control,help,{source='',required=null,full=false}={}){
   const canonical=(String(control).match(/data-pg01-df="(DF\d+)"/)||[])[1]||'';
-  return `<div class="field${full?' full':''}"${canonical?` data-field="${canonical}"`:''} data-pg01-visible="${attr(label)}"><label>${esc(label)}${required?requiredMark():''}${source?pg01Prefill(source):''}</label>${control}<div class="field-help">${esc(help)}</div></div>`;
+  const canonicalField=canonical?(schema?.fields||[]).find(f=>f.Field_ID===canonical):null;
+  const isRequired=required===null?canonicalField?.Requiredness==='REQUIRED_90M':required===true;
+  return `<div class="field${full?' full':''}"${canonical?` data-field="${canonical}"`:''} data-pg01-visible="${attr(label)}"><label>${esc(label)}${isRequired?requiredMark():''}${source?pg01Prefill(source):''}</label>${control}<div class="field-help">${esc(help)}</div></div>`;
 }
 function pg01Select(options,value,attrs=''){
   const key=(String(attrs).match(/data-pg01-df="([^"]+)"/)||String(attrs).match(/data-pg01-company="([^"]+)"/)||String(attrs).match(/data-pg01-contact-ref="([^"]+)"/)||[])[1]||'field';
