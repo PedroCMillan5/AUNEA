@@ -1070,3 +1070,8 @@ body:has([data-diagnostic-stage="S08"]) .s08-context-explanation{display:block;m
 
 body:has([data-diagnostic-stage="S08"]) .s08-context-subtitle{display:block;margin-top:8px}
 body:has([data-diagnostic-stage="S08"]) .s08-duplication-why{margin:4px 0 8px;line-height:1.45;max-width:980px}
+
+/* [AUNEA-FE-PROCESS-SUGGESTIONS-010] START */
+.step-suggestion{margin-top:8px;padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:#fffdf7;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;font-size:var(--font-small)}
+.step-suggestion>div{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px;min-width:0}.step-suggestion strong{font-weight:800}.step-suggestion span{color:var(--muted)}.step-suggestion b{color:var(--ink)}.step-suggestion-inferred{border-style:dashed}.step-suggestion-coherence{background:#fff8f1}.step-suggestion-apply{flex:0 0 auto}
+/* [AUNEA-FE-PROCESS-SUGGESTIONS-010] END */
