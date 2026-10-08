@@ -884,7 +884,7 @@ function clientProcessView(e,steps,fr,tab='cliente'){
     <button class="client-rail-item ${tab==='impacto'?'active':''}" data-process-tab="impacto"><b>Impacto económico</b><span>${econCount}</span></button></aside>`;
   const key=processLayerKeySafe(tab),layer=processLayerState(e),labels={map:'mapa AS-IS',frictions:'fricciones y evidencia',risks:'riesgos y controles',impact:'impacto económico'},integrity=typeof processLayerIntegrityIssues==='function'?processLayerIntegrityIssues(e,key):[],done=!!layer[key]&&!integrity.length;
   const confirm=`${integrity.length?`<div class="notice warn"><b>Revisión necesaria</b><br>${integrity.map(x=>esc(x.message)).join(' ')}</div>`:''}<div class="flow-confirm"><div><b>${done?'Capa confirmada':integrity.length?'Revisión necesaria':'Confirmación pendiente'}</b><div class="field-help">${esc(labels[key])}</div></div><button class="btn ${done?'btn-outline':'btn-primary'}" id="confirmAsIs">${done?'Reconfirmar':'Confirmar'} ${esc(labels[key])}</button></div>`;
-  return section('Editor con cliente','Mapa, fricciones, riesgos e impacto se editan sobre el mismo contexto.',clientBar+`<div class="client-process-workspace" data-process-engagement="${attr(e.id)}">${layerRail}<div class="client-process-main">${sequence}${lineage}${asisParticipantContext(e)}${asisVariantCandidates(e)}${clientLayerBody(e,steps,fr,tab)}${confirm}${nextAction}</div></div>`);
+  return section('Editor con cliente','Mapa, fricciones, riesgos e impacto se editan sobre el mismo contexto.',clientBar+`<div class="client-process-workspace" data-process-engagement="${attr(e.id)}">${layerRail}<div class="client-process-main">${sequence}${lineage}${asisDemandBaseline(e)}${asisParticipantContext(e)}${asisVariantCandidates(e)}${clientLayerBody(e,steps,fr,tab)}${confirm}${nextAction}</div></div>`);
 }
 function stepsEditor(e,steps,fr){
   const discrepancies=stepOrderDiscrepancies(steps);
@@ -922,27 +922,60 @@ function asisOverview(e,steps,fr){
     if(v===undefined||v===null||v==='')return 'Pendiente';
     return esc(formatContextValue(f||{},v));
   };
-  const volume=raw('DF021'),period=raw('DF022');
-  const habitual=(volume&&volume.__asisState==='NA')?'No aplica':
-    ((typeof valuePresent==='function'?valuePresent(volume):volume!==undefined&&volume!==null&&volume!=='')
-      ?esc(typeof volume==='object'&&volume!==null&&'value' in volume?volume.value:volume)+' casos'
-        +((period&&!(period.__asisState))?' · '+esc(labelFrom('OS_PERIOD',String(period).toUpperCase())||period):'')
-      :'Pendiente');
-  const peak=raw('DF023');
-  const peakValue=peak&&peak.__asisState==='NA'?'No aplica':peak&&typeof peak==='object'
-    ?(peak.mode==='NONE'?'No aplica':peak.mode==='UNKNOWN'?'No disponible':(peak.value===undefined||peak.value===null||peak.value==='')?'Pendiente':
-      esc(peak.value)+' '+esc(({case:'casos',item:'elementos',request:'solicitudes',person:'personas'})[peak.unit]||peak.unit||'casos')
-      +(peak.period?' · '+esc(labelFrom('OS_PERIOD',String(peak.period).toUpperCase())):''))
-    :display('DF023');
   return '<div class="asis-facts">'
     +'<div><small>Proceso</small><b>'+display('DF011')+'</b></div>'
     +'<div><small>Empieza cuando</small><b>'+display('DF014')+'</b></div>'
     +'<div><small>Termina cuando</small><b>'+display('DF015')+'</b></div>'
-    +'<div><small>Volumen habitual</small><b>'+habitual+'</b></div>'
-    +'<div><small>Volumen máximo declarado</small><b>'+peakValue+'</b></div>'
-    +'<div><small>Tiempo objetivo</small><b>'+display('DF025')+'</b></div>'
-    +'<div><small>Duración habitual declarada</small><b>'+display('DF026')+'</b></div>'
     +'<div><small>Registrados</small><b>'+steps.length+' pasos · '+fr.length+' problemas · '+(e.risks||[]).length+' riesgos · '+(e.economicInputs||[]).length+' impactos</b></div>'
+    +'</div>';
+}
+function asisDemandBaseline(e){
+  const field=id=>(schema?.fields||[]).find(f=>f.Field_ID===id);
+  const raw=id=>{
+    const f=field(id);
+    if(!f)return e.answers?.[id];
+    if(typeof questionVisible==='function'&&!questionVisible(f,e))return {__asisState:'NA'};
+    return typeof effectiveValue==='function'?effectiveValue(f,e):e.answers?.[id];
+  };
+  const text=id=>{
+    const f=field(id),v=raw(id);
+    if(v&&v.__asisState==='NA')return 'No aplica';
+    if(typeof valuePresent==='function'&&!valuePresent(v))return 'Pendiente';
+    if(v===undefined||v===null||v==='')return 'Pendiente';
+    return esc(formatContextValue(f||{},v));
+  };
+  const num=(id,{defaultUnit='',periodField=''}={})=>{
+    const v=raw(id);
+    if(v&&v.__asisState==='NA')return 'No aplica';
+    if(v===undefined||v===null||v==='')return 'Pendiente';
+    if(typeof v==='object'){
+      if(v.mode==='UNKNOWN')return id==='DF027'?'No se mide':'No disponible';
+      if(v.mode==='NONE')return 'No aplica';
+      if(v.value===undefined||v.value===null||v.value==='')return 'Pendiente';
+      const unit=({case:'casos',item:'elementos',request:'solicitudes',person:'personas',percent:'%',count:'casos',min:'min',h:'horas',day:'días',week:'semanas'})[v.unit]||v.unit||defaultUnit;
+      const period=v.period?' · '+(labelFrom('OS_PERIOD',String(v.period).toUpperCase())||v.period):'';
+      return esc(v.value)+(unit?' '+esc(unit):'')+period;
+    }
+    const period=periodField?raw(periodField):'';
+    return esc(v)+(defaultUnit?' '+esc(defaultUnit):'')+(period&&!(period.__asisState)?' · '+esc(labelFrom('OS_PERIOD',String(period).toUpperCase())||period):'');
+  };
+  const seasonality=()=>{
+    const v=raw('DF024');if(v&&v.__asisState==='NA')return 'No aplica';
+    if(typeof valuePresent==='function'&&!valuePresent(v))return 'Pendiente';
+    const base=labelFrom('OS_SEASONALITY',v)||v,detail=(typeof answerDetails==='function'?answerDetails(e):(e.answerDetails||{})).DF024;
+    return esc(base)+(detail?' · '+esc(detail):'');
+  };
+  return '<div class="asis-map-hint"><b>Baseline de demanda y servicio heredada de la página 3</b> · sólo contexto; no se vuelve a preguntar en el mapa.</div>'
+    +'<div class="asis-facts asis-demand-facts">'
+    +'<div><small>Volumen habitual</small><b>'+num('DF021',{defaultUnit:'casos',periodField:'DF022'})+'</b></div>'
+    +'<div><small>Volumen de pico</small><b>'+num('DF023',{defaultUnit:'casos'})+'</b></div>'
+    +'<div><small>Demanda / estacionalidad</small><b>'+seasonality()+'</b></div>'
+    +'<div><small>Tiempo objetivo</small><b>'+num('DF025')+'</b></div>'
+    +'<div><small>Duración habitual</small><b>'+num('DF026')+'</b></div>'
+    +'<div><small>Backlog actual</small><b>'+num('DF027',{defaultUnit:'casos'})+'</b></div>'
+    +'<div><small>Error / retrabajo global</small><b>'+num('DF028')+'</b></div>'
+    +'<div><small>Clases que cambian tratamiento</small><b>'+text('DF029')+'</b></div>'
+    +'<div><small>Tendencia 12–18 meses</small><b>'+text('DF030')+'</b></div>'
     +'</div>';
 }
 function asisParticipantContext(e){
@@ -969,6 +1002,7 @@ function asisMapPage(e,steps,fr){
   const start=processBoundaryValue(e,'DF014','Límite inicial pendiente','DF012'),finish=processBoundaryValue(e,'DF015','Límite final pendiente','DF013');
   const flow=processGraphHtml(e,steps,fr,start,finish,'impacto',true);
   return '<div data-process-engagement="'+attr(e.id)+'">'+asisOverview(e,steps,fr)
+    +asisDemandBaseline(e)
     +asisParticipantContext(e)
     +asisVariantCandidates(e)
     +'<div class="asis-map-hint">Este es el mismo mapa AS-IS trabajado con el cliente. Para modificarlo, utiliza Pasos, Fricciones, Riesgos o Impacto en el menú de la izquierda.</div>'
