@@ -215,6 +215,7 @@ function openStepModal(stepId=null,linkFromStepId=null,preset=null){
   const s=stepMeta(existing?structuredClone(existing):{...base,...(preset||{}),_ui:{...(preset?._ui||{})}});
   const stepTypes=fieldOptions('OS_STEP_TYPE'),artifacts=fieldOptions('OS_ARTIFACT_TYPE'),decisions=fieldOptions('OS_DECISION_CRITERIA'),manual=fieldOptions('OS_MANUAL_ACTION'),auto=fieldOptions('OS_AUTOMATION_STATE'),channels=fieldOptions('OS_COMM_CHANNEL'),evid=fieldOptions('OS_EVIDENCE_TYPE');
   const actorContext=processContextValues(e,'OS_ACTOR_ROLE',{linkFromStepId}),toolContext=processContextValues(e,'OS_TOOL_CATEGORY',{linkFromStepId}),artifactContext=processContextValues(e,'OS_ARTIFACT_TYPE',{linkFromStepId}),decisionContext=processContextValues(e,'OS_DECISION_CRITERIA',{linkFromStepId}),manualContext=processContextValues(e,'OS_MANUAL_ACTION',{linkFromStepId}),channelContext=processContextValues(e,'OS_COMM_CHANNEL',{linkFromStepId}),evidenceContext=processContextValues(e,'OS_EVIDENCE_TYPE',{linkFromStepId});
+  const stepSuggestions=typeof processStepSuggestions==='function'?processStepSuggestions(e,s,{existing,linkFromStepId}):{};
   const decisionOther=catalogOtherOption(decisions),decisionOtherOpen=!!decisionOther&&normalizeArray(s.decision_criteria).map(String).includes(String(decisionOther.value));
   const existingDecision=processDecisionStep(s);
   const decisionBlocked=(!existingDecision&&existing?.id&&processStepInsideBranch(e,existing.id))||(!existingDecision&&linkFromStepId&&processStepInsideBranch(e,linkFromStepId));
@@ -232,13 +233,13 @@ function openStepModal(stepId=null,linkFromStepId=null,preset=null){
   <details class="step-group" open><summary>A. Información básica</summary><div class="form-grid">
     <div class="field full"><label>¿Qué se hace en este paso? ${requiredMark()}</label><input id="step_name" maxlength="80" value="${attr(s.step_name||'')}" placeholder="Verbo + objeto, ej. Validar requisitos"></div>
     <div class="field"><label>Tipo de paso ${requiredMark()}</label>${stepTypeControl}</div>
-    <div class="field"><label>¿Quién lo realiza? ${requiredMark()}</label>${datalistControl('step_actor','OS_ACTOR_ROLE',s.actor||'','Rol existente o nuevo',actorContext)}</div>
+    <div class="field"><label>¿Quién lo realiza? ${requiredMark()}</label>${datalistControl('step_actor','OS_ACTOR_ROLE',s.actor||'','Rol existente o nuevo',actorContext)}${processSuggestionHtml('actor',stepSuggestions.actor)}</div>
   </div></details>
   <details class="step-group"><summary>B. Entradas y salidas</summary><div class="form-grid">
-    <div class="field full"><label>¿A qué casos aplica?</label>${appliesControl(s)}</div>
+    <div class="field full"><label>¿A qué casos aplica?</label>${appliesControl(s)}${processSuggestionHtml('applies_to',stepSuggestions.applies_to)}</div>
     <div class="field"><label>Veces por caso</label><input id="step_occ" type="number" min="0" step="any" value="${attr(s.occurrences_per_case??1)}"></div>
-    <div class="field full"><label>¿Qué necesita para empezar?</label>${selectedHtml('step_inputs',artifacts,s.inputs,{wrapped:true,detailId:'step_inputs_detail',detailValue:s._details.inputs||'',detailPlaceholder:'Especifica el input sólo al seleccionar Otro',preferredValues:artifactContext})}</div>
-    <div class="field full"><label>¿Qué produce este paso?</label>${selectedHtml('step_outputs',artifacts,s.outputs,{wrapped:true,detailId:'step_outputs_detail',detailValue:s._details.outputs||'',detailPlaceholder:'Especifica el output sólo al seleccionar Otro',preferredValues:artifactContext})}</div>
+    <div class="field full"><label>¿Qué necesita para empezar?</label>${selectedHtml('step_inputs',artifacts,s.inputs,{wrapped:true,detailId:'step_inputs_detail',detailValue:s._details.inputs||'',detailPlaceholder:'Especifica el input sólo al seleccionar Otro',preferredValues:artifactContext})}${processSuggestionHtml('inputs',stepSuggestions.inputs)}</div>
+    <div class="field full"><label>¿Qué produce este paso?</label>${selectedHtml('step_outputs',artifacts,s.outputs,{wrapped:true,detailId:'step_outputs_detail',detailValue:s._details.outputs||'',detailPlaceholder:'Especifica el output sólo al seleccionar Otro',preferredValues:artifactContext})}${processSuggestionHtml('outputs',stepSuggestions.outputs)}</div>
   </div></details>
   <details class="step-group"><summary>C. Tiempo y rendimiento</summary><div class="form-grid">
     <div class="field"><label>¿Cuánto tiempo de trabajo requiere?</label>${timeControl('step_active',s.active_time,s._ui.active_unit||'min')}</div>
@@ -249,17 +250,17 @@ function openStepModal(stepId=null,linkFromStepId=null,preset=null){
   <details class="step-group"><summary>D. Flujo y decisiones</summary><div class="form-grid">
     <div class="field full"><label>¿Este paso incluye una decisión o bifurcación?</label>${decisionSelector}</div>
     <div class="field full"><div class="decision-route-card route-yes"><div class="decision-route-head"><b data-step-next-label>${hasDecision?'Ruta SÍ / afirmativa':'Siguiente paso normal'}</b><span>${hasDecision?'Cuando se cumple la condición principal':'Continuación del flujo'}</span></div><label>Destino ${hasDecision?requiredMark():''}</label>${auneaDropdownControl('step_next',decisionDestinationOptions(e,s),s.normal_next_step||'','Selecciona destino…')}</div></div>
-    <div class="field full" data-step-decision-area${hasDecision?'':' style="display:none"'}><label>Criterios de decisión</label>${selectedHtml('step_decisions',decisions,s.decision_criteria,{preferredValues:decisionContext})}${!existing&&normalizeArray(e.answers?.DF020).length?'<div class="field-help">Preselección sugerida desde las variantes declaradas en Alcance del proceso. Puedes ajustarla durante la validación del AS-IS.</div>':''}<div class="detail-wrap"><label>Condición principal</label><input id="step_decisions_detail" value="${attr(s._details.decision_criteria||'')}" placeholder="Ej. Importe > 1.500 € o existe una discrepancia"><div class="field-help">Regla concreta que activa la ruta SÍ / afirmativa.</div></div></div>
+    <div class="field full" data-step-decision-area${hasDecision?'':' style="display:none"'}><label>Criterios de decisión</label>${selectedHtml('step_decisions',decisions,s.decision_criteria,{preferredValues:decisionContext})}${processSuggestionHtml('decision_criteria',stepSuggestions.decision_criteria)}<div class="detail-wrap"><label>Condición principal</label><input id="step_decisions_detail" value="${attr(s._details.decision_criteria||'')}" placeholder="Ej. Importe > 1.500 € o existe una discrepancia"><div class="field-help">Regla concreta que activa la ruta SÍ / afirmativa.</div></div></div>
     <div class="field full" data-step-decision-area${hasDecision?'':' style="display:none"'}>${exceptionControl(s,e)}</div>
   </div></details>
   <details class="step-group"><summary>E. Automatización y sistemas</summary><div class="form-grid">
-    <div class="field"><label>Herramienta / sistema</label>${datalistControl('step_tool','OS_TOOL_CATEGORY',s.tool||'','Herramienta principal',toolContext)}</div>
-    <div class="field full"><label>Acciones manuales</label>${selectedHtml('step_manual',manual,s.manual_actions,{detailId:'step_manual_other',detailValue:s._details.manual_actions||'',detailPlaceholder:'Especifica la otra acción manual',preferredValues:manualContext})}</div>
-    <div class="field full"><label>Automatización actual</label>${segmented('step_auto',auto,s.automation_state,'data-step-auto')}</div>
-    <div class="field full"><label>Canal(es) de comunicación</label>${selectedHtml('step_channels',channels,s.communication_channels,{detailId:'step_channels_other',detailValue:s._details.communication_channels||'',detailPlaceholder:'Especifica el canal sólo al seleccionar Otro',preferredValues:channelContext})}</div>
+    <div class="field"><label>Herramienta / sistema</label>${datalistControl('step_tool','OS_TOOL_CATEGORY',s.tool||'','Herramienta principal',toolContext)}${processSuggestionHtml('tool',stepSuggestions.tool)}</div>
+    <div class="field full"><label>Acciones manuales</label>${selectedHtml('step_manual',manual,s.manual_actions,{detailId:'step_manual_other',detailValue:s._details.manual_actions||'',detailPlaceholder:'Especifica la otra acción manual',preferredValues:manualContext})}${processSuggestionHtml('manual_actions',stepSuggestions.manual_actions)}</div>
+    <div class="field full"><label>Automatización actual</label>${segmented('step_auto',auto,s.automation_state,'data-step-auto')}${processSuggestionHtml('automation_state',stepSuggestions.automation_state)}</div>
+    <div class="field full"><label>Canal(es) de comunicación</label>${selectedHtml('step_channels',channels,s.communication_channels,{detailId:'step_channels_other',detailValue:s._details.communication_channels||'',detailPlaceholder:'Especifica el canal sólo al seleccionar Otro',preferredValues:channelContext})}${processSuggestionHtml('communication_channels',stepSuggestions.communication_channels)}</div>
   </div></details>
   <details class="step-group"><summary>F. Evidencia y notas</summary><div class="form-grid">
-    <div class="field full"><label>Evidencia del paso</label>${selectedHtml('step_evidence',evid,s.evidence,{preferredValues:evidenceContext})}</div>
+    <div class="field full"><label>Evidencia del paso</label>${selectedHtml('step_evidence',evid,s.evidence,{preferredValues:evidenceContext})}${processSuggestionHtml('evidence',stepSuggestions.evidence)}</div>
     <div class="field full"><label>Nota breve excepcional</label><input id="step_notes" maxlength="200" value="${attr(s.notes||'')}" placeholder="Sólo si los campos estructurados no bastan"></div>
   </div></details>
   </div>`;
@@ -295,6 +296,7 @@ function openStepModal(stepId=null,linkFromStepId=null,preset=null){
     if(persisted===false)toast('No se ha podido persistir este paso.');else toast(existing?'Cambios del paso guardados.':'Paso guardado.');
   },existing?'Guardar cambios':'Añadir paso');
   bindProcessAppliesControl();
+  if(typeof bindProcessStepSuggestions==='function')bindProcessStepSuggestions(s,stepSuggestions);
   const stepErrorMode=document.getElementById('step_error_mode');
   if(stepErrorMode)stepErrorMode.addEventListener('change',()=>{
     const wrap=document.querySelector('[data-step-error-period-wrap]');
