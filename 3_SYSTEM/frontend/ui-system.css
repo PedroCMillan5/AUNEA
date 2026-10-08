@@ -1064,3 +1064,5 @@ body:has([data-diagnostic-stage="S08"]) .s08-detail-row .aunea-select{
   body:has([data-diagnostic-stage="S08"]) .s08-detail-row{grid-template-columns:1fr}
 }
 /* [AUNEA-FE-S08-DEFECT-SPACING-010] END */
+
+body:has([data-diagnostic-stage="S08"]) .s08-context-explanation{display:block;margin-top:6px;font-size:var(--font-small);line-height:1.45;color:var(--ink)}
