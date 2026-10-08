@@ -64,6 +64,22 @@ test('ALL blocks 100 percent; percentage and conditional modes are editable only
   assert.match(help.textContent,/bloqueado/);
 });
 
+test('scope roles and material variants remain visible as inherited context in the AS-IS map',()=>{
+  const {ctx,e}=setup();
+  e.answers.DF017=['CUSTOMER','OPERATIONS','MANAGER'];
+  e.answers.DF020=['CASE_TYPE','URGENCY'];
+  e.processSteps=[{id:'A',status:'ACTIVE',step_name:'Recibir'}];
+  const html=ctx.clientProcessView(e,e.processSteps,[],'cliente');
+  assert.match(html,/data-asis-participants="DF017"/);
+  assert.match(html,/CUSTOMER · OPERATIONS · MANAGER/);
+  assert.match(html,/data-asis-variant-candidates="DF020"/);
+  assert.match(html,/CASE_TYPE · URGENCY/);
+  assert.match(html,/Aún no hay una decisión en el mapa que represente una ruta alternativa/);
+  const consoleMap=ctx.asisMapPage(e,e.processSteps,[]);
+  assert.match(consoleMap,/data-asis-participants="DF017"/);
+  assert.match(consoleMap,/data-asis-variant-candidates="DF020"/);
+});
+
 test('step, friction, risk and impact are one connected, reviewable progression',()=>{
   const {ctx,e}=setup();
   e.processSteps=[{id:'A',status:'ACTIVE',step_name:'Recibir'}];
