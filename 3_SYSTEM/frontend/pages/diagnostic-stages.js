@@ -16,14 +16,15 @@ function slaTargetBlock(f,e){
   const p=numberParts(effectiveValue(f,e));
   const units=[{value:'min',label:'min'},{value:'h',label:'horas'},{value:'day',label:'días'},{value:'week',label:'semanas'}];
   const modeOpts=[{value:'',label:'Sí, existe'},{value:'NONE',label:'No existe'}];
-  const none=p.mode==='NONE';
+  const none=p.mode==='NONE',unset=!p.mode&&(p.value===''||p.value===undefined||p.value===null);
+  const modeValue=unset?'__PENDING__':p.mode;
   return `<div class="field full demand-sla-target" data-field="${attr(f.Field_ID)}" data-uat="UAT-VIS-025">
     <div class="demand-sla-head">
       <div><label>${esc(f.Pregunta_o_etiqueta_ES)}<span class="conditional-tag">condicional</span></label>
       <div class="field-help">Indica si existe un SLA o tiempo objetivo. Si existe, registra el valor; si no, queda cerrado explícitamente como “No existe”.</div></div>
-      <div class="demand-sla-exists">${auneaSelectControl(`${f.Field_ID}__mode`,modeOpts,p.mode,{extra:`data-number-mode="${f.Field_ID}" data-sla-mode="${f.Field_ID}"`,placeholder:'¿Existe?'})}</div>
+      <div class="demand-sla-exists">${auneaSelectControl(`${f.Field_ID}__mode`,modeOpts,modeValue,{extra:`data-number-mode="${f.Field_ID}" data-sla-mode="${f.Field_ID}"`,placeholder:'¿Existe?'})}</div>
     </div>
-    <div class="demand-sla-value" data-sla-value-wrap="${f.Field_ID}"${none?' hidden':''}>
+    <div class="demand-sla-value" data-sla-value-wrap="${f.Field_ID}"${none||unset?' hidden':''}>
       <span class="demand-sla-value-label">Tiempo objetivo</span>
       <input type="number" inputmode="decimal" min="0" step="any" data-number-value="${f.Field_ID}" value="${attr(p.value??'')}" placeholder="Ej. 24" aria-label="Tiempo objetivo">
       ${auneaSelectControl(`${f.Field_ID}__unit`,units,p.unit,{extra:`data-number-unit="${f.Field_ID}"`,placeholder:'Unidad'})}
