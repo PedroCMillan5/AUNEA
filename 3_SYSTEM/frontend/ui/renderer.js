@@ -288,61 +288,64 @@ function permissionWithScope(fid,opts,val){
 }
 
 
-function s08PriorContext(fid,e){
-  const values=selectedValues(e?.answers?.DF010).filter(Boolean);
-  if(!values.length)return '';
-  const labels=values.map(v=>labelFrom('OS_CONSTRAINT_TYPE',v)||v);
-  const selected=new Set(values.map(String));
-  let explanation='Estas restricciones ya están declaradas; concreta aquí sólo lo que aplique a esta pregunta, sin volver a capturarlas ni asumir detalles.';
-  if(fid==='DF087')explanation='Las restricciones previas pueden implicar elementos que deban conservarse. Identifica el elemento concreto sólo cuando realmente deba mantenerse.';
-  if(fid==='DF088')explanation='Las restricciones previas pueden limitar la automatización o el uso de IA. Define únicamente límites reales; ninguna categoría previa crea por sí sola una prohibición.';
-  if(fid==='DF089'){
-    const direct=selected.has('PLATFORM');
-    explanation=(direct?'Herramientas / plataforma ya fue declarada y debe concretarse aquí. ':'No se declaró una restricción específica de herramientas / plataforma. ')
-      +'Seguridad y adopción/cambio permanecen como contexto, pero no seleccionan una tecnología ni su nivel de obligatoriedad automáticamente.';
-  }
-  if(fid==='DF090'){
-    const direct=selected.has('SECURITY')||selected.has('COMPLIANCE')||selected.has('DATA_RESIDENCY')||selected.has('OWNERSHIP');
-    explanation=(direct?'Hay una restricción previa relacionada con seguridad/datos y debe concretarse aquí. ':'No se declaró una restricción previa directamente asociada a seguridad/datos. ')
-      +'Las demás categorías siguen como contexto y no crean controles de seguridad automáticamente.';
-  }
-  if(fid==='DF091'){
-    const direct=selected.has('CHANGE')||selected.has('RESOURCE');
-    explanation=(direct?'Adopción/cambio o capacidad ya fue declarada y debe concretarse aquí. ':'No se declaró una restricción previa directamente asociada a adopción/cambio. ')
-      +'Las demás categorías no generan por sí solas restricciones de implantación.';
-  }
-  return '<div class="reuse-context s08-prior-context"><div><strong>Contexto previo relevante</strong><small>'+labels.map(esc).join(' · ')+'</small><span class="s08-context-explanation">'+esc(explanation)+'</span></div></div>';
+function s08Recommendation(fid,contextValues,currentValues){
+  const context=new Set(contextValues.map(String)),has=currentValues.length>0;
+  if(fid==='DF087')return has?'Comprueba que cada opción marcada tenga una referencia concreta y que realmente deba conservarse.':'Revisa las restricciones previas y marca sólo elementos concretos que cualquier solución futura deba conservar.';
+  if(fid==='DF088')return has?'Confirma que cada límite marcado responde a una restricción real; no conviertas el contexto previo en una prohibición automática.':'Define límites sólo si alguna restricción previa exige mantener intervención humana o excluir automatización/IA.';
+  if(fid==='DF089')return context.has('PLATFORM')
+    ?(has?'Clasifica cada opción marcada como obligatoria, preferida o indiferente.':'La restricción de herramientas/plataforma declarada en Contexto debe concretarse aquí si condiciona la solución futura.')
+    :(has?'Clasifica cada opción marcada como obligatoria, preferida o indiferente.':'No hay una restricción tecnológica previa específica; marca opciones sólo si existe una preferencia o límite real.');
+  if(fid==='DF090')return (context.has('SECURITY')||context.has('COMPLIANCE')||context.has('DATA_RESIDENCY')||context.has('OWNERSHIP'))
+    ?(has?'Clasifica cada requisito marcado como obligatorio o preferido.':'Existe contexto previo relacionado con seguridad/datos; concreta únicamente los requisitos reales que deba cumplir la solución.')
+    :(has?'Clasifica cada requisito marcado como obligatorio o preferido.':'No hay una restricción previa directamente asociada a seguridad/datos; añade requisitos sólo si realmente aplican.');
+  if(fid==='DF091')return (context.has('CHANGE')||context.has('RESOURCE'))
+    ?(has?'Añade detalle sólo cuando una opción marcada cambie realmente el plan de implantación.':'Existe contexto previo de adopción/capacidad; concreta únicamente las condiciones que afecten a la implantación.')
+    :(has?'Añade detalle sólo cuando una opción marcada cambie realmente el plan de implantación.':'No hay una restricción previa directamente asociada a adopción/cambio; añade condiciones sólo si realmente aplican.');
+  return '';
+}
+function s08PriorContext(fid,e,currentVal,items){
+  const contextValues=selectedValues(e?.answers?.DF010).filter(Boolean);
+  const currentValues=selectedValues(currentVal).filter(Boolean);
+  if(!contextValues.length&&!currentValues.length)return '';
+  const contextLabels=contextValues.map(v=>labelFrom('OS_CONSTRAINT_TYPE',v)||v);
+  const currentLabels=currentValues.map(v=>items?.find(x=>String(x.value)===String(v))?.label||v);
+  const recommendation=s08Recommendation(fid,contextValues,currentValues);
+  return '<div class="reuse-context s08-prior-context"><div>'
+    +'<strong>Contexto previo</strong><small>'+(contextLabels.length?contextLabels.map(esc).join(' · '):'Sin restricciones previas registradas')+'</small>'
+    +'<strong class="s08-context-subtitle">Opciones marcadas</strong><small>'+(currentLabels.length?currentLabels.map(esc).join(' · '):'Ninguna todavía')+'</small>'
+    +'<strong class="s08-context-subtitle">Recomendación</strong><small>'+esc(recommendation)+'</small>'
+    +'</div></div>';
 }
 function s08ReferenceControl(fid,items,val,e){
   const base=multiChoices(fid,items,val,{other:hasCanonicalOtherOption(items)});
   const selected=selectedValues(val),details=answerDetails(e),refs=details[`${fid}__references`]||{};
-  if(!selected.length)return base+s08PriorContext(fid,e);
+  if(!selected.length)return base+s08PriorContext(fid,e,val,items);
   const rows=selected.map(v=>{
     const label=items.find(x=>String(x.value)===String(v))?.label||v;
     return '<label class="s08-detail-row"><span>'+esc(label)+' — referencia concreta</span><input type="text" data-s08-reference="'+fid+'" data-s08-key="'+attr(v)+'" value="'+attr(refs[v]||'')+'" placeholder="Elemento existente que debe mantenerse"></label>';
   }).join('');
-  return base+s08PriorContext(fid,e)+'<div class="linked-field-block"><div class="linked-step-label">Referencia el elemento existente; no se crea uno nuevo aquí.</div>'+rows+'</div>';
+  return base+s08PriorContext(fid,e,val,items)+'<div class="linked-field-block"><div class="linked-step-label">Referencia el elemento existente; no se crea uno nuevo aquí.</div>'+rows+'</div>';
 }
 function s08PreferenceControl(fid,items,val,e,modes){
   const base=multiChoices(fid,items,val,{other:hasCanonicalOtherOption(items)});
   const selected=selectedValues(val),details=answerDetails(e),saved=details[`${fid}__preference`]||{};
-  if(!selected.length)return base+s08PriorContext(fid,e);
+  if(!selected.length)return base+s08PriorContext(fid,e,val,items);
   const modeOpts=modes.map(([value,label])=>({value,label}));
   const rows=selected.map(v=>{
     const label=items.find(x=>String(x.value)===String(v))?.label||v;
     return '<div class="s08-detail-row"><span>'+esc(label)+'</span>'+auneaSelectControl(`${fid}__pref__${v}`,modeOpts,saved[v]||'',{extra:`data-s08-preference="${fid}" data-s08-key="${attr(v)}"`,placeholder:'Clasifica…'})+'</div>';
   }).join('');
-  return base+s08PriorContext(fid,e)+'<div class="linked-field-block"><div class="linked-step-label">Clasificación de cada restricción seleccionada</div>'+rows+'</div>';
+  return base+s08PriorContext(fid,e,val,items)+'<div class="linked-field-block"><div class="linked-step-label">Clasificación de cada restricción seleccionada</div>'+rows+'</div>';
 }
 function s08ChangeDetailControl(fid,items,val,e){
   const base=multiChoices(fid,items,val,{other:hasCanonicalOtherOption(items)});
   const selected=selectedValues(val),details=answerDetails(e),saved=details[`${fid}__details`]||{};
-  if(!selected.length)return base+s08PriorContext(fid,e);
+  if(!selected.length)return base+s08PriorContext(fid,e,val,items);
   const rows=selected.map(v=>{
     const label=items.find(x=>String(x.value)===String(v))?.label||v;
     return '<label class="s08-detail-row"><span>'+esc(label)+' — detalle si cambia el plan</span><input type="text" data-s08-change-detail="'+fid+'" data-s08-key="'+attr(v)+'" value="'+attr(saved[v]||'')+'" placeholder="Detalle opcional"></label>';
   }).join('');
-  return base+s08PriorContext(fid,e)+'<div class="linked-field-block">'+rows+'</div>';
+  return base+s08PriorContext(fid,e,val,items)+'<div class="linked-field-block">'+rows+'</div>';
 }
 function renderControl(f,val,opts,e){
   const c=String(f.Control_UI||'').toUpperCase(),fid=f.Field_ID;
@@ -350,7 +353,7 @@ function renderControl(f,val,opts,e){
   if(fid==='DF088'){
     const base=multiChoices(fid,opts,val,{other:true,linkedSteps:{fid:`${fid}__steps`,items:stepOptions(e),val:answerDetails(e)[`${fid}__steps`]||[]}});
     const pending=stepOptions(e).length?'':'<div class="field-help clarification-note">El límite queda capturado ahora; la referencia a pasos/acciones se completa después de construir el mapa AS-IS.</div>';
-    return base+s08PriorContext(fid,e)+pending;
+    return base+s08PriorContext(fid,e,val,opts)+pending;
   }
   if(fid==='DF089')return s08PreferenceControl(fid,opts,val,e,[['REQUIRED','Obligatorio'],['PREFERRED','Preferido'],['INDIFFERENT','Indiferente']]);
   if(fid==='DF090')return s08PreferenceControl(fid,opts,val,e,[['REQUIRED','Obligatorio'],['PREFERRED','Preferido']]);
