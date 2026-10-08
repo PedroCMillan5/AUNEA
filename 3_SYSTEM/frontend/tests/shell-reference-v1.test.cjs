@@ -148,6 +148,21 @@ test('B03 status is driven by Diagnostic Master requiredness without duplicating
   assert.ok(folded.some(f=>f.Requiredness==='REQUIRED_90M'),'the current Diagnostic Master must drive at least one required folded field');
 });
 
+test('PG01 required markers follow canonical requiredness instead of visual defaults', () => {
+  assert.match(diagJs, /function pg01Field\(label,control,help,\{source='',required=null,full=false\}=\{\}\)/);
+  assert.match(diagJs, /canonicalField\?\.Requiredness==='REQUIRED_90M'/);
+  assert.match(diagJs, /isRequired\?requiredMark\(\):''/);
+  const s01=diagnosticSchema.fields.filter(f=>f.Stage_ID==='S01');
+  const required=s01.filter(f=>f.Requiredness==='REQUIRED_90M').map(f=>f.Field_ID);
+  assert.deepEqual(required,['DF001','DF006','DF008']);
+  assert.equal(s01.find(f=>f.Field_ID==='DF002').Requiredness,'OPTIONAL_90M');
+  assert.equal(s01.find(f=>f.Field_ID==='DF003').Requiredness,'OPTIONAL_90M');
+  assert.equal(s01.find(f=>f.Field_ID==='DF009').Requiredness,'OPTIONAL_90M');
+  assert.equal(s01.find(f=>f.Field_ID==='DF010').Requiredness,'CONDITIONAL_90M');
+  const flow=schemaFlow=>schemaFlow.find(x=>x.Stage_ID==='S01').Criterio_de_salida;
+  assert.equal(flow(diagnosticSchema.flow),'DF001, DF006 y DF008 completos; DF009 es opcional y DF010 sólo aplica cuando corresponda');
+});
+
 test('Console keeps the reference identifier without a legacy mode wrapper',()=>{assert.match(stateJs,/function pageTop\(title,subtitle,actions='',screenId=''\)/);assert.doesNotMatch(html,/ui\/mode\.js/)});
 test('private AS-IS pages defensively keep one layer confirmation bar in runtime',()=>{
   assert.match(stateJs,/function dedupeProcessLayerConfirmations\(\)/);
