@@ -158,6 +158,18 @@ test('S03 seasonality detail appears only for material seasonality choices',()=>
   assert.doesNotMatch(peak,/data-seasonality-detail="DF024" style="display:none"/);
 });
 
+test('S08 canonical controls expose references, preference classification and reused S01 context',()=>{
+  const source=fs.readFileSync(path.join(root,'ui/renderer.js'),'utf8');
+  assert.match(source,/function s08PriorContext\(e\)/);
+  assert.match(source,/Restricciones ya declaradas en Contexto/);
+  assert.match(source,/function s08ReferenceControl\(fid,items,val,e\)/);
+  assert.match(source,/Referencia el elemento existente/);
+  assert.match(source,/\['REQUIRED','Obligatorio'\],\['PREFERRED','Preferido'\],\['INDIFFERENT','Indiferente'\]/);
+  assert.match(source,/DF090[^\n]*\['REQUIRED','Obligatorio'\],\['PREFERRED','Preferido'\]/);
+  assert.match(source,/detalle si cambia el plan/);
+  assert.match(source,/la referencia a pasos\/acciones se completa después de construir el mapa AS-IS/);
+});
+
 test('PG02 DF020 Otra reveals detail only when selected',()=>{
   e.answerDetails={};
   const opts=[{value:'SERVICE',label:'Servicio / producto'},{value:'OTHER',label:'Otra'}];
