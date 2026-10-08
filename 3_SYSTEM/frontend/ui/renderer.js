@@ -287,8 +287,50 @@ function permissionWithScope(fid,opts,val){
   </div>`;
 }
 
+
+function s08PriorContext(e){
+  const values=selectedValues(e?.answers?.DF010).filter(Boolean);
+  if(!values.length)return '';
+  const labels=values.map(v=>labelFrom('OS_CONSTRAINT_TYPE',v)||v);
+  return '<div class="reuse-context s08-prior-context"><div><strong>Restricciones ya declaradas en Contexto</strong><small>'+labels.map(esc).join(' · ')+'</small></div></div>';
+}
+function s08ReferenceControl(fid,items,val,e){
+  const base=multiChoices(fid,items,val,{other:hasCanonicalOtherOption(items)});
+  const selected=selectedValues(val),details=answerDetails(e),refs=details[`${fid}__references`]||{};
+  if(!selected.length)return base+s08PriorContext(e);
+  const rows=selected.map(v=>{
+    const label=items.find(x=>String(x.value)===String(v))?.label||v;
+    return '<label class="s08-detail-row"><span>'+esc(label)+' — referencia concreta</span><input type="text" data-s08-reference="'+fid+'" data-s08-key="'+attr(v)+'" value="'+attr(refs[v]||'')+'" placeholder="Elemento existente que debe mantenerse"></label>';
+  }).join('');
+  return base+s08PriorContext(e)+'<div class="linked-field-block"><div class="linked-step-label">Referencia el elemento existente; no se crea uno nuevo aquí.</div>'+rows+'</div>';
+}
+function s08PreferenceControl(fid,items,val,e,modes){
+  const base=multiChoices(fid,items,val,{other:hasCanonicalOtherOption(items)});
+  const selected=selectedValues(val),details=answerDetails(e),saved=details[`${fid}__preference`]||{};
+  if(!selected.length)return base+s08PriorContext(e);
+  const modeOpts=modes.map(([value,label])=>({value,label}));
+  const rows=selected.map(v=>{
+    const label=items.find(x=>String(x.value)===String(v))?.label||v;
+    return '<div class="s08-detail-row"><span>'+esc(label)+'</span>'+auneaSelectControl(`${fid}__pref__${v}`,modeOpts,saved[v]||'',{extra:`data-s08-preference="${fid}" data-s08-key="${attr(v)}"`,placeholder:'Clasifica…'})+'</div>';
+  }).join('');
+  return base+s08PriorContext(e)+'<div class="linked-field-block"><div class="linked-step-label">Clasificación de cada restricción seleccionada</div>'+rows+'</div>';
+}
+function s08ChangeDetailControl(fid,items,val,e){
+  const base=multiChoices(fid,items,val,{other:hasCanonicalOtherOption(items)});
+  const selected=selectedValues(val),details=answerDetails(e),saved=details[`${fid}__details`]||{};
+  if(!selected.length)return base+s08PriorContext(e);
+  const rows=selected.map(v=>{
+    const label=items.find(x=>String(x.value)===String(v))?.label||v;
+    return '<label class="s08-detail-row"><span>'+esc(label)+' — detalle si cambia el plan</span><input type="text" data-s08-change-detail="'+fid+'" data-s08-key="'+attr(v)+'" value="'+attr(saved[v]||'')+'" placeholder="Detalle opcional"></label>';
+  }).join('');
+  return base+s08PriorContext(e)+'<div class="linked-field-block">'+rows+'</div>';
+}
 function renderControl(f,val,opts,e){
   const c=String(f.Control_UI||'').toUpperCase(),fid=f.Field_ID;
+  if(fid==='DF087')return s08ReferenceControl(fid,opts,val,e);
+  if(fid==='DF089')return s08PreferenceControl(fid,opts,val,e,[['REQUIRED','Obligatorio'],['PREFERRED','Preferido'],['INDIFFERENT','Indiferente']]);
+  if(fid==='DF090')return s08PreferenceControl(fid,opts,val,e,[['REQUIRED','Obligatorio'],['PREFERRED','Preferido']]);
+  if(fid==='DF091')return s08ChangeDetailControl(fid,opts,val,e);
   if(c==='CRM_REFERENCE_OR_TEXT')return canonicalSelect(fid,state.companies.map(x=>({value:x.name,label:x.name})),val);
   if(c==='CONTACT_REFERENCE')return canonicalSelect(fid,referenceableContacts(e).map(x=>({value:x.id,label:`${referenceContactLabel(x)}${x.role?' · '+x.role:''}`})),val);
   if(c==='CONTACT_MULTISELECT'){
@@ -406,6 +448,19 @@ if(typeof document!=='undefined'&&typeof document.addEventListener==='function'&
     document.querySelectorAll('details.aunea-select[open]').forEach(box=>box.open=false);
   });
   document.addEventListener('keydown',ev=>{if(ev.key==='Escape')document.querySelectorAll('details.aunea-select[open]').forEach(box=>box.open=false)});
+  document.addEventListener('input',ev=>{
+    const el=ev.target.closest?.('[data-s08-reference],[data-s08-change-detail]');
+    if(!el)return;
+    const fid=el.dataset.s08Reference||el.dataset.s08ChangeDetail,key=el.dataset.s08Key,e=currentEng(),d=answerDetails(e);
+    const bucket=el.dataset.s08Reference?`${fid}__references`:`${fid}__details`;
+    d[bucket]={...(d[bucket]||{}),[key]:el.value};e.updatedAt=now();markDirty(`Detalle ${fid} actualizado`);
+  });
+  document.addEventListener('change',ev=>{
+    const el=ev.target.closest?.('[data-s08-preference]');
+    if(!el)return;
+    const fid=el.dataset.s08Preference,key=el.dataset.s08Key,e=currentEng(),d=answerDetails(e);
+    d[`${fid}__preference`]={...(d[`${fid}__preference`]||{}),[key]:el.value};e.updatedAt=now();markDirty(`Clasificación ${fid} actualizada`);
+  });
   document.addEventListener('change',ev=>{
     const el=ev.target.closest?.('[data-other-toggle]');
     if(!el)return;
