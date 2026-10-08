@@ -949,12 +949,12 @@ function asisParticipantContext(e){
   const participants=normalizeArray(e.answers?.DF017).filter(Boolean);
   if(!participants.length)return '';
   const labels=participants.map(v=>labelFrom('OS_ACTOR_ROLE',v)||v);
-  return '<div class="asis-scope-hint" data-asis-participants="DF017"><b>Roles declarados en alcance</b><span>'+labels.map(esc).join(' · ')+'</span><small>Se muestran como contexto del mapa; el responsable de cada paso se confirma en el propio AS-IS.</small></div>';
+  return '<div class="asis-variant-hint asis-scope-hint" data-asis-participants="DF017"><b>Roles declarados en alcance</b><span>'+labels.map(esc).join(' · ')+' · Se muestran como contexto; el responsable de cada paso se confirma en el propio AS-IS.</span></div>';
 }
 function asisVariantCandidates(e){
   const variants=normalizeArray(e.answers?.DF020).filter(Boolean);
   if(!variants.length)return '';
-  const detail=answerDetails(e).DF020;
+  const detail=(typeof answerDetails==='function'?answerDetails(e):(e.answerDetails||{})).DF020;
   const labels=variants.map(v=>{
     const label=labelFrom('OS_VARIANT_DIMENSION',v)||v;
     return String(v).toUpperCase()==='OTHER'&&detail?label+' — '+detail:label;
