@@ -12,7 +12,7 @@ function answerDetails(e=currentEng()){
   return e.answerDetails;
 }
 function getAnswerDetail(fid,e=currentEng()){return answerDetails(e)[fid]||''}
-function setAnswerDetail(fid,value){const e=currentEng();if(!e)return;answerDetails(e)[fid]=value;e.updatedAt=now();markDirty(`Detalle ${fid} actualizado`);if(typeof refreshCaptureProgress==='function')refreshCaptureProgress()}
+function setAnswerDetail(fid,value){const e=currentEng();if(!e)return;answerDetails(e)[fid]=value;e.updatedAt=now();markDirty(`Detalle ${fid} actualizado`);if(typeof refreshCaptureProgress==='function')refreshCaptureProgress();if(typeof refreshPendingFieldVisual==='function')refreshPendingFieldVisual(fid,e)}
 function optionLabel(setId,value){return labelFrom(setId,value)}
 function selectedValues(v){return normalizeArray(v).map(String)}
 function isOtherAllowed(f){return /OTHER/i.test(String(f.Control_UI||''))||/Otro/i.test(String(f.Validation||''))}
