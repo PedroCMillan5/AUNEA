@@ -1030,3 +1030,37 @@ body:not(.mode-process-editor) .content [data-process-engagement] .flow-insert{d
   .derived-structured-facts{display:grid;gap:4px}
 }
 /* [AUNEA-FE-RISK-FINAL-090] END */
+
+/* [AUNEA-FE-S08-DEFECT-SPACING-010] START — Local spacing fix for reopened S08 defect.
+   Keeps the frozen widths/layout intact; only separates conditional/detail boxes from surrounding controls. */
+body:has([data-diagnostic-stage="S08"]) .field .s08-prior-context,
+body:has([data-diagnostic-stage="S08"]) .field .linked-field-block,
+body:has([data-diagnostic-stage="S08"]) .field .detail-wrap{
+  margin-top:12px;
+}
+body:has([data-diagnostic-stage="S08"]) .field .s08-prior-context,
+body:has([data-diagnostic-stage="S08"]) .field .linked-field-block{
+  margin-bottom:8px;
+}
+body:has([data-diagnostic-stage="S08"]) .s08-detail-row{
+  display:grid;
+  grid-template-columns:minmax(220px,.9fr) minmax(260px,1.1fr);
+  gap:12px;
+  align-items:center;
+}
+body:has([data-diagnostic-stage="S08"]) .s08-detail-row + .s08-detail-row{
+  margin-top:10px;
+}
+body:has([data-diagnostic-stage="S08"]) .s08-detail-row>span{
+  font-size:var(--font-small);
+  font-weight:700;
+}
+body:has([data-diagnostic-stage="S08"]) .s08-detail-row input,
+body:has([data-diagnostic-stage="S08"]) .s08-detail-row .aunea-select{
+  width:100%;
+  box-sizing:border-box;
+}
+@media(max-width:760px){
+  body:has([data-diagnostic-stage="S08"]) .s08-detail-row{grid-template-columns:1fr}
+}
+/* [AUNEA-FE-S08-DEFECT-SPACING-010] END */
