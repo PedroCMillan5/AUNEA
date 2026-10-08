@@ -160,7 +160,7 @@ test('S03 seasonality detail appears only for material seasonality choices',()=>
 
 
 
-test('S08 separates drill-down rationale from yellow context box',()=>{
+test('S08 yellow context box renders real prior and current selections, never a decorative label',()=>{
   const renderer=fs.readFileSync(path.join(root,'ui/renderer.js'),'utf8');
   const noReask=fs.readFileSync(path.join(root,'domain/no-reask.js'),'utf8');
   assert.match(noReask,/S08_DUPLICATION_WHY/);
@@ -169,13 +169,27 @@ test('S08 separates drill-down rationale from yellow context box',()=>{
   assert.match(renderer,/Recomendación/);
   assert.doesNotMatch(renderer,/Opciones marcadas/);
   assert.match(renderer,/Contexto previo/);
+  assert.match(renderer,/Concretado en esta pregunta/);
   assert.doesNotMatch(renderer,/s08-context-explanation/);
+
+  e.answers.DF010=['SECURITY','CHANGE'];
+  const html=ctx.renderControl(
+    {Field_ID:'DF087',Control_UI:'MULTISELECT'},
+    ['KEEP_TOOL'],
+    [{value:'KEEP_TOOL',label:'Herramienta actual'}],
+    e
+  );
+  assert.match(html,/Contexto previo/);
+  assert.match(html,/SECURITY · CHANGE/);
+  assert.match(html,/Concretado en esta pregunta/);
+  assert.match(html,/Herramienta actual/);
+  e.answers.DF010=undefined;
 });
 
 test('S08 canonical controls expose references, preference classification and reused S01 context',()=>{
   const source=fs.readFileSync(path.join(root,'ui/renderer.js'),'utf8');
-  assert.match(source,/function s08PriorContext\(e\)/);
-  assert.match(source,/Restricciones ya declaradas en Contexto/);
+  assert.match(source,/function s08PriorContext\(fid,e,currentVal,items\)/);
+  assert.match(source,/Contexto previo/);
   assert.match(source,/function s08ReferenceControl\(fid,items,val,e\)/);
   assert.match(source,/Referencia el elemento existente/);
   assert.match(source,/\['REQUIRED','Obligatorio'\],\['PREFERRED','Preferido'\],\['INDIFFERENT','Indiferente'\]/);
