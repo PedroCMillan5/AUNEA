@@ -107,7 +107,7 @@ test('actor/tool reference controls retain canonical dropdowns and explicit Othe
 });
 
 test('decision detail is hidden unless canonical Other is selected, and step deletion is a confirmed remove-from-flow action',()=>{
-  assert.match(code,/selectedHtml\('step_decisions',decisions,s\.decision_criteria\)/);
+  assert.match(code,/selectedHtml\('step_decisions',decisions,s\.decision_criteria(?:,\{preferredValues:decisionContext\})?\)/);
   assert.match(code,/data-v1-other-toggle/);
   assert.match(code,/function removeStepFromFlow\(stepId\)/);
   assert.match(code,/openModal\('Eliminar paso del flujo'/);
