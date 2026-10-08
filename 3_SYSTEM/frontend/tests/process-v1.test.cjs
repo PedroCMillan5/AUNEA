@@ -385,7 +385,7 @@ test('AS-IS construction reuses prior context before exposing the full catalog',
     assert.match(html,/data-value="FIN"/);
     assert.match(html,/data-value="IT"/);
     assert.match(html,/data-context-catalog-extra="step_actor"/);
-    assert.match(html,/Mostrar todos/);
+    assert.match(html,/Mostrar más/);
   }finally{ctx.fieldOptions=oldFieldOptions;eng.answers={};eng.processSteps=[]}
 });
 
