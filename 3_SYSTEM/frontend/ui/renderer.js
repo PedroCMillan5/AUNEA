@@ -20,7 +20,7 @@ function dataListId(fid){return `list_${String(fid).replace(/[^a-zA-Z0-9_-]/g,'_
 function detailInput(fid,placeholder='Detalle breve'){
   return `<input class="detail-input" data-detail-answer="${fid}" value="${attr(getAnswerDetail(fid))}" placeholder="${attr(placeholder)}">`;
 }
-function auneaSelectControl(id,opts,val,{extra='',placeholder='Selecciona…',searchable=false}={}){
+function auneaSelectControl(id,opts,val,{extra='',placeholder='Selecciona…',searchable=true}={}){
   const normalized=(opts||[]).map(x=>({value:String(x.value??''),label:String(x.label??x.value??'')}));
   const selected=normalized.find(x=>x.value===String(val??'')),shown=selected?.label||placeholder;
   return `<div class="canonical-aunea-select"><input type="hidden" id="${attr(id)}" value="${attr(val??'')}" ${extra}><details class="aunea-select" data-aunea-select="${attr(id)}"><summary><span>${esc(shown)}</span><i aria-hidden="true"></i></summary><div class="aunea-select-menu" role="listbox">${searchable?`<div class="aunea-select-search"><input type="search" data-aunea-select-search="${attr(id)}" placeholder="Buscar…"></div>`:''}${normalized.map(o=>`<button type="button" role="option" class="${o.value===String(val??'')?'selected':''}" data-aunea-select-option="${attr(id)}" data-value="${attr(o.value)}" data-label="${attr(o.label)}">${esc(o.label)}</button>`).join('')}</div></details></div>`;

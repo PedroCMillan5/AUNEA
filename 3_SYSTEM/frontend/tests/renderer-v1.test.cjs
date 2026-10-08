@@ -12,16 +12,25 @@ vm.createContext(ctx);vm.runInContext(code,ctx);
 test('searchable dropdown remains catalog-backed and uses the single AUNEA Select primitive',()=>{const html=ctx.renderControl({Field_ID:'DF002',Control_UI:'SEARCHABLE_DROPDOWN',Option_Set_ID:'OS_X',Validation:'permitir Otro'},'A',ctx.schema.option_sets.OS_X.options,e);assert.match(html,/data-aunea-select="DF002"/);assert.match(html,/data-aunea-select-search="DF002"/);assert.match(html,/data-aunea-select-option="DF002"/);assert.doesNotMatch(html,/<datalist/);assert.doesNotMatch(html,/<select/);});
 test('number+unit is structured',()=>{const html=ctx.renderControl({Field_ID:'DF021',Control_UI:'NUMBER_WITH_UNIT'},'',[],e);assert.match(html,/data-number-value="DF021"/);assert.match(html,/data-number-unit="DF021"/);});
 
-test('all canonical single-select controls share AUNEA Select instead of browser-native dropdowns',()=>{
+test('all canonical single-select controls share searchable AUNEA Select instead of browser-native dropdowns',()=>{
   const opts=[{value:'A',label:'Alpha'},{value:'B',label:'Beta'}];
   for(const control of ['DROPDOWN','CONTACT_REFERENCE','CRM_REFERENCE_OR_TEXT']){
     const html=ctx.renderControl({Field_ID:'DF004',Control_UI:control},'A',opts,e);
     assert.match(html,/class="aunea-select"/,control+' must use AUNEA Select');
+    assert.match(html,/data-aunea-select-search="DF004"/,control+' must expose the shared filter');
     assert.doesNotMatch(html,/<select/,control+' must not render a native select');
   }
   const compound=ctx.renderControl({Field_ID:'DF021',Control_UI:'NUMBER_WITH_UNIT'},{value:10,unit:'case'},[],e);
   assert.match(compound,/class="aunea-select"/,'compound unit dropdown uses same component');
+  assert.match(compound,/data-aunea-select-search=/,'compound dropdowns inherit the same filter');
   assert.doesNotMatch(compound,/<select/);
+});
+test('AUNEA Select search is enabled by default and keeps one shared filtering contract',()=>{
+  const source=fs.readFileSync(path.join(root,'ui/renderer.js'),'utf8');
+  assert.match(source,/searchable=true/);
+  assert.match(source,/data-aunea-select-search/);
+  assert.match(source,/data-aunea-select-option/);
+  assert.match(source,/includes\(term\)\?'':'none'/);
 });
 test('multiselect keeps choices',()=>{const html=ctx.renderControl({Field_ID:'DF008',Control_UI:'MULTISELECT_WITH_OTHER'},['A'],ctx.schema.option_sets.OS_X.options,e);assert.match(html,/data-multi="DF008"/);assert.match(html,/detail-input/);});
 test('unknown structured controls never degrade to free text',()=>{const html=ctx.renderControl({Field_ID:'DF999',Control_UI:'UNSUPPORTED_STRUCTURED'},'',[],e);assert.match(html,/control-error/);assert.doesNotMatch(html,/data-answer="DF999"/);});
