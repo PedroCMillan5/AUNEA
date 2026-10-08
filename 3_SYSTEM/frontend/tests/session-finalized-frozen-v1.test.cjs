@@ -7,5 +7,13 @@ test('FINALIZED Estudios source and scoped styles are frozen',()=>{const s=read(
 test('FINALIZED S01 Contexto y objetivos contract is frozen',()=>{const s=read('pages/diagnostic-stages.js');assert.equal(block(s,'// ['+'AUNEA-FROZEN-STAGE-S01-001'+'] START','// ['+'AUNEA-FROZEN-STAGE-S01-001'+'] END'),read('tests/frozen/session-s01-v1.js.snapshot'));assert.match(s,/S01:'I90-01'/)});
 test('FINALIZED S02 Alcance del proceso contract is frozen',()=>{const s=read('pages/diagnostic-stages.js');assert.equal(block(s,'// ['+'AUNEA-FROZEN-STAGE-S02-001'+'] START','// ['+'AUNEA-FROZEN-STAGE-S02-001'+'] END'),read('tests/frozen/session-s02-v1.js.snapshot'));assert.match(s,/stage\.Stage_ID==='S02'\?engagementBusinessAreaBlock\(e\):''/);assert.match(s,/S02:'I90-02'/)});
 test('FINALIZED S08 keeps DF089 full width',()=>{const c=read('ui-system.css'),s=read('pages/diagnostic-stages.js');assert.equal(block(c,'/* ['+'AUNEA-FROZEN-STAGE-S08-001'+'] START','/* ['+'AUNEA-FROZEN-STAGE-S08-001'+'] END */'),read('tests/frozen/session-s08-v1.css.snapshot'));assert.match(c,/\.field\[data-field="DF089"\]\{grid-column:1\/-1\}/);assert.match(s,/S08:'I90-08'/)});
+test('reopened S08 defect fix adds only page-scoped spacing outside the frozen width block',()=>{
+  const css=read('ui-system.css');
+  assert.match(css,/AUNEA-FE-S08-DEFECT-SPACING-010/);
+  assert.match(css,/body:has\(\[data-diagnostic-stage="S08"\]\) \.field \.detail-wrap/);
+  assert.match(css,/margin-top:12px/);
+  assert.match(css,/\.s08-detail-row/);
+});
+
 test('registry freezes the four approved pages but not S03',()=>{const r=JSON.parse(read('FROZEN_PAGES.json')),ids=new Set(r.frozen_pages.filter(x=>x.status==='FROZEN').map(x=>x.page_id));for(const id of ['estudios','contexto-objetivos','alcance-proceso','estado-objetivo-restricciones'])assert.ok(ids.has(id),id);assert.ok(!ids.has('demanda-volumen-servicio'))});
 // [AUNEA-UAT-SESSION-FINALIZED-FROZEN-020] END
