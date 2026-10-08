@@ -369,3 +369,39 @@ test('Mapa AS-IS is read-only for S04 complementary capture; Pasos is the single
   assert.doesNotMatch(code,/function processPage\(\)[\s\S]*?asisMapPage\(e,steps,fr\)\+layerCanonicalQuestions\(e,'S04'\)/);
   assert.match(code,/function consultantStepsPage\(\)[\s\S]*?'map','S04'\)/);
 });
+
+
+test('AS-IS construction reuses prior context before exposing the full catalog',()=>{
+  const oldFieldOptions=ctx.fieldOptions;
+  ctx.fieldOptions=set=>({
+    OS_ACTOR_ROLE:[{value:'OPS',label:'Operaciones'},{value:'FIN',label:'Finanzas'},{value:'IT',label:'IT'},{value:'OTHER',label:'Otro'}],
+    OS_TOOL_CATEGORY:[{value:'ERP',label:'ERP'},{value:'CRM',label:'CRM'},{value:'OTHER',label:'Otro'}]
+  }[set]||[]);
+  eng.answers={DF017:['OPS','FIN']};eng.processSteps=[{id:'S1',status:'ACTIVE',actor:'OPS',tool:'ERP'}];
+  try{
+    assert.deepEqual(Array.from(ctx.processContextValues(eng,'OS_ACTOR_ROLE')),['OPS','FIN']);
+    const html=ctx.datalistControl('step_actor','OS_ACTOR_ROLE','','Rol',ctx.processContextValues(eng,'OS_ACTOR_ROLE'));
+    assert.match(html,/data-value="OPS"/);
+    assert.match(html,/data-value="FIN"/);
+    assert.match(html,/data-value="IT"/);
+    assert.match(html,/data-context-catalog-extra="step_actor"/);
+    assert.match(html,/Mostrar todos/);
+  }finally{ctx.fieldOptions=oldFieldOptions;eng.answers={};eng.processSteps=[]}
+});
+
+test('contextual multiselect keeps selected values visible and hides only extra catalog choices',()=>{
+  const html=ctx.selectedHtml('step_inputs',[
+    {value:'DOC',label:'Documento'},{value:'DATA',label:'Datos'},{value:'EMAIL',label:'Email'},{value:'OTHER',label:'Otro'}
+  ],['EMAIL'],{preferredValues:['DOC']});
+  assert.match(html,/id="step_inputs_EMAIL"[^>]+checked/);
+  assert.match(html,/data-context-choice-extra="step_inputs" hidden/);
+  assert.match(html,/Mostrar todas las opciones/);
+});
+
+test('DF020 recommendation opens the existing decision-step popup as a suggestion, never auto-creates a branch',()=>{
+  assert.match(code,/data-add-recommended-decision="DF020"/);
+  assert.match(code,/data-add-recommended-decision="DF020"[^\n]*addDecisionStep/);
+  assert.match(code,/function addDecisionStep\(\)[\s\S]*openStepModal\(null,null,\{step_name:'Decisión',step_type:'ST04',decision_criteria:criteria,_ui:\{has_decision:true\}\}\)/);
+  const fn=code.slice(code.indexOf('function asisVariantCandidates'),code.indexOf('function asisMapPage'));
+  assert.doesNotMatch(fn,/processSteps\.push/);
+});

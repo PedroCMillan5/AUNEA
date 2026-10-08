@@ -1,6 +1,6 @@
 // [AUNEA-FE-PROC-EDITOR-020] START — Process Step + Friction canonical editor v1.1
 // PURPOSE: Build/review the AS-IS with the 20 canonical Process Step attributes and anchored Friction records.
-// SOURCE: Diagnostic Master v1.2 CANONICAL (v1.3 B02 REVIEW candidate), Process/Friction/Pain models; REQ-PROC-001/002; REQ-FRIC-001/002; DEC-040/063/068.
+// SOURCE: Diagnostic Master v1.2 CANONICAL (v1.3 B02 REVIEW candidate), Process/Friction/Pain models; REQ-PROC-001/002; REQ-FRIC-001/002; DEC-040/050/063/068/070/071.
 // INPUTS: canonical schema option sets, engagement Process Steps/Frictions and user edits.
 // OUTPUTS: RT_PROCESS_STEP-compatible local records and RT_FRICTION-compatible local records; Pain_ID remains derived.
 // SIDE_EFFECTS: engagement state, AS-IS confirmation invalidation, audit trail.
@@ -39,9 +39,11 @@ function painForFriction(type){return schema.friction_pain_map.find(x=>String(x.
 function processLayerState(e){return typeof processLayerConfirmations==='function'?processLayerConfirmations(e):(e.layerConfirmations||(e.layerConfirmations={map:false,frictions:false,risks:false,impact:false}))}
 function processLayerKeySafe(tab){return typeof processLayerKey==='function'?processLayerKey(tab):(tab==='fricciones'?'frictions':tab==='riesgos'?'risks':tab==='impacto'?'impact':'map')}
 function invalidateProcessLayersSafe(e,from='map'){if(typeof invalidateProcessLayers==='function')return invalidateProcessLayers(e,from);e.confirmedAsIs=false;e.answers.DF093=''}
-function selectedHtml(id,opts,selected,{detailId='',detailValue='',detailPlaceholder='Especifica la opción',wrapped=false}={}){
+function selectedHtml(id,opts,selected,{detailId='',detailValue='',detailPlaceholder='Especifica la opción',wrapped=false,preferredValues=[]}={}){
   const arr=normalizeArray(selected).map(String),other=catalogOtherOption(opts),otherValue=other?String(other.value):'',otherOpen=!!other&&arr.includes(otherValue);
-  const choices=`<div class="choice-grid${wrapped?' choice-grid-wrapped':''}">${opts.map(o=>{const isOther=!!other&&String(o.value)===otherValue;return `<div class="choice"><input type="checkbox" id="${id}_${attr(o.value)}" value="${attr(o.value)}" data-v1-multi="${id}" ${isOther?`data-v1-other-toggle="${id}"`:''} ${arr.includes(String(o.value))?'checked':''}><label for="${id}_${attr(o.value)}">${esc(o.label)}</label></div>`}).join('')}</div>`;
+  const preferred=new Set(normalizeArray(preferredValues).map(String)),useContext=preferred.size>0;
+  const hasHidden=useContext&&opts.some(o=>{const v=String(o.value);return !preferred.has(v)&&!arr.includes(v)&&(!other||v!==otherValue)});
+  const choices=`<div class="choice-grid${wrapped?' choice-grid-wrapped':''}">${opts.map(o=>{const v=String(o.value),isOther=!!other&&v===otherValue,visible=!useContext||preferred.has(v)||arr.includes(v)||isOther;return `<div class="choice"${visible?'':` data-context-choice-extra="${attr(id)}" hidden`}><input type="checkbox" id="${id}_${attr(o.value)}" value="${attr(o.value)}" data-v1-multi="${id}" ${isOther?`data-v1-other-toggle="${id}"`:''} ${arr.includes(v)?'checked':''}><label for="${id}_${attr(o.value)}">${esc(o.label)}</label></div>`}).join('')}</div>`+(hasHidden?`<button type="button" class="btn btn-small btn-outline contextual-show-all" data-show-all-context="${attr(id)}">Mostrar todas las opciones</button>`:'');
   if(!detailId||!other)return choices;
   return choices+`<div class="detail-wrap" data-v1-other-wrap="${id}"${otherOpen?'':' style="display:none"'}><input id="${detailId}" value="${attr(otherOpen?detailValue:'')}" placeholder="${attr(detailPlaceholder)}"></div>`;
 }
@@ -105,15 +107,33 @@ function auneaDropdownControl(id,opts,value='',placeholder='Selecciona…',extra
   // Horizontal wrapping belongs exclusively to pre-existing multi-choice controls.
   return auneaSelectControl(id,opts,value,{extra,placeholder});
 }
-function datalistControl(id,setId,value,placeholder){
+function processContextValues(e,setId,{linkFromStepId=null}={}){
+  const steps=activeSteps(e),values=[];
+  if(setId==='OS_ACTOR_ROLE') values.push(...normalizeArray(e?.answers?.DF017),e?.answers?.DF016,...steps.map(s=>s.actor),...steps.map(s=>s.exception_path?.owner));
+  else if(setId==='OS_TOOL_CATEGORY') values.push(...steps.map(s=>s.tool));
+  else if(setId==='OS_ARTIFACT_TYPE'){const origin=linkFromStepId?steps.find(s=>s.id===linkFromStepId):null;if(origin)values.push(...normalizeArray(origin.outputs));values.push(...steps.flatMap(s=>[...normalizeArray(s.inputs),...normalizeArray(s.outputs)]))}
+  else if(setId==='OS_DECISION_CRITERIA'){if(typeof decisionCriteriaPresetFromScope==='function')values.push(...decisionCriteriaPresetFromScope(e));values.push(...steps.flatMap(s=>normalizeArray(s.decision_criteria)))}
+  else if(setId==='OS_MANUAL_ACTION') values.push(...steps.flatMap(s=>normalizeArray(s.manual_actions)));
+  else if(setId==='OS_COMM_CHANNEL') values.push(...steps.flatMap(s=>normalizeArray(s.communication_channels)));
+  else if(setId==='OS_EVIDENCE_TYPE') values.push(...steps.flatMap(s=>normalizeArray(s.evidence)));
+  const allowed=new Set(fieldOptions(setId).map(o=>String(o.value)));
+  return [...new Set(values.filter(v=>v!==undefined&&v!==null&&v!=='').map(String).filter(v=>allowed.has(v)))];
+}
+function datalistControl(id,setId,value,placeholder,preferredValues=[]){
   const opts=fieldOptions(setId),match=opts.find(o=>String(o.value)===String(value)),other=catalogOtherOption(opts),isCustom=!!value&&!match,isOther=!!other&&(String(value)===String(other.value)||isCustom),selectedValue=isCustom&&other?other.value:value,otherValue=other?.value||'__OTHER__',all=other?opts:[...opts,{value:'__OTHER__',label:'Otro / nuevo…'}];
-  return `<div class="catalog-reference-control">${auneaDropdownControl(id,all,selectedValue,placeholder,`data-model-set="${attr(setId||'')}" data-other-value="${attr(otherValue)}" data-catalog-reference="${attr(id)}"`)}<div class="detail-wrap" data-catalog-other-wrap="${id}"${isOther?'':' style="display:none"'}><input id="${id}_other" value="${attr(isCustom?value:'')}" placeholder="Especifica el valor"></div></div>`;
+  const preferred=new Set(normalizeArray(preferredValues).map(String)),useContext=preferred.size>0,current=String(selectedValue??'');
+  const visible=all.filter(o=>!useContext||preferred.has(String(o.value))||String(o.value)===current||String(o.value)===String(otherValue)),hidden=useContext?all.filter(o=>!visible.includes(o)):[];
+  let dropdown=auneaDropdownControl(id,[...visible,...hidden],selectedValue,placeholder,`data-model-set="${attr(setId||'')}" data-other-value="${attr(otherValue)}" data-catalog-reference="${attr(id)}"`);
+  hidden.forEach(o=>{const needle=`data-aunea-select-option="${attr(id)}" data-value="${attr(o.value)}"`;dropdown=dropdown.replace(needle,`hidden data-context-catalog-extra="${attr(id)}" ${needle}`)});
+  return `<div class="catalog-reference-control contextual-catalog-control">${dropdown}${hidden.length?`<button type="button" class="btn btn-small btn-outline contextual-show-all" data-show-all-context="${attr(id)}">Mostrar todos</button>`:''}<div class="detail-wrap" data-catalog-other-wrap="${id}"${isOther?'':' style="display:none"'}><input id="${id}_other" value="${attr(isCustom?value:'')}" placeholder="Especifica el valor"></div></div>`;
 }
 function resolveCatalogInput(el){if(!el)return '';const opts=fieldOptions(el.dataset.modelSet),raw=String(el.value||''),otherValue=String(el.dataset.otherValue||'__OTHER__');if(raw===otherValue)return document.getElementById(`${el.id}_other`)?.value.trim()||raw;const m=opts.find(o=>String(o.value)===raw);return m?.value||raw}
 function bindProcessDropdownDelegation(){
   if(typeof document==='undefined'||typeof document.addEventListener!=='function'||document.__auneaProcessDropdownBound)return;
   document.__auneaProcessDropdownBound=true;
   document.addEventListener('click',ev=>{
+    const expand=ev.target.closest?.('[data-show-all-context]');
+    if(expand){ev.preventDefault();ev.stopPropagation();const key=expand.dataset.showAllContext;document.querySelectorAll(`[data-context-catalog-extra="${key}"],[data-context-choice-extra="${key}"]`).forEach(x=>x.hidden=false);expand.hidden=true;return}
     const chip=ev.target.closest?.('[data-process-chip]');
     if(chip){
       ev.preventDefault();ev.stopPropagation();
@@ -171,7 +191,7 @@ function exceptionControl(s,e){
     <div class="field full"><label>Destino de la ruta NO ${requiredMark()}</label>${auneaDropdownControl('step_exc_dest',dest,x.destination_step||'','Selecciona destino…')}</div>
     <div class="field"><label>Condición / criterio de salida</label><input id="step_exc_condition" value="${attr(x.condition||'')}" placeholder="Ej. No cumple requisitos"></div>
     <div class="field"><label>Tipo de excepción</label>${auneaDropdownControl('step_exc_type',types,x.type||'','Sin clasificación adicional')}</div>
-    <div class="field full"><label>Responsable de la excepción</label>${datalistControl('step_exc_owner','OS_ACTOR_ROLE',x.owner||'','Rol responsable')}</div>
+    <div class="field full"><label>Responsable de la excepción</label>${datalistControl('step_exc_owner','OS_ACTOR_ROLE',x.owner||'','Rol responsable',processContextValues(e,'OS_ACTOR_ROLE'))}</div>
   </div></div>`;
 }
 
@@ -181,6 +201,7 @@ function openStepModal(stepId=null,linkFromStepId=null,preset=null){
   const base={id:id('STEP'),status:'ACTIVE',occurrences_per_case:1,inputs:[],outputs:[],manual_actions:[],decision_criteria:[],communication_channels:[],evidence:[],active_time:0,wait_time:0,rework_time:0};
   const s=stepMeta(existing?structuredClone(existing):{...base,...(preset||{}),_ui:{...(preset?._ui||{})}});
   const stepTypes=fieldOptions('OS_STEP_TYPE'),artifacts=fieldOptions('OS_ARTIFACT_TYPE'),decisions=fieldOptions('OS_DECISION_CRITERIA'),manual=fieldOptions('OS_MANUAL_ACTION'),auto=fieldOptions('OS_AUTOMATION_STATE'),channels=fieldOptions('OS_COMM_CHANNEL'),evid=fieldOptions('OS_EVIDENCE_TYPE');
+  const actorContext=processContextValues(e,'OS_ACTOR_ROLE',{linkFromStepId}),toolContext=processContextValues(e,'OS_TOOL_CATEGORY',{linkFromStepId}),artifactContext=processContextValues(e,'OS_ARTIFACT_TYPE',{linkFromStepId}),decisionContext=processContextValues(e,'OS_DECISION_CRITERIA',{linkFromStepId}),manualContext=processContextValues(e,'OS_MANUAL_ACTION',{linkFromStepId}),channelContext=processContextValues(e,'OS_COMM_CHANNEL',{linkFromStepId}),evidenceContext=processContextValues(e,'OS_EVIDENCE_TYPE',{linkFromStepId});
   const decisionOther=catalogOtherOption(decisions),decisionOtherOpen=!!decisionOther&&normalizeArray(s.decision_criteria).map(String).includes(String(decisionOther.value));
   const existingDecision=processDecisionStep(s);
   const decisionBlocked=(!existingDecision&&existing?.id&&processStepInsideBranch(e,existing.id))||(!existingDecision&&linkFromStepId&&processStepInsideBranch(e,linkFromStepId));
@@ -198,13 +219,13 @@ function openStepModal(stepId=null,linkFromStepId=null,preset=null){
   <details class="step-group" open><summary>A. Información básica</summary><div class="form-grid">
     <div class="field full"><label>¿Qué se hace en este paso? ${requiredMark()}</label><input id="step_name" maxlength="80" value="${attr(s.step_name||'')}" placeholder="Verbo + objeto, ej. Validar requisitos"></div>
     <div class="field"><label>Tipo de paso ${requiredMark()}</label>${stepTypeControl}</div>
-    <div class="field"><label>¿Quién lo realiza? ${requiredMark()}</label>${datalistControl('step_actor','OS_ACTOR_ROLE',s.actor||'','Rol existente o nuevo')}</div>
+    <div class="field"><label>¿Quién lo realiza? ${requiredMark()}</label>${datalistControl('step_actor','OS_ACTOR_ROLE',s.actor||'','Rol existente o nuevo',actorContext)}</div>
   </div></details>
   <details class="step-group"><summary>B. Entradas y salidas</summary><div class="form-grid">
     <div class="field full"><label>¿A qué casos aplica?</label>${appliesControl(s)}</div>
     <div class="field"><label>Veces por caso</label><input id="step_occ" type="number" min="0" step="any" value="${attr(s.occurrences_per_case??1)}"></div>
-    <div class="field full"><label>¿Qué necesita para empezar?</label>${selectedHtml('step_inputs',artifacts,s.inputs,{wrapped:true,detailId:'step_inputs_detail',detailValue:s._details.inputs||'',detailPlaceholder:'Especifica el input sólo al seleccionar Otro'})}</div>
-    <div class="field full"><label>¿Qué produce este paso?</label>${selectedHtml('step_outputs',artifacts,s.outputs,{wrapped:true,detailId:'step_outputs_detail',detailValue:s._details.outputs||'',detailPlaceholder:'Especifica el output sólo al seleccionar Otro'})}</div>
+    <div class="field full"><label>¿Qué necesita para empezar?</label>${selectedHtml('step_inputs',artifacts,s.inputs,{wrapped:true,detailId:'step_inputs_detail',detailValue:s._details.inputs||'',detailPlaceholder:'Especifica el input sólo al seleccionar Otro',preferredValues:artifactContext})}</div>
+    <div class="field full"><label>¿Qué produce este paso?</label>${selectedHtml('step_outputs',artifacts,s.outputs,{wrapped:true,detailId:'step_outputs_detail',detailValue:s._details.outputs||'',detailPlaceholder:'Especifica el output sólo al seleccionar Otro',preferredValues:artifactContext})}</div>
   </div></details>
   <details class="step-group"><summary>C. Tiempo y rendimiento</summary><div class="form-grid">
     <div class="field"><label>¿Cuánto tiempo de trabajo requiere?</label>${timeControl('step_active',s.active_time,s._ui.active_unit||'min')}</div>
@@ -215,17 +236,17 @@ function openStepModal(stepId=null,linkFromStepId=null,preset=null){
   <details class="step-group"><summary>D. Flujo y decisiones</summary><div class="form-grid">
     <div class="field full"><label>¿Este paso incluye una decisión o bifurcación?</label>${decisionSelector}</div>
     <div class="field full"><div class="decision-route-card route-yes"><div class="decision-route-head"><b data-step-next-label>${hasDecision?'Ruta SÍ / afirmativa':'Siguiente paso normal'}</b><span>${hasDecision?'Cuando se cumple la condición principal':'Continuación del flujo'}</span></div><label>Destino ${hasDecision?requiredMark():''}</label>${auneaDropdownControl('step_next',decisionDestinationOptions(e,s),s.normal_next_step||'','Selecciona destino…')}</div></div>
-    <div class="field full" data-step-decision-area${hasDecision?'':' style="display:none"'}><label>Criterios de decisión</label>${selectedHtml('step_decisions',decisions,s.decision_criteria)}${!existing&&normalizeArray(e.answers?.DF020).length?'<div class="field-help">Preselección sugerida desde las variantes declaradas en Alcance del proceso. Puedes ajustarla durante la validación del AS-IS.</div>':''}<div class="detail-wrap"><label>Condición principal</label><input id="step_decisions_detail" value="${attr(s._details.decision_criteria||'')}" placeholder="Ej. Importe > 1.500 € o existe una discrepancia"><div class="field-help">Regla concreta que activa la ruta SÍ / afirmativa.</div></div></div>
+    <div class="field full" data-step-decision-area${hasDecision?'':' style="display:none"'}><label>Criterios de decisión</label>${selectedHtml('step_decisions',decisions,s.decision_criteria,{preferredValues:decisionContext})}${!existing&&normalizeArray(e.answers?.DF020).length?'<div class="field-help">Preselección sugerida desde las variantes declaradas en Alcance del proceso. Puedes ajustarla durante la validación del AS-IS.</div>':''}<div class="detail-wrap"><label>Condición principal</label><input id="step_decisions_detail" value="${attr(s._details.decision_criteria||'')}" placeholder="Ej. Importe > 1.500 € o existe una discrepancia"><div class="field-help">Regla concreta que activa la ruta SÍ / afirmativa.</div></div></div>
     <div class="field full" data-step-decision-area${hasDecision?'':' style="display:none"'}>${exceptionControl(s,e)}</div>
   </div></details>
   <details class="step-group"><summary>E. Automatización y sistemas</summary><div class="form-grid">
-    <div class="field"><label>Herramienta / sistema</label>${datalistControl('step_tool','OS_TOOL_CATEGORY',s.tool||'','Herramienta principal')}</div>
-    <div class="field full"><label>Acciones manuales</label>${selectedHtml('step_manual',manual,s.manual_actions,{detailId:'step_manual_other',detailValue:s._details.manual_actions||'',detailPlaceholder:'Especifica la otra acción manual'})}</div>
+    <div class="field"><label>Herramienta / sistema</label>${datalistControl('step_tool','OS_TOOL_CATEGORY',s.tool||'','Herramienta principal',toolContext)}</div>
+    <div class="field full"><label>Acciones manuales</label>${selectedHtml('step_manual',manual,s.manual_actions,{detailId:'step_manual_other',detailValue:s._details.manual_actions||'',detailPlaceholder:'Especifica la otra acción manual',preferredValues:manualContext})}</div>
     <div class="field full"><label>Automatización actual</label>${segmented('step_auto',auto,s.automation_state,'data-step-auto')}</div>
-    <div class="field full"><label>Canal(es) de comunicación</label>${selectedHtml('step_channels',channels,s.communication_channels,{detailId:'step_channels_other',detailValue:s._details.communication_channels||'',detailPlaceholder:'Especifica el canal sólo al seleccionar Otro'})}</div>
+    <div class="field full"><label>Canal(es) de comunicación</label>${selectedHtml('step_channels',channels,s.communication_channels,{detailId:'step_channels_other',detailValue:s._details.communication_channels||'',detailPlaceholder:'Especifica el canal sólo al seleccionar Otro',preferredValues:channelContext})}</div>
   </div></details>
   <details class="step-group"><summary>F. Evidencia y notas</summary><div class="form-grid">
-    <div class="field full"><label>Evidencia del paso</label>${selectedHtml('step_evidence',evid,s.evidence)}</div>
+    <div class="field full"><label>Evidencia del paso</label>${selectedHtml('step_evidence',evid,s.evidence,{preferredValues:evidenceContext})}</div>
     <div class="field full"><label>Nota breve excepcional</label><input id="step_notes" maxlength="200" value="${attr(s.notes||'')}" placeholder="Sólo si los campos estructurados no bastan"></div>
   </div></details>
   </div>`;
@@ -996,7 +1017,7 @@ function asisVariantCandidates(e){
   const message=decisions
     ?'Declaradas en Alcance: '+labels.map(esc).join(' · ')+'. El mapa contiene '+decisions+' decisión(es); comprueba que cubren las variantes materiales antes de confirmar.'
     :'Declaradas en Alcance: '+labels.map(esc).join(' · ')+'. Aún no hay una decisión en el mapa que represente una ruta alternativa.';
-  return '<div class="asis-variant-hint" data-asis-variant-candidates="DF020"><b>Variantes del alcance</b><span>'+message+'</span></div>';
+  return '<div class="asis-variant-hint" data-asis-variant-candidates="DF020"><b>Variantes del alcance</b><span>'+message+'</span>'+(!decisions&&typeof isProcessEditorWindow==='function'&&isProcessEditorWindow()?'<button type="button" class="btn btn-small btn-outline" data-add-recommended-decision="DF020">Añadir decisión sugerida</button>':'')+'</div>';
 }
 function asisMapPage(e,steps,fr){
   const start=processBoundaryValue(e,'DF014','Límite inicial pendiente','DF012'),finish=processBoundaryValue(e,'DF015','Límite final pendiente','DF013');
@@ -1098,6 +1119,7 @@ bindForms=function(){
   const sTpl=document.getElementById('addStepTemplate');if(sTpl)sTpl.onclick=openStepTemplatePicker;
   const addClient=document.getElementById('addStepFromClient');if(addClient)addClient.onclick=()=>openStepModal();
   const addDecision=document.getElementById('addDecisionFromClient');if(addDecision)addDecision.onclick=addDecisionStep;
+  document.querySelectorAll('[data-add-recommended-decision="DF020"]').forEach(b=>b.onclick=ev=>{ev.preventDefault();ev.stopPropagation();addDecisionStep()});
   const addMany=document.getElementById('addMultipleSteps');if(addMany)addMany.onclick=()=>addMultipleSteps();
   const reviewCandidates=document.getElementById('reviewPainCandidates');if(reviewCandidates)reviewCandidates.onclick=ev=>{ev.preventDefault();ev.stopPropagation();reviewPainCandidates()};
   const reviewRiskCandidatesBtn=document.getElementById('reviewRiskCandidates');if(reviewRiskCandidatesBtn)reviewRiskCandidatesBtn.onclick=ev=>{ev.preventDefault();ev.stopPropagation();reviewRiskCandidates()};
