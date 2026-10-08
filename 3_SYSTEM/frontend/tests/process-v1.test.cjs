@@ -405,3 +405,20 @@ test('DF020 recommendation opens the existing decision-step popup as a suggestio
   const fn=code.slice(code.indexOf('function asisVariantCandidates'),code.indexOf('function asisMapPage'));
   assert.doesNotMatch(fn,/processSteps\.push/);
 });
+
+
+test('contextual catalog keeps extra options hidden and places Mostrar más inside the dropdown',()=>{
+  const oldFieldOptions=ctx.fieldOptions;
+  ctx.fieldOptions=set=>set==='OS_ACTOR_ROLE'
+    ?[{value:'ADMIN',label:'Administración'},{value:'FINANCE',label:'Finanzas'},{value:'IT',label:'IT'},{value:'OTHER',label:'Otro'}]
+    :[];
+  try{
+    const html=ctx.datalistControl('step_actor','OS_ACTOR_ROLE','','Rol',['ADMIN','FINANCE']);
+    const detailsStart=html.indexOf('<details class="aunea-select"');
+    const detailsEnd=html.indexOf('</details>',detailsStart);
+    const more=html.indexOf('data-show-all-context="step_actor"');
+    assert.ok(more>detailsStart&&more<detailsEnd,'Mostrar más must live inside the opened dropdown');
+    assert.match(html,/style="display:none" data-context-catalog-extra="step_actor"[^>]*data-value="IT"/);
+    assert.doesNotMatch(html,/<\/details><\/div><button[^>]*data-show-all-context/,'no external show-more button remains');
+  }finally{ctx.fieldOptions=oldFieldOptions}
+});

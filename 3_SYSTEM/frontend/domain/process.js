@@ -124,8 +124,15 @@ function datalistControl(id,setId,value,placeholder,preferredValues=[]){
   const preferred=new Set(normalizeArray(preferredValues).map(String)),useContext=preferred.size>0,current=String(selectedValue??'');
   const visible=all.filter(o=>!useContext||preferred.has(String(o.value))||String(o.value)===current||String(o.value)===String(otherValue)),hidden=useContext?all.filter(o=>!visible.includes(o)):[];
   let dropdown=auneaDropdownControl(id,[...visible,...hidden],selectedValue,placeholder,`data-model-set="${attr(setId||'')}" data-other-value="${attr(otherValue)}" data-catalog-reference="${attr(id)}"`);
-  hidden.forEach(o=>{const needle=`data-aunea-select-option="${attr(id)}" data-value="${attr(o.value)}"`;dropdown=dropdown.replace(needle,`hidden data-context-catalog-extra="${attr(id)}" ${needle}`)});
-  return `<div class="catalog-reference-control contextual-catalog-control">${dropdown}${hidden.length?`<button type="button" class="btn btn-small btn-outline contextual-show-all" data-show-all-context="${attr(id)}">Mostrar todos</button>`:''}<div class="detail-wrap" data-catalog-other-wrap="${id}"${isOther?'':' style="display:none"'}><input id="${id}_other" value="${attr(isCustom?value:'')}" placeholder="Especifica el valor"></div></div>`;
+  hidden.forEach(o=>{
+    const needle=`data-aunea-select-option="${attr(id)}" data-value="${attr(o.value)}"`;
+    dropdown=dropdown.replace(needle,`style="display:none" data-context-catalog-extra="${attr(id)}" ${needle}`);
+  });
+  if(hidden.length){
+    const more=`<button type="button" class="aunea-select-show-more" data-show-all-context="${attr(id)}">Mostrar más</button>`;
+    dropdown=dropdown.replace('</div></details></div>',more+'</div></details></div>');
+  }
+  return `<div class="catalog-reference-control contextual-catalog-control">${dropdown}<div class="detail-wrap" data-catalog-other-wrap="${id}"${isOther?'':' style="display:none"'}><input id="${id}_other" value="${attr(isCustom?value:'')}" placeholder="Especifica el valor"></div></div>`;
 }
 function resolveCatalogInput(el){if(!el)return '';const opts=fieldOptions(el.dataset.modelSet),raw=String(el.value||''),otherValue=String(el.dataset.otherValue||'__OTHER__');if(raw===otherValue)return document.getElementById(`${el.id}_other`)?.value.trim()||raw;const m=opts.find(o=>String(o.value)===raw);return m?.value||raw}
 function bindProcessDropdownDelegation(){
@@ -133,7 +140,13 @@ function bindProcessDropdownDelegation(){
   document.__auneaProcessDropdownBound=true;
   document.addEventListener('click',ev=>{
     const expand=ev.target.closest?.('[data-show-all-context]');
-    if(expand){ev.preventDefault();ev.stopPropagation();const key=expand.dataset.showAllContext;document.querySelectorAll(`[data-context-catalog-extra="${key}"],[data-context-choice-extra="${key}"]`).forEach(x=>x.hidden=false);expand.hidden=true;return}
+    if(expand){
+      ev.preventDefault();ev.stopPropagation();
+      const key=expand.dataset.showAllContext,box=expand.closest('details.aunea-select');
+      if(box)box.dataset.contextExpanded='1';
+      document.querySelectorAll(`[data-context-catalog-extra="${key}"],[data-context-choice-extra="${key}"]`).forEach(x=>{x.hidden=false;x.style.display=''});
+      expand.hidden=true;return;
+    }
     const chip=ev.target.closest?.('[data-process-chip]');
     if(chip){
       ev.preventDefault();ev.stopPropagation();

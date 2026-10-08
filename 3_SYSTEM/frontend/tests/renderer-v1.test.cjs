@@ -25,6 +25,14 @@ test('all canonical single-select controls share searchable AUNEA Select instead
   assert.match(compound,/data-aunea-select-search=/,'compound dropdowns inherit the same filter');
   assert.doesNotMatch(compound,/<select/);
 });
+
+test('AUNEA Select search respects contextual options until Mostrar más expands them',()=>{
+  const source=fs.readFileSync(path.join(root,'ui/renderer.js'),'utf8');
+  assert.match(source,/hasAttribute\('data-context-catalog-extra'\)/);
+  assert.match(source,/dataset\.contextExpanded!=='1'/);
+  assert.match(source,/contextHidden\?'none'/);
+});
+
 test('AUNEA Select search is enabled by default and keeps one shared filtering contract',()=>{
   const source=fs.readFileSync(path.join(root,'ui/renderer.js'),'utf8');
   assert.match(source,/searchable=true/);
