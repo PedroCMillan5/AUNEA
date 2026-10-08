@@ -152,7 +152,7 @@ function setAnswer(fid,value){
     if(closesSession&&e.confirmedAsIs&&typeof invalidateAsIsClosure==='function')invalidateAsIsClosure(e,`detalle de cierre ${parentFid} actualizado`);
     details[fid]=value;e.updatedAt=now();
     if(typeof advanceEngagementTo==='function')advanceEngagementTo(e,'Sesión 1','captura vinculada a paso');
-    invalidateDerivedState(e,`detalle ${fid} actualizado`,parentFid);markDirty(`Detalle ${fid} actualizado`);if(typeof refreshCaptureProgress==='function')refreshCaptureProgress();refreshPendingFieldVisual(parentFid,e);
+    invalidateDerivedState(e,`detalle ${fid} actualizado`,parentFid);markDirty(`Detalle ${fid} actualizado`);if(typeof refreshCaptureProgress==='function')refreshCaptureProgress();if(typeof refreshPendingFieldVisual==='function')refreshPendingFieldVisual(parentFid,e);
     return;
   }
   // A repeated render/change event is not a new capture version and must not reopen PG09.
@@ -172,7 +172,7 @@ function setAnswer(fid,value){
   // Capturing an answer is what starts Sesión 1 — an action, not a screen being open. The helper is a
   // no-op unless the engagement is exactly one step behind, so this never skips or rewrites a state.
   if(typeof advanceEngagementTo==='function')advanceEngagementTo(e,'Sesión 1','primera captura de la sesión');
-  invalidateDerivedState(e,`respuesta ${fid} actualizada`,fid);markDirty(`Respuesta ${fid} actualizada`);if(typeof refreshCaptureProgress==='function')refreshCaptureProgress();refreshPendingFieldVisual(fid,e);
+  invalidateDerivedState(e,`respuesta ${fid} actualizada`,fid);markDirty(`Respuesta ${fid} actualizada`);if(typeof refreshCaptureProgress==='function')refreshCaptureProgress();if(typeof refreshPendingFieldVisual==='function')refreshPendingFieldVisual(fid,e);
 }
 function normalizeArray(v){if(Array.isArray(v))return v;if(v===null||v===undefined||v==='')return [];return [v]}
 
