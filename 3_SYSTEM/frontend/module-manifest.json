@@ -80,7 +80,7 @@
       "block_id": "AUNEA-FE-SESSION-SNAPSHOT-010"
     },
     {
-      "layer": "data",
+      "layer": "domain",
       "path": "data/process-suggestion-rules.js",
       "block_id": "AUNEA-DATA-PROCESS-SUGGESTIONS-010",
       "order": 14
