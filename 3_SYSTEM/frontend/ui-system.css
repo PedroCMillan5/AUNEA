@@ -699,10 +699,6 @@ body:has(.home-screen-marker) .app-shell{height:100vh;min-height:0;overflow:hidd
 .asis-variant-hint{display:flex;align-items:flex-start;gap:12px;padding:10px 12px;margin:0 0 10px;border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:7px;background:#fff}
 .asis-variant-hint b{flex:0 0 auto;font-size:12px}
 .asis-variant-hint span{font-size:12px;color:var(--muted);line-height:1.4}
-.asis-scope-hint{display:flex;align-items:flex-start;gap:12px;padding:10px 12px;margin:0 0 10px;border:1px solid var(--line);border-left:3px solid var(--system-line);border-radius:7px;background:#fff;flex-wrap:wrap}
-.asis-scope-hint b{flex:0 0 auto;font-size:12px}
-.asis-scope-hint span{font-size:12px;color:var(--ink);line-height:1.4}
-.asis-scope-hint small{flex-basis:100%;font-size:11px;color:var(--muted);line-height:1.35}
 body:not(.mode-process-editor) .content [data-process-engagement] .flow-step-tools,
 body:not(.mode-process-editor) .content [data-process-engagement] .process-node-actions,
 body:not(.mode-process-editor) .content [data-process-engagement] .flow-insert{display:none!important}
