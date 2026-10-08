@@ -135,6 +135,29 @@ test('PG02 DF017 Otro reveals detail only when selected',()=>{
   assert.doesNotMatch(shown,/data-detail-wrap="DF017"[^>]*style="display:none"/);
 });
 
+test('S03 backlog shows cases, requires integer capture and uses canonical No se mide state',()=>{
+  const field={Field_ID:'DF027',Control_UI:'NUMBER_WITH_NONE_UNKNOWN'};
+  const html=ctx.renderControl(field,{value:22,mode:''},[],e);
+  assert.match(html,/step="1"/);
+  assert.match(html,/>casos</);
+  assert.match(html,/No se mide/);
+  assert.doesNotMatch(html,/No aplica/);
+});
+
+test('S03 seasonality detail appears only for material seasonality choices',()=>{
+  const field={Field_ID:'DF024',Control_UI:'DROPDOWN_WITH_DETAIL'};
+  const opts=[
+    {value:'NONE',label:'No relevante'},
+    {value:'PREDICTABLE',label:'Picos previsibles'},
+    {value:'UNKNOWN',label:'No se sabe'}
+  ];
+  const none=ctx.renderControl(field,'NONE',opts,e);
+  assert.match(none,/data-seasonality-detail="DF024" style="display:none"/);
+  const peak=ctx.renderControl(field,'PREDICTABLE',opts,e);
+  assert.match(peak,/data-seasonality-detail="DF024"/);
+  assert.doesNotMatch(peak,/data-seasonality-detail="DF024" style="display:none"/);
+});
+
 test('PG02 DF020 Otra reveals detail only when selected',()=>{
   e.answerDetails={};
   const opts=[{value:'SERVICE',label:'Servicio / producto'},{value:'OTHER',label:'Otra'}];
