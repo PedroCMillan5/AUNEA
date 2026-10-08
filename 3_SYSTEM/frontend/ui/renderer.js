@@ -312,7 +312,6 @@ function s08PriorContext(fid,e,currentVal,items){
   const recommendation=s08Recommendation(fid,contextValues,currentValues);
   return '<div class="reuse-context s08-prior-context"><div>'
     +'<strong>Contexto previo</strong><small>'+(contextLabels.length?contextLabels.map(esc).join(' · '):'Sin restricciones previas registradas')+'</small>'
-    +'<strong class="s08-context-subtitle">Opciones marcadas</strong><small>'+(currentLabels.length?currentLabels.map(esc).join(' · '):'Ninguna todavía')+'</small>'
     +'<strong class="s08-context-subtitle">Recomendación</strong><small>'+esc(recommendation)+'</small>'
     +'</div></div>';
 }
