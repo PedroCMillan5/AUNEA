@@ -99,14 +99,16 @@ function segmented(fid,opts,val,attrName='data-segment'){
 }
 function numberParts(val){return (val&&typeof val==='object')?val:{value:val??'',unit:'',period:'',mode:''}}
 function numberCompound(f,val){
-  const c=String(f.Control_UI||'').toUpperCase(),p=numberParts(val),fid=f.Field_ID;
+  const c=String(f.Control_UI||'').toUpperCase(),p=numberParts(val),fid=f.Field_ID,isBacklog=fid==='DF027';
   let units=[];
   if(c.includes('TIME_UNIT'))units=[['min','min'],['h','h'],['day','días'],['week','semanas']];
   else if(c.includes('EUR'))units=[['EUR','€']];
   else if(c.includes('PERCENT'))units=[['percent','%'],['count','casos']];
   else if(c.includes('UNIT'))units=[['case','casos'],['item','elementos'],['request','solicitudes'],['person','personas']];
   const periodNeeded=c.includes('PERIOD')||c.includes('COUNT');
-  const special=[];if(c.includes('UNKNOWN'))special.push(['UNKNOWN','No disponible']);if(c.includes('NONE'))special.push(['NONE','No aplica']);if(c.includes('ZERO'))special.push(['ZERO','0']);
+  const special=[];
+  if(isBacklog)special.push(['UNKNOWN','No se mide']);
+  else{if(c.includes('UNKNOWN'))special.push(['UNKNOWN','No disponible']);if(c.includes('NONE'))special.push(['NONE','No aplica']);if(c.includes('ZERO'))special.push(['ZERO','0']);}
   const unitOpts=units.map(([value,label])=>({value,label}));
   const periodOpts=[{value:'day',label:'por día'},{value:'week',label:'por semana'},{value:'month',label:'por mes'},{value:'year',label:'por año'}];
   const modeOpts=[{value:'',label:'Dato disponible'},...special.map(([value,label])=>({value,label}))];
@@ -114,7 +116,8 @@ function numberCompound(f,val){
   const unitExtra=`data-number-unit="${fid}"${percentOrCount?` data-percent-count-unit="${fid}"`:''}`;
   const periodControl=periodNeeded?auneaSelectControl(`${fid}__period`,periodOpts,p.period,{extra:`data-number-period="${fid}"`,placeholder:'Periodo…'}):'';
   const periodHtml=percentOrCount?`<div class="number-count-period" data-count-period-wrap="${fid}"${p.unit==='count'?'':' hidden'}>${periodControl}</div>`:periodControl;
-  return `<div class="compound-control${percentOrCount?' percent-count-control':''}"><input type="number" step="any" min="0" data-number-value="${fid}" value="${attr(p.value)}" placeholder="Valor">${units.length?auneaSelectControl(`${fid}__unit`,unitOpts,p.unit,{extra:unitExtra,placeholder:'Unidad…'}):''}${periodHtml}${special.length?auneaSelectControl(`${fid}__mode`,modeOpts,p.mode,{extra:`data-number-mode="${fid}"`,placeholder:'Dato disponible'}):''}</div>`;
+  const fixedUnit=isBacklog?'<span class="unit-label">casos</span>':'';
+  return `<div class="compound-control${percentOrCount?' percent-count-control':''}"><input type="number" step="${isBacklog?'1':'any'}" min="0" data-number-value="${fid}" value="${attr(p.value)}" placeholder="Valor">${fixedUnit}${units.length?auneaSelectControl(`${fid}__unit`,unitOpts,p.unit,{extra:unitExtra,placeholder:'Unidad…'}):''}${periodHtml}${special.length?auneaSelectControl(`${fid}__mode`,modeOpts,p.mode,{extra:`data-number-mode="${fid}"`,placeholder:'Dato disponible'}):''}</div>`;
 }
 // Excludes contacts marked 'Perdido' from reference pickers (DF007/DF016), reusing the same criterion
 // as the CRM's own "ocultar perdidos" filter — not a new archived flag, just consistent status reuse.
@@ -300,7 +303,14 @@ function renderControl(f,val,opts,e){
   }
   if(c==='SEARCHABLE_DROPDOWN')return searchableSelect(f,val,opts);
   if(c==='DROPDOWN')return canonicalSelect(fid,opts,val);
-  if(c==='DROPDOWN_WITH_DETAIL')return selectWithConditionalDetail(fid,opts,val,'Detalle si aplica');
+  if(c==='DROPDOWN_WITH_DETAIL'){
+    if(fid==='DF024'){
+      const material=['PREDICTABLE','IRREGULAR','STRONG'].includes(String(val||''));
+      return canonicalSelect(fid,opts,val,`data-seasonality-select="${fid}"`)
+        +`<div class="detail-wrap" data-seasonality-detail="${fid}"${material?'':' style="display:none"'}>${detailInput(fid,'Periodo / causa si aplica')}</div>`;
+    }
+    return selectWithConditionalDetail(fid,opts,val,'Detalle si aplica');
+  }
   if(c==='DROPDOWN_WITH_OWNER_DATE')return nextStepWithOwnerDate(f,opts,e);
   if(c==='DROPDOWN_WITH_STEP_LINK')return canonicalSelect(fid,opts,val)+stepSingle(`${fid}__step`,e,answerDetails(e)[`${fid}__step`]||'');
   if(c==='COMBOBOX_WITH_DETAIL')return selectWithConditionalDetail(fid,opts,val,'Detalle / nombre concreto');
@@ -404,6 +414,15 @@ if(typeof document!=='undefined'&&typeof document.addEventListener==='function'&
     wrap.hidden=!el.checked;
     wrap.style.display=el.checked?'':'none';
     if(!el.checked)setAnswerDetail(fid,'');
+  });
+  document.addEventListener('change',ev=>{
+    const el=ev.target.closest?.('[data-seasonality-select]');
+    if(!el)return;
+    const fid=el.dataset.seasonalitySelect,wrap=document.querySelector(`[data-seasonality-detail="${fid}"]`);
+    if(!wrap)return;
+    const material=['PREDICTABLE','IRREGULAR','STRONG'].includes(String(el.value||''));
+    wrap.hidden=!material;wrap.style.display=material?'':'none';
+    if(!material)setAnswerDetail(fid,'');
   });
   document.addEventListener('change',ev=>{
     const el=ev.target.closest?.('[data-conditional-other-select]');
