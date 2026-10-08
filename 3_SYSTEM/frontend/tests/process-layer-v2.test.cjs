@@ -64,6 +64,20 @@ test('ALL blocks 100 percent; percentage and conditional modes are editable only
   assert.match(help.textContent,/bloqueado/);
 });
 
+test('S03 baseline is projected into consultant and shared AS-IS views',()=>{
+  const {ctx,e}=setup();
+  assert.match(process,/function asisDemandBaseline\(e\)/);
+  assert.match(process,/Volumen habitual/);
+  assert.match(process,/Demanda \/ estacionalidad/);
+  assert.match(process,/Backlog actual/);
+  assert.match(process,/Error \/ retrabajo global/);
+  assert.match(process,/Clases que cambian tratamiento/);
+  assert.match(process,/Tendencia 12–18 meses/);
+  assert.match(process,/\+asisDemandBaseline\(e\)/);
+  const occurrences=(process.match(/asisDemandBaseline\(e\)/g)||[]).length;
+  assert.ok(occurrences>=3,'helper definition plus consultant map and shared editor must all reference S03 baseline');
+});
+
 test('scope roles and material variants remain visible as inherited context in the AS-IS map',()=>{
   const {ctx,e}=setup();
   e.answers.DF017=['CUSTOMER','OPERATIONS','MANAGER'];
