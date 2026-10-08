@@ -187,16 +187,34 @@ test('S08 yellow context box renders real prior and current selections, never a 
   e.answers.DF010=undefined;
 });
 
-test('S08 canonical controls expose references, preference classification and reused S01 context',()=>{
+test('S08 keeps one simple pattern after DF086: options plus yellow context, without auxiliary subcontrols',()=>{
   const source=fs.readFileSync(path.join(root,'ui/renderer.js'),'utf8');
   assert.match(source,/function s08PriorContext\(fid,e,currentVal,items\)/);
-  assert.match(source,/Contexto previo/);
-  assert.match(source,/function s08ReferenceControl\(fid,items,val,e\)/);
-  assert.match(source,/Referencia el elemento existente/);
-  assert.match(source,/\['REQUIRED','Obligatorio'\],\['PREFERRED','Preferido'\],\['INDIFFERENT','Indiferente'\]/);
-  assert.match(source,/DF090[^\n]*\['REQUIRED','Obligatorio'\],\['PREFERRED','Preferido'\]/);
-  assert.match(source,/detalle si cambia el plan/);
-  assert.match(source,/la referencia a pasos\/acciones se completa después de construir el mapa AS-IS/);
+  assert.match(source,/\['DF087','DF088','DF089','DF090','DF091'\]\.includes\(fid\)/);
+  assert.doesNotMatch(source,/function s08ReferenceControl/);
+  assert.doesNotMatch(source,/function s08PreferenceControl/);
+  assert.doesNotMatch(source,/function s08ChangeDetailControl/);
+  assert.doesNotMatch(source,/data-s08-reference/);
+  assert.doesNotMatch(source,/data-s08-preference/);
+  assert.doesNotMatch(source,/data-s08-change-detail/);
+
+  e.answers.DF010=['SECURITY'];
+  for(const fid of ['DF087','DF088','DF089','DF090','DF091']){
+    const html=ctx.renderControl(
+      {Field_ID:fid,Control_UI:'MULTISELECT_WITH_DETAIL'},
+      ['A'],
+      [{value:'A',label:'Opción A'},{value:'OTHER',label:'Otro'}],
+      e
+    );
+    assert.match(html,/Opción A/);
+    assert.match(html,/Contexto previo/);
+    assert.match(html,/Recomendación/);
+    assert.doesNotMatch(html,/linked-field-block/);
+    assert.doesNotMatch(html,/Clasificación de cada restricción/);
+    assert.doesNotMatch(html,/referencia concreta/);
+    assert.doesNotMatch(html,/detalle si cambia el plan/);
+  }
+  e.answers.DF010=undefined;
 });
 
 test('PG02 DF020 Otra reveals detail only when selected',()=>{
