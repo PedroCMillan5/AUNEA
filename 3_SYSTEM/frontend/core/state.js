@@ -381,7 +381,12 @@ function bindCommon(){
 function bindForms(){
   document.querySelectorAll('[data-answer]').forEach(el=>{const event=el.type==='text'||el.tagName==='TEXTAREA'?'input':'change';el.addEventListener(event,()=>setAnswer(el.dataset.answer,el.value))});
   document.querySelectorAll('[data-multi]').forEach(el=>el.addEventListener('change',()=>{const fid=el.dataset.multi;const vals=[...document.querySelectorAll(`[data-multi="${fid}"]:checked`)].map(x=>x.value);setAnswer(fid,vals)}));
-  document.querySelectorAll('[data-segment]').forEach(b=>b.onclick=()=>{setAnswer(b.dataset.segment,b.dataset.value);render()});
+  document.querySelectorAll('[data-segment]').forEach(b=>b.onclick=()=>{
+    const x=typeof window!=='undefined'?window.scrollX:0,y=typeof window!=='undefined'?window.scrollY:0;
+    setAnswer(b.dataset.segment,b.dataset.value);render();
+    const restore=()=>{if(typeof window!=='undefined'&&typeof window.scrollTo==='function')window.scrollTo(x,y)};
+    if(typeof requestAnimationFrame==='function')requestAnimationFrame(restore);else restore();
+  });
   document.querySelectorAll('[data-remove-company]').forEach(b=>b.onclick=()=>removeCompany(b.dataset.removeCompany));
   document.querySelectorAll('[data-contact-study]').forEach(b=>b.onclick=()=>createStudyFromContact(b.dataset.contactStudy));
   document.querySelectorAll('[data-crm-tab]').forEach(b=>b.onclick=()=>{state.crmTab=b.dataset.crmTab;render()});
