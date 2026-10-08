@@ -1,3 +1,6 @@
+// [AUNEA-DATA-PROCESS-SUGGESTIONS-010] START — Runtime registration for the governed rule projection
+// SOURCE FILE: data/process-suggestion-rules.js; canonical source remains Drive document v1.0.
+// [AUNEA-DATA-PROCESS-SUGGESTIONS-010] END
 // [AUNEA-FE-PROCESS-SUGGESTION-ENGINE-010] START — Governed deterministic assistance for AS-IS steps
 // SOURCE: AUNEA_PROCESS_SUGGESTION_RULES_CANONICAL v1.0; DEC-009/031/032; Diagnostic Master v1.2.
 // PURPOSE: reuse, derive, infer and flag coherence without auto-confirming client reality.
