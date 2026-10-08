@@ -23,7 +23,7 @@ function setup(){
     bindForms:()=>{},normalizeArray:v=>Array.isArray(v)?v:v==null||v===''?[]:[v],
     activeSteps:x=>x.processSteps.filter(s=>s.status!=='SUPERSEDED'),
     activeFrictions:x=>x.frictions.filter(f=>f.status!=='SUPERSEDED'),
-    currentEng:()=>e,fieldOptions:()=>[],labelFrom:(set,v)=>v||'—',
+    currentEng:()=>e,fieldOptions:()=>[],labelFrom:(set,v)=>v||'—',formatContextValue:(f,v)=>Array.isArray(v)?v.join(', '):String(v??''),
     section:(title,description,body)=>body,attr:v=>String(v??'').replaceAll('"','&quot;'),esc:v=>String(v??''),
     num:v=>Number(v||0),pageTop:()=>'',requiredMark:()=>'*',
     auneaSelectControl:(id,opts,val)=>'<input id="'+id+'" value="'+(val||'')+'">',
