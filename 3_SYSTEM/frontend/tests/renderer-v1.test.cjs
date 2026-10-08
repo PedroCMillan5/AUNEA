@@ -158,6 +158,17 @@ test('S03 seasonality detail appears only for material seasonality choices',()=>
   assert.doesNotMatch(peak,/data-seasonality-detail="DF024" style="display:none"/);
 });
 
+test('S08 inherited context explains what prior constraints mean for each question',()=>{
+  const source=fs.readFileSync(path.join(root,'ui/renderer.js'),'utf8');
+  assert.match(source,/function s08PriorContext\(fid,e\)/);
+  assert.match(source,/Contexto previo relevante/);
+  assert.match(source,/Herramientas \/ plataforma ya fue declarada y debe concretarse aquí/);
+  assert.match(source,/no seleccionan una tecnología ni su nivel de obligatoriedad automáticamente/);
+  assert.match(source,/Hay una restricción previa relacionada con seguridad\/datos y debe concretarse aquí/);
+  assert.match(source,/Adopción\/cambio o capacidad ya fue declarada y debe concretarse aquí/);
+  assert.doesNotMatch(source,/Restricciones ya declaradas en Contexto/);
+});
+
 test('S08 canonical controls expose references, preference classification and reused S01 context',()=>{
   const source=fs.readFileSync(path.join(root,'ui/renderer.js'),'utf8');
   assert.match(source,/function s08PriorContext\(e\)/);
