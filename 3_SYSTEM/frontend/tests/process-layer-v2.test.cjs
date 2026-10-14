@@ -262,7 +262,7 @@ test('friction popup captures approved time attribution without changing existin
   assert.ok(process.includes("BREAKDOWN"));
   assert.ok(process.includes("ADDITIONAL"));
   assert.ok(process.includes("f.time_attribution={mode:"));
-  assert.ok(process.includes("f.affected_steps.includes(f.time_attribution.step_id)"));
+  assert.ok(process.includes("processRefIncludes(f.affected_steps,f.time_attribution.step_id)"));
   assert.ok(process.includes("Sólo Adicional podrá incrementar"));
 });
 
