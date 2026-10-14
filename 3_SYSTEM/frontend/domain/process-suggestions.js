@@ -2,11 +2,11 @@
 // SOURCE FILE: data/process-suggestion-rules.js; canonical source remains Drive document v1.0.
 // [AUNEA-DATA-PROCESS-SUGGESTIONS-010] END
 // [AUNEA-FE-PROCESS-SUGGESTION-ENGINE-010] START — Governed deterministic assistance for AS-IS steps
-// SOURCE: AUNEA_PROCESS_SUGGESTION_RULES_CANONICAL v1.0; DEC-009/031/032; Diagnostic Master v1.2.
+// SOURCE: AUNEA_PROCESS_SUGGESTION_RULES_CANONICAL v1.1; DEC-009/031/032; Diagnostic Master v1.2.
 // PURPOSE: reuse, derive, infer and flag coherence without auto-confirming client reality.
 // CHANGE_RISK: HIGH.
 
-function processSuggestionTypeLabel(type){return ({REUSE:'Reutilizado',DERIVED:'Derivado',INFERRED:'Inferido',COHERENCE:'Revisar coherencia'})[type]||'Sugerencia'}
+function processSuggestionTypeLabel(type){return ({REUSE:'Reutilizado',DERIVED:'Derivado',INFERRED:'Inferido',COHERENCE:'Revisar coherencia',CONTEXT:'Contexto'})[type]||'Sugerencia'}
 function processSuggestionIdList(values){return [...new Set(normalizeArray(values).filter(Boolean).map(String))]}
 function processSuggestionLabels(setId,values){return processSuggestionIdList(values).map(v=>labelFrom(setId,v)||v)}
 function processSuggestionSyntheticContext(e){const marker=String(e?.answers?.DF100||'');return !!(e?._uat||e?.uat||/\bUAT\b|sint[eé]tic/i.test(marker))}
@@ -19,9 +19,9 @@ function processSuggestionAdd(map,field,suggestion){(map[field]||(map[field]=[])
 function processStepSuggestions(e,s,{existing=null,linkFromStepId=null}={}){
   const out={},first=processSuggestionFirstStep(e,s,existing),prev=processSuggestionPreviousStep(e,s,existing,linkFromStepId);
   const actorValues=processContextValues(e,'OS_ACTOR_ROLE',{linkFromStepId});
-  if(actorValues.length)processSuggestionAdd(out,'actor',{ruleId:'PSR-001',type:'REUSE',values:actorValues,setId:'OS_ACTOR_ROLE',text:actorValues.length===1?'Este rol ya está identificado en el proceso.':'Estos roles ya están identificados en el proceso; elige el que realiza este paso.',apply:actorValues.length===1});
+  if(actorValues.length)processSuggestionAdd(out,'actor',{ruleId:'PSR-001',type:'REUSE',values:actorValues,setId:'OS_ACTOR_ROLE',singleChoice:true,text:actorValues.length===1?'Este rol ya está identificado en el proceso.':'Estos roles ya están identificados en el proceso; elige explícitamente el que realiza este paso.',apply:true});
   const toolValues=processContextValues(e,'OS_TOOL_CATEGORY',{linkFromStepId});
-  if(toolValues.length)processSuggestionAdd(out,'tool',{ruleId:'PSR-002',type:'REUSE',values:toolValues,setId:'OS_TOOL_CATEGORY',text:toolValues.length===1?'Esta herramienta ya está utilizada en el proceso.':'Herramientas ya utilizadas en el proceso.',apply:toolValues.length===1});
+  if(toolValues.length)processSuggestionAdd(out,'tool',{ruleId:'PSR-002',type:'REUSE',values:toolValues,setId:'OS_TOOL_CATEGORY',singleChoice:true,text:toolValues.length===1?'Esta herramienta ya está utilizada en el proceso.':'Herramientas ya utilizadas en el proceso. Son candidatos reutilizables, no una recomendación única.',apply:true});
   const prevOutputs=processSuggestionIdList(prev?.outputs);
   if(prevOutputs.length)processSuggestionAdd(out,'inputs',{ruleId:'PSR-003',type:'DERIVED',values:prevOutputs,setId:'OS_ARTIFACT_TYPE',text:'El paso anterior produce estos artefactos; pueden reutilizarse como entradas de este paso.',apply:true});
   else if(first){const artifacts=processSuggestionStartArtifacts(e);if(artifacts.length)processSuggestionAdd(out,'inputs',{ruleId:'PSR-004',type:'DERIVED',values:artifacts,setId:'OS_ARTIFACT_TYPE',text:'Se han identificado explícitamente en el inicio del proceso.',apply:true})}
@@ -44,6 +44,16 @@ function processStepSuggestions(e,s,{existing=null,linkFromStepId=null}={}){
     const currentMode=s?.applies_to?.mode||s?.applies_to||'';
     if(!currentMode||currentMode==='ALL')processSuggestionAdd(out,'applies_to',{ruleId:'PSR-008',type:'DERIVED',value:{mode:'ALL'},display:'Todos los casos',text:'El paso está en el flujo principal y no depende de una condición previa.',apply:true});
   }
+  const volumeKnown=e?.answers?.DF021!==undefined&&e?.answers?.DF021!==null&&String(e.answers.DF021)!==''&&e?.answers?.DF022;
+  if(volumeKnown)processSuggestionAdd(out,'active_time',{ruleId:'PSR-015',type:'CONTEXT',text:'El proceso tiene volumen habitual informado. Este tiempo activo se utilizará junto con ese volumen para anualizar carga y esfuerzo; AUNEA no propone minutos sin una fuente.',apply:false});
+  if(e?.answers?.DF025||e?.answers?.DF026)processSuggestionAdd(out,'wait_time',{ruleId:'PSR-016',type:'CONTEXT',text:'Existe contexto global de SLA o tiempo end-to-end. La espera de este paso contribuirá al tiempo de ciclo, pero se mantiene separada del trabajo activo y no se monetiza como trabajo.',apply:false});
+  const stepHasFailure=Number(s?.rework_time||0)>0||Number(s?.error_rate?.value??s?.error_rate??0)>0;
+  const globalFailure=e?.answers?.DF028;
+  if(stepHasFailure||globalFailure){
+    const failureText=globalFailure?'Existe una proporción global de error/retrabajo para el proceso. Úsala sólo como contraste; no se copia como tasa específica de este paso. Tiempo de retrabajo y frecuencia describen el mismo mecanismo desde dimensiones distintas.':'Tiempo de retrabajo y frecuencia describen el mismo mecanismo de fallo desde dimensiones distintas: tiempo de corrección y frecuencia.';
+    processSuggestionAdd(out,'rework_time',{ruleId:'PSR-017',type:'CONTEXT',text:failureText,apply:false});
+    processSuggestionAdd(out,'error_rate',{ruleId:'PSR-017',type:'CONTEXT',text:failureText,apply:false});
+  }
   if(String(s?.automation_state||'')==='AUTOMATED'&&normalizeArray(s?.manual_actions).length)processSuggestionAdd(out,'automation_state',{ruleId:'PSR-011',type:'COHERENCE',text:'Has indicado Automatizado, pero también existen acciones manuales. Revisa ambos datos.',apply:false});
   if(s?.step_type&&!['ST06','ST07','ST09'].includes(String(s.step_type))&&!normalizeArray(s?.outputs).length)processSuggestionAdd(out,'outputs',{ruleId:'PSR-012',type:'COHERENCE',text:'Este tipo de paso suele generar o actualizar algo. Confirma el output o valida que realmente no exista.',apply:false});
   return out;
@@ -51,23 +61,67 @@ function processStepSuggestions(e,s,{existing=null,linkFromStepId=null}={}){
 function processSuggestionValueText(s){if(s.display)return s.display;const labels=s.setId?processSuggestionLabels(s.setId,s.values):processSuggestionIdList(s.values);return labels.join(' · ')}
 function processSuggestionHtml(field,suggestions){
   const rows=normalizeArray(suggestions).filter(Boolean);if(!rows.length)return '';
-  return rows.map((s,i)=>{const value=processSuggestionValueText(s),type=processSuggestionTypeLabel(s.type),apply=s.apply&&value?`<button type="button" class="btn btn-small step-suggestion-apply" data-step-suggestion-field="${attr(field)}" data-step-suggestion-index="${i}">Aplicar</button>`:'';
-    return `<div class="step-suggestion step-suggestion-${String(s.type||'').toLowerCase()}" data-step-suggestion-rule="${attr(s.ruleId)}"><div><strong>${esc(type)}</strong><span>${esc(s.text||'')}</span>${value?`<b>${esc(value)}</b>`:''}</div>${apply}</div>`;
+  return rows.map((s,i)=>{
+    const value=processSuggestionValueText(s),type=processSuggestionTypeLabel(s.type),values=processSuggestionIdList(s.values);
+    let actions='';
+    if(s.apply&&value){
+      if(s.singleChoice&&values.length>1){
+        actions=`<div class="step-suggestion-candidates">${values.map(v=>`<button type="button" class="btn btn-small step-suggestion-apply" data-step-suggestion-field="${attr(field)}" data-step-suggestion-index="${i}" data-step-suggestion-choice="${attr(v)}">Aplicar ${esc(s.setId?labelFrom(s.setId,v)||v:v)}</button>`).join('')}<button type="button" class="btn btn-small step-suggestion-undo" data-step-suggestion-field="${attr(field)}" data-step-suggestion-index="${i}" hidden>Deshacer</button></div>`;
+      }else{
+        actions=`<button type="button" class="btn btn-small step-suggestion-apply" data-step-suggestion-field="${attr(field)}" data-step-suggestion-index="${i}">Aplicar</button><button type="button" class="btn btn-small step-suggestion-undo" data-step-suggestion-field="${attr(field)}" data-step-suggestion-index="${i}" hidden>Deshacer</button>`;
+      }
+    }
+    return `<div class="step-suggestion step-suggestion-${String(s.type||'').toLowerCase()}" data-step-suggestion-rule="${attr(s.ruleId)}" data-step-suggestion-row-field="${attr(field)}" data-step-suggestion-row-index="${i}"><div><strong>${esc(type)}</strong><span>${esc(s.text||'')}</span>${value?`<b>${esc(value)}</b>`:''}<em class="step-suggestion-status" data-step-suggestion-status></em></div>${actions}</div>`;
   }).join('');
 }
 function processSuggestionTrace(s,suggestion,accepted){s._suggestion_trace=Array.isArray(s._suggestion_trace)?s._suggestion_trace:[];const entry={rule_id:suggestion.ruleId,type:suggestion.type,target_field:suggestion.targetField||'',proposed_value:suggestion.values||suggestion.value||null,accepted:!!accepted,timestamp:now()};const i=s._suggestion_trace.findIndex(x=>x.rule_id===entry.rule_id&&x.target_field===entry.target_field);if(i>=0)s._suggestion_trace[i]=entry;else s._suggestion_trace.push(entry)}
 function processSuggestionSetSingle(id,value){const input=document.getElementById(id);if(!input)return false;input.value=value;const box=document.querySelector?.(`details[data-aunea-select="${id}"]`);const option=box?.querySelector?.(`[data-aunea-select-option="${id}"][data-value="${value}"]`);if(box&&option){box.querySelectorAll(`[data-aunea-select-option="${id}"]`).forEach(x=>x.classList.toggle('selected',x===option));const label=box.querySelector('summary span');if(label)label.textContent=option.dataset.label||option.textContent||value}input.dispatchEvent?.(new Event('change',{bubbles:true}));return true}
-function processSuggestionSetMulti(id,values){const wanted=new Set(processSuggestionIdList(values));let changed=false;document.querySelectorAll?.(`[data-v1-multi="${id}"]`).forEach(x=>{if(wanted.has(String(x.value))){x.checked=true;changed=true;x.dispatchEvent?.(new Event('change',{bubbles:true}))}});return changed}
-function applyProcessStepSuggestion(field,suggestion,s){
+function processSuggestionSetMulti(id,values,{replace=false}={}){const wanted=new Set(processSuggestionIdList(values));let changed=false;document.querySelectorAll?.(`[data-v1-multi="${id}"]`).forEach(x=>{const next=replace?wanted.has(String(x.value)):(x.checked||wanted.has(String(x.value)));if(x.checked!==next){x.checked=next;changed=true;x.dispatchEvent?.(new Event('change',{bubbles:true}))}});return changed||wanted.size===0}
+function processSuggestionFieldControl(field){return ({actor:'step_actor',tool:'step_tool',inputs:'step_inputs',decision_criteria:'step_decisions',manual_actions:'step_manual',communication_channels:'step_channels',evidence:'step_evidence'})[field]||''}
+function processSuggestionSnapshot(field){
+  if(field==='applies_to')return {kind:'applies',mode:document.getElementById('step_applies_mode')?.value||'ALL',value:document.getElementById('step_applies_value')?.value||''};
+  const id=processSuggestionFieldControl(field);if(!id)return null;
+  if(['actor','tool'].includes(field)){const input=document.getElementById(id);return {kind:'single',id,value:input?.value||'',other:document.getElementById(id+'_other')?.value||''}}
+  return {kind:'multi',id,values:[...document.querySelectorAll?.(`[data-v1-multi="${id}"]:checked`)||[]].map(x=>x.value)};
+}
+function processSuggestionRestore(field,snapshot){
+  if(!snapshot)return false;
+  if(snapshot.kind==='single'){const ok=processSuggestionSetSingle(snapshot.id,snapshot.value);const other=document.getElementById(snapshot.id+'_other');if(other)other.value=snapshot.other||'';return ok}
+  if(snapshot.kind==='multi')return processSuggestionSetMulti(snapshot.id,snapshot.values,{replace:true});
+  if(snapshot.kind==='applies'){const mode=document.getElementById('step_applies_mode'),detail=document.getElementById('step_applies_value');if(!mode||!detail)return false;mode.value=snapshot.mode;mode.dispatchEvent?.(new Event('change',{bubbles:true}));detail.value=snapshot.value;return true}
+  return false;
+}
+function applyProcessStepSuggestion(field,suggestion,s,choiceValue=''){
   if(!suggestion)return false;let changed=false;suggestion.targetField=field;
-  if(field==='actor')changed=processSuggestionSetSingle('step_actor',suggestion.values?.[0]||'');
-  else if(field==='tool')changed=processSuggestionSetSingle('step_tool',suggestion.values?.[0]||'');
+  const chosen=choiceValue||suggestion.values?.[0]||'';
+  if(field==='actor')changed=processSuggestionSetSingle('step_actor',chosen);
+  else if(field==='tool')changed=processSuggestionSetSingle('step_tool',chosen);
   else if(field==='inputs')changed=processSuggestionSetMulti('step_inputs',suggestion.values);
+  else if(field==='decision_criteria')changed=processSuggestionSetMulti('step_decisions',suggestion.values);
   else if(field==='manual_actions')changed=processSuggestionSetMulti('step_manual',suggestion.values);
   else if(field==='communication_channels')changed=processSuggestionSetMulti('step_channels',suggestion.values);
   else if(field==='evidence')changed=processSuggestionSetMulti('step_evidence',suggestion.values);
   else if(field==='applies_to'){const mode=suggestion.value?.mode||'ALL',input=document.getElementById('step_applies_mode'),detail=document.getElementById('step_applies_value');if(input){input.value=mode;input.dispatchEvent?.(new Event('change',{bubbles:true}));if(detail&&mode==='CONDITION')detail.value=suggestion.value?.condition||'';changed=true}}
-  if(changed){processSuggestionTrace(s,suggestion,true);if(typeof toast==='function')toast('Sugerencia aplicada. Confirma el paso para guardarla.')}return changed;
+  if(changed){processSuggestionTrace(s,{...suggestion,values:choiceValue?[choiceValue]:suggestion.values},true);if(typeof toast==='function')toast('Sugerencia aplicada. Confirma el paso para guardarla.')}return changed;
 }
-function bindProcessStepSuggestions(s,suggestionMap){document.querySelectorAll?.('[data-step-suggestion-field]').forEach(btn=>btn.addEventListener?.('click',()=>{const field=btn.dataset.stepSuggestionField,index=Number(btn.dataset.stepSuggestionIndex||0),suggestion=normalizeArray(suggestionMap[field])[index];applyProcessStepSuggestion(field,suggestion,s)}))}
+function processSuggestionSetRowState(row,state,choiceValue=''){
+  if(!row)return;
+  const status=row.querySelector?.('[data-step-suggestion-status]'),undo=row.querySelector?.('.step-suggestion-undo'),applyButtons=[...row.querySelectorAll?.('.step-suggestion-apply')||[]];
+  if(state==='applied'){if(status)status.textContent=choiceValue?`Aplicado · ${choiceValue}`:'Aplicado';applyButtons.forEach(b=>b.hidden=true);if(undo)undo.hidden=false;row.dataset.suggestionApplied='1'}
+  else{if(status)status.textContent='Deshecho';applyButtons.forEach(b=>b.hidden=false);if(undo)undo.hidden=true;delete row.dataset.suggestionApplied}
+}
+function bindProcessStepSuggestions(s,suggestionMap){
+  document.querySelectorAll?.('[data-step-suggestion-row-field]').forEach(row=>{
+    row.__auneaSuggestionState=null;
+    row.querySelectorAll?.('.step-suggestion-apply').forEach(btn=>btn.addEventListener?.('click',()=>{
+      const field=btn.dataset.stepSuggestionField,index=Number(btn.dataset.stepSuggestionIndex||0),suggestion=normalizeArray(suggestionMap[field])[index],choice=btn.dataset.stepSuggestionChoice||'';
+      const snapshot=processSuggestionSnapshot(field);if(!applyProcessStepSuggestion(field,suggestion,s,choice))return;
+      row.__auneaSuggestionState={snapshot,field,suggestion,choice};processSuggestionSetRowState(row,'applied',choice?(suggestion.setId?labelFrom(suggestion.setId,choice)||choice:choice):'');
+    }));
+    row.querySelector?.('.step-suggestion-undo')?.addEventListener?.('click',()=>{
+      const state=row.__auneaSuggestionState;if(!state)return;
+      if(processSuggestionRestore(state.field,state.snapshot)){processSuggestionTrace(s,{...state.suggestion,targetField:state.field,values:state.choice?[state.choice]:state.suggestion.values},false);processSuggestionSetRowState(row,'undone');row.__auneaSuggestionState=null;if(typeof toast==='function')toast('Sugerencia deshecha.')}
+    });
+  });
+}
 // [AUNEA-FE-PROCESS-SUGGESTION-ENGINE-010] END
