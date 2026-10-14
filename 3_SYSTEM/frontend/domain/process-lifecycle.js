@@ -186,7 +186,7 @@ function preCloseConsistencyReview(e,completion){
   // Detect stale duplicate answers only where the runtime already owns a reusable/derived source.
   // It is a review item, not an automatic overwrite: the consultant corrects the canonical owner.
   if(typeof reusedValue==='function'&&typeof valuePresent==='function'){
-    ['DF017','DF046','DF047','DF049','DF050','DF053','DF066','DF067','DF078','DF079'].forEach(fid=>{
+    ['DF046','DF047','DF049','DF050','DF066','DF067','DF078','DF079'].forEach(fid=>{
       const explicit=e.answers?.[fid],reuse=reusedValue(fid,e);
       if(valuePresent(explicit)&&valuePresent(reuse)&&consistencyValueSignature(explicit)!==consistencyValueSignature(reuse)){
         const field=(schema?.fields||[]).find(f=>f.Field_ID===fid);
