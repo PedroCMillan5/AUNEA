@@ -453,3 +453,11 @@ test('time and performance shows declared end-to-end cycle share without inventi
 test('tool field spans the full popup width',()=>{
   assert.match(code,/<div class="field full"><label>Herramienta \/ sistema<\/label>/);
 });
+
+
+test('decision criteria Other exposes and validates its own short detail',()=>{
+  assert.match(code,/detailId:'step_decisions_other'/);
+  assert.match(code,/decision_criteria_other/);
+  assert.match(code,/selectedOtherMissingDetail\(decisions,s\.decision_criteria,s\._details\.decision_criteria_other\)/);
+  assert.match(code,/placeholder:'Especifica el criterio de decisión'/);
+});
