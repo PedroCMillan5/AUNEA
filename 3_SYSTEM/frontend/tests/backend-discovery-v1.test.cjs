@@ -47,7 +47,7 @@ test('descubre AUNEA en 8010 cuando 8000 pertenece a otro servicio', async () =>
   assert.deepEqual(requested,['http://localhost:8010/health','http://127.0.0.1:8010/health']);
   assert.ok(!requested.some(url=>url.includes(':8000/health')),'must stop probing once AUNEA is found on 8010');
   assert.ok(!requested.some(url=>url.includes(':8020/health')),'must not probe later dead ports after success');
-  assert.ok(writes.length > 0);
+  assert.equal(writes.length,0,'backend health checks must not rewrite the shared diagnostic state');
 });
 
 test('descubre backend reenviado de Codespaces también en 8010', async () => {
