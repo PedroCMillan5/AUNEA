@@ -476,3 +476,9 @@ test('processRefIncludes compares process references by canonical string identit
   assert.equal(ctx.processRefIncludes([6],'6'),true);
   assert.equal(ctx.processRefIncludes(['5'],6),false);
 });
+
+
+test('friction step selectors prefix the visual step number in both affected and time-owner fields',()=>{
+  assert.match(code,/selectedHtml\('fr_steps',activeSteps\(e\)\.map\(\(s,i\)=>\(\{value:s\.id,label:'Paso '\+\(i\+1\)\+' — '\+\(s\.step_name\|\|s\.id\)\}\)\),f\.affected_steps\)/);
+  assert.match(code,/\.\.\.activeSteps\(e\)\.map\(\(s,i\)=>\(\{value:s\.id,label:'Paso '\+\(i\+1\)\+' — '\+\(s\.step_name\|\|s\.id\)\}\)\)/);
+});
