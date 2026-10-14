@@ -208,8 +208,8 @@ test('client layer exposes only the matching per-step add action and linked badg
 
 test('decision gateway and YES card share the main row while NO stays below',()=>{
   assert.match(css,/\.process-graph-yes-branch-cell\{transform:none/);
-  assert.match(css,/\.graph-decision-gateway\{[^}]*top:max\(calc\(50% - 29px\),calc\(72px \+ var\(--decision-details-height,0px\)\)\)/);
-  assert.match(css,/\.graph-decision-copy\{[^}]*top:max\(calc\(50% \+ 43px\),calc\(144px \+ var\(--decision-details-height,0px\)\)\)/);
+  assert.match(css,/\.graph-decision-gateway\{[^}]*top:calc\(50% - 29px\)/);
+  assert.match(css,/\.graph-decision-copy\{[^}]*top:calc\(50% \+ 43px\)/);
   assert.match(process,/if\(Math\.abs\(targetY-centerY\)<4\)appendPath\('M'\+rightX\+' '\+centerY\+'H'\+\(targetX-5\)/);
   assert.match(process,/yesBottom\+34/);
 });
@@ -225,18 +225,22 @@ test('decision NO route exits below the gateway, clears the YES card, and overla
   assert.match(css,/\.graph-decision-inline>\.process-node-actions\{[^}]*top:40px/);
   assert.match(css,/\.graph-decision-inline>\.process-node-links\{[^}]*top:40px[^}]*width:100%/);
   assert.match(css,/\.graph-decision-inline\.has-layer-action>\.process-node-links\{top:78px/);
-  assert.match(css,/\.graph-decision-gateway\{[^}]*top:max\(calc\(50% - 29px\),calc\(72px \+ var\(--decision-details-height,0px\)\)\)/);
-  assert.match(css,/\.graph-decision-copy\{[^}]*top:max\(calc\(50% \+ 43px\),calc\(144px \+ var\(--decision-details-height,0px\)\)\)/);
-  assert.match(css,/\.graph-decision-gateway\{[^}]*top:max\(calc\(50% - 29px\),calc\(72px \+ var\(--decision-details-height,0px\)\)\)/);
+  assert.match(css,/\.graph-decision-gateway\{[^}]*top:calc\(50% - 29px\)/);
+  assert.match(css,/\.graph-decision-copy\{[^}]*top:calc\(50% \+ 43px\)/);
+  assert.match(css,/\.graph-decision-gateway\{[^}]*top:calc\(50% - 29px\)/);
   assert.match(css,/body\.mode-process-editor \.process-graph-cell \.flow-step\{[^}]*max-height:none/);
   assert.doesNotMatch(css,/\.process-node-links \.friction-badge:before/);
 });
 
 
-test('decision-linked badges reserve vertical clearance below controls and above the gateway',()=>{
-  assert.match(process,/decisionDetailsHeight=\(layerAction\?34:0\)\+\(linkCount\?linkCount\*42:0\)/);
-  assert.match(process,/layerAction\?'has-layer-action '/);
-  assert.match(css,/\.graph-decision-inline\.has-layer-action>\.process-node-links\{top:78px/);
+test('decision diagnostics use compact fixed-position chips without moving the gateway',()=>{
+  assert.match(process,/compactBadge=\(kind,shortLabel,fullLabel,editAttr\)/);
+  assert.match(process,/compactBadge\('friction','F'\+n/);
+  assert.match(process,/compactBadge\('risk','R'\+n/);
+  assert.match(process,/compactBadge\('economic','I'\+n/);
+  assert.match(process,/linkCountForStep=s=>processDecisionStep\(s\)\?0:/);
+  assert.match(css,/\.graph-decision-inline>\.process-node-links \.decision-link-chip\{/);
+  assert.match(css,/\.graph-decision-gateway\{[^}]*top:calc\(50% - 29px\)/);
 });
 
 test('client graph stays within the editor viewport and decision routes explain their destination',()=>{
