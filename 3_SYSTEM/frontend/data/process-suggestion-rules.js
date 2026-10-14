@@ -1,5 +1,5 @@
-// [AUNEA-DATA-PROCESS-SUGGESTIONS-010] START — Technical projection of Drive canonical v1.0
-// SOURCE: AUNEA_PROCESS_SUGGESTION_RULES_CANONICAL v1.0, Drive ID 1vBnltfnWSwmZsE6Um3lBnocTKKXcJM4XIGWbKtRHz1A.
+// [AUNEA-DATA-PROCESS-SUGGESTIONS-010] START — Technical projection of Drive canonical v1.1
+// SOURCE: AUNEA_PROCESS_SUGGESTION_RULES_CANONICAL v1.1, Drive ID 1vBnltfnWSwmZsE6Um3lBnocTKKXcJM4XIGWbKtRHz1A.
 // UI/runtime code consumes these governed definitions; it must not invent additional inference rules.
 const PROCESS_SUGGESTION_RULES=Object.freeze([
   {id:'PSR-001',type:'REUSE',target:'actor',source:['DF017','DF016','RT_PROCESS_STEP.Actor'],confidence:'HIGH'},
@@ -15,6 +15,9 @@ const PROCESS_SUGGESTION_RULES=Object.freeze([
   {id:'PSR-011',type:'COHERENCE',target:'automation_state',source:['DF044','DF045'],confidence:'HIGH'},
   {id:'PSR-012',type:'COHERENCE',target:'outputs',source:['DF032','DF036'],confidence:'HIGH'},
   {id:'PSR-013',type:'DERIVED',target:'evidence',source:['UAT_CONTEXT'],confidence:'HIGH',evidence:'EV04'},
-  {id:'PSR-014',type:'INFERRED',target:'evidence',source:['PROCESS_SUGGESTION_TRACE'],confidence:'HIGH',evidence:'EV07'}
+  {id:'PSR-014',type:'INFERRED',target:'evidence',source:['PROCESS_SUGGESTION_TRACE'],confidence:'HIGH',evidence:'EV07'},
+  {id:'PSR-015',type:'CONTEXT',target:'active_time',source:['DF021','DF022'],confidence:'HIGH'},
+  {id:'PSR-016',type:'CONTEXT',target:'wait_time',source:['DF025','DF026'],confidence:'HIGH'},
+  {id:'PSR-017',type:'CONTEXT',target:'rework_time,error_rate',source:['DF028','DF039','DF040'],confidence:'HIGH'}
 ]);
 // [AUNEA-DATA-PROCESS-SUGGESTIONS-010] END
