@@ -53,6 +53,15 @@ function selectedOtherMissingDetail(opts,selected,detail){const other=catalogOth
 /* [AUNEA-FE-PROC-CHOICES-025] START — Preserve canonical dropdowns.
    Existing MULTICHECK and MULTISELECT options wrap horizontally; applies-to uses its original dropdown. */
 /* [AUNEA-FE-PROC-CHOICES-025] END */
+function processRefIncludes(values,id){
+  const target=String(id??'');
+  return target!==''&&normalizeArray(values).some(v=>String(v)===target);
+}
+function processRefWithout(values,id){
+  const target=String(id??'');
+  return normalizeArray(values).filter(v=>String(v)!==target);
+}
+
 function processDecisionStep(s){
   return s?(typeof s._ui?.has_decision==='boolean'?s._ui.has_decision:!!(['ST04','ST05'].includes(String(s.step_type||''))||normalizeArray(s.decision_criteria).length||s.exception_path)):false;
 }
@@ -485,7 +494,7 @@ function openFrictionModal(frId=null,preselectedSteps=[],candidate=null){
     if(f.frequency.mode==='count'&&f.frequency.value!==null&&f.frequency.value>0&&!f.frequency.period)return toast('Si la frecuencia se registra en casos, indica también el periodo.');
     if(f.direct_loss.value>0&&!f.direct_loss.period)return toast('Si registras una pérdida monetaria directa, indica también el periodo.');
     if(selectedOtherMissingDetail(causes,f.cause,f._details.cause)||selectedOtherMissingDetail(nonTime,f.non_time_impact,f._details.non_time)||selectedOtherMissingDetail(work,f.workaround,f._details.workaround))return toast('Completa el detalle de cada opción «Otro» seleccionada.');
-    if(f.active_time_loss.value>0&&(!['INCLUDED','BREAKDOWN','ADDITIONAL'].includes(f.time_attribution.mode)||!f.affected_steps.includes(f.time_attribution.step_id)))return toast('Para atribuir el tiempo, selecciona Incluido, Desglose o Adicional y un paso afectado responsable.');if(f.active_time_loss.value===0)f.time_attribution={mode:'',step_id:''};if(existing){Object.assign(existing,f);audit(`Fricción editada ${existing.id}`)}else{e.frictions.push(f);audit(`Fricción creada ${f.id}`)}if(typeof advanceEngagementTo==='function')advanceEngagementTo(e,'Sesión 1','captura de proceso');invalidateProcessLayersSafe(e,'frictions');e.diagnosticOutput=null;e.updatedAt=now();markDirty();closeModal();render();},existing?'Guardar cambios':'Añadir fricción');
+    if(f.active_time_loss.value>0&&(!['INCLUDED','BREAKDOWN','ADDITIONAL'].includes(f.time_attribution.mode)||!processRefIncludes(f.affected_steps,f.time_attribution.step_id)))return toast('Para atribuir el tiempo, selecciona Incluido, Desglose o Adicional y un paso afectado responsable.');if(f.active_time_loss.value===0)f.time_attribution={mode:'',step_id:''};if(existing){Object.assign(existing,f);audit(`Fricción editada ${existing.id}`)}else{e.frictions.push(f);audit(`Fricción creada ${f.id}`)}if(typeof advanceEngagementTo==='function')advanceEngagementTo(e,'Sesión 1','captura de proceso');invalidateProcessLayersSafe(e,'frictions');e.diagnosticOutput=null;e.updatedAt=now();markDirty();closeModal();render();},existing?'Guardar cambios':'Añadir fricción');
   bindFrictionFrequencyControl('fr_frequency');
   document.querySelectorAll('[data-v1-multi="fr_steps"]').forEach(el=>el.addEventListener('change',syncFrictionTimeOwnerOptions));
   syncFrictionTimeOwnerOptions();
@@ -511,12 +520,12 @@ function addMultipleSteps(){
 function removeStepFromFlow(stepId){
   if(typeof guardAsisMutation==='function'&&guardAsisMutation())return;
   const e=currentEng(),step=e?.processSteps?.find(x=>x.id===stepId&&x.status!=='SUPERSEDED');if(!step)return;
-  const linkedFrictions=activeFrictions(e).filter(f=>normalizeArray(f.affected_steps).includes(stepId));
+  const linkedFrictions=activeFrictions(e).filter(f=>processRefIncludes(f.affected_steps,stepId));
   const body=`<div class="notice warn"><b>¿Eliminar “${esc(step.step_name||'este paso')}” del flujo?</b><p>Dejará de aparecer en el mapa. La trazabilidad histórica se conservará internamente. Las rutas que apunten a este paso quedarán pendientes de redefinir${linkedFrictions.length?` y ${linkedFrictions.length} fricción(es) perderán este vínculo`:''}.</p></div>`;
   openModal('Eliminar paso del flujo',body,()=>{
     step.status='SUPERSEDED';
     e.processSteps.filter(x=>x.status!=='SUPERSEDED').forEach(x=>{if(x.normal_next_step===stepId)x.normal_next_step='';if(x.exception_path?.destination_step===stepId)x.exception_path={...x.exception_path,destination_step:''}});
-    linkedFrictions.forEach(f=>{f.affected_steps=normalizeArray(f.affected_steps).filter(id=>id!==stepId);if(!f.affected_steps.length)f.status='SUPERSEDED'});
+    linkedFrictions.forEach(f=>{f.affected_steps=processRefWithout(f.affected_steps,stepId);if(!f.affected_steps.length)f.status='SUPERSEDED'});
     invalidateProcessLayersSafe(e,'map');e.diagnosticOutput=null;e.updatedAt=now();
     audit(`Paso eliminado del flujo ${stepId}`);markDirty('Paso eliminado del flujo');
     if(typeof persistRecoverySnapshot==='function')persistRecoverySnapshot('eliminar-paso');
@@ -592,9 +601,9 @@ function flowIntermediateNodes(e,steps,fr,tab='cliente'){
   const risks=e.risks||[],economics=e.economicInputs||[];
   return steps.map((s,i)=>{
     const decision=s._ui?.has_decision===true||['ST04','ST05'].includes(String(s.step_type||''))||normalizeArray(s.decision_criteria).length>0;
-    const stepFr=fr.filter(x=>normalizeArray(x.affected_steps).includes(s.id));
-    const stepRisks=risks.filter(x=>normalizeArray(x.step_ids).includes(s.id));
-    const stepEcon=economics.filter(x=>normalizeArray(x.step_ids).includes(s.id));
+    const stepFr=fr.filter(x=>processRefIncludes(x.affected_steps,s.id));
+    const stepRisks=risks.filter(x=>processRefIncludes(x.step_ids,s.id));
+    const stepEcon=economics.filter(x=>processRefIncludes(x.step_ids,s.id));
     const layerAction=tab==='fricciones'?'<button type="button" data-add-friction-step="'+attr(s.id)+'">+ Añadir fricción</button>':
       tab==='riesgos'?'<button type="button" data-add-risk-step="'+attr(s.id)+'">+ Añadir riesgo</button>':
       tab==='impacto'?'<button type="button" data-add-economic-step="'+attr(s.id)+'">+ Añadir impacto</button>':'';
@@ -742,9 +751,9 @@ function processNodeIconSvg(name){
 }
 function graphNodeCard(e,s,i,fr,tab='cliente',readonly=false){
   const decision=processDecisionStep(s),steps=activeSteps(e),iconName=processNodeIconName(s),typeClass='step-type-'+String(s.step_type||'generic').toLowerCase();
-  const frOn=fr.filter(f=>normalizeArray(f.affected_steps).includes(s.id));
-  const risks=(e.risks||[]),riskOn=risks.filter(r=>normalizeArray(r.step_ids).includes(s.id));
-  const economics=e.economicInputs||[],money=economics.filter(x=>normalizeArray(x.step_ids).includes(s.id));
+  const frOn=fr.filter(f=>processRefIncludes(f.affected_steps,s.id));
+  const risks=(e.risks||[]),riskOn=risks.filter(r=>processRefIncludes(r.step_ids,s.id));
+  const economics=e.economicInputs||[],money=economics.filter(x=>processRefIncludes(x.step_ids,s.id));
   const dest=id=>id==='__END__'?'Fin del proceso':(steps.find(x=>x.id===id)?.step_name||'Destino pendiente');
   const actions=readonly?'':'<div class="flow-step-tools">'
     +'<button type="button" data-move-step-up="'+attr(s.id)+'" '+(i===0?'disabled':'')+'>←</button>'
@@ -785,9 +794,9 @@ function graphNodeCard(e,s,i,fr,tab='cliente',readonly=false){
 }
 function processGraphHtml(e,steps,fr,start,finish,tab='cliente',readonly=false){
   const model=processGraphData(e,steps),risks=e.risks||[],economics=e.economicInputs||[];
-  const linkCountForStep=s=>fr.filter(f=>normalizeArray(f.affected_steps).includes(s.id)).length
-    +risks.filter(r=>normalizeArray(r.step_ids).includes(s.id)).length
-    +economics.filter(x=>normalizeArray(x.step_ids).includes(s.id)).length;
+  const linkCountForStep=s=>fr.filter(f=>processRefIncludes(f.affected_steps,s.id)).length
+    +risks.filter(r=>processRefIncludes(r.step_ids,s.id)).length
+    +economics.filter(x=>processRefIncludes(x.step_ids,s.id)).length;
   const maxLinkCount=steps.reduce((max,s)=>Math.max(max,linkCountForStep(s)),0);
   const hasLayerAction=['fricciones','riesgos','impacto'].includes(tab);
   const graphCardHeight=286+Math.max(0,maxLinkCount-1)*42+(hasLayerAction?34:0);
