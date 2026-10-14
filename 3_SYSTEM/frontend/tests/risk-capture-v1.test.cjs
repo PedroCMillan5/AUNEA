@@ -84,3 +84,9 @@ test('risk review keeps candidate scoring manual',()=>{
   assert.match(code,/OS_SCALE_1_5/);
   assert.doesNotMatch(code,/candidate\.category/);
 });
+
+
+test('risk capture prefixes visual step and friction numbers',()=>{
+  assert.match(source,/steps\.map\(\(s,i\)=>[\s\S]*?'Paso '\+\(i\+1\)\+' — '/);
+  assert.match(source,/frictions\.map\(\(f,i\)=>[\s\S]*?'Fricción '\+\(i\+1\)\+' — '/);
+});
