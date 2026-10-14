@@ -73,3 +73,31 @@ test('accepted provenance is stored separately from confirmed field values',()=>
 });
 
 // QA trigger after Block_ID index alignment
+
+
+test('time fields receive context from global process data without invented numeric recommendations',()=>{
+  const e={answers:{DF021:160,DF022:'MONTH',DF025:'48 h',DF026:'3 días',DF028:8},processSteps:[]};
+  const s={active_time:8,wait_time:90,rework_time:10,error_rate:{value:8,mode:'percent'},inputs:[],outputs:[],manual_actions:[],communication_channels:[],evidence:[]};
+  const out=ctx.processStepSuggestions(e,s,{});
+  assert.equal(out.active_time[0].ruleId,'PSR-015');
+  assert.equal(out.wait_time[0].ruleId,'PSR-016');
+  assert.equal(out.rework_time[0].ruleId,'PSR-017');
+  assert.equal(out.error_rate[0].ruleId,'PSR-017');
+  assert.equal(out.active_time[0].apply,false);
+  assert.match(out.active_time[0].text,/no propone minutos/i);
+});
+
+test('actionable suggestion UI exposes Apply Undo and a visible state placeholder',()=>{
+  const html=ctx.processSuggestionHtml('evidence',[{ruleId:'PSR-014',type:'INFERRED',values:['EV07'],setId:'OS_EVIDENCE_TYPE',text:'Patrón.',apply:true}]);
+  assert.match(html,/>Aplicar</);
+  assert.match(html,/>Deshacer</);
+  assert.match(html,/data-step-suggestion-status/);
+});
+
+test('single-select suggestions with several valid candidates require an explicit candidate choice',()=>{
+  const html=ctx.processSuggestionHtml('tool',[{ruleId:'PSR-002',type:'REUSE',values:['EMAIL','ERP'],setId:'OS_TOOL_CATEGORY',singleChoice:true,text:'Herramientas ya usadas.',apply:true}]);
+  assert.match(html,/Aplicar Email/);
+  assert.match(html,/Aplicar ERP/);
+  assert.match(html,/data-step-suggestion-choice="EMAIL"/);
+  assert.match(html,/data-step-suggestion-choice="ERP"/);
+});
