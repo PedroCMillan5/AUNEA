@@ -778,8 +778,8 @@ function graphNodeCard(e,s,i,fr,tab='cliente',readonly=false){
   const layerActionHtml=layerAction?'<div class="process-node-actions">'+layerAction+'</div>':'';
   const stack=links||layerActionHtml?'<div class="process-node-stack">'+links+layerActionHtml+'</div>':'';
   if(decision){
-    const decisionDetailsHeight=(layerAction?34:0)+(linkCount?linkCount*36:0);
-    return '<div class="graph-decision-inline '+(linkCount?'has-node-links ':'')+(processLayerState(e).map?'confirmed':'')+'" '+(readonly?'':'data-drag-step="'+attr(s.id)+'"')+' style="--decision-link-count:'+linkCount+';--decision-details-height:'+decisionDetailsHeight+'px">'
+    const decisionDetailsHeight=(layerAction?34:0)+(linkCount?linkCount*42:0);
+    return '<div class="graph-decision-inline '+(linkCount?'has-node-links ':'')+(layerAction?'has-layer-action ':'')+(processLayerState(e).map?'confirmed':'')+'" '+(readonly?'':'data-drag-step="'+attr(s.id)+'"')+' style="--decision-link-count:'+linkCount+';--decision-details-height:'+decisionDetailsHeight+'px">'
       +actions+layerActionHtml+links
       +'<div class="graph-decision-gateway" aria-hidden="true"><div class="graph-decision-gateway-icon">'+processNodeIconSvg('decision')+'</div></div>'
       +'<div class="graph-decision-copy"><span class="boundary-kicker">Decisión</span><h4 title="'+attr(s.step_name||'Decisión sin nombre')+'">'+esc(s.step_name||'Decisión sin nombre')+'</h4>'
