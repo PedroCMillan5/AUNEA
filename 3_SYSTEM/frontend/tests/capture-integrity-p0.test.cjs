@@ -203,3 +203,15 @@ test('S04 complementary signals reuse step/friction owners without persisting in
   assert.doesNotMatch(body,/e\.answers\s*\[|e\.answers\.|setAnswer\(|confirmDerivedValue\(/);
   assert.match(process,/stageId==='S04'\?asIsComplementarySignals\(e\)/);
 });
+
+
+test('S04 complementary fields have explicit human acceptance and derived documents are visible',()=>{
+ const process=fs.readFileSync(path.join(root,'domain/process.js'),'utf8');
+ const noreask=fs.readFileSync(path.join(root,'domain/no-reask.js'),'utf8');
+ const renderer=fs.readFileSync(path.join(root,'ui/renderer.js'),'utf8');
+ assert.match(process,/data-confirm-as-is-suggestion="DF048"/);
+ assert.match(process,/data-confirm-as-is-suggestion="DF055"/);
+ assert.match(process,/setAnswer\(fid,next\)/);
+ assert.match(noreask,/f\.Field_ID==='DF049'.*processDocumentArtifacts/);
+ assert.match(renderer,/No hay reintroducciones confirmadas todavía/);
+});
