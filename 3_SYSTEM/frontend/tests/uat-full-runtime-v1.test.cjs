@@ -64,6 +64,39 @@ test('single UAT loads complete, traverses PG01-PG09 and hands off to internal w
  assert.deepEqual(errors.filter(x=>/TypeError|ReferenceError|SyntaxError/.test(x)),[],'runtime console errors: '+errors.join(' / '));
  dom.window.close();reloaded.dom.window.close();
 });
+test('PG09 blocks cross-layer source conflicts and stale time projections',async()=>{
+ const {w,dom,run}=buildRuntime();
+ run("state.activePage='uat';render()");
+ await w.document.getElementById('loadSingleUat').onclick();
+ run("currentEng().answers.DF046=['__CONFLICT__']");
+ let review=run("preCloseConsistencyReview(currentEng())");
+ assert.ok(Array.from(review.blockers).some(x=>x.code==='SOURCE_CONFLICT_DF046'),'derived/reused contradiction must block final closure');
+ run("delete currentEng().answers.DF046; currentEng()._sessionTimeProjection={requestKey:'STALE'}");
+ review=run("preCloseConsistencyReview(currentEng())");
+ assert.ok(Array.from(review.blockers).some(x=>x.code==='STALE_TIME_PROJECTION'),'stale economic projection must block final closure');
+ dom.window.close();
+});
+
+test('PG09 rolls back confirmation, snapshot and lifecycle when durable persistence conflicts',async()=>{
+ const {w,dom,run}=buildRuntime();
+ run("state.activePage='uat';render()");
+ await w.document.getElementById('loadSingleUat').onclick();
+ const baseline=JSON.parse(w.localStorage.getItem('aunea_internal_v1'));
+ const remote=JSON.parse(JSON.stringify(baseline));
+ const re=remote.engagements.find(e=>e.id.startsWith('UAT3-CASE-'));
+ re.contextSummary='Cambio remoto concurrente';
+ w.localStorage.setItem('aunea_internal_v1',JSON.stringify(remote));
+ run("currentEng().contextSummary='Cambio local concurrente'; state.dirty=true; state.activePage='diagnostico'; currentEng().stageId='S09'; render()");
+ const close=w.document.getElementById('confirmClosingAsIs');
+ assert.ok(close,'PG09 close action must exist');
+ close.onclick();
+ assert.equal(run('currentEng().confirmedAsIs'),false,'failed persistence must leave AS-IS open');
+ assert.equal(run('hasConfirmedSnapshot(currentEng())'),false,'failed persistence must not expose a handoff snapshot');
+ assert.equal(run("engagementStatus(currentEng())"),'Sesión 1','failed persistence must not advance lifecycle');
+ assert.equal(run("(currentEng().confirmedSnapshots||[]).some(s=>s.finalClosure===true)"),false,'failed persistence must not retain a final snapshot only in memory');
+ dom.window.close();
+});
+
 test('single UAT risk payload is complete and never throws reversibility startup errors',()=>{
  const {run,dom}=buildRuntime();
  const fixture=JSON.parse(read('uat/cases/invoices.json'));
