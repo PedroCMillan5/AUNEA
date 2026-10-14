@@ -366,13 +366,13 @@ function addEconomic(preselectedSteps=[],editIndex=null,forceSuggestedScope=fals
     const volume=eng.answers?.DF021,period=eng.answers?.DF022;
     const volumeText=volume!==undefined&&volume!==null&&volume!==''?esc(volume)+' casos'+(period?' · '+esc(labelFrom('OS_PERIOD',String(period).toUpperCase())||period):''):'Volumen pendiente';
     const stepSummary=selectedSteps.length
-      ?selectedSteps.map(s=>'<div class="economic-context-step"><b>'+esc(s.step_name||s.id)+'</b><span>'+Number(s.active_time||0)+' min trabajo · '+Number(s.wait_time||0)+' min espera · '+Number(s.rework_time||0)+' min retrabajo</span></div>').join('')
+      ?selectedSteps.map(s=>{const n=steps.indexOf(s)+1;return '<div class="economic-context-step"><b>'+esc('Paso '+n+' — '+(s.step_name||s.id))+'</b><span>'+Number(s.active_time||0)+' min trabajo · '+Number(s.wait_time||0)+' min espera · '+Number(s.rework_time||0)+' min retrabajo</span></div>'}).join('')
       :'<div class="economic-context-empty">Selecciona uno o varios pasos para acotar el impacto.</div>';
     return '<div class="client-inherited-context economic-context-card"><div class="economic-context-head"><div><b>Contexto del impacto</b><span>'+volumeText+'</span></div></div>'
       +'<div class="economic-context-steps">'+stepSummary+'</div>'
       +'<div class="economic-context-links">'
-      +(linkedFrictions.length?'<p><b>Fricciones relacionadas:</b> '+linkedFrictions.map(f=>esc(f.client_label||labelFrom('OS_FRICTION_TYPE',f.friction_type))).join(' · ')+'</p>':'<p><b>Fricciones relacionadas:</b> Ninguna.</p>')
-      +(linkedRisks.length?'<p><b>Riesgos relacionados:</b> '+linkedRisks.map(r=>esc(r.description||labelFrom('OS_RISK_CATEGORY',r.category))).join(' · ')+'</p>':'<p><b>Riesgos relacionados:</b> Ninguno.</p>')
+      +(linkedFrictions.length?'<p><b>Fricciones relacionadas:</b> '+linkedFrictions.map(f=>{const n=allFrictions.indexOf(f)+1;return esc('Fricción '+n+' — '+(f.client_label||labelFrom('OS_FRICTION_TYPE',f.friction_type)))}).join(' · ')+'</p>':'<p><b>Fricciones relacionadas:</b> Ninguna.</p>')
+      +(linkedRisks.length?'<p><b>Riesgos relacionados:</b> '+linkedRisks.map(r=>{const n=(eng.risks||[]).indexOf(r)+1;return esc('Riesgo '+n+' — '+(r.description||labelFrom('OS_RISK_CATEGORY',r.category)))}).join(' · ')+'</p>':'<p><b>Riesgos relacionados:</b> Ninguno.</p>')
       +'</div>'
       +(selectedTools.length?'<p class="economic-context-meta">Herramientas de los pasos seleccionados: '+selectedTools.map(x=>esc(labelFrom('OS_TOOL_CATEGORY',x))).join(' · ')+'. Registra sólo el coste atribuible; no presupongas su eliminación.</p>':'')
       +(attributedLosses.length?'<p class="economic-context-meta">Pérdidas directas ya declaradas en fricciones: '+attributedLosses.map(f=>esc(f.client_label||f.id)).join(' · ')+'. Evita volver a contabilizar el mismo evento.</p>':'')
@@ -391,7 +391,7 @@ function addEconomic(preselectedSteps=[],editIndex=null,forceSuggestedScope=fals
   const candidateNotice=!existing&&candidate?'<div class="notice info economic-candidate-prefill"><b>Señal para revisar — no es un impacto confirmado</b><p>'+esc(candidate.rationale||'')+'</p>'+(normalizeArray(candidate.review_questions).length?'<div class="field-help"><b>Comprueba antes de guardar:</b><br>'+normalizeArray(candidate.review_questions).map(q=>'• '+esc(q)).join('<br>')+'</div>':'')+'</div>':'';
   openModal(existing?'Editar impacto':'Añadir impacto',`<div class="step-groups process-modal-form economic-modal-form">${candidateNotice}${inheritedContext}
     <details class="step-group" open><summary>1. Ámbito del impacto</summary><div class="form-grid">
-      <div class="field full"><label>Pasos del proceso relacionados</label><div class="choice-grid">${steps.map(s=>`<div class="choice"><input type="checkbox" id="econ_step_${attr(s.id)}" data-econ-step="${attr(s.id)}" ${preselectedSteps.includes(s.id)?'checked':''}><label for="econ_step_${attr(s.id)}">${esc(s.step_name||s.id)}</label></div>`).join('')}</div></div>
+      <div class="field full"><label>Pasos del proceso relacionados</label><div class="choice-grid">${steps.map((s,i)=>`<div class="choice"><input type="checkbox" id="econ_step_${attr(s.id)}" data-econ-step="${attr(s.id)}" ${preselectedSteps.includes(s.id)?'checked':''}><label for="econ_step_${attr(s.id)}">${esc('Paso '+(i+1)+' — '+(s.step_name||s.id))}</label></div>`).join('')}</div></div>
     </div></details>
     <details class="step-group" open><summary>2. Qué quieres cuantificar</summary><div class="form-grid">
       <div class="field full"><label>Concepto económico</label>${econDropdown('econDriver',[{value:'',label:'Selecciona…'},...selectableDrivers.map(d=>({value:d.Economic_Driver_ID,label:econDriverLabel(d.Economic_Driver_ID)}))],existing?.driver_id||candidate?.driver_id||'','Selecciona…')}</div>
