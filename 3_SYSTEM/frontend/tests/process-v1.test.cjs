@@ -407,6 +407,18 @@ test('DF020 recommendation opens the existing decision-step popup as a suggestio
 });
 
 
+
+
+test('contextual catalogs expose reversible Mostrar más / Mostrar menos controls',()=>{
+  const html=ctx.selectedHtml('step_inputs',[
+    {value:'DOC',label:'Documento'},{value:'DATA',label:'Datos'},{value:'OTHER',label:'Otro'}
+  ],[],{preferredValues:['DOC']});
+  assert.match(html,/data-more-label="Mostrar todas las opciones"/);
+  assert.match(html,/data-less-label="Mostrar menos"/);
+  assert.match(code,/expand\.textContent=expand\.dataset\.lessLabel\|\|'Mostrar menos'/);
+  assert.match(code,/expand\.textContent=expand\.dataset\.moreLabel\|\|'Mostrar más'/);
+  assert.match(code,/input\[type="checkbox"\]:checked/);
+});
 test('contextual catalog keeps extra options hidden and places Mostrar más inside the dropdown',()=>{
   const oldFieldOptions=ctx.fieldOptions;
   ctx.fieldOptions=set=>set==='OS_ACTOR_ROLE'
