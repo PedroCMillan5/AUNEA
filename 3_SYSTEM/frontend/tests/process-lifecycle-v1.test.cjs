@@ -179,9 +179,9 @@ test('pre-close review classifies blockers separately from non-blocking review i
   e._sessionTimeProjection={requestKey:'stale'};
   ctx.economicTimeRequest=()=>({volume:100,period:'MONTH'});
   const reviewOnly=ctx.preCloseConsistencyReview(e);
-  assert.equal(reviewOnly.blockers.length,0);
-  assert.equal(reviewOnly.reviews.some(x=>x.code==='STALE_TIME_PROJECTION'),true);
-  assert.equal(reviewOnly.clear,true,'review items are explicit but do not block closure');
+  assert.equal(reviewOnly.blockers.some(x=>x.code==='STALE_TIME_PROJECTION'),true);
+  assert.equal(reviewOnly.reviews.some(x=>x.code==='STALE_TIME_PROJECTION'),false);
+  assert.equal(reviewOnly.clear,false,'a stale economic projection cannot cross the PG09 handoff');
 });
 
 test('PG09 closure is refused when the visible consistency review has blockers',()=>{
