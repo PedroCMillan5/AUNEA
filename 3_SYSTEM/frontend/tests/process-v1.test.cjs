@@ -461,3 +461,18 @@ test('decision criteria Other exposes and validates its own short detail',()=>{
   assert.match(code,/selectedOtherMissingDetail\(decisions,s\.decision_criteria,s\._details\.decision_criteria_other\)/);
   assert.match(code,/detailPlaceholder:'Especifica el criterio de decisión'/);
 });
+
+
+test('friction badges keep step links when stored step ids and current step ids differ only by type',()=>{
+  const e={processSteps:[{id:6,status:'ACTIVE',step_name:'Registrar',step_type:'ST02',actor:'ADMIN'}],frictions:[],risks:[],economicInputs:[]};
+  const fr=[{id:'F1',status:'ACTIVE',friction_type:'P01',affected_steps:['6']}];
+  const html=ctx.graphNodeCard(e,e.processSteps[0],0,fr,'fricciones',false);
+  assert.match(html,/Fricción/);
+  assert.match(html,/data-edit-friction="F1"/);
+});
+
+test('processRefIncludes compares process references by canonical string identity',()=>{
+  assert.equal(ctx.processRefIncludes(['6'],6),true);
+  assert.equal(ctx.processRefIncludes([6],'6'),true);
+  assert.equal(ctx.processRefIncludes(['5'],6),false);
+});
