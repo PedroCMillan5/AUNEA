@@ -1203,8 +1203,96 @@ function consultantLayerPage(title,intro,body,layer,stageId,{questionsFirst=fals
   const layerSummary=layer==='impact'?impactLayerReviewSummary(e,integrity):'';
   return pageTop(title,intro,'<button class="btn btn-outline" data-page="proceso">← Ver mapa AS-IS</button>')+(typeof asisConsoleLockNotice==='function'?asisConsoleLockNotice():'')+content+layerSummary+confirm;
 }
+// PG05 visual / S04 internal: after client confirmation this is a sufficiency review, not a
+// second ProcessStep editor or a second confirmation of the same four-layer client map.
+// DEC-050/065: render live owner values; changing facts must go back to the owner.
+function consultantStepsReviewPage(e){
+  const steps=activeSteps(e),frictions=activeFrictions(e),fields=(schema?.fields||[])
+    .filter(f=>f.Stage_ID==='S04'&&Number(f.Field_ID.slice(2))>=46&&Number(f.Field_ID.slice(2))<=55);
+  const byId=new Map(steps.map((s,i)=>[String(s.id),String(i+1)+'. '+String(s.step_name||'Paso sin nombre')]));
+  const list=(values,set)=>normalizeArray(values).filter(v=>v!==null&&v!==undefined&&v!=='')
+    .map(v=>labelFrom(set,v)||String(v)).join(', ')||'No consta';
+  const time=v=>v===null||v===undefined||v===''?'No consta':String(v)+' min';
+  const route=id=>id==='__END__'?'Fin del proceso':byId.get(String(id))||'Pendiente de identificar';
+  const rows=steps.map((s,i)=>'<div class="process-row"><div class="process-index">'+(i+1)+'</div><div>'
+    +'<b>'+esc(s.step_name||'Paso sin nombre')+'</b>'
+    +'<p>'+esc(labelFrom('OS_STEP_TYPE',s.step_type)||'Tipo no identificado')+' · '
+      +esc(labelFrom('OS_ACTOR_ROLE',s.actor)||'Actor pendiente')+' · '
+      +esc(labelFrom('OS_TOOL_CATEGORY',s.tool)||'Herramienta no indicada')+'</p>'
+    +'<p><b>Entradas:</b> '+esc(list(s.inputs,'OS_ARTIFACT_TYPE'))+' · <b>Salidas:</b> '+esc(list(s.outputs,'OS_ARTIFACT_TYPE'))+'</p>'
+    +'<p><b>Activo:</b> '+esc(time(s.active_time))+' · <b>Espera:</b> '+esc(time(s.wait_time))
+      +' · <b>Retrabajo:</b> '+esc(time(s.rework_time))+'</p>'
+    +'<p><b>Siguiente:</b> '+esc(route(s.normal_next_step))
+      +(s.exception_path? ' · <b>Excepción:</b> '+esc(route(s.exception_path.destination_step)):'')+'</p>'
+    +'</div></div>').join('');
+  const signals=asIsComplementarySignals(e),signalFor=fid=>signals.find(x=>x.field===fid);
+  const current=e.answers||{},pending=[],summary=[];
+  for(const f of fields){
+    const fid=f.Field_ID,mode=String(f.Ask_Mode||''),reuse=typeof reusedValue==='function'?reusedValue(fid,e):undefined;
+    const derived=mode==='DERIVE_AND_CONFIRM',suggest=mode==='SYSTEM_SUGGEST_THEN_CONFIRM';
+    const explicit=current[fid],hasExplicit=valuePresent(explicit);
+    const hasReuse=valuePresent(reuse);
+    const visible=typeof questionVisible==='function'&&questionVisible(f,e);
+    let status='',detail='';
+    if(derived){
+      const confirmed=hasReuse&&typeof isDerivedConfirmed==='function'&&isDerivedConfirmed(f,e,reuse);
+      status=confirmed?'Derivado y confirmado':hasReuse?'Derivado · validar si aplica':'Sin datos de origen';
+      detail=hasReuse?formatContextValue(f,reuse):'No se han identificado valores en el mapa';
+      if(hasReuse&&!confirmed&&visible)pending.push({f,hint:'La información procede de los pasos del mapa. Confirma únicamente este valor derivado, no el mapa completo.'});
+    }else if(suggest){
+      const count=fid==='DF051'&&typeof duplicateEntryRows==='function'?duplicateEntryRows(explicit).length:normalizeArray(explicit).length;
+      status=hasExplicit&&count?'Hallazgo confirmado':'Detección pendiente / no constatada';
+      if(fid==='DF051')detail=count?count+' reintroducción(es) registrada(s)':'Ninguna reintroducción confirmada';
+      else if(fid==='DF053')detail=hasExplicit?normalizeArray(explicit).map(id=>byId.get(String(id))||'Paso no disponible').join(' · '):'Sin pasos de búsqueda confirmados';
+      else detail=count?count+' intercambio(s) confirmado(s)':'Sin intercambios manuales confirmados';
+      const signal=fid==='DF051'?!!signalFor(fid):fid==='DF053'?hasReuse:
+        fid==='DF054'&&typeof stepSystemHandoffCandidates==='function'&&stepSystemHandoffCandidates(e).length>0;
+      if(visible&&(signal||hasExplicit))pending.push({f,hint:signalFor(fid)?.message||'Revisa o corrige sólo si existe un hallazgo material; ninguna propuesta se confirma automáticamente.',optional:hasExplicit});
+    }else{
+      status=hasExplicit?'Declarado / confirmado':'Condicional · no consta';
+      detail=hasExplicit?formatContextValue(f,explicit):'No se ha obtenido un dato concreto; no bloquea por estar vacío';
+      const signal=signalFor(fid),material=!!signal||(fid==='DF052'&&visible);
+      if(visible&&(hasExplicit||material)){
+        const known=hasExplicit?'Valor registrado. Corrígelo únicamente si la información aportada no es correcta.':
+          (signal?.message||'Comprueba este dato sólo cuando exista un problema documental material.');
+        pending.push({f,hint:known,optional:hasExplicit||fid==='DF052'});
+      }
+    }
+    summary.push('<div class="notice '+(status==='Derivado y confirmado'||status==='Hallazgo confirmado'||status==='Declarado / confirmado'?'good':'info')+'">'
+      +'<b>'+esc(f.Pregunta_o_etiqueta_ES||fid)+'</b><div class="field-help">'+esc(status)+'</div>'
+      +'<p>'+esc(detail)+'</p></div>');
+  }
+  const signalButtons=fid=>{
+    const found=signalFor(fid),saved=normalizeArray(current[fid]);
+    if(fid==='DF048'&&found&&!saved.includes('MASTER_DATA'))
+      return '<div class="field-help">'+esc(found.message)+'</div><button type="button" class="btn btn-small btn-outline" data-confirm-as-is-suggestion="DF048" data-suggest-value="MASTER_DATA">Confirmar dato maestro</button>';
+    if(fid==='DF055'&&found&&/faltan?|ausente|incomplet|sin informaci[oó]n/i.test(found.message)&&!saved.includes('MISSING'))
+      return '<div class="field-help">'+esc(found.message)+'</div><button type="button" class="btn btn-small btn-outline" data-confirm-as-is-suggestion="DF055" data-suggest-value="MISSING">Confirmar campos ausentes</button>';
+    return '';
+  };
+  const actions=pending.map(x=>'<div class="notice info"><b>'+esc(x.f.Pregunta_o_etiqueta_ES)+'</b>'
+    +'<div class="field-help">'+esc(x.hint)+'</div>'+signalButtons(x.f.Field_ID)
+    +(x.optional?'<details><summary>Revisar o corregir si procede</summary>'+renderStageFields([x.f],e)+'</details>':renderStageFields([x.f],e))+'</div>').join('');
+  const integrity=typeof processLayerIntegrityIssues==='function'?processLayerIntegrityIssues(e,'map'):[];
+  const integrityHtml=integrity.length?'<div class="notice warn"><b>Comprobaciones pendientes</b>'
+    +integrity.map(x=>'<p>'+esc(x.message||x.label)+'</p>').join('')+'</div>':'';
+  const intro=pageTop('Pasos','Revisión interna después de confirmar el mapa con el cliente.',
+    '<button class="btn btn-outline" data-page="proceso">← Ver / corregir mapa propietario</button>');
+  return intro+(typeof asisConsoleLockNotice==='function'?asisConsoleLockNotice():'')
+    +section('Mapa AS-IS confirmado','Datos reutilizados del proceso; no se pide una segunda confirmación.',
+      '<div class="notice good"><b>Mapa confirmado con el cliente.</b> Para modificar una actividad, vuelve al mapa. La corrección invalidará las confirmaciones dependientes conforme al contrato.</div>'
+      +'<div class="process-list">'+rows+'</div>')
+    +section('Suficiencia de información para la propuesta','Qué se conoce, de dónde viene y qué permanece condicional. Los valores sin evidencia no se inventan.',
+      '<div class="grid g2">'+summary.join('')+'</div>')
+    +(actions?section('Solo comprobaciones que pueden aportar información','No son una segunda validación del flujo. Se conservan las confirmaciones individuales del Diagnostic Master.',actions):'')
+    +section('Continuidad del diagnóstico','La capa Pasos ya está confirmada. Las observaciones condicionales no son automáticamente bloqueantes.',
+      integrityHtml+'<div class="row-actions"><button class="btn btn-primary" data-page="fricciones">Continuar a Fricciones →</button></div>');
+}
 function consultantStepsPage(){
-  const e=currentEng();return consultantLayerPage('Pasos','Añade, edita o elimina las actividades reales del proceso.',stepsEditor(e,activeSteps(e),activeFrictions(e)),'map','S04');
+  const e=currentEng();if(!e)return pageTop('Pasos','Abre primero un estudio.');
+  // Before the client confirms the map, keep the existing editor and its confirmation contract.
+  if(!processLayerState(e).map)return consultantLayerPage('Pasos','Añade, edita o elimina las actividades reales del proceso.',stepsEditor(e,activeSteps(e),activeFrictions(e)),'map','S04');
+  return consultantStepsReviewPage(e);
 }
 function consultantFrictionsPage(){
   const e=currentEng();return consultantLayerPage('Fricciones','Registra los problemas de los pasos y su evidencia.',frictionsEditor(e,activeSteps(e),activeFrictions(e)),'frictions','S05');
