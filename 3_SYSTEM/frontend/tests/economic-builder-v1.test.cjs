@@ -415,3 +415,20 @@ test('DF077 practical capacity is captured on ED14 with role, hours, period and 
   assert.equal(row.period,'MONTH');
   assert.equal(row.capacity_cost_rate_eur_hour,32);
 });
+
+
+test('economic impact context prefixes step, friction and risk numbers',()=>{
+  const ctx=makeCtx();
+  ctx.__eng.processSteps=[
+    {id:'S1',status:'ACTIVE',step_name:'Recibir factura',actor:'ADMIN',active_time:3,wait_time:0,rework_time:0},
+    {id:'S2',status:'ACTIVE',step_name:'Validar factura',actor:'FINANCE',active_time:8,wait_time:90,rework_time:10}
+  ];
+  ctx.__eng.frictions=[{id:'F1',status:'ACTIVE',affected_steps:['S2'],friction_type:'P03'}];
+  ctx.__eng.risks=[{step_ids:['S2'],description:'Pago duplicado'}];
+  ctx.activeSteps=x=>x.processSteps.filter(s=>s.status!=='SUPERSEDED');
+  ctx.activeFrictions=x=>x.frictions.filter(fr=>fr.status!=='SUPERSEDED');
+  ctx.addEconomic(['S2']);
+  assert.match(ctx.__lastBody,/Paso 2 — Validar factura/);
+  assert.match(ctx.__lastBody,/Fricción 1 —/);
+  assert.match(ctx.__lastBody,/Riesgo 1 — Pago duplicado/);
+});
