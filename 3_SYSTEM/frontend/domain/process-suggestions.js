@@ -71,12 +71,12 @@ function processSuggestionHtml(field,suggestions){
         actions=`<button type="button" class="btn btn-small step-suggestion-apply" data-step-suggestion-field="${attr(field)}" data-step-suggestion-index="${i}">Aplicar</button><button type="button" class="btn btn-small step-suggestion-undo" data-step-suggestion-field="${attr(field)}" data-step-suggestion-index="${i}" hidden>Deshacer</button>`;
       }
     }
-    return `<div class="step-suggestion step-suggestion-${String(s.type||'').toLowerCase()}" data-step-suggestion-rule="${attr(s.ruleId)}" data-step-suggestion-row-field="${attr(field)}" data-step-suggestion-row-index="${i}"><div><strong>${esc(type)}</strong><span>${esc(s.text||'')}</span>${value?`<b>${esc(value)}</b>`:''}<em class="step-suggestion-status" data-step-suggestion-status></em></div>${actions}</div>`;
+    return `<div class="step-suggestion step-suggestion-${String(s.type||'').toLowerCase()}" data-step-suggestion-rule="${attr(s.ruleId)}" data-step-suggestion-row-field="${attr(field)}" data-step-suggestion-row-index="${i}"><div class="step-suggestion-copy"><strong>${esc(type)}</strong><span>${esc(s.text||'')}</span>${value?`<b>${esc(value)}</b>`:''}</div>${actions||s.apply?`<div class="step-suggestion-action-state"><em class="step-suggestion-status" data-step-suggestion-status></em>${actions}</div>`:''}</div>`;
   }).join('');
 }
 function processSuggestionTrace(s,suggestion,accepted){s._suggestion_trace=Array.isArray(s._suggestion_trace)?s._suggestion_trace:[];const entry={rule_id:suggestion.ruleId,type:suggestion.type,target_field:suggestion.targetField||'',proposed_value:suggestion.values||suggestion.value||null,accepted:!!accepted,timestamp:now()};const i=s._suggestion_trace.findIndex(x=>x.rule_id===entry.rule_id&&x.target_field===entry.target_field);if(i>=0)s._suggestion_trace[i]=entry;else s._suggestion_trace.push(entry)}
 function processSuggestionSetSingle(id,value){const input=document.getElementById(id);if(!input)return false;input.value=value;const box=document.querySelector?.(`details[data-aunea-select="${id}"]`);const option=box?.querySelector?.(`[data-aunea-select-option="${id}"][data-value="${value}"]`);if(box&&option){box.querySelectorAll(`[data-aunea-select-option="${id}"]`).forEach(x=>x.classList.toggle('selected',x===option));const label=box.querySelector('summary span');if(label)label.textContent=option.dataset.label||option.textContent||value}input.dispatchEvent?.(new Event('change',{bubbles:true}));return true}
-function processSuggestionSetMulti(id,values,{replace=false}={}){const wanted=new Set(processSuggestionIdList(values));let changed=false;document.querySelectorAll?.(`[data-v1-multi="${id}"]`).forEach(x=>{const next=replace?wanted.has(String(x.value)):(x.checked||wanted.has(String(x.value)));if(x.checked!==next){x.checked=next;changed=true;x.dispatchEvent?.(new Event('change',{bubbles:true}))}});return changed||wanted.size===0}
+function processSuggestionSetMulti(id,values,{replace=false}={}){const wanted=new Set(processSuggestionIdList(values)),nodes=[...document.querySelectorAll?.(`[data-v1-multi="${id}"]`)||[]];let changed=false,matched=wanted.size===0;nodes.forEach(x=>{const hit=wanted.has(String(x.value));if(hit)matched=true;const next=replace?hit:(x.checked||hit);if(x.checked!==next){x.checked=next;changed=true;x.dispatchEvent?.(new Event('change',{bubbles:true}))}});return changed||matched}
 function processSuggestionFieldControl(field){return ({actor:'step_actor',tool:'step_tool',inputs:'step_inputs',decision_criteria:'step_decisions',manual_actions:'step_manual',communication_channels:'step_channels',evidence:'step_evidence'})[field]||''}
 function processSuggestionSnapshot(field){
   if(field==='applies_to')return {kind:'applies',mode:document.getElementById('step_applies_mode')?.value||'ALL',value:document.getElementById('step_applies_value')?.value||''};
@@ -110,17 +110,29 @@ function processSuggestionSetRowState(row,state,choiceValue=''){
   if(state==='applied'){if(status)status.textContent=choiceValue?`Aplicado · ${choiceValue}`:'Aplicado';applyButtons.forEach(b=>b.hidden=true);if(undo)undo.hidden=false;row.dataset.suggestionApplied='1'}
   else{if(status)status.textContent='Deshecho';applyButtons.forEach(b=>b.hidden=false);if(undo)undo.hidden=true;delete row.dataset.suggestionApplied}
 }
+function processSuggestionFieldNodes(field){
+  if(field==='applies_to')return [document.getElementById('step_applies_mode'),document.getElementById('step_applies_value')].filter(Boolean);
+  const id=processSuggestionFieldControl(field);if(!id)return [];
+  if(['actor','tool'].includes(field))return [document.getElementById(id),document.getElementById(id+'_other')].filter(Boolean);
+  return [...document.querySelectorAll?.(`[data-v1-multi="${id}"]`)||[]];
+}
 function bindProcessStepSuggestions(s,suggestionMap){
   document.querySelectorAll?.('[data-step-suggestion-row-field]').forEach(row=>{
-    row.__auneaSuggestionState=null;
+    row.__auneaSuggestionState=null;row.__auneaSuggestionMutating=false;
     row.querySelectorAll?.('.step-suggestion-apply').forEach(btn=>btn.addEventListener?.('click',()=>{
       const field=btn.dataset.stepSuggestionField,index=Number(btn.dataset.stepSuggestionIndex||0),suggestion=normalizeArray(suggestionMap[field])[index],choice=btn.dataset.stepSuggestionChoice||'';
-      const snapshot=processSuggestionSnapshot(field);if(!applyProcessStepSuggestion(field,suggestion,s,choice))return;
+      const snapshot=processSuggestionSnapshot(field);row.__auneaSuggestionMutating=true;const applied=applyProcessStepSuggestion(field,suggestion,s,choice);row.__auneaSuggestionMutating=false;if(!applied)return;
       row.__auneaSuggestionState={snapshot,field,suggestion,choice};processSuggestionSetRowState(row,'applied',choice?(suggestion.setId?labelFrom(suggestion.setId,choice)||choice:choice):'');
     }));
     row.querySelector?.('.step-suggestion-undo')?.addEventListener?.('click',()=>{
       const state=row.__auneaSuggestionState;if(!state)return;
-      if(processSuggestionRestore(state.field,state.snapshot)){processSuggestionTrace(s,{...state.suggestion,targetField:state.field,values:state.choice?[state.choice]:state.suggestion.values},false);processSuggestionSetRowState(row,'undone');row.__auneaSuggestionState=null;if(typeof toast==='function')toast('Sugerencia deshecha.')}
+      row.__auneaSuggestionMutating=true;const restored=processSuggestionRestore(state.field,state.snapshot);row.__auneaSuggestionMutating=false;
+      if(restored){processSuggestionTrace(s,{...state.suggestion,targetField:state.field,values:state.choice?[state.choice]:state.suggestion.values},false);processSuggestionSetRowState(row,'undone');row.__auneaSuggestionState=null;if(typeof toast==='function')toast('Sugerencia deshecha.')}
+    });
+    const field=row.dataset.stepSuggestionRowField;
+    processSuggestionFieldNodes(field).forEach(node=>{
+      const manualChange=()=>{if(row.__auneaSuggestionMutating||row.dataset.suggestionApplied!=='1')return;processSuggestionTrace(s,{...row.__auneaSuggestionState?.suggestion,targetField:field},false);processSuggestionSetRowState(row,'undone');row.__auneaSuggestionState=null};
+      node.addEventListener?.('change',manualChange);if(node.tagName==='INPUT'&&node.type==='text')node.addEventListener?.('input',manualChange);
     });
   });
 }
