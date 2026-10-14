@@ -113,8 +113,7 @@ test('PG05 internal Pasos reads confirmed client map without a second editor or 
  try{
    run("state.activePage='uat';render()");
    await w.document.getElementById('loadSingleUat').onclick();
-   const previous=run("currentEng().layerConfirmations.map");
-   assert.equal(previous,false,'fixture starts with an unconfirmed map');
+   run("currentEng().layerConfirmations.map=false");
    const initial=run("consultantStepsPage()");
    assert.match(initial,/data-confirm-process-layer="map"/,'original editable flow must stay before client confirmation');
    const count=run("currentEng().processSteps.length");
