@@ -286,6 +286,9 @@ function questionVisible(f,e){
   // DF055 is the canonical data-quality discovery question. Leaving it visible as a non-blocking
   // CONDITIONAL_90M probe prevents BR-DATA from requiring a pre-existing data-quality finding first.
   if(DATA_DISCOVERY_FIELDS.has(f.Field_ID)&&f.Stage_ID==='S04'&&String(f.Write_Target||'')==='RT_FINDING')return true;
+  // DF049 is derived from documentary ProcessStep inputs/outputs: an actual projection must remain visible
+  // for confirmation even when BR-KNOWLEDGE lacks a separate pain signal.
+  if(f.Field_ID==='DF049'&&f.Stage_ID==='S04'&&processDocumentArtifacts(activeSteps(e)).length)return true;
   // DF052 is only useful when the current map already contains multiple documentary artifacts or an
   // existing pain signal. This follows its canonical re-ask trigger without opening every BR-PAIN question.
   if(f.Field_ID==='DF052'&&f.Stage_ID==='S04')return processDocumentArtifacts(activeSteps(e)).length>1||branchActive('BR-PAIN',e)||valuePresent(e.answers?.DF052);
