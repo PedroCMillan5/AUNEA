@@ -223,10 +223,20 @@ test('decision NO route exits below the gateway, clears the YES card, and overla
   assert.match(css,/\.process-graph-decision-cell\{align-items:stretch\}/);
   assert.match(css,/\.graph-decision-inline \.flow-step-tools\{[^}]*top:8px/);
   assert.match(css,/\.graph-decision-inline>\.process-node-actions\{[^}]*top:40px/);
-  assert.match(css,/\.graph-decision-inline>\.process-node-links\{[^}]*top:-58px[^}]*width:100%/);
+  assert.match(css,/\.graph-decision-inline>\.process-node-links\{[^}]*top:40px[^}]*width:100%/);
+  assert.match(css,/\.graph-decision-inline\.has-layer-action>\.process-node-links\{top:78px/);
+  assert.match(css,/\.graph-decision-gateway\{[^}]*top:max\(calc\(50% - 29px\),calc\(72px \+ var\(--decision-details-height,0px\)\)\)/);
+  assert.match(css,/\.graph-decision-copy\{[^}]*top:max\(calc\(50% \+ 43px\),calc\(144px \+ var\(--decision-details-height,0px\)\)\)/);
   assert.match(css,/\.graph-decision-gateway\{[^}]*top:calc\(50% - 29px\)/);
   assert.match(css,/body\.mode-process-editor \.process-graph-cell \.flow-step\{[^}]*max-height:none/);
   assert.doesNotMatch(css,/\.process-node-links \.friction-badge:before/);
+});
+
+
+test('decision-linked badges reserve vertical clearance below controls and above the gateway',()=>{
+  assert.match(process,/decisionDetailsHeight=\(layerAction\?34:0\)\+\(linkCount\?linkCount\*42:0\)/);
+  assert.match(process,/layerAction\?'has-layer-action '/);
+  assert.match(css,/\.graph-decision-inline\.has-layer-action>\.process-node-links\{top:78px/);
 });
 
 test('client graph stays within the editor viewport and decision routes explain their destination',()=>{
