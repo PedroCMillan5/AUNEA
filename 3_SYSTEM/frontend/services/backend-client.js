@@ -68,7 +68,9 @@ checkBackend = async function(){
     state.backendOnline = true;
     state.backendVersion = hit.payload.backend_version;
     if(previousUrl !== hit.baseUrl && typeof audit === 'function') audit(`Backend local detectado en ${hit.baseUrl}`);
-    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(_err){}
+    // Backend health is transient UI state. Never rewrite the complete shared diagnostic
+    // payload from the 5s monitor: doing so emits cross-window storage events and can
+    // redraw the process editor or overwrite fresher engagement edits from another window.
     updateHeader();
     return true;
   }
