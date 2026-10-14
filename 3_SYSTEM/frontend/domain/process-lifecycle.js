@@ -191,7 +191,7 @@ function preCloseConsistencyReview(e,completion){
       if(valuePresent(explicit)&&valuePresent(reuse)&&consistencyValueSignature(explicit)!==consistencyValueSignature(reuse)){
         const field=(schema?.fields||[]).find(f=>f.Field_ID===fid);
         const describe=v=>typeof formatContextValue==='function'&&field?formatContextValue(field,v):normalizeArray(v).map(x=>typeof x==='object'?JSON.stringify(x):String(x)).join(', ');
-        add('REVIEW','SOURCE_CONFLICT_'+fid,'"'+(field?.Pregunta_o_etiqueta_ES||fid)+'": la respuesta guardada indica «'+describe(explicit)+'»; la fuente reutilizada indica «'+describe(reuse)+'». Revisa esa sección y corrige el dato de origen para que ambas representen el mismo proceso.',field?.Stage_ID||'');
+        add('BLOCKER','SOURCE_CONFLICT_'+fid,'"'+(field?.Pregunta_o_etiqueta_ES||fid)+'": la respuesta guardada indica «'+describe(explicit)+'»; la fuente reutilizada indica «'+describe(reuse)+'». Revisa esa sección y corrige el dato de origen para que ambas representen el mismo proceso.',field?.Stage_ID||'');
       }
     });
   }
@@ -199,7 +199,7 @@ function preCloseConsistencyReview(e,completion){
   if(e._sessionTimeProjection&&typeof economicTimeRequest==='function'){
     const currentKey=JSON.stringify(economicTimeRequest(e));
     if(e._sessionTimeProjection.requestKey&&e._sessionTimeProjection.requestKey!==currentKey)
-      add('REVIEW','STALE_TIME_PROJECTION','La proyección temporal corresponde a una versión anterior del AS-IS. Recalcula el impacto antes del análisis interno.','S07');
+      add('BLOCKER','STALE_TIME_PROJECTION','La proyección temporal corresponde a una versión anterior del AS-IS. Recalcula el impacto antes de cerrar el AS-IS.','S07');
   }
 
   if(typeof effectiveValue==='function'){
@@ -265,13 +265,35 @@ function confirmClosingAsIs(){
   if(integrity.length)return toast('No se puede cerrar el AS-IS: '+integrity[0].message),false;
   const review=preCloseConsistencyReview(e);
   if(review.blockers.length)return toast('No se puede cerrar el AS-IS: '+review.blockers[0].message),false;
+  // PG09 is a transactional boundary: if durable persistence fails, neither the final confirmation,
+  // the sealed handoff snapshot nor the lifecycle transition may remain active only in memory.
+  const before={
+    confirmedAsIs:e.confirmedAsIs,
+    df093:e.answers?.DF093,
+    asIsConfirmedAt:e.asIsConfirmedAt??null,
+    confirmedSnapshot:e.confirmedSnapshot??null,
+    status:e.status,
+    lifecycleLog:[...(e.lifecycleLog||[])],
+    confirmedSnapshots:[...(e.confirmedSnapshots||[])],
+    dirty:state.dirty,
+    audit:[...(state.audit||[])]
+  };
   const ts=now();e.confirmedAsIs=true;e.answers.DF093='YES';e.asIsConfirmedAt=ts;
   const sealed=typeof sealConfirmedSnapshot==='function'?sealConfirmedSnapshot(e,'confirmación final S09 del AS-IS enriquecido'):null;
   markDirty(sealed?`AS-IS confirmado en cierre · snapshot v${sealed.version}`:'AS-IS confirmado en cierre');
-  // PG09 is a transactional boundary: the sealed snapshot must survive an immediate reload.
   // Do not rely only on the delayed autosave installed by persistence.js.
   if(typeof persistRecoverySnapshot==='function'&&!persistRecoverySnapshot('cierre S09 confirmado')){
-    toast('El cierre se ha generado, pero no ha podido persistirse por un conflicto de edición. Revisa la otra ventana antes de continuar.');
+    e.confirmedAsIs=before.confirmedAsIs;
+    if(before.df093===undefined)delete e.answers.DF093;else e.answers.DF093=before.df093;
+    e.asIsConfirmedAt=before.asIsConfirmedAt;
+    e.confirmedSnapshot=before.confirmedSnapshot;
+    e.status=before.status;
+    e.lifecycleLog=before.lifecycleLog;
+    e.confirmedSnapshots=before.confirmedSnapshots;
+    state.dirty=before.dirty;
+    state.audit=before.audit;
+    toast('No se ha cerrado el AS-IS: el snapshot no ha podido persistirse por un conflicto de edición. Revisa la otra ventana antes de continuar.');
+    render();
     return false;
   }
   toast(review.reviews.length?'AS-IS confirmado. Quedan observaciones no bloqueantes registradas para Trabajo interno.':'AS-IS completo confirmado y snapshot sellado.');
