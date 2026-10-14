@@ -773,13 +773,19 @@ function graphNodeCard(e,s,i,fr,tab='cliente',readonly=false){
     frOn.map(x=>{const label='Fricción · '+labelFrom('OS_FRICTION_TYPE',x.friction_type);return badge('friction',label,'data-edit-friction="'+attr(x.id)+'"')}).join('')
     +riskOn.map(x=>{const label='Riesgo · '+(x.description||x.category);return badge('risk',label,'data-edit-risk-index="'+risks.indexOf(x)+'"')}).join('')
     +money.map(x=>{const label='Impacto · '+(typeof econDriverLabel==='function'?econDriverLabel(x.driver_id):x.driver_id);return badge('economic',label,'data-edit-economic-index="'+economics.indexOf(x)+'"')}).join('');
+  const compactBadge=(kind,shortLabel,fullLabel,editAttr)=>readonly
+    ?'<span class="'+kind+'-badge decision-link-chip" title="'+attr(fullLabel)+'"><span>'+esc(shortLabel)+'</span></span>'
+    :'<button type="button" class="'+kind+'-badge decision-link-chip" '+editAttr+' title="'+attr(fullLabel)+'" aria-label="'+attr(fullLabel)+'"><span>'+esc(shortLabel)+'</span></button>';
+  const decisionLinkItems=
+    frOn.map(x=>{const n=fr.indexOf(x)+1,full='Fricción '+n+' · '+labelFrom('OS_FRICTION_TYPE',x.friction_type);return compactBadge('friction','F'+n,full,'data-edit-friction="'+attr(x.id)+'"')}).join('')
+    +riskOn.map(x=>{const n=risks.indexOf(x)+1,full='Riesgo '+n+' · '+(x.description||x.category);return compactBadge('risk','R'+n,full,'data-edit-risk-index="'+risks.indexOf(x)+'"')}).join('')
+    +money.map(x=>{const n=economics.indexOf(x)+1,full='Impacto '+n+' · '+(typeof econDriverLabel==='function'?econDriverLabel(x.driver_id):x.driver_id);return compactBadge('economic','I'+n,full,'data-edit-economic-index="'+economics.indexOf(x)+'"')}).join('');
   const linkCount=frOn.length+riskOn.length+money.length;
-  const links=linkCount?'<div class="process-node-links">'+linkItems+'</div>':'';
+  const links=linkCount?'<div class="process-node-links">'+(decision?decisionLinkItems:linkItems)+'</div>':'';
   const layerActionHtml=layerAction?'<div class="process-node-actions">'+layerAction+'</div>':'';
   const stack=links||layerActionHtml?'<div class="process-node-stack">'+links+layerActionHtml+'</div>':'';
   if(decision){
-    const decisionDetailsHeight=(layerAction?34:0)+(linkCount?linkCount*42:0);
-    return '<div class="graph-decision-inline '+(linkCount?'has-node-links ':'')+(layerAction?'has-layer-action ':'')+(processLayerState(e).map?'confirmed':'')+'" '+(readonly?'':'data-drag-step="'+attr(s.id)+'"')+' style="--decision-link-count:'+linkCount+';--decision-details-height:'+decisionDetailsHeight+'px">'
+    return '<div class="graph-decision-inline '+(linkCount?'has-node-links ':'')+(layerAction?'has-layer-action ':'')+(processLayerState(e).map?'confirmed':'')+'" '+(readonly?'':'data-drag-step="'+attr(s.id)+'"')+'>'
       +actions+layerActionHtml+links
       +'<div class="graph-decision-gateway" aria-hidden="true"><div class="graph-decision-gateway-icon">'+processNodeIconSvg('decision')+'</div></div>'
       +'<div class="graph-decision-copy"><span class="boundary-kicker">Decisión</span><h4 title="'+attr(s.step_name||'Decisión sin nombre')+'">'+esc(s.step_name||'Decisión sin nombre')+'</h4>'
@@ -794,7 +800,7 @@ function graphNodeCard(e,s,i,fr,tab='cliente',readonly=false){
 }
 function processGraphHtml(e,steps,fr,start,finish,tab='cliente',readonly=false){
   const model=processGraphData(e,steps),risks=e.risks||[],economics=e.economicInputs||[];
-  const linkCountForStep=s=>fr.filter(f=>processRefIncludes(f.affected_steps,s.id)).length
+  const linkCountForStep=s=>processDecisionStep(s)?0:fr.filter(f=>processRefIncludes(f.affected_steps,s.id)).length
     +risks.filter(r=>processRefIncludes(r.step_ids,s.id)).length
     +economics.filter(x=>processRefIncludes(x.step_ids,s.id)).length;
   const maxLinkCount=steps.reduce((max,s)=>Math.max(max,linkCountForStep(s)),0);
