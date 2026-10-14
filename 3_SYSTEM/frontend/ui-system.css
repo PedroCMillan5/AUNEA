@@ -413,7 +413,7 @@ body.asis-console-locked .result-list button:disabled{cursor:not-allowed;opacity
 .graph-decision-copy .boundary-kicker{display:block;margin-bottom:2px}
 .graph-decision-copy h4{margin:0;font-size:12px;line-height:1.25;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;text-overflow:ellipsis}
 .graph-decision-copy p{margin:3px 0 0!important;font-size:10px!important;line-height:1.25}
-.graph-decision-inline>.process-node-actions{position:absolute;top:-94px;left:0;right:0;bottom:auto;width:100%;margin:0;padding:0;background:transparent;z-index:4;display:flex;justify-content:center}
+.graph-decision-inline>.process-node-actions{position:absolute;top:40px;left:0;right:0;bottom:auto;width:100%;margin:0;padding:0;background:transparent;z-index:4;display:flex;justify-content:center}
 .graph-decision-inline>.process-node-actions button{display:inline-flex;width:auto;min-width:0;box-sizing:border-box;white-space:nowrap;line-height:1.2;padding:5px 10px;text-align:center;align-items:center;justify-content:center}
 .graph-decision-inline>.process-node-links{position:absolute;left:0;right:0;top:-58px;display:grid;grid-template-columns:1fr;gap:6px;margin:0;width:100%;z-index:4}
 .graph-decision-inline>.process-node-links button{display:flex;width:100%;box-sizing:border-box;justify-content:flex-start;text-align:left}
