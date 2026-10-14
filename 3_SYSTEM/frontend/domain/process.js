@@ -43,7 +43,7 @@ function selectedHtml(id,opts,selected,{detailId='',detailValue='',detailPlaceho
   const arr=normalizeArray(selected).map(String),other=catalogOtherOption(opts),otherValue=other?String(other.value):'',otherOpen=!!other&&arr.includes(otherValue);
   const preferred=new Set(normalizeArray(preferredValues).map(String)),useContext=preferred.size>0;
   const hasHidden=useContext&&opts.some(o=>{const v=String(o.value);return !preferred.has(v)&&!arr.includes(v)&&(!other||v!==otherValue)});
-  const choices=`<div class="choice-grid${wrapped?' choice-grid-wrapped':''}">${opts.map(o=>{const v=String(o.value),isOther=!!other&&v===otherValue,visible=!useContext||preferred.has(v)||arr.includes(v)||isOther;return `<div class="choice"${visible?'':` data-context-choice-extra="${attr(id)}" hidden`}><input type="checkbox" id="${id}_${attr(o.value)}" value="${attr(o.value)}" data-v1-multi="${id}" ${isOther?`data-v1-other-toggle="${id}"`:''} ${arr.includes(v)?'checked':''}><label for="${id}_${attr(o.value)}">${esc(o.label)}</label></div>`}).join('')}</div>`+(hasHidden?`<button type="button" class="btn btn-small btn-outline contextual-show-all" data-show-all-context="${attr(id)}">Mostrar todas las opciones</button>`:'');
+  const choices=`<div class="choice-grid${wrapped?' choice-grid-wrapped':''}">${opts.map(o=>{const v=String(o.value),isOther=!!other&&v===otherValue,visible=!useContext||preferred.has(v)||arr.includes(v)||isOther;return `<div class="choice"${visible?'':` data-context-choice-extra="${attr(id)}" hidden`}><input type="checkbox" id="${id}_${attr(o.value)}" value="${attr(o.value)}" data-v1-multi="${id}" ${isOther?`data-v1-other-toggle="${id}"`:''} ${arr.includes(v)?'checked':''}><label for="${id}_${attr(o.value)}">${esc(o.label)}</label></div>`}).join('')}</div>`+(hasHidden?`<button type="button" class="btn btn-small btn-outline contextual-show-all" data-show-all-context="${attr(id)}" data-more-label="Mostrar todas las opciones" data-less-label="Mostrar menos">Mostrar todas las opciones</button>`:'');
   if(!detailId||!other)return choices;
   return choices+`<div class="detail-wrap" data-v1-other-wrap="${id}"${otherOpen?'':' style="display:none"'}><input id="${detailId}" value="${attr(otherOpen?detailValue:'')}" placeholder="${attr(detailPlaceholder)}"></div>`;
 }
@@ -129,7 +129,7 @@ function datalistControl(id,setId,value,placeholder,preferredValues=[]){
     dropdown=dropdown.replace(needle,`style="display:none" data-context-catalog-extra="${attr(id)}" ${needle}`);
   });
   if(hidden.length){
-    const more=`<button type="button" class="aunea-select-show-more" data-show-all-context="${attr(id)}">Mostrar más</button>`;
+    const more=`<button type="button" class="aunea-select-show-more" data-show-all-context="${attr(id)}" data-more-label="Mostrar más" data-less-label="Mostrar menos">Mostrar más</button>`;
     dropdown=dropdown.replace('</div></details></div>',more+'</div></details></div>');
   }
   return `<div class="catalog-reference-control contextual-catalog-control">${dropdown}<div class="detail-wrap" data-catalog-other-wrap="${id}"${isOther?'':' style="display:none"'}><input id="${id}_other" value="${attr(isCustom?value:'')}" placeholder="Especifica el valor"></div></div>`;
@@ -142,10 +142,18 @@ function bindProcessDropdownDelegation(){
     const expand=ev.target.closest?.('[data-show-all-context]');
     if(expand){
       ev.preventDefault();ev.stopPropagation();
-      const key=expand.dataset.showAllContext,box=expand.closest('details.aunea-select');
-      if(box)box.dataset.contextExpanded='1';
-      document.querySelectorAll(`[data-context-catalog-extra="${key}"],[data-context-choice-extra="${key}"]`).forEach(x=>{x.hidden=false;x.style.display=''});
-      expand.hidden=true;return;
+      const key=expand.dataset.showAllContext,box=expand.closest('details.aunea-select'),expanded=(box?.dataset.contextExpanded==='1'||expand.dataset.contextExpanded==='1');
+      if(expanded){
+        if(box)box.dataset.contextExpanded='0';else expand.dataset.contextExpanded='0';
+        document.querySelectorAll(`[data-context-catalog-extra="${key}"]`).forEach(x=>{x.style.display='none'});
+        document.querySelectorAll(`[data-context-choice-extra="${key}"]`).forEach(x=>{const checked=!!x.querySelector?.('input[type="checkbox"]:checked');x.hidden=!checked;x.style.display=checked?'':'none'});
+        expand.textContent=expand.dataset.moreLabel||'Mostrar más';
+      }else{
+        if(box)box.dataset.contextExpanded='1';else expand.dataset.contextExpanded='1';
+        document.querySelectorAll(`[data-context-catalog-extra="${key}"],[data-context-choice-extra="${key}"]`).forEach(x=>{x.hidden=false;x.style.display=''});
+        expand.textContent=expand.dataset.lessLabel||'Mostrar menos';
+      }
+      return;
     }
     const chip=ev.target.closest?.('[data-process-chip]');
     if(chip){
@@ -243,10 +251,10 @@ function openStepModal(stepId=null,linkFromStepId=null,preset=null){
     <div class="field full"><label>¿Qué produce este paso?</label>${selectedHtml('step_outputs',artifacts,s.outputs,{wrapped:true,detailId:'step_outputs_detail',detailValue:s._details.outputs||'',detailPlaceholder:'Especifica el output sólo al seleccionar Otro',preferredValues:artifactContext})}${suggestionHtml('outputs',stepSuggestions.outputs)}</div>
   </div></details>
   <details class="step-group"><summary>C. Tiempo y rendimiento</summary><div class="form-grid">
-    <div class="field"><label>¿Cuánto tiempo de trabajo requiere?</label>${timeControl('step_active',s.active_time,s._ui.active_unit||'min')}</div>
-    <div class="field"><label>¿Cuánto tiempo queda esperando?</label>${timeControl('step_wait',s.wait_time,s._ui.wait_unit||'min')}<div class="field-help">Tiempo en el que el caso está parado o esperando antes de poder continuar. Se mantiene separado del trabajo activo y no se monetiza como trabajo.</div></div>
-    <div class="field"><label>Tiempo de retrabajo</label>${timeControl('step_rework',s.rework_time,s._ui.rework_unit||'min')}</div>
-    <div class="field"><label>Error / repetición</label><div class="compound-control"><input id="step_error" type="number" min="0" step="any" value="${attr(s.error_rate&&typeof s.error_rate==='object'?s.error_rate.value:(s.error_rate||''))}" placeholder="5">${auneaDropdownControl('step_error_mode',[{value:'percent',label:'%'},{value:'count',label:'casos'}],s.error_rate?.mode||'percent','Unidad')}<span data-step-error-period-wrap${(s.error_rate?.mode||'percent')==='count'?'':' style="display:none"'}>${auneaDropdownControl('step_error_period',[{value:'',label:'Selecciona periodo…'},{value:'day',label:'por día'},{value:'week',label:'por semana'},{value:'month',label:'por mes'},{value:'year',label:'por año'}],s.error_rate?.period||'','Periodo')}</span></div><div class="field-help">Con % se interpreta como proporción de casos y no lleva periodo. Si eliges casos, indica también el periodo.</div></div>
+    <div class="field"><label>¿Cuánto tiempo de trabajo requiere?</label>${timeControl('step_active',s.active_time,s._ui.active_unit||'min')}${suggestionHtml('active_time',stepSuggestions.active_time)}</div>
+    <div class="field"><label>¿Cuánto tiempo queda esperando?</label>${timeControl('step_wait',s.wait_time,s._ui.wait_unit||'min')}${suggestionHtml('wait_time',stepSuggestions.wait_time)}<div class="field-help">Tiempo en el que el caso está parado o esperando antes de poder continuar. Se mantiene separado del trabajo activo y no se monetiza como trabajo.</div></div>
+    <div class="field"><label>Tiempo de retrabajo</label>${timeControl('step_rework',s.rework_time,s._ui.rework_unit||'min')}${suggestionHtml('rework_time',stepSuggestions.rework_time)}</div>
+    <div class="field"><label>Error / repetición</label><div class="compound-control"><input id="step_error" type="number" min="0" step="any" value="${attr(s.error_rate&&typeof s.error_rate==='object'?s.error_rate.value:(s.error_rate||''))}" placeholder="5">${auneaDropdownControl('step_error_mode',[{value:'percent',label:'%'},{value:'count',label:'casos'}],s.error_rate?.mode||'percent','Unidad')}<span data-step-error-period-wrap${(s.error_rate?.mode||'percent')==='count'?'':' style="display:none"'}>${auneaDropdownControl('step_error_period',[{value:'',label:'Selecciona periodo…'},{value:'day',label:'por día'},{value:'week',label:'por semana'},{value:'month',label:'por mes'},{value:'year',label:'por año'}],s.error_rate?.period||'','Periodo')}</span></div>${suggestionHtml('error_rate',stepSuggestions.error_rate)}<div class="field-help">Con % se interpreta como proporción de casos y no lleva periodo. Si eliges casos, indica también el periodo.</div></div>
   </div></details>
   <details class="step-group"><summary>D. Flujo y decisiones</summary><div class="form-grid">
     <div class="field full"><label>¿Este paso incluye una decisión o bifurcación?</label>${decisionSelector}</div>
