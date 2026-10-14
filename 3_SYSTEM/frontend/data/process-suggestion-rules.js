@@ -1,5 +1,5 @@
-// [AUNEA-DATA-PROCESS-SUGGESTIONS-010] START — Technical projection of Drive canonical v1.1
-// SOURCE: AUNEA_PROCESS_SUGGESTION_RULES_CANONICAL v1.1, Drive ID 1vBnltfnWSwmZsE6Um3lBnocTKKXcJM4XIGWbKtRHz1A.
+// [AUNEA-DATA-PROCESS-SUGGESTIONS-010] START — Technical projection of Drive canonical v1.2
+// SOURCE: AUNEA_PROCESS_SUGGESTION_RULES_CANONICAL v1.2, Drive ID 1vBnltfnWSwmZsE6Um3lBnocTKKXcJM4XIGWbKtRHz1A.
 // UI/runtime code consumes these governed definitions; it must not invent additional inference rules.
 const PROCESS_SUGGESTION_RULES=Object.freeze([
   {id:'PSR-001',type:'REUSE',target:'actor',source:['DF017','DF016','RT_PROCESS_STEP.Actor'],confidence:'HIGH'},
