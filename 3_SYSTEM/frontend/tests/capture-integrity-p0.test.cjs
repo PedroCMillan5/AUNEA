@@ -189,3 +189,17 @@ test('risk adapter fails closed instead of applying frontend fallback semantics'
   assert.doesNotMatch(body,/category:r\.category\|\|'RC01'/);
   assert.doesNotMatch(body,/reversible:r\.reversible!==false/);
 });
+
+
+test('S04 complementary signals reuse step/friction owners without persisting inferred answers',()=>{
+  assert.match(process,/function asIsComplementarySignals\(e\)/);
+  assert.match(process,/field:'DF048'/);
+  assert.match(process,/field:'DF049'/);
+  assert.match(process,/field:'DF051'/);
+  assert.match(process,/field:'DF055'/);
+  const start=process.indexOf('function asIsComplementarySignals');
+  const end=process.indexOf('function layerCanonicalQuestions',start);
+  const body=process.slice(start,end);
+  assert.doesNotMatch(body,/e\.answers\s*\[|e\.answers\.|setAnswer\(|confirmDerivedValue\(/);
+  assert.match(process,/stageId==='S04'\?asIsComplementarySignals\(e\)/);
+});
