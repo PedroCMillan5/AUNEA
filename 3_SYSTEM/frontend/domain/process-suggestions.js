@@ -2,7 +2,7 @@
 // SOURCE FILE: data/process-suggestion-rules.js; canonical source remains Drive document v1.0.
 // [AUNEA-DATA-PROCESS-SUGGESTIONS-010] END
 // [AUNEA-FE-PROCESS-SUGGESTION-ENGINE-010] START — Governed deterministic assistance for AS-IS steps
-// SOURCE: AUNEA_PROCESS_SUGGESTION_RULES_CANONICAL v1.1; DEC-009/031/032; Diagnostic Master v1.2.
+// SOURCE: AUNEA_PROCESS_SUGGESTION_RULES_CANONICAL v1.2; DEC-009/031/032; Diagnostic Master v1.2.
 // PURPOSE: reuse, derive, infer and flag coherence without auto-confirming client reality.
 // CHANGE_RISK: HIGH.
 
@@ -19,9 +19,9 @@ function processSuggestionAdd(map,field,suggestion){(map[field]||(map[field]=[])
 function processStepSuggestions(e,s,{existing=null,linkFromStepId=null}={}){
   const out={},first=processSuggestionFirstStep(e,s,existing),prev=processSuggestionPreviousStep(e,s,existing,linkFromStepId);
   const actorValues=processContextValues(e,'OS_ACTOR_ROLE',{linkFromStepId});
-  if(actorValues.length)processSuggestionAdd(out,'actor',{ruleId:'PSR-001',type:'REUSE',values:actorValues,setId:'OS_ACTOR_ROLE',singleChoice:true,text:actorValues.length===1?'Este rol ya está identificado en el proceso.':'Estos roles ya están identificados en el proceso; elige explícitamente el que realiza este paso.',apply:true});
+  if(actorValues.length)processSuggestionAdd(out,'actor',{ruleId:'PSR-001',type:'REUSE',values:actorValues,setId:'OS_ACTOR_ROLE',text:actorValues.length===1?'Este rol ya está identificado en el proceso.':'Estos roles ya están identificados en el proceso; elige explícitamente el que realiza este paso.',apply:false});
   const toolValues=processContextValues(e,'OS_TOOL_CATEGORY',{linkFromStepId});
-  if(toolValues.length)processSuggestionAdd(out,'tool',{ruleId:'PSR-002',type:'REUSE',values:toolValues,setId:'OS_TOOL_CATEGORY',singleChoice:true,text:toolValues.length===1?'Esta herramienta ya está utilizada en el proceso.':'Herramientas ya utilizadas en el proceso. Son candidatos reutilizables, no una recomendación única.',apply:true});
+  if(toolValues.length)processSuggestionAdd(out,'tool',{ruleId:'PSR-002',type:'REUSE',values:toolValues,setId:'OS_TOOL_CATEGORY',text:toolValues.length===1?'Esta herramienta ya está utilizada en el proceso.':'Herramientas ya utilizadas en el proceso. Elige la que corresponda en el desplegable; no se recomienda una automáticamente.',apply:false});
   const prevOutputs=processSuggestionIdList(prev?.outputs);
   if(prevOutputs.length)processSuggestionAdd(out,'inputs',{ruleId:'PSR-003',type:'DERIVED',values:prevOutputs,setId:'OS_ARTIFACT_TYPE',text:'El paso anterior produce estos artefactos; pueden reutilizarse como entradas de este paso.',apply:true});
   else if(first){const artifacts=processSuggestionStartArtifacts(e);if(artifacts.length)processSuggestionAdd(out,'inputs',{ruleId:'PSR-004',type:'DERIVED',values:artifacts,setId:'OS_ARTIFACT_TYPE',text:'Se han identificado explícitamente en el inicio del proceso.',apply:true})}
@@ -64,13 +64,7 @@ function processSuggestionHtml(field,suggestions){
   return rows.map((s,i)=>{
     const value=processSuggestionValueText(s),type=processSuggestionTypeLabel(s.type),values=processSuggestionIdList(s.values);
     let actions='';
-    if(s.apply&&value){
-      if(s.singleChoice&&values.length>1){
-        actions=`<div class="step-suggestion-candidates">${values.map(v=>`<button type="button" class="btn btn-small step-suggestion-apply" data-step-suggestion-field="${attr(field)}" data-step-suggestion-index="${i}" data-step-suggestion-choice="${attr(v)}">Aplicar ${esc(s.setId?labelFrom(s.setId,v)||v:v)}</button>`).join('')}<button type="button" class="btn btn-small step-suggestion-undo" data-step-suggestion-field="${attr(field)}" data-step-suggestion-index="${i}" hidden>Deshacer</button></div>`;
-      }else{
-        actions=`<button type="button" class="btn btn-small step-suggestion-apply" data-step-suggestion-field="${attr(field)}" data-step-suggestion-index="${i}">Aplicar</button><button type="button" class="btn btn-small step-suggestion-undo" data-step-suggestion-field="${attr(field)}" data-step-suggestion-index="${i}" hidden>Deshacer</button>`;
-      }
-    }
+    if(s.apply&&value)actions=`<button type="button" class="btn btn-small step-suggestion-apply" data-step-suggestion-field="${attr(field)}" data-step-suggestion-index="${i}">Aplicar</button><button type="button" class="btn btn-small step-suggestion-undo" data-step-suggestion-field="${attr(field)}" data-step-suggestion-index="${i}" hidden>Deshacer</button>`;
     return `<div class="step-suggestion step-suggestion-${String(s.type||'').toLowerCase()}" data-step-suggestion-rule="${attr(s.ruleId)}" data-step-suggestion-row-field="${attr(field)}" data-step-suggestion-row-index="${i}"><div class="step-suggestion-copy"><strong>${esc(type)}</strong><span>${esc(s.text||'')}</span>${value?`<b>${esc(value)}</b>`:''}</div>${actions||s.apply?`<div class="step-suggestion-action-state"><em class="step-suggestion-status" data-step-suggestion-status></em>${actions}</div>`:''}</div>`;
   }).join('');
 }
@@ -96,11 +90,11 @@ function applyProcessStepSuggestion(field,suggestion,s,choiceValue=''){
   const chosen=choiceValue||suggestion.values?.[0]||'';
   if(field==='actor')changed=processSuggestionSetSingle('step_actor',chosen);
   else if(field==='tool')changed=processSuggestionSetSingle('step_tool',chosen);
-  else if(field==='inputs')changed=processSuggestionSetMulti('step_inputs',suggestion.values);
-  else if(field==='decision_criteria')changed=processSuggestionSetMulti('step_decisions',suggestion.values);
-  else if(field==='manual_actions')changed=processSuggestionSetMulti('step_manual',suggestion.values);
-  else if(field==='communication_channels')changed=processSuggestionSetMulti('step_channels',suggestion.values);
-  else if(field==='evidence')changed=processSuggestionSetMulti('step_evidence',suggestion.values);
+  else if(field==='inputs')changed=processSuggestionSetMulti('step_inputs',suggestion.values,{replace:true});
+  else if(field==='decision_criteria')changed=processSuggestionSetMulti('step_decisions',suggestion.values,{replace:true});
+  else if(field==='manual_actions')changed=processSuggestionSetMulti('step_manual',suggestion.values,{replace:true});
+  else if(field==='communication_channels')changed=processSuggestionSetMulti('step_channels',suggestion.values,{replace:true});
+  else if(field==='evidence')changed=processSuggestionSetMulti('step_evidence',suggestion.values,{replace:true});
   else if(field==='applies_to'){const mode=suggestion.value?.mode||'ALL',input=document.getElementById('step_applies_mode'),detail=document.getElementById('step_applies_value');if(input){input.value=mode;input.dispatchEvent?.(new Event('change',{bubbles:true}));if(detail&&mode==='CONDITION')detail.value=suggestion.value?.condition||'';changed=true}}
   if(changed){processSuggestionTrace(s,{...suggestion,values:choiceValue?[choiceValue]:suggestion.values},true);if(typeof toast==='function')toast('Sugerencia aplicada. Confirma el paso para guardarla.')}return changed;
 }
@@ -120,14 +114,14 @@ function bindProcessStepSuggestions(s,suggestionMap){
   document.querySelectorAll?.('[data-step-suggestion-row-field]').forEach(row=>{
     row.__auneaSuggestionState=null;row.__auneaSuggestionMutating=false;
     row.querySelectorAll?.('.step-suggestion-apply').forEach(btn=>btn.addEventListener?.('click',()=>{
-      const field=btn.dataset.stepSuggestionField,index=Number(btn.dataset.stepSuggestionIndex||0),suggestion=normalizeArray(suggestionMap[field])[index],choice=btn.dataset.stepSuggestionChoice||'';
-      const snapshot=processSuggestionSnapshot(field);row.__auneaSuggestionMutating=true;const applied=applyProcessStepSuggestion(field,suggestion,s,choice);row.__auneaSuggestionMutating=false;if(!applied)return;
-      row.__auneaSuggestionState={snapshot,field,suggestion,choice};processSuggestionSetRowState(row,'applied',choice?(suggestion.setId?labelFrom(suggestion.setId,choice)||choice:choice):'');
+      const field=btn.dataset.stepSuggestionField,index=Number(btn.dataset.stepSuggestionIndex||0),suggestion=normalizeArray(suggestionMap[field])[index];
+      const snapshot=processSuggestionSnapshot(field);row.__auneaSuggestionMutating=true;const applied=applyProcessStepSuggestion(field,suggestion,s);row.__auneaSuggestionMutating=false;if(!applied)return;
+      row.__auneaSuggestionState={snapshot,field,suggestion};processSuggestionSetRowState(row,'applied');
     }));
     row.querySelector?.('.step-suggestion-undo')?.addEventListener?.('click',()=>{
       const state=row.__auneaSuggestionState;if(!state)return;
       row.__auneaSuggestionMutating=true;const restored=processSuggestionRestore(state.field,state.snapshot);row.__auneaSuggestionMutating=false;
-      if(restored){processSuggestionTrace(s,{...state.suggestion,targetField:state.field,values:state.choice?[state.choice]:state.suggestion.values},false);processSuggestionSetRowState(row,'undone');row.__auneaSuggestionState=null;if(typeof toast==='function')toast('Sugerencia deshecha.')}
+      if(restored){processSuggestionTrace(s,{...state.suggestion,targetField:state.field},false);processSuggestionSetRowState(row,'undone');row.__auneaSuggestionState=null;if(typeof toast==='function')toast('Sugerencia deshecha.')}
     });
     const field=row.dataset.stepSuggestionRowField;
     processSuggestionFieldNodes(field).forEach(node=>{
