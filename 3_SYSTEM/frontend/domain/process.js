@@ -1150,8 +1150,19 @@ function layerCanonicalQuestions(e,stageId){
     return section('Evidencia económica','Procedencia de los datos económicos registrados en esta etapa.','<div class="impact-evidence-compact"><b>Calidad de evidencia económica</b><span>'+(labels.length?labels.map(esc).join(' · '):'Sin evidencia económica registrada')+'</span><small>Se deriva de la evidencia de cada impacto; no se vuelve a preguntar.</small></div>');
   }
   const signals=stageId==='S04'?asIsComplementarySignals(e).filter(x=>fields.some(f=>f.Field_ID===x.field)):[];
-  const context=signals.length?'<div class="notice info"><b>Información ya identificada en el AS-IS · sin nueva captura</b>'+signals.map(x=>'<p><b>'+esc(x.field)+'</b> · '+esc(x.message)+'</p>').join('')+'<small>Son referencias a datos capturados. Las respuestas condicionales y los hallazgos siguen requiriendo confirmación explícita cuando proceda.</small></div>':'';
-  const block=section('Datos complementarios de la etapa','Sólo aparecen datos cuyo owner no está ya cubierto por el editor estructurado. No se duplica captura de pasos, fricciones, riesgos ni impactos.',context+`<div class="form-grid">${renderStageFields(fields,e)}</div>`);
+  const master=signals.some(x=>x.field==='DF048')&&!normalizeArray(e.answers?.DF048).includes('MASTER_DATA');
+  const quality=signals.some(x=>x.field==='DF055'&&/faltan?|ausente|incomplet|sin informaci[oó]n/i.test(x.message))&&!normalizeArray(e.answers?.DF055).includes('MISSING');
+  const suggestions={};
+  if(master)suggestions.DF048='<div class="field-help"><b>Dato maestro detectado en los pasos (sin confirmar).</b> <button type="button" class="btn btn-small btn-outline" data-confirm-as-is-suggestion="DF048" data-suggest-value="MASTER_DATA">Confirmar «Dato maestro»</button></div>';
+  if(quality)suggestions.DF055='<div class="field-help"><b>Las fricciones describen información ausente o incompleta (sin confirmar).</b> <button type="button" class="btn btn-small btn-outline" data-confirm-as-is-suggestion="DF055" data-suggest-value="MISSING">Confirmar «Campos ausentes»</button></div>';
+  const rendered=renderStageFields(fields,e);
+  const withSuggestions=Object.entries(suggestions).reduce((html,[fid,hint])=>{
+    const start=html.indexOf('data-field="'+fid+'"');
+    if(start<0)return html;
+    const end=html.indexOf('>',start);
+    return end<0?html:html.slice(0,end+1)+hint+html.slice(end+1);
+  },rendered);
+  const block=section('Datos complementarios de la etapa','Valores derivados y confirmados se reutilizan; solo los hallazgos nuevos requieren confirmación.',`<div class="form-grid">${withSuggestions}</div>`);
   return stageId==='S06'?'<div class="risk-stage-complementary">'+block+'</div>':block;
 }
 function processPage(){
@@ -1208,6 +1219,17 @@ function consultantImpactPage(){
 
 function flowReview(e,steps,fr){return clientProcessView(e,steps,fr)}
 
+const __auneaComplementaryBaseBindForms=bindForms;
+bindForms=function(){
+  __auneaComplementaryBaseBindForms();
+  document.querySelectorAll('[data-confirm-as-is-suggestion]').forEach(button=>button.onclick=()=>{
+    const e=currentEng(),fid=button.dataset.confirmAsIsSuggestion,value=button.dataset.suggestValue;
+    if(!e||!['DF048','DF055'].includes(fid)||!value)return;
+    const next=unique([...normalizeArray(e.answers?.[fid]),value]);
+    setAnswer(fid,next);
+    render();
+  });
+};
 const __auneaNoReaskBindForms=bindForms;
 bindForms=function(){
   __auneaNoReaskBindForms();
