@@ -64,7 +64,7 @@ function processSuggestionHtml(field,suggestions){
   return rows.map((s,i)=>{
     const value=processSuggestionValueText(s),type=processSuggestionTypeLabel(s.type),values=processSuggestionIdList(s.values);
     let actions='';
-    if(s.apply&&value)actions=`<button type="button" class="btn btn-small step-suggestion-apply" data-step-suggestion-field="${attr(field)}" data-step-suggestion-index="${i}">Aplicar</button><button type="button" class="btn btn-small step-suggestion-undo" data-step-suggestion-field="${attr(field)}" data-step-suggestion-index="${i}" hidden>Deshacer</button>`;
+    if(s.apply&&value)actions=`<button type="button" class="btn btn-small step-suggestion-toggle" data-step-suggestion-field="${attr(field)}" data-step-suggestion-index="${i}" data-step-suggestion-action="apply">Aplicar</button>`;
     return `<div class="step-suggestion step-suggestion-${String(s.type||'').toLowerCase()}" data-step-suggestion-rule="${attr(s.ruleId)}" data-step-suggestion-row-field="${attr(field)}" data-step-suggestion-row-index="${i}"><div class="step-suggestion-copy"><strong>${esc(type)}</strong><span>${esc(s.text||'')}</span>${value?`<b>${esc(value)}</b>`:''}</div>${actions||s.apply?`<div class="step-suggestion-action-state"><em class="step-suggestion-status" data-step-suggestion-status></em>${actions}</div>`:''}</div>`;
   }).join('');
 }
@@ -98,11 +98,11 @@ function applyProcessStepSuggestion(field,suggestion,s,choiceValue=''){
   else if(field==='applies_to'){const mode=suggestion.value?.mode||'ALL',input=document.getElementById('step_applies_mode'),detail=document.getElementById('step_applies_value');if(input){input.value=mode;input.dispatchEvent?.(new Event('change',{bubbles:true}));if(detail&&mode==='CONDITION')detail.value=suggestion.value?.condition||'';changed=true}}
   if(changed){processSuggestionTrace(s,{...suggestion,values:choiceValue?[choiceValue]:suggestion.values},true);if(typeof toast==='function')toast('Sugerencia aplicada. Confirma el paso para guardarla.')}return changed;
 }
-function processSuggestionSetRowState(row,state,choiceValue=''){
+function processSuggestionSetRowState(row,state){
   if(!row)return;
-  const status=row.querySelector?.('[data-step-suggestion-status]'),undo=row.querySelector?.('.step-suggestion-undo'),applyButtons=[...row.querySelectorAll?.('.step-suggestion-apply')||[]];
-  if(state==='applied'){if(status)status.textContent=choiceValue?`Aplicado · ${choiceValue}`:'Aplicado';applyButtons.forEach(b=>b.hidden=true);if(undo)undo.hidden=false;row.dataset.suggestionApplied='1'}
-  else{if(status)status.textContent='Deshecho';applyButtons.forEach(b=>b.hidden=false);if(undo)undo.hidden=true;delete row.dataset.suggestionApplied}
+  const status=row.querySelector?.('[data-step-suggestion-status]'),toggle=row.querySelector?.('.step-suggestion-toggle');
+  if(state==='applied'){if(status)status.textContent='Aplicado';if(toggle){toggle.textContent='Deshacer';toggle.dataset.stepSuggestionAction='undo'}row.dataset.suggestionApplied='1'}
+  else{if(status)status.textContent='Deshecho';if(toggle){toggle.textContent='Aplicar';toggle.dataset.stepSuggestionAction='apply'}delete row.dataset.suggestionApplied}
 }
 function processSuggestionFieldNodes(field){
   if(field==='applies_to')return [document.getElementById('step_applies_mode'),document.getElementById('step_applies_value')].filter(Boolean);
@@ -113,15 +113,17 @@ function processSuggestionFieldNodes(field){
 function bindProcessStepSuggestions(s,suggestionMap){
   document.querySelectorAll?.('[data-step-suggestion-row-field]').forEach(row=>{
     row.__auneaSuggestionState=null;row.__auneaSuggestionMutating=false;
-    row.querySelectorAll?.('.step-suggestion-apply').forEach(btn=>btn.addEventListener?.('click',()=>{
-      const field=btn.dataset.stepSuggestionField,index=Number(btn.dataset.stepSuggestionIndex||0),suggestion=normalizeArray(suggestionMap[field])[index];
+    const toggle=row.querySelector?.('.step-suggestion-toggle');
+    toggle?.addEventListener?.('click',()=>{
+      const field=toggle.dataset.stepSuggestionField,index=Number(toggle.dataset.stepSuggestionIndex||0),suggestion=normalizeArray(suggestionMap[field])[index];
+      if(toggle.dataset.stepSuggestionAction==='undo'){
+        const state=row.__auneaSuggestionState;if(!state)return;
+        row.__auneaSuggestionMutating=true;const restored=processSuggestionRestore(state.field,state.snapshot);row.__auneaSuggestionMutating=false;
+        if(restored){processSuggestionTrace(s,{...state.suggestion,targetField:state.field},false);processSuggestionSetRowState(row,'undone');row.__auneaSuggestionState=null;if(typeof toast==='function')toast('Sugerencia deshecha.')}
+        return;
+      }
       const snapshot=processSuggestionSnapshot(field);row.__auneaSuggestionMutating=true;const applied=applyProcessStepSuggestion(field,suggestion,s);row.__auneaSuggestionMutating=false;if(!applied)return;
       row.__auneaSuggestionState={snapshot,field,suggestion};processSuggestionSetRowState(row,'applied');
-    }));
-    row.querySelector?.('.step-suggestion-undo')?.addEventListener?.('click',()=>{
-      const state=row.__auneaSuggestionState;if(!state)return;
-      row.__auneaSuggestionMutating=true;const restored=processSuggestionRestore(state.field,state.snapshot);row.__auneaSuggestionMutating=false;
-      if(restored){processSuggestionTrace(s,{...state.suggestion,targetField:state.field},false);processSuggestionSetRowState(row,'undone');row.__auneaSuggestionState=null;if(typeof toast==='function')toast('Sugerencia deshecha.')}
     });
     const field=row.dataset.stepSuggestionRowField;
     processSuggestionFieldNodes(field).forEach(node=>{
