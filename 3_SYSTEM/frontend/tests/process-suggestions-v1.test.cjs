@@ -87,11 +87,14 @@ test('time fields receive context from global process data without invented nume
   assert.match(out.active_time[0].text,/no propone minutos/i);
 });
 
-test('actionable suggestion UI exposes Apply Undo and a visible state placeholder',()=>{
+test('actionable suggestion UI exposes one reversible action and a visible state placeholder',()=>{
   const html=ctx.processSuggestionHtml('evidence',[{ruleId:'PSR-014',type:'INFERRED',values:['EV07'],setId:'OS_EVIDENCE_TYPE',text:'Patrón.',apply:true}]);
-  assert.match(html,/>Aplicar</);
-  assert.match(html,/>Deshacer</);
+  assert.equal((html.match(/>Aplicar</g)||[]).length,1);
+  assert.doesNotMatch(html,/>Deshacer</);
+  assert.match(html,/data-step-suggestion-action="apply"/);
   assert.match(html,/data-step-suggestion-status/);
+  assert.match(engine,/toggle\.textContent='Deshacer'/);
+  assert.match(engine,/toggle\.textContent='Aplicar'/);
 });
 
 test('single-select reuse stays informational and leaves selection to the dropdown',()=>{
@@ -104,6 +107,6 @@ test('single-select reuse stays informational and leaves selection to the dropdo
 test('actionable multiselect suggestions use one visible Apply action and exact replacement semantics',()=>{
   const html=ctx.processSuggestionHtml('inputs',[{ruleId:'PSR-003',type:'DERIVED',values:['PDF'],setId:'OS_ARTIFACT_TYPE',text:'Output anterior.',apply:true}]);
   assert.equal((html.match(/>Aplicar</g)||[]).length,1);
-  assert.equal((html.match(/>Deshacer</g)||[]).length,1);
+  assert.equal((html.match(/>Deshacer</g)||[]).length,0);
   assert.match(engine,/field==='inputs'\)changed=processSuggestionSetMulti\('step_inputs',suggestion\.values,\{replace:true\}\)/);
 });
