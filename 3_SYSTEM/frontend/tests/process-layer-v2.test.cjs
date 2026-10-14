@@ -221,7 +221,7 @@ test('decision NO route exits below the gateway, clears the YES card, and overla
   assert.match(process,/Math\.max\(mainY\+94,noStartY\+64,yesBottom\+34\)/);
   assert.match(process,/appendPath\('M'\+noStartX\+' '\+noStartY\+'V'\+lowerY/);
   assert.match(css,/\.process-graph-decision-cell\{align-items:stretch\}/);
-  assert.match(css,/\.graph-decision-inline \.flow-step-tools\{[^}]*top:-126px/);
+  assert.match(css,/\.graph-decision-inline \.flow-step-tools\{[^}]*top:8px/);
   assert.match(css,/\.graph-decision-inline>\.process-node-actions\{[^}]*top:-94px/);
   assert.match(css,/\.graph-decision-inline>\.process-node-links\{[^}]*top:-58px[^}]*width:100%/);
   assert.match(css,/\.graph-decision-gateway\{[^}]*top:calc\(50% - 29px\)/);
