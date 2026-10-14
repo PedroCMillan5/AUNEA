@@ -87,6 +87,6 @@ test('risk review keeps candidate scoring manual',()=>{
 
 
 test('risk capture prefixes visual step and friction numbers',()=>{
-  assert.match(source,/steps\.map\(\(s,i\)=>[\s\S]*?'Paso '\+\(i\+1\)\+' — '/);
-  assert.match(source,/frictions\.map\(\(f,i\)=>[\s\S]*?'Fricción '\+\(i\+1\)\+' — '/);
+  assert.match(code,/steps\.map\(\(s,i\)=>[\s\S]*?'Paso '\+\(i\+1\)\+' — '/);
+  assert.match(code,/frictions\.map\(\(f,i\)=>[\s\S]*?'Fricción '\+\(i\+1\)\+' — '/);
 });
