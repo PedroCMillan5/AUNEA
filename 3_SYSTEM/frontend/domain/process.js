@@ -1116,6 +1116,22 @@ function asisMapPage(e,steps,fr){
     +'<div class="asis-map-hint">Este es el mismo mapa AS-IS trabajado con el cliente. Para modificarlo, utiliza Pasos, Fricciones, Riesgos o Impacto en el menú de la izquierda.</div>'
     +flow+'</div>';
 }
+// S04 contextual evidence is a read-only projection of ProcessStep/Friction owners.
+// Conditional findings still require explicit human confirmation in their canonical controls.
+function asIsComplementarySignals(e){
+  const steps=activeSteps(e),frictions=activeFrictions(e),out=[];
+  const stepName=s=>String(s?.step_name||s?.id||'Paso');
+  const masterSteps=steps.filter(s=>normalizeArray(s.inputs).concat(normalizeArray(s.outputs)).includes('MASTER_DATA'));
+  if(masterSteps.length)out.push({field:'DF048',message:'Datos maestros detectados en: '+masterSteps.map(stepName).join(' · ')+'. Identifica las referencias concretas sólo si se conocen; la categoría Dato maestro no especifica por sí sola cuáles son.'});
+  const documents=processDocumentArtifacts(steps);
+  if(documents.length)out.push({field:'DF049',message:'Artefactos documentales procedentes de los pasos: '+documents.map(v=>labelFrom('OS_ARTIFACT_TYPE',v)||v).join(' · ')+'. La confirmación se realiza en el campo derivado, sin una segunda captura.'});
+  const rekeySteps=steps.filter(s=>normalizeArray(s.manual_actions).some(a=>['REKEY','COPY'].includes(String(a))));
+  const duplicateFrictions=frictions.filter(f=>['P03','P13'].includes(String(f.friction_type)));
+  if(rekeySteps.length||duplicateFrictions.length)out.push({field:'DF051',message:'Posible reintroducción detectada en '+rekeySteps.map(stepName).join(' · ')+(duplicateFrictions.length?'. '+duplicateFrictions.length+' fricción(es) vinculada(s) a duplicación/reintroducción.':'')+' Confirma dato, paso origen y destino en el registro de reintroducción. No se crea una ficha automáticamente.'});
+  const qualityFrictions=frictions.filter(f=>['P02','P11','P13'].includes(String(f.friction_type))||/faltan?|ausente|incomplet|duplicad|incorrect|err[oó]ne/i.test(String(f.observable_signal||f.client_label||'')));
+  if(qualityFrictions.length)out.push({field:'DF055',message:'Señales de calidad de datos en las fricciones: '+qualityFrictions.map(f=>String(f.observable_signal||f.client_label||f.id)).join(' · ')+'. Selecciona sólo problemas respaldados por estas señales; no se presuponen otras categorías.'});
+  return out;
+}
 function layerCanonicalQuestions(e,stageId){
   if(typeof renderStageFields!=='function')return '';
   const structuredOwners=new Set(['RT_PROCESS_STEP','RT_PAIN','RT_RISK','RT_ECONOMIC_INPUT']);
@@ -1133,7 +1149,9 @@ function layerCanonicalQuestions(e,stageId){
     const labels=evidence.map(x=>typeof economicEvidenceLabel==='function'?economicEvidenceLabel(x):String(x));
     return section('Evidencia económica','Procedencia de los datos económicos registrados en esta etapa.','<div class="impact-evidence-compact"><b>Calidad de evidencia económica</b><span>'+(labels.length?labels.map(esc).join(' · '):'Sin evidencia económica registrada')+'</span><small>Se deriva de la evidencia de cada impacto; no se vuelve a preguntar.</small></div>');
   }
-  const block=section('Datos complementarios de la etapa','Sólo aparecen datos cuyo owner no está ya cubierto por el editor estructurado. No se duplica captura de pasos, fricciones, riesgos ni impactos.',`<div class="form-grid">${renderStageFields(fields,e)}</div>`);
+  const signals=stageId==='S04'?asIsComplementarySignals(e).filter(x=>fields.some(f=>f.Field_ID===x.field)):[];
+  const context=signals.length?'<div class="notice info"><b>Información ya identificada en el AS-IS · sin nueva captura</b>'+signals.map(x=>'<p><b>'+esc(x.field)+'</b> · '+esc(x.message)+'</p>').join('')+'<small>Son referencias a datos capturados. Las respuestas condicionales y los hallazgos siguen requiriendo confirmación explícita cuando proceda.</small></div>':'';
+  const block=section('Datos complementarios de la etapa','Sólo aparecen datos cuyo owner no está ya cubierto por el editor estructurado. No se duplica captura de pasos, fricciones, riesgos ni impactos.',context+`<div class="form-grid">${renderStageFields(fields,e)}</div>`);
   return stageId==='S06'?'<div class="risk-stage-complementary">'+block+'</div>':block;
 }
 function processPage(){
