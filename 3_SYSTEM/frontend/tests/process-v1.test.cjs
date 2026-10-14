@@ -438,8 +438,11 @@ test('contextual catalog keeps extra options hidden and places Mostrar más insi
 
 test('time and performance shows declared end-to-end cycle share without inventing a duration',()=>{
   assert.match(code,/function processDeclaredCycleContext\(e\)/);
+  assert.match(code,/function processDeclaredSlaContext\(e\)/);
   assert.match(code,/e\?\.answers\?\.DF026/);
-  assert.match(code,/Total del proceso declarado:/);
+  assert.match(code,/e\?\.answers\?\.DF025/);
+  assert.match(code,/Tiempo end-to-end declarado/);
+  assert.match(code,/SLA objetivo declarado/);
   assert.match(code,/del tiempo end-to-end declarado/);
   assert.match(code,/processTimeShareHtml\(e,'step_active'/);
   assert.match(code,/processTimeShareHtml\(e,'step_wait'/);
