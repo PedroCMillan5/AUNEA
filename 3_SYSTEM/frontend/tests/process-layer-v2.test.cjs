@@ -208,8 +208,8 @@ test('client layer exposes only the matching per-step add action and linked badg
 
 test('decision gateway and YES card share the main row while NO stays below',()=>{
   assert.match(css,/\.process-graph-yes-branch-cell\{transform:none/);
-  assert.match(css,/\.graph-decision-gateway\{[^}]*top:calc\(50% - 29px\)/);
-  assert.match(css,/\.graph-decision-copy\{[^}]*top:calc\(50% \+ 43px\)/);
+  assert.match(css,/\.graph-decision-gateway\{[^}]*top:max\(calc\(50% - 29px\),calc\(72px \+ var\(--decision-details-height,0px\)\)\)/);
+  assert.match(css,/\.graph-decision-copy\{[^}]*top:max\(calc\(50% \+ 43px\),calc\(144px \+ var\(--decision-details-height,0px\)\)\)/);
   assert.match(process,/if\(Math\.abs\(targetY-centerY\)<4\)appendPath\('M'\+rightX\+' '\+centerY\+'H'\+\(targetX-5\)/);
   assert.match(process,/yesBottom\+34/);
 });
@@ -227,7 +227,7 @@ test('decision NO route exits below the gateway, clears the YES card, and overla
   assert.match(css,/\.graph-decision-inline\.has-layer-action>\.process-node-links\{top:78px/);
   assert.match(css,/\.graph-decision-gateway\{[^}]*top:max\(calc\(50% - 29px\),calc\(72px \+ var\(--decision-details-height,0px\)\)\)/);
   assert.match(css,/\.graph-decision-copy\{[^}]*top:max\(calc\(50% \+ 43px\),calc\(144px \+ var\(--decision-details-height,0px\)\)\)/);
-  assert.match(css,/\.graph-decision-gateway\{[^}]*top:calc\(50% - 29px\)/);
+  assert.match(css,/\.graph-decision-gateway\{[^}]*top:max\(calc\(50% - 29px\),calc\(72px \+ var\(--decision-details-height,0px\)\)\)/);
   assert.match(css,/body\.mode-process-editor \.process-graph-cell \.flow-step\{[^}]*max-height:none/);
   assert.doesNotMatch(css,/\.process-node-links \.friction-badge:before/);
 });
