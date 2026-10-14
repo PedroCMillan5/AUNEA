@@ -222,7 +222,7 @@ test('decision NO route exits below the gateway, clears the YES card, and overla
   assert.match(process,/appendPath\('M'\+noStartX\+' '\+noStartY\+'V'\+lowerY/);
   assert.match(css,/\.process-graph-decision-cell\{align-items:stretch\}/);
   assert.match(css,/\.graph-decision-inline \.flow-step-tools\{[^}]*top:8px/);
-  assert.match(css,/\.graph-decision-inline>\.process-node-actions\{[^}]*top:-94px/);
+  assert.match(css,/\.graph-decision-inline>\.process-node-actions\{[^}]*top:40px/);
   assert.match(css,/\.graph-decision-inline>\.process-node-links\{[^}]*top:-58px[^}]*width:100%/);
   assert.match(css,/\.graph-decision-gateway\{[^}]*top:calc\(50% - 29px\)/);
   assert.match(css,/body\.mode-process-editor \.process-graph-cell \.flow-step\{[^}]*max-height:none/);
@@ -255,6 +255,15 @@ test('risk inherits confirmed friction locations via existing step_ids; economic
   assert.match(econ,/Evita volver a contabilizar el mismo evento/);
   assert.match(css,/\.client-inherited-context\{/);
 });
+
+test('friction save persists synchronously before the layer redraw',()=>{
+  assert.match(process,/markDirty\('Fricción guardada'\)/);
+  assert.match(process,/persistRecoverySnapshot\('friccion-guardada'\)/);
+  const saveAt=process.indexOf("persistRecoverySnapshot('friccion-guardada')");
+  const renderAt=process.indexOf('closeModal();render();',saveAt);
+  assert.ok(saveAt>=0&&renderAt>saveAt,'friction must be persisted before redraw');
+});
+
 test('friction popup captures approved time attribution without changing existing dropdowns',()=>{
   assert.ok(process.includes("auneaDropdownControl('fr_time_mode'"));
   assert.ok(process.includes("auneaDropdownControl('fr_time_owner'"));
