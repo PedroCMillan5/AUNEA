@@ -434,3 +434,19 @@ test('contextual catalog keeps extra options hidden and places Mostrar más insi
     assert.doesNotMatch(html,/<\/details><\/div><button[^>]*data-show-all-context/,'no external show-more button remains');
   }finally{ctx.fieldOptions=oldFieldOptions}
 });
+
+
+test('time and performance shows declared end-to-end cycle share without inventing a duration',()=>{
+  assert.match(code,/function processDeclaredCycleContext\(e\)/);
+  assert.match(code,/e\?\.answers\?\.DF026/);
+  assert.match(code,/Total del proceso declarado:/);
+  assert.match(code,/del tiempo end-to-end declarado/);
+  assert.match(code,/processTimeShareHtml\(e,'step_active'/);
+  assert.match(code,/processTimeShareHtml\(e,'step_wait'/);
+  assert.match(code,/processTimeShareHtml\(e,'step_rework'.*conditional:true/);
+  assert.match(code,/bindProcessTimeShares\(\)/);
+});
+
+test('tool field spans the full popup width',()=>{
+  assert.match(code,/<div class="field full"><label>Herramienta \/ sistema<\/label>/);
+});
