@@ -107,4 +107,30 @@ test('single UAT risk payload is complete and never throws reversibility startup
  assert.equal(Array.from(risks).every(r=>typeof r.reversible==='boolean'&&typeof r.controls_present==='boolean'),true);
  dom.window.close();
 });
+
+test('PG05 internal Pasos reads confirmed client map without a second editor or layer confirmation',async()=>{
+ const {w,dom,run}=buildRuntime();
+ try{
+   run("state.activePage='uat';render()");
+   await w.document.getElementById('loadSingleUat').onclick();
+   const previous=run("currentEng().layerConfirmations.map");
+   assert.equal(previous,false,'fixture starts with an unconfirmed map');
+   const initial=run("consultantStepsPage()");
+   assert.match(initial,/data-confirm-process-layer="map"/,'original editable flow must stay before client confirmation');
+   const count=run("currentEng().processSteps.length");
+   const baseAnswers=run("JSON.stringify(currentEng().answers)");
+   run("currentEng().layerConfirmations.map=true");
+   const reviewed=run("consultantStepsPage()");
+   assert.match(reviewed,/Mapa AS-IS confirmado/);
+   assert.match(reviewed,/Suficiencia de información para la propuesta/);
+   assert.match(reviewed,/Continuar a Fricciones/);
+   assert.doesNotMatch(reviewed,/data-confirm-process-layer="map"/,'client confirmation is not repeated');
+   assert.doesNotMatch(reviewed,/data-delete-step=/,'confirmed map is not recreated in the internal review');
+   assert.doesNotMatch(reviewed,/id="addStep"/,'confirmed map does not show another add-step editor');
+   assert.equal(run("currentEng().processSteps.length"),count);
+   assert.equal(run("JSON.stringify(currentEng().answers)"),baseAnswers,'read-only review never manufactures answers');
+   assert.equal(run("currentEng().layerConfirmations.map"),true);
+   assert.equal(run("currentEng().confirmedAsIs"),false,'PG09 remains the separate final confirmation');
+ }finally{dom.window.close();}
+});
 // [AUNEA-UAT-RUNTIME-125] END
