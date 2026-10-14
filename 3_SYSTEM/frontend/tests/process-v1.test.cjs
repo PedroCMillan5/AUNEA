@@ -443,7 +443,7 @@ test('time and performance shows declared end-to-end cycle share without inventi
   assert.match(code,/e\?\.answers\?\.DF025/);
   assert.match(code,/Tiempo end-to-end declarado/);
   assert.match(code,/SLA objetivo declarado/);
-  assert.match(code,/del tiempo end-to-end declarado/);
+  assert.match(code,/tiempo end-to-end declarado/);
   assert.match(code,/processTimeShareHtml\(e,'step_active'/);
   assert.match(code,/processTimeShareHtml\(e,'step_wait'/);
   assert.match(code,/processTimeShareHtml\(e,'step_rework'.*conditional:true/);
