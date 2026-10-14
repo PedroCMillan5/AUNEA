@@ -177,28 +177,46 @@ function bindProcessDropdownDelegation(){
   });
 }
 bindProcessDropdownDelegation();
-function processDeclaredCycleContext(e){
-  const raw=e?.answers?.DF026;
-  if(!raw||typeof raw!=='object'||['UNKNOWN','NONE'].includes(String(raw.mode||'')))return null;
-  const value=Number(raw.value),unit=String(raw.unit||'');
-  if(!Number.isFinite(value)||value<=0||!unit)return null;
-  const factors={min:1,h:60,day:1440,week:10080},factor=factors[unit];
-  if(!factor)return null;
-  const labels={min:'min',h:'h',day:'días',week:'semanas'};
-  return {minutes:value*factor,label:`${String(value).replace('.',',')} ${labels[unit]||unit}`};
+function processTimeAnswerContext(raw){
+  if(raw===undefined||raw===null||raw==='')return null;
+  if(typeof raw==='number'&&Number.isFinite(raw)&&raw>0)return {value:raw,unit:'min'};
+  if(typeof raw==='string'){
+    const m=raw.trim().match(/^([0-9]+(?:[.,][0-9]+)?)\s*(min|m|minuto|minutos|h|hora|horas|d|dia|día|dias|días|week|semana|semanas)?$/i);
+    if(!m)return null;
+    const value=Number(m[1].replace(',','.')),token=String(m[2]||'min').toLowerCase();
+    const unit=/^h|hora/.test(token)?'h':/^d|día|dia/.test(token)?'day':/^week|semana/.test(token)?'week':'min';
+    return Number.isFinite(value)&&value>0?{value,unit}:null;
+  }
+  if(typeof raw==='object'){
+    if(['UNKNOWN','NONE'].includes(String(raw.mode||'')))return null;
+    const value=Number(raw.value),unitRaw=String(raw.unit||'').toLowerCase();
+    const unit=({min:'min',minute:'min',minutes:'min',m:'min',h:'h',hour:'h',hours:'h',day:'day',days:'day',d:'day',week:'week',weeks:'week'})[unitRaw]||unitRaw;
+    return Number.isFinite(value)&&value>0&&unit?{value,unit}:null;
+  }
+  return null;
 }
+function processDurationContext(raw){
+  const parsed=processTimeAnswerContext(raw);if(!parsed)return null;
+  const factors={min:1,h:60,day:1440,week:10080},labels={min:'min',h:'h',day:'días',week:'semanas'},factor=factors[parsed.unit];
+  if(!factor)return null;
+  return {minutes:parsed.value*factor,label:`${String(parsed.value).replace('.',',')} ${labels[parsed.unit]||parsed.unit}`};
+}
+function processDeclaredCycleContext(e){return processDurationContext(e?.answers?.DF026)}
+function processDeclaredSlaContext(e){return processDurationContext(e?.answers?.DF025)}
 function processTimeShareHtml(e,id,minutes,{conditional=false}={}){
-  const total=processDeclaredCycleContext(e);if(!total)return '';
-  const pct=Number(minutes)>0?Number(minutes)/total.minutes*100:null;
-  const pctText=pct===null?'Introduce el tiempo del paso para calcular su peso.':`${conditional?'Cuando ocurre retrabajo, este tiempo':'Este tiempo'} representa ${pct<0.1?'<0,1':pct.toLocaleString('es-ES',{minimumFractionDigits:1,maximumFractionDigits:1})} % del tiempo end-to-end declarado.`;
-  return `<div class="step-time-context" data-step-time-context="${attr(id)}" data-process-cycle-minutes="${attr(total.minutes)}" data-process-cycle-label="${attr(total.label)}" data-step-time-conditional="${conditional?'1':'0'}"><b>Total del proceso declarado:</b> ${esc(total.label)}. <span data-step-time-share-text>${pctText}</span></div>`;
+  const cycle=processDeclaredCycleContext(e),sla=processDeclaredSlaContext(e),reference=cycle||sla;if(!reference)return '';
+  const referenceType=cycle?'Tiempo end-to-end declarado':'SLA objetivo declarado';
+  const pct=Number(minutes)>0?Number(minutes)/reference.minutes*100:null;
+  const pctText=pct===null?'Introduce el tiempo del paso para calcular su peso.':`${conditional?'Cuando ocurre retrabajo, este tiempo':'Este tiempo'} representa ${pct<0.1?'<0,1':pct.toLocaleString('es-ES',{minimumFractionDigits:1,maximumFractionDigits:1})} % del ${cycle?'tiempo end-to-end declarado':'SLA objetivo'}.`;
+  const note=cycle?'':' No hay tiempo end-to-end declarado disponible; el porcentaje se muestra contra el SLA y se identifica expresamente como tal.';
+  return `<div class="step-time-context" data-step-time-context="${attr(id)}" data-process-cycle-minutes="${attr(reference.minutes)}" data-process-cycle-label="${attr(reference.label)}" data-process-reference-type="${cycle?'cycle':'sla'}" data-step-time-conditional="${conditional?'1':'0'}"><b>${esc(referenceType)}:</b> ${esc(reference.label)}. <span data-step-time-share-text>${pctText}</span>${note?`<span class="field-help">${esc(note)}</span>`:''}</div>`;
 }
 function refreshProcessTimeShare(id){
   const box=document.querySelector?.(`[data-step-time-context="${id}"]`),input=document.getElementById(id),unit=document.getElementById(id+'_unit');if(!box||!input||!unit)return;
   const total=Number(box.dataset.processCycleMinutes||0),minutes=minutesFrom(input.value,unit.value),span=box.querySelector?.('[data-step-time-share-text]');if(!span||!total)return;
   if(!input.value||!Number.isFinite(minutes)){span.textContent='Introduce el tiempo del paso para calcular su peso.';return}
-  const pct=minutes/total*100,pctLabel=pct<0.1?'<0,1':pct.toLocaleString('es-ES',{minimumFractionDigits:1,maximumFractionDigits:1});
-  span.textContent=(box.dataset.stepTimeConditional==='1'?'Cuando ocurre retrabajo, este tiempo':'Este tiempo')+` representa ${pctLabel} % del tiempo end-to-end declarado.`;
+  const pct=minutes/total*100,pctLabel=pct<0.1?'<0,1':pct.toLocaleString('es-ES',{minimumFractionDigits:1,maximumFractionDigits:1}),ref=box.dataset.processReferenceType==='cycle'?'tiempo end-to-end declarado':'SLA objetivo';
+  span.textContent=(box.dataset.stepTimeConditional==='1'?'Cuando ocurre retrabajo, este tiempo':'Este tiempo')+` representa ${pctLabel} % del ${ref}.`;
 }
 function bindProcessTimeShares(){
   document.querySelectorAll?.('[data-step-time-context]').forEach(box=>{
