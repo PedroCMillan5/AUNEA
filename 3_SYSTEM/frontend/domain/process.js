@@ -177,6 +177,35 @@ function bindProcessDropdownDelegation(){
   });
 }
 bindProcessDropdownDelegation();
+function processDeclaredCycleContext(e){
+  const raw=e?.answers?.DF026;
+  if(!raw||typeof raw!=='object'||['UNKNOWN','NONE'].includes(String(raw.mode||'')))return null;
+  const value=Number(raw.value),unit=String(raw.unit||'');
+  if(!Number.isFinite(value)||value<=0||!unit)return null;
+  const factors={min:1,h:60,day:1440,week:10080},factor=factors[unit];
+  if(!factor)return null;
+  const labels={min:'min',h:'h',day:'días',week:'semanas'};
+  return {minutes:value*factor,label:`${String(value).replace('.',',')} ${labels[unit]||unit}`};
+}
+function processTimeShareHtml(e,id,minutes,{conditional=false}={}){
+  const total=processDeclaredCycleContext(e);if(!total)return '';
+  const pct=Number(minutes)>0?Number(minutes)/total.minutes*100:null;
+  const pctText=pct===null?'Introduce el tiempo del paso para calcular su peso.':`${conditional?'Cuando ocurre retrabajo, este tiempo':'Este tiempo'} representa ${pct<0.1?'<0,1':pct.toLocaleString('es-ES',{minimumFractionDigits:1,maximumFractionDigits:1})} % del tiempo end-to-end declarado.`;
+  return `<div class="step-time-context" data-step-time-context="${attr(id)}" data-process-cycle-minutes="${attr(total.minutes)}" data-process-cycle-label="${attr(total.label)}" data-step-time-conditional="${conditional?'1':'0'}"><b>Total del proceso declarado:</b> ${esc(total.label)}. <span data-step-time-share-text>${pctText}</span></div>`;
+}
+function refreshProcessTimeShare(id){
+  const box=document.querySelector?.(`[data-step-time-context="${id}"]`),input=document.getElementById(id),unit=document.getElementById(id+'_unit');if(!box||!input||!unit)return;
+  const total=Number(box.dataset.processCycleMinutes||0),minutes=minutesFrom(input.value,unit.value),span=box.querySelector?.('[data-step-time-share-text]');if(!span||!total)return;
+  if(!input.value||!Number.isFinite(minutes)){span.textContent='Introduce el tiempo del paso para calcular su peso.';return}
+  const pct=minutes/total*100,pctLabel=pct<0.1?'<0,1':pct.toLocaleString('es-ES',{minimumFractionDigits:1,maximumFractionDigits:1});
+  span.textContent=(box.dataset.stepTimeConditional==='1'?'Cuando ocurre retrabajo, este tiempo':'Este tiempo')+` representa ${pctLabel} % del tiempo end-to-end declarado.`;
+}
+function bindProcessTimeShares(){
+  document.querySelectorAll?.('[data-step-time-context]').forEach(box=>{
+    const id=box.dataset.stepTimeContext,input=document.getElementById(id),unit=document.getElementById(id+'_unit'),refresh=()=>refreshProcessTimeShare(id);
+    input?.addEventListener?.('input',refresh);unit?.addEventListener?.('change',refresh);refresh();
+  });
+}
 function timeControl(id,minutes,unit='min',allowSpecial=false){
   const units=[{value:'min',label:'min'},{value:'h',label:'h'},{value:'day',label:'días'},{value:'week',label:'semanas'}],modes=[{value:'',label:'Dato disponible'},{value:'UNKNOWN',label:'No disponible'},{value:'ZERO',label:'Cero'}];
   return `<div class="compound-control"><input id="${id}" type="number" min="0" step="any" value="${attr(displayDuration(minutes,unit))}" placeholder="0">${auneaDropdownControl(id+'_unit',units,unit,'Unidad')}${allowSpecial?auneaDropdownControl(id+'_mode',modes,'','Estado'):''}</div>`;
@@ -251,9 +280,9 @@ function openStepModal(stepId=null,linkFromStepId=null,preset=null){
     <div class="field full"><label>¿Qué produce este paso?</label>${selectedHtml('step_outputs',artifacts,s.outputs,{wrapped:true,detailId:'step_outputs_detail',detailValue:s._details.outputs||'',detailPlaceholder:'Especifica el output sólo al seleccionar Otro',preferredValues:artifactContext})}${suggestionHtml('outputs',stepSuggestions.outputs)}</div>
   </div></details>
   <details class="step-group"><summary>C. Tiempo y rendimiento</summary><div class="form-grid">
-    <div class="field"><label>¿Cuánto tiempo de trabajo requiere?</label>${timeControl('step_active',s.active_time,s._ui.active_unit||'min')}${suggestionHtml('active_time',stepSuggestions.active_time)}</div>
-    <div class="field"><label>¿Cuánto tiempo queda esperando?</label>${timeControl('step_wait',s.wait_time,s._ui.wait_unit||'min')}${suggestionHtml('wait_time',stepSuggestions.wait_time)}<div class="field-help">Tiempo en el que el caso está parado o esperando antes de poder continuar. Se mantiene separado del trabajo activo y no se monetiza como trabajo.</div></div>
-    <div class="field"><label>Tiempo de retrabajo</label>${timeControl('step_rework',s.rework_time,s._ui.rework_unit||'min')}${suggestionHtml('rework_time',stepSuggestions.rework_time)}</div>
+    <div class="field"><label>¿Cuánto tiempo de trabajo requiere?</label>${timeControl('step_active',s.active_time,s._ui.active_unit||'min')}${suggestionHtml('active_time',stepSuggestions.active_time)}${processTimeShareHtml(e,'step_active',s.active_time)}</div>
+    <div class="field"><label>¿Cuánto tiempo queda esperando?</label>${timeControl('step_wait',s.wait_time,s._ui.wait_unit||'min')}${suggestionHtml('wait_time',stepSuggestions.wait_time)}${processTimeShareHtml(e,'step_wait',s.wait_time)}<div class="field-help">Tiempo en el que el caso está parado o esperando antes de poder continuar. Se mantiene separado del trabajo activo y no se monetiza como trabajo.</div></div>
+    <div class="field"><label>Tiempo de retrabajo</label>${timeControl('step_rework',s.rework_time,s._ui.rework_unit||'min')}${suggestionHtml('rework_time',stepSuggestions.rework_time)}${processTimeShareHtml(e,'step_rework',s.rework_time,{conditional:true})}</div>
     <div class="field"><label>Error / repetición</label><div class="compound-control"><input id="step_error" type="number" min="0" step="any" value="${attr(s.error_rate&&typeof s.error_rate==='object'?s.error_rate.value:(s.error_rate||''))}" placeholder="5">${auneaDropdownControl('step_error_mode',[{value:'percent',label:'%'},{value:'count',label:'casos'}],s.error_rate?.mode||'percent','Unidad')}<span data-step-error-period-wrap${(s.error_rate?.mode||'percent')==='count'?'':' style="display:none"'}>${auneaDropdownControl('step_error_period',[{value:'',label:'Selecciona periodo…'},{value:'day',label:'por día'},{value:'week',label:'por semana'},{value:'month',label:'por mes'},{value:'year',label:'por año'}],s.error_rate?.period||'','Periodo')}</span></div>${suggestionHtml('error_rate',stepSuggestions.error_rate)}<div class="field-help">Con % se interpreta como proporción de casos y no lleva periodo. Si eliges casos, indica también el periodo.</div></div>
   </div></details>
   <details class="step-group"><summary>D. Flujo y decisiones</summary><div class="form-grid">
@@ -263,7 +292,7 @@ function openStepModal(stepId=null,linkFromStepId=null,preset=null){
     <div class="field full" data-step-decision-area${hasDecision?'':' style="display:none"'}>${exceptionControl(s,e)}</div>
   </div></details>
   <details class="step-group"><summary>E. Automatización y sistemas</summary><div class="form-grid">
-    <div class="field"><label>Herramienta / sistema</label>${datalistControl('step_tool','OS_TOOL_CATEGORY',s.tool||'','Herramienta principal',toolContext)}${suggestionHtml('tool',stepSuggestions.tool)}</div>
+    <div class="field full"><label>Herramienta / sistema</label>${datalistControl('step_tool','OS_TOOL_CATEGORY',s.tool||'','Herramienta principal',toolContext)}${suggestionHtml('tool',stepSuggestions.tool)}</div>
     <div class="field full"><label>Acciones manuales</label>${selectedHtml('step_manual',manual,s.manual_actions,{detailId:'step_manual_other',detailValue:s._details.manual_actions||'',detailPlaceholder:'Especifica la otra acción manual',preferredValues:manualContext})}${suggestionHtml('manual_actions',stepSuggestions.manual_actions)}</div>
     <div class="field full"><label>Automatización actual</label>${segmented('step_auto',auto,s.automation_state,'data-step-auto')}${suggestionHtml('automation_state',stepSuggestions.automation_state)}</div>
     <div class="field full"><label>Canal(es) de comunicación</label>${selectedHtml('step_channels',channels,s.communication_channels,{detailId:'step_channels_other',detailValue:s._details.communication_channels||'',detailPlaceholder:'Especifica el canal sólo al seleccionar Otro',preferredValues:channelContext})}${suggestionHtml('communication_channels',stepSuggestions.communication_channels)}</div>
@@ -305,6 +334,7 @@ function openStepModal(stepId=null,linkFromStepId=null,preset=null){
     if(persisted===false)toast('No se ha podido persistir este paso.');else toast(existing?'Cambios del paso guardados.':'Paso guardado.');
   },existing?'Guardar cambios':'Añadir paso');
   bindProcessAppliesControl();
+  bindProcessTimeShares();
   if(typeof bindProcessStepSuggestions==='function')bindProcessStepSuggestions(s,stepSuggestions);
   const stepErrorMode=document.getElementById('step_error_mode');
   if(stepErrorMode)stepErrorMode.addEventListener('change',()=>{
