@@ -94,10 +94,16 @@ test('actionable suggestion UI exposes Apply Undo and a visible state placeholde
   assert.match(html,/data-step-suggestion-status/);
 });
 
-test('single-select suggestions with several valid candidates require an explicit candidate choice',()=>{
-  const html=ctx.processSuggestionHtml('tool',[{ruleId:'PSR-002',type:'REUSE',values:['EMAIL','ERP'],setId:'OS_TOOL_CATEGORY',singleChoice:true,text:'Herramientas ya usadas.',apply:true}]);
-  assert.match(html,/Aplicar Email/);
-  assert.match(html,/Aplicar ERP/);
-  assert.match(html,/data-step-suggestion-choice="EMAIL"/);
-  assert.match(html,/data-step-suggestion-choice="ERP"/);
+test('single-select reuse stays informational and leaves selection to the dropdown',()=>{
+  const html=ctx.processSuggestionHtml('tool',[{ruleId:'PSR-002',type:'REUSE',values:['EMAIL','ERP'],setId:'OS_TOOL_CATEGORY',text:'Herramientas ya usadas.',apply:false}]);
+  assert.match(html,/Email · ERP/);
+  assert.doesNotMatch(html,/>Aplicar/);
+  assert.doesNotMatch(html,/data-step-suggestion-choice/);
+});
+
+test('actionable multiselect suggestions use one visible Apply action and exact replacement semantics',()=>{
+  const html=ctx.processSuggestionHtml('inputs',[{ruleId:'PSR-003',type:'DERIVED',values:['PDF'],setId:'OS_ARTIFACT_TYPE',text:'Output anterior.',apply:true}]);
+  assert.equal((html.match(/>Aplicar</g)||[]).length,1);
+  assert.equal((html.match(/>Deshacer</g)||[]).length,1);
+  assert.match(engine,/field==='inputs'\)changed=processSuggestionSetMulti\('step_inputs',suggestion\.values,\{replace:true\}\)/);
 });
