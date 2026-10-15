@@ -424,25 +424,34 @@ test('PG05 derives all four source-owned values, revokes stale confirmations, an
  }finally{dom.window.close();}
 });
 
-test('PG05 shows every DF053 detected search step in process order, without auto-confirming it',async()=>{
+test('PG05 separates human-confirmed searches from unconfirmed detections in process order',async()=>{
  const {w,dom,run}=buildRuntime();
  try{
    run("state.activePage='uat';render()");
    await w.document.getElementById('loadSingleUat').onclick();
+   const original=run("JSON.stringify(currentEng().answers.DF053)");
+   const confirmed=JSON.parse(original||'null')||[];
+   const suggested=Array.from(run("reusedValue('DF053',currentEng())")||[]);
+   const added=suggested.filter(id=>!confirmed.includes(id));
    run("state.activePage='pasos';render()");
-   const candidates=run("reusedValue('DF053',currentEng())");
-   const ordered=run("activeSteps(currentEng()).map(x=>x.id)").filter(id=>candidates.includes(id));
    const box=w.document.querySelector('[data-pg05-field="DF053"]');
    const shown=box.querySelector('.pg05-field-value').textContent;
-   let last=-1;
-   for(const id of ordered){
-     const idx=run("activeSteps(currentEng()).findIndex(x=>x.id==='"+id+"')")+1;
-     const name=run("activeSteps(currentEng()).find(x=>x.id==='"+id+"').step_name");
-     const at=shown.indexOf(idx+'. '+name);
-     assert.ok(at>last,'search candidates displayed in process order: '+name+'; actual: '+shown+'; IDs: '+JSON.stringify(candidates));
-     last=at;
+   const order=Array.from(run("activeSteps(currentEng()).map(x=>x.id)"));
+   const labels=Array.from(run("activeSteps(currentEng()).map(x=>x.step_name)"));
+   for(const [label,ids] of [['Confirmados',confirmed],['Nuevos candidatos',added]]){
+     if(!ids.length)continue;
+     const segment=label==='Confirmados'?shown.split(' | ')[0]:shown.split(' | ').at(-1);
+     if(label==='Confirmados')assert.match(segment,/Confirmados:/);
+     else assert.match(segment,/Nuevos candidatos:|Candidatos detectados:/);
+     let last=-1;
+     for(const id of ids.slice().sort((a,b)=>order.indexOf(a)-order.indexOf(b))){
+       const pos=order.indexOf(id),at=segment.indexOf((pos+1)+'. '+labels[pos]);
+       assert.ok(at>last,'step shown in proper source order: '+id+' in '+segment);
+       last=at;
+     }
    }
-   assert.equal(run("currentEng().answers.DF053"),undefined,'suggested search steps are not silently human-confirmed');
+   if(confirmed.length&&added.length)assert.match(box.textContent,/nuevos candidatos por revisar/i);
+   assert.equal(run("JSON.stringify(currentEng().answers.DF053)"),original,'new derived candidates must never overwrite confirmed selections');
  }finally{dom.window.close();}
 });
 
