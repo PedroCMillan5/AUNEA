@@ -1420,9 +1420,9 @@ function consultantStepsReviewPage(e){
     const selectedGlobal=new Set(normalizeArray(currentSourceValues).map(String));
     const globalChoices=sourceSet?fieldOptions(sourceSet).filter(o=>!sourceAllowed||sourceAllowed.has(String(o.value))):[];
     const sourceEditor=derived&&hasReuse&&kind!=='confirmed'&&sourceSet
-      ?'<div class="pg05-source-review"><b>Opciones recuperadas del mapa</b><small>Selecciona globalmente las opciones aplicables. Las recuperadas de la última revisión aparecen marcadas.</small><div class="pg05-source-options">'
-       +globalChoices.map(o=>'<label class="pg05-source-choice"><input type="checkbox" data-pg05-global-option="'+fid+'" value="'+attr(o.value)+'"'+(selectedGlobal.has(String(o.value))?' checked':'')+'><span>'+esc(o.label||o.value)+'</span></label>').join('')
-       +'</div></div>':'';
+      ?'<div class="pg05-source-review"><b>Opciones recuperadas del mapa</b><small>Las opciones de la última revisión aparecen marcadas; puedes modificar la selección global.</small>'
+       +selectedHtml('pg05_review_'+fid,globalChoices,[...selectedGlobal],{wrapped:true,preferredValues:initialSourceValues})
+       +'</div>':'';
     // [AUNEA-FE-PG05-GLOBAL-REVIEW-105]
     const derivedAction=derived&&hasReuse?sourceEditor+'<div class="pg05-field-action pg05-field-confirmation">'+(kind==='confirmed'
       ?'<button type="button" class="btn btn-small btn-outline" data-undo-derived="'+fid+'">Deshacer confirmación</button>'
@@ -1535,10 +1535,10 @@ bindForms=function(){
   __auneaPg05BindForms();
   // PG05 finding actions use the persistent delegated listener below.
   // Live selection changes write directly to the original ProcessStep.
-  document.querySelectorAll('[data-pg05-global-option]').forEach(input=>input.addEventListener('change',()=>{
-    const e=currentEng(),fid=input.dataset.pg05GlobalOption;if(!e)return;
+  document.querySelectorAll('[data-v1-multi^="pg05_review_"]').forEach(input=>input.addEventListener('change',()=>{
+    const e=currentEng(),fid=String(input.dataset.v1Multi).replace(/^pg05_review_/,'');if(!e)return;
     const source=normalizeArray(reusedValue(fid,e)).map(String);
-    const selected=[...document.querySelectorAll('[data-pg05-global-option="'+fid+'"]:checked')].map(x=>x.value);
+    const selected=[...document.querySelectorAll('[data-v1-multi="pg05_review_'+fid+'"]:checked')].map(x=>x.value);
     const details=e.answerDetails||(e.answerDetails={});
     details[fid+'__global_review']={base:source,values:selected};
     delete details[fid+'__derived_confirmation'];
