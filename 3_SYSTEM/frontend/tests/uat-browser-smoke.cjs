@@ -54,6 +54,17 @@ async function main(){
    assert.equal(chosen,'impacto',id+' switched to Pasos unexpectedly');
    await editor.screenshot({path:path.join(outDir,id.toLowerCase()+'.png'),fullPage:true});
    await editor.close();
+   // Native consultant PG05: one owner, six editable cards, ten nonduplicated projections.
+   await page.evaluate(()=>{state.activePage='pasos';render()});
+   await page.locator('.pg05-review').waitFor();
+   assert.equal(await page.locator('.pg05-review [data-pg05-step]').count(),6,'PG05 must display six source ProcessSteps');
+   assert.equal(await page.locator('.pg05-review [data-pg05-field]').count(),10,'PG05 must display exactly ten complementary fields');
+   await page.screenshot({path:path.join(outDir,id.toLowerCase()+'-pg05-consultor.png'),fullPage:true});
+   const stepEdit=page.locator('.pg05-review [data-edit-step]').first();
+   await stepEdit.click();
+   await page.locator('#modalRoot #step_name').waitFor();
+   await page.locator('#modalCancel').click();
+   assert.equal(await page.locator('#modalRoot .modal').count(),0,'cancel must keep the review clean');
    // Session rail is contextual: return through Inicio before opening system UAT again.
    await page.locator('[data-page="inicio"]').first().click();
    await page.locator('[data-page="uat"]').click();
