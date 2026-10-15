@@ -209,7 +209,7 @@
 | AUNEA-FE-SHELL-LAYOUT-091 | 3_SYSTEM/frontend/ui-system.css | Layout de barra superior responsive y sidebar sin scroll vertical, sin logo inferior | Simulator CANONICAL 1.14 §23.2; DEC-066 | Shell común | Navegación visible en desktop | CSS global acotado al shell | HIGH | uat-browser-smoke.cjs; páginas FROZEN | REVIEW |
 
 
-| AUNEA-FE-SHELL-HEADER-093 | 3_SYSTEM/frontend/ui-system.css | Barra superior de dos filas con sesión/progreso y estudio activo/acciones; responsive sin pérdida de navegación | Simulator CANONICAL v1.14 §23; DEC-050/066 | Engagement actual y estado sesión | Header informativo | CSS global shell únicamente | HIGH | uat-browser-smoke.cjs; uat-full-runtime-v1.test.cjs | REVIEW |
+| AUNEA-FE-SHELL-HEADER-093 | 3_SYSTEM/frontend/ui-system.css | Barra superior de una fila con estudio activo, progreso, acciones y usuario; se omiten las etiquetas duplicadas | Simulator CANONICAL v1.14 §23; DEC-050/066 | Engagement actual y estado sesión | Header informativo | CSS global shell únicamente | HIGH | uat-browser-smoke.cjs; uat-full-runtime-v1.test.cjs | REVIEW |
 
 | AUNEA-FE-PG05-CONFIRM-UNDO-094 | 3_SYSTEM/frontend/domain/process.js | Reversible PG05 confirmation | DEC-050 | Value | Confirmation UI | DOM | HIGH | UAT | REVIEW |
 
