@@ -1409,12 +1409,12 @@ function consultantStepsReviewPage(e){
       ?'<button type="button" class="btn btn-small btn-primary" data-open-pg05-finding="'+fid+'">Validar hallazgo</button>':'';
     const noReviewKey=fid+'__no_review_needed';
     const noReviewNeeded=!!e.answerDetails?.[noReviewKey];
-    const noReviewAvailable=!derived&&!hasExplicit&&!signal&&!hasReuse&&['DF052','DF053','DF054','DF055'].includes(fid);
+    const noReviewAvailable=!hasExplicit&&!signal&&!hasReuse&&['DF046','DF047','DF049','DF050','DF051','DF052','DF053','DF054','DF055'].includes(fid)&&!(fid==='DF051'&&typeof duplicateEntryDraftRows==='function'&&duplicateEntryDraftRows(e,'DF051',explicit).length);
     if(noReviewAvailable){status=noReviewNeeded?'Sin validación pendiente':'Sin información que validar';kind=noReviewNeeded?'confirmed':'unknown';}
     const noReviewAction=noReviewAvailable?'<button type="button" class="btn btn-small btn-outline" data-pg05-no-review="'+fid+'">'+(noReviewNeeded?'Deshacer confirmación':'No hay validación que hacer')+'</button>':'';
     const findingUndoAction=fid==='DF051'&&kind==='confirmed'
       ?'<button type="button" class="btn btn-small btn-outline" data-undo-pg05-finding="DF051">Deshacer confirmación</button>':'';
-    const action=derived?derivedAction:(requiresReview
+    const action=derived?(derivedAction+(noReviewAvailable?'<div class="pg05-field-action">'+noReviewAction+'</div>':'')):(requiresReview
       ?'<div class="pg05-field-action">'+quickAction+findingOpenAction+findingUndoAction+noReviewAction
         +'<details class="pg05-discovery-control" data-pg05-finding-editor="'+fid+'"'+(__auneaPg05OpenFinding===fid?' open':'')+'><summary>'+(kind==='confirmed'?'Revisar o corregir':kind==='review'?'Completar información para confirmar':'Añadir información si existe')+'</summary>'
         +(fid==='DF054'?manualHandoffControl():renderStageFields([f],e))+'</details></div>':'');
@@ -1575,7 +1575,7 @@ if(typeof document!=='undefined'&&!document.__auneaPg05FindingActionsBound){
     if(noReview){
       ev.preventDefault();
       const e=currentEng(),fid=noReview.getAttribute('data-pg05-no-review');
-      if(!e||!['DF052','DF053','DF054','DF055'].includes(fid))return;
+      if(!e||!['DF046','DF047','DF049','DF050','DF051','DF052','DF053','DF054','DF055'].includes(fid))return;
       const detail=e.answerDetails||(e.answerDetails={}),key=fid+'__no_review_needed';
       if(detail[key])delete detail[key];
       else detail[key]={acknowledgedAt:now()};
