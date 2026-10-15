@@ -1312,6 +1312,35 @@ function consultantStepsReviewPage(e){
     DF051:'Acciones REKEY/COPY y fricciones',DF052:'Control documental declarado',
     DF053:'Acciones SEARCH y fricciones',DF054:'Transferencias entre herramientas',DF055:'Evidencia de calidad en fricciones'
   };
+  // [AUNEA-FE-PG05-DISCOVERY-084] Optional discovery on the same canonical DF054 answer.
+  // Automatic candidates remain neutral; other pairs can be confirmed by the consultant,
+  // so absence of an inference never makes a valid finding impossible to record.
+  const manualHandoffControl=()=>{
+    const detected=typeof stepSystemHandoffCandidates==='function'?stepSystemHandoffCandidates(e):[];
+    const excluded=new Set((typeof duplicateEntryRows==='function'?duplicateEntryRows(e.answers?.DF051):[])
+      .map(x=>String(x.from)+':'+String(x.to)));
+    const confirmed=new Set(normalizeArray(e.answers?.DF054).map(String));
+    const detectIds=new Set(detected.map(x=>String(x.value)));
+    const possible=[];
+    for(const from of steps)for(const to of steps){
+      if(from.id===to.id||!from.tool||!to.tool||String(from.tool)===String(to.tool))continue;
+      if(excluded.has(String(from.id)+':'+String(to.id)))continue;
+      const value='pair:'+from.id+':'+to.id;
+      if(detectIds.has(value))continue;
+      possible.push({value,label:(byId.get(String(from.id))||from.step_name)+' ('+(labelFrom('OS_TOOL_CATEGORY',from.tool)||from.tool)+') → '
+        +(byId.get(String(to.id))||to.step_name)+' ('+(labelFrom('OS_TOOL_CATEGORY',to.tool)||to.tool)+')'});
+    }
+    const manual=possible.filter(x=>confirmed.has(x.value));
+    const rest=possible.filter(x=>!confirmed.has(x.value));
+    const hints=detected.length?'<p class="pg05-discovery-hint">Revisa los intercambios identificados por el mapa y marca solo los que realmente son manuales.</p>':'';
+    const suggested=detected.length?'<div class="pg05-handoff-options"><b>Candidatos del mapa</b>'+multiChoices('DF054',detected,e.answers?.DF054)+'</div>':'';
+    const other=manual.length||rest.length?'<details class="pg05-manual-pairs"'+(manual.length?' open':'')+'>'
+      +'<summary>'+(detected.length?'Otros pares de pasos entre sistemas':'Seleccionar pasos entre sistemas')+'</summary>'
+      +'<div class="pg05-handoff-options">'+multiChoices('DF054',manual.concat(rest),e.answers?.DF054)+'</div></details>':'';
+    return hints+suggested+other+(!detected.length&&!possible.length
+      ?'<p class="pg05-discovery-hint">No hay pares de pasos con herramientas distintas. Comprueba las herramientas en el editor del mapa si el intercambio existe.</p>':'');
+  };
+  // [AUNEA-FE-PG05-DISCOVERY-084] END
   const current=e.answers||{},derivedCards=[],findingCards=[];
   for(const f of fields){
     const fid=f.Field_ID,mode=String(f.Ask_Mode||''),reuse=typeof reusedValue==='function'?reusedValue(fid,e):undefined;
@@ -1335,12 +1364,16 @@ function consultantStepsReviewPage(e){
       if(fid==='DF051')detail=count?count+' reintroducción(es) registrada(s)':signal?.message||'No se han confirmado reintroducciones';
       else if(fid==='DF053')detail=count?normalizeArray(explicit).map(id=>byId.get(String(id))||'Paso no disponible').join(' · '):hasReuse?normalizeArray(reuse).map(id=>byId.get(String(id))||'Paso no disponible').join(' · '):'Sin búsquedas identificadas';
       else detail=count?count+' intercambio(s) registrado(s)':'Sin intercambios manuales confirmados';
-      requiresReview=!!(visible&&(candidate||count));
+      // Absence of a detected candidate must never prevent manual discovery.
+      // Field ownership and the original canonical validation remain unchanged.
+      requiresReview=true;
     }else{
       status=hasExplicit?'Dato registrado':signal?'Indicio · pendiente de validar':'No consta · condicional';
       kind=hasExplicit?'confirmed':signal?'review':'unknown';
       detail=hasExplicit?formatContextValue(f,explicit):signal?.message||'No hay información acreditada; no bloquea por sí solo';
-      requiresReview=!!(visible&&(signal||hasExplicit));
+      // CONDITIONAL_ASK is optional, not inaccessible. A consultant can discover
+      // master-data, document-version or quality issues without a prior Pain/Step signal.
+      requiresReview=true;
     }
     const quickConfirm=fid==='DF048'&&signal&&!normalizeArray(explicit).includes('MASTER_DATA')
       ?'<button type="button" class="btn btn-small btn-outline" data-confirm-as-is-suggestion="DF048" data-suggest-value="MASTER_DATA">Confirmar dato maestro</button>'
@@ -1348,8 +1381,8 @@ function consultantStepsReviewPage(e){
         ?'<button type="button" class="btn btn-small btn-outline" data-confirm-as-is-suggestion="DF055" data-suggest-value="MISSING">Confirmar campos ausentes</button>':'';
     const action=requiresReview
       ?'<div class="pg05-field-action">'+quickConfirm
-        +'<details><summary>'+(kind==='confirmed'?'Revisar o corregir':'Validar o completar')+'</summary>'
-        +renderStageFields([f],e)+'</details></div>':'';
+        +'<details class="pg05-discovery-control"><summary>'+(kind==='confirmed'?'Revisar o corregir':kind==='review'?'Validar el hallazgo':'Añadir información si existe')+'</summary>'
+        +(fid==='DF054'?manualHandoffControl():renderStageFields([f],e))+'</details></div>':'';
     const card='<article class="pg05-field pg05-field--'+kind+'" data-pg05-field="'+fid+'">'
       +'<div class="pg05-field-top"><b>'+esc(f.Pregunta_o_etiqueta_ES||fid)+'</b>'
       +'<span class="pg05-state-label">'+esc(status)+'</span></div>'
@@ -1379,7 +1412,7 @@ function consultantStepsReviewPage(e){
       +'</div></details>')
     +section('2. Información recuperada del mapa','Cuatro derivaciones calculadas a partir del ProcessStep actual; cada confirmación individual se conserva mientras la fuente no cambie.',
       '<div class="pg05-field-grid">'+derivedCards.join('')+'</div>')
-    +section('3. Hallazgos y datos condicionales','Solo se presentan acciones cuando existe evidencia o un valor que revisar. Un dato desconocido no es un bloqueo.',
+    +section('3. Hallazgos y datos condicionales','Los datos detectados se reutilizan. Si identificas un problema que no aparece en el mapa, puedes registrarlo de forma opcional en su campo.',
       '<div class="pg05-field-list">'+findingCards.join('')+'</div>')
     +section('4. Continuidad del diagnóstico','La edición del mapa se hace aquí sobre el mismo registro. Los hallazgos condicionales sin dato no impiden por sí solos avanzar.',
       (integrity.length?'<div class="pg05-status pg05-status--review"><b>Integridad del mapa pendiente</b>'
