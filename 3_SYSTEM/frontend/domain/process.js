@@ -1428,18 +1428,28 @@ function consultantStepsReviewPage(e){
     // explicitly instead of presenting a misleading one-click confirmation.
     const findingOpenAction=fid!=='DF051'&&!quickAction&&kind==='review'&&!hasExplicit
       ?'<button type="button" class="btn btn-small btn-primary" data-open-pg05-finding="'+fid+'">Validar hallazgo</button>':'';
+    const df051Fingerprint= fid==='DF051'?JSON.stringify({
+      steps:steps.map(x=>[x.id,x.status,x.inputs,x.outputs,x.manual_actions]),
+      frictions:frictions.map(x=>[x.id,x.status,x.friction_type,x.affected_steps,x.observable_signal]),
+      confirmed:typeof duplicateEntryRows==='function'?duplicateEntryRows(e.answers?.DF051):[],
+      drafts:typeof duplicateEntryDraftRows==='function'?duplicateEntryDraftRows(e,'DF051',e.answers?.DF051):[],
+      dismissed:e.answerDetails?.DF051__dismissed||[]
+    }):'';
+    const df051Validated=fid==='DF051'&&e.answerDetails?.DF051__section_confirmation?.fingerprint===df051Fingerprint;
+    if(fid==='DF051'){status=df051Validated?'VALIDADA':'Pendiente de validar';kind=df051Validated?'confirmed':'review';}
+    const df051Action=fid==='DF051'?'<button type="button" class="btn btn-small '+(df051Validated?'btn-outline':'btn-primary')+'" data-pg05-validate-section="DF051">'+(df051Validated?'Deshacer validación':'Validar hallazgo')+'</button>':'';
     const noReviewKey=fid+'__no_review_needed';
     const noReviewNeeded=!!e.answerDetails?.[noReviewKey];
-    const noReviewAvailable=!hasExplicit&&!signal&&!hasReuse&&['DF046','DF047','DF049','DF050','DF051','DF052','DF053','DF054','DF055'].includes(fid)&&!(fid==='DF051'&&typeof duplicateEntryDraftRows==='function'&&duplicateEntryDraftRows(e,'DF051',explicit).length);
+    const noReviewAvailable=!hasExplicit&&!signal&&!hasReuse&&['DF046','DF047','DF049','DF050','DF052','DF053','DF054','DF055'].includes(fid)&&!(fid==='DF051'&&typeof duplicateEntryDraftRows==='function'&&duplicateEntryDraftRows(e,'DF051',explicit).length);
     if(noReviewAvailable){status=noReviewNeeded?'Sin validación pendiente':'Sin información que validar';kind=noReviewNeeded?'confirmed':'unknown';}
     const noReviewAction=noReviewAvailable?'<button type="button" class="btn btn-small btn-outline" data-pg05-no-review="'+fid+'">'+(noReviewNeeded?'Deshacer confirmación':'No hay validación que hacer')+'</button>':'';
     const reviewConfirmationAction=['DF053','DF054','DF055'].includes(fid)&&hasExplicit?'<button type="button" class="btn btn-small '+(e.answerDetails?.[fid+'__finding_confirmation']?.fingerprint===JSON.stringify(explicit)?'btn-outline':'btn-primary')+'" data-pg05-confirm-finding="'+fid+'">'+(e.answerDetails?.[fid+'__finding_confirmation']?.fingerprint===JSON.stringify(explicit)?'Deshacer confirmación':'Confirmar selección')+'</button>':'';
     const findingUndoAction=''; // DF051 reversibility lives on each confirmed row, not a second card action.
     const inlineDuplicate=fid==='DF051'&&requiresReview;
     const action=derived?(derivedAction+(noReviewAvailable?'<div class="pg05-field-action">'+noReviewAction+'</div>':'')):(requiresReview
-      ?'<div class="pg05-field-action">'+quickAction+findingOpenAction+findingUndoAction+reviewConfirmationAction+noReviewAction
+      ?'<div class="pg05-field-action">'+quickAction+findingOpenAction+findingUndoAction+reviewConfirmationAction+df051Action+noReviewAction
         +(inlineDuplicate
-          ?'<div class="pg05-inline-duplicate" data-pg05-finding-editor="DF051">'+renderStageFields([f],e)+'</div>'
+          ?'<div class="pg05-inline-duplicate" data-pg05-finding-editor="DF051">'+(df051Validated?'<div class="field-help">La sección está validada. Pulsa Deshacer validación para añadir, eliminar o corregir reintroducciones.</div>':renderStageFields([f],e))+'</div>'
           :'<details class="pg05-discovery-control" data-pg05-finding-editor="'+fid+'"'+(__auneaPg05OpenFinding===fid?' open':'')+'><summary>'+(kind==='confirmed'?'Revisar o corregir':kind==='review'?'Completar información para confirmar':'Añadir información si existe')+'</summary>'
             +(fid==='DF054'?manualHandoffControl():renderStageFields([f],e))+'</details>')+'</div>':'');
     // [AUNEA-FE-PG05-CONFIRM-UNDO-094] END
@@ -1595,6 +1605,25 @@ if(typeof document!=='undefined'&&!document.__auneaPg05FindingActionsBound){
       const first=editor.querySelector('input:not([type="hidden"]),button,select,textarea');
       first?.focus?.({preventScroll:true});
       return;
+    }
+    const globalValidation=ev.target?.closest?.('[data-pg05-validate-section="DF051"]');
+    if(globalValidation){
+      ev.preventDefault();
+      const e=currentEng();if(!e)return;
+      const details=e.answerDetails||(e.answerDetails={}),key='DF051__section_confirmation';
+      if(details[key])delete details[key];
+      else {
+        const steps=activeSteps(e),frictions=activeFrictions(e);
+        const fingerprint=JSON.stringify({
+          steps:steps.map(x=>[x.id,x.status,x.inputs,x.outputs,x.manual_actions]),
+          frictions:frictions.map(x=>[x.id,x.status,x.friction_type,x.affected_steps,x.observable_signal]),
+          confirmed:typeof duplicateEntryRows==='function'?duplicateEntryRows(e.answers?.DF051):[],
+          drafts:typeof duplicateEntryDraftRows==='function'?duplicateEntryDraftRows(e,'DF051',e.answers?.DF051):[],
+          dismissed:details.DF051__dismissed||[]
+        });
+        details[key]={fingerprint,confirmedAt:now()};
+      }
+      e.updatedAt=now();markDirty('Validación global de reintroducciones revisada');render();return;
     }
     const review=ev.target?.closest?.('[data-pg05-confirm-finding]');
     if(review){
