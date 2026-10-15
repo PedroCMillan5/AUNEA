@@ -248,20 +248,32 @@ function updateHeader(){
   renderRailHead();
 }
 
-// The rail header is the brand block until a study is open, then the selected-project card (IMG90-01).
+// [AUNEA-FE-SHELL-CONTEXT-090] START — Brand stays in rail; existing Engagement owner stays in header.
+// Switching/removing/opening a context writes through the existing actions and never duplicates study state.
 function renderRailHead(){
-  const host=document.getElementById('railHead');if(!host)return;
+  const brand=document.getElementById('railHead');
+  if(brand)brand.innerHTML='<div class="brand"><img class="aunea-brand-logo" src="./assets/brand/Logo.png" alt="AUNEA System"></div>';
+  const host=document.getElementById('topbarActiveStudy');if(!host)return;
   const e=currentEng(),c=e?companyById(e.companyId):null;
-  const activeStatus=e?`<div class="rail-context-status">${statusBadge(engagementStatus(e))}</div>`:'';
-  const actions=e?`
-    <div class="rail-context-actions">
-      <button class="btn btn-small btn-primary" data-open-context="${esc(e.id)}">Abrir / Continuar</button>
-      <button class="btn btn-small" data-change-context="1">Cambiar</button>
-      <button class="btn btn-small" data-clear-context="1">Quitar selección</button>
-    </div>`:'';
-  host.innerHTML=`<div class="brand"><img class="aunea-brand-logo" src="./assets/brand/Logo.png" alt="AUNEA System"></div>`
-    +(e?`<div class="rail-context"><span class="rc-icon">▦</span><div><small>Contexto activo</small><b>${esc(c?.name||'Empresa')}</b><em>${esc(e.title||e.processName||'Diagnóstico')}</em>${activeStatus}</div></div>${actions}`:'');
+  if(!e){host.innerHTML='<div class="topbar-no-study">Sin estudio seleccionado</div>';return;}
+  host.innerHTML=`<div class="topbar-study">
+    <div class="topbar-study-main" title="${esc(c?.name||'Empresa')} · ${esc(e.title||e.processName||'Diagnóstico')}">
+      <small>Contexto activo</small>
+      <b>${esc(c?.name||'Empresa')}</b>
+      <span>${esc(e.title||e.processName||'Diagnóstico')}</span>
+    </div>
+    <details class="topbar-study-disclosure">
+      <summary aria-label="Acciones del estudio activo">Gestionar <span aria-hidden="true">⌄</span></summary>
+      <div class="topbar-study-menu">
+        <div class="topbar-study-menu-status">${statusBadge(engagementStatus(e))}</div>
+        <button type="button" class="btn btn-small btn-primary" data-open-context="${esc(e.id)}">Abrir / Continuar</button>
+        <button type="button" class="btn btn-small" data-change-context="1">Cambiar estudio</button>
+        <button type="button" class="btn btn-small" data-clear-context="1">Quitar selección</button>
+      </div>
+    </details>
+  </div>`;
 }
+// [AUNEA-FE-SHELL-CONTEXT-090] END
 
 function renderNav(){
   const n=document.getElementById('nav');if(!n)return;
