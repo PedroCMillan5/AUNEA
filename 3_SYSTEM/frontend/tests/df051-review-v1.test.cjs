@@ -27,11 +27,11 @@ test('map-origin candidate is visible and actionable without a generic empty mes
  assert.match(ui,/data-duplicate-confirm=/);
  assert.doesNotMatch(ui,/No hay reintroducciones confirmadas todav[ií]a/);
 });
-test('unresolved origin gets a per-candidate Validar hallazgo control',()=>{
+test('unresolved origin gets a per-candidate Completar hallazgo control',()=>{
  const e=fixture();e.processSteps[1].inputs=['RECORD'];
  const ui=ctx.duplicateEntryControl('DF051',e,[]);
  assert.match(ui,/data-duplicate-review-step="s6"/);
- assert.match(ui,/Validar hallazgo/);
+ assert.match(ui,/Completar hallazgo/);
 });
 test('draft retains its values and confirm requires three parts',()=>{
  const e=fixture();e.answerDetails.DF051__drafts=[{data:'Datos factura',from:'s1',to:'s6'}];
@@ -48,3 +48,15 @@ test('confirmed item offers undo; no contradictory no-confirmations message',()=
  assert.doesNotMatch(ui,/No hay reintroducciones confirmadas/);
 });
 // [AUNEA-UAT-DF051-102] END
+
+test('DF051 global validation has one authoritative Validate and reversible VALIDADA state',()=>{
+ const process=fs.readFileSync(path.join(__dirname,'..','domain','process.js'),'utf8');
+ assert.match(process,/data-pg05-validate-section="DF051"/);
+ assert.match(process,/status=df051Validated\?'VALIDADA'/);
+ assert.match(process,/Deshacer validación/);
+ assert.match(process,/DF051__section_confirmation/);
+ assert.match(process,/const globalValidation=ev\.target/);
+ assert.match(process,/df051Validated\?'<div class="field-help">/);
+ assert.match(process,/const findingOpenAction=fid!=='DF051'/);
+ assert.doesNotMatch(process,/const noReviewAvailable=[^;]*'DF050','DF051','DF052'/);
+});
