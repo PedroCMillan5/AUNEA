@@ -343,4 +343,26 @@ test('PG05 optional discovery controls exist with no prior findings',async()=>{
  }finally{dom.window.close();}
 });
 
+
+test('PG05 can record manual cross-system exchanges not detected as adjacent handoffs',async()=>{
+ const {w,dom,run}=buildRuntime();
+ try{
+   run("state.activePage='uat';render()");
+   await w.document.getElementById('loadSingleUat').onclick();
+   run("state.activePage='pasos';render()");
+   const box=w.document.querySelector('[data-pg05-field="DF054"]');
+   const input=box.querySelector('.pg05-manual-pairs [data-multi="DF054"]');
+   assert.ok(input,'manual nonadjacent exchange options available');
+   input.checked=true;input.dispatchEvent(new w.Event('change',{bubbles:true}));
+   assert.ok(Array.from(run("currentEng().answers.DF054")||[]).includes(input.value));
+   assert.equal(run("persistRecoverySnapshot('PG05 manual exchange')"),true);
+   const saved=w.localStorage.getItem('aunea_internal_v1');
+   const reopened=buildRuntime(saved);
+   try{
+     assert.ok(Array.from(reopened.run("currentEng().answers.DF054")||[]).includes(input.value));
+     assert.match(reopened.run("consultantStepsPage()"),/Hallazgo confirmado/);
+   }finally{reopened.dom.window.close();}
+ }finally{dom.window.close();}
+});
+
 // [AUNEA-UAT-RUNTIME-125] END
