@@ -480,4 +480,23 @@ test('PG05 derivative confirmation has visible Confirmar / Deshacer without modi
  }finally{dom.window.close()}
 });
 
+
+test('PG05 quick suggestion is undoable and preserves unrelated manual selections',async()=>{
+ const {w,dom,run}=buildRuntime();
+ try{
+   run("state.activePage='uat';render()");
+   await w.document.getElementById('loadSingleUat').onclick();
+   run("currentEng().answers.DF048=['PDF'];state.activePage='pasos';render()");
+   const card=()=>w.document.querySelector('[data-pg05-field="DF048"]');
+   assert.ok(card().querySelector('[data-confirm-as-is-suggestion]'));
+   card().querySelector('[data-confirm-as-is-suggestion]').click();
+   assert.ok(run("currentEng().answers.DF048.includes('MASTER_DATA')"));
+   assert.ok(card().querySelector('[data-undo-as-is-suggestion]'));
+   card().querySelector('[data-undo-as-is-suggestion]').click();
+   assert.ok(!run("currentEng().answers.DF048.includes('MASTER_DATA')"));
+   assert.ok(run("currentEng().answers.DF048.includes('PDF')"));
+   assert.ok(card().querySelector('[data-confirm-as-is-suggestion]'));
+ }finally{dom.window.close()}
+});
+
 // [AUNEA-UAT-RUNTIME-125] END
