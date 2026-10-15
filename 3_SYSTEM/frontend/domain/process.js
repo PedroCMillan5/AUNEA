@@ -1363,12 +1363,22 @@ function consultantStepsReviewPage(e){
       kind=count?'confirmed':candidate?'review':'unknown';
       if(fid==='DF051')detail=count?count+' reintroducción(es) registrada(s)':signal?.message||'No se han confirmado reintroducciones';
       else if(fid==='DF053'){
-        // Review order follows the actual process, not the order in which the search
-        // signal and related friction were discovered. The owner values remain untouched.
+        // Keep the actual human-confirmed answer and new machine-derived evidence distinct.
+        // A later SEARCH action or a friction may add candidates; neither silently overwrites
+        // the saved answer nor disappears behind the "confirmed" state.
         const order=new Map(steps.map((s,i)=>[String(s.id),i]));
-        const candidate=count?normalizeArray(explicit):hasReuse?normalizeArray(reuse):[];
-        detail=candidate.length?candidate.slice().sort((a,b)=>(order.get(String(a))??Infinity)-(order.get(String(b))??Infinity))
-          .map(id=>byId.get(String(id))||'Paso no disponible').join(' · '):'Sin búsquedas identificadas';
+        const sortIds=ids=>ids.slice().sort((a,b)=>(order.get(String(a))??Infinity)-(order.get(String(b))??Infinity));
+        const displayIds=ids=>sortIds(ids).map(id=>byId.get(String(id))||'Paso no disponible').join(' · ');
+        const validated=normalizeArray(explicit);
+        const validatedIds=new Set(validated.map(String));
+        const discovered=normalizeArray(reuse).filter(id=>!validatedIds.has(String(id)));
+        if(discovered.length){
+          status=validated.length?'Confirmado · nuevos candidatos por revisar':'Posible hallazgo · por validar';
+          kind='review';
+        }
+        detail=[validated.length?'Confirmados: '+displayIds(validated):'',
+          discovered.length?(validated.length?'Nuevos candidatos: ':'Candidatos detectados: ')+displayIds(discovered):'']
+          .filter(Boolean).join(' | ')||'Sin búsquedas identificadas';
       }
       else detail=count?count+' intercambio(s) registrado(s)':'Sin intercambios manuales confirmados';
       // Absence of a detected candidate must never prevent manual discovery.
