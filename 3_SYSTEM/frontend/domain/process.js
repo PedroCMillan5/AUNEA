@@ -1474,6 +1474,12 @@ bindForms=function(){
     setAnswer(fid,next);
     render();
   });
+  document.querySelectorAll('[data-undo-as-is-suggestion]').forEach(button=>button.onclick=()=>{
+    const e=currentEng(),fid=button.dataset.undoAsIsSuggestion,value=button.dataset.suggestValue;
+    if(!e||!['DF048','DF055'].includes(fid)||!value)return;
+    setAnswer(fid,normalizeArray(e.answers?.[fid]).filter(x=>String(x)!==String(value)));
+    render();
+  });
 };
 const __auneaPg05BindForms=bindForms;
 bindForms=function(){
