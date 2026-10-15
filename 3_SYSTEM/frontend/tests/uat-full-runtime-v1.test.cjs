@@ -365,4 +365,29 @@ test('PG05 can record manual cross-system exchanges not detected as adjacent han
  }finally{dom.window.close();}
 });
 
+
+test('common shell keeps study actions in header and rail contains only logo/navigation',async()=>{
+ const {w,dom,run}=buildRuntime();
+ try{
+   run("state.activePage='uat';render()");
+   await w.document.getElementById('loadSingleUat').onclick();
+   run("state.activePage='pasos';render()");
+   assert.equal(w.document.querySelector('.sidebar-foot'),null,'bottom logo removed');
+   assert.equal(w.document.getElementById('globalSearch'),null,'search removed');
+   assert.equal(w.document.querySelectorAll('#railHead img.aunea-brand-logo').length,1,'one top logo');
+   assert.equal(w.document.querySelector('.rail-context'),null,'context removed from rail');
+   const header=w.document.getElementById('topbarActiveStudy');
+   assert.ok(header.querySelector('.topbar-study-main'));
+   assert.match(header.textContent,/Contexto activo/);
+   assert.match(header.textContent,/Levante Instalaciones/i);
+   assert.ok(header.querySelector('[data-open-context]'));
+   assert.ok(header.querySelector('[data-change-context]'));
+   assert.ok(header.querySelector('[data-clear-context]'));
+   header.querySelector('[data-change-context]').click();
+   assert.equal(run('state.activeEngagementId'),null,'changing study clears the active Engagement');
+   assert.equal(run('state.activePage'),'estudios','existing navigation remains owner');
+   assert.match(w.document.getElementById('topbarActiveStudy').textContent,/Sin estudio seleccionado/);
+ }finally{dom.window.close();}
+});
+
 // [AUNEA-UAT-RUNTIME-125] END
