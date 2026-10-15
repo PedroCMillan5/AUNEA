@@ -1285,3 +1285,14 @@ body.shell-session .topbar-left{display:none}
   .topbar .topbar-left{display:none}
 }
 /* [AUNEA-FE-SHELL-HEADER-093] END */
+
+/* [AUNEA-FE-PG05-SOURCE-REVIEW-100] START — review selected ProcessStep values in place. */
+.pg05-source-review{display:grid;gap:8px;margin:10px 0 12px;padding:12px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--bg,#fff)}
+.pg05-source-review>small{line-height:1.45;color:var(--muted)}
+.pg05-source-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid var(--line)}
+.pg05-source-row>span{line-height:1.5;min-width:0;overflow-wrap:anywhere}
+.pg05-source-row button{flex-shrink:0}
+.duplicate-entry-draft .row-actions{display:flex;gap:8px;justify-content:flex-end;align-items:center;flex-wrap:wrap}
+.duplicate-entry-row .duplicate-entry-fields{margin-bottom:12px}
+@media(max-width:700px){.pg05-source-row{align-items:flex-start;flex-direction:column}.duplicate-entry-draft .row-actions{justify-content:flex-start}}
+/* [AUNEA-FE-PG05-SOURCE-REVIEW-100] END */
