@@ -141,31 +141,31 @@ function refreshPendingFieldVisual(fid,e=currentEng()){
     :false;
   if(present&&!issue&&!integrity)host.classList.remove('field-pending');
 }
-// Map confirmation validates ProcessStep topology and the client-reviewed flow. DF046–DF055
-// are process-level projections/findings reviewed afterwards in Console; their capture is
-// not a new edit of the ProcessStep owner (DEC-050/065). Final PG09 snapshots still go stale.
-function invalidateAsisForCanonicalAnswer(e,fid){
-  if(!e||fid==='DF093')return;
-  const f=(schema?.fields||[]).find(x=>x.Field_ID===fid);
-  const stage=String(f?.Stage_ID||'');
-  const hasLayer=Object.values(e.layerConfirmations||{}).some(v=>v===true);
-  if(stage==='S09'){
-    if(e.confirmedAsIs&&typeof invalidateAsIsClosure==='function')
-      invalidateAsIsClosure(e,'dato del cierre '+fid+' modificado');
-    return;
-  }
-  const complementary=stage==='S04'&&/^DF0(?:4[6-9]|5[0-5])$/.test(fid);
-  if(complementary){
-    // Explicitly invalidate any sealed handoff, never silently change a confirmed snapshot.
-    // Unchanged ProcessSteps and client layer confirmations remain valid.
-    if(e.confirmedAsIs&&typeof invalidateAsIsClosure==='function')
-      invalidateAsIsClosure(e,'dato complementario '+fid+' modificado');
-    return;
-  }
-  if((e.confirmedAsIs||hasLayer)&&typeof invalidateProcessLayers==='function')
-    invalidateProcessLayers(e,'map');
-}
 function setAnswer(fid,value){
+  // Map confirmation validates ProcessStep topology and the client-reviewed flow. DF046–DF055
+  // are process-level projections/findings reviewed afterwards in Console; their capture is
+  // not a new edit of the ProcessStep owner (DEC-050/065). Final PG09 snapshots still go stale.
+  function invalidateAsisForCanonicalAnswer(e,fid){
+    if(!e||fid==='DF093')return;
+    const f=(schema?.fields||[]).find(x=>x.Field_ID===fid);
+    const stage=String(f?.Stage_ID||'');
+    const hasLayer=Object.values(e.layerConfirmations||{}).some(v=>v===true);
+    if(stage==='S09'){
+      if(e.confirmedAsIs&&typeof invalidateAsIsClosure==='function')
+        invalidateAsIsClosure(e,'dato del cierre '+fid+' modificado');
+      return;
+    }
+    const complementary=stage==='S04'&&/^DF0(?:4[6-9]|5[0-5])$/.test(fid);
+    if(complementary){
+      // Explicitly invalidate any sealed handoff, never silently change a confirmed snapshot.
+      // Unchanged ProcessSteps and client layer confirmations remain valid.
+      if(e.confirmedAsIs&&typeof invalidateAsIsClosure==='function')
+        invalidateAsIsClosure(e,'dato complementario '+fid+' modificado');
+      return;
+    }
+    if((e.confirmedAsIs||hasLayer)&&typeof invalidateProcessLayers==='function')
+      invalidateProcessLayers(e,'map');
+  }
   const e=currentEng();if(!e)return;
   const detailMatch=String(fid||'').match(/^(DF\d{3})__(step|steps)$/);
   if(detailMatch){
