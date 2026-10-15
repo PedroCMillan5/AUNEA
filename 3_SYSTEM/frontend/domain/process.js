@@ -1401,7 +1401,21 @@ function consultantStepsReviewPage(e){
     const quickAction=quickValue&&quickEvidence?(quickSelected
       ?'<button type="button" class="btn btn-small btn-outline" data-undo-as-is-suggestion="'+fid+'" data-suggest-value="'+quickValue+'">Deshacer confirmación</button>'
       :'<button type="button" class="btn btn-small btn-primary" data-confirm-as-is-suggestion="'+fid+'" data-suggest-value="'+quickValue+'">Confirmar '+(fid==='DF048'?'dato maestro':'campos ausentes')+'</button>'):'';
-    const derivedAction=derived&&hasReuse?'<div class="pg05-field-action pg05-field-confirmation">'+(kind==='confirmed'
+    // Review is a live view of the ProcessStep owner. Editing opens the existing
+    // step controls with their actual selections; it never edits a duplicate answer.
+    const perStepValues=step=>{
+      if(fid==='DF046')return step.tool?[labelFrom('OS_TOOL_CATEGORY',step.tool)||step.tool]:[];
+      if(fid==='DF047')return unique([...normalizeArray(step.inputs),...normalizeArray(step.outputs).filter(x=>['RECORD','MASTER_DATA','API'].includes(String(x)))])
+        .map(x=>labelFrom('OS_ARTIFACT_TYPE',x)||x);
+      if(fid==='DF049')return unique([...normalizeArray(step.inputs),...normalizeArray(step.outputs)].filter(x=>['FORM','EMAIL','TEXT','PDF','DOC','SHEET','IMAGE'].includes(String(x))))
+        .map(x=>labelFrom('OS_ARTIFACT_TYPE',x)||x);
+      if(fid==='DF050')return normalizeArray(step.communication_channels).map(x=>labelFrom('OS_COMMUNICATION_CHANNEL',x)||x);
+      return [];
+    };
+    const sources=derived&&hasReuse&&kind!=='confirmed'?steps.map((step,i)=>({step,index:i+1,values:perStepValues(step)})).filter(x=>x.values.length):[];
+    const sourceEditor=sources.length?'<div class="pg05-source-review"><b>Opciones seleccionadas en el mapa</b><small>Para cambiar una selección, edita el paso que la contiene. Los cambios actualizarán automáticamente esta ficha.</small>'
+      +sources.map(x=>'<div class="pg05-source-row"><span><b>'+x.index+'. '+esc(x.step.step_name||'Paso')+'</b> · '+x.values.map(v=>'✓ '+esc(v)).join(' · ')+'</span><button type="button" class="btn btn-small btn-outline" data-edit-step="'+attr(x.step.id)+'">Modificar selección</button></div>').join('')+'</div>':'';
+    const derivedAction=derived&&hasReuse?sourceEditor+'<div class="pg05-field-action pg05-field-confirmation">'+(kind==='confirmed'
       ?'<button type="button" class="btn btn-small btn-outline" data-undo-derived="'+fid+'">Deshacer confirmación</button>'
       :'<button type="button" class="btn btn-small btn-primary" data-confirm-derived="'+fid+'">Confirmar valor</button>')+'</div>':'';
     // A candidate is not an accepted fact. Open the canonical structured owner
