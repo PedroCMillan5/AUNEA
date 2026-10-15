@@ -174,39 +174,26 @@ function migrateDuplicateEntryDrafts(e,fid='DF051'){
   return true;
 }
 function duplicateEntryCandidates(e){
+  // Only a *defined* flow relationship with matching data and a recorded repeat-entry action.
+  // Frictions, manual actions alone, and guessed nearest producers never create a finding.
   const steps=(e.processSteps||[]).filter(x=>x.status!=='SUPERSEDED'),out=[];
-  const artifactLabel=v=>optionLabel('OS_ARTIFACT_TYPE',v);
-  // A suggestion is only useful when the process data points to ONE unambiguous handoff.
-  // Generic artifacts shared by many earlier steps are not evidence of re-entry and must not
-  // explode into a Cartesian list for the consultant to dismiss.
-  for(let j=0;j<steps.length;j++){
-    const dest=steps[j],manual=normalizeArray(dest.manual_actions).map(String);
-    if(!manual.some(x=>x==='REKEY'||x==='COPY'))continue;
-    const matches=[];
-    normalizeArray(dest.inputs).map(String).forEach(dataKey=>{
-      for(let i=j-1;i>=0;i--){
-        const src=steps[i];
-        if(normalizeArray(src.outputs).map(String).includes(dataKey)){
-          matches.push({id:`${dataKey}:${src.id}:${dest.id}`,data:artifactLabel(dataKey),dataKey,from:src.id,to:dest.id});
-          break; // nearest actual producer only
-        }
-      }
-    });
-    if(matches.length===1)out.push(matches[0]); // ambiguity => ask, never guess
+  for(const dest of steps){
+    if(!normalizeArray(dest.manual_actions).some(a=>['REKEY','COPY'].includes(String(a))))continue;
+    const producers=steps.filter(src=>String(src.id)!==String(dest.id)
+      &&(String(src.normal_next_step||'')===String(dest.id)
+         ||String(src.exception_path?.destination_step||'')===String(dest.id)));
+    const matches=producers.flatMap(src=>normalizeArray(src.outputs)
+      .filter(data=>normalizeArray(dest.inputs).map(String).includes(String(data)))
+      .map(data=>({id:String(data)+':'+src.id+':'+dest.id,
+        data:optionLabel('OS_ARTIFACT_TYPE',data),dataKey:String(data),from:src.id,to:dest.id})));
+    if(matches.length===1)out.push(matches[0]);
   }
   return out;
 }
 function duplicateEntryControl(fid,e,val){
   const rows=duplicateEntryRows(val),drafts=duplicateEntryDraftRows(e,fid,val),opts=stepOptions(e),d=answerDetails(e),dismissed=new Set(normalizeArray(d[`${fid}__dismissed`])),confirmedKeys=new Set(rows.map(x=>`${x.dataKey||x.data}:${x.from}:${x.to}`));
   const suggestions=duplicateEntryCandidates(e).filter(x=>!dismissed.has(x.id)&&!confirmedKeys.has(x.id));
-  const active=(e.processSteps||[]).filter(x=>x.status!=='SUPERSEDED');
-  const unresolved=active.filter(x=>normalizeArray(x.manual_actions).some(a=>['REKEY','COPY'].includes(String(a)))&&!suggestions.some(v=>String(v.to)===String(x.id))&&!rows.some(v=>String(v.to)===String(x.id))&&!drafts.some(v=>String(v.to)===String(x.id)));
-  const frictionSignals=(e.frictions||[]).filter(fr=>fr.status!=='SUPERSEDED'&&['P03','P13'].includes(String(fr.friction_type)));
-  const uncoveredFrictions=frictionSignals.filter(fr=>{
-    const ids=normalizeArray(fr.affected_steps).map(String);
-    return !ids.some(id=>suggestions.some(x=>String(x.to)===id)||rows.some(x=>String(x.to)===id)||drafts.some(x=>String(x.to)===id)||unresolved.some(step=>String(step.id)===id));
-  });
-  const frictionHtml=uncoveredFrictions.length?'<div class="duplicate-entry-suggestions"><div class="duplicate-entry-heading"><b>Posibles duplicaciones indicadas en las fricciones</b><span>La fricción no identifica por sí sola qué información se copia ni su origen.</span></div>'+uncoveredFrictions.map(fr=>'<div class="duplicate-entry-suggestion"><div><b>'+esc(fr.observable_signal||fr.client_label||'Problema de reintroducción registrado')+'</b><span>Pasos relacionados: '+esc(normalizeArray(fr.affected_steps).map(id=>opts.find(x=>String(x.value)===String(id))?.label||'Paso pendiente').join(' · ')||'Pendientes de identificar')+'</span></div><button type="button" class="btn btn-small btn-outline" data-duplicate-review-step="'+attr(normalizeArray(fr.affected_steps).length===1?normalizeArray(fr.affected_steps)[0]:'')+'">Completar hallazgo</button></div>').join('')+'</div>':'';
+  const unresolvedHtml='',frictionHtml=''; // Incomplete signals never become detected reintroductions.
   const suggestionHtml=suggestions.length?`<div class="duplicate-entry-suggestions"><div class="duplicate-entry-heading"><b>Posibles reintroducciones detectadas</b><span>Confirma sólo las que ocurren realmente.</span></div>${suggestions.map(x=>`<div class="duplicate-entry-suggestion" data-duplicate-suggestion="${attr(x.id)}"><div><b>${esc(x.data)}</b><span>${esc(stepOptions(e).find(o=>o.value===x.from)?.label||x.from)} → ${esc(stepOptions(e).find(o=>o.value===x.to)?.label||x.to)}</span></div><div class="row-actions"><button type="button" class="btn btn-small btn-primary" data-duplicate-confirm="${attr(x.id)}" data-duplicate-data="${attr(x.data)}" data-duplicate-data-key="${attr(x.dataKey)}" data-duplicate-from="${attr(x.from)}" data-duplicate-to="${attr(x.to)}">Confirmar</button><button type="button" class="btn btn-small" data-duplicate-dismiss="${attr(x.id)}">No es una reintroducción</button></div></div>`).join('')}</div>`:'';
   const unresolvedHtml=unresolved.length?'<div class="duplicate-entry-suggestions"><div class="duplicate-entry-heading"><b>Pasos donde podría repetirse la introducción de datos</b><span>El mapa señala la acción manual, pero no permite identificar de forma segura la información y su origen.</span></div>'+unresolved.map(step=>'<div class="duplicate-entry-suggestion"><div><b>'+esc(step.step_name||'Paso sin nombre')+'</b><span>Completa la información que se copia y su paso de origen antes de confirmar.</span></div><button type="button" class="btn btn-small btn-outline" data-duplicate-review-step="'+attr(step.id)+'">Completar hallazgo</button></div>').join('')+'</div>':'';
   const rowHtml=rows.length?rows.map((x,i)=>`<div class="duplicate-entry-row" data-duplicate-row="${i}"><div class="duplicate-entry-heading"><b>Reintroducción confirmada ${i+1}</b></div><div class="duplicate-entry-fields"><label><span>Información afectada</span><input class="detail-input" data-duplicate-part="data" data-duplicate-index="${i}" value="${attr(x.data||'')}" placeholder="Ej. Datos de la factura"></label><label><span>Disponible originalmente en</span>${canonicalSelect(`${fid}__from_${i}`,opts,x.from||'',`data-duplicate-part="from" data-duplicate-index="${i}"`)}</label><label><span>Se vuelve a introducir en</span>${canonicalSelect(`${fid}__to_${i}`,opts,x.to||'',`data-duplicate-part="to" data-duplicate-index="${i}"`)}</label></div><div class="row-actions"><button type="button" class="btn btn-small btn-outline" data-duplicate-undo="${i}">Deshacer confirmación</button><button type="button" class="btn btn-small duplicate-entry-remove" data-duplicate-remove="${i}">Eliminar</button></div></div>`).join(''):'';
@@ -581,20 +568,6 @@ function bindCanonicalRenderer(){
   };document.querySelectorAll(`[data-number-value="${fid}"]`).forEach(el=>el.addEventListener('input',sync));document.querySelectorAll(`[data-number-unit="${fid}"],[data-number-period="${fid}"],[data-number-mode="${fid}"]`).forEach(el=>el.addEventListener('change',sync))});
   document.querySelectorAll('[data-set-unknown]').forEach(b=>b.onclick=()=>{const fid=b.dataset.setUnknown;setAnswer(fid,currentEng()?.answers?.[fid]==='UNKNOWN'?'':'UNKNOWN');render()});
   const pairFids=[...new Set([...document.querySelectorAll('[data-pair-field]')].map(x=>x.dataset.pairField))];pairFids.forEach(fid=>document.querySelectorAll(`[data-pair-field="${fid}"]`).forEach(el=>el.addEventListener('change',()=>{const p={};document.querySelectorAll(`[data-pair-field="${fid}"]`).forEach(x=>p[x.dataset.pairPart]=x.value);setAnswer(fid,p)})));
-  document.querySelectorAll('[data-duplicate-review-step]').forEach(btn=>btn.onclick=()=>{
-    const e=currentEng();if(!e)return;
-    const drafts=duplicateEntryDraftRows(e,'DF051',e.answers?.DF051);
-    const dest=String(btn.dataset.duplicateReviewStep||'');
-    const candidates=duplicateEntryCandidates(e).filter(x=>String(x.to)===dest);
-    const data=candidates.length===1?candidates[0]:null;
-    const steps=(e.processSteps||[]).filter(x=>x.status!=='SUPERSEDED');
-    const target=steps.find(x=>String(x.id)===dest);
-    const inputTypes=normalizeArray(target?.inputs);
-    const producerPairs=steps.filter(x=>String(x.id)!==dest).flatMap(src=>normalizeArray(src.outputs).filter(v=>inputTypes.includes(v)).map(v=>({data:optionLabel('OS_ARTIFACT_TYPE',v),dataKey:v,from:src.id,to:dest})));
-    const inferred=producerPairs.length===1?producerPairs[0]:null;
-    const prefill=data||inferred||{data:inputTypes.length===1?optionLabel('OS_ARTIFACT_TYPE',inputTypes[0]):'',dataKey:inputTypes.length===1?inputTypes[0]:'',from:'',to:dest};
-    saveDuplicateEntryDraftRows(e,'DF051',[...drafts,prefill]);render();
-  });
   document.querySelectorAll('[data-duplicate-add]').forEach(btn=>btn.onclick=()=>{const fid=btn.dataset.duplicateAdd,e=currentEng();if(!e)return;const drafts=duplicateEntryDraftRows(e,fid,e.answers?.[fid]);saveDuplicateEntryDraftRows(e,fid,[...drafts,{data:'',from:'',to:''}]);render()});
   document.querySelectorAll('[data-duplicate-part]').forEach(el=>el.addEventListener(el.tagName==='INPUT'?'input':'change',()=>{const e=currentEng(),fid='DF051',rows=duplicateEntryRows(e.answers?.[fid]),i=Number(el.dataset.duplicateIndex);if(!rows[i])return;rows[i]={...rows[i],[el.dataset.duplicatePart]:el.value};setAnswer(fid,rows)}));
   // [AUNEA-FE-PG05-DUPLICATE-UNDO-097] START — Restore confirmed DF051 to its governed draft owner without data loss.
