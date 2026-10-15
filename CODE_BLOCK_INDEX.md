@@ -212,5 +212,6 @@
 | AUNEA-FE-SHELL-HEADER-093 | 3_SYSTEM/frontend/ui-system.css | Barra superior de una fila con estudio activo, progreso, acciones y usuario; se omiten las etiquetas duplicadas | Simulator CANONICAL v1.14 §23; DEC-050/066 | Engagement actual y estado sesión | Header informativo | CSS global shell únicamente | HIGH | uat-browser-smoke.cjs; uat-full-runtime-v1.test.cjs | REVIEW |
 
 | AUNEA-FE-PG05-CONFIRM-UNDO-094 | 3_SYSTEM/frontend/domain/process.js | Reversible PG05 confirmation | DEC-050 | Value | Confirmation UI | DOM | HIGH | UAT | REVIEW |
+| AUNEA-FE-PG05-CANDIDATE-096 | 3_SYSTEM/frontend/domain/process.js | Abre explícitamente la validación de candidatos DF051/053/054 y hallazgos condicionales en su propio control sin confirmar automáticamente ni modificar la fuente. | Diagnostic Master v1.2; DEC-040/050; Simulator CANONICAL | Señales y valores de los owners | Acción visible Validar hallazgo, foco en captura canónica | DOM, sin escritura directa | HIGH | uat-full-runtime-v1.test.cjs; UAT visual pendiente | REVIEW |
 
 | AUNEA-FE-PG05-UNDO-095 | 3_SYSTEM/frontend/domain/no-reask.js | Revoke canonical derivation confirmation | DEC-050 | Owner data | Undo | State | HIGH | UAT | REVIEW |
