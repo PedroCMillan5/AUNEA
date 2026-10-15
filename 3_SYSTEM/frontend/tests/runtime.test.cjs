@@ -79,7 +79,9 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   // the private-console marker, and the open study is identified in the rail context card.
   assert.match(d.querySelector('#breadcrumb').textContent,/Sesión de diagnóstico/);
   assert.match(d.querySelector('#topbarContext').textContent,/Consola interna/);
-  assert.match(d.querySelector('.rail-context').textContent,/UAT Runtime empresa/);
+  assert.match(d.querySelector('.topbar-study').textContent,/UAT Runtime empresa/);
+  assert.equal(d.querySelector('.rail-context'),null,'active context must no longer duplicate the rail');
+  assert.ok(d.querySelector('.topbar-study-disclosure [data-change-context]'),'study actions remain available');
   assert.match(d.querySelector('#stepProgress').textContent,/Paso 1 de 9/);
   // DF001 arrives prefilled from the Company and carries its provenance chip — an ordinary filled
   // control, as the references show, not a blank question and not a read-only panel.
