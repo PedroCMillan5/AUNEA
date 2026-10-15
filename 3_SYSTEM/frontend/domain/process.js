@@ -1360,8 +1360,9 @@ function consultantStepsReviewPage(e){
       const count=fid==='DF051'&&typeof duplicateEntryRows==='function'?duplicateEntryRows(explicit).length:normalizeArray(explicit).length;
       const candidate=fid==='DF051'?!!signal:fid==='DF053'?hasReuse:
         fid==='DF054'&&typeof stepSystemHandoffCandidates==='function'&&stepSystemHandoffCandidates(e).length>0;
-      status=count?'Hallazgo confirmado':candidate?'Posible hallazgo · por validar':'No consta hallazgo';
-      kind=count?'confirmed':candidate?'review':'unknown';
+      const acknowledged=!!(count&&e.answerDetails?.[fid+'__finding_confirmation']?.fingerprint===JSON.stringify(explicit));
+      status=count?(fid==='DF051'||acknowledged?'Hallazgo confirmado':'Datos registrados · pendientes de validar'):candidate?'Posible hallazgo · por validar':'No consta hallazgo';
+      kind=count?(fid==='DF051'||acknowledged?'confirmed':'review'):candidate?'review':'unknown';
       if(fid==='DF051')detail=[count?count+' reintroducción(es) confirmada(s).':'',signal?.message||(!count?'No se han detectado duplicaciones. Puedes registrar una manualmente si existe.':'')].filter(Boolean).join(' ');
       else if(fid==='DF053'){
         // Keep the actual human-confirmed answer and new machine-derived evidence distinct.
@@ -1374,10 +1375,10 @@ function consultantStepsReviewPage(e){
         const validatedIds=new Set(validated.map(String));
         const discovered=normalizeArray(reuse).filter(id=>!validatedIds.has(String(id)));
         if(discovered.length){
-          status=validated.length?'Confirmado · nuevos candidatos por revisar':'Posible hallazgo · por validar';
+          status=validated.length?'Datos registrados · nuevos candidatos por revisar':'Posible hallazgo · por validar';
           kind='review';
         }
-        detail=[validated.length?'Confirmados: '+displayIds(validated):'',
+        detail=[validated.length?'Seleccionados: '+displayIds(validated):'',
           discovered.length?(validated.length?'Nuevos candidatos: ':'Candidatos detectados: ')+displayIds(discovered):'']
           .filter(Boolean).join(' | ')||'Sin búsquedas identificadas';
       }
@@ -1405,17 +1406,18 @@ function consultantStepsReviewPage(e){
       :'<button type="button" class="btn btn-small btn-primary" data-confirm-derived="'+fid+'">Confirmar valor</button>')+'</div>':'';
     // A candidate is not an accepted fact. Open the canonical structured owner
     // explicitly instead of presenting a misleading one-click confirmation.
-    const findingOpenAction=!quickAction&&kind==='review'
+    const findingOpenAction=!quickAction&&kind==='review'&&!hasExplicit
       ?'<button type="button" class="btn btn-small btn-primary" data-open-pg05-finding="'+fid+'">Validar hallazgo</button>':'';
     const noReviewKey=fid+'__no_review_needed';
     const noReviewNeeded=!!e.answerDetails?.[noReviewKey];
     const noReviewAvailable=!hasExplicit&&!signal&&!hasReuse&&['DF046','DF047','DF049','DF050','DF051','DF052','DF053','DF054','DF055'].includes(fid)&&!(fid==='DF051'&&typeof duplicateEntryDraftRows==='function'&&duplicateEntryDraftRows(e,'DF051',explicit).length);
     if(noReviewAvailable){status=noReviewNeeded?'Sin validación pendiente':'Sin información que validar';kind=noReviewNeeded?'confirmed':'unknown';}
     const noReviewAction=noReviewAvailable?'<button type="button" class="btn btn-small btn-outline" data-pg05-no-review="'+fid+'">'+(noReviewNeeded?'Deshacer confirmación':'No hay validación que hacer')+'</button>':'';
+    const reviewConfirmationAction=['DF053','DF054','DF055'].includes(fid)&&hasExplicit?'<button type="button" class="btn btn-small '+(e.answerDetails?.[fid+'__finding_confirmation']?.fingerprint===JSON.stringify(explicit)?'btn-outline':'btn-primary')+'" data-pg05-confirm-finding="'+fid+'">'+(e.answerDetails?.[fid+'__finding_confirmation']?.fingerprint===JSON.stringify(explicit)?'Deshacer confirmación':'Confirmar selección')+'</button>':'';
     const findingUndoAction=fid==='DF051'&&kind==='confirmed'
       ?'<button type="button" class="btn btn-small btn-outline" data-undo-pg05-finding="DF051">Deshacer confirmación</button>':'';
     const action=derived?(derivedAction+(noReviewAvailable?'<div class="pg05-field-action">'+noReviewAction+'</div>':'')):(requiresReview
-      ?'<div class="pg05-field-action">'+quickAction+findingOpenAction+findingUndoAction+noReviewAction
+      ?'<div class="pg05-field-action">'+quickAction+findingOpenAction+findingUndoAction+reviewConfirmationAction+noReviewAction
         +'<details class="pg05-discovery-control" data-pg05-finding-editor="'+fid+'"'+(__auneaPg05OpenFinding===fid?' open':'')+'><summary>'+(kind==='confirmed'?'Revisar o corregir':kind==='review'?'Completar información para confirmar':'Añadir información si existe')+'</summary>'
         +(fid==='DF054'?manualHandoffControl():renderStageFields([f],e))+'</details></div>':'');
     // [AUNEA-FE-PG05-CONFIRM-UNDO-094] END
@@ -1571,6 +1573,16 @@ if(typeof document!=='undefined'&&!document.__auneaPg05FindingActionsBound){
       first?.focus?.({preventScroll:true});
       return;
     }
+    const review=ev.target?.closest?.('[data-pg05-confirm-finding]');
+    if(review){
+      ev.preventDefault();
+      const e=currentEng(),fid=review.getAttribute('data-pg05-confirm-finding');
+      if(!e||!['DF053','DF054','DF055'].includes(fid))return;
+      const details=e.answerDetails||(e.answerDetails={}),key=fid+'__finding_confirmation',fingerprint=JSON.stringify(e.answers?.[fid]);
+      if(details[key]?.fingerprint===fingerprint)delete details[key];
+      else details[key]={fingerprint,confirmedAt:now()};
+      e.updatedAt=now();markDirty('Confirmación revisada');render();return;
+    }
     const noReview=ev.target?.closest?.('[data-pg05-no-review]');
     if(noReview){
       ev.preventDefault();
@@ -1579,7 +1591,11 @@ if(typeof document!=='undefined'&&!document.__auneaPg05FindingActionsBound){
       const detail=e.answerDetails||(e.answerDetails={}),key=fid+'__no_review_needed';
       if(detail[key])delete detail[key];
       else detail[key]={acknowledgedAt:now()};
-      e.updatedAt=now();markDirty('Revisión de '+fid);render();return;
+      const pane=document.querySelector('#content'),previous=pane?.scrollTop||0,position=typeof window!=='undefined'?window.scrollY:0;
+      e.updatedAt=now();markDirty('Revisión de '+fid);render();
+      if(pane)pane.scrollTop=previous;
+      if(typeof window!=='undefined')window.scrollTo(0,position);
+      return;
     }
     const undo=ev.target?.closest?.('[data-undo-pg05-finding="DF051"]');
     if(undo){
