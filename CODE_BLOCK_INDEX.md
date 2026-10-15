@@ -213,5 +213,6 @@
 
 | AUNEA-FE-PG05-CONFIRM-UNDO-094 | 3_SYSTEM/frontend/domain/process.js | Reversible PG05 confirmation | DEC-050 | Value | Confirmation UI | DOM | HIGH | UAT | REVIEW |
 | AUNEA-FE-PG05-CANDIDATE-096 | 3_SYSTEM/frontend/domain/process.js | Abre explícitamente la validación de candidatos DF051/053/054 y hallazgos condicionales en su propio control sin confirmar automáticamente ni modificar la fuente. | Diagnostic Master v1.2; DEC-040/050; Simulator CANONICAL | Señales y valores de los owners | Acción visible Validar hallazgo, foco en captura canónica | DOM, sin escritura directa | HIGH | uat-full-runtime-v1.test.cjs; UAT visual pendiente | REVIEW |
+| AUNEA-FE-PG05-DUPLICATE-UNDO-097 | 3_SYSTEM/frontend/ui/renderer.js | Revierte una reintroducción DF051 confirmada a borrador persistente sin perder información, origen ni destino; permite posterior rectificación y reconfirmación. | Diagnostic Master v1.2 DF051; DEC-040/050; Simulator CANONICAL | Ficha DF051 confirmada | Borrador DF051 conservado y acción Deshacer confirmación | Engagement answers/answerDetails con owner existente | HIGH | UAT de persistencia/reconfirmación pendiente | REVIEW |
 
 | AUNEA-FE-PG05-UNDO-095 | 3_SYSTEM/frontend/domain/no-reask.js | Revoke canonical derivation confirmation | DEC-050 | Owner data | Undo | State | HIGH | UAT | REVIEW |
