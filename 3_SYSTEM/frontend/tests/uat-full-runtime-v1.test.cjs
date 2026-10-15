@@ -390,4 +390,36 @@ test('common shell keeps study actions in header and rail contains only logo/nav
  }finally{dom.window.close();}
 });
 
+
+test('PG05 derives all four source-owned values, revokes stale confirmations, and orders search candidates by step',async()=>{
+ const {w,dom,run}=buildRuntime();
+ try{
+   run("state.activePage='uat';render()");
+   await w.document.getElementById('loadSingleUat').onclick();
+   run("state.activePage='pasos';render()");
+   const fields=['DF046','DF047','DF049','DF050'];
+   const expected=(id)=>run("formatContextValue(schema.fields.find(f=>f.Field_ID==='"+id+"'),reusedValue('"+id+"',currentEng()))");
+   for(const id of fields){
+     const box=w.document.querySelector('[data-pg05-field="'+id+'"]');
+     assert.equal(box.querySelector('.pg05-field-value').textContent,expected(id),'canonical derived '+id);
+     assert.match(box.textContent,/Derivado y confirmado/,'fixture source confirmation '+id);
+   }
+   run("currentEng().processSteps.forEach(s=>{s.tool='ERP';s.inputs=['RECORD'];s.outputs=['RECORD'];s.communication_channels=[]})");
+   run("state.activePage='pasos';render()");
+   const element=id=>w.document.querySelector('[data-pg05-field="'+id+'"]');
+   for(const id of fields){
+     const current=element(id);
+     const source=run("reusedValue('"+id+"',currentEng())");
+     const projected=current.querySelector('.pg05-field-value').textContent;
+     if(source.length){
+       assert.equal(projected,expected(id),'updated source-projection '+id);
+       if(id==='DF046'||id==='DF047')assert.doesNotMatch(current.textContent,/Derivado y confirmado/,'source change invalidates confirmation '+id);
+     }else{
+       assert.match(current.textContent,/No hay valores que derivar/,'empty source is unknown, not confirmed: '+id);
+     }
+   }
+   assert.equal(run("currentEng().answers.DF049"),undefined,'derived artifacts are not copied to manual answers');
+ }finally{dom.window.close();}
+});
+
 // [AUNEA-UAT-RUNTIME-125] END
