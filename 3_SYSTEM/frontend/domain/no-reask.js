@@ -339,7 +339,7 @@ function confirmDerivedValue(fid){
   if(e.confirmedAsIs&&typeof invalidateAsIsClosure==='function')invalidateAsIsClosure(e,'confirmación derivada '+fid+' modificada');
   audit(`Valor derivado confirmado ${fid}`);markDirty(`Confirmación derivada ${fid}`);render();
 }
-// [AUNEA-FE-PG05-CONFIRM-UNDO-094] START — A confirmed source value can be unconfirmed without deleting its owner.
+// [AUNEA-FE-PG05-UNDO-095] START — A confirmed source value can be unconfirmed without deleting its owner.
 function undoDerivedConfirmation(fid){
   const e=currentEng(),f=schema?.fields?.find(x=>x.Field_ID===fid);
   if(!e||!f||String(f.Ask_Mode)!=='DERIVE_AND_CONFIRM')return;
@@ -352,7 +352,7 @@ function undoDerivedConfirmation(fid){
   markDirty('Revisión pendiente '+fid);
   render();
 }
-// [AUNEA-FE-PG05-CONFIRM-UNDO-094] END
+// [AUNEA-FE-PG05-UNDO-095] END
 
 // Provenance UI — human-readable in normal use, full technical contract only in Internal mode.
 // The human label is DERIVED, not hand-authored per field: a one-time reverse index (Write_Target -> Field)
