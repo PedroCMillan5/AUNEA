@@ -17,18 +17,18 @@ function fixture(){
  return {processSteps:[
   {id:'s1',step_name:'Recibir factura PDF',inputs:['PDF'],outputs:['PDF'],manual_actions:[],normal_next_step:'s6'},
   {id:'s6',step_name:'Registrar en ERP y archivar',inputs:['PDF'],outputs:['RECORD'],manual_actions:['REKEY']}
- ],frictions:[],answers:{DF051:[]},answerDetails:{}};
+ ],frictions:[{id:'f1',friction_type:'P03',affected_steps:['s6'],observable_signal:'Administración vuelve a teclear en el ERP número, importe y proveedor del PDF.'}],answers:{DF051:[]},answerDetails:{}};
 }
 test('map-origin candidate is visible and actionable without a generic empty message',()=>{
  const e=fixture(),c=ctx.duplicateEntryCandidates(e);
- assert.equal(c.length,1);assert.equal(c[0].to,'s6');
+ assert.equal(c.length,1);assert.equal(c[0].to,'s6');assert.equal(c[0].from,'s1');assert.equal(c[0].data,'Número, importe y proveedor de la factura (PDF)');
  const ui=ctx.duplicateEntryControl('DF051',e,[]);
  assert.match(ui,/Posibles reintroducciones detectadas/);
  assert.match(ui,/data-duplicate-confirm=/);
  assert.doesNotMatch(ui,/No hay reintroducciones confirmadas todav[ií]a/);
 });
 test('no automatic finding when data relation is not defined in flow',()=>{
- const e=fixture();delete e.processSteps[0].normal_next_step;
+ const e=fixture();e.frictions=[];
  const ui=ctx.duplicateEntryControl('DF051',e,[]);
  assert.doesNotMatch(ui,/Posibles reintroducciones detectadas/);
  assert.doesNotMatch(ui,/Completar hallazgo/);
@@ -53,10 +53,10 @@ test('confirmed item offers undo; no contradictory no-confirmations message',()=
 });
 // [AUNEA-UAT-DF051-102] END
 
-test('DF051 global validation has one authoritative Validate and reversible VALIDADA state',()=>{
+test('DF051 global validation has one authoritative Validate and reversible confirmed state',()=>{
  const process=fs.readFileSync(path.join(__dirname,'..','domain','process.js'),'utf8');
  assert.match(process,/data-pg05-validate-section="DF051"/);
- assert.match(process,/status=df051Validated\?'VALIDADA'/);
+ assert.match(process,/status=df051Validated\?'Confirmado'/);
  assert.match(process,/Deshacer validación/);
  assert.match(process,/DF051__section_confirmation/);
  assert.match(process,/const globalValidation=ev\.target/);
