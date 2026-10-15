@@ -1253,7 +1253,9 @@ function consultantLayerPage(title,intro,body,layer,stageId,{questionsFirst=fals
     :'<div class="flow-confirm-issues">'+integrity.map(x=>'<span>'+esc(x.message)+'</span>').join('')+'</div>')
     :'<div class="field-help">'+(done?'La capa está validada.':'Puedes guardar y continuar sin confirmar todavía.')+'</div>';
   const disabled=integrity.length?' disabled aria-disabled="true" title="Completa los elementos pendientes antes de confirmar"':'';
-  const confirm='<div class="flow-confirm '+(integrity.length?'flow-confirm-needs-review':'')+'"><div><b>'+(done?'Revisión confirmada':integrity.length?'Revisión necesaria':'Revisión pendiente')+'</b>'+reviewCopy+'</div><button class="btn '+(done?'btn-outline':'btn-primary')+'" data-confirm-process-layer="'+layer+'"'+disabled+'>'+(done?'Volver a confirmar':'Confirmar')+' '+tabs[layer]+'</button></div>';
+  const next={frictions:{page:'riesgos',label:'Continuar a Riesgos →'},risks:{page:'impacto',label:'Continuar a Impacto →'}}[layer];
+  const nextButton=next?'<button type="button" class="btn btn-primary" data-page="'+next.page+'"'+(done?'':' disabled aria-disabled="true" title="Confirma '+tabs[layer]+' antes de avanzar"')+'>'+next.label+'</button>':'';
+  const confirm='<div class="flow-confirm '+(integrity.length?'flow-confirm-needs-review':'')+'"><div><b>'+(done?'Revisión confirmada':integrity.length?'Revisión necesaria':'Revisión pendiente')+'</b>'+reviewCopy+'</div><div class="row-actions"><button type="button" class="btn '+(done?'btn-outline':'btn-primary')+'" data-confirm-process-layer="'+layer+'"'+disabled+'>'+(done?'Volver a confirmar':'Confirmar')+' '+tabs[layer]+'</button>'+nextButton+'</div></div>';
   const questions=stageId?layerCanonicalQuestions(e,stageId):'';
   const content=questionsFirst?questions+body:body+questions;
   const layerSummary=layer==='impact'?impactLayerReviewSummary(e,integrity):'';
@@ -1529,7 +1531,29 @@ function consultantFrictionsPage(){
   const e=currentEng();return consultantLayerPage('Fricciones','Registra los problemas de los pasos y su evidencia.',frictionsEditor(e,activeSteps(e),activeFrictions(e)),'frictions','S05');
 }
 function consultantRisksPage(){
-  const e=currentEng();return consultantLayerPage('Riesgos','Qué podría salir mal y qué controles existen hoy.',riskBuilder(e),'risks','S06',{questionsFirst:true});
+  const e=currentEng();if(!e)return pageTop('Riesgos','Abre primero un estudio.');
+  const risks=(e.risks||[]).filter(r=>r.status!=='SUPERSEDED');
+  const steps=activeSteps(e),byStep=new Map(steps.map((step,i)=>[String(step.id),String(i+1)+'. '+String(step.step_name||'Paso')]));
+  const cards=risks.map((r,i)=>{
+    const missing=typeof riskIncompleteFields==='function'?riskIncompleteFields(r):[];
+    const category=labelFrom('OS_RISK_CATEGORY',r.category)||r.category||'Pendiente';
+    const fields=[
+      ['Categoría',category],
+      ['Pasos afectados',normalizeArray(r.step_ids).map(id=>byStep.get(String(id))||'Paso no disponible').join(' · ')||'Pendiente'],
+      ['Probabilidad',r.likelihood_1_5?String(r.likelihood_1_5)+'/5':'Pendiente'],
+      ['Consecuencia',r.impact_1_5?String(r.impact_1_5)+'/5':'Pendiente'],
+      ['Reversibilidad',labelFrom('OS_REVERSIBILITY',r.reversibility)||r.reversibility||'Pendiente'],
+      ['Controles actuales',typeof r.controls_present==='boolean'?(r.controls_present?'Sí':'No'):'Pendiente'],
+      ['Sensibilidad',typeof r.sensitive_or_high_impact==='boolean'?(r.sensitive_or_high_impact?'Sí':'No'):'Pendiente'],
+      ['Materialidad',typeof r.material_financial_or_compliance==='boolean'?(r.material_financial_or_compliance?'Sí':'No'):'Pendiente'],
+      ['Criticidad',typeof r.critical_trigger==='boolean'?(r.critical_trigger?'Sí':'No'):'Pendiente']
+    ];
+    return '<article class="pg05-step-card risk-review-card"><div class="pg05-step-head"><div><b>'+(i+1)+'. '+esc(r.description||category)+'</b><small> · '+esc(missing.length?'Pendiente · '+missing.length+' campo(s)':'Completo')+'</small></div><div class="row-actions"><button type="button" class="btn btn-small btn-outline" data-edit-risk-index="'+i+'">Editar</button><button type="button" class="btn btn-small btn-danger" data-delete-risk-index="'+i+'">Eliminar</button></div></div><details class="pg05-step-detail"><summary>Ver información del riesgo</summary><div class="risk-review-detail">'+fields.map(([label,value])=>'<div><b>'+esc(label)+'</b><span>'+esc(value)+'</span></div>').join('')+'</div>'+(missing.length?'<div class="field-help">Pendiente: '+esc(missing.join(' · '))+'</div>':'')+'</details></article>';
+  }).join('');
+  const content=section('1. Riesgos registrados','Revisa cada riesgo, despliega sus datos y edítalo en su ficha original.',
+    '<div class="pg05-step-list">'+(cards||'<div class="pg05-empty">No hay riesgos registrados.</div>')+'</div>',
+    '<button type="button" class="btn btn-outline" id="reviewRiskCandidates">Revisar posibles riesgos</button><button type="button" class="btn btn-primary" id="addRisk" data-add-risk-global>Añadir riesgo</button>');
+  return consultantLayerPage('Riesgos','Revisión de los riesgos vinculados al AS-IS.',content,'risks','S06');
 }
 function consultantImpactPage(){
   const e=currentEng();return consultantLayerPage('Impacto','Consulta los datos existentes y añade sólo los costes o tiempos que falten.',economicBuilder(e),'impact','S07');
@@ -1567,6 +1591,8 @@ bindForms=function(){
     const details=e.answerDetails||(e.answerDetails={});
     details[fid+'__global_review']={base:source,values:selected};
     delete details[fid+'__derived_confirmation'];
+    // Any revised PG05 map value requires explicit map reconfirmation before proceeding.
+    if(typeof invalidateProcessLayersSafe==='function')invalidateProcessLayersSafe(e,'map');
     e.updatedAt=now();markDirty('Selección global revisada '+fid);
   }));
   document.querySelectorAll('[data-pg05-finding-editor]').forEach(el=>el.addEventListener('toggle',()=>{
