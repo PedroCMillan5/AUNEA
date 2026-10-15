@@ -1182,9 +1182,8 @@ function asIsComplementarySignals(e){
   if(masterSteps.length)out.push({field:'DF048',message:'Datos maestros detectados en: '+masterSteps.map(stepName).join(' · ')+'. Identifica las referencias concretas sólo si se conocen; la categoría Dato maestro no especifica por sí sola cuáles son.'});
   const documents=processDocumentArtifacts(steps);
   if(documents.length)out.push({field:'DF049',message:'Artefactos documentales procedentes de los pasos: '+documents.map(v=>labelFrom('OS_ARTIFACT_TYPE',v)||v).join(' · ')+'. La confirmación se realiza en el campo derivado, sin una segunda captura.'});
-  const rekeySteps=steps.filter(s=>normalizeArray(s.manual_actions).some(a=>['REKEY','COPY'].includes(String(a))));
-  const duplicateFrictions=frictions.filter(f=>['P03','P13'].includes(String(f.friction_type)));
-  if(rekeySteps.length||duplicateFrictions.length)out.push({field:'DF051',message:'Se ha identificado una posible repetición de la introducción de información'+(rekeySteps.length?' en '+rekeySteps.map(stepName).join(' · '):'')+'.'+(duplicateFrictions.length?' También existen '+duplicateFrictions.length+' problema(s) registrado(s) relacionado(s) con la copia o duplicación de datos.':'')+' Comprueba qué información se repite, dónde estaba disponible y en qué paso se introduce de nuevo. La detección es una propuesta, no una confirmación.'});
+  const actualReintroductions=typeof duplicateEntryCandidates==='function'?duplicateEntryCandidates(e):[];
+  if(actualReintroductions.length)out.push({field:'DF051',message:'Reintroducciones identificadas en el flujo: '+actualReintroductions.map(x=>stepName(steps.find(s=>String(s.id)===String(x.from)))+' → '+stepName(steps.find(s=>String(s.id)===String(x.to)))+' ('+x.data+')').join(' · ')+'. Revisa y confirma únicamente estas relaciones registradas.'});
   const qualityFrictions=frictions.filter(f=>['P02','P11','P13'].includes(String(f.friction_type))||/faltan?|ausente|incomplet|duplicad|incorrect|err[oó]ne/i.test(String(f.observable_signal||f.client_label||'')));
   if(qualityFrictions.length)out.push({field:'DF055',message:'Señales de calidad de datos en las fricciones: '+qualityFrictions.map(f=>String(f.observable_signal||f.client_label||f.id)).join(' · ')+'. Selecciona sólo problemas respaldados por estas señales; no se presuponen otras categorías.'});
   return out;
