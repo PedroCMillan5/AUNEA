@@ -11,7 +11,9 @@ test('shared shell uses the official logo and Pedro Carrasco consultant identity
   assert.doesNotMatch(html,/aunea-system-dark\.jpg/);
   assert.match(html,/<b>Pedro Carrasco<\/b><small>Consultor<\/small>/);
   assert.match(html,/class="avatar">PC</);
-  assert.match(html,/id="globalSearch"/);
+  assert.doesNotMatch(html,/id="globalSearch"/,'global search has been intentionally removed from the common header');
+  assert.match(html,/id="topbarActiveStudy"/,'selected study belongs in the topbar');
+  assert.doesNotMatch(html,/class="sidebar-foot"/,'the bottom duplicate brand is removed');
 });
 
 test('workspace pearl covers both main and content surfaces without white outer gutters',()=>{
