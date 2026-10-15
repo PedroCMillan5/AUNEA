@@ -236,17 +236,33 @@ function confirmProcessLayer(tab){
   }
   const integrity=processLayerIntegrityIssues(e,key);if(integrity.length)return toast('No se puede confirmar: '+integrity[0].message),false;
   const x=processLayerConfirmations(e);
+  const before={
+    layers:{...x},confirmedAsIs:e.confirmedAsIs,df093:e.answers?.DF093,
+    asIsConfirmedAt:e.asIsConfirmedAt,confirmedSnapshot:e.confirmedSnapshot,dirty:state.dirty
+  };
   x[key]=true;x[key+'_at']=now();
-  if(allProcessLayersConfirmed(e)){
-    // The four AS-IS layers only unlock PG09. They do not confirm DF093, seal a snapshot or advance lifecycle.
+  const all=allProcessLayersConfirmed(e);
+  if(all){
+    // Layer validation only unlocks PG09; its final snapshot requires a separate action.
     e.confirmedAsIs=false;e.answers.DF093='';e.asIsConfirmedAt=null;e.confirmedSnapshot=null;
-    markDirty('Capas AS-IS confirmadas · cierre final pendiente en PG09');
-    toast('Mapa, fricciones, riesgos e impacto confirmados. Continúa a Validación y cierre para confirmar el AS-IS y generar el snapshot.');
-  }else{
-    markDirty(`Capa ${key} confirmada`);
-    toast('Capa confirmada. Puedes continuar con la siguiente.');
   }
+  markDirty(all?'Capas AS-IS confirmadas · cierre final pendiente en PG09':`Capa ${key} confirmada`);
+  // A client acknowledgement is a durable event. Never display success if this tab
+  // could not persist the shared Engagement due to a second-editor conflict.
+  if(typeof persistRecoverySnapshot==='function'&&!persistRecoverySnapshot('confirmación capa '+key)){
+    Object.keys(x).forEach(k=>delete x[k]);Object.assign(x,before.layers);
+    e.confirmedAsIs=before.confirmedAsIs;
+    if(before.df093===undefined)delete e.answers.DF093;else e.answers.DF093=before.df093;
+    e.asIsConfirmedAt=before.asIsConfirmedAt;e.confirmedSnapshot=before.confirmedSnapshot;
+    state.dirty=before.dirty;
+    toast('La confirmación no se ha guardado. Revisa la sincronización de la otra pestaña antes de continuar.');
+    render();return false;
+  }
+  toast(all
+    ?'Mapa, fricciones, riesgos e impacto confirmados. Continúa a Validación y cierre para generar el snapshot.'
+    :'Capa confirmada y guardada. Puedes continuar con la siguiente.');
   render();
+  return true;
 }
 function confirmAsIs(){confirmProcessLayer(currentEng()?.processTab||'cliente')}
 function invalidateAsIsClosure(e,reason='cambio en cierre de sesión'){
