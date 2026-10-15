@@ -1382,7 +1382,12 @@ function consultantStepsReviewPage(e){
           discovered.length?(validated.length?'Nuevos candidatos: ':'Candidatos detectados: ')+displayIds(discovered):'']
           .filter(Boolean).join(' | ')||'Sin búsquedas identificadas';
       }
-      else detail=count?count+' intercambio(s) registrado(s)':'Sin intercambios manuales confirmados';
+      else if(fid==='DF054'){
+        const candidates=typeof stepSystemHandoffCandidates==='function'?stepSystemHandoffCandidates(e):[];
+        detail=count?count+' intercambio(s) seleccionado(s).':candidates.length
+          ?'Posibles traspasos de información entre pasos: '+candidates.map(x=>x.label).join(' · ')+'. Confirma sólo los que se realizan manualmente.'
+          :'No se han identificado intercambios manuales; puedes revisar otros pares si conoces alguno.';
+      }else detail=hasExplicit?formatContextValue(f,explicit):signal?.message||'No hay información confirmada';
       // Absence of a detected candidate must never prevent manual discovery.
       // Field ownership and the original canonical validation remain unchanged.
       requiresReview=true;
