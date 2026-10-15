@@ -1080,7 +1080,7 @@ body:has([data-diagnostic-stage="S08"]) .s08-duplication-why{margin:4px 0 8px;li
 
 
 /* [AUNEA-FE-PG05-CONSULTANT-STYLE-082] START — PG05 internal review only; FROZEN screens unchanged. */
-.pg05-review{display:grid;gap:32px;max-width:1280px;margin:0 auto}
+.pg05-review{display:grid;gap:24px;width:100%;max-width:none;min-width:0;margin:0;align-content:start}
 .pg05-review>section{margin:0;min-width:0}
 .pg05-status{border:1px solid var(--line);border-radius:12px;padding:14px 18px;background:#f8faf8;line-height:1.5}
 .pg05-status--ok{border-left:4px solid #6fa885;background:#edf5ef}
@@ -1129,3 +1129,36 @@ body:has([data-diagnostic-stage="S08"]) .s08-duplication-why{margin:4px 0 8px;li
 .pg05-empty{border:1px dashed var(--line);border-radius:12px;padding:20px;color:var(--muted)}
 @media(max-width:760px){.pg05-review{gap:24px}.pg05-step-card,.pg05-field{padding:16px}.pg05-field-grid,.pg05-step-facts{grid-template-columns:1fr}.pg05-step-top{flex-wrap:wrap}.pg05-step-top>.btn{margin-left:50px}.pg05-step-metrics{gap:8px}.pg05-step-metrics>span{padding:10px}}
 /* [AUNEA-FE-PG05-CONSULTANT-STYLE-082] END */
+
+/* [AUNEA-FE-PG05-DISCOVERY-STYLE-084] START — Full-width review and accessible, compact optional discovery. */
+.content:has(.pg05-review) .page-head{width:100%;max-width:none}
+.content:has(.pg05-review)>*{max-width:none}
+.pg05-review>.section{width:100%;max-width:none;box-sizing:border-box}
+.pg05-step-list{gap:12px}
+.pg05-step-card{padding:14px 18px}
+.pg05-step-top{gap:12px;align-items:center}
+.pg05-step-number{width:30px;height:30px}
+.pg05-step-heading{gap:3px}
+.pg05-step-metrics{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0}
+.pg05-step-metrics>span{display:flex;gap:7px;align-items:baseline;background:#f7f9f7;padding:6px 10px;font-size:13px}
+.pg05-step-metrics small{font-size:12px}
+.pg05-step-io{display:flex;flex-wrap:wrap;gap:8px 22px;font-size:12px}
+.pg05-step-details{margin-top:12px;padding-top:10px}
+.pg05-step-facts{gap:12px 20px;margin:12px 0}
+.pg05-field-grid{gap:12px}
+.pg05-field-list{gap:10px}
+.pg05-field{padding:14px 18px;gap:7px}
+.pg05-field-action{gap:8px;padding-top:10px}
+.pg05-field-action .field{margin:0}
+.pg05-discovery-control{min-width:0}
+.pg05-discovery-control[open]>.field,.pg05-discovery-control[open]>.pg05-handoff-options{margin-top:12px}
+.pg05-discovery-control [data-field]>label:first-child,.pg05-discovery-control [data-field]>.field-label:first-child{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+.pg05-discovery-hint{color:var(--muted);font-size:12px;margin:8px 0;line-height:1.5}
+.pg05-manual-pairs{margin:12px 0}
+.pg05-manual-pairs>summary{cursor:pointer;font-weight:600;color:var(--system)}
+.pg05-handoff-options{display:grid;gap:8px;margin-top:10px}
+.pg05-handoff-options>.choice-grid{display:flex;flex-wrap:wrap;gap:10px}
+.pg05-handoff-options>.choice-grid>.choice{min-width:min(100%,320px)}
+@media(max-width:760px){.pg05-review{gap:20px}.pg05-step-card,.pg05-field{padding:14px}.pg05-step-metrics{gap:6px}.pg05-step-metrics>span{padding:5px 8px}.pg05-step-io{display:grid}}
+/* [AUNEA-FE-PG05-DISCOVERY-STYLE-084] END */
+
