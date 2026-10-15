@@ -1296,3 +1296,16 @@ body.shell-session .topbar-left{display:none}
 .duplicate-entry-row .duplicate-entry-fields{margin-bottom:12px}
 @media(max-width:700px){.pg05-source-row{align-items:flex-start;flex-direction:column}.duplicate-entry-draft .row-actions{justify-content:flex-start}}
 /* [AUNEA-FE-PG05-SOURCE-REVIEW-100] END */
+
+/* [AUNEA-FE-PG05-DF051-INLINE-103] START — One full-width, always-visible finding editor. */
+.pg05-inline-duplicate{width:100%;min-width:0;box-sizing:border-box}
+.pg05-inline-duplicate>.field{width:100%;margin:0}
+.pg05-inline-duplicate [data-field="DF051"]>label:first-child{position:absolute;width:1px;height:1px;overflow:hidden;white-space:nowrap;clip-path:inset(50%)}
+.pg05-inline-duplicate .duplicate-entry-control{display:grid;gap:12px;min-width:0}
+.pg05-inline-duplicate .duplicate-entry-row{min-width:0;box-sizing:border-box}
+.pg05-inline-duplicate .duplicate-entry-fields{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start}
+.pg05-inline-duplicate .duplicate-entry-fields .canonical-aunea-select{min-width:0;width:100%}
+.pg05-inline-duplicate .duplicate-entry-row .row-actions{display:flex;flex-wrap:wrap;justify-content:flex-start;gap:8px}
+.pg05-inline-duplicate .duplicate-entry-suggestions{min-width:0}
+@media(max-width:900px){.pg05-inline-duplicate .duplicate-entry-fields{grid-template-columns:1fr}}
+/* [AUNEA-FE-PG05-DF051-INLINE-103] END */
