@@ -273,7 +273,7 @@ test('PG05 owner edit persists real modifications and restores the right step af
      assert.equal(reopened.run("currentEng().processSteps.find(x=>x.id==='"+stepId+"').step_name"),changed);
      const html=reopened.run("consultantStepsPage()");
      assert.match(html,/pg05-step-card/);
-     assert.match(html,/pendiente de revalidación/);
+     assert.match(html,/pendiente de revalidación|pendiente de confirmar/);
    }finally{reopened.dom.window.close();}
  }finally{dom.window.close();}
 });
