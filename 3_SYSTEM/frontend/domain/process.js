@@ -1392,14 +1392,21 @@ function consultantStepsReviewPage(e){
       // master-data, document-version or quality issues without a prior Pain/Step signal.
       requiresReview=true;
     }
-    const quickConfirm=fid==='DF048'&&signal&&!normalizeArray(explicit).includes('MASTER_DATA')
-      ?'<button type="button" class="btn btn-small btn-outline" data-confirm-as-is-suggestion="DF048" data-suggest-value="MASTER_DATA">Confirmar dato maestro</button>'
-      :fid==='DF055'&&signal&&/faltan?|ausente|incomplet|sin informaci[oó]n/i.test(signal.message)&&!normalizeArray(explicit).includes('MISSING')
-        ?'<button type="button" class="btn btn-small btn-outline" data-confirm-as-is-suggestion="DF055" data-suggest-value="MISSING">Confirmar campos ausentes</button>':'';
-    const action=requiresReview
-      ?'<div class="pg05-field-action">'+quickConfirm
+    // [AUNEA-FE-PG05-CONFIRM-UNDO-094] START — Visible, reversible confirmation actions.
+    const quickValue=fid==='DF048'?'MASTER_DATA':fid==='DF055'?'MISSING':null;
+    const quickEvidence=fid==='DF048'?!!signal:fid==='DF055'&&!!signal&&/faltan?|ausente|incomplet|sin informaci[oó]n/i.test(signal.message);
+    const quickSelected=quickValue&&normalizeArray(explicit).includes(quickValue);
+    const quickAction=quickValue&&quickEvidence?(quickSelected
+      ?'<button type="button" class="btn btn-small btn-outline" data-undo-as-is-suggestion="'+fid+'" data-suggest-value="'+quickValue+'">Deshacer confirmación</button>'
+      :'<button type="button" class="btn btn-small btn-primary" data-confirm-as-is-suggestion="'+fid+'" data-suggest-value="'+quickValue+'">Confirmar '+(fid==='DF048'?'dato maestro':'campos ausentes')+'</button>'):'';
+    const derivedAction=derived&&hasReuse?'<div class="pg05-field-action pg05-field-confirmation">'+(kind==='confirmed'
+      ?'<button type="button" class="btn btn-small btn-outline" data-undo-derived="'+fid+'">Deshacer confirmación</button>'
+      :'<button type="button" class="btn btn-small btn-primary" data-confirm-derived="'+fid+'">Confirmar valor</button>')+'</div>':'';
+    const action=derived?derivedAction:(requiresReview
+      ?'<div class="pg05-field-action">'+quickAction
         +'<details class="pg05-discovery-control"><summary>'+(kind==='confirmed'?'Revisar o corregir':kind==='review'?'Validar el hallazgo':'Añadir información si existe')+'</summary>'
-        +(fid==='DF054'?manualHandoffControl():renderStageFields([f],e))+'</details></div>':'';
+        +(fid==='DF054'?manualHandoffControl():renderStageFields([f],e))+'</details></div>':'');
+    // [AUNEA-FE-PG05-CONFIRM-UNDO-094] END
     const card='<article class="pg05-field pg05-field--'+kind+'" data-pg05-field="'+fid+'">'
       +'<div class="pg05-field-top"><b>'+esc(f.Pregunta_o_etiqueta_ES||fid)+'</b>'
       +'<span class="pg05-state-label">'+esc(status)+'</span></div>'
