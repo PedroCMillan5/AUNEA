@@ -25,6 +25,31 @@ async function main(){
   await page.locator('[data-page="uat"]').click();
   await page.locator('#loadSingleUat').click();
   await page.locator('#singleUatLoadStatus').getByText(/UAT completa y guardada: 1 estudio/).waitFor({timeout:20000});
+
+  // [AUNEA-UAT-SHELL-092] START — Real Chromium shell UX with no vertical rail scrolling.
+  assert.equal(await page.locator('.sidebar-foot').count(),0,'no repeated bottom logo');
+  assert.equal(await page.locator('#globalSearch').count(),0,'global search was intentionally removed');
+  assert.equal(await page.locator('#railHead .aunea-brand-logo').count(),1,'official top logo retained');
+  assert.equal(await page.locator('.rail-context').count(),0,'active engagement is no longer in sidebar');
+  assert.equal(await page.locator('#topbarActiveStudy .topbar-study').count(),1,'active engagement visible in header');
+  assert.equal(await page.locator('#topbarActiveStudy [data-change-context]').count(),1,'switch study retained');
+  for(const size of [{width:1365,height:900},{width:1365,height:720},{width:1024,height:768}]){
+    await page.setViewportSize(size);
+    const layout=await page.evaluate(()=>{
+      const rail=document.querySelector('.sidebar'),nav=document.getElementById('nav');
+      const header=document.querySelector('.topbar'),context=document.getElementById('topbarActiveStudy');
+      const panel=context?.getBoundingClientRect(),bar=header?.getBoundingClientRect();
+      return {scrollable:rail.scrollHeight>rail.clientHeight+2,navScrollable:nav.scrollHeight>nav.clientHeight+2,
+        contextVisible:!!panel&&panel.width>80&&panel.left>=bar.left-1&&panel.right<=bar.right+1,
+        contextTitle:context?.textContent||'',scrollMode:getComputedStyle(rail).overflowY};
+    });
+    assert.equal(layout.scrollable,false,'sidebar overflow at '+JSON.stringify(size));
+    assert.equal(layout.navScrollable,false,'navigation overflow at '+JSON.stringify(size));
+    assert.ok(layout.contextVisible,'header active study must fit at '+JSON.stringify(size));
+    assert.match(layout.contextTitle,/Contexto activo/);
+  }
+  await page.setViewportSize({width:1365,height:900});
+  // [AUNEA-UAT-SHELL-092] END
   const ids=await page.evaluate(()=>state.engagements.filter(e=>e.id.startsWith('UAT3-CASE-')).map(e=>e.id));
   assert.equal(ids.length,1,'The actual UAT click must create exactly one study.');
   for(const id of ids){
