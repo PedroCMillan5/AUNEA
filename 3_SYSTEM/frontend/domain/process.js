@@ -1206,94 +1206,130 @@ function consultantLayerPage(title,intro,body,layer,stageId,{questionsFirst=fals
 // PG05 visual / S04 internal: after client confirmation this is a sufficiency review, not a
 // second ProcessStep editor or a second confirmation of the same four-layer client map.
 // DEC-050/065: render live owner values; changing facts must go back to the owner.
+// [AUNEA-FE-PG05-CONSULTANT-REVIEW-081] START — One ProcessStep owner, one review surface.
+let __auneaPg05ExpandedStepId='';
 function consultantStepsReviewPage(e){
-  const mapConfirmed=!!processLayerState(e).map;
-  const steps=activeSteps(e),frictions=activeFrictions(e),fields=(schema?.fields||[])
-    .filter(f=>f.Stage_ID==='S04'&&Number(f.Field_ID.slice(2))>=46&&Number(f.Field_ID.slice(2))<=55);
+  const confirmations=processLayerState(e),mapConfirmed=!!confirmations.map;
+  const steps=activeSteps(e),frictions=activeFrictions(e);
+  const fields=(schema?.fields||[]).filter(f=>f.Stage_ID==='S04'&&Number(f.Field_ID.slice(2))>=46&&Number(f.Field_ID.slice(2))<=55);
   const byId=new Map(steps.map((s,i)=>[String(s.id),String(i+1)+'. '+String(s.step_name||'Paso sin nombre')]));
   const list=(values,set)=>normalizeArray(values).filter(v=>v!==null&&v!==undefined&&v!=='')
     .map(v=>labelFrom(set,v)||String(v)).join(', ')||'No consta';
   const time=v=>v===null||v===undefined||v===''?'No consta':String(v)+' min';
   const route=id=>id==='__END__'?'Fin del proceso':byId.get(String(id))||'Pendiente de identificar';
-  const rows=steps.map((s,i)=>'<div class="process-row"><div class="process-index">'+(i+1)+'</div><div>'
-    +'<b>'+esc(s.step_name||'Paso sin nombre')+'</b>'
-    +'<p>'+esc(labelFrom('OS_STEP_TYPE',s.step_type)||'Tipo no identificado')+' · '
-      +esc(labelFrom('OS_ACTOR_ROLE',s.actor)||'Actor pendiente')+' · '
-      +esc(labelFrom('OS_TOOL_CATEGORY',s.tool)||'Herramienta no indicada')+'</p>'
-    +'<p><b>Entradas:</b> '+esc(list(s.inputs,'OS_ARTIFACT_TYPE'))+' · <b>Salidas:</b> '+esc(list(s.outputs,'OS_ARTIFACT_TYPE'))+'</p>'
-    +'<p><b>Activo:</b> '+esc(time(s.active_time))+' · <b>Espera:</b> '+esc(time(s.wait_time))
-      +' · <b>Retrabajo:</b> '+esc(time(s.rework_time))+'</p>'
-    +'<p><b>Siguiente:</b> '+esc(route(s.normal_next_step))
-      +(s.exception_path? ' · <b>Excepción:</b> '+esc(route(s.exception_path.destination_step)):'')+'</p>'
-    +'</div></div>').join('');
+  const stepCards=steps.map((s,i)=>{
+    const decision=typeof processDecisionStep==='function'&&processDecisionStep(s);
+    const detail=[
+      ['Entradas',list(s.inputs,'OS_ARTIFACT_TYPE')],
+      ['Salidas',list(s.outputs,'OS_ARTIFACT_TYPE')],
+      ['Acciones manuales',list(s.manual_actions,'OS_MANUAL_ACTION')],
+      ['Automatización actual',labelFrom('OS_AUTOMATION_STATE',s.automation_state)||'No consta'],
+      ['Canales de comunicación',list(s.communication_channels,'OS_COMM_CHANNEL')],
+      ['Frecuencia de error',s.error_rate?.value==null?'No consta':String(s.error_rate.value)+(s.error_rate.mode==='percent'?' %':' casos'+(s.error_rate.period?' / '+s.error_rate.period:''))],
+      ['Siguiente paso'+(decision?' (SÍ)':''),route(s.normal_next_step)]
+    ];
+    if(decision)detail.push(['Criterio de decisión',list(s.decision_criteria,'OS_DECISION_CRITERIA')+(s._details?.decision_criteria?' · '+s._details.decision_criteria:'')]);
+    if(s.exception_path)detail.push(['Ruta alternativa'+(decision?' (NO)':''),route(s.exception_path.destination_step)+(s.exception_path.condition?' · '+s.exception_path.condition:'')]);
+    if(s.notes)detail.push(['Nota',s.notes]);
+    return '<article class="pg05-step-card" data-pg05-step="'+attr(s.id)+'">'
+      +'<div class="pg05-step-top"><span class="pg05-step-number">'+(i+1)+'</span><div class="pg05-step-heading">'
+      +'<b>'+esc(s.step_name||'Paso sin nombre')+'</b><span>'+esc(labelFrom('OS_STEP_TYPE',s.step_type)||'Tipo pendiente')
+      +' · '+esc(labelFrom('OS_ACTOR_ROLE',s.actor)||'Responsable pendiente')+' · '+esc(labelFrom('OS_TOOL_CATEGORY',s.tool)||'Sin herramienta')+'</span>'
+      +'</div><button type="button" class="btn btn-small btn-outline" data-edit-step="'+attr(s.id)+'">Editar</button></div>'
+      +'<div class="pg05-step-metrics"><span><small>Activo</small>'+esc(time(s.active_time))+'</span>'
+      +'<span><small>Espera</small>'+esc(time(s.wait_time))+'</span>'
+      +'<span><small>Retrabajo</small>'+esc(time(s.rework_time))+'</span></div>'
+      +'<div class="pg05-step-io"><span><b>Entradas:</b> '+esc(list(s.inputs,'OS_ARTIFACT_TYPE'))+'</span>'
+      +'<span><b>Salidas:</b> '+esc(list(s.outputs,'OS_ARTIFACT_TYPE'))+'</span></div>'
+      +'<details class="pg05-step-details" data-pg05-step-detail="'+attr(s.id)+'"'+(__auneaPg05ExpandedStepId===String(s.id)?' open':'')+'>'
+      +'<summary>Ver detalle del paso</summary><dl class="pg05-step-facts">'
+      +detail.map(([label,value])=>'<div><dt>'+esc(label)+'</dt><dd>'+esc(value)+'</dd></div>').join('')+'</dl>'
+      +'<div class="pg05-step-tools"><button type="button" class="btn btn-small btn-outline" data-move-step-up="'+attr(s.id)+'"'+(i===0?' disabled':'')+'>Subir</button>'
+      +'<button type="button" class="btn btn-small btn-outline" data-move-step-down="'+attr(s.id)+'"'+(i===steps.length-1?' disabled':'')+'>Bajar</button>'
+      +'<button type="button" class="btn btn-small btn-outline" data-delete-step="'+attr(s.id)+'">Eliminar paso</button></div></details></article>';
+  }).join('');
   const signals=asIsComplementarySignals(e),signalFor=fid=>signals.find(x=>x.field===fid);
-  const current=e.answers||{},pending=[],summary=[];
+  const sourceLabels={
+    DF046:'Herramientas de los pasos',DF047:'Entradas y salidas del mapa',DF048:'Referencias registradas en los pasos',
+    DF049:'Documentos de entrada y salida',DF050:'Canales registrados por paso',
+    DF051:'Acciones REKEY/COPY y fricciones',DF052:'Control documental declarado',
+    DF053:'Acciones SEARCH y fricciones',DF054:'Transferencias entre herramientas',DF055:'Evidencia de calidad en fricciones'
+  };
+  const current=e.answers||{},derivedCards=[],findingCards=[];
   for(const f of fields){
     const fid=f.Field_ID,mode=String(f.Ask_Mode||''),reuse=typeof reusedValue==='function'?reusedValue(fid,e):undefined;
     const derived=mode==='DERIVE_AND_CONFIRM',suggest=mode==='SYSTEM_SUGGEST_THEN_CONFIRM';
-    const explicit=current[fid],hasExplicit=valuePresent(explicit);
-    const hasReuse=valuePresent(reuse);
+    const explicit=current[fid],hasExplicit=valuePresent(explicit),hasReuse=valuePresent(reuse);
     const visible=typeof questionVisible==='function'&&questionVisible(f,e);
-    let status='',detail='';
+    const signal=signalFor(fid);
+    let status='',detail='',kind='unknown',requiresReview=false;
     if(derived){
       const confirmed=hasReuse&&typeof isDerivedConfirmed==='function'&&isDerivedConfirmed(f,e,reuse);
-      status=confirmed?'Derivado y confirmado':hasReuse?'Derivado · validar si aplica':'Sin datos de origen';
-      detail=hasReuse?formatContextValue(f,reuse):'No se han identificado valores en el mapa';
-      if(hasReuse&&!confirmed&&visible)pending.push({f,hint:'La información procede de los pasos del mapa. Confirma únicamente este valor derivado, no el mapa completo.'});
+      status=confirmed?'Derivado y confirmado':hasReuse?'Derivado · pendiente de validar':'No hay valores que derivar';
+      kind=confirmed?'confirmed':hasReuse?'derived':'unknown';
+      detail=hasReuse?formatContextValue(f,reuse):'No consta en los pasos';
+      requiresReview=!!(visible&&hasReuse&&!confirmed);
     }else if(suggest){
       const count=fid==='DF051'&&typeof duplicateEntryRows==='function'?duplicateEntryRows(explicit).length:normalizeArray(explicit).length;
-      status=hasExplicit&&count?'Hallazgo confirmado':'Detección pendiente / no constatada';
-      if(fid==='DF051')detail=count?count+' reintroducción(es) registrada(s)':'Ninguna reintroducción confirmada';
-      else if(fid==='DF053')detail=hasExplicit?normalizeArray(explicit).map(id=>byId.get(String(id))||'Paso no disponible').join(' · '):'Sin pasos de búsqueda confirmados';
-      else detail=count?count+' intercambio(s) confirmado(s)':'Sin intercambios manuales confirmados';
-      const signal=fid==='DF051'?!!signalFor(fid):fid==='DF053'?hasReuse:
+      const candidate=fid==='DF051'?!!signal:fid==='DF053'?hasReuse:
         fid==='DF054'&&typeof stepSystemHandoffCandidates==='function'&&stepSystemHandoffCandidates(e).length>0;
-      if(visible&&(signal||hasExplicit))pending.push({f,hint:signalFor(fid)?.message||'Revisa o corrige sólo si existe un hallazgo material; ninguna propuesta se confirma automáticamente.',optional:hasExplicit});
+      status=count?'Hallazgo confirmado':candidate?'Posible hallazgo · por validar':'No consta hallazgo';
+      kind=count?'confirmed':candidate?'review':'unknown';
+      if(fid==='DF051')detail=count?count+' reintroducción(es) registrada(s)':signal?.message||'No se han confirmado reintroducciones';
+      else if(fid==='DF053')detail=count?normalizeArray(explicit).map(id=>byId.get(String(id))||'Paso no disponible').join(' · '):hasReuse?normalizeArray(reuse).map(id=>byId.get(String(id))||'Paso no disponible').join(' · '):'Sin búsquedas identificadas';
+      else detail=count?count+' intercambio(s) registrado(s)':'Sin intercambios manuales confirmados';
+      requiresReview=!!(visible&&(candidate||count));
     }else{
-      status=hasExplicit?'Declarado / confirmado':'Condicional · no consta';
-      detail=hasExplicit?formatContextValue(f,explicit):'No se ha obtenido un dato concreto; no bloquea por estar vacío';
-      const signal=signalFor(fid),material=!!signal||(fid==='DF052'&&visible);
-      if(visible&&(hasExplicit||material)){
-        const known=hasExplicit?'Valor registrado. Corrígelo únicamente si la información aportada no es correcta.':
-          (signal?.message||'Comprueba este dato sólo cuando exista un problema documental material.');
-        pending.push({f,hint:known,optional:hasExplicit||fid==='DF052'});
-      }
+      status=hasExplicit?'Dato registrado':signal?'Indicio · pendiente de validar':'No consta · condicional';
+      kind=hasExplicit?'confirmed':signal?'review':'unknown';
+      detail=hasExplicit?formatContextValue(f,explicit):signal?.message||'No hay información acreditada; no bloquea por sí solo';
+      requiresReview=!!(visible&&(signal||hasExplicit));
     }
-    summary.push('<div class="notice '+(status==='Derivado y confirmado'||status==='Hallazgo confirmado'||status==='Declarado / confirmado'?'good':'info')+'">'
-      +'<b>'+esc(f.Pregunta_o_etiqueta_ES||fid)+'</b><div class="field-help">'+esc(status)+'</div>'
-      +'<p>'+esc(detail)+'</p></div>');
+    const quickConfirm=fid==='DF048'&&signal&&!normalizeArray(explicit).includes('MASTER_DATA')
+      ?'<button type="button" class="btn btn-small btn-outline" data-confirm-as-is-suggestion="DF048" data-suggest-value="MASTER_DATA">Confirmar dato maestro</button>'
+      :fid==='DF055'&&signal&&/faltan?|ausente|incomplet|sin informaci[oó]n/i.test(signal.message)&&!normalizeArray(explicit).includes('MISSING')
+        ?'<button type="button" class="btn btn-small btn-outline" data-confirm-as-is-suggestion="DF055" data-suggest-value="MISSING">Confirmar campos ausentes</button>':'';
+    const action=requiresReview
+      ?'<div class="pg05-field-action">'+quickConfirm
+        +'<details><summary>'+(kind==='confirmed'?'Revisar o corregir':'Validar o completar')+'</summary>'
+        +renderStageFields([f],e)+'</details></div>':'';
+    const card='<article class="pg05-field pg05-field--'+kind+'" data-pg05-field="'+fid+'">'
+      +'<div class="pg05-field-top"><b>'+esc(f.Pregunta_o_etiqueta_ES||fid)+'</b>'
+      +'<span class="pg05-state-label">'+esc(status)+'</span></div>'
+      +'<div class="pg05-field-value">'+esc(detail)+'</div>'
+      +'<small>Fuente: '+esc(sourceLabels[fid]||'Información registrada')+'</small>'+action+'</article>';
+    (derived?derivedCards:findingCards).push(card);
   }
-  const signalButtons=fid=>{
-    const found=signalFor(fid),saved=normalizeArray(current[fid]);
-    if(fid==='DF048'&&found&&!saved.includes('MASTER_DATA'))
-      return '<div class="field-help">'+esc(found.message)+'</div><button type="button" class="btn btn-small btn-outline" data-confirm-as-is-suggestion="DF048" data-suggest-value="MASTER_DATA">Confirmar dato maestro</button>';
-    if(fid==='DF055'&&found&&/faltan?|ausente|incomplet|sin informaci[oó]n/i.test(found.message)&&!saved.includes('MISSING'))
-      return '<div class="field-help">'+esc(found.message)+'</div><button type="button" class="btn btn-small btn-outline" data-confirm-as-is-suggestion="DF055" data-suggest-value="MISSING">Confirmar campos ausentes</button>';
-    return '';
-  };
-  const actions=pending.map(x=>'<div class="notice info"><b>'+esc(x.f.Pregunta_o_etiqueta_ES)+'</b>'
-    +'<div class="field-help">'+esc(x.hint)+'</div>'+signalButtons(x.f.Field_ID)
-    +(x.optional?'<details><summary>Revisar o corregir si procede</summary>'+renderStageFields([x.f],e)+'</details>':renderStageFields([x.f],e))+'</div>').join('');
   const integrity=typeof processLayerIntegrityIssues==='function'?processLayerIntegrityIssues(e,'map'):[];
-  const integrityHtml=integrity.length?'<div class="notice warn"><b>Comprobaciones pendientes</b>'
-    +integrity.map(x=>'<p>'+esc(x.message||x.label)+'</p>').join('')+'</div>':'';
-  const intro=pageTop('Pasos','Revisión interna después de confirmar el mapa con el cliente.',
-    '<button class="btn btn-outline" data-page="proceso">← Ver / corregir mapa propietario</button>');
-  return intro+(typeof asisConsoleLockNotice==='function'?asisConsoleLockNotice():'')
-    +section(mapConfirmed?'Mapa AS-IS confirmado':'Mapa trabajado previamente · confirmación pendiente',
-      'Datos reutilizados del proceso; no se vuelve a construir el mapa en Console.',
-      (mapConfirmed
-        ?'<div class="notice good"><b>Mapa confirmado con el cliente.</b> Para corregir un paso, vuelve al mapa propietario.</div>'
-        :'<div class="notice warn"><b>La confirmación anterior ya no está vigente.</b> Esta versión fue confirmada previamente, pero algún cambio posterior la invalidó. Revisa el mapa antes de confirmar otra vez; el sistema no recupera confirmaciones sin comprobar la realidad del cliente.</div>')
-      +'<div class="process-list">'+rows+'</div>')
-    +section('Suficiencia de información para la propuesta','Qué se conoce, de dónde viene y qué permanece condicional. Los valores sin evidencia no se inventan.',
-      '<div class="grid g2">'+summary.join('')+'</div>')
-    +(actions?section('Solo comprobaciones que pueden aportar información','No son una segunda validación del flujo. Se conservan las confirmaciones individuales del Diagnostic Master.',actions):'')
-    +section('Continuidad del diagnóstico',mapConfirmed?'La capa Pasos está confirmada. Las observaciones condicionales no son automáticamente bloqueantes.':'Debes revisar la confirmación invalidada; no se obliga a reconstruir el editor.',
-      integrityHtml+(mapConfirmed
-        ?'<div class="row-actions"><button class="btn btn-primary" data-page="fricciones">Continuar a Fricciones →</button></div>'
-        :'<div class="row-actions"><button class="btn btn-outline" data-page="proceso">Revisar el mapa con cliente</button><button class="btn btn-primary" data-confirm-process-layer="map"'+(integrity.length?' disabled aria-disabled="true"':'')+'>Confirmar mapa revisado</button></div>'));
+  const locked=typeof isAsisConsoleLocked==='function'&&isAsisConsoleLocked(e);
+  const statusHtml=mapConfirmed
+    ?'<div class="pg05-status pg05-status--ok"><b>Mapa confirmado con el cliente.</b> La revisión interna reutiliza los mismos pasos.</div>'
+    :'<div class="pg05-status pg05-status--review"><b>Confirmación del mapa pendiente de revalidación.</b> Hay una confirmación anterior registrada, pero no consta vigente. Si el motivo concreto no está registrado, no se presupone. Revisa la versión actual antes de confirmar.</div>';
+  const nav=mapConfirmed
+    ?'<button type="button" class="btn btn-primary" data-page="fricciones">Continuar a Fricciones →</button>'
+    :'<button type="button" class="btn btn-primary" data-confirm-process-layer="map"'+(integrity.length?' disabled aria-disabled="true"':'')+'>Confirmar mapa revisado</button>';
+  return pageTop('Pasos','Revisión interna del AS-IS; los datos del cliente se capturan una sola vez.',
+      '<button type="button" class="btn btn-outline" data-page="proceso">Ver mapa AS-IS</button>')
+    +'<div class="pg05-review">'+(typeof asisConsoleLockNotice==='function'?asisConsoleLockNotice():'')
+    +statusHtml
+    +section('1. Proceso registrado','Consulta la secuencia. Despliega detalles y edita cualquier paso en su mismo registro.',
+      '<div class="pg05-step-list">'+(stepCards||'<div class="pg05-empty">No hay pasos intermedios registrados.</div>')+'</div>'
+      +'<details class="pg05-add-options"><summary>Gestionar pasos</summary><div class="pg05-step-tools">'
+      +'<button type="button" class="btn btn-small btn-outline" id="addStep">Añadir paso</button>'
+      +'<button type="button" class="btn btn-small btn-outline" id="addMultipleSteps">Añadir varios pasos</button>'
+      +'<button type="button" class="btn btn-small btn-outline" id="addStepTemplate">Plantilla de paso</button>'
+      +'</div></details>')
+    +section('2. Información recuperada del mapa','Cuatro derivaciones calculadas a partir del ProcessStep actual; cada confirmación individual se conserva mientras la fuente no cambie.',
+      '<div class="pg05-field-grid">'+derivedCards.join('')+'</div>')
+    +section('3. Hallazgos y datos condicionales','Solo se presentan acciones cuando existe evidencia o un valor que revisar. Un dato desconocido no es un bloqueo.',
+      '<div class="pg05-field-list">'+findingCards.join('')+'</div>')
+    +section('4. Continuidad del diagnóstico','La edición del mapa se hace aquí sobre el mismo registro. Los hallazgos condicionales sin dato no impiden por sí solos avanzar.',
+      (integrity.length?'<div class="pg05-status pg05-status--review"><b>Integridad del mapa pendiente</b>'
+        +integrity.map(x=>'<p>'+esc(x.message||x.label)+'</p>').join('')+'</div>':'')
+      +'<div class="pg05-footer"><span>'+(locked?'Edición disponible desde la pestaña con cliente':'Las correcciones se guardan en el mapa propietario')+'</span>'
+      +nav+'</div>')+'</div>';
 }
+// [AUNEA-FE-PG05-CONSULTANT-REVIEW-081] END
 function consultantStepsPage(){
   const e=currentEng();if(!e)return pageTop('Pasos','Abre primero un estudio.');
   // Before the client confirms the map, keep the existing editor and its confirmation contract.
@@ -1324,13 +1360,22 @@ bindForms=function(){
     render();
   });
 };
+const __auneaPg05BindForms=bindForms;
+bindForms=function(){
+  __auneaPg05BindForms();
+  document.querySelectorAll('[data-pg05-step-detail]').forEach(panel=>panel.addEventListener('toggle',()=>{
+    if(panel.open)__auneaPg05ExpandedStepId=panel.dataset.pg05StepDetail;
+    else if(__auneaPg05ExpandedStepId===panel.dataset.pg05StepDetail)__auneaPg05ExpandedStepId='';
+  }));
+};
+// Preserve selected step across an edit modal and rerender.
 const __auneaNoReaskBindForms=bindForms;
 bindForms=function(){
   __auneaNoReaskBindForms();
   document.querySelectorAll('[data-add-friction-step]').forEach(b=>b.onclick=ev=>{ev.preventDefault();ev.stopPropagation();openFrictionModal(null,[b.dataset.addFrictionStep])});
   document.querySelectorAll('[data-add-risk-step]').forEach(b=>b.onclick=ev=>{ev.preventDefault();ev.stopPropagation();addRisk([b.dataset.addRiskStep])});
   document.querySelectorAll('[data-add-economic-step]').forEach(b=>b.onclick=ev=>{ev.preventDefault();ev.stopPropagation();addEconomic([b.dataset.addEconomicStep])});
-  document.querySelectorAll('[data-edit-step]').forEach(b=>b.onclick=ev=>{ev.preventDefault();ev.stopPropagation();openStepModal(b.dataset.editStep)});
+  document.querySelectorAll('[data-edit-step]').forEach(b=>b.onclick=ev=>{ev.preventDefault();ev.stopPropagation();__auneaPg05ExpandedStepId=b.dataset.editStep;openStepModal(b.dataset.editStep)});
   document.querySelectorAll('[data-delete-step]').forEach(b=>b.onclick=ev=>{ev.preventDefault();ev.stopPropagation();removeStepFromFlow(b.dataset.deleteStep)});
   document.querySelectorAll('[data-move-step-up]').forEach(b=>b.onclick=()=>moveStep(b.dataset.moveStepUp,-1));
   document.querySelectorAll('[data-move-step-down]').forEach(b=>b.onclick=()=>moveStep(b.dataset.moveStepDown,1));
