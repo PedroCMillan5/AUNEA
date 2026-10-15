@@ -424,4 +424,26 @@ test('PG05 derives all four source-owned values, revokes stale confirmations, an
  }finally{dom.window.close();}
 });
 
+test('PG05 shows every DF053 detected search step in process order, without auto-confirming it',async()=>{
+ const {w,dom,run}=buildRuntime();
+ try{
+   run("state.activePage='uat';render()");
+   await w.document.getElementById('loadSingleUat').onclick();
+   run("state.activePage='pasos';render()");
+   const candidates=run("reusedValue('DF053',currentEng())");
+   const ordered=run("activeSteps(currentEng()).map(x=>x.id)").filter(id=>candidates.includes(id));
+   const box=w.document.querySelector('[data-pg05-field="DF053"]');
+   const shown=box.querySelector('.pg05-field-value').textContent;
+   let last=-1;
+   for(const id of ordered){
+     const idx=run("activeSteps(currentEng()).findIndex(x=>x.id==='"+id+"')")+1;
+     const name=run("activeSteps(currentEng()).find(x=>x.id==='"+id+"').step_name");
+     const at=shown.indexOf(idx+'. '+name);
+     assert.ok(at>last,'search candidates displayed in process order: '+name);
+     last=at;
+   }
+   assert.equal(run("currentEng().answers.DF053"),undefined,'suggested search steps are not silently human-confirmed');
+ }finally{dom.window.close();}
+});
+
 // [AUNEA-UAT-RUNTIME-125] END
