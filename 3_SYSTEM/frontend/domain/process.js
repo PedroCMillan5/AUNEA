@@ -1362,7 +1362,7 @@ function consultantStepsReviewPage(e){
   const clientReturn=locked?'<button type="button" class="btn btn-outline" id="pg05GoToClientEditor">Ir a la vista con cliente</button>':'';
   const statusHtml=mapConfirmed
     ?'<div class="pg05-status pg05-status--ok"><b>Mapa confirmado con el cliente.</b> La revisión interna reutiliza los mismos pasos.</div>'
-    :'<div class="pg05-status pg05-status--review"><b>Confirmación del mapa pendiente de revalidación.</b> Hay una confirmación anterior registrada, pero no consta vigente. Si el motivo concreto no está registrado, no se presupone. Revisa la versión actual antes de confirmar.</div>';
+    :'<div class="pg05-status pg05-status--review"><b>Confirmación del mapa pendiente de revalidación.</b> '+(confirmations.map_at?'Hay una confirmación anterior registrada, pero no consta vigente.':'Esta versión todavía no consta confirmada.')+' Revisa la versión actual antes de confirmar.</div>';
   const nav=mapConfirmed
     ?'<button type="button" class="btn btn-primary" data-page="fricciones">Continuar a Fricciones →</button>'
     :'<button type="button" class="btn btn-primary" data-confirm-process-layer="map"'+(integrity.length?' disabled aria-disabled="true"':'')+'>Confirmar mapa revisado</button>';
@@ -1391,7 +1391,7 @@ function consultantStepsReviewPage(e){
 function consultantStepsPage(){
   const e=currentEng();if(!e)return pageTop('Pasos','Abre primero un estudio.');
   // Before the client confirms the map, keep the existing editor and its confirmation contract.
-  if(!processLayerState(e).map&&!processLayerState(e).map_at)return consultantLayerPage('Pasos','Añade, edita o elimina las actividades reales del proceso.',stepsEditor(e,activeSteps(e),activeFrictions(e)),'map','S04');
+  if(!activeSteps(e).length&&!processLayerState(e).map&&!processLayerState(e).map_at)return consultantLayerPage('Pasos','Añade, edita o elimina las actividades reales del proceso.',stepsEditor(e,activeSteps(e),activeFrictions(e)),'map','S04');
   return consultantStepsReviewPage(e);
 }
 function consultantFrictionsPage(){
