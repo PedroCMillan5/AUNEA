@@ -8,6 +8,8 @@ function buildRuntime(storage){
  virtualConsole.on('jsdomError',e=>errors.push(String(e.message||e)));
  const dom=new JSDOM(html,{url:'http://localhost:5500/index.html',runScripts:'outside-only',pretendToBeVisual:true,virtualConsole});
  const w=dom.window,context=dom.getInternalVMContext(),run=script=>vm.runInContext(script,context);
+ // jsdom does not always expose the browser structuredClone API used by the canonical owner modal.
+ w.structuredClone=globalThis.structuredClone;
  w.console={...console,error:(...args)=>errors.push(args.map(String).join(' '))};
  w.fetch=async url=>{
    const u=new URL(String(url),'http://localhost:5500/index.html');
