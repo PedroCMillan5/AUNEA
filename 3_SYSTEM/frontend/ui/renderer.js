@@ -174,36 +174,26 @@ function migrateDuplicateEntryDrafts(e,fid='DF051'){
   return true;
 }
 function duplicateEntryCandidates(e){
-  // Only complete relationships explicitly supported by the mapped process AND its recorded friction.
-  // A generic REKEY action or an artifact overlap by itself never creates a finding.
-  const steps=(e.processSteps||[]).filter(x=>x.status!=='SUPERSEDED'),frictions=(e.frictions||[]).filter(x=>x.status!=='SUPERSEDED'),out=[];
-  const stepIds=new Set(steps.map(x=>String(x.id)));
-  const order=new Map(steps.map((x,i)=>[String(x.id),i]));
-  const relevant=frictions.filter(f=>['P03','P13'].includes(String(f.friction_type)));
-  for(const dest of steps){
+  // Derive only complete origin/data/destination relationships that are actually
+  // recorded in process steps. A REKEY action alone is never a finding.
+  const steps=(e.processSteps||[]).filter(x=>x.status!=='SUPERSEDED'),out=[];
+  for(let j=0;j<steps.length;j++){
+    const dest=steps[j];
     if(!normalizeArray(dest.manual_actions).some(a=>['REKEY','COPY'].includes(String(a))))continue;
-    const evidence=relevant.filter(f=>normalizeArray(f.affected_steps).some(id=>String(id)===String(dest.id)));
-    if(!evidence.length)continue;
-    const candidates=[];
-    for(const fr of evidence){
-      const description=String(fr.observable_signal||fr.client_label||'');
-      const pdfMention=/\bPDF\b/i.test(description);
-      const repeated=/vuelve\s+a\s+(?:teclear|introducir|copiar)|reintroduc|duplicaci[oó]n\s+manual/i.test(description);
-      if(!pdfMention||!repeated)continue;
-      const dataKey='PDF';
-      if(!normalizeArray(dest.inputs).map(String).includes(dataKey))continue;
-      const sources=steps.filter(src=>String(src.id)!==String(dest.id)
-        &&order.get(String(src.id))<order.get(String(dest.id))
-        &&normalizeArray(src.outputs).map(String).includes(dataKey));
-      if(sources.length!==1)continue;
-      const source=sources[0];
-      // Use the concrete data named in the recorded friction, not a generic artifact label.
-      const match=description.match(/(?:ERP|sistema|aplicaci[oó]n)\s+(n[uú]mero,?\s*importe\s+y\s+proveedor)\s+del\s+PDF/i);
-      const data=match?'Número, importe y proveedor de la factura (PDF)':optionLabel('OS_ARTIFACT_TYPE',dataKey);
-      candidates.push({id:dataKey+':'+source.id+':'+dest.id,data,dataKey,from:source.id,to:dest.id});
+    const matches=[];
+    for(const dataKey of normalizeArray(dest.inputs).map(String)){
+      const producers=steps.slice(0,j).filter(src=>normalizeArray(src.outputs).map(String).includes(dataKey));
+      // An origin must be unambiguous. A direct flow link is not required:
+      // the same document can travel through intermediate process steps.
+      if(producers.length!==1)continue;
+      const src=producers[0];
+      matches.push({id:dataKey+':'+src.id+':'+dest.id,
+        data:optionLabel('OS_ARTIFACT_TYPE',dataKey),dataKey,from:src.id,to:dest.id});
     }
-    const unique=[...new Map(candidates.map(x=>[x.id,x])).values()];
-    if(unique.length===1&&stepIds.has(String(unique[0].from)))out.push(unique[0]);
+    // Prefer document evidence when the same step receives multiple artifacts.
+    const documentary=matches.filter(x=>['PDF','DOC','FORM','SHEET','EMAIL','TEXT'].includes(String(x.dataKey)));
+    const selected=documentary.length===1?documentary:matches.length===1?matches:[];
+    if(selected.length===1)out.push(selected[0]);
   }
   return out;
 }
