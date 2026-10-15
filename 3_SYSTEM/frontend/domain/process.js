@@ -1362,7 +1362,14 @@ function consultantStepsReviewPage(e){
       status=count?'Hallazgo confirmado':candidate?'Posible hallazgo · por validar':'No consta hallazgo';
       kind=count?'confirmed':candidate?'review':'unknown';
       if(fid==='DF051')detail=count?count+' reintroducción(es) registrada(s)':signal?.message||'No se han confirmado reintroducciones';
-      else if(fid==='DF053')detail=count?normalizeArray(explicit).map(id=>byId.get(String(id))||'Paso no disponible').join(' · '):hasReuse?normalizeArray(reuse).map(id=>byId.get(String(id))||'Paso no disponible').join(' · '):'Sin búsquedas identificadas';
+      else if(fid==='DF053'){
+        // Review order follows the actual process, not the order in which the search
+        // signal and related friction were discovered. The owner values remain untouched.
+        const order=new Map(steps.map((s,i)=>[String(s.id),i]));
+        const candidate=count?normalizeArray(explicit):hasReuse?normalizeArray(reuse):[];
+        detail=candidate.length?candidate.slice().sort((a,b)=>(order.get(String(a))??Infinity)-(order.get(String(b))??Infinity))
+          .map(id=>byId.get(String(id))||'Paso no disponible').join(' · '):'Sin búsquedas identificadas';
+      }
       else detail=count?count+' intercambio(s) registrado(s)':'Sin intercambios manuales confirmados';
       // Absence of a detected candidate must never prevent manual discovery.
       // Field ownership and the original canonical validation remain unchanged.
