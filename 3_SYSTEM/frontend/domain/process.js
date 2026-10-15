@@ -1500,6 +1500,7 @@ bindForms=function(){
   __auneaPg05BindForms();
   // PG05 finding actions use the persistent delegated listener below.
   document.querySelectorAll('[data-pg05-finding-editor]').forEach(el=>el.addEventListener('toggle',()=>{
+    if(!el.isConnected)return; // Ignore deferred close events from DOM nodes replaced by render().
     const fid=el.getAttribute('data-pg05-finding-editor');
     if(el.open)__auneaPg05OpenFinding=fid;
     else if(__auneaPg05OpenFinding===fid)__auneaPg05OpenFinding='';
