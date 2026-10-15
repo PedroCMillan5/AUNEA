@@ -1428,18 +1428,6 @@ function consultantStepsReviewPage(e){
       :'<button type="button" class="btn btn-small btn-primary" data-confirm-derived="'+fid+'">Confirmar valor</button>')+'</div>':'';
     // A candidate is not an accepted fact. Open the canonical structured owner
     // explicitly instead of presenting a misleading one-click confirmation.
-    const findingOpenAction=!uniform&&fid!=='DF051'&&!quickAction&&kind==='review'&&!hasExplicit
-      ?'<button type="button" class="btn btn-small btn-primary" data-open-pg05-finding="'+fid+'">Validar hallazgo</button>':'';
-    const df051Fingerprint= fid==='DF051'?JSON.stringify({
-      steps:steps.map(x=>[x.id,x.status,x.inputs,x.outputs,x.manual_actions]),
-      frictions:frictions.map(x=>[x.id,x.status,x.friction_type,x.affected_steps,x.observable_signal]),
-      confirmed:typeof duplicateEntryRows==='function'?duplicateEntryRows(e.answers?.DF051):[],
-      drafts:typeof duplicateEntryDraftRows==='function'?duplicateEntryDraftRows(e,'DF051',e.answers?.DF051):[],
-      dismissed:e.answerDetails?.DF051__dismissed||[]
-    }):'';
-    const df051Validated=fid==='DF051'&&e.answerDetails?.DF051__section_confirmation?.fingerprint===df051Fingerprint;
-    if(fid==='DF051'){status=df051Validated?'Confirmado':'Pendiente de validar';kind=df051Validated?'confirmed':'review';}
-    const df051Action=fid==='DF051'?'<button type="button" class="btn btn-small '+(df051Validated?'btn-outline':'btn-primary')+'" data-pg05-validate-section="DF051">'+(df051Validated?'Deshacer validación':'Validar hallazgo')+'</button>':'';
     const uniformFields=['DF048','DF052','DF053','DF054','DF055'];
     const uniform=fid!=='DF051'&&uniformFields.includes(fid);
     const uniformFingerprint=JSON.stringify(explicit);
@@ -1459,6 +1447,18 @@ function consultantStepsReviewPage(e){
         ?'<button type="button" class="btn btn-small btn-outline" data-pg05-unlock="'+fid+'">Deshacer confirmación</button>'
         :'<button type="button" class="btn btn-small btn-primary" data-pg05-confirm-finding="'+fid+'"'+(!hasExplicit?' disabled':'')+'>Confirmar selección</button>'
       :'';
+    const findingOpenAction=!uniform&&fid!=='DF051'&&!quickAction&&kind==='review'&&!hasExplicit
+      ?'<button type="button" class="btn btn-small btn-primary" data-open-pg05-finding="'+fid+'">Validar hallazgo</button>':'';
+    const df051Fingerprint= fid==='DF051'?JSON.stringify({
+      steps:steps.map(x=>[x.id,x.status,x.inputs,x.outputs,x.manual_actions]),
+      frictions:frictions.map(x=>[x.id,x.status,x.friction_type,x.affected_steps,x.observable_signal]),
+      confirmed:typeof duplicateEntryRows==='function'?duplicateEntryRows(e.answers?.DF051):[],
+      drafts:typeof duplicateEntryDraftRows==='function'?duplicateEntryDraftRows(e,'DF051',e.answers?.DF051):[],
+      dismissed:e.answerDetails?.DF051__dismissed||[]
+    }):'';
+    const df051Validated=fid==='DF051'&&e.answerDetails?.DF051__section_confirmation?.fingerprint===df051Fingerprint;
+    if(fid==='DF051'){status=df051Validated?'Confirmado':'Pendiente de validar';kind=df051Validated?'confirmed':'review';}
+    const df051Action=fid==='DF051'?'<button type="button" class="btn btn-small '+(df051Validated?'btn-outline':'btn-primary')+'" data-pg05-validate-section="DF051">'+(df051Validated?'Deshacer validación':'Validar hallazgo')+'</button>':'';
     const noReviewKey=fid+'__no_review_needed';
     const noReviewNeeded=!!e.answerDetails?.[noReviewKey];
     const noReviewAvailable=!hasExplicit&&!signal&&!hasReuse&&['DF046','DF047','DF049','DF050','DF052','DF053','DF054','DF055'].includes(fid)&&!(fid==='DF051'&&typeof duplicateEntryDraftRows==='function'&&duplicateEntryDraftRows(e,'DF051',explicit).length);
