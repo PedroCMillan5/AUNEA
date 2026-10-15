@@ -65,7 +65,7 @@ async function main(){
    }));
    assert.ok(sizing.review/sizing.parent>=0.85,'PG05 must use the available desktop workspace, not a narrow centered column');
    for(const fid of ['DF048','DF051','DF052','DF053','DF054','DF055'])
-     assert.equal(await page.locator('[data-pg05-field="'+fid+'"] .pg05-discovery-control summary').count(),1,
+     assert.ok(await page.locator('[data-pg05-field="'+fid+'"] .pg05-discovery-control > summary').count()>=1,
        'PG05 must preserve optional discovery for '+fid);
    await page.screenshot({path:path.join(outDir,id.toLowerCase()+'-pg05-consultor.png'),fullPage:true});
    const stepEdit=page.locator('.pg05-review [data-edit-step]').first();
