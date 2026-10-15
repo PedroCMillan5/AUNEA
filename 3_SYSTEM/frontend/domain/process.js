@@ -272,6 +272,38 @@ function exceptionControl(s,e){
   </div></div>`;
 }
 
+// [AUNEA-FE-PG05-STEP-EDIT-083] START — Semantic no-op and durable owner commit.
+function stepOwnerEditSignature(raw){
+  const s=raw||{},details=s._details||{},ap=s.applies_to||{};
+  const v=x=>String(x??''),many=x=>normalizeArray(x).map(v);
+  const applies=typeof ap==='object'?ap:{mode:ap};
+  const mode=v(applies.mode||'ALL');
+  const decide=typeof processDecisionStep==='function'&&processDecisionStep(s);
+  const er=s.error_rate||{},error=typeof er==='object'?er:{value:er};
+  return JSON.stringify({
+    name:v(s.step_name).trim(),type:v(s.step_type),actor:v(s.actor),tool:v(s.tool),
+    applies:[mode,mode==='PERCENT'?v(applies.value):'',mode==='CONDITION'?v(applies.condition):''],
+    occurrences:Number(s.occurrences_per_case??1),
+    inputs:many(s.inputs),outputs:many(s.outputs),manual:many(s.manual_actions),
+    channels:many(s.communication_channels),evidence:many(s.evidence),
+    active:Number(s.active_time||0),wait:Number(s.wait_time||0),rework:Number(s.rework_time||0),
+    error:[Number(error.value||0),v(error.mode||'percent'),Number(error.value||0)>0&&error.mode==='count'?v(error.period):''],
+    decision:!!decide,criteria:decide?many(s.decision_criteria):[],
+    next:v(s.normal_next_step),exception:decide&&s.exception_path?[
+      v(s.exception_path.type),v(s.exception_path.condition),v(s.exception_path.destination_step),v(s.exception_path.owner)
+    ]:[],
+    notes:v(s.notes).trim(),
+    detail:[v(details.inputs),v(details.outputs),decide?v(details.decision_criteria):'',
+      decide?v(details.decision_criteria_other):'',v(details.manual_actions),v(details.communication_channels)]
+  });
+}
+function restoreStepCommitFailure(e,before,dirtyBefore,auditBefore){
+  for(const k of Object.keys(e))if(!Object.prototype.hasOwnProperty.call(before,k))delete e[k];
+  Object.assign(e,before);
+  state.dirty=dirtyBefore;
+  state.audit=auditBefore;
+}
+// [AUNEA-FE-PG05-STEP-EDIT-083] END
 function openStepModal(stepId=null,linkFromStepId=null,preset=null){
   if(typeof guardAsisMutation==='function'&&guardAsisMutation())return;
   const e=currentEng(),existing=stepId?e.processSteps.find(x=>x.id===stepId):null;
@@ -349,16 +381,34 @@ function openStepModal(stepId=null,linkFromStepId=null,preset=null){
     if(s.error_rate.mode==='count'&&s.error_rate.value>0&&!s.error_rate.period)return toast('Si el error se registra en casos, indica también el periodo.');
     if(selectedOtherMissingDetail(artifacts,s.inputs,s._details.inputs)||selectedOtherMissingDetail(artifacts,s.outputs,s._details.outputs)||selectedOtherMissingDetail(decisions,s.decision_criteria,s._details.decision_criteria_other)||selectedOtherMissingDetail(manual,s.manual_actions,s._details.manual_actions)||selectedOtherMissingDetail(channels,s.communication_channels,s._details.communication_channels))return toast('Completa el detalle de cada opción «Otro» seleccionada.');
     if(hasDecisionNow&&(!nextVal||!ed))return toast('Una decisión necesita destino para la ruta SÍ y para la ruta NO. También puedes elegir Fin del proceso.');
+    // A real unchanged save must preserve all layer confirmations and derived evidence.
+    // Compare the canonical fields, not UI unit formatting or modal disclosure state.
+    s.normal_next_step=hasDecisionNow?nextVal:(nextVal==='__NEW__'?'':nextVal);
+    s.exception_path=hasDecisionNow?{type:et,condition:ec,destination_step:ed,owner:eo}:null;
+    s.notes=document.getElementById('step_notes').value.trim();
+    if(existing&&nextVal!=='__NEW__'&&ed!=='__NEW__'
+      &&stepOwnerEditSignature(existing)===stepOwnerEditSignature(s)){
+      closeModal();toast('No hay cambios en este paso. Se mantienen las confirmaciones.');return;
+    }
+    const before=structuredClone(e),dirtyBefore=state.dirty,auditBefore=structuredClone(state.audit||[]);
     let yesDestination=nextVal,noDestination=ed;
     const createdDestinations=[];
     if(hasDecisionNow&&yesDestination==='__NEW__'){const draft=blankDecisionDestination();e.processSteps.push(draft);yesDestination=draft.id;createdDestinations.push(draft.id)}
     if(hasDecisionNow&&noDestination==='__NEW__'){const draft=blankDecisionDestination();e.processSteps.push(draft);noDestination=draft.id;createdDestinations.push(draft.id)}
     s.normal_next_step=hasDecisionNow?yesDestination:(nextVal==='__NEW__'?'':nextVal);
     s.exception_path=hasDecisionNow?{type:et,condition:ec,destination_step:noDestination,owner:eo}:null;s.notes=document.getElementById('step_notes').value.trim();
-    if(existing){Object.assign(existing,s);audit(`Paso editado ${existing.id}`)}else{e.processSteps.push(s);audit(`Paso creado ${s.id}`);if(linkFromStepId){const origin=e.processSteps.find(x=>x.id===linkFromStepId);if(origin)origin.normal_next_step=s.id}}if(typeof advanceEngagementTo==='function')advanceEngagementTo(e,'Sesión 1','captura de proceso');invalidateProcessLayersSafe(e,'map');e.diagnosticOutput=null;e.updatedAt=now();markDirty('Paso guardado');const persisted=typeof persistRecoverySnapshot==='function'?persistRecoverySnapshot('paso-guardado'):true;closeModal();
+    if(existing){Object.assign(existing,s);audit(`Paso editado ${existing.id}`)}else{e.processSteps.push(s);audit(`Paso creado ${s.id}`);if(linkFromStepId){const origin=e.processSteps.find(x=>x.id===linkFromStepId);if(origin)origin.normal_next_step=s.id}}if(typeof advanceEngagementTo==='function')advanceEngagementTo(e,'Sesión 1','captura de proceso');invalidateProcessLayersSafe(e,'map');e.diagnosticOutput=null;e.updatedAt=now();markDirty('Paso guardado');
+    const persisted=typeof persistRecoverySnapshot==='function'
+      ?persistRecoverySnapshot('paso-guardado',{allowStepCommit:true}):true;
+    if(persisted===false){
+      restoreStepCommitFailure(e,before,dirtyBefore,auditBefore);
+      toast('No se ha guardado el paso. El editor permanece abierto para revisar el conflicto y reintentar.');
+      return false;
+    }
+    closeModal();
     if(createdDestinations.length)toast(`${createdDestinations.length} destino(s) vacío(s) creados. Edítalos para completar el flujo.`);
     if(!hasDecisionNow&&nextVal==='__NEW__'){render();openStepModal(null,s.id)}else{render()}
-    if(persisted===false)toast('No se ha podido persistir este paso.');else toast(existing?'Cambios del paso guardados.':'Paso guardado.');
+    toast(existing?'Cambios del paso guardados.':'Paso guardado.');
   },existing?'Guardar cambios':'Añadir paso');
   bindProcessAppliesControl();
   bindProcessTimeShares();
