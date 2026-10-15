@@ -1469,7 +1469,7 @@ function consultantStepsReviewPage(e){
     const df051Action=fid==='DF051'?'<button type="button" class="btn btn-small '+(df051Validated?'btn-outline':'btn-primary')+'" data-pg05-validate-section="DF051">'+(df051Validated?'Deshacer validación':'Validar hallazgo')+'</button>':'';
     const noReviewKey=fid+'__no_review_needed';
     const noReviewNeeded=!!e.answerDetails?.[noReviewKey];
-    const noReviewAvailable=!hasExplicit&&!signal&&!hasReuse&&['DF046','DF047','DF049','DF050','DF052','DF053','DF054','DF055'].includes(fid)&&!(fid==='DF051'&&typeof duplicateEntryDraftRows==='function'&&duplicateEntryDraftRows(e,'DF051',explicit).length);
+    const noReviewAvailable=!uniform&&!hasExplicit&&!signal&&!hasReuse&&['DF046','DF047','DF049','DF050','DF052','DF053','DF054','DF055'].includes(fid)&&!(fid==='DF051'&&typeof duplicateEntryDraftRows==='function'&&duplicateEntryDraftRows(e,'DF051',explicit).length);
     if(noReviewAvailable){status=noReviewNeeded?'Sin validación pendiente':'Sin información que validar';kind=noReviewNeeded?'confirmed':'unknown';}
     const noReviewAction=uniform?(uniformLocked?'':'<button type="button" class="btn btn-small btn-outline" data-pg05-no-review="'+fid+'">No hay validación que hacer</button>'):noReviewAvailable?'<button type="button" class="btn btn-small btn-outline" data-pg05-no-review="'+fid+'">'+(noReviewNeeded?'Deshacer confirmación':'No hay validación que hacer')+'</button>':'';
     const reviewConfirmationAction=!uniform&&['DF053','DF054','DF055'].includes(fid)&&hasExplicit?'<button type="button" class="btn btn-small '+(e.answerDetails?.[fid+'__finding_confirmation']?.fingerprint===JSON.stringify(explicit)?'btn-outline':'btn-primary')+'" data-pg05-confirm-finding="'+fid+'">'+(e.answerDetails?.[fid+'__finding_confirmation']?.fingerprint===JSON.stringify(explicit)?'Deshacer confirmación':'Confirmar selección')+'</button>':'';
@@ -1684,7 +1684,7 @@ if(typeof document!=='undefined'&&!document.__auneaPg05FindingActionsBound){
       if(!e||!['DF048','DF052','DF053','DF054','DF055'].includes(fid))return;
       const details=e.answerDetails||(e.answerDetails={}),key=fid+'__finding_confirmation',fingerprint=JSON.stringify(e.answers?.[fid]);
       if(details[key]?.fingerprint===fingerprint)delete details[key];
-      else details[key]={fingerprint,confirmedAt:now()};
+      else {details[key]={fingerprint,confirmedAt:now()};delete details[fid+'__no_review_needed'];}
       e.updatedAt=now();markDirty('Confirmación revisada');render();return;
     }
     const noReview=ev.target?.closest?.('[data-pg05-no-review]');
