@@ -209,6 +209,14 @@ test('PG05 review contains one canonical representation for all DF046–DF055 an
    assert.equal(section.querySelectorAll('[data-pg05-field]').length,10,'exactly ten DF046–DF055 fields');
    for(const id of ['DF046','DF047','DF048','DF049','DF050','DF051','DF052','DF053','DF054','DF055'])
      assert.equal(section.querySelectorAll('[data-pg05-field="'+id+'"]').length,1,'no duplicate card for '+id);
+   for(const id of ['DF046','DF047','DF049','DF050']){
+     const expected=run("formatContextValue(schema.fields.find(f=>f.Field_ID==='"+id+"'),reusedValue('"+id+"',currentEng()))");
+     const shown=section.querySelector('[data-pg05-field="'+id+'"] .pg05-field-value').textContent;
+     assert.equal(shown,expected,'the UI must show the exact current canonical projection for '+id);
+   }
+   for(const id of ['DF048','DF051','DF052','DF053','DF054','DF055'])
+     assert.ok(section.querySelector('[data-pg05-field="'+id+'"] small').textContent.includes('Fuente:'),
+       'every conditional candidate must declare its source for '+id);
    assert.equal(section.querySelectorAll('[data-edit-step]').length,6);
    assert.equal(section.querySelectorAll('.pg05-step-details').length,6);
    const initial=run("currentEng().layerConfirmations.map");
