@@ -1409,18 +1409,26 @@ function consultantStepsReviewPage(e){
       :'<button type="button" class="btn btn-small btn-primary" data-confirm-as-is-suggestion="'+fid+'" data-suggest-value="'+quickValue+'">'+(fid==='DF048'?'Confirmar dato maestro':'Aplicar sugerencia de campos ausentes')+'</button>'):'';
     // Review is a live view of the ProcessStep owner. Editing opens the existing
     // step controls with their actual selections; it never edits a duplicate answer.
-    const perStepValues=step=>{
-      if(fid==='DF046')return step.tool?[labelFrom('OS_TOOL_CATEGORY',step.tool)||step.tool]:[];
-      if(fid==='DF047')return unique([...normalizeArray(step.inputs),...normalizeArray(step.outputs).filter(x=>['RECORD','MASTER_DATA','API'].includes(String(x)))])
-        .map(x=>labelFrom('OS_ARTIFACT_TYPE',x)||x);
-      if(fid==='DF049')return unique([...normalizeArray(step.inputs),...normalizeArray(step.outputs)].filter(x=>['FORM','EMAIL','TEXT','PDF','DOC','SHEET','IMAGE'].includes(String(x))))
-        .map(x=>labelFrom('OS_ARTIFACT_TYPE',x)||x);
-      if(fid==='DF050')return normalizeArray(step.communication_channels).map(x=>labelFrom('OS_COMMUNICATION_CHANNEL',x)||x);
-      return [];
-    };
-    const sources=derived&&hasReuse&&kind!=='confirmed'?steps.map((step,i)=>({step,index:i+1,values:perStepValues(step)})).filter(x=>x.values.length):[];
-    const sourceEditor=sources.length?'<div class="pg05-source-review"><b>Opciones seleccionadas en el mapa</b><small>Para cambiar una selección, edita el paso que la contiene. Los cambios actualizarán automáticamente esta ficha.</small>'
-      +sources.map(x=>'<div class="pg05-source-row"><span><b>'+x.index+'. '+esc(x.step.step_name||'Paso')+'</b> · '+x.values.map(v=>'<button type="button" class="btn btn-small btn-outline" data-edit-step="'+attr(x.step.id)+'" title="Modificar en el paso original">✓ '+esc(v)+'</button>').join(' ')+'</span><button type="button" class="btn btn-small btn-outline" data-edit-step="'+attr(x.step.id)+'">Modificar selección</button></div>').join('')+'</div>':'';
+    // [AUNEA-FE-PG05-SOURCE-SELECTION-104] START — Canonical options, checked from live step owners.
+    const sourceField=fid==='DF046'?{set:'OS_TOOL_CATEGORY',prop:'tool',single:true}
+      :fid==='DF047'?{set:'OS_ARTIFACT_TYPE',prop:'inputs',outputs:true}
+      :fid==='DF049'?{set:'OS_ARTIFACT_TYPE',prop:'inputs',outputs:true,allowed:['FORM','EMAIL','TEXT','PDF','DOC','SHEET','IMAGE']}
+      :fid==='DF050'?{set:'OS_COMM_CHANNEL',prop:'communication_channels'}:null;
+    const sourceEditor=derived&&hasReuse&&kind!=='confirmed'&&sourceField
+      ?'<div class="pg05-source-review"><b>Revisar las opciones del mapa</b><small>Las opciones seleccionadas aparecen marcadas. Puedes modificarlas por paso y confirmar nuevamente. Los cambios se guardan en el paso original.</small>'
+        +steps.map((step,index)=>{
+          const candidates=fieldOptions(sourceField.set).filter(o=>!sourceField.allowed||sourceField.allowed.includes(String(o.value)));
+          const selected=new Set(normalizeArray(step[sourceField.prop]).map(String));
+          const selectedOut=new Set(sourceField.outputs?normalizeArray(step.outputs).map(String):[]);
+          const rows=candidates.map(o=>{
+            const value=String(o.value),marked=selected.has(value),outputMarked=selectedOut.has(value);
+            const input='<label class="pg05-source-choice"><input type="'+(sourceField.single?'radio':'checkbox')+'" data-pg05-source-option="'+fid+'" data-pg05-step="'+attr(step.id)+'" data-pg05-property="'+sourceField.prop+'" value="'+attr(value)+'"'+(marked?' checked':'')+'><span>'+esc(o.label||value)+'</span></label>';
+            const output=sourceField.outputs?'<label class="pg05-source-choice"><input type="checkbox" data-pg05-source-option="'+fid+'" data-pg05-step="'+attr(step.id)+'" data-pg05-property="outputs" value="'+attr(value)+'"'+(outputMarked?' checked':'')+'><span>Salida: '+esc(o.label||value)+'</span></label>':'';
+            return input+output;
+          }).join('');
+          return '<div class="pg05-source-step"><div class="pg05-source-step-title"><b>'+(index+1)+'. '+esc(step.step_name||'Paso')+'</b><button type="button" class="btn btn-small btn-outline" data-edit-step="'+attr(step.id)+'">Editar paso completo</button></div><div class="pg05-source-options">'+rows+'</div></div>';
+        }).join('')+'</div>':'';
+    // [AUNEA-FE-PG05-SOURCE-SELECTION-104] END
     const derivedAction=derived&&hasReuse?sourceEditor+'<div class="pg05-field-action pg05-field-confirmation">'+(kind==='confirmed'
       ?'<button type="button" class="btn btn-small btn-outline" data-undo-derived="'+fid+'">Deshacer confirmación</button>'
       :'<button type="button" class="btn btn-small btn-primary" data-confirm-derived="'+fid+'">Confirmar valor</button>')+'</div>':'';
@@ -1436,7 +1444,7 @@ function consultantStepsReviewPage(e){
       dismissed:e.answerDetails?.DF051__dismissed||[]
     }):'';
     const df051Validated=fid==='DF051'&&e.answerDetails?.DF051__section_confirmation?.fingerprint===df051Fingerprint;
-    if(fid==='DF051'){status=df051Validated?'VALIDADA':'Pendiente de validar';kind=df051Validated?'confirmed':'review';}
+    if(fid==='DF051'){status=df051Validated?'Hallazgo confirmado':'Pendiente de validar';kind=df051Validated?'confirmed':'review';}
     const df051Action=fid==='DF051'?'<button type="button" class="btn btn-small '+(df051Validated?'btn-outline':'btn-primary')+'" data-pg05-validate-section="DF051">'+(df051Validated?'Deshacer validación':'Validar hallazgo')+'</button>':'';
     const noReviewKey=fid+'__no_review_needed';
     const noReviewNeeded=!!e.answerDetails?.[noReviewKey];
@@ -1531,6 +1539,26 @@ const __auneaPg05BindForms=bindForms;
 bindForms=function(){
   __auneaPg05BindForms();
   // PG05 finding actions use the persistent delegated listener below.
+  // Live selection changes write directly to the original ProcessStep.
+  document.querySelectorAll('[data-pg05-source-option]').forEach(input=>input.addEventListener('change',()=>{
+    const e=currentEng(),step=activeSteps(e).find(x=>String(x.id)===String(input.dataset.pg05Step));
+    if(!step)return;
+    const property=input.dataset.pg05Property,code=String(input.value);
+    if(property==='tool')step.tool=code;
+    else {
+      const group=[...document.querySelectorAll('[data-pg05-source-option]')].filter(x=>x.dataset.pg05Step===input.dataset.pg05Step&&x.dataset.pg05Property===property);
+      const selected=group.filter(x=>x.checked).map(x=>x.value);
+      if(property==='inputs'||property==='outputs'){
+        const represented=new Set(group.map(x=>String(x.value)));
+        step[property]=[...normalizeArray(step[property]).filter(x=>!represented.has(String(x))),...selected];
+      }else step[property]=selected;
+    }
+    if(typeof invalidateProcessLayersSafe==='function')invalidateProcessLayersSafe(e,'map');
+    if(typeof invalidateDerivedState==='function')invalidateDerivedState(e,'revisión de opciones del mapa');
+    e.updatedAt=now();markDirty('Selección del mapa modificada');
+    // Keep the controls mounted, so clicking an option never jumps the screen.
+  }));
+
   document.querySelectorAll('[data-pg05-finding-editor]').forEach(el=>el.addEventListener('toggle',()=>{
     if(!el.isConnected)return; // Ignore deferred close events from DOM nodes replaced by render().
     const fid=el.getAttribute('data-pg05-finding-editor');
@@ -1604,6 +1632,11 @@ if(typeof document!=='undefined'&&!document.__auneaPg05FindingActionsBound){
       editor.scrollIntoView?.({block:'nearest'});
       const first=editor.querySelector('input:not([type="hidden"]),button,select,textarea');
       first?.focus?.({preventScroll:true});
+      return;
+    }
+    const sourceOption=ev.target?.closest?.('[data-pg05-source-option]');
+    if(sourceOption){
+      // Checkbox updates are applied by the change handler below; avoid click-level rerenders.
       return;
     }
     const globalValidation=ev.target?.closest?.('[data-pg05-validate-section="DF051"]');
