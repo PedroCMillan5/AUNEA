@@ -49,6 +49,29 @@ async function main(){
     assert.match(layout.contextTitle,/Contexto activo/);
   }
   await page.setViewportSize({width:1365,height:900});
+  // Header must use two meaningful rows and keep the active Engagement legible.
+  for(const viewport of [{width:1365,height:900},{width:1200,height:800},{width:1024,height:768},{width:390,height:844}]){
+    await page.setViewportSize(viewport);
+    const header=await page.evaluate(()=>{
+      const rect=id=>{const b=document.querySelector(id)?.getBoundingClientRect();return b?{x:b.left,y:b.top,w:b.width,h:b.height,right:b.right,bottom:b.bottom}:null};
+      return {shell:rect('.topbar'),intro:rect('.topbar-left'),progress:rect('#stepProgress'),study:rect('.topbar-active-study'),actions:rect('.topbar-right'),
+        studyText:document.querySelector('.topbar-study-main')?.textContent||'',
+        overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth};
+    });
+    assert.ok(header.study?.w>=Math.min(260,viewport.width*.55),'active-study text has enough width at '+viewport.width);
+    assert.ok(header.study.y>=header.intro.y,'active-study starts after the session heading at '+viewport.width);
+    assert.ok(header.actions.right<=header.shell.right+2,'actions fit within header at '+viewport.width);
+    assert.ok(header.study.right<=header.shell.right+2,'study fits within header at '+viewport.width);
+    assert.ok(header.overflow<=2,'header must not cause horizontal page scroll at '+viewport.width);
+    if(viewport.width>1100){
+      assert.ok(header.study.y>header.intro.y+4,'second-row study separates visually from the session title');
+      assert.ok(header.actions.y>=header.study.y-3,'actions align with active-study row');
+      assert.ok(header.progress?.w>60,'progress remains visible on desktop');
+    }
+    assert.match(header.studyText,/Levante Instalaciones|Contexto activo/);
+  }
+  await page.setViewportSize({width:1365,height:900});
+  await page.screenshot({path:path.join(outDir,'aunea-topbar-study-context.png'),fullPage:false});
   // [AUNEA-UAT-SHELL-092] END
   const ids=await page.evaluate(()=>state.engagements.filter(e=>e.id.startsWith('UAT3-CASE-')).map(e=>e.id));
   assert.equal(ids.length,1,'The actual UAT click must create exactly one study.');
