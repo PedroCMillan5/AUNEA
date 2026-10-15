@@ -141,15 +141,37 @@ function refreshPendingFieldVisual(fid,e=currentEng()){
     :false;
   if(present&&!issue&&!integrity)host.classList.remove('field-pending');
 }
+// Map confirmation validates ProcessStep topology and the client-reviewed flow. DF046–DF055
+// are process-level projections/findings reviewed afterwards in Console; their capture is
+// not a new edit of the ProcessStep owner (DEC-050/065). Final PG09 snapshots still go stale.
+function invalidateAsisForCanonicalAnswer(e,fid){
+  if(!e||fid==='DF093')return;
+  const f=(schema?.fields||[]).find(x=>x.Field_ID===fid);
+  const stage=String(f?.Stage_ID||'');
+  const hasLayer=Object.values(e.layerConfirmations||{}).some(v=>v===true);
+  if(stage==='S09'){
+    if(e.confirmedAsIs&&typeof invalidateAsIsClosure==='function')
+      invalidateAsIsClosure(e,'dato del cierre '+fid+' modificado');
+    return;
+  }
+  const complementary=stage==='S04'&&/^DF0(?:4[6-9]|5[0-5])$/.test(fid);
+  if(complementary){
+    // Explicitly invalidate any sealed handoff, never silently change a confirmed snapshot.
+    // Unchanged ProcessSteps and client layer confirmations remain valid.
+    if(e.confirmedAsIs&&typeof invalidateAsIsClosure==='function')
+      invalidateAsIsClosure(e,'dato complementario '+fid+' modificado');
+    return;
+  }
+  if((e.confirmedAsIs||hasLayer)&&typeof invalidateProcessLayers==='function')
+    invalidateProcessLayers(e,'map');
+}
 function setAnswer(fid,value){
   const e=currentEng();if(!e)return;
   const detailMatch=String(fid||'').match(/^(DF\d{3})__(step|steps)$/);
   if(detailMatch){
     const parentFid=detailMatch[1],details=e.answerDetails||(e.answerDetails={});
     if(JSON.stringify(details[fid])===JSON.stringify(value))return;
-    const fieldStage=(schema?.fields||[]).find(f=>f.Field_ID===parentFid)?.Stage_ID||'',closesSession=fieldStage==='S09';
-    if(!closesSession&&(e.confirmedAsIs||Object.values(e.layerConfirmations||{}).some(v=>v===true))&&typeof invalidateProcessLayers==='function')invalidateProcessLayers(e,'map');
-    if(closesSession&&e.confirmedAsIs&&typeof invalidateAsIsClosure==='function')invalidateAsIsClosure(e,`detalle de cierre ${parentFid} actualizado`);
+    invalidateAsisForCanonicalAnswer(e,parentFid);
     details[fid]=value;e.updatedAt=now();
     if(typeof advanceEngagementTo==='function')advanceEngagementTo(e,'Sesión 1','captura vinculada a paso');
     invalidateDerivedState(e,`detalle ${fid} actualizado`,parentFid);markDirty(`Detalle ${fid} actualizado`);if(typeof refreshCaptureProgress==='function')refreshCaptureProgress();if(typeof refreshPendingFieldVisual==='function')refreshPendingFieldVisual(parentFid,e);
@@ -157,13 +179,9 @@ function setAnswer(fid,value){
   }
   // A repeated render/change event is not a new capture version and must not reopen PG09.
   if(JSON.stringify(e.answers?.[fid])===JSON.stringify(value))return;
-  // DEC-065: if an upstream session answer changes, all four dependent confirmations
-  // must be reviewed again. Never mutate an immutable previously sealed snapshot.
-  const fieldStage=(schema?.fields||[]).find(f=>f.Field_ID===fid)?.Stage_ID||'';
-  const closesSession=fieldStage==='S09';
-  if(fid!=='DF093'&&!closesSession&&(e.confirmedAsIs||Object.values(e.layerConfirmations||{}).some(v=>v===true))
-      &&typeof invalidateProcessLayers==='function')invalidateProcessLayers(e,'map');
-  if(fid!=='DF093'&&closesSession&&e.confirmedAsIs&&typeof invalidateAsIsClosure==='function')invalidateAsIsClosure(e,`respuesta de cierre ${fid} actualizada`);
+  // Invalidate the exact owner-dependent confirmation, not the client map when the
+  // consultant is only classifying supplementary findings from that already-reviewed map.
+  invalidateAsisForCanonicalAnswer(e,fid);
   e.answers[fid]=value;e.updatedAt=now();
   // A reused value corrected here must reach its owner, not become a second copy (DEC-050). The
   // engagement still keeps the snapshot of the value it used. Guarded because the No-Reask module
