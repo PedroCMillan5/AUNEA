@@ -89,9 +89,11 @@ function reconcileRecoveryWithDisk(){
 }
 // The storage listener never replaces a draft under an open modal; its save reconciles it
 // against the latest disk state before the shared and client-safe projections are published.
-function persistRecoverySnapshot(reason='recovery'){
+// An explicit, validated ProcessStep commit may persist while its own modal remains open.
+// Autosave/storage reconciliation still cannot replace an unfinished draft.
+function persistRecoverySnapshot(reason='recovery',options={}){
   if(typeof isClientDisplay==='function'&&isClientDisplay())return false;
-  if(recoveryModalOpen())return false;
+  if(recoveryModalOpen()&&options?.allowStepCommit!==true)return false;
   try{
     const result=reconcileRecoveryWithDisk();
     if(result.conflicts.length){
