@@ -132,4 +132,64 @@ test('PG05 internal Pasos reads confirmed client map without a second editor or 
    assert.equal(run("currentEng().confirmedAsIs"),false,'PG09 remains the separate final confirmation');
  }finally{dom.window.close();}
 });
+
+test('PG05: supplementary DF048/DF055 answers preserve client layer confirmations across reload',async()=>{
+ const {w,dom,run}=buildRuntime();
+ try{
+   run("state.activePage='uat';render()");
+   await w.document.getElementById('loadSingleUat').onclick();
+   const before=run("JSON.stringify(currentEng().layerConfirmations)");
+   assert.equal(run("currentEng().layerConfirmations.map"),true,'UAT fixture already confirmed the map');
+   run("setAnswer('DF048',['MASTER_DATA']);setAnswer('DF055',['MISSING'])");
+   assert.equal(run("currentEng().layerConfirmations.map"),true,'supporting records cannot reopen the client map');
+   for(const layer of ['frictions','risks','impact'])assert.equal(run("currentEng().layerConfirmations."+layer),true);
+   assert.equal(run("currentEng().confirmedAsIs"),false,'PG09 stays pending');
+   assert.equal(run("persistRecoverySnapshot('PG05 supplementary test')"),true);
+   const saved=w.localStorage.getItem('aunea_internal_v1');
+   assert.ok(saved);
+   const next=buildRuntime(saved);
+   try{
+     assert.equal(next.run("currentEng().layerConfirmations.map"),true,'map confirmation survives rehydration');
+     assert.match(next.run("consultantStepsPage()"),/Suficiencia de información para la propuesta/);
+     assert.doesNotMatch(next.run("consultantStepsPage()"),/data-confirm-process-layer="map"/);
+   }finally{next.dom.window.close();}
+   assert.notEqual(run("JSON.stringify(currentEng().answers.DF048)"),undefined);
+ }finally{dom.window.close();}
+});
+
+test('PG05: true Process upstream edit still revokes old map and historical invalidation is honest',async()=>{
+ const {w,dom,run}=buildRuntime();
+ try{
+   run("state.activePage='uat';render()");
+   await w.document.getElementById('loadSingleUat').onclick();
+   run("currentEng().layerConfirmations.map_at='2026-10-14T12:00:00Z'");
+   run("setAnswer('DF020',['AMOUNT'])");
+   assert.equal(run("currentEng().layerConfirmations.map"),false,'changing route dimensions invalidates the map');
+   const html=run("consultantStepsPage()");
+   assert.match(html,/Mapa trabajado previamente/);
+   assert.match(html,/confirmación anterior ya no está vigente/);
+   assert.match(html,/data-confirm-process-layer="map"/,'consultant must explicitly revalidate');
+   assert.doesNotMatch(html,/data-delete-step=/,'invalidated map still does not require rebuilding the second editor');
+ }finally{dom.window.close();}
+});
+
+test('PG05: layer confirmation is rolled back if cross-tab durable save conflicts',async()=>{
+ const {w,dom,run}=buildRuntime();
+ try{
+   run("state.activePage='uat';render()");
+   await w.document.getElementById('loadSingleUat').onclick();
+   run("currentEng().layerConfirmations.map=false");
+   const persisted=JSON.parse(w.localStorage.getItem('aunea_internal_v1'));
+   const remote=JSON.parse(JSON.stringify(persisted));
+   const active=remote.engagements.find(x=>x.id.startsWith('UAT3-CASE-'));
+   active.contextSummary='Cambio remoto no conciliado';
+   w.localStorage.setItem('aunea_internal_v1',JSON.stringify(remote));
+   run("currentEng().contextSummary='Cambio local distinto'");
+   const result=run("confirmProcessLayer('cliente')");
+   assert.equal(result,false,'confirmation is rejected when the write is rejected');
+   assert.equal(run("currentEng().layerConfirmations.map"),false,'UI cannot retain a false confirmation');
+   assert.equal(run("currentEng().confirmedAsIs"),false);
+ }finally{dom.window.close();}
+});
+
 // [AUNEA-UAT-RUNTIME-125] END
