@@ -1227,3 +1227,69 @@ body:has([data-diagnostic-stage="S08"]) .s08-duplication-why{margin:4px 0 8px;li
 }
 @media print{.topbar-study-menu{display:none}}
 /* [AUNEA-FE-SHELL-LAYOUT-091] END */
+
+
+/* [AUNEA-FE-SHELL-HEADER-093] START — Two balanced rows; existing Engagement and progress are read-only projections. */
+.topbar{
+  display:grid;grid-template-areas:"session progress" "study actions";
+  grid-template-columns:minmax(0,1.08fr) minmax(0,1fr);
+  grid-template-rows:minmax(24px,auto) minmax(48px,auto);
+  gap:8px 24px;height:auto;min-height:112px;padding:12px 24px;
+  align-items:center;min-width:0;
+}
+.topbar-left{grid-area:session;min-width:0;justify-self:stretch;display:flex;align-items:center}
+.topbar-location{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;min-width:0}
+.topbar .breadcrumb{max-width:none;font-size:16px;line-height:1.35;min-width:0}
+.topbar #topbarContext{display:flex;flex:0 0 auto}
+.topbar-progress{grid-area:progress;min-width:0;display:flex;align-items:center;justify-content:flex-end}
+.topbar-progress .step-progress{display:flex;align-items:center;gap:10px}
+.topbar-progress .stage-clock{margin-left:10px}
+.topbar-active-study{grid-area:study;min-width:0;width:100%;justify-self:stretch}
+.topbar-study{width:100%;box-sizing:border-box;min-height:52px;max-width:none;gap:16px;padding:8px 14px}
+.topbar-study-main{gap:3px;min-width:0}
+.topbar-study-main b{font-size:13px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar-study-main>span{font-size:12px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar-study-disclosure>summary{font-size:12px;min-height:30px;display:flex;align-items:center;gap:6px}
+.topbar-right{grid-area:actions;display:flex;align-items:center;justify-content:flex-end;justify-self:stretch;
+  gap:12px;min-width:0;flex-wrap:nowrap}
+.topbar-right .save-state{font-size:11px;white-space:nowrap}
+.topbar-right .user-chip{max-width:180px}
+.topbar-right .user-chip>div:last-child{min-width:0}
+.topbar-right .user-chip b,.topbar-right .user-chip small{white-space:nowrap}
+@media(max-width:1320px){
+  .topbar{grid-template-columns:minmax(0,1fr) minmax(0,.95fr);gap:8px 16px;padding:11px 16px}
+  .topbar .backend-badge{display:none}
+  .topbar-right{gap:9px}
+}
+@media(max-width:1100px){
+  .topbar{grid-template-areas:"session progress" "study study" "actions actions";
+    grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto auto;gap:7px 12px;min-height:0}
+  .topbar-active-study{max-width:none}
+  .topbar-right{justify-content:flex-end}
+  .topbar-progress{justify-self:end}
+}
+@media(max-width:900px){
+  .topbar{display:grid;grid-template-areas:"session actions" "study study";
+    grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;gap:8px 10px;padding:10px 14px}
+  .topbar-progress{display:none}
+  .topbar-left{min-width:0}
+  .topbar-right{justify-self:end}
+  .topbar .breadcrumb{font-size:14px}
+  .topbar .topbar-location{gap:6px}
+  .topbar-study{min-height:50px}
+}
+@media(max-width:760px){
+  .topbar{grid-template-columns:minmax(0,1fr) auto}
+  .topbar .topbar-location{display:block}
+  .topbar .breadcrumb{font-size:13px}
+  .topbar #topbarContext{margin-top:4px}
+  .topbar-right #saveState{display:none}
+  .topbar-study-main>span{font-size:11px}
+  .topbar-study-main b{font-size:12px}
+}
+@media(max-width:420px){
+  .topbar-right .user-chip{display:none}
+  .topbar-study{gap:8px;padding:8px}
+  .topbar-study-disclosure>summary{font-size:11px}
+}
+/* [AUNEA-FE-SHELL-HEADER-093] END */
