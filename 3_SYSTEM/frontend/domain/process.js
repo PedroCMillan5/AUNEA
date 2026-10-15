@@ -1402,9 +1402,13 @@ function consultantStepsReviewPage(e){
     const derivedAction=derived&&hasReuse?'<div class="pg05-field-action pg05-field-confirmation">'+(kind==='confirmed'
       ?'<button type="button" class="btn btn-small btn-outline" data-undo-derived="'+fid+'">Deshacer confirmación</button>'
       :'<button type="button" class="btn btn-small btn-primary" data-confirm-derived="'+fid+'">Confirmar valor</button>')+'</div>':'';
+    // A candidate is not an accepted fact. Open the canonical structured owner
+    // explicitly instead of presenting a misleading one-click confirmation.
+    const findingOpenAction=!quickAction&&kind==='review'
+      ?'<button type="button" class="btn btn-small btn-primary" data-open-pg05-finding="'+fid+'">Validar hallazgo</button>':'';
     const action=derived?derivedAction:(requiresReview
-      ?'<div class="pg05-field-action">'+quickAction
-        +'<details class="pg05-discovery-control"><summary>'+(kind==='confirmed'?'Revisar o corregir':kind==='review'?'Validar el hallazgo':'Añadir información si existe')+'</summary>'
+      ?'<div class="pg05-field-action">'+quickAction+findingOpenAction
+        +'<details class="pg05-discovery-control" data-pg05-finding-editor="'+fid+'"><summary>'+(kind==='confirmed'?'Revisar o corregir':kind==='review'?'Completar información para confirmar':'Añadir información si existe')+'</summary>'
         +(fid==='DF054'?manualHandoffControl():renderStageFields([f],e))+'</details></div>':'');
     // [AUNEA-FE-PG05-CONFIRM-UNDO-094] END
     const card='<article class="pg05-field pg05-field--'+kind+'" data-pg05-field="'+fid+'">'
@@ -1484,6 +1488,17 @@ bindForms=function(){
 const __auneaPg05BindForms=bindForms;
 bindForms=function(){
   __auneaPg05BindForms();
+  // [AUNEA-FE-PG05-CANDIDATE-096] START — Reveal owner form for inferred findings; never auto-confirm.
+  document.querySelectorAll('[data-open-pg05-finding]').forEach(button=>button.onclick=()=>{
+    const field=button.dataset.openPg05Finding;
+    const editor=[...document.querySelectorAll('[data-pg05-finding-editor]')].find(el=>el.dataset.pg05FindingEditor===field);
+    if(!editor)return;
+    editor.open=true;
+    const first=editor.querySelector('input,select,textarea,button');
+    first?.focus?.({preventScroll:true});
+    editor.scrollIntoView?.({block:'nearest'});
+  });
+  // [AUNEA-FE-PG05-CANDIDATE-096] END
   const clientButton=document.getElementById('pg05GoToClientEditor');
   if(clientButton)clientButton.onclick=()=>openProcessEditorWindow();
   document.querySelectorAll('[data-pg05-step-detail]').forEach(panel=>panel.addEventListener('toggle',()=>{
