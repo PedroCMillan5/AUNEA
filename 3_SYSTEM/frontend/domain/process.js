@@ -1406,8 +1406,10 @@ function consultantStepsReviewPage(e){
     // explicitly instead of presenting a misleading one-click confirmation.
     const findingOpenAction=!quickAction&&kind==='review'
       ?'<button type="button" class="btn btn-small btn-primary" data-open-pg05-finding="'+fid+'">Validar hallazgo</button>':'';
+    const findingUndoAction=fid==='DF051'&&kind==='confirmed'
+      ?'<button type="button" class="btn btn-small btn-outline" data-undo-pg05-finding="DF051">Deshacer confirmación</button>':'';
     const action=derived?derivedAction:(requiresReview
-      ?'<div class="pg05-field-action">'+quickAction+findingOpenAction
+      ?'<div class="pg05-field-action">'+quickAction+findingOpenAction+findingUndoAction
         +'<details class="pg05-discovery-control" data-pg05-finding-editor="'+fid+'"><summary>'+(kind==='confirmed'?'Revisar o corregir':kind==='review'?'Completar información para confirmar':'Añadir información si existe')+'</summary>'
         +(fid==='DF054'?manualHandoffControl():renderStageFields([f],e))+'</details></div>':'');
     // [AUNEA-FE-PG05-CONFIRM-UNDO-094] END
@@ -1499,6 +1501,17 @@ bindForms=function(){
     editor.scrollIntoView?.({block:'nearest'});
   });
   // [AUNEA-FE-PG05-CANDIDATE-096] END
+  // [AUNEA-FE-PG05-DUPLICATE-UNDO-097] START — Reopen all saved DF051 findings as their existing drafts.
+  document.querySelectorAll('[data-undo-pg05-finding="DF051"]').forEach(button=>button.onclick=()=>{
+    const e=currentEng();if(!e)return;
+    const rows=duplicateEntryRows(e.answers?.DF051);
+    if(!rows.length)return;
+    const drafts=duplicateEntryDraftRows(e,'DF051',e.answers?.DF051);
+    setAnswer('DF051',[]);
+    saveDuplicateEntryDraftRows(e,'DF051',[...drafts,...rows]);
+    render();
+  });
+  // [AUNEA-FE-PG05-DUPLICATE-UNDO-097] END
   const clientButton=document.getElementById('pg05GoToClientEditor');
   if(clientButton)clientButton.onclick=()=>openProcessEditorWindow();
   document.querySelectorAll('[data-pg05-step-detail]').forEach(panel=>panel.addEventListener('toggle',()=>{
