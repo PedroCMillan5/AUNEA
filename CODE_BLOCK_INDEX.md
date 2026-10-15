@@ -204,3 +204,6 @@
 
 | AUNEA-FE-PG05-DISCOVERY-084 | 3_SYSTEM/frontend/domain/process.js | Captura condicional opcional DF048/051/052/053/054/055 con selección manual de pares DF054 | Diagnostic Master 1.2 / DEC-050 | ProcessStep y hallazgos | UI sin nuevas preguntas | DOM / state | HIGH | uat-full-runtime-v1.test.cjs | REVIEW |
 | AUNEA-FE-PG05-DISCOVERY-STYLE-084 | 3_SYSTEM/frontend/ui-system.css | Ajuste visual PG05 a ancho de consola y fichas compactas | Simulator 1.14 / DEC-066 | PG05 | Responsive | CSS | MEDIUM | uat-browser-smoke.cjs | REVIEW |
+
+| AUNEA-FE-SHELL-CONTEXT-090 | 3_SYSTEM/frontend/core/state.js | Mueve el Engagement activo y sus acciones al topbar, manteniendo marca única en rail | Simulator CANONICAL 1.14; DEC-050/066 | Engagement actual | Barra de contexto y acciones write-through | UI global, sin nuevo owner | HIGH | uat-full-runtime-v1.test.cjs; uat-browser-smoke.cjs | REVIEW |
+| AUNEA-FE-SHELL-LAYOUT-091 | 3_SYSTEM/frontend/ui-system.css | Layout de barra superior responsive y sidebar sin scroll vertical, sin logo inferior | Simulator CANONICAL 1.14 §23.2; DEC-066 | Shell común | Navegación visible en desktop | CSS global acotado al shell | HIGH | uat-browser-smoke.cjs; páginas FROZEN | REVIEW |
