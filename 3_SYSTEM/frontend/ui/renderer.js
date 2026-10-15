@@ -584,8 +584,16 @@ function bindCanonicalRenderer(){
   document.querySelectorAll('[data-duplicate-review-step]').forEach(btn=>btn.onclick=()=>{
     const e=currentEng();if(!e)return;
     const drafts=duplicateEntryDraftRows(e,'DF051',e.answers?.DF051);
-    if(typeof __auneaPg05OpenFinding!=='undefined')__auneaPg05OpenFinding='DF051';
-    saveDuplicateEntryDraftRows(e,'DF051',[...drafts,{data:'',from:'',to:btn.dataset.duplicateReviewStep}]);render();
+    const dest=String(btn.dataset.duplicateReviewStep||'');
+    const candidates=duplicateEntryCandidates(e).filter(x=>String(x.to)===dest);
+    const data=candidates.length===1?candidates[0]:null;
+    const steps=(e.processSteps||[]).filter(x=>x.status!=='SUPERSEDED');
+    const target=steps.find(x=>String(x.id)===dest);
+    const inputTypes=normalizeArray(target?.inputs);
+    const producerPairs=steps.filter(x=>String(x.id)!==dest).flatMap(src=>normalizeArray(src.outputs).filter(v=>inputTypes.includes(v)).map(v=>({data:optionLabel('OS_ARTIFACT_TYPE',v),dataKey:v,from:src.id,to:dest})));
+    const inferred=producerPairs.length===1?producerPairs[0]:null;
+    const prefill=data||inferred||{data:inputTypes.length===1?optionLabel('OS_ARTIFACT_TYPE',inputTypes[0]):'',dataKey:inputTypes.length===1?inputTypes[0]:'',from:'',to:dest};
+    saveDuplicateEntryDraftRows(e,'DF051',[...drafts,prefill]);render();
   });
   document.querySelectorAll('[data-duplicate-add]').forEach(btn=>btn.onclick=()=>{const fid=btn.dataset.duplicateAdd,e=currentEng();if(!e)return;const drafts=duplicateEntryDraftRows(e,fid,e.answers?.[fid]);saveDuplicateEntryDraftRows(e,fid,[...drafts,{data:'',from:'',to:''}]);render()});
   document.querySelectorAll('[data-duplicate-part]').forEach(el=>el.addEventListener(el.tagName==='INPUT'?'input':'change',()=>{const e=currentEng(),fid='DF051',rows=duplicateEntryRows(e.answers?.[fid]),i=Number(el.dataset.duplicateIndex);if(!rows[i])return;rows[i]={...rows[i],[el.dataset.duplicatePart]:el.value};setAnswer(fid,rows)}));
