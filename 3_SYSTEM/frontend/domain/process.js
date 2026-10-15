@@ -1420,7 +1420,7 @@ function consultantStepsReviewPage(e){
     };
     const sources=derived&&hasReuse&&kind!=='confirmed'?steps.map((step,i)=>({step,index:i+1,values:perStepValues(step)})).filter(x=>x.values.length):[];
     const sourceEditor=sources.length?'<div class="pg05-source-review"><b>Opciones seleccionadas en el mapa</b><small>Para cambiar una selección, edita el paso que la contiene. Los cambios actualizarán automáticamente esta ficha.</small>'
-      +sources.map(x=>'<div class="pg05-source-row"><span><b>'+x.index+'. '+esc(x.step.step_name||'Paso')+'</b> · '+x.values.map(v=>'✓ '+esc(v)).join(' · ')+'</span><button type="button" class="btn btn-small btn-outline" data-edit-step="'+attr(x.step.id)+'">Modificar selección</button></div>').join('')+'</div>':'';
+      +sources.map(x=>'<div class="pg05-source-row"><span><b>'+x.index+'. '+esc(x.step.step_name||'Paso')+'</b> · '+x.values.map(v=>'<button type="button" class="btn btn-small btn-outline" data-edit-step="'+attr(x.step.id)+'" title="Modificar en el paso original">✓ '+esc(v)+'</button>').join(' ')+'</span><button type="button" class="btn btn-small btn-outline" data-edit-step="'+attr(x.step.id)+'">Modificar selección</button></div>').join('')+'</div>':'';
     const derivedAction=derived&&hasReuse?sourceEditor+'<div class="pg05-field-action pg05-field-confirmation">'+(kind==='confirmed'
       ?'<button type="button" class="btn btn-small btn-outline" data-undo-derived="'+fid+'">Deshacer confirmación</button>'
       :'<button type="button" class="btn btn-small btn-primary" data-confirm-derived="'+fid+'">Confirmar valor</button>')+'</div>':'';
