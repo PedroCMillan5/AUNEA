@@ -174,19 +174,36 @@ function migrateDuplicateEntryDrafts(e,fid='DF051'){
   return true;
 }
 function duplicateEntryCandidates(e){
-  // Only a *defined* flow relationship with matching data and a recorded repeat-entry action.
-  // Frictions, manual actions alone, and guessed nearest producers never create a finding.
-  const steps=(e.processSteps||[]).filter(x=>x.status!=='SUPERSEDED'),out=[];
+  // Only complete relationships explicitly supported by the mapped process AND its recorded friction.
+  // A generic REKEY action or an artifact overlap by itself never creates a finding.
+  const steps=(e.processSteps||[]).filter(x=>x.status!=='SUPERSEDED'),frictions=(e.frictions||[]).filter(x=>x.status!=='SUPERSEDED'),out=[];
+  const stepIds=new Set(steps.map(x=>String(x.id)));
+  const order=new Map(steps.map((x,i)=>[String(x.id),i]));
+  const relevant=frictions.filter(f=>['P03','P13'].includes(String(f.friction_type)));
   for(const dest of steps){
     if(!normalizeArray(dest.manual_actions).some(a=>['REKEY','COPY'].includes(String(a))))continue;
-    const producers=steps.filter(src=>String(src.id)!==String(dest.id)
-      &&(String(src.normal_next_step||'')===String(dest.id)
-         ||String(src.exception_path?.destination_step||'')===String(dest.id)));
-    const matches=producers.flatMap(src=>normalizeArray(src.outputs)
-      .filter(data=>normalizeArray(dest.inputs).map(String).includes(String(data)))
-      .map(data=>({id:String(data)+':'+src.id+':'+dest.id,
-        data:optionLabel('OS_ARTIFACT_TYPE',data),dataKey:String(data),from:src.id,to:dest.id})));
-    if(matches.length===1)out.push(matches[0]);
+    const evidence=relevant.filter(f=>normalizeArray(f.affected_steps).some(id=>String(id)===String(dest.id)));
+    if(!evidence.length)continue;
+    const candidates=[];
+    for(const fr of evidence){
+      const description=String(fr.observable_signal||fr.client_label||'');
+      const pdfMention=/\bPDF\b/i.test(description);
+      const repeated=/vuelve\s+a\s+(?:teclear|introducir|copiar)|reintroduc|duplicaci[oó]n\s+manual/i.test(description);
+      if(!pdfMention||!repeated)continue;
+      const dataKey='PDF';
+      if(!normalizeArray(dest.inputs).map(String).includes(dataKey))continue;
+      const sources=steps.filter(src=>String(src.id)!==String(dest.id)
+        &&order.get(String(src.id))<order.get(String(dest.id))
+        &&normalizeArray(src.outputs).map(String).includes(dataKey));
+      if(sources.length!==1)continue;
+      const source=sources[0];
+      // Use the concrete data named in the recorded friction, not a generic artifact label.
+      const match=description.match(/(?:ERP|sistema|aplicaci[oó]n)\s+(n[uú]mero,?\s*importe\s+y\s+proveedor)\s+del\s+PDF/i);
+      const data=match?'Número, importe y proveedor de la factura (PDF)':optionLabel('OS_ARTIFACT_TYPE',dataKey);
+      candidates.push({id:dataKey+':'+source.id+':'+dest.id,data,dataKey,from:source.id,to:dest.id});
+    }
+    const unique=[...new Map(candidates.map(x=>[x.id,x])).values()];
+    if(unique.length===1&&stepIds.has(String(unique[0].from)))out.push(unique[0]);
   }
   return out;
 }
