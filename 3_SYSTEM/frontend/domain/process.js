@@ -1426,7 +1426,7 @@ function consultantStepsReviewPage(e){
       :'<button type="button" class="btn btn-small btn-primary" data-confirm-derived="'+fid+'">Confirmar valor</button>')+'</div>':'';
     // A candidate is not an accepted fact. Open the canonical structured owner
     // explicitly instead of presenting a misleading one-click confirmation.
-    const findingOpenAction=!quickAction&&kind==='review'&&!hasExplicit
+    const findingOpenAction=fid!=='DF051'&&!quickAction&&kind==='review'&&!hasExplicit
       ?'<button type="button" class="btn btn-small btn-primary" data-open-pg05-finding="'+fid+'">Validar hallazgo</button>':'';
     const noReviewKey=fid+'__no_review_needed';
     const noReviewNeeded=!!e.answerDetails?.[noReviewKey];
@@ -1434,12 +1434,14 @@ function consultantStepsReviewPage(e){
     if(noReviewAvailable){status=noReviewNeeded?'Sin validación pendiente':'Sin información que validar';kind=noReviewNeeded?'confirmed':'unknown';}
     const noReviewAction=noReviewAvailable?'<button type="button" class="btn btn-small btn-outline" data-pg05-no-review="'+fid+'">'+(noReviewNeeded?'Deshacer confirmación':'No hay validación que hacer')+'</button>':'';
     const reviewConfirmationAction=['DF053','DF054','DF055'].includes(fid)&&hasExplicit?'<button type="button" class="btn btn-small '+(e.answerDetails?.[fid+'__finding_confirmation']?.fingerprint===JSON.stringify(explicit)?'btn-outline':'btn-primary')+'" data-pg05-confirm-finding="'+fid+'">'+(e.answerDetails?.[fid+'__finding_confirmation']?.fingerprint===JSON.stringify(explicit)?'Deshacer confirmación':'Confirmar selección')+'</button>':'';
-    const findingUndoAction=fid==='DF051'&&kind==='confirmed'
-      ?'<button type="button" class="btn btn-small btn-outline" data-undo-pg05-finding="DF051">Deshacer confirmación</button>':'';
+    const findingUndoAction=''; // DF051 reversibility lives on each confirmed row, not a second card action.
+    const inlineDuplicate=fid==='DF051'&&requiresReview;
     const action=derived?(derivedAction+(noReviewAvailable?'<div class="pg05-field-action">'+noReviewAction+'</div>':'')):(requiresReview
       ?'<div class="pg05-field-action">'+quickAction+findingOpenAction+findingUndoAction+reviewConfirmationAction+noReviewAction
-        +'<details class="pg05-discovery-control" data-pg05-finding-editor="'+fid+'"'+(__auneaPg05OpenFinding===fid?' open':'')+'><summary>'+(kind==='confirmed'?'Revisar o corregir':kind==='review'?'Completar información para confirmar':'Añadir información si existe')+'</summary>'
-        +(fid==='DF054'?manualHandoffControl():renderStageFields([f],e))+'</details></div>':'');
+        +(inlineDuplicate
+          ?'<div class="pg05-inline-duplicate" data-pg05-finding-editor="DF051">'+renderStageFields([f],e)+'</div>'
+          :'<details class="pg05-discovery-control" data-pg05-finding-editor="'+fid+'"'+(__auneaPg05OpenFinding===fid?' open':'')+'><summary>'+(kind==='confirmed'?'Revisar o corregir':kind==='review'?'Completar información para confirmar':'Añadir información si existe')+'</summary>'
+            +(fid==='DF054'?manualHandoffControl():renderStageFields([f],e))+'</details>')+'</div>':'');
     // [AUNEA-FE-PG05-CONFIRM-UNDO-094] END
     const card='<article class="pg05-field pg05-field--'+kind+'" data-pg05-field="'+fid+'">'
       +'<div class="pg05-field-top"><b>'+esc(f.Pregunta_o_etiqueta_ES||fid)+'</b>'
