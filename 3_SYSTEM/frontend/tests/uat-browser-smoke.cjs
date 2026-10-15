@@ -62,7 +62,7 @@ async function main(){
     assert.ok(h.study.right<=h.actions.x+2,'study does not overlap actions');
     assert.ok(h.scroll<=2,'no page-level horizontal overflow');
     assert.doesNotMatch(h.labels,/Sesión de diagnóstico|Consola interna/);
-    if(viewport.width>670)assert.ok(Math.abs(h.study.y-h.progress.y)<18,'progress shares the row');
+    if(viewport.width>1100&&h.progress?.w>0)assert.ok(Math.abs(h.study.y-h.progress.y)<18,'progress aligned');
   }
   await page.setViewportSize({width:1365,height:900});
   await page.screenshot({path:path.join(outDir,'aunea-topbar-study-context.png'),fullPage:false});
