@@ -48,8 +48,9 @@ test('the shell exposes the reference regions', () => {
   for (const id of ['railHead', 'nav', 'breadcrumb', 'topbarContext', 'stepProgress', 'content', 'modalRoot']) {
     assert.match(html, new RegExp(`id="${id}"`), `index.html must expose #${id}`);
   }
-  assert.match(html, /AUNEA SYSTEM/, 'the rail footer carries the AUNEA SYSTEM signature');
-  assert.match(html, /SISTEMAS QUE<br>OPTIMIZAN TU NEGOCIO\./);
+  assert.match(html, /id="topbarActiveStudy"/, 'the active study is accessible in the header');
+  assert.match(html, /assets\/brand\/Logo\.png/, 'the rail retains the single official top logo');
+  assert.doesNotMatch(html, /class="sidebar-foot"/, 'the bottom brand block has been removed');
 });
 
 test('the rail carries no product version string', () => {
