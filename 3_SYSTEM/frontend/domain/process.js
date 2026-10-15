@@ -1392,8 +1392,9 @@ function consultantStepsReviewPage(e){
       // Field ownership and the original canonical validation remain unchanged.
       requiresReview=true;
     }else{
-      status=hasExplicit?'Dato registrado':signal?'Indicio · pendiente de validar':'No consta · condicional';
-      kind=hasExplicit?'confirmed':signal?'review':'unknown';
+      const confirmedSelection=hasExplicit&&!!(e.answerDetails?.[fid+'__finding_confirmation']?.fingerprint===JSON.stringify(explicit));
+      status=hasExplicit?(fid==='DF055'&&!confirmedSelection?'Dato registrado · pendiente de validar':'Dato registrado'):signal?'Indicio · pendiente de validar':'No consta · condicional';
+      kind=hasExplicit?(fid==='DF055'&&!confirmedSelection?'review':'confirmed'):signal?'review':'unknown';
       detail=hasExplicit?formatContextValue(f,explicit):signal?.message||'No hay información acreditada; no bloquea por sí solo';
       // CONDITIONAL_ASK is optional, not inaccessible. A consultant can discover
       // master-data, document-version or quality issues without a prior Pain/Step signal.
@@ -1404,8 +1405,8 @@ function consultantStepsReviewPage(e){
     const quickEvidence=fid==='DF048'?!!signal:fid==='DF055'&&!!signal&&/faltan?|ausente|incomplet|sin informaci[oó]n/i.test(signal.message);
     const quickSelected=quickValue&&normalizeArray(explicit).includes(quickValue);
     const quickAction=quickValue&&quickEvidence?(quickSelected
-      ?'<button type="button" class="btn btn-small btn-outline" data-undo-as-is-suggestion="'+fid+'" data-suggest-value="'+quickValue+'">Deshacer confirmación</button>'
-      :'<button type="button" class="btn btn-small btn-primary" data-confirm-as-is-suggestion="'+fid+'" data-suggest-value="'+quickValue+'">Confirmar '+(fid==='DF048'?'dato maestro':'campos ausentes')+'</button>'):'';
+      ?'<button type="button" class="btn btn-small btn-outline" data-undo-as-is-suggestion="'+fid+'" data-suggest-value="'+quickValue+'">'+(fid==='DF048'?'Deshacer confirmación':'Quitar sugerencia')+'</button>'
+      :'<button type="button" class="btn btn-small btn-primary" data-confirm-as-is-suggestion="'+fid+'" data-suggest-value="'+quickValue+'">'+(fid==='DF048'?'Confirmar dato maestro':'Aplicar sugerencia de campos ausentes')+'</button>'):'';
     // Review is a live view of the ProcessStep owner. Editing opens the existing
     // step controls with their actual selections; it never edits a duplicate answer.
     const perStepValues=step=>{
