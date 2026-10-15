@@ -251,4 +251,63 @@ test('PG05 step modal keeps data and confirmation on no-op; failed persistence r
  }finally{dom.window.close();}
 });
 
+
+test('PG05 owner edit persists real modifications and restores the right step after reload',async()=>{
+ const {w,dom,run}=buildRuntime();
+ try{
+   run("state.activePage='uat';render()");
+   await w.document.getElementById('loadSingleUat').onclick();
+   run("state.activePage='pasos';render()");
+   w.document.querySelectorAll('.pg05-review [data-edit-step]')[1].click();
+   const stepId=run("currentEng().processSteps[1].id"),original=run("currentEng().processSteps[1].step_name");
+   const changed=original+' revisada';
+   w.document.getElementById('step_name').value=changed;
+   w.document.getElementById('modalSave').click();
+   assert.equal(w.document.getElementById('modalSave'),null,'successful save closes modal');
+   assert.equal(run("currentEng().processSteps.find(x=>x.id==='"+stepId+"').step_name"),changed);
+   assert.equal(run("currentEng().layerConfirmations.map"),false,'material step edit invalidates dependent confirmations');
+   const saved=w.localStorage.getItem('aunea_internal_v1');
+   assert.ok(saved&&saved.includes(changed),'owner saved durably');
+   const reopened=buildRuntime(saved);
+   try{
+     assert.equal(reopened.run("currentEng().processSteps.find(x=>x.id==='"+stepId+"').step_name"),changed);
+     const html=reopened.run("consultantStepsPage()");
+     assert.match(html,/pg05-step-card/);
+     assert.match(html,/pendiente de revalidación/);
+   }finally{reopened.dom.window.close();}
+ }finally{dom.window.close();}
+});
+
+test('canonical ProcessStep can commit from active client tab while modal is open',async()=>{
+ const {w,dom,run}=buildRuntime();
+ try{
+   run("state.activePage='uat';render()");
+   await w.document.getElementById('loadSingleUat').onclick();
+   w.location.hash='#process-editor';
+   run("state.activePage='proceso';render()");
+   const original=run("currentEng().processSteps[0].step_name");
+   run("openStepModal(currentEng().processSteps[0].id)");
+   assert.ok(w.document.getElementById('modalSave'));
+   w.document.getElementById('step_name').value=original+' corregida';
+   w.document.getElementById('modalSave').click();
+   assert.equal(w.document.querySelector('#modalRoot .modal'),null,'client editor closes only after durable commit');
+   assert.equal(run("currentEng().processSteps[0].step_name"),original+' corregida');
+   assert.match(w.localStorage.getItem('aunea_internal_v1'),/corregida/);
+ }finally{dom.window.close();}
+});
+
+test('PG05 invalid step keeps modal open and expands the affected group',async()=>{
+ const {w,dom,run}=buildRuntime();
+ try{
+   run("state.activePage='uat';render()");
+   await w.document.getElementById('loadSingleUat').onclick();
+   run("state.activePage='pasos';render()");
+   w.document.querySelector('[data-edit-step]').click();
+   const input=w.document.getElementById('step_name');input.value='x';
+   w.document.getElementById('modalSave').click();
+   assert.ok(w.document.querySelector('#modalRoot .modal'));
+   assert.equal(input.closest('details.step-group').open,true);
+ }finally{dom.window.close();}
+});
+
 // [AUNEA-UAT-RUNTIME-125] END
