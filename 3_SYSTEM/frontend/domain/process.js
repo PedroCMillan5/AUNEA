@@ -1410,25 +1410,20 @@ function consultantStepsReviewPage(e){
     // Review is a live view of the ProcessStep owner. Editing opens the existing
     // step controls with their actual selections; it never edits a duplicate answer.
     // [AUNEA-FE-PG05-SOURCE-SELECTION-104] START — Canonical options, checked from live step owners.
-    const sourceField=fid==='DF046'?{set:'OS_TOOL_CATEGORY',prop:'tool',single:true}
-      :fid==='DF047'?{set:'OS_ARTIFACT_TYPE',prop:'inputs',outputs:true}
-      :fid==='DF049'?{set:'OS_ARTIFACT_TYPE',prop:'inputs',outputs:true,allowed:['FORM','EMAIL','TEXT','PDF','DOC','SHEET','IMAGE']}
-      :fid==='DF050'?{set:'OS_COMM_CHANNEL',prop:'communication_channels'}:null;
-    const sourceEditor=derived&&hasReuse&&kind!=='confirmed'&&sourceField
-      ?'<div class="pg05-source-review"><b>Revisar las opciones del mapa</b><small>Las opciones seleccionadas aparecen marcadas. Puedes modificarlas por paso y confirmar nuevamente. Los cambios se guardan en el paso original.</small>'
-        +steps.map((step,index)=>{
-          const candidates=fieldOptions(sourceField.set).filter(o=>!sourceField.allowed||sourceField.allowed.includes(String(o.value)));
-          const selected=new Set(normalizeArray(step[sourceField.prop]).map(String));
-          const selectedOut=new Set(sourceField.outputs?normalizeArray(step.outputs).map(String):[]);
-          const rows=candidates.map(o=>{
-            const value=String(o.value),marked=selected.has(value),outputMarked=selectedOut.has(value);
-            const input='<label class="pg05-source-choice"><input type="'+(sourceField.single?'radio':'checkbox')+'" data-pg05-source-option="'+fid+'" data-pg05-step="'+attr(step.id)+'" data-pg05-property="'+sourceField.prop+'" value="'+attr(value)+'"'+(marked?' checked':'')+'><span>'+esc(o.label||value)+'</span></label>';
-            const output=sourceField.outputs?'<label class="pg05-source-choice"><input type="checkbox" data-pg05-source-option="'+fid+'" data-pg05-step="'+attr(step.id)+'" data-pg05-property="outputs" value="'+attr(value)+'"'+(outputMarked?' checked':'')+'><span>Salida: '+esc(o.label||value)+'</span></label>':'';
-            return input+output;
-          }).join('');
-          return '<div class="pg05-source-step"><div class="pg05-source-step-title"><b>'+(index+1)+'. '+esc(step.step_name||'Paso')+'</b><button type="button" class="btn btn-small btn-outline" data-edit-step="'+attr(step.id)+'">Editar paso completo</button></div><div class="pg05-source-options">'+rows+'</div></div>';
-        }).join('')+'</div>':'';
-    // [AUNEA-FE-PG05-SOURCE-SELECTION-104] END
+    // Global review is a single selection, not four repetitive reviews per process step.
+    const sourceSet=fid==='DF046'?'OS_TOOL_CATEGORY':fid==='DF047'||fid==='DF049'?'OS_ARTIFACT_TYPE':fid==='DF050'?'OS_COMM_CHANNEL':null;
+    const sourceAllowed=fid==='DF049'?new Set(['FORM','EMAIL','TEXT','PDF','DOC','SHEET','IMAGE']):null;
+    const initialSourceValues=normalizeArray(reuse).map(String);
+    const selectionStored=e.answerDetails?.[fid+'__global_review'];
+    const currentSourceValues=selectionStored&&JSON.stringify(selectionStored.base)===JSON.stringify(initialSourceValues)
+      ?selectionStored.values:initialSourceValues;
+    const selectedGlobal=new Set(normalizeArray(currentSourceValues).map(String));
+    const globalChoices=sourceSet?fieldOptions(sourceSet).filter(o=>!sourceAllowed||sourceAllowed.has(String(o.value))):[];
+    const sourceEditor=derived&&hasReuse&&kind!=='confirmed'&&sourceSet
+      ?'<div class="pg05-source-review"><b>Opciones recuperadas del mapa</b><small>Selecciona globalmente las opciones aplicables. Las recuperadas de la última revisión aparecen marcadas.</small><div class="pg05-source-options">'
+       +globalChoices.map(o=>'<label class="pg05-source-choice"><input type="checkbox" data-pg05-global-option="'+fid+'" value="'+attr(o.value)+'"'+(selectedGlobal.has(String(o.value))?' checked':'')+'><span>'+esc(o.label||o.value)+'</span></label>').join('')
+       +'</div></div>':'';
+    // [AUNEA-FE-PG05-GLOBAL-REVIEW-105]
     const derivedAction=derived&&hasReuse?sourceEditor+'<div class="pg05-field-action pg05-field-confirmation">'+(kind==='confirmed'
       ?'<button type="button" class="btn btn-small btn-outline" data-undo-derived="'+fid+'">Deshacer confirmación</button>'
       :'<button type="button" class="btn btn-small btn-primary" data-confirm-derived="'+fid+'">Confirmar valor</button>')+'</div>':'';
@@ -1444,7 +1439,7 @@ function consultantStepsReviewPage(e){
       dismissed:e.answerDetails?.DF051__dismissed||[]
     }):'';
     const df051Validated=fid==='DF051'&&e.answerDetails?.DF051__section_confirmation?.fingerprint===df051Fingerprint;
-    if(fid==='DF051'){status=df051Validated?'Hallazgo confirmado':'Pendiente de validar';kind=df051Validated?'confirmed':'review';}
+    if(fid==='DF051'){status=df051Validated?'Confirmado':'Pendiente de validar';kind=df051Validated?'confirmed':'review';}
     const df051Action=fid==='DF051'?'<button type="button" class="btn btn-small '+(df051Validated?'btn-outline':'btn-primary')+'" data-pg05-validate-section="DF051">'+(df051Validated?'Deshacer validación':'Validar hallazgo')+'</button>':'';
     const noReviewKey=fid+'__no_review_needed';
     const noReviewNeeded=!!e.answerDetails?.[noReviewKey];
@@ -1540,25 +1535,15 @@ bindForms=function(){
   __auneaPg05BindForms();
   // PG05 finding actions use the persistent delegated listener below.
   // Live selection changes write directly to the original ProcessStep.
-  document.querySelectorAll('[data-pg05-source-option]').forEach(input=>input.addEventListener('change',()=>{
-    const e=currentEng(),step=activeSteps(e).find(x=>String(x.id)===String(input.dataset.pg05Step));
-    if(!step)return;
-    const property=input.dataset.pg05Property,code=String(input.value);
-    if(property==='tool')step.tool=code;
-    else {
-      const group=[...document.querySelectorAll('[data-pg05-source-option]')].filter(x=>x.dataset.pg05Step===input.dataset.pg05Step&&x.dataset.pg05Property===property);
-      const selected=group.filter(x=>x.checked).map(x=>x.value);
-      if(property==='inputs'||property==='outputs'){
-        const represented=new Set(group.map(x=>String(x.value)));
-        step[property]=[...normalizeArray(step[property]).filter(x=>!represented.has(String(x))),...selected];
-      }else step[property]=selected;
-    }
-    if(typeof invalidateProcessLayersSafe==='function')invalidateProcessLayersSafe(e,'map');
-    if(typeof invalidateDerivedState==='function')invalidateDerivedState(e,'revisión de opciones del mapa');
-    e.updatedAt=now();markDirty('Selección del mapa modificada');
-    // Keep the controls mounted, so clicking an option never jumps the screen.
+  document.querySelectorAll('[data-pg05-global-option]').forEach(input=>input.addEventListener('change',()=>{
+    const e=currentEng(),fid=input.dataset.pg05GlobalOption;if(!e)return;
+    const source=normalizeArray(reusedValue(fid,e)).map(String);
+    const selected=[...document.querySelectorAll('[data-pg05-global-option="'+fid+'"]:checked')].map(x=>x.value);
+    const details=e.answerDetails||(e.answerDetails={});
+    details[fid+'__global_review']={base:source,values:selected};
+    delete details[fid+'__derived_confirmation'];
+    e.updatedAt=now();markDirty('Selección global revisada '+fid);
   }));
-
   document.querySelectorAll('[data-pg05-finding-editor]').forEach(el=>el.addEventListener('toggle',()=>{
     if(!el.isConnected)return; // Ignore deferred close events from DOM nodes replaced by render().
     const fid=el.getAttribute('data-pg05-finding-editor');
