@@ -455,4 +455,29 @@ test('PG05 separates human-confirmed searches from unconfirmed detections in pro
  }finally{dom.window.close();}
 });
 
+
+test('PG05 derivative confirmation has visible Confirmar / Deshacer without modifying ProcessStep',async()=>{
+ const {w,dom,run}=buildRuntime();
+ try{
+   run("state.activePage='uat';render()");
+   await w.document.getElementById('loadSingleUat').onclick();
+   run("state.activePage='pasos';render()");
+   const owner=run("JSON.stringify(currentEng().processSteps)");
+   for(const fid of ['DF046','DF047','DF049','DF050']){
+     const card=()=>w.document.querySelector('[data-pg05-field="'+fid+'"]');
+     const initial=card().querySelector('.pg05-field-value').textContent;
+     const old=card().querySelector('[data-undo-derived]');
+     if(old)old.click();
+     assert.ok(card().querySelector('[data-confirm-derived]'),fid+' has confirm');
+     card().querySelector('[data-confirm-derived]').click();
+     assert.ok(card().querySelector('[data-undo-derived]'),fid+' has undo');
+     card().querySelector('[data-undo-derived]').click();
+     assert.ok(card().querySelector('[data-confirm-derived]'),fid+' returns to pending');
+     assert.equal(card().querySelector('.pg05-field-value').textContent,initial,fid+' source unchanged');
+   }
+   assert.equal(run("JSON.stringify(currentEng().processSteps)"),owner);
+   assert.equal(run("currentEng().layerConfirmations.map"),true);
+ }finally{dom.window.close()}
+});
+
 // [AUNEA-UAT-RUNTIME-125] END
