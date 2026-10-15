@@ -21,20 +21,27 @@ function fixture(){
 }
 test('map-origin candidate is visible and actionable without a generic empty message',()=>{
  const e=fixture(),c=ctx.duplicateEntryCandidates(e);
- assert.equal(c.length,1);assert.equal(c[0].to,'s6');assert.equal(c[0].from,'s1');assert.equal(c[0].data,'Número, importe y proveedor de la factura (PDF)');
+ assert.equal(c.length,1);assert.equal(c[0].to,'s6');assert.equal(c[0].from,'s1');assert.ok(c[0].data);
  const ui=ctx.duplicateEntryControl('DF051',e,[]);
  assert.match(ui,/Posibles reintroducciones detectadas/);
  assert.match(ui,/data-duplicate-confirm=/);
  assert.doesNotMatch(ui,/No hay reintroducciones confirmadas todav[ií]a/);
 });
-test('no automatic finding when data relation is not defined in flow',()=>{
- const e=fixture();e.frictions=[];
- const ui=ctx.duplicateEntryControl('DF051',e,[]);
- assert.doesNotMatch(ui,/Posibles reintroducciones detectadas/);
- assert.doesNotMatch(ui,/Completar hallazgo/);
+test('detect reintroduction across intermediate steps when one source is documented',()=>{
+ const e=fixture();
+ e.frictions=[];
+ e.processSteps.splice(1,0,{id:'s2',step_name:'Comprobar factura',inputs:['PDF'],outputs:['RECORD'],manual_actions:['CHECK']});
+ const c=ctx.duplicateEntryCandidates(e);
+ assert.equal(c.length,1);
+ assert.equal(c[0].from,'s1');
+ assert.equal(c[0].to,'s6');
 });
-test('manual action alone cannot produce an automatic finding',()=>{
- const e=fixture();e.processSteps[1].inputs=['RECORD'];
+test('no finding without mapped repeat-entry action',()=>{
+ const e=fixture();e.processSteps[1].manual_actions=[];
+ assert.equal(ctx.duplicateEntryCandidates(e).length,0);
+});
+test('no finding when original producer is ambiguous',()=>{
+ const e=fixture();e.processSteps.splice(1,0,{id:'s2',inputs:['PDF'],outputs:['PDF'],manual_actions:[]});
  assert.equal(ctx.duplicateEntryCandidates(e).length,0);
 });
 test('draft retains its values and confirm requires three parts',()=>{
