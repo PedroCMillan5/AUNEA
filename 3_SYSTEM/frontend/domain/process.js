@@ -1184,7 +1184,7 @@ function asIsComplementarySignals(e){
   if(documents.length)out.push({field:'DF049',message:'Artefactos documentales procedentes de los pasos: '+documents.map(v=>labelFrom('OS_ARTIFACT_TYPE',v)||v).join(' · ')+'. La confirmación se realiza en el campo derivado, sin una segunda captura.'});
   const rekeySteps=steps.filter(s=>normalizeArray(s.manual_actions).some(a=>['REKEY','COPY'].includes(String(a))));
   const duplicateFrictions=frictions.filter(f=>['P03','P13'].includes(String(f.friction_type)));
-  if(rekeySteps.length||duplicateFrictions.length)out.push({field:'DF051',message:'Posible reintroducción detectada en '+rekeySteps.map(stepName).join(' · ')+(duplicateFrictions.length?'. '+duplicateFrictions.length+' fricción(es) vinculada(s) a duplicación/reintroducción.':'')+' Confirma dato, paso origen y destino en el registro de reintroducción. No se crea una ficha automáticamente.'});
+  if(rekeySteps.length||duplicateFrictions.length)out.push({field:'DF051',message:'Se ha identificado una posible repetición de la introducción de información'+(rekeySteps.length?' en '+rekeySteps.map(stepName).join(' · '):'')+'.'+(duplicateFrictions.length?' También existen '+duplicateFrictions.length+' problema(s) registrado(s) relacionado(s) con la copia o duplicación de datos.':'')+' Comprueba qué información se repite, dónde estaba disponible y en qué paso se introduce de nuevo. La detección es una propuesta, no una confirmación.'});
   const qualityFrictions=frictions.filter(f=>['P02','P11','P13'].includes(String(f.friction_type))||/faltan?|ausente|incomplet|duplicad|incorrect|err[oó]ne/i.test(String(f.observable_signal||f.client_label||'')));
   if(qualityFrictions.length)out.push({field:'DF055',message:'Señales de calidad de datos en las fricciones: '+qualityFrictions.map(f=>String(f.observable_signal||f.client_label||f.id)).join(' · ')+'. Selecciona sólo problemas respaldados por estas señales; no se presuponen otras categorías.'});
   return out;
@@ -1309,8 +1309,8 @@ function consultantStepsReviewPage(e){
   const sourceLabels={
     DF046:'Herramientas de los pasos',DF047:'Entradas y salidas del mapa',DF048:'Referencias registradas en los pasos',
     DF049:'Documentos de entrada y salida',DF050:'Canales registrados por paso',
-    DF051:'Acciones REKEY/COPY y fricciones',DF052:'Control documental declarado',
-    DF053:'Acciones SEARCH y fricciones',DF054:'Transferencias entre herramientas',DF055:'Evidencia de calidad en fricciones'
+    DF051:'Acciones manuales de copia o introducción de datos y problemas registrados',DF052:'Control documental declarado',
+    DF053:'Búsqueda manual de información y problemas registrados',DF054:'Transferencias entre herramientas',DF055:'Evidencia de calidad en fricciones'
   };
   // [AUNEA-FE-PG05-DISCOVERY-084] START — Optional discovery on the same canonical DF054 answer.
   // Automatic candidates remain neutral; other pairs can be confirmed by the consultant,
@@ -1361,7 +1361,7 @@ function consultantStepsReviewPage(e){
         fid==='DF054'&&typeof stepSystemHandoffCandidates==='function'&&stepSystemHandoffCandidates(e).length>0;
       status=count?'Hallazgo confirmado':candidate?'Posible hallazgo · por validar':'No consta hallazgo';
       kind=count?'confirmed':candidate?'review':'unknown';
-      if(fid==='DF051')detail=count?count+' reintroducción(es) registrada(s)':signal?.message||'No se han confirmado reintroducciones';
+      if(fid==='DF051')detail=[count?count+' reintroducción(es) confirmada(s).':'',signal?.message||(!count?'No se han detectado duplicaciones. Puedes registrar una manualmente si existe.':'')].filter(Boolean).join(' ');
       else if(fid==='DF053'){
         // Keep the actual human-confirmed answer and new machine-derived evidence distinct.
         // A later SEARCH action or a friction may add candidates; neither silently overwrites
@@ -1490,28 +1490,7 @@ bindForms=function(){
 const __auneaPg05BindForms=bindForms;
 bindForms=function(){
   __auneaPg05BindForms();
-  // [AUNEA-FE-PG05-CANDIDATE-096] START — Reveal owner form for inferred findings; never auto-confirm.
-  document.querySelectorAll('[data-open-pg05-finding]').forEach(button=>button.onclick=()=>{
-    const field=button.dataset.openPg05Finding;
-    const editor=[...document.querySelectorAll('[data-pg05-finding-editor]')].find(el=>el.dataset.pg05FindingEditor===field);
-    if(!editor)return;
-    editor.open=true;
-    const first=editor.querySelector('input,select,textarea,button');
-    first?.focus?.({preventScroll:true});
-    editor.scrollIntoView?.({block:'nearest'});
-  });
-  // [AUNEA-FE-PG05-CANDIDATE-096] END
-  // [AUNEA-FE-PG05-DUPLICATE-UNDO-097] START — Reopen all saved DF051 findings as their existing drafts.
-  document.querySelectorAll('[data-undo-pg05-finding="DF051"]').forEach(button=>button.onclick=()=>{
-    const e=currentEng();if(!e)return;
-    const rows=duplicateEntryRows(e.answers?.DF051);
-    if(!rows.length)return;
-    const drafts=duplicateEntryDraftRows(e,'DF051',e.answers?.DF051);
-    setAnswer('DF051',[]);
-    saveDuplicateEntryDraftRows(e,'DF051',[...drafts,...rows]);
-    render();
-  });
-  // [AUNEA-FE-PG05-DUPLICATE-UNDO-097] END
+  // PG05 finding actions use the persistent delegated listener below.
   const clientButton=document.getElementById('pg05GoToClientEditor');
   if(clientButton)clientButton.onclick=()=>openProcessEditorWindow();
   document.querySelectorAll('[data-pg05-step-detail]').forEach(panel=>panel.addEventListener('toggle',()=>{
@@ -1563,6 +1542,37 @@ bindForms=function(){
     document.querySelectorAll('[data-validated-case]').forEach(b=>b.onclick=()=>instantiateValidatedCase(b.dataset.validatedCase));
 };
 
+// [AUNEA-FE-PG05-FINDING-ACTIONS-098] START — Delegation survives redraws and binds even after data changes.
+if(typeof document!=='undefined'&&!document.__auneaPg05FindingActionsBound){
+  document.__auneaPg05FindingActionsBound=true;
+  document.addEventListener('click',ev=>{
+    const open=ev.target?.closest?.('[data-open-pg05-finding]');
+    if(open){
+      ev.preventDefault();
+      const fid=open.getAttribute('data-open-pg05-finding');
+      const card=open.closest('[data-pg05-field]');
+      const editor=card?.querySelector('[data-pg05-finding-editor]');
+      if(!editor||editor.getAttribute('data-pg05-finding-editor')!==fid)return;
+      editor.open=true;
+      editor.scrollIntoView?.({block:'nearest'});
+      const first=editor.querySelector('input:not([type="hidden"]),button,select,textarea');
+      first?.focus?.({preventScroll:true});
+      return;
+    }
+    const undo=ev.target?.closest?.('[data-undo-pg05-finding="DF051"]');
+    if(undo){
+      ev.preventDefault();
+      const e=currentEng();if(!e)return;
+      const rows=duplicateEntryRows(e.answers?.DF051);
+      if(!rows.length)return;
+      const drafts=duplicateEntryDraftRows(e,'DF051',e.answers?.DF051);
+      setAnswer('DF051',[]);
+      saveDuplicateEntryDraftRows(e,'DF051',[...drafts,...rows]);
+      render();
+    }
+  });
+}
+// [AUNEA-FE-PG05-FINDING-ACTIONS-098] END
 // Global layer actions live in content that is replaced on every process-tab render.
 // Bind once at document level so "Añadir riesgo" / "Añadir impacto" never depend on
 // the exact render/bindForms timing of the current layer.
