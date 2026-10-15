@@ -402,7 +402,9 @@ test('PG05 derives all four source-owned values, revokes stale confirmations, an
    for(const id of fields){
      const box=w.document.querySelector('[data-pg05-field="'+id+'"]');
      assert.equal(box.querySelector('.pg05-field-value').textContent,expected(id),'canonical derived '+id);
-     assert.match(box.textContent,/Derivado y confirmado/,'fixture source confirmation '+id);
+     assert.match(box.textContent,/Derivado · pendiente de validar|Derivado y confirmado/,'displays actual confirmation state '+id);
+     run("confirmDerivedValue('"+id+"')");
+     assert.match(w.document.querySelector('[data-pg05-field="'+id+'"]').textContent,/Derivado y confirmado/,'human confirmation is recorded '+id);
    }
    run("currentEng().processSteps.forEach(s=>{s.tool='ERP';s.inputs=['RECORD'];s.outputs=['RECORD'];s.communication_channels=[]})");
    run("state.activePage='pasos';render()");
