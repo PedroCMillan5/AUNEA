@@ -1,0 +1,29 @@
+// Regression guard for AS-IS review and progression. Run with: node --test tests/asis-layer-navigation-v1.test.cjs
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const source=fs.readFileSync(path.join(__dirname,'..','domain','process.js'),'utf8');
+const lifecycle=fs.readFileSync(path.join(__dirname,'..','domain','process-lifecycle.js'),'utf8');
+test('editing map options invalidates map confirmation and all downstream layers',()=>{
+ assert.match(source,/details\[fid\+'__global_review'\]=\{base:source,values:selected\}/);
+ assert.match(source,/invalidateProcessLayersSafe\(e,'map'\)/);
+ assert.match(lifecycle,/order=\['map','frictions','risks','impact'\]/);
+ assert.match(lifecycle,/order\.slice\(i\)\.forEach\(k=>x\[k\]=false\)/);
+});
+test('frictions and risks navigation require a confirmed current layer',()=>{
+ assert.match(source,/frictions:\{page:'riesgos',label:'Continuar a Riesgos/);
+ assert.match(source,/risks:\{page:'impacto',label:'Continuar a Impacto/);
+ assert.match(source,/done\?'':' disabled aria-disabled="true"/);
+ assert.match(source,/data-confirm-process-layer/);
+});
+test('risk review reuses step card structure and canonical risk actions',()=>{
+ assert.match(source,/function consultantRisksPage\(\)/);
+ assert.match(source,/pg05-step-card risk-review-card/);
+ assert.match(source,/pg05-step-top/);
+ assert.match(source,/pg05-step-metrics/);
+ assert.match(source,/pg05-step-details/);
+ assert.match(source,/data-edit-risk-index/);
+ assert.match(source,/data-delete-risk-index/);
+ assert.match(source,/map\(\(r,i\)=>\(\{r,i\}\)\)/);
+});
