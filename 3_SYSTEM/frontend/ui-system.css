@@ -1309,3 +1309,14 @@ body.shell-session .topbar-left{display:none}
 .pg05-inline-duplicate .duplicate-entry-suggestions{min-width:0}
 @media(max-width:900px){.pg05-inline-duplicate .duplicate-entry-fields{grid-template-columns:1fr}}
 /* [AUNEA-FE-PG05-DF051-INLINE-103] END */
+
+/* [AUNEA-FE-PG05-SOURCE-SELECTION-104] START */
+.pg05-source-step{border-top:1px solid var(--line);padding:12px 0;display:grid;gap:10px}
+.pg05-source-step-title{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.pg05-source-options{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px 12px}
+.pg05-source-choice{display:flex;align-items:flex-start;gap:8px;min-width:0;padding:8px 10px;border:1px solid var(--line);border-radius:var(--radius-sm);line-height:1.4;cursor:pointer}
+.pg05-source-choice:has(input:checked){border-color:var(--system-line);background:var(--surface,#faf9f6)}
+.pg05-source-choice input{flex-shrink:0;margin-top:3px}
+.pg05-source-choice span{overflow-wrap:anywhere}
+@media(max-width:700px){.pg05-source-step-title{flex-direction:column;align-items:flex-start}.pg05-source-options{grid-template-columns:1fr}}
+/* [AUNEA-FE-PG05-SOURCE-SELECTION-104] END */
