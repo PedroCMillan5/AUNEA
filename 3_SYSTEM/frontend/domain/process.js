@@ -1532,9 +1532,9 @@ function consultantFrictionsPage(){
 }
 function consultantRisksPage(){
   const e=currentEng();if(!e)return pageTop('Riesgos','Abre primero un estudio.');
-  const risks=(e.risks||[]).filter(r=>r.status!=='SUPERSEDED');
+  const risks=(e.risks||[]).map((r,i)=>({r,i})).filter(x=>x.r.status!=='SUPERSEDED');
   const steps=activeSteps(e),byStep=new Map(steps.map((step,i)=>[String(step.id),String(i+1)+'. '+String(step.step_name||'Paso')]));
-  const cards=risks.map((r,i)=>{
+  const cards=risks.map(({r,i})=>{
     const missing=typeof riskIncompleteFields==='function'?riskIncompleteFields(r):[];
     const category=labelFrom('OS_RISK_CATEGORY',r.category)||r.category||'Pendiente';
     const fields=[
