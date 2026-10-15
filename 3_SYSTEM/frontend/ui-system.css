@@ -1077,3 +1077,55 @@ body:has([data-diagnostic-stage="S08"]) .s08-duplication-why{margin:4px 0 8px;li
 .step-suggestion{margin-top:8px;padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:#fffdf7;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;font-size:var(--font-small)}
 .step-suggestion>div{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px;min-width:0}.step-suggestion strong{font-weight:800}.step-suggestion span{color:var(--muted)}.step-suggestion b{color:var(--ink)}.step-suggestion-inferred{border-style:dashed}.step-suggestion-coherence{background:#fff8f1}.step-suggestion-apply{flex:0 0 auto}
 /* [AUNEA-FE-PROCESS-SUGGESTIONS-010] END */
+
+
+/* [AUNEA-FE-PG05-CONSULTANT-STYLE-082] START — PG05 internal review only; FROZEN screens unchanged. */
+.pg05-review{display:grid;gap:32px;max-width:1280px;margin:0 auto}
+.pg05-review>section{margin:0;min-width:0}
+.pg05-status{border:1px solid var(--line);border-radius:12px;padding:14px 18px;background:#f8faf8;line-height:1.5}
+.pg05-status--ok{border-left:4px solid #6fa885;background:#edf5ef}
+.pg05-status--review{border-left:4px solid #bb9239;background:#fffaf0}
+.pg05-step-list{display:grid;gap:16px}
+.pg05-step-card{border:1px solid var(--line);border-radius:12px;background:#fff;padding:20px 24px;min-width:0}
+.pg05-step-top{display:flex;align-items:flex-start;gap:16px;min-width:0}
+.pg05-step-number{display:grid;place-items:center;flex:none;width:34px;height:34px;border-radius:50%;background:var(--system-soft);color:var(--system);font-weight:700}
+.pg05-step-heading{display:grid;gap:6px;min-width:0;flex:1}
+.pg05-step-heading>b{line-height:1.45;overflow-wrap:anywhere}
+.pg05-step-heading>span{color:var(--muted);font-size:13px;line-height:1.5}
+.pg05-step-top>.btn{flex:none}
+.pg05-step-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:16px 0}
+.pg05-step-metrics>span{display:grid;gap:5px;background:#f7f9f7;border-radius:8px;padding:11px 14px;font-size:14px;font-weight:600}
+.pg05-step-metrics small{color:var(--muted);font-weight:400}
+.pg05-step-io{display:grid;gap:8px;font-size:13px;line-height:1.5}
+.pg05-step-io span{overflow-wrap:anywhere}
+.pg05-step-details{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
+.pg05-step-details>summary,.pg05-add-options>summary,.pg05-field-action summary{cursor:pointer;color:var(--system);font-weight:600;line-height:1.5}
+.pg05-step-details>summary:focus-visible,.pg05-add-options>summary:focus-visible,.pg05-field-action summary:focus-visible{outline:2px solid var(--system);outline-offset:4px}
+.pg05-step-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:18px 0}
+.pg05-step-facts>div{min-width:0}
+.pg05-step-facts dt{font-size:12px;color:var(--muted);margin-bottom:4px}
+.pg05-step-facts dd{margin:0;line-height:1.5;overflow-wrap:anywhere}
+.pg05-step-tools{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.pg05-add-options{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+.pg05-add-options>.pg05-step-tools{margin-top:12px}
+.pg05-field-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.pg05-field-list{display:grid;grid-template-columns:1fr;gap:12px}
+.pg05-field{background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px 22px;display:grid;gap:10px;min-width:0}
+.pg05-field-top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:10px}
+.pg05-field-top>b{line-height:1.4;flex:1;min-width:160px}
+.pg05-state-label{font-size:12px;font-weight:600;line-height:1.5}
+.pg05-field--confirmed .pg05-state-label{color:#256548}
+.pg05-field--derived .pg05-state-label{color:#255a80}
+.pg05-field--review .pg05-state-label{color:#8a611c}
+.pg05-field--unknown .pg05-state-label{color:#69727b}
+.pg05-field-value{line-height:1.5;overflow-wrap:anywhere}
+.pg05-field>small{font-size:12px;color:var(--muted);line-height:1.45}
+.pg05-field-action{display:grid;gap:12px;border-top:1px solid var(--line);padding-top:12px}
+.pg05-field-action>.btn{justify-self:start}
+.pg05-field-action details[open] summary{margin-bottom:14px}
+.pg05-field-action .field{margin:8px 0}
+.pg05-footer{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px}
+.pg05-footer>span{color:var(--muted);font-size:13px}
+.pg05-empty{border:1px dashed var(--line);border-radius:12px;padding:20px;color:var(--muted)}
+@media(max-width:760px){.pg05-review{gap:24px}.pg05-step-card,.pg05-field{padding:16px}.pg05-field-grid,.pg05-step-facts{grid-template-columns:1fr}.pg05-step-top{flex-wrap:wrap}.pg05-step-top>.btn{margin-left:50px}.pg05-step-metrics{gap:8px}.pg05-step-metrics>span{padding:10px}}
+/* [AUNEA-FE-PG05-CONSULTANT-STYLE-082] END */
