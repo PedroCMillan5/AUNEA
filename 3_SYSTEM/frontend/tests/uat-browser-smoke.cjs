@@ -101,6 +101,7 @@ async function main(){
    await page.locator('.pg05-review').waitFor();
    assert.equal(await page.locator('body.shell-session').count(),1);
    assert.doesNotMatch(await page.locator('.topbar').textContent(),/Sesión de diagnóstico|Consola interna/);
+   assert.ok((await page.locator('.topbar').boundingBox()).height<=84,'header stays on a single row');
    for(const fid of ['DF046','DF047','DF049','DF050']){
      const card=page.locator('[data-pg05-field="'+fid+'"]');
      const undo=card.locator('[data-undo-derived]'),confirm=card.locator('[data-confirm-derived]');
