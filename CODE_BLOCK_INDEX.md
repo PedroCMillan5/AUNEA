@@ -208,3 +208,5 @@
 | AUNEA-FE-SHELL-CONTEXT-090 | 3_SYSTEM/frontend/core/state.js | Mueve el Engagement activo y sus acciones al topbar, manteniendo marca única en rail | Simulator CANONICAL 1.14; DEC-050/066 | Engagement actual | Barra de contexto y acciones write-through | UI global, sin nuevo owner | HIGH | uat-full-runtime-v1.test.cjs; uat-browser-smoke.cjs | REVIEW |
 | AUNEA-FE-SHELL-LAYOUT-091 | 3_SYSTEM/frontend/ui-system.css | Layout de barra superior responsive y sidebar sin scroll vertical, sin logo inferior | Simulator CANONICAL 1.14 §23.2; DEC-066 | Shell común | Navegación visible en desktop | CSS global acotado al shell | HIGH | uat-browser-smoke.cjs; páginas FROZEN | REVIEW |
 
+
+| AUNEA-FE-SHELL-HEADER-093 | 3_SYSTEM/frontend/ui-system.css | Barra superior de dos filas con sesión/progreso y estudio activo/acciones; responsive sin pérdida de navegación | Simulator CANONICAL v1.14 §23; DEC-050/066 | Engagement actual y estado sesión | Header informativo | CSS global shell únicamente | HIGH | uat-browser-smoke.cjs; uat-full-runtime-v1.test.cjs | REVIEW |
