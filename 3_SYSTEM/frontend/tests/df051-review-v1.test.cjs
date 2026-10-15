@@ -15,7 +15,7 @@ const ctx={
 };vm.createContext(ctx);vm.runInContext(code,ctx);
 function fixture(){
  return {processSteps:[
-  {id:'s1',step_name:'Recibir factura PDF',inputs:['PDF'],outputs:['PDF'],manual_actions:[]},
+  {id:'s1',step_name:'Recibir factura PDF',inputs:['PDF'],outputs:['PDF'],manual_actions:[],normal_next_step:'s6'},
   {id:'s6',step_name:'Registrar en ERP y archivar',inputs:['PDF'],outputs:['RECORD'],manual_actions:['REKEY']}
  ],frictions:[],answers:{DF051:[]},answerDetails:{}};
 }
@@ -27,11 +27,15 @@ test('map-origin candidate is visible and actionable without a generic empty mes
  assert.match(ui,/data-duplicate-confirm=/);
  assert.doesNotMatch(ui,/No hay reintroducciones confirmadas todav[ií]a/);
 });
-test('unresolved origin gets a per-candidate Completar hallazgo control',()=>{
- const e=fixture();e.processSteps[1].inputs=['RECORD'];
+test('no automatic finding when data relation is not defined in flow',()=>{
+ const e=fixture();delete e.processSteps[0].normal_next_step;
  const ui=ctx.duplicateEntryControl('DF051',e,[]);
- assert.match(ui,/data-duplicate-review-step="s6"/);
- assert.match(ui,/Completar hallazgo/);
+ assert.doesNotMatch(ui,/Posibles reintroducciones detectadas/);
+ assert.doesNotMatch(ui,/Completar hallazgo/);
+});
+test('manual action alone cannot produce an automatic finding',()=>{
+ const e=fixture();e.processSteps[1].inputs=['RECORD'];
+ assert.equal(ctx.duplicateEntryCandidates(e).length,0);
 });
 test('draft retains its values and confirm requires three parts',()=>{
  const e=fixture();e.answerDetails.DF051__drafts=[{data:'Datos factura',from:'s1',to:'s6'}];
