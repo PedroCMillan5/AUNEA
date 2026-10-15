@@ -1439,9 +1439,17 @@ function consultantStepsReviewPage(e){
       else if(uniformConfirmed){status='Confirmado';kind='confirmed';}
       else{status=hasExplicit?'Pendiente de confirmar':'Pendiente de validar';kind='review';}
     }
-    const uniformHasMap=uniform&&['DF053','DF054','DF055'].includes(fid)&&!!signal;
-    const uniformWarning=uniform&&!uniformLocked&&uniformHasMap&&hasExplicit
-      ?'<div class="pg05-review-notice">Advertencia: revisa posibles discrepancias entre la información recuperada del mapa y la selección actual. Si desmarcas una opción del mapa, confirma la exclusión; si añades otra, comprueba que existe evidencia.</div>':'';
+    const mapReviewValues=fid==='DF053'?normalizeArray(reuse).map(String)
+      :fid==='DF054'&&typeof stepSystemHandoffCandidates==='function'
+        ?stepSystemHandoffCandidates(e).map(x=>String(x.id||x.key||'')).filter(Boolean)
+        :[];
+    const chosenReviewValues=normalizeArray(explicit).map(x=>typeof x==='object'?String(x.id||x.key||''):String(x)).filter(Boolean);
+    const omittedMapValues=mapReviewValues.filter(x=>!chosenReviewValues.includes(x));
+    const extraReviewValues=chosenReviewValues.filter(x=>mapReviewValues.length&&!mapReviewValues.includes(x));
+    const uniformWarning=uniform&&!uniformLocked&&['DF053','DF054'].includes(fid)
+      ?(omittedMapValues.length?'<div class="pg05-review-notice">Advertencia: '+omittedMapValues.length+' opción(es) recuperada(s) del mapa no están seleccionadas. Comprueba que la exclusión es correcta.</div>':'')
+       +(extraReviewValues.length?'<div class="pg05-review-notice">Nota: '+extraReviewValues.length+' opción(es) seleccionada(s) no proceden del mapa. Comprueba su evidencia antes de confirmar.</div>':'')
+      :'';
     const uniformAction=uniform
       ?uniformLocked
         ?'<button type="button" class="btn btn-small btn-outline" data-pg05-unlock="'+fid+'">Deshacer confirmación</button>'
