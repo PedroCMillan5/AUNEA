@@ -1265,6 +1265,7 @@ function consultantLayerPage(title,intro,body,layer,stageId,{questionsFirst=fals
 // DEC-050/065: render live owner values; changing facts must go back to the owner.
 // [AUNEA-FE-PG05-CONSULTANT-REVIEW-081] START — One ProcessStep owner, one review surface.
 let __auneaPg05ExpandedStepId='';
+let __auneaPg05OpenFinding=''; // UI only: retain the expanded owner while capture triggers rerender.
 function consultantStepsReviewPage(e){
   const confirmations=processLayerState(e),mapConfirmed=!!confirmations.map;
   const steps=activeSteps(e),frictions=activeFrictions(e);
@@ -1406,11 +1407,16 @@ function consultantStepsReviewPage(e){
     // explicitly instead of presenting a misleading one-click confirmation.
     const findingOpenAction=!quickAction&&kind==='review'
       ?'<button type="button" class="btn btn-small btn-primary" data-open-pg05-finding="'+fid+'">Validar hallazgo</button>':'';
+    const noReviewKey=fid+'__no_review_needed';
+    const noReviewNeeded=!!e.answerDetails?.[noReviewKey];
+    const noReviewAvailable=!derived&&!hasExplicit&&!signal&&!hasReuse&&['DF052','DF053','DF054','DF055'].includes(fid);
+    if(noReviewAvailable){status=noReviewNeeded?'Sin validación pendiente':'Sin información que validar';kind=noReviewNeeded?'confirmed':'unknown';}
+    const noReviewAction=noReviewAvailable?'<button type="button" class="btn btn-small btn-outline" data-pg05-no-review="'+fid+'">'+(noReviewNeeded?'Deshacer confirmación':'No hay validación que hacer')+'</button>':'';
     const findingUndoAction=fid==='DF051'&&kind==='confirmed'
       ?'<button type="button" class="btn btn-small btn-outline" data-undo-pg05-finding="DF051">Deshacer confirmación</button>':'';
     const action=derived?derivedAction:(requiresReview
-      ?'<div class="pg05-field-action">'+quickAction+findingOpenAction+findingUndoAction
-        +'<details class="pg05-discovery-control" data-pg05-finding-editor="'+fid+'"><summary>'+(kind==='confirmed'?'Revisar o corregir':kind==='review'?'Completar información para confirmar':'Añadir información si existe')+'</summary>'
+      ?'<div class="pg05-field-action">'+quickAction+findingOpenAction+findingUndoAction+noReviewAction
+        +'<details class="pg05-discovery-control" data-pg05-finding-editor="'+fid+'"'+(__auneaPg05OpenFinding===fid?' open':'')+'><summary>'+(kind==='confirmed'?'Revisar o corregir':kind==='review'?'Completar información para confirmar':'Añadir información si existe')+'</summary>'
         +(fid==='DF054'?manualHandoffControl():renderStageFields([f],e))+'</details></div>':'');
     // [AUNEA-FE-PG05-CONFIRM-UNDO-094] END
     const card='<article class="pg05-field pg05-field--'+kind+'" data-pg05-field="'+fid+'">'
@@ -1491,6 +1497,11 @@ const __auneaPg05BindForms=bindForms;
 bindForms=function(){
   __auneaPg05BindForms();
   // PG05 finding actions use the persistent delegated listener below.
+  document.querySelectorAll('[data-pg05-finding-editor]').forEach(el=>el.addEventListener('toggle',()=>{
+    const fid=el.getAttribute('data-pg05-finding-editor');
+    if(el.open)__auneaPg05OpenFinding=fid;
+    else if(__auneaPg05OpenFinding===fid)__auneaPg05OpenFinding='';
+  }));
   const clientButton=document.getElementById('pg05GoToClientEditor');
   if(clientButton)clientButton.onclick=()=>openProcessEditorWindow();
   document.querySelectorAll('[data-pg05-step-detail]').forEach(panel=>panel.addEventListener('toggle',()=>{
@@ -1553,11 +1564,22 @@ if(typeof document!=='undefined'&&!document.__auneaPg05FindingActionsBound){
       const card=open.closest('[data-pg05-field]');
       const editor=card?.querySelector('[data-pg05-finding-editor]');
       if(!editor||editor.getAttribute('data-pg05-finding-editor')!==fid)return;
+      __auneaPg05OpenFinding=fid;
       editor.open=true;
       editor.scrollIntoView?.({block:'nearest'});
       const first=editor.querySelector('input:not([type="hidden"]),button,select,textarea');
       first?.focus?.({preventScroll:true});
       return;
+    }
+    const noReview=ev.target?.closest?.('[data-pg05-no-review]');
+    if(noReview){
+      ev.preventDefault();
+      const e=currentEng(),fid=noReview.getAttribute('data-pg05-no-review');
+      if(!e||!['DF052','DF053','DF054','DF055'].includes(fid))return;
+      const detail=e.answerDetails||(e.answerDetails={}),key=fid+'__no_review_needed';
+      if(detail[key])delete detail[key];
+      else detail[key]={acknowledgedAt:now()};
+      e.updatedAt=now();markDirty('Revisión de '+fid);render();return;
     }
     const undo=ev.target?.closest?.('[data-undo-pg05-finding="DF051"]');
     if(undo){
