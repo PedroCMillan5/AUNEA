@@ -439,7 +439,7 @@ test('PG05 shows every DF053 detected search step in process order, without auto
      const idx=run("activeSteps(currentEng()).findIndex(x=>x.id==='"+id+"')")+1;
      const name=run("activeSteps(currentEng()).find(x=>x.id==='"+id+"').step_name");
      const at=shown.indexOf(idx+'. '+name);
-     assert.ok(at>last,'search candidates displayed in process order: '+name);
+     assert.ok(at>last,'search candidates displayed in process order: '+name+'; actual: '+shown+'; IDs: '+JSON.stringify(candidates));
      last=at;
    }
    assert.equal(run("currentEng().answers.DF053"),undefined,'suggested search steps are not silently human-confirmed');
