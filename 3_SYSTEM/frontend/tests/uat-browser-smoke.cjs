@@ -99,6 +99,18 @@ async function main(){
    // Native consultant PG05: one owner, six editable cards, ten nonduplicated projections.
    await page.evaluate(()=>{state.activePage='pasos';render()});
    await page.locator('.pg05-review').waitFor();
+   assert.equal(await page.locator('body.shell-session').count(),1);
+   assert.doesNotMatch(await page.locator('.topbar').textContent(),/Sesión de diagnóstico|Consola interna/);
+   for(const fid of ['DF046','DF047','DF049','DF050']){
+     const card=page.locator('[data-pg05-field="'+fid+'"]');
+     const undo=card.locator('[data-undo-derived]'),confirm=card.locator('[data-confirm-derived]');
+     if(await undo.count())await undo.click();
+     assert.equal(await confirm.count(),1,'confirm visible for '+fid);
+     await confirm.click();
+     assert.equal(await undo.count(),1,'undo visible after confirming '+fid);
+     await undo.click();
+     assert.equal(await confirm.count(),1,'undo restores confirm for '+fid);
+   }
    assert.equal(await page.locator('.pg05-review [data-pg05-step]').count(),6,'PG05 must display six source ProcessSteps');
    assert.equal(await page.locator('.pg05-review [data-pg05-field]').count(),10,'PG05 must display exactly ten complementary fields');
    const sizing=await page.evaluate(()=>({
