@@ -1207,6 +1207,7 @@ function consultantLayerPage(title,intro,body,layer,stageId,{questionsFirst=fals
 // second ProcessStep editor or a second confirmation of the same four-layer client map.
 // DEC-050/065: render live owner values; changing facts must go back to the owner.
 function consultantStepsReviewPage(e){
+  const mapConfirmed=!!processLayerState(e).map;
   const steps=activeSteps(e),frictions=activeFrictions(e),fields=(schema?.fields||[])
     .filter(f=>f.Stage_ID==='S04'&&Number(f.Field_ID.slice(2))>=46&&Number(f.Field_ID.slice(2))<=55);
   const byId=new Map(steps.map((s,i)=>[String(s.id),String(i+1)+'. '+String(s.step_name||'Paso sin nombre')]));
@@ -1279,19 +1280,24 @@ function consultantStepsReviewPage(e){
   const intro=pageTop('Pasos','Revisión interna después de confirmar el mapa con el cliente.',
     '<button class="btn btn-outline" data-page="proceso">← Ver / corregir mapa propietario</button>');
   return intro+(typeof asisConsoleLockNotice==='function'?asisConsoleLockNotice():'')
-    +section('Mapa AS-IS confirmado','Datos reutilizados del proceso; no se pide una segunda confirmación.',
-      '<div class="notice good"><b>Mapa confirmado con el cliente.</b> Para modificar una actividad, vuelve al mapa. La corrección invalidará las confirmaciones dependientes conforme al contrato.</div>'
+    +section(mapConfirmed?'Mapa AS-IS confirmado':'Mapa trabajado previamente · confirmación pendiente',
+      'Datos reutilizados del proceso; no se vuelve a construir el mapa en Console.',
+      (mapConfirmed
+        ?'<div class="notice good"><b>Mapa confirmado con el cliente.</b> Para corregir un paso, vuelve al mapa propietario.</div>'
+        :'<div class="notice warn"><b>La confirmación anterior ya no está vigente.</b> Esta versión fue confirmada previamente, pero algún cambio posterior la invalidó. Revisa el mapa antes de confirmar otra vez; el sistema no recupera confirmaciones sin comprobar la realidad del cliente.</div>')
       +'<div class="process-list">'+rows+'</div>')
     +section('Suficiencia de información para la propuesta','Qué se conoce, de dónde viene y qué permanece condicional. Los valores sin evidencia no se inventan.',
       '<div class="grid g2">'+summary.join('')+'</div>')
     +(actions?section('Solo comprobaciones que pueden aportar información','No son una segunda validación del flujo. Se conservan las confirmaciones individuales del Diagnostic Master.',actions):'')
-    +section('Continuidad del diagnóstico','La capa Pasos ya está confirmada. Las observaciones condicionales no son automáticamente bloqueantes.',
-      integrityHtml+'<div class="row-actions"><button class="btn btn-primary" data-page="fricciones">Continuar a Fricciones →</button></div>');
+    +section('Continuidad del diagnóstico',mapConfirmed?'La capa Pasos está confirmada. Las observaciones condicionales no son automáticamente bloqueantes.':'Debes revisar la confirmación invalidada; no se obliga a reconstruir el editor.',
+      integrityHtml+(mapConfirmed
+        ?'<div class="row-actions"><button class="btn btn-primary" data-page="fricciones">Continuar a Fricciones →</button></div>'
+        :'<div class="row-actions"><button class="btn btn-outline" data-page="proceso">Revisar el mapa con cliente</button><button class="btn btn-primary" data-confirm-process-layer="map"'+(integrity.length?' disabled aria-disabled="true"':'')+'>Confirmar mapa revisado</button></div>'));
 }
 function consultantStepsPage(){
   const e=currentEng();if(!e)return pageTop('Pasos','Abre primero un estudio.');
   // Before the client confirms the map, keep the existing editor and its confirmation contract.
-  if(!processLayerState(e).map)return consultantLayerPage('Pasos','Añade, edita o elimina las actividades reales del proceso.',stepsEditor(e,activeSteps(e),activeFrictions(e)),'map','S04');
+  if(!processLayerState(e).map&&!processLayerState(e).map_at)return consultantLayerPage('Pasos','Añade, edita o elimina las actividades reales del proceso.',stepsEditor(e,activeSteps(e),activeFrictions(e)),'map','S04');
   return consultantStepsReviewPage(e);
 }
 function consultantFrictionsPage(){
