@@ -212,3 +212,5 @@
 | AUNEA-FE-SHELL-HEADER-093 | 3_SYSTEM/frontend/ui-system.css | Barra superior de dos filas con sesión/progreso y estudio activo/acciones; responsive sin pérdida de navegación | Simulator CANONICAL v1.14 §23; DEC-050/066 | Engagement actual y estado sesión | Header informativo | CSS global shell únicamente | HIGH | uat-browser-smoke.cjs; uat-full-runtime-v1.test.cjs | REVIEW |
 
 | AUNEA-FE-PG05-CONFIRM-UNDO-094 | 3_SYSTEM/frontend/domain/process.js | Reversible PG05 confirmation | DEC-050 | Value | Confirmation UI | DOM | HIGH | UAT | REVIEW |
+
+| AUNEA-FE-PG05-UNDO-095 | 3_SYSTEM/frontend/domain/no-reask.js | Revoke canonical derivation confirmation | DEC-050 | Owner data | Undo | State | HIGH | UAT | REVIEW |
