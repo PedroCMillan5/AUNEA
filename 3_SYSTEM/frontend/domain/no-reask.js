@@ -336,8 +336,23 @@ function confirmDerivedValue(fid){
   const e=currentEng(),f=schema?.fields?.find(x=>x.Field_ID===fid);if(!e||!f)return;
   const reuse=reusedValue(fid,e);if(reuse===undefined)return toast('No hay una derivación disponible que confirmar.');
   const details=e.answerDetails||(e.answerDetails={});details[`${fid}__derived_confirmation`]={fingerprint:derivedFingerprint(reuse),confirmedAt:now()};
+  if(e.confirmedAsIs&&typeof invalidateAsIsClosure==='function')invalidateAsIsClosure(e,'confirmación derivada '+fid+' modificada');
   audit(`Valor derivado confirmado ${fid}`);markDirty(`Confirmación derivada ${fid}`);render();
 }
+// [AUNEA-FE-PG05-CONFIRM-UNDO-094] START — A confirmed source value can be unconfirmed without deleting its owner.
+function undoDerivedConfirmation(fid){
+  const e=currentEng(),f=schema?.fields?.find(x=>x.Field_ID===fid);
+  if(!e||!f||String(f.Ask_Mode)!=='DERIVE_AND_CONFIRM')return;
+  const details=e.answerDetails||(e.answerDetails={}),key=fid+'__derived_confirmation';
+  if(!details[key])return;
+  delete details[key];
+  if(e.confirmedAsIs&&typeof invalidateAsIsClosure==='function')invalidateAsIsClosure(e,'confirmación derivada '+fid+' retirada');
+  e.updatedAt=now();
+  audit('Confirmación derivada retirada '+fid);
+  markDirty('Revisión pendiente '+fid);
+  render();
+}
+// [AUNEA-FE-PG05-CONFIRM-UNDO-094] END
 
 // Provenance UI — human-readable in normal use, full technical contract only in Internal mode.
 // The human label is DERIVED, not hand-authored per field: a one-time reverse index (Write_Target -> Field)
@@ -560,6 +575,7 @@ function bindNoReask(){
   document.querySelectorAll('[data-close-context]').forEach(b=>b.onclick=()=>{const e=currentEng();delete reaskState(e)[b.dataset.closeContext];markDirty(`Edición explícita cerrada ${b.dataset.closeContext}`);render()});
   document.querySelectorAll('[data-goto-source]').forEach(b=>b.onclick=()=>setPage(b.dataset.gotoSource));
   document.querySelectorAll('[data-confirm-derived]').forEach(b=>b.onclick=()=>confirmDerivedValue(b.dataset.confirmDerived));
+  document.querySelectorAll('[data-undo-derived]').forEach(b=>b.onclick=()=>undoDerivedConfirmation(b.dataset.undoDerived));
   if(typeof bindHelpToggles==='function')bindHelpToggles();
 }
 const __auneaRendererBindForms=bindForms;
