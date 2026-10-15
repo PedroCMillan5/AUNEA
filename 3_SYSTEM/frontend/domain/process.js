@@ -361,6 +361,13 @@ function openStepModal(stepId=null,linkFromStepId=null,preset=null){
     <div class="field full"><label>Nota breve excepcional</label><input id="step_notes" maxlength="200" value="${attr(s.notes||'')}" placeholder="Sólo si los campos estructurados no bastan"></div>
   </div></details>
   </div>`;
+  const invalidStep=(message,controlId)=>{
+    const input=document.getElementById(controlId);
+    const group=input?.closest('details.step-group');
+    if(group)group.open=true;
+    if(input?.focus)input.focus();
+    toast(message);return false;
+  };
   openModal(existing?'Editar paso':'Añadir paso',body,()=>{
     const occurrenceRaw=document.getElementById('step_occ').value,occurrence=occurrenceRaw===''?1:Number(occurrenceRaw);s.step_name=document.getElementById('step_name').value.trim();s.step_type=document.getElementById('step_type').value;s.actor=resolveCatalogInput(document.getElementById('step_actor'));s.tool=resolveCatalogInput(document.getElementById('step_tool'));s.occurrences_per_case=occurrence;
     const am=document.getElementById('step_applies_mode').value,av=document.getElementById('step_applies_value').value.trim();s.applies_to={mode:am,value:am==='PERCENT'?av:'',condition:am==='CONDITION'?av:''};
@@ -372,15 +379,15 @@ function openStepModal(stepId=null,linkFromStepId=null,preset=null){
     s.error_rate={value:Number(document.getElementById('step_error').value||0),mode:errorMode,period:errorMode==='count'?errorPeriod:''};
     const nextVal=document.getElementById('step_next').value;
     const et=document.getElementById('step_exc_type').value,ec=document.getElementById('step_exc_condition').value.trim(),ed=document.getElementById('step_exc_dest').value,eo=resolveCatalogInput(document.getElementById('step_exc_owner'));
-    if(!s.step_name||s.step_name.length<3||!s.step_type||!s.actor)return toast('Nombre (mín. 3 caracteres), tipo y responsable son obligatorios.');
-    if(!Number.isFinite(s.occurrences_per_case)||s.occurrences_per_case<0)return toast('Veces por caso debe ser un número igual o mayor que 0.');
-    if([s.active_time,s.wait_time,s.rework_time].some(v=>!Number.isFinite(Number(v))||Number(v)<0))return toast('Los tiempos del paso deben ser valores iguales o mayores que 0.');
-    if(am==='PERCENT'&&(av===''||!Number.isFinite(Number(av))||Number(av)<0||Number(av)>100))return toast('Indica un porcentaje válido entre 0 y 100.');
-    if(am==='CONDITION'&&!av)return toast('Describe la condición observable cuando el paso no aplica a todos los casos.');
-    if(s.error_rate.mode==='percent'&&(s.error_rate.value<0||s.error_rate.value>100))return toast('El porcentaje de error o repetición debe estar entre 0 y 100.');
-    if(s.error_rate.mode==='count'&&s.error_rate.value>0&&!s.error_rate.period)return toast('Si el error se registra en casos, indica también el periodo.');
-    if(selectedOtherMissingDetail(artifacts,s.inputs,s._details.inputs)||selectedOtherMissingDetail(artifacts,s.outputs,s._details.outputs)||selectedOtherMissingDetail(decisions,s.decision_criteria,s._details.decision_criteria_other)||selectedOtherMissingDetail(manual,s.manual_actions,s._details.manual_actions)||selectedOtherMissingDetail(channels,s.communication_channels,s._details.communication_channels))return toast('Completa el detalle de cada opción «Otro» seleccionada.');
-    if(hasDecisionNow&&(!nextVal||!ed))return toast('Una decisión necesita destino para la ruta SÍ y para la ruta NO. También puedes elegir Fin del proceso.');
+    if(!s.step_name||s.step_name.length<3||!s.step_type||!s.actor)return invalidStep('Nombre (mín. 3 caracteres), tipo y responsable son obligatorios.','step_name');
+    if(!Number.isFinite(s.occurrences_per_case)||s.occurrences_per_case<0)return invalidStep('Veces por caso debe ser un número igual o mayor que 0.','step_occ');
+    if([s.active_time,s.wait_time,s.rework_time].some(v=>!Number.isFinite(Number(v))||Number(v)<0))return invalidStep('Los tiempos del paso deben ser valores iguales o mayores que 0.','step_active');
+    if(am==='PERCENT'&&(av===''||!Number.isFinite(Number(av))||Number(av)<0||Number(av)>100))return invalidStep('Indica un porcentaje válido entre 0 y 100.','step_applies_value');
+    if(am==='CONDITION'&&!av)return invalidStep('Describe la condición observable cuando el paso no aplica a todos los casos.','step_applies_value');
+    if(s.error_rate.mode==='percent'&&(s.error_rate.value<0||s.error_rate.value>100))return invalidStep('El porcentaje de error o repetición debe estar entre 0 y 100.','step_error');
+    if(s.error_rate.mode==='count'&&s.error_rate.value>0&&!s.error_rate.period)return invalidStep('Si el error se registra en casos, indica también el periodo.','step_error_period');
+    if(selectedOtherMissingDetail(artifacts,s.inputs,s._details.inputs)||selectedOtherMissingDetail(artifacts,s.outputs,s._details.outputs)||selectedOtherMissingDetail(decisions,s.decision_criteria,s._details.decision_criteria_other)||selectedOtherMissingDetail(manual,s.manual_actions,s._details.manual_actions)||selectedOtherMissingDetail(channels,s.communication_channels,s._details.communication_channels))return invalidStep('Completa el detalle de cada opción «Otro» seleccionada.','step_inputs_detail');
+    if(hasDecisionNow&&(!nextVal||!ed))return invalidStep('Una decisión necesita destino para la ruta SÍ y para la ruta NO. También puedes elegir Fin del proceso.','step_next');
     // A real unchanged save must preserve all layer confirmations and derived evidence.
     // Compare the canonical fields, not UI unit formatting or modal disclosure state.
     s.normal_next_step=hasDecisionNow?nextVal:(nextVal==='__NEW__'?'':nextVal);
@@ -1352,6 +1359,7 @@ function consultantStepsReviewPage(e){
   }
   const integrity=typeof processLayerIntegrityIssues==='function'?processLayerIntegrityIssues(e,'map'):[];
   const locked=typeof isAsisConsoleLocked==='function'&&isAsisConsoleLocked(e);
+  const clientReturn=locked?'<button type="button" class="btn btn-outline" id="pg05GoToClientEditor">Ir a la vista con cliente</button>':'';
   const statusHtml=mapConfirmed
     ?'<div class="pg05-status pg05-status--ok"><b>Mapa confirmado con el cliente.</b> La revisión interna reutiliza los mismos pasos.</div>'
     :'<div class="pg05-status pg05-status--review"><b>Confirmación del mapa pendiente de revalidación.</b> Hay una confirmación anterior registrada, pero no consta vigente. Si el motivo concreto no está registrado, no se presupone. Revisa la versión actual antes de confirmar.</div>';
@@ -1376,8 +1384,8 @@ function consultantStepsReviewPage(e){
     +section('4. Continuidad del diagnóstico','La edición del mapa se hace aquí sobre el mismo registro. Los hallazgos condicionales sin dato no impiden por sí solos avanzar.',
       (integrity.length?'<div class="pg05-status pg05-status--review"><b>Integridad del mapa pendiente</b>'
         +integrity.map(x=>'<p>'+esc(x.message||x.label)+'</p>').join('')+'</div>':'')
-      +'<div class="pg05-footer"><span>'+(locked?'Edición disponible desde la pestaña con cliente':'Las correcciones se guardan en el mapa propietario')+'</span>'
-      +nav+'</div>')+'</div>';
+      +'<div class="pg05-footer"><span>'+(locked?'La vista con cliente mantiene la edición activa':'Las correcciones se guardan en el mapa propietario')+'</span>'
+      +clientReturn+nav+'</div>')+'</div>';
 }
 // [AUNEA-FE-PG05-CONSULTANT-REVIEW-081] END
 function consultantStepsPage(){
@@ -1413,6 +1421,8 @@ bindForms=function(){
 const __auneaPg05BindForms=bindForms;
 bindForms=function(){
   __auneaPg05BindForms();
+  const clientButton=document.getElementById('pg05GoToClientEditor');
+  if(clientButton)clientButton.onclick=()=>openProcessEditorWindow();
   document.querySelectorAll('[data-pg05-step-detail]').forEach(panel=>panel.addEventListener('toggle',()=>{
     if(panel.open)__auneaPg05ExpandedStepId=panel.dataset.pg05StepDetail;
     else if(__auneaPg05ExpandedStepId===panel.dataset.pg05StepDetail)__auneaPg05ExpandedStepId='';
