@@ -127,7 +127,7 @@ test('PG05 internal Pasos reads confirmed client map without a second editor or 
    assert.match(reviewed,/data-edit-step=/,'every saved step remains editable from the owner');
    assert.match(reviewed,/data-pg05-step-detail=/,'step details are progressive, not a second editor');
    assert.match(reviewed,/data-delete-step=/,'destructive action is available only inside the contextual detail');
-   assert.doesNotMatch(reviewed,/id="addStep"/,'confirmed map does not show another add-step editor');
+   assert.match(reviewed,/pg05-add-options/,'management controls stay collapsed');
    assert.equal(run("currentEng().processSteps.length"),count);
    assert.equal(run("JSON.stringify(currentEng().answers)"),baseAnswers,'read-only review never manufactures answers');
    assert.equal(run("currentEng().layerConfirmations.map"),true);
@@ -211,6 +211,8 @@ test('PG05 review contains one canonical representation for all DF046–DF055 an
    assert.equal(section.querySelectorAll('.pg05-step-details').length,6);
    const initial=run("currentEng().layerConfirmations.map");
    const edit=section.querySelectorAll('[data-edit-step]')[1],expectedId=edit.dataset.editStep;
+   assert.equal(edit.disabled,false,'edit is enabled in consultant-only view');
+   assert.equal(typeof edit.onclick,'function','owner editor is bound');
    edit.click();
    assert.match(w.document.querySelector('#modalRoot .modal-head').textContent,/Editar paso/);
    assert.equal(run("currentEng().processSteps[1].id"),expectedId);
@@ -229,6 +231,7 @@ test('PG05 step modal keeps data and confirmation on no-op; failed persistence r
    const original=run("JSON.stringify(currentEng().processSteps[1])");
    const edit=()=>w.document.querySelectorAll('.pg05-review [data-edit-step]')[1].click();
    edit();
+   assert.ok(w.document.getElementById('modalSave'),'edit opens modal');
    w.document.getElementById('modalSave').click();
    assert.equal(run("currentEng().layerConfirmations.map"),true,'no-op must preserve client validation');
    assert.equal(run("JSON.stringify(currentEng().processSteps[1])"),original,'no-op must not mutate stored step');
