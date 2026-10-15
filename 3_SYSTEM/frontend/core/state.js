@@ -220,13 +220,14 @@ function stageWindow(i){
 function updateHeader(){
   const e=currentEng(),c=e?companyById(e.companyId):null;
   const inSession=SESSION_SURFACE_PAGES.has(state.activePage)&&!!e;
+  document.body.classList.toggle('shell-session',inSession);
   const crumb=document.getElementById('breadcrumb');
   if(crumb){
     // CRM surfaces are titled by where you are (IMG90-00-01 "CRM · Empresas"); session surfaces by the
     // session itself, with the open study identified in the rail rather than repeated in the top bar.
     const navLabel=(contextualNav().find(x=>x.length>1&&x[0]===state.activePage)||[])[2];
     crumb.textContent=inSession
-      ? 'Sesión de diagnóstico · 90 min'
+      ? ''
       : CRM_SURFACE_PAGES.has(state.activePage)
         ? `CRM · ${navLabel||'Inicio'}`
         : (e?`${c?.name||'Empresa'} · ${e.title||e.processName||'Estudio'}`:'Cockpit de consultoría');
@@ -234,7 +235,7 @@ function updateHeader(){
   // The console marker is not decoration: it is the standing reminder that this surface is private and
   // is not what the client is looking at (DEC-048/049).
   const ctx=document.getElementById('topbarContext');
-  if(ctx)ctx.innerHTML=inSession?'<span class="console-chip">🔒 Consola interna</span>':'';
+  if(ctx)ctx.innerHTML='';
   const sp=document.getElementById('stepProgress');
   if(sp){
     const flow=stageList(),i=currentStageIndex();
