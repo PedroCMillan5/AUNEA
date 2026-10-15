@@ -1312,7 +1312,7 @@ function consultantStepsReviewPage(e){
     DF051:'Acciones REKEY/COPY y fricciones',DF052:'Control documental declarado',
     DF053:'Acciones SEARCH y fricciones',DF054:'Transferencias entre herramientas',DF055:'Evidencia de calidad en fricciones'
   };
-  // [AUNEA-FE-PG05-DISCOVERY-084] Optional discovery on the same canonical DF054 answer.
+  // [AUNEA-FE-PG05-DISCOVERY-084] START — Optional discovery on the same canonical DF054 answer.
   // Automatic candidates remain neutral; other pairs can be confirmed by the consultant,
   // so absence of an inference never makes a valid finding impossible to record.
   const manualHandoffControl=()=>{
