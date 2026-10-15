@@ -318,4 +318,29 @@ test('PG05 invalid step keeps modal open and expands the affected group',async()
  }finally{dom.window.close();}
 });
 
+
+test('PG05 optional discovery controls exist with no prior findings',async()=>{
+ const {w,dom,run}=buildRuntime();
+ try{
+   run("state.activePage='uat';render()");
+   await w.document.getElementById('loadSingleUat').onclick();
+   run("currentEng().frictions=[];currentEng().processSteps.forEach(s=>s.manual_actions=[]);['DF048','DF051','DF052','DF053','DF054','DF055'].forEach(id=>delete currentEng().answers[id])");
+   run("state.activePage='pasos';render()");
+   for(const id of ['DF048','DF051','DF052','DF053','DF054','DF055']){
+     const card=w.document.querySelector('[data-pg05-field="'+id+'"]');
+     assert.ok(card,'missing '+id);
+     assert.ok(card.querySelector('.pg05-discovery-control summary'),'missing optional action '+id);
+   }
+   for(const id of ['DF048','DF052','DF055']){
+     const input=w.document.querySelector('[data-pg05-field="'+id+'"] [data-multi="'+id+'"]');
+     assert.ok(input,'missing editable canonical control '+id);
+     input.checked=true;input.dispatchEvent(new w.Event('change',{bubbles:true}));
+     assert.ok(Array.from(run("currentEng().answers."+id)||[]).includes(input.value));
+   }
+   assert.ok(w.document.querySelector('[data-pg05-field="DF051"] [data-duplicate-add]'));
+   assert.ok(w.document.querySelector('[data-pg05-field="DF053"] [data-multi="DF053"]'));
+   assert.equal(run("currentEng().layerConfirmations.map"),true);
+ }finally{dom.window.close();}
+});
+
 // [AUNEA-UAT-RUNTIME-125] END
