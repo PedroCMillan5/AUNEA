@@ -120,11 +120,13 @@ test('PG05 internal Pasos reads confirmed client map without a second editor or 
    const baseAnswers=run("JSON.stringify(currentEng().answers)");
    run("currentEng().layerConfirmations.map=true");
    const reviewed=run("consultantStepsPage()");
-   assert.match(reviewed,/Mapa AS-IS confirmado/);
-   assert.match(reviewed,/Suficiencia de información para la propuesta/);
+   assert.match(reviewed,/Mapa confirmado con el cliente/);
+   assert.match(reviewed,/Información recuperada del mapa/);
    assert.match(reviewed,/Continuar a Fricciones/);
    assert.doesNotMatch(reviewed,/data-confirm-process-layer="map"/,'client confirmation is not repeated');
-   assert.doesNotMatch(reviewed,/data-delete-step=/,'confirmed map is not recreated in the internal review');
+   assert.match(reviewed,/data-edit-step=/,'every saved step remains editable from the owner');
+   assert.match(reviewed,/data-pg05-step-detail=/,'step details are progressive, not a second editor');
+   assert.match(reviewed,/data-delete-step=/,'destructive action is available only inside the contextual detail');
    assert.doesNotMatch(reviewed,/id="addStep"/,'confirmed map does not show another add-step editor');
    assert.equal(run("currentEng().processSteps.length"),count);
    assert.equal(run("JSON.stringify(currentEng().answers)"),baseAnswers,'read-only review never manufactures answers');
@@ -150,7 +152,7 @@ test('PG05: supplementary DF048/DF055 answers preserve client layer confirmation
    const next=buildRuntime(saved);
    try{
      assert.equal(next.run("currentEng().layerConfirmations.map"),true,'map confirmation survives rehydration');
-     assert.match(next.run("consultantStepsPage()"),/Suficiencia de información para la propuesta/);
+     assert.match(next.run("consultantStepsPage()"),/Información recuperada del mapa/);
      assert.doesNotMatch(next.run("consultantStepsPage()"),/data-confirm-process-layer="map"/);
    }finally{next.dom.window.close();}
    assert.notEqual(run("JSON.stringify(currentEng().answers.DF048)"),undefined);
@@ -166,10 +168,10 @@ test('PG05: true Process upstream edit still revokes old map and historical inva
    run("setAnswer('DF020',['AMOUNT'])");
    assert.equal(run("currentEng().layerConfirmations.map"),false,'changing route dimensions invalidates the map');
    const html=run("consultantStepsPage()");
-   assert.match(html,/Mapa trabajado previamente/);
-   assert.match(html,/confirmación anterior ya no está vigente/);
+   assert.match(html,/Confirmación del mapa pendiente de revalidación/);
+   assert.match(html,/no consta vigente/);
    assert.match(html,/data-confirm-process-layer="map"/,'consultant must explicitly revalidate');
-   assert.doesNotMatch(html,/data-delete-step=/,'invalidated map still does not require rebuilding the second editor');
+   assert.match(html,/data-pg05-step-detail=/,'invalidated map remains reviewable');
  }finally{dom.window.close();}
 });
 
@@ -189,6 +191,58 @@ test('PG05: layer confirmation is rolled back if cross-tab durable save conflict
    assert.equal(result,false,'confirmation is rejected when the write is rejected');
    assert.equal(run("currentEng().layerConfirmations.map"),false,'UI cannot retain a false confirmation');
    assert.equal(run("currentEng().confirmedAsIs"),false);
+ }finally{dom.window.close();}
+});
+
+
+test('PG05 review contains one canonical representation for all DF046–DF055 and editable source steps',async()=>{
+ const {w,dom,run}=buildRuntime();
+ try{
+   run("state.activePage='uat';render()");
+   await w.document.getElementById('loadSingleUat').onclick();
+   run("state.activePage='pasos';render()");
+   const section=w.document.querySelector('.pg05-review');
+   assert.ok(section,'consultant review must be visible after client map validation');
+   assert.equal(section.querySelectorAll('[data-pg05-step]').length,6,'six canonical ProcessSteps');
+   assert.equal(section.querySelectorAll('[data-pg05-field]').length,10,'exactly ten DF046–DF055 fields');
+   for(const id of ['DF046','DF047','DF048','DF049','DF050','DF051','DF052','DF053','DF054','DF055'])
+     assert.equal(section.querySelectorAll('[data-pg05-field="'+id+'"]').length,1,'no duplicate card for '+id);
+   assert.equal(section.querySelectorAll('[data-edit-step]').length,6);
+   assert.equal(section.querySelectorAll('.pg05-step-details').length,6);
+   const initial=run("currentEng().layerConfirmations.map");
+   const edit=section.querySelectorAll('[data-edit-step]')[1],expectedId=edit.dataset.editStep;
+   edit.click();
+   assert.match(w.document.querySelector('#modalRoot .modal-head').textContent,/Editar paso/);
+   assert.equal(run("currentEng().processSteps[1].id"),expectedId);
+   assert.equal(w.document.getElementById('step_name').value,run("currentEng().processSteps[1].step_name"));
+   w.document.getElementById('modalCancel').click();
+   assert.equal(run("currentEng().layerConfirmations.map"),initial,'cancel never invalidates map');
+ }finally{dom.window.close();}
+});
+
+test('PG05 step modal keeps data and confirmation on no-op; failed persistence rolls back and keeps editor open',async()=>{
+ const {w,dom,run}=buildRuntime();
+ try{
+   run("state.activePage='uat';render()");
+   await w.document.getElementById('loadSingleUat').onclick();
+   run("state.activePage='pasos';render()");
+   const original=run("JSON.stringify(currentEng().processSteps[1])");
+   const edit=()=>w.document.querySelectorAll('.pg05-review [data-edit-step]')[1].click();
+   edit();
+   w.document.getElementById('modalSave').click();
+   assert.equal(run("currentEng().layerConfirmations.map"),true,'no-op must preserve client validation');
+   assert.equal(run("JSON.stringify(currentEng().processSteps[1])"),original,'no-op must not mutate stored step');
+   assert.equal(w.document.querySelector('#modalRoot .modal'),null,'no-op closes without changing anything');
+   edit();
+   w.document.getElementById('step_name').value='Validar nueva condición del proceso';
+   const before=run("JSON.stringify(currentEng().processSteps[1])");
+   const beforeLayers=run("JSON.stringify(currentEng().layerConfirmations)");
+   run("persistRecoverySnapshot=function(){return false}");
+   w.document.getElementById('modalSave').click();
+   assert.ok(w.document.querySelector('#modalRoot .modal'),'failed save keeps modal and draft on screen');
+   assert.equal(w.document.getElementById('step_name').value,'Validar nueva condición del proceso');
+   assert.equal(run("JSON.stringify(currentEng().processSteps[1])"),before,'failed save restores owner');
+   assert.equal(run("JSON.stringify(currentEng().layerConfirmations)"),beforeLayers,'failed save restores confirmations');
  }finally{dom.window.close();}
 });
 
