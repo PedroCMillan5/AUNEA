@@ -1256,6 +1256,16 @@ function consultantLayerPage(title,intro,body,layer,stageId,{questionsFirst=fals
   const next={frictions:{page:'riesgos',label:'Continuar a Riesgos →'},risks:{page:'impacto',label:'Continuar a Impacto →'}}[layer];
   const nextButton=next?'<button type="button" class="btn btn-primary" data-page="'+next.page+'"'+(done?'':' disabled aria-disabled="true" title="Confirma '+tabs[layer]+' antes de avanzar"')+'>'+next.label+'</button>':'';
   const confirm='<div class="flow-confirm '+(integrity.length?'flow-confirm-needs-review':'')+'"><div><b>'+(done?'Revisión confirmada':integrity.length?'Revisión necesaria':'Revisión pendiente')+'</b>'+reviewCopy+'</div><div class="row-actions"><button type="button" class="btn '+(done?'btn-outline':'btn-primary')+'" data-confirm-process-layer="'+layer+'"'+(done&&layer==='risks'?' data-undo-risk-layer="1"':'')+disabled+'>'+(done&&layer==='risks'?'Deshacer confirmación':done?'Volver a confirmar':'Confirmar '+tabs[layer])+'</button>'+nextButton+'</div></div>';
+  const riskSources=layer==='risks'?activeSteps(e):[];
+  const approvalSources=riskSources.filter(step=>step.step_type==='ST05'||normalizeArray(step.decision_criteria).length);
+  const riskSuggestions=layer==='risks'&&!done?'<div class="pg05-risk-reuse"><b>Información recuperada del mapa</b>'
+    +'<div class="field-help">Aprobaciones registradas: '+(approvalSources.length
+      ?approvalSources.map(step=>(riskSources.indexOf(step)+1)+'. '+esc(step.step_name||'Paso')+' — '+esc(labelFrom('OS_ACTOR_ROLE',step.actor)||step.actor||'Responsable sin identificar')+' — '+esc(normalizeArray(step.decision_criteria).map(x=>labelFrom('OS_DECISION_CRITERIA',x)||x).join(', ')||step._details?.decision_criteria||'Criterio pendiente')).join(' · ')
+      :'No constan aprobaciones en el mapa')+'</div>'
+    +'<div class="field-help">Datos sensibles: no se infieren de los tipos genéricos de documento. Confirma solo los que estén acreditados.</div>'
+    +'<div class="field-help">Reversibilidad: se obtiene de cada riesgo registrado, sin duplicar su captura.</div>'
+    +(approvalSources.length&&!normalizeArray(e.answers?.DF075).length?'<button type="button" class="btn btn-small btn-outline" data-risk-approval-prefill="1">Proponer decisión final a partir de las aprobaciones existentes</button>':'')
+    +'</div>':'';
   const questions=stageId?((layer==='risks'&&done)
     ?section('Datos complementarios de la etapa','Valores reutilizados de la versión confirmada. Deshaz la confirmación para editar.',
       '<div class="pg05-locked-risk-data">'+(schema?.fields||[]).filter(f=>f.Stage_ID==='S06'&&typeof questionVisible==='function'&&questionVisible(f,e)&&!['RT_RISK','RT_PROCESS_STEP'].includes(String(f.Write_Target||'').split('.')[0])&&!['CAPTURE_IN_RISK','DERIVED'].includes(String(f.Ask_Mode||''))).map(f=>{
@@ -1263,7 +1273,7 @@ function consultantLayerPage(title,intro,body,layer,stageId,{questionsFirst=fals
         const shown=typeof formatContextValue==='function'?formatContextValue(f,value):normalizeArray(value).join(' · ');
         return '<div class="pg05-step-io"><b>'+esc(f.Pregunta_o_etiqueta_ES||f.Field_ID)+'</b><span>'+esc(shown||'No consta')+'</span></div>';
       }).join('')+'</div>')
-    :layerCanonicalQuestions(e,stageId)):'';
+    :layerCanonicalQuestions(e,stageId)+riskSuggestions):'';
   const content=questionsFirst?questions+body:body+questions;
   const layerSummary=layer==='impact'?impactLayerReviewSummary(e,integrity):'';
   return pageTop(title,intro,'<button class="btn btn-outline" data-page="proceso">← Ver mapa AS-IS</button>')+(typeof asisConsoleLockNotice==='function'?asisConsoleLockNotice():'')+content+layerSummary+confirm;
@@ -1656,6 +1666,15 @@ bindForms=function(){
   document.querySelectorAll('[data-delete-economic-index]').forEach(b=>b.onclick=()=>deleteEconomic(Number(b.dataset.deleteEconomicIndex)));
   const share=document.getElementById('openSessionDisplayFromProcess');if(share)share.onclick=()=>openProcessEditorWindow();
   const closeClient=document.getElementById('closeClientProcessEditor');if(closeClient)closeClient.onclick=()=>closeProcessEditorWindow();
+  document.querySelectorAll('[data-risk-approval-prefill]').forEach(b=>b.onclick=()=>{
+    const e=currentEng();if(!e)return;
+    const approvals=activeSteps(e).filter(s=>s.step_type==='ST05'||normalizeArray(s.decision_criteria).length);
+    if(!approvals.length)return;
+    const selected=normalizeArray(e.answers?.DF075);
+    if(!selected.includes('FINAL_DECISION'))setAnswer('DF075',[...selected,'FINAL_DECISION']);
+    if(typeof invalidateProcessLayers==='function')invalidateProcessLayers(e,'risks');
+    render();
+  });
   document.querySelectorAll('[data-confirm-process-layer]').forEach(b=>b.onclick=()=>{
     if(b.dataset.undoRiskLayer==='1'){
       const e=currentEng();if(!e)return;
