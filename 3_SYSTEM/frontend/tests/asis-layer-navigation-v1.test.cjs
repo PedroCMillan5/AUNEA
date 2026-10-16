@@ -27,3 +27,12 @@ test('risk review reuses step card structure and canonical risk actions',()=>{
  assert.match(source,/data-delete-risk-index/);
  assert.match(source,/map\(\(r,i\)=>\(\{r,i\}\)\)/);
 });
+
+test('risk map evidence is shown without silently confirming new facts',()=>{
+ assert.match(source,/data-risk-approval-prefill/);
+ assert.match(source,/approvalSources=riskSources\.filter/);
+ assert.match(source,/if\(!approvals\.length\)return/);
+ assert.match(source,/setAnswer\('DF075',\[\.\.\.selected,'FINAL_DECISION'\]\)/);
+ assert.match(source,/Datos sensibles: no se infieren/);
+ assert.match(source,/Reversibilidad: se obtiene de cada riesgo/);
+});
