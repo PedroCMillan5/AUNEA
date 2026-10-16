@@ -1258,14 +1258,9 @@ function consultantLayerPage(title,intro,body,layer,stageId,{questionsFirst=fals
   const confirm='<div class="flow-confirm '+(integrity.length?'flow-confirm-needs-review':'')+'"><div><b>'+(done?'Revisión confirmada':integrity.length?'Revisión necesaria':'Revisión pendiente')+'</b>'+reviewCopy+'</div><div class="row-actions"><button type="button" class="btn '+(done?'btn-outline':'btn-primary')+'" data-confirm-process-layer="'+layer+'"'+(done&&layer==='risks'?' data-undo-risk-layer="1"':'')+disabled+'>'+(done&&layer==='risks'?'Deshacer confirmación':done?'Volver a confirmar':'Confirmar '+tabs[layer])+'</button>'+nextButton+'</div></div>';
   const riskSources=layer==='risks'?activeSteps(e):[];
   const approvalSources=riskSources.filter(step=>step.step_type==='ST05'||normalizeArray(step.decision_criteria).length);
-  const riskSuggestions=layer==='risks'&&!done?'<div class="pg05-risk-reuse"><b>Información recuperada del mapa</b>'
-    +'<div class="field-help">Aprobaciones registradas: '+(approvalSources.length
-      ?approvalSources.map(step=>(riskSources.indexOf(step)+1)+'. '+esc(step.step_name||'Paso')+' — '+esc(labelFrom('OS_ACTOR_ROLE',step.actor)||step.actor||'Responsable sin identificar')+' — '+esc(normalizeArray(step.decision_criteria).map(x=>labelFrom('OS_DECISION_CRITERIA',x)||x).join(', ')||step._details?.decision_criteria||'Criterio pendiente')).join(' · ')
-      :'No constan aprobaciones en el mapa')+'</div>'
-    +'<div class="field-help">Datos sensibles: no se infieren de los tipos genéricos de documento. Confirma solo los que estén acreditados.</div>'
-    +'<div class="field-help">Reversibilidad: se obtiene de cada riesgo registrado, sin duplicar su captura.</div>'
-    +(approvalSources.length&&!normalizeArray(e.answers?.DF075).length?'<button type="button" class="btn btn-small btn-outline" data-risk-approval-prefill="1">Proponer decisión final a partir de las aprobaciones existentes</button>':'')
-    +'</div>':'';
+  // Context is already shown in the relevant derivative fields and risk cards.
+  // Avoid a second, contradictory summary of the same AS-IS approvals.
+  const riskSuggestions='';
   const sourceGaps=layer==='risks'&&typeof activeSteps==='function'?activeSteps(e).flatMap((step,i)=>{
     const gaps=[];
     if(step.exception_path&&typeof step.exception_path==='object'){
