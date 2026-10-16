@@ -1258,10 +1258,10 @@ function consultantLayerPage(title,intro,body,layer,stageId,{questionsFirst=fals
   const confirm='<div class="flow-confirm '+(integrity.length?'flow-confirm-needs-review':'')+'"><div><b>'+(done?'Revisión confirmada':integrity.length?'Revisión necesaria':'Revisión pendiente')+'</b>'+reviewCopy+'</div><div class="row-actions"><button type="button" class="btn '+(done?'btn-outline':'btn-primary')+'" data-confirm-process-layer="'+layer+'"'+(done&&layer==='risks'?' data-undo-risk-layer="1"':'')+disabled+'>'+(done&&layer==='risks'?'Deshacer confirmación':done?'Volver a confirmar':'Confirmar '+tabs[layer])+'</button>'+nextButton+'</div></div>';
   const questions=stageId?((layer==='risks'&&done)
     ?section('Datos complementarios de la etapa','Valores reutilizados de la versión confirmada. Deshaz la confirmación para editar.',
-      '<div class="pg05-locked-risk-data">'+(schema?.fields||[]).filter(f=>f.Stage_ID==='S06'&&['DF073','DF075','DF076'].includes(f.Field_ID)).map(f=>{
-        const values=normalizeArray(e.answers?.[f.Field_ID]);
-        const shown=values.map(v=>labelFrom(String(f.Option_Set_ID||f.Option_Set||''),v)||String(v));
-        return '<div class="pg05-step-io"><b>'+esc(f.Pregunta_o_etiqueta_ES||f.Field_ID)+'</b><span>'+esc(shown.join(' · ')||'No consta')+'</span></div>';
+      '<div class="pg05-locked-risk-data">'+(schema?.fields||[]).filter(f=>f.Stage_ID==='S06'&&typeof questionVisible==='function'&&questionVisible(f,e)&&!['RT_RISK','RT_PROCESS_STEP'].includes(String(f.Write_Target||'').split('.')[0])&&!['CAPTURE_IN_RISK','DERIVED'].includes(String(f.Ask_Mode||''))).map(f=>{
+        const value=typeof effectiveValue==='function'?effectiveValue(f,e):e.answers?.[f.Field_ID];
+        const shown=typeof formatContextValue==='function'?formatContextValue(f,value):normalizeArray(value).join(' · ');
+        return '<div class="pg05-step-io"><b>'+esc(f.Pregunta_o_etiqueta_ES||f.Field_ID)+'</b><span>'+esc(shown||'No consta')+'</span></div>';
       }).join('')+'</div>')
     :layerCanonicalQuestions(e,stageId)):'';
   const content=questionsFirst?questions+body:body+questions;
@@ -1556,7 +1556,7 @@ function consultantRisksPage(){
       ['Materialidad',typeof r.material_financial_or_compliance==='boolean'?(r.material_financial_or_compliance?'Sí':'No'):'Pendiente'],
       ['Criticidad',typeof r.critical_trigger==='boolean'?(r.critical_trigger?'Sí':'No'):'Pendiente']
     ];
-    return '<article class="pg05-step-card risk-review-card"><div class="pg05-step-top"><span class="pg05-step-number">'+(i+1)+'</span><div class="pg05-step-heading"><b>'+esc(r.description||category)+'</b><span>'+esc(category)+' · '+esc(missing.length?'Pendiente de completar':'Completo')+'</span></div><button type="button" class="btn btn-small btn-outline" data-edit-risk-index="'+i+'">Editar</button></div>'
+    return '<article class="pg05-step-card risk-review-card"><div class="pg05-step-top"><span class="pg05-step-number">'+(i+1)+'</span><div class="pg05-step-heading"><b>'+esc(r.description||category)+'</b><span>'+esc(category)+' · '+esc(missing.length?'Pendiente de completar':'Completo')+'</span></div>'+(riskConfirmed?'':'<button type="button" class="btn btn-small btn-outline" data-edit-risk-index="'+i+'">Editar</button>')+'</div>'
       +'<div class="pg05-step-metrics"><span><small>Probabilidad</small>'+esc(r.likelihood_1_5?String(r.likelihood_1_5)+'/5':'Pendiente')+'</span><span><small>Consecuencia</small>'+esc(r.impact_1_5?String(r.impact_1_5)+'/5':'Pendiente')+'</span><span><small>Reversibilidad</small>'+esc(labelFrom('OS_REVERSIBILITY',r.reversibility)||r.reversibility||'Pendiente')+'</span></div>'
       +'<div class="pg05-step-io"><span><b>Pasos:</b> '+esc(normalizeArray(r.step_ids).map(id=>byStep.get(String(id))||'Paso no disponible').join(' · ')||'Pendiente')+'</span></div>'
       +'<details class="pg05-step-details"><summary>Ver detalle del riesgo</summary><dl class="pg05-step-facts">'+fields.map(([label,value])=>'<div><dt>'+esc(label)+'</dt><dd>'+esc(value)+'</dd></div>').join('')+'</dl>'
