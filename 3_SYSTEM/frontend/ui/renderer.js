@@ -356,7 +356,11 @@ function renderControl(f,val,opts,e){
   if(c==='MULTISELECT_WITH_PRIORITY')return multiChoicesWithPriority(fid,opts,val,e);
   if(fid==='DF075'&&c==='STEP_ACTION_MULTISELECT'){
     const choices=multiChoices(fid,opts,val,{other:hasCanonicalOtherOption(opts)});
-    const linked=answerDetails(e).DF075__steps||e.answers?.DF075__steps||[];
+    const stored=answerDetails(e).DF075__steps??e.answers?.DF075__steps;
+    const mapped=(e.processSteps||[]).filter(x=>x.status!=='SUPERSEDED'&&(x.step_type==='ST05'||normalizeArray(x.decision_criteria).length>0)).map(x=>x.id);
+    // Reuse known AS-IS approval steps as a proposal only when a human-approval action is selected.
+    // Explicitly saved links, including an empty array, always take precedence.
+    const linked=stored!==undefined?stored:(normalizeArray(val).length?mapped:[]);
     const steps=linkedStepMulti('DF075__steps',e,linked);
     return '<div class="linked-field-block"><div class="linked-step-label">Acciones que requieren validación humana</div>'+choices
       +'<div class="linked-step-group"><div class="linked-step-label">Pasos donde aplica</div>'+steps+'</div></div>';
