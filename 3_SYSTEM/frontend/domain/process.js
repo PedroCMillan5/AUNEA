@@ -1255,8 +1255,15 @@ function consultantLayerPage(title,intro,body,layer,stageId,{questionsFirst=fals
   const disabled=integrity.length?' disabled aria-disabled="true" title="Completa los elementos pendientes antes de confirmar"':'';
   const next={frictions:{page:'riesgos',label:'Continuar a Riesgos →'},risks:{page:'impacto',label:'Continuar a Impacto →'}}[layer];
   const nextButton=next?'<button type="button" class="btn btn-primary" data-page="'+next.page+'"'+(done?'':' disabled aria-disabled="true" title="Confirma '+tabs[layer]+' antes de avanzar"')+'>'+next.label+'</button>':'';
-  const confirm='<div class="flow-confirm '+(integrity.length?'flow-confirm-needs-review':'')+'"><div><b>'+(done?'Revisión confirmada':integrity.length?'Revisión necesaria':'Revisión pendiente')+'</b>'+reviewCopy+'</div><div class="row-actions"><button type="button" class="btn '+(done?'btn-outline':'btn-primary')+'" data-confirm-process-layer="'+layer+'"'+disabled+'>'+(done?'Volver a confirmar':'Confirmar')+' '+tabs[layer]+'</button>'+nextButton+'</div></div>';
-  const questions=stageId?layerCanonicalQuestions(e,stageId):'';
+  const confirm='<div class="flow-confirm '+(integrity.length?'flow-confirm-needs-review':'')+'"><div><b>'+(done?'Revisión confirmada':integrity.length?'Revisión necesaria':'Revisión pendiente')+'</b>'+reviewCopy+'</div><div class="row-actions"><button type="button" class="btn '+(done?'btn-outline':'btn-primary')+'" data-confirm-process-layer="'+layer+'"'+(done&&layer==='risks'?' data-undo-risk-layer="1"':'')+disabled+'>'+(done&&layer==='risks'?'Deshacer confirmación':done?'Volver a confirmar':'Confirmar '+tabs[layer])+'</button>'+nextButton+'</div></div>';
+  const questions=stageId?((layer==='risks'&&done)
+    ?section('Datos complementarios de la etapa','Valores reutilizados de la versión confirmada. Deshaz la confirmación para editar.',
+      '<div class="pg05-locked-risk-data">'+(schema?.fields||[]).filter(f=>f.Stage_ID==='S06'&&['DF073','DF075','DF076'].includes(f.Field_ID)).map(f=>{
+        const values=normalizeArray(e.answers?.[f.Field_ID]);
+        const shown=values.map(v=>labelFrom(String(f.Option_Set_ID||f.Option_Set||''),v)||String(v));
+        return '<div class="pg05-step-io"><b>'+esc(f.Pregunta_o_etiqueta_ES||f.Field_ID)+'</b><span>'+esc(shown.join(' · ')||'No consta')+'</span></div>';
+      }).join('')+'</div>')
+    :layerCanonicalQuestions(e,stageId)):'';
   const content=questionsFirst?questions+body:body+questions;
   const layerSummary=layer==='impact'?impactLayerReviewSummary(e,integrity):'';
   return pageTop(title,intro,'<button class="btn btn-outline" data-page="proceso">← Ver mapa AS-IS</button>')+(typeof asisConsoleLockNotice==='function'?asisConsoleLockNotice():'')+content+layerSummary+confirm;
@@ -1533,6 +1540,7 @@ function consultantFrictionsPage(){
 function consultantRisksPage(){
   const e=currentEng();if(!e)return pageTop('Riesgos','Abre primero un estudio.');
   const risks=(e.risks||[]).map((r,i)=>({r,i})).filter(x=>x.r.status!=='SUPERSEDED');
+  const riskConfirmed=!!processLayerState(e).risks&&!(typeof processLayerIntegrityIssues==='function'&&processLayerIntegrityIssues(e,'risks').length);
   const steps=activeSteps(e),byStep=new Map(steps.map((step,i)=>[String(step.id),String(i+1)+'. '+String(step.step_name||'Paso')]));
   const cards=risks.map(({r,i})=>{
     const missing=typeof riskIncompleteFields==='function'?riskIncompleteFields(r):[];
@@ -1553,11 +1561,11 @@ function consultantRisksPage(){
       +'<div class="pg05-step-io"><span><b>Pasos:</b> '+esc(normalizeArray(r.step_ids).map(id=>byStep.get(String(id))||'Paso no disponible').join(' · ')||'Pendiente')+'</span></div>'
       +'<details class="pg05-step-details"><summary>Ver detalle del riesgo</summary><dl class="pg05-step-facts">'+fields.map(([label,value])=>'<div><dt>'+esc(label)+'</dt><dd>'+esc(value)+'</dd></div>').join('')+'</dl>'
       +(missing.length?'<div class="field-help">Pendiente: '+esc(missing.join(' · '))+'</div>':'')
-      +'<div class="pg05-step-tools"><button type="button" class="btn btn-small btn-outline" data-edit-risk-index="'+i+'">Editar riesgo</button><button type="button" class="btn btn-small btn-danger" data-delete-risk-index="'+i+'">Eliminar riesgo</button></div></details></article>';
+      +(riskConfirmed?'':'<div class="pg05-step-tools"><button type="button" class="btn btn-small btn-outline" data-edit-risk-index="'+i+'">Editar riesgo</button><button type="button" class="btn btn-small btn-danger" data-delete-risk-index="'+i+'">Eliminar riesgo</button></div>')+'</details></article>';
   }).join('');
   const content=section('1. Riesgos registrados','Revisa cada riesgo, despliega sus datos y edítalo en su ficha original.',
     '<div class="pg05-step-list">'+(cards||'<div class="pg05-empty">No hay riesgos registrados.</div>')+'</div>',
-    '<button type="button" class="btn btn-outline" id="reviewRiskCandidates">Revisar posibles riesgos</button><button type="button" class="btn btn-primary" id="addRisk" data-add-risk-global>Añadir riesgo</button>');
+    riskConfirmed?'': '<button type="button" class="btn btn-outline" id="reviewRiskCandidates">Revisar posibles riesgos</button><button type="button" class="btn btn-primary" id="addRisk" data-add-risk-global>Añadir riesgo</button>');
   return consultantLayerPage('Riesgos','Revisión de los riesgos vinculados al AS-IS.',content,'risks','S06');
 }
 function consultantImpactPage(){
@@ -1645,7 +1653,14 @@ bindForms=function(){
   document.querySelectorAll('[data-delete-economic-index]').forEach(b=>b.onclick=()=>deleteEconomic(Number(b.dataset.deleteEconomicIndex)));
   const share=document.getElementById('openSessionDisplayFromProcess');if(share)share.onclick=()=>openProcessEditorWindow();
   const closeClient=document.getElementById('closeClientProcessEditor');if(closeClient)closeClient.onclick=()=>closeProcessEditorWindow();
-  document.querySelectorAll('[data-confirm-process-layer]').forEach(b=>b.onclick=()=>confirmProcessLayer(({map:'cliente',frictions:'fricciones',risks:'riesgos',impact:'impacto'})[b.dataset.confirmProcessLayer]));
+  document.querySelectorAll('[data-confirm-process-layer]').forEach(b=>b.onclick=()=>{
+    if(b.dataset.undoRiskLayer==='1'){
+      const e=currentEng();if(!e)return;
+      if(typeof invalidateProcessLayers==='function')invalidateProcessLayers(e,'risks');
+      e.updatedAt=now();markDirty('Confirmación de riesgos deshecha');render();return;
+    }
+    confirmProcessLayer(({map:'cliente',frictions:'fricciones',risks:'riesgos',impact:'impacto'})[b.dataset.confirmProcessLayer]);
+  });
   document.querySelectorAll('[data-add-after]').forEach(b=>b.onclick=e=>{e.stopPropagation();openStepModal(null,b.dataset.addAfter||null)});
   document.querySelectorAll('[data-drag-step]').forEach(el=>{el.ondragstart=ev=>{ev.dataTransfer?.setData('text/plain',el.dataset.dragStep)};el.ondragover=ev=>ev.preventDefault();el.ondrop=ev=>{ev.preventDefault();const source=ev.dataTransfer?.getData('text/plain');if(source)reorderStepBefore(source,el.dataset.dragStep)}});
   document.querySelectorAll('[data-graph-edit-route]').forEach(b=>b.onclick=ev=>{
