@@ -36,3 +36,17 @@ test('risk map evidence is shown without silently confirming new facts',()=>{
  assert.match(source,/Datos sensibles: no se infieren/);
  assert.match(source,/Reversibilidad: se obtiene de cada riesgo/);
 });
+
+test('risk approvals preselect only mapped approval or decision steps when not overridden',()=>{
+ const renderer=fs.readFileSync(path.join(__dirname,'..','ui','renderer.js'),'utf8');
+ assert.match(renderer,/const stored=answerDetails\(e\)\.DF075__steps\?\?e\.answers\?\.DF075__steps/);
+ assert.match(renderer,/const linked=stored!==undefined\?stored:/);
+ assert.match(renderer,/x\.step_type==='ST05'\|\|normalizeArray\(x\.decision_criteria\)\.length>0/);
+});
+test('missing approval and exception sources are identified instead of silently ignored',()=>{
+ assert.match(source,/const sourceGaps=layer==='risks'/);
+ assert.match(source,/tipo de excepción/);
+ assert.match(source,/responsable de la excepción/);
+ assert.match(source,/criterio de aprobación/);
+ assert.match(source,/Completa esos datos en el paso original/);
+});
