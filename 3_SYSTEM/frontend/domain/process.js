@@ -1542,6 +1542,9 @@ function consultantRisksPage(){
   const risks=(e.risks||[]).map((r,i)=>({r,i})).filter(x=>x.r.status!=='SUPERSEDED');
   const riskConfirmed=!!processLayerState(e).risks&&!(typeof processLayerIntegrityIssues==='function'&&processLayerIntegrityIssues(e,'risks').length);
   const steps=activeSteps(e),byStep=new Map(steps.map((step,i)=>[String(step.id),String(i+1)+'. '+String(step.step_name||'Paso')]));
+  const frictions=activeFrictions(e);
+  const approvalCount=steps.filter(x=>x.step_type==='ST05'||normalizeArray(x.decision_criteria).length).length;
+  const summary='<div class="pg05-status pg05-status--review"><b>Contexto recuperado del AS-IS</b><div class="pg05-step-io"><span>'+steps.length+' pasos registrados</span><span>'+frictions.length+' fricciones registradas</span><span>'+approvalCount+' pasos de decisión o aprobación</span></div><small>Este resumen procede del mapa. Los riesgos individuales son los únicos registros editables de riesgo.</small></div>';
   const cards=risks.map(({r,i})=>{
     const missing=typeof riskIncompleteFields==='function'?riskIncompleteFields(r):[];
     const category=labelFrom('OS_RISK_CATEGORY',r.category)||r.category||'Pendiente';
@@ -1564,7 +1567,7 @@ function consultantRisksPage(){
       +(riskConfirmed?'':'<div class="pg05-step-tools"><button type="button" class="btn btn-small btn-outline" data-edit-risk-index="'+i+'">Editar riesgo</button><button type="button" class="btn btn-small btn-danger" data-delete-risk-index="'+i+'">Eliminar riesgo</button></div>')+'</details></article>';
   }).join('');
   const content=section('1. Riesgos registrados','Revisa cada riesgo, despliega sus datos y edítalo en su ficha original.',
-    '<div class="pg05-step-list">'+(cards||'<div class="pg05-empty">No hay riesgos registrados.</div>')+'</div>',
+    summary+'<div class="pg05-step-list">'+(cards||'<div class="pg05-empty">No hay riesgos registrados.</div>')+'</div>',
     riskConfirmed?'': '<button type="button" class="btn btn-outline" id="reviewRiskCandidates">Revisar posibles riesgos</button><button type="button" class="btn btn-primary" id="addRisk" data-add-risk-global>Añadir riesgo</button>');
   return consultantLayerPage('Riesgos','Revisión de los riesgos vinculados al AS-IS.',content,'risks','S06');
 }
