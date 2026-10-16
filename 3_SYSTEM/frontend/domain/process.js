@@ -1269,7 +1269,7 @@ function consultantLayerPage(title,intro,body,layer,stageId,{questionsFirst=fals
   const questions=stageId?((layer==='risks'&&done)
     ?section('Datos complementarios de la etapa','Valores reutilizados de la versión confirmada. Deshaz la confirmación para editar.',
       '<div class="pg05-locked-risk-data">'+(schema?.fields||[]).filter(f=>f.Stage_ID==='S06'&&typeof questionVisible==='function'&&questionVisible(f,e)&&!['RT_RISK','RT_PROCESS_STEP'].includes(String(f.Write_Target||'').split('.')[0])&&!['CAPTURE_IN_RISK','DERIVED'].includes(String(f.Ask_Mode||''))).map(f=>{
-        const value=typeof effectiveValue==='function'?effectiveValue(f,e):e.answers?.[f.Field_ID];
+        const value=f.Field_ID==='DF074'&&typeof derivedRiskIrreversibility==='function'?derivedRiskIrreversibility(e):(typeof effectiveValue==='function'?effectiveValue(f,e):e.answers?.[f.Field_ID]);
         const shown=typeof formatContextValue==='function'?formatContextValue(f,value):normalizeArray(value).join(' · ');
         return '<div class="pg05-step-io"><b>'+esc(f.Pregunta_o_etiqueta_ES||f.Field_ID)+'</b><span>'+esc(shown||'No consta')+'</span></div>';
       }).join('')+'</div>')
