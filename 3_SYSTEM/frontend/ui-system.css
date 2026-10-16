@@ -1326,3 +1326,17 @@ body.shell-session .topbar-left{display:none}
 
 /* [AUNEA-FE-RISKS-RECONCILE-111] Explicitly distinguish unavailable next-step actions. */
 .flow-confirm [data-page][disabled]{opacity:.45;cursor:not-allowed;filter:grayscale(.25);pointer-events:none}
+
+/* [AUNEA-FE-RISKS-AIR-113] START — rhythm between risk sections, no global component changes */
+.risk-review-card + .risk-review-card{margin-top:14px}
+.risk-review-card .pg05-step-details{margin-top:10px}
+.pg05-locked-risk-data{display:grid;gap:14px}
+.pg05-locked-risk-data .pg05-step-io{margin:0}
+.pg05-risk-reuse{margin-top:16px}
+.pg05-risk-reuse .field-help + .field-help{margin-top:10px}
+.derived-structured-review{display:grid;gap:12px}
+.derived-structured-review .derived-structured-row + .derived-structured-row{margin-top:0}
+.derived-structured-facts{row-gap:8px}
+.pg05-status + .pg05-step-list{margin-top:14px}
+@media(max-width:700px){.risk-review-card + .risk-review-card{margin-top:12px}}
+/* [AUNEA-FE-RISKS-AIR-113] END */
