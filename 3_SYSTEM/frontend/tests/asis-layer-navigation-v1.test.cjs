@@ -50,3 +50,13 @@ test('missing approval and exception sources are identified instead of silently 
  assert.match(source,/criterio de aprobación/);
  assert.match(source,/Completa esos datos en el paso original/);
 });
+
+test('derived S06 source gaps have one canonical evaluator and do not masquerade as complete',()=>{
+ const noReask=fs.readFileSync(path.join(__dirname,'..','domain','no-reask.js'),'utf8');
+ assert.match(noReask,/function riskDerivedSourceGaps\(fid,e\)/);
+ assert.match(noReask,/Revisión confirmada · origen incompleto/);
+ assert.match(source,/riskDerivedSourceGaps\('DF066',e\)/);
+ assert.match(source,/riskDerivedSourceGaps\('DF067',e\)/);
+ assert.match(source,/Datos sensibles: no hay declaración registrada/);
+ assert.doesNotMatch(source,/const riskSuggestions=layer==='risks'/);
+});
