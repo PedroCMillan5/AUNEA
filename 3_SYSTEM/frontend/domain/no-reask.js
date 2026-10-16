@@ -470,6 +470,22 @@ function migrateDf074ToRiskDerived(engagements=[]){
   return changed;
 }
 
+function riskDerivedSourceGaps(fid,e){
+  if(!['DF066','DF067'].includes(fid))return [];
+  const steps=activeSteps(e),gaps=[];
+  for(let i=0;i<steps.length;i++){
+    const step=steps[i],who=(i+1)+'. '+String(step.step_name||'Paso');
+    if(fid==='DF066'&&step.exception_path&&typeof step.exception_path==='object'){
+      if(!step.exception_path.type&&!step.exception_path.label)gaps.push(who+': tipo de excepción');
+      if(!step.exception_path.owner)gaps.push(who+': responsable de excepción no registrado');
+    }
+    if(fid==='DF067'&&(step.step_type==='ST05'||normalizeArray(step.decision_criteria).length)){
+      if(!step.actor)gaps.push(who+': responsable de aprobación');
+      if(!normalizeArray(step.decision_criteria).length&&!String(step._details?.decision_criteria||'').trim())gaps.push(who+': criterio de aprobación');
+    }
+  }
+  return gaps;
+}
 function structuredRiskDerivedReviewHtml(fid,e){
   if(!['DF066','DF067'].includes(fid))return '';
   const steps=activeSteps(e);
@@ -518,8 +534,9 @@ function renderQuestion(f,e){
   if(mode==='DERIVE_AND_CONFIRM'){
     const src=reuseSourceInfo(f),confirmed=isDerivedConfirmed(f,e,reuse),derivedText=valuePresent(reuse)?formatContextValue(f,reuse):'Sin elementos derivados';
     const riskDerived=['DF066','DF067'].includes(f.Field_ID);
+    const sourceGaps=riskDerived?riskDerivedSourceGaps(f.Field_ID,e):[];
     const confirmUi=confirmed
-      ?'<span class="status green">'+(riskDerived?'✓ Confirmado':'Derivación confirmada')+'</span>'
+      ?'<span class="status '+(sourceGaps.length?'amber':'green')+'">'+(sourceGaps.length?'✓ Revisión confirmada · origen incompleto':riskDerived?'✓ Confirmado':'Derivación confirmada')+'</span>'
       :`<button type="button" class="btn btn-small btn-primary" data-confirm-derived="${f.Field_ID}">${riskDerived?'Confirmar información':'Confirmar valor'}</button>`;
     const editUi=src.page?`<button type="button" class="btn btn-small" data-goto-source="${attr(src.page)}">Revisar en ${esc(pageLabelEs(src.page))}</button>`:'';
     const structured=structuredRiskDerivedReviewHtml(f.Field_ID,e);
