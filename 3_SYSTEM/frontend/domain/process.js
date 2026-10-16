@@ -1261,19 +1261,11 @@ function consultantLayerPage(title,intro,body,layer,stageId,{questionsFirst=fals
   // Context is already shown in the relevant derivative fields and risk cards.
   // Avoid a second, contradictory summary of the same AS-IS approvals.
   const riskSuggestions='';
-  const sourceGaps=layer==='risks'&&typeof activeSteps==='function'?activeSteps(e).flatMap((step,i)=>{
-    const gaps=[];
-    if(step.exception_path&&typeof step.exception_path==='object'){
-      if(!step.exception_path.type)gaps.push('tipo de excepción');
-      if(!step.exception_path.owner)gaps.push('responsable de la excepción');
-    }
-    if(step.step_type==='ST05'||normalizeArray(step.decision_criteria).length){
-      if(!step.actor)gaps.push('responsable de aprobación');
-      if(!normalizeArray(step.decision_criteria).length&&!String(step._details?.decision_criteria||'').trim())gaps.push('criterio de aprobación');
-    }
-    return gaps.length?[(i+1)+'. '+(step.step_name||'Paso')+': '+gaps.join(', ')]:[];
-  }):[];
-  const gapsNotice=sourceGaps.length?'<div class="notice warn"><b>Información incompleta en el mapa</b><p>'+sourceGaps.map(esc).join(' · ')+'</p><small>Completa esos datos en el paso original. Esta página no crea una segunda captura.</small></div>':'';
+  const sourceGaps=layer==='risks'&&typeof riskDerivedSourceGaps==='function'
+    ?[...riskDerivedSourceGaps('DF066',e),...riskDerivedSourceGaps('DF067',e)]:[];
+  const sensitivePending=layer==='risks'&&!done&&!normalizeArray(e.answers?.DF073).length;
+  const gapsNotice=(sourceGaps.length?'<div class="notice warn"><b>Información incompleta en el mapa</b><p>'+sourceGaps.map(esc).join(' · ')+'</p><small>Completa esos datos en el paso original. Esta página no crea una segunda captura.</small></div>':'')
+    +(sensitivePending?'<div class="field-help">Datos sensibles: no hay declaración registrada. Selecciona los tipos acreditados o confirma «Ninguno» cuando corresponda; no se deduce del formato de los documentos.</div>':'');
   const questions=stageId?((layer==='risks'&&done)
     ?section('Datos complementarios de la etapa','Valores reutilizados de la versión confirmada. Deshaz la confirmación para editar.',
       '<div class="pg05-locked-risk-data">'+(schema?.fields||[]).filter(f=>f.Stage_ID==='S06'&&typeof questionVisible==='function'&&questionVisible(f,e)&&!['RT_RISK','RT_PROCESS_STEP'].includes(String(f.Write_Target||'').split('.')[0])&&!['CAPTURE_IN_RISK','DERIVED'].includes(String(f.Ask_Mode||''))).map(f=>{
