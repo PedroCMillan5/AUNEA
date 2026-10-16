@@ -28,13 +28,11 @@ test('risk review reuses step card structure and canonical risk actions',()=>{
  assert.match(source,/map\(\(r,i\)=>\(\{r,i\}\)\)/);
 });
 
-test('risk map evidence is shown without silently confirming new facts',()=>{
- assert.match(source,/data-risk-approval-prefill/);
- assert.match(source,/approvalSources=riskSources\.filter/);
- assert.match(source,/if\(!approvals\.length\)return/);
- assert.match(source,/setAnswer\('DF075',\[\.\.\.selected,'FINAL_DECISION'\]\)/);
- assert.match(source,/Datos sensibles: no se infieren/);
- assert.match(source,/Reversibilidad: se obtiene de cada riesgo/);
+test('risk evidence is shown in its canonical field rather than in a duplicate map block',()=>{
+ assert.match(source,/const riskSuggestions=''/);
+ assert.match(source,/riskDerivedSourceGaps\('DF066',e\)/);
+ assert.match(source,/riskDerivedSourceGaps\('DF067',e\)/);
+ assert.match(source,/Datos sensibles: no hay declaración registrada/);
 });
 
 test('risk approvals preselect only mapped approval or decision steps when not overridden',()=>{
@@ -45,9 +43,10 @@ test('risk approvals preselect only mapped approval or decision steps when not o
 });
 test('missing approval and exception sources are identified instead of silently ignored',()=>{
  assert.match(source,/const sourceGaps=layer==='risks'/);
- assert.match(source,/tipo de excepción/);
- assert.match(source,/responsable de la excepción/);
- assert.match(source,/criterio de aprobación/);
+ const noReask=fs.readFileSync(path.join(__dirname,'..','domain','no-reask.js'),'utf8');
+ assert.match(noReask,/tipo de excepción/);
+ assert.match(noReask,/responsable de excepción/);
+ assert.match(noReask,/criterio de aprobación/);
  assert.match(source,/Completa esos datos en el paso original/);
 });
 
