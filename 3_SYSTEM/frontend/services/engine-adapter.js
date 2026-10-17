@@ -19,11 +19,13 @@ function gateBool(g){return g==='YES'}
 function inferGateSuggestion(contract,e){const fr=new Set(activeFrictions(e).map(x=>x.friction_type)),out=new Set(normalizeArray(e.answers?.DF086));if(contract.key==='process_design_first'&&(fr.has('P04')||fr.has('P10')))return'YES';if(contract.key==='management_visibility_need'&&(out.has('VISIBILITY')||fr.has('P09')||fr.has('P14')||fr.has('P17')))return'YES';return''}
 function unresolvedEngineGates(e){const g=engineGates(e);return ENGINE_GATE_CONTRACT.filter(c=>!gateResolved(g[c.key]))}
 function openEngineGateReview(){const e=currentEng(),g=engineGates(e);const body=`<div class="notice info"><strong>Confirmación del consultor antes de calcular</strong><br>Estas respuestas son inputs del contrato canónico ya gobernado; no son preguntas al cliente ni resultados calculados por el navegador.</div><div class="form-grid">${ENGINE_GATE_CONTRACT.map(c=>{const suggested=inferGateSuggestion(c,e),value=g[c.key]||suggested||'';return `<div class="field full"><label>${esc(c.label)}</label>${auneaSelectControl(`engine_gate_${c.key}`,[{value:'',label:'Pendiente de confirmar'},{value:'YES',label:'Sí'},{value:'NO',label:'No'}],value,{extra:`data-engine-gate="${c.key}"`,placeholder:'Pendiente de confirmar'})}<div class="field-help"><span class="canonical-id">${c.id}</span> ${esc(c.source)}${suggested&&!g[c.key]?' · sugerencia desde captura; requiere confirmación':''}</div></div>`}).join('')}</div>`;openModal('Confirmación del consultor antes de calcular',body,()=>{document.querySelectorAll('[data-engine-gate]').forEach(x=>g[x.dataset.engineGate]=x.value);if(unresolvedEngineGates(e).length)return toast('Confirma los cinco inputs canónicos antes de calcular.');e.updatedAt=now();markDirty('Inputs canónicos de Recommendation confirmados por el consultor');closeModal();runDiagnosis();},'Confirmar y calcular')}
-function evidenceTypeBackend(v){return ({EV01:'MEASURED',EV02:'CLIENT_DECLARED',EV03:'AUNEA_ESTIMATE',EV04:'HYPOTHESIS',EV05:'SPECIFIC_BENCHMARK',EV06:'AUNEA_ESTIMATE',EV07:'AUNEA_ESTIMATE',MEASURED:'MEASURED',CLIENT_DECLARED:'CLIENT_DECLARED',AUNEA_ESTIMATE:'AUNEA_ESTIMATE',SPECIFIC_BENCHMARK:'SPECIFIC_BENCHMARK',HYPOTHESIS:'HYPOTHESIS'})[v]||'CLIENT_DECLARED'}
+function evidenceTypeBackend(v){return ({EV01:'MEASURED',EV02:'CLIENT_DECLARED',EV03:'AUNEA_ESTIMATE',EV04:'HYPOTHESIS',EV05:'SPECIFIC_BENCHMARK',EV06:'AUNEA_ESTIMATE',EV07:'AUNEA_ESTIMATE',MEASURED:'MEASURED',CLIENT_DECLARED:'CLIENT_DECLARED',AUNEA_ESTIMATE:'AUNEA_ESTIMATE',SPECIFIC_BENCHMARK:'SPECIFIC_BENCHMARK',HYPOTHESIS:'HYPOTHESIS'})[v]||null}
 function normalizeEconomicInputs(e){
   const activeDrivers=new Set(['ED01','ED02','ED03','ED04','ED05','ED06','ED07','ED08']);
   return (e.economicInputs||[]).map(x=>{
     const driver=x.driver_id,active=activeDrivers.has(driver),wait=driver==='ED13';
+    const evidence=evidenceTypeBackend(x.evidence_type);
+    if(!evidence)throw new Error('Evidencia económica sin tipo reconocido: revisa el input '+(driver||'sin driver')+'.');
     return {
       step_ids:normalizeArray(x.step_ids).filter(Boolean),pain_id:x.pain_id||null,driver_id:driver,
       annual_active_hours:active?(x.annual_active_hours==null?null:Number(x.annual_active_hours)):0,
@@ -33,7 +35,7 @@ function normalizeEconomicInputs(e){
       direct_loss_eur_annual:x.direct_loss_eur_annual==null?null:Number(x.direct_loss_eur_annual),
       current_tool_cost_eur_annual:x.current_tool_cost_eur_annual==null?null:Number(x.current_tool_cost_eur_annual),
       realized_cash_saving_eur_annual:x.realized_cash_saving_eur_annual==null?null:Number(x.realized_cash_saving_eur_annual),
-      evidence_type:evidenceTypeBackend(x.evidence_type),deduplication_key:x.deduplication_key||null
+      evidence_type:evidence,deduplication_key:x.deduplication_key||null
     };
   }).filter(x=>x.driver_id)
 }
@@ -138,7 +140,7 @@ function questionnaireAnswersForEngine(e){
 function buildBackendPayload(engagement){
   const e=typeof engagementOfRecord==='function'?engagementOfRecord(engagement):engagement;
   const evidence=[],painSignals=[],fmap=Object.fromEntries(schema.friction_pain_map.map(x=>[x.Friction_Type_ID,x.Pain_ID]));
-  activeFrictions(e).forEach(f=>{const signal=String(f.observable_signal||'').trim(),evid=`EV-${f.id}`,etype=evidenceTypeBackend(f.evidence_type),hasConcrete=!!signal&&['MEASURED','CLIENT_DECLARED'].includes(etype);if(signal)evidence.push({evidence_id:evid,type:etype,description:signal,source:'AUNEA Internal · fricción vinculada al AS-IS'});painSignals.push({pain_id:fmap[f.friction_type]||f.derived_pain_id||f.friction_type,direct_mechanism_present:!!f.friction_type,concrete_evidence_present:hasConcrete,signal_present:!!signal,evidence_ids:signal?[evid]:[],rationale:f.client_label||signal||null})});
+  activeFrictions(e).forEach(f=>{const signal=String(f.observable_signal||'').trim(),evid=`EV-${f.id}`,etype=evidenceTypeBackend(f.evidence_type),hasConcrete=!!signal&&['MEASURED','CLIENT_DECLARED'].includes(etype);if(signal&&etype)evidence.push({evidence_id:evid,type:etype,description:signal,source:'AUNEA Internal · fricción vinculada al AS-IS'});painSignals.push({pain_id:fmap[f.friction_type]||f.derived_pain_id||f.friction_type,direct_mechanism_present:!!f.friction_type,concrete_evidence_present:hasConcrete,signal_present:!!signal,evidence_ids:signal&&etype?[evid]:[],rationale:f.client_label||signal||null})});
   const g=engineGates(e),payload={engagement_id:e.id,process_instance_id:`PROC-${e.id}`,process_name:e.answers?.DF011||e.processName||e.title,evidence,pains:[],pain_signals:painSignals,questionnaire_answers:{...questionnaireAnswersForEngine(e),_business_area_id:e.businessAreaId||null,_answer_details:e.answerDetails||{},_process_steps:activeSteps(e),_frictions:activeFrictions(e),_engine_gate_trace:Object.fromEntries(ENGINE_GATE_CONTRACT.map(c=>[c.id,g[c.key]||'UNRESOLVED']))},economics:normalizeEconomicInputs(e),risks:normalizeRiskInputs(e),existing_tool_can_cover:gateBool(g.existing_tool_can_close),process_design_preconditions_ok:!gateBool(g.process_design_first),requires_unstructured_ai_assistance:gateBool(g.unstructured_interpretation_need),requires_bounded_agent_action:gateBool(g.bounded_action_space),requires_management_visibility:gateBool(g.management_visibility_need)};
   if(e.commercialScope)payload.commercial_scope={...e.commercialScope};
   return payload;
@@ -146,9 +148,9 @@ function buildBackendPayload(engagement){
 async function runDiagnosis(){const e=currentEng();if(!e)return;if(!hasConfirmedSnapshot(e))return toast('Confirma el AS-IS en PG09 antes de calcular en Trabajo interno.');if(!state.backendOnline&&!(await checkBackend())){state.activePage='resultados';render();toast('Backend no conectado: no se publican resultados oficiales.');return}const gaps=canonicalMissingRequired(e);if(gaps.length){state.activePage='resultados';render();toast(`Captura incompleta: ${gaps.slice(0,5).join(', ')}`);return}const captureIssues=typeof captureIntegrityIssues==='function'?captureIntegrityIssues(engagementOfRecord(e)):[];if(captureIssues.length){state.activePage='resultados';render();toast('No se ha recalculado: '+(captureIssues[0].message||captureIssues[0].label||'hay una inconsistencia de captura pendiente.'));return}if(unresolvedEngineGates(e).length){openEngineGateReview();return}
   const sourceSnapshot=confirmedSnapshot(e);
   if(!sourceSnapshot)return toast('El AS-IS debe estar confirmado antes de calcular.');
-  const payload=buildBackendPayload(e);
   ['runDiag','runDiagHeader'].forEach(bid=>{const b=document.getElementById(bid);if(b){b.disabled=true;b.textContent='Comprobando…'}});
   try{
+    const payload=buildBackendPayload(e);
     const preflight=await diagnosticCoveragePreflight(payload);
     if(!handleCoveragePreflight(e,preflight))return;
     ['runDiag','runDiagHeader'].forEach(bid=>{const b=document.getElementById(bid);if(b){b.disabled=true;b.textContent='Calculando…'}});
