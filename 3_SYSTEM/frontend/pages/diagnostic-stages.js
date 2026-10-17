@@ -308,8 +308,8 @@ function validationSummary(e,completion){
   const frWithEvidence=fr.filter(x=>!!x.evidence_type).length;
   const risksWithControls=risks.filter(x=>x.controls_present===true).length;
   const econByType={};
-  econ.forEach(x=>{const t=evidenceTypeBackend(x.evidence_type);econByType[t]=(econByType[t]||0)+1});
-  const econLine=Object.keys(econByType).length?Object.entries(econByType).map(([k,v])=>`${v} ${engineLabel('evidence_quality',k)}`).join(', '):'Sin inputs económicos registrados';
+  econ.forEach(x=>{const t=evidenceTypeBackend(x.evidence_type)||'UNVERIFIED';econByType[t]=(econByType[t]||0)+1});
+  const econLine=Object.keys(econByType).length?Object.entries(econByType).map(([k,v])=>`${v} ${k==='UNVERIFIED'?'sin evidencia validada':engineLabel('evidence_quality',k)}`).join(', '):'Sin inputs económicos registrados';
   const nextStep=e.answers?.DF098||'',notes=e.answers?.DF100||'';
   // The sealed record internal work will read. It appears here because PG09 is where it is created.
   const snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;
