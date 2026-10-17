@@ -70,6 +70,37 @@ function processLayerIntegrityIssues(e,key){
       if(er?.mode==='count'&&Number(er.value)>0&&!er.period)push(`La frecuencia en casos de "${s.step_name||'Paso '+(i+1)}" necesita periodo.`);
     });
   }
+  // [AUNEA-FE-ASIS-GRAPH-INTEGRITY-077] START — Persisted routing validation
+  // SOURCE: Diagnostic Master DF042/043; DEC-050/065. Only branched maps require
+  // explicit links for each step; purely linear maps retain ordered-step semantics.
+  // No UI projection or guessed successor is used to validate the stored graph.
+  if(key==='map'&&steps.length&&typeof processDecisionStep==='function'&&steps.some(processDecisionStep)){
+    const byId=new Map(steps.map(s=>[s.id,s]));
+    const destinations=s=>processDecisionStep(s)?[s.normal_next_step,s.exception_path?.destination_step]:[s.normal_next_step];
+    const nextOf=s=>destinations(s).filter(x=>byId.has(x));
+    steps.forEach((s,i)=>{
+      if(!s.normal_next_step)push(`El paso ${i+1} («${s.step_name||s.id}») necesita un destino principal persistido o Fin del proceso.`);
+    });
+    const reachable=new Set(),toVisit=[steps[0].id];
+    while(toVisit.length){
+      const id=toVisit.pop();if(reachable.has(id))continue;
+      reachable.add(id);const s=byId.get(id);
+      if(s)toVisit.push(...nextOf(s).filter(x=>!reachable.has(x)));
+    }
+    steps.filter(s=>!reachable.has(s.id)).forEach(s=>push(`El paso «${s.step_name||s.id}» es inalcanzable desde el inicio del proceso.`));
+    const reachesEnd=new Set(steps.filter(s=>destinations(s).includes('__END__')).map(s=>s.id));
+    let changed=true;
+    while(changed){
+      changed=false;
+      steps.forEach(s=>{
+        if(reachesEnd.has(s.id))return;
+        if(nextOf(s).some(id=>reachesEnd.has(id))){reachesEnd.add(s.id);changed=true}
+      });
+    }
+    if(!reachesEnd.has(steps[0].id))push('El proceso no tiene una ruta persistida desde el inicio hasta Fin.');
+    steps.filter(s=>reachable.has(s.id)&&!reachesEnd.has(s.id)).forEach(s=>push(`El paso «${s.step_name||s.id}» no dispone de una ruta de salida que alcance Fin.`));
+  }
+  // [AUNEA-FE-ASIS-GRAPH-INTEGRITY-077] END
   if(key==='frictions'){
     const frictions=typeof activeFrictions==='function'?activeFrictions(e):(e.frictions||[]).filter(x=>x.status!=='SUPERSEDED');
     frictions.forEach((fr,i)=>{
