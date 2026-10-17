@@ -183,6 +183,19 @@ function consistencyValueSignature(v){
   if(v&&typeof v==='object')return JSON.stringify(Object.keys(v).sort().reduce((o,k)=>(o[k]=consistencyValueSignature(v[k]),o),{}));
   return JSON.stringify(v);
 }
+// [AUNEA-FE-ASIS-PARTICIPANTS-078] START — S02 participants versus actual ProcessStep actors
+// SOURCE: Diagnostic Master DF017; DEC-050; ProcessStep.Actor; no automated scope inference.
+// An old manual DF017 selection may include contextual stakeholders, so differences require human review.
+function processParticipantsScopeReview(e){
+  const steps=(e?.processSteps||[]).filter(s=>s&&s.status!=='SUPERSEDED');
+  const declared=normalizeArray(e?.answers?.DF017).map(v=>String(v??'').trim()).filter(Boolean);
+  const mapped=steps.map(s=>String(s.actor??'').trim()).filter(Boolean);
+  if(!declared.length||!mapped.length)return null;
+  const a=[...new Set(declared)],b=[...new Set(mapped)];
+  const onlyDeclared=a.filter(v=>!b.includes(v)),onlyMapped=b.filter(v=>!a.includes(v));
+  return onlyDeclared.length||onlyMapped.length?{onlyDeclared,onlyMapped}:null;
+}
+// [AUNEA-FE-ASIS-PARTICIPANTS-078] END
 function preCloseConsistencyReview(e,completion){
   const items=[],seen=new Set();
   const add=(severity,code,message,stage='',navigationTarget='')=>{
@@ -225,6 +238,17 @@ function preCloseConsistencyReview(e,completion){
         add('BLOCKER','SOURCE_CONFLICT_'+fid,'"'+(field?.Pregunta_o_etiqueta_ES||fid)+'": la respuesta guardada indica «'+describe(explicit)+'»; la fuente reutilizada indica «'+describe(reuse)+'». Revisa esa sección y corrige el dato de origen para que ambas representen el mismo proceso.',field?.Stage_ID||'');
       }
     });
+  }
+
+  // DF017 can be a previous manual scope list. Do not silently replace it with step actors.
+  // Contextual participants may legitimately differ from actual owners; surface both for review.
+  const participantGap=processParticipantsScopeReview(e);
+  if(participantGap){
+    const sides=[
+      participantGap.onlyDeclared.length?'Declarados en alcance sin paso asignado: '+participantGap.onlyDeclared.join(', ')+'.':'',
+      participantGap.onlyMapped.length?'Responsables del mapa ausentes del alcance inicial: '+participantGap.onlyMapped.join(', ')+'.':''
+    ].filter(Boolean).join(' ');
+    add('REVIEW','DF017_PARTICIPANT_SCOPE','DF017 · Revisar equipos participantes. '+sides+' Confirma cuáles son participantes contextuales y cuáles ejecutan pasos; corrige el dato en su propietario. No se ha modificado ningún valor automáticamente.','S02');
   }
 
   if(e._sessionTimeProjection&&typeof economicTimeRequest==='function'){
