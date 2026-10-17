@@ -1,6 +1,6 @@
 // [AUNEA-UAT-DIAG-REUSE-133] START — Direct reuse contract regression (isolated)
 // SOURCE: Diagnostic Master v1.2; DEC-050/072; canonical no-reask.js, not copied helper logic.
-// SCOPE: 20 direct reusedValue branches; no UI/backend/browser or 30 alternate route claims.
+// SCOPE: 21 direct reusedValue branches; no UI/backend/browser or 30 alternate route claims.
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const src=fs.readFileSync(path.join(__dirname,'../domain/no-reask.js'),'utf8');
@@ -10,7 +10,7 @@ const unique=v=>[...new Set(v.filter(x=>x!==undefined&&x!==null&&x!=='') )];
 const ctx={
  activeSteps:e=>(e.processSteps||[]).filter(x=>x.status!=='SUPERSEDED'),
  activeFrictions:e=>(e.frictions||[]).filter(x=>x.status!=='SUPERSEDED'),
- companyById:()=>({name:'Empresa',sector:'M',country:'ES'}),
+ companyById:()=>({name:'Empresa',sector:'M',country:'ES',revenueBand:'BAND_100K_250K'}),
  canonicalValueFromLabel:(_,v)=>v,unique,normalizeArray:arr,
  processDataSources:steps=>unique(steps.flatMap(s=>arr(s.inputs).concat(arr(s.outputs).filter(x=>['RECORD','MASTER_DATA','API'].includes(x))))),
  processDocumentArtifacts:steps=>unique(steps.flatMap(s=>arr(s.inputs).concat(arr(s.outputs))).filter(x=>['FORM','EMAIL','TEXT','PDF','DOC','SHEET','IMAGE'].includes(x))),
@@ -37,7 +37,7 @@ function fixture(){const e={
  confirmedAsIs:true
  };e._sessionTimeProjection={requestKey:JSON.stringify({fingerprint:'test'}),output:{active_minutes_per_case:13,rework_minutes_per_case:2}};return e}
 const cases=[
- ['DF001','Empresa'],['DF002','M'],['DF005','ES'],['DF006','contact1'],
+ ['DF001','Empresa'],['DF002','M'],['DF004','BAND_100K_250K'],['DF005','ES'],['DF006','contact1'],
  ['DF017',['ADMIN','MANAGER']],['DF046',['EMAIL','ERP']],['DF047',['PDF','RECORD']],
  ['DF049',['PDF','DOC']],['DF050',['EMAIL','TEAMS']],['DF053',['P1']],
  ['DF057','Se deriva de la fricción registrada; no se pregunta al cliente.'],
