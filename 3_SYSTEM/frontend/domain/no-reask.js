@@ -165,6 +165,9 @@ function reusedValue(fid,e){
   const steps=activeSteps(e),fr=activeFrictions(e),c=companyById(e.companyId);
   if(fid==='DF001')return c?.name||e.answers?.DF001||'';
   if(fid==='DF002')return canonicalValueFromLabel('REF_INDUSTRY_CNAE25',c?.sector||e.answers?.DF002||'');
+  // DF004 is Company-owned (RT_COMPANY.Revenue_Band). Reuse the actual stored band,
+  // not a generated number or a new independent Engagement answer.
+  if(fid==='DF004')return c?.revenueBand||e.answers?.DF004||'';
   if(fid==='DF005')return canonicalValueFromLabel('REF_COUNTRY_ISO3166',c?.country||e.answers?.DF005||'');
   if(fid==='DF006')return e.contactIds?.[0]||e.answers?.DF006||'';
   if(fid==='DF017')return unique(steps.map(x=>x.actor));
