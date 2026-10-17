@@ -685,6 +685,9 @@ function flowIntermediateNodes(e,steps,fr,tab='cliente'){
    and solid merge point are presentation-only and never introduce a second routing owner. */
 function processGraphData(e,steps){
   const byId=new Map(steps.map(s=>[s.id,s])),nodes=[{id:'__START__',kind:'start'}],edges=[];
+  // DF042 permits an implicit next step only for a fully linear, ordered map.
+  // Once any gateway exists, never manufacture an edge absent from ProcessStep.
+  const allowPositionalNext=!steps.some(processDecisionStep);
   const addNode=(id,kind='step',parent='',route='')=>{
     if(!nodes.some(n=>n.id===id))nodes.push({id,kind,parent,route});return id;
   };
@@ -699,7 +702,7 @@ function processGraphData(e,steps){
       edge(step.id,yes,'SÍ');edge(step.id,no,'NO');
     }else{
       const next=step.normal_next_step==='__END__'?addNode('__END__','end'):valid(step.normal_next_step)?step.normal_next_step:
-        (step.normal_next_step?addNode('__NEXT__'+step.id,'pending',step.id,'SIGUIENTE'):(steps[i+1]?.id||addNode('__END__','end')));
+        (step.normal_next_step?addNode('__NEXT__'+step.id,'pending',step.id,'SIGUIENTE'):(allowPositionalNext?(steps[i+1]?.id||addNode('__END__','end')):addNode('__NEXT__'+step.id,'pending',step.id,'SIGUIENTE')));
       edge(step.id,next);
     }
   });
