@@ -2,7 +2,7 @@
 **Corte:** 2026-10-17 · **Rama:** `work/as-is-ux-simplification-20260930`
 **Estado:** REVIEW / FASE 2 PARCIAL, **NO** PRODUCTION / UAT INTEGRAL **NO** VALIDADA.
 **Baseline:** 6a1603d2ae4e6097dc96e1c08ec635dd41602bc8.
-**Rama evaluada antes de este informe:** 5731bebfe7db686929cc83640891c7ba26d5266a.
+**Rama evaluada inicialmente:** 5731bebfe7db686929cc83640891c7ba26d5266a. **Actualización adicional:** DF004 y matriz al commit c8b7d9f20df47b9aacea5d0feb5bce8c9412ddd8.
 **Sesión original negativa:** `AUNEA_Sesion_Actual.json`, SHA-256 `72ed2c9c42bb731373992c79f2f7727a9fbae5da1f9736e40b827a8e4ca885bd`; NO COMMIT / NO MUTACIÓN.
 
 ## 1. Fuentes consultadas directamente
@@ -31,10 +31,10 @@ Nuevo CSV: `docs/QA/AUNEA_PHASE2_DF001_DF100_RECONCILIATION_20261017.csv`.
 - El parche del grafo y de evidencia del traspaso sigue en rama; no se han cambiado `normal_next_step` faltantes en el JSON sintético.
 
 ## 4. Reconciliación 2.C — No-Reask
-El workbook original tiene **49** campos con `Reuse_From`. `reusedValue()` contiene **20** Field_ID directos en código; de ellos **19 pertenecen a los 49 del workbook**. El vigésimo es **DF074**, un derivado por DEC-072, aunque el workbook todavía no registra `Reuse_From`. Por tanto la clasificación de campo vigente es **19 directos + 30 rutas alternativas pendientes**, no una sentencia sobre fallos.
-- 20/20 ramas `reusedValue` ejercitadas en el runtime JavaScript V8, con fixtures controlados/mocks, y resultados esperados. Prueba adicional: proyección temporal obsoleta DF078/079 devuelve `undefined`; riesgo con reversibilidad incompleta no produce DF074; `effectiveValue` prefiere fuente vigente para DF017.
+El workbook original tiene **49** campos con `Reuse_From`. `reusedValue()` contiene **21** Field_ID directos en código; de ellos **20 pertenecen a los 49 del workbook**. El vigésimo es **DF074**, un derivado por DEC-072, aunque el workbook todavía no registra `Reuse_From`. Por tanto la clasificación de campo vigente es **20 directos + 29 rutas alternativas pendientes**, no una sentencia sobre fallos.
+- 21/21 ramas `reusedValue` ejercitadas en el runtime JavaScript V8, con fixtures controlados/mocks, y resultados esperados. Prueba adicional: proyección temporal obsoleta DF078/079 devuelve `undefined`; riesgo con reversibilidad incompleta no produce DF074; `effectiveValue` prefiere fuente vigente para DF017.
 - `isDerivedConfirmed` con DF050: fingerprint coincide antes de editar la fuente y **deja de coincidir tras cambiar un canal en ProcessStep**.
-- Los **30 alternativos sin aceptación E2E** están explícitos en la matriz: `DF003, DF004, DF007, DF014, DF015, DF016, DF023, DF026, DF028, DF033, DF034, DF035, DF036, DF042, DF051, DF054, DF059, DF075, DF076, DF077, DF080, DF081, DF082, DF083, DF087, DF088, DF089, DF090, DF091, DF096`. Debe seguirse cada uno por owner/editor/CRM/sugerencia/derivación y probar recarga e invalidación. No están declarados FAIL.
+- Los **29 alternativos sin aceptación E2E** están explícitos en la matriz: `DF003, DF007, DF014, DF015, DF016, DF023, DF026, DF028, DF033, DF034, DF035, DF036, DF042, DF051, DF054, DF059, DF075, DF076, DF077, DF080, DF081, DF082, DF083, DF087, DF088, DF089, DF090, DF091, DF096`. Debe seguirse cada uno por owner/editor/CRM/sugerencia/derivación y probar recarga e invalidación. No están declarados FAIL.
 
 ## 5. Correcciones implementadas en GitHub
 1. `717b0be7cadc835e78b1489646fd65a288fe80d4` — REVIEW de DF017 vs actores actuales (sin inventar scope).
@@ -44,14 +44,20 @@ El workbook original tiene **49** campos con `Reuse_From`. `reusedValue()` conti
 5. `b91734430908e29481a6be1af27f0c183c8b93f6` — DF074 runtime como derivado de `RT_RISK.Reversibility`, no pregunta adicional S06; queda explícita la divergencia del workbook pendiente de consolidar.
 6. `0c3db3e9329e6b39d10236ff2f513172a8d630a0` — nueva matriz de 100 campos y requisitos de engines.
 7. `2cc73cb76949897a7c1f24b3c7a09f699072c6f3` — adaptador elimina siempre `answers.DF074` heredado antes de proyectar desde el riesgo vigente. **Defecto previo reproducido**: la respuesta manual persistía en el payload si el derivado no existía; negativo y positivo verificados con la función real en V8.
-8. `51c02b7e5fdf3b744e0d844f7ae35fcf04698181` — `node:test` de 20 rutas directas + proyección temporal + fingerprint.
+8. `51c02b7e5fdf3b744e0d844f7ae35fcf04698181` — `node:test` de 21 rutas directas + proyección temporal + fingerprint.
 9. `76675a1d022fc58695797d5d17cae89424a82a9a` — `node:test` DEC-072 runtime/adapter.
 10. `5731bebfe7db686929cc83640891c7ba26d5266a` — CODE_BLOCK_INDEX actualizado.
+
+### Delta adicional de esta misma fase — DF004
+- `5cd59775257b7b84fb2dc11185ccb7bef65a9b3c`: `reusedValue('DF004')` ahora reutiliza `Company.revenueBand` si existe y conserva el valor previo del Engagement como fallback sin inventar importes. Tres aserciones aisladas PASS.
+- `97a89ccc021cbdfe08bdae15f93887f84abab1bf`: test No-Reask ampliado a 21 rutas directas.
+- `c8b7d9f20df47b9aacea5d0feb5bce8c9412ddd8`: matriz corregida a 20 directos / 29 alternativos.
+- **DF003 permanece pendiente de decisión de calidad semántica**: `Company.employeeCount` se captura desde bandas seleccionables con códigos numéricos máximos (10, 50, 250, 500, 1000, 1001). Reutilizar un límite de banda como recuento exacto sería engañoso; no se ha añadido un prefill que falsee la precisión. Debe revisarse representación/procedencia antes de normalizar el reuso.
 
 ## 6. Evidencias de pruebas, límites de ejecución
 **Ejecutado en runtime JS V8 sobre fuente descargada de la rama** (sin Node runner):
 - 5 aserciones directas (DF017: divergencia, caso conciliado, fuente ausente, no mutación, aparición PG09).
-- 20/20 ramas de `reusedValue` con fixtures; negativo de cache DF078/079; negativo DF074; precedencia `effectiveValue`.
+- 21/21 ramas de `reusedValue` con fixtures; negativo de cache DF078/079; negativo DF074; precedencia `effectiveValue`.
 - Prueba de invalidación `isDerivedConfirmed` tras modificación de ProcessStep: `true -> false`.
 - Defecto en adaptador `questionnaireAnswersForEngine` reproducido antes/después; 3 aserciones, salida vieja no válida eliminada; derivación de riesgo válida conservada.
 - Evaluación sintáctica `new Function` de **9/9** archivos JS/CJS de código y tests de esta intervención/anterior, PASS; JSON schema reparseado, 100 IDs únicos, PASS.
