@@ -128,8 +128,11 @@ function handleCoveragePreflight(e,result){
   }
   return true;
 }
+// [AUNEA-FE-ENGINE-RISKOWNER-079] START — Risk-owned DF074 engine projection
+// SOURCE: DEC-072. Never forward a legacy manually stored DF074 when RiskInput has no valid derivation.
 function questionnaireAnswersForEngine(e){
   const out={...(e.answers||{})};
+  delete out.DF074; // always re-materialize exclusively from current RiskInput.reversibility
   for(const fid of ['DF074','DF085','DF094','DF095']){
     const field=(schema?.fields||[]).find(x=>x.Field_ID===fid);
     const value=field&&typeof effectiveValue==='function'?effectiveValue(field,e):(typeof reusedValue==='function'?reusedValue(fid,e):undefined);
@@ -137,6 +140,7 @@ function questionnaireAnswersForEngine(e){
   }
   return out;
 }
+// [AUNEA-FE-ENGINE-RISKOWNER-079] END
 function buildBackendPayload(engagement){
   const e=typeof engagementOfRecord==='function'?engagementOfRecord(engagement):engagement;
   const evidence=[],painSignals=[],fmap=Object.fromEntries(schema.friction_pain_map.map(x=>[x.Friction_Type_ID,x.Pain_ID]));
