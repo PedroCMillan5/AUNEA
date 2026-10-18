@@ -278,7 +278,7 @@ class RiskEngine:
             )
         # Missing risk-owned control facts cannot justify any assessed residual risk.
         incomplete=[str(i+1) for i,r in enumerate(ctx.engagement.risks)
-                    if r.reversible is None or r.controls_present is None]
+                    if any(getattr(r,key) is None for key in ("reversible","controls_present","sensitive_or_high_impact","material_financial_or_compliance","critical_trigger"))]
         if incomplete:
             return RiskResult(inherent_level="UNKNOWN",residual_level="UNKNOWN",status="INPUT_GAP",
                 rationale="Falta reversibilidad o existencia de controles declarada en riesgos: "+", ".join(incomplete)+".",
