@@ -65,7 +65,8 @@ class EconomicInput(BaseModel):
     direct_loss_eur_annual: float | None = None
     current_tool_cost_eur_annual: float | None = None
     realized_cash_saving_eur_annual: float | None = None
-    evidence_type: str = "CLIENT_DECLARED"
+    # Evidence provenance must come from the capture owner, never a silent fallback.
+    evidence_type: str | None = None
     deduplication_key: str | None = None
 
 class RiskInput(BaseModel):
