@@ -263,4 +263,7 @@ class DiagnosticOutput(BaseModel):
     recommendation: Recommendation
     quote: Quote
     optimal_scenario: ScenarioResult
+    # Proyección operativa explicativa del AS-IS, distinta de EconomicResult/ahorros.
+    # Se produce únicamente desde los ProcessSteps ya capturados en el snapshot de entrada.
+    process_time_projection: dict[str, Any] | None = None
 # [AUNEA-BE-MODEL-CORE-010] END
