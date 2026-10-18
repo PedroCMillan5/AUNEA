@@ -1310,7 +1310,7 @@ body.shell-session .topbar-left{display:none}
 @media(max-width:900px){.pg05-inline-duplicate .duplicate-entry-fields{grid-template-columns:1fr}}
 /* [AUNEA-FE-PG05-DF051-INLINE-103] END */
 
-/* [AUNEA-FE-PG05-SOURCE-SELECTION-104] START */
+/* [AUNEA-FE-PG05-SOURCE-SELECTION-STYLE-114] START */
 .pg05-source-step{border-top:1px solid var(--line);padding:12px 0;display:grid;gap:10px}
 .pg05-source-step-title{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .pg05-source-options{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px 12px}
@@ -1319,7 +1319,7 @@ body.shell-session .topbar-left{display:none}
 .pg05-source-choice input{flex-shrink:0;margin-top:3px}
 .pg05-source-choice span{overflow-wrap:anywhere}
 @media(max-width:700px){.pg05-source-step-title{flex-direction:column;align-items:flex-start}.pg05-source-options{grid-template-columns:1fr}}
-/* [AUNEA-FE-PG05-SOURCE-SELECTION-104] END */
+/* [AUNEA-FE-PG05-SOURCE-SELECTION-STYLE-114] END */
 
 /* PG05: the expand/collapse options control sizes to its wording. */
 .pg05-source-review .contextual-show-all{display:inline-flex;width:max-content;max-width:100%;justify-self:start;align-self:flex-start;flex:0 0 auto;white-space:normal;text-align:center}
