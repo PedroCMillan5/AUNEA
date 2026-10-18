@@ -39,10 +39,11 @@ test('all downstream diagnostic consumers use the current snapshot output',()=>{
 });
 
 test('Diagnóstico copy is conservative and keeps waiting separate',()=>{
-  assert.match(results,/Impacto activo cuantificado/);
-  assert.match(results,/No representa por sí sola la duración total anual del proceso/);
-  assert.match(results,/Espera anual/);
-  assert.match(results,/No se monetiza como trabajo/);
+  assert.match(results,/Trabajo activo del proceso/);
+  assert.match(results,/EconomicInput/);
+  assert.match(results,/Exposición a espera/);
+  assert.match(results,/no son horas laborales/);
+  assert.match(results,/No se monetiza como trabajo|no se monetiza como trabajo/);
   assert.doesNotMatch(results,/Revisado: continuar a TO-BE/);
   assert.match(results,/Continuar al diseño TO-BE/);
 });
