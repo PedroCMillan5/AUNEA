@@ -218,7 +218,27 @@ class InputCoverageEngine:
             # DIAG_PAIN_QUESTION sources are represented by the confirmed friction/pain signal path.
             if any(str(s).startswith("DIAG_PAIN_QUESTION:") for s in row.get("Source_Fields",[])) and (e.pain_signals or e.pains):
                 present_sources.append("PAIN_SIGNAL")
-            present=bool(present_sources) or (row.get("Input_ID")=="IN-R-01" and bool(e.pain_signals or e.pains))
+            present=bool(present_sources)
+            # IN-R-01 is 'confirmed_pains'. A signal or INDICATED observation
+            # cannot replace confirmation. Reuse the PainEngine signal semantics.
+            # SOURCE: MAP_QUESTION_ENGINE_INPUT IN-R-01; DEC-050/065.
+            if row.get("Input_ID")=="IN-R-01":
+                confirmed_observation=any(
+                    str(getattr(p.state,"value",p.state))=="CONFIRMED" for p in e.pains
+                )
+                confirmed_signal=any(
+                    s.direct_mechanism_present is True and s.concrete_evidence_present
+                    and not s.exclusion_condition_present for s in e.pain_signals
+                )
+                confirmed_frictions=(
+                    _source_present("DF093",e)
+                    and bool(_frictions(e))
+                    and all(
+                        _present(f.get("friction_type")) and _present(f.get("cause"))
+                        and _present(f.get("affected_steps")) for f in _frictions(e)
+                    )
+                )
+                present=confirmed_observation or confirmed_signal or confirmed_frictions
             present=_critical_sufficiency(str(row.get("Input_ID") or ""),e,present)
             present=_risk_source_complete(str(row.get("Input_ID") or ""),e,present)
             blocking=_blocking(row,applicable,e)
