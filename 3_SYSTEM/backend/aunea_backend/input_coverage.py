@@ -95,15 +95,17 @@ def _source_present(fid: str, e: EngagementInput) -> bool:
     if fid=="DF067":
         return any(str(s.get("step_type") or "")=="ST05" or _present(s.get("decision_criteria")) for s in steps)
     if fid=="DF068":
-        return bool(e.risks) and any(_present(r.description) for r in e.risks)
+        return bool(e.risks) and all(_present(r.description) for r in e.risks)
     if fid=="DF069":
-        return bool(e.risks) and any(_present(r.category) for r in e.risks)
+        return bool(e.risks) and all(_present(r.category) for r in e.risks)
     if fid=="DF070":
-        return bool(e.risks) and any(r.likelihood_1_5 is not None for r in e.risks)
+        return bool(e.risks) and all(r.likelihood_1_5 is not None for r in e.risks)
     if fid=="DF071":
-        return bool(e.risks) and any(r.impact_1_5 is not None for r in e.risks)
+        return bool(e.risks) and all(r.impact_1_5 is not None for r in e.risks)
     if fid=="DF072":
-        return bool(e.risks) and any(r.controls_present is not None for r in e.risks)
+        return bool(e.risks) and all(r.controls_present is not None for r in e.risks)
+    if fid=="DF074":
+        return bool(e.risks) and all(r.reversible is not None for r in e.risks)
     if fid=="DF076":
         return any(x.capacity_cost_rate_eur_hour is not None for x in e.economics)
     if fid=="DF078":
@@ -179,6 +181,21 @@ def _critical_sufficiency(input_id: str, e: EngagementInput, generic_present: bo
     return generic_present
 # [AUNEA-BE-COVERAGE-SUFFICIENCY-016] END
 
+# [AUNEA-BE-RISK-COVERAGE-017] START — Complete material risk facts across each record.
+# SOURCE: Diagnostic Master DF068–DF074; DEC-072; RiskInput canonical owner.
+def _risk_source_complete(input_id: str, e: EngagementInput, generic_present: bool) -> bool:
+    risks=e.risks
+    if input_id=="IN-K-02":
+        return bool(risks) and all(_present(r.description) and _present(r.category) for r in risks)
+    if input_id=="IN-K-03":
+        return bool(risks) and all(r.likelihood_1_5 is not None and r.impact_1_5 is not None for r in risks)
+    if input_id=="IN-K-04":
+        return bool(risks) and all(r.controls_present is not None for r in risks)
+    if input_id=="IN-K-06":
+        return bool(risks) and all(r.reversible is not None for r in risks)
+    return generic_present
+# [AUNEA-BE-RISK-COVERAGE-017] END
+
 def _blocking(row: dict[str, Any], applicable: bool | None, e: EngagementInput) -> bool:
     if applicable is not True:
         return False
@@ -203,6 +220,7 @@ class InputCoverageEngine:
                 present_sources.append("PAIN_SIGNAL")
             present=bool(present_sources) or (row.get("Input_ID")=="IN-R-01" and bool(e.pain_signals or e.pains))
             present=_critical_sufficiency(str(row.get("Input_ID") or ""),e,present)
+            present=_risk_source_complete(str(row.get("Input_ID") or ""),e,present)
             blocking=_blocking(row,applicable,e)
             if applicable is False:
                 status="NOT_APPLICABLE"
