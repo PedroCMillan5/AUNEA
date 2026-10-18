@@ -68,7 +68,7 @@ def _fmt_eur(value: float | None) -> str:
 def _fmt_hours(value: float | None) -> str:
     if value is None:
         return "No calculado"
-    return f"{value:,.1f} h".replace(",", ".")
+    return f"{value:,.1f}".replace(",", "_").replace(".", ",").replace("_", ".") + " h"
 
 
 def _lookup_name(table_name: str, id_field: str, raw_id: str | None, name_fields: tuple[str, ...]) -> str:
