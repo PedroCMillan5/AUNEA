@@ -1250,25 +1250,33 @@ function impactLayerReviewSummary(e,integrity=[]){
 function consultantLayerPage(title,intro,body,layer,stageId,{questionsFirst=false}={}){
   const e=currentEng();if(!e)return pageTop(title,'Abre primero un estudio.');
   const integrity=typeof processLayerIntegrityIssues==='function'?processLayerIntegrityIssues(e,layer):[],done=!!processLayerState(e)[layer]&&!integrity.length,tabs={map:'Mapa AS-IS',frictions:'Fricciones',risks:'Riesgos',impact:'Impacto'};
+  // [AUNEA-FE-RISKS-RECONCILE-111] START — Check completion from risk owner.
   const incompleteRisks=layer==='risks'?(e.risks||[]).filter(r=>typeof riskIncompleteFields==='function'&&riskIncompleteFields(r).length).length:0;
   const reviewCopy=integrity.length?(layer==='risks'
     ?'<div class="field-help">'+(incompleteRisks?('Quedan '+incompleteRisks+' riesgo'+(incompleteRisks===1?'':'s')+' por completar. Revisa los campos pendientes en '+(incompleteRisks===1?'su ficha':'sus fichas')+' antes de confirmar.'):'Quedan datos complementarios de la etapa por revisar antes de confirmar.')+'</div>'
     :'<div class="flow-confirm-issues">'+integrity.map(x=>'<span>'+esc(x.message)+'</span>').join('')+'</div>')
     :'<div class="field-help">'+(done?'La capa está validada.':'Puedes guardar y continuar sin confirmar todavía.')+'</div>';
+  // [AUNEA-FE-RISKS-RECONCILE-111] END
   const disabled=integrity.length?' disabled aria-disabled="true" title="Completa los elementos pendientes antes de confirmar"':'';
+  // [AUNEA-FE-ASIS-LAYER-PROGRESSION-108] START — Next layer requires current confirmation.
   const next={frictions:{page:'riesgos',label:'Continuar a Riesgos →'},risks:{page:'impacto',label:'Continuar a Impacto →'}}[layer];
   const nextButton=next?'<button type="button" class="btn btn-primary" data-page="'+next.page+'"'+(done?'':' disabled aria-disabled="true" title="Confirma '+tabs[layer]+' antes de avanzar"')+'>'+next.label+'</button>':'';
+  // [AUNEA-FE-ASIS-LAYER-PROGRESSION-108] END
   const confirm='<div class="flow-confirm '+(integrity.length?'flow-confirm-needs-review':'')+'"><div><b>'+(done?'Revisión confirmada':integrity.length?'Revisión necesaria':'Revisión pendiente')+'</b>'+reviewCopy+'</div><div class="row-actions"><button type="button" class="btn '+(done?'btn-outline':'btn-primary')+'" data-confirm-process-layer="'+layer+'"'+(done&&layer==='risks'?' data-undo-risk-layer="1"':'')+disabled+'>'+(done&&layer==='risks'?'Deshacer confirmación':done?'Volver a confirmar':'Confirmar '+tabs[layer])+'</button>'+nextButton+'</div></div>';
+  // [AUNEA-FE-RISKS-SOURCE-110] START — Derived approval and decision context only.
   const riskSources=layer==='risks'?activeSteps(e):[];
   const approvalSources=riskSources.filter(step=>step.step_type==='ST05'||normalizeArray(step.decision_criteria).length);
   // Context is already shown in the relevant derivative fields and risk cards.
   // Avoid a second, contradictory summary of the same AS-IS approvals.
   const riskSuggestions='';
+  // [AUNEA-FE-RISKS-SOURCE-110] END
+  // [AUNEA-FE-RISKS-RECONCILE-112] START — Incomplete derived sources trigger a notice.
   const sourceGaps=layer==='risks'&&typeof riskDerivedSourceGaps==='function'
     ?[...riskDerivedSourceGaps('DF066',e),...riskDerivedSourceGaps('DF067',e)]:[];
   const sensitivePending=layer==='risks'&&!done&&!normalizeArray(e.answers?.DF073).length;
   const gapsNotice=(sourceGaps.length?'<div class="notice warn"><b>Información incompleta en el mapa</b><p>'+sourceGaps.map(esc).join(' · ')+'</p><small>Completa esos datos en el paso original. Esta página no crea una segunda captura.</small></div>':'')
     +(sensitivePending?'<div class="field-help">Datos sensibles: no hay declaración registrada. Selecciona los tipos acreditados o confirma «Ninguno» cuando corresponda; no se deduce del formato de los documentos.</div>':'');
+  // [AUNEA-FE-RISKS-RECONCILE-112] END
   const questions=stageId?((layer==='risks'&&done)
     ?section('Datos complementarios de la etapa','Valores reutilizados de la versión confirmada. Deshaz la confirmación para editar.',
       '<div class="pg05-locked-risk-data">'+(schema?.fields||[]).filter(f=>f.Stage_ID==='S06'&&typeof questionVisible==='function'&&questionVisible(f,e)&&!['RT_RISK','RT_PROCESS_STEP'].includes(String(f.Write_Target||'').split('.')[0])&&!['CAPTURE_IN_RISK','DERIVED'].includes(String(f.Ask_Mode||''))).map(f=>{
@@ -1286,7 +1294,9 @@ function consultantLayerPage(title,intro,body,layer,stageId,{questionsFirst=fals
 // DEC-050/065: render live owner values; changing facts must go back to the owner.
 // [AUNEA-FE-PG05-CONSULTANT-REVIEW-081] START — One ProcessStep owner, one review surface.
 let __auneaPg05ExpandedStepId='';
+// [AUNEA-FE-PG05-REVIEW-PERSIST-099] START — Retain UI expansion state across renders.
 let __auneaPg05OpenFinding=''; // UI only: retain the expanded owner while capture triggers rerender.
+// [AUNEA-FE-PG05-REVIEW-PERSIST-099] END
 function consultantStepsReviewPage(e){
   const confirmations=processLayerState(e),mapConfirmed=!!confirmations.map;
   const steps=activeSteps(e),frictions=activeFrictions(e);
@@ -1439,7 +1449,9 @@ function consultantStepsReviewPage(e){
     const currentSourceValues=selectionStored&&JSON.stringify(selectionStored.base)===JSON.stringify(initialSourceValues)
       ?selectionStored.values:initialSourceValues;
     const selectedGlobal=new Set(normalizeArray(currentSourceValues).map(String));
+    // [AUNEA-FE-PG05-CANONICAL-CHOICES-106] START — Same governed option set.
     const globalChoices=sourceSet?fieldOptions(sourceSet).filter(o=>!sourceAllowed||sourceAllowed.has(String(o.value))):[];
+    // [AUNEA-FE-PG05-CANONICAL-CHOICES-106] END
     const sourceEditor=derived&&hasReuse&&kind!=='confirmed'&&sourceSet
       ?'<div class="pg05-source-review"><b>Opciones recuperadas del mapa</b><small>Las opciones de la última revisión aparecen marcadas; puedes modificar la selección global.</small>'
        +selectedHtml('pg05_review_'+fid,globalChoices,[...selectedGlobal],{wrapped:true,preferredValues:initialSourceValues})
@@ -1452,12 +1464,14 @@ function consultantStepsReviewPage(e){
     // [AUNEA-FE-PG05-GLOBAL-REVIEW-105] END
     // A candidate is not an accepted fact. Open the canonical structured owner
     // explicitly instead of presenting a misleading one-click confirmation.
+    // [AUNEA-FE-PG05-UNIFIED-CONFIRM-107] START — Shared confirm / undo semantics.
     const uniformFields=['DF048','DF052','DF053','DF054','DF055'];
     const uniform=fid!=='DF051'&&uniformFields.includes(fid);
     const uniformFingerprint=JSON.stringify(explicit);
     const uniformConfirmed=uniform&&!!e.answerDetails?.[fid+'__finding_confirmation']&&e.answerDetails[fid+'__finding_confirmation'].fingerprint===uniformFingerprint;
     const uniformNoReview=uniform&&!!e.answerDetails?.[fid+'__no_review_needed'];
     const uniformLocked=uniform&&(uniformConfirmed||uniformNoReview);
+    // [AUNEA-FE-PG05-UNIFIED-CONFIRM-107] END
     if(uniform){
       if(uniformNoReview){status='Sin información que validar';kind='confirmed';}
       else if(uniformConfirmed){status='Confirmado';kind='confirmed';}
@@ -1479,8 +1493,10 @@ function consultantStepsReviewPage(e){
         ?'<button type="button" class="btn btn-small btn-outline" data-pg05-unlock="'+fid+'">Deshacer confirmación</button>'
         :'<button type="button" class="btn btn-small btn-primary" data-pg05-confirm-finding="'+fid+'"'+(!hasExplicit?' disabled':'')+'>Confirmar selección</button>'
       :'';
+    // [AUNEA-FE-PG05-CANDIDATE-096] START — Open canonical capture for a candidate.
     const findingOpenAction=fid!=='DF051'&&!uniform&&!quickAction&&kind==='review'&&!hasExplicit
       ?'<button type="button" class="btn btn-small btn-primary" data-open-pg05-finding="'+fid+'">Validar hallazgo</button>':'';
+    // [AUNEA-FE-PG05-CANDIDATE-096] END
     const df051Fingerprint= fid==='DF051'?JSON.stringify({
       steps:steps.map(x=>[x.id,x.status,x.inputs,x.outputs,x.manual_actions]),
       frictions:frictions.map(x=>[x.id,x.status,x.friction_type,x.affected_steps,x.observable_signal]),
@@ -1555,7 +1571,9 @@ function consultantFrictionsPage(){
 function consultantRisksPage(){
   const e=currentEng();if(!e)return pageTop('Riesgos','Abre primero un estudio.');
   const risks=(e.risks||[]).map((r,i)=>({r,i})).filter(x=>x.r.status!=='SUPERSEDED');
+  // [AUNEA-FE-RISKS-CONFIRM-109] START — Risk cards readonly only after integrity-confirmed signoff.
   const riskConfirmed=!!processLayerState(e).risks&&!(typeof processLayerIntegrityIssues==='function'&&processLayerIntegrityIssues(e,'risks').length);
+  // [AUNEA-FE-RISKS-CONFIRM-109] END
   const steps=activeSteps(e),byStep=new Map(steps.map((step,i)=>[String(step.id),String(i+1)+'. '+String(step.step_name||'Paso')]));
   const frictions=activeFrictions(e);
   const approvalCount=steps.filter(x=>x.step_type==='ST05'||normalizeArray(x.decision_criteria).length).length;
@@ -1750,6 +1768,7 @@ if(typeof document!=='undefined'&&!document.__auneaPg05FindingActionsBound){
       delete d[fid+'__finding_confirmation'];delete d[fid+'__no_review_needed'];
       e.updatedAt=now();markDirty('Deshacer confirmación '+fid);render();return;
     }
+    // [AUNEA-FE-PG05-REVIEW-ACTIONS-101] START — Versioned finding confirmation.
     const review=ev.target?.closest?.('[data-pg05-confirm-finding]');
     if(review){
       ev.preventDefault();
@@ -1760,6 +1779,7 @@ if(typeof document!=='undefined'&&!document.__auneaPg05FindingActionsBound){
       else {details[key]={fingerprint,confirmedAt:now()};delete details[fid+'__no_review_needed'];}
       e.updatedAt=now();markDirty('Confirmación revisada');render();return;
     }
+    // [AUNEA-FE-PG05-REVIEW-ACTIONS-101] END
     const noReview=ev.target?.closest?.('[data-pg05-no-review]');
     if(noReview){
       ev.preventDefault();
