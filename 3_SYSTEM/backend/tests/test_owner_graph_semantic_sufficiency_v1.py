@@ -93,3 +93,16 @@ def test_invalid_exception_destination_does_not_count_as_complete():
     data=graph()
     data['questionnaire_answers']['_process_steps'][1]['exception_path']['destination_step']='S-NONEXISTENT'
     assert row(data,'IN-P-03').status=='GAP'
+
+
+def test_economic_evidence_types_are_governed():
+    from pydantic import ValidationError
+    from aunea_backend.models import EconomicInput
+    for v in ('MEASURED','CLIENT_DECLARED','AUNEA_ESTIMATE','SPECIFIC_BENCHMARK','HYPOTHESIS'):
+        assert EconomicInput(driver_id='ED02',evidence_type=v).evidence_type == v
+    for v in ('UNRECOGNIZED','',123):
+        try:
+            EconomicInput(driver_id='ED02',evidence_type=v)
+        except ValidationError:
+            continue
+        raise AssertionError('Non-canonical economic evidence accepted')
