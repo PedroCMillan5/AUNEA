@@ -22,7 +22,7 @@ def test_cors_allows_local_and_codespaces_frontend_origins():
 
 def test_risk_step_ids_round_trip_is_technical_trace_only():
     from aunea_backend.models import RiskInput, EngagementInput
-    risk=RiskInput(category='RC05', likelihood_1_5=3, impact_1_5=4, step_ids=['ASIS-S04','ASIS-S05'], reversible=True, controls_present=True, description="Traceable risk")
+    risk=RiskInput(category='RC05', likelihood_1_5=3, impact_1_5=4, step_ids=['ASIS-S04','ASIS-S05'], reversible=True, controls_present=True,sensitive_or_high_impact=False,material_financial_or_compliance=False,critical_trigger=False, description="Traceable risk")
     payload=EngagementInput(engagement_id='TRACE-1', process_instance_id='PROC-TRACE-1', process_name='Factura', risks=[risk])
     out=EngagementInput.model_validate(payload.model_dump())
     assert out.risks[0].step_ids==['ASIS-S04','ASIS-S05']
