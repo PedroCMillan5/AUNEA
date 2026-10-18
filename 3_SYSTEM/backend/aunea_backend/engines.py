@@ -276,6 +276,13 @@ class RiskEngine:
                 rationale="No risk assessment supplied." + (f" Missing canonical inputs: {', '.join(missing)}." if missing else ""),
                 input_ids_used=used,
             )
+        # Missing risk-owned control facts cannot justify any assessed residual risk.
+        incomplete=[str(i+1) for i,r in enumerate(ctx.engagement.risks)
+                    if r.reversible is None or r.controls_present is None]
+        if incomplete:
+            return RiskResult(inherent_level="UNKNOWN",residual_level="UNKNOWN",status="INPUT_GAP",
+                rationale="Falta reversibilidad o existencia de controles declarada en riesgos: "+", ".join(incomplete)+".",
+                input_ids_used=used)
         levels = [self._level(r) for r in ctx.engagement.risks]
         rank = {"UNKNOWN":-1,"R0":0,"R1":1,"R2":2,"R3":3}
         inherent = max(levels, key=lambda x: rank[x])
