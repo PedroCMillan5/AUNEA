@@ -66,7 +66,7 @@ class EconomicInput(BaseModel):
     current_tool_cost_eur_annual: float | None = None
     realized_cash_saving_eur_annual: float | None = None
     # Evidence provenance must come from the capture owner, never a silent fallback.
-    evidence_type: str | None = None
+    evidence_type: Literal["MEASURED","CLIENT_DECLARED","AUNEA_ESTIMATE","SPECIFIC_BENCHMARK","HYPOTHESIS"] | None = None
     deduplication_key: str | None = None
 
 class RiskInput(BaseModel):
