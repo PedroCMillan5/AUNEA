@@ -196,6 +196,68 @@ function processParticipantsScopeReview(e){
   return onlyDeclared.length||onlyMapped.length?{onlyDeclared,onlyMapped}:null;
 }
 // [AUNEA-FE-ASIS-PARTICIPANTS-078] END
+// [AUNEA-FE-ASIS-SCOPE-079] START — Evidence-backed scope ↔ map review
+// PURPOSE: flag traceable inconsistencies before AS-IS signoff without pretending that
+// lexical similarity proves a business process is (in)correct.
+// SOURCE: Diagnostic Master DF011/014/015/031; DEC-050/065/073; PROJECT_RULES.
+// INPUTS: confirmed scope text, legacy process label, active step labels and routing.
+// OUTPUTS: review signals + a version-bound explicit review marker, never new facts.
+// SIDE_EFFECTS: none in review function; marker written only after user confirmation.
+// CHANGE_RISK: HIGH. THIS IS REVIEW GRADE ONLY, NOT A DIAGNOSTIC ACCURACY CLAIM.
+const AUNEA_SCOPE_REVIEW_STOPWORDS=new Set([
+  'gestion','proceso','procesos','servicio','servicios','soporte','operacion','operaciones',
+  'recepcion','registro','registrar','aprobacion','aprobar','validacion','validar',
+  'tramitacion','seguimiento','clasificacion','control','revision','cierre',
+  'inicio','final','alta','datos','tareas','responsable','responsables','empresa','empresas',
+  'cliente','clientes','usuario','usuarios','realizar','completar','mediante',
+  'documento','documentos','fase','desde','hasta','tras','para','con','del','las','los',
+  'email','correo','recibido','recibida','recibir','enviado','enviada'
+]);
+function scopeReviewTokens(value){
+  const txt=String(value??'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  return [...new Set((txt.match(/[a-z]{4,}/g)||[]).map(word=>{
+    if(word.endsWith('es')&&word.length>=8)return word.slice(0,-2);
+    if(word.endsWith('s')&&word.length>=6)return word.slice(0,-1);
+    return word;
+  }).filter(word=>word.length>=4&&!AUNEA_SCOPE_REVIEW_STOPWORDS.has(word)))];
+}
+function processScopeReviewFingerprint(e){
+  const active=(e?.processSteps||[]).filter(s=>s&&s.status!=='SUPERSEDED');
+  return JSON.stringify({declared:e?.answers?.DF011||'',legacy:e?.processName||'',
+    start:e?.answers?.DF014||'',end:e?.answers?.DF015||'',
+    steps:active.map(s=>[s.id,s.step_name,s.step_type,s.normal_next_step,s.exception_path?.destination_step||''])});
+}
+function processScopeReviewSignals(e){
+  if(!e)return [];
+  const declared=String(e.answers?.DF011||'').trim(),legacy=String(e.processName||'').trim();
+  const scope=[declared,String(e.answers?.DF014||''),String(e.answers?.DF015||'')];
+  const steps=(e.processSteps||[]).filter(s=>s&&s.status!=='SUPERSEDED');
+  const signals=[];
+  if(declared&&legacy&&declared.toLocaleLowerCase('es')!==legacy.toLocaleLowerCase('es')){
+    signals.push({code:'SCOPE_NAME_SOURCE_DISAGREEMENT',stage:'S02',
+      message:'El nombre del proceso de Alcance (DF011) difiere del nombre histórico del estudio. Comprueba qué denominación corresponde a los pasos reales; ninguna se sobrescribirá automáticamente.',
+      evidence:{DF011:declared,legacy_processName:legacy}});
+  }
+  // Only signal missing continuity when a non-generic term independently appears
+  // in at least TWO scope fields but nowhere in the named process steps.
+  // This is a prompt for human review: synonyms and cross-domain workflows exist.
+  if(steps.length>=2){
+    const occurrences=new Map();
+    scope.forEach((text,i)=>scopeReviewTokens(text).forEach(word=>{
+      const at=occurrences.get(word)||new Set();at.add(i);occurrences.set(word,at);
+    }));
+    const mapped=new Set(steps.flatMap(s=>scopeReviewTokens(s.step_name)));
+    const absent=[...occurrences].filter(([w,locations])=>locations.size>=2&&!mapped.has(w)).map(([w])=>w);
+    if(absent.length)signals.push({code:'SCOPE_MAP_TOPIC_NOT_VISIBLE',stage:'S04',
+      message:'El alcance repite '+absent.map(x=>'«'+x+'»').join(', ')+' pero esos términos no aparecen en los nombres de los pasos. Comprueba si el mapa corresponde al mismo proceso. Puede tratarse de sinónimos; no se ha inferido ningún hecho.',
+      evidence:{repeated_scope_terms:absent,DF011:declared,DF014:e.answers?.DF014||'',DF015:e.answers?.DF015||'',step_names:steps.map(s=>s.step_name)}});
+  }
+  return signals;
+}
+function scopeReviewAcknowledged(e){
+  return e?.answerDetails?.DF011__scope_map_review?.fingerprint===processScopeReviewFingerprint(e);
+}
+// [AUNEA-FE-ASIS-SCOPE-079] END
 function preCloseConsistencyReview(e,completion){
   const items=[],seen=new Set();
   const add=(severity,code,message,stage='',navigationTarget='')=>{
@@ -251,6 +313,15 @@ function preCloseConsistencyReview(e,completion){
     add('REVIEW','DF017_PARTICIPANT_SCOPE','DF017 · Revisar equipos participantes. '+sides+' Confirma cuáles son participantes contextuales y cuáles ejecutan pasos; corrige el dato en su propietario. No se ha modificado ningún valor automáticamente.','S02');
   }
 
+  // [AUNEA-FE-ASIS-SCOPE-079] Mandatory explicit review of scope-map warning.
+  const scopeSignals=processScopeReviewSignals(e);
+  if(scopeSignals.length){
+    const ack=scopeReviewAcknowledged(e);
+    scopeSignals.forEach(signal=>add(ack?'REVIEW':'BLOCKER',signal.code,
+      (ack?'Revisión de alcance confirmada, permanece trazada: ':'Pendiente de revisión explícita de alcance: ')+signal.message,
+      signal.stage||'S04'));
+  }
+
   if(e._sessionTimeProjection&&typeof economicTimeRequest==='function'){
     const currentKey=JSON.stringify(economicTimeRequest(e));
     if(e._sessionTimeProjection.requestKey&&e._sessionTimeProjection.requestKey!==currentKey)
@@ -290,6 +361,34 @@ function confirmProcessLayer(tab){
     if((!start||!finish)&&!hasActive)return toast('Define los límites inicial y final o añade al menos un paso antes de confirmar el mapa.');
   }
   const integrity=processLayerIntegrityIssues(e,key);if(integrity.length)return toast('No se puede confirmar: '+integrity[0].message),false;
+  // [AUNEA-FE-ASIS-SCOPE-079] Review before map sign-off, version-bound and auditable.
+  const oldScopeReview=e.answerDetails?.DF011__scope_map_review;
+  const oldScopeAudit=typeof state!=='undefined'&&Array.isArray(state.audit)?[...state.audit]:null;
+  let scopeReviewWasChanged=false;
+  if(key==='map'){
+    const signals=processScopeReviewSignals(e);
+    if(signals.length){
+      const steps=activeSteps(e);
+      const message=[
+        'REVISIÓN DEL ALCANCE ANTES DE CONFIRMAR EL MAPA',
+        'Proceso declarado: '+String(e.answers?.DF011||'—'),
+        'Comienza: '+String(e.answers?.DF014||'—'),
+        'Termina: '+String(e.answers?.DF015||'—'),
+        'Primer paso: '+String(steps[0]?.step_name||'—'),
+        'Último paso: '+String(steps[steps.length-1]?.step_name||'—'),
+        '',...signals.map(x=>'ALERTA: '+x.message),
+        '', '¿Has comprobado expresamente que el alcance y TODOS los pasos describen el mismo proceso?',
+        'Cancelar: vuelve a Alcance o al Mapa y corrige la información.',
+        'Aceptar: confirma la revisión humana y registra la versión exacta revisada.'
+      ].join('\n');
+      if(typeof confirm!=='function'||!confirm(message))return false;
+      const details=e.answerDetails||(e.answerDetails={});
+      details.DF011__scope_map_review={fingerprint:processScopeReviewFingerprint(e),
+        at:typeof now==='function'?now():null,signals:signals.map(x=>x.code)};
+      scopeReviewWasChanged=true;
+      if(typeof audit==='function')audit('Revisión explícita de coherencia Alcance/Mapa: '+signals.map(x=>x.code).join(', '));
+    }
+  }
   const x=processLayerConfirmations(e);
   const before={
     layers:{...x},confirmedAsIs:e.confirmedAsIs,df093:e.answers?.DF093,
@@ -309,6 +408,11 @@ function confirmProcessLayer(tab){
     e.confirmedAsIs=before.confirmedAsIs;
     if(before.df093===undefined)delete e.answers.DF093;else e.answers.DF093=before.df093;
     e.asIsConfirmedAt=before.asIsConfirmedAt;e.confirmedSnapshot=before.confirmedSnapshot;
+    if(scopeReviewWasChanged){
+      if(oldScopeReview===undefined)delete e.answerDetails.DF011__scope_map_review;
+      else e.answerDetails.DF011__scope_map_review=oldScopeReview;
+      if(oldScopeAudit)state.audit=oldScopeAudit;
+    }
     state.dirty=before.dirty;
     toast('La confirmación no se ha guardado. Revisa la sincronización de la otra pestaña antes de continuar.');
     render();return false;
