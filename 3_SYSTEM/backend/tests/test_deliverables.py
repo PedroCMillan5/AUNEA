@@ -8,7 +8,7 @@ def fixture_engagement():
         engagement_id="ENG-DEL-001", process_instance_id="PROC-001", process_name="Client Intake",
         pains=[PainObservation(pain_id="P03", state=PainState.CONFIRMED, rationale="Duplicate entry observed")],
         economics=[EconomicInput(pain_id="P03", driver_id="ED01", annual_active_hours=120, capacity_cost_rate_eur_hour=30)],
-        risks=[RiskInput(category="operational", likelihood_1_5=2, impact_1_5=2, reversible=True, controls_present=True, description="Observed operational risk")],
+        risks=[RiskInput(category="operational", likelihood_1_5=2, impact_1_5=2, reversible=True, controls_present=True,sensitive_or_high_impact=False,material_financial_or_compliance=False,critical_trigger=False, description="Observed operational risk")],
         commercial_scope=CommercialScope(scope_bounded=True, integrations_known=True, tool_tco_current=True)
     )
 
