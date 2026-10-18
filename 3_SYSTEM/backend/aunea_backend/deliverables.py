@@ -68,6 +68,16 @@ class DeliverablesEngine:
         if scenario.quote.status == QuoteStatus.BLOCKED: issues.append("La cotización seleccionada está bloqueada.")
         if not diagnostic.pain_results: issues.append("No hay hallazgos suficientes para emitir un informe completo.")
         if issues: return "BLOCKED_SCENARIO_NOT_SELECTABLE", issues
+        # [AUNEA-BE-PG15-PUBLICATION-GATE-011] START — Un cálculo técnico no autoriza su publicación.
+        # SOURCE: Simulator CANONICAL PG10–PG15; Architecture Contract: APPROVED_FOR_CLIENT/PUBLISHED.
+        # Do not return READY if capture sources were never evaluated or have material gaps.
+        # The full approval/snapshot gate is owned by the app and not represented by DiagnosticOutput.
+        if diagnostic.input_coverage.status != "COMPLETE":
+            return "DRAFT", [
+                "La cobertura de datos del diagnóstico no está completamente validada ("+
+                str(diagnostic.input_coverage.status)+"). Revisar fuentes y confirmar AS-IS antes de autorizar la entrega."
+            ]
+        # [AUNEA-BE-PG15-PUBLICATION-GATE-011] END
         if scenario.quote.status in {QuoteStatus.PROVISIONAL, QuoteStatus.MANUAL_REVIEW}:
             return "DRAFT", [f"La cotización está en estado {_quote_status_es(scenario.quote.status)} y requiere revisión antes de emisión final."]
         return "READY", []
