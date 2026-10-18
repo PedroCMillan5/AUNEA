@@ -154,7 +154,7 @@ function addRisk(preselectedSteps=[],editIndex=null,candidate=null){
       if(controls==='0'&&controlIds.length)return toast('Si no existen controles actuales, desmarca los controles seleccionados.');
       if(controlIds.includes('OTHER')&&!otherDetail)return toast('Describe el control indicado como «Otro».');
       const current_control=controls==='1'?controlIds.map(x=>x==='OTHER'?'OTHER: '+otherDetail:x):[];
-      const draft={step_ids,category:cat,description,likelihood_1_5:like,
+      const draft={id:existing?.id||id('RISK'),step_ids,category:cat,description,likelihood_1_5:like,
         impact_1_5:impact,
         reversible:!['HARD','IRREVERSIBLE'].includes(rv),reversibility:rv,
         controls_present:controls==='1',current_control,
