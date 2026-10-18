@@ -173,7 +173,9 @@ def _critical_sufficiency(input_id: str, e: EngagementInput, generic_present: bo
         steps=_steps(e)
         if not steps or not all(_present(s.get("step_name")) and _present(s.get("step_type")) and _present(s.get("actor")) for s in steps):
             return False
-        return len(steps)==1 or _source_present("DF042",e)
+        # ProcessStep.normal_next_step is REQUIRED for every active step
+        # (next step or terminal reference). One valid edge must not hide another gap.
+        return all(_present(s.get("normal_next_step")) for s in steps)
     if input_id=="IN-E-09":
         return bool(e.economics) and all(_present(x.evidence_type) for x in e.economics)
     if input_id=="IN-R-03":
