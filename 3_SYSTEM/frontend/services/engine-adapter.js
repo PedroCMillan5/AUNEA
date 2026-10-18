@@ -45,7 +45,7 @@ function normalizeRiskInputs(e){
     const likelihood=Number(r.likelihood_1_5),impact=Number(r.impact_1_5);
     if(!r.category)throw new Error('Riesgo incompleto: falta la categoría.');
     if(!Number.isInteger(likelihood)||likelihood<1||likelihood>5||!Number.isInteger(impact)||impact<1||impact>5)throw new Error('Riesgo incompleto: probabilidad e impacto deben estar entre 1 y 5.');
-    return {step_ids:normalizeArray(r.step_ids).filter(Boolean),category:r.category,likelihood_1_5:likelihood,impact_1_5:impact,
+    return {risk_id:r.id||null,step_ids:normalizeArray(r.step_ids).filter(Boolean),category:r.category,likelihood_1_5:likelihood,impact_1_5:impact,
       reversible:requireBool(r.reversible,'reversibilidad'),
       sensitive_or_high_impact:requireBool(r.sensitive_or_high_impact,'sensibilidad'),
       material_financial_or_compliance:requireBool(r.material_financial_or_compliance,'materialidad'),
