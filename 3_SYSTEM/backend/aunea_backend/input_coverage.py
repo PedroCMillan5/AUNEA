@@ -188,7 +188,13 @@ def _risk_source_complete(input_id: str, e: EngagementInput, generic_present: bo
     if input_id=="IN-K-02":
         return bool(risks) and all(_present(r.description) and _present(r.category) for r in risks)
     if input_id=="IN-K-03":
-        return bool(risks) and all(r.likelihood_1_5 is not None and r.impact_1_5 is not None for r in risks)
+        # RiskEngine also needs the three classification flags owned by RiskInput.
+        # In their absence an apparently COMPLETE coverage would still yield UNKNOWN.
+        return bool(risks) and all(
+            r.likelihood_1_5 is not None and r.impact_1_5 is not None
+            and r.sensitive_or_high_impact is not None
+            and r.material_financial_or_compliance is not None
+            and r.critical_trigger is not None for r in risks)
     if input_id=="IN-K-04":
         return bool(risks) and all(r.controls_present is not None for r in risks)
     if input_id=="IN-K-06":
