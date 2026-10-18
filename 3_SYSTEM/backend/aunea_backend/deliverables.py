@@ -211,6 +211,20 @@ Este apéndice es de uso interno y no forma parte de la versión cliente."""
         summary=self._summary(diagnostic,scenario,request,status,issues)
         report=self._report(diagnostic,scenario,request)
         proposal=self._proposal(diagnostic,scenario,request)
+        # [AUNEA-BE-PG15-DRAFT-DISCLOSURE-012] START — Technical output != client approval.
+        # SOURCE: Simulator CANONICAL PG15; Architecture Contract review/publication gates.
+        # DRAFT/BLOCKED files are QA material, never silently presented as approved.
+        if status!="READY":
+            reasons=" ".join(issues) if issues else "Revisión técnica pendiente."
+            warning=("**DOCUMENTO DE TRABAJO — NO AUTORIZADO PARA ENTREGA AL CLIENTE**\n"
+                     +f"Estado del paquete: {status}. {reasons}\n\n")
+        else:
+            warning=("**SALIDA TÉCNICA LISTA — REQUIERE APROBACIÓN EXPRESA DEL CONSULTOR "
+                     "ANTES DE PUBLICAR O ENTREGAR AL CLIENTE**\n\n")
+        summary=warning+summary
+        report=warning+report
+        proposal=warning+proposal
+        # [AUNEA-BE-PG15-DRAFT-DISCLOSURE-012] END
         artifacts=[
             DeliverableArtifact(name="executive_summary.md",media_type="text/markdown",content=summary),
             DeliverableArtifact(name="diagnostic_report.md",media_type="text/markdown",content=report),
