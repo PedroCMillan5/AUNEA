@@ -1277,7 +1277,7 @@ function consultantLayerPage(title,intro,body,layer,stageId,{questionsFirst=fals
         return '<div class="pg05-step-io"><b>'+esc(f.Pregunta_o_etiqueta_ES||f.Field_ID)+'</b><span>'+esc(shown||'No consta')+'</span></div>';
       }).join('')+'</div>')
     :layerCanonicalQuestions(e,stageId)+riskSuggestions):'';
-  const content=layer==='risks'?body+gapsNotice+questions:(questionsFirst?questions+body:body+questions);
+  const content=layer==='risks'?(questionsFirst?questions+body+gapsNotice:body+gapsNotice+questions):(questionsFirst?questions+body:body+questions);
   const layerSummary=layer==='impact'?impactLayerReviewSummary(e,integrity):'';
   return pageTop(title,intro,'<button class="btn btn-outline" data-page="proceso">← Ver mapa AS-IS</button>')+(typeof asisConsoleLockNotice==='function'?asisConsoleLockNotice():'')+content+layerSummary+confirm;
 }
@@ -1444,10 +1444,12 @@ function consultantStepsReviewPage(e){
       ?'<div class="pg05-source-review"><b>Opciones recuperadas del mapa</b><small>Las opciones de la última revisión aparecen marcadas; puedes modificar la selección global.</small>'
        +selectedHtml('pg05_review_'+fid,globalChoices,[...selectedGlobal],{wrapped:true,preferredValues:initialSourceValues})
        +'</div>':'';
-    // [AUNEA-FE-PG05-GLOBAL-REVIEW-105]
+    // [AUNEA-FE-PG05-SOURCE-SELECTION-104] END
+    // [AUNEA-FE-PG05-GLOBAL-REVIEW-105] START — selected values from process owner.
     const derivedAction=derived&&hasReuse?sourceEditor+'<div class="pg05-field-action pg05-field-confirmation">'+(kind==='confirmed'
       ?'<button type="button" class="btn btn-small btn-outline" data-undo-derived="'+fid+'">Deshacer confirmación</button>'
       :'<button type="button" class="btn btn-small btn-primary" data-confirm-derived="'+fid+'">Confirmar valor</button>')+'</div>':'';
+    // [AUNEA-FE-PG05-GLOBAL-REVIEW-105] END
     // A candidate is not an accepted fact. Open the canonical structured owner
     // explicitly instead of presenting a misleading one-click confirmation.
     const uniformFields=['DF048','DF052','DF053','DF054','DF055'];
@@ -1477,7 +1479,7 @@ function consultantStepsReviewPage(e){
         ?'<button type="button" class="btn btn-small btn-outline" data-pg05-unlock="'+fid+'">Deshacer confirmación</button>'
         :'<button type="button" class="btn btn-small btn-primary" data-pg05-confirm-finding="'+fid+'"'+(!hasExplicit?' disabled':'')+'>Confirmar selección</button>'
       :'';
-    const findingOpenAction=!uniform&&fid!=='DF051'&&!quickAction&&kind==='review'&&!hasExplicit
+    const findingOpenAction=fid!=='DF051'&&!uniform&&!quickAction&&kind==='review'&&!hasExplicit
       ?'<button type="button" class="btn btn-small btn-primary" data-open-pg05-finding="'+fid+'">Validar hallazgo</button>':'';
     const df051Fingerprint= fid==='DF051'?JSON.stringify({
       steps:steps.map(x=>[x.id,x.status,x.inputs,x.outputs,x.manual_actions]),
@@ -1582,7 +1584,7 @@ function consultantRisksPage(){
   const content=section('1. Riesgos registrados','Revisa cada riesgo, despliega sus datos y edítalo en su ficha original.',
     summary+'<div class="pg05-step-list">'+(cards||'<div class="pg05-empty">No hay riesgos registrados.</div>')+'</div>',
     riskConfirmed?'': '<button type="button" class="btn btn-outline" id="reviewRiskCandidates">Revisar posibles riesgos</button><button type="button" class="btn btn-primary" id="addRisk" data-add-risk-global>Añadir riesgo</button>');
-  return consultantLayerPage('Riesgos','Revisión de los riesgos vinculados al AS-IS.',content,'risks','S06');
+  return consultantLayerPage('Riesgos','Revisión de los riesgos vinculados al AS-IS.',content,'risks','S06',{questionsFirst:true});
 }
 function consultantImpactPage(){
   const e=currentEng();return consultantLayerPage('Impacto','Consulta los datos existentes y añade sólo los costes o tiempos que falten.',economicBuilder(e),'impact','S07');
