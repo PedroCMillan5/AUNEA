@@ -134,9 +134,9 @@ def _source_present(fid: str, e: EngagementInput) -> bool:
     if fid=="DF093":
         return str(a.get("DF093") or "").upper()=="YES"
     if fid=="DF094":
-        return "_coverage_ack" in a or _present(a.get("DF094"))
+        return a.get("_coverage_ack") is True or _present(a.get("DF094"))
     if fid=="DF095":
-        return "_coverage_ack" in a or _present(a.get("DF095"))
+        return a.get("_coverage_ack") is True or _present(a.get("DF095"))
     return False
 
 def _branch_applicable(branch: str, e: EngagementInput) -> bool | None:
