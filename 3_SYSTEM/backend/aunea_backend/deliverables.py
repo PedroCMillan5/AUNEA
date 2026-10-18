@@ -24,7 +24,7 @@ def _fmt_eur(value):
 
 def _fmt_hours(value):
     if value is None: return "No calculado"
-    return f"{value:,.1f} h".replace(",", ".")
+    return f"{value:,.1f}".replace(",", "_").replace(".", ",").replace("_", ".") + " h"
 
 def _status_value(x: Any) -> str:
     return getattr(x, "value", x) if x is not None else ""
