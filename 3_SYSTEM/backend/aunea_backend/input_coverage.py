@@ -175,7 +175,8 @@ def _critical_sufficiency(input_id: str, e: EngagementInput, generic_present: bo
             return False
         # ProcessStep.normal_next_step is REQUIRED for every active step
         # (next step or terminal reference). One valid edge must not hide another gap.
-        return all(_present(s.get("normal_next_step")) for s in steps)
+        valid_ids={str(s.get("id")) for s in steps if _present(s.get("id"))}
+        return all(str(s.get("normal_next_step") or "") in valid_ids | {"__END__"} for s in steps)
     if input_id=="IN-E-09":
         return bool(e.economics) and all(_present(x.evidence_type) for x in e.economics)
     if input_id=="IN-R-03":
