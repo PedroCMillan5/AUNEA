@@ -26,7 +26,7 @@ def _ev(eid: str = "E1", typ: str = "MEASURED") -> Evidence:
 
 
 def _risk(impact: int = 1, **kw: Any) -> RiskInput:
-    return RiskInput(**{**dict(category="operational", likelihood_1_5=2, impact_1_5=impact, reversible=True, controls_present=True, description="Synthetic UAT operational risk"),**kw})
+    return RiskInput(**{**dict(category="operational", likelihood_1_5=2, impact_1_5=impact, reversible=True, controls_present=True, sensitive_or_high_impact=False, material_financial_or_compliance=False, critical_trigger=False, description="Synthetic UAT operational risk"),**kw})
 
 
 def _value(v: Any) -> Any:
