@@ -75,11 +75,13 @@ class RiskInput(BaseModel):
     category: str
     likelihood_1_5: int = Field(ge=1, le=5)
     impact_1_5: int = Field(ge=1, le=5)
-    reversible: bool = True
+    # Reversibility is a risk-owner declaration, never a silent default.
+    reversible: bool | None = None
     sensitive_or_high_impact: bool = False
     material_financial_or_compliance: bool = False
     critical_trigger: bool = False
-    controls_present: bool = True
+    # Existing controls must be declared by the source; unknown is not YES.
+    controls_present: bool | None = None
     description: str | None = None
 
 class ScenarioAssumption(BaseModel):
