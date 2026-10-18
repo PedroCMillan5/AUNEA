@@ -1,0 +1,229 @@
+{
+  "engagement_id": "QA55-COMPLETE",
+  "process_instance_id": "QA55-P1",
+  "process_name": "Recepción de solicitudes",
+  "questionnaire_answers": {
+    "DF012": "REQUEST",
+    "DF013": "REGISTERED",
+    "DF021": 180,
+    "DF022": "MONTH",
+    "DF027": 14,
+    "DF084": 1000,
+    "DF086": [
+      "REDUCE_REWORK"
+    ],
+    "DF087": [
+      "KEEP_ERP"
+    ],
+    "DF088": [
+      "NO_AUTONOMOUS_PAYMENT"
+    ],
+    "DF090": [
+      "EU_HOSTING"
+    ],
+    "DF091": [
+      "TRAINING"
+    ],
+    "DF092": 8000,
+    "DF093": "YES",
+    "DF096": [
+      "P13"
+    ],
+    "_coverage_ack": true,
+    "_engine_gate_trace": {
+      "IN-R-11": "YES",
+      "IN-R-12": "YES",
+      "IN-R-13": "YES"
+    },
+    "_process_steps": [
+      {
+        "id": "S1",
+        "status": "ACTIVE",
+        "step_name": "Recibir solicitud",
+        "step_type": "ST02",
+        "actor": "Operations",
+        "tool": "Email",
+        "inputs": [
+          "PDF"
+        ],
+        "outputs": [
+          "Case"
+        ],
+        "active_time": 12,
+        "wait_time": 10,
+        "rework_time": 4,
+        "error_rate": 0.15,
+        "decision_criteria": [
+          "Complete"
+        ],
+        "normal_next_step": "S2",
+        "manual_actions": [
+          "REKEY",
+          "SEARCH",
+          "COPY",
+          "CHASE"
+        ],
+        "communication_channels": [
+          "EMAIL"
+        ],
+        "automation_state": "MANUAL",
+        "exception_path": {
+          "type": "OTHER",
+          "destination_step": "S3",
+          "owner": "Operations"
+        }
+      },
+      {
+        "id": "S2",
+        "status": "ACTIVE",
+        "step_name": "Aprobar solicitud",
+        "step_type": "ST05",
+        "actor": "Manager",
+        "tool": "ERP",
+        "inputs": [
+          "Case"
+        ],
+        "outputs": [
+          "Approval"
+        ],
+        "active_time": 4,
+        "wait_time": 30,
+        "rework_time": 0,
+        "error_rate": 0.05,
+        "decision_criteria": [
+          "Approved"
+        ],
+        "normal_next_step": "S3",
+        "manual_actions": [
+          "REPORT"
+        ],
+        "communication_channels": [
+          "ERP"
+        ],
+        "automation_state": "PARTIAL"
+      },
+      {
+        "id": "S3",
+        "status": "ACTIVE",
+        "step_name": "Archivar solicitud",
+        "step_type": "ST02",
+        "actor": "Operations",
+        "tool": "Drive",
+        "inputs": [
+          "Approval"
+        ],
+        "outputs": [
+          "File"
+        ],
+        "active_time": 3,
+        "wait_time": 0,
+        "rework_time": 0,
+        "error_rate": 0,
+        "normal_next_step": "__END__",
+        "manual_actions": [
+          "COPY"
+        ],
+        "communication_channels": [
+          "EMAIL"
+        ],
+        "automation_state": "MANUAL"
+      }
+    ],
+    "_frictions": [
+      {
+        "id": "F1",
+        "status": "ACTIVE",
+        "friction_type": "P13",
+        "derived_pain_id": "P13",
+        "cause": "Cambio de sistema",
+        "affected_steps": [
+          "S1"
+        ],
+        "frequency": 0.3,
+        "severity": 3,
+        "active_time_loss": {
+          "value": 4
+        },
+        "direct_loss": {
+          "value": 5
+        },
+        "non_time_impact": [
+          "QUALITY"
+        ],
+        "workaround": "Revisar manualmente",
+        "time_attribution": {
+          "mode": "INCLUDED",
+          "step_id": "S1"
+        }
+      },
+      {
+        "id": "F4",
+        "status": "ACTIVE",
+        "friction_type": "P20",
+        "derived_pain_id": "P20",
+        "cause": "Cambio de sistema",
+        "affected_steps": [
+          "S1"
+        ],
+        "frequency": 0.3,
+        "severity": 3,
+        "active_time_loss": {
+          "value": 4
+        },
+        "direct_loss": {
+          "value": 5
+        },
+        "non_time_impact": [
+          "QUALITY"
+        ],
+        "workaround": "Revisar manualmente",
+        "time_attribution": {
+          "mode": "INCLUDED",
+          "step_id": "S1"
+        }
+      }
+    ]
+  },
+  "economics": [
+    {
+      "step_ids": [
+        "S1"
+      ],
+      "pain_id": "P13",
+      "driver_id": "ED05",
+      "annual_active_hours": 50,
+      "capacity_cost_rate_eur_hour": 28,
+      "role_or_resource": "Ops",
+      "evidence_type": "CLIENT_DECLARED"
+    },
+    {
+      "step_ids": [
+        "S1"
+      ],
+      "driver_id": "ED08",
+      "direct_loss_eur_annual": 300,
+      "current_tool_cost_eur_annual": 2000,
+      "evidence_type": "CLIENT_DECLARED"
+    }
+  ],
+  "risks": [
+    {
+      "risk_id": "R1",
+      "step_ids": [
+        "S1"
+      ],
+      "category": "operational",
+      "likelihood_1_5": 3,
+      "impact_1_5": 3,
+      "reversible": true,
+      "sensitive_or_high_impact": false,
+      "material_financial_or_compliance": false,
+      "critical_trigger": false,
+      "controls_present": true,
+      "description": "Error por copia manual"
+    }
+  ],
+  "requires_unstructured_ai_assistance": true,
+  "requires_bounded_agent_action": true,
+  "requires_management_visibility": true
+}
