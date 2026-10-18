@@ -23,6 +23,7 @@ from reportlab.platypus import (
 
 from .models import DiagnosticOutput, ScenarioResult
 from .deliverable_models import DeliverableRequest
+from .deliverables import DeliverablesEngine
 from .registry import table as registry_table
 
 CHARCOAL = colors.HexColor("#1E1E1E")
@@ -118,6 +119,18 @@ class PDFExporter:
             title=f"AUNEA — {title_subject}",
         )
         story: list = []
+        # [AUNEA-BE-PG15-PDF-DISCLOSURE-013] START — Same readiness rule as other outputs.
+        # SOURCE: Simulator CANONICAL PG15; no PDF may hide review/publication status.
+        pack_status,pack_issues=DeliverablesEngine()._readiness(diagnostic,scenario)
+        if pack_status=="READY":
+            notice="SALIDA TÉCNICA LISTA — REQUIERE APROBACIÓN EXPRESA DEL CONSULTOR"
+        else:
+            notice="BORRADOR NO AUTORIZADO PARA ENTREGA AL CLIENTE"
+        story.append(Paragraph(_safe(notice),styles["h2"]))
+        story.append(Paragraph(_safe("Estado del paquete: "+pack_status),styles["note"]))
+        if pack_issues:
+            story.append(Paragraph(_safe("Revisión pendiente: "+"; ".join(pack_issues)),styles["note"]))
+        # [AUNEA-BE-PG15-PDF-DISCLOSURE-013] END
         story += self._cover(request, scenario, styles)
         story.append(PageBreak())
         story += self._section_findings(diagnostic, styles)
