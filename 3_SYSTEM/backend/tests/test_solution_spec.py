@@ -30,7 +30,7 @@ def system_engagement():
             "DF090":["Client data must remain in approved systems"],
             "DF098":"Confirm implementation scope — Operations — 14/09/2026",
             "_process_steps":[{
-                "id":"STEP-001","status":"ACTIVE","step_name":"Validate approved request","tool":"Airtable",
+                "id":"STEP-001","status":"ACTIVE","step_name":"Validate approved request","step_type":"ST02","actor":"Operations","normal_next_step":"__END__","tool":"Airtable",
                 "inputs":["Request form","Client details"],"outputs":["Project record","Tasks","Brief"],
                 "decision_criteria":["Request approved"],"exception_path":None,
             }],
