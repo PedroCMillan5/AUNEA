@@ -1476,6 +1476,10 @@ function consultantStepsReviewPage(e){
       if(uniformNoReview){status='Sin información que validar';kind='confirmed';}
       else if(uniformConfirmed){status='Confirmado';kind='confirmed';}
       else{status=hasExplicit?'Pendiente de confirmar':'Pendiente de validar';kind='review';}
+      if(fid==='DF053'&&!uniformLocked&&normalizeArray(reuse).some(id=>!normalizeArray(explicit).map(String).includes(String(id)))){
+        status=hasExplicit?'Datos registrados · nuevos candidatos por revisar':'Candidatos detectados · pendientes de validar';
+        kind='review';
+      }
     }
     const mapReviewValues=fid==='DF053'?normalizeArray(reuse).map(String)
       :fid==='DF054'&&typeof stepSystemHandoffCandidates==='function'
