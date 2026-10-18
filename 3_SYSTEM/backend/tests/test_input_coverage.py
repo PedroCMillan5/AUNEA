@@ -40,7 +40,7 @@ def test_real_capture_without_session_trace_is_not_falsely_blocked_as_legacy_bac
 
 def test_relational_integrity_rejects_risk_and_economic_rows_without_active_step_anchor():
     e=engagement(
-        risks=[RiskInput(step_ids=["MISSING"],category="operational",likelihood_1_5=2,impact_1_5=2,reversible=True,controls_present=True,description="Orphan step risk")],
+        risks=[RiskInput(step_ids=["MISSING"],category="operational",likelihood_1_5=2,impact_1_5=2,reversible=True,controls_present=True,sensitive_or_high_impact=False,material_financial_or_compliance=False,critical_trigger=False,description="Orphan step risk")],
         economics=[EconomicInput(step_ids=[],driver_id="ED05",annual_active_hours=19.2)]
     )
     issues=relational_integrity_issues(e)
