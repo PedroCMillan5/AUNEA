@@ -62,3 +62,8 @@ def test_full_risk_classification_has_no_spurious_k03_gap():
     assert result(e,"IN-K-03").status=="COVERED"
     # Other coverage groups remain intentionally incomplete in this isolated fixture.
     assert RiskEngine().run(EngineContext(e),InputCoverageEngine().run(e)).inherent_level!="UNKNOWN"
+
+def test_route_to_nonexistent_step_is_not_sufficient():
+    rows=steps()
+    rows[0]["normal_next_step"]="NOT_A_STEP"
+    assert result(engagement(rows),"IN-P-03").status=="GAP"
