@@ -8,7 +8,7 @@ def test_persistence_and_signal_derived_pain(tmp_path):
         engagement_id='SIG-1',process_instance_id='P',process_name='Signal test',
         evidence=[Evidence(evidence_id='E',type='CLIENT_DECLARED')],
         pain_signals=[PainSignalInput(pain_id='P05',direct_mechanism_present=True,concrete_evidence_present=True,signal_present=True,evidence_ids=['E'])],
-        risks=[RiskInput(category='op',likelihood_1_5=1,impact_1_5=1,reversible=True,controls_present=True,description='Low operational risk')],
+        risks=[RiskInput(category='op',likelihood_1_5=1,impact_1_5=1,reversible=True,controls_present=True,sensitive_or_high_impact=False,material_financial_or_compliance=False,critical_trigger=False,description='Low operational risk')],
         commercial_scope=CommercialScope(scope_bounded=True,integrations_known=True,tool_tco_current=True)
     )
     out=Orchestrator(store=store).diagnose(eng)
@@ -23,7 +23,7 @@ def test_latest_output_uses_insert_order_when_timestamps_tie(tmp_path):
     store=SQLiteStore(tmp_path/'db.sqlite')
     eng=EngagementInput(
         engagement_id='LATEST-1',process_instance_id='P',process_name='Latest output',
-        risks=[RiskInput(category='op',likelihood_1_5=1,impact_1_5=1,reversible=True,controls_present=True,description='Low operational risk')],
+        risks=[RiskInput(category='op',likelihood_1_5=1,impact_1_5=1,reversible=True,controls_present=True,sensitive_or_high_impact=False,material_financial_or_compliance=False,critical_trigger=False,description='Low operational risk')],
         commercial_scope=CommercialScope(scope_bounded=True,integrations_known=True,tool_tco_current=True)
     )
     orch=Orchestrator(store=store)
