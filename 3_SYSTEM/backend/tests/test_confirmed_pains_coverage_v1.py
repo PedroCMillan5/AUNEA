@@ -4,7 +4,7 @@ The confirmation conditions mirror PainEngine's structured signal classification
 complete DF056/DF058/DF059 plus DF093 is the other canonical source route.
 """
 import pytest
-from aunea_backend.models import EngagementInput, PainObservation, PainSignalInput, PainState
+from aunea_backend.models import EngagementInput, PainObservation, PainSignalInput, PainState, Evidence
 from aunea_backend.input_coverage import InputCoverageEngine
 
 
@@ -35,8 +35,11 @@ def test_confirmed_observation_counts():
 
 
 def test_concrete_direct_mechanism_counts_like_pain_engine():
-    assert status(study(signals=[PainSignalInput(
-        pain_id="P03",direct_mechanism_present=True,concrete_evidence_present=True)]))=="COVERED"
+    e=study(signals=[PainSignalInput(
+        pain_id="P03",direct_mechanism_present=True,concrete_evidence_present=True,
+        evidence_ids=["EV-P03"])])
+    e.evidence=[Evidence(evidence_id="EV-P03",type="CLIENT_DECLARED")]
+    assert status(e)=="COVERED"
 
 
 def test_exclusion_defeats_mechanism():
