@@ -70,6 +70,8 @@ class EconomicInput(BaseModel):
     deduplication_key: str | None = None
 
 class RiskInput(BaseModel):
+    # Stable technical identity owned by the risk record, not a new questionnaire field.
+    risk_id: str | None = None
     # DEC-065: traceability only; risk scoring does not derive from these step IDs.
     step_ids: list[str] = Field(default_factory=list)
     category: str
