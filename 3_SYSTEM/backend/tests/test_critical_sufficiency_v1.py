@@ -51,6 +51,6 @@ def test_valid_joint_sources_cover(case,input_id,answers,economics):
 def test_partial_economics_cannot_mark_all_material_evidence_as_covered():
     e=engagement({},[
         EconomicInput(driver_id="ED05",evidence_type="CLIENT_DECLARED"),
-        EconomicInput(driver_id="ED06",evidence_type=""),
+        EconomicInput(driver_id="ED06",evidence_type=None),
     ])
     assert check(e,"IN-E-09").status=="GAP"
