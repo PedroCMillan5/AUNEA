@@ -283,8 +283,10 @@ class InputCoverageEngine:
                 confirmed_observation=any(
                     str(getattr(p.state,"value",p.state))=="CONFIRMED" for p in e.pains
                 )
+                actual_evidence_ids={ev.evidence_id for ev in e.evidence}
                 confirmed_signal=any(
                     s.direct_mechanism_present is True and s.concrete_evidence_present
+                    and bool(actual_evidence_ids.intersection(s.evidence_ids))
                     and not s.exclusion_condition_present for s in e.pain_signals
                 )
                 confirmed_frictions=(
