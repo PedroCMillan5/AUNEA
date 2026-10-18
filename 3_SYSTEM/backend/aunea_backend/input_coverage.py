@@ -62,9 +62,18 @@ FRICTION_FIELD = {
     "DF064":"non_time_impact","DF065":"workaround",
 }
 
+# [AUNEA-BE-COVERAGE-OWNER-PROVENANCE-018] START — Derived/child-owned fields must read their owner.
+# SOURCE: DEC-050/072; Diagnostic Master ProcessStep/Friction/Risk/EconomicInput.
+# A loose DF answer is NOT evidence of a populated step, friction, risk or economic input.
+OWNER_ONLY_FIELDS=(set(STEP_FIELD) | set(FRICTION_FIELD) | {
+    "DF066", "DF067", "DF068", "DF069", "DF070", "DF071", "DF072", "DF074",
+    "DF076", "DF078", "DF079", "DF080", "DF081", "DF082", "DF083", "DF085",
+})
+# [AUNEA-BE-COVERAGE-OWNER-PROVENANCE-018] END
+
 def _source_present(fid: str, e: EngagementInput) -> bool:
     a=e.questionnaire_answers
-    if fid in a and _present(a.get(fid)):
+    if fid not in OWNER_ONLY_FIELDS and fid in a and _present(a.get(fid)):
         return True
     steps=_steps(e); frictions=_frictions(e)
     if fid in STEP_FIELD:
@@ -176,7 +185,46 @@ def _critical_sufficiency(input_id: str, e: EngagementInput, generic_present: bo
         # ProcessStep.normal_next_step is REQUIRED for every active step
         # (next step or terminal reference). One valid edge must not hide another gap.
         valid_ids={str(s.get("id")) for s in steps if _present(s.get("id"))}
-        return all(str(s.get("normal_next_step") or "") in valid_ids | {"__END__"} for s in steps)
+        if len(valid_ids)!=len(steps):
+            return False  # Duplicate or absent step identities cannot define a graph.
+        edges={}
+        for step in steps:
+            sid=str(step["id"])
+            targets=[str(step.get("normal_next_step") or "")]
+            alternate=step.get("exception_path")
+            if isinstance(alternate,dict) and _present(alternate.get("destination_step")):
+                targets.append(str(alternate["destination_step"]))
+            if any(target not in valid_ids | {"__END__"} for target in targets):
+                return False
+            edges[sid]=targets
+        # [AUNEA-BE-GRAPH-COVERAGE-019] START — Reachability and END connectivity.
+        # SOURCE: ProcessStep routing contract + AS-IS graph integrity; not semantic NLP.
+        start=str(steps[0]["id"])
+        visited=set()
+        frontier=[start]
+        while frontier:
+            current=frontier.pop()
+            if current in visited:
+                continue
+            visited.add(current)
+            frontier.extend(t for t in edges[current] if t!="__END__")
+        if visited!=valid_ids:
+            return False
+        has_end={sid for sid,targets in edges.items() if "__END__" in targets}
+        predecessors={sid:set() for sid in valid_ids}
+        for sid,targets in edges.items():
+            for target in targets:
+                if target!="__END__":
+                    predecessors[target].add(sid)
+        can_finish=set(has_end)
+        frontier=list(has_end)
+        while frontier:
+            current=frontier.pop()
+            for before in predecessors[current]-can_finish:
+                can_finish.add(before)
+                frontier.append(before)
+        return can_finish==valid_ids
+        # [AUNEA-BE-GRAPH-COVERAGE-019] END
     if input_id=="IN-E-09":
         return bool(e.economics) and all(_present(x.evidence_type) for x in e.economics)
     if input_id=="IN-R-03":
