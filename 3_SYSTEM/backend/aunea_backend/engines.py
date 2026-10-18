@@ -281,7 +281,7 @@ class RiskEngine:
                     if any(getattr(r,key) is None for key in ("reversible","controls_present","sensitive_or_high_impact","material_financial_or_compliance","critical_trigger"))]
         if incomplete:
             return RiskResult(inherent_level="UNKNOWN",residual_level="UNKNOWN",status="INPUT_GAP",
-                rationale="Falta reversibilidad o existencia de controles declarada en riesgos: "+", ".join(incomplete)+".",
+                rationale="Hay riesgos con atributos obligatorios de valoración sin declarar (reversibilidad, controles, sensibilidad, materialidad o criticidad): "+", ".join(incomplete)+".",
                 input_ids_used=used)
         levels = [self._level(r) for r in ctx.engagement.risks]
         rank = {"UNKNOWN":-1,"R0":0,"R1":1,"R2":2,"R3":3}
