@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from .models import EngagementInput, DiagnosticOutput, ScenarioRequest, ScenarioResult
+from .session_time import TimeProjectionRequest, project_session_time
 from .deliverable_models import DeliverableRequest, DeliverablePack
 from .solution_models import SolutionSpecificationRequest, SolutionSpecification
 from .system_builder_models import SystemBuilderRequest, SystemBuildPlan, SystemBuildPackage
@@ -64,7 +65,27 @@ class Orchestrator:
         rec=self.rec.run(ctx,pain,risk,coverage); self._run(engagement.engagement_id,"RecommendationEngine", {"engagement":engagement.model_dump(),"coverage":coverage.model_dump(),"pain":[x.model_dump() for x in pain],"risk":risk.model_dump()}, rec.model_dump())
         quote=self.price.run(ctx,rec,risk); self._run(engagement.engagement_id,"ProductPricingEngine", rec.model_dump(), quote.model_dump())
         optimal=self.scenario.create(ctx,pain,econ,risk,rec,quote); self._run(engagement.engagement_id,"ScenarioComparator", rec.model_dump(), optimal.model_dump())
-        result=DiagnosticOutput(engagement_id=engagement.engagement_id,rule_bundle_version=rule_bundle_version(),input_snapshot_hash=stable_hash(engagement.model_dump()),input_coverage=coverage,pain_results=pain,economic_result=econ,risk_result=risk,recommendation=rec,quote=quote,optimal_scenario=optimal)
+        # [AUNEA-BE-ORCH-PROCESS-TIME-090] START — Proyección AS-IS ya gobernada, separada de Economics.
+        # SOURCE: Diagnostic Master RULE_ECON_ANNUALIZE; DEC-034/041/068; Simulator PG10–PG15.
+        # Reuses the exact captured process owner carried in questionnaire_answers; no new questions,
+        # no future-state assumptions, no mutation of economic inputs or scenario arithmetic.
+        answers=engagement.questionnaire_answers
+        steps=answers.get("_process_steps")
+        frictions=answers.get("_frictions")
+        process_time=None
+        if isinstance(steps,list) and steps:
+            raw_volume=answers.get("DF021")
+            volume=raw_volume.get("value") if isinstance(raw_volume,dict) else raw_volume
+            if isinstance(volume,bool) or not isinstance(volume,(float,int)):
+                volume=None
+            projection_input=TimeProjectionRequest(
+                volume=volume,period=answers.get("DF022"),
+                steps=steps,frictions=frictions if isinstance(frictions,list) else []
+            )
+            process_time=project_session_time(projection_input)
+            self._run(engagement.engagement_id,"SessionTimeProjection",projection_input.model_dump(),process_time)
+        # [AUNEA-BE-ORCH-PROCESS-TIME-090] END
+        result=DiagnosticOutput(engagement_id=engagement.engagement_id,rule_bundle_version=rule_bundle_version(),input_snapshot_hash=stable_hash(engagement.model_dump()),input_coverage=coverage,pain_results=pain,economic_result=econ,risk_result=risk,recommendation=rec,quote=quote,optimal_scenario=optimal,process_time_projection=process_time)
         if self.store: self.store.save_output(result)
         return result
 
