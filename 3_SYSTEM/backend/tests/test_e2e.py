@@ -11,7 +11,7 @@ def ev(eid="E1",typ="MEASURED"):
     return Evidence(evidence_id=eid,type=typ)
 
 def risk(impact=1, **kw):
-    return RiskInput(category="operational",likelihood_1_5=2,impact_1_5=impact,**kw)
+    return RiskInput(**{**dict(category="operational",likelihood_1_5=2,impact_1_5=impact,reversible=True,controls_present=True,description="Synthetic operational risk"),**kw})
 
 def test_e2e_01_deterministic_intake_n2_i0_and_override():
     eng=EngagementInput(
