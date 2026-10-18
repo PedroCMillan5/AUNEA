@@ -7,7 +7,7 @@ from aunea_backend.models import EngagementInput, RiskInput
 
 def risk(description="Possible data loss",controls_present=True,reversible=True):
     return RiskInput(step_ids=["S1"],category="operational",description=description,
-        likelihood_1_5=2,impact_1_5=2,controls_present=controls_present,reversible=reversible)
+        likelihood_1_5=2,impact_1_5=2,controls_present=controls_present,reversible=reversible,sensitive_or_high_impact=False,material_financial_or_compliance=False,critical_trigger=False)
 
 
 def engagement(risks, agent=False):
