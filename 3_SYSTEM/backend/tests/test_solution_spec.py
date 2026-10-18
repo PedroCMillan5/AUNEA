@@ -1,7 +1,7 @@
 import pytest
 
 from aunea_backend.orchestrator import Orchestrator
-from aunea_backend.models import EngagementInput, PainSignalInput, EconomicInput, RiskInput, CommercialScope
+from aunea_backend.models import EngagementInput, PainSignalInput, Evidence, EconomicInput, RiskInput, CommercialScope
 from aunea_backend.solution_models import (
     SolutionSpecificationRequest, SolutionSpecRole, SolutionSpecDataEntity,
     SolutionSpecIntegration, SolutionSpecRule, SolutionSpecAcceptanceTest,
@@ -11,7 +11,8 @@ from aunea_backend.solution_models import (
 def system_engagement():
     return EngagementInput(
         engagement_id="E-SPEC-1", process_instance_id="P-SPEC-1", process_name="Client Intake",
-        pain_signals=[PainSignalInput(pain_id="P05", direct_mechanism_present=True, concrete_evidence_present=True, signal_present=True)],
+        evidence=[Evidence(evidence_id="EV-P05",type="CLIENT_DECLARED",description="Approved request observation")],
+        pain_signals=[PainSignalInput(pain_id="P05",direct_mechanism_present=True,concrete_evidence_present=True,signal_present=True,evidence_ids=["EV-P05"])],
         economics=[EconomicInput(step_ids=["STEP-001"], driver_id="ED01", evidence_type="CLIENT_DECLARED", annual_active_hours=240)],
         risks=[RiskInput(step_ids=["STEP-001"], category="ops", likelihood_1_5=2, impact_1_5=2, reversible=True, controls_present=True,sensitive_or_high_impact=False,material_financial_or_compliance=False,critical_trigger=False, description="Incomplete intake risk")],
         process_design_preconditions_ok=True,
