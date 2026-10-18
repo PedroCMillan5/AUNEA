@@ -39,8 +39,14 @@ def _ref_label(table_name: str, id_field: str, raw_id: str | None, *label_fields
             return missing
     return missing
 
-def _pain_label(pid):
-    return _ref_label("REF_PAIN","Pain_ID",pid,"Pain_Name","Label_ES","Pain_Pattern","Name",missing="Hallazgo")
+def _pain_label(pid, rationale=None):
+    label=_ref_label("REF_PAIN","Pain_ID",pid,"Pain_Name","Label_ES","Pain_Pattern","Name",missing=None)
+    # PainResult.rationale is the original captured client label when no registry entry
+    # exists. Never render multiple indistinguishable generic "Hallazgo" rows.
+    return label or (str(rationale).strip() if rationale else "Descripción pendiente de validar")
+
+def _md_cell(value):
+    return str(value).replace("|", "/").replace("\n", " ").replace("\r", " ")
 
 def _quote_status_es(status):
     return {"READY":"Lista","PROVISIONAL":"Provisional","MANUAL_REVIEW":"Revisión manual","BLOCKED":"Bloqueada"}.get(_status_value(status),"No disponible")
@@ -83,35 +89,77 @@ class DeliverablesEngine:
         return "READY", []
 
     def _pain_summary_md(self, diagnostic, scenario):
-        lines=["| Hallazgo | Estado | Cobertura | Confianza |","|---|---:|---:|---:|"]
+        lines=["| Hallazgo identificado | Estado | Cobertura | Confianza |","|---|---:|---:|---:|"]
         for pain in diagnostic.pain_results:
-            lines.append(f"| {_pain_label(pain.pain_id)} | {_pain_state_es(pain.state)} | {_coverage_es(scenario.coverage_by_pain.get(pain.pain_id))} | {_confidence_es(pain.confidence)} |")
+            lines.append(f"| {_md_cell(_pain_label(pain.pain_id,pain.rationale))} | {_pain_state_es(pain.state)} | {_coverage_es(scenario.coverage_by_pain.get(pain.pain_id))} | {_confidence_es(pain.confidence)} |")
         return "\n".join(lines)
+
+    # [AUNEA-BE-PG10-ECON-PRESENT-014] START — Diferenciar proyección operativa y economía parcial.
+    # SOURCE: DEC-034/041/068; Simulator CANONICAL PG10/PG12/PG14/PG15.
+    # Render only already-calculated outputs, never infer an unapproved TO-BE or cash saving.
+    def _process_time_md(self, diagnostic):
+        p=diagnostic.process_time_projection
+        if not p:
+            return "Proyección temporal del proceso: no disponible para este snapshot."
+        return "\n".join([
+            "| Métrica operativa (proyección AS-IS del backend) | Resultado |",
+            "|---|---:|",
+            f"| Casos al año | {p['annual_cases']:,.0f}".replace(",", ".")+ " |" if p.get("annual_cases") is not None else "| Casos al año | No calculado |",
+            f"| Trabajo activo anual del proceso | {_fmt_hours(p.get('annual_active_hours'))} |",
+            f"| Exposición anual a espera (caso-horas, no horas laborales) | {_fmt_hours(p.get('annual_wait_exposure_hours'))} |",
+            f"| Retrabajo anual desglosado | {_fmt_hours(p.get('annual_rework_hours'))} |",
+            f"| Estado | {'Calculado' if p.get('status')=='CALCULATED' else 'Incompleto, revisar gaps'} |",
+            "\nEste bloque es una proyección operativa del AS-IS capturado. La espera no es trabajo activo ni ahorro monetario.",
+            ("Gaps de proyección: "+_md_cell("; ".join(p.get("gaps") or []))) if p.get("gaps") else ""
+        ])
 
     def _economics_md(self, diagnostic, scenario):
         b,s=diagnostic.economic_result,scenario.economics
+        assumptions=scenario.assumptions or []
+        no_future="Sin hipótesis cuantificada"
+        def estimate(field):
+            if not assumptions or s.status=="NOT_CALCULATED":
+                return no_future
+            numeric={
+                "annual_active_hours":("future_active_hours","explicit_reduction_factor"),
+                "annual_wait_hours":("future_wait_hours",),
+                "direct_loss_eur_annual":("preventable_loss_fraction",),
+                "realized_cash_saving_eur_annual":("realized_cash_saving_eur_annual",)
+            }
+            keys=numeric.get(field,())
+            if not any(any(getattr(a,k,None) is not None for k in keys) for a in assumptions):
+                return no_future
+            value=getattr(s,field)
+            return _fmt_eur(value) if field.endswith("_eur_annual") else _fmt_hours(value)
+        active_baseline=_fmt_hours(b.annual_active_hours) if b.annual_active_hours else "Sin tiempo activo cuantificado"
+        wait_baseline=_fmt_hours(b.annual_wait_hours) if b.annual_wait_hours else "Sin espera cuantificada en inputs"
         return "\n".join([
-            "| Métrica | Situación actual | Escenario seleccionado |","|---|---:|---:|",
-            f"| Trabajo activo | {_fmt_hours(b.annual_active_hours)} | {_fmt_hours(s.annual_active_hours)} |",
-            f"| Espera | {_fmt_hours(b.annual_wait_hours)} | {_fmt_hours(s.annual_wait_hours)} |",
-            f"| Valor de capacidad | {_fmt_eur(b.capacity_value_eur_annual)} | {_fmt_eur(s.capacity_value_eur_annual)} |",
-            f"| Pérdida directa / evitable | {_fmt_eur(b.direct_loss_eur_annual)} | {_fmt_eur(s.direct_loss_eur_annual)} |",
-            f"| Ahorro de caja realizado | {_fmt_eur(b.realized_cash_saving_eur_annual)} | {_fmt_eur(s.realized_cash_saving_eur_annual)} |",
+            "| Input económico declarado | Situación actual (alcance parcial) | Reducción modelada del escenario (no tiempo futuro) |",
+            "|---|---:|---:|",
+            f"| Tiempo activo en inputs económicos | {active_baseline} | {estimate('annual_active_hours')} |",
+            f"| Espera en inputs económicos | {wait_baseline} | {estimate('annual_wait_hours')} |",
+            f"| Valor de capacidad | {_fmt_eur(b.capacity_value_eur_annual)} | {_fmt_eur(s.capacity_value_eur_annual) if assumptions and s.capacity_value_eur_annual is not None else no_future} |",
+            f"| Pérdida directa / evitable | {_fmt_eur(b.direct_loss_eur_annual)} | {estimate('direct_loss_eur_annual')} |",
+            f"| Ahorro de caja realizado | {_fmt_eur(b.realized_cash_saving_eur_annual)} | {estimate('realized_cash_saving_eur_annual')} |",
+            "\nLa base económica refleja sólo EconomicInput, no el tiempo completo del mapa. Una reducción calculada es una hipótesis sujeta a revisión, nunca el tiempo TO-BE restante."
         ])
+    # [AUNEA-BE-PG10-ECON-PRESENT-014] END
 
     def _quote_md(self, scenario):
         q=scenario.quote
         product=_ref_label("REF_PRODUCT","Product_ID",q.product_id,"Product_Name","Name",missing="No disponible") if q.product_id else "Sin producto de implementación"
         option=_ref_label("REF_PRODUCT_OPTION","Product_Option_ID",q.product_option_id,"Option_Name","Name",missing="No disponible") if q.product_option_id else "No aplica"
+        blocked=q.status==QuoteStatus.BLOCKED
+        price=lambda value: "Sin precio autorizado" if blocked else _fmt_eur(value)
         return f"""| Concepto | Valor |
 |---|---:|
 | Producto | {product} |
 | Configuración | {option} |
-| One-off | {_fmt_eur(q.one_off_eur)} |
-| Recurrente mensual | {_fmt_eur(q.recurring_monthly_eur)} |
-| Coste de herramientas mensual | {_fmt_eur(q.tool_cost_monthly_eur)} |
-| TCO 12 meses | {_fmt_eur(q.tco_12m_eur)} |
-| TCO 36 meses | {_fmt_eur(q.tco_36m_eur)} |
+| One-off | {price(q.one_off_eur)} |
+| Recurrente mensual | {price(q.recurring_monthly_eur)} |
+| Coste de herramientas mensual | {price(q.tool_cost_monthly_eur)} |
+| TCO 12 meses | {price(q.tco_12m_eur)} |
+| TCO 36 meses | {price(q.tco_36m_eur)} |
 | Estado | {_quote_status_es(q.status)} |"""
 
     def _summary(self, diagnostic, scenario, request, status, issues):
@@ -131,8 +179,8 @@ class DeliverablesEngine:
 
 ## Visión comercial
 - Producto: {product}
-- One-off: **{_fmt_eur(scenario.quote.one_off_eur)}**
-- TCO 12 meses: **{_fmt_eur(scenario.quote.tco_12m_eur)}**
+- One-off: **{_fmt_eur(scenario.quote.one_off_eur) if scenario.quote.status!=QuoteStatus.BLOCKED else 'Sin precio autorizado'}**
+- TCO 12 meses: **{_fmt_eur(scenario.quote.tco_12m_eur) if scenario.quote.status!=QuoteStatus.BLOCKED else 'Sin precio autorizado'}**
 - Estado de la cotización: {_quote_status_es(scenario.quote.status)}
 
 ## Notas de revisión
@@ -151,7 +199,10 @@ class DeliverablesEngine:
 ## 2. Hallazgos y cobertura
 {self._pain_summary_md(diagnostic, scenario)}
 
-## 3. Visión económica
+## 3. Línea base operativa AS-IS
+{self._process_time_md(diagnostic)}
+
+## 4. Visión económica por inputs (alcance independiente)
 {self._economics_md(diagnostic, scenario)}
 
 Trabajo activo, espera, valor de capacidad, pérdida directa y ahorro de caja son categorías separadas y no se agregan como un único ahorro universal.
