@@ -79,9 +79,9 @@ class RiskInput(BaseModel):
     impact_1_5: int = Field(ge=1, le=5)
     # Reversibility is a risk-owner declaration, never a silent default.
     reversible: bool | None = None
-    sensitive_or_high_impact: bool = False
-    material_financial_or_compliance: bool = False
-    critical_trigger: bool = False
+    sensitive_or_high_impact: bool | None = None
+    material_financial_or_compliance: bool | None = None
+    critical_trigger: bool | None = None
     # Existing controls must be declared by the source; unknown is not YES.
     controls_present: bool | None = None
     description: str | None = None
