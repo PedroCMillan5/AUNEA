@@ -75,7 +75,7 @@ class PainEngine:
         for s in ctx.engagement.pain_signals:
             if s.exclusion_condition_present or s.direct_mechanism_present is False:
                 state = "NOT_DETECTED"
-            elif s.direct_mechanism_present is True and s.concrete_evidence_present:
+            elif s.direct_mechanism_present is True and s.concrete_evidence_present and any(eid in evidence for eid in s.evidence_ids):
                 state = "CONFIRMED"
             elif s.direct_mechanism_present is True and s.signal_present:
                 state = "INDICATED"
