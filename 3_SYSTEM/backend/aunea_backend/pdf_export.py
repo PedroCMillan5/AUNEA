@@ -84,8 +84,12 @@ def _lookup_name(table_name: str, id_field: str, raw_id: str | None, name_fields
     return CLIENT_SAFE_MISSING
 
 
-def _pain_name(pain_id: str | None) -> str:
-    return _lookup_name("REF_PAIN", "Pain_ID", pain_id, ("Pain_Name", "Label_ES", "Pain_Pattern", "Name"))
+def _pain_name(pain_id: str | None, rationale: str | None = None) -> str:
+    name=_lookup_name("REF_PAIN", "Pain_ID", pain_id, ("Pain_Name", "Label_ES", "Pain_Pattern", "Name"))
+    if name != CLIENT_SAFE_MISSING and name != "—":
+        return name
+    # Prefer the source-friction description already carried by PainResult.
+    return str(rationale).strip() if rationale else "Descripción pendiente de validar"
 
 
 def _product_name(product_id: str | None) -> str:
@@ -134,6 +138,7 @@ class PDFExporter:
         story += self._cover(request, scenario, styles)
         story.append(PageBreak())
         story += self._section_findings(diagnostic, styles)
+        story += self._section_process_time(diagnostic, styles)
         story += self._section_economics(diagnostic, scenario, styles)
         story += self._section_risk(diagnostic, scenario, styles)
         story += self._section_recommendation(diagnostic, styles)
@@ -203,7 +208,7 @@ class PDFExporter:
 
     def _section_findings(self, diagnostic: DiagnosticOutput, styles) -> list:
         rows = [
-            (_pain_name(p.pain_id), _es("pain_state", p.state), _es("confidence", p.confidence))
+            (_pain_name(p.pain_id, p.rationale), _es("pain_state", p.state), _es("confidence", p.confidence))
             for p in diagnostic.pain_results
         ] or [("Sin hallazgos detectados", "—", "—")]
         data = [["Hallazgo", "Estado", "Confianza"]] + [[_safe(x) for x in r] for r in rows]
@@ -211,22 +216,55 @@ class PDFExporter:
         t.setStyle(self._table_style())
         return [Paragraph("Hallazgos", styles["h2"]), t]
 
+    # [AUNEA-BE-PG15-PDF-ECON-SCOPE-015] START — Same semantics as the MD/HTML pack.
+    # SOURCE: DEC-041/068, Simulator CANONICAL PG10/PG15. Formatting only.
+    def _section_process_time(self, diagnostic: DiagnosticOutput, styles) -> list:
+        p=diagnostic.process_time_projection
+        if p is None:
+            return [Paragraph("Línea base operativa AS-IS", styles["h2"]),
+                    Paragraph("Sin proyección temporal disponible para este snapshot.",styles["note"])]
+        cases=p.get("annual_cases")
+        rows=[
+            ("Casos anuales", f"{cases:,.0f}".replace(",", ".") if cases is not None else "No calculado"),
+            ("Trabajo activo anual del proceso", _fmt_hours(p.get("annual_active_hours"))),
+            ("Exposición a espera (caso-horas)", _fmt_hours(p.get("annual_wait_exposure_hours"))),
+            ("Retrabajo anual", _fmt_hours(p.get("annual_rework_hours"))),
+            ("Estado de la proyección", "Calculado" if p.get("status")=="CALCULATED" else "Incompleto"),
+        ]
+        info="Proyección operativa del proceso registrado. Las caso-horas de espera no son horas laborales ni ahorro."
+        if p.get("gaps"):
+            info += " Faltan datos: "+"; ".join(p["gaps"])
+        return [Paragraph("Línea base operativa AS-IS",styles["h2"]),self._kv_table(rows),Paragraph(_safe(info),styles["note"])]
+
     def _section_economics(self, diagnostic: DiagnosticOutput, scenario: ScenarioResult, styles) -> list:
         b, s = diagnostic.economic_result, scenario.economics
+        assumptions = scenario.assumptions or []
+        pending="Sin hipótesis cuantificada"
+        def estimate(field, *keys):
+            if s.status=="NOT_CALCULATED" or not any(
+                any(getattr(a,key,None) is not None for key in keys) for a in assumptions
+            ):
+                return pending
+            value=getattr(s,field)
+            return _fmt_eur(value) if field.endswith("_eur_annual") else _fmt_hours(value)
         data = [
-            ["Métrica", "Situación actual", "Escenario cotizado"],
-            ["Trabajo activo anual", _fmt_hours(b.annual_active_hours), _fmt_hours(s.annual_active_hours)],
-            ["Espera anual", _fmt_hours(b.annual_wait_hours), _fmt_hours(s.annual_wait_hours)],
-            ["Valor de capacidad", _fmt_eur(b.capacity_value_eur_annual), _fmt_eur(s.capacity_value_eur_annual)],
-            ["Pérdida directa", _fmt_eur(b.direct_loss_eur_annual), _fmt_eur(s.direct_loss_eur_annual)],
-            ["Ahorro de caja realizado", _fmt_eur(b.realized_cash_saving_eur_annual), _fmt_eur(s.realized_cash_saving_eur_annual)],
+            ["Input económico", "AS-IS parcial", "Reducción estimada"],
+            ["Tiempo activo en inputs", _fmt_hours(b.annual_active_hours) if b.annual_active_hours else "Sin cuantificar", estimate("annual_active_hours","future_active_hours","explicit_reduction_factor")],
+            ["Espera en inputs", _fmt_hours(b.annual_wait_hours) if b.annual_wait_hours else "Sin cuantificar", estimate("annual_wait_hours","future_wait_hours")],
+            ["Valor de capacidad", _fmt_eur(b.capacity_value_eur_annual), _fmt_eur(s.capacity_value_eur_annual) if assumptions and s.capacity_value_eur_annual is not None else pending],
+            ["Pérdida directa evitable", _fmt_eur(b.direct_loss_eur_annual), estimate("direct_loss_eur_annual","preventable_loss_fraction")],
+            ["Ahorro de caja declarado", _fmt_eur(b.realized_cash_saving_eur_annual), estimate("realized_cash_saving_eur_annual","realized_cash_saving_eur_annual")],
         ]
-        t = Table([[ _safe(c) for c in row ] for row in data], colWidths=[55 * mm, 42.5 * mm, 62.5 * mm])
+        table_data=[[Paragraph(_safe(c), styles["body"]) for c in row] for row in data]
+        t=Table(table_data,colWidths=[55*mm,46*mm,59*mm],repeatRows=1)
         t.setStyle(self._table_style())
         return [
-            Paragraph("Impacto económico", styles["h2"]), t,
-            Paragraph(_safe("Trabajo activo, espera, capacidad, pérdida directa y ahorro de caja son categorías separadas; este documento no las combina en un único ahorro universal."), styles["note"]),
+            Paragraph("Economía — inputs independientes", styles["h2"]), t,
+            Paragraph(_safe("EconomicResult sólo refleja los inputs económicos registrados, no el total del mapa. "
+                            "La reducción modelada no es el tiempo TO-BE futuro. "
+                            "Capacidad, caja, espera y pérdidas permanecen separadas."),styles["note"]),
         ]
+    # [AUNEA-BE-PG15-PDF-ECON-SCOPE-015] END
 
     def _section_risk(self, diagnostic: DiagnosticOutput, scenario: ScenarioResult, styles) -> list:
         return [
@@ -264,16 +302,17 @@ class PDFExporter:
 
     def _section_quote(self, scenario: ScenarioResult, styles) -> list:
         q = scenario.quote
+        price=lambda value: "Sin precio autorizado" if _status_value(q.status)=="BLOCKED" else _fmt_eur(value)
         return [
             Paragraph("Cotización", styles["h2"]),
             self._kv_table([
                 ("Producto", _product_name(q.product_id)),
                 ("Configuración", _product_option_name(q.product_option_id)),
-                ("One-off", _fmt_eur(q.one_off_eur)),
-                ("Recurrente mensual", _fmt_eur(q.recurring_monthly_eur)),
-                ("Coste de herramientas mensual", _fmt_eur(q.tool_cost_monthly_eur)),
-                ("TCO 12 meses", _fmt_eur(q.tco_12m_eur)),
-                ("TCO 36 meses", _fmt_eur(q.tco_36m_eur)),
+                ("One-off", price(q.one_off_eur)),
+                ("Recurrente mensual", price(q.recurring_monthly_eur)),
+                ("Coste de herramientas mensual", price(q.tool_cost_monthly_eur)),
+                ("TCO 12 meses", price(q.tco_12m_eur)),
+                ("TCO 36 meses", price(q.tco_36m_eur)),
                 ("Estado de la cotización", _es("quote_status", q.status)),
             ]),
         ]
