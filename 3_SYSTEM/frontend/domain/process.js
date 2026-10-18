@@ -1516,10 +1516,10 @@ function consultantStepsReviewPage(e){
     const findingUndoAction=''; // DF051 reversibility lives on each confirmed row, not a second card action.
     const inlineDuplicate=fid==='DF051'&&requiresReview;
     const action=derived?(derivedAction+(noReviewAvailable?'<div class="pg05-field-action">'+noReviewAction+'</div>':''))
-      :uniform?'<div class="pg05-field-action">'+uniformAction+noReviewAction
-        +(uniformLocked?'':uniformWarning+'<div class="pg05-inline-review" data-pg05-finding-editor="'+fid+'">'+(fid==='DF054'?manualHandoffControl():renderStageFields([f],e))+'</div>')+'</div>'
+      :uniform?'<div class="pg05-field-action">'+quickAction+uniformAction+noReviewAction
+        +(uniformLocked?'':uniformWarning+'<details class="pg05-discovery-control" open><summary>Revisar datos opcionales</summary><div class="pg05-inline-review" data-pg05-finding-editor="'+fid+'">'+(fid==='DF054'?manualHandoffControl():renderStageFields([f],e))+'</div></details>')+'</div>'
       :requiresReview?'<div class="pg05-field-action">'+quickAction+findingOpenAction+findingUndoAction+reviewConfirmationAction+df051Action+noReviewAction
-        +(inlineDuplicate?'<div class="pg05-inline-duplicate" data-pg05-finding-editor="DF051">'+(df051Validated?'<div class="field-help">La sección está confirmada. Pulsa Deshacer validación para editar.</div>':renderStageFields([f],e))+'</div>':'')+'</div>':'';
+        +(inlineDuplicate?'<details class="pg05-discovery-control" open><summary>Revisar reintroducción de datos</summary><div class="pg05-inline-duplicate" data-pg05-finding-editor="DF051">'+(df051Validated?'<div class="field-help">La sección está confirmada. Pulsa Deshacer validación para editar.</div>':renderStageFields([f],e))+'</div></details>':'')+'</div>':'';
     // [AUNEA-FE-PG05-CONFIRM-UNDO-094] END
     const card='<article class="pg05-field pg05-field--'+kind+'" data-pg05-field="'+fid+'">'
       +'<div class="pg05-field-top"><b>'+esc(f.Pregunta_o_etiqueta_ES||fid)+'</b>'
