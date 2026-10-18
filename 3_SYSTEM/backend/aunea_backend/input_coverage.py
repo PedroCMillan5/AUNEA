@@ -155,6 +155,30 @@ def _branch_applicable(branch: str, e: EngagementInput) -> bool | None:
     if branch=="BR-LOGIC": return bool(any(_present(s.get("decision_criteria")) for s in steps) or _present(a.get("DF067")))
     return None
 
+# [AUNEA-BE-COVERAGE-SUFFICIENCY-016] START — Requisitos conjuntos gobernados
+# PURPOSE: Evitar que fuentes alternativas cuenten como sustitutas de campos conjuntamente necesarios.
+# SOURCE: Diagnostic Master v1.2 — MAP_QUESTION_ENGINE_INPUT; IN-P-01/02/03,
+#         IN-E-01/09 e IN-R-03; DEC-050 (single owner), DEC-070 (trigger/outcome).
+# INPUTS: Entrada de cobertura + engagement y fuentes previamente identificadas.
+# OUTPUTS: Booleano de suficiencia para seis contratos críticos; resto conserva regla canónica.
+# SIDE_EFFECTS: none. CHANGE_RISK: HIGH.
+def _critical_sufficiency(input_id: str, e: EngagementInput, generic_present: bool) -> bool:
+    if input_id=="IN-P-01":
+        return _source_present("DF012",e) and _source_present("DF013",e)
+    if input_id in {"IN-P-02","IN-E-01"}:
+        return _source_present("DF021",e) and _source_present("DF022",e)
+    if input_id=="IN-P-03":
+        steps=_steps(e)
+        if not steps or not all(_present(s.get("step_name")) and _present(s.get("step_type")) and _present(s.get("actor")) for s in steps):
+            return False
+        return len(steps)==1 or _source_present("DF042",e)
+    if input_id=="IN-E-09":
+        return bool(e.economics) and all(_present(x.evidence_type) for x in e.economics)
+    if input_id=="IN-R-03":
+        return _source_present("DF086",e)
+    return generic_present
+# [AUNEA-BE-COVERAGE-SUFFICIENCY-016] END
+
 def _blocking(row: dict[str, Any], applicable: bool | None, e: EngagementInput) -> bool:
     if applicable is not True:
         return False
@@ -178,6 +202,7 @@ class InputCoverageEngine:
             if any(str(s).startswith("DIAG_PAIN_QUESTION:") for s in row.get("Source_Fields",[])) and (e.pain_signals or e.pains):
                 present_sources.append("PAIN_SIGNAL")
             present=bool(present_sources) or (row.get("Input_ID")=="IN-R-01" and bool(e.pain_signals or e.pains))
+            present=_critical_sufficiency(str(row.get("Input_ID") or ""),e,present)
             blocking=_blocking(row,applicable,e)
             if applicable is False:
                 status="NOT_APPLICABLE"
