@@ -22,8 +22,8 @@ const ctx={
 };
 vm.createContext(ctx);
 vm.runInContext(
-  between('function processParticipantsScopeReview(e){','// [AUNEA-FE-ASIS-PARTICIPANTS-078] END')+
-  between('const CONSISTENCY_LAYER_STAGE=','// [AUNEA-FE-ASIS-CONSISTENCY-076] END'),ctx
+  between('function processParticipantsScopeReview(e){','// [AUNEA-FE-ASIS-PARTICIPANTS-078] EN'+'D')+
+  between('const CONSISTENCY_LAYER_STAGE=','// [AUNEA-FE-ASIS-CONSISTENCY-076] EN'+'D'),ctx
 );
 const session=()=>({
   answers:{DF017:['CUSTOMER','SALES','OPERATIONS','MANAGER']},
