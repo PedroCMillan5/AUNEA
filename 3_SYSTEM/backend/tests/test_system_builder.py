@@ -11,7 +11,7 @@ def ready_spec():
     eng=EngagementInput(
         engagement_id="E-BUILD-1",process_instance_id="P-BUILD-1",process_name="Client Intake",
         pain_signals=[PainSignalInput(pain_id="P05",direct_mechanism_present=True,concrete_evidence_present=True,signal_present=True)],
-        economics=[EconomicInput(step_ids=["STEP-001"],driver_id="ED01",annual_active_hours=200)],
+        economics=[EconomicInput(step_ids=["STEP-001"],driver_id="ED01",evidence_type="CLIENT_DECLARED",annual_active_hours=200)],
         risks=[RiskInput(step_ids=["STEP-001"],category="ops",likelihood_1_5=2,impact_1_5=2)],
         commercial_scope=CommercialScope(scope_bounded=True,integrations_known=True,tool_tco_current=True),
         questionnaire_answers={
