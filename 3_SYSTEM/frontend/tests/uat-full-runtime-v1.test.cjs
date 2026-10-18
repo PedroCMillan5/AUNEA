@@ -360,7 +360,7 @@ test('PG05 can record manual cross-system exchanges not detected as adjacent han
    const reopened=buildRuntime(saved);
    try{
      assert.ok(Array.from(reopened.run("currentEng().answers.DF054")||[]).includes(input.value));
-     assert.match(reopened.run("consultantStepsPage()"),/Hallazgo confirmado/);
+     assert.match(reopened.run("consultantStepsPage()"),/Pendiente de confirmar/,'a persisted selection must still be confirmed by a human');
    }finally{reopened.dom.window.close();}
  }finally{dom.window.close();}
 });
@@ -417,7 +417,7 @@ test('PG05 derives all four source-owned values, revokes stale confirmations, an
        assert.equal(projected,expected(id),'updated source-projection '+id);
        if(id==='DF046'||id==='DF047')assert.doesNotMatch(current.textContent,/Derivado y confirmado/,'source change invalidates confirmation '+id);
      }else{
-       assert.match(current.textContent,/No hay valores que derivar/,'empty source is unknown, not confirmed: '+id);
+       assert.match(current.textContent,/No hay valores que derivar|Sin información que validar/,'missing source cannot be confirmed: '+id);
      }
    }
    assert.equal(run("currentEng().answers.DF049"),undefined,'derived artifacts are not copied to manual answers');
@@ -441,7 +441,7 @@ test('PG05 separates human-confirmed searches from unconfirmed detections in pro
    for(const [label,ids] of [['Confirmados',confirmed],['Nuevos candidatos',added]]){
      if(!ids.length)continue;
      const segment=label==='Confirmados'?shown.split(' | ')[0]:shown.split(' | ').at(-1);
-     if(label==='Confirmados')assert.match(segment,/Confirmados:/);
+     if(label==='Confirmados')assert.match(segment,/Seleccionados:/,'persisted selections are not automatically confirmed');
      else assert.match(segment,/Nuevos candidatos:|Candidatos detectados:/);
      let last=-1;
      for(const id of ids.slice().sort((a,b)=>order.indexOf(a)-order.indexOf(b))){
