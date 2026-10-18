@@ -117,7 +117,7 @@ test('real SÍ/NO routes, merges and unconnected future destinations are visual 
     {id:'D',status:'ACTIVE',step_name:'Decidir',step_type:'ST04',normal_next_step:'Y',exception_path:{destination_step:'N'}},
     {id:'Y',status:'ACTIVE',step_name:'Aprobar',normal_next_step:'M'},
     {id:'N',status:'ACTIVE',step_name:'Solicitar datos',normal_next_step:'M'},
-    {id:'M',status:'ACTIVE',step_name:'Continuar'}
+    {id:'M',status:'ACTIVE',step_name:'Continuar',normal_next_step:'__END__'}
   ];
   const graph=ctx.processGraphData(e,e.processSteps);
   const yes=graph.edges.find(x=>x.from==='D'&&x.label==='SÍ');
