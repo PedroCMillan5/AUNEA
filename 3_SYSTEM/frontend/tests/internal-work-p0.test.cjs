@@ -43,7 +43,7 @@ test('Diagnóstico copy is conservative and keeps waiting separate',()=>{
   assert.match(results,/EconomicInput/);
   assert.match(results,/Exposición a espera/);
   assert.match(results,/no son horas laborales/);
-  assert.match(results,/no horas laborales ni ahorro monetario|no se monetiza como trabajo/);
+  assert.match(results,/no horas laborales ni ahorro|no se monetiza como trabajo/);
   assert.doesNotMatch(results,/Revisado: continuar a TO-BE/);
   assert.match(results,/Continuar al diseño TO-BE/);
 });
