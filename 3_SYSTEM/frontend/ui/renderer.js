@@ -304,19 +304,40 @@ function s08Recommendation(fid,contextValues,currentValues){
     :(has?'Añade detalle sólo cuando una opción marcada cambie realmente el plan de implantación.':'No hay una restricción previa directamente asociada a adopción/cambio; añade condiciones sólo si realmente aplican.');
   return '';
 }
+// [AUNEA-FE-S08-RELEVANT-CONTEXT-148] START — Show only applicable PG01 restrictions beside each PG04 question.
+// SOURCE: Diagnostic Master DF010 / OS_CONSTRAINT_TYPE and DF087–DF091; DEC-050/066.
+// INPUT: RT_ENGAGEMENT.Initial_Constraints (DF010), current owned target answer.
+// OUTPUT: read-only contextual guidance and selected answers; no inference of new obligations.
+// SIDE EFFECTS: none. Existing DF010 and DF087–DF091 answers and downstream consumers remain unchanged.
+// RISK: MEDIUM; page S08 explicitly reopened solely for selective context presentation.
+const S08_INITIAL_CONTEXT_BY_FIELD=Object.freeze({
+  DF087:['COMPLIANCE','SECURITY','PLATFORM','DATA_RESIDENCY','OWNERSHIP','PROCUREMENT'],
+  DF088:['COMPLIANCE','SECURITY'],
+  DF089:['PLATFORM'],
+  DF090:['COMPLIANCE','SECURITY','DATA_RESIDENCY','OWNERSHIP'],
+  DF091:['CHANGE','RESOURCE']
+});
+function s08RelevantContextValues(fid,e){
+  const applicable=new Set(S08_INITIAL_CONTEXT_BY_FIELD[fid]||[]);
+  // OTHER and unspecified cross-cutting restrictions cannot be classified without
+  // human context, so never reinterpret them as a particular guardrail automatically.
+  return selectedValues(e?.answers?.DF010).filter(v=>applicable.has(String(v)));
+}
 function s08PriorContext(fid,e,currentVal,items){
-  const contextValues=selectedValues(e?.answers?.DF010).filter(Boolean);
+  const contextValues=s08RelevantContextValues(fid,e);
   const currentValues=selectedValues(currentVal).filter(Boolean);
   if(!contextValues.length&&!currentValues.length)return '';
   const contextLabels=contextValues.map(v=>labelFrom('OS_CONSTRAINT_TYPE',v)||v);
   const currentLabels=currentValues.map(v=>items?.find(x=>String(x.value)===String(v))?.label||v);
   const recommendation=s08Recommendation(fid,contextValues,currentValues);
-  return '<div class="reuse-context s08-prior-context"><div>'
-    +'<strong>Contexto previo</strong><small>'+(contextLabels.length?contextLabels.map(esc).join(' · '):'Sin restricciones previas registradas')+'</small>'
-    +(currentLabels.length?'<strong class="s08-context-subtitle">Concretado en esta pregunta</strong><small>'+currentLabels.map(esc).join(' · ')+'</small>':'')
-    +'<strong class="s08-context-subtitle">Recomendación</strong><small>'+esc(recommendation)+'</small>'
+  return '<div class="reuse-context s08-prior-context" data-s08-context-for="'+attr(fid)+'"><div>'
+    +(contextLabels.length?'<strong>Contexto previo relevante <span class="s08-context-source">· PG01 / DF010</span></strong><small>'+contextLabels.map(esc).join(' · ')+'</small>':'')
+    +(currentLabels.length?'<strong class="s08-context-subtitle">Opciones marcadas</strong><small>'+currentLabels.map(esc).join(' · ')+'</small>':'')
+    +(recommendation?'<strong class="s08-context-subtitle">Recomendación</strong><small>'+esc(recommendation)+'</small>':'')
     +'</div></div>';
 }
+// [AUNEA-FE-S08-RELEVANT-CONTEXT-148] END
+
 function renderControl(f,val,opts,e){
   const c=String(f.Control_UI||'').toUpperCase(),fid=f.Field_ID;
   if(['DF087','DF088','DF089','DF090','DF091'].includes(fid)){
