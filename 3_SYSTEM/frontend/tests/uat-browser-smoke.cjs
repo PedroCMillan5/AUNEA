@@ -23,6 +23,48 @@ async function main(){
   page.on('pageerror',err=>failures.push(err.message));
   await page.goto(origin+'/index.html',{waitUntil:'domcontentloaded'});
   await page.locator('[data-page="uat"]').click();
+  // Use the existing immutable synthetic fixture as a deliberately invalid PG01 capture.
+  // No imported backup, business data or master JSON is edited to make this test pass.
+  await page.evaluate(async()=>{
+    const response=await fetch(new URL('uat/cases/invoices.json',document.baseURI).href);
+    if(!response.ok)throw Error('PG01 browser fixture unavailable');
+    const row=uat3Seed(await response.json());
+    state.companies.push(row.company);state.contacts.push(...row.contacts);
+    state.opportunities.push(row.opportunity);state.interactions.push(row.interaction);
+    state.engagements.push(row.engagement);
+    state.activeEngagementId=row.engagement.id;
+    row.engagement.stageId='S01';state.activePage='diagnostico';render();
+  });
+  const pg01State=()=>page.evaluate(()=>({
+    stage:currentEng()?.stageId,
+    objectives:currentEng()?.answers?.DF008?.length,
+    criteria:currentEng()?.answers?.DF009?.length
+  }));
+  let pg01=await pg01State();
+  assert.deepEqual([pg01.objectives,pg01.criteria],[4,4],'PG01 must retain the four invalid imported selections');
+  assert.match(await page.locator('.pg01-validation-issues').innerText(),/máximo 3/);
+  assert.equal(await page.locator('#nav [data-stage-nav="S02"]').isDisabled(),true,'rail must block invalid PG01');
+  await page.locator('#nextStage').click();
+  assert.equal((await pg01State()).stage,'S01','A: Continue must refuse four objectives and four criteria');
+  await page.screenshot({path:path.join(outDir,'pg01-invalid-cardinality.png'),fullPage:false});
+  await page.evaluate(()=>{currentEng().answers.DF008.pop();render()});
+  await page.locator('#nextStage').click();
+  assert.equal((await pg01State()).stage,'S01','B: optional DF009 answered with four criteria must block');
+  await page.evaluate(()=>{currentEng().answers.DF009=[];render()});
+  await page.locator('#nextStage').click();
+  assert.equal((await pg01State()).stage,'S02','C: valid DF008 and blank optional DF009 permit PG02');
+  await page.locator('#prevStage').click();
+  await page.evaluate(()=>{currentEng().answers.DF008=['UNDERSTAND','REDUCE_TIME'];render()});
+  await page.locator('#nextStage').click();
+  pg01=await pg01State();
+  assert.equal(pg01.stage,'S02','D: returning to PG01 and editing permits revalidation');
+  assert.equal(pg01.objectives,2,'D: editing PG01 retains the corrected objective count');
+  console.log('PG01_CHROMIUM_GATE_PASS: four functional navigation scenarios');
+  await page.evaluate(()=>{
+    for(const key of ['companies','contacts','opportunities','interactions','engagements'])
+      state[key]=(state[key]||[]).filter(row=>!String(row.id||'').startsWith('UAT3-CASE-'));
+    state.activeEngagementId=null;state.activePage='uat';render();
+  });
   await page.locator('#loadSingleUat').click();
   await page.locator('#singleUatLoadStatus').getByText(/UAT completa y guardada: 1 estudio/).waitFor({timeout:20000});
 
