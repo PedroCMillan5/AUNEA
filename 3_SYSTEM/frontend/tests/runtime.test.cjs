@@ -226,6 +226,32 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
     const css=await fs.readFile(path.join(root,'ui-system.css'),'utf8');
     assert.match(css,/\.field\[data-field="DF087"\],[\s\S]*?\.field\[data-field="DF088"\]\{grid-column:1\/-1\}/,'DF087 y DF088 ocupan filas completas independientes');
   });
+  await t.test('PG03 real DOM aligns filled seasonality controls and retains SLA unit when peak period changes',async()=>{
+    const before=w.eval('JSON.stringify({stageId:currentEng().stageId,answers:currentEng().answers,details:currentEng().answerDetails,dirty:state.dirty})');
+    try{
+      w.eval(`(()=>{const e=currentEng();e.stageId='S03';e.answers.DF024='PREDICTABLE';e.answerDetails.DF024='Picos de fin de mes';e.answers.DF025={value:48,unit:'h',mode:''};e.answers.DF026={value:250,unit:'min'};e.answers.DF023={value:170,unit:'case',period:'month'};render()})()`);
+      const field=d.querySelector('.field[data-field="DF024"]'),pair=field?.querySelector('.demand-seasonality-pair');
+      assert.ok(field?.classList.contains('full'),'DF024 must use the full grid row');
+      assert.ok(pair,'seasonality is one paired DOM unit even when prefilled');
+      assert.ok(pair.querySelector(':scope > .canonical-aunea-select'),'left-hand select exists');
+      assert.ok(pair.querySelector(':scope > .detail-wrap input'),'right-hand detailed cause exists');
+      const css=await fs.readFile(path.join(root,'ui-system.css'),'utf8');
+      assert.match(css,/\.demand-seasonality-pair\{[\s\S]*?grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+      const slaUnit=d.querySelector('[data-number-unit="DF025"]');
+      assert.equal(slaUnit?.value,'h','the owner value 48 h must render with a selected unit');
+      assert.match(d.querySelector('[data-sla-value-wrap="DF025"]').textContent,/horas/);
+      assert.match(d.querySelector('[data-s03-service-time-compare]').textContent,/inferior al objetivo/);
+      const peakPeriod=d.querySelector('[data-aunea-select-option="DF023__period"][data-value="MONTH"]');
+      assert.ok(peakPeriod,'peak-period MONTH option exists');
+      peakPeriod.click();
+      assert.equal(w.eval('currentEng().answers.DF025.unit'),'h','changing DF023 must not erase DF025 unit');
+      assert.equal(d.querySelector('[data-number-unit="DF025"]').value,'h');
+      assert.ok(d.querySelector('.field[data-field="DF027"]'),'backlog remains in the same canonical stage');
+      assert.match(css,/\.field\[data-field="DF027"\]\{grid-column:1\}/);
+    }finally{
+      w.eval(`(()=>{const e=currentEng(),prior=${before};e.stageId=prior.stageId;e.answers=prior.answers;e.answerDetails=prior.details;state.dirty=prior.dirty;render()})()`);
+    }
+  });
   await t.test('VR-02 stage labels and order react to schema changes without a second list',()=>{
     w.eval('window.__flowBefore=schema.flow; schema.flow=schema.flow.slice().reverse().map((s,i)=>i===0?{...s,Stage_ES:"Etapa de prueba del schema"}:s); render()');
     try{
