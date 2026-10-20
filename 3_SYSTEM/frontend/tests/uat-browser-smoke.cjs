@@ -77,6 +77,23 @@ async function main(){
   console.log('PG02_CHROMIUM_AUDIT: '+JSON.stringify(pg02Audit));
   assert.equal(pg02Audit.stage,'S02','PG02 must be the active page after successful PG01');
   assert.equal(pg02Audit.fields.length>0,true,'PG02 must expose canonical data fields');
+  await page.locator('#nextStage').click();
+  assert.equal((await pg01State()).stage,'S03','PG02 Continue must reach PG03 with canonical data');
+  for(const stageId of ['S03','S08']){
+    const audit=await page.evaluate(()=>({
+      id:currentEng().stageId,
+      blocker:stageAdvanceProblem(currentEng()),
+      fields:(schema?.fields||[]).filter(f=>f.Stage_ID===currentEng().stageId).map(f=>({
+        id:f.Field_ID,requiredness:f.Requiredness,askMode:f.Ask_Mode,
+        visible:questionVisible(f,currentEng()),value:effectiveValue(f,currentEng()),
+        issue:canonicalFieldValidationIssue(f,effectiveValue(f,currentEng()),currentEng())
+      }))
+    }));
+    console.log('STAGE_CHROMIUM_AUDIT: '+JSON.stringify(audit));
+    assert.equal(audit.id,stageId,'canonical stage order after PG02');
+    if(audit.blocker)break;
+    await page.locator('#nextStage').click();
+  }
   await page.evaluate(()=>{
     for(const key of ['companies','contacts','opportunities','interactions','engagements'])
       state[key]=(state[key]||[]).filter(row=>!String(row.id||'').startsWith('UAT3-CASE-'));
