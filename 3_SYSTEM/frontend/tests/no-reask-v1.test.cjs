@@ -9,7 +9,7 @@ const company={id:'c1',name:'ACME',sector:'D25',country:'España'};
 const eng={companyId:'c1',contactIds:['p1'],answers:{DF011:'Proceso'},answerDetails:{},processSteps:[{id:'s1',status:'ACTIVE',step_name:'Alta',actor:'A1',tool:'T1',active_time:10,rework_time:2,occurrences_per_case:1,communication_channels:['CH1'],inputs:['AR1'],outputs:['AR2']},{id:'s2',status:'ACTIVE',step_name:'Aprobación',step_type:'ST05',actor:'A2',tool:'T2',wait_time:60,decision_criteria:['DC1'],communication_channels:['CH2']}],frictions:[{id:'f1',status:'ACTIVE',friction_type:'P07',evidence_type:'EV02'}],risks:[],economicInputs:[],confirmedAsIs:false};
 const opts={REF_COUNTRY_ISO3166:[{value:'ES',label:'España'}],REF_DOMAIN:[{value:'D25',label:'Professional Services Delivery'}],OS_COMM_CHANNEL:[{value:'CH1',label:'Email'},{value:'CH2',label:'Teams'},{value:'CH3',label:'Portal'}],OS_REVERSIBILITY:[{value:'REVERSIBLE',label:'Fácilmente reversible'},{value:'PARTIAL',label:'Reversible con coste / intervención'},{value:'HARD',label:'Difícil de revertir'},{value:'IRREVERSIBLE',label:'Prácticamente irreversible'}],OS_TOOL_CATEGORY:[],OS_ACTOR_ROLE:[],OS_ARTIFACT_TYPE:[],OS_FRICTION_TYPE:[{value:'P07',label:'Cuello'}]};
 const ctx={console,schema:{fields:[{Field_ID:'DF001',Requiredness:'REQUIRED_90M',Ask_Mode:'PREFILL_CONFIRM',Reask_Policy:'CONFIRM_ONLY_IF_CHANGED',Branch_Rule_ID:'BR-BASE',Option_Set_ID:null,Write_Target:'RT_COMPANY.Company_Name',Pregunta_o_etiqueta_ES:'Nombre de la empresa'},{Field_ID:'DF050',Pregunta_o_etiqueta_ES:'Canales de comunicación utilizados',Objetivo_concreto:'',Requiredness:'CONDITIONAL_90M',Ask_Mode:'DERIVE_AND_CONFIRM',Reask_Policy:'DERIVE_THEN_CONFIRM',Branch_Rule_ID:'BR-TOOLS',Reuse_From:'RT_PROCESS_STEP.Communication_Channels',Option_Set_ID:'OS_COMM_CHANNEL',Validation:'0..N.',Ejemplo_ES:'Email; Teams'},{Field_ID:'DF094',Requiredness:'CONDITIONAL_90M',Ask_Mode:'SYSTEM_GENERATED',Branch_Rule_ID:'BR-CLOSE'}]},currentEng:()=>eng,companyById:()=>company,fieldOptions:id=>opts[id]||[],labelFrom:(id,v)=>(opts[id]||[]).find(o=>String(o.value)===String(v))?.label||v,normalizeArray:v=>Array.isArray(v)?v:(v==null||v===''?[]:[v]),setAnswer:(fid,v)=>{eng.answers[fid]=v},setPage:()=>{},now:()=>new Date(0).toISOString(),markDirty:()=>{},audit:()=>{},answerDetails:e=>{e.answerDetails=e.answerDetails||{};return e.answerDetails},bindForms:()=>{},renderControl:(f,val)=>'<CONTROL value="'+(Array.isArray(val)?val.join(','):(val==null?'':val))+'">',render:()=>{},openModal:()=>{},id:p=>p,closeModal:()=>{},toast:()=>{},state:{companies:[company]},document:{querySelectorAll:()=>[],getElementById:()=>({})},esc:v=>String(v??''),attr:v=>String(v??''),requiredMark:()=>'<span class="required-mark" title="Campo obligatorio">*</span>'};
-ctx.prefillChip=s=>s?'<span class="prefill-chip">Prerrellenado desde '+s+'</span>':'';
+ctx.fieldStatusIcon=(kind,source)=>'<span class="field-status-icon field-status-'+(kind==='reused'?'reused':'saved')+'" data-tooltip="'+(kind==='reused'?'Autocompletado desde '+source:'Valor guardado en el estudio')+'"></span>';
 vm.createContext(ctx);vm.runInContext(code,ctx);
 test('NR03 derives channels from process steps',()=>{assert.deepEqual(Array.from(ctx.reusedValue('DF050',eng)),['CH1','CH2']);});
 test('legacy country label is canonicalized to ISO option value',()=>{assert.equal(ctx.reusedValue('DF005',eng),'ES');});
@@ -92,7 +92,8 @@ test('an existing CRM value is prefilled into the real control, never a blank qu
   // The references show a prefilled value as an ordinary filled control with a provenance chip, not a
   // read-only panel. The value must still be there, and it must still be attributed.
   assert.match(html,/ACME/,'the reused value is present');
-  assert.match(html,/prefill-chip/,'and is attributed to where it came from');
+  assert.match(html,/field-status-reused/,'the reused value has a provenance icon');
+  assert.match(html,/data-tooltip="Autocompletado desde/,'the hover text reveals the source');
   assert.doesNotMatch(html,/reuse-context/,'a Company-owned value is edited in place and written through, not shown as a panel');
 });
 test('required gaps use effective reused values and AS-IS gates',()=>{const gaps=Array.from(ctx.canonicalMissingRequired(eng));assert.ok(!gaps.includes('DF001'));assert.ok(gaps.includes('Confirmación AS-IS'));});
@@ -102,7 +103,7 @@ test('human provenance is unobtrusive while technical Reuse_From/Reask_Policy is
   const html=ctx.renderQuestion(f,eng);
   // Human-readable provenance is the chip beside the label; the technical mapping stays internal-only,
   // now inside the discreet help popover rather than printed under every field.
-  assert.match(html,/prefill-chip">Prerrellenado desde Nombre de la empresa/);
+  assert.match(html,/data-tooltip="Autocompletado desde Nombre de la empresa"/);
   assert.match(html,/class="internal-only technical-provenance"/);
   assert.match(html,/Reuse_From:<\/b> RT_COMPANY\.Company_Name/);
   assert.match(html,/Reask_Policy:<\/b> CONFIRM_ONLY_IF_CHANGED/);
