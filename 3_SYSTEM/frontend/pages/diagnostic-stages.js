@@ -12,6 +12,36 @@ function habitualVolumeBlock(f21,f22,e){
   const raw=effectiveValue(f21,e),value=(raw&&typeof raw==='object')?raw.value:raw,period=effectiveValue(f22,e),periods=fieldOptions(f22.Option_Set_ID||'OS_PERIOD');
   return `<div class="field full volume-pair demand-volume-primary" data-uat="UAT-VIS-023"><label>Volumen habitual${diagnosticFieldMeta(f21)}</label><div class="compound-control volume-sentence"><input type="number" inputmode="decimal" min="0" step="any" data-number-value="${f21.Field_ID}" value="${attr(value??'')}" placeholder="120" aria-label="Volumen habitual de casos"><span class="unit-label">casos por</span>${auneaSelectControl(f22.Field_ID,periods.map(o=>({value:o.value,label:String(o.label).toLowerCase()})),period,{extra:`data-answer="${f22.Field_ID}"`,placeholder:'Selecciona periodo…'})}</div><div class="field-help">${esc(f21.Objetivo_concreto||'')} ${esc(f22.Objetivo_concreto||'')}</div></div>`;
 }
+// [AUNEA-FE-DEMAND-SLA-CYCLE-143] START — Compare two distinct time measures, without interpreting compliance.
+// SOURCE: Diagnostic Master DF025 SLA_Target vs DF026 Actual_Cycle_Time; Simulator CANONICAL PG03.
+// INPUTS: existing RT_PROCESS answer owners; OUTPUT: read-only contextual comparison.
+// SIDE EFFECTS: none; no new question, SLA rule, derived answer, or economic projection.
+function s03ServiceTimeComparisonHtml(e){
+  const target=numberParts(e?.answers?.DF025),cycle=numberParts(e?.answers?.DF026);
+  const factor={min:1,h:60};
+  const a=Number(cycle.value),b=Number(target.value);
+  const comparable=target.mode!=='NONE'&&target.value!==''&&target.value!=null
+    &&cycle.value!==''&&cycle.value!=null&&Number.isFinite(a)&&Number.isFinite(b)
+    &&a>=0&&b>0&&factor[target.unit]&&factor[cycle.unit];
+  let sentence='';
+  if(target.mode==='NONE')sentence='No se ha declarado un SLA: no existe un objetivo con el que comparar el tiempo real.';
+  else if(comparable){
+    const comparison=a*factor[cycle.unit]<b*factor[target.unit]?'inferior al':
+      a*factor[cycle.unit]>b*factor[target.unit]?'superior al':'igual al';
+    sentence='En esta captura, el tiempo habitual declarado ('+esc(String(cycle.value))+' '+esc(cycle.unit)+') es '+comparison
+      +' objetivo ('+esc(String(target.value))+' '+esc(target.unit)+').';
+  } else if(target.value!==''&&cycle.value!=='')sentence='Hay valores de tiempo, pero no pueden compararse automáticamente con una base temporal homogénea.';
+  return '<strong>SLA frente a tiempo end-to-end</strong>'
+    +'<p><b>SLA (DF025):</b> plazo objetivo de servicio. <b>End-to-end (DF026):</b> duración habitual transcurrida desde el evento inicial hasta el resultado final, incluyendo esperas; no es sólo tiempo de trabajo.</p>'
+    +(sentence?'<p class="demand-service-observation">'+sentence+'</p>':'')
+    +'<p>Que el valor habitual sea inferior al objetivo no demuestra el cumplimiento de todos los casos. Antes de concluirlo hay que contrastar límites del proceso, calendario natural o laboral, variabilidad y evidencia del dato.</p>';
+}
+function refreshS03ServiceTimeComparison(e){
+  if(typeof document==='undefined')return;
+  const host=document.querySelector('[data-s03-service-time-compare]');
+  if(host)host.innerHTML=s03ServiceTimeComparisonHtml(e);
+}
+// [AUNEA-FE-DEMAND-SLA-CYCLE-143] END
 function slaTargetBlock(f,e){
   const p=numberParts(effectiveValue(f,e));
   const units=[{value:'min',label:'min'},{value:'h',label:'horas'},{value:'day',label:'días'},{value:'week',label:'semanas'}];
@@ -29,6 +59,7 @@ function slaTargetBlock(f,e){
       <input type="number" inputmode="decimal" min="0" step="any" data-number-value="${f.Field_ID}" value="${attr(p.value??'')}" placeholder="Ej. 24" aria-label="Tiempo objetivo">
       ${auneaSelectControl(`${f.Field_ID}__unit`,units,p.unit,{extra:`data-number-unit="${f.Field_ID}"`,placeholder:'Unidad'})}
     </div>
+    <div class="demand-service-comparison" data-s03-service-time-compare="1" aria-live="polite">${s03ServiceTimeComparisonHtml(e)}</div>
   </div>`;
 }
 
