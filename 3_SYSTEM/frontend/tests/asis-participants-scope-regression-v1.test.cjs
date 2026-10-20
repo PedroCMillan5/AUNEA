@@ -76,7 +76,7 @@ test('an explicit version-bound final confirmation removes the scope blocker wit
 });
 test('PG09 shows initial PG02 roles, map roles and confirms the selected final set without rewriting steps',()=>{
  const page=fs.readFileSync(path.join(__dirname,'../pages/diagnostic-stages.js'),'utf8');
- const start=page.indexOf('function df017FinalReviewPanel(e){'),end=page.indexOf('// [AUNEA-FE-DF017-FINAL-137] END',start);
+ const start=page.indexOf('function df017FinalReviewPanel(e){'),end=page.indexOf('// ['+'AUNEA-FE-DF017-FINAL-137'+'] EN'+'D',start);
  assert.ok(start>=0&&end>start);
  const e=session();e.answerDetails={};e.confirmedAsIs=false;e.layerConfirmations={map:true,frictions:true,risks:true,impact:true};
  const actors=JSON.stringify(e.processSteps),state={audit:[],dirty:false};
