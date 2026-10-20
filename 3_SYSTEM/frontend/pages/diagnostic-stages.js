@@ -318,6 +318,60 @@ function stagePage(){
 function processPrompt(e){return `<div class="notice info"><strong>Mapa AS-IS:</strong> los campos DF031–DF055 se capturan principalmente en el editor visual. Actualmente hay <b>${e.processSteps.filter(x=>x.status!=='SUPERSEDED').length}</b> pasos. <button class="btn btn-small btn-primary" data-open-process-editor="1">Abrir editor con el cliente ↗</button><button class="btn btn-small" data-goto-process="1">Abrir aquí</button></div>`}
 function frictionPrompt(e){return `<div class="notice info"><strong>Fricciones:</strong> DF056–DF065 se capturan vinculando cada fricción a uno o varios pasos. Actualmente hay <b>${e.frictions.filter(x=>x.status!=='SUPERSEDED').length}</b> fricciones. <button class="btn btn-small" data-goto-process="1">Abrir fricciones</button></div>`}
 
+// [AUNEA-FE-DF017-FINAL-137] START — Confirm PG02 participants against step actors at PG09.
+// PG02 owns the initial answer; ProcessStep owns actors. The review keeps both sources,
+// saves the confirmed final DF017 without changing ProcessSteps, and invalidates stale outputs.
+function df017FinalReviewPanel(e){
+  const steps=activeSteps(e), mapped=[...new Set(steps.map(s=>String(s.actor||'')).filter(Boolean))];
+  const details=e.answerDetails||{},initial=normalizeArray(details.DF017__initial_scope??e.answers?.DF017).map(String);
+  const final=normalizeArray(e.answers?.DF017).map(String);
+  const sign=JSON.stringify({declared:[...new Set(final)].sort(),mapped:[...mapped].sort()});
+  const confirmed=details.DF017__final_scope_confirmation?.fingerprint===sign;
+  const choices=[...new Set([...initial,...mapped,...final])];
+  if(!choices.length)return '';
+  const fmt=arr=>arr.length?arr.map(v=>labelFrom('OS_ACTOR_ROLE',v)||v).join(' · '):'Ninguno declarado';
+  const current=confirmed?final:(initial.length?initial:mapped);
+  const opts=choices.map(v=>'<label class="df017-final-choice"><input type="checkbox" data-df017-final-option="'+attr(v)+'" '+(current.includes(v)?'checked':'')+'><span>'+esc(labelFrom('OS_ACTOR_ROLE',v)||v)+'</span></label>').join('');
+  return '<div class="df017-final-review" data-df017-final-review="1"><h3>Validación de participantes · DF017</h3>'
+    +'<p>En la página 2 seleccionaste <strong>'+initial.length+' perfil(es)</strong>: '+esc(fmt(initial))+'.</p>'
+    +'<p>En el mapa AS-IS aparecen <strong>'+mapped.length+' perfil(es)</strong>: '+esc(fmt(mapped))+'.</p>'
+    +'<p class="field-help">Compara ambas listas y confirma qué perfiles deben quedar como participantes finales. Los responsables de cada paso no cambian.</p>'
+    +'<div class="df017-final-options" role="group" aria-label="Perfiles finales del proceso">'+opts+'</div>'
+    +(confirmed?'<span class="status green">✓ Listado final confirmado</span>':'<button type="button" class="btn btn-small btn-primary" data-confirm-df017-final="1">Confirmar listado final</button>')
+    +'</div>';
+}
+function confirmDf017FinalSelection(){
+  const e=currentEng();if(!e)return false;
+  const selected=[...document.querySelectorAll('[data-df017-final-option]:checked')].map(el=>String(el.dataset.df017FinalOption));
+  if(!selected.length){toast('Selecciona al menos un perfil para confirmar el listado final.');return false}
+  const allowed=new Set(fieldOptions('OS_ACTOR_ROLE').map(x=>String(x.value)));
+  if(selected.some(x=>!allowed.has(x))){toast('Existe un perfil no reconocido en el catálogo.');return false}
+  const before=JSON.parse(JSON.stringify(e)),priorAudit=[...(state.audit||[])],priorDirty=state.dirty;
+  const details=e.answerDetails||(e.answerDetails={});
+  const initial=normalizeArray(details.DF017__initial_scope??e.answers?.DF017).map(String);
+  if(!Object.prototype.hasOwnProperty.call(details,'DF017__initial_scope'))details.DF017__initial_scope=[...initial];
+  const mapped=[...new Set(activeSteps(e).map(s=>String(s.actor||'')).filter(Boolean))];
+  const changed=JSON.stringify(e.answers?.DF017)!==JSON.stringify(selected);
+  e.answers=e.answers||{};e.answers.DF017=selected;
+  details.DF017__final_scope_confirmation={
+    fingerprint:JSON.stringify({declared:[...new Set(selected)].sort(),mapped:[...mapped].sort()}),
+    confirmedAt:now(),initial:[...initial],mapped:[...mapped],final:[...selected]
+  };
+  if(changed){
+    if(e.confirmedAsIs&&typeof invalidateAsIsClosure==='function')invalidateAsIsClosure(e,'participantes finales DF017 actualizados');
+    invalidateDerivedState(e,'confirmación final de participantes DF017','DF017');
+  }
+  e.updatedAt=now();markDirty('DF017: listado final de participantes confirmado');
+  if(typeof persistRecoverySnapshot==='function'&&!persistRecoverySnapshot('confirmación DF017')){
+    Object.keys(e).forEach(k=>delete e[k]);Object.assign(e,before);
+    state.audit=priorAudit;state.dirty=priorDirty;
+    toast('No se ha guardado la confirmación de participantes. Revisa la sincronización.');
+    render();return false;
+  }
+  render();return true;
+}
+// [AUNEA-FE-DF017-FINAL-137] END
+
 // Real closing screen for the last stage (UAT-VIS-063/064/066/067): factual summary, never a proxy
 // state ("revisada"/"confirmado") that the data model does not actually have (correction #3) — only
 // e.confirmedAsIs is a real confirmed state; frictions/risks only ever report "con evidencia/controles
@@ -349,6 +403,7 @@ function validationSummary(e,completion){
       <div class="notice"><b>Siguiente paso</b><br>${nextStep?esc(nextStep):'Pendiente de acordar (DF098)'}</div>
       <div class="notice"><b>Snapshot final</b><br>${snap?`v${snap.version} · ${esc(formatDateEs(snap.sealedAt))}`:'Pendiente · se genera al confirmar el cierre'}</div>
     </div>
+    ${df017FinalReviewPanel(e)}
     <div class="closing-consistency-review" data-consistency-review="1">
       <h3>Validación de coherencia</h3>
       <p class="field-help">AUNEA contrasta lo ya capturado antes de sellar el snapshot. No vuelve a preguntar datos ni elige automáticamente entre respuestas incompatibles.</p>
@@ -408,6 +463,7 @@ bindForms=function(){
   document.querySelectorAll('[data-consistency-stage]').forEach(b=>b.onclick=()=>{const e=currentEng();if(!e)return;e.stageId=b.dataset.consistencyStage;render()});
   document.querySelectorAll('[data-open-gate-review]').forEach(b=>b.onclick=()=>openEngineGateReview());
   document.querySelectorAll('[data-pg09-confirm-layer]').forEach(b=>b.onclick=()=>confirmProcessLayer(({map:'cliente',frictions:'fricciones',risks:'riesgos',impact:'impacto'})[b.dataset.pg09ConfirmLayer]));
+  const df017Final=document.querySelector('[data-confirm-df017-final]');if(df017Final)df017Final.onclick=()=>confirmDf017FinalSelection();
   const finalConfirm=document.getElementById('confirmClosingAsIs');if(finalConfirm)finalConfirm.onclick=()=>confirmClosingAsIs();
   const sd=document.getElementById('saveDraft');if(sd)sd.onclick=()=>saveState('Borrador guardado');
 };
