@@ -235,6 +235,9 @@ function setAnswer(fid,value){
   // no-op unless the engagement is exactly one step behind, so this never skips or rewrites a state.
   if(typeof advanceEngagementTo==='function')advanceEngagementTo(e,'Sesión 1','primera captura de la sesión');
   invalidateDerivedState(e,`respuesta ${fid} actualizada`,fid);markDirty(`Respuesta ${fid} actualizada`);if(typeof refreshCaptureProgress==='function')refreshCaptureProgress();if(typeof refreshPendingFieldVisual==='function')refreshPendingFieldVisual(fid,e);
+  // [AUNEA-FE-DEMAND-SLA-REFRESH-144] START — Display-only refresh after changing the owner fields.
+  if((fid==='DF025'||fid==='DF026')&&typeof refreshS03ServiceTimeComparison==='function')refreshS03ServiceTimeComparison(e);
+  // [AUNEA-FE-DEMAND-SLA-REFRESH-144] END
 }
 function normalizeArray(v){if(Array.isArray(v))return v;if(v===null||v===undefined||v==='')return [];return [v]}
 
