@@ -21,15 +21,26 @@ function studyPagination(rows){
   const start=(page-1)*STUDY_PAGE_SIZE;
   return {page,totalPages,rows:rows.slice(start,start+STUDY_PAGE_SIZE)};
 }
+function studyWorkAvailable(eng){
+  return !!eng && engagementAtLeast(eng,'Trabajo interno') && hasConfirmedSnapshot(eng);
+}
+function studyCanAdvanceToInternal(eng){
+  return !!eng && engagementStatus(eng)==='Sesión 1' && hasConfirmedSnapshot(eng)
+    && typeof allProcessLayersConfirmed==='function' && allProcessLayersConfirmed(eng);
+}
+function studyContactNames(eng){
+  return (eng?.contactIds||[]).map(contactById).filter(c=>c && c.companyId===eng.companyId)
+    .map(contactFullName).filter(Boolean).join(', ') || '—';
+}
 function closeStudyFloatingMenu(){document.getElementById('studyFloatingMenu')?.remove()}
 function openStudyActionMenu(button,engagementId){
   closeStudyFloatingMenu();
   const eng=(state.engagements||[]).find(x=>x.id===engagementId);if(!eng)return;
-  const next=nextEngagementStatus(eng);
+  const canWork=studyWorkAvailable(eng),canAdvance=studyCanAdvanceToInternal(eng);
   const menu=document.createElement('div');menu.id='studyFloatingMenu';menu.className='row-menu-popover company-floating-menu';
   menu.innerHTML=`<button type="button" data-study-menu-open="${attr(eng.id)}">Abrir estudio</button>
-    <button type="button" data-study-menu-work="${attr(eng.id)}">Trabajo interno</button>
-    ${next?`<button type="button" data-study-menu-advance="${attr(eng.id)}">Avanzar a ${esc(next)}</button>`:''}`;
+    ${canWork?`<button type="button" data-study-menu-work="${attr(eng.id)}">Trabajo interno</button>`:''}
+    ${canAdvance?`<button type="button" data-study-menu-advance="${attr(eng.id)}">Avanzar a Trabajo interno</button>`:''}`;
   document.body.appendChild(menu);
   const r=button.getBoundingClientRect(),gap=6;
   let left=Math.min(window.innerWidth-menu.offsetWidth-8,Math.max(8,r.right-menu.offsetWidth));
@@ -38,8 +49,8 @@ function openStudyActionMenu(button,engagementId){
   menu.style.left=`${left}px`;menu.style.top=`${top}px`;
 }
 function studyActionMenu(e){
-  const next=nextEngagementStatus(e);
-  return `<div class="study-action-cell"><button type="button" class="kebab-btn" data-study-actions="${attr(e.id)}" aria-label="Acciones de ${attr(e.title||'estudio')}">•••</button><span class="hidden" aria-hidden="true"><button type="button" data-open-eng="${attr(e.id)}">Abrir estudio</button><button type="button" data-open-eng="${attr(e.id)}" data-open-eng-page="resultados">Trabajo interno</button>${next?`<button type="button" data-advance-eng="${e.id}">Avanzar a ${esc(next)}</button>`:''}</span></div>`;
+  const canWork=studyWorkAvailable(e),canAdvance=studyCanAdvanceToInternal(e);
+  return `<div class="study-action-cell"><button type="button" class="kebab-btn" data-study-actions="${attr(e.id)}" aria-label="Acciones de ${attr(e.title||'estudio')}">•••</button><span class="hidden" aria-hidden="true"><button type="button" data-open-eng="${attr(e.id)}">Abrir estudio</button>${canWork?`<button type="button" data-open-eng="${attr(e.id)}" data-open-eng-page="resultados">Trabajo interno</button>`:''}${canAdvance?`<button type="button" data-advance-eng="${attr(e.id)}">Avanzar a Trabajo interno</button>`:''}</span></div>`;
 }
 
 if(!window.__auneaStudyActionsBound){
@@ -52,16 +63,17 @@ if(!window.__auneaStudyActionsBound){
     ev.preventDefault();ev.stopPropagation();closeStudyFloatingMenu();
     const eid=action.dataset.studyMenuOpen||action.dataset.studyMenuWork||action.dataset.studyMenuAdvance;
     const eng=(state.engagements||[]).find(x=>x.id===eid);if(!eng)return;
+    if(action.dataset.studyMenuWork!==undefined && !studyWorkAvailable(eng))return;
+    if(action.dataset.studyMenuAdvance!==undefined && !studyCanAdvanceToInternal(eng))return;
     state.activeEngagementId=eng.id;
     if(action.dataset.studyMenuOpen!==undefined){state.activePage='diagnostico';render();return}
     if(action.dataset.studyMenuWork!==undefined){state.activePage='resultados';render();return}
-    const next=nextEngagementStatus(eng);
-    if(next&&advanceEngagementTo(eng,next,'avance manual desde Estudios'))render();
+    if(action.dataset.studyMenuAdvance!==undefined && advanceEngagementTo(eng,'Trabajo interno','avance tras cierre validado en PG09')){state.activePage='resultados';render()}
   },true);
 }
 function studiesPage(){
   const all=state.engagements||[],paged=studyPagination(all),rows=paged.rows;
-  const body=all.length?`<div class="table-wrap"><table class="data-table studies-table"><thead><tr><th>Empresa</th><th>Estudio</th><th>Área</th><th>Contacto</th><th>Proceso</th><th>Ciclo de vida</th><th>Actualizado</th><th>Acciones</th></tr></thead><tbody>${rows.map(e=>`<tr><td>${esc(companyById(e.companyId)?.name||'—')}</td><td><b>${esc(e.title)}</b></td><td>${esc(labelFrom('REF_DOMAIN',e.businessAreaId)||'—')}</td><td>${esc(e.contactIds.map(x=>contactById(x)?.name).filter(Boolean).join(', '))}</td><td>${esc(e.answers?.DF011||'Pendiente')}</td><td>${statusBadge(engagementStatus(e))}</td><td>${fmtDate(e.updatedAt)}</td><td>${studyActionMenu(e)}</td></tr>`).join('')}</tbody></table></div>
+  const body=all.length?`<div class="table-wrap"><table class="data-table studies-table"><thead><tr><th>Empresa</th><th>Estudio</th><th>Área</th><th>Contacto</th><th>Proceso</th><th>Ciclo de vida</th><th>Actualizado</th><th>Acciones</th></tr></thead><tbody>${rows.map(e=>`<tr><td>${esc(companyById(e.companyId)?.name||'—')}</td><td><b>${esc(e.title)}</b></td><td>${esc(labelFrom('REF_DOMAIN',e.businessAreaId)||'—')}</td><td>${esc(studyContactNames(e))}</td><td>${esc(e.answers?.DF011||'Pendiente')}</td><td>${statusBadge(engagementStatus(e))}</td><td>${fmtDate(e.updatedAt)}</td><td>${studyActionMenu(e)}</td></tr>`).join('')}</tbody></table></div>
     <div class="table-foot studies-table-foot"><span>Mostrando ${rows.length} de ${all.length} estudios</span>${paged.totalPages>1?`<nav class="crm-pagination studies-pagination" aria-label="Páginas de estudios"><button type="button" data-study-page="${paged.page-1}" ${paged.page<=1?'disabled':''} aria-label="Página anterior">‹</button>${Array.from({length:paged.totalPages},(_,i)=>i+1).map(n=>`<button type="button" class="${n===paged.page?'active':''}" data-study-page="${n}" aria-current="${n===paged.page?'page':'false'}">${n}</button>`).join('')}<button type="button" data-study-page="${paged.page+1}" ${paged.page>=paged.totalPages?'disabled':''} aria-label="Página siguiente">›</button></nav>`:''}</div>`
     :'<div class="empty"><h2>No hay estudios</h2><p>Crea uno desde un contacto para mantener trazabilidad de la relación.</p></div>';
   return `<span class="studies-screen-marker" hidden></span>`+pageTop('Estudios','Biblioteca histórica de engagements. Un contacto puede tener varios estudios y proyectos.',`<button class="btn btn-primary" id="newStudy">Nuevo estudio</button>`)+section('Histórico',`${all.length} estudio(s) guardados en este navegador.`,body);
