@@ -557,8 +557,9 @@ function renderQuestion(f,e){
   // The references put the requiredness mark and the provenance chip beside the label, and show no
   // Field_ID on the field itself — coverage is stated once, in the stage inspector.
   const source=f.Reuse_From?reuseSourceInfo(f):null,reuse=reusedValue(f.Field_ID,e);
-  const chip=(source&&valuePresent(reuse))?prefillChip(source.label):'';
-  const meta=`${required?requiredMark():''}${f.Requiredness==='CONDITIONAL_90M'?'<span class="conditional-tag">condicional</span>':''}${chip}`;
+  const chip=(source&&valuePresent(reuse))?fieldStatusIcon('reused',source.label):'';
+  const saved=valuePresent(e.answers?.[f.Field_ID])&&!systemOnly?fieldStatusIcon('saved'):'';
+  const meta=`${required?requiredMark():''}${f.Requiredness==='CONDITIONAL_90M'?'<span class="conditional-tag">condicional</span>':''}${chip}${saved}`;
   let body='';
   if(mode==='DERIVE_AND_CONFIRM'){
     const src=reuseSourceInfo(f),confirmed=isDerivedConfirmed(f,e,reuse),derivedText=valuePresent(reuse)?formatContextValue(f,reuse):'Sin elementos derivados';
@@ -584,7 +585,7 @@ function renderQuestion(f,e){
       // multi-step compound fields like DF098, needs 3 separate interactions to complete — the very
       // next unrelated render() made it vanish behind a small "Editar aquí" link. Keep it fully
       // editable; just mark visibly that it already has a value.
-      body=`<div class="answered-inline"><span class="answered-badge">✓ Guardado</span>${renderControl(f,val,opts,e)}</div>`;
+      body=`<div class="answered-inline">${renderControl(f,val,opts,e)}</div>`;
     } else {
       const src=reuseSourceInfo(f),needsConfirm=requiresDerivedConfirmation(f),confirmed=needsConfirm&&isDerivedConfirmed(f,e);
       const confirmUi=needsConfirm?(confirmed?'<span class="status green">Derivación confirmada</span>':`<button type="button" class="btn btn-small btn-primary" data-confirm-derived="${f.Field_ID}">Confirmar valor</button>`):'';
