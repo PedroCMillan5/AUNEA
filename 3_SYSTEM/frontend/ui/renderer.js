@@ -349,7 +349,7 @@ function renderControl(f,val,opts,e){
   if(c==='DROPDOWN_WITH_STEP_LINK')return canonicalSelect(fid,opts,val)+stepSingle(`${fid}__step`,e,answerDetails(e)[`${fid}__step`]||'');
   if(c==='COMBOBOX_WITH_DETAIL')return selectWithConditionalDetail(fid,opts,val,'Detalle / nombre concreto');
   if(c==='COMBOBOX_REFERENCE')return selectWithConditionalDetail(fid,opts,val,'Nueva referencia sólo si no existe');
-  if(c==='MULTISELECT'||c==='MULTICHECK'||c==='MULTISELECT_REFERENCE'||c==='SYSTEM_GENERATED_MULTISELECT')return multiChoices(fid,opts,val,{other:hasCanonicalOtherOption(opts)});
+  if(c==='MULTISELECT'||c==='MULTICHECK'||c==='MULTISELECT_REFERENCE'||c==='MULTICHECK_WITH_REFERENCE'||c==='SYSTEM_GENERATED_MULTISELECT')return multiChoices(fid,opts,val,{other:hasCanonicalOtherOption(opts)});
   if(c==='MULTISELECT_WITH_OTHER'||c==='MULTICHECK_WITH_OTHER')return multiChoices(fid,opts,val,{other:true});
   if(c==='MULTISELECT_WITH_DETAIL'||c==='MULTICHECK_WITH_DETAIL'||c==='MULTISELECT_WITH_REFERENCE')return hasCanonicalOtherOption(opts)?multiChoices(fid,opts,val,{other:true}):multiChoices(fid,opts,val,{detail:true});
   if(c==='MULTISELECT_WITH_PRIORITY')return multiChoicesWithPriority(fid,opts,val,e);
