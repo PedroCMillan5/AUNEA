@@ -29,6 +29,9 @@ async function main(){
     const response=await fetch(new URL('uat/cases/invoices.json',document.baseURI).href);
     if(!response.ok)throw Error('PG01 browser fixture unavailable');
     const row=uat3Seed(await response.json());
+    // Negative-case injection is test-local: the canonical invoice fixture stays valid.
+    row.engagement.answers.DF008.push('CONTROL');
+    row.engagement.answers.DF009.push('SCOPE');
     state.companies.push(row.company);state.contacts.push(...row.contacts);
     state.opportunities.push(row.opportunity);state.interactions.push(row.interaction);
     state.engagements.push(row.engagement);
