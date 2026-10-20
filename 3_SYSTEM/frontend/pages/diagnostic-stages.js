@@ -57,7 +57,7 @@ function renderStageFields(fields,e){
 // to their single owner. B03 adds the canonical S01 remainder as progressive disclosure below them.
 // [AUNEA-FROZEN-STAGE-S01-001] START — S01 Contexto y objetivos
 const PG01_PRIORITY=Object.freeze(['Baja','Media','Alta','Crítica']);
-function pg01Prefill(source){return `<span class="prefill-chip">Prellenado desde ${esc(source)}</span>`}
+function pg01Prefill(source){return fieldStatusIcon('reused',source)}
 function pg01Field(label,control,help,{source='',required=null,full=false}={}){
   const canonical=(String(control).match(/data-pg01-df="(DF\d+)"/)||[])[1]||'';
   const canonicalField=canonical?(schema?.fields||[]).find(f=>f.Field_ID===canonical):null;
@@ -213,7 +213,7 @@ function bindPg01Context(){
 function engagementBusinessAreaBlock(e){
   const options=fieldOptions('REF_DOMAIN');
   return `<div class="field full engagement-business-area" data-runtime-field="RT_ENGAGEMENT.Business_Area_ID">
-    <label>Área de la empresa <span class="prefill-chip">Propio de este estudio</span></label>
+    <label>Área de la empresa ${fieldStatusIcon('reused','el estudio activo')}</label>
     ${auneaSelectControl('engagement_business_area',options,e.businessAreaId||'',{extra:'data-engagement-business-area="1"',placeholder:'Selecciona el área principal del estudio…'})}
     <div class="field-help">Área o dominio funcional sobre el que se realiza este diagnóstico. Puede ser distinta en otros estudios de la misma empresa.</div>
   </div>`;
