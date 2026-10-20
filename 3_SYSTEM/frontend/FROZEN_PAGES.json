@@ -1,5 +1,5 @@
 {
-  "version": 7,
+  "version": 8,
   "frozen_pages": [
     {
       "page_id": "inicio",
@@ -76,9 +76,12 @@
       "stage_id": "S01",
       "status": "FROZEN",
       "frozen_on": "2026-09-24",
-      "rule": "Contexto y objetivos cerrado por aprobación explícita del propietario. No modificar sin reapertura explícita.",
+      "rule": "Reapertura autorizada 20/10/2026: PG01 muestra validación cardinalidad DF008/DF009, reutiliza DF003 exclusivamente desde Company y presenta CNAE legacy por código canónico. Solo PG01 cambia de presentación; motor y snapshot preservan owner/procedencia e histórico. Snapshot de S01 renovado tras QA dirigido; suite CI y UAT de navegador requieren comprobación independiente. No modificar sin nueva autorización.",
       "source_snapshot": "tests/frozen/session-s01-v1.js.snapshot",
-      "gate": "AUNEA-UAT-SESSION-FINALIZED-FROZEN-020"
+      "gate": "AUNEA-UAT-SESSION-FINALIZED-FROZEN-020",
+      "reopened_on": "2026-10-20",
+      "reapproved_on": "2026-10-20",
+      "qa_reference": "tests/pg01-dependencies-v1.test.cjs"
     },
     {
       "page_id": "alcance-proceso",
