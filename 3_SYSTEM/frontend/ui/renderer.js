@@ -340,8 +340,11 @@ function renderControl(f,val,opts,e){
   if(c==='DROPDOWN_WITH_DETAIL'){
     if(fid==='DF024'){
       const material=['PREDICTABLE','IRREGULAR','STRONG'].includes(String(val||''));
-      return canonicalSelect(fid,opts,val,`data-seasonality-select="${fid}"`)
-        +`<div class="detail-wrap" data-seasonality-detail="${fid}"${material?'':' style="display:none"'}>${detailInput(fid,'Periodo / causa si aplica')}</div>`;
+      // PG03 uses a single semantic pair, even when renderQuestion wraps existing
+      // answers in .answered-inline. Each side is aligned and equally wide.
+      return `<div class="demand-seasonality-pair" data-demand-seasonality-pair="DF024">`
+        +canonicalSelect(fid,opts,val,`data-seasonality-select="${fid}"`)
+        +`<div class="detail-wrap" data-seasonality-detail="${fid}"${material?'':' style="display:none"'}>${detailInput(fid,'Periodo / causa si aplica')}</div></div>`;
     }
     return selectWithConditionalDetail(fid,opts,val,'Detalle si aplica');
   }
