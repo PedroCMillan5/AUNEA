@@ -27,7 +27,7 @@ function fixture(){
     normalizeArray:v=>Array.isArray(v)?v:v===undefined||v===null||v===''?[]:[v],
     bindForms:()=>{},now:()=>new Date('2026-10-20T10:00:00Z').toISOString(),audit:()=>{},markDirty:()=>{},
     contactFullName:c=>[c.firstName,c.lastName].filter(Boolean).join(' '),
-    attr:String,esc:String,requiredMark:()=>'*',
+    attr:String,esc:String,requiredMark:()=>'*',fieldStatusIcon:(kind,source)=>'<STATUS kind="'+kind+'" source="'+source+'">',
     auneaSelectControl:(_id,_opts,v)=>'<SELECT data-value="'+v+'">',
     companySizeBand:c=>Number(c.employeeCount)>0?'11–50':'—',
     questionVisible:()=>true,renderControl:()=>'<CONTROL>',renderStageFields:()=>'<FIELDS>',currentEng:()=>engagement,
