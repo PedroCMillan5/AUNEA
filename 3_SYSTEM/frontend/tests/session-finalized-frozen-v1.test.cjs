@@ -17,3 +17,42 @@ test('reopened S08 defect fix adds only page-scoped spacing outside the frozen w
 
 test('registry freezes the four approved pages but not S03',()=>{const r=JSON.parse(read('FROZEN_PAGES.json')),ids=new Set(r.frozen_pages.filter(x=>x.status==='FROZEN').map(x=>x.page_id));for(const id of ['estudios','contexto-objetivos','alcance-proceso','estado-objetivo-restricciones'])assert.ok(ids.has(id),id);assert.ok(!ids.has('demanda-volumen-servicio'))});
 // [AUNEA-UAT-SESSION-FINALIZED-FROZEN-020] END
+
+
+test('S08 filters only relevant DF010 context per field without changing canonical owner answers',()=>{
+  const vm=require('node:vm'),renderer=read('ui/renderer.js');
+  const from=renderer.indexOf('function s08Recommendation('),to=renderer.indexOf('function renderControl(',from);
+  assert.ok(from>=0&&to>from,'isolated S08 context functions exist');
+  const labels={COMPLIANCE:'Legal / compliance',OWNERSHIP:'Ownership / propiedad de datos',PLATFORM:'Herramientas / plataforma'};
+  const ctx={
+    selectedValues:v=>Array.isArray(v)?v:[],
+    labelFrom:(name,v)=>labels[v]||v,
+    esc:s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'),
+    attr:s=>String(s).replace(/"/g,'&quot;')
+  };
+  vm.createContext(ctx);vm.runInContext(renderer.slice(from,to),ctx);
+  const e={answers:{DF010:['COMPLIANCE','OWNERSHIP','PLATFORM']}},before=JSON.stringify(e);
+  const context=id=>Array.from(ctx.s08RelevantContextValues(id,e));
+  assert.deepEqual(context('DF087'),['COMPLIANCE','OWNERSHIP','PLATFORM']);
+  assert.deepEqual(context('DF088'),['COMPLIANCE']);
+  assert.deepEqual(context('DF089'),['PLATFORM']);
+  assert.deepEqual(context('DF090'),['COMPLIANCE','OWNERSHIP']);
+  assert.deepEqual(context('DF091'),[]);
+  const html=ctx.s08PriorContext('DF089',e,['KEEP_EXISTING'],[{value:'KEEP_EXISTING',label:'Mantener herramientas actuales'}]);
+  assert.match(html,/Contexto previo relevante/);
+  assert.match(html,/PG01 \/ DF010/);
+  assert.match(html,/Herramientas \/ plataforma/);
+  assert.doesNotMatch(html,/Legal \/ compliance|Ownership \/ propiedad de datos/);
+  assert.match(html,/Opciones marcadas/);
+  assert.match(html,/Recomendación/);
+  const other=ctx.s08PriorContext('DF091',e,['TRAINING'],[{value:'TRAINING',label:'Necesidad de formación'}]);
+  assert.doesNotMatch(other,/Contexto previo relevante|Sin restricciones previas/);
+  assert.match(other,/Opciones marcadas/);
+  assert.match(other,/Necesidad de formación/);
+  assert.match(other,/Recomendación/);
+  assert.equal(JSON.stringify(e),before,'presentational context does not write to owners');
+});
+test('S08 stays frozen at approved layout baseline while only renderer context is refined',()=>{
+  const c=read('ui-system.css');
+  assert.equal(block(c,'/* ['+'AUNEA-FROZEN-STAGE-S08-001'+'] START','/* ['+'AUNEA-FROZEN-STAGE-S08-001'+'] END */'),read('tests/frozen/session-s08-v1.css.snapshot'));
+});
