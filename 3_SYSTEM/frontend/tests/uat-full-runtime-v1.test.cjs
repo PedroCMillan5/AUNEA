@@ -24,6 +24,30 @@ function buildRuntime(storage){
  run('schema=applyDiagnosticMasterV12('+JSON.stringify(JSON.parse(read('data/diagnostic-master.min.json')))+');');
  return {w,dom,errors,run};
 }
+test('full UAT classifies every DF001–DF100 and validates populated editable fields',()=>{
+ const {run,dom}=buildRuntime();
+ try{
+  const fixture=JSON.parse(read('uat/cases/invoices.json'));
+  const row=run('uat3Seed('+JSON.stringify(fixture)+')');
+  run('state.companies.push('+JSON.stringify(row.company)+');state.contacts.push(...'+JSON.stringify(row.contacts)+');state.engagements.push('+JSON.stringify(row.engagement)+');state.activeEngagementId='+JSON.stringify(row.engagement.id));
+  const fields=Array.from(run("schema.fields.map(f=>({id:f.Field_ID,stage:f.Stage_ID,mode:f.Ask_Mode,control:f.Control_UI,owner:typeof structuredCaptureOwner==='function'?structuredCaptureOwner(f):null,visible:questionVisible(f,currentEng()),value:effectiveValue(f,currentEng()),valid:canonicalFieldValuePresent(f,effectiveValue(f,currentEng()),currentEng()),issue:canonicalFieldValidationIssue(f,effectiveValue(f,currentEng()),currentEng())}))"));
+  assert.equal(fields.length,100,'test must inspect the current 100-field Diagnostic Master');
+  assert.equal(new Set(fields.map(f=>f.id)).size,100,'every canonical ID is accounted for exactly once');
+  const derived=new Set(['DERIVED','SYSTEM_GENERATED','DERIVE_AND_CONFIRM','SYSTEM_SUGGEST_THEN_CONFIRM']);
+  const confirmation=new Set(['CLIENT_CONFIRMATION']);
+  const directlyEditable=fields.filter(f=>f.visible&&!f.owner&&!derived.has(f.mode)&&!confirmation.has(f.mode));
+  const invalid=fields.filter(f=>f.visible&&!f.owner&&f.issue);
+  const incomplete=directlyEditable.filter(f=>!f.valid);
+  assert.deepEqual(invalid.map(f=>({id:f.id,issue:f.issue})),[],'no visible form field should contain an invalid imported value');
+  assert.deepEqual(incomplete.map(f=>({id:f.id,stage:f.stage,mode:f.mode})),[],'full-case UAT must not silently leave ANY applicable editable question blank, even if OPTIONAL_90M');
+  const structured=fields.filter(f=>f.owner),unowned=fields.filter(f=>!f.owner);
+  assert.equal(structured.length+unowned.length,100);
+  assert.ok(structured.some(f=>f.owner==='PROCESS_STEP')&&structured.some(f=>f.owner==='FRICTION')&&structured.some(f=>f.owner==='RISK')&&structured.some(f=>f.owner==='ECONOMIC'));
+  assert.equal(row.engagement.confirmedAsIs,false,'test fixture must never forge client closure');
+  assert.equal((row.engagement.confirmedSnapshots||[]).length,0);
+  console.log('AUNEA_100_FIELD_COVERAGE '+JSON.stringify({canonical:fields.length,directlyEditable:directlyEditable.length,structured:structured.length,derived:fields.filter(f=>derived.has(f.mode)).length,clientConfirmations:fields.filter(f=>confirmation.has(f.mode)).length,hidden:fields.filter(f=>!f.visible).length}));
+ } finally {dom.window.close()}
+});
 test('single UAT loads complete, traverses PG01-PG09 and hands off to internal work',async()=>{
  const {w,dom,errors,run}=buildRuntime();
  run("state.activePage='uat';render()");
