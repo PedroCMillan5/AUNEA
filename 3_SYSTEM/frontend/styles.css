@@ -113,6 +113,21 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}a{color:inherit}
 .df017-final-choice input{width:15px;height:15px;flex:0 0 15px;accent-color:var(--system)}
 /* [AUNEA-FE-DF017-FINAL-CSS-137] END */
 
+/* [AUNEA-FE-PG02-REVIEW-CSS-139] START — Read-only limit reconciliation and accessible full-text preview. */
+.pg02-boundary-review{margin-top:18px;padding:16px 18px;border:1px solid var(--line);border-radius:var(--radius-sm);background:#f9faf9}
+.pg02-boundary-review h3{margin:0 0 9px;font-size:var(--font-body)}
+.pg02-boundary-review>.field-help{margin:6px 0 10px}
+.pg02-boundary-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:10px 0}
+.pg02-boundary-row>div{min-width:0;background:#fff;border:1px solid var(--line);border-radius:var(--radius-sm);padding:10px 12px}
+.pg02-boundary-row small{display:block;color:var(--muted);font-size:var(--font-caption)}
+.pg02-boundary-row p{margin:6px 0 0;font-size:var(--font-small);line-height:1.5;overflow-wrap:anywhere}
+.boundary-full-preview{margin:6px 0 3px;font-size:var(--font-caption)}
+.boundary-full-preview summary{display:inline-block;color:var(--system);cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.boundary-full-preview p{padding:9px 11px;border:1px solid var(--system-line);border-radius:var(--radius-sm);background:var(--system-soft);line-height:1.55;overflow-wrap:anywhere}
+@media(max-width:760px){.pg02-boundary-row{grid-template-columns:1fr}}
+/* [AUNEA-FE-PG02-REVIEW-CSS-139] END */
+
+
 .char-count{float:right;font-size:var(--font-caption);color:var(--muted)}
 .badge{display:inline-flex;align-items:center;border-radius:var(--radius-pill);padding:4px 11px;font-size:var(--font-caption);font-weight:600;background:#eef0ef;color:#5b6560}
 .badge.ok{background:var(--green-soft);color:#1d6b3f}.badge.wait{background:var(--amber-soft);color:#8c5900}.badge.off{background:var(--red-soft);color:#a43830}.badge.system{background:var(--system-soft);color:var(--system)}
