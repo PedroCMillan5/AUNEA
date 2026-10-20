@@ -45,9 +45,15 @@ test('PG03 explains SLA vs actual elapsed time and does not certify per-case com
   assert.match(state,/refreshS03ServiceTimeComparison\(e\)/);
 });
 test('PG03 seasonal classification and its contextual detail have aligned adjacent columns',()=>{
-  assert.match(css,/\.field\[data-field="DF024"\]\{[\s\S]*?grid-column:1\/-1;display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
-  assert.match(css,/\.field\[data-field="DF024"\]>\.detail-wrap\{margin-top:0\}/);
-  assert.match(css,/@media\(max-width:760px\)[\s\S]*?\.field\[data-field="DF024"\]\{grid-template-columns:1fr\}/);
+  assert.match(css,/\.demand-seasonality-pair\{[\s\S]*?grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(css,/\.demand-seasonality-pair>\.detail-wrap\{margin:0;width:100%;min-width:0\}/);
+  assert.match(css,/@media\(max-width:760px\)[\s\S]*?\.demand-seasonality-pair\{grid-template-columns:1fr\}/);
+});
+test('DF024 actually renders as a full-width two-control pair even with answered-inline wrapping',()=>{
+  const noReask=read('domain/no-reask.js');
+  assert.match(noReask,/const wide=\['DF024','DF094','DF095'\]/);
+  assert.match(renderer,/class="demand-seasonality-pair"/);
+  assert.match(renderer,/data-seasonality-detail="\$\{fid\}"/);
 });
 test('PG03 backlog uses the left column beneath elapsed end-to-end time',()=>{
   assert.match(css,/\.field\[data-field="DF027"\]\{grid-column:1\}/);
