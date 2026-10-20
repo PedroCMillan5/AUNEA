@@ -1,5 +1,5 @@
 {
-  "version": 8,
+  "version": 9,
   "frozen_pages": [
     {
       "page_id": "inicio",
@@ -76,12 +76,13 @@
       "stage_id": "S01",
       "status": "FROZEN",
       "frozen_on": "2026-09-24",
-      "rule": "Reapertura autorizada 20/10/2026: PG01 muestra validación cardinalidad DF008/DF009, reutiliza DF003 exclusivamente desde Company y presenta CNAE legacy por código canónico. Solo PG01 cambia de presentación; motor y snapshot preservan owner/procedencia e histórico. Snapshot de S01 renovado tras QA dirigido; suite CI y UAT de navegador requieren comprobación independiente. No modificar sin nueva autorización.",
+      "rule": "PG01 autorizada y congelada tras correcciones del 20/10/2026. Captura y fuente única se mantienen; DF008 (REQUIRED_90M) admite 1–3 objetivos y DF009 (OPTIONAL_90M) admite 0–3 criterios. El avance por Continuar, rail o acceso genérico comprueba la validez de la etapa y previene saltos ante datos inválidos, incluidos importados. QA dirigido de clics y opciones; ejecución integral y UAT visual del propietario pendientes. Sin modificar el snapshot visual S01 en esta corrección.",
       "source_snapshot": "tests/frozen/session-s01-v1.js.snapshot",
       "gate": "AUNEA-UAT-SESSION-FINALIZED-FROZEN-020",
       "reopened_on": "2026-10-20",
       "reapproved_on": "2026-10-20",
-      "qa_reference": "tests/pg01-dependencies-v1.test.cjs"
+      "qa_reference": "tests/pg01-dependencies-v1.test.cjs",
+      "qa_note": "10 pruebas Node añadidas/actualizadas; ejecución dirigida del código: 5 escenarios de Continuar, 5 de rail y verificación render de bloqueo, todos PASS; CI integral pendiente"
     },
     {
       "page_id": "alcance-proceso",
