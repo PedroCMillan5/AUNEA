@@ -62,12 +62,13 @@
       "screen_id": "P05",
       "status": "FROZEN",
       "frozen_on": "2026-09-24",
-      "rule": "Página cerrada por aprobación explícita del propietario. Menú ••• flotante idéntico al patrón Empresas/CRM. No modificar sin reapertura explícita.",
+      "rule": "Página reabierta con autorización el 20/10/2026 y cerrada tras QA dirigido 8/8. P05 muestra Contact por nombre completo y sólo permite Trabajo interno tras validación PG09. Mantener FROZEN hasta nueva autorización.",
       "source_snapshot": "tests/frozen/studies-page-v1.js.snapshot",
       "style_snapshot": "tests/frozen/studies-style-v1.css.snapshot",
       "gate": "AUNEA-UAT-SESSION-FINALIZED-FROZEN-020",
       "reopened_on": "2026-10-20",
-      "qa_reference": "tests/studies-actions-gated-v1.test.cjs"
+      "qa_reference": "tests/studies-actions-gated-v1.test.cjs",
+      "reapproved_on": "2026-10-20"
     },
     {
       "page_id": "contexto-objetivos",
