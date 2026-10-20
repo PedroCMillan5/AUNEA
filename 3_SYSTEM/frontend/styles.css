@@ -95,6 +95,8 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}a{color:inherit}
 .field-status-icon{position:relative;display:inline-flex;align-items:center;justify-content:center;flex:0 0 19px;width:19px;height:19px;vertical-align:middle;border-radius:50%;cursor:help;outline-offset:2px;color:var(--system);background:var(--system-soft)}
 .field-status-icon svg{display:block;pointer-events:none}
 .field-status-saved{color:#1d6b3f;background:var(--green-soft)}
+.field-status-pending{color:#925d0f;background:var(--amber-soft)}
+.field-status-error{color:#a43830;background:var(--red-soft)}
 .field-status-icon:hover,.field-status-icon:focus-visible{outline:1px solid currentColor}
 .field-status-icon::after{content:attr(data-tooltip);display:none;position:absolute;z-index:90;top:calc(100% + 7px);left:50%;transform:translateX(-50%);width:max-content;max-width:min(270px,80vw);padding:7px 9px;border:1px solid #dadfdc;border-radius:6px;background:#fff;box-shadow:0 4px 14px rgba(20,24,28,.16);font-size:var(--font-caption);font-weight:500;line-height:1.45;white-space:normal;color:#37433f;pointer-events:none}
 .field-status-icon:hover::after,.field-status-icon:focus-visible::after{display:block}
