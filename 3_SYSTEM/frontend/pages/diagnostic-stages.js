@@ -57,7 +57,7 @@ function renderStageFields(fields,e){
 // to their single owner. B03 adds the canonical S01 remainder as progressive disclosure below them.
 // [AUNEA-FROZEN-STAGE-S01-001] START — S01 Contexto y objetivos
 const PG01_PRIORITY=Object.freeze(['Baja','Media','Alta','Crítica']);
-function pg01Prefill(source){return fieldStatusIcon('reused',source)}
+function pg01Prefill(source){return typeof fieldStatusIcon==='function'?fieldStatusIcon('reused',source):''}
 function pg01Field(label,control,help,{source='',required=null,full=false}={}){
   const canonical=(String(control).match(/data-pg01-df="(DF\d+)"/)||[])[1]||'';
   const canonicalField=canonical?(schema?.fields||[]).find(f=>f.Field_ID===canonical):null;
