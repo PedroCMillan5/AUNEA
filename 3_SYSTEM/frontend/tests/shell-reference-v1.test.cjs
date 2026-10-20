@@ -196,7 +196,10 @@ test('C01 closes PG01 interaction detail: compound phone, canonical fold title a
   // The gate reads requiredness and branch activity from the Diagnostic Master, decides nothing itself,
   // and is wired into the Continuar button rather than living beside it.
   assert.match(diagJs, /function blockStageAdvance\(e\)/);
-  assert.match(diagJs, /f\.Stage_ID===sid&&f\.Requiredness==='REQUIRED_90M'&&questionVisible\(f,e\)&&!valuePresent\(effectiveValue\(f,e\)\)/);
+  assert.match(diagJs, /f\.Stage_ID===sid&&canonicalFieldRequiredNow\(f,e\)/, 'only canonically required fields gate by missingness');
+  assert.match(diagJs, /!canonicalFieldValuePresent\(f,effectiveValue\(f,e\),e\)/, 'nonempty but invalid required answer still blocks');
+  assert.match(diagJs, /f\.Stage_ID===sid&&questionVisible\(f,e\)/, 'validate all visible answers on the current stage');
+  assert.match(diagJs, /canonicalFieldValidationIssue\(f,effectiveValue\(f,e\),e\)/, 'optional entered answers remain subject to canonical validity');
   assert.doesNotMatch(diagJs, /closest\('details\.pg01-disclosure'\)/,'the block is no longer collapsible');
   const shellJs = fs.readFileSync(path.join(root, 'ui/shell.js'), 'utf8');
   assert.match(shellJs, /blockStageAdvance\(e\)\)return;if\(i<schema\.flow\.length-1\)/, 'Continuar must consult the gate before advancing');
