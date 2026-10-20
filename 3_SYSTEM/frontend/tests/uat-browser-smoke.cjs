@@ -119,7 +119,7 @@ async function main(){
     assert.match(layout.comparison,/inferior al objetivo/);
     const vertical=await page.evaluate(()=>{
       const box=id=>{
-        const element=document.querySelector('.diagnostic-stage-s03 .field[data-field="'+id+'"]');
+        const element=document.querySelector('.field[data-field="'+id+'"]');
         if(!element)return null;
         const r=element.getBoundingClientRect();
         return {x:r.x,y:r.y,width:r.width,height:r.height,bottom:r.bottom};
