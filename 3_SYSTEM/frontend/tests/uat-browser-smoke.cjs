@@ -117,6 +117,22 @@ async function main(){
     assert.ok(layout.gap>=10&&layout.gap<=24,'pair has a consistent visual gap: '+JSON.stringify(layout));
     assert.equal(layout.target,'h','48-hour SLA unit comes from the owner value');
     assert.match(layout.comparison,/inferior al objetivo/);
+    const vertical=await page.evaluate(()=>{
+      const box=id=>{
+        const element=document.querySelector('.diagnostic-stage-s03 .field[data-field="'+id+'"]');
+        if(!element)return null;
+        const r=element.getBoundingClientRect();
+        return {x:r.x,y:r.y,width:r.width,height:r.height,bottom:r.bottom};
+      };
+      return {cycle:box('DF026'),backlog:box('DF027'),errors:box('DF028')};
+    });
+    assert.ok(vertical.cycle&&vertical.backlog&&vertical.errors,'DF026, DF027 and DF028 must all appear');
+    const {cycle,backlog,errors}=vertical;
+    assert.ok(Math.abs(cycle.x-backlog.x)<3,'Backlog must be beneath end-to-end in the left column: '+JSON.stringify(vertical));
+    assert.ok(Math.abs(backlog.x-errors.x)<3,'Errors and rework must use the same left column as backlog: '+JSON.stringify(vertical));
+    assert.ok(cycle.bottom<backlog.y,'Backlog must follow end-to-end vertically: '+JSON.stringify(vertical));
+    assert.ok(backlog.bottom<errors.y,'Proporción de casos must be BELOW backlog, not alongside it: '+JSON.stringify(vertical));
+    console.log('PG03_CHROMIUM_VERTICAL_PASS: '+JSON.stringify(vertical));
     await page.screenshot({path:path.join(outDir,'pg03-demand-sla-aligned.png'),fullPage:true});
     console.log('PG03_CHROMIUM_LAYOUT_PASS: '+JSON.stringify(layout));
   }finally{
