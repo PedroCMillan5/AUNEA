@@ -649,6 +649,27 @@ body:has(.opportunities-screen-marker) .app-shell{height:100vh;min-height:0;over
 .content:has(.diagnostic-stage-s03) .percent-count-control:has(.number-count-period[hidden]){grid-template-columns:minmax(160px,1fr) 150px}
 .content:has(.diagnostic-stage-s03) .number-count-period,.content:has(.diagnostic-stage-s03) .number-count-period>.canonical-aunea-select{min-width:0;width:100%}
 @media(max-width:900px){.content:has(.diagnostic-stage-s03) .percent-count-control,.content:has(.diagnostic-stage-s03) .percent-count-control:has(.number-count-period[hidden]){grid-template-columns:1fr}}
+/* [AUNEA-FE-DEMAND-LAYOUT-145] START — PG03 sole visual layout, no schema or data ownership change. */
+.content:has(.diagnostic-stage-s03) .field[data-field="DF024"]{
+  grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:14px;row-gap:7px;align-items:start
+}
+.content:has(.diagnostic-stage-s03) .field[data-field="DF024"]>label,
+.content:has(.diagnostic-stage-s03) .field[data-field="DF024"]>.field-help{grid-column:1/-1}
+.content:has(.diagnostic-stage-s03) .field[data-field="DF024"]>.canonical-aunea-select,
+.content:has(.diagnostic-stage-s03) .field[data-field="DF024"]>.detail-wrap{min-width:0;width:100%}
+.content:has(.diagnostic-stage-s03) .field[data-field="DF024"]>.detail-wrap{margin-top:0}
+.content:has(.diagnostic-stage-s03) .field[data-field="DF024"]>.detail-wrap input{width:100%;box-sizing:border-box}
+.content:has(.diagnostic-stage-s03) .field[data-field="DF027"]{grid-column:1}
+.content:has(.diagnostic-stage-s03) .demand-service-comparison{border-top:1px solid var(--line);padding-top:11px;display:grid;gap:6px;font-size:var(--font-caption);line-height:1.5}
+.content:has(.diagnostic-stage-s03) .demand-service-comparison strong{font-size:var(--font-small);color:var(--ink)}
+.content:has(.diagnostic-stage-s03) .demand-service-comparison p{margin:0;color:var(--muted)}
+.content:has(.diagnostic-stage-s03) .demand-service-comparison .demand-service-observation{font-weight:700;color:var(--system)}
+@media(max-width:760px){
+  .content:has(.diagnostic-stage-s03) .field[data-field="DF024"]{grid-template-columns:1fr}
+  .content:has(.diagnostic-stage-s03) .field[data-field="DF027"]{grid-column:auto}
+}
+/* [AUNEA-FE-DEMAND-LAYOUT-145] END */
+
 /* [AUNEA-FE-DEMAND-STAGE-030] END */
 
 
