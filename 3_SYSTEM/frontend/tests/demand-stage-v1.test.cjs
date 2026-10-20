@@ -32,3 +32,32 @@ test('DF028 percentage hides period; count reveals a period selector',()=>{
   assert.match(renderer,/period=unit==='percent'\?'':rawPeriod/);
   assert.match(css,/\.percent-count-control \.number-count-period\[hidden\]\{display:none!important\}/);
 });
+
+// [AUNEA-UAT-DEMAND-SLA-LAYOUT-146] START — SLA meaning and demand layout regression.
+test('PG03 explains SLA vs actual elapsed time and does not certify per-case compliance',()=>{
+  assert.match(stages,/function s03ServiceTimeComparisonHtml\(e\)/);
+  assert.match(stages,/SLA \(DF025\)/);
+  assert.match(stages,/End-to-end \(DF026\)/);
+  assert.match(stages,/no demuestra el cumplimiento de todos los casos/);
+  assert.match(stages,/data-s03-service-time-compare/);
+  const state=read('core/state.js');
+  assert.match(state,/fid==='DF025'\|\|fid==='DF026'/);
+  assert.match(state,/refreshS03ServiceTimeComparison\(e\)/);
+});
+test('PG03 seasonal classification and its contextual detail have aligned adjacent columns',()=>{
+  assert.match(css,/\.field\[data-field="DF024"\]\{[\s\S]*?grid-column:1\/-1;display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(css,/\.field\[data-field="DF024"\]>\.detail-wrap\{margin-top:0\}/);
+  assert.match(css,/@media\(max-width:760px\)[\s\S]*?\.field\[data-field="DF024"\]\{grid-template-columns:1fr\}/);
+});
+test('PG03 backlog uses the left column beneath elapsed end-to-end time',()=>{
+  assert.match(css,/\.field\[data-field="DF027"\]\{grid-column:1\}/);
+  assert.match(stages,/if\(f\.Field_ID==='DF025'\)/);
+  assert.match(stages,/out\.push\(renderQuestion\(f,e\)\)/);
+});
+test('comparison uses only existing DF025 and DF026 with no added capture or SLA business rule',()=>{
+  const section=stages.slice(stages.indexOf('function s03ServiceTimeComparisonHtml'),stages.indexOf('function slaTargetBlock'));
+  assert.match(section,/e\?\.answers\?\.DF025/);
+  assert.match(section,/e\?\.answers\?\.DF026/);
+  assert.doesNotMatch(section,/setAnswer|writeThroughToOwner|Math\.round/);
+});
+// [AUNEA-UAT-DEMAND-SLA-LAYOUT-146] END
