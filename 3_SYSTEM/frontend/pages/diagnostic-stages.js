@@ -144,8 +144,10 @@ function refreshPg01DisclosureValidation(){
 // at the first field still missing, unfolding the progressive-disclosure block when it hides one.
 function stagePendingRequired(e,stageId){
   const sid=stageId||e?.stageId||'S01';
-  const missing=(schema?.fields||[]).filter(f=>f.Stage_ID===sid&&f.Requiredness==='REQUIRED_90M'&&questionVisible(f,e)&&!valuePresent(effectiveValue(f,e)));
-  return missing.filter(f=>!(typeof canonicalFieldValuePresent==='function'&&canonicalFieldValuePresent(f,effectiveValue(f,e),e)));
+  // Presence alone is not completion: an imported value that breaks canonical validation
+  // (e.g. DF008 with four choices) remains pending even if it is nonempty.
+  return (schema?.fields||[]).filter(f=>f.Stage_ID===sid&&canonicalFieldRequiredNow(f,e)
+    &&!canonicalFieldValuePresent(f,effectiveValue(f,e),e));
 }
 function focusPendingField(fid){
   const host=document.querySelector(`.field[data-field="${fid}"]`);
@@ -159,18 +161,26 @@ function focusPendingField(fid){
 // Continuar applies the same canonical required/applicable contract to every session stage.
 function blockStageAdvance(e){
   if(!e)return false;
-  const sid=e.stageId||'S01',pending=stagePendingRequired(e,sid);
-  if(!pending.length){
-    const invalid=typeof canonicalFieldIntegrityIssues==='function'?canonicalFieldIntegrityIssues(e).find(x=>x.stage===sid):null;
-    if(!invalid)return false;
-    focusPendingField(invalid.id);
-    toast(invalid.label);
+  const sid=e.stageId||'S01';
+  // One canonical rule source for both REQUIRED_90M completion and the validity of any
+  // answered OPTIONAL_90M / CONDITIONAL_90M field. This checks the stage being left,
+  // regardless of how the user reaches the Continue button or whether a progress panel refreshed.
+  const invalid=(schema?.fields||[])
+    .filter(f=>f.Stage_ID===sid&&questionVisible(f,e))
+    .map(f=>({field:f,reason:canonicalFieldValidationIssue(f,effectiveValue(f,e),e)}))
+    .find(item=>item.reason);
+  if(invalid){
+    focusPendingField(invalid.field.Field_ID);
+    toast(`${invalid.field.Pregunta_o_etiqueta_ES||invalid.field.Field_ID}: ${invalid.reason}`);
     return true;
   }
-  const first=pending[0],issue=typeof canonicalFieldValidationIssue==='function'?canonicalFieldValidationIssue(first,effectiveValue(first,e),e):'';
-  focusPendingField(first.Field_ID);
-  toast(issue?`${first.Pregunta_o_etiqueta_ES||first.Field_ID}: ${issue}`:`Falta un campo obligatorio: ${first.Pregunta_o_etiqueta_ES||first.Field_ID}`);
-  return true;
+  const first=stagePendingRequired(e,sid)[0];
+  if(first){
+    focusPendingField(first.Field_ID);
+    toast(`Falta un campo obligatorio: ${first.Pregunta_o_etiqueta_ES||first.Field_ID}`);
+    return true;
+  }
+  return false;
 }
 
 function bindPg01Context(){
