@@ -260,7 +260,7 @@ function captureProgressHtml(e,stage){
   const completion=engagementCompletion(e);
   const stat=completion.stage[stage.Stage_ID]||{applicable:0,answered:0,pct:100};
   return `<div class="completion-headline" style="margin-bottom:8px">${completion.readyToCalculate?'<span class="status green">Listo para calcular</span>':`<span class="status amber">${completion.missing.length} pendiente${completion.missing.length===1?'':'s'}</span>`}</div>`
-    +kvRows([['En esta etapa',`${stat.answered} de ${stat.applicable} campo(s) con dato`],['Etapas revisadas',`${completion.stagesReviewed} de ${completion.stagesTotal}`],['Obligatorios',`${completion.requiredComplete} de ${completion.requiredApplicable}`],['Evidencia pendiente',String(completion.evidencePending.length)]]);
+    +kvRows([['En esta etapa',`${stat.answered} de ${stat.applicable} campo(s) con dato`],['Etapas con requisitos cumplidos',`${completion.stagesReviewed} de ${completion.stagesTotal}`],['Obligatorios',`${completion.requiredComplete} de ${completion.requiredApplicable}`],['Evidencia pendiente',String(completion.evidencePending.length)]]);
 }
 function refreshCaptureProgress(){
   if(typeof document==='undefined')return;
