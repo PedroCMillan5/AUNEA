@@ -423,7 +423,12 @@ function bindCommon(){
     if(!setEngagementStatus(e,nextEngagementStatus(e),'avance manual desde Estudios'))return toast('Ese estado no es el siguiente del ciclo de vida.');
     render();
   });
-  document.querySelectorAll('[data-stage]').forEach(b=>b.onclick=()=>{const e=currentEng();e.stageId=b.dataset.stage;markDirty();render()});
+  document.querySelectorAll('[data-stage]').forEach(b=>b.onclick=()=>{
+    const e=currentEng();if(!e)return;
+    const blocker=firstForwardSessionBlocker(e,b.dataset.stage);
+    if(blocker){toast(blocker.message);return}
+    e.stageId=b.dataset.stage;markDirty();render();
+  });
   bindForms();
 }
 
