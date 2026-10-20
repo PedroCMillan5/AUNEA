@@ -210,6 +210,29 @@ function bindPg01Context(){
 }
 
 // [AUNEA-FROZEN-STAGE-S02-001] START — S02 Alcance del proceso
+// [AUNEA-FE-SCOPE-PG02-139] START — Read-only source comparison, no new capture or inferred correctness.
+// SOURCE: Diagnostic Master DF012–DF015, ProcessStep owner, DEC-050/065 and existing scope review.
+// A first/last-step comparison is factual; semantic equivalence still requires human review in map.
+function pg02BoundaryReviewHtml(e){
+  const steps=typeof activeSteps==='function'?activeSteps(e):[];
+  if(!steps.length)return '';
+  const initial=String(e.answers?.DF014||''),final=String(e.answers?.DF015||'');
+  const first=steps[0],last=steps[steps.length-1];
+  const issues=typeof processScopeReviewSignals==='function'?processScopeReviewSignals(e):[];
+  const noted=typeof scopeReviewAcknowledged==='function'?scopeReviewAcknowledged(e):false;
+  const texts=[
+    ['Inicio definido en PG02',initial||'No concretado','Primer paso del mapa',String(first.step_name||'No identificado')],
+    ['Final definido en PG02',final||'No concretado','Último paso del mapa',String(last.step_name||'No identificado')]
+  ];
+  return '<section class="pg02-boundary-review" data-pg02-boundary-review="1"><h3>Contraste con el mapa AS-IS</h3>'
+    +'<p class="field-help">Reutilizamos los límites definidos aquí y los comparamos con los pasos activos. La equivalencia de su significado requiere revisión humana; AUNEA no modifica ni vuelve a preguntar estos datos.</p>'
+    +texts.map(([label,a,mappedLabel,b])=>'<div class="pg02-boundary-row"><div><small>'+esc(label)+'</small><p>'+esc(a)+'</p></div><div><small>'+esc(mappedLabel)+'</small><p>'+esc(b)+'</p></div></div>').join('')
+    +(issues.length?'<div class="notice warn" data-pg02-scope-alert="1"><strong>Revisión necesaria</strong><p>'+issues.map(s=>esc(s.message)).join(' ')+'</p></div>':'<p class="field-help">El contraste visual no acredita por sí solo la equivalencia semántica. La revisión del mapa continúa siendo obligatoria.</p>')
+    +(noted?'<span class="status green">Revisión registrada para esta versión del mapa</span>':'<span class="status amber">Pendiente de revisar/confirmar en el mapa AS-IS</span>')
+    +'</section>';
+}
+// [AUNEA-FE-SCOPE-PG02-139] END
+
 function engagementBusinessAreaBlock(e){
   const options=fieldOptions('REF_DOMAIN');
   return `<div class="field full engagement-business-area" data-runtime-field="RT_ENGAGEMENT.Business_Area_ID">
@@ -293,7 +316,7 @@ function stagePage(){
     : `<div class="card stage-card">
       ${fields.some(f=>f.Requiredness==='REQUIRED_90M')?REQUIRED_LEGEND_HTML:''}
       <div class="form-grid">${engagementArea}${stageFields}</div>
-      ${stage.Stage_ID==='S04'?processPrompt(e):''}${stage.Stage_ID==='S05'?frictionPrompt(e):''}
+      ${stage.Stage_ID==='S02'?pg02BoundaryReviewHtml(e):''}${stage.Stage_ID==='S04'?processPrompt(e):''}${stage.Stage_ID==='S05'?frictionPrompt(e):''}
       ${stage.Stage_ID==='S06'?riskBuilder(e):''}${stage.Stage_ID==='S07'?economicBuilder(e):''}
       ${isLastStage?validationSummary(e,completion):''}
     </div>`;
