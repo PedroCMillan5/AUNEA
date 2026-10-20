@@ -30,7 +30,7 @@ function fixture(){
     attr:String,esc:String,requiredMark:()=>'*',
     auneaSelectControl:(_id,_opts,v)=>'<SELECT data-value="'+v+'">',
     companySizeBand:c=>Number(c.employeeCount)>0?'11–50':'—',
-    questionVisible:()=>true,renderStageFields:()=>'<FIELDS>',
+    questionVisible:()=>true,renderControl:()=>'<CONTROL>',renderStageFields:()=>'<FIELDS>',currentEng:()=>engagement,
     document:{querySelector:()=>null}
   };
   vm.createContext(ctx);
