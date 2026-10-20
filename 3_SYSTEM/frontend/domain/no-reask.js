@@ -20,7 +20,24 @@ function activeTimeContributors(e){return activeSteps(e).filter(x=>scalarNumber(
 // DF078/DF079, no Field_ID derives a total from wait_time), so this only surfaces which steps recorded
 // wait_time as evidence; it never sums or annualizes it.
 function waitTimeContributors(e){return activeSteps(e).filter(x=>scalarNumber(x.wait_time)>0).map(x=>x.step_name||x.id)}
-function canonicalValueFromLabel(setId,value){if(value===undefined||value===null||value==='')return value;const opts=fieldOptions(setId),m=opts.find(o=>String(o.value)===String(value)||String(o.label).toLowerCase()===String(value).toLowerCase());return m?m.value:value}
+function canonicalValueFromLabel(setId,value){
+  if(value===undefined||value===null||value==='')return value;
+  const opts=fieldOptions(setId),raw=String(value).trim();
+  const m=opts.find(o=>String(o.value)===raw||String(o.label).toLowerCase()===raw.toLowerCase());
+  if(m)return m.value;
+  // Older CRM exports used CNAE section letters. Accept only an exact canonical counterpart;
+  // the company master is not rewritten merely because a diagnostic page was displayed.
+  if(setId==='REF_INDUSTRY_CNAE25'&&/^[A-V]$/i.test(raw)){
+    const legacy=opts.find(o=>String(o.value).toUpperCase()===`CNAE25-${raw.toUpperCase()}`);
+    if(legacy)return legacy.value;
+  }
+  return value;
+}
+const CANONICAL_MULTISELECT_MAX=Object.freeze({
+  DF008:3, // Diagnostic Master v1.2: seleccionar 1–3 objetivos.
+  DF009:3  // Diagnostic Master v1.2: seleccionar hasta 3 criterios de éxito.
+});
+function canonicalMultiSelectMaximum(fid){return CANONICAL_MULTISELECT_MAX[fid]||null}
 function reaskState(e){e.reaskOverrides=e.reaskOverrides||{};return e.reaskOverrides}
 function explicitReaskAllowed(fid,e){return !!reaskState(e)[fid]}
 function valuePresent(v){if(v===undefined||v===null||v==='')return false;if(Array.isArray(v))return v.length>0;if(typeof v==='object')return Object.values(v).some(valuePresent);return true}
@@ -33,6 +50,8 @@ function canonicalFieldValidationIssue(f,v,e){
   const control=String(f.Control_UI||'').toUpperCase(),mode=v&&typeof v==='object'?String(v.mode||'').toUpperCase():'',detail=String(e?.answerDetails?.[f.Field_ID]||'').trim();
   const opts=typeof fieldOptions==='function'?fieldOptions(f.Option_Set_ID):[],other=(opts||[]).find(o=>String(o.value).toUpperCase()==='OTHER'||['otro','otra'].includes(String(o.label||'').trim().toLowerCase()));
   const selected=normalizeArray(v).map(String);
+  const limit=canonicalMultiSelectMaximum(f.Field_ID);
+  if(limit&&new Set(selected).size>limit)return `Selecciona como máximo ${limit} opciones.`;
   if(other&&selected.includes(String(other.value))&&!detail)return 'Completa el detalle de la opción «Otro».';
   if((control==='CONTACT_OR_ROLE_REFERENCE'||control.includes('DROPDOWN_WITH_DETAIL'))&&String(v)==='OTHER'&&!detail)return 'Completa el detalle de la opción «Otro».';
   if(f.Field_ID==='DF099'&&String(v)==='YES'&&!detail)return 'Indica el alcance o condición del permiso.';
@@ -165,6 +184,7 @@ function reusedValue(fid,e){
   const steps=activeSteps(e),fr=activeFrictions(e),c=companyById(e.companyId);
   if(fid==='DF001')return c?.name||e.answers?.DF001||'';
   if(fid==='DF002')return canonicalValueFromLabel('REF_INDUSTRY_CNAE25',c?.sector||e.answers?.DF002||'');
+  if(fid==='DF003')return Number.isFinite(Number(c?.employeeCount))&&Number(c.employeeCount)>0?Number(c.employeeCount):undefined;
   // DF004 is Company-owned (RT_COMPANY.Revenue_Band). Reuse the actual stored band,
   // not a generated number or a new independent Engagement answer.
   if(fid==='DF004')return c?.revenueBand||e.answers?.DF004||'';
@@ -209,6 +229,9 @@ function reusedValue(fid,e){
 }
 function effectiveValue(f,e){
   const explicit=e.answers?.[f.Field_ID],reuse=reusedValue(f.Field_ID,e),mode=String(f.Ask_Mode||'');
+  // DF003 is a Company-owned projection, never a live second answer. When the engine reads
+  // an already-sealed record, use its historical DF003 value rather than the changed live CRM.
+  if(f.Field_ID==='DF003')return e.confirmedSnapshotVersion?(valuePresent(explicit)?explicit:''):(valuePresent(reuse)?reuse:'');
   if(['DERIVED','SYSTEM_GENERATED','DERIVE_AND_CONFIRM','SYSTEM_SUGGEST_THEN_CONFIRM','PREFILL_CONFIRM'].includes(mode)&&valuePresent(reuse))return reuse;
   if(valuePresent(explicit))return explicit;
   if(valuePresent(reuse))return reuse;
