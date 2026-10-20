@@ -88,7 +88,7 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
   const df001=d.querySelector('.field[data-field="DF001"]');
   assert.ok(df001,'DF001 debe renderizarse en la etapa de contexto');
   assert.ok(df001.innerHTML.includes('UAT Runtime empresa'),'DF001 llega prerrellenado desde la empresa');
-  assert.ok(df001.querySelector('.prefill-chip'),'y declara de dónde viene');
+  assert.ok(df001.querySelector('.field-status-reused[data-tooltip^="Autocompletado desde"]'),'y declara de dónde viene al pasar el cursor');
   // C01: Teléfono is the prefix+number compound IMG90-01 shows, and both boxes write the single
   // Contact.Teléfono value that DEC-057 closes — not a second attribute.
   await t.test('PG01 Contexto uses only the shared AUNEA Select and no native dropdowns',()=>{
