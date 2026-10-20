@@ -142,7 +142,7 @@ test('B03 VR-01B keeps DF004 and DF007-DF010 in an always-open governed block', 
 });
 
 test('B03 status is driven by Diagnostic Master requiredness without duplicating a required-field list', () => {
-  assert.match(diagJs, /f\.Requiredness==='REQUIRED_90M'&&questionVisible\(f,e\)&&!valuePresent\(effectiveValue\(f,e\)\)/);
+  assert.match(diagJs, /f\.Requiredness==='REQUIRED_90M'&&questionVisible\(f,e\)&&!canonicalFieldValuePresent\(f,effectiveValue\(f,e\),e\)/);
   const foldedIds=['DF004','DF007','DF008','DF009','DF010'];
   const folded=diagnosticSchema.fields.filter(f=>f.Stage_ID==='S01'&&foldedIds.includes(f.Field_ID));
   assert.equal(folded.length,5,'all five governed S01 remainder fields must come from the runtime Diagnostic Master');

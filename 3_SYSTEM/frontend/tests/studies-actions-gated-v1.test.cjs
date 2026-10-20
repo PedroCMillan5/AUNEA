@@ -1,7 +1,7 @@
 // [AUNEA-UAT-STUDIES-ACTIONS-021] START — PG09 gating and Contact references in Estudios (authorized reopening 2026-10-20)
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const source=fs.readFileSync(path.join(__dirname,'../ui/shell.js'),'utf8');
-const start='// [AUNEA-FE-PAGE-STUDIES-010] START',end='// [AUNEA-FE-PAGE-STUDIES-010] END';
+const tag='AUNEA-FE-PAGE-STUDIES-010',start='// ['+tag+'] '+'START',end='// ['+tag+'] '+'END';
 const i=source.indexOf(start),j=source.indexOf(end,i);
 assert.ok(i>=0&&j>i,'Estudios source block must exist');
 const block=source.slice(i,j+end.length);

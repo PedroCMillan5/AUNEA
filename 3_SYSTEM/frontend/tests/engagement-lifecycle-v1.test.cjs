@@ -103,7 +103,7 @@ test('no surface writes an Engagement status outside the lifecycle', () => {
   // The first capture of the session is what starts Sesión 1 — not a page being open.
   assert.match(read('core/state.js'), /advanceEngagementTo\(e,'Sesión 1','primera captura de la sesión'\)/);
   // Estudios drives the lifecycle by hand and can only ever offer the next governed state.
-  assert.match(read('ui/shell.js'), /data-advance-eng="\$\{e\.id\}"/);
+  assert.match(read('ui/shell.js'), /const canWork=studyWorkAvailable\(e\),canAdvance=studyCanAdvanceToInternal\(e\)/);
   assert.match(read('core/state.js'), /setEngagementStatus\(e,nextEngagementStatus\(e\)/);
 });
 

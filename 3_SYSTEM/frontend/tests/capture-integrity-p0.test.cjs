@@ -15,7 +15,7 @@ const completion=read('domain/completion.js');
 const engine=read('services/engine-adapter.js');
 
 test('every session stage uses canonical required-field validation before advancing',()=>{
-  const start=stages.indexOf('function blockStageAdvance');
+  const start=stages.indexOf('function stageAdvanceProblem(');
   const end=stages.indexOf('\nfunction bindPg01Context',start);
   const body=stages.slice(start,end);
   assert.match(body,/stagePendingRequired\(e,sid\)/);

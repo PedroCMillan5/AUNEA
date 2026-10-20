@@ -35,7 +35,7 @@ function fixture(){
   };
   vm.createContext(ctx);
   for(const f of modules)vm.runInContext(read(f),ctx,{filename:f});
-  return {ctx,state,company,contact,engagement,run:js=>vm.runInContext(js,ctx)};
+  return {ctx,state,company,contact,engagement,schema,run:js=>vm.runInContext(js,ctx)};
 }
 test('PG01 renders legacy sector and Company size without writing a second DF003 answer',()=>{
   const f=fixture(),before=JSON.stringify(f.engagement.answers);
