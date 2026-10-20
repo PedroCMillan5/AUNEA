@@ -32,9 +32,7 @@ function pg01ContextFields(e){
   e.answers=e.answers||{};
   if(e.priority===undefined)e.priority='';
   if(e.contextSummary===undefined)e.contextSummary='';
-  // DF003 is Company-owned. Reuse the existing master value in the Engagement snapshot so the
-  // canonical completion contract sees the same value without creating another editable size field.
-  if((e.answers.DF003===undefined||e.answers.DF003==='')&&Number.isFinite(Number(co.employeeCount))&&Number(co.employeeCount)>0)e.answers.DF003=Number(co.employeeCount);
+  // DF003 is read from Company by effectiveValue; no write into Engagement.answers during render.
   const contactOpts=contacts.map(c=>({value:c.id,label:typeof contactFullName==='function'?contactFullName(c):(c.name||c.email||c.id)}));
   const sectorOpts=fieldOptions('REF_INDUSTRY_CNAE25');
   const orgOpts=(typeof COMPANY_ORG_TYPE!=='undefined'?COMPANY_ORG_TYPE:[]).map(v=>({value:v,label:v}));
@@ -46,7 +44,7 @@ function pg01ContextFields(e){
     pg01Field('Cargo',`<input data-pg01-contact="role" value="${attr(selected?.role||'')}">`,'Rol profesional de la persona seleccionada. Se reutiliza desde Contactos y cualquier corrección actualiza su ficha.',{source:'Contactos'}),
     pg01Field('Email',`<input type="email" data-pg01-contact="email" value="${attr(selected?.email||'')}">`,'Correo de la persona seleccionada para seguimiento del estudio y comunicaciones posteriores.',{source:'Contactos'}),
     pg01Field('Teléfono',pg01PhoneCompound(selected?.phone||''),'Teléfono de la persona seleccionada. Es opcional y se guarda en su ficha de Contacto.',{source:'Contactos',required:false}),
-    pg01Field('Sector',pg01Select(sectorOpts,co.sector||'',`data-pg01-company="sector" data-pg01-df="DF002"`),'Actividad económica principal de la empresa según el catálogo CNAE-2025.',{source:'Empresas'}),
+    pg01Field('Sector',pg01Select(sectorOpts,canonicalValueFromLabel('REF_INDUSTRY_CNAE25',co.sector||''),`data-pg01-company="sector" data-pg01-df="DF002"`),'Actividad económica principal de la empresa según el catálogo CNAE-2025.',{source:'Empresas'}),
     pg01Field('Tamaño de empresa',`<input data-pg01-company-size="1" value="${attr(size==='—'?'Sin indicar':`${size} empleados`)}" disabled>`,'Tamaño derivado automáticamente del número de empleados registrado en Empresas; no se edita desde el estudio.',{source:'Empresas'}),
     pg01Field('Tipo de organización',pg01Select(orgOpts,co.orgType||'',`data-pg01-company="orgType"`),'Tipo de organización registrado para la empresa; se reutiliza para contextualizar el diagnóstico.',{source:'Empresas'}),
     pg01Field('Prioridad',`<div class="segmented">${PG01_PRIORITY.map(v=>`<button type="button" class="segment ${e.priority===v?'active':''}" data-pg01-engagement="priority" data-value="${attr(v)}">${esc(v)}</button>`).join('')}</div>`,'Urgencia del estudio para priorizar el trabajo y el siguiente paso; no altera por sí sola la recomendación.'),
@@ -61,11 +59,25 @@ function pg01ContextFields(e){
 const PG01_DISCLOSURE_IDS=Object.freeze(['DF004','DF007','DF008','DF009','DF010']);
 const PG01_DISCLOSURE_TITLE='Objetivo, criterios y restricciones de la sesión';
 function pg01DisclosureFields(fields){return PG01_DISCLOSURE_IDS.map(fid=>fields.find(f=>f.Field_ID===fid)).filter(Boolean)}
-function pg01DisclosurePending(fields,e){return pg01DisclosureFields(fields).filter(f=>f.Requiredness==='REQUIRED_90M'&&questionVisible(f,e)&&!valuePresent(effectiveValue(f,e)))}
+function pg01DisclosurePending(fields,e){return pg01DisclosureFields(fields).filter(f=>f.Requiredness==='REQUIRED_90M'&&questionVisible(f,e)&&!canonicalFieldValuePresent(f,effectiveValue(f,e),e))}
+function pg01DisclosureValidation(fields,e){
+  const folded=pg01DisclosureFields(fields),pending=pg01DisclosurePending(fields,e);
+  const errors=folded.map(f=>({f,message:canonicalFieldValidationIssue(f,effectiveValue(f,e),e)})).filter(x=>x.message);
+  const status=errors.length?`${errors.length} dato${errors.length===1?'':'s'} por corregir`
+    :pending.length?`${pending.length} obligatorio${pending.length===1?'':'s'} pendiente${pending.length===1?'':'s'}`:'Completo';
+  const warnings=errors.map(({f,message})=>`<div><b>${esc(f.Pregunta_o_etiqueta_ES||f.Field_ID)}:</b> ${esc(message)}</div>`).join('');
+  return {status,warnings};
+}
 function pg01CanonicalDisclosure(fields,e){
   const folded=pg01DisclosureFields(fields);if(!folded.length)return '';
-  const pending=pg01DisclosurePending(fields,e);
-  const status=pending.length?`${pending.length} obligatorio${pending.length===1?'':'s'} pendiente${pending.length===1?'':'s'}`:'Completo';
-  return `<section class="pg01-disclosure pg01-disclosure-open"><div class="pg01-disclosure-head"><span>${esc(PG01_DISCLOSURE_TITLE)}</span><span class="conditional-tag">${esc(status)}</span></div><div class="form-grid">${renderStageFields(folded,e)}</div></section>`;
+  const validation=pg01DisclosureValidation(fields,e);
+  return `<section class="pg01-disclosure pg01-disclosure-open"><div class="pg01-disclosure-head"><span>${esc(PG01_DISCLOSURE_TITLE)}</span><span class="conditional-tag">${esc(validation.status)}</span></div><div class="form-grid">${renderStageFields(folded,e)}</div><div class="pg01-validation-issues notice warn" ${validation.warnings?'':'hidden'}>${validation.warnings}</div></section>`;
+}
+function refreshPg01DisclosureValidation(){
+  const e=currentEng();if(!e||e.stageId!=='S01')return;
+  const result=pg01DisclosureValidation(schema.fields.filter(f=>f.Stage_ID==='S01'&&questionVisible(f,e)),e);
+  const tag=document.querySelector('.pg01-disclosure .conditional-tag'),warnings=document.querySelector('.pg01-validation-issues');
+  if(tag)tag.textContent=result.status;
+  if(warnings){warnings.hidden=!result.warnings;warnings.innerHTML=result.warnings}
 }
 // [AUNEA-FROZEN-STAGE-S01-001] END
