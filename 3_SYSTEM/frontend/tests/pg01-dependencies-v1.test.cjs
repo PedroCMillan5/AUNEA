@@ -94,4 +94,37 @@ test('No invented DF003 when missing; sector aliases only exact supported sectio
   assert.equal(f.run("canonicalValueFromLabel('REF_INDUSTRY_CNAE25','Z')"),'Z');
   assert.equal(f.run("canonicalValueFromLabel('REF_INDUSTRY_CNAE25','CNAE25-O')"),'CNAE25-O');
 });
+test('real Continue handler blocks four DF008 values, then four answered optional DF009 values, and permits valid/blank',()=>{
+  const f=fixture(),warnings=[],button={},shell=read('ui/shell.js');
+  f.schema.flow.push({Stage_ID:'S02'});
+  f.ctx.by=id=>id==='nextStage'?button:null;
+  f.ctx.currentEng=()=>f.engagement;
+  f.ctx.toast=message=>warnings.push(message);
+  f.ctx.render=()=>{};
+  f.ctx.markDirty=()=>{};
+  const line=shell.split('\n').find(line=>line.includes("if(by('nextStage'))"));
+  assert.ok(line,'real frontend nextStage button must be wired');
+  f.run(line);
+  assert.equal(typeof button.onclick,'function');
+  button.onclick();
+  assert.equal(f.engagement.stageId,'S01','DF008 with four values must block');
+  assert.match(warnings.at(-1),/máximo 3/);
+  assert.equal(f.run("stagePendingRequired(state.engagements[0],'S01').some(f=>f.Field_ID==='DF008')"),true);
+  f.engagement.answers.DF008.pop();
+  button.onclick();
+  assert.equal(f.engagement.stageId,'S01','optional DF009 with four entered values must still block');
+  assert.match(warnings.at(-1),/Criterios:.*máximo 3/);
+  f.engagement.answers.DF009=[];
+  button.onclick();
+  assert.equal(f.engagement.stageId,'S02','optional DF009 blank and required DF008 valid must allow advancement');
+});
+test('empty DF008 blocks as required, while blank DF009 alone is never required',()=>{
+  const f=fixture();
+  f.engagement.answers.DF008=[];f.engagement.answers.DF009=[];
+  const missing=f.run("stagePendingRequired(state.engagements[0],'S01').map(f=>f.Field_ID)");
+  assert.deepEqual(Array.from(missing),['DF008']);
+  const warnings=[];f.ctx.toast=t=>warnings.push(t);
+  assert.equal(f.run('blockStageAdvance(state.engagements[0])'),true);
+  assert.match(warnings[0],/Falta un campo obligatorio/);
+});
 // [AUNEA-UAT-PG01-DEPENDENCIES-023] END
