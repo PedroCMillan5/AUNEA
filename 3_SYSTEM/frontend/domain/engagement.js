@@ -106,6 +106,15 @@ function migrateLegacyPrematureClosures(engagements=[]){
 function buildConfirmedSnapshot(e) {
   const co = companyById(e.companyId);
   const contacts = (e.contactIds || []).map(contactById).filter(Boolean);
+  // A snapshot is historical evidence, not an editable Company copy. Materialize the exact
+  // Company-owned values used when PG09 is confirmed, leaving live Engagement.answers untouched.
+  const snapshotAnswers={...(e.answers||{})};
+  for(const fid of ['DF002','DF003']){
+    const field=(schema?.fields||[]).find(f=>f.Field_ID===fid);
+    const value=field&&typeof effectiveValue==='function'?effectiveValue(field,e):undefined;
+    if(typeof valuePresent==='function'&&valuePresent(value))snapshotAnswers[fid]=value;
+    else delete snapshotAnswers[fid];
+  }
   return {
     schemaVersion: ENGAGEMENT_SNAPSHOT_SCHEMA,
     finalClosure: true,
@@ -115,7 +124,7 @@ function buildConfirmedSnapshot(e) {
     stageId: 'S09',
     diagnosticMaster: { version: schema?.version || '', source: schema?.source || '' },
     company: co ? {
-      id: co.id, name: co.name, sector: co.sector, country: co.country,
+      id: co.id, name: co.name, sector: typeof canonicalValueFromLabel==='function'?canonicalValueFromLabel('REF_INDUSTRY_CNAE25',co.sector):co.sector, country: co.country,
       employeeCount: co.employeeCount ?? null, orgType: co.orgType || '', entryChannel: co.entryChannel || ''
     } : null,
     contacts: contacts.map(c => ({
@@ -126,7 +135,7 @@ function buildConfirmedSnapshot(e) {
     contextSummary: e.contextSummary || '',
     businessAreaId: e.businessAreaId || '',
     processName: e.answers?.DF011 || e.processName || '',
-    answers: { ...(e.answers || {}) },
+    answers: snapshotAnswers,
     answerDetails: { ...(e.answerDetails || {}) },
     processSteps: activeSteps(e),
     frictions: activeFrictions(e),
