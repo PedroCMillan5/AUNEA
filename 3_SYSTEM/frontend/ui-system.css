@@ -661,6 +661,7 @@ body:has(.opportunities-screen-marker) .app-shell{height:100vh;min-height:0;over
 .content:has(.diagnostic-stage-s03) .demand-seasonality-pair>.detail-wrap{margin:0;width:100%;min-width:0}
 .content:has(.diagnostic-stage-s03) .demand-seasonality-pair>.detail-wrap input{box-sizing:border-box;width:100%}
 .content:has(.diagnostic-stage-s03) .field[data-field="DF027"]{grid-column:1}
+.content:has(.diagnostic-stage-s03) .field[data-field="DF028"]{grid-column:1}
 .content:has(.diagnostic-stage-s03) .demand-service-comparison{border-top:1px solid var(--line);padding-top:11px;display:grid;gap:6px;font-size:var(--font-caption);line-height:1.5}
 .content:has(.diagnostic-stage-s03) .demand-service-comparison strong{font-size:var(--font-small);color:var(--ink)}
 .content:has(.diagnostic-stage-s03) .demand-service-comparison p{margin:0;color:var(--muted)}
@@ -668,6 +669,7 @@ body:has(.opportunities-screen-marker) .app-shell{height:100vh;min-height:0;over
 @media(max-width:760px){
   .content:has(.diagnostic-stage-s03) .demand-seasonality-pair{grid-template-columns:1fr}
   .content:has(.diagnostic-stage-s03) .field[data-field="DF027"]{grid-column:auto}
+  .content:has(.diagnostic-stage-s03) .field[data-field="DF028"]{grid-column:auto}
 }
 /* [AUNEA-FE-DEMAND-LAYOUT-145] END */
 
