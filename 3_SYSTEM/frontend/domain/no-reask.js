@@ -190,7 +190,10 @@ function reusedValue(fid,e){
   if(fid==='DF004')return c?.revenueBand||e.answers?.DF004||'';
   if(fid==='DF005')return canonicalValueFromLabel('REF_COUNTRY_ISO3166',c?.country||e.answers?.DF005||'');
   if(fid==='DF006')return e.contactIds?.[0]||e.answers?.DF006||'';
-  if(fid==='DF017')return unique(steps.map(x=>x.actor));
+  // DF017 is FIRST captured in PG02. The map consumes those roles as suggestions;
+  // its step actors are reconciled with this original answer at PG09, never silently
+  // substituted into the PG02 owner's field (DEC-050 + canonical ASK_THEN_DERIVE).
+  if(fid==='DF017')return undefined;
   if(fid==='DF046')return unique(steps.map(x=>x.tool));
   if(fid==='DF047')return processDataSources(steps);
   if(fid==='DF049')return processDocumentArtifacts(steps);
