@@ -27,11 +27,11 @@ function singleUatAudit(e){
   const checks=[
     ['CRM completo',!!companyById(e.companyId)&&normalizeArray(e.contactIds).length>=1&&!!e.opportunityId],
     ['Contexto, alcance y demanda completos',requiredBeforeClose.filter(x=>/^DF0(0[1-9]|1[0-9]|2[0-9]|30)$/.test(String(x))).length===0],
-    ['Mapa AS-IS completo',(typeof activeSteps==='function'?activeSteps(e):e.processSteps||[]).length>=1&&!!layers.map],
-    ['Fricciones completas',(typeof activeFrictions==='function'?activeFrictions(e):e.frictions||[]).length>=1&&!!layers.frictions],
-    ['Riesgos completos',risksOk&&!!layers.risks],
-    ['Impacto completo',(e.economicInputs||[]).length>=1&&!!layers.impact],
-    ['PG09 coherente',requiredBeforeClose.length===0&&!!layers.map&&!!layers.frictions&&!!layers.risks&&!!layers.impact],
+    ['Mapa AS-IS con pasos capturados',(typeof activeSteps==='function'?activeSteps(e):e.processSteps||[]).length>=1],
+    ['Fricciones capturadas',(typeof activeFrictions==='function'?activeFrictions(e):e.frictions||[]).length>=1],
+    ['Riesgos capturados',risksOk],
+    ['Inputs económicos capturados',(e.economicInputs||[]).length>=1],
+    ['Datos para PG09 disponibles',requiredBeforeClose.length===0],
     ['Snapshot coherente con el cierre',typeof hasConfirmedSnapshot==='function'?(e.confirmedAsIs?hasConfirmedSnapshot(e):!hasConfirmedSnapshot(e)):true],
     ['Inputs internos resueltos',typeof unresolvedEngineGates==='function'?unresolvedEngineGates(e).length===0:true]
   ].map(([label,ok])=>({label,ok:!!ok}));
@@ -64,12 +64,13 @@ async function loadSingleUat(){
     state.interactions.push(row.interaction);
     state.engagements.push(row.engagement);
     const e=row.engagement;
-    e.layerConfirmations={map:true,frictions:true,risks:true,impact:true};
+    // The case is prefilled, never approved. Client layer confirmations belong to the real UAT interaction.
+    e.layerConfirmations={map:false,frictions:false,risks:false,impact:false};
     e.confirmedAsIs=false;
-    e.answers.DF093='';
+    delete e.answers.DF093;
     e.asIsConfirmedAt=null;
     e.confirmedSnapshots=[];
-    e.stageId='S09';
+    e.stageId='S01';
     e.engineGates={
       process_design_first:'NO',
       existing_tool_can_close:'NO',
@@ -84,9 +85,9 @@ async function loadSingleUat(){
     state.activeEngagementId=e.id;
     state.activePage='uat';
     if(!persistRecoverySnapshot('uat-single-load'))throw new Error('No se pudo guardar la UAT por conflicto de edición.');
-    say('UAT completa y guardada: 1 estudio · 6 pasos · 3 fricciones · 2 riesgos · PG09 lista para confirmar · snapshot pendiente del cierre final.');
+    say('UAT de captura precargada: 1 estudio · 6 pasos · 3 fricciones · 2 riesgos · cuatro capas y cierre PG09 pendientes de validación humana.');
     render();
-    toast('UAT única cargada y lista para recorrer.');
+    toast('UAT precargada. Revisa todos los campos y confirma las capas antes de cerrar.');
   }catch(err){
     say('Error al cargar la UAT: '+(err?.message||String(err)));
     console.error('AUNEA_SINGLE_UAT_LOAD_ERROR',err);
@@ -101,8 +102,8 @@ function singleUatPage(){
   const checks=e?'<div class="table-wrap"><table class="data-table"><thead><tr><th>Control</th><th>Estado</th></tr></thead><tbody>'+audit.checks.map(x=>'<tr><td>'+esc(x.label)+'</td><td>'+uatSingleBadge(x.ok)+'</td></tr>').join('')+'</tbody></table></div>':'';
   const stageButtons=e?'<div class="row" style="display:flex;gap:8px;flex-wrap:wrap">'+stages.map(([id,label])=>'<button class="btn btn-small btn-outline" data-single-uat-stage="'+id+'">'+label+'</button>').join('')+'</div>':'';
   const card=e?section('Única UAT · Recepción y aprobación de facturas',
-    'Empresa sintética: '+esc(company?.name||e.companyId)+' · todos los datos aplicables están precargados; PG09 queda deliberadamente pendiente de confirmación final.',
-    '<div class="notice '+(audit.pass?'good':'warn')+'"><b>Estado end-to-end:</b> '+(audit.pass?'PASS · lista para revisar desde Contexto hasta Trabajo interno':'hay datos pendientes de reconciliar')+'.</div>'+
+    'Empresa sintética: '+esc(company?.name||e.companyId)+' · expediente preparado para revisar campo por campo; ninguna capa AS-IS se confirma durante la carga.',
+    '<div class="notice '+(audit.pass?'good':'warn')+'"><b>Estado end-to-end:</b> '+(audit.pass?'CAPTURA PREPARADA · requiere revisión y confirmaciones':'hay datos pendientes de reconciliar')+'.</div>'+
     '<div class="grid g4" style="margin-top:12px"><div class="card metric"><small>Estudios</small><strong>1</strong></div><div class="card metric"><small>Pasos</small><strong>'+activeSteps(e).length+'</strong></div><div class="card metric"><small>Fricciones</small><strong>'+activeFrictions(e).length+'</strong></div><div class="card metric"><small>Riesgos</small><strong>'+e.risks.length+'</strong></div></div>'+
     '<h3 style="margin-top:16px">Recorrer las 9 pantallas</h3>'+stageButtons+
     '<div style="margin-top:16px">'+checks+'</div>',
