@@ -209,7 +209,6 @@ function bindPg01Context(){
   });
 }
 
-// [AUNEA-FROZEN-STAGE-S02-001] START — S02 Alcance del proceso
 // [AUNEA-FE-SCOPE-PG02-139] START — Read-only source comparison, no new capture or inferred correctness.
 // SOURCE: Diagnostic Master DF012–DF015, ProcessStep owner, DEC-050/065 and existing scope review.
 // A first/last-step comparison is factual; semantic equivalence still requires human review in map.
@@ -233,6 +232,7 @@ function pg02BoundaryReviewHtml(e){
 }
 // [AUNEA-FE-SCOPE-PG02-139] END
 
+// [AUNEA-FROZEN-STAGE-S02-001] START — S02 Alcance del proceso
 function engagementBusinessAreaBlock(e){
   const options=fieldOptions('REF_DOMAIN');
   return `<div class="field full engagement-business-area" data-runtime-field="RT_ENGAGEMENT.Business_Area_ID">
