@@ -242,8 +242,8 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
     assert.equal(w.eval('JSON.stringify(currentEng())'),before);
     assert.equal(w.eval('currentEng().stageId'),'S04');
     assert.ok(d.querySelector('#nav [data-page="proceso"]'),'S04 se retoma mediante el bloque AS-IS');
-    assert.deepEqual(railStages(),visibleStageIds);
-    assert.deepEqual(railPages(),sessionPages);
+    assert.deepEqual(railStages(),['S01','S02','S03','S08','S09']);
+    assert.deepEqual(railPages(),['inicio','proceso','pasos','fricciones','riesgos','impacto']);
   });
   click('[data-page="pasos"]');click('#addStep');fill('#step_name','Validar solicitud');fill('#step_type','ST02');fill('#step_actor','OPERATIONS');
   fill('#step_active','12');fill('#step_wait','60');fill('#step_rework','3');click('#modalSave');
