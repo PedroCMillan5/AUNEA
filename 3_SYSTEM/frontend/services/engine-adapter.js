@@ -132,6 +132,16 @@ function handleCoveragePreflight(e,result){
 // SOURCE: DEC-072. Never forward a legacy manually stored DF074 when RiskInput has no valid derivation.
 function questionnaireAnswersForEngine(e){
   const out={...(e.answers||{})};
+  // Live diagnostics use their Company owner; sealed diagnostics use the historical snapshot.
+  // The same projection is reused for preflight, candidate engines and final diagnosis.
+  for(const fid of ['DF002','DF003']){
+    const field=(schema?.fields||[]).find(f=>f.Field_ID===fid);
+    const value=fid==='DF002'&&e.confirmedSnapshotVersion
+      ?canonicalValueFromLabel('REF_INDUSTRY_CNAE25',out.DF002)
+      :(field&&typeof effectiveValue==='function'?effectiveValue(field,e):undefined);
+    if(typeof valuePresent==='function'&&valuePresent(value))out[fid]=value;
+    else delete out[fid];
+  }
   delete out.DF074; // always re-materialize exclusively from current RiskInput.reversibility
   for(const fid of ['DF074','DF085','DF094','DF095']){
     const field=(schema?.fields||[]).find(x=>x.Field_ID===fid);
