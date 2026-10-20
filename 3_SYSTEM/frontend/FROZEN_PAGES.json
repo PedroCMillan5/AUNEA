@@ -1,5 +1,5 @@
 {
-  "version": 6,
+  "version": 7,
   "frozen_pages": [
     {
       "page_id": "inicio",
@@ -65,7 +65,9 @@
       "rule": "Página cerrada por aprobación explícita del propietario. Menú ••• flotante idéntico al patrón Empresas/CRM. No modificar sin reapertura explícita.",
       "source_snapshot": "tests/frozen/studies-page-v1.js.snapshot",
       "style_snapshot": "tests/frozen/studies-style-v1.css.snapshot",
-      "gate": "AUNEA-UAT-SESSION-FINALIZED-FROZEN-020"
+      "gate": "AUNEA-UAT-SESSION-FINALIZED-FROZEN-020",
+      "reopened_on": "2026-10-20",
+      "qa_reference": "tests/studies-actions-gated-v1.test.cjs"
     },
     {
       "page_id": "contexto-objetivos",
