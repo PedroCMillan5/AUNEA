@@ -60,7 +60,7 @@ if(!window.__auneaStudyActionsBound){
     state.activeEngagementId=eng.id;
     if(action.dataset.studyMenuOpen!==undefined){state.activePage='diagnostico';render();return}
     if(action.dataset.studyMenuWork!==undefined){state.activePage='resultados';render();return}
-    if(action.dataset.studyMenuAdvance!==undefined && advanceEngagementTo(eng,'Trabajo interno','avance tras cierre validado en PG09')){state.activePage='resultados';render()}
+    if(action.dataset.studyMenuAdvance!==undefined){const next='Trabajo interno';if(advanceEngagementTo(eng,next,'avance manual desde Estudios')){state.activePage='resultados';render()}}
   },true);
 }
 function studiesPage(){
