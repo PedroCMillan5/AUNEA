@@ -38,7 +38,7 @@ function fixture(){const e={
  };e._sessionTimeProjection={requestKey:JSON.stringify({fingerprint:'test'}),output:{active_minutes_per_case:13,rework_minutes_per_case:2}};return e}
 const cases=[
  ['DF001','Empresa'],['DF002','M'],['DF004','BAND_100K_250K'],['DF005','ES'],['DF006','contact1'],
- ['DF017',['ADMIN','MANAGER']],['DF046',['EMAIL','ERP']],['DF047',['PDF','RECORD']],
+ ['DF017',undefined],['DF046',['EMAIL','ERP']],['DF047',['PDF','RECORD']],
  ['DF049',['PDF','DOC']],['DF050',['EMAIL','TEAMS']],['DF053',['P1']],
  ['DF057','Se deriva de la fricción registrada; no se pregunta al cliente.'],
  ['DF066',['Paso 1 ex']],['DF067',['Paso 2 approval']],['DF074','Riesgo 1 — HARD'],
@@ -58,9 +58,10 @@ test('risk with incomplete reversibility makes DF074 unresolved',()=>{
  const e=fixture();e.risks.push({description:'Pendiente',reversibility:''});
  assert.equal(ctx.reusedValue('DF074',e),undefined);
 });
-test('derived source wins over prior manual DF017 when effective value is evaluated',()=>{
- const e=fixture();e.answers.DF017=['LEGACY'];
- assert.equal(JSON.stringify(ctx.effectiveValue({Field_ID:'DF017',Ask_Mode:'PREFILL_CONFIRM'},e)),JSON.stringify(['ADMIN','MANAGER']));
+test('PG02 initial DF017 answer wins over map actors until final human reconciliation',()=>{
+ const e=fixture();e.answers.DF017=['ADMIN','OPERATIONS'];
+ assert.equal(JSON.stringify(ctx.effectiveValue({Field_ID:'DF017',Ask_Mode:'PREFILL_CONFIRM'},e)),JSON.stringify(['ADMIN','OPERATIONS']));
+ assert.equal(ctx.reusedValue('DF017',e),undefined);
 });
 test('derived confirmation fingerprint becomes stale after source change',()=>{
  const e=fixture(),f={Field_ID:'DF050'},initial=ctx.reusedValue('DF050',e);
