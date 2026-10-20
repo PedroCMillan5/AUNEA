@@ -82,6 +82,54 @@ async function main(){
   assert.equal(pg02Audit.fields.length>0,true,'PG02 must expose canonical data fields');
   await page.locator('#nextStage').click();
   assert.equal((await pg01State()).stage,'S03','PG02 Continue must reach PG03 with canonical data');
+  // [AUNEA-UAT-PG03-PIXEL-147] START — Verify the real rendered PG03 columns in native Chromium.
+  const pg03Saved=await page.evaluate(()=>{
+    const e=currentEng();return {
+      a24:e.answers?.DF024,has24:Object.prototype.hasOwnProperty.call(e.answers||{},'DF024'),
+      detail:e.answerDetails?.DF024,hasDetail:Object.prototype.hasOwnProperty.call(e.answerDetails||{},'DF024'),
+      a25:e.answers?.DF025,has25:Object.prototype.hasOwnProperty.call(e.answers||{},'DF025'),
+      a26:e.answers?.DF026,has26:Object.prototype.hasOwnProperty.call(e.answers||{},'DF026')
+    };
+  });
+  try{
+    await page.evaluate(()=>{
+      const e=currentEng();e.answers.DF024='PREDICTABLE';
+      e.answerDetails=e.answerDetails||{};e.answerDetails.DF024='Picos de fin de mes: HIPÓTESIS QA.';
+      e.answers.DF025={value:48,unit:'h',mode:''};
+      e.answers.DF026={value:250,unit:'min'};render();
+    });
+    const layout=await page.evaluate(()=>{
+      const select=document.querySelector('.field[data-field="DF024"] .demand-seasonality-pair > .canonical-aunea-select');
+      const detail=document.querySelector('.field[data-field="DF024"] .demand-seasonality-pair > .detail-wrap');
+      const wrap=select?.closest('.demand-seasonality-pair');
+      if(!select||!detail||!wrap)return null;
+      const r1=select.getBoundingClientRect(),r2=detail.getBoundingClientRect();
+      return {x1:r1.x,x2:r2.x,y1:r1.y,y2:r2.y,w1:r1.width,w2:r2.width,gap:r2.x-r1.right,
+        columns:getComputedStyle(wrap).gridTemplateColumns,
+        full:wrap.closest('.field')?.classList.contains('full')||false,
+        target:document.querySelector('[data-number-unit="DF025"]')?.value,
+        comparison:document.querySelector('[data-s03-service-time-compare]')?.innerText||''};
+    });
+    assert.ok(layout,'the actual nested select and detail must render');
+    assert.ok(layout.full,'the seasonality field spans both columns of the stage grid');
+    assert.ok(Math.abs(layout.y1-layout.y2)<5,'select and detail must appear alongside, not stacked: '+JSON.stringify(layout));
+    assert.ok(Math.abs(layout.w1-layout.w2)<5,'select and detail must have equal width: '+JSON.stringify(layout));
+    assert.ok(layout.gap>=10&&layout.gap<=24,'pair has a consistent visual gap: '+JSON.stringify(layout));
+    assert.equal(layout.target,'h','48-hour SLA unit comes from the owner value');
+    assert.match(layout.comparison,/inferior al objetivo/);
+    await page.screenshot({path:path.join(outDir,'pg03-demand-sla-aligned.png'),fullPage:true});
+    console.log('PG03_CHROMIUM_LAYOUT_PASS: '+JSON.stringify(layout));
+  }finally{
+    await page.evaluate(saved=>{
+      const e=currentEng();
+      for(const [key,val,present] of [['DF024',saved.a24,saved.has24],['DF025',saved.a25,saved.has25],['DF026',saved.a26,saved.has26]]){
+        if(present)e.answers[key]=val;else delete e.answers[key];
+      }
+      if(saved.hasDetail)e.answerDetails.DF024=saved.detail;else if(e.answerDetails)delete e.answerDetails.DF024;
+      render();
+    },pg03Saved);
+  }
+  // [AUNEA-UAT-PG03-PIXEL-147] END
   for(const stageId of ['S03','S08']){
     const audit=await page.evaluate(()=>({
       id:currentEng().stageId,
