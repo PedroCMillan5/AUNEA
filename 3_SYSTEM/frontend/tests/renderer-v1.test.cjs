@@ -185,9 +185,9 @@ test('S08 yellow context box renders real prior and current selections, never a 
   assert.match(noReask,/Aunque en Contexto ya identificamos restricciones generales/);
   assert.match(noReask,/s08-duplication-why/);
   assert.match(renderer,/Recomendación/);
-  assert.doesNotMatch(renderer,/Opciones marcadas/);
+  assert.match(renderer,/Opciones marcadas/);
   assert.match(renderer,/Contexto previo/);
-  assert.match(renderer,/Concretado en esta pregunta/);
+  assert.doesNotMatch(renderer,/Concretado en esta pregunta/);
   assert.doesNotMatch(renderer,/s08-context-explanation/);
 
   e.answers.DF010=['SECURITY','CHANGE'];
@@ -198,8 +198,9 @@ test('S08 yellow context box renders real prior and current selections, never a 
     e
   );
   assert.match(html,/Contexto previo/);
-  assert.match(html,/SECURITY · CHANGE/);
-  assert.match(html,/Concretado en esta pregunta/);
+  assert.match(html,/SECURITY/);
+  assert.doesNotMatch(html,/SECURITY · CHANGE/,'unrelated change constraints must not be repeated in must-keep');
+  assert.match(html,/Opciones marcadas/);
   assert.match(html,/Herramienta actual/);
   e.answers.DF010=undefined;
 });
@@ -224,7 +225,9 @@ test('S08 keeps one simple pattern after DF086: options plus yellow context, wit
       e
     );
     assert.match(html,/Opción A/);
-    assert.match(html,/Contexto previo/);
+    if(['DF087','DF088','DF090'].includes(fid))assert.match(html,/Contexto previo relevante/);
+    else assert.doesNotMatch(html,/Contexto previo relevante/,'only relevant source appears for '+fid);
+    assert.match(html,/Opciones marcadas/);
     assert.match(html,/Recomendación/);
     assert.doesNotMatch(html,/linked-field-block/);
     assert.doesNotMatch(html,/data-s08-reference/);
