@@ -94,6 +94,32 @@ async function main(){
     if(audit.blocker)break;
     await page.locator('#nextStage').click();
   }
+  const layerProgress=[];
+  for(const id of ['S04','S05','S06','S07']){
+    const result=await page.evaluate(()=>({
+      stage:currentEng()?.stageId,
+      blocker:stageAdvanceProblem(currentEng()),
+      confirmedAsIs:currentEng()?.confirmedAsIs,
+      layers:currentEng()?.layerConfirmations,
+      snapshots:currentEng()?.confirmedSnapshots?.length||0
+    }));
+    layerProgress.push(result);
+    assert.equal(result.stage,id,'ordered AS-IS stage navigation');
+    assert.equal(result.confirmedAsIs,false,'no synthetic final confirmation before PG09');
+    assert.equal(result.snapshots,0,'no invented historical snapshot');
+    if(result.blocker)break;
+    await page.locator('#nextStage').click();
+  }
+  console.log('ASIS_CHROMIUM_AUDIT: '+JSON.stringify(layerProgress));
+  const reached=await page.evaluate(()=>({stage:currentEng()?.stageId,confirmedAsIs:currentEng()?.confirmedAsIs,
+    snapshots:currentEng()?.confirmedSnapshots?.length||0}));
+  if(reached.stage==='S09'){
+    assert.equal(reached.confirmedAsIs,false,'PG09 cannot be preconfirmed');
+    assert.equal(reached.snapshots,0,'PG09 has not sealed a snapshot');
+    assert.equal(await page.locator('#confirmClosingAsIs').count(),0,
+      'PG09 must not offer final close before four independent layer confirmations');
+    console.log('PG09_UNCONFIRMED_GATE_PASS: no premature closure');
+  }
   await page.evaluate(()=>{
     for(const key of ['companies','contacts','opportunities','interactions','engagements'])
       state[key]=(state[key]||[]).filter(row=>!String(row.id||'').startsWith('UAT3-CASE-'));
