@@ -86,12 +86,27 @@ function migrateLoadedState(){
   if(moved.companies||moved.contacts||moved.engagements||moved.process||moved.risks||moved.df074||moved.economics||moved.pg09)audit(`Migración de almacenamiento: ${moved.companies} empresa(s), ${moved.contacts} contacto(s), ${moved.engagements} estudio(s), ${moved.process} estudio(s) con fricciones normalizadas, ${moved.risks} estudio(s) con riesgos legacy pendientes de revisión, ${moved.df074} estudio(s) con DF074 convertido en proyección derivada de riesgos, ${moved.economics} estudio(s) con impactos normalizados y ${moved.pg09} cierre(s) PG09 legacy reabiertos para confirmación final explícita`);
   return moved;
 }
+// [AUNEA-FE-PERSISTENCE-STATUS-138] START — Browser storage acknowledgement, never infer saved from nonempty fields.
+// SOURCE: Simulator CANONICAL 24.4; existing localStorage owner and state.dirty.
+// INPUTS: current in-memory state; OUTPUTS: saved / pending / error UI. No new business fields.
+// SIDE EFFECTS: synchronous localStorage write; no optimistic success on failure. REVIEW.
+let saveStateFailure=false;
 function saveState(reason='Guardado manual'){
   if(isClientDisplay())return false;
-  localStorage.setItem(STORAGE_KEY,JSON.stringify(state));state.dirty=false;
-  audit(reason);updateHeader();toast('Guardado localmente en este navegador.');
+  try{
+    localStorage.setItem(STORAGE_KEY,JSON.stringify({...state,dirty:false}));
+    state.dirty=false;saveStateFailure=false;
+    audit(reason);updateHeader();toast('Guardado localmente en este navegador.');
+    return true;
+  }catch(error){
+    state.dirty=true;saveStateFailure=true;
+    audit('No se pudo guardar localmente el estudio');
+    updateHeader();toast('No se pudo guardar. Los cambios siguen pendientes en este navegador.');
+    return false;
+  }
 }
-function markDirty(reason){state.dirty=true;if(reason)audit(reason);updateHeader()}
+function markDirty(reason){state.dirty=true;saveStateFailure=false;if(reason)audit(reason);updateHeader()}
+// [AUNEA-FE-PERSISTENCE-STATUS-138] END
 function audit(message){state.audit.unshift({ts:new Date().toISOString(),message});state.audit=state.audit.slice(0,250)}
 function id(prefix){return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2,7)}`}
 function now(){return new Date().toISOString()}
@@ -99,13 +114,31 @@ function esc(v){return String(v??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt
 function attr(v){return esc(v).replace(/'/g,'&#39;')}
 // [AUNEA-FE-FIELD-STATUS-136] START — Compact, accessible saved/reused indicators (visual only).
 // Source names are descriptive labels; icons do not change No-Reask, ownership or confirmation.
+function fieldSavedPresentation(){
+  if(saveStateFailure)return {kind:'error',label:'No se pudo guardar. Hay cambios pendientes.'};
+  if(state.dirty)return {kind:'pending',label:'Cambios pendientes de guardar en el estudio'};
+  return {kind:'saved',label:'Valor guardado en el estudio'};
+}
+function fieldStatusDrawing(kind){
+  if(kind==='reused')return '<path d="M4 6h10a3 3 0 0 1 3 3v4"/><path d="m13 10 4 4 4-4"/><path d="M4 18h7"/>';
+  if(kind==='pending')return '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>';
+  if(kind==='error')return '<circle cx="12" cy="12" r="9"/><path d="M12 7v7"/><path d="M12 17v.01"/>';
+  return '<path d="m4.5 12.5 5 5 10-11"/>';
+}
 function fieldStatusIcon(kind,source=''){
-  const reused=kind==='reused';
-  const label=reused?'Autocompletado desde '+String(source||'la fuente original'):'Valor guardado en el estudio';
-  const drawing=reused
-    ?'<path d="M4 6h10a3 3 0 0 1 3 3v4"/><path d="m13 10 4 4 4-4"/><path d="M4 18h7"/>'
-    :'<path d="m4.5 12.5 5 5 10-11"/>';
-  return '<span class="field-status-icon '+(reused?'field-status-reused':'field-status-saved')+'" role="img" tabindex="0" aria-label="'+attr(label)+'" data-tooltip="'+attr(label)+'"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+drawing+'</svg></span>';
+  const status=kind==='reused'?{kind:'reused',label:'Autocompletado desde '+String(source||'la fuente original')}:fieldSavedPresentation();
+  return '<span class="field-status-icon field-status-'+status.kind+'" data-field-save-icon="'+(kind==='saved'?'1':'0')+'" role="img" tabindex="0" aria-label="'+attr(status.label)+'" data-tooltip="'+attr(status.label)+'"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+fieldStatusDrawing(status.kind)+'</svg></span>';
+}
+function refreshFieldSaveIcons(){
+  if(typeof document==='undefined'||!document.querySelectorAll)return;
+  const p=fieldSavedPresentation();
+  document.querySelectorAll('[data-field-save-icon="1"]').forEach(icon=>{
+    icon.classList.remove('field-status-saved','field-status-pending','field-status-error');
+    icon.classList.add('field-status-'+p.kind);
+    icon.setAttribute('aria-label',p.label);
+    icon.setAttribute('data-tooltip',p.label);
+    const svg=icon.querySelector('svg');if(svg)svg.innerHTML=fieldStatusDrawing(p.kind);
+  });
 }
 // [AUNEA-FE-FIELD-STATUS-136] END
 function requiredMark(){return '<span class="required-mark" tabindex="0" title="Campo obligatorio" aria-label="Campo obligatorio">*</span>'}
@@ -255,7 +288,8 @@ function updateHeader(){
         +`<span class="stage-clock">◷ ${stageWindow(i)}</span>`
       : '';
   }
-  const ss=document.getElementById('saveState');if(ss)ss.textContent=state.dirty?'Cambios sin guardar':'Guardado local';
+  const ss=document.getElementById('saveState');if(ss)ss.textContent=saveStateFailure?'Error al guardar':state.dirty?'Cambios sin guardar':'Guardado local';
+  if(typeof refreshFieldSaveIcons==='function')refreshFieldSaveIcons();
   const bb=document.getElementById('backendBadge');if(bb){bb.className=`backend-badge ${state.backendOnline?'online':'offline'}`;bb.innerHTML=`<span></span>${state.backendOnline?`Backend ${esc(state.backendVersion||'online')}`:'Backend no conectado'}`}
   renderRailHead();
 }
