@@ -60,6 +60,23 @@ async function main(){
   assert.equal(pg01.stage,'S02','D: returning to PG01 and editing permits revalidation');
   assert.equal(pg01.objectives,2,'D: editing PG01 retains the corrected objective count');
   console.log('PG01_CHROMIUM_GATE_PASS: four functional navigation scenarios');
+  const pg02Audit=await page.evaluate(()=>{
+    const e=currentEng(),fields=(schema?.fields||[]).filter(f=>f.Stage_ID==='S02');
+    return {
+      stage:e.stageId,
+      firstBlocker:stageAdvanceProblem(e,'S02'),
+      fields:fields.map(f=>({
+        id:f.Field_ID,askMode:f.Ask_Mode,requiredness:f.Requiredness,
+        control:f.Control_UI,owner:f.Data_Owner||f.Owner_Entity||'',
+        visible:questionVisible(f,e),
+        value:effectiveValue(f,e),
+        issue:canonicalFieldValidationIssue(f,effectiveValue(f,e),e)
+      }))
+    };
+  });
+  console.log('PG02_CHROMIUM_AUDIT: '+JSON.stringify(pg02Audit));
+  assert.equal(pg02Audit.stage,'S02','PG02 must be the active page after successful PG01');
+  assert.equal(pg02Audit.fields.length>0,true,'PG02 must expose canonical data fields');
   await page.evaluate(()=>{
     for(const key of ['companies','contacts','opportunities','interactions','engagements'])
       state[key]=(state[key]||[]).filter(row=>!String(row.id||'').startsWith('UAT3-CASE-'));
