@@ -159,28 +159,25 @@ function focusPendingField(fid){
   return true;
 }
 // Continuar applies the same canonical required/applicable contract to every session stage.
-function blockStageAdvance(e){
-  if(!e)return false;
-  const sid=e.stageId||'S01';
-  // One canonical rule source for both REQUIRED_90M completion and the validity of any
-  // answered OPTIONAL_90M / CONDITIONAL_90M field. This checks the stage being left,
-  // regardless of how the user reaches the Continue button or whether a progress panel refreshed.
+function stageAdvanceProblem(e,stageId){
+  if(!e)return {id:null,message:'Abre un estudio antes de avanzar.'};
+  const sid=stageId||e.stageId||'S01';
+  // Same pure result is consumed by the Continue button AND by the session rail.
+  // A filled but invalid OPTIONAL_90M field blocks; an unanswered optional one does not.
   const invalid=(schema?.fields||[])
     .filter(f=>f.Stage_ID===sid&&questionVisible(f,e))
     .map(f=>({field:f,reason:canonicalFieldValidationIssue(f,effectiveValue(f,e),e)}))
     .find(item=>item.reason);
-  if(invalid){
-    focusPendingField(invalid.field.Field_ID);
-    toast(`${invalid.field.Pregunta_o_etiqueta_ES||invalid.field.Field_ID}: ${invalid.reason}`);
-    return true;
-  }
+  if(invalid)return {id:invalid.field.Field_ID,message:`${invalid.field.Pregunta_o_etiqueta_ES||invalid.field.Field_ID}: ${invalid.reason}`};
   const first=stagePendingRequired(e,sid)[0];
-  if(first){
-    focusPendingField(first.Field_ID);
-    toast(`Falta un campo obligatorio: ${first.Pregunta_o_etiqueta_ES||first.Field_ID}`);
-    return true;
-  }
-  return false;
+  return first?{id:first.Field_ID,message:`Falta un campo obligatorio: ${first.Pregunta_o_etiqueta_ES||first.Field_ID}`}:null;
+}
+function blockStageAdvance(e){
+  const problem=stageAdvanceProblem(e);
+  if(!problem)return false;
+  if(problem.id)focusPendingField(problem.id);
+  toast(problem.message);
+  return true;
 }
 
 function bindPg01Context(){
