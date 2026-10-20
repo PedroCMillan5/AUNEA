@@ -158,6 +158,27 @@ async function main(){
     }));
     console.log('STAGE_CHROMIUM_AUDIT: '+JSON.stringify(audit));
     assert.equal(audit.id,stageId,'canonical stage order after PG02');
+    if(stageId==='S08'){
+      const context=await page.evaluate(()=>{
+        const result={};
+        for(const fid of ['DF087','DF088','DF089','DF090','DF091']){
+          const el=document.querySelector('[data-s08-context-for="'+fid+'"]');
+          if(!el){result[fid]=null;continue;}
+          const label=[...el.querySelectorAll('strong')].find(x=>x.textContent.includes('Contexto previo relevante'));
+          result[fid]={prior:label?.nextElementSibling?.textContent||'',body:el.textContent||''};
+        }
+        return result;
+      });
+      assert.ok(Object.values(context).every(Boolean),'all five S08 contextual cards render');
+      assert.equal(context.DF088.prior,'Legal / compliance');
+      assert.equal(context.DF089.prior,'Herramientas / plataforma');
+      assert.doesNotMatch(context.DF090.prior,/Herramientas \/ plataforma/);
+      assert.equal(context.DF091.prior,'');
+      assert.match(context.DF091.body,/Opciones marcadas/);
+      await page.screenshot({path:path.join(outDir,'pg04-context-by-question.png'),fullPage:true});
+      console.log('PG04_CHROMIUM_CONTEXT_PASS: '+JSON.stringify(context));
+    }
+
     if(audit.blocker)break;
     await page.locator('#nextStage').click();
   }
