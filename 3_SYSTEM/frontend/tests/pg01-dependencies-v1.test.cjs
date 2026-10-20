@@ -176,4 +176,25 @@ test('sidebar cannot jump past an invalid intermediate stage despite imported la
   assert.equal(reason.id,'TEST_S02');
   assert.equal(f.run("firstForwardSessionBlocker(state.engagements[0],'S01')"),null);
 });
+test('session rail disables previously prefilled later stages until PG01 errors are fixed',()=>{
+  const f=fixture(),stateCode=read('core/state.js');
+  const a=stateCode.indexOf('function firstForwardSessionBlocker(');
+  const b=stateCode.indexOf('// [AUNEA-FE-PROC-VIEWPORT-052]',a);
+  assert.ok(a>=0&&b>a,'navigation rendering must be present');
+  f.schema.flow.push({Stage_ID:'S02',Stage_ES:'Alcance'});
+  f.state.activePage='diagnostico';
+  f.ctx.stageList=()=>f.schema.flow;
+  f.ctx.currentStageIndex=()=>f.schema.flow.findIndex(s=>s.Stage_ID===f.engagement.stageId);
+  f.ctx.contextualNav=()=>[['__STAGES__']];
+  f.ctx.completionStageReviewed=stage=>stage.Stage_ID==='S02';
+  f.ctx.esc=String;
+  const nav={innerHTML:''};
+  f.ctx.document.getElementById=id=>id==='nav'?nav:null;
+  f.run(stateCode.slice(a,b));
+  f.run('renderNav()');
+  assert.match(nav.innerHTML,/data-stage-nav="S02" disabled aria-disabled="true"/);
+  f.engagement.answers.DF008.pop();f.engagement.answers.DF009.pop();
+  f.run('renderNav()');
+  assert.doesNotMatch(nav.innerHTML,/data-stage-nav="S02" disabled/);
+});
 // [AUNEA-UAT-PG01-DEPENDENCIES-023] END
