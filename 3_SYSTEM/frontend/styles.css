@@ -101,6 +101,16 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}a{color:inherit}
 /* Legacy class retained only for compatibility with non-stage fragments. */
 .prefill-chip{display:inline-flex;align-items:center;font-size:var(--font-caption);font-weight:500;color:var(--system);background:var(--system-soft);border:1px solid var(--system-line);border-radius:var(--radius-xs);padding:2px 8px;white-space:nowrap}
 /* [AUNEA-FE-FIELD-STATUS-136] END */
+
+/* [AUNEA-FE-DF017-FINAL-137] START — PG09 compare and confirm participant scope. */
+.df017-final-review{margin:16px 0;padding:15px 17px;border:1px solid var(--system-line);border-radius:var(--radius-sm);background:#f7faf8}
+.df017-final-review h3{margin:0 0 9px;font-size:var(--font-body)}
+.df017-final-review p{margin:5px 0;font-size:var(--font-small);line-height:1.55}
+.df017-final-options{display:flex;flex-wrap:wrap;gap:8px;margin:13px 0}
+.df017-final-choice{display:inline-flex;align-items:center;gap:7px;padding:7px 10px;background:#fff;border:1px solid var(--line);border-radius:var(--radius-sm);font-size:var(--font-small);cursor:pointer}
+.df017-final-choice input{width:15px;height:15px;flex:0 0 15px;accent-color:var(--system)}
+/* [AUNEA-FE-DF017-FINAL-137] END */
+
 .char-count{float:right;font-size:var(--font-caption);color:var(--muted)}
 .badge{display:inline-flex;align-items:center;border-radius:var(--radius-pill);padding:4px 11px;font-size:var(--font-caption);font-weight:600;background:#eef0ef;color:#5b6560}
 .badge.ok{background:var(--green-soft);color:#1d6b3f}.badge.wait{background:var(--amber-soft);color:#8c5900}.badge.off{background:var(--red-soft);color:#a43830}.badge.system{background:var(--system-soft);color:var(--system)}
