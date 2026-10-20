@@ -276,6 +276,18 @@ function renderRailHead(){
 }
 // [AUNEA-FE-SHELL-CONTEXT-090] END
 
+function firstForwardSessionBlocker(e,targetId){
+  if(!e)return null;
+  const flow=stageList(),from=currentStageIndex(),to=flow.findIndex(x=>x.Stage_ID===targetId);
+  if(from<0||to<=from||typeof stageAdvanceProblem!=='function')return null;
+  // The sidebar must not bypass an invalid earlier stage merely because a later one
+  // was prefilled by an import. Backward navigation remains freely available.
+  for(let i=from;i<to;i++){
+    const issue=stageAdvanceProblem(e,flow[i].Stage_ID);
+    if(issue)return {stageId:flow[i].Stage_ID,...issue};
+  }
+  return null;
+}
 function renderNav(){
   const n=document.getElementById('nav');if(!n)return;
   const e=currentEng(),flow=stageList(),active=currentStageIndex();
@@ -288,7 +300,7 @@ function renderNav(){
         if((s.Stage_ID==='S09')!==(x[0]==='__CLOSURE__'))return;
         const on=e&&state.activePage==='diagnostico'&&i===active;
         const reviewed=!!e&&typeof completionStageReviewed==='function'&&completionStageReviewed(s,e);
-        const available=!!e&&(i<=active||reviewed||(s.Stage_ID==='S09'&&((typeof allProcessLayersConfirmed==='function'&&allProcessLayersConfirmed(e))||e.confirmedAsIs)));
+        const available=!!e&&(i<=active||(!firstForwardSessionBlocker(e,s.Stage_ID)&&(reviewed||(s.Stage_ID==='S09'&&((typeof allProcessLayersConfirmed==='function'&&allProcessLayersConfirmed(e))||e.confirmedAsIs)))));
         const locked=!!e&&!available;
         out.push(`<button class="nav-item nav-step ${on?'active':''} ${reviewed?'done':''} ${locked?'locked':''}" data-stage-nav="${s.Stage_ID}" ${locked?'disabled aria-disabled="true"':''}><span class="nav-num">${i+1}</span>${esc(s.Stage_ES)}</button>`);
       });
@@ -391,7 +403,13 @@ function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t
 
 function bindCommon(){
   document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>setPage(b.dataset.page));
-  document.querySelectorAll('[data-stage-nav]').forEach(b=>b.onclick=()=>{const e=currentEng();if(!e){toast('Abre o crea un estudio antes.');setPage('estudios');return}e.stageId=b.dataset.stageNav;setPage('diagnostico')});
+  document.querySelectorAll('[data-stage-nav]').forEach(b=>b.onclick=()=>{
+    const e=currentEng();
+    if(!e){toast('Abre o crea un estudio antes.');setPage('estudios');return}
+    const blocker=firstForwardSessionBlocker(e,b.dataset.stageNav);
+    if(blocker){toast(blocker.message);return}
+    e.stageId=b.dataset.stageNav;setPage('diagnostico');
+  });
   document.getElementById('saveBtn').onclick=()=>saveState();
   const mm=document.getElementById('mobileMenu');if(mm)mm.onclick=()=>document.querySelector('.sidebar').classList.toggle('open');
   document.querySelectorAll('[data-open-eng]').forEach(b=>b.onclick=()=>{state.activeEngagementId=b.dataset.openEng;setPage(b.dataset.openEngPage==='resultados'?'resultados':'diagnostico')});
