@@ -313,7 +313,7 @@ function preCloseConsistencyReview(e,completion){
       participantGap.onlyDeclared.length?'Declarados en alcance sin paso asignado: '+participantGap.onlyDeclared.join(', ')+'.':'',
       participantGap.onlyMapped.length?'Responsables del mapa ausentes del alcance inicial: '+participantGap.onlyMapped.join(', ')+'.':''
     ].filter(Boolean).join(' ');
-    add('REVIEW','DF017_PARTICIPANT_SCOPE','DF017 · Revisar equipos participantes. '+sides+' Confirma cuáles son participantes contextuales y cuáles ejecutan pasos; corrige el dato en su propietario. No se ha modificado ningún valor automáticamente.','S02');
+    add('BLOCKER','DF017_PARTICIPANT_SCOPE','DF017 · Equipos declarados en PG02 y responsables del mapa difieren. '+sides+' Selecciona y confirma el listado final en la validación PG09. No se modifica ningún valor automáticamente.','S09');
   }
 
   // [AUNEA-FE-ASIS-SCOPE-079] Mandatory explicit review of scope-map warning.
