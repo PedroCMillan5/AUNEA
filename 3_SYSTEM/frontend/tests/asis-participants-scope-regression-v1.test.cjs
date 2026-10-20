@@ -50,16 +50,28 @@ test('superseded steps are ignored and review never mutates source data',()=>{
 test('PG09 surfaces a human review, not a fabricated replacement or engine conclusion',()=>{
   const e=session(),before=JSON.stringify(e);
   const r=ctx.preCloseConsistencyReview(e,{blockers:[]});
-  const item=r.reviews.find(x=>x.code==='DF017_PARTICIPANT_SCOPE');
+  const item=r.blockers.find(x=>x.code==='DF017_PARTICIPANT_SCOPE');
   assert.ok(item,'the conflict must be discoverable at PG09');
-  assert.equal(item.stage,'S02');
-  assert.match(item.message,/participantes contextuales/);
+  assert.equal(item.stage,'S09');
+  assert.match(item.message,/PG02 y responsables del mapa/);
   assert.equal(JSON.stringify(e),before);
-  assert.equal(r.blockers.length,0,'contextual roles must not automatically block or recategorize');
+  assert.ok(r.blockers.length>=1,'a material disagreement requires explicit final human reconciliation');
 });
 test('PG09 does not show a role-conflict review after reconciliation',()=>{
   const e=session();e.answers.DF017=['ADMIN','FINANCE','MANAGER'];
   const r=ctx.preCloseConsistencyReview(e,{blockers:[]});
-  assert.equal(r.reviews.some(x=>x.code==='DF017_PARTICIPANT_SCOPE'),false);
+  assert.equal(r.blockers.some(x=>x.code==='DF017_PARTICIPANT_SCOPE'),false);
+});
+test('an explicit version-bound final confirmation removes the scope blocker without editing steps',()=>{
+  const e=session();e.answerDetails={};
+  const before=JSON.stringify(e.processSteps),declared=e.answers.DF017;
+  const mapped=[...new Set(e.processSteps.filter(s=>s.status!=='SUPERSEDED').map(s=>s.actor))];
+  e.answerDetails.DF017__initial_scope=[...declared];
+  e.answers.DF017=['ADMIN','FINANCE','MANAGER'];
+  e.answerDetails.DF017__final_scope_confirmation={fingerprint:JSON.stringify({declared:[...e.answers.DF017].sort(),mapped:[...mapped].sort()})};
+  assert.equal(ctx.processParticipantsScopeReview(e),null);
+  assert.equal(JSON.stringify(e.processSteps),before);
+  e.processSteps.push({actor:'HR'});
+  assert.ok(ctx.processParticipantsScopeReview(e),'adding a new actor must invalidate the previous role confirmation');
 });
 // [AUNEA-UAT-ASIS-PARTICIPANTS-132] END
