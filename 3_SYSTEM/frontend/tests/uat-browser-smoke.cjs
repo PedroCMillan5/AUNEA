@@ -108,6 +108,10 @@ async function main(){
     assert.equal(result.confirmedAsIs,false,'no synthetic final confirmation before PG09');
     assert.equal(result.snapshots,0,'no invented historical snapshot');
     if(result.blocker)break;
+    if(!(await page.locator('#nextStage').count())){
+      console.log('ASIS_EDITOR_HANDOFF: '+id+' requires the canonical process editor, not a generic Continue button');
+      break;
+    }
     await page.locator('#nextStage').click();
   }
   console.log('ASIS_CHROMIUM_AUDIT: '+JSON.stringify(layerProgress));
