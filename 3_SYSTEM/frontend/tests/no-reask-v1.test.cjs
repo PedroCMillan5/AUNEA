@@ -274,7 +274,7 @@ test('DF098 real interaction (jsdom, real runtime): action+owner+date consolidat
       const df098Card=[...d.querySelectorAll('.field[data-field]')].find(c=>c.querySelector('[data-nextstep-action="DF098"]'));
       assert.ok(df098Card,'DF098 sigue siendo un control editable real tras el render() no relacionado, nunca una caja "Tomado de"');
       assert.doesNotMatch(df098Card.innerHTML,/reuse-context/);
-      assert.match(df098Card.innerHTML,/answered-badge/);
+      assert.match(df098Card.innerHTML,/field-status-saved/);
       assert.equal(d.querySelector('[data-nextstep-owner="DF098"]').value,'Pedro Carrasco');
       assert.equal(d.querySelector('[data-nextstep-date="DF098"]').value,'2026-09-12');
       assert.equal(d.querySelector('[data-nextstep-owner="DF098"]').readOnly,true);
