@@ -193,6 +193,9 @@ function processParticipantsScopeReview(e){
   if(!declared.length||!mapped.length)return null;
   const a=[...new Set(declared)],b=[...new Set(mapped)];
   const onlyDeclared=a.filter(v=>!b.includes(v)),onlyMapped=b.filter(v=>!a.includes(v));
+  const review=e?.answerDetails?.DF017__final_scope_confirmation;
+  const fingerprint=JSON.stringify({declared:[...a].sort(),mapped:[...b].sort()});
+  if(review?.fingerprint===fingerprint)return null;
   return onlyDeclared.length||onlyMapped.length?{onlyDeclared,onlyMapped}:null;
 }
 // [AUNEA-FE-ASIS-PARTICIPANTS-078] END
