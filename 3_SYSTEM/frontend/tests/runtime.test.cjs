@@ -182,20 +182,17 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
     click('#nav [data-page="contactos"]');
     assert.equal(d.querySelector('#breadcrumb').textContent,'CRM · Contactos');
   });
-  await t.test('VR-02 Studies opens internal work for the selected engagement and keeps every output reachable',()=>{
+  await t.test('VR-02 Estudios respects PG09 gating and still opens the study',()=>{
     click('#nav [data-page="estudios"]');
-    const engagementBefore=w.eval('JSON.stringify(currentEng())');
-    click('[data-open-eng-page="resultados"]');
-    for(const page of internalPages){
-      click(`#nav [data-page="${page}"]`);reached.add(page);
-      assert.ok(d.querySelector('h1'),page);
-      for(const target of internalPages)assert.ok(railPages().includes(target),`${page} -> ${target}`);
-      assert.ok(!railPages().includes('interacciones'));
-      assert.ok(!railPages().includes('oportunidades'));
-      assert.deepEqual(railStages(),[]);
-    }
-    assert.equal(w.eval('JSON.stringify(currentEng())'),engagementBefore,'navigation must not mutate capture, lifecycle, snapshots or outputs');
-    click('#nav [data-page="diagnostico"]');
+    const captured=w.eval('JSON.stringify(currentEng())');
+    assert.equal(w.eval('hasConfirmedSnapshot(currentEng())'),false);
+    assert.equal(d.querySelector('[data-open-eng-page="resultados"]'),null);
+    click('[data-study-actions]');
+    assert.ok(d.querySelector('#studyFloatingMenu [data-study-menu-open]'));
+    assert.equal(d.querySelector('#studyFloatingMenu [data-study-menu-work]'),null);
+    click('#studyFloatingMenu [data-study-menu-open]');
+    assert.equal(w.eval('state.activePage'),'diagnostico');
+    assert.equal(w.eval('JSON.stringify(currentEng())'),captured);
   });
   await t.test('VR-02 PG01–PG09 keep nine schema steps and exclude CRM/internal work in the Console',()=>{
     const ids=Array.from(w.eval('schema.flow.map(s=>s.Stage_ID)'));
@@ -245,7 +242,8 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
     assert.equal(w.eval('JSON.stringify(currentEng())'),before);
     assert.equal(w.eval('currentEng().stageId'),'S04');
     assert.ok(d.querySelector('#nav [data-page="proceso"]'),'S04 se retoma mediante el bloque AS-IS');
-    assert.deepEqual([...reached].sort(),Array.from(w.eval('Object.keys(pages)')).sort(),'every registered Console page was reached by real navigation');
+    assert.deepEqual(railStages(),visibleStageIds);
+    assert.deepEqual(railPages(),sessionPages);
   });
   click('[data-page="pasos"]');click('#addStep');fill('#step_name','Validar solicitud');fill('#step_type','ST02');fill('#step_actor','OPERATIONS');
   fill('#step_active','12');fill('#step_wait','60');fill('#step_rework','3');click('#modalSave');
@@ -276,6 +274,15 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
     // C07 is a downstream lifecycle fixture, not a second capture-completeness test.
     // Give it an explicit synthetic sealed baseline so it exercises only post-diagnostic behavior.
     w.eval(`(()=>{const e=currentEng();e.confirmedAsIs=true;e.answers.DF093='YES';e.asIsConfirmedAt=now();const snap=sealConfirmedSnapshot(e,'fixture sintético C07');e.lastEngineSnapshotVersion=snap.version;e.diagnosticOutput={optimal_scenario:{scenario_id:'SC-UAT',scenario_name:'Escenario UAT',economics:{annual_active_hours:12}},recommendation:{},economic_result:{},risk_result:{},pain_results:[]};state.activePage='tobe';render()})()`);
+    const sealed=w.eval('JSON.stringify(confirmedSnapshot(currentEng()))');
+    for(const page of internalPages){
+      click(`#nav [data-page="${page}"]`);
+      assert.ok(d.querySelector('h1'),page);
+      assert.deepEqual(railStages(),[]);
+      for(const target of internalPages)assert.ok(railPages().includes(target),target);
+      assert.equal(w.eval('JSON.stringify(confirmedSnapshot(currentEng()))'),sealed);
+    }
+    click('#nav [data-page="tobe"]');
     click('#createTobeDraft');
     const tobeBefore=w.eval('JSON.stringify(confirmedSnapshot(currentEng()))');
     d.querySelectorAll('[data-tobe-field="transformation"]').forEach(el=>el.value='Se mantiene');
