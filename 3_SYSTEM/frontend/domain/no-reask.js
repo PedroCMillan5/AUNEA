@@ -557,8 +557,8 @@ function renderQuestion(f,e){
   // The references put the requiredness mark and the provenance chip beside the label, and show no
   // Field_ID on the field itself — coverage is stated once, in the stage inspector.
   const source=f.Reuse_From?reuseSourceInfo(f):null,reuse=reusedValue(f.Field_ID,e);
-  const chip=(source&&valuePresent(reuse))?fieldStatusIcon('reused',source.label):'';
-  const saved=valuePresent(e.answers?.[f.Field_ID])&&!systemOnly?fieldStatusIcon('saved'):'';
+  const chip=(source&&valuePresent(reuse)&&typeof fieldStatusIcon==='function')?fieldStatusIcon('reused',source.label):'';
+  const saved=valuePresent(e.answers?.[f.Field_ID])&&!systemOnly&&typeof fieldStatusIcon==='function'?fieldStatusIcon('saved'):'';
   const meta=`${required?requiredMark():''}${f.Requiredness==='CONDITIONAL_90M'?'<span class="conditional-tag">condicional</span>':''}${chip}${saved}`;
   let body='';
   if(mode==='DERIVE_AND_CONFIRM'){
