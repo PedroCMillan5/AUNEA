@@ -55,8 +55,10 @@ test('DF024 actually renders as a full-width two-control pair even with answered
   assert.match(renderer,/class="demand-seasonality-pair"/);
   assert.match(renderer,/data-seasonality-detail="\$\{fid\}"/);
 });
-test('PG03 backlog uses the left column beneath elapsed end-to-end time',()=>{
+test('PG03 shows DF026, then DF027 backlog, then DF028 failures in one vertical column',()=>{
   assert.match(css,/\.field\[data-field="DF027"\]\{grid-column:1\}/);
+  assert.match(css,/\.field\[data-field="DF028"\]\{grid-column:1\}/);
+  assert.match(css,/@media\(max-width:760px\)[\s\S]*?\.field\[data-field="DF028"\]\{grid-column:auto\}/);
   assert.match(stages,/if\(f\.Field_ID==='DF025'\)/);
   assert.match(stages,/out\.push\(renderQuestion\(f,e\)\)/);
 });
