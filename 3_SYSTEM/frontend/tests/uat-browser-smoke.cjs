@@ -82,7 +82,7 @@ async function main(){
   assert.equal(pg02Audit.fields.length>0,true,'PG02 must expose canonical data fields');
   await page.locator('#nextStage').click();
   assert.equal((await pg01State()).stage,'S03','PG02 Continue must reach PG03 with canonical data');
-  // [AUNEA-UAT-PG03-PIXEL-147] START — Verify the real rendered PG03 columns in native Chromium.
+  // PG03 visual regression belongs to the existing browser-UAT block: measure rendered columns in Chromium.
   const pg03Saved=await page.evaluate(()=>{
     const e=currentEng();return {
       a24:e.answers?.DF024,has24:Object.prototype.hasOwnProperty.call(e.answers||{},'DF024'),
@@ -129,7 +129,7 @@ async function main(){
       render();
     },pg03Saved);
   }
-  // [AUNEA-UAT-PG03-PIXEL-147] END
+  // End PG03 visual regression.
   for(const stageId of ['S03','S08']){
     const audit=await page.evaluate(()=>({
       id:currentEng().stageId,
