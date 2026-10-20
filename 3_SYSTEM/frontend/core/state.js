@@ -97,6 +97,17 @@ function id(prefix){return `${prefix}-${Date.now()}-${Math.random().toString(36)
 function now(){return new Date().toISOString()}
 function esc(v){return String(v??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
 function attr(v){return esc(v).replace(/'/g,'&#39;')}
+// [AUNEA-FE-FIELD-STATUS-136] START — Compact, accessible saved/reused indicators (visual only).
+// Source names are descriptive labels; icons do not change No-Reask, ownership or confirmation.
+function fieldStatusIcon(kind,source=''){
+  const reused=kind==='reused';
+  const label=reused?'Autocompletado desde '+String(source||'la fuente original'):'Valor guardado en el estudio';
+  const drawing=reused
+    ?'<path d="M4 6h10a3 3 0 0 1 3 3v4"/><path d="m13 10 4 4 4-4"/><path d="M4 18h7"/>'
+    :'<path d="m4.5 12.5 5 5 10-11"/>';
+  return '<span class="field-status-icon '+(reused?'field-status-reused':'field-status-saved')+'" role="img" tabindex="0" aria-label="'+attr(label)+'" data-tooltip="'+attr(label)+'"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+drawing+'</svg></span>';
+}
+// [AUNEA-FE-FIELD-STATUS-136] END
 function requiredMark(){return '<span class="required-mark" tabindex="0" title="Campo obligatorio" aria-label="Campo obligatorio">*</span>'}
 const REQUIRED_LEGEND_HTML='<div class="field-help required-legend">Los campos marcados con '+requiredMark()+' son obligatorios.</div>';
 function fmtDate(v){if(!v)return '—';try{return new Date(v).toLocaleString('es-ES',{dateStyle:'short',timeStyle:'short'})}catch{return v}}
