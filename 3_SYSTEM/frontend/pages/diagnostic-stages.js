@@ -30,7 +30,9 @@ function s03ServiceTimeComparisonHtml(e){
       a*factor[cycle.unit]>b*factor[target.unit]?'superior al':'igual al';
     sentence='En esta captura, el tiempo habitual declarado ('+esc(String(cycle.value))+' '+esc(cycle.unit)+') es '+comparison
       +' objetivo ('+esc(String(target.value))+' '+esc(target.unit)+').';
-  } else if(target.value!==''&&cycle.value!=='')sentence='Hay valores de tiempo, pero no pueden compararse automáticamente con una base temporal homogénea.';
+  } else if(target.value!==''&&target.value!=null&&!factor[target.unit])sentence='El SLA tiene un valor numérico, pero falta seleccionar una unidad válida (minutos u horas) antes de compararlo con el tiempo real.';
+  else if(cycle.value!==''&&cycle.value!=null&&!factor[cycle.unit])sentence='El tiempo end-to-end necesita una unidad comparable (minutos u horas) para hacer el contraste.';
+  else if(target.value!==''&&cycle.value!=='')sentence='Hay valores de tiempo, pero no pueden compararse automáticamente con una base temporal homogénea.';
   return '<strong>SLA frente a tiempo end-to-end</strong>'
     +'<p><b>SLA (DF025):</b> plazo objetivo de servicio. <b>End-to-end (DF026):</b> duración habitual transcurrida desde el evento inicial hasta el resultado final, incluyendo esperas; no es sólo tiempo de trabajo.</p>'
     +(sentence?'<p class="demand-service-observation">'+sentence+'</p>':'')
