@@ -74,4 +74,32 @@ test('an explicit version-bound final confirmation removes the scope blocker wit
   e.processSteps.push({actor:'HR'});
   assert.ok(ctx.processParticipantsScopeReview(e),'adding a new actor must invalidate the previous role confirmation');
 });
+test('PG09 shows initial PG02 roles, map roles and confirms the selected final set without rewriting steps',()=>{
+ const page=fs.readFileSync(path.join(__dirname,'../pages/diagnostic-stages.js'),'utf8');
+ const start=page.indexOf('function df017FinalReviewPanel(e){'),end=page.indexOf('// [AUNEA-FE-DF017-FINAL-137] END',start);
+ assert.ok(start>=0&&end>start);
+ const e=session();e.answerDetails={};e.confirmedAsIs=false;e.layerConfirmations={map:true,frictions:true,risks:true,impact:true};
+ const actors=JSON.stringify(e.processSteps),state={audit:[],dirty:false};
+ const local={
+   normalizeArray:ctx.normalizeArray,
+   activeSteps:eng=>eng.processSteps.filter(s=>s.status!=='SUPERSEDED'),
+   labelFrom:(_,value)=>({ADMIN:'Administración',FINANCE:'Finanzas',MANAGER:'Manager',CUSTOMER:'Cliente',SALES:'Ventas',OPERATIONS:'Operaciones'}[value]||value),
+   esc:String,attr:String,fieldOptions:()=>['ADMIN','FINANCE','MANAGER','CUSTOMER','SALES','OPERATIONS'].map(value=>({value})),
+   state,currentEng:()=>e,now:()=>new Date('2026-10-20T12:00:00Z').toISOString(),
+   document:{querySelectorAll:()=>['ADMIN','FINANCE','MANAGER'].map(df017FinalOption=>({dataset:{df017FinalOption}}))},
+   markDirty:()=>{state.dirty=true},audit:()=>{},invalidateDerivedState:()=>{},
+   persistRecoverySnapshot:()=>true,render:()=>{},toast:()=>{}
+ };
+ vm.createContext(local);vm.runInContext(page.slice(start,end),local);
+ const panel=local.df017FinalReviewPanel(e);
+ assert.match(panel,/En la página 2 seleccionaste/);
+ assert.match(panel,/En el mapa AS-IS aparecen/);
+ assert.match(panel,/data-confirm-df017-final/);
+ assert.equal(local.confirmDf017FinalSelection(),true);
+ assert.deepEqual(Array.from(e.answers.DF017),['ADMIN','FINANCE','MANAGER']);
+ assert.deepEqual(Array.from(e.answerDetails.DF017__initial_scope),['CUSTOMER','SALES','OPERATIONS','MANAGER']);
+ assert.equal(JSON.stringify(e.processSteps),actors,'the ProcessStep owner is not changed by reconciliation');
+ assert.equal(ctx.processParticipantsScopeReview(e),null,'the version-bound confirmation clears the conflict');
+ assert.match(local.df017FinalReviewPanel(e),/Listado final confirmado/);
+});
 // [AUNEA-UAT-ASIS-PARTICIPANTS-132] END
