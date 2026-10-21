@@ -394,6 +394,17 @@ body.asis-console-locked .result-list button:disabled{cursor:not-allowed;opacity
 .process-node-title .boundary-kicker{margin-bottom:3px}
 .process-node-title h4{margin:0;line-height:1.25;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;text-overflow:ellipsis}
 .process-graph-cell .flow-boundary h4{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4;overflow:hidden;text-overflow:ellipsis}
+
+/* [AUNEA-FE-PG05-BOUNDARY-151] START — Read-only PG05 shows declared DF014/DF015 without ellipsis.
+   Other AS-IS editor/Session surfaces retain their existing card and layout contracts. */
+.process-graph-readonly .flow-boundary .process-node-heading{gap:7px}
+.process-graph-readonly .flow-boundary .process-node-icon{width:26px;height:26px;min-width:26px}
+.process-graph-readonly .flow-boundary h4{
+  display:block;-webkit-line-clamp:unset;overflow:visible;text-overflow:clip;
+  white-space:normal;overflow-wrap:anywhere;font-size:11px;line-height:1.27;
+}
+/* [AUNEA-FE-PG05-BOUNDARY-151] END */
+
 .process-node-meta{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .process-node-icon{display:grid;place-items:center;width:32px;height:32px;min-width:32px;border-radius:9px;background:var(--system-soft);color:var(--system);border:1px solid var(--system-line)}
 .process-node-icon svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
