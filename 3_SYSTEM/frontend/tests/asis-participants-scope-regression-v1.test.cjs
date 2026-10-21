@@ -18,7 +18,8 @@ const ctx={
   captureIntegrityIssues:()=>[],
   reusedValue:(id,e)=>id==='DF017'?e.processSteps.filter(s=>s.status!=='SUPERSEDED').map(s=>s.actor):[],
   valuePresent:v=>Array.isArray(v)?v.length>0:v!==null&&v!==undefined&&v!=='',
-  schema:{fields:[]}
+  schema:{fields:[]},
+  labelFrom:(_,v)=>({CUSTOMER:'Cliente',SALES:'Comercial',OPERATIONS:'Operaciones',MANAGER:'Manager / dirección',ADMIN:'Administración',FINANCE:'Finanzas'}[v]||v)
 };
 vm.createContext(ctx);
 vm.runInContext(
