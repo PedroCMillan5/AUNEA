@@ -1527,5 +1527,7 @@ body.shell-session .topbar-left{display:none}
 
 /* Align sensitive/materiality selects despite wrapped question labels. */
 .risk-modal-form .field:has(#riskSensitive) label,
-.risk-modal-form .field:has(#riskMat) label{min-height:2.8em;display:flex;align-items:flex-end}
+.risk-modal-form .field:has(#riskMat) label{min-height:2.8em;display:block;align-content:end;text-align:left}
+.risk-modal-form .field:has(#riskMat) label .required,.risk-modal-form .field:has(#riskMat) label .required-mark{display:inline!important;float:none!important;position:static!important;margin-left:2px}
+.risk-related-problems .risk-friction-separator{display:inline-block;font-weight:900;font-size:1.15em;margin-inline:13px;vertical-align:middle;line-height:1}
 @media(max-width:700px){.risk-modal-form .field:has(#riskSensitive) label,.risk-modal-form .field:has(#riskMat) label{min-height:0;display:block}}
