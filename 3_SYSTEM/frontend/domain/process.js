@@ -442,10 +442,10 @@ function frictionNumberControl(id,obj,kind='number'){
   const periods=[{value:'',label:'Selecciona periodo…'},{value:'day',label:'por día'},{value:'week',label:'por semana'},{value:'month',label:'por mes'},{value:'year',label:'por año'}];
   if(kind==='money')return `<div class="compound-control"><input id="${id}" type="number" min="0" step="any" value="${attr(p.value||'')}" placeholder="0"><span class="unit-label">€</span>${auneaDropdownControl(id+'_period',periods,p.period||'','Periodo')}${auneaDropdownControl(id+'_mode',[{value:'',label:'Dato disponible'},{value:'NONE',label:'No aplica'},{value:'UNKNOWN',label:'No disponible'}],p.mode||'','Estado')}</div>`;
   const hasValue=p.value!==undefined&&p.value!==null&&String(p.value)!=='';
-  const mode=p.mode||(hasValue?'percent':''),period=p.period||'';
+  const mode=p.mode||(hasValue?'percent':'UNKNOWN'),period=p.period||'';
   return `<div class="compound-control friction-frequency-control" data-fr-frequency-control="${id}">
     <input id="${id}" type="number" min="0" step="any" value="${attr(hasValue?p.value:'')}" placeholder="Sin informar">
-    ${auneaDropdownControl(id+'_mode',[{value:'',label:'Sin informar'},{value:'percent',label:'%'},{value:'count',label:'casos'},{value:'UNKNOWN',label:'No se sabe'}],mode,'Unidad')}
+    ${auneaDropdownControl(id+'_mode',[{value:'percent',label:'%'},{value:'count',label:'casos'},{value:'UNKNOWN',label:'No se sabe'}],mode,'Unidad')}
     <span class="unit-label" data-fr-frequency-percent-suffix${mode==='percent'?'':' style="display:none"'}>de los casos</span>
     <span data-fr-frequency-period-wrap${mode==='count'?'':' style="display:none"'}>${auneaDropdownControl(id+'_period',periods,period,'Periodo')}</span>
   </div>`;
