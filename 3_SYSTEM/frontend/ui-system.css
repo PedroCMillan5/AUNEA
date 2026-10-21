@@ -1095,6 +1095,70 @@ body:has([data-diagnostic-stage="S08"]) .s08-detail-row .aunea-select{
 body:has([data-diagnostic-stage="S08"]) .s08-context-explanation{display:block;margin-top:6px;font-size:var(--font-small);line-height:1.45;color:var(--ink)}
 
 body:has([data-diagnostic-stage="S08"]) .s08-context-subtitle{display:block;margin-top:8px}
+
+/* [AUNEA-FE-S08-CONTEXT-COMPACT-149] START — Compact read-only context presentation outside FROZEN S08.
+   Source: DEC-050/066, Diagnostic Master DF010 and DF087–DF091.
+   Do not affect owner values, full-row question widths or other pages. */
+body:has([data-diagnostic-stage="S08"]) .field .s08-prior-context{
+  margin:7px 0 3px;
+  padding:8px 11px;
+  border:1px solid var(--line);
+  border-left:3px solid var(--gold);
+  background:var(--bg);
+  border-radius:var(--radius-sm);
+  display:block;
+}
+body:has([data-diagnostic-stage="S08"]) .s08-context-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1.1fr) minmax(0,1.5fr);
+  align-items:start;
+  gap:12px;
+  width:100%;
+}
+body:has([data-diagnostic-stage="S08"]) .s08-context-cell{
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+  min-width:0;
+}
+body:has([data-diagnostic-stage="S08"]) .s08-context-cell strong{
+  margin:0;
+  font-size:var(--font-caption);
+  font-weight:700;
+  line-height:1.3;
+  color:var(--ink-2);
+}
+body:has([data-diagnostic-stage="S08"]) .s08-context-cell span{
+  color:var(--muted);
+  font-size:var(--font-caption);
+  line-height:1.35;
+  overflow-wrap:anywhere;
+}
+body:has([data-diagnostic-stage="S08"]) .s08-context-advice{
+  border-left:1px solid var(--line);
+  padding-left:12px;
+}
+body:has([data-diagnostic-stage="S08"]) .s08-context-action-note{
+  margin:5px 0 2px;
+  color:var(--muted);
+  font-size:var(--font-caption);
+  line-height:1.45;
+}
+@media(max-width:900px){
+  body:has([data-diagnostic-stage="S08"]) .s08-context-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  body:has([data-diagnostic-stage="S08"]) .s08-context-advice{
+    grid-column:1/-1;
+    border-left:0;
+    border-top:1px solid var(--line);
+    padding:7px 0 0;
+  }
+}
+@media(max-width:600px){
+  body:has([data-diagnostic-stage="S08"]) .s08-context-grid{grid-template-columns:1fr}
+  body:has([data-diagnostic-stage="S08"]) .s08-context-advice{grid-column:auto}
+}
+/* [AUNEA-FE-S08-CONTEXT-COMPACT-149] END */
+
 body:has([data-diagnostic-stage="S08"]) .s08-duplication-why{margin:4px 0 8px;line-height:1.45;max-width:980px}
 
 /* [AUNEA-FE-PROCESS-SUGGESTIONS-010] START */
