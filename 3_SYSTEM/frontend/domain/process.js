@@ -1145,7 +1145,7 @@ function asisDemandBaseline(e){
     +'<div><small>Tiempo objetivo</small><b>'+num('DF025')+'</b></div>'
     +'<div><small>Duración habitual</small><b>'+num('DF026')+'</b></div>'
     +'<div><small>Backlog actual</small><b>'+num('DF027',{defaultUnit:'casos'})+'</b></div>'
-    +'<div><small>Error / retrabajo global</small><b>'+num('DF028')+'</b></div>'
+    +'<div><small>Error / retrabajo global</small>'+failureRatePresentation()+'</div>'
     +'<div><small>Clases que cambian tratamiento</small><b>'+text('DF029')+'</b></div>'
     +'<div><small>Tendencia 12–18 meses</small><b>'+text('DF030')+'</b></div>'
     +'</div>';
