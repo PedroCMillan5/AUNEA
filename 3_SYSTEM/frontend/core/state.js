@@ -253,7 +253,7 @@ function contextualNav(){
   return [...(internal?INTERNAL_WORK_NAV:CRM_NAV),...SYSTEM_NAV];
 }
 function currentStageIndex(){const e=currentEng(),f=stageList();if(!e||!f.length)return -1;return f.findIndex(s=>s.Stage_ID===(e.stageId||'S01'))}
-// [AUNEA-FE-PG05-VISUAL-PROGRESS-150] START — Display context, not a persisted navigation change.
+// AS-IS progress projection (owner block AUNEA-FE-SHELL-CONTEXT-090): display context only.
 // DEC-065: AS-IS owns visual session pages 5–8; the stored stage may still be S08 (PG04).
 // The header reads the surface stage; capture navigation and returnTo keep their original owners.
 function visibleSessionStageIndex(){
@@ -262,7 +262,7 @@ function visibleSessionStageIndex(){
   const index=stageList().findIndex(s=>s.Stage_ID===surfaceStage);
   return index>=0?index:currentStageIndex();
 }
-// [AUNEA-FE-PG05-VISUAL-PROGRESS-150] END
+// End AS-IS progress projection.
 // The stage clock is the cumulative window of the canonical per-stage minutes — derived from the flow,
 // never a hardcoded schedule. Stage 1 of the shipped flow yields 00:00 – 06:00, as the references show.
 function stageWindow(i){
