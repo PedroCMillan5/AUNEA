@@ -87,6 +87,12 @@ select option{background:#fff;color:var(--ink)}
 .company-form-select .aunea-select-menu button{white-space:normal}
 
 .company-ins-head{align-items:flex-start;gap:12px}.company-ins-head h3{min-width:0;flex:1;overflow-wrap:anywhere;word-break:break-word}.ins-head-actions{display:flex;gap:6px;flex:0 0 auto;flex-wrap:nowrap;justify-content:flex-end;white-space:nowrap}
+/* PG06: separación específica entre aviso y tarjetas de fricciones candidatas. */
+.modal .notice.info:has(+ .result-list:has(.pain-review-card)){margin-bottom:16px}
+.modal .result-list:has(> .pain-review-card){display:flex;flex-direction:column;gap:14px;min-width:0}
+.modal .result-list>.pain-review-card{margin:0;padding:16px;min-width:0}
+.modal .pain-review-card .result-item-head>div:first-child>p{margin:8px 0}
+.modal .pain-review-card .field-help{margin-top:10px;line-height:1.6}
 .result-item-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.result-item-head>div:first-child{min-width:0;flex:1}.result-actions{display:flex;gap:6px;flex-wrap:nowrap;flex:0 0 auto}
 
 /* AUNEA custom select: unlike the native OS popup, the opened panel is owned by the product and keeps
