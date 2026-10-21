@@ -569,6 +569,23 @@ async function main(){
    await editor.screenshot({path:path.join(outDir,id.toLowerCase()+'.png'),fullPage:true});
    await editor.close();
    // Native consultant PG05: one owner, six editable cards, ten nonduplicated projections.
+   for(const pageId of ['pasos','fricciones','riesgos','impacto']){
+     await page.evaluate(id=>{state.activePage=id;render()},pageId);
+     const bar=page.locator('.asis-temporal-card');
+     await bar.waitFor();
+     assert.equal(await bar.count(),1,pageId+' has one visible AS-IS temporal bar');
+     const visible=await bar.evaluate(node=>{
+       const track=node.querySelector('.asis-temporal-track');
+       return {heading:node.textContent.includes('Reconstrucción del tiempo actual'),
+         reference:node.textContent.includes('Tiempo end-to-end declarado'),
+         barWidth:Math.round(track?.getBoundingClientRect().width||0),
+         categories:node.querySelectorAll('.asis-temporal-label').length,
+         hasNeutral:!!track?.querySelector('.asis-temporal-unreconciled')};
+     });
+     assert.ok(visible.heading&&visible.reference&&visible.barWidth>100&&visible.categories>=4&&visible.hasNeutral,
+       pageId+' must show the actual progress track, not only an error message: '+JSON.stringify(visible));
+   }
+   console.log('DEC074_PRIVATE_LAYERS_VISIBLE_PASS: Pasos, Fricciones, Riesgos, Impacto');
    await page.evaluate(()=>{state.activePage='pasos';render()});
    await page.locator('.pg05-review').waitFor();
    assert.equal(await page.locator('body.shell-session').count(),1);
