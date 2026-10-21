@@ -445,6 +445,15 @@ async function main(){
    await editor.locator('.client-process-sequence').waitFor({timeout:20000});
    const canvas=editor.locator('.flow-canvas');
    await canvas.waitFor();
+   const textSizes=await editor.evaluate(()=>{
+     const els=document.querySelectorAll('.client-process-canvas .flow-boundary h4,.client-process-canvas .graph-flow-step h4,.client-process-canvas .graph-decision-copy h4');
+     return [...els].map(el=>getComputedStyle(el).fontSize);
+   });
+   assert.ok(textSizes.length>=4,'client AS-IS titles visible');
+   assert.deepEqual([...new Set(textSizes)],['12px'],'client step labels have equal 12px size');
+   const consoleSizes=await page.evaluate(()=>[...document.querySelectorAll('.process-graph-readonly .flow-boundary h4,.process-graph-readonly .graph-flow-step h4,.process-graph-readonly .graph-decision-copy h4')].map(el=>getComputedStyle(el).fontSize));
+   assert.deepEqual([...new Set(consoleSizes)],['12px'],'console titles have the same size');
+   console.log('PG05_SHARED_FONT_PASS: '+JSON.stringify({client:textSizes,console:consoleSizes}));
    // PG05 and the client editor display the same owner boundaries, not two renderings
    // with different truncation rules. Capture their actual rendered values first.
    const consultantBoundaries=await page.evaluate(()=>['start','end'].map(kind=>
