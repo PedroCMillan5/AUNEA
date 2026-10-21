@@ -1056,7 +1056,7 @@ function clientProcessView(e,steps,fr,tab='cliente'){
     <button class="client-rail-item ${tab==='impacto'?'active':''}" data-process-tab="impacto"><b>Impacto económico</b><span>${econCount}</span></button></aside>`;
   const key=processLayerKeySafe(tab),layer=processLayerState(e),labels={map:'mapa AS-IS',frictions:'fricciones y evidencia',risks:'riesgos y controles',impact:'impacto económico'},integrity=typeof processLayerIntegrityIssues==='function'?processLayerIntegrityIssues(e,key):[],done=!!layer[key]&&!integrity.length;
   const confirm=`${integrity.length?`<div class="notice warn"><b>Revisión necesaria</b><br>${integrity.map(x=>esc(x.message)).join(' ')}</div>`:''}<div class="flow-confirm"><div><b>${done?'Capa confirmada':integrity.length?'Revisión necesaria':'Confirmación pendiente'}</b><div class="field-help">${esc(labels[key])}</div></div><button class="btn ${done?'btn-outline':'btn-primary'}" id="confirmAsIs">${done?'Reconfirmar':'Confirmar'} ${esc(labels[key])}</button></div>`;
-  return section('Editor con cliente','Mapa, fricciones, riesgos e impacto se editan sobre el mismo contexto.',clientBar+`<div class="client-process-workspace" data-process-engagement="${attr(e.id)}">${layerRail}<div class="client-process-main">${sequence}${lineage}${asisDemandBaseline(e)}${asisParticipantContext(e)}${asisVariantCandidates(e)}${clientLayerBody(e,steps,fr,tab)}${confirm}${nextAction}</div></div>`);
+  return section('Editor con cliente','Mapa, fricciones, riesgos e impacto se editan sobre el mismo contexto.',clientBar+`<div class="client-process-workspace" data-process-engagement="${attr(e.id)}">${layerRail}<div class="client-process-main">${sequence}${lineage}${asisDemandBaseline(e)}${asisTemporalBar(e)}${asisParticipantContext(e)}${asisVariantCandidates(e)}${clientLayerBody(e,steps,fr,tab)}${confirm}${nextAction}</div></div>`);
 }
 function stepsEditor(e,steps,fr){
   const discrepancies=stepOrderDiscrepancies(steps);
@@ -1256,6 +1256,7 @@ function asisMapPage(e,steps,fr){
   const flow=processGraphHtml(e,steps,fr,start,finish,'impacto',true);
   return '<div data-process-engagement="'+attr(e.id)+'">'+asisOverview(e,steps,fr)
     +asisDemandBaseline(e)
+    +asisTemporalBar(e)
     +asisParticipantContext(e)
     +asisVariantCandidates(e)
     +'<div class="asis-map-hint">Este es el mismo mapa AS-IS trabajado con el cliente. Para modificarlo, utiliza Pasos, Fricciones, Riesgos o Impacto en el menú de la izquierda.</div>'
@@ -1803,6 +1804,7 @@ bindForms=function(){
     if(details){details.open=true;const dest=document.getElementById(b.dataset.graphRouteKind==='no'?'step_exc_dest':'step_next');const target=dest?.closest('.canonical-aunea-select')||details;target.scrollIntoView?.({block:'nearest',behavior:'smooth'});const dropdown=target.querySelector?.('details.aunea-select');if(dropdown)dropdown.open=true;}
   });
   if(typeof requestAnimationFrame==='function')requestAnimationFrame(drawProcessGraph);
+  bindAsisTemporalBars();
     document.querySelectorAll('[data-validated-case]').forEach(b=>b.onclick=()=>instantiateValidatedCase(b.dataset.validatedCase));
 };
 
