@@ -1524,3 +1524,8 @@ body.shell-session .topbar-left{display:none}
 .pg05-status + .pg05-step-list{margin-top:14px}
 @media(max-width:700px){.risk-review-card + .risk-review-card{margin-top:12px}}
 /* [AUNEA-FE-RISKS-AIR-113] END */
+
+/* Align sensitive/materiality selects despite wrapped question labels. */
+.risk-modal-form .field:has(#riskSensitive) label,
+.risk-modal-form .field:has(#riskMat) label{min-height:2.8em;display:flex;align-items:flex-end}
+@media(max-width:700px){.risk-modal-form .field:has(#riskSensitive) label,.risk-modal-form .field:has(#riskMat) label{min-height:0;display:block}}
