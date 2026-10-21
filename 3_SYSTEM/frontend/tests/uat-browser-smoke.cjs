@@ -454,6 +454,34 @@ async function main(){
    assert.match(timeCard,/Reconstrucción del tiempo actual/);
    assert.match(timeCard,/end-to-end|End-to-end/i);
    console.log('DEC074_ASIS_TIME_BAR: '+JSON.stringify({console:await consultantTime.textContent(),client:timeCard}).slice(0,1000));
+
+   // Exercise the full segment renderer with a synthetic backend-shaped result.
+   // Browser smoke does not launch the backend; endpoint arithmetic has separate API tests.
+   const segmentPreview=await editor.evaluate(()=>{
+     const node=document.querySelector('.asis-temporal-card'),
+       board=document.querySelector('.client-process-canvas .process-graph-board'),
+       canvas=document.querySelector('.client-process-canvas'),position=canvas.scrollLeft;
+     const output={
+       declared_minutes:250,identified_minutes:225,unreconciled_percent:10,
+       exceeds_declared_reference:false,
+       segments:[
+         {key:'active',label:'Trabajo activo',minutes:20,width_percent:8},
+         {key:'wait',label:'Exposición a espera',minutes:200,width_percent:80},
+         {key:'rework',label:'Retrabajo ponderado',minutes:5,width_percent:2},
+         {key:'additional',label:'Trabajo adicional validado',minutes:0,width_percent:0}
+       ],unresolved:['Solapamiento de esperas no acreditado']
+     };
+     node.querySelector('.asis-temporal-content').innerHTML=asisTemporalBarContent(output);
+     return {
+       segments:node.querySelectorAll('.asis-temporal-track .asis-temporal-fill').length,
+       declared:node.textContent.includes('250 min'),
+       pending:node.textContent.includes('Conciliación pendiente'),
+       graphStable:board===document.querySelector('.client-process-canvas .process-graph-board'),
+       offsetStable:canvas.scrollLeft===position
+     };
+   });
+   assert.deepEqual(segmentPreview,{segments:4,declared:true,pending:true,graphStable:true,offsetStable:true});
+   console.log('DEC074_SEGMENT_RENDER_PASS: '+JSON.stringify(segmentPreview));
    const canvas=editor.locator('.flow-canvas');
    await canvas.waitFor();
    const textSizes=await editor.evaluate(()=>{
