@@ -222,7 +222,8 @@ test('B03: direct loss repeated across friction and DF082 is held pending reconc
   e.economicInputs=[{driver_id:'ED11',step_ids:['S1'],direct_loss_eur_annual:100}];
   const problems=ctx.economicCaptureIssues(e,{driver_id:'ED11',step_ids:['S1'],direct_loss_eur_annual:100});
   assert.equal(problems.length,1);
-  assert.match(problems[0],/DF063\/DF082/);
+  assert.match(problems[0],/Ya existe una pérdida económica directa registrada/);
+  assert.doesNotMatch(problems[0],/\bDF\d{3}\b/);
   assert.equal(ctx.economicCaptureIssues(e,{driver_id:'ED11',step_ids:['S2'],direct_loss_eur_annual:100}).length,0);
   assert.match(code,/deduplication_key:\s*existing\?\.deduplication_key\s*\?\?\s*null/);
 });
