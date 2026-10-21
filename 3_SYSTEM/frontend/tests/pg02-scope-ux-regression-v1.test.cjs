@@ -1,27 +1,22 @@
-// [AUNEA-UAT-PG02-SCOPE-141] START — PG02 boundary display + owner provenance regression
+// [AUNEA-UAT-PG02-SCOPE-141] START — PG02 initial capture before map + owner provenance regression
 'use strict';
-const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const root=path.join(__dirname,'..'),page=fs.readFileSync(path.join(root,'pages/diagnostic-stages.js'),'utf8'),noreask=fs.readFileSync(path.join(root,'domain/no-reask.js'),'utf8');
 function slice(s,start,end){const a=s.indexOf(start),b=s.indexOf(end,a+start.length);assert.ok(a>=0&&b>a,'required block exists: '+start);return s.slice(a,b)}
-function context(steps){
- const e={businessAreaId:'D14',answers:{DF014:'La recepción por Administración de la factura PDF adjunta al email del proveedor.',DF015:'El registro de la factura en ERP y el archivo del expediente, con aprobación humana cuando proceda.'},processSteps:steps};
- const ctx={activeSteps:x=>x.processSteps.filter(p=>p.status!=='SUPERSEDED'),esc:String,attr:String,processScopeReviewSignals:()=>[],scopeReviewAcknowledged:()=>false};
- vm.createContext(ctx);
- vm.runInContext(slice(page,'function pg02BoundaryReviewHtml(e){','// ['+'AUNEA-FE-SCOPE-PG02-139'+'] END'),ctx);
- return {ctx,e}
-}
-test('PG02 has no fabricated comparison before any process steps are present',()=>{
- const {ctx,e}=context([]);
- assert.equal(ctx.pg02BoundaryReviewHtml(e),'');
+test('PG02 is not subordinated to future AS-IS map comparison, including when the UAT fixture preloads steps',()=>{
+ assert.doesNotMatch(page,/function pg02BoundaryReviewHtml\(/,'no obsolete pre-map widget');
+ assert.doesNotMatch(page,/pg02BoundaryReviewHtml\(e\)/,'the first four screens must not compare to future map state');
+ assert.doesNotMatch(page,/data-pg02-boundary-review/,'no warning or pending-map summary in PG02');
+ const stage= slice(page,'function stagePage(){','function processPrompt(e){');
+ assert.doesNotMatch(stage,/Pendiente de revisar\/confirmar en el mapa AS-IS/);
+ assert.match(stage,/stage\.Stage_ID==='S02'\?engagementBusinessAreaBlock\(e\)/,'the normal scope owner stays intact');
 });
-test('PG02 displays original boundaries and actual first/last map step without mutating source',()=>{
- const {ctx,e}=context([{step_name:'Recibir factura',status:'ACTIVE'},{step_name:'Aprobar factura',status:'SUPERSEDED'},{step_name:'Registrar en ERP y archivar',status:'ACTIVE'}]);
- const before=JSON.stringify(e),html=ctx.pg02BoundaryReviewHtml(e);
- for(const term of ['Inicio declarado en Alcance','Final declarado en Alcance','Primer paso del mapa','Último paso del mapa','Recibir factura','Registrar en ERP y archivar','Pendiente de revisar/confirmar']){
-  assert.ok(html.includes(term),term);
- }
- assert.ok(!html.includes('Aprobar factura'));
- assert.equal(JSON.stringify(e),before);
+test('map-layer confirmation and PG09 retain downstream consistency checks',()=>{
+ const life=fs.readFileSync(path.join(root,'domain/process-lifecycle.js'),'utf8');
+ assert.match(life,/if\(key==='map'\)\{\s*const signals=processScopeReviewSignals\(e\)/);
+ assert.match(life,/function preCloseConsistencyReview\(e,completion\)/);
+ assert.match(life,/const scopeSignals=processScopeReviewSignals\(e\)/);
+ assert.match(life,/const participantGap=processParticipantsScopeReview\(e\)/);
 });
 test('PG02 boundaries expose complete read-only preview without storing another answer',()=>{
  assert.match(noreask,/data-boundary-preview/);
