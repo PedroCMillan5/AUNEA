@@ -386,6 +386,32 @@ async function main(){
      assert.match(mapAudit.percentage,/8 % · Mes/,'display the source-declared percent and month unchanged');
    console.log('PG05_VISUAL_INTEGRITY_PASS: '+JSON.stringify(mapAudit));
    await page.locator('.process-graph-readonly').screenshot({path:path.join(outDir,'pg05-map-no-text-crossing.png')});
+
+   // Stress the real four-step screenshot's longer declared DF014/DF015 copy.
+   // Test-only temporary values; restore exactly before opening the source editor.
+   const longBoundaries=await page.evaluate(()=>{
+     const e=currentEng(),initial=e.answers.DF014,final=e.answers.DF015;
+     e.answers.DF014='La recepción por Administración de la factura PDF adjunta al email del proveedor.';
+     e.answers.DF015='El registro de la factura en ERP y el archivo del expediente, con aprobación humana cuando proceda. Pago y conciliación quedan fuera.';
+     render();drawProcessGraph();
+     const check=kind=>{
+       const card=document.querySelector('.process-graph-readonly .flow-boundary.'+kind),
+         heading=card.querySelector('h4'),note=card.querySelector('p');
+       return {value:heading.innerText,clipped:heading.scrollHeight>heading.clientHeight+2,
+         overflow:getComputedStyle(heading).overflow,
+         noteOverlap:!!note&&heading.getBoundingClientRect().bottom>note.getBoundingClientRect().top+2};
+     };
+     const result={start:check('start'),end:check('end')};
+     e.answers.DF014=initial;e.answers.DF015=final;render();
+     return result;
+   });
+   for(const kind of ['start','end']){
+     assert.equal(longBoundaries[kind].clipped,false,'long '+kind+' must remain fully readable');
+     assert.equal(longBoundaries[kind].noteOverlap,false,'long '+kind+' must not overlap the note');
+     assert.equal(longBoundaries[kind].overflow,'visible');
+   }
+   console.log('PG05_LONG_BOUNDARIES_PASS: '+JSON.stringify(longBoundaries));
+
    // [AUNEA-UAT-PG05-PRESENTATION-150] END
 
    const popupPromise=page.waitForEvent('popup');
