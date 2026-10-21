@@ -1131,9 +1131,13 @@ function asisTemporalBarContent(output){
     +(leading.length?'<p class="asis-temporal-issues">'+leading.map(esc).join(' · ')+'</p>':'');
 }
 function asisTemporalBar(e){
+  // The empty/unavailable state must still be a visible progress bar, not text only.
+  // All unexplained width is neutral: it is not a calculated absence or an inferred wait.
   return '<section class="asis-temporal-card" data-asis-temporal="'+attr(e.id)+'" aria-label="Reconstrucción del tiempo actual">'
     +'<div class="asis-temporal-title"><b>Reconstrucción del tiempo actual</b><small>Tiempo end-to-end declarado: '+esc(processDeclaredCycleContext(e)?.label||'Pendiente')+' · Valores compartidos con fricciones, riesgos e impacto</small></div>'
-    +'<div class="asis-temporal-content" aria-live="polite">Calculando componentes del mapa…</div></section>';
+    +'<div class="asis-temporal-content" aria-live="polite"><div class="asis-temporal-track asis-temporal-track-pending" role="img" aria-label="Tiempo aún no conciliado"><span class="asis-temporal-unreconciled" style="width:100%"></span></div>'
+    +'<div class="asis-temporal-legend"><span class="asis-temporal-label"><i class="asis-temporal-active"></i>Trabajo activo: pendiente</span><span class="asis-temporal-label"><i class="asis-temporal-wait"></i>Espera: pendiente</span><span class="asis-temporal-label"><i class="asis-temporal-rework"></i>Retrabajo: pendiente</span><span class="asis-temporal-label"><i class="asis-temporal-additional"></i>Adicional: pendiente</span></div>'
+    +'<p class="asis-temporal-notice" data-asis-temporal-state>Calculando componentes del mapa…</p></div></section>';
 }
 function bindAsisTemporalBars(){
   const nodes=[...document.querySelectorAll('[data-asis-temporal]')];if(!nodes.length)return;
@@ -1150,7 +1154,7 @@ function bindAsisTemporalBars(){
   const reportError=err=>currentNodes().forEach(node=>{
     if(!node.isConnected||node.dataset.asisTemporal!==e.id||node.__temporalKey!==key)return;
     const host=node.querySelector('.asis-temporal-content');
-    if(host)host.textContent='Sin cálculo temporal: '+(err?.message||'servidor no disponible')+'. Se conservan los datos originales.';
+    if(host){const status=host.querySelector('[data-asis-temporal-state]');if(status)status.textContent='Sin cálculo temporal: '+(err?.message||'servidor no disponible')+'. Los componentes siguen pendientes y se conservan los datos originales.';}
   });
   nodes.forEach(node=>node.__temporalKey=key);
   if(__asisTemporalCache.has(cacheKey)){display(__asisTemporalCache.get(cacheKey));return}
