@@ -218,7 +218,7 @@ test('decision NO route starts after caption and follows original vertical/horiz
   assert.match(process,/const noStartX=dr\.left\+dr\.width\/2-rect\.left/);
   assert.match(process,/const noStartY=dr\.bottom-rect\.top/);
   assert.match(process,/const yesBottom=yesRect\?yesRect\.bottom-rect\.top:mainY/);
-  assert.match(process,/Math\.max\(mainY\+94,noStartY\+64,yesBottom\+34\)/);
+  assert.match(process,/Math\.max\(mainY\+94,noStartY\+64,yesBottom\+34,noLineStartY\+40\)/);
   assert.match(process,/const decisionCaption=els\.get\(b\.decisionId\)\?\.querySelector\('\.graph-decision-copy'\)/);
   assert.match(process,/const noLineStartY=Math\.max\(noStartY\+10/);
   assert.match(process,/appendPath\('M'\+noStartX\+' '\+noLineStartY\+'V'\+lowerY\+'H'\+mergeX/);
