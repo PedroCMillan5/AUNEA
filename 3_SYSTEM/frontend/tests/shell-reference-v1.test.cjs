@@ -79,9 +79,9 @@ test('workspace, inspector, action bar and provenance chip exist as shared primi
   }
 });
 
-test('pageTop accepts the reference screen identifier', () => {
+test('pageTop accepts the technical identifier internally but never displays it', () => {
   assert.match(stateJs, /function pageTop\(title,subtitle,actions='',screenId=''\)/);
-  assert.match(stateJs, /class="screen-id"/);
+  assert.doesNotMatch(stateJs, /<div class="screen-id">/);
 });
 
 test('the stage clock reproduces the windows the UI spec states', () => {
