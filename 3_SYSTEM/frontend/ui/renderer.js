@@ -327,13 +327,19 @@ function s08PriorContext(fid,e,currentVal,items){
   const contextValues=s08RelevantContextValues(fid,e);
   const currentValues=selectedValues(currentVal).filter(Boolean);
   if(!contextValues.length&&!currentValues.length)return '';
+  const recommendation=s08Recommendation(fid,contextValues,currentValues);
+  // No relevant PG01 source: do not fabricate a "previous context" card
+  // or repeat the already visible selected checkboxes a second time.
+  if(!contextValues.length)return recommendation
+    ?'<p class="field-help s08-context-action-note" data-s08-context-for="'+attr(fid)+'"><strong>Recomendación:</strong> '+esc(recommendation)+'</p>'
+    :'';
   const contextLabels=contextValues.map(v=>labelFrom('OS_CONSTRAINT_TYPE',v)||v);
   const currentLabels=currentValues.map(v=>items?.find(x=>String(x.value)===String(v))?.label||v);
-  const recommendation=s08Recommendation(fid,contextValues,currentValues);
-  return '<div class="reuse-context s08-prior-context" data-s08-context-for="'+attr(fid)+'"><div>'
-    +(contextLabels.length?'<strong>Contexto previo relevante <span class="s08-context-source">· PG01 / DF010</span></strong><small>'+contextLabels.map(esc).join(' · ')+'</small>':'')
-    +(currentLabels.length?'<strong class="s08-context-subtitle">Opciones marcadas</strong><small>'+currentLabels.map(esc).join(' · ')+'</small>':'')
-    +(recommendation?'<strong class="s08-context-subtitle">Recomendación</strong><small>'+esc(recommendation)+'</small>':'')
+  const cell=(heading,value,cls)=>'<div class="s08-context-cell '+cls+'"><strong>'+heading+'</strong><span>'+esc(value)+'</span></div>';
+  return '<div class="reuse-context s08-prior-context" data-s08-context-for="'+attr(fid)+'"><div class="s08-context-grid">'
+    +cell('Contexto PG01 · DF010',contextLabels.join(' · '),'s08-context-origin')
+    +(currentLabels.length?cell('Opciones marcadas',currentLabels.join(' · '),'s08-context-selected'):'')
+    +(recommendation?cell('Recomendación',recommendation,'s08-context-advice'):'')
     +'</div></div>';
 }
 // [AUNEA-FE-S08-RELEVANT-CONTEXT-148] END
