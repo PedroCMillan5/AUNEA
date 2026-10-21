@@ -89,6 +89,9 @@ async function main(){
   await assertBusinessOnlyUi('process scope');
   assert.equal(pg02Audit.stage,'S02','PG02 must be the active page after successful PG01');
   assert.equal(pg02Audit.fields.length>0,true,'PG02 must expose canonical data fields');
+  assert.equal(await page.locator('[data-pg02-boundary-review]').count(),0,'PG02 must not contain an imported/future AS-IS map comparison');
+  assert.doesNotMatch(await page.locator('#content').innerText(),/Pendiente de revisar\/confirmar en el mapa AS-IS|Contraste con el mapa AS-IS/,'PG02 must remain independent of the future map');
+
   await page.locator('#nextStage').click();
   assert.equal((await pg01State()).stage,'S03','PG02 Continue must reach PG03 with canonical data');
   // PG03 visual regression belongs to the existing browser-UAT block: measure rendered columns in Chromium.
