@@ -337,7 +337,7 @@ function s08PriorContext(fid,e,currentVal,items){
   const currentLabels=currentValues.map(v=>items?.find(x=>String(x.value)===String(v))?.label||v);
   const cell=(heading,value,cls)=>'<div class="s08-context-cell '+cls+'"><strong>'+heading+'</strong><span>'+esc(value)+'</span></div>';
   return '<div class="reuse-context s08-prior-context" data-s08-context-for="'+attr(fid)+'"><div class="s08-context-grid">'
-    +cell('Contexto previo · PG01 / DF010',contextLabels.join(' · '),'s08-context-origin')
+    +cell('Contexto previo',contextLabels.join(' · '),'s08-context-origin')
     +(currentLabels.length?cell('Opciones marcadas',currentLabels.join(' · '),'s08-context-selected'):'')
     +(recommendation?cell('Recomendación',recommendation,'s08-context-advice'):'')
     +'</div></div>';
