@@ -1659,7 +1659,7 @@ function consultantStepsReviewPage(e){
       (integrity.length?'<div class="pg05-status pg05-status--review"><b>Integridad del mapa pendiente</b>'
         +integrity.map(x=>'<p>'+esc(x.message||x.label)+'</p>').join('')+'</div>':'')
       +'<div class="pg05-footer"><span>'+(locked?'La vista con cliente mantiene la edición activa':'Las correcciones se guardan en el mapa propietario')+'</span>'
-      +clientReturn+nav+'</div>')+'</div>';
+      +clientReturn+'<div class="pg05-footer-next">'+nav+'</div></div>')+'</div>';
 }
 // [AUNEA-FE-PG05-CONSULTANT-REVIEW-081] END
 function consultantStepsPage(){
