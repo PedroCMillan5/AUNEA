@@ -1116,6 +1116,12 @@ function asisTemporalBarContent(output){
   const segments=output.segments||[],tones={active:'active',wait:'wait',rework:'rework',additional:'additional'};
   const colors=segments.map(s=>'<span class="asis-temporal-fill asis-temporal-'+(tones[s.key]||'additional')+'" style="width:'+Math.max(0,Math.min(100,Number(s.width_percent)||0))+'%" title="'+esc(s.label)+': '+esc(asisTemporalMinutes(s.minutes))+'"></span>').join('');
   const unresolved=Number(output.unreconciled_percent)||0;
+  const declared=Number(output.declared_minutes),identified=Number(output.identified_minutes);
+  const hasDeclared=output.declared_minutes!=null&&Number.isFinite(declared)&&declared>0;
+  const hasIdentified=output.identified_minutes!=null&&Number.isFinite(identified);
+  const overrun=!!output.exceeds_declared_reference&&hasDeclared&&hasIdentified&&identified>declared;
+  const overrunMinutes=overrun?identified-declared:0;
+  const overrunPercent=overrun?overrunMinutes/declared*100:0;
   const legend=segments.map(s=>'<span class="asis-temporal-label"><i class="asis-temporal-'+(tones[s.key]||'additional')+'"></i>'+esc(s.label)+': <b>'+esc(asisTemporalMinutes(s.minutes))+'</b></span>').join('');
   const issues=normalizeArray(output.unresolved).filter(Boolean);
   const leading=issues.filter(x=>!/equivalencia entre tiempo habitual declarado/.test(x)).slice(0,2);
@@ -1124,8 +1130,10 @@ function asisTemporalBarContent(output){
     :'Reconstrucción orientativa: los tiempos identificados pueden solaparse. El tiempo end-to-end todavía no está conciliado.';
   return '<div class="asis-temporal-metrics"><div><small>End-to-end declarado</small><strong>'+esc(asisTemporalMinutes(output.declared_minutes))+'</strong></div>'
     +'<div><small>Componentes identificados (no elapsed)</small><strong>'+esc(asisTemporalMinutes(output.identified_minutes))+'</strong></div></div>'
-    +'<div class="asis-temporal-track" role="img" aria-label="Tiempo declarado frente a componentes parciales identificados, sin conciliación end-to-end">'+colors
-    +'<span class="asis-temporal-unreconciled" style="width:'+Math.max(0,Math.min(100,unresolved))+'%" title="No conciliado; no es ahorro ni espera inferida"></span></div>'
+    +'<div class="asis-temporal-track'+(overrun?' asis-temporal-track-overrun':'')+'" role="img" aria-label="'+(overrun?'Componentes identificados superiores al tiempo declarado; exceso indicado sin ampliar el ancho de la barra':'Tiempo declarado frente a componentes parciales identificados, sin conciliación end-to-end')+'">'+colors
+    +'<span class="asis-temporal-unreconciled" style="width:'+Math.max(0,Math.min(100,unresolved))+'%" title="No conciliado; no es ahorro ni espera inferida"></span>'
+    +(overrun?'<span class="asis-temporal-overrun-edge" aria-hidden="true"></span>':'')+'</div>'
+    +(overrun?'<p class="asis-temporal-overrun-summary"><b>Supera el tiempo declarado: +'+esc(asisTemporalMinutes(overrunMinutes))+' (+'+esc(overrunPercent.toLocaleString('es-ES',{maximumFractionDigits:1}))+' %).</b> La barra representa el 100 % de los componentes identificados; la marca roja indica que exceden la referencia declarada. No implica que el tiempo end-to-end esté conciliado.</p>':'')
     +'<div class="asis-temporal-legend">'+legend+'<span class="asis-temporal-label"><i class="asis-temporal-unreconciled"></i>No conciliado</span></div>'
     +'<p class="asis-temporal-notice"><b>Conciliación pendiente.</b> '+esc(message)+'</p>'
     +(leading.length?'<p class="asis-temporal-issues">'+leading.map(esc).join(' · ')+'</p>':'');
