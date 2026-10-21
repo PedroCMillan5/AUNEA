@@ -226,7 +226,8 @@ test('S08 keeps one simple pattern after DF086: options plus yellow context, wit
     );
     assert.match(html,/Opción A/);
     if(['DF087','DF088','DF090'].includes(fid)){
-      assert.match(html,/Contexto previo · PG01 \/ DF010/);
+      assert.match(html,/Contexto previo/);
+      assert.doesNotMatch(html,/<strong>Contexto previo[^<]*\b(?:PG\d{2}|DF\d{3})\b/);
       assert.match(html,/s08-context-grid/);
       assert.match(html,/Opciones marcadas/);
     }else{
