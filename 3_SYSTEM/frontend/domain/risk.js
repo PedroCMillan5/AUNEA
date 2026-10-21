@@ -175,7 +175,7 @@ function addRisk(preselectedSteps=[],editIndex=null,candidate=null){
       row.style.display=row.hidden?'none':'';
       if(!row.hidden){visible++;visibleRows.push(row)}
     });
-    visibleRows.forEach((row,i)=>{row.textContent=row.dataset.riskProblemLabel+(i<visibleRows.length-1?' ·':'');});
+    visibleRows.forEach((row,i)=>{row.textContent=row.dataset.riskProblemLabel;if(i<visibleRows.length-1){const dot=document.createElement('span');dot.className='risk-friction-separator';dot.textContent='•';dot.setAttribute('aria-hidden','true');row.appendChild(dot);}});
     const empty=document.getElementById('riskNoRelatedFriction');
     if(empty)empty.textContent=!chosen.length?'Selecciona un paso para ver sus problemas ya registrados.':visible?'':'No hay fricciones registradas en los pasos seleccionados.';
   }
