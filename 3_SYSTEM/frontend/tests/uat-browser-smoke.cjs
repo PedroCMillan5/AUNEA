@@ -370,11 +370,24 @@ async function main(){
      return {crossing,pathCount:alternative.length,start:boundary('start'),end:boundary('end'),
        badges:[...board.querySelectorAll('.graph-decision-inline>.process-node-links')].map(el=>getComputedStyle(el).top),
        labels:[...board.querySelectorAll('.graph-decision-copy .boundary-kicker')].map(el=>el.textContent),
+       routeStart:alternative.map(path=>{
+         const p=path.getPointAtLength(0),caption=board.querySelector('.graph-decision-copy').getBoundingClientRect();
+         const gateway=board.querySelector('.graph-decision-gateway').getBoundingClientRect();
+         const next=path.getPointAtLength(Math.min(12,path.getTotalLength()));
+         return {x:base.left+p.x,y:base.top+p.y,
+           captionBottom:caption.bottom,captionCenter:caption.left+caption.width/2,
+           gatewayCenter:gateway.left+gateway.width/2,
+           vertical:Math.abs(p.x-next.x)<1};
+       }),
        percentage:document.querySelector('.asis-demand-facts')?.innerText||'',rate:currentEng().answers.DF028};
    });
    assert.ok(mapAudit,'PG05 canvas must be measurable');
    assert.ok(mapAudit.pathCount>0,'the alternative branch is drawn');
    assert.deepEqual(mapAudit.crossing,[],'NO path cannot cross the decision text');
+   assert.ok(mapAudit.routeStart.every(p=>p.y>=p.captionBottom+8),
+     'NO must start below the last line of decision text');
+   assert.ok(mapAudit.routeStart.every(p=>Math.abs(p.x-p.gatewayCenter)<2&&p.vertical),
+     'NO must follow the original centered vertical-down layout');
    assert.ok(mapAudit.labels.some(s=>/Paso \d+ · Decisión/.test(s)),'the gateway includes its step number');
    for(const kind of ['start','end']){
      assert.ok(mapAudit[kind].text.length>25,'full '+kind+' boundary was loaded');
@@ -383,7 +396,11 @@ async function main(){
    }
    assert.ok(mapAudit.badges.every(top=>top==='40px'||top==='78px'),'F/R/I badges keep their approved positions');
    if(mapAudit.rate?.unit==='percent'&&mapAudit.rate?.period==='month')
-     assert.match(mapAudit.percentage,/8 % · Mes/,'display the source-declared percent and month unchanged');
+     {
+       assert.match(mapAudit.percentage,/8 % de los casos/,'error proportion is a share of cases');
+       assert.match(mapAudit.percentage,/Periodo de referencia: mes/,'source monthly context remains explicit');
+       assert.doesNotMatch(mapAudit.percentage,/8 % · Mes/,'do not represent a case proportion as percent per month');
+     }
    console.log('PG05_VISUAL_INTEGRITY_PASS: '+JSON.stringify(mapAudit));
    await page.locator('.process-graph-readonly').screenshot({path:path.join(outDir,'pg05-map-no-text-crossing.png')});
 
@@ -397,7 +414,10 @@ async function main(){
      const check=kind=>{
        const card=document.querySelector('.process-graph-readonly .flow-boundary.'+kind),
          heading=card.querySelector('h4'),note=card.querySelector('p');
+       const style=getComputedStyle(heading);
        return {value:heading.innerText,clipped:heading.scrollHeight>heading.clientHeight+2,
+         clamp:style.webkitLineClamp,ellipsis:style.textOverflow,
+         width:heading.getBoundingClientRect().width,cardWidth:card.getBoundingClientRect().width,
          overflow:getComputedStyle(heading).overflow,
          noteOverlap:!!note&&heading.getBoundingClientRect().bottom>note.getBoundingClientRect().top+2};
      };
@@ -409,6 +429,10 @@ async function main(){
      assert.equal(longBoundaries[kind].clipped,false,'long '+kind+' must remain fully readable');
      assert.equal(longBoundaries[kind].noteOverlap,false,'long '+kind+' must not overlap the note');
      assert.equal(longBoundaries[kind].overflow,'visible');
+     assert.equal(longBoundaries[kind].clamp,'none','long boundaries cannot be line-clamped');
+     assert.notEqual(longBoundaries[kind].ellipsis,'ellipsis','long boundaries cannot use ellipses');
+     assert.ok(longBoundaries[kind].width>longBoundaries[kind].cardWidth-35,
+       'boundary description must use nearly the entire card width');
    }
    console.log('PG05_LONG_BOUNDARIES_PASS: '+JSON.stringify(longBoundaries));
 
