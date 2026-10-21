@@ -381,3 +381,21 @@ test('generated closure checklist uses semantic bullets and preserves the agreed
  assert.equal((html.match(/<li class="readonly-checklist-item">/g)||[]).length,2);
  assert.match(html,/Seguimiento acordado/);
 });
+
+test('PG04 captures automation exclusions before the map without requesting step links from a preloaded fixture',()=>{
+  const saved={stageId:e.stageId,layerConfirmations:e.layerConfirmations};
+  try{
+    e.stageId='S08';e.layerConfirmations={map:false};
+    const opts=[{value:'FINAL_DECISION',label:'Decisión final'}];
+    const f={Field_ID:'DF088',Control_UI:'MULTISELECT_WITH_STEP_REFERENCE'};
+    const initial=ctx.renderControl(f,['FINAL_DECISION'],opts,e);
+    assert.match(initial,/Decisión final/);
+    assert.doesNotMatch(initial,/Pasos afectados|linked-step-group/,'future map must not be a PG04 dependency');
+    e.layerConfirmations.map=true;
+    const revisited=ctx.renderControl(f,['FINAL_DECISION'],opts,e);
+    assert.match(revisited,/Pasos afectados/,'after the map was confirmed, revisiting PG04 may refine the existing step relation');
+  }finally{
+    e.stageId=saved.stageId;
+    e.layerConfirmations=saved.layerConfirmations;
+  }
+});
