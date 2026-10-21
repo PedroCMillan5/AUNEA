@@ -335,7 +335,7 @@ function s08PriorContext(fid,e,currentVal,items){
     :'';
   const contextLabels=contextValues.map(v=>labelFrom('OS_CONSTRAINT_TYPE',v)||v);
   const currentLabels=currentValues.map(v=>items?.find(x=>String(x.value)===String(v))?.label||v);
-  const cell=(heading,value,cls)=>'<div class="s08-context-cell '+cls+'"><strong>'+heading+'</strong><span>'+esc(value)+'</span></div>';
+  const cell=(heading,value,cls)=>'<div class="s08-context-cell '+cls+'"><strong'+(cls==='s08-context-origin'?' title="Recuperado de Contexto y objetivo, apartado Restricciones iniciales."':'')+'>'+heading+'</strong><span>'+esc(value)+'</span></div>';
   return '<div class="reuse-context s08-prior-context" data-s08-context-for="'+attr(fid)+'"><div class="s08-context-grid">'
     +cell('Contexto previo',contextLabels.join(' · '),'s08-context-origin')
     +(currentLabels.length?cell('Opciones marcadas',currentLabels.join(' · '),'s08-context-selected'):'')
