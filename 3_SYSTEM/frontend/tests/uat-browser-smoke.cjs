@@ -164,17 +164,20 @@ async function main(){
         for(const fid of ['DF087','DF088','DF089','DF090','DF091']){
           const el=document.querySelector('[data-s08-context-for="'+fid+'"]');
           if(!el){result[fid]=null;continue;}
-          const label=[...el.querySelectorAll('strong')].find(x=>x.textContent.includes('Contexto previo relevante'));
-          result[fid]={prior:label?.nextElementSibling?.textContent||'',body:el.textContent||''};
+          const source=el.querySelector('.s08-context-origin');
+          result[fid]={prior:source?.querySelector('span')?.textContent||'',body:el.textContent||'',compact:!!el.querySelector('.s08-context-grid'),note:el.classList.contains('s08-context-action-note')};
         }
         return result;
       });
-      assert.ok(Object.values(context).every(Boolean),'all five S08 contextual cards render');
+      assert.ok(Object.values(context).every(Boolean),'every S08 question has a compact contextual explanation');
       assert.equal(context.DF088.prior,'Legal / compliance');
       assert.equal(context.DF089.prior,'Herramientas / plataforma');
+      assert.equal(context.DF089.compact,true,'relevant source is presented in compact band');
       assert.doesNotMatch(context.DF090.prior,/Herramientas \/ plataforma/);
       assert.equal(context.DF091.prior,'');
-      assert.match(context.DF091.body,/Opciones marcadas/);
+      assert.equal(context.DF091.compact,false,'no yellow context card without related PG01 restriction');
+      assert.equal(context.DF091.note,true,'show a discreet recommendation instead');
+      assert.doesNotMatch(context.DF091.body,/Opciones marcadas|Contexto previo/);
       await page.screenshot({path:path.join(outDir,'pg04-context-by-question.png'),fullPage:true});
       console.log('PG04_CHROMIUM_CONTEXT_PASS: '+JSON.stringify(context));
     }
