@@ -18,7 +18,7 @@ from .orchestrator import Orchestrator
 from .registry import rule_bundle_version, load_registry
 from .store import SQLiteStore
 from .uat import run_canonical_uat
-from .session_time import TimeProjectionRequest, project_session_time
+from .session_time import TimeProjectionRequest, TimeReconciliationRequest, project_session_time, reconcile_session_time
 from .input_coverage import relational_integrity_issues
 
 app = FastAPI(title="AUNEA Internal Backend", version="1.1.1")
@@ -55,6 +55,11 @@ def registry_status():
 @app.post("/v1/diagnostic/time-projection")
 def diagnostic_time_projection(payload: TimeProjectionRequest):
     return project_session_time(payload)
+
+# DEC-074: display-only reconstruction, with explicit non-comparability warnings.
+@app.post("/v1/diagnostic/time-reconciliation")
+def diagnostic_time_reconciliation(payload: TimeReconciliationRequest):
+    return reconcile_session_time(payload)
 # [AUNEA-BE-SESSION-TIME-API-070] END
 
 # [AUNEA-UAT-API-010] START — Visible isolated UAT endpoint
