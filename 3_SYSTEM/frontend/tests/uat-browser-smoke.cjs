@@ -331,6 +331,10 @@ async function main(){
    // through the same runtime state transition used by contextual navigation.
    await page.evaluate(()=>{state.activePage='proceso';render()});
    await page.locator('#openSessionDisplayFromProcess').waitFor();
+   const consultantTime=page.locator('[data-asis-temporal] .asis-temporal-content');
+   await consultantTime.waitFor();
+   await page.waitForFunction(()=>document.querySelector('.asis-temporal-content')?.querySelector('.asis-temporal-track')||document.querySelector('.asis-temporal-content')?.textContent?.includes('Sin cálculo temporal'),{timeout:15000});
+   assert.equal(await page.locator('.asis-temporal-card').count(),1,'console has one time bar');
 
    // [AUNEA-UAT-PG05-PRESENTATION-150] START — Browser geometry and read-only contract.
    const stageProgress=await page.evaluate(()=>{
@@ -443,6 +447,13 @@ async function main(){
    const editor=await popupPromise;
    await editor.waitForLoadState('domcontentloaded');
    await editor.locator('.client-process-sequence').waitFor({timeout:20000});
+   await editor.locator('[data-asis-temporal] .asis-temporal-content').waitFor();
+   await editor.waitForFunction(()=>document.querySelector('.asis-temporal-content')?.querySelector('.asis-temporal-track')||document.querySelector('.asis-temporal-content')?.textContent?.includes('Sin cálculo temporal'),{timeout:15000});
+   assert.equal(await editor.locator('.asis-temporal-card').count(),1,'client has one time bar');
+   const timeCard=await editor.locator('.asis-temporal-card').textContent();
+   assert.match(timeCard,/Reconstrucción del tiempo actual/);
+   assert.match(timeCard,/end-to-end|End-to-end/i);
+   console.log('DEC074_ASIS_TIME_BAR: '+JSON.stringify({console:await consultantTime.textContent(),client:timeCard}).slice(0,1000));
    const canvas=editor.locator('.flow-canvas');
    await canvas.waitFor();
    const textSizes=await editor.evaluate(()=>{
