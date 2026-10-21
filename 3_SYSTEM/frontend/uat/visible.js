@@ -84,7 +84,7 @@ async function loadSingleUat(){
     state.activeEngagementId=e.id;
     state.activePage='uat';
     if(!persistRecoverySnapshot('uat-single-load'))throw new Error('No se pudo guardar la UAT por conflicto de edición.');
-    say('UAT completa y guardada: 1 estudio · 6 pasos · 3 fricciones · 2 riesgos · PG09 lista para confirmar · snapshot pendiente del cierre final.');
+    say('UAT completa y guardada: 1 estudio · 6 pasos · 3 fricciones · 2 riesgos · Validación y cierre preparados para confirmar · snapshot pendiente del cierre final.');
     render();
     toast('UAT única cargada y lista para recorrer.');
   }catch(err){
@@ -101,7 +101,7 @@ function singleUatPage(){
   const checks=e?'<div class="table-wrap"><table class="data-table"><thead><tr><th>Control</th><th>Estado</th></tr></thead><tbody>'+audit.checks.map(x=>'<tr><td>'+esc(x.label)+'</td><td>'+uatSingleBadge(x.ok)+'</td></tr>').join('')+'</tbody></table></div>':'';
   const stageButtons=e?'<div class="row" style="display:flex;gap:8px;flex-wrap:wrap">'+stages.map(([id,label])=>'<button class="btn btn-small btn-outline" data-single-uat-stage="'+id+'">'+label+'</button>').join('')+'</div>':'';
   const card=e?section('Única UAT · Recepción y aprobación de facturas',
-    'Empresa sintética: '+esc(company?.name||e.companyId)+' · todos los datos aplicables están precargados; PG09 queda deliberadamente pendiente de confirmación final.',
+    'Empresa sintética: '+esc(company?.name||e.companyId)+' · todos los datos aplicables están precargados; la validación final queda deliberadamente pendiente de confirmación.',
     '<div class="notice '+(audit.pass?'good':'warn')+'"><b>Estado end-to-end:</b> '+(audit.pass?'PASS · lista para revisar desde Contexto hasta Trabajo interno':'hay datos pendientes de reconciliar')+'.</div>'+
     '<div class="grid g4" style="margin-top:12px"><div class="card metric"><small>Estudios</small><strong>1</strong></div><div class="card metric"><small>Pasos</small><strong>'+activeSteps(e).length+'</strong></div><div class="card metric"><small>Fricciones</small><strong>'+activeFrictions(e).length+'</strong></div><div class="card metric"><small>Riesgos</small><strong>'+e.risks.length+'</strong></div></div>'+
     '<h3 style="margin-top:16px">Recorrer las 9 pantallas</h3>'+stageButtons+
