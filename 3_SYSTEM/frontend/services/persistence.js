@@ -26,6 +26,15 @@ function normalizeRecoveredState(raw){
 const RECOVERY_TAB_LOCAL=['activePage','activeEngagementId','uiMode','returnTo','selectedCompanyId','selectedContactId','companyTab','companySearch','companyFilters','contactSearch','contactFilters','interactionFilters','opportunityFilters','companyInspectorTab','backendOnline','crmTab'];
 const recoveryClone=x=>x===undefined?undefined:JSON.parse(JSON.stringify(x));
 const recoverySame=(x,y)=>JSON.stringify(x)===JSON.stringify(y);
+/* Stable visual-data fingerprint for incoming storage events. Saving in the second
+   window can update audit/recovery metadata without changing the mapped process.
+   In that case keep the existing SVG, scroll position, and modal DOM intact. */
+function recoveryVisibleFingerprint(snapshot){
+  const v=recoveryShared(snapshot);
+  for(const e of v.engagements||[])delete e.updatedAt;
+  return JSON.stringify(v);
+}
+
 let __auneaSyncedState=null,__auneaConflictNotified=false;
 function recoveryShared(x){
   const result=recoveryClone(x);
@@ -147,6 +156,11 @@ window.addEventListener('storage',ev=>{
       top:flowCanvas.scrollTop,
       mainTop:processMain?.scrollTop||0
     }:null;
+    // Metadata-only saves from the other tab must not reconstruct the AS-IS map.
+    // Compare only shared business data; navigation, audit and autosave timestamps
+    // remain local or are not graph changes.
+    const sharedBefore=recoveryVisibleFingerprint(state);
+    const sharedAfter=recoveryVisibleFingerprint(incoming);
     // Store the actual accepted remote baseline before applying per-window navigation.
     __auneaSyncedState=recoveryClone(incoming);
     const selectedEngagement=(state.engagements||[]).find(e=>e.id===state.activeEngagementId);
@@ -155,6 +169,7 @@ window.addEventListener('storage',ev=>{
     const incomingActive=(state.engagements||[]).find(e=>e.id===state.activeEngagementId);
     if(incomingActive&&localProcessTab)incomingActive.processTab=localProcessTab;
     if(isProcessEditorWindow())state.activePage='proceso';
+    if(sharedBefore===sharedAfter){updateHeader();return}
     render();
     if(viewport)requestAnimationFrame(()=>requestAnimationFrame(()=>{
       const next=document.querySelector('.flow-canvas');
