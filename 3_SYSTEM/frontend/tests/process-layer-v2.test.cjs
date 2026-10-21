@@ -214,14 +214,15 @@ test('decision gateway and YES card share the main row while NO stays below',()=
   assert.match(process,/yesBottom\+34/);
 });
 
-test('decision NO route exits below the gateway, clears the YES card, and overlays stay above the gateway',()=>{
+test('decision NO route starts after caption and follows original vertical/horizontal merge while chips remain above',()=>{
   assert.match(process,/const noStartX=dr\.left\+dr\.width\/2-rect\.left/);
   assert.match(process,/const noStartY=dr\.bottom-rect\.top/);
   assert.match(process,/const yesBottom=yesRect\?yesRect\.bottom-rect\.top:mainY/);
   assert.match(process,/Math\.max\(mainY\+94,noStartY\+64,yesBottom\+34\)/);
-  assert.match(process,/const noBypassX=Math\.min\(dr\.left-rect\.left-18,noStartX-94\)/);
-  assert.match(process,/appendPath\('M'\+noStartX\+' '\+noStartY\+'H'\+noBypassX\+'V'\+lowerY/);
-  assert.doesNotMatch(process,/appendPath\('M'\+noStartX\+' '\+noStartY\+'V'\+lowerY/,'NO no longer drops through decision text');
+  assert.match(process,/const decisionCaption=els\.get\(b\.decisionId\)\?\.querySelector\('\.graph-decision-copy'\)/);
+  assert.match(process,/const noLineStartY=Math\.max\(noStartY\+10/);
+  assert.match(process,/appendPath\('M'\+noStartX\+' '\+noLineStartY\+'V'\+lowerY\+'H'\+mergeX/);
+  assert.doesNotMatch(process,/noBypassX/,'route must not create a horizontal segment next to the gateway');
   assert.match(css,/\.process-graph-decision-cell\{align-items:stretch\}/);
   assert.match(css,/\.graph-decision-inline \.flow-step-tools\{[^}]*top:8px/);
   assert.match(css,/\.graph-decision-inline>\.process-node-actions\{[^}]*top:40px/);
