@@ -949,15 +949,17 @@ function drawProcessGraph(){
     // The two routes therefore never share or cross the same segment at the gateway.
     const noStartX=dr.left+dr.width/2-rect.left;
     const noStartY=dr.bottom-rect.top;
-    // The decision caption is below the gateway. Exit at the bottom, turn LEFT
-    // before the caption starts, then descend outside its text width. Badge
-    // positions (F/R/I) and persisted route targets remain unchanged.
-    const noBypassX=Math.min(dr.left-rect.left-18,noStartX-94);
+    // The NO line is projected beneath the decision's complete label/metadata,
+    // on the original straight vertical → horizontal → merge path.
+    // Only its visible START is shifted; this is a drawing choice, not a route edit.
+    const decisionCaption=els.get(b.decisionId)?.querySelector('.graph-decision-copy');
+    const captionBottom=decisionCaption?.getBoundingClientRect().bottom;
+    const noLineStartY=Math.max(noStartY+10,(captionBottom??dr.bottom)-rect.top+10);
     const mainY=tr.top+tr.height/2-rect.top;
     const mergeX=tr.left-rect.left-32;
     const yesRect=b.yesStart&&b.yesStart!==b.merge?nodeRect(b.yesStart):null;
     const yesBottom=yesRect?yesRect.bottom-rect.top:mainY;
-    const lowerY=Math.max(mainY+94,noStartY+64,yesBottom+34);
+    const lowerY=Math.max(mainY+94,noStartY+64,yesBottom+34,noLineStartY+40);
 
     // SÍ: leaves the gateway to the right, rises to the affirmative card,
     // then returns vertically to the convergence point.
@@ -982,18 +984,18 @@ function drawProcessGraph(){
       }
     }
 
-    // NO: first turns outside the decision-caption column while still above the text.
-    // Descending in the left gutter prevents any route-text overlap.
+    // NO: old centred vertical-down, lower horizontal, merge-up shape.
+    // The first painted pixel starts just below the entire decision copy.
     if(b.noStart&&b.noStart!==b.merge){
       const nr=nodeRect(b.noStart);
       if(nr){
         const targetX=nr.left-rect.left,targetY=nr.top+nr.height/2-rect.top;
-        appendPath('M'+noStartX+' '+noStartY+'H'+noBypassX+'V'+lowerY+'H'+(targetX-18)+'V'+targetY+'H'+(targetX-5),true,true);
-        appendLabel('NO',noBypassX+26,lowerY-12,true);
+        appendPath('M'+noStartX+' '+noLineStartY+'V'+lowerY+'H'+(targetX-18)+'V'+targetY+'H'+(targetX-5),true,true);
+        appendLabel('NO',rightX+80,lowerY-12,true);
       }
     }else{
-      appendPath('M'+noStartX+' '+noStartY+'H'+noBypassX+'V'+lowerY+'H'+mergeX+'V'+mainY,true,false);
-      appendLabel('NO',noBypassX+26,lowerY-12,true);
+      appendPath('M'+noStartX+' '+noLineStartY+'V'+lowerY+'H'+mergeX+'V'+mainY,true,false);
+      appendLabel('NO',rightX+80,lowerY-12,true);
     }
 
     if(b.noPred&&b.noPred!==b.decisionId){
