@@ -461,8 +461,8 @@ const FIELD_CLARIFICATION_ES=Object.freeze({
   DF014:'Indica dónde empieza exactamente lo que vamos a analizar. Debe ser coherente con el evento que inicia el proceso y con el primer paso del mapa.',
   DF015:'Indica dónde termina exactamente lo que vamos a analizar. Debe ser coherente con el resultado final esperado y con el último paso del mapa.',
   DF016:'Este es el responsable end-to-end del proceso. Puede coincidir o no con el interlocutor principal de la sesión o con quien aprueba la inversión; selecciona una persona existente o indica el rol si aún no se conoce.',
-  DF020:'A diferencia de DF029: esto son variantes que cambian la RUTA del proceso (pasos distintos), no sólo cómo se trata un caso.',
-  DF029:'A diferencia de DF020: esto son clases que cambian el TRATAMIENTO operativo o económico de un caso, sin cambiar la ruta del proceso en sí.',
+  DF020:'Estas son variantes que cambian la RUTA del proceso (pasos distintos), no sólo el tratamiento operativo o económico de un caso.',
+  DF029:'Estas clases cambian el TRATAMIENTO operativo o económico del caso, pero no la ruta de pasos del proceso.',
   DF052:'Se refiere al método general de control de versión del proceso (¿cómo se sabe cuál es la versión correcta?), no a versionar cada documento o artefacto por separado.'
 });
 // [AUNEA-FE-DIAG-ECON-CONTEXT-054] START — Existing manual time is not an additive benefit.
