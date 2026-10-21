@@ -1101,6 +1101,77 @@ function asisOverview(e,steps,fr){
     +'<div><small>Registrados</small><b>'+steps.length+' pasos · '+fr.length+' problemas · '+(e.risks||[]).length+' riesgos · '+(e.economicInputs||[]).length+' impactos</b></div>'
     +'</div>';
 }
+
+/* DEC-074 — Server-owned, display-only AS-IS time bar.
+   Owns no ProcessStep/Friction values and does not recalculate economics or elapsed.
+   Read-only in both consultant and independent client editor; refreshes DOM in place. */
+const __asisTemporalCache=new Map(),__asisTemporalPending=new Map();
+function asisTemporalRequest(e){
+  return {...economicTimeRequest(e),declared_cycle_minutes:processDeclaredCycleContext(e)?.minutes||null};
+}
+function asisTemporalMinutes(v){
+  return v===null||v===undefined?'Pendiente':Number(v).toLocaleString('es-ES',{maximumFractionDigits:1})+' min';
+}
+function asisTemporalBarContent(output){
+  const segments=output.segments||[],tones={active:'active',wait:'wait',rework:'rework',additional:'additional'};
+  const colors=segments.map(s=>'<span class="asis-temporal-fill asis-temporal-'+(tones[s.key]||'additional')+'" style="width:'+Math.max(0,Math.min(100,Number(s.width_percent)||0))+'%" title="'+esc(s.label)+': '+esc(asisTemporalMinutes(s.minutes))+'"></span>').join('');
+  const unresolved=Number(output.unreconciled_percent)||0;
+  const legend=segments.map(s=>'<span class="asis-temporal-label"><i class="asis-temporal-'+(tones[s.key]||'additional')+'"></i>'+esc(s.label)+': <b>'+esc(asisTemporalMinutes(s.minutes))+'</b></span>').join('');
+  const issues=normalizeArray(output.unresolved).filter(Boolean);
+  const leading=issues.filter(x=>!/equivalencia entre tiempo habitual declarado/.test(x)).slice(0,2);
+  const message=output.exceeds_declared_reference
+    ?'Los tiempos identificados superan la referencia declarada. Comprueba solapamientos, alcance y frecuencia.'
+    :'Reconstrucción orientativa: los tiempos identificados pueden solaparse. El tiempo end-to-end todavía no está conciliado.';
+  return '<div class="asis-temporal-metrics"><div><small>End-to-end declarado</small><strong>'+esc(asisTemporalMinutes(output.declared_minutes))+'</strong></div>'
+    +'<div><small>Componentes identificados (no elapsed)</small><strong>'+esc(asisTemporalMinutes(output.identified_minutes))+'</strong></div></div>'
+    +'<div class="asis-temporal-track" role="img" aria-label="Tiempo declarado frente a componentes parciales identificados, sin conciliación end-to-end">'+colors
+    +'<span class="asis-temporal-unreconciled" style="width:'+Math.max(0,Math.min(100,unresolved))+'%" title="No conciliado; no es ahorro ni espera inferida"></span></div>'
+    +'<div class="asis-temporal-legend">'+legend+'<span class="asis-temporal-label"><i class="asis-temporal-unreconciled"></i>No conciliado</span></div>'
+    +'<p class="asis-temporal-notice"><b>Conciliación pendiente.</b> '+esc(message)+'</p>'
+    +(leading.length?'<p class="asis-temporal-issues">'+leading.map(esc).join(' · ')+'</p>':'');
+}
+function asisTemporalBar(e){
+  return '<section class="asis-temporal-card" data-asis-temporal="'+attr(e.id)+'" aria-label="Reconstrucción del tiempo actual">'
+    +'<div class="asis-temporal-title"><b>Reconstrucción del tiempo actual</b><small>Datos compartidos entre mapa, fricciones, riesgos e impacto</small></div>'
+    +'<div class="asis-temporal-content" aria-live="polite">Calculando componentes del mapa…</div></section>';
+}
+function bindAsisTemporalBars(){
+  const nodes=[...document.querySelectorAll('[data-asis-temporal]')];if(!nodes.length)return;
+  const e=currentEng();if(!e)return;
+  const payload=asisTemporalRequest(e),key=JSON.stringify(payload),cacheKey=e.id+'|'+key;
+  const display=output=>{
+    nodes.forEach(node=>{
+      if(!node.isConnected||node.dataset.asisTemporal!==e.id||node.__temporalKey!==key)return;
+      const host=node.querySelector('.asis-temporal-content');
+      if(host)host.innerHTML=asisTemporalBarContent(output);
+    });
+  };
+  nodes.forEach(node=>node.__temporalKey=key);
+  if(__asisTemporalCache.has(cacheKey)){display(__asisTemporalCache.get(cacheKey));return}
+  if(!__asisTemporalPending.has(cacheKey)){
+    const task=(async()=>{
+      if(!state.backendOnline&&!(await checkBackend()))throw Error('Backend no conectado');
+      const response=await fetch(state.backendUrl+'/v1/diagnostic/time-reconciliation',{
+        method:'POST',headers:{'Content-Type':'application/json'},body:key
+      });
+      if(!response.ok)throw Error('No se pudo calcular la reconstrucción temporal');
+      return response.json();
+    })();
+    __asisTemporalPending.set(cacheKey,task);
+    task.then(output=>{
+      __asisTemporalCache.set(cacheKey,output);
+      if(__asisTemporalCache.size>30)__asisTemporalCache.delete(__asisTemporalCache.keys().next().value);
+      display(output);
+    }).catch(err=>{
+      nodes.forEach(node=>{
+        if(!node.isConnected||node.__temporalKey!==key)return;
+        const host=node.querySelector('.asis-temporal-content');
+        if(host)host.textContent='Sin cálculo temporal: '+(err?.message||'servidor no disponible')+'. Se conservan los datos originales.';
+      });
+    }).finally(()=>__asisTemporalPending.delete(cacheKey));
+  }else __asisTemporalPending.get(cacheKey).then(display,()=>{});
+}
+
 function asisDemandBaseline(e){
   const field=id=>(schema?.fields||[]).find(f=>f.Field_ID===id);
   const raw=id=>{
