@@ -1139,13 +1139,19 @@ function bindAsisTemporalBars(){
   const nodes=[...document.querySelectorAll('[data-asis-temporal]')];if(!nodes.length)return;
   const e=currentEng();if(!e)return;
   const payload=asisTemporalRequest(e),key=JSON.stringify(payload),cacheKey=e.id+'|'+key;
+  const currentNodes=()=>[...document.querySelectorAll('[data-asis-temporal]')];
   const display=output=>{
-    nodes.forEach(node=>{
+    currentNodes().forEach(node=>{
       if(!node.isConnected||node.dataset.asisTemporal!==e.id||node.__temporalKey!==key)return;
       const host=node.querySelector('.asis-temporal-content');
       if(host)host.innerHTML=asisTemporalBarContent(output);
     });
   };
+  const reportError=err=>currentNodes().forEach(node=>{
+    if(!node.isConnected||node.dataset.asisTemporal!==e.id||node.__temporalKey!==key)return;
+    const host=node.querySelector('.asis-temporal-content');
+    if(host)host.textContent='Sin cálculo temporal: '+(err?.message||'servidor no disponible')+'. Se conservan los datos originales.';
+  });
   nodes.forEach(node=>node.__temporalKey=key);
   if(__asisTemporalCache.has(cacheKey)){display(__asisTemporalCache.get(cacheKey));return}
   if(!__asisTemporalPending.has(cacheKey)){
@@ -1162,14 +1168,8 @@ function bindAsisTemporalBars(){
       __asisTemporalCache.set(cacheKey,output);
       if(__asisTemporalCache.size>30)__asisTemporalCache.delete(__asisTemporalCache.keys().next().value);
       display(output);
-    }).catch(err=>{
-      nodes.forEach(node=>{
-        if(!node.isConnected||node.__temporalKey!==key)return;
-        const host=node.querySelector('.asis-temporal-content');
-        if(host)host.textContent='Sin cálculo temporal: '+(err?.message||'servidor no disponible')+'. Se conservan los datos originales.';
-      });
-    }).finally(()=>__asisTemporalPending.delete(cacheKey));
-  }else __asisTemporalPending.get(cacheKey).then(display,()=>{});
+    }).catch(reportError).finally(()=>__asisTemporalPending.delete(cacheKey));
+  }else __asisTemporalPending.get(cacheKey).then(display,reportError);
 }
 
 function asisDemandBaseline(e){
