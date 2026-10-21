@@ -248,4 +248,96 @@ def project_session_time(request: TimeProjectionRequest) -> dict[str, Any]:
         "status": "INCOMPLETE" if gaps else "CALCULATED",
         "note": "Espera = suma de exposiciones por actividad, no ciclo end-to-end. Trabajo activo y retrabajo no equivalen a ahorro."
     }
+
+# DEC-074: Read-only temporal reconciliation; never call exposure elapsed time.
+class TimeReconciliationRequest(TimeProjectionRequest):
+    declared_cycle_minutes: float | None = Field(default=None, gt=0)
+
+
+def reconcile_session_time(request: TimeReconciliationRequest) -> dict[str, Any]:
+    projection = project_session_time(request)
+    groups = {"active": 0.0, "wait": 0.0, "rework": 0.0}
+    known = {"active": False, "wait": False, "rework": False}
+    pending: list[str] = []
+    steps = [s for s in request.steps if s.get("status") != "SUPERSEDED"]
+    for step in steps:
+        label = str(step.get("step_name") or step.get("id") or "Paso")
+        issues: list[str] = []
+        share = _step_share(step, issues)
+        repetitions = _number(step.get("occurrences_per_case", 1))
+        multiplier = share * repetitions if share is not None and repetitions is not None else None
+        if multiplier is None:
+            pending.append(label + ": no se conoce la proporción de la ruta o sus repeticiones")
+            continue
+        for field, key in (("active_time", "active"), ("wait_time", "wait")):
+            value = _number(step.get(field))
+            if value is None:
+                pending.append(label + ": " + ("trabajo activo" if key == "active" else "espera") + " sin cuantificar")
+            else:
+                known[key] = True
+                groups[key] += value * multiplier
+        redo = _number(step.get("rework_time"))
+        if redo is None:
+            pending.append(label + ": retrabajo sin cuantificar")
+        elif redo == 0:
+            known["rework"] = True
+        else:
+            frequency_issues: list[str] = []
+            rate = _error_share(step, frequency_issues)
+            if rate is None:
+                pending.append(label + ": frecuencia de retrabajo no acreditada")
+            else:
+                known["rework"] = True
+                groups["rework"] += redo * multiplier * rate
+    additional = None
+    annual_cases = projection.get("annual_cases")
+    annual_extra = projection.get("annual_friction_additional_hours")
+    if annual_cases and annual_extra is not None:
+        additional = annual_extra * 60 / annual_cases
+    elif annual_extra == 0 and not projection.get("frictions_pending_overlap_review"):
+        additional = 0.0
+    if projection.get("frictions_pending_overlap_review"):
+        pending.append("Fricciones con tiempo no atribuido sin duplicidad o frecuencia acreditada")
+    baseline = request.declared_cycle_minutes
+    if baseline is None:
+        pending.append("DF026: tiempo actual declarado sin unidad convertible a minutos")
+    if not steps:
+        pending.append("Mapa sin pasos activos")
+    parts = [
+        ("active", "Trabajo activo", groups["active"] if known["active"] else None),
+        ("wait", "Exposición a espera", groups["wait"] if known["wait"] else None),
+        ("rework", "Retrabajo ponderado", groups["rework"] if known["rework"] else None),
+        ("additional", "Trabajo adicional validado", additional),
+    ]
+    total_identified = sum(value for _, _, value in parts if value is not None)
+    excess = bool(baseline is not None and total_identified > baseline)
+    # Bar values are visual ratios against the declared reference, NOT elapsed reconciliation.
+    scale = max(baseline or 0, total_identified, 1)
+    segments = [
+        {"key": key, "label": label, "minutes": round(value, 4) if value is not None else None,
+         "width_percent": round(value / scale * 100, 4) if value is not None else 0}
+        for key, label, value in parts
+    ]
+    identified_percent = min(100.0, total_identified / scale * 100)
+    if any(s.get("minutes") is None for s in segments):
+        pending.append("Existen categorías temporales incompletas: un valor desconocido no significa cero")
+    if (groups["wait"] if known["wait"] else 0) > 0:
+        pending.append("Solapamiento de esperas no acreditado: exposición no equivale a elapsed")
+    pending.append("Sin acreditación de equivalencia entre tiempo habitual declarado y media ponderada del mapa")
+    return {
+        "status": "NO_BASELINE" if baseline is None else "PROVISIONAL",
+        "declared_minutes": baseline,
+        "segments": segments,
+        "identified_minutes": round(total_identified, 4),
+        "identified_percent": round(identified_percent, 4),
+        "unreconciled_percent": round(max(0.0, 100.0 - identified_percent), 4),
+        "exceeds_declared_reference": excess,
+        "unresolved": list(dict.fromkeys(pending)),
+        "elapsed_reconciled": False,
+        "projection_status": projection["status"],
+        "projection_gaps": projection["gaps"],
+        "note": "Componentes ponderados identificados; pueden solaparse. No es una duración elapsed conciliada ni un ahorro."
+    }
+
+
 # [AUNEA-BE-SESSION-TIME-070] END
