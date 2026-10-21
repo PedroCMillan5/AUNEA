@@ -445,6 +445,46 @@ async function main(){
    await editor.locator('.client-process-sequence').waitFor({timeout:20000});
    const canvas=editor.locator('.flow-canvas');
    await canvas.waitFor();
+   // PG05 and the client editor display the same owner boundaries, not two renderings
+   // with different truncation rules. Capture their actual rendered values first.
+   const consultantBoundaries=await page.evaluate(()=>['start','end'].map(kind=>
+     document.querySelector('.process-graph-readonly .flow-boundary.'+kind+' h4')?.textContent||''
+   ));
+   const clientBoundaries=await editor.evaluate(()=>['start','end'].map(kind=>
+     document.querySelector('.client-process-canvas .flow-boundary.'+kind+' h4')?.textContent||''
+   ));
+   assert.deepEqual(clientBoundaries,consultantBoundaries,'client and console must read the same DF014/DF015 owner values');
+   const clientFullWidth=await editor.evaluate(()=>{
+     const engagement=currentEng();
+     const initial=engagement.answers.DF014,final=engagement.answers.DF015;
+     engagement.answers.DF014='La recepción por Administración de la factura PDF adjunta al email del proveedor.';
+     engagement.answers.DF015='El registro de la factura en ERP y el archivo del expediente, con aprobación humana cuando proceda. Pago y conciliación quedan fuera.';
+     render();drawProcessGraph();
+     const audit=kind=>{
+       const card=document.querySelector('.client-process-canvas .flow-boundary.'+kind),
+         heading=card?.querySelector('h4'),note=card?.querySelector('p');
+       if(!card||!heading)return null;
+       const style=getComputedStyle(heading),r=heading.getBoundingClientRect();
+       return {text:heading.textContent,clamp:style.webkitLineClamp,overflow:style.overflow,ellipsis:style.textOverflow,
+         width:r.width,cardWidth:card.getBoundingClientRect().width,
+         clipped:heading.scrollHeight>heading.clientHeight+2,
+         noteOverlap:!!note&&r.bottom>note.getBoundingClientRect().top+2};
+     };
+     const result={start:audit('start'),end:audit('end')};
+     engagement.answers.DF014=initial;engagement.answers.DF015=final;render();
+     return result;
+   });
+   for(const kind of ['start','end']){
+     const b=clientFullWidth[kind];
+     assert.ok(b,'client must render '+kind+' boundary');
+     assert.equal(b.clamp,'none','client '+kind+' must show every line');
+     assert.equal(b.overflow,'visible','client '+kind+' text must not be clipped');
+     assert.notEqual(b.ellipsis,'ellipsis','client '+kind+' must not show ellipsis');
+     assert.equal(b.clipped,false,'client '+kind+' must be fully legible');
+     assert.equal(b.noteOverlap,false,'client '+kind+' must not overlap source note');
+     assert.ok(b.width>=b.cardWidth-35,'client '+kind+' uses full card width');
+   }
+   console.log('PG05_CLIENT_BOUNDARIES_PASS: '+JSON.stringify(clientFullWidth));
    await editor.waitForTimeout(100);
    const before=await canvas.evaluate(el=>{el.scrollLeft=Math.min(el.scrollWidth-el.clientWidth,620);el.scrollTop=Math.min(el.scrollHeight-el.clientHeight,35);return {x:el.scrollLeft,width:el.scrollWidth,client:el.clientWidth}});
    assert.ok(before.width>before.client,id+' map is not horizontally navigable');
