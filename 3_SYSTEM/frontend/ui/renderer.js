@@ -291,17 +291,17 @@ function permissionWithScope(fid,opts,val){
 
 function s08Recommendation(fid,contextValues,currentValues){
   const context=new Set(contextValues.map(String)),has=currentValues.length>0;
-  if(fid==='DF087')return has?'Comprueba que cada opción marcada tenga una referencia concreta y que realmente deba conservarse.':'Revisa las restricciones previas y marca sólo elementos concretos que cualquier solución futura deba conservar.';
-  if(fid==='DF088')return has?'Confirma que cada límite marcado responde a una restricción real; no conviertas el contexto previo en una prohibición automática.':'Define límites sólo si alguna restricción previa exige mantener intervención humana o excluir automatización/IA.';
+  if(fid==='DF087')return has?'Confirma qué elementos son obligatorios y por qué deben mantenerse.':'Revisa las restricciones previas y marca sólo elementos concretos que cualquier solución futura deba conservar.';
+  if(fid==='DF088')return has?'Valida cada exclusión; el contexto previo no implica prohibir automatizaciones.':'Define límites sólo si alguna restricción previa exige mantener intervención humana o excluir automatización/IA.';
   if(fid==='DF089')return context.has('PLATFORM')
-    ?(has?'Clasifica cada opción marcada como obligatoria, preferida o indiferente.':'La restricción de herramientas/plataforma declarada en Contexto debe concretarse aquí si condiciona la solución futura.')
-    :(has?'Clasifica cada opción marcada como obligatoria, preferida o indiferente.':'No hay una restricción tecnológica previa específica; marca opciones sólo si existe una preferencia o límite real.');
+    ?(has?'Distingue los requisitos obligatorios de las preferencias tecnológicas.':'La restricción de herramientas/plataforma declarada en Contexto debe concretarse aquí si condiciona la solución futura.')
+    :(has?'Distingue los requisitos obligatorios de las preferencias tecnológicas.':'No hay una restricción tecnológica previa específica; marca opciones sólo si existe una preferencia o límite real.');
   if(fid==='DF090')return (context.has('SECURITY')||context.has('COMPLIANCE')||context.has('DATA_RESIDENCY')||context.has('OWNERSHIP'))
-    ?(has?'Clasifica cada requisito marcado como obligatorio o preferido.':'Existe contexto previo relacionado con seguridad/datos; concreta únicamente los requisitos reales que deba cumplir la solución.')
-    :(has?'Clasifica cada requisito marcado como obligatorio o preferido.':'No hay una restricción previa directamente asociada a seguridad/datos; añade requisitos sólo si realmente aplican.');
+    ?(has?'Confirma qué requisitos son realmente obligatorios.':'Existe contexto previo relacionado con seguridad/datos; concreta únicamente los requisitos reales que deba cumplir la solución.')
+    :(has?'Confirma qué requisitos son realmente obligatorios.':'No hay una restricción previa directamente asociada a seguridad/datos; añade requisitos sólo si realmente aplican.');
   if(fid==='DF091')return (context.has('CHANGE')||context.has('RESOURCE'))
-    ?(has?'Añade detalle sólo cuando una opción marcada cambie realmente el plan de implantación.':'Existe contexto previo de adopción/capacidad; concreta únicamente las condiciones que afecten a la implantación.')
-    :(has?'Añade detalle sólo cuando una opción marcada cambie realmente el plan de implantación.':'No hay una restricción previa directamente asociada a adopción/cambio; añade condiciones sólo si realmente aplican.');
+    ?(has?'Concreta cómo afectan estas condiciones al plan de implantación.':'Existe contexto previo de adopción/capacidad; concreta únicamente las condiciones que afecten a la implantación.')
+    :(has?'Concreta cómo afectan estas condiciones al plan de implantación.':'No hay una restricción previa directamente asociada a adopción/cambio; añade condiciones sólo si realmente aplican.');
   return '';
 }
 // [AUNEA-FE-S08-RELEVANT-CONTEXT-148] START — Show only applicable PG01 restrictions beside each PG04 question.
