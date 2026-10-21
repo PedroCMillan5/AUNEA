@@ -848,7 +848,7 @@ function graphNodeCard(e,s,i,fr,tab='cliente',readonly=false){
     return '<div class="graph-decision-inline '+(linkCount?'has-node-links ':'')+(layerAction?'has-layer-action ':'')+(processLayerState(e).map?'confirmed':'')+'" '+(readonly?'':'data-drag-step="'+attr(s.id)+'"')+'>'
       +actions+layerActionHtml+links
       +'<div class="graph-decision-gateway" aria-hidden="true"><div class="graph-decision-gateway-icon">'+processNodeIconSvg('decision')+'</div></div>'
-      +'<div class="graph-decision-copy"><span class="boundary-kicker">Decisión</span><h4 title="'+attr(s.step_name||'Decisión sin nombre')+'">'+esc(s.step_name||'Decisión sin nombre')+'</h4>'
+      +'<div class="graph-decision-copy"><span class="boundary-kicker">Paso '+(i+1)+' · Decisión</span><h4 title="'+attr(s.step_name||'Decisión sin nombre')+'">'+esc(s.step_name||'Decisión sin nombre')+'</h4>'
       +'<p class="process-node-meta" title="'+attr((labelFrom('OS_ACTOR_ROLE',s.actor)||'—')+' · '+(labelFrom('OS_TOOL_CATEGORY',s.tool)||'—'))+'">'+esc(labelFrom('OS_ACTOR_ROLE',s.actor)||'—')+' · '+esc(labelFrom('OS_TOOL_CATEGORY',s.tool)||'—')+'</p>'
       +(num(s.active_time)?'<p>'+num(s.active_time)+' min trabajo</p>':'')+'</div></div>';
   }
@@ -949,6 +949,10 @@ function drawProcessGraph(){
     // The two routes therefore never share or cross the same segment at the gateway.
     const noStartX=dr.left+dr.width/2-rect.left;
     const noStartY=dr.bottom-rect.top;
+    // The decision caption is below the gateway. Exit at the bottom, turn LEFT
+    // before the caption starts, then descend outside its text width. Badge
+    // positions (F/R/I) and persisted route targets remain unchanged.
+    const noBypassX=Math.min(dr.left-rect.left-18,noStartX-94);
     const mainY=tr.top+tr.height/2-rect.top;
     const mergeX=tr.left-rect.left-32;
     const yesRect=b.yesStart&&b.yesStart!==b.merge?nodeRect(b.yesStart):null;
@@ -978,20 +982,18 @@ function drawProcessGraph(){
       }
     }
 
-    // NO: leaves horizontally from the gateway beyond the decision-copy width, then descends
-    // to the lower bypass lane. This keeps the alternative connector clear of decision text.
+    // NO: first turns outside the decision-caption column while still above the text.
+    // Descending in the left gutter prevents any route-text overlap.
     if(b.noStart&&b.noStart!==b.merge){
       const nr=nodeRect(b.noStart);
       if(nr){
         const targetX=nr.left-rect.left,targetY=nr.top+nr.height/2-rect.top;
-        const noLaneX=rightX+72;
-        appendPath('M'+noStartX+' '+noStartY+'V'+lowerY+'H'+(targetX-18)+'V'+targetY+'H'+(targetX-5),true,true);
-        appendLabel('NO',noLaneX+8,lowerY-12,true);
+        appendPath('M'+noStartX+' '+noStartY+'H'+noBypassX+'V'+lowerY+'H'+(targetX-18)+'V'+targetY+'H'+(targetX-5),true,true);
+        appendLabel('NO',noBypassX+26,lowerY-12,true);
       }
     }else{
-      const noLaneX=rightX+72;
-      appendPath('M'+noStartX+' '+noStartY+'V'+lowerY+'H'+mergeX+'V'+mainY,true,false);
-      appendLabel('NO',noLaneX+8,lowerY-12,true);
+      appendPath('M'+noStartX+' '+noStartY+'H'+noBypassX+'V'+lowerY+'H'+mergeX+'V'+mainY,true,false);
+      appendLabel('NO',noBypassX+26,lowerY-12,true);
     }
 
     if(b.noPred&&b.noPred!==b.decisionId){
