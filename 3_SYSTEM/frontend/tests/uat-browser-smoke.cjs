@@ -460,11 +460,12 @@ async function main(){
      canvas.scrollLeft=Math.min(180,canvas.scrollWidth-canvas.clientWidth);
      window.__uatGraphOffset=canvas.scrollLeft;
    });
-   await page.evaluate(()=>{
-     const raw=JSON.parse(localStorage.getItem(STORAGE_KEY));
+   const sourceState=await editor.evaluate(()=>JSON.stringify(state));
+   await page.evaluate(snapshot=>{
+     const raw=JSON.parse(snapshot);
      raw.recoveryMeta={...(raw.recoveryMeta||{}),reason:'visual-regression'};
      localStorage.setItem(STORAGE_KEY,JSON.stringify(raw));
-   });
+   },sourceState);
    await editor.waitForTimeout(2300);
    const idle=await editor.evaluate(()=>{
      const canvas=document.querySelector('.client-process-canvas');
