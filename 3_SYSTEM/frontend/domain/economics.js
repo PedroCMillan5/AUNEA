@@ -352,6 +352,15 @@ function addEconomic(preselectedSteps=[],editIndex=null,forceSuggestedScope=fals
   const eng=currentEng(),steps=typeof activeSteps==='function'?activeSteps(eng):[];
   const roleOptions=[...new Set(steps.map(s=>s.actor).filter(Boolean))].map(value=>({value,label:labelFrom('OS_ACTOR_ROLE',value)||value}));
   const capacityPeriods=typeof fieldOptions==='function'?fieldOptions('OS_PERIOD'):[];
+  // Imported EconomicInput.period may be lowercase (month), while OS_PERIOD uses uppercase (MONTH).
+  // Preserve the original stored value until the user explicitly chooses a different period.
+  const importedCapacityPeriod=String(existing?.period||'');
+  const capacityPeriodOptions=capacityPeriods.map(o=>({value:String(o.value),label:o.label}));
+  if(importedCapacityPeriod&&!capacityPeriodOptions.some(o=>o.value===importedCapacityPeriod)){
+    const match=capacityPeriodOptions.find(o=>o.value.toUpperCase()===importedCapacityPeriod.toUpperCase());
+    if(match)capacityPeriodOptions.push({value:importedCapacityPeriod,label:match.label});
+    else capacityPeriodOptions.push({value:importedCapacityPeriod,label:importedCapacityPeriod+' — valor importado'});
+  }
   const existing=editIndex===null?null:eng.economicInputs[editIndex];
   if(!existing&&candidate?.step_ids?.length&&!preselectedSteps.length)preselectedSteps=normalizeArray(candidate.step_ids);
   if(editIndex!==null&&!existing)return;
@@ -411,7 +420,7 @@ function addEconomic(preselectedSteps=[],editIndex=null,forceSuggestedScope=fals
       <div class="field" data-econ-ui="rate"><label>Coste de capacidad por hora</label><div class="compound-control"><input id="econRate" value="${attr(existing?.capacity_cost_rate_eur_hour??'')}" type="number" min="0" step="any" inputmode="decimal" placeholder="0"><span class="unit-label">€/h</span></div><div class="field-help">Valor de capacidad del perfil. No equivale por sí solo a ahorro de caja.</div></div>
       <div class="field" data-econ-ui="capacity-meta"><label>Rol / recurso</label>${econDropdown('econRole',[{value:'',label:'Selecciona…'},...roleOptions],existing?.role_or_resource||'','Selecciona…')}</div>
       <div class="field" data-econ-ui="capacity-meta"><label>Capacidad práctica/productiva del rol</label><div class="compound-control"><input id="econCapacityValue" value="${attr(existing?.value??'')}" type="number" min="0" step="any" inputmode="decimal" placeholder="0"><span class="unit-label">h</span></div><div class="field-help">Horas prácticas disponibles del mismo rol y periodo; no se presupone ningún porcentaje de utilización.</div></div>
-      <div class="field" data-econ-ui="capacity-meta"><label>Periodo de la capacidad práctica</label>${econDropdown('econCapacityPeriod',[{value:'',label:'Selecciona…'},...capacityPeriods],existing?.period||'','Selecciona…')}</div>
+      <div class="field" data-econ-ui="capacity-meta"><label>Periodo de la capacidad práctica</label>${econDropdown('econCapacityPeriod',[{value:'',label:'Selecciona…'},...capacityPeriodOptions],existing?.period||'','Selecciona…')}</div>
       <div class="field" data-econ-ui="direct"><label>Pérdida directa anual</label><div class="compound-control"><input id="econDirect" value="${attr(existing?.direct_loss_eur_annual??'')}" type="number" min="0" step="any" inputmode="decimal" placeholder="0"><span class="unit-label">€/año</span></div><div class="field-help">Pérdida financiera directa evidenciada y atribuible al proceso.</div></div>
       <div class="field" data-econ-ui="tool"><label>Coste actual de herramientas</label><div class="compound-control"><input id="econTool" value="${attr(existing?.current_tool_cost_eur_annual??'')}" type="number" min="0" step="any" inputmode="decimal" placeholder="0"><span class="unit-label">€/año</span></div><div class="field-help">Gasto actual atribuible. No se presume eliminable.</div></div>
       <div class="field" data-econ-ui="cash"><label>Ahorro de caja ya realizado</label><div class="compound-control"><input id="econCash" value="${attr(existing?.realized_cash_saving_eur_annual??'')}" type="number" min="0" step="any" inputmode="decimal" placeholder="0"><span class="unit-label">€/año</span></div><div class="field-help">Sólo ahorro real ya materializado; nunca una estimación futura.</div></div>
