@@ -180,7 +180,7 @@ function economicInputIntegrityIssues(e){
   const byId=new Map(steps.map(s=>[s.id,s])),issues=[];
   (e?.economicInputs||[]).forEach((x,index)=>{
     const ids=normalizeArray(x.step_ids).filter(Boolean),selected=ids.map(id=>byId.get(id)).filter(Boolean);
-    if(x.driver_id==='ED15')issues.push({index,kind:'DUPLICATE_OWNER',message:'Volumen de casos pertenece a Demanda (DF021/DF022). Este registro económico legacy debe revisarse y no se utilizará como segundo owner.'});
+    if(x.driver_id==='ED15')issues.push({index,kind:'DUPLICATE_OWNER',message:'El volumen de casos ya se registra en Demanda y servicio. Este registro económico legacy debe revisarse y no se utilizará como segundo owner.'});
     if(x.driver_id==='ED13'&&Number(x.annual_active_hours||0)>0)
       issues.push({index,kind:'LEGACY_CROSS_METRIC',message:'Tiempo de espera contiene horas activas heredadas de una versión anterior. Se excluirán del cálculo al recalcular.'});
     if(['ED01','ED02','ED03','ED04','ED05','ED06','ED07','ED08'].includes(x.driver_id)&&Number(x.annual_wait_hours||0)>0)
@@ -214,7 +214,7 @@ function economicCaptureIssues(e,draft){
     // DF063 is contextual evidence, not an automatically aggregated EconomicInput.
     // One validated DF082 row may therefore represent it, but a second overlapping
     // monetary EconomicInput with no event identity is held for reconciliation.
-    if(duplicateRows)issues.push('DF063/DF082: ya existe una pérdida directa económica en este ámbito sin conciliación por evento. Verifica su propietario y evita registrarla otra vez.');
+    if(duplicateRows)issues.push('Ya existe una pérdida económica directa registrada en este ámbito sin conciliación por evento. Verifica su propietario y evita registrarla otra vez.');
   }
   return [...new Set(issues)];
 }
@@ -334,7 +334,7 @@ function economicBuilder(e){
     '<div class="result-list">'+((e.economicInputs||[]).length?e.economicInputs.map((x,i)=>{
       const legacy=x.driver_id==='ED15';
       return '<div class="result-item"><div class="result-item-head"><div><b>'+esc(legacy?'Volumen de casos — registro legacy':econDriverLabel(x.driver_id))+'</b>'
-        +(legacy?'<div class="notice warn economic-row-warning"><b>No se usa como impacto económico.</b><br>El volumen pertenece a Demanda (DF021/DF022). Elimina este registro duplicado para mantener un único owner.</div>':'<p>'+esc(economicRecordSummary(x))+'</p>')
+        +(legacy?'<div class="notice warn economic-row-warning"><b>No se usa como impacto económico.</b><br>El volumen pertenece a Demanda y servicio. Elimina este registro duplicado para mantener un único owner.</div>':'<p>'+esc(economicRecordSummary(x))+'</p>')
         +'<p>Pasos: '+normalizeArray(x.step_ids).map(id=>steps.find(s=>s.id===id)?.step_name||id).map(esc).join(', ')+'</p></div>'
         +'<div class="result-actions">'+(legacy?'':'<button class="btn btn-small" data-edit-economic-index="'+i+'">Editar</button>')+'<button class="btn btn-small btn-danger" data-delete-economic-index="'+i+'">Eliminar</button></div></div></div>';
     }).join(''):'<div class="empty"><p>Todavía no hay impactos registrados.</p></div>')+'</div>',
@@ -422,7 +422,7 @@ function addEconomic(preselectedSteps=[],editIndex=null,forceSuggestedScope=fals
     const waitHours=projected?projected.wait:capturedHours('econWait','annual_wait_hours');
     let draft={step_ids,driver_id:document.getElementById('econDriver').value,annual_active_hours:activeHours,annual_wait_hours:waitHours,capacity_cost_rate_eur_hour:econNullableNumber(document.getElementById('econRate').value),role_or_resource:document.getElementById('econRole')?.value||null,value:econNullableNumber(document.getElementById('econCapacityValue')?.value),unit:document.getElementById('econCapacityValue')?.value!==''?'h':null,period:document.getElementById('econCapacityPeriod')?.value||null,direct_loss_eur_annual:econNullableNumber(document.getElementById('econDirect').value),current_tool_cost_eur_annual:econNullableNumber(document.getElementById('econTool').value),realized_cash_saving_eur_annual:econNullableNumber(document.getElementById('econCash').value),evidence_type:document.getElementById('econEvidence').value,derivation_source:projected?'DF021/DF022 + RT_PROCESS_STEP':(preserveCapturedTime&&activeHours===existing?.annual_active_hours&&waitHours===existing?.annual_wait_hours?existing.derivation_source:'MANUAL_VALIDATION'),deduplication_key:existing?.deduplication_key??null};
     if(!draft.driver_id)return toast('Selecciona el tipo de impacto antes de guardar.');
-    if(draft.driver_id==='ED15')return toast('El volumen de casos pertenece a Demanda (DF021/DF022); no se crea un EconomicInput duplicado para ED15.');
+    if(draft.driver_id==='ED15')return toast('El volumen de casos pertenece a Demanda y servicio; no se crea un registro económico duplicado.');
     draft=normalizedEconomicDriverRecord(draft);
     if(['annual_active_hours','annual_wait_hours','capacity_cost_rate_eur_hour','direct_loss_eur_annual','current_tool_cost_eur_annual','realized_cash_saving_eur_annual'].some(k=>draft[k]!==null&&draft[k]!==undefined&&(!Number.isFinite(Number(draft[k]))||Number(draft[k])<0)))return toast('Los valores económicos deben ser números iguales o mayores que 0.');
     if(draft.driver_id!=='ED14'){draft.role_or_resource=null;draft.value=null;draft.unit=null;draft.period=null}
