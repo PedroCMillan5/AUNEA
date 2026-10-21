@@ -351,6 +351,7 @@ function addEconomic(preselectedSteps=[],editIndex=null,forceSuggestedScope=fals
   if(typeof guardAsisMutation==='function'&&guardAsisMutation())return;
   const eng=currentEng(),steps=typeof activeSteps==='function'?activeSteps(eng):[];
   const roleOptions=[...new Set(steps.map(s=>s.actor).filter(Boolean))].map(value=>({value,label:labelFrom('OS_ACTOR_ROLE',value)||value}));
+  const existing=editIndex===null?null:eng.economicInputs[editIndex];
   const capacityPeriods=typeof fieldOptions==='function'?fieldOptions('OS_PERIOD'):[];
   // Imported EconomicInput.period may be lowercase (month), while OS_PERIOD uses uppercase (MONTH).
   // Preserve the original stored value until the user explicitly chooses a different period.
@@ -361,7 +362,7 @@ function addEconomic(preselectedSteps=[],editIndex=null,forceSuggestedScope=fals
     if(match)capacityPeriodOptions.push({value:importedCapacityPeriod,label:match.label});
     else capacityPeriodOptions.push({value:importedCapacityPeriod,label:importedCapacityPeriod+' — valor importado'});
   }
-  const existing=editIndex===null?null:eng.economicInputs[editIndex];
+
   if(!existing&&candidate?.step_ids?.length&&!preselectedSteps.length)preselectedSteps=normalizeArray(candidate.step_ids);
   if(editIndex!==null&&!existing)return;
   if(existing?.driver_id==='ED15')return toast('Volumen de casos ya pertenece a Demanda (DF021/DF022). Elimina este registro legacy; no puede editarse como impacto económico.');
