@@ -117,10 +117,10 @@ test('metadata-only cross-tab autosave must never rebuild the client AS-IS, real
   const original={...ctx.blankState(),activePage:'proceso',activeEngagementId:'ENG-1',
     engagements:[{id:'ENG-1',processTab:'cliente',updatedAt:'t0',
       answers:{DF026:{value:250,unit:'min'}},processSteps:[{id:'P1',step_name:'Recibir factura',active_time:3}]}]};
-  ctx.state=JSON.parse(JSON.stringify(original));
+  ctx.state=ctx.normalizeRecoveredState(JSON.parse(JSON.stringify(original)));
   vm.runInContext('__auneaSyncedState=recoveryClone(state)',ctx);
   let renders=0;ctx.render=()=>{renders++};
-  const other=JSON.parse(JSON.stringify(original));
+  const other=JSON.parse(JSON.stringify(ctx.state));
   other.engagements[0].updatedAt='t1';
   other.audit=[{ts:'2026-10-21T00:00:00Z',message:'Guardado'}];
   other.recoveryMeta={savedAt:'2026-10-21T00:00:00Z',reason:'autosave'};
