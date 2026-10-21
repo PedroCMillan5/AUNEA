@@ -93,15 +93,6 @@ function homePage(){
 }
 // [AUNEA-FE-PAGE-HOME-010] END
 
-const pages={
-  inicio:homePage,
-  empresas:companiesPage,contactos:contactsPage,interacciones:interactionsPage,oportunidades:opportunitiesPage,
-  estudios:studiesPage,
-  proyectos:projectsPage,implementacion:implementationPage,
-  diagnostico:stagePage,proceso:processPage,
-  pasos(){return consultantStepsPage()},fricciones(){return consultantFrictionsPage()},
-  riesgos(){return consultantRisksPage()},impacto(){return consultantImpactPage()},
-  resultados:resultsPage,recomendacion:recommendationPage,escenarios:scenariosPage,quote:quotePage,
 // [AUNEA-FE-USER-COPY-150] START — Hide stored technical references only when displaying audit text.
 // SOURCE: Diagnostic Master field labels and simulator page titles; code IDs in state and logs never change.
 // INPUT: audit message string; OUTPUT: consultant-facing wording. No state mutations.
@@ -119,6 +110,16 @@ function readableAuditMessage(message){
     .replace(/\b(?:RT_[A-Z_]+|OS_[A-Z_]+|BR-[A-Z_]+|DEC-\d+)\b/g,'regla interna del sistema');
 }
 // [AUNEA-FE-USER-COPY-150] END
+
+const pages={
+  inicio:homePage,
+  empresas:companiesPage,contactos:contactsPage,interacciones:interactionsPage,oportunidades:opportunitiesPage,
+  estudios:studiesPage,
+  proyectos:projectsPage,implementacion:implementationPage,
+  diagnostico:stagePage,proceso:processPage,
+  pasos(){return consultantStepsPage()},fricciones(){return consultantFrictionsPage()},
+  riesgos(){return consultantRisksPage()},impacto(){return consultantImpactPage()},
+  resultados:resultsPage,recomendacion:recommendationPage,escenarios:scenariosPage,quote:quotePage,
   admin(){const e=currentEng();return pageTop('Admin / Auditoría','Estado del frontend, fuente canónica, persistencia y trazabilidad de cambios.',`<button class="btn" id="checkBackend">Comprobar backend</button><button class="btn btn-danger" id="clearLocal">Limpiar datos locales</button>`) + `<div class="grid g4"><div class="card metric"><small>Frontend</small><strong>v${esc(AUNEA_PRODUCT_VERSION)}</strong><span>${esc(AUNEA_PRODUCT_STATUS)}</span></div><div class="card metric"><small>Diagnostic Master</small><strong>100</strong><span>campos canónicos</span></div><div class="card metric"><small>Option sets</small><strong>${Object.keys(schema.option_sets).length}</strong><span>${Object.values(schema.option_sets).reduce((n,s)=>n+(s.options?.length||0),0)} opciones</span></div><div class="card metric"><small>Backend</small><strong>${state.backendOnline?'OK':'—'}</strong><span>${esc(state.backendVersion||'no conectado')}</span></div></div>`+section('Fuente canónica','La UI no gobierna reglas.',`<div class="notice good"><strong>Diagnostic Master v1.2:</strong> ${esc(schema.source)}<br>100/100 campos con controles, objetivos, validaciones, ejemplos y trazabilidad de origen y destino.</div>`)+section('Auditoría local','Últimos cambios en esta sesión.',state.audit.length?state.audit.slice(0,40).map(a=>`<div class="audit-line"><b>${fmtDate(a.ts)}</b> · ${esc(readableAuditMessage(a.message))}</div>`).join(''):'<div class="empty"><p>Sin cambios registrados todavía.</p></div>')}
 };
 
