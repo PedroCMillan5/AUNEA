@@ -454,6 +454,26 @@ async function main(){
    const consoleSizes=await page.evaluate(()=>[...document.querySelectorAll('.process-graph-readonly .flow-boundary h4,.process-graph-readonly .graph-flow-step h4,.process-graph-readonly .graph-decision-copy h4')].map(el=>getComputedStyle(el).fontSize));
    assert.deepEqual([...new Set(consoleSizes)],['12px'],'console titles have the same size');
    console.log('PG05_SHARED_FONT_PASS: '+JSON.stringify({client:textSizes,console:consoleSizes}));
+   await editor.evaluate(()=>{
+     window.__uatGraphNode=document.querySelector('.client-process-canvas .process-graph-board');
+     const canvas=document.querySelector('.client-process-canvas');
+     canvas.scrollLeft=Math.min(180,canvas.scrollWidth-canvas.clientWidth);
+     window.__uatGraphOffset=canvas.scrollLeft;
+   });
+   await page.evaluate(()=>{
+     const raw=JSON.parse(localStorage.getItem(STORAGE_KEY));
+     raw.recoveryMeta={...(raw.recoveryMeta||{}),reason:'visual-regression'};
+     localStorage.setItem(STORAGE_KEY,JSON.stringify(raw));
+   });
+   await editor.waitForTimeout(2300);
+   const idle=await editor.evaluate(()=>{
+     const canvas=document.querySelector('.client-process-canvas');
+     return {same:window.__uatGraphNode===document.querySelector('.client-process-canvas .process-graph-board'),
+       x:canvas.scrollLeft,expected:window.__uatGraphOffset};
+   });
+   assert.equal(idle.same,true,'a metadata-only storage event must not recreate the graph');
+   assert.equal(idle.x,idle.expected,'an idle client graph must not shift');
+   console.log('PG05_STABLE_IDLE_MAP_PASS: '+JSON.stringify(idle));
    // PG05 and the client editor display the same owner boundaries, not two renderings
    // with different truncation rules. Capture their actual rendered values first.
    const consultantBoundaries=await page.evaluate(()=>['start','end'].map(kind=>
