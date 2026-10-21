@@ -1302,6 +1302,8 @@ body:has([data-diagnostic-stage="S08"]) .s08-duplication-why{margin:4px 0 8px;li
 .pg05-field-action .field{margin:8px 0}
 .pg05-footer{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px}
 .pg05-footer>span{color:var(--muted);font-size:13px}
+.pg05-footer-next{margin-left:auto;display:flex;justify-content:flex-end;min-width:0}
+.pg05-footer-next>.btn{max-width:100%;white-space:normal;text-align:center}
 .pg05-empty{border:1px dashed var(--line);border-radius:12px;padding:20px;color:var(--muted)}
 @media(max-width:760px){.pg05-review{gap:24px}.pg05-step-card,.pg05-field{padding:16px}.pg05-field-grid,.pg05-step-facts{grid-template-columns:1fr}.pg05-step-top{flex-wrap:wrap}.pg05-step-top>.btn{margin-left:50px}.pg05-step-metrics{gap:8px}.pg05-step-metrics>span{padding:10px}}
 /* [AUNEA-FE-PG05-CONSULTANT-STYLE-082] END */
