@@ -230,8 +230,14 @@ test('S08 keeps one simple pattern after DF086: options plus yellow context, wit
       assert.doesNotMatch(html,/<strong>Contexto previo[^<]*\b(?:PG\d{2}|DF\d{3})\b/);
       assert.match(html,/s08-context-grid/);
       assert.match(html,/Opciones marcadas/);
+      assert.match(html,/class="s08-context-info"/,'an actual icon, not just a title attribute');
+      assert.match(html,/role="img" tabindex="0" aria-label="Información recuperada de/);
+      assert.match(html,/data-tooltip="Información recuperada de/);
+      assert.match(html,/<svg viewBox="0 0 24 24"/);
+      assert.doesNotMatch(html,/<strong[^>]*title=/,'heading must not fake an info icon using a title');
     }else{
       assert.doesNotMatch(html,/Contexto previo|Opciones marcadas|s08-context-grid/,'no contextless repetition on '+fid);
+      assert.doesNotMatch(html,/s08-context-info/,'no icon without a true source');
       assert.match(html,/s08-context-action-note/);
     }
     assert.match(html,/Recomendación/);
