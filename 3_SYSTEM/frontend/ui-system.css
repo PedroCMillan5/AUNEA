@@ -1157,6 +1157,33 @@ body:has([data-diagnostic-stage="S08"]) .s08-context-action-note{
   body:has([data-diagnostic-stage="S08"]) .s08-context-grid{grid-template-columns:1fr}
   body:has([data-diagnostic-stage="S08"]) .s08-context-advice{grid-column:auto}
 }
+/* Accessible source icon beside “Contexto previo”; no technical codes in user-facing text. */
+body:has([data-diagnostic-stage="S08"]) .s08-context-origin>strong{
+  display:inline-flex;align-items:center;gap:5px;flex-wrap:wrap;
+}
+body:has([data-diagnostic-stage="S08"]) .s08-context-info{
+  display:inline-flex;align-items:center;justify-content:center;
+  flex:0 0 17px;width:17px;height:17px;
+  position:relative;vertical-align:middle;
+  border-radius:50%;background:var(--system-soft);color:var(--system);
+  cursor:help;outline-offset:2px;
+}
+body:has([data-diagnostic-stage="S08"]) .s08-context-info svg{display:block;pointer-events:none}
+body:has([data-diagnostic-stage="S08"]) .s08-context-info:focus-visible{outline:2px solid var(--system)}
+body:has([data-diagnostic-stage="S08"]) .s08-context-info::after{
+  content:attr(data-tooltip);
+  display:none;position:absolute;z-index:110;top:calc(100% + 7px);left:0;
+  width:max-content;max-width:min(290px,78vw);
+  padding:7px 9px;border:1px solid var(--line);border-radius:var(--radius-sm);
+  box-shadow:0 4px 14px rgba(20,24,28,.16);
+  background:#fff;color:var(--ink);
+  font-size:var(--font-caption);font-weight:500;line-height:1.45;
+  white-space:normal;text-align:left;pointer-events:none;
+}
+body:has([data-diagnostic-stage="S08"]) .s08-context-info:hover::after,
+body:has([data-diagnostic-stage="S08"]) .s08-context-info:focus-visible::after{
+  display:block;
+}
 /* [AUNEA-FE-S08-CONTEXT-COMPACT-149] END */
 
 body:has([data-diagnostic-stage="S08"]) .s08-duplication-why{margin:4px 0 8px;line-height:1.45;max-width:980px}
