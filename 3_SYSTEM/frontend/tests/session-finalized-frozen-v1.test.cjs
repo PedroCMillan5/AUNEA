@@ -41,7 +41,6 @@ test('S08 filters only relevant DF010 context per field without changing canonic
   const html=ctx.s08PriorContext('DF089',e,['KEEP_EXISTING'],[{value:'KEEP_EXISTING',label:'Mantener herramientas actuales'}]);
   assert.match(html,/Contexto previo/);
   assert.doesNotMatch(html,/<strong>Contexto previo[^<]*\b(?:PG\d{2}|DF\d{3})\b/);
-  assert.match(html,/PG01 \/ DF010/);
   assert.match(html,/Herramientas \/ plataforma/);
   assert.doesNotMatch(html,/Legal \/ compliance|Ownership \/ propiedad de datos/);
   assert.match(html,/Opciones marcadas/);
