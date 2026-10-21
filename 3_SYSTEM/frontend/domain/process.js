@@ -1377,7 +1377,7 @@ function consultantLayerPage(title,intro,body,layer,stageId,{questionsFirst=fals
     :layerCanonicalQuestions(e,stageId)+riskSuggestions):'';
   const content=layer==='risks'?(questionsFirst?questions+body+gapsNotice:body+gapsNotice+questions):(questionsFirst?questions+body:body+questions);
   const layerSummary=layer==='impact'?impactLayerReviewSummary(e,integrity):'';
-  return pageTop(title,intro,'<button class="btn btn-outline" data-page="proceso">← Ver mapa AS-IS</button>')+(typeof asisConsoleLockNotice==='function'?asisConsoleLockNotice():'')+content+layerSummary+confirm;
+  return pageTop(title,intro,'<button class="btn btn-outline" data-page="proceso">← Ver mapa AS-IS</button>')+(typeof asisConsoleLockNotice==='function'?asisConsoleLockNotice():'')+asisTemporalBar(e)+content+layerSummary+confirm;
 }
 // PG05 visual / S04 internal: after client confirmation this is a sufficiency review, not a
 // second ProcessStep editor or a second confirmation of the same four-layer client map.
@@ -1633,6 +1633,7 @@ function consultantStepsReviewPage(e){
     :'<button type="button" class="btn btn-primary" data-confirm-process-layer="map"'+(integrity.length?' disabled aria-disabled="true"':'')+'>Confirmar mapa revisado</button>';
   return pageTop('Pasos','Revisión interna del AS-IS; los datos del cliente se capturan una sola vez.',
       '<button type="button" class="btn btn-outline" data-page="proceso">Ver mapa AS-IS</button>')
+    +asisTemporalBar(e)
     +'<div class="pg05-review">'+(typeof asisConsoleLockNotice==='function'?asisConsoleLockNotice():'')
     +statusHtml
     +section('1. Proceso registrado','Consulta la secuencia. Despliega detalles y edita cualquier paso en su mismo registro.',
