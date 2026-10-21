@@ -281,6 +281,12 @@ function economicEvidenceLabel(value){
   if(Object.prototype.hasOwnProperty.call(I18N_LABELS_ES.evidence_quality,backend))return I18N_LABELS_ES.evidence_quality[backend];
   return (typeof labelFrom==='function'&&labelFrom('OS_EVIDENCE_TYPE',value))||String(value||'—');
 }
+function economicEvidenceOptions(selectedValue){
+  const options=Object.entries(I18N_LABELS_ES.evidence_quality).map(([value,label])=>({value,label}));
+  const raw=String(selectedValue||'');
+  if(raw&&!options.some(x=>x.value===raw))options.push({value:raw,label:economicEvidenceLabel(raw)});
+  return options;
+}
 function economicRecordSummary(x){
   const evidence='Evidencia: '+economicEvidenceLabel(x.evidence_type);
   const num=v=>Number(v||0).toLocaleString('es-ES',{maximumFractionDigits:2});
@@ -399,7 +405,7 @@ function addEconomic(preselectedSteps=[],editIndex=null,forceSuggestedScope=fals
       <div class="field full economic-derived-card"><div class="economic-derived-kicker" id="economicResultTitle">Impacto calculado</div><div class="notice info" id="economicDerivedPreview" role="status">${esc(initialPreview)}</div><div class="field-help" id="economicResultHelp">AUNEA reutiliza volumen y tiempos ya capturados. Los cálculos derivados pertenecen al backend.</div></div>
       <div class="field" data-econ-ui="active"><label id="econActiveLabel">Trabajo anual asociado</label>${econAnnualTimeControl('econActive',existing?.annual_active_hours||0,'h')}<div class="field-help" id="econActiveHelp">Si el backend puede derivarlo, el dato se completa automáticamente. En caso contrario requiere validación manual y evidencia.</div></div>
       <div class="field" data-econ-ui="wait"><label>Espera anual cuantificada</label>${econAnnualTimeControl('econWait',existing?.annual_wait_hours||0,'h')}<div class="field-help">Exposición a espera del proceso. No se monetiza automáticamente como trabajo ni como ahorro.</div></div>
-      <div class="field full"><label>Tipo de evidencia</label>${econDropdown('econEvidence',[...Object.entries(I18N_LABELS_ES.evidence_quality).map(([value,label])=>({value,label})),...(existing?.evidence_type&&!Object.prototype.hasOwnProperty.call(I18N_LABELS_ES.evidence_quality,existing.evidence_type)?[{value:existing.evidence_type,label:((typeof labelFrom==='function'&&labelFrom('OS_EVIDENCE_TYPE',existing.evidence_type))||existing.evidence_type)+' — valor original importado'}]:[])],existing?.evidence_type||'','Selecciona…')}</div>
+      <div class="field full"><label>Tipo de evidencia</label>${econDropdown('econEvidence',economicEvidenceOptions(existing?.evidence_type),existing?.evidence_type||'','Selecciona…')}</div>
     </div></details>
     <details class="step-group" open id="economicValueGroup"><summary>3. Valor económico cuando proceda</summary><div class="form-grid">
       <div class="field" data-econ-ui="rate"><label>Coste de capacidad por hora</label><div class="compound-control"><input id="econRate" value="${attr(existing?.capacity_cost_rate_eur_hour??'')}" type="number" min="0" step="any" inputmode="decimal" placeholder="0"><span class="unit-label">€/h</span></div><div class="field-help">Valor de capacidad del perfil. No equivale por sí solo a ahorro de caja.</div></div>
