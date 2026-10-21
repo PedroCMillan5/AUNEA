@@ -165,8 +165,8 @@ window.addEventListener('storage',ev=>{
     // Metadata-only saves from the other tab must not reconstruct the AS-IS map.
     // Compare only shared business data; navigation, audit and autosave timestamps
     // remain local or are not graph changes.
-    const sharedBefore=recoveryVisibleFingerprint(state);
-    const sharedAfter=recoveryVisibleFingerprint(incoming);
+    const sharedBefore=recoveryVisibleFingerprint(state,state.activeEngagementId,state.activePage);
+    const sharedAfter=recoveryVisibleFingerprint(incoming,state.activeEngagementId,state.activePage);
     // Store the actual accepted remote baseline before applying per-window navigation.
     __auneaSyncedState=recoveryClone(incoming);
     const selectedEngagement=(state.engagements||[]).find(e=>e.id===state.activeEngagementId);
