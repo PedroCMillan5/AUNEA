@@ -435,7 +435,7 @@ function goToProcessFromStage(){const e=currentEng();if(e){state.returnTo={page:
 function returnToStage(){const e=currentEng(),rt=state.returnTo;if(e&&rt)e.stageId=rt.stageId;state.returnTo=null;setPage('diagnostico')}
 // screenId is the approved reference a screen must reproduce (e.g. "I90-00-01"). It is internal
 // traceability shown above the title, exactly as the references do, and carries no business meaning.
-function pageTop(title,subtitle,actions='',screenId=''){return `<div class="page-head"><div>${screenId?`<div class="screen-id">${esc(screenId)}</div>`:''}<h1>${esc(title)}</h1><p class="subtitle">${subtitle}</p></div><div class="head-actions">${actions}</div></div>`}
+function pageTop(title,subtitle,actions='',screenId=''){return `<div class="page-head"><div><h1>${esc(title)}</h1><p class="subtitle">${subtitle}</p></div><div class="head-actions">${actions}</div></div>`}
 // Main column plus persistent inspector, and the sticky action bar. Both come from the reference set:
 // every approved screen is built from these two shapes.
 function workspace(main,inspector,opts={}){return `<div class="workspace${opts.wide?' wide-inspector':''}"><div>${main}</div><aside class="inspector">${inspector}</aside></div>`}
