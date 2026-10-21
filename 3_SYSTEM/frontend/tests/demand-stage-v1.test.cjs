@@ -36,8 +36,8 @@ test('DF028 percentage hides period; count reveals a period selector',()=>{
 // [AUNEA-UAT-DEMAND-SLA-LAYOUT-146] START — SLA meaning and demand layout regression.
 test('PG03 explains SLA vs actual elapsed time and does not certify per-case compliance',()=>{
   assert.match(stages,/function s03ServiceTimeComparisonHtml\(e\)/);
-  assert.match(stages,/SLA \(DF025\)/);
-  assert.match(stages,/End-to-end \(DF026\)/);
+  assert.match(stages,/<b>SLA:<\/b>/);
+  assert.match(stages,/<b>Tiempo real end-to-end:<\/b>/);
   assert.match(stages,/no demuestra el cumplimiento de todos los casos/);
   assert.match(stages,/data-s03-service-time-compare/);
   const state=read('core/state.js');
