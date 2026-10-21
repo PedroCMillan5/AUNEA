@@ -393,6 +393,8 @@ function render(){
   const fn=pages[state.activePage]||pages.inicio;
   document.getElementById('content').innerHTML=fn();
   bindCommon();postBind();
+  // DEC-074: read-only time projection updates only its own node after render.
+  if(typeof bindAsisTemporalBars==='function')bindAsisTemporalBars();
   // Defensive runtime guard: each private AS-IS layer must expose exactly one confirmation bar.
   // This removes any duplicate legacy/runtime insertion without changing the layer model or confirmation state.
   if(typeof dedupeProcessLayerConfirmations==='function')dedupeProcessLayerConfirmations();
