@@ -253,6 +253,16 @@ function contextualNav(){
   return [...(internal?INTERNAL_WORK_NAV:CRM_NAV),...SYSTEM_NAV];
 }
 function currentStageIndex(){const e=currentEng(),f=stageList();if(!e||!f.length)return -1;return f.findIndex(s=>s.Stage_ID===(e.stageId||'S01'))}
+// [AUNEA-FE-PG05-VISUAL-PROGRESS-150] START — Display context, not a persisted navigation change.
+// DEC-065: AS-IS owns visual session pages 5–8; the stored stage may still be S08 (PG04).
+// The header reads the surface stage; capture navigation and returnTo keep their original owners.
+function visibleSessionStageIndex(){
+  const surfaceStage={proceso:'S04',pasos:'S04',fricciones:'S05',riesgos:'S06',impacto:'S07'}[state.activePage];
+  if(!surfaceStage)return currentStageIndex();
+  const index=stageList().findIndex(s=>s.Stage_ID===surfaceStage);
+  return index>=0?index:currentStageIndex();
+}
+// [AUNEA-FE-PG05-VISUAL-PROGRESS-150] END
 // The stage clock is the cumulative window of the canonical per-stage minutes — derived from the flow,
 // never a hardcoded schedule. Stage 1 of the shipped flow yields 00:00 – 06:00, as the references show.
 function stageWindow(i){
@@ -285,7 +295,7 @@ function updateHeader(){
   if(ctx)ctx.innerHTML='';
   const sp=document.getElementById('stepProgress');
   if(sp){
-    const flow=stageList(),i=currentStageIndex();
+    const flow=stageList(),i=visibleSessionStageIndex();
     sp.innerHTML=(inSession&&flow.length&&i>=0)
       ? `<div class="step-progress"><small>Paso ${i+1} de ${flow.length}</small><div class="step-dots">${flow.map((_,k)=>`<i class="${k<i?'on':k===i?'now':''}"></i>`).join('')}</div></div>`
         +`<span class="stage-clock">◷ ${stageWindow(i)}</span>`
