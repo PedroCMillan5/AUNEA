@@ -172,6 +172,13 @@ async function main(){
     assert.equal(audit.id,stageId,'canonical stage order after PG02');
     await assertBusinessOnlyUi('session stage '+stageId);
     if(stageId==='S08'){
+      const preMapLinks=await page.evaluate(()=>{
+        const e=currentEng();
+        return {confirmed:!!e.layerConfirmations?.map,linkedRows:document.querySelectorAll('.field[data-field="DF088"] .linked-step-group').length};
+      });
+      if(!preMapLinks.confirmed)assert.equal(preMapLinks.linkedRows,0,
+        'PG04 must capture exclusions without requiring step links from a future or preloaded map');
+
       const context=await page.evaluate(()=>{
         const result={};
         for(const fid of ['DF087','DF088','DF089','DF090','DF091']){
