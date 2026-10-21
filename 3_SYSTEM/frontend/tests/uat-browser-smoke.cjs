@@ -175,7 +175,7 @@ async function main(){
           const el=document.querySelector('[data-s08-context-for="'+fid+'"]');
           if(!el){result[fid]=null;continue;}
           const source=el.querySelector('.s08-context-origin');
-          result[fid]={prior:source?.querySelector('span')?.textContent||'',body:el.textContent||'',compact:!!el.querySelector('.s08-context-grid'),note:el.classList.contains('s08-context-action-note')};
+          result[fid]={prior:source?.querySelector(':scope > span')?.textContent||'',body:el.textContent||'',compact:!!el.querySelector('.s08-context-grid'),note:el.classList.contains('s08-context-action-note'),hasInfo:!!source?.querySelector('.s08-context-info')};
         }
         return result;
       });
@@ -188,6 +188,30 @@ async function main(){
       assert.equal(context.DF091.compact,false,'no yellow context card without related PG01 restriction');
       assert.equal(context.DF091.note,true,'show a discreet recommendation instead');
       assert.doesNotMatch(context.DF091.body,/Opciones marcadas|Contexto previo/);
+      for(const fid of ['DF087','DF088','DF089','DF090']){
+        assert.equal(context[fid].hasInfo,true,'visible source info icon required for '+fid);
+      }
+      assert.equal(context.DF091.hasInfo,false,'no prior source means no info icon');
+      const info=page.locator('[data-s08-context-for="DF089"] .s08-context-info');
+      await info.waitFor({state:'visible'});
+      const infoDetail=await info.evaluate(el=>({size:el.getBoundingClientRect().width,
+        title:el.getAttribute('title'),label:el.getAttribute('aria-label'),
+        tip:el.getAttribute('data-tooltip'),svg:!!el.querySelector('svg')}));
+      assert.ok(infoDetail.size>=14,'info icon has a visible hit area: '+JSON.stringify(infoDetail));
+      assert.equal(infoDetail.title,null,'do not rely on a title attribute as icon replacement');
+      assert.equal(infoDetail.svg,true);
+      assert.match(infoDetail.label,/Información recuperada de «Contexto y objetivo»/);
+      await info.hover();
+      const hoverTip=await info.evaluate(el=>({
+        display:getComputedStyle(el,'::after').display,
+        content:getComputedStyle(el,'::after').content
+      }));
+      assert.equal(hoverTip.display,'block','actual tooltip becomes visible on hover');
+      assert.match(hoverTip.content,/Restricciones iniciales/);
+      await info.focus();
+      assert.equal(await info.getAttribute('tabindex'),'0','icon remains keyboard focusable');
+      console.log('PG04_SOURCE_INFO_TOOLTIP_PASS: '+JSON.stringify({infoDetail,hoverTip}));
+
       const geometry=await page.evaluate(()=>{
         const ids=['DF087','DF088','DF089','DF090'];
         const cards=ids.map(fid=>{
