@@ -225,9 +225,14 @@ test('S08 keeps one simple pattern after DF086: options plus yellow context, wit
       e
     );
     assert.match(html,/Opción A/);
-    if(['DF087','DF088','DF090'].includes(fid))assert.match(html,/Contexto previo relevante/);
-    else assert.doesNotMatch(html,/Contexto previo relevante/,'only relevant source appears for '+fid);
-    assert.match(html,/Opciones marcadas/);
+    if(['DF087','DF088','DF090'].includes(fid)){
+      assert.match(html,/Contexto previo · PG01 \/ DF010/);
+      assert.match(html,/s08-context-grid/);
+      assert.match(html,/Opciones marcadas/);
+    }else{
+      assert.doesNotMatch(html,/Contexto previo|Opciones marcadas|s08-context-grid/,'no contextless repetition on '+fid);
+      assert.match(html,/s08-context-action-note/);
+    }
     assert.match(html,/Recomendación/);
     assert.doesNotMatch(html,/linked-field-block/);
     assert.doesNotMatch(html,/data-s08-reference/);
