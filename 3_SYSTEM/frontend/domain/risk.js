@@ -127,17 +127,17 @@ function addRisk(preselectedSteps=[],editIndex=null,candidate=null){
     '<div class="step-groups process-modal-form risk-modal-form">'+candidateNotice+'<details class="step-group" open><summary>¿Qué podría salir mal?</summary><div class="form-grid">'
     +'<div class="field full"><label>¿En qué pasos podría ocurrir?</label><div class="choice-grid">'
     +steps.map((s,i)=>'<div class="choice"><input type="checkbox" id="risk_step_'+attr(s.id)+'" data-risk-step="'+attr(s.id)+'" '+(preselectedSteps.includes(s.id)?'checked':'')+'><label for="risk_step_'+attr(s.id)+'">'+esc('Paso '+(i+1)+' — '+(s.step_name||s.id))+'</label></div>').join('')+'</div></div>'
-    +'<div class="field full"><label>Problemas observados en los pasos elegidos</label><div class="field-help">Se reutilizan como contexto. No tienes que volver a seleccionarlos ni describirlos.</div><div class="choice-grid">'
-    +frictions.map((f,i)=>'<div class="choice" data-risk-friction-row data-affected-steps="'+attr(normalizeArray(f.affected_steps).join('|'))+'"><span>'+esc('Fricción '+(i+1)+' — '+(f.client_label||labelFrom('OS_FRICTION_TYPE',f.friction_type)))+'</span></div>').join('')+'</div><div class="field-help" id="riskNoRelatedFriction">Selecciona un paso para ver sus problemas ya registrados.</div></div>'
+    +'<div class="field full"><label>Problemas observados en los pasos elegidos</label><div class="field-help">Se reutilizan como contexto. No tienes que volver a seleccionarlos ni describirlos.</div><div class="risk-related-problems">'
+    +frictions.map((f,i)=>'<span class="risk-related-problem" data-risk-friction-row data-risk-problem-label="'+attr('Fricción '+(i+1)+' — '+(f.client_label||labelFrom('OS_FRICTION_TYPE',f.friction_type)))+'" data-affected-steps="'+attr(normalizeArray(f.affected_steps).join('|'))+'">'+esc('Fricción '+(i+1)+' — '+(f.client_label||labelFrom('OS_FRICTION_TYPE',f.friction_type)))+'</span>').join('')+'</div><div class="field-help" id="riskNoRelatedFriction">Selecciona un paso para ver sus problemas ya registrados.</div></div>'
     +'<div class="field"><label>¿De qué tipo es este riesgo? '+requiredMark()+'</label>'+riskDropdown('riskCat',[{value:'',label:'Selecciona…'},...cats],selected.category||'','Selecciona…')+'</div>'
     +'<div class="field"><label>¿Qué podría salir mal? '+requiredMark()+'</label><input id="riskDesc" value="'+attr(selected.description||'')+'" placeholder="Describe qué podría ocurrir"></div>'
     +'<div class="field"><label>¿Qué probabilidad hay de que ocurra? '+requiredMark()+'</label>'+riskDropdown('riskLike',[{value:'',label:'Selecciona…'},...riskScale],num(selected.likelihood_1_5),'Selecciona…')+'<div class="field-help">Valora la probabilidad del escenario descrito; usa histórico o evidencia cuando exista.</div></div>'
     +'<div class="field"><label>¿Qué consecuencias tendría? '+requiredMark()+'</label>'+riskDropdown('riskImpact',[{value:'',label:'Selecciona…'},...riskScale],num(selected.impact_1_5),'Selecciona…')+'<div class="field-help">Valora la consecuencia si el riesgo llega a ocurrir, no la gravedad de la fricción.</div></div></div></details>'
     +'<details class="step-group" open><summary>Controles y condiciones</summary><div class="form-grid">'
-    +'<div class="field"><label>Si ocurre, ¿se puede corregir? '+requiredMark()+'</label>'+riskDropdown('riskRev',[{value:'',label:'Selecciona…'},...rev],selected.reversibility||'','Selecciona…')+'<div class="field-help">Reversibilidad: cuánto cuesta o qué intervención exige volver a una situación segura.</div></div>'
+    +'<div class="field"><label>Si ocurre, ¿se puede corregir? '+requiredMark()+'</label>'+riskDropdown('riskRev',[{value:'',label:'Selecciona…'},...rev],selected.reversibility||'','Selecciona…')+'<div class="field-help">Reversibilidad: cuánto cuesta o qué intervención exige volver a una situación segura.</div><div class="field-help" id="riskReversibleDerived">¿Es reversible? — Pendiente</div></div>'
     +'<div class="field"><label>¿Existen controles actuales? '+requiredMark()+'</label>'+riskDropdown('riskControls',[{value:'',label:'Selecciona…'},{value:'1',label:'Sí'},{value:'0',label:'No'}],existing?(selected.controls_present===true?'1':selected.controls_present===false?'0':''):(storedControls.length?'1':''),'Selecciona…')+'</div>'
     +'<div class="field full"><label>Controles actuales</label><div class="choice-grid">'+controlOptions.map(o=>'<div class="choice"><input type="checkbox" id="risk_control_'+attr(o.value)+'" data-risk-control="'+attr(o.value)+'" '+(selectedControlIds.includes(String(o.value))?'checked':'')+'><label for="risk_control_'+attr(o.value)+'">'+esc(o.label)+'</label></div>').join('')+'</div><div class="detail-wrap" id="riskControlOtherWrap" '+(selectedControlIds.includes('OTHER')?'':'style="display:none"')+'><input id="riskControlOther" value="'+attr(otherControl.replace(/^OTHER:\s*/,''))+'" placeholder="Describe el otro control"></div></div>'
-    +'<div class="field"><label>¿Afecta a datos sensibles o de alto impacto? '+requiredMark()+'</label>'+riskDropdown('riskSensitive',[{value:'',label:'Selecciona…'},{value:'1',label:sensitive.length?'Sí — recuperado de la información ya registrada':'Sí'},{value:'0',label:'No'}],existing?(selected.sensitive_or_high_impact===true?'1':selected.sensitive_or_high_impact===false?'0':''):(sensitive.length?'1':sensitiveRaw.includes('NONE')?'0':''),'Selecciona…')+'</div>'
+    +'<div class="field"><label>¿Afecta a datos sensibles o de alto impacto? '+requiredMark()+'</label>'+riskDropdown('riskSensitive',[{value:'',label:'Selecciona…'},{value:'1',label:'Sí'},{value:'0',label:'No'}],existing?(selected.sensitive_or_high_impact===true?'1':selected.sensitive_or_high_impact===false?'0':''):(sensitive.length?'1':sensitiveRaw.includes('NONE')?'0':''),'Selecciona…')+'<div class="field-help">'+(sensitive.length?'Existen datos sensibles declarados previamente; comprueba si afectan a este riesgo.':'Evalúa la sensibilidad de este riesgo concreto.')+'</div></div>'
     +'<div class="field"><label>¿Puede tener consecuencias económicas o de cumplimiento importantes? '+requiredMark()+'</label>'+riskDropdown('riskMat',[{value:'',label:'Selecciona…'},{value:'0',label:'No'},{value:'1',label:'Sí'}],existing?(selected.material_financial_or_compliance===true?'1':selected.material_financial_or_compliance===false?'0':''):'','Selecciona…')+'<div class="field-help">Marca Sí sólo si la consecuencia financiera, contractual o de cumplimiento puede ser material.</div></div>'
     +'<div class="field"><label>¿Es un evento crítico? '+requiredMark()+'</label>'+riskDropdown('riskCritical',[{value:'',label:'Selecciona…'},{value:'0',label:'No'},{value:'1',label:'Sí'}],existing?(selected.critical_trigger===true?'1':selected.critical_trigger===false?'0':''):'','Selecciona…')+'<div class="field-help">Evento crítico: una consecuencia que exige tratamiento especial aunque su probabilidad sea baja.</div></div></div></details></div>',
     ()=>{
@@ -168,12 +168,14 @@ function addRisk(preselectedSteps=[],editIndex=null,candidate=null){
   function refreshRelatedProblems(){
     const chosen=[...document.querySelectorAll('[data-risk-step]:checked')].map(x=>x.dataset.riskStep);
     let visible=0;
+    const visibleRows=[];
     document.querySelectorAll('[data-risk-friction-row]').forEach(row=>{
       const affected=String(row.dataset.affectedSteps||'').split('|').filter(Boolean);
       row.hidden=!chosen.length||!affected.some(id=>chosen.includes(id));
       row.style.display=row.hidden?'none':'';
-      if(!row.hidden)visible++;
+      if(!row.hidden){visible++;visibleRows.push(row)}
     });
+    visibleRows.forEach((row,i)=>{row.textContent=row.dataset.riskProblemLabel+(i<visibleRows.length-1?' ·':'');});
     const empty=document.getElementById('riskNoRelatedFriction');
     if(empty)empty.textContent=!chosen.length?'Selecciona un paso para ver sus problemas ya registrados.':visible?'':'No hay fricciones registradas en los pasos seleccionados.';
   }
@@ -183,6 +185,10 @@ function addRisk(preselectedSteps=[],editIndex=null,candidate=null){
     if(wrap)wrap.style.display=other?.checked?'':'none';
     if(other&&!other.checked){const input=document.getElementById('riskControlOther');if(input)input.value=''}
   }));
+  const riskRev=document.getElementById('riskRev');
+  const refreshReversibleDerived=()=>{const target=document.getElementById('riskReversibleDerived');if(!target||!riskRev)return;const v=riskRev.value;target.textContent='¿Es reversible? — '+(!v?'Pendiente':(['HARD','IRREVERSIBLE'].includes(v)?'No':'Sí (derivado de la reversibilidad seleccionada)'));};
+  if(riskRev)riskRev.addEventListener('change',refreshReversibleDerived);
+  refreshReversibleDerived();
   refreshRelatedProblems();
 }
 function deleteRisk(index){
