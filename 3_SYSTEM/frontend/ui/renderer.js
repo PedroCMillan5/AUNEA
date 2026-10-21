@@ -400,7 +400,12 @@ function renderControl(f,val,opts,e){
   }
   if(c==='MULTISELECT_WITH_STEP_LINK'||c==='MULTISELECT_WITH_STEP_REFERENCE'||c==='STEP_ACTION_MULTISELECT'){
     const choices=multiChoices(fid,opts,val,hasCanonicalOtherOption(opts)?{other:true}:{detail:true});
-    const showSteps=fid!=='DF055'||valuePresent(val);
+    // DEC-065: PG04 is captured before PG05 creates/confirms the AS-IS.
+    // Preloaded UAT steps must never turn a future map linkage into a PG04 obligation.
+    // After a user-confirmed map, deliberate return to PG04 may refine the existing
+    // DF088__steps owner without inventing an additional diagnostic question.
+    const preMapBoundary=fid==='DF088'&&e?.stageId==='S08'&&!e?.layerConfirmations?.map;
+    const showSteps=!preMapBoundary&&(fid!=='DF055'||valuePresent(val));
     return choices+(showSteps?`<div class="linked-step-group"><div class="linked-step-label">${fid==='DF055'?'¿En qué pasos ocurre?':'Pasos afectados'}</div>${stepMulti(`${fid}__steps`,e,answerDetails(e)[`${fid}__steps`]||[])}</div>`:'');
   }
   if(c==='STEP_MULTISELECT_VISUAL'||c==='STEP_MULTISELECT_WITH_FRICTION')return stepMulti(fid,e,val);
