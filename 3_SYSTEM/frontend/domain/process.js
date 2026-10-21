@@ -1132,7 +1132,7 @@ function asisTemporalBarContent(output){
 }
 function asisTemporalBar(e){
   return '<section class="asis-temporal-card" data-asis-temporal="'+attr(e.id)+'" aria-label="Reconstrucción del tiempo actual">'
-    +'<div class="asis-temporal-title"><b>Reconstrucción del tiempo actual</b><small>Datos compartidos entre mapa, fricciones, riesgos e impacto</small></div>'
+    +'<div class="asis-temporal-title"><b>Reconstrucción del tiempo actual</b><small>Tiempo end-to-end declarado: '+esc(processDeclaredCycleContext(e)?.label||'Pendiente')+' · Valores compartidos con fricciones, riesgos e impacto</small></div>'
     +'<div class="asis-temporal-content" aria-live="polite">Calculando componentes del mapa…</div></section>';
 }
 function bindAsisTemporalBars(){
