@@ -1056,7 +1056,7 @@ function clientProcessView(e,steps,fr,tab='cliente'){
     <button class="client-rail-item ${tab==='impacto'?'active':''}" data-process-tab="impacto"><b>Impacto económico</b><span>${econCount}</span></button></aside>`;
   // La vista compartida es captura y navegación; nunca confirma capas.
   // Las advertencias de integridad se resuelven en la consola antes de su confirmación formal.
-  const clientNavigation=nextAction?'<div class="client-process-navigation">'+nextAction+'</div>':'';
+  const clientNavigation='<div class="client-process-navigation">'+(nextAction||'<button class="btn btn-primary client-process-next" type="button" id="saveAndCloseClientProcessEditor">Guardar y salir</button>')+'</div>';
   return section('Editor con cliente','Mapa, fricciones, riesgos e impacto se editan sobre el mismo contexto.',clientBar+`<div class="client-process-workspace" data-process-engagement="${attr(e.id)}">${layerRail}<div class="client-process-main">${sequence}${lineage}${asisDemandBaseline(e)}${asisTemporalBar(e)}${asisParticipantContext(e)}${asisVariantCandidates(e)}${clientLayerBody(e,steps,fr,tab)}${clientNavigation}</div></div>`);
 }
 function stepsEditor(e,steps,fr){
@@ -1793,6 +1793,7 @@ bindForms=function(){
   document.querySelectorAll('[data-delete-economic-index]').forEach(b=>b.onclick=()=>deleteEconomic(Number(b.dataset.deleteEconomicIndex)));
   const share=document.getElementById('openSessionDisplayFromProcess');if(share)share.onclick=()=>openProcessEditorWindow();
   const closeClient=document.getElementById('closeClientProcessEditor');if(closeClient)closeClient.onclick=()=>closeProcessEditorWindow();
+  const finishClient=document.getElementById('saveAndCloseClientProcessEditor');if(finishClient)finishClient.onclick=()=>{if(typeof persistRecoverySnapshot==='function'&&!persistRecoverySnapshot('guardar y salir de vista con cliente'))return toast('No se pudo guardar la sesión. Revisa la persistencia antes de salir.');closeProcessEditorWindow();};
   document.querySelectorAll('[data-risk-approval-prefill]').forEach(b=>b.onclick=()=>{
     const e=currentEng();if(!e)return;
     const approvals=activeSteps(e).filter(s=>s.step_type==='ST05'||normalizeArray(s.decision_criteria).length);
