@@ -766,7 +766,11 @@ body:has(.home-screen-marker) .app-shell{height:100vh;min-height:0;overflow:hidd
 .asis-temporal-metrics>div{display:flex;flex-direction:column;gap:2px}
 .asis-temporal-metrics small{font-size:11px}
 .asis-temporal-metrics strong{font-size:16px;color:var(--text)}
-.asis-temporal-track{height:17px;border-radius:6px;overflow:hidden;display:flex;background:#eef0f2;width:100%}
+.asis-temporal-track{height:17px;border-radius:6px;overflow:hidden;display:flex;background:#eef0f2;width:100%;max-width:100%;min-width:0;position:relative;box-sizing:border-box}
+.asis-temporal-track-overrun{outline:1px solid #ae4840;outline-offset:0}
+.asis-temporal-overrun-edge{position:absolute;right:0;top:0;bottom:0;width:5px;background:#a83935;box-shadow:-2px 0 0 #fff;pointer-events:none}
+.asis-temporal-overrun-summary{font-size:11px;line-height:1.5;margin:8px 0 0;color:#8c3731;overflow-wrap:anywhere}
+.asis-temporal-overrun-summary b{font-weight:700}
 .asis-temporal-fill,.asis-temporal-unreconciled{height:100%;flex:0 0 auto;min-width:0}
 .asis-temporal-active{background:#297b67}
 .asis-temporal-wait{background:#bc913d}
