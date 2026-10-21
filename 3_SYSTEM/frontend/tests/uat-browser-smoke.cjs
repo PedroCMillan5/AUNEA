@@ -178,6 +178,21 @@ async function main(){
       assert.equal(context.DF091.compact,false,'no yellow context card without related PG01 restriction');
       assert.equal(context.DF091.note,true,'show a discreet recommendation instead');
       assert.doesNotMatch(context.DF091.body,/Opciones marcadas|Contexto previo/);
+      const geometry=await page.evaluate(()=>{
+        const ids=['DF087','DF088','DF089','DF090'];
+        const cards=ids.map(fid=>{
+          const el=document.querySelector('[data-s08-context-for="'+fid+'"]');
+          const box=el.getBoundingClientRect();
+          const grid=el.querySelector('.s08-context-grid');
+          return {fid,height:box.height,width:box.width,columns:getComputedStyle(grid).gridTemplateColumns.split(' ').length};
+        });
+        const note=document.querySelector('[data-s08-context-for="DF091"]');
+        return {cards,noteHeight:note?.getBoundingClientRect().height||0};
+      });
+      assert.ok(geometry.cards.every(c=>c.height<105),'PG04 compact context cards must not dominate the questionnaire: '+JSON.stringify(geometry));
+      assert.ok(geometry.cards.every(c=>c.columns===3),'PG04 context is presented as a single three-column row: '+JSON.stringify(geometry));
+      assert.ok(geometry.noteHeight<50,'PG04 adoption without a source remains a small note: '+JSON.stringify(geometry));
+      console.log('PG04_COMPACT_LAYOUT_PASS: '+JSON.stringify(geometry));
       await page.screenshot({path:path.join(outDir,'pg04-context-by-question.png'),fullPage:true});
       console.log('PG04_CHROMIUM_CONTEXT_PASS: '+JSON.stringify(context));
     }
