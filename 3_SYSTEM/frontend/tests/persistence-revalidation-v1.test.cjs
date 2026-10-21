@@ -116,7 +116,8 @@ test('metadata-only cross-tab autosave must never rebuild the client AS-IS, real
   ctx.isClientDisplay=()=>false;ctx.isProcessEditorWindow=()=>true;
   const original={...ctx.blankState(),activePage:'proceso',activeEngagementId:'ENG-1',
     engagements:[{id:'ENG-1',processTab:'cliente',updatedAt:'t0',
-      answers:{DF026:{value:250,unit:'min'}},processSteps:[{id:'P1',step_name:'Recibir factura',active_time:3}]}]};
+      answers:{DF026:{value:250,unit:'min'}},processSteps:[{id:'P1',step_name:'Recibir factura',active_time:3}]},
+      {id:'ENG-OTHER',answers:{DF021:10},processSteps:[]}]};
   ctx.state=ctx.normalizeRecoveredState(JSON.parse(JSON.stringify(original)));
   vm.runInContext('__auneaSyncedState=recoveryClone(state)',ctx);
   let renders=0;ctx.render=()=>{renders++};
@@ -129,6 +130,11 @@ test('metadata-only cross-tab autosave must never rebuild the client AS-IS, real
   ctx.__listeners.storage({key:'aunea_internal_v1',newValue:payload});
   assert.equal(renders,0,'mere metadata change cannot replace the map canvas');
   assert.equal(ctx.state.engagements[0].updatedAt,'t1','sync accepts remote metadata without rebuilding');
+  other.engagements[1].answers.DF021=99;
+  payload=JSON.stringify(other);
+  ctx.localStorage.setItem('aunea_internal_v1',payload);
+  ctx.__listeners.storage({key:'aunea_internal_v1',newValue:payload});
+  assert.equal(renders,0,'another study cannot move the active client map');
   other.engagements[0].processSteps[0].active_time=5;
   payload=JSON.stringify(other);
   ctx.localStorage.setItem('aunea_internal_v1',payload);
