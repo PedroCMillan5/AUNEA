@@ -17,7 +17,7 @@ test('PG02 has no fabricated comparison before any process steps are present',()
 test('PG02 displays original boundaries and actual first/last map step without mutating source',()=>{
  const {ctx,e}=context([{step_name:'Recibir factura',status:'ACTIVE'},{step_name:'Aprobar factura',status:'SUPERSEDED'},{step_name:'Registrar en ERP y archivar',status:'ACTIVE'}]);
  const before=JSON.stringify(e),html=ctx.pg02BoundaryReviewHtml(e);
- for(const term of ['Inicio definido en PG02','Final definido en PG02','Primer paso del mapa','Último paso del mapa','Recibir factura','Registrar en ERP y archivar','Pendiente de revisar/confirmar']){
+ for(const term of ['Inicio declarado en Alcance','Final declarado en Alcance','Primer paso del mapa','Último paso del mapa','Recibir factura','Registrar en ERP y archivar','Pendiente de revisar/confirmar']){
   assert.ok(html.includes(term),term);
  }
  assert.ok(!html.includes('Aprobar factura'));
