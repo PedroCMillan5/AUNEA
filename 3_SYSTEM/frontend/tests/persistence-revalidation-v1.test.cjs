@@ -111,6 +111,32 @@ test('an edit modal holds its captured Engagement object and stale remote state 
   assert.equal(renderCount,1);
 });
 
+test('metadata-only cross-tab autosave must never rebuild the client AS-IS, real step changes still refresh it',()=>{
+  const ctx=makeCtx();
+  ctx.isClientDisplay=()=>false;ctx.isProcessEditorWindow=()=>true;
+  const original={...ctx.blankState(),activePage:'proceso',activeEngagementId:'ENG-1',
+    engagements:[{id:'ENG-1',processTab:'cliente',updatedAt:'t0',
+      answers:{DF026:{value:250,unit:'min'}},processSteps:[{id:'P1',step_name:'Recibir factura',active_time:3}]}]};
+  ctx.state=JSON.parse(JSON.stringify(original));
+  vm.runInContext('__auneaSyncedState=recoveryClone(state)',ctx);
+  let renders=0;ctx.render=()=>{renders++};
+  const other=JSON.parse(JSON.stringify(original));
+  other.engagements[0].updatedAt='t1';
+  other.audit=[{ts:'2026-10-21T00:00:00Z',message:'Guardado'}];
+  other.recoveryMeta={savedAt:'2026-10-21T00:00:00Z',reason:'autosave'};
+  let payload=JSON.stringify(other);
+  ctx.localStorage.setItem('aunea_internal_v1',payload);
+  ctx.__listeners.storage({key:'aunea_internal_v1',newValue:payload});
+  assert.equal(renders,0,'mere metadata change cannot replace the map canvas');
+  assert.equal(ctx.state.engagements[0].updatedAt,'t1','sync accepts remote metadata without rebuilding');
+  other.engagements[0].processSteps[0].active_time=5;
+  payload=JSON.stringify(other);
+  ctx.localStorage.setItem('aunea_internal_v1',payload);
+  ctx.__listeners.storage({key:'aunea_internal_v1',newValue:payload});
+  assert.equal(renders,1,'a real change to a ProcessStep does redraw');
+  assert.equal(ctx.state.engagements[0].processSteps[0].active_time,5);
+});
+
 test('a delayed older storage event never replaces a newer shared record',()=>{
   const ctx=makeCtx();ctx.isClientDisplay=()=>false;ctx.isProcessEditorWindow=()=>false;
   const current={...ctx.blankState(),engagements:[{id:'E1',answers:{DF021:200}}]};
