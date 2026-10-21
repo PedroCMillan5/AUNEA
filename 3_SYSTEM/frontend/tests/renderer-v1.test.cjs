@@ -393,7 +393,7 @@ test('PG04 captures automation exclusions before the map without requesting step
     assert.doesNotMatch(initial,/Pasos afectados|linked-step-group/,'future map must not be a PG04 dependency');
     e.layerConfirmations.map=true;
     const revisited=ctx.renderControl(f,['FINAL_DECISION'],opts,e);
-    assert.match(revisited,/Pasos afectados/,'after the map was confirmed, revisiting PG04 may refine the existing step relation');
+    assert.doesNotMatch(revisited,/Pasos afectados|linked-step-group/,'PG04 remains a capture page; step relations belong to the downstream process review');
   }finally{
     e.stageId=saved.stageId;
     e.layerConfirmations=saved.layerConfirmations;
