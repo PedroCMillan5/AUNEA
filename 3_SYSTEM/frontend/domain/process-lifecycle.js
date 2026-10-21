@@ -238,7 +238,7 @@ function processScopeReviewSignals(e){
   const signals=[];
   if(declared&&legacy&&declared.toLocaleLowerCase('es')!==legacy.toLocaleLowerCase('es')){
     signals.push({code:'SCOPE_NAME_SOURCE_DISAGREEMENT',stage:'S02',
-      message:'El nombre del proceso de Alcance (DF011) difiere del nombre histórico del estudio. Comprueba qué denominación corresponde a los pasos reales; ninguna se sobrescribirá automáticamente.',
+      message:'El nombre del proceso definido en Alcance difiere del nombre histórico del estudio. Comprueba qué denominación corresponde a los pasos reales; ninguna se sobrescribirá automáticamente.',
       evidence:{DF011:declared,legacy_processName:legacy}});
   }
   // Only signal missing continuity when a non-generic term independently appears
@@ -283,12 +283,12 @@ function preCloseConsistencyReview(e,completion){
 
   const comp=completion||(typeof engagementCompletion==='function'?engagementCompletion(e):null);
   (comp?.blockers||[]).filter(b=>b.type!=='GATE'&&b.id!=='Confirmación AS-IS'&&b.id!=='DF093').forEach((b,i)=>{
-    add('BLOCKER','COMPLETION_'+i,b.label||b.id||'Queda un dato obligatorio pendiente.',b.stage||'',b.navigationTarget||'');
+    add('BLOCKER','COMPLETION_'+i,b.label||'Queda un dato obligatorio pendiente.',b.stage||'',b.navigationTarget||'');
   });
   if(!comp&&typeof canonicalMissingRequired==='function'){
     canonicalMissingRequired(e).filter(id=>id!=='DF093'&&id!=='Confirmación AS-IS').forEach((id,i)=>{
       const field=(schema?.fields||[]).find(f=>f.Field_ID===id);
-      add('BLOCKER','REQUIRED_'+i,'Falta completar "'+(field?.Pregunta_o_etiqueta_ES||id)+'".',field?.Stage_ID||'');
+      add('BLOCKER','REQUIRED_'+i,'Falta completar "'+(field?.Pregunta_o_etiqueta_ES||'el dato pendiente')+'".',field?.Stage_ID||'');
     });
   }
 
@@ -300,7 +300,7 @@ function preCloseConsistencyReview(e,completion){
       if(valuePresent(explicit)&&valuePresent(reuse)&&consistencyValueSignature(explicit)!==consistencyValueSignature(reuse)){
         const field=(schema?.fields||[]).find(f=>f.Field_ID===fid);
         const describe=v=>typeof formatContextValue==='function'&&field?formatContextValue(field,v):normalizeArray(v).map(x=>typeof x==='object'?JSON.stringify(x):String(x)).join(', ');
-        add('BLOCKER','SOURCE_CONFLICT_'+fid,'"'+(field?.Pregunta_o_etiqueta_ES||fid)+'": la respuesta guardada indica «'+describe(explicit)+'»; la fuente reutilizada indica «'+describe(reuse)+'». Revisa esa sección y corrige el dato de origen para que ambas representen el mismo proceso.',field?.Stage_ID||'');
+        add('BLOCKER','SOURCE_CONFLICT_'+fid,'"'+(field?.Pregunta_o_etiqueta_ES||'el dato revisado')+'": la respuesta guardada indica «'+describe(explicit)+'»; la fuente reutilizada indica «'+describe(reuse)+'». Revisa esa sección y corrige el dato de origen para que ambas representen el mismo proceso.',field?.Stage_ID||'');
       }
     });
   }
@@ -313,7 +313,7 @@ function preCloseConsistencyReview(e,completion){
       participantGap.onlyDeclared.length?'Declarados en alcance sin paso asignado: '+participantGap.onlyDeclared.join(', ')+'.':'',
       participantGap.onlyMapped.length?'Responsables del mapa ausentes del alcance inicial: '+participantGap.onlyMapped.join(', ')+'.':''
     ].filter(Boolean).join(' ');
-    add('BLOCKER','DF017_PARTICIPANT_SCOPE','DF017 · Equipos declarados en PG02 y responsables del mapa difieren. '+sides+' Selecciona y confirma el listado final en la validación PG09. No se modifica ningún valor automáticamente.','S09');
+    add('BLOCKER','DF017_PARTICIPANT_SCOPE','Los equipos declarados en Alcance y los responsables del mapa difieren. '+sides+' Selecciona y confirma el listado final en Validación y cierre. No se modifica ningún valor automáticamente.','S09');
   }
 
   // [AUNEA-FE-ASIS-SCOPE-079] Mandatory explicit review of scope-map warning.
