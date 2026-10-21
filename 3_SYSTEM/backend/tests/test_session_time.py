@@ -3,7 +3,7 @@
 # CHANGE_RISK: HIGH.
 from fastapi.testclient import TestClient
 from aunea_backend.api import app
-from aunea_backend.session_time import TimeProjectionRequest, project_session_time
+from aunea_backend.session_time import TimeProjectionRequest, TimeReconciliationRequest, project_session_time, reconcile_session_time
 
 
 STEP = {
@@ -252,3 +252,38 @@ def test_three_uat3_fixtures_project_in_backend_without_double_counting_friction
         assert "actual_cycle_time_hours" not in out
         assert "roi" not in out
 
+
+
+def test_dec074_provisional_bar_never_equates_wait_exposure_and_elapsed():
+    req=TimeReconciliationRequest(volume=100,period="MONTH",declared_cycle_minutes=250,
+        steps=[dict(STEP,active_time=20,wait_time=230,rework_time=0)])
+    output=reconcile_session_time(req)
+    assert output["identified_minutes"]==250
+    assert output["elapsed_reconciled"] is False
+    assert output["status"]=="PROVISIONAL"
+    assert any("Solapamiento de esperas" in x for x in output["unresolved"])
+
+
+def test_dec074_partial_conditional_route_no_invented_share():
+    conditional=dict(STEP,id="S2",applies_to={"mode":"CONDITION","condition":"Aprobación"},
+                     active_time=90,wait_time=0,rework_time=0)
+    req=TimeReconciliationRequest(volume=100,period="MONTH",declared_cycle_minutes=250,
+        steps=[dict(STEP,active_time=15,wait_time=0,rework_time=0),conditional])
+    output=reconcile_session_time(req)
+    assert next(x["minutes"] for x in output["segments"] if x["key"]=="active")==15
+    assert any("proporción de la ruta" in x for x in output["unresolved"])
+    assert output["elapsed_reconciled"] is False
+
+
+def test_dec074_no_baseline_and_excess_always_pending():
+    req=TimeReconciliationRequest(volume=100,period="MONTH",
+        steps=[dict(STEP,active_time=300,wait_time=0,rework_time=0)])
+    assert reconcile_session_time(req)["status"]=="NO_BASELINE"
+    req.declared_cycle_minutes=250
+    output=reconcile_session_time(req)
+    assert output["exceeds_declared_reference"] is True
+    assert output["unreconciled_percent"]==0
+    assert output["elapsed_reconciled"] is False
+    response=TestClient(app).post("/v1/diagnostic/time-reconciliation",json=req.model_dump())
+    assert response.status_code==200
+    assert response.json()["identified_minutes"]==300
