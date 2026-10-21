@@ -357,6 +357,8 @@ function invalidateProcessLayers(e,from='map'){
   if(typeof invalidateDerivedState==='function')invalidateDerivedState(e,'cambio en capa AS-IS: '+from);
 }
 function confirmProcessLayer(tab){
+  // La ventana compartida nunca firma las capas: sólo captura y navega.
+  if(typeof isProcessEditorWindow==='function'&&isProcessEditorWindow())return false;
   if(typeof guardAsisMutation==='function'&&guardAsisMutation())return;
   const e=currentEng();if(!e)return;
   const key=processLayerKey(tab);
