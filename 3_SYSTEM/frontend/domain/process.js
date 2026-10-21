@@ -1131,6 +1131,16 @@ function asisDemandBaseline(e){
     const period=periodField?raw(periodField):'';
     return esc(v)+(defaultUnit?' '+esc(defaultUnit):'')+(period&&!(period.__asisState)?' · '+esc(labelFrom('OS_PERIOD',String(period).toUpperCase())||period):'');
   };
+  // DF028 percent is a proportion of cases, not a rate of change per month.
+  const failureRatePresentation=()=>{
+    const v=raw('DF028');
+    if(!v||typeof v!=='object'||!(v.unit==='percent'||v.mode==='percent')
+       ||v.value===undefined||v.value===null||v.value===''||!Number.isFinite(Number(v.value)))
+      return '<b>'+num('DF028')+'</b>';
+    const period=v.period?(labelFrom('OS_PERIOD',String(v.period).toUpperCase())||String(v.period)):'';
+    const suffix=period?'<small class="asis-fact-reference">Periodo de referencia: '+esc(String(period).toLocaleLowerCase('es'))+'</small>':'';
+    return '<b>'+esc(v.value)+' % de los casos</b>'+suffix;
+  };
   const seasonality=()=>{
     const v=raw('DF024');if(v&&v.__asisState==='NA')return 'No aplica';
     if(typeof valuePresent==='function'&&!valuePresent(v))return 'Pendiente';
