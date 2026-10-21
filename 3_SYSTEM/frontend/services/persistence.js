@@ -29,7 +29,13 @@ const recoverySame=(x,y)=>JSON.stringify(x)===JSON.stringify(y);
 /* Stable visual-data fingerprint for incoming storage events. Saving in the second
    window can update audit/recovery metadata without changing the mapped process.
    In that case keep the existing SVG, scroll position, and modal DOM intact. */
-function recoveryVisibleFingerprint(snapshot){
+function recoveryVisibleFingerprint(snapshot,activeId,activePage){
+  if(activePage==='proceso'&&activeId){
+    const e=recoveryClone((snapshot?.engagements||[]).find(x=>x.id===activeId)||null);
+    if(e){delete e.updatedAt;delete e.processTab}
+    const company=recoveryClone((snapshot?.companies||[]).find(x=>x.id===e?.companyId)||null);
+    return JSON.stringify({e,company});
+  }
   const v=recoveryShared(snapshot);
   for(const e of v.engagements||[])delete e.updatedAt;
   return JSON.stringify(v);
