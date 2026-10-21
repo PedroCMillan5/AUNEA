@@ -38,6 +38,14 @@ async function main(){
     state.activeEngagementId=row.engagement.id;
     row.engagement.stageId='S01';state.activePage='diagnostico';render();
   });
+  // User-visible diagnostic and page identifiers must not leak into the interface.
+  // Data attributes, workflow internals, logs and identifiers in persisted state stay intact.
+  const assertBusinessOnlyUi=async(where)=>{
+    const visible=await page.locator('body').innerText();
+    const found=visible.match(/\b(?:PG\d{2}|DF\d{3}|S0[1-9]|I90-\d{2}(?:-\d{2})?|C90-\d{2})\b/g)||[];
+    assert.deepEqual(found,[],'Technical identifiers are not user-visible on '+where+': '+found.join(', '));
+  };
+  await assertBusinessOnlyUi('context and objectives');
   const pg01State=()=>page.evaluate(()=>({
     stage:currentEng()?.stageId,
     objectives:currentEng()?.answers?.DF008?.length,
@@ -78,6 +86,7 @@ async function main(){
     };
   });
   console.log('PG02_CHROMIUM_AUDIT: '+JSON.stringify(pg02Audit));
+  await assertBusinessOnlyUi('process scope');
   assert.equal(pg02Audit.stage,'S02','PG02 must be the active page after successful PG01');
   assert.equal(pg02Audit.fields.length>0,true,'PG02 must expose canonical data fields');
   await page.locator('#nextStage').click();
@@ -158,6 +167,7 @@ async function main(){
     }));
     console.log('STAGE_CHROMIUM_AUDIT: '+JSON.stringify(audit));
     assert.equal(audit.id,stageId,'canonical stage order after PG02');
+    await assertBusinessOnlyUi('session stage '+stageId);
     if(stageId==='S08'){
       const context=await page.evaluate(()=>{
         const result={};
