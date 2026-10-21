@@ -335,7 +335,11 @@ function s08PriorContext(fid,e,currentVal,items){
     :'';
   const contextLabels=contextValues.map(v=>labelFrom('OS_CONSTRAINT_TYPE',v)||v);
   const currentLabels=currentValues.map(v=>items?.find(x=>String(x.value)===String(v))?.label||v);
-  const cell=(heading,value,cls)=>'<div class="s08-context-cell '+cls+'"><strong'+(cls==='s08-context-origin'?' title="Recuperado de Contexto y objetivo, apartado Restricciones iniciales."':'')+'>'+heading+'</strong><span>'+esc(value)+'</span></div>';
+  // Source explanation is discoverable from an actual inline icon, not a title on the heading.
+  // It remains present only for fields with genuinely relevant prior context.
+  const sourceHint='Información recuperada de «Contexto y objetivo», apartado «Restricciones iniciales».';
+  const sourceIcon='<span class="s08-context-info" role="img" tabindex="0" aria-label="'+attr(sourceHint)+'" data-tooltip="'+attr(sourceHint)+'"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.7" r=".8" fill="currentColor" stroke="none"/></svg></span>';
+  const cell=(heading,value,cls)=>'<div class="s08-context-cell '+cls+'"><strong>'+heading+(cls==='s08-context-origin'?' '+sourceIcon:'')+'</strong><span>'+esc(value)+'</span></div>';
   return '<div class="reuse-context s08-prior-context" data-s08-context-for="'+attr(fid)+'"><div class="s08-context-grid">'
     +cell('Contexto previo',contextLabels.join(' · '),'s08-context-origin')
     +(currentLabels.length?cell('Opciones marcadas',currentLabels.join(' · '),'s08-context-selected'):'')
