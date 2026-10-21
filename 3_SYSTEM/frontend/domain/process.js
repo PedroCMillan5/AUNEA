@@ -1139,7 +1139,7 @@ function bindAsisTemporalBars(){
   const nodes=[...document.querySelectorAll('[data-asis-temporal]')];if(!nodes.length)return;
   const e=currentEng();if(!e)return;
   const payload=asisTemporalRequest(e),key=JSON.stringify(payload),cacheKey=e.id+'|'+key;
-  const currentNodes=()=>[...document.querySelectorAll('[data-asis-temporal]')];
+  const currentNodes=()=>typeof document!=='undefined'&&document?.querySelectorAll?[...document.querySelectorAll('[data-asis-temporal]')]:[];
   const display=output=>{
     currentNodes().forEach(node=>{
       if(!node.isConnected||node.dataset.asisTemporal!==e.id||node.__temporalKey!==key)return;
