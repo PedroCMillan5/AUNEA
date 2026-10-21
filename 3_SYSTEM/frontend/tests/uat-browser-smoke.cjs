@@ -333,15 +333,6 @@ async function main(){
    await page.locator('#openSessionDisplayFromProcess').waitFor();
    const consultantTime=page.locator('[data-asis-temporal] .asis-temporal-content');
    await consultantTime.waitFor();
-   await page.waitForTimeout(8500);
-   console.log('DEC074_DIAGNOSTIC: '+JSON.stringify(await page.evaluate(()=>({
-     card:document.querySelector('.asis-temporal-content')?.innerHTML?.slice(0,750),
-     backend:state.backendOnline,
-     activePage:state.activePage,
-     current:currentEng()?.id,
-     cache:__asisTemporalCache.size,
-     pending:__asisTemporalPending.size
-   }))));
    await page.waitForFunction(()=>document.querySelector('.asis-temporal-content')?.querySelector('.asis-temporal-track')||document.querySelector('.asis-temporal-content')?.textContent?.includes('Sin cálculo temporal'),{timeout:15000});
    assert.equal(await page.locator('.asis-temporal-card').count(),1,'console has one time bar');
 
