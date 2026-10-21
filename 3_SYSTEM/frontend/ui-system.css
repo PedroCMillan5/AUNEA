@@ -408,7 +408,7 @@ body.asis-console-locked .result-list button:disabled{cursor:not-allowed;opacity
   display:block!important;-webkit-line-clamp:none!important;line-clamp:unset;
   overflow:visible!important;text-overflow:clip!important;
   white-space:normal;overflow-wrap:anywhere;word-break:normal;
-  font-size:11px;line-height:1.32;margin:2px 0 0;
+  font-size:12px;line-height:1.32;margin:2px 0 0;
 }
 .asis-demand-facts .asis-fact-reference{
   display:block;font-size:10px;line-height:1.4;font-weight:500;
@@ -416,6 +416,13 @@ body.asis-console-locked .result-list button:disabled{cursor:not-allowed;opacity
 }
 /* End shared AS-IS boundary presentation. */
 
+/* The same step-title typography in the console and client editor, for each node kind.
+   The boundary uses a separate grid only for space; its font is identical. */
+.process-graph-canvas .graph-flow-step .process-node-title h4,
+.process-graph-canvas .graph-decision-copy h4,
+.process-graph-canvas .flow-boundary .process-node-title h4{
+  font-size:12px;line-height:1.32;
+}
 .process-node-meta{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .process-node-icon{display:grid;place-items:center;width:32px;height:32px;min-width:32px;border-radius:9px;background:var(--system-soft);color:var(--system);border:1px solid var(--system-line)}
 .process-node-icon svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -473,6 +480,9 @@ body.mode-process-editor .client-process-canvas.process-graph-canvas{display:blo
 body.mode-process-editor .process-graph-board{width:max-content;min-width:max-content}
 body.mode-process-editor .process-graph-cell .flow-step{padding:11px;height:var(--graph-card-height);min-height:var(--graph-card-height);max-height:none}
 body.mode-process-editor .process-graph-cell .flow-step h4{font-size:12px;line-height:1.28}
+body.mode-process-editor .process-graph-canvas .graph-flow-step .process-node-title h4,
+body.mode-process-editor .process-graph-canvas .flow-boundary .process-node-title h4,
+body.mode-process-editor .process-graph-canvas .graph-decision-copy h4{font-size:12px;line-height:1.32}
 body.mode-process-editor .process-graph-cell .flow-step p{font-size:10px;line-height:1.35}
 @media(max-width:1100px){
   .process-graph-board{gap:14px 50px}
