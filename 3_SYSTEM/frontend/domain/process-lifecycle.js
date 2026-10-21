@@ -309,9 +309,10 @@ function preCloseConsistencyReview(e,completion){
   // Contextual participants may legitimately differ from actual owners; surface both for review.
   const participantGap=processParticipantsScopeReview(e);
   if(participantGap){
+    const roleNames=values=>values.map(value=>labelFrom('OS_ACTOR_ROLE',value)||value).join(', ');
     const sides=[
-      participantGap.onlyDeclared.length?'Declarados en alcance sin paso asignado: '+participantGap.onlyDeclared.join(', ')+'.':'',
-      participantGap.onlyMapped.length?'Responsables del mapa ausentes del alcance inicial: '+participantGap.onlyMapped.join(', ')+'.':''
+      participantGap.onlyDeclared.length?'Declarados en alcance sin paso asignado: '+roleNames(participantGap.onlyDeclared)+'.':'',
+      participantGap.onlyMapped.length?'Responsables del mapa ausentes del alcance inicial: '+roleNames(participantGap.onlyMapped)+'.':''
     ].filter(Boolean).join(' ');
     add('BLOCKER','DF017_PARTICIPANT_SCOPE','Los equipos declarados en Alcance y los responsables del mapa difieren. '+sides+' Selecciona y confirma el listado final en Validación y cierre. No se modifica ningún valor automáticamente.','S09');
   }
