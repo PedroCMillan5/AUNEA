@@ -53,7 +53,8 @@ test('PG09 surfaces a human review, not a fabricated replacement or engine concl
   const item=r.blockers.find(x=>x.code==='DF017_PARTICIPANT_SCOPE');
   assert.ok(item,'the conflict must be discoverable at PG09');
   assert.equal(item.stage,'S09');
-  assert.match(item.message,/PG02 y responsables del mapa/);
+  assert.match(item.message,/declarados en Alcance y los responsables del mapa/);
+  assert.doesNotMatch(item.message,/\b(?:PG\d{2}|DF\d{3})\b/);
   assert.equal(JSON.stringify(e),before);
   assert.ok(r.blockers.length>=1,'a material disagreement requires explicit final human reconciliation');
 });
