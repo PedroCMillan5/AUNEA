@@ -34,7 +34,7 @@ function s03ServiceTimeComparisonHtml(e){
   else if(cycle.value!==''&&cycle.value!=null&&!factor[cycle.unit])sentence='El tiempo end-to-end necesita una unidad comparable (minutos u horas) para hacer el contraste.';
   else if(target.value!==''&&cycle.value!=='')sentence='Hay valores de tiempo, pero no pueden compararse automáticamente con una base temporal homogénea.';
   return '<strong>SLA frente a tiempo end-to-end</strong>'
-    +'<p><b>SLA (DF025):</b> plazo objetivo de servicio. <b>End-to-end (DF026):</b> duración habitual transcurrida desde el evento inicial hasta el resultado final, incluyendo esperas; no es sólo tiempo de trabajo.</p>'
+    +'<p><b>SLA:</b> plazo objetivo de servicio. <b>Tiempo real end-to-end:</b> duración habitual transcurrida desde el evento inicial hasta el resultado final, incluyendo esperas; no es sólo tiempo de trabajo.</p>'
     +(sentence?'<p class="demand-service-observation">'+sentence+'</p>':'')
     +'<p>Que el valor habitual sea inferior al objetivo no demuestra el cumplimiento de todos los casos. Antes de concluirlo hay que contrastar límites del proceso, calendario natural o laboral, variabilidad y evidencia del dato.</p>';
 }
@@ -253,8 +253,8 @@ function pg02BoundaryReviewHtml(e){
   const issues=typeof processScopeReviewSignals==='function'?processScopeReviewSignals(e):[];
   const noted=typeof scopeReviewAcknowledged==='function'?scopeReviewAcknowledged(e):false;
   const texts=[
-    ['Inicio definido en PG02',initial||'No concretado','Primer paso del mapa',String(first.step_name||'No identificado')],
-    ['Final definido en PG02',final||'No concretado','Último paso del mapa',String(last.step_name||'No identificado')]
+    ['Inicio declarado en Alcance',initial||'No concretado','Primer paso del mapa',String(first.step_name||'No identificado')],
+    ['Final declarado en Alcance',final||'No concretado','Último paso del mapa',String(last.step_name||'No identificado')]
   ];
   return '<section class="pg02-boundary-review" data-pg02-boundary-review="1"><h3>Contraste con el mapa AS-IS</h3>'
     +'<p class="field-help">Reutilizamos los límites definidos aquí y los comparamos con los pasos activos. La equivalencia de su significado requiere revisión humana; AUNEA no modifica ni vuelve a preguntar estos datos.</p>'
@@ -293,22 +293,36 @@ const STAGE_CLIENT_STATE = {
 
 // The inspector explains the stage from its own canonical attributes — objective, input, main
 // interaction, output and exit criterion — instead of restating them as invented copy.
+// Narrative labels for the 90-minute session. The schema keeps every technical
+// stage/field identifier; only the consultant-facing wording is made understandable.
+const STAGE_PLAIN_COPY=Object.freeze({
+  S01:{Criterio_de_salida:'Empresa, persona de contacto y objetivos completos; criterios de éxito opcionales y restricciones cuando correspondan.'},
+  S02:{Regla_de_tiempo:'Si el inicio y el resultado final ya delimitan el proceso, no volver a preguntar por sus límites.'},
+  S03:{Criterio_de_salida:'Volumen habitual y período obligatorios; resto de información según corresponda.'},
+  S04:{Salida:'Mapa del proceso y pasos estructurados.'},
+  S06:{Salida:'Riesgos estructurados para su evaluación.',Regla_de_tiempo:'Profundizar en riesgos únicamente cuando existan señales que lo justifiquen.'},
+  S08:{Entrada:'Contexto, alcance y demanda completados.',Interacción_principal:'Objetivos y restricciones con reutilización de la información anterior.',Criterio_de_salida:'Resultados deseados definidos; restricciones relevantes reutilizadas o confirmadas.'},
+  S09:{Criterio_de_salida:'Cierre validado, siguiente paso acordado y evidencias pendientes identificadas.'}
+});
+function stageNarrative(stage,property){
+  return STAGE_PLAIN_COPY[stage.Stage_ID]?.[property]||stage[property]||'';
+}
 function stagePurposeCard(stage){
-  const rows=[['Objetivo',stage.Objetivo],['Entrada',stage.Entrada],['Interacción principal',stage['Interacción_principal']],
-              ['Salida',stage.Salida],['Criterio de salida',stage.Criterio_de_salida]].filter(([,v])=>v);
+  const rows=[['Objetivo',stageNarrative(stage,'Objetivo')],['Entrada',stageNarrative(stage,'Entrada')],['Interacción principal',stageNarrative(stage,'Interacción_principal')],
+              ['Salida',stageNarrative(stage,'Salida')],['Criterio de salida',stageNarrative(stage,'Criterio_de_salida')]].filter(([,v])=>v);
   return insCard('Qué prepara este paso',`<ul class="numbered-list">${rows.map(([k,v],i)=>
     `<li><span class="n">${i+1}</span><div><b>${esc(k)}</b><p>${esc(v)}</p></div></li>`).join('')}</ul>`,{icon:'▤'});
 }
 function stageCoverageCard(stage,fields){
   const ids=fields.map(f=>f.Field_ID).filter(Boolean).sort();
-  const range=ids.length?(ids.length===1?ids[0]:`${ids[0]} – ${ids[ids.length-1]}`):'—';
+  const questionCount=ids.length;
   return insCard('Cobertura',
-    `<div class="coverage-chips"><span class="chip">${esc(range)}</span><span class="chip">${esc(stage.Stage_ID)}</span><span class="chip gold">${esc(String(stage.Minutos_objetivo))} min</span></div>`
-    +`<p class="ins-note">${esc(stage.Regla_de_tiempo||'')}</p>`,{icon:'◎'});
+    `<div class="coverage-chips"><span class="chip">${questionCount} preguntas</span><span class="chip gold">${esc(String(stage.Minutos_objetivo))} min</span></div>`
+    +`<p class="ins-note">${esc(stageNarrative(stage,'Regla_de_tiempo'))}</p>`,{icon:'◎'});
 }
 function stageClientCard(stage){
   const c=STAGE_CLIENT_STATE[stage.Stage_ID]||{id:'—',shared:false,text:''};
-  return insCard('Vista de la sesión',`<p>${esc(c.text)}</p><div class="coverage-chips" style="margin-top:10px"><span class="chip">${esc(c.id)}</span><span class="chip ${c.shared?'gold':''}">${c.shared?'Compartida con el cliente':'No se comparte'}</span></div>`,
+  return insCard('Vista de la sesión',`<p>${esc(c.text)}</p><div class="coverage-chips" style="margin-top:10px"><span class="chip ${c.shared?'gold':''}">${c.shared?'Compartida con el cliente':'No se comparte'}</span></div>`,
     {accent:true,icon:c.shared?'◉':'◌'});
 }
 
@@ -371,8 +385,8 @@ function stagePage(){
   return stageMarker+pageTop(pageTitle,pageSubtitle,'',STAGE_REFERENCE[stage.Stage_ID]||'')
     + workspace(main,inspector) + bar;
 }
-function processPrompt(e){return `<div class="notice info"><strong>Mapa AS-IS:</strong> los campos DF031–DF055 se capturan principalmente en el editor visual. Actualmente hay <b>${e.processSteps.filter(x=>x.status!=='SUPERSEDED').length}</b> pasos. <button class="btn btn-small btn-primary" data-open-process-editor="1">Abrir editor con el cliente ↗</button><button class="btn btn-small" data-goto-process="1">Abrir aquí</button></div>`}
-function frictionPrompt(e){return `<div class="notice info"><strong>Fricciones:</strong> DF056–DF065 se capturan vinculando cada fricción a uno o varios pasos. Actualmente hay <b>${e.frictions.filter(x=>x.status!=='SUPERSEDED').length}</b> fricciones. <button class="btn btn-small" data-goto-process="1">Abrir fricciones</button></div>`}
+function processPrompt(e){return `<div class="notice info"><strong>Mapa AS-IS:</strong> los pasos y sus datos se capturan principalmente en el editor visual. Actualmente hay <b>${e.processSteps.filter(x=>x.status!=='SUPERSEDED').length}</b> pasos. <button class="btn btn-small btn-primary" data-open-process-editor="1">Abrir editor con el cliente ↗</button><button class="btn btn-small" data-goto-process="1">Abrir aquí</button></div>`}
+function frictionPrompt(e){return `<div class="notice info"><strong>Fricciones:</strong> las fricciones se capturan vinculándolas a uno o varios pasos. Actualmente hay <b>${e.frictions.filter(x=>x.status!=='SUPERSEDED').length}</b> fricciones. <button class="btn btn-small" data-goto-process="1">Abrir fricciones</button></div>`}
 
 // [AUNEA-FE-DF017-FINAL-137] START — Confirm PG02 participants against step actors at PG09.
 // PG02 owns the initial answer; ProcessStep owns actors. The review keeps both sources,
@@ -388,7 +402,7 @@ function df017FinalReviewPanel(e){
   const fmt=arr=>arr.length?arr.map(v=>labelFrom('OS_ACTOR_ROLE',v)||v).join(' · '):'Ninguno declarado';
   const current=confirmed?final:(initial.length?initial:mapped);
   const opts=choices.map(v=>'<label class="df017-final-choice"><input type="checkbox" data-df017-final-option="'+attr(v)+'" '+(current.includes(v)?'checked':'')+'><span>'+esc(labelFrom('OS_ACTOR_ROLE',v)||v)+'</span></label>').join('');
-  return '<div class="df017-final-review" data-df017-final-review="1"><h3>Validación de participantes · DF017</h3>'
+  return '<div class="df017-final-review" data-df017-final-review="1"><h3>Validación de participantes</h3>'
     +'<p>En la página 2 seleccionaste <strong>'+initial.length+' perfil(es)</strong>: '+esc(fmt(initial))+'.</p>'
     +'<p>En el mapa AS-IS aparecen <strong>'+mapped.length+' perfil(es)</strong>: '+esc(fmt(mapped))+'.</p>'
     +'<p class="field-help">Compara ambas listas y confirma qué perfiles deben quedar como participantes finales. Los responsables de cada paso no cambian.</p>'
@@ -456,7 +470,7 @@ function validationSummary(e,completion){
       <div class="notice"><b>Riesgos</b><br>${risks.length} registrado(s), ${risksWithControls} con controles registrados</div>
       <div class="notice"><b>Impactos</b><br>${econ.length} registrado(s) — ${esc(econLine)}</div>
       <div class="notice"><b>Obligatorios</b><br>${captureMissing.length===0?'✓ captura completa':`${captureMissing.length} pendiente(s)`}</div>
-      <div class="notice"><b>Siguiente paso</b><br>${nextStep?esc(nextStep):'Pendiente de acordar (DF098)'}</div>
+      <div class="notice"><b>Siguiente paso</b><br>${nextStep?esc(nextStep):'Pendiente de acordar'}</div>
       <div class="notice"><b>Snapshot final</b><br>${snap?`v${snap.version} · ${esc(formatDateEs(snap.sealedAt))}`:'Pendiente · se genera al confirmar el cierre'}</div>
     </div>
     ${df017FinalReviewPanel(e)}
