@@ -331,6 +331,63 @@ async function main(){
    // through the same runtime state transition used by contextual navigation.
    await page.evaluate(()=>{state.activePage='proceso';render()});
    await page.locator('#openSessionDisplayFromProcess').waitFor();
+
+   // [AUNEA-UAT-PG05-PRESENTATION-150] START — Browser geometry and read-only contract.
+   const stageProgress=await page.evaluate(()=>{
+     const e=currentEng(),previous=e.stageId;
+     e.stageId='S08';updateHeader();
+     const progress=document.getElementById('stepProgress')?.textContent||'';
+     const untouched=e.stageId;
+     e.stageId=previous;updateHeader();
+     return {progress,untouched};
+   });
+   assert.match(stageProgress.progress,/Paso 5 de 9/,'the map visually belongs to stage 5');
+   assert.equal(stageProgress.untouched,'S08','the visual indicator must not rewrite stored stage');
+   const mapAudit=await page.evaluate(()=>{
+     drawProcessGraph();
+     const board=document.querySelector('.process-graph-readonly .process-graph-board');
+     const svg=board?.querySelector('.process-graph-lines');
+     if(!board||!svg)return null;
+     const base=svg.getBoundingClientRect();
+     const captions=[...board.querySelectorAll('.graph-decision-copy')].map(el=>el.getBoundingClientRect());
+     const alternative=[...svg.querySelectorAll('.graph-path-alternative')];
+     const crossing=[];
+     alternative.forEach((path,index)=>{
+       const length=path.getTotalLength();
+       for(let n=0;n<=length;n+=3){
+         const pt=path.getPointAtLength(n),x=base.left+pt.x,y=base.top+pt.y;
+         if(captions.some(r=>x>r.left+1&&x<r.right-1&&y>r.top+1&&y<r.bottom-1)){
+           crossing.push(index);break;
+         }
+       }
+     });
+     const boundary=kind=>{
+       const node=board.querySelector('.flow-boundary.'+kind);
+       const h=node?.querySelector('h4'),p=node?.querySelector('p');
+       return {text:h?.textContent||'',clip:!!h&&(h.scrollHeight>h.clientHeight+2||getComputedStyle(h).overflow==='hidden'),
+         overlap:!!p&&h.getBoundingClientRect().bottom>p.getBoundingClientRect().top+2};
+     };
+     return {crossing,pathCount:alternative.length,start:boundary('start'),end:boundary('end'),
+       badges:[...board.querySelectorAll('.graph-decision-inline>.process-node-links')].map(el=>getComputedStyle(el).top),
+       labels:[...board.querySelectorAll('.graph-decision-copy .boundary-kicker')].map(el=>el.textContent),
+       percentage:document.querySelector('.asis-demand-facts')?.innerText||'',rate:currentEng().answers.DF028};
+   });
+   assert.ok(mapAudit,'PG05 canvas must be measurable');
+   assert.ok(mapAudit.pathCount>0,'the alternative branch is drawn');
+   assert.deepEqual(mapAudit.crossing,[],'NO path cannot cross the decision text');
+   assert.ok(mapAudit.labels.some(s=>/Paso \d+ · Decisión/.test(s)),'the gateway includes its step number');
+   for(const kind of ['start','end']){
+     assert.ok(mapAudit[kind].text.length>25,'full '+kind+' boundary was loaded');
+     assert.equal(mapAudit[kind].clip,false,kind+' boundary is not truncated');
+     assert.equal(mapAudit[kind].overlap,false,kind+' boundary does not overlap its note');
+   }
+   assert.ok(mapAudit.badges.every(top=>top==='40px'||top==='78px'),'F/R/I badges keep their approved positions');
+   if(mapAudit.rate?.unit==='percent'&&mapAudit.rate?.period==='month')
+     assert.match(mapAudit.percentage,/8 % · Mes/,'display the source-declared percent and month unchanged');
+   console.log('PG05_VISUAL_INTEGRITY_PASS: '+JSON.stringify(mapAudit));
+   await page.locator('.process-graph-readonly').screenshot({path:path.join(outDir,'pg05-map-no-text-crossing.png')});
+   // [AUNEA-UAT-PG05-PRESENTATION-150] END
+
    const popupPromise=page.waitForEvent('popup');
    await page.locator('#openSessionDisplayFromProcess').click();
    const editor=await popupPromise;
