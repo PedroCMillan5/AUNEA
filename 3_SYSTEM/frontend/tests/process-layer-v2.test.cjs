@@ -219,7 +219,9 @@ test('decision NO route exits below the gateway, clears the YES card, and overla
   assert.match(process,/const noStartY=dr\.bottom-rect\.top/);
   assert.match(process,/const yesBottom=yesRect\?yesRect\.bottom-rect\.top:mainY/);
   assert.match(process,/Math\.max\(mainY\+94,noStartY\+64,yesBottom\+34\)/);
-  assert.match(process,/appendPath\('M'\+noStartX\+' '\+noStartY\+'V'\+lowerY/);
+  assert.match(process,/const noBypassX=Math\.min\(dr\.left-rect\.left-18,noStartX-94\)/);
+  assert.match(process,/appendPath\('M'\+noStartX\+' '\+noStartY\+'H'\+noBypassX\+'V'\+lowerY/);
+  assert.doesNotMatch(process,/appendPath\('M'\+noStartX\+' '\+noStartY\+'V'\+lowerY/,'NO no longer drops through decision text');
   assert.match(css,/\.process-graph-decision-cell\{align-items:stretch\}/);
   assert.match(css,/\.graph-decision-inline \.flow-step-tools\{[^}]*top:8px/);
   assert.match(css,/\.graph-decision-inline>\.process-node-actions\{[^}]*top:40px/);
