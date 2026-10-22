@@ -366,7 +366,9 @@ function confirmProcessLayer(tab){
     const start=e.answers?.DF014,finish=e.answers?.DF015,hasActive=(e.processSteps||[]).some(x=>x.status!=='SUPERSEDED');
     if((!start||!finish)&&!hasActive)return toast('Define los límites inicial y final o añade al menos un paso antes de confirmar el mapa.');
   }
-  const integrity=processLayerIntegrityIssues(e,key);if(integrity.length)return toast('No se puede confirmar: '+integrity[0].message),false;
+  const integrity=processLayerIntegrityIssues(e,key);
+  if(key==='map'&&typeof pg05PendingReviewIssues==='function')for(const message of pg05PendingReviewIssues(e))integrity.push({message});
+  if(integrity.length)return toast('No se puede confirmar: '+integrity[0].message),false;
   // [AUNEA-FE-ASIS-SCOPE-079] Review before map sign-off, version-bound and auditable.
   const oldScopeReview=e.answerDetails?.DF011__scope_map_review;
   const oldScopeAudit=typeof state!=='undefined'&&Array.isArray(state.audit)?[...state.audit]:null;
