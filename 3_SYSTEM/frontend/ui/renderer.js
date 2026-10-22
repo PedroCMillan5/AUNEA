@@ -521,6 +521,11 @@ if(typeof document!=='undefined'&&typeof document.addEventListener==='function'&
     if(!el)return;
     const fid=el.dataset.otherToggle,wrap=document.querySelector(`[data-detail-wrap="${fid}"]`);
     if(!wrap)return;
+    if(!el.checked&&String(getAnswerDetail(fid)||'').trim()){
+      el.checked=true;el.disabled=true;wrap.hidden=false;wrap.style.display='';
+      if(typeof toast==='function')toast('Borra el texto de Otro antes de desmarcarlo.');
+      return;
+    }
     wrap.hidden=!el.checked;
     wrap.style.display=el.checked?'':'none';
     if(!el.checked)setAnswerDetail(fid,'');
