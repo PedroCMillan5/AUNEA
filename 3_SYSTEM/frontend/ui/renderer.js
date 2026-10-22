@@ -209,6 +209,21 @@ function duplicateEntryIncompleteSignals(e){
     frictions:frictions.filter(f=>normalizeArray(f.affected_steps).map(String).includes(String(step.id))
       &&/reintroduc|doble introducci|copiar datos|transcri/i.test([f.client_label,f.observable_signal,f.notes].filter(Boolean).join(' '))).map(f=>f.client_label||f.id)}));
 }
+// Candidate-only prefill: first upstream step sharing the original document category.
+// An inferred origin is never written to confirmed DF051 without explicit user action.
+function duplicateEntrySuggestedDraft(e,to){
+  const steps=(e.processSteps||[]).filter(x=>x.status!=='SUPERSEDED');
+  const destIndex=steps.findIndex(x=>String(x.id)===String(to));
+  if(destIndex<1)return {data:'',from:'',to};
+  const dest=steps[destIndex],prior=steps.slice(0,destIndex);
+  const source=prior.find(x=>normalizeArray(x.inputs).some(k=>['PDF','DOC','EMAIL'].includes(String(k))
+    &&normalizeArray(dest.inputs).includes(k)));
+  const relevant=(e.frictions||[]).some(f=>f.status!=='SUPERSEDED'
+    &&normalizeArray(f.affected_steps).map(String).includes(String(to))
+    &&/datos|informaci[oó]n/i.test([f.client_label,f.observable_signal].join(' '))
+    &&/reintroduc|transcri|doble introducci/i.test([f.client_label,f.observable_signal].join(' ')));
+  return {data:relevant?'Datos de la factura':'',from:source?.id||'',to};
+}
 function duplicateEntryControl(fid,e,val){
   const rows=duplicateEntryRows(val),drafts=duplicateEntryDraftRows(e,fid,val),opts=stepOptions(e),d=answerDetails(e),dismissed=new Set(normalizeArray(d[`${fid}__dismissed`])),confirmedKeys=new Set(rows.map(x=>`${x.dataKey||x.data}:${x.from}:${x.to}`));
   const suggestions=duplicateEntryCandidates(e).filter(x=>!dismissed.has(x.id)&&!confirmedKeys.has(x.id));
@@ -218,7 +233,7 @@ function duplicateEntryControl(fid,e,val){
   const frictionHtml='';
   const suggestionHtml=suggestions.length?`<div class="duplicate-entry-suggestions"><div class="duplicate-entry-heading"><b>Posibles reintroducciones detectadas</b><span>Confirma sólo las que ocurren realmente.</span></div>${suggestions.map(x=>`<div class="duplicate-entry-suggestion" data-duplicate-suggestion="${attr(x.id)}"><div><b>${esc(x.data)}</b><span>${esc(stepOptions(e).find(o=>o.value===x.from)?.label||x.from)} → ${esc(stepOptions(e).find(o=>o.value===x.to)?.label||x.to)}</span></div><div class="row-actions"><button type="button" class="btn btn-small btn-primary" data-duplicate-confirm="${attr(x.id)}" data-duplicate-data="${attr(x.data)}" data-duplicate-data-key="${attr(x.dataKey)}" data-duplicate-from="${attr(x.from)}" data-duplicate-to="${attr(x.to)}">Confirmar</button><button type="button" class="btn btn-small" data-duplicate-dismiss="${attr(x.id)}">No es una reintroducción</button></div></div>`).join('')}</div>`:'';
   const rowHtml=rows.length?rows.map((x,i)=>`<div class="duplicate-entry-row" data-duplicate-row="${i}"><div class="duplicate-entry-heading"><b>Reintroducción confirmada ${i+1}</b></div><div class="duplicate-entry-fields"><label><span>Información afectada</span><input class="detail-input" data-duplicate-part="data" data-duplicate-index="${i}" value="${attr(x.data||'')}" placeholder="Ej. Datos de la factura"></label><label><span>Disponible originalmente en</span>${canonicalSelect(`${fid}__from_${i}`,opts,x.from||'',`data-duplicate-part="from" data-duplicate-index="${i}"`)}</label><label><span>Se vuelve a introducir en</span>${canonicalSelect(`${fid}__to_${i}`,opts,x.to||'',`data-duplicate-part="to" data-duplicate-index="${i}"`)}</label></div><div class="row-actions"><button type="button" class="btn btn-small btn-outline" data-duplicate-undo="${i}">Deshacer confirmación</button><button type="button" class="btn btn-small duplicate-entry-remove" data-duplicate-remove="${i}">Eliminar</button></div></div>`).join(''):(suggestions.length?'':'<div class="field-help">No hay reintroducciones confirmadas todavía.</div>');
-  const draftHtml=drafts.length?`<div class="duplicate-entry-drafts"><div class="duplicate-entry-heading"><b>Pendientes de confirmar</b><span>Completa los tres datos antes de convertirlos en una reintroducción real.</span></div>${drafts.map((x,i)=>`<div class="duplicate-entry-row duplicate-entry-draft" data-duplicate-draft-row="${i}"><div class="duplicate-entry-fields"><label><span>Información afectada</span><input class="detail-input" data-duplicate-draft-part="data" data-duplicate-draft-index="${i}" value="${attr(x.data||'')}" placeholder="Ej. Datos de la factura"></label><label><span>Disponible originalmente en</span>${canonicalSelect(`${fid}__draft_from_${i}`,opts,x.from||'',`data-duplicate-draft-part="from" data-duplicate-draft-index="${i}"`)}</label><label><span>Se vuelve a introducir en</span>${canonicalSelect(`${fid}__draft_to_${i}`,opts,x.to||'',`data-duplicate-draft-part="to" data-duplicate-draft-index="${i}"`)}</label></div><div class="row-actions duplicate-entry-draft-actions"><button type="button" class="btn btn-small btn-primary" data-duplicate-draft-confirm="${i}" ${duplicateEntryComplete(x)?'':'disabled'}>Confirmar reintroducción</button><button type="button" class="btn btn-small" data-duplicate-draft-remove="${i}">Descartar</button></div></div>`).join('')}</div>`:'';
+  const draftHtml=drafts.length?`<div class="duplicate-entry-drafts"><div class="duplicate-entry-heading"><b>Pendientes de confirmar</b><span>Revisa los valores sugeridos: proceden del proceso y no son hechos confirmados. Confirma solo si los tres son correctos.</span></div>${drafts.map((x,i)=>`<div class="duplicate-entry-row duplicate-entry-draft" data-duplicate-draft-row="${i}"><div class="duplicate-entry-fields"><label><span>Información afectada</span><input class="detail-input" data-duplicate-draft-part="data" data-duplicate-draft-index="${i}" value="${attr(x.data||'')}" placeholder="Ej. Datos de la factura"></label><label><span>Disponible originalmente en</span>${canonicalSelect(`${fid}__draft_from_${i}`,opts,x.from||'',`data-duplicate-draft-part="from" data-duplicate-draft-index="${i}"`)}</label><label><span>Se vuelve a introducir en</span>${canonicalSelect(`${fid}__draft_to_${i}`,opts,x.to||'',`data-duplicate-draft-part="to" data-duplicate-draft-index="${i}"`)}</label></div><div class="row-actions duplicate-entry-draft-actions"><button type="button" class="btn btn-small btn-primary" data-duplicate-draft-confirm="${i}" ${duplicateEntryComplete(x)?'':'disabled'}>Confirmar reintroducción</button><button type="button" class="btn btn-small" data-duplicate-draft-remove="${i}">Descartar</button></div></div>`).join('')}</div>`:'';
   return `<div class="duplicate-entry-control" data-duplicate-field="${fid}"><div class="field-help">Una reintroducción sólo se registra cuando están identificados la información, el origen y el destino. Las detecciones incompletas permanecen como pendientes.</div>${suggestionHtml}${unresolvedHtml}${frictionHtml}${draftHtml}<div class="duplicate-entry-list">${rowHtml}</div><button type="button" class="btn btn-small btn-outline duplicate-entry-add" data-duplicate-add="${fid}">+ Añadir reintroducción</button></div>`;
 }
 // DF054 (Integration_Gaps): SYSTEM_SUGGEST_THEN_CONFIRM authorizes the suggest+confirm interaction
@@ -632,7 +647,7 @@ function bindCanonicalRenderer(){
     if(!e||!to)return;
     const drafts=duplicateEntryDraftRows(e,fid,e.answers?.[fid]);
     if(!drafts.some(x=>String(x.to)===String(to)&&!duplicateEntryComplete(x)))
-      saveDuplicateEntryDraftRows(e,fid,[...drafts,{data:'',from:'',to}]);
+      saveDuplicateEntryDraftRows(e,fid,[...drafts,duplicateEntrySuggestedDraft(e,to)]);
     render();
   });
   document.querySelectorAll('[data-duplicate-add]').forEach(btn=>btn.onclick=()=>{const fid=btn.dataset.duplicateAdd,e=currentEng();if(!e)return;const drafts=duplicateEntryDraftRows(e,fid,e.answers?.[fid]);saveDuplicateEntryDraftRows(e,fid,[...drafts,{data:'',from:'',to:''}]);render()});
