@@ -283,10 +283,10 @@ async function reviewEconomicCandidates(){
         const status=x._review_status||'Pendiente de comprobar';
         const uncovered=normalizeArray(x._uncovered_steps).map(id=>steps.find(s=>s.id===id)?.step_name||id);
         return '<div class="result-item economic-review-card"><div class="result-item-head"><div><b>'+esc(econDriverLabel(x.driver_id))+'</b>'
-          +'<p>'+esc(x.rationale||'')+'</p>'
-          +'<div class="candidate-review-summary"><b>Lo que sabemos</b><p>'+esc(status)+'</p><p><b>Qué comprobar:</b> '+esc(x._review_decision||'Contrasta el importe y su evidencia.')+'</p></div>'
-          +(names.length?'<p><b>Dónde revisar:</b> '+names.map(esc).join(', ')+'</p>':'')
-          +(qs.length?'<div class="field-help"><b>Preguntas para validarlo:</b><br>'+qs.map(q=>'• '+esc(q)).join('<br>')+'</div>':'')
+          +'<p class="candidate-card-subtitle">'+esc(x.driver_id==='ED01'?'Trabajo manual registrado en el proceso.':x.driver_id==='ED05'?'Retrabajo registrado en el proceso.':x.driver_id==='ED13'?'Esperas registradas en el proceso.':'Posible pérdida económica registrada en una fricción.')+'</p>'
+          +'<div class="candidate-review-summary"><b>Lo que sabemos</b><p>'+esc(status)+'</p><b>Qué falta comprobar</b><p>'+esc(x._review_decision||'Contrasta el importe y su evidencia.')+'</p></div>'
+          +(names.length?'<p><b>Pasos relacionados:</b> '+names.map(esc).join(' · ')+'</p>':'')
+          +(qs.length?'<p class="candidate-key-question"><b>Pregunta clave:</b> '+esc(qs[0])+'</p>':'')
           +'</div><div class="result-actions"><button type="button" class="btn btn-small btn-primary" data-review-economic-candidate="'+i+'">Revisar impacto</button></div></div></div>';
       }).join('')+'</div>'
     :'<div class="empty"><h2>No hay nuevos impactos que revisar</h2><p>Los impactos detectables desde el AS-IS ya están registrados o no hay señal suficiente para sugerir otro.</p></div>';
