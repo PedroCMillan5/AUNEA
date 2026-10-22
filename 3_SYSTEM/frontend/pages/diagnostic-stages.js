@@ -79,9 +79,9 @@ function demandTargetTimeBlock(e){
   const units=[{value:'min',label:'minutos'},{value:'h',label:'horas'},{value:'day',label:'días'},{value:'week',label:'semanas'}];
   return '<div class="field full demand-target-cycle" data-demand-target-cycle="1">'
     +'<label>Tiempo end-to-end objetivo del proceso <span class="conditional-tag">objetivo de mejora</span></label>'
-    +'<div class="field-help">Duración que se desea alcanzar desde el inicio hasta el final del proceso, incluidas las esperas. No es el SLA ni el tiempo actual.</div>'
     +'<div class="compound-control"><input type="number" min="0" step="any" inputmode="decimal" data-demand-target-value="1" value="'+attr(saved.value??'')+'" placeholder="Ej. 175" aria-label="Tiempo end-to-end objetivo">'
     +auneaSelectControl('demandTargetUnit',units,saved.unit||'min',{extra:'data-demand-target-unit="1"',placeholder:'Unidad'})+'</div>'
+    +'<div class="field-help">Duración que se desea alcanzar desde el inicio hasta el final del proceso, incluidas las esperas. No es el SLA ni el tiempo actual.</div>'
     +'<div class="field-help" data-demand-target-comparison="1">'+(reduction===null?'Indica un objetivo y un tiempo actual comparable para calcular la reducción deseada.':'Reducción deseada respecto al tiempo actual: '+(reduction>=0?'+':'')+reduction.toLocaleString('es-ES',{maximumFractionDigits:2})+' %.')+'</div>'
     +'</div>';
 }
