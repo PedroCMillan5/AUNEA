@@ -1617,7 +1617,8 @@ function consultantStepsReviewPage(e){
     }):'';
     const df051Validated=fid==='DF051'&&e.answerDetails?.DF051__section_confirmation?.fingerprint===df051Fingerprint;
     if(fid==='DF051'){status=df051Validated?'Confirmado':'Pendiente de validar';kind=df051Validated?'confirmed':'review';}
-    const df051Action=fid==='DF051'?'<button type="button" class="btn btn-small '+(df051Validated?'btn-outline':'btn-primary')+'" data-pg05-validate-section="DF051">'+(df051Validated?'Deshacer validación':'Validar hallazgo')+'</button>':'';
+    const df051HasDrafts=fid==='DF051'&&typeof duplicateEntryDraftRows==='function'&&duplicateEntryDraftRows(e,'DF051',e.answers?.DF051).length>0;
+    const df051Action=fid==='DF051'?'<button type="button" class="btn btn-small '+(df051Validated?'btn-outline':'btn-primary')+'" data-pg05-validate-section="DF051"'+(!df051Validated&&df051HasDrafts?' disabled title="Revisa o descarta primero las reintroducciones pendientes"':'')+'>'+(df051Validated?'Deshacer validación':'Validar hallazgo')+'</button>':'';
     const noReviewKey=fid+'__no_review_needed';
     const noReviewNeeded=!!e.answerDetails?.[noReviewKey];
     const noReviewAvailable=!uniform&&!hasExplicit&&!signal&&!hasReuse&&['DF046','DF047','DF049','DF050','DF052','DF053','DF054','DF055'].includes(fid)&&!(fid==='DF051'&&typeof duplicateEntryDraftRows==='function'&&duplicateEntryDraftRows(e,'DF051',explicit).length);
@@ -1861,6 +1862,10 @@ if(typeof document!=='undefined'&&!document.__auneaPg05FindingActionsBound){
       const details=e.answerDetails||(e.answerDetails={}),key='DF051__section_confirmation';
       if(details[key])delete details[key];
       else {
+        if(typeof duplicateEntryDraftRows==='function'&&duplicateEntryDraftRows(e,'DF051',e.answers?.DF051).length){
+          if(typeof toast==='function')toast('Confirma o descarta las reintroducciones pendientes antes de validar el hallazgo.');
+          return;
+        }
         const steps=activeSteps(e),frictions=activeFrictions(e);
         const fingerprint=JSON.stringify({
           steps:steps.map(x=>[x.id,x.status,x.inputs,x.outputs,x.manual_actions]),
