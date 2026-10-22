@@ -100,6 +100,7 @@ async function reviewRiskCandidates(){
           const related=normalizeArray(x._related_risks);
           const status=String(x._review_status||'Pendiente de revisar');
           return '<div class="result-item risk-candidate-card"><div class="result-item-head"><div><b>'+esc(x.title||'Posible riesgo')+'</b><p>'+esc(x.rationale||'')+'</p>'
+            +'<p class="risk-candidate-related"><b>Clasificación preliminar:</b> '+esc(status)+(related.length?'. Registros relacionados: '+related.map(esc).join(' · '):'')+'. Verifica el escenario antes de crear otro.</p>'
             +(names.length?'<p><b>Dónde revisar:</b> '+names.map(esc).join(', ')+'</p>':'')
             +(names.length>1?'<p class="field-help">AUNEA ha agrupado el mismo escenario detectado en varios pasos. Confirma si es un único riesgo multietapa o ajusta los pasos al revisarlo.</p>':'')
             +(qs.length?'<div class="field-help"><b>Preguntas para validarlo:</b><br>'+qs.map(q=>'• '+esc(q)).join('<br>')+'</div>':'')
