@@ -1602,7 +1602,7 @@ function consultantStepsReviewPage(e){
     const uniformAction=uniform
       ?uniformLocked
         ?'<button type="button" class="btn btn-small btn-outline" data-pg05-unlock="'+fid+'">Deshacer confirmación</button>'
-        :'<button type="button" class="btn btn-small btn-primary" data-pg05-confirm-finding="'+fid+'"'+(!hasExplicit&&fid!=='DF053'?' disabled':'')+'>Confirmar selección</button>'
+        :'<button type="button" class="btn btn-small btn-primary" data-pg05-confirm-finding="'+fid+'"'+(!hasExplicit&&fid!=='DF053'&&fid!=='DF054'?' disabled':'')+'>Confirmar selección</button>'
       :'';
     // [AUNEA-FE-PG05-CANDIDATE-096] START — Open canonical capture for a candidate.
     const findingOpenAction=fid!=='DF051'&&!uniform&&!quickAction&&kind==='review'&&!hasExplicit
@@ -1634,9 +1634,9 @@ function consultantStepsReviewPage(e){
         +(inlineDuplicate?'<details class="pg05-discovery-control" open><summary>Revisar reintroducción de datos</summary><div class="pg05-inline-duplicate" data-pg05-finding-editor="DF051">'+(df051Validated?'<div class="field-help">La sección está confirmada. Pulsa Deshacer validación para editar.</div>':renderStageFields([f],e))+'</div></details>':'')+'</div>':'';
     // [AUNEA-FE-PG05-CONFIRM-UNDO-094] END
     const conceptHelp=fid==='DF051'
-      ?'<div class="pg05-concept-help"><b>¿Qué es una reintroducción?</b> Volver a introducir manualmente datos que ya estaban disponibles. <b>Ejemplo:</b> copiar al ERP los datos de una factura recibida anteriormente. Solo se confirma si se identifican la información, el origen y el destino.</div>'
+      ?'<div class="pg05-concept-help"><p><b>¿Qué es una reintroducción?</b> Volver a introducir manualmente datos que ya estaban disponibles.</p><p><b>Ejemplo:</b> copiar al ERP los datos de una factura recibida anteriormente.</p><p>Solo se confirma si se identifican la información, el origen y el destino.</p></div>'
       :fid==='DF054'
-      ?'<div class="pg05-concept-help"><b>¿Qué es un intercambio manual?</b> Transferir información entre pasos, personas o herramientas mediante una acción humana, sin que necesariamente se vuelvan a introducir los datos. <b>Ejemplo:</b> enviar por correo un PDF de factura para que otra persona lo apruebe. Una transferencia manual no demuestra por sí sola una reintroducción.</div>'
+      ?'<div class="pg05-concept-help"><p><b>¿Qué es un intercambio manual?</b> Transferir información entre pasos, personas o herramientas mediante una acción humana, sin que necesariamente se vuelvan a introducir los datos.</p><p><b>Ejemplo:</b> enviar por correo un PDF de factura para que otra persona lo apruebe.</p><p>Una transferencia manual no demuestra por sí sola una reintroducción.</p></div>'
       :'';
     const card='<article class="pg05-field pg05-field--'+kind+'" data-pg05-field="'+fid+'">'
       +'<div class="pg05-field-top"><b>'+esc(f.Pregunta_o_etiqueta_ES||fid)+'</b>'
@@ -1898,6 +1898,15 @@ if(typeof document!=='undefined'&&!document.__auneaPg05FindingActionsBound){
       ev.preventDefault();
       const e=currentEng(),fid=review.getAttribute('data-pg05-confirm-finding');
       if(!e||!['DF048','DF052','DF053','DF054','DF055'].includes(fid))return;
+      if(fid==='DF054'){
+        const selected=[...document.querySelectorAll('[data-pg05-finding-editor="DF054"] [data-multi="DF054"]:checked')].map(x=>x.value);
+        const unique=[...new Set(selected)];
+        if(!unique.length){
+          if(typeof toast==='function')toast('Selecciona al menos un intercambio o utiliza «No hay validación que hacer».');
+          return;
+        }
+        if(JSON.stringify(normalizeArray(e.answers?.DF054))!==JSON.stringify(unique))setAnswer('DF054',unique);
+      }
       if(fid==='DF053'&&!valuePresent(e.answers?.DF053)){
         const selected=[...document.querySelectorAll('[data-pg05-finding-editor="DF053"] [data-multi="DF053"]:checked')].map(x=>x.value);
         const candidates=selected.length?selected:(typeof reusedValue==='function'?normalizeArray(reusedValue('DF053',e)):[]);
