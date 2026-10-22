@@ -1602,7 +1602,7 @@ function consultantStepsReviewPage(e){
     const uniformAction=uniform
       ?uniformLocked
         ?'<button type="button" class="btn btn-small btn-outline" data-pg05-unlock="'+fid+'">Deshacer confirmación</button>'
-        :'<button type="button" class="btn btn-small btn-primary" data-pg05-confirm-finding="'+fid+'"'+(!hasExplicit&&fid!=='DF053'&&fid!=='DF054'?' disabled':'')+'>Confirmar selección</button>'
+        :(fid==='DF054'&&!hasExplicit?'':'<button type="button" class="btn btn-small btn-primary" data-pg05-confirm-finding="'+fid+'"'+(!hasExplicit&&fid!=='DF053'?' disabled':'')+'>Confirmar selección</button>')
       :'';
     // [AUNEA-FE-PG05-CANDIDATE-096] START — Open canonical capture for a candidate.
     const findingOpenAction=fid!=='DF051'&&!uniform&&!quickAction&&kind==='review'&&!hasExplicit
