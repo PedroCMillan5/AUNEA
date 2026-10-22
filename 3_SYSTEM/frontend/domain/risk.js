@@ -72,12 +72,18 @@ async function reviewRiskCandidates(){
       if(!current.suggested_description)current.suggested_description=x.suggested_description||'';
       grouped.set(key,current);
     });
-    __auneaRiskCandidates=[...grouped.values()];
+    const registered=(e.risks||[]).filter(x=>x.status!=='SUPERSEDED');
+    __auneaRiskCandidates=[...grouped.values()].map(x=>({
+      ...x,
+      _related_risks:registered.filter(risk=>normalizeArray(risk.step_ids).some(id=>normalizeArray(x.step_ids).includes(id)))
+        .map(risk=>String(risk.description||'Riesgo registrado'))
+    }));
     const body=__auneaRiskCandidates.length
-      ?'<div class="notice info"><b>Situaciones que conviene validar con el cliente</b><p>AUNEA ha encontrado señales en el proceso. Son preguntas de revisión: no se crea ni puntúa ningún riesgo hasta que lo confirmes.</p></div><div class="result-list">'
+      ?'<div class="notice info risk-review-intro"><b>Situaciones que conviene validar con el cliente</b><p>AUNEA ha encontrado señales en el proceso. Son preguntas de revisión: no se crea ni puntúa ningún riesgo hasta que lo confirmes.</p></div><div class="result-list">'
         +__auneaRiskCandidates.map((x,i)=>{
           const names=normalizeArray(x.step_ids).map(id=>steps.find(s=>s.id===id)?.step_name||'').filter(Boolean);
           const qs=normalizeArray(x.review_questions).filter(Boolean);
+          const related=normalizeArray(x._related_risks);
           return '<div class="result-item risk-candidate-card"><div class="result-item-head"><div><b>'+esc(x.title||'Posible riesgo')+'</b><p>'+esc(x.rationale||'')+'</p>'
             +(names.length?'<p><b>Dónde revisar:</b> '+names.map(esc).join(', ')+'</p>':'')
             +(names.length>1?'<p class="field-help">AUNEA ha agrupado el mismo escenario detectado en varios pasos. Confirma si es un único riesgo multietapa o ajusta los pasos al revisarlo.</p>':'')
