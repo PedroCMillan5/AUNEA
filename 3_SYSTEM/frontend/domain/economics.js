@@ -233,7 +233,7 @@ function economicReviewCandidates(e){
       &&normalizeArray(x.step_ids).some(id=>stepIds.includes(id)));
     const covered=new Set(related.flatMap(x=>normalizeArray(x.step_ids)));
     const uncovered=stepIds.filter(id=>!covered.has(id));
-    const status=!related.length?'Sin impacto del mismo tipo registrado':uncovered.length?'Cobertura parcial':'Ámbito ya registrado';
+    const status=!related.length?'No hay registro del mismo concepto en estos pasos':uncovered.length?'El concepto consta solo en parte de los pasos':'El concepto ya consta en todos estos pasos';
     candidates.push({driver_id:driver,step_ids:stepIds,rationale,review_questions:questions,_review_status:status,
       _related_impacts:related.map(x=>({id:x.id||'',steps:normalizeArray(x.step_ids)})),_uncovered_steps:uncovered});
   };
@@ -270,7 +270,7 @@ async function reviewEconomicCandidates(){
         const uncovered=normalizeArray(x._uncovered_steps).map(id=>steps.find(s=>s.id===id)?.step_name||id);
         return '<div class="result-item economic-review-card"><div class="result-item-head"><div><b>'+esc(econDriverLabel(x.driver_id))+'</b>'
           +'<p>'+esc(x.rationale||'')+'</p>'
-          +'<p class="candidate-review-explanation"><b>Estado:</b> '+esc(status)+'. '+(uncovered.length?'Sin registrar en: '+uncovered.map(esc).join(', ')+'. ':'')+'Verifica el alcance y evita contabilizar el mismo tiempo dos veces.</p>'
+          +'<div class="candidate-review-summary"><b>¿Ya se está contabilizando?</b><p>'+esc(status)+'.</p>'+(uncovered.length?'<p><b>Pasos sin registro de este concepto:</b> '+uncovered.map(esc).join(' · ')+'</p>':'')+'<p><b>Siguiente acción:</b> revisar el alcance y la evidencia. Que exista un registro no significa que su importe o tiempo esté validado. No contabilices dos veces el mismo concepto.</p></div>'
           +(names.length?'<p><b>Dónde revisar:</b> '+names.map(esc).join(', ')+'</p>':'')
           +(names.length>1?'<p class="field-help">AUNEA ha agrupado el mismo tipo de impacto detectado en varios pasos para evitar recomendaciones repetidas.</p>':'')
           +(qs.length?'<div class="field-help"><b>Preguntas para validarlo:</b><br>'+qs.map(q=>'• '+esc(q)).join('<br>')+'</div>':'')
