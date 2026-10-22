@@ -287,6 +287,26 @@ function currentSelectedConsultantName(){
   if(typeof AUNEA_DEFAULT_PROJECT_OWNER!=='undefined'&&AUNEA_DEFAULT_PROJECT_OWNER?.name)return AUNEA_DEFAULT_PROJECT_OWNER.name;
   return 'Consultor AUNEA';
 }
+// [AUNEA-FE-PG09-SPANISH-DATE-139] START — Unambiguous Spanish display; canonical ISO remains the stored value.
+function spanishDateControl(fid,iso,target){
+  const shown=iso?formatDateEs(iso):'';
+  return '<div class="pg09-spanish-date">'
+    +'<input type="text" inputmode="numeric" autocomplete="off" maxlength="10" placeholder="dd/mm/aaaa" aria-label="Fecha en formato día, mes y año" data-date-es="'+attr(fid)+'" data-date-es-target="'+attr(target)+'" value="'+attr(shown)+'">'
+    +'<button type="button" class="btn btn-small btn-outline pg09-calendar-trigger" data-date-es-open="'+attr(fid)+'" aria-label="Elegir fecha en el calendario" title="Abrir calendario">Calendario</button>'
+    +'<input type="date" tabindex="-1" lang="es-ES" class="pg09-native-date" data-date-es-native="'+attr(fid)+'" value="'+attr(iso||'')+'" aria-hidden="true">'
+    +'</div>';
+}
+function parseSpanishDate(text){
+  const value=String(text||'').trim();
+  if(!value)return '';
+  const found=/^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value);
+  if(!found)return null;
+  const day=Number(found[1]),month=Number(found[2]),year=Number(found[3]);
+  const valueDate=new Date(Date.UTC(year,month-1,day));
+  if(valueDate.getUTCFullYear()!==year||valueDate.getUTCMonth()!==month-1||valueDate.getUTCDate()!==day)return null;
+  return found[3]+'-'+found[2]+'-'+found[1];
+}
+// [AUNEA-FE-PG09-SPANISH-DATE-139] END
 function nextStepWithOwnerDate(f,opts,e){
   const fid=f.Field_ID,d=answerDetails(e);
   const actionValue=d[`${fid}__action`]||'',owner=currentSelectedConsultantName(),dateVal=d[`${fid}__date`]||'',otherDetail=d[`${fid}__other`]||'';
@@ -295,7 +315,7 @@ function nextStepWithOwnerDate(f,opts,e){
   return `<div class="nextstep-inline" data-nextstep-row="${fid}">
     <div class="nextstep-cell nextstep-action"><span class="nextstep-cell-label">Acción acordada</span>${actionSelect}</div>
     <div class="nextstep-cell nextstep-owner"><span class="nextstep-cell-label">Responsable</span><input class="detail-input" data-nextstep-owner="${fid}" value="${attr(owner)}" readonly aria-readonly="true" title="Consultor AUNEA seleccionado en la cabecera"></div>
-    <div class="nextstep-cell nextstep-date"><span class="nextstep-cell-label">Fecha objetivo</span><input type="date" lang="es-ES" data-nextstep-date="${fid}" value="${attr(dateVal)}"><small class="date-es-preview" data-nextstep-date-preview="${fid}">${dateVal?esc(formatDateEs(dateVal)):''}</small></div>
+    <div class="nextstep-cell nextstep-date"><span class="nextstep-cell-label">Fecha objetivo</span>${spanishDateControl(fid,dateVal,"nextstep")}</div>
   </div>${otherBox}`;
 }
 function nextStepActionText(fid,e){
@@ -449,7 +469,7 @@ function renderControl(f,val,opts,e){
   if(c==='BOOLEAN_UNKNOWN'||c==='SEGMENTED'||c==='SEGMENTED_SCALE')return segmented(fid,opts,val);
   if(c==='DATE_WITH_UNKNOWN'){
     const unknown=val==='UNKNOWN';
-    return `<div class="compound-control date-with-preview"><input type="date" lang="es-ES" data-answer="${fid}" value="${attr(unknown?'':val||'')}" ${unknown?'disabled aria-disabled="true"':''}><button type="button" class="btn btn-small ${unknown?'is-selected':''}" aria-pressed="${unknown}" data-set-unknown="${fid}">${unknown?'✓ No disponible':'No disponible'}</button>${val&&!unknown?'<small class="date-es-preview">'+esc(formatDateEs(val))+'</small>':''}</div>`;
+    return `<div class="compound-control date-with-preview">${spanishDateControl(fid,unknown?'':val||'','answer')}<button type="button" class="btn btn-small ${unknown?'is-selected':''}" aria-pressed="${unknown}" data-set-unknown="${fid}">${unknown?'✓ No disponible':'No disponible'}</button></div>`;
   }
   if(c.startsWith('NUMBER')||c.startsWith('PERCENT'))return numberCompound(f,val);
   // DF080/DF081: Ask_Mode:CONDITIONAL_ASK means "ask when it can't be derived and it's material" — no
@@ -623,7 +643,32 @@ function bindCanonicalRenderer(){
   });
   document.querySelectorAll('[data-nextstep-action]').forEach(el=>el.addEventListener('change',()=>{const fid=el.dataset.nextstepAction;answerDetails(currentEng())[`${fid}__action`]=el.value;syncNextStep(fid);render()}));
   document.querySelectorAll('[data-nextstep-other]').forEach(el=>el.addEventListener('input',()=>{const fid=el.dataset.nextstepOther;answerDetails(currentEng())[`${fid}__other`]=el.value;syncNextStep(fid)}));
-  document.querySelectorAll('[data-nextstep-date]').forEach(el=>el.addEventListener('change',()=>{const fid=el.dataset.nextstepDate;answerDetails(currentEng())[`${fid}__date`]=el.value;syncNextStep(fid)}));
+  document.querySelectorAll('[data-date-es]').forEach(el=>{
+    el.addEventListener('input',()=>el.setCustomValidity(''));
+    el.addEventListener('change',()=>{
+      const fid=el.dataset.dateEs,date=parseSpanishDate(el.value);
+      if(date===null){
+        el.setCustomValidity('Introduce una fecha válida con el formato dd/mm/aaaa.');
+        el.reportValidity();return;
+      }
+      el.setCustomValidity('');el.value=date?formatDateEs(date):'';
+      const native=document.querySelector('[data-date-es-native="'+fid+'"]');if(native)native.value=date;
+      if(el.dataset.dateEsTarget==='nextstep'){
+        answerDetails(currentEng())[fid+'__date']=date;syncNextStep(fid);
+      }else setAnswer(fid,date);
+    });
+  });
+  document.querySelectorAll('[data-date-es-open]').forEach(btn=>btn.onclick=()=>{
+    const native=document.querySelector('[data-date-es-native="'+btn.dataset.dateEsOpen+'"]');
+    if(!native)return;
+    try{if(typeof native.showPicker==='function')native.showPicker();else native.click()}
+    catch(_err){native.focus();native.click()}
+  });
+  document.querySelectorAll('[data-date-es-native]').forEach(native=>native.addEventListener('change',()=>{
+    const visible=document.querySelector('[data-date-es="'+native.dataset.dateEsNative+'"]');
+    if(visible){visible.value=native.value?formatDateEs(native.value):'';visible.dispatchEvent(new Event('change',{bubbles:true}))}
+  }));
+
   const safeNumericValue=el=>{
     if(!el||String(el.value??'').trim()==='')return '';
     const native=Number(el.valueAsNumber);
