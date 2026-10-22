@@ -1614,3 +1614,15 @@ body.shell-session .topbar-left{display:none}
 .modal .risk-candidate-card .result-item-head>div:first-child>p:not(:first-of-type),
 .modal .economic-review-card .result-item-head>div:first-child>p:not(:first-of-type){margin:4px 0}
 @media(max-width:580px){.modal .pain-review-card .result-item-head>.result-actions,.modal .risk-candidate-card .result-item-head>.result-actions,.modal .economic-review-card .result-item-head>.result-actions{grid-row:3}}
+
+/* Confirmed AS-IS layer: read-only evidence; the shared footer owns Undo and Next. */
+.asis-layer-confirmed button,
+.asis-layer-confirmed .btn,
+.asis-layer-confirmed input[type="button"],
+.asis-layer-confirmed input[type="submit"]{display:none!important}
+.asis-layer-confirmed input:not([type="checkbox"]):not([type="radio"]),
+.asis-layer-confirmed select,
+.asis-layer-confirmed textarea{pointer-events:none;background:var(--surface,#fff);opacity:1}
+.asis-layer-confirmed input[type="checkbox"],
+.asis-layer-confirmed input[type="radio"]{pointer-events:none}
+.asis-layer-confirmed label{cursor:default}
