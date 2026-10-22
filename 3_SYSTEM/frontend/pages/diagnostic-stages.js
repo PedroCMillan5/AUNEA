@@ -353,7 +353,7 @@ function stagePage(){
   const stageFields=stage.Stage_ID==='S01'?pg01ContextFields(e):renderStageFields(fields,e);
   const pg01Disclosure=stage.Stage_ID==='S01'?pg01CanonicalDisclosure(fields,e):'';
   const engagementArea=stage.Stage_ID==='S02'?engagementBusinessAreaBlock(e):'';
-  const main=stage.Stage_ID==='S01'
+  const main=stage.Stage_ID==='S09'?pg09CaptureContent(e,fields,completion):stage.Stage_ID==='S01'
     ? `<div class="card stage-card">
         ${REQUIRED_LEGEND_HTML}
         <div class="form-grid">${stageFields}</div>
@@ -382,7 +382,7 @@ function stagePage(){
   const pageSubtitle=stage.Stage_ID==='S01'?'Recogemos la base operativa y empresarial antes de entrar en el flujo.':stage.Objetivo;
   const stageMarker=`<span class="diagnostic-stage-marker diagnostic-stage-${String(stage.Stage_ID).toLowerCase()}" data-diagnostic-stage="${attr(stage.Stage_ID)}" hidden></span>`;
   return stageMarker+pageTop(pageTitle,pageSubtitle,'',STAGE_REFERENCE[stage.Stage_ID]||'')
-    + workspace(main,inspector) + bar;
+    +(stage.Stage_ID==='S09'?'<div class="pg09-final-page">'+main+'</div>':workspace(main,inspector)) + bar;
 }
 function processPrompt(e){return `<div class="notice info"><strong>Mapa AS-IS:</strong> los pasos y sus datos se capturan principalmente en el editor visual. Actualmente hay <b>${e.processSteps.filter(x=>x.status!=='SUPERSEDED').length}</b> pasos. <button class="btn btn-small btn-primary" data-open-process-editor="1">Abrir editor con el cliente ↗</button><button class="btn btn-small" data-goto-process="1">Abrir aquí</button></div>`}
 function frictionPrompt(e){return `<div class="notice info"><strong>Fricciones:</strong> las fricciones se capturan vinculándolas a uno o varios pasos. Actualmente hay <b>${e.frictions.filter(x=>x.status!=='SUPERSEDED').length}</b> fricciones. <button class="btn btn-small" data-goto-process="1">Abrir fricciones</button></div>`}
@@ -440,6 +440,43 @@ function confirmDf017FinalSelection(){
   render();return true;
 }
 // [AUNEA-FE-DF017-FINAL-137] END
+
+// [AUNEA-FE-PG09-FINAL-UX-138] START — One owner for capture; concise final review.
+function pg09EvidenceItems(e,fid){
+  const f=(schema?.fields||[]).find(x=>x.Field_ID===fid);
+  const value=f&&typeof effectiveValue==='function'?effectiveValue(f,e):e.answers?.[fid];
+  return normalizeArray(value).map(x=>String(x||'').trim()).filter(x=>x&&x!=='No hay evidencias pendientes'&&x!=='No hay información crítica pendiente');
+}
+function pg09HumanNextStep(e){
+  const text=String(e.answers?.DF098||'').trim();if(!text)return 'Pendiente de acordar';
+  const f=(schema?.fields||[]).find(x=>x.Field_ID==='DF098');
+  const options=f&&typeof fieldOptions==='function'?fieldOptions(f.Option_Set_ID):[];
+  const token=text.split(/\s+[—–-]\s+/)[0].trim();
+  const match=options.find(x=>String(x.value)===token);
+  return match?String(match.label)+text.slice(token.length):text;
+}
+function pg09ReadOnlyGroup(label,items,empty){
+  return '<div class="pg09-readgroup"><h3>'+esc(label)+'</h3>'
+    +(items.length?'<div class="pg09-readrows">'+items.map(x=>'<div class="pg09-readrow">'+esc(x)+'</div>').join('')+'</div>'
+      :'<div class="pg09-readempty">'+esc(empty)+'</div>')+'</div>';
+}
+function pg09CaptureContent(e,fields,completion){
+  const item=id=>{const f=fields.find(x=>x.Field_ID===id);return f?renderStageFields([f],e):'';};
+  const conf=typeof processLayerConfirmations==='function'?processLayerConfirmations(e):{};
+  const ready=!!(conf.map&&conf.frictions&&conf.risks&&conf.impact);
+  const current=e.confirmedAsIs?'Cierre confirmado y registrado':ready?'Las cuatro capas están confirmadas':'Falta confirmar alguna capa del AS-IS';
+  return '<section class="pg09-section"><div class="pg09-section-heading"><h2>Información para el cierre</h2><p>Revisa únicamente lo que sigue pendiente y los acuerdos para continuar. Los pasos, las fricciones, los riesgos y los impactos no se vuelven a capturar.</p></div>'
+    +'<div class="pg09-asis-state '+(ready?'is-ready':'is-pending')+'"><b>'+esc(current)+'</b><span>'+(ready?'La aceptación final se realizará al cerrar el diagnóstico; no hay que volver a confirmar el mapa.':'Revisa las confirmaciones anteriores antes del cierre.')+'</span></div>'
+    +'<div class="pg09-pending-grid">'
+    +pg09ReadOnlyGroup('Información crítica pendiente',pg09EvidenceItems(e,'DF094'),'No se ha identificado información crítica pendiente.')
+    +pg09ReadOnlyGroup('Evidencias por recibir',pg09EvidenceItems(e,'DF095'),'No hay evidencias pendientes de solicitar.')
+    +'</div>'
+    +'<div class="pg09-formblock"><h3>Prioridades y fechas</h3><div class="pg09-fields pg09-fields-two">'+item('DF096')+item('DF097')+'</div></div>'
+    +'<div class="pg09-formblock"><h3>Siguiente paso acordado</h3><div class="pg09-fields">'+item('DF098')+'</div></div>'
+    +'<div class="pg09-formblock"><h3>Uso de datos y notas internas</h3><div class="pg09-fields">'+item('DF099')+item('DF100')+'</div></div>'
+    +'</section>'+validationSummary(e,completion);
+}
+// [AUNEA-FE-PG09-FINAL-UX-138] END
 
 // Real closing screen for the last stage (UAT-VIS-063/064/066/067): factual summary, never a proxy
 // state ("revisada"/"confirmado") that the data model does not actually have (correction #3) — only
