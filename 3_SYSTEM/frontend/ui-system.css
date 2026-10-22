@@ -1596,3 +1596,21 @@ body.shell-session .topbar-left{display:none}
 .modal .pain-review-card .result-item-head>.result-actions,.modal .risk-candidate-card .result-item-head>.result-actions,.modal .economic-review-card .result-item-head>.result-actions{grid-column:2;grid-row:1}
 .modal .pain-review-card .result-item-head>div:first-child>p,.modal .risk-candidate-card .result-item-head>div:first-child>p,.modal .economic-review-card .result-item-head>div:first-child>p,.modal .pain-review-card .result-item-head>div:first-child>.candidate-review-summary,.modal .risk-candidate-card .result-item-head>div:first-child>.candidate-review-summary,.modal .economic-review-card .result-item-head>div:first-child>.candidate-review-summary,.modal .pain-review-card .result-item-head>div:first-child>.field-help,.modal .risk-candidate-card .result-item-head>div:first-child>.field-help,.modal .economic-review-card .result-item-head>div:first-child>.field-help{grid-column:1/-1;width:100%;min-width:0;box-sizing:border-box}
 @media(max-width:580px){.modal .pain-review-card .result-item-head,.modal .risk-candidate-card .result-item-head,.modal .economic-review-card .result-item-head{grid-template-columns:minmax(0,1fr)}.modal .pain-review-card .result-item-head>.result-actions,.modal .risk-candidate-card .result-item-head>.result-actions,.modal .economic-review-card .result-item-head>.result-actions{grid-column:1;grid-row:auto}}
+
+/* Candidate cards: compact two-line heading by the action; full-width details thereafter. */
+.modal .pain-review-card .result-item-head,
+.modal .risk-candidate-card .result-item-head,
+.modal .economic-review-card .result-item-head{row-gap:4px;align-items:start}
+.modal .pain-review-card .result-item-head>div:first-child>p:first-of-type,
+.modal .risk-candidate-card .result-item-head>div:first-child>p:first-of-type,
+.modal .economic-review-card .result-item-head>div:first-child>p:first-of-type{grid-column:1;grid-row:2;margin:0 0 4px;line-height:1.35}
+.modal .pain-review-card .result-item-head>.result-actions,
+.modal .risk-candidate-card .result-item-head>.result-actions,
+.modal .economic-review-card .result-item-head>.result-actions{grid-row:1/3;align-self:start}
+.modal .pain-review-card .result-item-head>div:first-child>.candidate-review-summary,
+.modal .risk-candidate-card .result-item-head>div:first-child>.candidate-review-summary,
+.modal .economic-review-card .result-item-head>div:first-child>.candidate-review-summary{margin:8px 0}
+.modal .pain-review-card .result-item-head>div:first-child>p:not(:first-of-type),
+.modal .risk-candidate-card .result-item-head>div:first-child>p:not(:first-of-type),
+.modal .economic-review-card .result-item-head>div:first-child>p:not(:first-of-type){margin:4px 0}
+@media(max-width:580px){.modal .pain-review-card .result-item-head>.result-actions,.modal .risk-candidate-card .result-item-head>.result-actions,.modal .economic-review-card .result-item-head>.result-actions{grid-row:3}}
