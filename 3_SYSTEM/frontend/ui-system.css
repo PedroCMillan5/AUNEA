@@ -1571,3 +1571,11 @@ body.shell-session .topbar-left{display:none}
 .modal .risk-review-intro + .result-list{display:flex;flex-direction:column;gap:16px}
 .modal .risk-review-intro + .result-list > .risk-candidate-card{margin:0}
 .modal .risk-candidate-related{margin:12px 0;padding:10px 12px;border-left:2px solid #ad8a3e;background:#f9f5eb;line-height:1.5}
+
+/* Unified candidate review: clear summary, comfortable typography, consistent spacing. */
+.modal .economic-review-intro{margin-bottom:24px!important}
+.modal .economic-review-intro + .result-list{display:flex;flex-direction:column;gap:16px}
+.modal .economic-review-intro + .result-list > .economic-review-card{margin:0;padding:20px}
+.modal .pain-review-card,.modal .risk-candidate-card{padding:20px!important}
+.modal .pain-review-card .pain-overlap-note,.modal .risk-candidate-card .risk-candidate-related,.modal .economic-review-card .candidate-review-explanation{max-width:none;margin:14px 0;padding:12px 14px;background:var(--surface-muted,#f7f7f5);border:1px solid var(--border,#e2dfd8);border-left:3px solid #ad8a3e;border-radius:6px;line-height:1.55;overflow-wrap:anywhere;color:inherit}
+.modal .pain-review-card .field-help,.modal .risk-candidate-card .field-help,.modal .economic-review-card .field-help{line-height:1.6;margin-top:12px}
