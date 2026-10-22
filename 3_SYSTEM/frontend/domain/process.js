@@ -1657,9 +1657,14 @@ function consultantStepsReviewPage(e){
   const statusHtml=mapConfirmed
     ?'<div class="pg05-status pg05-status--ok"><b>Mapa confirmado con el cliente.</b> La revisión interna reutiliza los mismos pasos.</div>'
     :'<div class="pg05-status pg05-status--review"><b>Confirmación del mapa pendiente de revalidación.</b> '+(confirmations.map_at?'Hay una confirmación anterior registrada, pero no consta vigente.':'Esta versión todavía no consta confirmada.')+' Revisa la versión actual antes de confirmar.</div>';
-  const nav=mapConfirmed
-    ?'<button type="button" class="btn btn-primary" data-page="fricciones">Continuar a Fricciones →</button>'
-    :'<button type="button" class="btn btn-primary" data-confirm-process-layer="map"'+(integrity.length?' disabled aria-disabled="true"':'')+'>Confirmar mapa revisado</button>';
+  // Match the shared layer confirmation card used by Fricciones/Riesgos: status, action and next together.
+  const mapReviewCopy=integrity.length
+    ?'<div class="flow-confirm-issues">'+integrity.map(x=>'<span>'+esc(x.message||x.label)+'</span>').join('')+'</div>'
+    :'<div class="field-help">'+(mapConfirmed?'La capa está validada.':'Revisa los pasos y confirma esta versión para continuar.')+'</div>';
+  const mapConfirm='<div class="flow-confirm '+(integrity.length?'flow-confirm-needs-review':'')+'"><div><b>'+(mapConfirmed?'Revisión confirmada':integrity.length?'Revisión necesaria':'Revisión pendiente')+'</b>'+mapReviewCopy+'</div><div class="row-actions">'
+    +'<button type="button" class="btn '+(mapConfirmed?'btn-outline':'btn-primary')+'" data-confirm-process-layer="map"'+(integrity.length?' disabled aria-disabled="true"':'')+'>'+(mapConfirmed?'Volver a confirmar':'Confirmar mapa revisado')+'</button>'
+    +'<button type="button" class="btn btn-primary" data-page="fricciones"'+(mapConfirmed?'':' disabled aria-disabled="true" title="Confirma Pasos antes de avanzar"')+'>Continuar a Fricciones →</button>'
+    +'</div></div>';
   return pageTop('Pasos','Revisión interna del AS-IS; los datos del cliente se capturan una sola vez.',
       '<button type="button" class="btn btn-outline" data-page="proceso">Ver mapa AS-IS</button>')
     +asisTemporalBar(e)
@@ -1679,8 +1684,9 @@ function consultantStepsReviewPage(e){
     +section('4. Continuidad del diagnóstico','La edición del mapa se hace aquí sobre el mismo registro. Los hallazgos condicionales sin dato no impiden por sí solos avanzar.',
       (integrity.length?'<div class="pg05-status pg05-status--review"><b>Integridad del mapa pendiente</b>'
         +integrity.map(x=>'<p>'+esc(x.message||x.label)+'</p>').join('')+'</div>':'')
+      +mapConfirm
       +'<div class="pg05-footer"><span>'+(locked?'La vista con cliente mantiene la edición activa':'Las correcciones se guardan en el mapa propietario')+'</span>'
-      +clientReturn+'<div class="pg05-footer-next">'+nav+'</div></div>')+'</div>';
+      +clientReturn+'</div>')+'</div>';
 }
 // [AUNEA-FE-PG05-CONSULTANT-REVIEW-081] END
 function consultantStepsPage(){
