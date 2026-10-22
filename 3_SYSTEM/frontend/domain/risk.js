@@ -93,7 +93,7 @@ async function reviewRiskCandidates(){
       return {...x,_review_status:review.status,_related_risks:review.related};
     });
     const body=__auneaRiskCandidates.length
-      ?'<div class="notice info risk-review-intro"><b>Situaciones que conviene validar con el cliente</b><p>AUNEA ha encontrado señales en el proceso. Son preguntas de revisión: no se crea ni puntúa ningún riesgo hasta que lo confirmes.</p></div><div class="result-list">'
+      ?'<div class="notice info risk-review-intro"><b>Antes de registrar otro riesgo</b><p>Estas situaciones pueden tener consecuencias para el proceso. Comprueba si ya están cubiertas por los riesgos existentes.</p></div><div class="result-list">'
         +__auneaRiskCandidates.map((x,i)=>{
           const names=normalizeArray(x.step_ids).map(id=>steps.find(s=>s.id===id)?.step_name||'').filter(Boolean);
           const qs=normalizeArray(x.review_questions).filter(Boolean);
