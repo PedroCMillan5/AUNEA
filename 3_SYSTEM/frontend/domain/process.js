@@ -1441,6 +1441,15 @@ let __auneaPg05OpenFinding=''; // UI only: retain the expanded owner while captu
 function pg05PendingReviewIssues(e){
   if(!e)return ['No hay estudio activo'];
   const d=e.answerDetails||{},a=e.answers||{},issues=[];
+  // Each derived block can be confirmed independently. Global sign-off waits for all
+  // applicable partial confirmations; no prescribed confirmation order.
+  for(const fid of ['DF046','DF047','DF049','DF050']){
+    const field=(schema?.fields||[]).find(x=>x.Field_ID===fid);
+    if(!field||typeof questionVisible==='function'&&!questionVisible(field,e))continue;
+    const source=typeof reusedValue==='function'?reusedValue(fid,e):undefined;
+    if(valuePresent(source)&&!(typeof isDerivedConfirmed==='function'&&isDerivedConfirmed(field,e,source)))
+      issues.push('Confirma la información recuperada: '+String(field.Pregunta_o_etiqueta_ES||fid)+'.');
+  }
   for(const fid of ['DF048','DF052','DF053','DF054','DF055']){
     const f=(schema?.fields||[]).find(x=>x.Field_ID===fid);
     if(!f||typeof questionVisible==='function'&&!questionVisible(f,e))continue;
