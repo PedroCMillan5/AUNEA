@@ -237,6 +237,10 @@ function setAnswer(fid,value){
   invalidateDerivedState(e,`respuesta ${fid} actualizada`,fid);markDirty(`Respuesta ${fid} actualizada`);if(typeof refreshCaptureProgress==='function')refreshCaptureProgress();if(typeof refreshPendingFieldVisual==='function')refreshPendingFieldVisual(fid,e);
   // [AUNEA-FE-DEMAND-SLA-REFRESH-144] START — Display-only refresh after changing the owner fields.
   if((fid==='DF025'||fid==='DF026')&&typeof refreshS03ServiceTimeComparison==='function')refreshS03ServiceTimeComparison(e);
+  if(fid==='DF026'&&typeof demandTargetTimeBlock==='function'){
+    const host=document.querySelector('[data-demand-target-cycle]');
+    if(host){const template=document.createElement('div');template.innerHTML=demandTargetTimeBlock(e);host.replaceWith(template.firstElementChild);bindDemandTargetCycle();}
+  }
   // [AUNEA-FE-DEMAND-SLA-REFRESH-144] END
 }
 function normalizeArray(v){if(Array.isArray(v))return v;if(v===null||v===undefined||v==='')return [];return [v]}
