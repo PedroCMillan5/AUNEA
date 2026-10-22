@@ -1378,13 +1378,13 @@ function impactLayerReviewSummary(e,integrity=[]){
 
 function asisLayerConfirmBar(layer,done,integrity=[]){
   const labels={map:'Pasos',frictions:'Fricciones',risks:'Riesgos',impact:'Impacto'};
-  const next={map:['fricciones','Continuar a Fricciones →'],frictions:['riesgos','Continuar a Riesgos →'],risks:['impacto','Continuar a Impacto →'],impact:['cierre','Continuar a Validación y cierre →']}[layer];
+  const next={map:['fricciones','Continuar a Fricciones →'],frictions:['riesgos','Continuar a Riesgos →'],risks:['impacto','Continuar a Impacto →'],impact:['S09','Continuar a Validación y cierre →']}[layer];
   const issues=integrity.length>0;
   const explanation=issues?'<div class="flow-confirm-issues">'+integrity.map(x=>'<span>'+esc(x.message||x.label||String(x))+'</span>').join('')+'</div>'
     :'<div class="field-help">'+(done?'La revisión está confirmada. Puedes avanzar.':'Confirma esta capa para poder continuar.')+'</div>';
   return '<div class="flow-confirm'+(issues?' flow-confirm-needs-review':'')+'"><div><b>'+(done?'Revisión confirmada':issues?'Revisión necesaria':'Revisión pendiente')+'</b>'+explanation+'</div><div class="row-actions">'
     +'<button type="button" class="btn '+(done?'btn-outline':'btn-primary')+'" data-confirm-process-layer="'+layer+'"'+(done&&layer==='risks'?' data-undo-risk-layer="1"':'')+(issues?' disabled aria-disabled="true"':'')+'>'+(done&&layer==='risks'?'Deshacer confirmación':done?'Volver a confirmar':layer==='map'?'Confirmar mapa revisado':'Confirmar '+labels[layer])+'</button>'
-    +(next?'<button type="button" class="btn btn-primary" data-page="'+next[0]+'"'+(!done?' disabled aria-disabled="true" title="Confirma '+labels[layer]+' antes de avanzar"':'')+'>'+next[1]+'</button>':'')
+    +(next?'<button type="button" class="btn btn-primary" '+(layer==='impact'?'data-stage-nav':'data-page')+'="'+next[0]+'"'+(!done?' disabled aria-disabled="true" title="Confirma '+labels[layer]+' antes de avanzar"':'')+'>'+next[1]+'</button>':'')
     +'</div></div>';
 }
 function consultantLayerPage(title,intro,body,layer,stageId,{questionsFirst=false}={}){
