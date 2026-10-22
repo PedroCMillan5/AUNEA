@@ -450,7 +450,21 @@ function watchProcessLayerConfirmations(){
   __auneaProcessLayerConfirmObserver=new MutationObserver(()=>dedupeProcessLayerConfirmations());
   __auneaProcessLayerConfirmObserver.observe(document.body,{childList:true,subtree:true});
 }
-function setPage(page){if(['diagnostico','proceso','pasos','fricciones','riesgos','impacto','resultados','tobe','comparacion','revision','modoresultados','implementacion','recomendacion','escenarios','quote'].includes(page)&&!currentEng()){toast('Abre o crea un estudio antes.');state.activePage='estudios';render();return}const e=currentEng(),previousPage=state.activePage;if(page==='diagnostico'&&e&&typeof advanceEngagementTo==='function')advanceEngagementTo(e,'Sesión 1','apertura de la primera sesión');if(page==='proceso'&&e&&!['cliente','fricciones','riesgos','impacto'].includes(e.processTab))e.processTab='cliente';state.activePage=page;render()}
+function setPage(page){
+  // All navigation surfaces obey the same AS-IS layer confirmation gate.
+  const asisSequence=['pasos','fricciones','riesgos','impacto'];
+  const target=asisSequence.indexOf(page),current=asisSequence.indexOf(state.activePage);
+  if(target>0){
+    const e=currentEng(),conf=e&&(typeof processLayerState==='function'?processLayerState(e):(e.layerConfirmations||{}));
+    const keys=['map','frictions','risks','impact'];
+    const firstMissing=keys.slice(0,target).find(key=>!conf?.[key]||(typeof processLayerIntegrityIssues==='function'&&processLayerIntegrityIssues(e,key).length));
+    if(firstMissing){
+      const labels={map:'Pasos',frictions:'Fricciones',risks:'Riesgos'};
+      if(typeof toast==='function')toast('Confirma '+(labels[firstMissing]||firstMissing)+' antes de avanzar.');
+      return;
+    }
+  }
+  if(['diagnostico','proceso','pasos','fricciones','riesgos','impacto','resultados','tobe','comparacion','revision','modoresultados','implementacion','recomendacion','escenarios','quote'].includes(page)&&!currentEng()){toast('Abre o crea un estudio antes.');state.activePage='estudios';render();return}const e=currentEng(),previousPage=state.activePage;if(page==='diagnostico'&&e&&typeof advanceEngagementTo==='function')advanceEngagementTo(e,'Sesión 1','apertura de la primera sesión');if(page==='proceso'&&e&&!['cliente','fricciones','riesgos','impacto'].includes(e.processTab))e.processTab='cliente';state.activePage=page;render()}
 function goToProcessFromStage(){const e=currentEng();if(e){state.returnTo={page:'diagnostico',stageId:e.stageId};e.processTab='cliente'}setPage('proceso')}
 function returnToStage(){const e=currentEng(),rt=state.returnTo;if(e&&rt)e.stageId=rt.stageId;state.returnTo=null;setPage('diagnostico')}
 // screenId is the approved reference a screen must reproduce (e.g. "I90-00-01"). It is internal
