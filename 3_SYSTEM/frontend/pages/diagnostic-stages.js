@@ -65,6 +65,26 @@ function slaTargetBlock(f,e){
   </div>`;
 }
 
+// Demand-only operational extension pending formal Diagnostic Master field governance.
+// Stored separately from DF025 (SLA), DF026 (actual), and DF086 (qualitative desired outcome).
+function demandTargetTimeBlock(e){
+  const saved=e?.answerDetails?.demand_target_end_to_end||{};
+  const cycle=numberParts(e?.answers?.DF026);
+  const factors={min:1,h:60,day:1440,week:10080};
+  const actual=Number(cycle.value)*factors[cycle.unit];
+  const target=Number(saved.value)*factors[saved.unit];
+  const validActual=cycle.value!==''&&cycle.value!=null&&Number.isFinite(actual)&&actual>0;
+  const validTarget=saved.value!==''&&saved.value!=null&&Number.isFinite(target)&&target>0;
+  const reduction=validActual&&validTarget?(1-target/actual)*100:null;
+  const units=[{value:'min',label:'minutos'},{value:'h',label:'horas'},{value:'day',label:'días'},{value:'week',label:'semanas'}];
+  return '<div class="field full demand-target-cycle" data-demand-target-cycle="1">'
+    +'<label>Tiempo end-to-end objetivo del proceso <span class="conditional-tag">objetivo de mejora</span></label>'
+    +'<div class="field-help">Duración que se desea alcanzar desde el inicio hasta el final del proceso, incluidas las esperas. No es el SLA ni el tiempo actual.</div>'
+    +'<div class="compound-control"><input type="number" min="0" step="any" inputmode="decimal" data-demand-target-value="1" value="'+attr(saved.value??'')+'" placeholder="Ej. 175" aria-label="Tiempo end-to-end objetivo">'
+    +auneaSelectControl('demandTargetUnit',units,saved.unit||'min',{extra:'data-demand-target-unit="1"',placeholder:'Unidad'})+'</div>'
+    +'<div class="field-help" data-demand-target-comparison="1">'+(reduction===null?'Indica un objetivo y un tiempo actual comparable para calcular la reducción deseada.':'Reducción deseada respecto al tiempo actual: '+(reduction>=0?'+':'')+reduction.toLocaleString('es-ES',{maximumFractionDigits:2})+' %.')+'</div>'
+    +'</div>';
+}
 function peakVolumeBlock(f,e){
   const value=numberParts(effectiveValue(f,e)),periods=fieldOptions('OS_PERIOD');
   return `<div class="field full volume-pair demand-volume-peak" data-uat="UAT-VIS-024"><label>${esc(f.Pregunta_o_etiqueta_ES)}${diagnosticFieldMeta(f)}</label><div class="compound-control volume-sentence"><input type="number" inputmode="decimal" min="0" step="any" data-number-value="${f.Field_ID}" value="${attr(value.value??'')}" placeholder="200" aria-label="Volumen de pico"><input type="hidden" data-number-unit="${f.Field_ID}" value="case"><span class="unit-label">casos por</span>${auneaSelectControl(`${f.Field_ID}__period`,periods.map(o=>({value:o.value,label:String(o.label).toLowerCase()})),value.period,{extra:`data-number-period="${f.Field_ID}"`,placeholder:'Selecciona periodo…'})}</div><div class="field-help">${esc(f.Objetivo_concreto||'')}</div></div>`;
@@ -79,6 +99,7 @@ function renderStageFields(fields,e){
     }
     if(f.Field_ID==='DF022'&&fields.some(x=>x.Field_ID==='DF021'))continue;
     if(f.Field_ID==='DF023'){out.push(peakVolumeBlock(f,e));continue}
+    if(f.Field_ID==='DF026'){out.push(renderQuestion(f,e));out.push(demandTargetTimeBlock(e));continue}
     if(f.Field_ID==='DF025'){out.push(slaTargetBlock(f,e));continue}
     out.push(renderQuestion(f,e));
   }
