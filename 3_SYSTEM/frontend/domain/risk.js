@@ -100,10 +100,9 @@ async function reviewRiskCandidates(){
           const related=normalizeArray(x._related_risks);
           const status=String(x._review_status||'Pendiente de revisar');
           return '<div class="result-item risk-candidate-card"><div class="result-item-head"><div><b>'+esc(x.title||'Posible riesgo')+'</b><p>'+esc(x.rationale||'')+'</p>'
-            +'<div class="candidate-review-summary"><b>Lo que sabemos</b><p>'+esc(status)+'.</p>'+(related.length?'<p><b>Ya existe:</b> '+related.map(esc).join(' · ')+'</p>':'')+'<p><b>Qué comprobar:</b> si podría ocurrir el mismo incidente y con las mismas consecuencias. Si ya está registrado, no crees otro. Si es un escenario diferente, consúltalo con el cliente.</p></div>'
-            +(names.length?'<p><b>Dónde revisar:</b> '+names.map(esc).join(', ')+'</p>':'')
-            +(names.length>1?'<p class="field-help">AUNEA ha agrupado el mismo escenario detectado en varios pasos. Confirma si es un único riesgo multietapa o ajusta los pasos al revisarlo.</p>':'')
-            +(qs.length?'<div class="field-help"><b>Preguntas para validarlo:</b><br>'+qs.map(q=>'• '+esc(q)).join('<br>')+'</div>':'')
+            +'<div class="candidate-review-summary"><b>Lo que sabemos</b><p>'+esc(status)+'.'+(related.length?' Riesgos que conviene revisar: '+related.map(esc).join(' · ')+'.':'')+'</p><b>Qué falta comprobar</b><p>Si el posible incidente y sus consecuencias ya están cubiertos por un riesgo existente. No se creará otro sin revisarlo.</p></div>'
+            +(names.length?'<p><b>Pasos relacionados:</b> '+names.map(esc).join(' · ')+'</p>':'')
+            +(qs.length?'<p class="candidate-key-question"><b>Pregunta clave:</b> '+esc(qs[0])+'</p>':'')
             +'</div><div class="result-actions"><button type="button" class="btn btn-small btn-primary" data-review-risk-candidate="'+i+'">Revisar con el cliente</button></div></div></div>';
         }).join('')+'</div>'
       :'<div class="empty"><h2>No hay nuevas situaciones que revisar</h2><p>Con la información disponible no se ha detectado otro escenario de riesgo material para revisar.</p></div>';
