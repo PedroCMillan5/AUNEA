@@ -198,16 +198,20 @@ function duplicateEntryCandidates(e){
 }
 // Review-only evidence when a step records rekey/copy or a friction explicitly names re-entry.
 function duplicateEntryIncompleteSignals(e){
+  // Candidate detection is governed by structured selections, never narrative text.
+  // REKEY explicitly indicates re-entry; P03 is the re-entry friction type.
+  // COPY alone is not proof of re-entry and remains available to manual review.
   const steps=(e.processSteps||[]).filter(x=>x.status!=='SUPERSEDED');
   const frictions=(e.frictions||[]).filter(x=>x.status!=='SUPERSEDED');
-  return steps.filter(step=>{
-    const manual=normalizeArray(step.manual_actions).some(v=>['REKEY','COPY'].includes(String(v)));
-    const linked=frictions.some(f=>normalizeArray(f.affected_steps).map(String).includes(String(step.id))
-      &&(/reintroduc|reintroduc|copiar datos|doble introducci|transcri/i.test([f.client_label,f.observable_signal,f.notes].filter(Boolean).join(' '))));
-    return manual||linked;
-  }).map(step=>({id:'step:'+String(step.id),to:String(step.id),step:step.step_name||step.id,
-    frictions:frictions.filter(f=>normalizeArray(f.affected_steps).map(String).includes(String(step.id))
-      &&/reintroduc|doble introducci|copiar datos|transcri/i.test([f.client_label,f.observable_signal,f.notes].filter(Boolean).join(' '))).map(f=>f.client_label||f.id)}));
+  return steps.map(step=>{
+    const manual=normalizeArray(step.manual_actions).map(String).includes('REKEY');
+    const linked=frictions.filter(f=>String(f.friction_type)==='P03'
+      &&normalizeArray(f.affected_steps).map(String).includes(String(step.id)));
+    if(!manual&&!linked.length)return null;
+    return {id:'step:'+String(step.id),to:String(step.id),step:step.step_name||step.id,
+      frictions:linked.map(f=>f.client_label||f.id),
+      sources:[...(manual?['REKEY']:[]),...(linked.length?['P03']:[])]};
+  }).filter(Boolean);
 }
 // Candidate-only prefill: first upstream step sharing the original document category.
 // An inferred origin is never written to confirmed DF051 without explicit user action.
@@ -219,9 +223,8 @@ function duplicateEntrySuggestedDraft(e,to){
   const source=prior.find(x=>normalizeArray(x.inputs).some(k=>['PDF','DOC','EMAIL'].includes(String(k))
     &&normalizeArray(dest.inputs).includes(k)));
   const relevant=(e.frictions||[]).some(f=>f.status!=='SUPERSEDED'
-    &&normalizeArray(f.affected_steps).map(String).includes(String(to))
-    &&/datos|informaci[oó]n/i.test([f.client_label,f.observable_signal].join(' '))
-    &&/reintroduc|transcri|doble introducci/i.test([f.client_label,f.observable_signal].join(' ')));
+    &&String(f.friction_type)==='P03'
+    &&normalizeArray(f.affected_steps).map(String).includes(String(to)));
   return {data:relevant?'Datos de la factura':'',from:source?.id||'',to};
 }
 function duplicateEntryControl(fid,e,val){
