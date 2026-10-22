@@ -1553,3 +1553,6 @@ body.shell-session .topbar-left{display:none}
 @media(max-width:760px){.content:has(.diagnostic-stage-s03) .stage-card>.form-grid>.field[data-field="DF026"],.content:has(.diagnostic-stage-s03) .stage-card>.form-grid>.demand-target-cycle,.content:has(.diagnostic-stage-s03) .stage-card>.form-grid>.field[data-field="DF027"],.content:has(.diagnostic-stage-s03) .stage-card>.form-grid>.field[data-field="DF028"]{grid-column:1/-1}}
 /* Give the active engagement more of the header without hiding actions. */
 @media(min-width:1100px){.topbar{grid-template-columns:minmax(155px,.55fr) minmax(360px,1.45fr) minmax(0,1.45fr)}.topbar-center{max-width:none}}
+
+/* Fricciones: allow natural page height; do not reserve the generic 70px bottom scroll area. */
+.main:has(.flow-confirm [data-confirm-process-layer="frictions"])>.content{min-height:0;padding-bottom:20px;box-sizing:border-box}
