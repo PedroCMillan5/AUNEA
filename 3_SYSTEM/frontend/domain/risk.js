@@ -33,6 +33,21 @@ function migrateRiskCaptureIntegrity(engagements=[]){
   });
   return changed;
 }
+// [AUNEA-FE-RISK-CANDIDATE-RECONCILE-115] START — Structural comparison, no semantic inference.
+function riskCandidateReview(candidate,registered){
+  const ids=normalizeArray(candidate.step_ids).map(String);
+  const normalize=v=>String(v||'').toLocaleLowerCase('es').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
+  const description=normalize(candidate.suggested_description||candidate.title);
+  const matches=registered.map(r=>{
+    const actual=normalizeArray(r.step_ids).map(String),shared=ids.filter(id=>actual.includes(id));
+    return {r,shared,descriptionMatch:!!description&&description===normalize(r.description),sameSteps:ids.length>0&&ids.length===actual.length&&ids.every(id=>actual.includes(id))};
+  }).filter(x=>x.shared.length);
+  const exact=matches.filter(x=>x.descriptionMatch&&x.sameSteps);
+  const partial=matches.filter(x=>x.descriptionMatch&&!x.sameSteps);
+  return {status:exact.length?'Coincidencia estructural':partial.length?'Cobertura parcial':matches.length?'Posible relación':'Sin coincidencia estructurada',
+    related:(exact.length?exact:partial.length?partial:matches).map(x=>String(x.r.description||'Riesgo registrado'))};
+}
+// [AUNEA-FE-RISK-CANDIDATE-RECONCILE-115] END
 let __auneaRiskCandidates=[];
 function riskIncompleteFields(r){
   const missing=[];
@@ -73,17 +88,17 @@ async function reviewRiskCandidates(){
       grouped.set(key,current);
     });
     const registered=(e.risks||[]).filter(x=>x.status!=='SUPERSEDED');
-    __auneaRiskCandidates=[...grouped.values()].map(x=>({
-      ...x,
-      _related_risks:registered.filter(risk=>normalizeArray(risk.step_ids).some(id=>normalizeArray(x.step_ids).includes(id)))
-        .map(risk=>String(risk.description||'Riesgo registrado'))
-    }));
+    __auneaRiskCandidates=[...grouped.values()].map(x=>{
+      const review=riskCandidateReview(x,registered);
+      return {...x,_review_status:review.status,_related_risks:review.related};
+    });
     const body=__auneaRiskCandidates.length
       ?'<div class="notice info risk-review-intro"><b>Situaciones que conviene validar con el cliente</b><p>AUNEA ha encontrado señales en el proceso. Son preguntas de revisión: no se crea ni puntúa ningún riesgo hasta que lo confirmes.</p></div><div class="result-list">'
         +__auneaRiskCandidates.map((x,i)=>{
           const names=normalizeArray(x.step_ids).map(id=>steps.find(s=>s.id===id)?.step_name||'').filter(Boolean);
           const qs=normalizeArray(x.review_questions).filter(Boolean);
           const related=normalizeArray(x._related_risks);
+          const status=String(x._review_status||'Pendiente de revisar');
           return '<div class="result-item risk-candidate-card"><div class="result-item-head"><div><b>'+esc(x.title||'Posible riesgo')+'</b><p>'+esc(x.rationale||'')+'</p>'
             +(names.length?'<p><b>Dónde revisar:</b> '+names.map(esc).join(', ')+'</p>':'')
             +(names.length>1?'<p class="field-help">AUNEA ha agrupado el mismo escenario detectado en varios pasos. Confirma si es un único riesgo multietapa o ajusta los pasos al revisarlo.</p>':'')
