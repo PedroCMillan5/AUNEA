@@ -1642,3 +1642,85 @@ body.shell-session .topbar-left{display:none}
 .modal .candidate-review-summary{padding:11px 13px;margin:8px 0 10px}
 .modal .candidate-review-summary>b:not(:first-child){display:block;margin-top:9px;color:#0f3b2e}
 .modal .candidate-review-summary>p{margin:4px 0 0}
+
+/* [AUNEA-FE-PG09-FINAL-VISUAL-140] START — Final design: one capture review + one controlled closure. */
+.content:has(.diagnostic-stage-s09) .pg09-final-page{display:grid;gap:18px;width:100%;max-width:none;min-width:0;padding:0 0 20px}
+.content:has(.diagnostic-stage-s09) .pg09-final-page>.pg09-section,
+.content:has(.diagnostic-stage-s09) .pg09-final-page>.section{background:#fff;border:1px solid var(--line);border-radius:12px;padding:24px 28px;box-shadow:0 4px 16px rgba(15,40,30,.04);min-width:0;margin:0}
+.content:has(.diagnostic-stage-s09) .pg09-section-heading{margin-bottom:18px}
+.content:has(.diagnostic-stage-s09) .pg09-section-heading h2,
+.content:has(.diagnostic-stage-s09) .pg09-final-page>.section>.section-title h2{margin:0 0 5px;font-size:19px;line-height:1.3}
+.content:has(.diagnostic-stage-s09) .pg09-section-heading p,
+.content:has(.diagnostic-stage-s09) .pg09-final-page>.section>.section-title p{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
+.content:has(.diagnostic-stage-s09) .pg09-asis-state{display:flex;flex-wrap:wrap;gap:5px 12px;align-items:center;padding:13px 16px;border-radius:8px;background:#f2f8f5;border:1px solid #d4e6dc;color:#153e2f;font-size:13px}
+.content:has(.diagnostic-stage-s09) .pg09-asis-state.is-pending{background:#fff8ed;border-color:#e9d8b7;color:#6a4b1a}
+.content:has(.diagnostic-stage-s09) .pg09-asis-state span{color:inherit;opacity:.83}
+.content:has(.diagnostic-stage-s09) .pg09-pending-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.content:has(.diagnostic-stage-s09) .pg09-readgroup{border:1px solid var(--line);border-radius:9px;padding:14px 16px;min-width:0}
+.content:has(.diagnostic-stage-s09) .pg09-readgroup h3,
+.content:has(.diagnostic-stage-s09) .pg09-formblock h3,
+.content:has(.diagnostic-stage-s09) .pg09-confirm-section h3{font-size:14px;line-height:1.3;margin:0 0 10px;color:var(--text)}
+.content:has(.diagnostic-stage-s09) .pg09-readrows{display:grid;gap:7px}
+.content:has(.diagnostic-stage-s09) .pg09-readrow{border:1px solid #e5e9e6;border-radius:6px;background:#f8faf9;padding:9px 11px;line-height:1.4;font-size:13px;overflow-wrap:anywhere}
+.content:has(.diagnostic-stage-s09) .pg09-readempty{color:#326347;background:#f4f8f5;padding:12px;border-radius:6px;font-size:13px}
+.content:has(.diagnostic-stage-s09) .pg09-formblock{margin-top:20px;padding-top:19px;border-top:1px solid #e8ece9}
+.content:has(.diagnostic-stage-s09) .pg09-fields{display:grid;gap:14px}
+.content:has(.diagnostic-stage-s09) .pg09-fields-two{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start;gap:18px}
+.content:has(.diagnostic-stage-s09) .pg09-fields-two>.field{grid-column:auto!important;min-width:0}
+.content:has(.diagnostic-stage-s09) .pg09-fields>.field{min-width:0;margin:0}
+.content:has(.diagnostic-stage-s09) .pg09-fields .field>label{font-size:13px;font-weight:700;margin-bottom:7px}
+.content:has(.diagnostic-stage-s09) .pg09-fields .field-help{font-size:12px;line-height:1.4;margin-top:6px}
+.content:has(.diagnostic-stage-s09) .pg09-spanish-date{display:flex;gap:7px;align-items:center;position:relative;min-width:0;flex:1}
+.content:has(.diagnostic-stage-s09) .pg09-spanish-date>input[type=text]{width:100%;min-width:0;max-width:none;flex:1}
+.content:has(.diagnostic-stage-s09) .pg09-spanish-date>.pg09-calendar-trigger{flex:none;white-space:nowrap}
+.content:has(.diagnostic-stage-s09) .pg09-native-date{position:absolute;right:5px;bottom:0;width:1px;height:1px;opacity:0;pointer-events:none}
+.content:has(.diagnostic-stage-s09) .nextstep-cell{min-width:0}
+.content:has(.diagnostic-stage-s09) .nextstep-inline{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,.8fr) minmax(0,1fr);gap:12px;align-items:end}
+.content:has(.diagnostic-stage-s09) .nextstep-cell-label{min-height:0;margin:0 0 6px;font-size:12px}
+.content:has(.diagnostic-stage-s09) .pg09-confirm-section{margin-top:2px}
+.content:has(.diagnostic-stage-s09) .pg09-layer-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.content:has(.diagnostic-stage-s09) .pg09-layer-tile{border:1px solid #dce7e0;background:#f7faf8;border-radius:9px;padding:13px;display:flex;flex-direction:column;gap:5px}
+.content:has(.diagnostic-stage-s09) .pg09-layer-tile>span{font-size:12px;color:#506159}
+.content:has(.diagnostic-stage-s09) .pg09-layer-tile>b{font-size:15px;color:#173f30}
+.content:has(.diagnostic-stage-s09) .pg09-layer-tile>small{font-size:11px;color:#49695a}
+.content:has(.diagnostic-stage-s09) .df017-final-review{margin-top:18px;padding:16px 18px;border:1px solid #deebe3;border-radius:9px;background:#f7faf8}
+.content:has(.diagnostic-stage-s09) .df017-final-review p{margin:5px 0 9px;line-height:1.45}
+.content:has(.diagnostic-stage-s09) .pg09-validation-section{margin-top:20px;padding-top:20px;border-top:1px solid #e3e9e4}
+.content:has(.diagnostic-stage-s09) .pg09-validation-title p{margin:0 0 12px;font-size:12px;color:var(--muted);line-height:1.45}
+.content:has(.diagnostic-stage-s09) .pg09-consistency-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.content:has(.diagnostic-stage-s09) .pg09-consistency-summary>div{padding:12px 14px;border:1px solid #e3e8e5;border-radius:8px;display:flex;flex-direction:column;gap:5px;background:#f8faf9}
+.content:has(.diagnostic-stage-s09) .pg09-consistency-summary b{font-size:17px;color:#20342a}
+.content:has(.diagnostic-stage-s09) .pg09-consistency-summary span{font-size:12px;color:var(--muted)}
+.content:has(.diagnostic-stage-s09) .pg09-consistency-summary .is-ready{background:#f1f8f3;border-color:#d1e6d7}
+.content:has(.diagnostic-stage-s09) .pg09-consistency-summary .is-pending{background:#fff8ed;border-color:#e9d5a5}
+.content:has(.diagnostic-stage-s09) .pg09-consistency-summary .is-ready b{font-size:13px;color:#1f633f}
+.content:has(.diagnostic-stage-s09) .pg09-consistency-summary .is-pending b{font-size:13px;color:#78531e}
+.content:has(.diagnostic-stage-s09) .pg09-review-list{display:grid;gap:8px;margin-top:12px}
+.content:has(.diagnostic-stage-s09) .pg09-review-row{display:flex;justify-content:space-between;gap:12px;align-items:center;background:#fcfaf6;border:1px solid #eaddc8;border-left:3px solid #a47a35;border-radius:7px;padding:11px 14px;min-width:0}
+.content:has(.diagnostic-stage-s09) .pg09-review-row.is-blocker{background:#fff6f5;border-color:#e7bdb7;border-left-color:#b94031}
+.content:has(.diagnostic-stage-s09) .pg09-review-row>div{display:flex;flex-direction:column;gap:4px;min-width:0}
+.content:has(.diagnostic-stage-s09) .pg09-review-row span{font-size:13px;line-height:1.45;overflow-wrap:anywhere}
+.content:has(.diagnostic-stage-s09) .pg09-review-row small{font-size:11px;color:#755d35}
+.content:has(.diagnostic-stage-s09) .pg09-clean-review{margin:12px 0;color:#1d653c;font-size:13px}
+.content:has(.diagnostic-stage-s09) .pg09-missing-required{padding:12px;background:#fff8e9;border:1px solid #e8d7b8;border-radius:8px;margin-top:12px}
+.content:has(.diagnostic-stage-s09) .pg09-close-footer{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-top:22px;border-top:1px solid #e5ece7;padding-top:20px}
+.content:has(.diagnostic-stage-s09) .pg09-close-footer h3{margin:0 0 5px}
+.content:has(.diagnostic-stage-s09) .pg09-close-footer p{font-size:12px;color:var(--muted);margin:0;line-height:1.45}
+.content:has(.diagnostic-stage-s09) .pg09-close-actions{flex:none}
+.content:has(.diagnostic-stage-s09) .pg09-snapshot-meta{padding-top:5px}
+.content:has(.diagnostic-stage-s09) .pg09-final-page .field .meta-tag,
+.content:has(.diagnostic-stage-s09) .pg09-final-page .field .requiredness-label{display:none}
+@media(max-width:1000px){
+ .content:has(.diagnostic-stage-s09) .pg09-pending-grid,.content:has(.diagnostic-stage-s09) .pg09-fields-two{grid-template-columns:1fr}
+ .content:has(.diagnostic-stage-s09) .nextstep-inline{grid-template-columns:1fr 1fr}
+ .content:has(.diagnostic-stage-s09) .nextstep-action{grid-column:1/-1}
+}
+@media(max-width:650px){
+ .content:has(.diagnostic-stage-s09) .pg09-final-page>.pg09-section,.content:has(.diagnostic-stage-s09) .pg09-final-page>.section{padding:18px}
+ .content:has(.diagnostic-stage-s09) .pg09-layer-grid,.content:has(.diagnostic-stage-s09) .pg09-consistency-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .content:has(.diagnostic-stage-s09) .nextstep-inline{grid-template-columns:1fr}
+ .content:has(.diagnostic-stage-s09) .nextstep-action{grid-column:auto}
+ .content:has(.diagnostic-stage-s09) .pg09-close-footer{align-items:stretch;flex-direction:column}
+ .content:has(.diagnostic-stage-s09) .pg09-close-actions .btn{width:100%}
+}
+/* [AUNEA-FE-PG09-FINAL-VISUAL-140] END */
