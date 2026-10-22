@@ -516,11 +516,10 @@ async function reviewPainCandidates(){
           const overlaps=normalizeArray(x._related_frictions);
           const status=String(x._review_status||'Pendiente de revisar');
           return '<div class="result-item pain-review-card"><div class="result-item-head"><div><b>'+esc(labelFrom('OS_FRICTION_TYPE',x.pain_id)||'Posible fricción')+'</b>'
-            +'<p>'+esc(x.rationale||'')+'</p>'
-            +'<div class="candidate-review-summary"><b>Lo que sabemos</b><p>'+esc(status)+'.</p>'+(overlaps.length?'<p><b>Ya existe:</b> '+overlaps.map(esc).join(' · ')+'</p>':'')+'<p><b>Qué comprobar:</b> si ocurre exactamente el mismo problema, revisa la ficha existente. Si la causa o el problema son distintos, contrástalo con el cliente antes de crear una fricción.</p></div>'
-            +(stepNames.length?'<p><b>Dónde ocurre:</b> '+stepNames.map(esc).join(', ')+'</p>':'')
-            +(stepNames.length>1?'<p class="field-help">La sugerencia afecta a varios pasos. Comprueba cuáles intervienen realmente.</p>':'')
-            +(questions.length?'<div class="field-help"><b>Preguntas para validarlo con el cliente:</b><br>'+questions.map(q=>'• '+esc(q)).join('<br>')+'</div>':'')
+            +'<p class="candidate-card-subtitle">'+esc(x.rationale||'Posible problema detectado en el proceso.')+'</p>'
+            +'<div class="candidate-review-summary"><b>Lo que sabemos</b><p>'+esc(status)+'.'+(overlaps.length?' Fricciones que conviene revisar: '+overlaps.join(' · ')+'.':'')+'</p><b>Qué falta comprobar</b><p>Si se trata del mismo problema ya registrado o de uno distinto. No se añadirá ninguna fricción sin confirmación.</p></div>'
+            +(stepNames.length?'<p><b>Pasos relacionados:</b> '+stepNames.map(esc).join(' · ')+'</p>':'')
+            +(questions.length?'<p class="candidate-key-question"><b>Pregunta clave:</b> '+esc(questions[0])+'</p>':'')
             +'</div><div class="result-actions"><button type="button" class="btn btn-small btn-primary" data-review-pain-candidate="'+i+'">Revisar con el cliente</button></div></div></div>';
         }).join('')+'</div>'
       :'<div class="empty"><h2>No hay nuevas señales que revisar</h2><p>Con la información disponible no se ha detectado ninguna posible fricción adicional.</p></div>';
