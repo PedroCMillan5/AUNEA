@@ -288,12 +288,12 @@ function currentSelectedConsultantName(){
   return 'Consultor AUNEA';
 }
 // [AUNEA-FE-PG09-SPANISH-DATE-139] START — Unambiguous Spanish display; canonical ISO remains the stored value.
-function spanishDateControl(fid,iso,target){
+function spanishDateControl(fid,iso,target,disabled=false){
   const shown=iso?formatDateEs(iso):'';
   return '<div class="pg09-spanish-date">'
-    +'<input type="text" inputmode="numeric" autocomplete="off" maxlength="10" placeholder="dd/mm/aaaa" aria-label="Fecha en formato día, mes y año" data-date-es="'+attr(fid)+'" data-date-es-target="'+attr(target)+'" value="'+attr(shown)+'">'
-    +'<button type="button" class="btn btn-small btn-outline pg09-calendar-trigger" data-date-es-open="'+attr(fid)+'" aria-label="Elegir fecha en el calendario" title="Abrir calendario">Calendario</button>'
-    +'<input type="date" tabindex="-1" lang="es-ES" class="pg09-native-date" data-date-es-native="'+attr(fid)+'" value="'+attr(iso||'')+'" aria-hidden="true">'
+    +'<input type="text" inputmode="numeric" autocomplete="off" maxlength="10" placeholder="dd/mm/aaaa" aria-label="Fecha en formato día, mes y año" data-date-es="'+attr(fid)+'" data-date-es-target="'+attr(target)+'" value="'+attr(shown)+'"'+(disabled?' disabled aria-disabled="true"':'')+'>'
+    +'<button type="button" class="btn btn-small btn-outline pg09-calendar-trigger" data-date-es-open="'+attr(fid)+'" aria-label="Elegir fecha en el calendario" title="Abrir calendario"'+(disabled?' disabled':'')+'>Calendario</button>'
+    +'<input type="date" tabindex="-1" lang="es-ES" class="pg09-native-date" data-date-es-native="'+attr(fid)+'" value="'+attr(iso||'')+'" aria-hidden="true"'+(disabled?' disabled':'')+'>'
     +'</div>';
 }
 function parseSpanishDate(text){
@@ -469,7 +469,7 @@ function renderControl(f,val,opts,e){
   if(c==='BOOLEAN_UNKNOWN'||c==='SEGMENTED'||c==='SEGMENTED_SCALE')return segmented(fid,opts,val);
   if(c==='DATE_WITH_UNKNOWN'){
     const unknown=val==='UNKNOWN';
-    return `<div class="compound-control date-with-preview">${spanishDateControl(fid,unknown?'':val||'','answer')}<button type="button" class="btn btn-small ${unknown?'is-selected':''}" aria-pressed="${unknown}" data-set-unknown="${fid}">${unknown?'✓ No disponible':'No disponible'}</button></div>`;
+    return `<div class="compound-control date-with-preview">${spanishDateControl(fid,unknown?'':val||'','answer',unknown)}<button type="button" class="btn btn-small ${unknown?'is-selected':''}" aria-pressed="${unknown}" data-set-unknown="${fid}">${unknown?'✓ No disponible':'No disponible'}</button></div>`;
   }
   if(c.startsWith('NUMBER')||c.startsWith('PERCENT'))return numberCompound(f,val);
   // DF080/DF081: Ask_Mode:CONDITIONAL_ASK means "ask when it can't be derived and it's material" — no
