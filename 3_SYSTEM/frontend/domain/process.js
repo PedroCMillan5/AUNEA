@@ -1567,7 +1567,7 @@ function consultantStepsReviewPage(e){
     // [AUNEA-FE-PG05-CANONICAL-CHOICES-106] END
     const sourceEditor=derived&&hasReuse&&kind!=='confirmed'&&sourceSet
       ?'<div class="pg05-source-review"><b>Opciones recuperadas del mapa</b><small>Las opciones de la última revisión aparecen marcadas; puedes modificar la selección global.</small>'
-       +selectedHtml('pg05_review_'+fid,globalChoices,[...selectedGlobal],{wrapped:true,preferredValues:initialSourceValues})
+       +selectedHtml('pg05_review_'+fid,globalChoices,[...selectedGlobal],{wrapped:true,preferredValues:initialSourceValues,detailId:'pg05_other_'+fid,detailValue:selectionStored?.otherText||''})
        +'</div>':'';
     // [AUNEA-FE-PG05-SOURCE-SELECTION-104] END
     // [AUNEA-FE-PG05-GLOBAL-REVIEW-105] START — selected values from process owner.
@@ -1762,11 +1762,25 @@ bindForms=function(){
     const source=normalizeArray(reusedValue(fid,e)).map(String);
     const selected=[...document.querySelectorAll('[data-v1-multi="pg05_review_'+fid+'"]:checked')].map(x=>x.value);
     const details=e.answerDetails||(e.answerDetails={});
-    details[fid+'__global_review']={base:source,values:selected};
+    details[fid+'__global_review']={base:source,values:selected,otherText:details[fid+'__global_review']?.otherText||''};
     delete details[fid+'__derived_confirmation'];
     // Any revised PG05 map value requires explicit map reconfirmation before proceeding.
     if(typeof invalidateProcessLayersSafe==='function')invalidateProcessLayersSafe(e,'map');
     e.updatedAt=now();markDirty('Selección global revisada '+fid);
+  }));
+  document.querySelectorAll('[id^="pg05_other_DF"]').forEach(input=>input.addEventListener('input',()=>{
+    const fid=input.id.replace(/^pg05_other_/,'');if(!['DF046','DF047','DF049','DF050'].includes(fid))return;
+    const e=currentEng();if(!e)return;
+    const key='pg05_review_'+fid,other=document.querySelector('[data-v1-other-toggle="'+key+'"]');
+    if(other){other.checked=!!input.value.trim()||other.checked;other.disabled=!!input.value.trim();}
+    const details=e.answerDetails||(e.answerDetails={});
+    const source=normalizeArray(reusedValue(fid,e)).map(String);
+    const selected=[...document.querySelectorAll('[data-v1-multi="'+key+'"]:checked')].map(x=>x.value);
+    if(input.value.trim()&&other&&!selected.includes(other.value))selected.push(other.value);
+    details[fid+'__global_review']={base:source,values:selected,otherText:input.value};
+    delete details[fid+'__derived_confirmation'];
+    if(typeof invalidateProcessLayersSafe==='function')invalidateProcessLayersSafe(e,'map');
+    e.updatedAt=now();markDirty('Detalle Otro actualizado '+fid);
   }));
   document.querySelectorAll('[data-pg05-finding-editor]').forEach(el=>el.addEventListener('toggle',()=>{
     if(!el.isConnected)return; // Ignore deferred close events from DOM nodes replaced by render().
