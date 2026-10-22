@@ -503,8 +503,8 @@ async function reviewPainCandidates(){
         return {fr,shared,sameType,exactSteps:ids.length>0&&ids.length===actual.length&&ids.every(id=>actual.includes(id))};
       }).filter(x=>x.shared.length);
       const exact=matches.filter(x=>x.sameType&&x.exactSteps),partial=matches.filter(x=>x.sameType&&!x.exactSteps);
-      const status=exact.length?'Coincidencia estructural':partial.length?'Cobertura parcial':matches.length?'Posible relación':'Sin coincidencia estructurada';
-      const related=(exact.length?exact:partial.length?partial:matches).map(x=>String(x.fr.client_label||x.fr.id));
+      const status=exact.length?'Coincide en tipo y pasos':partial.length?'Mismo tipo; pasos diferentes':matches.length?'Hay otros problemas en esos pasos':'No se ha registrado un problema equivalente';
+      const related=(exact.length?exact:partial.length?partial:[]).map(x=>String(x.fr.client_label||x.fr.id));
       return {...candidate,_review_status:status,_related_frictions:related};
     });
     // [AUNEA-FE-PAIN-CANDIDATE-RECONCILE-114] END
@@ -517,9 +517,9 @@ async function reviewPainCandidates(){
           const status=String(x._review_status||'Pendiente de revisar');
           return '<div class="result-item pain-review-card"><div class="result-item-head"><div><b>'+esc(labelFrom('OS_FRICTION_TYPE',x.pain_id)||'Posible fricción')+'</b>'
             +'<p>'+esc(x.rationale||'')+'</p>'
-            +'<p class="pain-overlap-note"><b>Clasificación preliminar:</b> '+esc(status)+(overlaps.length?'. Registros relacionados: '+overlaps.map(esc).join(', '):'')+'. Comprueba causa y señal observable; esto no confirma equivalencia.</p>'
+            +'<p class="pain-overlap-note"><b>¿Ya lo hemos recogido?</b> '+esc(status)+(overlaps.length?'. Revisa: '+overlaps.map(esc).join(', '):'')+'. Si describe el mismo problema, no lo registres otra vez.</p>'
             +(stepNames.length?'<p><b>Dónde ocurre:</b> '+stepNames.map(esc).join(', ')+'</p>':'')
-            +(stepNames.length>1?'<p class="field-help">AUNEA ha agrupado la misma señal detectada en varios pasos. Confirma si es una única fricción multietapa o desmarca los pasos que correspondan si son incidencias distintas.</p>':'')
+            +(stepNames.length>1?'<p class="field-help">La sugerencia afecta a varios pasos. Comprueba cuáles intervienen realmente.</p>':'')
             +(questions.length?'<div class="field-help"><b>Preguntas para validarlo con el cliente:</b><br>'+questions.map(q=>'• '+esc(q)).join('<br>')+'</div>':'')
             +'</div><div class="result-actions"><button type="button" class="btn btn-small btn-primary" data-review-pain-candidate="'+i+'">Revisar con el cliente</button></div></div></div>';
         }).join('')+'</div>'
