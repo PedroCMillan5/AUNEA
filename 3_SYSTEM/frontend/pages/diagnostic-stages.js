@@ -374,12 +374,12 @@ function stagePage(){
   // the blockers that explain why it is or is not available. Two of them was one too many.
   const bar=actionBar(
     `<button class="btn" id="saveDraft">Guardar borrador</button>`
-    +`<button class="btn btn-outline" id="openSessionDisplay" ${typeof CLIENT_DISPLAY_PAUSED!=='undefined'&&CLIENT_DISPLAY_PAUSED?'disabled aria-disabled="true" title="Vista cliente en pausa: revisión de coherencia del flujo"':''}>${typeof CLIENT_DISPLAY_PAUSED!=='undefined'&&CLIENT_DISPLAY_PAUSED?'Vista cliente en pausa':'Abrir vista de sesión'}</button>`,
+    +(isLastStage&&typeof CLIENT_DISPLAY_PAUSED!=='undefined'&&CLIENT_DISPLAY_PAUSED?'':`<button class="btn btn-outline" id="openSessionDisplay" ${typeof CLIENT_DISPLAY_PAUSED!=='undefined'&&CLIENT_DISPLAY_PAUSED?'disabled aria-disabled="true" title="Vista cliente en pausa: revisión de coherencia del flujo"':''}>${typeof CLIENT_DISPLAY_PAUSED!=='undefined'&&CLIENT_DISPLAY_PAUSED?'Vista cliente en pausa':'Abrir vista de sesión'}</button>`),
     `<button class="btn" id="prevStage" ${stageIndex===0?'disabled':''}>Volver</button>`
     +(isLastStage?'':`<button class="btn btn-primary" id="nextStage">Continuar a ${esc(String(next.Stage_ES).toLowerCase())} →</button>`));
 
   const pageTitle=stage.Stage_ID==='S01'?'Contexto del cliente':stage.Stage_ES;
-  const pageSubtitle=stage.Stage_ID==='S01'?'Recogemos la base operativa y empresarial antes de entrar en el flujo.':stage.Objetivo;
+  const pageSubtitle=stage.Stage_ID==='S09'?'Comprueba los pendientes, confirma el diagnóstico y deja acordado el siguiente paso.':stage.Stage_ID==='S01'?'Recogemos la base operativa y empresarial antes de entrar en el flujo.':stage.Objetivo;
   const stageMarker=`<span class="diagnostic-stage-marker diagnostic-stage-${String(stage.Stage_ID).toLowerCase()}" data-diagnostic-stage="${attr(stage.Stage_ID)}" hidden></span>`;
   return stageMarker+pageTop(pageTitle,pageSubtitle,'',STAGE_REFERENCE[stage.Stage_ID]||'')
     +(stage.Stage_ID==='S09'?'<div class="pg09-final-page">'+main+'</div>':workspace(main,inspector)) + bar;
