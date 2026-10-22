@@ -1509,7 +1509,7 @@ body.shell-session .topbar-left{display:none}
 .pg05-source-review .contextual-show-all{display:inline-flex;width:max-content;max-width:100%;justify-self:start;align-self:flex-start;flex:0 0 auto;white-space:normal;text-align:center}
 
 /* [AUNEA-FE-RISKS-RECONCILE-111] Explicitly distinguish unavailable next-step actions. */
-.flow-confirm [data-page][disabled]{opacity:.45;cursor:not-allowed;filter:grayscale(.25);pointer-events:none}
+.flow-confirm [data-page][disabled],.flow-confirm [data-stage-nav][disabled]{opacity:.45;cursor:not-allowed;filter:grayscale(.25);pointer-events:none}
 
 /* [AUNEA-FE-RISKS-AIR-113] START — rhythm between risk sections, no global component changes */
 .risk-review-card + .risk-review-card{margin-top:14px}
