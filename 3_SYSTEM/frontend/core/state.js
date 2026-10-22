@@ -91,11 +91,12 @@ function migrateLoadedState(){
 // INPUTS: current in-memory state; OUTPUTS: saved / pending / error UI. No new business fields.
 // SIDE EFFECTS: synchronous localStorage write; no optimistic success on failure. REVIEW.
 let saveStateFailure=false;
+let __auneaPendingFieldId=null;
 function saveState(reason='Guardado manual'){
   if(isClientDisplay())return false;
   try{
     localStorage.setItem(STORAGE_KEY,JSON.stringify({...state,dirty:false}));
-    state.dirty=false;saveStateFailure=false;
+    state.dirty=false;saveStateFailure=false;__auneaPendingFieldId=null;
     audit(reason);updateHeader();toast('Guardado localmente en este navegador.');
     return true;
   }catch(error){
@@ -131,8 +132,10 @@ function fieldStatusIcon(kind,source=''){
 }
 function refreshFieldSaveIcons(){
   if(typeof document==='undefined'||!document.querySelectorAll)return;
-  const p=fieldSavedPresentation();
   document.querySelectorAll('[data-field-save-icon="1"]').forEach(icon=>{
+    const owner=icon.closest('[data-field]');
+    const fieldId=owner?.dataset?.field||'';
+    const p=state.dirty&&fieldId&&fieldId!==__auneaPendingFieldId?{kind:'saved',label:'Último valor guardado de este campo; hay cambios pendientes en otro campo'}:fieldSavedPresentation();
     icon.classList.remove('field-status-saved','field-status-pending','field-status-error');
     icon.classList.add('field-status-'+p.kind);
     icon.setAttribute('aria-label',p.label);
@@ -226,6 +229,7 @@ function setAnswer(fid,value){
   // Invalidate the exact owner-dependent confirmation, not the client map when the
   // consultant is only classifying supplementary findings from that already-reviewed map.
   invalidateAsisForCanonicalAnswer(e,fid);
+  __auneaPendingFieldId=fid;
   e.answers[fid]=value;e.updatedAt=now();
   // A reused value corrected here must reach its owner, not become a second copy (DEC-050). The
   // engagement still keeps the snapshot of the value it used. Guarded because the No-Reask module
