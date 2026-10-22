@@ -492,7 +492,32 @@ function bindCommon(){
   bindForms();
 }
 
+function bindDemandTargetCycle(){
+  const valueEl=document.querySelector('[data-demand-target-value]'),unitEl=document.querySelector('[data-demand-target-unit]');
+  if(!valueEl||!unitEl)return;
+  const update=()=>{
+    const e=currentEng();if(!e)return;
+    const raw=valueEl.value.trim(),value=raw===''?'':Number(raw),unit=unitEl.value;
+    if((raw!==''&&(!Number.isFinite(value)||value<=0))||!['min','h','day','week'].includes(unit))return;
+    const next={value,unit};
+    const details=e.answerDetails||(e.answerDetails={});
+    if(JSON.stringify(details.demand_target_end_to_end)!==JSON.stringify(next)){
+      details.demand_target_end_to_end=next;
+      e.updatedAt=now();
+      if(typeof invalidateDerivedState==='function')invalidateDerivedState(e,'objetivo temporal actualizado','DF026');
+      markDirty('Objetivo end-to-end actualizado');
+    }
+    const current=typeof numberParts==='function'?numberParts(e.answers?.DF026):e.answers?.DF026||{};
+    const factors={min:1,h:60,day:1440,week:10080},actual=Number(current.value)*factors[current.unit],target=Number(value)*factors[unit];
+    const valid=current.value!==''&&current.value!=null&&Number.isFinite(actual)&&actual>0&&value!==''&&Number.isFinite(target)&&target>0;
+    const output=document.querySelector('[data-demand-target-comparison]');
+    if(output)output.textContent=valid?'Reducción deseada respecto al tiempo actual: '+((1-target/actual)*100).toLocaleString('es-ES',{maximumFractionDigits:2})+' %.':'Indica un objetivo y un tiempo actual comparable para calcular la reducción deseada.';
+  };
+  valueEl.addEventListener('input',update);
+  unitEl.addEventListener('change',update);
+}
 function bindForms(){
+  bindDemandTargetCycle();
   document.querySelectorAll('[data-answer]').forEach(el=>{const event=el.type==='text'||el.tagName==='TEXTAREA'?'input':'change';el.addEventListener(event,()=>setAnswer(el.dataset.answer,el.value))});
   document.querySelectorAll('[data-multi]').forEach(el=>el.addEventListener('change',()=>{
     const fid=el.dataset.multi;
