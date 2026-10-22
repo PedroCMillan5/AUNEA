@@ -1541,3 +1541,15 @@ body.shell-session .topbar-left{display:none}
 .pg05-field-grid .pg05-field--confirmed .pg05-field-confirmation{grid-column:2;grid-row:2/span 2;border-top:0;padding-top:0;display:flex;justify-content:flex-end;align-self:center}
 .pg05-field-grid .pg05-field--confirmed .pg05-field-confirmation>.btn{min-height:34px;height:auto;padding:6px 12px;white-space:nowrap}
 @media(max-width:540px){.pg05-field-grid .pg05-field--confirmed{grid-template-columns:1fr}.pg05-field-grid .pg05-field--confirmed .pg05-field-confirmation{grid-column:1;grid-row:4;justify-content:flex-start}}
+
+/* PG03: aligned current/target and backlog/error pairs. Backlog's own conditional controls stay intact. */
+.content:has(.diagnostic-stage-s03) .stage-card>.form-grid>.field[data-field="DF026"],
+.content:has(.diagnostic-stage-s03) .stage-card>.form-grid>.demand-target-cycle,
+.content:has(.diagnostic-stage-s03) .stage-card>.form-grid>.field[data-field="DF027"],
+.content:has(.diagnostic-stage-s03) .stage-card>.form-grid>.field[data-field="DF028"]{grid-column:auto;min-width:0;width:100%;box-sizing:border-box}
+.content:has(.diagnostic-stage-s03) .demand-target-cycle .compound-control{display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:10px;align-items:center}
+.content:has(.diagnostic-stage-s03) .demand-target-cycle .compound-control>input{min-width:0;width:100%;box-sizing:border-box}
+.content:has(.diagnostic-stage-s03) .demand-target-cycle .compound-control>.canonical-aunea-select{width:100%;min-width:0}
+@media(max-width:760px){.content:has(.diagnostic-stage-s03) .stage-card>.form-grid>.field[data-field="DF026"],.content:has(.diagnostic-stage-s03) .stage-card>.form-grid>.demand-target-cycle,.content:has(.diagnostic-stage-s03) .stage-card>.form-grid>.field[data-field="DF027"],.content:has(.diagnostic-stage-s03) .stage-card>.form-grid>.field[data-field="DF028"]{grid-column:1/-1}}
+/* Give the active engagement more of the header without hiding actions. */
+@media(min-width:1100px){.topbar{grid-template-columns:minmax(155px,.55fr) minmax(360px,1.45fr) minmax(0,1.45fr)}.topbar-center{max-width:none}}
