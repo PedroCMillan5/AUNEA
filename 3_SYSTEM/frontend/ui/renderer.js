@@ -646,8 +646,16 @@ function bindCanonicalRenderer(){
     const e=currentEng(),fid='DF051',to=btn.dataset.duplicateSignalDraft;
     if(!e||!to)return;
     const drafts=duplicateEntryDraftRows(e,fid,e.answers?.[fid]);
-    if(!drafts.some(x=>String(x.to)===String(to)&&!duplicateEntryComplete(x)))
-      saveDuplicateEntryDraftRows(e,fid,[...drafts,duplicateEntrySuggestedDraft(e,to)]);
+    const idx=drafts.findIndex(x=>String(x.to)===String(to)&&!duplicateEntryComplete(x));
+    const suggested=duplicateEntrySuggestedDraft(e,to);
+    if(idx<0)saveDuplicateEntryDraftRows(e,fid,[...drafts,suggested]);
+    else{
+      const existing=drafts[idx];
+      const merged={...existing,data:existing.data||suggested.data,from:existing.from||suggested.from,to};
+      if(JSON.stringify(merged)!==JSON.stringify(existing)){
+        drafts[idx]=merged;saveDuplicateEntryDraftRows(e,fid,drafts);
+      }
+    }
     render();
   });
   document.querySelectorAll('[data-duplicate-add]').forEach(btn=>btn.onclick=()=>{const fid=btn.dataset.duplicateAdd,e=currentEng();if(!e)return;const drafts=duplicateEntryDraftRows(e,fid,e.answers?.[fid]);saveDuplicateEntryDraftRows(e,fid,[...drafts,{data:'',from:'',to:''}]);render()});
