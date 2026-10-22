@@ -499,55 +499,44 @@ function validationSummary(e,completion){
   const captureMissing=(completion.missing||[]).filter(x=>(x.id||x)!=='DF093'&&(x.id||x)!=='Confirmación AS-IS');
   const primaryCta=snap?'<span class="status green">✓ Cierre confirmado y snapshot generado</span><button class="btn btn-primary" data-page="resultados">Continuar a Trabajo interno →</button>':(consistency.blockers.length?'':'<button class="btn btn-primary" id="confirmClosingAsIs">Confirmar cierre y generar snapshot</button>');
   const cta=primaryCta+(consistency.blockers.length?'<div class="notice warn"><b>No puede cerrarse todavía.</b><br>Resuelve los bloqueos indicados antes de generar el snapshot.</div>':'');
-  return section('Cierre del diagnóstico AS-IS','Comprueba el conjunto del estudio y confirma qué información queda pendiente. El cierre conserva las evidencias no verificadas.',
-    `<div class="grid g3">
-      <div class="notice"><b>Proceso</b><br>${steps.length} paso(s) activo(s) · ${snap?'AS-IS confirmado':'AS-IS pendiente de cierre'}</div>
-      <div class="notice"><b>Fricciones</b><br>${fr.length} detectada(s), ${frWithEvidence} con evidencia registrada</div>
-      <div class="notice"><b>Riesgos</b><br>${risks.length} registrado(s), ${risksWithControls} con controles registrados</div>
-      <div class="notice"><b>Impactos</b><br>${econ.length} registrado(s) — ${esc(econLine)}</div>
-      <div class="notice"><b>Obligatorios</b><br>${captureMissing.length===0?'✓ captura completa':`${captureMissing.length} pendiente(s)`}</div>
-      <div class="notice"><b>Siguiente paso</b><br>${nextStep?esc(nextStep):'Pendiente de acordar'}</div>
-      <div class="notice"><b>Snapshot final</b><br>${snap?`v${snap.version} · ${esc(formatDateEs(snap.sealedAt))}`:'Pendiente · se genera al confirmar el cierre'}</div>
-    </div>
-    ${df017FinalReviewPanel(e)}
-    <div class="closing-consistency-review" data-consistency-review="1">
-      <h3>¿Podemos cerrar este diagnóstico?</h3>
-      <p class="field-help">Los bloqueos impiden cerrar. Las observaciones y evidencias pendientes no bloqueantes se conservan para revisarlas después; no se consideran verificadas.</p>
-      <div class="grid g3">
-        <div class="notice ${consistency.blockers.length?'warn':'good'}"><b>Bloqueantes</b><br>${consistency.blockers.length}</div>
-        <div class="notice ${consistency.reviews.length?'info':'good'}"><b>Observaciones pendientes</b><br>${consistency.reviews.length}</div>
-        <div class="notice ${consistency.blockers.length?'warn':''}"><b>Estado</b><br>${consistency.blockers.length?'No se puede cerrar':'Se puede cerrar con las observaciones indicadas'}</div>
-      </div>
-      ${consistency.items.length?`<div class="blocker-list">
-        ${consistency.items.map(item=>{
-          const label=item.severity==='BLOCKER'?'Bloqueante':item.severity==='REVIEW'?'Revisar':'Información';
-          const cls=item.severity==='BLOCKER'?'warn':item.severity==='REVIEW'?'info':'good';
-          const pendingLayer=String(item.code||'').startsWith('LAYER_')?String(item.code).slice(6).toLowerCase():'';
-          const layerPages={map:'pasos',frictions:'fricciones',risks:'riesgos',impact:'impacto'};
-          const layerLabels={map:'mapa AS-IS',frictions:'fricciones',risks:'riesgos',impact:'impactos'};
-          const action=pendingLayer&&layerPages[pendingLayer]
-            ?`<div class="closing-review-actions"><button type="button" class="btn btn-small" data-page="${layerPages[pendingLayer]}">Revisar ${layerLabels[pendingLayer]}</button><button type="button" class="btn btn-small btn-primary" data-pg09-confirm-layer="${pendingLayer}">Confirmar ${layerLabels[pendingLayer]}</button></div>`
-            :item.navigationTarget==='proceso'
-            ?'<button class="btn btn-small" data-goto-process="1">Ir a corregir</button>'
-            :item.stage&&item.stage!=='S09'?`<button class="btn btn-small" data-goto-stage="${attr(item.stage)}" data-consistency-stage="${attr(item.stage)}">Ir a corregir</button>`:'';
-          return `<div class="notice ${cls}" data-consistency-severity="${attr(item.severity)}"><b>${label}</b><br><span>${esc(item.message)}</span>${action}</div>`;
-        }).join('')}
-      </div>`:''}
-      ${consistency.reviews.length&&!consistency.blockers.length?'<div class="field-help">Las observaciones ámbar no impiden el cierre: permanecen explícitas como incertidumbre/evidencia pendiente para Trabajo interno.</div>':''}
-    </div>
-    <div class="closing-first-readings">
-      <h3>Antes de confirmar el cierre</h3>
-      <p class="field-help">Los cuatro bloques del AS-IS ya se revisaron en sus pantallas. Comprueba que no hay bloqueos, que se conservan las evidencias pendientes y que el siguiente paso está acordado.</p>
-      <div class="grid g3">
-        <div class="notice ${consistency.blockers.length?'warn':'good'}"><b>Bloqueos</b><br>${consistency.blockers.length}</div>
-        <div class="notice ${evidencePending.length?'info':'good'}"><b>Evidencias por recibir</b><br>${evidencePending.length}</div>
-        <div class="notice"><b>Siguiente paso acordado</b><br>${nextStep?esc(nextStep):'Pendiente de acordar'}</div>
-      </div>
-      ${captureMissing.length?'<div class="notice warn"><b>Campos obligatorios pendientes</b><br>'+captureMissing.map(x=>esc(x.label||'Dato pendiente')).join(' · ')+'</div>':'<p class="field-help">Todos los campos obligatorios de captura están completos. Las evidencias pendientes siguen identificadas como no verificadas.</p>'}
-    </div>
-    <div class="field-help internal-only" style="margin-top:10px"><b>Notas internas del consultor:</b> ${notes?esc(notes):'—'}</div>
-    <div class="closing-final-action">${cta}</div>`
-  );
+  const proceed=layersReady&&!consistency.blockers.length&&!captureMissing.length;
+  const layerTiles=[
+    ['Pasos',steps.length+' registrados',layers.map],
+    ['Fricciones',fr.length+' registradas',layers.frictions],
+    ['Riesgos',risks.length+' registrados',layers.risks],
+    ['Impactos',econ.length+' registrados',layers.impact]
+  ].map(([title,detail,ok])=>'<div class="pg09-layer-tile"><span>'+esc(title)+'</span><b>'+esc(detail)+'</b><small>'+(ok?'Confirmado':'Pendiente de confirmar')+'</small></div>').join('');
+  const findings=consistency.items.filter(x=>x.severity!=='INFO');
+  const issuesHtml=findings.length?'<div class="pg09-review-list">'+findings.map(item=>{
+    const evidence=String(item.code||'').startsWith('EVIDENCE_');
+    const raw=String(item.message||'');
+    const message=evidence?raw.replace(/^Evidencia pendiente:\\s*/i,'').split('. Solicita el soporte')[0]:raw;
+    const stage=(item.navigationTarget==='proceso')?'proceso':item.stage||'';
+    const action=stage&&stage!=='S09'
+      ?(stage==='proceso'?'<button type="button" class="btn btn-small btn-outline" data-goto-process="1">Revisar origen</button>':'<button type="button" class="btn btn-small btn-outline" data-goto-stage="'+attr(stage)+'">Revisar origen</button>')
+      :'';
+    return '<div class="pg09-review-row '+(item.severity==='BLOCKER'?'is-blocker':'is-observation')+'">'
+      +'<div><span>'+esc(message)+'</span><small>'+(evidence?'Evidencia pendiente de recibir':item.severity==='BLOCKER'?'Requiere corrección para cerrar':'Revisión pendiente')+'</small></div>'+action+'</div>';
+  }).join('')+'</div>':'<p class="pg09-clean-review">No se han detectado bloqueos ni observaciones pendientes.</p>';
+  return section('Revisión y confirmación final',
+    'Esta revisión comprueba las confirmaciones anteriores y los datos pendientes, sin volver a capturar el proceso.',
+    '<div class="pg09-confirm-section">'
+      +'<h3>Capas del AS-IS</h3><div class="pg09-layer-grid">'+layerTiles+'</div>'
+      +df017FinalReviewPanel(e)
+      +'<div class="pg09-validation-section"><div class="pg09-validation-title"><h3>Comprobaciones antes del cierre</h3>'
+      +'<p>Los bloqueos deben resolverse. Las observaciones no bloqueantes permanecen registradas para el trabajo interno.</p></div>'
+      +'<div class="pg09-consistency-summary">'
+        +'<div><b>'+consistency.blockers.length+'</b><span>Bloqueos</span></div>'
+        +'<div><b>'+consistency.reviews.length+'</b><span>Observaciones</span></div>'
+        +'<div class="'+(proceed?'is-ready':'is-pending')+'"><b>'+(proceed?'Puede cerrarse':'Requiere revisión')+'</b><span>Resultado de la comprobación</span></div>'
+      +'</div>'+issuesHtml+'</div>'
+      +(captureMissing.length?'<div class="pg09-missing-required"><b>Información obligatoria pendiente</b><p>'+captureMissing.map(x=>esc(x.label||'Dato obligatorio pendiente')).join(' · ')+'</p></div>':'')
+      +'<div class="pg09-close-footer"><div><h3>'+(snap?'Diagnóstico cerrado':'Cerrar diagnóstico y guardar versión')+'</h3>'
+        +'<p>'+(snap?'La versión final ha quedado registrada.':'Al confirmar se guarda la versión revisada con sus observaciones y evidencias pendientes.')+'</p>'
+        +(snap?'<p class="pg09-snapshot-meta">Versión '+esc(snap.version)+' · '+esc(formatDateEs(snap.sealedAt))+'</p>':'')
+      +'</div><div class="pg09-close-actions">'+cta+'</div></div>'
+    +'</div>');
+
 }
 const __auneaDiagFieldsBindForms=bindForms;
 bindForms=function(){
