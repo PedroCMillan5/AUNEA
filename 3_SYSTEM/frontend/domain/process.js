@@ -1290,8 +1290,10 @@ function asIsComplementarySignals(e){
   if(masterSteps.length)out.push({field:'DF048',message:'Datos maestros detectados en: '+masterSteps.map(stepName).join(' · ')+'. Identifica las referencias concretas sólo si se conocen; la categoría Dato maestro no especifica por sí sola cuáles son.'});
   const documents=processDocumentArtifacts(steps);
   if(documents.length)out.push({field:'DF049',message:'Artefactos documentales procedentes de los pasos: '+documents.map(v=>labelFrom('OS_ARTIFACT_TYPE',v)||v).join(' · ')+'. La confirmación se realiza en el campo derivado, sin una segunda captura.'});
+  const incompleteReentry=typeof duplicateEntryIncompleteSignals==='function'?duplicateEntryIncompleteSignals(e):[];
   const actualReintroductions=typeof duplicateEntryCandidates==='function'?duplicateEntryCandidates(e):[];
   if(actualReintroductions.length)out.push({field:'DF051',message:'Reintroducciones identificadas en el flujo: '+actualReintroductions.map(x=>stepName(steps.find(s=>String(s.id)===String(x.from)))+' → '+stepName(steps.find(s=>String(s.id)===String(x.to)))+' ('+x.data+')').join(' · ')+'. Revisa y confirma únicamente estas relaciones registradas.'});
+  if(incompleteReentry.length)out.push({field:'DF051',message:'Posible reintroducción pendiente de verificar en: '+incompleteReentry.map(x=>x.step+(x.frictions.length?' · '+x.frictions.join(', '):'')).join(' · ')+'. El origen y los datos reintroducidos no se infieren automáticamente.'});
   const qualityFrictions=frictions.filter(f=>['P02','P11','P13'].includes(String(f.friction_type))||/faltan?|ausente|incomplet|duplicad|incorrect|err[oó]ne/i.test(String(f.observable_signal||f.client_label||'')));
   if(qualityFrictions.length)out.push({field:'DF055',message:'Señales de calidad de datos en las fricciones: '+qualityFrictions.map(f=>String(f.observable_signal||f.client_label||f.id)).join(' · ')+'. Selecciona sólo problemas respaldados por estas señales; no se presuponen otras categorías.'});
   return out;
@@ -1499,7 +1501,7 @@ function consultantStepsReviewPage(e){
       const acknowledged=!!(count&&e.answerDetails?.[fid+'__finding_confirmation']?.fingerprint===JSON.stringify(explicit));
       status=count?(fid==='DF051'||acknowledged?'Hallazgo confirmado':'Datos registrados · pendientes de validar'):candidate?'Posible hallazgo · por validar':'No consta hallazgo';
       kind=count?(fid==='DF051'||acknowledged?'confirmed':'review'):candidate?'review':'unknown';
-      if(fid==='DF051')detail=[count?count+' reintroducción(es) confirmada(s).':'',signal?.message||(!count?'No se han detectado duplicaciones. Puedes registrar una manualmente si existe.':'')].filter(Boolean).join(' ');
+      if(fid==='DF051')detail=[count?count+' reintroducción(es) confirmada(s).':'',signal?.message||(!count?'No hay reintroducciones confirmadas. Puedes registrar una manualmente si existe.':'')].filter(Boolean).join(' ');
       else if(fid==='DF053'){
         // Keep the actual human-confirmed answer and new machine-derived evidence distinct.
         // A later SEARCH action or a friction may add candidates; neither silently overwrites
