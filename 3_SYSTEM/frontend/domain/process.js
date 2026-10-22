@@ -493,24 +493,31 @@ async function reviewPainCandidates(){
       if(!current.rationale)current.rationale=x.rationale||'';
       grouped.set(key,current);
     });
+    // [AUNEA-FE-PAIN-CANDIDATE-RECONCILE-114] START — Conservative, explainable review; never auto-confirm.
     const existing=activeFrictions(e);
     __auneaPainCandidates=[...grouped.values()].map(candidate=>{
-      const related=existing.filter(fr=>{
-        const mapped=typeof painForFriction==='function'?String(painForFriction(fr.friction_type)||''):'';
-        return mapped===String(candidate.pain_id)
-          &&normalizeArray(fr.affected_steps).some(id=>normalizeArray(candidate.step_ids).map(String).includes(String(id)));
-      });
-      return {...candidate,_related_frictions:related.map(fr=>fr.client_label||fr.id)};
+      const ids=normalizeArray(candidate.step_ids).map(String),matches=existing.map(fr=>{
+        const actual=normalizeArray(fr.affected_steps).map(String),shared=ids.filter(id=>actual.includes(id));
+        const pain=String(fr.derived_pain_id||painForFriction(fr.friction_type)||'');
+        const sameType=pain!==''&&pain===String(candidate.pain_id);
+        return {fr,shared,sameType,exactSteps:ids.length>0&&ids.length===actual.length&&ids.every(id=>actual.includes(id))};
+      }).filter(x=>x.shared.length);
+      const exact=matches.filter(x=>x.sameType&&x.exactSteps),partial=matches.filter(x=>x.sameType&&!x.exactSteps);
+      const status=exact.length?'Coincidencia estructural':partial.length?'Cobertura parcial':matches.length?'Posible relación':'Sin coincidencia estructurada';
+      const related=(exact.length?exact:partial.length?partial:matches).map(x=>String(x.fr.client_label||x.fr.id));
+      return {...candidate,_review_status:status,_related_frictions:related};
     });
+    // [AUNEA-FE-PAIN-CANDIDATE-RECONCILE-114] END
     const body=__auneaPainCandidates.length
       ?'<div class="notice info pain-review-intro"><b>Oportunidades para revisar con el cliente</b><p>AUNEA ha detectado señales a partir del proceso ya capturado. Son hipótesis de revisión: no se crea ninguna fricción hasta que la confirmes.</p></div><div class="result-list">'
         +__auneaPainCandidates.map((x,i)=>{
           const stepNames=normalizeArray(x.step_ids).map(id=>steps.find(s=>s.id===id)?.step_name||'').filter(Boolean);
           const questions=normalizeArray(x.review_questions).filter(Boolean);
           const overlaps=normalizeArray(x._related_frictions);
+          const status=String(x._review_status||'Pendiente de revisar');
           return '<div class="result-item pain-review-card"><div class="result-item-head"><div><b>'+esc(labelFrom('OS_FRICTION_TYPE',x.pain_id)||'Posible fricción')+'</b>'
             +'<p>'+esc(x.rationale||'')+'</p>'
-            +(overlaps.length?'<p class="pain-overlap-note"><b>Posible solapamiento con fricción registrada:</b> '+overlaps.map(esc).join(', ')+'. Contrasta si describe el mismo problema antes de crear otra.</p>':'')
+            +'<p class="pain-overlap-note"><b>Clasificación preliminar:</b> '+esc(status)+(overlaps.length?'. Registros relacionados: '+overlaps.map(esc).join(', '):'')+'. Comprueba causa y señal observable; esto no confirma equivalencia.</p>'
             +(stepNames.length?'<p><b>Dónde ocurre:</b> '+stepNames.map(esc).join(', ')+'</p>':'')
             +(stepNames.length>1?'<p class="field-help">AUNEA ha agrupado la misma señal detectada en varios pasos. Confirma si es una única fricción multietapa o desmarca los pasos que correspondan si son incidencias distintas.</p>':'')
             +(questions.length?'<div class="field-help"><b>Preguntas para validarlo con el cliente:</b><br>'+questions.map(q=>'• '+esc(q)).join('<br>')+'</div>':'')
