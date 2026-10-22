@@ -44,8 +44,8 @@ function riskCandidateReview(candidate,registered){
   }).filter(x=>x.shared.length);
   const exact=matches.filter(x=>x.descriptionMatch&&x.sameSteps);
   const partial=matches.filter(x=>x.descriptionMatch&&!x.sameSteps);
-  return {status:exact.length?'Coincidencia estructural':partial.length?'Cobertura parcial':matches.length?'Posible relación':'Sin coincidencia estructurada',
-    related:(exact.length?exact:partial.length?partial:matches).map(x=>String(x.r.description||'Riesgo registrado'))};
+  return {status:exact.length?'Mismo escenario y mismos pasos':partial.length?'Mismo escenario; pasos diferentes':matches.length?'Hay otros riesgos en esos pasos':'No se ha registrado un escenario equivalente',
+    related:(exact.length?exact:partial.length?partial:[]).map(x=>String(x.r.description||'Riesgo registrado'))};
 }
 // [AUNEA-FE-RISK-CANDIDATE-RECONCILE-115] END
 let __auneaRiskCandidates=[];
@@ -100,7 +100,7 @@ async function reviewRiskCandidates(){
           const related=normalizeArray(x._related_risks);
           const status=String(x._review_status||'Pendiente de revisar');
           return '<div class="result-item risk-candidate-card"><div class="result-item-head"><div><b>'+esc(x.title||'Posible riesgo')+'</b><p>'+esc(x.rationale||'')+'</p>'
-            +'<p class="risk-candidate-related"><b>Clasificación preliminar:</b> '+esc(status)+(related.length?'. Registros relacionados: '+related.map(esc).join(' · '):'')+'. Verifica el escenario antes de crear otro.</p>'
+            +'<p class="risk-candidate-related"><b>¿Ya lo hemos recogido?</b> '+esc(status)+(related.length?'. Revisa: '+related.map(esc).join(' · '):'')+'. Contrasta la consecuencia antes de crear otro.</p>'
             +(names.length?'<p><b>Dónde revisar:</b> '+names.map(esc).join(', ')+'</p>':'')
             +(names.length>1?'<p class="field-help">AUNEA ha agrupado el mismo escenario detectado en varios pasos. Confirma si es un único riesgo multietapa o ajusta los pasos al revisarlo.</p>':'')
             +(qs.length?'<div class="field-help"><b>Preguntas para validarlo:</b><br>'+qs.map(q=>'• '+esc(q)).join('<br>')+'</div>':'')
@@ -183,7 +183,7 @@ function addRisk(preselectedSteps=[],editIndex=null,candidate=null){
         sensitive_or_high_impact:sensitiveValue==='1',
         material_financial_or_compliance:materialValue==='1',
         critical_trigger:criticalValue==='1',_candidate_id:selected._candidate_id||candidate?.candidate_id||null};
-      if(!existing&&riskCandidateReview({step_ids, suggested_description:description},(e.risks||[]).filter(x=>x.status!=='SUPERSEDED')).status==='Coincidencia estructural')return toast('Ya hay un riesgo registrado con la misma descripción y los mismos pasos. Revisa ese registro antes de crear otro.');
+      if(!existing&&riskCandidateReview({step_ids, suggested_description:description},(e.risks||[]).filter(x=>x.status!=='SUPERSEDED')).status==='Mismo escenario y mismos pasos')return toast('Ya hay un riesgo registrado con la misma descripción y los mismos pasos. Revisa ese registro antes de crear otro.');
       if(existing)Object.assign(existing,draft);else e.risks.push(draft);
       if(typeof invalidateProcessLayers==='function')invalidateProcessLayers(e,'risks');
       markDirty(existing?'Riesgo modificado':'Riesgo añadido');closeModal();render();
