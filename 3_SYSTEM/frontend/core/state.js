@@ -457,7 +457,7 @@ function setPage(page){
   if(target>0){
     const e=currentEng(),conf=e&&(typeof processLayerState==='function'?processLayerState(e):(e.layerConfirmations||{}));
     const keys=['map','frictions','risks','impact'];
-    const firstMissing=keys.slice(0,target).find(key=>!conf?.[key]||(typeof processLayerIntegrityIssues==='function'&&processLayerIntegrityIssues(e,key).length));
+    const firstMissing=keys.slice(0,target).find(key=>!conf?.[key]||(typeof processLayerIntegrityIssues==='function'&&processLayerIntegrityIssues(e,key).length)||(key==='map'&&typeof pg05PendingReviewIssues==='function'&&pg05PendingReviewIssues(e).length));
     if(firstMissing){
       const labels={map:'Pasos',frictions:'Fricciones',risks:'Riesgos'};
       if(typeof toast==='function')toast('Confirma '+(labels[firstMissing]||firstMissing)+' antes de avanzar.');
