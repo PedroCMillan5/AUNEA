@@ -1631,3 +1631,14 @@ body.shell-session .topbar-left{display:none}
 .pg05-review.asis-layer-confirmed .flow-confirm button{display:inline-flex!important}
 .pg05-review.asis-layer-confirmed input,.pg05-review.asis-layer-confirmed select,
 .pg05-review.asis-layer-confirmed textarea{pointer-events:none}
+
+/* Unified concise recommendation cards (frictions, risks, impact). */
+.modal .pain-review-card .candidate-card-subtitle,
+.modal .risk-candidate-card .candidate-card-subtitle,
+.modal .economic-review-card .candidate-card-subtitle{margin:0 0 6px;line-height:1.4;color:var(--muted)}
+.modal .pain-review-card .candidate-key-question,
+.modal .risk-candidate-card .candidate-key-question,
+.modal .economic-review-card .candidate-key-question{margin:8px 0 0;line-height:1.45}
+.modal .candidate-review-summary{padding:11px 13px;margin:8px 0 10px}
+.modal .candidate-review-summary>b:not(:first-child){display:block;margin-top:9px;color:#0f3b2e}
+.modal .candidate-review-summary>p{margin:4px 0 0}
