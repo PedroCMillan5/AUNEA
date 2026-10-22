@@ -1565,3 +1565,9 @@ body.shell-session .topbar-left{display:none}
 .modal .pain-review-intro{margin-bottom:24px!important}
 .modal .pain-review-intro + .result-list{display:flex;flex-direction:column;gap:16px}
 .modal .pain-review-intro + .result-list > .pain-review-card{margin:0}
+
+/* PG07: separación clara entre contexto y sugerencias de riesgo. */
+.modal .risk-review-intro{margin-bottom:24px!important}
+.modal .risk-review-intro + .result-list{display:flex;flex-direction:column;gap:16px}
+.modal .risk-review-intro + .result-list > .risk-candidate-card{margin:0}
+.modal .risk-candidate-related{margin:12px 0;padding:10px 12px;border-left:2px solid #ad8a3e;background:#f9f5eb;line-height:1.5}
