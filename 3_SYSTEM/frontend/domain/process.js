@@ -1139,7 +1139,7 @@ function asisTemporalBarContent(output){
     +'<div class="asis-temporal-track'+(overrun?' asis-temporal-track-overrun':'')+'" role="img" aria-label="'+(overrun?'Componentes identificados superiores al tiempo declarado; exceso indicado sin ampliar el ancho de la barra':'Tiempo declarado frente a componentes parciales identificados, sin conciliación end-to-end')+'">'+colors
     +'<span class="asis-temporal-unreconciled" style="width:'+Math.max(0,Math.min(100,unresolved))+'%" title="No conciliado; no es ahorro ni espera inferida"></span>'
     +(overrun?'<span class="asis-temporal-overrun-edge" aria-hidden="true"></span>':'')+'</div>'
-    +(reviewDeclared?'<p class="asis-temporal-issues"><b>Revisión temporal requerida: desviación '+esc(deviationText)+' (umbral ±25 %).</b></p>':'')
+    +'<p class="asis-temporal-deviation"><b>Desviación frente al declarado: '+esc(deviationText)+'</b> · Umbral de revisión: ±25 % · '+(deviationPercent===null?'Comparación no disponible':reviewDeclared?'Revisar tiempo declarado y componentes':'Dentro del umbral; no requiere revisión por desviación')+'.</p>'
     +(overrun?'<p class="asis-temporal-overrun-summary">Los componentes identificados superan el tiempo declarado en '+esc(asisTemporalMinutes(overrunMinutes))+'; marca visual del exceso. '+(reviewDeclared?'Revisa la diferencia.':'La diferencia por sí sola no activa revisión.')+'</p>':'')
     +'<div class="asis-temporal-legend">'+legend+'<span class="asis-temporal-label"><i class="asis-temporal-unreconciled"></i>No conciliado</span></div>'
     +'<p class="asis-temporal-notice"><b>'+(reviewDeclared?'Revisión necesaria.':'Comparación temporal.')+'</b> '+esc(message)+'</p>'
