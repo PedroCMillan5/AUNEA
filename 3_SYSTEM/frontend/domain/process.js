@@ -1123,20 +1123,26 @@ function asisTemporalBarContent(output){
   const overrun=!!output.exceeds_declared_reference&&hasDeclared&&hasIdentified&&identified>declared;
   const overrunMinutes=overrun?identified-declared:0;
   const overrunPercent=overrun?overrunMinutes/declared*100:0;
+  // Review trigger only: the backend remains owner of the reconstructed components.
+  // Do not interpret a close match as evidence that the AS-IS is complete.
+  const deviationPercent=hasDeclared&&hasIdentified?(identified-declared)/declared*100:null;
+  const reviewDeclared=deviationPercent!==null&&Math.abs(deviationPercent)>25;
+  const deviationText=deviationPercent===null?'No calculable':(deviationPercent>0?'+':'')+deviationPercent.toLocaleString('es-ES',{maximumFractionDigits:2})+' %';
   const legend=segments.map(s=>'<span class="asis-temporal-label"><i class="asis-temporal-'+(tones[s.key]||'additional')+'"></i>'+esc(s.label)+': <b>'+esc(asisTemporalMinutes(s.minutes))+'</b></span>').join('');
   const issues=normalizeArray(output.unresolved).filter(Boolean);
   const leading=issues.filter(x=>!/equivalencia entre tiempo habitual declarado/.test(x)).slice(0,2);
-  const message=output.exceeds_declared_reference
-    ?'Los tiempos identificados superan la referencia declarada. Comprueba solapamientos, alcance y frecuencia.'
-    :'Reconstrucción orientativa: los tiempos identificados pueden solaparse. El tiempo end-to-end todavía no está conciliado.';
+  const message=reviewDeclared
+    ?'Revisar el tiempo end-to-end declarado y los componentes del proceso: la desviación supera el umbral del ±25 %. Comprueba alcance, esperas, retrabajos, frecuencia y posibles solapamientos; no se modifica el dato automáticamente.'
+    :'Comparación orientativa dentro del umbral de revisión del ±25 %. Esto no confirma que los componentes estén completos ni conciliados.';
   return '<div class="asis-temporal-metrics"><div><small>End-to-end declarado</small><strong>'+esc(asisTemporalMinutes(output.declared_minutes))+'</strong></div>'
     +'<div><small>Componentes identificados (no elapsed)</small><strong>'+esc(asisTemporalMinutes(output.identified_minutes))+'</strong></div></div>'
     +'<div class="asis-temporal-track'+(overrun?' asis-temporal-track-overrun':'')+'" role="img" aria-label="'+(overrun?'Componentes identificados superiores al tiempo declarado; exceso indicado sin ampliar el ancho de la barra':'Tiempo declarado frente a componentes parciales identificados, sin conciliación end-to-end')+'">'+colors
     +'<span class="asis-temporal-unreconciled" style="width:'+Math.max(0,Math.min(100,unresolved))+'%" title="No conciliado; no es ahorro ni espera inferida"></span>'
     +(overrun?'<span class="asis-temporal-overrun-edge" aria-hidden="true"></span>':'')+'</div>'
-    +(overrun?'<p class="asis-temporal-overrun-summary"><b>Supera el tiempo declarado: +'+esc(asisTemporalMinutes(overrunMinutes))+' (+'+esc(overrunPercent.toLocaleString('es-ES',{maximumFractionDigits:1}))+' %).</b> La barra representa el 100 % de los componentes identificados; la marca roja indica que exceden la referencia declarada. No implica que el tiempo end-to-end esté conciliado.</p>':'')
+    +(reviewDeclared?'<p class="asis-temporal-issues"><b>Revisión temporal requerida: desviación '+esc(deviationText)+' (umbral ±25 %).</b></p>':'')
+    +(overrun?'<p class="asis-temporal-overrun-summary">Los componentes identificados superan el tiempo declarado en '+esc(asisTemporalMinutes(overrunMinutes))+'; marca visual del exceso. '+(reviewDeclared?'Revisa la diferencia.':'La diferencia por sí sola no activa revisión.')+'</p>':'')
     +'<div class="asis-temporal-legend">'+legend+'<span class="asis-temporal-label"><i class="asis-temporal-unreconciled"></i>No conciliado</span></div>'
-    +'<p class="asis-temporal-notice"><b>Conciliación pendiente.</b> '+esc(message)+'</p>'
+    +'<p class="asis-temporal-notice"><b>'+(reviewDeclared?'Revisión necesaria.':'Comparación temporal.')+'</b> '+esc(message)+'</p>'
     +(leading.length?'<p class="asis-temporal-issues">'+leading.map(esc).join(' · ')+'</p>':'');
 }
 function asisTemporalBar(e){
