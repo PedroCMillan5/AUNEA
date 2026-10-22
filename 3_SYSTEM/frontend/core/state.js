@@ -484,6 +484,14 @@ function statusBadge(s){return `<span class="status ${statusClass(s)}">${esc(s||
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(window.__toast);window.__toast=setTimeout(()=>t.classList.remove('show'),2600)}
 
 function bindCommon(){
+  // A confirmed AS-IS layer shows its values, never editable controls.
+  // Undo triggers a fresh render and restores the original controls.
+  document.querySelectorAll('.asis-layer-confirmed').forEach(root=>{
+    root.querySelectorAll('input,select,textarea').forEach(control=>{
+      control.disabled=true;
+      control.setAttribute('aria-disabled','true');
+    });
+  });
   document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>setPage(b.dataset.page));
   document.querySelectorAll('[data-stage-nav]').forEach(b=>b.onclick=()=>{
     const e=currentEng();
