@@ -55,15 +55,16 @@ function multiChoices(fid,items,val,{detail=false,other=false,linkedSteps=null}=
   const html=(linkedSteps&&catalogOther?items.filter(x=>x!==catalogOther):items).map(x=>{
     const isExclusive=exclusiveValue!==undefined&&String(x.value)===String(exclusiveValue);
     const isOther=!!catalogOther&&x===catalogOther;
-    return `<div class="choice"><input type="checkbox" id="${fid}_${attr(x.value)}" value="${attr(x.value)}" data-multi="${fid}" ${isExclusive?'data-exclusive="1"':''} ${isOther?`data-other-toggle="${fid}"`:''} ${arr.includes(String(x.value))?'checked':''}><label for="${fid}_${attr(x.value)}">${esc(x.label)}</label></div>`;
+    return `<div class="choice"><input type="checkbox" id="${fid}_${attr(x.value)}" value="${attr(x.value)}" data-multi="${fid}" ${isExclusive?'data-exclusive="1"':''} ${isOther?`data-other-toggle="${fid}"`:''} ${(arr.includes(String(x.value))||(isOther&&!!String(getAnswerDetail(fid)||'').trim()))?'checked':''} ${(isOther&&!!String(getAnswerDetail(fid)||'').trim())?'disabled':''}><label for="${fid}_${attr(x.value)}">${esc(x.label)}</label></div>`;
   }).join('');
   // DF088 joins the existing process-step checkboxes in the same flex flow, while preserving
   // their distinct data-multi key / answerDetails write target. Only the visual row is shared.
   const linkedHtml=linkedSteps?(linkedSteps.items||[]).map(x=>`<div class="choice"><input type="checkbox" id="${linkedSteps.fid}_${attr(x.value)}" value="${attr(x.value)}" data-multi="${linkedSteps.fid}" ${selectedValues(linkedSteps.val).includes(String(x.value))?'checked':''}><label for="${linkedSteps.fid}_${attr(x.value)}">${esc(x.label)}</label></div>`).join(''):'';
-  const relocatedOther=linkedSteps&&catalogOther?`<div class="choice"><input type="checkbox" id="${fid}_${attr(catalogOther.value)}" value="${attr(catalogOther.value)}" data-multi="${fid}" data-other-toggle="${fid}" ${arr.includes(String(catalogOther.value))?'checked':''}><label for="${fid}_${attr(catalogOther.value)}">${esc(catalogOther.label)}</label></div>`:'';
+  const relocatedOther=linkedSteps&&catalogOther?`<div class="choice"><input type="checkbox" id="${fid}_${attr(catalogOther.value)}" value="${attr(catalogOther.value)}" data-multi="${fid}" data-other-toggle="${fid}" ${(arr.includes(String(catalogOther.value))||!!String(getAnswerDetail(fid)||'').trim())?'checked':''} ${String(getAnswerDetail(fid)||'').trim()?'disabled':''}><label for="${fid}_${attr(catalogOther.value)}">${esc(catalogOther.label)}</label></div>`:'';
   const syntheticOther=other&&!catalogOther;
-  const otherOpen=other&&(catalogOther?arr.includes(String(catalogOther.value)):!!getAnswerDetail(fid));
-  const otherToggle=syntheticOther?`<div class="choice"><input type="checkbox" id="${fid}__other_toggle" data-other-toggle="${fid}" ${otherOpen?'checked':''}><label for="${fid}__other_toggle">Otro</label></div>`:'';
+  const hasOtherText=!!String(getAnswerDetail(fid)||'').trim();
+  const otherOpen=other&&(hasOtherText||(catalogOther?arr.includes(String(catalogOther.value)):false));
+  const otherToggle=syntheticOther?`<div class="choice"><input type="checkbox" id="${fid}__other_toggle" data-other-toggle="${fid}" ${otherOpen?'checked':''} ${hasOtherText?'disabled':''}><label for="${fid}__other_toggle">Otro</label></div>`:'';
   const detailBox=other
     ?`<div class="detail-wrap" data-detail-wrap="${fid}"${otherOpen?'':' style="display:none"'}>${detailInput(fid,'Especifica la opción')}</div>`
     :(detail?detailInput(fid,'Detalle / condición relevante'):'');
@@ -230,7 +231,8 @@ function duplicateEntrySuggestedDraft(e,to){
 function duplicateEntryControl(fid,e,val){
   const rows=duplicateEntryRows(val),drafts=duplicateEntryDraftRows(e,fid,val),opts=stepOptions(e),d=answerDetails(e),dismissed=new Set(normalizeArray(d[`${fid}__dismissed`])),confirmedKeys=new Set(rows.map(x=>`${x.dataKey||x.data}:${x.from}:${x.to}`));
   const suggestions=duplicateEntryCandidates(e).filter(x=>!dismissed.has(x.id)&&!confirmedKeys.has(x.id));
-  const incomplete=duplicateEntryIncompleteSignals(e).filter(x=>!dismissed.has(x.id));
+  const resolvedDestinations=new Set(rows.map(x=>String(x.to)));
+  const incomplete=duplicateEntryIncompleteSignals(e).filter(x=>!dismissed.has(x.id)&&!resolvedDestinations.has(String(x.to)));
   const unresolvedHtml=incomplete.length?'<div class="duplicate-entry-suggestions"><div class="duplicate-entry-heading"><b>Señales de posible reintroducción pendientes de verificar</b><span>No son duplicaciones confirmadas. Comprueba la información afectada y el paso de origen.</span></div>'
     +incomplete.map(x=>'<div class="duplicate-entry-suggestion"><div><b>'+esc(x.step)+'</b><span>Destino propuesto · '+esc(x.frictions.join(' · ')||'Acción manual de copia o reintroducción registrada')+'</span></div><div class="row-actions"><button type="button" class="btn btn-small btn-primary" data-duplicate-signal-draft="'+attr(x.to)+'">Revisar origen y datos</button><button type="button" class="btn btn-small" data-duplicate-dismiss="'+attr(x.id)+'">Descartar señal</button></div></div>').join('')+'</div>':'';
   const frictionHtml='';
@@ -551,7 +553,11 @@ function bindCanonicalRenderer(){
     if(typeof refreshCaptureProgress==='function')refreshCaptureProgress();
   }));
 
-  document.querySelectorAll('[data-detail-answer]').forEach(el=>el.addEventListener('input',()=>setAnswerDetail(el.dataset.detailAnswer,el.value)));
+  document.querySelectorAll('[data-detail-answer]').forEach(el=>el.addEventListener('input',()=>{
+    const fid=el.dataset.detailAnswer;setAnswerDetail(fid,el.value);
+    const toggle=document.querySelector(`[data-other-toggle="${fid}"]`);
+    if(toggle){const nonempty=!!el.value.trim();if(nonempty){toggle.checked=true;toggle.disabled=true;}else toggle.disabled=false;}
+  }));
   document.querySelectorAll('[data-linked-step-single]').forEach(el=>el.addEventListener('change',()=>{
     const e=currentEng(),fid=el.dataset.linkedStepSingle,d=answerDetails(e);
     d[fid]=el.value||'';e.updatedAt=now();markDirty('Ámbito de paso actualizado');
