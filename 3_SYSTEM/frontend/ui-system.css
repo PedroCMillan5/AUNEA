@@ -1579,3 +1579,12 @@ body.shell-session .topbar-left{display:none}
 .modal .pain-review-card,.modal .risk-candidate-card{padding:20px!important}
 .modal .pain-review-card .pain-overlap-note,.modal .risk-candidate-card .risk-candidate-related,.modal .economic-review-card .candidate-review-explanation{max-width:none;margin:14px 0;padding:12px 14px;background:var(--surface-muted,#f7f7f5);border:1px solid var(--border,#e2dfd8);border-left:3px solid #ad8a3e;border-radius:6px;line-height:1.55;overflow-wrap:anywhere;color:inherit}
 .modal .pain-review-card .field-help,.modal .risk-candidate-card .field-help,.modal .economic-review-card .field-help{line-height:1.6;margin-top:12px}
+
+/* Unified candidate review presentation: one restrained summary, clear reading order. */
+.modal .candidate-review-summary{margin:12px 0 14px;padding:12px 14px;border:1px solid #d9e6df;border-left:3px solid #0f3b2e;border-radius:8px;background:#f6faf8;line-height:1.5;max-width:100%;box-sizing:border-box}
+.modal .candidate-review-summary>b{display:block;color:#0f3b2e;margin-bottom:6px}
+.modal .candidate-review-summary>p{margin:0 0 7px;color:#354a42}
+.modal .candidate-review-summary>p:last-child{margin-bottom:0}
+.modal .economic-review-intro{margin-bottom:24px!important}
+.modal .economic-review-intro + .result-list{display:flex;flex-direction:column;gap:16px}
+.modal .economic-review-intro + .result-list>.economic-review-card{margin:0}
