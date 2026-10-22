@@ -693,6 +693,11 @@ function bindCanonicalRenderer(){
   document.querySelectorAll('[data-duplicate-draft-remove]').forEach(btn=>btn.onclick=()=>{const e=currentEng(),fid='DF051',drafts=duplicateEntryDraftRows(e,fid,e.answers?.[fid]);drafts.splice(Number(btn.dataset.duplicateDraftRemove),1);setAnswer(fid,duplicateEntryRows(e.answers?.[fid]));saveDuplicateEntryDraftRows(e,fid,drafts);render()});
   document.querySelectorAll('[data-duplicate-confirm]').forEach(btn=>btn.onclick=()=>{const e=currentEng(),fid='DF051',rows=duplicateEntryRows(e.answers?.[fid]);rows.push({data:btn.dataset.duplicateData||'',dataKey:btn.dataset.duplicateDataKey||'',from:btn.dataset.duplicateFrom||'',to:btn.dataset.duplicateTo||''});setAnswer(fid,rows);render()});
   document.querySelectorAll('[data-duplicate-dismiss]').forEach(btn=>btn.onclick=()=>{const e=currentEng(),d=answerDetails(e),key='DF051__dismissed',items=new Set(normalizeArray(d[key]));items.add(btn.dataset.duplicateDismiss);d[key]=[...items];e.updatedAt=now();markDirty('Candidato de reintroducción descartado');render()});
+  // DF054 actions depend on the current persisted selection: redraw only after change.
+  document.querySelectorAll('[data-pg05-finding-editor="DF054"] [data-multi="DF054"]').forEach(el=>el.addEventListener('change',()=>{
+    // The ordinary data-multi binding writes to the canonical DF054 answer first.
+    if(typeof render==='function')render();
+  }));
   document.querySelectorAll('[data-multi][data-exclusive]').forEach(el=>el.addEventListener('change',()=>{
     const fid=el.dataset.multi;
     if(el.checked)document.querySelectorAll(`[data-multi="${fid}"]`).forEach(other=>{if(other!==el)other.checked=false});
