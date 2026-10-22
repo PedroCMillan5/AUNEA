@@ -503,7 +503,7 @@ async function reviewPainCandidates(){
         return {fr,shared,sameType,exactSteps:ids.length>0&&ids.length===actual.length&&ids.every(id=>actual.includes(id))};
       }).filter(x=>x.shared.length);
       const exact=matches.filter(x=>x.sameType&&x.exactSteps),partial=matches.filter(x=>x.sameType&&!x.exactSteps);
-      const status=exact.length?'Coincide en tipo y pasos':partial.length?'Mismo tipo; pasos diferentes':matches.length?'Hay otros problemas en esos pasos':'No se ha registrado un problema equivalente';
+      const status=exact.length?'Mismo tipo y pasos; verificar si es el mismo problema':partial.length?'Mismo tipo, pero solo parte de los pasos coincide':matches.length?'No se ha encontrado el mismo tipo de fricción':'No hay una fricción equivalente identificada';
       const related=(exact.length?exact:partial.length?partial:[]).map(x=>String(x.fr.client_label||x.fr.id));
       return {...candidate,_review_status:status,_related_frictions:related};
     });
@@ -517,7 +517,7 @@ async function reviewPainCandidates(){
           const status=String(x._review_status||'Pendiente de revisar');
           return '<div class="result-item pain-review-card"><div class="result-item-head"><div><b>'+esc(labelFrom('OS_FRICTION_TYPE',x.pain_id)||'Posible fricción')+'</b>'
             +'<p>'+esc(x.rationale||'')+'</p>'
-            +'<p class="pain-overlap-note"><b>¿Ya lo hemos recogido?</b> '+esc(status)+(overlaps.length?'. Revisa: '+overlaps.map(esc).join(', '):'')+'. Si describe el mismo problema, no lo registres otra vez.</p>'
+            +'<div class="candidate-review-summary"><b>¿Ya está recogido?</b><p>'+esc(status)+'.</p>'+(overlaps.length?'<p><b>Fricciones que revisar:</b> '+overlaps.map(esc).join(' · ')+'</p>':'')+'<p><b>Siguiente acción:</b> comprobar si existe el mismo problema. Si ya está registrado, utiliza su ficha; si es distinto, revisa la sugerencia con el cliente.</p></div>'
             +(stepNames.length?'<p><b>Dónde ocurre:</b> '+stepNames.map(esc).join(', ')+'</p>':'')
             +(stepNames.length>1?'<p class="field-help">La sugerencia afecta a varios pasos. Comprueba cuáles intervienen realmente.</p>':'')
             +(questions.length?'<div class="field-help"><b>Preguntas para validarlo con el cliente:</b><br>'+questions.map(q=>'• '+esc(q)).join('<br>')+'</div>':'')
