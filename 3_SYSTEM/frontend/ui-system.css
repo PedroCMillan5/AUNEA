@@ -1709,7 +1709,8 @@ body.shell-session .topbar-left{display:none}
 .content:has(.diagnostic-stage-s09) .pg09-close-actions{flex:none}
 .content:has(.diagnostic-stage-s09) .pg09-snapshot-meta{padding-top:5px}
 .content:has(.diagnostic-stage-s09) .pg09-final-page .field .meta-tag,
-.content:has(.diagnostic-stage-s09) .pg09-final-page .field .requiredness-label{display:none}
+.content:has(.diagnostic-stage-s09) .pg09-final-page .field .requiredness-label,
+.content:has(.diagnostic-stage-s09) .pg09-final-page .conditional-tag{display:none}
 @media(max-width:1000px){
  .content:has(.diagnostic-stage-s09) .pg09-pending-grid,.content:has(.diagnostic-stage-s09) .pg09-fields-two{grid-template-columns:1fr}
  .content:has(.diagnostic-stage-s09) .nextstep-inline{grid-template-columns:1fr 1fr}
@@ -1724,3 +1725,8 @@ body.shell-session .topbar-left{display:none}
  .content:has(.diagnostic-stage-s09) .pg09-close-actions .btn{width:100%}
 }
 /* [AUNEA-FE-PG09-FINAL-VISUAL-140] END */
+
+.content:has(.diagnostic-stage-s09) .pg09-participant-confirmed{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px}
+.content:has(.diagnostic-stage-s09) .pg09-participant-confirmed>span{display:inline-flex;padding:7px 10px;border:1px solid #c4d9cd;border-radius:7px;background:#fff;color:#1b4833;font-size:12px;font-weight:600}
+.content:has(.diagnostic-stage-s09) .pg09-participant-confirmed>strong{color:#22643d;font-size:12px;margin-left:auto}
+.content:has(.diagnostic-stage-s09) .pg09-close-warning{font-size:12px;line-height:1.45;color:#795021;max-width:290px}
