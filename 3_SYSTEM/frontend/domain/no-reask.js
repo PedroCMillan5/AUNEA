@@ -163,7 +163,8 @@ function derivedApprovalReview(steps){
     const name=s.step_name||s.id;
     const actor=labelFrom('OS_ACTOR_ROLE',s.actor)||s.actor||'Pendiente';
     const details=String(s?._details?.decision_criteria||'').trim();
-    const criteria=details||normalizeArray(s.decision_criteria).map(v=>labelFrom('OS_DECISION_CRITERIA',v)||v).filter(Boolean).join(', ')||'Pendiente';
+    const criteriaInfo=approvalCriteriaSource(s,steps);
+      const criteria=criteriaInfo?(criteriaInfo.criteria+(criteriaInfo.source?' (heredado de «'+String(criteriaInfo.source.step_name||criteriaInfo.source.id)+'»)':'')):'Pendiente';
     const evidence=normalizeArray(s.evidence).map(v=>labelFrom('OS_EVIDENCE_TYPE',v)||v).filter(Boolean).join(', ')||'Pendiente';
     const result=s.step_type==='ST05'?'Aprobar o rechazar':'Determinar si requiere aprobación';
     return name+' · Aprobador/decisor: '+actor+' · Criterio: '+criteria+' · Resultado: '+result+' · Evidencia: '+evidence;
@@ -499,6 +500,21 @@ function migrateDf074ToRiskDerived(engagements=[]){
   return changed;
 }
 
+// [AUNEA-FE-RISK-APPROVAL-SOURCE-113] START — Reuse upstream decision criteria for a directly linked approval step.
+// Source remains the decision step; the approval step never acquires a fabricated rule.
+function approvalCriteriaSource(step,steps){
+  const own=String(step?._details?.decision_criteria||'').trim()||normalizeArray(step?.decision_criteria).map(v=>labelFrom('OS_DECISION_CRITERIA',v)||v).filter(Boolean).join(', ');
+  if(own)return {criteria:own,source:null};
+  if(step?.step_type!=='ST05')return null;
+  const parents=steps.filter(parent=>parent.id!==step.id
+    &&(String(parent.normal_next_step||'')===String(step.id)||String(parent.exception_path?.destination_step||'')===String(step.id))
+    &&(normalizeArray(parent.decision_criteria).length||String(parent?._details?.decision_criteria||'').trim()));
+  if(parents.length!==1)return null; // Ambiguous source: do not infer a policy.
+  const parent=parents[0],criteria=String(parent?._details?.decision_criteria||'').trim()
+    ||normalizeArray(parent.decision_criteria).map(v=>labelFrom('OS_DECISION_CRITERIA',v)||v).filter(Boolean).join(', ');
+  return criteria?{criteria,source:parent}:null;
+}
+// [AUNEA-FE-RISK-APPROVAL-SOURCE-113] END
 function riskDerivedSourceGaps(fid,e){
   if(!['DF066','DF067'].includes(fid))return [];
   const steps=activeSteps(e),gaps=[];
@@ -510,7 +526,7 @@ function riskDerivedSourceGaps(fid,e){
     }
     if(fid==='DF067'&&(step.step_type==='ST05'||normalizeArray(step.decision_criteria).length)){
       if(!step.actor)gaps.push(who+': responsable de aprobación');
-      if(!normalizeArray(step.decision_criteria).length&&!String(step._details?.decision_criteria||'').trim())gaps.push(who+': criterio de aprobación');
+      if(!approvalCriteriaSource(step,steps))gaps.push(who+': criterio de aprobación');
     }
   }
   return gaps;
