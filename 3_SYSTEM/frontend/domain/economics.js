@@ -224,16 +224,20 @@ let __auneaEconomicCandidates=[];
 function economicReviewCandidates(e){
   const steps=typeof activeSteps==='function'?activeSteps(e):(e.processSteps||[]).filter(x=>x.status!=='SUPERSEDED');
   const existing=e.economicInputs||[];
-  const existingCovers=(driver,ids)=>{
-    const wanted=new Set(normalizeArray(ids));
-    return existing.some(x=>x.driver_id===driver&&normalizeArray(x.step_ids).some(id=>wanted.has(id)));
-  };
+  // [AUNEA-FE-ECON-CANDIDATE-RECONCILE-116] START — Never suppress partially covered candidate scopes.
   const candidates=[];
   const add=(driver,ids,rationale,questions=[])=>{
     const stepIds=[...new Set(normalizeArray(ids).filter(Boolean))];
-    if(!stepIds.length||existingCovers(driver,stepIds))return;
-    candidates.push({driver_id:driver,step_ids:stepIds,rationale,review_questions:questions});
+    if(!stepIds.length)return;
+    const related=existing.filter(x=>x.status!=='SUPERSEDED'&&String(x.driver_id)===String(driver)
+      &&normalizeArray(x.step_ids).some(id=>stepIds.includes(id)));
+    const covered=new Set(related.flatMap(x=>normalizeArray(x.step_ids)));
+    const uncovered=stepIds.filter(id=>!covered.has(id));
+    const status=!related.length?'Sin impacto del mismo tipo registrado':uncovered.length?'Cobertura parcial':'Ámbito ya registrado';
+    candidates.push({driver_id:driver,step_ids:stepIds,rationale,review_questions:questions,_review_status:status,
+      _related_impacts:related.map(x=>({id:x.id||'',steps:normalizeArray(x.step_ids)})),_uncovered_steps:uncovered});
   };
+  // [AUNEA-FE-ECON-CANDIDATE-RECONCILE-116] END
   const active=steps.filter(s=>Number(s.active_time||0)>0).map(s=>s.id);
   const wait=steps.filter(s=>Number(s.wait_time||0)>0).map(s=>s.id);
   const rework=steps.filter(s=>Number(s.rework_time||0)>0).map(s=>s.id);
@@ -258,12 +262,15 @@ async function reviewEconomicCandidates(){
   const steps=typeof activeSteps==='function'?activeSteps(e):[];
   __auneaEconomicCandidates=economicReviewCandidates(e);
   const body=__auneaEconomicCandidates.length
-    ?'<div class="notice info"><b>Impactos que conviene revisar con el cliente</b><p>AUNEA reutiliza el mapa, las fricciones y los tiempos ya capturados. Son oportunidades de cuantificación, no resultados económicos confirmados.</p></div><div class="result-list">'
+    ?'<div class="notice info economic-review-intro"><b>Impactos que conviene revisar con el cliente</b><p>AUNEA reutiliza el mapa, las fricciones y los tiempos ya capturados. Son oportunidades de cuantificación, no resultados económicos confirmados.</p></div><div class="result-list">'
       +__auneaEconomicCandidates.map((x,i)=>{
         const names=normalizeArray(x.step_ids).map(id=>steps.find(s=>s.id===id)?.step_name||'').filter(Boolean);
         const qs=normalizeArray(x.review_questions).filter(Boolean);
+        const status=x._review_status||'Pendiente de comprobar';
+        const uncovered=normalizeArray(x._uncovered_steps).map(id=>steps.find(s=>s.id===id)?.step_name||id);
         return '<div class="result-item economic-review-card"><div class="result-item-head"><div><b>'+esc(econDriverLabel(x.driver_id))+'</b>'
           +'<p>'+esc(x.rationale||'')+'</p>'
+          +'<p class="candidate-review-explanation"><b>Estado:</b> '+esc(status)+'. '+(uncovered.length?'Sin registrar en: '+uncovered.map(esc).join(', ')+'. ':'')+'Verifica el alcance y evita contabilizar el mismo tiempo dos veces.</p>'
           +(names.length?'<p><b>Dónde revisar:</b> '+names.map(esc).join(', ')+'</p>':'')
           +(names.length>1?'<p class="field-help">AUNEA ha agrupado el mismo tipo de impacto detectado en varios pasos para evitar recomendaciones repetidas.</p>':'')
           +(qs.length?'<div class="field-help"><b>Preguntas para validarlo:</b><br>'+qs.map(q=>'• '+esc(q)).join('<br>')+'</div>':'')
