@@ -88,7 +88,7 @@ select option{background:#fff;color:var(--ink)}
 
 .company-ins-head{align-items:flex-start;gap:12px}.company-ins-head h3{min-width:0;flex:1;overflow-wrap:anywhere;word-break:break-word}.ins-head-actions{display:flex;gap:6px;flex:0 0 auto;flex-wrap:nowrap;justify-content:flex-end;white-space:nowrap}
 /* PG06: separación específica entre aviso y tarjetas de fricciones candidatas. */
-.modal .notice.info:has(+ .result-list:has(.pain-review-card)){margin-bottom:16px}
+.modal .notice.info:has(+ .result-list:has(.pain-review-card)){margin-bottom:24px}
 .modal .result-list:has(> .pain-review-card){display:flex;flex-direction:column;gap:14px;min-width:0}
 .modal .result-list>.pain-review-card{margin:0;padding:16px;min-width:0}
 .modal .pain-review-card .result-item-head>div:first-child>p{margin:8px 0}
@@ -1558,3 +1558,5 @@ body.shell-session .topbar-left{display:none}
 .main:has(.flow-confirm [data-confirm-process-layer="frictions"])>.content{min-height:0;padding-bottom:0;box-sizing:border-box}
 /* Preserve a compact visual footer without adding 20px to the scrollable document. */
 .main:has(.flow-confirm [data-confirm-process-layer="frictions"]) .flow-confirm{margin-bottom:0}
+
+.modal .pain-review-card .pain-overlap-note{margin:12px 0;padding:10px 12px;border-left:2px solid #A66300;background:#fff8ed;color:#664b20;line-height:1.5}
