@@ -1531,3 +1531,13 @@ body.shell-session .topbar-left{display:none}
 .risk-modal-form .field:has(#riskMat) label .required,.risk-modal-form .field:has(#riskMat) label .required-mark{display:inline!important;float:none!important;position:static!important;margin-left:2px}
 .risk-related-problems .risk-friction-separator{display:inline-block;font-weight:900;font-size:1.15em;margin-inline:13px;vertical-align:middle;line-height:1}
 @media(max-width:700px){.risk-modal-form .field:has(#riskSensitive) label,.risk-modal-form .field:has(#riskMat) label{min-height:0;display:block}}
+
+/* PG05: confirmed derived cards remain compact; reversal is a secondary inline action. */
+.pg05-field-grid{align-items:start}
+.pg05-field-grid .pg05-field--confirmed{grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:7px 14px}
+.pg05-field-grid .pg05-field--confirmed .pg05-field-top{grid-column:1/-1}
+.pg05-field-grid .pg05-field--confirmed .pg05-field-value{grid-column:1;grid-row:2}
+.pg05-field-grid .pg05-field--confirmed>small{grid-column:1;grid-row:3}
+.pg05-field-grid .pg05-field--confirmed .pg05-field-confirmation{grid-column:2;grid-row:2/span 2;border-top:0;padding-top:0;display:flex;justify-content:flex-end;align-self:center}
+.pg05-field-grid .pg05-field--confirmed .pg05-field-confirmation>.btn{min-height:34px;height:auto;padding:6px 12px;white-space:nowrap}
+@media(max-width:540px){.pg05-field-grid .pg05-field--confirmed{grid-template-columns:1fr}.pg05-field-grid .pg05-field--confirmed .pg05-field-confirmation{grid-column:1;grid-row:4;justify-content:flex-start}}
