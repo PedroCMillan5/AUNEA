@@ -1560,3 +1560,8 @@ body.shell-session .topbar-left{display:none}
 .main:has(.flow-confirm [data-confirm-process-layer="frictions"]) .flow-confirm{margin-bottom:0}
 
 .modal .pain-review-card .pain-overlap-note{margin:12px 0;padding:10px 12px;border-left:2px solid #A66300;background:#fff8ed;color:#664b20;line-height:1.5}
+
+/* Explicit popup spacing: independent of :has() sibling matching. */
+.modal .pain-review-intro{margin-bottom:24px!important}
+.modal .pain-review-intro + .result-list{display:flex;flex-direction:column;gap:16px}
+.modal .pain-review-intro + .result-list > .pain-review-card{margin:0}
