@@ -196,10 +196,26 @@ function duplicateEntryCandidates(e){
   }
   return out;
 }
+// Review-only evidence when a step records rekey/copy or a friction explicitly names re-entry.
+function duplicateEntryIncompleteSignals(e){
+  const steps=(e.processSteps||[]).filter(x=>x.status!=='SUPERSEDED');
+  const frictions=(e.frictions||[]).filter(x=>x.status!=='SUPERSEDED');
+  return steps.filter(step=>{
+    const manual=normalizeArray(step.manual_actions).some(v=>['REKEY','COPY'].includes(String(v)));
+    const linked=frictions.some(f=>normalizeArray(f.affected_steps).map(String).includes(String(step.id))
+      &&(/reintroduc|reintroduc|copiar datos|doble introducci|transcri/i.test([f.client_label,f.observable_signal,f.notes].filter(Boolean).join(' '))));
+    return manual||linked;
+  }).map(step=>({id:'step:'+String(step.id),to:String(step.id),step:step.step_name||step.id,
+    frictions:frictions.filter(f=>normalizeArray(f.affected_steps).map(String).includes(String(step.id))
+      &&/reintroduc|doble introducci|copiar datos|transcri/i.test([f.client_label,f.observable_signal,f.notes].filter(Boolean).join(' '))).map(f=>f.client_label||f.id)}));
+}
 function duplicateEntryControl(fid,e,val){
   const rows=duplicateEntryRows(val),drafts=duplicateEntryDraftRows(e,fid,val),opts=stepOptions(e),d=answerDetails(e),dismissed=new Set(normalizeArray(d[`${fid}__dismissed`])),confirmedKeys=new Set(rows.map(x=>`${x.dataKey||x.data}:${x.from}:${x.to}`));
   const suggestions=duplicateEntryCandidates(e).filter(x=>!dismissed.has(x.id)&&!confirmedKeys.has(x.id));
-  const unresolvedHtml='',frictionHtml=''; // Incomplete signals never become detected reintroductions.
+  const incomplete=duplicateEntryIncompleteSignals(e).filter(x=>!dismissed.has(x.id));
+  const unresolvedHtml=incomplete.length?'<div class="duplicate-entry-suggestions"><div class="duplicate-entry-heading"><b>Señales de posible reintroducción pendientes de verificar</b><span>No son duplicaciones confirmadas. Comprueba la información afectada y el paso de origen.</span></div>'
+    +incomplete.map(x=>'<div class="duplicate-entry-suggestion"><div><b>'+esc(x.step)+'</b><span>Destino propuesto · '+esc(x.frictions.join(' · ')||'Acción manual de copia o reintroducción registrada')+'</span></div><div class="row-actions"><button type="button" class="btn btn-small btn-primary" data-duplicate-signal-draft="'+attr(x.to)+'">Revisar origen y datos</button><button type="button" class="btn btn-small" data-duplicate-dismiss="'+attr(x.id)+'">Descartar señal</button></div></div>').join('')+'</div>':'';
+  const frictionHtml='';
   const suggestionHtml=suggestions.length?`<div class="duplicate-entry-suggestions"><div class="duplicate-entry-heading"><b>Posibles reintroducciones detectadas</b><span>Confirma sólo las que ocurren realmente.</span></div>${suggestions.map(x=>`<div class="duplicate-entry-suggestion" data-duplicate-suggestion="${attr(x.id)}"><div><b>${esc(x.data)}</b><span>${esc(stepOptions(e).find(o=>o.value===x.from)?.label||x.from)} → ${esc(stepOptions(e).find(o=>o.value===x.to)?.label||x.to)}</span></div><div class="row-actions"><button type="button" class="btn btn-small btn-primary" data-duplicate-confirm="${attr(x.id)}" data-duplicate-data="${attr(x.data)}" data-duplicate-data-key="${attr(x.dataKey)}" data-duplicate-from="${attr(x.from)}" data-duplicate-to="${attr(x.to)}">Confirmar</button><button type="button" class="btn btn-small" data-duplicate-dismiss="${attr(x.id)}">No es una reintroducción</button></div></div>`).join('')}</div>`:'';
   const rowHtml=rows.length?rows.map((x,i)=>`<div class="duplicate-entry-row" data-duplicate-row="${i}"><div class="duplicate-entry-heading"><b>Reintroducción confirmada ${i+1}</b></div><div class="duplicate-entry-fields"><label><span>Información afectada</span><input class="detail-input" data-duplicate-part="data" data-duplicate-index="${i}" value="${attr(x.data||'')}" placeholder="Ej. Datos de la factura"></label><label><span>Disponible originalmente en</span>${canonicalSelect(`${fid}__from_${i}`,opts,x.from||'',`data-duplicate-part="from" data-duplicate-index="${i}"`)}</label><label><span>Se vuelve a introducir en</span>${canonicalSelect(`${fid}__to_${i}`,opts,x.to||'',`data-duplicate-part="to" data-duplicate-index="${i}"`)}</label></div><div class="row-actions"><button type="button" class="btn btn-small btn-outline" data-duplicate-undo="${i}">Deshacer confirmación</button><button type="button" class="btn btn-small duplicate-entry-remove" data-duplicate-remove="${i}">Eliminar</button></div></div>`).join(''):(suggestions.length?'':'<div class="field-help">No hay reintroducciones confirmadas todavía.</div>');
   const draftHtml=drafts.length?`<div class="duplicate-entry-drafts"><div class="duplicate-entry-heading"><b>Pendientes de confirmar</b><span>Completa los tres datos antes de convertirlos en una reintroducción real.</span></div>${drafts.map((x,i)=>`<div class="duplicate-entry-row duplicate-entry-draft" data-duplicate-draft-row="${i}"><div class="duplicate-entry-fields"><label><span>Información afectada</span><input class="detail-input" data-duplicate-draft-part="data" data-duplicate-draft-index="${i}" value="${attr(x.data||'')}" placeholder="Ej. Datos de la factura"></label><label><span>Disponible originalmente en</span>${canonicalSelect(`${fid}__draft_from_${i}`,opts,x.from||'',`data-duplicate-draft-part="from" data-duplicate-draft-index="${i}"`)}</label><label><span>Se vuelve a introducir en</span>${canonicalSelect(`${fid}__draft_to_${i}`,opts,x.to||'',`data-duplicate-draft-part="to" data-duplicate-draft-index="${i}"`)}</label></div><div class="row-actions duplicate-entry-draft-actions"><button type="button" class="btn btn-small btn-primary" data-duplicate-draft-confirm="${i}" ${duplicateEntryComplete(x)?'':'disabled'}>Confirmar reintroducción</button><button type="button" class="btn btn-small" data-duplicate-draft-remove="${i}">Descartar</button></div></div>`).join('')}</div>`:'';
@@ -611,6 +627,14 @@ function bindCanonicalRenderer(){
   };document.querySelectorAll(`[data-number-value="${fid}"]`).forEach(el=>el.addEventListener('input',sync));document.querySelectorAll(`[data-number-unit="${fid}"],[data-number-period="${fid}"],[data-number-mode="${fid}"]`).forEach(el=>el.addEventListener('change',sync))});
   document.querySelectorAll('[data-set-unknown]').forEach(b=>b.onclick=()=>{const fid=b.dataset.setUnknown;setAnswer(fid,currentEng()?.answers?.[fid]==='UNKNOWN'?'':'UNKNOWN');render()});
   const pairFids=[...new Set([...document.querySelectorAll('[data-pair-field]')].map(x=>x.dataset.pairField))];pairFids.forEach(fid=>document.querySelectorAll(`[data-pair-field="${fid}"]`).forEach(el=>el.addEventListener('change',()=>{const p={};document.querySelectorAll(`[data-pair-field="${fid}"]`).forEach(x=>p[x.dataset.pairPart]=x.value);setAnswer(fid,p)})));
+  document.querySelectorAll('[data-duplicate-signal-draft]').forEach(btn=>btn.onclick=()=>{
+    const e=currentEng(),fid='DF051',to=btn.dataset.duplicateSignalDraft;
+    if(!e||!to)return;
+    const drafts=duplicateEntryDraftRows(e,fid,e.answers?.[fid]);
+    if(!drafts.some(x=>String(x.to)===String(to)&&!duplicateEntryComplete(x)))
+      saveDuplicateEntryDraftRows(e,fid,[...drafts,{data:'',from:'',to}]);
+    render();
+  });
   document.querySelectorAll('[data-duplicate-add]').forEach(btn=>btn.onclick=()=>{const fid=btn.dataset.duplicateAdd,e=currentEng();if(!e)return;const drafts=duplicateEntryDraftRows(e,fid,e.answers?.[fid]);saveDuplicateEntryDraftRows(e,fid,[...drafts,{data:'',from:'',to:''}]);render()});
   document.querySelectorAll('[data-duplicate-part]').forEach(el=>el.addEventListener(el.tagName==='INPUT'?'input':'change',()=>{const e=currentEng(),fid='DF051',rows=duplicateEntryRows(e.answers?.[fid]),i=Number(el.dataset.duplicateIndex);if(!rows[i])return;rows[i]={...rows[i],[el.dataset.duplicatePart]:el.value};setAnswer(fid,rows)}));
   // [AUNEA-FE-PG05-DUPLICATE-UNDO-097] START — Restore confirmed DF051 to its governed draft owner without data loss.
