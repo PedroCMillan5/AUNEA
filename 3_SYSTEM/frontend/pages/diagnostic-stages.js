@@ -505,7 +505,7 @@ function validationSummary(e,completion){
     ['Riesgos',risks.length+' registrados',layers.risks],
     ['Impactos',econ.length+' registrados',layers.impact]
   ].map(([title,detail,ok])=>'<div class="pg09-layer-tile"><span>'+esc(title)+'</span><b>'+esc(detail)+'</b><small>'+(ok?'Confirmado':'Pendiente de confirmar')+'</small></div>').join('');
-  const findings=consistency.items.filter(x=>x.severity!=='INFO');
+  const findings=consistency.items.filter(x=>x.severity!=='INFO'&&!String(x.code||'').startsWith('EVIDENCE_'));
   const issuesHtml=findings.length?'<div class="pg09-review-list">'+findings.map(item=>{
     const evidence=String(item.code||'').startsWith('EVIDENCE_');
     const raw=String(item.message||'');
@@ -516,7 +516,7 @@ function validationSummary(e,completion){
       :'';
     return '<div class="pg09-review-row '+(item.severity==='BLOCKER'?'is-blocker':'is-observation')+'">'
       +'<div><span>'+esc(message)+'</span><small>'+(evidence?'Evidencia pendiente de recibir':item.severity==='BLOCKER'?'Requiere corrección para cerrar':'Revisión pendiente')+'</small></div>'+action+'</div>';
-  }).join('')+'</div>':'<p class="pg09-clean-review">No se han detectado bloqueos ni observaciones pendientes.</p>';
+  }).join('')+'</div>':'<p class="pg09-clean-review">'+(consistency.reviews.length?'Las evidencias pendientes figuran en el bloque superior y quedarán documentadas tras el cierre.':'No hay bloqueos ni observaciones pendientes.')+'</p>';
   return section('Revisión y confirmación final',
     'Esta revisión comprueba las confirmaciones anteriores y los datos pendientes, sin volver a capturar el proceso.',
     '<div class="pg09-confirm-section">'
