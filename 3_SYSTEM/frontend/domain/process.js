@@ -1290,8 +1290,13 @@ function asIsComplementarySignals(e){
   if(masterSteps.length)out.push({field:'DF048',message:'Datos maestros detectados en: '+masterSteps.map(stepName).join(' · ')+'. Identifica las referencias concretas sólo si se conocen; la categoría Dato maestro no especifica por sí sola cuáles son.'});
   const documents=processDocumentArtifacts(steps);
   if(documents.length)out.push({field:'DF049',message:'Artefactos documentales procedentes de los pasos: '+documents.map(v=>labelFrom('OS_ARTIFACT_TYPE',v)||v).join(' · ')+'. La confirmación se realiza en el campo derivado, sin una segunda captura.'});
-  const incompleteReentry=typeof duplicateEntryIncompleteSignals==='function'?duplicateEntryIncompleteSignals(e):[];
-  const actualReintroductions=typeof duplicateEntryCandidates==='function'?duplicateEntryCandidates(e):[];
+  const confirmedReentries=typeof duplicateEntryRows==='function'?duplicateEntryRows(e.answers?.DF051):[];
+  const confirmedDestinations=new Set(confirmedReentries.map(x=>String(x.to)));
+  const dismissedReentry=new Set(normalizeArray(e.answerDetails?.DF051__dismissed).map(String));
+  const incompleteReentry=(typeof duplicateEntryIncompleteSignals==='function'?duplicateEntryIncompleteSignals(e):[])
+    .filter(x=>!confirmedDestinations.has(String(x.to))&&!dismissedReentry.has(String(x.id)));
+  const actualReintroductions=(typeof duplicateEntryCandidates==='function'?duplicateEntryCandidates(e):[])
+    .filter(x=>!confirmedReentries.some(y=>String(y.to)===String(x.to)&&String(y.from)===String(x.from))&&!dismissedReentry.has(String(x.id)));
   if(actualReintroductions.length)out.push({field:'DF051',message:'Reintroducciones identificadas en el flujo: '+actualReintroductions.map(x=>stepName(steps.find(s=>String(s.id)===String(x.from)))+' → '+stepName(steps.find(s=>String(s.id)===String(x.to)))+' ('+x.data+')').join(' · ')+'. Revisa y confirma únicamente estas relaciones registradas.'});
   if(incompleteReentry.length)out.push({field:'DF051',message:'Posible reintroducción pendiente de verificar en: '+incompleteReentry.map(x=>x.step+(x.frictions.length?' · '+x.frictions.join(', '):'')).join(' · ')+'. El origen y los datos reintroducidos no se infieren automáticamente.'});
   const qualityFrictions=frictions.filter(f=>['P02','P11','P13'].includes(String(f.friction_type))||/faltan?|ausente|incomplet|duplicad|incorrect|err[oó]ne/i.test(String(f.observable_signal||f.client_label||'')));
@@ -1501,7 +1506,7 @@ function consultantStepsReviewPage(e){
       const acknowledged=!!(count&&e.answerDetails?.[fid+'__finding_confirmation']?.fingerprint===JSON.stringify(explicit));
       status=count?(fid==='DF051'||acknowledged?'Hallazgo confirmado':'Datos registrados · pendientes de validar'):candidate?'Posible hallazgo · por validar':'No consta hallazgo';
       kind=count?(fid==='DF051'||acknowledged?'confirmed':'review'):candidate?'review':'unknown';
-      if(fid==='DF051')detail=[count?count+' reintroducción(es) confirmada(s).':'',signal?.message||(!count?'No hay reintroducciones confirmadas. Puedes registrar una manualmente si existe.':'')].filter(Boolean).join(' ');
+      if(fid==='DF051')detail=[count?count+' reintroducción(es) confirmada(s): '+duplicateEntryRows(explicit).map(x=>String(x.data)+' ('+(byId.get(String(x.from))||x.from)+' → '+(byId.get(String(x.to))||x.to)+')').join(' · ')+'.':'',signal?.message||(!count?'No hay reintroducciones confirmadas. Puedes registrar una manualmente si existe.':'')].filter(Boolean).join(' ');
       else if(fid==='DF053'){
         // Keep the actual human-confirmed answer and new machine-derived evidence distinct.
         // A later SEARCH action or a friction may add candidates; neither silently overwrites
@@ -1534,6 +1539,7 @@ function consultantStepsReviewPage(e){
       status=hasExplicit?(fid==='DF055'&&!confirmedSelection?'Dato registrado · pendiente de validar':'Dato registrado'):signal?'Indicio · pendiente de validar':'No consta · condicional';
       kind=hasExplicit?(fid==='DF055'&&!confirmedSelection?'review':'confirmed'):signal?'review':'unknown';
       detail=hasExplicit?formatContextValue(f,explicit):signal?.message||'No hay información acreditada; no bloquea por sí solo';
+      if(fid==='DF055'&&hasExplicit){const linked=normalizeArray(e.answerDetails?.DF055__steps).map(String);detail+=' · Pasos afectados: '+(linked.length?linked.map(id=>byId.get(id)||id).join(' · '):'pendientes de identificar');}
       // CONDITIONAL_ASK is optional, not inaccessible. A consultant can discover
       // master-data, document-version or quality issues without a prior Pain/Step signal.
       requiresReview=true;
@@ -1574,7 +1580,7 @@ function consultantStepsReviewPage(e){
     // [AUNEA-FE-PG05-UNIFIED-CONFIRM-107] START — Shared confirm / undo semantics.
     const uniformFields=['DF048','DF052','DF053','DF054','DF055'];
     const uniform=fid!=='DF051'&&uniformFields.includes(fid);
-    const uniformFingerprint=JSON.stringify(explicit);
+    const uniformFingerprint=JSON.stringify(fid==='DF055'?{values:explicit,steps:normalizeArray(e.answerDetails?.DF055__steps)}:explicit);
     const uniformConfirmed=uniform&&!!e.answerDetails?.[fid+'__finding_confirmation']&&e.answerDetails[fid+'__finding_confirmation'].fingerprint===uniformFingerprint;
     const uniformNoReview=uniform&&!!e.answerDetails?.[fid+'__no_review_needed'];
     const uniformLocked=uniform&&(uniformConfirmed||uniformNoReview);
@@ -1624,7 +1630,7 @@ function consultantStepsReviewPage(e){
     const noReviewAvailable=!uniform&&!hasExplicit&&!signal&&!hasReuse&&['DF046','DF047','DF049','DF050','DF052','DF053','DF054','DF055'].includes(fid)&&!(fid==='DF051'&&typeof duplicateEntryDraftRows==='function'&&duplicateEntryDraftRows(e,'DF051',explicit).length);
     if(noReviewAvailable){status=noReviewNeeded?'Sin validación pendiente':'Sin información que validar';kind=noReviewNeeded?'confirmed':'unknown';}
     const noReviewAction=uniform?(uniformLocked||hasExplicit?'':'<button type="button" class="btn btn-small btn-outline" data-pg05-no-review="'+fid+'">No hay validación que hacer</button>'):noReviewAvailable?'<button type="button" class="btn btn-small btn-outline" data-pg05-no-review="'+fid+'">'+(noReviewNeeded?'Deshacer confirmación':'No hay validación que hacer')+'</button>':'';
-    const reviewConfirmationAction=!uniform&&['DF053','DF054','DF055'].includes(fid)&&hasExplicit?'<button type="button" class="btn btn-small '+(e.answerDetails?.[fid+'__finding_confirmation']?.fingerprint===JSON.stringify(explicit)?'btn-outline':'btn-primary')+'" data-pg05-confirm-finding="'+fid+'">'+(e.answerDetails?.[fid+'__finding_confirmation']?.fingerprint===JSON.stringify(explicit)?'Deshacer confirmación':'Confirmar selección')+'</button>':'';
+    const reviewConfirmationAction=!uniform&&['DF053','DF054','DF055'].includes(fid)&&hasExplicit?'<button type="button" class="btn btn-small '+(e.answerDetails?.[fid+'__finding_confirmation']?.fingerprint===uniformFingerprint?'btn-outline':'btn-primary')+'" data-pg05-confirm-finding="'+fid+'">'+(e.answerDetails?.[fid+'__finding_confirmation']?.fingerprint===uniformFingerprint?'Deshacer confirmación':'Confirmar selección')+'</button>':'';
     const findingUndoAction=''; // DF051 reversibility lives on each confirmed row, not a second card action.
     const inlineDuplicate=fid==='DF051'&&requiresReview;
     const action=derived?(derivedAction+(noReviewAvailable?'<div class="pg05-field-action">'+noReviewAction+'</div>':''))
@@ -1916,7 +1922,7 @@ if(typeof document!=='undefined'&&!document.__auneaPg05FindingActionsBound){
         if(typeof toast==='function')toast('Selecciona al menos un paso donde ocurre el problema de calidad.');
         return;
       }
-      const details=e.answerDetails||(e.answerDetails={}),key=fid+'__finding_confirmation',fingerprint=JSON.stringify(e.answers?.[fid]);
+      const details=e.answerDetails||(e.answerDetails={}),key=fid+'__finding_confirmation',fingerprint=JSON.stringify(fid==='DF055'?{values:e.answers?.[fid],steps:normalizeArray(e.answerDetails?.DF055__steps)}:e.answers?.[fid]);
       if(details[key]?.fingerprint===fingerprint)delete details[key];
       else {details[key]={fingerprint,confirmedAt:now()};delete details[fid+'__no_review_needed'];}
       e.updatedAt=now();markDirty('Confirmación revisada');render();return;
