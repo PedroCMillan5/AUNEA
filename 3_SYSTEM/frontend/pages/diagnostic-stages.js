@@ -499,19 +499,14 @@ function validationSummary(e,completion){
       ${consistency.reviews.length&&!consistency.blockers.length?'<div class="field-help">Las observaciones ámbar no impiden el cierre: permanecen explícitas como incertidumbre/evidencia pendiente para Trabajo interno.</div>':''}
     </div>
     <div class="closing-first-readings">
-      <h3>Comprobación final</h3>
-      <p class="field-help">Resumen de control: estos recuentos no representan evidencia validada ni resultados económicos confirmados.</p>
+      <h3>Antes de confirmar el cierre</h3>
+      <p class="field-help">Los cuatro bloques del AS-IS ya se revisaron en sus pantallas. Comprueba que no hay bloqueos, que se conservan las evidencias pendientes y que el siguiente paso está acordado.</p>
       <div class="grid g3">
-        <div class="notice"><b>Proceso</b><br>${steps.length} pasos</div>
-        <div class="notice"><b>Fricciones</b><br>${fr.length}</div>
-        <div class="notice"><b>Riesgos</b><br>${risks.length}</div>
-        <div class="notice"><b>Impactos</b><br>${econ.length}</div>
-        <div class="notice ${consistency.blockers.length?'warn':'good'}"><b>Bloqueantes</b><br>${consistency.blockers.length}</div>
-        <div class="notice ${consistency.reviews.length?'info':'good'}"><b>Observaciones</b><br>${consistency.reviews.length}</div>
-        <div class="notice ${evidencePending.length?'info':'good'}"><b>Evidencias pendientes</b><br>${evidencePending.length}</div>
-        <div class="notice"><b>Siguiente acción</b><br>${nextStep?esc(nextStep):'Pendiente de acordar'}</div>
+        <div class="notice ${consistency.blockers.length?'warn':'good'}"><b>Bloqueos</b><br>${consistency.blockers.length}</div>
+        <div class="notice ${evidencePending.length?'info':'good'}"><b>Evidencias por recibir</b><br>${evidencePending.length}</div>
+        <div class="notice"><b>Siguiente paso acordado</b><br>${nextStep?esc(nextStep):'Pendiente de acordar'}</div>
       </div>
-      ${(()=>{const pending=captureMissing;return pending.length?'<div class="notice warn"><b>Pendientes antes de Trabajo interno</b><br>'+pending.map(x=>{const label=esc(x.label||'Dato obligatorio pendiente'),stage=x.stage||'';return stage&&stage!=='S09'?'<button class="link-btn" data-goto-stage="'+attr(stage)+'">'+label+'</button>':label}).join(' · ')+'</div>':'<div class="notice good"><b>Campos obligatorios completos</b><br>No faltan datos obligatorios de captura. Pueden quedar evidencias u observaciones por verificar.</div>'})()}
+      ${captureMissing.length?'<div class="notice warn"><b>Campos obligatorios pendientes</b><br>'+captureMissing.map(x=>esc(x.label||'Dato pendiente')).join(' · ')+'</div>':'<p class="field-help">Todos los campos obligatorios de captura están completos. Las evidencias pendientes siguen identificadas como no verificadas.</p>'}
     </div>
     <div class="field-help internal-only" style="margin-top:10px"><b>Notas internas del consultor:</b> ${notes?esc(notes):'—'}</div>
     <div class="closing-final-action">${cta}</div>`
