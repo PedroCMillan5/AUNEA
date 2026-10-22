@@ -509,7 +509,7 @@ async function reviewPainCandidates(){
     });
     // [AUNEA-FE-PAIN-CANDIDATE-RECONCILE-114] END
     const body=__auneaPainCandidates.length
-      ?'<div class="notice info pain-review-intro"><b>Oportunidades para revisar con el cliente</b><p>AUNEA ha detectado señales a partir del proceso ya capturado. Son hipótesis de revisión: no se crea ninguna fricción hasta que la confirmes.</p></div><div class="result-list">'
+      ?'<div class="notice info pain-review-intro"><b>Antes de registrar otra fricción</b><p>Estas señales proceden del proceso. Comprueba si el problema ya existe; ninguna sugerencia se registra automáticamente.</p></div><div class="result-list">'
         +__auneaPainCandidates.map((x,i)=>{
           const stepNames=normalizeArray(x.step_ids).map(id=>steps.find(s=>s.id===id)?.step_name||'').filter(Boolean);
           const questions=normalizeArray(x.review_questions).filter(Boolean);
@@ -517,7 +517,7 @@ async function reviewPainCandidates(){
           const status=String(x._review_status||'Pendiente de revisar');
           return '<div class="result-item pain-review-card"><div class="result-item-head"><div><b>'+esc(labelFrom('OS_FRICTION_TYPE',x.pain_id)||'Posible fricción')+'</b>'
             +'<p class="candidate-card-subtitle">'+esc(x.rationale||'Posible problema detectado en el proceso.')+'</p>'
-            +'<div class="candidate-review-summary"><b>Lo que sabemos</b><p>'+esc(status)+'.'+(overlaps.length?' Fricciones que conviene revisar: '+overlaps.join(' · ')+'.':'')+'</p><b>Qué falta comprobar</b><p>Si se trata del mismo problema ya registrado o de uno distinto. No se añadirá ninguna fricción sin confirmación.</p></div>'
+            +'<div class="candidate-review-summary"><b>Lo que sabemos</b><p>'+esc(status)+'.'+(overlaps.length?' Fricciones que conviene revisar: '+overlaps.map(esc).join(' · ')+'.':'')+'</p><b>Qué falta comprobar</b><p>Si se trata del mismo problema ya registrado o de uno distinto. No se añadirá ninguna fricción sin confirmación.</p></div>'
             +(stepNames.length?'<p><b>Pasos relacionados:</b> '+stepNames.map(esc).join(' · ')+'</p>':'')
             +(questions.length?'<p class="candidate-key-question"><b>Pregunta clave:</b> '+esc(questions[0])+'</p>':'')
             +'</div><div class="result-actions"><button type="button" class="btn btn-small btn-primary" data-review-pain-candidate="'+i+'">Revisar con el cliente</button></div></div></div>';
