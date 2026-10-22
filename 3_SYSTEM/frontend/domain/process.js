@@ -503,7 +503,7 @@ async function reviewPainCandidates(){
       return {...candidate,_related_frictions:related.map(fr=>fr.client_label||fr.id)};
     });
     const body=__auneaPainCandidates.length
-      ?'<div class="notice info"><b>Oportunidades para revisar con el cliente</b><p>AUNEA ha detectado señales a partir del proceso ya capturado. Son hipótesis de revisión: no se crea ninguna fricción hasta que la confirmes.</p></div><div class="result-list">'
+      ?'<div class="notice info pain-review-intro"><b>Oportunidades para revisar con el cliente</b><p>AUNEA ha detectado señales a partir del proceso ya capturado. Son hipótesis de revisión: no se crea ninguna fricción hasta que la confirmes.</p></div><div class="result-list">'
         +__auneaPainCandidates.map((x,i)=>{
           const stepNames=normalizeArray(x.step_ids).map(id=>steps.find(s=>s.id===id)?.step_name||'').filter(Boolean);
           const questions=normalizeArray(x.review_questions).filter(Boolean);
