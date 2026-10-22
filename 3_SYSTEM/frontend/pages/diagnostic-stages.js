@@ -503,8 +503,8 @@ function validationSummary(e,completion){
     ['Pasos',steps.length+' registrados',layers.map],
     ['Fricciones',fr.length+' registradas',layers.frictions],
     ['Riesgos',risks.length+' registrados',layers.risks],
-    ['Impactos',econ.length+' registrados',layers.impact]
-  ].map(([title,detail,ok])=>'<div class="pg09-layer-tile"><span>'+esc(title)+'</span><b>'+esc(detail)+'</b><small>'+(ok?'Confirmado':'Pendiente de confirmar')+'</small></div>').join('');
+    ['Impactos',econ.length+' registrados',layers.impact,econLine]
+  ].map(([title,detail,ok,evidence])=>'<div class="pg09-layer-tile"><span>'+esc(title)+'</span><b>'+esc(detail)+'</b><small>'+(ok?'Confirmado':'Pendiente de confirmar')+(evidence?' · '+esc(evidence):'')+'</small></div>').join('');
   const findings=consistency.items.filter(x=>x.severity!=='INFO'&&!String(x.code||'').startsWith('EVIDENCE_'));
   const issuesHtml=findings.length?'<div class="pg09-review-list">'+findings.map(item=>{
     const evidence=String(item.code||'').startsWith('EVIDENCE_');
