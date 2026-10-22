@@ -1409,8 +1409,39 @@ let __auneaPg05ExpandedStepId='';
 // [AUNEA-FE-PG05-REVIEW-PERSIST-099] START — Retain UI expansion state across renders.
 let __auneaPg05OpenFinding=''; // UI only: retain the expanded owner while capture triggers rerender.
 // [AUNEA-FE-PG05-REVIEW-PERSIST-099] END
+// PG05 review gate: confirmation of the map cannot bypass unresolved visible findings.
+function pg05PendingReviewIssues(e){
+  if(!e)return ['No hay estudio activo'];
+  const d=e.answerDetails||{},a=e.answers||{},issues=[];
+  for(const fid of ['DF048','DF052','DF053','DF054','DF055']){
+    const f=(schema?.fields||[]).find(x=>x.Field_ID===fid);
+    if(!f||typeof questionVisible==='function'&&!questionVisible(f,e))continue;
+    const values=a[fid],selected=normalizeArray(values);
+    const optionalEmpty=!selected.length&&!valuePresent(values);
+    if(optionalEmpty&&!d[fid+'__no_review_needed']){
+      // Optional, unrecorded findings do not block the map.
+      continue;
+    }
+    if(optionalEmpty)continue;
+    const fingerprint=JSON.stringify(fid==='DF055'?{values,steps:normalizeArray(d.DF055__steps)}:values);
+    if(d[fid+'__finding_confirmation']?.fingerprint!==fingerprint)
+      issues.push('Confirma la selección de '+String(f.Pregunta_o_etiqueta_ES||fid)+'.');
+    if(fid==='DF055'&&!normalizeArray(d.DF055__steps).length)
+      issues.push('Asocia los problemas de calidad a uno o más pasos.');
+  }
+  const duplicates=typeof duplicateEntryRows==='function'?duplicateEntryRows(a.DF051):[];
+  const drafts=typeof duplicateEntryDraftRows==='function'?duplicateEntryDraftRows(e,'DF051',a.DF051):[];
+  if(drafts.length)issues.push('Resuelve los borradores de reintroducción pendientes.');
+  if(duplicates.length){
+    const steps=typeof activeSteps==='function'?activeSteps(e):[];
+    const frictions=typeof activeFrictions==='function'?activeFrictions(e):[];
+    const fingerprint=JSON.stringify({steps:steps.map(x=>[x.id,x.status,x.inputs,x.outputs,x.manual_actions]),frictions:frictions.map(x=>[x.id,x.status,x.friction_type,x.affected_steps,x.observable_signal]),confirmed:duplicates,drafts,dismissed:d.DF051__dismissed||[]});
+    if(d.DF051__section_confirmation?.fingerprint!==fingerprint)issues.push('Valida el hallazgo de reintroducción.');
+  }
+  return issues;
+}
 function consultantStepsReviewPage(e){
-  const confirmations=processLayerState(e),mapConfirmed=!!confirmations.map;
+  const confirmations=processLayerState(e),mapConfirmed=!!confirmations.map&&!pg05PendingReviewIssues(e).length;
   const steps=activeSteps(e),frictions=activeFrictions(e);
   const fields=(schema?.fields||[]).filter(f=>f.Stage_ID==='S04'&&Number(f.Field_ID.slice(2))>=46&&Number(f.Field_ID.slice(2))<=55);
   const byId=new Map(steps.map((s,i)=>[String(s.id),String(i+1)+'. '+String(s.step_name||'Paso sin nombre')]));
@@ -1652,6 +1683,7 @@ function consultantStepsReviewPage(e){
     (derived?derivedCards:findingCards).push(card);
   }
   const integrity=typeof processLayerIntegrityIssues==='function'?processLayerIntegrityIssues(e,'map'):[];
+  for(const message of pg05PendingReviewIssues(e))integrity.push({message});
   const locked=typeof isAsisConsoleLocked==='function'&&isAsisConsoleLocked(e);
   const clientReturn=locked?'<button type="button" class="btn btn-outline" id="pg05GoToClientEditor">Ir a la vista con cliente</button>':'';
   const statusHtml=mapConfirmed
