@@ -40,10 +40,10 @@ function processLayerState(e){return typeof processLayerConfirmations==='functio
 function processLayerKeySafe(tab){return typeof processLayerKey==='function'?processLayerKey(tab):(tab==='fricciones'?'frictions':tab==='riesgos'?'risks':tab==='impacto'?'impact':'map')}
 function invalidateProcessLayersSafe(e,from='map'){if(typeof invalidateProcessLayers==='function')return invalidateProcessLayers(e,from);e.confirmedAsIs=false;e.answers.DF093=''}
 function selectedHtml(id,opts,selected,{detailId='',detailValue='',detailPlaceholder='Especifica la opción',wrapped=false,preferredValues=[]}={}){
-  const arr=normalizeArray(selected).map(String),other=catalogOtherOption(opts),otherValue=other?String(other.value):'',otherOpen=!!other&&arr.includes(otherValue);
+  const arr=normalizeArray(selected).map(String),other=catalogOtherOption(opts),otherValue=other?String(other.value):'',hasOtherText=!!String(detailValue||'').trim(),otherOpen=!!other&&(arr.includes(otherValue)||hasOtherText);
   const preferred=new Set(normalizeArray(preferredValues).map(String)),useContext=preferred.size>0;
   const hasHidden=useContext&&opts.some(o=>{const v=String(o.value);return !preferred.has(v)&&!arr.includes(v)&&(!other||v!==otherValue)});
-  const choices=`<div class="choice-grid${wrapped?' choice-grid-wrapped':''}">${opts.map(o=>{const v=String(o.value),isOther=!!other&&v===otherValue,visible=!useContext||preferred.has(v)||arr.includes(v)||isOther;return `<div class="choice"${visible?'':` data-context-choice-extra="${attr(id)}" hidden`}><input type="checkbox" id="${id}_${attr(o.value)}" value="${attr(o.value)}" data-v1-multi="${id}" ${isOther?`data-v1-other-toggle="${id}"`:''} ${arr.includes(v)?'checked':''}><label for="${id}_${attr(o.value)}">${esc(o.label)}</label></div>`}).join('')}</div>`+(hasHidden?`<button type="button" class="btn btn-small btn-outline contextual-show-all" data-show-all-context="${attr(id)}" data-more-label="Mostrar todas las opciones" data-less-label="Mostrar menos">Mostrar todas las opciones</button>`:'');
+  const choices=`<div class="choice-grid${wrapped?' choice-grid-wrapped':''}">${opts.map(o=>{const v=String(o.value),isOther=!!other&&v===otherValue,visible=!useContext||preferred.has(v)||arr.includes(v)||isOther;return `<div class="choice"${visible?'':` data-context-choice-extra="${attr(id)}" hidden`}><input type="checkbox" id="${id}_${attr(o.value)}" value="${attr(o.value)}" data-v1-multi="${id}" ${isOther?`data-v1-other-toggle="${id}"`:''} ${(arr.includes(v)||(isOther&&hasOtherText))?'checked':''} ${(isOther&&hasOtherText)?'disabled':''}><label for="${id}_${attr(o.value)}">${esc(o.label)}</label></div>`}).join('')}</div>`+(hasHidden?`<button type="button" class="btn btn-small btn-outline contextual-show-all" data-show-all-context="${attr(id)}" data-more-label="Mostrar todas las opciones" data-less-label="Mostrar menos">Mostrar todas las opciones</button>`:'');
   if(!detailId||!other)return choices;
   return choices+`<div class="detail-wrap" data-v1-other-wrap="${id}"${otherOpen?'':' style="display:none"'}><input id="${detailId}" value="${attr(otherOpen?detailValue:'')}" placeholder="${attr(detailPlaceholder)}"></div>`;
 }
@@ -1761,6 +1761,9 @@ bindForms=function(){
     const e=currentEng(),fid=String(input.dataset.v1Multi).replace(/^pg05_review_/,'');if(!e)return;
     const source=normalizeArray(reusedValue(fid,e)).map(String);
     const selected=[...document.querySelectorAll('[data-v1-multi="pg05_review_'+fid+'"]:checked')].map(x=>x.value);
+    const prevText=String(e.answerDetails?.[fid+'__global_review']?.otherText||'');
+    const other=document.querySelector('[data-v1-other-toggle="pg05_review_'+fid+'"]');
+    if(prevText.trim()&&other&&!selected.includes(other.value)){selected.push(other.value);other.checked=true;other.disabled=true;}
     const details=e.answerDetails||(e.answerDetails={});
     details[fid+'__global_review']={base:source,values:selected,otherText:details[fid+'__global_review']?.otherText||''};
     delete details[fid+'__derived_confirmation'];
