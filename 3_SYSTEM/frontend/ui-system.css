@@ -1555,4 +1555,6 @@ body.shell-session .topbar-left{display:none}
 @media(min-width:1100px){.topbar{grid-template-columns:minmax(155px,.55fr) minmax(360px,1.45fr) minmax(0,1.45fr)}.topbar-center{max-width:none}}
 
 /* Fricciones: allow natural page height; do not reserve the generic 70px bottom scroll area. */
-.main:has(.flow-confirm [data-confirm-process-layer="frictions"])>.content{min-height:0;padding-bottom:20px;box-sizing:border-box}
+.main:has(.flow-confirm [data-confirm-process-layer="frictions"])>.content{min-height:0;padding-bottom:0;box-sizing:border-box}
+/* Preserve a compact visual footer without adding 20px to the scrollable document. */
+.main:has(.flow-confirm [data-confirm-process-layer="frictions"]) .flow-confirm{margin-bottom:0}
