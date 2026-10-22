@@ -182,6 +182,7 @@ function addRisk(preselectedSteps=[],editIndex=null,candidate=null){
         sensitive_or_high_impact:sensitiveValue==='1',
         material_financial_or_compliance:materialValue==='1',
         critical_trigger:criticalValue==='1',_candidate_id:selected._candidate_id||candidate?.candidate_id||null};
+      if(!existing&&riskCandidateReview({step_ids, suggested_description:description},(e.risks||[]).filter(x=>x.status!=='SUPERSEDED')).status==='Coincidencia estructural')return toast('Ya hay un riesgo registrado con la misma descripción y los mismos pasos. Revisa ese registro antes de crear otro.');
       if(existing)Object.assign(existing,draft);else e.risks.push(draft);
       if(typeof invalidateProcessLayers==='function')invalidateProcessLayers(e,'risks');
       markDirty(existing?'Riesgo modificado':'Riesgo añadido');closeModal();render();
