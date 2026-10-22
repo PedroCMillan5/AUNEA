@@ -1383,7 +1383,7 @@ function asisLayerConfirmBar(layer,done,integrity=[]){
   const explanation=issues?'<div class="flow-confirm-issues">'+integrity.map(x=>'<span>'+esc(x.message||x.label||String(x))+'</span>').join('')+'</div>'
     :'<div class="field-help">'+(done?'La revisión está confirmada. Puedes avanzar.':'Confirma esta capa para poder continuar.')+'</div>';
   return '<div class="flow-confirm'+(issues?' flow-confirm-needs-review':'')+'"><div><b>'+(done?'Revisión confirmada':issues?'Revisión necesaria':'Revisión pendiente')+'</b>'+explanation+'</div><div class="row-actions">'
-    +'<button type="button" class="btn '+(done?'btn-outline':'btn-primary')+'" data-confirm-process-layer="'+layer+'"'+(done&&layer==='risks'?' data-undo-risk-layer="1"':'')+(issues?' disabled aria-disabled="true"':'')+'>'+(done&&layer==='risks'?'Deshacer confirmación':done?'Volver a confirmar':layer==='map'?'Confirmar mapa revisado':'Confirmar '+labels[layer])+'</button>'
+    +'<button type="button" class="btn '+(done?'btn-outline':'btn-primary')+'" data-confirm-process-layer="'+layer+'"'+(done?' data-undo-confirmed-layer="1"':'')+(issues?' disabled aria-disabled="true"':'')+'>'+(done?'Deshacer confirmación':layer==='map'?'Confirmar mapa revisado':'Confirmar '+labels[layer])+'</button>'
     +(next?'<button type="button" class="btn btn-primary" '+(layer==='impact'?'data-stage-nav':'data-page')+'="'+next[0]+'"'+(!done?' disabled aria-disabled="true" title="Confirma '+labels[layer]+' antes de avanzar"':'')+'>'+next[1]+'</button>':'')
     +'</div></div>';
 }
@@ -1427,7 +1427,7 @@ function consultantLayerPage(title,intro,body,layer,stageId,{questionsFirst=fals
     :layerCanonicalQuestions(e,stageId)+riskSuggestions):'';
   const content=layer==='risks'?(questionsFirst?questions+body+gapsNotice:body+gapsNotice+questions):(questionsFirst?questions+body:body+questions);
   const layerSummary=layer==='impact'?impactLayerReviewSummary(e,integrity):'';
-  return pageTop(title,intro,'<button class="btn btn-outline" data-page="proceso">← Ver mapa AS-IS</button>')+(typeof asisConsoleLockNotice==='function'?asisConsoleLockNotice():'')+asisTemporalBar(e)+content+layerSummary+confirm;
+  return pageTop(title,intro,done?'':'<button class="btn btn-outline" data-page="proceso">← Ver mapa AS-IS</button>')+(typeof asisConsoleLockNotice==='function'?asisConsoleLockNotice():'')+asisTemporalBar(e)+'<div class="asis-layer-content'+(done?' asis-layer-confirmed':'')+'">'+content+layerSummary+'</div>'+confirm;
 }
 // PG05 visual / S04 internal: after client confirmation this is a sufficiency review, not a
 // second ProcessStep editor or a second confirmation of the same four-layer client map.
@@ -1720,9 +1720,9 @@ function consultantStepsReviewPage(e){
   // Match the shared layer confirmation card used by Fricciones/Riesgos: status, action and next together.
   const mapConfirm=asisLayerConfirmBar('map',mapConfirmed,integrity);
   return pageTop('Pasos','Revisión interna del AS-IS; los datos del cliente se capturan una sola vez.',
-      '<button type="button" class="btn btn-outline" data-page="proceso">Ver mapa AS-IS</button>')
+      mapConfirmed?'':'<button type="button" class="btn btn-outline" data-page="proceso">Ver mapa AS-IS</button>')
     +asisTemporalBar(e)
-    +'<div class="pg05-review">'+(typeof asisConsoleLockNotice==='function'?asisConsoleLockNotice():'')
+    +'<div class="pg05-review'+(mapConfirmed?' asis-layer-confirmed':'')+'">'+(typeof asisConsoleLockNotice==='function'?asisConsoleLockNotice():'')
     +statusHtml
     +section('1. Proceso registrado','Consulta la secuencia. Despliega detalles y edita cualquier paso en su mismo registro.',
       '<div class="pg05-step-list">'+(stepCards||'<div class="pg05-empty">No hay pasos intermedios registrados.</div>')+'</div>'
@@ -1901,10 +1901,10 @@ bindForms=function(){
     render();
   });
   document.querySelectorAll('[data-confirm-process-layer]').forEach(b=>b.onclick=()=>{
-    if(b.dataset.undoRiskLayer==='1'){
+    if(b.dataset.undoConfirmedLayer==='1'){
       const e=currentEng();if(!e)return;
-      if(typeof invalidateProcessLayers==='function')invalidateProcessLayers(e,'risks');
-      e.updatedAt=now();markDirty('Confirmación de riesgos deshecha');render();return;
+      if(typeof invalidateProcessLayers==='function')invalidateProcessLayers(e,b.dataset.confirmProcessLayer);
+      e.updatedAt=now();markDirty('Confirmación de '+b.dataset.confirmProcessLayer+' deshecha');render();return;
     }
     confirmProcessLayer(({map:'cliente',frictions:'fricciones',risks:'riesgos',impact:'impacto'})[b.dataset.confirmProcessLayer]);
   });
