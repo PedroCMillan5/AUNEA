@@ -461,8 +461,8 @@ function validationSummary(e,completion){
   const evidencePending=normalizeArray(evidenceField&&typeof effectiveValue==='function'?effectiveValue(evidenceField,e):[]).filter(x=>x&&x!=='No hay evidencias pendientes');
   const captureMissing=(completion.missing||[]).filter(x=>(x.id||x)!=='DF093'&&(x.id||x)!=='Confirmación AS-IS');
   const primaryCta=snap?'<span class="status green">✓ Cierre confirmado y snapshot generado</span><button class="btn btn-primary" data-page="resultados">Continuar a Trabajo interno →</button>':(consistency.blockers.length?'':'<button class="btn btn-primary" id="confirmClosingAsIs">Confirmar cierre y generar snapshot</button>');
-  const cta=primaryCta+(consistency.blockers.length?'<div class="notice warn"><b>El cierre está bloqueado.</b><br>Resuelve los elementos rojos de la validación de coherencia.</div>':'');
-  return section('Confirmación del AS-IS','Revisión factual del estudio; ningún estado se afirma más allá de lo realmente capturado.',
+  const cta=primaryCta+(consistency.blockers.length?'<div class="notice warn"><b>No puede cerrarse todavía.</b><br>Resuelve los bloqueos indicados antes de generar el snapshot.</div>':'');
+  return section('Cierre del diagnóstico AS-IS','Comprueba el conjunto del estudio y confirma qué información queda pendiente. El cierre conserva las evidencias no verificadas.',
     `<div class="grid g3">
       <div class="notice"><b>Proceso</b><br>${steps.length} paso(s) activo(s) · ${snap?'AS-IS confirmado':'AS-IS pendiente de cierre'}</div>
       <div class="notice"><b>Fricciones</b><br>${fr.length} detectada(s), ${frWithEvidence} con evidencia registrada</div>
@@ -474,12 +474,12 @@ function validationSummary(e,completion){
     </div>
     ${df017FinalReviewPanel(e)}
     <div class="closing-consistency-review" data-consistency-review="1">
-      <h3>Validación de coherencia</h3>
-      <p class="field-help">AUNEA contrasta lo ya capturado antes de sellar el snapshot. No vuelve a preguntar datos ni elige automáticamente entre respuestas incompatibles.</p>
+      <h3>¿Podemos cerrar este diagnóstico?</h3>
+      <p class="field-help">Los bloqueos impiden cerrar. Las observaciones y evidencias pendientes no bloqueantes se conservan para revisarlas después; no se consideran verificadas.</p>
       <div class="grid g3">
         <div class="notice ${consistency.blockers.length?'warn':'good'}"><b>Bloqueantes</b><br>${consistency.blockers.length}</div>
-        <div class="notice ${consistency.reviews.length?'info':'good'}"><b>Necesitan revisión</b><br>${consistency.reviews.length}</div>
-        <div class="notice ${consistency.blockers.length?'warn':''}"><b>Estado</b><br>${consistency.blockers.length?'No se puede cerrar':'Puede cerrarse'}</div>
+        <div class="notice ${consistency.reviews.length?'info':'good'}"><b>Observaciones pendientes</b><br>${consistency.reviews.length}</div>
+        <div class="notice ${consistency.blockers.length?'warn':''}"><b>Estado</b><br>${consistency.blockers.length?'No se puede cerrar':'Se puede cerrar con las observaciones indicadas'}</div>
       </div>
       ${consistency.items.length?`<div class="blocker-list">
         ${consistency.items.map(item=>{
@@ -499,8 +499,8 @@ function validationSummary(e,completion){
       ${consistency.reviews.length&&!consistency.blockers.length?'<div class="field-help">Las observaciones ámbar no impiden el cierre: permanecen explícitas como incertidumbre/evidencia pendiente para Trabajo interno.</div>':''}
     </div>
     <div class="closing-first-readings">
-      <h3>Resumen de control antes del cierre</h3>
-      <p class="field-help">Comprobación compacta de lo ya capturado. No añade diagnóstico, recomendación, ROI ni propuesta.</p>
+      <h3>Comprobación final</h3>
+      <p class="field-help">Resumen de control: estos recuentos no representan evidencia validada ni resultados económicos confirmados.</p>
       <div class="grid g3">
         <div class="notice"><b>Proceso</b><br>${steps.length} pasos</div>
         <div class="notice"><b>Fricciones</b><br>${fr.length}</div>
@@ -511,7 +511,7 @@ function validationSummary(e,completion){
         <div class="notice ${evidencePending.length?'info':'good'}"><b>Evidencias pendientes</b><br>${evidencePending.length}</div>
         <div class="notice"><b>Siguiente acción</b><br>${nextStep?esc(nextStep):'Pendiente de acordar'}</div>
       </div>
-      ${(()=>{const pending=captureMissing;return pending.length?'<div class="notice warn"><b>Pendientes antes de Trabajo interno</b><br>'+pending.map(x=>{const label=esc(x.label||'Dato obligatorio pendiente'),stage=x.stage||'';return stage&&stage!=='S09'?'<button class="link-btn" data-goto-stage="'+attr(stage)+'">'+label+'</button>':label}).join(' · ')+'</div>':'<div class="notice good"><b>Captura completa</b><br>No quedan obligatorios pendientes distintos de la confirmación final del cierre.</div>'})()}
+      ${(()=>{const pending=captureMissing;return pending.length?'<div class="notice warn"><b>Pendientes antes de Trabajo interno</b><br>'+pending.map(x=>{const label=esc(x.label||'Dato obligatorio pendiente'),stage=x.stage||'';return stage&&stage!=='S09'?'<button class="link-btn" data-goto-stage="'+attr(stage)+'">'+label+'</button>':label}).join(' · ')+'</div>':'<div class="notice good"><b>Campos obligatorios completos</b><br>No faltan datos obligatorios de captura. Pueden quedar evidencias u observaciones por verificar.</div>'})()}
     </div>
     <div class="field-help internal-only" style="margin-top:10px"><b>Notas internas del consultor:</b> ${notes?esc(notes):'—'}</div>
     <div class="closing-final-action">${cta}</div>`
