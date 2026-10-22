@@ -233,9 +233,23 @@ function economicReviewCandidates(e){
       &&normalizeArray(x.step_ids).some(id=>stepIds.includes(id)));
     const covered=new Set(related.flatMap(x=>normalizeArray(x.step_ids)));
     const uncovered=stepIds.filter(id=>!covered.has(id));
-    const status=!related.length?'No hay registro del mismo concepto en estos pasos':uncovered.length?'El concepto consta solo en parte de los pasos':'El concepto ya consta en todos estos pasos';
+    const capacity=existing.filter(x=>x.status!=='SUPERSEDED'&&String(x.driver_id)==='ED14'&&normalizeArray(x.step_ids).some(id=>stepIds.includes(id)));
+    const operational=driver==='ED01'?'Tiempo de trabajo registrado en el mapa.':driver==='ED05'?'Tiempo de retrabajo registrado en el mapa.':driver==='ED13'?'Tiempo de espera registrado en el mapa.':'Pérdida directa señalada en una fricción.';
+    const financial=related.length
+      ?(uncovered.length?'Hay un registro económico de este concepto para parte de los pasos.':'Ya existe un registro económico de este concepto para estos pasos.')
+      :driver==='ED01'&&capacity.length
+        ?'Hay costes de capacidad por hora registrados, pero no equivalen a un coste total ni a ahorro.'
+        :'No hay un registro económico independiente de este concepto.';
+    const decision=driver==='ED13'
+      ?'Comprueba si la espera genera un coste directo demostrable. Si solo retrasa el proceso, no conviertas las horas de espera en coste salarial.'
+      :driver==='ED05'
+        ?'Comprueba si el retrabajo produce un coste adicional no incluido en los tiempos existentes. Evita sumar dos veces los mismos minutos.'
+        :driver==='ED01'
+          ?'Comprueba si corresponde cuantificar un coste adicional distinto de las tarifas por hora ya registradas. No presupongas ahorros.'
+          :'Verifica el importe y la evidencia antes de reconocer una pérdida. No dupliques un mismo evento.';
+    const status=operational+' '+financial;
     candidates.push({driver_id:driver,step_ids:stepIds,rationale,review_questions:questions,_review_status:status,
-      _related_impacts:related.map(x=>({id:x.id||'',steps:normalizeArray(x.step_ids)})),_uncovered_steps:uncovered});
+      _related_impacts:related.map(x=>({id:x.id||'',steps:normalizeArray(x.step_ids)})),_uncovered_steps:uncovered,_review_decision:decision});
   };
   // [AUNEA-FE-ECON-CANDIDATE-RECONCILE-116] END
   const active=steps.filter(s=>Number(s.active_time||0)>0).map(s=>s.id);
@@ -270,9 +284,8 @@ async function reviewEconomicCandidates(){
         const uncovered=normalizeArray(x._uncovered_steps).map(id=>steps.find(s=>s.id===id)?.step_name||id);
         return '<div class="result-item economic-review-card"><div class="result-item-head"><div><b>'+esc(econDriverLabel(x.driver_id))+'</b>'
           +'<p>'+esc(x.rationale||'')+'</p>'
-          +'<div class="candidate-review-summary"><b>¿Ya se está contabilizando?</b><p>'+esc(status)+'.</p>'+(uncovered.length?'<p><b>Pasos sin registro de este concepto:</b> '+uncovered.map(esc).join(' · ')+'</p>':'')+'<p><b>Siguiente acción:</b> revisar el alcance y la evidencia. Que exista un registro no significa que su importe o tiempo esté validado. No contabilices dos veces el mismo concepto.</p></div>'
+          +'<div class="candidate-review-summary"><b>Lo que sabemos</b><p>'+esc(status)+'</p><p><b>Qué comprobar:</b> '+esc(x._review_decision||'Contrasta el importe y su evidencia.')+'</p></div>'
           +(names.length?'<p><b>Dónde revisar:</b> '+names.map(esc).join(', ')+'</p>':'')
-          +(names.length>1?'<p class="field-help">AUNEA ha agrupado el mismo tipo de impacto detectado en varios pasos para evitar recomendaciones repetidas.</p>':'')
           +(qs.length?'<div class="field-help"><b>Preguntas para validarlo:</b><br>'+qs.map(q=>'• '+esc(q)).join('<br>')+'</div>':'')
           +'</div><div class="result-actions"><button type="button" class="btn btn-small btn-primary" data-review-economic-candidate="'+i+'">Revisar impacto</button></div></div></div>';
       }).join('')+'</div>'
