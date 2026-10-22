@@ -517,7 +517,7 @@ async function reviewPainCandidates(){
           const status=String(x._review_status||'Pendiente de revisar');
           return '<div class="result-item pain-review-card"><div class="result-item-head"><div><b>'+esc(labelFrom('OS_FRICTION_TYPE',x.pain_id)||'Posible fricción')+'</b>'
             +'<p>'+esc(x.rationale||'')+'</p>'
-            +'<div class="candidate-review-summary"><b>¿Ya está recogido?</b><p>'+esc(status)+'.</p>'+(overlaps.length?'<p><b>Fricciones que revisar:</b> '+overlaps.map(esc).join(' · ')+'</p>':'')+'<p><b>Siguiente acción:</b> comprobar si existe el mismo problema. Si ya está registrado, utiliza su ficha; si es distinto, revisa la sugerencia con el cliente.</p></div>'
+            +'<div class="candidate-review-summary"><b>Lo que sabemos</b><p>'+esc(status)+'.</p>'+(overlaps.length?'<p><b>Ya existe:</b> '+overlaps.map(esc).join(' · ')+'</p>':'')+'<p><b>Qué comprobar:</b> si ocurre exactamente el mismo problema, revisa la ficha existente. Si la causa o el problema son distintos, contrástalo con el cliente antes de crear una fricción.</p></div>'
             +(stepNames.length?'<p><b>Dónde ocurre:</b> '+stepNames.map(esc).join(', ')+'</p>':'')
             +(stepNames.length>1?'<p class="field-help">La sugerencia afecta a varios pasos. Comprueba cuáles intervienen realmente.</p>':'')
             +(questions.length?'<div class="field-help"><b>Preguntas para validarlo con el cliente:</b><br>'+questions.map(q=>'• '+esc(q)).join('<br>')+'</div>':'')
