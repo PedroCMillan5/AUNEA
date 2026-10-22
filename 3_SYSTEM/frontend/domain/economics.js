@@ -276,7 +276,7 @@ async function reviewEconomicCandidates(){
   const steps=typeof activeSteps==='function'?activeSteps(e):[];
   __auneaEconomicCandidates=economicReviewCandidates(e);
   const body=__auneaEconomicCandidates.length
-    ?'<div class="notice info economic-review-intro"><b>Impactos que conviene revisar con el cliente</b><p>AUNEA reutiliza el mapa, las fricciones y los tiempos ya capturados. Son oportunidades de cuantificación, no resultados económicos confirmados.</p></div><div class="result-list">'
+    ?'<div class="notice info economic-review-intro"><b>Antes de añadir un impacto</b><p>Los tiempos del proceso ya están capturados. Revisa únicamente si existe un efecto económico adicional acreditable, sin contabilizar dos veces.</p></div><div class="result-list">'
       +__auneaEconomicCandidates.map((x,i)=>{
         const names=normalizeArray(x.step_ids).map(id=>steps.find(s=>s.id===id)?.step_name||'').filter(Boolean);
         const qs=normalizeArray(x.review_questions).filter(Boolean);
