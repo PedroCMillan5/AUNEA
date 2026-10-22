@@ -1602,7 +1602,7 @@ function consultantStepsReviewPage(e){
     const uniformAction=uniform
       ?uniformLocked
         ?'<button type="button" class="btn btn-small btn-outline" data-pg05-unlock="'+fid+'">Deshacer confirmación</button>'
-        :'<button type="button" class="btn btn-small btn-primary" data-pg05-confirm-finding="'+fid+'"'+(!hasExplicit?' disabled':'')+'>Confirmar selección</button>'
+        :'<button type="button" class="btn btn-small btn-primary" data-pg05-confirm-finding="'+fid+'"'+(!hasExplicit&&fid!=='DF053'?' disabled':'')+'>Confirmar selección</button>'
       :'';
     // [AUNEA-FE-PG05-CANDIDATE-096] START — Open canonical capture for a candidate.
     const findingOpenAction=fid!=='DF051'&&!uniform&&!quickAction&&kind==='review'&&!hasExplicit
@@ -1893,6 +1893,15 @@ if(typeof document!=='undefined'&&!document.__auneaPg05FindingActionsBound){
       ev.preventDefault();
       const e=currentEng(),fid=review.getAttribute('data-pg05-confirm-finding');
       if(!e||!['DF048','DF052','DF053','DF054','DF055'].includes(fid))return;
+      if(fid==='DF053'&&!valuePresent(e.answers?.DF053)){
+        const selected=[...document.querySelectorAll('[data-pg05-finding-editor="DF053"] [data-multi="DF053"]:checked')].map(x=>x.value);
+        const candidates=selected.length?selected:(typeof reusedValue==='function'?normalizeArray(reusedValue('DF053',e)):[]);
+        if(candidates.length)setAnswer('DF053',candidates);
+      }
+      if(fid==='DF055'&&normalizeArray(e.answers?.DF055).length&&!normalizeArray(e.answerDetails?.DF055__steps).length){
+        if(typeof toast==='function')toast('Selecciona al menos un paso donde ocurre el problema de calidad.');
+        return;
+      }
       const details=e.answerDetails||(e.answerDetails={}),key=fid+'__finding_confirmation',fingerprint=JSON.stringify(e.answers?.[fid]);
       if(details[key]?.fingerprint===fingerprint)delete details[key];
       else {details[key]={fingerprint,confirmedAt:now()};delete details[fid+'__no_review_needed'];}
