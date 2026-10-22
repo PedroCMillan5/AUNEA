@@ -547,7 +547,8 @@ function structuredRiskDerivedReviewHtml(fid,e){
     rows=steps.filter(s=>s.step_type==='ST05'||normalizeArray(s.decision_criteria).length).map(s=>{
       const actor=labelFrom('OS_ACTOR_ROLE',s.actor)||s.actor||'Pendiente';
       const details=String(s?._details?.decision_criteria||'').trim();
-      const criteria=details||normalizeArray(s.decision_criteria).map(v=>labelFrom('OS_DECISION_CRITERIA',v)||v).filter(Boolean).join(', ')||'Pendiente';
+      const criteriaInfo=approvalCriteriaSource(s,steps);
+    const criteria=criteriaInfo?(criteriaInfo.criteria+(criteriaInfo.source?' (heredado de «'+String(criteriaInfo.source.step_name||criteriaInfo.source.id)+'»)':'')):'Pendiente';
       const evidence=normalizeArray(s.evidence).map(v=>labelFrom('OS_EVIDENCE_TYPE',v)||v).filter(Boolean).join(', ')||'Pendiente';
       const result=s.step_type==='ST05'?'Aprobar o rechazar':'Determinar si requiere aprobación';
       return '<div class="derived-structured-row"><strong>'+esc(s.step_name||s.id)+'</strong><div class="derived-structured-facts"><span><b>Aprobador / decisor:</b> '+esc(actor)+'</span><span><b>Criterio:</b> '+esc(criteria)+'</span><span><b>Resultado:</b> '+esc(result)+'</span><span><b>Evidencia:</b> '+esc(evidence)+'</span></div></div>';
