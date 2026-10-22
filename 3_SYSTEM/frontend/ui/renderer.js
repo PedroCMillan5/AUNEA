@@ -462,7 +462,12 @@ function renderControl(f,val,opts,e){
   if(c==='REFERENCE_OR_SHORT_TEXT'||c==='TEXT_SHORT')return `<input data-answer="${fid}" value="${attr(val||'')}" maxlength="200" placeholder="Respuesta breve">`;
   if(c==='TEXT_LONG')return `<textarea data-answer="${fid}" placeholder="Describe las decisiones o acciones difíciles de revertir">${esc(val||'')}</textarea>`;
   if(c==='TEXT_LONG_INTERNAL')return `<textarea data-answer="${fid}" class="internal-only" placeholder="Notas internas; no se muestran en Modo Sesión">${esc(val||'')}</textarea>`;
-  if(c==='CLIENT_CONFIRMATION_WITH_INLINE_EDIT')return `<div class="notice ${e.confirmedAsIs?'good':'warn'}">${e.confirmedAsIs?'Flujo AS-IS confirmado.':'Pendiente de confirmar el AS-IS.'} <button type="button" class="btn btn-small" data-page="proceso">Revisar / editar</button></div>`;
+  if(c==='CLIENT_CONFIRMATION_WITH_INLINE_EDIT'){
+    const layers=typeof processLayerConfirmations==='function'?processLayerConfirmations(e):(e.layerConfirmations||{});
+    const ready=!!(layers.map&&layers.frictions&&layers.risks&&layers.impact);
+    const status=e.confirmedAsIs?'Diagnóstico cerrado y registrado.':ready?'Pasos, Fricciones, Riesgos e Impacto confirmados. Falta únicamente la aceptación final y generar el snapshot.':'Hay una o más capas pendientes de confirmar. Deben revisarse en su pantalla correspondiente.';
+    return '<div class="notice '+(ready?'good':'warn')+'"><b>'+esc(status)+'</b>'+(ready?'<p>Esta es la confirmación final del conjunto; no requiere confirmar nuevamente el mapa.</p>':'')+'</div>';
+  }
   if(c==='RISK_BUILDER')return structuredRedirect('Riesgo estructurado','diagnostico');
   if(['ROLE_CAPACITY_TABLE','ROLE_RATE_TABLE','MONETARY_EVENT_TABLE','TOOL_COST_TABLE'].includes(c))return structuredRedirect('Input económico estructurado','diagnostico');
   if(c==='FRICTION_TYPE_SELECT_WITH_CLIENT_LABEL'||c==='EXCEPTION_BUILDER')return structuredRedirect('Registro estructurado','proceso');
