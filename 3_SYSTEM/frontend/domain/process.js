@@ -1633,11 +1633,16 @@ function consultantStepsReviewPage(e){
       :requiresReview?'<div class="pg05-field-action">'+quickAction+findingOpenAction+findingUndoAction+reviewConfirmationAction+df051Action+noReviewAction
         +(inlineDuplicate?'<details class="pg05-discovery-control" open><summary>Revisar reintroducción de datos</summary><div class="pg05-inline-duplicate" data-pg05-finding-editor="DF051">'+(df051Validated?'<div class="field-help">La sección está confirmada. Pulsa Deshacer validación para editar.</div>':renderStageFields([f],e))+'</div></details>':'')+'</div>':'';
     // [AUNEA-FE-PG05-CONFIRM-UNDO-094] END
+    const conceptHelp=fid==='DF051'
+      ?'<div class="pg05-concept-help"><b>¿Qué es una reintroducción?</b> Volver a introducir manualmente datos que ya estaban disponibles. <b>Ejemplo:</b> copiar al ERP los datos de una factura recibida anteriormente. Solo se confirma si se identifican la información, el origen y el destino.</div>'
+      :fid==='DF054'
+      ?'<div class="pg05-concept-help"><b>¿Qué es un intercambio manual?</b> Transferir información entre pasos, personas o herramientas mediante una acción humana, sin que necesariamente se vuelvan a introducir los datos. <b>Ejemplo:</b> enviar por correo un PDF de factura para que otra persona lo apruebe. Una transferencia manual no demuestra por sí sola una reintroducción.</div>'
+      :'';
     const card='<article class="pg05-field pg05-field--'+kind+'" data-pg05-field="'+fid+'">'
       +'<div class="pg05-field-top"><b>'+esc(f.Pregunta_o_etiqueta_ES||fid)+'</b>'
       +'<span class="pg05-state-label">'+esc(status)+'</span></div>'
       +'<div class="pg05-field-value">'+esc(detail)+'</div>'
-      +'<small>Fuente: '+esc(sourceLabels[fid]||'Información registrada')+'</small>'+action+'</article>';
+      +'<small>Fuente: '+esc(sourceLabels[fid]||'Información registrada')+'</small>'+conceptHelp+action+'</article>';
     (derived?derivedCards:findingCards).push(card);
   }
   const integrity=typeof processLayerIntegrityIssues==='function'?processLayerIntegrityIssues(e,'map'):[];
