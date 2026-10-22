@@ -1626,3 +1626,8 @@ body.shell-session .topbar-left{display:none}
 .asis-layer-confirmed input[type="checkbox"],
 .asis-layer-confirmed input[type="radio"]{pointer-events:none}
 .asis-layer-confirmed label{cursor:default}
+
+/* PG05 footer lives within the review wrapper: Undo and Next must stay visible. */
+.pg05-review.asis-layer-confirmed .flow-confirm button{display:inline-flex!important}
+.pg05-review.asis-layer-confirmed input,.pg05-review.asis-layer-confirmed select,
+.pg05-review.asis-layer-confirmed textarea{pointer-events:none}
