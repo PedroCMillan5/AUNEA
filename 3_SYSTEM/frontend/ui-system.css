@@ -1588,3 +1588,11 @@ body.shell-session .topbar-left{display:none}
 .modal .economic-review-intro{margin-bottom:24px!important}
 .modal .economic-review-intro + .result-list{display:flex;flex-direction:column;gap:16px}
 .modal .economic-review-intro + .result-list>.economic-review-card{margin:0}
+
+/* Candidate review: full-width body under its title/action header. */
+.modal .pain-review-card .result-item-head,.modal .risk-candidate-card .result-item-head,.modal .economic-review-card .result-item-head{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;column-gap:12px}
+.modal .pain-review-card .result-item-head>div:first-child,.modal .risk-candidate-card .result-item-head>div:first-child,.modal .economic-review-card .result-item-head>div:first-child{display:contents}
+.modal .pain-review-card .result-item-head>div:first-child>b,.modal .risk-candidate-card .result-item-head>div:first-child>b,.modal .economic-review-card .result-item-head>div:first-child>b{grid-column:1;grid-row:1}
+.modal .pain-review-card .result-item-head>.result-actions,.modal .risk-candidate-card .result-item-head>.result-actions,.modal .economic-review-card .result-item-head>.result-actions{grid-column:2;grid-row:1}
+.modal .pain-review-card .result-item-head>div:first-child>p,.modal .risk-candidate-card .result-item-head>div:first-child>p,.modal .economic-review-card .result-item-head>div:first-child>p,.modal .pain-review-card .result-item-head>div:first-child>.candidate-review-summary,.modal .risk-candidate-card .result-item-head>div:first-child>.candidate-review-summary,.modal .economic-review-card .result-item-head>div:first-child>.candidate-review-summary,.modal .pain-review-card .result-item-head>div:first-child>.field-help,.modal .risk-candidate-card .result-item-head>div:first-child>.field-help,.modal .economic-review-card .result-item-head>div:first-child>.field-help{grid-column:1/-1;width:100%;min-width:0;box-sizing:border-box}
+@media(max-width:580px){.modal .pain-review-card .result-item-head,.modal .risk-candidate-card .result-item-head,.modal .economic-review-card .result-item-head{grid-template-columns:minmax(0,1fr)}.modal .pain-review-card .result-item-head>.result-actions,.modal .risk-candidate-card .result-item-head>.result-actions,.modal .economic-review-card .result-item-head>.result-actions{grid-column:1;grid-row:auto}}
