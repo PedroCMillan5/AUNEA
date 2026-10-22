@@ -405,8 +405,7 @@ function df017FinalReviewPanel(e){
     +'<p>En la página 2 seleccionaste <strong>'+initial.length+' perfil(es)</strong>: '+esc(fmt(initial))+'.</p>'
     +'<p>En el mapa AS-IS aparecen <strong>'+mapped.length+' perfil(es)</strong>: '+esc(fmt(mapped))+'.</p>'
     +'<p class="field-help">Compara ambas listas y confirma qué perfiles deben quedar como participantes finales. Los responsables de cada paso no cambian.</p>'
-    +'<div class="df017-final-options" role="group" aria-label="Perfiles finales del proceso">'+opts+'</div>'
-    +(confirmed?'<span class="status green">✓ Listado final confirmado</span>':'<button type="button" class="btn btn-small btn-primary" data-confirm-df017-final="1">Confirmar listado final</button>')
+    +(confirmed?'<div class="pg09-participant-confirmed">'+current.map(v=>'<span>'+esc(labelFrom('OS_ACTOR_ROLE',v)||v)+'</span>').join('')+'<strong>Confirmado</strong></div>':'<div class="df017-final-options" role="group" aria-label="Perfiles finales del proceso">'+opts+'</div><button type="button" class="btn btn-small btn-primary" data-confirm-df017-final="1">Confirmar listado final</button>')
     +'</div>';
 }
 function confirmDf017FinalSelection(){
@@ -497,8 +496,8 @@ function validationSummary(e,completion){
   const evidenceField=(schema?.fields||[]).find(f=>f.Field_ID==='DF095');
   const evidencePending=normalizeArray(evidenceField&&typeof effectiveValue==='function'?effectiveValue(evidenceField,e):[]).filter(x=>x&&x!=='No hay evidencias pendientes');
   const captureMissing=(completion.missing||[]).filter(x=>(x.id||x)!=='DF093'&&(x.id||x)!=='Confirmación AS-IS');
-  const primaryCta=snap?'<span class="status green">✓ Cierre confirmado y snapshot generado</span><button class="btn btn-primary" data-page="resultados">Continuar a Trabajo interno →</button>':(consistency.blockers.length?'':'<button class="btn btn-primary" id="confirmClosingAsIs">Confirmar cierre y generar snapshot</button>');
-  const cta=primaryCta+(consistency.blockers.length?'<div class="notice warn"><b>No puede cerrarse todavía.</b><br>Resuelve los bloqueos indicados antes de generar el snapshot.</div>':'');
+  const primaryCta=snap?'<span class="status green">✓ Cierre confirmado y snapshot generado</span><button class="btn btn-primary" data-page="resultados">Continuar a Trabajo interno →</button>':((!layersReady||consistency.blockers.length||captureMissing.length)?'':'<button class="btn btn-primary" id="confirmClosingAsIs">Confirmar cierre y generar snapshot</button>');
+  const cta=primaryCta+((!layersReady||consistency.blockers.length||captureMissing.length)?'<div class="pg09-close-warning">Resuelve los elementos pendientes antes de confirmar el cierre.</div>':'');
   const proceed=layersReady&&!consistency.blockers.length&&!captureMissing.length;
   const layerTiles=[
     ['Pasos',steps.length+' registrados',layers.map],
@@ -510,7 +509,7 @@ function validationSummary(e,completion){
   const issuesHtml=findings.length?'<div class="pg09-review-list">'+findings.map(item=>{
     const evidence=String(item.code||'').startsWith('EVIDENCE_');
     const raw=String(item.message||'');
-    const message=evidence?raw.replace(/^Evidencia pendiente:\\s*/i,'').split('. Solicita el soporte')[0]:raw;
+    const message=evidence?raw.replace(/^Evidencia pendiente:\s*/i,'').split('. Solicita el soporte')[0]:raw;
     const stage=(item.navigationTarget==='proceso')?'proceso':item.stage||'';
     const action=stage&&stage!=='S09'
       ?(stage==='proceso'?'<button type="button" class="btn btn-small btn-outline" data-goto-process="1">Revisar origen</button>':'<button type="button" class="btn btn-small btn-outline" data-goto-stage="'+attr(stage)+'">Revisar origen</button>')
