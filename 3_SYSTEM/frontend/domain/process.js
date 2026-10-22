@@ -1334,7 +1334,17 @@ function layerCanonicalQuestions(e,stageId){
   if(stageId==='S07'&&fields.length===1&&fields[0].Field_ID==='DF085'){
     const evidence=normalizeArray(typeof effectiveValue==='function'?effectiveValue(fields[0],e):[]).filter(Boolean);
     const labels=evidence.map(x=>typeof economicEvidenceLabel==='function'?economicEvidenceLabel(x):String(x));
-    return section('Evidencia económica','Procedencia de los datos económicos registrados en esta etapa.','<div class="impact-evidence-compact"><b>Calidad de evidencia económica</b><span>'+(labels.length?labels.map(esc).join(' · '):'Sin evidencia económica registrada')+'</span><small>Se deriva de la evidencia de cada impacto; no se vuelve a preguntar.</small></div>');
+    const counts=new Map();
+    (e.economicInputs||[]).filter(x=>x.status!=='SUPERSEDED').forEach(x=>{
+      const label=typeof economicEvidenceLabel==='function'?economicEvidenceLabel(x.evidence_type||''):String(x.evidence_type||'');
+      counts.set(label||'Sin tipo indicado',(counts.get(label||'Sin tipo indicado')||0)+1);
+    });
+    const summary=[...counts].map(([label,count])=>count+' '+(count===1?'registro':'registros')+' · '+label).join(' | ');
+    const onlyHypothesis=counts.size>0&&[...counts.keys()].every(label=>/hip[oó]tesis|supuesto/i.test(label));
+    const explanation=onlyHypothesis
+      ?'Los valores son supuestos. Aunque AUNEA pueda calcular resultados con ellos, no son costes comprobados del cliente.'
+      :'El tipo de evidencia indica cómo se respalda cada dato, no si el cálculo es correcto ni si existe un ahorro. Comprueba los registros de origen antes de presentar los resultados como acreditados.';
+    return section('Fiabilidad de los datos económicos','Qué respaldo tienen los costes y valores utilizados en los impactos.','<div class="impact-evidence-compact"><b>Procedencia de los datos</b><span>'+esc(summary||'Sin datos económicos registrados')+'</span><p>'+esc(explanation)+'</p><small>Se obtiene de los impactos registrados. No necesitas rellenarlo de nuevo.</small></div>');
   }
   const signals=stageId==='S04'?asIsComplementarySignals(e).filter(x=>fields.some(f=>f.Field_ID===x.field)):[];
   const master=signals.some(x=>x.field==='DF048')&&!normalizeArray(e.answers?.DF048).includes('MASTER_DATA');
