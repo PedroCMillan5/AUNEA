@@ -1376,6 +1376,17 @@ function impactLayerReviewSummary(e,integrity=[]){
     +'</div>';
 }
 
+function asisLayerConfirmBar(layer,done,integrity=[]){
+  const labels={map:'Pasos',frictions:'Fricciones',risks:'Riesgos',impact:'Impacto'};
+  const next={map:['fricciones','Continuar a Fricciones →'],frictions:['riesgos','Continuar a Riesgos →'],risks:['impacto','Continuar a Impacto →'],impact:['cierre','Continuar a Validación y cierre →']}[layer];
+  const issues=integrity.length>0;
+  const explanation=issues?'<div class="flow-confirm-issues">'+integrity.map(x=>'<span>'+esc(x.message||x.label||String(x))+'</span>').join('')+'</div>'
+    :'<div class="field-help">'+(done?'La revisión está confirmada. Puedes avanzar.':'Confirma esta capa para poder continuar.')+'</div>';
+  return '<div class="flow-confirm'+(issues?' flow-confirm-needs-review':'')+'"><div><b>'+(done?'Revisión confirmada':issues?'Revisión necesaria':'Revisión pendiente')+'</b>'+explanation+'</div><div class="row-actions">'
+    +'<button type="button" class="btn '+(done?'btn-outline':'btn-primary')+'" data-confirm-process-layer="'+layer+'"'+(done&&layer==='risks'?' data-undo-risk-layer="1"':'')+(issues?' disabled aria-disabled="true"':'')+'>'+(done&&layer==='risks'?'Deshacer confirmación':done?'Volver a confirmar':layer==='map'?'Confirmar mapa revisado':'Confirmar '+labels[layer])+'</button>'
+    +(next?'<button type="button" class="btn btn-primary" data-page="'+next[0]+'"'+(!done?' disabled aria-disabled="true" title="Confirma '+labels[layer]+' antes de avanzar"':'')+'>'+next[1]+'</button>':'')
+    +'</div></div>';
+}
 function consultantLayerPage(title,intro,body,layer,stageId,{questionsFirst=false}={}){
   const e=currentEng();if(!e)return pageTop(title,'Abre primero un estudio.');
   const integrity=typeof processLayerIntegrityIssues==='function'?processLayerIntegrityIssues(e,layer):[],done=!!processLayerState(e)[layer]&&!integrity.length,tabs={map:'Mapa AS-IS',frictions:'Fricciones',risks:'Riesgos',impact:'Impacto'};
@@ -1391,7 +1402,7 @@ function consultantLayerPage(title,intro,body,layer,stageId,{questionsFirst=fals
   const next={frictions:{page:'riesgos',label:'Continuar a Riesgos →'},risks:{page:'impacto',label:'Continuar a Impacto →'}}[layer];
   const nextButton=next?'<button type="button" class="btn btn-primary" data-page="'+next.page+'"'+(done?'':' disabled aria-disabled="true" title="Confirma '+tabs[layer]+' antes de avanzar"')+'>'+next.label+'</button>':'';
   // [AUNEA-FE-ASIS-LAYER-PROGRESSION-108] END
-  const confirm='<div class="flow-confirm '+(integrity.length?'flow-confirm-needs-review':'')+'"><div><b>'+(done?'Revisión confirmada':integrity.length?'Revisión necesaria':'Revisión pendiente')+'</b>'+reviewCopy+'</div><div class="row-actions"><button type="button" class="btn '+(done?'btn-outline':'btn-primary')+'" data-confirm-process-layer="'+layer+'"'+(done&&layer==='risks'?' data-undo-risk-layer="1"':'')+disabled+'>'+(done&&layer==='risks'?'Deshacer confirmación':done?'Volver a confirmar':'Confirmar '+tabs[layer])+'</button>'+nextButton+'</div></div>';
+  const confirm=asisLayerConfirmBar(layer,done,integrity);
   // [AUNEA-FE-RISKS-SOURCE-110] START — Derived approval and decision context only.
   const riskSources=layer==='risks'?activeSteps(e):[];
   const approvalSources=riskSources.filter(step=>step.step_type==='ST05'||normalizeArray(step.decision_criteria).length);
@@ -1707,13 +1718,7 @@ function consultantStepsReviewPage(e){
     ?'<div class="pg05-status pg05-status--ok"><b>Mapa confirmado con el cliente.</b> La revisión interna reutiliza los mismos pasos.</div>'
     :'<div class="pg05-status pg05-status--review"><b>Confirmación del mapa pendiente de revalidación.</b> '+(confirmations.map_at?'Hay una confirmación anterior registrada, pero no consta vigente.':'Esta versión todavía no consta confirmada.')+' Revisa la versión actual antes de confirmar.</div>';
   // Match the shared layer confirmation card used by Fricciones/Riesgos: status, action and next together.
-  const mapReviewCopy=integrity.length
-    ?'<div class="flow-confirm-issues">'+integrity.map(x=>'<span>'+esc(x.message||x.label)+'</span>').join('')+'</div>'
-    :'<div class="field-help">'+(mapConfirmed?'La capa está validada.':'Revisa los pasos y confirma esta versión para continuar.')+'</div>';
-  const mapConfirm='<div class="flow-confirm '+(integrity.length?'flow-confirm-needs-review':'')+'"><div><b>'+(mapConfirmed?'Revisión confirmada':integrity.length?'Revisión necesaria':'Revisión pendiente')+'</b>'+mapReviewCopy+'</div><div class="row-actions">'
-    +'<button type="button" class="btn '+(mapConfirmed?'btn-outline':'btn-primary')+'" data-confirm-process-layer="map"'+(integrity.length?' disabled aria-disabled="true"':'')+'>'+(mapConfirmed?'Volver a confirmar':'Confirmar mapa revisado')+'</button>'
-    +'<button type="button" class="btn btn-primary" data-page="fricciones"'+(mapConfirmed?'':' disabled aria-disabled="true" title="Confirma Pasos antes de avanzar"')+'>Continuar a Fricciones →</button>'
-    +'</div></div>';
+  const mapConfirm=asisLayerConfirmBar('map',mapConfirmed,integrity);
   return pageTop('Pasos','Revisión interna del AS-IS; los datos del cliente se capturan una sola vez.',
       '<button type="button" class="btn btn-outline" data-page="proceso">Ver mapa AS-IS</button>')
     +asisTemporalBar(e)
