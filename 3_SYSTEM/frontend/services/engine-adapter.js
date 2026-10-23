@@ -151,7 +151,9 @@ function unresolvedEngineGates(e){
 }
 function engineGateCard(c,e){
   const info=engineGateReviewEvidence(c,e),guide=ENGINE_GATE_GUIDE[c.key];
-  const saved=engineGates(e)[c.key]||'';
+  const version=confirmedSnapshot(e)?.version||null;
+  const stale=!!(e.engineGateReview?.snapshotVersion&&version!==e.engineGateReview.snapshotVersion);
+  const saved=stale?'':(engineGates(e)[c.key]||'');
   const stateText=info.status==='PROPOSAL'?'Propuesta para contrastar'
     :info.status==='REVIEW'?'Información para revisar':'Información insuficiente';
   const chip=info.status==='PROPOSAL'?'candidate':'review';
@@ -161,7 +163,9 @@ function engineGateCard(c,e){
   const proposed=info.suggestion
     ?'<p><b>Propuesta de AUNEA: '+(info.suggestion==='YES'?'Sí':'No')+'.</b> '+esc(info.reason)+'</p>'
     :'<p><b>Conclusión:</b> '+esc(info.reason||'Los datos disponibles no permiten establecer una respuesta técnica.')+'</p>';
-  const savedNote=saved?'<p class="engine-review-saved">Respuesta confirmada previamente: '+(saved==='YES'?'Sí':'No')+'. Puedes revisarla.</p>':'';
+  const savedNote=stale
+    ?'<p class="engine-review-saved">El AS-IS confirmado ha cambiado. Vuelve a revisar esta decisión para el nuevo snapshot.</p>'
+    :saved?'<p class="engine-review-saved">Respuesta confirmada previamente: '+(saved==='YES'?'Sí':'No')+'. Puedes revisarla.</p>':'';
   return '<section class="engine-review-card" data-engine-review-card="'+attr(c.key)+'">'
     +'<header class="engine-review-header"><div><h3>'+esc(guide.title)+'</h3><p>'+esc(guide.help)+'</p></div>'
     +'<span class="engine-review-status '+chip+'">'+esc(stateText)+'</span></header>'
@@ -192,6 +196,8 @@ function openEngineGateReview(){
     }
     const current=confirmedSnapshot(e);
     if(!current){toast('El AS-IS ya no está confirmado. Revisa el diagnóstico antes de calcular.');closeModal();return;}
+    // Each decision retains whether it came from a source-backed proposal,
+    // a contextual review or a consultant assertion without sufficient capture evidence.
     const previous={gates:{...e.engineGates},review:e.engineGateReview};
     e.engineGates={...(e.engineGates||{}),...staged};
     e.engineGateReview={
@@ -199,7 +205,7 @@ function openEngineGateReview(){
       confirmedAt:now(),
       decisions:Object.fromEntries(ENGINE_GATE_CONTRACT.map(c=>{
         const v=engineGateReviewEvidence(c,e);
-        return [c.key,{answer:staged[c.key],basis:v.status,sources:v.sources.map(s=>s.source),suggestion:v.suggestion}];
+        return [c.key,{answer:staged[c.key],basis:v.status==='INSUFFICIENT'?'CONSULTANT_ASSERTION':v.status,sources:v.sources.map(s=>s.source),suggestion:v.suggestion}];
       }))
     };
     e.updatedAt=now();markDirty('Cinco decisiones técnicas confirmadas por el consultor');
