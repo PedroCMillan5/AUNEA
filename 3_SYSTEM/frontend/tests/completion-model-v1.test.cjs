@@ -25,6 +25,12 @@ const schema={
   ]
 };
 
+function confirmTechnicalReview(e){
+  const keys=['process_design_first','existing_tool_can_close','unstructured_interpretation_need','bounded_action_space','management_visibility_need'];
+  e.engineGates=Object.fromEntries(keys.map(k=>[k,e.engineGates?.[k]||'NO']));
+  e.engineGateReview={snapshotVersion:1,decisions:Object.fromEntries(keys.map(k=>[k,{answer:e.engineGates[k],basis:'REVIEW'}]))};
+  return e;
+}
 function makeEngagement(){
   return {companyId:'c1',contactIds:[],answers:{},processSteps:[],frictions:[],risks:[],economicInputs:[],confirmedAsIs:false,engineGates:{}};
 }
@@ -39,6 +45,11 @@ function makeCtx(){
     setAnswer:()=>{},bindForms:()=>{},markDirty:()=>{},render:()=>{},setPage:()=>{},
     openModal:()=>{},closeModal:()=>{},toast:()=>{},now:()=>'',runDiagnosis:()=>{},processPage:()=>'<PROCESS>',consultantFrictionsPage:()=>'<FRICTIONS>',consultantRisksPage:()=>'<RISKS>',consultantImpactPage:()=>'<IMPACT>',
     answerDetails:e=>{e.answerDetails=e.answerDetails||{};return e.answerDetails},audit:()=>{},
+    // This isolated VM does not load engagement.js. Simulate a sealed record only
+    // for fixtures that explicitly set confirmedAsIs, never for an open session.
+    confirmedSnapshot:e=>e?.confirmedAsIs?{version:1,finalClosure:true}:null,
+    processBoundaryValue:(e,fid)=>e?.answers?.[fid]||'',
+    pg09ProcessReadOnlyReview:()=>'<div class="pg09-review-empty">No hay pasos que mostrar en esta prueba aislada.</div>',
     numberParts:v=>(v&&typeof v==='object'?v:{value:v??'',unit:'',period:'',mode:''}),
     renderQuestion:()=>'<QUESTION>',
     esc:v=>String(v??''),attr:v=>String(v??''),
@@ -99,7 +110,7 @@ test('readyToCalculate mirrors runDiagnosis gating exactly: only missing===[] an
   const ctx=makeCtx();const e=makeEngagement();ctx.__eng=e;
   e.answers.DF900='ACME';e.answers.DF010='Reducir tiempos de espera';
   e.processSteps=[{id:'s1',status:'ACTIVE'}];e.confirmedAsIs=true;
-  e.engineGates={process_design_first:'NO',existing_tool_can_close:'NO',unstructured_interpretation_need:'NO',bounded_action_space:'NO',management_visibility_need:'NO'};
+  confirmTechnicalReview(e);
   const c=ctx.engagementCompletion(e);
   assert.equal(c.missing.length,0);
   assert.equal(c.engineGates.unresolved.length,0);
@@ -188,7 +199,7 @@ test('PG01–PG09 never calculate or recalculate recommendation',()=>{
   e.answers={DF900:'ACME',DF010:'Reducir tiempos de espera'};
   e.processSteps=[{id:'s1',status:'ACTIVE'}];
   e.confirmedAsIs=true;
-  e.engineGates={process_design_first:'NO',existing_tool_can_close:'NO',unstructured_interpretation_need:'NO',bounded_action_space:'NO',management_visibility_need:'NO'};
+  confirmTechnicalReview(e);
   ctx.__eng=e;
 
   // The references put one action on a screen. Before the closing stage there is no calculate button
@@ -235,6 +246,7 @@ function makeRealCtx(){
     openModal:()=>{},closeModal:()=>{},toast:()=>{},now:()=>'',runDiagnosis:()=>{},
     esc:v=>String(v??''),attr:v=>String(v??''),
     state:{backendOnline:true,returnTo:null},
+    confirmedSnapshot:e=>e?.confirmedAsIs?{version:1,finalClosure:true}:null,
     document:{querySelectorAll:()=>[],getElementById:()=>null}
   };
   ctx.currentEng=()=>ctx.__eng;
@@ -266,7 +278,7 @@ function fullyWorkedEngagement(){
 }
 
 test('a fully worked, already-calculable case (every REQUIRED_90M field answered, AS-IS confirmed, gates resolved) shows every applicable stage as reviewed — never stuck below stagesTotal',()=>{
-  const ctx=makeRealCtx();const e=fullyWorkedEngagement();ctx.__eng=e;
+  const ctx=makeRealCtx();const e=confirmTechnicalReview(fullyWorkedEngagement());ctx.__eng=e;
   const c=ctx.engagementCompletion(e);
   assert.equal(c.stagesReviewed,c.stagesTotal,`esperaba ${c.stagesTotal}/${c.stagesTotal}, obtuve ${c.stagesReviewed}/${c.stagesTotal} — pendientes: ${JSON.stringify(c.missing)}`);
   assert.equal(c.missing.length,0);
