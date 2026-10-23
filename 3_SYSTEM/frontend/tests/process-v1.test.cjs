@@ -330,7 +330,7 @@ test('friendly AS-IS graph keeps routing owners and adds functional node iconogr
 test('server-owned Pain candidates remain proposals until human confirmation',()=>{
   assert.match(code,/async function reviewPainCandidates\(/);
   assert.match(code,/fetchPainCandidates\(e\)/);
-  assert.match(code,/Oportunidades para revisar con el cliente/);
+  assert.match(code,/Antes de registrar otra fricción/);
   assert.match(code,/openFrictionModal\(null,x\.step_ids,x\)/);
   assert.match(code,/Señal detectada en el mapa — pendiente de confirmar/);
   assert.doesNotMatch(code,/frictions\.push\(candidate\)/,'candidate review must not persist a Friction directly');
@@ -344,7 +344,7 @@ test('Pain candidate review reuses the normal friction builder without forcing a
 });
 
 test('friction frequency distinguishes not informed from zero and explicitly supports unknown',()=>{
-  assert.match(code,/\{value:'',label:'Sin informar'\}/);
+  assert.match(code,/placeholder="Sin informar"/);
   assert.match(code,/\{value:'UNKNOWN',label:'No se sabe'\}/);
   assert.match(code,/frequencyRaw=String\(document\.getElementById\('fr_frequency'\)\.value\|\|''\)\.trim\(\)/);
   assert.match(code,/frequencyMode==='UNKNOWN'\|\|frequencyRaw===''\)\?null:Number\(frequencyRaw\)/);
