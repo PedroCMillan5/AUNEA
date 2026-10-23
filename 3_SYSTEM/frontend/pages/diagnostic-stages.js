@@ -477,20 +477,64 @@ function pg09ReadOnlyGroup(label,items,empty){
     +(items.length?'<div class="pg09-readrows">'+items.map(x=>'<div class="pg09-readrow">'+esc(x)+'</div>').join('')+'</div>'
       :'<div class="pg09-readempty">'+esc(empty)+'</div>')+'</div>';
 }
+// [AUNEA-FE-PG09-CLOSURE-REVIEW-144] START — read-only, source-owned AS-IS acceptance.
+function pg09ProcessReadOnlyReview(e){
+  const steps=activeSteps(e),fr=activeFrictions(e);
+  if(!steps.length)return '<div class="pg09-review-empty">Aún no hay pasos del proceso para revisar.</div>';
+  const start=processBoundaryValue(e,'DF014','Inicio por revisar','DF012');
+  const end=processBoundaryValue(e,'DF015','Final por revisar','DF013');
+  // Reuse the same routed graph as the AS-IS editor; readonly=true has no editing controls.
+  const diagram=processGraphHtml(e,steps,fr,start,end,'cliente',true);
+  const frictionNames=fr.map((f,i)=>{
+    const ids=normalizeArray(f.affected_steps).map(String);
+    const where=steps.map((step,n)=>ids.includes(String(step.id))?'P'+(n+1):'').filter(Boolean);
+    return '<div class="pg09-friction-item"><b>F'+(i+1)+' · '+esc(f.client_label||labelFrom('OS_FRICTION_TYPE',f.friction_type)||'Problema registrado')+'</b>'
+      +'<span>'+(where.length?'Pasos '+esc(where.join(' · ')):'Sin paso relacionado')+'</span></div>';
+  }).join('');
+  return '<div class="pg09-process-review"><div class="pg09-review-heading"><div><h3>Así funciona el proceso actualmente</h3>'
+    +'<p>Es el mapa ya confirmado, con las fricciones en sus pasos. No tienes que validar los pasos otra vez.</p></div>'
+    +'<button type="button" class="btn btn-small btn-outline" data-page="pasos">Consultar en Pasos</button></div>'
+    +'<div class="pg09-process-viewport" aria-label="Mapa confirmado del proceso con fricciones vinculadas">'+diagram+'</div>'
+    +(fr.length?'<div class="pg09-friction-key"><b>Problemas identificados en el mapa</b><div class="pg09-friction-list">'+frictionNames+'</div></div>':'')
+    +'</div>';
+}
+function pg09EvidenceReview(e){
+  const items=pg09EvidenceItems(e,'DF095'),fr=activeFrictions(e);
+  if(!items.length)return pg09ReadOnlyGroup('Evidencias por recibir',[],'No hay evidencias pendientes de solicitar.');
+  const rows=items.map(item=>{
+    // A derived evidence request can be linked by its governed friction-type label.
+    // It is not proof that a document or measurement was received.
+    const related=fr.map((f,i)=>({f,i}))
+      .filter(({f})=>item==='Evidencia de '+labelFrom('OS_FRICTION_TYPE',f.friction_type));
+    const refs=related.map(({i})=>'F'+(i+1)).join(' · ');
+    const toCheck=related.length
+      ?'Contrastar el problema descrito'+(related.some(({f})=>f.frequency!=null||f.frequency_value!=null)?', su frecuencia':'')
+        +(related.some(({f})=>f.active_time_loss?.value!=null||f.wait_time_loss?.value!=null)?' y los tiempos indicados':'')
+        +' con datos o documentos del cliente.'
+      :'Identificar el dato pendiente y contrastarlo con su fuente antes de considerarlo acreditado.';
+    return '<div class="pg09-evidence-row"><div><b>'+esc(item)+'</b>'
+      +(refs?'<small>Relacionado con '+esc(refs)+'</small>':'')+'</div>'
+      +'<p>'+esc(toCheck)+'</p></div>';
+  }).join('');
+  return '<div class="pg09-readgroup"><h3>Evidencias por recibir</h3>'
+    +'<p class="pg09-evidence-intro">La información ya está registrada. Estas pruebas servirán para comprobar lo declarado, no para repetir la captura.</p>'
+    +'<div class="pg09-evidence-list">'+rows+'</div></div>';
+}
+// [AUNEA-FE-PG09-CLOSURE-REVIEW-144] END
 function pg09CaptureContent(e,fields,completion){
   const item=id=>{const f=fields.find(x=>x.Field_ID===id);return f?renderStageFields([f],e):'';};
   const conf=typeof processLayerConfirmations==='function'?processLayerConfirmations(e):{};
   const ready=!!(conf.map&&conf.frictions&&conf.risks&&conf.impact);
   const current=e.confirmedAsIs?'Cierre confirmado y registrado':ready?'Las cuatro capas están confirmadas':'Falta confirmar alguna capa del AS-IS';
-  return '<section class="pg09-section"><div class="pg09-section-heading"><h2>Información para el cierre</h2><p>Revisa únicamente lo que sigue pendiente y los acuerdos para continuar. Los pasos, las fricciones, los riesgos y los impactos no se vuelven a capturar.</p></div>'
+  return '<section class="pg09-section"><div class="pg09-section-heading"><h2>Información para el cierre</h2><p>Comprueba los datos revisados, identifica qué falta y deja acordado el siguiente paso. No necesitas volver a rellenar el diagnóstico.</p></div>'
     +'<div class="pg09-asis-state '+(ready?'is-ready':'is-pending')+'"><b>'+esc(current)+'</b><span>'+(ready?'La aceptación final se realizará al cerrar el diagnóstico; no hay que volver a confirmar el mapa.':'Revisa las confirmaciones anteriores antes del cierre.')+'</span></div>'
     +'<div class="pg09-pending-grid">'
     +pg09ReadOnlyGroup('Información crítica pendiente',pg09EvidenceItems(e,'DF094'),'No se ha identificado información crítica pendiente.')
-    +pg09ReadOnlyGroup('Evidencias por recibir',pg09EvidenceItems(e,'DF095'),'No hay evidencias pendientes de solicitar.')
+    +pg09EvidenceReview(e)
     +'</div>'
-    +'<div class="pg09-formblock"><h3>Prioridades y fechas</h3><div class="pg09-fields pg09-fields-two">'+item('DF096')+item('DF097')+'</div></div>'
+    +'<div class="pg09-formblock"><h3>Prioridades y fechas</h3><p class="pg09-block-hint">Selecciona los problemas que tendrán preferencia durante el análisis. Esta selección no establece un orden entre ellos.</p><div class="pg09-fields pg09-fields-two">'+item('DF096')+item('DF097')+'</div></div>'
     +'<div class="pg09-formblock"><h3>Siguiente paso acordado</h3><div class="pg09-fields">'+item('DF098')+'</div></div>'
-    +'<div class="pg09-formblock"><h3>Uso de datos y notas internas</h3><div class="pg09-fields">'+item('DF099')+item('DF100')+'</div></div>'
+    +'<div class="pg09-formblock"><h3>Uso de datos y notas internas</h3><p class="pg09-block-hint">Registra el permiso declarado. Si no existe autorización, no se presupone que los datos puedan reutilizarse fuera de lo permitido.</p><div class="pg09-fields">'+item('DF099')+item('DF100')+'</div></div>'
     +'</section>'+validationSummary(e,completion);
 }
 // [AUNEA-FE-PG09-FINAL-UX-138] END
@@ -552,7 +596,8 @@ function validationSummary(e,completion){
   return section('Revisión y confirmación final',
     'Esta revisión comprueba las confirmaciones anteriores y los datos pendientes, sin volver a capturar el proceso.',
     '<div class="pg09-confirm-section">'
-      +'<h3>Capas del AS-IS</h3><div class="pg09-layer-grid">'+layerTiles+'</div>'
+      +pg09ProcessReadOnlyReview(e)
+      +'<h3>Partes del diagnóstico revisadas</h3><div class="pg09-layer-grid">'+layerTiles+'</div>'
       +df017FinalReviewPanel(e)
       +'<div class="pg09-validation-section"><div class="pg09-validation-title"><h3>Comprobaciones antes del cierre</h3>'
       +'<p>Para cerrar, confirma los participantes y resuelve los bloqueos. Las evidencias pendientes se conservarán sin marcarse como verificadas.</p></div>'
