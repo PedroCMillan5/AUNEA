@@ -95,7 +95,7 @@ test('DF098 DROPDOWN_WITH_OWNER_DATE serializes to a plain "<acción> — <owner
   const html=ctx.renderControl({Field_ID:'DF098',Control_UI:'DROPDOWN_WITH_OWNER_DATE',Option_Set_ID:'OS_X'},'',ctx.schema.option_sets.OS_X.options,e);
   assert.match(html,/data-nextstep-action="DF098"/);
   assert.match(html,/data-nextstep-owner="DF098"/);
-  assert.match(html,/data-nextstep-date="DF098"/);
+  assert.match(html,/data-date-es="DF098" data-date-es-target="nextstep"/);
   const fakeBox={querySelector:sel=>sel==='summary span'?{textContent:'Beta'}:null};
   const savedDoc=ctx.document;
   ctx.document={querySelector:sel=>sel.includes('data-aunea-select="DF098__action"')?fakeBox:null,querySelectorAll:()=>[]};
@@ -367,7 +367,7 @@ test('DF099 renders permission and scope as one inline control and scope is cano
 
 test('date unknown is selected, disables the input and never writes UNKNOWN into a date value',()=>{
  const html=ctx.renderControl({Field_ID:'DF097',Control_UI:'DATE_WITH_UNKNOWN'},'UNKNOWN',[],e);
- assert.match(html,/data-answer="DF097" value="" disabled aria-disabled="true"/);
+ assert.match(html,/data-date-es="DF097" data-date-es-target="answer" value="" disabled aria-disabled="true"/);
  assert.match(html,/aria-pressed="true" data-set-unknown="DF097">✓ No disponible/);
  assert.doesNotMatch(html,/value="UNKNOWN"/);
  const available=ctx.renderControl({Field_ID:'DF097',Control_UI:'DATE_WITH_UNKNOWN'},'2026-10-14',[],e);
