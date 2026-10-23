@@ -14,13 +14,14 @@ function hasConfirmedEngagementSnapshot(e){
 
 function currentDiagnosticOutput(e){
   const snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;
-  return snap&&e?.lastEngineSnapshotVersion===snap.version?e.diagnosticOutput:null;
+  return snap&&e?.lastEngineSnapshotVersion===snap.version&&(typeof engineGateOutputFresh!=='function'||engineGateOutputFresh(e))?e.diagnosticOutput:null;
 }
 function diagnosticOutputFreshness(e){
   const snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;
   if(!snap)return {status:'BLOCKED',label:'Sin snapshot confirmado',snapshotVersion:null};
   if(!e?.diagnosticOutput)return {status:'PENDING',label:'Diagnóstico pendiente',snapshotVersion:snap.version};
   if(e.lastEngineSnapshotVersion!==snap.version)return {status:'OBSOLETE',label:'Resultado obsoleto',snapshotVersion:snap.version,outputSnapshotVersion:e.lastEngineSnapshotVersion??null};
+  if(typeof engineGateOutputFresh==='function'&&!engineGateOutputFresh(e))return {status:'OBSOLETE',label:'Resultado obsoleto: decisiones internas modificadas',snapshotVersion:snap.version,outputSnapshotVersion:e.lastEngineSnapshotVersion};
   return {status:'CURRENT',label:'Resultado vigente',snapshotVersion:snap.version,outputSnapshotVersion:e.lastEngineSnapshotVersion};
 }
 function diagnosisStepName(record,id){
@@ -138,7 +139,7 @@ function resultsPage(){
   if(!o){
     const unresolved=typeof unresolvedEngineGates==='function'?unresolvedEngineGates(e):[];
     const ready=miss.length===0&&!!activeSnapshot;
-    return pageTop('Diagnóstico interno','El snapshot de Sesión 1 está sellado. Ejecuta los motores canónicos para convertir la captura confirmada en diagnóstico.',`<button class="btn" data-page="diagnostico">Volver a Sesión 1</button><button class="btn btn-primary" id="runDiag">${unresolved.length?'Revisar inputs y ejecutar diagnóstico':'Ejecutar diagnóstico'}</button>`)
+    return pageTop('Diagnóstico interno','El snapshot de Sesión 1 está sellado. Ejecuta los motores canónicos para convertir la captura confirmada en diagnóstico.',`<button class="btn" data-page="diagnostico">Volver a Sesión 1</button><button class="btn btn-outline" id="reviewEngineGates">Revisar decisiones</button><button class="btn btn-primary" id="runDiag">${unresolved.length?'Revisar decisiones y ejecutar diagnóstico':'Ejecutar diagnóstico'}</button>`)
       +`<div class="grid g4 diagnosis-readiness">
         <div class="card metric"><small>Snapshot</small><strong>v${esc(activeSnapshot?.version||'—')}</strong><span>AS-IS confirmado</span></div>
         <div class="card metric"><small>Pasos</small><strong>${steps.length}</strong><span>${fr.length} fricciones · ${risks.length} riesgos</span></div>
@@ -150,7 +151,7 @@ function resultsPage(){
   }
   const pains=o.pain_results||[],econ=o.economic_result||{},risk=o.risk_result||{},processTime=o.process_time_projection||null,confirmed=pains.filter(x=>x.state==='CONFIRMED').length;
   const runDate=e.lastEngineRunAt?(typeof formatDateEs==='function'?formatDateEs(e.lastEngineRunAt):String(e.lastEngineRunAt)):'—';
-  return pageTop('Diagnóstico interno',`Snapshot v${esc(activeSnapshot?.version||'—')} · diagnóstico backend ${esc(runDate)} · ${esc(freshness.label)}. Los resultados están ligados a la versión confirmada del AS-IS.`,`<button class="btn" data-page="diagnostico">Volver a Sesión 1</button><button class="btn" data-page="proceso">Revisar AS-IS</button><button class="btn btn-primary" id="runDiag">Recalcular diagnóstico</button>`)
+  return pageTop('Diagnóstico interno',`Snapshot v${esc(activeSnapshot?.version||'—')} · diagnóstico backend ${esc(runDate)} · ${esc(freshness.label)}. Los resultados están ligados a la versión confirmada del AS-IS.`,`<button class="btn" data-page="diagnostico">Volver a Sesión 1</button><button class="btn" data-page="proceso">Revisar AS-IS</button><button class="btn btn-outline" id="reviewEngineGates">Revisar decisiones</button><button class="btn btn-primary" id="runDiag">Recalcular diagnóstico</button>`)
     +`<div class="grid g4 diagnosis-result-kpis">
       <div class="card metric"><small>Hallazgos confirmados</small><strong>${confirmed}</strong><span>de ${pains.length} evaluados</span></div>
       <div class="card metric"><small>Trabajo activo del proceso</small><strong>${processTime?.annual_active_hours!=null?num(processTime.annual_active_hours)+' h/año':'No calculado'}</strong><span>Proyección AS-IS, no EconomicInput</span></div>
