@@ -1730,3 +1730,67 @@ body.shell-session .topbar-left{display:none}
 .content:has(.diagnostic-stage-s09) .pg09-participant-confirmed>span{display:inline-flex;padding:7px 10px;border:1px solid #c4d9cd;border-radius:7px;background:#fff;color:#1b4833;font-size:12px;font-weight:600}
 .content:has(.diagnostic-stage-s09) .pg09-participant-confirmed>strong{color:#22643d;font-size:12px;margin-left:auto}
 .content:has(.diagnostic-stage-s09) .pg09-close-warning{font-size:12px;line-height:1.45;color:#795021;max-width:290px}
+
+/* [AUNEA-FE-PG09-UX-FOLLOWUP-143] START — Aligned date actions, explained review states, balanced global session header. */
+/* Keep the date input, Calendar and No disponible on one baseline. Responsive widths are retained. */
+.content:has(.diagnostic-stage-s09) .compound-control.date-with-preview{
+  display:flex;align-items:stretch;justify-content:stretch;gap:8px;
+  flex-wrap:nowrap;width:100%;min-width:0;
+}
+.content:has(.diagnostic-stage-s09) .date-with-preview>.pg09-spanish-date{
+  display:flex;flex:1 1 auto;align-items:stretch;min-width:0;gap:8px;
+}
+.content:has(.diagnostic-stage-s09) .date-with-preview>.pg09-spanish-date>input[type="text"]{
+  flex:1 1 auto;min-width:110px;height:40px;box-sizing:border-box;margin:0;
+}
+.content:has(.diagnostic-stage-s09) .date-with-preview button,
+.content:has(.diagnostic-stage-s09) .date-with-preview>.pg09-spanish-date>.pg09-calendar-trigger{
+  flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
+  height:40px;min-height:40px;box-sizing:border-box;margin:0;white-space:nowrap;
+}
+.content:has(.diagnostic-stage-s09) .pg09-spanish-date:not(.date-with-preview)>.pg09-calendar-trigger{
+  display:inline-flex;align-items:center;justify-content:center;height:40px;
+  min-height:40px;box-sizing:border-box;margin:0;
+}
+.content:has(.diagnostic-stage-s09) .pg09-consistency-summary>.pg09-status-tile{
+  min-width:0;min-height:118px;justify-content:flex-start;gap:6px;
+}
+.content:has(.diagnostic-stage-s09) .pg09-status-tile>span{font-weight:700;color:#394940}
+.content:has(.diagnostic-stage-s09) .pg09-status-tile>p{
+  margin:3px 0 0;font-size:12px;line-height:1.5;
+  color:#526359;overflow-wrap:anywhere;
+}
+/* The study identifier is a locator, not the whole header. Keep room for progress and actions. */
+body.shell-session .topbar{gap:14px;padding-inline:18px}
+body.shell-session .topbar-active-study{
+  flex:0 1 clamp(300px,32vw,440px);width:auto;min-width:270px;max-width:440px;
+}
+body.shell-session .topbar-progress{
+  flex:1 1 auto;min-width:240px;justify-content:center;overflow:hidden;
+}
+body.shell-session .topbar-right{flex:0 0 auto;gap:12px}
+body.shell-session .topbar-study{gap:10px;padding-inline:11px}
+@media(max-width:1280px){
+  body.shell-session .topbar{gap:10px;padding-inline:13px}
+  body.shell-session .topbar-active-study{flex:0 1 clamp(245px,30vw,370px);min-width:235px}
+  body.shell-session .topbar-progress{min-width:175px}
+  body.shell-session .topbar-right{gap:8px}
+}
+@media(max-width:1000px){
+  body.shell-session .topbar-active-study{flex:1 1 230px;min-width:185px;max-width:340px}
+  body.shell-session .topbar-progress{flex:0 1 auto;min-width:105px}
+}
+@media(max-width:840px){
+  body.shell-session .topbar-active-study{min-width:170px}
+  body.shell-session .topbar-progress{min-width:65px}
+}
+@media(max-width:670px){
+  body.shell-session .topbar-active-study{flex:1 1 auto;min-width:0;max-width:none}
+  body.shell-session .topbar-progress{display:none}
+  .content:has(.diagnostic-stage-s09) .compound-control.date-with-preview{flex-wrap:wrap}
+}
+@media(max-width:510px){
+  .content:has(.diagnostic-stage-s09) .date-with-preview>.pg09-spanish-date{flex:1 1 100%}
+  .content:has(.diagnostic-stage-s09) .pg09-consistency-summary{grid-template-columns:1fr}
+}
+/* [AUNEA-FE-PG09-UX-FOLLOWUP-143] END */
