@@ -94,6 +94,16 @@ def diagnostic_coverage(payload: EngagementInput):
     integrity=relational_integrity_issues(payload)
     return {"coverage":coverage,"integrity_issues":integrity}
 
+# [AUNEA-BE-ASIS-ANALYSIS-API-152] START — Baseline before solution selection
+# Uses the same canonical EngagementInput, with no invented five-gate answers.
+@app.post("/v1/diagnostic/asis-analysis")
+def asis_analysis(payload: EngagementInput):
+    try:
+        return engine.analyze_asis(payload)
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+# [AUNEA-BE-ASIS-ANALYSIS-API-152] END
+
 @app.post("/v1/diagnose")
 def diagnose(payload: EngagementInput):
     try:
