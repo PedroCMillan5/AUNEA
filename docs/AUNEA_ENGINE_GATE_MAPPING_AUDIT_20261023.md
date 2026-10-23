@@ -61,3 +61,18 @@ Estado: REVIEW · 23/10/2026 · Rama: `work/as-is-ux-simplification-20260930`
 **Alcance y deuda de integración:** estas regresiones demuestran la integridad de la frontera PG09→PG10 con mocks controlados y guardas hasta la revisión para cliente. **No demuestran todavía la cadena real completa de una empresa** desde PG01 hasta PG15 ni que TO-BE, escenarios, aprobación y Modo Resultados se vean correctamente por un usuario. Se requiere recuperar un gate general verde o justificar cada discrepancia antigua, recorrer un único expediente representativo en navegador, contrastar diagnóstico y outputs del backend, confirmar fuentes/evidencias/hipótesis, revisar TO-BE y la publicación desde el mismo snapshot, y comprobar invalidación tras cambios y persistencia tras recarga. No publicar como caso de cliente real los datos UAT sintéticos de Levante.
 
 **Gobierno:** DEC-034/041/052/053 y Diagnostic Master v1.2 no cambian. El estado sigue REVIEW; no corresponde crear una DEC nueva, cambiar ROADMAP ni declarar un hito de cierre definitivo en ESTADO. La siguiente decisión de promoción sólo procede con QA integral y aceptación de resultados verificados.
+
+
+## Protección del AS-IS — reconciliación de la UAT tras endurecer PG10 (23/10/2026)
+
+Comparativa de QA ejecutada sobre la rama vigente:
+- Antes del ajuste a la UAT, en `2a308f7`: frontend 613/664 PASS y 51 FAIL; 15 fallos añadidos concentrados en la carga de la única UAT y pruebas de PG05/PG09 dependientes de esa carga.
+- Causa demostrada: `singleUatAudit` requería que las cinco decisiones técnicas estuviesen confirmadas **antes del cierre PG09**, mientras el contrato vigente exige confirmación explícita sobre el snapshot **después del cierre**. Por ello el cargador no completaba la UAT y sus pruebas dependientes recibían un engagement nulo.
+- Reparación acotada en `3_SYSTEM/frontend/uat/visible.js`: la preparación del AS-IS sintético no queda bloqueada por decisiones posteriores; no se crean decisiones humanas automáticas, ni se precargan valores Sí/No. Una vez sellado el AS-IS, las cinco decisiones siguen pendientes y bloquean el cálculo hasta su confirmación.
+- Regresión en `3_SYSTEM/frontend/tests/uat-full-runtime-v1.test.cjs`: exige exactamente cinco decisiones pendientes antes del cierre, sin impedir que `singleUatAudit` considere preparada la captura.
+- QA del commit `0024f9a0e`: frontend **628/664 PASS, 36 FAIL** (15 pruebas recuperadas); backend del acceptance gate **SUCCESS**. Los 36 fallos coinciden por nombre con los del antecedente `e3126ad` (623/659 PASS); las cinco regresiones nuevas de PG10 permanecen verdes.
+- Chromium de `0024f9a0e`: las comprobaciones visuales PG03 vertical/layout PASS; el recorrido completo sigue bloqueado en un assertion posterior del estado de capa AS-IS, por lo que **no hay UAT integral aprobada**.
+
+Control de alcance: se preservan Diagnostic Master v1.2, schema DF001–DF100, reglas/engines server-owned, snapshots y páginas FROZEN. El cambio reparó exclusivamente el **fixture y validación de UAT**; no introduce una condición nueva en la sesión del cliente ni altera los outputs del backend. **REVIEW**, sin autorización para promover el módulo a CANONICAL/PRODUCTION.
+
+Próximo trabajo: resolver por causalidad los 36 fallos preexistentes; comparar el conjunto de errores y ejecutar QA tras cada cambio sin intervenir en pantallas congeladas, y validar la ruta PG01→PG15 en navegador antes de declarar cierre global.
