@@ -1,0 +1,65 @@
+# AUNEA Internal — Continuidad AS-IS → puntos críticos → alternativas → escenarios (REVIEW)
+
+Fecha: 23/10/2026  
+Estado: **REVIEW — alcance analítico implantado; generación completa de tres escenarios cuantificados no autorizada sin hipótesis y alcance**.  
+Rama: `work/as-is-ux-simplification-20260930`.
+
+## Fuentes y límites
+
+Revisión iniciada desde `00_AUNEA_INTERNAL_MASTER_INDEX` v1.58, `PROJECT_RULES.md` v1.7, `DECISIONES_AUNEA` (DEC-034, DEC-052, DEC-053, DEC-065), `AUNEA_SYSTEM_SIMULATOR_CANONICAL` v1.14 y Diagnostic Master v1.2 vigente.
+
+**No se modifican los DF001–DF100, modalidades, requiredness, reglas de captación, pantallas FROZEN, snapshots, preguntas, Engine Consumers, reglas económicas ni pricing.** El cierre histórico PG09 sigue exigiendo confirmación humana y persistencia. La ruta PG11–PG15 no puede publicar un análisis exploratorio como resultado aprobado.
+
+## Secuencia funcional: fuente única
+
+| Paso | Input dueño | Operación | Salida y condición |
+|---|---|---|---|
+| Contexto AS-IS | Snapshot PG09, Company, Contact, 100 DF y modelos | Examinar todos los DF; respetar valor efectivo / derivado; no reinterpretar ausencia de opcionales como bloqueo | Inventario privado de fuentes/valores por etapa |
+| Puntos críticos | ProcessStep, Friction.affected_steps, RiskInput.step_ids, EconomicInput.step_ids | Mostrar las relaciones existentes, tiempos declarados por paso y registros sin ancla | Panel de puntos críticos navegable en el mismo AS-IS; no duplica modelos |
+| Línea base | Backend InputCoverage/Pain/Economics/Risk/SessionTime | Nuevo endpoint **read-only** `POST /v1/diagnostic/asis-analysis`, sin Recommendation/Pricing/Scenario; omite cómputos derivados si falta base crítica o integridad | Resultados de origen, brechas y advertencias sin cinco decisiones comerciales |
+| Alternativas condicionadas | Hallazgos del AS-IS + REF_ACTION/REF_LEVEL_AI | Tres vías de intervención como **hipótesis de contraste**, con pros, contras y dependencias | Sin decisión automática sobre IA, rediseño o posibilidades de ERP |
+| TO-BE | Snapshot y diagnóstico oficial vigente | Se mantiene trazabilidad de cada ProcessStep y se requiere revisión humana para un TO-BE aprobable | Alternativas visualizables antes; edición/aprobación oficial aún gobernada |
+| Escenarios oficiales | Recommendation/Scenario Comparator/CommercialScope y EconomicInput | Desde tres vías se puede abrir el comparador con acción y nivel IA tomados del catálogo vigente; el consultor debe documentar los supuestos | `quote`, tiempo futuro, valor de capacidad, ahorro de caja, payback solo cuando el backend los calcule y autorice |
+| Resultado al cliente | OutputReview, TO-BE aprobado, misma versión del AS-IS | La presentación consume exclusivamente resultados y escenarios aprobados | No se muestran borradores internos ni inferencias no comprobadas |
+
+## Las cinco dimensiones dejan de bloquear la lectura del AS-IS
+
+Las dimensiones «rediseño», «herramientas actuales», «interpretación IA», «agente acotado» y «seguimiento» se recuperan de `ENGINE_GATE_CONTRACT` como **evidencia/propuesta/por determinar**, sin autoaceptar las sugerencias. La exigencia de respuestas Sí/No permanece únicamente en la ruta **actual** de recomendación y cotización oficiales porque el backend espera cinco booleanos; el endpoint nuevo permite diagnosticar los problemas antes de esta selección.
+
+Este trabajo **no ha reescrito el Recommendation Engine** para admitir trivalencia, porque eso requiere aprobación y modificación coordinada del contrato canónico de reglas y comparador. El condicionamiento de la selección tecnológica se ha expresado en la capa exploratoria, no mediante el envío ficticio de «No».
+
+## Tres vías a comparar (no tres resultados inventados)
+
+1. **Optimización sin IA** — referencia del catálogo `ACT03`, `I0`. Verificar datos estructurados, integraciones y reglas.
+2. **Optimización asistida por IA** — `ACT04`, `I1`. Verificar muestras documentales, calidad, supervisión y coste operativo. No se presupone que usar PDF implique necesitar IA.
+3. **Rediseño / tecnología existente** — punto de partida `ACT02`, `I0`, revisable hacia `ACT01` cuando se demuestre necesaria una modificación organizativa. Verificar las capacidades reales, licencias y responsables.
+
+Los niveles funcionales y todas las cotizaciones se obtienen de catálogo/reglas canónicas. No se crea un nuevo producto, tarifa, ahorro o tasa de mejora. El escenario óptimo sigue inmutable y los alternativos deben pasar por el Scenario Comparator con hipótesis explícitas.
+
+## Fuentes económicas y gaps
+
+- `DF025` = SLA/plazo de servicio, **no** mejora objetivo implícita.
+- `DF026` = end-to-end actual declarado; no sustituye tiempos de trabajo/espera/retrabajo.
+- `ProcessStep.active_time/wait_time/rework_time` = atribución por paso; las rutas condicionadas impiden sumar ciegamente tiempos para obtener un end-to-end.
+- `EconomicInput` = impacto económico parcial, con owner, driver, evidencias y atribución. No se presenta como total de tiempo del proceso.
+- `SessionTime` server-owned = línea base anualizada cuando haya volumen/periodo soportados; la espera es exposición, no horas laborales.
+- `Scenario Economics` server-owned = tiempo futuro y capacidad recuperable **sólo con hipótesis documentadas**; el valor de capacidad no implica cash saving.
+- `Quote` = sólo producto/alcance/costes canónicos, nunca una cifra propuesta por la IA.
+- El registro de brechas distingue fuentes no capturadas, campos opcionales/condicionales, faltas de integridad, ausencia de evidencia, integración ERP no comprobada y dependencias de cada variante.
+
+## QA / criterios de aceptación
+
+- Test unitario: los 100 DF se examinan sin cambiar el modelo y se conserva su etapa/consumer.
+- Test relacional: cada punto conserva IDs de Friction, Risk y EconomicInput y no crea ahorro automático.
+- Test endpoint: el análisis AS-IS no requiere resolver decisiones de solución, no modifica capturas/almacén y no devuelve recomendación, escenario óptimo ni precio.
+- Test E2E de facturas: confirmar realmente DF017 + PG09, entrar a Diagnóstico con cinco decisiones sin resolver, mostrar mapa, cobertura de 100 campos y tres vías, sin modificar el snapshot.
+- Tests anteriores PG01–PG09, snapshots, persistencia, riesgos, backend y Chromium siguen siendo obligatorios y no se sustituyen por pruebas aisladas.
+
+## Pendientes explícitos para un circuito PG10–PG15 plenamente automático
+
+1. Motor IA de orquestación con proveedor gobernado: actualmente `AiAgentService.status()` indica `UNAVAILABLE` cuando no hay proveedor. Los enfoques exploratorios proceden de reglas y fuentes, **no son generación autónoma de IA**.
+2. Simulación de mejoras **por cada intervención** y consolidación sin solapes (rutas, esperas y retrabajo): falta un contrato de hipótesis TO-BE por punto con trazabilidad propia al backend. No se calculan mejoras ficticias en el frontend.
+3. Generación/validación de **tres escenarios globales con números y precios**: el backend ya dispone de comparator y pricing canónicos; solo devolverá cantidades cuando haya supuestos económicos, alcance y reglas válidos. La UI propone tres vías y abre el configurador de alternativa, pero no inventa supuestos.
+4. Matriz trazable de ventajas/inconvenientes con scores basados en evidencia por alternativa, y publicación PG15 con tres escenarios aprobados, sin duplicar Snapshot ni crear un nuevo estudio.
+
+Hasta cerrar estos puntos, el proyecto sigue **REVIEW**, sin promoción a CANONICAL/PRODUCTION y sin cambio de DECISIONES/ESTADO/ROADMAP por mera disponibilidad de una interfaz exploratoria.
