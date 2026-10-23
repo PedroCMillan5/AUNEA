@@ -250,7 +250,10 @@ test('A source-identical binary fingerprint never publishes a result without a v
  e.engineGates=Object.fromEntries(allKeys.map(k=>[k,'YES']));
  e.lastEngineGateFingerprint=fn.engineGateFingerprint(e);
  e.diagnosticOutput={recommendation:{},quote:{},optimal_scenario:{}};
- assert.equal(fn.engineGateOutputFresh(e),false);
+ e.lastEngineGateFingerprint=undefined;
+ assert.equal(fn.engineGateOutputFresh(e),false,'a legacy output without a gate fingerprint is not fresh');
+ e.lastEngineGateFingerprint=fn.engineGateFingerprint(e);
+ assert.equal(fn.engineGateOutputFresh(e),false,'a binary fingerprint without its review is insufficient');
  e.engineGateReview={snapshotVersion:1,decisions:Object.fromEntries(allKeys.map(k=>[k,{answer:'YES',basis:'REVIEW'}]))};
  assert.equal(fn.engineGateOutputFresh(e),true);
  e.engineGateReview.decisions[allKeys[0]].answer='NO';
@@ -290,6 +293,56 @@ test('The entire snapshot-to-results boundary invalidates review, client output 
  assert.match(adapter,/sourceGateFingerprint!==engineGateFingerprint\(e\)\|\|unresolvedEngineGates\(e\)\.length/);
  assert.match(results,/diagnosisEngineDecisionTraceHtml\(e\)/);
  assert.match(results,/unresolved\.length===0/);
+});
+
+
+test('E2E consultant gate → backend → durable PG10 output: mid-run edits and save conflicts never publish',async()=>{
+ const begin=adapter.indexOf('async function runDiagnosis()');
+ const end=adapter.indexOf('// C05 · Optional internal AI',begin);
+ assert.ok(begin>0&&end>begin,'the production diagnosis runner must exist');
+ const realRunner=adapter.slice(begin,end);
+ const base=()=>{
+  const e=record();
+  e.id='UAT-END-TO-END-01';e.confirmedAsIs=true;
+  e.engineGates=Object.fromEntries(allKeys.map(k=>[k,'NO']));
+  e.engineGateReview={snapshotVersion:1,decisions:Object.fromEntries(allKeys.map(k=>[k,{answer:'NO',basis:'REVIEW'}]))};
+  return e;
+ };
+ const output={recommendation:{action_id:'TEST'},quote:{status:'BLOCKED'},optimal_scenario:{id:'OPTIMAL'}};
+ async function attempt(behavior){
+  const e=base(),messages=[],audit=[];
+  let persistCalls=0,renderCount=0;
+  const state={backendOnline:true,backendUrl:'/test-backend',activePage:'resultados'};
+  const mock={
+   state,currentEng:()=>e,hasConfirmedSnapshot:x=>!!x.snapshot,
+   confirmedSnapshot:x=>x.snapshot,
+   canonicalMissingRequired:()=>[],captureIntegrityIssues:()=>[],
+   engagementOfRecord:x=>x,unresolvedEngineGates:fn.unresolvedEngineGates,
+   engineGateFingerprint:fn.engineGateFingerprint,engineGateOutputFresh:fn.engineGateOutputFresh,
+   document:{getElementById:()=>null},buildBackendPayload:()=>({engagement_id:e.id}),
+   diagnosticCoveragePreflight:async()=>({status:'READY'}),handleCoveragePreflight:()=>true,
+   fetch:async()=>{if(behavior==='changed')e.engineGates.management_visibility_need='YES';return {ok:true,json:async()=>output};},
+   now:()=> '2026-10-23T10:00:00',markDirty:reason=>audit.push(reason),
+   persistRecoverySnapshot:()=>{persistCalls++;return behavior!=='conflict';},
+   render:()=>{renderCount++;},toast:t=>messages.push(t)
+  };
+  const {runDiagnosis}=vm.runInNewContext(realRunner+'\\n({runDiagnosis})',mock);
+  await runDiagnosis();
+  return {e,messages,audit,persistCalls,renderCount,state};
+ }
+ const changed=await attempt('changed');
+ assert.equal(changed.e.diagnosticOutput,undefined);
+ assert.equal(changed.persistCalls,0);
+ assert.match(changed.messages.join(' '),/decisiones técnicas cambiaron/);
+ const conflict=await attempt('conflict');
+ assert.equal(conflict.e.diagnosticOutput,undefined,'a failed durable commit rolls back official outputs');
+ assert.equal(conflict.persistCalls,1);
+ assert.match(conflict.messages.join(' '),/no se ha podido guardar/);
+ const ok=await attempt('ok');
+ assert.equal(ok.e.diagnosticOutput,output);
+ assert.equal(ok.e.lastEngineSnapshotVersion,1);
+ assert.equal(ok.persistCalls,1);
+ assert.match(ok.messages.join(' '),/calculado y guardado/);
 });
 
 // [AUNEA-UAT-ENGINE-GATE-ASSIST-151] END
