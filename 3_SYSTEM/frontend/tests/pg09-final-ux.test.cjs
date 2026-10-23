@@ -92,4 +92,39 @@ test('Incomplete layer or required data blocks closure action',()=>{
   html=fns.pg09CaptureContent(e,schema.fields,{missing:[{id:'DF098',label:'Siguiente paso acordado'}]});
   assert.doesNotMatch(html,/id="confirmClosingAsIs"/);
 });
+
+test('Matching profiles still require explicit final confirmation before PG09 closure',()=>{
+  const lifecycle=fs.readFileSync(path.join(root,'domain/process-lifecycle.js'),'utf8');
+  const part=(a,b)=>excerpt(lifecycle,a,b);
+  const code=[
+    part('function processParticipantsFinalConfirmation(','// [AUNEA-FE-PG09-PARTICIPANTS-GATE-141] END'),
+    part('function processParticipantsScopeReview(','// [AUNEA-FE-ASIS-PARTICIPANTS-078] END'),
+    part('function preCloseConsistencyReview(','// [AUNEA-FE-ASIS-CONSISTENCY-076] END')
+  ].join('\n');
+  const stub={
+    normalizeArray:x=>Array.isArray(x)?x:x?[x]:[],
+    processLayerConfirmations:e=>e.layerConfirmations,
+    processScopeReviewSignals:()=>[],
+    captureIntegrityIssues:()=>[],
+    labelFrom:(_set,value)=>value,
+    schema:{fields:[]},
+    CONSISTENCY_LAYER_STAGE:{map:'S04',frictions:'S05',risks:'S06',impact:'S07'}
+  };
+  const review=vm.runInNewContext(Object.keys(stub).map(k=>'const '+k+'=stubs.'+k+';').join('\n')+code+'\npreCloseConsistencyReview',{stubs:stub});
+  const e={
+    processSteps:[{actor:'ADMIN',status:'ACTIVE'},{actor:'MANAGER',status:'ACTIVE'}],
+    answers:{DF017:['ADMIN','MANAGER']},answerDetails:{},
+    layerConfirmations:{map:true,frictions:true,risks:true,impact:true}
+  };
+  const before=review(e,{blockers:[]});
+  assert.ok(before.blockers.some(b=>b.code==='DF017_FINAL_CONFIRMATION'));
+  e.answerDetails.DF017__final_scope_confirmation={
+    fingerprint:JSON.stringify({declared:['ADMIN','MANAGER'],mapped:['ADMIN','MANAGER']})
+  };
+  assert.equal(review(e,{blockers:[]}).blockers.length,0);
+  e.processSteps.push({actor:'AUDITOR',status:'ACTIVE'});
+  assert.ok(review(e,{blockers:[]}).blockers.some(b=>b.code==='DF017_PARTICIPANT_SCOPE'));
+  assert.match(stages,/data-undo-df017-final/);
+});
+
 // [AUNEA-UAT-PG09-FINAL-UX-140] END
