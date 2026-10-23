@@ -165,4 +165,8 @@ def test_contract_rejects_invalid_negative_minutes_or_dimension():
         _hypothesis("S6", "ACTIVE", -1)
     with pytest.raises(ValidationError):
         _hypothesis("S6", "ROUTE_CRITICAL_PATH", 5)
+    with pytest.raises(ValidationError):
+        _hypothesis("S6", "ACTIVE", float('nan'))
+    with pytest.raises(ValidationError):
+        _hypothesis("S6", "ACTIVE", float('inf'))
 # [AUNEA-UAT-INTERVENTION-REVIEW-155] END
