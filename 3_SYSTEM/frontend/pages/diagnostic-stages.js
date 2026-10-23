@@ -563,8 +563,9 @@ function validationSummary(e,completion){
   const evidencePending=normalizeArray(evidenceField&&typeof effectiveValue==='function'?effectiveValue(evidenceField,e):[]).filter(x=>x&&x!=='No hay evidencias pendientes');
   const captureMissing=(completion.missing||[]).filter(x=>(x.id||x)!=='DF093'&&(x.id||x)!=='Confirmación AS-IS');
   const primaryCta=snap?'<span class="status green">✓ Diagnóstico confirmado y versión guardada</span><button class="btn btn-primary" data-page="resultados">Continuar a Trabajo interno →</button>':((!layersReady||consistency.blockers.length||captureMissing.length)?'':'<button class="btn btn-primary" id="confirmClosingAsIs">Confirmar diagnóstico y guardar versión final</button>');
-  const cta=primaryCta+((!layersReady||consistency.blockers.length||captureMissing.length)?'<div class="pg09-close-warning">Resuelve los elementos pendientes antes de confirmar el cierre.</div>':'');
-  const proceed=layersReady&&!consistency.blockers.length&&!captureMissing.length;
+  const pendingClosure=!snap&&(!layersReady||consistency.blockers.length||captureMissing.length);
+  const cta=primaryCta+(pendingClosure?'<div class="pg09-close-warning">Resuelve los elementos pendientes antes de confirmar el cierre.</div>':'');
+  const proceed=!!snap||!pendingClosure;
   const layerTiles=[
     ['Pasos',steps.length+' registrados',layers.map],
     ['Fricciones',fr.length+' registradas',layers.frictions,frWithEvidence+' con evidencia registrada'],
@@ -610,7 +611,7 @@ function validationSummary(e,completion){
         +'<div class="pg09-status-tile"><b>'+consistency.reviews.length+'</b><span>Observaciones</span><p>'+esc(observationsExplanation)+'</p></div>'
         +'<div class="pg09-status-tile '+(proceed?'is-ready':'is-pending')+'"><b>'+(proceed?'Puede cerrarse':'Requiere revisión')+'</b><span>Estado del cierre</span><p>'+esc(closeExplanation)+'</p></div>'
       +'</div>'+issuesHtml+'</div>'
-      +(captureMissing.length?'<div class="pg09-missing-required"><b>Información obligatoria pendiente</b><p>'+captureMissing.map(x=>esc(x.label||'Dato obligatorio pendiente')).join(' · ')+'</p></div>':'')
+      +(captureMissing.length?'<div class="pg09-missing-required"><b>Información obligatoria pendiente</b><div class="pg09-missing-items">'+captureMissing.map(x=>'<div class="pg09-missing-item"><span>'+esc(x.label||'Dato obligatorio pendiente')+'</span>'+(x.stage?'<button type="button" class="btn btn-small btn-outline" data-goto-stage="'+attr(x.stage)+'">Revisar origen</button>':'')+'</div>').join('')+'</div></div>':'')
       +'<div class="pg09-close-footer"><div class="pg09-close-copy"><h3>'+(snap?'Diagnóstico confirmado':'Confirmación final del diagnóstico')+'</h3>'
         +'<p><b>Qué estás confirmando:</b> que el proceso y los problemas reflejan la información revisada con el cliente hasta este momento. Las cifras estimadas y las pruebas pendientes seguirán identificadas como tales; confirmarlas no significa haberlas demostrado.</p>'
         +'<p><b>Qué quedará guardado:</b> '+(snap?'La versión confirmada está disponible para el trabajo interno.':'El proceso, las fricciones, los riesgos, los impactos y los acuerdos, con sus limitaciones y evidencias pendientes. No se generan ahorros automáticamente.')+'</p>'
