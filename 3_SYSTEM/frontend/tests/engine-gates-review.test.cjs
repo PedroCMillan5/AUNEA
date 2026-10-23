@@ -22,6 +22,7 @@ const fields=['DF075','DF086','DF087','DF088','DF089','DF050'].map(Field_ID=>({F
 let modal=null,closeCount=0,runCount=0,persistCount=0,dirtyCount=0,toastLog=[];
 let current=null,nodes=[];
 const stub={
+ state:{dirty:false,audit:[]},
  activeSteps:e=>(e.processSteps||[]).filter(x=>x.status!=='SUPERSEDED'),
  activeFrictions:e=>(e.frictions||[]).filter(x=>x.status!=='SUPERSEDED'),
  normalizeArray:v=>Array.isArray(v)?v:v==null||v===''?[]:[v],
@@ -148,7 +149,7 @@ test('Gate edits invalidate only diagnostic outputs generated with an earlier de
  assert.match(results,/engineGateOutputFresh\(e\)/);
  assert.match(review,/engineGateOutputFresh\(e\)/);
  assert.match(shell,/reviewEngineGates.*openEngineGateReview/);
- assert.match(adapter,/e\.lastEngineGateFingerprint=engineGateFingerprint\(e\)/);
+ assert.match(adapter,/e\.lastEngineGateFingerprint=sourceGateFingerprint/);
 });
 
 test('Review is calculated from immutable confirmed snapshot when available',()=>{
