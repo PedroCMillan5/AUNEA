@@ -1,0 +1,180 @@
+// [AUNEA-FE-ASIS-WORKBENCH-152] START — Read-only source coverage and conditional alternatives
+// PURPOSE: Show what captured AS-IS data supports, what remains unknown, and where options differ.
+// SOURCE: Diagnostic Master v1.2 (all DF001–DF100); DEC-034/052/053; Simulator CANONICAL PG10–PG15.
+// INPUTS: sealed Engagement snapshot, canonical schema and optional server-owned AS-IS analysis.
+// OUTPUTS: source audit, traceable point cards and conditional exploration; no official prices/savings.
+// SIDE_EFFECTS: none on Engagement or AS-IS; server call results live in memory, bound to snapshot.
+const __asisAnalysisCache=new Map();
+const ASIS_CONDITIONAL_DIRECTIONS=Object.freeze([
+  {name:'Optimización sin IA',condition:'Si las actividades se resuelven con reglas y entradas suficientemente estructuradas',
+   approach:'Rediseño puntual, reglas, integraciones y avisos que se puedan verificar.',
+   advantage:'Menor variabilidad de comportamiento y controles deterministas.',
+   drawback:'Necesita comprobar calidad de datos, integraciones y excepciones; no interpreta libremente documentos variables.',
+   dependencies:['Capacidad real de conexión o configuración de las herramientas','Reglas y excepciones documentadas','Responsable de las aprobaciones']},
+  {name:'Optimización asistida por IA',condition:'Si existe interpretación material de contenido variable que no sea razonable resolver con reglas',
+   approach:'Las mismas reglas gobernadas, con interpretación o redacción asistida y revisión humana donde proceda.',
+   advantage:'Puede abordar documentos y mensajes heterogéneos cuando una prueba de calidad lo confirme.',
+   drawback:'Mayor coste operativo, errores posibles y necesidad de supervisión y prueba de calidad.',
+   dependencies:['Muestras de documentos y validación de extracción','Permisos y datos tratados','Costes de operación y aceptación de calidad']},
+  {name:'Rediseño y tecnología existente',condition:'Si simplificar pasos o configurar capacidades disponibles resuelve las fricciones materiales',
+   approach:'Revisar secuencia, responsables, criterios y funcionalidades nativas antes de añadir software.',
+   advantage:'Puede reducir integraciones nuevas y costes de mantenimiento.',
+   drawback:'Depende de capacidades, licencias, restricciones y aceptación del cambio que aún deben verificarse.',
+   dependencies:['Capacidades y licencias de herramientas existentes','Políticas reales y cambios organizativos','Evidencia de tiempos tras el rediseño']}
+]);
+function asisAnalysisSnapshot(e){
+  return typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;
+}
+function asisAnalysisSource(e){
+  return typeof engagementOfRecord==='function'?engagementOfRecord(e):e;
+}
+function asisAnalysisKey(e){
+  const snap=asisAnalysisSnapshot(e);
+  if(!snap||!e?.confirmedAsIs)return null;
+  // Current sealed record is the only authority; unrelated gates cannot change this key.
+  return String(e.id)+'|'+String(snap.version)+'|'+JSON.stringify({
+    answers:snap.answers,processSteps:snap.processSteps,frictions:snap.frictions,
+    risks:snap.risks,economicInputs:snap.economicInputs,answerDetails:snap.answerDetails
+  });
+}
+function asisAnalysisResult(e){
+  const key=asisAnalysisKey(e);
+  return key?__asisAnalysisCache.get(key)||null:null;
+}
+async function runAsisAnalysis(e){
+  const key=asisAnalysisKey(e);
+  if(!key)return toast('Confirma el AS-IS antes de analizarlo.');
+  if(typeof checkBackend==='function'&&!state.backendOnline&&!(await checkBackend()))
+    return toast('El análisis necesita el backend para calcular Pain, economía, riesgo y tiempos.');
+  const payload=buildBackendPayload(e);
+  const button=document.getElementById('analyzeAsisOnly');
+  if(button){button.disabled=true;button.textContent='Analizando datos confirmados…'}
+  try{
+    const response=await fetch(state.backendUrl+'/v1/diagnostic/asis-analysis',{
+      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)
+    });
+    if(!response.ok)throw new Error(await response.text());
+    const data=await response.json();
+    if(data.diagnostic_type!=='ASIS_ONLY'||data.engagement_id!==e.id||data.recommendation||data.quote||data.optimal_scenario)
+      throw new Error('El endpoint no cumple el contrato de análisis sin recomendación.');
+    if(asisAnalysisKey(e)!==key||currentEng()?.id!==e.id)
+      throw new Error('El AS-IS cambió durante el análisis. No se utilizan resultados antiguos.');
+    __asisAnalysisCache.set(key,data);
+    render();
+  }catch(err){toast('No se pudo analizar el AS-IS: '+String(err.message||err));render()}
+}
+function asisFieldInventory(record){
+  const fields=Array.isArray(schema?.fields)?schema.fields:[];
+  const order=(schema?.flow||[]).map(x=>x.Stage_ID);
+  const stages=new Map(order.map(id=>[id,[]]));
+  for(const f of fields){
+    const stage=f.Stage_ID||'OTROS',fid=f.Field_ID;
+    let value=record?.answers?.[fid];
+    if(typeof effectiveValue==='function'){
+      try{const effective=effectiveValue(f,record);if(effective!==undefined&&effective!==null&&effective!=='')value=effective}catch(_){}
+    }
+    const filled=typeof valuePresent==='function'?valuePresent(value):
+      !(value===undefined||value===null||value===''||(Array.isArray(value)&&!value.length));
+    const item={id:fid,label:f.Pregunta_o_etiqueta_ES||f.Field_Name||'Dato del estudio',
+      stage,mode:f.Ask_Mode||'',required:f.Requiredness||'',consumers:String(f.Engine_Consumers||''),
+      filled:!!filled};
+    if(!stages.has(stage))stages.set(stage,[]);
+    stages.get(stage).push(item);
+  }
+  return [...stages.entries()].map(([stage,items])=>({
+    stage,title:(schema?.flow||[]).find(x=>x.Stage_ID===stage)?.Stage_ES||'Datos vinculados',
+    items,filled:items.filter(x=>x.filled).length
+  }));
+}
+function asisSourceTime(v){
+  if(v===null||v===undefined||v==='')return 'Sin cuantificar';
+  const n=Number(v);return Number.isFinite(n)?n.toLocaleString('es-ES',{maximumFractionDigits:2})+' min':'Sin cuantificar';
+}
+function asisSourceBoundary(record,fid){
+  const v=record?.answers?.[fid];
+  if(!v||typeof v!=='object')return v==null||v===''?'No consta':String(v);
+  const n=Number(v.value);if(!Number.isFinite(n))return 'No consta';
+  const unit=({min:'min',h:'horas',hour:'horas',day:'días'})[String(v.unit||'').toLowerCase()]||v.unit||'';
+  return n.toLocaleString('es-ES')+' '+unit;
+}
+function asisPointRecords(record){
+  const steps=(record?.processSteps||[]).filter(x=>x.status!=='SUPERSEDED'),
+    fr=(record?.frictions||[]).filter(x=>x.status!=='SUPERSEDED'),
+    risks=(record?.risks||[]).filter(x=>x.status!=='SUPERSEDED'),
+    impacts=(record?.economicInputs||[]).filter(x=>x.status!=='SUPERSEDED');
+  const ids=x=>Array.isArray(x)?x.map(String):x==null?[]:[String(x)];
+  const points=steps.map((step,index)=>{
+    const match=(rows,key)=>rows.filter(x=>ids(x[key]).includes(String(step.id)));
+    const frictions=match(fr,'affected_steps'),linkedRisks=match(risks,'step_ids'),economics=match(impacts,'step_ids');
+    const gaps=[];
+    if(step.active_time==null)gaps.push('Tiempo de trabajo del paso sin cuantificar');
+    frictions.forEach((f,i)=>{
+      if(!String(f.observable_signal||'').trim())gaps.push('Fricción '+(i+1)+': señal observable sin describir');
+      if(!f.evidence_type)gaps.push('Fricción '+(i+1)+': tipo de evidencia pendiente');
+    });
+    linkedRisks.forEach((r,i)=>{if(r.controls_present===null||r.controls_present===undefined)
+      gaps.push('Riesgo '+(i+1)+': controles no declarados')});
+    economics.forEach((x,i)=>{if(!x.evidence_type)gaps.push('Impacto '+(i+1)+': evidencia no declarada')});
+    return {step,index,frictions,risks:linkedRisks,impacts:economics,gaps,
+      critical:frictions.length>0||linkedRisks.length>0||economics.length>0};
+  });
+  return {points,orphanFrictions:fr.filter(x=>!ids(x.affected_steps).some(id=>steps.some(s=>String(s.id)===id))),
+    orphanRisks:risks.filter(x=>!ids(x.step_ids).some(id=>steps.some(s=>String(s.id)===id))),
+    orphanImpacts:impacts.filter(x=>!ids(x.step_ids).some(id=>steps.some(s=>String(s.id)===id)))};
+}
+function asisPointCardsHtml(record){
+  const source=asisPointRecords(record);
+  const rows=source.points.filter(p=>p.critical);
+  const card=p=>{
+    const step=p.step;
+    const list=(items,text)=>items.length?'<ul>'+items.map(x=>'<li>'+esc(text(x))+'</li>').join('')+'</ul>':'<p>No consta vínculo directo.</p>';
+    return '<article class="asis-opportunity-point"><div class="asis-opportunity-head"><b>Paso '+(p.index+1)+' · '+esc(step.step_name||'Sin título')+'</b><span>'+p.frictions.length+' fricciones · '+p.risks.length+' riesgos · '+p.impacts.length+' impactos</span></div>'
+      +'<div class="asis-opportunity-times"><span>Trabajo: '+esc(asisSourceTime(step.active_time))+'</span><span>Espera: '+esc(asisSourceTime(step.wait_time))+'</span><span>Retrabajo: '+esc(asisSourceTime(step.rework_time))+'</span></div>'
+      +'<div class="asis-opportunity-columns"><div><b>Puntos observados</b>'+list(p.frictions,f=>f.client_label||f.observable_signal||labelFrom('OS_FRICTION_TYPE',f.friction_type)||'Fricción registrada')+'</div>'
+      +'<div><b>Riesgos y costes vinculados</b>'+list(p.risks,r=>r.description||labelFrom('OS_RISK_CATEGORY',r.category)||'Riesgo registrado')
+      +(p.impacts.length?'<p>'+p.impacts.length+' impacto(s) relacionados; valores pertenecen a EconomicInput.</p>':'')+'</div></div>'
+      +(p.gaps.length?'<div class="asis-opportunity-gaps"><b>Datos a comprobar</b><ul>'+p.gaps.map(g=>'<li>'+esc(g)+'</li>').join('')+'</ul></div>':'')
+      +'<div class="asis-opportunity-direction"><b>Qué se puede evaluar para este punto:</b> simplificar la actividad; resolverla mediante reglas e integración; o añadir asistencia IA solo si la naturaleza de sus entradas lo exige. Ninguna opción lleva ahorro asignado sin una hipótesis futura trazable.</div></article>';
+  const orphan=source.orphanFrictions.length+source.orphanRisks.length+source.orphanImpacts.length;
+  return '<div class="asis-opportunity-summary"><b>'+rows.length+' pasos con fricciones, riesgos o impactos relacionados</b> de '+source.points.length+' pasos activos. La vinculación señala dónde analizar, no asigna causalidad automáticamente.</div>'
+    +(rows.length?'<div class="asis-opportunity-list">'+rows.map(card).join('')+'</div>':'<p>No hay puntos con relaciones registradas. No se inventan incidencias.</p>')
+    +(orphan?'<div class="notice warn">'+orphan+' registro(s) sin vínculo directo al paso en este mapa. Revisar su ámbito en la fuente antes de atribuir impactos.</div>':'');
+}
+function asisCoverageHtml(e,baseline){
+  const record=asisAnalysisSource(e),groups=asisFieldInventory(record),total=groups.reduce((n,g)=>n+g.items.length,0);
+  const all=groups.flatMap(g=>g.items);
+  const filled=all.filter(x=>x.filled).length;
+  const inputCoverage=baseline?.input_coverage,issues=inputCoverage?.items||[];
+  const gaps=issues.filter(x=>x.status==='GAP'||x.status==='UNKNOWN_APPLICABILITY');
+  return '<div class="asis-coverage-overview"><b>'+total+' campos del modelo examinados</b> · '+filled+' con valor accesible en el registro · '+(total-filled)+' sin valor directo, derivados o condicionales. La ausencia en campos opcionales no es por sí sola un bloqueo.</div>'
+    +(baseline?'<div class="asis-coverage-backend"><b>Contraste de motores:</b> '+esc(inputCoverage?.status||baseline.status||'No evaluado')+' · '+gaps.length+' entradas con gap o aplicabilidad desconocida.'
+    +(gaps.length?'<ul>'+gaps.slice(0,15).map(x=>'<li>'+esc(x.input_name||x.input_id||'Entrada de motor')+' — '+esc(x.status==='GAP'?'Falta fuente aplicable':'Aplicabilidad pendiente')+'</li>').join('')+'</ul>':'')+'</div>':'<p class="field-help">La cobertura oficial de motores se obtiene al analizar el AS-IS en el backend, sin responder a decisiones de tecnología.</p>')
+    +'<details class="asis-field-ledger"><summary>Consultar trazabilidad de todos los campos capturados y condicionales</summary>'
+    +groups.map(g=>'<details><summary>'+esc(g.title)+' · '+g.filled+' de '+g.items.length+' con valor accesible</summary><ul>'+g.items.map(f=>'<li><span>'+esc(f.label)+'</span><small>'+(f.filled?'Dato disponible':'Sin valor directo o condicional')+(f.consumers?' · Consumidores: '+esc(f.consumers):'')+'</small></li>').join('')+'</ul></details>').join('')+'</details>';
+}
+function asisDirectionCardsHtml(e){
+  const gateEvidence=typeof engineGateReviewEvidence==='function'&&typeof ENGINE_GATE_CONTRACT!=='undefined'
+    ?ENGINE_GATE_CONTRACT.map(g=>({name:ENGINE_GATE_GUIDE[g.key]?.title||g.label,...engineGateReviewEvidence(g,e)})):[];
+  return '<p class="field-help">Tres líneas de intervención para contrastar sobre los mismos puntos. No son escenarios calculados, soluciones aprobadas ni precios comerciales. Solo pasan a escenarios oficiales tras documentar viabilidad y supuestos.</p>'
+    +'<div class="asis-direction-grid">'+ASIS_CONDITIONAL_DIRECTIONS.map((d,i)=>
+      '<article class="asis-direction-card"><h3>'+(i+1)+'. '+esc(d.name)+'</h3><p><b>Aplicaría si:</b> '+esc(d.condition)+'</p><p><b>Intervención posible:</b> '+esc(d.approach)+'</p>'
+      +'<p><b>Ventaja:</b> '+esc(d.advantage)+'</p><p><b>Limitación:</b> '+esc(d.drawback)+'</p>'
+      +'<b>Comprobaciones necesarias</b><ul>'+d.dependencies.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>'
+      +'<p><b>Mejora global y precio:</b> pendientes de simulación con hipótesis justificadas y cotización canónica.</p></article>'
+    ).join('')+'</div>'
+    +(gateEvidence.length?'<details class="asis-conditional-gates"><summary>Condiciones que AUNEA ha podido evaluar con los datos disponibles</summary>'+gateEvidence.map(g=>
+      '<div class="asis-conditional-gate"><b>'+esc(g.name)+'</b><p>'+esc(g.reason||'Sin conclusión demostrada')+'</p><small>Evaluación: '+esc(g.status==='PROPOSAL'?'Propuesta para contrastar':g.status==='REVIEW'?'Pendiente de comprobar':'Información insuficiente')+'</small></div>').join('')+'</details>':'');
+}
+function asisBaselineHtml(e){
+  const data=asisAnalysisResult(e);
+  if(!data)return '<div class="notice info">Puedes examinar ya el mapa, los puntos críticos y los gaps. El análisis adicional del backend no necesita contestar las cinco decisiones de solución.</div><button class="btn btn-primary" id="analyzeAsisOnly">Analizar AS-IS y cuantificar línea base</button>';
+  if(data.status!=='ANALYZED')return '<div class="notice warn"><b>Análisis parcial: entradas o relaciones pendientes.</b> No se calculan resultados derivados con fuentes incoherentes.</div>'
+    +asisCoverageHtml(e,data)+'<button class="btn btn-outline" id="analyzeAsisOnly">Volver a comprobar fuentes</button>';
+  const record=asisAnalysisSource(e);
+  return '<div class="notice good"><b>Análisis AS-IS calculado por backend.</b> Sin seleccionar tecnología, sin precios y sin nuevas respuestas al cliente. No constituye aún una recomendación de solución.</div>'
+    +(typeof diagnosisProcessBaselineHtml==='function'?diagnosisProcessBaselineHtml(data.process_time_projection):'')
+    +(typeof diagnosisFindingsHtml==='function'?diagnosisFindingsHtml(record,data.pain_results||[]):'')
+    +(typeof diagnosisRisksHtml==='function'&&data.risk_result?diagnosisRisksHtml(data.risk_result,record):'')
+    +'<button class="btn btn-outline" id="analyzeAsisOnly">Actualizar análisis con el AS-IS vigente</button>';
+}
+// [AUNEA-FE-ASIS-WORKBENCH-152] END
