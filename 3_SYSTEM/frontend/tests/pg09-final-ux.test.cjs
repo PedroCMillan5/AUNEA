@@ -165,7 +165,7 @@ test('PG09 keeps evidence-to-friction relations and never changes the canonical 
   const {fns,e,schema}=demo();
   const html=fns.pg09CaptureContent(e,schema.fields,{missing:[]});
   assert.equal((html.match(/Evidencia de reintroducción manual de datos/g)||[]).length,1);
-  assert.match(html,/Contrastar el problema descrito/);
+  assert.match(html,/Contrasta .*la existencia del problema/);
   assert.match(html,/La información ya está registrada/);
   assert.match(html,/Esta selección no establece un orden entre ellos/);
   assert.match(html,/sin darlas por verificadas|no significa que estén demostradas/);
