@@ -199,14 +199,14 @@ function engineGateCard(c,e){
   const stale=!!(e.engineGateReview?.snapshotVersion&&version!==e.engineGateReview.snapshotVersion);
   const saved=stale?'':(engineGates(e)[c.key]||'');
   const stateText=info.status==='PROPOSAL'?'Propuesta para contrastar'
-    :info.status==='REVIEW'?'Información para revisar':'Información insuficiente';
+    :info.status==='REVIEW'?'Decisión pendiente de comprobar':'Información insuficiente';
   const chip=info.status==='PROPOSAL'?'candidate':'review';
   const provenance=info.sources.length
     ?'<ul class="engine-review-sources">'+info.sources.map(s=>'<li>'+esc(s.label)+'</li>').join('')+'</ul>'
     :'<p class="engine-review-empty">No hay un dato suficiente en el diagnóstico para resolver esta decisión.</p>';
   const proposed=info.suggestion
     ?'<p><b>Propuesta de AUNEA: '+(info.suggestion==='YES'?'Sí':'No')+'.</b> '+esc(info.reason)+'</p>'
-    :'<p><b>Conclusión:</b> '+esc(info.reason||'Los datos disponibles no permiten establecer una respuesta técnica.')+'</p>';
+    :'<p><b>Evaluación provisional:</b> '+esc(info.reason||'Los datos disponibles no permiten establecer una respuesta técnica.')+'</p>';
   const savedNote=stale
     ?'<p class="engine-review-saved">El AS-IS confirmado ha cambiado. Vuelve a revisar esta decisión para el nuevo snapshot.</p>'
     :saved?'<p class="engine-review-saved">Respuesta confirmada previamente: '+(saved==='YES'?'Sí':'No')+'. Puedes revisarla.</p>':'';
