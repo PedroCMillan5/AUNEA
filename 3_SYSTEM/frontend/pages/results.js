@@ -182,8 +182,9 @@ function diagnosisEngineDecisionTraceHtml(e){
     const title=typeof ENGINE_GATE_GUIDE!=='undefined'?ENGINE_GATE_GUIDE[c.key]?.title:c.label;
     const basis=v.basis==='CONSULTANT_ASSERTION'
       ?'Criterio del consultor; la captura no acredita por sí sola esta conclusión'
-      :v.basis==='PROPOSAL'?'Propuesta de AUNEA aceptada por el consultor; pendiente de acreditación externa cuando corresponda'
-      :'Decisión del consultor con información registrada en el AS-IS';
+      :v.basis==='PROPOSAL'
+        ?(v.answer===v.suggestion?'Propuesta de AUNEA aceptada por el consultor; su evidencia conserva las limitaciones declaradas':'Decisión del consultor distinta de la propuesta de AUNEA; contrastar su fundamento')
+        :'Decisión del consultor apoyada en información contextual del AS-IS, no necesariamente acreditada';
     return '<div class="result-item"><b>'+esc(title||c.label)+'</b><p>Respuesta utilizada: '+(actual==='YES'?'Sí':'No')+' · '+esc(basis)+'</p></div>';
   }).filter(Boolean);
   return rows.length===contracts.length&&contracts.length===5
