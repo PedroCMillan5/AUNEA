@@ -20,6 +20,7 @@ from .store import SQLiteStore
 from .uat import run_canonical_uat
 from .session_time import TimeProjectionRequest, TimeReconciliationRequest, project_session_time, reconcile_session_time
 from .input_coverage import relational_integrity_issues
+from .intervention_projection import InterventionProjectionRequest, project_interventions_review
 
 app = FastAPI(title="AUNEA Internal Backend", version="1.1.1")
 app.add_middleware(
@@ -103,6 +104,17 @@ def asis_analysis(payload: EngagementInput):
     except ValueError as exc:
         raise HTTPException(409, str(exc)) from exc
 # [AUNEA-BE-ASIS-ANALYSIS-API-152] END
+
+// [AUNEA-BE-INTERVENTION-API-155] START — Isolated review-only simulation endpoint
+# SOURCE: DEC-034/050/068/074, REVIEW contract 2026-10-23 (NOT official PG14).
+# INPUTS: Explicit reviewed step assumptions + existing time baseline, never a sealed-snapshot claim.
+# OUTPUTS: Unsupported official outputs remain null; no write to ScenarioComparator/store/client.
+# SIDE_EFFECTS: None. No client publication or pricing from this endpoint.
+# CHANGE_RISK: HIGH.
+@app.post("/v1/diagnostic/interventions/review")
+def review_interventions(payload: InterventionProjectionRequest):
+    return project_interventions_review(payload)
+# [AUNEA-BE-INTERVENTION-API-155] END
 
 @app.post("/v1/diagnose")
 def diagnose(payload: EngagementInput):
