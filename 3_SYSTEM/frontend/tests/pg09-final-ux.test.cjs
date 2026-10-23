@@ -64,7 +64,7 @@ function demo(){
     risks:[{},{}],economicInputs:[{evidence_type:'HYPOTHESIS'},{evidence_type:'HYPOTHESIS'},{evidence_type:'HYPOTHESIS'}],
     layerConfirmations:{map:true,frictions:true,risks:true,impact:true},
     answers:{DF094:['No hay información crítica pendiente'],DF095:['Evidencia de reintroducción manual de datos','Evidencia de falta de visibilidad','Evidencia de cuello de botella']},
-    consistency:{items:['reintroducción manual de datos','falta de visibilidad','cuello de botella'].map((label,i)=>({code:'EVIDENCE_'+i,severity:'REVIEW',message:'Evidencia pendiente: Evidencia de '+label+'. Solicita el soporte y vincúlalo al registro correspondiente.',stage:'S09'})),blockers:[],reviews:[{},{},{}]}
+    consistency:{items:['reintroducción manual de datos','falta de visibilidad','cuello de botella'].map((label,i)=>({code:'EVIDENCE_'+i,severity:'REVIEW',message:'Evidencia pendiente: Evidencia de '+label+'. Solicita el soporte y vincúlalo al registro correspondiente.',stage:'S09'})),blockers:[],reviews:[{code:'EVIDENCE_0'},{code:'EVIDENCE_1'},{code:'EVIDENCE_2'}]}
   };
   return {fns,e,schema};
 }
@@ -125,6 +125,31 @@ test('Matching profiles still require explicit final confirmation before PG09 cl
   e.processSteps.push({actor:'AUDITOR',status:'ACTIVE'});
   assert.ok(review(e,{blockers:[]}).blockers.some(b=>b.code==='DF017_PARTICIPANT_SCOPE'));
   assert.match(stages,/data-undo-df017-final/);
+});
+
+
+test('PG09 indicators explain the current closure result and actual evidence requests',()=>{
+  const {fns,e,schema}=demo();
+  const html=fns.pg09CaptureContent(e,schema.fields,{missing:[]});
+  assert.match(html,/No hay datos obligatorios, contradicciones ni confirmaciones pendientes/);
+  assert.match(html,/Las 3 observaciones son las evidencias que figuran arriba/);
+  assert.match(html,/Las cuatro capas están confirmadas y no hay bloqueos/);
+  assert.match(html,/Estado del cierre/);
+  e.consistency={
+    items:[{severity:'BLOCKER',code:'INTEGRITY_0',stage:'S09',message:'Revisar información del estudio'}],
+    blockers:[{}],reviews:[]
+  };
+  const blocked=fns.pg09CaptureContent(e,schema.fields,{missing:[]});
+  assert.match(blocked,/Hay elementos que requieren confirmación o corrección/);
+  assert.doesNotMatch(blocked,/id="confirmClosingAsIs"/);
+});
+
+test('Final PG09 date actions have one consistent height and header keeps progress space',()=>{
+  assert.match(css,/PG09-UX-FOLLOWUP-143/);
+  assert.match(css,/compound-control\.date-with-preview[\s\S]*?align-items:stretch/);
+  assert.match(css,/date-with-preview button[\s\S]*?height:40px/);
+  assert.match(css,/shell-session \.topbar-active-study[\s\S]*?max-width:440px/);
+  assert.match(css,/shell-session \.topbar-progress[\s\S]*?justify-content:center/);
 });
 
 // [AUNEA-UAT-PG09-FINAL-UX-140] END
