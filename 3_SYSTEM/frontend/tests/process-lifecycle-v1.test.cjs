@@ -202,10 +202,10 @@ test('PG09 closure is refused when the visible consistency review has blockers',
 
 test('PG09 UI renders the same consistency review that gates confirmation',()=>{
   const source=fs.readFileSync(path.join(root,'pages/diagnostic-stages.js'),'utf8');
-  assert.match(source,/Validación de coherencia/);
+  assert.match(source,/¿Está todo preparado para cerrar\?/);
   assert.match(source,/preCloseConsistencyReview\(e,completion\)/);
   assert.match(source,/data-consistency-stage/);
-  assert.match(source,/El cierre está bloqueado/);
+  assert.match(source,/Resuelve los elementos pendientes antes de confirmar el cierre/);
 });
 // [AUNEA-UAT-ASIS-CONSISTENCY-076] END
 
