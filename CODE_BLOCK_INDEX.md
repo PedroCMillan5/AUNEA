@@ -4,6 +4,7 @@
 
 | Block_ID | Archivo | Responsabilidad | Fuente | Inputs | Outputs | Efectos | Riesgo | Regresión | Estado |
 |---|---|---|---|---|---|---|---|---|---|
+| AUNEA-UAT-PG09-FINAL-UX-140 | 3_SYSTEM/frontend/tests/pg09-final-ux.test.cjs | Regresión de validación final, navegación y presentación PG09 | Diagnostic Master v1.2; DEC-052/053/065 | UAT sintética/snapshots | Comprobaciones de cierre cliente | Ninguno | LOW | node --test tests/pg09-final-ux.test.cjs | REVIEW |
 | AUNEA-FE-ECON-CANDIDATE-RECONCILE-116 | 3_SYSTEM/frontend/domain/economics.js | Reconciliación de candidatos económicos con entradas existentes | Diagnostic Master v1.2; DEC-034/041/052/065 | Engagement vigente y procedencia canónica | Componente gobernado AS-IS | Estado/DOM según bloque; sin reglas duplicadas | HIGH | QA de proceso, PG09 y Block_ID audit | REVIEW |
 | AUNEA-FE-RISK-APPROVAL-SOURCE-113 | 3_SYSTEM/frontend/domain/no-reask.js | Fuente única de aprobaciones reutilizadas en riesgo | Diagnostic Master v1.2; DEC-034/041/052/065 | Engagement vigente y procedencia canónica | Componente gobernado AS-IS | Estado/DOM según bloque; sin reglas duplicadas | HIGH | QA de proceso, PG09 y Block_ID audit | REVIEW |
 | AUNEA-FE-PG09-PARTICIPANTS-GATE-141 | 3_SYSTEM/frontend/domain/process-lifecycle.js | Gobierno de consistencia de participantes antes del cierre | Diagnostic Master v1.2; DEC-034/041/052/065 | Engagement vigente y procedencia canónica | Componente gobernado AS-IS | Estado/DOM según bloque; sin reglas duplicadas | HIGH | QA de proceso, PG09 y Block_ID audit | REVIEW |
