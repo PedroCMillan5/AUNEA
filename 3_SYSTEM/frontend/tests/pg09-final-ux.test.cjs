@@ -79,7 +79,7 @@ test('Complete UAT renders each evidence only once, without bullets or revalidat
   assert.match(html,/Las cuatro capas están confirmadas/);
   assert.match(html,/process-graph-readonly/);
   assert.match(html,/Así funciona el proceso actualmente/);
-  assert.match(html,/¿Qué confirmas al cerrar\?/);
+  assert.match(html,/Qué estás confirmando:/);
   assert.match(html,/Confirmar diagnóstico y guardar versión final/);
   assert.doesNotMatch(html,/Editor indebido/);
   assert.match(html,/dd\/mm\/aaaa|data-field="DF097"/);
@@ -168,8 +168,26 @@ test('PG09 keeps evidence-to-friction relations and never changes the canonical 
   assert.match(html,/Contrasta .*la existencia del problema/);
   assert.match(html,/La información ya está registrada/);
   assert.match(html,/Esta selección no establece un orden entre ellos/);
-  assert.match(html,/sin darlas por verificadas|no significa que estén demostradas/);
+  assert.match(html,/seguirán identificadas como tales|no significa haberlas demostrado/);
   assert.doesNotMatch(html,/Editor indebido/);
+});
+
+
+test('PG09 stacks pending panels, compacts only the read-only graph and binds acceptance to close',()=>{
+  const {fns,e,schema}=demo();
+  const html=fns.pg09CaptureContent(e,schema.fields,{missing:[]});
+  const start=html.indexOf('class="pg09-pending-grid"');
+  assert.ok(start>0);
+  assert.ok(html.indexOf('Información crítica pendiente',start)>start);
+  assert.ok(html.indexOf('Evidencias por recibir',start)>html.indexOf('Información crítica pendiente',start));
+  assert.match(css,/PG09-VISUAL-CLOSE-146/);
+  assert.match(css,/\.pg09-pending-grid\s*\{\s*grid-template-columns:minmax\(0,1fr\)/);
+  assert.match(css,/\.pg09-process-viewport \.process-graph-board\s*\{\s*padding:38px 20px 34px/);
+  assert.match(html,/class="pg09-close-footer"><div class="pg09-close-copy"/);
+  assert.match(html,/Qué estás confirmando:/);
+  assert.match(html,/Qué quedará guardado:/);
+  assert.match(html,/id="confirmClosingAsIs"/);
+  assert.doesNotMatch(html,/class="pg09-acceptance"/);
 });
 
 // [AUNEA-UAT-PG09-FINAL-UX-140] END
