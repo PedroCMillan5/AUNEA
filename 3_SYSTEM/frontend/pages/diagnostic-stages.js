@@ -567,8 +567,8 @@ function validationSummary(e,completion){
   const proceed=layersReady&&!consistency.blockers.length&&!captureMissing.length;
   const layerTiles=[
     ['Pasos',steps.length+' registrados',layers.map],
-    ['Fricciones',fr.length+' registradas',layers.frictions],
-    ['Riesgos',risks.length+' registrados',layers.risks],
+    ['Fricciones',fr.length+' registradas',layers.frictions,frWithEvidence+' con evidencia registrada'],
+    ['Riesgos',risks.length+' registrados',layers.risks,risksWithControls+' con controles registrados'],
     ['Impactos',econ.length+' registrados',layers.impact,econLine]
   ].map(([title,detail,ok,evidence])=>'<div class="pg09-layer-tile"><span>'+esc(title)+'</span><b>'+esc(detail)+'</b><small>'+(ok?'Confirmado':'Pendiente de confirmar')+(evidence?' · '+esc(evidence):'')+'</small></div>').join('');
   // Source-owned PG09 indicators: explain exactly what their values refer to.
