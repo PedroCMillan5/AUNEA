@@ -27,7 +27,7 @@ test('PG09 source compiles and uses the full-width final layout',()=>{
 });
 
 test('Dates display in Spanish and save as ISO, rejecting impossible dates',()=>{
-  const src=excerpt(renderer,'function parseSpanishDate(', '// [AUNEA-FE-PG09-SPANISH-DATE-139] END');
+  const src=excerpt(renderer,'function parseSpanishDate(', '// ['+'AUNEA-FE-PG09-SPANISH-DATE-139'+'] END');
   const parse=vm.runInNewContext(src+'\nparseSpanishDate',{Date});
   assert.equal(parse('11/06/2026'),'2026-06-11');
   assert.equal(parse('29/02/2028'),'2028-02-29');
@@ -109,9 +109,9 @@ test('Matching profiles still require explicit final confirmation before PG09 cl
   const lifecycle=fs.readFileSync(path.join(root,'domain/process-lifecycle.js'),'utf8');
   const part=(a,b)=>excerpt(lifecycle,a,b);
   const code=[
-    part('function processParticipantsFinalConfirmation(','// [AUNEA-FE-PG09-PARTICIPANTS-GATE-141] END'),
-    part('function processParticipantsScopeReview(','// [AUNEA-FE-ASIS-PARTICIPANTS-078] END'),
-    part('function preCloseConsistencyReview(','// [AUNEA-FE-ASIS-CONSISTENCY-076] END')
+    part('function processParticipantsFinalConfirmation(','// ['+'AUNEA-FE-PG09-PARTICIPANTS-GATE-141'+'] END'),
+    part('function processParticipantsScopeReview(','// ['+'AUNEA-FE-ASIS-PARTICIPANTS-078'+'] END'),
+    part('function preCloseConsistencyReview(','// ['+'AUNEA-FE-ASIS-CONSISTENCY-076'+'] END')
   ].join('\n');
   const stub={
     normalizeArray:x=>Array.isArray(x)?x:x?[x]:[],
