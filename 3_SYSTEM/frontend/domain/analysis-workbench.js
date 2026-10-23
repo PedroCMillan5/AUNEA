@@ -135,6 +135,7 @@ function asisPointCardsHtml(record){
       +(p.impacts.length?'<p>'+p.impacts.length+' impacto(s) relacionados; valores pertenecen a EconomicInput.</p>':'')+'</div></div>'
       +(p.gaps.length?'<div class="asis-opportunity-gaps"><b>Datos a comprobar</b><ul>'+p.gaps.map(g=>'<li>'+esc(g)+'</li>').join('')+'</ul></div>':'')
       +'<div class="asis-opportunity-direction"><b>Qué se puede evaluar para este punto:</b> simplificar la actividad; resolverla mediante reglas e integración; o añadir asistencia IA solo si la naturaleza de sus entradas lo exige. Ninguna opción lleva ahorro asignado sin una hipótesis futura trazable.</div></article>';
+  };
   const orphan=source.orphanFrictions.length+source.orphanRisks.length+source.orphanImpacts.length;
   return '<div class="asis-opportunity-summary"><b>'+rows.length+' pasos con fricciones, riesgos o impactos relacionados</b> de '+source.points.length+' pasos activos. La vinculación señala dónde analizar, no asigna causalidad automáticamente.</div>'
     +(rows.length?'<div class="asis-opportunity-list">'+rows.map(card).join('')+'</div>':'<p>No hay puntos con relaciones registradas. No se inventan incidencias.</p>')
