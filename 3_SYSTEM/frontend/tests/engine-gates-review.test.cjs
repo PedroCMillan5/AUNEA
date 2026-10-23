@@ -14,7 +14,7 @@ assert.ok(start>=0&&end>start,'Governed gate review source missing');
 const source=adapter.slice(start,end);
 const reuseCode=fs.readFileSync(path.join(root,'domain/no-reask.js'),'utf8');
 const approvalBegin=reuseCode.indexOf('function approvalCriteriaSource(');
-const approvalEnd=reuseCode.indexOf('// [AUNEA-FE-RISK-APPROVAL-SOURCE-113] END',approvalBegin);
+const approvalEnd=reuseCode.indexOf('function riskDerivedSourceGaps(',approvalBegin);
 assert.ok(approvalBegin>=0&&approvalEnd>approvalBegin);
 const approvalFn=reuseCode.slice(approvalBegin,approvalEnd);
 
