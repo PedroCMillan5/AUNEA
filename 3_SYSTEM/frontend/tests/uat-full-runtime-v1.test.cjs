@@ -76,7 +76,7 @@ test('single UAT loads complete, traverses PG01-PG09 and hands off to internal w
  }
  run("state.activePage='diagnostico';currentEng().stageId='S09';render()");
  const close=w.document.getElementById('confirmClosingAsIs');
- assert.ok(close,'PG09 final closure CTA must be visible before handoff');
+ assert.ok(close,'PG09 final closure CTA must be visible before handoff: '+JSON.stringify(run('({layers:processLayerConfirmations(currentEng()),issues:preCloseConsistencyReview(currentEng()).blockers.map(x=>({code:x.code,message:x.message,stage:x.stage})),df017:currentEng().answers.DF017})')));
  close.onclick();
  assert.equal(run('currentEng().confirmedAsIs'),true);
  assert.equal(run('hasConfirmedSnapshot(currentEng())'),true);
@@ -115,7 +115,7 @@ test('PG09 rolls back confirmation, snapshot and lifecycle when durable persiste
  w.localStorage.setItem('aunea_internal_v1',JSON.stringify(remote));
  run("currentEng().contextSummary='Cambio local concurrente'; state.dirty=true; state.activePage='diagnostico'; currentEng().stageId='S09'; render()");
  const close=w.document.getElementById('confirmClosingAsIs');
- assert.ok(close,'PG09 close action must exist');
+ assert.ok(close,'PG09 close action must exist: '+JSON.stringify(run('({layers:processLayerConfirmations(currentEng()),issues:preCloseConsistencyReview(currentEng()).blockers.map(x=>({code:x.code,message:x.message,stage:x.stage})),df017:currentEng().answers.DF017})')));
  close.onclick();
  assert.equal(run('currentEng().confirmedAsIs'),false,'failed persistence must leave AS-IS open');
  assert.equal(run('hasConfirmedSnapshot(currentEng())'),false,'failed persistence must not expose a handoff snapshot');
