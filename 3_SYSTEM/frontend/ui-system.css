@@ -1870,7 +1870,7 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
   padding:12px 8px 12px;
 }
 .content:has(.diagnostic-stage-s09) .pg09-process-viewport .process-graph-board{
-  padding:38px 20px 34px;
+  padding:38px 20px 72px;
 }
 .content:has(.diagnostic-stage-s09) .pg09-process-viewport .graph-flow-step .process-node-title h4,
 .content:has(.diagnostic-stage-s09) .pg09-process-viewport .flow-boundary .process-node-title h4,
