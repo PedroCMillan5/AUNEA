@@ -39,7 +39,7 @@ const stub={
  render:()=>{},
  toast:t=>{toastLog.push(t)}
 };
-const exposed=['ENGINE_GATE_CONTRACT','engineGateReviewEvidence','engineGateCard','inferGateSuggestion','unresolvedEngineGates','openEngineGateReview','gateBool'];
+const exposed=['ENGINE_GATE_CONTRACT','engineGateReviewEvidence','engineGateCard','inferGateSuggestion','unresolvedEngineGates','openEngineGateReview','gateBool','engineGateFingerprint','engineGateOutputFresh'];
 const context=vm.createContext({...stub});
 const fn=vm.runInContext(source+'\n({'+exposed.join(',')+'})',context);
 const record=()=>({
@@ -124,4 +124,32 @@ test('The adapter keeps the canonical five backend flags and one-to-one polarity
  for(const f of expected)assert.ok(adapter.includes(f),f);
  assert.match(css,/AUNEA-FE-ENGINE-GATES-UX-151/);
 });
+
+test('Gate edits invalidate only diagnostic outputs generated with an earlier decision set',()=>{
+ const e=record();
+ Object.assign(e.engineGates,Object.fromEntries(allKeys.map(k=>[k,'NO'])));
+ e.lastEngineGateFingerprint=fn.engineGateFingerprint(e);
+ assert.equal(fn.engineGateOutputFresh(e),true);
+ e.engineGates.management_visibility_need='YES';
+ assert.equal(fn.engineGateOutputFresh(e),false);
+ const results=fs.readFileSync(path.join(root,'pages/results.js'),'utf8');
+ const review=fs.readFileSync(path.join(root,'domain/output-review.js'),'utf8');
+ const shell=fs.readFileSync(path.join(root,'ui/shell.js'),'utf8');
+ assert.match(results,/engineGateOutputFresh\(e\)/);
+ assert.match(review,/engineGateOutputFresh\(e\)/);
+ assert.match(shell,/reviewEngineGates.*openEngineGateReview/);
+ assert.match(adapter,/e\.lastEngineGateFingerprint=engineGateFingerprint\(e\)/);
+});
+
+test('Review is calculated from immutable confirmed snapshot when available',()=>{
+ const ctx=vm.createContext({...stub,engagementOfRecord:e=>e.sealedRecord||e});
+ const gates=vm.runInContext(source+'\n({engineGateReviewEvidence,ENGINE_GATE_CONTRACT})',ctx);
+ const e=record();
+ e.processSteps=[{step_name:'Live edit not in snapshot',tool:'NEW_TOOL'}];
+ e.sealedRecord={answers:{},processSteps:[{step_name:'Factura recibida',tool:'ERP'}],frictions:[]};
+ const info=gates.engineGateReviewEvidence(gates.ENGINE_GATE_CONTRACT[1],e);
+ assert.match(JSON.stringify(info.sources),/ERP/);
+ assert.doesNotMatch(JSON.stringify(info.sources),/NEW_TOOL/);
+});
+
 // [AUNEA-UAT-ENGINE-GATE-ASSIST-151] END
