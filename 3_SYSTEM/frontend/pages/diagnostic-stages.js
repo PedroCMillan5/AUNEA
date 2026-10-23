@@ -558,7 +558,7 @@ function validationSummary(e,completion){
   const evidenceField=(schema?.fields||[]).find(f=>f.Field_ID==='DF095');
   const evidencePending=normalizeArray(evidenceField&&typeof effectiveValue==='function'?effectiveValue(evidenceField,e):[]).filter(x=>x&&x!=='No hay evidencias pendientes');
   const captureMissing=(completion.missing||[]).filter(x=>(x.id||x)!=='DF093'&&(x.id||x)!=='Confirmación AS-IS');
-  const primaryCta=snap?'<span class="status green">✓ Cierre confirmado y snapshot generado</span><button class="btn btn-primary" data-page="resultados">Continuar a Trabajo interno →</button>':((!layersReady||consistency.blockers.length||captureMissing.length)?'':'<button class="btn btn-primary" id="confirmClosingAsIs">Confirmar cierre y generar snapshot</button>');
+  const primaryCta=snap?'<span class="status green">✓ Diagnóstico confirmado y versión guardada</span><button class="btn btn-primary" data-page="resultados">Continuar a Trabajo interno →</button>':((!layersReady||consistency.blockers.length||captureMissing.length)?'':'<button class="btn btn-primary" id="confirmClosingAsIs">Confirmar diagnóstico y guardar versión final</button>');
   const cta=primaryCta+((!layersReady||consistency.blockers.length||captureMissing.length)?'<div class="pg09-close-warning">Resuelve los elementos pendientes antes de confirmar el cierre.</div>':'');
   const proceed=layersReady&&!consistency.blockers.length&&!captureMissing.length;
   const layerTiles=[
@@ -576,10 +576,10 @@ function validationSummary(e,completion){
   const observationsExplanation=consistency.reviews.length===0
     ?'No hay asuntos pendientes de revisión.'
     :evidenceReviews&&otherReviews===0
-      ?'Las '+evidenceReviews+' observaciones son las evidencias que figuran arriba, todavía sin verificar.'
+      ?'Son las '+evidenceReviews+' pruebas indicadas arriba que todavía hay que recibir y contrastar con lo declarado.'
       :'Hay '+evidenceReviews+' evidencia(s) por recibir y '+otherReviews+' otra(s) revisión(es). Consulta los detalles que aparecen arriba o a continuación.';
   const closeExplanation=proceed
-    ?'Las cuatro capas están confirmadas y no hay bloqueos. El cierre conservará las observaciones pendientes, sin darlas por verificadas.'
+    ?'Las cuatro partes están confirmadas y no hay bloqueos. Las pruebas pendientes seguirán identificadas, no se considerarán hechos acreditados.'
     :'Hay elementos que requieren confirmación o corrección antes de generar el snapshot.';
   const findings=consistency.items.filter(x=>x.severity!=='INFO'&&!String(x.code||'').startsWith('EVIDENCE_'));
   const issuesHtml=findings.length?'<div class="pg09-review-list">'+findings.map(item=>{
@@ -594,12 +594,12 @@ function validationSummary(e,completion){
       +'<div><span>'+esc(message)+'</span><small>'+(evidence?'Evidencia pendiente de recibir':item.severity==='BLOCKER'?'Requiere corrección para cerrar':'Revisión pendiente')+'</small></div>'+action+'</div>';
   }).join('')+'</div>':'';
   return section('Revisión y confirmación final',
-    'Esta revisión comprueba las confirmaciones anteriores y los datos pendientes, sin volver a capturar el proceso.',
+    'Comprueba el proceso tal como se ha registrado y qué se ha acordado antes de guardar su versión confirmada.',
     '<div class="pg09-confirm-section">'
       +pg09ProcessReadOnlyReview(e)
       +'<h3>Partes del diagnóstico revisadas</h3><div class="pg09-layer-grid">'+layerTiles+'</div>'
       +df017FinalReviewPanel(e)
-      +'<div class="pg09-validation-section"><div class="pg09-validation-title"><h3>Comprobaciones antes del cierre</h3>'
+      +'<div class="pg09-validation-section"><div class="pg09-validation-title"><h3>¿Está todo preparado para cerrar?</h3>'
       +'<p>Para cerrar, confirma los participantes y resuelve los bloqueos. Las evidencias pendientes se conservarán sin marcarse como verificadas.</p></div>'
       +'<div class="pg09-consistency-summary">'
         +'<div class="pg09-status-tile"><b>'+consistency.blockers.length+'</b><span>Bloqueos</span><p>'+esc(blockerExplanation)+'</p></div>'
@@ -607,8 +607,9 @@ function validationSummary(e,completion){
         +'<div class="pg09-status-tile '+(proceed?'is-ready':'is-pending')+'"><b>'+(proceed?'Puede cerrarse':'Requiere revisión')+'</b><span>Estado del cierre</span><p>'+esc(closeExplanation)+'</p></div>'
       +'</div>'+issuesHtml+'</div>'
       +(captureMissing.length?'<div class="pg09-missing-required"><b>Información obligatoria pendiente</b><p>'+captureMissing.map(x=>esc(x.label||'Dato obligatorio pendiente')).join(' · ')+'</p></div>':'')
-      +'<div class="pg09-close-footer"><div><h3>'+(snap?'Diagnóstico cerrado':'Cerrar diagnóstico y guardar versión')+'</h3>'
-        +'<p>'+(snap?'La versión final ha quedado registrada.':'Al confirmar se guarda la versión revisada con sus observaciones y evidencias pendientes.')+'</p>'
+      +'<div class="pg09-acceptance"><b>¿Qué confirmas al cerrar?</b><p>Que el proceso y los problemas reflejan la información revisada con el cliente hasta este momento. Las cifras estimadas y las pruebas pendientes conservarán esa condición; confirmar no significa que estén demostradas.</p></div>'
+      +'<div class="pg09-close-footer"><div><h3>'+(snap?'Diagnóstico confirmado':'Confirmar el diagnóstico y guardar la versión revisada')+'</h3>'
+        +'<p>'+(snap?'La versión confirmada ya está guardada para el trabajo interno.':'Se guarda una versión del proceso, las fricciones, los riesgos, los impactos y los acuerdos, con sus limitaciones y evidencias pendientes. No se generan conclusiones ni ahorros automáticamente.')+'</p>'
         +(snap?'<p class="pg09-snapshot-meta">Versión '+esc(snap.version)+' · '+esc(formatDateEs(snap.sealedAt))+'</p>':'')
       +'</div><div class="pg09-close-actions">'+cta+'</div></div>'
     +'</div>');
