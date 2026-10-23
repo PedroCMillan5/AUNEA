@@ -16,9 +16,179 @@ const ENGINE_GATE_CONTRACT=Object.freeze([
 function engineGates(e){e.engineGates=e.engineGates||{};return e.engineGates}
 function gateResolved(g){return g==='YES'||g==='NO'}
 function gateBool(g){return g==='YES'}
-function inferGateSuggestion(contract,e){const fr=new Set(activeFrictions(e).map(x=>x.friction_type)),out=new Set(normalizeArray(e.answers?.DF086));if(contract.key==='process_design_first'&&(fr.has('P04')||fr.has('P10')))return'YES';if(contract.key==='management_visibility_need'&&(out.has('VISIBILITY')||fr.has('P09')||fr.has('P14')||fr.has('P17')))return'YES';return''}
-function unresolvedEngineGates(e){const g=engineGates(e);return ENGINE_GATE_CONTRACT.filter(c=>!gateResolved(g[c.key]))}
-function openEngineGateReview(){const e=currentEng(),g=engineGates(e);const body=`<div class="notice info"><strong>Confirmación del consultor antes de calcular</strong><br>Estas respuestas son inputs del contrato canónico ya gobernado; no son preguntas al cliente ni resultados calculados por el navegador.</div><div class="form-grid">${ENGINE_GATE_CONTRACT.map(c=>{const suggested=inferGateSuggestion(c,e),value=g[c.key]||suggested||'';return `<div class="field full"><label>${esc(c.label)}</label>${auneaSelectControl(`engine_gate_${c.key}`,[{value:'',label:'Pendiente de confirmar'},{value:'YES',label:'Sí'},{value:'NO',label:'No'}],value,{extra:`data-engine-gate="${c.key}"`,placeholder:'Pendiente de confirmar'})}<div class="field-help"><span class="canonical-id">${c.id}</span> ${esc(c.source)}${suggested&&!g[c.key]?' · sugerencia desde captura; requiere confirmación':''}</div></div>`}).join('')}</div>`;openModal('Confirmación del consultor antes de calcular',body,()=>{document.querySelectorAll('[data-engine-gate]').forEach(x=>g[x.dataset.engineGate]=x.value);if(unresolvedEngineGates(e).length)return toast('Confirma los cinco inputs canónicos antes de calcular.');e.updatedAt=now();markDirty('Inputs canónicos de Recommendation confirmados por el consultor');closeModal();runDiagnosis();},'Confirmar y calcular')}
+// [AUNEA-FE-ENGINE-GATE-ASSIST-151] START — Evidence-aware, consultant-owned decisions.
+// SOURCE: unchanged ENGINE_GATE_CONTRACT and DEC-034/052/065; DF086–DF089,
+// ProcessStep, Friction. Never infer a negative from missing facts.
+// A proposal is not an automatic answer, nor a verified client measurement.
+const ENGINE_GATE_GUIDE=Object.freeze({
+  process_design_first:{
+    title:'¿Hay que aclarar las reglas o responsabilidades antes de automatizar?',
+    help:'Comprueba si los criterios de decisión, responsables y controles actuales son suficientes para implantar cambios sin rediseñar antes el proceso.',
+    missing:'Verificar las reglas reales de aprobación, responsabilidades y controles; identificar cuáles deben cambiar antes de automatizar.'
+  },
+  existing_tool_can_close:{
+    title:'¿Las herramientas actuales pueden resolver el problema?',
+    help:'Valora si las capacidades necesarias están disponibles mediante configuración o adopción, sin asumirlo solo porque exista un ERP o correo.',
+    missing:'Comprobar las funciones, licencias y posibilidades reales de configuración o integración de las herramientas actuales.'
+  },
+  unstructured_interpretation_need:{
+    title:'¿Se necesita IA para interpretar o elaborar información?',
+    help:'Distingue tareas con interpretación de documentos o lenguaje de aquellas que se resuelven mediante reglas conocidas.',
+    missing:'Determinar si alguna tarea requiere interpretar contenido variable y por qué las reglas convencionales no serían suficientes.'
+  },
+  bounded_action_space:{
+    title:'¿Hace falta un agente que proponga o ejecute acciones controladas?',
+    help:'Una aprobación o bifurcación no implica por sí misma la necesidad de un agente. Comprueba los límites, permisos y decisiones humanas.',
+    missing:'Precisar qué acción delegable existe, dentro de qué límites y qué aprobación debe seguir siendo humana.'
+  },
+  management_visibility_need:{
+    title:'¿Hace falta mejorar el seguimiento y control del proceso?',
+    help:'Valora si se necesitan estados, alertas o indicadores para controlar carga, esperas, excepciones y rendimiento.',
+    missing:'Contrastar con el cliente qué seguimiento necesita y qué problemas concretos pretende resolver.'
+  }
+});
+function engineGateReviewEvidence(contract,e){
+  const key=contract.key,steps=activeSteps(e),fr=activeFrictions(e);
+  const ans=e.answers||{},sources=[],relevant=[];
+  const add=(label,source)=>{if(label&&!sources.some(s=>s.label===label))sources.push({label,source})};
+  const stepName=(x)=>String(x.step_name||'Paso del proceso');
+  const frName=(f)=>String(f.client_label||f.observable_signal||labelFrom('OS_FRICTION_TYPE',f.friction_type)||'Problema registrado');
+  const hasDecision=s=>s.step_type==='ST05'||s.step_type==='ST04'||normalizeArray(s.decision_criteria).length>0||s._ui?.has_decision===true;
+  const decisionSteps=steps.filter(hasDecision);
+  const tools=[...new Set(steps.map(s=>String(s.tool||'').trim()).filter(Boolean))];
+  const citeSteps=(records,why)=>records.slice(0,3).forEach(x=>add(why+': '+stepName(x),'ProcessStep'));
+  const listAnswer=(fid,title)=>{
+    const vals=normalizeArray(ans[fid]).map(String).filter(Boolean);
+    if(vals.length)add(title+': '+vals.slice(0,4).map(v=>String(labelFrom((schema?.fields||[]).find(f=>f.Field_ID===fid)?.Option_Set_ID,v)||v)).join(' · '),fid);
+    return vals;
+  };
+  let suggestion='',status='INSUFFICIENT',reason='';
+  switch(key){
+    case 'process_design_first':{
+      citeSteps(decisionSteps,'Decisión o aprobación registrada');
+      const missing=decisionSteps.filter(s=>!normalizeArray(s.decision_criteria).length&&!String(s._details?.decision_criteria||'').trim());
+      if(missing.length)add('Hay decisiones sin criterio documentado en '+missing.map(stepName).slice(0,2).join(' · '),'ProcessStep');
+      listAnswer('DF087','Condiciones que deben mantenerse');
+      listAnswer('DF088','Límites para automatizar');
+      const types=new Set(fr.map(f=>String(f.friction_type)));
+      if(types.has('P04')||types.has('P10')){
+        suggestion='YES';status='REVIEW';
+        const matching=fr.filter(f=>['P04','P10'].includes(String(f.friction_type)));
+        matching.slice(0,2).forEach(f=>add('Problema relacionado: '+frName(f),'Friction'));
+        reason='Hay señales gobernadas de rediseño; no bastan por sí solas para afirmar que sea imprescindible.';
+      }else if(sources.length){status='REVIEW';reason='Hay decisiones o restricciones registradas, pero no demuestran por sí solas que haya que rediseñar.';}
+      break;
+    }
+    case 'existing_tool_can_close':{
+      if(tools.length)add('Herramientas declaradas en los pasos: '+tools.slice(0,5).map(x=>labelFrom('OS_TOOL_CATEGORY',x)||x).join(' · '),'ProcessStep');
+      listAnswer('DF089','Preferencias o restricciones tecnológicas');
+      listAnswer('DF050','Integraciones o transferencias manuales');
+      if(sources.length){status='REVIEW';reason='Conocemos parte del entorno técnico, pero no se han acreditado sus capacidades para resolver los problemas.';}
+      break;
+    }
+    case 'unstructured_interpretation_need':{
+      const doc=steps.filter(x=>normalizeArray(x.inputs).concat(normalizeArray(x.outputs)).some(v=>/PDF|EMAIL|DOCUMENT|TEXT|WORD|FILE/i.test(String(v))));
+      citeSteps(doc,'Documentos o información de entrada/salida');
+      listAnswer('DF088','Límites para automatizar');
+      if(sources.length){status='REVIEW';reason='Tener documentos no demuestra que se necesite IA: antes hay que comprobar si las reglas bastan.';}
+      break;
+    }
+    case 'bounded_action_space':{
+      citeSteps(decisionSteps,'Decisión o aprobación en el proceso');
+      listAnswer('DF088','Acciones que no deben automatizarse');
+      const human=normalizeArray(ans.DF075).map(String).filter(Boolean);
+      if(human.length)add('Acciones que requieren intervención humana: '+human.slice(0,4).join(' · '),'DF075');
+      if(sources.length){status='REVIEW';reason='Existen decisiones o límites de actuación, pero no una necesidad demostrada de agente.';}
+      break;
+    }
+    case 'management_visibility_need':{
+      const types=new Set(fr.map(f=>String(f.friction_type)));
+      const targets=normalizeArray(ans.DF086).map(String);
+      const signals=fr.filter(f=>['P09','P14','P17'].includes(String(f.friction_type)));
+      signals.slice(0,3).forEach(f=>add('Fricción registrada: '+frName(f),'Friction'));
+      if(targets.includes('VISIBILITY'))add('El cliente incluyó visibilidad en el resultado deseado','DF086');
+      if(signals.length||targets.includes('VISIBILITY')){
+        suggestion='YES';status='PROPOSAL';
+        reason='El objetivo declarado o las fricciones de visibilidad justifican proponer seguimiento; las cifras conservan la calidad de evidencia original.';
+      }else{
+        listAnswer('DF086','Resultados esperados');
+        if(sources.length){status='REVIEW';reason='Hay resultados deseados, pero no confirman una necesidad específica de seguimiento.';}
+      }
+      break;
+    }
+  }
+  return {key,status,suggestion,sources,reason,missing:ENGINE_GATE_GUIDE[key].missing};
+}
+function inferGateSuggestion(contract,e){
+  return engineGateReviewEvidence(contract,e).suggestion;
+}
+function unresolvedEngineGates(e){
+  const g=engineGates(e),version=confirmedSnapshot(e)?.version||null;
+  const stale=!!(e.engineGateReview?.snapshotVersion&&version!==e.engineGateReview.snapshotVersion);
+  return ENGINE_GATE_CONTRACT.filter(c=>stale||!gateResolved(g[c.key]));
+}
+function engineGateCard(c,e){
+  const info=engineGateReviewEvidence(c,e),guide=ENGINE_GATE_GUIDE[c.key];
+  const saved=engineGates(e)[c.key]||'';
+  const stateText=info.status==='PROPOSAL'?'Propuesta para contrastar'
+    :info.status==='REVIEW'?'Información para revisar':'Información insuficiente';
+  const chip=info.status==='PROPOSAL'?'candidate':'review';
+  const provenance=info.sources.length
+    ?'<ul class="engine-review-sources">'+info.sources.map(s=>'<li>'+esc(s.label)+'</li>').join('')+'</ul>'
+    :'<p class="engine-review-empty">No hay un dato suficiente en el diagnóstico para resolver esta decisión.</p>';
+  const proposed=info.suggestion
+    ?'<p><b>Propuesta de AUNEA: '+(info.suggestion==='YES'?'Sí':'No')+'.</b> '+esc(info.reason)+'</p>'
+    :'<p><b>Conclusión:</b> '+esc(info.reason||'Los datos disponibles no permiten establecer una respuesta técnica.')+'</p>';
+  const savedNote=saved?'<p class="engine-review-saved">Respuesta confirmada previamente: '+(saved==='YES'?'Sí':'No')+'. Puedes revisarla.</p>':'';
+  return '<section class="engine-review-card" data-engine-review-card="'+attr(c.key)+'">'
+    +'<header class="engine-review-header"><div><h3>'+esc(guide.title)+'</h3><p>'+esc(guide.help)+'</p></div>'
+    +'<span class="engine-review-status '+chip+'">'+esc(stateText)+'</span></header>'
+    +'<div class="engine-review-detail"><div><b>Información recuperada</b>'+provenance+'</div>'
+    +'<div class="engine-review-judgement">'+proposed+'<p><b>Qué comprobar:</b> '+esc(info.missing)+'</p></div></div>'
+    +'<div class="engine-review-choice"><label for="engine_gate_'+attr(c.key)+'">Tu decisión</label>'
+    +auneaSelectControl('engine_gate_'+c.key,[{value:'',label:'Pendiente de confirmar'},{value:'YES',label:'Sí'},{value:'NO',label:'No'}],saved,
+      {extra:'data-engine-gate="'+attr(c.key)+'"',placeholder:'Pendiente de confirmar',searchable:false})
+    +savedNote+'<small>Confirma Sí o No solo cuando dispongas de fundamento. Pendiente no equivale a No.</small></div></section>';
+}
+function openEngineGateReview(){
+  const e=currentEng();if(!e)return;
+  const body='<div class="engine-review-intro"><p><b>Revisa cinco decisiones técnicas antes de calcular.</b> AUNEA recupera los datos del AS-IS y muestra qué sustentan. Una propuesta no es una respuesta confirmada.</p>'
+    +'<p>Si falta información, deja la decisión pendiente. No se ejecutarán los motores ni se guardarán respuestas parciales como confirmadas.</p></div>'
+    +'<div class="engine-review-list">'+ENGINE_GATE_CONTRACT.map(c=>engineGateCard(c,e)).join('')+'</div>';
+  openModal('Decisiones del consultor',body,()=>{
+    const staged={},missing=[];
+    document.querySelectorAll('[data-engine-gate]').forEach(x=>{
+      const key=x.dataset.engineGate;
+      staged[key]=x.value;
+    });
+    ENGINE_GATE_CONTRACT.forEach(c=>{if(!gateResolved(staged[c.key]))missing.push(c)});
+    if(missing.length){
+      toast('Quedan '+missing.length+' decisiones pendientes. Revisa su fundamento antes de calcular.');
+      const first=document.querySelector('[data-engine-review-card="'+missing[0].key+'"]');
+      if(first&&typeof first.scrollIntoView==='function')first.scrollIntoView({block:'center',behavior:'smooth'});
+      return;
+    }
+    const current=confirmedSnapshot(e);
+    if(!current){toast('El AS-IS ya no está confirmado. Revisa el diagnóstico antes de calcular.');closeModal();return;}
+    const previous={gates:{...e.engineGates},review:e.engineGateReview};
+    e.engineGates={...(e.engineGates||{}),...staged};
+    e.engineGateReview={
+      snapshotVersion:current.version,
+      confirmedAt:now(),
+      decisions:Object.fromEntries(ENGINE_GATE_CONTRACT.map(c=>{
+        const v=engineGateReviewEvidence(c,e);
+        return [c.key,{answer:staged[c.key],basis:v.status,sources:v.sources.map(s=>s.source),suggestion:v.suggestion}];
+      }))
+    };
+    e.updatedAt=now();markDirty('Cinco decisiones técnicas confirmadas por el consultor');
+    if(typeof persistRecoverySnapshot==='function'&&!persistRecoverySnapshot('inputs internos del diagnóstico')){
+      e.engineGates=previous.gates;e.engineGateReview=previous.review;
+      toast('No se pudo guardar la confirmación. No se ejecutará el diagnóstico.');render();return;
+    }
+    closeModal();runDiagnosis();
+  },'Confirmar decisiones y calcular');
+}
+// [AUNEA-FE-ENGINE-GATE-ASSIST-151] END
 function evidenceTypeBackend(v){return ({EV01:'MEASURED',EV02:'CLIENT_DECLARED',EV03:'AUNEA_ESTIMATE',EV04:'HYPOTHESIS',EV05:'SPECIFIC_BENCHMARK',EV06:'AUNEA_ESTIMATE',EV07:'AUNEA_ESTIMATE',MEASURED:'MEASURED',CLIENT_DECLARED:'CLIENT_DECLARED',AUNEA_ESTIMATE:'AUNEA_ESTIMATE',SPECIFIC_BENCHMARK:'SPECIFIC_BENCHMARK',HYPOTHESIS:'HYPOTHESIS'})[v]||null}
 function normalizeEconomicInputs(e){
   const activeDrivers=new Set(['ED01','ED02','ED03','ED04','ED05','ED06','ED07','ED08']);
