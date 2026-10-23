@@ -76,3 +76,28 @@ Comparativa de QA ejecutada sobre la rama vigente:
 Control de alcance: se preservan Diagnostic Master v1.2, schema DF001–DF100, reglas/engines server-owned, snapshots y páginas FROZEN. El cambio reparó exclusivamente el **fixture y validación de UAT**; no introduce una condición nueva en la sesión del cliente ni altera los outputs del backend. **REVIEW**, sin autorización para promover el módulo a CANONICAL/PRODUCTION.
 
 Próximo trabajo: resolver por causalidad los 36 fallos preexistentes; comparar el conjunto de errores y ejecutar QA tras cada cambio sin intervenir en pantallas congeladas, y validar la ruta PG01→PG15 en navegador antes de declarar cierre global.
+
+
+## Resultado de la remediación de las 36 incidencias — 23/10/2026
+
+**Estado de esta intervención: QA AUTOMATIZADO PASS / producto AUNEA Internal continúa REVIEW, no PRODUCTION.**
+
+**Base de referencia:** `a1e07e37` con 628/664 pruebas frontend superadas y 36 fallos; la rama `work/as-is-ux-simplification-20260930` se ha actualizado sin introducir ningún nuevo campo DF, cambio de regla canónica, fórmula económica, esquema de backend, precio ni producto. No se ha ejecutado ninguna operación sobre el almacenamiento local del navegador del propietario.
+
+**Remediación por causa:**
+- Fixtures aislados del AS-IS/PG09 y completitud reconciliados con el contrato vigente de snapshot sellado y las cinco decisiones humanas confirmadas por versión; la ausencia de confirmación sigue bloqueando motores y publicación.
+- Pruebas que comparaban textos anteriores (revisión de participantes, fricciones, riesgos, impactos, interfaz de fecha española y enlaces del cierre) adaptadas para exigir las señales funcionales y los estados vigentes, sin recuperar etiquetas técnicas ni autoconfirmaciones.
+- `CODE_BLOCK_INDEX.md` reconciliado con los Block_ID existentes del código y la prueba de PG09; se eliminaron del fixture los marcadores de cierre que el auditor interpretaba erróneamente como bloques ejecutables.
+- El cargador sintético de facturas sigue dejando las cinco decisiones técnicas pendientes **hasta después** de PG09; el recorrido ejecuta la confirmación explícita DF017 en el control real de la interfaz, no inserta respuestas confirmadas artificialmente.
+- PG09 muestra recuentos ya capturados de fricciones con evidencia y riesgos con controles, con sus límites; no inventa magnitudes. Una versión realmente sellada no muestra el mensaje contradictorio de cierre pendiente. Los gaps obligatorios enlazan con su pregunta origen. CSS limitado a esa presentación.
+- Las pruebas de mapa conservan la diferencia entre `layerConfirmations.map` y una revisión derivada PG05 pendiente; la acción visible permite confirmar o deshacer según el estado real. Una prueba de navegación deja de pulsar `Deshacer` cuando el mapa ya está confirmado.
+- La prueba de barra temporal de Chromium exige el estado canónico «No conciliado» y su advertencia de no acreditación, en vez de una antigua cadena literal.
+- El fixture de postdiagnóstico C07 incluye un snapshot sellado y la huella de las decisiones, como requiere `engineGateOutputFresh()`; no permite acceder a TO-BE usando resultados no trazables.
+
+**Verificación en GitHub Actions sobre el commit `8978429a275726b8b5732dd77fad7d0aa0cdeb37`:**
+- Frontend Tests run **39939004928**: **SUCCESS**, **666/666 PASS, 0 FAIL**.
+- Acceptance Gate run **39939004942**: **SUCCESS**; trabajos `frontend`, `backend` y `browser_uat` los tres **SUCCESS**.
+- Chromium UAT registra `PG01_CHROMIUM_GATE_PASS`, `PG03_CHROMIUM_VERTICAL_PASS`, `PG03_CHROMIUM_LAYOUT_PASS`, `PG05_VISUAL_INTEGRITY_PASS`, `DEC074_SEGMENT_RENDER_PASS`, `PG05_STABLE_IDLE_MAP_PASS`, `PG05_CLIENT_BOUNDARIES_PASS` y `CHROMIUM_UAT_PASS` (único estudio sintético creado, recorrido y recuperado tras recarga). La UAT de navegador no exige que un resultado fuera de la capa AS-IS se apruebe sin evidencia.
+- Comparación de cambios `a1e07e37...8978429a`: cambios confinados a frontend `pages/diagnostic-stages.js`, `ui-system.css`, pruebas bajo `tests/` y `CODE_BLOCK_INDEX.md`; **sin cambios en el backend, schemas DF001–DF100 o las páginas/capturas FROZEN**.
+
+**Límite de la afirmación:** los 36 fallos automáticos están remediados y la aceptación automatizada vigente es verde. Esta evidencia no sustituye la comprobación humana del expediente real guardado en el navegador del propietario ni demuestra que la experiencia completa PG10→PG15 en un entorno productivo sea satisfactoria. La promoción a CANONICAL/PRODUCTION y los cambios en DECISIONES/ROADMAP requieren evidencia y aprobación adicionales, no se realizan automáticamente. Los datos sintéticos UAT de Levante no son un caso real de cliente contratado.
