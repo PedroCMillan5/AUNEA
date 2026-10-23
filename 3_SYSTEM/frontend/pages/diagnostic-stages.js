@@ -395,17 +395,21 @@ function df017FinalReviewPanel(e){
   const details=e.answerDetails||{},initial=normalizeArray(details.DF017__initial_scope??e.answers?.DF017).map(String);
   const final=normalizeArray(e.answers?.DF017).map(String);
   const sign=JSON.stringify({declared:[...new Set(final)].sort(),mapped:[...mapped].sort()});
-  const confirmed=details.DF017__final_scope_confirmation?.fingerprint===sign;
+  const confirmed=typeof processParticipantsFinalConfirmation==='function'?processParticipantsFinalConfirmation(e):details.DF017__final_scope_confirmation?.fingerprint===sign;
   const choices=[...new Set([...initial,...mapped,...final])];
   if(!choices.length)return '';
   const fmt=arr=>arr.length?arr.map(v=>labelFrom('OS_ACTOR_ROLE',v)||v).join(' · '):'Ninguno declarado';
   const current=confirmed?final:(initial.length?initial:mapped);
   const opts=choices.map(v=>'<label class="df017-final-choice"><input type="checkbox" data-df017-final-option="'+attr(v)+'" '+(current.includes(v)?'checked':'')+'><span>'+esc(labelFrom('OS_ACTOR_ROLE',v)||v)+'</span></label>').join('');
-  return '<div class="df017-final-review" data-df017-final-review="1"><h3>Validación de participantes</h3>'
-    +'<p>En la página 2 seleccionaste <strong>'+initial.length+' perfil(es)</strong>: '+esc(fmt(initial))+'.</p>'
-    +'<p>En el mapa AS-IS aparecen <strong>'+mapped.length+' perfil(es)</strong>: '+esc(fmt(mapped))+'.</p>'
-    +'<p class="field-help">Compara ambas listas y confirma qué perfiles deben quedar como participantes finales. Los responsables de cada paso no cambian.</p>'
-    +(confirmed?'<div class="pg09-participant-confirmed">'+current.map(v=>'<span>'+esc(labelFrom('OS_ACTOR_ROLE',v)||v)+'</span>').join('')+'<strong>Confirmado</strong></div>':'<div class="df017-final-options" role="group" aria-label="Perfiles finales del proceso">'+opts+'</div><button type="button" class="btn btn-small btn-primary" data-confirm-df017-final="1">Confirmar listado final</button>')
+  const coincide=initial.length===mapped.length&&initial.every(v=>mapped.includes(v));
+  const explanation=coincide
+    ?'Los '+mapped.length+' perfiles declarados coinciden con los responsables del mapa.'
+    :'Los participantes declarados ('+esc(fmt(initial))+') y los responsables del mapa ('+esc(fmt(mapped))+') son diferentes. Revisa qué perfiles deben quedar incluidos.';
+  return '<div class="df017-final-review" data-df017-final-review="1"><h3>Participantes finales</h3>'
+    +'<p>'+explanation+'</p>'
+    +(confirmed
+      ?'<div class="pg09-participant-confirmed">'+current.map(v=>'<span>'+esc(labelFrom('OS_ACTOR_ROLE',v)||v)+'</span>').join('')+'<strong>Confirmado</strong></div>'
+      :'<p class="field-help">Selecciona los participantes que forman parte del diagnóstico y confirma el listado. Esta revisión no modifica los responsables asignados a los pasos.</p><div class="df017-final-options" role="group" aria-label="Perfiles finales del proceso">'+opts+'</div><button type="button" class="btn btn-small btn-primary" data-confirm-df017-final="1">Confirmar participantes</button>')
     +'</div>';
 }
 function confirmDf017FinalSelection(){
@@ -523,7 +527,7 @@ function validationSummary(e,completion){
       +'<h3>Capas del AS-IS</h3><div class="pg09-layer-grid">'+layerTiles+'</div>'
       +df017FinalReviewPanel(e)
       +'<div class="pg09-validation-section"><div class="pg09-validation-title"><h3>Comprobaciones antes del cierre</h3>'
-      +'<p>Los bloqueos deben resolverse. Las observaciones no bloqueantes permanecen registradas para el trabajo interno.</p></div>'
+      +'<p>Para cerrar, confirma los participantes y resuelve los bloqueos. Las evidencias pendientes se conservarán sin marcarse como verificadas.</p></div>'
       +'<div class="pg09-consistency-summary">'
         +'<div><b>'+consistency.blockers.length+'</b><span>Bloqueos</span></div>'
         +'<div><b>'+consistency.reviews.length+'</b><span>Observaciones</span></div>'
