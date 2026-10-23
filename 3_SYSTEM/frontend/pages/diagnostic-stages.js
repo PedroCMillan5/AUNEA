@@ -507,14 +507,18 @@ function pg09EvidenceReview(e){
     const related=fr.map((f,i)=>({f,i}))
       .filter(({f})=>item==='Evidencia de '+labelFrom('OS_FRICTION_TYPE',f.friction_type));
     const refs=related.map(({i})=>'F'+(i+1)).join(' · ');
+    const signals=related.map(({f})=>String(f.observable_signal||'').trim()).filter(Boolean);
+    const hasFrequency=related.some(({f})=>f.frequency?.value!=null&&f.frequency?.mode!=='UNKNOWN');
+    const hasTime=related.some(({f})=>Number(f.active_time_loss?.value)>0||Number(f.wait_time_loss?.value)>0);
+    const aspects=[hasFrequency?'frecuencia':'',hasTime?'tiempos':''].filter(Boolean).join(' y ');
     const toCheck=related.length
-      ?'Contrastar el problema descrito'+(related.some(({f})=>f.frequency!=null||f.frequency_value!=null)?', su frecuencia':'')
-        +(related.some(({f})=>f.active_time_loss?.value!=null||f.wait_time_loss?.value!=null)?' y los tiempos indicados':'')
-        +' con datos o documentos del cliente.'
-      :'Identificar el dato pendiente y contrastarlo con su fuente antes de considerarlo acreditado.';
+      ?'Contrasta '+(aspects?'la '+aspects+' declarados y ':'')+'el problema descrito con registros o documentos del cliente.'
+      :'Identifica el dato pendiente y compáralo con su fuente antes de considerarlo acreditado.';
     return '<div class="pg09-evidence-row"><div><b>'+esc(item)+'</b>'
       +(refs?'<small>Relacionado con '+esc(refs)+'</small>':'')+'</div>'
-      +'<p>'+esc(toCheck)+'</p></div>';
+      +'<div class="pg09-evidence-check">'
+      +(signals.length?'<p><b>Dato declarado:</b> '+signals.map(esc).join(' · ')+'</p>':'')
+      +'<p>'+esc(toCheck)+'</p></div></div>';
   }).join('');
   return '<div class="pg09-readgroup"><h3>Evidencias por recibir</h3>'
     +'<p class="pg09-evidence-intro">La información ya está registrada. Estas pruebas servirán para comprobar lo declarado, no para repetir la captura.</p>'
