@@ -1950,3 +1950,29 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
  .modal .engine-review-choice{grid-template-columns:1fr}
 }
 /* [AUNEA-FE-ENGINE-GATES-UX-151] END */
+
+
+/* [AUNEA-FE-ASIS-WORKBENCH-STYLE-152] START — Source-bound internal exploration */
+.asis-opportunity-list{display:grid;gap:16px;margin-top:14px}
+.asis-opportunity-point,.asis-direction-card,.asis-field-ledger{border:1px solid var(--border,#d8dedc);border-radius:12px;padding:16px;background:var(--card,#fff)}
+.asis-opportunity-head{display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap}
+.asis-opportunity-head>span,.asis-opportunity-times{color:var(--muted,#67736d);font-size:13px}
+.asis-opportunity-times{display:flex;gap:12px;flex-wrap:wrap;margin:10px 0}
+.asis-opportunity-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-top:12px}
+.asis-opportunity-columns ul,.asis-opportunity-gaps ul,.asis-direction-card ul{padding-left:20px;margin:7px 0}
+.asis-opportunity-gaps{margin-top:10px;padding:12px;background:var(--surface-soft,#f6f7f6);border-radius:9px}
+.asis-opportunity-direction{margin-top:12px;border-top:1px solid var(--border,#d8dedc);padding-top:12px;line-height:1.55}
+.asis-opportunity-summary,.asis-coverage-overview{line-height:1.55}
+.asis-direction-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:12px}
+.asis-direction-card h3{margin:0 0 12px;font-size:17px}
+.asis-direction-card p{line-height:1.55}
+.asis-field-ledger{margin-top:18px}
+.asis-field-ledger summary,.asis-conditional-gates summary{cursor:pointer;font-weight:650;padding:6px 0}
+.asis-field-ledger details details{margin:10px 0;border-top:1px solid var(--border,#d8dedc);padding-top:8px}
+.asis-field-ledger ul{list-style:none;padding:0;margin:8px 0}
+.asis-field-ledger li{display:flex;justify-content:space-between;gap:14px;padding:7px 0;border-bottom:1px solid var(--border,#d8dedc)}
+.asis-field-ledger li small{color:var(--muted,#67736d);text-align:right}
+.asis-coverage-backend,.asis-conditional-gates{margin-top:14px}
+.asis-conditional-gate{padding:10px 0;border-bottom:1px solid var(--border,#d8dedc)}
+@media(max-width:960px){.asis-direction-grid{grid-template-columns:1fr}.asis-opportunity-columns{grid-template-columns:1fr}}
+/* [AUNEA-FE-ASIS-WORKBENCH-STYLE-152] END */
