@@ -75,6 +75,12 @@ test('single UAT loads complete, traverses PG01-PG09 and hands off to internal w
    assert.doesNotMatch(body,/No se ha podido iniciar AUNEA Internal/);
  }
  run("state.activePage='diagnostico';currentEng().stageId='S09';render()");
+ // PG09 requires a human to confirm the actual final role list even when
+ // the selected roles already match the map. Exercise that real UI action.
+ const confirmRoles=w.document.querySelector('[data-confirm-df017-final]');
+ assert.ok(confirmRoles,'human role reconciliation must be available before closing');
+ confirmRoles.click();
+ assert.equal(run('processParticipantsFinalConfirmation(currentEng())'),true,'the selected final list is version-bound');
  const close=w.document.getElementById('confirmClosingAsIs');
  assert.ok(close,'PG09 final closure CTA must be visible before handoff: '+JSON.stringify(run('({layers:processLayerConfirmations(currentEng()),issues:preCloseConsistencyReview(currentEng()).blockers.map(x=>({code:x.code,message:x.message,stage:x.stage})),df017:currentEng().answers.DF017})')));
  close.onclick();
@@ -108,6 +114,12 @@ test('PG09 rolls back confirmation, snapshot and lifecycle when durable persiste
  const {w,dom,run}=buildRuntime();
  run("state.activePage='uat';render()");
  await w.document.getElementById('loadSingleUat').onclick();
+ // Human-confirm roles before injecting the deliberately conflicting remote edit.
+ run("state.activePage='diagnostico';currentEng().stageId='S09';render()");
+ const confirmRoles=w.document.querySelector('[data-confirm-df017-final]');
+ assert.ok(confirmRoles,'final role confirmation must exist for the conflict UAT');
+ confirmRoles.click();
+ assert.equal(run('processParticipantsFinalConfirmation(currentEng())'),true);
  const baseline=JSON.parse(w.localStorage.getItem('aunea_internal_v1'));
  const remote=JSON.parse(JSON.stringify(baseline));
  const re=remote.engagements.find(e=>e.id.startsWith('UAT3-CASE-'));
