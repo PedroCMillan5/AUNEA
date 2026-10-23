@@ -53,6 +53,9 @@ function demo(){
     attr:x=>String(x??'').replaceAll('"','&quot;'),
     formatDateEs:x=>String(x).slice(0,10).split('-').reverse().join('/'),
     df017FinalReviewPanel:()=>'<div>Validación de participantes</div>',
+    labelFrom:(_set,v)=>v,
+    processBoundaryValue:(_e,fid)=>fid==='DF014'?'Factura recibida':'Factura archivada',
+    processGraphHtml:(_e,steps,fr,_start,_end,_tab,readonly)=>readonly?'<div class="process-graph-readonly" data-steps="'+steps.length+'" data-frictions="'+fr.length+'">Mapa confirmado</div>':'<button>Editor indebido</button>',
     section:(title,summary,body)=>'<section><h2>'+title+'</h2><p>'+summary+'</p>'+body+'</section>',
     renderStageFields:fields=>fields.map(f=>'<div data-field="'+f.Field_ID+'"></div>').join('')
   };
@@ -74,6 +77,11 @@ test('Complete UAT renders each evidence only once, without bullets or revalidat
   const html=fns.pg09CaptureContent(e,schema.fields,{missing:[]});
   assert.match(html,/id="confirmClosingAsIs"/);
   assert.match(html,/Las cuatro capas están confirmadas/);
+  assert.match(html,/process-graph-readonly/);
+  assert.match(html,/Así funciona el proceso actualmente/);
+  assert.match(html,/¿Qué confirmas al cerrar\?/);
+  assert.match(html,/Confirmar diagnóstico y guardar versión final/);
+  assert.doesNotMatch(html,/Editor indebido/);
   assert.match(html,/dd\/mm\/aaaa|data-field="DF097"/);
   assert.match(html,/Evidencia de reintroducción manual de datos/);
   assert.equal((html.match(/Evidencia de reintroducción manual de datos/g)||[]).length,1);
@@ -132,7 +140,7 @@ test('PG09 indicators explain the current closure result and actual evidence req
   const {fns,e,schema}=demo();
   const html=fns.pg09CaptureContent(e,schema.fields,{missing:[]});
   assert.match(html,/No hay datos obligatorios, contradicciones ni confirmaciones pendientes/);
-  assert.match(html,/Las 3 observaciones son las evidencias que figuran arriba/);
+  assert.match(html,/Son las 3 pruebas indicadas arriba que todavía hay que recibir/);
   assert.match(html,/Las cuatro capas están confirmadas y no hay bloqueos/);
   assert.match(html,/Estado del cierre/);
   e.consistency={
@@ -150,6 +158,18 @@ test('Final PG09 date actions have one consistent height and header keeps progre
   assert.match(css,/date-with-preview button[\s\S]*?height:40px/);
   assert.match(css,/shell-session \.topbar-active-study[\s\S]*?max-width:440px/);
   assert.match(css,/shell-session \.topbar-progress[\s\S]*?justify-content:center/);
+});
+
+
+test('PG09 keeps evidence-to-friction relations and never changes the canonical evidence list',()=>{
+  const {fns,e,schema}=demo();
+  const html=fns.pg09CaptureContent(e,schema.fields,{missing:[]});
+  assert.equal((html.match(/Evidencia de reintroducción manual de datos/g)||[]).length,1);
+  assert.match(html,/Contrastar el problema descrito/);
+  assert.match(html,/La información ya está registrada/);
+  assert.match(html,/Esta selección no establece un orden entre ellos/);
+  assert.match(html,/sin darlas por verificadas|no significa que estén demostradas/);
+  assert.doesNotMatch(html,/Editor indebido/);
 });
 
 // [AUNEA-UAT-PG09-FINAL-UX-140] END
