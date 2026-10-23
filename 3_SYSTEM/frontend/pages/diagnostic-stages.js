@@ -523,6 +523,20 @@ function validationSummary(e,completion){
     ['Riesgos',risks.length+' registrados',layers.risks],
     ['Impactos',econ.length+' registrados',layers.impact,econLine]
   ].map(([title,detail,ok,evidence])=>'<div class="pg09-layer-tile"><span>'+esc(title)+'</span><b>'+esc(detail)+'</b><small>'+(ok?'Confirmado':'Pendiente de confirmar')+(evidence?' · '+esc(evidence):'')+'</small></div>').join('');
+  // Source-owned PG09 indicators: explain exactly what their values refer to.
+  const evidenceReviews=consistency.reviews.filter(x=>String(x.code||'').startsWith('EVIDENCE_')).length;
+  const otherReviews=consistency.reviews.length-evidenceReviews;
+  const blockerExplanation=consistency.blockers.length
+    ?'Datos o confirmaciones pendientes y contradicciones que debes corregir antes de cerrar.'
+    :'No hay datos obligatorios, contradicciones ni confirmaciones pendientes que impidan el cierre.';
+  const observationsExplanation=consistency.reviews.length===0
+    ?'No hay asuntos pendientes de revisión.'
+    :evidenceReviews&&otherReviews===0
+      ?'Las '+evidenceReviews+' observaciones son las evidencias que figuran arriba, todavía sin verificar.'
+      :'Hay '+evidenceReviews+' evidencia(s) por recibir y '+otherReviews+' otra(s) revisión(es). Consulta los detalles que aparecen arriba o a continuación.';
+  const closeExplanation=proceed
+    ?'Las cuatro capas están confirmadas y no hay bloqueos. El cierre conservará las observaciones pendientes, sin darlas por verificadas.'
+    :'Hay elementos que requieren confirmación o corrección antes de generar el snapshot.';
   const findings=consistency.items.filter(x=>x.severity!=='INFO'&&!String(x.code||'').startsWith('EVIDENCE_'));
   const issuesHtml=findings.length?'<div class="pg09-review-list">'+findings.map(item=>{
     const evidence=String(item.code||'').startsWith('EVIDENCE_');
@@ -534,7 +548,7 @@ function validationSummary(e,completion){
       :'';
     return '<div class="pg09-review-row '+(item.severity==='BLOCKER'?'is-blocker':'is-observation')+'">'
       +'<div><span>'+esc(message)+'</span><small>'+(evidence?'Evidencia pendiente de recibir':item.severity==='BLOCKER'?'Requiere corrección para cerrar':'Revisión pendiente')+'</small></div>'+action+'</div>';
-  }).join('')+'</div>':'<p class="pg09-clean-review">'+(consistency.reviews.length?'Las evidencias pendientes figuran en el bloque superior y quedarán documentadas tras el cierre.':'No hay bloqueos ni observaciones pendientes.')+'</p>';
+  }).join('')+'</div>':'';
   return section('Revisión y confirmación final',
     'Esta revisión comprueba las confirmaciones anteriores y los datos pendientes, sin volver a capturar el proceso.',
     '<div class="pg09-confirm-section">'
@@ -543,9 +557,9 @@ function validationSummary(e,completion){
       +'<div class="pg09-validation-section"><div class="pg09-validation-title"><h3>Comprobaciones antes del cierre</h3>'
       +'<p>Para cerrar, confirma los participantes y resuelve los bloqueos. Las evidencias pendientes se conservarán sin marcarse como verificadas.</p></div>'
       +'<div class="pg09-consistency-summary">'
-        +'<div><b>'+consistency.blockers.length+'</b><span>Bloqueos</span></div>'
-        +'<div><b>'+consistency.reviews.length+'</b><span>Observaciones</span></div>'
-        +'<div class="'+(proceed?'is-ready':'is-pending')+'"><b>'+(proceed?'Puede cerrarse':'Requiere revisión')+'</b><span>Resultado de la comprobación</span></div>'
+        +'<div class="pg09-status-tile"><b>'+consistency.blockers.length+'</b><span>Bloqueos</span><p>'+esc(blockerExplanation)+'</p></div>'
+        +'<div class="pg09-status-tile"><b>'+consistency.reviews.length+'</b><span>Observaciones</span><p>'+esc(observationsExplanation)+'</p></div>'
+        +'<div class="pg09-status-tile '+(proceed?'is-ready':'is-pending')+'"><b>'+(proceed?'Puede cerrarse':'Requiere revisión')+'</b><span>Estado del cierre</span><p>'+esc(closeExplanation)+'</p></div>'
       +'</div>'+issuesHtml+'</div>'
       +(captureMissing.length?'<div class="pg09-missing-required"><b>Información obligatoria pendiente</b><p>'+captureMissing.map(x=>esc(x.label||'Dato obligatorio pendiente')).join(' · ')+'</p></div>':'')
       +'<div class="pg09-close-footer"><div><h3>'+(snap?'Diagnóstico cerrado':'Cerrar diagnóstico y guardar versión')+'</h3>'
