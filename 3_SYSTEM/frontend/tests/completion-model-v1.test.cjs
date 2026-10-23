@@ -49,7 +49,7 @@ function makeCtx(){
     // for fixtures that explicitly set confirmedAsIs, never for an open session.
     confirmedSnapshot:e=>e?.confirmedAsIs?{version:1,finalClosure:true}:null,
     processBoundaryValue:(e,fid)=>e?.answers?.[fid]||'',
-    pg09ProcessReadOnlyReview:()=>'<div class="pg09-review-empty">No hay pasos que mostrar en esta prueba aislada.</div>',
+    processGraphHtml:()=>'<div class="process-graph-test-stub">Mapa confirmado para revisión</div>',
     numberParts:v=>(v&&typeof v==='object'?v:{value:v??'',unit:'',period:'',mode:''}),
     renderQuestion:()=>'<QUESTION>',
     esc:v=>String(v??''),attr:v=>String(v??''),
