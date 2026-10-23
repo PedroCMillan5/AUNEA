@@ -278,7 +278,8 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
    click('[data-page="fricciones"]');click('#addFriction');click('[data-aunea-select-option="fr_type"]:not([data-value=""])');fill('#fr_signal','UAT: faltan datos en la solicitud');click('#modalSave');
   assert.ok(d.querySelector('#modalSave'),'La fricción sin paso ni causa debe seguir abierta');
   const stepChoice=d.querySelector('[data-v1-multi="fr_steps"]'),causeChoice=d.querySelector('[data-v1-multi="fr_causes"]');assert.ok(stepChoice);assert.ok(causeChoice);stepChoice.checked=true;causeChoice.checked=true;click('#modalSave');assert.equal(d.querySelector('#modalSave'),null);
-  click('[data-page="pasos"]');click('[data-confirm-process-layer="map"]');
+  click('[data-page="pasos"]');
+  assert.equal(w.eval('currentEng().layerConfirmations.map'),true,'registering a friction must not revoke the existing client map');
   click('[data-page="fricciones"]');click('[data-confirm-process-layer="frictions"]');
   click('[data-page="riesgos"]');click('[data-confirm-process-layer="risks"]');
   click('[data-page="impacto"]');click('[data-confirm-process-layer="impact"]');
