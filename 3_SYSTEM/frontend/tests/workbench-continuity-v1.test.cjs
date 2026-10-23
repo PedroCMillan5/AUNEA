@@ -54,7 +54,7 @@ test('exact approved current review is the only path to client mode',()=>{
 test('implementation is read-only and the runtime owns no new diagnostic fields',()=>{
   assert.match(source,/AUNEA-FE-WORKFLOW-READINESS-153/);
   assert.equal((source.match(/workbenchContinuityHtml\(e\)/g)||[]).length>=2,true);
-  const fn=source.slice(source.indexOf('function workbenchContinuityModel('),source.indexOf('// [AUNEA-FE-WORKFLOW-READINESS-153] END'));
+  const fn=source.slice(source.indexOf('function workbenchContinuityModel('),source.indexOf('// ['+'AUNEA-FE-WORKFLOW-READINESS-153'+'] END'));
   assert.doesNotMatch(fn,/setAnswer\(|markDirty\(|createOutputReview\(|advanceOutputReview\(|\bfetch\(/);
   assert.doesNotMatch(fn,/DF\d{3}/);
 });
