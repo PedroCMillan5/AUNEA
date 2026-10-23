@@ -173,16 +173,16 @@ test('Impact page summarizes the applicable driver values and blocks incomplete 
   assert.match(econ,/Coste de capacidad por hora/);
   assert.match(econ,/Coste anual de herramientas|coste anual de herramientas/i);
   assert.match(process,/function impactLayerReviewSummary\(/);
-  assert.match(process,/Evidencia económica/);
+  assert.match(process,/Con evidencia/);
   assert.match(process,/Sin inconsistencias pendientes/);
 });
 
 test('review recommendations are grouped and Impact exposes its own review action',()=>{
   assert.match(process,/const grouped=new Map\(\)/);
-  assert.match(process,/AUNEA ha agrupado la misma señal detectada en varios pasos/);
+  assert.match(process,/Antes de registrar otra fricción/);
   assert.match(econ,/function reviewEconomicCandidates\(/);
   assert.match(econ,/id="reviewEconomicCandidates"/);
-  assert.match(econ,/AUNEA ha agrupado el mismo tipo de impacto detectado en varios pasos/);
+  assert.match(econ,/Antes de añadir un impacto/);
   assert.match(process,/reviewEconomicCandidatesBtn/);
 });
 
