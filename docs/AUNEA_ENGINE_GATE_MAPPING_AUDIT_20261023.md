@@ -37,3 +37,9 @@ Estado: REVIEW · 23/10/2026 · Rama: `work/as-is-ux-simplification-20260930`
 - Después de modificar decisiones, resultado anterior obsoleto, bloqueado para publicación y recalculado desde el backend.
 - QA visual de la ventana con datos de Levante y otro expediente sin datos suficientes.
 - Estado actual: implementación REVIEW; **suite y navegador no ejecutados ni declarados aprobados** en esta sesión. No promover a CANONICAL ni modificar la matriz maestra sin aprobación.
+
+## UAT visual — revisión real de las cinco tarjetas (23/10/2026)
+- Capturas de Levante: las cinco tarjetas existen, pero mostraban `[object Object]` en DF027 y DF081, claves de paso `UAT-LIT-Px` en DF053/054, datos repetidos en herramientas y una falsa alerta de criterio faltante en «Aprobar factura» por no usar herencia de «Determinar si procede aprobación».
+- Corrección de presentación `3_SYSTEM/frontend/services/engine-adapter.js`: decodificación conservadora de valores estructurados (38 casos; 3 min/caso en fixture), IDs de paso y pares de herramienta traducidos a nombres, fuentes resumidas sin códigos técnicos, aprobación heredada a través de `approvalCriteriaSource` sin duplicar la regla, política UAT simulada indicada explícitamente como no validada. La pregunta RR-03 recupera su semántica exacta de **rediseñar**, no simplemente aclarar.
+- Tarjetas: detalle apilado a ancho completo; evidencias en dos columnas compactas con adaptación móvil; evaluación presentada como **provisional** y «decisión pendiente de comprobar», sin aprobación implícita.
+- QA específico: `engine-gates-review.test.cjs` incluye 4 regresiones nuevas para objetos, unidades, IDs y herencia; **todos esos tests pasan en GitHub Actions** (ejecución `39930060841`). El frontend completo conserva **36 fallos** en pruebas más amplias, incluidos hallazgos anteriores de PG05/PG09; NO afirmar suite verde ni cerrar UAT visual final. Código REVIEW.
