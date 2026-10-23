@@ -537,4 +537,33 @@ test('PG05 quick suggestion is undoable and preserves unrelated manual selection
  }finally{dom.window.close()}
 });
 
+test('PG10: confirmed 100-field AS-IS exposes critical points, gaps and three conditional routes before any solution gates',async()=>{
+ const {w,dom,run}=buildRuntime();
+ try{
+   run("state.activePage='uat';render()");
+   await w.document.getElementById('loadSingleUat').onclick();
+   run("state.activePage='diagnostico';currentEng().stageId='S09';render()");
+   const confirm=w.document.querySelector('[data-confirm-df017-final]');
+   assert.ok(confirm,'final participant list is a real human confirmation');
+   confirm.click();
+   const seal=w.document.getElementById('confirmClosingAsIs');
+   assert.ok(seal,'valid sources and final participant confirmation allow sealing');
+   seal.click();
+   assert.equal(run('hasConfirmedSnapshot(currentEng())'),true);
+   const before=run('JSON.stringify(confirmedSnapshot(currentEng()))');
+   assert.equal(run('unresolvedEngineGates(currentEng()).length'),5);
+   run("state.activePage='resultados';render()");
+   const text=w.document.getElementById('content').textContent;
+   assert.match(text,/100 campos del modelo examinados/);
+   assert.match(text,/puntos críticos|Puntos críticos/);
+   assert.match(text,/Optimización sin IA/);
+   assert.match(text,/Optimización asistida por IA/);
+   assert.match(text,/Rediseño y tecnología existente/);
+   assert.ok(w.document.getElementById('analyzeAsisOnly'),'preliminary AS-IS analysis remains available without selecting technologies');
+   assert.ok(w.document.querySelector('[data-draft-conditional-scenario="0"]'));
+   assert.equal(run('currentEng().diagnosticOutput||null'),null,'a preview cannot invent official recommendation');
+   assert.equal(run('JSON.stringify(confirmedSnapshot(currentEng()))'),before,'read-only exploration preserves the sealed capture exactly');
+ }finally{dom.window.close()}
+});
+
 // [AUNEA-UAT-RUNTIME-125] END
