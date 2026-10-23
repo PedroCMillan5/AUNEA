@@ -60,6 +60,17 @@ Los niveles funcionales y todas las cotizaciones se obtienen de catálogo/reglas
 1. Motor IA de orquestación con proveedor gobernado: actualmente `AiAgentService.status()` indica `UNAVAILABLE` cuando no hay proveedor. Los enfoques exploratorios proceden de reglas y fuentes, **no son generación autónoma de IA**.
 2. Simulación de mejoras **por cada intervención** y consolidación sin solapes (rutas, esperas y retrabajo): falta un contrato de hipótesis TO-BE por punto con trazabilidad propia al backend. No se calculan mejoras ficticias en el frontend.
 3. Generación/validación de **tres escenarios globales con números y precios**: el backend ya dispone de comparator y pricing canónicos; solo devolverá cantidades cuando haya supuestos económicos, alcance y reglas válidos. La UI propone tres vías y abre el configurador de alternativa, pero no inventa supuestos.
-4. Matriz trazable de ventajas/inconvenientes con scores basados en evidencia por alternativa, y publicación PG15 con tres escenarios aprobados, sin duplicar Snapshot ni crear un nuevo estudio.
+4. La matriz cualitativa por paso ya tiene tres alternativas visibles, ventajas, inconvenientes y dependencias (incremento REVIEW descrito abajo); siguen pendientes los scores basados en evidencia, la simulación cuantitativa y la publicación PG15 con tres escenarios aprobados, sin duplicar Snapshot ni crear un nuevo estudio.
 
 Hasta cerrar estos puntos, el proyecto sigue **REVIEW**, sin promoción a CANONICAL/PRODUCTION y sin cambio de DECISIONES/ESTADO/ROADMAP por mera disponibilidad de una interfaz exploratoria.
+
+
+## Incremento validado — 23/10/2026
+
+En la rama de trabajo, sin alterar capturas ni preguntas del AS-IS, cada paso crítico (definido sólo por sus vínculos existentes a Friction, RiskInput o EconomicInput) dispone ahora de tres alternativas condicionadas, derivadas de las líneas de intervención ya registradas. Cada tarjeta reutiliza el nombre del paso y el contexto de fricciones/riesgos/impactos del snapshot sellado; expone cuándo podría aplicar, intervención a examinar, ventajas, limitaciones y comprobaciones. La evaluación es cualitativa, nunca se presenta como recomendación del engine ni valoración demostrada de viabilidad. Se distingue que las cifras futuras y la contribución por punto están **sin calcular**.
+
+Se amplían los bloques técnicos existentes AUNEA-FE-ASIS-WORKBENCH-152 y AUNEA-FE-ASIS-WORKBENCH-STYLE-152, y la UAT AUNEA-UAT-ASIS-WORKBENCH-152 (3 alternativas por cada paso, dos pasos, escaping y fuente inmutable). La aceptación en commit \`6e6e9e87de2b6602a79408430da59b606b35360d\` ha sido PASS en frontend **672/672**, backend PASS y Chromium PASS, run 39948427691. No constituye UAT visual/nativa del propietario ni simula tiempos TO-BE.
+
+**Siguiente contrato pendiente (no implementado ni aprobado):** distinguir supuestos futuros por intervención/punto, vincular cada uno a su fuente y a la medida temporal propietaria; conciliar rutas excluyentes y solapes de esperas/retrabajo; agregar efectos individuales sin duplicar magnitudes; entregar esos resultados al Scenario Comparator y pricing sólo mediante inputs, alcance y catálogo autorizados. El contrato existente ScenarioAssumption está relacionado con Pain/EconomicInput y no determina por sí solo una atribución temporal por ProcessStep. No se añaden campos DF ni porcentajes universales para resolverlo.
+
+Continúa REVIEW; no se promueven escenarios, entregables, fuentes canónicas ni estado de producto.
