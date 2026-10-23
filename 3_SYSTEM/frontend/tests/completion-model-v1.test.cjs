@@ -50,6 +50,7 @@ function makeCtx(){
     confirmedSnapshot:e=>e?.confirmedAsIs?{version:1,finalClosure:true}:null,
     processBoundaryValue:(e,fid)=>e?.answers?.[fid]||'',
     processGraphHtml:()=>'<div class="process-graph-test-stub">Mapa confirmado para revisión</div>',
+    formatDateEs:v=>v,
     numberParts:v=>(v&&typeof v==='object'?v:{value:v??'',unit:'',period:'',mode:''}),
     renderQuestion:()=>'<QUESTION>',
     esc:v=>String(v??''),attr:v=>String(v??''),
@@ -171,7 +172,7 @@ test('validationSummary (last-stage closing screen) uses only factual language �
   assert.match(html,/1 con controles registrados/);
   assert.match(html,/1 Medido/);
   assert.doesNotMatch(html,/revisada/i);
-  assert.doesNotMatch(html,/\bconfirmado\b/i,'only the literal e.confirmedAsIs state may use this word, and it is false here');
+  assert.doesNotMatch(html,/id="confirmClosingAsIs"/,'missing capture must prevent final sealing despite separately confirmed layers');
   assert.match(html,/data-goto-stage="S01"/);
   assert.doesNotMatch(html,/id="runDiag"/,'the CALCULAR button must not appear while blockers remain');
 });
@@ -181,7 +182,7 @@ test('PG09 confirms AS-IS and never offers engines even when internal calculatio
   const e={confirmedAsIs:true,processSteps:[{id:'s1',status:'ACTIVE'}],frictions:[],risks:[],economicInputs:[],answers:{DF098:'Solicitar evidencias — Pedro — 12/09/2026'}};
   const completion={readyToCalculate:true,missing:[],blockers:[]};
   const html=ctx.validationSummary(e,completion);
-  assert.match(html,/id="confirmClosingAsIs">Confirmar cierre y generar snapshot/);
+  assert.match(html,/data-page="resultados">Continuar a Trabajo interno/);
   assert.doesNotMatch(html,/id="runDiag"/);
   assert.doesNotMatch(html,/blocker-list/);
   assert.match(html,/Solicitar evidencias — Pedro — 12\/09\/2026/);
@@ -213,7 +214,7 @@ test('PG01–PG09 never calculate or recalculate recommendation',()=>{
   html=ctx.stagePage();
   assert.equal((html.match(/id="runDiag"/g)||[]).length,0,'PG09 only confirms AS-IS');
   assert.doesNotMatch(html,/id="nextStage"/,'there is no stage 10 to continue to');
-  assert.match(html,/id="confirmClosingAsIs">Confirmar cierre y generar snapshot/);
+  assert.match(html,/data-page="resultados">Continuar a Trabajo interno/);
   assert.doesNotMatch(html,/id="runDiag"/);
 
   e.diagnosticOutput={recommendation:{}};
@@ -330,8 +331,9 @@ test('S09 closure shows objective first readings but never labels them diagnosis
   const ctx=makeCtx();
   const e={answers:{DF096:[]},processSteps:[{id:'s1',status:'ACTIVE',step_name:'Paso'}],frictions:[],risks:[],economicInputs:[],confirmedAsIs:false,confirmedSnapshots:[]};
   const html=ctx.validationSummary(e,{missing:[],blockers:[]});
-  assert.match(html,/Resumen de control antes del cierre/);
-  assert.match(html,/No añade diagnóstico, recomendación, ROI ni propuesta/);
+  assert.match(html,/Revisión y confirmación final/);
+  assert.match(html,/¿Está todo preparado para cerrar\?/);
+  assert.doesNotMatch(html,/id="runDiag"/,'no engine calculation in PG09');
   assert.match(html,/id="confirmClosingAsIs"/);
 });
 
@@ -354,15 +356,16 @@ test('PG09 sealed closure offers internal work instead of a second seal action',
   const html=ctx.validationSummary(e,{missing:[],blockers:[]});
   assert.match(html,/data-page="resultados">Continuar a Trabajo interno/);
   assert.doesNotMatch(html,/id="confirmClosingAsIs"/);
-  assert.match(html,/Snapshot final/);
+  assert.match(html,/Diagnóstico confirmado y versión guardada/);
   assert.doesNotMatch(html,/Economics/);
 });
 
 
 test('PG09 pending map exposes both review and the existing layer confirmation action',()=>{
  const ctx=makeCtx();ctx.preCloseConsistencyReview=()=>({items:[{code:'LAYER_MAP',severity:'BLOCKER',message:'Falta confirmar mapa',stage:'S04'}],blockers:[{}],reviews:[]});
- const html=ctx.validationSummary({answers:{},processSteps:[],frictions:[],risks:[],economicInputs:[]},{missing:[],blockers:[]});
- assert.match(html,/data-page="pasos">Revisar mapa AS-IS/);
- assert.match(html,/data-pg09-confirm-layer="map">Confirmar mapa AS-IS/);
- assert.doesNotMatch(html,/id="confirmClosingAsIs"/);
+ const html=ctx.validationSummary({answers:{},processSteps:[{id:'s1',status:'ACTIVE',step_name:'Recibir'}],frictions:[],risks:[],economicInputs:[],layerConfirmations:{map:false,frictions:false,risks:false,impact:false}},{missing:[],blockers:[]});
+ assert.match(html,/data-page="pasos">Consultar en Pasos/,'the canonical map remains accessible from PG09');
+ assert.match(html,/Resuelve los elementos pendientes antes de confirmar el cierre/);
+ assert.doesNotMatch(html,/id="confirmClosingAsIs"/,'an unconfirmed map cannot seal a snapshot');
+ assert.doesNotMatch(html,/data-pg09-confirm-layer="map"/,'PG09 must not duplicate the confirmation control owned by Pasos');
 });
