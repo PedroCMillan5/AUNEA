@@ -1794,3 +1794,60 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
   .content:has(.diagnostic-stage-s09) .pg09-consistency-summary{grid-template-columns:1fr}
 }
 /* [AUNEA-FE-PG09-UX-FOLLOWUP-143] END */
+
+/* [AUNEA-FE-PG09-CLOSURE-PRESENTATION-145] START — Final process evidence, compact friction links, unambiguous acceptance. */
+.content:has(.diagnostic-stage-s09) .pg09-process-review{
+  margin:0 0 23px;padding-bottom:20px;border-bottom:1px solid #e3e9e4;min-width:0;
+}
+.content:has(.diagnostic-stage-s09) .pg09-review-heading{
+  display:flex;align-items:start;justify-content:space-between;gap:12px;margin-bottom:10px;
+}
+.content:has(.diagnostic-stage-s09) .pg09-review-heading>div{min-width:0;flex:1}
+.content:has(.diagnostic-stage-s09) .pg09-review-heading h3{margin:0 0 5px;font-size:15px}
+.content:has(.diagnostic-stage-s09) .pg09-review-heading p{margin:0;color:var(--muted);font-size:12px;line-height:1.45}
+.content:has(.diagnostic-stage-s09) .pg09-review-heading>.btn{flex:none;white-space:nowrap}
+.content:has(.diagnostic-stage-s09) .pg09-process-viewport{
+  width:100%;min-width:0;max-width:100%;overflow-x:auto;overflow-y:hidden;
+  border:1px solid #dce7df;background:#fbfcfb;border-radius:9px;overscroll-behavior-inline:contain;
+}
+.content:has(.diagnostic-stage-s09) .pg09-process-viewport .process-graph-canvas{
+  width:100%;min-width:0;max-width:none;box-sizing:border-box;overflow:visible;
+  border:0;border-radius:0;margin:0;
+}
+.content:has(.diagnostic-stage-s09) .pg09-process-viewport .process-graph-board{
+  width:max-content;min-width:max-content;
+}
+.content:has(.diagnostic-stage-s09) .pg09-friction-key{padding:13px 0 0}
+.content:has(.diagnostic-stage-s09) .pg09-friction-key>b{font-size:12px}
+.content:has(.diagnostic-stage-s09) .pg09-friction-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px;margin-top:9px}
+.content:has(.diagnostic-stage-s09) .pg09-friction-item{
+  display:flex;flex-direction:column;gap:5px;padding:10px 12px;border:1px solid #e2e9e4;
+  background:#f7faf8;border-radius:8px;min-width:0;
+}
+.content:has(.diagnostic-stage-s09) .pg09-friction-item>b{font-size:12px;color:#173e30;line-height:1.4}
+.content:has(.diagnostic-stage-s09) .pg09-friction-item>span{color:var(--muted);font-size:11px}
+.content:has(.diagnostic-stage-s09) .pg09-evidence-intro,
+.content:has(.diagnostic-stage-s09) .pg09-block-hint{
+  font-size:12px;line-height:1.5;color:var(--muted);margin:0 0 11px;
+}
+.content:has(.diagnostic-stage-s09) .pg09-evidence-list{display:grid;gap:8px}
+.content:has(.diagnostic-stage-s09) .pg09-evidence-row{
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.45fr);
+  align-items:start;gap:12px;padding:10px 11px;border:1px solid #e2e9e4;border-radius:7px;background:#fafcfb;
+}
+.content:has(.diagnostic-stage-s09) .pg09-evidence-row>div{min-width:0;display:flex;flex-direction:column;gap:4px}
+.content:has(.diagnostic-stage-s09) .pg09-evidence-row b{font-size:12px;line-height:1.4;overflow-wrap:anywhere}
+.content:has(.diagnostic-stage-s09) .pg09-evidence-row small{font-size:11px;color:var(--muted)}
+.content:has(.diagnostic-stage-s09) .pg09-evidence-row p{margin:0;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+.content:has(.diagnostic-stage-s09) .pg09-acceptance{
+  margin-top:20px;padding:13px 16px;border:1px solid #d4e4d8;border-left:3px solid #31674c;
+  border-radius:8px;background:#f7faf8;
+}
+.content:has(.diagnostic-stage-s09) .pg09-acceptance b{display:block;color:#173f30;font-size:13px;margin-bottom:5px}
+.content:has(.diagnostic-stage-s09) .pg09-acceptance p{margin:0;color:#42594c;font-size:12px;line-height:1.6}
+@media(max-width:760px){
+  .content:has(.diagnostic-stage-s09) .pg09-evidence-row{grid-template-columns:1fr;gap:5px}
+  .content:has(.diagnostic-stage-s09) .pg09-review-heading{flex-wrap:wrap}
+  .content:has(.diagnostic-stage-s09) .pg09-friction-list{grid-template-columns:1fr}
+}
+/* [AUNEA-FE-PG09-CLOSURE-PRESENTATION-145] END */
