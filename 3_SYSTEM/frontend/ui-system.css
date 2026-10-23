@@ -1851,3 +1851,8 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
   .content:has(.diagnostic-stage-s09) .pg09-friction-list{grid-template-columns:1fr}
 }
 /* [AUNEA-FE-PG09-CLOSURE-PRESENTATION-145] END */
+
+/* PG09 evidence comparison: declared signal and verification action share the wide detail area. */
+.content:has(.diagnostic-stage-s09) .pg09-evidence-check{display:grid;gap:5px;min-width:0}
+.content:has(.diagnostic-stage-s09) .pg09-evidence-check p{margin:0;font-size:12px;line-height:1.45;overflow-wrap:anywhere}
+.content:has(.diagnostic-stage-s09) .pg09-evidence-check b{font-size:12px;color:#344d40}
