@@ -105,7 +105,7 @@ def asis_analysis(payload: EngagementInput):
         raise HTTPException(409, str(exc)) from exc
 # [AUNEA-BE-ASIS-ANALYSIS-API-152] END
 
-// [AUNEA-BE-INTERVENTION-API-155] START — Isolated review-only simulation endpoint
+# [AUNEA-BE-INTERVENTION-API-155] START — Isolated review-only simulation endpoint
 # SOURCE: DEC-034/050/068/074, REVIEW contract 2026-10-23 (NOT official PG14).
 # INPUTS: Explicit reviewed step assumptions + existing time baseline, never a sealed-snapshot claim.
 # OUTPUTS: Unsupported official outputs remain null; no write to ScenarioComparator/store/client.
