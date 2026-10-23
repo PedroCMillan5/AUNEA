@@ -576,7 +576,7 @@ function validationSummary(e,completion){
   const observationsExplanation=consistency.reviews.length===0
     ?'No hay asuntos pendientes de revisión.'
     :evidenceReviews&&otherReviews===0
-      ?'Son las '+evidenceReviews+' pruebas indicadas arriba que todavía hay que recibir y contrastar con lo declarado.'
+      ?'Son '+evidenceReviews+' evidencias solicitadas que figuran arriba; aún hay que recibirlas y contrastarlas con lo declarado.'
       :'Hay '+evidenceReviews+' evidencia(s) por recibir y '+otherReviews+' otra(s) revisión(es). Consulta los detalles que aparecen arriba o a continuación.';
   const closeExplanation=proceed
     ?'Las cuatro partes están confirmadas y no hay bloqueos. Las pruebas pendientes seguirán identificadas, no se considerarán hechos acreditados.'
