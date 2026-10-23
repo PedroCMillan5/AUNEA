@@ -139,7 +139,8 @@ test('consultant layer status cannot say confirmed while integrity issues exist'
   const body=process.slice(start,end);
   assert.match(body,/processLayerIntegrityIssues/);
   assert.match(body,/done=!!processLayerState\(e\)\[layer\]&&!integrity\.length/);
-  assert.match(body,/Revisión necesaria/);
+  assert.match(body,/done=!!processLayerState\(e\)\[layer\]&&!integrity\.length/);
+  assert.match(body,/const disabled=integrity\.length/);
 });
 
 
