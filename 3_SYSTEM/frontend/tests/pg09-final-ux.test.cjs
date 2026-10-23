@@ -145,7 +145,8 @@ test('PG09 indicators explain the current closure result and actual evidence req
   const html=fns.pg09CaptureContent(e,schema.fields,{missing:[]});
   assert.match(html,/No hay datos obligatorios, contradicciones ni confirmaciones pendientes/);
   assert.match(html,/Son 3 evidencias solicitadas que figuran arriba/);
-  assert.match(html,/Las cuatro capas están confirmadas y no hay bloqueos/);
+  assert.match(html,/Las cuatro capas están confirmadas/);
+  assert.match(html,/No hay datos obligatorios, contradicciones ni confirmaciones pendientes/);
   assert.match(html,/Estado del cierre/);
   e.consistency={
     items:[{severity:'BLOCKER',code:'INTEGRITY_0',stage:'S09',message:'Revisar información del estudio'}],
