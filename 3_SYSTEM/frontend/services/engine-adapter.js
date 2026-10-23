@@ -48,8 +48,10 @@ const ENGINE_GATE_GUIDE=Object.freeze({
   }
 });
 function engineGateReviewEvidence(contract,e){
-  const key=contract.key,steps=activeSteps(e),fr=activeFrictions(e);
-  const ans=e.answers||{},sources=[],relevant=[];
+  // Only the sealed PG09 version may justify the internal diagnostic decisions.
+  const record=typeof engagementOfRecord==='function'?engagementOfRecord(e):e;
+  const key=contract.key,steps=activeSteps(record),fr=activeFrictions(record);
+  const ans=record.answers||{},sources=[];
   const add=(label,source)=>{if(label&&!sources.some(s=>s.label===label))sources.push({label,source})};
   const stepName=(x)=>String(x.step_name||'Paso del proceso');
   const frName=(f)=>String(f.client_label||f.observable_signal||labelFrom('OS_FRICTION_TYPE',f.friction_type)||'Problema registrado');
