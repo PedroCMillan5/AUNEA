@@ -6,17 +6,17 @@
 // SIDE_EFFECTS: none on Engagement or AS-IS; server call results live in memory, bound to snapshot.
 const __asisAnalysisCache=new Map();
 const ASIS_CONDITIONAL_DIRECTIONS=Object.freeze([
-  {name:'Optimización sin IA',condition:'Si las actividades se resuelven con reglas y entradas suficientemente estructuradas',
+  {name:'Optimización sin IA',actionId:'ACT03',aiId:'I0',condition:'Si las actividades se resuelven con reglas y entradas suficientemente estructuradas',
    approach:'Rediseño puntual, reglas, integraciones y avisos que se puedan verificar.',
    advantage:'Menor variabilidad de comportamiento y controles deterministas.',
    drawback:'Necesita comprobar calidad de datos, integraciones y excepciones; no interpreta libremente documentos variables.',
    dependencies:['Capacidad real de conexión o configuración de las herramientas','Reglas y excepciones documentadas','Responsable de las aprobaciones']},
-  {name:'Optimización asistida por IA',condition:'Si existe interpretación material de contenido variable que no sea razonable resolver con reglas',
+  {name:'Optimización asistida por IA',actionId:'ACT04',aiId:'I1',condition:'Si existe interpretación material de contenido variable que no sea razonable resolver con reglas',
    approach:'Las mismas reglas gobernadas, con interpretación o redacción asistida y revisión humana donde proceda.',
    advantage:'Puede abordar documentos y mensajes heterogéneos cuando una prueba de calidad lo confirme.',
    drawback:'Mayor coste operativo, errores posibles y necesidad de supervisión y prueba de calidad.',
    dependencies:['Muestras de documentos y validación de extracción','Permisos y datos tratados','Costes de operación y aceptación de calidad']},
-  {name:'Rediseño y tecnología existente',condition:'Si simplificar pasos o configurar capacidades disponibles resuelve las fricciones materiales',
+  {name:'Rediseño y tecnología existente',actionId:'ACT02',aiId:'I0',condition:'Si simplificar pasos o configurar capacidades disponibles resuelve las fricciones materiales',
    approach:'Revisar secuencia, responsables, criterios y funcionalidades nativas antes de añadir software.',
    advantage:'Puede reducir integraciones nuevas y costes de mantenimiento.',
    drawback:'Depende de capacidades, licencias, restricciones y aceptación del cambio que aún deben verificarse.',
@@ -161,7 +161,8 @@ function asisDirectionCardsHtml(e){
       '<article class="asis-direction-card"><h3>'+(i+1)+'. '+esc(d.name)+'</h3><p><b>Aplicaría si:</b> '+esc(d.condition)+'</p><p><b>Intervención posible:</b> '+esc(d.approach)+'</p>'
       +'<p><b>Ventaja:</b> '+esc(d.advantage)+'</p><p><b>Limitación:</b> '+esc(d.drawback)+'</p>'
       +'<b>Comprobaciones necesarias</b><ul>'+d.dependencies.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>'
-      +'<p><b>Mejora global y precio:</b> pendientes de simulación con hipótesis justificadas y cotización canónica.</p></article>'
+      +'<p><b>Mejora global y precio:</b> pendientes de simulación con hipótesis justificadas y cotización canónica.</p>'
+      +'<button type="button" class="btn btn-outline" data-draft-conditional-scenario="'+i+'">Explorar esta alternativa con el motor</button></article>'
     ).join('')+'</div>'
     +(gateEvidence.length?'<details class="asis-conditional-gates"><summary>Condiciones que AUNEA ha podido evaluar con los datos disponibles</summary>'+gateEvidence.map(g=>
       '<div class="asis-conditional-gate"><b>'+esc(g.name)+'</b><p>'+esc(g.reason||'Sin conclusión demostrada')+'</p><small>Evaluación: '+esc(g.status==='PROPOSAL'?'Propuesta para contrastar':g.status==='REVIEW'?'Pendiente de comprobar':'Información insuficiente')+'</small></div>').join('')+'</details>':'');
