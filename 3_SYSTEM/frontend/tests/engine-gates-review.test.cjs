@@ -261,7 +261,7 @@ test('The entire snapshot-to-results boundary invalidates review, client output 
  const results=fs.readFileSync(path.join(root,'pages/results.js'),'utf8');
  const outputReview=fs.readFileSync(path.join(root,'domain/output-review.js'),'utf8');
  const view=results.slice(results.indexOf('function currentDiagnosticOutput(e)'),results.indexOf('function num(x)'));
- const review=outputReview.slice(outputReview.indexOf('function reviewSources(e)'),'//'.length+outputReview.indexOf('// [AUNEA-FE-OUTPUT-REVIEW-010] END'));
+ const review=outputReview.slice(outputReview.indexOf('function reviewSources(e)'),outputReview.indexOf('function createOutputReview(e)'));
  const extra={...stub,ENGINE_GATE_CONTRACT:fn.ENGINE_GATE_CONTRACT,ENGINE_GATE_GUIDE:vm.runInContext('ENGINE_GATE_GUIDE',context),engineGateOutputFresh:fn.engineGateOutputFresh,
    confirmedSnapshot:e=>e.snapshot,approvedTobeForClient:e=>e.approvedTobe,esc:stub.esc};
  const local=vm.runInNewContext(view+'\n'+review+'\n({currentDiagnosticOutput,diagnosticOutputFreshness,diagnosisEngineDecisionTraceHtml,reviewSources,approvedOutputReview})',extra);
