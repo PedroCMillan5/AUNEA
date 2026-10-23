@@ -186,6 +186,16 @@ function consistencyValueSignature(v){
 // [AUNEA-FE-ASIS-PARTICIPANTS-078] START — S02 participants versus actual ProcessStep actors
 // SOURCE: Diagnostic Master DF017; DEC-050; ProcessStep.Actor; no automated scope inference.
 // An old manual DF017 selection may include contextual stakeholders, so differences require human review.
+// [AUNEA-FE-PG09-PARTICIPANTS-GATE-141] START — Explicit final validation required, even when lists coincide.
+function processParticipantsFinalConfirmation(e){
+  const active=(e?.processSteps||[]).filter(s=>s&&s.status!=='SUPERSEDED');
+  const mapped=[...new Set(active.map(s=>String(s.actor||'').trim()).filter(Boolean))].sort();
+  const selected=[...new Set(normalizeArray(e?.answers?.DF017).map(v=>String(v||'').trim()).filter(Boolean))].sort();
+  if(!selected.length||!mapped.length)return false;
+  const fingerprint=JSON.stringify({declared:selected,mapped});
+  return e?.answerDetails?.DF017__final_scope_confirmation?.fingerprint===fingerprint;
+}
+// [AUNEA-FE-PG09-PARTICIPANTS-GATE-141] END
 function processParticipantsScopeReview(e){
   const steps=(e?.processSteps||[]).filter(s=>s&&s.status!=='SUPERSEDED');
   const declared=normalizeArray(e?.answers?.DF017).map(v=>String(v??'').trim()).filter(Boolean);
@@ -315,6 +325,13 @@ function preCloseConsistencyReview(e,completion){
       participantGap.onlyMapped.length?'Responsables del mapa ausentes del alcance inicial: '+roleNames(participantGap.onlyMapped)+'.':''
     ].filter(Boolean).join(' ');
     add('BLOCKER','DF017_PARTICIPANT_SCOPE','Los equipos declarados en Alcance y los responsables del mapa difieren. '+sides+' Selecciona y confirma el listado final en Validación y cierre. No se modifica ningún valor automáticamente.','S09');
+  }
+
+  // The final participant list is an explicit PG09 review, not implicitly accepted by matching data.
+  const participants=[...new Set(normalizeArray(e?.answers?.DF017).filter(Boolean))];
+  const mapActors=[...new Set((e?.processSteps||[]).filter(x=>x&&x.status!=='SUPERSEDED').map(x=>x.actor).filter(Boolean))];
+  if((participants.length||mapActors.length)&&!processParticipantsFinalConfirmation(e)&&!participantGap){
+    add('BLOCKER','DF017_FINAL_CONFIRMATION','Confirma los participantes finales. Los perfiles coinciden, pero todavía falta la validación explícita del listado.','S09');
   }
 
   // [AUNEA-FE-ASIS-SCOPE-079] Mandatory explicit review of scope-map warning.
