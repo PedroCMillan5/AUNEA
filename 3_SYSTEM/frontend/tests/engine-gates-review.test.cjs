@@ -326,7 +326,7 @@ test('E2E consultant gate → backend → durable PG10 output: mid-run edits and
    persistRecoverySnapshot:()=>{persistCalls++;return behavior!=='conflict';},
    render:()=>{renderCount++;},toast:t=>messages.push(t)
   };
-  const {runDiagnosis}=vm.runInNewContext(realRunner+'\\n({runDiagnosis})',mock);
+  const {runDiagnosis}=vm.runInNewContext(realRunner+'\n({runDiagnosis})',mock);
   await runDiagnosis();
   return {e,messages,audit,persistCalls,renderCount,state};
  }
