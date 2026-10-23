@@ -130,6 +130,46 @@ function diagnosisRecommendationHtml(o){
   <div class="field-help">Es una recomendación estructurada del diagnóstico. El diseño concreto del proceso futuro se realiza en TO-BE y requiere revisión humana antes de publicación.</div>`;
 }
 
+// [AUNEA-FE-WORKFLOW-READINESS-153] START — Read-only continuity of the internal review
+// PURPOSE: Make PG10–PG15 and the client publication gate legible from existing versioned sources.
+// SOURCE: DEC-034/050/052/053/055; Simulator CANONICAL PG10–PG15; end-to-end contract REVIEW 2026-10-23.
+// INPUTS: confirmed snapshot, optional AS-IS analysis, official engine output, TO-BE, scenarios, output review.
+// OUTPUTS: navigation/readiness labels only; no state transitions, price or time calculation.
+// SIDE_EFFECTS: none.
+// CHANGE_RISK: LOW. No new DF, data owner, gate or approval decision.
+function workbenchContinuityModel(e){
+  const snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;
+  if(!snap||!e?.confirmedAsIs)return [];
+  const official=currentDiagnosticOutput(e);
+  const analysis=typeof asisAnalysisResult==='function'?asisAnalysisResult(e):null;
+  const candidate=typeof latestTobe==='function'?latestTobe(e):null;
+  const tobe=candidate&&candidate.sourceSnapshotVersion===snap.version?candidate:null;
+  const reviewedTobe=!!tobe&&['REVIEWED','APPROVED_FOR_CLIENT','PUBLISHED'].includes(tobe.status);
+  const reviewed=typeof currentOutputReview==='function'?currentOutputReview(e):null;
+  const approved=typeof approvedOutputReview==='function'?approvedOutputReview(e):null;
+  const alternativeCount=official?Number((e.scenarioResults||[]).length):0;
+  return [
+    {title:'Diagnóstico',status:official?'Resultado oficial vigente':analysis?'AS-IS analizado · solución pendiente':'Análisis disponible · ejecutar backend',page:'resultados'},
+    {title:'Diseño TO-BE',status:tobe?(tobe.status==='DRAFT'?'Borrador sin aprobar':tobe.status==='REVIEWED'?'Revisado':tobe.status==='PUBLISHED'?'Publicado':'Aprobado para cliente'):'Propuesta pendiente',page:'tobe'},
+    {title:'Comparación',status:reviewedTobe?'Vista de cambios disponible':'Necesita TO-BE revisado',page:'comparacion'},
+    {title:'Solución',status:official?'Recomendación de backend disponible':'Recomendación oficial pendiente',page:'recomendacion'},
+    {title:'Escenarios',status:official?.optimal_scenario?'Óptimo calculado · '+alternativeCount+' alternativa(s) registradas':'Simulación oficial pendiente',page:'escenarios'},
+    {title:'Aprobación',status:approved?'Aprobado para cliente':reviewed?(reviewed.status==='REVIEWED'?'Revisado · falta autorización':reviewed.status==='DRAFT'?'Borrador · falta revisión': 'Pendiente de autorización'):'Sin paquete aprobado',page:'revision'}
+  ];
+}
+function workbenchContinuityHtml(e){
+  const stages=workbenchContinuityModel(e);
+  if(!stages.length)return '<div class="notice warn">Confirma el AS-IS antes de comenzar el trabajo interno.</div>';
+  const approved=typeof approvedOutputReview==='function'?approvedOutputReview(e):null;
+  return '<div class="grid g3">'+stages.map((s,i)=>
+    '<div class="notice"><small>Etapa '+(i+1)+'</small><br><b>'+esc(s.title)+'</b><br><small>'+esc(s.status)+'</small><div style="margin-top:8px"><button class="btn btn-outline" data-page="'+s.page+'">Abrir etapa</button></div></div>'
+  ).join('')+'</div><div class="notice info" style="margin-top:12px"><b>Presentación al cliente</b><br>'+
+    (approved?'Existe una revisión autorizada para el snapshot y escenario vigentes.':'Todavía no hay una revisión vigente aprobada para cliente. El análisis interno no se publica automáticamente.')+
+    (approved?' <button class="btn" data-page="modoresultados">Ver Modo Resultados</button>':'')+
+    '<small>Los tiempos futuros, la inversión y el ahorro solo aparecen cuando los motores los calculan a partir de supuestos y alcance válidos.</small></div>';
+}
+// [AUNEA-FE-WORKFLOW-READINESS-153] END
+
 function resultsPage(){
   const e=currentEng();
   if(!e) return pageTop('Diagnóstico interno','Debes confirmar el cierre del mapa y del diagnóstico antes de entrar en Trabajo interno.',`<button class="btn" data-page="diagnostico">Volver a Sesión 1</button>`) + `<div class="empty"><h2>AS-IS confirmado requerido</h2><p>La sesión termina al confirmar Validación y cierre. El diagnóstico interno siempre parte de un snapshot confirmado.</p></div>`;
@@ -146,6 +186,7 @@ function resultsPage(){
         <div class="card metric"><small>Impactos</small><strong>${econInputs.length}</strong><span>${miss.length} gap(s) obligatorio(s)</span></div>
         <div class="card metric"><small>Backend</small><strong>${state.backendOnline?'OK':'—'}</strong><span>${state.backendOnline?'disponible':'se comprobará al ejecutar'}</span></div>
       </div>`
+      +section('Recorrido de Trabajo Interno','Las etapas se alimentan del mismo AS-IS. Los estados indican disponibilidad, no aprobación automática.',workbenchContinuityHtml(e))
       +section('Estado actual y tiempo de referencia','Los valores declarados se muestran sin convertir un SLA en objetivo de mejora ni inferir un ahorro.',`<div class="grid g3"><div class="notice"><b>Duración end-to-end actual</b><br>${esc(asisSourceBoundary(record,'DF026'))}</div><div class="notice"><b>SLA del servicio</b><br>${esc(asisSourceBoundary(record,'DF025'))}<small>No equivale al objetivo de reducción</small></div><div class="notice"><b>Objetivos del negocio</b><br>${esc(normalizeArray(record.answers?.DF086).map(x=>labelFrom('OS_FUTURE_OUTCOME',x)||x).join(' · ')||'No declarados')}<small>Sin tiempo futuro asumido</small></div></div>`)
       +section('Mapa de los puntos críticos','El mismo mapa confirmado con fricciones, riesgos e impactos ligados a sus pasos, sin modificar su fuente.',diagnosisReadonlyMap(e,record)+asisPointCardsHtml(record))
       +section('Cobertura de los 100 campos y gaps','Se examina cada fuente, incluidas condiciones y datos opcionales; los gaps técnicos se contrastan en el backend.',asisCoverageHtml(e,asisAnalysisResult(e)))
@@ -163,6 +204,7 @@ function resultsPage(){
       <div class="card metric"><small>Exposición a espera</small><strong>${processTime?.annual_wait_exposure_hours!=null?num(processTime.annual_wait_exposure_hours)+' caso-horas':'No calculado'}</strong><span>no son horas laborales</span></div>
       <div class="card metric"><small>Riesgo residual</small><strong>${risk.residual_level?esc(engineLabel('risk_level',risk.residual_level)):'—'}</strong><span>${risk.status?esc(engineLabel('risk_status',risk.status)):''}</span></div>
     </div>`
+    +section('Recorrido de Trabajo Interno','Qué está preparado, qué necesita revisión y qué puede mostrarse al cliente.',workbenchContinuityHtml(e))
     +section('Mapa AS-IS con contexto de diagnóstico','El mismo snapshot confirmado, en lectura, con fricciones, riesgos e impactos anclados a sus pasos.',diagnosisReadonlyMap(e,record))
     +section('Puntos críticos y condiciones de mejora','Cada problema mantiene sus anclajes originales. Las alternativas no crean cifras ni cambios en AS-IS.',asisPointCardsHtml(record)+asisDirectionCardsHtml(e))
     +section('Cobertura de fuentes y gaps','Los datos de las 100 preguntas y las entradas del backend se revisan sin requerir una segunda captura.',asisCoverageHtml(e,{input_coverage:o.input_coverage,status:'ANALYZED'}))
