@@ -23,7 +23,8 @@ function engineGateFingerprint(e){
 function engineGateOutputFresh(e){
   // A matching binary fingerprint is insufficient if its consultant approval
   // was removed or belongs to another AS-IS snapshot.
-  return (!e?.lastEngineGateFingerprint||e.lastEngineGateFingerprint===engineGateFingerprint(e))
+  return (!e?.diagnosticOutput||typeof e.lastEngineGateFingerprint==='string')
+    &&(!e?.lastEngineGateFingerprint||e.lastEngineGateFingerprint===engineGateFingerprint(e))
     &&(!e?.diagnosticOutput||unresolvedEngineGates(e).length===0);
 }
 // [AUNEA-FE-ENGINE-GATE-ASSIST-151] START — Evidence-aware, consultant-owned decisions.
