@@ -510,9 +510,9 @@ function pg09EvidenceReview(e){
     const signals=related.map(({f})=>String(f.observable_signal||'').trim()).filter(Boolean);
     const hasFrequency=related.some(({f})=>f.frequency?.value!=null&&f.frequency?.mode!=='UNKNOWN');
     const hasTime=related.some(({f})=>Number(f.active_time_loss?.value)>0||Number(f.wait_time_loss?.value)>0);
-    const aspects=[hasFrequency?'frecuencia':'',hasTime?'tiempos':''].filter(Boolean).join(' y ');
+    const aspects=hasFrequency&&hasTime?'la frecuencia y los tiempos declarados':hasFrequency?'la frecuencia declarada':hasTime?'los tiempos declarados':'';
     const toCheck=related.length
-      ?'Contrasta '+(aspects?'la '+aspects+' declarados y ':'')+'el problema descrito con registros o documentos del cliente.'
+      ?'Contrasta '+(aspects?aspects+' y ':'')+'la existencia del problema con registros o documentos del cliente.'
       :'Identifica el dato pendiente y compáralo con su fuente antes de considerarlo acreditado.';
     return '<div class="pg09-evidence-row"><div><b>'+esc(item)+'</b>'
       +(refs?'<small>Relacionado con '+esc(refs)+'</small>':'')+'</div>'
