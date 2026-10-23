@@ -122,6 +122,29 @@ function asisPointRecords(record){
     orphanRisks:risks.filter(x=>!ids(x.step_ids).some(id=>steps.some(s=>String(s.id)===id))),
     orphanImpacts:impacts.filter(x=>!ids(x.step_ids).some(id=>steps.some(s=>String(s.id)===id)))};
 }
+// Three contextual options per critical ProcessStep, all sourced from the same confirmed AS-IS.
+// Applicability is deliberately undecided: no Pain→step economics or future-time rule is assumed.
+function asisPointAlternativesHtml(p){
+  const name=String(p.step.step_name||'este paso');
+  const labels=p.frictions.map(f=>f.client_label||f.observable_signal||labelFrom('OS_FRICTION_TYPE',f.friction_type)||'Fricción registrada');
+  const focus=labels.length?labels.join(' · '):p.risks.length?'Riesgos registrados para este paso':'Impactos económicos registrados para este paso';
+  const alternatives=[
+    'Comprobar si las actividades y excepciones de '+name+' se pueden resolver con reglas verificables e integraciones.',
+    'Comprobar si '+name+' necesita interpretar información variable, con supervisión humana y pruebas de calidad.',
+    'Comprobar si se puede simplificar '+name+' con cambios de proceso y funciones de las herramientas actuales.'
+  ];
+  return '<details class="asis-point-alternatives" open><summary>Comparar tres alternativas para este punto</summary>'
+    +'<p class="field-help">Origen del contraste: '+esc(focus)+'. La relación es contextual: no prueba por sí sola que ninguna alternativa resuelva el problema.</p>'
+    +'<div class="asis-point-alternatives-grid">'+ASIS_CONDITIONAL_DIRECTIONS.map((d,i)=>
+      '<article class="asis-point-alternative" data-asis-direction="'+i+'"><b>'+(i+1)+'. '+esc(d.name)+'</b>'
+      +'<p><strong>Qué se evaluaría:</strong> '+esc(alternatives[i])+'</p>'
+      +'<p><strong>Aplicaría si:</strong> '+esc(d.condition)+'</p>'
+      +'<p><strong>A favor:</strong> '+esc(d.advantage)+'</p>'
+      +'<p><strong>En contra:</strong> '+esc(d.drawback)+'</p>'
+      +'<p><strong>Verificar:</strong> '+esc(d.dependencies.join(' · '))+'</p>'
+      +'<p class="asis-point-alternative-pending"><strong>Tiempo futuro y contribución:</strong> no calculados; faltan hipótesis TO-BE por intervención y conciliación de solapes.</p>'
+      +'</article>').join('')+'</div></details>';
+}
 function asisPointCardsHtml(record){
   const source=asisPointRecords(record);
   const rows=source.points.filter(p=>p.critical);
@@ -134,7 +157,7 @@ function asisPointCardsHtml(record){
       +'<div><b>Riesgos y costes vinculados</b>'+list(p.risks,r=>r.description||labelFrom('OS_RISK_CATEGORY',r.category)||'Riesgo registrado')
       +(p.impacts.length?'<p>'+p.impacts.length+' impacto(s) relacionados; valores pertenecen a EconomicInput.</p>':'')+'</div></div>'
       +(p.gaps.length?'<div class="asis-opportunity-gaps"><b>Datos a comprobar</b><ul>'+p.gaps.map(g=>'<li>'+esc(g)+'</li>').join('')+'</ul></div>':'')
-      +'<div class="asis-opportunity-direction"><b>Qué se puede evaluar para este punto:</b> simplificar la actividad; resolverla mediante reglas e integración; o añadir asistencia IA solo si la naturaleza de sus entradas lo exige. Ninguna opción lleva ahorro asignado sin una hipótesis futura trazable.</div></article>';
+      +'<div class="asis-opportunity-direction"><b>Qué se puede evaluar para este punto:</b> simplificar la actividad; resolverla mediante reglas e integración; o añadir asistencia IA solo si la naturaleza de sus entradas lo exige. Ninguna opción lleva ahorro asignado sin una hipótesis futura trazable.</div>'+asisPointAlternativesHtml(p)+'</article>';
   };
   const orphan=source.orphanFrictions.length+source.orphanRisks.length+source.orphanImpacts.length;
   return '<div class="asis-opportunity-summary"><b>'+rows.length+' pasos con fricciones, riesgos o impactos relacionados</b> de '+source.points.length+' pasos activos. La vinculación señala dónde analizar, no asigna causalidad automáticamente.</div>'
