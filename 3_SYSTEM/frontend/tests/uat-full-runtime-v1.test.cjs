@@ -147,10 +147,10 @@ test('PG05 internal Pasos reads confirmed client map without a second editor or 
    const baseAnswers=run("JSON.stringify(currentEng().answers)");
    run("currentEng().layerConfirmations.map=true");
    const reviewed=run("consultantStepsPage()");
-   assert.match(reviewed,/Mapa confirmado con el cliente/);
+   assert.match(reviewed,/Revisión confirmada/);
    assert.match(reviewed,/Información recuperada del mapa/);
    assert.match(reviewed,/Continuar a Fricciones/);
-   assert.doesNotMatch(reviewed,/data-confirm-process-layer="map"/,'client confirmation is not repeated');
+   assert.match(reviewed,/data-confirm-process-layer="map" data-undo-confirmed-layer="1"/,'confirmed map offers only the explicit Deshacer action');
    assert.match(reviewed,/data-edit-step=/,'every saved step remains editable from the owner');
    assert.match(reviewed,/data-pg05-step-detail=/,'step details are progressive, not a second editor');
    assert.match(reviewed,/data-delete-step=/,'destructive action is available only inside the contextual detail');
@@ -180,7 +180,7 @@ test('PG05: supplementary DF048/DF055 answers preserve client layer confirmation
    try{
      assert.equal(next.run("currentEng().layerConfirmations.map"),true,'map confirmation survives rehydration');
      assert.match(next.run("consultantStepsPage()"),/Información recuperada del mapa/);
-     assert.doesNotMatch(next.run("consultantStepsPage()"),/data-confirm-process-layer="map"/);
+     assert.match(next.run("consultantStepsPage()"),/data-confirm-process-layer="map" data-undo-confirmed-layer="1"/);
    }finally{next.dom.window.close();}
    assert.notEqual(run("JSON.stringify(currentEng().answers.DF048)"),undefined);
  }finally{dom.window.close();}
