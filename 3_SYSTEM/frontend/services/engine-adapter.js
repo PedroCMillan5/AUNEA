@@ -16,6 +16,13 @@ const ENGINE_GATE_CONTRACT=Object.freeze([
 function engineGates(e){e.engineGates=e.engineGates||{};return e.engineGates}
 function gateResolved(g){return g==='YES'||g==='NO'}
 function gateBool(g){return g==='YES'}
+function engineGateFingerprint(e){
+  const g=e?.engineGates||{};
+  return JSON.stringify(ENGINE_GATE_CONTRACT.map(c=>[c.key,g[c.key]||'UNRESOLVED']));
+}
+function engineGateOutputFresh(e){
+  return !e?.lastEngineGateFingerprint||e.lastEngineGateFingerprint===engineGateFingerprint(e);
+}
 // [AUNEA-FE-ENGINE-GATE-ASSIST-151] START — Evidence-aware, consultant-owned decisions.
 // SOURCE: unchanged ENGINE_GATE_CONTRACT and DEC-034/052/065; DF086–DF089,
 // ProcessStep, Friction. Never infer a negative from missing facts.
@@ -345,7 +352,7 @@ async function runDiagnosis(){const e=currentEng();if(!e)return;if(!hasConfirmed
     // Never attach an obsolete result to the newly edited capture.
     const currentSnapshot=confirmedSnapshot(e);
     if(!currentSnapshot||currentSnapshot.version!==sourceSnapshot.version||e.confirmedAsIs!==true)throw new Error('El AS-IS cambió durante el cálculo. Confirma de nuevo antes de generar resultados.');
-    e.diagnosticOutput=out;e.lastEngineSnapshotVersion=sourceSnapshot.version;e.economicNormalizationVersion=1;e.scenarioResults=[];e.selectedScenarioIndex=0;e.updatedAt=now();e.lastEngineRunAt=now();markDirty('Pain → Economics → Risk → Recommendation → Pricing → Scenario calculados por backend con métricas económicas normalizadas por driver');state.activePage='resultados';render();toast('Resultados oficiales actualizados por backend.')}catch(err){toast('No se pudo ejecutar el backend: '+err.message);render()}}
+    e.diagnosticOutput=out;e.lastEngineSnapshotVersion=sourceSnapshot.version;e.lastEngineGateFingerprint=engineGateFingerprint(e);e.economicNormalizationVersion=1;e.scenarioResults=[];e.selectedScenarioIndex=0;e.updatedAt=now();e.lastEngineRunAt=now();markDirty('Pain → Economics → Risk → Recommendation → Pricing → Scenario calculados por backend con métricas económicas normalizadas por driver');state.activePage='resultados';render();toast('Resultados oficiales actualizados por backend.')}catch(err){toast('No se pudo ejecutar el backend: '+err.message);render()}}
 
 // C05 · Optional internal AI orchestration. No provider is configured by canonical source today, so
 // the default capability is explicitly UNAVAILABLE. This service never falls back to templates/rules
