@@ -102,6 +102,7 @@ test('PG09 shows initial PG02 roles, map roles and confirms the selected final s
  assert.deepEqual(Array.from(e.answerDetails.DF017__initial_scope),['CUSTOMER','SALES','OPERATIONS','MANAGER']);
  assert.equal(JSON.stringify(e.processSteps),actors,'the ProcessStep owner is not changed by reconciliation');
  assert.equal(ctx.processParticipantsScopeReview(e),null,'the version-bound confirmation clears the conflict');
- assert.match(local.df017FinalReviewPanel(e),/Listado final confirmado/);
+ assert.match(local.df017FinalReviewPanel(e),/pg09-participant-confirmed/);
+ assert.match(local.df017FinalReviewPanel(e),/<strong>Confirmado<\/strong>/);
 });
 // [AUNEA-UAT-ASIS-PARTICIPANTS-132] END
