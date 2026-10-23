@@ -475,7 +475,7 @@ async function main(){
      return {
        segments:node.querySelectorAll('.asis-temporal-track .asis-temporal-fill').length,
        declared:node.textContent.includes('250 min'),
-       pending:node.textContent.includes('Conciliación pendiente'),
+       pending:node.textContent.includes('No conciliado')&&node.textContent.includes('no confirma que los componentes estén completos ni conciliados'),
        graphStable:board===document.querySelector('.client-process-canvas .process-graph-board'),
        offsetStable:canvas.scrollLeft===position
      };
