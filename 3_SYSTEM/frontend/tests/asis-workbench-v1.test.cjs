@@ -63,6 +63,26 @@ test('source critical points preserve traceability and never project fabricated 
   assert.match(view,/Ninguna opción lleva ahorro asignado/);
   assert.match(fn.asisDirectionCardsHtml(e),/pendientes de simulación/);
 });
+test('per-critical-step matrix presents three conditional options without pretending to simulate',()=>{
+  const e=fixture(),before=JSON.stringify(e),html=fn.asisPointCardsHtml(e.snapshot);
+  assert.equal((html.match(/data-asis-direction=/g)||[]).length,3);
+  assert.match(html,/Optimización sin IA/);
+  assert.match(html,/Optimización asistida por IA/);
+  assert.match(html,/Rediseño y tecnología existente/);
+  assert.match(html,/Registrar factura/);
+  assert.match(html,/Copia manual/);
+  assert.match(html,/Tiempo futuro y contribución:<\/strong> no calculados/);
+  assert.equal(JSON.stringify(e),before);
+  const extra=JSON.parse(JSON.stringify(e));
+  extra.snapshot.processSteps.push({id:'S2',step_name:'Aprobar factura',active_time:2,status:'ACTIVE'});
+  extra.snapshot.frictions.push({id:'F2',status:'ACTIVE',affected_steps:['S2'],client_label:'Espera para aprobar'});
+  const html2=fn.asisPointCardsHtml(extra.snapshot);
+  assert.equal((html2.match(/data-asis-direction=/g)||[]).length,6);
+  extra.snapshot.frictions[1].client_label='<script>alert(1)</script>';
+  const escaped=fn.asisPointCardsHtml(extra.snapshot);
+  assert.ok(!escaped.includes('<script>'));
+  assert.ok(escaped.includes('&lt;script>'));
+});
 test('no refactor of the confirmed AS-IS or official recommendation gate',()=>{
   assert.match(html,/domain\/analysis-workbench\.js/);
   assert.match(results,/asisPointCardsHtml\(record\)/);
