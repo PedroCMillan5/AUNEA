@@ -33,7 +33,10 @@ function singleUatAudit(e){
     ['Impacto completo',(e.economicInputs||[]).length>=1&&!!layers.impact],
     ['PG09 coherente',requiredBeforeClose.length===0&&!!layers.map&&!!layers.frictions&&!!layers.risks&&!!layers.impact],
     ['Snapshot coherente con el cierre',typeof hasConfirmedSnapshot==='function'?(e.confirmedAsIs?hasConfirmedSnapshot(e):!hasConfirmedSnapshot(e)):true],
-    ['Inputs internos resueltos',typeof unresolvedEngineGates==='function'?unresolvedEngineGates(e).length===0:true]
+    // Technical gate confirmation belongs to PG10, after PG09 seals the AS-IS.
+    // A pre-closure UAT must remain loadable with five unresolved decisions.
+    ['Decisiones técnicas revisables después del cierre',typeof hasConfirmedSnapshot==='function'&&!hasConfirmedSnapshot(e)
+      ?true:(typeof unresolvedEngineGates==='function'?unresolvedEngineGates(e).length===0:true)]
   ].map(([label,ok])=>({label,ok:!!ok}));
   return {pass:checks.every(x=>x.ok),checks};
 }
@@ -70,13 +73,10 @@ async function loadSingleUat(){
     e.asIsConfirmedAt=null;
     e.confirmedSnapshots=[];
     e.stageId='S09';
-    e.engineGates={
-      process_design_first:'NO',
-      existing_tool_can_close:'NO',
-      unstructured_interpretation_need:'NO',
-      bounded_action_space:'NO',
-      management_visibility_need:'YES'
-    };
+    // The UAT is only a synthetic AS-IS. Do not fabricate or pre-confirm
+    // consultant-owned answers before the snapshot has been sealed.
+    e.engineGates={};
+    delete e.engineGateReview;
     const missing=typeof canonicalMissingRequired==='function'?canonicalMissingRequired(e).filter(x=>x!=='DF093'&&x!=='Confirmación AS-IS'):[];
     if(missing.length)throw new Error('La UAT no está completa antes del cierre. Pendientes: '+missing.join(', '));
     const audit=singleUatAudit(e);
