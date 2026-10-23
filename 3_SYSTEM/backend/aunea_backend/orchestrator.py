@@ -49,6 +49,50 @@ class Orchestrator:
         self.audit.runs.append(EngineRun(engine=engine,input_hash=ih,output_hash=oh))
         if self.store: self.store.add_run(engagement_id,engine,ih,oh)
 
+    # [AUNEA-BE-ASIS-ANALYSIS-152] START — Source-only PG10 analysis without sales decisions
+    # SOURCE: Diagnostic Master v1.2 / MAP_QUESTION_ENGINE_INPUT; DEC-034/052; Simulator PG10.
+    # No Recommendation, Pricing, optimal scenario, synthetic gates, mutation or store writes.
+    def analyze_asis(self, engagement: EngagementInput) -> dict[str, Any]:
+        source=engagement.model_dump()
+        integrity=relational_integrity_issues(engagement)
+        coverage=self.coverage.run(engagement)
+        out: dict[str, Any]={
+            "status":"INPUT_GAPS" if integrity or coverage.status=="BLOCKED" else "ANALYZED",
+            "engagement_id":engagement.engagement_id,
+            "input_snapshot_hash":stable_hash(source),
+            "rule_bundle_version":rule_bundle_version(),
+            "integrity_issues":integrity,
+            "input_coverage":coverage.model_dump(),
+            "pain_results":[],
+            "economic_result":None,
+            "risk_result":None,
+            "process_time_projection":None,
+            "diagnostic_type":"ASIS_ONLY",
+            "requires_solution_review":True,
+        }
+        # An invalid source is never silently accepted to manufacture findings.
+        if integrity or coverage.status=="BLOCKED":
+            return out
+        ctx=EngineContext(engagement)
+        out["pain_results"]=[p.model_dump() for p in self.pain.run(ctx)]
+        out["economic_result"]=self.econ.run(ctx,coverage).model_dump()
+        out["risk_result"]=self.risk.run(ctx,coverage).model_dump()
+        answers=engagement.questionnaire_answers
+        steps=answers.get("_process_steps")
+        frictions=answers.get("_frictions")
+        if isinstance(steps,list) and steps:
+            raw_volume=answers.get("DF021")
+            volume=raw_volume.get("value") if isinstance(raw_volume,dict) else raw_volume
+            if isinstance(volume,bool) or not isinstance(volume,(float,int)):
+                volume=None
+            request=TimeProjectionRequest(
+                volume=volume,period=answers.get("DF022"),
+                steps=steps,frictions=frictions if isinstance(frictions,list) else []
+            )
+            out["process_time_projection"]=project_session_time(request)
+        return out
+    # [AUNEA-BE-ASIS-ANALYSIS-152] END
+
     def diagnose(self, engagement: EngagementInput) -> DiagnosticOutput:
         if self.store: self.store.save_engagement(engagement)
         integrity=relational_integrity_issues(engagement)
