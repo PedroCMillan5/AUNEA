@@ -4,10 +4,12 @@ const test=require('node:test');const assert=require('node:assert/strict');const
   assert.equal(p.questionnaire_answers.DF074,'Pago irreversible — Prácticamente irreversible');
 });
 test('commercial scope is omitted unless explicitly captured',()=>{const p=ctx.buildBackendPayload(e);assert.equal(Object.hasOwn(p,'commercial_scope'),false)});test('scenario remains backend-owned',()=>{assert.match(code,/\/v1\/diagnose/);assert.doesNotMatch(code,/one_off_eur\s*=/)});
-test('the Engine Gates review is framed as "Confirmación del consultor antes de calcular", not another discovery section — never phrased as validating/asking the client',()=>{
-  assert.match(code,/Confirmación del consultor antes de calcular/);
+test('the Engine Gates review is an assisted consultant decision, not client discovery',()=>{
+  assert.match(code,/Decisiones del consultor/);
+  assert.match(code,/AUNEA recupera los datos del AS-IS/);
+  assert.match(code,/Una propuesta no es una respuesta confirmada/);
   assert.doesNotMatch(code,/Validar inputs para Recommendation/,'the old technical-sounding title must be gone');
-  assert.match(code,/Confirmar y calcular/);
+  assert.match(code,/Confirmar decisiones y calcular/);
 });
 
 // The adapter owns state→payload conversion, HTTP and structured outputs — never capture UI.
