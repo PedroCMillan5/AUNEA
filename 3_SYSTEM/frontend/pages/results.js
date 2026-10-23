@@ -138,7 +138,7 @@ function resultsPage(){
   const freshness=diagnosticOutputFreshness(e),o=currentDiagnosticOutput(e),miss=missingRequired(e),record=typeof engagementOfRecord==='function'?engagementOfRecord(e):e,steps=(record.processSteps||[]).filter(x=>x.status!=='SUPERSEDED'),fr=(record.frictions||[]).filter(x=>x.status!=='SUPERSEDED'),risks=record.risks||[],econInputs=record.economicInputs||[];
   if(!o){
     const unresolved=typeof unresolvedEngineGates==='function'?unresolvedEngineGates(e):[];
-    const ready=miss.length===0&&!!activeSnapshot;
+    const ready=miss.length===0&&!!activeSnapshot&&unresolved.length===0;
     return pageTop('Diagnóstico interno','El snapshot de Sesión 1 está sellado. Ejecuta los motores canónicos para convertir la captura confirmada en diagnóstico.',`<button class="btn" data-page="diagnostico">Volver a Sesión 1</button><button class="btn btn-outline" id="reviewEngineGates">Revisar decisiones</button><button class="btn btn-primary" id="runDiag">${unresolved.length?'Revisar decisiones y ejecutar diagnóstico':'Ejecutar diagnóstico'}</button>`)
       +`<div class="grid g4 diagnosis-readiness">
         <div class="card metric"><small>Snapshot</small><strong>v${esc(activeSnapshot?.version||'—')}</strong><span>AS-IS confirmado</span></div>
@@ -164,8 +164,34 @@ function resultsPage(){
      +section('Impactos económicos registrados','EconomicInput refleja un alcance parcial; capacidad, espera y ahorro de caja permanecen separados.',diagnosisEconomicsHtml(econ,record))
     +section('Riesgos','Resultado agregado del motor y riesgos capturados que lo sustentan.',diagnosisRisksHtml(risk,record))
     +section('Recomendación preliminar','Dirección estructurada calculada por el backend. No sustituye el diseño TO-BE ni constituye todavía una propuesta al cliente.',diagnosisRecommendationHtml(o))
+    +section('Decisiones técnicas utilizadas','Trazabilidad entre la revisión interna del consultor y el cálculo del backend.',diagnosisEngineDecisionTraceHtml(e))
     +section('Siguiente paso','El diagnóstico ya existe para el snapshot vigente. El siguiente bloque gobernado es diseñar el TO-BE sobre esta misma versión.',`<div class="notice good"><b>Diagnóstico generado correctamente</b><br>Revisa los hallazgos anteriores antes de diseñar el proceso futuro.</div>`,`<button class="btn btn-primary" data-page="tobe">Continuar al diseño TO-BE →</button>`);
 }
+// [AUNEA-FE-RESULT-GATE-TRACE-151] START — Display the reviewed technical inputs that produced PG10
+// SOURCE: DEC-034/041/052/053 and the existing ENGINE_GATE_CONTRACT, snapshot and consultant audit.
+// OUTPUT: read-only provenance; not a new diagnostic question or a second rules engine.
+function diagnosisEngineDecisionTraceHtml(e){
+  const snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;
+  const review=e?.engineGateReview;
+  const contracts=typeof ENGINE_GATE_CONTRACT!=='undefined'?ENGINE_GATE_CONTRACT:[];
+  if(!snap||!review||review.snapshotVersion!==snap.version)return '<div class="notice warn">Las decisiones técnicas de este diagnóstico requieren revisión para el AS-IS vigente.</div>';
+  const decisions=review.decisions||{};
+  const rows=contracts.map(c=>{
+    const v=decisions[c.key],actual=e?.engineGates?.[c.key];
+    if(!v||v.answer!==actual||!['YES','NO'].includes(actual))return '';
+    const title=typeof ENGINE_GATE_GUIDE!=='undefined'?ENGINE_GATE_GUIDE[c.key]?.title:c.label;
+    const basis=v.basis==='CONSULTANT_ASSERTION'
+      ?'Criterio del consultor; la captura no acredita por sí sola esta conclusión'
+      :v.basis==='PROPOSAL'?'Propuesta de AUNEA aceptada por el consultor; pendiente de acreditación externa cuando corresponda'
+      :'Decisión del consultor con información registrada en el AS-IS';
+    return '<div class="result-item"><b>'+esc(title||c.label)+'</b><p>Respuesta utilizada: '+(actual==='YES'?'Sí':'No')+' · '+esc(basis)+'</p></div>';
+  }).filter(Boolean);
+  return rows.length===contracts.length&&contracts.length===5
+    ?'<p>Estas son las cinco respuestas técnicas utilizadas por el backend, vinculadas al AS-IS confirmado v'+esc(snap.version)+'. Son decisiones internas; no sustituyen las evidencias del cliente.</p><div class="result-list">'+rows.join('')+'</div>'
+    :'<div class="notice warn">Falta la trazabilidad completa de las decisiones técnicas. Revisa las cinco respuestas antes de continuar.</div>';
+}
+// [AUNEA-FE-RESULT-GATE-TRACE-151] END
+
 function num(x){return Number(x||0).toLocaleString('es-ES',{maximumFractionDigits:1})}
 function eur(x){return Number(x||0).toLocaleString('es-ES',{style:'currency',currency:'EUR',maximumFractionDigits:0})}
 function businessLabel(rows,idField,id){const hit=(rows||[]).find(x=>String(x[idField])===String(id));if(hit?.Name)return hit.Name;return state.uiMode==='INTERNAL'?(id||'—'):'No disponible'}
