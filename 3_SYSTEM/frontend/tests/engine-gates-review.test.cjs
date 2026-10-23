@@ -170,7 +170,7 @@ test('Structured DF027 and DF081 never display [object Object], preserve values 
  e.answers.DF053=['UAT-LIT-P1','UAT-LIT-P2'];
  e.frictions=[{friction_type:'P09',client_label:'Falta de visibilidad'}];
  const c=fn.ENGINE_GATE_CONTRACT[4],info=fn.engineGateReviewEvidence(c,e),html=fn.engineGateCard(c,e);
- assert.match(JSON.stringify(info.sources),/38/);
+ assert.match(JSON.stringify(info.sources),/38 casos/);
  assert.match(JSON.stringify(info.sources),/3 min\/caso/);
  assert.match(JSON.stringify(info.sources),/Paso 1 — Recibir factura/);
  assert.doesNotMatch(html,/\[object Object\]|UAT-LIT-P1|UAT-LIT-P2/);
@@ -199,8 +199,8 @@ test('Inherited approval criteria do not produce a false missing-criterion warni
  const info=fn.engineGateReviewEvidence(fn.ENGINE_GATE_CONTRACT[0],e);
  const joined=JSON.stringify(info.sources);
  assert.doesNotMatch(joined,/sin criterio documentado|Criterio de decisión pendiente/);
- assert.match(joined,/simulación QA, sin validar como regla real/);
- assert.match(joined,/heredado de Paso 1/);
+ assert.match(joined,/simulación QA, no política validada: umbral/);
+ assert.match(joined,/hereda el criterio de Paso 1/);
  const card=fn.engineGateCard(fn.ENGINE_GATE_CONTRACT[0],e);
  assert.match(card,/¿Es necesario rediseñar el proceso antes de automatizar?/);
 });
