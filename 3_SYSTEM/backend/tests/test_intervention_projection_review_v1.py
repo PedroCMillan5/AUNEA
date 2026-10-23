@@ -160,6 +160,25 @@ def test_projection_is_pure_and_does_not_mutate_fixture_or_baseline():
     assert [one["annual_active_delta_hours"], two["annual_wait_exposure_delta_case_hours"], three["annual_rework_delta_hours"]] == [64, 960, 10.24]
 
 
+def test_review_endpoint_does_not_create_an_official_scenario_or_publish():
+    from fastapi.testclient import TestClient
+    from aunea_backend.api import app
+
+    request = _request(_hypothesis("S6", "ACTIVE", 3))
+    result = TestClient(app).post(
+        "/v1/diagnostic/interventions/review", json=request.model_dump(mode="json"),
+    )
+    assert result.status_code == 200
+    body = result.json()
+    assert body["official"] is False
+    assert body["snapshot_seal_verified"] is False
+    assert body["diagnostic_type"] == "INTERVENTION_REVIEW_ONLY"
+    assert body["annual_active_delta_hours"] == 64
+    assert body["optimal_scenario"] is None
+    assert body["quote"] is None
+    assert body["cash_saving_eur_annual"] is None
+
+
 def test_contract_rejects_invalid_negative_minutes_or_dimension():
     with pytest.raises(ValidationError):
         _hypothesis("S6", "ACTIVE", -1)
