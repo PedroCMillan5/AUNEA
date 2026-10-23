@@ -94,8 +94,8 @@ test('PG09 shows initial PG02 roles, map roles and confirms the selected final s
  };
  vm.createContext(local);vm.runInContext(page.slice(start,end),local);
  const panel=local.df017FinalReviewPanel(e);
- assert.match(panel,/En la página 2 seleccionaste/);
- assert.match(panel,/En el mapa AS-IS aparecen/);
+ assert.match(panel,/Los participantes declarados/);
+ assert.match(panel,/los responsables del mapa/);
  assert.match(panel,/data-confirm-df017-final/);
  assert.equal(local.confirmDf017FinalSelection(),true);
  assert.deepEqual(Array.from(e.answers.DF017),['ADMIN','FINANCE','MANAGER']);
