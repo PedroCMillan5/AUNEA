@@ -6,7 +6,7 @@ const path=require('node:path');
 const source=fs.readFileSync(path.join(__dirname,'..','domain','process.js'),'utf8');
 const lifecycle=fs.readFileSync(path.join(__dirname,'..','domain','process-lifecycle.js'),'utf8');
 test('editing map options invalidates map confirmation and all downstream layers',()=>{
- assert.match(source,/details\[fid\+'__global_review'\]=\{base:source,values:selected\}/);
+ assert.match(source,/details\[fid\+'__global_review'\]=\{base:source,values:selected,otherText:/);
  assert.match(source,/invalidateProcessLayersSafe\(e,'map'\)/);
  assert.match(lifecycle,/order=\['map','frictions','risks','impact'\]/);
  assert.match(lifecycle,/order\.slice\(i\)\.forEach\(k=>x\[k\]=false\)/);
