@@ -1856,3 +1856,52 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 .content:has(.diagnostic-stage-s09) .pg09-evidence-check{display:grid;gap:5px;min-width:0}
 .content:has(.diagnostic-stage-s09) .pg09-evidence-check p{margin:0;font-size:12px;line-height:1.45;overflow-wrap:anywhere}
 .content:has(.diagnostic-stage-s09) .pg09-evidence-check b{font-size:12px;color:#344d40}
+
+/* [AUNEA-FE-PG09-VISUAL-CLOSE-146] START — PG09 UAT final refinements; presentation only, no data duplication. */
+/* DF094 and DF095 are two full-width rows: no empty height from a neighbouring block. */
+.content:has(.diagnostic-stage-s09) .pg09-pending-grid{
+  grid-template-columns:minmax(0,1fr);gap:12px;align-items:start;
+}
+.content:has(.diagnostic-stage-s09) .pg09-pending-grid>.pg09-readgroup{
+  width:100%;min-width:0;box-sizing:border-box;
+}
+/* Preserve graph nodes, branch routing and readonly controls; only reduce unused board margins. */
+.content:has(.diagnostic-stage-s09) .pg09-process-viewport .process-graph-canvas{
+  padding:12px 8px 12px;
+}
+.content:has(.diagnostic-stage-s09) .pg09-process-viewport .process-graph-board{
+  padding:38px 20px 34px;
+}
+.content:has(.diagnostic-stage-s09) .pg09-process-viewport .graph-flow-step .process-node-title h4,
+.content:has(.diagnostic-stage-s09) .pg09-process-viewport .flow-boundary .process-node-title h4,
+.content:has(.diagnostic-stage-s09) .pg09-process-viewport .graph-decision-copy h4{
+  font-size:13px;line-height:1.33;
+}
+/* A single coherent confirmation surface: explanatory copy and the actual action belong together. */
+.content:has(.diagnostic-stage-s09) .pg09-close-footer{
+  margin-top:19px;padding:18px 20px;gap:20px;align-items:center;
+  border:1px solid #d4e4d8;border-left:3px solid #31674c;
+  border-radius:9px;background:#f7faf8;
+}
+.content:has(.diagnostic-stage-s09) .pg09-close-copy{flex:1 1 auto;min-width:0}
+.content:has(.diagnostic-stage-s09) .pg09-close-copy h3{
+  margin:0 0 9px;font-size:15px;color:#173f30;
+}
+.content:has(.diagnostic-stage-s09) .pg09-close-copy p{
+  margin:6px 0 0;font-size:12px;line-height:1.55;color:#42594c;
+}
+.content:has(.diagnostic-stage-s09) .pg09-close-copy p>b{
+  color:#173f30;font-weight:700;
+}
+.content:has(.diagnostic-stage-s09) .pg09-close-actions{flex:0 0 auto;align-self:center}
+@media(max-width:820px){
+  .content:has(.diagnostic-stage-s09) .pg09-close-footer{flex-direction:column;align-items:stretch}
+  .content:has(.diagnostic-stage-s09) .pg09-close-actions{align-self:stretch}
+}
+@media(max-width:650px){
+  .content:has(.diagnostic-stage-s09) .pg09-close-footer{padding:16px}
+  .content:has(.diagnostic-stage-s09) .pg09-process-viewport .process-graph-board{
+    padding:36px 16px 30px;
+  }
+}
+/* [AUNEA-FE-PG09-VISUAL-CLOSE-146] END */
