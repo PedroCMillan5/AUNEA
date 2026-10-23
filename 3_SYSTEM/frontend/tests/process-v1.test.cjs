@@ -156,9 +156,11 @@ test('reference templates accept only validated real cases; generic starters and
 
 test('process multiselect details use one generic conditional Otro contract',()=>{
   const opts=[{value:'DOC',label:'Documento'},{value:'OTHER',label:'Otro'}];
-  let html=ctx.selectedHtml('step_inputs',opts,['DOC'],{detailId:'step_inputs_detail',detailValue:'detalle'});
+  let html=ctx.selectedHtml('step_inputs',opts,['DOC'],{detailId:'step_inputs_detail',detailValue:''});
   assert.match(html,/data-v1-other-toggle="step_inputs"/);
   assert.match(html,/data-v1-other-wrap="step_inputs" style="display:none"/);
+  const restored=ctx.selectedHtml('step_inputs',opts,['DOC'],{detailId:'step_inputs_detail',detailValue:'detalle'});
+  assert.doesNotMatch(restored,/data-v1-other-wrap="step_inputs" style="display:none"/,'an existing Otro detail must never be hidden or discarded');
   html=ctx.selectedHtml('step_inputs',opts,['OTHER'],{detailId:'step_inputs_detail',detailValue:'detalle'});
   assert.doesNotMatch(html,/data-v1-other-wrap="step_inputs" style="display:none"/);
   assert.match(code,/data-v1-other-toggle/);
