@@ -30,9 +30,9 @@ function engineGateOutputFresh(e){
 // A proposal is not an automatic answer, nor a verified client measurement.
 const ENGINE_GATE_GUIDE=Object.freeze({
   process_design_first:{
-    title:'¿Hay que aclarar las reglas o responsabilidades antes de automatizar?',
-    help:'Comprueba si los criterios de decisión, responsables y controles actuales son suficientes para implantar cambios sin rediseñar antes el proceso.',
-    missing:'Verificar las reglas reales de aprobación, responsabilidades y controles; identificar cuáles deben cambiar antes de automatizar.'
+    title:'¿Es necesario rediseñar el proceso antes de automatizar?',
+    help:'Marca Sí solo si hay que modificar responsabilidades, reglas o controles antes de automatizar. Una regla pendiente de confirmar no demuestra por sí sola que haga falta rediseño.',
+    missing:'Verificar el criterio real de aprobación y comprobar si requiere cambios en el proceso o solo documentar una regla existente.'
   },
   existing_tool_can_close:{
     title:'¿Las herramientas actuales pueden resolver el problema?',
@@ -56,86 +56,130 @@ const ENGINE_GATE_GUIDE=Object.freeze({
   }
 });
 function engineGateReviewEvidence(contract,e){
-  // Only the sealed PG09 version may justify the internal diagnostic decisions.
+  // Use only the sealed snapshot. Structured values are formatted or resolved to
+  // their owners; never stringify an object or surface raw internal step identifiers.
   const record=typeof engagementOfRecord==='function'?engagementOfRecord(e):e;
   const key=contract.key,steps=activeSteps(record),fr=activeFrictions(record);
   const ans=record.answers||{},sources=[];
-  const add=(label,source)=>{if(label&&!sources.some(s=>s.label===label))sources.push({label,source})};
-  const stepName=(x)=>String(x.step_name||'Paso del proceso');
+  const add=(label,source)=>{
+    const text=String(label||'').trim();
+    if(text&&!sources.some(x=>x.label===text))sources.push({label:text,source});
+  };
+  const stepName=(s)=>String(s.step_name||'Paso del proceso');
+  const stepLabel=(s)=>'Paso '+(steps.indexOf(s)+1)+' — '+stepName(s);
+  const stepFromId=(id)=>steps.find(s=>String(s.id)===String(id));
   const frName=(f)=>String(f.client_label||f.observable_signal||labelFrom('OS_FRICTION_TYPE',f.friction_type)||'Problema registrado');
   const hasDecision=s=>s.step_type==='ST05'||s.step_type==='ST04'||normalizeArray(s.decision_criteria).length>0||s._ui?.has_decision===true;
   const decisionSteps=steps.filter(hasDecision);
   const tools=[...new Set(steps.map(s=>String(s.tool||'').trim()).filter(Boolean))];
-  const citeSteps=(records,why)=>records.slice(0,3).forEach(x=>add(why+': '+stepName(x),'ProcessStep'));
-  // Match the governed MAP_QUESTION_ENGINE_INPUT owners, including derived No-Reask values.
-  const listAnswer=(fid,title)=>{
+  const citeSteps=(items,description)=>{if(items.length)add(description+': '+items.slice(0,4).map(stepLabel).join(' · ')+(items.length>4?' · …':''),'ProcessStep')};
+  const asLabel=(fid,v)=>{
+    if(v===null||v===undefined||v==='')return '';
+    if(Array.isArray(v))return v.map(x=>asLabel(fid,x)).filter(Boolean).join(' · ');
+    if(v&&typeof v==='object'){
+      // Quantities in DF027/DF081 are structured; absence of a unit is not
+      // permission to invent one. Never expose "[object Object]" to a user.
+      if(Object.prototype.hasOwnProperty.call(v,'value')&&v.value!==null&&v.value!==''){
+        const numeric=typeof v.value==='number'||(typeof v.value==='string'&&v.value.trim()!==''&&!Number.isNaN(Number(v.value)));
+        const value=numeric?Number(v.value).toLocaleString('es-ES'):String(v.value);
+        const unit=({min:'min',h:'h',hour:'h',hours:'h',cases:'casos',case:'casos',percent:'%',eur:'€'})[String(v.unit||'').toLowerCase()]||'';
+        const period=({case:'caso',day:'día',week:'semana',month:'mes',year:'año'})[String(v.period||'').toLowerCase()]||'';
+        return value+(unit?' '+unit:'')+(period?'/'+period:'');
+      }
+      // Unknown object shapes are not interpreted without a source contract.
+      return '';
+    }
+    const str=String(v).trim();
+    const step=stepFromId(str);
+    if(step)return stepLabel(step);
+    if(str.startsWith('pair:')){
+      const ids=str.slice(5).split(':');
+      const a=stepFromId(ids[0]),b=stepFromId(ids[1]);
+      return a&&b?stepLabel(a)+' → '+stepLabel(b):'';
+    }
+    const f=(schema?.fields||[]).find(x=>x.Field_ID===fid);
+    return String(labelFrom(f?.Option_Set_ID,str)||str);
+  };
+  const listAnswer=(fid,title,limit=3)=>{
     const f=(schema?.fields||[]).find(x=>x.Field_ID===fid);
     const raw=f&&typeof effectiveValue==='function'?effectiveValue(f,record):ans[fid];
-    const vals=normalizeArray(raw).filter(v=>v!==null&&v!==undefined&&v!=='').map(String);
-    if(vals.length)add(title+': '+vals.slice(0,4).map(v=>String(labelFrom(f?.Option_Set_ID,v)||v)).join(' · '),fid);
-    return vals;
+    const values=normalizeArray(raw).map(v=>asLabel(fid,v)).filter(Boolean);
+    const uniqueValues=[...new Set(values)];
+    if(uniqueValues.length)add(title+': '+uniqueValues.slice(0,limit).join(' · ')+(uniqueValues.length>limit?' · …':''),fid);
+    return uniqueValues;
+  };
+  const approvalCriteria=(s)=>{
+    if(typeof approvalCriteriaSource==='function')return approvalCriteriaSource(s,steps);
+    const direct=String(s._details?.decision_criteria||'').trim()||normalizeArray(s.decision_criteria).map(v=>labelFrom('OS_DECISION_CRITERIA',v)||v).filter(Boolean).join(', ');
+    return direct?{criteria:direct,source:null}:null;
+  };
+  const summariseCriterion=(s,source)=>{
+    const rule=String(source.criteria||'').trim();
+    const simulation=/simulaci[oó]n|no es una pol[ií]tica real validada/i.test(rule);
+    const first=rule.split(/[.;]/)[0].trim();
+    return 'Criterio en '+stepLabel(s)+(source.source?' (heredado de '+stepLabel(source.source)+')':'')
+      +': '+(simulation?'ejemplo de simulación QA, sin validar como regla real':first.slice(0,140)+(first.length>140?'…':''));
   };
   let suggestion='',status='INSUFFICIENT',reason='';
   switch(key){
     case 'process_design_first':{
-      citeSteps(decisionSteps,'Decisión o aprobación registrada');
-      const missing=decisionSteps.filter(s=>!normalizeArray(s.decision_criteria).length&&!String(s._details?.decision_criteria||'').trim());
-      if(missing.length)add('Hay decisiones sin criterio documentado en '+missing.map(stepName).slice(0,2).join(' · '),'ProcessStep');
-      listAnswer('DF041','Criterios de decisión');
-      listAnswer('DF042','Ruta normal del proceso');
-      listAnswer('DF067','Aprobaciones y criterios registrados');
+      citeSteps(decisionSteps,'Decisiones y aprobaciones registradas');
+      const missing=decisionSteps.filter(s=>!approvalCriteria(s));
+      if(missing.length)add('Criterio de decisión pendiente: '+missing.map(stepLabel).join(' · '),'ProcessStep');
+      const approved=decisionSteps.filter(s=>approvalCriteria(s));
+      approved.slice(0,2).forEach(s=>add(summariseCriterion(s,approvalCriteria(s)),'DF041 / DF067'));
       const types=new Set(fr.map(f=>String(f.friction_type)));
       if(types.has('P04')||types.has('P10')){
         suggestion='YES';status='REVIEW';
-        const matching=fr.filter(f=>['P04','P10'].includes(String(f.friction_type)));
-        matching.slice(0,2).forEach(f=>add('Problema relacionado: '+frName(f),'Friction'));
-        reason='Hay señales gobernadas de rediseño; no bastan por sí solas para afirmar que sea imprescindible.';
-      }else if(sources.length){status='REVIEW';reason='Hay decisiones o restricciones registradas, pero no demuestran por sí solas que haya que rediseñar.';}
+        fr.filter(f=>['P04','P10'].includes(String(f.friction_type))).slice(0,2).forEach(f=>add('Problema relacionado: '+frName(f),'Friction'));
+        reason='Hay señales de posibles cambios, pero no prueban que el rediseño sea imprescindible.';
+      }else if(sources.length){
+        status='REVIEW';
+        reason='Las decisiones y reglas registradas permiten revisar el proceso; no demuestran por sí solas que necesite rediseño.';
+      }
       break;
     }
     case 'existing_tool_can_close':{
-      if(tools.length)add('Herramientas declaradas en los pasos: '+tools.slice(0,5).map(x=>labelFrom('OS_TOOL_CATEGORY',x)||x).join(' · '),'ProcessStep');
-      listAnswer('DF034','Herramienta de cada paso');
-      listAnswer('DF046','Herramientas del proceso');
-      listAnswer('DF054','Intercambios o integraciones pendientes');
+      if(tools.length)add('Herramientas actuales: '+tools.slice(0,5).map(t=>labelFrom('OS_TOOL_CATEGORY',t)||t).join(' · '),'DF034 / DF046');
+      listAnswer('DF054','Intercambios entre herramientas que requieren revisión');
       listAnswer('DF089','Preferencias o restricciones tecnológicas');
-      if(sources.length){status='REVIEW';reason='Conocemos parte del entorno técnico, pero no se han acreditado sus capacidades para resolver los problemas.';}
+      if(sources.length){status='REVIEW';reason='Conocemos el entorno técnico declarado, pero no está verificado que las funciones y licencias actuales resuelvan el problema.';}
       break;
     }
     case 'unstructured_interpretation_need':{
-      const doc=steps.filter(x=>normalizeArray(x.inputs).concat(normalizeArray(x.outputs)).some(v=>/PDF|EMAIL|DOCUMENT|TEXT|WORD|FILE/i.test(String(v))));
-      citeSteps(doc,'Documentos o información de entrada/salida');
-      listAnswer('DF035','Información que recibe cada paso');
-      listAnswer('DF049','Documentos y plantillas utilizados');
-      listAnswer('DF050','Comunicaciones del proceso');
+      const doc=steps.filter(s=>normalizeArray(s.inputs).concat(normalizeArray(s.outputs)).some(v=>/PDF|EMAIL|DOCUMENT|TEXT|WORD|FILE/i.test(String(v))));
+      citeSteps(doc,'Pasos que reciben o generan documentos');
+      listAnswer('DF049','Documentos y plantillas');
+      listAnswer('DF050','Comunicaciones');
       listAnswer('DF086','Resultados esperados');
-      if(sources.length){status='REVIEW';reason='Tener documentos no demuestra que se necesite IA: antes hay que comprobar si las reglas bastan.';}
+      if(sources.length){status='REVIEW';reason='Existen documentos y comunicaciones, pero su presencia no demuestra que se necesite IA en lugar de reglas.';}
       break;
     }
     case 'bounded_action_space':{
-      citeSteps(decisionSteps,'Decisión o aprobación en el proceso');
-      listAnswer('DF041','Criterios de decisión');
+      citeSteps(decisionSteps,'Decisiones y aprobaciones registradas');
       listAnswer('DF043','Rutas de excepción');
       listAnswer('DF074','Reversibilidad de los riesgos');
       listAnswer('DF075','Acciones que requieren aprobación humana');
       listAnswer('DF088','Acciones que no deben automatizarse');
-      if(sources.length){status='REVIEW';reason='Existen decisiones o límites de actuación, pero no una necesidad demostrada de agente.';}
+      if(sources.length){status='REVIEW';reason='Existen decisiones o límites de actuación, pero todavía no se ha demostrado una acción que requiera un agente.';}
       break;
     }
     case 'management_visibility_need':{
-      const types=new Set(fr.map(f=>String(f.friction_type)));
       const targets=normalizeArray(ans.DF086).map(String);
       const signals=fr.filter(f=>['P09','P14','P17'].includes(String(f.friction_type)));
-      signals.slice(0,3).forEach(f=>add('Fricción registrada: '+frName(f),'Friction'));
+      signals.slice(0,3).forEach(f=>add('Fricción relacionada con seguimiento: '+frName(f),'Friction'));
       listAnswer('DF027','Cola de trabajo declarada');
-      listAnswer('DF053','Búsqueda de información o estado');
-      listAnswer('DF081','Trabajo de consolidación o reporting');
+      listAnswer('DF053','Pasos donde se busca información o estado');
+      listAnswer('DF081','Tiempo dedicado a reporting');
       listAnswer('DF086','Resultados esperados');
-      if(targets.includes('VISIBILITY'))add('El cliente incluyó visibilidad en el resultado deseado','DF086');
+      if(targets.includes('VISIBILITY'))add('La visibilidad figura expresamente entre los resultados deseados','DF086');
       if(signals.length||targets.includes('VISIBILITY')){
         suggestion='YES';status='PROPOSAL';
-        reason='El objetivo declarado o las fricciones de visibilidad justifican proponer seguimiento; las cifras conservan la calidad de evidencia original.';
-      }else if(sources.length){status='REVIEW';reason='Hay datos de carga o información, pero no confirman por sí solos que sea necesaria una nueva capa de seguimiento.';}
+        reason='Las fricciones de visibilidad o los objetivos registrados justifican proponer seguimiento, sin convertir los datos declarados en evidencias verificadas.';
+      }else if(sources.length){
+        status='REVIEW';
+        reason='Existen datos de carga o reporting, pero no bastan para demostrar que haga falta una nueva capa de seguimiento.';
+      }
       break;
     }
   }
