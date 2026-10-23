@@ -24,7 +24,8 @@ function engineGateOutputFresh(e){
   return !e?.lastEngineGateFingerprint||e.lastEngineGateFingerprint===engineGateFingerprint(e);
 }
 // [AUNEA-FE-ENGINE-GATE-ASSIST-151] START — Evidence-aware, consultant-owned decisions.
-// SOURCE: unchanged ENGINE_GATE_CONTRACT and DEC-034/052/065; DF086–DF089,
+// SOURCE: MAP_QUESTION_ENGINE_INPUT v0.9.2 (IN-R-02/09/11/12/13), unchanged ENGINE_GATE_CONTRACT,
+// RULE_RECOMMENDATION RR-03/RR-04 and DEC-034/052/065. Only source-owned data can be reused.
 // ProcessStep, Friction. Never infer a negative from missing facts.
 // A proposal is not an automatic answer, nor a verified client measurement.
 const ENGINE_GATE_GUIDE=Object.freeze({
@@ -66,9 +67,12 @@ function engineGateReviewEvidence(contract,e){
   const decisionSteps=steps.filter(hasDecision);
   const tools=[...new Set(steps.map(s=>String(s.tool||'').trim()).filter(Boolean))];
   const citeSteps=(records,why)=>records.slice(0,3).forEach(x=>add(why+': '+stepName(x),'ProcessStep'));
+  // Match the governed MAP_QUESTION_ENGINE_INPUT owners, including derived No-Reask values.
   const listAnswer=(fid,title)=>{
-    const vals=normalizeArray(ans[fid]).map(String).filter(Boolean);
-    if(vals.length)add(title+': '+vals.slice(0,4).map(v=>String(labelFrom((schema?.fields||[]).find(f=>f.Field_ID===fid)?.Option_Set_ID,v)||v)).join(' · '),fid);
+    const f=(schema?.fields||[]).find(x=>x.Field_ID===fid);
+    const raw=f&&typeof effectiveValue==='function'?effectiveValue(f,record):ans[fid];
+    const vals=normalizeArray(raw).filter(v=>v!==null&&v!==undefined&&v!=='').map(String);
+    if(vals.length)add(title+': '+vals.slice(0,4).map(v=>String(labelFrom(f?.Option_Set_ID,v)||v)).join(' · '),fid);
     return vals;
   };
   let suggestion='',status='INSUFFICIENT',reason='';
@@ -77,8 +81,9 @@ function engineGateReviewEvidence(contract,e){
       citeSteps(decisionSteps,'Decisión o aprobación registrada');
       const missing=decisionSteps.filter(s=>!normalizeArray(s.decision_criteria).length&&!String(s._details?.decision_criteria||'').trim());
       if(missing.length)add('Hay decisiones sin criterio documentado en '+missing.map(stepName).slice(0,2).join(' · '),'ProcessStep');
-      listAnswer('DF087','Condiciones que deben mantenerse');
-      listAnswer('DF088','Límites para automatizar');
+      listAnswer('DF041','Criterios de decisión');
+      listAnswer('DF042','Ruta normal del proceso');
+      listAnswer('DF067','Aprobaciones y criterios registrados');
       const types=new Set(fr.map(f=>String(f.friction_type)));
       if(types.has('P04')||types.has('P10')){
         suggestion='YES';status='REVIEW';
@@ -90,23 +95,30 @@ function engineGateReviewEvidence(contract,e){
     }
     case 'existing_tool_can_close':{
       if(tools.length)add('Herramientas declaradas en los pasos: '+tools.slice(0,5).map(x=>labelFrom('OS_TOOL_CATEGORY',x)||x).join(' · '),'ProcessStep');
+      listAnswer('DF034','Herramienta de cada paso');
+      listAnswer('DF046','Herramientas del proceso');
+      listAnswer('DF054','Intercambios o integraciones pendientes');
       listAnswer('DF089','Preferencias o restricciones tecnológicas');
-      listAnswer('DF050','Integraciones o transferencias manuales');
       if(sources.length){status='REVIEW';reason='Conocemos parte del entorno técnico, pero no se han acreditado sus capacidades para resolver los problemas.';}
       break;
     }
     case 'unstructured_interpretation_need':{
       const doc=steps.filter(x=>normalizeArray(x.inputs).concat(normalizeArray(x.outputs)).some(v=>/PDF|EMAIL|DOCUMENT|TEXT|WORD|FILE/i.test(String(v))));
       citeSteps(doc,'Documentos o información de entrada/salida');
-      listAnswer('DF088','Límites para automatizar');
+      listAnswer('DF035','Información que recibe cada paso');
+      listAnswer('DF049','Documentos y plantillas utilizados');
+      listAnswer('DF050','Comunicaciones del proceso');
+      listAnswer('DF086','Resultados esperados');
       if(sources.length){status='REVIEW';reason='Tener documentos no demuestra que se necesite IA: antes hay que comprobar si las reglas bastan.';}
       break;
     }
     case 'bounded_action_space':{
       citeSteps(decisionSteps,'Decisión o aprobación en el proceso');
+      listAnswer('DF041','Criterios de decisión');
+      listAnswer('DF043','Rutas de excepción');
+      listAnswer('DF074','Reversibilidad de los riesgos');
+      listAnswer('DF075','Acciones que requieren aprobación humana');
       listAnswer('DF088','Acciones que no deben automatizarse');
-      const human=normalizeArray(ans.DF075).map(String).filter(Boolean);
-      if(human.length)add('Acciones que requieren intervención humana: '+human.slice(0,4).join(' · '),'DF075');
       if(sources.length){status='REVIEW';reason='Existen decisiones o límites de actuación, pero no una necesidad demostrada de agente.';}
       break;
     }
@@ -115,14 +127,15 @@ function engineGateReviewEvidence(contract,e){
       const targets=normalizeArray(ans.DF086).map(String);
       const signals=fr.filter(f=>['P09','P14','P17'].includes(String(f.friction_type)));
       signals.slice(0,3).forEach(f=>add('Fricción registrada: '+frName(f),'Friction'));
+      listAnswer('DF027','Cola de trabajo declarada');
+      listAnswer('DF053','Búsqueda de información o estado');
+      listAnswer('DF081','Trabajo de consolidación o reporting');
+      listAnswer('DF086','Resultados esperados');
       if(targets.includes('VISIBILITY'))add('El cliente incluyó visibilidad en el resultado deseado','DF086');
       if(signals.length||targets.includes('VISIBILITY')){
         suggestion='YES';status='PROPOSAL';
         reason='El objetivo declarado o las fricciones de visibilidad justifican proponer seguimiento; las cifras conservan la calidad de evidencia original.';
-      }else{
-        listAnswer('DF086','Resultados esperados');
-        if(sources.length){status='REVIEW';reason='Hay resultados deseados, pero no confirman una necesidad específica de seguimiento.';}
-      }
+      }else if(sources.length){status='REVIEW';reason='Hay datos de carga o información, pero no confirman por sí solos que sea necesaria una nueva capa de seguimiento.';}
       break;
     }
   }
