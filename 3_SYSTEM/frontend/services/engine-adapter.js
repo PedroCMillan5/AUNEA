@@ -264,7 +264,7 @@ function openEngineGateReview(){
     }
     // Each decision retains whether it came from a source-backed proposal,
     // a contextual review or a consultant assertion without sufficient capture evidence.
-    const previous={gates:{...e.engineGates},review:e.engineGateReview};
+    const previous={gates:{...e.engineGates},review:e.engineGateReview,updatedAt:e.updatedAt,dirty:state.dirty,audit:[...(state.audit||[])]};
     e.engineGates={...(e.engineGates||{}),...staged};
     e.engineGateReview={
       snapshotVersion:current.version,
@@ -276,7 +276,8 @@ function openEngineGateReview(){
     };
     e.updatedAt=now();markDirty('Cinco decisiones técnicas confirmadas por el consultor');
     if(typeof persistRecoverySnapshot==='function'&&!persistRecoverySnapshot('inputs internos del diagnóstico')){
-      e.engineGates=previous.gates;e.engineGateReview=previous.review;
+      e.engineGates=previous.gates;e.engineGateReview=previous.review;e.updatedAt=previous.updatedAt;
+      state.dirty=previous.dirty;state.audit=previous.audit;
       toast('No se pudo guardar la confirmación. No se ejecutará el diagnóstico.');render();return;
     }
     closeModal();runDiagnosis();
@@ -441,7 +442,18 @@ async function runDiagnosis(){const e=currentEng();if(!e)return;if(!hasConfirmed
     const currentSnapshot=confirmedSnapshot(e);
     if(!currentSnapshot||currentSnapshot.version!==sourceSnapshot.version||e.confirmedAsIs!==true)throw new Error('El AS-IS cambió durante el cálculo. Confirma de nuevo antes de generar resultados.');
     if(sourceGateFingerprint!==engineGateFingerprint(e)||unresolvedEngineGates(e).length)throw new Error('Las decisiones técnicas cambiaron durante el cálculo. Revisa y vuelve a calcular antes de generar resultados.');
-    e.diagnosticOutput=out;e.lastEngineSnapshotVersion=sourceSnapshot.version;e.lastEngineGateFingerprint=engineGateFingerprint(e);e.economicNormalizationVersion=1;e.scenarioResults=[];e.selectedScenarioIndex=0;e.updatedAt=now();e.lastEngineRunAt=now();markDirty('Pain → Economics → Risk → Recommendation → Pricing → Scenario calculados por backend con métricas económicas normalizadas por driver');state.activePage='resultados';render();toast('Resultados oficiales actualizados por backend.')}catch(err){toast('No se pudo ejecutar el backend: '+err.message);render()}}
+    const outputKeys=['diagnosticOutput','lastEngineSnapshotVersion','lastEngineGateFingerprint','economicNormalizationVersion','scenarioResults','selectedScenarioIndex','updatedAt','lastEngineRunAt'];
+    const previousOutput=Object.fromEntries(outputKeys.map(k=>[k,e[k]]));
+    e.diagnosticOutput=out;e.lastEngineSnapshotVersion=sourceSnapshot.version;e.lastEngineGateFingerprint=sourceGateFingerprint;e.economicNormalizationVersion=1;e.scenarioResults=[];e.selectedScenarioIndex=0;e.updatedAt=now();e.lastEngineRunAt=now();
+    markDirty('Pain → Economics → Risk → Recommendation → Pricing → Scenario calculados por backend con métricas económicas normalizadas por driver');
+    if(typeof persistRecoverySnapshot==='function'&&!persistRecoverySnapshot('diagnóstico desde AS-IS y decisiones técnicas confirmadas')){
+      outputKeys.forEach(k=>{if(previousOutput[k]===undefined)delete e[k];else e[k]=previousOutput[k]});
+      throw new Error('El diagnóstico se ha calculado, pero no se ha podido guardar sin conflictos. No se habilitan los resultados.');
+    }
+    const persisted=currentEng();
+    if(!persisted||persisted.id!==e.id||persisted.lastEngineSnapshotVersion!==sourceSnapshot.version
+      ||!engineGateOutputFresh(persisted))throw new Error('El estado guardado cambió durante el diagnóstico. Revisa y vuelve a calcular.');
+    state.activePage='resultados';render();toast('Diagnóstico calculado y guardado para el AS-IS confirmado.')}catch(err){toast('No se pudo ejecutar el backend: '+err.message);render()}}
 
 // C05 · Optional internal AI orchestration. No provider is configured by canonical source today, so
 // the default capability is explicitly UNAVAILABLE. This service never falls back to templates/rules
