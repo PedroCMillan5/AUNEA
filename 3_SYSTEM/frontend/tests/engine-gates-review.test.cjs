@@ -12,6 +12,12 @@ const start=adapter.indexOf('const ENGINE_GATE_CONTRACT=');
 const end=adapter.indexOf('function evidenceTypeBackend(v){',start);
 assert.ok(start>=0&&end>start,'Governed gate review source missing');
 const source=adapter.slice(start,end);
+const reuseCode=fs.readFileSync(path.join(root,'domain/no-reask.js'),'utf8');
+const approvalBegin=reuseCode.indexOf('function approvalCriteriaSource(');
+const approvalEnd=reuseCode.indexOf('// [AUNEA-FE-RISK-APPROVAL-SOURCE-113] END',approvalBegin);
+assert.ok(approvalBegin>=0&&approvalEnd>approvalBegin);
+const approvalFn=reuseCode.slice(approvalBegin,approvalEnd);
+
 const fields=['DF075','DF086','DF087','DF088','DF089','DF050'].map(Field_ID=>({Field_ID}));
 let modal=null,closeCount=0,runCount=0,persistCount=0,dirtyCount=0,toastLog=[];
 let current=null,nodes=[];
@@ -41,7 +47,7 @@ const stub={
 };
 const exposed=['ENGINE_GATE_CONTRACT','engineGateReviewEvidence','engineGateCard','inferGateSuggestion','unresolvedEngineGates','openEngineGateReview','gateBool','engineGateFingerprint','engineGateOutputFresh'];
 const context=vm.createContext({...stub});
-const fn=vm.runInContext(source+'\n({'+exposed.join(',')+'})',context);
+const fn=vm.runInContext(approvalFn+'\n'+source+'\n({'+exposed.join(',')+'})',context);
 const record=()=>({
  answers:{DF086:[]},engineGates:{},processSteps:[],frictions:[],
  snapshot:{version:1},answerDetails:{}
@@ -143,13 +149,67 @@ test('Gate edits invalidate only diagnostic outputs generated with an earlier de
 
 test('Review is calculated from immutable confirmed snapshot when available',()=>{
  const ctx=vm.createContext({...stub,engagementOfRecord:e=>e.sealedRecord||e});
- const gates=vm.runInContext(source+'\n({engineGateReviewEvidence,ENGINE_GATE_CONTRACT})',ctx);
+ const gates=vm.runInContext(approvalFn+'\n'+source+'\n({engineGateReviewEvidence,ENGINE_GATE_CONTRACT})',ctx);
  const e=record();
  e.processSteps=[{step_name:'Live edit not in snapshot',tool:'NEW_TOOL'}];
  e.sealedRecord={answers:{},processSteps:[{step_name:'Factura recibida',tool:'ERP'}],frictions:[]};
  const info=gates.engineGateReviewEvidence(gates.ENGINE_GATE_CONTRACT[1],e);
  assert.match(JSON.stringify(info.sources),/ERP/);
  assert.doesNotMatch(JSON.stringify(info.sources),/NEW_TOOL/);
+});
+
+
+test('Structured DF027 and DF081 never display [object Object], preserve values and units',()=>{
+ const e=record();
+ e.answers.DF027={value:38,mode:'DECLARED'};
+ e.answers.DF081={value:3,unit:'min',period:'case'};
+ e.processSteps=[
+  {id:'UAT-LIT-P1',step_name:'Recibir factura'},
+  {id:'UAT-LIT-P2',step_name:'Decidir aprobación'}
+ ];
+ e.answers.DF053=['UAT-LIT-P1','UAT-LIT-P2'];
+ e.frictions=[{friction_type:'P09',client_label:'Falta de visibilidad'}];
+ const c=fn.ENGINE_GATE_CONTRACT[4],info=fn.engineGateReviewEvidence(c,e),html=fn.engineGateCard(c,e);
+ assert.match(JSON.stringify(info.sources),/38/);
+ assert.match(JSON.stringify(info.sources),/3 min\/caso/);
+ assert.match(JSON.stringify(info.sources),/Paso 1 — Recibir factura/);
+ assert.doesNotMatch(html,/\[object Object\]|UAT-LIT-P1|UAT-LIT-P2/);
+});
+test('Pair integration identifiers render readable step names, no duplicated tool list',()=>{
+ const e=record();
+ e.processSteps=[
+  {id:'UAT-LIT-P3',step_name:'Aprobar factura',tool:'EMAIL'},
+  {id:'UAT-LIT-P4',step_name:'Registrar en ERP',tool:'ERP'}
+ ];
+ e.answers.DF054=['pair:UAT-LIT-P3:UAT-LIT-P4'];
+ e.answers.DF046=['EMAIL','ERP'];
+ const info=fn.engineGateReviewEvidence(fn.ENGINE_GATE_CONTRACT[1],e);
+ const body=JSON.stringify(info.sources);
+ assert.match(body,/Aprobar factura.*Registrar en ERP/);
+ assert.doesNotMatch(body,/UAT-LIT|pair:/);
+ assert.equal(info.sources.filter(s=>/Herramientas actuales/.test(s.label)).length,1);
+});
+test('Inherited approval criteria do not produce a false missing-criterion warning',()=>{
+ const e=record();
+ e.processSteps=[
+  {id:'P2',step_type:'ST04',step_name:'Determinar si procede aprobación',
+    decision_criteria:['OTHER'],_details:{decision_criteria:'SÓLO SIMULACIÓN QA: umbral >1.500 €; política real no validada'},normal_next_step:'P3'},
+  {id:'P3',step_type:'ST05',step_name:'Aprobar factura',decision_criteria:[]}
+ ];
+ const info=fn.engineGateReviewEvidence(fn.ENGINE_GATE_CONTRACT[0],e);
+ const joined=JSON.stringify(info.sources);
+ assert.doesNotMatch(joined,/sin criterio documentado|Criterio de decisión pendiente/);
+ assert.match(joined,/simulación QA, sin validar como regla real/);
+ assert.match(joined,/heredado de Paso 1/);
+ const card=fn.engineGateCard(fn.ENGINE_GATE_CONTRACT[0],e);
+ assert.match(card,/¿Es necesario rediseñar el proceso antes de automatizar?/);
+});
+test('Unsupported structured objects are not treated as facts or converted to raw object strings',()=>{
+ const e=record();
+ e.answers.DF027={unrecognized:true};
+ const info=fn.engineGateReviewEvidence(fn.ENGINE_GATE_CONTRACT[4],e);
+ assert.doesNotMatch(JSON.stringify(info.sources),/\[object Object\]/);
+ assert.ok(!info.sources.some(x=>x.label.startsWith('Cola de trabajo declarada')));
 });
 
 // [AUNEA-UAT-ENGINE-GATE-ASSIST-151] END
