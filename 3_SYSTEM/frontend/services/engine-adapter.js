@@ -82,7 +82,7 @@ function engineGateReviewEvidence(contract,e){
       if(Object.prototype.hasOwnProperty.call(v,'value')&&v.value!==null&&v.value!==''){
         const numeric=typeof v.value==='number'||(typeof v.value==='string'&&v.value.trim()!==''&&!Number.isNaN(Number(v.value)));
         const value=numeric?Number(v.value).toLocaleString('es-ES'):String(v.value);
-        const unit=({min:'min',h:'h',hour:'h',hours:'h',cases:'casos',case:'casos',percent:'%',eur:'€'})[String(v.unit||'').toLowerCase()]||'';
+        const unit=({min:'min',h:'h',hour:'h',hours:'h',cases:'casos',case:'casos',percent:'%',eur:'€'})[String(v.unit||'').toLowerCase()]||(fid==='DF027'?'casos':'');
         const period=({case:'caso',day:'día',week:'semana',month:'mes',year:'año'})[String(v.period||'').toLowerCase()]||'';
         return value+(unit?' '+unit:'')+(period?'/'+period:'');
       }
@@ -117,8 +117,10 @@ function engineGateReviewEvidence(contract,e){
     const rule=String(source.criteria||'').trim();
     const simulation=/simulaci[oó]n|no es una pol[ií]tica real validada/i.test(rule);
     const first=rule.split(/[.;]/)[0].trim();
-    return 'Criterio en '+stepLabel(s)+(source.source?' (heredado de '+stepLabel(source.source)+')':'')
-      +': '+(simulation?'ejemplo de simulación QA, sin validar como regla real':first.slice(0,140)+(first.length>140?'…':''));
+    const example=rule.replace(/^(S[ÓO]LO\s+)?SIMULACI[ÓO]N\s+QA\s*:\s*/i,'').split(/No es una pol[ií]tica real validada/i)[0].trim().replace(/[.;\s]+$/,'');
+    return 'Criterio en '+stepLabel(s)+': '+(simulation
+      ?'simulación QA, no política validada'+(example?': '+example.slice(0,150)+(example.length>150?'…':''):'')
+      :first.slice(0,140)+(first.length>140?'…':''));
   };
   let suggestion='',status='INSUFFICIENT',reason='';
   switch(key){
@@ -127,7 +129,10 @@ function engineGateReviewEvidence(contract,e){
       const missing=decisionSteps.filter(s=>!approvalCriteria(s));
       if(missing.length)add('Criterio de decisión pendiente: '+missing.map(stepLabel).join(' · '),'ProcessStep');
       const approved=decisionSteps.filter(s=>approvalCriteria(s));
-      approved.slice(0,2).forEach(s=>add(summariseCriterion(s,approvalCriteria(s)),'DF041 / DF067'));
+      approved.filter(s=>!approvalCriteria(s).source).slice(0,2)
+        .forEach(s=>add(summariseCriterion(s,approvalCriteria(s)),'DF041 / DF067'));
+      approved.filter(s=>approvalCriteria(s).source).slice(0,2)
+        .forEach(s=>add(stepLabel(s)+' hereda el criterio de '+stepLabel(approvalCriteria(s).source),'DF041 / DF067'));
       const types=new Set(fr.map(f=>String(f.friction_type)));
       if(types.has('P04')||types.has('P10')){
         suggestion='YES';status='REVIEW';
