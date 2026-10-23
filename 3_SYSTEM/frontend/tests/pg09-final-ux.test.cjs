@@ -186,7 +186,7 @@ test('PG09 stacks pending panels, compacts only the read-only graph and binds ac
   assert.ok(html.indexOf('Evidencias por recibir',start)>html.indexOf('Información crítica pendiente',start));
   assert.match(css,/PG09-VISUAL-CLOSE-146/);
   assert.match(css,/\.pg09-pending-grid\s*\{\s*grid-template-columns:minmax\(0,1fr\)/);
-  assert.match(css,/\.pg09-process-viewport \.process-graph-board\s*\{\s*padding:38px 20px 34px/);
+  assert.match(css,/\.pg09-process-viewport \.process-graph-board\s*\{\s*padding:38px 20px 72px/);
   assert.match(html,/class="pg09-close-footer"><div class="pg09-close-copy"/);
   assert.match(html,/Qué estás confirmando:/);
   assert.match(html,/Qué quedará guardado:/);
