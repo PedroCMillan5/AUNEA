@@ -611,9 +611,9 @@ function validationSummary(e,completion){
         +'<div class="pg09-status-tile '+(proceed?'is-ready':'is-pending')+'"><b>'+(proceed?'Puede cerrarse':'Requiere revisión')+'</b><span>Estado del cierre</span><p>'+esc(closeExplanation)+'</p></div>'
       +'</div>'+issuesHtml+'</div>'
       +(captureMissing.length?'<div class="pg09-missing-required"><b>Información obligatoria pendiente</b><p>'+captureMissing.map(x=>esc(x.label||'Dato obligatorio pendiente')).join(' · ')+'</p></div>':'')
-      +'<div class="pg09-acceptance"><b>¿Qué confirmas al cerrar?</b><p>Que el proceso y los problemas reflejan la información revisada con el cliente hasta este momento. Las cifras estimadas y las pruebas pendientes conservarán esa condición; confirmar no significa que estén demostradas.</p></div>'
-      +'<div class="pg09-close-footer"><div><h3>'+(snap?'Diagnóstico confirmado':'Confirmar el diagnóstico y guardar la versión revisada')+'</h3>'
-        +'<p>'+(snap?'La versión confirmada ya está guardada para el trabajo interno.':'Se guarda una versión del proceso, las fricciones, los riesgos, los impactos y los acuerdos, con sus limitaciones y evidencias pendientes. No se generan conclusiones ni ahorros automáticamente.')+'</p>'
+      +'<div class="pg09-close-footer"><div class="pg09-close-copy"><h3>'+(snap?'Diagnóstico confirmado':'Confirmación final del diagnóstico')+'</h3>'
+        +'<p><b>Qué estás confirmando:</b> que el proceso y los problemas reflejan la información revisada con el cliente hasta este momento. Las cifras estimadas y las pruebas pendientes seguirán identificadas como tales; confirmarlas no significa haberlas demostrado.</p>'
+        +'<p><b>Qué quedará guardado:</b> '+(snap?'La versión confirmada está disponible para el trabajo interno.':'El proceso, las fricciones, los riesgos, los impactos y los acuerdos, con sus limitaciones y evidencias pendientes. No se generan ahorros automáticamente.')+'</p>'
         +(snap?'<p class="pg09-snapshot-meta">Versión '+esc(snap.version)+' · '+esc(formatDateEs(snap.sealedAt))+'</p>':'')
       +'</div><div class="pg09-close-actions">'+cta+'</div></div>'
     +'</div>');
