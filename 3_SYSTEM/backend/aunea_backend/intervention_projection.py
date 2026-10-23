@@ -29,7 +29,7 @@ class StepTimeProposal(BaseModel):
     intervention_id: str = Field(min_length=1)
     step_id: str = Field(min_length=1)
     dimension: Dimension
-    future_minutes: float | None = Field(default=None, ge=0)
+    future_minutes: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     rationale: str | None = None
     source_ref: str | None = None
     evidence_type: EvidenceType | None = None
@@ -135,6 +135,8 @@ def project_interventions_review(request: InterventionProjectionRequest) -> dict
         "status": result_status,
         "diagnostic_type": "INTERVENTION_REVIEW_ONLY",
         "scenario_name": request.scenario_name,
+        "official": False,
+        "snapshot_seal_verified": False,
         "source_snapshot_version": request.source_snapshot_version,
         "source_snapshot_hash": request.source_snapshot_hash,
         "annual_cases": baseline["annual_cases"],
@@ -149,7 +151,7 @@ def project_interventions_review(request: InterventionProjectionRequest) -> dict
         "cash_saving_eur_annual": None,
         "quote": None,
         "optimal_scenario": None,
-        "warnings": list(dict.fromkeys(volume_gaps + notes)),
+        "warnings": list(dict.fromkeys(baseline["gaps"] + volume_gaps + notes)),
         "note": "Proyección parcial de hipótesis revisadas, no business case ni escenario oficial. La espera no equivale a duración E2E, capacidad o ahorro de caja.",
     }
 # [AUNEA-BE-INTERVENTION-REVIEW-155] END
