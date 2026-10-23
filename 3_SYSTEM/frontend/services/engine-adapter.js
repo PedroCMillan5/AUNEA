@@ -193,28 +193,38 @@ function engineGateReviewEvidence(contract,e){
 function inferGateSuggestion(contract,e){
   return engineGateReviewEvidence(contract,e).suggestion;
 }
+// The five inputs belong to a single human-confirmed decision bundle for the
+// sealed snapshot. A prefilled YES/NO without that attestation is not approval.
+function engineGateDecisionConfirmed(e,c,version=confirmedSnapshot(e)?.version||null){
+  const review=e?.engineGateReview,answer=e?.engineGates?.[c.key];
+  return !!(version!=null&&review?.snapshotVersion===version
+    &&gateResolved(answer)&&review?.decisions?.[c.key]?.answer===answer);
+}
 function unresolvedEngineGates(e){
-  const g=engineGates(e),version=confirmedSnapshot(e)?.version||null;
-  const stale=!!(e.engineGateReview?.snapshotVersion&&version!==e.engineGateReview.snapshotVersion);
-  return ENGINE_GATE_CONTRACT.filter(c=>stale||!gateResolved(g[c.key]));
+  const version=confirmedSnapshot(e)?.version||null;
+  return ENGINE_GATE_CONTRACT.filter(c=>!engineGateDecisionConfirmed(e,c,version));
 }
 function engineGateCard(c,e){
   const info=engineGateReviewEvidence(c,e),guide=ENGINE_GATE_GUIDE[c.key];
   const version=confirmedSnapshot(e)?.version||null;
   const stale=!!(e.engineGateReview?.snapshotVersion&&version!==e.engineGateReview.snapshotVersion);
   const saved=stale?'':(engineGates(e)[c.key]||'');
-  const stateText=info.status==='PROPOSAL'?'Propuesta para contrastar'
+  const confirmed=!stale&&engineGateDecisionConfirmed(e,c,version);
+  const stateText=confirmed?'Confirmada por el consultor'
+    :info.status==='PROPOSAL'?'Propuesta para contrastar'
     :info.status==='REVIEW'?'Decisión pendiente de comprobar':'Información insuficiente';
-  const chip=info.status==='PROPOSAL'?'candidate':'review';
+  const chip=confirmed?'confirmed':info.status==='PROPOSAL'?'candidate':'review';
   const provenance=info.sources.length
     ?'<ul class="engine-review-sources">'+info.sources.map(s=>'<li>'+esc(s.label)+'</li>').join('')+'</ul>'
     :'<p class="engine-review-empty">No hay un dato suficiente en el diagnóstico para resolver esta decisión.</p>';
   const proposed=info.suggestion
     ?'<p><b>Propuesta de AUNEA: '+(info.suggestion==='YES'?'Sí':'No')+'.</b> '+esc(info.reason)+'</p>'
     :'<p><b>Evaluación provisional:</b> '+esc(info.reason||'Los datos disponibles no permiten establecer una respuesta técnica.')+'</p>';
+  const basis=confirmed?e.engineGateReview.decisions[c.key].basis:'';
   const savedNote=stale
     ?'<p class="engine-review-saved">El AS-IS confirmado ha cambiado. Vuelve a revisar esta decisión para el nuevo snapshot.</p>'
-    :saved?'<p class="engine-review-saved">Respuesta confirmada previamente: '+(saved==='YES'?'Sí':'No')+'. Puedes revisarla.</p>':'';
+    :confirmed?'<p class="engine-review-saved">Respuesta confirmada por el consultor para este AS-IS: '+(saved==='YES'?'Sí':'No')+'. '+(basis==='CONSULTANT_ASSERTION'?'No consta fundamento suficiente en la captura; esta respuesta es criterio del consultor, no un dato acreditado.':'El fundamento disponible sigue sujeto a su tipo de evidencia.')+'</p>'
+    :saved?'<p class="engine-review-saved">Existe una selección anterior sin confirmación válida para este AS-IS. Debes revisar las cinco decisiones.</p>':'';
   return '<section class="engine-review-card" data-engine-review-card="'+attr(c.key)+'">'
     +'<header class="engine-review-header"><div><h3>'+esc(guide.title)+'</h3><p>'+esc(guide.help)+'</p></div>'
     +'<span class="engine-review-status '+chip+'">'+esc(stateText)+'</span></header>'
@@ -227,8 +237,9 @@ function engineGateCard(c,e){
 }
 function openEngineGateReview(){
   const e=currentEng();if(!e)return;
-  const body='<div class="engine-review-intro"><p><b>Revisa cinco decisiones técnicas antes de calcular.</b> AUNEA recupera los datos del AS-IS y muestra qué sustentan. Una propuesta no es una respuesta confirmada.</p>'
-    +'<p>Si falta información, deja la decisión pendiente. No se ejecutarán los motores ni se guardarán respuestas parciales como confirmadas.</p></div>'
+  const openedSnapshotVersion=confirmedSnapshot(e)?.version||null;
+  const body='<div class="engine-review-intro"><p><b>Revisa cinco decisiones técnicas antes de calcular.</b> AUNEA recupera los datos del AS-IS confirmado y muestra qué sustentan. Una propuesta no es una respuesta confirmada.</p>'
+    +'<p>Si falta información, deja la decisión pendiente. Una decisión que el consultor asuma sin evidencia capturada se conservará como criterio propio, no como hecho verificado. No se ejecutarán los motores ni se guardarán respuestas parciales como confirmadas.</p></div>'
     +'<div class="engine-review-list">'+ENGINE_GATE_CONTRACT.map(c=>engineGateCard(c,e)).join('')+'</div>';
   openModal('Decisiones del consultor',body,()=>{
     const staged={},missing=[];
@@ -244,7 +255,10 @@ function openEngineGateReview(){
       return;
     }
     const current=confirmedSnapshot(e);
-    if(!current){toast('El AS-IS ya no está confirmado. Revisa el diagnóstico antes de calcular.');closeModal();return;}
+    if(!current||current.version!==openedSnapshotVersion){
+      toast('El AS-IS ha cambiado desde que abriste la revisión. Ábrela de nuevo para decidir sobre el snapshot vigente.');
+      closeModal();return;
+    }
     // Each decision retains whether it came from a source-backed proposal,
     // a contextual review or a consultant assertion without sufficient capture evidence.
     const previous={gates:{...e.engineGates},review:e.engineGateReview};
@@ -409,6 +423,9 @@ function buildBackendPayload(engagement){
 async function runDiagnosis(){const e=currentEng();if(!e)return;if(!hasConfirmedSnapshot(e))return toast('Confirma el cierre del proceso actual en Validación y cierre antes de calcular en Trabajo interno.');if(!state.backendOnline&&!(await checkBackend())){state.activePage='resultados';render();toast('Backend no conectado: no se publican resultados oficiales.');return}const gaps=canonicalMissingRequired(e);if(gaps.length){state.activePage='resultados';render();toast(`Captura incompleta: ${gaps.slice(0,5).join(', ')}`);return}const captureIssues=typeof captureIntegrityIssues==='function'?captureIntegrityIssues(engagementOfRecord(e)):[];if(captureIssues.length){state.activePage='resultados';render();toast('No se ha recalculado: '+(captureIssues[0].message||captureIssues[0].label||'hay una inconsistencia de captura pendiente.'));return}if(unresolvedEngineGates(e).length){openEngineGateReview();return}
   const sourceSnapshot=confirmedSnapshot(e);
   if(!sourceSnapshot)return toast('El AS-IS debe estar confirmado antes de calcular.');
+  // Both the AS-IS and the consultant's five-decision bundle must remain the
+  // same throughout preflight and backend execution (including other tabs).
+  const sourceGateFingerprint=engineGateFingerprint(e);
   ['runDiag','runDiagHeader'].forEach(bid=>{const b=document.getElementById(bid);if(b){b.disabled=true;b.textContent='Comprobando…'}});
   try{
     const payload=buildBackendPayload(e);
@@ -420,6 +437,7 @@ async function runDiagnosis(){const e=currentEng();if(!e)return;if(!hasConfirmed
     // Never attach an obsolete result to the newly edited capture.
     const currentSnapshot=confirmedSnapshot(e);
     if(!currentSnapshot||currentSnapshot.version!==sourceSnapshot.version||e.confirmedAsIs!==true)throw new Error('El AS-IS cambió durante el cálculo. Confirma de nuevo antes de generar resultados.');
+    if(sourceGateFingerprint!==engineGateFingerprint(e)||unresolvedEngineGates(e).length)throw new Error('Las decisiones técnicas cambiaron durante el cálculo. Revisa y vuelve a calcular antes de generar resultados.');
     e.diagnosticOutput=out;e.lastEngineSnapshotVersion=sourceSnapshot.version;e.lastEngineGateFingerprint=engineGateFingerprint(e);e.economicNormalizationVersion=1;e.scenarioResults=[];e.selectedScenarioIndex=0;e.updatedAt=now();e.lastEngineRunAt=now();markDirty('Pain → Economics → Risk → Recommendation → Pricing → Scenario calculados por backend con métricas económicas normalizadas por driver');state.activePage='resultados';render();toast('Resultados oficiales actualizados por backend.')}catch(err){toast('No se pudo ejecutar el backend: '+err.message);render()}}
 
 // C05 · Optional internal AI orchestration. No provider is configured by canonical source today, so
