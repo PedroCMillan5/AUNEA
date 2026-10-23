@@ -332,9 +332,9 @@ test('S09 closure shows objective first readings but never labels them diagnosis
   const e={answers:{DF096:[]},processSteps:[{id:'s1',status:'ACTIVE',step_name:'Paso'}],frictions:[],risks:[],economicInputs:[],confirmedAsIs:false,confirmedSnapshots:[]};
   const html=ctx.validationSummary(e,{missing:[],blockers:[]});
   assert.match(html,/¿Está todo preparado para cerrar\?/);
-  assert.match(html,/¿Está todo preparado para cerrar\?/);
   assert.doesNotMatch(html,/id="runDiag"/,'no engine calculation in PG09');
-  assert.match(html,/id="confirmClosingAsIs"/);
+  assert.match(html,/Resuelve los elementos pendientes antes de confirmar el cierre/);
+  assert.doesNotMatch(html,/id="confirmClosingAsIs"/,'unconfirmed AS-IS layers must block final sealing');
 });
 
 test('CONDITIONAL_90M never blocks merely because visible, and DERIVE_AND_CONFIRM only needs confirmation when a derivation exists',()=>{
