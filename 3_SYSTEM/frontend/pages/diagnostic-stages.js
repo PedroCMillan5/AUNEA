@@ -399,7 +399,7 @@ function df017FinalReviewPanel(e){
   const choices=[...new Set([...initial,...mapped,...final])];
   if(!choices.length)return '';
   const fmt=arr=>arr.length?arr.map(v=>labelFrom('OS_ACTOR_ROLE',v)||v).join(' · '):'Ninguno declarado';
-  const current=confirmed?final:(initial.length?initial:mapped);
+  const current=final.length?final:(initial.length?initial:mapped);
   const opts=choices.map(v=>'<label class="df017-final-choice"><input type="checkbox" data-df017-final-option="'+attr(v)+'" '+(current.includes(v)?'checked':'')+'><span>'+esc(labelFrom('OS_ACTOR_ROLE',v)||v)+'</span></label>').join('');
   const coincide=initial.length===mapped.length&&initial.every(v=>mapped.includes(v));
   const explanation=coincide
@@ -408,10 +408,24 @@ function df017FinalReviewPanel(e){
   return '<div class="df017-final-review" data-df017-final-review="1"><h3>Participantes finales</h3>'
     +'<p>'+explanation+'</p>'
     +(confirmed
-      ?'<div class="pg09-participant-confirmed">'+current.map(v=>'<span>'+esc(labelFrom('OS_ACTOR_ROLE',v)||v)+'</span>').join('')+'<strong>Confirmado</strong></div>'
+      ?'<div class="pg09-participant-confirmed">'+current.map(v=>'<span>'+esc(labelFrom('OS_ACTOR_ROLE',v)||v)+'</span>').join('')+'<strong>Confirmado</strong>'+(e.confirmedAsIs?'':'<button type="button" class="btn btn-small btn-outline" data-undo-df017-final="1">Deshacer confirmación</button>')+'</div>'
       :'<p class="field-help">Selecciona los participantes que forman parte del diagnóstico y confirma el listado. Esta revisión no modifica los responsables asignados a los pasos.</p><div class="df017-final-options" role="group" aria-label="Perfiles finales del proceso">'+opts+'</div><button type="button" class="btn btn-small btn-primary" data-confirm-df017-final="1">Confirmar participantes</button>')
     +'</div>';
 }
+// [AUNEA-FE-PG09-DF017-UNDO-142] START — Reopen partial participant review without altering source data.
+function undoDf017FinalSelection(){
+  const e=currentEng();if(!e||e.confirmedAsIs)return false;
+  const detail=e.answerDetails||{},prev=detail.DF017__final_scope_confirmation;
+  if(!prev)return false;
+  delete detail.DF017__final_scope_confirmation;
+  e.updatedAt=now();markDirty('Participantes finales pendientes de nueva confirmación');
+  if(typeof persistRecoverySnapshot==='function'&&!persistRecoverySnapshot('deshacer confirmación DF017')){
+    detail.DF017__final_scope_confirmation=prev;
+    toast('No se ha podido guardar el cambio.');render();return false;
+  }
+  render();return true;
+}
+// [AUNEA-FE-PG09-DF017-UNDO-142] END
 function confirmDf017FinalSelection(){
   const e=currentEng();if(!e)return false;
   const selected=[...document.querySelectorAll('[data-df017-final-option]:checked')].map(el=>String(el.dataset.df017FinalOption));
@@ -557,6 +571,7 @@ bindForms=function(){
   document.querySelectorAll('[data-open-gate-review]').forEach(b=>b.onclick=()=>openEngineGateReview());
   document.querySelectorAll('[data-pg09-confirm-layer]').forEach(b=>b.onclick=()=>confirmProcessLayer(({map:'cliente',frictions:'fricciones',risks:'riesgos',impact:'impacto'})[b.dataset.pg09ConfirmLayer]));
   const df017Final=document.querySelector('[data-confirm-df017-final]');if(df017Final)df017Final.onclick=()=>confirmDf017FinalSelection();
+  const df017Undo=document.querySelector('[data-undo-df017-final]');if(df017Undo)df017Undo.onclick=()=>undoDf017FinalSelection();
   const finalConfirm=document.getElementById('confirmClosingAsIs');if(finalConfirm)finalConfirm.onclick=()=>confirmClosingAsIs();
   const sd=document.getElementById('saveDraft');if(sd)sd.onclick=()=>saveState('Borrador guardado');
 };
