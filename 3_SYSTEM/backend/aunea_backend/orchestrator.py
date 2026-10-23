@@ -56,8 +56,14 @@ class Orchestrator:
         source=engagement.model_dump()
         integrity=relational_integrity_issues(engagement)
         coverage=self.coverage.run(engagement)
+        facts=engagement.questionnaire_answers
+        has_source=bool(engagement.evidence or engagement.pain_signals or engagement.pains
+            or engagement.economics or engagement.risks
+            or (isinstance(facts.get("_process_steps"),list) and facts["_process_steps"])
+            or any(str(k).startswith("DF") and v is not None and v != "" and v != [] and v != {}
+                for k,v in facts.items()))
         out: dict[str, Any]={
-            "status":"INPUT_GAPS" if integrity or coverage.status=="BLOCKED" else "ANALYZED",
+            "status":"INPUT_GAPS" if integrity or coverage.status=="BLOCKED" or not has_source else "ANALYZED",
             "engagement_id":engagement.engagement_id,
             "input_snapshot_hash":stable_hash(source),
             "rule_bundle_version":rule_bundle_version(),
@@ -71,7 +77,9 @@ class Orchestrator:
             "requires_solution_review":True,
         }
         # An invalid source is never silently accepted to manufacture findings.
-        if integrity or coverage.status=="BLOCKED":
+        if not has_source:
+            out["source_warnings"]=["No existen hechos del AS-IS suficientes para iniciar un análisis."]
+        if integrity or coverage.status=="BLOCKED" or not has_source:
             return out
         ctx=EngineContext(engagement)
         out["pain_results"]=[p.model_dump() for p in self.pain.run(ctx)]
