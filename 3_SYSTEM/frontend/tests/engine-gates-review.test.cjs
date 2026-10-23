@@ -110,13 +110,17 @@ test('Explicitly confirmed answers preserve five existing backend booleans and s
  assert.equal(current.engineGates.bounded_action_space,'NO');
 });
 
-test('A later snapshot invalidates prior gate decisions, regardless of stored selections',()=>{
+test('A later snapshot invalidates all five decisions, including their consultant approval',()=>{
  const e=record();
  Object.assign(e.engineGates,Object.fromEntries(allKeys.map(k=>[k,'YES'])));
- e.engineGateReview={snapshotVersion:1};
+ assert.equal(fn.unresolvedEngineGates(e).length,5,'bare binary flags cannot stand in for human approval');
+ e.engineGateReview={snapshotVersion:1,decisions:Object.fromEntries(allKeys.map(k=>[k,{answer:'YES',basis:'REVIEW'}]))};
  assert.equal(fn.unresolvedEngineGates(e).length,0);
  e.snapshot.version=2;
  assert.equal(fn.unresolvedEngineGates(e).length,5);
+ e.snapshot.version=1;
+ e.engineGates[allKeys[0]]='NO';
+ assert.equal(fn.unresolvedEngineGates(e).length,1,'changed value is no longer the answer approved');
 });
 
 test('The adapter keeps the canonical five backend flags and one-to-one polarity',()=>{
@@ -210,6 +214,82 @@ test('Unsupported structured objects are not treated as facts or converted to ra
  const info=fn.engineGateReviewEvidence(fn.ENGINE_GATE_CONTRACT[4],e);
  assert.doesNotMatch(JSON.stringify(info.sources),/\[object Object\]/);
  assert.ok(!info.sources.some(x=>x.label.startsWith('Cola de trabajo declarada')));
+});
+
+test('The reopened popup distinguishes verified review state from a technical proposal',()=>{
+ const e=record();
+ e.answers.DF086=['VISIBILITY'];
+ e.frictions=[{friction_type:'P09',client_label:'Falta visibilidad'}];
+ e.engineGates=Object.fromEntries(allKeys.map(k=>[k,'NO']));
+ e.engineGates.management_visibility_need='YES';
+ const c=fn.ENGINE_GATE_CONTRACT[4];
+ assert.match(fn.engineGateCard(c,e),/Propuesta para contrastar/);
+ assert.doesNotMatch(fn.engineGateCard(c,e),/Confirmada por el consultor/);
+ e.engineGateReview={snapshotVersion:1,decisions:Object.fromEntries(allKeys.map(k=>[k,{answer:e.engineGates[k],basis:'REVIEW'}]))};
+ assert.match(fn.engineGateCard(c,e),/Confirmada por el consultor/);
+ assert.match(fn.engineGateCard(c,e),/Respuesta confirmada por el consultor/);
+ e.engineGateReview.decisions[c.key].answer='NO';
+ assert.doesNotMatch(fn.engineGateCard(c,e),/Confirmada por el consultor/);
+});
+
+test('A changed snapshot while the review modal remains open cannot save stale decisions',()=>{
+ current=record();modal=null;nodes=[];runCount=0;persistCount=0;
+ fn.openEngineGateReview();
+ const first=modal;
+ current.snapshot.version=2;
+ nodes=allKeys.map(key=>({dataset:{engineGate:key},value:'NO'}));
+ first.confirm();
+ assert.equal(runCount,0);
+ assert.equal(persistCount,0);
+ assert.equal(fn.unresolvedEngineGates(current).length,5);
+ assert.equal(current.engineGateReview,undefined);
+});
+
+test('A source-identical binary fingerprint never publishes a result without a valid consultant review',()=>{
+ const e=record();
+ e.engineGates=Object.fromEntries(allKeys.map(k=>[k,'YES']));
+ e.lastEngineGateFingerprint=fn.engineGateFingerprint(e);
+ e.diagnosticOutput={recommendation:{},quote:{},optimal_scenario:{}};
+ assert.equal(fn.engineGateOutputFresh(e),false);
+ e.engineGateReview={snapshotVersion:1,decisions:Object.fromEntries(allKeys.map(k=>[k,{answer:'YES',basis:'REVIEW'}]))};
+ assert.equal(fn.engineGateOutputFresh(e),true);
+ e.engineGateReview.decisions[allKeys[0]].answer='NO';
+ assert.equal(fn.engineGateOutputFresh(e),false);
+});
+
+test('The entire snapshot-to-results boundary invalidates review, client output and stale asynchronous responses',()=>{
+ const results=fs.readFileSync(path.join(root,'pages/results.js'),'utf8');
+ const outputReview=fs.readFileSync(path.join(root,'domain/output-review.js'),'utf8');
+ const view=results.slice(results.indexOf('function currentDiagnosticOutput(e)'),results.indexOf('function num(x)'));
+ const review=outputReview.slice(outputReview.indexOf('function reviewSources(e)'),'//'.length+outputReview.indexOf('// [AUNEA-FE-OUTPUT-REVIEW-010] END'));
+ const extra={...stub,ENGINE_GATE_CONTRACT:fn.ENGINE_GATE_CONTRACT,ENGINE_GATE_GUIDE:vm.runInContext('ENGINE_GATE_GUIDE',context),engineGateOutputFresh:fn.engineGateOutputFresh,
+   confirmedSnapshot:e=>e.snapshot,approvedTobeForClient:e=>e.approvedTobe,esc:stub.esc};
+ const local=vm.runInNewContext(view+'\n'+review+'\n({currentDiagnosticOutput,diagnosticOutputFreshness,diagnosisEngineDecisionTraceHtml,reviewSources,approvedOutputReview})',extra);
+ const e=record(),decisions=Object.fromEntries(allKeys.map(k=>[k,{answer:'NO',basis:'REVIEW'}]));
+ e.engineGates=Object.fromEntries(allKeys.map(k=>[k,'NO']));
+ e.engineGateReview={snapshotVersion:1,decisions};
+ e.lastEngineSnapshotVersion=1;
+ e.lastEngineGateFingerprint=fn.engineGateFingerprint(e);
+ e.diagnosticOutput={recommendation:{},quote:{},optimal_scenario:{quote:{status:'BLOCKED'}}};
+ e.approvedTobe={version:1,sourceSnapshotVersion:1};
+ e.selectedScenarioIndex=0;
+ assert.equal(local.diagnosticOutputFreshness(e).status,'CURRENT');
+ assert.equal(local.currentDiagnosticOutput(e),e.diagnosticOutput);
+ assert.match(local.diagnosisEngineDecisionTraceHtml(e),/cinco respuestas técnicas/);
+ assert.ok(local.reviewSources(e),'the current PG10 output can enter the consultant review stage');
+ e.engineGates.management_visibility_need='YES';
+ assert.equal(local.currentDiagnosticOutput(e),null);
+ assert.equal(local.diagnosticOutputFreshness(e).status,'OBSOLETE');
+ assert.equal(local.reviewSources(e),null);
+ e.engineGates.management_visibility_need='NO';
+ e.snapshot.version=2;
+ assert.equal(local.currentDiagnosticOutput(e),null);
+ assert.equal(local.reviewSources(e),null);
+ // The async pipeline must check its original decision fingerprint before committing output.
+ assert.match(adapter,/const sourceGateFingerprint=engineGateFingerprint\(e\)/);
+ assert.match(adapter,/sourceGateFingerprint!==engineGateFingerprint\(e\)\|\|unresolvedEngineGates\(e\)\.length/);
+ assert.match(results,/diagnosisEngineDecisionTraceHtml\(e\)/);
+ assert.match(results,/unresolved\.length===0/);
 });
 
 // [AUNEA-UAT-ENGINE-GATE-ASSIST-151] END
