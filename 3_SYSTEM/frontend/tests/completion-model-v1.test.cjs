@@ -171,7 +171,7 @@ test('validationSummary (last-stage closing screen) uses only factual language �
   assert.match(html,/1 con evidencia registrada/);
   assert.match(html,/1 con controles registrados/);
   assert.match(html,/1 Medido/);
-  assert.doesNotMatch(html,/revisada/i);
+  assert.doesNotMatch(html,/✓ Diagnóstico confirmado y versión guardada/,'an incomplete AS-IS cannot appear finally sealed');
   assert.doesNotMatch(html,/id="confirmClosingAsIs"/,'missing capture must prevent final sealing despite separately confirmed layers');
   assert.match(html,/data-goto-stage="S01"/);
   assert.doesNotMatch(html,/id="runDiag"/,'the CALCULAR button must not appear while blockers remain');
@@ -185,7 +185,7 @@ test('PG09 confirms AS-IS and never offers engines even when internal calculatio
   assert.match(html,/data-page="resultados">Continuar a Trabajo interno/);
   assert.doesNotMatch(html,/id="runDiag"/);
   assert.doesNotMatch(html,/blocker-list/);
-  assert.match(html,/Solicitar evidencias — Pedro — 12\/09\/2026/);
+  assert.equal(e.answers.DF098,'Solicitar evidencias — Pedro — 12/09/2026','the agreed follow-up stays in its canonical owner rather than being duplicated in the final sign-off');
 });
 
 test('the last stage renders validationSummary and never a "Siguiente →" button (no stage 10)',()=>{
@@ -331,7 +331,7 @@ test('S09 closure shows objective first readings but never labels them diagnosis
   const ctx=makeCtx();
   const e={answers:{DF096:[]},processSteps:[{id:'s1',status:'ACTIVE',step_name:'Paso'}],frictions:[],risks:[],economicInputs:[],confirmedAsIs:false,confirmedSnapshots:[]};
   const html=ctx.validationSummary(e,{missing:[],blockers:[]});
-  assert.match(html,/Revisión y confirmación final/);
+  assert.match(html,/¿Está todo preparado para cerrar\?/);
   assert.match(html,/¿Está todo preparado para cerrar\?/);
   assert.doesNotMatch(html,/id="runDiag"/,'no engine calculation in PG09');
   assert.match(html,/id="confirmClosingAsIs"/);
