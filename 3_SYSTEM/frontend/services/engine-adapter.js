@@ -21,7 +21,10 @@ function engineGateFingerprint(e){
   return JSON.stringify(ENGINE_GATE_CONTRACT.map(c=>[c.key,g[c.key]||'UNRESOLVED']));
 }
 function engineGateOutputFresh(e){
-  return !e?.lastEngineGateFingerprint||e.lastEngineGateFingerprint===engineGateFingerprint(e);
+  // A matching binary fingerprint is insufficient if its consultant approval
+  // was removed or belongs to another AS-IS snapshot.
+  return (!e?.lastEngineGateFingerprint||e.lastEngineGateFingerprint===engineGateFingerprint(e))
+    &&(!e?.diagnosticOutput||unresolvedEngineGates(e).length===0);
 }
 // [AUNEA-FE-ENGINE-GATE-ASSIST-151] START — Evidence-aware, consultant-owned decisions.
 // SOURCE: MAP_QUESTION_ENGINE_INPUT v0.9.2 (IN-R-02/09/11/12/13), unchanged ENGINE_GATE_CONTRACT,
