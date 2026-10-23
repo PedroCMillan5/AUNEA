@@ -259,8 +259,9 @@ test('DF098 real interaction (jsdom, real runtime): action+owner+date consolidat
       assert.equal(ownerInput.readOnly,true,'el owner procede del consultor AUNEA seleccionado y no es un segundo dato editable');
       assert.equal(w.currentEng().answers.DF098,'','sin fecha todavía no puede consolidar');
 
-      const dateInput=d.querySelector('[data-nextstep-date="DF098"]');
-      dateInput.value='2026-09-12';dateInput.dispatchEvent(new w.Event('change',{bubbles:true}));
+      const dateInput=d.querySelector('[data-date-es="DF098"][data-date-es-target="nextstep"]');
+      assert.ok(dateInput,'la fecha acordada usa el control español canónico');
+      dateInput.value='12/09/2026';dateInput.dispatchEvent(new w.Event('change',{bubbles:true}));
       assert.match(w.currentEng().answers.DF098,/Pedro Carrasco/);
       assert.match(w.currentEng().answers.DF098,/12\/09\/2026/,'la fecha se serializa en formato dd/mm/aaaa');
       assert.ok(!w.canonicalMissingRequired(w.currentEng()).includes('DF098'),'DF098 debe desaparecer de Readiness en cuanto consolida');
@@ -276,7 +277,7 @@ test('DF098 real interaction (jsdom, real runtime): action+owner+date consolidat
       assert.doesNotMatch(df098Card.innerHTML,/reuse-context/);
       assert.match(df098Card.innerHTML,/field-status-pending/);
       assert.equal(d.querySelector('[data-nextstep-owner="DF098"]').value,'Pedro Carrasco');
-      assert.equal(d.querySelector('[data-nextstep-date="DF098"]').value,'2026-09-12');
+      assert.equal(d.querySelector('[data-date-es="DF098"][data-date-es-target="nextstep"]').value,'12/09/2026');
       assert.equal(d.querySelector('[data-nextstep-owner="DF098"]').readOnly,true);
       assert.match(w.currentEng().answers.DF098,/Pedro Carrasco/);
       assert.equal(w.currentEng().answerDetails.DF098__owner,'Pedro Carrasco');
@@ -304,7 +305,7 @@ test('DF098 real interaction (jsdom, real runtime): action+owner+date consolidat
       w.eval("currentEng().stageId='S09';render()");
       await until(()=>d.querySelector('[data-nextstep-owner="DF098"]'));
       assert.equal(d.querySelector('[data-nextstep-owner="DF098"]').value,'Pedro Carrasco');
-      assert.equal(d.querySelector('[data-nextstep-date="DF098"]').value,'2026-09-12');
+      assert.equal(d.querySelector('[data-date-es="DF098"][data-date-es-target="nextstep"]').value,'12/09/2026');
       assert.deepEqual(errors,[]);
       // Deja que el autosave debounced (350ms, services/persistence.js) termine de disparar mientras
       // el documento sigue vivo — cerrar la ventana con ese timer aún pendiente lo hace fallar contra
