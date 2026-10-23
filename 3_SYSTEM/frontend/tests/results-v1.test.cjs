@@ -84,7 +84,7 @@ test('PG10 readiness exposes an explicit backend execution action instead of a d
   const ctx=makeCtx();ctx.__eng.diagnosticOutput=null;ctx.__eng.lastEngineSnapshotVersion=null;
   const html=ctx.resultsPage();
   assert.match(html,/Diagnóstico interno/);
-  assert.match(html,/id="runDiag">Ejecutar diagnóstico/);
+  assert.match(html,/id="runDiag">Calcular recomendación y escenarios oficiales/);
   assert.match(html,/Pain[\s\S]*Economics[\s\S]*Risk[\s\S]*Recommendation[\s\S]*Pricing[\s\S]*Scenario/);
 });
 
