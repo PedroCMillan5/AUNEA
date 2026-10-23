@@ -147,7 +147,7 @@ test('single UAT risk payload is complete and never throws reversibility startup
  dom.window.close();
 });
 
-test('PG05 internal Pasos reads confirmed client map without a second editor or layer confirmation',async()=>{
+test('PG05 keeps source-linked map review pending when derived fields lack explicit confirmation',async()=>{
  const {w,dom,run}=buildRuntime();
  try{
    run("state.activePage='uat';render()");
@@ -159,10 +159,11 @@ test('PG05 internal Pasos reads confirmed client map without a second editor or 
    const baseAnswers=run("JSON.stringify(currentEng().answers)");
    run("currentEng().layerConfirmations.map=true");
    const reviewed=run("consultantStepsPage()");
-   assert.match(reviewed,/Revisión confirmada/);
+   assert.match(reviewed,/Confirmación del mapa pendiente de revalidación/,'unconfirmed source-derived fields cannot produce a false reviewed status');
    assert.match(reviewed,/Información recuperada del mapa/);
    assert.match(reviewed,/Continuar a Fricciones/);
-   assert.match(reviewed,/data-confirm-process-layer="map" data-undo-confirmed-layer="1"/,'confirmed map offers only the explicit Deshacer action');
+   assert.match(reviewed,/data-confirm-process-layer="map"/,'the owner retains a confirmation action');
+   assert.doesNotMatch(reviewed,/data-undo-confirmed-layer="1"/,'outstanding source review must not be displayed as confirmed');
    assert.match(reviewed,/data-edit-step=/,'every saved step remains editable from the owner');
    assert.match(reviewed,/data-pg05-step-detail=/,'step details are progressive, not a second editor');
    assert.match(reviewed,/data-delete-step=/,'destructive action is available only inside the contextual detail');
@@ -192,7 +193,7 @@ test('PG05: supplementary DF048/DF055 answers preserve client layer confirmation
    try{
      assert.equal(next.run("currentEng().layerConfirmations.map"),true,'map confirmation survives rehydration');
      assert.match(next.run("consultantStepsPage()"),/Información recuperada del mapa/);
-     assert.match(next.run("consultantStepsPage()"),/data-confirm-process-layer="map" data-undo-confirmed-layer="1"/);
+     assert.match(next.run("consultantStepsPage()"),/Confirmación del mapa pendiente de revalidación/,'the pending source review survives reload');
    }finally{next.dom.window.close();}
    assert.notEqual(run("JSON.stringify(currentEng().answers.DF048)"),undefined);
  }finally{dom.window.close();}
