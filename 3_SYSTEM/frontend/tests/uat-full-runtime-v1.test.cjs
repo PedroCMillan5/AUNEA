@@ -61,7 +61,8 @@ test('single UAT loads complete, traverses PG01-PG09 and hands off to internal w
  assert.equal(run('currentEng().confirmedAsIs'),false);
  assert.equal(run('hasConfirmedSnapshot(currentEng())'),false);
  assert.deepEqual(Array.from(run('canonicalMissingRequired(currentEng())')).filter(x=>x!=='DF093'&&x!=='Confirmación AS-IS'),[]);
- assert.equal(run('unresolvedEngineGates(currentEng()).length'),0);
+ assert.equal(run('unresolvedEngineGates(currentEng()).length'),5,'technical review belongs after PG09, never to the pre-seal UAT');
+ assert.equal(run('singleUatAudit(currentEng()).pass'),true,'five pending PG10 decisions must not block AS-IS capture');
  assert.match(w.document.getElementById('singleUatLoadStatus').textContent,/UAT completa y guardada: 1 estudio/);
  for(const stage of ['S01','S02','S03','S08','S04','S05','S06','S07','S09']){
    run("state.activePage='uat';render()");
