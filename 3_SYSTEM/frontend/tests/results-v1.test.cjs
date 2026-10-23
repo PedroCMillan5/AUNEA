@@ -6,6 +6,7 @@ const vm=require('node:vm');
 const path=require('node:path');
 const root=path.join(__dirname,'..');
 const code=fs.readFileSync(path.join(root,'pages/results.js'),'utf8');
+const analysisCode=fs.readFileSync(path.join(root,'domain/analysis-workbench.js'),'utf8');
 const coreCode=fs.readFileSync(path.join(root,'core/state.js'),'utf8');
 const i18nCode=fs.readFileSync(path.join(root,'core/i18n.js'),'utf8');
 
@@ -50,7 +51,7 @@ function makeCtx(uiMode){
     openModal:()=>{},closeModal:()=>{},markDirty:()=>{},render:()=>{},toast:()=>{},now:()=>'',
     document:{getElementById:()=>null,querySelectorAll:()=>[]}
   };
-  vm.createContext(ctx);vm.runInContext(i18nCode,ctx);vm.runInContext(code,ctx);ctx.__eng=eng;return ctx;
+  vm.createContext(ctx);vm.runInContext(i18nCode,ctx);vm.runInContext(analysisCode,ctx);vm.runInContext(code,ctx);ctx.__eng=eng;return ctx;
 }
 
 test('resultsPage translates risk.residual_level/risk.status and pain state/confidence to Spanish, never the raw backend code',()=>{const ctx=makeCtx();ctx.__eng.diagnosticOutput={pain_results:[{pain_id:'P01',state:'CONFIRMED',confidence:'HIGH'}],economic_result:{},risk_result:{residual_level:'R2',status:'CONTROL_GAP'}};const html=ctx.resultsPage();assert.match(html,/Riesgo medio/);assert.match(html,/Brecha de control/);assert.match(html,/Confirmado/);assert.match(html,/Alta/);assert.doesNotMatch(html,/>CONTROL_GAP</);assert.doesNotMatch(html,/Estado: CONFIRMED/)});
