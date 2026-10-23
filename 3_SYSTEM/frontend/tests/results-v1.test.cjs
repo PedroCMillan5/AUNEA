@@ -109,7 +109,9 @@ test('PG10 result renders diagnostic sections, traceability and the governed TO-
 
 test('PG11 is blocked until a diagnostic output exists for the current confirmed snapshot',()=>{
   const ctx=makeCtx();ctx.__eng.diagnosticOutput=null;ctx.__eng.lastEngineSnapshotVersion=null;
-  assert.match(ctx.tobePage(),/Diagnóstico vigente requerido/);
+  assert.match(ctx.tobePage(),/La edición y aprobación de un TO-BE definitivo requiere la recomendación oficial vigente/);
+  assert.match(ctx.tobePage(),/Tres alternativas|Vías de intervención pendientes de validar/);
+  assert.doesNotMatch(ctx.tobePage(),/id="createTobeDraft"/,'the preview must never instantiate a publishable future state');
   ctx.__eng.diagnosticOutput={pain_results:[],economic_result:{},risk_result:{},recommendation:{},optimal_scenario:{}};
   ctx.__eng.lastEngineSnapshotVersion=1;
   assert.match(ctx.tobePage(),/Crear borrador desde AS-IS confirmado/);
