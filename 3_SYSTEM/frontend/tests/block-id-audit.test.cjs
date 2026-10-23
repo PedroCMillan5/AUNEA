@@ -44,6 +44,11 @@ function listScanFiles() {
   for (const f of fs.readdirSync(backendPkgDir)) {
     if (f.endsWith('.py')) files.push(path.join(backendPkgDir, f));
   }
+  // Python backend tests also own stable UAT Block_IDs and must be indexed.
+  const backendTestsDir = path.join(backendDir, 'tests');
+  for (const f of fs.readdirSync(backendTestsDir)) {
+    if (f.endsWith('.py')) files.push(path.join(backendTestsDir, f));
+  }
   files.push(path.join(backendDir, 'Dockerfile'));
   files.push(path.join(backendDir, 'pyproject.toml'));
   const workflowsDir = path.join(repoRoot, '.github', 'workflows');
