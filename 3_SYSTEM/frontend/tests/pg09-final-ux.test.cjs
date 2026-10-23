@@ -62,8 +62,12 @@ function demo(){
   const src=excerpt(stages,'function pg09EvidenceItems(', '\nconst __auneaDiagFieldsBindForms');
   const fns=vm.runInNewContext(src+'\n({pg09CaptureContent,validationSummary})',ctx);
   const e={
-    processSteps:[{},{},{},{}],
-    frictions:[{evidence_type:'HYPOTHESIS'},{evidence_type:'HYPOTHESIS'},{evidence_type:'HYPOTHESIS'}],
+    processSteps:[{id:'P1',step_name:'Recibir factura'},{id:'P2',step_name:'Decidir aprobación'},{id:'P3',step_name:'Aprobar factura'},{id:'P4',step_name:'Registrar en ERP'}],
+    frictions:[
+      {id:'F1',friction_type:'reintroducción manual de datos',client_label:'Reintroducción manual',affected_steps:['P4'],evidence_type:'HYPOTHESIS',observable_signal:'Copiar datos de la factura al ERP',frequency:{value:100,mode:'percent'},active_time_loss:{value:5}},
+      {id:'F2',friction_type:'falta de visibilidad',client_label:'Falta de visibilidad',affected_steps:['P1','P2'],evidence_type:'HYPOTHESIS',observable_signal:'Seguimiento manual por correo',frequency:{value:30,mode:'percent'},active_time_loss:{value:10}},
+      {id:'F3',friction_type:'cuello de botella',client_label:'Espera de aprobación',affected_steps:['P2','P3'],evidence_type:'HYPOTHESIS',observable_signal:'Espera de aprobación',frequency:{value:8,mode:'percent'},wait_time_loss:{value:2880}}
+    ],
     risks:[{},{}],economicInputs:[{evidence_type:'HYPOTHESIS'},{evidence_type:'HYPOTHESIS'},{evidence_type:'HYPOTHESIS'}],
     layerConfirmations:{map:true,frictions:true,risks:true,impact:true},
     answers:{DF094:['No hay información crítica pendiente'],DF095:['Evidencia de reintroducción manual de datos','Evidencia de falta de visibilidad','Evidencia de cuello de botella']},
