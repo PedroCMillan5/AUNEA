@@ -280,11 +280,15 @@ test('The entire snapshot-to-results boundary invalidates review, client output 
  assert.equal(local.diagnosticOutputFreshness(e).status,'CURRENT');
  assert.equal(local.currentDiagnosticOutput(e),e.diagnosticOutput);
  assert.match(local.diagnosisEngineDecisionTraceHtml(e),/cinco respuestas técnicas/);
- assert.ok(local.reviewSources(e),'the current PG10 output can enter the consultant review stage');
+ const reviewInputs=local.reviewSources(e);
+ assert.ok(reviewInputs,'the current PG10 output can enter the consultant review stage');
+ e.outputReviews=[{status:'APPROVED_FOR_CLIENT',fingerprint:JSON.stringify(reviewInputs)}];
+ assert.ok(local.approvedOutputReview(e),'the reviewed result can become client-eligible');
  e.engineGates.management_visibility_need='YES';
  assert.equal(local.currentDiagnosticOutput(e),null);
  assert.equal(local.diagnosticOutputFreshness(e).status,'OBSOLETE');
  assert.equal(local.reviewSources(e),null);
+ assert.equal(local.approvedOutputReview(e),null,'the previous client approval cannot publish changed gate inputs');
  e.engineGates.management_visibility_need='NO';
  e.snapshot.version=2;
  assert.equal(local.currentDiagnosticOutput(e),null);
