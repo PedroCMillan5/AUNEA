@@ -94,6 +94,7 @@ function asisOwnerCollectionValue(field,record){
   if(!group)return null;
   // EconomicInputs are driver-scoped; unrelated drivers cannot supply a value.
   const driverFilter={
+    DF076:['ED01','ED02','ED03','ED04','ED05','ED06','ED07','ED08','ED14'],
     DF077:['ED14'],DF080:['ED04'],DF081:['ED06'],
     DF082:['ED09','ED11'],DF083:['ED12']
   };
