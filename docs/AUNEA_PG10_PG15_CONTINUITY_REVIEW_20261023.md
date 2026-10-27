@@ -133,3 +133,9 @@ Continúa REVIEW; no se promueven escenarios, entregables, fuentes canónicas ni
 **Verificación:** parser JavaScript `PASS` para los módulos modificados y los tests registrados; comprobación aislada ejecutada de renderizado con la estructura de Levante (4 pasos/3 fricciones/2 riesgos/3 eventos económicos): 4 fichas, 4 desplegables, 0 trípticos por paso, 3 alternativas globales, atribuciones legibles, contexto basado en el AS-IS, botones deshabilitados sin salida vigente y activos con ella, labels del pipeline en español y CSS responsive: 12/12 checks `PASS`. Regresiones ejecutables incorporadas en `frontend/tests/internal-work-p0.test.cjs`.
 
 **Gates pendientes:** no se ha ejecutado la suite Node completa ni UAT de navegador Chromium/Edge contra la instancia del usuario; el código permanece `REVIEW`. No se cambia el estado CANONICAL, las decisiones vigentes, Master Index ni ROADMAP mientras no se apruebe la aceptación funcional.
+
+### Corrección visual puntual — 27/10/2026 · Estado actual y tiempo de referencia
+
+La UAT visual detectó que los textos de ayuda de SLA y objetivos se concatenaban con el valor precedente (`48 horasNo equivale…`, `Reducir esperasSin tiempo…`). Se corrigió solo el marcado PG10 de las tres tarjetas con estructura explícita `diagnosis-reference-card/value/note`, y se fijaron layout vertical, espacio y separador en `AUNEA-FE-PG10-REFERENCE-LAYOUT-159`. DF025, DF026 y DF086 mantienen sus valores y procedencia. Prueba de regresión añadida en `internal-work-p0.test.cjs`.
+
+QA parcial: análisis sintáctico de archivos JS `PASS`; 7 verificaciones directas de markup/CSS y conservación de owners `PASS`. Verificación visual real en navegador aún pendiente; no se modifica CANONICAL.
