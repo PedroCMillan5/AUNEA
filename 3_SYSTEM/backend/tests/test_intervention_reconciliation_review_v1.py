@@ -191,4 +191,15 @@ def test_review_provenance_and_engagement_are_part_of_identity():
     assert first["candidate_assumptions"][0]["source_or_rule_id"] != second["candidate_assumptions"][0]["source_or_rule_id"]
     r.engagement_id = "DIFFERENT-ENGAGEMENT"
     assert not reconcile_interventions_review(r)["candidate_assumptions"]
+
+
+def test_annualized_overflow_is_validation_error_not_http_500():
+    from aunea_backend.api import app
+    r = request_for_invoice()
+    payload = r.model_dump(mode="json")
+    payload["projection"]["baseline"]["volume"] = 1e308
+    payload["projection"]["baseline"]["period"] = "MONTH"
+    response = TestClient(app).post("/v1/diagnostic/interventions/reconcile-review", json=payload)
+    assert response.status_code == 422
+    assert "numérico no finito" in response.json()["detail"]
 # [AUNEA-UAT-INTERVENTION-RECONCILE-156] END
