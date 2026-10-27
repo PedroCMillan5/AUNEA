@@ -117,3 +117,19 @@ Continúa REVIEW; no se promueven escenarios, entregables, fuentes canónicas ni
 5. **QA pendiente:** ejecución completa de las pruebas Node/backend, UAT de navegador y contraste del snapshot de Levante después de la confirmación (DF096, materialidad y estado vigente). Por tanto **no se declara la pantalla PG10 validada ni se modifica su estado CANONICAL/FROZEN**.
 
 **Límites conocidos:** la navegación añadida lleva a la ficha de punto de análisis asociada dentro de PG10 y el botón original abre la página AS-IS, sin selección automática del paso en el mapa fuente. Las alternativas genéricas repetitivas y limpieza visual corresponden a las prioridades 4–5, fuera de este incremento.
+
+## Incremento REVIEW — 27/10/2026 · PG10 prioridades 4–5 (alternativas y presentación)
+
+**Motivo:** el UAT visual de Levante mostraba en cada paso las tres mismas fichas de alternativas, repetidas otra vez al pie. El resultado dificultaba distinguir problemas capturados, análisis por paso, vías comparables y decisiones aún pendientes.
+
+**Cambios exclusivamente de lectura/interfaz:**
+
+- `asisPointCardsHtml`: un resumen por ProcessStep activo con fricciones, riesgos, vínculos económicos y tiempo declarado; un `<details>` por paso para ampliar fricciones, señal observable, atribución temporal `INCLUDED/BREAKDOWN/ADDITIONAL`, riesgos, registros económicos y fuentes pendientes. Los registros vinculados a un paso no demuestran causalidad ni dinero recuperable. Cada paso conserva su ancla para la navegación interna desde los hallazgos.
+- `asisPointReviewHtml` sustituye a la repetición de tres alternativas por paso. No asigna mejora ni elige tecnología. `asisDirectionCardsHtml` mantiene las tres vías canónicas en **un único comparador** global con contexto procedente de las actividades manuales, entradas documentales y bifurcaciones/aprobaciones efectivamente presentes en el AS-IS. El contexto solo informa de dónde revisar; no concluye aplicabilidad de IA ni de automatización.
+- Se conservan los identificadores canónicos de vías y los controles `data-draft-conditional-scenario` conectados al comparador backend; se deshabilitan con un texto explícito si el `DiagnosticOutput` oficial no está vigente. No se modifica `ScenarioComparator`, pricing, óptimo, snapshots ni datos de captura.
+- Reorganización visual dentro del bloque CSS vigente `AUNEA-FE-ASIS-WORKBENCH-STYLE-152`: tarjetas más compactas, detalles opcionales con teclado, jerarquía, espaciado, enlace resaltado al paso de origen, columnas responsivas y fuentes legibles. La cadena informativa del motor ahora se muestra en español sin alterar el orden técnico de cálculo.
+- `resultsPage` conserva una sola instancia de cada sección y el renderizador oficial del mapa. El usuario había informado de aparentes duplicaciones en captura de pantalla completa; no se confirma duplicación de DOM sin test de navegador.
+
+**Verificación:** parser JavaScript `PASS` para los módulos modificados y los tests registrados; comprobación aislada ejecutada de renderizado con la estructura de Levante (4 pasos/3 fricciones/2 riesgos/3 eventos económicos): 4 fichas, 4 desplegables, 0 trípticos por paso, 3 alternativas globales, atribuciones legibles, contexto basado en el AS-IS, botones deshabilitados sin salida vigente y activos con ella, labels del pipeline en español y CSS responsive: 12/12 checks `PASS`. Regresiones ejecutables incorporadas en `frontend/tests/internal-work-p0.test.cjs`.
+
+**Gates pendientes:** no se ha ejecutado la suite Node completa ni UAT de navegador Chromium/Edge contra la instancia del usuario; el código permanece `REVIEW`. No se cambia el estado CANONICAL, las decisiones vigentes, Master Index ni ROADMAP mientras no se apruebe la aceptación funcional.
