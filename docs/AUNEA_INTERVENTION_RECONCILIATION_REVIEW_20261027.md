@@ -121,3 +121,9 @@ binario; validar el Acceptance Gate sobre el commit publicado.
 El estado general sigue REVIEW. No cambia el orden del ROADMAP ni se promueve
 main, CANONICAL o producción. Se actualizan contrato REVIEW y BITACORA; el índice
 registra esta implementación candidata, sin convertirla en regla oficial.
+
+## Corrección posterior — 27/10/2026 (sin cierre QA)
+
+Tras interrupción de Work se ha verificado que el HEAD inicial seguía en `aeab13bf` y la defensa final ante desbordamiento no estaba publicada. Se ha incorporado al endpoint REVIEW una comprobación `json.dumps(..., allow_nan=False)` para rechazar resultados derivados no finitos como HTTP 422 (también captura errores aritméticos). Se añade prueba de regresión HTTP con volumen mensual 1e308 y anualización desbordada. Commits `dede329a` y `2fc399d2` en la rama obligatoria. Esta corrección es defensiva y no modifica los motores oficiales.
+
+**QA NO CERRADO**: tras ambos commits no hay ejecuciones de Actions asociadas devueltas por el conector ni estados combinados; no se ha ejecutado pytest/npm/Chromium desde una copia completa en este turno. Los 338/682 PASS anteriores son anteriores a la corrección. Chromium y la regresión posterior deben completarse antes de declarar el incremento aceptado. La integración oficial PG14 sigue BLOQUEADA por los pendientes de este documento; no promover CANONICAL ni publicar estimaciones como acreditadas.
