@@ -2029,6 +2029,22 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 }
 .asis-opportunity-point.is-selected{outline:2px solid var(--system,#24714f);outline-offset:3px}
 /* [AUNEA-FE-PG10-MAP-NAV-160] END */
+/* [AUNEA-FE-PG10-SOURCE-DETAIL-161] START — Compact, readable source-owner data in PG10 only. */
+.asis-opportunity-point .asis-point-conditional{
+  margin:4px 0 12px;color:var(--muted,#67736d);font-size:12px;line-height:1.5
+}
+.asis-opportunity-point .asis-origin-note{margin:8px 0;padding:7px 0;border-top:1px solid var(--border,#d8dedc)}
+.asis-opportunity-point .asis-origin-note>summary{cursor:pointer;color:var(--muted,#67736d);font-weight:650;font-size:12px;line-height:1.5}
+.asis-opportunity-point .asis-origin-note>p{
+  font-size:12px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere;margin:7px 0 0
+}
+.asis-opportunity-point .asis-step-time-note{margin-bottom:11px}
+.asis-opportunity-point .asis-point-review-grid li>small{display:block;line-height:1.55;margin:5px 0 0}
+.asis-opportunity-point .asis-point-review-grid li>small strong{font-weight:650}
+.asis-opportunity-point .asis-point-review-grid li a{color:var(--system,#24714f);font-weight:650}
+.asis-opportunity-point .asis-opportunity-gaps{margin-top:14px}
+.asis-opportunity-point .asis-opportunity-gaps summary{cursor:pointer;font-weight:650}
+/* [AUNEA-FE-PG10-SOURCE-DETAIL-161] END */
 /* [AUNEA-FE-ASIS-WORKBENCH-STYLE-152] END */
 
 /* [AUNEA-FE-PG10-REFERENCE-LAYOUT-159] START — Values and secondary explanations in separate rows.
