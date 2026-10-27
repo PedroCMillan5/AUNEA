@@ -63,29 +63,84 @@ async function runAsisAnalysis(e){
     render();
   }catch(err){toast('No se pudo analizar el AS-IS: '+String(err.message||err));render()}
 }
+// [AUNEA-FE-ASIS-COVERAGE-OWNER-161] START — DF001–DF100 owner-aware read-only inventory
+// Canonical sources: Diagnostic Master v1.2, DEC-050/052 and sealed Engagement snapshot.
+// Repeatable DF data belong to ProcessStep/Friction/Risk/EconomicInput; answers are not a second owner.
+// Never write through this projection, silently infer applicability, or treat a partial count as complete.
+function asisOwnerCollectionValue(field,record){
+  const fid=String(field.Field_ID||'');
+  const owner={
+    step:{DF031:'step_name',DF032:'step_type',DF033:'actor',DF034:'tool',DF035:'inputs',
+      DF036:'outputs',DF037:'active_time',DF038:'wait_time',DF039:'rework_time',
+      DF040:'error_rate',DF041:'decision_criteria',DF042:'normal_next_step',
+      DF043:'exception_path',DF044:'manual_actions',DF045:'automation_state'},
+    friction:{DF056:'client_label',DF057:'derived_pain_id',DF058:'cause',DF059:'affected_steps',
+      DF060:'frequency',DF061:'impact',DF062:'active_time_loss',DF063:'direct_loss',
+      DF064:'non_time_impact',DF065:'workaround'},
+    risk:{DF068:'description',DF069:'category',DF070:'likelihood_1_5',
+      DF071:'impact_1_5',DF072:'current_control'},
+    economic:{DF076:'capacity_cost_rate_eur_hour',DF077:'value',
+      DF080:'annual_active_hours',DF081:'annual_active_hours',
+      DF082:'direct_loss_eur_annual',DF083:'current_tool_cost_eur_annual',
+      DF084:'direct_loss_eur_annual'}
+  };
+  const groups=[
+    {key:'step',records:record?.processSteps||[]},
+    {key:'friction',records:record?.frictions||[]},
+    {key:'risk',records:record?.risks||[]},
+    {key:'economic',records:record?.economicInputs||[]}
+  ];
+  const group=groups.find(g=>Object.prototype.hasOwnProperty.call(owner[g.key],fid));
+  if(!group)return null;
+  // EconomicInputs are driver-scoped; unrelated drivers cannot supply a value.
+  const driverFilter={
+    DF076:['ED14'],DF077:['ED14'],DF080:['ED04'],DF081:['ED06'],
+    DF082:['ED09','ED11'],DF083:['ED12'],DF084:['ED10']
+  };
+  const rows=group.records.filter(x=>x&&x.status!=='SUPERSEDED')
+    .filter(x=>group.key!=='economic'||!driverFilter[fid]||
+      driverFilter[fid].includes(String(x.driver_id||'')));
+  const key=owner[group.key][fid];
+  const present=v=>{
+    if(v===undefined||v===null||v==='')return false;
+    if(typeof v==='object'&&!Array.isArray(v)){
+      if(['UNKNOWN','NOT_APPLICABLE'].includes(String(v.mode||'').toUpperCase()))return false;
+      if(Object.prototype.hasOwnProperty.call(v,'value'))return v.value!==null&&v.value!==undefined&&v.value!=='';
+    }
+    return typeof valuePresent==='function'?valuePresent(v):
+      !(Array.isArray(v)&&!v.length);
+  };
+  const found=rows.filter(x=>present(x[key])||(fid==='DF056'&&present(x.observable_signal))||
+    (fid==='DF057'&&present(x.friction_type))).length;
+  return {count:found,total:rows.length,owner:group.key};
+}
 function asisFieldInventory(record){
   const fields=Array.isArray(schema?.fields)?schema.fields:[];
   const order=(schema?.flow||[]).map(x=>x.Stage_ID);
   const stages=new Map(order.map(id=>[id,[]]));
   for(const f of fields){
     const stage=f.Stage_ID||'OTROS',fid=f.Field_ID,mode=String(f.Ask_Mode||'');
-    const raw=record?.answers?.[fid];
-    let value=raw;
-    if(typeof effectiveValue==='function'){
-      try{const effective=effectiveValue(f,record);if(effective!==undefined&&effective!==null&&effective!=='')value=effective}catch(_){}
+    const source=asisOwnerCollectionValue(f,record);
+    let value=record?.answers?.[fid];
+    if(!source&&typeof effectiveValue==='function'){
+      try{const effective=effectiveValue(f,record);
+        if(effective!==undefined&&effective!==null&&effective!=='')value=effective;
+      }catch(_){}
     }
-    const present=typeof valuePresent==='function'?valuePresent(value):
+    const singlePresent=typeof valuePresent==='function'?valuePresent(value):
       !(value===undefined||value===null||value===''||(Array.isArray(value)&&!value.length));
+    const present=source?source.count>0:singlePresent;
     let requiredNow=false;
     if(typeof canonicalFieldRequiredNow==='function'){
       try{requiredNow=!!canonicalFieldRequiredNow(f,record)}catch(_){}
     }
-    const status=present?(mode==='DERIVED'||mode==='SYSTEM_GENERATED'?'DERIVED':'AVAILABLE')
+    const derivedMode=['DERIVED','SYSTEM_GENERATED'].includes(mode);
+    const status=present?(derivedMode?'DERIVED':'AVAILABLE')
       :requiredNow?'MISSING_REQUIRED'
-      :mode==='DERIVED'||mode==='SYSTEM_GENERATED'?'DERIVATION_NOT_AVAILABLE':'NOT_CAPTURED_OR_CONDITIONAL';
+      :derivedMode?'DERIVATION_NOT_AVAILABLE':'NOT_CAPTURED_OR_CONDITIONAL';
     const item={id:fid,label:f.Pregunta_o_etiqueta_ES||f.Field_Name||'Dato del estudio',
       stage,mode,required:f.Requiredness||'',consumers:String(f.Engine_Consumers||''),
-      status,filled:present};
+      status,filled:present,source};
     if(!stages.has(stage))stages.set(stage,[]);
     stages.get(stage).push(item);
   }
@@ -94,6 +149,7 @@ function asisFieldInventory(record){
     items,filled:items.filter(x=>x.filled).length
   }));
 }
+// [AUNEA-FE-ASIS-COVERAGE-OWNER-161] END
 function asisSourceTime(v){
   if(v===null||v===undefined||v==='')return 'Sin cuantificar';
   const n=Number(v);return Number.isFinite(n)?n.toLocaleString('es-ES',{maximumFractionDigits:2})+' min':'Sin cuantificar';
@@ -274,7 +330,7 @@ function asisCoverageHtml(e,baseline){
     +(gaps.length?'<ul>'+gaps.slice(0,15).map(x=>'<li><b>'+esc(sourceLabel(x))+'</b> · '+esc(statusLabel(x))+(x.blocking?' · Bloqueante':' · No bloqueante')+'</li>').join('')+'</ul>':'<p>Sin entradas pendientes identificadas por el motor.</p>')
     +'</div>':'<p class="field-help">La cobertura del motor se comprueba al analizar el AS-IS sin imponer decisiones de tecnología.</p>')
     +'<details class="asis-field-ledger"><summary>Consultar procedencia y estado de los 100 campos</summary>'
-    +groups.map(g=>'<details><summary>'+esc(g.title)+' · '+g.filled+' de '+g.items.length+' con valor accesible</summary><ul>'+g.items.map(f=>'<li><span>'+esc(f.label)+'</span><small>'+esc(fieldStatus(f))+(f.consumers?' · Consumidores: '+esc(f.consumers):'')+'</small></li>').join('')+'</ul></details>').join('')+'</details>';
+    +groups.map(g=>'<details><summary>'+esc(g.title)+' · '+g.filled+' de '+g.items.length+' con valor accesible</summary><ul>'+g.items.map(f=>'<li><span>'+esc(f.label)+'</span><small>'+esc(fieldStatus(f))+(f.source?' · '+f.source.count+' de '+f.source.total+' registros con valor'+(f.source.count>0&&f.source.count<f.source.total?' (cobertura parcial)':''):'')+(f.consumers?' · Consumidores: '+esc(f.consumers):'')+'</small></li>').join('')+'</ul></details>').join('')+'</details>';
 }
 function asisDirectionCardsHtml(e){
   const record=asisAnalysisSource(e),steps=(record?.processSteps||[]).filter(x=>x.status!=='SUPERSEDED');
