@@ -179,7 +179,7 @@ function workbenchContinuityHtml(e){
   ).join('')+'</div><div class="notice info" style="margin-top:12px"><b>Presentación al cliente</b><br>'+
     (approved?'Existe una revisión autorizada para el snapshot y escenario vigentes.':'Todavía no hay una revisión vigente aprobada para cliente. El análisis interno no se publica automáticamente.')+
     (approved?' <button class="btn" data-page="modoresultados">Ver Modo Resultados</button>':'')+
-    '<small>Los tiempos futuros, la inversión y el ahorro solo aparecen cuando los motores los calculan a partir de supuestos y alcance válidos.</small></div>';
+    '<small class="client-presentation-note" style="display:block;margin-top:8px">Los tiempos futuros, la inversión y el ahorro solo aparecen cuando los motores los calculan a partir de supuestos y alcance válidos.</small></div>';
 }
 // [AUNEA-FE-WORKFLOW-READINESS-153] END
 
