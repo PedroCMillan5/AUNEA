@@ -219,7 +219,24 @@ function resultsPage(){
         <div class="card metric"><small>Backend</small><strong>${state.backendOnline?'OK':'—'}</strong><span>${state.backendOnline?'disponible':'se comprobará al ejecutar'}</span></div>
       </div>`
       +section('Recorrido de Trabajo Interno','Las etapas se alimentan del mismo AS-IS. Los estados indican disponibilidad, no aprobación automática.',workbenchContinuityHtml(e))
-      +section('Estado actual y tiempo de referencia','Los valores declarados se muestran sin convertir un SLA en objetivo de mejora ni inferir un ahorro.',`<div class="grid g3"><div class="notice"><b>Duración end-to-end actual</b><br>${esc(asisSourceBoundary(record,'DF026'))}</div><div class="notice"><b>SLA del servicio</b><br>${esc(asisSourceBoundary(record,'DF025'))}<small>No equivale al objetivo de reducción</small></div><div class="notice"><b>Objetivos del negocio</b><br>${esc(normalizeArray(record.answers?.DF086).map(x=>labelFrom('OS_FUTURE_OUTCOME',x)||x).join(' · ')||'No declarados')}<small>Sin tiempo futuro asumido</small></div></div>`)
+      +section('Estado actual y tiempo de referencia','Los valores declarados se muestran sin convertir un SLA en objetivo de mejora ni inferir un ahorro.',`
+        <div class="grid g3 diagnosis-reference-grid">
+          <div class="notice diagnosis-reference-card">
+            <b>Duración end-to-end actual</b>
+            <div class="diagnosis-reference-value">${esc(asisSourceBoundary(record,'DF026'))}</div>
+            <p class="diagnosis-reference-note">Duración total declarada; la conciliación con los pasos se revisa por separado.</p>
+          </div>
+          <div class="notice diagnosis-reference-card">
+            <b>SLA del servicio</b>
+            <div class="diagnosis-reference-value">${esc(asisSourceBoundary(record,'DF025'))}</div>
+            <p class="diagnosis-reference-note">Compromiso de servicio; no equivale al objetivo de reducción.</p>
+          </div>
+          <div class="notice diagnosis-reference-card">
+            <b>Objetivos del negocio</b>
+            <div class="diagnosis-reference-value">${esc(normalizeArray(record.answers?.DF086).map(x=>labelFrom('OS_FUTURE_OUTCOME',x)||x).join(' · ')||'No declarados')}</div>
+            <p class="diagnosis-reference-note">Sin tiempo futuro calculado ni asumido.</p>
+          </div>
+        </div>`)
       +section('Mapa y puntos críticos del AS-IS','Mapa confirmado en lectura. Las fichas muestran el origen de cada problema y permiten consultar el detalle sin duplicar tres alternativas por paso.',diagnosisReadonlyMap(e,record)+asisPointCardsHtml(record))
       +section('Cobertura de los 100 campos y gaps','Se examina cada fuente, incluidas condiciones y datos opcionales; los gaps técnicos se contrastan en el backend.',asisCoverageHtml(e,asisAnalysisResult(e)))
       +section('Diagnóstico de problemas sin elegir tecnología','Pain, economía, riesgo y tiempos se calculan en el backend sin fabricar respuestas Sí/No para soluciones.',asisBaselineHtml(e))
