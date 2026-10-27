@@ -78,6 +78,7 @@ function diagnosisFindingsHtml(record,pains){
     const priorityKnown=priorityIds.length>0;
     const prioritySelected=trace.frictions.some(f=>priorityIds.includes(String(f.id)));
     const confidenceText=p.confidence?engineLabel('confidence',p.confidence):'Sin clasificar';
+    const firstStep=trace.stepIds[0];
     return `<article class="diagnosis-finding">
       <div class="diagnosis-finding-head"><div><span class="diagnosis-rank">${i+1}</span><div><h3>${esc(diagnosisPainLabel(p.pain_id))}</h3><p>${p.rationale?esc(p.rationale):'Hallazgo calculado por el backend a partir de la captura confirmada.'}</p></div></div><div class="diagnosis-state"><span>${p.state?esc(engineLabel('pain_state',p.state)):'—'}</span><small>Confianza: ${p.confidence?esc(engineLabel('confidence',p.confidence)):'—'}</small></div></div>
       <div class="diagnosis-trace-grid">
@@ -89,6 +90,7 @@ function diagnosisFindingsHtml(record,pains){
         <div><small>Impacto relacionado</small><b>${esc(impacts.join(' · ')||'Sin impacto económico/temporal enlazado')}</b></div>
         <div><small>Riesgos en los mismos pasos</small><b>${esc(riskText.join(' · ')||'Ninguno registrado')}</b></div>
       </div>
+      ${firstStep?'<a class="btn btn-outline" href="#asis-source-step-'+attr(String(firstStep))+'">Ver punto de análisis en esta página</a>':''}
       <details class="diagnosis-source-review">
         <summary>Ver trazabilidad del hallazgo</summary>
         <div class="notice info"><b>Origen del análisis</b><br>Hallazgo producido por el motor a partir del diagnóstico confirmado. La relación con los pasos se obtiene de los vínculos registrados, no demuestra por sí sola causalidad.</div>
