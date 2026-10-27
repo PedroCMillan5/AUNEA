@@ -162,3 +162,95 @@ test('PG10 EconomicInput cards distinguish zero, missing and unearned savings',(
   assert.match(fn,/No es una previsión de ahorro futuro/);
   assert.match(fn,/no equivale a un coste eliminable/);
 });
+
+
+// [AUNEA-UAT-PG10-COMPACT-158] START — Source-grounded UAT for one comparator and progressive drilldown.
+// Tests the HTML returned by the real PG10 functions, without any backend or persisted mutations.
+function pg10CompactRenderers(){
+  const begin=workbench.indexOf('const ASIS_CONDITIONAL_DIRECTIONS=');
+  const stop=workbench.indexOf('function asisAnalysisSnapshot(',begin);
+  assert.ok(begin>=0&&stop>begin);
+  const extract=name=>{
+    const from=workbench.indexOf('function '+name+'('),to=workbench.indexOf('\nfunction ',from+10);
+    assert.ok(from>=0&&to>from,'Function '+name+' is present');
+    return workbench.slice(from,to);
+  };
+  const source=workbench.slice(begin,stop)
+    +['asisPointRecords','asisPointReviewHtml','asisPointCardsHtml','asisDirectionCardsHtml'].map(extract).join('\n')
+    +'\nreturn {asisPointCardsHtml,asisDirectionCardsHtml};';
+  let official=false;
+  const renderers=new Function(
+    'normalizeArray','labelFrom','esc','attr','asisSourceTime','econDriverLabel','asisAnalysisSource','currentDiagnosticOutput',source
+  )(
+    v=>Array.isArray(v)?v:v==null?[]:[v],
+    (_,v)=>v,
+    v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'),
+    v=>String(v??'').replaceAll('"','&quot;'),
+    v=>v==null?'No consta':v+' min',
+    x=>x||'Evento',
+    e=>e,
+    ()=>official?{input_snapshot_hash:'official'}:null
+  );
+  return {...renderers,enableOfficial:()=>{official=true}};
+}
+function levantePg10Fixture(){
+  return {
+    processSteps:[
+      {id:'P1',step_name:'Recibir factura del proveedor',active_time:3,wait_time:0,rework_time:0,inputs:['PDF'],manual_actions:['CHECK']},
+      {id:'P2',step_name:'Determinar si procede aprobación',step_type:'ST04',decision_criteria:['THRESHOLD'],exception_path:{destination_step:'P4'},active_time:2,wait_time:0,rework_time:0,manual_actions:['COMPARE']},
+      {id:'P3',step_name:'Aprobar factura',step_type:'ST05',active_time:6,wait_time:768,rework_time:0,inputs:['PDF'],manual_actions:['CHECK']},
+      {id:'P4',step_name:'Registrar en ERP y archivar expediente',active_time:10,wait_time:0,rework_time:5,inputs:['PDF'],manual_actions:['REKEY']}
+    ],
+    frictions:[
+      {id:'F1',affected_steps:['P4'],client_label:'Reintroducción manual',observable_signal:'5 min ya incluidos',time_attribution:{mode:'INCLUDED'}},
+      {id:'F2',affected_steps:['P1','P2'],client_label:'Falta de visibilidad',observable_signal:'10 min adicionales',time_attribution:{mode:'ADDITIONAL'}},
+      {id:'F3',affected_steps:['P2','P3'],client_label:'Esperas de aprobación',observable_signal:'2 días ponderados',time_attribution:{mode:'INCLUDED'}}
+    ],
+    risks:[{step_ids:['P1','P4'],description:'Pérdida de trazabilidad'},{step_ids:['P4'],description:'Errores ERP'}],
+    economicInputs:[{step_ids:['P1','P2','P4'],driver_id:'ED14'},{step_ids:['P3'],driver_id:'ED14'},{step_ids:['P4'],driver_id:'ED12'}]
+  };
+}
+test('PG10 renders one compact step card per active source step without repeating three alternatives inside each',()=>{
+  const render=pg10CompactRenderers(),html=render.asisPointCardsHtml(levantePg10Fixture());
+  assert.equal(html.split('class="asis-opportunity-point"').length-1,4);
+  assert.equal(html.split('class="asis-point-review"').length-1,4);
+  assert.doesNotMatch(html,/asis-point-alternatives-grid|asis-point-alternative"/);
+  assert.match(html,/Reintroducción manual/);
+  assert.match(html,/Falta de visibilidad/);
+  assert.match(html,/Incluido en el paso/);
+  assert.match(html,/Adicional al paso/);
+  assert.match(html,/no implica causa, importe recuperable ni ahorro/);
+  assert.match(html,/id="asis-source-step-P4"/);
+});
+test('PG10 has exactly three global paths grounded in AS-IS and preserves governed scenario actions',()=>{
+  const render=pg10CompactRenderers(),record=levantePg10Fixture();
+  const pending=render.asisDirectionCardsHtml(record);
+  assert.equal(pending.split('class="asis-direction-card"').length-1,3);
+  assert.match(pending,/Acciones manuales registradas en:/);
+  assert.match(pending,/Documentos o mensajes registrados como entrada en:/);
+  assert.match(pending,/Decisiones, excepciones o aprobaciones registradas en:/);
+  assert.match(pending,/Disponible tras calcular el diagnóstico oficial/);
+  assert.equal(pending.split('disabled title="Primero calcula el diagnóstico oficial"').length-1,3);
+  render.enableOfficial();
+  const official=render.asisDirectionCardsHtml(record);
+  assert.equal(official.split('data-draft-conditional-scenario=').length-1,3);
+  assert.doesNotMatch(official,/disabled title="Primero calcula el diagnóstico oficial"/);
+  assert.match(official,/Tiempo futuro, ahorro y precio pendientes/);
+});
+test('PG10 compact hierarchy stays Spanish, responsive and does not duplicate the diagram or stages',()=>{
+  const css=fs.readFileSync(path.join(root,'ui-system.css'),'utf8');
+  assert.match(css,/\.asis-opportunity-point:target/);
+  assert.match(css,/\.asis-point-review-grid/);
+  assert.match(css,/\.asis-direction-source/);
+  assert.match(css,/@media\(max-width:760px\)/);
+  assert.match(results,/<span>Problemas<\/span>/);
+  assert.match(results,/<span>Impacto económico<\/span>/);
+  assert.doesNotMatch(results,/<span>Recommendation<\/span>/);
+  const start=results.indexOf('function resultsPage(');
+  const end=results.indexOf('\nfunction ',start+10);
+  const page=results.slice(start,end);
+  assert.equal(page.split("section('Mapa y puntos críticos del AS-IS'").length-1,1);
+  assert.equal(page.split("section('Alternativas de intervención a contrastar'").length-1,1);
+  assert.equal(page.split("section('Qué ocurrirá al calcular la recomendación'").length-1,1);
+});
+// [AUNEA-UAT-PG10-COMPACT-158] END
