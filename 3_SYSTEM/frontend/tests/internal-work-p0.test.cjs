@@ -117,7 +117,7 @@ test('PG10 coverage separates accessible, derived and nonrequired absent data',(
   assert.match(workbench,/DERIVATION_NOT_AVAILABLE/);
   assert.match(workbench,/NOT_CAPTURED_OR_CONDITIONAL/);
   assert.match(workbench,/canonicalMissingRequired\(e\)/);
-  assert.match(workbench,/no equivalen a preguntas obligatorias pendientes/);
+  assert.match(workbench,/Los campos opcionales o condicionales no son automáticamente preguntas pendientes/);
   assert.match(workbench,/x\.blocking\?' · Bloqueante':' · No bloqueante'/);
   assert.match(workbench,/x\.source_fields/);
 });
@@ -145,7 +145,7 @@ test('PG10 coverage reads actual repeatable owners and identifies partial covera
   const record={answers:{},
     processSteps:[{step_name:'P1',actor:'Compras'},{step_name:'P2',actor:'Finanzas'},
       {step_name:'P3'},{step_name:'P4',actor:'Administración'}],
-    frictions:[{observable_signal:'Reintroducción de datos'},{client_label:'Seguimiento'},{client_label:'Esperas'}],
+    frictions:[{friction_type:'P03',observable_signal:'Reintroducción de datos'},{friction_type:'P09',client_label:'Seguimiento'},{friction_type:'P07',client_label:'Esperas'}],
     risks:[{likelihood_1_5:3},{likelihood_1_5:2}],
     economicInputs:[{driver_id:'ED01',capacity_cost_rate_eur_hour:19},
       {driver_id:'ED14',capacity_cost_rate_eur_hour:23},{driver_id:'ED12',current_tool_cost_eur_annual:0}]};
@@ -167,6 +167,75 @@ test('PG10 preparation distinguishes missing capture data from unresolved consul
   assert.doesNotMatch(results,/Hay información obligatoria pendiente:/);
 });
 // [AUNEA-UAT-PG10-COVERAGE-OWNER-161] END
+
+// [AUNEA-UAT-PG10-COVERAGE-162] START — Real three-level renderer with backend-authoritative status.
+test('PG10 coverage shows capture integrity, server sufficiency and consultant gates as separate levels',()=>{
+  const extract=name=>{
+    const start=workbench.indexOf('function '+name+'(');
+    const end=workbench.indexOf('\nfunction ',start+10);
+    assert.ok(start>=0&&end>start,'renderer present: '+name);
+    return workbench.slice(start,end);
+  };
+  const fields=Array.from({length:100},(_,i)=>({
+    Field_ID:'DF'+String(i+1).padStart(3,'0'),
+    Pregunta_o_etiqueta_ES:'Pregunta '+(i+1),Stage_ID:'S01',Ask_Mode:'ASK'
+  }));
+  const inputSource=[
+    {status:'COVERED',source_fields:['DF031'],blocking:true},
+    {status:'GAP',source_fields:['DF070'],blocking:true},
+    {status:'UNKNOWN_APPLICABILITY',source_fields:['DF084'],blocking:false},
+    {status:'NOT_APPLICABLE',source_fields:['DF075'],blocking:false}
+  ];
+  const fn=new Function('schema','asisAnalysisSource','asisFieldInventory','canonicalMissingRequired',
+    'captureIntegrityIssues','asisAnalysisSnapshot','normalizeArray','esc',
+    'currentDiagnosticOutput','unresolvedEngineGates','ENGINE_GATE_CONTRACT','ENGINE_GATE_GUIDE',
+    extract('asisCoverageHtml')+'\nreturn asisCoverageHtml;')(
+      {fields},
+      e=>e,
+      ()=>[{stage:'S01',title:'Contexto',filled:2,items:fields.map((f,i)=>({
+        id:f.Field_ID,label:f.Pregunta_o_etiqueta_ES,status:i===0?'AVAILABLE':'NOT_CAPTURED_OR_CONDITIONAL',
+        filled:i===0,source:null,consumers:''
+      }))}],
+      ()=>[],()=>[],
+      ()=>({version:3}),
+      x=>Array.isArray(x)?x:x?[x]:[],
+      x=>String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'),
+      ()=>null,
+      ()=>[{key:'existing_tool_can_close',label:'¿Herramientas existentes?'}],
+      [{key:'existing_tool_can_close'},{key:'process_design_first'}],
+      {existing_tool_can_close:{title:'¿Las herramientas actuales pueden resolver el problema?'}}
+  );
+  const e={id:'TEST-ENG',confirmedAsIs:true};
+  const empty=fn(e,null);
+  assert.match(empty,/1\. Integridad de la captura/);
+  assert.match(empty,/2\. Suficiencia para el análisis/);
+  assert.match(empty,/3\. Preparación de los motores/);
+  assert.match(empty,/No consta una evaluación vigente de las entradas del backend/);
+  assert.match(empty,/Quedan 1 de 2 decisiones técnicas pendientes/);
+  assert.match(empty,/Auditoría detallada: procedencia y estado de los 100 campos/);
+  assert.doesNotMatch(empty,/Todos los datos permiten recomendar una solución/);
+  const blocked=fn(e,{input_coverage:{status:'BLOCKED',items:inputSource}});
+  assert.match(blocked,/Entradas bloqueantes/);
+  assert.match(blocked,/Entradas evaluadas: 4/);
+  assert.match(blocked,/Cubiertas: 1/);
+  assert.match(blocked,/Bloqueantes: 1/);
+  assert.match(blocked,/Probabilidad|Pregunta 70/);
+  assert.match(blocked,/No aplicables: 1/);
+  assert.match(blocked,/Aplicabilidad incierta: 1/);
+  assert.ok(blocked.indexOf('Integridad de la captura')<blocked.indexOf('Suficiencia para el análisis'));
+  assert.ok(blocked.indexOf('Suficiencia para el análisis')<blocked.indexOf('Preparación de los motores'));
+});
+test('PG10 source audit counts only backend-aligned fields, not similar-looking UI aliases',()=>{
+  assert.match(workbench,/DF056:'friction_type'/);
+  assert.match(workbench,/DF061:'severity'/);
+  assert.match(workbench,/DF072:'controls_present'/);
+  assert.doesNotMatch(workbench,/DF061:'impact'/);
+  assert.doesNotMatch(workbench,/DF084:'direct_loss_eur_annual'/);
+  assert.doesNotMatch(workbench,/fid==='DF057'&&present\(x\.friction_type\)/);
+});
+// [AUNEA-UAT-PG10-COVERAGE-162] END
+
+
 
 test('PG10 findings use canonical Spanish friction labels and show grounded trace',()=>{
   const start=results.indexOf('function diagnosisPainLabel(');
