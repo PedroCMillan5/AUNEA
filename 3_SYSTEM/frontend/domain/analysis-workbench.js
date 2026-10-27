@@ -159,7 +159,7 @@ function asisPointCardsHtml(record){
   const card=p=>{
     const step=p.step;
     const list=(items,text)=>items.length?'<ul>'+items.map(x=>'<li>'+esc(text(x))+'</li>').join('')+'</ul>':'<p>No consta vínculo directo.</p>';
-    return '<article class="asis-opportunity-point"><div class="asis-opportunity-head"><b>Paso '+(p.index+1)+' · '+esc(step.step_name||'Sin título')+'</b><span>'+p.frictions.length+' fricciones · '+p.risks.length+' riesgos · '+p.impacts.length+' impactos</span></div>'
+    return '<article class="asis-opportunity-point" id="asis-source-step-'+attr(String(step.id))+'"><div class="asis-opportunity-head"><b>Paso '+(p.index+1)+' · '+esc(step.step_name||'Sin título')+'</b><span>'+p.frictions.length+' fricciones · '+p.risks.length+' riesgos · '+p.impacts.length+' impactos</span></div>'
       +'<div class="asis-opportunity-times"><span>Trabajo: '+esc(asisSourceTime(step.active_time))+'</span><span>Espera: '+esc(asisSourceTime(step.wait_time))+'</span><span>Retrabajo: '+esc(asisSourceTime(step.rework_time))+'</span></div>'
       +'<div class="asis-opportunity-columns"><div><b>Puntos observados</b>'+list(p.frictions,f=>f.client_label||f.observable_signal||labelFrom('OS_FRICTION_TYPE',f.friction_type)||'Fricción registrada')+'</div>'
       +'<div><b>Riesgos y costes vinculados</b>'+list(p.risks,r=>r.description||labelFrom('OS_RISK_CATEGORY',r.category)||'Riesgo registrado')
