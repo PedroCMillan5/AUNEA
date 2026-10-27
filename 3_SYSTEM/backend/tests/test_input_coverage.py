@@ -1,4 +1,4 @@
-from aunea_backend.input_coverage import InputCoverageEngine, relational_integrity_issues
+from aunea_backend.input_coverage import InputCoverageEngine, relational_integrity_issues, _source_present
 from aunea_backend.models import EngagementInput, EconomicInput, RiskInput
 
 def engagement(**overrides):
@@ -62,3 +62,13 @@ def test_invoice_wait_and_rework_impacts_are_valid_when_anchored_to_the_real_ste
         EconomicInput(step_ids=["S5"],pain_id="P07",driver_id="ED13",annual_wait_hours=4320,evidence_type="CLIENT_DECLARED"),
     ])
     assert relational_integrity_issues(e)==[]
+
+def test_df061_reads_current_friction_impact_without_asking_again_for_severity():
+    """DF061 belongs to the existing Friction record; legacy severity remains readable."""
+    e = engagement()
+    e.questionnaire_answers["_frictions"] = [{"friction_type": "P03", "impact": "3"}]
+    assert _source_present("DF061", e)
+    e.questionnaire_answers["_frictions"] = [{"friction_type": "P03", "severity": "4"}]
+    assert _source_present("DF061", e)
+    e.questionnaire_answers["_frictions"] = [{"friction_type": "P03"}]
+    assert not _source_present("DF061", e)
