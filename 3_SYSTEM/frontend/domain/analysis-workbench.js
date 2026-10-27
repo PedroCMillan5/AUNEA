@@ -132,45 +132,48 @@ function asisPointRecords(record){
 }
 // Three contextual options per critical ProcessStep, all sourced from the same confirmed AS-IS.
 // Applicability is deliberately undecided: no Pain→step economics or future-time rule is assumed.
-function asisPointAlternativesHtml(p){
-  const name=String(p.step.step_name||'este paso');
-  const labels=p.frictions.map(f=>f.client_label||f.observable_signal||labelFrom('OS_FRICTION_TYPE',f.friction_type)||'Fricción registrada');
-  const focus=labels.length?labels.join(' · '):p.risks.length?'Riesgos registrados para este paso':'Impactos económicos registrados para este paso';
-  const alternatives=[
-    'Comprobar si las actividades y excepciones de '+name+' se pueden resolver con reglas verificables e integraciones.',
-    'Comprobar si '+name+' necesita interpretar información variable, con supervisión humana y pruebas de calidad.',
-    'Comprobar si se puede simplificar '+name+' con cambios de proceso y funciones de las herramientas actuales.'
-  ];
-  return '<details class="asis-point-alternatives" open><summary>Comparar tres alternativas para este punto</summary>'
-    +'<p class="field-help">Origen del contraste: '+esc(focus)+'. La relación es contextual: no prueba por sí sola que ninguna alternativa resuelva el problema.</p>'
-    +'<div class="asis-point-alternatives-grid">'+ASIS_CONDITIONAL_DIRECTIONS.map((d,i)=>
-      '<article class="asis-point-alternative" data-asis-direction="'+i+'"><b>'+(i+1)+'. '+esc(d.name)+'</b>'
-      +'<p><strong>Qué se evaluaría:</strong> '+esc(alternatives[i])+'</p>'
-      +'<p><strong>Aplicaría si:</strong> '+esc(d.condition)+'</p>'
-      +'<p><strong>A favor:</strong> '+esc(d.advantage)+'</p>'
-      +'<p><strong>En contra:</strong> '+esc(d.drawback)+'</p>'
-      +'<p><strong>Verificar:</strong> '+esc(d.dependencies.join(' · '))+'</p>'
-      +'<p class="asis-point-alternative-pending"><strong>Tiempo futuro y contribución:</strong> no calculados; faltan hipótesis TO-BE por intervención y conciliación de solapes.</p>'
-      +'</article>').join('')+'</div></details>';
+function asisPointReviewHtml(p){
+  const label=x=>x.client_label||x.observable_signal||labelFrom('OS_FRICTION_TYPE',x.friction_type)||'Fricción registrada';
+  const attribution={INCLUDED:'Incluido en el paso',BREAKDOWN:'Desglose del retrabajo',ADDITIONAL:'Adicional al paso'};
+  const list=(items,fn)=>items.length?'<ul>'+items.map(x=>'<li>'+fn(x)+'</li>').join('')+'</ul>':'<p class="field-help">Sin registros vinculados a este paso.</p>';
+  const frictions=list(p.frictions,f=>{
+    const mode=attribution[f.time_attribution?.mode]||'Atribución pendiente de verificar';
+    return '<b>'+esc(label(f))+'</b> · '+esc(mode)
+      +(f.observable_signal?'<small>'+esc(f.observable_signal)+'</small>':'<small>Señal observable no documentada</small>');
+  });
+  const risks=list(p.risks,r=>esc(r.description||labelFrom('OS_RISK_CATEGORY',r.category)||'Riesgo registrado'));
+  const costs=list(p.impacts,x=>esc(typeof econDriverLabel==='function'?econDriverLabel(x.driver_id):x.driver_id||'Entrada económica')
+    +'<small>Evento vinculado por paso; no implica causa, importe recuperable ni ahorro.</small>');
+  return '<details class="asis-point-review"><summary>Consultar evidencias y relaciones del paso</summary>'
+    +'<div class="asis-point-review-grid">'
+    +'<div><b>Fricciones</b>'+frictions+'</div>'
+    +'<div><b>Riesgos</b>'+risks+'</div>'
+    +'<div><b>Registros económicos relacionados</b>'+costs+'</div>'
+    +'</div>'
+    +(p.gaps.length?'<div class="asis-opportunity-gaps"><b>Información que requiere comprobación</b><ul>'+p.gaps.map(g=>'<li>'+esc(g)+'</li>').join('')+'</ul></div>':'')
+    +'<p class="field-help">Las tres vías de mejora se contrastan en una única sección inferior. Ninguna alternativa está elegida y no se asignan ahorros futuros a este paso.</p>'
+    +'</details>';
 }
 function asisPointCardsHtml(record){
-  const source=asisPointRecords(record);
-  const rows=source.points.filter(p=>p.critical);
+  const source=asisPointRecords(record),rows=source.points.filter(p=>p.critical);
   const card=p=>{
     const step=p.step;
-    const list=(items,text)=>items.length?'<ul>'+items.map(x=>'<li>'+esc(text(x))+'</li>').join('')+'</ul>':'<p>No consta vínculo directo.</p>';
-    return '<article class="asis-opportunity-point" id="asis-source-step-'+attr(String(step.id))+'"><div class="asis-opportunity-head"><b>Paso '+(p.index+1)+' · '+esc(step.step_name||'Sin título')+'</b><span>'+p.frictions.length+' fricciones · '+p.risks.length+' riesgos · '+p.impacts.length+' impactos</span></div>'
-      +'<div class="asis-opportunity-times"><span>Trabajo: '+esc(asisSourceTime(step.active_time))+'</span><span>Espera: '+esc(asisSourceTime(step.wait_time))+'</span><span>Retrabajo: '+esc(asisSourceTime(step.rework_time))+'</span></div>'
-      +'<div class="asis-opportunity-columns"><div><b>Puntos observados</b>'+list(p.frictions,f=>f.client_label||f.observable_signal||labelFrom('OS_FRICTION_TYPE',f.friction_type)||'Fricción registrada')+'</div>'
-      +'<div><b>Riesgos y costes vinculados</b>'+list(p.risks,r=>r.description||labelFrom('OS_RISK_CATEGORY',r.category)||'Riesgo registrado')
-      +(p.impacts.length?'<p>'+p.impacts.length+' impacto(s) relacionados; valores pertenecen a EconomicInput.</p>':'')+'</div></div>'
-      +(p.gaps.length?'<div class="asis-opportunity-gaps"><b>Datos a comprobar</b><ul>'+p.gaps.map(g=>'<li>'+esc(g)+'</li>').join('')+'</ul></div>':'')
-      +'<div class="asis-opportunity-direction"><b>Qué se puede evaluar para este punto:</b> simplificar la actividad; resolverla mediante reglas e integración; o añadir asistencia IA solo si la naturaleza de sus entradas lo exige. Ninguna opción lleva ahorro asignado sin una hipótesis futura trazable.</div>'+asisPointAlternativesHtml(p)+'</article>';
+    const observed=p.frictions.map(f=>f.client_label||f.observable_signal||labelFrom('OS_FRICTION_TYPE',f.friction_type)||'Fricción registrada');
+    const headline=observed.length?observed.join(' · '):p.risks.length
+      ?'Paso con riesgo registrado':'Paso relacionado con entradas económicas';
+    return '<article class="asis-opportunity-point" id="asis-source-step-'+attr(String(step.id))+'">'
+      +'<div class="asis-opportunity-head"><b>Paso '+(p.index+1)+' · '+esc(step.step_name||'Sin título')+'</b>'
+      +'<span>'+p.frictions.length+' fricciones · '+p.risks.length+' riesgos · '+p.impacts.length+' registros económicos</span></div>'
+      +'<p class="asis-point-headline">'+esc(headline)+'</p>'
+      +'<div class="asis-opportunity-times"><span>Trabajo: '+esc(asisSourceTime(step.active_time))+'</span>'
+      +'<span>Espera: '+esc(asisSourceTime(step.wait_time))+'</span>'
+      +'<span>Retrabajo declarado: '+esc(asisSourceTime(step.rework_time))+'</span></div>'
+      +asisPointReviewHtml(p)+'</article>';
   };
   const orphan=source.orphanFrictions.length+source.orphanRisks.length+source.orphanImpacts.length;
-  return '<div class="asis-opportunity-summary"><b>'+rows.length+' pasos con fricciones, riesgos o impactos relacionados</b> de '+source.points.length+' pasos activos. La vinculación señala dónde analizar, no asigna causalidad automáticamente.</div>'
-    +(rows.length?'<div class="asis-opportunity-list">'+rows.map(card).join('')+'</div>':'<p>No hay puntos con relaciones registradas. No se inventan incidencias.</p>')
-    +(orphan?'<div class="notice warn">'+orphan+' registro(s) sin vínculo directo al paso en este mapa. Revisar su ámbito en la fuente antes de atribuir impactos.</div>':'');
+  return '<div class="asis-opportunity-summary"><b>'+rows.length+' pasos con relaciones registradas</b> de '+source.points.length+' pasos activos. El vínculo ayuda a investigar; no atribuye causalidad, beneficios o soluciones.</div>'
+    +(rows.length?'<div class="asis-opportunity-list">'+rows.map(card).join('')+'</div>':'<p>No hay pasos con relaciones de fricciones, riesgos o eventos económicos. No se inventan incidencias.</p>')
+    +(orphan?'<div class="notice warn">'+orphan+' registro(s) sin vínculo directo con un paso activo. Revisar su ámbito antes de atribuir efectos.</div>':'');
 }
 function asisCoverageHtml(e,baseline){
   const record=asisAnalysisSource(e),groups=asisFieldInventory(record),all=groups.flatMap(g=>g.items),total=all.length;
@@ -205,17 +208,33 @@ function asisCoverageHtml(e,baseline){
     +groups.map(g=>'<details><summary>'+esc(g.title)+' · '+g.filled+' de '+g.items.length+' con valor accesible</summary><ul>'+g.items.map(f=>'<li><span>'+esc(f.label)+'</span><small>'+esc(fieldStatus(f))+(f.consumers?' · Consumidores: '+esc(f.consumers):'')+'</small></li>').join('')+'</ul></details>').join('')+'</details>';
 }
 function asisDirectionCardsHtml(e){
+  const record=asisAnalysisSource(e),steps=(record?.processSteps||[]).filter(x=>x.status!=='SUPERSEDED');
   const gateEvidence=typeof engineGateReviewEvidence==='function'&&typeof ENGINE_GATE_CONTRACT!=='undefined'
     ?ENGINE_GATE_CONTRACT.map(g=>({name:ENGINE_GATE_GUIDE[g.key]?.title||g.label,...engineGateReviewEvidence(g,e)})):[];
-  return '<p class="field-help">Tres líneas de intervención para contrastar sobre los mismos puntos. No son escenarios calculados, soluciones aprobadas ni precios comerciales. Solo pasan a escenarios oficiales tras documentar viabilidad y supuestos.</p>'
+  const names=items=>items.length?items.map(x=>x.step_name||'Paso sin título').join(' · '):'No consta un paso específico que permita adelantar una conclusión.';
+  const manual=steps.filter(s=>normalizeArray(s.manual_actions).length>0);
+  const documents=steps.filter(s=>normalizeArray(s.inputs).some(x=>['PDF','DOC','EMAIL','TEXT','DOCUMENT'].includes(String(x).toUpperCase())));
+  const decisions=steps.filter(s=>['ST04','ST05'].includes(String(s.step_type))||
+    normalizeArray(s.decision_criteria).length>0||!!s.exception_path?.destination_step);
+  const contexts=[
+    'Acciones manuales registradas en: '+names(manual)+'. La posibilidad de automatizarlas sigue sin comprobarse.',
+    'Documentos o mensajes registrados como entrada en: '+names(documents)+'. Su variabilidad y necesidad real de IA deben contrastarse.',
+    'Decisiones, excepciones o aprobaciones registradas en: '+names(decisions)+'. Su simplificación y las capacidades actuales deben verificarse.'
+  ];
+  return '<p class="field-help">Las tres vías se presentan una sola vez para todo el AS-IS; cada ficha muestra datos del proceso relevantes para evaluar su viabilidad. No son soluciones aprobadas ni escenarios cuantificados.</p>'
     +'<div class="asis-direction-grid">'+ASIS_CONDITIONAL_DIRECTIONS.map((d,i)=>
-      '<article class="asis-direction-card"><h3>'+(i+1)+'. '+esc(d.name)+'</h3><p><b>Aplicaría si:</b> '+esc(d.condition)+'</p><p><b>Intervención posible:</b> '+esc(d.approach)+'</p>'
-      +'<p><b>Ventaja:</b> '+esc(d.advantage)+'</p><p><b>Limitación:</b> '+esc(d.drawback)+'</p>'
-      +'<b>Comprobaciones necesarias</b><ul>'+d.dependencies.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>'
-      +'<p><b>Mejora global y precio:</b> pendientes de simulación con hipótesis justificadas y cotización canónica.</p>'
+      '<article class="asis-direction-card"><h3>'+(i+1)+'. '+esc(d.name)+'</h3>'
+      +'<p class="asis-direction-source"><b>Qué muestra este AS-IS</b><span>'+esc(contexts[i])+'</span></p>'
+      +'<p><b>Se consideraría si:</b> '+esc(d.condition)+'</p>'
+      +'<p><b>Intervención a contrastar:</b> '+esc(d.approach)+'</p>'
+      +'<details class="asis-direction-detail"><summary>Ver ventajas, límites y comprobaciones</summary>'
+      +'<p><b>Ventaja posible:</b> '+esc(d.advantage)+'</p>'
+      +'<p><b>Limitación:</b> '+esc(d.drawback)+'</p>'
+      +'<b>Comprobaciones necesarias</b><ul>'+d.dependencies.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul></details>'
+      +'<p class="asis-direction-pending">Tiempo futuro, ahorro y precio pendientes de hipótesis verificadas y simulación canónica.</p>'
       +'<button type="button" class="btn btn-outline" data-draft-conditional-scenario="'+i+'">Explorar esta alternativa con el motor</button></article>'
     ).join('')+'</div>'
-    +(gateEvidence.length?'<details class="asis-conditional-gates"><summary>Condiciones que AUNEA ha podido evaluar con los datos disponibles</summary>'+gateEvidence.map(g=>
+    +(gateEvidence.length?'<details class="asis-conditional-gates"><summary>Condiciones técnicas evaluadas con los datos disponibles</summary>'+gateEvidence.map(g=>
       '<div class="asis-conditional-gate"><b>'+esc(g.name)+'</b><p>'+esc(g.reason||'Sin conclusión demostrada')+'</p><small>Evaluación: '+esc(g.status==='PROPOSAL'?'Propuesta para contrastar':g.status==='REVIEW'?'Pendiente de comprobar':'Información insuficiente')+'</small></div>').join('')+'</details>':'');
 }
 function asisBaselineHtml(e){
