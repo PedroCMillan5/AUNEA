@@ -126,7 +126,15 @@ def review_interventions(payload: InterventionProjectionRequest):
 # CHANGE_RISK: HIGH.
 @app.post("/v1/diagnostic/interventions/reconcile-review")
 def reconcile_interventions(payload: InterventionReconciliationRequest):
-    return reconcile_interventions_review(payload)
+    # [AUNEA-BE-INTERVENTION-RECONCILE-API-156] Derived arithmetic can overflow
+    # even when every supplied float is finite; reject before FastAPI JSON encoding.
+    from json import dumps
+    try:
+        result = reconcile_interventions_review(payload)
+        dumps(result, allow_nan=False)
+        return result
+    except (ArithmeticError, ValueError) as exc:
+        raise HTTPException(422, "Los valores de la conciliación producen un resultado numérico no finito") from exc
 # [AUNEA-BE-INTERVENTION-RECONCILE-API-156] END
 
 @app.post("/v1/diagnose")
