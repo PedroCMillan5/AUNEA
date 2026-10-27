@@ -402,7 +402,37 @@ async function createScenario(presetIndex=null){
 }
 async function downloadQuotePdf(){const e=currentEng(),o=currentDiagnosticOutput(e);if(!o)return toast('Calcula un diagnóstico vigente antes de generar el PDF.');if(typeof approvedOutputReview==='function'&&!approvedOutputReview(e))return toast('Aprueba los resultados en Revisión humana antes de generar un entregable para cliente.');if(!state.backendOnline)return toast('Conecta el backend para generar el PDF.');const scenarios=[o.optimal_scenario,...(e.scenarioResults||[])],sel=e.selectedScenarioIndex??0,selectedScenario=scenarios[sel]||o.optimal_scenario,company=companyById(e.companyId),record=typeof engagementOfRecord==='function'?engagementOfRecord(e):e;const request={selected_scenario:selectedScenario,client_name:company?.name||'',process_name:record.answers?.DF011||e.title||'',next_step:record.answers?.DF098||'',include_internal_appendix:false};const btn=document.getElementById('printQuote');if(btn){btn.disabled=true;btn.textContent='Generando…'}try{const r=await fetch(`${state.backendUrl}/v1/deliverables/pdf`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({diagnostic:o,request})});if(!r.ok)throw new Error(await r.text());const blob=await r.blob(),url=URL.createObjectURL(blob),a=document.createElement('a');const raw=`${company?.name||'Cliente'}_${record.answers?.DF011||'Diagnostico'}`.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9_-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,80)||'Diagnostico';a.href=url;a.download=`AUNEA_${raw}.pdf`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),500);toast('PDF generado y descargado.')}catch(err){toast('No se pudo generar el PDF: '+err.message)}finally{if(btn){btn.disabled=false;btn.textContent='Descargar PDF'}}}
 function quotePage(){const e=currentEng();if(!e) return noOfficial('Cotización','La cotización consume el escenario seleccionado y Pricing Engine.');const o=currentDiagnosticOutput(e);if(!o)return noOfficial('Cotización','El diagnóstico no existe o ya no corresponde al snapshot confirmado actual. Recalcula antes de preparar cotización o entregables.');const scenarios=[{name:'Recomendación óptima',data:o.optimal_scenario},...(e.scenarioResults||[]).map((s,i)=>({name:`Alternativa ${i+1}`,data:s}))],sel=e.selectedScenarioIndex??0,q=scenarios[sel]?.data?.quote||o.quote||{};return pageTop('Cotización','Selecciona qué escenario cotizar. La recomendación óptima sigue siendo inmutable.',`<button class="btn" id="printQuote">Descargar PDF</button><button class="btn btn-primary" id="createProject">Crear proyecto</button>`)+section('Escenario a cotizar','Puedes usar la recomendación o una alternativa calculada.',`<div class="field">${auneaSelectControl('quoteScenario',scenarios.map((s,i)=>({value:String(i),label:s.name})),String(sel),{placeholder:'Selecciona escenario'})}</div><div class="grid g4" style="margin-top:14px"><div class="card metric"><small>One-off</small><strong>${q.status==='BLOCKED'?'Sin precio autorizado':eur(q.one_off_eur)}</strong></div><div class="card metric"><small>Recurrente</small><strong>${q.status==='BLOCKED'?'Sin precio autorizado':eur(q.recurring_monthly_eur)+'/m'}</strong></div><div class="card metric"><small>TCO 12m</small><strong>${q.status==='BLOCKED'?'Sin precio autorizado':eur(q.tco_12m_eur)}</strong></div><div class="card metric"><small>Estado</small><strong style="font-size:19px">${q.status?esc(engineLabel('quote_status',q.status)):'—'}</strong></div></div>`)+`<div class="internal-only">${section('Biblioteca de productos y niveles','Consulta interna para preparar escenarios; no sustituye Pricing Engine.',libraryHtml())}</div>`}
+// [AUNEA-FE-PG10-MAP-NAV-160] START — Read-only map nodes open source-bound diagnostic point details.
+// SOURCE: Simulator CANONICAL PG10; DEC-050/065. No mutations to the confirmed AS-IS.
+function bindDiagnosticMapPointNavigation(){
+  if(state.activePage!=='resultados'||typeof document==='undefined')return;
+  document.querySelectorAll('.process-graph-readonly [data-graph-node]').forEach(node=>{
+    const id=String(node.dataset.graphNode||'');
+    const target=document.getElementById('asis-source-step-'+id);
+    if(!target)return; // Boundaries and steps without an analysis card are not actionable.
+    const heading=target.querySelector('.asis-opportunity-head>b')?.textContent||'paso del proceso';
+    const open=()=>{
+      document.querySelectorAll('.asis-opportunity-point.is-selected').forEach(x=>x.classList.remove('is-selected'));
+      target.classList.add('is-selected');
+      const details=target.querySelector('.asis-point-review');
+      if(details)details.open=true;
+      target.scrollIntoView?.({block:'start',behavior:'smooth'});
+    };
+    node.setAttribute('role','button');
+    node.setAttribute('tabindex','0');
+    node.setAttribute('aria-label','Consultar análisis: '+heading);
+    node.setAttribute('title','Consultar las evidencias y relaciones de este paso');
+    node.classList.add('diagnosis-map-selectable');
+    node.addEventListener('click',open);
+    node.addEventListener('keydown',event=>{
+      if(event.key==='Enter'||event.key===' '){event.preventDefault();open();}
+    });
+  });
+}
+// [AUNEA-FE-PG10-MAP-NAV-160] END
+
 function registerInternalWorkPages(){if(typeof pages==='undefined'||registerInternalWorkPages.done)return;registerInternalWorkPages.done=true;pages.revision=outputReviewPage;pages.tobe=tobePage;pages.comparacion=tobeComparisonPage;const originalPostBind=postBind;postBind=function(){originalPostBind();const e=currentEng(),by=id=>document.getElementById(id);if(by('createOutputReview'))by('createOutputReview').onclick=()=>{createOutputReview(e);render()};if(by('advanceOutputReview'))by('advanceOutputReview').onclick=()=>{advanceOutputReview(e,!!by('authorizeResultsPrice')?.checked);render()};if(by('analyzeAsisOnly'))by('analyzeAsisOnly').onclick=()=>runAsisAnalysis(e);
+  bindDiagnosticMapPointNavigation();
   document.querySelectorAll('[data-draft-conditional-scenario]').forEach(x=>x.onclick=()=>createScenario(Number(x.dataset.draftConditionalScenario)));if(by('createTobeDraft'))by('createTobeDraft').onclick=()=>{createTobeDraft(e);render()};if(by('saveTobe'))by('saveTobe').onclick=()=>{saveTobeFromDom(e);render()};if(by('advanceTobe'))by('advanceTobe').onclick=()=>{saveTobeFromDom(e);if(advanceTobeStatus(e))render()}}}
 function outputReviewPage(){
   const e=currentEng(),r=currentOutputReview(e),sources=reviewSources(e);
