@@ -79,7 +79,20 @@ function diagnosisFindingsHtml(record,pains){
         <div><small>Impacto relacionado</small><b>${esc(impacts.join(' · ')||'Sin impacto económico/temporal enlazado')}</b></div>
         <div><small>Riesgos en los mismos pasos</small><b>${esc(riskText.join(' · ')||'Ninguno registrado')}</b></div>
       </div>
-      <div class="internal-only diagnosis-tech"><span class="code internal-only">${esc(p.pain_id)}</span> Trazabilidad presentada desde anclajes capturados; no implica causalidad adicional no calculada.</div>
+      <details class="diagnosis-source-review">
+        <summary>Ver trazabilidad del hallazgo</summary>
+        <div class="notice info"><b>Origen del análisis</b><br>Hallazgo producido por el motor a partir del diagnóstico confirmado. La relación con los pasos se obtiene de los vínculos registrados, no demuestra por sí sola causalidad.</div>
+        <div class="diagnosis-trace-grid">
+          <div><small>Pasos relacionados</small><b>${esc(steps.join(' · ')||'Sin paso enlazado: revisar atribución')}</b></div>
+          <div><small>Fricciones de origen</small><b>${esc(trace.frictions.map(f=>[f.id||'Sin identificador',f.client_label||labelFrom('OS_FRICTION_TYPE',f.friction_type),f.evidence_type||'Evidencia no clasificada'].filter(Boolean).join(' · ')).join(' | ')||'Sin fricción enlazada')}</b></div>
+          <div><small>Datos económicos relacionados</small><b>${esc(trace.economics.map(x=>[x.deduplication_key||'Evento sin clave',typeof econDriverLabel==='function'?econDriverLabel(x.driver_id):x.driver_id,x.evidence_type||'Evidencia sin clasificar'].join(' · ')).join(' | ')||'Sin registro económico enlazado')}</b></div>
+          <div><small>Riesgos en esos pasos</small><b>${esc(trace.risks.map(r=>r.description||labelFrom('OS_RISK_CATEGORY',r.category)).join(' · ')||'Sin riesgo enlazado')}</b></div>
+          <div><small>Estado del motor</small><b>${esc(p.state?engineLabel('pain_state',p.state):'Pendiente')} · Confianza: ${esc(p.confidence?engineLabel('confidence',p.confidence):'No informada')}</b></div>
+          <div><small>Fuente editable</small><b>AS-IS confirmado · Revisar AS-IS para corregir el origen; después recalcular</b></div>
+        </div>
+        <button type="button" class="btn btn-outline" data-page="proceso">Revisar AS-IS de origen</button>
+      </details>
+      <div class="internal-only diagnosis-tech"><span class="code internal-only">${esc(p.pain_id)}</span> Trazabilidad por anclajes registrados; sin causalidad adicional inferida.</div>
     </article>`;
   }).join('')+'</div>';
 }
