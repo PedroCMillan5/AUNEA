@@ -2019,3 +2019,27 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
   .asis-field-ledger li small{text-align:left;display:block;margin-top:4px}
 }
 /* [AUNEA-FE-ASIS-WORKBENCH-STYLE-152] END */
+
+/* [AUNEA-FE-PG10-REFERENCE-LAYOUT-159] START — Values and secondary explanations in separate rows.
+   SOURCE: Diagnostic Master DF025/DF026/DF086, DEC-074, Simulator CANONICAL PG10.
+   DISPLAY ONLY: no recalculation or change to capture ownership. */
+.diagnosis-reference-grid{align-items:stretch}
+.diagnosis-reference-grid .diagnosis-reference-card{
+  display:flex;flex-direction:column;align-items:stretch;gap:9px;
+  min-height:150px;min-width:0;padding:15px 17px;
+}
+.diagnosis-reference-card>b{display:block;font-size:14px;line-height:1.4}
+.diagnosis-reference-card .diagnosis-reference-value{
+  display:block;font-size:14px;line-height:1.55;
+  color:var(--text,#23332b);overflow-wrap:anywhere;
+}
+.diagnosis-reference-card .diagnosis-reference-note{
+  display:block;margin:auto 0 0;padding-top:11px;
+  border-top:1px solid var(--border,#d8dedc);
+  color:var(--muted,#67736d);font-size:12px;line-height:1.5;
+  overflow-wrap:anywhere;
+}
+@media(max-width:760px){
+  .diagnosis-reference-grid .diagnosis-reference-card{min-height:0}
+}
+/* [AUNEA-FE-PG10-REFERENCE-LAYOUT-159] END */
