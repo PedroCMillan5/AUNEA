@@ -429,6 +429,22 @@ function bindDiagnosticMapPointNavigation(){
       if(event.key==='Enter'||event.key===' '){event.preventDefault();open();}
     });
   });
+  // A shared friction can name a different time owner. Following that link opens
+  // the existing owner's diagnostic card, never an editor or a second data record.
+  document.querySelectorAll('.asis-point-review a[href^="#asis-source-step-"]').forEach(link=>{
+    link.addEventListener('click',event=>{
+      const href=link.getAttribute('href')||'';
+      const dest=document.getElementById(href.slice(1));
+      if(!dest)return;
+      event.preventDefault();
+      document.querySelectorAll('.asis-opportunity-point.is-selected').forEach(x=>x.classList.remove('is-selected'));
+      document.querySelectorAll('.asis-opportunity-point .asis-point-review').forEach(x=>{x.open=false;});
+      dest.classList.add('is-selected');
+      const detail=dest.querySelector('.asis-point-review');
+      if(detail)detail.open=true;
+      dest.scrollIntoView?.({block:'start',behavior:'smooth'});
+    });
+  });
   // Manual expansion uses the same one-step-at-a-time rule; source details remain read-only.
   document.querySelectorAll('.asis-opportunity-point .asis-point-review').forEach(details=>{
     details.addEventListener('toggle',()=>{
