@@ -150,3 +150,18 @@ El mapa PG10 usa `processGraphHtml(...,readonly=true)` del AS-IS confirmado. Ant
 - Verificaciones directas aisladas: parser JS `PASS`; mock de cuatro pasos con clic, teclado, selección y scroll `PASS`. Pendiente el UAT de navegación en navegador y la batería global. El incremento sigue REVIEW.
 
 El contrato no cambia: DEC-050 permite navegar al owner, no duplicar ni alterar un dato confirmado. No se crean nuevos DF ni outputs ni se aprueban recomendaciones por clic.
+
+### Incremento REVIEW — 27/10/2026 · Evidencias por paso y control 1:1 (UAT Levante)
+
+**Alcance:** PG10 únicamente; `asisPointCardsHtml`, `asisPointReviewHtml`, estilos del desplegable y `bindDiagnosticMapPointNavigation`. Sin modificar preguntas, valores, relaciones, owners, motor temporal/económico, snapshot, pricing, escenarios ni aprobación.
+
+- Contadores con singular/plural, trabajo/espera/retrabajo separados y frecuencia de error cuando procede. `applies_to` muestra el porcentaje de casos en la rama; las notas originales del paso permiten verificar el contexto del tiempo sin atribuir una nueva regla.
+- Fricción: causas y frecuencia desde `Friction`, tipo de evidencia desde `OS_EVIDENCE_TYPE`, minutos de actividad y de espera desde el registro original, clase de tiempo `INCLUDED/BREAKDOWN/ADDITIONAL` y **propietario único `time_attribution.step_id`**. Los demás pasos afectados se muestran como ámbito compartido, nunca como eventos adicionales. Un enlace navega al análisis del propietario.
+- Riesgos: descripción, categoría, probabilidad, impacto, controles presentes/ausentes/pendientes y nota fuente si existe. Un riesgo en varios pasos se mantiene como un único registro.
+- `EconomicInput`: tarifa de capacidad, capacidad mensual, coste actual de herramientas y tipo de evidencia solo cuando están informados. No se confunden con ahorro de caja. Se marca el índice del registro económico original, nunca se crean copias.
+- Trazas HTML de lectura: `data-source-step-id`, `data-source-friction-id`, `data-source-risk-id` y `data-source-economic-index` para comprobar relaciones 1:1 sin crear datos. La aclaración global de tres alternativas se retira de las cuatro fichas; sigue existiendo en el comparador inferior.
+- Seleccionar paso desde mapa o expandir manualmente cierra otros desplegables; la selección solo afecta al DOM transitorio, no a persistencia.
+
+**QA sobre el archivo aportado `AUNEA_LEVANTE_UAT_DF017_PG02_ORIGEN_20261020(2).json` (pre-cierre):** 4 pasos activos, 3 fricciones únicas, 2 riesgos únicos y 3 EconomicInput únicos. Referencias múltiples esperadas: 5 vínculos de fricción, 3 de riesgo y 5 de EconomicInput, distribuidos P1=1/1/1, P2=2/0/1, P3=1/0/1, P4=1/2/2. En F2 el propietario es P2 y en F3 es P3. El archivo fuente declara `confirmedAsIs:false`; se ha contrastado contra ese JSON original, **no contra el snapshot guardado después de confirmarlo en el navegador**.
+
+**Verificación ejecutada:** parser JS `PASS`; 18 controles aislados del HTML generado `PASS` (identidad/alcance, enlaces, frecuencias, lenguaje, importes de prueba sin estimaciones futuras); selección entre tarjetas y exclusividad de apertura `PASS`; integridad del JSON original y relaciones `PASS`. La creación de dos tests adicionales en el archivo Node fue bloqueada por la herramienta de actualización, por lo que **no se declara que esas regresiones se hayan versionado**. Pruebas Node de regresión global y prueba visual Chromium/Edge pendientes. Se mantiene estado REVIEW.
