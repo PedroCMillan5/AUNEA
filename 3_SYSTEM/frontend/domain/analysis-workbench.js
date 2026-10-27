@@ -299,38 +299,127 @@ function asisPointCardsHtml(record){
     +(rows.length?'<div class="asis-opportunity-list">'+rows.map(card).join('')+'</div>':'<p>No hay pasos con fricciones, riesgos o registros económicos enlazados.</p>')
     +(orphan?'<div class="notice warn">'+orphan+' registro(s) sin vínculo directo al paso activo. Revisar su alcance antes de atribuir efectos.</div>':'');
 }
+// [AUNEA-FE-PG10-COVERAGE-READINESS-162] START — Evidence-bound three-level coverage, no invented readiness
+// SOURCE: Diagnostic Master v1.2; DEC-034/050/052; backend InputCoverageEngine (55 inputs).
+// INPUT: confirmed AS-IS, existing capture validators and backend coverage result.
+// OUTPUT: inspectable capture integrity, backend analysis sufficiency and consultant decisions.
+// This is a read-only report. It does not replace official preflight or authorize publication.
 function asisCoverageHtml(e,baseline){
-  const record=asisAnalysisSource(e),groups=asisFieldInventory(record),all=groups.flatMap(g=>g.items),total=all.length;
+  const record=asisAnalysisSource(e),groups=asisFieldInventory(record);
+  const all=groups.flatMap(g=>g.items),total=all.length;
   const available=all.filter(x=>x.status==='AVAILABLE').length;
   const derived=all.filter(x=>x.status==='DERIVED').length;
-  const noValue=total-available-derived;
-  const captureGaps=typeof canonicalMissingRequired==='function'
-    ?canonicalMissingRequired(e).filter(x=>x!=='Confirmación AS-IS'&&x!=='DF093'):[];
-  const inputCoverage=baseline?.input_coverage,issues=inputCoverage?.items||[];
-  const gaps=issues.filter(x=>x.status==='GAP'||x.status==='UNKNOWN_APPLICABILITY');
-  const sourceLabel=x=>{
-    const df=normalizeArray(x.source_fields).filter(fid=>String(fid).startsWith('DF'));
-    const names=df.map(fid=>(schema.fields||[]).find(f=>f.Field_ID===fid)?.Pregunta_o_etiqueta_ES).filter(Boolean);
-    return names.join(' · ')||'Entrada técnica de motor sin pregunta directa';
+  const absent=total-available-derived;
+  const partial=all.filter(x=>x.source&&x.source.total>0&&x.source.count>0&&x.source.count<x.source.total);
+  const required=typeof canonicalMissingRequired==='function'?canonicalMissingRequired(e):null;
+  const integrity=typeof captureIntegrityIssues==='function'?captureIntegrityIssues(record):null;
+  const pending=Array.isArray(required)?required:null;
+  const invalid=Array.isArray(integrity)?integrity:null;
+  const snap=asisAnalysisSnapshot(e);
+  const inputCoverage=baseline?.input_coverage||null;
+  const inputs=Array.isArray(inputCoverage?.items)?inputCoverage.items:null;
+  const sourceName=x=>{
+    const ids=normalizeArray(x?.source_fields).filter(fid=>String(fid).startsWith('DF'));
+    return ids.map(fid=>(schema.fields||[]).find(f=>f.Field_ID===fid)?.Pregunta_o_etiqueta_ES||fid).join(' · ')
+      ||'Dependencia técnica sin pregunta directa';
   };
-  const statusLabel=x=>x.status==='GAP'?'Fuente aplicable pendiente':'Aplicabilidad por determinar';
+  const inputIssues=inputs?inputs.filter(x=>x.status==='GAP'||x.status==='UNKNOWN_APPLICABILITY'):[];
+  const blocked=inputIssues.filter(x=>x.status==='GAP'&&x.blocking);
+  const uncertain=inputIssues.filter(x=>x.status==='UNKNOWN_APPLICABILITY');
+  const covered=inputs?inputs.filter(x=>x.status==='COVERED').length:0;
+  const notApplicable=inputs?inputs.filter(x=>x.status==='NOT_APPLICABLE').length:0;
+  const official=typeof currentDiagnosticOutput==='function'?currentDiagnosticOutput(e):null;
+  const decisions=typeof unresolvedEngineGates==='function'?unresolvedEngineGates(e):null;
+  const decisionTotal=typeof ENGINE_GATE_CONTRACT!=='undefined'?ENGINE_GATE_CONTRACT.length:null;
+  const decisionNames=(decisions||[]).map(d=>(typeof ENGINE_GATE_GUIDE!=='undefined'&&ENGINE_GATE_GUIDE[d.key]?.title)||d.label).filter(Boolean);
   const fieldStatus=x=>({
-    AVAILABLE:'Valor disponible',
-    DERIVED:'Valor derivado accesible',
-    MISSING_REQUIRED:'Pendiente según la regla de captura',
-    DERIVATION_NOT_AVAILABLE:'Derivación sin valor accesible',
-    NOT_CAPTURED_OR_CONDITIONAL:'Sin valor accesible; comprobar aplicabilidad'
-  })[x.status]||'Sin clasificar';
-  return '<div class="asis-coverage-overview"><b>'+total+' campos canónicos examinados</b> · '+available+' valores accesibles · '+derived+' derivados accesibles · '+noValue+' sin valor accesible o condicionales. <b>Estos últimos no equivalen a preguntas obligatorias pendientes.</b></div>'
-    +'<div class="notice '+(captureGaps.length?'warn':'good')+'"><b>Integridad de la captura confirmada</b><br>'
-    +(captureGaps.length?'Datos exigibles que requieren revisión: '+esc(captureGaps.join(', ')):'No constan datos obligatorios pendientes según las reglas vigentes de captura.')
-    +'<small>La cobertura de entradas del motor es un control independiente.</small></div>'
-    +(baseline?'<div class="asis-coverage-backend"><b>Entradas del motor:</b> '+esc(({COMPLETE:'Completa',PARTIAL:'Parcial',BLOCKED:'Bloqueada',NOT_EVALUATED:'No evaluada'})[inputCoverage?.status]||inputCoverage?.status||'No evaluada')+' · '+gaps.length+' entrada(s) pendientes o de aplicabilidad incierta.'
-    +(gaps.length?'<ul>'+gaps.slice(0,15).map(x=>'<li><b>'+esc(sourceLabel(x))+'</b> · '+esc(statusLabel(x))+(x.blocking?' · Bloqueante':' · No bloqueante')+'</li>').join('')+'</ul>':'<p>Sin entradas pendientes identificadas por el motor.</p>')
-    +'</div>':'<p class="field-help">La cobertura del motor se comprueba al analizar el AS-IS sin imponer decisiones de tecnología.</p>')
-    +'<details class="asis-field-ledger"><summary>Consultar procedencia y estado de los 100 campos</summary>'
-    +groups.map(g=>'<details><summary>'+esc(g.title)+' · '+g.filled+' de '+g.items.length+' con valor accesible</summary><ul>'+g.items.map(f=>'<li><span>'+esc(f.label)+'</span><small>'+esc(fieldStatus(f))+(f.source?' · '+f.source.count+' de '+f.source.total+' registros con valor'+(f.source.count>0&&f.source.count<f.source.total?' (cobertura parcial)':''):'')+(f.consumers?' · Consumidores: '+esc(f.consumers):'')+'</small></li>').join('')+'</ul></details>').join('')+'</details>';
+    AVAILABLE:'Dato accesible en su propietario',
+    DERIVED:'Derivación disponible',
+    MISSING_REQUIRED:'Ausencia exigible: revisar captura',
+    DERIVATION_NOT_AVAILABLE:'Derivación no disponible',
+    NOT_CAPTURED_OR_CONDITIONAL:'Sin dato accesible: opcional, condicional o sin resolver'
+  })[x.status]||'Estado no evaluado';
+  const fieldLabel=id=>{
+    const f=(schema.fields||[]).find(x=>x.Field_ID===id);
+    return f?.Pregunta_o_etiqueta_ES||id;
+  };
+  const safeMessages=(rows,max)=>rows.slice(0,max).map(x=>'<li>'+esc(typeof x==='string'?fieldLabel(x):x.message||x.label||'Incidencia de integridad')+'</li>').join('');
+  const segment=(number,title,status,message,detail)=>
+    '<article class="asis-coverage-check"><div class="asis-coverage-check-head"><b>'+number+'. '+esc(title)+'</b><span>'+esc(status)+'</span></div>'
+    +'<p>'+message+'</p>'+detail+'</article>';
+  const captureState=!snap?'Snapshot no disponible':
+    !pending||!invalid?'Verificación incompleta':
+    pending.length||invalid.length?'Revisión necesaria':'Sin incidencias detectadas';
+  const captureDetail=
+    '<div class="asis-coverage-facts">'+
+      '<span>Snapshot: '+esc(snap?'v'+snap.version:'No disponible')+'</span>'+
+      '<span>Obligatorios pendientes: '+(pending?pending.length:'No comprobados')+'</span>'+
+      '<span>Incidencias de integridad: '+(invalid?invalid.length:'No comprobadas')+'</span>'+
+    '</div>'+
+    ((pending&&pending.length)?'<details><summary>Ver datos exigibles pendientes</summary><ul>'+safeMessages(pending,30)+'</ul></details>':'')+
+    ((invalid&&invalid.length)?'<details><summary>Ver incidencias de estructura y coherencia</summary><ul>'+safeMessages(invalid,30)+'</ul></details>':'');
+  const captureMessage=!snap?'No se ha localizado un AS-IS confirmado: no puede certificarse la integridad.':
+    !pending||!invalid?'No se han ejecutado todas las comprobaciones locales de captura.':
+    pending.length||invalid.length?'Hay datos o relaciones que requieren revisión desde su fuente, sin crear una segunda captura.':
+    'El snapshot está confirmado y los validadores actuales no identifican datos obligatorios pendientes ni incoherencias estructurales. Esto no certifica la veracidad externa de lo declarado.';
+  const coverageState=!inputs?'Sin evaluar':
+    inputCoverage.status==='BLOCKED'?'Entradas bloqueantes':
+    inputCoverage.status==='PARTIAL'?'Cobertura parcial':
+    inputCoverage.status==='COMPLETE'?'Cobertura técnica completa':'No evaluada';
+  const coverageMessage=!inputs
+    ?'No consta una evaluación vigente de las entradas del backend. Ejecuta el análisis AS-IS para comprobar la suficiencia técnica; no se presupone a partir del número de campos rellenados.'
+    :inputCoverage.status==='BLOCKED'
+      ?'El backend identifica dependencias bloqueantes. La presencia de datos en el inventario no permite ignorarlas.'
+    :inputCoverage.status==='PARTIAL'
+      ?'El backend identifica entradas no cubiertas o de aplicabilidad incierta. Los resultados que dependan de ellas necesitan revisión.'
+    :inputCoverage.status==='COMPLETE'
+      ?'El backend no marca gaps críticos en este contrato de entradas. Esto no acredita por sí solo causalidad, conciliación temporal, ahorro ni viabilidad de implementación.'
+      :'El backend aún no ha evaluado suficientemente el contrato de entradas para esta versión.';
+  const coverageDetail=!inputs?'<p class="field-help">Fuente de evaluación: InputCoverageEngine (backend). No se usan valores estimados.</p>':
+    '<div class="asis-coverage-facts"><span>Entradas evaluadas: '+inputs.length+'</span>'+
+      '<span>Cubiertas: '+covered+'</span><span>No aplicables: '+notApplicable+'</span>'+
+      '<span>Gaps: '+inputIssues.filter(x=>x.status==='GAP').length+'</span>'+
+      '<span>Aplicabilidad incierta: '+uncertain.length+'</span>'+
+      '<span>Bloqueantes: '+blocked.length+'</span></div>'+
+    (inputIssues.length?'<details><summary>Ver fuentes no cubiertas y condiciones ('+inputIssues.length+')</summary><ul>'+
+      inputIssues.map(x=>'<li><b>'+esc(sourceName(x))+'</b> — '+
+        esc(x.status==='GAP'?'Fuente pendiente':'Aplicabilidad sin determinar')+
+        (x.blocking?' · Bloqueante cuando aplica':' · No bloqueante según el contrato')+'</li>').join('')+
+      '</ul></details>':'<p class="field-help">El contrato no registra gaps en esta evaluación; la validación de hipótesis económicas sigue siendo independiente.</p>');
+  const decisionState=decisionTotal===null||!decisions?'No evaluado':
+    decisions.length?'Decisiones pendientes':'Decisiones confirmadas';
+  const decisionMessage=!decisions?'No se ha podido verificar el estado de las decisiones del consultor.':
+    decisions.length
+      ?'Quedan '+decisions.length+' de '+decisionTotal+' decisiones técnicas pendientes de confirmar sobre el snapshot vigente. No son respuestas faltantes del cliente.'
+      :'Las '+decisionTotal+' decisiones técnicas constan confirmadas para el snapshot actual. El cálculo oficial exige además su preflight backend.';
+  const decisionDetail='<div class="asis-coverage-facts"><span>Decisiones confirmadas: '+
+    (decisions&&decisionTotal!==null?decisionTotal-decisions.length:'No comprobadas')+
+    (decisionTotal!==null?' de '+decisionTotal:'')+'</span>'+
+    '<span>Diagnóstico oficial vigente: '+(official?'Disponible':'No disponible')+'</span></div>'+
+    (decisionNames.length?'<details><summary>Ver decisiones pendientes ('+decisionNames.length+')</summary><ul>'+
+      decisionNames.map(n=>'<li>'+esc(n)+'</li>').join('')+'</ul></details>':'');
+  const ledger='<details class="asis-field-ledger"><summary>Auditoría detallada: procedencia y estado de los '+total+' campos</summary>'+
+    '<p class="field-help">«Con dato» significa que existe al menos un valor legible, no que todos los registros estén completos. Un cero guardado no acredita que se haya medido el tiempo. Los campos opcionales o condicionales no son automáticamente preguntas pendientes.</p>'+
+    '<div class="asis-coverage-facts"><span>Con algún dato: '+available+'</span>'+
+    '<span>Derivados accesibles: '+derived+'</span>'+
+    '<span>Sin dato/condicionales: '+absent+'</span>'+
+    '<span>Campos repetibles con cobertura parcial: '+partial.length+'</span></div>'+
+    groups.map(g=>'<details><summary>'+esc(g.title)+' · '+g.filled+' de '+g.items.length+' con algún dato</summary><ul>'+
+      g.items.map(f=>'<li><span>'+esc(f.label)+'</span><small>'+esc(fieldStatus(f))+
+        (f.source?' · '+f.source.count+' de '+f.source.total+' registros con dato'+
+          (f.source.count>0&&f.source.count<f.source.total?' (parcial)':''):'')+
+        (f.consumers?' · Consumidores: '+esc(f.consumers):'')+
+        '</small></li>').join('')+'</ul></details>').join('')+'</details>';
+  return '<div class="asis-coverage-overview"><b>'+total+' campos canónicos examinados</b>'+
+    ' · '+available+' con algún dato · '+derived+' derivados accesibles · '+absent+
+    ' sin dato accesible o condicionales. El inventario no mide por sí mismo si el diagnóstico es suficiente.</div>'+
+    '<div class="asis-coverage-checks">'+
+      segment('1','Integridad de la captura',captureState,captureMessage,captureDetail)+
+      segment('2','Suficiencia para el análisis',coverageState,coverageMessage,coverageDetail)+
+      segment('3','Preparación de los motores',decisionState,decisionMessage,decisionDetail)+
+    '</div>'+ledger;
 }
+// [AUNEA-FE-PG10-COVERAGE-READINESS-162] END
 function asisDirectionCardsHtml(e){
   const record=asisAnalysisSource(e),steps=(record?.processSteps||[]).filter(x=>x.status!=='SUPERSEDED');
   const officialReady=typeof currentDiagnosticOutput==='function'&&!!currentDiagnosticOutput(e);
