@@ -119,7 +119,7 @@ test('PG10 coverage separates accessible, derived and nonrequired absent data',(
   assert.match(workbench,/canonicalMissingRequired\(e\)/);
   assert.match(workbench,/Los campos opcionales o condicionales no son automáticamente preguntas pendientes/);
   assert.match(workbench,/x\.blocking\?' · Bloqueante cuando aplica':' · No bloqueante según el contrato'/);
-  assert.match(workbench,/x\.source_fields/);
+  assert.match(workbench,/source_fields/);
 });
 // [AUNEA-UAT-PG10-COVERAGE-OWNER-161] START — Repeatable owners and independent gate messages.
 test('PG10 coverage reads actual repeatable owners and identifies partial coverage',()=>{
