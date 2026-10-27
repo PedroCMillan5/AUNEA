@@ -413,6 +413,7 @@ function bindDiagnosticMapPointNavigation(){
     const heading=target.querySelector('.asis-opportunity-head>b')?.textContent||'paso del proceso';
     const open=()=>{
       document.querySelectorAll('.asis-opportunity-point.is-selected').forEach(x=>x.classList.remove('is-selected'));
+      document.querySelectorAll('.asis-opportunity-point .asis-point-review').forEach(x=>{x.open=false;});
       target.classList.add('is-selected');
       const details=target.querySelector('.asis-point-review');
       if(details)details.open=true;
@@ -426,6 +427,15 @@ function bindDiagnosticMapPointNavigation(){
     node.addEventListener('click',open);
     node.addEventListener('keydown',event=>{
       if(event.key==='Enter'||event.key===' '){event.preventDefault();open();}
+    });
+  });
+  // Manual expansion uses the same one-step-at-a-time rule; source details remain read-only.
+  document.querySelectorAll('.asis-opportunity-point .asis-point-review').forEach(details=>{
+    details.addEventListener('toggle',()=>{
+      if(!details.open)return;
+      document.querySelectorAll('.asis-opportunity-point .asis-point-review').forEach(other=>{
+        if(other!==details)other.open=false;
+      });
     });
   });
 }
