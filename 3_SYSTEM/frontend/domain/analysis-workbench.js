@@ -225,7 +225,7 @@ function asisBaselineHtml(e){
     +asisCoverageHtml(e,data)+'<button class="btn btn-outline" id="analyzeAsisOnly">Volver a comprobar fuentes</button>';
   const record=asisAnalysisSource(e);
   return '<div class="notice good"><b>Análisis AS-IS calculado por backend.</b> Sin seleccionar tecnología, sin precios y sin nuevas respuestas al cliente. No constituye aún una recomendación de solución.</div>'
-    +(typeof diagnosisProcessBaselineHtml==='function'?diagnosisProcessBaselineHtml(data.process_time_projection):'')
+    +(typeof diagnosisProcessBaselineHtml==='function'?diagnosisProcessBaselineHtml(data.process_time_projection,record):'')
     +(typeof diagnosisFindingsHtml==='function'?diagnosisFindingsHtml(record,data.pain_results||[]):'')
     +(typeof diagnosisRisksHtml==='function'&&data.risk_result?diagnosisRisksHtml(data.risk_result,record):'')
     +'<button class="btn btn-outline" id="analyzeAsisOnly">Actualizar análisis con el AS-IS vigente</button>';
