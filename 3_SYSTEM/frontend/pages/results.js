@@ -130,13 +130,14 @@ function diagnosisProcessBaselineHtml(p,record){
 function diagnosisEconomicsHtml(econ,record){
   const inputs=record?.economicInputs||[];
   return `<div class="grid g3 diagnosis-econ-grid">
-    <div class="notice"><b>Tiempo en inputs económicos</b><br>${econ.annual_active_hours?num(econ.annual_active_hours)+' h/año':'Sin cuantificar'}<small>No es el tiempo activo total del mapa.</small></div>
-    <div class="notice"><b>Espera en inputs económicos</b><br>${econ.annual_wait_hours?num(econ.annual_wait_hours)+' h/año':'Sin cuantificar'}<small>No sustituye la exposición a espera del mapa.</small></div>
+    <div class="notice"><b>Tiempo en inputs económicos</b><br>${econ.annual_active_hours==null?'Sin cuantificar':num(econ.annual_active_hours)+' h/año'}<small>No es el tiempo activo total del mapa.</small></div>
+    <div class="notice"><b>Espera en inputs económicos</b><br>${econ.annual_wait_hours==null?'Sin cuantificar':num(econ.annual_wait_hours)+' h/año'}<small>No sustituye la exposición a espera del mapa.</small></div>
     <div class="notice"><b>Valor de capacidad</b><br>${econ.capacity_value_eur_annual==null?'No disponible':eur(econ.capacity_value_eur_annual)+'/año'}<small>No equivale a ahorro de caja.</small></div>
-    <div class="notice"><b>Pérdida directa</b><br>${eur(econ.direct_loss_eur_annual)}/año</div>
-    <div class="notice"><b>Coste actual de herramientas</b><br>${eur(econ.current_tool_cost_eur_annual)}/año</div>
-    <div class="notice"><b>Ahorro de caja realizado</b><br>${eur(econ.realized_cash_saving_eur_annual)}/año</div>
+    <div class="notice"><b>Pérdida directa registrada</b><br>${econ.direct_loss_eur_annual==null?'Sin cuantificar':eur(econ.direct_loss_eur_annual)+'/año'}</div>
+    <div class="notice"><b>Coste actual registrado de herramientas</b><br>${econ.current_tool_cost_eur_annual==null?'Sin cuantificar':eur(econ.current_tool_cost_eur_annual)+'/año'}</div>
+    <div class="notice"><b>Ahorro de caja realizado registrado</b><br>${econ.realized_cash_saving_eur_annual==null?'Sin cuantificar':eur(econ.realized_cash_saving_eur_annual)+'/año'}<small>No es una previsión de ahorro futuro.</small></div>
   </div>
+  <div class="notice info" style="margin-top:10px"><b>Alcance de estos importes</b><br>Estos valores proceden de registros EconomicInput. No reconstruyen el tiempo total del mapa: una tarifa de capacidad por rol no acredita ahorro de caja, y el coste de una herramienta existente no equivale a un coste eliminable.</div>
   ${inputs.length?`<div class="diagnosis-inputs"><b>Inputs que sustentan el cálculo</b><div>${inputs.map(x=>`<span class="closing-impact-item"><strong>${esc(typeof econDriverLabel==='function'?econDriverLabel(x.driver_id):x.driver_id)}</strong><small>${esc(diagnosisImpactMetric(x))} · ${esc(engineLabel('evidence_quality',evidenceTypeBackend(x.evidence_type)))}</small></span>`).join('')}</div></div>`:''}`;
 }
 function diagnosisRisksHtml(risk,record){
