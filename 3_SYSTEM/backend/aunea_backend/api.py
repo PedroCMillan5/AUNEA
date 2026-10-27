@@ -21,6 +21,7 @@ from .uat import run_canonical_uat
 from .session_time import TimeProjectionRequest, TimeReconciliationRequest, project_session_time, reconcile_session_time
 from .input_coverage import relational_integrity_issues
 from .intervention_projection import InterventionProjectionRequest, project_interventions_review
+from .intervention_reconciliation import InterventionReconciliationRequest, reconcile_interventions_review
 
 app = FastAPI(title="AUNEA Internal Backend", version="1.1.1")
 app.add_middleware(
@@ -115,6 +116,18 @@ def asis_analysis(payload: EngagementInput):
 def review_interventions(payload: InterventionProjectionRequest):
     return project_interventions_review(payload)
 # [AUNEA-BE-INTERVENTION-API-155] END
+
+# [AUNEA-BE-INTERVENTION-RECONCILE-API-156] START — Review-only attribution endpoint
+# PURPOSE: Validate event ownership and prepare compatible assumptions without executing official scenarios.
+# SOURCE: DEC-034/050/068/074; intervention reconciliation contract REVIEW 2026-10-27.
+# INPUTS: Version-bound proposals, economic owners, Pain observations and explicit reviewed bindings.
+# OUTPUTS: Partial temporal components, attribution dependencies and candidate assumptions.
+# SIDE_EFFECTS: None; never writes store or publishes.
+# CHANGE_RISK: HIGH.
+@app.post("/v1/diagnostic/interventions/reconcile-review")
+def reconcile_interventions(payload: InterventionReconciliationRequest):
+    return reconcile_interventions_review(payload)
+# [AUNEA-BE-INTERVENTION-RECONCILE-API-156] END
 
 @app.post("/v1/diagnose")
 def diagnose(payload: EngagementInput):

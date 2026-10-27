@@ -1,5 +1,16 @@
 # AUNEA Internal — Continuidad AS-IS → puntos críticos → alternativas → escenarios (REVIEW)
 
+## Actualización vigente — 27/10/2026
+
+Implementado el puente candidato de conciliación por evento, sin activarlo en PG14:
+[Contrato técnico y QA](AUNEA_INTERVENTION_RECONCILIATION_REVIEW_20261027.md).
+Endpoint `/v1/diagnostic/interventions/reconcile-review`, bloques 156. Comprueba
+propietario, huella, alcance y línea base antes de preparar ScenarioAssumptions.
+Fan-out por Pain, espera sin equivalencia, empeoramientos y solapes quedan
+pendientes explícitos. Los apartados del 23/10 siguientes conservan el historial
+de implementación; la atribución ya cuenta con este incremento REVIEW, pero su
+promoción, integración oficial y publicación siguen pendientes.
+
 Fecha: 23/10/2026  
 Estado: **REVIEW — alcance analítico implantado; generación completa de tres escenarios cuantificados no autorizada sin hipótesis y alcance**.  
 Rama: `work/as-is-ux-simplification-20260930`.
