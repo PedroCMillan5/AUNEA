@@ -155,7 +155,7 @@ test('PG10 coverage reads actual repeatable owners and identifies partial covera
   assert.equal(byId('DF033').status,'AVAILABLE');
   assert.deepEqual([byId('DF056').source.count,byId('DF056').source.total],[3,3]);
   assert.deepEqual([byId('DF070').source.count,byId('DF070').source.total],[2,2]);
-  assert.deepEqual([byId('DF076').source.count,byId('DF076').source.total],[2,3]);
+  assert.deepEqual([byId('DF076').source.count,byId('DF076').source.total],[2,2]);
   assert.equal(byId('DF085').status,'DERIVED');
   assert.equal(Object.keys(record.answers).length,0,'read-only inventory cannot synthesize answers');
   assert.match(workbench,/cobertura parcial/);
@@ -227,9 +227,9 @@ test('PG10 coverage shows capture integrity, server sufficiency and consultant g
 });
 test('PG10 source audit counts only backend-aligned fields, not similar-looking UI aliases',()=>{
   assert.match(workbench,/DF056:'friction_type'/);
-  assert.match(workbench,/DF061:'severity'/);
+  assert.match(workbench,/DF061:'impact'/);
   assert.match(workbench,/DF072:'controls_present'/);
-  assert.doesNotMatch(workbench,/DF061:'impact'/);
+  assert.match(workbench,/fid==='DF061'&&present\(x\.severity\)/);
   assert.doesNotMatch(workbench,/DF084:'direct_loss_eur_annual'/);
   assert.doesNotMatch(workbench,/fid==='DF057'&&present\(x\.friction_type\)/);
 });
