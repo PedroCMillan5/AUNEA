@@ -68,16 +68,24 @@ function asisFieldInventory(record){
   const order=(schema?.flow||[]).map(x=>x.Stage_ID);
   const stages=new Map(order.map(id=>[id,[]]));
   for(const f of fields){
-    const stage=f.Stage_ID||'OTROS',fid=f.Field_ID;
-    let value=record?.answers?.[fid];
+    const stage=f.Stage_ID||'OTROS',fid=f.Field_ID,mode=String(f.Ask_Mode||'');
+    const raw=record?.answers?.[fid];
+    let value=raw;
     if(typeof effectiveValue==='function'){
       try{const effective=effectiveValue(f,record);if(effective!==undefined&&effective!==null&&effective!=='')value=effective}catch(_){}
     }
-    const filled=typeof valuePresent==='function'?valuePresent(value):
+    const present=typeof valuePresent==='function'?valuePresent(value):
       !(value===undefined||value===null||value===''||(Array.isArray(value)&&!value.length));
+    let requiredNow=false;
+    if(typeof canonicalFieldRequiredNow==='function'){
+      try{requiredNow=!!canonicalFieldRequiredNow(f,record)}catch(_){}
+    }
+    const status=present?(mode==='DERIVED'||mode==='SYSTEM_GENERATED'?'DERIVED':'AVAILABLE')
+      :requiredNow?'MISSING_REQUIRED'
+      :mode==='DERIVED'||mode==='SYSTEM_GENERATED'?'DERIVATION_NOT_AVAILABLE':'NOT_CAPTURED_OR_CONDITIONAL';
     const item={id:fid,label:f.Pregunta_o_etiqueta_ES||f.Field_Name||'Dato del estudio',
-      stage,mode:f.Ask_Mode||'',required:f.Requiredness||'',consumers:String(f.Engine_Consumers||''),
-      filled:!!filled};
+      stage,mode,required:f.Requiredness||'',consumers:String(f.Engine_Consumers||''),
+      status,filled:present};
     if(!stages.has(stage))stages.set(stage,[]);
     stages.get(stage).push(item);
   }
@@ -165,16 +173,36 @@ function asisPointCardsHtml(record){
     +(orphan?'<div class="notice warn">'+orphan+' registro(s) sin vínculo directo al paso en este mapa. Revisar su ámbito en la fuente antes de atribuir impactos.</div>':'');
 }
 function asisCoverageHtml(e,baseline){
-  const record=asisAnalysisSource(e),groups=asisFieldInventory(record),total=groups.reduce((n,g)=>n+g.items.length,0);
-  const all=groups.flatMap(g=>g.items);
-  const filled=all.filter(x=>x.filled).length;
+  const record=asisAnalysisSource(e),groups=asisFieldInventory(record),all=groups.flatMap(g=>g.items),total=all.length;
+  const available=all.filter(x=>x.status==='AVAILABLE').length;
+  const derived=all.filter(x=>x.status==='DERIVED').length;
+  const noValue=total-available-derived;
+  const captureGaps=typeof canonicalMissingRequired==='function'
+    ?canonicalMissingRequired(e).filter(x=>x!=='Confirmación AS-IS'&&x!=='DF093'):[];
   const inputCoverage=baseline?.input_coverage,issues=inputCoverage?.items||[];
   const gaps=issues.filter(x=>x.status==='GAP'||x.status==='UNKNOWN_APPLICABILITY');
-  return '<div class="asis-coverage-overview"><b>'+total+' campos del modelo examinados</b> · '+filled+' con valor accesible en el registro · '+(total-filled)+' sin valor directo, derivados o condicionales. La ausencia en campos opcionales no es por sí sola un bloqueo.</div>'
-    +(baseline?'<div class="asis-coverage-backend"><b>Contraste de motores:</b> '+esc(inputCoverage?.status||baseline.status||'No evaluado')+' · '+gaps.length+' entradas con gap o aplicabilidad desconocida.'
-    +(gaps.length?'<ul>'+gaps.slice(0,15).map(x=>'<li>'+esc(x.input_name||x.input_id||'Entrada de motor')+' — '+esc(x.status==='GAP'?'Falta fuente aplicable':'Aplicabilidad pendiente')+'</li>').join('')+'</ul>':'')+'</div>':'<p class="field-help">La cobertura oficial de motores se obtiene al analizar el AS-IS en el backend, sin responder a decisiones de tecnología.</p>')
-    +'<details class="asis-field-ledger"><summary>Consultar trazabilidad de todos los campos capturados y condicionales</summary>'
-    +groups.map(g=>'<details><summary>'+esc(g.title)+' · '+g.filled+' de '+g.items.length+' con valor accesible</summary><ul>'+g.items.map(f=>'<li><span>'+esc(f.label)+'</span><small>'+(f.filled?'Dato disponible':'Sin valor directo o condicional')+(f.consumers?' · Consumidores: '+esc(f.consumers):'')+'</small></li>').join('')+'</ul></details>').join('')+'</details>';
+  const sourceLabel=x=>{
+    const df=normalizeArray(x.source_fields).filter(fid=>String(fid).startsWith('DF'));
+    const names=df.map(fid=>(schema.fields||[]).find(f=>f.Field_ID===fid)?.Pregunta_o_etiqueta_ES).filter(Boolean);
+    return names.join(' · ')||'Entrada técnica de motor sin pregunta directa';
+  };
+  const statusLabel=x=>x.status==='GAP'?'Fuente aplicable pendiente':'Aplicabilidad por determinar';
+  const fieldStatus=x=>({
+    AVAILABLE:'Valor disponible',
+    DERIVED:'Valor derivado accesible',
+    MISSING_REQUIRED:'Pendiente según la regla de captura',
+    DERIVATION_NOT_AVAILABLE:'Derivación sin valor accesible',
+    NOT_CAPTURED_OR_CONDITIONAL:'Sin valor accesible; comprobar aplicabilidad'
+  })[x.status]||'Sin clasificar';
+  return '<div class="asis-coverage-overview"><b>'+total+' campos canónicos examinados</b> · '+available+' valores accesibles · '+derived+' derivados accesibles · '+noValue+' sin valor accesible o condicionales. <b>Estos últimos no equivalen a preguntas obligatorias pendientes.</b></div>'
+    +'<div class="notice '+(captureGaps.length?'warn':'good')+'"><b>Integridad de la captura confirmada</b><br>'
+    +(captureGaps.length?'Datos exigibles que requieren revisión: '+esc(captureGaps.join(', ')):'No constan datos obligatorios pendientes según las reglas vigentes de captura.')
+    +'<small>La cobertura de entradas del motor es un control independiente.</small></div>'
+    +(baseline?'<div class="asis-coverage-backend"><b>Entradas del motor:</b> '+esc(({COMPLETE:'Completa',PARTIAL:'Parcial',BLOCKED:'Bloqueada',NOT_EVALUATED:'No evaluada'})[inputCoverage?.status]||inputCoverage?.status||'No evaluada')+' · '+gaps.length+' entrada(s) pendientes o de aplicabilidad incierta.'
+    +(gaps.length?'<ul>'+gaps.slice(0,15).map(x=>'<li><b>'+esc(sourceLabel(x))+'</b> · '+esc(statusLabel(x))+(x.blocking?' · Bloqueante':' · No bloqueante')+'</li>').join('')+'</ul>':'<p>Sin entradas pendientes identificadas por el motor.</p>')
+    +'</div>':'<p class="field-help">La cobertura del motor se comprueba al analizar el AS-IS sin imponer decisiones de tecnología.</p>')
+    +'<details class="asis-field-ledger"><summary>Consultar procedencia y estado de los 100 campos</summary>'
+    +groups.map(g=>'<details><summary>'+esc(g.title)+' · '+g.filled+' de '+g.items.length+' con valor accesible</summary><ul>'+g.items.map(f=>'<li><span>'+esc(f.label)+'</span><small>'+esc(fieldStatus(f))+(f.consumers?' · Consumidores: '+esc(f.consumers):'')+'</small></li>').join('')+'</ul></details>').join('')+'</details>';
 }
 function asisDirectionCardsHtml(e){
   const gateEvidence=typeof engineGateReviewEvidence==='function'&&typeof ENGINE_GATE_CONTRACT!=='undefined'
