@@ -209,6 +209,7 @@ function asisCoverageHtml(e,baseline){
 }
 function asisDirectionCardsHtml(e){
   const record=asisAnalysisSource(e),steps=(record?.processSteps||[]).filter(x=>x.status!=='SUPERSEDED');
+  const officialReady=typeof currentDiagnosticOutput==='function'&&!!currentDiagnosticOutput(e);
   const gateEvidence=typeof engineGateReviewEvidence==='function'&&typeof ENGINE_GATE_CONTRACT!=='undefined'
     ?ENGINE_GATE_CONTRACT.map(g=>({name:ENGINE_GATE_GUIDE[g.key]?.title||g.label,...engineGateReviewEvidence(g,e)})):[];
   const names=items=>items.length?items.map(x=>x.step_name||'Paso sin título').join(' · '):'No consta un paso específico que permita adelantar una conclusión.';
@@ -232,7 +233,7 @@ function asisDirectionCardsHtml(e){
       +'<p><b>Limitación:</b> '+esc(d.drawback)+'</p>'
       +'<b>Comprobaciones necesarias</b><ul>'+d.dependencies.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul></details>'
       +'<p class="asis-direction-pending">Tiempo futuro, ahorro y precio pendientes de hipótesis verificadas y simulación canónica.</p>'
-      +'<button type="button" class="btn btn-outline" data-draft-conditional-scenario="'+i+'">Explorar esta alternativa con el motor</button></article>'
+      +'<button type="button" class="btn btn-outline" data-draft-conditional-scenario="'+i+'"'+(officialReady?'':' disabled title="Primero calcula el diagnóstico oficial"')+'>'+(officialReady?'Explorar esta alternativa con el motor':'Disponible tras calcular el diagnóstico oficial')+'</button></article>'
     ).join('')+'</div>'
     +(gateEvidence.length?'<details class="asis-conditional-gates"><summary>Condiciones técnicas evaluadas con los datos disponibles</summary>'+gateEvidence.map(g=>
       '<div class="asis-conditional-gate"><b>'+esc(g.name)+'</b><p>'+esc(g.reason||'Sin conclusión demostrada')+'</p><small>Evaluación: '+esc(g.status==='PROPOSAL'?'Propuesta para contrastar':g.status==='REVIEW'?'Pendiente de comprobar':'Información insuficiente')+'</small></div>').join('')+'</details>':'');
