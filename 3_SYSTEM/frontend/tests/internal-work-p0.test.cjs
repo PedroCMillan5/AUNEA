@@ -121,6 +121,53 @@ test('PG10 coverage separates accessible, derived and nonrequired absent data',(
   assert.match(workbench,/x\.blocking\?' · Bloqueante':' · No bloqueante'/);
   assert.match(workbench,/x\.source_fields/);
 });
+// [AUNEA-UAT-PG10-COVERAGE-OWNER-161] START — Repeatable owners and independent gate messages.
+test('PG10 coverage reads actual repeatable owners and identifies partial coverage',()=>{
+  const extract=name=>{
+    const from=workbench.indexOf('function '+name+'(');
+    const to=workbench.indexOf('\nfunction ',from+10);
+    assert.ok(from>=0&&to>from,name+' must exist');
+    return workbench.slice(from,to);
+  };
+  const fields=[
+    {Field_ID:'DF031',Stage_ID:'S04',Pregunta_o_etiqueta_ES:'Nombre de paso',Ask_Mode:'CAPTURE_IN_PROCESS_STEP'},
+    {Field_ID:'DF033',Stage_ID:'S04',Pregunta_o_etiqueta_ES:'Responsable',Ask_Mode:'CAPTURE_IN_PROCESS_STEP'},
+    {Field_ID:'DF056',Stage_ID:'S05',Pregunta_o_etiqueta_ES:'Fricción',Ask_Mode:'CAPTURE_IN_FRICTION'},
+    {Field_ID:'DF070',Stage_ID:'S06',Pregunta_o_etiqueta_ES:'Probabilidad',Ask_Mode:'CAPTURE_IN_RISK'},
+    {Field_ID:'DF076',Stage_ID:'S07',Pregunta_o_etiqueta_ES:'Coste de capacidad',Ask_Mode:'CONDITIONAL_ASK'},
+    {Field_ID:'DF085',Stage_ID:'S07',Pregunta_o_etiqueta_ES:'Evidencia',Ask_Mode:'DERIVED'}
+  ];
+  const inventory=new Function('schema','valuePresent','canonicalFieldRequiredNow','effectiveValue',
+    extract('asisOwnerCollectionValue')+'\n'+extract('asisFieldInventory')+'\nreturn asisFieldInventory;')
+    ({fields,flow:[{Stage_ID:'S04',Stage_ES:'Pasos'},{Stage_ID:'S05',Stage_ES:'Fricciones'},{Stage_ID:'S06',Stage_ES:'Riesgos'},{Stage_ID:'S07',Stage_ES:'Economía'}]},
+     v=>v!==undefined&&v!==null&&v!==''&&(!Array.isArray(v)||v.length>0),
+     ()=>false,(f,e)=>f.Field_ID==='DF085'?['EV02']:e.answers?.[f.Field_ID]);
+  const record={answers:{},
+    processSteps:[{step_name:'P1',actor:'Compras'},{step_name:'P2',actor:'Finanzas'},
+      {step_name:'P3'},{step_name:'P4',actor:'Administración'}],
+    frictions:[{observable_signal:'Reintroducción de datos'},{client_label:'Seguimiento'},{client_label:'Esperas'}],
+    risks:[{likelihood_1_5:3},{likelihood_1_5:2}],
+    economicInputs:[{driver_id:'ED01',capacity_cost_rate_eur_hour:19},
+      {driver_id:'ED14',capacity_cost_rate_eur_hour:23},{driver_id:'ED12',current_tool_cost_eur_annual:0}]};
+  const flat=inventory(record).flatMap(g=>g.items),byId=id=>flat.find(x=>x.id===id);
+  assert.deepEqual([byId('DF031').source.count,byId('DF031').source.total],[4,4]);
+  assert.deepEqual([byId('DF033').source.count,byId('DF033').source.total],[3,4]);
+  assert.equal(byId('DF033').status,'AVAILABLE');
+  assert.deepEqual([byId('DF056').source.count,byId('DF056').source.total],[3,3]);
+  assert.deepEqual([byId('DF070').source.count,byId('DF070').source.total],[2,2]);
+  assert.deepEqual([byId('DF076').source.count,byId('DF076').source.total],[1,1]);
+  assert.equal(byId('DF085').status,'DERIVED');
+  assert.equal(Object.keys(record.answers).length,0,'read-only inventory cannot synthesize answers');
+  assert.match(workbench,/cobertura parcial/);
+});
+test('PG10 preparation distinguishes missing capture data from unresolved consultant gates',()=>{
+  assert.match(results,/miss\.length\?'Hay datos obligatorios de captura pendientes/);
+  assert.match(results,/Faltan decisiones técnicas del consultor/);
+  assert.match(results,/unresolved\.length/);
+  assert.doesNotMatch(results,/Hay información obligatoria pendiente:/);
+});
+// [AUNEA-UAT-PG10-COVERAGE-OWNER-161] END
+
 test('PG10 findings use canonical Spanish friction labels and show grounded trace',()=>{
   const start=results.indexOf('function diagnosisPainLabel(');
   const end=results.indexOf('\nfunction ',start+10);
