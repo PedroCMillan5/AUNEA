@@ -134,7 +134,7 @@ function asisPointRecords(record){
 // Applicability is deliberately undecided: no Pain→step economics or future-time rule is assumed.
 function asisPointReviewHtml(p){
   const safe=x=>esc(String(x??''));
-  const list=(items,fn)=>items.length?'<ul>'+items.map(x=>'<li>'+fn(x)+'</li>').join('')+'</ul>'
+  const list=(items,fn,source)=>items.length?'<ul>'+items.map(x=>'<li'+(source?' '+source(x):'')+'>'+fn(x)+'</li>').join('')+'</ul>'
     :'<p class="field-help">No hay registros relacionados con este paso.</p>';
   const stepName=id=>p.allSteps.find(s=>String(s.id)===String(id))?.step_name||'Paso no localizado';
   const sourceEvidence=x=>x?labelFrom('OS_EVIDENCE_TYPE',x)||'Tipo de evidencia no identificado':'Evidencia sin clasificar';
@@ -170,7 +170,7 @@ function asisPointReviewHtml(p){
       +(sourceSteps.length>1?'<small><strong>Ámbito compartido:</strong> '+safe(relatedNames)+'. No se contabiliza una vez por cada paso afectado.</small>':'')
       +(f.observable_signal?'<small><strong>Señal:</strong> '+safe(f.observable_signal)+'</small>':'')
       +(causalNotes?'<details class="asis-origin-note"><summary>Nota de origen</summary><p>'+safe(causalNotes)+'</p></details>':'');
-  });
+  },f=>'data-source-friction-id="'+attr(String(f.id||''))+'"');
   const risks=list(p.risks,r=>{
     const controls=r.controls_present===true?(normalizeArray(r.current_control).map(x=>x).join(' · ')||'Controles presentes, sin detalle')
       :r.controls_present===false?'No se declararon controles':'Controles sin verificar';
@@ -184,7 +184,7 @@ function asisPointReviewHtml(p){
       +'<small>'+safe(meta.join(' · '))+'</small><small><strong>Controles:</strong> '+safe(controls)+'</small>'
       +(linked.length>1?'<small>'+safe(scope(linked))+'</small>':'')
       +(r.notes?'<details class="asis-origin-note"><summary>Nota y procedencia del riesgo</summary><p>'+safe(r.notes)+'</p></details>':'');
-  });
+  },r=>'data-source-risk-id="'+attr(String(r.id||''))+'"');
   const economics=list(p.impacts,x=>{
     const linked=Array.isArray(x.step_ids)?x.step_ids:[];
     const rate=x.capacity_cost_rate_eur_hour;
@@ -204,7 +204,7 @@ function asisPointReviewHtml(p){
       +'<small><strong>Fuente:</strong> '+safe(sourceEvidence(x.evidence_type))+' · '+safe(scope(linked))+'</small>'
       +'<small>El coste de capacidad no demuestra ahorro de caja; el coste actual de herramientas no se presupone eliminable.</small>'
       +(x.notes?'<details class="asis-origin-note"><summary>Nota económica de origen</summary><p>'+safe(x.notes)+'</p></details>':'');
-  });
+  },x=>'data-source-economic-index="'+attr(String(p.allEconomics.indexOf(x)))+'"');
   return '<details class="asis-point-review"><summary>Consultar evidencias y relaciones del paso</summary>'
     +'<div class="asis-point-review-grid">'
     +'<div><b>Fricciones</b>'+frictions+'</div>'
@@ -218,7 +218,7 @@ function asisPointCardsHtml(record){
   const source=asisPointRecords(record),rows=source.points.filter(p=>p.critical);
   const singular=(n,one,many)=>n+' '+(n===1?one:many);
   const card=p=>{
-    const step=p.step,related={...p,allSteps:source.points.map(x=>x.step)};
+    const step=p.step,related={...p,allSteps:source.points.map(x=>x.step),allEconomics:record.economicInputs||[]};
     const observed=p.frictions.map(f=>f.client_label||f.observable_signal||labelFrom('OS_FRICTION_TYPE',f.friction_type)||'Fricción registrada');
     const headline=observed.length?observed.join(' · '):p.risks.length?'Paso con riesgo registrado':'Paso relacionado con entradas económicas';
     const applicability=step.applies_to?.mode==='PERCENT'&&step.applies_to.value!=null
@@ -226,7 +226,7 @@ function asisPointCardsHtml(record){
     const rate=step.error_rate?.mode==='percent'&&step.error_rate.value!=null
       ?String(step.error_rate.value)+' % de casos':'Frecuencia sin cuantificar';
     const hasRework=Number(step.rework_time)>0;
-    return '<article class="asis-opportunity-point" id="asis-source-step-'+attr(String(step.id))+'">'
+    return '<article class="asis-opportunity-point" id="asis-source-step-'+attr(String(step.id))+'" data-source-step-id="'+attr(String(step.id))+'">'
       +'<div class="asis-opportunity-head"><b>Paso '+(p.index+1)+' · '+esc(step.step_name||'Sin título')+'</b>'
       +'<span>'+singular(p.frictions.length,'fricción','fricciones')+' · '+singular(p.risks.length,'riesgo','riesgos')+' · '+singular(p.impacts.length,'registro económico','registros económicos')+'</span></div>'
       +'<p class="asis-point-headline">'+esc(headline)+'</p>'
