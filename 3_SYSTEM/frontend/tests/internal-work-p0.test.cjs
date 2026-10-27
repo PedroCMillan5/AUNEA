@@ -92,3 +92,15 @@ test('recalculation integrity gate stays on Diagnóstico instead of forcing Impa
   assert.doesNotMatch(body,/state\.activePage='impacto'/);
   assert.match(body,/No se ha recalculado:/);
 });
+
+
+test('PG10 provides an inspectable trace for each engine finding',()=>{
+  const start=results.indexOf('function diagnosisFindingsHtml(');
+  const end=results.indexOf('\nfunction ',start+10);
+  const source=results.slice(start,end);
+  assert.match(source,/<details class="diagnosis-source-review">/);
+  assert.match(source,/Ver trazabilidad del hallazgo/);
+  assert.match(source,/data-page="proceso"/);
+  assert.match(source,/deduplication_key/);
+  assert.match(source,/p\.confidence/);
+});
