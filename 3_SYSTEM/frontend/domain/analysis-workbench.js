@@ -76,7 +76,7 @@ function asisOwnerCollectionValue(field,record){
       DF040:'error_rate',DF041:'decision_criteria',DF042:'normal_next_step',
       DF043:'exception_path',DF044:'manual_actions',DF045:'automation_state'},
     friction:{DF056:'friction_type',DF057:'derived_pain_id',DF058:'cause',DF059:'affected_steps',
-      DF060:'frequency',DF061:'severity',DF062:'active_time_loss',DF063:'direct_loss',
+      DF060:'frequency',DF061:'impact',DF062:'active_time_loss',DF063:'direct_loss',
       DF064:'non_time_impact',DF065:'workaround'},
     risk:{DF068:'description',DF069:'category',DF070:'likelihood_1_5',
       DF071:'impact_1_5',DF072:'controls_present'},
@@ -111,7 +111,7 @@ function asisOwnerCollectionValue(field,record){
     return typeof valuePresent==='function'?valuePresent(v):
       !(Array.isArray(v)&&!v.length);
   };
-  const found=rows.filter(x=>present(x[key])).length;
+  const found=rows.filter(x=>present(x[key])||(fid==='DF061'&&present(x.severity))).length;
   return {count:found,total:rows.length,owner:group.key};
 }
 function asisFieldInventory(record){
