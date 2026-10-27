@@ -29,8 +29,11 @@ function diagnosisStepName(record,id){
   return step?.step_name||step?.name||id||'Paso';
 }
 function diagnosisPainLabel(painId){
+  // REF_PAIN is an internal English technical catalogue; the approved client-facing
+  // Spanish label belongs to the canonical friction-to-Pain mapping.
+  const mapped=(schema.friction_pain_map||[]).find(x=>String(x.Pain_ID)===String(painId));
   const ref=(schema.tables.REF_PAIN||[]).find(x=>String(x.Pain_ID)===String(painId));
-  return ref?.Pain_Name||ref?.Label_ES||ref?.Pain_Pattern||(state.uiMode==='INTERNAL'?painId:'Hallazgo');
+  return mapped?.Label_ES||ref?.Label_ES||'Hallazgo del diagnóstico';
 }
 function diagnosisLinkedFrictions(record,painId){
   const mapping=Object.fromEntries((schema.friction_pain_map||[]).map(x=>[String(x.Friction_Type_ID),String(x.Pain_ID)]));
@@ -70,11 +73,18 @@ function diagnosisFindingsHtml(record,pains){
     const evidence=trace.frictions.map(f=>f.observable_signal).filter(Boolean);
     const impacts=trace.economics.map(x=>`${typeof econDriverLabel==='function'?econDriverLabel(x.driver_id):x.driver_id}: ${diagnosisImpactMetric(x)}`);
     const riskText=trace.risks.map(r=>r.description||labelFrom('OS_RISK_CATEGORY',r.category)).filter(Boolean);
+    const causes=trace.frictions.flatMap(f=>normalizeArray(f.cause)).filter(Boolean).map(x=>labelFrom('OS_FRICTION_CAUSE',x)||x);
+    const priorityIds=normalizeArray(record?.answers?.DF096).map(String);
+    const priorityKnown=priorityIds.length>0;
+    const prioritySelected=trace.frictions.some(f=>priorityIds.includes(String(f.id)));
+    const confidenceText=p.confidence?engineLabel('confidence',p.confidence):'Sin clasificar';
     return `<article class="diagnosis-finding">
       <div class="diagnosis-finding-head"><div><span class="diagnosis-rank">${i+1}</span><div><h3>${esc(diagnosisPainLabel(p.pain_id))}</h3><p>${p.rationale?esc(p.rationale):'Hallazgo calculado por el backend a partir de la captura confirmada.'}</p></div></div><div class="diagnosis-state"><span>${p.state?esc(engineLabel('pain_state',p.state)):'—'}</span><small>Confianza: ${p.confidence?esc(engineLabel('confidence',p.confidence)):'—'}</small></div></div>
       <div class="diagnosis-trace-grid">
         <div><small>Dónde</small><b>${esc(steps.join(' · ')||'Sin paso trazable')}</b></div>
         <div><small>Fricción observada</small><b>${esc(frictionText.join(' · ')||'Sin fricción enlazada')}</b></div>
+        <div><small>Causa declarada</small><b>${esc([...new Set(causes)].join(' · ')||'Causa no especificada en el origen')}</b></div>
+        <div><small>Prioridad indicada por el cliente</small><b>${priorityKnown?(prioritySelected?'Entre las prioridades seleccionadas':'No figura entre las prioridades seleccionadas'):'No consta una prioridad confirmada (DF096)'}</b></div>
         <div><small>Evidencia</small><b>${esc(evidence.join(' · ')||'Sin evidencia textual enlazada')}</b></div>
         <div><small>Impacto relacionado</small><b>${esc(impacts.join(' · ')||'Sin impacto económico/temporal enlazado')}</b></div>
         <div><small>Riesgos en los mismos pasos</small><b>${esc(riskText.join(' · ')||'Ninguno registrado')}</b></div>
@@ -85,14 +95,14 @@ function diagnosisFindingsHtml(record,pains){
         <div class="diagnosis-trace-grid">
           <div><small>Pasos relacionados</small><b>${esc(steps.join(' · ')||'Sin paso enlazado: revisar atribución')}</b></div>
           <div><small>Fricciones de origen</small><b>${esc(trace.frictions.map(f=>[f.id||'Sin identificador',f.client_label||labelFrom('OS_FRICTION_TYPE',f.friction_type),f.evidence_type||'Evidencia no clasificada'].filter(Boolean).join(' · ')).join(' | ')||'Sin fricción enlazada')}</b></div>
-          <div><small>Datos económicos relacionados</small><b>${esc(trace.economics.map(x=>[x.deduplication_key||'Evento sin clave',typeof econDriverLabel==='function'?econDriverLabel(x.driver_id):x.driver_id,x.evidence_type||'Evidencia sin clasificar'].join(' · ')).join(' | ')||'Sin registro económico enlazado')}</b></div>
+          <div><small>Eventos económicos con pasos compartidos (relación contextual, no causal)</small><b>${esc(trace.economics.map(x=>[x.deduplication_key||'Evento sin clave',typeof econDriverLabel==='function'?econDriverLabel(x.driver_id):x.driver_id,x.evidence_type||'Evidencia sin clasificar'].join(' · ')).join(' | ')||'Sin registro económico enlazado')}</b></div>
           <div><small>Riesgos en esos pasos</small><b>${esc(trace.risks.map(r=>r.description||labelFrom('OS_RISK_CATEGORY',r.category)).join(' · ')||'Sin riesgo enlazado')}</b></div>
-          <div><small>Estado del motor</small><b>${esc(p.state?engineLabel('pain_state',p.state):'Pendiente')} · Confianza: ${esc(p.confidence?engineLabel('confidence',p.confidence):'No informada')}</b></div>
+          <div><small>Estado del motor</small><b>${esc(p.state?engineLabel('pain_state',p.state):'Pendiente')} · Confianza: ${esc(confidenceText)}</b><small>Clasificación basada en el tipo de evidencia disponible; no equivale a validación adicional del cliente.</small></div>
           <div><small>Fuente editable</small><b>AS-IS confirmado · Revisar AS-IS para corregir el origen; después recalcular</b></div>
         </div>
         <button type="button" class="btn btn-outline" data-page="proceso">Revisar AS-IS de origen</button>
       </details>
-      <div class="internal-only diagnosis-tech"><span class="code internal-only">${esc(p.pain_id)}</span> Trazabilidad por anclajes registrados; sin causalidad adicional inferida.</div>
+      <div class="internal-only diagnosis-tech"><span class="code internal-only">${esc(p.pain_id)}</span> Trazabilidad por anclajes registrados; las asociaciones no acreditan causalidad ni ahorros futuros.</div>
     </article>`;
   }).join('')+'</div>';
 }
