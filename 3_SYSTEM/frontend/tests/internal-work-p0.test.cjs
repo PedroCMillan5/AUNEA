@@ -150,3 +150,15 @@ test('PG10 temporal cards keep additional friction labour and declared E2E separ
   assert.match(workbench,/diagnosisProcessBaselineHtml\(data.process_time_projection,record\)/);
   assert.match(results,/diagnosisProcessBaselineHtml\(processTime,record\)/);
 });
+
+test('PG10 EconomicInput cards distinguish zero, missing and unearned savings',()=>{
+  const start=results.indexOf('function diagnosisEconomicsHtml(');
+  const end=results.indexOf('\nfunction ',start+10);
+  const fn=results.slice(start,end);
+  assert.match(fn,/econ\.annual_active_hours==null/);
+  assert.match(fn,/econ\.annual_wait_hours==null/);
+  assert.match(fn,/econ\.direct_loss_eur_annual==null/);
+  assert.match(fn,/econ\.realized_cash_saving_eur_annual==null/);
+  assert.match(fn,/No es una previsión de ahorro futuro/);
+  assert.match(fn,/no equivale a un coste eliminable/);
+});
