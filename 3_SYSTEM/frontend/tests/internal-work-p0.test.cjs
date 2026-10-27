@@ -4,6 +4,7 @@ const fs=require('node:fs');
 const path=require('node:path');
 const root=path.resolve(__dirname,'..');
 const results=fs.readFileSync(path.join(root,'pages/results.js'),'utf8');
+const workbench=fs.readFileSync(path.join(root,'domain/analysis-workbench.js'),'utf8');
 const state=fs.readFileSync(path.join(root,'core/state.js'),'utf8');
 const boot=fs.readFileSync(path.join(root,'boot.js'),'utf8');
 const display=fs.readFileSync(path.join(root,'pages/session-display.js'),'utf8');
@@ -108,4 +109,44 @@ test('PG10 provides an inspectable trace for each engine finding',()=>{
 
 test('client presentation helper note starts on its own line',()=>{
   assert.match(results,/class="client-presentation-note" style="display:block;margin-top:8px"/);
+});
+
+test('PG10 coverage separates accessible, derived and nonrequired absent data',()=>{
+  assert.match(workbench,/function asisFieldInventory\(record\)/);
+  assert.match(workbench,/status=present\?/);
+  assert.match(workbench,/DERIVATION_NOT_AVAILABLE/);
+  assert.match(workbench,/NOT_CAPTURED_OR_CONDITIONAL/);
+  assert.match(workbench,/canonicalMissingRequired\(e\)/);
+  assert.match(workbench,/no equivalen a preguntas obligatorias pendientes/);
+  assert.match(workbench,/x\.blocking\?' · Bloqueante':' · No bloqueante'/);
+  assert.match(workbench,/x\.source_fields/);
+});
+test('PG10 findings use canonical Spanish friction labels and show grounded trace',()=>{
+  const start=results.indexOf('function diagnosisPainLabel(');
+  const end=results.indexOf('\nfunction ',start+10);
+  const fn=results.slice(start,end);
+  assert.match(fn,/schema\.friction_pain_map/);
+  assert.match(fn,/mapped\?\.Label_ES/);
+  assert.doesNotMatch(fn,/ref\?\.Pain_Pattern/);
+  assert.match(results,/Causa declarada/);
+  assert.match(results,/Prioridad indicada por el cliente/);
+  assert.match(results,/No consta una prioridad confirmada \(DF096\)/);
+  assert.match(results,/relación contextual, no causal/);
+  assert.match(results,/Ver punto de análisis en esta página/);
+  assert.match(workbench,/asis-source-step-/);
+});
+test('PG10 temporal cards keep additional friction labour and declared E2E separate',()=>{
+  const start=results.indexOf('function diagnosisProcessBaselineHtml(');
+  const end=results.indexOf('\nfunction ',start+10);
+  const fn=results.slice(start,end);
+  assert.match(fn,/annual_active_hours/);
+  assert.match(fn,/annual_friction_additional_hours/);
+  assert.match(fn,/annual_total_active_hours/);
+  assert.match(fn,/annual_wait_exposure_hours/);
+  assert.match(fn,/annual_rework_hours/);
+  assert.match(fn,/asisSourceBoundary\(record,'DF026'\)/);
+  assert.match(fn,/Conciliación end-to-end pendiente de acreditar/);
+  assert.match(fn,/no horas laborales ni ahorro/);
+  assert.match(workbench,/diagnosisProcessBaselineHtml\(data.process_time_projection,record\)/);
+  assert.match(results,/diagnosisProcessBaselineHtml\(processTime,record\)/);
 });
