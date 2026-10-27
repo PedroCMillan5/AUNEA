@@ -67,6 +67,7 @@ async function runAsisAnalysis(e){
 // Canonical sources: Diagnostic Master v1.2, DEC-050/052 and sealed Engagement snapshot.
 // Repeatable DF data belong to ProcessStep/Friction/Risk/EconomicInput; answers are not a second owner.
 // Never write through this projection, silently infer applicability, or treat a partial count as complete.
+// Align field presence with backend input_coverage.py. A saved default 0 proves storage, not measurement.
 function asisOwnerCollectionValue(field,record){
   const fid=String(field.Field_ID||'');
   const owner={
@@ -74,15 +75,14 @@ function asisOwnerCollectionValue(field,record){
       DF036:'outputs',DF037:'active_time',DF038:'wait_time',DF039:'rework_time',
       DF040:'error_rate',DF041:'decision_criteria',DF042:'normal_next_step',
       DF043:'exception_path',DF044:'manual_actions',DF045:'automation_state'},
-    friction:{DF056:'client_label',DF057:'derived_pain_id',DF058:'cause',DF059:'affected_steps',
-      DF060:'frequency',DF061:'impact',DF062:'active_time_loss',DF063:'direct_loss',
+    friction:{DF056:'friction_type',DF057:'derived_pain_id',DF058:'cause',DF059:'affected_steps',
+      DF060:'frequency',DF061:'severity',DF062:'active_time_loss',DF063:'direct_loss',
       DF064:'non_time_impact',DF065:'workaround'},
     risk:{DF068:'description',DF069:'category',DF070:'likelihood_1_5',
-      DF071:'impact_1_5',DF072:'current_control'},
+      DF071:'impact_1_5',DF072:'controls_present'},
     economic:{DF076:'capacity_cost_rate_eur_hour',DF077:'value',
       DF080:'annual_active_hours',DF081:'annual_active_hours',
-      DF082:'direct_loss_eur_annual',DF083:'current_tool_cost_eur_annual',
-      DF084:'direct_loss_eur_annual'}
+      DF082:'direct_loss_eur_annual',DF083:'current_tool_cost_eur_annual'}
   };
   const groups=[
     {key:'step',records:record?.processSteps||[]},
@@ -94,8 +94,8 @@ function asisOwnerCollectionValue(field,record){
   if(!group)return null;
   // EconomicInputs are driver-scoped; unrelated drivers cannot supply a value.
   const driverFilter={
-    DF076:['ED14'],DF077:['ED14'],DF080:['ED04'],DF081:['ED06'],
-    DF082:['ED09','ED11'],DF083:['ED12'],DF084:['ED10']
+    DF077:['ED14'],DF080:['ED04'],DF081:['ED06'],
+    DF082:['ED09','ED11'],DF083:['ED12']
   };
   const rows=group.records.filter(x=>x&&x.status!=='SUPERSEDED')
     .filter(x=>group.key!=='economic'||!driverFilter[fid]||
@@ -110,8 +110,7 @@ function asisOwnerCollectionValue(field,record){
     return typeof valuePresent==='function'?valuePresent(v):
       !(Array.isArray(v)&&!v.length);
   };
-  const found=rows.filter(x=>present(x[key])||(fid==='DF056'&&present(x.observable_signal))||
-    (fid==='DF057'&&present(x.friction_type))).length;
+  const found=rows.filter(x=>present(x[key])).length;
   return {count:found,total:rows.length,owner:group.key};
 }
 function asisFieldInventory(record){
