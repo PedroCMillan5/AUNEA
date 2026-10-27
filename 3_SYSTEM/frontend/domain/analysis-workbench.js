@@ -202,6 +202,7 @@ function asisPointReviewHtml(p){
       +'<small><strong>Rol o recurso:</strong> '+safe(labelFrom('OS_ACTOR_ROLE',x.role_or_resource)||x.role_or_resource||'No declarado')+'</small>'
       +(entries.length?'<small>'+safe(entries.join(' · '))+'</small>':'<small>Sin importes materiales cuantificados en este registro.</small>')
       +'<small><strong>Fuente:</strong> '+safe(sourceEvidence(x.evidence_type))+' · '+safe(scope(linked))+'</small>'
+      +'<small>Evento vinculado por paso; no implica causa, importe recuperable ni ahorro.</small>'
       +'<small>El coste de capacidad no demuestra ahorro de caja; el coste actual de herramientas no se presupone eliminable.</small>'
       +(x.notes?'<details class="asis-origin-note"><summary>Nota económica de origen</summary><p>'+safe(x.notes)+'</p></details>':'');
   },x=>'data-source-economic-index="'+attr(String(p.allEconomics.indexOf(x)))+'"');
