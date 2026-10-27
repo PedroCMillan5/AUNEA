@@ -275,3 +275,61 @@ test('PG10 reference cards always separate the value and its supporting explanat
   assert.doesNotMatch(section,/<small>No equivale|<small>Sin tiempo futuro/);
 });
 // [AUNEA-UAT-PG10-REFERENCE-159] END
+
+
+// [AUNEA-UAT-PG10-MAP-NAV-160] START — Clicking a graph node reveals its owned PG10 analysis.
+test('PG10 map nodes open their matching read-only analysis cards and are keyboard accessible',()=>{
+  const start=results.indexOf('function bindDiagnosticMapPointNavigation(');
+  const end=results.indexOf('\nfunction ',start+10);
+  assert.ok(start>=0&&end>start);
+  const fn=results.slice(start,end);
+  const classes=()=>{
+    const set=new Set();
+    return {add:x=>set.add(x),remove:x=>set.delete(x),contains:x=>set.has(x)};
+  };
+  const targetIds=['P1','P2','P3','P4'];
+  const targets=Object.fromEntries(targetIds.map(id=>{
+    const details={open:false};
+    return ['asis-source-step-'+id,{classList:classes(),details,scrolls:0,
+      querySelector:q=>q==='.asis-point-review'?details:{textContent:'Paso '+id},
+      scrollIntoView(){this.scrolls++;}
+    }];
+  }));
+  const nodes=[...targetIds.map(id=>({dataset:{graphNode:id},classList:classes(),events:{},attrs:{},
+    addEventListener(event,fn){this.events[event]=fn},
+    setAttribute(k,v){this.attrs[k]=v}
+  })),{dataset:{graphNode:'__START__'},classList:classes(),events:{},
+    addEventListener(event,fn){this.events[event]=fn},
+    setAttribute(k,v){this.attrs[k]=v}
+  }];
+  const doc={
+    getElementById:id=>targets[id]||null,
+    querySelectorAll:q=>q==='.process-graph-readonly [data-graph-node]'?nodes:
+      q==='.asis-opportunity-point.is-selected'?Object.values(targets).filter(x=>x.classList.contains('is-selected')):[]
+  };
+  const bind=new Function('state','document',fn+'\nreturn bindDiagnosticMapPointNavigation;')({activePage:'resultados'},doc);
+  bind();
+  assert.equal(nodes.slice(0,4).filter(n=>n.attrs.role==='button'&&n.attrs.tabindex==='0').length,4);
+  assert.equal(Object.keys(nodes[4].events).length,0,'start boundary is not actionable');
+  nodes[0].events.click();
+  assert.equal(targets['asis-source-step-P1'].details.open,true);
+  assert.equal(targets['asis-source-step-P1'].scrolls,1);
+  let prevented=false;
+  nodes[3].events.keydown({key:'Enter',preventDefault(){prevented=true;}});
+  assert.equal(prevented,true);
+  assert.equal(targets['asis-source-step-P4'].details.open,true);
+  assert.equal(targets['asis-source-step-P4'].classList.contains('is-selected'),true);
+  assert.equal(targets['asis-source-step-P1'].classList.contains('is-selected'),false);
+  assert.match(results,/bindDiagnosticMapPointNavigation\(\);/);
+  const css=fs.readFileSync(path.join(root,'ui-system.css'),'utf8');
+  assert.match(css,/\.diagnosis-map-selectable:focus-visible/);
+});
+test('PG10 map click handler does not alter confirmed process records or call an editor',()=>{
+  const start=results.indexOf('function bindDiagnosticMapPointNavigation(');
+  const end=results.indexOf('\nfunction ',start+10);
+  const fn=results.slice(start,end);
+  assert.doesNotMatch(fn,/markDirty|save|mutation|data-edit-step|render\(/);
+  assert.match(fn,/\.asis-point-review/);
+  assert.match(fn,/scrollIntoView/);
+});
+// [AUNEA-UAT-PG10-MAP-NAV-160] END
