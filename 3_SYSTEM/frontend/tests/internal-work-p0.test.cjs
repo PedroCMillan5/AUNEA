@@ -254,3 +254,24 @@ test('PG10 compact hierarchy stays Spanish, responsive and does not duplicate th
   assert.equal(page.split("section('Qué ocurrirá al calcular la recomendación'").length-1,1);
 });
 // [AUNEA-UAT-PG10-COMPACT-158] END
+
+
+// [AUNEA-UAT-PG10-REFERENCE-159] START — Reference-card typography regression.
+test('PG10 reference cards always separate the value and its supporting explanation',()=>{
+  const css=fs.readFileSync(path.join(root,'ui-system.css'),'utf8');
+  const pageStart=results.indexOf("section('Estado actual y tiempo de referencia'");
+  const pageEnd=results.indexOf("section('Mapa y puntos críticos del AS-IS'",pageStart);
+  const section=results.slice(pageStart,pageEnd);
+  assert.ok(pageStart>=0&&pageEnd>pageStart);
+  assert.equal(section.split('class="notice diagnosis-reference-card"').length-1,3);
+  assert.equal(section.split('class="diagnosis-reference-value"').length-1,3);
+  assert.equal(section.split('class="diagnosis-reference-note"').length-1,3);
+  assert.match(section,/asisSourceBoundary\(record,'DF026'\)/);
+  assert.match(section,/asisSourceBoundary\(record,'DF025'\)/);
+  assert.match(section,/record\.answers\?\.DF086/);
+  assert.match(css,/\.diagnosis-reference-card \.diagnosis-reference-note\{/);
+  assert.match(css,/display:block;margin:auto 0 0;padding-top:11px/);
+  assert.match(css,/\.diagnosis-reference-grid \.diagnosis-reference-card\{/);
+  assert.doesNotMatch(section,/<small>No equivale|<small>Sin tiempo futuro/);
+});
+// [AUNEA-UAT-PG10-REFERENCE-159] END
