@@ -58,7 +58,7 @@ STEP_FIELD = {
 }
 FRICTION_FIELD = {
     "DF056":"friction_type","DF057":"derived_pain_id","DF058":"cause","DF059":"affected_steps",
-    "DF060":"frequency","DF061":"severity","DF062":"active_time_loss","DF063":"direct_loss",
+    "DF060":"frequency","DF061":"impact","DF062":"active_time_loss","DF063":"direct_loss",
     "DF064":"non_time_impact","DF065":"workaround",
 }
 
@@ -96,6 +96,10 @@ def _source_present(fid: str, e: EngagementInput) -> bool:
         return len({str(x) for x in tools})>1
     if fid=="DF055":
         return any(str(f.get("friction_type") or "")=="P13" for f in frictions)
+    if fid=="DF061":
+        # The current Friction modal saves the severity scale as impact. Accept legacy severity too.
+        # This is provenance repair for the same canonical field, not a new input or scoring rule.
+        return bool(frictions) and any(_present(f.get("impact")) or _present(f.get("severity")) for f in frictions)
     if fid in FRICTION_FIELD:
         key=FRICTION_FIELD[fid]
         return bool(frictions) and any(_present(f.get(key)) for f in frictions)
