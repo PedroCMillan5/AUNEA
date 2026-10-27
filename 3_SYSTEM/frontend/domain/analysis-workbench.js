@@ -133,47 +133,115 @@ function asisPointRecords(record){
 // Three contextual options per critical ProcessStep, all sourced from the same confirmed AS-IS.
 // Applicability is deliberately undecided: no Pain→step economics or future-time rule is assumed.
 function asisPointReviewHtml(p){
-  const label=x=>x.client_label||x.observable_signal||labelFrom('OS_FRICTION_TYPE',x.friction_type)||'Fricción registrada';
-  const attribution={INCLUDED:'Incluido en el paso',BREAKDOWN:'Desglose del retrabajo',ADDITIONAL:'Adicional al paso'};
-  const list=(items,fn)=>items.length?'<ul>'+items.map(x=>'<li>'+fn(x)+'</li>').join('')+'</ul>':'<p class="field-help">Sin registros vinculados a este paso.</p>';
+  const safe=x=>esc(String(x??''));
+  const list=(items,fn)=>items.length?'<ul>'+items.map(x=>'<li>'+fn(x)+'</li>').join('')+'</ul>'
+    :'<p class="field-help">No hay registros relacionados con este paso.</p>';
+  const stepName=id=>p.allSteps.find(s=>String(s.id)===String(id))?.step_name||'Paso no localizado';
+  const sourceEvidence=x=>x?labelFrom('OS_EVIDENCE_TYPE',x)||'Tipo de evidencia no identificado':'Evidencia sin clasificar';
+  const periodUnit=period=>({case:'caso',month:'mes',year:'año',week:'semana',day:'día'})[String(period||'').toLowerCase()]||'periodo no especificado';
+  const value=x=>x==null||x===''?'No informado':Number.isFinite(Number(x))
+    ?Number(x).toLocaleString('es-ES',{maximumFractionDigits:2}):String(x);
+  const rate=x=>{
+    if(!x||x.value==null||x.value==='')return 'Frecuencia sin cuantificar';
+    const token=String(x.mode||'').toLowerCase();
+    if(token==='percent')return value(x.value)+' % de casos';
+    return value(x.value)+' por '+periodUnit(x.period);
+  };
+  const minutes=x=>x?.value==null?'Sin tiempo informado':value(x.value)+' '+(x.unit||'min')+' por ocurrencia';
+  const scope=x=>Array.isArray(x)&&x.length>1?'Relacionado con '+x.length+' pasos; es un único registro.':'Relacionado con este paso.';
+  const affected=f=>Array.isArray(f.affected_steps)?f.affected_steps:[];
+  const owner=f=>f.time_attribution?.step_id;
+  const modeLabels={INCLUDED:'Incluido: no sumar otra vez',BREAKDOWN:'Desglose de retrabajo: no sumar otra vez',ADDITIONAL:'Adicional: sumar solo una vez al conciliar'};
   const frictions=list(p.frictions,f=>{
-    const mode=attribution[f.time_attribution?.mode]||'Atribución pendiente de verificar';
-    return '<b>'+esc(label(f))+'</b> · '+esc(mode)
-      +(f.observable_signal?'<small>'+esc(f.observable_signal)+'</small>':'<small>Señal observable no documentada</small>');
+    const ownerId=owner(f),currentId=String(p.step.id),ownerHere=ownerId!=null&&String(ownerId)===currentId;
+    const attribution=modeLabels[f.time_attribution?.mode]||'Atribución temporal pendiente de verificar';
+    const ownerName=ownerId!=null?stepName(ownerId):'Sin paso propietario confirmado';
+    const sourceSteps=affected(f);
+    const relatedNames=sourceSteps.map(id=>stepName(id)).join(' · ');
+    const causalNotes=f.notes||'';
+    return '<b>'+safe(f.client_label||labelFrom('OS_FRICTION_TYPE',f.friction_type)||'Fricción registrada')+'</b>'
+      +'<small><strong>Origen y frecuencia:</strong> '+safe(rate(f.frequency))+' · Evidencia: '+safe(sourceEvidence(f.evidence_type))+'</small>'
+      +'<small><strong>Causa registrada:</strong> '+safe(normalizeArray(f.cause).map(x=>labelFrom('OS_FRICTION_CAUSE',x)||x).join(' · ')||'No informada')+'</small>'
+      +'<small><strong>Trabajo relacionado:</strong> '+safe(minutes(f.active_time_loss))
+      +(Number(f.wait_time_loss?.value)>0?' · Espera indicada: '+safe(minutes(f.wait_time_loss)):'')+'</small>'
+      +'<small><strong>Atribución:</strong> '+safe(attribution)+'. Propietario: '
+      +(ownerHere?'<strong>este paso</strong>':ownerId!=null?'<a href="#asis-source-step-'+attr(String(ownerId))+'">'+safe(ownerName)+'</a>':'<strong>pendiente</strong>')
+      +'.</small>'
+      +(sourceSteps.length>1?'<small><strong>Ámbito compartido:</strong> '+safe(relatedNames)+'. No se contabiliza una vez por cada paso afectado.</small>':'')
+      +(f.observable_signal?'<small><strong>Señal:</strong> '+safe(f.observable_signal)+'</small>':'')
+      +(causalNotes?'<details class="asis-origin-note"><summary>Nota de origen</summary><p>'+safe(causalNotes)+'</p></details>':'');
   });
-  const risks=list(p.risks,r=>esc(r.description||labelFrom('OS_RISK_CATEGORY',r.category)||'Riesgo registrado'));
-  const costs=list(p.impacts,x=>esc(typeof econDriverLabel==='function'?econDriverLabel(x.driver_id):x.driver_id||'Entrada económica')
-    +'<small>Evento vinculado por paso; no implica causa, importe recuperable ni ahorro.</small>');
+  const risks=list(p.risks,r=>{
+    const controls=r.controls_present===true?(normalizeArray(r.current_control).map(x=>x).join(' · ')||'Controles presentes, sin detalle')
+      :r.controls_present===false?'No se declararon controles':'Controles sin verificar';
+    const meta=[
+      'Categoría: '+(labelFrom('OS_RISK_CATEGORY',r.category)||'Sin clasificar'),
+      'Probabilidad: '+(r.likelihood_1_5==null?'Pendiente':value(r.likelihood_1_5)+'/5'),
+      'Impacto: '+(r.impact_1_5==null?'Pendiente':value(r.impact_1_5)+'/5')
+    ];
+    const linked=Array.isArray(r.step_ids)?r.step_ids:[];
+    return '<b>'+safe(r.description||'Riesgo registrado')+'</b>'
+      +'<small>'+safe(meta.join(' · '))+'</small><small><strong>Controles:</strong> '+safe(controls)+'</small>'
+      +(linked.length>1?'<small>'+safe(scope(linked))+'</small>':'')
+      +(r.notes?'<details class="asis-origin-note"><summary>Nota y procedencia del riesgo</summary><p>'+safe(r.notes)+'</p></details>':'');
+  });
+  const economics=list(p.impacts,x=>{
+    const linked=Array.isArray(x.step_ids)?x.step_ids:[];
+    const rate=x.capacity_cost_rate_eur_hour;
+    const tool=x.current_tool_cost_eur_annual;
+    const capacity=x.value==null?'':value(x.value)+' '+(x.unit||'')+'/'+periodUnit(x.period);
+    const entries=[];
+    if(rate!=null)entries.push('Tarifa de capacidad: '+value(rate)+' €/hora');
+    if(capacity)entries.push('Capacidad declarada: '+capacity);
+    if(tool!=null)entries.push('Coste actual de herramienta: '+value(tool)+' €/año');
+    if(x.annual_active_hours!=null&&Number(x.annual_active_hours)!==0)entries.push('Horas activas registradas: '+value(x.annual_active_hours)+' h/año');
+    if(x.annual_wait_hours!=null&&Number(x.annual_wait_hours)!==0)entries.push('Horas de espera registradas: '+value(x.annual_wait_hours)+' h/año');
+    if(x.direct_loss_eur_annual!=null&&Number(x.direct_loss_eur_annual)!==0)entries.push('Pérdida directa registrada: '+value(x.direct_loss_eur_annual)+' €/año');
+    if(x.realized_cash_saving_eur_annual!=null&&Number(x.realized_cash_saving_eur_annual)!==0)entries.push('Ahorro de caja registrado: '+value(x.realized_cash_saving_eur_annual)+' €/año');
+    return '<b>'+safe(typeof econDriverLabel==='function'?econDriverLabel(x.driver_id):x.driver_id||'Entrada económica')+'</b>'
+      +'<small><strong>Rol o recurso:</strong> '+safe(labelFrom('OS_ACTOR_ROLE',x.role_or_resource)||x.role_or_resource||'No declarado')+'</small>'
+      +(entries.length?'<small>'+safe(entries.join(' · '))+'</small>':'<small>Sin importes materiales cuantificados en este registro.</small>')
+      +'<small><strong>Fuente:</strong> '+safe(sourceEvidence(x.evidence_type))+' · '+safe(scope(linked))+'</small>'
+      +'<small>El coste de capacidad no demuestra ahorro de caja; el coste actual de herramientas no se presupone eliminable.</small>'
+      +(x.notes?'<details class="asis-origin-note"><summary>Nota económica de origen</summary><p>'+safe(x.notes)+'</p></details>':'');
+  });
   return '<details class="asis-point-review"><summary>Consultar evidencias y relaciones del paso</summary>'
     +'<div class="asis-point-review-grid">'
     +'<div><b>Fricciones</b>'+frictions+'</div>'
     +'<div><b>Riesgos</b>'+risks+'</div>'
-    +'<div><b>Registros económicos relacionados</b>'+costs+'</div>'
-    +'</div>'
-    +(p.gaps.length?'<div class="asis-opportunity-gaps"><b>Información que requiere comprobación</b><ul>'+p.gaps.map(g=>'<li>'+esc(g)+'</li>').join('')+'</ul></div>':'')
-    +'<p class="field-help">Las tres vías de mejora se contrastan en una única sección inferior. Ninguna alternativa está elegida y no se asignan ahorros futuros a este paso.</p>'
+    +'<div><b>Registros económicos relacionados</b>'+economics+'</div></div>'
+    +(p.gaps.length?'<details class="asis-opportunity-gaps"><summary>Información pendiente de comprobar ('+p.gaps.length+')</summary><ul>'
+      +p.gaps.map(g=>'<li>'+safe(g)+'</li>').join('')+'</ul></details>':'')
     +'</details>';
 }
 function asisPointCardsHtml(record){
   const source=asisPointRecords(record),rows=source.points.filter(p=>p.critical);
+  const singular=(n,one,many)=>n+' '+(n===1?one:many);
   const card=p=>{
-    const step=p.step;
+    const step=p.step,related={...p,allSteps:source.points.map(x=>x.step)};
     const observed=p.frictions.map(f=>f.client_label||f.observable_signal||labelFrom('OS_FRICTION_TYPE',f.friction_type)||'Fricción registrada');
-    const headline=observed.length?observed.join(' · '):p.risks.length
-      ?'Paso con riesgo registrado':'Paso relacionado con entradas económicas';
+    const headline=observed.length?observed.join(' · '):p.risks.length?'Paso con riesgo registrado':'Paso relacionado con entradas económicas';
+    const applicability=step.applies_to?.mode==='PERCENT'&&step.applies_to.value!=null
+      ?' · Se ejecuta en '+esc(String(step.applies_to.value))+' % de los casos':'';
+    const rate=step.error_rate?.mode==='percent'&&step.error_rate.value!=null
+      ?String(step.error_rate.value)+' % de casos':'Frecuencia sin cuantificar';
+    const hasRework=Number(step.rework_time)>0;
     return '<article class="asis-opportunity-point" id="asis-source-step-'+attr(String(step.id))+'">'
       +'<div class="asis-opportunity-head"><b>Paso '+(p.index+1)+' · '+esc(step.step_name||'Sin título')+'</b>'
-      +'<span>'+p.frictions.length+' fricciones · '+p.risks.length+' riesgos · '+p.impacts.length+' registros económicos</span></div>'
+      +'<span>'+singular(p.frictions.length,'fricción','fricciones')+' · '+singular(p.risks.length,'riesgo','riesgos')+' · '+singular(p.impacts.length,'registro económico','registros económicos')+'</span></div>'
       +'<p class="asis-point-headline">'+esc(headline)+'</p>'
-      +'<div class="asis-opportunity-times"><span>Trabajo: '+esc(asisSourceTime(step.active_time))+'</span>'
-      +'<span>Espera: '+esc(asisSourceTime(step.wait_time))+'</span>'
-      +'<span>Retrabajo declarado: '+esc(asisSourceTime(step.rework_time))+'</span></div>'
-      +asisPointReviewHtml(p)+'</article>';
+      +'<div class="asis-opportunity-times">'
+      +'<span>Trabajo: '+esc(asisSourceTime(step.active_time))+'</span>'
+      +'<span>Espera registrada: '+esc(asisSourceTime(step.wait_time))+'</span>'
+      +'<span>Retrabajo cuando falla: '+esc(asisSourceTime(step.rework_time))+(hasRework?' · '+esc(rate):'')+'</span></div>'
+      +(applicability?'<p class="asis-point-conditional">Alcance de este paso'+applicability+'. No corresponde necesariamente a todos los casos.</p>':'')
+      +(Number(step.wait_time)>0&&step.notes?'<details class="asis-origin-note asis-step-time-note"><summary>Consultar contexto del tiempo y las condiciones del paso</summary><p>'+esc(step.notes)+'</p></details>':'')
+      +asisPointReviewHtml(related)+'</article>';
   };
   const orphan=source.orphanFrictions.length+source.orphanRisks.length+source.orphanImpacts.length;
-  return '<div class="asis-opportunity-summary"><b>'+rows.length+' pasos con relaciones registradas</b> de '+source.points.length+' pasos activos. El vínculo ayuda a investigar; no atribuye causalidad, beneficios o soluciones.</div>'
-    +(rows.length?'<div class="asis-opportunity-list">'+rows.map(card).join('')+'</div>':'<p>No hay pasos con relaciones de fricciones, riesgos o eventos económicos. No se inventan incidencias.</p>')
-    +(orphan?'<div class="notice warn">'+orphan+' registro(s) sin vínculo directo con un paso activo. Revisar su ámbito antes de atribuir efectos.</div>':'');
+  return '<div class="asis-opportunity-summary"><b>'+rows.length+' pasos con relaciones registradas</b> de '+source.points.length+' pasos activos. Los vínculos no son nuevas fricciones ni implican causa, beneficios o soluciones.</div>'
+    +(rows.length?'<div class="asis-opportunity-list">'+rows.map(card).join('')+'</div>':'<p>No hay pasos con fricciones, riesgos o registros económicos enlazados.</p>')
+    +(orphan?'<div class="notice warn">'+orphan+' registro(s) sin vínculo directo al paso activo. Revisar su alcance antes de atribuir efectos.</div>':'');
 }
 function asisCoverageHtml(e,baseline){
   const record=asisAnalysisSource(e),groups=asisFieldInventory(record),all=groups.flatMap(g=>g.items),total=all.length;
