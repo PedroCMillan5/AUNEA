@@ -108,17 +108,23 @@ function diagnosisFindingsHtml(record,pains){
 }
 // [AUNEA-FE-PG10-PROCESS-BASELINE-091] START — Server-owned AS-IS baseline, separate from EconomicInput.
 // SOURCE: DEC-034/041/068; Simulator CANONICAL PG10/PG12.
-function diagnosisProcessBaselineHtml(p){
+function diagnosisProcessBaselineHtml(p,record){
   if(!p)return '<div class="notice info">Proyección temporal del proceso no disponible; no se sustituye por inputs económicos parciales.</div>';
   const cell=k=>p[k]==null?'No calculado':num(p[k]);
+  const declared=record&&typeof asisSourceBoundary==='function'?asisSourceBoundary(record,'DF026'):'No disponible';
+  const gaps=Array.isArray(p.gaps)?p.gaps:[];
   return `<div class="grid g4 diagnosis-process-baseline">
     <div class="notice"><b>Casos al año</b><br>${cell('annual_cases')}<small>Volumen habitual anualizado</small></div>
-    <div class="notice"><b>Trabajo activo del proceso</b><br>${p.annual_active_hours==null?'No calculado':cell('annual_active_hours')+' h/año'}<small>Pasos ponderados por ruta</small></div>
+    <div class="notice"><b>Trabajo activo de los pasos</b><br>${p.annual_active_hours==null?'No calculado':cell('annual_active_hours')+' h/año'}<small>Ponderado por recorrido; no incluye fricciones adicionales</small></div>
+    <div class="notice"><b>Trabajo adicional de fricciones</b><br>${p.annual_friction_additional_hours==null?'Pendiente de atribución':cell('annual_friction_additional_hours')+' h/año'}<small>Solo clasificaciones ADICIONAL con frecuencia y propietario válidos</small></div>
+    <div class="notice"><b>Trabajo activo total con adicionales</b><br>${p.annual_total_active_hours==null?'No conciliado':cell('annual_total_active_hours')+' h/año'}<small>Trabajo de pasos más adicionales válidos; excluye retrabajo y espera</small></div>
     <div class="notice"><b>Exposición a espera</b><br>${p.annual_wait_exposure_hours==null?'No calculado':cell('annual_wait_exposure_hours')+' caso-horas/año'}<small>Espera pasiva, no horas laborales ni ahorro</small></div>
-    <div class="notice"><b>Retrabajo anual</b><br>${p.annual_rework_hours==null?'No calculado':cell('annual_rework_hours')+' h/año'}<small>Sin doble sumar fricciones</small></div>
-  </div>${p.status!=='CALCULATED'?'<div class="notice warn">Proyección incompleta; revisar datos y atribuciones.</div>':''}`;
+    <div class="notice"><b>Retrabajo anual</b><br>${p.annual_rework_hours==null?'No calculado':cell('annual_rework_hours')+' h/año'}<small>Sin doble sumar fricciones incluidas o desglosadas</small></div>
+    <div class="notice"><b>Ciclo end-to-end declarado</b><br>${esc(declared)}<small>Referencia del diagnóstico (DF026); no se sustituye por una suma de exposiciones</small></div>
+    <div class="notice"><b>Estado de la proyección</b><br>${p.status==='CALCULATED'?'Componentes calculados':'Componentes incompletos'}<small>Calculado no significa ciclo conciliado ni ahorro acreditado</small></div>
+  </div><div class="notice info" style="margin-top:10px"><b>Conciliación end-to-end pendiente de acreditar</b><br>La proximidad entre componentes temporales y la duración declarada no demuestra equivalencia: hay que verificar fronteras, frecuencias y posibles solapamientos. No se convierten caso-horas de espera en coste de personal ni capacidad recuperable en ahorro de caja.</div>
+  ${gaps.length?'<div class="notice warn" style="margin-top:10px"><b>Datos o atribuciones pendientes</b><ul>'+gaps.slice(0,5).map(g=>'<li>'+esc(g)+'</li>').join('')+'</ul></div>':''}`;
 }
-// [AUNEA-FE-PG10-PROCESS-BASELINE-091] END
 function diagnosisEconomicsHtml(econ,record){
   const inputs=record?.economicInputs||[];
   return `<div class="grid g3 diagnosis-econ-grid">
@@ -232,7 +238,7 @@ function resultsPage(){
     +section('Puntos críticos y condiciones de mejora','Cada problema mantiene sus anclajes originales. Las alternativas no crean cifras ni cambios en AS-IS.',asisPointCardsHtml(record)+asisDirectionCardsHtml(e))
     +section('Cobertura de fuentes y gaps','Los datos de las 100 preguntas y las entradas del backend se revisan sin requerir una segunda captura.',asisCoverageHtml(e,{input_coverage:o.input_coverage,status:'ANALYZED'}))
     +section('Hallazgos','Qué ocurre, dónde y con qué trazabilidad. El motor determina estado y confianza; la UI sólo enlaza contexto capturado.',diagnosisFindingsHtml(record,pains))
-    +section('Línea base operativa AS-IS','Proyección del backend sobre pasos del snapshot confirmado.',diagnosisProcessBaselineHtml(processTime))
+    +section('Línea base operativa AS-IS','Proyección del backend sobre pasos del snapshot confirmado.',diagnosisProcessBaselineHtml(processTime,record))
      +section('Impactos económicos registrados','EconomicInput refleja un alcance parcial; capacidad, espera y ahorro de caja permanecen separados.',diagnosisEconomicsHtml(econ,record))
     +section('Riesgos','Resultado agregado del motor y riesgos capturados que lo sustentan.',diagnosisRisksHtml(risk,record))
     +section('Recomendación preliminar','Dirección estructurada calculada por el backend. No sustituye el diseño TO-BE ni constituye todavía una propuesta al cliente.',diagnosisRecommendationHtml(o))
