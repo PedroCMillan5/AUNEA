@@ -104,3 +104,8 @@ test('PG10 provides an inspectable trace for each engine finding',()=>{
   assert.match(source,/deduplication_key/);
   assert.match(source,/p\.confidence/);
 });
+
+
+test('client presentation helper note starts on its own line',()=>{
+  assert.match(results,/class="client-presentation-note" style="display:block;margin-top:8px"/);
+});
