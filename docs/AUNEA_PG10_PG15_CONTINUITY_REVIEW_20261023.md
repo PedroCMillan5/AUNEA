@@ -139,3 +139,14 @@ Continúa REVIEW; no se promueven escenarios, entregables, fuentes canónicas ni
 La UAT visual detectó que los textos de ayuda de SLA y objetivos se concatenaban con el valor precedente (`48 horasNo equivale…`, `Reducir esperasSin tiempo…`). Se corrigió solo el marcado PG10 de las tres tarjetas con estructura explícita `diagnosis-reference-card/value/note`, y se fijaron layout vertical, espacio y separador en `AUNEA-FE-PG10-REFERENCE-LAYOUT-159`. DF025, DF026 y DF086 mantienen sus valores y procedencia. Prueba de regresión añadida en `internal-work-p0.test.cjs`.
 
 QA parcial: análisis sintáctico de archivos JS `PASS`; 7 verificaciones directas de markup/CSS y conservación de owners `PASS`. Verificación visual real en navegador aún pendiente; no se modifica CANONICAL.
+
+### Ajuste UAT — navegación desde el mapa del diagnóstico hacia cada paso (27/10/2026)
+
+El mapa PG10 usa `processGraphHtml(...,readonly=true)` del AS-IS confirmado. Antes de este ajuste los nodos de pasos no tenían acción; el editor seguía correctamente deshabilitado, pero el mapa y el análisis se percibían desconectados.
+
+- `AUNEA-FE-PG10-MAP-NAV-160`: `bindDiagnosticMapPointNavigation` únicamente en `state.activePage==='resultados'` relaciona las celdas existentes `data-graph-node` con las tarjetas `asis-source-step-[ID]`; un clic, Enter o espacio desplaza a la tarjeta, abre su desplegable de evidencia y destaca la selección. Nodos sin tarjeta y límites inicio/fin permanecen pasivos. Se añaden atributos accesibles a las celdas accionables. El gráfico conserva el mismo renderer de lectura y no edita datos.
+- Estilos de foco, hover y destino seleccionado en el bloque CSS `AUNEA-FE-PG10-MAP-NAV-160`, sin tocar el editor del AS-IS.
+- Regresión incorporada a `frontend/tests/internal-work-p0.test.cjs`.
+- Verificaciones directas aisladas: parser JS `PASS`; mock de cuatro pasos con clic, teclado, selección y scroll `PASS`. Pendiente el UAT de navegación en navegador y la batería global. El incremento sigue REVIEW.
+
+El contrato no cambia: DEC-050 permite navegar al owner, no duplicar ni alterar un dato confirmado. No se crean nuevos DF ni outputs ni se aprueban recomendaciones por clic.
