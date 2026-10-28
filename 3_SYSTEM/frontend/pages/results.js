@@ -217,6 +217,36 @@ function diagnosisProcessBaselineHtml(p,record){
   const cell=k=>p[k]==null?'No calculado':num(p[k]);
   const declared=record&&typeof asisSourceBoundary==='function'?asisSourceBoundary(record,'DF026'):'No disponible';
   const gaps=Array.isArray(p.gaps)?p.gaps:[];
+  const numeric=p.numeric_comparison;
+  const comparable=numeric&&Number.isFinite(numeric.declared_minutes)&&Number.isFinite(numeric.component_minutes)
+    &&Number.isFinite(numeric.difference_percent);
+  const comparison=comparable
+    ?'<div class="pg10-numeric-comparison"><b>'+
+      (numeric.status==='WITHIN_REVIEW_THRESHOLD'?'Coherencia numérica: dentro del umbral de revisión':'Diferencia temporal que requiere revisión')+'</b>'+
+      '<div class="pg10-numeric-comparison-values">'+
+      '<span>Declarado <strong>'+esc(num(numeric.declared_minutes))+' min</strong></span>'+
+      '<span>Componentes ponderados <strong>'+esc(num(numeric.component_minutes))+' min</strong></span>'+
+      '<span>Diferencia <strong>'+(numeric.difference_minutes>0?'+':'')+esc(num(numeric.difference_minutes))+
+      ' min ('+(numeric.difference_percent>0?'+':'')+esc(num(numeric.difference_percent))+' %)</strong></span></div>'+
+      '<p>Se aplica el umbral de revisión del ±'+esc(num(numeric.review_threshold_percent))+
+      ' % que ya utiliza el mapa AS-IS. Esto indica coherencia de cifras, no una duración cronológica demostrada. No convierte esperas en trabajo ni implica ahorros.</p></div>'
+    :'<div class="notice info pg10-numeric-comparison"><b>Comparación numérica no disponible</b>'+
+      '<p>Los componentes aún no son íntegramente comparables o el análisis es anterior a esta comprobación. Puedes actualizar el análisis, sin modificar datos confirmados.</p></div>';
+  // Informative coincidence only: INCLUDED/BREAKDOWN never add time; matching minutes are not proof of duplication.
+  const timeOwnerOverlap=(record?.frictions||[]).filter(f=>f.status!=='SUPERSEDED'&&
+    ['INCLUDED','BREAKDOWN'].includes(String(f.time_attribution?.mode||'').toUpperCase())).flatMap(f=>{
+      const owner=(record?.processSteps||[]).find(s=>String(s.id)===String(f.time_attribution?.step_id));
+      const raw=f.active_time_loss&&typeof f.active_time_loss==='object'?f.active_time_loss.value:f.active_time_loss;
+      const a=Number(raw),b=Number(owner?.rework_time);
+      return owner&&raw!=null&&Number.isFinite(a)&&Number.isFinite(b)&&a>0&&a===b
+        ?[{owner:owner.step_name||'Paso',minutes:a,friction:f.client_label||f.observable_signal||'Fricción incluida'}]:[];
+    });
+  const overlapNotice=timeOwnerOverlap.length?
+    '<div class="notice info pg10-time-overlap"><b>Comprobación de posibles actividades coincidentes</b><p>'+
+    esc(timeOwnerOverlap.map(x=>x.owner+': '+num(x.minutes)+' min en «'+x.friction+
+    '» ya incluidos y otros '+num(x.minutes)+' min de retrabajo por incidencia').join(' · '))+
+    '. La coincidencia no demuestra duplicidad: comprueba si son actividades distintas en su evidencia de origen. No se suma dos veces la fricción incluida.</p></div>':'';
+
   const card=(title,value,note)=>'<div class="notice pg10-time-summary-card"><b>'+esc(title)+'</b><strong>'+esc(value)+'</strong><small>'+esc(note)+'</small></div>';
   const main=[
     card('Casos al año',cell('annual_cases'),'Volumen habitual anualizado'),
@@ -236,8 +266,7 @@ function diagnosisProcessBaselineHtml(p,record){
     '<div class="grid g4 diagnosis-process-baseline">'+main+'</div>'+
     '<details class="pg10-time-summary-detail"><summary>Ver desglose de trabajo, ciclo declarado y estado del cálculo</summary>'+
     '<div class="grid g4 diagnosis-process-baseline">'+additional+'</div></details>'+
-    '<div class="notice info pg10-time-reconciliation"><b>Conciliación end-to-end pendiente de acreditar</b>'+
-    '<p>La coincidencia aproximada entre componentes y duración declarada no demuestra equivalencia: hay que verificar fronteras, frecuencias y solapamientos. Las caso-horas de espera no se convierten en coste de personal ni en ahorro de caja.</p></div>'+
+    comparison+overlapNotice+
     (gaps.length?'<div class="notice warn pg10-time-gaps"><b>Datos o atribuciones pendientes</b><ul>'+gaps.slice(0,5).map(g=>'<li>'+esc(g)+'</li>').join('')+'</ul></div>':'')+
     '</div>';
 }
