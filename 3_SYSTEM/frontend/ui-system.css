@@ -2247,3 +2247,35 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 .pg10-time-summary .diagnosis-process-baseline{gap:13px}
 @media(max-width:650px){.pg10-temporal-walkthrough{padding:13px}.pg10-time-route{grid-template-columns:1fr;gap:9px}.pg10-time-step:not(:last-child):after{content:'⌄';right:auto;left:8px;top:auto;bottom:-20px}.pg10-time-node{margin-bottom:4px}.pg10-time-card{height:auto}}
 /* [AUNEA-FE-PG10-TIME-UX-169] END */
+
+
+/* [AUNEA-FE-PG10-TIME-UX-170] START — True confirmed branch + compact annual metrics.
+   SOURCE: ProcessStep.normal_next_step / exception_path and session_time; PG10 REVIEW.
+   The branch is a route schematic, never an elapsed-time scale. */
+.pg10-time-branches{margin:5px 0 22px;display:grid;gap:12px}
+.pg10-time-branches h5{font-size:12px;line-height:1.5;margin:0}
+.pg10-time-branch{border:1px solid var(--line,#d8dedc);border-radius:10px;padding:13px 15px;background:var(--surface-soft,#f8faf9)}
+.pg10-time-branch>b{display:block;font-size:12px;margin-bottom:10px}
+.pg10-time-branch-paths{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.pg10-time-branch-paths>div{display:flex;gap:11px;align-items:start;padding:11px 12px;border-radius:8px;border-left:3px solid #137352;background:var(--card,#fff);min-width:0;font-size:12px;line-height:1.55}
+.pg10-time-branch-paths>div.pg10-time-branch-no{border-left-color:#c18b47}
+.pg10-time-branch-paths strong{flex:0 0 auto;min-width:24px}
+.pg10-time-branch-paths span{min-width:0;overflow-wrap:anywhere}
+.pg10-time-branches .field-help{margin:9px 0 0;line-height:1.6}
+.pg10-time-route-branched>.pg10-time-step:not(:last-child):after{content:none}
+.pg10-time-card .pg10-time-explainer{font-size:11px;color:var(--muted,#67736d);line-height:1.6;margin:0;padding:6px 0 0;border-top:1px dashed var(--line,#d8dedc)}
+.pg10-time-year>b{font-size:11px;line-height:1.4}
+.pg10-time-year>div{font-size:11px;line-height:1.6}
+.pg10-time-extra li>small{font-size:11px;color:var(--muted,#67736d)}
+.pg10-time-summary-card{min-height:100px;display:flex;flex-direction:column;align-items:flex-start;gap:7px;padding:14px 15px}
+.pg10-time-summary-card>b{font-size:12px;line-height:1.5}
+.pg10-time-summary-card>strong{font-size:17px;line-height:1.4;font-weight:700;overflow-wrap:anywhere}
+.pg10-time-summary-card>small{font-size:11px;line-height:1.5;color:var(--muted,#67736d)}
+.pg10-time-summary-detail{margin:13px 0 15px;padding:13px 15px;border-radius:9px;border:1px solid var(--line,#d8dedc)}
+.pg10-time-summary-detail>summary{font-size:12px;line-height:1.6;font-weight:700;cursor:pointer}
+.pg10-time-summary-detail[open]>summary{margin-bottom:14px}
+.pg10-time-reconciliation{margin-top:14px}
+.pg10-time-reconciliation p{font-size:12px;line-height:1.6;margin:8px 0 0}
+.pg10-time-gaps{margin-top:12px}
+@media(max-width:700px){.pg10-time-branch-paths{grid-template-columns:1fr}}
+/* [AUNEA-FE-PG10-TIME-UX-170] END */
