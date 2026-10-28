@@ -2279,3 +2279,18 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 .pg10-time-gaps{margin-top:12px}
 @media(max-width:700px){.pg10-time-branch-paths{grid-template-columns:1fr}}
 /* [AUNEA-FE-PG10-TIME-UX-170] END */
+
+/* [AUNEA-FE-PG10-EXPLANATIONS-171] START — Coherence, source overlap and readable evidence. */
+.pg10-numeric-comparison{border:1px solid var(--line,#d8dedc);border-radius:10px;background:var(--card,#fff);margin-top:14px;padding:16px 18px;line-height:1.6}
+.pg10-numeric-comparison>b{font-size:14px;display:block;margin-bottom:10px}
+.pg10-numeric-comparison-values{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:11px}
+.pg10-numeric-comparison-values>span{padding:11px 12px;border:1px solid var(--line,#d8dedc);border-radius:8px;display:flex;flex-direction:column;gap:5px;font-size:12px}
+.pg10-numeric-comparison-values strong{font-size:16px;font-weight:700;overflow-wrap:anywhere}
+.pg10-numeric-comparison p,.pg10-time-overlap p{font-size:12px;line-height:1.65;margin:8px 0 0}
+.pg10-time-overlap{margin-top:11px}
+.pg10-risk-explanation{font-size:12px;line-height:1.55;margin:9px 0 0}
+.pg10-technical-trace{margin:12px 0;padding:12px 14px;border:1px solid var(--line,#d8dedc);border-radius:8px}
+.pg10-technical-trace summary{cursor:pointer;font-size:11px;font-weight:600}
+.pg10-technical-trace p{font-size:11px;color:var(--muted,#67736d);line-height:1.6;overflow-wrap:anywhere}
+@media(max-width:750px){.pg10-numeric-comparison-values{grid-template-columns:1fr}.pg10-numeric-comparison{padding:13px}}
+/* [AUNEA-FE-PG10-EXPLANATIONS-171] END */
