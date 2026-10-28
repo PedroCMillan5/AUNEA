@@ -641,7 +641,7 @@ function asisBaselineHtml(e){
   if(data.status!=='ANALYZED')return '<div class="notice warn"><b>Análisis parcial: entradas o relaciones pendientes.</b> No se calculan resultados derivados con fuentes incoherentes.</div>'
     +asisCoverageHtml(e,data)+'<button class="btn btn-outline" id="analyzeAsisOnly">Volver a comprobar fuentes</button>';
   const record=asisAnalysisSource(e);
-  const subsection=(heading,content)=>'<section class="asis-baseline-result"><h3>'+esc(heading)+'</h3>'+content+'</section>';
+  const subsection=(heading,content)=>'<section class="asis-baseline-result"><h3>'+esc(heading)+'</h3><div class="asis-baseline-body">'+content+'</div></section>';
   const economic=data.economic_result;
   const economicsNote=economic&&economic.status!=='COMPLETE'
     ?'<div class="notice warn">La cobertura del análisis económico es '+esc(economic.status==='PARTIAL'?'parcial':'limitada')+'. Los importes registrados no representan por sí solos el coste total del proceso ni un ahorro alcanzable.</div>':'';
