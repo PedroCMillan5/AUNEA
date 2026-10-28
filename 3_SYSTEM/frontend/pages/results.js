@@ -288,6 +288,8 @@ function diagnosisEconomicsHtml(econ,record,projection){
   // SOURCE: DEC-021/032/050/068, backend process_labor_capacity.
   const capacity=projection?.process_labor_capacity;
   const moneyValue=x=>typeof x==='number'&&Number.isFinite(x)?eur(x):'No calculado';
+  const moneyPerCase=x=>typeof x==='number'&&Number.isFinite(x)
+    ?x.toLocaleString('es-ES',{style:'currency',currency:'EUR',minimumFractionDigits:2,maximumFractionDigits:2}):'No calculado';
   // Role sums come only from the source-matched backend step values. No new
   // multiplication, waiting-cost assumption, savings claim or separate owner.
   const roleRows=Array.isArray(capacity?.role_breakdown)?capacity.role_breakdown:[];
@@ -300,18 +302,36 @@ function diagnosisEconomicsHtml(econ,record,projection){
         '<td>'+esc(x.annual_hours==null?'Pendiente':num(x.annual_hours))+'</td>'+
         '<td>'+esc(x.hourly_rate==null?'Pendiente':moneyValue(x.hourly_rate)+'/h')+'</td>'+
         '<td>'+esc(moneyValue(x.annual_capacity_value_eur))+'</td>'+
-        '<td>'+esc(moneyValue(x.capacity_value_eur_per_case))+'</td></tr>').join('')+
+        '<td>'+esc(moneyPerCase(x.capacity_value_eur_per_case))+'</td></tr>').join('')+
       '</tbody><tfoot><tr><th scope="row">Total</th>'+
       '<td>'+esc(num(capacity.covered_hours))+'</td><td>—</td>'+
       '<td>'+esc(moneyValue(capacity.annual_labor_capacity_value_eur))+'</td>'+
-      '<td>'+esc(moneyValue(capacity.capacity_value_eur_per_case))+'</td></tr></tfoot></table></div>'+
+      '<td>'+esc(moneyPerCase(capacity.capacity_value_eur_per_case))+'</td></tr></tfoot></table></div>'+
       '<p>Los importes corresponden a trabajo activo y fricciones adicionales atribuidas una sola vez. No incluyen la espera pasiva; el retrabajo permanece separado.</p></div>'
     :'<p class="pg10-cost-roles-missing">El análisis guardado no incluye todavía el desglose por rol. Actualiza el análisis con el AS-IS vigente para obtenerlo.</p>';
+  // Highlight the existing backend allocation, not a new saving or assumed client fact.
+  // A fricción is payable capacity only if its documented loss is actual work,
+  // not passive waiting. DEC-068 attribution verifies owner/frequency, not semantics.
+  const extras=Array.isArray(projection?.additional_friction_breakdown)?projection.additional_friction_breakdown:[];
+  const sourceFriction=id=>(record?.frictions||[]).find(f=>String(f.id)===String(id)&&f.status!=='SUPERSEDED');
+  const evidenceLabel=f=>f?.evidence_type
+    ?engineLabel('evidence_quality',evidenceTypeBackend(f.evidence_type))
+    :'Sin calidad de evidencia consignada';
+  const extraProvenance=extras.length
+    ?'<div class="pg10-cost-conditional"><b>Trabajo adicional: revisar su naturaleza antes de validar el coste</b>'+
+      '<p>Estas horas están sumadas al valor estimado porque se registraron como esfuerzo activo adicional. Que su frecuencia y propietario sean válidos no demuestra que sean trabajo efectivo: si describen una espera pasiva, la valoración debe corregirse en la fricción original y recalcularse.</p>'+
+      '<ul>'+extras.map(x=>{const f=sourceFriction(x.friction_id);
+        return '<li><b>'+esc(f?.client_label||f?.observable_signal||'Fricción registrada')+'</b> · '+
+          esc(num(x.annual_additional_hours))+' h/año adicionales · '+
+          esc(x.minutes_per_event==null?'Duración por ocurrencia no disponible':num(x.minutes_per_event)+' min por ocurrencia')+
+          ' · Evidencia: '+esc(evidenceLabel(f))+'</li>';
+      }).join('')+'</ul></div>'
+    :'<p class="field-help">No consta trabajo adicional atribuido desde fricciones en esta proyección.</p>';
   const costIntro=capacity?.status==='COMPLETE'
-    ?'<div class="pg10-cost-estimate"><div><b>Valor anual del trabajo dedicado al proceso</b><strong>'+
+    ?'<div class="pg10-cost-estimate"><div><b>Valor estimado de capacidad dedicada al proceso</b><strong>'+
       moneyValue(capacity.annual_labor_capacity_value_eur)+'/año</strong>'+
-      '<small>' + (capacity.capacity_value_eur_per_case!=null?'Equivale a '+moneyValue(capacity.capacity_value_eur_per_case)+' de capacidad por factura. ':'') + 'Estimación con los tiempos de los pasos y las tarifas por rol registradas. No es gasto contable ni ahorro de caja.</small></div>'+
-      roleTable+'<details><summary>Ver cálculo por paso y tarifas aplicadas</summary><div class="pg10-cost-steps">'+
+      '<small>' + (capacity.capacity_value_eur_per_case!=null?'Equivale a '+moneyPerCase(capacity.capacity_value_eur_per_case)+' de capacidad por factura. ':'') + 'Estimación condicionada a la clasificación de trabajo activo y a las tarifas registradas por rol. No equivale a gasto contable ni a ahorro de caja.</small></div>'+
+      roleTable+extraProvenance+'<details><summary>Ver cálculo por paso y tarifas aplicadas</summary><div class="pg10-cost-steps">'+
       (capacity.steps||[]).map(s=>'<div><span>'+esc(s.step_name||'Paso')+' · '+esc(s.role||'Rol sin nombre')+
         '</span><b>'+esc(num(s.annual_hours))+' h/año × '+esc(eur(s.hourly_rate))+'/h = '+esc(moneyValue(s.capacity_value))+'</b></div>').join('')+
       '</div>'+(capacity.rework_separate_value_eur!=null
@@ -366,7 +386,7 @@ function diagnosisEconomicsHtml(econ,record,projection){
         '<div><b>Trabajo activo total del proceso</b><span>'+(projection?.annual_total_active_hours==null?'No calculado':num(projection.annual_total_active_hours)+' h/año')+'</span></div>'+
         '<div><b>Horas con tarifa asignada</b><span>'+(capacity?.covered_hours==null?'No calculado':num(capacity.covered_hours)+' h/año')+'</span></div>'+
         '<div><b>Valor estimado de la capacidad</b><span>'+esc(moneyValue(capacity?.annual_labor_capacity_value_eur))+'</span></div>'+
-        '<div><b>Valor estimado por factura</b><span>'+esc(moneyValue(capacity?.capacity_value_eur_per_case))+'</span></div>'+
+        '<div><b>Valor estimado por factura</b><span>'+esc(moneyPerCase(capacity?.capacity_value_eur_per_case))+'</span></div>'+
       '</div></section>'+
       '<section class="pg10-economic-source-group"><h5>Datos consignados directamente en registros económicos</h5>'+
       '<p class="field-help">Estos campos corresponden a las '+inputs.length+' entradas económicas originales. «No consignado» significa que no se introdujeron horas aquí, no que el proceso carezca de trabajo.</p>'+
