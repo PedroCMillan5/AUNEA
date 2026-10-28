@@ -960,7 +960,7 @@ test('PG10 estimates annual operating labour from exact role-matched server brea
     {driver_id:'ED12',current_tool_cost_eur_annual:960,evidence_type:'HYPOTHESIS'}
   ]};
   const time={process_labor_capacity:{status:'COMPLETE',
-    annual_labor_capacity_value_eur:15552,covered_hours:475.2,
+    annual_labor_capacity_value_eur:15552,capacity_value_eur_per_case:10.8,covered_hours:475.2,
     rework_separate_value_eur:307.2,steps:[
       {step_id:'P1',step_name:'Recibir factura',role:'Administración',
        annual_hours:72,hourly_rate:32,capacity_value:2304,evidence:['HYPOTHESIS']},
@@ -974,6 +974,7 @@ test('PG10 estimates annual operating labour from exact role-matched server brea
   const html=fn({current_tool_cost_eur_annual:960},source,time);
   assert.match(html,/Valor anual del trabajo dedicado al proceso/);
   assert.match(html,/15\.552 €\/año/);
+  assert.match(html,/10,8 € de capacidad por factura/);
   assert.match(html,/960 €\/año/);
   assert.match(html,/Hipótesis/);
   assert.match(html,/307,2 €\/año de capacidad teórica/);
