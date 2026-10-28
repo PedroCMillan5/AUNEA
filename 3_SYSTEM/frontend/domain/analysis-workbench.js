@@ -112,7 +112,8 @@ function asisOwnerCollectionValue(field,record){
       !(Array.isArray(v)&&!v.length);
   };
   const found=rows.filter(x=>present(x[key])||(fid==='DF061'&&present(x.severity))).length;
-  return {count:found,total:rows.length,owner:group.key};
+  // Keep source rows for read-only display. They are references, never new answers or persisted copies.
+  return {count:found,total:rows.length,owner:group.key,key,rows};
 }
 function asisFieldInventory(record){
   const fields=Array.isArray(schema?.fields)?schema.fields:[];
@@ -150,6 +151,161 @@ function asisFieldInventory(record){
   }));
 }
 // [AUNEA-FE-ASIS-COVERAGE-OWNER-161] END
+
+// [AUNEA-FE-PG10-SNAPSHOT-VALUES-163] START — Show real sealed source values, never just presence.
+// SOURCE: Engagement PG09 confirmed snapshot, Diagnostic Master v1.2, DEC-050/068/074.
+// Inputs are read-only: no model, calculation, re-ask, client publication or new source of truth.
+// Generic field formatting is intentionally conservative for unsupported structured formats.
+function asisReadableValue(field,raw,record){
+  const id=String(field?.Field_ID||''),set=field?.Option_Set_ID;
+  const num=n=>Number(n).toLocaleString('es-ES',{maximumFractionDigits:2});
+  const tokens={YES:'Sí',NO:'No',UNKNOWN:'No se sabe',NONE:'Ninguno',NOT_APPLICABLE:'No aplica',__END__:'Fin del proceso'};
+  const unit={min:'min',minute:'min',minutes:'min',h:'h',hour:'h',hours:'h',day:'días',days:'días',week:'semanas',month:'meses',year:'años'};
+  const period={case:'caso',day:'día',week:'semana',month:'mes',year:'año'};
+  const idsToNames=new Map((record?.processSteps||[]).map(s=>[String(s.id),s.step_name||'Paso sin nombre']));
+  const scalar=x=>{
+    if(x===null||x===undefined||x==='')return '';
+    if(typeof x==='boolean')return x?'Sí':'No';
+    if(typeof x==='number'){
+      if(['DF037','DF038','DF039'].includes(id))return num(x)+' min';
+      if(['DF061','DF070','DF071'].includes(id))return num(x)+'/5';
+      if(id==='DF076')return num(x)+' €/h';
+      if(id==='DF083')return num(x)+' €/año';
+      return num(x);
+    }
+    const t=String(x);
+    if(idsToNames.has(t))return idsToNames.get(t);
+    if(tokens[t])return tokens[t];
+    if(set&&typeof labelFrom==='function'){
+      const translated=labelFrom(set,t);
+      if(translated&&translated!==t)return translated;
+    }
+    return t;
+  };
+  const format=x=>{
+    if(x===null||x===undefined||x==='')return '';
+    if(Array.isArray(x))return x.map(format).filter(Boolean).join(' · ');
+    if(typeof x==='object'){
+      if(x.mode==='UNKNOWN')return 'Sin determinar';
+      if(x.mode==='NOT_APPLICABLE')return 'No aplica';
+      if(x.mode==='NONE')return 'Ninguno';
+      if(x.value!==undefined){
+        if(x.value===null||x.value==='')return '';
+        const v=scalar(x.value);
+        if(String(x.mode).toLowerCase()==='percent')return v+' %'+(x.period?' de los casos':'');
+        const u=unit[String(x.unit||'').toLowerCase()]||x.unit||'';
+        const p=period[String(x.period||'').toLowerCase()]||x.period||'';
+        return v+(u?' '+u:'')+(p?' / '+p:'');
+      }
+      if(x.destination_step)return scalar(x.destination_step);
+      if(x.destination)return scalar(x.destination);
+      return 'Dato estructurado: consultar origen';
+    }
+    return scalar(x);
+  };
+  return format(raw);
+}
+function asisFieldValueDisplay(field,record,snap){
+  const id=field.id,meta=(schema?.fields||[]).find(f=>f.Field_ID===id)||{Field_ID:id};
+  const source=field.source;
+  if(source){
+    const valid=x=>x!==null&&x!==undefined&&x!==''&&!(Array.isArray(x)&&!x.length);
+    const texts=(source.rows||[]).map((row,i)=>{
+      const raw=id==='DF056'?(row.client_label||row.observable_signal||row.friction_type)
+        :id==='DF061'?(row.impact??row.severity):row[source.key];
+      if(!valid(raw))return null;
+      const v=asisReadableValue(meta,raw,record);
+      if(!v)return null;
+      const prefix=source.owner==='step'?'Paso '+(i+1)
+        :source.owner==='friction'?'Fricción '+(i+1)
+        :source.owner==='risk'?'Riesgo '+(i+1)
+        :row.role_or_resource||((typeof econDriverLabel==='function'&&econDriverLabel(row.driver_id))||'Registro económico '+(i+1));
+      return String(prefix)+': '+v;
+    }).filter(Boolean);
+    return texts.join(' | ');
+  }
+  // Do not load mutable CRM values when reading a confirmed PG09 snapshot.
+  const company={DF001:snap?.company?.name,DF002:snap?.company?.sector,
+    DF003:snap?.company?.employeeCount,DF005:snap?.company?.country};
+  let raw=Object.prototype.hasOwnProperty.call(company,id)?company[id]:record?.answers?.[id];
+  if(id==='DF006'&&snap?.contacts?.length){
+    const matches=snap.contacts.filter(x=>String(x.id)===String(raw));
+    raw=(matches.length?matches:snap.contacts.slice(0,1)).map(x=>x.name).filter(Boolean).join(' · ');
+  }
+  if((raw===null||raw===undefined||raw===''||(Array.isArray(raw)&&!raw.length))
+    &&!['DF001','DF002','DF003','DF004','DF005','DF006'].includes(id)
+    &&typeof effectiveValue==='function'){
+    try{raw=effectiveValue(meta,record)}catch(_){}
+  }
+  return asisReadableValue(meta,raw,record);
+}
+function asisConfirmedDataHtml(e){
+  const snap=asisAnalysisSnapshot(e);
+  if(!snap)return '<p class="field-help">No existe un snapshot confirmado del que mostrar datos.</p>';
+  const rec=asisAnalysisSource(e),steps=(rec.processSteps||[]).filter(x=>x.status!=='SUPERSEDED'),
+    frictions=(rec.frictions||[]).filter(x=>x.status!=='SUPERSEDED'),
+    risks=(rec.risks||[]).filter(x=>x.status!=='SUPERSEDED'),
+    economics=(rec.economicInputs||[]).filter(x=>x.status!=='SUPERSEDED');
+  const fmt=(id,raw)=>asisReadableValue((schema.fields||[]).find(f=>f.Field_ID===id),raw,rec);
+  const value=(label,v)=>v!==null&&v!==undefined&&v!==''?'<div><b>'+esc(label)+'</b><span>'+esc(String(v))+'</span></div>':'';
+  const duration=x=>x===null||x===undefined?'No informado':Number(x).toLocaleString('es-ES',{maximumFractionDigits:2})+' min';
+  const list=(items,fn)=>items.length?'<ul>'+items.map(x=>'<li>'+fn(x)+'</li>').join('')+'</ul>':'<p class="field-help">No hay registros asociados.</p>';
+  const n=x=>Number(x).toLocaleString('es-ES',{maximumFractionDigits:2});
+  const timeParts=s=>['trabajo '+duration(s.active_time),'espera '+duration(s.wait_time),'retrabajo '+duration(s.rework_time)];
+  const economyInfo=x=>{
+    const parts=[];
+    if(x.capacity_cost_rate_eur_hour!=null&&['ED01','ED02','ED03','ED04','ED05','ED06','ED07','ED08','ED14'].includes(x.driver_id))
+      parts.push(n(x.capacity_cost_rate_eur_hour)+' €/h');
+    if(x.driver_id==='ED14'&&x.value!=null)parts.push(n(x.value)+' '+(x.unit||'')+'/'+(x.period||'periodo'));
+    if(x.driver_id==='ED12'&&x.current_tool_cost_eur_annual!=null)parts.push(n(x.current_tool_cost_eur_annual)+' €/año de herramientas');
+    if(x.driver_id==='ED05'&&x.annual_active_hours!=null&&x.annual_active_hours!==0)parts.push(n(x.annual_active_hours)+' h/año de retrabajo');
+    if(x.driver_id==='ED13'&&x.annual_wait_hours!=null&&x.annual_wait_hours!==0)parts.push(n(x.annual_wait_hours)+' h/año de espera');
+    if(x.direct_loss_eur_annual!=null&&Number(x.direct_loss_eur_annual)>0)parts.push(n(x.direct_loss_eur_annual)+' €/año de pérdida registrada');
+    const evidence=typeof labelFrom==='function'?labelFrom('OS_EVIDENCE_TYPE',x.evidence_type):'';
+    return esc((typeof econDriverLabel==='function'&&econDriverLabel(x.driver_id))||'Registro económico')+
+      (x.role_or_resource?' · '+esc(String(x.role_or_resource)):'')+
+      (parts.length?' — '+esc(parts.join(' · ')):' — Sin importe cuantificado')+
+      (evidence?' <small>('+esc(evidence)+')</small>':'');
+  };
+  const box=(heading,body)=>'<section class="asis-data-group"><h4>'+esc(heading)+'</h4>'+body+'</section>';
+  const company=box('Empresa y proceso',
+    '<div class="asis-data-pairs">'+
+      value('Empresa',snap.company?.name||rec.answers?.DF001)+
+      value('Proceso',snap.processName||rec.answers?.DF011)+
+      value('Responsable',rec.answers?.DF016)+
+      value('Objetivo',fmt('DF008',rec.answers?.DF008))+
+    '</div>');
+  const demand=box('Demanda y servicio',
+    '<div class="asis-data-pairs">'+
+      value('Volumen',rec.answers?.DF021!=null?fmt('DF021',rec.answers.DF021)+(rec.answers?.DF022?' / '+fmt('DF022',rec.answers.DF022):''):'')+
+      value('Tiempo actual (end-to-end)',fmt('DF026',rec.answers?.DF026))+
+      value('SLA declarado',fmt('DF025',rec.answers?.DF025))+
+      value('Backlog',fmt('DF027',rec.answers?.DF027))+
+    '</div>');
+  const proc=box('Pasos del AS-IS ('+steps.length+')',list(steps,(s,i)=>
+    '<b>'+esc((i+1)+'. '+(s.step_name||'Paso sin nombre'))+'</b><small>'+esc(timeParts(s).join(' · '))+'</small>'));
+  const fr=box('Fricciones registradas ('+frictions.length+')',list(frictions,f=>
+    '<b>'+esc(f.client_label||f.observable_signal||((typeof labelFrom==='function'&&labelFrom('OS_FRICTION_TYPE',f.friction_type))||'Fricción sin descripción'))+'</b>'+
+    (f.frequency?.value!=null?'<small>Frecuencia registrada: '+esc(fmt('DF060',f.frequency))+'</small>':'')));
+  const risk=box('Riesgos registrados ('+risks.length+')',list(risks,x=>
+    '<b>'+esc(x.description||'Riesgo sin descripción')+'</b><small>Probabilidad: '+
+      esc(x.likelihood_1_5==null?'No declarada':n(x.likelihood_1_5)+'/5')+
+      ' · Impacto: '+esc(x.impact_1_5==null?'No declarado':n(x.impact_1_5)+'/5')+'</small>'));
+  const econ=box('Información económica ('+economics.length+' registros)',list(economics,economyInfo)+
+    '<p class="field-help">Son datos e hipótesis registrados; no equivalen a ahorro demostrado, retorno ni reducción de costes.</p>');
+  const future=box('Estado objetivo',
+    '<div class="asis-data-pairs">'+
+    value('Resultados deseados',fmt('DF086',rec.answers?.DF086))+
+    value('Elementos que deben mantenerse',fmt('DF087',rec.answers?.DF087))+
+    value('Restricciones de plataforma',fmt('DF089',rec.answers?.DF089))+
+    '</div>');
+  return '<section class="asis-confirmed-data"><div class="asis-confirmed-data-heading"><b>Resumen de los datos del proceso</b>'+
+    '<small>Fuente: AS-IS confirmado · versión '+esc(String(snap.version))+'</small></div>'+
+    '<p class="field-help">Valores registrados, no conclusiones del motor. Trabajo, espera y retrabajo no se suman sin conciliación.</p>'+
+    '<div class="asis-data-grid">'+company+demand+proc+fr+risk+econ+future+'</div></section>';
+}
+// [AUNEA-FE-PG10-SNAPSHOT-VALUES-163] END
+
 function asisSourceTime(v){
   if(v===null||v===undefined||v==='')return 'Sin cuantificar';
   const n=Number(v);return Number.isFinite(n)?n.toLocaleString('es-ES',{maximumFractionDigits:2})+' min':'Sin cuantificar';
@@ -412,8 +568,9 @@ function asisCoverageHtml(e,baseline){
         (missingRequired?' · '+missingRequired+' obligatorios pendientes':'');
       return '<details><summary>'+esc(g.title)+' · '+g.filled+' de '+g.items.length+' con algún dato'+context+'</summary><ul>'+
         g.items.map(f=>{
-          const note=fieldNote(f);
-          return '<li><span>'+esc(f.label)+'</span>'+(note?'<small>'+esc(note)+'</small>':'')+'</li>';
+          const note=fieldNote(f),actual=f.filled?asisFieldValueDisplay(f,record,snap):'';
+          return '<li><span>'+esc(f.label)+(actual?'<em class="asis-field-value">'+esc(actual)+'</em>':'')+
+            '</span>'+(note?'<small>'+esc(note)+'</small>':'')+'</li>';
         }).join('')+'</ul></details>';
     }).join('')+'</details>';
   return '<div class="asis-coverage-overview"><b>'+total+' campos canónicos examinados</b>'+
@@ -423,7 +580,7 @@ function asisCoverageHtml(e,baseline){
       segment('1','Integridad de la captura',captureState,captureMessage,captureDetail)+
       segment('2','Suficiencia para el análisis',coverageState,coverageMessage,coverageDetail)+
       segment('3','Preparación de los motores',decisionState,decisionMessage,decisionDetail)+
-    '</div>'+ledger;
+    '</div>'+asisConfirmedDataHtml(e)+ledger;
 }
 // [AUNEA-FE-PG10-COVERAGE-READINESS-162] END
 function asisDirectionCardsHtml(e){
