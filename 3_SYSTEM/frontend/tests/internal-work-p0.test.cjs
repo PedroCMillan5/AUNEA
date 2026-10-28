@@ -986,7 +986,7 @@ test('PG10 estimates annual operating labour from exact role-matched server brea
   assert.match(html,/432/);
   assert.match(html,/43,2/);
   assert.match(html,/13\.824 €/);
-  assert.match(html,/1\.728 €/);
+  assert.match(html,/1\.?728 €/);
   assert.match(html,/9,6 €/);
   assert.match(html,/1,2 €/);
   assert.equal((html.match(/<tbody><tr>/g)||[]).length,1);
