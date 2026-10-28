@@ -743,6 +743,6 @@ test('PG10 analysis action has a visible gap below the informational notice',()=
   const body=workbench.slice(from,workbench.indexOf('// [AUNEA-FE-PG10-ASIS-ECON-165] END',from));
   assert.match(body,/class="notice info"/);
   assert.match(body,/id="analyzeAsisOnly"/);
-  assert.match(css,/#analyzeAsisOnly\\{margin-top:16px;\\}/);
+  assert.ok(css.includes('#analyzeAsisOnly{margin-top:16px;}'));
 });
 // [AUNEA-UAT-PG10-DIAGNOSTIC-ACTION-168] END
