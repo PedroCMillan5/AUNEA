@@ -473,8 +473,41 @@ def estimate_process_labor_capacity(
         else:rework_value+=redo*rate
     if projection.get("status")!="CALCULATED" or not breakdown:
         unknown.append("La proyección temporal no está completa")
+    # Group the exact same owned step values by role. Never revalue a step, infer
+    # a rate, add waiting or turn missing steps into a complete role amount.
+    grouped: dict[str, dict[str, Any]] = {}
+    for entry in breakdown:
+        role = entry.get("role")
+        key = role_key(role) if role else "__MISSING_ROLE__"
+        summary = grouped.setdefault(key, {
+            "role": role, "annual_hours": 0.0, "hourly_rate": None,
+            "annual_capacity_value_eur": 0.0, "step_count": 0,
+            "valued_step_count": 0, "step_ids": [], "evidence": set(),
+            "_incomplete": False,
+        })
+        summary["step_count"] += 1
+        summary["step_ids"].append(entry["step_id"])
+        if entry["capacity_value"] is None or entry["annual_hours"] is None:
+            summary["_incomplete"] = True
+            continue
+        summary["valued_step_count"] += 1
+        summary["annual_hours"] += entry["annual_hours"]
+        summary["annual_capacity_value_eur"] += entry["capacity_value"]
+        summary["hourly_rate"] = entry["hourly_rate"]
+        summary["evidence"].update(entry.get("evidence") or [])
+    role_breakdown = []
+    annual_volume = projection.get("annual_cases")
+    for summary in grouped.values():
+        complete = not summary.pop("_incomplete") and summary["valued_step_count"] == summary["step_count"]
+        value = round(summary["annual_capacity_value_eur"], 2) if complete else None
+        summary["annual_hours"] = round(summary["annual_hours"], 2) if complete else None
+        summary["annual_capacity_value_eur"] = value
+        summary["capacity_value_eur_per_case"] = round(value / annual_volume, 2) if value is not None and annual_volume and annual_volume > 0 else None
+        summary["evidence"] = sorted(summary["evidence"])
+        role_breakdown.append(summary)
     return {
         "status":"COMPLETE" if not unknown else "PARTIAL",
+        "role_breakdown": role_breakdown,
         "annual_labor_capacity_value_eur":round(total_value,2) if not unknown else None,
         "capacity_value_eur_per_case":round(total_value / projection["annual_cases"],2) if not unknown and projection.get("annual_cases") and projection["annual_cases"]>0 else None,
         "covered_value_eur":round(total_value,2),
