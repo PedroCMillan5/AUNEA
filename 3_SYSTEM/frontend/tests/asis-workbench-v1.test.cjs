@@ -19,6 +19,7 @@ const context={
   normalizeArray:v=>Array.isArray(v)?v:v==null||v===''?[]:[v],
   labelFrom:(_,v)=>String(v||''),
   esc:s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;'),
+  attr:s=>String(s??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'),
   state:{backendUrl:'/test-backend',backendOnline:true},
   toast:()=>{},
   document:{getElementById:()=>null},
@@ -59,25 +60,29 @@ test('source critical points preserve traceability and never project fabricated 
   assert.match(view,/Registrar factura/);
   assert.match(view,/Doble registro|Copia manual/);
   assert.match(view,/Trabajo: 5 min/);
-  assert.match(view,/Espera: 0 min/);
-  assert.match(view,/Ninguna opción lleva ahorro asignado/);
-  assert.match(fn.asisDirectionCardsHtml(e),/pendientes de simulación/);
+  assert.match(view,/Espera registrada: 0 min/);
+  assert.match(view,/Los vínculos no son nuevas fricciones ni implican causa, beneficios o soluciones/);
+  assert.match(fn.asisDirectionCardsHtml(e),/Tiempo futuro, ahorro y precio pendientes/);
 });
-test('per-critical-step matrix presents three conditional options without pretending to simulate',()=>{
+test('three options are global, not duplicated inside per-step source cards',()=>{
   const e=fixture(),before=JSON.stringify(e),html=fn.asisPointCardsHtml(e.snapshot);
-  assert.equal((html.match(/data-asis-direction=/g)||[]).length,3);
-  assert.match(html,/Optimización sin IA/);
-  assert.match(html,/Optimización asistida por IA/);
-  assert.match(html,/Rediseño y tecnología existente/);
+  assert.doesNotMatch(html,/data-asis-direction=|asis-point-alternatives-grid/);
+  const global=fn.asisDirectionCardsHtml(e);
+  assert.equal((global.match(/class="asis-direction-card"/g)||[]).length,3);
+  assert.match(global,/Optimización sin IA/);
+  assert.match(global,/Optimización asistida por IA/);
+  assert.match(global,/Rediseño y tecnología existente/);
   assert.match(html,/Registrar factura/);
   assert.match(html,/Copia manual/);
-  assert.match(html,/Tiempo futuro y contribución:<\/strong> no calculados/);
+  assert.match(global,/Tiempo futuro, ahorro y precio pendientes/);
+  assert.equal((global.match(/disabled title="Primero calcula el diagnóstico oficial"/g)||[]).length,3);
   assert.equal(JSON.stringify(e),before);
   const extra=JSON.parse(JSON.stringify(e));
   extra.snapshot.processSteps.push({id:'S2',step_name:'Aprobar factura',active_time:2,status:'ACTIVE'});
   extra.snapshot.frictions.push({id:'F2',status:'ACTIVE',affected_steps:['S2'],client_label:'Espera para aprobar'});
   const html2=fn.asisPointCardsHtml(extra.snapshot);
-  assert.equal((html2.match(/data-asis-direction=/g)||[]).length,6);
+  assert.equal((html2.match(/class="asis-opportunity-point"/g)||[]).length,2);
+  assert.doesNotMatch(html2,/data-asis-direction=/);
   extra.snapshot.frictions[1].client_label='<script>alert(1)</script>';
   const escaped=fn.asisPointCardsHtml(extra.snapshot);
   assert.ok(!escaped.includes('<script>'));
