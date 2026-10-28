@@ -373,3 +373,26 @@ def test_pg10_numeric_consistency_reviews_material_difference_or_missing_evidenc
     assert numeric_time_consistency(good,None)["status"]=="UNAVAILABLE"
     assert numeric_time_consistency(good,250)["elapsed_reconciled"] is False
 # [AUNEA-UAT-PG10-NUMERIC-171] END
+
+
+def test_pg10_orchestrator_exposes_numeric_comparison_without_overwriting_df026():
+    from aunea_backend.orchestrator import Orchestrator
+    from aunea_backend.session_time import TimeProjectionRequest
+    req=TimeProjectionRequest(volume=120,period="MONTH",steps=[
+        dict(STEP,id="P1",active_time=3,wait_time=0,rework_time=0),
+        dict(STEP,id="P2",active_time=2,wait_time=0,rework_time=0),
+        dict(STEP,id="P3",active_time=6,wait_time=768,rework_time=0,
+             applies_to={"mode":"PERCENT","value":30}),
+        dict(STEP,id="P4",active_time=10,wait_time=0,rework_time=5,
+             error_rate={"mode":"percent","value":8}),
+    ],frictions=[dict(id="F2",affected_steps=["P2"],
+        time_attribution={"mode":"ADDITIONAL","step_id":"P2"},
+        frequency={"mode":"percent","value":30,"period":"case"},active_time_loss={"value":10})])
+    confirmed={"DF026":{"value":250,"unit":"min"}}
+    projection=Orchestrator()._time_projection_with_comparison(req,confirmed)
+    assert confirmed["DF026"]=={"value":250,"unit":"min"}
+    assert projection["numeric_comparison"]["status"]=="WITHIN_REVIEW_THRESHOLD"
+    assert projection["numeric_comparison"]["component_minutes"]==250.6
+    assert projection["numeric_comparison"]["elapsed_reconciled"] is False
+    assert Orchestrator()._time_projection_with_comparison(req,{"DF026":{"value":250,"unit":"h"}})["numeric_comparison"]["declared_minutes"]==15000
+    assert Orchestrator()._time_projection_with_comparison(req,{"DF026":{"value":250,"unit":"unsupported"}})["numeric_comparison"]["status"]=="UNAVAILABLE"
