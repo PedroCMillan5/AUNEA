@@ -78,17 +78,16 @@ function diagnosisFindingsHtml(record,pains){
     const priorityKnown=priorityIds.length>0;
     const prioritySelected=trace.frictions.some(f=>priorityIds.includes(String(f.id)));
     const confidenceText=p.confidence?engineLabel('confidence',p.confidence):'Sin clasificar';
+    const distinctCauses=[...new Set(causes)].filter(x=>!frictionText.includes(x));
     const firstStep=trace.stepIds[0];
     return `<article class="diagnosis-finding">
       <div class="diagnosis-finding-head"><div><span class="diagnosis-rank">${i+1}</span><div><h3>${esc(diagnosisPainLabel(p.pain_id))}</h3><p>${p.rationale?esc(p.rationale):'Hallazgo calculado por el backend a partir de la captura confirmada.'}</p></div></div><div class="diagnosis-state"><span>${p.state?esc(engineLabel('pain_state',p.state)):'—'}</span><small>Confianza: ${p.confidence?esc(engineLabel('confidence',p.confidence)):'—'}</small></div></div>
       <div class="diagnosis-trace-grid">
         <div><small>Dónde</small><b>${esc(steps.join(' · ')||'Sin paso trazable')}</b></div>
         <div><small>Fricción observada</small><b>${esc(frictionText.join(' · ')||'Sin fricción enlazada')}</b></div>
-        <div><small>Causa declarada</small><b>${esc([...new Set(causes)].join(' · ')||'Causa no especificada en el origen')}</b></div>
-        <div><small>Prioridad indicada por el cliente</small><b>${priorityKnown?(prioritySelected?'Entre las prioridades seleccionadas':'No figura entre las prioridades seleccionadas'):'No consta una prioridad confirmada (DF096)'}</b></div>
-        <div><small>Evidencia</small><b>${esc(evidence.join(' · ')||'Sin evidencia textual enlazada')}</b></div>
-        <div><small>Impacto relacionado</small><b>${esc(impacts.join(' · ')||'Sin impacto económico/temporal enlazado')}</b></div>
-        <div><small>Riesgos en los mismos pasos</small><b>${esc(riskText.join(' · ')||'Ninguno registrado')}</b></div>
+        ${distinctCauses.length?'<div><small>Causa declarada</small><b>'+esc(distinctCauses.join(' · '))+'</b></div>':''}
+        <div><small>Evidencia registrada</small><b>${esc(evidence.join(' · ')||'Sin descripción adicional')}</b></div>
+        ${priorityKnown&&prioritySelected?'<div><small>Prioridad del cliente</small><b>Seleccionada</b></div>':''}
       </div>
       ${firstStep?'<a class="btn btn-outline" href="#asis-source-step-'+attr(String(firstStep))+'">Ver punto de análisis en esta página</a>':''}
       <details class="diagnosis-source-review">
@@ -99,12 +98,14 @@ function diagnosisFindingsHtml(record,pains){
           <div><small>Fricciones de origen</small><b>${esc(trace.frictions.map(f=>[f.id||'Sin identificador',f.client_label||labelFrom('OS_FRICTION_TYPE',f.friction_type),f.evidence_type||'Evidencia no clasificada'].filter(Boolean).join(' · ')).join(' | ')||'Sin fricción enlazada')}</b></div>
           <div><small>Eventos económicos con pasos compartidos (relación contextual, no causal)</small><b>${esc(trace.economics.map(x=>[x.deduplication_key||'Evento sin clave',typeof econDriverLabel==='function'?econDriverLabel(x.driver_id):x.driver_id,x.evidence_type||'Evidencia sin clasificar'].join(' · ')).join(' | ')||'Sin registro económico enlazado')}</b></div>
           <div><small>Riesgos en esos pasos</small><b>${esc(trace.risks.map(r=>r.description||labelFrom('OS_RISK_CATEGORY',r.category)).join(' · ')||'Sin riesgo enlazado')}</b></div>
+          <div><small>Impactos relacionados por pasos compartidos</small><b>${esc(impacts.join(' · ')||'Sin registro enlazado')}</b><small>La relación es contextual: no permite asignar pérdidas ni ahorros a este hallazgo.</small></div>
+          <div><small>Prioridad del cliente</small><b>${priorityKnown?(prioritySelected?'Seleccionada':'No seleccionada'):'No registrada'}</b></div>
           <div><small>Estado del motor</small><b>${esc(p.state?engineLabel('pain_state',p.state):'Pendiente')} · Confianza: ${esc(confidenceText)}</b><small>Clasificación basada en el tipo de evidencia disponible; no equivale a validación adicional del cliente.</small></div>
           <div><small>Fuente editable</small><b>AS-IS confirmado · Revisar AS-IS para corregir el origen; después recalcular</b></div>
         </div>
         <button type="button" class="btn btn-outline" data-page="proceso">Revisar AS-IS de origen</button>
       </details>
-      <div class="internal-only diagnosis-tech"><span class="code internal-only">${esc(p.pain_id)}</span> Trazabilidad por anclajes registrados; las asociaciones no acreditan causalidad ni ahorros futuros.</div>
+
     </article>`;
   }).join('')+'</div>';
 }
@@ -127,29 +128,72 @@ function diagnosisProcessBaselineHtml(p,record){
   </div><div class="notice info" style="margin-top:10px"><b>Conciliación end-to-end pendiente de acreditar</b><br>La proximidad entre componentes temporales y la duración declarada no demuestra equivalencia: hay que verificar fronteras, frecuencias y posibles solapamientos. No se convierten caso-horas de espera en coste de personal ni capacidad recuperable en ahorro de caja.</div>
   ${gaps.length?'<div class="notice warn" style="margin-top:10px"><b>Datos o atribuciones pendientes</b><ul>'+gaps.slice(0,5).map(g=>'<li>'+esc(g)+'</li>').join('')+'</ul></div>':''}`;
 }
+// [AUNEA-FE-PG10-ANALYSIS-UX-166] START — Source-owned economic/risk results with progressive evidence.
+// Source: backend EconomicsResult and RiskResult, DEC-034/050/068; no recomputation or scoring.
 function diagnosisEconomicsHtml(econ,record){
-  const inputs=record?.economicInputs||[];
-  return `<div class="grid g3 diagnosis-econ-grid">
-    <div class="notice"><b>Tiempo en inputs económicos</b><br>${econ.annual_active_hours==null?'Sin cuantificar':num(econ.annual_active_hours)+' h/año'}<small>No es el tiempo activo total del mapa.</small></div>
-    <div class="notice"><b>Espera en inputs económicos</b><br>${econ.annual_wait_hours==null?'Sin cuantificar':num(econ.annual_wait_hours)+' h/año'}<small>No sustituye la exposición a espera del mapa.</small></div>
-    <div class="notice"><b>Valor de capacidad</b><br>${econ.capacity_value_eur_annual==null?'No disponible':eur(econ.capacity_value_eur_annual)+'/año'}<small>No equivale a ahorro de caja.</small></div>
-    <div class="notice"><b>Pérdida directa registrada</b><br>${econ.direct_loss_eur_annual==null?'Sin cuantificar':eur(econ.direct_loss_eur_annual)+'/año'}</div>
-    <div class="notice"><b>Coste actual registrado de herramientas</b><br>${econ.current_tool_cost_eur_annual==null?'Sin cuantificar':eur(econ.current_tool_cost_eur_annual)+'/año'}</div>
-    <div class="notice"><b>Ahorro de caja realizado registrado</b><br>${econ.realized_cash_saving_eur_annual==null?'Sin cuantificar':eur(econ.realized_cash_saving_eur_annual)+'/año'}<small>No es una previsión de ahorro futuro.</small></div>
-  </div>
-  <div class="notice info" style="margin-top:10px"><b>Alcance de estos importes</b><br>Estos valores proceden de registros EconomicInput. No reconstruyen el tiempo total del mapa: una tarifa de capacidad por rol no acredita ahorro de caja, y el coste de una herramienta existente no equivale a un coste eliminable.</div>
-  ${inputs.length?`<div class="diagnosis-inputs"><b>Inputs que sustentan el cálculo</b><div>${inputs.map(x=>`<span class="closing-impact-item"><strong>${esc(typeof econDriverLabel==='function'?econDriverLabel(x.driver_id):x.driver_id)}</strong><small>${esc(diagnosisImpactMetric(x))} · ${esc(engineLabel('evidence_quality',evidenceTypeBackend(x.evidence_type)))}</small></span>`).join('')}</div></div>`:''}`;
+  const inputs=(record?.economicInputs||[]).filter(x=>x.status!=='SUPERSEDED');
+  const money=x=>x==null?'No cuantificado':eur(x)+'/año';
+  const positive=x=>x!=null&&Number(x)>0;
+  const hasOther=positive(econ.capacity_value_eur_annual)||positive(econ.direct_loss_eur_annual)
+    ||positive(econ.realized_cash_saving_eur_annual);
+  const evidence=x=>engineLabel('evidence_quality',evidenceTypeBackend(x.evidence_type));
+  const inputDescription=x=>{
+    const parts=[];
+    if(x.capacity_cost_rate_eur_hour!=null)parts.push(num(x.capacity_cost_rate_eur_hour)+' €/hora de capacidad');
+    if(x.current_tool_cost_eur_annual!=null)parts.push(money(x.current_tool_cost_eur_annual)+' de herramientas');
+    if(x.annual_active_hours!=null&&Number(x.annual_active_hours)>0)parts.push(num(x.annual_active_hours)+' h/año de trabajo');
+    if(x.annual_wait_hours!=null&&Number(x.annual_wait_hours)>0)parts.push(num(x.annual_wait_hours)+' h/año de espera');
+    if(x.direct_loss_eur_annual!=null&&Number(x.direct_loss_eur_annual)>0)parts.push(money(x.direct_loss_eur_annual)+' de pérdida directa');
+    const role=x.role_or_resource?labelFrom('OS_ACTOR_ROLE',x.role_or_resource)||x.role_or_resource:'';
+    return '<li><b>'+esc(typeof econDriverLabel==='function'?econDriverLabel(x.driver_id):x.driver_id)+'</b>'+
+      (role?'<span>'+esc(role)+'</span>':'')+
+      '<span>'+esc(parts.join(' · ')||'Sin importe anual cuantificado')+'</span>'+
+      '<small>Calidad de la evidencia: '+esc(evidence(x))+'</small></li>';
+  };
+  const otherCards=[
+    positive(econ.capacity_value_eur_annual)?'<div class="notice"><b>Valor de capacidad registrado</b><strong>'+money(econ.capacity_value_eur_annual)+'</strong><small>No equivale a ahorro de caja.</small></div>':'',
+    positive(econ.direct_loss_eur_annual)?'<div class="notice"><b>Pérdida directa registrada</b><strong>'+money(econ.direct_loss_eur_annual)+'</strong></div>':'',
+    positive(econ.realized_cash_saving_eur_annual)?'<div class="notice"><b>Ahorro de caja realizado registrado</b><strong>'+money(econ.realized_cash_saving_eur_annual)+'</strong><small>No es una previsión futura.</small></div>':''
+  ].filter(Boolean).join('');
+  return '<div class="grid g3 diagnosis-econ-grid">'+
+    '<div class="notice"><b>Coste actual de herramientas registrado</b><strong>'+money(econ.current_tool_cost_eur_annual)+'</strong><small>Coste existente, no necesariamente eliminable.</small></div>'+
+    (hasOther?otherCards:
+      '<div class="notice diagnosis-econ-uncertainty"><b>Otros impactos monetarios</b><strong>Sin importe positivo cuantificado</strong>'+
+      '<small>El resultado del motor no acredita pérdidas, capacidad recuperable ni ahorros de caja.</small></div>')+
+    '</div>'+
+    '<p class="diagnosis-economic-scope">Los importes proceden de registros económicos confirmados; no sustituyen la duración del proceso ni prueban beneficios futuros.</p>'+
+    '<details class="diagnosis-economic-detail"><summary>Ver detalle de horas, importes y fuentes ('+inputs.length+' registros)</summary>'+
+      '<div class="grid g3 diagnosis-economic-source-values">'+
+        '<div><b>Trabajo en registros económicos</b><span>'+ (econ.annual_active_hours==null?'No cuantificado':num(econ.annual_active_hours)+' h/año') +'</span></div>'+
+        '<div><b>Espera en registros económicos</b><span>'+(econ.annual_wait_hours==null?'No cuantificada':num(econ.annual_wait_hours)+' h/año')+'</span></div>'+
+        '<div><b>Valor de capacidad</b><span>'+money(econ.capacity_value_eur_annual)+'</span></div>'+
+        '<div><b>Pérdida directa</b><span>'+money(econ.direct_loss_eur_annual)+'</span></div>'+
+        '<div><b>Coste de herramientas</b><span>'+money(econ.current_tool_cost_eur_annual)+'</span></div>'+
+        '<div><b>Ahorro de caja realizado</b><span>'+money(econ.realized_cash_saving_eur_annual)+'</span></div>'+
+      '</div>'+
+      '<p class="field-help">Estas horas sólo proceden de registros económicos, no del total temporal del mapa.</p>'+
+      (inputs.length?'<ul class="diagnosis-economic-input-list">'+inputs.map(inputDescription).join('')+'</ul>':'<p>No se han registrado entradas económicas.</p>')+
+    '</details>';
 }
 function diagnosisRisksHtml(risk,record){
-  const rows=record?.risks||[];
-  return `<div class="grid g3 diagnosis-risk-summary">
-      <div class="notice"><b>Riesgo inherente</b><br>${risk.inherent_level?esc(engineLabel('risk_level',risk.inherent_level)):'—'}</div>
-      <div class="notice"><b>Riesgo residual</b><br>${risk.residual_level?esc(engineLabel('risk_level',risk.residual_level)):'—'}</div>
-      <div class="notice"><b>Estado</b><br>${risk.status?esc(engineLabel('risk_status',risk.status)):'—'}</div>
-    </div>
-    ${risk.rationale?`<div class="notice info diagnosis-risk-rationale"><b>Lectura del motor</b><br>${esc(risk.rationale)}</div>`:''}
-    ${rows.length?`<div class="result-list diagnosis-risk-list">${rows.map(r=>`<div class="result-item"><b>${esc(r.description||labelFrom('OS_RISK_CATEGORY',r.category))}</b><p>Pasos: ${esc(normalizeArray(r.step_ids).map(id=>diagnosisStepName(record,id)).join(' · ')||'—')} · Probabilidad ${esc(r.likelihood_1_5||'—')}/5 · Impacto ${esc(r.impact_1_5||'—')}/5 · Controles: ${r.controls_present===true?'Sí':r.controls_present===false?'No':'No indicado'}</p></div>`).join('')}</div>`:''}`;
+  const rows=(record?.risks||[]).filter(x=>x.status!=='SUPERSEDED');
+  const level=x=>x?esc(engineLabel('risk_level',x)):'No determinado';
+  const controlMissing=rows.filter(x=>x.controls_present===false).length;
+  const summary='<div class="grid g3 diagnosis-risk-summary">'+
+    '<div class="notice"><b>Riesgo inherente</b><strong>'+level(risk.inherent_level)+'</strong><small>Antes de considerar controles.</small></div>'+
+    '<div class="notice"><b>Riesgo residual</b><strong>'+level(risk.residual_level)+'</strong><small>Tras aplicar los controles declarados.</small></div>'+
+    '<div class="notice"><b>Estado de control</b><strong>'+(risk.status?esc(engineLabel('risk_status',risk.status)):'No determinado')+'</strong>'+
+       (controlMissing?'<small>'+controlMissing+' de '+rows.length+' riesgos sin controles registrados.</small>':'')+'</div></div>';
+  const items=rows.length?'<div class="result-list diagnosis-risk-list">'+rows.map(r=>
+    '<div class="result-item"><b>'+esc(r.description||labelFrom('OS_RISK_CATEGORY',r.category))+'</b>'+
+    '<p>Pasos: '+esc(normalizeArray(r.step_ids).map(id=>diagnosisStepName(record,id)).join(' · ')||'Sin paso enlazado')+
+    ' · Probabilidad '+esc(r.likelihood_1_5??'—')+'/5 · Impacto '+esc(r.impact_1_5??'—')+
+    '/5 · Controles: '+(r.controls_present===true?'Sí':r.controls_present===false?'No':'Sin determinar')+'</p></div>').join('')+'</div>':'';
+  return summary+
+    '<p class="diagnosis-risk-interpretation">La valoración procede de los riesgos y controles registrados. El resultado no verifica por sí solo la eficacia de los controles.</p>'+
+    items;
 }
+// [AUNEA-FE-PG10-ANALYSIS-UX-166] END
 function diagnosisRecommendationHtml(o){
   const r=o.recommendation||{};
   return `<div class="grid g4 diagnosis-rec-grid">
