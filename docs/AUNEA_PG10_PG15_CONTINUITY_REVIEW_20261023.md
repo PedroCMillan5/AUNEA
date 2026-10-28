@@ -348,3 +348,16 @@ A partir de la captura UAT de Levante se implementan los tres ajustes acordados 
 - No se cambian datos DF001–DF100, snapshot Levante, reglas de tiempos, economía, riesgos, precios, TO-BE ni estados de aprobación.
 
 **Estado de gobierno:** gate automatizado superado. La promoción de PG10 a CANONICAL o de la rama a producción sigue condicionada a UAT visual del consultor con el snapshot Levante (y controles de entrega vigentes). No se altera DECISIONES, ESTADO, ROADMAP ni Master Index por tratarse de corrección de test/higiene de código y documentación de continuidad. Registrar en BITÁCORA la incidencia y su resolución.
+
+
+### PG10 — Desglose económico por rol (28/10/2026; REVIEW)
+
+**Petición UAT:** mantener el cálculo vigente del valor de capacidad ocupada de PG10, pero mostrar un desglose anual visible agregado por el rol confirmado de cada paso. El detalle por paso permanece en el desplegable de procedencia. La UI no calcula ni redondea un segundo importe distinto del backend.
+
+**Contrato aplicado:** DEC-021/032/033/034/050/068 y la superficie PG10 CANONICAL. `estimate_process_labor_capacity` en `session_time.py` agrupa las mismas `steps[]` ya valoradas en el motor por clave normalizada de rol. Devuelve `role_breakdown[]` con etiqueta del rol, horas anuales, tarifa única, valor anual, valor por expediente, cantidad/IDs de pasos y calidad de evidencia. El total por roles procede de sumar **exactamente las mismas contribuciones por paso ya utilizadas en el total**, sin añadir tiempos de espera, no monetizar retrabajo pendiente ni sumar INCLUDED/BREAKDOWN. Si hay un paso sin tarifa inequívoca, el rol incompleto no recibe importe completo y la cifra total sigue sin acreditarse. El motor mantiene intactas las reglas de otros `EconomicsResult`, escenarios, precio y ahorro de caja.
+
+**Presentación PG10:** debajo del valor anual y por factura aparece la tabla visible `Rol | Horas/año | Tarifa | Valor anual | Por factura`, totalizada con valores server-owned. Se conserva «Ver cálculo por paso y tarifas aplicadas». El resultado antiguo sin `role_breakdown` solicita actualizar el análisis; no se inventa un grupo de roles en frontend. CSS responsive `AUNEA-FE-PG10-COST-ROLES-173`.
+
+**QA dirigido:** `test_session_time.py` compara que la suma de roles sea exactamente 475,2 horas y 15.552 € para el fixture Levante, con Administración (432 h, 32 €/h, 13.824 €), Dirección (43,2 h, 40 €/h, 1.728 €), y 9,60 €/factura + 1,20 €/factura = 10,80 €/factura. Confirma fuentes, ID de paso y manejo de tarifas contradictorias. `internal-work-p0.test.cjs` verifica la representación visible, las unidades, el estado legado y la conservación del detalle por paso. `CODE_BLOCK_INDEX.md` sincronizado: descripción de bloques 172 y nuevo estilo 173.
+
+**Gobierno:** contrato y owner sin cambios, no se añaden preguntas, productos, precios, KPIs o reglas de decisión. PG10 sigue **REVIEW** hasta validación visual con snapshot Levante y gate CI del HEAD. Master Index, DECISIONES, ESTADO y ROADMAP no requieren versión nueva porque no cambian los contratos canónicos.
