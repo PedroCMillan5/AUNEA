@@ -423,6 +423,21 @@ def test_pg10_source_role_capacity_estimate_levante_sized_case_without_double_co
     result=estimate_process_labor_capacity(hours,steps,econ)
     assert result["status"]=="COMPLETE"
     assert result["annual_labor_capacity_value_eur"]==15552
+    roles={entry["role"]:entry for entry in result["role_breakdown"]}
+    assert set(roles)=={"Administración","Dirección"}
+    assert roles["Administración"]["annual_hours"]==432
+    assert roles["Administración"]["hourly_rate"]==32
+    assert roles["Administración"]["annual_capacity_value_eur"]==13824
+    assert roles["Administración"]["capacity_value_eur_per_case"]==9.6
+    assert roles["Administración"]["step_ids"]==["P1","P2","P4"]
+    assert roles["Administración"]["evidence"]==["HYPOTHESIS"]
+    assert roles["Dirección"]["annual_hours"]==43.2
+    assert roles["Dirección"]["hourly_rate"]==40
+    assert roles["Dirección"]["annual_capacity_value_eur"]==1728
+    assert roles["Dirección"]["capacity_value_eur_per_case"]==1.2
+    assert sum(row["annual_hours"] for row in roles.values())==result["covered_hours"]
+    assert sum(row["annual_capacity_value_eur"] for row in roles.values())==result["annual_labor_capacity_value_eur"]
+
     assert result["capacity_value_eur_per_case"]==10.8
     assert result["covered_hours"]==475.2
     assert result["steps_valued"]==4
@@ -445,4 +460,8 @@ def test_pg10_operating_cost_is_unavailable_if_rate_missing_or_conflicts():
     assert r["status"]=="PARTIAL"
     assert r["annual_labor_capacity_value_eur"] is None
     assert r["steps_valued"]==0
+    assert r["role_breakdown"][0]["annual_capacity_value_eur"] is None
+    assert r["role_breakdown"][0]["annual_hours"] is None
+    assert r["role_breakdown"][0]["valued_step_count"]==0
+
 # [AUNEA-UAT-PG10-CAPACITY-172] END
