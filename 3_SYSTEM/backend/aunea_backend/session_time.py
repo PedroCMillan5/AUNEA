@@ -476,6 +476,7 @@ def estimate_process_labor_capacity(
     return {
         "status":"COMPLETE" if not unknown else "PARTIAL",
         "annual_labor_capacity_value_eur":round(total_value,2) if not unknown else None,
+        "capacity_value_eur_per_case":round(total_value / projection["annual_cases"],2) if not unknown and projection.get("annual_cases") and projection["annual_cases"]>0 else None,
         "covered_value_eur":round(total_value,2),
         "covered_hours":round(total_hours,2),
         "step_count":len(breakdown),
