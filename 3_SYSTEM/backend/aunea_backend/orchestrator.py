@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from .models import EngagementInput, DiagnosticOutput, ScenarioRequest, ScenarioResult
-from .session_time import TimeProjectionRequest, project_session_time
+from .session_time import TimeProjectionRequest, project_session_time, numeric_time_consistency
 from .deliverable_models import DeliverableRequest, DeliverablePack
 from .solution_models import SolutionSpecificationRequest, SolutionSpecification
 from .system_builder_models import SystemBuilderRequest, SystemBuildPlan, SystemBuildPackage
@@ -48,6 +48,26 @@ class Orchestrator:
         ih,oh=stable_hash(inp),stable_hash(out)
         self.audit.runs.append(EngineRun(engine=engine,input_hash=ih,output_hash=oh))
         if self.store: self.store.add_run(engagement_id,engine,ih,oh)
+
+    def _time_projection_with_comparison(self, request: TimeProjectionRequest, answers: dict[str, Any]) -> dict[str, Any]:
+        # [AUNEA-BE-ASIS-TIME-COMPARISON-171] START — Derive read-only numeric comparison from sealed DF026.
+        # SOURCE: DEC-074 and existing ±25% AS-IS review trigger; no elapsed reconciliation or changes to DF026.
+        projection = project_session_time(request)
+        declared = answers.get("DF026")
+        if isinstance(declared, dict):
+            value, unit = declared.get("value"), str(declared.get("unit") or "min").lower()
+        else:
+            value, unit = declared, "min"
+        try:
+            amount = float(value) if value is not None and not isinstance(value, bool) else None
+        except (ValueError, TypeError):
+            amount = None
+        factors = {"min": 1, "minute": 1, "minutes": 1, "h": 60, "hour": 60, "hours": 60,
+                   "day": 1440, "days": 1440}
+        minutes = amount * factors[unit] if amount is not None and unit in factors else None
+        projection["numeric_comparison"] = numeric_time_consistency(projection, minutes)
+        return projection
+        # [AUNEA-BE-ASIS-TIME-COMPARISON-171] END
 
     # [AUNEA-BE-ASIS-ANALYSIS-152] START — Source-only PG10 analysis without sales decisions
     # SOURCE: Diagnostic Master v1.2 / MAP_QUESTION_ENGINE_INPUT; DEC-034/052; Simulator PG10.
@@ -97,7 +117,7 @@ class Orchestrator:
                 volume=volume,period=answers.get("DF022"),
                 steps=steps,frictions=frictions if isinstance(frictions,list) else []
             )
-            out["process_time_projection"]=project_session_time(request)
+            out["process_time_projection"]=self._time_projection_with_comparison(request, answers)
         return out
     # [AUNEA-BE-ASIS-ANALYSIS-152] END
 
@@ -134,7 +154,7 @@ class Orchestrator:
                 volume=volume,period=answers.get("DF022"),
                 steps=steps,frictions=frictions if isinstance(frictions,list) else []
             )
-            process_time=project_session_time(projection_input)
+            process_time=self._time_projection_with_comparison(projection_input, answers)
             self._run(engagement.engagement_id,"SessionTimeProjection",projection_input.model_dump(),process_time)
         # [AUNEA-BE-ORCH-PROCESS-TIME-090] END
         result=DiagnosticOutput(engagement_id=engagement.engagement_id,rule_bundle_version=rule_bundle_version(),input_snapshot_hash=stable_hash(engagement.model_dump()),input_coverage=coverage,pain_results=pain,economic_result=econ,risk_result=risk,recommendation=rec,quote=quote,optimal_scenario=optimal,process_time_projection=process_time)
