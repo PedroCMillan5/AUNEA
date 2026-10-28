@@ -415,4 +415,77 @@ def reconcile_session_time(request: TimeReconciliationRequest) -> dict[str, Any]
     }
 
 
+
+# [AUNEA-BE-PG10-CAPACITY-VALUATION-172] START — Read-only current labour capacity estimate.
+# SOURCE: DEC-021/032/033/034/050/068, existing Economics rate × annual hours, SessionTime owner.
+# INPUTS: Confirmed steps + economic rates by exact role, existing temporal backend breakdown.
+# OUTPUTS: Informative labour capacity value, never cash cost, realized savings or official EconomicsResult.
+# SIDE EFFECTS: None. RISK: HIGH — strict role/unique-rate matches, no assumptions or waiting.
+def estimate_process_labor_capacity(
+    projection: dict[str, Any], steps: list[dict[str, Any]], economics: list[dict[str, Any]]
+) -> dict[str, Any]:
+    def role_key(value: Any) -> str:
+        return " ".join(str(value or "").strip().casefold().split())
+    rates: dict[str, dict[str, Any]] = {}
+    for item in economics:
+        if item.get("status") == "SUPERSEDED": continue
+        role=role_key(item.get("role_or_resource"))
+        rate=_number(item.get("capacity_cost_rate_eur_hour"))
+        if not role or rate is None: continue
+        entry=rates.setdefault(role,{"values":set(),"evidence":set()})
+        entry["values"].add(rate)
+        entry["evidence"].add(str(item.get("evidence_type") or "NOT_RECORDED"))
+    owners={str(s.get("id")):s for s in steps if s.get("status")!="SUPERSEDED"}
+    additional: dict[str,float]={}
+    for f in projection.get("additional_friction_breakdown") or []:
+        key=str(f.get("owner_step_id") or "")
+        hours=_number(f.get("annual_additional_hours"))
+        if key and hours is not None: additional[key]=additional.get(key,0.0)+hours
+    breakdown=[]
+    unknown=[]
+    total_hours=0.0
+    total_value=0.0
+    rework_value=0.0
+    rework_complete=True
+    for item in projection.get("step_breakdown") or []:
+        sid=str(item.get("step_id"))
+        step=owners.get(sid,{})
+        role=str(step.get("actor") or "").strip()
+        key=role_key(role)
+        main=_number(item.get("annual_active_hours"))
+        hours=(main+additional.get(sid,0.0)) if main is not None else None
+        options=rates.get(key)
+        rate=next(iter(options["values"])) if options and len(options["values"])==1 else None
+        if hours is None or rate is None:
+            unknown.append(str(step.get("step_name") or sid)+" (falta tarifa única por rol o tiempo anual)")
+            breakdown.append({"step_id":sid,"step_name":step.get("step_name"),"role":role or None,
+                              "annual_hours":hours,"hourly_rate":rate,"capacity_value":None})
+            rework_complete=False
+            continue
+        value=round(hours*rate,2)
+        total_hours+=hours
+        total_value+=value
+        breakdown.append({"step_id":sid,"step_name":step.get("step_name"),"role":role,
+                          "annual_hours":round(hours,2),"hourly_rate":rate,
+                          "capacity_value":value,"evidence":sorted(options["evidence"])})
+        redo=_number(item.get("annual_rework_hours"))
+        if redo is None:rework_complete=False
+        else:rework_value+=redo*rate
+    if projection.get("status")!="CALCULATED" or not breakdown:
+        unknown.append("La proyección temporal no está completa")
+    return {
+        "status":"COMPLETE" if not unknown else "PARTIAL",
+        "annual_labor_capacity_value_eur":round(total_value,2) if not unknown else None,
+        "covered_value_eur":round(total_value,2),
+        "covered_hours":round(total_hours,2),
+        "step_count":len(breakdown),
+        "steps_valued":sum(b["capacity_value"] is not None for b in breakdown),
+        "steps":breakdown,
+        "unvalued_steps":unknown,
+        "rework_separate_value_eur":round(rework_value,2) if rework_complete and not unknown else None,
+        "note":"Valor orientativo de capacidad ocupada. No es gasto de caja, ahorro ni coste contable total. El retrabajo se mantiene separado hasta verificar solapamientos.",
+    }
+# [AUNEA-BE-PG10-CAPACITY-VALUATION-172] END
+
+
 # [AUNEA-BE-SESSION-TIME-070] END
