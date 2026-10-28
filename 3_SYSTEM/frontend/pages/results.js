@@ -529,7 +529,10 @@ function pg10SynthesisHtml(record,data){
     (items.length?'<ul class="pg10-conclusion-list">'+items.join('')+'</ul>':
       '<div class="notice warn">El motor no ha proporcionado hallazgos. Verifica las fuentes antes de concluir que no existen problemas.</div>')+
     '<p class="field-help">Estos hallazgos no constituyen un ranking. Su orden ni la confianza asignada justifican por sí solos una prioridad analítica.</p>'+
-    '<div class="notice info"><b>Límite de la interpretación</b><p>Las relaciones con pasos acreditan contexto, no causalidad ni ahorro futuro. Las magnitudes, unidades y evidencias se mantienen en el diagnóstico calculado.</p></div></div>';
+    '<div class="notice info"><b>Qué permite concluir este AS-IS</b>'+
+      '<p>Los tiempos de trabajo, exposición a espera, retrabajo, costes de capacidad y riesgos se presentan con sus fuentes y limitaciones. Un valor calculado no acredita por sí solo que la actividad sea necesaria, que su coste sea recuperable ni que exista un incumplimiento.</p>'+
+      '<p><b>Comparación con lo recomendable:</b> el SLA y los objetivos del cliente son referencias de contexto. Solo se afirmará que el proceso supera o incumple una referencia cuando las medidas, unidades, periodo y evidencia sean comparables; no se inventan benchmarks.</p>'+
+      '<p><b>Fuera de PG10:</b> el rediseño del trabajo y los controles se establecen en TO-BE; los cambios en tiempo, capacidad y riesgo se comparan en AS-IS / TO-BE; las alternativas, inversión y ahorros defendibles se valoran después mediante escenarios.</p></div></div>';
 }
 function pg10ReviewHtml(e,official,analysis,miss,unresolved,freshness,recommendationReady){
   const available=!!official||analysis?.status==='ANALYZED';
