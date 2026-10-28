@@ -172,6 +172,9 @@ function diagnosisProcessStepTimelineHtml(p,record){
       ?(String(rawRate.mode||'percent').toLowerCase()==='percent'&&rawRate.value!=null
         ?num(rawRate.value)+' % de las ejecuciones de este paso':'Frecuencia sin porcentaje comparable')
       :rawRate!==undefined&&rawRate!==null&&rawRate!==''?num(rawRate)+' % de las ejecuciones de este paso':null;
+    const related=Number(wait)>0?frictions.filter(f=>Array.isArray(f.affected_steps)&&
+      f.affected_steps.map(String).includes(String(step.id))).map(f=>
+      f.client_label||f.observable_signal||(typeof labelFrom==='function'?labelFrom('OS_FRICTION_TYPE',f.friction_type):'')||'Fricción registrada'):[];
     const extra=extras.filter(x=>String(x.owner_step_id)===String(step.id)).map(x=>{
       const f=frictions.find(f=>String(f.id)===String(x.friction_id));
       return '<li><span>'+esc(f?.client_label||f?.observable_signal||'Trabajo adicional registrado')+'</span>'+
@@ -193,7 +196,8 @@ function diagnosisProcessStepTimelineHtml(p,record){
       '<div class="pg10-time-lane pg10-time-work"><span>Trabajo</span><strong>'+esc(minutes(work))+'</strong></div>'+
       '<div class="pg10-time-lane pg10-time-wait"><span>Espera</span><strong>'+esc(minutes(wait))+'</strong></div>'+
       '<div class="pg10-time-lane pg10-time-rework"><span>Retrabajo por incidencia</span><strong>'+esc(minutes(rework))+'</strong></div></div>'+
-      (Number(wait)>0?'<p class="pg10-time-explainer">Espera en '+esc(applicabilityText.toLowerCase())+'; exposición pasiva, no trabajo activo.</p>':'')+
+      (Number(wait)>0?'<p class="pg10-time-explainer">Espera en '+esc(applicabilityText.toLowerCase())+'; exposición pasiva, no trabajo activo.</p>'+
+        (related.length?'<p class="pg10-time-explainer">Fricciones relacionadas con este paso: '+esc([...new Set(related)].join(' · '))+'. Relación contextual, sin duplicar la espera.</p>':''):'')+
       (Number(rework)>0?'<p class="pg10-time-explainer">Frecuencia de retrabajo: '+esc(reworkFrequency||'no acreditada')+'.</p>':'')+
       annual+(extra?'<div class="pg10-time-extra"><b>Trabajo adicional atribuido a este paso</b><ul>'+extra+'</ul></div>':'')+
       '<a href="#asis-source-step-'+attr(String(step.id))+'" class="pg10-time-source">Consultar este paso en el mapa y su ficha</a></div></li>';
