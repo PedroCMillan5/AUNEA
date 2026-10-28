@@ -324,9 +324,12 @@ function diagnosisEconomicsHtml(econ,record,projection){
         return '<li><b>'+esc(f?.client_label||f?.observable_signal||'Fricción registrada')+'</b> · '+
           esc(num(x.annual_additional_hours))+' h/año adicionales · '+
           esc(x.minutes_per_event==null?'Duración por ocurrencia no disponible':num(x.minutes_per_event)+' min por ocurrencia')+
+          (x.frequency?.mode==='percent'&&x.frequency?.value!=null?' · Frecuencia registrada: '+esc(num(x.frequency.value))+' % de los casos':'')+
           ' · Evidencia: '+esc(evidenceLabel(f))+'</li>';
       }).join('')+'</ul></div>'
-    :'<p class="field-help">No consta trabajo adicional atribuido desde fricciones en esta proyección.</p>';
+    :'<p class="field-help">'+(Number(projection?.annual_friction_additional_hours)>0
+      ?'Esta proyección indica trabajo adicional, pero no incorpora su desglose por fricción. Actualiza el análisis con el AS-IS vigente para comprobar el origen.'
+      :'No consta trabajo adicional atribuido desde fricciones en esta proyección.')+'</p>';
   const costIntro=capacity?.status==='COMPLETE'
     ?'<div class="pg10-cost-estimate"><div><b>Valor estimado de capacidad dedicada al proceso</b><strong>'+
       moneyValue(capacity.annual_labor_capacity_value_eur)+'/año</strong>'+
