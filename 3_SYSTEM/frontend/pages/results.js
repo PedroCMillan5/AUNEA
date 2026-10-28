@@ -281,8 +281,29 @@ function diagnosisProcessBaselineHtml(p,record){
 }
 // [AUNEA-FE-PG10-ANALYSIS-UX-166] START — Source-owned economic/risk results with progressive evidence.
 // Source: backend EconomicsResult and RiskResult, DEC-034/050/068; no recomputation or scoring.
-function diagnosisEconomicsHtml(econ,record){
+function diagnosisEconomicsHtml(econ,record,projection){
   const inputs=(record?.economicInputs||[]).filter(x=>x.status!=='SUPERSEDED');
+  // [AUNEA-FE-PG10-OPERATING-COST-172] START — Server-owned role-cost estimation, separately from official EconomicsResult.
+  // SOURCE: DEC-021/032/050/068, backend process_labor_capacity.
+  const capacity=projection?.process_labor_capacity;
+  const moneyValue=x=>typeof x==='number'&&Number.isFinite(x)?eur(x):'No calculado';
+  const costIntro=capacity?.status==='COMPLETE'
+    ?'<div class="pg10-cost-estimate"><div><b>Valor anual del trabajo dedicado al proceso</b><strong>'+
+      moneyValue(capacity.annual_labor_capacity_value_eur)+'/año</strong>'+
+      '<small>Estimación de capacidad ocupada, calculada con los tiempos de los pasos y las tarifas por rol registradas. No es gasto contable ni ahorro de caja.</small></div>'+
+      '<details><summary>Ver cálculo por paso y tarifas aplicadas</summary><div class="pg10-cost-steps">'+
+      (capacity.steps||[]).map(s=>'<div><span>'+esc(s.step_name||'Paso')+' · '+esc(s.role||'Rol sin nombre')+
+        '</span><b>'+esc(num(s.annual_hours))+' h/año × '+esc(eur(s.hourly_rate))+'/h = '+esc(moneyValue(s.capacity_value))+'</b></div>').join('')+
+      '</div>'+(capacity.rework_separate_value_eur!=null
+        ?'<p>Retrabajo separado: '+esc(moneyValue(capacity.rework_separate_value_eur))+
+         '/año de capacidad teórica. No se suma sin descartar solapamientos.</p>':'')+
+      '<p>Calidad de tarifas: '+esc([...new Set((capacity.steps||[]).flatMap(s=>s.evidence||[]))].join(', ')||'No especificada')+
+      '. La tarifa de capacidad no equivale necesariamente al coste salarial ni al desembolso efectivo.</p></details></div>'
+    :'<div class="notice info pg10-cost-estimate"><b>Coste del trabajo del proceso: estimación no completada</b>'+
+      '<p>Existen horas del proceso y tarifas registradas, pero no se ha podido acreditar una tarifa única para todos los roles, o el cálculo es anterior a esta versión. No se inventa el coste total.</p>'+
+      (capacity?.unvalued_steps?.length?'<p>Por revisar: '+esc(capacity.unvalued_steps.join(' · '))+'</p>':'')+'</div>';
+  // [AUNEA-FE-PG10-OPERATING-COST-172] END
+
   const money=x=>x==null?'No cuantificado':eur(x)+'/año';
   const positive=x=>x!=null&&Number(x)>0;
   const hasOther=positive(econ.capacity_value_eur_annual)||positive(econ.direct_loss_eur_annual)
@@ -306,7 +327,7 @@ function diagnosisEconomicsHtml(econ,record){
     positive(econ.direct_loss_eur_annual)?'<div class="notice"><b>Pérdida directa registrada</b><strong>'+money(econ.direct_loss_eur_annual)+'</strong></div>':'',
     positive(econ.realized_cash_saving_eur_annual)?'<div class="notice"><b>Ahorro de caja realizado registrado</b><strong>'+money(econ.realized_cash_saving_eur_annual)+'</strong><small>No es una previsión futura.</small></div>':''
   ].filter(Boolean).join('');
-  return '<div class="grid g3 diagnosis-econ-grid">'+
+  return costIntro+'<div class="grid g3 diagnosis-econ-grid">'+
     '<div class="notice"><b>Coste actual de herramientas registrado</b><strong>'+money(econ.current_tool_cost_eur_annual)+'</strong><small>Coste existente, no necesariamente eliminable.</small></div>'+
     (hasOther?otherCards:
       '<div class="notice diagnosis-econ-uncertainty"><b>Otros impactos monetarios</b><strong>Sin importe positivo cuantificado</strong>'+
@@ -496,7 +517,7 @@ function resultsPage(){
       '<div class="pg10-diagnostic-parts">'+
       '<section><h3>Línea base temporal</h3>'+diagnosisProcessBaselineHtml(official.process_time_projection,record)+'</section>'+
       '<section><h3>Problemas y evidencias</h3>'+diagnosisFindingsHtml(record,official.pain_results||[])+'</section>'+
-      '<section><h3>Impacto económico registrado</h3>'+diagnosisEconomicsHtml(official.economic_result||{},record)+'</section>'+
+      '<section><h3>Impacto económico registrado</h3>'+diagnosisEconomicsHtml(official.economic_result||{},record,official.process_time_projection)+'</section>'+
       '<section><h3>Riesgos y controles</h3>'+diagnosisRisksHtml(official.risk_result||{},record)+'</section></div>'
     :asisBaselineHtml(e);
   return pageTop('Diagnóstico interno','Diagnóstico del proceso confirmado: problemas, causas, impactos y evidencias. Las soluciones se definen en las etapas siguientes.',
