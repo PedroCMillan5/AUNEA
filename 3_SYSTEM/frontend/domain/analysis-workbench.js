@@ -124,7 +124,14 @@ function asisFieldInventory(record){
     const stage=f.Stage_ID||'OTROS',fid=f.Field_ID,mode=String(f.Ask_Mode||'');
     const source=asisOwnerCollectionValue(f,record);
     let value=record?.answers?.[fid];
-    if(!source&&typeof effectiveValue==='function'){
+    const companySource={DF001:sealed?.company?.name,DF002:sealed?.company?.sector,
+      DF003:sealed?.company?.employeeCount,DF005:sealed?.company?.country};
+    if(sealed&&Object.prototype.hasOwnProperty.call(companySource,fid))
+      value=companySource[fid]??record?.answers?.[fid];
+    else if(sealed&&fid==='DF006')
+      value=(sealed.contacts||[]).some(x=>String(x.id)===String(value))
+        ?value:(sealed.contacts||[])[0]?.name||value;
+    else if(!source&&typeof effectiveValue==='function'){
       try{const effective=effectiveValue(f,record);
         if(effective!==undefined&&effective!==null&&effective!=='')value=effective;
       }catch(_){}
