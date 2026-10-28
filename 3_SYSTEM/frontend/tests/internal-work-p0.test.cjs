@@ -332,6 +332,7 @@ test('PG10 audit shows short values and hides long/repeated values in expandable
       f=>read(f.id));
   const html=render({id:'E',confirmedAsIs:true},null);
   assert.match(html,/<details class="asis-field-ledger">/);
+  assert.match(html,/<details name="asis-coverage-field-groups">/,'group sections use exclusive accordion');
   assert.match(html,/<details class="asis-ledger-value"><summary>3 registros · Ver valores<\/summary>/);
   assert.match(html,/Paso 1: 5 min \| Paso 2: 18 min/);
   assert.match(html,/&lt;no fiable&gt;/);
