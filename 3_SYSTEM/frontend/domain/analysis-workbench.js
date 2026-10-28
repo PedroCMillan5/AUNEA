@@ -264,14 +264,14 @@ function asisConfirmedDataHtml(e){
     const parts=[];
     if(x.capacity_cost_rate_eur_hour!=null&&['ED01','ED02','ED03','ED04','ED05','ED06','ED07','ED08','ED14'].includes(x.driver_id))
       parts.push(n(x.capacity_cost_rate_eur_hour)+' €/h');
-    if(x.driver_id==='ED14'&&x.value!=null)parts.push(n(x.value)+' '+(x.unit||'')+'/'+(x.period||'periodo'));
+    if(x.driver_id==='ED14'&&x.value!=null)parts.push(n(x.value)+' '+(x.unit||'')+' / '+({month:'mes',year:'año',week:'semana',day:'día'}[x.period]||'periodo declarado'));
     if(x.driver_id==='ED12'&&x.current_tool_cost_eur_annual!=null)parts.push(n(x.current_tool_cost_eur_annual)+' €/año de herramientas');
     if(x.driver_id==='ED05'&&x.annual_active_hours!=null&&x.annual_active_hours!==0)parts.push(n(x.annual_active_hours)+' h/año de retrabajo');
     if(x.driver_id==='ED13'&&x.annual_wait_hours!=null&&x.annual_wait_hours!==0)parts.push(n(x.annual_wait_hours)+' h/año de espera');
     if(x.direct_loss_eur_annual!=null&&Number(x.direct_loss_eur_annual)>0)parts.push(n(x.direct_loss_eur_annual)+' €/año de pérdida registrada');
     const evidence=typeof labelFrom==='function'?labelFrom('OS_EVIDENCE_TYPE',x.evidence_type):'';
     return esc((typeof econDriverLabel==='function'&&econDriverLabel(x.driver_id))||'Registro económico')+
-      (x.role_or_resource?' · '+esc(String(x.role_or_resource)):'')+
+      (x.role_or_resource?' · '+esc((typeof labelFrom==='function'&&labelFrom('OS_ACTOR_ROLE',x.role_or_resource))||String(x.role_or_resource)):'')+
       (parts.length?' — '+esc(parts.join(' · ')):' — Sin importe cuantificado')+
       (evidence?' <small>('+esc(evidence)+')</small>':'');
   };
