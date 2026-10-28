@@ -638,7 +638,7 @@ test('PG10 compact economics preserves source records and leaves zero/unknown ou
       {driver_id:'ED12',current_tool_cost_eur_annual:960,evidence_type:'EV04'}
     ]});
   assert.ok(html.includes('960 €/año'));
-  assert.match(html,/Sin importe positivo cuantificado/);
+  assert.match(html,/Sin importe acreditado/);
   assert.match(html,/<details class="diagnosis-economic-detail">/);
   assert.match(html,/3 registros/);
   assert.ok(html.includes('32 €/hora de capacidad'));
