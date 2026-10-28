@@ -396,3 +396,52 @@ def test_pg10_orchestrator_exposes_numeric_comparison_without_overwriting_df026(
     assert projection["numeric_comparison"]["elapsed_reconciled"] is False
     assert Orchestrator()._time_projection_with_comparison(req,{"DF026":{"value":250,"unit":"h"}})["numeric_comparison"]["declared_minutes"]==15000
     assert Orchestrator()._time_projection_with_comparison(req,{"DF026":{"value":250,"unit":"unsupported"}})["numeric_comparison"]["status"]=="UNAVAILABLE"
+
+
+# [AUNEA-UAT-PG10-CAPACITY-172] START — Provenance-safe operating labour capacity, not cash.
+def test_pg10_source_role_capacity_estimate_levante_sized_case_without_double_counting():
+    from aunea_backend.session_time import TimeProjectionRequest, project_session_time, estimate_process_labor_capacity
+    steps=[
+        {"id":"P1","step_name":"Recibir","actor":"Administración","active_time":3,"wait_time":0,"rework_time":0},
+        {"id":"P2","step_name":"Decidir","actor":"Administración","active_time":2,"wait_time":0,"rework_time":0},
+        {"id":"P3","step_name":"Aprobar","actor":"Dirección","active_time":6,"wait_time":768,"rework_time":0,
+         "applies_to":{"mode":"PERCENT","value":30}},
+        {"id":"P4","step_name":"ERP","actor":"Administración","active_time":10,"wait_time":0,"rework_time":5,
+         "error_rate":{"mode":"percent","value":8}},
+    ]
+    frictions=[{"id":"F2","affected_steps":["P2"],
+                "time_attribution":{"mode":"ADDITIONAL","step_id":"P2"},
+                "active_time_loss":{"value":10},
+                "frequency":{"mode":"percent","value":30,"period":"case"}},
+               {"id":"F1","affected_steps":["P4"],
+                "time_attribution":{"mode":"INCLUDED","step_id":"P4"},
+                "active_time_loss":{"value":5},
+                "frequency":{"mode":"percent","value":100,"period":"case"}}]
+    hours=project_session_time(TimeProjectionRequest(volume=120,period="MONTH",steps=steps,frictions=frictions))
+    econ=[{"role_or_resource":"Administración","capacity_cost_rate_eur_hour":32,"evidence_type":"HYPOTHESIS"},
+          {"role_or_resource":"Dirección","capacity_cost_rate_eur_hour":40,"evidence_type":"HYPOTHESIS"}]
+    result=estimate_process_labor_capacity(hours,steps,econ)
+    assert result["status"]=="COMPLETE"
+    assert result["annual_labor_capacity_value_eur"]==15552
+    assert result["covered_hours"]==475.2
+    assert result["steps_valued"]==4
+    assert result["rework_separate_value_eur"]==307.2
+    assert result["steps"][1]["annual_hours"]==120  # 48h step + 72h ADDITIONAL
+    assert result["steps"][3]["annual_hours"]==240  # INCLUDED does not increase cost
+    assert all("HYPOTHESIS" in x["evidence"] for x in result["steps"])
+    assert not any(key in result for key in ("cash_savings","annual_tool_cost","cost_accounting_total"))
+
+
+def test_pg10_operating_cost_is_unavailable_if_rate_missing_or_conflicts():
+    from aunea_backend.session_time import estimate_process_labor_capacity
+    projection={"status":"CALCULATED","step_breakdown":[{"step_id":"P1","annual_active_hours":10,
+                "annual_rework_hours":0}],"additional_friction_breakdown":[]}
+    steps=[{"id":"P1","step_name":"Registrar","actor":"Administración"}]
+    assert estimate_process_labor_capacity(projection,steps,[])["annual_labor_capacity_value_eur"] is None
+    conflicting=[{"role_or_resource":"Administración","capacity_cost_rate_eur_hour":32},
+                 {"role_or_resource":"Administración","capacity_cost_rate_eur_hour":45}]
+    r=estimate_process_labor_capacity(projection,steps,conflicting)
+    assert r["status"]=="PARTIAL"
+    assert r["annual_labor_capacity_value_eur"] is None
+    assert r["steps_valued"]==0
+# [AUNEA-UAT-PG10-CAPACITY-172] END
