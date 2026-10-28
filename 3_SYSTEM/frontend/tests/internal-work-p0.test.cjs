@@ -117,7 +117,7 @@ test('PG10 coverage separates accessible, derived and nonrequired absent data',(
   assert.match(workbench,/DERIVATION_NOT_AVAILABLE/);
   assert.match(workbench,/NOT_CAPTURED_OR_CONDITIONAL/);
   assert.match(workbench,/canonicalMissingRequired\(e\)/);
-  assert.match(workbench,/Los campos opcionales o condicionales no son automáticamente preguntas pendientes/);
+  assert.match(workbench,/Los campos condicionales no implican por sí solos una respuesta obligatoria pendiente/);
   assert.match(workbench,/x\.blocking\?' · Bloqueante cuando aplica':' · No bloqueante según el contrato'/);
   assert.match(workbench,/source_fields/);
 });
@@ -215,7 +215,7 @@ test('PG10 coverage shows capture integrity, server sufficiency and consultant g
   assert.match(empty,/Quedan 1 de 2 decisiones técnicas pendientes/);
   assert.match(empty,/Auditoría detallada: procedencia y estado de los 100 campos/);
   assert.match(empty,/2 de 4 registros con dato/,'partial coverage must remain visible');
-  assert.match(empty,/1 parciales/,'group must show partial fields');
+  assert.match(empty,/1 campo parcial/,'group must show partial fields');
   assert.match(empty,/Sin dato; comprobar si aplica/,'non-required absent fields retain a neutral note');
   assert.doesNotMatch(empty,/Consumidores:|Recommendation; Risk/,'engine consumers are internal metadata');
   assert.doesNotMatch(empty,/Dato accesible en su propietario|Derivación disponible/,'present values have no redundant badges');
