@@ -397,8 +397,10 @@ test('PG10 findings use canonical Spanish friction labels and show grounded trac
   assert.match(fn,/mapped\?\.Label_ES/);
   assert.doesNotMatch(fn,/ref\?\.Pain_Pattern/);
   assert.match(results,/Causa declarada/);
-  assert.match(results,/Prioridad indicada por el cliente/);
-  assert.match(results,/No consta una prioridad confirmada \(DF096\)/);
+  assert.match(results,/Prioridad del cliente/);
+  assert.match(results,/No registrada/);
+  assert.match(results,/priorityKnown&&prioritySelected/);
+  assert.match(results,/Impactos relacionados por pasos compartidos/);
   assert.match(results,/relación contextual, no causal/);
   assert.match(results,/Ver punto de análisis en esta página/);
   assert.match(workbench,/asis-source-step-/);
@@ -425,10 +427,12 @@ test('PG10 EconomicInput cards distinguish zero, missing and unearned savings',(
   const fn=results.slice(start,end);
   assert.match(fn,/econ\.annual_active_hours==null/);
   assert.match(fn,/econ\.annual_wait_hours==null/);
-  assert.match(fn,/econ\.direct_loss_eur_annual==null/);
-  assert.match(fn,/econ\.realized_cash_saving_eur_annual==null/);
-  assert.match(fn,/No es una previsión de ahorro futuro/);
-  assert.match(fn,/no equivale a un coste eliminable/);
+  assert.match(fn,/money\(econ\.direct_loss_eur_annual\)/);
+  assert.match(fn,/money\(econ\.realized_cash_saving_eur_annual\)/);
+  assert.match(fn,/No es una previsión futura/);
+  assert.match(fn,/Coste existente, no necesariamente eliminable/);
+  assert.match(fn,/diagnosis-economic-detail/);
+  assert.match(fn,/x\.capacity_cost_rate_eur_hour/);
 });
 
 
@@ -601,3 +605,60 @@ test('PG10 map click handler does not alter confirmed process records or call an
   assert.match(fn,/scrollIntoView/);
 });
 // [AUNEA-UAT-PG10-MAP-NAV-160] END
+
+
+// [AUNEA-UAT-PG10-ANALYSIS-UX-166] START — Readability, risk source, economy and traceability.
+test('PG10 shows unique problem facts once, with shared risks and economics in traceability',()=>{
+  const source=results.slice(results.indexOf('function diagnosisFindingsHtml('),results.indexOf('function diagnosisProcessBaselineHtml('));
+  const primary=source.slice(source.indexOf('<div class="diagnosis-trace-grid">'),source.indexOf('<details class="diagnosis-source-review">'));
+  assert.doesNotMatch(primary,/Riesgos en los mismos pasos|Impacto relacionado|No consta una prioridad confirmada/);
+  assert.match(source,/Riesgos en esos pasos/);
+  assert.match(source,/Impactos relacionados por pasos compartidos/);
+  assert.match(source,/relación contextual, no causal/);
+  assert.match(source,/distinctCauses/);
+  assert.doesNotMatch(source,/class="code internal-only"/);
+});
+test('PG10 compact economics preserves source records and leaves zero/unknown out of primary KPIs',()=>{
+  const start=results.indexOf('function diagnosisEconomicsHtml(');
+  const end=results.indexOf('function diagnosisRisksHtml(',start);
+  const fn=new Function('num','eur','esc','engineLabel','evidenceTypeBackend','econDriverLabel','labelFrom',
+    results.slice(start,end)+'\nreturn diagnosisEconomicsHtml;')(
+      n=>Number(n).toLocaleString('es-ES'),n=>Number(n).toLocaleString('es-ES')+' €',
+      v=>String(v).replaceAll('&','&amp;').replaceAll('<','&lt;'),
+      ()=> 'Hipótesis', x=>x,
+      x=>x==='ED12'?'Coste de herramientas':'Coste de capacidad',
+      (set,x)=>x
+    );
+  const html=fn({annual_active_hours:0,annual_wait_hours:0,capacity_value_eur_annual:0,
+      current_tool_cost_eur_annual:960,direct_loss_eur_annual:0,realized_cash_saving_eur_annual:0},
+    {economicInputs:[
+      {driver_id:'ED14',role_or_resource:'Administración',capacity_cost_rate_eur_hour:32,evidence_type:'EV04'},
+      {driver_id:'ED14',role_or_resource:'Responsable',capacity_cost_rate_eur_hour:40,evidence_type:'EV04'},
+      {driver_id:'ED12',current_tool_cost_eur_annual:960,evidence_type:'EV04'}
+    ]});
+  assert.match(html,/960 €\\/año/);
+  assert.match(html,/Sin importe positivo cuantificado/);
+  assert.match(html,/<details class="diagnosis-economic-detail">/);
+  assert.match(html,/3 registros/);
+  assert.match(html,/32 €\\/hora de capacidad/);
+  assert.match(html,/40 €\\/hora de capacidad/);
+  assert.match(html,/0 h\\/año/);
+  assert.equal((html.match(/<li>/g)||[]).length,3);
+});
+test('PG10 risk results remain grounded without displaying raw English rationale',()=>{
+  const s=results.slice(results.indexOf('function diagnosisRisksHtml('),results.indexOf('function diagnosisRecommendationHtml('));
+  const fn=new Function('esc','engineLabel','normalizeArray','diagnosisStepName','labelFrom',
+    s+'\nreturn diagnosisRisksHtml;')(
+      x=>String(x),(_field,x)=>({R3:'Riesgo crítico',CONTROL_GAP:'Brecha de control'})[x]||x,
+      x=>Array.isArray(x)?x:[],(_,id)=>id==='P4'?'Registrar en ERP':id,()=> 'Riesgo'
+    );
+  const html=fn({inherent_level:'R3',residual_level:'R3',status:'CONTROL_GAP',
+    rationale:'Highest contextual risk=R3; controls_present=False. Canonical inputs used=IN-K-01'},
+    {risks:[{description:'Error de registro',step_ids:['P4'],likelihood_1_5:3,impact_1_5:4,controls_present:false}]});
+  assert.match(html,/Riesgo crítico/);
+  assert.match(html,/Brecha de control/);
+  assert.match(html,/1 de 1 riesgos sin controles registrados/);
+  assert.match(html,/Error de registro/);
+  assert.doesNotMatch(html,/Highest contextual risk|controls_present|Canonical inputs|IN-K-01/);
+});
+// [AUNEA-UAT-PG10-ANALYSIS-UX-166] END
