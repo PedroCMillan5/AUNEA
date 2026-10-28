@@ -633,6 +633,8 @@ function asisDirectionCardsHtml(e){
     +(gateEvidence.length?'<details class="asis-conditional-gates"><summary>Condiciones técnicas evaluadas con los datos disponibles</summary>'+gateEvidence.map(g=>
       '<div class="asis-conditional-gate"><b>'+esc(g.name)+'</b><p>'+esc(g.reason||'Sin conclusión demostrada')+'</p><small>Evaluación: '+esc(g.status==='PROPOSAL'?'Propuesta para contrastar':g.status==='REVIEW'?'Pendiente de comprobar':'Información insuficiente')+'</small></div>').join('')+'</details>':'');
 }
+// [AUNEA-FE-PG10-ASIS-ECON-165] START — Four server-owned AS-IS outputs, no technology selection.
+// SOURCE: DEC-034/052, PG10 CANONICAL, Orchestrator.analyze_asis. Read-only, no derived browser economics.
 function asisBaselineHtml(e){
   const data=asisAnalysisResult(e);
   if(!data)return '<div class="notice info">Puedes examinar ya el mapa, los puntos críticos y los gaps. El análisis adicional del backend no necesita contestar las cinco decisiones de solución.</div><button class="btn btn-primary" id="analyzeAsisOnly">Analizar AS-IS y cuantificar línea base</button>';
@@ -654,4 +656,5 @@ function asisBaselineHtml(e){
       ?diagnosisRisksHtml(data.risk_result,record):'<p>No se dispone de resultados de riesgo.</p>')
     +'<button class="btn btn-outline" id="analyzeAsisOnly">Actualizar análisis con el AS-IS vigente</button>';
 }
+// [AUNEA-FE-PG10-ASIS-ECON-165] END
 // [AUNEA-FE-ASIS-WORKBENCH-152] END
