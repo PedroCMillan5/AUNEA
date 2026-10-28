@@ -782,7 +782,7 @@ test('PG10 displays the step-linked timeline using backend-owned annual contribu
   assert.match(html,/Aprobar factura/);
   assert.match(html,/25 % de los casos/);
   assert.match(html,/240 min/);
-  assert.match(html,/1.440 h\/año/);
+  assert.match(html,/(?:1[.]?440) h\/año/);
   assert.match(html,/Falta de visibilidad/);
   assert.match(html,/72 h\/año/);
   assert.match(html,/href="#asis-source-step-P2"/);
