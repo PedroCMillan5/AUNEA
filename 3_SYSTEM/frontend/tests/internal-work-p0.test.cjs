@@ -378,7 +378,7 @@ test('PG10 AS-IS backend results present time, pains, economics and risks withou
 test('PG10 AS-IS endpoint is solution-independent and exposes economics',()=>{
   assert.match(workbench,/\/v1\/diagnostic\/asis-analysis/);
   assert.match(workbench,/asisAnalysisKey\(e\)!==key/);
-  assert.match(workbench,/diagnosisEconomicsHtml\(economic,record\)/);
+  assert.match(workbench,/diagnosisEconomicsHtml\(economic,record,data\.process_time_projection\)/);
   assert.doesNotMatch(workbench.slice(workbench.indexOf('function asisBaselineHtml(')),
     /data\.recommendation\./);
 });
@@ -658,7 +658,7 @@ test('PG10 risk results remain grounded without displaying raw English rationale
     {risks:[{description:'Error de registro',step_ids:['P4'],likelihood_1_5:3,impact_1_5:4,controls_present:false}]});
   assert.match(html,/Riesgo crítico/);
   assert.match(html,/Brecha de control/);
-  assert.match(html,/1 de 1 riesgos sin controles registrados/);
+  assert.match(html,/1 sin controles registrados/);
   assert.match(html,/Error de registro/);
   assert.doesNotMatch(html,/Highest contextual risk|controls_present|Canonical inputs|IN-K-01/);
 });
@@ -937,7 +937,71 @@ test('PG10 explains monetary limits and risk triggers with existing source attri
     results.indexOf('// [AUNEA-FE-PG10-ANALYSIS-UX-166] END'));
   assert.match(risk,/r\.critical_trigger===true/);
   assert.match(risk,/r\.sensitive_or_high_impact===true/);
-  assert.match(risk,/Sin controles declarados/);
-  assert.match(risk,/Fundamento registrado/);
+  assert.match(risk,/No constan controles que permitan justificar una reducción/);
+  assert.match(risk,/Por qué se considera relevante/);
 });
 // [AUNEA-UAT-PG10-TEMPORAL-EXPLANATIONS-171] END
+
+
+// [AUNEA-UAT-PG10-COST-RISK-172] START — Source-matched operating labour without cash claims.
+test('PG10 estimates annual operating labour from exact role-matched server breakdown',()=>{
+  const from=results.indexOf('function diagnosisEconomicsHtml(');
+  const to=results.indexOf('function diagnosisRisksHtml(');
+  const fn=new Function('eur','esc','num','engineLabel','evidenceTypeBackend','labelFrom','econDriverLabel',
+    results.slice(from,to)+'\nreturn diagnosisEconomicsHtml;')(
+      x=>Number(x).toLocaleString('es-ES',{maximumFractionDigits:2})+' €',
+      String,x=>Number(x).toLocaleString('es-ES',{maximumFractionDigits:2}),
+      (key,value)=>value,(x)=>x,(_,x)=>x,x=>x);
+  const source={economicInputs:[
+    {driver_id:'ED01',role_or_resource:'Administración',capacity_cost_rate_eur_hour:32,
+     evidence_type:'HYPOTHESIS'},
+    {driver_id:'ED01',role_or_resource:'Dirección',capacity_cost_rate_eur_hour:40,
+     evidence_type:'HYPOTHESIS'},
+    {driver_id:'ED12',current_tool_cost_eur_annual:960,evidence_type:'HYPOTHESIS'}
+  ]};
+  const time={process_labor_capacity:{status:'COMPLETE',
+    annual_labor_capacity_value_eur:15552,covered_hours:475.2,
+    rework_separate_value_eur:307.2,steps:[
+      {step_id:'P1',step_name:'Recibir factura',role:'Administración',
+       annual_hours:72,hourly_rate:32,capacity_value:2304,evidence:['HYPOTHESIS']},
+      {step_id:'P2',step_name:'Determinar aprobación',role:'Administración',
+       annual_hours:120,hourly_rate:32,capacity_value:3840,evidence:['HYPOTHESIS']},
+      {step_id:'P3',step_name:'Aprobar',role:'Dirección',
+       annual_hours:43.2,hourly_rate:40,capacity_value:1728,evidence:['HYPOTHESIS']},
+      {step_id:'P4',step_name:'Registrar',role:'Administración',
+       annual_hours:240,hourly_rate:32,capacity_value:7680,evidence:['HYPOTHESIS']}
+    ]}};
+  const html=fn({current_tool_cost_eur_annual:960},source,time);
+  assert.match(html,/Valor anual del trabajo dedicado al proceso/);
+  assert.match(html,/15\.552 €\/año/);
+  assert.match(html,/960 €\/año/);
+  assert.match(html,/Hipótesis/);
+  assert.match(html,/307,2 €\/año de capacidad teórica/);
+  assert.match(html,/No se suma sin descartar solapamientos/);
+  assert.match(html,/Ver cálculo por paso y tarifas aplicadas/);
+  assert.doesNotMatch(html,/Ahorro de caja garantizado|Coste contable total de 16/);
+  const missing=fn({current_tool_cost_eur_annual:960},source,{
+    process_labor_capacity:{status:'PARTIAL',unvalued_steps:['Aprobar: falta tarifa']}});
+  assert.match(missing,/estimación no completada/);
+  assert.doesNotMatch(missing,/15\.552 €\/año/);
+});
+test('PG10 explains risk severity before/after controls and does not hallucinate protections',()=>{
+  const from=results.indexOf('function diagnosisRisksHtml(');
+  const to=results.indexOf('// [AUNEA-FE-PG10-ANALYSIS-UX-166] END',from);
+  const fn=new Function('esc','engineLabel','normalizeArray','diagnosisStepName','labelFrom',
+    results.slice(from,to)+'\nreturn diagnosisRisksHtml;')(
+      String,(_,x)=>({R3:'Riesgo crítico',CONTROL_GAP:'Brecha de control'})[x]||x,
+      x=>Array.isArray(x)?x:[],(_,id)=>id==='P4'?'Registrar en ERP':id,()=> 'Riesgo');
+  const html=fn({inherent_level:'R3',residual_level:'R3',status:'CONTROL_GAP'},
+    {risks:[{description:'Error de registro',step_ids:['P4'],likelihood_1_5:3,
+      impact_1_5:4,controls_present:false,critical_trigger:true}]});
+  assert.match(html,/Gravedad antes de controles/);
+  assert.match(html,/Gravedad con controles registrados/);
+  assert.match(html,/Se ha registrado 1 riesgo/);
+  assert.match(html,/No constan controles para 1 de 1 riesgos/);
+  assert.match(html,/no puede acreditar su protección/);
+  assert.match(html,/Por qué se considera relevante/);
+  assert.match(html,/No es una pérdida económica calculada|no es una pérdida económica calculada/);
+  assert.doesNotMatch(html,/Se han evitado|Controles eficaces confirmados/);
+});
+// [AUNEA-UAT-PG10-COST-RISK-172] END
