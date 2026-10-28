@@ -2201,3 +2201,8 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 .pg10-review-actions>.btn{max-width:100%;white-space:normal;min-height:38px}
 @media(max-width:680px){.pg10-review-actions{flex-direction:column;align-items:stretch}.pg10-stage-nav,.pg10-critical-points,.pg10-source-data{padding:12px}}
 /* [AUNEA-FE-PG10-WORKSPACE-STYLE-167] END */
+
+/* [AUNEA-FE-PG10-DIAGNOSTIC-ACTION-168] START — Separate the AS-IS run action from its informational notice. */
+/* This ID exists only in the PG10 AS-IS-only diagnostic renderer. */
+#analyzeAsisOnly{margin-top:16px;}
+/* [AUNEA-FE-PG10-DIAGNOSTIC-ACTION-168] END */
