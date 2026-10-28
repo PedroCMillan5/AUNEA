@@ -217,7 +217,7 @@ function diagnosisProcessBaselineHtml(p,record){
   const main=[
     card('Casos al año',cell('annual_cases'),'Volumen habitual anualizado'),
     card('Trabajo activo total',p.annual_total_active_hours==null?'No conciliado':cell('annual_total_active_hours')+' h/año','Trabajo ponderado de pasos y fricciones adicionales; excluye espera y retrabajo'),
-    card('Exposición a espera',p.annual_wait_exposure_hours==null?'No calculado':cell('annual_wait_exposure_hours')+' caso-horas/año','No son horas laborales ni duración elapsed'),
+    card('Exposición a espera',p.annual_wait_exposure_hours==null?'No calculado':cell('annual_wait_exposure_hours')+' caso-horas/año','Espera pasiva, no horas laborales ni ahorro; tampoco equivale a duración end-to-end'),
     card('Retrabajo anual',p.annual_rework_hours==null?'No calculado':cell('annual_rework_hours')+' h/año','Frecuencias registradas; sin duplicar fricciones')
   ].join('');
   const additional=[
