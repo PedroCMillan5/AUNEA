@@ -787,7 +787,7 @@ test('PG10 displays the step-linked timeline using backend-owned annual contribu
   assert.match(html,/72 h\/año/);
   assert.match(html,/href="#asis-source-step-P2"/);
   assert.match(html,/no una escala cronológica/);
-  assert.match(html,/Los recorridos condicionales se ponderan en el backend/);
+  assert.match(html,/El recorrido indica orden y bifurcaciones/);
   assert.doesNotMatch(html,/Retirado|href="#asis-source-step-OLD"/);
   const old=fn({},record);
   assert.match(old,/Desglose anual por paso no disponible/);
@@ -808,3 +808,80 @@ test('PG10 temporal UI is linked to source cards and annualization stays server-
   assert.match(css,/@media\(max-width:650px\)/);
 });
 // [AUNEA-UAT-PG10-TIME-169] END
+
+
+// [AUNEA-UAT-PG10-TEMPORAL-ROUTES-170] START — Canonical routing, frequency and compact totals.
+test('PG10 temporal route renders the real yes/no decision and rejoin without inventing route percentages',()=>{
+  const all=results.slice(results.indexOf('function diagnosisProcessStepTimelineHtml('),
+    results.indexOf('// [AUNEA-FE-PG10-STEP-TIMELINE-169] END'));
+  const process=fs.readFileSync(path.join(root,'domain/process.js'),'utf8');
+  const from=process.indexOf('function processBranchStructure(');
+  const to=process.indexOf('// [AUNEA-FE-PROC-BRANCH-075] END',from);
+  assert.ok(from>=0&&to>from);
+  const actualBranch=new Function('processDecisionStep','normalizeArray',process.slice(from,to)+
+    '\nreturn processBranchStructure;')(
+      step=>step._ui?.has_decision===true,
+      x=>Array.isArray(x)?x:[]);
+  const htmlFn=new Function('num','esc','attr','processBranchStructure',all+
+    '\nreturn diagnosisProcessStepTimelineHtml;')(
+      n=>Number(n).toLocaleString('es-ES',{maximumFractionDigits:2}),
+      s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'),
+      s=>String(s).replace(/"/g,'&quot;'),
+      actualBranch
+    );
+  const record={processSteps:[
+    {id:'P1',step_name:'Recibir factura',normal_next_step:'P2',active_time:3,wait_time:0,rework_time:0},
+    {id:'P2',step_name:'Determinar aprobación',_ui:{has_decision:true},normal_next_step:'P3',
+      exception_path:{destination_step:'P4'},active_time:2,wait_time:0,rework_time:0},
+    {id:'P3',step_name:'Aprobar factura',normal_next_step:'P4',active_time:6,wait_time:768,rework_time:0,
+      applies_to:{mode:'PERCENT',value:30}},
+    {id:'P4',step_name:'Registrar en ERP',normal_next_step:'__END__',active_time:10,wait_time:0,rework_time:5,
+      error_rate:{mode:'percent',value:8}}
+  ],frictions:[{id:'F2',client_label:'Seguimiento manual'}]};
+  const proj={step_breakdown:record.processSteps.map(s=>({step_id:s.id,annual_active_hours:100,
+    annual_wait_exposure_hours:s.id==='P3'?5529.6:0,
+    annual_rework_hours:s.id==='P4'?9.6:0,
+    applies_to:s.applies_to||{mode:'ALL'},error_rate:s.error_rate})),
+    additional_friction_breakdown:[{friction_id:'F2',owner_step_id:'P4',
+      minutes_per_event:10,frequency:{mode:'percent',value:30,period:'case'},
+      annual_additional_hours:72}]};
+  const html=htmlFn(proj,record);
+  assert.match(html,/Bifurcaciones del proceso confirmado/);
+  assert.match(html,/Decisión: Determinar aprobación/);
+  assert.match(html,/Sí<\/strong><span>Aprobar factura → Registrar en ERP/);
+  assert.match(html,/No<\/strong><span>Registrar en ERP/);
+  assert.match(html,/pg10-time-route-branched/);
+  assert.equal((html.match(/class="pg10-time-step"/g)||[]).length,4);
+  assert.equal((html.match(/href="#asis-source-step-P4"/g)||[]).length,1);
+  assert.match(html,/30 % de los casos/);
+  assert.match(html,/768 min/);
+  assert.match(html,/5\.529,6 h\/año/);
+  assert.match(html,/Frecuencia de retrabajo: 8 % de las ejecuciones de este paso/);
+  assert.match(html,/Frecuencia: 30 % de los casos/);
+  assert.match(html,/72 h\/año/);
+  assert.doesNotMatch(html,/70 %|Tiempo total del proceso: 768/);
+});
+test('PG10 shows four primary annual metrics while preserving the four secondary values on demand',()=>{
+  const from=results.indexOf('function diagnosisProcessBaselineHtml(');
+  const to=results.indexOf('// [AUNEA-FE-PG10-ANALYSIS-UX-166] START',from);
+  assert.ok(from>=0&&to>from);
+  const fn=new Function('num','esc','asisSourceBoundary','diagnosisProcessStepTimelineHtml',
+    results.slice(from,to)+'\nreturn diagnosisProcessBaselineHtml;')(
+    n=>Number(n).toLocaleString('es-ES',{maximumFractionDigits:2}),
+    x=>String(x),()=> '250 min',()=> '<section>Recorrido temporal</section>');
+  const result=fn({
+    annual_cases:1440,annual_active_hours:403.2,annual_friction_additional_hours:72,
+    annual_total_active_hours:475.2,annual_wait_exposure_hours:5529.6,
+    annual_rework_hours:9.6,status:'CALCULATED',gaps:[]},{});
+  const visible=result.slice(0,result.indexOf('<details class="pg10-time-summary-detail">'));
+  const detail=result.slice(result.indexOf('<details class="pg10-time-summary-detail">'));
+  assert.equal((visible.match(/class="notice pg10-time-summary-card"/g)||[]).length,4);
+  assert.equal((detail.match(/class="notice pg10-time-summary-card"/g)||[]).length,4);
+  for(const literal of ['1.440','475,2 h/año','5.529,6 caso-horas/año','9,6 h/año'])
+    assert.ok(visible.includes(literal),literal);
+  for(const literal of ['403,2 h/año','72 h/año','250 min','Componentes calculados'])
+    assert.ok(detail.includes(literal),literal);
+  assert.match(result,/Conciliación end-to-end pendiente de acreditar/);
+  assert.doesNotMatch(result,/ahorro acreditado de 475/);
+});
+// [AUNEA-UAT-PG10-TEMPORAL-ROUTES-170] END
