@@ -663,3 +663,75 @@ test('PG10 risk results remain grounded without displaying raw English rationale
   assert.doesNotMatch(html,/Highest contextual risk|controls_present|Canonical inputs|IN-K-01/);
 });
 // [AUNEA-UAT-PG10-ANALYSIS-UX-166] END
+
+// [AUNEA-UAT-PG10-WORKSPACE-167] START — Stable layout, source-only synthesis and preserved review actions.
+test('PG10 uses exactly six sections in one stable rendering path with no recommendation cards',()=>{
+  const start=results.indexOf('function resultsPage('),end=results.indexOf('\n// [AUNEA-FE-PG10-WORKSPACE-167] END',start);
+  assert.ok(start>=0&&end>start);
+  const page=results.slice(start,end);
+  const sections=['Resumen del estudio','Estado actual y mapa AS-IS','Integridad de datos y gaps',
+    'Diagnóstico calculado','Conclusiones y prioridades','Revisión y continuación'];
+  sections.forEach((name,i)=>assert.equal(page.split("section('"+(i+1)+'. '+name+"'").length-1,1,name));
+  assert.equal((page.match(/section\('/g)||[]).length,6);
+  assert.doesNotMatch(page,/section\('Recomendación preliminar'|section\('Alternativas de intervención a contrastar'/);
+  assert.match(page,/const official=currentDiagnosticOutput\(e\)/);
+  assert.match(page,/if\(!hasConfirmedEngagementSnapshot\(e\)\) return pageTop/);
+  assert.match(page,/recommendationReady/);
+  assert.match(page,/asisCoverageHtml\(e,official/);
+  assert.match(page,/asisBaselineHtml\(e\)/);
+  assert.match(page,/diagnosisFindingsHtml\(record,official\.pain_results/);
+  assert.match(page,/pg10SynthesisHtml\(record,data\)/);
+  assert.match(page,/pg10ReviewHtml\(e,official,asis/);
+  assert.match(page,/pg10-critical-points/);
+});
+test('PG10 synthesis does not infer business priority from presentation order or confidence',()=>{
+  const start=results.indexOf('function pg10SynthesisHtml(');
+  const end=results.indexOf('\nfunction pg10ReviewHtml(',start);
+  assert.ok(start>=0&&end>start);
+  const fn=new Function('normalizeArray','diagnosisTrace','diagnosisStepName','diagnosisPainLabel',
+    'engineLabel','esc',results.slice(start,end)+'\nreturn pg10SynthesisHtml;')(
+      v=>Array.isArray(v)?v:v==null?[]:[v],
+      (_record,p)=>({frictions:[{id:p.frictionId}],stepIds:[p.stepId]}),
+      (_record,id)=>id==='S1'?'Registrar factura':'Aprobar factura',
+      id=>id==='P02'?'Reintroducción manual':'Espera de aprobación',
+      (_kind,v)=>v==='HIGH'?'Alta':v==='LOW'?'Baja':v==='CONFIRMED'?'Confirmado':v,
+      s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    );
+  const data={status:'ANALYZED',pain_results:[
+    {pain_id:'P02',frictionId:'F1',stepId:'S1',confidence:'LOW',state:'CONFIRMED'},
+    {pain_id:'P03',frictionId:'F2',stepId:'S2',confidence:'HIGH',state:'INDICATED'}
+  ]};
+  const html=fn({answers:{DF096:['F2']}},data);
+  assert.match(html,/Reintroducción manual/);
+  assert.match(html,/Espera de aprobación/);
+  assert.equal((html.match(/Seleccionado por el cliente/g)||[]).length,1);
+  assert.match(html,/no constituyen un ranking/);
+  assert.doesNotMatch(html,/Prioridad analítica: (Alta|Baja)|Ahorro anual generado/);
+  assert.match(fn({answers:{DF096:[]}},data),/ausencia no bloquea el diagnóstico/);
+  assert.match(fn({answers:{}},null),/Todavía no existe un análisis/);
+});
+test('PG10 review retains source correction and backend decisions without a second approval state',()=>{
+  const a=results.indexOf('function pg10ReviewHtml('),b=results.indexOf('\nfunction resultsPage(',a);
+  assert.ok(a>=0&&b>a);
+  const fn=new Function('esc','diagnosisEngineDecisionTraceHtml',
+    results.slice(a,b)+'\nreturn pg10ReviewHtml;')(
+      v=>String(v),()=>'<p>Decisión técnica registrada</p>');
+  const pending=fn({},null,null,[],[{},{}],{status:'OBSOLETE'},false);
+  assert.match(pending,/id="reviewEngineGates"/);
+  assert.match(pending,/id="runDiag"/);
+  assert.match(pending,/data-page="tobe"/);
+  assert.match(pending,/Volver|Consultar fuentes AS-IS/);
+  assert.match(pending,/resultado oficial anterior no vigente/);
+  assert.doesNotMatch(pending,/id="confirmDiagnosis"|id="approveDiagnosis"/);
+  const official=fn({}, {pain_results:[]},{status:'ANALYZED'},[],[],{status:'CURRENT'},true);
+  assert.match(official,/Continuar al diseño TO-BE/);
+  assert.match(official,/Decisión técnica registrada/);
+});
+test('PG10 collapsed map source cards open from map and finding navigation',()=>{
+  const start=results.indexOf('function bindDiagnosticMapPointNavigation('),end=results.indexOf('\nfunction ',start+10);
+  const source=results.slice(start,end);
+  assert.match(source,/closest\?\.\('\.pg10-critical-points'\)/);
+  assert.match(source,/if\(parent\)parent\.open=true/);
+  assert.match(source,/\.diagnosis-finding a\[href/);
+});
+// [AUNEA-UAT-PG10-WORKSPACE-167] END
