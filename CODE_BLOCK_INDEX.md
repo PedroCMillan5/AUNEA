@@ -4,6 +4,7 @@
 
 | Block_ID | Archivo | Responsabilidad | Fuente | Inputs | Outputs | Efectos | Riesgo | Regresión | Estado |
 |---|---|---|---|---|---|---|---|---|---|
+| AUNEA-UAT-BE-PG10-TIME-169 | 3_SYSTEM/backend/tests/test_session_time.py | Verify backend-owned per-step projection and unique additional friction attribution | DEC-034/068/074 | Synthetic ProcessSteps and Frictions | Backend unit assertions | Tests only | LOW | Backend CI | REVIEW |
 | AUNEA-FE-PG10-MAP-NAV-160 | 3_SYSTEM/frontend/pages/results.js | PG10 map navigation opens owned step cards | PG10 canonical; DEC-034/050/074 | Confirmed source snapshot | Read-only presentation / regression | None | LOW | Frontend CI and UAT | REVIEW |
 | AUNEA-FE-PG10-MAP-NAV-STYLE-160 | 3_SYSTEM/frontend/ui-system.css | Visual focus states for read-only map navigation | PG10 canonical; DEC-034/050/074 | Confirmed source snapshot | Read-only presentation / regression | None | LOW | Frontend CI and UAT | REVIEW |
 | AUNEA-FE-PG10-SOURCE-DETAIL-161 | 3_SYSTEM/frontend/ui-system.css | Read-only source detail card styles | PG10 canonical; DEC-034/050/074 | Confirmed source snapshot | Read-only presentation / regression | None | LOW | Frontend CI and UAT | REVIEW |
