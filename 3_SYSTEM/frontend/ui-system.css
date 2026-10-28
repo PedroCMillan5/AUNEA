@@ -2335,3 +2335,12 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 .pg10-cost-roles p,.pg10-cost-roles-missing{font-size:11px;line-height:1.65;color:var(--muted,#67736d);margin:12px 0 0}
 @media(max-width:650px){.pg10-cost-roles table{min-width:520px}}
 /* [AUNEA-FE-PG10-COST-ROLES-173] END */
+
+
+/* [AUNEA-FE-PG10-ECON-SOURCE-174] START — Two source groups in one non-duplicating economic detail. */
+.diagnosis-economic-detail .pg10-economic-source-group{padding:12px 0 4px}
+.diagnosis-economic-detail .pg10-economic-source-group+.pg10-economic-source-group{border-top:1px solid var(--line,#d8dedc);margin-top:14px}
+.diagnosis-economic-detail .pg10-economic-source-group h5{font-size:13px;font-weight:700;line-height:1.5;margin:0 0 7px}
+.diagnosis-economic-detail .pg10-economic-source-group>.field-help{font-size:11px;line-height:1.65;margin:5px 0 11px}
+.diagnosis-economic-detail .pg10-economic-source-group .diagnosis-economic-source-values{margin:7px 0 11px}
+/* [AUNEA-FE-PG10-ECON-SOURCE-174] END */
