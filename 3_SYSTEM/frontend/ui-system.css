@@ -2118,3 +2118,26 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 @media(max-width:800px){.asis-data-grid{grid-template-columns:1fr}}
 @media(max-width:480px){.asis-data-pairs>div{grid-template-columns:1fr;gap:2px}}
 /* [AUNEA-FE-PG10-SNAPSHOT-VALUES-STYLE-163] END */
+
+/* [AUNEA-FE-PG10-LEDGER-UX-164] START — Progressive field-value disclosure without data loss.
+   SOURCE: Diagnostic Master v1.2 / DEC-050. Style only; the canonical snapshot is untouched. */
+.asis-confirmed-data-heading>b{font-size:16px;line-height:1.4}
+.asis-data-group{padding:17px}
+.asis-data-group h4{font-size:14px}
+.asis-data-pairs>div{font-size:13px;line-height:1.6}
+.asis-data-group li{font-size:13px;line-height:1.55}
+.asis-data-group li>small{font-size:12px;line-height:1.55}
+.asis-field-ledger>details>summary{font-size:13px;line-height:1.6;padding:10px 4px}
+.asis-field-ledger li.asis-ledger-entry{display:grid;grid-template-columns:minmax(180px,42%) minmax(0,1fr);align-items:start;gap:16px;padding:10px 4px}
+.asis-ledger-entry>.asis-ledger-label{font-size:12px;font-weight:600;line-height:1.5;min-width:0}
+.asis-ledger-result{min-width:0;text-align:left;overflow-wrap:anywhere}
+.asis-ledger-short-value{font-size:12px;line-height:1.5;display:block}
+.asis-ledger-note{display:block;font-size:11px;color:var(--muted,#67736d);margin-top:4px}
+.asis-ledger-value>summary{cursor:pointer;font-size:12px;line-height:1.5;font-weight:600;color:var(--text,#23332b)}
+.asis-ledger-value>summary:focus-visible{outline:2px solid var(--system,#24714f);outline-offset:3px}
+.asis-ledger-value>div{margin-top:9px;padding:10px 12px;border:1px solid var(--border,#d8dedc);border-radius:7px;background:var(--surface-soft,#f6f7f6);font-size:12px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
+@media(max-width:760px){
+ .asis-field-ledger li.asis-ledger-entry{grid-template-columns:1fr;gap:4px}
+ .asis-data-group{padding:14px}
+}
+/* [AUNEA-FE-PG10-LEDGER-UX-164] END */
