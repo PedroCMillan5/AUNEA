@@ -223,6 +223,8 @@ function diagnosisProcessBaselineHtml(p,record){
   const cell=k=>p[k]==null?'No calculado':num(p[k]);
   const declared=record&&typeof asisSourceBoundary==='function'?asisSourceBoundary(record,'DF026'):'No disponible';
   const gaps=Array.isArray(p.gaps)?p.gaps:[];
+  // [AUNEA-FE-PG10-NUMERIC-SUMMARY-171] START — Backend numeric comparison, source overlap hint, no elapsed auto-approval.
+  // SOURCE: DEC-074 and session_time.numeric_time_consistency; read-only UI for PG10.
   const numeric=p.numeric_comparison;
   const comparable=numeric&&Number.isFinite(numeric.declared_minutes)&&Number.isFinite(numeric.component_minutes)
     &&Number.isFinite(numeric.difference_percent);
@@ -253,6 +255,7 @@ function diagnosisProcessBaselineHtml(p,record){
     '» ya incluidos y otros '+num(x.minutes)+' min de retrabajo por incidencia').join(' · '))+
     '. La coincidencia no demuestra duplicidad: comprueba si son actividades distintas en su evidencia de origen. No se suma dos veces la fricción incluida.</p></div>':'';
 
+  // [AUNEA-FE-PG10-NUMERIC-SUMMARY-171] END
   const card=(title,value,note)=>'<div class="notice pg10-time-summary-card"><b>'+esc(title)+'</b><strong>'+esc(value)+'</strong><small>'+esc(note)+'</small></div>';
   const main=[
     card('Casos al año',cell('annual_cases'),'Volumen habitual anualizado'),
