@@ -651,7 +651,7 @@ function asisBaselineHtml(e){
     +subsection('Problemas y evidencias',typeof diagnosisFindingsHtml==='function'
       ?diagnosisFindingsHtml(record,data.pain_results||[]):'<p>No se dispone de resultados de problemas.</p>')
     +subsection('Impacto económico registrado',economicsNote+(economic&&typeof diagnosisEconomicsHtml==='function'
-      ?diagnosisEconomicsHtml(economic,record):'<p>No se dispone de una cuantificación económica validada.</p>'))
+      ?diagnosisEconomicsHtml(economic,record,data.process_time_projection):'<p>No se dispone de una cuantificación económica validada.</p>'))
     +subsection('Riesgos y controles',data.risk_result&&typeof diagnosisRisksHtml==='function'
       ?diagnosisRisksHtml(data.risk_result,record):'<p>No se dispone de resultados de riesgo.</p>')
     +'<button class="btn btn-outline" id="analyzeAsisOnly">Actualizar análisis con el AS-IS vigente</button>';
