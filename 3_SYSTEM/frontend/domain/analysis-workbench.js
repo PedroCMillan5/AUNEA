@@ -333,13 +333,17 @@ function asisCoverageHtml(e,baseline){
   const decisions=typeof unresolvedEngineGates==='function'?unresolvedEngineGates(e):null;
   const decisionTotal=typeof ENGINE_GATE_CONTRACT!=='undefined'?ENGINE_GATE_CONTRACT.length:null;
   const decisionNames=(decisions||[]).map(d=>(typeof ENGINE_GATE_GUIDE!=='undefined'&&ENGINE_GATE_GUIDE[d.key]?.title)||d.label).filter(Boolean);
-  const fieldStatus=x=>({
-    AVAILABLE:'Dato accesible en su propietario',
-    DERIVED:'Derivación disponible',
-    MISSING_REQUIRED:'Ausencia exigible: revisar captura',
-    DERIVATION_NOT_AVAILABLE:'Derivación no disponible',
-    NOT_CAPTURED_OR_CONDITIONAL:'Sin dato accesible: opcional, condicional o sin resolver'
-  })[x.status]||'Estado no evaluado';
+  // The canonical engine consumer stays in schema/inventory for traceability, not as a user-facing label.
+  // Only surface a note when it changes what the consultant needs to review.
+  const fieldNote=x=>{
+    if(x.status==='MISSING_REQUIRED')return 'Dato obligatorio pendiente';
+    if(x.source?.total>0&&x.source.count<x.source.total)
+      return x.source.count+' de '+x.source.total+' registros con dato';
+    if(x.status==='DERIVATION_NOT_AVAILABLE')return 'Sin resultado derivado';
+    if(x.status==='NOT_CAPTURED_OR_CONDITIONAL')
+      return x.source?.total===0?'Sin registros asociados':'Sin dato; comprobar si aplica';
+    return '';
+  };
   const fieldLabel=id=>{
     const f=(schema.fields||[]).find(x=>x.Field_ID===id);
     return f?.Pregunta_o_etiqueta_ES||id;
@@ -376,7 +380,7 @@ function asisCoverageHtml(e,baseline){
     :inputCoverage.status==='COMPLETE'
       ?'El backend no marca gaps críticos en este contrato de entradas. Esto no acredita por sí solo causalidad, conciliación temporal, ahorro ni viabilidad de implementación.'
       :'El backend aún no ha evaluado suficientemente el contrato de entradas para esta versión.';
-  const coverageDetail=!inputs?'<p class="field-help">Fuente de evaluación: InputCoverageEngine (backend). No se usan valores estimados.</p>':
+  const coverageDetail=!inputs?'':
     '<div class="asis-coverage-facts"><span>Entradas evaluadas: '+inputs.length+'</span>'+
       '<span>Cubiertas: '+covered+'</span><span>No aplicables: '+notApplicable+'</span>'+
       '<span>Gaps: '+inputIssues.filter(x=>x.status==='GAP').length+'</span>'+
@@ -400,17 +404,18 @@ function asisCoverageHtml(e,baseline){
     (decisionNames.length?'<details><summary>Ver decisiones pendientes ('+decisionNames.length+')</summary><ul>'+
       decisionNames.map(n=>'<li>'+esc(n)+'</li>').join('')+'</ul></details>':'');
   const ledger='<details class="asis-field-ledger"><summary>Auditoría detallada: procedencia y estado de los '+total+' campos</summary>'+
-    '<p class="field-help">«Con dato» significa que existe al menos un valor legible, no que todos los registros estén completos. Un cero guardado no acredita que se haya medido el tiempo. Los campos opcionales o condicionales no son automáticamente preguntas pendientes.</p>'+
-    '<div class="asis-coverage-facts"><span>Con algún dato: '+available+'</span>'+
-    '<span>Derivados accesibles: '+derived+'</span>'+
-    '<span>Sin dato/condicionales: '+absent+'</span>'+
-    '<span>Campos repetibles con cobertura parcial: '+partial.length+'</span></div>'+
-    groups.map(g=>'<details><summary>'+esc(g.title)+' · '+g.filled+' de '+g.items.length+' con algún dato</summary><ul>'+
-      g.items.map(f=>'<li><span>'+esc(f.label)+'</span><small>'+esc(fieldStatus(f))+
-        (f.source?' · '+f.source.count+' de '+f.source.total+' registros con dato'+
-          (f.source.count>0&&f.source.count<f.source.total?' (parcial)':''):'')+
-        (f.consumers?' · Consumidores: '+esc(f.consumers):'')+
-        '</small></li>').join('')+'</ul></details>').join('')+'</details>';
+    '<p class="field-help">Solo se muestran avisos cuando hay un dato sin registrar, una derivación no disponible o cobertura parcial. Los campos condicionales no implican por sí solos una respuesta obligatoria pendiente.</p>'+
+    groups.map(g=>{
+      const partialInGroup=g.items.filter(f=>f.source&&f.source.total>0&&f.source.count>0&&f.source.count<f.source.total).length;
+      const missingRequired=g.items.filter(f=>f.status==='MISSING_REQUIRED').length;
+      const context=(partialInGroup?' · '+partialInGroup+' parciales':'')+
+        (missingRequired?' · '+missingRequired+' obligatorios pendientes':'');
+      return '<details><summary>'+esc(g.title)+' · '+g.filled+' de '+g.items.length+' con algún dato'+context+'</summary><ul>'+
+        g.items.map(f=>{
+          const note=fieldNote(f);
+          return '<li><span>'+esc(f.label)+'</span>'+(note?'<small>'+esc(note)+'</small>':'')+'</li>';
+        }).join('')+'</ul></details>';
+    }).join('')+'</details>';
   return '<div class="asis-coverage-overview"><b>'+total+' campos canónicos examinados</b>'+
     ' · '+available+' con algún dato · '+derived+' derivados accesibles · '+absent+
     ' sin dato accesible o condicionales. El inventario no mide por sí mismo si el diagnóstico es suficiente.</div>'+
