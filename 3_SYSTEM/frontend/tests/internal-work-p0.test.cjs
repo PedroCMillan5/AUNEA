@@ -708,6 +708,10 @@ test('PG10 synthesis does not infer business priority from presentation order or
   assert.match(html,/Espera de aprobación/);
   assert.equal((html.match(/Seleccionado por el cliente/g)||[]).length,1);
   assert.match(html,/no constituyen un ranking/);
+  assert.match(html,/Qué permite concluir este AS-IS/);
+  assert.match(html,/Solo se afirmará que el proceso supera o incumple una referencia cuando las medidas, unidades, periodo y evidencia sean comparables/);
+  assert.match(html,/el rediseño del trabajo y los controles se establecen en TO-BE/);
+  assert.doesNotMatch(html,/tiempo futuro calculado|Ahorro garantizado/);
   assert.doesNotMatch(html,/Prioridad analítica: (Alta|Baja)|Ahorro anual generado/);
   assert.match(fn({answers:{DF096:[]}},data),/ausencia no bloquea el diagnóstico/);
   assert.match(fn({answers:{}},null),/Todavía no existe un análisis/);
