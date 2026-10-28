@@ -112,6 +112,8 @@ def project_session_time(request: TimeProjectionRequest) -> dict[str, Any]:
     active_per_case = wait_exposure_per_case = rework_per_case = 0.0
     missing_active = missing_wait = missing_rework = False
     included_steps = 0
+    step_breakdown: list[dict[str, Any]] = []  # backend-owned breakdown for PG10 presentation
+    friction_breakdown: list[dict[str, Any]] = []
 
     scope = set(request.scope_step_ids) if request.scope_step_ids is not None else None
     steps = [s for s in request.steps if scope is None or s.get("id") in scope]
@@ -136,6 +138,7 @@ def project_session_time(request: TimeProjectionRequest) -> dict[str, Any]:
         active = _number(step.get("active_time"))
         waiting = _number(step.get("wait_time"))
         rework = _number(step.get("rework_time"))
+        rework_rate = None
         if active is None or multiplier is None:
             missing_active = True
             if active is None:
@@ -156,10 +159,28 @@ def project_session_time(request: TimeProjectionRequest) -> dict[str, Any]:
                 gaps.append("Paso %s: falta tiempo de retrabajo" % label)
         elif rework > 0:
             rate = _error_share(step, gaps)
+            rework_rate = rate
             if rate is None:
                 missing_rework = True
             else:
                 rework_per_case += rework * multiplier * rate
+
+        # Independent per-step contributions use the exact same factors as aggregate values.
+        def step_annual(raw: float | None, factor: float | None) -> float | None:
+            return round(annual_cases * raw * factor / 60, 2) if raw is not None and factor is not None and annual_cases is not None else None
+        rework_factor = multiplier * rework_rate if rework and multiplier is not None and rework_rate is not None else (multiplier if rework == 0 else None)
+        step_breakdown.append({
+            "step_id": step.get("id"), "step_name": label,
+            "applies_to": step.get("applies_to", {"mode": "ALL"}),
+            "occurrences_per_case": repetitions,
+            "active_minutes_per_execution": active,
+            "wait_minutes_per_execution": waiting,
+            "rework_minutes_per_event": rework,
+            "error_rate": step.get("error_rate"),
+            "annual_active_hours": step_annual(active, multiplier),
+            "annual_wait_exposure_hours": step_annual(waiting, multiplier),
+            "annual_rework_hours": step_annual(rework, rework_factor),
+        })
 
     if not included_steps:
         gaps.append("PG04: no hay pasos activos")
@@ -212,6 +233,14 @@ def project_session_time(request: TimeProjectionRequest) -> dict[str, Any]:
             gaps.append("DF060: frecuencia/calendario insuficiente para fricción adicional " + fid)
         else:
             extra_per_year_minutes += minutes * events_per_year
+            friction_breakdown.append({
+                "friction_id": fid,
+                "owner_step_id": classified[fid]["owner_step_id"],
+                "mode": "ADDITIONAL",
+                "minutes_per_event": minutes,
+                "frequency": frequency,
+                "annual_additional_hours": round(minutes * events_per_year / 60, 2),
+            })
 
     if unallocated_frictions:
         gaps.append("DF062: falta atribución válida o frecuencia (posible solapamiento con DF039) para: " +
@@ -229,6 +258,8 @@ def project_session_time(request: TimeProjectionRequest) -> dict[str, Any]:
 
     return {
         "annual_cases": round(annual_cases, 2) if annual_cases is not None else None,
+        "step_breakdown": step_breakdown,
+        "additional_friction_breakdown": friction_breakdown,
         "active_minutes_per_case": round(active_per_case, 4) if not missing_active and included_steps else None,
         "wait_exposure_minutes_per_case": round(wait_exposure_per_case, 4) if not missing_wait and included_steps else None,
         "rework_minutes_per_case": round(rework_per_case, 4) if not missing_rework and included_steps else None,
