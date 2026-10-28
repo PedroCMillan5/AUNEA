@@ -279,6 +279,7 @@ function diagnosisProcessBaselineHtml(p,record){
     (gaps.length?'<div class="notice warn pg10-time-gaps"><b>Datos o atribuciones pendientes</b><ul>'+gaps.slice(0,5).map(g=>'<li>'+esc(g)+'</li>').join('')+'</ul></div>':'')+
     '</div>';
 }
+// [AUNEA-FE-PG10-PROCESS-BASELINE-091] END
 // [AUNEA-FE-PG10-ANALYSIS-UX-166] START — Source-owned economic/risk results with progressive evidence.
 // Source: backend EconomicsResult and RiskResult, DEC-034/050/068; no recomputation or scoring.
 function diagnosisEconomicsHtml(econ,record,projection){
