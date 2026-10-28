@@ -639,10 +639,19 @@ function asisBaselineHtml(e){
   if(data.status!=='ANALYZED')return '<div class="notice warn"><b>Análisis parcial: entradas o relaciones pendientes.</b> No se calculan resultados derivados con fuentes incoherentes.</div>'
     +asisCoverageHtml(e,data)+'<button class="btn btn-outline" id="analyzeAsisOnly">Volver a comprobar fuentes</button>';
   const record=asisAnalysisSource(e);
+  const subsection=(heading,content)=>'<section class="asis-baseline-result"><h3>'+esc(heading)+'</h3>'+content+'</section>';
+  const economic=data.economic_result;
+  const economicsNote=economic&&economic.status!=='COMPLETE'
+    ?'<div class="notice warn">La cobertura del análisis económico es '+esc(economic.status==='PARTIAL'?'parcial':'limitada')+'. Los importes registrados no representan por sí solos el coste total del proceso ni un ahorro alcanzable.</div>':'';
   return '<div class="notice good"><b>Análisis AS-IS calculado por backend.</b> Sin seleccionar tecnología, sin precios y sin nuevas respuestas al cliente. No constituye aún una recomendación de solución.</div>'
-    +(typeof diagnosisProcessBaselineHtml==='function'?diagnosisProcessBaselineHtml(data.process_time_projection,record):'')
-    +(typeof diagnosisFindingsHtml==='function'?diagnosisFindingsHtml(record,data.pain_results||[]):'')
-    +(typeof diagnosisRisksHtml==='function'&&data.risk_result?diagnosisRisksHtml(data.risk_result,record):'')
+    +subsection('Línea base temporal',typeof diagnosisProcessBaselineHtml==='function'
+      ?diagnosisProcessBaselineHtml(data.process_time_projection,record):'<p>La proyección temporal no está disponible.</p>')
+    +subsection('Problemas y evidencias',typeof diagnosisFindingsHtml==='function'
+      ?diagnosisFindingsHtml(record,data.pain_results||[]):'<p>No se dispone de resultados de problemas.</p>')
+    +subsection('Impacto económico registrado',economicsNote+(economic&&typeof diagnosisEconomicsHtml==='function'
+      ?diagnosisEconomicsHtml(economic,record):'<p>No se dispone de una cuantificación económica validada.</p>'))
+    +subsection('Riesgos y controles',data.risk_result&&typeof diagnosisRisksHtml==='function'
+      ?diagnosisRisksHtml(data.risk_result,record):'<p>No se dispone de resultados de riesgo.</p>')
     +'<button class="btn btn-outline" id="analyzeAsisOnly">Actualizar análisis con el AS-IS vigente</button>';
 }
 // [AUNEA-FE-ASIS-WORKBENCH-152] END
