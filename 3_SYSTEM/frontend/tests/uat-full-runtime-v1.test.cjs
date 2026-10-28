@@ -554,15 +554,22 @@ test('PG10: confirmed 100-field AS-IS exposes critical points, gaps and three co
    assert.equal(run('unresolvedEngineGates(currentEng()).length'),5);
    run("state.activePage='resultados';render()");
    const text=w.document.getElementById('content').textContent;
-   assert.match(text,/100 campos del modelo examinados/);
+   assert.match(text,/100 campos canónicos examinados/);
    assert.match(text,/puntos críticos|Puntos críticos/);
-   assert.match(text,/Optimización sin IA/);
-   assert.match(text,/Optimización asistida por IA/);
-   assert.match(text,/Rediseño y tecnología existente/);
-   assert.ok(w.document.getElementById('analyzeAsisOnly'),'preliminary AS-IS analysis remains available without selecting technologies');
-   assert.ok(w.document.querySelector('[data-draft-conditional-scenario="0"]'));
-   assert.equal(run('currentEng().diagnosticOutput||null'),null,'a preview cannot invent official recommendation');
-   assert.equal(run('JSON.stringify(confirmedSnapshot(currentEng()))'),before,'read-only exploration preserves the sealed capture exactly');
+   assert.doesNotMatch(text,/Optimización sin IA|Optimización asistida por IA|Rediseño y tecnología existente/,
+     'PG10 must not choose technologies before PG11');
+   assert.ok(w.document.getElementById('analyzeAsisOnly'),'AS-IS analysis remains available without solution gates');
+   assert.equal(w.document.querySelector('[data-draft-conditional-scenario="0"]'),null);
+   assert.equal(run('currentEng().diagnosticOutput||null'),null,'read-only diagnosis cannot invent a recommendation');
+   assert.equal(run('JSON.stringify(confirmedSnapshot(currentEng()))'),before,'the sealed AS-IS remains unchanged');
+   run("state.activePage='tobe';render()");
+   const tobeText=w.document.getElementById('content').textContent;
+   assert.match(tobeText,/Optimización sin IA/);
+   assert.match(tobeText,/Optimización asistida por IA/);
+   assert.match(tobeText,/Rediseño y tecnología existente/);
+   assert.equal(w.document.querySelectorAll('[data-draft-conditional-scenario]').length,3);
+   assert.equal(w.document.querySelectorAll('[data-draft-conditional-scenario]:disabled').length,3,
+     'no option can launch without the official diagnostic');
  }finally{dom.window.close()}
 });
 
