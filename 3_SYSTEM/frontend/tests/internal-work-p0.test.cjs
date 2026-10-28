@@ -415,7 +415,7 @@ test('PG10 temporal cards keep additional friction labour and declared E2E separ
   assert.match(fn,/annual_wait_exposure_hours/);
   assert.match(fn,/annual_rework_hours/);
   assert.match(fn,/asisSourceBoundary\(record,'DF026'\)/);
-  assert.match(fn,/Coherencia numérica: dentro del umbral de revisión/);
+  assert.match(fn,/Comparación numérica orientativa · tiempo de ciclo no conciliado/);
   assert.match(fn,/no horas laborales ni ahorro/);
   assert.match(workbench,/diagnosisProcessBaselineHtml\(data.process_time_projection,record\)/);
   assert.match(results,/diagnosisProcessBaselineHtml\(official.process_time_projection,record\)/);
@@ -911,11 +911,11 @@ test('PG10 renders numeric consistency without claiming elapsed reconciliation',
       active_time_loss:{value:5},time_attribution:{mode:'INCLUDED',step_id:'P4'}}],
     processSteps:[{id:'P4',step_name:'Registrar en ERP',rework_time:5}]};
   const html=build(base,record);
-  assert.match(html,/Coherencia numérica: dentro del umbral/);
+  assert.match(html,/Comparación numérica orientativa · tiempo de ciclo no conciliado/);
   assert.match(html,/250,6 min/);
   assert.match(html,/0,6 min/);
   assert.match(html,/0,24 %/);
-  assert.match(html,/no una duración cronológica demostrada/);
+  assert.match(html,/la proximidad de cifras no acredita el tiempo end-to-end/);
   assert.match(html,/Comprobación de posibles actividades coincidentes/);
   assert.match(html,/No se suma dos veces la fricción incluida/);
   assert.doesNotMatch(html,/Tiempo transcurrido confirmado|Ahorro demostrado/);
@@ -954,7 +954,7 @@ test('PG10 estimates annual operating labour from exact role-matched server brea
       x=>Number(x).toLocaleString('es-ES',{maximumFractionDigits:2})+' €',
       String,x=>Number(x).toLocaleString('es-ES',{maximumFractionDigits:2}),
       (key,value)=>value,(x)=>x,(_,x)=>x,x=>x);
-  const source={economicInputs:[
+  const source={frictions:[{id:'F2',client_label:'Falta de visibilidad',evidence_type:'HYPOTHESIS'}],economicInputs:[
     {driver_id:'ED01',role_or_resource:'Administración',capacity_cost_rate_eur_hour:32,
      evidence_type:'HYPOTHESIS'},
     {driver_id:'ED01',role_or_resource:'Dirección',capacity_cost_rate_eur_hour:40,
@@ -962,6 +962,7 @@ test('PG10 estimates annual operating labour from exact role-matched server brea
     {driver_id:'ED12',current_tool_cost_eur_annual:960,evidence_type:'HYPOTHESIS'}
   ]};
   const time={annual_active_hours:403.2,annual_friction_additional_hours:72,
+    additional_friction_breakdown:[{friction_id:'F2',owner_step_id:'P2',annual_additional_hours:72,minutes_per_event:10}],
     annual_total_active_hours:475.2,process_labor_capacity:{status:'COMPLETE',
     annual_labor_capacity_value_eur:15552,capacity_value_eur_per_case:10.8,covered_hours:475.2,
     role_breakdown:[
@@ -981,7 +982,7 @@ test('PG10 estimates annual operating labour from exact role-matched server brea
        annual_hours:240,hourly_rate:32,capacity_value:7680,evidence:['HYPOTHESIS']}
     ]}};
   const html=fn({current_tool_cost_eur_annual:960},source,time);
-  assert.match(html,/Valor anual del trabajo dedicado al proceso/);
+  assert.match(html,/Valor estimado de capacidad dedicada al proceso/);
   assert.match(html,/15\.552 €\/año/);
   assert.match(html,/Desglose anual por rol/);
   assert.match(html,/Administración/);
@@ -990,18 +991,26 @@ test('PG10 estimates annual operating labour from exact role-matched server brea
   assert.match(html,/43,2/);
   assert.match(html,/13\.824 €/);
   assert.match(html,/1\.?728 €/);
-  assert.match(html,/9,6 €/);
-  assert.match(html,/1,2 €/);
+  assert.match(html,/9,60\s*€/);
+  assert.match(html,/1,20\s*€/);
   assert.equal((html.match(/<tbody><tr>/g)||[]).length,1);
   assert.match(html,/<tfoot><tr><th scope="row">Total<\/th>/);
   assert.match(html,/Los importes corresponden a trabajo activo y fricciones adicionales atribuidas una sola vez/);
 
-  assert.match(html,/10,8 € de capacidad por factura/);
+  assert.match(html,/10,80\s*€ de capacidad por factura/);
   assert.match(html,/960 €\/año/);
   assert.match(html,/Hipótesis/);
   assert.match(html,/307,2 €\/año de capacidad teórica/);
   assert.match(html,/No se suma sin descartar solapamientos/);
   assert.match(html,/Ver cálculo por paso y tarifas aplicadas/);
+  assert.match(html,/Trabajo adicional: revisar su naturaleza antes de validar el coste/);
+  assert.match(html,/Falta de visibilidad/);
+  assert.match(html,/72 h\/año adicionales/);
+  assert.match(html,/10 min por ocurrencia/);
+  assert.match(html,/si describen una espera pasiva, la valoración debe corregirse/);
+  assert.match(html,/Estimación condicionada a la clasificación de trabajo activo/);
+  assert.doesNotMatch(html,/Coherencia numérica: dentro del umbral de revisión/);
+
   // Derived time and source economic entries must be visible in the SAME expanded panel.
   assert.match(html,/Ver detalle económico completo: cálculo y fuentes \(3 registros\)/);
   assert.match(html,/Trabajo y capacidad derivados del mapa AS-IS/);
