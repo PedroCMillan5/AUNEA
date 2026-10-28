@@ -277,7 +277,7 @@ function pg10SynthesisHtml(record,data){
     '<p class="field-help">Estos hallazgos no constituyen un ranking. Su orden ni la confianza asignada justifican por sí solos una prioridad analítica.</p>'+
     '<div class="notice info"><b>Límite de la interpretación</b><p>Las relaciones con pasos acreditan contexto, no causalidad ni ahorro futuro. Las magnitudes, unidades y evidencias se mantienen en el diagnóstico calculado.</p></div></div>';
 }
-function pg10ReviewHtml(e,official,analysis,miss,unresolved,freshness){
+function pg10ReviewHtml(e,official,analysis,miss,unresolved,freshness,recommendationReady){
   const available=!!official||analysis?.status==='ANALYZED';
   const msg=miss.length?'Existen '+miss.length+' datos obligatorios pendientes.':'Sin datos obligatorios pendientes en la captura.';
   const analyzed=available?'El análisis actual está disponible para revisar.':'Debes analizar el AS-IS y comprobar sus incidencias.';
@@ -285,7 +285,7 @@ function pg10ReviewHtml(e,official,analysis,miss,unresolved,freshness){
   const controls='<div class="pg10-review-actions">'+
     '<button class="btn btn-outline" data-page="proceso">Consultar fuentes AS-IS</button>'+
     '<button class="btn btn-outline" id="reviewEngineGates">Revisar decisiones técnicas</button>'+
-    (!official?'<button class="btn btn-primary" id="runDiag">'+(unresolved.length?'Evaluar condiciones para la recomendación':'Calcular recomendación y escenarios oficiales')+'</button>':
+    (!official?'<button class="btn btn-primary" id="runDiag">'+(recommendationReady?'Calcular recomendación y escenarios oficiales':'Evaluar condiciones para la recomendación')+'</button>':
       '<button class="btn btn-outline" id="runDiag">Recalcular resultado oficial</button>')+
     '<button class="btn btn-primary" data-page="tobe">'+(official?'Continuar al diseño TO-BE':'Consultar siguiente fase TO-BE')+'</button></div>';
   return '<div class="pg10-review-summary"><p>'+esc(msg)+' '+esc(analyzed)+'</p>'+
@@ -297,8 +297,8 @@ function pg10ReviewHtml(e,official,analysis,miss,unresolved,freshness){
 }
 function resultsPage(){
   const e=currentEng();
-  if(!e||!hasConfirmedEngagementSnapshot(e))
-    return pageTop('Diagnóstico interno','Confirma Validación y cierre antes de iniciar el análisis.','<button class="btn" data-page="diagnostico">Volver a Sesión 1</button>')+
+  if(!e) return pageTop('Diagnóstico interno','Confirma Validación y cierre antes de iniciar el análisis.','<button class="btn" data-page="diagnostico">Volver a Sesión 1</button>')+'<div class="empty">AS-IS confirmado requerido.</div>';
+  if(!hasConfirmedEngagementSnapshot(e)) return pageTop('Diagnóstico interno','Confirma Validación y cierre antes de iniciar el análisis.','<button class="btn" data-page="diagnostico">Volver a Sesión 1</button>')+
       '<div class="empty"><h2>AS-IS confirmado requerido</h2><p>Trabajo Interno consume el snapshot de PG09.</p></div>';
   const snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;
   const record=typeof engagementOfRecord==='function'?engagementOfRecord(e):e;
@@ -313,12 +313,14 @@ function resultsPage(){
   const missing=missingRequired(e);
   const unresolved=typeof unresolvedEngineGates==='function'?unresolvedEngineGates(e):[];
   const analyzed=!!official||asis?.status==='ANALYZED';
+  const recommendationReady=!!snap&&missing.length===0&&unresolved.length===0;
+  const confirmedCount=Array.isArray(data?.pain_results)?data.pain_results.filter(p=>p.state==='CONFIRMED').length:0;
   const heading='<div class="grid g4 diagnosis-readiness pg10-overview-metrics">'+
     '<div class="card metric"><small>AS-IS confirmado</small><strong>v'+esc(snap?.version||'—')+'</strong><span>Fuente del diagnóstico</span></div>'+
     '<div class="card metric"><small>Pasos activos</small><strong>'+steps.length+'</strong><span>'+fr.length+' fricciones · '+risks.length+' riesgos</span></div>'+
     '<div class="card metric"><small>Entradas económicas</small><strong>'+econ.length+'</strong><span>Registros, no ahorro estimado</span></div>'+
-    '<div class="card metric"><small>Estado del análisis</small><strong>'+(official?'Oficial':analyzed?'AS-IS':'Pendiente')+
-      '</strong><span>'+(data?.status==='INPUT_GAPS'?'Revisar fuentes y relaciones':analyzed?'Disponible para revisión':'Análisis sin calcular')+'</span></div></div>'+
+    '<div class="card metric"><small>'+(analyzed?'Hallazgos confirmados':'Estado del análisis')+'</small><strong>'+(analyzed?confirmedCount: 'Pendiente')+
+      '</strong><span>'+(data?.status==='INPUT_GAPS'?'Revisar fuentes y relaciones':official?'Resultado oficial vigente':analyzed?'AS-IS analizado':'Análisis sin calcular')+'</span></div></div>'+
     '<details class="pg10-stage-nav"><summary>Consultar las etapas del Trabajo Interno</summary>'+workbenchContinuityHtml(e)+'</details>';
   const reference='<div class="grid g3 diagnosis-reference-grid">'+
     '<div class="notice diagnosis-reference-card"><b>Duración end-to-end actual</b><div class="diagnosis-reference-value">'+esc(asisSourceBoundary(record,'DF026'))+'</div><p class="diagnosis-reference-note">Duración declarada; conciliación independiente.</p></div>'+
@@ -342,7 +344,7 @@ function resultsPage(){
     section('3. Integridad de datos y gaps','Cobertura, coherencia y evidencias, sin nueva captura de datos.',coverage)+
     section('4. Diagnóstico calculado','Problemas, tiempos, impactos y riesgos a partir de las fuentes confirmadas.',diagnostic)+
     section('5. Conclusiones y prioridades','Síntesis sin confundir prioridad declarada y confianza del motor.',pg10SynthesisHtml(record,data))+
-    section('6. Revisión y continuación','Revisar el diagnóstico, corregir únicamente en origen y continuar al TO-BE sin una aprobación nueva.',pg10ReviewHtml(e,official,asis,missing,unresolved,freshness));
+    section('6. Revisión y continuación','Revisar el diagnóstico, corregir únicamente en origen y continuar al TO-BE sin una aprobación nueva.',pg10ReviewHtml(e,official,asis,missing,unresolved,freshness,recommendationReady));
 }
 // [AUNEA-FE-PG10-WORKSPACE-167] END
 
