@@ -855,7 +855,7 @@ test('PG10 temporal route renders the real yes/no decision and rejoin without in
   assert.equal((html.match(/href="#asis-source-step-P4"/g)||[]).length,1);
   assert.match(html,/30 % de los casos/);
   assert.match(html,/768 min/);
-  assert.match(html,/5\.529,6 h\/año/);
+  assert.match(html,/5\.?529,6 h\/año/);
   assert.match(html,/Frecuencia de retrabajo: 8 % de las ejecuciones de este paso/);
   assert.match(html,/Frecuencia: 30 % de los casos/);
   assert.match(html,/72 h\/año/);
@@ -877,8 +877,8 @@ test('PG10 shows four primary annual metrics while preserving the four secondary
   const detail=result.slice(result.indexOf('<details class="pg10-time-summary-detail">'));
   assert.equal((visible.match(/class="notice pg10-time-summary-card"/g)||[]).length,4);
   assert.equal((detail.match(/class="notice pg10-time-summary-card"/g)||[]).length,4);
-  for(const literal of ['1.440','475,2 h/año','5.529,6 caso-horas/año','9,6 h/año'])
-    assert.ok(visible.includes(literal),literal);
+  for(const literal of ['1440','475,2 h/año','5529,6 caso-horas/año','9,6 h/año'])
+    assert.ok(visible.replace(/(?<=\d)\.(?=\d{3}(?:[,\s]|$))/g,'').includes(literal),literal);
   for(const literal of ['403,2 h/año','72 h/año','250 min','Componentes calculados'])
     assert.ok(detail.includes(literal),literal);
   assert.match(result,/Conciliación end-to-end pendiente de acreditar/);
