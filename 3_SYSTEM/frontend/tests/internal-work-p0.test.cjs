@@ -396,7 +396,7 @@ test('PG10 findings use canonical Spanish friction labels and show grounded trac
   assert.match(fn,/schema\.friction_pain_map/);
   assert.match(fn,/mapped\?\.Label_ES/);
   assert.doesNotMatch(fn,/ref\?\.Pain_Pattern/);
-  assert.match(results,/Causa declarada/);
+  assert.match(results,/Factores declarados \(no demuestran causa raíz\)/);
   assert.match(results,/Prioridad del cliente/);
   assert.match(results,/No registrada/);
   assert.match(results,/priorityKnown&&prioritySelected/);
@@ -415,7 +415,7 @@ test('PG10 temporal cards keep additional friction labour and declared E2E separ
   assert.match(fn,/annual_wait_exposure_hours/);
   assert.match(fn,/annual_rework_hours/);
   assert.match(fn,/asisSourceBoundary\(record,'DF026'\)/);
-  assert.match(fn,/Conciliación end-to-end pendiente de acreditar/);
+  assert.match(fn,/Coherencia numérica: dentro del umbral de revisión/);
   assert.match(fn,/no horas laborales ni ahorro/);
   assert.match(workbench,/diagnosisProcessBaselineHtml\(data.process_time_projection,record\)/);
   assert.match(results,/diagnosisProcessBaselineHtml\(official.process_time_projection,record\)/);
@@ -884,7 +884,60 @@ test('PG10 shows four primary annual metrics while preserving the four secondary
     assert.ok(visible.replace(/(?<=\d)\.(?=\d{3}(?:[,\s]|$))/g,'').includes(literal),literal);
   for(const literal of ['403,2 h/año','72 h/año','250 min','Componentes calculados'])
     assert.ok(detail.includes(literal),literal);
-  assert.match(result,/Conciliación end-to-end pendiente de acreditar/);
+  assert.match(result,/Comparación numérica no disponible/);
   assert.doesNotMatch(result,/ahorro acreditado de 475/);
 });
 // [AUNEA-UAT-PG10-TEMPORAL-ROUTES-170] END
+
+
+// [AUNEA-UAT-PG10-TEMPORAL-EXPLANATIONS-171] START — Coherence, source overlap, trace and risk.
+test('PG10 renders numeric consistency without claiming elapsed reconciliation',()=>{
+  const from=results.indexOf('function diagnosisProcessBaselineHtml(');
+  const to=results.indexOf('// [AUNEA-FE-PG10-ANALYSIS-UX-166] START',from);
+  const source=results.slice(from,to);
+  const build=new Function('num','esc','asisSourceBoundary','diagnosisProcessStepTimelineHtml',
+    source+'\nreturn diagnosisProcessBaselineHtml;')(
+      n=>Number(n).toLocaleString('es-ES',{maximumFractionDigits:2}),String,
+      ()=> '250 min',()=>'<p>Ruta temporal</p>');
+  const base={annual_cases:1440,annual_active_hours:403.2,
+    annual_total_active_hours:475.2,annual_wait_exposure_hours:5529.6,
+    annual_rework_hours:9.6,annual_friction_additional_hours:72,status:'CALCULATED',gaps:[],
+    numeric_comparison:{status:'WITHIN_REVIEW_THRESHOLD',declared_minutes:250,
+      component_minutes:250.6,difference_minutes:0.6,difference_percent:0.24,
+      review_threshold_percent:25,elapsed_reconciled:false}};
+  const record={frictions:[{id:'F1',client_label:'Reintroducción manual',
+      active_time_loss:{value:5},time_attribution:{mode:'INCLUDED',step_id:'P4'}}],
+    processSteps:[{id:'P4',step_name:'Registrar en ERP',rework_time:5}]};
+  const html=build(base,record);
+  assert.match(html,/Coherencia numérica: dentro del umbral/);
+  assert.match(html,/250,6 min/);
+  assert.match(html,/0,6 min/);
+  assert.match(html,/0,24 %/);
+  assert.match(html,/no una duración cronológica demostrada/);
+  assert.match(html,/Comprobación de posibles actividades coincidentes/);
+  assert.match(html,/No se suma dos veces la fricción incluida/);
+  assert.doesNotMatch(html,/Tiempo transcurrido confirmado|Ahorro demostrado/);
+  const incomplete=build({...base,numeric_comparison:{status:'UNAVAILABLE'}},record);
+  assert.match(incomplete,/Comparación numérica no disponible/);
+});
+test('PG10 shows source factors without asserting root cause; hides technical evidence by default',()=>{
+  const fn=results.slice(results.indexOf('function diagnosisFindingsHtml('),
+    results.indexOf('// [AUNEA-FE-PG10-STEP-TIMELINE-169] START'));
+  assert.match(fn,/Factores declarados \(no demuestran causa raíz\)/);
+  assert.match(fn,/No se ha acreditado una causa distinta/);
+  assert.match(fn,/pg10-technical-trace/);
+  assert.match(fn,/evidenceTypeBackend\(f.evidence_type\)/);
+  assert.doesNotMatch(fn,/f.id\|\|'Sin identificador'/);
+});
+test('PG10 explains monetary limits and risk triggers with existing source attributes',()=>{
+  const econ=results.slice(results.indexOf('function diagnosisEconomicsHtml('),
+    results.indexOf('function diagnosisRisksHtml('));
+  assert.match(econ,/tarifas horarias registradas no permiten cuantificar por sí solas/);
+  const risk=results.slice(results.indexOf('function diagnosisRisksHtml('),
+    results.indexOf('// [AUNEA-FE-PG10-ANALYSIS-UX-166] END'));
+  assert.match(risk,/r\.critical_trigger===true/);
+  assert.match(risk,/r\.sensitive_or_high_impact===true/);
+  assert.match(risk,/Sin controles declarados/);
+  assert.match(risk,/Fundamento registrado/);
+});
+// [AUNEA-UAT-PG10-TEMPORAL-EXPLANATIONS-171] END
