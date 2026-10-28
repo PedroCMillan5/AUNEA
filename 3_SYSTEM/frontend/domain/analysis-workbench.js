@@ -577,8 +577,19 @@ function asisCoverageHtml(e,baseline){
       return '<details><summary>'+esc(g.title)+' · '+g.filled+' de '+g.items.length+' con algún dato'+context+'</summary><ul>'+
         g.items.map(f=>{
           const note=fieldNote(f),actual=f.filled?asisFieldValueDisplay(f,record,snap):'';
-          return '<li><span>'+esc(f.label)+(actual?'<em class="asis-field-value">'+esc(actual)+'</em>':'')+
-            '</span>'+(note?'<small>'+esc(note)+'</small>':'')+'</li>';
+          // The full verified string is retained behind one intentional click for complex/repeatable values.
+          // This avoids turning a 100-field audit into a second, uncontrolled copy of the diagnosis.
+          const sourceCount=f.source?.count||0;
+          const expand=!!actual&&(sourceCount>1||actual.length>120||actual.includes(' | '));
+          const label='<span class="asis-ledger-label">'+esc(f.label)+'</span>';
+          const display=expand
+            ?'<details class="asis-ledger-value"><summary>'+
+              esc(sourceCount>1?sourceCount+' registros · Ver valores':'Ver respuesta completa')+
+              '</summary><div>'+esc(actual)+'</div></details>'
+            :actual?'<span class="asis-ledger-short-value">'+esc(actual)+'</span>':'';
+          return '<li class="asis-ledger-entry">'+label+
+            '<div class="asis-ledger-result">'+display+
+            (note?'<small class="asis-ledger-note">'+esc(note)+'</small>':'')+'</div></li>';
         }).join('')+'</ul></details>';
     }).join('')+'</details>';
   return '<div class="asis-coverage-overview"><b>'+total+' campos canónicos examinados</b>'+
