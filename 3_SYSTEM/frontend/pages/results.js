@@ -202,7 +202,7 @@ function diagnosisProcessStepTimelineHtml(p,record){
     '<p>Tiempo por ejecución de cada paso y su contribución anual calculada por el backend.</p></div>'+
     '<div class="pg10-time-legend"><span class="pg10-time-work">Trabajo</span><span class="pg10-time-wait">Espera</span><span class="pg10-time-rework">Retrabajo</span></div>'+
     routeHtml+'<ol class="pg10-time-route'+(branches.length?' pg10-time-route-branched':'')+'">'+cards+'</ol>'+
-    '<p class="field-help pg10-time-warning">El recorrido indica orden y bifurcaciones, no una escala cronológica. Las esperas pueden solaparse. Los minutos y horas mostrados no sustituyen los 250 minutos declarados ni acreditan ahorro.</p></section>';
+    '<p class="field-help pg10-time-warning">El recorrido indica orden y bifurcaciones, no una escala cronológica. Las esperas pueden solaparse. Los minutos y horas mostrados no sustituyen la duración end-to-end declarada ni acreditan ahorro.</p></section>';
 }
 // [AUNEA-FE-PG10-STEP-TIMELINE-169] END
 
@@ -213,17 +213,29 @@ function diagnosisProcessBaselineHtml(p,record){
   const cell=k=>p[k]==null?'No calculado':num(p[k]);
   const declared=record&&typeof asisSourceBoundary==='function'?asisSourceBoundary(record,'DF026'):'No disponible';
   const gaps=Array.isArray(p.gaps)?p.gaps:[];
-  return diagnosisProcessStepTimelineHtml(p,record)+`<div class="pg10-time-summary"><div class="pg10-temporal-heading"><h4>Resumen anual del proceso</h4><p>Las magnitudes anuales no equivalen a la duración de un expediente.</p></div><div class="grid g4 diagnosis-process-baseline">
-    <div class="notice"><b>Casos al año</b><br>${cell('annual_cases')}<small>Volumen habitual anualizado</small></div>
-    <div class="notice"><b>Trabajo activo de los pasos</b><br>${p.annual_active_hours==null?'No calculado':cell('annual_active_hours')+' h/año'}<small>Ponderado por recorrido; no incluye fricciones adicionales</small></div>
-    <div class="notice"><b>Trabajo adicional de fricciones</b><br>${p.annual_friction_additional_hours==null?'Pendiente de atribución':cell('annual_friction_additional_hours')+' h/año'}<small>Solo clasificaciones ADICIONAL con frecuencia y propietario válidos</small></div>
-    <div class="notice"><b>Trabajo activo total con adicionales</b><br>${p.annual_total_active_hours==null?'No conciliado':cell('annual_total_active_hours')+' h/año'}<small>Trabajo de pasos más adicionales válidos; excluye retrabajo y espera</small></div>
-    <div class="notice"><b>Exposición a espera</b><br>${p.annual_wait_exposure_hours==null?'No calculado':cell('annual_wait_exposure_hours')+' caso-horas/año'}<small>Espera pasiva, no horas laborales ni ahorro</small></div>
-    <div class="notice"><b>Retrabajo anual</b><br>${p.annual_rework_hours==null?'No calculado':cell('annual_rework_hours')+' h/año'}<small>Sin doble sumar fricciones incluidas o desglosadas</small></div>
-    <div class="notice"><b>Ciclo end-to-end declarado</b><br>${esc(declared)}<small>Referencia del diagnóstico (DF026); no se sustituye por una suma de exposiciones</small></div>
-    <div class="notice"><b>Estado de la proyección</b><br>${p.status==='CALCULATED'?'Componentes calculados':'Componentes incompletos'}<small>Calculado no significa ciclo conciliado ni ahorro acreditado</small></div>
-  </div><div class="notice info" style="margin-top:10px"><b>Conciliación end-to-end pendiente de acreditar</b><br>La proximidad entre componentes temporales y la duración declarada no demuestra equivalencia: hay que verificar fronteras, frecuencias y posibles solapamientos. No se convierten caso-horas de espera en coste de personal ni capacidad recuperable en ahorro de caja.</div>
-  ${gaps.length?'<div class="notice warn" style="margin-top:10px"><b>Datos o atribuciones pendientes</b><ul>'+gaps.slice(0,5).map(g=>'<li>'+esc(g)+'</li>').join('')+'</ul></div>':''}</div>`;
+  const card=(title,value,note)=>'<div class="notice pg10-time-summary-card"><b>'+esc(title)+'</b><strong>'+esc(value)+'</strong><small>'+esc(note)+'</small></div>';
+  const main=[
+    card('Casos al año',cell('annual_cases'),'Volumen habitual anualizado'),
+    card('Trabajo activo total',p.annual_total_active_hours==null?'No conciliado':cell('annual_total_active_hours')+' h/año','Trabajo ponderado de pasos y fricciones adicionales; excluye espera y retrabajo'),
+    card('Exposición a espera',p.annual_wait_exposure_hours==null?'No calculado':cell('annual_wait_exposure_hours')+' caso-horas/año','No son horas laborales ni duración elapsed'),
+    card('Retrabajo anual',p.annual_rework_hours==null?'No calculado':cell('annual_rework_hours')+' h/año','Frecuencias registradas; sin duplicar fricciones')
+  ].join('');
+  const additional=[
+    card('Trabajo activo de los pasos',p.annual_active_hours==null?'No calculado':cell('annual_active_hours')+' h/año','No incluye fricciones adicionales'),
+    card('Trabajo adicional de fricciones',p.annual_friction_additional_hours==null?'Pendiente de atribución':cell('annual_friction_additional_hours')+' h/año','Solo fricciones ADICIONAL con propietario y frecuencia válidos'),
+    card('Ciclo end-to-end declarado',declared,'Referencia declarada; no es la suma de exposiciones'),
+    card('Estado de la proyección',p.status==='CALCULATED'?'Componentes calculados':'Componentes incompletos','No equivale a tiempo de ciclo conciliado')
+  ].join('');
+  return diagnosisProcessStepTimelineHtml(p,record)+
+    '<div class="pg10-time-summary"><div class="pg10-temporal-heading"><h4>Resumen anual del proceso</h4>'+
+    '<p>Magnitudes de distinta naturaleza, no una única duración.</p></div>'+
+    '<div class="grid g4 diagnosis-process-baseline">'+main+'</div>'+
+    '<details class="pg10-time-summary-detail"><summary>Ver desglose de trabajo, ciclo declarado y estado del cálculo</summary>'+
+    '<div class="grid g4 diagnosis-process-baseline">'+additional+'</div></details>'+
+    '<div class="notice info pg10-time-reconciliation"><b>Conciliación end-to-end pendiente de acreditar</b>'+
+    '<p>La coincidencia aproximada entre componentes y duración declarada no demuestra equivalencia: hay que verificar fronteras, frecuencias y solapamientos. Las caso-horas de espera no se convierten en coste de personal ni en ahorro de caja.</p></div>'+
+    (gaps.length?'<div class="notice warn pg10-time-gaps"><b>Datos o atribuciones pendientes</b><ul>'+gaps.slice(0,5).map(g=>'<li>'+esc(g)+'</li>').join('')+'</ul></div>':'')+
+    '</div>';
 }
 // [AUNEA-FE-PG10-ANALYSIS-UX-166] START — Source-owned economic/risk results with progressive evidence.
 // Source: backend EconomicsResult and RiskResult, DEC-034/050/068; no recomputation or scoring.
