@@ -288,11 +288,30 @@ function diagnosisEconomicsHtml(econ,record,projection){
   // SOURCE: DEC-021/032/050/068, backend process_labor_capacity.
   const capacity=projection?.process_labor_capacity;
   const moneyValue=x=>typeof x==='number'&&Number.isFinite(x)?eur(x):'No calculado';
+  // Role sums come only from the source-matched backend step values. No new
+  // multiplication, waiting-cost assumption, savings claim or separate owner.
+  const roleRows=Array.isArray(capacity?.role_breakdown)?capacity.role_breakdown:[];
+  const roleTable=roleRows.length
+    ?'<div class="pg10-cost-roles"><h5>Desglose anual por rol</h5>'+
+      '<div class="pg10-cost-roles-scroll"><table><thead><tr><th scope="col">Rol</th>'+
+      '<th scope="col">Horas/año</th><th scope="col">Tarifa</th>'+
+      '<th scope="col">Valor anual</th><th scope="col">Por factura</th></tr></thead><tbody>'+
+      roleRows.map(x=>'<tr><th scope="row">'+esc(x.role||'Rol sin identificar')+'</th>'+
+        '<td>'+esc(x.annual_hours==null?'Pendiente':num(x.annual_hours))+'</td>'+
+        '<td>'+esc(x.hourly_rate==null?'Pendiente':moneyValue(x.hourly_rate)+'/h')+'</td>'+
+        '<td>'+esc(moneyValue(x.annual_capacity_value_eur))+'</td>'+
+        '<td>'+esc(moneyValue(x.capacity_value_eur_per_case))+'</td></tr>').join('')+
+      '</tbody><tfoot><tr><th scope="row">Total</th>'+
+      '<td>'+esc(num(capacity.covered_hours))+'</td><td>—</td>'+
+      '<td>'+esc(moneyValue(capacity.annual_labor_capacity_value_eur))+'</td>'+
+      '<td>'+esc(moneyValue(capacity.capacity_value_eur_per_case))+'</td></tr></tfoot></table></div>'+
+      '<p>Los importes corresponden a trabajo activo y fricciones adicionales atribuidas una sola vez. No incluyen la espera pasiva; el retrabajo permanece separado.</p></div>'
+    :'<p class="pg10-cost-roles-missing">El análisis guardado no incluye todavía el desglose por rol. Actualiza el análisis con el AS-IS vigente para obtenerlo.</p>';
   const costIntro=capacity?.status==='COMPLETE'
     ?'<div class="pg10-cost-estimate"><div><b>Valor anual del trabajo dedicado al proceso</b><strong>'+
       moneyValue(capacity.annual_labor_capacity_value_eur)+'/año</strong>'+
       '<small>' + (capacity.capacity_value_eur_per_case!=null?'Equivale a '+moneyValue(capacity.capacity_value_eur_per_case)+' de capacidad por factura. ':'') + 'Estimación con los tiempos de los pasos y las tarifas por rol registradas. No es gasto contable ni ahorro de caja.</small></div>'+
-      '<details><summary>Ver cálculo por paso y tarifas aplicadas</summary><div class="pg10-cost-steps">'+
+      roleTable+'<details><summary>Ver cálculo por paso y tarifas aplicadas</summary><div class="pg10-cost-steps">'+
       (capacity.steps||[]).map(s=>'<div><span>'+esc(s.step_name||'Paso')+' · '+esc(s.role||'Rol sin nombre')+
         '</span><b>'+esc(num(s.annual_hours))+' h/año × '+esc(eur(s.hourly_rate))+'/h = '+esc(moneyValue(s.capacity_value))+'</b></div>').join('')+
       '</div>'+(capacity.rework_separate_value_eur!=null
