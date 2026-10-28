@@ -323,15 +323,15 @@ function diagnosisEconomicsHtml(econ,record,projection){
       '<small>Calidad de la evidencia: '+esc(evidence(x))+'</small></li>';
   };
   const otherCards=[
-    positive(econ.capacity_value_eur_annual)?'<div class="notice"><b>Valor de capacidad registrado</b><strong>'+money(econ.capacity_value_eur_annual)+'</strong><small>No equivale a ahorro de caja.</small></div>':'',
+    positive(econ.capacity_value_eur_annual)?'<div class="notice"><b>Valor de capacidad registrado</b><strong>'+money(econ.capacity_value_eur_annual)+'</strong><small>No equivale a ahorro de caja ni debe sumarse a la valoración de los mismos pasos sin conciliar su origen.</small></div>':'',
     positive(econ.direct_loss_eur_annual)?'<div class="notice"><b>Pérdida directa registrada</b><strong>'+money(econ.direct_loss_eur_annual)+'</strong></div>':'',
     positive(econ.realized_cash_saving_eur_annual)?'<div class="notice"><b>Ahorro de caja realizado registrado</b><strong>'+money(econ.realized_cash_saving_eur_annual)+'</strong><small>No es una previsión futura.</small></div>':''
   ].filter(Boolean).join('');
   return costIntro+'<div class="grid g3 diagnosis-econ-grid">'+
     '<div class="notice"><b>Coste actual de herramientas registrado</b><strong>'+money(econ.current_tool_cost_eur_annual)+'</strong><small>Coste existente, no necesariamente eliminable.</small></div>'+
     (hasOther?otherCards:
-      '<div class="notice diagnosis-econ-uncertainty"><b>Otros impactos monetarios</b><strong>Sin importe positivo cuantificado</strong>'+
-      '<small>El resultado del motor no acredita pérdidas, capacidad recuperable ni ahorros de caja.</small></div>')+
+      '<div class="notice diagnosis-econ-uncertainty"><b>Pérdidas o ahorros de caja registrados</b><strong>Sin importe acreditado</strong>'+
+      '<small>La valoración del trabajo es capacidad ocupada, no una pérdida monetaria demostrada ni ahorro de caja recuperable.</small></div>')+
     '</div>'+
     '<p class="diagnosis-economic-scope">Los importes proceden de registros económicos confirmados; no sustituyen la duración del proceso ni prueban beneficios futuros.</p>'+
     '<p class="diagnosis-economic-scope">Las tarifas horarias registradas no permiten cuantificar por sí solas el coste de cada fricción: hacen falta horas atribuibles y una base monetaria compatible. No equivale a que el problema no tenga coste.</p>'+
