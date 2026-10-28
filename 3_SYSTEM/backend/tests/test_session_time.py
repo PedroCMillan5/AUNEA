@@ -423,6 +423,7 @@ def test_pg10_source_role_capacity_estimate_levante_sized_case_without_double_co
     result=estimate_process_labor_capacity(hours,steps,econ)
     assert result["status"]=="COMPLETE"
     assert result["annual_labor_capacity_value_eur"]==15552
+    assert result["capacity_value_eur_per_case"]==10.8
     assert result["covered_hours"]==475.2
     assert result["steps_valued"]==4
     assert result["rework_separate_value_eur"]==307.2
