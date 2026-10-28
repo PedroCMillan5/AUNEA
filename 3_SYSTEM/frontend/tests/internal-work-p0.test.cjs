@@ -194,7 +194,8 @@ test('PG10 coverage shows capture integrity, server sufficiency and consultant g
       e=>e,
       ()=>[{stage:'S01',title:'Contexto',filled:2,items:fields.map((f,i)=>({
         id:f.Field_ID,label:f.Pregunta_o_etiqueta_ES,status:i===0?'AVAILABLE':'NOT_CAPTURED_OR_CONDITIONAL',
-        filled:i===0,source:null,consumers:''
+        filled:i===0,source:i===0?{count:2,total:4}:null,
+        consumers:i===0?'Recommendation; Risk':''
       }))}],
       ()=>[],()=>[],
       ()=>({version:3}),
@@ -213,6 +214,12 @@ test('PG10 coverage shows capture integrity, server sufficiency and consultant g
   assert.match(empty,/No consta una evaluación vigente de las entradas del backend/);
   assert.match(empty,/Quedan 1 de 2 decisiones técnicas pendientes/);
   assert.match(empty,/Auditoría detallada: procedencia y estado de los 100 campos/);
+  assert.match(empty,/2 de 4 registros con dato/,'partial coverage must remain visible');
+  assert.match(empty,/1 parciales/,'group must show partial fields');
+  assert.match(empty,/Sin dato; comprobar si aplica/,'non-required absent fields retain a neutral note');
+  assert.doesNotMatch(empty,/Consumidores:|Recommendation; Risk/,'engine consumers are internal metadata');
+  assert.doesNotMatch(empty,/Dato accesible en su propietario|Derivación disponible/,'present values have no redundant badges');
+  assert.doesNotMatch(empty,/InputCoverageEngine/,'backend class name is not a consultant-facing label');
   assert.doesNotMatch(empty,/Todos los datos permiten recomendar una solución/);
   const blocked=fn(e,{input_coverage:{status:'BLOCKED',items:inputSource}});
   assert.match(blocked,/Entradas bloqueantes/);
