@@ -230,14 +230,14 @@ function diagnosisProcessBaselineHtml(p,record){
     &&Number.isFinite(numeric.difference_percent);
   const comparison=comparable
     ?'<div class="pg10-numeric-comparison"><b>'+
-      (numeric.status==='WITHIN_REVIEW_THRESHOLD'?'Coherencia numérica: dentro del umbral de revisión':'Diferencia temporal que requiere revisión')+'</b>'+
+      (numeric.status==='WITHIN_REVIEW_THRESHOLD'?'Comparación numérica orientativa · tiempo de ciclo no conciliado':'Diferencia temporal para revisar · tiempo de ciclo no conciliado')+'</b>'+
       '<div class="pg10-numeric-comparison-values">'+
       '<span>Declarado <strong>'+esc(num(numeric.declared_minutes))+' min</strong></span>'+
       '<span>Componentes ponderados <strong>'+esc(num(numeric.component_minutes))+' min</strong></span>'+
       '<span>Diferencia <strong>'+(numeric.difference_minutes>0?'+':'')+esc(num(numeric.difference_minutes))+
       ' min ('+(numeric.difference_percent>0?'+':'')+esc(num(numeric.difference_percent))+' %)</strong></span></div>'+
       '<p>Se aplica el umbral de revisión del ±'+esc(num(numeric.review_threshold_percent))+
-      ' % que ya utiliza el mapa AS-IS. Esto indica coherencia de cifras, no una duración cronológica demostrada. No convierte esperas en trabajo ni implica ahorros.</p></div>'
+      ' % que ya utiliza el mapa AS-IS es solo un umbral para revisar diferencias, no un criterio para validar la duración real. La suma incluye exposición a espera, que puede solaparse con otras actividades; la proximidad de cifras no acredita el tiempo end-to-end. No se monetiza la espera ni se infieren ahorros.</p></div>'
     :'<div class="notice info pg10-numeric-comparison"><b>Comparación numérica no disponible</b>'+
       '<p>Los componentes aún no son íntegramente comparables o el análisis es anterior a esta comprobación. Puedes actualizar el análisis, sin modificar datos confirmados.</p></div>';
   // Informative coincidence only: INCLUDED/BREAKDOWN never add time; matching minutes are not proof of duplication.
