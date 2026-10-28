@@ -837,7 +837,8 @@ test('PG10 temporal route renders the real yes/no decision and rejoin without in
       applies_to:{mode:'PERCENT',value:30}},
     {id:'P4',step_name:'Registrar en ERP',normal_next_step:'__END__',active_time:10,wait_time:0,rework_time:5,
       error_rate:{mode:'percent',value:8}}
-  ],frictions:[{id:'F2',client_label:'Seguimiento manual'}]};
+  ],frictions:[{id:'F2',client_label:'Seguimiento manual'},
+    {id:'F3',client_label:'Esperas por aprobación',affected_steps:['P3']}]};
   const proj={step_breakdown:record.processSteps.map(s=>({step_id:s.id,annual_active_hours:100,
     annual_wait_exposure_hours:s.id==='P3'?5529.6:0,
     annual_rework_hours:s.id==='P4'?9.6:0,
@@ -855,6 +856,8 @@ test('PG10 temporal route renders the real yes/no decision and rejoin without in
   assert.equal((html.match(/href="#asis-source-step-P4"/g)||[]).length,1);
   assert.match(html,/30 % de los casos/);
   assert.match(html,/768 min/);
+  assert.match(html,/Fricciones relacionadas con este paso: Esperas por aprobación/);
+  assert.match(html,/Relación contextual, sin duplicar la espera/);
   assert.match(html,/5\.?529,6 h\/año/);
   assert.match(html,/Frecuencia de retrabajo: 8 % de las ejecuciones de este paso/);
   assert.match(html,/Frecuencia: 30 % de los casos/);
