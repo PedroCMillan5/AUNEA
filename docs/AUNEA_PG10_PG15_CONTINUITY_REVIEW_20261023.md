@@ -334,3 +334,17 @@ A partir de la captura UAT de Levante se implementan los tres ajustes acordados 
 **UI:** `diagnosisEconomicsHtml` muestra importe anual y por factura, desglose por paso/rol/tarifa, calidad de hipótesis y alcance; distingue explícitamente capacidad de pérdidas/ahorros monetarios y conserva las tres entradas económicas. `diagnosisRisksHtml` reemplaza jargon por «Gravedad antes de controles», «Gravedad con controles registrados» y «Situación de los controles» con definiciones, resumen del peor nivel de los riesgos (no presupone misma gravedad en cada riesgo), atributos que dispararon la clasificación e indicación «no registrado» sin afirmar ausencia real de controles. Sin cambio de la lógica RiskEngine.
 
 **QA:** Backend `test_session_time.py` verifica 15.552€, 10,80€/factura, 307,20€ de retrabajo separado, ausencia de suma INCLUDED y casos de tarifa ambigua/ausente. Frontend `internal-work-p0.test.cjs` contrasta el desglose, la distinción de caja y capacidad, términos españoles y que las reglas y niveles de riesgo no se recalculan. Documentado en CODE_BLOCK_INDEX (bloques 172). Estado PG10 **REVIEW** hasta prueba visual de Levante y cierre del Acceptance Gate; no publicar como salida CANONICAL ni cambiar las reglas oficiales de Economics, Pricing o Scenario.
+
+
+### PG10 — Reparación definitiva del Acceptance Gate (28/10/2026)
+
+**Contexto:** el gate tenía 9 pruebas frontend fallidas en la rama (4 de cobertura y continuidad, 4 de Block_ID y 1 de puntos críticos). No correspondían a fallos de los nuevos motores de coste/riesgo; se ha comprobado la causa exacta en los logs de CI, sin declarar los errores como históricos por el mero hecho de que persistieran.
+
+**Corrección aplicada sobre el HEAD vigente:** los casos aislados de `asis-workbench-v1.test.cjs` ahora aportan `attr` al contexto VM, buscan el texto de cobertura real («100 campos canónicos examinados») y verifican las alternativas globalmente en PG11, no repetidas dentro de cada tarjeta PG10. `uat-full-runtime-v1.test.cjs` comprueba las seis secciones PG10 y separa explícitamente las tres vías tecnológicas de PG11; antes de entrar en PG11 registra sus páginas en jsdom, como hace el arranque real. `internal-work-p0.test.cjs` usa las etiquetas actuales del propietario de tiempos y evita que la auditoría interprete cadenas literales de búsqueda como marcadores de código. `results.js` cierra el bloque `AUNEA-FE-PG10-PROCESS-BASELINE-091`; el estilo del mapa usa un Block_ID propio `AUNEA-FE-PG10-MAP-NAV-STYLE-160`, y el test backend temporal uno distinto del frontend `AUNEA-UAT-BE-PG10-TIME-169`. El `CODE_BLOCK_INDEX.md` ya contiene los ocho nuevos registros correspondientes sin borrar trazabilidad existente.
+
+**QA final en commit `fce4527c84ee19d7651b8265b9dc55af28b532af`:**
+- Frontend Tests: **720 tests, 720 PASS, 0 FAIL**, ejecución `40718990702`.
+- AUNEA Internal V2 REVIEW Acceptance Gate: **SUCCESS**, ejecución `40718990264`: frontend PASS, backend PASS y browser_uat PASS.
+- No se cambian datos DF001–DF100, snapshot Levante, reglas de tiempos, economía, riesgos, precios, TO-BE ni estados de aprobación.
+
+**Estado de gobierno:** gate automatizado superado. La promoción de PG10 a CANONICAL o de la rama a producción sigue condicionada a UAT visual del consultor con el snapshot Levante (y controles de entrega vigentes). No se altera DECISIONES, ESTADO, ROADMAP ni Master Index por tratarse de corrección de test/higiene de código y documentación de continuidad. Registrar en BITÁCORA la incidencia y su resolución.
