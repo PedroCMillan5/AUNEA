@@ -307,6 +307,42 @@ test('PG10 covers real values only through verified fields and escaped text',()=
 });
 // [AUNEA-UAT-PG10-SOURCE-DATA-163] END
 
+// [AUNEA-UAT-PG10-LEDGER-UX-164] START — all source data readable without a wall of values.
+test('PG10 audit shows short values and hides long/repeated values in expandable row details',()=>{
+  const start=workbench.indexOf('function asisCoverageHtml(');
+  const end=workbench.indexOf('\nfunction ',start+10);
+  assert.ok(start>=0&&end>start);
+  const source=workbench.slice(start,end);
+  const fields=[{Field_ID:'DF037',Pregunta_o_etiqueta_ES:'Tiempo activo típico'},
+    {Field_ID:'DF011',Pregunta_o_etiqueta_ES:'Proceso'}];
+  const rows=[{id:'DF037',label:'Tiempo activo típico',status:'AVAILABLE',filled:true,
+    source:{count:3,total:3,owner:'step'},consumers:'Economic; Recommendation'},
+    {id:'DF011',label:'Proceso',status:'AVAILABLE',filled:true,source:null,consumers:'Recommendation'}];
+  const read=id=>id==='DF037'
+    ?'Paso 1: 5 min | Paso 2: 18 min | Paso 3: <no fiable>':'Recepción y registro de facturas';
+  const esc=x=>String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const render=new Function('schema','asisAnalysisSource','asisFieldInventory','canonicalMissingRequired',
+    'captureIntegrityIssues','asisAnalysisSnapshot','normalizeArray','esc','currentDiagnosticOutput',
+    'unresolvedEngineGates','ENGINE_GATE_CONTRACT','ENGINE_GATE_GUIDE',
+    'asisConfirmedDataHtml','asisFieldValueDisplay',
+    source+'\nreturn asisCoverageHtml;')(
+      {fields},e=>e,()=>[{stage:'S04',title:'Mapa AS-IS',items:rows,filled:2}],
+      ()=>[],()=>[],()=>({version:4}),x=>Array.isArray(x)?x:x?[x]:[],esc,()=>null,
+      ()=>[],[{key:'test'}],{},()=>'<section>Resumen confirmado</section>',
+      f=>read(f.id));
+  const html=render({id:'E',confirmedAsIs:true},null);
+  assert.match(html,/<details class="asis-field-ledger">/);
+  assert.match(html,/<details class="asis-ledger-value"><summary>3 registros · Ver valores<\/summary>/);
+  assert.match(html,/Paso 1: 5 min \| Paso 2: 18 min/);
+  assert.match(html,/&lt;no fiable&gt;/);
+  assert.doesNotMatch(html,/<no fiable>|Consumidores:|Economic; Recommendation/);
+  assert.match(html,/class="asis-ledger-short-value">Recepción y registro de facturas/);
+  assert.match(html,/Resumen confirmado/);
+  assert.doesNotMatch(html,/class="asis-ledger-short-value">Paso 1/);
+});
+// [AUNEA-UAT-PG10-LEDGER-UX-164] END
+
+
 
 
 
