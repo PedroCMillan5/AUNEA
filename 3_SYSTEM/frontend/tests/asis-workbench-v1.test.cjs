@@ -86,8 +86,9 @@ test('per-critical-step matrix presents three conditional options without preten
 test('no refactor of the confirmed AS-IS or official recommendation gate',()=>{
   assert.match(html,/domain\/analysis-workbench\.js/);
   assert.match(results,/asisPointCardsHtml\(record\)/);
-  assert.match(results,/asisCoverageHtml\(e,asisAnalysisResult\(e\)\)/);
-  assert.match(results,/runAsisAnalysis\(e\)/);
+  assert.match(results,/asisCoverageHtml\(e,official\?/);
+  assert.match(results,/asisBaselineHtml\(e\)/);
+  assert.match(source,/runAsisAnalysis\(e\)/);
   assert.match(adapter,/if\(unresolvedEngineGates\(e\)\.length\)\{openEngineGateReview\(\);return\}/);
   assert.doesNotMatch(source,/setAnswer\(|sealConfirmedSnapshot\(|e\.diagnosticOutput\s*=/);
 });
