@@ -2304,6 +2304,10 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 .pg10-cost-estimate details{margin-top:13px;border-top:1px solid var(--line,#d8dedc);padding-top:12px}
 .pg10-cost-estimate summary{font-size:12px;font-weight:700;cursor:pointer}
 .pg10-cost-estimate details>p{font-size:12px;line-height:1.6;margin:13px 0 0}
+.pg10-cost-conditional{margin:14px 0;padding:12px 0;border-top:1px solid var(--line,#d8dedc);border-bottom:1px solid var(--line,#d8dedc)}
+.pg10-cost-conditional>b{font-size:12px}
+.pg10-cost-conditional p,.pg10-cost-conditional li{font-size:12px;line-height:1.65}
+.pg10-cost-conditional ul{padding-left:18px;margin:10px 0 0}
 .pg10-cost-steps{display:grid;gap:0;margin-top:12px}
 .pg10-cost-steps>div{padding:10px 0;display:flex;justify-content:space-between;align-items:baseline;gap:10px;border-bottom:1px solid var(--line,#d8dedc);font-size:12px}
 .pg10-cost-steps b{font-size:12px;text-align:right}
