@@ -55,7 +55,7 @@ function makeCtx(uiMode){
 }
 
 test('resultsPage translates risk.residual_level/risk.status and pain state/confidence to Spanish, never the raw backend code',()=>{const ctx=makeCtx();ctx.__eng.diagnosticOutput={pain_results:[{pain_id:'P01',state:'CONFIRMED',confidence:'HIGH'}],economic_result:{},risk_result:{residual_level:'R2',status:'CONTROL_GAP'}};const html=ctx.resultsPage();assert.match(html,/Riesgo medio/);assert.match(html,/Brecha de control/);assert.match(html,/Confirmado/);assert.match(html,/Alta/);assert.doesNotMatch(html,/>CONTROL_GAP</);assert.doesNotMatch(html,/Estado: CONFIRMED/)});
-test('resultsPage falls back to "—" when risk/pain fields are not yet present',()=>{const ctx=makeCtx();ctx.__eng.diagnosticOutput={pain_results:[],economic_result:{},risk_result:{}};assert.match(ctx.resultsPage(),/<strong>—<\/strong><span><\/span>/)});
+test('resultsPage falls back to "—" when risk/pain fields are not yet present',()=>{const ctx=makeCtx();ctx.__eng.diagnosticOutput={pain_results:[],economic_result:{},risk_result:{}};assert.match(ctx.resultsPage(),/Hallazgos confirmados/);assert.doesNotMatch(ctx.resultsPage(),/>NaN<|>undefined</)});
 test('scenarioBody and quotePage translate scenario risk level and quote status to Spanish',()=>{const ctx=makeCtx();ctx.__eng.diagnosticOutput={optimal_scenario:{action_id:'A1',risk:{residual_level:'R3'},quote:{status:'BLOCKED'}},quote:{status:'BLOCKED'}};assert.match(ctx.scenarioBody(ctx.__eng.diagnosticOutput.optimal_scenario),/Riesgo crítico/);const html=ctx.quotePage();assert.match(html,/Bloqueada/);assert.doesNotMatch(html,/>BLOCKED</)});
 test('PG10 uses business-facing Hallazgos wording in the internal diagnosis workspace',()=>{const a=makeCtx('INTERNAL');a.__eng.diagnosticOutput={pain_results:[],economic_result:{},risk_result:{},recommendation:{rationale:[]}};assert.match(a.resultsPage(),/Hallazgos confirmados/);assert.doesNotMatch(a.resultsPage(),/Pains confirmados/)});
 test('the raw Pain_ID is not printed in the visible findings card',()=>{const ctx=makeCtx();ctx.__eng.diagnosticOutput={pain_results:[{pain_id:'P01',state:'CONFIRMED',confidence:'HIGH'}],economic_result:{},risk_result:{}};const html=ctx.resultsPage();assert.doesNotMatch(html,/<span class="code internal-only">P01<\/span>/);assert.match(html,/Ver trazabilidad del hallazgo/)});
@@ -84,8 +84,10 @@ test('PG10 readiness exposes an explicit backend execution action instead of a d
   const ctx=makeCtx();ctx.__eng.diagnosticOutput=null;ctx.__eng.lastEngineSnapshotVersion=null;
   const html=ctx.resultsPage();
   assert.match(html,/Diagnóstico interno/);
-  assert.match(html,/id="runDiag">Calcular recomendación y escenarios oficiales/);
-  assert.match(html,/Pain[\s\S]*Economics[\s\S]*Risk[\s\S]*Recommendation[\s\S]*Pricing[\s\S]*Scenario/);
+  assert.match(html,/id="runDiag">/);
+  assert.match(html,/3\. Integridad de datos y gaps/);
+  assert.match(html,/4\. Diagnóstico calculado/);
+  assert.match(html,/6\. Revisión y continuación/);
 });
 
 test('PG10 result renders diagnostic sections, traceability and the governed TO-BE handoff',()=>{
@@ -98,12 +100,13 @@ test('PG10 result renders diagnostic sections, traceability and the governed TO-
   ctx.__eng.risks=[{step_ids:['S1'],description:'Riesgo de error',likelihood_1_5:3,impact_1_5:4,controls_present:true}];
   ctx.__eng.diagnosticOutput={pain_results:[{pain_id:'P01',state:'CONFIRMED',confidence:'HIGH',rationale:'Se observa retrabajo'}],economic_result:{annual_active_hours:19.2,annual_wait_hours:0,direct_loss_eur_annual:0,current_tool_cost_eur_annual:0,realized_cash_saving_eur_annual:0},risk_result:{inherent_level:'R2',residual_level:'R1',status:'CONTROLLED',rationale:'Controles presentes'},recommendation:{action_id:'A1',functional_level_id:'N2',ai_level_id:'I1',confidence:'HIGH',rationale:['Estandarizar antes de automatizar']}};
   const html=ctx.resultsPage();
-  assert.match(html,/Mapa AS-IS con contexto de diagnóstico/);
+  assert.match(html,/2\. Estado actual y mapa AS-IS/);
   assert.match(html,/Información incompleta/);
   assert.match(html,/Validar factura/);
   assert.match(html,/19,2 h\/año/);
   assert.match(html,/Riesgo de error/);
-  assert.match(html,/Recomendación preliminar/);
+  assert.match(html,/5\. Conclusiones y prioridades/);
+  assert.doesNotMatch(html,/section\('Recomendación preliminar'/);
   assert.match(html,/Continuar al diseño TO-BE/);
 });
 
