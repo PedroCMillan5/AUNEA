@@ -425,8 +425,8 @@ test('PG10 EconomicInput cards distinguish zero, missing and unearned savings',(
   const start=results.indexOf('function diagnosisEconomicsHtml(');
   const end=results.indexOf('\nfunction ',start+10);
   const fn=results.slice(start,end);
-  assert.match(fn,/econ\.annual_active_hours==null/);
-  assert.match(fn,/econ\.annual_wait_hours==null/);
+  assert.match(fn,/inputs.some\(x=>x.annual_active_hours!=null\)/);
+  assert.match(fn,/inputs.some\(x=>x.annual_wait_hours!=null\)/);
   assert.match(fn,/money\(econ\.direct_loss_eur_annual\)/);
   assert.match(fn,/money\(econ\.realized_cash_saving_eur_annual\)/);
   assert.match(fn,/No es una previsión futura/);
@@ -643,7 +643,9 @@ test('PG10 compact economics preserves source records and leaves zero/unknown ou
   assert.match(html,/3 registros/);
   assert.ok(html.includes('32 €/hora de capacidad'));
   assert.ok(html.includes('40 €/hora de capacidad'));
-  assert.ok(html.includes('0 h/año'));
+  assert.match(html,/<b>Trabajo consignado en registros económicos<\/b><span>No consignado/);
+  assert.match(html,/<b>Espera consignada en registros económicos<\/b><span>No consignada/);
+  assert.doesNotMatch(html,/<b>Trabajo consignado en registros económicos<\/b><span>0 h\/año/);
   assert.equal((html.match(/<li>/g)||[]).length,3);
 });
 test('PG10 risk results remain grounded without displaying raw English rationale',()=>{
