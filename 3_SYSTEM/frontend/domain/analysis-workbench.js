@@ -574,7 +574,7 @@ function asisCoverageHtml(e,baseline){
       const missingRequired=g.items.filter(f=>f.status==='MISSING_REQUIRED').length;
       const context=(partialInGroup?' · '+partialInGroup+(partialInGroup===1?' campo parcial':' campos parciales'):'')+
         (missingRequired?' · '+missingRequired+' obligatorios pendientes':'');
-      return '<details><summary>'+esc(g.title)+' · '+g.filled+' de '+g.items.length+' con algún dato'+context+'</summary><ul>'+
+      return '<details name="asis-coverage-field-groups"><summary>'+esc(g.title)+' · '+g.filled+' de '+g.items.length+' con algún dato'+context+'</summary><ul>'+
         g.items.map(f=>{
           const note=fieldNote(f),actual=f.filled?asisFieldValueDisplay(f,record,snap):'';
           // The full verified string is retained behind one intentional click for complex/repeatable values.
