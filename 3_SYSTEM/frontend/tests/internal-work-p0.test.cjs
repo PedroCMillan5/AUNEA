@@ -40,10 +40,10 @@ test('all downstream diagnostic consumers use the current snapshot output',()=>{
 });
 
 test('Diagnóstico copy is conservative and keeps waiting separate',()=>{
-  assert.match(results,/Trabajo activo del proceso/);
+  assert.match(results,/Trabajo activo de los pasos/);
   assert.match(results,/EconomicInput/);
   assert.match(results,/Exposición a espera/);
-  assert.match(results,/no son horas laborales/);
+  assert.match(results,/no horas laborales ni ahorro/);
   assert.match(results,/no horas laborales ni ahorro|no se monetiza como trabajo/);
   assert.doesNotMatch(results,/Revisado: continuar a TO-BE/);
   assert.match(results,/Continuar al diseño TO-BE/);
@@ -161,8 +161,8 @@ test('PG10 coverage reads actual repeatable owners and identifies partial covera
   assert.match(workbench,/cobertura parcial/);
 });
 test('PG10 preparation distinguishes missing capture data from unresolved consultant gates',()=>{
-  assert.match(results,/miss\.length\?'Hay datos obligatorios de captura pendientes/);
-  assert.match(results,/Faltan decisiones técnicas del consultor/);
+  assert.match(results,/miss\.length\?'Existen '|miss\.length\?'Hay datos/);
+  assert.match(results,/decisiones técnicas sobre soluciones/);
   assert.match(results,/unresolved\.length/);
   assert.doesNotMatch(results,/Hay información obligatoria pendiente:/);
 });
@@ -418,7 +418,7 @@ test('PG10 temporal cards keep additional friction labour and declared E2E separ
   assert.match(fn,/Conciliación end-to-end pendiente de acreditar/);
   assert.match(fn,/no horas laborales ni ahorro/);
   assert.match(workbench,/diagnosisProcessBaselineHtml\(data.process_time_projection,record\)/);
-  assert.match(results,/diagnosisProcessBaselineHtml\(processTime,record\)/);
+  assert.match(results,/diagnosisProcessBaselineHtml\(official.process_time_projection,record\)/);
 });
 
 test('PG10 EconomicInput cards distinguish zero, missing and unearned savings',()=>{
@@ -515,15 +515,16 @@ test('PG10 compact hierarchy stays Spanish, responsive and does not duplicate th
   assert.match(css,/\.asis-point-review-grid/);
   assert.match(css,/\.asis-direction-source/);
   assert.match(css,/@media\(max-width:760px\)/);
-  assert.match(results,/<span>Problemas<\/span>/);
-  assert.match(results,/<span>Impacto económico<\/span>/);
+  assert.match(results,/5\. Conclusiones y prioridades/);
+  assert.match(results,/4\. Diagnóstico calculado/);
   assert.doesNotMatch(results,/<span>Recommendation<\/span>/);
   const start=results.indexOf('function resultsPage(');
   const end=results.indexOf('\nfunction ',start+10);
   const page=results.slice(start,end);
-  assert.equal(page.split("section('Mapa y puntos críticos del AS-IS'").length-1,1);
-  assert.equal(page.split("section('Alternativas de intervención a contrastar'").length-1,1);
-  assert.equal(page.split("section('Qué ocurrirá al calcular la recomendación'").length-1,1);
+  assert.equal(page.split("section('2. Estado actual y mapa AS-IS'").length-1,1);
+  assert.equal(page.split("section('5. Conclusiones y prioridades'").length-1,1);
+  assert.equal(page.split("section('6. Revisión y continuación'").length-1,1);
+  assert.doesNotMatch(page,/section\('Alternativas de intervención a contrastar'/);
 });
 // [AUNEA-UAT-PG10-COMPACT-158] END
 
@@ -531,8 +532,8 @@ test('PG10 compact hierarchy stays Spanish, responsive and does not duplicate th
 // [AUNEA-UAT-PG10-REFERENCE-159] START — Reference-card typography regression.
 test('PG10 reference cards always separate the value and its supporting explanation',()=>{
   const css=fs.readFileSync(path.join(root,'ui-system.css'),'utf8');
-  const pageStart=results.indexOf("section('Estado actual y tiempo de referencia'");
-  const pageEnd=results.indexOf("section('Mapa y puntos críticos del AS-IS'",pageStart);
+  const pageStart=results.indexOf("const reference='<div class=\"grid g3 diagnosis-reference-grid\"'");
+  const pageEnd=results.indexOf('const map=diagnosisReadonlyMap(e,record)',pageStart);
   const section=results.slice(pageStart,pageEnd);
   assert.ok(pageStart>=0&&pageEnd>pageStart);
   assert.equal(section.split('class="notice diagnosis-reference-card"').length-1,3);
