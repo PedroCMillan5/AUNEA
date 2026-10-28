@@ -117,56 +117,92 @@ function diagnosisProcessStepTimelineHtml(p,record){
   const steps=(record?.processSteps||[]).filter(s=>s.status!=='SUPERSEDED');
   const calculated=Array.isArray(p?.step_breakdown)?p.step_breakdown:[];
   const extras=Array.isArray(p?.additional_friction_breakdown)?p.additional_friction_breakdown:[];
-  const sourceFrictions=(record?.frictions||[]).filter(f=>f.status!=='SUPERSEDED');
-  const perStep=id=>calculated.find(x=>String(x.step_id)===String(id));
+  const frictions=(record?.frictions||[]).filter(f=>f.status!=='SUPERSEDED');
+  const byId=new Map(steps.map(s=>[String(s.id),s]));
+  const byCalc=id=>calculated.find(x=>String(x.step_id)===String(id));
   const minutes=x=>{
-    if(x===undefined||x===null||x==='')return 'Sin dato';
-    const n=typeof x==='object'?x.value:x;
-    return n===null||n===undefined||n===''||!Number.isFinite(Number(n))?'Sin dato':num(Number(n))+' min';
+    const v=x&&typeof x==='object'?x.value:x;
+    return v===null||v===undefined||v===''||!Number.isFinite(Number(v))?'Sin dato':num(Number(v))+' min';
   };
   const yearly=x=>x===null||x===undefined?'Sin cálculo anual':num(x)+' h/año';
-  const applicability=(step,breakdown)=>{
-    const value=breakdown?.applies_to||step.applies_to;
-    const mode=String(value?.mode||value||'ALL').toUpperCase();
-    if(mode==='ALL')return 'Todos los casos';
-    if(mode==='PERCENT'&&value?.value!=null)return num(value.value)+' % de los casos';
-    return 'Ruta condicional · proporción sin verificar';
+  const applicability=(s,b)=>{
+    const a=b?.applies_to??s.applies_to??{mode:'ALL'};
+    const mode=String(a?.mode||a||'ALL').toUpperCase();
+    return mode==='ALL'?'Todos los casos':
+      mode==='PERCENT'&&a?.value!=null&&Number(a.value)>=0&&Number(a.value)<=100
+        ?num(a.value)+' % de los casos':'Ruta condicional sin proporción acreditada';
   };
-  if(!steps.length)return '<p class="field-help">No se han registrado pasos activos para reconstruir el recorrido.</p>';
+  const eventFrequency=frequency=>{
+    if(!frequency||frequency.value===null||frequency.value===undefined)return 'Frecuencia no acreditada';
+    const amount=Number(frequency.value);
+    if(!Number.isFinite(amount)||amount<0)return 'Frecuencia no acreditada';
+    if(String(frequency.mode).toLowerCase()==='percent')return num(amount)+' % de los casos';
+    if(String(frequency.mode).toLowerCase()==='count'){
+      const period={case:'caso',month:'mes',year:'año',day:'día'}[frequency.period];
+      return period?num(amount)+' eventos por '+period:'Frecuencia sin periodo comparable';
+    }
+    return 'Frecuencia no comparable';
+  };
+  if(!steps.length)return '<p class="field-help">No existen pasos activos de los que mostrar tiempos.</p>';
+  // Read precisely the same YES/NO routes as the confirmed AS-IS map.
+  // Do not derive routing from a percentage or visual array position.
+  const branches=typeof processBranchStructure==='function'?processBranchStructure(record,steps).branches:[];
+  const routeHtml=branches.length?
+    '<div class="pg10-time-branches"><h5>Bifurcaciones del proceso confirmado</h5>'+
+    branches.map(branch=>{
+      const decision=byId.get(String(branch.decisionId));
+      const merge=branch.merge==='__END__'?'Fin del proceso':(byId.get(String(branch.merge))?.step_name||'Reincorporación no identificada');
+      const names=ids=>ids.map(id=>byId.get(String(id))?.step_name).filter(Boolean);
+      const describe=ids=>[...names(ids),merge].join(' → ');
+      return '<div class="pg10-time-branch"><b>Decisión: '+esc(decision?.step_name||'Paso de decisión')+'</b>'+
+        '<div class="pg10-time-branch-paths">'+
+        '<div class="pg10-time-branch-yes"><strong>Sí</strong><span>'+esc(describe(branch.yesSteps))+'</span></div>'+
+        '<div class="pg10-time-branch-no"><strong>No</strong><span>'+esc(describe(branch.noSteps))+'</span></div>'+
+        '</div></div>';
+    }).join('')+
+    '<p class="field-help">Rutas derivadas de los destinos confirmados del mapa. Cada paso aparece una sola vez en los datos temporales.</p></div>':'';
   const cards=steps.map((step,i)=>{
-    const b=perStep(step.id);
+    const b=byCalc(step.id);
     const work=b?.active_minutes_per_execution??step.active_time;
     const wait=b?.wait_minutes_per_execution??step.wait_time;
     const rework=b?.rework_minutes_per_event??step.rework_time;
+    const applicabilityText=applicability(step,b);
+    const rawRate=b?.error_rate??step.error_rate;
+    const reworkFrequency=rawRate&&typeof rawRate==='object'
+      ?(String(rawRate.mode||'percent').toLowerCase()==='percent'&&rawRate.value!=null
+        ?num(rawRate.value)+' % de las ejecuciones de este paso':'Frecuencia sin porcentaje comparable')
+      :rawRate!==undefined&&rawRate!==null&&rawRate!==''?num(rawRate)+' % de las ejecuciones de este paso':null;
     const extra=extras.filter(x=>String(x.owner_step_id)===String(step.id)).map(x=>{
-      const f=sourceFrictions.find(f=>String(f.id)===String(x.friction_id));
-      return '<li><span>'+esc(f?.client_label||f?.observable_signal||'Fricción adicional registrada')+'</span>'+
-       '<b>'+esc(minutes(x.minutes_per_event))+' por incidencia · '+esc(yearly(x.annual_additional_hours))+'</b></li>';
+      const f=frictions.find(f=>String(f.id)===String(x.friction_id));
+      return '<li><span>'+esc(f?.client_label||f?.observable_signal||'Trabajo adicional registrado')+'</span>'+
+        '<b>'+esc(minutes(x.minutes_per_event))+' por incidencia · '+esc(yearly(x.annual_additional_hours))+'</b>'+
+        '<small>Frecuencia: '+esc(eventFrequency(x.frequency))+'</small></li>';
     }).join('');
-    const annual=b?'<p class="pg10-time-year">Trabajo activo ponderado: <strong>'+esc(yearly(b.annual_active_hours))+'</strong>'+
-      (b.annual_wait_exposure_hours!=null?'<span>Espera: '+esc(yearly(b.annual_wait_exposure_hours))+'</span>':'')+
-      (b.annual_rework_hours!=null?'<span>Retrabajo: '+esc(yearly(b.annual_rework_hours))+'</span>':'')+'</p>'
-      :'<p class="pg10-time-year">Desglose anual por paso no disponible; vuelve a calcular para consultar el dato del backend.</p>';
+    const annual=b?
+      '<div class="pg10-time-year"><b>Aportación anual ponderada</b>'+
+      '<div>Trabajo: <strong>'+esc(yearly(b.annual_active_hours))+'</strong></div>'+
+      (b.annual_wait_exposure_hours!=null?'<div>Exposición a espera: '+esc(yearly(b.annual_wait_exposure_hours))+'</div>':'')+
+      (b.annual_rework_hours!=null?'<div>Retrabajo: '+esc(yearly(b.annual_rework_hours))+'</div>':'')+
+      '</div>':
+      '<div class="pg10-time-year"><small>Desglose anual por paso no disponible; recalcula el AS-IS para obtenerlo del backend.</small></div>';
     const repeat=Number(b?.occurrences_per_case??step.occurrences_per_case??1);
-    return '<li class="pg10-time-step">'+
-      '<div class="pg10-time-node"><span>'+esc(String(i+1))+'</span></div>'+
+    return '<li class="pg10-time-step"><div class="pg10-time-node"><span>'+esc(String(i+1))+'</span></div>'+
       '<div class="pg10-time-card"><div class="pg10-time-card-header"><b>'+esc(step.step_name||'Paso sin nombre')+'</b>'+
-      '<small>'+esc(applicability(step,b))+(Number.isFinite(repeat)&&repeat>1?' · '+esc(String(repeat))+' veces por caso':'')+'</small></div>'+
+      '<small>'+esc(applicabilityText)+(Number.isFinite(repeat)&&repeat>1?' · '+esc(String(repeat))+' veces por caso':'')+'</small></div>'+
       '<div class="pg10-time-lanes">'+
       '<div class="pg10-time-lane pg10-time-work"><span>Trabajo</span><strong>'+esc(minutes(work))+'</strong></div>'+
       '<div class="pg10-time-lane pg10-time-wait"><span>Espera</span><strong>'+esc(minutes(wait))+'</strong></div>'+
-      '<div class="pg10-time-lane pg10-time-rework"><span>Retrabajo por incidencia</span><strong>'+esc(minutes(rework))+'</strong></div>'+
-      '</div>'+annual+
-      (extra?'<div class="pg10-time-extra"><b>Trabajo adicional atribuido a este paso</b><ul>'+extra+'</ul></div>':'')+
-      '<a href="#asis-source-step-'+attr(String(step.id))+'" class="pg10-time-source">Consultar este paso en el mapa y su ficha</a>'+
-      '</div></li>';
+      '<div class="pg10-time-lane pg10-time-rework"><span>Retrabajo por incidencia</span><strong>'+esc(minutes(rework))+'</strong></div></div>'+
+      (Number(wait)>0?'<p class="pg10-time-explainer">Espera en '+esc(applicabilityText.toLowerCase())+'; exposición pasiva, no trabajo activo.</p>':'')+
+      (Number(rework)>0?'<p class="pg10-time-explainer">Frecuencia de retrabajo: '+esc(reworkFrequency||'no acreditada')+'.</p>':'')+
+      annual+(extra?'<div class="pg10-time-extra"><b>Trabajo adicional atribuido a este paso</b><ul>'+extra+'</ul></div>':'')+
+      '<a href="#asis-source-step-'+attr(String(step.id))+'" class="pg10-time-source">Consultar este paso en el mapa y su ficha</a></div></li>';
   }).join('');
   return '<section class="pg10-temporal-walkthrough"><div class="pg10-temporal-heading"><h4>Recorrido temporal por pasos</h4>'+
-    '<p>Minutos registrados por ejecución de cada paso; las horas anuales ponderadas proceden del backend.</p></div>'+
+    '<p>Tiempo por ejecución de cada paso y su contribución anual calculada por el backend.</p></div>'+
     '<div class="pg10-time-legend"><span class="pg10-time-work">Trabajo</span><span class="pg10-time-wait">Espera</span><span class="pg10-time-rework">Retrabajo</span></div>'+
-    '<ol class="pg10-time-route">'+cards+'</ol>'+
-    '<p class="field-help pg10-time-warning">La línea representa el orden de los pasos, no una escala cronológica. Los recorridos condicionales se ponderan en el backend. Las esperas pueden solaparse; los minutos por paso no sustituyen el ciclo end-to-end declarado.</p>'+
-    '</section>';
+    routeHtml+'<ol class="pg10-time-route'+(branches.length?' pg10-time-route-branched':'')+'">'+cards+'</ol>'+
+    '<p class="field-help pg10-time-warning">El recorrido indica orden y bifurcaciones, no una escala cronológica. Las esperas pueden solaparse. Los minutos y horas mostrados no sustituyen los 250 minutos declarados ni acreditan ahorro.</p></section>';
 }
 // [AUNEA-FE-PG10-STEP-TIMELINE-169] END
 
