@@ -188,7 +188,7 @@ test('PG10 coverage shows capture integrity, server sufficiency and consultant g
   ];
   const fn=new Function('schema','asisAnalysisSource','asisFieldInventory','canonicalMissingRequired',
     'captureIntegrityIssues','asisAnalysisSnapshot','normalizeArray','esc',
-    'currentDiagnosticOutput','unresolvedEngineGates','ENGINE_GATE_CONTRACT','ENGINE_GATE_GUIDE',
+    'currentDiagnosticOutput','unresolvedEngineGates','ENGINE_GATE_CONTRACT','ENGINE_GATE_GUIDE','asisConfirmedDataHtml',
     extract('asisCoverageHtml')+'\nreturn asisCoverageHtml;')(
       {fields},
       e=>e,
@@ -204,7 +204,8 @@ test('PG10 coverage shows capture integrity, server sufficiency and consultant g
       ()=>null,
       ()=>[{key:'existing_tool_can_close',label:'¿Herramientas existentes?'}],
       [{key:'existing_tool_can_close'},{key:'process_design_first'}],
-      {existing_tool_can_close:{title:'¿Las herramientas actuales pueden resolver el problema?'}}
+      {existing_tool_can_close:{title:'¿Las herramientas actuales pueden resolver el problema?'}},
+      ()=>'<section>Datos del AS-IS confirmado</section>'
   );
   const e={id:'TEST-ENG',confirmedAsIs:true};
   const empty=fn(e,null);
@@ -241,6 +242,70 @@ test('PG10 source audit counts only backend-aligned fields, not similar-looking 
   assert.doesNotMatch(workbench,/fid==='DF057'&&present\(x\.friction_type\)/);
 });
 // [AUNEA-UAT-PG10-COVERAGE-162] END
+
+// [AUNEA-UAT-PG10-SOURCE-DATA-163] START — real values, evidence and snapshot insulation.
+test('PG10 renders true registered values from sealed snapshot, not just field-presence markers',()=>{
+  const extract=name=>{
+    const from=workbench.indexOf('function '+name+'('),to=workbench.indexOf('\nfunction ',from+10);
+    assert.ok(from>=0&&to>from,name+' must exist');
+    return workbench.slice(from,to);
+  };
+  const fields=[
+    {Field_ID:'DF021',Option_Set_ID:null},{Field_ID:'DF022',Option_Set_ID:'OS_PERIOD'},
+    {Field_ID:'DF025',Option_Set_ID:null},{Field_ID:'DF026',Option_Set_ID:null},
+    {Field_ID:'DF037',Option_Set_ID:null},{Field_ID:'DF056',Option_Set_ID:'OS_FRICTION_TYPE'},
+    {Field_ID:'DF060',Option_Set_ID:null},{Field_ID:'DF070',Option_Set_ID:null},
+    {Field_ID:'DF086',Option_Set_ID:'OS_FUTURE_OUTCOME'}
+  ];
+  const schema={fields};
+  const snap={version:4,company:{name:'Empresa sellada'},processName:'Facturas selladas',
+    answers:{DF021:120,DF022:'MONTH',DF025:{value:48,unit:'h'},DF026:{value:250,unit:'min'},DF086:['VISIBILITY']},
+    processSteps:[{id:'P1',step_name:'Recibir',active_time:3,wait_time:0,rework_time:0},
+      {id:'P2',step_name:'Registrar',active_time:10,wait_time:15,rework_time:5}],
+    frictions:[{id:'F1',client_label:'Doble entrada',frequency:{mode:'percent',value:25}}],
+    risks:[{id:'R1',description:'Error en datos',likelihood_1_5:2,impact_1_5:4}],
+    economicInputs:[{driver_id:'ED14',role_or_resource:'ADMIN',value:120,unit:'h',period:'month',
+      capacity_cost_rate_eur_hour:32,evidence_type:'EV04'}]
+  };
+  const source={answers:snap.answers,processSteps:snap.processSteps,frictions:snap.frictions,
+    risks:snap.risks,economicInputs:snap.economicInputs};
+  const translate=(set,value)=>({OS_PERIOD:{MONTH:'mes'},OS_FUTURE_OUTCOME:{VISIBILITY:'Visibilidad'},
+    OS_EVIDENCE_TYPE:{EV04:'Hipótesis'}})[set]?.[value]||value;
+  const esc=x=>String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const fn=new Function('schema','asisAnalysisSnapshot','asisAnalysisSource','esc','labelFrom','econDriverLabel',
+    extract('asisReadableValue')+'\n'+extract('asisConfirmedDataHtml')+'\nreturn {asisReadableValue,asisConfirmedDataHtml};')
+    (schema,()=>snap,()=>source,esc,translate,id=>id==='ED14'?'Coste de capacidad':id);
+  const html=fn.asisConfirmedDataHtml({answers:{DF021:9999},company:{name:'Empresa CRM modificada'}});
+  assert.match(html,/Empresa sellada/);
+  assert.doesNotMatch(html,/Empresa CRM modificada|9\.999/);
+  assert.match(html,/120 \/ mes/);
+  assert.match(html,/250 min/);
+  assert.match(html,/48 h/);
+  assert.match(html,/Recibir/);
+  assert.match(html,/trabajo 3 min/);
+  assert.match(html,/espera 15 min/);
+  assert.match(html,/Doble entrada/);
+  assert.match(html,/Error en datos/);
+  assert.match(html,/32 €/);
+  assert.match(html,/Hipótesis/);
+  assert.doesNotMatch(html,/ahorro demostrado 32/);
+  const ownerFn=new Function('schema','asisReadableValue','econDriverLabel','effectiveValue',
+    extract('asisFieldValueDisplay')+'\nreturn asisFieldValueDisplay;')(
+      schema,fn.asisReadableValue,()=>'Coste de capacidad',()=>null);
+  assert.equal(ownerFn({id:'DF037',source:{owner:'step',key:'active_time',rows:snap.processSteps}},
+    source,snap),'Paso 1: 3 min | Paso 2: 10 min');
+  assert.equal(ownerFn({id:'DF070',source:{owner:'risk',key:'likelihood_1_5',rows:snap.risks}},
+    source,snap),'Riesgo 1: 2/5');
+});
+test('PG10 covers real values only through verified fields and escaped text',()=>{
+  assert.match(workbench,/asisConfirmedDataHtml\(e\)\+ledger/);
+  assert.match(workbench,/f\.filled\?asisFieldValueDisplay\(f,record,snap\)/);
+  assert.match(workbench,/esc\(actual\)/);
+  assert.match(workbench,/const snap=asisAnalysisSnapshot\(e\)/);
+  assert.match(workbench,/No existe un snapshot confirmado/);
+});
+// [AUNEA-UAT-PG10-SOURCE-DATA-163] END
+
 
 
 
