@@ -85,7 +85,7 @@ function diagnosisFindingsHtml(record,pains){
       <div class="diagnosis-trace-grid">
         <div><small>Dónde</small><b>${esc(steps.join(' · ')||'Sin paso trazable')}</b></div>
         <div><small>Fricción observada</small><b>${esc(frictionText.join(' · ')||'Sin fricción enlazada')}</b></div>
-        ${distinctCauses.length?'<div><small>Causa declarada</small><b>'+esc(distinctCauses.join(' · '))+'</b></div>':''}
+        <div><small>Factores declarados (no demuestran causa raíz)</small><b>${esc(distinctCauses.join(' · ')||'No se ha acreditado una causa distinta del problema observado')}</b></div>
         <div><small>Evidencia registrada</small><b>${esc(evidence.join(' · ')||'Sin descripción adicional')}</b></div>
         ${priorityKnown&&prioritySelected?'<div><small>Prioridad del cliente</small><b>Seleccionada</b></div>':''}
       </div>
@@ -95,14 +95,20 @@ function diagnosisFindingsHtml(record,pains){
         <div class="notice info"><b>Origen del análisis</b><br>Hallazgo producido por el motor a partir del diagnóstico confirmado. La relación con los pasos se obtiene de los vínculos registrados, no demuestra por sí sola causalidad.</div>
         <div class="diagnosis-trace-grid">
           <div><small>Pasos relacionados</small><b>${esc(steps.join(' · ')||'Sin paso enlazado: revisar atribución')}</b></div>
-          <div><small>Fricciones de origen</small><b>${esc(trace.frictions.map(f=>[f.id||'Sin identificador',f.client_label||labelFrom('OS_FRICTION_TYPE',f.friction_type),f.evidence_type||'Evidencia no clasificada'].filter(Boolean).join(' · ')).join(' | ')||'Sin fricción enlazada')}</b></div>
-          <div><small>Eventos económicos con pasos compartidos (relación contextual, no causal)</small><b>${esc(trace.economics.map(x=>[x.deduplication_key||'Evento sin clave',typeof econDriverLabel==='function'?econDriverLabel(x.driver_id):x.driver_id,x.evidence_type||'Evidencia sin clasificar'].join(' · ')).join(' | ')||'Sin registro económico enlazado')}</b></div>
+          <div><small>Fricciones de origen</small><b>${esc(trace.frictions.map(f=>[f.client_label||labelFrom('OS_FRICTION_TYPE',f.friction_type),
+            f.evidence_type?engineLabel('evidence_quality',evidenceTypeBackend(f.evidence_type)):'Sin calidad de evidencia registrada'].filter(Boolean).join(' · ')).join(' | ')||'Sin fricción enlazada')}</b></div>
+          <div><small>Eventos económicos con pasos compartidos (relación contextual, no causal)</small><b>${esc(trace.economics.map(x=>[typeof econDriverLabel==='function'?econDriverLabel(x.driver_id):'Registro económico',
+            x.evidence_type?engineLabel('evidence_quality',evidenceTypeBackend(x.evidence_type)):'Sin calidad de evidencia registrada'].join(' · ')).join(' | ')||'Sin registro económico enlazado')}</b></div>
           <div><small>Riesgos en esos pasos</small><b>${esc(trace.risks.map(r=>r.description||labelFrom('OS_RISK_CATEGORY',r.category)).join(' · ')||'Sin riesgo enlazado')}</b></div>
           <div><small>Impactos relacionados por pasos compartidos</small><b>${esc(impacts.join(' · ')||'Sin registro enlazado')}</b><small>La relación es contextual: no permite asignar pérdidas ni ahorros a este hallazgo.</small></div>
           <div><small>Prioridad del cliente</small><b>${priorityKnown?(prioritySelected?'Seleccionada':'No seleccionada'):'No registrada'}</b></div>
           <div><small>Estado del motor</small><b>${esc(p.state?engineLabel('pain_state',p.state):'Pendiente')} · Confianza: ${esc(confidenceText)}</b><small>Clasificación basada en el tipo de evidencia disponible; no equivale a validación adicional del cliente.</small></div>
           <div><small>Fuente editable</small><b>AS-IS confirmado · Revisar AS-IS para corregir el origen; después recalcular</b></div>
         </div>
+        <details class="pg10-technical-trace"><summary>Consultar identificadores técnicos de la fuente</summary>
+          <p>${esc(trace.frictions.map(f=>'Fricción: '+String(f.id||'sin ID')+' · Evidencia: '+String(f.evidence_type||'sin código')).join(' | ')||'Sin fricción enlazada')}</p>
+          <p>${esc(trace.economics.map(x=>'Evento: '+String(x.deduplication_key||'sin clave')+' · Evidencia: '+String(x.evidence_type||'sin código')).join(' | ')||'Sin evento económico enlazado')}</p>
+        </details>
         <button type="button" class="btn btn-outline" data-page="proceso">Revisar AS-IS de origen</button>
       </details>
 
@@ -304,6 +310,7 @@ function diagnosisEconomicsHtml(econ,record){
       '<small>El resultado del motor no acredita pérdidas, capacidad recuperable ni ahorros de caja.</small></div>')+
     '</div>'+
     '<p class="diagnosis-economic-scope">Los importes proceden de registros económicos confirmados; no sustituyen la duración del proceso ni prueban beneficios futuros.</p>'+
+    '<p class="diagnosis-economic-scope">Las tarifas horarias registradas no permiten cuantificar por sí solas el coste de cada fricción: hacen falta horas atribuibles y una base monetaria compatible. No equivale a que el problema no tenga coste.</p>'+
     '<details class="diagnosis-economic-detail"><summary>Ver detalle de horas, importes y fuentes ('+inputs.length+' registros)</summary>'+
       '<div class="grid g3 diagnosis-economic-source-values">'+
         '<div><b>Trabajo en registros económicos</b><span>'+ (econ.annual_active_hours==null?'No cuantificado':num(econ.annual_active_hours)+' h/año') +'</span></div>'+
@@ -326,11 +333,21 @@ function diagnosisRisksHtml(risk,record){
     '<div class="notice"><b>Riesgo residual</b><strong>'+level(risk.residual_level)+'</strong><small>Tras aplicar los controles declarados.</small></div>'+
     '<div class="notice"><b>Estado de control</b><strong>'+(risk.status?esc(engineLabel('risk_status',risk.status)):'No determinado')+'</strong>'+
        (controlMissing?'<small>'+controlMissing+' de '+rows.length+' riesgos sin controles registrados.</small>':'')+'</div></div>';
+  const riskReason=r=>{
+    const factors=[];
+    if(r.critical_trigger===true)factors.push('Criticidad específica declarada');
+    if(r.sensitive_or_high_impact===true&&Number(r.impact_1_5)>=4)
+      factors.push('Datos sensibles o alto impacto con impacto '+esc(String(r.impact_1_5))+'/5');
+    if(!factors.length&&Number(r.impact_1_5)>=4)factors.push('Impacto alto declarado: '+esc(String(r.impact_1_5))+'/5');
+    if(r.controls_present===false)factors.push('Sin controles declarados: no se justifica reducción del nivel residual');
+    return factors.join(' · ')||'La evidencia estructurada no permite detallar el criterio: revisar los atributos del riesgo';
+  };
   const items=rows.length?'<div class="result-list diagnosis-risk-list">'+rows.map(r=>
     '<div class="result-item"><b>'+esc(r.description||labelFrom('OS_RISK_CATEGORY',r.category))+'</b>'+
     '<p>Pasos: '+esc(normalizeArray(r.step_ids).map(id=>diagnosisStepName(record,id)).join(' · ')||'Sin paso enlazado')+
     ' · Probabilidad '+esc(r.likelihood_1_5??'—')+'/5 · Impacto '+esc(r.impact_1_5??'—')+
-    '/5 · Controles: '+(r.controls_present===true?'Sí':r.controls_present===false?'No':'Sin determinar')+'</p></div>').join('')+'</div>':'';
+    '/5 · Controles: '+(r.controls_present===true?'Sí':r.controls_present===false?'No':'Sin determinar')+'</p>'+
+    '<p class="pg10-risk-explanation"><b>Fundamento registrado:</b> '+riskReason(r)+'</p></div>').join('')+'</div>':'';
   return summary+
     '<p class="diagnosis-risk-interpretation">La valoración procede de los riesgos y controles registrados. El resultado no verifica por sí solo la eficacia de los controles.</p>'+
     items;
