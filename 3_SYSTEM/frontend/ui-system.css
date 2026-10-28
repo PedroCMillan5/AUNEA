@@ -2018,7 +2018,7 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
   .asis-field-ledger li{display:block}
   .asis-field-ledger li small{text-align:left;display:block;margin-top:4px}
 }
-/* [AUNEA-FE-PG10-MAP-NAV-160] START — Focus and selected point without editing the source graph. */
+/* [AUNEA-FE-PG10-MAP-NAV-STYLE-160] START — Focus and selected point without editing the source graph. */
 .process-graph-readonly .process-graph-cell.diagnosis-map-selectable{cursor:pointer;border-radius:10px;outline-offset:4px}
 .process-graph-readonly .process-graph-cell.diagnosis-map-selectable:hover .graph-flow-step,
 .process-graph-readonly .process-graph-cell.diagnosis-map-selectable:hover .graph-decision-inline{
@@ -2028,7 +2028,7 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
   outline:3px solid var(--system,#24714f)
 }
 .asis-opportunity-point.is-selected{outline:2px solid var(--system,#24714f);outline-offset:3px}
-/* [AUNEA-FE-PG10-MAP-NAV-160] END */
+/* [AUNEA-FE-PG10-MAP-NAV-STYLE-160] END */
 /* [AUNEA-FE-PG10-SOURCE-DETAIL-161] START — Compact, readable source-owner data in PG10 only. */
 .asis-opportunity-point .asis-point-conditional{
   margin:4px 0 12px;color:var(--muted,#67736d);font-size:12px;line-height:1.5
