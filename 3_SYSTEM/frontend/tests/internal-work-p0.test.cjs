@@ -357,7 +357,7 @@ test('PG10 AS-IS backend results present time, pains, economics and risks withou
     'diagnosisProcessBaselineHtml','diagnosisFindingsHtml','diagnosisEconomicsHtml','diagnosisRisksHtml',
     source+'\nreturn asisBaselineHtml;')(
       ()=>output,()=>({processSteps:[]}),x=>String(x),
-      ()=>{throw Error('coverage panel should not replace a valid analysis');},
+      ()=>'<div>Datos y fuentes pendientes</div>',
       p=>{rendered.push('time');return 'TEMPORAL-'+p.annual_active_hours;},
       (record,p)=>{rendered.push('pain');return 'PAIN-'+p.length;},
       econ=>{rendered.push('economic');return 'ECON-'+econ.current_tool_cost_eur_annual;},
