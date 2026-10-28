@@ -735,3 +735,14 @@ test('PG10 collapsed map source cards open from map and finding navigation',()=>
   assert.match(source,/\.diagnosis-finding a\[href/);
 });
 // [AUNEA-UAT-PG10-WORKSPACE-167] END
+
+// [AUNEA-UAT-PG10-DIAGNOSTIC-ACTION-168] START
+test('PG10 analysis action has a visible gap below the informational notice',()=>{
+  const css=fs.readFileSync(path.join(root,'ui-system.css'),'utf8');
+  const from=workbench.indexOf('function asisBaselineHtml(');
+  const body=workbench.slice(from,workbench.indexOf('// [AUNEA-FE-PG10-ASIS-ECON-165] END',from));
+  assert.match(body,/class="notice info"/);
+  assert.match(body,/id="analyzeAsisOnly"/);
+  assert.match(css,/#analyzeAsisOnly\\{margin-top:16px;\\}/);
+});
+// [AUNEA-UAT-PG10-DIAGNOSTIC-ACTION-168] END
