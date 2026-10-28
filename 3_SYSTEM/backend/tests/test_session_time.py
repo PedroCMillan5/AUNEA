@@ -289,7 +289,7 @@ def test_dec074_no_baseline_and_excess_always_pending():
     assert response.json()["identified_minutes"]==300
 
 
-# [AUNEA-UAT-PG10-TIME-169] START — Breakdown is backend-owned, source-linked and never double-counted.
+# [AUNEA-UAT-BE-PG10-TIME-169] START — Breakdown is backend-owned, source-linked and never double-counted.
 def test_pg10_per_step_temporal_breakdown_matches_backend_aggregates():
     steps=[
         dict(STEP,id="P1",step_name="Recibir",active_time=3,wait_time=0,rework_time=0),
@@ -332,7 +332,7 @@ def test_pg10_breakdown_marks_unverified_conditional_route_unquantified():
     assert entry["annual_active_hours"] is None
     assert entry["annual_wait_exposure_hours"] is None
     assert out["annual_active_hours"] is None
-# [AUNEA-UAT-PG10-TIME-169] END
+# [AUNEA-UAT-BE-PG10-TIME-169] END
 
 
 # [AUNEA-UAT-PG10-NUMERIC-171] START — Numeric consistency without elapsed auto-approval.
