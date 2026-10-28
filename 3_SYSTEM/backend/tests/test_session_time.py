@@ -287,3 +287,49 @@ def test_dec074_no_baseline_and_excess_always_pending():
     response=TestClient(app).post("/v1/diagnostic/time-reconciliation",json=req.model_dump())
     assert response.status_code==200
     assert response.json()["identified_minutes"]==300
+
+
+# [AUNEA-UAT-PG10-TIME-169] START — Breakdown is backend-owned, source-linked and never double-counted.
+def test_pg10_per_step_temporal_breakdown_matches_backend_aggregates():
+    steps=[
+        dict(STEP,id="P1",step_name="Recibir",active_time=3,wait_time=0,rework_time=0),
+        dict(STEP,id="P2",step_name="Aprobar",applies_to={"mode":"PERCENT","value":25},
+             active_time=6,wait_time=240,rework_time=0),
+        dict(STEP,id="P3",step_name="Registrar",active_time=10,wait_time=0,
+             rework_time=5,error_rate={"mode":"percent","value":20}),
+    ]
+    frictions=[{
+        "id":"F1","affected_steps":["P1","P3"],
+        "time_attribution":{"mode":"ADDITIONAL","step_id":"P3"},
+        "active_time_loss":{"value":10},
+        "frequency":{"mode":"percent","value":30,"period":"case"},
+    }]
+    out=project_session_time(TimeProjectionRequest(volume=120,period="MONTH",steps=steps,frictions=frictions))
+    assert out["status"]=="CALCULATED"
+    b=out["step_breakdown"]
+    assert [r["step_id"] for r in b]==["P1","P2","P3"]
+    assert b[1]["annual_active_hours"]==36  # 6 min, 25% of 1,440 cases
+    assert b[1]["annual_wait_exposure_hours"]==1440  # exposure, NOT elapsed process time
+    assert b[2]["annual_rework_hours"]==24
+    assert round(sum(r["annual_active_hours"] for r in b),2)==out["annual_active_hours"]
+    assert round(sum(r["annual_wait_exposure_hours"] for r in b),2)==out["annual_wait_exposure_hours"]
+    assert round(sum(r["annual_rework_hours"] for r in b),2)==out["annual_rework_hours"]
+    extras=out["additional_friction_breakdown"]
+    assert len(extras)==1
+    assert extras[0]["friction_id"]=="F1"
+    assert extras[0]["owner_step_id"]=="P3"
+    assert extras[0]["annual_additional_hours"]==72
+    assert sum(x["annual_additional_hours"] for x in extras)==out["annual_friction_additional_hours"]
+    assert out["annual_total_active_hours"]==out["annual_active_hours"]+72
+
+
+def test_pg10_breakdown_marks_unverified_conditional_route_unquantified():
+    condition=dict(STEP,id="P_COND",applies_to={"mode":"CONDITION","condition":"Approval"},
+                   active_time=6,wait_time=10,rework_time=0)
+    out=project_session_time(TimeProjectionRequest(volume=100,period="MONTH",steps=[condition]))
+    assert out["status"]=="INCOMPLETE"
+    entry=out["step_breakdown"][0]
+    assert entry["annual_active_hours"] is None
+    assert entry["annual_wait_exposure_hours"] is None
+    assert out["annual_active_hours"] is None
+# [AUNEA-UAT-PG10-TIME-169] END
