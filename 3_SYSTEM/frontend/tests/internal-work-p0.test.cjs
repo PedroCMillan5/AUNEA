@@ -188,7 +188,7 @@ test('PG10 coverage shows capture integrity, server sufficiency and consultant g
   ];
   const fn=new Function('schema','asisAnalysisSource','asisFieldInventory','canonicalMissingRequired',
     'captureIntegrityIssues','asisAnalysisSnapshot','normalizeArray','esc',
-    'currentDiagnosticOutput','unresolvedEngineGates','ENGINE_GATE_CONTRACT','ENGINE_GATE_GUIDE','asisConfirmedDataHtml',
+    'currentDiagnosticOutput','unresolvedEngineGates','ENGINE_GATE_CONTRACT','ENGINE_GATE_GUIDE','asisConfirmedDataHtml','asisFieldValueDisplay',
     extract('asisCoverageHtml')+'\nreturn asisCoverageHtml;')(
       {fields},
       e=>e,
@@ -205,7 +205,8 @@ test('PG10 coverage shows capture integrity, server sufficiency and consultant g
       ()=>[{key:'existing_tool_can_close',label:'¿Herramientas existentes?'}],
       [{key:'existing_tool_can_close'},{key:'process_design_first'}],
       {existing_tool_can_close:{title:'¿Las herramientas actuales pueden resolver el problema?'}},
-      ()=>'<section>Datos del AS-IS confirmado</section>'
+      ()=>'<section>Datos del AS-IS confirmado</section>',
+      ()=>''
   );
   const e={id:'TEST-ENG',confirmedAsIs:true};
   const empty=fn(e,null);
