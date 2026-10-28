@@ -246,69 +246,106 @@ function workbenchContinuityHtml(e){
 }
 // [AUNEA-FE-WORKFLOW-READINESS-153] END
 
+// [AUNEA-FE-PG10-WORKSPACE-167] START — One six-section diagnosis for all engine states.
+// SOURCE: Simulator CANONICAL PG10–PG15; DEC-034/050/052/055/068/074.
+// INPUT: PG09 sealed snapshot, capture validators, ASIS_ONLY/official backend results.
+// OUTPUT: context → integrity → diagnosis → evidence-bound conclusions → human review.
+// SIDE EFFECTS: none. No new approval state, ranking, calculation or price.
+// CHANGE RISK: HIGH. Keep server-owned outputs and existing navigation/actions.
+function pg10SynthesisHtml(record,data){
+  if(!data||data.status==='INPUT_GAPS')
+    return '<div class="notice info">Todavía no existe un análisis de problemas vigente. Ejecuta el análisis AS-IS para obtener conclusiones basadas en los datos confirmados.</div>';
+  const pains=Array.isArray(data.pain_results)?data.pain_results:[];
+  const chosen=normalizeArray(record?.answers?.DF096).map(String);
+  const known=chosen.length>0;
+  const items=pains.map(p=>{
+    const trace=diagnosisTrace(record,p);
+    const priority=known&&trace.frictions.some(f=>chosen.includes(String(f.id)));
+    const steps=trace.stepIds.map(id=>diagnosisStepName(record,id)).filter(Boolean);
+    return '<li><b>'+esc(diagnosisPainLabel(p.pain_id))+'</b>'+
+      '<span>Estado: '+esc(p.state?engineLabel('pain_state',p.state):'Sin clasificación')+
+      ' · Confianza: '+esc(p.confidence?engineLabel('confidence',p.confidence):'Sin determinar')+
+      (priority?' · Seleccionado por el cliente':'')+'</span>'+
+      '<small>'+esc(steps.length?'Pasos relacionados: '+steps.join(' · '):'Sin paso asociado: revisar trazabilidad')+'</small></li>';
+  });
+  const client=known
+    ?'Constan '+chosen.length+' prioridades del cliente. Se señalan sólo cuando coinciden con una fricción enlazada.'
+    :'No hay prioridades del cliente confirmadas en DF096. Esta ausencia no bloquea el diagnóstico.';
+  return '<div class="pg10-conclusions"><p>'+esc(client)+'</p>'+
+    (items.length?'<ul class="pg10-conclusion-list">'+items.join('')+'</ul>':
+      '<div class="notice warn">El motor no ha proporcionado hallazgos. Verifica las fuentes antes de concluir que no existen problemas.</div>')+
+    '<p class="field-help">Estos hallazgos no constituyen un ranking. Su orden ni la confianza asignada justifican por sí solos una prioridad analítica.</p>'+
+    '<div class="notice info"><b>Límite de la interpretación</b><p>Las relaciones con pasos acreditan contexto, no causalidad ni ahorro futuro. Las magnitudes, unidades y evidencias se mantienen en el diagnóstico calculado.</p></div></div>';
+}
+function pg10ReviewHtml(e,official,analysis,miss,unresolved,freshness){
+  const available=!!official||analysis?.status==='ANALYZED';
+  const msg=miss.length?'Existen '+miss.length+' datos obligatorios pendientes.':'Sin datos obligatorios pendientes en la captura.';
+  const analyzed=available?'El análisis actual está disponible para revisar.':'Debes analizar el AS-IS y comprobar sus incidencias.';
+  const pending=unresolved.length?'Quedan '+unresolved.length+' decisiones técnicas sobre soluciones.':'No constan decisiones técnicas de solución pendientes.';
+  const controls='<div class="pg10-review-actions">'+
+    '<button class="btn btn-outline" data-page="proceso">Consultar fuentes AS-IS</button>'+
+    '<button class="btn btn-outline" id="reviewEngineGates">Revisar decisiones técnicas</button>'+
+    (!official?'<button class="btn btn-primary" id="runDiag">'+(unresolved.length?'Evaluar condiciones para la recomendación':'Calcular recomendación y escenarios oficiales')+'</button>':
+      '<button class="btn btn-outline" id="runDiag">Recalcular resultado oficial</button>')+
+    '<button class="btn btn-primary" data-page="tobe">'+(official?'Continuar al diseño TO-BE':'Consultar siguiente fase TO-BE')+'</button></div>';
+  return '<div class="pg10-review-summary"><p>'+esc(msg)+' '+esc(analyzed)+'</p>'+
+    (freshness?.status==='OBSOLETE'?'<div class="notice warn">Existe un resultado oficial anterior no vigente: recalcula antes de utilizarlo.</div>':'')+
+    '<p>'+esc(pending)+' Estas decisiones son internas y no convierten los hallazgos en una recomendación aprobada.</p>'+
+    '<p class="field-help">Contrasta cada hallazgo con su origen. Si se detecta un error, modifica únicamente el dato propietario mediante el flujo PG01–PG09 y vuelve a calcular. Esta pantalla no crea una segunda aprobación ni publica resultados.</p>'+
+    (official?'<details class="pg10-decision-trace"><summary>Consultar decisiones utilizadas por el resultado oficial</summary>'+diagnosisEngineDecisionTraceHtml(e)+'</details>':'')+
+    controls+'</div>';
+}
 function resultsPage(){
   const e=currentEng();
-  if(!e) return pageTop('Diagnóstico interno','Debes confirmar el cierre del mapa y del diagnóstico antes de entrar en Trabajo interno.',`<button class="btn" data-page="diagnostico">Volver a Sesión 1</button>`) + `<div class="empty"><h2>AS-IS confirmado requerido</h2><p>La sesión termina al confirmar Validación y cierre. El diagnóstico interno siempre parte de un snapshot confirmado.</p></div>`;
-  if(!hasConfirmedEngagementSnapshot(e)) return pageTop('Diagnóstico interno','Debes confirmar el cierre del mapa y del diagnóstico antes de entrar en Trabajo interno.',`<button class="btn" data-page="diagnostico">Volver a Sesión 1</button>`) + `<div class="empty"><h2>AS-IS confirmado requerido</h2><p>La sesión termina al confirmar Validación y cierre. El diagnóstico interno siempre parte de un snapshot confirmado.</p></div>`;
-  const activeSnapshot=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;
-  const freshness=diagnosticOutputFreshness(e),o=currentDiagnosticOutput(e),miss=missingRequired(e),record=typeof engagementOfRecord==='function'?engagementOfRecord(e):e,steps=(record.processSteps||[]).filter(x=>x.status!=='SUPERSEDED'),fr=(record.frictions||[]).filter(x=>x.status!=='SUPERSEDED'),risks=record.risks||[],econInputs=record.economicInputs||[];
-  if(!o){
-    const unresolved=typeof unresolvedEngineGates==='function'?unresolvedEngineGates(e):[];
-    const ready=miss.length===0&&!!activeSnapshot&&unresolved.length===0;
-    return pageTop('Diagnóstico interno','El snapshot de Sesión 1 está sellado. Ejecuta los motores canónicos para convertir la captura confirmada en diagnóstico.',`<button class="btn" data-page="diagnostico">Volver a Sesión 1</button><button class="btn btn-outline" id="reviewEngineGates">Revisar decisiones</button><button class="btn btn-primary" id="runDiag">${unresolved.length?'Evaluar condiciones para la recomendación':'Calcular recomendación y escenarios oficiales'}</button>`)
-      +`<div class="grid g4 diagnosis-readiness">
-        <div class="card metric"><small>Snapshot</small><strong>v${esc(activeSnapshot?.version||'—')}</strong><span>AS-IS confirmado</span></div>
-        <div class="card metric"><small>Pasos</small><strong>${steps.length}</strong><span>${fr.length} fricciones · ${risks.length} riesgos</span></div>
-        <div class="card metric"><small>Impactos</small><strong>${econInputs.length}</strong><span>${miss.length} gap(s) obligatorio(s)</span></div>
-        <div class="card metric"><small>Backend</small><strong>${state.backendOnline?'OK':'—'}</strong><span>${state.backendOnline?'disponible':'se comprobará al ejecutar'}</span></div>
-      </div>`
-      +section('Recorrido de Trabajo Interno','Las etapas se alimentan del mismo AS-IS. Los estados indican disponibilidad, no aprobación automática.',workbenchContinuityHtml(e))
-      +section('Estado actual y tiempo de referencia','Los valores declarados se muestran sin convertir un SLA en objetivo de mejora ni inferir un ahorro.',`
-        <div class="grid g3 diagnosis-reference-grid">
-          <div class="notice diagnosis-reference-card">
-            <b>Duración end-to-end actual</b>
-            <div class="diagnosis-reference-value">${esc(asisSourceBoundary(record,'DF026'))}</div>
-            <p class="diagnosis-reference-note">Duración total declarada; la conciliación con los pasos se revisa por separado.</p>
-          </div>
-          <div class="notice diagnosis-reference-card">
-            <b>SLA del servicio</b>
-            <div class="diagnosis-reference-value">${esc(asisSourceBoundary(record,'DF025'))}</div>
-            <p class="diagnosis-reference-note">Compromiso de servicio; no equivale al objetivo de reducción.</p>
-          </div>
-          <div class="notice diagnosis-reference-card">
-            <b>Objetivos del negocio</b>
-            <div class="diagnosis-reference-value">${esc(normalizeArray(record.answers?.DF086).map(x=>labelFrom('OS_FUTURE_OUTCOME',x)||x).join(' · ')||'No declarados')}</div>
-            <p class="diagnosis-reference-note">Sin tiempo futuro calculado ni asumido.</p>
-          </div>
-        </div>`)
-      +section('Mapa y puntos críticos del AS-IS','Mapa confirmado en lectura. Las fichas muestran el origen de cada problema y permiten consultar el detalle sin duplicar tres alternativas por paso.',diagnosisReadonlyMap(e,record)+asisPointCardsHtml(record))
-      +section('Cobertura de los 100 campos y gaps','Se examina cada fuente, incluidas condiciones y datos opcionales; los gaps técnicos se contrastan en el backend.',asisCoverageHtml(e,asisAnalysisResult(e)))
-      +section('Diagnóstico de problemas sin elegir tecnología','Se analizan problemas, tiempos, impacto económico y riesgos a partir de los datos confirmados, antes de seleccionar ninguna solución.',asisBaselineHtml(e))
-      +section('Alternativas de intervención a contrastar','Una comparación única de las tres vías, basada en los pasos confirmados. La viabilidad y los beneficios requieren revisión posterior.',asisDirectionCardsHtml(e))
-      +section('Preparación de recomendación y escenarios oficiales','La evaluación tecnológica permanece condicionada; no bloquea el análisis anterior.',`<div class="notice ${ready?'good':miss.length?'warn':'info'}">${miss.length?'Hay datos obligatorios de captura pendientes: '+esc(miss.join(', ')):unresolved.length?'La captura confirmada no tiene datos obligatorios pendientes. Faltan decisiones técnicas del consultor para la recomendación y los escenarios oficiales.':'La captura confirmada está preparada para calcular la recomendación oficial.'}</div>${freshness.status==='OBSOLETE'?`<div class="notice warn" style="margin-top:10px"><b>Resultado anterior obsoleto</b><br>El diagnóstico existente corresponde al snapshot v${esc(freshness.outputSnapshotVersion??'—')} y no puede utilizarse para el snapshot confirmado v${esc(freshness.snapshotVersion)}. Recalcula antes de continuar.</div>`:''}${unresolved.length?`<div class="notice info" style="margin-top:10px"><b>Condiciones de solución pendientes</b><br>${unresolved.length} dimensión(es) por contrastar antes de calcular una recomendación técnica y precios oficiales. El análisis del AS-IS de arriba sigue disponible.</div>`:''}`)
-      +section('Qué ocurrirá al calcular la recomendación','El análisis AS-IS anterior es independiente. La recomendación y las cotizaciones oficiales siguen el contrato vigente del backend.',`<div class="diagnosis-pipeline"><span>Problemas</span><i>→</i><span>Impacto económico</span><i>→</i><span>Riesgos</span><i>→</i><span>Recomendación</span><i>→</i><span>Precio</span><i>→</i><span>Escenarios</span></div>`);
-  }
-  const pains=o.pain_results||[],econ=o.economic_result||{},risk=o.risk_result||{},processTime=o.process_time_projection||null,confirmed=pains.filter(x=>x.state==='CONFIRMED').length;
-  const runDate=e.lastEngineRunAt?(typeof formatDateEs==='function'?formatDateEs(e.lastEngineRunAt):String(e.lastEngineRunAt)):'—';
-  return pageTop('Diagnóstico interno',`Snapshot v${esc(activeSnapshot?.version||'—')} · diagnóstico backend ${esc(runDate)} · ${esc(freshness.label)}. Los resultados están ligados a la versión confirmada del AS-IS.`,`<button class="btn" data-page="diagnostico">Volver a Sesión 1</button><button class="btn" data-page="proceso">Revisar AS-IS</button><button class="btn btn-outline" id="reviewEngineGates">Revisar decisiones</button><button class="btn btn-primary" id="runDiag">Recalcular diagnóstico</button>`)
-    +`<div class="grid g4 diagnosis-result-kpis">
-      <div class="card metric"><small>Hallazgos confirmados</small><strong>${confirmed}</strong><span>de ${pains.length} evaluados</span></div>
-      <div class="card metric"><small>Trabajo activo del proceso</small><strong>${processTime?.annual_active_hours!=null?num(processTime.annual_active_hours)+' h/año':'No calculado'}</strong><span>Proyección AS-IS, no EconomicInput</span></div>
-      <div class="card metric"><small>Exposición a espera</small><strong>${processTime?.annual_wait_exposure_hours!=null?num(processTime.annual_wait_exposure_hours)+' caso-horas':'No calculado'}</strong><span>no son horas laborales</span></div>
-      <div class="card metric"><small>Riesgo residual</small><strong>${risk.residual_level?esc(engineLabel('risk_level',risk.residual_level)):'—'}</strong><span>${risk.status?esc(engineLabel('risk_status',risk.status)):''}</span></div>
-    </div>`
-    +section('Recorrido de Trabajo Interno','Qué está preparado, qué necesita revisión y qué puede mostrarse al cliente.',workbenchContinuityHtml(e))
-    +section('Mapa AS-IS con contexto de diagnóstico','El mismo snapshot confirmado, en lectura, con fricciones, riesgos e impactos anclados a sus pasos.',diagnosisReadonlyMap(e,record))
-    +section('Puntos críticos y alternativas a contrastar','Primero se revisan los hechos de cada paso; a continuación, una única comparación de las tres vías sin cifras futuras asumidas.',asisPointCardsHtml(record)+asisDirectionCardsHtml(e))
-    +section('Cobertura de fuentes y gaps','Los datos de las 100 preguntas y las entradas del backend se revisan sin requerir una segunda captura.',asisCoverageHtml(e,{input_coverage:o.input_coverage,status:'ANALYZED'}))
-    +section('Hallazgos','Qué ocurre, dónde y con qué trazabilidad. El motor determina estado y confianza; la UI sólo enlaza contexto capturado.',diagnosisFindingsHtml(record,pains))
-    +section('Línea base operativa AS-IS','Proyección del backend sobre pasos del snapshot confirmado.',diagnosisProcessBaselineHtml(processTime,record))
-     +section('Impactos económicos registrados','EconomicInput refleja un alcance parcial; capacidad, espera y ahorro de caja permanecen separados.',diagnosisEconomicsHtml(econ,record))
-    +section('Riesgos','Resultado agregado del motor y riesgos capturados que lo sustentan.',diagnosisRisksHtml(risk,record))
-    +section('Recomendación preliminar','Dirección estructurada calculada por el backend. No sustituye el diseño TO-BE ni constituye todavía una propuesta al cliente.',diagnosisRecommendationHtml(o))
-    +section('Decisiones técnicas utilizadas','Trazabilidad entre la revisión interna del consultor y el cálculo del backend.',diagnosisEngineDecisionTraceHtml(e))
-    +section('Siguiente paso','El diagnóstico ya existe para el snapshot vigente. El siguiente bloque gobernado es diseñar el TO-BE sobre esta misma versión.',`<div class="notice good"><b>Diagnóstico generado correctamente</b><br>Revisa los hallazgos anteriores antes de diseñar el proceso futuro.</div>`,`<button class="btn btn-primary" data-page="tobe">Continuar al diseño TO-BE →</button>`);
+  if(!e||!hasConfirmedEngagementSnapshot(e))
+    return pageTop('Diagnóstico interno','Confirma Validación y cierre antes de iniciar el análisis.','<button class="btn" data-page="diagnostico">Volver a Sesión 1</button>')+
+      '<div class="empty"><h2>AS-IS confirmado requerido</h2><p>Trabajo Interno consume el snapshot de PG09.</p></div>';
+  const snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;
+  const record=typeof engagementOfRecord==='function'?engagementOfRecord(e):e;
+  const steps=(record.processSteps||[]).filter(x=>x.status!=='SUPERSEDED');
+  const fr=(record.frictions||[]).filter(x=>x.status!=='SUPERSEDED');
+  const risks=(record.risks||[]).filter(x=>x.status!=='SUPERSEDED');
+  const econ=(record.economicInputs||[]).filter(x=>x.status!=='SUPERSEDED');
+  const official=currentDiagnosticOutput(e);
+  const asis=typeof asisAnalysisResult==='function'?asisAnalysisResult(e):null;
+  const data=official||asis;
+  const freshness=diagnosticOutputFreshness(e);
+  const missing=missingRequired(e);
+  const unresolved=typeof unresolvedEngineGates==='function'?unresolvedEngineGates(e):[];
+  const analyzed=!!official||asis?.status==='ANALYZED';
+  const heading='<div class="grid g4 diagnosis-readiness pg10-overview-metrics">'+
+    '<div class="card metric"><small>AS-IS confirmado</small><strong>v'+esc(snap?.version||'—')+'</strong><span>Fuente del diagnóstico</span></div>'+
+    '<div class="card metric"><small>Pasos activos</small><strong>'+steps.length+'</strong><span>'+fr.length+' fricciones · '+risks.length+' riesgos</span></div>'+
+    '<div class="card metric"><small>Entradas económicas</small><strong>'+econ.length+'</strong><span>Registros, no ahorro estimado</span></div>'+
+    '<div class="card metric"><small>Estado del análisis</small><strong>'+(official?'Oficial':analyzed?'AS-IS':'Pendiente')+
+      '</strong><span>'+(data?.status==='INPUT_GAPS'?'Revisar fuentes y relaciones':analyzed?'Disponible para revisión':'Análisis sin calcular')+'</span></div></div>'+
+    '<details class="pg10-stage-nav"><summary>Consultar las etapas del Trabajo Interno</summary>'+workbenchContinuityHtml(e)+'</details>';
+  const reference='<div class="grid g3 diagnosis-reference-grid">'+
+    '<div class="notice diagnosis-reference-card"><b>Duración end-to-end actual</b><div class="diagnosis-reference-value">'+esc(asisSourceBoundary(record,'DF026'))+'</div><p class="diagnosis-reference-note">Duración declarada; conciliación independiente.</p></div>'+
+    '<div class="notice diagnosis-reference-card"><b>SLA del servicio</b><div class="diagnosis-reference-value">'+esc(asisSourceBoundary(record,'DF025'))+'</div><p class="diagnosis-reference-note">Compromiso de servicio, no objetivo de reducción.</p></div>'+
+    '<div class="notice diagnosis-reference-card"><b>Objetivos del negocio</b><div class="diagnosis-reference-value">'+esc(normalizeArray(record.answers?.DF086).map(x=>labelFrom('OS_FUTURE_OUTCOME',x)||x).join(' · ')||'No declarados')+'</div><p class="diagnosis-reference-note">Sin tiempo futuro supuesto.</p></div></div>';
+  const map=diagnosisReadonlyMap(e,record)+
+    '<details class="pg10-critical-points"><summary>Consultar fichas y evidencias de los puntos críticos</summary>'+asisPointCardsHtml(record)+'</details>';
+  const coverage=asisCoverageHtml(e,official?{status:'ANALYZED',input_coverage:official.input_coverage}:asis);
+  const diagnostic=official
+    ?'<div class="notice good">Resultados vinculados al snapshot confirmado. La solución técnica se evalúa en las páginas posteriores.</div>'+
+      '<div class="pg10-diagnostic-parts">'+
+      '<section><h3>Línea base temporal</h3>'+diagnosisProcessBaselineHtml(official.process_time_projection,record)+'</section>'+
+      '<section><h3>Problemas y evidencias</h3>'+diagnosisFindingsHtml(record,official.pain_results||[])+'</section>'+
+      '<section><h3>Impacto económico registrado</h3>'+diagnosisEconomicsHtml(official.economic_result||{},record)+'</section>'+
+      '<section><h3>Riesgos y controles</h3>'+diagnosisRisksHtml(official.risk_result||{},record)+'</section></div>'
+    :asisBaselineHtml(e);
+  return pageTop('Diagnóstico interno','Diagnóstico del proceso confirmado: problemas, causas, impactos y evidencias. Las soluciones se definen en las etapas siguientes.',
+    '<button class="btn" data-page="diagnostico">Volver a Sesión 1</button><button class="btn btn-outline" data-page="proceso">Revisar AS-IS</button>')+
+    section('1. Resumen del estudio','Snapshot confirmado y navegación por etapas.',heading)+
+    section('2. Estado actual y mapa AS-IS','Los tiempos declarados y el mapa permiten localizar el origen de cada problema.',reference+map)+
+    section('3. Integridad de datos y gaps','Cobertura, coherencia y evidencias, sin nueva captura de datos.',coverage)+
+    section('4. Diagnóstico calculado','Problemas, tiempos, impactos y riesgos a partir de las fuentes confirmadas.',diagnostic)+
+    section('5. Conclusiones y prioridades','Síntesis sin confundir prioridad declarada y confianza del motor.',pg10SynthesisHtml(record,data))+
+    section('6. Revisión y continuación','Revisar el diagnóstico, corregir únicamente en origen y continuar al TO-BE sin una aprobación nueva.',pg10ReviewHtml(e,official,asis,missing,unresolved,freshness));
 }
+// [AUNEA-FE-PG10-WORKSPACE-167] END
+
 // [AUNEA-FE-RESULT-GATE-TRACE-151] START — Display the reviewed technical inputs that produced PG10
 // SOURCE: DEC-034/041/052/053 and the existing ENGINE_GATE_CONTRACT, snapshot and consultant audit.
 // OUTPUT: read-only provenance; not a new diagnostic question or a second rules engine.
