@@ -408,7 +408,7 @@ function asisCoverageHtml(e,baseline){
     groups.map(g=>{
       const partialInGroup=g.items.filter(f=>f.source&&f.source.total>0&&f.source.count>0&&f.source.count<f.source.total).length;
       const missingRequired=g.items.filter(f=>f.status==='MISSING_REQUIRED').length;
-      const context=(partialInGroup?' · '+partialInGroup+' parciales':'')+
+      const context=(partialInGroup?' · '+partialInGroup+(partialInGroup===1?' campo parcial':' campos parciales'):'')+
         (missingRequired?' · '+missingRequired+' obligatorios pendientes':'');
       return '<details><summary>'+esc(g.title)+' · '+g.filled+' de '+g.items.length+' con algún dato'+context+'</summary><ul>'+
         g.items.map(f=>{
