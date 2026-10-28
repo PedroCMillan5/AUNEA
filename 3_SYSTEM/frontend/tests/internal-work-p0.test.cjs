@@ -213,7 +213,7 @@ test('PG10 coverage shows capture integrity, server sufficiency and consultant g
   assert.match(empty,/3\. Preparación de los motores/);
   assert.match(empty,/No consta una evaluación vigente de las entradas del backend/);
   assert.match(empty,/Quedan 1 de 2 decisiones técnicas pendientes/);
-  assert.match(empty,/Auditoría detallada: procedencia y estado de los 100 campos/);
+  assert.match(empty,/Detalle de los 100 campos/);
   assert.match(empty,/2 de 4 registros con dato/,'partial coverage must remain visible');
   assert.match(empty,/1 campo parcial/,'group must show partial fields');
   assert.match(empty,/Sin dato; comprobar si aplica/,'non-required absent fields retain a neutral note');
