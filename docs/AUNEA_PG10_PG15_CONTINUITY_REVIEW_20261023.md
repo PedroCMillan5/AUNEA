@@ -212,3 +212,16 @@ A petición del propietario se simplifica el bloque desplegable de cobertura de 
 - Archivos: `3_SYSTEM/frontend/domain/analysis-workbench.js` y pruebas `3_SYSTEM/frontend/tests/internal-work-p0.test.cjs`. Regresión específica: los consumidores siguen en los datos pero no aparecen en el HTML; el estado parcial y la ausencia siguen informándose. Sin cambios de backend, simulador, pricing, reglas de obligatoriedad, snapshots ni decisiones del consultor.
 
 Estado: REVIEW hasta la verificación visual del caso Levante sellado. No actualizar Master Index, DECISIONES, ESTADO ni ROADMAP por este ajuste puramente informativo; registrar en BITÁCORA. La validación de CI se conserva con su resultado real, sin convertir las incidencias globales preexistentes en una aprobación completa.
+
+### Corrección de fondo — mostrar valores reales, no sólo su presencia — 28/10/2026 (REVIEW)
+
+A raíz de la UAT, el inventario de cobertura mostraba los nombres de los campos y estados de disponibilidad, pero no su contenido. La presentación era una auditoría de fuentes y no un resumen operativo legible. Se incorpora una capa de presentación de solo lectura sin alterar los 100 DF ni la captura.
+
+**Implementación** (`3_SYSTEM/frontend/domain/analysis-workbench.js`, `ui-system.css`, regresión `internal-work-p0.test.cjs`):
+- Bajo los tres bloques existentes de integridad, suficiencia y preparación, aparece **«Resumen de los datos del proceso»**: empresa y proceso, demanda y servicio, pasos y tiempos activo/espera/retrabajo por separado, fricciones, riesgos, entradas económicas con tipo de evidencia, estado objetivo.
+- «Detalle de los 100 campos» presenta también los valores legibles que realmente existen. Campos repetibles se muestran por registro («Paso 1: ... | Paso 2: ...»); la relación al owner sigue siendo de lectura, no otra copia editable. Ausencias e información derivada no disponible permanecen explícitas.
+- Los valores provienen del `confirmedSnapshot` PG09 y `engagementOfRecord`; para datos de empresa y contacto de procedencia CRM se priorizan `snapshot.company`/`snapshot.contacts` antes que datos vivos posteriores. Los ejemplos económicos distinguen costo de capacidad, costes de herramientas y evidencia: no afirman ahorro o recuperación. Sin totalizar tiempos heterogéneos ni confundir SLA, E2E y minutos de trabajo.
+- Se usa el catálogo canónico al presentar códigos del schema y unidades españolas. Los formatos no interpretables se etiquetan conservadoramente en lugar de inventar valor. No se modifica ningun campo, branch, motor o gate.
+- QA aislada: fixture sintética con snapshot sellado que conserva valores aunque cambie CRM vivo; verifica volumen, SLA, ciclo, tiempos por paso, fricción, riesgo y tarifa junto a evidencia. El fixture no es evidencia empírica de Levante. Antes de promover, validar visualmente con su snapshot confirmado real; no asumir que datos de exportación QA de 20/10 son los actuales.
+
+**Estado**: REVIEW. Sin cambios a fuentes CANONICAL, DECISIONES, ESTADO y ROADMAP. Registrar en BITACORA.
