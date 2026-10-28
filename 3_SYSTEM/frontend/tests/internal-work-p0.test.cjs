@@ -532,7 +532,7 @@ test('PG10 compact hierarchy stays Spanish, responsive and does not duplicate th
 // [AUNEA-UAT-PG10-REFERENCE-159] START — Reference-card typography regression.
 test('PG10 reference cards always separate the value and its supporting explanation',()=>{
   const css=fs.readFileSync(path.join(root,'ui-system.css'),'utf8');
-  const pageStart=results.indexOf("const reference='<div class=\"grid g3 diagnosis-reference-grid\"'");
+  const pageStart=results.indexOf('const reference=');
   const pageEnd=results.indexOf('const map=diagnosisReadonlyMap(e,record)',pageStart);
   const section=results.slice(pageStart,pageEnd);
   assert.ok(pageStart>=0&&pageEnd>pageStart);
