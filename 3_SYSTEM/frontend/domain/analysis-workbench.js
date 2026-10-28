@@ -117,6 +117,7 @@ function asisOwnerCollectionValue(field,record){
 }
 function asisFieldInventory(record){
   const fields=Array.isArray(schema?.fields)?schema.fields:[];
+  const sealed=typeof asisAnalysisSnapshot==='function'?asisAnalysisSnapshot(record):null;
   const order=(schema?.flow||[]).map(x=>x.Stage_ID);
   const stages=new Map(order.map(id=>[id,[]]));
   for(const f of fields){
