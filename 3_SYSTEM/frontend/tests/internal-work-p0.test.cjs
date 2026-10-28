@@ -746,3 +746,65 @@ test('PG10 analysis action has a visible gap below the informational notice',()=
   assert.ok(css.includes('#analyzeAsisOnly{margin-top:16px;}'));
 });
 // [AUNEA-UAT-PG10-DIAGNOSTIC-ACTION-168] END
+
+
+// [AUNEA-UAT-PG10-TIME-169] START — Temporal walkthrough is source-linked and doesn't recompute annual metrics.
+test('PG10 displays the step-linked timeline using backend-owned annual contributions',()=>{
+  const from=results.indexOf('function diagnosisProcessStepTimelineHtml(');
+  const end=results.indexOf('// [AUNEA-FE-PG10-STEP-TIMELINE-169] END',from);
+  assert.ok(from>=0&&end>from);
+  const fn=new Function('num','esc','attr',results.slice(from,end)+'\nreturn diagnosisProcessStepTimelineHtml;')(
+    x=>Number(x).toLocaleString('es-ES',{maximumFractionDigits:2}),
+    x=>String(x).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'),
+    x=>String(x).replaceAll('"','&quot;'));
+  const record={
+    processSteps:[
+      {id:'P1',step_name:'Recibir factura',active_time:3,wait_time:0,rework_time:0,applies_to:{mode:'ALL'}},
+      {id:'P2',step_name:'Aprobar factura',active_time:6,wait_time:240,rework_time:0,
+        applies_to:{mode:'PERCENT',value:25}},
+      {id:'P3',step_name:'Registrar en ERP',active_time:10,wait_time:0,rework_time:5},
+      {id:'OLD',step_name:'Retirado',status:'SUPERSEDED',active_time:500}
+    ],
+    frictions:[{id:'F2',client_label:'Falta de visibilidad',time_attribution:{step_id:'P3'}}]
+  };
+  const projection={
+    step_breakdown:[
+      {step_id:'P1',annual_active_hours:72,annual_wait_exposure_hours:0,annual_rework_hours:0},
+      {step_id:'P2',annual_active_hours:36,annual_wait_exposure_hours:1440,annual_rework_hours:0,
+        applies_to:{mode:'PERCENT',value:25}},
+      {step_id:'P3',annual_active_hours:240,annual_wait_exposure_hours:0,annual_rework_hours:24}
+    ],
+    additional_friction_breakdown:[{friction_id:'F2',owner_step_id:'P3',minutes_per_event:10,annual_additional_hours:72}]
+  };
+  const html=fn(projection,record);
+  assert.equal((html.match(/class="pg10-time-step"/g)||[]).length,3);
+  assert.match(html,/Recibir factura/);
+  assert.match(html,/Aprobar factura/);
+  assert.match(html,/25 % de los casos/);
+  assert.match(html,/240 min/);
+  assert.match(html,/1.440 h\/año/);
+  assert.match(html,/Falta de visibilidad/);
+  assert.match(html,/72 h\/año/);
+  assert.match(html,/href="#asis-source-step-P2"/);
+  assert.match(html,/no una escala cronológica/);
+  assert.match(html,/Los recorridos condicionales se ponderan en el backend/);
+  assert.doesNotMatch(html,/Retirado|href="#asis-source-step-OLD"/);
+  const old=fn({},record);
+  assert.match(old,/Desglose anual por paso no disponible/);
+  assert.doesNotMatch(old,/NaN|undefined h\/año/);
+});
+test('PG10 temporal UI is linked to source cards and annualization stays server-owned',()=>{
+  const a=results.indexOf('function diagnosisProcessStepTimelineHtml(');
+  const b=results.indexOf('// [AUNEA-FE-PG10-STEP-TIMELINE-169] END',a);
+  const source=results.slice(a,b);
+  assert.match(source,/annual_active_hours/);
+  assert.match(source,/additional_friction_breakdown/);
+  assert.doesNotMatch(source,/annual_cases\s*\*|annual_active_hours\s*=|annual_wait_exposure_hours\s*=/);
+  assert.match(results,/diagnosisProcessStepTimelineHtml\(p,record\)/);
+  assert.match(results,/\.pg10-time-source\[href/);
+  const css=fs.readFileSync(path.join(root,'ui-system.css'),'utf8');
+  assert.match(css,/\.pg10-time-route\{/);
+  assert.match(css,/\.pg10-time-step:not\(:last-child\):after/);
+  assert.match(css,/@media\(max-width:650px\)/);
+});
+// [AUNEA-UAT-PG10-TIME-169] END
