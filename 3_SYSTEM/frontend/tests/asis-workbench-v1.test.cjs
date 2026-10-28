@@ -47,7 +47,7 @@ test('all 100 canonical fields are audited, not just a subset of questions',()=>
   assert.equal(new Set(all.map(x=>x.id)).size,100);
   assert.ok(all.some(x=>x.id==='DF025'&&x.filled));
   assert.ok(all.some(x=>x.id==='DF100'&&!x.filled));
-  assert.match(fn.asisCoverageHtml(e,null),/100 campos del modelo examinados/);
+  assert.match(fn.asisCoverageHtml(e,null),/100 campos canónicos examinados/);
 });
 test('source critical points preserve traceability and never project fabricated savings',()=>{
   const e=fixture();
