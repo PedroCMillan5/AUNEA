@@ -200,3 +200,15 @@ El inventario DF001–DF100 es **desplegable secundario**. Cuenta «campos con a
 **QA ejecutada en GitHub:** frontend 688 PASS / 10 FAIL en SHA \`60d5b1fa58ff06ca7c67b06b4cf0e9c4352ce857\`, los mismos diez fallos previos a este incremento; regresiones nuevas del informe PASS. Backend de SHA \`cf7f54e9ba83880cef14f73f15eb1e432db4a8e8\` SUCCESS incluyendo DF061. El gate global sigue sin superarse mientras frontend tenga fallos y la UAT visual nativa del snapshot del usuario esté pendiente. No promover PG10 ni otros bloques REVIEW a CANONICAL.
 
 **Sin cambios de gobierno:** los 100 Field_ID, preguntas, requiredness, gates oficiales, fases, escenarios, precios y fuentes canónicas permanecen intactos. Esta corrección queda en REVIEW y se registra en BITÁCORA. No requiere modificar Master Index, DECISIONES, ESTADO ni ROADMAP.
+
+### Ajuste visual de la auditoría DF001–DF100 — 28/10/2026 (REVIEW)
+
+A petición del propietario se simplifica el bloque desplegable de cobertura de PG10 sin modificar el diagnóstico, sus validaciones ni los contratos de los 100 campos.
+
+- La vista deja de mostrar en cada fila las etiquetas técnicas de consumidores de motores («Consumidores: Recommendation / Risk / Economics / Pair / Governance») y los textos redundantes de presencia («Dato accesible en su propietario», «Derivación disponible»).
+- Para los campos que tienen información suficiente para el inventario, solo se muestra el nombre canónico. Los avisos visibles quedan limitados a ausencia obligatoria, ausencia no obligatoria/condicional, falta de un resultado derivado y cobertura parcial de registros repetibles (n de N).
+- Se conservan internamente las referencias a Engine_Consumers y los metadatos de procedencia sin modificar el schema ni crear nuevos campos. Los grupos muestran el número de campos con algún dato y, cuando proceda, los casos parciales y los obligatorios pendientes.
+- Se evita repetir dentro del inspector los KPI ya mostrados en el resumen principal y se omite el nombre técnico de clase `InputCoverageEngine` cuando todavía no existe evaluación backend. El inspector se titula «Detalle de los 100 campos» para no prometer una explicación de procedencia que no se muestra.
+- Archivos: `3_SYSTEM/frontend/domain/analysis-workbench.js` y pruebas `3_SYSTEM/frontend/tests/internal-work-p0.test.cjs`. Regresión específica: los consumidores siguen en los datos pero no aparecen en el HTML; el estado parcial y la ausencia siguen informándose. Sin cambios de backend, simulador, pricing, reglas de obligatoriedad, snapshots ni decisiones del consultor.
+
+Estado: REVIEW hasta la verificación visual del caso Levante sellado. No actualizar Master Index, DECISIONES, ESTADO ni ROADMAP por este ajuste puramente informativo; registrar en BITÁCORA. La validación de CI se conserva con su resultado real, sin convertir las incidencias globales preexistentes en una aprobación completa.
