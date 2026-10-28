@@ -290,7 +290,7 @@ function diagnosisEconomicsHtml(econ,record,projection){
   const costIntro=capacity?.status==='COMPLETE'
     ?'<div class="pg10-cost-estimate"><div><b>Valor anual del trabajo dedicado al proceso</b><strong>'+
       moneyValue(capacity.annual_labor_capacity_value_eur)+'/año</strong>'+
-      '<small>Estimación de capacidad ocupada, calculada con los tiempos de los pasos y las tarifas por rol registradas. No es gasto contable ni ahorro de caja.</small></div>'+
+      '<small>' + (capacity.capacity_value_eur_per_case!=null?'Equivale a '+moneyValue(capacity.capacity_value_eur_per_case)+' de capacidad por factura. ':'') + 'Estimación con los tiempos de los pasos y las tarifas por rol registradas. No es gasto contable ni ahorro de caja.</small></div>'+
       '<details><summary>Ver cálculo por paso y tarifas aplicadas</summary><div class="pg10-cost-steps">'+
       (capacity.steps||[]).map(s=>'<div><span>'+esc(s.step_name||'Paso')+' · '+esc(s.role||'Rol sin nombre')+
         '</span><b>'+esc(num(s.annual_hours))+' h/año × '+esc(eur(s.hourly_rate))+'/h = '+esc(moneyValue(s.capacity_value))+'</b></div>').join('')+
