@@ -343,6 +343,48 @@ test('PG10 audit shows short values and hides long/repeated values in expandable
 });
 // [AUNEA-UAT-PG10-LEDGER-UX-164] END
 
+// [AUNEA-UAT-PG10-ASIS-ECON-165] START — Baseline includes all four server-owned results.
+test('PG10 AS-IS backend results present time, pains, economics and risks without solutions',()=>{
+  const from=workbench.indexOf('function asisBaselineHtml(');
+  const to=workbench.indexOf('\n// [AUNEA-FE-PG10-ASIS-ECON-165] END',from);
+  assert.ok(from>=0&&to>from,'baseline body must exist');
+  const source=workbench.slice(from,to);
+  const output={status:'ANALYZED',process_time_projection:{annual_active_hours:15},
+    pain_results:[{pain_id:'P01'}],economic_result:{status:'PARTIAL',current_tool_cost_eur_annual:960},
+    risk_result:{status:'PARTIAL'},diagnostic_type:'ASIS_ONLY'};
+  let rendered=[];
+  const render=new Function('asisAnalysisResult','asisAnalysisSource','esc','asisCoverageHtml',
+    'diagnosisProcessBaselineHtml','diagnosisFindingsHtml','diagnosisEconomicsHtml','diagnosisRisksHtml',
+    source+'\nreturn asisBaselineHtml;')(
+      ()=>output,()=>({processSteps:[]}),x=>String(x),
+      ()=>{throw Error('coverage panel should not replace a valid analysis');},
+      p=>{rendered.push('time');return 'TEMPORAL-'+p.annual_active_hours;},
+      (record,p)=>{rendered.push('pain');return 'PAIN-'+p.length;},
+      econ=>{rendered.push('economic');return 'ECON-'+econ.current_tool_cost_eur_annual;},
+      risk=>{rendered.push('risk');return 'RISK-'+risk.status;});
+  const html=render({id:'E'});
+  assert.deepEqual(rendered,['time','pain','economic','risk']);
+  for(const expected of ['Línea base temporal','Problemas y evidencias',
+    'Impacto económico registrado','Riesgos y controles','TEMPORAL-15','PAIN-1',
+    'ECON-960','RISK-PARTIAL','cobertura del análisis económico es parcial']){
+    assert.ok(html.includes(expected),expected);
+  }
+  assert.doesNotMatch(html,/recommendation|optimal_scenario|quote|one_off_eur/);
+  output.economic_result=null;
+  assert.match(render({id:'E'}),/No se dispone de una cuantificación económica validada/);
+  output.status='INPUT_GAPS';
+  assert.match(render({id:'E'}),/Análisis parcial/);
+});
+test('PG10 AS-IS endpoint is solution-independent and exposes economics',()=>{
+  assert.match(workbench,/\/v1\/diagnostic\/asis-analysis/);
+  assert.match(workbench,/asisAnalysisKey\(e\)!==key/);
+  assert.match(workbench,/diagnosisEconomicsHtml\(economic,record\)/);
+  assert.doesNotMatch(workbench.slice(workbench.indexOf('function asisBaselineHtml(')),
+    /data\.recommendation\./);
+});
+// [AUNEA-UAT-PG10-ASIS-ECON-165] END
+
+
 
 
 
