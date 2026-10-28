@@ -355,18 +355,33 @@ function diagnosisEconomicsHtml(econ,record,projection){
     '</div>'+
     '<p class="diagnosis-economic-scope">Los importes proceden de registros económicos confirmados; no sustituyen la duración del proceso ni prueban beneficios futuros.</p>'+
     '<p class="diagnosis-economic-scope">Las tarifas horarias registradas no permiten cuantificar por sí solas el coste de cada fricción: hacen falta horas atribuibles y una base monetaria compatible. No equivale a que el problema no tenga coste.</p>'+
-    '<details class="diagnosis-economic-detail"><summary>Ver detalle de horas, importes y fuentes ('+inputs.length+' registros)</summary>'+
+    // [AUNEA-FE-PG10-ECON-SOURCE-CONCILIATION-174] START — One economic view, distinct owners, no data duplication.
+    // SOURCE: DEC-021/032/034/050/068/074; process_time_projection and EconomicResult.
+    '<details class="diagnosis-economic-detail"><summary>Ver detalle económico completo: cálculo y fuentes ('+inputs.length+' registros)</summary>'+
+      '<section class="pg10-economic-source-group"><h5>Trabajo y capacidad derivados del mapa AS-IS</h5>'+
+      '<p class="field-help">Cálculos del backend a partir de los pasos confirmados. Las tarifas se toman de los registros económicos por rol; estas horas no se capturan por segunda vez.</p>'+
       '<div class="grid g3 diagnosis-economic-source-values">'+
-        '<div><b>Trabajo en registros económicos</b><span>'+ (econ.annual_active_hours==null?'No cuantificado':num(econ.annual_active_hours)+' h/año') +'</span></div>'+
-        '<div><b>Espera en registros económicos</b><span>'+(econ.annual_wait_hours==null?'No cuantificada':num(econ.annual_wait_hours)+' h/año')+'</span></div>'+
-        '<div><b>Valor de capacidad</b><span>'+money(econ.capacity_value_eur_annual)+'</span></div>'+
-        '<div><b>Pérdida directa</b><span>'+money(econ.direct_loss_eur_annual)+'</span></div>'+
-        '<div><b>Coste de herramientas</b><span>'+money(econ.current_tool_cost_eur_annual)+'</span></div>'+
-        '<div><b>Ahorro de caja realizado</b><span>'+money(econ.realized_cash_saving_eur_annual)+'</span></div>'+
+        '<div><b>Trabajo de los pasos</b><span>'+(projection?.annual_active_hours==null?'No calculado':num(projection.annual_active_hours)+' h/año')+'</span></div>'+
+        '<div><b>Trabajo adicional atribuido</b><span>'+(projection?.annual_friction_additional_hours==null?'No calculado':num(projection.annual_friction_additional_hours)+' h/año')+'</span></div>'+
+        '<div><b>Trabajo activo total del proceso</b><span>'+(projection?.annual_total_active_hours==null?'No calculado':num(projection.annual_total_active_hours)+' h/año')+'</span></div>'+
+        '<div><b>Horas con tarifa asignada</b><span>'+(capacity?.covered_hours==null?'No calculado':num(capacity.covered_hours)+' h/año')+'</span></div>'+
+        '<div><b>Valor estimado de la capacidad</b><span>'+esc(moneyValue(capacity?.annual_labor_capacity_value_eur_annual))+'</span></div>'+
+        '<div><b>Valor estimado por factura</b><span>'+esc(moneyValue(capacity?.capacity_value_eur_per_case))+'</span></div>'+
+      '</div></section>'+
+      '<section class="pg10-economic-source-group"><h5>Datos consignados directamente en registros económicos</h5>'+
+      '<p class="field-help">Estos campos corresponden a las '+inputs.length+' entradas económicas originales. «No consignado» significa que no se introdujeron horas aquí, no que el proceso carezca de trabajo.</p>'+
+      '<div class="grid g3 diagnosis-economic-source-values">'+
+        '<div><b>Trabajo consignado en registros económicos</b><span>'+(inputs.some(x=>x.annual_active_hours!=null)?num(econ.annual_active_hours)+' h/año':'No consignado')+'</span></div>'+
+        '<div><b>Espera consignada en registros económicos</b><span>'+(inputs.some(x=>x.annual_wait_hours!=null)?num(econ.annual_wait_hours)+' h/año':'No consignada')+'</span></div>'+
+        '<div><b>Capacidad valorada en registros económicos</b><span>'+(econ.capacity_value_eur_annual==null?'No consignada':money(econ.capacity_value_eur_annual))+'</span></div>'+
+        '<div><b>Pérdida directa consignada</b><span>'+(inputs.some(x=>x.direct_loss_eur_annual!=null)?money(econ.direct_loss_eur_annual):'No consignada')+'</span></div>'+
+        '<div><b>Coste de herramientas registrado</b><span>'+(inputs.some(x=>x.current_tool_cost_eur_annual!=null)?money(econ.current_tool_cost_eur_annual):'No consignado')+'</span></div>'+
+        '<div><b>Ahorro de caja realizado consignado</b><span>'+(inputs.some(x=>x.realized_cash_saving_eur_annual!=null)?money(econ.realized_cash_saving_eur_annual):'No consignado')+'</span></div>'+
       '</div>'+
-      '<p class="field-help">Estas horas sólo proceden de registros económicos, no del total temporal del mapa.</p>'+
+      '<p class="field-help">Las dos secciones describen fuentes distintas del mismo estudio. No se suman las horas o los valores de capacidad entre ellas, porque podrían representar el mismo trabajo.</p>'+
       (inputs.length?'<ul class="diagnosis-economic-input-list">'+inputs.map(inputDescription).join('')+'</ul>':'<p>No se han registrado entradas económicas.</p>')+
-    '</details>';
+      '</section></details>';
+    // [AUNEA-FE-PG10-ECON-SOURCE-CONCILIATION-174] END
 }
 function diagnosisRisksHtml(risk,record){
   // [AUNEA-FE-PG10-RISK-EXPLANATION-172] START — Plain language only; backend risk rating unchanged.
