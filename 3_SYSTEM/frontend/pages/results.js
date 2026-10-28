@@ -349,32 +349,48 @@ function diagnosisEconomicsHtml(econ,record,projection){
     '</details>';
 }
 function diagnosisRisksHtml(risk,record){
+  // [AUNEA-FE-PG10-RISK-EXPLANATION-172] START — Plain language only; backend risk rating unchanged.
+  // SOURCE: RiskEngine R0-R3 and recorded RiskInput, DEC-034/050 and Simulator PG10.
   const rows=(record?.risks||[]).filter(x=>x.status!=='SUPERSEDED');
-  const level=x=>x?esc(engineLabel('risk_level',x)):'No determinado';
-  const controlMissing=rows.filter(x=>x.controls_present===false).length;
-  const summary='<div class="grid g3 diagnosis-risk-summary">'+
-    '<div class="notice"><b>Riesgo inherente</b><strong>'+level(risk.inherent_level)+'</strong><small>Antes de considerar controles.</small></div>'+
-    '<div class="notice"><b>Riesgo residual</b><strong>'+level(risk.residual_level)+'</strong><small>Tras aplicar los controles declarados.</small></div>'+
-    '<div class="notice"><b>Estado de control</b><strong>'+(risk.status?esc(engineLabel('risk_status',risk.status)):'No determinado')+'</strong>'+
-       (controlMissing?'<small>'+controlMissing+' de '+rows.length+' riesgos sin controles registrados.</small>':'')+'</div></div>';
-  const riskReason=r=>{
-    const factors=[];
-    if(r.critical_trigger===true)factors.push('Criticidad específica declarada');
+  const level=x=>x?esc(engineLabel('risk_level',x)):'Sin valoración';
+  const missing=rows.filter(x=>x.controls_present===false).length;
+  const unknown=rows.filter(x=>x.controls_present==null).length;
+  const withControls=rows.filter(x=>x.controls_present===true).length;
+  const card=(title,value,help)=>'<div class="notice pg10-risk-card"><b>'+title+'</b><strong>'+value+'</strong><small>'+help+'</small></div>';
+  const summary='<div class="pg10-risk-lead"><b>¿Qué riesgos presenta el proceso actual?</b>'+
+    '<p>Se han registrado '+rows.length+' riesgos. AUNEA utiliza la valoración más alta para resumir el proceso; no significa que todos tengan exactamente la misma gravedad.</p></div>'+
+    '<div class="grid g3 diagnosis-risk-summary">'+
+    card('Gravedad antes de controles',level(risk.inherent_level),
+      'Valoración del proceso si no se tiene en cuenta ningún control preventivo o correctivo.')+
+    card('Gravedad con controles registrados',level(risk.residual_level),
+      'Valoración que permanece según los controles documentados. No demuestra que un control funcione.')+
+    card('Situación de los controles',risk.status?esc(engineLabel('risk_status',risk.status)):'Sin valoración',
+      missing+' sin controles registrados · '+withControls+' con controles registrados'+(unknown?' · '+unknown+' sin información':'')+'.')+
+    '</div>'+
+    (missing?'<p class="pg10-risk-context">No constan controles para '+missing+' de '+rows.length+
+       ' riesgos. Esto no prueba que no existan en la empresa: indica que el diagnóstico no puede acreditar su protección.</p>':'')+
+    '<p class="pg10-risk-context">Si ambos niveles son críticos, no se ha acreditado una reducción del riesgo con los controles registrados. Esto no es una pérdida económica calculada ni un incidente ocurrido.</p>';
+  const reason=r=>{
+    const f=[];
+    if(r.critical_trigger===true)f.push('Tiene un factor de criticidad declarado');
     if(r.sensitive_or_high_impact===true&&Number(r.impact_1_5)>=4)
-      factors.push('Datos sensibles o alto impacto con impacto '+esc(String(r.impact_1_5))+'/5');
-    if(!factors.length&&Number(r.impact_1_5)>=4)factors.push('Impacto alto declarado: '+esc(String(r.impact_1_5))+'/5');
-    if(r.controls_present===false)factors.push('Sin controles declarados: no se justifica reducción del nivel residual');
-    return factors.join(' · ')||'La evidencia estructurada no permite detallar el criterio: revisar los atributos del riesgo';
+      f.push('Afecta a información sensible o de alto impacto ('+esc(String(r.impact_1_5))+'/5)');
+    if(!f.length&&Number(r.impact_1_5)>=4)f.push('Impacto declarado elevado ('+esc(String(r.impact_1_5))+'/5)');
+    if(r.material_financial_or_compliance===true)f.push('Posible consecuencia financiera o normativa declarada');
+    if(r.reversible===false)f.push('Consecuencia declarada difícil de revertir');
+    if(r.controls_present===false)f.push('No constan controles que permitan justificar una reducción');
+    return f.join(' · ')||'Revisar el fundamento en la fuente confirmada';
   };
-  const items=rows.length?'<div class="result-list diagnosis-risk-list">'+rows.map(r=>
-    '<div class="result-item"><b>'+esc(r.description||labelFrom('OS_RISK_CATEGORY',r.category))+'</b>'+
-    '<p>Pasos: '+esc(normalizeArray(r.step_ids).map(id=>diagnosisStepName(record,id)).join(' · ')||'Sin paso enlazado')+
-    ' · Probabilidad '+esc(r.likelihood_1_5??'—')+'/5 · Impacto '+esc(r.impact_1_5??'—')+
-    '/5 · Controles: '+(r.controls_present===true?'Sí':r.controls_present===false?'No':'Sin determinar')+'</p>'+
-    '<p class="pg10-risk-explanation"><b>Fundamento registrado:</b> '+riskReason(r)+'</p></div>').join('')+'</div>':'';
-  return summary+
-    '<p class="diagnosis-risk-interpretation">La valoración procede de los riesgos y controles registrados. El resultado no verifica por sí solo la eficacia de los controles.</p>'+
-    items;
+  const items=rows.length?'<div class="pg10-risk-explain-list">'+rows.map((r,i)=>
+    '<div class="result-item pg10-risk-item"><b>'+(i+1)+'. '+esc(r.description||labelFrom('OS_RISK_CATEGORY',r.category)||'Riesgo')+'</b>'+
+    '<p><b>¿Dónde puede ocurrir?</b> '+esc(normalizeArray(r.step_ids).map(id=>diagnosisStepName(record,id)).join(' · ')||'Sin paso enlazado')+'</p>'+
+    '<p><b>Probabilidad declarada:</b> '+esc(r.likelihood_1_5??'No consta')+'/5 · <b>Gravedad de la consecuencia:</b> '+esc(r.impact_1_5??'No consta')+'/5</p>'+
+    '<p><b>Controles registrados:</b> '+(r.controls_present===true?'Sí':r.controls_present===false?'No constan':'No determinado')+'</p>'+
+    '<p class="pg10-risk-explanation"><b>Por qué se considera relevante:</b> '+reason(r)+'</p>'+
+    '</div>').join('')+'</div>':'<p>No hay riesgos registrados para este proceso.</p>';
+  return summary+items+
+    '<p class="pg10-risk-context"><b>Qué revisar:</b> comprobar si existen medidas para prevenir o detectar cada riesgo y si hay evidencia de que se aplican. Las propuestas de control se definirán en el diseño TO-BE; no se suponen implantadas.</p>';
+  // [AUNEA-FE-PG10-RISK-EXPLANATION-172] END
 }
 // [AUNEA-FE-PG10-ANALYSIS-UX-166] END
 function diagnosisRecommendationHtml(o){
