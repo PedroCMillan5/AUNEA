@@ -365,7 +365,7 @@ function diagnosisEconomicsHtml(econ,record,projection){
         '<div><b>Trabajo adicional atribuido</b><span>'+(projection?.annual_friction_additional_hours==null?'No calculado':num(projection.annual_friction_additional_hours)+' h/año')+'</span></div>'+
         '<div><b>Trabajo activo total del proceso</b><span>'+(projection?.annual_total_active_hours==null?'No calculado':num(projection.annual_total_active_hours)+' h/año')+'</span></div>'+
         '<div><b>Horas con tarifa asignada</b><span>'+(capacity?.covered_hours==null?'No calculado':num(capacity.covered_hours)+' h/año')+'</span></div>'+
-        '<div><b>Valor estimado de la capacidad</b><span>'+esc(moneyValue(capacity?.annual_labor_capacity_value_eur_annual))+'</span></div>'+
+        '<div><b>Valor estimado de la capacidad</b><span>'+esc(moneyValue(capacity?.annual_labor_capacity_value_eur))+'</span></div>'+
         '<div><b>Valor estimado por factura</b><span>'+esc(moneyValue(capacity?.capacity_value_eur_per_case))+'</span></div>'+
       '</div></section>'+
       '<section class="pg10-economic-source-group"><h5>Datos consignados directamente en registros económicos</h5>'+
