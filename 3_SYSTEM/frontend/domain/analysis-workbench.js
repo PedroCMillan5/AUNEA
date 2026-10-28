@@ -599,7 +599,7 @@ function asisCoverageHtml(e,baseline){
       segment('1','Integridad de la captura',captureState,captureMessage,captureDetail)+
       segment('2','Suficiencia para el análisis',coverageState,coverageMessage,coverageDetail)+
       segment('3','Preparación de los motores',decisionState,decisionMessage,decisionDetail)+
-    '</div>'+asisConfirmedDataHtml(e)+ledger;
+    '</div>'+'<details class="pg10-source-data"><summary>Consultar resumen de datos y los 100 campos</summary>'+asisConfirmedDataHtml(e)+ledger+'</details>';
 }
 // [AUNEA-FE-PG10-COVERAGE-READINESS-162] END
 function asisDirectionCardsHtml(e){
