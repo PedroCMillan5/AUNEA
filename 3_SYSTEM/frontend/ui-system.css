@@ -2320,3 +2320,18 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 .pg10-risk-item>p{font-size:12px;line-height:1.6;margin:8px 0 0}
 @media(max-width:680px){.pg10-cost-steps>div{align-items:flex-start;flex-direction:column;gap:6px}.pg10-cost-steps b{text-align:left}.pg10-cost-estimate{padding:12px}}
 /* [AUNEA-FE-PG10-COST-RISK-172] END */
+
+
+/* [AUNEA-FE-PG10-COST-ROLES-173] START — Compact, readable role-based economic allocation. */
+.pg10-cost-roles{margin:16px 0 14px;border-top:1px solid var(--line,#d8dedc);padding-top:14px}
+.pg10-cost-roles h5{font-size:13px;line-height:1.5;margin:0 0 11px}
+.pg10-cost-roles-scroll{width:100%;overflow-x:auto}
+.pg10-cost-roles table{width:100%;min-width:560px;border-collapse:collapse;text-align:right;font-size:12px;font-variant-numeric:tabular-nums}
+.pg10-cost-roles th,.pg10-cost-roles td{padding:11px 9px;border-bottom:1px solid var(--line,#d8dedc);vertical-align:top}
+.pg10-cost-roles th:first-child,.pg10-cost-roles td:first-child{text-align:left}
+.pg10-cost-roles thead th{font-size:11px;font-weight:600;color:var(--muted,#67736d)}
+.pg10-cost-roles tbody th{font-weight:600}
+.pg10-cost-roles tfoot th,.pg10-cost-roles tfoot td{font-weight:700;border-top:2px solid var(--line,#d8dedc)}
+.pg10-cost-roles p,.pg10-cost-roles-missing{font-size:11px;line-height:1.65;color:var(--muted,#67736d);margin:12px 0 0}
+@media(max-width:650px){.pg10-cost-roles table{min-width:520px}}
+/* [AUNEA-FE-PG10-COST-ROLES-173] END */
