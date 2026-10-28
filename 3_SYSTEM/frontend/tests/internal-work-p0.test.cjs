@@ -346,7 +346,7 @@ test('PG10 audit shows short values and hides long/repeated values in expandable
 // [AUNEA-UAT-PG10-ASIS-ECON-165] START — Baseline includes all four server-owned results.
 test('PG10 AS-IS backend results present time, pains, economics and risks without solutions',()=>{
   const from=workbench.indexOf('function asisBaselineHtml(');
-  const to=workbench.indexOf('\n// [AUNEA-FE-PG10-ASIS-ECON-165] END',from);
+  const to=workbench.indexOf('\n// ['+'AUNEA-FE-PG10-ASIS-ECON-165] END',from);
   assert.ok(from>=0&&to>from,'baseline body must exist');
   const source=workbench.slice(from,to);
   const output={status:'ANALYZED',process_time_projection:{annual_active_hours:15},
@@ -489,8 +489,8 @@ test('PG10 renders one compact step card per active source step without repeatin
   assert.doesNotMatch(html,/asis-point-alternatives-grid|asis-point-alternative"/);
   assert.match(html,/Reintroducción manual/);
   assert.match(html,/Falta de visibilidad/);
-  assert.match(html,/Incluido en el paso/);
-  assert.match(html,/Adicional al paso/);
+  assert.match(html,/Incluido: no sumar otra vez/);
+  assert.match(html,/Adicional: sumar solo una vez al conciliar/);
   assert.match(html,/no implica causa, importe recuperable ni ahorro/);
   assert.match(html,/id="asis-source-step-P4"/);
 });
@@ -666,7 +666,7 @@ test('PG10 risk results remain grounded without displaying raw English rationale
 
 // [AUNEA-UAT-PG10-WORKSPACE-167] START — Stable layout, source-only synthesis and preserved review actions.
 test('PG10 uses exactly six sections in one stable rendering path with no recommendation cards',()=>{
-  const start=results.indexOf('function resultsPage('),end=results.indexOf('\n// [AUNEA-FE-PG10-WORKSPACE-167] END',start);
+  const start=results.indexOf('function resultsPage('),end=results.indexOf('\n// ['+'AUNEA-FE-PG10-WORKSPACE-167] END',start);
   assert.ok(start>=0&&end>start);
   const page=results.slice(start,end);
   const sections=['Resumen del estudio','Estado actual y mapa AS-IS','Integridad de datos y gaps',
@@ -740,7 +740,7 @@ test('PG10 collapsed map source cards open from map and finding navigation',()=>
 test('PG10 analysis action has a visible gap below the informational notice',()=>{
   const css=fs.readFileSync(path.join(root,'ui-system.css'),'utf8');
   const from=workbench.indexOf('function asisBaselineHtml(');
-  const body=workbench.slice(from,workbench.indexOf('// [AUNEA-FE-PG10-ASIS-ECON-165] END',from));
+  const body=workbench.slice(from,workbench.indexOf('// ['+'AUNEA-FE-PG10-ASIS-ECON-165] END',from));
   assert.match(body,/class="notice info"/);
   assert.match(body,/id="analyzeAsisOnly"/);
   assert.ok(css.includes('#analyzeAsisOnly{margin-top:16px;}'));
@@ -751,7 +751,7 @@ test('PG10 analysis action has a visible gap below the informational notice',()=
 // [AUNEA-UAT-PG10-TIME-169] START — Temporal walkthrough is source-linked and doesn't recompute annual metrics.
 test('PG10 displays the step-linked timeline using backend-owned annual contributions',()=>{
   const from=results.indexOf('function diagnosisProcessStepTimelineHtml(');
-  const end=results.indexOf('// [AUNEA-FE-PG10-STEP-TIMELINE-169] END',from);
+  const end=results.indexOf('// ['+'AUNEA-FE-PG10-STEP-TIMELINE-169] END',from);
   assert.ok(from>=0&&end>from);
   const fn=new Function('num','esc','attr',results.slice(from,end)+'\nreturn diagnosisProcessStepTimelineHtml;')(
     x=>Number(x).toLocaleString('es-ES',{maximumFractionDigits:2}),
@@ -795,7 +795,7 @@ test('PG10 displays the step-linked timeline using backend-owned annual contribu
 });
 test('PG10 temporal UI is linked to source cards and annualization stays server-owned',()=>{
   const a=results.indexOf('function diagnosisProcessStepTimelineHtml(');
-  const b=results.indexOf('// [AUNEA-FE-PG10-STEP-TIMELINE-169] END',a);
+  const b=results.indexOf('// ['+'AUNEA-FE-PG10-STEP-TIMELINE-169] END',a);
   const source=results.slice(a,b);
   assert.match(source,/annual_active_hours/);
   assert.match(source,/additional_friction_breakdown/);
@@ -813,10 +813,10 @@ test('PG10 temporal UI is linked to source cards and annualization stays server-
 // [AUNEA-UAT-PG10-TEMPORAL-ROUTES-170] START — Canonical routing, frequency and compact totals.
 test('PG10 temporal route renders the real yes/no decision and rejoin without inventing route percentages',()=>{
   const all=results.slice(results.indexOf('function diagnosisProcessStepTimelineHtml('),
-    results.indexOf('// [AUNEA-FE-PG10-STEP-TIMELINE-169] END'));
+    results.indexOf('// ['+'AUNEA-FE-PG10-STEP-TIMELINE-169] END'));
   const process=fs.readFileSync(path.join(root,'domain/process.js'),'utf8');
   const from=process.indexOf('function processBranchStructure(');
-  const to=process.indexOf('// [AUNEA-FE-PROC-BRANCH-075] END',from);
+  const to=process.indexOf('// ['+'AUNEA-FE-PROC-BRANCH-075] END',from);
   assert.ok(from>=0&&to>from);
   const actualBranch=new Function('processDecisionStep','normalizeArray',process.slice(from,to)+
     '\nreturn processBranchStructure;')(
@@ -866,7 +866,7 @@ test('PG10 temporal route renders the real yes/no decision and rejoin without in
 });
 test('PG10 shows four primary annual metrics while preserving the four secondary values on demand',()=>{
   const from=results.indexOf('function diagnosisProcessBaselineHtml(');
-  const to=results.indexOf('// [AUNEA-FE-PG10-ANALYSIS-UX-166] START',from);
+  const to=results.indexOf('// ['+'AUNEA-FE-PG10-ANALYSIS-UX-166] START',from);
   assert.ok(from>=0&&to>from);
   const fn=new Function('num','esc','asisSourceBoundary','diagnosisProcessStepTimelineHtml',
     results.slice(from,to)+'\nreturn diagnosisProcessBaselineHtml;')(
@@ -893,7 +893,7 @@ test('PG10 shows four primary annual metrics while preserving the four secondary
 // [AUNEA-UAT-PG10-TEMPORAL-EXPLANATIONS-171] START — Coherence, source overlap, trace and risk.
 test('PG10 renders numeric consistency without claiming elapsed reconciliation',()=>{
   const from=results.indexOf('function diagnosisProcessBaselineHtml(');
-  const to=results.indexOf('// [AUNEA-FE-PG10-ANALYSIS-UX-166] START',from);
+  const to=results.indexOf('// ['+'AUNEA-FE-PG10-ANALYSIS-UX-166] START',from);
   const source=results.slice(from,to);
   const build=new Function('num','esc','asisSourceBoundary','diagnosisProcessStepTimelineHtml',
     source+'\nreturn diagnosisProcessBaselineHtml;')(
@@ -922,7 +922,7 @@ test('PG10 renders numeric consistency without claiming elapsed reconciliation',
 });
 test('PG10 shows source factors without asserting root cause; hides technical evidence by default',()=>{
   const fn=results.slice(results.indexOf('function diagnosisFindingsHtml('),
-    results.indexOf('// [AUNEA-FE-PG10-STEP-TIMELINE-169] START'));
+    results.indexOf('// ['+'AUNEA-FE-PG10-STEP-TIMELINE-169] START'));
   assert.match(fn,/Factores declarados \(no demuestran causa raíz\)/);
   assert.match(fn,/No se ha acreditado una causa distinta/);
   assert.match(fn,/pg10-technical-trace/);
@@ -934,7 +934,7 @@ test('PG10 explains monetary limits and risk triggers with existing source attri
     results.indexOf('function diagnosisRisksHtml('));
   assert.match(econ,/tarifas horarias registradas no permiten cuantificar por sí solas/);
   const risk=results.slice(results.indexOf('function diagnosisRisksHtml('),
-    results.indexOf('// [AUNEA-FE-PG10-ANALYSIS-UX-166] END'));
+    results.indexOf('// ['+'AUNEA-FE-PG10-ANALYSIS-UX-166] END'));
   assert.match(risk,/r\.critical_trigger===true/);
   assert.match(risk,/r\.sensitive_or_high_impact===true/);
   assert.match(risk,/No constan controles que permitan justificar una reducción/);
@@ -988,7 +988,7 @@ test('PG10 estimates annual operating labour from exact role-matched server brea
 });
 test('PG10 explains risk severity before/after controls and does not hallucinate protections',()=>{
   const from=results.indexOf('function diagnosisRisksHtml(');
-  const to=results.indexOf('// [AUNEA-FE-PG10-ANALYSIS-UX-166] END',from);
+  const to=results.indexOf('// ['+'AUNEA-FE-PG10-ANALYSIS-UX-166] END',from);
   const fn=new Function('esc','engineLabel','normalizeArray','diagnosisStepName','labelFrom',
     results.slice(from,to)+'\nreturn diagnosisRisksHtml;')(
       String,(_,x)=>({R3:'Riesgo crítico',CONTROL_GAP:'Brecha de control'})[x]||x,
