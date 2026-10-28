@@ -959,7 +959,8 @@ test('PG10 estimates annual operating labour from exact role-matched server brea
      evidence_type:'HYPOTHESIS'},
     {driver_id:'ED12',current_tool_cost_eur_annual:960,evidence_type:'HYPOTHESIS'}
   ]};
-  const time={process_labor_capacity:{status:'COMPLETE',
+  const time={annual_active_hours:403.2,annual_friction_additional_hours:72,
+    annual_total_active_hours:475.2,process_labor_capacity:{status:'COMPLETE',
     annual_labor_capacity_value_eur:15552,capacity_value_eur_per_case:10.8,covered_hours:475.2,
     role_breakdown:[
       {role:'Administración',annual_hours:432,hourly_rate:32,
@@ -999,6 +1000,21 @@ test('PG10 estimates annual operating labour from exact role-matched server brea
   assert.match(html,/307,2 €\/año de capacidad teórica/);
   assert.match(html,/No se suma sin descartar solapamientos/);
   assert.match(html,/Ver cálculo por paso y tarifas aplicadas/);
+  // Derived time and source economic entries must be visible in the SAME expanded panel.
+  assert.match(html,/Ver detalle económico completo: cálculo y fuentes \(3 registros\)/);
+  assert.match(html,/Trabajo y capacidad derivados del mapa AS-IS/);
+  assert.match(html,/<b>Trabajo de los pasos<\/b><span>403,2 h\/año/);
+  assert.match(html,/<b>Trabajo adicional atribuido<\/b><span>72 h\/año/);
+  assert.match(html,/<b>Trabajo activo total del proceso<\/b><span>475,2 h\/año/);
+  assert.match(html,/<b>Horas con tarifa asignada<\/b><span>475,2 h\/año/);
+  assert.match(html,/<b>Valor estimado de la capacidad<\/b><span>15\.552 €/);
+  assert.match(html,/Datos consignados directamente en registros económicos/);
+  assert.match(html,/<b>Trabajo consignado en registros económicos<\/b><span>No consignado/);
+  assert.match(html,/<b>Espera consignada en registros económicos<\/b><span>No consignada/);
+  assert.match(html,/<b>Coste de herramientas registrado<\/b><span>960 €/);
+  assert.match(html,/No se suman las horas o los valores de capacidad entre ellas/);
+  assert.doesNotMatch(html,/<b>Trabajo consignado en registros económicos<\/b><span>0 h\/año/);
+
   assert.doesNotMatch(html,/Ahorro de caja garantizado|Coste contable total de 16/);
   const missing=fn({current_tool_cost_eur_annual:960},source,{
     process_labor_capacity:{status:'PARTIAL',unvalued_steps:['Aprobar: falta tarifa']}});
@@ -1009,6 +1025,12 @@ test('PG10 estimates annual operating labour from exact role-matched server brea
     process_labor_capacity:{...time.process_labor_capacity,role_breakdown:undefined}});
   assert.match(legacy,/El análisis guardado no incluye todavía el desglose por rol/);
   assert.match(legacy,/Ver cálculo por paso y tarifas aplicadas/);
+  assert.match(legacy,/<b>Trabajo activo total del proceso<\/b><span>No calculado/);
+  // An explicit zero in an economic source is different from a missing source field.
+  const zero={economicInputs:[{driver_id:'ED01',annual_active_hours:0}]};
+  const rawZero=fn({annual_active_hours:0},zero,time);
+  assert.match(rawZero,/<b>Trabajo consignado en registros económicos<\/b><span>0 h\/año/);
+
 
 });
 test('PG10 explains risk severity before/after controls and does not hallucinate protections',()=>{
