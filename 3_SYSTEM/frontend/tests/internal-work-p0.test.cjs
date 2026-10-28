@@ -636,13 +636,13 @@ test('PG10 compact economics preserves source records and leaves zero/unknown ou
       {driver_id:'ED14',role_or_resource:'Responsable',capacity_cost_rate_eur_hour:40,evidence_type:'EV04'},
       {driver_id:'ED12',current_tool_cost_eur_annual:960,evidence_type:'EV04'}
     ]});
-  assert.match(html,/960 €\\/año/);
+  assert.ok(html.includes('960 €/año'));
   assert.match(html,/Sin importe positivo cuantificado/);
   assert.match(html,/<details class="diagnosis-economic-detail">/);
   assert.match(html,/3 registros/);
-  assert.match(html,/32 €\\/hora de capacidad/);
-  assert.match(html,/40 €\\/hora de capacidad/);
-  assert.match(html,/0 h\\/año/);
+  assert.ok(html.includes('32 €/hora de capacidad'));
+  assert.ok(html.includes('40 €/hora de capacidad'));
+  assert.ok(html.includes('0 h/año'));
   assert.equal((html.match(/<li>/g)||[]).length,3);
 });
 test('PG10 risk results remain grounded without displaying raw English rationale',()=>{
