@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from .models import EngagementInput, DiagnosticOutput, ScenarioRequest, ScenarioResult
-from .session_time import TimeProjectionRequest, project_session_time, numeric_time_consistency
+from .session_time import TimeProjectionRequest, project_session_time, numeric_time_consistency, estimate_process_labor_capacity
 from .deliverable_models import DeliverableRequest, DeliverablePack
 from .solution_models import SolutionSpecificationRequest, SolutionSpecification
 from .system_builder_models import SystemBuilderRequest, SystemBuildPlan, SystemBuildPackage
@@ -49,7 +49,7 @@ class Orchestrator:
         self.audit.runs.append(EngineRun(engine=engine,input_hash=ih,output_hash=oh))
         if self.store: self.store.add_run(engagement_id,engine,ih,oh)
 
-    def _time_projection_with_comparison(self, request: TimeProjectionRequest, answers: dict[str, Any]) -> dict[str, Any]:
+    def _time_projection_with_comparison(self, request: TimeProjectionRequest, answers: dict[str, Any], economic_inputs: list[dict[str, Any]] | None = None) -> dict[str, Any]:
         # [AUNEA-BE-ASIS-TIME-COMPARISON-171] START — Derive read-only numeric comparison from sealed DF026.
         # SOURCE: DEC-074 and existing ±25% AS-IS review trigger; no elapsed reconciliation or changes to DF026.
         projection = project_session_time(request)
@@ -66,6 +66,7 @@ class Orchestrator:
                    "day": 1440, "days": 1440}
         minutes = amount * factors[unit] if amount is not None and unit in factors else None
         projection["numeric_comparison"] = numeric_time_consistency(projection, minutes)
+        projection["process_labor_capacity"] = estimate_process_labor_capacity(projection, request.steps, economic_inputs or [])
         return projection
         # [AUNEA-BE-ASIS-TIME-COMPARISON-171] END
 
@@ -117,7 +118,7 @@ class Orchestrator:
                 volume=volume,period=answers.get("DF022"),
                 steps=steps,frictions=frictions if isinstance(frictions,list) else []
             )
-            out["process_time_projection"]=self._time_projection_with_comparison(request, answers)
+            out["process_time_projection"]=self._time_projection_with_comparison(request, answers, [x.model_dump() for x in engagement.economics])
         return out
     # [AUNEA-BE-ASIS-ANALYSIS-152] END
 
@@ -154,7 +155,7 @@ class Orchestrator:
                 volume=volume,period=answers.get("DF022"),
                 steps=steps,frictions=frictions if isinstance(frictions,list) else []
             )
-            process_time=self._time_projection_with_comparison(projection_input, answers)
+            process_time=self._time_projection_with_comparison(projection_input, answers, [x.model_dump() for x in engagement.economics])
             self._run(engagement.engagement_id,"SessionTimeProjection",projection_input.model_dump(),process_time)
         # [AUNEA-BE-ORCH-PROCESS-TIME-090] END
         result=DiagnosticOutput(engagement_id=engagement.engagement_id,rule_bundle_version=rule_bundle_version(),input_snapshot_hash=stable_hash(engagement.model_dump()),input_coverage=coverage,pain_results=pain,economic_result=econ,risk_result=risk,recommendation=rec,quote=quote,optimal_scenario=optimal,process_time_projection=process_time)
