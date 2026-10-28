@@ -464,4 +464,25 @@ def test_pg10_operating_cost_is_unavailable_if_rate_missing_or_conflicts():
     assert r["role_breakdown"][0]["annual_hours"] is None
     assert r["role_breakdown"][0]["valued_step_count"]==0
 
+
+
+def test_pg10_waiting_is_excluded_from_role_capacity_value():
+    """Large passive waits change exposure, never employee work or its valuation."""
+    from aunea_backend.session_time import TimeProjectionRequest, project_session_time, estimate_process_labor_capacity
+    roles=[{"id":"A","actor":"Administración","active_time":3,"wait_time":0,"rework_time":0},
+           {"id":"D","actor":"Dirección","active_time":6,"wait_time":0,"rework_time":0,
+            "applies_to":{"mode":"PERCENT","value":30}}]
+    rates=[{"role_or_resource":"Administración","capacity_cost_rate_eur_hour":32},
+           {"role_or_resource":"Dirección","capacity_cost_rate_eur_hour":40}]
+    values=[]
+    for passive_wait in (0,768,7680):
+        steps=[dict(s) for s in roles]
+        steps[1]["wait_time"]=passive_wait
+        projection=project_session_time(TimeProjectionRequest(volume=120,period="MONTH",steps=steps))
+        capacity=estimate_process_labor_capacity(projection,steps,rates)
+        assert capacity["status"]=="COMPLETE"
+        values.append((projection["annual_wait_exposure_hours"],capacity["annual_labor_capacity_value_eur"]))
+    assert [row[0] for row in values]==[0,5529.6,55296]
+    assert [row[1] for row in values]==[4032,4032,4032]
+
 # [AUNEA-UAT-PG10-CAPACITY-172] END
