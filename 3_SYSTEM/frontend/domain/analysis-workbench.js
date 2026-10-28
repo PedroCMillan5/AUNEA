@@ -403,7 +403,7 @@ function asisCoverageHtml(e,baseline){
     '<span>Diagnóstico oficial vigente: '+(official?'Disponible':'No disponible')+'</span></div>'+
     (decisionNames.length?'<details><summary>Ver decisiones pendientes ('+decisionNames.length+')</summary><ul>'+
       decisionNames.map(n=>'<li>'+esc(n)+'</li>').join('')+'</ul></details>':'');
-  const ledger='<details class="asis-field-ledger"><summary>Auditoría detallada: procedencia y estado de los '+total+' campos</summary>'+
+  const ledger='<details class="asis-field-ledger"><summary>Detalle de los '+total+' campos</summary>'+
     '<p class="field-help">Solo se muestran avisos cuando hay un dato sin registrar, una derivación no disponible o cobertura parcial. Los campos condicionales no implican por sí solos una respuesta obligatoria pendiente.</p>'+
     groups.map(g=>{
       const partialInGroup=g.items.filter(f=>f.source&&f.source.total>0&&f.source.count>0&&f.source.count<f.source.total).length;
