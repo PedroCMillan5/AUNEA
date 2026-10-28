@@ -2206,3 +2206,44 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 /* This ID exists only in the PG10 AS-IS-only diagnostic renderer. */
 #analyzeAsisOnly{margin-top:16px;}
 /* [AUNEA-FE-PG10-DIAGNOSTIC-ACTION-168] END */
+
+
+/* [AUNEA-FE-PG10-TIME-UX-169] START — Step-linked time walkthrough, not a scaled elapsed chart. */
+.pg10-temporal-walkthrough{padding:16px 18px 15px;border:1px solid var(--line,#d8dedc);border-radius:12px;background:var(--card,#fff);margin-bottom:22px}
+.pg10-temporal-heading{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px 18px;margin-bottom:15px}
+.pg10-temporal-heading h4{font-size:15px;line-height:1.4;margin:0}
+.pg10-temporal-heading p{font-size:12px;line-height:1.55;margin:0;color:var(--muted,#67736d)}
+.pg10-time-legend{display:flex;gap:15px;flex-wrap:wrap;margin:0 0 18px}
+.pg10-time-legend span{font-size:11px;display:inline-flex;align-items:center;gap:7px}
+.pg10-time-legend span:before{content:'';width:10px;height:10px;border-radius:3px;background:var(--neutral-500,#64748b)}
+.pg10-time-legend .pg10-time-work:before{background:#137352}
+.pg10-time-legend .pg10-time-wait:before{background:#ba8339}
+.pg10-time-legend .pg10-time-rework:before{background:#a85b51}
+.pg10-time-route{padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(205px,1fr));list-style:none;gap:17px}
+.pg10-time-step{min-width:0;position:relative}
+.pg10-time-step:not(:last-child):after{content:'›';position:absolute;right:-14px;top:7px;font-size:22px;color:var(--muted,#67736d)}
+.pg10-time-node{height:31px;display:flex;align-items:center;margin-bottom:8px}
+.pg10-time-node span{width:27px;height:27px;border:2px solid #256c55;background:#eaf3ef;color:#175b45;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;font-size:12px;font-weight:700}
+.pg10-time-card{height:calc(100% - 39px);border:1px solid var(--line,#d8dedc);border-radius:10px;padding:13px;background:var(--surface,#fff);display:flex;flex-direction:column;gap:12px}
+.pg10-time-card-header{display:flex;flex-direction:column;gap:5px}
+.pg10-time-card-header b{font-size:13px;line-height:1.45}
+.pg10-time-card-header small{font-size:11px;color:var(--muted,#67736d);line-height:1.5}
+.pg10-time-lanes{display:grid;gap:6px}
+.pg10-time-lane{display:flex;justify-content:space-between;align-items:baseline;gap:10px;border-radius:6px;border-left:4px solid var(--line,#d8dedc);padding:8px 10px;font-size:11px;line-height:1.45;background:#f4f6f5}
+.pg10-time-lane strong{white-space:nowrap;font-size:12px}
+.pg10-time-work{border-left-color:#137352}
+.pg10-time-wait{border-left-color:#ba8339}
+.pg10-time-rework{border-left-color:#a85b51}
+.pg10-time-year{font-size:11px;line-height:1.55;display:flex;flex-direction:column;gap:3px;border-top:1px solid var(--line,#d8dedc);padding-top:9px;margin:0}
+.pg10-time-year strong{font-size:12px}
+.pg10-time-year span{color:var(--muted,#67736d)}
+.pg10-time-extra{margin-top:auto;border-top:1px solid var(--line,#d8dedc);padding-top:10px}
+.pg10-time-extra>b{font-size:11px}
+.pg10-time-extra ul{list-style:none;padding:0;margin:7px 0 0}
+.pg10-time-extra li{display:flex;flex-direction:column;gap:3px;font-size:11px;line-height:1.5}
+.pg10-time-source{margin-top:auto;font-size:11px;font-weight:600;line-height:1.5}
+.pg10-time-warning{margin:15px 0 0!important;line-height:1.65}
+.pg10-time-summary{margin-top:16px}
+.pg10-time-summary .diagnosis-process-baseline{gap:13px}
+@media(max-width:650px){.pg10-temporal-walkthrough{padding:13px}.pg10-time-route{grid-template-columns:1fr;gap:9px}.pg10-time-step:not(:last-child):after{content:'⌄';right:auto;left:8px;top:auto;bottom:-20px}.pg10-time-node{margin-bottom:4px}.pg10-time-card{height:auto}}
+/* [AUNEA-FE-PG10-TIME-UX-169] END */
