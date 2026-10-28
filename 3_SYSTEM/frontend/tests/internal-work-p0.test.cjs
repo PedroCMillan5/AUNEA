@@ -966,7 +966,7 @@ test('PG10 estimates annual operating labour from exact role-matched server brea
     {driver_id:'ED12',current_tool_cost_eur_annual:960,evidence_type:'HYPOTHESIS'}
   ]};
   const time={annual_active_hours:403.2,annual_friction_additional_hours:72,
-    additional_friction_breakdown:[{friction_id:'F2',owner_step_id:'P2',annual_additional_hours:72,minutes_per_event:10}],
+    additional_friction_breakdown:[{friction_id:'F2',owner_step_id:'P2',annual_additional_hours:72,minutes_per_event:10,frequency:{mode:'percent',value:30}}],
     annual_total_active_hours:475.2,process_labor_capacity:{status:'COMPLETE',
     annual_labor_capacity_value_eur:15552,capacity_value_eur_per_case:10.8,covered_hours:475.2,
     role_breakdown:[
@@ -1011,6 +1011,7 @@ test('PG10 estimates annual operating labour from exact role-matched server brea
   assert.match(html,/Falta de visibilidad/);
   assert.match(html,/72 h\/año adicionales/);
   assert.match(html,/10 min por ocurrencia/);
+  assert.match(html,/Frecuencia registrada: 30 % de los casos/);
   assert.match(html,/si describen una espera pasiva, la valoración debe corregirse/);
   assert.match(html,/Estimación condicionada a la clasificación de trabajo activo/);
   assert.doesNotMatch(html,/Coherencia numérica: dentro del umbral de revisión/);
