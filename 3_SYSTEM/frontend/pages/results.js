@@ -109,6 +109,67 @@ function diagnosisFindingsHtml(record,pains){
     </article>`;
   }).join('')+'</div>';
 }
+// [AUNEA-FE-PG10-STEP-TIMELINE-169] START — Temporal walkthrough from sealed steps and backend contributions.
+// SOURCE: DEC-034/050/068/074, Diagnostic Master DF037–DF040/DF060/DF062, session_time.py.
+// No frontend annualization, elapsed-cycle inference or duplicate friction attribution.
+// The step line is schematic, not a proportional elapsed-time graph.
+function diagnosisProcessStepTimelineHtml(p,record){
+  const steps=(record?.processSteps||[]).filter(s=>s.status!=='SUPERSEDED');
+  const calculated=Array.isArray(p?.step_breakdown)?p.step_breakdown:[];
+  const extras=Array.isArray(p?.additional_friction_breakdown)?p.additional_friction_breakdown:[];
+  const sourceFrictions=(record?.frictions||[]).filter(f=>f.status!=='SUPERSEDED');
+  const perStep=id=>calculated.find(x=>String(x.step_id)===String(id));
+  const minutes=x=>{
+    if(x===undefined||x===null||x==='')return 'Sin dato';
+    const n=typeof x==='object'?x.value:x;
+    return n===null||n===undefined||n===''||!Number.isFinite(Number(n))?'Sin dato':num(Number(n))+' min';
+  };
+  const yearly=x=>x===null||x===undefined?'Sin cálculo anual':num(x)+' h/año';
+  const applicability=(step,breakdown)=>{
+    const value=breakdown?.applies_to||step.applies_to;
+    const mode=String(value?.mode||value||'ALL').toUpperCase();
+    if(mode==='ALL')return 'Todos los casos';
+    if(mode==='PERCENT'&&value?.value!=null)return num(value.value)+' % de los casos';
+    return 'Ruta condicional · proporción sin verificar';
+  };
+  if(!steps.length)return '<p class="field-help">No se han registrado pasos activos para reconstruir el recorrido.</p>';
+  const cards=steps.map((step,i)=>{
+    const b=perStep(step.id);
+    const work=b?.active_minutes_per_execution??step.active_time;
+    const wait=b?.wait_minutes_per_execution??step.wait_time;
+    const rework=b?.rework_minutes_per_event??step.rework_time;
+    const extra=extras.filter(x=>String(x.owner_step_id)===String(step.id)).map(x=>{
+      const f=sourceFrictions.find(f=>String(f.id)===String(x.friction_id));
+      return '<li><span>'+esc(f?.client_label||f?.observable_signal||'Fricción adicional registrada')+'</span>'+
+       '<b>'+esc(minutes(x.minutes_per_event))+' por incidencia · '+esc(yearly(x.annual_additional_hours))+'</b></li>';
+    }).join('');
+    const annual=b?'<p class="pg10-time-year">Trabajo activo ponderado: <strong>'+esc(yearly(b.annual_active_hours))+'</strong>'+
+      (b.annual_wait_exposure_hours!=null?'<span>Espera: '+esc(yearly(b.annual_wait_exposure_hours))+'</span>':'')+
+      (b.annual_rework_hours!=null?'<span>Retrabajo: '+esc(yearly(b.annual_rework_hours))+'</span>':'')+'</p>'
+      :'<p class="pg10-time-year">Desglose anual por paso no disponible; vuelve a calcular para consultar el dato del backend.</p>';
+    const repeat=Number(b?.occurrences_per_case??step.occurrences_per_case??1);
+    return '<li class="pg10-time-step">'+
+      '<div class="pg10-time-node"><span>'+esc(String(i+1))+'</span></div>'+
+      '<div class="pg10-time-card"><div class="pg10-time-card-header"><b>'+esc(step.step_name||'Paso sin nombre')+'</b>'+
+      '<small>'+esc(applicability(step,b))+(Number.isFinite(repeat)&&repeat>1?' · '+esc(String(repeat))+' veces por caso':'')+'</small></div>'+
+      '<div class="pg10-time-lanes">'+
+      '<div class="pg10-time-lane pg10-time-work"><span>Trabajo</span><strong>'+esc(minutes(work))+'</strong></div>'+
+      '<div class="pg10-time-lane pg10-time-wait"><span>Espera</span><strong>'+esc(minutes(wait))+'</strong></div>'+
+      '<div class="pg10-time-lane pg10-time-rework"><span>Retrabajo por incidencia</span><strong>'+esc(minutes(rework))+'</strong></div>'+
+      '</div>'+annual+
+      (extra?'<div class="pg10-time-extra"><b>Trabajo adicional atribuido a este paso</b><ul>'+extra+'</ul></div>':'')+
+      '<a href="#asis-source-step-'+attr(String(step.id))+'" class="pg10-time-source">Consultar este paso en el mapa y su ficha</a>'+
+      '</div></li>';
+  }).join('');
+  return '<section class="pg10-temporal-walkthrough"><div class="pg10-temporal-heading"><h4>Recorrido temporal por pasos</h4>'+
+    '<p>Minutos registrados por ejecución de cada paso; las horas anuales ponderadas proceden del backend.</p></div>'+
+    '<div class="pg10-time-legend"><span class="pg10-time-work">Trabajo</span><span class="pg10-time-wait">Espera</span><span class="pg10-time-rework">Retrabajo</span></div>'+
+    '<ol class="pg10-time-route">'+cards+'</ol>'+
+    '<p class="field-help pg10-time-warning">La línea representa el orden de los pasos, no una escala cronológica. Los recorridos condicionales se ponderan en el backend. Las esperas pueden solaparse; los minutos por paso no sustituyen el ciclo end-to-end declarado.</p>'+
+    '</section>';
+}
+// [AUNEA-FE-PG10-STEP-TIMELINE-169] END
+
 // [AUNEA-FE-PG10-PROCESS-BASELINE-091] START — Server-owned AS-IS baseline, separate from EconomicInput.
 // SOURCE: DEC-034/041/068; Simulator CANONICAL PG10/PG12.
 function diagnosisProcessBaselineHtml(p,record){
@@ -116,7 +177,7 @@ function diagnosisProcessBaselineHtml(p,record){
   const cell=k=>p[k]==null?'No calculado':num(p[k]);
   const declared=record&&typeof asisSourceBoundary==='function'?asisSourceBoundary(record,'DF026'):'No disponible';
   const gaps=Array.isArray(p.gaps)?p.gaps:[];
-  return `<div class="grid g4 diagnosis-process-baseline">
+  return diagnosisProcessStepTimelineHtml(p,record)+`<div class="pg10-time-summary"><div class="pg10-temporal-heading"><h4>Resumen anual del proceso</h4><p>Las magnitudes anuales no equivalen a la duración de un expediente.</p></div><div class="grid g4 diagnosis-process-baseline">
     <div class="notice"><b>Casos al año</b><br>${cell('annual_cases')}<small>Volumen habitual anualizado</small></div>
     <div class="notice"><b>Trabajo activo de los pasos</b><br>${p.annual_active_hours==null?'No calculado':cell('annual_active_hours')+' h/año'}<small>Ponderado por recorrido; no incluye fricciones adicionales</small></div>
     <div class="notice"><b>Trabajo adicional de fricciones</b><br>${p.annual_friction_additional_hours==null?'Pendiente de atribución':cell('annual_friction_additional_hours')+' h/año'}<small>Solo clasificaciones ADICIONAL con frecuencia y propietario válidos</small></div>
@@ -126,7 +187,7 @@ function diagnosisProcessBaselineHtml(p,record){
     <div class="notice"><b>Ciclo end-to-end declarado</b><br>${esc(declared)}<small>Referencia del diagnóstico (DF026); no se sustituye por una suma de exposiciones</small></div>
     <div class="notice"><b>Estado de la proyección</b><br>${p.status==='CALCULATED'?'Componentes calculados':'Componentes incompletos'}<small>Calculado no significa ciclo conciliado ni ahorro acreditado</small></div>
   </div><div class="notice info" style="margin-top:10px"><b>Conciliación end-to-end pendiente de acreditar</b><br>La proximidad entre componentes temporales y la duración declarada no demuestra equivalencia: hay que verificar fronteras, frecuencias y posibles solapamientos. No se convierten caso-horas de espera en coste de personal ni capacidad recuperable en ahorro de caja.</div>
-  ${gaps.length?'<div class="notice warn" style="margin-top:10px"><b>Datos o atribuciones pendientes</b><ul>'+gaps.slice(0,5).map(g=>'<li>'+esc(g)+'</li>').join('')+'</ul></div>':''}`;
+  ${gaps.length?'<div class="notice warn" style="margin-top:10px"><b>Datos o atribuciones pendientes</b><ul>'+gaps.slice(0,5).map(g=>'<li>'+esc(g)+'</li>').join('')+'</ul></div>':''}</div>`;
 }
 // [AUNEA-FE-PG10-ANALYSIS-UX-166] START — Source-owned economic/risk results with progressive evidence.
 // Source: backend EconomicsResult and RiskResult, DEC-034/050/068; no recomputation or scoring.
