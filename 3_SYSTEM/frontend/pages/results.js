@@ -495,6 +495,8 @@ function bindDiagnosticMapPointNavigation(){
     const open=()=>{
       document.querySelectorAll('.asis-opportunity-point.is-selected').forEach(x=>x.classList.remove('is-selected'));
       document.querySelectorAll('.asis-opportunity-point .asis-point-review').forEach(x=>{x.open=false;});
+      const parent=target.closest?.('.pg10-critical-points');
+      if(parent)parent.open=true;
       target.classList.add('is-selected');
       const details=target.querySelector('.asis-point-review');
       if(details)details.open=true;
@@ -512,7 +514,7 @@ function bindDiagnosticMapPointNavigation(){
   });
   // A shared friction can name a different time owner. Following that link opens
   // the existing owner's diagnostic card, never an editor or a second data record.
-  document.querySelectorAll('.asis-point-review a[href^="#asis-source-step-"]').forEach(link=>{
+  document.querySelectorAll('.asis-point-review a[href^="#asis-source-step-"], .diagnosis-finding a[href^="#asis-source-step-"]').forEach(link=>{
     link.addEventListener('click',event=>{
       const href=link.getAttribute('href')||'';
       const dest=document.getElementById(href.slice(1));
@@ -520,6 +522,8 @@ function bindDiagnosticMapPointNavigation(){
       event.preventDefault();
       document.querySelectorAll('.asis-opportunity-point.is-selected').forEach(x=>x.classList.remove('is-selected'));
       document.querySelectorAll('.asis-opportunity-point .asis-point-review').forEach(x=>{x.open=false;});
+      const parent=dest.closest?.('.pg10-critical-points');
+      if(parent)parent.open=true;
       dest.classList.add('is-selected');
       const detail=dest.querySelector('.asis-point-review');
       if(detail)detail.open=true;
