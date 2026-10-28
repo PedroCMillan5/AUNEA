@@ -297,7 +297,7 @@ function diagnosisEconomicsHtml(econ,record,projection){
       '</div>'+(capacity.rework_separate_value_eur!=null
         ?'<p>Retrabajo separado: '+esc(moneyValue(capacity.rework_separate_value_eur))+
          '/año de capacidad teórica. No se suma sin descartar solapamientos.</p>':'')+
-      '<p>Calidad de tarifas: '+esc([...new Set((capacity.steps||[]).flatMap(s=>s.evidence||[]))].join(', ')||'No especificada')+
+      '<p>Calidad de tarifas: '+esc([...new Set((capacity.steps||[]).flatMap(s=>s.evidence||[]))].map(x=>({HYPOTHESIS:'Hipótesis',CLIENT_DECLARED:'Declaración del cliente',MEASURED:'Medición',AUNEA_ESTIMATE:'Estimación AUNEA',SPECIFIC_BENCHMARK:'Referencia específica',NOT_RECORDED:'Sin acreditar'})[x]||'Sin clasificar').join(', ')||'No especificada')+
       '. La tarifa de capacidad no equivale necesariamente al coste salarial ni al desembolso efectivo.</p></details></div>'
     :'<div class="notice info pg10-cost-estimate"><b>Coste del trabajo del proceso: estimación no completada</b>'+
       '<p>Existen horas del proceso y tarifas registradas, pero no se ha podido acreditar una tarifa única para todos los roles, o el cálculo es anterior a esta versión. No se inventa el coste total.</p>'+
@@ -358,7 +358,7 @@ function diagnosisRisksHtml(risk,record){
   const withControls=rows.filter(x=>x.controls_present===true).length;
   const card=(title,value,help)=>'<div class="notice pg10-risk-card"><b>'+title+'</b><strong>'+value+'</strong><small>'+help+'</small></div>';
   const summary='<div class="pg10-risk-lead"><b>¿Qué riesgos presenta el proceso actual?</b>'+
-    '<p>Se han registrado '+rows.length+' riesgos. AUNEA utiliza la valoración más alta para resumir el proceso; no significa que todos tengan exactamente la misma gravedad.</p></div>'+
+    '<p>Se '+(rows.length===1?'ha registrado ':'han registrado ')+rows.length+' '+(rows.length===1?'riesgo':'riesgos')+'. AUNEA utiliza la valoración más alta para resumir el proceso; no significa que todos tengan exactamente la misma gravedad.</p></div>'+
     '<div class="grid g3 diagnosis-risk-summary">'+
     card('Gravedad antes de controles',level(risk.inherent_level),
       'Valoración del proceso si no se tiene en cuenta ningún control preventivo o correctivo.')+
