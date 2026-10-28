@@ -562,7 +562,7 @@ test('PG10: confirmed 100-field AS-IS exposes critical points, gaps and three co
    assert.equal(w.document.querySelector('[data-draft-conditional-scenario="0"]'),null);
    assert.equal(run('currentEng().diagnosticOutput||null'),null,'read-only diagnosis cannot invent a recommendation');
    assert.equal(run('JSON.stringify(confirmedSnapshot(currentEng()))'),before,'the sealed AS-IS remains unchanged');
-   run("state.activePage='tobe';render()");
+   run("registerInternalWorkPages();state.activePage='tobe';render()");
    const tobeText=w.document.getElementById('content').textContent;
    assert.match(tobeText,/Optimización sin IA/);
    assert.match(tobeText,/Optimización asistida por IA/);
