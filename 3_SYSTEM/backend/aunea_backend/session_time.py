@@ -280,6 +280,48 @@ def project_session_time(request: TimeProjectionRequest) -> dict[str, Any]:
         "note": "Espera = suma de exposiciones por actividad, no ciclo end-to-end. Trabajo activo y retrabajo no equivalen a ahorro."
     }
 
+# [AUNEA-BE-TIME-NUMERIC-CHECK-171] START — Numerical coherence separate from chronological reconciliation.
+# SOURCE: DEC-074 (never auto-conciliate elapsed) and existing ±25% map review trigger.
+# INPUTS: sealed DF026 converted to minutes, complete canonical source projection.
+# OUTPUTS: comparison and informative deviation; no extra capture, approval or savings.
+# SIDE_EFFECTS: None. CHANGE_RISK: HIGH. An acceptable difference is not elapsed proof.
+TIME_REVIEW_THRESHOLD_PERCENT = 25.0
+
+
+def numeric_time_consistency(projection: dict[str, Any], declared_minutes: float | None) -> dict[str, Any]:
+    result: dict[str, Any] = {
+        "status": "UNAVAILABLE",
+        "declared_minutes": declared_minutes,
+        "component_minutes": None,
+        "difference_minutes": None,
+        "difference_percent": None,
+        "review_threshold_percent": TIME_REVIEW_THRESHOLD_PERCENT,
+        "elapsed_reconciled": False,
+    }
+    if declared_minutes is None or not isfinite(declared_minutes) or declared_minutes <= 0:
+        return result
+    needed = ("active_minutes_per_case", "wait_exposure_minutes_per_case", "rework_minutes_per_case")
+    if projection.get("status") != "CALCULATED" or any(projection.get(k) is None for k in needed):
+        return result
+    annual_cases = projection.get("annual_cases")
+    extra = projection.get("annual_friction_additional_hours")
+    if annual_cases is None or annual_cases <= 0 or extra is None:
+        return result
+    component = sum(float(projection[k]) for k in needed) + extra * 60 / annual_cases
+    if not isfinite(component):
+        return result
+    deviation = component - declared_minutes
+    percent = deviation / declared_minutes * 100
+    result.update({
+        "status": "WITHIN_REVIEW_THRESHOLD" if abs(percent) <= TIME_REVIEW_THRESHOLD_PERCENT else "REVIEW_DIFFERENCE",
+        "component_minutes": round(component, 4),
+        "difference_minutes": round(deviation, 4),
+        "difference_percent": round(percent, 4),
+    })
+    return result
+# [AUNEA-BE-TIME-NUMERIC-CHECK-171] END
+
+
 # DEC-074: Read-only temporal reconciliation; never call exposure elapsed time.
 class TimeReconciliationRequest(TimeProjectionRequest):
     declared_cycle_minutes: float | None = Field(default=None, gt=0)
@@ -355,7 +397,9 @@ def reconcile_session_time(request: TimeReconciliationRequest) -> dict[str, Any]
     if (groups["wait"] if known["wait"] else 0) > 0:
         pending.append("Solapamiento de esperas no acreditado: exposición no equivale a elapsed")
     pending.append("Sin acreditación de equivalencia entre tiempo habitual declarado y media ponderada del mapa")
+    numeric = numeric_time_consistency(projection, baseline)
     return {
+        "numeric_comparison": numeric,
         "status": "NO_BASELINE" if baseline is None else "PROVISIONAL",
         "declared_minutes": baseline,
         "segments": segments,
