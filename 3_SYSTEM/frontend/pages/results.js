@@ -353,7 +353,7 @@ function diagnosisEconomicsHtml(econ,record,projection){
       '<div class="notice diagnosis-econ-uncertainty"><b>Pérdidas o ahorros de caja registrados</b><strong>Sin importe acreditado</strong>'+
       '<small>La valoración del trabajo es capacidad ocupada, no una pérdida monetaria demostrada ni ahorro de caja recuperable.</small></div>')+
     '</div>'+
-    '<p class="diagnosis-economic-scope">Los importes proceden de registros económicos confirmados; no sustituyen la duración del proceso ni prueban beneficios futuros.</p>'+
+    '<p class="diagnosis-economic-scope">La valoración de capacidad combina horas calculadas del mapa AS-IS y tarifas registradas por rol. Los importes de herramientas, pérdidas y ahorros realizados se muestran desde sus registros económicos originales. No se suman magnitudes duplicadas ni se presuponen beneficios futuros.</p>'+
     '<p class="diagnosis-economic-scope">Las tarifas horarias registradas no permiten cuantificar por sí solas el coste de cada fricción: hacen falta horas atribuibles y una base monetaria compatible. No equivale a que el problema no tenga coste.</p>'+
     // [AUNEA-FE-PG10-ECON-SOURCE-CONCILIATION-174] START — One economic view, distinct owners, no data duplication.
     // SOURCE: DEC-021/032/034/050/068/074; process_time_projection and EconomicResult.
