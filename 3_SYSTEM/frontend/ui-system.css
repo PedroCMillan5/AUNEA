@@ -2093,3 +2093,28 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 @media(max-width:1100px){.asis-coverage-checks{grid-template-columns:1fr 1fr}}
 @media(max-width:740px){.asis-coverage-checks{grid-template-columns:1fr}.asis-coverage-check{padding:13px}}
 /* [AUNEA-FE-PG10-COVERAGE-STYLE-162] END */
+
+/* [AUNEA-FE-PG10-SNAPSHOT-VALUES-STYLE-163] START — Read-only grounded summary from PG09 sealed source */
+.asis-confirmed-data{margin-top:18px;border-top:1px solid var(--border,#d8dedc);padding-top:16px}
+.asis-confirmed-data-heading{display:flex;justify-content:space-between;gap:12px;align-items:baseline;flex-wrap:wrap}
+.asis-confirmed-data-heading>b{font-size:15px}
+.asis-confirmed-data-heading>small{color:var(--muted,#67736d);font-size:11px}
+.asis-confirmed-data>.field-help{margin:6px 0 13px;font-size:12px}
+.asis-data-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.asis-data-group{min-width:0;padding:15px;border:1px solid var(--border,#d8dedc);border-radius:10px;background:var(--card,#fff)}
+.asis-data-group h4{font-size:13px;line-height:1.4;margin:0 0 11px}
+.asis-data-group ul{list-style:none;padding:0;margin:0}
+.asis-data-group li{font-size:12px;line-height:1.5;padding:7px 0;border-top:1px solid var(--border,#d8dedc);overflow-wrap:anywhere}
+.asis-data-group li:first-child{border-top:0;padding-top:0}
+.asis-data-group li>b,.asis-data-group li>small{display:block}
+.asis-data-group li>small{font-size:11px;color:var(--muted,#67736d);margin-top:3px}
+.asis-data-group .field-help{font-size:11px;margin:9px 0 0;line-height:1.55}
+.asis-data-pairs{display:grid;gap:8px}
+.asis-data-pairs>div{display:grid;grid-template-columns:minmax(100px,35%) minmax(0,1fr);gap:12px;align-items:start;font-size:12px;line-height:1.5}
+.asis-data-pairs>div>b{font-weight:600;color:var(--muted,#67736d)}
+.asis-data-pairs>div>span{overflow-wrap:anywhere}
+.asis-field-ledger .asis-field-value{display:block;font-style:normal;font-size:12px;font-weight:400;color:var(--text,#23332b);margin-top:3px;line-height:1.5;overflow-wrap:anywhere}
+.asis-field-ledger li>span{min-width:0}
+@media(max-width:800px){.asis-data-grid{grid-template-columns:1fr}}
+@media(max-width:480px){.asis-data-pairs>div{grid-template-columns:1fr;gap:2px}}
+/* [AUNEA-FE-PG10-SNAPSHOT-VALUES-STYLE-163] END */
