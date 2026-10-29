@@ -689,6 +689,28 @@ test('PG10 uses exactly six sections in one stable rendering path with no recomm
   assert.match(page,/pg10ReviewHtml\(e,official,asis/);
   assert.match(page,/pg10-critical-points/);
 });
+test('PG10 shared trace excludes historical economic and risk records from active findings',()=>{
+  const from=results.indexOf('function diagnosisTrace(');
+  const to=results.indexOf('function diagnosisReadonlyMap(',from);
+  const trace=new Function('diagnosisLinkedFrictions','normalizeArray',
+    results.slice(from,to)+'\nreturn diagnosisTrace;')(
+      ()=>[{id:'F1',affected_steps:['P1']}],
+      x=>Array.isArray(x)?x:x==null?[]:[x]);
+  const record={economicInputs:[
+    {id:'E1',step_ids:['P1'],status:'ACTIVE'},
+    {id:'E2',step_ids:['P1'],status:'SUPERSEDED'},
+    {id:'E3',step_ids:['P2'],status:'ACTIVE'}
+  ],risks:[
+    {id:'R1',step_ids:['P1'],status:'ACTIVE'},
+    {id:'R2',step_ids:['P1'],status:'SUPERSEDED'},
+    {id:'R3',step_ids:['P2'],status:'ACTIVE'}
+  ]};
+  const read=trace(record,{pain_id:'PAIN1'});
+  assert.deepEqual(read.stepIds,['P1']);
+  assert.deepEqual(read.economics.map(x=>x.id),['E1']);
+  assert.deepEqual(read.risks.map(x=>x.id),['R1']);
+  assert.equal(record.economicInputs.length,3,'read only: original sources remain intact');
+});
 test('PG10 synthesis reads the backend projection without inventing rankings, causal savings or priorities',()=>{
   const start=results.indexOf('function pg10SynthesisHtml(');
   const end=results.indexOf('\nfunction pg10ReviewHtml(',start);
