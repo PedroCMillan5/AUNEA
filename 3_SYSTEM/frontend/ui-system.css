@@ -2387,3 +2387,24 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 .pg10-econ-overview .pg10-econ-zero-fields p{font-size:11px;line-height:1.6;margin:6px 0 0}
 @media(max-width:700px){.pg10-econ-overview .pg10-step-source-row{align-items:flex-start;flex-direction:column;gap:7px}.pg10-econ-overview .pg10-step-source-row>b{text-align:left}}
 /* [AUNEA-FE-PG10-ECON-AUDIT-176] END */
+
+
+/* [AUNEA-FE-PG10-SYNTHESIS-REVIEW-177] START — Evidence-bound conclusions and single primary continuation. */
+.pg10-conclusion-list>li.pg10-conclusion-item{gap:8px;padding:15px 16px}
+.pg10-conclusion-item>span{color:var(--muted,#67736d)}
+.pg10-conclusion-item>small{font-size:12px;line-height:1.55}
+.pg10-conclusion-item>small b{font-weight:650}
+.pg10-conclusion-measures{padding:9px 12px;border-left:2px solid var(--line,#d8dedc);display:grid;gap:5px}
+.pg10-conclusion-measures>b{font-size:11px}
+.pg10-conclusion-measures>p{font-size:12px;line-height:1.6;margin:0}
+.pg10-conclusion-source{font-size:12px;align-self:flex-start;line-height:1.5;font-weight:600;margin-top:4px}
+.pg10-conclusion-source-unavailable{font-size:12px;color:var(--muted,#67736d)}
+.pg10-conclusion-boundaries{padding:13px 0 0;border-top:1px solid var(--line,#d8dedc)}
+.pg10-conclusion-boundaries>b{font-size:12px}
+.pg10-conclusion-boundaries p{margin:8px 0 0;font-size:12px;line-height:1.6}
+.pg10-review-actions{margin-top:15px}
+.pg10-review-support{margin-top:15px;padding-top:13px;border-top:1px solid var(--line,#d8dedc)}
+.pg10-review-support>summary{cursor:pointer;font-size:12px;font-weight:600}
+.pg10-review-support-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+@media(max-width:680px){.pg10-review-support-actions{flex-direction:column;align-items:stretch}.pg10-review-support-actions>.btn{white-space:normal}}
+/* [AUNEA-FE-PG10-SYNTHESIS-REVIEW-177] END */
