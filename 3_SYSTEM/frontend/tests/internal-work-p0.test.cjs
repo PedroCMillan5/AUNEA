@@ -162,7 +162,7 @@ test('PG10 coverage reads actual repeatable owners and identifies partial covera
 });
 test('PG10 preparation distinguishes missing capture data from unresolved consultant gates',()=>{
   assert.match(results,/miss\.length\?'Existen '|miss\.length\?'Hay datos/);
-  assert.match(results,/decisiones técnicas sobre soluciones/);
+  assert.match(results,/decisiones técnicas internas para preparar una recomendación oficial/);
   assert.match(results,/unresolved\.length/);
   assert.doesNotMatch(results,/Hay información obligatoria pendiente:/);
 });
@@ -689,52 +689,79 @@ test('PG10 uses exactly six sections in one stable rendering path with no recomm
   assert.match(page,/pg10ReviewHtml\(e,official,asis/);
   assert.match(page,/pg10-critical-points/);
 });
-test('PG10 synthesis does not infer business priority from presentation order or confidence',()=>{
+test('PG10 synthesis reads the backend projection without inventing rankings, causal savings or priorities',()=>{
   const start=results.indexOf('function pg10SynthesisHtml(');
   const end=results.indexOf('\nfunction pg10ReviewHtml(',start);
   assert.ok(start>=0&&end>start);
   const fn=new Function('normalizeArray','diagnosisTrace','diagnosisStepName','diagnosisPainLabel',
-    'engineLabel','esc',results.slice(start,end)+'\nreturn pg10SynthesisHtml;')(
+    'engineLabel','esc','labelFrom','evidenceTypeBackend','num','attr',
+    results.slice(start,end)+'\nreturn pg10SynthesisHtml;')(
       v=>Array.isArray(v)?v:v==null?[]:[v],
-      (_record,p)=>({frictions:[{id:p.frictionId}],stepIds:[p.stepId]}),
+      (_record,p)=>({
+        frictions:[{id:p.frictionId,friction_type:'FT1',observable_signal:'Seguimiento manual',
+          evidence_type:'HYPOTHESIS',client_label:p.pain_id==='P02'?'Duplicación de captura':'Falta de visibilidad'}],
+        stepIds:[p.stepId]
+      }),
       (_record,id)=>id==='S1'?'Registrar factura':'Aprobar factura',
       id=>id==='P02'?'Reintroducción manual':'Espera de aprobación',
-      (_kind,v)=>v==='HIGH'?'Alta':v==='LOW'?'Baja':v==='CONFIRMED'?'Confirmado':v,
-      s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      (_kind,v)=>v==='HIGH'?'Alta':v==='LOW'?'Baja':v==='CONFIRMED'?'Confirmado':v==='INDICATED'?'Indicado':v,
+      s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'),
+      (_,v)=>v, x=>x, n=>String(n).replace('.',','),x=>String(x)
     );
   const data={status:'ANALYZED',pain_results:[
     {pain_id:'P02',frictionId:'F1',stepId:'S1',confidence:'LOW',state:'CONFIRMED'},
     {pain_id:'P03',frictionId:'F2',stepId:'S2',confidence:'HIGH',state:'INDICATED'}
-  ]};
+  ],process_time_projection:{
+    additional_friction_breakdown:[{friction_id:'F2',mode:'ADDITIONAL',annual_additional_hours:12}],
+    step_breakdown:[{step_id:'S2',annual_wait_exposure_hours:450,annual_rework_hours:0},
+      {step_id:'S1',annual_wait_exposure_hours:0,annual_rework_hours:5}]
+  }};
   const html=fn({answers:{DF096:['F2']}},data);
   assert.match(html,/Reintroducción manual/);
   assert.match(html,/Espera de aprobación/);
-  assert.equal((html.match(/Seleccionado por el cliente/g)||[]).length,1);
-  assert.match(html,/no constituyen un ranking/);
-  assert.match(html,/Qué permite concluir este AS-IS/);
-  assert.match(html,/Solo se afirmará que el proceso supera o incumple una referencia cuando las medidas, unidades, periodo y evidencia sean comparables/);
-  assert.match(html,/el rediseño del trabajo y los controles se establecen en TO-BE/);
-  assert.doesNotMatch(html,/tiempo futuro calculado|Ahorro garantizado/);
-  assert.doesNotMatch(html,/Prioridad analítica: (Alta|Baja)|Ahorro anual generado/);
-  assert.match(fn({answers:{DF096:[]}},data),/ausencia no bloquea el diagnóstico/);
+  assert.equal((html.match(/Prioridad señalada por el cliente/g)||[]).length,1);
+  assert.match(html,/12 h\/año/);
+  assert.match(html,/450 h\/año/);
+  assert.match(html,/5 h\/año/);
+  assert.match(html,/Exposición contextual, no atribuida como causa exclusiva/);
+  assert.match(html,/Ya incluido en el diagnóstico económico; no es un ahorro/);
+  assert.match(html,/Calidad de evidencia/);
+  assert.match(html,/Contrastar el mecanismo observado/);
+  assert.match(html,/Estos hallazgos no constituyen un ranking/);
+  assert.match(html,/no deben sumarse entre tarjetas/);
+  assert.match(html,/El diseño del TO-BE/);
+  assert.doesNotMatch(html,/Prioridad analítica: (Alta|Baja)|Ahorro anual generado|tiempo futuro calculado/);
+  assert.match(html,/class="pg10-conclusion-source"/);
+  assert.match(fn({answers:{DF096:[]}},data),/El cliente no ha señalado prioridades/);
   assert.match(fn({answers:{}},null),/Todavía no existe un análisis/);
+  // Projection missing is not zero: no number, no invented year value.
+  const noTime=fn({answers:{}},{status:'ANALYZED',pain_results:data.pain_results});
+  assert.match(noTime,/Impacto específico no cuantificado/);
+  assert.doesNotMatch(noTime,/12 h\/año|450 h\/año/);
 });
-test('PG10 review retains source correction and backend decisions without a second approval state',()=>{
+test('PG10 review distinguishes preliminary PG11 from official design and never double-approves',()=>{
   const a=results.indexOf('function pg10ReviewHtml('),b=results.indexOf('\nfunction resultsPage(',a);
   assert.ok(a>=0&&b>a);
   const fn=new Function('esc','diagnosisEngineDecisionTraceHtml',
     results.slice(a,b)+'\nreturn pg10ReviewHtml;')(
       v=>String(v),()=>'<p>Decisión técnica registrada</p>');
-  const pending=fn({},null,null,[],[{},{}],{status:'OBSOLETE'},false);
+  const pending=fn({},null,{status:'ANALYZED'},[],[{},{}],{status:'OBSOLETE'},false);
   assert.match(pending,/id="reviewEngineGates"/);
   assert.match(pending,/id="runDiag"/);
   assert.match(pending,/data-page="tobe"/);
-  assert.match(pending,/Volver|Consultar fuentes AS-IS/);
+  assert.match(pending,/Consultar fuentes AS-IS/);
   assert.match(pending,/resultado oficial anterior no vigente/);
+  assert.match(pending,/Consultar TO-BE preliminar/);
+  assert.match(pending,/la edición del diseño TO-BE requiere una recomendación oficial vigente/);
+  assert.equal((pending.match(/btn btn-primary/g)||[]).length,1);
   assert.doesNotMatch(pending,/id="confirmDiagnosis"|id="approveDiagnosis"/);
+  const ready=fn({},null,{status:'ANALYZED'},[],[],{status:'CURRENT'},true);
+  assert.match(ready,/Calcular recomendación oficial/);
   const official=fn({}, {pain_results:[]},{status:'ANALYZED'},[],[],{status:'CURRENT'},true);
   assert.match(official,/Continuar al diseño TO-BE/);
   assert.match(official,/Decisión técnica registrada/);
+  assert.equal((official.match(/btn btn-primary/g)||[]).length,1);
+  assert.equal((official.match(/data-page="tobe"/g)||[]).length,1);
 });
 test('PG10 collapsed map source cards open from map and finding navigation',()=>{
   const start=results.indexOf('function bindDiagnosticMapPointNavigation('),end=results.indexOf('\nfunction ',start+10);
@@ -742,6 +769,7 @@ test('PG10 collapsed map source cards open from map and finding navigation',()=>
   assert.match(source,/closest\?\.\('\.pg10-critical-points'\)/);
   assert.match(source,/if\(parent\)parent\.open=true/);
   assert.match(source,/\.diagnosis-finding a\[href/);
+  assert.match(source,/\.pg10-conclusion-source\[href/);
 });
 // [AUNEA-UAT-PG10-WORKSPACE-167] END
 
