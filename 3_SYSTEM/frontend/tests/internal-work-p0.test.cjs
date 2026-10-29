@@ -947,7 +947,7 @@ test('PG10 explains monetary limits and risk triggers with existing source attri
   assert.match(risk,/r\.critical_trigger===true/);
   assert.match(risk,/r\.sensitive_or_high_impact===true/);
   assert.match(risk,/No constan controles que permitan justificar una reducción/);
-  assert.match(risk,/Por qué se considera relevante/);
+  assert.match(risk,/Factores registrados para la valoración/);
 });
 // [AUNEA-UAT-PG10-TEMPORAL-EXPLANATIONS-171] END
 
@@ -1055,8 +1055,10 @@ test('PG10 explains risk severity before/after controls and does not hallucinate
   assert.match(html,/Se ha registrado 1 riesgo/);
   assert.match(html,/No constan controles para 1 de 1 riesgos/);
   assert.match(html,/no puede acreditar su protección/);
-  assert.match(html,/Por qué se considera relevante/);
+  assert.match(html,/Factores registrados para la valoración/);
   assert.match(html,/no un incidente ocurrido ni una pérdida monetaria calculada/);
+  assert.match(html,/Cómo interpretar el nivel global/);
+  assert.match(html,/no se asigna ese nivel automáticamente a todos los riesgos/);
   assert.doesNotMatch(html,/Se han evitado|Controles eficaces confirmados/);
 });
 // [AUNEA-UAT-PG10-COST-RISK-172] END
