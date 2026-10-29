@@ -803,6 +803,25 @@ test('PG10 review distinguishes preliminary PG11 from official design and never 
   assert.doesNotMatch(official,/id="checkRecommendationReadiness"/);
   assert.doesNotMatch(official,/Consultar TO-BE preliminar/);
 });
+test('PG11 preliminary view states its purpose, remains read-only and routes back to PG10',()=>{
+  const start=results.indexOf("function tobePage()"),
+    end=results.indexOf("function tobeComparisonPage(",start);
+  assert.ok(start>0&&end>start);
+  const source=results.slice(start,end);
+  assert.match(source,/TO-BE preliminar/);
+  assert.match(source,/Para qué sirve esta vista/);
+  assert.match(source,/Qué puedes hacer ahora/);
+  assert.match(source,/Qué falta para diseñar/);
+  assert.match(source,/Qué no sucede aquí/);
+  assert.match(source,/no se crea ni aprueba un TO-BE/);
+  assert.match(source,/no se calculan ahorros o precios futuros/);
+  assert.match(source,/Volver a revisión del AS-IS/);
+  assert.match(source,/data-page="resultados"/);
+  assert.match(source,/cinco decisiones técnicas internas/);
+  assert.match(source,/recomendación oficial vigente/);
+  const preliminary=source.slice(0,source.indexOf(";const p=latestTobe(e);"));
+  assert.doesNotMatch(preliminary,/id="createTobeDraft"|advanceTobeStatus\(/);
+});
 test('PG10 AS-IS source navigation returns to exactly the prior review position without mutating Engagement',()=>{
   const stateJs=fs.readFileSync(path.join(root,'core/state.js'),'utf8');
   const processJs=fs.readFileSync(path.join(root,'domain/process.js'),'utf8');
