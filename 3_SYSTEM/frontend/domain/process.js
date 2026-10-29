@@ -1368,7 +1368,9 @@ function processPage(){
   // The client-first editor is the existing consultant-owned surface, not the read-only #session projection.
   if(typeof isProcessEditorWindow==='function'&&isProcessEditorWindow())return clientProcessView(e,steps,fr,e.processTab||'cliente');
   const locked=typeof isAsisConsoleLocked==='function'&&isAsisConsoleLocked(e);
-  const top='<button class="btn btn-primary" id="openSessionDisplayFromProcess">'+(locked?'Vista con cliente abierta ↗':'Vista con cliente ↗')+'</button>';
+  const top=(typeof canReturnToPg10FromAsis==='function'&&canReturnToPg10FromAsis(e)
+    ?'<button class="btn btn-outline" id="returnFromAsisToPg10">Volver a revisión del diagnóstico</button>':'')+
+    '<button class="btn btn-primary" id="openSessionDisplayFromProcess">'+(locked?'Vista con cliente abierta ↗':'Vista con cliente ↗')+'</button>';
   return pageTop('Mapa AS-IS','Lo que sabemos del proceso actual, todo en un mismo mapa.',top)
     +(typeof asisConsoleLockNotice==='function'?asisConsoleLockNotice():'')+asisMapPage(e,steps,fr);
 }
