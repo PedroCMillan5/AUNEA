@@ -2348,3 +2348,31 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 .diagnosis-economic-detail .pg10-economic-source-group>.field-help{font-size:11px;line-height:1.65;margin:5px 0 11px}
 .diagnosis-economic-detail .pg10-economic-source-group .diagnosis-economic-source-values{margin:7px 0 11px}
 /* [AUNEA-FE-PG10-ECON-SOURCE-174] END */
+
+
+/* [AUNEA-FE-PG10-ECON-LAYOUT-175] START — Unified baseline, compact roles/other impacts and one drilldown. */
+.pg10-econ-overview{display:grid;gap:13px}
+.pg10-econ-hero{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.pg10-econ-hero>div{padding:14px 16px;border:1px solid var(--line,#d8dedc);border-radius:10px;background:var(--card,#fff);display:flex;flex-direction:column;gap:7px;min-width:0}
+.pg10-econ-hero small{font-size:11px;color:var(--muted,#67736d);line-height:1.4}
+.pg10-econ-hero strong{font-size:24px;font-weight:700;line-height:1.3;font-variant-numeric:tabular-nums}
+.pg10-econ-overview .pg10-cost-roles{margin:0;padding:3px 0 0;border:0}
+.pg10-econ-overview .pg10-cost-roles h5,.pg10-econ-other h5,.pg10-econ-detail-group h5{font-size:13px;line-height:1.45;margin:0 0 9px;font-weight:700}
+.pg10-econ-other{border-top:1px solid var(--line,#d8dedc);padding-top:15px}
+.pg10-econ-other-grid{gap:10px}
+.pg10-econ-other-grid>.notice{border:1px solid var(--line,#d8dedc);border-radius:9px;background:transparent;min-width:0;padding:12px 14px;display:flex;flex-direction:column;gap:7px}
+.pg10-econ-other-grid>.notice b{font-size:11px}
+.pg10-econ-other-grid>.notice strong{font-size:17px;line-height:1.3;font-variant-numeric:tabular-nums}
+.pg10-econ-other-grid>.notice small{font-size:11px;line-height:1.5;color:var(--muted,#67736d)}
+.pg10-econ-overview .pg10-econ-summary-note{font-size:12px;line-height:1.6;margin:0}
+.pg10-econ-overview .diagnosis-economic-detail{margin:0;border:1px solid var(--line,#d8dedc);border-radius:9px;padding:13px 15px}
+.pg10-econ-overview .diagnosis-economic-detail>summary{font-size:12px;font-weight:700;cursor:pointer}
+.pg10-econ-detail-group{padding:15px 0 2px;display:grid;gap:7px}
+.pg10-econ-detail-group+.pg10-econ-detail-group{margin-top:9px;border-top:1px solid var(--line,#d8dedc)}
+.pg10-econ-detail-group p{font-size:12px;line-height:1.65;margin:0}
+.pg10-econ-overview .pg10-cost-conditional{margin:13px 0 0}
+.pg10-econ-overview .diagnosis-economic-input-list{margin:4px 0 0;list-style:none;padding:0;display:grid;gap:8px}
+.pg10-econ-overview .diagnosis-economic-input-list>li{border:1px solid var(--line,#d8dedc);border-radius:8px;padding:10px 12px;display:flex;flex-wrap:wrap;gap:7px 12px;font-size:12px}
+.pg10-econ-overview .diagnosis-economic-input-list>li>small{flex-basis:100%;color:var(--muted,#67736d)}
+@media(max-width:700px){.pg10-econ-hero{grid-template-columns:1fr}.pg10-econ-hero strong{font-size:21px}.pg10-econ-other-grid{grid-template-columns:1fr}}
+/* [AUNEA-FE-PG10-ECON-LAYOUT-175] END */
