@@ -573,4 +573,32 @@ test('PG10: confirmed 100-field AS-IS exposes critical points, gaps and three co
  }finally{dom.window.close()}
 });
 
+test('PG11: create-draft button reacts to a real click and retains AS-IS confirmation',async()=>{
+  const {w,dom,run,errors}=buildRuntime();
+  try{
+    run("registerInternalWorkPages();state.activePage='uat';render()");
+    await w.document.getElementById('loadSingleUat').onclick();
+    run("state.activePage='diagnostico';currentEng().stageId='S09';render()");
+    w.document.querySelector('[data-confirm-df017-final]').click();
+    w.document.getElementById('confirmClosingAsIs').click();
+    assert.equal(run('hasConfirmedSnapshot(currentEng())'),true);
+    const before=run('JSON.stringify(confirmedSnapshot(currentEng()))');
+    // Avoid a new recommendation engine calculation; isolate the click/DOM binding.
+    run('currentDiagnosticOutput=()=>({recommendation:{}})');
+    run("state.activePage='tobe';render()");
+    const button=w.document.getElementById('createTobeDraft');
+    assert.ok(button,'the official output permits a new draft');
+    assert.equal(typeof button.onclick,'function','the visible action must have a working listener');
+    button.click();
+    assert.equal(run('currentEng().tobeProposals?.length||0'),1,
+      'clicking the button must instantiate exactly one DRAFT');
+    assert.equal(run('latestTobe(currentEng()).status'),'DRAFT');
+    assert.equal(run('JSON.stringify(confirmedSnapshot(currentEng()))'),before,
+      'instantiating a proposal must not alter the confirmed AS-IS');
+    assert.ok(!w.document.getElementById('createTobeDraft'),'after click the editable draft replaces the create button');
+    assert.ok(w.document.getElementById('saveTobe'),'the newly created draft is editable');
+    assert.deepEqual(errors,[]);
+  }finally{dom.window.close()}
+});
+
 // [AUNEA-UAT-RUNTIME-125] END
