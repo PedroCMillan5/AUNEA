@@ -976,13 +976,13 @@ test('PG10 economic baseline shows one summary, readable roles, separate impacts
         {role:'MANAGER',annual_hours:43.2,hourly_rate:40,annual_capacity_value_eur:1728,capacity_value_eur_per_case:1.2}
       ],
       rework_separate_value_eur:307.2,steps:[
-        {step_id:'P1',step_name:'Recibir factura',role:'ADMIN',annual_hours:72,
+        {step_id:'P1',step_name:'Recibir factura',role:'ADMIN',annual_hours:72,base_annual_hours:72,additional_annual_hours:0,
           hourly_rate:32,capacity_value:2304,evidence:['HYPOTHESIS']},
-        {step_id:'P2',step_name:'Determinar aprobación',role:'ADMIN',annual_hours:120,
+        {step_id:'P2',step_name:'Determinar aprobación',role:'ADMIN',annual_hours:120,base_annual_hours:48,additional_annual_hours:72,
           hourly_rate:32,capacity_value:3840,evidence:['HYPOTHESIS']},
-        {step_id:'P3',step_name:'Aprobar',role:'MANAGER',annual_hours:43.2,
+        {step_id:'P3',step_name:'Aprobar',role:'MANAGER',annual_hours:43.2,base_annual_hours:43.2,additional_annual_hours:0,
           hourly_rate:40,capacity_value:1728,evidence:['HYPOTHESIS']},
-        {step_id:'P4',step_name:'Registrar',role:'ADMIN',annual_hours:240,
+        {step_id:'P4',step_name:'Registrar',role:'ADMIN',annual_hours:240,base_annual_hours:240,additional_annual_hours:0,
           hourly_rate:32,capacity_value:7680,evidence:['HYPOTHESIS']}
       ]}};
   const html=fn({current_tool_cost_eur_annual:960},source,time);
@@ -1013,6 +1013,9 @@ test('PG10 economic baseline shows one summary, readable roles, separate impacts
   assert.match(html,/72 h\/año/);
   assert.match(html,/475,2 h\/año/);
   assert.match(html,/Procedencia por paso/);
+  assert.match(html,/48 h\/año del paso \+ 72 h\/año adicionales = 120 h\/año/);
+  assert.match(html,/2\.304 €|2304 €/);
+  assert.match(html,/El valor por paso usa las horas atribuidas por el backend/);
   assert.match(html,/Recibir factura/);
   assert.match(html,/Determinar aprobación/);
   assert.match(html,/Falta de visibilidad/);
@@ -1032,7 +1035,9 @@ test('PG10 economic baseline shows one summary, readable roles, separate impacts
   assert.match(legacy,/No se dispone del desglose por rol en este análisis/);
   assert.match(legacy,/Procedencia por paso/);
   const zero=fn({annual_active_hours:0}, {economicInputs:[{driver_id:'ED01',annual_active_hours:0}]},time);
-  assert.match(zero,/0 h\/año de trabajo consignado directamente/);
+  assert.match(zero,/Ver campos consignados con valor cero \(1\)/);
+  assert.match(zero,/Trabajo declarado: 0 h\/año/);
+  assert.doesNotMatch(zero,/0 h\/año de trabajo consignado directamente/);
   assert.doesNotMatch(zero,/0 h\/año de capacidad no utilizada/);
 });
 test('PG10 explains risk severity before/after controls and does not hallucinate protections',()=>{
