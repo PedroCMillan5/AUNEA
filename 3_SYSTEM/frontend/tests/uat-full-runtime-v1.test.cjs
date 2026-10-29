@@ -588,15 +588,28 @@ test('PG11: create-draft button reacts to a real click and retains AS-IS confirm
     run("state.activePage='tobe';render()");
     const button=w.document.getElementById('createTobeDraft');
     assert.ok(button,'the official output permits a new draft');
-    assert.equal(typeof button.onclick,'function','the visible action must have a working listener');
+    assert.equal(button.onclick,null,'single delegated handler avoids duplicate handlers on each render');
     button.click();
     assert.equal(run('currentEng().tobeProposals?.length||0'),1,
       'clicking the button must instantiate exactly one DRAFT');
     assert.equal(run('latestTobe(currentEng()).status'),'DRAFT');
+    // A stale DOM click must not instantiate another version of the same draft.
+    button.click();
+    assert.equal(run('currentEng().tobeProposals.length'),1,
+      'a second click after the first repaint must not duplicate the proposal');
+
     assert.equal(run('JSON.stringify(confirmedSnapshot(currentEng()))'),before,
       'instantiating a proposal must not alter the confirmed AS-IS');
     assert.ok(!w.document.getElementById('createTobeDraft'),'after click the editable draft replaces the create button');
     assert.ok(w.document.getElementById('saveTobe'),'the newly created draft is editable');
+    // A legacy malformed history should fail visibly without overwriting client data.
+    run('currentEng().tobeProposals={legacy:true};state.activePage="tobe";render()');
+    const malformed=w.document.getElementById('createTobeDraft');
+    assert.ok(malformed);
+    malformed.click();
+    assert.equal(run('JSON.stringify(currentEng().tobeProposals)'),JSON.stringify({legacy:true}));
+    assert.match(w.document.getElementById('toast').textContent,/formato no reconocido/);
+    assert.equal(run('JSON.stringify(confirmedSnapshot(currentEng()))'),before);
     assert.deepEqual(errors,[]);
   }finally{dom.window.close()}
 });
