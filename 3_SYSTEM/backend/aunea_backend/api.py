@@ -7,7 +7,7 @@
 # CHANGE_RISK: CRITICAL.
 from __future__ import annotations
 import os
-from fastapi import FastAPI, HTTPException, Body, Response
+from fastapi import FastAPI, HTTPException, Body, Response, Request as FastAPIRequest
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from .models import EngagementInput, ScenarioRequest, DiagnosticOutput
@@ -22,6 +22,8 @@ from .session_time import TimeProjectionRequest, TimeReconciliationRequest, proj
 from .input_coverage import relational_integrity_issues
 from .intervention_projection import InterventionProjectionRequest, project_interventions_review
 from .intervention_reconciliation import InterventionReconciliationRequest, reconcile_interventions_review
+from .internal_ai import PilotAIRequest
+from .internal_ai_provider import status as internal_ai_status, propose as propose_internal_tobe, ProviderUnavailable
 
 app = FastAPI(title="AUNEA Internal Backend", version="1.1.1")
 app.add_middleware(
@@ -42,6 +44,26 @@ class ComparePayload(BaseModel):
 class DeliverPayload(BaseModel):
     diagnostic: dict | None = None
     request: DeliverableRequest = Field(default_factory=DeliverableRequest)
+
+
+# [AUNEA-BE-INTERNAL-AI-API-192] START — explicit local pilot, disabled by default
+# SOURCE: DEC-034/050/052/055, Simulator CANONICAL PG10/PG11, pilot REVIEW.
+# No provider calls unless three server-side configuration gates are enabled.
+@app.get("/v1/internal-ai/status")
+def get_internal_ai_status():
+    return internal_ai_status()
+
+@app.post("/v1/internal-ai/tobe-draft")
+def internal_ai_tobe_draft(payload: PilotAIRequest, request: FastAPIRequest):
+    if request.client is None or request.client.host not in ("127.0.0.1", "::1", "testclient"):
+        raise HTTPException(403, "Piloto IA limitado a acceso local. Requiere autenticación antes del despliegue.")
+    try:
+        return propose_internal_tobe(payload)
+    except ProviderUnavailable as exc:
+        raise HTTPException(503, str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+# [AUNEA-BE-INTERNAL-AI-API-192] END
 
 @app.get("/health")
 def health():
