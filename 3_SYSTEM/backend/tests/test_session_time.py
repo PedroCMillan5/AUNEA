@@ -443,6 +443,12 @@ def test_pg10_source_role_capacity_estimate_levante_sized_case_without_double_co
     assert result["steps_valued"]==4
     assert result["rework_separate_value_eur"]==307.2
     assert result["steps"][1]["annual_hours"]==120  # 48h step + 72h ADDITIONAL
+    assert result["steps"][1]["base_annual_hours"]==48
+    assert result["steps"][1]["additional_annual_hours"]==72
+    assert result["steps"][1]["base_annual_hours"]+result["steps"][1]["additional_annual_hours"]==result["steps"][1]["annual_hours"]
+    assert sum(step["base_annual_hours"] for step in result["steps"])==403.2
+    assert sum(step["additional_annual_hours"] for step in result["steps"])==72
+    assert all(step["additional_annual_hours"]==0 for step in result["steps"] if step["step_id"]!="P2")
     assert result["steps"][3]["annual_hours"]==240  # INCLUDED does not increase cost
     assert all("HYPOTHESIS" in x["evidence"] for x in result["steps"])
     assert not any(key in result for key in ("cash_savings","annual_tool_cost","cost_accounting_total"))
@@ -463,6 +469,8 @@ def test_pg10_operating_cost_is_unavailable_if_rate_missing_or_conflicts():
     assert r["role_breakdown"][0]["annual_capacity_value_eur"] is None
     assert r["role_breakdown"][0]["annual_hours"] is None
     assert r["role_breakdown"][0]["valued_step_count"]==0
+    assert r["steps"][0]["base_annual_hours"]==10
+    assert r["steps"][0]["additional_annual_hours"]==0
 
 
 
