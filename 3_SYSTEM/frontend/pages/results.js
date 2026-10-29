@@ -459,9 +459,10 @@ function diagnosisRisksHtml(risk,record){
     '<p><b>¿Dónde puede ocurrir?</b> '+esc(normalizeArray(r.step_ids).map(id=>diagnosisStepName(record,id)).join(' · ')||'Sin paso enlazado')+'</p>'+
     '<p><b>Probabilidad declarada:</b> '+esc(r.likelihood_1_5??'No consta')+'/5 · <b>Gravedad de la consecuencia:</b> '+esc(r.impact_1_5??'No consta')+'/5</p>'+
     '<p><b>Controles registrados:</b> '+(r.controls_present===true?'Sí':r.controls_present===false?'No constan':'No determinado')+'</p>'+
-    '<p class="pg10-risk-explanation"><b>Por qué se considera relevante:</b> '+reason(r)+'</p>'+
+    '<p class="pg10-risk-explanation"><b>Factores registrados para la valoración:</b> '+reason(r)+'</p>'+
     '</div>').join('')+'</div>':'<p>No hay riesgos registrados para este proceso.</p>';
   return summary+items+
+    '<p class="pg10-risk-context"><b>Cómo interpretar el nivel global:</b> los factores consignados para cada riesgo fundamentan su evaluación. El nivel máximo resume el proceso; no se asigna ese nivel automáticamente a todos los riesgos. No se declara eficacia de controles sin evidencia.</p>'+
     '<p class="pg10-risk-context"><b>Qué revisar:</b> comprobar si existen medidas para prevenir o detectar cada riesgo y si hay evidencia de que se aplican. Las propuestas de control se definirán en el diseño TO-BE; no se suponen implantadas.</p>';
   // [AUNEA-FE-PG10-RISK-EXPLANATION-172] END
 }
