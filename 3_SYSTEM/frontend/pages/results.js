@@ -593,7 +593,7 @@ function pg10SynthesisHtml(record,data){
   return '<div class="pg10-conclusions"><p>'+esc(client)+'</p>'+
     (items.length?'<ul class="pg10-conclusion-list">'+items.join('')+'</ul>':
       '<div class="notice info">No hay hallazgos confirmados o indicados en el análisis actual. Esto no equivale a demostrar que el proceso no tenga problemas.</div>')+
-    (needingEvidence?'<p class="field-help">Hay '+needingEvidence+' señales sin evidencia suficiente para considerarlas hallazgos. Consulta el diagnóstico y sus fuentes antes de confirmarlas.</p>':'')+
+    (needingEvidence?'<p class="field-help">'+(needingEvidence===1?'Hay 1 señal sin evidencia suficiente para considerarla un hallazgo.':'Hay '+needingEvidence+' señales sin evidencia suficiente para considerarlas hallazgos.')+' Consulta el diagnóstico y sus fuentes antes de confirmar estos casos.</p>':'')+
     '<p class="field-help">Estos hallazgos no constituyen un ranking ni una prioridad analítica calculada. Pueden compartir pasos y magnitudes: las cifras mostradas proceden del diagnóstico existente y no deben sumarse entre tarjetas.</p>'+
     '<div class="pg10-conclusion-boundaries"><b>Alcance del diagnóstico actual</b>'+
       '<p>Se describe la situación AS-IS y su evidencia. La proximidad de datos no demuestra una causa raíz ni un incumplimiento; cualquier comparación con objetivos o referencias necesita medidas y periodos compatibles.</p>'+
