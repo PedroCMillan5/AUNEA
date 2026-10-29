@@ -459,14 +459,17 @@ def estimate_process_labor_capacity(
         if hours is None or rate is None:
             unknown.append(str(step.get("step_name") or sid)+" (falta tarifa única por rol o tiempo anual)")
             breakdown.append({"step_id":sid,"step_name":step.get("step_name"),"role":role or None,
-                              "annual_hours":hours,"hourly_rate":rate,"capacity_value":None})
+                              "annual_hours":hours,"base_annual_hours":main,
+                              "additional_annual_hours":round(additional.get(sid,0.0),2),
+                              "hourly_rate":rate,"capacity_value":None})
             rework_complete=False
             continue
         value=round(hours*rate,2)
         total_hours+=hours
         total_value+=value
         breakdown.append({"step_id":sid,"step_name":step.get("step_name"),"role":role,
-                          "annual_hours":round(hours,2),"hourly_rate":rate,
+                          "annual_hours":round(hours,2),"base_annual_hours":round(main,2),
+                          "additional_annual_hours":round(additional.get(sid,0.0),2),"hourly_rate":rate,
                           "capacity_value":value,"evidence":sorted(options["evidence"])})
         redo=_number(item.get("annual_rework_hours"))
         if redo is None:rework_complete=False
