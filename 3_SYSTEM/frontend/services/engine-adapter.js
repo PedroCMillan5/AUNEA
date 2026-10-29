@@ -210,6 +210,7 @@ function unresolvedEngineGates(e){
 }
 function engineGateCard(c,e){
   const info=engineGateReviewEvidence(c,e),guide=ENGINE_GATE_GUIDE[c.key];
+  const decisionNumber=ENGINE_GATE_CONTRACT.findIndex(item=>item.key===c.key)+1;
   const version=confirmedSnapshot(e)?.version||null;
   const stale=!!(e.engineGateReview?.snapshotVersion&&version!==e.engineGateReview.snapshotVersion);
   const saved=stale?'':(engineGates(e)[c.key]||'');
@@ -230,7 +231,7 @@ function engineGateCard(c,e){
     :confirmed?'<p class="engine-review-saved">Respuesta confirmada por el consultor para este AS-IS: '+(saved==='YES'?'Sí':'No')+'. '+(basis==='CONSULTANT_ASSERTION'?'No consta fundamento suficiente en la captura; esta respuesta es criterio del consultor, no un dato acreditado.':'El fundamento disponible sigue sujeto a su tipo de evidencia.')+'</p>'
     :saved?'<p class="engine-review-saved">Existe una selección anterior sin confirmación válida para este AS-IS. Debes revisar las cinco decisiones.</p>':'';
   return '<section class="engine-review-card" data-engine-review-card="'+attr(c.key)+'">'
-    +'<header class="engine-review-header"><div><h3>'+esc(guide.title)+'</h3><p>'+esc(guide.help)+'</p></div>'
+    +'<header class="engine-review-header"><div><small class="engine-review-number">Decisión '+decisionNumber+' de '+ENGINE_GATE_CONTRACT.length+'</small><h3>'+esc(guide.title)+'</h3><p>'+esc(guide.help)+'</p></div>'
     +'<span class="engine-review-status '+chip+'">'+esc(stateText)+'</span></header>'
     +'<div class="engine-review-detail"><div><b>Información recuperada</b>'+provenance+'</div>'
     +'<div class="engine-review-judgement">'+proposed+'<p><b>Qué comprobar:</b> '+esc(info.missing)+'</p></div></div>'
@@ -242,7 +243,8 @@ function engineGateCard(c,e){
 function openEngineGateReview(){
   const e=currentEng();if(!e)return;
   const openedSnapshotVersion=confirmedSnapshot(e)?.version||null;
-  const body='<div class="engine-review-intro"><p><b>Revisa cinco decisiones técnicas antes de calcular.</b> AUNEA recupera los datos del AS-IS confirmado y muestra qué sustentan. Una propuesta no es una respuesta confirmada.</p>'
+  const body='<div class="engine-review-intro"><p><b>Decisiones técnicas del consultor — '+ENGINE_GATE_CONTRACT.length+' preguntas.</b> No son campos pendientes del cliente ni nuevas preguntas de captura.</p>'+
+    '<p><b>Cómo completarlas:</b> revisa la información recuperada, comprueba lo que falta y selecciona Sí o No únicamente cuando tengas un fundamento. AUNEA puede proponer una respuesta, pero no la marca por ti.</p>'
     +'<p>Si falta información, deja la decisión pendiente. Una decisión que el consultor asuma sin evidencia capturada se conservará como criterio propio, no como hecho verificado. No se ejecutarán los motores ni se guardarán respuestas parciales como confirmadas.</p></div>'
     +'<div class="engine-review-list">'+ENGINE_GATE_CONTRACT.map(c=>engineGateCard(c,e)).join('')+'</div>';
   openModal('Decisiones del consultor',body,()=>{
@@ -282,7 +284,7 @@ function openEngineGateReview(){
       toast('No se pudo guardar la confirmación. No se ejecutará el diagnóstico.');render();return;
     }
     closeModal();runDiagnosis();
-  },'Confirmar decisiones y calcular');
+  },'Confirmar decisiones y calcular recomendación');
 }
 // [AUNEA-FE-ENGINE-GATE-ASSIST-151] END
 function evidenceTypeBackend(v){return ({EV01:'MEASURED',EV02:'CLIENT_DECLARED',EV03:'AUNEA_ESTIMATE',EV04:'HYPOTHESIS',EV05:'SPECIFIC_BENCHMARK',EV06:'AUNEA_ESTIMATE',EV07:'AUNEA_ESTIMATE',MEASURED:'MEASURED',CLIENT_DECLARED:'CLIENT_DECLARED',AUNEA_ESTIMATE:'AUNEA_ESTIMATE',SPECIFIC_BENCHMARK:'SPECIFIC_BENCHMARK',HYPOTHESIS:'HYPOTHESIS'})[v]||null}
