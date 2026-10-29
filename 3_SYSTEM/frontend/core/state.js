@@ -465,6 +465,38 @@ function setPage(page){
     }
   }
   if(['diagnostico','proceso','pasos','fricciones','riesgos','impacto','resultados','tobe','comparacion','revision','modoresultados','implementacion','recomendacion','escenarios','quote'].includes(page)&&!currentEng()){toast('Abre o crea un estudio antes.');state.activePage='estudios';render();return}const e=currentEng(),previousPage=state.activePage;if(page==='diagnostico'&&e&&typeof advanceEngagementTo==='function')advanceEngagementTo(e,'Sesión 1','apertura de la primera sesión');if(page==='proceso'&&e&&!['cliente','fricciones','riesgos','impacto'].includes(e.processTab))e.processTab='cliente';state.activePage=page;render()}
+// [AUNEA-FE-PG10-SOURCE-RETURN-178] START — UI-only origin for PG10 source consultation.
+// Does not mutate Engagement, stage, snapshot, confirmation or persistent navigation.
+let __pg10SourceOrigin=null;
+function openPg10Sources(){
+  const e=currentEng();if(!e)return;
+  __pg10SourceOrigin={
+    engagementId:e.id,
+    scrollY:typeof window!=='undefined'?window.scrollY:0
+  };
+  setPage('proceso');
+}
+function canReturnToPg10FromAsis(e){
+  return !!(e&&__pg10SourceOrigin?.engagementId===e.id);
+}
+function returnFromAsisToPg10(){
+  const e=currentEng(),origin=__pg10SourceOrigin;
+  if(!canReturnToPg10FromAsis(e)){setPage('resultados');return}
+  __pg10SourceOrigin=null;
+  setPage('resultados');
+  const restore=()=>{
+    if(state.activePage!=='resultados'||currentEng()?.id!==origin.engagementId)return;
+    const section=document.getElementById('pg10-review-section');
+    if(typeof window!=='undefined'&&typeof window.scrollTo==='function'){
+      try{window.scrollTo(0,origin.scrollY);return}catch(_e){}
+    }
+    section?.scrollIntoView?.({block:'start'});
+  };
+  if(typeof requestAnimationFrame==='function')
+    requestAnimationFrame(()=>requestAnimationFrame(restore));
+  else restore();
+}
+// [AUNEA-FE-PG10-SOURCE-RETURN-178] END
 function goToProcessFromStage(){const e=currentEng();if(e){state.returnTo={page:'diagnostico',stageId:e.stageId};e.processTab='cliente'}setPage('proceso')}
 function returnToStage(){const e=currentEng(),rt=state.returnTo;if(e&&rt)e.stageId=rt.stageId;state.returnTo=null;setPage('diagnostico')}
 // screenId is the approved reference a screen must reproduce (e.g. "I90-00-01"). It is internal
