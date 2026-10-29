@@ -16,7 +16,7 @@ La primera capacidad de IA es **PG10 análisis vigente → PG11 propuesta TO-BE 
 ## Seguridad, proveedor y disponibilidad
 Backend: `aunea_backend/internal_ai.py`, `internal_ai_provider.py`, `api.py`. Frontend: `domain/internal-ai-pilot.js` (registrado en manifest y cargado antes de boot). Endpoints de piloto: `GET /v1/internal-ai/status` y `POST /v1/internal-ai/tobe-draft`.
 
-El proveedor está **UNAVAILABLE por defecto**, sin llamadas de pago. Para habilitar el piloto local hacen falta `AUNEA_INTERNAL_AI_ENABLED=1`, `AUNEA_INTERNAL_AI_DATA_AUTHORIZED=1` y una credencial `OPENAI_API_KEY` configurada únicamente en el servidor; modelo parametrizable por `AUNEA_INTERNAL_AI_MODEL`, por defecto `gpt-6-luna`. El POST sólo admite tráfico de loopback/test local; no se autoriza exposición remota ni clientes reales sin autenticación, base jurídica y tratamiento de datos formalizados. La API se invoca únicamente al pulsar el botón, sin reintentos automáticos y con `store=false` en el proveedor.
+El agente está **UNAVAILABLE por defecto**. Selección en backend con `AUNEA_INTERNAL_AI_PROVIDER=ollama|openai` (por compatibilidad, si se omite conserva `openai`). Ambos exigen `AUNEA_INTERNAL_AI_ENABLED=1` y `AUNEA_INTERNAL_AI_DATA_AUTHORIZED=1`. OpenAI necesita `OPENAI_API_KEY`, usa `AUNEA_INTERNAL_AI_MODEL` y remite `store=false`; Ollama NO necesita clave de API, requiere servicio local en `127.0.0.1:11434` y modelo instalado, elegido con `AUNEA_OLLAMA_MODEL` (por defecto `qwen3:4b-instruct`). Ollama sólo conecta a loopback y nunca se sustituye automáticamente por la API de pago de OpenAI. El POST de piloto no se habilita para acceso público; no se autoriza exposición remota ni clientes reales sin autenticación, base jurídica y controles de tratamiento. La llamada sólo se hace por acción explícita, sin reintentos automáticos. Guía técnica: `docs/AUNEA_INTERNAL_AI_OLLAMA_LOCAL_SETUP_REVIEW_20261029.md`.
 
 El servicio utiliza Structured Outputs y valida de nuevo todas las referencias recibidas. Un proveedor ausente o inválido detiene la operación; jamás se finge una propuesta IA. Los outputs del motor oficial siguen siendo server-owned.
 
@@ -26,6 +26,7 @@ En la rama `work/as-is-ux-simplification-20260930`, GitHub Actions Acceptance Ga
 - Frontend: **728 passed, 0 failed**.
 - Browser UAT automatizada: **SUCCESS**.
 - Regresiones añadidas: `test_internal_ai_pilot_review.py`, `internal-ai-pilot-review.test.cjs`.
+- Segundo proveedor local Ollama incorporado el mismo 29/10, con regresión `test_internal_ai_ollama_review.py`. Gate actualizado en CI posterior; no implica prueba de inferencia real en Windows.
 - CODE_BLOCK_INDEX actualizado con bloques 190/191/192/193.
 
 **No probado**: llamada real a proveedor, calidad semántica de propuestas, validación humana de los cuatro pasos actuales ni UAT completa Windows/Edge/Chromium después de usar el botón IA. El gate verde no certifica ninguno de esos puntos.
