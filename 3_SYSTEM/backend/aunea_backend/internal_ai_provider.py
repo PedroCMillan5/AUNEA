@@ -1,8 +1,8 @@
-# [AUNEA-BE-INTERNAL-AI-PROVIDER-191] START — optional OpenAI Responses adapter
+# [AUNEA-BE-INTERNAL-AI-PROVIDER-191] START — optional governed AI provider dispatch (OpenAI or Ollama)
 # SOURCE: DEC-034/052/055 and PG10–PG11 REVIEW contract, 2026-10-29.
 # INPUTS: read-only canonical engagement and engine output.
 # OUTPUTS: validated DRAFT, no engine writes or publication.
-# SIDE_EFFECTS: a single external API request only after explicit operator opt-in.
+# SIDE_EFFECTS: one selected-provider request after explicit operator opt-in; Ollama uses loopback only.
 # CHANGE_RISK: HIGH. No logging of prompts, customer records or credentials.
 from __future__ import annotations
 import json
@@ -15,11 +15,25 @@ class ProviderUnavailable(Exception):
     pass
 
 def status() -> dict:
+    """Operator-side selection only. Never fallback from Ollama to a billed API."""
+    provider = os.getenv("AUNEA_INTERNAL_AI_PROVIDER", "openai").strip().lower()
     enabled = os.getenv("AUNEA_INTERNAL_AI_ENABLED") == "1"
     authorized = os.getenv("AUNEA_INTERNAL_AI_DATA_AUTHORIZED") == "1"
+    if provider not in ("ollama", "openai"):
+        return {"status": "UNAVAILABLE", "provider": provider, "reason": "Proveedor IA desconocido."}
+    if not (enabled and authorized):
+        return {"status": "UNAVAILABLE", "provider": provider,
+                "reason": "Faltan activación explícita o autorización para tratar datos."}
+    if provider == "ollama":
+        from .internal_ai_ollama import readiness, OllamaUnavailable
+        try:
+            return readiness()
+        except OllamaUnavailable as exc:
+            return {"status": "UNAVAILABLE", "provider": "ollama", "reason": str(exc)}
     configured = bool(os.getenv("OPENAI_API_KEY"))
-    return {"status": "AVAILABLE" if enabled and authorized and configured else "UNAVAILABLE",
-            "model": os.getenv("AUNEA_INTERNAL_AI_MODEL", "gpt-6-luna")}
+    return {"status": "AVAILABLE" if configured else "UNAVAILABLE",
+            "provider": "openai", "model": os.getenv("AUNEA_INTERNAL_AI_MODEL", "gpt-6-luna"),
+            "reason": "" if configured else "Falta la clave API de OpenAI."}
 
 def _schema() -> dict:
     fields = ("source_step_id", "problem_resolved", "future_actor", "tool", "inputs",
@@ -52,7 +66,13 @@ def propose(request: PilotAIRequest) -> PilotAIResult:
     steps = validate_pilot_source(request)
     config = status()
     if config["status"] != "AVAILABLE":
-        raise ProviderUnavailable("IA no configurada o tratamiento de datos no autorizado.")
+        raise ProviderUnavailable(config.get("reason") or "IA no configurada o no autorizada.")
+    if config["provider"] == "ollama":
+        from .internal_ai_ollama import propose as local_propose, OllamaUnavailable
+        try:
+            return local_propose(request, steps, _schema(), _INSTRUCTIONS)
+        except OllamaUnavailable as exc:
+            raise ProviderUnavailable(str(exc)) from exc
     context = {"source_snapshot_version": request.snapshot_version,
                "engagement": request.engagement.model_dump(mode="json"),
                "diagnostic": request.diagnostic.model_dump(mode="json"),
