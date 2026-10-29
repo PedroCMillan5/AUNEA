@@ -244,7 +244,7 @@ function openEngineGateReview(){
   const e=currentEng();if(!e)return;
   const openedSnapshotVersion=confirmedSnapshot(e)?.version||null;
   const body='<div class="engine-review-intro"><p><b>Decisiones técnicas del consultor — '+ENGINE_GATE_CONTRACT.length+' preguntas.</b> No son campos pendientes del cliente ni nuevas preguntas de captura.</p>'+
-    '<p><b>Cómo completarlas:</b> revisa la información recuperada, comprueba lo que falta y selecciona Sí o No únicamente cuando tengas un fundamento. AUNEA puede proponer una respuesta, pero no la marca por ti.</p>'
+    '<p><b>Cómo completarlas:</b> revisa la información recuperada, comprueba lo que falta y selecciona Sí o No únicamente cuando tengas un fundamento. AUNEA recupera los datos del AS-IS confirmado y puede proponer una respuesta, pero no la marca por ti. Una propuesta no es una respuesta confirmada.</p>'
     +'<p>Si falta información, deja la decisión pendiente. Una decisión que el consultor asuma sin evidencia capturada se conservará como criterio propio, no como hecho verificado. No se ejecutarán los motores ni se guardarán respuestas parciales como confirmadas.</p></div>'
     +'<div class="engine-review-list">'+ENGINE_GATE_CONTRACT.map(c=>engineGateCard(c,e)).join('')+'</div>';
   openModal('Decisiones del consultor',body,()=>{
