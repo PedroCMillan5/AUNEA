@@ -365,7 +365,7 @@ test('PG10 AS-IS backend results present time, pains, economics and risks withou
   const html=render({id:'E'});
   assert.deepEqual(rendered,['time','pain','economic','risk']);
   for(const expected of ['Línea base temporal','Problemas y evidencias',
-    'Impacto económico registrado','Riesgos y controles','TEMPORAL-15','PAIN-1',
+    'Línea base económica del proceso','Riesgos y controles','TEMPORAL-15','PAIN-1',
     'ECON-960','RISK-PARTIAL','cobertura del análisis económico es parcial']){
     assert.ok(html.includes(expected),expected);
   }
