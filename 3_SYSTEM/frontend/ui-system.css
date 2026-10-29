@@ -2408,3 +2408,11 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 .pg10-review-support-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
 @media(max-width:680px){.pg10-review-support-actions{flex-direction:column;align-items:stretch}.pg10-review-support-actions>.btn{white-space:normal}}
 /* [AUNEA-FE-PG10-SYNTHESIS-REVIEW-177] END */
+
+/* [AUNEA-FE-PG10-RETURN-GATE-179] START */
+#pg10-review-section{scroll-margin-top:18px}
+.pg10-recommendation-check{border:1px solid var(--line,#d8dedc);border-radius:9px;padding:11px 14px;margin-top:15px}
+.pg10-recommendation-check>summary{cursor:pointer;font-size:12px;font-weight:650}
+.pg10-recommendation-check>p{font-size:12px;line-height:1.65;margin:10px 0 0}
+#returnFromAsisToPg10{margin-right:10px}
+/* [AUNEA-FE-PG10-RETURN-GATE-179] END */
