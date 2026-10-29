@@ -621,6 +621,27 @@ async function main(){
    await page.locator('[data-page="inicio"]').first().click();
    await page.locator('[data-page="uat"]').click();
   }
+  // PG11: execute the visible button inside Chromium, not the internal helper.
+  const tobeSteps=await page.evaluate(()=>{
+    const e=state.engagements.find(x=>x.id.startsWith('UAT3-CASE-'));
+    if(!e)throw Error('No test engagement');
+    const steps=(e.processSteps||[]).filter(x=>x.status!=='SUPERSEDED');
+    if(!steps.length)throw Error('No source steps');
+    e.confirmedAsIs=true;
+    e.confirmedSnapshots=[{version:1,finalClosure:true,processSteps:structuredClone(steps)}];
+    e.engineGates=Object.fromEntries(ENGINE_GATE_CONTRACT.map(g=>[g.key,'NO']));
+    e.engineGateReview={snapshotVersion:1,decisions:Object.fromEntries(ENGINE_GATE_CONTRACT.map(g=>[g.key,{answer:'NO'}]))};
+    e.lastEngineGateFingerprint=engineGateFingerprint(e);
+    e.lastEngineSnapshotVersion=1;
+    e.diagnosticOutput={pain_results:[],economic_result:{},risk_result:{},recommendation:{},optimal_scenario:{}};
+    state.activeEngagementId=e.id;state.activePage='tobe';render();
+    return steps.length;
+  });
+  await page.locator('#createTobeDraft').click();
+  const pg11=await page.evaluate(()=>({count:currentEng().tobeProposals?.length||0,status:currentEng().tobeProposals?.at(-1)?.status,
+    cards:document.querySelectorAll('[data-tobe-field="transformation"]').length}));
+  assert.deepEqual(pg11,{count:1,status:'DRAFT',cards:tobeSteps},'PG11 click must create and render the draft');
+  console.log('PG11_CREATE_DRAFT_CLICK_PASS: '+JSON.stringify(pg11));
   await page.reload({waitUntil:'domcontentloaded'});
   await page.locator('[data-page="uat"]').click();
   const afterReload=await page.evaluate(()=>state.engagements.filter(e=>e.id.startsWith('UAT3-CASE-')).map(e=>e.id));
