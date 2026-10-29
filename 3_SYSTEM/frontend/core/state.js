@@ -472,7 +472,8 @@ function openPg10Sources(){
   const e=currentEng();if(!e)return;
   __pg10SourceOrigin={
     engagementId:e.id,
-    scrollY:typeof window!=='undefined'?window.scrollY:0
+    scrollY:typeof window!=='undefined'?window.scrollY:0,
+    supportOpen:!!document.querySelector('.pg10-review-support')?.open
   };
   setPage('proceso');
 }
@@ -487,6 +488,8 @@ function returnFromAsisToPg10(){
   const restore=()=>{
     if(state.activePage!=='resultados'||currentEng()?.id!==origin.engagementId)return;
     const section=document.getElementById('pg10-review-section');
+    const support=document.querySelector('.pg10-review-support');
+    if(support&&origin.supportOpen)support.open=true;
     if(typeof window!=='undefined'&&typeof window.scrollTo==='function'){
       try{window.scrollTo(0,origin.scrollY);return}catch(_e){}
     }
