@@ -52,10 +52,11 @@ function diagnosisTrace(record,p){
   const frictions=diagnosisLinkedFrictions(record,p.pain_id);
   const stepIds=[...new Set(frictions.flatMap(f=>normalizeArray(f.affected_steps)).filter(Boolean))];
   const economics=(record?.economicInputs||[]).filter(x=>{
+    if(x.status==='SUPERSEDED')return false;
     const ids=normalizeArray(x.step_ids).filter(Boolean);
     return String(x.pain_id||'')===String(p.pain_id)||ids.some(id=>stepIds.includes(id));
   });
-  const risks=(record?.risks||[]).filter(r=>normalizeArray(r.step_ids).some(id=>stepIds.includes(id)));
+  const risks=(record?.risks||[]).filter(r=>r.status!=='SUPERSEDED'&&normalizeArray(r.step_ids).some(id=>stepIds.includes(id)));
   return {frictions,stepIds,economics,risks};
 }
 function diagnosisReadonlyMap(e,record){
