@@ -796,6 +796,11 @@ test('PG10 review distinguishes preliminary PG11 from official design and never 
   assert.match(pending,/Ver condiciones para generar la recomendación/);
   assert.match(pending,/Consultar fuentes y opciones de revisión/);
   assert.equal((pending.match(/data-page="tobe"/g)||[]).length,1);
+  const capturePending=fn({},null,{status:'INPUT_GAPS'},['DF017'],[{},{}],{status:'CURRENT'},false);
+  assert.match(capturePending,/<button class="btn btn-primary" id="pg10OpenAsisSources">Revisar los datos obligatorios del AS-IS<\/button>/);
+  assert.equal((capturePending.match(/id="pg10OpenAsisSources"/g)||[]).length,1);
+  assert.equal((capturePending.match(/id="reviewEngineGates"/g)||[]).length,1);
+  assert.equal((capturePending.match(/btn btn-primary/g)||[]).length,1);
   const ready=fn({},null,{status:'ANALYZED'},[],[],{status:'CURRENT'},true);
   assert.match(ready,/Calcular recomendación oficial/);
   assert.match(ready,/id="runDiag"/);
