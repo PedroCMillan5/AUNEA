@@ -790,7 +790,7 @@ test('PG10 review distinguishes preliminary PG11 from official design and never 
   assert.match(pending,/Consultar fuentes AS-IS/);
   assert.match(pending,/resultado oficial anterior no vigente/);
   assert.match(pending,/Consultar TO-BE preliminar/);
-  assert.match(pending,/no crea ni aprueba el proceso futuro, y no calcula ahorros/);
+  assert.match(pending,/No crea ni aprueba el proceso futuro, y no calcula ahorros/);
   assert.equal((pending.match(/btn btn-primary/g)||[]).length,1);
   assert.doesNotMatch(pending,/id="confirmDiagnosis"|id="approveDiagnosis"/);
   assert.match(pending,/Ver condiciones para generar la recomendación/);
