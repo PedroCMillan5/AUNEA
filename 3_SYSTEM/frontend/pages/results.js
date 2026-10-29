@@ -891,9 +891,67 @@ function bindDiagnosticMapPointNavigation(){
 }
 // [AUNEA-FE-PG10-MAP-NAV-160] END
 
-function registerInternalWorkPages(){if(typeof pages==='undefined'||registerInternalWorkPages.done)return;registerInternalWorkPages.done=true;pages.revision=outputReviewPage;pages.tobe=tobePage;pages.comparacion=tobeComparisonPage;const originalPostBind=postBind;postBind=function(){originalPostBind();const e=currentEng(),by=id=>document.getElementById(id);if(by('createOutputReview'))by('createOutputReview').onclick=()=>{createOutputReview(e);render()};if(by('advanceOutputReview'))by('advanceOutputReview').onclick=()=>{advanceOutputReview(e,!!by('authorizeResultsPrice')?.checked);render()};if(by('analyzeAsisOnly'))by('analyzeAsisOnly').onclick=()=>runAsisAnalysis(e);
-  bindDiagnosticMapPointNavigation();
-  document.querySelectorAll('[data-draft-conditional-scenario]').forEach(x=>x.onclick=()=>createScenario(Number(x.dataset.draftConditionalScenario)));if(by('createTobeDraft'))by('createTobeDraft').onclick=()=>{const draft=createTobeDraft(currentEng());if(!draft)return toast('No se pudo crear el borrador: comprueba que el AS-IS sigue confirmado.');render();toast('Borrador TO-BE v'+draft.version+' creado desde AS-IS confirmado.');};if(by('saveTobe'))by('saveTobe').onclick=()=>{saveTobeFromDom(e);render()};if(by('advanceTobe'))by('advanceTobe').onclick=()=>{saveTobeFromDom(e);if(advanceTobeStatus(e))render()}}}
+function registerInternalWorkPages(){
+  if(typeof pages==='undefined'||registerInternalWorkPages.done)return;
+  registerInternalWorkPages.done=true;
+  pages.revision=outputReviewPage;
+  pages.tobe=tobePage;
+  pages.comparacion=tobeComparisonPage;
+  // [AUNEA-FE-PG11-DRAFT-CLICK-181] START — Single durable action for creating a read-only-AS-IS-derived DRAFT.
+  // SOURCE: Simulator CANONICAL PG11; DEC-034/050/052/055. No second data owner, no automatic proposal approval.
+  // A delegated click survives UI refreshes and never relies on successful binding of unrelated page controls.
+  document.addEventListener('click',event=>{
+    const button=event.target?.closest?.('#createTobeDraft');
+    if(!button)return;
+    event.preventDefault();
+    if(button.dataset.working==='1')return;
+    button.dataset.working='1';
+    button.disabled=true;
+    try{
+      const engagement=currentEng();
+      if(!engagement||!confirmedSnapshot(engagement)){
+        toast('No se puede crear el borrador: el AS-IS no está confirmado.');
+        return;
+      }
+      if(engagement.tobeProposals!=null&&!Array.isArray(engagement.tobeProposals)){
+        toast('No se puede crear el borrador: el historial TO-BE tiene un formato no reconocido. No se ha modificado el estudio.');
+        return;
+      }
+      // If an earlier click persisted a proposal but failed to repaint the page, do not create a duplicate.
+      if(latestTobe(engagement)){
+        render();
+        toast('Se ha recuperado el borrador TO-BE existente.');
+        return;
+      }
+      const draft=createTobeDraft(engagement);
+      if(!draft){
+        toast('No se ha creado el borrador. Comprueba la confirmación del AS-IS.');
+        return;
+      }
+      render();
+      toast('Borrador TO-BE v'+draft.version+' creado desde AS-IS confirmado.');
+    }catch(error){
+      console.error('PG11: error al crear o mostrar el borrador TO-BE',error);
+      try{toast('No se ha podido completar la creación del borrador TO-BE. Revisa el error y no vuelvas a confirmar el AS-IS.')}catch(_ignore){}
+    }finally{
+      button.dataset.working='0';
+      button.disabled=false;
+    }
+  },true);
+  // [AUNEA-FE-PG11-DRAFT-CLICK-181] END
+  const originalPostBind=postBind;
+  postBind=function(){
+    originalPostBind();
+    const e=currentEng(),by=id=>document.getElementById(id);
+    if(by('createOutputReview'))by('createOutputReview').onclick=()=>{createOutputReview(e);render()};
+    if(by('advanceOutputReview'))by('advanceOutputReview').onclick=()=>{advanceOutputReview(e,!!by('authorizeResultsPrice')?.checked);render()};
+    if(by('analyzeAsisOnly'))by('analyzeAsisOnly').onclick=()=>runAsisAnalysis(e);
+    bindDiagnosticMapPointNavigation();
+    document.querySelectorAll('[data-draft-conditional-scenario]').forEach(x=>x.onclick=()=>createScenario(Number(x.dataset.draftConditionalScenario)));
+    if(by('saveTobe'))by('saveTobe').onclick=()=>{saveTobeFromDom(e);render()};
+    if(by('advanceTobe'))by('advanceTobe').onclick=()=>{saveTobeFromDom(e);if(advanceTobeStatus(e))render()};
+  };
+}
 function outputReviewPage(){
   const e=currentEng(),r=currentOutputReview(e),sources=reviewSources(e);
   if(!sources)return pageTop('Revisión humana','Confirma el AS-IS, calcula el diagnóstico y aprueba el TO-BE de esa versión antes de revisar resultados.');
