@@ -609,12 +609,22 @@ function pg10ReviewHtml(e,official,analysis,miss,unresolved,freshness,recommenda
   // actual TO-BE authoring/approval is gated in tobePage and never bypassed here.
   const main=official
     ?'<button class="btn btn-primary" data-page="tobe">Continuar al diseño TO-BE</button>'
-    :'<button class="btn btn-primary" id="runDiag">'+
-       (recommendationReady?'Calcular recomendación oficial':'Evaluar condiciones de la recomendación')+'</button>';
+    :recommendationReady
+      ?'<button class="btn btn-primary" id="runDiag">Calcular recomendación oficial</button>'
+      :'<button class="btn btn-primary" id="checkRecommendationReadiness">Comprobar requisitos para la recomendación</button>';
+  const readiness=!official&&!recommendationReady
+    ?'<details class="pg10-recommendation-check" id="pg10RecommendationStatus">'+
+      '<summary>Estado de los requisitos de recomendación</summary>'+
+      '<p>'+(miss.length?'Faltan '+miss.length+' datos obligatorios de captura.':
+        'La captura no tiene datos obligatorios pendientes.')+'</p>'+
+      '<p>'+(unresolved.length?'Quedan '+unresolved.length+' decisiones técnicas del consultor sin confirmar para el AS-IS vigente.':
+        'Las cinco decisiones técnicas están confirmadas.')+'</p>'+
+      '<p>Estas decisiones se completan ahora, antes de generar una recomendación oficial, no al finalizar el TO-BE. El sistema propone fundamentos, pero la confirmación corresponde al consultor. Usa «Revisar decisiones técnicas» para abrir el formulario; esta comprobación no ejecuta el cálculo ni modifica el estudio.</p></details>'
+    :'';
   const next=official?'':'<button class="btn btn-outline" data-page="tobe">Consultar TO-BE preliminar</button>';
   const audit='<details class="pg10-review-support"><summary>Consultar fuentes y decisiones internas</summary>'+
     '<div class="pg10-review-support-actions">'+
-      '<button class="btn btn-outline" data-page="proceso">Consultar fuentes AS-IS</button>'+
+      '<button class="btn btn-outline" id="pg10OpenAsisSources">Consultar fuentes AS-IS</button>'+
       '<button class="btn btn-outline" id="reviewEngineGates">Revisar decisiones técnicas</button>'+
       (official?'<button class="btn btn-outline" id="runDiag">Recalcular resultado oficial</button>':'')+
     '</div></details>';
@@ -624,7 +634,7 @@ function pg10ReviewHtml(e,official,analysis,miss,unresolved,freshness,recommenda
     '<p class="field-help">Para corregir un hallazgo, modifica únicamente su fuente en el AS-IS y vuelve a calcular. No hay una segunda aprobación ni publicación automática de resultados.</p>'+
     (!official?'<p class="field-help">Puedes consultar la siguiente fase de forma preliminar, pero la edición del diseño TO-BE requiere una recomendación oficial vigente.</p>':'')+
     (official?'<details class="pg10-decision-trace"><summary>Consultar decisiones utilizadas por el resultado oficial</summary>'+diagnosisEngineDecisionTraceHtml(e)+'</details>':'')+
-    '<div class="pg10-review-actions">'+main+next+'</div>'+audit+'</div>';
+    '<div class="pg10-review-actions">'+main+next+'</div>'+readiness+audit+'</div>';
 }
 function resultsPage(){
   const e=currentEng();
@@ -675,7 +685,7 @@ function resultsPage(){
     section('3. Integridad de datos y gaps','Cobertura, coherencia y evidencias, sin nueva captura de datos.',coverage)+
     section('4. Diagnóstico calculado','Problemas, tiempos, impactos y riesgos a partir de las fuentes confirmadas.',diagnostic)+
     section('5. Conclusiones y prioridades','Hallazgos, evidencia y magnitudes ya calculadas, sin atribuir causas ni inventar un ranking.',pg10SynthesisHtml(record,data))+
-    section('6. Revisión y continuación','Revisar el diagnóstico, corregir únicamente en origen y continuar al TO-BE sin una aprobación nueva.',pg10ReviewHtml(e,official,asis,missing,unresolved,freshness,recommendationReady));
+    '<div id="pg10-review-section">'+section('6. Revisión y continuación','Revisar el diagnóstico, corregir únicamente en origen y continuar al TO-BE sin una aprobación nueva.',pg10ReviewHtml(e,official,asis,missing,unresolved,freshness,recommendationReady))+'</div>';
 }
 // [AUNEA-FE-PG10-WORKSPACE-167] END
 
