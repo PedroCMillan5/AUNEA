@@ -612,7 +612,9 @@ function pg10ReviewHtml(e,official,analysis,miss,unresolved,freshness,recommenda
     ?'<button class="btn btn-primary" data-page="tobe">Continuar al diseño TO-BE</button>'
     :recommendationReady
       ?'<button class="btn btn-primary" id="runDiag">Calcular recomendación oficial</button>'
-      :'<button class="btn btn-primary" id="reviewEngineGates">Revisar las cinco decisiones técnicas</button>';
+      :miss.length
+        ?'<button class="btn btn-primary" id="pg10OpenAsisSources">Revisar los datos obligatorios del AS-IS</button>'
+        :'<button class="btn btn-primary" id="reviewEngineGates">Revisar las cinco decisiones técnicas</button>';
   const next=official?'':'<button class="btn btn-outline" data-page="tobe">Consultar TO-BE preliminar</button>';
   const readiness=!official&&!recommendationReady
     ?'<details class="pg10-recommendation-check" id="pg10RecommendationStatus">'+
@@ -626,8 +628,8 @@ function pg10ReviewHtml(e,official,analysis,miss,unresolved,freshness,recommenda
     :'';
   const audit='<details class="pg10-review-support"><summary>Consultar fuentes y opciones de revisión</summary>'+
     '<div class="pg10-review-support-actions">'+
-      '<button class="btn btn-outline" id="pg10OpenAsisSources">Consultar fuentes AS-IS</button>'+
-      (ready?'<button class="btn btn-outline" id="reviewEngineGates">Revisar decisiones técnicas</button>':'')+
+      (!official&&!recommendationReady&&miss.length?'':'<button class="btn btn-outline" id="pg10OpenAsisSources">Consultar fuentes AS-IS</button>')+
+      (ready||miss.length?'<button class="btn btn-outline" id="reviewEngineGates">Revisar decisiones técnicas</button>':'')+
       (official?'<button class="btn btn-outline" id="runDiag">Recalcular resultado oficial</button>':'')+
     '</div></details>';
   return '<div class="pg10-review-summary"><p>'+esc(msg)+' '+esc(analyzed)+'</p>'+
