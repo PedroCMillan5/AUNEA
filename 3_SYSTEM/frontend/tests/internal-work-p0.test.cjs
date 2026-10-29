@@ -425,12 +425,12 @@ test('PG10 EconomicInput cards distinguish zero, missing and unearned savings',(
   const start=results.indexOf('function diagnosisEconomicsHtml(');
   const end=results.indexOf('\nfunction ',start+10);
   const fn=results.slice(start,end);
-  assert.match(fn,/inputs.some\(x=>x.annual_active_hours!=null\)/);
-  assert.match(fn,/inputs.some\(x=>x.annual_wait_hours!=null\)/);
+  assert.match(fn,/x.annual_active_hours!=null/);
+  assert.match(fn,/x.annual_wait_hours!=null/);
   assert.match(fn,/money\(econ\.direct_loss_eur_annual\)/);
   assert.match(fn,/money\(econ\.realized_cash_saving_eur_annual\)/);
-  assert.match(fn,/No es una previsión futura/);
-  assert.match(fn,/Coste existente, no necesariamente eliminable/);
+  assert.match(fn,/Ahorro de caja ya realizado/);
+  assert.match(fn,/No se presupone eliminable/);
   assert.match(fn,/diagnosis-economic-detail/);
   assert.match(fn,/x\.capacity_cost_rate_eur_hour/);
 });
@@ -619,7 +619,7 @@ test('PG10 shows unique problem facts once, with shared risks and economics in t
   assert.match(source,/distinctCauses/);
   assert.doesNotMatch(source,/class="code internal-only"/);
 });
-test('PG10 compact economics preserves source records and leaves zero/unknown out of primary KPIs',()=>{
+test('PG10 compact economics preserves original source entries and does not present zero as a cash saving',()=>{
   const start=results.indexOf('function diagnosisEconomicsHtml(');
   const end=results.indexOf('function diagnosisRisksHtml(',start);
   const fn=new Function('num','eur','esc','engineLabel','evidenceTypeBackend','econDriverLabel','labelFrom',
@@ -628,24 +628,27 @@ test('PG10 compact economics preserves source records and leaves zero/unknown ou
       v=>String(v).replaceAll('&','&amp;').replaceAll('<','&lt;'),
       ()=> 'Hipótesis', x=>x,
       x=>x==='ED12'?'Coste de herramientas':'Coste de capacidad',
-      (set,x)=>x
+      (_,x)=>x
     );
   const html=fn({annual_active_hours:0,annual_wait_hours:0,capacity_value_eur_annual:0,
       current_tool_cost_eur_annual:960,direct_loss_eur_annual:0,realized_cash_saving_eur_annual:0},
     {economicInputs:[
-      {driver_id:'ED14',role_or_resource:'Administración',capacity_cost_rate_eur_hour:32,evidence_type:'EV04'},
-      {driver_id:'ED14',role_or_resource:'Responsable',capacity_cost_rate_eur_hour:40,evidence_type:'EV04'},
+      {driver_id:'ED14',role_or_resource:'ADMIN',capacity_cost_rate_eur_hour:32,evidence_type:'EV04'},
+      {driver_id:'ED14',role_or_resource:'MANAGER',capacity_cost_rate_eur_hour:40,evidence_type:'EV04'},
       {driver_id:'ED12',current_tool_cost_eur_annual:960,evidence_type:'EV04'}
     ]});
-  assert.ok(html.includes('960 €/año'));
+  assert.match(html,/Valoración laboral incompleta/);
+  assert.match(html,/960 €\/año/);
   assert.match(html,/Sin importe acreditado/);
-  assert.match(html,/<details class="diagnosis-economic-detail">/);
-  assert.match(html,/3 registros/);
+  assert.match(html,/Consultar cálculos, pasos y fuentes \(3 registros\)/);
+  assert.equal((html.match(/<details class="diagnosis-economic-detail">/g)||[]).length,1);
+  assert.match(html,/Registros económicos originales/);
+  assert.match(html,/Administración/);
+  assert.match(html,/Dirección \/ responsable/);
   assert.ok(html.includes('32 €/hora de capacidad'));
   assert.ok(html.includes('40 €/hora de capacidad'));
-  assert.match(html,/<b>Trabajo consignado en registros económicos<\/b><span>No consignado/);
-  assert.match(html,/<b>Espera consignada en registros económicos<\/b><span>No consignada/);
-  assert.doesNotMatch(html,/<b>Trabajo consignado en registros económicos<\/b><span>0 h\/año/);
+  assert.match(html,/No hay pérdidas directas ni ahorros de caja positivos acreditados/);
+  assert.doesNotMatch(html,/ahorro garantizado|Valor anual del trabajo dedicado al proceso/);
   assert.equal((html.match(/<li>/g)||[]).length,3);
 });
 test('PG10 risk results remain grounded without displaying raw English rationale',()=>{
@@ -938,7 +941,7 @@ test('PG10 shows source factors without asserting root cause; hides technical ev
 test('PG10 explains monetary limits and risk triggers with existing source attributes',()=>{
   const econ=results.slice(results.indexOf('function diagnosisEconomicsHtml('),
     results.indexOf('function diagnosisRisksHtml('));
-  assert.match(econ,/tarifas horarias registradas no permiten cuantificar por sí solas/);
+  assert.match(econ,/tarifas registradas/);
   const risk=results.slice(results.indexOf('function diagnosisRisksHtml('),
     results.indexOf('// ['+'AUNEA-FE-PG10-ANALYSIS-UX-166] END'));
   assert.match(risk,/r\.critical_trigger===true/);
@@ -950,7 +953,7 @@ test('PG10 explains monetary limits and risk triggers with existing source attri
 
 
 // [AUNEA-UAT-PG10-COST-RISK-172] START — Source-matched operating labour without cash claims.
-test('PG10 estimates annual operating labour from exact role-matched server breakdown',()=>{
+test('PG10 economic baseline shows one summary, readable roles, separate impacts and one auditable detail',()=>{
   const from=results.indexOf('function diagnosisEconomicsHtml(');
   const to=results.indexOf('function diagnosisRisksHtml(');
   const fn=new Function('eur','esc','num','engineLabel','evidenceTypeBackend','labelFrom','econDriverLabel',
@@ -959,95 +962,78 @@ test('PG10 estimates annual operating labour from exact role-matched server brea
       String,x=>Number(x).toLocaleString('es-ES',{maximumFractionDigits:2}),
       (key,value)=>value,(x)=>x,(_,x)=>x,x=>x);
   const source={frictions:[{id:'F2',client_label:'Falta de visibilidad',evidence_type:'HYPOTHESIS'}],economicInputs:[
-    {driver_id:'ED01',role_or_resource:'Administración',capacity_cost_rate_eur_hour:32,
-     evidence_type:'HYPOTHESIS'},
-    {driver_id:'ED01',role_or_resource:'Dirección',capacity_cost_rate_eur_hour:40,
-     evidence_type:'HYPOTHESIS'},
+    {driver_id:'ED01',role_or_resource:'ADMIN',capacity_cost_rate_eur_hour:32,evidence_type:'HYPOTHESIS'},
+    {driver_id:'ED01',role_or_resource:'MANAGER',capacity_cost_rate_eur_hour:40,evidence_type:'HYPOTHESIS'},
     {driver_id:'ED12',current_tool_cost_eur_annual:960,evidence_type:'HYPOTHESIS'}
   ]};
-  const time={annual_active_hours:403.2,annual_friction_additional_hours:72,
-    additional_friction_breakdown:[{friction_id:'F2',owner_step_id:'P2',annual_additional_hours:72,minutes_per_event:10,frequency:{mode:'percent',value:30}}],
-    annual_total_active_hours:475.2,process_labor_capacity:{status:'COMPLETE',
-    annual_labor_capacity_value_eur:15552,capacity_value_eur_per_case:10.8,covered_hours:475.2,
-    role_breakdown:[
-      {role:'Administración',annual_hours:432,hourly_rate:32,
-        annual_capacity_value_eur:13824,capacity_value_eur_per_case:9.6},
-      {role:'Dirección',annual_hours:43.2,hourly_rate:40,
-        annual_capacity_value_eur:1728,capacity_value_eur_per_case:1.2}
-    ],
-    rework_separate_value_eur:307.2,steps:[
-      {step_id:'P1',step_name:'Recibir factura',role:'Administración',
-       annual_hours:72,hourly_rate:32,capacity_value:2304,evidence:['HYPOTHESIS']},
-      {step_id:'P2',step_name:'Determinar aprobación',role:'Administración',
-       annual_hours:120,hourly_rate:32,capacity_value:3840,evidence:['HYPOTHESIS']},
-      {step_id:'P3',step_name:'Aprobar',role:'Dirección',
-       annual_hours:43.2,hourly_rate:40,capacity_value:1728,evidence:['HYPOTHESIS']},
-      {step_id:'P4',step_name:'Registrar',role:'Administración',
-       annual_hours:240,hourly_rate:32,capacity_value:7680,evidence:['HYPOTHESIS']}
-    ]}};
+  const time={annual_active_hours:403.2,annual_friction_additional_hours:72,annual_total_active_hours:475.2,
+    additional_friction_breakdown:[{friction_id:'F2',owner_step_id:'P2',annual_additional_hours:72,
+      minutes_per_event:10,frequency:{mode:'percent',value:30}}],
+    process_labor_capacity:{status:'COMPLETE',
+      annual_labor_capacity_value_eur:15552,capacity_value_eur_per_case:10.8,covered_hours:475.2,
+      role_breakdown:[
+        {role:'ADMIN',annual_hours:432,hourly_rate:32,annual_capacity_value_eur:13824,capacity_value_eur_per_case:9.6},
+        {role:'MANAGER',annual_hours:43.2,hourly_rate:40,annual_capacity_value_eur:1728,capacity_value_eur_per_case:1.2}
+      ],
+      rework_separate_value_eur:307.2,steps:[
+        {step_id:'P1',step_name:'Recibir factura',role:'ADMIN',annual_hours:72,
+          hourly_rate:32,capacity_value:2304,evidence:['HYPOTHESIS']},
+        {step_id:'P2',step_name:'Determinar aprobación',role:'ADMIN',annual_hours:120,
+          hourly_rate:32,capacity_value:3840,evidence:['HYPOTHESIS']},
+        {step_id:'P3',step_name:'Aprobar',role:'MANAGER',annual_hours:43.2,
+          hourly_rate:40,capacity_value:1728,evidence:['HYPOTHESIS']},
+        {step_id:'P4',step_name:'Registrar',role:'ADMIN',annual_hours:240,
+          hourly_rate:32,capacity_value:7680,evidence:['HYPOTHESIS']}
+      ]}};
   const html=fn({current_tool_cost_eur_annual:960},source,time);
-  assert.match(html,/Valor estimado de capacidad dedicada al proceso/);
-  assert.match(html,/15\.552 €\/año/);
-  assert.match(html,/Desglose anual por rol/);
+  assert.match(html,/Capacidad anual valorada/);
+  assert.match(html,/15\.552 €/);
+  assert.match(html,/Valor de capacidad por caso/);
+  assert.match(html,/10,80\s*€/);
+  assert.match(html,/Distribución anual por rol/);
   assert.match(html,/Administración/);
-  assert.match(html,/Dirección/);
+  assert.match(html,/Dirección \/ responsable/);
   assert.match(html,/432/);
   assert.match(html,/43,2/);
   assert.match(html,/13\.824 €/);
   assert.match(html,/1\.?728 €/);
   assert.match(html,/9,60\s*€/);
   assert.match(html,/1,20\s*€/);
-  assert.equal((html.match(/<tbody><tr>/g)||[]).length,1);
   assert.match(html,/<tfoot><tr><th scope="row">Total<\/th>/);
-  assert.match(html,/Los importes corresponden a trabajo activo y fricciones adicionales atribuidas una sola vez/);
-
-  assert.match(html,/10,80\s*€ de capacidad por factura/);
+  assert.match(html,/Otros importes registrados/);
   assert.match(html,/960 €\/año/);
-  assert.match(html,/Hipótesis/);
-  assert.match(html,/307,2 €\/año de capacidad teórica/);
-  assert.match(html,/No se suma sin descartar solapamientos/);
-  assert.match(html,/Ver cálculo por paso y tarifas aplicadas/);
-  assert.match(html,/Trabajo adicional: revisar su naturaleza antes de validar el coste/);
+  assert.match(html,/307,20\s*€\/año/);
+  assert.match(html,/No se suma: podría solaparse con trabajo ya contabilizado/);
+  assert.match(html,/Sin importe acreditado/);
+  assert.match(html,/No son gasto contable ni ahorro realizable|no son gasto contable ni ahorro realizable/);
+  assert.equal((html.match(/<details class="diagnosis-economic-detail">/g)||[]).length,1);
+  assert.match(html,/Consultar cálculos, pasos y fuentes \(3 registros\)/);
+  assert.match(html,/Cómo se obtienen las horas/);
+  assert.match(html,/403,2 h\/año/);
+  assert.match(html,/72 h\/año/);
+  assert.match(html,/475,2 h\/año/);
+  assert.match(html,/Procedencia por paso/);
+  assert.match(html,/Recibir factura/);
+  assert.match(html,/Determinar aprobación/);
   assert.match(html,/Falta de visibilidad/);
-  assert.match(html,/72 h\/año adicionales/);
   assert.match(html,/10 min por ocurrencia/);
   assert.match(html,/Frecuencia registrada: 30 % de los casos/);
-  assert.match(html,/si describen una espera pasiva, la valoración debe corregirse/);
-  assert.match(html,/Estimación condicionada a la clasificación de trabajo activo/);
-  assert.doesNotMatch(html,/Coherencia numérica: dentro del umbral de revisión/);
-
-  // Derived time and source economic entries must be visible in the SAME expanded panel.
-  assert.match(html,/Ver detalle económico completo: cálculo y fuentes \(3 registros\)/);
-  assert.match(html,/Trabajo y capacidad derivados del mapa AS-IS/);
-  assert.match(html,/<b>Trabajo de los pasos<\/b><span>403,2 h\/año/);
-  assert.match(html,/<b>Trabajo adicional atribuido<\/b><span>72 h\/año/);
-  assert.match(html,/<b>Trabajo activo total del proceso<\/b><span>475,2 h\/año/);
-  assert.match(html,/<b>Horas con tarifa asignada<\/b><span>475,2 h\/año/);
-  assert.match(html,/<b>Valor estimado de la capacidad<\/b><span>15\.552 €/);
-  assert.match(html,/Datos consignados directamente en registros económicos/);
-  assert.match(html,/<b>Trabajo consignado en registros económicos<\/b><span>No consignado/);
-  assert.match(html,/<b>Espera consignada en registros económicos<\/b><span>No consignada/);
-  assert.match(html,/<b>Coste de herramientas registrado<\/b><span>960 €/);
-  assert.match(html,/No se suman las horas o los valores de capacidad entre ellas/);
-  assert.doesNotMatch(html,/<b>Trabajo consignado en registros económicos<\/b><span>0 h\/año/);
-
-  assert.doesNotMatch(html,/Ahorro de caja garantizado|Coste contable total de 16/);
+  assert.match(html,/Registros económicos originales/);
+  assert.match(html,/Calidad de la evidencia/);
+  assert.doesNotMatch(html,/diagnosis-economic-source-values|Ver detalle económico completo|Valor anual del trabajo dedicado al proceso/);
   const missing=fn({current_tool_cost_eur_annual:960},source,{
     process_labor_capacity:{status:'PARTIAL',unvalued_steps:['Aprobar: falta tarifa']}});
-  assert.match(missing,/estimación no completada/);
-  assert.doesNotMatch(missing,/15\.552 €\/año/);
-  assert.doesNotMatch(missing,/Desglose anual por rol/);
+  assert.match(missing,/Valoración laboral incompleta/);
+  assert.match(missing,/Aprobar: falta tarifa/);
+  assert.doesNotMatch(missing,/15\.552 €/);
+  assert.doesNotMatch(missing,/Distribución anual por rol/);
   const legacy=fn({current_tool_cost_eur_annual:960},source,{
     process_labor_capacity:{...time.process_labor_capacity,role_breakdown:undefined}});
-  assert.match(legacy,/El análisis guardado no incluye todavía el desglose por rol/);
-  assert.match(legacy,/Ver cálculo por paso y tarifas aplicadas/);
-  assert.match(legacy,/<b>Trabajo activo total del proceso<\/b><span>No calculado/);
-  // An explicit zero in an economic source is different from a missing source field.
-  const zero={economicInputs:[{driver_id:'ED01',annual_active_hours:0}]};
-  const rawZero=fn({annual_active_hours:0},zero,time);
-  assert.match(rawZero,/<b>Trabajo consignado en registros económicos<\/b><span>0 h\/año/);
-
-
+  assert.match(legacy,/No se dispone del desglose por rol en este análisis/);
+  assert.match(legacy,/Procedencia por paso/);
+  const zero=fn({annual_active_hours:0}, {economicInputs:[{driver_id:'ED01',annual_active_hours:0}]},time);
+  assert.match(zero,/0 h\/año de trabajo consignado directamente/);
+  assert.doesNotMatch(zero,/0 h\/año de capacidad no utilizada/);
 });
 test('PG10 explains risk severity before/after controls and does not hallucinate protections',()=>{
   const from=results.indexOf('function diagnosisRisksHtml(');
@@ -1065,7 +1051,7 @@ test('PG10 explains risk severity before/after controls and does not hallucinate
   assert.match(html,/No constan controles para 1 de 1 riesgos/);
   assert.match(html,/no puede acreditar su protección/);
   assert.match(html,/Por qué se considera relevante/);
-  assert.match(html,/No es una pérdida económica calculada|no es una pérdida económica calculada/);
+  assert.match(html,/no un incidente ocurrido ni una pérdida monetaria calculada/);
   assert.doesNotMatch(html,/Se han evitado|Controles eficaces confirmados/);
 });
 // [AUNEA-UAT-PG10-COST-RISK-172] END
