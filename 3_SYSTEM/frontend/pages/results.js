@@ -841,7 +841,7 @@ function bindDiagnosticMapPointNavigation(){
   });
   // A shared friction can name a different time owner. Following that link opens
   // the existing owner's diagnostic card, never an editor or a second data record.
-  document.querySelectorAll('.asis-point-review a[href^="#asis-source-step-"], .diagnosis-finding a[href^="#asis-source-step-"], .pg10-time-source[href^="#asis-source-step-"]').forEach(link=>{
+  document.querySelectorAll('.asis-point-review a[href^="#asis-source-step-"], .diagnosis-finding a[href^="#asis-source-step-"], .pg10-conclusion-source[href^="#asis-source-step-"], .pg10-time-source[href^="#asis-source-step-"]').forEach(link=>{
     link.addEventListener('click',event=>{
       const href=link.getAttribute('href')||'';
       const dest=document.getElementById(href.slice(1));
