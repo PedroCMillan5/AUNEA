@@ -2376,3 +2376,14 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 .pg10-econ-overview .diagnosis-economic-input-list>li>small{flex-basis:100%;color:var(--muted,#67736d)}
 @media(max-width:700px){.pg10-econ-hero{grid-template-columns:1fr}.pg10-econ-hero strong{font-size:21px}.pg10-econ-other-grid{grid-template-columns:1fr}}
 /* [AUNEA-FE-PG10-ECON-LAYOUT-175] END */
+
+
+/* [AUNEA-FE-PG10-ECON-AUDIT-176] START — source-only hour splits and optional zero-value disclosure. */
+.pg10-econ-overview .pg10-step-source-row>span{display:flex;flex-direction:column;gap:5px}
+.pg10-econ-overview .pg10-step-hour-split{font-size:11px;line-height:1.45;color:var(--muted,#67736d)}
+.pg10-econ-overview .pg10-step-source-row>b{font-variant-numeric:tabular-nums}
+.pg10-econ-overview .pg10-econ-zero-fields{flex-basis:100%;border-top:1px solid var(--line,#d8dedc);margin-top:3px;padding-top:7px}
+.pg10-econ-overview .pg10-econ-zero-fields>summary{font-size:11px;color:var(--muted,#67736d);cursor:pointer}
+.pg10-econ-overview .pg10-econ-zero-fields p{font-size:11px;line-height:1.6;margin:6px 0 0}
+@media(max-width:700px){.pg10-econ-overview .pg10-step-source-row{align-items:flex-start;flex-direction:column;gap:7px}.pg10-econ-overview .pg10-step-source-row>b{text-align:left}}
+/* [AUNEA-FE-PG10-ECON-AUDIT-176] END */
