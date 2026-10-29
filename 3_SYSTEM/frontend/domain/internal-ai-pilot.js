@@ -35,11 +35,14 @@ async function generateTobeAiPilot(e){
   try{
     if(!state.backendOnline&&!(await checkBackend()))throw Error('Backend no conectado.');
     const check=await fetch(state.backendUrl+'/v1/internal-ai/status');
-    if(!check.ok||(await check.json()).status!=='AVAILABLE')
-      throw Error('Servicio IA no configurado o sin autorización para tratar datos.');
+    if(!check.ok)throw Error('No se pudo consultar el proveedor IA.');
+    const availability=await check.json();
+    if(availability.status!=='AVAILABLE')
+      throw Error(availability.reason||'Servicio IA no configurado o sin autorización para tratar datos.');
+    if(button)button.textContent=availability.provider==='ollama'?'Analizando con IA local…':'Analizando con IA…';
     const snap=confirmedSnapshot(e);
     if(!AiAgentService.available()){
-      AiAgentService.register({name:'AUNEA Backend — piloto local',
+      AiAgentService.register({name:'AUNEA Backend — proveedor gobernado',
         async propose({kind,engagement}){
           if(kind!=='TOBE_DRAFT')throw Error('Capacidad IA no habilitada.');
           const response=await fetch(state.backendUrl+'/v1/internal-ai/tobe-draft',{
