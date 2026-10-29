@@ -819,19 +819,22 @@ test('PG10 AS-IS source navigation returns to exactly the prior review position 
   const snapshots=JSON.stringify(e),calls=[];
   let currentPage='resultados';
   const navState={activePage:'resultados'};
+  const support={open:true};
   const api=new Function('currentEng','setPage','window','document','state',
     stateJs.slice(start,end)+'\nreturn {openPg10Sources,canReturnToPg10FromAsis,returnFromAsisToPg10};')(
     ()=>e,page=>{currentPage=page;calls.push(page);navState.activePage=page},
     {scrollY:763,scrollTo:(x,y)=>calls.push(['scroll',x,y])},
-    {getElementById:()=>({scrollIntoView:()=>calls.push('fallback')})},
+    {getElementById:()=>({scrollIntoView:()=>calls.push('fallback')}),querySelector:()=>support},
     navState
   );
   api.openPg10Sources();
+  support.open=false;
   assert.equal(currentPage,'proceso');
   assert.equal(api.canReturnToPg10FromAsis(e),true);
   api.returnFromAsisToPg10();
   assert.equal(currentPage,'resultados');
   assert.deepEqual(calls,['proceso','resultados',['scroll',0,763]]);
+  assert.equal(support.open,true,'the source/review controls remain expanded on return');
   assert.equal(api.canReturnToPg10FromAsis(e),false);
   assert.equal(JSON.stringify(e),snapshots,'source lookup never edits confirmed input');
 });
