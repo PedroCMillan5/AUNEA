@@ -4,6 +4,7 @@
 
 | Block_ID | Archivo | Responsabilidad | Fuente | Inputs | Outputs | Efectos | Riesgo | Regresión | Estado |
 |---|---|---|---|---|---|---|---|---|---|
+| AUNEA-FE-PG10-DECISION-HIERARCHY-180 | 3_SYSTEM/frontend/ui-system.css | PG10 decisions as single primary action; consultation and sources as secondary; decision modal numbering in familiar brand styling | Simulator CANONICAL PG10/PG11; DEC-034/050/052/055 | EngineGate decisions and confirmed AS-IS snapshot | No new fields, status, approval or calculation; styling only | None | LOW | internal-work-p0 and engine-gates-review tests; browser QA | REVIEW |
 | AUNEA-FE-PG10-RETURN-GATE-179 | 3_SYSTEM/frontend/ui-system.css | PG10 requirements and return layout | CANONICAL PG10 | Read-only state | Navigation and readiness | No write | LOW | Frontend CI | REVIEW |
 | AUNEA-FE-PG10-SOURCE-RETURN-178 | 3_SYSTEM/frontend/core/state.js | PG10 source return | CANONICAL PG10 | UI navigation | Return to review | No write | LOW | Regression | REVIEW |
 | AUNEA-FE-PG10-SYNTHESIS-REVIEW-177 | 3_SYSTEM/frontend/ui-system.css | Styles for evidence-led diagnostic summary, one action per phase, linked source review and separate technical controls | Simulator CANONICAL PG10/PG11; DEC-021/032/033/034/050/052/055 | PainResult from backend; process_time_projection; AS-IS trace; gate status | Read-only conclusions and continuation | No new owner, ranking, saving or approval | LOW | internal-work-p0.test.cjs and frontend/browser acceptance | REVIEW |
