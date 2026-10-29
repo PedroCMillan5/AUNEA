@@ -219,6 +219,12 @@
     },
     {
       "order": 37,
+      "layer": "domain",
+      "path": "domain/internal-ai-pilot.js",
+      "block_id": "AUNEA-FE-INTERNAL-AI-PILOT-193"
+    },
+    {
+      "order": 38,
       "layer": "boot",
       "path": "boot.js",
       "block_id": "AUNEA-FE-BOOT-INIT-010"
