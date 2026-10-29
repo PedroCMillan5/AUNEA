@@ -37,7 +37,8 @@ El modelo local no incurre en una tarifa por token o llamada a una API externa. 
 Pruebas con respuesta Ollama simulada (sin conexión externa): disponibilidad desactivada, respuesta estructurada, preservación de IDs, rechazo de referencias no existentes, rechazo de modelo cloud y ausencia de fallback a OpenAI.
 - `3_SYSTEM/backend/tests/test_internal_ai_ollama_review.py`
 - `CODE_BLOCK_INDEX.md`: AUNEA-BE-INTERNAL-AI-OLLAMA-194, AUNEA-UAT-INTERNAL-AI-OLLAMA-194.
-- Gate global y UAT humana se documentarán después de la ejecución.
-**No se realizó una llamada al modelo del ordenador del usuario**: instalación y aceptación real siguen pendientes.
+- QA GitHub Actions **Acceptance Gate 40918259145, SUCCESS** (commit `3c3684f616ea16947ad121042c8bc54f470172c9`): backend **356 passed, 1 warning**, frontend **728 passed, 0 failed**, browser UAT **SUCCESS**. Incluye la regresión Ollama simulada y auditoría de Block_ID.
+- Sigue pendiente una UAT con inferencia real y aceptación humana del TO-BE en el ordenador Windows del operador.
+**No se realizó una llamada al modelo del ordenador del usuario**: instalación, evaluación de calidad y aceptación real siguen pendientes.
 
 Fuentes técnicas: https://docs.ollama.com/windows, https://docs.ollama.com/api/chat, https://docs.ollama.com/api/tags, https://ollama.com/library/qwen3:4b-instruct.
