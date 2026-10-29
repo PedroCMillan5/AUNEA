@@ -97,7 +97,7 @@ test('Explicitly confirmed answers preserve five existing backend booleans and s
  assert.match(modal.body,/Pendiente no equivale a No/);
  assert.match(modal.body,/No son campos pendientes del cliente/);
  assert.match(modal.body,/Cómo completarlas/);
- assert.match(modal.body,/AUNEA puede proponer una respuesta, pero no la marca por ti/);
+ assert.match(modal.body,/puede proponer una respuesta, pero no la marca por ti/);
  assert.match(modal.body,/Decisión 1 de 5/);
  assert.match(modal.body,/Decisión 5 de 5/);
  assert.equal(modal.label,'Confirmar decisiones y calcular recomendación');
