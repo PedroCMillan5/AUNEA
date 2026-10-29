@@ -818,12 +818,13 @@ test('PG10 AS-IS source navigation returns to exactly the prior review position 
   const e={id:'E-TEST',confirmedAsIs:true,answers:{DF026:250}};
   const snapshots=JSON.stringify(e),calls=[];
   let currentPage='resultados';
+  const navState={activePage:'resultados'};
   const api=new Function('currentEng','setPage','window','document','state',
     stateJs.slice(start,end)+'\nreturn {openPg10Sources,canReturnToPg10FromAsis,returnFromAsisToPg10};')(
-    ()=>e,page=>{currentPage=page;calls.push(page);state.activePage=page},
+    ()=>e,page=>{currentPage=page;calls.push(page);navState.activePage=page},
     {scrollY:763,scrollTo:(x,y)=>calls.push(['scroll',x,y])},
     {getElementById:()=>({scrollIntoView:()=>calls.push('fallback')})},
-    (state={activePage:'resultados'})
+    navState
   );
   api.openPg10Sources();
   assert.equal(currentPage,'proceso');
