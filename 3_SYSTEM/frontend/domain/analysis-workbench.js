@@ -650,7 +650,7 @@ function asisBaselineHtml(e){
       ?diagnosisProcessBaselineHtml(data.process_time_projection,record):'<p>La proyección temporal no está disponible.</p>')
     +subsection('Problemas y evidencias',typeof diagnosisFindingsHtml==='function'
       ?diagnosisFindingsHtml(record,data.pain_results||[]):'<p>No se dispone de resultados de problemas.</p>')
-    +subsection('Impacto económico registrado',economicsNote+(economic&&typeof diagnosisEconomicsHtml==='function'
+    +subsection('Línea base económica del proceso',economicsNote+(economic&&typeof diagnosisEconomicsHtml==='function'
       ?diagnosisEconomicsHtml(economic,record,data.process_time_projection):'<p>No se dispone de una cuantificación económica validada.</p>'))
     +subsection('Riesgos y controles',data.risk_result&&typeof diagnosisRisksHtml==='function'
       ?diagnosisRisksHtml(data.risk_result,record):'<p>No se dispone de resultados de riesgo.</p>')
