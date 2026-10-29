@@ -286,7 +286,8 @@ function diagnosisEconomicsHtml(econ,record,projection){
   const inputs=(record?.economicInputs||[]).filter(x=>x.status!=='SUPERSEDED');
   const capacity=projection?.process_labor_capacity;
   const money=x=>x==null?'No cuantificado':eur(x)+'/año';
-  const euroValue=x=>typeof x==='number'&&Number.isFinite(x)?eur(x):'No calculado';
+  const euroValue=x=>typeof x==='number'&&Number.isFinite(x)
+    ?x.toLocaleString('es-ES',{minimumFractionDigits:0,maximumFractionDigits:2})+' €':'No calculado';
   const euroCents=x=>typeof x==='number'&&Number.isFinite(x)
     ?x.toLocaleString('es-ES',{style:'currency',currency:'EUR',minimumFractionDigits:2,maximumFractionDigits:2}):'No calculado';
   const hours=x=>x==null?'No calculado':num(x)+' h/año';
@@ -365,24 +366,39 @@ function diagnosisEconomicsHtml(econ,record,projection){
       :'<p class="field-help">No consta trabajo adicional por fricciones en este cálculo.</p>');
   const stepDetail=Array.isArray(capacity?.steps)&&capacity.steps.length
     ?'<section class="pg10-econ-detail-group"><h5>Procedencia por paso</h5><div class="pg10-cost-steps">'+
-      capacity.steps.map(x=>'<div><span>'+esc(x.step_name||'Paso')+' · '+esc(roleLabel(x.role))+'</span><b>'+
-        esc(x.annual_hours==null?'Horas pendientes':hours(x.annual_hours))+' × '+
-        esc(x.hourly_rate==null?'Tarifa pendiente':euroValue(x.hourly_rate)+'/h')+' = '+
-        esc(euroValue(x.capacity_value))+'</b></div>').join('')+'</div>'+
+      capacity.steps.map(x=>{
+        const base=x.base_annual_hours,additional=x.additional_annual_hours;
+        const basis=base!=null&&additional!=null&&additional>0
+          ?'<small class="pg10-step-hour-split">'+esc(hours(base))+' del paso + '+esc(hours(additional))+
+             ' adicionales = '+esc(hours(x.annual_hours))+'</small>'
+          :'<small class="pg10-step-hour-split">'+esc(x.annual_hours==null?'Horas pendientes':hours(x.annual_hours))+
+             (base==null?' · desglose de horas no disponible':' · trabajo del paso')+'</small>';
+        return '<div class="pg10-step-source-row"><span>'+esc(x.step_name||'Paso')+' · '+esc(roleLabel(x.role))+
+          basis+'</span><b>'+esc(x.annual_hours==null?'Horas pendientes':hours(x.annual_hours))+' × '+
+          esc(x.hourly_rate==null?'Tarifa pendiente':euroValue(x.hourly_rate)+'/h')+' = '+
+          esc(euroValue(x.capacity_value))+'</b></div>';
+      }).join('')+'</div>'+
+      '<p class="field-help">El valor por paso usa las horas atribuidas por el backend: trabajo propio más fricciones adicionales válidas, sin incluir espera pasiva ni retrabajo pendiente de conciliación.</p>'+
       '<p class="field-help">Calidad de las tarifas: '+esc([...new Set(capacity.steps.flatMap(x=>x.evidence||[]))].map(evidenceLabel).join(', ')||'No especificada')+'.</p></section>'
     :'<p class="field-help">No existe aún un desglose por pasos valorados; la valoración no debe completarse en la interfaz.</p>';
   const inputDescription=x=>{
     const parts=[];
     if(x.capacity_cost_rate_eur_hour!=null)parts.push(num(x.capacity_cost_rate_eur_hour)+' €/hora de capacidad');
     if(x.current_tool_cost_eur_annual!=null&&Number(x.current_tool_cost_eur_annual)>0)parts.push(money(x.current_tool_cost_eur_annual)+' de herramientas');
-    if(x.annual_active_hours!=null)parts.push(hours(x.annual_active_hours)+' de trabajo consignado directamente');
-    if(x.annual_wait_hours!=null)parts.push(hours(x.annual_wait_hours)+' de espera consignada directamente');
+    if(x.annual_active_hours!=null&&Number(x.annual_active_hours)!==0)parts.push(hours(x.annual_active_hours)+' de trabajo consignado directamente');
+    if(x.annual_wait_hours!=null&&Number(x.annual_wait_hours)!==0)parts.push(hours(x.annual_wait_hours)+' de espera consignada directamente');
     if(x.direct_loss_eur_annual!=null&&Number(x.direct_loss_eur_annual)>0)parts.push(money(x.direct_loss_eur_annual)+' de pérdida directa');
     const role=x.role_or_resource?roleLabel(x.role_or_resource):'';
+    const zeros=[x.annual_active_hours===0?'Trabajo declarado: 0 h/año':'',
+      x.annual_wait_hours===0?'Espera declarada: 0 h/año':'',
+      x.direct_loss_eur_annual===0?'Pérdida directa declarada: 0 €/año':'',
+      x.realized_cash_saving_eur_annual===0?'Ahorro realizado declarado: 0 €/año':''].filter(Boolean);
+    const optionalZeros=zeros.length?'<details class="pg10-econ-zero-fields"><summary>Ver campos consignados con valor cero ('+
+      zeros.length+')</summary><p>'+esc(zeros.join(' · '))+'</p></details>':'';
     return '<li><b>'+esc(typeof econDriverLabel==='function'?econDriverLabel(x.driver_id):x.driver_id||'Registro económico')+
       '</b>'+(role?'<span>'+esc(role)+'</span>':'')+
-      '<span>'+esc(parts.join(' · ')||'Sin importe anual cuantificado')+'</span>'+
-      '<small>Calidad de la evidencia: '+esc(evidence(x))+'</small></li>';
+      '<span>'+esc(parts.join(' · ')||'Sin importe anual adicional consignado')+'</span>'+
+      '<small>Calidad de la evidencia: '+esc(evidence(x))+'</small>'+optionalZeros+'</li>';
   };
   const directNonzero=[
     Number(econ.direct_loss_eur_annual)>0&&hasLoss?'Pérdidas directas: '+money(econ.direct_loss_eur_annual):'',
@@ -398,7 +414,7 @@ function diagnosisEconomicsHtml(econ,record,projection){
       '</b>. La espera pasiva se mantiene fuera del coste laboral y el retrabajo se valora aparte. No se suman horas ni importes procedentes de fuentes coincidentes.</p></div>'+
     stepDetail+extraDetail+
     '<section class="pg10-econ-detail-group"><h5>Registros económicos originales</h5>'+
-      '<p>Los siguientes registros aportan tarifas y otros costes. Sus campos de trabajo y espera no sustituyen los tiempos calculados del mapa: un cero explícito significa cero consignado en ese campo, no ausencia de actividad del proceso.</p>'+
+      '<p>Estos registros conservan las tarifas y otros costes originales. Los campos con valor cero se ocultan en el resumen para evitar confundirlos con las horas del mapa; puedes consultarlos en cada registro. Un cero explícito no significa ausencia de trabajo en el proceso.</p>'+
       (directNonzero.length?'<p>'+esc(directNonzero.join(' · '))+'</p>':'<p>No hay pérdidas directas ni ahorros de caja positivos acreditados en los registros.</p>')+
       (inputs.length?'<ul class="diagnosis-economic-input-list">'+inputs.map(inputDescription).join('')+'</ul>':'<p>No se han registrado entradas económicas.</p>')+
     '</section></details>';
