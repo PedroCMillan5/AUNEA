@@ -415,18 +415,18 @@ function diagnosisRisksHtml(risk,record){
   const withControls=rows.filter(x=>x.controls_present===true).length;
   const card=(title,value,help)=>'<div class="notice pg10-risk-card"><b>'+title+'</b><strong>'+value+'</strong><small>'+help+'</small></div>';
   const summary='<div class="pg10-risk-lead"><b>¿Qué riesgos presenta el proceso actual?</b>'+
-    '<p>Se '+(rows.length===1?'ha registrado ':'han registrado ')+rows.length+' '+(rows.length===1?'riesgo':'riesgos')+'. AUNEA utiliza la valoración más alta para resumir el proceso; no significa que todos tengan exactamente la misma gravedad.</p></div>'+
+    '<p>Se '+(rows.length===1?'ha registrado ':'han registrado ')+rows.length+' '+(rows.length===1?'riesgo':'riesgos')+'. La clasificación procede de los datos declarados y de las reglas del motor, no de una auditoría externa. AUNEA utiliza el nivel más alto para resumir el proceso; no implica que todos los riesgos tengan igual gravedad.</p></div>'+
     '<div class="grid g3 diagnosis-risk-summary">'+
     card('Gravedad antes de controles',level(risk.inherent_level),
-      'Valoración del proceso si no se tiene en cuenta ningún control preventivo o correctivo.')+
+      'Valoración calculada antes de considerar controles. Depende de los factores de riesgo registrados.')+
     card('Gravedad con controles registrados',level(risk.residual_level),
-      'Valoración que permanece según los controles documentados. No demuestra que un control funcione.')+
+      'Clasificación calculada teniendo en cuenta solo los controles registrados; no prueba su aplicación ni eficacia real.')+
     card('Situación de los controles',risk.status?esc(engineLabel('risk_status',risk.status)):'Sin valoración',
       missing+' sin controles registrados · '+withControls+' con controles registrados'+(unknown?' · '+unknown+' sin información':'')+'.')+
     '</div>'+
     (missing?'<p class="pg10-risk-context">No constan controles para '+missing+' de '+rows.length+
        ' riesgos. Esto no prueba que no existan en la empresa: indica que el diagnóstico no puede acreditar su protección.</p>':'')+
-    '<p class="pg10-risk-context">Si ambos niveles son críticos, no se ha acreditado una reducción del riesgo con los controles registrados. Esto no es una pérdida económica calculada ni un incidente ocurrido.</p>';
+    '<p class="pg10-risk-context">Si el nivel antes y después de controles es crítico, no hay evidencia suficiente para reducir la clasificación. «Crítico» es un nivel de riesgo estimado por reglas, no un incidente ocurrido ni una pérdida monetaria calculada.</p>';
   const reason=r=>{
     const f=[];
     if(r.critical_trigger===true)f.push('Tiene un factor de criticidad declarado');
