@@ -528,48 +528,97 @@ function workbenchContinuityHtml(e){
 function pg10SynthesisHtml(record,data){
   if(!data||data.status==='INPUT_GAPS')
     return '<div class="notice info">Todavía no existe un análisis de problemas vigente. Ejecuta el análisis AS-IS para obtener conclusiones basadas en los datos confirmados.</div>';
+  // Server-owned findings and time contributions are read only. Step proximity is
+  // contextual; it is never a proof of cause, a priority score, or a cash saving.
   const pains=Array.isArray(data.pain_results)?data.pain_results:[];
+  const pTime=data.process_time_projection||{};
+  const extras=Array.isArray(pTime.additional_friction_breakdown)?pTime.additional_friction_breakdown:[];
+  const timeSteps=Array.isArray(pTime.step_breakdown)?pTime.step_breakdown:[];
   const chosen=normalizeArray(record?.answers?.DF096).map(String);
   const known=chosen.length>0;
+  const yearly=x=>typeof x==='number'&&Number.isFinite(x)?num(x)+' h/año':'Sin cálculo';
   const items=pains.map(p=>{
     const trace=diagnosisTrace(record,p);
+    const frictionIds=new Set(trace.frictions.map(f=>String(f.id)));
+    const stepIds=new Set(trace.stepIds.map(String));
     const priority=known&&trace.frictions.some(f=>chosen.includes(String(f.id)));
     const steps=trace.stepIds.map(id=>diagnosisStepName(record,id)).filter(Boolean);
-    return '<li><b>'+esc(diagnosisPainLabel(p.pain_id))+'</b>'+
-      '<span>Estado: '+esc(p.state?engineLabel('pain_state',p.state):'Sin clasificación')+
-      ' · Confianza: '+esc(p.confidence?engineLabel('confidence',p.confidence):'Sin determinar')+
-      (priority?' · Seleccionado por el cliente':'')+'</span>'+
-      '<small>'+esc(steps.length?'Pasos relacionados: '+steps.join(' · '):'Sin paso asociado: revisar trazabilidad')+'</small></li>';
+    const labels=[...new Set(trace.frictions.map(f=>f.client_label||labelFrom('OS_FRICTION_TYPE',f.friction_type)).filter(Boolean))];
+    const qualities=[...new Set(trace.frictions.map(f=>f.evidence_type
+      ?engineLabel('evidence_quality',evidenceTypeBackend(f.evidence_type))
+      :'Sin evidencia clasificada'))];
+    const signals=[...new Set(trace.frictions.map(f=>f.observable_signal).filter(Boolean))];
+    const ownedExtra=extras.filter(x=>frictionIds.has(String(x.friction_id))&&x.mode==='ADDITIONAL');
+    const relatedWait=timeSteps.filter(x=>stepIds.has(String(x.step_id))&&
+      Number.isFinite(x.annual_wait_exposure_hours)&&x.annual_wait_exposure_hours>0);
+    const relatedRework=timeSteps.filter(x=>stepIds.has(String(x.step_id))&&
+      Number.isFinite(x.annual_rework_hours)&&x.annual_rework_hours>0);
+    const measures=[];
+    if(ownedExtra.length)measures.push('Trabajo adicional de fricciones enlazadas: '+
+      ownedExtra.map(x=>yearly(x.annual_additional_hours)).join(' · ')+'. Ya incluido en el diagnóstico económico; no es un ahorro.');
+    if(relatedWait.length)measures.push('Espera en pasos relacionados: '+
+      relatedWait.map(x=>diagnosisStepName(record,x.step_id)+' ('+yearly(x.annual_wait_exposure_hours)+')').join(' · ')+
+      '. Exposición contextual, no atribuida como causa exclusiva de este hallazgo ni valorada como trabajo.');
+    if(relatedRework.length)measures.push('Retrabajo en pasos relacionados: '+
+      relatedRework.map(x=>diagnosisStepName(record,x.step_id)+' ('+yearly(x.annual_rework_hours)+')').join(' · ')+
+      '. Puede solaparse con otras actividades; no equivale a ahorro.');
+    const observation=signals.length?signals.join(' · '):labels.length?labels.join(' · '):
+      'Sin descripción de una señal enlazada; revisar el origen.';
+    const confidence=p.confidence?engineLabel('confidence',p.confidence):'Sin determinar';
+    const state=p.state?engineLabel('pain_state',p.state):'Sin clasificación';
+    const need=p.state==='CONFIRMED'
+      ?'Comprobar que la evidencia sigue vigente para este proceso.'
+      :'Contrastar el mecanismo observado y aportar evidencia suficiente antes de confirmar el hallazgo.';
+    const source=trace.stepIds[0]
+      ?'<a class="pg10-conclusion-source" href="#asis-source-step-'+attr(String(trace.stepIds[0]))+'">Consultar paso y evidencias de origen</a>'
+      :'<span class="pg10-conclusion-source-unavailable">Falta vincular un paso: revisar trazabilidad del AS-IS.</span>';
+    return '<li class="pg10-conclusion-item"><b>'+esc(diagnosisPainLabel(p.pain_id))+'</b>'+
+      '<span>Estado del motor: '+esc(state)+' · Confianza de la evidencia: '+esc(confidence)+
+        (priority?' · Prioridad señalada por el cliente':'')+'</span>'+
+      '<small><b>Dónde:</b> '+esc(steps.length?steps.join(' · '):'Sin paso vinculado')+'</small>'+
+      '<small><b>Qué consta:</b> '+esc(observation)+'</small>'+
+      '<small><b>Calidad de evidencia:</b> '+esc(qualities.join(' · ')||'No registrada')+'</small>'+
+      (measures.length?'<div class="pg10-conclusion-measures"><b>Magnitudes relacionadas</b>'+
+        measures.map(x=>'<p>'+esc(x)+'</p>').join('')+'</div>':
+        '<small>Impacto específico no cuantificado en las fuentes relacionadas; no se estima ni se asigna uno nuevo.</small>')+
+      '<small><b>Qué comprobar:</b> '+esc(need)+'</small>'+source+'</li>';
   });
   const client=known
-    ?'Constan '+chosen.length+' prioridades del cliente. Se señalan sólo cuando coinciden con una fricción enlazada.'
-    :'No hay prioridades del cliente confirmadas en DF096. Esta ausencia no bloquea el diagnóstico.';
+    ?'Se han registrado '+chosen.length+' prioridades del cliente. Solo se señalan en los hallazgos vinculados a ellas.'
+    :'El cliente no ha señalado prioridades de problemas en el AS-IS. Esto no impide revisar el diagnóstico.';
   return '<div class="pg10-conclusions"><p>'+esc(client)+'</p>'+
     (items.length?'<ul class="pg10-conclusion-list">'+items.join('')+'</ul>':
       '<div class="notice warn">El motor no ha proporcionado hallazgos. Verifica las fuentes antes de concluir que no existen problemas.</div>')+
-    '<p class="field-help">Estos hallazgos no constituyen un ranking. Su orden ni la confianza asignada justifican por sí solos una prioridad analítica.</p>'+
-    '<div class="notice info"><b>Qué permite concluir este AS-IS</b>'+
-      '<p>Los tiempos de trabajo, exposición a espera, retrabajo, costes de capacidad y riesgos se presentan con sus fuentes y limitaciones. Un valor calculado no acredita por sí solo que la actividad sea necesaria, que su coste sea recuperable ni que exista un incumplimiento.</p>'+
-      '<p><b>Comparación con lo recomendable:</b> el SLA y los objetivos del cliente son referencias de contexto. Solo se afirmará que el proceso supera o incumple una referencia cuando las medidas, unidades, periodo y evidencia sean comparables; no se inventan benchmarks.</p>'+
-      '<p><b>Fuera de PG10:</b> el rediseño del trabajo y los controles se establecen en TO-BE; los cambios en tiempo, capacidad y riesgo se comparan en AS-IS / TO-BE; las alternativas, inversión y ahorros defendibles se valoran después mediante escenarios.</p></div></div>';
+    '<p class="field-help">Estos hallazgos no constituyen un ranking ni una prioridad analítica calculada. Pueden compartir pasos y magnitudes: las cifras mostradas proceden del diagnóstico existente y no deben sumarse entre tarjetas.</p>'+
+    '<div class="pg10-conclusion-boundaries"><b>Alcance del diagnóstico actual</b>'+
+      '<p>Se describe la situación AS-IS y su evidencia. La proximidad de datos no demuestra una causa raíz ni un incumplimiento; cualquier comparación con objetivos o referencias necesita medidas y periodos compatibles.</p>'+
+      '<p>El diseño del TO-BE, la comparación de mejoras y la valoración de alternativas y ahorros corresponden a las fases siguientes.</p></div></div>';
 }
 function pg10ReviewHtml(e,official,analysis,miss,unresolved,freshness,recommendationReady){
   const available=!!official||analysis?.status==='ANALYZED';
-  const msg=miss.length?'Existen '+miss.length+' datos obligatorios pendientes.':'Sin datos obligatorios pendientes en la captura.';
-  const analyzed=available?'El análisis actual está disponible para revisar.':'Debes analizar el AS-IS y comprobar sus incidencias.';
-  const pending=unresolved.length?'Quedan '+unresolved.length+' decisiones técnicas sobre soluciones.':'No constan decisiones técnicas de solución pendientes.';
-  const controls='<div class="pg10-review-actions">'+
-    '<button class="btn btn-outline" data-page="proceso">Consultar fuentes AS-IS</button>'+
-    '<button class="btn btn-outline" id="reviewEngineGates">Revisar decisiones técnicas</button>'+
-    (!official?'<button class="btn btn-primary" id="runDiag">'+(recommendationReady?'Calcular recomendación y escenarios oficiales':'Evaluar condiciones para la recomendación')+'</button>':
-      '<button class="btn btn-outline" id="runDiag">Recalcular resultado oficial</button>')+
-    '<button class="btn btn-primary" data-page="tobe">'+(official?'Continuar al diseño TO-BE':'Consultar siguiente fase TO-BE')+'</button></div>';
+  const msg=miss.length?'Existen '+miss.length+' datos obligatorios pendientes en la captura.':'Sin datos obligatorios pendientes en la captura.';
+  const analyzed=available?'El análisis AS-IS está disponible para consultar.':'El AS-IS necesita un análisis vigente para mostrar sus conclusiones.';
+  const pending=unresolved.length?'Quedan '+unresolved.length+' decisiones técnicas internas para preparar una recomendación oficial.':'No constan decisiones técnicas internas pendientes.';
+  // PG11 preview deliberately remains read-only without an official recommendation;
+  // actual TO-BE authoring/approval is gated in tobePage and never bypassed here.
+  const main=official
+    ?'<button class="btn btn-primary" data-page="tobe">Continuar al diseño TO-BE</button>'
+    :'<button class="btn btn-primary" id="runDiag">'+
+       (recommendationReady?'Calcular recomendación oficial':'Evaluar condiciones de la recomendación')+'</button>';
+  const next=official?'':'<button class="btn btn-outline" data-page="tobe">Consultar TO-BE preliminar</button>';
+  const audit='<details class="pg10-review-support"><summary>Consultar fuentes y decisiones internas</summary>'+
+    '<div class="pg10-review-support-actions">'+
+      '<button class="btn btn-outline" data-page="proceso">Consultar fuentes AS-IS</button>'+
+      '<button class="btn btn-outline" id="reviewEngineGates">Revisar decisiones técnicas</button>'+
+      (official?'<button class="btn btn-outline" id="runDiag">Recalcular resultado oficial</button>':'')+
+    '</div></details>';
   return '<div class="pg10-review-summary"><p>'+esc(msg)+' '+esc(analyzed)+'</p>'+
     (freshness?.status==='OBSOLETE'?'<div class="notice warn">Existe un resultado oficial anterior no vigente: recalcula antes de utilizarlo.</div>':'')+
-    '<p>'+esc(pending)+' Estas decisiones son internas y no convierten los hallazgos en una recomendación aprobada.</p>'+
-    '<p class="field-help">Contrasta cada hallazgo con su origen. Si se detecta un error, modifica únicamente el dato propietario mediante el flujo PG01–PG09 y vuelve a calcular. Esta pantalla no crea una segunda aprobación ni publica resultados.</p>'+
+    '<p>'+esc(pending)+' No son errores de captura ni equivalen a hallazgos confirmados; condicionan la recomendación y la edición del TO-BE, no la consulta del diagnóstico.</p>'+
+    '<p class="field-help">Para corregir un hallazgo, modifica únicamente su fuente en el AS-IS y vuelve a calcular. No hay una segunda aprobación ni publicación automática de resultados.</p>'+
+    (!official?'<p class="field-help">Puedes consultar la siguiente fase de forma preliminar, pero la edición del diseño TO-BE requiere una recomendación oficial vigente.</p>':'')+
     (official?'<details class="pg10-decision-trace"><summary>Consultar decisiones utilizadas por el resultado oficial</summary>'+diagnosisEngineDecisionTraceHtml(e)+'</details>':'')+
-    controls+'</div>';
+    '<div class="pg10-review-actions">'+main+next+'</div>'+audit+'</div>';
 }
 function resultsPage(){
   const e=currentEng();
@@ -619,7 +668,7 @@ function resultsPage(){
     section('2. Estado actual y mapa AS-IS','Los tiempos declarados y el mapa permiten localizar el origen de cada problema.',reference+map)+
     section('3. Integridad de datos y gaps','Cobertura, coherencia y evidencias, sin nueva captura de datos.',coverage)+
     section('4. Diagnóstico calculado','Problemas, tiempos, impactos y riesgos a partir de las fuentes confirmadas.',diagnostic)+
-    section('5. Conclusiones y prioridades','Síntesis sin confundir prioridad declarada y confianza del motor.',pg10SynthesisHtml(record,data))+
+    section('5. Conclusiones y prioridades','Hallazgos, evidencia y magnitudes ya calculadas, sin atribuir causas ni inventar un ranking.',pg10SynthesisHtml(record,data))+
     section('6. Revisión y continuación','Revisar el diagnóstico, corregir únicamente en origen y continuar al TO-BE sin una aprobación nueva.',pg10ReviewHtml(e,official,asis,missing,unresolved,freshness,recommendationReady));
 }
 // [AUNEA-FE-PG10-WORKSPACE-167] END
