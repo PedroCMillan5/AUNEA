@@ -779,22 +779,29 @@ test('PG10 review distinguishes preliminary PG11 from official design and never 
       v=>String(v),()=>'<p>Decisión técnica registrada</p>');
   const pending=fn({},null,{status:'ANALYZED'},[],[{},{}],{status:'OBSOLETE'},false);
   assert.match(pending,/id="reviewEngineGates"/);
-  assert.match(pending,/id="checkRecommendationReadiness"/);
+  assert.doesNotMatch(pending,/id="checkRecommendationReadiness"/);
+  assert.match(pending,/<button class="btn btn-primary" id="reviewEngineGates">Revisar las cinco decisiones técnicas<\/button>/);
+  assert.equal((pending.match(/id="reviewEngineGates"/g)||[]).length,1);
   assert.doesNotMatch(pending,/id="runDiag"/);
   assert.match(pending,/id="pg10RecommendationStatus"/);
   assert.match(pending,/id="pg10OpenAsisSources"/);
-  assert.match(pending,/antes de generar una recomendación oficial/);
+  assert.match(pending,/Primero revisa y confirma las decisiones técnicas/);
   assert.match(pending,/data-page="tobe"/);
   assert.match(pending,/Consultar fuentes AS-IS/);
   assert.match(pending,/resultado oficial anterior no vigente/);
   assert.match(pending,/Consultar TO-BE preliminar/);
-  assert.match(pending,/la edición del diseño TO-BE requiere una recomendación oficial vigente/);
+  assert.match(pending,/no crea ni aprueba el proceso futuro, y no calcula ahorros/);
   assert.equal((pending.match(/btn btn-primary/g)||[]).length,1);
   assert.doesNotMatch(pending,/id="confirmDiagnosis"|id="approveDiagnosis"/);
+  assert.match(pending,/Ver condiciones para generar la recomendación/);
+  assert.match(pending,/Consultar fuentes y opciones de revisión/);
+  assert.equal((pending.match(/data-page="tobe"/g)||[]).length,1);
   const ready=fn({},null,{status:'ANALYZED'},[],[],{status:'CURRENT'},true);
   assert.match(ready,/Calcular recomendación oficial/);
   assert.match(ready,/id="runDiag"/);
   assert.doesNotMatch(ready,/id="checkRecommendationReadiness"/);
+  assert.equal((ready.match(/id="reviewEngineGates"/g)||[]).length,1);
+  assert.equal((ready.match(/btn btn-primary/g)||[]).length,1);
   const official=fn({}, {pain_results:[]},{status:'ANALYZED'},[],[],{status:'CURRENT'},true);
   assert.match(official,/Continuar al diseño TO-BE/);
   assert.match(official,/Decisión técnica registrada/);
@@ -802,6 +809,7 @@ test('PG10 review distinguishes preliminary PG11 from official design and never 
   assert.equal((official.match(/data-page="tobe"/g)||[]).length,1);
   assert.doesNotMatch(official,/id="checkRecommendationReadiness"/);
   assert.doesNotMatch(official,/Consultar TO-BE preliminar/);
+  assert.equal((official.match(/id="reviewEngineGates"/g)||[]).length,1);
 });
 test('PG11 preliminary view states its purpose, remains read-only and routes back to PG10',()=>{
   const start=results.indexOf("function tobePage()"),
@@ -833,7 +841,7 @@ test('PG10 AS-IS source navigation returns to exactly the prior review position 
   assert.match(results,/id="pg10-review-section"/);
   assert.match(shellJs,/pg10OpenAsisSources.*openPg10Sources/);
   assert.match(shellJs,/returnFromAsisToPg10.*returnFromAsisToPg10/);
-  assert.match(shellJs,/checkRecommendationReadiness/);
+  assert.match(shellJs,/reviewEngineGates/);
   const e={id:'E-TEST',confirmedAsIs:true,answers:{DF026:250}};
   const snapshots=JSON.stringify(e),calls=[];
   let currentPage='resultados';
@@ -857,19 +865,18 @@ test('PG10 AS-IS source navigation returns to exactly the prior review position 
   assert.equal(api.canReturnToPg10FromAsis(e),false);
   assert.equal(JSON.stringify(e),snapshots,'source lookup never edits confirmed input');
 });
-test('PG10 requirements check cannot accidentally run diagnosis or open the decision popup',()=>{
+test('PG10 requirements stay informational and the primary decision action keeps the existing review handler',()=>{
   const shellJs=fs.readFileSync(path.join(root,'ui/shell.js'),'utf8');
-  assert.match(shellJs,/if\(by\('checkRecommendationReadiness'\)\)/);
-  const from=shellJs.indexOf("if(by('checkRecommendationReadiness'))"),
-    end=shellJs.indexOf("if(by('prevStage'))",from);
-  const source=shellJs.slice(from,end);
-  assert.match(source,/panel\.open=true/);
-  assert.doesNotMatch(source,/runDiagnosis\(|openEngineGateReview\(/);
-  const review=results.slice(results.indexOf('function pg10ReviewHtml('),results.indexOf('\nfunction resultsPage('));
-  assert.match(review,/id="reviewEngineGates"/);
-  assert.match(review,/id="checkRecommendationReadiness"/);
-  assert.match(review,/id="runDiag"/);
-  assert.match(review,/recommendationReady/);
+  assert.match(shellJs,/reviewEngineGates.*openEngineGateReview/);
+  const source=results.slice(results.indexOf('function pg10ReviewHtml('),results.indexOf('\nfunction resultsPage('));
+  assert.match(source,/Ver condiciones para generar la recomendación/);
+  assert.match(source,/id="pg10RecommendationStatus"/);
+  assert.match(source,/id="reviewEngineGates"/);
+  assert.match(source,/class="btn btn-primary" id="reviewEngineGates"/);
+  assert.doesNotMatch(source,/id="checkRecommendationReadiness"/);
+  assert.match(source,/id="pg10OpenAsisSources"/);
+  assert.match(source,/data-page="tobe"/);
+  assert.doesNotMatch(source,/function\s+runDiagnosis\s*\(/);
 });
 test('PG10 collapsed map source cards open from map and finding navigation',()=>{
   const start=results.indexOf('function bindDiagnosticMapPointNavigation('),end=results.indexOf('\nfunction ',start+10);
