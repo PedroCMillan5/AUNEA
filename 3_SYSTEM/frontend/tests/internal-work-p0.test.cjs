@@ -747,7 +747,7 @@ test('PG10 synthesis reads the backend projection without inventing rankings, ca
     ]});
   assert.doesNotMatch(withExcluded,/Reintroducción manual|Espera de aprobación/);
   assert.match(withExcluded,/No hay hallazgos confirmados o indicados/);
-  assert.match(withExcluded,/1 señales sin evidencia suficiente/);
+  assert.match(withExcluded,/1 señal sin evidencia suficiente/);
 });
 test('PG10 review distinguishes preliminary PG11 from official design and never double-approves',()=>{
   const a=results.indexOf('function pg10ReviewHtml('),b=results.indexOf('\nfunction resultsPage(',a);
