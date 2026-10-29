@@ -284,127 +284,126 @@ function diagnosisProcessBaselineHtml(p,record){
 // Source: backend EconomicsResult and RiskResult, DEC-034/050/068; no recomputation or scoring.
 function diagnosisEconomicsHtml(econ,record,projection){
   const inputs=(record?.economicInputs||[]).filter(x=>x.status!=='SUPERSEDED');
-  // [AUNEA-FE-PG10-OPERATING-COST-172] START — Server-owned role-cost estimation, separately from official EconomicsResult.
-  // SOURCE: DEC-021/032/050/068, backend process_labor_capacity.
   const capacity=projection?.process_labor_capacity;
-  const moneyValue=x=>typeof x==='number'&&Number.isFinite(x)?eur(x):'No calculado';
-  const moneyPerCase=x=>typeof x==='number'&&Number.isFinite(x)
+  const money=x=>x==null?'No cuantificado':eur(x)+'/año';
+  const euroValue=x=>typeof x==='number'&&Number.isFinite(x)?eur(x):'No calculado';
+  const euroCents=x=>typeof x==='number'&&Number.isFinite(x)
     ?x.toLocaleString('es-ES',{style:'currency',currency:'EUR',minimumFractionDigits:2,maximumFractionDigits:2}):'No calculado';
-  // Role sums come only from the source-matched backend step values. No new
-  // multiplication, waiting-cost assumption, savings claim or separate owner.
+  const hours=x=>x==null?'No calculado':num(x)+' h/año';
+  const roleLabel=code=>{
+    const raw=String(code||'').trim();
+    const fromSource=raw?labelFrom('OS_ACTOR_ROLE',raw):'';
+    if(fromSource&&fromSource!==raw)return fromSource;
+    return {ADMIN:'Administración',MANAGER:'Dirección / responsable'}[raw]||raw||'Rol sin identificar';
+  };
+  const evidence=x=>x?.evidence_type?engineLabel('evidence_quality',evidenceTypeBackend(x.evidence_type)):'Sin evidencia clasificada';
+  const evidenceLabel=x=>({HYPOTHESIS:'Hipótesis',CLIENT_DECLARED:'Declaración del cliente',
+    MEASURED:'Medición',AUNEA_ESTIMATE:'Estimación AUNEA',SPECIFIC_BENCHMARK:'Referencia específica',
+    NOT_RECORDED:'Sin acreditar'})[x]||'Sin clasificar';
+
+  // [AUNEA-FE-PG10-OPERATING-COST-172] START — Values owned by backend, never recomputed in UI.
+  // SOURCE: process_time_projection/process_labor_capacity, EconomicResult, DEC-021/032/034/050/068.
   const roleRows=Array.isArray(capacity?.role_breakdown)?capacity.role_breakdown:[];
-  const roleTable=roleRows.length
-    ?'<div class="pg10-cost-roles"><h5>Desglose anual por rol</h5>'+
+  const complete=capacity?.status==='COMPLETE'&&
+    typeof capacity.annual_labor_capacity_value_eur==='number'&&Number.isFinite(capacity.annual_labor_capacity_value_eur);
+  const costIntro=complete
+    ?'<div class="pg10-econ-hero"><div><small>Capacidad anual valorada</small><strong>'+
+      esc(euroValue(capacity.annual_labor_capacity_value_eur))+
+      '</strong></div><div><small>Valor de capacidad por caso</small><strong>'+
+      esc(euroCents(capacity.capacity_value_eur_per_case))+'</strong></div></div>'
+    :'<div class="notice info pg10-econ-incomplete"><b>Valoración laboral incompleta</b><p>No se puede calcular un importe total fiable: falta una tarifa única por rol, tiempo suficiente o un análisis actualizado.</p>'+
+      (capacity?.unvalued_steps?.length?'<p>Por comprobar: '+esc(capacity.unvalued_steps.join(' · '))+'</p>':'')+'</div>';
+
+  const roleTable=complete&&roleRows.length
+    ?'<section class="pg10-cost-roles"><h5>Distribución anual por rol</h5>'+
       '<div class="pg10-cost-roles-scroll"><table><thead><tr><th scope="col">Rol</th>'+
       '<th scope="col">Horas/año</th><th scope="col">Tarifa</th>'+
-      '<th scope="col">Valor anual</th><th scope="col">Por factura</th></tr></thead><tbody>'+
-      roleRows.map(x=>'<tr><th scope="row">'+esc(x.role||'Rol sin identificar')+'</th>'+
+      '<th scope="col">Valor anual</th><th scope="col">Por caso</th></tr></thead><tbody>'+
+      roleRows.map(x=>'<tr><th scope="row">'+esc(roleLabel(x.role))+'</th>'+
         '<td>'+esc(x.annual_hours==null?'Pendiente':num(x.annual_hours))+'</td>'+
-        '<td>'+esc(x.hourly_rate==null?'Pendiente':moneyValue(x.hourly_rate)+'/h')+'</td>'+
-        '<td>'+esc(moneyValue(x.annual_capacity_value_eur))+'</td>'+
-        '<td>'+esc(moneyPerCase(x.capacity_value_eur_per_case))+'</td></tr>').join('')+
-      '</tbody><tfoot><tr><th scope="row">Total</th>'+
-      '<td>'+esc(num(capacity.covered_hours))+'</td><td>—</td>'+
-      '<td>'+esc(moneyValue(capacity.annual_labor_capacity_value_eur))+'</td>'+
-      '<td>'+esc(moneyPerCase(capacity.capacity_value_eur_per_case))+'</td></tr></tfoot></table></div>'+
-      '<p>Los importes corresponden a trabajo activo y fricciones adicionales atribuidas una sola vez. No incluyen la espera pasiva; el retrabajo permanece separado.</p></div>'
-    :'<p class="pg10-cost-roles-missing">El análisis guardado no incluye todavía el desglose por rol. Actualiza el análisis con el AS-IS vigente para obtenerlo.</p>';
-  // Highlight the existing backend allocation, not a new saving or assumed client fact.
-  // A fricción is payable capacity only if its documented loss is actual work,
-  // not passive waiting. DEC-068 attribution verifies owner/frequency, not semantics.
-  const extras=Array.isArray(projection?.additional_friction_breakdown)?projection.additional_friction_breakdown:[];
-  const sourceFriction=id=>(record?.frictions||[]).find(f=>String(f.id)===String(id)&&f.status!=='SUPERSEDED');
-  const evidenceLabel=f=>f?.evidence_type
-    ?engineLabel('evidence_quality',evidenceTypeBackend(f.evidence_type))
-    :'Sin calidad de evidencia consignada';
-  const extraProvenance=extras.length
-    ?'<div class="pg10-cost-conditional"><b>Trabajo adicional: revisar su naturaleza antes de validar el coste</b>'+
-      '<p>Estas horas están sumadas al valor estimado porque se registraron como esfuerzo activo adicional. Que su frecuencia y propietario sean válidos no demuestra que sean trabajo efectivo: si describen una espera pasiva, la valoración debe corregirse en la fricción original y recalcularse.</p>'+
-      '<ul>'+extras.map(x=>{const f=sourceFriction(x.friction_id);
-        return '<li><b>'+esc(f?.client_label||f?.observable_signal||'Fricción registrada')+'</b> · '+
-          esc(num(x.annual_additional_hours))+' h/año adicionales · '+
-          esc(x.minutes_per_event==null?'Duración por ocurrencia no disponible':num(x.minutes_per_event)+' min por ocurrencia')+
-          (x.frequency?.mode==='percent'&&x.frequency?.value!=null?' · Frecuencia registrada: '+esc(num(x.frequency.value))+' % de los casos':'')+
-          ' · Evidencia: '+esc(evidenceLabel(f))+'</li>';
-      }).join('')+'</ul></div>'
-    :'<p class="field-help">'+(Number(projection?.annual_friction_additional_hours)>0
-      ?'Esta proyección indica trabajo adicional, pero no incorpora su desglose por fricción. Actualiza el análisis con el AS-IS vigente para comprobar el origen.'
-      :'No consta trabajo adicional atribuido desde fricciones en esta proyección.')+'</p>';
-  const costIntro=capacity?.status==='COMPLETE'
-    ?'<div class="pg10-cost-estimate"><div><b>Valor estimado de capacidad dedicada al proceso</b><strong>'+
-      moneyValue(capacity.annual_labor_capacity_value_eur)+'/año</strong>'+
-      '<small>' + (capacity.capacity_value_eur_per_case!=null?'Equivale a '+moneyPerCase(capacity.capacity_value_eur_per_case)+' de capacidad por factura. ':'') + 'Estimación condicionada a la clasificación de trabajo activo y a las tarifas registradas por rol. No equivale a gasto contable ni a ahorro de caja.</small></div>'+
-      roleTable+extraProvenance+'<details><summary>Ver cálculo por paso y tarifas aplicadas</summary><div class="pg10-cost-steps">'+
-      (capacity.steps||[]).map(s=>'<div><span>'+esc(s.step_name||'Paso')+' · '+esc(s.role||'Rol sin nombre')+
-        '</span><b>'+esc(num(s.annual_hours))+' h/año × '+esc(eur(s.hourly_rate))+'/h = '+esc(moneyValue(s.capacity_value))+'</b></div>').join('')+
-      '</div>'+(capacity.rework_separate_value_eur!=null
-        ?'<p>Retrabajo separado: '+esc(moneyValue(capacity.rework_separate_value_eur))+
-         '/año de capacidad teórica. No se suma sin descartar solapamientos.</p>':'')+
-      '<p>Calidad de tarifas: '+esc([...new Set((capacity.steps||[]).flatMap(s=>s.evidence||[]))].map(x=>({HYPOTHESIS:'Hipótesis',CLIENT_DECLARED:'Declaración del cliente',MEASURED:'Medición',AUNEA_ESTIMATE:'Estimación AUNEA',SPECIFIC_BENCHMARK:'Referencia específica',NOT_RECORDED:'Sin acreditar'})[x]||'Sin clasificar').join(', ')||'No especificada')+
-      '. La tarifa de capacidad no equivale necesariamente al coste salarial ni al desembolso efectivo.</p></details></div>'
-    :'<div class="notice info pg10-cost-estimate"><b>Coste del trabajo del proceso: estimación no completada</b>'+
-      '<p>Existen horas del proceso y tarifas registradas, pero no se ha podido acreditar una tarifa única para todos los roles, o el cálculo es anterior a esta versión. No se inventa el coste total.</p>'+
-      (capacity?.unvalued_steps?.length?'<p>Por revisar: '+esc(capacity.unvalued_steps.join(' · '))+'</p>':'')+'</div>';
+        '<td>'+esc(x.hourly_rate==null?'Pendiente':euroValue(x.hourly_rate)+'/h')+'</td>'+
+        '<td>'+esc(euroValue(x.annual_capacity_value_eur))+'</td>'+
+        '<td>'+esc(euroCents(x.capacity_value_eur_per_case))+'</td></tr>').join('')+
+      '</tbody><tfoot><tr><th scope="row">Total</th><td>'+esc(hours(capacity.covered_hours).replace(' h/año',''))+'</td><td>—</td>'+
+      '<td>'+esc(euroValue(capacity.annual_labor_capacity_value_eur))+'</td>'+
+      '<td>'+esc(euroCents(capacity.capacity_value_eur_per_case))+'</td></tr></tfoot></table></div></section>'
+    :'<p class="pg10-cost-roles-missing">'+(complete
+      ?'No se dispone del desglose por rol en este análisis. Actualiza el análisis con el AS-IS vigente.'
+      :'El desglose por rol se mostrará cuando exista una valoración completa.')+'</p>';
+
+  const hasTools=inputs.some(x=>x.current_tool_cost_eur_annual!=null);
+  const hasLoss=inputs.some(x=>x.direct_loss_eur_annual!=null);
+  const hasCash=inputs.some(x=>x.realized_cash_saving_eur_annual!=null);
+  const moneyKnown=(flag,value)=>flag&&value!=null?money(value):'No consignado';
+  const otherImpacts='<section class="pg10-econ-other"><h5>Otros importes registrados</h5><div class="grid g3 pg10-econ-other-grid">'+
+    '<div class="notice"><b>Herramientas</b><strong>'+esc(moneyKnown(hasTools,econ.current_tool_cost_eur_annual))+
+      '</strong><small>Coste actual. No se presupone eliminable.</small></div>'+
+    '<div class="notice"><b>Retrabajo (valoración separada)</b><strong>'+
+      esc(capacity?.rework_separate_value_eur==null?'No calculado':euroCents(capacity.rework_separate_value_eur)+'/año')+
+      '</strong><small>No se suma: podría solaparse con trabajo ya contabilizado.</small></div>'+
+    '<div class="notice"><b>Pérdidas directas / ahorro de caja realizado</b><strong>'+
+      esc(((hasLoss&&Number(econ.direct_loss_eur_annual)>0)||(hasCash&&Number(econ.realized_cash_saving_eur_annual)>0))
+        ?'Ver importes registrados':'Sin importe acreditado')+
+      '</strong><small>Importes distintos de la capacidad laboral estimada.</small></div></div></section>';
+  const mainExplanation='<p class="field-help pg10-econ-summary-note">La capacidad se valora con trabajo activo de los pasos, esfuerzo adicional atribuido y tarifas registradas. La espera pasiva no es trabajo laboral. Los importes son estimaciones condicionadas a los datos y su evidencia; no son gasto contable ni ahorro realizable.</p>';
   // [AUNEA-FE-PG10-OPERATING-COST-172] END
 
-  const money=x=>x==null?'No cuantificado':eur(x)+'/año';
-  const positive=x=>x!=null&&Number(x)>0;
-  const hasOther=positive(econ.capacity_value_eur_annual)||positive(econ.direct_loss_eur_annual)
-    ||positive(econ.realized_cash_saving_eur_annual);
-  const evidence=x=>engineLabel('evidence_quality',evidenceTypeBackend(x.evidence_type));
+  const extras=Array.isArray(projection?.additional_friction_breakdown)?projection.additional_friction_breakdown:[];
+  const sourceFriction=id=>(record?.frictions||[]).find(f=>String(f.id)===String(id)&&f.status!=='SUPERSEDED');
+  const extraDetail=extras.length
+    ?'<div class="pg10-cost-conditional"><b>Esfuerzo adicional atribuido a fricciones</b>'+
+      '<p>Estas horas se han incluido como trabajo activo porque así constan en su fuente. Frecuencia y propietario no prueban por sí solos que sean trabajo y no espera: si la clasificación es errónea, se corrige en el AS-IS y se recalcula.</p><ul>'+
+      extras.map(x=>{const f=sourceFriction(x.friction_id);
+        return '<li><b>'+esc(f?.client_label||f?.observable_signal||'Fricción registrada')+'</b> · '+
+          esc(hours(x.annual_additional_hours))+' adicionales · '+
+          esc(x.minutes_per_event==null?'Duración por ocurrencia no disponible':num(x.minutes_per_event)+' min por ocurrencia')+
+          (x.frequency?.mode==='percent'&&x.frequency?.value!=null?' · Frecuencia registrada: '+esc(num(x.frequency.value))+' % de los casos':'')+
+          ' · Evidencia: '+esc(evidence(f))+'</li>';
+      }).join('')+'</ul></div>'
+    :(Number(projection?.annual_friction_additional_hours)>0
+      ?'<p class="field-help">Esta proyección contiene trabajo adicional sin detalle de atribución. Actualiza el análisis con el AS-IS vigente.</p>'
+      :'<p class="field-help">No consta trabajo adicional por fricciones en este cálculo.</p>');
+  const stepDetail=Array.isArray(capacity?.steps)&&capacity.steps.length
+    ?'<section class="pg10-econ-detail-group"><h5>Procedencia por paso</h5><div class="pg10-cost-steps">'+
+      capacity.steps.map(x=>'<div><span>'+esc(x.step_name||'Paso')+' · '+esc(roleLabel(x.role))+'</span><b>'+
+        esc(x.annual_hours==null?'Horas pendientes':hours(x.annual_hours))+' × '+
+        esc(x.hourly_rate==null?'Tarifa pendiente':euroValue(x.hourly_rate)+'/h')+' = '+
+        esc(euroValue(x.capacity_value))+'</b></div>').join('')+'</div>'+
+      '<p class="field-help">Calidad de las tarifas: '+esc([...new Set(capacity.steps.flatMap(x=>x.evidence||[]))].map(evidenceLabel).join(', ')||'No especificada')+'.</p></section>'
+    :'<p class="field-help">No existe aún un desglose por pasos valorados; la valoración no debe completarse en la interfaz.</p>';
   const inputDescription=x=>{
     const parts=[];
     if(x.capacity_cost_rate_eur_hour!=null)parts.push(num(x.capacity_cost_rate_eur_hour)+' €/hora de capacidad');
-    if(x.current_tool_cost_eur_annual!=null)parts.push(money(x.current_tool_cost_eur_annual)+' de herramientas');
-    if(x.annual_active_hours!=null&&Number(x.annual_active_hours)>0)parts.push(num(x.annual_active_hours)+' h/año de trabajo');
-    if(x.annual_wait_hours!=null&&Number(x.annual_wait_hours)>0)parts.push(num(x.annual_wait_hours)+' h/año de espera');
+    if(x.current_tool_cost_eur_annual!=null&&Number(x.current_tool_cost_eur_annual)>0)parts.push(money(x.current_tool_cost_eur_annual)+' de herramientas');
+    if(x.annual_active_hours!=null)parts.push(hours(x.annual_active_hours)+' de trabajo consignado directamente');
+    if(x.annual_wait_hours!=null)parts.push(hours(x.annual_wait_hours)+' de espera consignada directamente');
     if(x.direct_loss_eur_annual!=null&&Number(x.direct_loss_eur_annual)>0)parts.push(money(x.direct_loss_eur_annual)+' de pérdida directa');
-    const role=x.role_or_resource?labelFrom('OS_ACTOR_ROLE',x.role_or_resource)||x.role_or_resource:'';
-    return '<li><b>'+esc(typeof econDriverLabel==='function'?econDriverLabel(x.driver_id):x.driver_id)+'</b>'+
-      (role?'<span>'+esc(role)+'</span>':'')+
+    const role=x.role_or_resource?roleLabel(x.role_or_resource):'';
+    return '<li><b>'+esc(typeof econDriverLabel==='function'?econDriverLabel(x.driver_id):x.driver_id||'Registro económico')+
+      '</b>'+(role?'<span>'+esc(role)+'</span>':'')+
       '<span>'+esc(parts.join(' · ')||'Sin importe anual cuantificado')+'</span>'+
       '<small>Calidad de la evidencia: '+esc(evidence(x))+'</small></li>';
   };
-  const otherCards=[
-    positive(econ.capacity_value_eur_annual)?'<div class="notice"><b>Valor de capacidad registrado</b><strong>'+money(econ.capacity_value_eur_annual)+'</strong><small>No equivale a ahorro de caja ni debe sumarse a la valoración de los mismos pasos sin conciliar su origen.</small></div>':'',
-    positive(econ.direct_loss_eur_annual)?'<div class="notice"><b>Pérdida directa registrada</b><strong>'+money(econ.direct_loss_eur_annual)+'</strong></div>':'',
-    positive(econ.realized_cash_saving_eur_annual)?'<div class="notice"><b>Ahorro de caja realizado registrado</b><strong>'+money(econ.realized_cash_saving_eur_annual)+'</strong><small>No es una previsión futura.</small></div>':''
-  ].filter(Boolean).join('');
-  return costIntro+'<div class="grid g3 diagnosis-econ-grid">'+
-    '<div class="notice"><b>Coste actual de herramientas registrado</b><strong>'+money(econ.current_tool_cost_eur_annual)+'</strong><small>Coste existente, no necesariamente eliminable.</small></div>'+
-    (hasOther?otherCards:
-      '<div class="notice diagnosis-econ-uncertainty"><b>Pérdidas o ahorros de caja registrados</b><strong>Sin importe acreditado</strong>'+
-      '<small>La valoración del trabajo es capacidad ocupada, no una pérdida monetaria demostrada ni ahorro de caja recuperable.</small></div>')+
-    '</div>'+
-    '<p class="diagnosis-economic-scope">La valoración de capacidad combina horas calculadas del mapa AS-IS y tarifas registradas por rol. Los importes de herramientas, pérdidas y ahorros realizados se muestran desde sus registros económicos originales. No se suman magnitudes duplicadas ni se presuponen beneficios futuros.</p>'+
-    '<p class="diagnosis-economic-scope">Las tarifas horarias registradas no permiten cuantificar por sí solas el coste de cada fricción: hacen falta horas atribuibles y una base monetaria compatible. No equivale a que el problema no tenga coste.</p>'+
-    // [AUNEA-FE-PG10-ECON-SOURCE-CONCILIATION-174] START — One economic view, distinct owners, no data duplication.
-    // SOURCE: DEC-021/032/034/050/068/074; process_time_projection and EconomicResult.
-    '<details class="diagnosis-economic-detail"><summary>Ver detalle económico completo: cálculo y fuentes ('+inputs.length+' registros)</summary>'+
-      '<section class="pg10-economic-source-group"><h5>Trabajo y capacidad derivados del mapa AS-IS</h5>'+
-      '<p class="field-help">Cálculos del backend a partir de los pasos confirmados. Las tarifas se toman de los registros económicos por rol; estas horas no se capturan por segunda vez.</p>'+
-      '<div class="grid g3 diagnosis-economic-source-values">'+
-        '<div><b>Trabajo de los pasos</b><span>'+(projection?.annual_active_hours==null?'No calculado':num(projection.annual_active_hours)+' h/año')+'</span></div>'+
-        '<div><b>Trabajo adicional atribuido</b><span>'+(projection?.annual_friction_additional_hours==null?'No calculado':num(projection.annual_friction_additional_hours)+' h/año')+'</span></div>'+
-        '<div><b>Trabajo activo total del proceso</b><span>'+(projection?.annual_total_active_hours==null?'No calculado':num(projection.annual_total_active_hours)+' h/año')+'</span></div>'+
-        '<div><b>Horas con tarifa asignada</b><span>'+(capacity?.covered_hours==null?'No calculado':num(capacity.covered_hours)+' h/año')+'</span></div>'+
-        '<div><b>Valor estimado de la capacidad</b><span>'+esc(moneyValue(capacity?.annual_labor_capacity_value_eur))+'</span></div>'+
-        '<div><b>Valor estimado por factura</b><span>'+esc(moneyPerCase(capacity?.capacity_value_eur_per_case))+'</span></div>'+
-      '</div></section>'+
-      '<section class="pg10-economic-source-group"><h5>Datos consignados directamente en registros económicos</h5>'+
-      '<p class="field-help">Estos campos corresponden a las '+inputs.length+' entradas económicas originales. «No consignado» significa que no se introdujeron horas aquí, no que el proceso carezca de trabajo.</p>'+
-      '<div class="grid g3 diagnosis-economic-source-values">'+
-        '<div><b>Trabajo consignado en registros económicos</b><span>'+(inputs.some(x=>x.annual_active_hours!=null)?num(econ.annual_active_hours)+' h/año':'No consignado')+'</span></div>'+
-        '<div><b>Espera consignada en registros económicos</b><span>'+(inputs.some(x=>x.annual_wait_hours!=null)?num(econ.annual_wait_hours)+' h/año':'No consignada')+'</span></div>'+
-        '<div><b>Capacidad valorada en registros económicos</b><span>'+(econ.capacity_value_eur_annual==null?'No consignada':money(econ.capacity_value_eur_annual))+'</span></div>'+
-        '<div><b>Pérdida directa consignada</b><span>'+(inputs.some(x=>x.direct_loss_eur_annual!=null)?money(econ.direct_loss_eur_annual):'No consignada')+'</span></div>'+
-        '<div><b>Coste de herramientas registrado</b><span>'+(inputs.some(x=>x.current_tool_cost_eur_annual!=null)?money(econ.current_tool_cost_eur_annual):'No consignado')+'</span></div>'+
-        '<div><b>Ahorro de caja realizado consignado</b><span>'+(inputs.some(x=>x.realized_cash_saving_eur_annual!=null)?money(econ.realized_cash_saving_eur_annual):'No consignado')+'</span></div>'+
-      '</div>'+
-      '<p class="field-help">Las dos secciones describen fuentes distintas del mismo estudio. No se suman las horas o los valores de capacidad entre ellas, porque podrían representar el mismo trabajo.</p>'+
+  const directNonzero=[
+    Number(econ.direct_loss_eur_annual)>0&&hasLoss?'Pérdidas directas: '+money(econ.direct_loss_eur_annual):'',
+    Number(econ.realized_cash_saving_eur_annual)>0&&hasCash?'Ahorro de caja ya realizado: '+money(econ.realized_cash_saving_eur_annual):''
+  ].filter(Boolean);
+  // [AUNEA-FE-PG10-ECON-SOURCE-CONCILIATION-174] START — one auditable source detail, no duplicate summary cards.
+  const detail='<details class="diagnosis-economic-detail"><summary>Consultar cálculos, pasos y fuentes ('+inputs.length+' registros)</summary>'+
+    '<div class="pg10-econ-detail-group"><h5>Cómo se obtienen las horas</h5>'+
+    '<p>Trabajo activo de pasos: <b>'+esc(hours(projection?.annual_active_hours))+'</b> · Trabajo adicional atribuido: <b>'+
+      esc(hours(projection?.annual_friction_additional_hours))+'</b> · Trabajo activo total: <b>'+
+      esc(hours(projection?.annual_total_active_hours))+'</b>.</p>'+
+    '<p>Horas con tarifa asignada: <b>'+esc(hours(capacity?.covered_hours))+
+      '</b>. La espera pasiva se mantiene fuera del coste laboral y el retrabajo se valora aparte. No se suman horas ni importes procedentes de fuentes coincidentes.</p></div>'+
+    stepDetail+extraDetail+
+    '<section class="pg10-econ-detail-group"><h5>Registros económicos originales</h5>'+
+      '<p>Los siguientes registros aportan tarifas y otros costes. Sus campos de trabajo y espera no sustituyen los tiempos calculados del mapa: un cero explícito significa cero consignado en ese campo, no ausencia de actividad del proceso.</p>'+
+      (directNonzero.length?'<p>'+esc(directNonzero.join(' · '))+'</p>':'<p>No hay pérdidas directas ni ahorros de caja positivos acreditados en los registros.</p>')+
       (inputs.length?'<ul class="diagnosis-economic-input-list">'+inputs.map(inputDescription).join('')+'</ul>':'<p>No se han registrado entradas económicas.</p>')+
-      '</section></details>';
-    // [AUNEA-FE-PG10-ECON-SOURCE-CONCILIATION-174] END
+    '</section></details>';
+  // [AUNEA-FE-PG10-ECON-SOURCE-CONCILIATION-174] END
+  return '<div class="pg10-econ-overview">'+costIntro+roleTable+otherImpacts+mainExplanation+detail+'</div>';
 }
 function diagnosisRisksHtml(risk,record){
   // [AUNEA-FE-PG10-RISK-EXPLANATION-172] START — Plain language only; backend risk rating unchanged.
