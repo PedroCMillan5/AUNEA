@@ -237,7 +237,7 @@ function diagnosisProcessBaselineHtml(p,record){
       '<span>Diferencia <strong>'+(numeric.difference_minutes>0?'+':'')+esc(num(numeric.difference_minutes))+
       ' min ('+(numeric.difference_percent>0?'+':'')+esc(num(numeric.difference_percent))+' %)</strong></span></div>'+
       '<p>Se aplica el umbral de revisión del ±'+esc(num(numeric.review_threshold_percent))+
-      ' % que ya utiliza el mapa AS-IS es solo un umbral para revisar diferencias, no un criterio para validar la duración real. La suma incluye exposición a espera, que puede solaparse con otras actividades; la proximidad de cifras no acredita el tiempo end-to-end. No se monetiza la espera ni se infieren ahorros.</p></div>'
+      ' % que ya utiliza el mapa AS-IS. Es solo un umbral para revisar diferencias, no un criterio para validar la duración real. La suma incluye exposición a espera, que puede solaparse con otras actividades; la proximidad de cifras no acredita el tiempo end-to-end. No se monetiza la espera ni se infieren ahorros.</p></div>'
     :'<div class="notice info pg10-numeric-comparison"><b>Comparación numérica no disponible</b>'+
       '<p>Los componentes aún no son íntegramente comparables o el análisis es anterior a esta comprobación. Puedes actualizar el análisis, sin modificar datos confirmados.</p></div>';
   // Informative coincidence only: INCLUDED/BREAKDOWN never add time; matching minutes are not proof of duplication.
@@ -531,13 +531,15 @@ function pg10SynthesisHtml(record,data){
   // Server-owned findings and time contributions are read only. Step proximity is
   // contextual; it is never a proof of cause, a priority score, or a cash saving.
   const pains=Array.isArray(data.pain_results)?data.pain_results:[];
+  const detected=pains.filter(p=>p.state==='CONFIRMED'||p.state==='INDICATED');
+  const needingEvidence=pains.filter(p=>p.state==='INSUFFICIENT_EVIDENCE').length;
   const pTime=data.process_time_projection||{};
   const extras=Array.isArray(pTime.additional_friction_breakdown)?pTime.additional_friction_breakdown:[];
   const timeSteps=Array.isArray(pTime.step_breakdown)?pTime.step_breakdown:[];
   const chosen=normalizeArray(record?.answers?.DF096).map(String);
   const known=chosen.length>0;
   const yearly=x=>typeof x==='number'&&Number.isFinite(x)?num(x)+' h/año':'Sin cálculo';
-  const items=pains.map(p=>{
+  const items=detected.map(p=>{
     const trace=diagnosisTrace(record,p);
     const frictionIds=new Set(trace.frictions.map(f=>String(f.id)));
     const stepIds=new Set(trace.stepIds.map(String));
@@ -548,6 +550,7 @@ function pg10SynthesisHtml(record,data){
       ?engineLabel('evidence_quality',evidenceTypeBackend(f.evidence_type))
       :'Sin evidencia clasificada'))];
     const signals=[...new Set(trace.frictions.map(f=>f.observable_signal).filter(Boolean))];
+    const relatedRisks=[...new Set(trace.risks.map(r=>r.description||labelFrom('OS_RISK_CATEGORY',r.category)).filter(Boolean))];
     const ownedExtra=extras.filter(x=>frictionIds.has(String(x.friction_id))&&x.mode==='ADDITIONAL');
     const relatedWait=timeSteps.filter(x=>stepIds.has(String(x.step_id))&&
       Number.isFinite(x.annual_wait_exposure_hours)&&x.annual_wait_exposure_hours>0);
@@ -577,7 +580,8 @@ function pg10SynthesisHtml(record,data){
         (priority?' · Prioridad señalada por el cliente':'')+'</span>'+
       '<small><b>Dónde:</b> '+esc(steps.length?steps.join(' · '):'Sin paso vinculado')+'</small>'+
       '<small><b>Qué consta:</b> '+esc(observation)+'</small>'+
-      '<small><b>Calidad de evidencia:</b> '+esc(qualities.join(' · ')||'No registrada')+'</small>'+
+      '<small><b>Calidad de evidencia:</b> '+esc(qualities.join(' · ')||'No registrada')+'</small>'+ 
+      (relatedRisks.length?'<small><b>Riesgos en los mismos pasos:</b> '+esc(relatedRisks.join(' · '))+'. Relación contextual, no causal.</small>':'')+
       (measures.length?'<div class="pg10-conclusion-measures"><b>Magnitudes relacionadas</b>'+
         measures.map(x=>'<p>'+esc(x)+'</p>').join('')+'</div>':
         '<small>Impacto específico no cuantificado en las fuentes relacionadas; no se estima ni se asigna uno nuevo.</small>')+
@@ -588,7 +592,8 @@ function pg10SynthesisHtml(record,data){
     :'El cliente no ha señalado prioridades de problemas en el AS-IS. Esto no impide revisar el diagnóstico.';
   return '<div class="pg10-conclusions"><p>'+esc(client)+'</p>'+
     (items.length?'<ul class="pg10-conclusion-list">'+items.join('')+'</ul>':
-      '<div class="notice warn">El motor no ha proporcionado hallazgos. Verifica las fuentes antes de concluir que no existen problemas.</div>')+
+      '<div class="notice info">No hay hallazgos confirmados o indicados en el análisis actual. Esto no equivale a demostrar que el proceso no tenga problemas.</div>')+
+    (needingEvidence?'<p class="field-help">Hay '+needingEvidence+' señales sin evidencia suficiente para considerarlas hallazgos. Consulta el diagnóstico y sus fuentes antes de confirmarlas.</p>':'')+
     '<p class="field-help">Estos hallazgos no constituyen un ranking ni una prioridad analítica calculada. Pueden compartir pasos y magnitudes: las cifras mostradas proceden del diagnóstico existente y no deben sumarse entre tarjetas.</p>'+
     '<div class="pg10-conclusion-boundaries"><b>Alcance del diagnóstico actual</b>'+
       '<p>Se describe la situación AS-IS y su evidencia. La proximidad de datos no demuestra una causa raíz ni un incumplimiento; cualquier comparación con objetivos o referencias necesita medidas y periodos compatibles.</p>'+
