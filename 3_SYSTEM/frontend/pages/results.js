@@ -605,34 +605,36 @@ function pg10ReviewHtml(e,official,analysis,miss,unresolved,freshness,recommenda
   const msg=miss.length?'Existen '+miss.length+' datos obligatorios pendientes en la captura.':'Sin datos obligatorios pendientes en la captura.';
   const analyzed=available?'El análisis AS-IS está disponible para consultar.':'El AS-IS necesita un análisis vigente para mostrar sus conclusiones.';
   const pending=unresolved.length?'Quedan '+unresolved.length+' decisiones técnicas internas para preparar una recomendación oficial.':'No constan decisiones técnicas internas pendientes.';
-  // PG11 preview deliberately remains read-only without an official recommendation;
-  // actual TO-BE authoring/approval is gated in tobePage and never bypassed here.
+  const ready=!!official||recommendationReady;
+  // One primary action, defined by gate state. No new validation rules or side effects:
+  // the existing reviewEngineGates, runDiag and data-page=tobe handlers retain ownership.
   const main=official
     ?'<button class="btn btn-primary" data-page="tobe">Continuar al diseño TO-BE</button>'
     :recommendationReady
       ?'<button class="btn btn-primary" id="runDiag">Calcular recomendación oficial</button>'
-      :'<button class="btn btn-primary" id="checkRecommendationReadiness">Comprobar requisitos para la recomendación</button>';
+      :'<button class="btn btn-primary" id="reviewEngineGates">Revisar las cinco decisiones técnicas</button>';
+  const next=official?'':'<button class="btn btn-outline" data-page="tobe">Consultar TO-BE preliminar</button>';
   const readiness=!official&&!recommendationReady
     ?'<details class="pg10-recommendation-check" id="pg10RecommendationStatus">'+
-      '<summary>Estado de los requisitos de recomendación</summary>'+
+      '<summary>Ver condiciones para generar la recomendación</summary>'+
       '<p>'+(miss.length?'Faltan '+miss.length+' datos obligatorios de captura.':
         'La captura no tiene datos obligatorios pendientes.')+'</p>'+
       '<p>'+(unresolved.length?'Quedan '+unresolved.length+' decisiones técnicas del consultor sin confirmar para el AS-IS vigente.':
         'Las cinco decisiones técnicas están confirmadas.')+'</p>'+
-      '<p>Estas decisiones se completan ahora, antes de generar una recomendación oficial, no al finalizar el TO-BE. El sistema propone fundamentos, pero la confirmación corresponde al consultor. Usa «Revisar decisiones técnicas» para abrir el formulario; esta comprobación no ejecuta el cálculo ni modifica el estudio.</p></details>'
+      '<p>Las cinco decisiones son del consultor, no preguntas pendientes del cliente. AUNEA recupera los fundamentos disponibles y señala lo que falta verificar. Debes confirmar cada respuesta; una propuesta no se aprueba automáticamente.</p>'+
+      '<p>Primero revisa y confirma las decisiones técnicas. Después se calculará la recomendación oficial, si se cumplen sus condiciones. Esta consulta no modifica el estudio.</p></details>'
     :'';
-  const next=official?'':'<button class="btn btn-outline" data-page="tobe">Consultar TO-BE preliminar</button>';
-  const audit='<details class="pg10-review-support"><summary>Consultar fuentes y decisiones internas</summary>'+
+  const audit='<details class="pg10-review-support"><summary>Consultar fuentes y opciones de revisión</summary>'+
     '<div class="pg10-review-support-actions">'+
       '<button class="btn btn-outline" id="pg10OpenAsisSources">Consultar fuentes AS-IS</button>'+
-      '<button class="btn btn-outline" id="reviewEngineGates">Revisar decisiones técnicas</button>'+
+      (ready?'<button class="btn btn-outline" id="reviewEngineGates">Revisar decisiones técnicas</button>':'')+
       (official?'<button class="btn btn-outline" id="runDiag">Recalcular resultado oficial</button>':'')+
     '</div></details>';
   return '<div class="pg10-review-summary"><p>'+esc(msg)+' '+esc(analyzed)+'</p>'+
     (freshness?.status==='OBSOLETE'?'<div class="notice warn">Existe un resultado oficial anterior no vigente: recalcula antes de utilizarlo.</div>':'')+
     '<p>'+esc(pending)+' No son errores de captura ni equivalen a hallazgos confirmados; condicionan la recomendación y la edición del TO-BE, no la consulta del diagnóstico.</p>'+
     '<p class="field-help">Para corregir un hallazgo, modifica únicamente su fuente en el AS-IS y vuelve a calcular. No hay una segunda aprobación ni publicación automática de resultados.</p>'+
-    (!official?'<p class="field-help">Puedes consultar la siguiente fase de forma preliminar, pero la edición del diseño TO-BE requiere una recomendación oficial vigente.</p>':'')+
+    (!official?'<p class="field-help">La vista TO-BE preliminar solo permite explorar problemas y posibles vías de intervención. No crea ni aprueba el proceso futuro, y no calcula ahorros.</p>':'')+
     (official?'<details class="pg10-decision-trace"><summary>Consultar decisiones utilizadas por el resultado oficial</summary>'+diagnosisEngineDecisionTraceHtml(e)+'</details>':'')+
     '<div class="pg10-review-actions">'+main+next+'</div>'+readiness+audit+'</div>';
 }
