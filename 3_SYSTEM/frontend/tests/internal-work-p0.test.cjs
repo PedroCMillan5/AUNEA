@@ -700,7 +700,7 @@ test('PG10 synthesis reads the backend projection without inventing rankings, ca
       (_record,p)=>({
         frictions:[{id:p.frictionId,friction_type:'FT1',observable_signal:'Seguimiento manual',
           evidence_type:'HYPOTHESIS',client_label:p.pain_id==='P02'?'Duplicación de captura':'Falta de visibilidad'}],
-        stepIds:[p.stepId]
+        stepIds:[p.stepId],risks:[{description:'Riesgo registrado en ese paso'}]
       }),
       (_record,id)=>id==='S1'?'Registrar factura':'Aprobar factura',
       id=>id==='P02'?'Reintroducción manual':'Espera de aprobación',
@@ -726,6 +726,8 @@ test('PG10 synthesis reads the backend projection without inventing rankings, ca
   assert.match(html,/Exposición contextual, no atribuida como causa exclusiva/);
   assert.match(html,/Ya incluido en el diagnóstico económico; no es un ahorro/);
   assert.match(html,/Calidad de evidencia/);
+  assert.match(html,/Riesgos en los mismos pasos/);
+  assert.match(html,/Relación contextual, no causal/);
   assert.match(html,/Contrastar el mecanismo observado/);
   assert.match(html,/Estos hallazgos no constituyen un ranking/);
   assert.match(html,/no deben sumarse entre tarjetas/);
@@ -738,6 +740,14 @@ test('PG10 synthesis reads the backend projection without inventing rankings, ca
   const noTime=fn({answers:{}},{status:'ANALYZED',pain_results:data.pain_results});
   assert.match(noTime,/Impacto específico no cuantificado/);
   assert.doesNotMatch(noTime,/12 h\/año|450 h\/año/);
+  const withExcluded=fn({answers:{}},{status:'ANALYZED',
+    pain_results:[
+      {pain_id:'P02',frictionId:'F1',stepId:'S1',confidence:'LOW',state:'NOT_DETECTED'},
+      {pain_id:'P03',frictionId:'F2',stepId:'S2',confidence:'LOW',state:'INSUFFICIENT_EVIDENCE'}
+    ]});
+  assert.doesNotMatch(withExcluded,/Reintroducción manual|Espera de aprobación/);
+  assert.match(withExcluded,/No hay hallazgos confirmados o indicados/);
+  assert.match(withExcluded,/1 señales sin evidencia suficiente/);
 });
 test('PG10 review distinguishes preliminary PG11 from official design and never double-approves',()=>{
   const a=results.indexOf('function pg10ReviewHtml('),b=results.indexOf('\nfunction resultsPage(',a);
