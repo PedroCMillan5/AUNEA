@@ -42,6 +42,12 @@ class PilotAIResult(BaseModel):
     model: str
     items: list[PilotAIItem]
 
+class PilotAIConsolidationRequest(BaseModel):
+    # Transient validation request, not a new business capture or persistence owner.
+    request: PilotAIRequest
+    items: list[PilotAIItem]
+
+
 class PilotAIStepRequest(BaseModel):
     # Source still contains the complete confirmed AS-IS for server-side hash validation.
     request: PilotAIRequest
