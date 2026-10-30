@@ -54,6 +54,21 @@ class PilotAIStepRequest(BaseModel):
     source_step_id: str = Field(min_length=1, max_length=128)
 
 
+def related_step_ids(record: dict) -> set[str]:
+    """Canonical link extraction used by source validation and Ollama context."""
+    keys = ("step_id", "affected_step_id", "step_ids", "affected_steps",
+            "affected_step_ids", "linked_step_ids", "related_step_ids")
+    ids: set[str] = set()
+    for key in keys:
+        value = record.get(key)
+        if isinstance(value, (str, int)) and not isinstance(value, bool) and str(value):
+            ids.add(str(value))
+        elif isinstance(value, list):
+            ids.update(str(x) for x in value
+                       if isinstance(x, (str, int)) and not isinstance(x, bool))
+    return ids
+
+
 def validate_pilot_step_result(
     request: PilotAIRequest, source_step_id: str, item: PilotAIItem,
 ) -> PilotAIItem:
@@ -65,11 +80,10 @@ def validate_pilot_step_result(
     frictions = request.engagement.questionnaire_answers.get("_frictions") or []
     # Source steps may be cited for context, but friction/risk assertions need
     # explicit step linkage. An unlinked ID alone is NOT evidence for this step.
-    from .internal_ai_ollama import _related_ids
     allowed = {str(s["id"]) for s in steps}
     allowed.update(str(f["id"]) for f in frictions
                    if isinstance(f, dict) and f.get("id")
-                   and source_step_id in _related_ids(f))
+                   and source_step_id in related_step_ids(f))
     allowed.update(str(r.risk_id) for r in request.engagement.risks
                    if r.risk_id and source_step_id in r.step_ids)
     if (not item.source_refs or source_step_id not in item.source_refs
