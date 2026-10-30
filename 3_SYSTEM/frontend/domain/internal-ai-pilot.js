@@ -91,9 +91,29 @@ async function generateTobeBySteps(e,key,snap,availability){
       ' completadas y verificadas. Preparando siguiente actividad…');
   }
   if(completed.items.size!==stepIds.length)throw Error('Faltan actividades; propuesta incompleta.');
+  // Review cross-step coherence only after every source step is validated.
+  // If review fails, retain every completed step; retry only the review call.
+  const items=stepIds.map(id=>completed.items.get(id));
+  internalAiPilotFeedback(e,'4 fases de generación cerradas: '+stepIds.length+
+    ' de '+stepIds.length+' actividades verificadas. Consolidando coherencia global…');
+  const reviewed=await fetch(state.backendUrl+'/v1/internal-ai/tobe-review',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({request,items})
+  });
+  if(!reviewed.ok){
+    const err=await reviewed.json().catch(()=>null);
+    throw Error('La revisión global no se completó (HTTP '+reviewed.status+'): '+
+      (typeof err?.detail==='string'?err.detail:'Revisa el backend.')+
+      ' · '+completed.items.size+' actividades conservadas.');
+  }
+  const review=await reviewed.json();
+  if(!review||!['CHECKED','CHECKED_WITH_NOTES'].includes(review.status)||
+     review.requires_human_review!==true||!Array.isArray(review.issues)||
+     internalAiPilotKey(e)!==key||currentEng()?.id!==e.id||
+     !tobeEditable(latestTobe(e)))
+    throw Error('La consolidación no corresponde al estudio vigente.');
   const data={status:'DRAFT',engagement_id:e.id,snapshot_version:snap.version,
-    input_hash:completed.inputHash,model:availability.model,
-    items:stepIds.map(id=>completed.items.get(id))};
+    input_hash:completed.inputHash,model:availability.model,review,items};
   __auneaAiPreview.set(key,data);
   __auneaAiCompletedSteps.delete(key);
   __auneaAiFeedback.delete(key);
