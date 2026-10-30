@@ -39,7 +39,7 @@ function aiPilotHarness({fail=false,steps=['S1']}={}){
   const snapshot={version:2};
   const diagnostic={input_snapshot_hash:'hash'};
   const proposal={status:'DRAFT',engagement_id:'SYNTHETIC',snapshot_version:2,
-    item:{source_step_id:'S1',transformation:'Se mantiene',rationale:'Propuesta con fuente',
+    item:{source_step_id:'S1',transformation:'Se modifica',problem_resolved:'Registro disperso',rationale:'Acción propuesta: registrar entradas. Resultado esperado: mayor trazabilidad. Justificación: el paso registra solicitudes',
       source_refs:['S1'],limitations:'Pendiente de revisión'},input_hash:'hash',model:'aunea-qwen3-4b:latest'};
   const button={disabled:false,textContent:'Preparar propuesta con IA'};
   notice={textContent:'',className:'notice info',outerHTML:''};
@@ -66,6 +66,8 @@ function aiPilotHarness({fail=false,steps=['S1']}={}){
     fetch:async(url,opts)=>{
       requests.push({url,opts});
       if(url.endsWith('/status'))return {ok:true,json:async()=>({status:'AVAILABLE',provider:'ollama',model:'aunea-qwen3-4b:latest'})};
+      if(url.endsWith('/tobe-review'))return {ok:true,json:async()=>({status:'CHECKED',summary:'Coherencia global revisada',
+        issues:[],requires_human_review:true})};
       if(fail)return {ok:false,status:409,json:async()=>({detail:'El diagnóstico no corresponde al AS-IS vigente.'})};
       return {ok:true,json:async()=>({...proposal,item:{...proposal.item,source_step_id:JSON.parse(opts.body).source_step_id,source_refs:[JSON.parse(opts.body).source_step_id]}})};
     }
@@ -87,8 +89,10 @@ test('AI button click reaches backend once and preserves draft inputs on success
   app.click();
   assert.equal(app.button.disabled,true);
   await app.settle();
-  assert.equal(app.requests.length,2);
+  assert.equal(app.requests.length,3);
   assert.equal(app.requests[1].url,'http://localhost:8010/v1/internal-ai/tobe-step');
+  assert.equal(app.requests[2].url,'http://localhost:8010/v1/internal-ai/tobe-review');
+  assert.match(app.notice.outerHTML,/Resultado esperado/);
   assert.match(app.notice.outerHTML,/Propuesta IA sin aprobar/);
   assert.equal(app.renderCount,0,'No re-render that could erase unsaved TO-BE edits');
   assert.equal(app.button.disabled,false);
@@ -108,8 +112,9 @@ test('failed AI request displays durable HTTP detail, re-enables the button, no 
 test('one Ollama request per source activity',async()=>{
   const app=aiPilotHarness({steps:['S1','S2','S3']});
   app.click();await app.settle();
-  assert.equal(app.requests.length,4);
-  assert.deepEqual(app.requests.slice(1).map(x=>JSON.parse(x.opts.body).source_step_id),['S1','S2','S3']);
+  assert.equal(app.requests.length,5);
+  assert.deepEqual(app.requests.slice(1,4).map(x=>JSON.parse(x.opts.body).source_step_id),['S1','S2','S3']);
+  assert.equal(JSON.parse(app.requests[4].opts.body).items.length,3);
   assert.match(app.notice.outerHTML,/Propuesta IA sin aprobar/);
   assert.equal(app.renderCount,0);
 });
