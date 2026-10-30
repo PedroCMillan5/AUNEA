@@ -4,6 +4,18 @@
 // SIDE_EFFECTS: external provider only after click, local DRAFT updates only after acceptance.
 // CHANGE_RISK: HIGH. Never auto-approve, invent numerical benefits, or alter engine results.
 const __auneaAiPreview=new Map();
+const __auneaAiFeedback=new Map();
+const __auneaAiWorking=new Set();
+function internalAiPilotFeedback(e,message,type='info'){
+  const key=internalAiPilotKey(e);
+  if(key)__auneaAiFeedback.set(key,{message,type});
+  const node=document.getElementById('tobeAiPilotStatus');
+  if(node){node.className='notice '+(type==='warn'?'warn':'info');node.textContent=message}
+}
+function internalAiPilotRefreshPanel(e){
+  const panel=document.getElementById('tobeAiPilotStatus');
+  if(panel)panel.outerHTML=internalAiPilotPanel(e);
+}
 function internalAiPilotKey(e){
   const snap=confirmedSnapshot(e),diagnostic=currentDiagnosticOutput(e);
   return e?.confirmedAsIs===true&&snap&&diagnostic
@@ -11,8 +23,10 @@ function internalAiPilotKey(e){
 }
 function internalAiPilotPanel(e){
   const key=internalAiPilotKey(e),draft=key?__auneaAiPreview.get(key):null;
-  if(!draft)return '<div class="notice info">La IA es opcional. Para usarla hay que habilitar el proveedor y autorizar el tratamiento de los datos del estudio. No se generan resultados de IA simulados.</div>';
-  return '<div class="notice info"><b>Propuesta IA sin aprobar — '+esc(draft.model)+'</b>'+
+  const feedback=key?__auneaAiFeedback.get(key):null;
+  if(!draft)return '<div id="tobeAiPilotStatus" role="status" aria-live="polite" class="notice '+(feedback?.type==='warn'?'warn':'info')+'">'+
+    esc(feedback?.message||'La IA es opcional. Pulsa «Preparar propuesta con IA» para consultar el proveedor autorizado; no se generan resultados simulados.')+'</div>';
+  return '<div id="tobeAiPilotStatus" role="status" aria-live="polite" class="notice info"><b>Propuesta IA sin aprobar — '+esc(draft.model)+'</b>'+
     '<p>Consulta las razones y las fuentes. Aplicar sólo completará campos vacíos del borrador.</p>'+
     draft.items.map(item=>'<p><b>'+esc(item.source_step_id)+' · '+esc(item.transformation)+'</b> — '+
       esc(item.rationale)+'<br><small>Fuentes: '+esc(item.source_refs.join(', '))+
@@ -30,8 +44,11 @@ tobePage=function(){
 async function generateTobeAiPilot(e){
   const key=internalAiPilotKey(e);
   if(!key||!tobeEditable(latestTobe(e)))return toast('El estudio no tiene un borrador vigente.');
+  if(__auneaAiWorking.has(key))return;
+  __auneaAiWorking.add(key);
   const button=document.getElementById('generateTobeAiPilot');
-  if(button){button.disabled=true;button.textContent='Generando propuesta…'}
+  if(button){button.disabled=true;button.textContent='Comprobando IA…'}
+  internalAiPilotFeedback(e,'Comprobando disponibilidad del proveedor IA…');
   try{
     if(!state.backendOnline&&!(await checkBackend()))throw Error('Backend no conectado.');
     const check=await fetch(state.backendUrl+'/v1/internal-ai/status');
@@ -40,6 +57,7 @@ async function generateTobeAiPilot(e){
     if(availability.status!=='AVAILABLE')
       throw Error(availability.reason||'Servicio IA no configurado o sin autorización para tratar datos.');
     if(button)button.textContent=availability.provider==='ollama'?'Analizando con IA local…':'Analizando con IA…';
+    internalAiPilotFeedback(e,'Generando propuesta con '+(availability.provider==='ollama'?'Ollama local':'el proveedor autorizado')+'… No cierres el estudio durante el análisis.');
     const snap=confirmedSnapshot(e);
     if(!AiAgentService.available()){
       AiAgentService.register({name:'AUNEA Backend — proveedor gobernado',
@@ -51,7 +69,11 @@ async function generateTobeAiPilot(e){
               diagnostic:currentDiagnosticOutput(engagement),
               confirmed_as_is:engagement.confirmedAsIs===true,
               snapshot_version:confirmedSnapshot(engagement).version})});
-          if(!response.ok)throw Error('La propuesta IA no se generó ('+response.status+').');
+          if(!response.ok){
+            const errorPayload=await response.json().catch(()=>null);
+            const detail=typeof errorPayload?.detail==='string'?errorPayload.detail:'Comprueba el registro del backend.';
+            throw Error('La propuesta IA no se generó (HTTP '+response.status+'): '+detail);
+          }
           return response.json();
         }});
     }
@@ -64,11 +86,20 @@ async function generateTobeAiPilot(e){
       ||!Array.isArray(data.items)||data.items.length!==p.items.length
       ||data.items.some(it=>!stepIds.has(String(it.source_step_id))))
       throw Error('La respuesta no es coherente con el TO-BE vigente.');
-    __auneaAiPreview.set(key,data);render();
+    __auneaAiPreview.set(key,data);
+    __auneaAiFeedback.delete(key);
+    // Replace only the feedback panel: never discard unsaved consultant edits in TO-BE cards.
+    internalAiPilotRefreshPanel(e);
     toast('Propuesta recibida como borrador pendiente de revisión.');
   }catch(error){
     if(AiAgentService.available())AiAgentService.clear();
-    toast(String(error.message||error));render();
+    const message=String(error?.message||error||'Error desconocido al generar la propuesta.');
+    internalAiPilotFeedback(e,'No se ha generado la propuesta: '+message,'warn');
+    console.error('PG11: solicitud IA no completada',error);
+  }finally{
+    __auneaAiWorking.delete(key);
+    const currentButton=document.getElementById('generateTobeAiPilot');
+    if(currentButton){currentButton.disabled=false;currentButton.textContent='Preparar propuesta con IA'}
   }
 }
 function applyTobeAiPilot(e){
@@ -90,17 +121,22 @@ function applyTobeAiPilot(e){
   __auneaAiPreview.delete(key);render();
   toast('Aplicado a campos vacíos. Revisa y guarda antes de enviar a revisión.');
 }
+// Bind once through event delegation, as in PG11 draft creation. A postBind wrapper
+// can be replaced by other modules and must not be the only way the button works.
 const __originalRegisterInternalAi=registerInternalWorkPages;
 registerInternalWorkPages=function(){
   __originalRegisterInternalAi();
-  const previousPostBind=postBind;
-  postBind=function(){
-    previousPostBind();
-    const e=currentEng();
-    const generate=document.getElementById('generateTobeAiPilot');
-    if(generate)generate.onclick=()=>generateTobeAiPilot(e);
-    const apply=document.getElementById('applyTobeAiPilot');
-    if(apply)apply.onclick=()=>applyTobeAiPilot(e);
-  };
+  if(document.__auneaAiPilotDelegatedBound)return;
+  document.__auneaAiPilotDelegatedBound=true;
+  document.addEventListener('click',event=>{
+    const generate=event.target?.closest?.('#generateTobeAiPilot');
+    if(generate){
+      event.preventDefault();
+      if(!generate.disabled)void generateTobeAiPilot(currentEng());
+      return;
+    }
+    const apply=event.target?.closest?.('#applyTobeAiPilot');
+    if(apply){event.preventDefault();applyTobeAiPilot(currentEng())}
+  },true);
 };
 // [AUNEA-FE-INTERNAL-AI-PILOT-193] END
