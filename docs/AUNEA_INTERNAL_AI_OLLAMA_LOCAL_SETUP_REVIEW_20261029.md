@@ -30,6 +30,23 @@ El adaptador Ollama se conecta **únicamente a `http://127.0.0.1:11434`** del si
 
 Para desactivar la IA: `$env:AUNEA_INTERNAL_AI_ENABLED = "0"` y reiniciar el backend. La autorización exige un acto consciente; no debe ponerse a 1 con información de clientes reales sin comprobar base jurídica y controles de acceso.
 
+## Incidencia 30/10 — arranque con 16 GB RAM
+
+Al ejecutar `ollama run qwen3:4b-instruct` en Windows CMD, el motor informó que necesitaba reservar 19.327.352.832 bytes (18 GiB) para la KV cache, más que los 16 GB físicos disponibles. Es un error de contexto al inicializar, no una prueba de que los pesos de 2,5 GB no puedan ejecutarse en ese equipo.
+
+**Corrección de prueba en CMD (no modifica el modelo original)**:
+```cmd
+echo FROM qwen3:4b-instruct > "%TEMP%\Modelfile-aunea"
+echo PARAMETER num_ctx 4096 >> "%TEMP%\Modelfile-aunea"
+ollama create aunea-qwen3-4b -f "%TEMP%\Modelfile-aunea"
+ollama run aunea-qwen3-4b
+```
+Si aún falla, repetir con `PARAMETER num_ctx 2048` y revisar memoria disponible/cargas. No aumentar contexto hasta que el arranque y las pruebas sean estables.
+
+En el adaptador del backend (`internal_ai_ollama.py`) se reduce el perfil inicial de `num_ctx=16384` a `4096` y `num_predict=2048`. Esto **no** garantiza que quepa el expediente completo en un solo contexto: si la entrada y el esquema de salida superan la capacidad disponible, la siguiente iteración debe diseñar segmentación validada por paso y rechazar cualquier resultado truncado. La respuesta generada sigue requiriendo revisión humana.
+
+Para probar el alias con AUNEA, usar `AUNEA_OLLAMA_MODEL=aunea-qwen3-4b:latest` en el proceso backend local. El servidor Ollama continúa en `127.0.0.1:11434` y AUNEA en `127.0.0.1:8010`. El cambio no crea costes API.
+
 ## Coste y rendimiento
 El modelo local no incurre en una tarifa por token o llamada a una API externa. Sí consume RAM, CPU, almacenamiento y electricidad del equipo, y su calidad debe evaluarse. Con 16 GB RAM e Intel i5-1145G7, puede ser lento; la descarga del modelo publicado ocupa alrededor de 2,5 GB. Se han limitado los presupuestos de contexto y salida, evitando la generación ilimitada. No se certifica rendimiento ni calidad hasta ejecutar el modelo físico.
 
