@@ -39,8 +39,8 @@ function aiPilotHarness({fail=false,steps=['S1']}={}){
   const snapshot={version:2};
   const diagnostic={input_snapshot_hash:'hash'};
   const proposal={status:'DRAFT',engagement_id:'SYNTHETIC',snapshot_version:2,
-    items:[{source_step_id:'S1',transformation:'Se mantiene',rationale:'Propuesta con fuente',
-      source_refs:['S1'],limitations:'Pendiente de revisión'}],model:'aunea-qwen3-4b:latest'};
+    item:{source_step_id:'S1',transformation:'Se mantiene',rationale:'Propuesta con fuente',
+      source_refs:['S1'],limitations:'Pendiente de revisión'},input_hash:'hash',model:'aunea-qwen3-4b:latest'};
   const button={disabled:false,textContent:'Preparar propuesta con IA'};
   notice={textContent:'',className:'notice info',outerHTML:''};
   nodes.set('generateTobeAiPilot',button);nodes.set('tobeAiPilotStatus',notice);
