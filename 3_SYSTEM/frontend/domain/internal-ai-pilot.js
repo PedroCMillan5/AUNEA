@@ -5,6 +5,7 @@
 // CHANGE_RISK: HIGH. Never auto-approve, invent numerical benefits, or alter engine results.
 const __auneaAiPreview=new Map();
 const __auneaAiFeedback=new Map();
+const __auneaAiCompletedSteps=new Map(); // Transient, keyed by confirmed snapshot; no partial approval.
 const __auneaAiWorking=new Set();
 function internalAiPilotFeedback(e,message,type='info'){
   const key=internalAiPilotKey(e);
@@ -41,6 +42,66 @@ tobePage=function(){
   return html.replace('<button class="btn" id="saveTobe">',button+'<button class="btn" id="saveTobe">')
     .replace('<div class="card card-pad section">',internalAiPilotPanel(e)+'<div class="card card-pad section">');
 };
+// [AUNEA-FE-TOBE-SEGMENTED-197] START — true progress by confirmed activity.
+async function generateTobeBySteps(e,key,snap,availability){
+  const draft=latestTobe(e);
+  const stepIds=draft.items.map(x=>String(x.sourceStepId));
+  if(!stepIds.length||stepIds.some(x=>!x)||new Set(stepIds).size!==stepIds.length)
+    throw Error('El borrador no tiene actividades de origen únicas y válidas.');
+  const previous=__auneaAiCompletedSteps.get(key);
+  const completed=previous?.stepSignature===stepIds.join('|')?previous:
+    {stepSignature:stepIds.join('|'),items:new Map(),inputHash:null};
+  __auneaAiCompletedSteps.set(key,completed);
+  const request={
+    engagement:buildBackendPayload(e),
+    diagnostic:currentDiagnosticOutput(e),
+    confirmed_as_is:e.confirmedAsIs===true,
+    snapshot_version:snap.version
+  };
+  for(const stepId of stepIds){
+    if(completed.items.has(stepId))continue;
+    if(internalAiPilotKey(e)!==key||currentEng()?.id!==e.id||
+       !tobeEditable(latestTobe(e)))throw Error('El estudio cambió; no se continuará esta ejecución.');
+    const done=completed.items.size;
+    internalAiPilotFeedback(e,'Actividad '+(done+1)+' de '+stepIds.length+
+      ' · '+done+' completadas y verificadas. Analizando '+stepId+
+      ' con Ollama local…');
+    const response=await fetch(state.backendUrl+'/v1/internal-ai/tobe-step',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({request,source_step_id:stepId})
+    });
+    if(!response.ok){
+      const error=await response.json().catch(()=>null);
+      const detail=typeof error?.detail==='string'?error.detail:'Comprueba el registro del backend.';
+      throw Error('Actividad '+stepId+' (HTTP '+response.status+'): '+detail+
+        ' · '+done+' de '+stepIds.length+' completadas. Puedes reintentar.');
+    }
+    const result=await response.json();
+    if(internalAiPilotKey(e)!==key||currentEng()?.id!==e.id||
+       !tobeEditable(latestTobe(e)))throw Error('El estudio cambió durante la generación.');
+    if(result?.status!=='DRAFT'||result.engagement_id!==e.id||
+       result.snapshot_version!==snap.version||
+       result.item?.source_step_id!==stepId||
+       !Array.isArray(result.item?.source_refs)||!result.item.source_refs.includes(stepId)||
+       (completed.inputHash&&completed.inputHash!==result.input_hash))
+       throw Error('El backend devolvió una actividad o versión incoherente: '+stepId);
+    completed.inputHash=result.input_hash;
+    completed.items.set(stepId,result.item);
+    internalAiPilotFeedback(e,'Actividad '+completed.items.size+' de '+stepIds.length+
+      ' completadas y verificadas. Preparando siguiente actividad…');
+  }
+  if(completed.items.size!==stepIds.length)throw Error('Faltan actividades; propuesta incompleta.');
+  const data={status:'DRAFT',engagement_id:e.id,snapshot_version:snap.version,
+    input_hash:completed.inputHash,model:availability.model,
+    items:stepIds.map(id=>completed.items.get(id))};
+  __auneaAiPreview.set(key,data);
+  __auneaAiCompletedSteps.delete(key);
+  __auneaAiFeedback.delete(key);
+  internalAiPilotRefreshPanel(e);
+  toast('Propuesta IA completa, pendiente de revisión del consultor.');
+}
+// [AUNEA-FE-TOBE-SEGMENTED-197] END
+
 async function generateTobeAiPilot(e){
   const key=internalAiPilotKey(e);
   if(!key||!tobeEditable(latestTobe(e)))return toast('El estudio no tiene un borrador vigente.');
@@ -59,6 +120,10 @@ async function generateTobeAiPilot(e){
     if(button)button.textContent=availability.provider==='ollama'?'Analizando con IA local…':'Analizando con IA…';
     internalAiPilotFeedback(e,'Generando propuesta con '+(availability.provider==='ollama'?'Ollama local':'el proveedor autorizado')+'… No cierres el estudio durante el análisis.');
     const snap=confirmedSnapshot(e);
+    if(availability.provider==='ollama'){
+      await generateTobeBySteps(e,key,snap,availability);
+      return;
+    }
     if(!AiAgentService.available()){
       AiAgentService.register({name:'AUNEA Backend — proveedor gobernado',
         async propose({kind,engagement}){
