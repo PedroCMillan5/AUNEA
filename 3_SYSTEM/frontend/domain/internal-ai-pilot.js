@@ -22,16 +22,40 @@ function internalAiPilotKey(e){
   return e?.confirmedAsIs===true&&snap&&diagnostic
     ?String(e.id)+'|'+String(snap.version)+'|'+String(diagnostic.input_snapshot_hash):null;
 }
+function internalAiPilotNarrative(value){
+  const text=String(value||'');
+  const match=text.match(/Acci[oó]n propuesta:\s*([\s\S]*?)\s*Resultado esperado:\s*([\s\S]*?)\s*Justificaci[oó]n:\s*([\s\S]*)/i);
+  return match?{action:match[1].trim(),expected:match[2].trim(),reason:match[3].trim()}
+    :{action:'',expected:'',reason:text};
+}
 function internalAiPilotPanel(e){
   const key=internalAiPilotKey(e),draft=key?__auneaAiPreview.get(key):null;
   const feedback=key?__auneaAiFeedback.get(key):null;
   if(!draft)return '<div id="tobeAiPilotStatus" role="status" aria-live="polite" class="notice '+(feedback?.type==='warn'?'warn':'info')+'">'+
     esc(feedback?.message||'La IA es opcional. Pulsa «Preparar propuesta con IA» para consultar el proveedor autorizado; no se generan resultados simulados.')+'</div>';
-  return '<div id="tobeAiPilotStatus" role="status" aria-live="polite" class="notice info"><b>Propuesta IA sin aprobar — '+esc(draft.model)+'</b>'+
-    '<p>Consulta las razones y las fuentes. Aplicar sólo completará campos vacíos del borrador.</p>'+
-    draft.items.map(item=>'<p><b>'+esc(item.source_step_id)+' · '+esc(item.transformation)+'</b> — '+
-      esc(item.rationale)+'<br><small>Fuentes: '+esc(item.source_refs.join(', '))+
-      ' · Por comprobar: '+esc(item.limitations)+'</small></p>').join('')+
+  const review=draft.review||null;
+  const overview=review?'<p><b>Consolidación automática '+(review.status==='CHECKED'?'sin observaciones':'con observaciones')+
+    '</b> — '+esc(review.summary||'')+'</p>'+
+    (review.issues?.length?'<div class="notice warn"><b>Aspectos por revisar:</b><ul>'+
+      review.issues.map(issue=>'<li>'+esc(issue.step_id)+': '+esc(issue.issue)+'</li>').join('')+
+      '</ul></div>':''):'';
+  const sections=draft.items.map(item=>{
+    const narrative=internalAiPilotNarrative(item.rationale);
+    return '<div class="card card-pad section"><p><b>'+esc(item.source_step_id)+' · '+esc(item.transformation)+'</b></p>'+
+      '<p><b>Área de mejora:</b> '+esc(item.problem_resolved||'No concretada')+'</p>'+
+      (narrative.action?'<p><b>Intervención propuesta:</b> '+esc(narrative.action)+'</p>':'')+
+      (narrative.expected?'<p><b>Resultado esperado:</b> '+esc(narrative.expected)+'</p>':'')+
+      (narrative.reason?'<p><b>Justificación:</b> '+esc(narrative.reason)+'</p>':'')+
+      (item.future_actor?'<p><b>Responsable futuro:</b> '+esc(item.future_actor)+'</p>':'')+
+      (item.controls_risk?'<p><b>Control y riesgo:</b> '+esc(item.controls_risk)+'</p>':'')+
+      '<p><small><b>Fuentes:</b> '+esc((item.source_refs||[]).join(', '))+
+      ' · <b>Condiciones por validar:</b> '+esc(item.limitations||'Sin condiciones adicionales declaradas')+
+      '</small></p></div>';
+  }).join('');
+  return '<div id="tobeAiPilotStatus" role="status" aria-live="polite" class="notice info">'+
+    '<b>Propuesta TO-BE IA sin aprobar — '+esc(draft.model)+'</b>'+
+    '<p>Intervenciones y resultados esperados son hipótesis de diseño. La revisión automática no equivale a aprobación humana.</p>'+
+    overview+sections+'<p>Aplicar sólo completará campos vacíos del borrador y requiere revisión del consultor.</p>'+
     '<button class="btn btn-outline" id="applyTobeAiPilot">Aplicar a campos vacíos</button></div>';
 }
 const __originalTobePagePilot=tobePage;
@@ -94,7 +118,7 @@ async function generateTobeBySteps(e,key,snap,availability){
   // Review cross-step coherence only after every source step is validated.
   // If review fails, retain every completed step; retry only the review call.
   const items=stepIds.map(id=>completed.items.get(id));
-  internalAiPilotFeedback(e,'4 fases de generación cerradas: '+stepIds.length+
+  internalAiPilotFeedback(e,'Generación individual completada: '+stepIds.length+
     ' de '+stepIds.length+' actividades verificadas. Consolidando coherencia global…');
   const reviewed=await fetch(state.backendUrl+'/v1/internal-ai/tobe-review',{
     method:'POST',headers:{'Content-Type':'application/json'},
