@@ -96,11 +96,11 @@ def test_measured_over_budget_refused(monkeypatch):
         if req.full_url.endswith("/api/tags"):
             return base(req,timeout)
         data=json.loads(base(req,timeout).read())
-        data["prompt_eval_count"]=5001
+        data["prompt_eval_count"]=4001
         return io.BytesIO(json.dumps(data).encode())
     monkeypatch.setattr(local._LOCAL_HTTP,"open",higher)
     req=sample()
-    with pytest.raises(ValueError,match="5000 tokens"):
+    with pytest.raises(ValueError,match="4000 tokens"):
         local.propose_step(req,validate_pilot_source(req),
                            provider._schema(),provider._INSTRUCTIONS,"S1")
 # [AUNEA-UAT-INTERNAL-AI-STEP-195] END
