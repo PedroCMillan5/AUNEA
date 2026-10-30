@@ -21,11 +21,11 @@ El adaptador Ollama se conecta **únicamente a `http://127.0.0.1:11434`** del si
    $env:AUNEA_INTERNAL_AI_PROVIDER = "ollama"
    $env:AUNEA_INTERNAL_AI_ENABLED = "1"
    $env:AUNEA_INTERNAL_AI_DATA_AUTHORIZED = "1"
-   $env:AUNEA_OLLAMA_MODEL = "qwen3:4b-instruct"
+   $env:AUNEA_OLLAMA_MODEL = "aunea-qwen3-4b:latest"
    cd 3_SYSTEM/backend
-   python -m uvicorn aunea_backend.main:app --host 127.0.0.1 --port 8000
+   python -m uvicorn aunea_backend.api:app --host 127.0.0.1 --port 8010
    ```
-4. Comprobar en `http://127.0.0.1:8000/v1/internal-ai/status` que aparezca `provider: ollama`, `status: AVAILABLE`. El frontend debe conectarse a ese mismo backend local.
+4. Comprobar en `http://127.0.0.1:8010/v1/internal-ai/status` que aparezca `provider: ollama`, `status: AVAILABLE`. El frontend debe conectarse a ese mismo backend local.
 5. En el TO-BE DRAFT de un estudio **sintético y confirmado**, usar «Preparar propuesta con IA»; revisar fuentes y aceptar explícitamente las sugerencias antes de guardar. No generar un informe como si fuera un caso real.
 
 Para desactivar la IA: `$env:AUNEA_INTERNAL_AI_ENABLED = "0"` y reiniciar el backend. La autorización exige un acto consciente; no debe ponerse a 1 con información de clientes reales sin comprobar base jurídica y controles de acceso.
@@ -47,6 +47,14 @@ En el adaptador del backend (`internal_ai_ollama.py`) se reduce el perfil inicia
 
 Para probar el alias con AUNEA, usar `AUNEA_OLLAMA_MODEL=aunea-qwen3-4b:latest` en el proceso backend local. El servidor Ollama continúa en `127.0.0.1:11434` y AUNEA en `127.0.0.1:8010`. El cambio no crea costes API.
 
+## Incidencia 30/10 — petición de inferencia HTTP 503 pese a estado AVAILABLE
+
+En la UAT real de Windows/Visual Studio Code, el endpoint de estado devolvió `AVAILABLE` y la UI `Preparar propuesta con IA` alcanzó el backend, pero la generación retornó HTTP 503 con el mensaje genérico «Ollama local no pudo completar la propuesta». **El 503 no acredita por sí solo la causa**: puede proceder de error HTTP del motor local, memoria, tamaño de contexto o timeout. El adaptador anterior ocultaba el detalle útil.
+
+Corrección REVIEW en `internal_ai_ollama.py`: traducción controlada de los errores del proveedor local (sin mostrar trazas ni prompt ni datos del cliente): memoria insuficiente, contexto excedido, esquema JSON rechazado, modelo no encontrado, timeout de 240 s, interrupción de red u otro HTTP concreto. La interfaz PG11 conserva el mensaje hasta nueva solicitud. Las pruebas simulan los casos HTTP 500 con OOM, HTTP 400 por contexto y timeout y verifican que los cuerpos no clasificados no filtran datos.
+
+**Operación**: tras actualizar la rama de GitHub en VS Code con cambios locales protegidos, reiniciar el backend Python para cargar el adaptador nuevo; mantener las variables del proveedor Ollama y modelo `aunea-qwen3-4b:latest`. Recargar TO-BE y repetir una sola vez sobre el expediente sintético. Si devuelve «ventana de contexto», la decisión de producto es analizar el estudio por segmentos con fuentes y validación, no ampliar `num_ctx` más allá de la RAM disponible ni ocultar truncamientos. El estado `AVAILABLE` verifica disponibilidad del servidor/modelo, **no** generación válida.
+
 ## Coste y rendimiento
 El modelo local no incurre en una tarifa por token o llamada a una API externa. Sí consume RAM, CPU, almacenamiento y electricidad del equipo, y su calidad debe evaluarse. Con 16 GB RAM e Intel i5-1145G7, puede ser lento; la descarga del modelo publicado ocupa alrededor de 2,5 GB. Se han limitado los presupuestos de contexto y salida, evitando la generación ilimitada. No se certifica rendimiento ni calidad hasta ejecutar el modelo físico.
 
@@ -56,6 +64,6 @@ Pruebas con respuesta Ollama simulada (sin conexión externa): disponibilidad de
 - `CODE_BLOCK_INDEX.md`: AUNEA-BE-INTERNAL-AI-OLLAMA-194, AUNEA-UAT-INTERNAL-AI-OLLAMA-194.
 - QA GitHub Actions **Acceptance Gate 40918259145, SUCCESS** (commit `3c3684f616ea16947ad121042c8bc54f470172c9`): backend **356 passed, 1 warning**, frontend **728 passed, 0 failed**, browser UAT **SUCCESS**. Incluye la regresión Ollama simulada y auditoría de Block_ID.
 - Sigue pendiente una UAT con inferencia real y aceptación humana del TO-BE en el ordenador Windows del operador.
-**No se realizó una llamada al modelo del ordenador del usuario**: instalación, evaluación de calidad y aceptación real siguen pendientes.
+**Actualización 30/10:** el usuario ejecutó el modelo local en CLI y recibió una respuesta general en español; también confirmó disponibilidad del modelo y un intento real desde el frontend (HTTP 503 durante generación). Aún **no existe** UAT correcta de generación TO-BE con revisión humana.
 
 Fuentes técnicas: https://docs.ollama.com/windows, https://docs.ollama.com/api/chat, https://docs.ollama.com/api/tags, https://ollama.com/library/qwen3:4b-instruct.
