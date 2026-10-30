@@ -116,7 +116,8 @@ def propose(request: PilotAIRequest, steps: list[dict], schema: dict, instructio
                       "modelo con un contexto menor; no aumenta la RAM disponible.")
         elif any(term in description for term in
                  ("context length", "context window", "context size",
-                  "prompt too long", "exceeds context", "too many tokens")):
+                  "prompt too long", "exceeds context", "exceeds the available context size",
+                  "too many tokens")):
             reason = ("El estudio completo no cabe en la ventana de contexto local. "
                       "Se necesita análisis segmentado con trazabilidad; "
                       "no se ha generado ni aprobado un TO-BE.")
