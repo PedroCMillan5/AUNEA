@@ -65,9 +65,9 @@ function aiPilotHarness({fail=false,steps=['S1']}={}){
     registerInternalWorkPages:()=>{registrationCount++},postBind:()=>{},
     fetch:async(url,opts)=>{
       requests.push({url,opts});
-      if(url.endsWith('/status'))return {ok:true,json:async()=>({status:'AVAILABLE',provider:'ollama'})};
+      if(url.endsWith('/status'))return {ok:true,json:async()=>({status:'AVAILABLE',provider:'ollama',model:'aunea-qwen3-4b:latest'})};
       if(fail)return {ok:false,status:409,json:async()=>({detail:'El diagnóstico no corresponde al AS-IS vigente.'})};
-      return {ok:true,json:async()=>proposal};
+      return {ok:true,json:async()=>({...proposal,item:{...proposal.item,source_step_id:JSON.parse(opts.body).source_step_id,source_refs:[JSON.parse(opts.body).source_step_id]}})};
     }
   };
   vm.createContext(sandbox);
