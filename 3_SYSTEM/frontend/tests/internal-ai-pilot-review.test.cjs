@@ -120,3 +120,16 @@ test('one Ollama request per source activity',async()=>{
   assert.match(app.notice.outerHTML,/Propuesta TO-BE IA sin aprobar/);
   assert.equal(app.renderCount,0);
 });
+
+test('consolidation retry reuses already generated activities',async()=>{
+  const app=aiPilotHarness({steps:['S1','S2'],failReview:true});
+  app.click();await app.settle();
+  assert.equal(app.requests.length,4); // status, S1, S2, failed review
+  assert.match(app.notice.textContent,/2 actividades conservadas/);
+  app.setReviewFailure(false);
+  app.click();await app.settle();
+  assert.equal(app.requests.length,6); // next status + review; no step repeats
+  assert.equal(app.requests[5].url,'http://localhost:8010/v1/internal-ai/tobe-review');
+  assert.match(app.notice.outerHTML,/Resultado esperado/);
+  assert.equal(app.renderCount,0);
+});
