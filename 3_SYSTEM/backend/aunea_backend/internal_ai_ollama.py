@@ -205,6 +205,15 @@ def _step_context(request: PilotAIRequest, steps: list[dict], step_id: str) -> d
         "activity_order": [{"id": str(s["id"]), "name": str(s.get("step_name") or
                              s.get("name") or s.get("label") or "")}
                            for s in steps],
+        # Compact process-wide links, NOT a claim of causal/branch relationships.
+        # Details of other steps are not leaked into the focused segment.
+        "process_friction_index": [
+            {"id": str(f["id"]), "step_ids": sorted(_related_ids(f)),
+             "type": str(f.get("friction_type") or "")}
+            for f in frictions if isinstance(f, dict) and f.get("id")],
+        "process_risk_index": [
+            {"id": str(r.risk_id), "step_ids": list(r.step_ids), "category": r.category}
+            for r in engagement.risks if r.risk_id],
         "current_activity": source,
         "explicit_linked_frictions": linked_frictions,
         "explicit_linked_risks": linked_risks,
