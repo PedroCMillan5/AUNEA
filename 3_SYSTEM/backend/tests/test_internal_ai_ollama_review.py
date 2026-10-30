@@ -42,6 +42,8 @@ def configure(monkeypatch):
     monkeypatch.setenv("AUNEA_INTERNAL_AI_ENABLED", "1")
     monkeypatch.setenv("AUNEA_INTERNAL_AI_DATA_AUTHORIZED", "1")
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("AUNEA_OLLAMA_NUM_CTX", raising=False)
+    monkeypatch.delenv("AUNEA_OLLAMA_TIMEOUT_SECONDS", raising=False)
 
 def fake_http(monkeypatch, *, installed=True, malicious=False):
     calls=[]
@@ -56,7 +58,7 @@ def fake_http(monkeypatch, *, installed=True, malicious=False):
             assert body["model"]==ollama.DEFAULT_MODEL
             assert body["stream"] is False
             assert isinstance(body["format"],dict)
-            assert body["options"]["num_ctx"] == 4096, "perfil local 16GB: no reservar contexto masivo"
+            assert body["options"]["num_ctx"] == ollama.context_window(), "El valor de contexto enviado debe coincidir con el configurado"
             assert body["options"]["num_predict"] <= 2048
             items=[suggestion("S1"),suggestion("S2")]
             if malicious:items[0]["source_refs"]=["S1","UNTRUSTED"]
@@ -84,6 +86,46 @@ def test_local_success_without_openai_key_or_fallback(monkeypatch):
     assert {x.source_step_id for x in result.items}=={"S1","S2"}
     assert all(url.startswith("http://127.0.0.1:11434/") for url,_,_ in calls)
     assert any(url.endswith("/api/chat") for url,_,_ in calls)
+
+def test_explicit_24k_context_is_sent_to_ollama_and_exposed_in_status(monkeypatch):
+    configure(monkeypatch)
+    monkeypatch.setenv("AUNEA_OLLAMA_NUM_CTX", "24576")
+    monkeypatch.setenv("AUNEA_OLLAMA_TIMEOUT_SECONDS", "900")
+    calls = fake_http(monkeypatch)
+    status = provider.status()
+    assert status["status"] == "AVAILABLE" and status["num_ctx"] == 24576
+    result = provider.propose(case())
+    assert result.status == "DRAFT"
+    chat = next((json.loads(data), timeout) for url,timeout,data in calls
+                if url.endswith("/api/chat"))
+    assert chat[0]["options"]["num_ctx"] == 24576
+    assert chat[0]["options"]["num_predict"] == 2048
+    assert chat[1] == 900
+    assert chat[0]["model"] == ollama.DEFAULT_MODEL
+
+
+@pytest.mark.parametrize("value", ["0", "999", "24577", "-1", "banana", ""])
+def test_invalid_context_setting_fails_closed_before_network(monkeypatch, value):
+    configure(monkeypatch)
+    monkeypatch.setenv("AUNEA_OLLAMA_NUM_CTX", value)
+    def no_calls(*args, **kwargs):
+        raise AssertionError("No debe contactar Ollama con contexto inválido")
+    monkeypatch.setattr(ollama._LOCAL_HTTP, "open", no_calls)
+    status = provider.status()
+    assert status["status"] == "UNAVAILABLE"
+    assert "AUNEA_OLLAMA_NUM_CTX" in status["reason"]
+
+
+def test_default_context_is_4096_and_default_timeout_is_240(monkeypatch):
+    configure(monkeypatch)
+    calls=fake_http(monkeypatch)
+    assert provider.status()["num_ctx"] == 4096
+    provider.propose(case())
+    chat=next((json.loads(data), timeout) for url,timeout,data in calls
+              if url.endswith("/api/chat"))
+    assert chat[0]["options"]["num_ctx"] == 4096
+    assert chat[1] == 240
+
 
 def test_missing_local_model_fails_closed_no_cloud(monkeypatch):
     configure(monkeypatch)
@@ -114,6 +156,21 @@ def test_openai_is_explicit_only_and_unknown_provider_is_unavailable(monkeypatch
     monkeypatch.setenv("AUNEA_INTERNAL_AI_PROVIDER","openai")
     assert provider.status()["status"]=="UNAVAILABLE"
     assert provider.status()["provider"]=="openai"
+def test_custom_timeout_reports_selected_limit_without_sensitive_details(monkeypatch):
+    configure(monkeypatch)
+    monkeypatch.setenv("AUNEA_OLLAMA_NUM_CTX","24576")
+    monkeypatch.setenv("AUNEA_OLLAMA_TIMEOUT_SECONDS","900")
+    def fake(req,timeout=0):
+        if req.full_url.endswith("/api/tags"):
+            return io.BytesIO(json.dumps({"models":[{"name":ollama.DEFAULT_MODEL}]}).encode())
+        assert timeout == 900
+        raise socket.timeout("local private invoice data")
+    monkeypatch.setattr(ollama._LOCAL_HTTP, "open", fake)
+    with pytest.raises(provider.ProviderUnavailable,match="900 segundos") as ex:
+        provider.propose(case())
+    assert "private invoice" not in str(ex.value)
+
+
 def test_ollama_http_out_of_memory_shows_safe_reason(monkeypatch):
     configure(monkeypatch)
     base_open=ollama._LOCAL_HTTP.open
