@@ -32,9 +32,10 @@ test('module is installed after engine-adapter and before boot',()=>{
 // Behavioral regression: the button must respond to a real delegated click,
 // show backend failures permanently, and keep the active consultant inputs intact.
 const vm=require('node:vm');
-function aiPilotHarness({fail=false,steps=['S1']}={}){
+function aiPilotHarness({fail=false,steps=['S1'],failReview=false}={}){
   const listeners=new Map(), nodes=new Map(), requests=[];
   let provider=null,renderCount=0,registrationCount=0,notice=null;
+  let shouldFailReview=failReview;
   const engagement={id:'SYNTHETIC',confirmedAsIs:true};
   const snapshot={version:2};
   const diagnostic={input_snapshot_hash:'hash'};
@@ -66,6 +67,7 @@ function aiPilotHarness({fail=false,steps=['S1']}={}){
     fetch:async(url,opts)=>{
       requests.push({url,opts});
       if(url.endsWith('/status'))return {ok:true,json:async()=>({status:'AVAILABLE',provider:'ollama',model:'aunea-qwen3-4b:latest'})};
+      if(url.endsWith('/tobe-review')&&shouldFailReview)return {ok:false,status:503,json:async()=>({detail:'Sin respuesta de Ollama.'})};
       if(url.endsWith('/tobe-review'))return {ok:true,json:async()=>({status:'CHECKED',summary:'Coherencia global revisada',
         issues:[],requires_human_review:true})};
       if(fail)return {ok:false,status:409,json:async()=>({detail:'El diagnóstico no corresponde al AS-IS vigente.'})};
@@ -80,7 +82,7 @@ function aiPilotHarness({fail=false,steps=['S1']}={}){
     preventDefault:()=>{}
   });
   const settle=async()=>{for(let i=0;i<8;i++)await new Promise(resolve=>setImmediate(resolve))};
-  return {sandbox,click,settle,requests,button,notice,
+  return {sandbox,click,settle,requests,button,notice,setReviewFailure:v=>{shouldFailReview=v},
     get renderCount(){return renderCount},get registrationCount(){return registrationCount}};
 }
 test('AI button click reaches backend once and preserves draft inputs on success',async()=>{
