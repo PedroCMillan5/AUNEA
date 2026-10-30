@@ -197,6 +197,19 @@ def test_ollama_http_context_overflow_is_not_a_generic_503(monkeypatch):
         provider.propose(case())
 
 
+def test_actual_ollama_overflow_message_is_categorized(monkeypatch):
+    configure(monkeypatch)
+    def fake(req,timeout=0):
+        if req.full_url.endswith("/api/tags"):
+            return io.BytesIO(json.dumps({"models":[{"name":ollama.DEFAULT_MODEL}]}).encode())
+        raise HTTPError(req.full_url, 400, "Bad Request", {}, io.BytesIO(json.dumps({
+            "error":"request (17739 tokens) exceeds the available context size (4096 tokens), try increasing it"
+        }).encode()))
+    monkeypatch.setattr(ollama._LOCAL_HTTP,"open",fake)
+    with pytest.raises(provider.ProviderUnavailable,match="ventana de contexto"):
+        provider.propose(case())
+
+
 def test_ollama_timeout_is_explained_without_echoing_private_details(monkeypatch):
     configure(monkeypatch)
     def fake(req,timeout=0):
