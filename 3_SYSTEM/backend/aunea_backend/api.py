@@ -22,7 +22,7 @@ from .session_time import TimeProjectionRequest, TimeReconciliationRequest, proj
 from .input_coverage import relational_integrity_issues
 from .intervention_projection import InterventionProjectionRequest, project_interventions_review
 from .intervention_reconciliation import InterventionReconciliationRequest, reconcile_interventions_review
-from .internal_ai import PilotAIRequest
+from .internal_ai import PilotAIRequest, PilotAIStepRequest, validate_pilot_source
 from .internal_ai_provider import status as internal_ai_status, propose as propose_internal_tobe, ProviderUnavailable
 
 app = FastAPI(title="AUNEA Internal Backend", version="1.1.1")
@@ -64,6 +64,36 @@ def internal_ai_tobe_draft(payload: PilotAIRequest, request: FastAPIRequest):
     except ValueError as exc:
         raise HTTPException(409, str(exc)) from exc
 # [AUNEA-BE-INTERNAL-AI-API-192] END
+# [AUNEA-BE-INTERNAL-AI-STEP-API-196] START — one request per source activity.
+# SOURCE: same confirmed snapshot and official diagnostic as PG11 pilot, REVIEW.
+# SECURITY: local-only, explicit provider and consent; no persistence or approval.
+@app.post("/v1/internal-ai/tobe-step")
+def internal_ai_tobe_step(payload: PilotAIStepRequest, request: FastAPIRequest):
+    if request.client is None or request.client.host not in ("127.0.0.1", "::1", "testclient"):
+        raise HTTPException(403, "El piloto IA por actividad sólo admite conexiones locales.")
+    from .internal_ai_provider import _schema, _INSTRUCTIONS, status as provider_status
+    from .internal_ai_ollama import propose_step, OllamaUnavailable
+    from .utils import stable_hash
+    config = provider_status()
+    if config.get("status") != "AVAILABLE" or config.get("provider") != "ollama":
+        raise HTTPException(503, "La generación por segmentos requiere Ollama local autorizado.")
+    try:
+        steps = validate_pilot_source(payload.request)
+        item = propose_step(payload.request, steps, _schema(), _INSTRUCTIONS, payload.source_step_id)
+        return {
+            "status": "DRAFT", "requires_human_review": True,
+            "engagement_id": payload.request.engagement.engagement_id,
+            "snapshot_version": payload.request.snapshot_version,
+            "input_hash": stable_hash(payload.request.engagement.model_dump()),
+            "model": config["model"], "item": item.model_dump(mode="json")
+        }
+    except OllamaUnavailable as exc:
+        raise HTTPException(503, str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+# [AUNEA-BE-INTERNAL-AI-STEP-API-196] END
+
+
 
 @app.get("/health")
 def health():
