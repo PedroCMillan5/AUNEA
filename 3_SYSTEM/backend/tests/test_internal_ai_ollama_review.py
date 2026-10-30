@@ -54,6 +54,8 @@ def fake_http(monkeypatch, *, installed=True, malicious=False):
             assert body["model"]==ollama.DEFAULT_MODEL
             assert body["stream"] is False
             assert isinstance(body["format"],dict)
+            assert body["options"]["num_ctx"] == 4096, "perfil local 16GB: no reservar contexto masivo"
+            assert body["options"]["num_predict"] <= 2048
             items=[suggestion("S1"),suggestion("S2")]
             if malicious:items[0]["source_refs"]=["S1","UNTRUSTED"]
             result={"done":True,"message":{"role":"assistant","content":json.dumps({"items":items})}}
