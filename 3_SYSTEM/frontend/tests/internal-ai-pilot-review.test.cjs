@@ -32,7 +32,7 @@ test('module is installed after engine-adapter and before boot',()=>{
 // Behavioral regression: the button must respond to a real delegated click,
 // show backend failures permanently, and keep the active consultant inputs intact.
 const vm=require('node:vm');
-function aiPilotHarness({fail=false}={}){
+function aiPilotHarness({fail=false,steps=['S1']}={}){
   const listeners=new Map(), nodes=new Map(), requests=[];
   let provider=null,renderCount=0,registrationCount=0,notice=null;
   const engagement={id:'SYNTHETIC',confirmedAsIs:true};
@@ -57,7 +57,7 @@ function aiPilotHarness({fail=false}={}){
     document,console,Map,Set,Error,String,JSON,Promise,
     state:{backendOnline:true,backendUrl:'http://localhost:8010'},
     confirmedSnapshot:()=>snapshot,currentDiagnosticOutput:()=>diagnostic,
-    currentEng:()=>engagement,latestTobe:()=>({status:'DRAFT',items:[{sourceStepId:'S1'}]}),
+    currentEng:()=>engagement,latestTobe:()=>({status:'DRAFT',items:steps.map(sourceStepId=>({sourceStepId}))}),
     tobeEditable:p=>p?.status==='DRAFT',AiAgentService:ai,
     buildBackendPayload:()=>({engagement_id:'SYNTHETIC'}),
     checkBackend:async()=>true,render:()=>{renderCount++},toast:()=>{},
@@ -88,7 +88,7 @@ test('AI button click reaches backend once and preserves draft inputs on success
   assert.equal(app.button.disabled,true);
   await app.settle();
   assert.equal(app.requests.length,2);
-  assert.equal(app.requests[1].url,'http://localhost:8010/v1/internal-ai/tobe-draft');
+  assert.equal(app.requests[1].url,'http://localhost:8010/v1/internal-ai/tobe-step');
   assert.match(app.notice.outerHTML,/Propuesta IA sin aprobar/);
   assert.equal(app.renderCount,0,'No re-render that could erase unsaved TO-BE edits');
   assert.equal(app.button.disabled,false);
