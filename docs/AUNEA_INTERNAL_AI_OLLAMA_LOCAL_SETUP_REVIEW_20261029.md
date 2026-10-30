@@ -55,6 +55,29 @@ Corrección REVIEW en `internal_ai_ollama.py`: traducción controlada de los err
 
 **Operación**: tras actualizar la rama de GitHub en VS Code con cambios locales protegidos, reiniciar el backend Python para cargar el adaptador nuevo; mantener las variables del proveedor Ollama y modelo `aunea-qwen3-4b:latest`. Recargar TO-BE y repetir una sola vez sobre el expediente sintético. Si devuelve «ventana de contexto», la decisión de producto es analizar el estudio por segmentos con fuentes y validación, no ampliar `num_ctx` más allá de la RAM disponible ni ocultar truncamientos. El estado `AVAILABLE` verifica disponibilidad del servidor/modelo, **no** generación válida.
 
+## Prueba 30/10 — ventana opt-in de 24K para el caso sintético Levante
+
+Evidencia real del fallo anterior, aportada por el operador desde Ollama Windows:
+`request (17739 tokens) exceeds the available context size (4096 tokens)` (HTTP 400 del servidor local; AUNEA lo traduce a 503). Ollama pudo cargar el modelo con `num_ctx=4096`, KV cache 576 MiB y CPU compute buffer ~86 MiB. **Esta prueba no demuestra OOM**; prueba un rechazo por tamaño del contexto antes de generar.
+
+**Cambio acotado a REVIEW**: el backend admite `AUNEA_OLLAMA_NUM_CTX` desde 1024 hasta 24576 (24K de prueba; exactamente 24.576 tokens). Mantiene 4096 si la variable no se fija, para evitar picos de memoria involuntarios en máquinas de 16 GB. La opción `num_ctx` se envía expresamente en la petición `/api/chat` y prevalece para esa llamada sobre el Modelfile local de 4096. El estado `/v1/internal-ai/status` informa de `num_ctx` configurado; NO certifica RAM disponible ni que la generación se complete. Sigue vigente `num_predict=2048`, salida estructurada y revisión humana. Se incorpora también `AUNEA_OLLAMA_TIMEOUT_SECONDS`, de 60 a 900, con 240 por defecto, para poder ensayar entradas largas en CPU sin reducir la petición silenciosamente. Configuración inválida → UNAVAILABLE, sin fallback ni generación.
+
+**Ejemplo para el ensayo local exclusivo con datos sintéticos**, desde la terminal PowerShell de `3_SYSTEM/backend` con el entorno virtual activo:
+
+```powershell
+$env:AUNEA_INTERNAL_AI_PROVIDER = "ollama"
+$env:AUNEA_INTERNAL_AI_ENABLED = "1"
+$env:AUNEA_INTERNAL_AI_DATA_AUTHORIZED = "1"
+$env:AUNEA_OLLAMA_MODEL = "aunea-qwen3-4b:latest"
+$env:AUNEA_OLLAMA_NUM_CTX = "24576"
+$env:AUNEA_OLLAMA_TIMEOUT_SECONDS = "900"
+python -m uvicorn aunea_backend.api:app --host 127.0.0.1 --port 8010
+```
+
+Verificar `http://127.0.0.1:8010/v1/internal-ai/status`, que debe incluir `"num_ctx":24576`, con el modelo seleccionado y estado AVAILABLE. Después probar una sola vez en TO-BE, sin aplicar al borrador hasta revisar el contenido. Para revertir a 4K y timeout estándar: asignar `"4096"` a `AUNEA_OLLAMA_NUM_CTX` y `"240"` a `AUNEA_OLLAMA_TIMEOUT_SECONDS`, y reiniciar backend.
+
+**Riesgo y limitación**: ampliar el contexto de 4096 a 24576 multiplica aproximadamente por seis la KV cache observada en ese modelo (576 MiB → ~3456 MiB), además de los pesos, buffers y la RAM utilizada por Windows. No se ha verificado físicamente el consumo final ni la calidad en el portátil. Si hay OOM, detener, volver a 4096 y diseñar segmentación. Tampoco se garantiza que el JSON de todas las actividades quepa en 2048 tokens o que el modelo razone con fiabilidad sobre 17.739 tokens. El camino de producto sigue siendo preparar y segmentar contexto con cobertura de fuentes. Ningún dato de cliente real debe usarse antes de revisión de privacidad y autorización.
+
 ## Coste y rendimiento
 El modelo local no incurre en una tarifa por token o llamada a una API externa. Sí consume RAM, CPU, almacenamiento y electricidad del equipo, y su calidad debe evaluarse. Con 16 GB RAM e Intel i5-1145G7, puede ser lento; la descarga del modelo publicado ocupa alrededor de 2,5 GB. Se han limitado los presupuestos de contexto y salida, evitando la generación ilimitada. No se certifica rendimiento ni calidad hasta ejecutar el modelo físico.
 
