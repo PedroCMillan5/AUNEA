@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import json
 import os
+import socket
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, build_opener, ProxyHandler
 from pydantic import ValidationError
 from .internal_ai import PilotAIRequest, PilotAIItem, PilotAIResult, validate_pilot_result
@@ -66,8 +68,51 @@ def propose(request: PilotAIRequest, steps: list[dict], schema: dict, instructio
     try:
         with _LOCAL_HTTP.open(req, timeout=240) as res:
             payload = json.loads(res.read(250_000).decode("utf-8"))
-    except Exception as exc:
-        raise OllamaUnavailable("Ollama local no pudo completar la propuesta.") from exc
+    except HTTPError as exc:
+        # Never disclose the provider's raw error in the UI: it may echo request
+        # context or local paths. Map only recognized operational conditions.
+        try:
+            error_body = json.loads(exc.read(4_000).decode("utf-8"))
+            description = str(error_body.get("error") or "").lower()
+        except (ValueError, UnicodeError, AttributeError, TypeError):
+            description = ""
+        if any(term in description for term in
+               ("out-of-memory", "out of memory", "failed to allocate",
+                "insufficient memory", "not enough memory", "cuda out of memory")):
+            reason = ("Ollama se quedó sin memoria al generar la propuesta. "
+                      "Cierra otras aplicaciones, comprueba ollama ps y prueba el "
+                      "modelo con un contexto menor; no aumenta la RAM disponible.")
+        elif any(term in description for term in
+                 ("context length", "context window", "context size",
+                  "prompt too long", "exceeds context", "too many tokens")):
+            reason = ("El estudio completo no cabe en la ventana de contexto local. "
+                      "Se necesita análisis segmentado con trazabilidad; "
+                      "no se ha generado ni aprobado un TO-BE.")
+        elif "model" in description and any(term in description for term in
+                 ("not found", "does not exist", "missing")):
+            reason = "Ollama no encuentra el modelo seleccionado; revisa ollama list."
+        elif "json schema" in description or "invalid schema" in description:
+            reason = "Ollama rechazó el esquema estructurado del TO-BE."
+        else:
+            reason = ("Ollama rechazó la generación (HTTP " + str(exc.code) +
+                      "). Consulta los registros locales de Ollama; no se ha aplicado ningún cambio.")
+        raise OllamaUnavailable(reason) from exc
+    except (socket.timeout, TimeoutError) as exc:
+        raise OllamaUnavailable(
+            "Ollama no terminó la generación en 240 segundos. "
+            "El modelo local puede necesitar una solicitud segmentada más pequeña."
+        ) from exc
+    except URLError as exc:
+        if isinstance(exc.reason, (socket.timeout, TimeoutError)):
+            raise OllamaUnavailable(
+                "Ollama no terminó la generación en 240 segundos. "
+                "El modelo local puede necesitar una solicitud segmentada más pequeña."
+            ) from exc
+        raise OllamaUnavailable(
+            "Se perdió la conexión con Ollama durante la generación (127.0.0.1:11434)."
+        ) from exc
+    except (ValueError, UnicodeError, TypeError, OSError) as exc:
+        raise OllamaUnavailable("Ollama devolvió una respuesta no interpretable o interrumpida.") from exc
     content = payload.get("message", {}).get("content")
     if not isinstance(content, str) or not content.strip() or payload.get("done") is not True:
         raise ValueError("Ollama devolvió una salida incompleta.")
