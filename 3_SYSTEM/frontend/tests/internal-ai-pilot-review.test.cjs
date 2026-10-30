@@ -104,3 +104,12 @@ test('failed AI request displays durable HTTP detail, re-enables the button, no 
   assert.equal(app.button.disabled,false);
   assert.equal(app.renderCount,0);
 });
+
+test('one Ollama request per source activity',async()=>{
+  const app=aiPilotHarness({steps:['S1','S2','S3']});
+  app.click();await app.settle();
+  assert.equal(app.requests.length,4);
+  assert.deepEqual(app.requests.slice(1).map(x=>JSON.parse(x.opts.body).source_step_id),['S1','S2','S3']);
+  assert.match(app.notice.outerHTML,/Propuesta IA sin aprobar/);
+  assert.equal(app.renderCount,0);
+});
