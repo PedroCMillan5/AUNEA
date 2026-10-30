@@ -72,7 +72,7 @@ def readiness() -> dict:
     request_timeout_seconds()  # Fail closed on invalid operator settings.
     if model not in _get_models():
         raise OllamaUnavailable("Instala el modelo local mediante: ollama pull " + model)
-    return {"status": "AVAILABLE", "provider": "ollama", "model": model, "num_ctx": num_ctx}
+    return {"status": "AVAILABLE", "provider": "ollama", "model": model, "num_ctx": num_ctx, "step_num_ctx": min(num_ctx, 8192)}
 
 def propose(request: PilotAIRequest, steps: list[dict], schema: dict, instructions: str) -> PilotAIResult:
     settings = readiness()
@@ -166,7 +166,7 @@ def propose(request: PilotAIRequest, steps: list[dict], schema: dict, instructio
 from .internal_ai import validate_pilot_step_result
 
 STEP_MAX_PROMPT_BYTES = 10800
-STEP_MAX_TOTAL_PROMPT_TOKENS = 5000
+STEP_MAX_TOTAL_PROMPT_TOKENS = 4000
 STEP_MAX_OUTPUT_TOKENS = 1024
 
 def _related_ids(record: dict) -> set[str]:
@@ -296,7 +296,7 @@ def propose_step(request: PilotAIRequest, steps: list[dict], schema: dict,
     if (isinstance(measured_tokens, int) and
             measured_tokens > STEP_MAX_TOTAL_PROMPT_TOKENS):
         raise ValueError("La actividad " + source_step_id +
-                         " excedió el límite medido de 5000 tokens; reducir el segmento.")
+                         " excedió el límite medido de 4000 tokens de entrada; reducir el segmento.")
     content = result["message"].get("content")
     try:
         raw = json.loads(content) if isinstance(content, str) else {}
