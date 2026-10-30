@@ -22,7 +22,7 @@ from .session_time import TimeProjectionRequest, TimeReconciliationRequest, proj
 from .input_coverage import relational_integrity_issues
 from .intervention_projection import InterventionProjectionRequest, project_interventions_review
 from .intervention_reconciliation import InterventionReconciliationRequest, reconcile_interventions_review
-from .internal_ai import PilotAIRequest, PilotAIStepRequest, validate_pilot_source
+from .internal_ai import PilotAIRequest, PilotAIStepRequest, PilotAIConsolidationRequest, validate_pilot_source
 from .internal_ai_provider import status as internal_ai_status, propose as propose_internal_tobe, ProviderUnavailable
 
 app = FastAPI(title="AUNEA Internal Backend", version="1.1.1")
@@ -97,6 +97,26 @@ def internal_ai_tobe_step(payload: PilotAIStepRequest, request: FastAPIRequest):
         raise HTTPException(503, str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(409, str(exc)) from exc
+@app.post("/v1/internal-ai/tobe-review")
+def internal_ai_tobe_review(payload: PilotAIConsolidationRequest, request: FastAPIRequest):
+    # Consolidation never edits proposals or official diagnostic engines.
+    if request.client is None or request.client.host not in ("127.0.0.1", "::1", "testclient"):
+        raise HTTPException(403, "El piloto IA por actividad sólo admite conexiones locales.")
+    if os.getenv("AUNEA_INTERNAL_AI_PROVIDER", "").strip().lower() != "ollama":
+        raise HTTPException(503, "La revisión requiere seleccionar Ollama local.")
+    if os.getenv("AUNEA_INTERNAL_AI_ENABLED") != "1":
+        raise HTTPException(503, "La IA del backend está desactivada.")
+    if os.getenv("AUNEA_INTERNAL_AI_DATA_AUTHORIZED") != "1":
+        raise HTTPException(503, "No hay autorización vigente para tratar datos con IA.")
+    from .internal_ai_review import consolidate
+    from .internal_ai_ollama import OllamaUnavailable
+    try:
+        return consolidate(payload)
+    except OllamaUnavailable as exc:
+        raise HTTPException(503, str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+
 # [AUNEA-BE-INTERNAL-AI-STEP-API-196] END
 
 
