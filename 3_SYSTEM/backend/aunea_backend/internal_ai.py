@@ -42,6 +42,32 @@ class PilotAIResult(BaseModel):
     model: str
     items: list[PilotAIItem]
 
+class PilotAIStepRequest(BaseModel):
+    # Source still contains the complete confirmed AS-IS for server-side hash validation.
+    request: PilotAIRequest
+    source_step_id: str = Field(min_length=1, max_length=128)
+
+
+def validate_pilot_step_result(
+    request: PilotAIRequest, source_step_id: str, item: PilotAIItem,
+) -> PilotAIItem:
+    """One bounded proposal; same source, tool and citation rules as the whole draft."""
+    steps = validate_pilot_source(request)
+    source = next((s for s in steps if str(s["id"]) == source_step_id), None)
+    if source is None or item.source_step_id != source_step_id:
+        raise ValueError("La propuesta no corresponde a una actividad vigente del AS-IS.")
+    frictions = request.engagement.questionnaire_answers.get("_frictions") or []
+    allowed = {str(s["id"]) for s in steps}
+    allowed.update(str(f["id"]) for f in frictions if isinstance(f, dict) and f.get("id"))
+    allowed.update(str(r.risk_id) for r in request.engagement.risks if r.risk_id)
+    if (not item.source_refs or source_step_id not in item.source_refs
+            or any(ref not in allowed for ref in item.source_refs)):
+        raise ValueError("La propuesta contiene referencias inexistentes.")
+    if item.tool and item.tool != str(source.get("tool") or ""):
+        raise ValueError("Herramienta futura no acreditada.")
+    return item
+
+
 def validate_pilot_source(request: PilotAIRequest) -> list[dict[str, Any]]:
     if not request.confirmed_as_is:
         raise ValueError("Se necesita un AS-IS confirmado.")
