@@ -163,23 +163,11 @@ def propose(request: PilotAIRequest, steps: list[dict], schema: dict, instructio
 # DATA: confirmed snapshot + current step + explicit links; never truncate evidence silently.
 # RULES: DEC-034/052/055 and pilot PG11 REVIEW; no engine writes or approval.
 # CHANGE_RISK: HIGH. The frontend requests one step at a time and retains confirmed results.
-from .internal_ai import validate_pilot_step_result
+from .internal_ai import validate_pilot_step_result, related_step_ids
 
 STEP_MAX_PROMPT_BYTES = 10800
 STEP_MAX_TOTAL_PROMPT_TOKENS = 4000
 STEP_MAX_OUTPUT_TOKENS = 1024
-
-def _related_ids(record: dict) -> set[str]:
-    keys = ("step_id", "affected_step_id", "step_ids", "affected_steps",
-            "affected_step_ids", "linked_step_ids", "related_step_ids")
-    ids = set()
-    for key in keys:
-        value = record.get(key)
-        if isinstance(value, (str, int)) and not isinstance(value, bool) and str(value):
-            ids.add(str(value))
-        elif isinstance(value, list):
-            ids.update(str(x) for x in value if isinstance(x, (str, int)) and not isinstance(x, bool))
-    return ids
 
 def _step_context(request: PilotAIRequest, steps: list[dict], step_id: str) -> dict:
     source = next((s for s in steps if str(s.get("id")) == step_id), None)
@@ -190,9 +178,9 @@ def _step_context(request: PilotAIRequest, steps: list[dict], step_id: str) -> d
     if not isinstance(frictions, list):
         raise ValueError("Las fricciones del expediente tienen un formato incorrecto.")
     linked_frictions = [f for f in frictions
-                        if isinstance(f, dict) and step_id in _related_ids(f)]
+                        if isinstance(f, dict) and step_id in related_step_ids(f)]
     unlinked_ids = [str(f["id"]) for f in frictions
-                    if isinstance(f, dict) and f.get("id") and not _related_ids(f)]
+                    if isinstance(f, dict) and f.get("id") and not related_step_ids(f)]
     linked_risks = [r.model_dump(mode="json") for r in engagement.risks if step_id in r.step_ids]
     unlinked_risks = [str(r.risk_id) for r in engagement.risks if not r.step_ids and r.risk_id]
     evidence_ids = {"EV-" + str(f["id"]) for f in linked_frictions if f.get("id")}
@@ -208,7 +196,7 @@ def _step_context(request: PilotAIRequest, steps: list[dict], step_id: str) -> d
         # Compact process-wide links, NOT a claim of causal/branch relationships.
         # Details of other steps are not leaked into the focused segment.
         "process_friction_index": [
-            {"id": str(f["id"]), "step_ids": sorted(_related_ids(f)),
+            {"id": str(f["id"]), "step_ids": sorted(related_step_ids(f)),
              "type": str(f.get("friction_type") or "")}
             for f in frictions if isinstance(f, dict) and f.get("id")],
         "process_risk_index": [
