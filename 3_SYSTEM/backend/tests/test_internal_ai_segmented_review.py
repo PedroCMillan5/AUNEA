@@ -63,6 +63,8 @@ def test_independent_steps_and_explicit_links(monkeypatch):
     assert [a.source_step_id,b.source_step_id]==["S1","S2"]
     chat=[json.loads(data) for url,timeout,data in calls if url.endswith("/api/chat")]
     assert len(chat)==2
+    assert all(url.endswith("/api/chat") for url,_,_ in calls), "No repeated /api/tags between inference steps"
+    assert all(x["keep_alive"]=="5m" for x in chat)
     assert all(x["options"]["num_predict"]<=1024 and x["options"]["num_ctx"]==8192 for x in chat)
     one=chat[0]["messages"][1]["content"]
     two=chat[1]["messages"][1]["content"]
