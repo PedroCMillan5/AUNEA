@@ -8,7 +8,7 @@ import json
 import socket
 from urllib.error import HTTPError, URLError
 from urllib.request import Request
-from .internal_ai import PilotAIConsolidationRequest, validate_pilot_result
+from .internal_ai import PilotAIConsolidationRequest, validate_pilot_result, related_step_ids
 from .internal_ai_ollama import (
     LOCAL_URL, _LOCAL_HTTP, OllamaUnavailable, model_name, context_window,
     request_timeout_seconds,
@@ -34,6 +34,7 @@ _REVIEW_INSTRUCTIONS = (
     "excepciones y controles. Busca afirmaciones sin evidencia, contradicciones "
     "entre propuestas, resultados prometidos sin condiciones y saltos de responsabilidad. "
     "Usa SOLO IDs de la lista de actividades en step_id; usa GLOBAL para un problema transversal. "
+    "Si se mantienen todos los pasos con fricciones vinculadas, comprueba oportunidades omitidas. "
     "Si no detectas problemas, issues debe ser []. No propongas datos, ahorro, tiempos ni "
     "capacidades tecnicas no respaldados. Los resultados esperados son HIPOTESIS, no mediciones. "
     "La salida es una comprobacion de coherencia, nunca una aprobacion para cliente."
@@ -46,6 +47,11 @@ def _context(request: PilotAIConsolidationRequest) -> dict:
         "process_name":request.request.engagement.process_name,
         "activity_order":[{"id":str(s["id"]),"name":str(s.get("step_name") or s.get("name") or ""),
                            "type":str(s.get("step_type") or "")} for s in active],
+        "frictions":[{"id":str(f.get("id")),"step_ids":sorted(related_step_ids(f)),
+                      "type":str(f.get("friction_type") or ""),
+                      "label":str(f.get("client_label") or "")}
+                     for f in request.request.engagement.questionnaire_answers.get("_frictions",[])
+                     if isinstance(f,dict) and f.get("id")],
         "proposals":[item.model_dump(mode="json") for item in request.items],
     }
 
@@ -55,12 +61,14 @@ def _batches(context: dict) -> list[dict]:
     for item in context["proposals"]:
         candidate={"process_name":context["process_name"],
                    "activity_order":context["activity_order"],
+                   "frictions":context.get("frictions",[]),
                    "proposals":([*groups[-1]["proposals"],item] if groups else [item])}
         body=_request_bytes(candidate)
         if len(body)>MAX_REVIEW_BYTES:
             if groups and len(groups[-1]["proposals"])>0:
                 candidate={"process_name":context["process_name"],
-                           "activity_order":context["activity_order"],"proposals":[item]}
+                           "activity_order":context["activity_order"],
+                           "frictions":context.get("frictions",[]),"proposals":[item]}
                 if len(_request_bytes(candidate))>MAX_REVIEW_BYTES:
                     raise ValueError("Una actividad excede el presupuesto de la consolidacion; requiere revision humana.")
                 groups.append(candidate)
@@ -102,6 +110,12 @@ def consolidate(request: PilotAIConsolidationRequest) -> dict:
         if "resultado esperado:" not in rationale:
             issues.append({"step_id":item.source_step_id,
                            "issue":"No se explica el resultado operativo esperado."})
+    if (all(item.transformation=="Se mantiene" for item in request.items)
+            and any(f["step_ids"] for f in context["frictions"])):
+        issues.append({"step_id":"GLOBAL","issue":
+            "Todas las actividades se mantienen pese a fricciones vinculadas. "
+            "Verificar si existen oportunidades de simplificacion o control; "
+            "no se obliga a transformar sin fundamento."})
     summaries=[]
     for batch in batches:
         body=_request_bytes(batch)
