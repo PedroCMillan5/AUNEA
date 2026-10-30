@@ -93,7 +93,7 @@ test('AI button click reaches backend once and preserves draft inputs on success
   assert.equal(app.requests[1].url,'http://localhost:8010/v1/internal-ai/tobe-step');
   assert.equal(app.requests[2].url,'http://localhost:8010/v1/internal-ai/tobe-review');
   assert.match(app.notice.outerHTML,/Resultado esperado/);
-  assert.match(app.notice.outerHTML,/Propuesta IA sin aprobar/);
+  assert.match(app.notice.outerHTML,/Propuesta TO-BE IA sin aprobar/);
   assert.equal(app.renderCount,0,'No re-render that could erase unsaved TO-BE edits');
   assert.equal(app.button.disabled,false);
 });
@@ -115,6 +115,6 @@ test('one Ollama request per source activity',async()=>{
   assert.equal(app.requests.length,5);
   assert.deepEqual(app.requests.slice(1,4).map(x=>JSON.parse(x.opts.body).source_step_id),['S1','S2','S3']);
   assert.equal(JSON.parse(app.requests[4].opts.body).items.length,3);
-  assert.match(app.notice.outerHTML,/Propuesta IA sin aprobar/);
+  assert.match(app.notice.outerHTML,/Propuesta TO-BE IA sin aprobar/);
   assert.equal(app.renderCount,0);
 });
