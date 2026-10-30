@@ -56,7 +56,8 @@ function internalAiPilotPanel(e){
     '<b>Propuesta TO-BE IA sin aprobar — '+esc(draft.model)+'</b>'+
     '<p>Intervenciones y resultados esperados son hipótesis de diseño. La revisión automática no equivale a aprobación humana.</p>'+
     overview+sections+'<p>Aplicar sólo completará campos vacíos del borrador y requiere revisión del consultor.</p>'+
-    '<button class="btn btn-outline" id="applyTobeAiPilot">Aplicar a campos vacíos</button></div>';
+    (draft.applied?'<p><b>Aplicado a los campos disponibles del TO-BE DRAFT.</b> Se conserva esta explicación en la sesión para revisión; no es un nuevo campo persistente.</p>':
+    '<button class="btn btn-outline" id="applyTobeAiPilot">Aplicar a campos vacíos</button>')+'</div>';
 }
 const __originalTobePagePilot=tobePage;
 tobePage=function(){
@@ -227,7 +228,8 @@ function applyTobeAiPilot(e){
     }
   }
   p.updatedAt=now();markDirty('Propuesta IA aceptada sólo en campos vacíos de TO-BE DRAFT');
-  __auneaAiPreview.delete(key);render();
+  data.applied=true; // Retain expected outcomes in the read-only review panel.
+  render();
   toast('Aplicado a campos vacíos. Revisa y guarda antes de enviar a revisión.');
 }
 // Bind once through event delegation, as in PG11 draft creation. A postBind wrapper
