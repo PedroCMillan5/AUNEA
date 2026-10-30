@@ -2,6 +2,8 @@
 import io
 import json
 from urllib.request import Request
+from urllib.error import HTTPError, URLError
+import socket
 import pytest
 from aunea_backend.models import EngagementInput, DiagnosticOutput
 from aunea_backend.utils import stable_hash
@@ -112,4 +114,55 @@ def test_openai_is_explicit_only_and_unknown_provider_is_unavailable(monkeypatch
     monkeypatch.setenv("AUNEA_INTERNAL_AI_PROVIDER","openai")
     assert provider.status()["status"]=="UNAVAILABLE"
     assert provider.status()["provider"]=="openai"
+def test_ollama_http_out_of_memory_shows_safe_reason(monkeypatch):
+    configure(monkeypatch)
+    base_open=ollama._LOCAL_HTTP.open
+    def fake(req,timeout=0):
+        if req.full_url.endswith("/api/tags"):
+            return io.BytesIO(json.dumps({"models":[{"name":ollama.DEFAULT_MODEL}]}).encode())
+        body=io.BytesIO(json.dumps({"error":
+            "llama-server reported out-of-memory; failed to allocate 19327352832 bytes"}).encode())
+        raise HTTPError(req.full_url, 500, "failed", {}, body)
+    monkeypatch.setattr(ollama._LOCAL_HTTP, "open", fake)
+    with pytest.raises(provider.ProviderUnavailable,match="sin memoria"):
+        provider.propose(case())
+
+
+def test_ollama_http_context_overflow_is_not_a_generic_503(monkeypatch):
+    configure(monkeypatch)
+    def fake(req,timeout=0):
+        if req.full_url.endswith("/api/tags"):
+            return io.BytesIO(json.dumps({"models":[{"name":ollama.DEFAULT_MODEL}]}).encode())
+        raise HTTPError(req.full_url, 400, "bad request", {},
+            io.BytesIO(json.dumps({"error":"prompt exceeds context window"}).encode()))
+    monkeypatch.setattr(ollama._LOCAL_HTTP, "open", fake)
+    with pytest.raises(provider.ProviderUnavailable,match="ventana de contexto"):
+        provider.propose(case())
+
+
+def test_ollama_timeout_is_explained_without_echoing_private_details(monkeypatch):
+    configure(monkeypatch)
+    def fake(req,timeout=0):
+        if req.full_url.endswith("/api/tags"):
+            return io.BytesIO(json.dumps({"models":[{"name":ollama.DEFAULT_MODEL}]}).encode())
+        raise socket.timeout("private folder C:/client/secret")
+    monkeypatch.setattr(ollama._LOCAL_HTTP, "open", fake)
+    with pytest.raises(provider.ProviderUnavailable,match="240 segundos") as ex:
+        provider.propose(case())
+    assert "private folder" not in str(ex.value)
+
+
+def test_ollama_unclassified_error_does_not_leak_raw_provider_body(monkeypatch):
+    configure(monkeypatch)
+    def fake(req,timeout=0):
+        if req.full_url.endswith("/api/tags"):
+            return io.BytesIO(json.dumps({"models":[{"name":ollama.DEFAULT_MODEL}]}).encode())
+        raise HTTPError(req.full_url, 500, "secret", {},
+            io.BytesIO(json.dumps({"error":"secret customer invoice ABC123"}).encode()))
+    monkeypatch.setattr(ollama._LOCAL_HTTP, "open", fake)
+    with pytest.raises(provider.ProviderUnavailable,match="HTTP 500") as ex:
+        provider.propose(case())
+    assert "ABC123" not in str(ex.value)
+
+
 # [AUNEA-UAT-INTERNAL-AI-OLLAMA-194] END
