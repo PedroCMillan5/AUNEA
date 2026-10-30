@@ -98,4 +98,14 @@ def test_large_review_partitions_without_dropping_proposals(monkeypatch):
     assert len(groups)>1
     assert [x["source_step_id"] for b in groups for x in b["proposals"]]==[f"S{i}" for i in range(18)]
     assert all(len(review._request_bytes(b))<=review.MAX_REVIEW_BYTES for b in groups)
+
+def test_all_steps_kept_despite_linked_friction_warrants_review(monkeypatch):
+    mock_model(monkeypatch,issues=[])
+    a=proposal("S1")
+    b=proposal("S2")
+    a.transformation=b.transformation="Se mantiene"
+    result=review.consolidate(PilotAIConsolidationRequest(request=sample(),items=[a,b]))
+    assert result["status"]=="CHECKED_WITH_NOTES"
+    assert any("fricciones vinculadas" in i["issue"] for i in result["issues"])
+
 # [AUNEA-UAT-INTERNAL-AI-REVIEW-198] END
