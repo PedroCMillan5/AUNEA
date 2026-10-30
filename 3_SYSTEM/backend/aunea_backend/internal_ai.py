@@ -63,9 +63,15 @@ def validate_pilot_step_result(
     if source is None or item.source_step_id != source_step_id:
         raise ValueError("La propuesta no corresponde a una actividad vigente del AS-IS.")
     frictions = request.engagement.questionnaire_answers.get("_frictions") or []
+    # Source steps may be cited for context, but friction/risk assertions need
+    # explicit step linkage. An unlinked ID alone is NOT evidence for this step.
+    from .internal_ai_ollama import _related_ids
     allowed = {str(s["id"]) for s in steps}
-    allowed.update(str(f["id"]) for f in frictions if isinstance(f, dict) and f.get("id"))
-    allowed.update(str(r.risk_id) for r in request.engagement.risks if r.risk_id)
+    allowed.update(str(f["id"]) for f in frictions
+                   if isinstance(f, dict) and f.get("id")
+                   and source_step_id in _related_ids(f))
+    allowed.update(str(r.risk_id) for r in request.engagement.risks
+                   if r.risk_id and source_step_id in r.step_ids)
     if (not item.source_refs or source_step_id not in item.source_refs
             or any(ref not in allowed for ref in item.source_refs)):
         raise ValueError("La propuesta contiene referencias inexistentes.")
