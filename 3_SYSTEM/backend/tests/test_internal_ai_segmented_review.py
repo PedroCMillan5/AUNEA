@@ -103,4 +103,23 @@ def test_measured_over_budget_refused(monkeypatch):
     with pytest.raises(ValueError,match="4000 tokens"):
         local.propose_step(req,validate_pilot_source(req),
                            provider._schema(),provider._INSTRUCTIONS,"S1")
+
+def test_unlinked_friction_cannot_be_cited_as_step_evidence(monkeypatch):
+    wire(monkeypatch)
+    previous=local._LOCAL_HTTP.open
+    def poisoned(req,timeout=0):
+        response=previous(req,timeout)
+        if req.full_url.endswith("/api/tags"):
+            return response
+        result=json.loads(response.read())
+        item=json.loads(result["message"]["content"])["items"][0]
+        item["source_refs"]=[item["source_step_id"],"F1"]
+        result["message"]["content"]=json.dumps({"items":[item]})
+        return io.BytesIO(json.dumps(result).encode())
+    monkeypatch.setattr(local._LOCAL_HTTP,"open",poisoned)
+    req=sample()
+    with pytest.raises(ValueError,match="referencias"):
+        local.propose_step(req,validate_pilot_source(req),
+                           provider._schema(),provider._INSTRUCTIONS,"S2")
+
 # [AUNEA-UAT-INTERNAL-AI-STEP-195] END
