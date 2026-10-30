@@ -50,7 +50,7 @@ def _context(request: PilotAIConsolidationRequest) -> dict:
         "frictions":[{"id":str(f.get("id")),"step_ids":sorted(related_step_ids(f)),
                       "type":str(f.get("friction_type") or ""),
                       "label":str(f.get("client_label") or "")}
-                     for f in request.request.engagement.questionnaire_answers.get("_frictions",[])
+                     for f in request.request.engagement.questionnaire_answers.get("_frictions",[]) or []
                      if isinstance(f,dict) and f.get("id")],
         "proposals":[item.model_dump(mode="json") for item in request.items],
     }
