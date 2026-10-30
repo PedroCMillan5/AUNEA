@@ -71,13 +71,19 @@ def internal_ai_tobe_draft(payload: PilotAIRequest, request: FastAPIRequest):
 def internal_ai_tobe_step(payload: PilotAIStepRequest, request: FastAPIRequest):
     if request.client is None or request.client.host not in ("127.0.0.1", "::1", "testclient"):
         raise HTTPException(403, "El piloto IA por actividad sólo admite conexiones locales.")
-    from .internal_ai_provider import _schema, _INSTRUCTIONS, status as provider_status
-    from .internal_ai_ollama import propose_step, OllamaUnavailable
+    from .internal_ai_provider import _schema, _INSTRUCTIONS
+    from .internal_ai_ollama import propose_step, OllamaUnavailable, model_name
     from .utils import stable_hash
-    config = provider_status()
-    if config.get("status") != "AVAILABLE" or config.get("provider") != "ollama":
-        raise HTTPException(503, "La generación por segmentos requiere Ollama local autorizado.")
+    # Verify authorization on EVERY step, without a fragile 2-second /api/tags
+    # probe between CPU-bound inferences. /api/chat reports actual model failures.
+    if os.getenv("AUNEA_INTERNAL_AI_PROVIDER", "").strip().lower() != "ollama":
+        raise HTTPException(503, "El proveedor seleccionado ya no es Ollama local.")
+    if os.getenv("AUNEA_INTERNAL_AI_ENABLED") != "1":
+        raise HTTPException(503, "La función de IA fue desactivada en el backend.")
+    if os.getenv("AUNEA_INTERNAL_AI_DATA_AUTHORIZED") != "1":
+        raise HTTPException(503, "No hay autorización vigente para tratar datos con IA.")
     try:
+        model = model_name()
         steps = validate_pilot_source(payload.request)
         item = propose_step(payload.request, steps, _schema(), _INSTRUCTIONS, payload.source_step_id)
         return {
@@ -85,7 +91,7 @@ def internal_ai_tobe_step(payload: PilotAIStepRequest, request: FastAPIRequest):
             "engagement_id": payload.request.engagement.engagement_id,
             "snapshot_version": payload.request.snapshot_version,
             "input_hash": stable_hash(payload.request.engagement.model_dump()),
-            "model": config["model"], "item": item.model_dump(mode="json")
+            "model": model, "item": item.model_dump(mode="json")
         }
     except OllamaUnavailable as exc:
         raise HTTPException(503, str(exc)) from exc
