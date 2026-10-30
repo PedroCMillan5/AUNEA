@@ -118,7 +118,7 @@ def test_unlinked_friction_cannot_be_cited_as_step_evidence(monkeypatch):
         return io.BytesIO(json.dumps(result).encode())
     monkeypatch.setattr(local._LOCAL_HTTP,"open",poisoned)
     req=sample()
-    with pytest.raises(ValueError,match="referencias"):
+    with pytest.raises(ValueError,match="contrato de salida y fuentes"):
         local.propose_step(req,validate_pilot_source(req),
                            provider._schema(),provider._INSTRUCTIONS,"S2")
 
