@@ -13,7 +13,7 @@ function internalAiPilotFeedback(e,message,type='info'){
   if(key)__auneaAiFeedback.set(key,{message,type});
   const node=document.getElementById('tobeAiPilotStatus');
   if(currentEng()?.id!==e?.id||internalAiPilotKey(e)!==key)return;
-  if(node){node.className='notice '+(type==='warn'?'warn':'info');const label=document.getElementById('tobeAiProgress');if(label)label.textContent=message;else node.textContent=message}
+  if(node){if(!String(node.className||'').includes('pg11-ai-panel'))node.className='notice '+(type==='warn'?'warn':'info');const label=document.getElementById('tobeAiProgress');if(label)label.textContent=message;else node.textContent=message}
 }
 function internalAiPilotRefreshPanel(e){
   const panel=document.getElementById('tobeAiPilotStatus');
@@ -107,6 +107,30 @@ function persistTobeAiDraft(e){
   return true;
 }
 // [AUNEA-FE-PG11-AI-DRAFT-SAVE-202] END
+// A saved marker is shown only after localStorage confirms this exact proposal.
+function internalAiSavedInBrowser(e,draft){
+  if(!draft||typeof localStorage==='undefined'||typeof STORAGE_KEY==='undefined')return false;
+  try{
+    const stored=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');
+    const p=latestTobe(e);
+    const copy=stored?.engagements?.find(x=>x.id===e.id)?.tobeProposals?.
+      find(x=>x.version===p?.version)?.aiDraft;
+    if(!copy||copy.sourceSnapshotVersion!==p.sourceSnapshotVersion||
+       copy.diagnosticInputHash!==currentDiagnosticOutput(e)?.input_snapshot_hash||
+       !internalAiDraftMatchesTobe(e,copy.proposal))return false;
+    const normalized={
+      items:draft.items.map(internalAiBoundedDraftItem),
+      review:internalAiBoundedReview(draft.review),
+      applied:draft.applied===true
+    };
+    const onDisk={
+      items:copy.proposal.items,review:copy.proposal.review,
+      applied:copy.proposal.applied===true
+    };
+    return copy.proposal.input_hash===draft.input_hash&&
+      JSON.stringify(normalized)===JSON.stringify(onDisk);
+  }catch(_){return false}
+}
 function internalAiPilotNarrative(value){
   const text=String(value||'');
   const match=text.match(/Acci[oó]n propuesta:\s*([\s\S]*?)\s*Resultado esperado:\s*([\s\S]*?)\s*Justificaci[oó]n:\s*([\s\S]*)/i);
@@ -203,77 +227,98 @@ function internalAiReviewPanel(review){
 }
 function internalAiPilotPanel(e){
   if(typeof isClientDisplay==='function'&&isClientDisplay())return '';
-  const key=internalAiPilotKey(e),cached=key?__auneaAiPreview.get(key):null,
-    persisted=key?internalAiSavedDraft(e):null,
-    draft=cached||persisted,
-    saved=!!(persisted&&draft&&persisted.input_hash===draft.input_hash&&
-      persisted.model===draft.model&&
-      JSON.stringify(persisted.items)===JSON.stringify(draft.items.map(internalAiBoundedDraftItem))&&
-      JSON.stringify(persisted.review)===JSON.stringify(internalAiBoundedReview(draft.review))&&
-      persisted.applied===(draft.applied===true));
+  const key=internalAiPilotKey(e),cached=key?__auneaAiPreview.get(key):null;
+  const persisted=key?internalAiSavedDraft(e):null;
+  const draft=cached||persisted;
   const feedback=key?__auneaAiFeedback.get(key):null;
   const partial=key?__auneaAiCompletedSteps.get(key):null;
-  if(!draft)return '<div id="tobeAiPilotStatus" role="status" aria-live="polite" class="notice '+(feedback?.type==='warn'?'warn':'info')+'">'+
-    '<p id="tobeAiProgress">'+esc(feedback?.message||'La IA es opcional. Pulsa «Preparar propuesta con IA» para generar un borrador sin aprobación automática.')+'</p>'+
-    internalAiPilotTracePanel(Object.fromEntries(partial?.traces||new Map()))+'</div>';
+  if(!draft)return '<section id="tobeAiPilotStatus" class="pg11-ai-panel pg11-ai-empty card card-pad section">'+
+    '<header class="pg11-ai-header"><div><p class="pg11-ai-eyebrow">TRABAJO INTERNO · PG11</p>'+
+    '<h2>Diseño TO-BE asistido por IA</h2>'+
+    '<p class="pg11-ai-subtitle">La IA prepara sugerencias, pero el consultor revisa y decide.</p></div></header>'+
+    '<p id="tobeAiProgress" role="status" aria-live="polite" class="pg11-ai-message'+(feedback?.type==='warn'?' pg11-ai-message-warn':'')+'">'+
+    esc(feedback?.message||'Pulsa «Preparar propuesta con IA» para comenzar. No se aplica ningún cambio automáticamente.')+'</p>'+
+    internalAiPilotTracePanel(Object.fromEntries(partial?.traces||new Map()))+'</section>';
   const review=draft.review||null;
   const items=Array.isArray(draft.items)?draft.items:[];
   const issues=Array.isArray(review?.issues)?review.issues:[];
   const blockedIds=new Set(Array.isArray(review?.blocking_step_ids)?review.blocking_step_ids:[]);
   for(const issue of issues)if(issue.category==='BLOCKING'&&issue.step_id!=='GLOBAL')blockedIds.add(issue.step_id);
-  const blocked=blockedIds.size>0||issues.some(i=>i.category==='BLOCKING'&&i.step_id==='GLOBAL');
-  const warning=feedback?.type==='warn'?'<p class="notice warn">'+esc(feedback.message)+'</p>':'';
-  const progress=__auneaAiWorking.has(key)?feedback?.message:'Generación individual completada. Revisión automática '+(review?'recibida':'pendiente')+'.';
+  const blocked=blockedIds.size>0||issues.some(i=>i.category==='BLOCKING'&&(!i.step_id||i.step_id==='GLOBAL'));
+  const saved=internalAiSavedInBrowser(e,draft);
   const traces=partial?Object.fromEntries(partial.traces||new Map()):draft.context_traces;
   const sourceNames=new Map((latestTobe(e)?.items||[]).map(it=>[String(it.sourceStepId),String(it.sourceStepName||'')]));
-  const cards=items.map(item=>{
+  const cards=items.map((item,index)=>{
     const sid=String(item.source_step_id||'');
     const related=issues.filter(i=>i.step_id===sid);
     const hasBlock=blockedIds.has(sid);
     const narrative=internalAiPilotNarrative(item.rationale);
-    return '<section class="card card-pad section">'+
-      '<p><b>'+esc(sid)+(sourceNames.get(sid)?' · '+esc(sourceNames.get(sid)):'')+'</b>'+
-      ' · '+esc(item.transformation||'Sin clasificar')+
-      (hasBlock?' · <b>Requiere corrección</b>':'')+'</p>'+
-      '<p><b>Problema:</b> '+esc(item.problem_resolved||'Sin definir')+'</p>'+
-      '<p><b>Intervención propuesta:</b> '+esc(narrative.action||'No concretada')+'</p>'+
-      '<p><b>Resultado esperado:</b> '+esc(narrative.expected||'No declarado')+'</p>'+
-      (related.length?'<details><summary>Aspectos por revisar · '+related.length+'</summary><ul>'+
-        related.map(internalAiReviewIssue).join('')+'</ul></details>':
-        hasBlock?'<p class="field-help"><b>Bloqueada:</b> revisar la propuesta antes de aplicarla.</p>':
-        '<p class="field-help">Sin observaciones específicas comunicadas; requiere revisión del consultor.</p>')+
-      '<details><summary>Justificación, fuentes y condiciones</summary>'+
-      '<p><b>Justificación:</b> '+esc(narrative.reason||'No declarada')+'</p>'+
-      '<p><b>Fuentes declaradas:</b> '+esc((item.source_refs||[]).join(', ')||'Ninguna')+'</p>'+
-      '<p><b>Condiciones por validar:</b> '+esc(item.limitations||'No declaradas')+'</p>'+
-      '<p><b>Responsable futuro:</b> '+esc(item.future_actor||'No definido')+'</p>'+
-      '<p><b>Supervisión humana:</b> '+esc(item.human_supervision||'No definida')+'</p>'+
-      '<p><b>Controles:</b> '+esc(item.controls_risk||'No definidos')+'</p>'+
-      '</details></section>';
+    return '<article class="pg11-ai-step" aria-label="Propuesta '+esc(sid)+'">'+
+      '<header class="pg11-ai-step-head">'+
+        '<div class="pg11-ai-step-identity"><span class="pg11-ai-step-number">'+(index+1)+'</span>'+
+        '<div class="pg11-ai-step-heading"><span class="pg11-ai-step-code">AS-IS · '+esc(sid)+'</span>'+
+        '<h4>'+esc(sourceNames.get(sid)||sid)+'</h4></div></div>'+
+        '<span class="pg11-ai-transformation">'+esc(item.transformation||'Sin clasificar')+'</span>'+
+      '</header>'+
+      '<div class="pg11-ai-step-main">'+
+        '<div class="pg11-ai-problem"><span>Problema identificado</span><p>'+esc(item.problem_resolved||'No concretado')+'</p></div>'+
+        '<div class="pg11-ai-proposal-grid">'+
+          '<div><span>Intervención propuesta</span><p>'+esc(narrative.action||'No concretada')+'</p></div>'+
+          '<div><span>Resultado esperado</span><p>'+esc(narrative.expected||'No declarado')+'</p></div>'+
+        '</div>'+
+        (hasBlock?'<p class="pg11-ai-issue-flag">Requiere corrección antes de aplicar.</p>':'')+
+        (related.length?'<details class="pg11-ai-details pg11-ai-review-details"><summary>Aspectos por revisar · '+
+          related.length+'</summary><ul class="pg11-ai-review-list">'+related.map(internalAiReviewIssue).join('')+'</ul></details>':
+          '<p class="pg11-ai-muted">Sin observaciones individuales; pendiente de revisión humana.</p>')+
+        '<details class="pg11-ai-details"><summary>Justificación, fuentes y condiciones</summary>'+
+          '<div class="pg11-ai-detail-content">'+
+          '<p><b>Justificación:</b> '+esc(narrative.reason||'No declarada')+'</p>'+
+          '<p><b>Fuentes:</b> '+esc((item.source_refs||[]).join(', ')||'Ninguna')+'</p>'+
+          '<p><b>Condiciones por validar:</b> '+esc(item.limitations||'No declaradas')+'</p>'+
+          '<p><b>Responsable futuro:</b> '+esc(item.future_actor||'No definido')+'</p>'+
+          '<p><b>Supervisión humana:</b> '+esc(item.human_supervision||'No definida')+'</p>'+
+          '<p><b>Controles y riesgos:</b> '+esc(item.controls_risk||'No definidos')+'</p>'+
+          '</div></details>'+
+      '</div></article>';
   }).join('');
-  const reviewLabel=review?.status==='CHECKED'?'sin observaciones globales bloqueantes':
-    review?'con observaciones':'pendiente';
-  return '<div id="tobeAiPilotStatus" role="status" aria-live="polite" class="card card-pad">'+
-    '<b>Diseño TO-BE asistido por IA · Borrador sin aprobar</b>'+
-    '<p class="field-help">Modelo: '+esc(draft.model||'No especificado')+
-    ' · Revisión automática '+reviewLabel+'. La aprobación corresponde al consultor.</p>'+
-    (saved?'<p class="field-help"><b>'+(cached?'Propuesta IA guardada en el borrador.':
-      'Propuesta IA recuperada del borrador guardado.')+'</b> Los registros HTTP detallados no se guardan.</p>':
-      '<p class="field-help">Propuesta IA temporal: pulsa «Guardar borrador» para conservarla en este navegador.</p>')+
-    '<p id="tobeAiProgress">'+esc(progress||'Generación completada')+'</p>'+warning+
-    '<p><b>'+items.length+'</b> actividades generadas · <b>'+blockedIds.size+
-    '</b> con bloqueos por actividad · <b>'+issues.length+'</b> observaciones registradas</p>'+
-    (blocked?'<p class="notice warn"><b>No apta para aplicar.</b> Corrige las incoherencias señaladas y revisa el diseño antes de continuar.</p>':'')+
-    (review?.summary?'<p><b>Resultado de la revisión:</b> '+esc(review.summary)+'</p>':'')+
-    '<p><b>Propuestas por actividad</b></p>'+cards+
-    internalAiReviewPanel(review)+
-    internalAiPilotTracePanel(traces)+
-    '<p class="field-help">El JSON puede ser correcto y la propuesta seguir teniendo defectos operativos. '+
-    'La IA no cambia los datos ni publica resultados por sí sola.</p>'+
-    (draft.applied?'<p><b>Propuesta aplicada a campos vacíos del DRAFT.</b> Requiere guardar y revisar. </p>':
-      blocked?'':'<button class="btn btn-outline" id="applyTobeAiPilot">Aplicar a campos vacíos</button>')+
-    '<button class="btn btn-outline" id="regenerateTobeAiPilot">Generar propuestas nuevas</button>'+
-    '<p class="field-help">La regeneración vuelve a analizar las actividades sin borrar los campos ya editados.</p></div>';
+  return '<section id="tobeAiPilotStatus" class="pg11-ai-panel card card-pad section">'+
+    '<header class="pg11-ai-header">'+
+      '<div><p class="pg11-ai-eyebrow">TRABAJO INTERNO · PG11</p>'+
+      '<h2>Diseño TO-BE asistido por IA</h2>'+
+      '<p class="pg11-ai-subtitle">Borrador de propuestas para revisión del consultor · '+esc(draft.model||'Modelo no indicado')+'</p></div>'+
+      '<span class="pg11-ai-top-status">'+(blocked?'Revisión con bloqueos':'Revisión pendiente')+'</span>'+
+    '</header>'+
+    '<div class="pg11-ai-save-state'+(saved?' pg11-ai-save-state-saved':' pg11-ai-save-state-pending')+'">'+
+      '<span class="pg11-ai-save-indicator" aria-hidden="true"></span>'+
+      '<div><b>'+(saved?'Propuesta IA guardada en el borrador.':'Propuesta IA pendiente de guardar.')+'</b>'+
+        '<p>'+(saved?'Recuperable al volver a abrir este estudio en el mismo navegador.':
+          'Pulsa «Guardar propuesta y borrador» para conservar la generación y la revisión.')+'</p></div>'+
+    '</div>'+
+    '<p id="tobeAiProgress" role="status" aria-live="polite" class="pg11-ai-message">'+
+      esc(__auneaAiWorking.has(key)?feedback?.message||'Generación en curso…':
+        'Generación completada · Revisión automática '+(review?'recibida':'pendiente')+'.')+'</p>'+
+    (feedback?.type==='warn'?'<p class="pg11-ai-message pg11-ai-message-warn">'+esc(feedback.message)+'</p>':'')+
+    '<div class="pg11-ai-metrics" aria-label="Resumen de revisión">'+
+      '<div><strong>'+items.length+'</strong><span>Actividades generadas</span></div>'+
+      '<div><strong>'+blockedIds.size+'</strong><span>Actividades bloqueadas</span></div>'+
+      '<div><strong>'+issues.length+'</strong><span>Aspectos por revisar</span></div>'+
+    '</div>'+
+    (blocked?'<div class="pg11-ai-blocked"><b>No apta para aplicar.</b><p>La revisión encontró incoherencias. Puedes guardar y consultar la propuesta sin aprobarla.</p></div>':'')+
+    (review?.summary?'<div class="pg11-ai-summary"><b>Resultado de la revisión</b><p>'+esc(review.summary)+'</p></div>':'')+
+    '<div class="pg11-ai-section-title"><div><p class="pg11-ai-eyebrow">PROPUESTA DE DISEÑO</p>'+
+      '<h3>Propuestas por actividad</h3></div><span>'+items.length+' actividades</span></div>'+
+    '<div class="pg11-ai-step-list">'+cards+'</div>'+
+    '<section class="pg11-ai-review-area"><h3>Revisión y trazabilidad</h3>'+
+      internalAiReviewPanel(review)+internalAiPilotTracePanel(traces)+'</section>'+
+    '<footer class="pg11-ai-footer">'+
+      '<p>La IA no aprueba ni publica resultados. Los registros HTTP y prompts técnicos son temporales.</p>'+
+      '<div class="pg11-ai-actions">'+
+        '<button type="button" class="btn btn-primary" id="saveTobeAiPilot">Guardar propuesta y borrador</button>'+
+        (draft.applied?'':blocked?'':'<button class="btn btn-outline" id="applyTobeAiPilot">Aplicar a campos vacíos</button>')+
+        '<button type="button" class="btn btn-outline" id="regenerateTobeAiPilot">Generar propuestas nuevas</button>'+
+      '</div>'+
+      (draft.applied?'<p class="pg11-ai-muted">Se aplicó a campos vacíos del TO-BE; revisa y guarda los cambios.</p>':'')+
+    '</footer></section>';
 }
 // [AUNEA-FE-PG11-AI-UX-201] END
 const __originalTobePagePilot=tobePage;
@@ -532,6 +577,16 @@ registerInternalWorkPages=function(){
     const copy=event.target?.closest?.('[data-ai-copy]');
     if(copy){event.preventDefault();const text=copy.parentElement?.querySelector('pre')?.textContent;
       if(text&&typeof navigator!=='undefined')void navigator.clipboard.writeText(text).then(()=>toast('JSON copiado.')).catch(()=>toast('No se pudo copiar; selecciona el JSON.'));return;}
+
+    const saveAi=event.target?.closest?.('#saveTobeAiPilot');
+    if(saveAi){
+      event.preventDefault();
+      const e=currentEng();
+      if(e&&saveTobeFromDom(e)&&saveState('Guardar borrador TO-BE')){
+        internalAiPilotRefreshPanel(currentEng());
+      }else toast('No se pudo guardar el borrador. Conserva esta pestaña abierta.');
+      return;
+    }
 
     const generate=event.target?.closest?.('#generateTobeAiPilot');
     if(generate){
