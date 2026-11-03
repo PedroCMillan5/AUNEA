@@ -87,7 +87,10 @@ function internalAiSavedDraft(e){
 }
 function persistTobeAiDraft(e){
   const key=internalAiPilotKey(e),p=latestTobe(e);
-  if(!key||!tobeEditable(p))return false;
+  if(!tobeEditable(p))return false;
+  // Manual consultant fields remain saveable if the IA provider or official diagnostic is
+  // temporarily unavailable. Never attach a suggestion from a different snapshot/version.
+  if(!key)return true;
   const proposal=__auneaAiPreview.get(key);
   if(!proposal)return true; // Re-save existing version without clearing the stored AI draft.
   if(!internalAiDraftMatchesTobe(e,proposal)){
