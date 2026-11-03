@@ -779,7 +779,7 @@ function advanceTobeStatus(e){
   return true;
 }
 // [AUNEA-FE-PG11-REVIEW-GATE-199] END
-function saveTobeFromDom(e){const p=latestTobe(e);if(!tobeEditable(p))return false;document.querySelectorAll('[data-tobe-item]').forEach(el=>{const item=p.items.find(x=>x.id===el.dataset.tobeItem);if(item)item[el.dataset.tobeField]=el.value});p.updatedAt=now();markDirty(`TO-BE v${p.version} actualizado`);return true}
+function saveTobeFromDom(e){const p=latestTobe(e);if(!tobeEditable(p))return false;document.querySelectorAll('[data-tobe-item]').forEach(el=>{const item=p.items.find(x=>x.id===el.dataset.tobeItem);if(item)item[el.dataset.tobeField]=el.value});if(typeof persistTobeAiDraft==='function'&&!persistTobeAiDraft(e))return false;p.updatedAt=now();markDirty(`TO-BE v${p.version} actualizado`);return true}
 function tobeField(item,key,label,value,type='text',disabled=false){return `<div class="field"><label>${esc(label)}</label>${type==='textarea'?`<textarea data-tobe-item="${attr(item.id)}" data-tobe-field="${attr(key)}" ${disabled?'disabled':''}>${esc(value||'')}</textarea>`:`<input data-tobe-item="${attr(item.id)}" data-tobe-field="${attr(key)}" value="${attr(value||'')}" ${disabled?'disabled':''}>`}</div>`}
 function tobePage(){const e=currentEng(),snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;if(!snap)return pageTop('TO-BE','El diseño del proceso futuro requiere un mapa del proceso actual confirmado.',`<button class="btn" data-page="diagnostico">Volver a captura</button>`)+`<div class="empty"><h2>AS-IS confirmado requerido</h2><p>Confirma Validación y cierre antes de diseñar el proceso propuesto.</p></div>`;if(!currentDiagnosticOutput(e))return pageTop('TO-BE preliminar','Vista de orientación para preparar el diseño futuro; todavía no es un proceso propuesto ni una recomendación aprobada.',`<button class="btn btn-primary" data-page="resultados">Volver a revisión del AS-IS</button>`)
   +section('Para qué sirve esta vista','Antes de diseñar, revisa el alcance de la transformación y las necesidades detectadas.', 
@@ -986,7 +986,7 @@ function registerInternalWorkPages(){
     if(by('analyzeAsisOnly'))by('analyzeAsisOnly').onclick=()=>runAsisAnalysis(e);
     bindDiagnosticMapPointNavigation();
     document.querySelectorAll('[data-draft-conditional-scenario]').forEach(x=>x.onclick=()=>createScenario(Number(x.dataset.draftConditionalScenario)));
-    if(by('saveTobe'))by('saveTobe').onclick=()=>{saveTobeFromDom(e);render()};
+    if(by('saveTobe'))by('saveTobe').onclick=()=>{if(saveTobeFromDom(e)&&saveState('Guardar borrador TO-BE'))render()};
     if(by('advanceTobe'))by('advanceTobe').onclick=()=>{saveTobeFromDom(e);if(advanceTobeStatus(e))render()};
   };
 }
