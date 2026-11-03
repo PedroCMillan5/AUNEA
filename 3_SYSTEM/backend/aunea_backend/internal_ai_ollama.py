@@ -223,6 +223,21 @@ def _step_context(request: PilotAIRequest, steps: list[dict], step_id: str) -> d
         }
     }
 
+def _bounded_step_schema(schema: dict, request: PilotAIRequest,
+                         steps: list[dict], source_step_id: str) -> dict:
+    """Only permit source IDs and tools already allowed by canonical validation."""
+    source = next((step for step in steps if str(step["id"]) == source_step_id), None)
+    if source is None:
+        raise ValueError("Actividad no encontrada en el AS-IS confirmado.")
+    result = json.loads(json.dumps(schema))
+    props = result["properties"]["items"]["items"]["properties"]
+    props["source_step_id"] = {"type": "string", "enum": [source_step_id]}
+    props["tool"] = {"type": "string", "enum": sorted({"", str(source.get("tool") or "")})}
+    props["source_refs"]["items"] = {"type": "string", "enum": sorted(
+        allowed_pilot_step_refs(request, steps, source_step_id))}
+    return result
+
+
 def propose_step(request: PilotAIRequest, steps: list[dict], schema: dict,
                  instructions: str, source_step_id: str) -> PilotAIItem:
     # /api/tags is checked by status before the run. Do not query it again
