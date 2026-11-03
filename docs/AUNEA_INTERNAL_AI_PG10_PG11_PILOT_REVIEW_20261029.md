@@ -132,3 +132,17 @@ QA automatizado del cambio: tests backend de enums, JSON/esquema, truncamiento, 
 4. Pruebas ampliadas: `test_internal_ai_review_consolidation.py` (conflicto claro/«Se mantiene» fundamentado, sin falsos bloqueos por fricción) e `internal-ai-pilot-review.test.cjs` (regeneración integral vs reuso, bloqueo de aplicación de contradicción), sin llamadas reales Ollama.
 
 **QA verificable:** GitHub Actions Acceptance Gate `41633701111` sobre SHA `44041be4eea89c938b2b41bbad5bb9af15c37ba0` SUCCESS: **392 pruebas backend**, **737 frontend** y **Chromium UAT PASS**. QA demuestra regresión técnica, no mejora consultiva real con Qwen3 local. **Pendiente UAT real en Windows:** Pull, reiniciar backend, recargar frontend con guardado previo de borrador, pulsar **«Generar propuestas nuevas»**, contrastar propuestas e incidencias y registrar si subsisten recomendaciones genéricas. Estado PG11 se mantiene REVIEW; no promover.
+
+
+## Incidencia UAT 03/11/2026 — la pantalla vuelve a mostrar exactamente el resultado anterior
+
+**Evidencia:** el operador vuelve a pegar exactamente el mismo texto de «Consolidación automática con observaciones» y las mismas propuestas P1–P4 «Se mantiene» (incluida la misma lista de 9 observaciones) después de la corrección `_clear_transformation_conflicts`. Con el revisor nuevo, cada `rationale` comienza por «Acción propuesta: Establecer ...», por lo que se esperaría `blocking_step_ids` no vacío y el UI «No apta para aplicar». **No puede atribuirse todavía a una inferencia realmente nueva**; probable falta de recarga, backend anterior o previsualización efímera conservada. No se dispone de registros locales de red ni de la versión runtime para desambiguarlo.
+
+**Cambio técnico correctivo, exclusivamente diagnóstico y de compatibilidad:**
+- Protocolo técnico `PG11_REVIEW_20261103_2` gobernado en `internal_ai_review.py`, comunicado como `pg11_review_protocol` en `GET /v1/internal-ai/status` y `protocol_revision` en la revisión. **No es campo comercial, owner de datos, regla de negocio, ni nueva versión de modelo Ollama.**
+- El frontend `internal-ai-pilot.js` exige igualdad del protocolo antes de enviar actividades a Ollama (sin inferencia si el backend es antiguo) y vuelve a comprobar la versión de la consolidación. Se consulta status con `cache: 'no-store'`, se muestra revisión técnica en la previsualización y se indica reinicio Uvicorn y recarga del navegador si falla.
+- QA automático añadido: status/review devuelven la misma revisión, el frontend rechaza backend sin protocolo antes de consumir tokens, y la previsualización nueva expone la versión.
+
+**Acción local necesaria:** guardar TO-BE DRAFT, `git status --short`, `git pull --ff-only` en rama activa, reiniciar **backend** local, recargar frontend con Ctrl+Shift+R, verificar GET `http://127.0.0.1:8010/v1/internal-ai/status` y `pg11_review_protocol=PG11_REVIEW_20261103_2`. Después generar otra vez las cuatro actividades con una sesión limpia y contrastar los resultados. El SHA de rama y que el CI pase no prueban por sí solos qué frontend/backend están corriendo en Windows.
+
+**Estado:** PG11 continúa REVIEW; no debe presentarse la respuesta repetida como validación de la corrección ni afirmar mejora de calidad de Qwen3 sin UAT local.
