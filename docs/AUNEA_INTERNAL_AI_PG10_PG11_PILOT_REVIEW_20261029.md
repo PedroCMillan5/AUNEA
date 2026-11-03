@@ -68,3 +68,18 @@ En la rama `work/as-is-ux-simplification-20260930`, GitHub Actions Acceptance Ga
 `_validated_step_json` conserva el bloqueo del resultado no válido y devuelve códigos **seguros, sin eco del prompt ni datos del expediente**: `IA_STEP_LENGTH` (salida truncada por tokens), `IA_STEP_EMPTY`, `IA_STEP_JSON`, `IA_STEP_SHAPE`, `IA_STEP_COUNT`, `IA_STEP_FIELD`, `IA_STEP_REFS`, `IA_STEP_TOOL`, `IA_STEP_ORIGIN`, `IA_STEP_VALIDATION`. No se introduce reintento automático de inferencia: el operador puede reintentar manualmente una actividad sin repetir las anteriores. El límite de salida, contexto por paso, controles de entrada y aprobación humana siguen vigentes.
 
 **QA:** `test_internal_ai_segmented_review.py` comprueba que el esquema se restringe por actividad y verifica categorías de error con ejemplos sintéticos (sin acceso al equipo del operador). GitHub Actions Acceptance Gate `41600736723` PASS (backend/frontend/browser), confirmado en la rama de trabajo. Se mantiene estado REVIEW. **Pendiente:** actualizar rama y reiniciar backend Windows; repetir P1 con Qwen3 local y revisar el resultado. Si reaparece HTTP 409, el código específico permitirá localizar la causa real sin registrar información de cliente.
+
+
+## Corrección REVIEW 03/11/2026 — HTTP 409 en consolidación final (4/4 conservadas)
+
+En una nueva UAT local real con Qwen3 4B se han generado y validado **las cuatro actividades** del estudio sintético; falló sólo la revisión global `POST /v1/internal-ai/tobe-review` con HTTP 409 «La revision de coherencia no supera validacion de fuentes». El frontend conserva las cuatro propuestas en memoria mientras no se recargue/cierre la página. No consta el JSON rechazado, por lo que **no se atribuye la incidencia a un ID, estructura o JSON concreto**.
+
+Causa técnica confirmada del diagnóstico insuficiente: el esquema de salida de `internal_ai_review.py` aceptaba `step_id` de texto libre, pese a que la validación posterior sólo permitía IDs literales del AS-IS más `GLOBAL`. Además, un bloque `except` convertía JSON incorrecto, esquema inválido o ID no permitido en el mismo mensaje genérico. Corrección sin relajar controles:
+
+- `_review_schema(activity_ids)` construye un esquema efímero JSON con `step_id.enum` limitado a los IDs exactos del lote y `GLOBAL`; no modifica `_REVIEW_SCHEMA` global.
+- La instrucción del revisor prohíbe abreviaturas tipo P1 cuando el ID real es, por ejemplo, UAT-LIT-P1.
+- `_parse_review_result` separa `IA_REVIEW_LENGTH`, `INCOMPLETE`, `EMPTY`, `JSON`, `SHAPE`, `COUNT`, `ISSUES` e `IDS`, sin revelar el texto de Ollama ni datos privados.
+- Se mantiene rechazo ante IDs sin respaldo y comprobación de 4.000 tokens de entrada medidos. No hay aprobaciones automáticas, rellenos simulados ni sustitución de los motores.
+- La interfaz no se ha alterado: **reintentar desde la página sin recarga reutiliza las 4 actividades** en el mapa temporal y llama solamente a `/v1/internal-ai/tobe-review`. Para cargar el cambio del backend, el operador deberá actualizar la rama en VS Code y reiniciar Uvicorn; no hace falta recargar la página. La persistencia no sobrevive a cierre o actualización del navegador.
+
+QA automatizado del cambio: tests backend de enums, JSON/esquema, truncamiento, citas inválidas y no filtración de contenidos; pruebas de frontend/browser en GitHub Actions Acceptance Gate `41607179199`: SUCCESS. **Queda pendiente UAT real de Ollama en Windows sobre la consolidación**, comprobar tanto el resultado como la calidad consultiva del TO-BE. Todo permanece REVIEW; BITACORA refleja el incidente. No se modifica el contrato canónico de PG11 ni datos, pricing, economics o permisos.
