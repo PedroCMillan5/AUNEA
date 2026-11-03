@@ -12,7 +12,7 @@ import socket
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, build_opener, ProxyHandler
 from pydantic import ValidationError
-from .internal_ai import PilotAIRequest, PilotAIItem, PilotAIResult, validate_pilot_result
+from .internal_ai import PilotAIRequest, PilotAIItem, PilotAIResult, validate_pilot_result, explicit_pilot_process_flow
 
 LOCAL_URL = "http://127.0.0.1:11434"
 DEFAULT_MODEL = "qwen3:4b-instruct"
@@ -190,6 +190,7 @@ def _step_context(request: PilotAIRequest, steps: list[dict], step_id: str) -> d
         "engagement_id": engagement.engagement_id,
         "snapshot_version": request.snapshot_version,
         "process_name": engagement.process_name,
+        "process_flow": explicit_pilot_process_flow(steps),
         "activity_order": [{"id": str(s["id"]), "name": str(s.get("step_name") or
                              s.get("name") or s.get("label") or "")}
                            for s in steps],
@@ -307,7 +308,11 @@ def propose_step(request: PilotAIRequest, steps: list[dict], schema: dict,
           "source_step_id debe ser el ID de current_activity. " 
           "En source_refs incluye ese ID; otros IDs requieren vínculo explícito. " 
           "En tool usa exactamente la herramienta de origen o una cadena vacía. " 
-          "Responde brevemente: una frase por campo y sin repetir información."
+          "Responde brevemente: una frase por campo y sin repetir información. "
+          "process_flow.explicit_routes son las únicas conexiones confirmadas; "
+          "no conviertas activity_order en flujo obligatorio. "
+          "Distingue la función de las decisiones y la de las aprobaciones humanas, "
+          "y evita repetir la misma intervención en actividades diferentes."
     )
     body = json.dumps({
         "model": settings["model"],
