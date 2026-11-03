@@ -44,6 +44,7 @@ def test_review_reports_real_coherence_without_approving(monkeypatch):
     assert data["requires_human_review"] is True
     assert data["issues"]==[]
     assert data["blocking_step_ids"]==[]
+    assert data["protocol_revision"]==review.PG11_REVIEW_PROTOCOL
     assert data["batches_checked"]==1
     assert len(calls)==1
     assert calls[0]["stream"] is False
@@ -211,6 +212,14 @@ def test_keep_step_without_new_action_does_not_trigger_quality_gate(monkeypatch)
     # Existing global observation about linked frictions remains non-blocking.
     assert result["blocking_step_ids"]==[]
     assert result["status"]=="CHECKED_WITH_NOTES"
+
+
+def test_status_discloses_backend_review_protocol_without_running_ollama(monkeypatch):
+    from aunea_backend import api
+    monkeypatch.setattr(api, "internal_ai_status", lambda: {"status":"AVAILABLE", "provider":"ollama"})
+    result=api.get_internal_ai_status()
+    assert result["pg11_review_protocol"]==review.PG11_REVIEW_PROTOCOL
+    assert result["status"]=="AVAILABLE"
 
 
 # [AUNEA-UAT-INTERNAL-AI-REVIEW-198] END
