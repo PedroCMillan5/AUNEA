@@ -28,12 +28,37 @@ function internalAiPilotNarrative(value){
   return match?{action:match[1].trim(),expected:match[2].trim(),reason:match[3].trim()}
     :{action:'',expected:'',reason:text};
 }
+function internalAiPilotTracePanel(traces){
+  const values=Object.entries(traces||{});
+  if(!values.length)return '';
+  const ids=list=>Array.isArray(list)&&list.length?list.map(esc).join(', '):'Ninguno vinculado';
+  const routeLabel=r=>esc(String(r.from||'')+' → '+String(r.to||'')+
+     (r.route==='exception'?' (excepción)':' (ruta normal)'));
+  const blocks=values.map(([stepId,trace])=>{
+    const routes=Array.isArray(trace?.explicit_routes)?trace.explicit_routes:[];
+    const unresolved=Array.isArray(trace?.unresolved_routes)?trace.unresolved_routes:[];
+    return '<div class="card card-pad"><b>'+esc(stepId)+'</b>'+
+      '<p><b>Fricciones facilitadas:</b> '+ids(trace?.friction_ids)+'</p>'+
+      '<p><b>Riesgos facilitados:</b> '+ids(trace?.risk_ids)+'</p>'+
+      '<p><b>Evidencias facilitadas:</b> '+ids(trace?.evidence_ids)+'</p>'+
+      '<p><b>Rutas explícitas relacionadas:</b> '+(routes.length?routes.map(routeLabel).join(' · '):'Sin vínculos explícitos para esta actividad')+'</p>'+
+      (unresolved.length?'<p><b>Rutas pendientes de confirmar:</b> '+unresolved.length+'</p>':'')+
+      '</div>';
+  }).join('');
+  return '<details class="step-group"><summary>Qué información recibió Ollama (trazabilidad)</summary>'+
+    '<p class="field-help">Inventario de identificadores procedentes del estudio activo confirmado. '+
+    'El diagnóstico oficial se envía como referencia de hash, no como informe completo. '+
+    'Los vínculos visuales no se confunden con rutas confirmadas. '+
+    'Este panel no contiene el prompt completo ni el razonamiento interno del modelo.</p>'+
+    blocks+'</details>';
+}
 function internalAiPilotPanel(e){
   const key=internalAiPilotKey(e),draft=key?__auneaAiPreview.get(key):null;
   const feedback=key?__auneaAiFeedback.get(key):null;
   if(!draft)return '<div id="tobeAiPilotStatus" role="status" aria-live="polite" class="notice '+(feedback?.type==='warn'?'warn':'info')+'">'+
     esc(feedback?.message||'La IA es opcional. Pulsa «Preparar propuesta con IA» para consultar el proveedor autorizado; no se generan resultados simulados.')+'</div>';
   const review=draft.review||null;
+  const contextTraceHtml=internalAiPilotTracePanel(draft.context_traces);
   const overview=review?'<p><b>Consolidación automática '+(review.status==='CHECKED'?'sin observaciones':'con observaciones')+
     '</b> — '+esc(review.summary||'')+'</p>'+
     (review.issues?.length?'<div class="notice warn"><b>Aspectos por revisar:</b><ul>'+
@@ -55,7 +80,7 @@ function internalAiPilotPanel(e){
   return '<div id="tobeAiPilotStatus" role="status" aria-live="polite" class="notice info">'+
     '<b>Propuesta TO-BE IA sin aprobar — '+esc(draft.model)+'</b>'+
     '<p>Intervenciones y resultados esperados son hipótesis de diseño. La revisión automática no equivale a aprobación humana.</p>'+
-    overview+sections+'<p>Aplicar sólo completará campos vacíos del borrador y requiere revisión del consultor.</p>'+
+    overview+contextTraceHtml+sections+'<p>Aplicar sólo completará campos vacíos del borrador y requiere revisión del consultor.</p>'+
     (draft.applied?'<p><b>Aplicado a los campos disponibles del TO-BE DRAFT.</b> Se conserva esta explicación en la sesión para revisión; no es un nuevo campo persistente.</p>':
     '<button class="btn btn-outline" id="applyTobeAiPilot">Aplicar a campos vacíos</button>')+'</div>';
 }
@@ -75,7 +100,7 @@ async function generateTobeBySteps(e,key,snap,availability){
     throw Error('El borrador no tiene actividades de origen únicas y válidas.');
   const previous=__auneaAiCompletedSteps.get(key);
   const completed=previous?.stepSignature===stepIds.join('|')?previous:
-    {stepSignature:stepIds.join('|'),items:new Map(),inputHash:null};
+    {stepSignature:stepIds.join('|'),items:new Map(),traces:new Map(),inputHash:null};
   __auneaAiCompletedSteps.set(key,completed);
   const request={
     engagement:buildBackendPayload(e),
@@ -110,6 +135,12 @@ async function generateTobeBySteps(e,key,snap,availability){
        !Array.isArray(result.item?.source_refs)||!result.item.source_refs.includes(stepId)||
        (completed.inputHash&&completed.inputHash!==result.input_hash))
        throw Error('El backend devolvió una actividad o versión incoherente: '+stepId);
+    if(result.context_trace){
+      if(result.context_trace.source_step_id!==stepId)
+        throw Error('La trazabilidad de la IA no corresponde a la actividad '+stepId);
+      if(!completed.traces)completed.traces=new Map();
+      completed.traces.set(stepId,result.context_trace);
+    }
     completed.inputHash=result.input_hash;
     completed.items.set(stepId,result.item);
     internalAiPilotFeedback(e,'Actividad '+completed.items.size+' de '+stepIds.length+
@@ -138,7 +169,8 @@ async function generateTobeBySteps(e,key,snap,availability){
      !tobeEditable(latestTobe(e)))
     throw Error('La consolidación no corresponde al estudio vigente.');
   const data={status:'DRAFT',engagement_id:e.id,snapshot_version:snap.version,
-    input_hash:completed.inputHash,model:availability.model,review,items};
+    input_hash:completed.inputHash,model:availability.model,review,items,
+    context_traces:Object.fromEntries(completed.traces||new Map())};
   __auneaAiPreview.set(key,data);
   __auneaAiCompletedSteps.delete(key);
   __auneaAiFeedback.delete(key);
