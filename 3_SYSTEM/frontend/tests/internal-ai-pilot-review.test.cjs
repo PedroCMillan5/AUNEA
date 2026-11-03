@@ -238,7 +238,7 @@ test('PG11 presents proposals first and review findings by activity without expo
   assert.match(html,/Observaciones generales/);
   assert.match(html,/No apta para aplicar/);
   assert.doesNotMatch(html,/id="applyTobeAiPilot"/);
-  assert.match(html,/Examinar entrada y salida/);
+  assert.match(html,/data-ai-audit-step/);
   assert.equal(app.renderCount,0,'unsaved consultant fields should not be re-rendered');
 });
 
