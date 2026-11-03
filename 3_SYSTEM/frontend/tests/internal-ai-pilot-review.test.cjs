@@ -102,7 +102,7 @@ test('AI button click reaches backend once and preserves draft inputs on success
   assert.equal(app.requests[2].url,'http://localhost:8010/v1/internal-ai/tobe-review');
   assert.match(app.notice.outerHTML,/Resultado esperado/);
   assert.match(app.notice.outerHTML,/Qué información recibió Ollama/);
-  assert.match(app.notice.outerHTML,/Fricciones facilitadas:<\\/b> F1/);
+  assert.ok(app.notice.outerHTML.includes('Fricciones facilitadas:</b> F1'));
   assert.match(app.notice.outerHTML,/diagnóstico oficial se envía como referencia/);
   assert.match(app.notice.outerHTML,/Propuesta TO-BE IA sin aprobar/);
   assert.equal(app.renderCount,0,'No re-render that could erase unsaved TO-BE edits');
