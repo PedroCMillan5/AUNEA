@@ -107,12 +107,50 @@ def _request_bytes(context: dict) -> bytes:
                    "num_predict":700},
     },ensure_ascii=False).encode("utf-8")
 
+def _parse_review_result(result: dict, valid_ids: set[str]) -> tuple[str, list[dict]]:
+    """Categorize local reviewer contract failures without echoing model content."""
+    if not isinstance(result, dict):
+        raise ValueError("[IA_REVIEW_SHAPE] Ollama devolvió una estructura de respuesta inválida.")
+    if result.get("done_reason") == "length":
+        raise ValueError("[IA_REVIEW_LENGTH] Ollama agotó el límite de salida al revisar "
+                         "la coherencia. Se conservan las actividades ya generadas.")
+    if result.get("done") is not True:
+        raise ValueError("[IA_REVIEW_INCOMPLETE] La revisión terminó sin confirmar "
+                         "una respuesta completa.")
+    message = result.get("message")
+    if not isinstance(message, dict) or not isinstance(message.get("content"), str):
+        raise ValueError("[IA_REVIEW_SHAPE] No se ha recibido el contenido esperado.")
+    content = message["content"]
+    if not content.strip():
+        raise ValueError("[IA_REVIEW_EMPTY] La revisión no generó contenido.")
+    try:
+        raw = json.loads(content)
+    except (json.JSONDecodeError, TypeError) as exc:
+        raise ValueError("[IA_REVIEW_JSON] Ollama devolvió JSON inválido o incompleto.") from exc
+    if (not isinstance(raw, dict) or set(raw) != {"summary", "issues"}
+            or not isinstance(raw["summary"], str)
+            or not isinstance(raw["issues"], list)):
+        raise ValueError("[IA_REVIEW_SHAPE] La revisión no cumple el esquema de resumen y observaciones.")
+    if len(raw["issues"]) > 30:
+        raise ValueError("[IA_REVIEW_COUNT] La revisión excede el límite de observaciones.")
+    issues = []
+    for issue in raw["issues"]:
+        if (not isinstance(issue, dict) or set(issue) != {"step_id", "issue"}
+                or not isinstance(issue["step_id"], str)
+                or not isinstance(issue["issue"], str) or not issue["issue"].strip()):
+            raise ValueError("[IA_REVIEW_ISSUES] La estructura de una observación es inválida.")
+        if issue["step_id"] not in valid_ids | {"GLOBAL"}:
+            raise ValueError("[IA_REVIEW_IDS] La revisión citó una actividad que no pertenece "
+                             "al lote confirmado.")
+        issues.append(issue)
+    return raw["summary"], issues
+
+
 def consolidate(request: PilotAIConsolidationRequest) -> dict:
     """Cross-step quality review, always subordinate to canonical validations."""
     validate_pilot_result(request.request,model_name(),request.items)
     context=_context(request)
     batches=_batches(context)
-    all_ids={p.source_step_id for p in request.items}
     issues=[]
     for item in request.items:
         if not item.problem_resolved.strip():
@@ -151,26 +189,14 @@ def consolidate(request: PilotAIConsolidationRequest) -> dict:
             raise OllamaUnavailable("Se perdio la conexion local durante la consolidacion.") from exc
         except (OSError,TypeError,ValueError,UnicodeError) as exc:
             raise OllamaUnavailable("La consolidacion local no devolvio una respuesta valida.") from exc
-        if not result.get("done"):
-            raise ValueError("La respuesta de consolidacion esta incompleta.")
-        actual_tokens=result.get("prompt_eval_count")
+        actual_tokens=result.get("prompt_eval_count") if isinstance(result,dict) else None
         if isinstance(actual_tokens,int) and actual_tokens>MAX_REVIEW_INPUT_TOKENS:
-            raise ValueError("La consolidacion excedio 4000 tokens de entrada medidos.")
-        try:
-            raw=json.loads(result["message"]["content"])
-            if not isinstance(raw.get("summary"),str) or not isinstance(raw.get("issues"),list):
-                raise ValueError("Faltan campos de revision.")
-            if len(raw["issues"])>30:
-                raise ValueError("Exceso de observaciones.")
-            for issue in raw["issues"]:
-                if (not isinstance(issue,dict) or set(issue)!={"step_id","issue"}
-                    or not isinstance(issue["issue"],str) or not issue["issue"].strip()
-                    or issue["step_id"] not in all_ids|{"GLOBAL"}):
-                    raise ValueError("La revision cita una actividad inexistente.")
-            summaries.append(raw["summary"])
-            issues.extend(raw["issues"])
-        except (KeyError,TypeError,ValueError,UnicodeError) as exc:
-            raise ValueError("La revision de coherencia no supera validacion de fuentes.") from exc
+            raise ValueError("[IA_REVIEW_TOKENS] La revisión superó el presupuesto "
+                             "medido de 4.000 tokens de entrada.")
+        batch_ids={str(item["source_step_id"]) for item in batch["proposals"]}
+        summary, confirmed_issues=_parse_review_result(result,batch_ids)
+        summaries.append(summary)
+        issues.extend(confirmed_issues)
     if len(batches)>1:
         issues.append({"step_id":"GLOBAL","issue":
                        "Revisión fragmentada: comprobar manualmente dependencias entre lotes."})
