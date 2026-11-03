@@ -24,6 +24,86 @@ function internalAiPilotKey(e){
   return e?.confirmedAsIs===true&&snap&&diagnostic
     ?String(e.id)+'|'+String(snap.version)+'|'+String(diagnostic.input_snapshot_hash):null;
 }
+// [AUNEA-FE-PG11-AI-DRAFT-SAVE-202] START — save concise AI suggestion in versioned TO-BE owner.
+// SOURCE: Simulator CANONICAL PG11 (versioned TO-BE proposal); DEC-050/052/055.
+// This is an internal, unapproved proposal, not the approved TO-BE item or a new business master.
+// Only functional suggestions/review are stored. Technical HTTP audits and prompts stay ephemeral.
+const __auneaAiDraftItemKeys=Object.freeze([
+  'source_step_id','transformation','problem_resolved','rationale',
+  'future_actor','tool','inputs','outputs','automation_ai','human_supervision',
+  'controls_risk','source_refs','limitations'
+]);
+function internalAiBoundedDraftItem(item){
+  const saved={};
+  for(const field of __auneaAiDraftItemKeys){
+    const value=item?.[field];
+    if(typeof value==='string')saved[field]=value;
+    else if(field==='source_refs'&&Array.isArray(value))
+      saved[field]=value.filter(v=>typeof v==='string');
+  }
+  return saved;
+}
+function internalAiBoundedReview(review){
+  return {
+    status:String(review?.status||''),
+    summary:String(review?.summary||''),
+    protocol_revision:String(review?.protocol_revision||''),
+    requires_human_review:true,
+    blocking_step_ids:Array.isArray(review?.blocking_step_ids)?
+      review.blocking_step_ids.filter(x=>typeof x==='string'):[],
+    issues:Array.isArray(review?.issues)?review.issues.map(issue=>({
+      step_id:String(issue?.step_id||''),
+      category:String(issue?.category||'WARNING'),
+      issue:String(issue?.issue||''),
+      evidence:String(issue?.evidence||''),
+      action:String(issue?.action||'')
+    })):[]
+  };
+}
+function internalAiDraftMatchesTobe(e,data){
+  const p=latestTobe(e),snap=confirmedSnapshot(e),diag=currentDiagnosticOutput(e);
+  const stepIds=p?.items?.map(x=>String(x.sourceStepId));
+  return !!(p?.status==='DRAFT'&&snap&&diag&&Array.isArray(stepIds)&&stepIds.length&&
+    data?.status==='DRAFT'&&data.snapshot_version===snap.version&&
+    data.input_hash===diag.input_snapshot_hash&&
+    Array.isArray(data.items)&&data.items.length===stepIds.length&&
+    data.items.every(x=>stepIds.includes(String(x.source_step_id)))&&
+    new Set(data.items.map(x=>String(x.source_step_id))).size===stepIds.length);
+}
+function internalAiSavedDraft(e){
+  const p=latestTobe(e),entry=p?.aiDraft;
+  if(!entry||entry.sourceSnapshotVersion!==p.sourceSnapshotVersion)return null;
+  const proposal=entry.proposal;
+  return entry.diagnosticInputHash===currentDiagnosticOutput(e)?.input_snapshot_hash&&
+    internalAiDraftMatchesTobe(e,proposal)?proposal:null;
+}
+function persistTobeAiDraft(e){
+  const key=internalAiPilotKey(e),p=latestTobe(e);
+  if(!key||!tobeEditable(p))return false;
+  const proposal=__auneaAiPreview.get(key);
+  if(!proposal)return true; // Re-save existing version without clearing the stored AI draft.
+  if(!internalAiDraftMatchesTobe(e,proposal)){
+    toast('La propuesta IA no coincide con el estudio confirmado; no se ha guardado.');
+    return false;
+  }
+  // Attach a single read-only AI suggestion to the canonical TO-BE DRAFT owner/version.
+  // Blocked suggestions are saved as proposals, never copied to approved business fields.
+  const bounded={
+    status:'DRAFT',engagement_id:e.id,snapshot_version:proposal.snapshot_version,
+    input_hash:proposal.input_hash,model:String(proposal.model||''),
+    items:proposal.items.map(internalAiBoundedDraftItem),
+    review:internalAiBoundedReview(proposal.review),
+    applied:proposal.applied===true
+  };
+  p.aiDraft={
+    sourceSnapshotVersion:p.sourceSnapshotVersion,
+    diagnosticInputHash:proposal.input_hash,
+    savedAt:now(),
+    proposal:bounded
+  };
+  return true;
+}
+// [AUNEA-FE-PG11-AI-DRAFT-SAVE-202] END
 function internalAiPilotNarrative(value){
   const text=String(value||'');
   const match=text.match(/Acci[oó]n propuesta:\s*([\s\S]*?)\s*Resultado esperado:\s*([\s\S]*?)\s*Justificaci[oó]n:\s*([\s\S]*)/i);
@@ -117,7 +197,8 @@ function internalAiReviewPanel(review){
 }
 function internalAiPilotPanel(e){
   if(typeof isClientDisplay==='function'&&isClientDisplay())return '';
-  const key=internalAiPilotKey(e),draft=key?__auneaAiPreview.get(key):null;
+  const key=internalAiPilotKey(e),cached=key?__auneaAiPreview.get(key):null,
+    draft=cached||(key?internalAiSavedDraft(e):null),saved=!!(!cached&&draft);
   const feedback=key?__auneaAiFeedback.get(key):null;
   const partial=key?__auneaAiCompletedSteps.get(key):null;
   if(!draft)return '<div id="tobeAiPilotStatus" role="status" aria-live="polite" class="notice '+(feedback?.type==='warn'?'warn':'info')+'">'+
@@ -164,6 +245,8 @@ function internalAiPilotPanel(e){
     '<b>Diseño TO-BE asistido por IA · Borrador sin aprobar</b>'+
     '<p class="field-help">Modelo: '+esc(draft.model||'No especificado')+
     ' · Revisión automática '+reviewLabel+'. La aprobación corresponde al consultor.</p>'+
+    (saved?'<p class="field-help"><b>Propuesta IA recuperada del borrador guardado.</b> La auditoría HTTP detallada no se conserva.</p>':
+      '<p class="field-help">Propuesta IA temporal: pulsa «Guardar borrador» para conservarla en este navegador.</p>')+
     '<p id="tobeAiProgress">'+esc(progress||'Generación completada')+'</p>'+warning+
     '<p><b>'+items.length+'</b> actividades generadas · <b>'+blockedIds.size+
     '</b> con bloqueos por actividad · <b>'+issues.length+'</b> observaciones registradas</p>'+
@@ -372,7 +455,7 @@ async function generateTobeAiPilot(e,fresh=false){
 }
 function applyTobeAiPilot(e){
   if(typeof isClientDisplay==='function'&&isClientDisplay())return;
-  const key=internalAiPilotKey(e),data=key?__auneaAiPreview.get(key):null,p=latestTobe(e);
+  const key=internalAiPilotKey(e),data=key?(__auneaAiPreview.get(key)||internalAiSavedDraft(e)):null,p=latestTobe(e);
   if(!data||!tobeEditable(p))return toast('La propuesta ya no está disponible.');
   if((Array.isArray(data.review?.blocking_step_ids)&&data.review.blocking_step_ids.length)||
      (Array.isArray(data.review?.issues)&&data.review.issues.some(i=>i.category==='BLOCKING')))
@@ -391,6 +474,7 @@ function applyTobeAiPilot(e){
   }
   p.updatedAt=now();markDirty('Propuesta IA aceptada sólo en campos vacíos de TO-BE DRAFT');
   data.applied=true; // Retain expected outcomes in the read-only review panel.
+  if(p.aiDraft?.proposal?.input_hash===data.input_hash)p.aiDraft.proposal.applied=true;
   render();
   toast('Aplicado a campos vacíos. Revisa y guarda antes de enviar a revisión.');
 }
