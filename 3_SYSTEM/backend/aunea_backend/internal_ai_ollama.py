@@ -238,6 +238,56 @@ def _bounded_step_schema(schema: dict, request: PilotAIRequest,
     return result
 
 
+def _validated_step_json(request: PilotAIRequest, source_step_id: str,
+                         response: dict) -> PilotAIItem:
+    """Return safe, specific errors. Never echo provider content or client data."""
+    if response.get("done_reason") == "length":
+        raise ValueError("[IA_STEP_LENGTH] Ollama agotó el límite de salida JSON "
+                         "de esta actividad. No hay propuesta completa.")
+    content = response["message"].get("content")
+    if not isinstance(content, str) or not content.strip():
+        raise ValueError("[IA_STEP_EMPTY] Ollama no devolvió contenido JSON.")
+    try:
+        raw = json.loads(content)
+    except (json.JSONDecodeError, TypeError) as exc:
+        raise ValueError("[IA_STEP_JSON] La respuesta de Ollama contiene JSON "
+                         "inválido o incompleto.") from exc
+    if not isinstance(raw, dict) or not isinstance(raw.get("items"), list):
+        raise ValueError("[IA_STEP_SHAPE] Se esperaba un objeto con la lista items.")
+    if len(raw["items"]) != 1:
+        raise ValueError("[IA_STEP_COUNT] La respuesta debe contener una sola actividad.")
+    try:
+        item = PilotAIItem.model_validate(raw["items"][0])
+    except ValidationError as exc:
+        field = str(exc.errors()[0].get("loc", ("estructura",))[-1])
+        names = {
+            "source_step_id": "identificador de actividad",
+            "transformation": "transformación",
+            "source_refs": "referencias de origen",
+            "tool": "herramienta",
+            "problem_resolved": "área de mejora",
+            "rationale": "justificación y resultado esperado",
+        }
+        safe_field = names.get(field, "campo obligatorio o estructura")
+        raise ValueError("[IA_STEP_FIELD] El modelo devolvió un valor inválido "
+                         "en " + safe_field + ".") from exc
+    try:
+        return validate_pilot_step_result(request, source_step_id, item)
+    except ValueError as exc:
+        message = str(exc)
+        if "referencias inexistentes" in message:
+            raise ValueError("[IA_STEP_REFS] El modelo citó fuentes que no están "
+                             "vinculadas a esta actividad. No se han aceptado.") from exc
+        if "Herramienta futura no acreditada" in message:
+            raise ValueError("[IA_STEP_TOOL] La herramienta propuesta no coincide "
+                             "con la fuente confirmada; debe dejarse vacía o conservarse.") from exc
+        if "no corresponde a una actividad vigente" in message:
+            raise ValueError("[IA_STEP_ORIGIN] El modelo devolvió otro identificador "
+                             "de actividad. No se ha aceptado.") from exc
+        raise ValueError("[IA_STEP_VALIDATION] La actividad no supera los "
+                         "controles de origen y trazabilidad.") from exc
+
+
 def propose_step(request: PilotAIRequest, steps: list[dict], schema: dict,
                  instructions: str, source_step_id: str) -> PilotAIItem:
     # /api/tags is checked by status before the run. Do not query it again
