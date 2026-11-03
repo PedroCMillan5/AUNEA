@@ -65,8 +65,10 @@ function internalAiDraftMatchesTobe(e,data){
   const p=latestTobe(e),snap=confirmedSnapshot(e),diag=currentDiagnosticOutput(e);
   const stepIds=p?.items?.map(x=>String(x.sourceStepId));
   return !!(p?.status==='DRAFT'&&snap&&diag&&Array.isArray(stepIds)&&stepIds.length&&
-    data?.status==='DRAFT'&&data.snapshot_version===snap.version&&
-    data.input_hash===diag.input_snapshot_hash&&
+    p.sourceSnapshotVersion===snap.version&&
+    data?.status==='DRAFT'&&data.engagement_id===e.id&&
+    data.snapshot_version===snap.version&&
+    typeof data.input_hash==='string'&&!!data.input_hash&&
     Array.isArray(data.items)&&data.items.length===stepIds.length&&
     data.items.every(x=>stepIds.includes(String(x.source_step_id)))&&
     new Set(data.items.map(x=>String(x.source_step_id))).size===stepIds.length);
@@ -98,7 +100,7 @@ function persistTobeAiDraft(e){
   };
   p.aiDraft={
     sourceSnapshotVersion:p.sourceSnapshotVersion,
-    diagnosticInputHash:proposal.input_hash,
+    diagnosticInputHash:currentDiagnosticOutput(e).input_snapshot_hash,
     savedAt:now(),
     proposal:bounded
   };
