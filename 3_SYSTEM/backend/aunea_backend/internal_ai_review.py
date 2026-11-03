@@ -34,27 +34,30 @@ _REVIEW_SCHEMA = {
     },"required":["summary","issues"],
 }
 _REVIEW_INSTRUCTIONS = (
-    "Eres revisor tecnico de propuestas TO-BE DRAFT, NO decisor ni autor de un nuevo proceso. "
-    "Devuelve SOLO JSON del esquema. Revisa coherencia entre actividades, decisiones, "
-    "excepciones y controles. Busca afirmaciones sin evidencia, contradicciones "
-    "entre propuestas, resultados prometidos sin condiciones y saltos de responsabilidad. "
-    "Contrasta transformacion e intervencion: si se mantiene una actividad pero "
-    "se cambia su funcion, senala la incoherencia. Contrasta resultados con el "
-    "problema real que intenta resolver cada medida; evita controles genericos "
-    "que no aborden la causa. Identifica duplicidades de propuestas entre pasos. "
-    "Comprueba las conexiones usando SOLO process_flow.explicit_routes; el orden "
-    "visual por si solo no prueba una ruta ni politica de aprobacion. "
-    "Usa SOLO IDs de la lista de actividades en step_id; usa GLOBAL para un problema transversal. "
-    "Si se mantienen todos los pasos con fricciones vinculadas, comprueba oportunidades omitidas. "
-    "Si no detectas problemas, issues debe ser []. No propongas datos, ahorro, tiempos ni "
-    "capacidades tecnicas no respaldados. Los resultados esperados son HIPOTESIS, no mediciones. "
-    "No utilices nombres abreviados como P1 en step_id: cita literalmente los IDs disponibles. "
-    "Usa GLOBAL solo cuando la observacion afecte al conjunto. Si no hay observaciones, "
-    "devuelve issues como lista vacia y summary como texto breve. "
-    "Escribe un resumen de maximo 240 caracteres y hasta 8 observaciones prioritarias por lote. "
-    "Cada observacion: una sola frase de maximo 200 caracteres, especifica y fundada. "
-    "No repitas contexto, ni enumeres los pasos completos, ni incluyas preambulos. "
-    "La salida es una comprobacion de coherencia, nunca una aprobacion para cliente."
+    "Eres revisor de DISEÑO TO-BE DRAFT. Devuelve SOLO el JSON del esquema. "
+    "Evalua la CALIDAD DEL REDISEÑO, no repitas una auditoria de la realidad del cliente. "
+    "En un escenario QA/sintetico, las fricciones y cifras declaradas son premisas "
+    "de prueba; son validas para evaluar coherencia logica, NO hechos de una empresa real. "
+    "Una sola advertencia global sobre el origen QA es suficiente y solo si es material. "
+    "Prioridad 1: contradicciones entre transformation y accion, especialmente "
+    "'Se mantiene' con una medida nueva; identifica el ID exacto. "
+    "Prioridad 2: comprueba si la accion ataca la friccion indicada o solo un sintoma: "
+    "verificar errores no resuelve necesariamente la reintroduccion duplicada de datos. "
+    "Prioridad 3: busca recomendaciones repetidas que deberian repartirse entre pasos, "
+    "decisiones sin ruta clara, excepciones y responsabilidades ausentes. "
+    "Prioridad 4: comprueba que el resultado es una HIPOTESIS cualitativa viable, "
+    "no un ahorro medido ni una integracion o capacidad del ERP inventada. "
+    "Utiliza SOLO process_flow.explicit_routes como conexiones confirmadas; "
+    "no inventes enlaces a partir del orden visual. "
+    "No declares ausencia de controles si existe contenido en controls_risk o human_supervision; "
+    "si es insuficiente especifica exactamente la laguna. "
+    "No trates la falta de medicion real por si sola como defecto de la propuesta sintetica. "
+    "Nunca obligues a transformar una actividad sin fundamento. "
+    "Cada observacion debe describir un defecto especifico del diseño y citar "
+    "un step_id EXACTO del lote; GLOBAL solo para problemas transversales. "
+    "Si no hay defectos, issues=[]. No inventes cifras ni nuevos datos. "
+    "Resumen <=240 caracteres, maximo 8 observaciones por lote, cada una <=200 caracteres. "
+    "Sin repeticiones ni preambulos. La revision no es aprobacion para cliente."
 )
 
 def _context(request: PilotAIConsolidationRequest) -> dict:
@@ -166,12 +169,43 @@ def _parse_review_result(result: dict, valid_ids: set[str]) -> tuple[str, list[d
     return raw["summary"], issues
 
 
+# REVIEW safeguard: detects only clear new actions mislabeled as 'Se mantiene'.
+# This is a conservative, explainable textual signal, NOT semantic proof or a
+# replacement for consultant review. It does not alter a transformation.
+_CHANGE_OPENERS = (
+    "establecer ", "implantar ", "implementar ", "introducir ", "incorporar ",
+    "crear ", "automatizar ", "integrar ", "sustituir ", "reemplazar ",
+    "centralizar ", "rediseñar ", "modificar ", "eliminar ", "habilitar ",
+    "configurar ", "desplegar ",
+)
+
+
+def _clear_transformation_conflicts(items: list) -> list[str]:
+    """Only high-confidence mismatch candidates; no change enforced by friction alone."""
+    flagged = []
+    for item in items:
+        if item.transformation != "Se mantiene":
+            continue
+        rationale = item.rationale.strip()
+        # "Acción propuesta" is a required narrative section in the existing contract.
+        action = rationale.split("Resultado esperado:", 1)[0]
+        action = action.split("Acción propuesta:", 1)[-1].strip().casefold()
+        if any(action.startswith(opener) for opener in _CHANGE_OPENERS):
+            flagged.append(item.source_step_id)
+    return flagged
+
+
 def consolidate(request: PilotAIConsolidationRequest) -> dict:
     """Cross-step quality review, always subordinate to canonical validations."""
     validate_pilot_result(request.request,model_name(),request.items)
     context=_context(request)
     batches=_batches(context)
     issues=[]
+    conflicts=_clear_transformation_conflicts(request.items)
+    for sid in conflicts:
+        issues.append({"step_id":sid,
+            "issue":"Clasificada «Se mantiene», pero propone implantar una medida nueva. "
+                    "Revisar la transformación antes de aplicar."})
     for item in request.items:
         if not item.problem_resolved.strip():
             issues.append({"step_id":item.source_step_id,
@@ -226,5 +260,6 @@ def consolidate(request: PilotAIConsolidationRequest) -> dict:
         "issues":issues,
         "batches_checked":len(batches),
         "requires_human_review":True,
+        "blocking_step_ids":conflicts,
     }
 # [AUNEA-BE-INTERNAL-AI-REVIEW-198] END
