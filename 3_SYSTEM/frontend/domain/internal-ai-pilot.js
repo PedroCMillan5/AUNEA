@@ -193,8 +193,11 @@ function internalAiReviewPanel(review){
   return '<details><summary>Observaciones generales · '+global.length+'</summary>'+
     (global.length?'<ul>'+global.map(internalAiReviewIssue).join('')+'</ul>':
       '<p class="field-help">No se han comunicado observaciones globales.</p>')+
-    '<button type="button" class="btn btn-outline" data-ai-review-audit>Examinar auditoría del revisor</button>'+
-    '<div data-ai-review-slot></div></details>';
+    ((Array.isArray(review.audit)&&review.audit.length)||review.initial_review?
+      '<button type="button" class="btn btn-outline" data-ai-review-audit>Examinar auditoría del revisor</button>'+
+      '<div data-ai-review-slot></div>':
+      '<p class="field-help">El registro técnico detallado de la revisión no se conserva tras recargar.</p>')+
+    '</details>';
 }
 function internalAiPilotPanel(e){
   if(typeof isClientDisplay==='function'&&isClientDisplay())return '';
