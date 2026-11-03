@@ -14,6 +14,10 @@ from .internal_ai_ollama import (
     request_timeout_seconds,
 )
 
+# Technical protocol version only, not a business schema or canonical data field.
+# Frontend refuses a stale reviewer before requesting costly local inference.
+PG11_REVIEW_PROTOCOL = "PG11_REVIEW_20261103_2"
+
 MAX_REVIEW_BYTES = 11000
 MAX_REVIEW_INPUT_TOKENS = 4000
 # Independent output budget; does not expand context sent to the model.
@@ -260,6 +264,7 @@ def consolidate(request: PilotAIConsolidationRequest) -> dict:
         "issues":issues,
         "batches_checked":len(batches),
         "requires_human_review":True,
+        "protocol_revision":PG11_REVIEW_PROTOCOL,
         "blocking_step_ids":conflicts,
     }
 # [AUNEA-BE-INTERNAL-AI-REVIEW-198] END
