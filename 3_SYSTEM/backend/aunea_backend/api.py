@@ -51,7 +51,9 @@ class DeliverPayload(BaseModel):
 # No provider calls unless three server-side configuration gates are enabled.
 @app.get("/v1/internal-ai/status")
 def get_internal_ai_status():
-    return internal_ai_status()
+    from .internal_ai_review import PG11_REVIEW_PROTOCOL
+    # Read-only diagnostic handshake; never exposes client data or prompts.
+    return {**internal_ai_status(), "pg11_review_protocol":PG11_REVIEW_PROTOCOL}
 
 @app.post("/v1/internal-ai/tobe-draft")
 def internal_ai_tobe_draft(payload: PilotAIRequest, request: FastAPIRequest):
