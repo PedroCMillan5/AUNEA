@@ -39,9 +39,10 @@ function aiPilotHarness({fail=false,steps=['S1'],failReview=false,blockingSteps=
   const listeners=new Map(), nodes=new Map(), requests=[];
   let provider=null,renderCount=0,registrationCount=0,notice=null;
   let shouldFailReview=failReview;
-  const engagement={id:'SYNTHETIC',confirmedAsIs:true};
   const snapshot={version:2};
   const diagnostic={input_snapshot_hash:'hash'};
+  const tobe={version:1,sourceSnapshotVersion:2,status:'DRAFT',items:steps.map(sourceStepId=>({sourceStepId}))};
+  const engagement={id:'SYNTHETIC',confirmedAsIs:true,tobeProposals:[tobe]};
   const proposal={status:'DRAFT',engagement_id:'SYNTHETIC',snapshot_version:2,
     item:{source_step_id:'S1',transformation:'Se modifica',problem_resolved:'Registro disperso',rationale:'Acción propuesta: registrar entradas. Resultado esperado: mayor trazabilidad. Justificación: el paso registra solicitudes',
       source_refs:['S1'],limitations:'Pendiente de revisión'},input_hash:'hash',model:'aunea-qwen3-4b:latest'};
@@ -61,10 +62,11 @@ function aiPilotHarness({fail=false,steps=['S1'],failReview=false,blockingSteps=
     document,console,Map,Set,Error,String,JSON,Promise,
     state:{backendOnline:true,backendUrl:'http://localhost:8010'},
     confirmedSnapshot:()=>snapshot,currentDiagnosticOutput:()=>diagnostic,
-    currentEng:()=>engagement,latestTobe:()=>({status:'DRAFT',items:steps.map(sourceStepId=>({sourceStepId}))}),
+    currentEng:()=>engagement,latestTobe:()=>tobe,
     tobeEditable:p=>p?.status==='DRAFT',AiAgentService:ai,
     buildBackendPayload:()=>({engagement_id:'SYNTHETIC'}),
     checkBackend:async()=>true,render:()=>{renderCount++},toast:()=>{},
+    now:()=> '2026-11-03T17:00:00Z',
     esc:x=>String(x),tobePage:()=>'<button class="btn" id="saveTobe">Guardar</button><div class="card card-pad section"></div>',
     registerInternalWorkPages:()=>{registrationCount++},postBind:()=>{},
     fetch:async(url,opts)=>{
@@ -98,7 +100,7 @@ function aiPilotHarness({fail=false,steps=['S1'],failReview=false,blockingSteps=
     preventDefault:()=>{}
   });
   const settle=async()=>{for(let i=0;i<8;i++)await new Promise(resolve=>setImmediate(resolve))};
-  return {sandbox,click,clickFresh,settle,requests,button,notice,setReviewFailure:v=>{shouldFailReview=v},
+  return {sandbox,click,clickFresh,settle,requests,button,notice,tobe,engagement,snapshot,diagnostic,setReviewFailure:v=>{shouldFailReview=v},
     get renderCount(){return renderCount},get registrationCount(){return registrationCount}};
 }
 test('AI button click reaches backend once and preserves draft inputs on success',async()=>{
@@ -252,6 +254,46 @@ test('PG11 technical audit remains on-demand even with a large original HTTP req
   assert.doesNotMatch(html,/DATOS_PRIVADOS__/);
   const expanded=vm.runInContext('internalAiAuditContext(trace.S1,0)',app.sandbox);
   assert.match(expanded,/DATOS_PRIVADOS__/);
+});
+
+
+test('Guardar borrador retains unapproved AI narrative and reviewer findings without HTTP trace',async()=>{
+  const app=aiPilotHarness({blockingSteps:['S1'],steps:['S1','S2']});
+  app.click();await app.settle();
+  assert.equal(vm.runInContext('persistTobeAiDraft(currentEng())',app.sandbox),true);
+  assert.equal(app.tobe.status,'DRAFT');
+  assert.equal(app.tobe.aiDraft.sourceSnapshotVersion,2);
+  assert.equal(app.tobe.aiDraft.proposal.items.length,2);
+  assert.match(app.tobe.aiDraft.proposal.items[0].rationale,/Resultado esperado/);
+  assert.deepEqual(JSON.parse(JSON.stringify(app.tobe.aiDraft.proposal.review.blocking_step_ids)),['S1']);
+  assert.doesNotMatch(JSON.stringify(app.tobe.aiDraft),/context_traces|prompt_eval_count|\"request\"|original_response/);
+  vm.runInContext('__auneaAiPreview.clear()',app.sandbox);
+  const saved=vm.runInContext('internalAiSavedDraft(currentEng())',app.sandbox);
+  assert.equal(saved.items.length,2);
+  const html=vm.runInContext('internalAiPilotPanel(currentEng())',app.sandbox);
+  assert.match(html,/Propuesta IA recuperada del borrador guardado/);
+  assert.match(html,/Resultado esperado/);
+  assert.match(html,/No apta para aplicar/);
+  assert.doesNotMatch(html,/id="applyTobeAiPilot"/);
+});
+
+test('saved AI draft belongs only to its original confirmed snapshot and diagnostic',async()=>{
+  const app=aiPilotHarness();
+  app.click();await app.settle();
+  assert.equal(vm.runInContext('persistTobeAiDraft(currentEng())',app.sandbox),true);
+  vm.runInContext('__auneaAiPreview.clear()',app.sandbox);
+  assert.ok(vm.runInContext('internalAiSavedDraft(currentEng())',app.sandbox));
+  app.diagnostic.input_snapshot_hash='DIFFERENT';
+  assert.equal(vm.runInContext('internalAiSavedDraft(currentEng())',app.sandbox),null);
+  app.diagnostic.input_snapshot_hash='hash';
+  app.snapshot.version=3;
+  assert.equal(vm.runInContext('internalAiSavedDraft(currentEng())',app.sandbox),null);
+});
+
+test('Guardar borrador invokes local save after collecting current TO-BE fields',()=>{
+  const results=fs.readFileSync(path.join(root,'pages/results.js'),'utf8');
+  assert.match(results,/saveTobeFromDom\(e\).*?persistTobeAiDraft\(e\)/s);
+  assert.match(results,/if\(by\('saveTobe'\)\)by\('saveTobe'\)\.onclick=\(\)=>\{if\(saveTobeFromDom\(e\)&&saveState\('Guardar borrador TO-BE'\)\)render\(\)\}/);
 });
 
 // [AUNEA-UAT-PG11-AUDIT-200] END
