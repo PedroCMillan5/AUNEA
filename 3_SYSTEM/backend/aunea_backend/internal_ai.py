@@ -69,6 +69,20 @@ def related_step_ids(record: dict) -> set[str]:
     return ids
 
 
+def allowed_pilot_step_refs(
+    request: PilotAIRequest, steps: list[dict[str, Any]], source_step_id: str
+) -> set[str]:
+    """Same source-ID allowlist is used by the prompt schema and server validator."""
+    frictions = request.engagement.questionnaire_answers.get("_frictions") or []
+    allowed = {str(step["id"]) for step in steps}
+    allowed.update(str(f["id"]) for f in frictions
+                   if isinstance(f, dict) and f.get("id")
+                   and source_step_id in related_step_ids(f))
+    allowed.update(str(r.risk_id) for r in request.engagement.risks
+                   if r.risk_id and source_step_id in r.step_ids)
+    return allowed
+
+
 def validate_pilot_step_result(
     request: PilotAIRequest, source_step_id: str, item: PilotAIItem,
 ) -> PilotAIItem:
@@ -77,15 +91,9 @@ def validate_pilot_step_result(
     source = next((s for s in steps if str(s["id"]) == source_step_id), None)
     if source is None or item.source_step_id != source_step_id:
         raise ValueError("La propuesta no corresponde a una actividad vigente del AS-IS.")
-    frictions = request.engagement.questionnaire_answers.get("_frictions") or []
-    # Source steps may be cited for context, but friction/risk assertions need
-    # explicit step linkage. An unlinked ID alone is NOT evidence for this step.
-    allowed = {str(s["id"]) for s in steps}
-    allowed.update(str(f["id"]) for f in frictions
-                   if isinstance(f, dict) and f.get("id")
-                   and source_step_id in related_step_ids(f))
-    allowed.update(str(r.risk_id) for r in request.engagement.risks
-                   if r.risk_id and source_step_id in r.step_ids)
+    # The source ID belongs in every proposal. Other refs must be linked
+    # in the confirmed AS-IS; the model is not allowed to invent relationships.
+    allowed = allowed_pilot_step_refs(request, steps, source_step_id)
     if (not item.source_refs or source_step_id not in item.source_refs
             or any(ref not in allowed for ref in item.source_refs)):
         raise ValueError("La propuesta contiene referencias inexistentes.")
