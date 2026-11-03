@@ -740,7 +740,45 @@ function tobeEditable(p){return !!p&&p.status==='DRAFT'}
 function tobeSourceSteps(e){const snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;return (snap?.processSteps||[]).filter(x=>x.status!=='SUPERSEDED')}
 function createTobeDraft(e){const snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;if(!e||!snap)return null;const h=tobeHistory(e),p={version:h.length+1,status:'DRAFT',sourceSnapshotVersion:snap.version,createdAt:now(),updatedAt:now(),items:tobeSourceSteps(e).map((s,i)=>({id:`TOBE-${h.length+1}-${i+1}`,sourceStepId:s.id||'',sourceStepName:s.name||s.step_name||`Paso ${i+1}`,transformation:'',problemResolved:'',futureActor:labelFrom('OS_ACTOR_ROLE',s.actor)||'',tool:labelFrom('OS_TOOL_CATEGORY',s.tool)||'',inputs:Array.isArray(s.inputs)?s.inputs.join(', '):(s.inputs||''),outputs:Array.isArray(s.outputs)?s.outputs.join(', '):(s.outputs||''),automationAi:'',humanSupervision:'',controlsRisk:'',futureTime:'',futureTimeAssumption:''}))};h.push(p);markDirty(`TO-BE v${p.version} creado como DRAFT desde snapshot confirmado v${snap.version}`);return p}
 function nextTobeStatus(p){const i=TOBE_PUBLICATION_STATES.indexOf(p?.status);return i>=0&&i<TOBE_PUBLICATION_STATES.length-1?TOBE_PUBLICATION_STATES[i+1]:null}
-function advanceTobeStatus(e){const p=latestTobe(e),next=nextTobeStatus(p);if(!p||!next)return false;if(p.status==='DRAFT'&&p.items.some(x=>!x.transformation))return toast('Define el estado de transformación de todos los pasos antes de enviar a revisión.'),false;p.status=next;p.updatedAt=now();markDirty(`TO-BE v${p.version}: ${next}`);return true}
+// [AUNEA-FE-PG11-REVIEW-GATE-199] START — only canonical source/field readiness, not engine approval.
+// SOURCE: Simulator CANONICAL PG11; DEC-034/050/052/055.
+// INPUTS: versioned TO-BE DRAFT and confirmed AS-IS; OUTPUT: missing-field reason.
+// SIDE_EFFECTS: none. Does not score AI quality or approve for client.
+function tobeReviewReadiness(e,p){
+  const snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;
+  if(!snap||p?.sourceSnapshotVersion!==snap.version)
+    return 'El TO-BE no corresponde al AS-IS confirmado vigente. Revisa el origen antes de continuar.';
+  const originals=tobeSourceSteps(e);
+  if(!Array.isArray(p?.items)||p.items.length!==originals.length||
+      new Set(p.items.map(x=>String(x.sourceStepId))).size!==p.items.length||
+      p.items.some(x=>!originals.some(y=>String(y.id)===String(x.sourceStepId))))
+    return 'Los pasos del TO-BE no coinciden con el AS-IS confirmado; no se puede enviar a revisión.';
+  for(const item of p.items){
+    const name=item.sourceStepName||item.sourceStepId||'actividad sin identificar';
+    if(!TOBE_TRANSFORMATIONS.includes(item.transformation))
+      return 'Selecciona una transformación válida para '+name+'.';
+    if(!String(item.futureActor||'').trim())
+      return 'Indica el responsable futuro de '+name+' antes de enviar a revisión.';
+    if(item.transformation!=='Se mantiene'&&!String(item.problemResolved||'').trim())
+      return 'Explica qué problema resuelve la transformación de '+name+'.';
+    if(String(item.futureTime||'').trim()&&!String(item.futureTimeAssumption||'').trim())
+      return 'El tiempo futuro de '+name+' requiere un supuesto trazable.';
+  }
+  return null;
+}
+function advanceTobeStatus(e){
+  const p=latestTobe(e),next=nextTobeStatus(p);
+  if(!p||!next)return false;
+  if(p.status==='DRAFT'){
+    const issue=tobeReviewReadiness(e,p);
+    if(issue){toast(issue);return false}
+  }
+  p.status=next;
+  p.updatedAt=now();
+  markDirty(`TO-BE v${p.version}: ${next}`);
+  return true;
+}
+// [AUNEA-FE-PG11-REVIEW-GATE-199] END
 function saveTobeFromDom(e){const p=latestTobe(e);if(!tobeEditable(p))return false;document.querySelectorAll('[data-tobe-item]').forEach(el=>{const item=p.items.find(x=>x.id===el.dataset.tobeItem);if(item)item[el.dataset.tobeField]=el.value});p.updatedAt=now();markDirty(`TO-BE v${p.version} actualizado`);return true}
 function tobeField(item,key,label,value,type='text',disabled=false){return `<div class="field"><label>${esc(label)}</label>${type==='textarea'?`<textarea data-tobe-item="${attr(item.id)}" data-tobe-field="${attr(key)}" ${disabled?'disabled':''}>${esc(value||'')}</textarea>`:`<input data-tobe-item="${attr(item.id)}" data-tobe-field="${attr(key)}" value="${attr(value||'')}" ${disabled?'disabled':''}>`}</div>`}
 function tobePage(){const e=currentEng(),snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;if(!snap)return pageTop('TO-BE','El diseño del proceso futuro requiere un mapa del proceso actual confirmado.',`<button class="btn" data-page="diagnostico">Volver a captura</button>`)+`<div class="empty"><h2>AS-IS confirmado requerido</h2><p>Confirma Validación y cierre antes de diseñar el proceso propuesto.</p></div>`;if(!currentDiagnosticOutput(e))return pageTop('TO-BE preliminar','Vista de orientación para preparar el diseño futuro; todavía no es un proceso propuesto ni una recomendación aprobada.',`<button class="btn btn-primary" data-page="resultados">Volver a revisión del AS-IS</button>`)
