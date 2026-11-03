@@ -252,7 +252,8 @@ function internalAiPilotPanel(e){
     '<b>Diseño TO-BE asistido por IA · Borrador sin aprobar</b>'+
     '<p class="field-help">Modelo: '+esc(draft.model||'No especificado')+
     ' · Revisión automática '+reviewLabel+'. La aprobación corresponde al consultor.</p>'+
-    (saved?'<p class="field-help"><b>Propuesta IA recuperada del borrador guardado.</b> La auditoría HTTP detallada no se conserva.</p>':
+    (saved?'<p class="field-help"><b>'+(cached?'Propuesta IA guardada en el borrador.':
+      'Propuesta IA recuperada del borrador guardado.')+'</b> Los registros HTTP detallados no se guardan.</p>':
       '<p class="field-help">Propuesta IA temporal: pulsa «Guardar borrador» para conservarla en este navegador.</p>')+
     '<p id="tobeAiProgress">'+esc(progress||'Generación completada')+'</p>'+warning+
     '<p><b>'+items.length+'</b> actividades generadas · <b>'+blockedIds.size+
