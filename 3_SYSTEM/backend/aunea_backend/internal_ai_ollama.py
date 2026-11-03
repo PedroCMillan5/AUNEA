@@ -169,6 +169,27 @@ STEP_MAX_PROMPT_BYTES = 10800
 STEP_MAX_TOTAL_PROMPT_TOKENS = 4000
 STEP_MAX_OUTPUT_TOKENS = 1024
 
+def _compact_context_value(value):
+    """Omit absent/empty context members, preserving all nonempty source values."""
+    if isinstance(value, dict):
+        return {k: _compact_context_value(v) for k, v in value.items()
+                if v is not None and v != "" and v != [] and v != {}}
+    if isinstance(value, list):
+        return [_compact_context_value(v) for v in value]
+    return value
+
+
+def _compact_pilot_step(step: dict) -> dict:
+    # _ui is editor state. Its decision flag is already carried in process_flow.
+    return _compact_context_value({k: v for k, v in step.items() if k != "_ui"})
+
+
+def _compact_process_flow(steps: list[dict]) -> dict:
+    flow = explicit_pilot_process_flow(steps)
+    return {k: _compact_context_value(flow[k])
+            for k in ("activities", "explicit_routes", "unresolved_routes")}
+
+
 def _step_context(request: PilotAIRequest, steps: list[dict], step_id: str) -> dict:
     source = next((s for s in steps if str(s.get("id")) == step_id), None)
     if source is None:
