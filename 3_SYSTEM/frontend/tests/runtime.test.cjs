@@ -317,7 +317,12 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
     // source activities via the fixture without manufacturing a second UI owner.
     w.eval("latestTobe(currentEng()).items.forEach(x=>{x.transformation='Se mantiene';if(!x.futureActor)x.futureActor='Responsable del proceso'})");
     d.querySelectorAll('[data-tobe-field="transformation"]').forEach(el=>el.value='Se mantiene');
-    click('#advanceTobe');click('#advanceTobe');
+    click('#advanceTobe');
+    assert.equal(w.eval('latestTobe(currentEng()).status'),'REVIEWED',
+      'PG11 draft should be reviewed: '+w.eval('tobeReviewReadiness(currentEng(),latestTobe(currentEng()))'));
+    click('#advanceTobe');
+    assert.equal(w.eval('latestTobe(currentEng()).status'),'APPROVED_FOR_CLIENT',
+      'PG11 reviewed version should be approved for client');
     assert.equal(w.eval('JSON.stringify(confirmedSnapshot(currentEng()))'),tobeBefore);
     click('#nav [data-page="revision"]');click('#createOutputReview');click('#advanceOutputReview');click('#advanceOutputReview');
     assert.equal(w.eval('engagementStatus(currentEng())'),'Listo para resultados');
