@@ -194,4 +194,18 @@ def test_missing_routes_do_not_become_confirmed_links():
     assert any(x["reason"]=="destino_no_vigente" for x in routes["unresolved_routes"])
 
 
+def test_step_trace_lists_actual_inputs_not_other_studies():
+    req=sample()
+    steps=validate_pilot_source(req)
+    trace=local.step_context_trace(req,steps,"S1")
+    assert trace["source_step_id"]=="S1"
+    assert trace["friction_ids"]==["F1"]
+    assert trace["risk_ids"]==[]
+    assert trace["evidence_ids"]==[]
+    assert trace["explicit_routes"]==[]
+    assert trace["context_scope"]=="SOLO_ESTUDIO_ACTIVO_CONFIRMADO"
+    assert trace["diagnostic_mode"]=="REFERENCIA_HASH_SIN_DIAGNOSTICO_COMPLETO"
+    assert "large private data marker" not in json.dumps(trace)
+
+
 # [AUNEA-UAT-INTERNAL-AI-STEP-195] END
