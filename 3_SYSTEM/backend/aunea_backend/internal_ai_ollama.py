@@ -224,6 +224,32 @@ def _step_context(request: PilotAIRequest, steps: list[dict], step_id: str) -> d
         }
     }
 
+def step_context_trace(request: PilotAIRequest, steps: list[dict],
+                       source_step_id: str) -> dict:
+    """Transient source inventory of the exact bounded step-context projection.
+
+    Source IDs and flow links only; never expose prompt text, evidence contents,
+    unrelated questionnaire answers, secrets or derived business values.
+    """
+    context = _step_context(request, steps, source_step_id)
+    flow = context["process_flow"]
+    return {
+        "source_step_id": source_step_id,
+        "friction_ids": [str(f["id"]) for f in context["explicit_linked_frictions"]
+                         if f.get("id")],
+        "risk_ids": [str(r["risk_id"]) for r in context["explicit_linked_risks"]
+                     if r.get("risk_id")],
+        "evidence_ids": [str(e["evidence_id"]) for e in context["linked_evidence"]
+                         if e.get("evidence_id")],
+        "explicit_routes": [route for route in flow["explicit_routes"]
+                             if source_step_id in (route["from"], route["to"])],
+        "unresolved_routes": [route for route in flow["unresolved_routes"]
+                              if route["step_id"] == source_step_id],
+        "diagnostic_mode": "REFERENCIA_HASH_SIN_DIAGNOSTICO_COMPLETO",
+        "context_scope": "SOLO_ESTUDIO_ACTIVO_CONFIRMADO",
+    }
+
+
 def _bounded_step_schema(schema: dict, request: PilotAIRequest,
                          steps: list[dict], source_step_id: str) -> dict:
     """Only permit source IDs and tools already allowed by canonical validation."""
