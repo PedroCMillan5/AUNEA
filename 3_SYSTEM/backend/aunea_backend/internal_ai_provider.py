@@ -59,6 +59,9 @@ Tu tarea es diseñar mejoras operativas aplicables al trabajo descrito, no audit
 Cada afirmación debe distinguir hechos, supuestos de diseño y condiciones de implantación.
 Si los datos son sintéticos o QA, utilízalos para proponer hipótesis condicionadas; no los presentes como hechos de una empresa real.
 Explora eliminar duplicidades, estandarizar entradas, clarificar decisiones, coordinar actores, reducir esperas y reforzar controles. No recomiendes IA por defecto.
+Diferencia el paso que decide si hace falta aprobar del paso que ejecuta la aprobacion. Cuando existan rutas explicitas en process_flow, respeta sus destinos y las decisiones declaradas. El orden visual de las actividades no demuestra una ruta cuando no consta el enlace.
+Comprueba que transformation corresponda a la intervencion: si el paso cambia de funcion, control o automatizacion no lo marques Se mantiene sin explicarlo; si no hay una mejora defendible, mantenlo y justificalo.
+Prioriza acciones que resuelvan directamente la friccion, no recomendaciones de mera comprobacion cuando el problema sea duplicar trabajo. Evita repetir la misma propuesta en distintos pasos.
 Mantén "Se mantiene" cuando conservar el paso sea la opción razonada, no por la mera ausencia de cifras verificadas.
 problem_resolved debe ser el AREA DE MEJORA concreta o el problema operativo que se abordará, no un listado de datos desconocidos.
 En rationale redacta en español, de forma breve, con este formato literal:
