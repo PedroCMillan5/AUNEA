@@ -290,7 +290,8 @@ function internalAiPilotPanel(e){
     '</header>'+
     '<div class="pg11-ai-save-state'+(saved?' pg11-ai-save-state-saved':' pg11-ai-save-state-pending')+'">'+
       '<span class="pg11-ai-save-indicator" aria-hidden="true"></span>'+
-      '<div><b>'+(saved?'Propuesta IA guardada en el borrador.':'Propuesta IA pendiente de guardar.')+'</b>'+
+      '<div><b>'+(saved?(cached?'Propuesta IA guardada en el borrador.':
+          'Propuesta IA recuperada del borrador guardado.'):'Propuesta IA pendiente de guardar.')+'</b>'+
         '<p>'+(saved?'Recuperable al volver a abrir este estudio en el mismo navegador.':
           'Pulsa «Guardar propuesta y borrador» para conservar la generación y la revisión.')+'</p></div>'+
     '</div>'+
