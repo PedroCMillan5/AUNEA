@@ -62,7 +62,7 @@ function aiPilotHarness({fail=false,steps=['S1'],failReview=false,blockingSteps=
     document,console,Map,Set,Error,String,JSON,Promise,
     state:{backendOnline:true,backendUrl:'http://localhost:8010'},
     confirmedSnapshot:()=>snapshot,currentDiagnosticOutput:()=>diagnostic,
-    currentEng:()=>engagement,latestTobe:()=>tobe,
+    currentEng:()=>engagement,latestTobe:()=>engagement.tobeProposals.at(-1),
     tobeEditable:p=>p?.status==='DRAFT',AiAgentService:ai,
     buildBackendPayload:()=>({engagement_id:'SYNTHETIC'}),
     checkBackend:async()=>true,render:()=>{renderCount++},toast:()=>{},
@@ -264,6 +264,9 @@ test('Guardar borrador retains unapproved AI narrative and reviewer findings wit
   assert.equal(app.tobe.status,'DRAFT');
   assert.equal(app.tobe.aiDraft.sourceSnapshotVersion,2);
   assert.equal(app.tobe.aiDraft.proposal.items.length,2);
+  const inSession=vm.runInContext('internalAiPilotPanel(currentEng())',app.sandbox);
+  assert.match(inSession,/Propuesta IA recuperada del borrador guardado/);
+  app.engagement.tobeProposals=JSON.parse(JSON.stringify(app.engagement.tobeProposals));
   assert.match(app.tobe.aiDraft.proposal.items[0].rationale,/Resultado esperado/);
   assert.deepEqual(JSON.parse(JSON.stringify(app.tobe.aiDraft.proposal.review.blocking_step_ids)),['S1']);
   assert.doesNotMatch(JSON.stringify(app.tobe.aiDraft),/context_traces|prompt_eval_count|\"request\"|original_response/);
@@ -288,6 +291,18 @@ test('saved AI draft belongs only to its original confirmed snapshot and diagnos
   app.diagnostic.input_snapshot_hash='hash';
   app.snapshot.version=3;
   assert.equal(vm.runInContext('internalAiSavedDraft(currentEng())',app.sandbox),null);
+});
+
+
+test('a new TO-BE version never inherits the previous version AI suggestion',async()=>{
+  const app=aiPilotHarness();
+  app.click();await app.settle();
+  assert.equal(vm.runInContext('persistTobeAiDraft(currentEng())',app.sandbox),true);
+  const next={version:2,sourceSnapshotVersion:2,status:'DRAFT',items:[{sourceStepId:'S1'}]};
+  app.engagement.tobeProposals.push(next);
+  assert.equal(vm.runInContext('internalAiSavedDraft(currentEng())',app.sandbox),null);
+  assert.equal(vm.runInContext('persistTobeAiDraft(currentEng())',app.sandbox),true);
+  assert.equal(next.aiDraft,undefined,'the cached suggestion belongs to the previous version');
 });
 
 test('Guardar borrador invokes local save after collecting current TO-BE fields',()=>{
