@@ -32,7 +32,7 @@ test('module is installed after engine-adapter and before boot',()=>{
 // Behavioral regression: the button must respond to a real delegated click,
 // show backend failures permanently, and keep the active consultant inputs intact.
 const vm=require('node:vm');
-function aiPilotHarness({fail=false,steps=['S1'],failReview=false}={}){
+function aiPilotHarness({fail=false,steps=['S1'],failReview=false,blockingSteps=[]}={}){
   const listeners=new Map(), nodes=new Map(), requests=[];
   let provider=null,renderCount=0,registrationCount=0,notice=null;
   let shouldFailReview=failReview;
@@ -68,8 +68,10 @@ function aiPilotHarness({fail=false,steps=['S1'],failReview=false}={}){
       requests.push({url,opts});
       if(url.endsWith('/status'))return {ok:true,json:async()=>({status:'AVAILABLE',provider:'ollama',model:'aunea-qwen3-4b:latest'})};
       if(url.endsWith('/tobe-review')&&shouldFailReview)return {ok:false,status:503,json:async()=>({detail:'Sin respuesta de Ollama.'})};
-      if(url.endsWith('/tobe-review'))return {ok:true,json:async()=>({status:'CHECKED',summary:'Coherencia global revisada',
-        issues:[],requires_human_review:true})};
+      if(url.endsWith('/tobe-review'))return {ok:true,json:async()=>({
+        status:blockingSteps.length?'CHECKED_WITH_NOTES':'CHECKED',
+        summary:'Coherencia global revisada',issues:[],
+        blocking_step_ids:blockingSteps,requires_human_review:true})};
       if(fail)return {ok:false,status:409,json:async()=>({detail:'El diagnóstico no corresponde al AS-IS vigente.'})};
       return {ok:true,json:async()=>({...proposal,
         item:{...proposal.item,source_step_id:JSON.parse(opts.body).source_step_id,source_refs:[JSON.parse(opts.body).source_step_id]},
@@ -87,8 +89,12 @@ function aiPilotHarness({fail=false,steps=['S1'],failReview=false}={}){
     target:{closest:selector=>selector==='#generateTobeAiPilot'?button:null},
     preventDefault:()=>{}
   });
+  const clickFresh=()=>listeners.get('click')({
+    target:{closest:selector=>selector==='#regenerateTobeAiPilot'?{disabled:false}:null},
+    preventDefault:()=>{}
+  });
   const settle=async()=>{for(let i=0;i<8;i++)await new Promise(resolve=>setImmediate(resolve))};
-  return {sandbox,click,settle,requests,button,notice,setReviewFailure:v=>{shouldFailReview=v},
+  return {sandbox,click,clickFresh,settle,requests,button,notice,setReviewFailure:v=>{shouldFailReview=v},
     get renderCount(){return renderCount},get registrationCount(){return registrationCount}};
 }
 test('AI button click reaches backend once and preserves draft inputs on success',async()=>{
@@ -141,4 +147,26 @@ test('consolidation retry reuses already generated activities',async()=>{
   assert.equal(app.requests[5].url,'http://localhost:8010/v1/internal-ai/tobe-review');
   assert.match(app.notice.outerHTML,/Resultado esperado/);
   assert.equal(app.renderCount,0);
+});
+
+
+test('fresh regeneration never reuses prior activities after a review failure',async()=>{
+  const app=aiPilotHarness({steps:['S1','S2'],failReview:true});
+  app.click();await app.settle();
+  assert.equal(app.requests.length,4); // status, S1, S2, failed review
+  app.setReviewFailure(false);
+  app.clickFresh();await app.settle();
+  assert.equal(app.requests.length,8); // status, NEW S1, NEW S2, review
+  assert.deepEqual(app.requests.slice(5,7).map(x=>JSON.parse(x.opts.body).source_step_id),['S1','S2']);
+  assert.match(app.notice.outerHTML,/Generar propuestas nuevas/);
+  assert.equal(app.renderCount,0,'unsaved consultant form edits remain untouched');
+});
+
+test('clear keep-versus-change contradictions prevent applying AI suggestions',async()=>{
+  const app=aiPilotHarness({blockingSteps:['S1']});
+  app.click();await app.settle();
+  assert.match(app.notice.outerHTML,/No apta para aplicar/);
+  assert.match(app.notice.outerHTML,/S1/);
+  assert.doesNotMatch(app.notice.outerHTML,/id="applyTobeAiPilot"/);
+  assert.match(app.notice.outerHTML,/id="regenerateTobeAiPilot"/);
 });
