@@ -83,3 +83,17 @@ Causa técnica confirmada del diagnóstico insuficiente: el esquema de salida de
 - La interfaz no se ha alterado: **reintentar desde la página sin recarga reutiliza las 4 actividades** en el mapa temporal y llama solamente a `/v1/internal-ai/tobe-review`. Para cargar el cambio del backend, el operador deberá actualizar la rama en VS Code y reiniciar Uvicorn; no hace falta recargar la página. La persistencia no sobrevive a cierre o actualización del navegador.
 
 QA automatizado del cambio: tests backend de enums, JSON/esquema, truncamiento, citas inválidas y no filtración de contenidos; pruebas de frontend/browser en GitHub Actions Acceptance Gate `41607179199`: SUCCESS. **Queda pendiente UAT real de Ollama en Windows sobre la consolidación**, comprobar tanto el resultado como la calidad consultiva del TO-BE. Todo permanece REVIEW; BITACORA refleja el incidente. No se modifica el contrato canónico de PG11 ni datos, pricing, economics o permisos.
+
+
+## Corrección REVIEW 03/11/2026 — IA_REVIEW_LENGTH tras cuatro actividades
+
+**Evidencia real Windows:** cuatro actividades TO-BE completadas y conservadas, pero la consolidación final devolvió HTTP 409 con código `IA_REVIEW_LENGTH`. La respuesta de Ollama reportó `done_reason=length`: se alcanzó el límite de generación de salida del revisor (`num_predict=700`). La incidencia es distinta de la anterior validación de fuentes y no implica pérdida de las cuatro propuestas mientras la pestaña siga abierta sin recargar.
+
+**Corrección técnica acotada (bloque AUNEA-BE-INTERNAL-AI-REVIEW-198):**
+- Nuevo presupuesto `MAX_REVIEW_OUTPUT_TOKENS=1536` para la revisión, manteniendo `MAX_REVIEW_INPUT_TOKENS=4000`, `num_ctx<=8192`, el tamaño máximo del request `MAX_REVIEW_BYTES=11000` y sin cambiar los segmentos individuales.
+- Esquema JSON de respuesta y prompt limitan el resumen a 240 caracteres, cada observación a 200 y el número de observaciones prioritarias por lote a 8. El validador comprueba estos límites además de fuentes e identificadores.
+- No se trunca silenciosamente una salida incompleta ni se permite que una respuesta sin cerrar pase como validada. Si el modelo vuelve a exceder `num_predict`, se devuelve `IA_REVIEW_LENGTH` y se conservan las actividades.
+- Las 8 observaciones por lote son una revisión automática priorizada, **no garantía de auditoría exhaustiva**. Mantiene revisión humana obligatoria, sin aprobación automática y sin cambiar el contrato canónico ni los motores.
+- No se altera el frontend: en la pestaña de AUNEA ya abierta se puede actualizar únicamente el backend (Pull + reiniciar Uvicorn), sin recargar navegador, y reintentar solamente `/v1/internal-ai/tobe-review` con las cuatro actividades en memoria. Si se recarga, se pierde ese progreso efímero.
+
+**QA:** tests backend comprueban presupuesto de salida, esquemas de longitud y contador, y rechazo seguro de respuestas excesivas. GitHub Actions Acceptance Gate `41612867236` SUCCESS (backend, frontend, navegador). **Pendiente UAT real Qwen3 Windows** de esta consolidación y evaluación de utilidad del resultado. Estado REVIEW; no promover a CANONICAL.
