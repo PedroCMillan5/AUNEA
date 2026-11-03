@@ -46,7 +46,12 @@ def test_review_reports_real_coherence_without_approving(monkeypatch):
     assert data["batches_checked"]==1
     assert len(calls)==1
     assert calls[0]["stream"] is False
-    assert calls[0]["options"]["num_predict"]==700
+    assert calls[0]["options"]["num_predict"]==review.MAX_REVIEW_OUTPUT_TOKENS
+    assert review.MAX_REVIEW_OUTPUT_TOKENS>700
+    assert calls[0]["options"]["num_ctx"]<=8192
+    assert calls[0]["format"]["properties"]["summary"]["maxLength"]==review.MAX_REVIEW_SUMMARY_CHARS
+    assert calls[0]["format"]["properties"]["issues"]["maxItems"]==review.MAX_REVIEW_ISSUES_PER_BATCH
+    assert calls[0]["format"]["properties"]["issues"]["items"]["properties"]["issue"]["maxLength"]==review.MAX_REVIEW_ISSUE_CHARS
     assert calls[0]["model"]=="aunea-qwen3-4b:latest"
     allowed=calls[0]["format"]["properties"]["issues"]["items"]["properties"]["step_id"]["enum"]
     assert allowed==["GLOBAL","S1","S2"]
@@ -136,6 +141,23 @@ def test_review_schema_matches_only_current_batch():
     assert ids==["GLOBAL","UAT-LIT-P1","UAT-LIT-P2"]
     assert "P1" not in ids
     assert review._REVIEW_SCHEMA["properties"]["issues"]["items"]["properties"]["step_id"]=={"type":"string"}
+
+
+def test_review_output_bounds_reject_verbose_model_without_losing_sources():
+    too_long_summary={"done":True,"message":{"content":json.dumps({
+        "summary":"x"*(review.MAX_REVIEW_SUMMARY_CHARS+1),"issues":[]})}}
+    with pytest.raises(ValueError,match="IA_REVIEW_SHAPE"):
+        review._parse_review_result(too_long_summary,{"S1"})
+    too_many={"done":True,"message":{"content":json.dumps({
+        "summary":"Resumen","issues":[{"step_id":"S1","issue":"Revisar control"}
+                  for _ in range(review.MAX_REVIEW_ISSUES_PER_BATCH+1)]})}}
+    with pytest.raises(ValueError,match="IA_REVIEW_COUNT"):
+        review._parse_review_result(too_many,{"S1"})
+    verbose_issue={"done":True,"message":{"content":json.dumps({
+        "summary":"Resumen","issues":[{"step_id":"S1",
+            "issue":"x"*(review.MAX_REVIEW_ISSUE_CHARS+1)}]})}}
+    with pytest.raises(ValueError,match="IA_REVIEW_ISSUES"):
+        review._parse_review_result(verbose_issue,{"S1"})
 
 
 # [AUNEA-UAT-INTERNAL-AI-REVIEW-198] END
