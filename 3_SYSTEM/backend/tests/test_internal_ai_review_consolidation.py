@@ -160,4 +160,23 @@ def test_review_output_bounds_reject_verbose_model_without_losing_sources():
         review._parse_review_result(verbose_issue,{"S1"})
 
 
+def test_global_review_consumes_same_explicit_process_map(monkeypatch):
+    calls=mock_model(monkeypatch)
+    req=sample()
+    steps=req.engagement.questionnaire_answers["_process_steps"]
+    steps[0]["normal_next_step"]="S2"
+    steps[1]["normal_next_step"]="__END__"
+    from aunea_backend.utils import stable_hash
+    req.diagnostic.input_snapshot_hash=stable_hash(req.engagement.model_dump())
+    review.consolidate(PilotAIConsolidationRequest(
+        request=req,items=[proposal("S1"),proposal("S2")]))
+    assert len(calls)==1
+    context=json.loads(calls[0]["messages"][1]["content"].split("\\n",1)[1])
+    assert context["process_flow"]["explicit_routes"]==[
+        {"from":"S1","to":"S2","route":"normal","source":"ProcessStep"},
+        {"from":"S2","to":"__END__","route":"normal","source":"ProcessStep"},
+    ]
+    assert context["process_flow"]["activities"][0]["id"]=="S1"
+
+
 # [AUNEA-UAT-INTERNAL-AI-REVIEW-198] END
