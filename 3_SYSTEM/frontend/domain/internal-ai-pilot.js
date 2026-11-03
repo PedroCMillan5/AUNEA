@@ -3,6 +3,7 @@
 // INPUTS: current confirmed snapshot and official diagnostic; OUTPUTS: DRAFT suggestions.
 // SIDE_EFFECTS: external provider only after click, local DRAFT updates only after acceptance.
 // CHANGE_RISK: HIGH. Never auto-approve, invent numerical benefits, or alter engine results.
+const __auneaPg11ReviewProtocol='PG11_REVIEW_20261103_2'; // Technical backend/UI compatibility; no business owner.
 const __auneaAiPreview=new Map();
 const __auneaAiFeedback=new Map();
 const __auneaAiCompletedSteps=new Map(); // Transient, keyed by confirmed snapshot; no partial approval.
@@ -59,6 +60,8 @@ function internalAiPilotPanel(e){
     esc(feedback?.message||'La IA es opcional. Pulsa «Preparar propuesta con IA» para consultar el proveedor autorizado; no se generan resultados simulados.')+'</div>';
   const review=draft.review||null;
   const blocked=Array.isArray(review?.blocking_step_ids)&&review.blocking_step_ids.length>0;
+  const reviewProtocolLabel=review?.protocol_revision?
+    '<p class="field-help">Revisor PG11: '+esc(review.protocol_revision)+'</p>':'';
   const warning=feedback?.type==='warn'?'<p class="notice warn">'+esc(feedback.message)+'</p>':'';
   const contextTraceHtml=internalAiPilotTracePanel(draft.context_traces);
   const overview=review?'<p><b>Consolidación automática '+(review.status==='CHECKED'?'sin observaciones':'con observaciones')+
@@ -82,7 +85,7 @@ function internalAiPilotPanel(e){
   return '<div id="tobeAiPilotStatus" role="status" aria-live="polite" class="notice info">'+
     '<b>Propuesta TO-BE IA sin aprobar — '+esc(draft.model)+'</b>'+
     '<p>Intervenciones y resultados esperados son hipótesis de diseño. La revisión automática no equivale a aprobación humana.</p>'+
-    warning+overview+contextTraceHtml+sections+
+    warning+overview+reviewProtocolLabel+contextTraceHtml+sections+
     '<p>Aplicar sólo completará campos vacíos del borrador y requiere revisión del consultor.</p>'+
     (blocked?'<p class="notice warn"><b>No apta para aplicar:</b> revisar las clasificaciones de '+
       esc(review.blocking_step_ids.join(', '))+'. Puedes corregir el TO-BE manualmente o generar nuevas sugerencias.</p>':'')+
@@ -175,7 +178,8 @@ async function generateTobeBySteps(e,key,snap,availability){
       ' · '+completed.items.size+' actividades conservadas.');
   }
   const review=await reviewed.json();
-  if(!review||!['CHECKED','CHECKED_WITH_NOTES'].includes(review.status)||
+  if(!review||review.protocol_revision!==__auneaPg11ReviewProtocol||
+     !['CHECKED','CHECKED_WITH_NOTES'].includes(review.status)||
      review.requires_human_review!==true||!Array.isArray(review.issues)||
      internalAiPilotKey(e)!==key||currentEng()?.id!==e.id||
      !tobeEditable(latestTobe(e)))
@@ -201,11 +205,15 @@ async function generateTobeAiPilot(e,fresh=false){
   internalAiPilotFeedback(e,'Comprobando disponibilidad del proveedor IA…');
   try{
     if(!state.backendOnline&&!(await checkBackend()))throw Error('Backend no conectado.');
-    const check=await fetch(state.backendUrl+'/v1/internal-ai/status');
+    const check=await fetch(state.backendUrl+'/v1/internal-ai/status',{cache:'no-store'});
     if(!check.ok)throw Error('No se pudo consultar el proveedor IA.');
     const availability=await check.json();
     if(availability.status!=='AVAILABLE')
       throw Error(availability.reason||'Servicio IA no configurado o sin autorización para tratar datos.');
+    if(availability.provider==='ollama'&&
+       availability.pg11_review_protocol!==__auneaPg11ReviewProtocol)
+      throw Error('Versiones incompatibles de PG11: el backend no tiene el revisor actualizado ('+
+        __auneaPg11ReviewProtocol+'). Actualiza la rama y reinicia Uvicorn; después recarga el navegador.');
     if(button)button.textContent=availability.provider==='ollama'?'Analizando con IA local…':'Analizando con IA…';
     internalAiPilotFeedback(e,'Generando propuesta con '+(availability.provider==='ollama'?'Ollama local':'el proveedor autorizado')+'… No cierres el estudio durante el análisis.');
     const snap=confirmedSnapshot(e);
