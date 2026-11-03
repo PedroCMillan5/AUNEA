@@ -104,3 +104,32 @@ Pruebas con respuesta Ollama simulada (sin conexión externa): disponibilidad de
 **Actualización 30/10 (evidencia posterior):** el operador terminó la generación real de las cuatro actividades sintéticas Levante usando Ollama local y reanudó desde P2 tras un 503 transitorio de disponibilidad. La generación y trazabilidad básica funcionaron; la calidad consultiva fue insuficiente (cuatro actividades `Se mantiene`, sin mejoras aplicables). Se ha implementado después un prompt orientado a oportunidades/resultado esperado, validación de vínculos y consolidación global bounded (`/v1/internal-ai/tobe-review`) con salida temporal y supervisión humana. La nueva versión aún necesita UAT real en Windows, aceptación de calidad e inspección de tiempos y RAM. El progreso parcial y la justificación siguen siendo efímeros. No hay promoción a CANONICAL.
 
 Fuentes técnicas: https://docs.ollama.com/windows, https://docs.ollama.com/api/chat, https://docs.ollama.com/api/tags, https://ollama.com/library/qwen3:4b-instruct.
+
+## Prueba vigente — auditoría PG11 (03/11/2026)
+
+1. En la pestaña actual, pulsa **Guardar borrador** y comprueba el guardado antes de recargar. No borres datos del navegador ni cambies el origen/puerto del frontend. La auditoría temporal no se guarda; si necesitas conservar su texto, cópialo antes.
+2. Desde la raíz de tu repositorio, PowerShell:
+
+```powershell
+git switch work/as-is-ux-simplification-20260930
+git pull --ff-only
+```
+
+Si Git informa de cambios locales incompatibles, no uses reset ni sobrescribas archivos.
+
+3. Detén Uvicorn con Ctrl+C. En la consola del backend, con tu entorno Python habitual activo y situado en `3_SYSTEM/backend`:
+
+```powershell
+$env:AUNEA_INTERNAL_AI_PROVIDER = "ollama"
+$env:AUNEA_INTERNAL_AI_ENABLED = "1"
+$env:AUNEA_INTERNAL_AI_DATA_AUTHORIZED = "1"
+$env:AUNEA_OLLAMA_MODEL = "aunea-qwen3-4b:latest"
+$env:AUNEA_OLLAMA_NUM_CTX = "8192"
+$env:AUNEA_OLLAMA_TIMEOUT_SECONDS = "480"
+python -m uvicorn aunea_backend.api:app --host 127.0.0.1 --port 8010
+```
+
+4. Comprueba `http://127.0.0.1:8010/v1/internal-ai/status`: `AVAILABLE`, `step_num_ctx: 8192`, `pg11_review_protocol: PG11_REVIEW_20261103_3`. Ollama debe seguir abierto con el modelo ya instalado; no se requiere pull de modelo.
+5. En el mismo navegador/origen, Ctrl+Shift+R. Abre el estudio y PG11; comprueba que el borrador guardado se recupera. Pulsa **Preparar propuesta con IA**. No pulses Generar propuestas nuevas para recuperar un fallo: Preparar reutiliza las actividades válidas de la sesión.
+6. Abre «Qué información recibió Ollama (trazabilidad)»: revisa entrada real por actividad, hallazgos, límites, respuesta original/validada e intentos. En REVISIÓN comprueba motivo y acción de cada observación. Un bloqueo persistente debe impedir aplicar. Una corrección no debe tocar los campos que ya editaste.
+7. Repite la aceptación con Levante y un proceso de otra naturaleza. Contrasta P2/P3 sin duplicidad injustificada, P4 sin capacidad de ERP inventada, transformación coherente y ausencia de ahorros inventados. La regresión automática no sustituye esta UAT consultiva.

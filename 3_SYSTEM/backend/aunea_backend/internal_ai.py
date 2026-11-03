@@ -46,6 +46,7 @@ class PilotAIConsolidationRequest(BaseModel):
     # Transient validation request, not a new business capture or persistence owner.
     request: PilotAIRequest
     items: list[PilotAIItem]
+    correction_attempted_ids: list[str] = Field(default_factory=list)
 
 
 class PilotAIStepRequest(BaseModel):
@@ -194,6 +195,7 @@ def validate_pilot_result(request: PilotAIRequest, model: str, items: list[Pilot
     refs = source_ids | {str(x["id"]) for x in frictions if isinstance(x, dict) and x.get("id")}
     refs.update(str(x.risk_id) for x in request.engagement.risks if x.risk_id)
     for item in items:
+        validate_pilot_step_result(request, item.source_step_id, item)
         if not item.source_refs or item.source_step_id not in item.source_refs or any(r not in refs for r in item.source_refs):
             raise ValueError("La propuesta contiene referencias inexistentes.")
         step = next(s for s in steps if str(s["id"]) == item.source_step_id)

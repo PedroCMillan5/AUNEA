@@ -40,9 +40,9 @@ def test_review_reports_real_coherence_without_approving(monkeypatch):
     payload=PilotAIConsolidationRequest(request=sample(),
         items=[proposal("S1"),proposal("S2")])
     data=review.consolidate(payload)
-    assert data["status"]=="CHECKED"
+    assert data["status"]=="CHECKED_WITH_NOTES"
     assert data["requires_human_review"] is True
-    assert data["issues"]==[]
+    assert all(i["category"] == "PENDING" for i in data["issues"])
     assert data["blocking_step_ids"]==[]
     assert data["protocol_revision"]==review.PG11_REVIEW_PROTOCOL
     assert data["batches_checked"]==1
@@ -222,4 +222,41 @@ def test_status_discloses_backend_review_protocol_without_running_ollama(monkeyp
     assert result["status"]=="AVAILABLE"
 
 
+
+
+
+def test_selective_semantic_repair_skips_correct_steps_and_preserves_audit(monkeypatch):
+    from aunea_backend import internal_ai_provider as provider
+    wire(monkeypatch)
+    calls=[]
+    def respond(req,timeout=0):
+        body=json.loads(req.data);calls.append(body)
+        if 'current_activity' in body['messages'][1]['content']:
+            context=json.loads(body['messages'][1]['content'].split('\n',1)[1])
+            assert context['current_activity']['id']=='S1'
+            assert 'targeted_correction' in context
+            out={'items':[proposal('S1').model_dump(mode='json')]}
+        else:
+            out={'summary':'Comprobación semántica', 'issues':([
+                {'step_id':'S1','issue':'Intervención no resuelve la fricción',
+                 'category':'BLOCKING','evidence':'F1: entrada duplicada','action':'Reutilizar los datos de origen'}]
+                 if len(calls)==1 else [])}
+        return io.BytesIO(json.dumps({'done':True,'prompt_eval_count':2000,'message':{'content':json.dumps(out)}}).encode())
+    monkeypatch.setattr(local._LOCAL_HTTP,'open',respond)
+    result=review.consolidate(PilotAIConsolidationRequest(request=sample(),items=[proposal('S1'),proposal('S2')]))
+    assert len(calls)==3 # review, S1 only, verification; no S2 regeneration
+    assert result['blocking_step_ids']==[]
+    assert result['corrected_items'][1]==proposal('S2').model_dump(mode='json')
+    assert result['correction_traces']['S1']['correction_attempted']
+    assert result['initial_review']['issues'][0]['category']=='BLOCKING'
+    assert result['audit'][0]['request']==calls[-1]
+
+
+def test_already_repaired_step_never_gets_second_automatic_attempt(monkeypatch):
+    calls=mock_model(monkeypatch,issues=[{'step_id':'S1','issue':'Contradicción persistente',
+        'category':'BLOCKING','evidence':'Acción incompatible','action':'Corregir manualmente'}])
+    result=review.consolidate(PilotAIConsolidationRequest(request=sample(),items=[proposal('S1'),proposal('S2')],
+                                                       correction_attempted_ids=['S1']))
+    assert len(calls)==1 and result['blocking_step_ids']==['S1']
+    assert 'corrected_items' not in result
 # [AUNEA-UAT-INTERNAL-AI-REVIEW-198] END

@@ -1,3 +1,6 @@
+// [AUNEA-UAT-PG11-AUDIT-200] START — Transient audit, selective recovery and client exclusion.
+// SOURCE: DEC-052/055; PG11 REVIEW. INPUTS: synthetic backend; OUTPUTS: assertions.
+// SIDE_EFFECTS: none external. CHANGE_RISK: LOW.
 const test=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
@@ -32,7 +35,7 @@ test('module is installed after engine-adapter and before boot',()=>{
 // Behavioral regression: the button must respond to a real delegated click,
 // show backend failures permanently, and keep the active consultant inputs intact.
 const vm=require('node:vm');
-function aiPilotHarness({fail=false,steps=['S1'],failReview=false,blockingSteps=[],protocol='PG11_REVIEW_20261103_2'}={}){
+function aiPilotHarness({fail=false,steps=['S1'],failReview=false,blockingSteps=[],protocol='PG11_REVIEW_20261103_3'}={}){
   const listeners=new Map(), nodes=new Map(), requests=[];
   let provider=null,renderCount=0,registrationCount=0,notice=null;
   let shouldFailReview=failReview;
@@ -109,8 +112,8 @@ test('AI button click reaches backend once and preserves draft inputs on success
   assert.equal(app.requests[2].url,'http://localhost:8010/v1/internal-ai/tobe-review');
   assert.match(app.notice.outerHTML,/Resultado esperado/);
   assert.match(app.notice.outerHTML,/Qué información recibió Ollama/);
-  assert.ok(app.notice.outerHTML.includes('Fricciones facilitadas:</b> F1'));
-  assert.match(app.notice.outerHTML,/diagnóstico oficial se envía como referencia/);
+  assert.ok(app.notice.outerHTML.includes('F1'));
+  assert.match(app.notice.outerHTML,/diagnóstico como hash/);
   assert.match(app.notice.outerHTML,/Propuesta TO-BE IA sin aprobar/);
   assert.equal(app.renderCount,0,'No re-render that could erase unsaved TO-BE edits');
   assert.equal(app.button.disabled,false);
@@ -184,6 +187,40 @@ test('PG11 rejects stale backend before expensive local Ollama calls',async()=>{
 test('PG11 shows reviewer protocol revision on new successful draft',async()=>{
   const app=aiPilotHarness();
   app.click();await app.settle();
-  assert.match(app.notice.outerHTML,/Revisor PG11: PG11_REVIEW_20261103_2/);
+  assert.match(app.notice.outerHTML,/Revisor PG11: PG11_REVIEW_20261103_3/);
   assert.equal(app.requests.length,3);
 });
+
+test('failed activity retains its real audit, continues other steps, retries only failed activity',async()=>{
+  const app=aiPilotHarness({steps:['S1','S2']});
+  const base=app.sandbox.fetch;let failed=true;
+  app.sandbox.fetch=async(url,opts)=>{
+    const result=await base(url,opts);
+    if(url.endsWith('/tobe-step')&&JSON.parse(opts.body).source_step_id==='S1'&&failed)
+      return {ok:false,status:409,json:async()=>({detail:{message:'IA_STEP_REFS',context_trace:{source_step_id:'S1',redacted:true,attempts:[{sent:true,validation_status:'BLOQUEADO',error:'IA_STEP_REFS',original_response:{items:[]}}]}}})};
+    return result;
+  };
+  app.click();await app.settle();
+  assert.equal(app.requests.length,3);
+  assert.match(app.notice.outerHTML,/SALIDA — Respuesta y validación/);
+  assert.match(app.notice.textContent,/1 de 2 completadas/);
+  failed=false;app.click();await app.settle();
+  assert.deepEqual(app.requests.filter(r=>r.url.endsWith('/tobe-step')).map(r=>JSON.parse(r.opts.body).source_step_id),['S1','S2','S1']);
+  assert.equal(app.renderCount,0);
+});
+
+test('audit displays transmitted values and blocks rendering or generation in client surface',async()=>{
+  const app=aiPilotHarness();
+  const context={current_activity:{id:'S1',step_name:'Registrar'},explicit_linked_frictions:[{id:'F1',observable_signal:'Entrada duplicada'}],official_diagnostic_findings:{linked_pain_results:[{pain_id:'P1',state:'INDICATED'}]}};
+  app.sandbox.trace={S1:{attempts:[{sent:true,request_bytes:1234,budget_bytes:11000,prompt_eval_count:500,
+    input_token_limit:4000,request:{messages:[{content:'Instrucciones reales'},{content:'DATOS\n'+JSON.stringify(context)}],options:{num_ctx:8192}},
+    original_response:{items:[{source_step_id:'S1'}]},validation_status:'CONTRATO_VALIDO_PENDIENTE_REVISION'}]}};
+  const html=vm.runInContext('internalAiPilotTracePanel(trace)',app.sandbox);
+  assert.match(html,/Entrada duplicada/);assert.match(html,/INDICATED/);assert.match(html,/1234/);
+  assert.match(html,/Instrucciones reales/);assert.match(html,/data-ai-copy/);
+  app.sandbox.isClientDisplay=()=>true;
+  assert.equal(vm.runInContext('internalAiPilotPanel(currentEng())',app.sandbox),'');
+  app.click();await app.settle();assert.equal(app.requests.length,0);
+});
+
+// [AUNEA-UAT-PG11-AUDIT-200] END

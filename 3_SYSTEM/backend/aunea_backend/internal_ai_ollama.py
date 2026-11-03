@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import os
 import socket
+import re
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, build_opener, ProxyHandler
 from pydantic import ValidationError
@@ -207,6 +208,18 @@ def _step_context(request: PilotAIRequest, steps: list[dict], step_id: str) -> d
     evidence_ids = {"EV-" + str(f["id"]) for f in linked_frictions if f.get("id")}
     linked_evidence = [e.model_dump(mode="json") for e in engagement.evidence
                        if e.evidence_id in evidence_ids]
+    pain_ids = {str(f.get("derived_pain_id") or f.get("friction_type") or "")
+                for f in linked_frictions}
+    pain_ids.update(s.pain_id for s in engagement.pain_signals
+                    if evidence_ids.intersection(s.evidence_ids))
+    diagnostic = request.diagnostic.model_dump(mode="json")
+    findings = {
+        "linked_pain_results": [p for p in diagnostic.get("pain_results", [])
+                                if p["pain_id"] in pain_ids],
+        "process_risk_result": diagnostic.get("risk_result"),
+        "scope": "Pain vinculado; riesgo global del proceso, no atribuible a este paso.",
+        "omitted": "Economía, precios y escenarios globales no son beneficios futuros de la actividad.",
+    }
     return {
         "engagement_id": engagement.engagement_id,
         "snapshot_version": request.snapshot_version,
@@ -228,12 +241,16 @@ def _step_context(request: PilotAIRequest, steps: list[dict], step_id: str) -> d
         "unlinked_friction_ids_not_assessed": unlinked_ids,
         "unlinked_risk_ids_not_assessed": unlinked_risks,
         "analysis_constraints": {
+            "confirmed_constraints": {k: engagement.questionnaire_answers[k]
+                                      for k in ("DF010", "DF073", "DF075", "DF086", "DF087", "DF088", "DF089", "DF090", "DF091")
+                                      if k in engagement.questionnaire_answers},
             "existing_tool_can_cover": engagement.existing_tool_can_cover,
             "process_design_preconditions_ok": engagement.process_design_preconditions_ok,
             "requires_unstructured_ai_assistance": engagement.requires_unstructured_ai_assistance,
             "requires_bounded_agent_action": engagement.requires_bounded_agent_action,
             "no_future_savings_or_prices": True,
         },
+        "official_diagnostic_findings": _compact_context_value(findings),
         "official_diagnostic_reference": {
             "input_snapshot_hash": request.diagnostic.input_snapshot_hash,
             "rule_bundle_version": request.diagnostic.rule_bundle_version,
@@ -334,13 +351,16 @@ def _validated_step_json(request: PilotAIRequest, source_step_id: str,
 
 
 def propose_step(request: PilotAIRequest, steps: list[dict], schema: dict,
-                 instructions: str, source_step_id: str) -> PilotAIItem:
+                 instructions: str, source_step_id: str, *, audit: dict | None = None,
+                 correction: dict | None = None) -> PilotAIItem:
     # /api/tags is checked by status before the run. Do not query it again
     # between activities: the local CPU daemon can be busy and miss its probe.
     settings = {"model": model_name(), "num_ctx": context_window()}
     num_ctx = min(settings["num_ctx"], 8192)
     timeout = min(request_timeout_seconds(), 480)
     context = _step_context(request, steps, source_step_id)
+    if correction:
+        context["targeted_correction"] = correction
     constrained_schema = _bounded_step_schema(schema, request, steps, source_step_id)
     step_instructions = (
         instructions.replace(
@@ -368,15 +388,27 @@ def propose_step(request: PilotAIRequest, steps: list[dict], schema: dict,
         "format": constrained_schema, "stream": False, "keep_alive": "5m",
         "options": {"temperature": 0, "num_ctx": num_ctx,
                     "num_predict": STEP_MAX_OUTPUT_TOKENS},
-    }, ensure_ascii=False).encode("utf-8")
+    }, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
     # Conservative byte guard, NOT an exact token count. Final token count
     # is checked from Ollama's own prompt_eval_count after successful inference.
     budget = STEP_MAX_PROMPT_BYTES if num_ctx >= 8192 else 6800
+    if audit is not None:
+        audit.update({"request": json.loads(body), "sent": False,
+                      "request_bytes": len(body), "budget_bytes": budget,
+                      "input_token_limit": STEP_MAX_TOTAL_PROMPT_TOKENS,
+                      "component_bytes": {k: len(json.dumps(v, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
+                                          for k, v in context.items()},
+                      "instructions_bytes": len(step_instructions.encode("utf-8")),
+                      "schema_bytes": len(json.dumps(constrained_schema, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))})
     if len(body) > budget:
+        largest = max(context, key=lambda k: len(json.dumps(context[k], ensure_ascii=False)))
         raise ValueError(
             "El contexto vinculado a la actividad " + source_step_id +
-            " excede el presupuesto del piloto; dividir evidencias sin perder trazabilidad."
+            " excede el presupuesto del piloto (" + str(len(body)) + "/" + str(budget) +
+            " bytes; componente mayor: " + largest + "); dividir evidencias sin perder trazabilidad."
         )
+    if audit is not None:
+        audit["sent"] = True
     req = Request(LOCAL_URL + "/api/chat", data=body, method="POST",
                   headers={"Content-Type": "application/json"})
     try:
@@ -408,6 +440,16 @@ def propose_step(request: PilotAIRequest, steps: list[dict], schema: dict,
     except (OSError, ValueError, TypeError) as exc:
         raise OllamaUnavailable(
             "Ollama no devolvió una respuesta interpretable para " + source_step_id + ".") from exc
+    if audit is not None:
+        # content only: never expose Ollama thinking/reasoning or arbitrary metadata.
+        content = result.get("message", {}).get("content") if isinstance(result.get("message"), dict) else None
+        try:
+            audit["original_response"] = json.loads(content) if isinstance(content, str) else None
+        except ValueError:
+            audit["original_response"] = None
+            audit["response_note"] = "Respuesta no JSON omitida; no se expone razonamiento libre."
+        audit["prompt_eval_count"] = result.get("prompt_eval_count")
+        audit["done_reason"] = result.get("done_reason")
     if result.get("done") is not True or not isinstance(result.get("message"), dict):
         raise ValueError("Ollama devolvió una propuesta parcial para " + source_step_id + ".")
     measured_tokens = result.get("prompt_eval_count")
@@ -415,6 +457,59 @@ def propose_step(request: PilotAIRequest, steps: list[dict], schema: dict,
             measured_tokens > STEP_MAX_TOTAL_PROMPT_TOKENS):
         raise ValueError("La actividad " + source_step_id +
                          " excedió el límite medido de 4000 tokens de entrada; reducir el segmento.")
-    return _validated_step_json(request, source_step_id, result)
+    item = _validated_step_json(request, source_step_id, result)
+    if audit is not None:
+        audit["validated_proposal"] = item.model_dump(mode="json")
+        audit["validation_status"] = "CONTRATO_VALIDO_PENDIENTE_REVISION"
+    return item
+def redact_audit(value):
+    """Diagnostic view only. Preserve wire bytes measurements, redact secrets/PII."""
+    if isinstance(value, dict):
+        return {k: ("[REDACTADO]" if re.search(r"password|secret|token|authorization|credential|api.key", k, re.I)
+                    and k not in ("input_token_limit", "prompt_eval_count", "num_predict") else redact_audit(v))
+                for k, v in value.items() if k not in ("thinking", "reasoning", "chain_of_thought")}
+    if isinstance(value, list):
+        return [redact_audit(v) for v in value]
+    if isinstance(value, str):
+        # User messages contain serialized source data. Redact nested keys before encoding again.
+        for separator in ("\n", "\\n"):
+            if separator in value:
+                prefix, tail = value.split(separator, 1)
+                try:
+                    nested = json.loads(tail)
+                except (ValueError, TypeError):
+                    continue
+                return prefix + separator + json.dumps(redact_audit(nested), ensure_ascii=False, separators=(",", ":"))
+        value = re.sub(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", "[EMAIL REDACTADO]", value)
+        value = re.sub(r"(?i)(bearer\s+|(?:password|secret|api[_-]?key|token)\s*[:=]\s*)[^\s,;\"}]+", r"\1[REDACTADO]", value)
+    return value
+
+
+def audited_step(request, steps, schema, instructions, source_step_id, *, correction=None):
+    """At most one directed repair; ephemeral audit travels only to authorized caller."""
+    attempts = []
+    item = None
+    error = None
+    for attempt_index in range(1 if correction else 2):
+        attempt = {}
+        attempts.append(attempt)
+        try:
+            item = propose_step(request, steps, schema, instructions, source_step_id,
+                                audit=attempt, correction=correction)
+            break
+        except (ValueError, OllamaUnavailable) as exc:
+            error = str(exc)
+            attempt.update(validation_status="BLOQUEADO", error=error)
+            # Correct only explicit output-contract defects, never retry budget/network failures.
+            if attempt_index or correction or not error.startswith("[IA_STEP_"):
+                break
+            correction = {"defect": error, "previous_proposal": attempt.get("original_response"),
+                          "instruction": "Corrige exclusivamente el defecto indicado con las fuentes adjuntas."}
+    trace = {"source_step_id": source_step_id, "attempts": redact_audit(attempts),
+             "redacted": True, "correction_attempted": bool(correction),
+             "diagnostic_mode": "PROYECCION_DIAGNOSTICA_TRAZABLE",
+             "context_scope": "SOLO_ESTUDIO_ACTIVO_CONFIRMADO"}
+    return item, trace, error if item is None else None
+
 # [AUNEA-BE-INTERNAL-AI-STEP-195] END
 

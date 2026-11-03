@@ -208,4 +208,113 @@ def test_step_trace_lists_actual_inputs_not_other_studies():
     assert "large private data marker" not in json.dumps(trace)
 
 
+
+
+@pytest.mark.parametrize('process,names,ids', [
+    ('Levante QA — Facturas', ['Recepción','Condiciones de aprobación','Aprobación humana','Registro ERP'],
+     ['UAT-LIT-P1','UAT-LIT-P2','UAT-LIT-P3','UAT-LIT-P4']),
+    ('QA — Planificación de turnos', ['Recoger disponibilidad','Asignar turnos','Confirmar calendario'],
+     ['TURN-1','TURN-2','TURN-3']),
+])
+def test_actual_wire_audit_and_diagnostic_projection_two_processes(monkeypatch, process, names, ids):
+    from aunea_backend.models import PainResult, Evidence
+    calls=wire(monkeypatch)
+    req=sample()
+    req.engagement.process_name=process
+    req.engagement.questionnaire_answers['_process_steps']=[
+        {'id':sid,'step_name':name,'tool':'CRM','normal_next_step':ids[i+1] if i+1<len(ids) else '__END__'}
+        for i,(sid,name) in enumerate(zip(ids,names))]
+    req.engagement.questionnaire_answers['_frictions']=[
+        {'id':'F1','step_ids':[ids[0]],'derived_pain_id':'P01','observable_signal':'Registro duplicado QA'}]
+    req.engagement.evidence=[Evidence(evidence_id='EV-F1',type='HYPOTHESIS',description='Premisa sintética')]
+    req.diagnostic.pain_results=[PainResult(pain_id='P01',state='INDICATED',confidence='LOW',rationale='Hipótesis QA'),
+                                 PainResult(pain_id='P02',state='NOT_DETECTED',confidence='UNKNOWN')]
+    req.diagnostic.input_snapshot_hash=stable_hash(req.engagement.model_dump())
+    steps=validate_pilot_source(req)
+    for sid in ids:
+        item,trace,error=local.audited_step(req,steps,provider._schema(),provider._INSTRUCTIONS,sid)
+        assert error is None and item.source_step_id==sid
+        attempt=trace['attempts'][0]
+        wire_body=json.loads(calls[-1][2])
+        assert attempt['request']==wire_body # with no sensitive data, view equals exact transmitted request
+        assert attempt['request_bytes']==len(calls[-1][2])
+        assert attempt['original_response']['items'][0]==item.model_dump(mode='json')
+        assert attempt['prompt_eval_count']==2200
+        context=json.loads(wire_body['messages'][1]['content'].split('\n',1)[1])
+        findings=context['official_diagnostic_findings'].get('linked_pain_results', [])
+        assert [x['pain_id'] for x in findings]==(['P01'] if sid==ids[0] else [])
+        assert context['process_flow']['explicit_routes'][0]['to']==ids[1]
+    assert len(calls)==len(ids)
+
+
+def test_output_contract_repair_is_once_and_audits_both_real_responses(monkeypatch):
+    calls=wire(monkeypatch)
+    original=local._LOCAL_HTTP.open
+    def invalid(req,timeout=0):
+        response=json.loads(original(req,timeout).read())
+        payload=json.loads(response['message']['content'])
+        payload['items'][0]['source_refs']=['UNRELATED']
+        response['message']['content']=json.dumps(payload)
+        response['message']['thinking']='HIDDEN REASONING'
+        return io.BytesIO(json.dumps(response).encode())
+    monkeypatch.setattr(local._LOCAL_HTTP,'open',invalid)
+    req=sample()
+    item,trace,error=local.audited_step(req,validate_pilot_source(req),provider._schema(),provider._INSTRUCTIONS,'S1')
+    assert item is None and 'IA_STEP_REFS' in error
+    assert len(calls)==2 and len(trace['attempts'])==2 and trace['correction_attempted']
+    assert 'HIDDEN REASONING' not in json.dumps(trace)
+    assert trace['attempts'][0]['original_response']['items'][0]['source_refs']==['UNRELATED']
+    correction=json.loads(calls[1][2])['messages'][1]['content']
+    assert 'targeted_correction' in correction and 'IA_STEP_REFS' in correction
+
+
+def test_audit_redacts_nested_secrets_and_email_without_modifying_wire(monkeypatch):
+    calls=wire(monkeypatch)
+    req=sample()
+    req.engagement.questionnaire_answers['_process_steps'][0]['metadata']={
+        'password':'PRIVATE-SECRET', 'contact':'private@example.test'}
+    req.diagnostic.input_snapshot_hash=stable_hash(req.engagement.model_dump())
+    item,trace,error=local.audited_step(req,validate_pilot_source(req),provider._schema(),provider._INSTRUCTIONS,'S1')
+    assert item and not error and trace['redacted']
+    assert 'PRIVATE-SECRET' in calls[0][2].decode()
+    assert 'PRIVATE-SECRET' not in json.dumps(trace) and 'private@example.test' not in json.dumps(trace)
+    assert trace['attempts'][0]['request_bytes']==len(calls[0][2])
+
+
+def test_oversize_audit_identifies_component_without_call_or_retry(monkeypatch):
+    calls=wire(monkeypatch)
+    req=sample()
+    req.engagement.questionnaire_answers['_process_steps'][0]['notes']='X'*20000
+    req.diagnostic.input_snapshot_hash=stable_hash(req.engagement.model_dump())
+    item,trace,error=local.audited_step(req,validate_pilot_source(req),provider._schema(),provider._INSTRUCTIONS,'S1')
+    assert item is None and 'current_activity' in error and not calls
+    assert len(trace['attempts'])==1 and not trace['attempts'][0]['sent']
+
+
+def test_step_endpoint_auth_and_snapshot_isolation_before_inference(monkeypatch):
+    from fastapi import HTTPException
+    from starlette.requests import Request
+    from aunea_backend.api import internal_ai_tobe_step
+    from aunea_backend.internal_ai import PilotAIStepRequest
+    calls=wire(monkeypatch)
+    source=sample()
+    payload=PilotAIStepRequest.model_construct(request=source,source_step_id='S1')
+    remote=Request({'type':'http','client':('203.0.113.1',1234)})
+    with pytest.raises(HTTPException) as err:
+        internal_ai_tobe_step(payload,remote)
+    assert err.value.status_code==403 and not calls
+    localhost=Request({'type':'http','client':('127.0.0.1',1234)})
+    monkeypatch.setenv('AUNEA_INTERNAL_AI_DATA_AUTHORIZED','0')
+    with pytest.raises(HTTPException) as err:
+        internal_ai_tobe_step(payload,localhost)
+    assert err.value.status_code==503 and not calls
+    monkeypatch.setenv('AUNEA_INTERNAL_AI_DATA_AUTHORIZED','1')
+    source.diagnostic.engagement_id='ANOTHER-STUDY'
+    with pytest.raises(HTTPException) as err:
+        internal_ai_tobe_step(payload,localhost)
+    assert err.value.status_code==409 and not calls
+    source.diagnostic.engagement_id=source.engagement.engagement_id
+    response=internal_ai_tobe_step(payload,localhost)
+    assert response['engagement_id']==source.engagement.engagement_id
+    assert response['context_trace']['attempts'][0]['request']==json.loads(calls[0][2])
 # [AUNEA-UAT-INTERNAL-AI-STEP-195] END

@@ -3,7 +3,7 @@
 // INPUTS: current confirmed snapshot and official diagnostic; OUTPUTS: DRAFT suggestions.
 // SIDE_EFFECTS: external provider only after click, local DRAFT updates only after acceptance.
 // CHANGE_RISK: HIGH. Never auto-approve, invent numerical benefits, or alter engine results.
-const __auneaPg11ReviewProtocol='PG11_REVIEW_20261103_2'; // Technical backend/UI compatibility; no business owner.
+const __auneaPg11ReviewProtocol='PG11_REVIEW_20261103_3'; // Technical backend/UI compatibility; no business owner.
 const __auneaAiPreview=new Map();
 const __auneaAiFeedback=new Map();
 const __auneaAiCompletedSteps=new Map(); // Transient, keyed by confirmed snapshot; no partial approval.
@@ -12,7 +12,8 @@ function internalAiPilotFeedback(e,message,type='info'){
   const key=internalAiPilotKey(e);
   if(key)__auneaAiFeedback.set(key,{message,type});
   const node=document.getElementById('tobeAiPilotStatus');
-  if(node){node.className='notice '+(type==='warn'?'warn':'info');node.textContent=message}
+  if(currentEng()?.id!==e?.id||internalAiPilotKey(e)!==key)return;
+  if(node){node.className='notice '+(type==='warn'?'warn':'info');const label=document.getElementById('tobeAiProgress');if(label)label.textContent=message;else node.textContent=message}
 }
 function internalAiPilotRefreshPanel(e){
   const panel=document.getElementById('tobeAiPilotStatus');
@@ -29,46 +30,78 @@ function internalAiPilotNarrative(value){
   return match?{action:match[1].trim(),expected:match[2].trim(),reason:match[3].trim()}
     :{action:'',expected:'',reason:text};
 }
+function internalAiAuditJson(value,label='JSON técnico'){
+  return '<details><summary>'+esc(label)+'</summary><button type="button" class="btn btn-outline" data-ai-copy>Copiar JSON</button>'+
+    '<pre style="white-space:pre-wrap;overflow-wrap:anywhere">'+esc(JSON.stringify(value,null,2))+'</pre></details>';
+}
+function internalAiAuditValues(value){
+  if(value==null)return 'No transmitido';
+  if(Array.isArray(value))return value.length?'<ul>'+value.map(v=>'<li>'+internalAiAuditValues(v)+'</li>').join('')+'</ul>':'Ninguno';
+  if(typeof value==='object')return '<dl>'+Object.entries(value).map(([k,v])=>'<dt><b>'+esc(k)+'</b></dt><dd>'+internalAiAuditValues(v)+'</dd>').join('')+'</dl>';
+  return esc(String(value));
+}
 function internalAiPilotTracePanel(traces){
   const values=Object.entries(traces||{});
   if(!values.length)return '';
-  const ids=list=>Array.isArray(list)&&list.length?list.map(esc).join(', '):'Ninguno vinculado';
-  const routeLabel=r=>esc(String(r.from||'')+' → '+String(r.to||'')+
-     (r.route==='exception'?' (excepción)':' (ruta normal)'));
-  const blocks=values.map(([stepId,trace])=>{
-    const routes=Array.isArray(trace?.explicit_routes)?trace.explicit_routes:[];
-    const unresolved=Array.isArray(trace?.unresolved_routes)?trace.unresolved_routes:[];
-    return '<div class="card card-pad"><b>'+esc(stepId)+'</b>'+
-      '<p><b>Fricciones facilitadas:</b> '+ids(trace?.friction_ids)+'</p>'+
-      '<p><b>Riesgos facilitados:</b> '+ids(trace?.risk_ids)+'</p>'+
-      '<p><b>Evidencias facilitadas:</b> '+ids(trace?.evidence_ids)+'</p>'+
-      '<p><b>Rutas explícitas relacionadas:</b> '+(routes.length?routes.map(routeLabel).join(' · '):'Sin vínculos explícitos para esta actividad')+'</p>'+
-      (unresolved.length?'<p><b>Rutas pendientes de confirmar:</b> '+unresolved.length+'</p>':'')+
-      '</div>';
-  }).join('');
-  return '<details class="step-group"><summary>Qué información recibió Ollama (trazabilidad)</summary>'+
-    '<p class="field-help">Inventario de identificadores procedentes del estudio activo confirmado. '+
-    'El diagnóstico oficial se envía como referencia de hash, no como informe completo. '+
-    'Los vínculos visuales no se confunden con rutas confirmadas. '+
-    'Este panel no contiene el prompt completo ni el razonamiento interno del modelo.</p>'+
-    blocks+'</details>';
+  return '<details class="step-group internal-only"><summary>Qué información recibió Ollama (trazabilidad)</summary>'+
+    '<p class="field-help">Auditoría temporal del estudio activo. Vista redactada: oculta patrones de credenciales y correo. '+
+    'Sólo las entradas marcadas como enviadas llegaron a una solicitud HTTP; no se muestra razonamiento interno. '+
+    'Los tamaños corresponden a los bytes originales, antes de redactar.</p>'+values.map(([sid,trace])=>{
+    if(!trace.attempts)return '<details><summary>'+esc(sid)+'</summary>'+internalAiAuditJson(trace,'Inventario anterior: sólo IDs; diagnóstico como hash')+'</details>';
+    return '<details><summary>'+esc(sid)+'</summary>'+trace.attempts.map((attempt,index)=>{
+      let context=null;try{context=JSON.parse(attempt.request?.messages?.[1]?.content?.split('\n').slice(1).join('\n'))}catch(_){}
+      return '<section class="card card-pad"><b>Intento '+(index+1)+(index?' · Corrección dirigida':'')+'</b>'+
+        '<details><summary>ENTRADA — '+(attempt.sent?(attempt.original_response?'Solicitud enviada y respuesta recibida':'Envío intentado; recepción sin confirmar'):'Preparada, no enviada')+'</summary>'+
+        '<p><b>Actividad:</b> '+esc(context?.current_activity?.step_name||context?.current_activity?.name||sid)+'</p>'+
+        [['Actividad',context?.current_activity],['Fricciones',context?.explicit_linked_frictions],
+         ['Riesgos',context?.explicit_linked_risks],['Evidencias',context?.linked_evidence],
+         ['Hallazgos diagnósticos enviados',context?.official_diagnostic_findings],
+         ['Decisiones y rutas explícitas',context?.process_flow],['Restricciones',context?.analysis_constraints],
+         ['Corrección solicitada',context?.targeted_correction]].map(([label,value])=>
+          '<details><summary>'+label+'</summary>'+internalAiAuditValues(value)+'</details>').join('')+
+        '<p>Disponible en AUNEA: diagnóstico completo. Enviado: únicamente la proyección indicada y su referencia; no el informe completo.</p>'+
+        '<p><b>Instrucciones recibidas:</b> '+esc(attempt.request?.messages?.[0]?.content||'No disponibles')+'</p>'+
+        '<p><b>Tamaño:</b> '+esc(attempt.request_bytes)+' / '+esc(attempt.budget_bytes)+' bytes. '+
+        '<b>Tokens de entrada medidos por Ollama:</b> '+esc(attempt.prompt_eval_count??'No disponibles')+' / '+esc(attempt.input_token_limit)+'</p>'+
+        internalAiAuditJson({components:attempt.component_bytes,instructions:attempt.instructions_bytes,schema:attempt.schema_bytes,model:attempt.request?.model,options:attempt.request?.options},'Medición y configuración efectiva')+
+        internalAiAuditJson(attempt.request,'Solicitud y esquema enviados (redactados)')+'</details>'+
+        '<details><summary>SALIDA — Respuesta y validación</summary><p><b>Estado:</b> '+esc(attempt.validation_status||'Sin respuesta validada')+'</p>'+
+        (attempt.error?'<p class="notice warn">'+esc(attempt.error)+'</p>':'')+
+        (attempt.response_note?'<p>'+esc(attempt.response_note)+'</p>':'')+
+        internalAiAuditJson(attempt.original_response,'Respuesta estructurada original (redactada)')+
+        internalAiAuditJson(attempt.validated_proposal,'Propuesta que supera el contrato; aprobación humana pendiente')+'</details></section>';
+    }).join('')+'</details>';
+  }).join('')+'</details>';
+}
+function internalAiReviewPanel(review){
+  if(!review)return '';
+  return '<details open><summary>REVISIÓN — Aspectos por revisar</summary>'+[
+    ['BLOCKING','Bloqueantes'],['WARNING','Advertencias'],['PENDING','Información pendiente']
+  ].map(([category,label])=>{
+    const issues=(review.issues||[]).filter(i=>(i.category||'WARNING')===category);
+    return issues.length?'<h4>'+label+'</h4><ul>'+issues.map(i=>'<li><b>'+esc(i.step_id)+'</b>: '+esc(i.issue)+
+      (i.evidence?'<p><b>Motivo:</b> '+esc(i.evidence)+'</p>':'')+
+      (i.action?'<p><b>Acción necesaria:</b> '+esc(i.action)+'</p>':'')+'</li>').join('')+'</ul>':'';
+  }).join('')+internalAiAuditJson(review.audit||[],'Solicitud y respuesta del revisor (redactadas)')+
+    (review.initial_review?internalAiAuditJson(review.initial_review,'Revisión anterior a la corrección'):'')+'</details>';
 }
 function internalAiPilotPanel(e){
+  if(typeof isClientDisplay==='function'&&isClientDisplay())return '';
   const key=internalAiPilotKey(e),draft=key?__auneaAiPreview.get(key):null;
   const feedback=key?__auneaAiFeedback.get(key):null;
+  const partial=key?__auneaAiCompletedSteps.get(key):null;
   if(!draft)return '<div id="tobeAiPilotStatus" role="status" aria-live="polite" class="notice '+(feedback?.type==='warn'?'warn':'info')+'">'+
-    esc(feedback?.message||'La IA es opcional. Pulsa «Preparar propuesta con IA» para consultar el proveedor autorizado; no se generan resultados simulados.')+'</div>';
+    '<p id="tobeAiProgress">'+esc(feedback?.message||'La IA es opcional. Pulsa «Preparar propuesta con IA» para consultar el proveedor autorizado; no se generan resultados simulados.')+'</p>'+
+    internalAiPilotTracePanel(Object.fromEntries(partial?.traces||new Map()))+'</div>';
   const review=draft.review||null;
   const blocked=Array.isArray(review?.blocking_step_ids)&&review.blocking_step_ids.length>0;
   const reviewProtocolLabel=review?.protocol_revision?
     '<p class="field-help">Revisor PG11: '+esc(review.protocol_revision)+'</p>':'';
   const warning=feedback?.type==='warn'?'<p class="notice warn">'+esc(feedback.message)+'</p>':'';
-  const contextTraceHtml=internalAiPilotTracePanel(draft.context_traces);
+  const contextTraceHtml=internalAiPilotTracePanel(partial?Object.fromEntries(partial.traces):draft.context_traces);
   const overview=review?'<p><b>Consolidación automática '+(review.status==='CHECKED'?'sin observaciones':'con observaciones')+
     '</b> — '+esc(review.summary||'')+'</p>'+
-    (review.issues?.length?'<div class="notice warn"><b>Aspectos por revisar:</b><ul>'+
-      review.issues.map(issue=>'<li>'+esc(issue.step_id)+': '+esc(issue.issue)+'</li>').join('')+
-      '</ul></div>':''):'';
+    internalAiReviewPanel(review):'';
   const sections=draft.items.map(item=>{
     const narrative=internalAiPilotNarrative(item.rationale);
     return '<div class="card card-pad section"><p><b>'+esc(item.source_step_id)+' · '+esc(item.transformation)+'</b></p>'+
@@ -85,7 +118,7 @@ function internalAiPilotPanel(e){
   return '<div id="tobeAiPilotStatus" role="status" aria-live="polite" class="notice info">'+
     '<b>Propuesta TO-BE IA sin aprobar — '+esc(draft.model)+'</b>'+
     '<p>Intervenciones y resultados esperados son hipótesis de diseño. La revisión automática no equivale a aprobación humana.</p>'+
-    warning+overview+reviewProtocolLabel+contextTraceHtml+sections+
+    '<p id="tobeAiProgress">'+esc(feedback?.message||'Generación completada; pendiente de aprobación humana.')+'</p>'+warning+overview+reviewProtocolLabel+contextTraceHtml+sections+
     '<p>Aplicar sólo completará campos vacíos del borrador y requiere revisión del consultor.</p>'+
     (blocked?'<p class="notice warn"><b>No apta para aplicar:</b> revisar las clasificaciones de '+
       esc(review.blocking_step_ids.join(', '))+'. Puedes corregir el TO-BE manualmente o generar nuevas sugerencias.</p>':'')+
@@ -98,7 +131,7 @@ function internalAiPilotPanel(e){
 const __originalTobePagePilot=tobePage;
 tobePage=function(){
   const html=__originalTobePagePilot(),e=currentEng();
-  if(!e||!tobeEditable(latestTobe(e))||!internalAiPilotKey(e))return html;
+  if((typeof isClientDisplay==='function'&&isClientDisplay())||!e||!tobeEditable(latestTobe(e))||!internalAiPilotKey(e))return html;
   const button='<button class="btn btn-outline" id="generateTobeAiPilot">Preparar propuesta con IA</button>';
   return html.replace('<button class="btn" id="saveTobe">',button+'<button class="btn" id="saveTobe">')
     .replace('<div class="card card-pad section">',internalAiPilotPanel(e)+'<div class="card card-pad section">');
@@ -123,6 +156,7 @@ async function generateTobeBySteps(e,key,snap,availability){
     confirmed_as_is:e.confirmedAsIs===true,
     snapshot_version:snap.version
   };
+  const failures=[];
   for(const stepId of stepIds){
     if(completed.items.has(stepId))continue;
     if(internalAiPilotKey(e)!==key||currentEng()?.id!==e.id||
@@ -137,9 +171,11 @@ async function generateTobeBySteps(e,key,snap,availability){
     });
     if(!response.ok){
       const error=await response.json().catch(()=>null);
-      const detail=typeof error?.detail==='string'?error.detail:'Comprueba el registro del backend.';
-      throw Error('Actividad '+stepId+' (HTTP '+response.status+'): '+detail+
-        ' · '+done+' de '+stepIds.length+' completadas. Puedes reintentar.');
+      const detail=typeof error?.detail==='string'?error.detail:(error?.detail?.message||'Comprueba el registro del backend.');
+      if(error?.detail?.context_trace?.source_step_id===stepId)completed.traces.set(stepId,error.detail.context_trace);
+      failures.push('Actividad '+stepId+' (HTTP '+response.status+'): '+detail);
+      internalAiPilotRefreshPanel(e);
+      continue;
     }
     const result=await response.json();
     if(internalAiPilotKey(e)!==key||currentEng()?.id!==e.id||
@@ -158,18 +194,20 @@ async function generateTobeBySteps(e,key,snap,availability){
     }
     completed.inputHash=result.input_hash;
     completed.items.set(stepId,result.item);
+    internalAiPilotRefreshPanel(e);
     internalAiPilotFeedback(e,'Actividad '+completed.items.size+' de '+stepIds.length+
       ' completadas y verificadas. Preparando siguiente actividad…');
   }
+  if(failures.length)throw Error(failures.join(' · ')+' · '+completed.items.size+' de '+stepIds.length+' completadas. Puedes reintentar.');
   if(completed.items.size!==stepIds.length)throw Error('Faltan actividades; propuesta incompleta.');
   // Review cross-step coherence only after every source step is validated.
   // If review fails, retain every completed step; retry only the review call.
-  const items=stepIds.map(id=>completed.items.get(id));
+  let items=stepIds.map(id=>completed.items.get(id));
   internalAiPilotFeedback(e,'Generación individual completada: '+stepIds.length+
     ' de '+stepIds.length+' actividades verificadas. Consolidando coherencia global…');
   const reviewed=await fetch(state.backendUrl+'/v1/internal-ai/tobe-review',{
     method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({request,items})
+    body:JSON.stringify({request,items,correction_attempted_ids:[...completed.traces].filter(([,t])=>t.correction_attempted).map(([id])=>id)})
   });
   if(!reviewed.ok){
     const err=await reviewed.json().catch(()=>null);
@@ -184,9 +222,18 @@ async function generateTobeBySteps(e,key,snap,availability){
      internalAiPilotKey(e)!==key||currentEng()?.id!==e.id||
      !tobeEditable(latestTobe(e)))
     throw Error('La consolidación no corresponde al estudio vigente.');
+  if(review.corrected_items){
+    if(review.corrected_items.length!==items.length||review.corrected_items.some((it,i)=>it.source_step_id!==items[i].source_step_id))throw Error('Corrección fuera del conjunto de actividades.');
+    items=review.corrected_items;
+    for(const [sid,trace] of Object.entries(review.correction_traces||{})){
+      const initial=completed.traces.get(sid);
+      completed.traces.set(sid,{...trace,attempts:[...(initial?.attempts||[]),...(trace.attempts||[])]});
+    }
+  }
   const data={status:'DRAFT',engagement_id:e.id,snapshot_version:snap.version,
     input_hash:completed.inputHash,model:availability.model,review,items,
     context_traces:Object.fromEntries(completed.traces||new Map())};
+  delete review.corrected_items;delete review.correction_traces;
   __auneaAiPreview.set(key,data);
   __auneaAiCompletedSteps.delete(key);
   __auneaAiFeedback.delete(key);
@@ -197,8 +244,10 @@ async function generateTobeBySteps(e,key,snap,availability){
 
 async function generateTobeAiPilot(e,fresh=false){
   const key=internalAiPilotKey(e);
-  if(!key||!tobeEditable(latestTobe(e)))return toast('El estudio no tiene un borrador vigente.');
+  if((typeof isClientDisplay==='function'&&isClientDisplay())||!key||!tobeEditable(latestTobe(e)))return toast('El estudio no tiene un borrador vigente.');
   if(__auneaAiWorking.has(key))return;
+  for(const cache of [__auneaAiPreview,__auneaAiFeedback,__auneaAiCompletedSteps])
+    for(const oldKey of cache.keys())if(oldKey!==key)cache.delete(oldKey);
   __auneaAiWorking.add(key);
   const button=document.getElementById('generateTobeAiPilot');
   if(button){button.disabled=true;button.textContent='Comprobando IA…'}
@@ -270,6 +319,7 @@ async function generateTobeAiPilot(e,fresh=false){
   }
 }
 function applyTobeAiPilot(e){
+  if(typeof isClientDisplay==='function'&&isClientDisplay())return;
   const key=internalAiPilotKey(e),data=key?__auneaAiPreview.get(key):null,p=latestTobe(e);
   if(!data||!tobeEditable(p))return toast('La propuesta ya no está disponible.');
   if(Array.isArray(data.review?.blocking_step_ids)&&data.review.blocking_step_ids.length)
@@ -299,6 +349,10 @@ registerInternalWorkPages=function(){
   if(document.__auneaAiPilotDelegatedBound)return;
   document.__auneaAiPilotDelegatedBound=true;
   document.addEventListener('click',event=>{
+    const copy=event.target?.closest?.('[data-ai-copy]');
+    if(copy){event.preventDefault();const text=copy.parentElement?.querySelector('pre')?.textContent;
+      if(text&&typeof navigator!=='undefined')void navigator.clipboard.writeText(text).then(()=>toast('JSON copiado.')).catch(()=>toast('No se pudo copiar; selecciona el JSON.'));return;}
+
     const generate=event.target?.closest?.('#generateTobeAiPilot');
     if(generate){
       event.preventDefault();
