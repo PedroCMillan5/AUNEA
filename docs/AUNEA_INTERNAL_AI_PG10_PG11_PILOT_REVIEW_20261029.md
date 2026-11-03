@@ -97,3 +97,25 @@ QA automatizado del cambio: tests backend de enums, JSON/esquema, truncamiento, 
 - No se altera el frontend: en la pestaña de AUNEA ya abierta se puede actualizar únicamente el backend (Pull + reiniciar Uvicorn), sin recargar navegador, y reintentar solamente `/v1/internal-ai/tobe-review` con las cuatro actividades en memoria. Si se recarga, se pierde ese progreso efímero.
 
 **QA:** tests backend comprueban presupuesto de salida, esquemas de longitud y contador, y rechazo seguro de respuestas excesivas. GitHub Actions Acceptance Gate `41612867236` SUCCESS (backend, frontend, navegador). **Pendiente UAT real Qwen3 Windows** de esta consolidación y evaluación de utilidad del resultado. Estado REVIEW; no promover a CANONICAL.
+
+
+## Ejecución incremental de cierre PG11 — 03/11/2026 · primera entrega
+
+**Fuentes vigentes comprobadas:** `00_AUNEA_INTERNAL_MASTER_INDEX` v1.59, `PROJECT_RULES.md` v1.7, `DECISIONES` (DEC-034/050/052/055), `AUNEA_SYSTEM_SIMULATOR_CANONICAL` PG11, `AUNEA_INTERNAL_ARCHITECTURE_CONTRACT_CANONICAL` v1.7, `CODE_BLOCK_INDEX.md`. No se crea otra matriz de datos: se reutilizan DF001–DF100, ProcessStep, fricciones, riesgos, evidencias y snapshot sellado.
+
+**Comprobación de cobertura (sin nueva matriz persistente):**
+- **Existente/reutilizado:** actividad y origen AS-IS; transformación canónica; responsable, herramienta, inputs/outputs, automatización, supervisión y controles del DRAFT; fricciones/riesgos/evidencias vinculados; restricción de herramienta, IDs, hash y contexto Ollama; revisión global y estados versionados.
+- **Gap de interpretación corregido ahora:** el segmento individual tenía sólo orden de actividades y vínculos de fricción/riesgo; faltaban destinos del flujo. `explicit_pilot_process_flow` proyecta las rutas canónicas `normal_next_step` y `exception_path.destination_step` por estudio, identifica bifurcaciones y rutas pendientes sin inventar conexiones. Se reutiliza en generación individual y revisión global. **No interpreta un orden visual como regla de aprobación.**
+- **Gap de visibilidad mitigado:** `step_context_trace` añade metadatos transitorios al `/v1/internal-ai/tobe-step` con IDs de fricciones/riesgos/evidencias realmente incluidos, rutas explícitas pertinentes y rutas sin destino confirmado; el panel IA del PG11 permite consultarlos tras generar el borrador. No son nuevos campos de negocio, no expone respuestas completas, secretos, prompt ni contenido sensible y no se persiste como segunda fuente.
+- **Gate de revisión de datos canónicos reforzado:** `tobeReviewReadiness` en `results.js` impide mover el DRAFT a REVIEWED si la versión AS-IS es obsoleta, los IDs o conteo de pasos no coinciden, la transformación no pertenece al catálogo, falta el responsable futuro, una transformación distinta de «Se mantiene» carece de problema abordado o existe tiempo futuro sin supuesto trazable. «Se mantiene» sin fricción inventada sigue admitido. El gate es de **completitud/formato de la UI**, no sustituye validación de reglas server-owned ni certifica calidad semántica; se registra `AUNEA-FE-PG11-REVIEW-GATE-199` con QA específica.
+- **Instrucciones ajustadas:** distinguir decisiones de aprobaciones y comparar intervenciones con causas, fuentes, rutas explícitas y duplicidad entre pasos. Sin training, sin cambiar de modelo, sin llamadas adicionales ni aumento del presupuesto de tokens.
+
+**QA automatizado:** GitHub Actions Acceptance Gate `41623785634` sobre `854bc02578d18576c0adb3b4d93567a19bb14439`: backend **390 PASS**, frontend **735 PASS**, Chromium UAT **PASS**; `CODE_BLOCK_INDEX.md` registra responsabilidades 199 y pruebas. La revisión del flujo con Ollama Qwen3 real, en entorno Windows, **no** está acreditada por GitHub Actions.
+
+**Pendientes para cierre de toda PG11, sin falsear resultado:**
+1. Probar con Ollama real que el nuevo contexto no provoca `IA_STEP_TOKENS`, `IA_REVIEW_TOKENS` o exceso de bytes, y comparar la calidad frente al resultado anterior para Levante y un segundo proceso.
+2. Formalizar criterios de calidad semántica y severidad de defectos de diseño con fuente de gobierno, sin transformar automáticamente observaciones de IA en reglas deterministas no aprobadas; reintento dirigido sólo cuando esté contractualizado.
+3. Resolver el owner y contrato de persistencia para resultados esperados, justificaciones y evidencias del TO-BE, hoy narrativas temporales del panel IA; no introducir campos sin fuente CANONICAL.
+4. Verificar la UX y el historial de DRAFT / REVIEWED / APPROVED_FOR_CLIENT / PUBLISHED y la transición real a PG12 con dos estudios, guardado y recarga, no sólo pruebas automatizadas.
+
+**Estado:** primera entrega técnica de PG11 implementada y QA PASS; **PG11 continúa REVIEW y no está declarada cerrada, apta para cliente ni en PRODUCCIÓN.** El código cambiado está sólo en la rama de trabajo, pendiente de actualización del entorno del operador. No cambian decisiones de negocio, motores oficiales, precios, estado canónico de las fuentes ni ROADMAP.
