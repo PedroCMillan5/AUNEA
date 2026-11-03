@@ -65,6 +65,9 @@ def test_independent_steps_and_explicit_links(monkeypatch):
     assert len(chat)==2
     assert all(url.endswith("/api/chat") for url,_,_ in calls), "No repeated /api/tags between inference steps"
     assert all(x["keep_alive"]=="5m" for x in chat)
+    assert all(x["format"]["properties"]["items"]["items"]["properties"]["source_step_id"]["enum"]==[sid] for x,sid in zip(chat,("S1","S2")))
+    assert all(set(x["format"]["properties"]["items"]["items"]["properties"]["tool"]["enum"])=={"","CRM"} for x in chat)
+    assert "F1" not in chat[1]["format"]["properties"]["items"]["items"]["properties"]["source_refs"]["items"]["enum"]
     assert all(x["options"]["num_predict"]<=1024 and x["options"]["num_ctx"]==8192 for x in chat)
     one=chat[0]["messages"][1]["content"]
     two=chat[1]["messages"][1]["content"]
