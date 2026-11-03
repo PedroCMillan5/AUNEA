@@ -16,14 +16,19 @@ from .internal_ai_ollama import (
 
 MAX_REVIEW_BYTES = 11000
 MAX_REVIEW_INPUT_TOKENS = 4000
+# Independent output budget; does not expand context sent to the model.
+MAX_REVIEW_OUTPUT_TOKENS = 1536
+MAX_REVIEW_ISSUES_PER_BATCH = 8
+MAX_REVIEW_SUMMARY_CHARS = 240
+MAX_REVIEW_ISSUE_CHARS = 200
 
 _REVIEW_SCHEMA = {
     "type":"object","additionalProperties":False,
     "properties":{
-        "summary":{"type":"string"},
-        "issues":{"type":"array","items":{
+        "summary":{"type":"string","maxLength":MAX_REVIEW_SUMMARY_CHARS},
+        "issues":{"type":"array","maxItems":MAX_REVIEW_ISSUES_PER_BATCH,"items":{
             "type":"object","additionalProperties":False,
-            "properties":{"step_id":{"type":"string"},"issue":{"type":"string"}},
+            "properties":{"step_id":{"type":"string"},"issue":{"type":"string","maxLength":MAX_REVIEW_ISSUE_CHARS}},
             "required":["step_id","issue"],
         }},
     },"required":["summary","issues"],
@@ -40,6 +45,9 @@ _REVIEW_INSTRUCTIONS = (
     "No utilices nombres abreviados como P1 en step_id: cita literalmente los IDs disponibles. "
     "Usa GLOBAL solo cuando la observacion afecte al conjunto. Si no hay observaciones, "
     "devuelve issues como lista vacia y summary como texto breve. "
+    "Escribe un resumen de maximo 240 caracteres y hasta 8 observaciones prioritarias por lote. "
+    "Cada observacion: una sola frase de maximo 200 caracteres, especifica y fundada. "
+    "No repitas contexto, ni enumeres los pasos completos, ni incluyas preambulos. "
     "La salida es una comprobacion de coherencia, nunca una aprobacion para cliente."
 )
 
@@ -104,7 +112,7 @@ def _request_bytes(context: dict) -> bytes:
         "format":_review_schema({str(item["source_step_id"]) for item in context["proposals"]}),
         "stream":False,"keep_alive":"5m",
         "options":{"temperature":0,"num_ctx":min(context_window(),8192),
-                   "num_predict":700},
+                   "num_predict":MAX_REVIEW_OUTPUT_TOKENS},
     },ensure_ascii=False).encode("utf-8")
 
 def _parse_review_result(result: dict, valid_ids: set[str]) -> tuple[str, list[dict]]:
@@ -131,13 +139,16 @@ def _parse_review_result(result: dict, valid_ids: set[str]) -> tuple[str, list[d
             or not isinstance(raw["summary"], str)
             or not isinstance(raw["issues"], list)):
         raise ValueError("[IA_REVIEW_SHAPE] La revisión no cumple el esquema de resumen y observaciones.")
-    if len(raw["issues"]) > 30:
+    if len(raw["summary"]) > MAX_REVIEW_SUMMARY_CHARS:
+        raise ValueError("[IA_REVIEW_SHAPE] El resumen excede el límite de extensión.")
+    if len(raw["issues"]) > MAX_REVIEW_ISSUES_PER_BATCH:
         raise ValueError("[IA_REVIEW_COUNT] La revisión excede el límite de observaciones.")
     issues = []
     for issue in raw["issues"]:
         if (not isinstance(issue, dict) or set(issue) != {"step_id", "issue"}
                 or not isinstance(issue["step_id"], str)
-                or not isinstance(issue["issue"], str) or not issue["issue"].strip()):
+                or not isinstance(issue["issue"], str) or not issue["issue"].strip()
+                or len(issue["issue"]) > MAX_REVIEW_ISSUE_CHARS):
             raise ValueError("[IA_REVIEW_ISSUES] La estructura de una observación es inválida.")
         if issue["step_id"] not in valid_ids | {"GLOBAL"}:
             raise ValueError("[IA_REVIEW_IDS] La revisión citó una actividad que no pertenece "
