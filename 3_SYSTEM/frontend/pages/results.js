@@ -916,10 +916,16 @@ function tobePage(){
   if(!snap)return pageTop('Diseño TO-BE','Necesita un AS-IS confirmado.',
     '<button class="btn" data-page="diagnostico">Volver al AS-IS</button>')+
     '<div class="notice warn">Confirma el cierre del AS-IS antes de diseñar el proceso futuro.</div>';
-  if(!currentDiagnosticOutput(e))return pageTop('Diseño TO-BE','La generación requiere un diagnóstico oficial vigente.',
-    '<button class="btn" data-page="resultados">Revisar diagnóstico PG10</button>')+
-    '<div class="notice warn">No hay diagnóstico vigente para este snapshot. Revisa PG10 antes de crear un TO-BE.</div>';
-  const p=latestTobe(e);
+  if(!currentDiagnosticOutput(e))return pageTop('TO-BE preliminar',
+    'Vista de orientación para preparar el diseño futuro; todavía no es un proceso propuesto ni una recomendación aprobada.',
+    '<button class="btn btn-primary" data-page="resultados">Volver a revisión del AS-IS</button>')+
+    section('Para qué sirve esta vista','Antes de diseñar, revisa el alcance de la transformación y las necesidades detectadas.',
+      '<div class="notice info"><b>Qué puedes hacer ahora</b><p>Consultar problemas vinculados al AS-IS y vías de intervención pendientes de validar; no son pasos futuros aprobados.</p>'+
+      '<p><b>Qué falta para diseñar:</b> revisar y confirmar las cinco decisiones técnicas internas desde PG10 y obtener la recomendación oficial vigente del backend.</p>'+
+      '<p><b>Qué no sucede aquí:</b> no se modifican datos del AS-IS, no se crea ni aprueba un TO-BE y no se calculan ahorros o precios futuros.</p></div>')+
+    section('Problemas de origen','Referencias AS-IS para orientar el diseño. No se editan aquí.',asisPointCardsHtml(asisAnalysisSource(e)))+
+    section('Vías de intervención pendientes de validar','Opciones de análisis, no alternativas seleccionadas.',asisDirectionCardsHtml(e))+
+    '<div class="notice warn">La edición y aprobación de un TO-BE definitivo requiere la recomendación oficial vigente. Regresa a PG10 para revisar las decisiones técnicas y comprobar requisitos.</div>';const p=latestTobe(e);
   if(!p)return pageTop('Diseño TO-BE','El proceso futuro parte del AS-IS confirmado.',
     '<button class="btn btn-primary" id="createTobeDraft">Crear borrador desde AS-IS confirmado</button>')+
     section('Fuente confirmada','El diseño comienza como propuesta sin aprobar.',
