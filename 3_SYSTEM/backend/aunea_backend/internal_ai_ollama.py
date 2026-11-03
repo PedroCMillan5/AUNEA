@@ -211,10 +211,7 @@ def _step_context(request: PilotAIRequest, steps: list[dict], step_id: str) -> d
         "engagement_id": engagement.engagement_id,
         "snapshot_version": request.snapshot_version,
         "process_name": engagement.process_name,
-        "process_flow": explicit_pilot_process_flow(steps),
-        "activity_order": [{"id": str(s["id"]), "name": str(s.get("step_name") or
-                             s.get("name") or s.get("label") or "")}
-                           for s in steps],
+        "process_flow": _compact_process_flow(steps),
         # Compact process-wide links, NOT a claim of causal/branch relationships.
         # Details of other steps are not leaked into the focused segment.
         "process_friction_index": [
