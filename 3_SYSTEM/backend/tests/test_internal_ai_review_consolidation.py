@@ -48,6 +48,8 @@ def test_review_reports_real_coherence_without_approving(monkeypatch):
     assert calls[0]["stream"] is False
     assert calls[0]["options"]["num_predict"]==700
     assert calls[0]["model"]=="aunea-qwen3-4b:latest"
+    allowed=calls[0]["format"]["properties"]["issues"]["items"]["properties"]["step_id"]["enum"]
+    assert allowed==["GLOBAL","S1","S2"]
     assert len(json.dumps(calls[0]).encode()) < review.MAX_REVIEW_BYTES
 
 def test_missing_improvement_and_expected_result_are_flagged(monkeypatch):
@@ -80,7 +82,7 @@ def test_unknown_source_rejected_before_model_call(monkeypatch):
 
 def test_model_review_unknown_step_fails_closed(monkeypatch):
     mock_model(monkeypatch,issues=[{"step_id":"NOT_IN_ASIS","issue":"No verificable"}])
-    with pytest.raises(ValueError,match="fuentes"):
+    with pytest.raises(ValueError,match="IA_REVIEW_IDS"):
         review.consolidate(PilotAIConsolidationRequest(
             request=sample(),items=[proposal("S1"),proposal("S2")]))
 
@@ -107,5 +109,33 @@ def test_all_steps_kept_despite_linked_friction_warrants_review(monkeypatch):
     result=review.consolidate(PilotAIConsolidationRequest(request=sample(),items=[a,b]))
     assert result["status"]=="CHECKED_WITH_NOTES"
     assert any("fricciones vinculadas" in i["issue"] for i in result["issues"])
+
+def test_review_contract_errors_categorized_without_unsafe_echo():
+    good={"done":True,"message":{"content":json.dumps({
+        "summary":"Observaciones verificables","issues":[]})}}
+    assert review._parse_review_result(good,{"S1"})==("Observaciones verificables",[])
+    cases=[
+        ({"done":True,"done_reason":"length","message":{"content":"{}"}},"IA_REVIEW_LENGTH"),
+        ({"done":True,"message":{"content":"not json PRIVATE_DATA"}},"IA_REVIEW_JSON"),
+        ({"done":True,"message":{"content":""}},"IA_REVIEW_EMPTY"),
+        ({"done":True,"message":{"content":json.dumps({"issues":[]})}},"IA_REVIEW_SHAPE"),
+        ({"done":True,"message":{"content":json.dumps({
+            "summary":"S","issues":[{"step_id":"P1","issue":"PRIVATE_DATA"}]})}},"IA_REVIEW_IDS"),
+        ({"done":True,"message":{"content":json.dumps({
+            "summary":"S","issues":[{"step_id":"S1","note":"PRIVATE_DATA"}]})}},"IA_REVIEW_ISSUES"),
+    ]
+    for response,code in cases:
+        with pytest.raises(ValueError,match=code) as error:
+            review._parse_review_result(response,{"S1"})
+        assert "PRIVATE_DATA" not in str(error.value)
+
+
+def test_review_schema_matches_only_current_batch():
+    schema=review._review_schema({"UAT-LIT-P1","UAT-LIT-P2"})
+    ids=schema["properties"]["issues"]["items"]["properties"]["step_id"]["enum"]
+    assert ids==["GLOBAL","UAT-LIT-P1","UAT-LIT-P2"]
+    assert "P1" not in ids
+    assert review._REVIEW_SCHEMA["properties"]["issues"]["items"]["properties"]["step_id"]=={"type":"string"}
+
 
 # [AUNEA-UAT-INTERNAL-AI-REVIEW-198] END
