@@ -462,7 +462,7 @@ function applyTobeAiPilot(e){
     return toast('Esta propuesta contiene bloqueos de revisión. Corrige el diseño antes de aplicar.');
   if(data.items.length!==p.items.length||data.items.some(x=>!p.items.some(it=>String(it.sourceStepId)===String(x.source_step_id))))
     return toast('La estructura del proceso ha cambiado; no se aplica la propuesta.');
-  saveTobeFromDom(e);
+  if(!saveTobeFromDom(e))return;
   const fields={transformation:'transformation',problem_resolved:'problemResolved',
     future_actor:'futureActor',tool:'tool',inputs:'inputs',outputs:'outputs',
     automation_ai:'automationAi',human_supervision:'humanSupervision',controls_risk:'controlsRisk'};
