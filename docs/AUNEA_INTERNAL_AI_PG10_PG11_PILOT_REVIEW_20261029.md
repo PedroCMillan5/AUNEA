@@ -58,3 +58,13 @@ En la rama `work/as-is-ux-simplification-20260930`, GitHub Actions Acceptance Ga
 
 **Gobierno:** todos los cambios permanecen REVIEW; no alteran DF001–DF100, productos, precios, KPIs ni estados de aprobación. No se promueve a CANONICAL hasta superar UAT funcional de calidad y decidir el almacenamiento correcto de resultados esperados.
 
+
+## Corrección REVIEW 03/11/2026 — error HTTP 409 en primer paso
+
+**Incidencia de UAT:** con backend y Ollama local activados, el operador obtuvo `Actividad UAT-LIT-P1 (HTTP 409): La actividad UAT-LIT-P1 no cumple el contrato de salida y fuentes`, 0/4 actividades completadas. El adaptador anterior agrupaba errores independientes (JSON, campos, ID, herramienta, referencias) en ese mensaje genérico. **No se capturó la respuesta del modelo, así que no está identificada la causa concreta de esta ejecución**. No atribuir el fallo a referencias o herramientas sin evidencia.
+
+**Corrección del backend** (sin modificar el contrato de negocio):`allowed_pilot_step_refs` centraliza, en `internal_ai.py`, los identificadores que una propuesta puede citar para una actividad dada: pasos válidos y fricciones/riesgos expresamente vinculados. `_bounded_step_schema` en `internal_ai_ollama.py` utiliza la misma lista para declarar enums JSON de `source_refs`, exige `source_step_id` correspondiente y restringe `tool` a la herramienta confirmada o a cadena vacía. La validación server-side sigue siendo obligatoria aunque Ollama ignore el esquema.
+
+`_validated_step_json` conserva el bloqueo del resultado no válido y devuelve códigos **seguros, sin eco del prompt ni datos del expediente**: `IA_STEP_LENGTH` (salida truncada por tokens), `IA_STEP_EMPTY`, `IA_STEP_JSON`, `IA_STEP_SHAPE`, `IA_STEP_COUNT`, `IA_STEP_FIELD`, `IA_STEP_REFS`, `IA_STEP_TOOL`, `IA_STEP_ORIGIN`, `IA_STEP_VALIDATION`. No se introduce reintento automático de inferencia: el operador puede reintentar manualmente una actividad sin repetir las anteriores. El límite de salida, contexto por paso, controles de entrada y aprobación humana siguen vigentes.
+
+**QA:** `test_internal_ai_segmented_review.py` comprueba que el esquema se restringe por actividad y verifica categorías de error con ejemplos sintéticos (sin acceso al equipo del operador). GitHub Actions Acceptance Gate `41600736723` PASS (backend/frontend/browser), confirmado en la rama de trabajo. Se mantiene estado REVIEW. **Pendiente:** actualizar rama y reiniciar backend Windows; repetir P1 con Qwen3 local y revisar el resultado. Si reaparece HTTP 409, el código específico permitirá localizar la causa real sin registrar información de cliente.
