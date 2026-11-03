@@ -58,6 +58,8 @@ function internalAiPilotPanel(e){
   if(!draft)return '<div id="tobeAiPilotStatus" role="status" aria-live="polite" class="notice '+(feedback?.type==='warn'?'warn':'info')+'">'+
     esc(feedback?.message||'La IA es opcional. Pulsa «Preparar propuesta con IA» para consultar el proveedor autorizado; no se generan resultados simulados.')+'</div>';
   const review=draft.review||null;
+  const blocked=Array.isArray(review?.blocking_step_ids)&&review.blocking_step_ids.length>0;
+  const warning=feedback?.type==='warn'?'<p class="notice warn">'+esc(feedback.message)+'</p>':'';
   const contextTraceHtml=internalAiPilotTracePanel(draft.context_traces);
   const overview=review?'<p><b>Consolidación automática '+(review.status==='CHECKED'?'sin observaciones':'con observaciones')+
     '</b> — '+esc(review.summary||'')+'</p>'+
@@ -80,9 +82,15 @@ function internalAiPilotPanel(e){
   return '<div id="tobeAiPilotStatus" role="status" aria-live="polite" class="notice info">'+
     '<b>Propuesta TO-BE IA sin aprobar — '+esc(draft.model)+'</b>'+
     '<p>Intervenciones y resultados esperados son hipótesis de diseño. La revisión automática no equivale a aprobación humana.</p>'+
-    overview+contextTraceHtml+sections+'<p>Aplicar sólo completará campos vacíos del borrador y requiere revisión del consultor.</p>'+
+    warning+overview+contextTraceHtml+sections+
+    '<p>Aplicar sólo completará campos vacíos del borrador y requiere revisión del consultor.</p>'+
+    (blocked?'<p class="notice warn"><b>No apta para aplicar:</b> revisar las clasificaciones de '+
+      esc(review.blocking_step_ids.join(', '))+'. Puedes corregir el TO-BE manualmente o generar nuevas sugerencias.</p>':'')+
     (draft.applied?'<p><b>Aplicado a los campos disponibles del TO-BE DRAFT.</b> Se conserva esta explicación en la sesión para revisión; no es un nuevo campo persistente.</p>':
-    '<button class="btn btn-outline" id="applyTobeAiPilot">Aplicar a campos vacíos</button>')+'</div>';
+    blocked?'':'<button class="btn btn-outline" id="applyTobeAiPilot">Aplicar a campos vacíos</button>')+
+    '<button class="btn btn-outline" id="regenerateTobeAiPilot">Generar propuestas nuevas</button>'+
+    '<p class="field-help">Generar nuevas sugerencias vuelve a analizar todas las actividades con Ollama. '+
+    'Conserva los campos del borrador ya editados; sustituye únicamente esta previsualización cuando finaliza.</p></div>';
 }
 const __originalTobePagePilot=tobePage;
 tobePage=function(){
@@ -102,6 +110,10 @@ async function generateTobeBySteps(e,key,snap,availability){
   const completed=previous?.stepSignature===stepIds.join('|')?previous:
     {stepSignature:stepIds.join('|'),items:new Map(),traces:new Map(),inputHash:null};
   __auneaAiCompletedSteps.set(key,completed);
+  if(completed.items.size){
+    internalAiPilotFeedback(e,'Reutilizando '+completed.items.size+' actividades verificadas de esta sesión. '+
+      'Para volver a generar todo, usa «Generar propuestas nuevas».');
+  }
   const request={
     engagement:buildBackendPayload(e),
     diagnostic:currentDiagnosticOutput(e),
@@ -179,7 +191,7 @@ async function generateTobeBySteps(e,key,snap,availability){
 }
 // [AUNEA-FE-TOBE-SEGMENTED-197] END
 
-async function generateTobeAiPilot(e){
+async function generateTobeAiPilot(e,fresh=false){
   const key=internalAiPilotKey(e);
   if(!key||!tobeEditable(latestTobe(e)))return toast('El estudio no tiene un borrador vigente.');
   if(__auneaAiWorking.has(key))return;
@@ -198,6 +210,11 @@ async function generateTobeAiPilot(e){
     internalAiPilotFeedback(e,'Generando propuesta con '+(availability.provider==='ollama'?'Ollama local':'el proveedor autorizado')+'… No cierres el estudio durante el análisis.');
     const snap=confirmedSnapshot(e);
     if(availability.provider==='ollama'){
+      if(fresh){
+        // Explicit user action; only transient cached steps are cleared.
+        // Keep the last successful preview until a replacement completes.
+        __auneaAiCompletedSteps.delete(key);
+      }
       await generateTobeBySteps(e,key,snap,availability);
       return;
     }
@@ -247,6 +264,8 @@ async function generateTobeAiPilot(e){
 function applyTobeAiPilot(e){
   const key=internalAiPilotKey(e),data=key?__auneaAiPreview.get(key):null,p=latestTobe(e);
   if(!data||!tobeEditable(p))return toast('La propuesta ya no está disponible.');
+  if(Array.isArray(data.review?.blocking_step_ids)&&data.review.blocking_step_ids.length)
+    return toast('Esta propuesta tiene transformaciones contradictorias. Revisa el diseño antes de aplicar.');
   if(data.items.length!==p.items.length||data.items.some(x=>!p.items.some(it=>String(it.sourceStepId)===String(x.source_step_id))))
     return toast('La estructura del proceso ha cambiado; no se aplica la propuesta.');
   saveTobeFromDom(e);
@@ -276,6 +295,12 @@ registerInternalWorkPages=function(){
     if(generate){
       event.preventDefault();
       if(!generate.disabled)void generateTobeAiPilot(currentEng());
+      return;
+    }
+    const fresh=event.target?.closest?.('#regenerateTobeAiPilot');
+    if(fresh){
+      event.preventDefault();
+      if(!fresh.disabled)void generateTobeAiPilot(currentEng(),true);
       return;
     }
     const apply=event.target?.closest?.('#applyTobeAiPilot');
