@@ -2551,3 +2551,105 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
  .pg11-ai-header h2{font-size:20px}
 }
 /* [AUNEA-FE-PG11-AI-LAYOUT-203] END */
+
+
+/* [AUNEA-FE-PG11-WORKSPACE-LAYOUT-207] START — scoped PG11 map and inspector, AUNEA System tokens.
+   SOURCE: Simulator CANONICAL v1.14 PG11/PG04, DEC-056, existing System UI. */
+.tobe-workspace{display:grid;gap:20px;width:100%;min-width:0;max-width:100%;margin:16px 0 36px}
+.tobe-workspace *, .tobe-workspace *::before, .tobe-workspace *::after{box-sizing:border-box}
+.tobe-workspace :is(h2,h3,p){margin:0}
+.tobe-workspace :is(section,div,details){min-width:0}
+.tobe-context{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px 22px;
+  padding:16px 20px;border:1px solid var(--system-line);background:var(--system-soft);border-radius:var(--radius-md)}
+.tobe-context strong{font-size:14px;color:var(--system)}
+.tobe-context p{margin-top:5px;font-size:12px;line-height:1.6;color:var(--muted)}
+.tobe-context-status,.tobe-selected-status{font-size:12px;font-weight:700;padding:6px 12px;
+  border-radius:var(--radius-pill);background:#fff;border:1px solid var(--system-line);color:var(--system)}
+.tobe-map-area,.tobe-inspector,.tobe-completion,.tobe-ai-workspace{border:1px solid var(--system-line);
+  border-radius:var(--radius-md);background:#fff;box-shadow:var(--shadow-system);
+  width:100%;min-width:0;max-width:100%;padding:clamp(16px,2vw,24px)}
+.tobe-eyebrow{display:block;color:var(--system);font-size:11px;font-weight:750;letter-spacing:.08em}
+.tobe-workspace-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px 24px;
+  flex-wrap:wrap;margin-bottom:18px}
+.tobe-workspace-head h2,.tobe-inspector-head h2{font-size:clamp(18px,2vw,23px);line-height:1.3;margin-top:5px}
+.tobe-workspace-head>p{max-width:280px;color:var(--muted);font-size:12px;line-height:1.6}
+.tobe-canvas-viewport{width:100%;min-width:0;max-width:100%;border:1px solid var(--line);
+  border-radius:var(--radius-sm);background:#fbfcfa;overflow:auto;overscroll-behavior-x:contain}
+.tobe-process-canvas{max-width:none;width:max-content;min-width:100%;border:0;overflow:visible;background:transparent}
+.tobe-process-canvas .process-graph-board{--graph-card-height:190px!important;width:max-content;
+  min-width:max-content;grid-template-columns:repeat(var(--graph-cols),180px);
+  grid-template-rows:repeat(var(--graph-rows),var(--graph-card-height));gap:22px 60px;
+  padding:76px 24px 72px}
+.tobe-process-canvas .process-graph-cell{align-items:stretch;min-width:0}
+.tobe-process-canvas .tobe-graph-node{appearance:none;text-align:left;display:flex;flex-direction:column;
+  justify-content:flex-start;align-items:flex-start;gap:10px;cursor:pointer;
+  width:100%;height:100%;min-height:190px;max-height:190px;margin:0;border:1px solid var(--system-line);
+  border-radius:12px;padding:15px;background:#fff;color:var(--ink);font:inherit;
+  box-shadow:0 3px 10px rgba(20,40,29,.04);white-space:normal;transition:border-color .15s,box-shadow .15s}
+.tobe-process-canvas .tobe-graph-node:hover{border-color:var(--system);box-shadow:0 5px 15px rgba(20,40,29,.1)}
+.tobe-process-canvas .tobe-graph-node.is-selected{border:2px solid var(--system);background:#f5faf6}
+.tobe-process-canvas .tobe-graph-node.is-eliminated{border-style:dashed;opacity:.8}
+.tobe-process-canvas .tobe-graph-node:focus-visible{outline:3px solid var(--system);outline-offset:4px}
+.tobe-node-count{font-size:10px;font-weight:750;color:var(--muted);letter-spacing:.045em}
+.tobe-node-icon{display:block;max-height:25px}
+.tobe-node-icon .process-node-icon{width:23px;height:23px}
+.tobe-graph-node strong{font-size:13px;line-height:1.4;overflow-wrap:anywhere;display:-webkit-box;
+  -webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.tobe-node-status{font-size:11px;font-weight:750;color:var(--system);background:var(--system-soft);
+  border:1px solid var(--system-line);border-radius:6px;padding:5px 7px;max-width:100%;overflow-wrap:anywhere}
+.tobe-graph-node small{font-size:11px;color:var(--muted);line-height:1.4;max-width:100%;overflow-wrap:anywhere}
+.tobe-process-canvas .tobe-boundary.flow-boundary{display:flex;flex-direction:column;gap:9px;justify-content:center;
+  height:190px;min-height:190px;width:100%;padding:12px;background:var(--system-soft);
+  border:1px dashed var(--system-line);border-radius:12px;box-shadow:none}
+.tobe-boundary b{font-size:13px;line-height:1.4;color:var(--system)}
+.tobe-boundary small{font-size:10px;color:var(--muted);line-height:1.4}
+.tobe-map-note,.tobe-muted{font-size:12px;color:var(--muted);line-height:1.65;overflow-wrap:anywhere}
+.tobe-map-note{margin-top:12px!important}
+.tobe-inspector{display:grid;gap:18px}
+.tobe-inspector-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;
+  padding-bottom:17px;border-bottom:1px solid var(--system-line)}
+.tobe-origin,.tobe-edit,.tobe-advice{display:grid;gap:12px}
+.tobe-origin{background:var(--system-soft);border:1px solid var(--system-line);border-radius:var(--radius-sm);
+  padding:16px 18px}
+.tobe-origin h3,.tobe-edit h3,.tobe-advice h3,.tobe-completion h2{font-size:15px;color:var(--system)}
+.tobe-source-list{display:grid;gap:7px;padding-left:22px;margin:0;font-size:12px;line-height:1.6}
+.tobe-inspector .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px;align-items:start}
+.tobe-inspector .field{min-width:0;margin:0}
+.tobe-inspector .field label{font-size:12px;line-height:1.4}
+.tobe-inspector .field :is(input,textarea){width:100%;min-width:0;max-width:100%;font:inherit;font-size:13px;
+  line-height:1.5;box-sizing:border-box}
+.tobe-inspector .field textarea{min-height:70px;resize:vertical}
+.tobe-subdetails{border:1px solid var(--line);border-radius:var(--radius-sm);padding:12px 14px;
+  background:#fbfcfb;min-width:0}
+.tobe-subdetails summary{cursor:pointer;color:var(--system);font-size:12px;font-weight:700}
+.tobe-subdetails .form-grid{margin-top:14px}
+.tobe-subdetails p,.tobe-subdetails li{font-size:12px;line-height:1.65;margin-top:10px!important;overflow-wrap:anywhere}
+.tobe-advice{border-top:1px solid var(--line);padding-top:18px}
+.tobe-ai-empty{border:1px dashed var(--system-line);border-radius:var(--radius-sm);padding:13px 16px}
+.tobe-advice-content{display:grid;gap:12px}
+.tobe-advice-label{font-size:11px;font-weight:700;color:var(--system)}
+.tobe-advice-pairs{margin:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.tobe-advice-pairs>div{border:1px solid var(--line);background:#fbfcfb;border-radius:var(--radius-sm);
+  padding:14px;min-width:0;overflow-wrap:anywhere}
+.tobe-advice-pairs dt{font-size:11px;font-weight:750;color:var(--system);margin-bottom:7px}
+.tobe-advice-pairs dd{font-size:12px;line-height:1.6;color:var(--ink);margin:0;white-space:pre-wrap}
+.tobe-ai-workspace>summary{font-size:14px;font-weight:750;color:var(--system);cursor:pointer}
+.tobe-ai-workspace .pg11-ai-panel.card{margin:20px 0 0;box-shadow:none}
+.tobe-completion{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:15px}
+.tobe-completion>div:first-child{flex:1 1 280px}
+.tobe-completion p{font-size:12px;line-height:1.6;color:var(--muted);margin-top:6px}
+#tobeReadinessStatus:not(:empty){flex-basis:100%}
+@media(max-width:900px){
+  .tobe-advice-pairs{grid-template-columns:1fr}
+  .tobe-workspace-head{display:block}
+  .tobe-workspace-head>p{max-width:100%;margin-top:8px}
+}
+@media(max-width:600px){
+  .tobe-workspace{gap:15px}
+  .tobe-map-area,.tobe-inspector,.tobe-completion,.tobe-ai-workspace{padding:14px}
+  .tobe-context{padding:12px 14px}
+  .tobe-inspector .form-grid{grid-template-columns:1fr}
+  .tobe-process-canvas .process-graph-board{padding:58px 20px 54px}
+  .tobe-ai-workspace .pg11-ai-panel.card{padding:14px}
+}
+/* [AUNEA-FE-PG11-WORKSPACE-LAYOUT-207] END */
