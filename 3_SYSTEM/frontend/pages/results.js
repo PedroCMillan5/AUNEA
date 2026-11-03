@@ -781,12 +781,175 @@ function advanceTobeStatus(e){
 // [AUNEA-FE-PG11-REVIEW-GATE-199] END
 function saveTobeFromDom(e){const p=latestTobe(e);if(!tobeEditable(p))return false;document.querySelectorAll('[data-tobe-item]').forEach(el=>{const item=p.items.find(x=>x.id===el.dataset.tobeItem);if(item)item[el.dataset.tobeField]=el.value});if(typeof persistTobeAiDraft==='function'&&!persistTobeAiDraft(e))return false;p.updatedAt=now();markDirty(`TO-BE v${p.version} actualizado`);return true}
 function tobeField(item,key,label,value,type='text',disabled=false){return `<div class="field"><label>${esc(label)}</label>${type==='textarea'?`<textarea data-tobe-item="${attr(item.id)}" data-tobe-field="${attr(key)}" ${disabled?'disabled':''}>${esc(value||'')}</textarea>`:`<input data-tobe-item="${attr(item.id)}" data-tobe-field="${attr(key)}" value="${attr(value||'')}" ${disabled?'disabled':''}>`}</div>`}
-function tobePage(){const e=currentEng(),snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;if(!snap)return pageTop('TO-BE','El diseño del proceso futuro requiere un mapa del proceso actual confirmado.',`<button class="btn" data-page="diagnostico">Volver a captura</button>`)+`<div class="empty"><h2>AS-IS confirmado requerido</h2><p>Confirma Validación y cierre antes de diseñar el proceso propuesto.</p></div>`;if(!currentDiagnosticOutput(e))return pageTop('TO-BE preliminar','Vista de orientación para preparar el diseño futuro; todavía no es un proceso propuesto ni una recomendación aprobada.',`<button class="btn btn-primary" data-page="resultados">Volver a revisión del AS-IS</button>`)
-  +section('Para qué sirve esta vista','Antes de diseñar, revisa el alcance de la transformación y las necesidades detectadas.', 
-    '<div class="notice info"><b>Qué puedes hacer ahora</b><p>Consultar los problemas vinculados al AS-IS y las vías de intervención que habrá que contrastar. Son hipótesis de trabajo; no constituyen pasos futuros aprobados.</p><p><b>Qué falta para diseñar:</b> revisar y confirmar las cinco decisiones técnicas internas desde PG10 y obtener la recomendación oficial vigente del backend.</p><p><b>Qué no sucede aquí:</b> no se modifican los datos del AS-IS, no se crea ni aprueba un TO-BE y no se calculan ahorros o precios futuros.</p></div>')
-  +section('Problemas de origen','Referencias del AS-IS para orientar el diseño posterior. No se editan aquí.',asisPointCardsHtml(asisAnalysisSource(e)))
-  +section('Vías de intervención pendientes de validar','Opciones de análisis, no alternativas seleccionadas ni soluciones ya diseñadas.',asisDirectionCardsHtml(e))
-  +'<div class="notice warn">La edición y aprobación de un TO-BE definitivo requiere la recomendación oficial vigente. Regresa a PG10 para revisar las decisiones técnicas y comprobar los requisitos.</div>';const p=latestTobe(e);if(!p)return pageTop('Diseño TO-BE','Representa cómo funcionaría el proceso propuesto sin abrir una segunda ronda de discovery.',`<button class="btn btn-primary" id="createTobeDraft">Crear borrador desde AS-IS confirmado</button>`)+section('Fuente','El borrador se instancia desde el snapshot confirmado y queda DRAFT hasta revisión humana.',`<div class="notice info">Snapshot confirmado v${snap.version}. Ningún cambio se considera aprobado automáticamente.</div>`);const editable=tobeEditable(p),statusLabel=p.status==='APPROVED_FOR_CLIENT'?'Aprobado para cliente':p.status==='REVIEWED'?'Revisado':p.status==='PUBLISHED'?'Publicado':'Borrador';const cards=p.items.map((it,i)=>`<div class="card card-pad section"><div class="section-title"><div><small>Origen AS-IS · ${esc(it.sourceStepName)}</small><h2>${i+1}. ${esc(it.sourceStepName)}</h2></div><span class="status ${p.status==='DRAFT'?'amber':'green'}">${esc(it.transformation||'Pendiente de diseño')}</span></div><div class="form-grid"><div class="field"><label>Qué cambia</label>${editable?auneaSelectControl(`tobe_${it.id}_transformation`,TOBE_TRANSFORMATIONS.map(v=>({value:v,label:v})),it.transformation||'',{extra:`data-tobe-item="${attr(it.id)}" data-tobe-field="transformation"`,placeholder:'Selecciona…'}):`<input value="${attr(it.transformation||'')}" disabled>`}</div>${tobeField(it,'problemResolved','Qué problema resuelve',it.problemResolved,'text',!editable)}${tobeField(it,'futureActor','Responsable futuro',it.futureActor,'text',!editable)}${tobeField(it,'tool','Herramienta / arquitectura',it.tool,'text',!editable)}${tobeField(it,'inputs','Datos de entrada',it.inputs,'text',!editable)}${tobeField(it,'outputs','Datos de salida',it.outputs,'text',!editable)}${tobeField(it,'automationAi','Automatización e IA',it.automationAi,'text',!editable)}${tobeField(it,'humanSupervision','Supervisión humana',it.humanSupervision,'text',!editable)}${tobeField(it,'controlsRisk','Control / riesgo',it.controlsRisk,'text',!editable)}${tobeField(it,'futureTime','Tiempo futuro',it.futureTime,'text',!editable)}${tobeField(it,'futureTimeAssumption','Supuesto trazable del tiempo futuro',it.futureTimeAssumption,'textarea',!editable)}</div></div>`).join('');const next=nextTobeStatus(p),actions=`<button class="btn" data-page="resultados">Diagnóstico</button><button class="btn" data-page="comparacion">Comparar AS-IS / TO-BE</button>${editable?'<button class="btn" id="saveTobe">Guardar borrador</button>':''}${next?`<button class="btn btn-primary" id="advanceTobe">${next==='REVIEWED'?'Enviar a revisión':next==='APPROVED_FOR_CLIENT'?'Aprobar para cliente':'Publicar'}</button>`:''}`;return pageTop('Diseño TO-BE',`Versión ${p.version} · ${statusLabel}. Cada propuesta conserva el snapshot AS-IS del que parte.`,actions)+cards}
+// [AUNEA-FE-PG11-WORKSPACE-205] START — single versioned TO-BE canvas and contextual inspector.
+// SOURCE: Simulator CANONICAL v1.14 PG11; DEC-050/052/055; PG04 graph source.
+// INPUTS: confirmed AS-IS snapshot, official diagnostic, TO-BE DRAFT and bounded AI suggestions.
+// OUTPUTS: read-only source graph projection, human-editable TO-BE inspector; no new data owner.
+let __auneaTobeSelection={engagementId:'',version:0,stepId:''};
+function tobeSelectedItem(e,p){
+  if(!p?.items?.length)return null;
+  if(__auneaTobeSelection.engagementId!==e.id||__auneaTobeSelection.version!==p.version){
+    __auneaTobeSelection={engagementId:e.id,version:p.version,stepId:String(p.items[0].sourceStepId)};
+  }
+  const selected=p.items.find(x=>String(x.sourceStepId)===__auneaTobeSelection.stepId);
+  if(!selected)__auneaTobeSelection.stepId=String(p.items[0].sourceStepId);
+  return selected||p.items[0];
+}
+function tobeSnapshotIssueCards(e,item){
+  const snap=confirmedSnapshot(e),id=String(item.sourceStepId),fr=(snap?.frictions||[]).filter(x=>x.status!=='SUPERSEDED'&&
+    (Array.isArray(x.affected_steps)?x.affected_steps:[]).map(String).includes(id));
+  const risks=(snap?.risks||[]).filter(x=>(Array.isArray(x.step_ids)?x.step_ids:[]).map(String).includes(id));
+  const frHtml=fr.map(x=>'<li><b>Fricción:</b> '+esc(x.client_label||labelFrom('OS_FRICTION_TYPE',x.friction_type)||'Sin etiqueta')+
+    (x.observable_signal?' · '+esc(x.observable_signal):'')+'</li>').join('');
+  const riskHtml=risks.map(x=>'<li><b>Riesgo:</b> '+esc(x.description||x.category||'Sin descripción')+'</li>').join('');
+  return frHtml||riskHtml?'<ul class="tobe-source-list">'+frHtml+riskHtml+'</ul>':
+    '<p class="tobe-muted">No hay fricciones o riesgos vinculados directamente a este paso en el snapshot. Consulta el diagnóstico global antes de justificar una transformación.</p>';
+}
+function tobeAiAdviceHtml(e,item){
+  const key=typeof internalAiPilotKey==='function'?internalAiPilotKey(e):null;
+  const cached=key&&typeof __auneaAiPreview!=='undefined'?__auneaAiPreview.get(key):null;
+  const draft=cached||(typeof internalAiSavedDraft==='function'?internalAiSavedDraft(e):null);
+  const suggestion=draft?.items?.find(x=>String(x.source_step_id)===String(item.sourceStepId));
+  if(!suggestion)return '<div class="tobe-ai-empty"><p class="tobe-muted">Todavía no hay una sugerencia de IA para esta actividad. Puedes diseñarla manualmente o preparar propuestas con el motor local.</p></div>';
+  const narrative=typeof internalAiPilotNarrative==='function'?internalAiPilotNarrative(suggestion.rationale):{action:'',expected:'',reason:String(suggestion.rationale||'')};
+  const issues=(draft.review?.issues||[]).filter(x=>x.step_id===item.sourceStepId||x.step_id==='GLOBAL');
+  const blocking=issues.some(x=>x.category==='BLOCKING')||(draft.review?.blocking_step_ids||[]).includes(item.sourceStepId);
+  return '<div class="tobe-advice-content">'+
+    '<div class="tobe-advice-label">'+esc(suggestion.transformation||'Sin clasificar')+
+      (blocking?' · Requiere corrección':' · Propuesta sin aprobar')+'</div>'+
+    '<dl class="tobe-advice-pairs">'+
+    '<div><dt>Problema identificado</dt><dd>'+esc(suggestion.problem_resolved||'No concretado')+'</dd></div>'+
+    '<div><dt>Intervención recomendada</dt><dd>'+esc(narrative.action||'No concretada')+'</dd></div>'+
+    '<div><dt>Resultado esperado</dt><dd>'+esc(narrative.expected||'No declarado')+'</dd></div>'+
+    '</dl>'+
+    '<details class="tobe-subdetails"><summary>Justificación, fuentes y aspectos por revisar</summary>'+
+      '<p><b>Justificación:</b> '+esc(narrative.reason||'No declarada')+'</p>'+
+      '<p><b>Fuentes:</b> '+esc((suggestion.source_refs||[]).join(', ')||'No identificadas')+'</p>'+
+      '<p><b>Condiciones pendientes:</b> '+esc(suggestion.limitations||'Ninguna declarada')+'</p>'+
+      (issues.length?'<ul>'+issues.map(x=>'<li>'+esc(x.issue||x.action||'Revisión pendiente')+'</li>').join('')+'</ul>':'<p>Sin observaciones específicas del revisor automático.</p>')+
+    '</details>'+
+    '<p class="tobe-muted">Esta narrativa forma parte de la sugerencia IA conservada en el borrador; la propuesta operativa sólo cambia mediante revisión humana.</p>'+
+    '</div>';
+}
+function tobeCanvasHtml(e,p){
+  const steps=tobeSourceSteps(e);
+  if(typeof processGraphData!=='function')return '<div class="notice warn">El componente de mapa AS-IS no está disponible; no se han modificado los datos.</div>';
+  const graph=processGraphData(e,steps),selected=tobeSelectedItem(e,p);
+  const byStep=new Map(p.items.map(x=>[String(x.sourceStepId),x]));
+  const cells=graph.nodes.map(n=>{
+    const pos=graph.positions.get(n.id);if(!pos)return '';
+    const step=n.kind==='step'?steps.find(s=>String(s.id)===String(n.id)):null;
+    const item=step?byStep.get(String(step.id)):null;
+    let content='';
+    if(n.kind==='start'||n.kind==='end'){
+      const label=n.kind==='start'?'Inicio del proceso':'Fin del proceso';
+      content='<div class="tobe-boundary flow-boundary"><b>'+label+'</b><small>Referencia AS-IS</small></div>';
+    }else if(n.kind==='pending'){
+      content='<div class="graph-route-pending"><b>'+esc(n.route||'Ruta')+'</b><span>Destino pendiente en el AS-IS</span></div>';
+    }else if(item){
+      const status=item.transformation||'Pendiente de diseño';
+      const isSelected=String(selected?.sourceStepId)===String(step.id);
+      content='<button type="button" class="graph-flow-step tobe-graph-node'+
+        (isSelected?' is-selected':'')+(item.transformation==='Se elimina'?' is-eliminated':'')+
+        '" data-tobe-select="'+attr(step.id)+'" aria-pressed="'+(isSelected?'true':'false')+
+        '" aria-label="Abrir diseño de '+attr(item.sourceStepName)+'">'+
+        '<span class="tobe-node-count">Actividad '+(steps.indexOf(step)+1)+'</span>'+
+        '<span class="tobe-node-icon">'+processNodeIconSvg(processNodeIconName(step))+'</span>'+
+        '<strong>'+esc(item.sourceStepName||step.step_name||'Actividad')+'</strong>'+
+        '<span class="tobe-node-status">'+esc(status)+'</span>'+
+        '<small>'+esc(item.futureActor||'Responsable futuro pendiente')+'</small></button>';
+    }
+    return '<div class="process-graph-cell" style="grid-row:'+pos.row+';grid-column:'+pos.col+
+      '" data-graph-node="'+attr(n.id)+'">'+content+'</div>';
+  }).join('');
+  const routes=graph.edges.some(x=>x.label==='NO')?
+    '<div class="process-graph-legend"><span class="legend-main"><i></i>Ruta SÍ / principal</span><span class="legend-alt"><i></i>Ruta NO / alternativa</span></div>':'';
+  return '<div class="tobe-canvas-viewport" aria-label="Mapa del proceso futuro proyectado desde el flujo AS-IS">'+
+    '<div class="flow-canvas process-graph-canvas tobe-process-canvas">'+routes+
+    '<div class="process-graph-board" style="--graph-cols:'+graph.cols+';--graph-rows:'+graph.rows+
+      ';--graph-card-height:190px" data-graph-edges="'+attr(JSON.stringify(graph.edges))+
+      '" data-graph-branches="'+attr(JSON.stringify(graph.branchLayouts))+'">'+
+    '<svg class="process-graph-lines" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>'+
+    cells+'</div></div></div>';
+}
+function tobeInspectorHtml(e,p){
+  const item=tobeSelectedItem(e,p),editable=tobeEditable(p);
+  if(!item)return '<div class="notice warn">No hay actividades TO-BE vinculadas al AS-IS.</div>';
+  const statusField='<div class="field"><label for="tobe_'+attr(item.id)+'_transformation">Qué cambia</label>'+
+    (editable?auneaSelectControl('tobe_'+item.id+'_transformation',TOBE_TRANSFORMATIONS.map(v=>({value:v,label:v})),
+      item.transformation||'',{extra:'data-tobe-item="'+attr(item.id)+'" data-tobe-field="transformation"',placeholder:'Selecciona una transformación'}):
+      '<input value="'+attr(item.transformation||'Sin definir')+'" disabled>')+'</div>';
+  return '<header class="tobe-inspector-head"><div><span class="tobe-eyebrow">ACTIVIDAD SELECCIONADA · ORIGEN AS-IS</span>'+
+      '<h2>'+esc(item.sourceStepName)+'</h2></div><span class="tobe-selected-status">'+esc(item.transformation||'Sin definir')+'</span></header>'+
+    '<section class="tobe-origin"><h3>Situación de partida y hallazgos</h3>'+
+      tobeSnapshotIssueCards(e,item)+'</section>'+
+    '<section class="tobe-edit"><h3>Diseño operativo propuesto</h3><div class="form-grid">'+statusField+
+      tobeField(item,'problemResolved','Qué problema resuelve',item.problemResolved,'textarea',!editable)+
+      tobeField(item,'futureActor','Responsable futuro',item.futureActor,'text',!editable)+
+      tobeField(item,'tool','Herramienta / arquitectura',item.tool,'text',!editable)+
+      tobeField(item,'inputs','Datos de entrada',item.inputs,'textarea',!editable)+
+      tobeField(item,'outputs','Datos de salida',item.outputs,'textarea',!editable)+
+      tobeField(item,'automationAi','Automatización e IA',item.automationAi,'textarea',!editable)+
+      tobeField(item,'humanSupervision','Supervisión humana',item.humanSupervision,'textarea',!editable)+
+      tobeField(item,'controlsRisk','Control / riesgo',item.controlsRisk,'textarea',!editable)+
+      '</div><details class="tobe-subdetails"><summary>Tiempo futuro y supuesto trazable (si existe)</summary>'+
+      '<div class="form-grid">'+tobeField(item,'futureTime','Tiempo futuro',item.futureTime,'text',!editable)+
+      tobeField(item,'futureTimeAssumption','Supuesto trazable',item.futureTimeAssumption,'textarea',!editable)+
+      '</div></details></section>'+
+    '<section class="tobe-advice" aria-label="Sugerencia IA para actividad"><h3>Recomendación asistida por IA</h3>'+
+      '<div id="tobeAiRecommendation">'+tobeAiAdviceHtml(e,item)+'</div></section>';
+}
+function createNextTobeVersion(e){
+  const previous=latestTobe(e),snap=confirmedSnapshot(e);
+  if(!previous||previous.status==='DRAFT'||!snap||previous.sourceSnapshotVersion!==snap.version)return false;
+  const h=tobeHistory(e),version=h.length+1;
+  const items=previous.items.map((it,i)=>({...it,id:'TOBE-'+version+'-'+(i+1)}));
+  h.push({version,status:'DRAFT',sourceSnapshotVersion:snap.version,createdAt:now(),
+    updatedAt:now(),items});
+  __auneaTobeSelection={engagementId:'',version:0,stepId:''};
+  markDirty('Nueva versión TO-BE '+version+' desde versión revisada '+previous.version);
+  return true;
+}
+function tobePage(){
+  const e=currentEng(),snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;
+  if(!snap)return pageTop('Diseño TO-BE','Necesita un AS-IS confirmado.',
+    '<button class="btn" data-page="diagnostico">Volver al AS-IS</button>')+
+    '<div class="notice warn">Confirma el cierre del AS-IS antes de diseñar el proceso futuro.</div>';
+  if(!currentDiagnosticOutput(e))return pageTop('Diseño TO-BE','La generación requiere un diagnóstico oficial vigente.',
+    '<button class="btn" data-page="resultados">Revisar diagnóstico PG10</button>')+
+    '<div class="notice warn">No hay diagnóstico vigente para este snapshot. Revisa PG10 antes de crear un TO-BE.</div>';
+  const p=latestTobe(e);
+  if(!p)return pageTop('Diseño TO-BE','El proceso futuro parte del AS-IS confirmado.',
+    '<button class="btn btn-primary" id="createTobeDraft">Crear borrador desde AS-IS confirmado</button>')+
+    section('Fuente confirmada','El diseño comienza como propuesta sin aprobar.',
+      '<div class="notice info">AS-IS confirmado v'+esc(snap.version)+
+      '. El diagnóstico oficial se reutiliza; no se vuelve a capturar.</div>');
+  const editable=tobeEditable(p),statusLabel={DRAFT:'Borrador',REVIEWED:'Revisado',APPROVED_FOR_CLIENT:'Aprobado para cliente',PUBLISHED:'Publicado'}[p.status]||p.status;
+  const actions='<button class="btn" data-page="resultados">Diagnóstico PG10</button>'+
+    (['REVIEWED','APPROVED_FOR_CLIENT','PUBLISHED'].includes(p.status)?'<button class="btn" data-page="comparacion">Ir a comparación PG12</button>':'')+
+    (editable?'<button class="btn" id="saveTobe">Guardar borrador</button>':'')+
+    (editable?'<button class="btn btn-primary" id="advanceTobe">Marcar como revisado</button>':
+      p.status==='REVIEWED'?'<button class="btn btn-primary" id="advanceTobe">Aprobar para cliente</button>':'')+
+    (!editable&&p.status!=='PUBLISHED'?'<button class="btn" id="newTobeVersion">Crear nueva versión</button>':'');
+  return pageTop('Diseño TO-BE','Versión '+p.version+' · '+statusLabel+
+    ' · Origen AS-IS v'+esc(p.sourceSnapshotVersion)+'. Las decisiones pertenecen al consultor.',actions)+
+    '<main class="tobe-workspace" data-tobe-version="'+p.version+'">'+
+      '<section class="tobe-context"><div><strong>Origen del diseño</strong><p>AS-IS confirmado v'+esc(snap.version)+
+      ' · Diagnóstico '+esc(diagnosticOutputFreshness(e).label)+
+      ' · '+p.items.length+' actividades de origen</p></div><div class="tobe-context-status">'+esc(statusLabel)+'</div></section>'+
+      '<section class="tobe-map-area"><header class="tobe-workspace-head"><div><span class="tobe-eyebrow">PROCESO FUTURO · MAPA</span>'+
+      '<h2>Diseño TO-BE por actividad</h2></div><p>Selecciona un nodo para consultar y editar su propuesta.</p></header>'+
+      tobeCanvasHtml(e,p)+
+      '<p class="tobe-map-note">Las conexiones reproducen el AS-IS confirmado como estructura de referencia. Una transformación propuesta no modifica por sí sola rutas ni datos de origen.</p></section>'+
+      '<section id="tobeInspector" class="tobe-inspector">'+tobeInspectorHtml(e,p)+'</section>'+
+      (editable?'<details class="tobe-ai-workspace" id="tobeAiWorkspace"><summary>Propuestas IA, revisión automática y auditoría técnica</summary>'+
+        '<div id="tobeAiMount"></div></details>':'')+
+      '<section class="tobe-completion"><div><h2>Validación global</h2><p>Comprobación de versión, cobertura y requisitos del TO-BE. La calidad semántica requiere revisión humana.</p></div>'+
+        '<button type="button" class="btn btn-outline" id="checkTobeReadiness">Comprobar requisitos</button>'+
+        '<div id="tobeReadinessStatus" role="status" aria-live="polite"></div></section>'+
+      '</main>';
+}
+// [AUNEA-FE-PG11-WORKSPACE-205] END
 function comparable(v){return v===null||v===undefined||v===''?'No disponible con evidencia suficiente':String(v)}
 function stepMetric(step,key){return step?.[key]??step?.[key.replace(/[A-Z]/g,m=>'_'+m.toLowerCase())]??''}
 function tobeComparisonPage(){const e=currentEng(),snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null,p=latestTobe(e);if(!snap||!p||!['REVIEWED','APPROVED_FOR_CLIENT','PUBLISHED'].includes(p.status))return pageTop('AS-IS vs TO-BE','La comparación reutiliza las fuentes versionadas; no captura datos nuevos.',`<button class="btn" data-page="tobe">Volver a TO-BE</button>`)+`<div class="empty"><h2>TO-BE revisado requerido</h2><p>La comparación se habilita cuando el TO-BE ha pasado revisión humana.</p></div>`;const source=(e.confirmedSnapshots||[]).find(s=>s.version===p.sourceSnapshotVersion)||snap;const asis=(source.processSteps||[]).filter(x=>x.status!=='SUPERSEDED');const rows=p.items.map((it,i)=>{const a=asis.find(s=>String(s.id)===String(it.sourceStepId))||asis[i]||{};return `<tr><td>${esc(it.sourceStepName)}</td><td>${esc(comparable(stepMetric(a,'actor')))}</td><td>${esc(comparable(it.futureActor))}</td><td>${esc(comparable(stepMetric(a,'tool')))}</td><td>${esc(comparable(it.tool))}</td><td>${esc(it.transformation||'—')}</td><td>${esc(comparable(it.automationAi))}</td><td>${esc(comparable(it.humanSupervision))}</td><td>${esc(comparable(it.controlsRisk))}</td></tr>`}).join('');const current=currentDiagnosticOutput(e),econ=current?.economic_result||{},pt=current?.process_time_projection||null;return pageTop('AS-IS vs TO-BE','Comparación derivada del snapshot confirmado y del TO-BE revisado; ninguna métrica económica se calcula en el navegador.',`<button class="btn" data-page="tobe">Propuesto</button><button class="btn btn-primary" data-page="comparacion">Comparación</button>`)+section('Qué cambia','Correspondencia de cada paso actual con la propuesta.',`<div class="table-wrap"><table class="data-table"><thead><tr><th>Paso</th><th>Actor actual</th><th>Actor propuesto</th><th>Herramienta actual</th><th>Herramienta propuesta</th><th>Transformación</th><th>Automatización / IA</th><th>Intervención humana</th><th>Control</th></tr></thead><tbody>${rows}</tbody></table></div>`)+section('Métricas comparables','Sólo se muestran outputs vigentes del backend; los valores futuros permanecen pendientes hasta que exista una regla o supuesto trazable.',`<div class="grid g3"><div class="notice"><b>Impacto activo cuantificado AS-IS</b><br>${pt?.annual_active_hours!=null?num(pt.annual_active_hours)+' h/año':'No disponible con evidencia suficiente'}<small>Proyección AS-IS, sin hipótesis futura.</small></div><div class="notice"><b>Espera anual AS-IS</b><br>${pt?.annual_wait_exposure_hours!=null?num(pt.annual_wait_exposure_hours)+' caso-horas/año':'No disponible con evidencia suficiente'}<small>Exposición a espera, no trabajo activo.</small></div><div class="notice"><b>Retrabajo AS-IS</b><br>${pt?.annual_rework_hours!=null?num(pt.annual_rework_hours)+' h/año':'No disponible con evidencia suficiente'}<small>TO-BE aún sin cifra comparable aprobada.</small></div><div class="notice"><b>Capacidad liberada</b><br>No disponible con evidencia suficiente</div><div class="notice"><b>Ahorro de caja</b><br>No disponible con evidencia suficiente</div><div class="notice"><b>Riesgo residual futuro</b><br>No disponible con evidencia suficiente</div></div>`)}
@@ -977,6 +1140,26 @@ function registerInternalWorkPages(){
     }
   },true);
   // [AUNEA-FE-PG11-DRAFT-CLICK-181] END
+  // [AUNEA-FE-PG11-SELECT-206] START — retain unsaved consultant data before switching inspector.
+  document.addEventListener('click',event=>{
+    const selected=event.target?.closest?.('[data-tobe-select]');
+    if(!selected||state.activePage!=='tobe')return;
+    const e=currentEng(),p=latestTobe(e),sourceId=selected.getAttribute('data-tobe-select');
+    if(!e||!p||!p.items.some(x=>String(x.sourceStepId)===String(sourceId)))return;
+    event.preventDefault();
+    if(tobeEditable(p)&&(!saveTobeFromDom(e)||!saveState('Guardar edición TO-BE antes de cambiar actividad'))){
+      toast('No se ha guardado la edición. Mantén la actividad actual abierta.');
+      return;
+    }
+    __auneaTobeSelection={engagementId:e.id,version:p.version,stepId:String(sourceId)};
+    const inspector=document.getElementById('tobeInspector');
+    if(inspector)inspector.innerHTML=tobeInspectorHtml(e,p);
+    document.querySelectorAll('[data-tobe-select]').forEach(node=>{
+      const active=node.getAttribute('data-tobe-select')===String(sourceId);
+      node.classList.toggle('is-selected',active);node.setAttribute('aria-pressed',String(active));
+    });
+  },true);
+  // [AUNEA-FE-PG11-SELECT-206] END
   const originalPostBind=postBind;
   postBind=function(){
     originalPostBind();
@@ -987,7 +1170,30 @@ function registerInternalWorkPages(){
     bindDiagnosticMapPointNavigation();
     document.querySelectorAll('[data-draft-conditional-scenario]').forEach(x=>x.onclick=()=>createScenario(Number(x.dataset.draftConditionalScenario)));
     if(by('saveTobe'))by('saveTobe').onclick=()=>{if(saveTobeFromDom(e)&&saveState('Guardar borrador TO-BE'))render()};
-    if(by('advanceTobe'))by('advanceTobe').onclick=()=>{saveTobeFromDom(e);if(advanceTobeStatus(e))render()};
+    if(by('advanceTobe'))by('advanceTobe').onclick=()=>{
+      if(!saveTobeFromDom(e)||!saveState('Guardar campos TO-BE antes de revisión'))return;
+      const p=latestTobe(e),previous=p.status;
+      if(!advanceTobeStatus(e))return;
+      if(!saveState('Confirmar revisión humana TO-BE')){
+        p.status=previous;p.updatedAt=now();
+        toast('El cambio de estado no se ha guardado. El TO-BE sigue en '+previous+'.');
+        return;
+      }
+      render();
+    };
+    if(by('newTobeVersion'))by('newTobeVersion').onclick=()=>{
+      if(!createNextTobeVersion(e))return toast('No es posible crear una nueva versión con las fuentes actuales.');
+      if(saveState('Nueva versión TO-BE'))render();
+    };
+    if(by('checkTobeReadiness'))by('checkTobeReadiness').onclick=()=>{
+      if(tobeEditable(latestTobe(e))&&!saveTobeFromDom(e))return;
+      const issue=tobeReviewReadiness(e,latestTobe(e));
+      const feedback=by('tobeReadinessStatus');
+      if(feedback)feedback.innerHTML='<div class="notice '+(issue?'warn':'info')+'">'+
+        esc(issue||'Los requisitos estructurales están completos. Revisa la coherencia y las fuentes antes de marcar como revisado.')+'</div>';
+    };
+    if(state.activePage==='tobe'&&by('tobeInspector')&&typeof drawProcessGraph==='function'&&
+      typeof requestAnimationFrame==='function')requestAnimationFrame(drawProcessGraph);
   };
 }
 function outputReviewPage(){
