@@ -147,6 +147,7 @@ function internalAiPilotPanel(e){
       '<p><b>Resultado esperado:</b> '+esc(narrative.expected||'No declarado')+'</p>'+
       (related.length?'<details><summary>Aspectos por revisar · '+related.length+'</summary><ul>'+
         related.map(internalAiReviewIssue).join('')+'</ul></details>':
+        hasBlock?'<p class="field-help"><b>Bloqueada:</b> revisar la propuesta antes de aplicarla.</p>':
         '<p class="field-help">Sin observaciones específicas comunicadas; requiere revisión del consultor.</p>')+
       '<details><summary>Justificación, fuentes y condiciones</summary>'+
       '<p><b>Justificación:</b> '+esc(narrative.reason||'No declarada')+'</p>'+
@@ -373,8 +374,9 @@ function applyTobeAiPilot(e){
   if(typeof isClientDisplay==='function'&&isClientDisplay())return;
   const key=internalAiPilotKey(e),data=key?__auneaAiPreview.get(key):null,p=latestTobe(e);
   if(!data||!tobeEditable(p))return toast('La propuesta ya no está disponible.');
-  if(Array.isArray(data.review?.blocking_step_ids)&&data.review.blocking_step_ids.length)
-    return toast('Esta propuesta tiene transformaciones contradictorias. Revisa el diseño antes de aplicar.');
+  if((Array.isArray(data.review?.blocking_step_ids)&&data.review.blocking_step_ids.length)||
+     (Array.isArray(data.review?.issues)&&data.review.issues.some(i=>i.category==='BLOCKING')))
+    return toast('Esta propuesta contiene bloqueos de revisión. Corrige el diseño antes de aplicar.');
   if(data.items.length!==p.items.length||data.items.some(x=>!p.items.some(it=>String(it.sourceStepId)===String(x.source_step_id))))
     return toast('La estructura del proceso ha cambiado; no se aplica la propuesta.');
   saveTobeFromDom(e);
