@@ -111,10 +111,10 @@ test('AI button click reaches backend once and preserves draft inputs on success
   assert.equal(app.requests[1].url,'http://localhost:8010/v1/internal-ai/tobe-step');
   assert.equal(app.requests[2].url,'http://localhost:8010/v1/internal-ai/tobe-review');
   assert.match(app.notice.outerHTML,/Resultado esperado/);
-  assert.match(app.notice.outerHTML,/Qué información recibió Ollama/);
-  assert.ok(app.notice.outerHTML.includes('F1'));
-  assert.match(app.notice.outerHTML,/diagnóstico como hash/);
-  assert.match(app.notice.outerHTML,/Propuesta TO-BE IA sin aprobar/);
+  assert.match(app.notice.outerHTML,/Auditoría técnica IA/);
+  assert.ok(app.notice.outerHTML.includes('data-ai-audit-step'));
+  assert.match(app.notice.outerHTML,/sólo se representa al solicitarlo/);
+  assert.match(app.notice.outerHTML,/Diseño TO-BE asistido por IA/);
   assert.equal(app.renderCount,0,'No re-render that could erase unsaved TO-BE edits');
   assert.equal(app.button.disabled,false);
 });
@@ -136,7 +136,7 @@ test('one Ollama request per source activity',async()=>{
   assert.equal(app.requests.length,5);
   assert.deepEqual(app.requests.slice(1,4).map(x=>JSON.parse(x.opts.body).source_step_id),['S1','S2','S3']);
   assert.equal(JSON.parse(app.requests[4].opts.body).items.length,3);
-  assert.match(app.notice.outerHTML,/Propuesta TO-BE IA sin aprobar/);
+  assert.match(app.notice.outerHTML,/Diseño TO-BE asistido por IA/);
   assert.equal(app.renderCount,0);
 });
 
@@ -187,7 +187,7 @@ test('PG11 rejects stale backend before expensive local Ollama calls',async()=>{
 test('PG11 shows reviewer protocol revision on new successful draft',async()=>{
   const app=aiPilotHarness();
   app.click();await app.settle();
-  assert.match(app.notice.outerHTML,/Revisor PG11: PG11_REVIEW_20261103_3/);
+  assert.equal(vm.runInContext('__auneaAiPreview.values().next().value.review.protocol_revision',app.sandbox),'PG11_REVIEW_20261103_3');
   assert.equal(app.requests.length,3);
 });
 
@@ -202,7 +202,7 @@ test('failed activity retains its real audit, continues other steps, retries onl
   };
   app.click();await app.settle();
   assert.equal(app.requests.length,3);
-  assert.match(app.notice.outerHTML,/SALIDA — Respuesta y validación/);
+  assert.match(app.notice.outerHTML,/Auditoría técnica IA/);
   assert.match(app.notice.textContent,/1 de 2 completadas/);
   failed=false;app.click();await app.settle();
   assert.deepEqual(app.requests.filter(r=>r.url.endsWith('/tobe-step')).map(r=>JSON.parse(r.opts.body).source_step_id),['S1','S2','S1']);
@@ -216,11 +216,42 @@ test('audit displays transmitted values and blocks rendering or generation in cl
     input_token_limit:4000,request:{messages:[{content:'Instrucciones reales'},{content:'DATOS\n'+JSON.stringify(context)}],options:{num_ctx:8192}},
     original_response:{items:[{source_step_id:'S1'}]},validation_status:'CONTRATO_VALIDO_PENDIENTE_REVISION'}]}};
   const html=vm.runInContext('internalAiPilotTracePanel(trace)',app.sandbox);
-  assert.match(html,/Entrada duplicada/);assert.match(html,/INDICATED/);assert.match(html,/1234/);
-  assert.match(html,/Instrucciones reales/);assert.match(html,/data-ai-copy/);
+  assert.match(html,/Auditoría técnica IA/);
+  assert.match(html,/data-ai-audit-step/);
+  assert.doesNotMatch(html,/Entrada duplicada|Instrucciones reales/,'raw payload must be rendered on demand');
+  const details=vm.runInContext('internalAiAuditContext(trace.S1,0)',app.sandbox);
+  assert.match(details,/Entrada duplicada/);assert.match(details,/INDICATED/);assert.match(details,/1234/);
+  assert.match(details,/Instrucciones reales/);assert.match(details,/data-ai-copy/);
   app.sandbox.isClientDisplay=()=>true;
   assert.equal(vm.runInContext('internalAiPilotPanel(currentEng())',app.sandbox),'');
   app.click();await app.settle();assert.equal(app.requests.length,0);
+});
+
+
+test('PG11 presents proposals first and review findings by activity without exposing raw audit',async()=>{
+  const app=aiPilotHarness({blockingSteps:['S1'],steps:['S1','S2']});
+  app.click();await app.settle();
+  const html=app.notice.outerHTML;
+  assert.ok(html.indexOf('Propuestas por actividad') < html.indexOf('Auditoría técnica IA'));
+  assert.match(html,/Intervención propuesta/);
+  assert.match(html,/Resultado esperado/);
+  assert.match(html,/Observaciones generales/);
+  assert.match(html,/No apta para aplicar/);
+  assert.doesNotMatch(html,/id="applyTobeAiPilot"/);
+  assert.match(html,/Examinar entrada y salida/);
+  assert.equal(app.renderCount,0,'unsaved consultant fields should not be re-rendered');
+});
+
+test('PG11 technical audit remains on-demand even with a large original HTTP request',()=>{
+  const app=aiPilotHarness();
+  const huge='DATOS_PRIVADOS__'+('X'.repeat(85000));
+  app.sandbox.trace={S1:{attempts:[{sent:true,request:{messages:[{content:'Reglas'},{content:'DATOS\n'+JSON.stringify({private_data:huge})}]},
+      request_bytes:88500,budget_bytes:90000,prompt_eval_count:3500,validation_status:'REVIEW'}]}};
+  const html=vm.runInContext('internalAiPilotTracePanel(trace)',app.sandbox);
+  assert.ok(html.length < 1500,'collapsed audit should not stringify or embed HTTP requests');
+  assert.doesNotMatch(html,/DATOS_PRIVADOS__/);
+  const expanded=vm.runInContext('internalAiAuditContext(trace.S1,0)',app.sandbox);
+  assert.match(expanded,/DATOS_PRIVADOS__/);
 });
 
 // [AUNEA-UAT-PG11-AUDIT-200] END
