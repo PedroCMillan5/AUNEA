@@ -69,6 +69,72 @@ def related_step_ids(record: dict) -> set[str]:
     return ids
 
 
+def explicit_pilot_process_flow(steps: list[dict[str, Any]]) -> dict[str, Any]:
+    """Project only routing owned by confirmed ProcessSteps, never other studies.
+
+    Explicit DF042 normal_next_step and DF043 exception_path.destination_step
+    take precedence. The order of activities is a presentation hint, not an
+    assertion that one step always leads to the next.
+    """
+    ids = {str(s["id"]) for s in steps}
+    activities: list[dict[str, Any]] = []
+    routes: list[dict[str, str]] = []
+    unresolved: list[dict[str, str]] = []
+    for step in steps:
+        step_id = str(step["id"])
+        exception = step.get("exception_path")
+        exception = exception if isinstance(exception, dict) else {}
+        ui = step.get("_ui")
+        declared_decision = ui.get("has_decision") if isinstance(ui, dict) else None
+        criteria = step.get("decision_criteria")
+        if isinstance(criteria, list):
+            criteria_list = [str(c) for c in criteria if isinstance(c, (str, int))]
+        elif isinstance(criteria, str) and criteria:
+            criteria_list = [criteria]
+        else:
+            criteria_list = []
+        decision = (declared_decision if isinstance(declared_decision, bool) else
+                    bool(str(step.get("step_type") or "") in ("ST04", "ST05")
+                         or criteria_list or exception))
+        activity: dict[str, Any] = {
+            "id": step_id,
+            "name": str(step.get("step_name") or step.get("name") or ""),
+            "decision": decision,
+        }
+        if criteria_list:
+            activity["decision_criteria"] = criteria_list
+        if exception.get("condition"):
+            activity["exception_condition"] = str(exception["condition"])
+        if exception.get("owner"):
+            activity["exception_owner"] = str(exception["owner"])
+        activities.append(activity)
+
+        for route_name, raw_destination in (
+            ("normal", step.get("normal_next_step")),
+            ("exception", exception.get("destination_step") if decision else None),
+        ):
+            if raw_destination is None or raw_destination == "":
+                if decision or route_name == "normal":
+                    unresolved.append({"step_id": step_id, "route": route_name,
+                                       "reason": "sin_destino_explicito"})
+                continue
+            destination = str(raw_destination)
+            if destination in ids or destination == "__END__":
+                routes.append({"from": step_id, "to": destination, "route": route_name,
+                               "source": "ProcessStep"})
+            else:
+                unresolved.append({"step_id": step_id, "route": route_name,
+                                   "reason": "destino_no_vigente"})
+    return {
+        "activities": activities,
+        "explicit_routes": routes,
+        "unresolved_routes": unresolved,
+        "interpretation": ("Las rutas derivan únicamente del ProcessStep confirmado. "
+                           "El orden visual NO acredita una transición ni una regla de aprobación. "
+                           "Las rutas no declaradas quedan pendientes, no se inventan."),
+    }
+
+
 def allowed_pilot_step_refs(
     request: PilotAIRequest, steps: list[dict[str, Any]], source_step_id: str
 ) -> set[str]:
