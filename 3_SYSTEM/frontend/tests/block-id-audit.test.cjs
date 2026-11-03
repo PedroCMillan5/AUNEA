@@ -39,7 +39,8 @@ function listScanFiles() {
   files.push(path.join(frontendDir, 'index.html'));
   const testsDir = path.join(frontendDir, 'tests');
   for (const f of fs.readdirSync(testsDir)) {
-    if (f.endsWith('.test.cjs')) files.push(path.join(testsDir, f));
+    if (f.endsWith('.test.cjs') || f === 'uat-browser-smoke.cjs')
+      files.push(path.join(testsDir, f));
   }
   for (const f of fs.readdirSync(backendPkgDir)) {
     if (f.endsWith('.py')) files.push(path.join(backendPkgDir, f));
