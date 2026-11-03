@@ -1194,6 +1194,13 @@ function registerInternalWorkPages(){
       if(!live||!p||(tobeEditable(p)&&!saveTobeFromDom(live))||
         !saveState('Guardar campos TO-BE antes de revisión'))return;
       if(!advanceTobeStatus(live))return;
+      if(typeof window!=='undefined')window.__pg11TransitionTrace={
+        before:previous,
+        liveAfter:latestTobe(live)?.status,
+        currentAfter:latestTobe(currentEng())?.status,
+        sameEngagement:live===currentEng(),
+        auditAfterAdvance:state.audit.slice(0,3).map(x=>x.message)
+      };
       if(!saveState('Confirmar revisión humana TO-BE')){
         p.status=previous;p.updatedAt=now();
         toast('El cambio de estado no se ha guardado. El TO-BE sigue en '+previous+'.');
