@@ -642,10 +642,101 @@ async function main(){
     cards:document.querySelectorAll('[data-tobe-field="transformation"]').length}));
   assert.deepEqual(pg11,{count:1,status:'DRAFT',cards:tobeSteps},'PG11 click must create and render the draft');
   console.log('PG11_CREATE_DRAFT_CLICK_PASS: '+JSON.stringify(pg11));
+  // [AUNEA-UAT-PG11-BROWSER-204] START — real browser save/reload and AUNEA layout without Ollama.
+  await page.evaluate(()=>{
+    const e=currentEng(),p=latestTobe(e);
+    if(!e||!p||p.status!=='DRAFT')throw Error('PG11 DRAFT missing');
+    const diagnostic=currentDiagnosticOutput(e);
+    if(!diagnostic)throw Error('PG11 diagnostic missing');
+    diagnostic.input_snapshot_hash='DIAG_BROWSER_HASH';
+    const key=internalAiPilotKey(e);
+    if(!key)throw Error('PG11 preview key not available');
+    const items=p.items.map((it,index)=>({
+      source_step_id:String(it.sourceStepId),
+      transformation:'Se modifica',
+      problem_resolved:'Hipótesis de prueba '+(index+1),
+      rationale:'Acción propuesta: ordenar la recepción. Resultado esperado: mejorar la trazabilidad. Justificación: existe un paso de origen.',
+      future_actor:'',tool:'',inputs:'',outputs:'',automation_ai:'',
+      human_supervision:'',controls_risk:'',source_refs:[String(it.sourceStepId)],
+      limitations:'Pendiente de revisión humana'
+    }));
+    const first=items[0].source_step_id;
+    __auneaAiPreview.set(key,{
+      status:'DRAFT',engagement_id:e.id,snapshot_version:p.sourceSnapshotVersion,
+      input_hash:'ENGAGEMENT_REQUEST_HASH_DISTINCT',
+      model:'fixture-sin-ollama',items,
+      review:{status:'CHECKED_WITH_NOTES',summary:'Revisión QA sintética.',
+        protocol_revision:__auneaPg11ReviewProtocol,requires_human_review:true,
+        blocking_step_ids:[first],
+        issues:[{step_id:first,category:'BLOCKING',issue:'Transformación incoherente en UAT',
+          evidence:'Hallazgo de prueba',action:'Revisión del consultor'}]}
+    });
+    internalAiPilotRefreshPanel(e);
+  });
+  assert.equal(await page.locator('#tobeAiPilotStatus .pg11-ai-step').count(),tobeSteps);
+  assert.match(await page.locator('#tobeAiPilotStatus').innerText(),/pendiente de guardar/);
+  assert.equal(await page.locator('#applyTobeAiPilot').count(),0,'blocked suggestions never apply');
+  const pg11Layout=await page.evaluate(()=>{
+    const panel=document.querySelector('#tobeAiPilotStatus');
+    const card=panel.querySelector('.pg11-ai-step');
+    const panelRect=panel.getBoundingClientRect(),cardRect=card.getBoundingClientRect();
+    const padding=parseFloat(getComputedStyle(panel).paddingLeft);
+    return {padding,contained:cardRect.left>=panelRect.left+padding-2&&
+      cardRect.right<=panelRect.right-padding+2,
+      pageOverflow:document.documentElement.scrollWidth>window.innerWidth+2};
+  });
+  assert.ok(pg11Layout.padding>=18,'PG11 AUNEA card must have real padding');
+  assert.equal(pg11Layout.contained,true,'PG11 activity cards must respect panel margins');
+  assert.equal(pg11Layout.pageOverflow,false,'PG11 must not create horizontal page overflow');
+  await page.screenshot({path:path.join(outDir,'pg11-aunea-consultant-desktop.png'),fullPage:true});
+  await page.locator('#saveTobeAiPilot').click();
+  const savedAi=await page.evaluate(()=>{
+    const e=currentEng(),p=latestTobe(e);
+    const stored=JSON.parse(localStorage.getItem(STORAGE_KEY));
+    const disk=stored.engagements.find(x=>x.id===e.id)?.tobeProposals?.find(x=>x.version===p.version);
+    return disk?.aiDraft||null;
+  });
+  assert.ok(savedAi,'explicit save must persist the AI proposal within the versioned TO-BE');
+  assert.equal(savedAi.diagnosticInputHash,'DIAG_BROWSER_HASH');
+  assert.equal(savedAi.proposal.input_hash,'ENGAGEMENT_REQUEST_HASH_DISTINCT');
+  assert.equal(savedAi.proposal.items.length,tobeSteps);
+  assert.deepEqual(savedAi.proposal.review.blocking_step_ids.length,1);
+  assert.equal(Object.hasOwn(savedAi.proposal,'context_traces'),false,'HTTP audit stays ephemeral');
+  assert.match(await page.locator('#tobeAiPilotStatus').innerText(),/guardada en el borrador/);
+  // [AUNEA-UAT-PG11-BROWSER-204] END
   await page.reload({waitUntil:'domcontentloaded'});
   await page.locator('[data-page="uat"]').click();
   const afterReload=await page.evaluate(()=>state.engagements.filter(e=>e.id.startsWith('UAT3-CASE-')).map(e=>e.id));
   assert.deepEqual(afterReload,ids,'The single UAT study must survive a native browser reload.');
+
+  // [AUNEA-UAT-PG11-BROWSER-204] RESTORE — re-open PG11 without any provider call.
+  await page.evaluate(()=>{
+    const e=state.engagements.find(x=>x.id.startsWith('UAT3-CASE-'));
+    if(!e)throw Error('Saved PG11 study missing after reload');
+    state.activeEngagementId=e.id;
+    state.activePage='tobe';
+    render();
+  });
+  assert.equal(await page.locator('#tobeAiPilotStatus .pg11-ai-step').count(),tobeSteps,
+    'saved AI proposals must be visible after native Chromium reload');
+  assert.match(await page.locator('#tobeAiPilotStatus').innerText(),/recuperada del borrador guardado/);
+  assert.equal(await page.locator('#applyTobeAiPilot').count(),0,
+    'reloaded blocked proposal must remain unapplicable');
+  await page.setViewportSize({width:550,height:820});
+  const mobile=await page.evaluate(()=>{
+    const panel=document.querySelector('#tobeAiPilotStatus');
+    const card=panel.querySelector('.pg11-ai-step');
+    const p=panel.getBoundingClientRect(),c=card.getBoundingClientRect();
+    return {padding:parseFloat(getComputedStyle(panel).paddingLeft),
+      contained:c.left>=p.left+10&&c.right<=p.right-10,
+      overflow:document.documentElement.scrollWidth>window.innerWidth+2};
+  });
+  assert.equal(mobile.contained,true,'PG11 cards must respect mobile margins');
+  assert.equal(mobile.overflow,false,'PG11 must not overflow mobile viewport');
+  await page.screenshot({path:path.join(outDir,'pg11-aunea-consultant-mobile.png'),fullPage:true});
+  await page.setViewportSize({width:1365,height:900});
+  console.log('PG11_AI_DRAFT_BROWSER_PASS: saved, restored, blocked, responsive without Ollama');
+
   assert.deepEqual(failures,[],'Unhandled browser JS errors: '+failures.join(' / '));
   process.stdout.write('CHROMIUM_UAT_PASS: 1 study generated, navigated and recovered after reload.\n');
  }finally{if(browser)await browser.close();await new Promise(resolve=>server.close(resolve))}
