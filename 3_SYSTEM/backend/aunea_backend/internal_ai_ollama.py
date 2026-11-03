@@ -163,7 +163,7 @@ def propose(request: PilotAIRequest, steps: list[dict], schema: dict, instructio
 # DATA: confirmed snapshot + current step + explicit links; never truncate evidence silently.
 # RULES: DEC-034/052/055 and pilot PG11 REVIEW; no engine writes or approval.
 # CHANGE_RISK: HIGH. The frontend requests one step at a time and retains confirmed results.
-from .internal_ai import validate_pilot_step_result, related_step_ids
+from .internal_ai import validate_pilot_step_result, related_step_ids, allowed_pilot_step_refs
 
 STEP_MAX_PROMPT_BYTES = 10800
 STEP_MAX_TOTAL_PROMPT_TOKENS = 4000
