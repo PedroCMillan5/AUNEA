@@ -30,9 +30,12 @@ function internalAiPilotNarrative(value){
   return match?{action:match[1].trim(),expected:match[2].trim(),reason:match[3].trim()}
     :{action:'',expected:'',reason:text};
 }
+// [AUNEA-FE-PG11-AI-UX-201] START — summary-first consultant UI; audit rendered on demand.
+// SOURCE: PG11 Simulator CANONICAL; DEC-050/052/055. No new capture or persistence.
 function internalAiAuditJson(value,label='JSON técnico'){
+  if(value==null)return '<p class="field-help">No disponible en esta ejecución.</p>';
   return '<details><summary>'+esc(label)+'</summary><button type="button" class="btn btn-outline" data-ai-copy>Copiar JSON</button>'+
-    '<pre style="white-space:pre-wrap;overflow-wrap:anywhere">'+esc(JSON.stringify(value,null,2))+'</pre></details>';
+    '<pre style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:30rem;overflow:auto">'+esc(JSON.stringify(value,null,2))+'</pre></details>';
 }
 function internalAiAuditValues(value){
   if(value==null)return 'No transmitido';
@@ -40,50 +43,77 @@ function internalAiAuditValues(value){
   if(typeof value==='object')return '<dl>'+Object.entries(value).map(([k,v])=>'<dt><b>'+esc(k)+'</b></dt><dd>'+internalAiAuditValues(v)+'</dd>').join('')+'</dl>';
   return esc(String(value));
 }
+function internalAiAuditContext(trace,index){
+  if(!trace?.attempts)return internalAiAuditJson(trace,'Inventario anterior: sólo IDs');
+  const attempt=trace.attempts[index];
+  if(!attempt)return '<p>Intento no disponible.</p>';
+  let context=null;
+  try{context=JSON.parse(attempt.request?.messages?.[1]?.content?.split('\n').slice(1).join('\n'))}catch(_){}
+  return '<div class="card card-pad">'+
+    '<p><b>Intento '+(index+1)+'</b> · '+esc(attempt.validation_status||'Validación pendiente')+'</p>'+
+    (attempt.error?'<p class="notice warn">'+esc(attempt.error)+'</p>':'')+
+    '<p class="field-help">Auditoría de la ejecución actual: datos redactados cuando corresponde; bytes medidos antes de la redacción. No contiene razonamiento interno.</p>'+
+    '<details><summary>Entrada y fuentes enviadas</summary>'+
+    [['Actividad',context?.current_activity],['Fricciones',context?.explicit_linked_frictions],
+     ['Riesgos',context?.explicit_linked_risks],['Evidencias',context?.linked_evidence],
+     ['Hallazgos diagnósticos',context?.official_diagnostic_findings],
+     ['Decisiones y rutas',context?.process_flow],
+     ['Restricciones',context?.analysis_constraints],
+     ['Corrección solicitada',context?.targeted_correction]].map(([label,value])=>
+       '<details><summary>'+label+'</summary>'+internalAiAuditValues(value)+'</details>').join('')+
+    '<p class="field-help">Se envió la proyección indicada, no el diagnóstico oficial completo.</p>'+
+    '</details>'+
+    '<details><summary>Salida y validación</summary>'+
+    (attempt.response_note?'<p>'+esc(attempt.response_note)+'</p>':'')+
+    internalAiAuditJson(attempt.original_response,'Respuesta original (redactada)')+
+    internalAiAuditJson(attempt.validated_proposal,'Propuesta validada estructuralmente')+
+    '</details>'+
+    '<details><summary>Medición, instrucciones y solicitud HTTP</summary>'+
+    '<p><b>Tamaño:</b> '+esc(attempt.request_bytes??'No disponible')+' / '+esc(attempt.budget_bytes??'No disponible')+' bytes. '+
+    '<b>Tokens de entrada:</b> '+esc(attempt.prompt_eval_count??'No disponibles')+' / '+esc(attempt.input_token_limit??'No disponible')+'</p>'+
+    internalAiAuditJson({components:attempt.component_bytes,instructions_bytes:attempt.instructions_bytes,
+      schema_bytes:attempt.schema_bytes,model:attempt.request?.model,options:attempt.request?.options},'Desglose técnico')+
+    internalAiAuditJson({instructions:attempt.request?.messages?.[0]?.content},'Instrucciones recibidas')+
+    internalAiAuditJson(attempt.request,'Solicitud y esquema enviados (redactados)')+
+    '</details></div>';
+}
 function internalAiPilotTracePanel(traces){
   const values=Object.entries(traces||{});
   if(!values.length)return '';
-  return '<details class="step-group internal-only"><summary>Qué información recibió Ollama (trazabilidad)</summary>'+
-    '<p class="field-help">Auditoría temporal del estudio activo. Vista redactada: oculta patrones de credenciales y correo. '+
-    'Sólo las entradas marcadas como enviadas llegaron a una solicitud HTTP; no se muestra razonamiento interno. '+
-    'Los tamaños corresponden a los bytes originales, antes de redactar.</p>'+values.map(([sid,trace])=>{
-    if(!trace.attempts)return '<details><summary>'+esc(sid)+'</summary>'+internalAiAuditJson(trace,'Inventario anterior: sólo IDs; diagnóstico como hash')+'</details>';
-    return '<details><summary>'+esc(sid)+'</summary>'+trace.attempts.map((attempt,index)=>{
-      let context=null;try{context=JSON.parse(attempt.request?.messages?.[1]?.content?.split('\n').slice(1).join('\n'))}catch(_){}
-      return '<section class="card card-pad"><b>Intento '+(index+1)+(index?' · Corrección dirigida':'')+'</b>'+
-        '<details><summary>ENTRADA — '+(attempt.sent?(attempt.original_response?'Solicitud enviada y respuesta recibida':'Envío intentado; recepción sin confirmar'):'Preparada, no enviada')+'</summary>'+
-        '<p><b>Actividad:</b> '+esc(context?.current_activity?.step_name||context?.current_activity?.name||sid)+'</p>'+
-        [['Actividad',context?.current_activity],['Fricciones',context?.explicit_linked_frictions],
-         ['Riesgos',context?.explicit_linked_risks],['Evidencias',context?.linked_evidence],
-         ['Hallazgos diagnósticos enviados',context?.official_diagnostic_findings],
-         ['Decisiones y rutas explícitas',context?.process_flow],['Restricciones',context?.analysis_constraints],
-         ['Corrección solicitada',context?.targeted_correction]].map(([label,value])=>
-          '<details><summary>'+label+'</summary>'+internalAiAuditValues(value)+'</details>').join('')+
-        '<p>Disponible en AUNEA: diagnóstico completo. Enviado: únicamente la proyección indicada y su referencia; no el informe completo.</p>'+
-        '<p><b>Instrucciones recibidas:</b> '+esc(attempt.request?.messages?.[0]?.content||'No disponibles')+'</p>'+
-        '<p><b>Tamaño:</b> '+esc(attempt.request_bytes)+' / '+esc(attempt.budget_bytes)+' bytes. '+
-        '<b>Tokens de entrada medidos por Ollama:</b> '+esc(attempt.prompt_eval_count??'No disponibles')+' / '+esc(attempt.input_token_limit)+'</p>'+
-        internalAiAuditJson({components:attempt.component_bytes,instructions:attempt.instructions_bytes,schema:attempt.schema_bytes,model:attempt.request?.model,options:attempt.request?.options},'Medición y configuración efectiva')+
-        internalAiAuditJson(attempt.request,'Solicitud y esquema enviados (redactados)')+'</details>'+
-        '<details><summary>SALIDA — Respuesta y validación</summary><p><b>Estado:</b> '+esc(attempt.validation_status||'Sin respuesta validada')+'</p>'+
-        (attempt.error?'<p class="notice warn">'+esc(attempt.error)+'</p>':'')+
-        (attempt.response_note?'<p>'+esc(attempt.response_note)+'</p>':'')+
-        internalAiAuditJson(attempt.original_response,'Respuesta estructurada original (redactada)')+
-        internalAiAuditJson(attempt.validated_proposal,'Propuesta que supera el contrato; aprobación humana pendiente')+'</details></section>';
+  return '<details class="step-group internal-only"><summary>Auditoría técnica IA · '+values.length+
+    ' actividades (ver entradas, respuestas y JSON)</summary>'+
+    '<p class="field-help">Detalle para diagnóstico interno. Cerrado por defecto; sólo se representa al solicitarlo. '+
+    'Los datos sensibles pueden aparecer redactados. La validación del contrato no equivale a aprobación humana.</p>'+
+    values.map(([sid,trace])=>{
+      const attempts=trace?.attempts||[];
+      const count=attempts.length||1;
+      return '<details><summary>'+esc(sid)+' · '+count+' intento'+(count===1?'':'s')+'</summary>'+
+        (attempts.length?attempts.map((attempt,index)=>
+          '<div class="card card-pad"><p><b>Intento '+(index+1)+'</b> · '+
+          esc(attempt.validation_status||(attempt.error?'Error':'Pendiente'))+
+          (attempt.prompt_eval_count==null?'':' · '+esc(attempt.prompt_eval_count)+' tokens')+'</p>'+
+          '<button type="button" class="btn btn-outline" data-ai-audit-step="'+esc(sid)+
+          '" data-ai-audit-attempt="'+index+'">Examinar entrada y salida</button>'+
+          '<div data-ai-audit-slot></div></div>').join(''):
+          '<button type="button" class="btn btn-outline" data-ai-audit-step="'+esc(sid)+
+          '" data-ai-audit-attempt="legacy">Ver inventario anterior</button><div data-ai-audit-slot></div>')+
+      '</details>';
     }).join('')+'</details>';
-  }).join('')+'</details>';
+}
+function internalAiReviewIssue(issue){
+  return '<li><b>'+esc(issue.category==='BLOCKING'?'Bloqueo':issue.category==='PENDING'?'Pendiente':'Observación')+
+    ':</b> '+esc(issue.issue||'Sin descripción')+
+    (issue.evidence?'<p><b>Motivo:</b> '+esc(issue.evidence)+'</p>':'')+
+    (issue.action?'<p><b>Para resolverlo:</b> '+esc(issue.action)+'</p>':'')+'</li>';
 }
 function internalAiReviewPanel(review){
-  if(!review)return '';
-  return '<details open><summary>REVISIÓN — Aspectos por revisar</summary>'+[
-    ['BLOCKING','Bloqueantes'],['WARNING','Advertencias'],['PENDING','Información pendiente']
-  ].map(([category,label])=>{
-    const issues=(review.issues||[]).filter(i=>(i.category||'WARNING')===category);
-    return issues.length?'<h4>'+label+'</h4><ul>'+issues.map(i=>'<li><b>'+esc(i.step_id)+'</b>: '+esc(i.issue)+
-      (i.evidence?'<p><b>Motivo:</b> '+esc(i.evidence)+'</p>':'')+
-      (i.action?'<p><b>Acción necesaria:</b> '+esc(i.action)+'</p>':'')+'</li>').join('')+'</ul>':'';
-  }).join('')+internalAiAuditJson(review.audit||[],'Solicitud y respuesta del revisor (redactadas)')+
-    (review.initial_review?internalAiAuditJson(review.initial_review,'Revisión anterior a la corrección'):'')+'</details>';
+  if(!review)return '<p class="field-help">La revisión global aún no ha concluido.</p>';
+  const global=(review.issues||[]).filter(i=>i.step_id==='GLOBAL'||!i.step_id);
+  return '<details><summary>Observaciones generales · '+global.length+'</summary>'+
+    (global.length?'<ul>'+global.map(internalAiReviewIssue).join('')+'</ul>':
+      '<p class="field-help">No se han comunicado observaciones globales.</p>')+
+    '<button type="button" class="btn btn-outline" data-ai-review-audit>Examinar auditoría del revisor</button>'+
+    '<div data-ai-review-slot></div></details>';
 }
 function internalAiPilotPanel(e){
   if(typeof isClientDisplay==='function'&&isClientDisplay())return '';
@@ -91,43 +121,64 @@ function internalAiPilotPanel(e){
   const feedback=key?__auneaAiFeedback.get(key):null;
   const partial=key?__auneaAiCompletedSteps.get(key):null;
   if(!draft)return '<div id="tobeAiPilotStatus" role="status" aria-live="polite" class="notice '+(feedback?.type==='warn'?'warn':'info')+'">'+
-    '<p id="tobeAiProgress">'+esc(feedback?.message||'La IA es opcional. Pulsa «Preparar propuesta con IA» para consultar el proveedor autorizado; no se generan resultados simulados.')+'</p>'+
+    '<p id="tobeAiProgress">'+esc(feedback?.message||'La IA es opcional. Pulsa «Preparar propuesta con IA» para generar un borrador sin aprobación automática.')+'</p>'+
     internalAiPilotTracePanel(Object.fromEntries(partial?.traces||new Map()))+'</div>';
   const review=draft.review||null;
-  const blocked=Array.isArray(review?.blocking_step_ids)&&review.blocking_step_ids.length>0;
-  const reviewProtocolLabel=review?.protocol_revision?
-    '<p class="field-help">Revisor PG11: '+esc(review.protocol_revision)+'</p>':'';
+  const items=Array.isArray(draft.items)?draft.items:[];
+  const issues=Array.isArray(review?.issues)?review.issues:[];
+  const blockedIds=new Set(Array.isArray(review?.blocking_step_ids)?review.blocking_step_ids:[]);
+  for(const issue of issues)if(issue.category==='BLOCKING'&&issue.step_id!=='GLOBAL')blockedIds.add(issue.step_id);
+  const blocked=blockedIds.size>0||issues.some(i=>i.category==='BLOCKING'&&i.step_id==='GLOBAL');
   const warning=feedback?.type==='warn'?'<p class="notice warn">'+esc(feedback.message)+'</p>':'';
-  const contextTraceHtml=internalAiPilotTracePanel(partial?Object.fromEntries(partial.traces):draft.context_traces);
-  const overview=review?'<p><b>Consolidación automática '+(review.status==='CHECKED'?'sin observaciones':'con observaciones')+
-    '</b> — '+esc(review.summary||'')+'</p>'+
-    internalAiReviewPanel(review):'';
-  const sections=draft.items.map(item=>{
+  const progress=__auneaAiWorking.has(key)?feedback?.message:'Generación individual completada. Revisión automática '+(review?'recibida':'pendiente')+'.';
+  const traces=partial?Object.fromEntries(partial.traces||new Map()):draft.context_traces;
+  const sourceNames=new Map((latestTobe(e)?.items||[]).map(it=>[String(it.sourceStepId),String(it.sourceStepName||'')]));
+  const cards=items.map(item=>{
+    const sid=String(item.source_step_id||'');
+    const related=issues.filter(i=>i.step_id===sid);
+    const hasBlock=blockedIds.has(sid);
     const narrative=internalAiPilotNarrative(item.rationale);
-    return '<div class="card card-pad section"><p><b>'+esc(item.source_step_id)+' · '+esc(item.transformation)+'</b></p>'+
-      '<p><b>Área de mejora:</b> '+esc(item.problem_resolved||'No concretada')+'</p>'+
-      (narrative.action?'<p><b>Intervención propuesta:</b> '+esc(narrative.action)+'</p>':'')+
-      (narrative.expected?'<p><b>Resultado esperado:</b> '+esc(narrative.expected)+'</p>':'')+
-      (narrative.reason?'<p><b>Justificación:</b> '+esc(narrative.reason)+'</p>':'')+
-      (item.future_actor?'<p><b>Responsable futuro:</b> '+esc(item.future_actor)+'</p>':'')+
-      (item.controls_risk?'<p><b>Control y riesgo:</b> '+esc(item.controls_risk)+'</p>':'')+
-      '<p><small><b>Fuentes:</b> '+esc((item.source_refs||[]).join(', '))+
-      ' · <b>Condiciones por validar:</b> '+esc(item.limitations||'Sin condiciones adicionales declaradas')+
-      '</small></p></div>';
+    return '<section class="card card-pad section">'+
+      '<p><b>'+esc(sid)+(sourceNames.get(sid)?' · '+esc(sourceNames.get(sid)):'')+'</b>'+
+      ' · '+esc(item.transformation||'Sin clasificar')+
+      (hasBlock?' · <b>Requiere corrección</b>':'')+'</p>'+
+      '<p><b>Problema:</b> '+esc(item.problem_resolved||'Sin definir')+'</p>'+
+      '<p><b>Intervención propuesta:</b> '+esc(narrative.action||'No concretada')+'</p>'+
+      '<p><b>Resultado esperado:</b> '+esc(narrative.expected||'No declarado')+'</p>'+
+      (related.length?'<details><summary>Aspectos por revisar · '+related.length+'</summary><ul>'+
+        related.map(internalAiReviewIssue).join('')+'</ul></details>':
+        '<p class="field-help">Sin observaciones específicas comunicadas; requiere revisión del consultor.</p>')+
+      '<details><summary>Justificación, fuentes y condiciones</summary>'+
+      '<p><b>Justificación:</b> '+esc(narrative.reason||'No declarada')+'</p>'+
+      '<p><b>Fuentes declaradas:</b> '+esc((item.source_refs||[]).join(', ')||'Ninguna')+'</p>'+
+      '<p><b>Condiciones por validar:</b> '+esc(item.limitations||'No declaradas')+'</p>'+
+      '<p><b>Responsable futuro:</b> '+esc(item.future_actor||'No definido')+'</p>'+
+      '<p><b>Supervisión humana:</b> '+esc(item.human_supervision||'No definida')+'</p>'+
+      '<p><b>Controles:</b> '+esc(item.controls_risk||'No definidos')+'</p>'+
+      '</details></section>';
   }).join('');
-  return '<div id="tobeAiPilotStatus" role="status" aria-live="polite" class="notice info">'+
-    '<b>Propuesta TO-BE IA sin aprobar — '+esc(draft.model)+'</b>'+
-    '<p>Intervenciones y resultados esperados son hipótesis de diseño. La revisión automática no equivale a aprobación humana.</p>'+
-    '<p id="tobeAiProgress">'+esc(feedback?.message||'Generación completada; pendiente de aprobación humana.')+'</p>'+warning+overview+reviewProtocolLabel+contextTraceHtml+sections+
-    '<p>Aplicar sólo completará campos vacíos del borrador y requiere revisión del consultor.</p>'+
-    (blocked?'<p class="notice warn"><b>No apta para aplicar:</b> revisar las clasificaciones de '+
-      esc(review.blocking_step_ids.join(', '))+'. Puedes corregir el TO-BE manualmente o generar nuevas sugerencias.</p>':'')+
-    (draft.applied?'<p><b>Aplicado a los campos disponibles del TO-BE DRAFT.</b> Se conserva esta explicación en la sesión para revisión; no es un nuevo campo persistente.</p>':
-    blocked?'':'<button class="btn btn-outline" id="applyTobeAiPilot">Aplicar a campos vacíos</button>')+
+  const reviewLabel=review?.status==='CHECKED'?'sin observaciones globales bloqueantes':
+    review?'con observaciones':'pendiente';
+  return '<div id="tobeAiPilotStatus" role="status" aria-live="polite" class="card card-pad">'+
+    '<b>Diseño TO-BE asistido por IA · Borrador sin aprobar</b>'+
+    '<p class="field-help">Modelo: '+esc(draft.model||'No especificado')+
+    ' · Revisión automática '+reviewLabel+'. La aprobación corresponde al consultor.</p>'+
+    '<p id="tobeAiProgress">'+esc(progress||'Generación completada')+'</p>'+warning+
+    '<p><b>'+items.length+'</b> actividades generadas · <b>'+blockedIds.size+
+    '</b> con bloqueos por actividad · <b>'+issues.length+'</b> observaciones registradas</p>'+
+    (blocked?'<p class="notice warn"><b>No apta para aplicar.</b> Corrige las incoherencias señaladas y revisa el diseño antes de continuar.</p>':'')+
+    (review?.summary?'<p><b>Resultado de la revisión:</b> '+esc(review.summary)+'</p>':'')+
+    '<p><b>Propuestas por actividad</b></p>'+cards+
+    internalAiReviewPanel(review)+
+    internalAiPilotTracePanel(traces)+
+    '<p class="field-help">El JSON puede ser correcto y la propuesta seguir teniendo defectos operativos. '+
+    'La IA no cambia los datos ni publica resultados por sí sola.</p>'+
+    (draft.applied?'<p><b>Propuesta aplicada a campos vacíos del DRAFT.</b> Requiere guardar y revisar. </p>':
+      blocked?'':'<button class="btn btn-outline" id="applyTobeAiPilot">Aplicar a campos vacíos</button>')+
     '<button class="btn btn-outline" id="regenerateTobeAiPilot">Generar propuestas nuevas</button>'+
-    '<p class="field-help">Generar nuevas sugerencias vuelve a analizar todas las actividades con Ollama. '+
-    'Conserva los campos del borrador ya editados; sustituye únicamente esta previsualización cuando finaliza.</p></div>';
+    '<p class="field-help">La regeneración vuelve a analizar las actividades sin borrar los campos ya editados.</p></div>';
 }
+// [AUNEA-FE-PG11-AI-UX-201] END
 const __originalTobePagePilot=tobePage;
 tobePage=function(){
   const html=__originalTobePagePilot(),e=currentEng();
@@ -349,6 +400,36 @@ registerInternalWorkPages=function(){
   if(document.__auneaAiPilotDelegatedBound)return;
   document.__auneaAiPilotDelegatedBound=true;
   document.addEventListener('click',event=>{
+    const audit=event.target?.closest?.('[data-ai-audit-step]');
+    if(audit){
+      event.preventDefault();
+      const host=audit.parentElement?.querySelector('[data-ai-audit-slot]');
+      if(!host)return;
+      if(host.innerHTML){host.innerHTML='';audit.textContent='Examinar entrada y salida';return}
+      const e=currentEng(),key=internalAiPilotKey(e);
+      const partial=__auneaAiCompletedSteps.get(key);
+      const stored=partial?.traces?.get(audit.getAttribute('data-ai-audit-step'))||
+        __auneaAiPreview.get(key)?.context_traces?.[audit.getAttribute('data-ai-audit-step')];
+      if(!stored)return toast('Auditoría no disponible para esta ejecución.');
+      const index=Number(audit.getAttribute('data-ai-audit-attempt'));
+      host.innerHTML=internalAiAuditContext(stored,Number.isInteger(index)?index:0);
+      audit.textContent='Ocultar detalle técnico';
+      return;
+    }
+    const reviewAudit=event.target?.closest?.('[data-ai-review-audit]');
+    if(reviewAudit){
+      event.preventDefault();
+      const host=reviewAudit.parentElement?.querySelector('[data-ai-review-slot]');
+      if(!host)return;
+      if(host.innerHTML){host.innerHTML='';reviewAudit.textContent='Examinar auditoría del revisor';return}
+      const e=currentEng(),key=internalAiPilotKey(e);
+      const review=__auneaAiPreview.get(key)?.review;
+      if(!review)return toast('Revisión no disponible.');
+      host.innerHTML=internalAiAuditJson(review.audit||[],'Solicitudes y respuestas del revisor (redactadas)')+
+        (review.initial_review?internalAiAuditJson(review.initial_review,'Revisión previa a corrección'):'');
+      reviewAudit.textContent='Ocultar auditoría del revisor';
+      return;
+    }
     const copy=event.target?.closest?.('[data-ai-copy]');
     if(copy){event.preventDefault();const text=copy.parentElement?.querySelector('pre')?.textContent;
       if(text&&typeof navigator!=='undefined')void navigator.clipboard.writeText(text).then(()=>toast('JSON copiado.')).catch(()=>toast('No se pudo copiar; selecciona el JSON.'));return;}
