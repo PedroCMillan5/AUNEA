@@ -127,4 +127,30 @@ def test_unlinked_friction_cannot_be_cited_as_step_evidence(monkeypatch):
         local.propose_step(req,validate_pilot_source(req),
                            provider._schema(),provider._INSTRUCTIONS,"S2")
 
+def test_step_output_diagnostic_codes_are_safe_and_specific():
+    request=sample()
+    record={"source_step_id":"S1","transformation":"Se modifica",
+        "problem_resolved":"Estandarizar entrada","future_actor":"",
+        "tool":"CRM","inputs":"","outputs":"","automation_ai":"",
+        "human_supervision":"","controls_risk":"",
+        "rationale":"Acción propuesta: registrar entradas. Resultado esperado: trazabilidad. Justificación: paso S1.",
+        "source_refs":["S1"],"limitations":"Validar alcance."}
+    def response(record):
+        return {"done":True,"message":{"content":json.dumps({"items":[record]})}}
+    assert local._validated_step_json(request,"S1",response(record)).source_step_id=="S1"
+    cases=[
+        ({"message":{"content":"{"}}, "IA_STEP_JSON"),
+        ({"done_reason":"length","message":{"content":"{}"}}, "IA_STEP_LENGTH"),
+        (response({**record,"tool":"Herramienta inventada"}), "IA_STEP_TOOL"),
+        (response({**record,"source_refs":["S1","FALSO"]}), "IA_STEP_REFS"),
+        (response({**record,"source_step_id":"S2"}), "IA_STEP_ORIGIN"),
+        (response({**record,"transformation":"Transformación inventada"}), "IA_STEP_FIELD"),
+    ]
+    for payload,code in cases:
+        with pytest.raises(ValueError,match=code) as error:
+            local._validated_step_json(request,"S1",payload)
+        assert "Herramienta inventada" not in str(error.value)
+        assert "FALSO" not in str(error.value)
+
+
 # [AUNEA-UAT-INTERNAL-AI-STEP-195] END
