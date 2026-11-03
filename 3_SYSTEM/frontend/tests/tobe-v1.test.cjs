@@ -16,7 +16,9 @@ test('C04 PG11 TO-BE is a versioned DRAFT based on the confirmed snapshot',()=>{
 
 test('C04 PG11 requires human review before client approval',()=>{
   assert.match(src,/\['DRAFT','REVIEWED','APPROVED_FOR_CLIENT','PUBLISHED'\]/);
-  assert.match(src,/Define el estado de transformación de todos los pasos antes de enviar a revisión/);
+  assert.match(src,/function tobeReviewReadiness/);
+  assert.match(src,/Selecciona una transformación válida/);
+  assert.match(src,/El TO-BE no corresponde al AS-IS confirmado vigente/);
   assert.match(fs.readFileSync(path.join(root,'domain/output-review.js'),'utf8'),/Listo para resultados/);
 });
 
