@@ -366,15 +366,6 @@ def propose_step(request: PilotAIRequest, steps: list[dict], schema: dict,
             measured_tokens > STEP_MAX_TOTAL_PROMPT_TOKENS):
         raise ValueError("La actividad " + source_step_id +
                          " excedió el límite medido de 4000 tokens de entrada; reducir el segmento.")
-    content = result["message"].get("content")
-    try:
-        raw = json.loads(content) if isinstance(content, str) else {}
-        items = [PilotAIItem.model_validate(x) for x in raw["items"]]
-        if len(items) != 1:
-            raise ValueError("La respuesta debe contener una única actividad.")
-        return validate_pilot_step_result(request, source_step_id, items[0])
-    except (ValueError, KeyError, TypeError, ValidationError) as exc:
-        raise ValueError("La actividad " + source_step_id +
-                         " no cumple el contrato de salida y fuentes.") from exc
+    return _validated_step_json(request, source_step_id, result)
 # [AUNEA-BE-INTERNAL-AI-STEP-195] END
 
