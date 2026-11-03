@@ -1190,10 +1190,10 @@ function registerInternalWorkPages(){
     document.querySelectorAll('[data-draft-conditional-scenario]').forEach(x=>x.onclick=()=>createScenario(Number(x.dataset.draftConditionalScenario)));
     if(by('saveTobe'))by('saveTobe').onclick=()=>{if(saveTobeFromDom(e)&&saveState('Guardar borrador TO-BE'))render()};
     if(by('advanceTobe'))by('advanceTobe').onclick=()=>{
-      const p=latestTobe(e),previous=p?.status;
-      if(!p||(tobeEditable(p)&&!saveTobeFromDom(e))||
+      const live=currentEng(),p=latestTobe(live),previous=p?.status;
+      if(!live||!p||(tobeEditable(p)&&!saveTobeFromDom(live))||
         !saveState('Guardar campos TO-BE antes de revisión'))return;
-      if(!advanceTobeStatus(e))return;
+      if(!advanceTobeStatus(live))return;
       if(!saveState('Confirmar revisión humana TO-BE')){
         p.status=previous;p.updatedAt=now();
         toast('El cambio de estado no se ha guardado. El TO-BE sigue en '+previous+'.');
