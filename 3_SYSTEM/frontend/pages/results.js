@@ -768,7 +768,15 @@ function tobeReviewReadiness(e,p){
 }
 function advanceTobeStatus(e){
   const p=latestTobe(e),next=nextTobeStatus(p);
-  if(!p||!next)return false;
+  if(!p||!next||next==='PUBLISHED')return false;
+  if(p.sourceSnapshotVersion!==confirmedSnapshot(e)?.version){
+    toast('El origen AS-IS cambió; no se puede aprobar esta versión TO-BE.');
+    return false;
+  }
+  if(typeof currentDiagnosticOutput==='function'&&!currentDiagnosticOutput(e)){
+    toast('El diagnóstico ya no está vigente. Revisa PG10 antes de aprobar TO-BE.');
+    return false;
+  }
   if(p.status==='DRAFT'){
     const issue=tobeReviewReadiness(e,p);
     if(issue){toast(issue);return false}
@@ -1182,8 +1190,9 @@ function registerInternalWorkPages(){
     document.querySelectorAll('[data-draft-conditional-scenario]').forEach(x=>x.onclick=()=>createScenario(Number(x.dataset.draftConditionalScenario)));
     if(by('saveTobe'))by('saveTobe').onclick=()=>{if(saveTobeFromDom(e)&&saveState('Guardar borrador TO-BE'))render()};
     if(by('advanceTobe'))by('advanceTobe').onclick=()=>{
-      if(!saveTobeFromDom(e)||!saveState('Guardar campos TO-BE antes de revisión'))return;
-      const p=latestTobe(e),previous=p.status;
+      const p=latestTobe(e),previous=p?.status;
+      if(!p||(tobeEditable(p)&&!saveTobeFromDom(e))||
+        !saveState('Guardar campos TO-BE antes de revisión'))return;
       if(!advanceTobeStatus(e))return;
       if(!saveState('Confirmar revisión humana TO-BE')){
         p.status=previous;p.updatedAt=now();
