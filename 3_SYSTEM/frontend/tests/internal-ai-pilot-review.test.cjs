@@ -71,7 +71,13 @@ function aiPilotHarness({fail=false,steps=['S1'],failReview=false}={}){
       if(url.endsWith('/tobe-review'))return {ok:true,json:async()=>({status:'CHECKED',summary:'Coherencia global revisada',
         issues:[],requires_human_review:true})};
       if(fail)return {ok:false,status:409,json:async()=>({detail:'El diagnóstico no corresponde al AS-IS vigente.'})};
-      return {ok:true,json:async()=>({...proposal,item:{...proposal.item,source_step_id:JSON.parse(opts.body).source_step_id,source_refs:[JSON.parse(opts.body).source_step_id]}})};
+      return {ok:true,json:async()=>({...proposal,
+        item:{...proposal.item,source_step_id:JSON.parse(opts.body).source_step_id,source_refs:[JSON.parse(opts.body).source_step_id]},
+        context_trace:{source_step_id:JSON.parse(opts.body).source_step_id,
+          friction_ids:['F1'],risk_ids:[],evidence_ids:['EV-F1'],
+          explicit_routes:[],unresolved_routes:[],
+          diagnostic_mode:'REFERENCIA_HASH_SIN_DIAGNOSTICO_COMPLETO',
+          context_scope:'SOLO_ESTUDIO_ACTIVO_CONFIRMADO'}})};
     }
   };
   vm.createContext(sandbox);
@@ -95,6 +101,9 @@ test('AI button click reaches backend once and preserves draft inputs on success
   assert.equal(app.requests[1].url,'http://localhost:8010/v1/internal-ai/tobe-step');
   assert.equal(app.requests[2].url,'http://localhost:8010/v1/internal-ai/tobe-review');
   assert.match(app.notice.outerHTML,/Resultado esperado/);
+  assert.match(app.notice.outerHTML,/Qué información recibió Ollama/);
+  assert.match(app.notice.outerHTML,/Fricciones facilitadas:<\\/b> F1/);
+  assert.match(app.notice.outerHTML,/diagnóstico oficial se envía como referencia/);
   assert.match(app.notice.outerHTML,/Propuesta TO-BE IA sin aprobar/);
   assert.equal(app.renderCount,0,'No re-render that could erase unsaved TO-BE edits');
   assert.equal(app.button.disabled,false);
