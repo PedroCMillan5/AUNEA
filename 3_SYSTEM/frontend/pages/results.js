@@ -808,7 +808,8 @@ function tobeSnapshotIssueCards(e,item){
 function tobeAiAdviceHtml(e,item){
   const key=typeof internalAiPilotKey==='function'?internalAiPilotKey(e):null;
   const cached=key&&typeof __auneaAiPreview!=='undefined'?__auneaAiPreview.get(key):null;
-  const draft=cached||(typeof internalAiSavedDraft==='function'?internalAiSavedDraft(e):null);
+  const draft=cached||(typeof internalAiSavedDraft==='function'?internalAiSavedDraft(e):null)||
+    (!tobeEditable(latestTobe(e))?latestTobe(e)?.aiDraft?.proposal:null);
   const suggestion=draft?.items?.find(x=>String(x.source_step_id)===String(item.sourceStepId));
   if(!suggestion)return '<div class="tobe-ai-empty"><p class="tobe-muted">Todavía no hay una sugerencia de IA para esta actividad. Puedes diseñarla manualmente o preparar propuestas con el motor local.</p></div>';
   const narrative=typeof internalAiPilotNarrative==='function'?internalAiPilotNarrative(suggestion.rationale):{action:'',expected:'',reason:String(suggestion.rationale||'')};
@@ -1127,6 +1128,10 @@ function registerInternalWorkPages(){
       const draft=createTobeDraft(engagement);
       if(!draft){
         toast('No se ha creado el borrador. Comprueba la confirmación del AS-IS.');
+        return;
+      }
+      if(!saveState('Crear borrador TO-BE v'+draft.version)){
+        toast('El borrador sólo está en memoria. No cambies de página hasta guardarlo.');
         return;
       }
       render();
