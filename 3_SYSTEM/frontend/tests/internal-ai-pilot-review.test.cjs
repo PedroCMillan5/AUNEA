@@ -265,7 +265,7 @@ test('Guardar borrador retains unapproved AI narrative and reviewer findings wit
   assert.equal(app.tobe.aiDraft.sourceSnapshotVersion,2);
   assert.equal(app.tobe.aiDraft.proposal.items.length,2);
   const inSession=vm.runInContext('internalAiPilotPanel(currentEng())',app.sandbox);
-  assert.match(inSession,/Propuesta IA recuperada del borrador guardado/);
+  assert.match(inSession,/Propuesta IA guardada en el borrador/);
   app.engagement.tobeProposals=JSON.parse(JSON.stringify(app.engagement.tobeProposals));
   assert.match(app.tobe.aiDraft.proposal.items[0].rationale,/Resultado esperado/);
   assert.deepEqual(JSON.parse(JSON.stringify(app.tobe.aiDraft.proposal.review.blocking_step_ids)),['S1']);
