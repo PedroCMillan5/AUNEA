@@ -18,6 +18,11 @@ function internalAiPilotFeedback(e,message,type='info'){
 function internalAiPilotRefreshPanel(e){
   const panel=document.getElementById('tobeAiPilotStatus');
   if(panel)panel.outerHTML=internalAiPilotPanel(e);
+  const recommendation=document.getElementById('tobeAiRecommendation');
+  if(recommendation&&typeof tobeSelectedItem==='function'&&typeof tobeAiAdviceHtml==='function'){
+    const selected=tobeSelectedItem(e,latestTobe(e));
+    if(selected)recommendation.innerHTML=tobeAiAdviceHtml(e,selected);
+  }
 }
 function internalAiPilotKey(e){
   const snap=confirmedSnapshot(e),diagnostic=currentDiagnosticOutput(e),p=latestTobe(e);
@@ -327,8 +332,10 @@ tobePage=function(){
   const html=__originalTobePagePilot(),e=currentEng();
   if((typeof isClientDisplay==='function'&&isClientDisplay())||!e||!tobeEditable(latestTobe(e))||!internalAiPilotKey(e))return html;
   const button='<button class="btn btn-outline" id="generateTobeAiPilot">Preparar propuesta con IA</button>';
-  return html.replace('<button class="btn" id="saveTobe">',button+'<button class="btn" id="saveTobe">')
-    .replace('<div class="card card-pad section">',internalAiPilotPanel(e)+'<div class="card card-pad section">');
+  const withAction=html.replace('<button class="btn" id="saveTobe">',button+'<button class="btn" id="saveTobe">');
+  return withAction.includes('<div id="tobeAiMount"></div>')
+    ?withAction.replace('<div id="tobeAiMount"></div>',internalAiPilotPanel(e))
+    :withAction.replace('<div class="card card-pad section">',internalAiPilotPanel(e)+'<div class="card card-pad section">');
 };
 // [AUNEA-FE-TOBE-SEGMENTED-197] START — true progress by confirmed activity.
 async function generateTobeBySteps(e,key,snap,availability){
@@ -445,6 +452,8 @@ async function generateTobeAiPilot(e,fresh=false){
   __auneaAiWorking.add(key);
   const button=document.getElementById('generateTobeAiPilot');
   if(button){button.disabled=true;button.textContent='Comprobando IA…'}
+  const workspace=document.getElementById('tobeAiWorkspace');
+  if(workspace)workspace.open=true;
   internalAiPilotFeedback(e,'Comprobando disponibilidad del proveedor IA…');
   try{
     if(!state.backendOnline&&!(await checkBackend()))throw Error('Backend no conectado.');
@@ -462,6 +471,9 @@ async function generateTobeAiPilot(e,fresh=false){
     const snap=confirmedSnapshot(e);
     if(availability.provider==='ollama'){
       if(fresh){
+        // Protect the previous versioned suggestion and manual edits before a new expensive run.
+        if(!saveTobeFromDom(e)||!saveState('Conservar propuesta antes de regenerar'))
+          throw Error('No se pudo conservar el borrador anterior; no se inició otra generación.');
         // Explicit user action; only transient cached steps are cleared.
         // Keep the last successful preview until a replacement completes.
         __auneaAiCompletedSteps.delete(key);
