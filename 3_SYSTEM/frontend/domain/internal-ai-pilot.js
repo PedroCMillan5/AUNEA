@@ -20,9 +20,10 @@ function internalAiPilotRefreshPanel(e){
   if(panel)panel.outerHTML=internalAiPilotPanel(e);
 }
 function internalAiPilotKey(e){
-  const snap=confirmedSnapshot(e),diagnostic=currentDiagnosticOutput(e);
-  return e?.confirmedAsIs===true&&snap&&diagnostic
-    ?String(e.id)+'|'+String(snap.version)+'|'+String(diagnostic.input_snapshot_hash):null;
+  const snap=confirmedSnapshot(e),diagnostic=currentDiagnosticOutput(e),p=latestTobe(e);
+  return e?.confirmedAsIs===true&&snap&&diagnostic&&p
+    ?String(e.id)+'|'+String(snap.version)+'|'+String(diagnostic.input_snapshot_hash)+
+      '|TOBE:'+String(p.version):null;
 }
 // [AUNEA-FE-PG11-AI-DRAFT-SAVE-202] START — save concise AI suggestion in versioned TO-BE owner.
 // SOURCE: Simulator CANONICAL PG11 (versioned TO-BE proposal); DEC-050/052/055.
@@ -198,7 +199,13 @@ function internalAiReviewPanel(review){
 function internalAiPilotPanel(e){
   if(typeof isClientDisplay==='function'&&isClientDisplay())return '';
   const key=internalAiPilotKey(e),cached=key?__auneaAiPreview.get(key):null,
-    draft=cached||(key?internalAiSavedDraft(e):null),saved=!!(!cached&&draft);
+    persisted=key?internalAiSavedDraft(e):null,
+    draft=cached||persisted,
+    saved=!!(persisted&&draft&&persisted.input_hash===draft.input_hash&&
+      persisted.model===draft.model&&
+      JSON.stringify(persisted.items)===JSON.stringify(draft.items.map(internalAiBoundedDraftItem))&&
+      JSON.stringify(persisted.review)===JSON.stringify(internalAiBoundedReview(draft.review))&&
+      persisted.applied===(draft.applied===true));
   const feedback=key?__auneaAiFeedback.get(key):null;
   const partial=key?__auneaAiCompletedSteps.get(key):null;
   if(!draft)return '<div id="tobeAiPilotStatus" role="status" aria-live="polite" class="notice '+(feedback?.type==='warn'?'warn':'info')+'">'+
