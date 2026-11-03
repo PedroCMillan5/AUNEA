@@ -639,8 +639,21 @@ async function main(){
   });
   await page.locator('#createTobeDraft').click();
   const pg11=await page.evaluate(()=>({count:currentEng().tobeProposals?.length||0,status:currentEng().tobeProposals?.at(-1)?.status,
-    cards:document.querySelectorAll('[data-tobe-field="transformation"]').length}));
-  assert.deepEqual(pg11,{count:1,status:'DRAFT',cards:tobeSteps},'PG11 click must create and render the draft');
+    nodes:document.querySelectorAll('[data-tobe-select]').length,
+    inspectorFields:document.querySelectorAll('[data-tobe-field="transformation"]').length}));
+  assert.deepEqual(pg11,{count:1,status:'DRAFT',nodes:tobeSteps,inspectorFields:1},
+    'PG11 creates one DRAFT, a source-linked node per step, and one contextual inspector');
+  // One click changes the inspector, without destroying any draft edits.
+  const sourceIds=await page.evaluate(()=>latestTobe(currentEng()).items.map(x=>String(x.sourceStepId)));
+  if(sourceIds.length>1){
+    await page.locator('[data-tobe-select="'+sourceIds[1]+'"]').click();
+    assert.equal(await page.locator('[data-tobe-select="'+sourceIds[1]+'"]').getAttribute('aria-pressed'),'true');
+    await page.locator('#tobeInspector [data-tobe-field="problemResolved"]').fill('Mejora revisada en UAT');
+    await page.locator('[data-tobe-select="'+sourceIds[0]+'"]').click();
+    await page.locator('[data-tobe-select="'+sourceIds[1]+'"]').click();
+    assert.equal(await page.locator('#tobeInspector [data-tobe-field="problemResolved"]').inputValue(),
+      'Mejora revisada en UAT','inspector edits survive navigation and real saves');
+  }
   console.log('PG11_CREATE_DRAFT_CLICK_PASS: '+JSON.stringify(pg11));
   // [AUNEA-UAT-PG11-BROWSER-204] START — real browser save/reload and AUNEA layout without Ollama.
   await page.evaluate(()=>{
@@ -673,6 +686,7 @@ async function main(){
     });
     internalAiPilotRefreshPanel(e);
   });
+  await page.locator('#tobeAiWorkspace summary').click();
   assert.equal(await page.locator('#tobeAiPilotStatus .pg11-ai-step').count(),tobeSteps);
   assert.match(await page.locator('#tobeAiPilotStatus').innerText(),/pendiente de guardar/);
   assert.equal(await page.locator('#applyTobeAiPilot').count(),0,'blocked suggestions never apply');
@@ -717,6 +731,7 @@ async function main(){
     state.activePage='tobe';
     render();
   });
+  await page.locator('#tobeAiWorkspace summary').click();
   assert.equal(await page.locator('#tobeAiPilotStatus .pg11-ai-step').count(),tobeSteps,
     'saved AI proposals must be visible after native Chromium reload');
   assert.match(await page.locator('#tobeAiPilotStatus').innerText(),/recuperada del borrador guardado/);
