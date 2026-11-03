@@ -686,7 +686,7 @@ async function main(){
     });
     internalAiPilotRefreshPanel(e);
   });
-  await page.locator('#tobeAiWorkspace summary').click();
+  await page.locator('#tobeAiWorkspace > summary').click();
   assert.equal(await page.locator('#tobeAiPilotStatus .pg11-ai-step').count(),tobeSteps);
   assert.match(await page.locator('#tobeAiPilotStatus').innerText(),/pendiente de guardar/);
   assert.equal(await page.locator('#applyTobeAiPilot').count(),0,'blocked suggestions never apply');
@@ -731,7 +731,7 @@ async function main(){
     state.activePage='tobe';
     render();
   });
-  await page.locator('#tobeAiWorkspace summary').click();
+  await page.locator('#tobeAiWorkspace > summary').click();
   assert.equal(await page.locator('#tobeAiPilotStatus .pg11-ai-step').count(),tobeSteps,
     'saved AI proposals must be visible after native Chromium reload');
   assert.match(await page.locator('#tobeAiPilotStatus').innerText(),/recuperada del borrador guardado/);
