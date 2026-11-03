@@ -320,7 +320,7 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
     d.querySelectorAll('[data-tobe-field="futureActor"]').forEach(el=>el.value='Responsable del proceso');
     click('#advanceTobe');
     assert.equal(w.eval('latestTobe(currentEng()).status'),'REVIEWED',
-      'PG11 draft should be reviewed: '+w.eval('JSON.stringify({readiness:tobeReviewReadiness(currentEng(),latestTobe(currentEng())),handler:!!document.getElementById("advanceTobe")?.onclick,aiKey:internalAiPilotKey(currentEng()),diagnostic:!!currentDiagnosticOutput(currentEng()),saved:!saveStateFailure,audit:state.audit.slice(0,4)})'));
+      'PG11 draft should be reviewed: '+w.eval('JSON.stringify({readiness:tobeReviewReadiness(currentEng(),latestTobe(currentEng())),handler:!!document.getElementById("advanceTobe")?.onclick,aiKey:internalAiPilotKey(currentEng()),diagnostic:!!currentDiagnosticOutput(currentEng()),saved:!saveStateFailure,transition:window.__pg11TransitionTrace,audit:state.audit.slice(0,4)})'));
     click('#advanceTobe');
     assert.equal(w.eval('latestTobe(currentEng()).status'),'APPROVED_FOR_CLIENT',
       'PG11 reviewed version should be approved for client');
