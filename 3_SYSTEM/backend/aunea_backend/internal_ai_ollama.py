@@ -253,7 +253,11 @@ def propose_step(request: PilotAIRequest, steps: list[dict], schema: dict,
             "Devuelve exactamente UNA propuesta para current_activity. Conserva su ID en source_step_id.")
         + "\nUsa exclusivamente referencias adjuntas al segmento; "
           "la lista de elementos sin vincular es una limitación, no una prueba contra la actividad. "
-          "No utilices información no aportada."
+          "No utilices información no aportada. " 
+          "source_step_id debe ser el ID de current_activity. " 
+          "En source_refs incluye ese ID; otros IDs requieren vínculo explícito. " 
+          "En tool usa exactamente la herramienta de origen o una cadena vacía. " 
+          "Responde brevemente: una frase por campo y sin repetir información."
     )
     body = json.dumps({
         "model": settings["model"],
