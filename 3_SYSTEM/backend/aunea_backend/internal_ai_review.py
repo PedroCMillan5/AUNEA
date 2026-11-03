@@ -8,7 +8,7 @@ import json
 import socket
 from urllib.error import HTTPError, URLError
 from urllib.request import Request
-from .internal_ai import PilotAIConsolidationRequest, validate_pilot_result, related_step_ids
+from .internal_ai import PilotAIConsolidationRequest, validate_pilot_result, related_step_ids, explicit_pilot_process_flow
 from .internal_ai_ollama import (
     LOCAL_URL, _LOCAL_HTTP, OllamaUnavailable, model_name, context_window,
     request_timeout_seconds,
@@ -38,6 +38,12 @@ _REVIEW_INSTRUCTIONS = (
     "Devuelve SOLO JSON del esquema. Revisa coherencia entre actividades, decisiones, "
     "excepciones y controles. Busca afirmaciones sin evidencia, contradicciones "
     "entre propuestas, resultados prometidos sin condiciones y saltos de responsabilidad. "
+    "Contrasta transformacion e intervencion: si se mantiene una actividad pero "
+    "se cambia su funcion, senala la incoherencia. Contrasta resultados con el "
+    "problema real que intenta resolver cada medida; evita controles genericos "
+    "que no aborden la causa. Identifica duplicidades de propuestas entre pasos. "
+    "Comprueba las conexiones usando SOLO process_flow.explicit_routes; el orden "
+    "visual por si solo no prueba una ruta ni politica de aprobacion. "
     "Usa SOLO IDs de la lista de actividades en step_id; usa GLOBAL para un problema transversal. "
     "Si se mantienen todos los pasos con fricciones vinculadas, comprueba oportunidades omitidas. "
     "Si no detectas problemas, issues debe ser []. No propongas datos, ahorro, tiempos ni "
@@ -56,6 +62,7 @@ def _context(request: PilotAIConsolidationRequest) -> dict:
     active=[s for s in steps if isinstance(s,dict) and s.get("status")!="SUPERSEDED"]
     return {
         "process_name":request.request.engagement.process_name,
+        "process_flow":explicit_pilot_process_flow(active),
         "activity_order":[{"id":str(s["id"]),"name":str(s.get("step_name") or s.get("name") or ""),
                            "type":str(s.get("step_type") or "")} for s in active],
         "frictions":[{"id":str(f.get("id")),"step_ids":sorted(related_step_ids(f)),
@@ -70,14 +77,16 @@ def _batches(context: dict) -> list[dict]:
     """No silent truncation: partition by measured encoded request bytes."""
     groups=[]
     for item in context["proposals"]:
-        candidate={"process_name":context["process_name"],
+        candidate={"process_flow":context.get("process_flow"),
+                   "process_name":context["process_name"],
                    "activity_order":context["activity_order"],
                    "frictions":context.get("frictions",[]),
                    "proposals":([*groups[-1]["proposals"],item] if groups else [item])}
         body=_request_bytes(candidate)
         if len(body)>MAX_REVIEW_BYTES:
             if groups and len(groups[-1]["proposals"])>0:
-                candidate={"process_name":context["process_name"],
+                candidate={"process_flow":context.get("process_flow"),
+                           "process_name":context["process_name"],
                            "activity_order":context["activity_order"],
                            "frictions":context.get("frictions",[]),"proposals":[item]}
                 if len(_request_bytes(candidate))>MAX_REVIEW_BYTES:
