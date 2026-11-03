@@ -224,7 +224,7 @@ def _step_context(request: PilotAIRequest, steps: list[dict], step_id: str) -> d
         "process_risk_index": [
             {"id": str(r.risk_id), "step_ids": list(r.step_ids), "category": r.category}
             for r in engagement.risks if r.risk_id],
-        "current_activity": source,
+        "current_activity": _compact_pilot_step(source),
         "explicit_linked_frictions": linked_frictions,
         "explicit_linked_risks": linked_risks,
         "linked_evidence": linked_evidence,
