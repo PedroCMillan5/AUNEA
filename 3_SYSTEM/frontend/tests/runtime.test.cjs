@@ -313,6 +313,9 @@ test('HTTP, arranque, modos UX, CRM, navegación, pasos, fricciones y persistenc
     click('#nav [data-page="tobe"]');
     click('#createTobeDraft');
     const tobeBefore=w.eval('JSON.stringify(confirmedSnapshot(currentEng()))');
+    // The PG11 inspector edits one selected activity; populate the other synthetic
+    // source activities via the fixture without manufacturing a second UI owner.
+    w.eval("latestTobe(currentEng()).items.forEach(x=>{x.transformation='Se mantiene';if(!x.futureActor)x.futureActor='Responsable del proceso'})");
     d.querySelectorAll('[data-tobe-field="transformation"]').forEach(el=>el.value='Se mantiene');
     click('#advanceTobe');click('#advanceTobe');
     assert.equal(w.eval('JSON.stringify(confirmedSnapshot(currentEng()))'),tobeBefore);
