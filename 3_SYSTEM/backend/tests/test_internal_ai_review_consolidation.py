@@ -43,6 +43,7 @@ def test_review_reports_real_coherence_without_approving(monkeypatch):
     assert data["status"]=="CHECKED"
     assert data["requires_human_review"] is True
     assert data["issues"]==[]
+    assert data["blocking_step_ids"]==[]
     assert data["batches_checked"]==1
     assert len(calls)==1
     assert calls[0]["stream"] is False
@@ -177,6 +178,39 @@ def test_global_review_consumes_same_explicit_process_map(monkeypatch):
         {"from":"S2","to":"__END__","route":"normal","source":"ProcessStep"},
     ]
     assert context["process_flow"]["activities"][0]["id"]=="S1"
+
+
+def test_new_action_classified_as_kept_is_flagged_for_correction(monkeypatch):
+    mock_model(monkeypatch, issues=[])
+    changed=proposal("S1")
+    changed.transformation="Se mantiene"
+    changed.rationale=("Acción propuesta: Establecer un registro compartido. "
+                       "Resultado esperado: visibilidad. Justificación: trazabilidad.")
+    stable=proposal("S2")
+    stable.transformation="Se mantiene"
+    stable.rationale=("Acción propuesta: Mantener la revisión actual. "
+                      "Resultado esperado: continuidad. Justificación: sin cambio fundado.")
+    result=review.consolidate(PilotAIConsolidationRequest(
+        request=sample(),items=[changed,stable]))
+    assert result["status"]=="CHECKED_WITH_NOTES"
+    assert result["blocking_step_ids"]==["S1"]
+    assert any(x["step_id"]=="S1" and "Se mantiene" in x["issue"]
+               for x in result["issues"])
+
+
+def test_keep_step_without_new_action_does_not_trigger_quality_gate(monkeypatch):
+    mock_model(monkeypatch, issues=[])
+    a=proposal("S1")
+    b=proposal("S2")
+    a.transformation=b.transformation="Se mantiene"
+    a.rationale=("Acción propuesta: Mantener el flujo original. "
+                 "Resultado esperado: continuidad. Justificación: sin mejora respaldada.")
+    b.rationale=a.rationale
+    result=review.consolidate(PilotAIConsolidationRequest(
+        request=sample(),items=[a,b]))
+    # Existing global observation about linked frictions remains non-blocking.
+    assert result["blocking_step_ids"]==[]
+    assert result["status"]=="CHECKED_WITH_NOTES"
 
 
 # [AUNEA-UAT-INTERNAL-AI-REVIEW-198] END
