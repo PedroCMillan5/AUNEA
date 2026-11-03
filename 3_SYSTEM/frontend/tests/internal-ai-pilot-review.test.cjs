@@ -32,7 +32,7 @@ test('module is installed after engine-adapter and before boot',()=>{
 // Behavioral regression: the button must respond to a real delegated click,
 // show backend failures permanently, and keep the active consultant inputs intact.
 const vm=require('node:vm');
-function aiPilotHarness({fail=false,steps=['S1'],failReview=false,blockingSteps=[]}={}){
+function aiPilotHarness({fail=false,steps=['S1'],failReview=false,blockingSteps=[],protocol='PG11_REVIEW_20261103_2'}={}){
   const listeners=new Map(), nodes=new Map(), requests=[];
   let provider=null,renderCount=0,registrationCount=0,notice=null;
   let shouldFailReview=failReview;
@@ -66,11 +66,12 @@ function aiPilotHarness({fail=false,steps=['S1'],failReview=false,blockingSteps=
     registerInternalWorkPages:()=>{registrationCount++},postBind:()=>{},
     fetch:async(url,opts)=>{
       requests.push({url,opts});
-      if(url.endsWith('/status'))return {ok:true,json:async()=>({status:'AVAILABLE',provider:'ollama',model:'aunea-qwen3-4b:latest'})};
+      if(url.endsWith('/status'))return {ok:true,json:async()=>({status:'AVAILABLE',provider:'ollama',model:'aunea-qwen3-4b:latest',pg11_review_protocol:protocol})};
       if(url.endsWith('/tobe-review')&&shouldFailReview)return {ok:false,status:503,json:async()=>({detail:'Sin respuesta de Ollama.'})};
       if(url.endsWith('/tobe-review'))return {ok:true,json:async()=>({
         status:blockingSteps.length?'CHECKED_WITH_NOTES':'CHECKED',
         summary:'Coherencia global revisada',issues:[],
+        protocol_revision:protocol,
         blocking_step_ids:blockingSteps,requires_human_review:true})};
       if(fail)return {ok:false,status:409,json:async()=>({detail:'El diagnóstico no corresponde al AS-IS vigente.'})};
       return {ok:true,json:async()=>({...proposal,
@@ -169,4 +170,20 @@ test('clear keep-versus-change contradictions prevent applying AI suggestions',a
   assert.match(app.notice.outerHTML,/S1/);
   assert.doesNotMatch(app.notice.outerHTML,/id="applyTobeAiPilot"/);
   assert.match(app.notice.outerHTML,/id="regenerateTobeAiPilot"/);
+});
+
+test('PG11 rejects stale backend before expensive local Ollama calls',async()=>{
+  const app=aiPilotHarness({protocol:null,steps:['S1','S2']});
+  app.click();await app.settle();
+  assert.equal(app.requests.length,1,'Only read-only status; zero inference requests');
+  assert.match(app.notice.textContent,/Versiones incompatibles de PG11/);
+  assert.match(app.notice.textContent,/reinicia Uvicorn/);
+  assert.equal(app.button.disabled,false);
+});
+
+test('PG11 shows reviewer protocol revision on new successful draft',async()=>{
+  const app=aiPilotHarness();
+  app.click();await app.settle();
+  assert.match(app.notice.outerHTML,/Revisor PG11: PG11_REVIEW_20261103_2/);
+  assert.equal(app.requests.length,3);
 });
