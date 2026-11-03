@@ -153,4 +153,45 @@ def test_step_output_diagnostic_codes_are_safe_and_specific():
         assert "FALSO" not in str(error.value)
 
 
+def test_confirmed_process_routes_shared_with_each_step_without_inventing_links(monkeypatch):
+    calls=wire(monkeypatch)
+    req=sample()
+    steps=req.engagement.questionnaire_answers["_process_steps"]
+    steps[0]["normal_next_step"]="S2"
+    steps[1]["step_type"]="ST04"
+    steps[1]["decision_criteria"]=["Control documental"]
+    steps[1]["normal_next_step"]="__END__"
+    steps[1]["exception_path"]={"condition":"Excepción validada","destination_step":"S1",
+                                 "owner":"Responsable"}
+    req.engagement.questionnaire_answers["_unrelated_study"]={"client":"NO_OTHER_STUDY"}
+    req.diagnostic.input_snapshot_hash=stable_hash(req.engagement.model_dump())
+    active=validate_pilot_source(req)
+    for sid in ("S1","S2"):
+        local.propose_step(req,active,provider._schema(),provider._INSTRUCTIONS,sid)
+    contexts=[json.loads(json.loads(data)["messages"][1]["content"].split("\n",1)[1])
+              for url,_,data in calls if url.endswith("/api/chat")]
+    assert len(contexts)==2
+    routes=contexts[0]["process_flow"]["explicit_routes"]
+    assert routes==[
+        {"from":"S1","to":"S2","route":"normal","source":"ProcessStep"},
+        {"from":"S2","to":"__END__","route":"normal","source":"ProcessStep"},
+        {"from":"S2","to":"S1","route":"exception","source":"ProcessStep"},
+    ]
+    assert contexts[0]["process_flow"]==contexts[1]["process_flow"]
+    assert contexts[1]["process_flow"]["activities"][1]["decision_criteria"]==["Control documental"]
+    assert "NO_OTHER_STUDY" not in json.dumps(contexts)
+
+
+def test_missing_routes_do_not_become_confirmed_links():
+    req=sample()
+    active=validate_pilot_source(req)
+    routes=local.explicit_pilot_process_flow(active)
+    assert routes["explicit_routes"]==[]
+    assert {x["step_id"] for x in routes["unresolved_routes"]}=={"S1","S2"}
+    active[0]["normal_next_step"]="DOES_NOT_EXIST"
+    routes=local.explicit_pilot_process_flow(active)
+    assert routes["explicit_routes"]==[]
+    assert any(x["reason"]=="destino_no_vigente" for x in routes["unresolved_routes"])
+
+
 # [AUNEA-UAT-INTERNAL-AI-STEP-195] END
