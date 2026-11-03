@@ -45,8 +45,10 @@ function aiPilotHarness({fail=false,steps=['S1'],failReview=false,blockingSteps=
   const engagement={id:'SYNTHETIC',confirmedAsIs:true,tobeProposals:[tobe]};
   const proposal={status:'DRAFT',engagement_id:'SYNTHETIC',snapshot_version:2,
     item:{source_step_id:'S1',transformation:'Se modifica',problem_resolved:'Registro disperso',rationale:'Acción propuesta: registrar entradas. Resultado esperado: mayor trazabilidad. Justificación: el paso registra solicitudes',
-      source_refs:['S1'],limitations:'Pendiente de revisión'},input_hash:'hash',model:'aunea-qwen3-4b:latest'};
+      source_refs:['S1'],limitations:'Pendiente de revisión'},input_hash:'ENGAGEMENT_HASH_DIFFERENT_FROM_DIAGNOSTIC',model:'aunea-qwen3-4b:latest'};
   const button={disabled:false,textContent:'Preparar propuesta con IA'};
+  const disk=new Map();
+  const localStorage={getItem:key=>disk.get(key)||null,setItem:(key,value)=>disk.set(key,String(value))};
   notice={textContent:'',className:'notice info',outerHTML:''};
   nodes.set('generateTobeAiPilot',button);nodes.set('tobeAiPilotStatus',notice);
   const document={
@@ -60,11 +62,14 @@ function aiPilotHarness({fail=false,steps=['S1'],failReview=false,blockingSteps=
   };
   const sandbox={
     document,console,Map,Set,Error,String,JSON,Promise,
-    state:{backendOnline:true,backendUrl:'http://localhost:8010'},
+    state:{backendOnline:true,backendUrl:'http://localhost:8010',engagements:[engagement]},
+    STORAGE_KEY:'aunea_internal_v1',localStorage,
+    saveState:()=>{localStorage.setItem('aunea_internal_v1',JSON.stringify({engagements:[engagement]}));return true},
     confirmedSnapshot:()=>snapshot,currentDiagnosticOutput:()=>diagnostic,
     currentEng:()=>engagement,latestTobe:()=>engagement.tobeProposals.at(-1),
     tobeEditable:p=>p?.status==='DRAFT',AiAgentService:ai,
     buildBackendPayload:()=>({engagement_id:'SYNTHETIC'}),
+    saveTobeFromDom:e=>sandbox.persistTobeAiDraft(e),
     checkBackend:async()=>true,render:()=>{renderCount++},toast:()=>{},
     now:()=> '2026-11-03T17:00:00Z',
     esc:x=>String(x),tobePage:()=>'<button class="btn" id="saveTobe">Guardar</button><div class="card card-pad section"></div>',
@@ -91,6 +96,7 @@ function aiPilotHarness({fail=false,steps=['S1'],failReview=false,blockingSteps=
   vm.createContext(sandbox);
   vm.runInContext(src,sandbox);
   vm.runInContext('registerInternalWorkPages();registerInternalWorkPages()',sandbox);
+  document.__auneaAiPilotClickHandler=listeners.get('click');
   const click=()=>listeners.get('click')({
     target:{closest:selector=>selector==='#generateTobeAiPilot'?button:null},
     preventDefault:()=>{}
@@ -263,7 +269,12 @@ test('Guardar borrador retains unapproved AI narrative and reviewer findings wit
   assert.equal(vm.runInContext('persistTobeAiDraft(currentEng())',app.sandbox),true);
   assert.equal(app.tobe.status,'DRAFT');
   assert.equal(app.tobe.aiDraft.sourceSnapshotVersion,2);
+  assert.equal(app.tobe.aiDraft.diagnosticInputHash,'hash');
+  assert.equal(app.tobe.aiDraft.proposal.input_hash,'ENGAGEMENT_HASH_DIFFERENT_FROM_DIAGNOSTIC');
   assert.equal(app.tobe.aiDraft.proposal.items.length,2);
+  const beforeSave=vm.runInContext('internalAiPilotPanel(currentEng())',app.sandbox);
+  assert.match(beforeSave,/Propuesta IA pendiente de guardar/);
+  assert.equal(vm.runInContext("saveState('Guardar borrador TO-BE')",app.sandbox),true);
   const inSession=vm.runInContext('internalAiPilotPanel(currentEng())',app.sandbox);
   assert.match(inSession,/Propuesta IA guardada en el borrador/);
   app.engagement.tobeProposals=JSON.parse(JSON.stringify(app.engagement.tobeProposals));
@@ -309,6 +320,32 @@ test('Guardar borrador invokes local save after collecting current TO-BE fields'
   const results=fs.readFileSync(path.join(root,'pages/results.js'),'utf8');
   assert.match(results,/saveTobeFromDom\(e\).*?persistTobeAiDraft\(e\)/s);
   assert.match(results,/if\(by\('saveTobe'\)\)by\('saveTobe'\)\.onclick=\(\)=>\{if\(saveTobeFromDom\(e\)&&saveState\('Guardar borrador TO-BE'\)\)render\(\)\}/);
+});
+
+
+test('the in-panel save actually saves local state and does not require another Ollama request',async()=>{
+  const app=aiPilotHarness({blockingSteps:['S1']});
+  app.click();await app.settle();
+  const before=app.requests.length;
+  const el={};
+  app.sandbox.document.__auneaAiSaveTest=true;
+  const clickHandler=app.sandbox.document.__auneaAiPilotClickHandler;
+  assert.equal(typeof clickHandler,'function');
+  clickHandler({target:{closest:selector=>selector==='#saveTobeAiPilot'?el:null},preventDefault(){}});
+  assert.equal(app.requests.length,before);
+  const saved=JSON.parse(app.sandbox.localStorage.getItem('aunea_internal_v1'));
+  assert.equal(saved.engagements[0].tobeProposals[0].aiDraft.proposal.items.length,1);
+  assert.match(app.notice.outerHTML,/Propuesta IA guardada en el borrador/);
+  assert.doesNotMatch(app.notice.outerHTML,/id="applyTobeAiPilot"/);
+});
+
+test('PG11 styles use AUNEA System tokens, explicit spacing, responsive cards and contained audit',()=>{
+  const css=fs.readFileSync(path.join(root,'ui-system.css'),'utf8');
+  assert.match(css,/AUNEA-FE-PG11-AI-LAYOUT-203/);
+  assert.match(css,/\.pg11-ai-panel\.card\{[\s\S]*?padding:clamp\(18px,2vw,28px\)/);
+  assert.match(css,/\.pg11-ai-step-list\{display:grid;gap:14px/);
+  assert.match(css,/\.pg11-ai-review-area pre\{[\s\S]*?overflow:auto/);
+  assert.match(css,/@media\(max-width:520px\)\{/);
 });
 
 // [AUNEA-UAT-PG11-AUDIT-200] END
