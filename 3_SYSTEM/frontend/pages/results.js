@@ -1172,7 +1172,8 @@ function registerInternalWorkPages(){
     }
     __auneaTobeSelection={engagementId:e.id,version:p.version,stepId:String(sourceId)};
     const inspector=document.getElementById('tobeInspector');
-    if(inspector)inspector.innerHTML=tobeInspectorHtml(e,p);
+    const savedEngagement=currentEng(),savedProposal=latestTobe(savedEngagement);
+    if(inspector&&savedEngagement&&savedProposal)inspector.innerHTML=tobeInspectorHtml(savedEngagement,savedProposal);
     document.querySelectorAll('[data-tobe-select]').forEach(node=>{
       const active=node.getAttribute('data-tobe-select')===String(sourceId);
       node.classList.toggle('is-selected',active);node.setAttribute('aria-pressed',String(active));
@@ -1190,20 +1191,18 @@ function registerInternalWorkPages(){
     document.querySelectorAll('[data-draft-conditional-scenario]').forEach(x=>x.onclick=()=>createScenario(Number(x.dataset.draftConditionalScenario)));
     if(by('saveTobe'))by('saveTobe').onclick=()=>{if(saveTobeFromDom(e)&&saveState('Guardar borrador TO-BE'))render()};
     if(by('advanceTobe'))by('advanceTobe').onclick=()=>{
-      const live=currentEng(),p=latestTobe(live),previous=p?.status;
-      if(!live||!p||(tobeEditable(p)&&!saveTobeFromDom(live))||
+      // Persistence reconciles and replaces state.engagements. Reacquire the live
+      // owner after each save; never advance an orphaned Engagement reference.
+      const before=currentEng(),current=latestTobe(before),previous=current?.status;
+      if(!before||!current||(tobeEditable(current)&&!saveTobeFromDom(before))||
         !saveState('Guardar campos TO-BE antes de revisión'))return;
-      if(!advanceTobeStatus(live))return;
-      if(typeof window!=='undefined')window.__pg11TransitionTrace={
-        before:previous,
-        liveAfter:latestTobe(live)?.status,
-        currentAfter:latestTobe(currentEng())?.status,
-        sameEngagement:live===currentEng(),
-        auditAfterAdvance:state.audit.slice(0,3).map(x=>x.message)
-      };
+      const live=currentEng();
+      if(!live||!advanceTobeStatus(live))return;
       if(!saveState('Confirmar revisión humana TO-BE')){
-        p.status=previous;p.updatedAt=now();
-        toast('El cambio de estado no se ha guardado. El TO-BE sigue en '+previous+'.');
+        const present=latestTobe(currentEng());
+        if(present){present.status=previous;present.updatedAt=now();}
+        markDirty('Cambio de estado TO-BE pendiente de guardar');
+        toast('El cambio de estado no se ha guardado. Conserva el estudio abierto.');
         return;
       }
       render();
