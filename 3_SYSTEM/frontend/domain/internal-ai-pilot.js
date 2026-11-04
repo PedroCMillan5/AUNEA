@@ -52,6 +52,7 @@ function internalAiBoundedDraftItem(item){
 function internalAiBoundedReview(review){
   return {
     status:String(review?.status||''),
+    review_mode:String(review?.review_mode||'OLLAMA'),
     summary:String(review?.summary||''),
     protocol_revision:String(review?.protocol_revision||''),
     requires_human_review:true,
@@ -364,7 +365,7 @@ function internalAiPendingPanel(e,key,pending,feedback){
     '<div class="pg11-ai-step-list">'+cards+'</div>'+
     '<div class="pg11-ai-actions">'+
       '<button type="button" class="btn btn-primary" id="retryTobeAiReview">'+
-        (complete?'Reintentar sólo la revisión global':'Continuar las actividades pendientes')+'</button>'+
+        (complete?'Comprobar coherencia básica (sin Ollama)':'Continuar las actividades pendientes')+'</button>'+
       '<button type="button" class="btn btn-outline" id="saveTobeAiPending">'+
         'Guardar actividades verificadas</button></div>'+
     internalAiPilotTracePanel(Object.fromEntries(pending.traces||new Map()))+
@@ -460,6 +461,7 @@ function internalAiPilotPanel(e){
       '<div><strong>'+blockedIds.size+'</strong><span>Actividades bloqueadas</span></div>'+
       '<div><strong>'+issues.length+'</strong><span>Aspectos por revisar</span></div>'+
     '</div>'+
+    (review?.review_mode==='RULES_ONLY'?'<p class="notice info"><b>Comprobación básica por reglas completada.</b> No se utilizó Ollama. Estos controles detectan inconsistencias explícitas, pero no certifican la viabilidad ni sustituyen la revisión humana.</p>':'')+
     (blocked?'<div class="pg11-ai-blocked"><b>No apta para aplicar.</b><p>La revisión encontró incoherencias. Puedes guardar y consultar la propuesta sin aprobarla.</p></div>':'')+
     (review?.summary?'<div class="pg11-ai-summary"><b>Resultado de la revisión</b><p>'+esc(review.summary)+'</p></div>':'')+
     '<div class="pg11-ai-section-title"><div><p class="pg11-ai-eyebrow">PROPUESTA DE DISEÑO</p>'+
@@ -561,7 +563,7 @@ async function generateTobeBySteps(e,key,snap,availability,fresh=false){
 }
 // [AUNEA-FE-TOBE-SEGMENTED-197] END
 // [AUNEA-FE-PG11-REVIEW-ONLY-216] START — dedicated review handler and shared consolidation.
-async function internalAiConsolidateVerified(e,key,snap,availability,completed,request){
+async function internalAiConsolidateVerified(e,key,snap,availability,completed,request,mode='ollama'){
   const stepIds=(latestTobe(e)?.items||[]).map(it=>String(it.sourceStepId));
   if(!stepIds.length||completed?.stepSignature!==stepIds.join('|')||
      completed.items.size!==stepIds.length||stepIds.some(id=>!completed.items.has(id)))
@@ -569,9 +571,11 @@ async function internalAiConsolidateVerified(e,key,snap,availability,completed,r
   // Review cross-step coherence only after every source step is validated.
   // If review fails, retain every completed step; retry only the review call.
   let items=stepIds.map(id=>completed.items.get(id));
-  internalAiPilotFeedback(e,'Generación individual completada: '+stepIds.length+
+  internalAiPilotFeedback(e,mode==='basic'?
+    'Comprobando por reglas las '+stepIds.length+' propuestas guardadas, sin usar Ollama…':
+    'Generación individual completada: '+stepIds.length+
     ' de '+stepIds.length+' actividades verificadas. Consolidando coherencia global…');
-  const reviewed=await fetch(state.backendUrl+'/v1/internal-ai/tobe-review',{
+  const reviewed=await fetch(state.backendUrl+(mode==='basic'?'/v1/internal-ai/tobe-review-basic':'/v1/internal-ai/tobe-review'),{
     method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({request,items,correction_attempted_ids:[...completed.traces].filter(([,t])=>t.correction_attempted).map(([id])=>id)})
   });
@@ -642,19 +646,12 @@ async function retryTobeAiReviewOnly(){
   }
   __auneaAiWorking.add(key);
   const button=document.getElementById('retryTobeAiReview');
-  if(button){button.disabled=true;button.textContent='Comprobando revisor…'}
-  internalAiPilotFeedback(e,'Comprobando disponibilidad del revisor global. Las '+ids.length+' propuestas permanecen guardadas…');
+  if(button){button.disabled=true;button.textContent='Comprobando coherencia básica…'}
+  internalAiPilotFeedback(e,'Comprobando '+ids.length+' propuestas con reglas de AUNEA. No se utiliza Ollama ni se modifican los borradores.');
   try{
     if(!state.backendOnline&&!(await checkBackend()))throw Error('Backend no conectado; las propuestas siguen guardadas.');
-    const statusResponse=await fetch(state.backendUrl+'/v1/internal-ai/status',{cache:'no-store'});
-    if(!statusResponse.ok)throw Error('No se ha podido consultar el estado del proveedor (HTTP '+statusResponse.status+').');
-    const availability=await statusResponse.json();
-    if(availability.status!=='AVAILABLE')
-      throw Error(String(availability.reason||'Proveedor IA no disponible.')+' Las actividades guardadas no han cambiado.');
-    if(availability.provider!=='ollama')
-      throw Error('El reintento segmentado requiere el revisor local autorizado. No se ha cambiado el proveedor.');
-    if(availability.pg11_review_protocol!==__auneaPg11ReviewProtocol)
-      throw Error('El protocolo del revisor no coincide con el backend. Actualiza y reinicia Uvicorn antes de reintentar.');
+    // This is deterministic: it does not need an Ollama health probe or inference.
+    const availability={model:'AUNEA — comprobación por reglas'};
     const live=currentEng();
     if(!live||internalAiPilotKey(live)!==key||!tobeEditable(latestTobe(live)))
       throw Error('El estudio o su versión cambiaron antes de la revisión.');
@@ -666,17 +663,17 @@ async function retryTobeAiReviewOnly(){
     // Strictly call the global reviewer. The per-activity /tobe-step endpoint
     // is intentionally absent from this function.
     await internalAiConsolidateVerified(live,key,confirmedSnapshot(live),
-      availability,completed,request);
+      availability,completed,request,'basic');
   }catch(error){
-    const message=String(error?.message||error||'Fallo desconocido del revisor global.');
-    internalAiPilotFeedback(currentEng()||e,'La revisión global no se completó: '+message+
+    const message=String(error?.message||error||'Fallo desconocido de la comprobación básica.');
+    internalAiPilotFeedback(currentEng()||e,'La comprobación básica no se completó: '+message+
       ' Las '+ids.length+' actividades verificadas permanecen guardadas.','warn');
     if(currentEng()?.id===e.id)internalAiPilotRefreshPanel(currentEng());
     console.error('PG11: reintento de revisión global no completado',error);
   }finally{
     __auneaAiWorking.delete(key);
     const currentButton=document.getElementById('retryTobeAiReview');
-    if(currentButton){currentButton.disabled=false;currentButton.textContent='Reintentar sólo la revisión global'}
+    if(currentButton){currentButton.disabled=false;currentButton.textContent='Comprobar coherencia básica (sin Ollama)'}
   }
 }
 // [AUNEA-FE-PG11-REVIEW-ONLY-216] END
