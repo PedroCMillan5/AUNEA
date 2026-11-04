@@ -9,7 +9,7 @@ import re
 from .internal_ai import PilotAIConsolidationRequest, validate_pilot_result
 from .internal_ai_review import PG11_REVIEW_PROTOCOL, _clear_transformation_conflicts
 
-_NUMBER_CLAIM = re.compile(r"\b\d+(?:[.,]\d+)?\s*(?:%|€|euros?|minutos?|horas?|d[ií]as?)(?!\w)", re.I)
+_NUMBER_CLAIM = re.compile(r"\b\d+(?:[.,]\d+)*\s*(?:%|€|euros?|minutos?|horas?|d[ií]as?)(?!\w)", re.I)
 
 
 def basic_review(request: PilotAIConsolidationRequest) -> dict:
