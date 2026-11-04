@@ -79,6 +79,25 @@ test('decisions preserve explicit YES and NO routes, and verify reconvergence',(
  assert.equal(h.run('tobeFlowIntegrity'),null);
  assert.equal(h.run('tobeFutureSteps')[0].exception_path.destination_step,'__END__');
 });
+test('a newly added decision needs explicit YES and NO routes and keeps the original source unchanged',()=>{
+ const h=harness(linear),snapshot=JSON.stringify(h.snapshot.processSteps),flow=h.run('tobeFlowOwner');
+ const id='TOBE-ADD-1-1';
+ flow.addedSteps.push({id,isAddition:true,sourceStepId:'S1',sourceStepName:'Recepción',
+   stepName:'Clasificar excepción',stepType:'ST04',status:'DRAFT',
+   transformation:'Requiere decisión humana',problemResolved:'Distinguir ruta excepcional',
+   futureActor:'Supervisor',futureTime:'',futureTimeAssumption:''});
+ flow.routes[id]={normal:'S2',exception:'__PENDING__'};
+ flow.routes.S1.normal=id;
+ h.p.flow=flow;
+ assert.match(h.run('tobeFlowIntegrity'),/pendiente de conectar/);
+ flow.routes[id].exception='__END__';
+ assert.equal(h.run('tobeFlowIntegrity'),null);
+ const added=h.run('tobeFutureSteps').find(x=>x.id===id);
+ assert.equal(added.step_type,'ST04');
+ assert.equal(added.exception_path.destination_step,'__END__');
+ assert.equal(JSON.stringify(h.snapshot.processSteps),snapshot);
+});
+
 test('a closed loop with no route to END blocks review',()=>{
  const h=harness(linear);h.p.flow=h.run('tobeFlowOwner');
  h.p.flow.routes.S2.normal='S1';
