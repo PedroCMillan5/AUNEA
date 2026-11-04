@@ -2811,3 +2811,16 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
   .tobe-ai-stage>summary .tobe-muted{display:block;margin-top:7px}
 }
 /* [AUNEA-FE-PG11-MAP-PRIMARY-STYLE-242] END */
+
+/* [AUNEA-FE-PG11-ORIGINAL-FACTS-STYLE-244] START — AS-IS source facts within existing inspector. */
+.tobe-original-facts{display:grid;gap:10px;min-width:0;width:100%}
+.tobe-original-facts dl{margin:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.tobe-original-facts dl>div{min-width:0;border:1px solid var(--system-line);
+  border-radius:var(--radius-sm);background:#fff;padding:11px 12px}
+.tobe-original-facts dt{font-size:10px;font-weight:750;line-height:1.5;color:var(--system)}
+.tobe-original-facts dd{margin:5px 0 0;font-size:12px;line-height:1.55;
+  color:var(--ink);overflow-wrap:anywhere}
+.tobe-original-facts .tobe-muted{margin:0}
+@media(max-width:1000px){.tobe-original-facts dl{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.tobe-original-facts dl{grid-template-columns:1fr}}
+/* [AUNEA-FE-PG11-ORIGINAL-FACTS-STYLE-244] END */
