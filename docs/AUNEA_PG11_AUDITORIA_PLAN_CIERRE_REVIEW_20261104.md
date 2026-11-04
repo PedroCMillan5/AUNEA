@@ -153,3 +153,14 @@
 **Implementación REVIEW:** motor `internal_ai_review_basic.py` (220), endpoint local `tobe-review-basic` (221), test backend (222), y frontal con botón «Comprobar coherencia básica (sin Ollama)». El chequeo valida el origen y muestra conflictos explícitos, información pendiente y cifras por verificar. El resultado indica `review_mode=RULES_ONLY`, siempre requiere revisión humana y permanece DRAFT. Se conserva el checkpoint P1–P4 sin regeneración. Se usa también después de generar propuestas nuevas.
 
 **Aceptación pendiente:** QA automatizado y verificación en el navegador del operador; no se considera análisis semántico IA terminado ni PG11 listo para PG12. El motor LLM largo permanece aislado, no se emplea en este botón.
+
+
+## UAT visual de comprobación básica y ajuste del estado final (2026-11-04)
+
+La captura del operador confirma que el botón sin Ollama devuelve revisión por reglas guardada con **4 propuestas, 3 actividades bloqueadas y 16 observaciones**. No supone aceptación de la calidad del TO-BE. Se mantiene `RULES_ONLY` y la necesidad de decisiones humanas. Se observa una etiqueta errónea `Generación en curso…` después de recibir revisión terminada: el render del panel ocurría antes de retirar la clave `__auneaAiWorking`.
+
+Corrección: `internalAiPilotRefreshPanel` se ejecuta al finalizar, después de retirar la clave activa, tanto en el reintento como tras generación de propuestas. Se conserva `Engagement.tobeProposals` y ningún campo se autoaprueba. Para `RULES_ONLY`, rótulos específicos `Comprobación con bloqueos`, `Comprobación por reglas completada` y `Resultado de la comprobación`; cada actividad muestra desglose de bloqueos versus asuntos pendientes sin ocultar el detalle. Regresión Chromium añadida para impedir que el panel muestre un estado de generación tras recibir el resultado.
+
+La clasificación de tres bloqueos es el resultado conservador del detector de nuevas medidas: una actividad que propone clarificar criterios puede aparecer como pendiente y no bloqueada si la regla no puede demostrar un cambio. No convertir automáticamente ese pendiente en bloqueo sin validación semántica. Las cifras y la viabilidad continúan como hipótesis por revisar.
+
+**QA:** validación estática de sintaxis y marcadores de bloque superada; GitHub Actions en cola a la hora del registro. Queda pendiente la comprobación visual tras actualizar el frontend. El punto B está operativo pero no se declara cerrado hasta revisar las observaciones y confirmar la nueva pantalla.
