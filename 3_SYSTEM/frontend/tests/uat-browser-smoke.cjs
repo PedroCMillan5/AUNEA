@@ -655,6 +655,45 @@ async function main(){
       'Mejora revisada en UAT','inspector edits survive navigation and real saves');
   }
   console.log('PG11_CREATE_DRAFT_CLICK_PASS: '+JSON.stringify(pg11));
+
+  // [AUNEA-UAT-PG11-CHECKPOINT-BROWSER-213] START — real browser readback and reload for 4 verified steps.
+  const partialStudyId=await page.evaluate(()=>currentEng().id);
+  await page.evaluate(()=>{
+    const e=currentEng(),p=latestTobe(e),key=internalAiPilotKey(e);
+    const ids=p.items.map(x=>String(x.sourceStepId));
+    const items=new Map(ids.map((id,index)=>[id,{
+      source_step_id:id,transformation:'Se modifica',
+      problem_resolved:'Problema sintético vinculado '+(index+1),
+      rationale:'Acción propuesta: registrar la recepción. Resultado esperado: mejorar la trazabilidad. Justificación: existe una fricción sintética.',
+      future_actor:'',tool:'',inputs:'',outputs:'',automation_ai:'',
+      human_supervision:'',controls_risk:'',source_refs:[id],limitations:'Revisar antes de aplicar'
+    }]));
+    __auneaAiCompletedSteps.set(key,{stepSignature:ids.join('|'),items,traces:new Map(),
+      inputHash:'BROWSER_CHECKPOINT_HASH',model:'fixture-local-no-ollama'});
+    internalAiPilotRefreshPanel(e);
+  });
+  assert.equal(await page.locator('#tobeAiPilotStatus .pg11-ai-step').count(),tobeSteps,
+    'four verified activities must be visible even when review did not complete');
+  assert.match(await page.locator('#tobeAiPilotStatus').innerText(),/Revisión global/);
+  assert.equal(await page.locator('#applyTobeAiPilot').count(),0,
+    'unreviewed step proposals must not become applied decisions');
+  await page.locator('#saveTobeAiPending').click();
+  const diskPartial=await page.evaluate(()=>{
+    const e=currentEng(),p=latestTobe(e);
+    const disk=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');
+    return disk?.engagements?.find(x=>x.id===e.id)?.tobeProposals?.
+      find(x=>x.version===p.version)?.aiDraft?.checkpoint?.items?.length||0;
+  });
+  assert.equal(diskPartial,tobeSteps,'checkpoint must be durable before refresh');
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.evaluate(id=>{state.activeEngagementId=id;state.activePage='tobe';render()},partialStudyId);
+  assert.equal(await page.locator('#tobeAiPilotStatus .pg11-ai-step').count(),tobeSteps,
+    'checkpoint cards must recover after real browser reload');
+  assert.match(await page.locator('#tobeAiPilotStatus').innerText(),/guardadas en el estudio/);
+  assert.equal(await page.locator('#retryTobeAiReview').count(),1,
+    'review may be retried without regenerating any verified activities');
+  // [AUNEA-UAT-PG11-CHECKPOINT-BROWSER-213] END
+
   // [AUNEA-UAT-PG11-BROWSER-204] START — real browser save/reload and AUNEA layout without Ollama.
   await page.evaluate(()=>{
     const e=currentEng(),p=latestTobe(e);
