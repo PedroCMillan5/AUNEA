@@ -441,7 +441,9 @@ test('a new TO-BE version never inherits the previous version AI suggestion',asy
 test('Guardar borrador invokes local save after collecting current TO-BE fields',()=>{
   const results=fs.readFileSync(path.join(root,'pages/results.js'),'utf8');
   assert.match(results,/saveTobeFromDom\(e\).*?persistTobeAiDraft\(e\)/s);
-  assert.match(results,/if\(by\('saveTobe'\)\)by\('saveTobe'\)\.onclick=\(\)=>\{if\(saveTobeFromDom\(e\)&&saveState\('Guardar borrador TO-BE'\)\)render\(\)\}/);
+  assert.match(results,/if\(by\('saveTobe'\)\)by\('saveTobe'\)\.onclick=\(\)=>\{/);
+  assert.match(results,/const live=currentEng\(\);\s*if\(live&&saveTobeFromDom\(live\)&&saveState\('Guardar borrador TO-BE'\)\)render\(\)/,
+    'manual save must use the live Engagement after recovery replaces captured objects');
 });
 
 
