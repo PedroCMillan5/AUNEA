@@ -185,7 +185,7 @@ test('retry-only click reports progress, invokes reviewer only, saves completed 
   app.setReviewFailure(false);
   const before=app.requests.length;
   delegate({target:{closest:s=>s==='#retryTobeAiReview'?retry:null},preventDefault(){}});
-  assert.match(app.notice.textContent,/Comprobando 4 propuestas con reglas de AUNEA/,
+  assert.match(app.notice.textContent,/Comprobando (?:por reglas las|4 propuestas con reglas de AUNEA)/,
     'click must immediately acknowledge work to the consultant');
   await app.settle();
   assert.equal(app.requests.length,before+1,'basic reviewer uses one request and no model status');
