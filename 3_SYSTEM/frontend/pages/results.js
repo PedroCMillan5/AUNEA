@@ -1885,7 +1885,11 @@ function registerInternalWorkPages(){
     if(by('analyzeAsisOnly'))by('analyzeAsisOnly').onclick=()=>runAsisAnalysis(e);
     bindDiagnosticMapPointNavigation();
     document.querySelectorAll('[data-draft-conditional-scenario]').forEach(x=>x.onclick=()=>createScenario(Number(x.dataset.draftConditionalScenario)));
-    if(by('saveTobe'))by('saveTobe').onclick=()=>{if(saveTobeFromDom(e)&&saveState('Guardar borrador TO-BE'))render()};
+    if(by('saveTobe'))by('saveTobe').onclick=()=>{
+      // Recovery merges and replaces Engagement references; always save the live owner.
+      const live=currentEng();
+      if(live&&saveTobeFromDom(live)&&saveState('Guardar borrador TO-BE'))render();
+    };
     if(by('advanceTobe'))by('advanceTobe').onclick=()=>{
       // Persistence reconciles and replaces state.engagements. Reacquire the live
       // owner after each save; never advance an orphaned Engagement reference.
