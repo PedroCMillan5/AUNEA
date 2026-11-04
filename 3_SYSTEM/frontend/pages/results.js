@@ -1207,10 +1207,12 @@ function tobeFutureSteps(e,p){
         destination_step:String(route.exception??'__PENDING__')}:undefined};
   }).filter(Boolean);
   const additions=tobeAddedSteps(p).map(item=>{
-    const route=f.routes[String(item.id)]||{};
-    return {id:String(item.id),step_name:tobeFlowItemName(item),step_type:'ST02',
+    const route=f.routes[String(item.id)]||{},
+      isDecision=String(item.stepType||'ST02')==='ST04';
+    return {id:String(item.id),step_name:tobeFlowItemName(item),
+      step_type:isDecision?'ST04':'ST02',
       normal_next_step:String(route.normal??'__PENDING__'),actor:'',
-      exception_path:undefined};
+      exception_path:isDecision?{destination_step:String(route.exception||'__PENDING__')}:undefined};
   });
   const steps=[...existing,...additions];
   const first=steps.findIndex(x=>String(x.id)===f.startStepId);
@@ -1225,6 +1227,8 @@ function tobeFlowIntegrity(e,p){
   for(const added of tobeAddedSteps(p)){
     if(!originals.has(String(added.sourceStepId)))
       return 'La actividad añadida '+tobeFlowItemName(added)+' no tiene origen AS-IS confirmado.';
+    if(!['ST02','ST04'].includes(String(added.stepType||'ST02')))
+      return 'El tipo de la nueva actividad '+tobeFlowItemName(added)+' no está permitido.';
     if(!String(added.stepName||'').trim())
       return 'Asigna un nombre a la actividad añadida vinculada a '+added.sourceStepName+'.';
     if(!TOBE_TRANSFORMATIONS.includes(added.transformation))
@@ -1240,7 +1244,7 @@ function tobeFlowIntegrity(e,p){
   for(const s of steps){
     const route=f.routes[String(s.id)]||{},original=originals.get(String(s.id));
     const next=String(route.normal??s.normal_next_step??'__PENDING__');
-    const exception=original&&processDecisionStep(original)?
+    const exception=processDecisionStep(s)?
       String(route.exception??s.exception_path?.destination_step??'__PENDING__'):'';
     const targets=[next,...(exception?[exception]:[])];
     for(const dest of targets)if(dest!=='__END__'&&!ids.has(dest))
@@ -1275,7 +1279,9 @@ function tobeFlowInspector(e,p,item){
     return '<p class="notice warn">Actividad marcada para eliminar. Reconecta las rutas entrantes desde otras actividades y, si procede, cambia el inicio del proceso. El original se conserva en el AS-IS.</p>';
   }
   const flow=tobeFlowOwner(e,p),stepId=tobeFlowItemId(item),routes=flow.routes[stepId]||{},
-    origin=tobeProposalSourceSteps(e,p).find(x=>String(x.id)===String(item.sourceStepId)),editable=tobeEditable(p);
+    origin=tobeProposalSourceSteps(e,p).find(x=>String(x.id)===String(item.sourceStepId)),
+    decision=item.isAddition?String(item.stepType||'ST02')==='ST04':
+      !!origin&&processDecisionStep(origin),editable=tobeEditable(p);
   const opts=tobeFlowOptions(e,p,item);
   const field=(kind,label,value)=>
     '<div class="field"><label>'+label+'</label>'+
@@ -1285,8 +1291,8 @@ function tobeFlowInspector(e,p,item){
     '</div>';
   return '<section class="tobe-route-editor"><h3>Conexiones del proceso futuro</h3>'+
     '<p class="tobe-muted">Edita aquí las rutas del TO-BE. No se modificarán las conexiones del AS-IS confirmado.</p>'+
-    '<div class="form-grid">'+field('normal','Siguiente actividad'+(origin&&processDecisionStep(origin)?' · ruta SÍ':''),routes.normal)+
-    (origin&&processDecisionStep(origin)?field('exception','Ruta NO / excepción',routes.exception):'')+
+    '<div class="form-grid">'+field('normal','Siguiente actividad'+(decision?' · ruta SÍ':''),routes.normal)+
+    (decision?field('exception','Ruta NO / excepción',routes.exception):'')+
     '</div></section>';
 }
 // [AUNEA-FE-PG11-FUTURE-FLOW-228] END
@@ -1368,6 +1374,13 @@ function tobeInspectorHtml(e,p){
         '<p class="notice warn"><b>Justificación pendiente:</b> «Se mantiene» conserva esta actividad sin rediseño. El valor «NO» no explica por qué se mantienen los hallazgos ni cómo se controlan; revisa la decisión antes de validar.</p>':'')+
       '<div class="form-grid">'+
       (item.isAddition?tobeField(item,'stepName','Nombre de actividad futura',item.stepName,'text',!editable):'')+
+      (item.isAddition?'<div class="field"><label>Tipo de actividad futura</label>'+
+        (editable?auneaSelectControl('tobeStepType_'+item.id,
+          [{value:'ST02',label:'Actividad operativa'},{value:'ST04',label:'Decisión · rutas SÍ / NO'}],
+          item.stepType||'ST02',{extra:'data-tobe-item="'+attr(item.id)+'" data-tobe-field="stepType"',
+            placeholder:'Selecciona tipo'}):
+          '<input disabled value="'+attr(item.stepType==='ST04'?'Decisión · rutas SÍ / NO':'Actividad operativa')+'">')+
+        '</div>':'')+
       statusField+
       tobeField(item,'problemResolved',
         item.transformation==='Se mantiene'?'Motivo para conservar la actividad':
@@ -1799,7 +1812,7 @@ function registerInternalWorkPages(){
       flow.addedSteps.push({
         id,isAddition:true,sourceStepId:String(source.id),
         sourceStepName:String(source.step_name||source.name||source.id),
-        stepName:'',status:'DRAFT',transformation:'',problemResolved:'',
+        stepName:'',stepType:'ST02',status:'DRAFT',transformation:'',problemResolved:'',
         futureActor:'',tool:'',inputs:'',outputs:'',automationAi:'',
         humanSupervision:'',controlsRisk:'',futureTime:'',futureTimeAssumption:''
       });
@@ -1826,6 +1839,20 @@ function registerInternalWorkPages(){
     toast('Actividad retirada del flujo futuro. Comprueba sus conexiones entrantes.');
   },true);
   // [AUNEA-FE-PG11-FLOW-ACTIONS-229] END
+  // [AUNEA-FE-PG11-DECISION-TYPE-245] START — reuse canonical ProcessStep
+  // decision type for a new future step, without altering AS-IS.
+  document.addEventListener('change',event=>{
+    const input=event.target?.closest?.('[data-tobe-field="stepType"]');
+    if(!input||state.activePage!=='tobe')return;
+    const live=currentEng(),draft=latestTobe(live);
+    if(!tobeEditable(draft)||!tobeAddedSteps(draft).some(x=>x.id===input.dataset.tobeItem))return;
+    if(!saveTobeFromDom(live)||!saveState('Guardar tipo de actividad TO-BE'))
+      return toast('No se pudo guardar el tipo de actividad. No se modificó el AS-IS.');
+    render();
+    toast('Tipo de actividad futura actualizado. Configura sus rutas y revisa la coherencia.');
+  },true);
+  // [AUNEA-FE-PG11-DECISION-TYPE-245] END
+
 
   // [AUNEA-FE-PG11-HUMAN-DECISION-SAVE-224] START — explicit consultant
   // decision with durable version/source/diagnostic binding; no proposal is applied.
