@@ -85,6 +85,21 @@ function internalAiSavedDraft(e){
   return entry.diagnosticInputHash===currentDiagnosticOutput(e)?.input_snapshot_hash&&
     internalAiDraftMatchesTobe(e,proposal)?proposal:null;
 }
+// [AUNEA-FE-PG11-AI-RECOVERY-208] START — expose saved proposals of previous or stale versions read-only.
+// SOURCE: DEC-050/055; only existing Engagement.tobeProposals[n].aiDraft.
+// OUTPUT: bounded, read-only recovery; never promotes a proposal to current DRAFT fields.
+function internalAiHistoricalDraft(e){
+  const versions=Array.isArray(e?.tobeProposals)?e.tobeProposals:[];
+  for(let i=versions.length-1;i>=0;i--){
+    const owner=versions[i],stored=owner?.aiDraft,proposal=stored?.proposal;
+    if(proposal&&Array.isArray(proposal.items)&&proposal.items.length){
+      return {proposal,version:owner.version,snapshotVersion:stored.sourceSnapshotVersion,
+        savedAt:stored.savedAt||'',currentVersion:owner===latestTobe(e)};
+    }
+  }
+  return null;
+}
+// [AUNEA-FE-PG11-AI-RECOVERY-208] END
 function persistTobeAiDraft(e){
   const key=internalAiPilotKey(e),p=latestTobe(e);
   if(!tobeEditable(p))return false;
@@ -237,15 +252,17 @@ function internalAiPilotPanel(e){
   if(typeof isClientDisplay==='function'&&isClientDisplay())return '';
   const key=internalAiPilotKey(e),cached=key?__auneaAiPreview.get(key):null;
   const persisted=key?internalAiSavedDraft(e):null;
-  const draft=cached||persisted;
+  const historical=!cached&&!persisted?internalAiHistoricalDraft(e):null;
+  const draft=cached||persisted||historical?.proposal;
   const feedback=key?__auneaAiFeedback.get(key):null;
   const partial=key?__auneaAiCompletedSteps.get(key):null;
   if(!draft)return '<section id="tobeAiPilotStatus" class="pg11-ai-panel pg11-ai-empty card card-pad section">'+
     '<header class="pg11-ai-header"><div><p class="pg11-ai-eyebrow">TRABAJO INTERNO · PG11</p>'+
     '<h2>Diseño TO-BE asistido por IA</h2>'+
     '<p class="pg11-ai-subtitle">La IA prepara sugerencias, pero el consultor revisa y decide.</p></div></header>'+
+    '<p class="pg11-ai-message">No se ha localizado una propuesta IA guardada para este estudio en su historial de versiones. Los datos generados en una sesión anterior sin guardar no pueden recuperarse automáticamente.</p>'+
     '<p id="tobeAiProgress" role="status" aria-live="polite" class="pg11-ai-message'+(feedback?.type==='warn'?' pg11-ai-message-warn':'')+'">'+
-    esc(feedback?.message||'Pulsa «Preparar propuesta con IA» para comenzar. No se aplica ningún cambio automáticamente.')+'</p>'+
+    esc(feedback?.message||'Pulsa «Preparar propuesta con IA» cuando el proveedor esté disponible. La generación es opcional y no modifica el diseño automáticamente.')+'</p>'+
     internalAiPilotTracePanel(Object.fromEntries(partial?.traces||new Map()))+'</section>';
   const review=draft.review||null;
   const items=Array.isArray(draft.items)?draft.items:[];
@@ -253,7 +270,7 @@ function internalAiPilotPanel(e){
   const blockedIds=new Set(Array.isArray(review?.blocking_step_ids)?review.blocking_step_ids:[]);
   for(const issue of issues)if(issue.category==='BLOCKING'&&issue.step_id!=='GLOBAL')blockedIds.add(issue.step_id);
   const blocked=blockedIds.size>0||issues.some(i=>i.category==='BLOCKING'&&(!i.step_id||i.step_id==='GLOBAL'));
-  const saved=internalAiSavedInBrowser(e,draft);
+  const saved=!!historical||internalAiSavedInBrowser(e,draft);
   const traces=partial?Object.fromEntries(partial.traces||new Map()):draft.context_traces;
   const sourceNames=new Map((latestTobe(e)?.items||[]).map(it=>[String(it.sourceStepId),String(it.sourceStepName||'')]));
   const cards=items.map((item,index)=>{
@@ -290,6 +307,10 @@ function internalAiPilotPanel(e){
       '</div></article>';
   }).join('');
   return '<section id="tobeAiPilotStatus" class="pg11-ai-panel card card-pad section">'+
+    (historical?'<div class="notice warn pg11-ai-historical-notice"><b>Propuesta IA anterior recuperada — sólo consulta.</b>'+
+      '<p>Se encuentra guardada en TO-BE v'+esc(historical.version)+
+      ' (origen AS-IS v'+esc(historical.snapshotVersion)+
+      '). No es una propuesta vigente y no se puede aplicar automáticamente. El modelo local no es necesario para consultar este archivo.</p></div>':'')+
     '<header class="pg11-ai-header">'+
       '<div><p class="pg11-ai-eyebrow">TRABAJO INTERNO · PG11</p>'+
       '<h2>Diseño TO-BE asistido por IA</h2>'+
@@ -298,9 +319,10 @@ function internalAiPilotPanel(e){
     '</header>'+
     '<div class="pg11-ai-save-state'+(saved?' pg11-ai-save-state-saved':' pg11-ai-save-state-pending')+'">'+
       '<span class="pg11-ai-save-indicator" aria-hidden="true"></span>'+
-      '<div><b>'+(saved?(cached?'Propuesta IA guardada en el borrador.':
+      '<div><b>'+(historical?'Propuesta histórica recuperada sin modificar el estudio.':saved?(cached?'Propuesta IA guardada en el borrador.':
           'Propuesta IA recuperada del borrador guardado.'):'Propuesta IA pendiente de guardar.')+'</b>'+
-        '<p>'+(saved?'Recuperable al volver a abrir este estudio en el mismo navegador.':
+        '<p>'+(historical?'No corresponde a una sugerencia aplicable al borrador actual; conserva la versión original.':
+          saved?'Recuperable al volver a abrir este estudio en el mismo navegador.':
           'Pulsa «Guardar propuesta y borrador» para conservar la generación y la revisión.')+'</p></div>'+
     '</div>'+
     '<p id="tobeAiProgress" role="status" aria-live="polite" class="pg11-ai-message">'+
@@ -322,9 +344,10 @@ function internalAiPilotPanel(e){
     '<footer class="pg11-ai-footer">'+
       '<p>La IA no aprueba ni publica resultados. Los registros HTTP y prompts técnicos son temporales.</p>'+
       '<div class="pg11-ai-actions">'+
-        '<button type="button" class="btn btn-primary" id="saveTobeAiPilot">Guardar propuesta y borrador</button>'+
-        (draft.applied?'':blocked?'':'<button class="btn btn-outline" id="applyTobeAiPilot">Aplicar a campos vacíos</button>')+
-        '<button type="button" class="btn btn-outline" id="regenerateTobeAiPilot">Generar propuestas nuevas</button>'+
+        (historical?'':'<button type="button" class="btn btn-primary" id="saveTobeAiPilot">Guardar propuesta y borrador</button>')+
+        (historical||draft.applied||blocked?'':'<button class="btn btn-outline" id="applyTobeAiPilot">Aplicar a campos vacíos</button>')+
+        '<button type="button" class="btn btn-outline" id="regenerateTobeAiPilot">'+
+          (historical?'Generar para el borrador actual':'Generar propuestas nuevas')+'</button>'+
       '</div>'+
       (draft.applied?'<p class="pg11-ai-muted">Se aplicó a campos vacíos del TO-BE; revisa y guarda los cambios.</p>':'')+
     '</footer></section>';
@@ -333,7 +356,7 @@ function internalAiPilotPanel(e){
 const __originalTobePagePilot=tobePage;
 tobePage=function(){
   const html=__originalTobePagePilot(),e=currentEng();
-  if((typeof isClientDisplay==='function'&&isClientDisplay())||!e||!tobeEditable(latestTobe(e))||!internalAiPilotKey(e))return html;
+  if((typeof isClientDisplay==='function'&&isClientDisplay())||!e||!tobeEditable(latestTobe(e)))return html;
   const button='<button class="btn btn-outline" id="generateTobeAiPilot">Preparar propuesta con IA</button>';
   const withAction=html.replace('<button class="btn" id="saveTobe">',button+'<button class="btn" id="saveTobe">');
   return withAction.includes('<div id="tobeAiMount"></div>')
@@ -463,8 +486,13 @@ async function generateTobeAiPilot(e,fresh=false){
     const check=await fetch(state.backendUrl+'/v1/internal-ai/status',{cache:'no-store'});
     if(!check.ok)throw Error('No se pudo consultar el proveedor IA.');
     const availability=await check.json();
-    if(availability.status!=='AVAILABLE')
-      throw Error(availability.reason||'Servicio IA no configurado o sin autorización para tratar datos.');
+    if(availability.status!=='AVAILABLE'){
+      const reason=String(availability.reason||'Servicio IA no configurado o sin autorización para tratar datos.');
+      const hint=/Ollama|127\.0\.0\.1:11434/i.test(reason)
+        ?' En Windows comprueba que Ollama esté abierto y ejecuta: ollama list; después comprueba http://127.0.0.1:11434/api/tags. AUNEA Backend (8010) y Ollama (11434) deben ejecutarse en el mismo equipo. No es necesario volver a generar ni borrar lo ya guardado.'
+        :' No se han cambiado las propuestas anteriores.';
+      throw Error(reason+hint);
+    }
     if(availability.provider==='ollama'&&
        availability.pg11_review_protocol!==__auneaPg11ReviewProtocol)
       throw Error('Versiones incompatibles de PG11: el backend no tiene el revisor actualizado ('+
