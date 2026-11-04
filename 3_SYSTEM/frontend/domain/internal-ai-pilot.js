@@ -560,7 +560,9 @@ async function generateTobeBySteps(e,key,snap,availability,fresh=false){
   }
   if(failures.length)throw Error(failures.join(' · ')+' · '+completed.items.size+' de '+stepIds.length+' completadas. Puedes reintentar.');
   if(completed.items.size!==stepIds.length)throw Error('Faltan actividades; propuesta incompleta.');
-  return internalAiConsolidateVerified(e,key,snap,availability,completed,request);
+  // The first global check is deterministic too: never trigger a long Ollama
+  // consolidation after generating otherwise valid individual proposals.
+  return internalAiConsolidateVerified(e,key,snap,{model:'AUNEA — comprobación por reglas'},completed,request,'basic');
 }
 // [AUNEA-FE-TOBE-SEGMENTED-197] END
 // [AUNEA-FE-PG11-REVIEW-ONLY-216] START — dedicated review handler and shared consolidation.
