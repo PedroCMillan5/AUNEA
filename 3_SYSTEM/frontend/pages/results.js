@@ -871,6 +871,13 @@ const TOBE_HUMAN_LABELS=Object.freeze({
   ACCEPT:'Aceptar recomendación',MODIFY:'Modificar antes de usar',
   DISCARD:'Descartar recomendación'
 });
+function tobeCandidateFingerprint(p){
+  const items=p?.aiDraft?.proposal?.items||p?.aiDraft?.checkpoint?.items||[];
+  const raw=JSON.stringify(items);
+  let hash=2166136261;
+  for(let i=0;i<raw.length;i++)hash=Math.imul(hash^raw.charCodeAt(i),16777619)>>>0;
+  return hash.toString(16)+':'+raw.length;
+}
 function tobeHumanReviewRecord(e,p){
   const h=p?.aiDraft?.humanReview,diag=currentDiagnosticOutput(e),
     input=p?.aiDraft?.proposal?.input_hash||p?.aiDraft?.checkpoint?.inputHash;
