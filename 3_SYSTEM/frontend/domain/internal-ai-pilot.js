@@ -490,12 +490,12 @@ tobePage=function(){
     :withAction.replace('<div class="card card-pad section">',internalAiPilotPanel(e)+'<div class="card card-pad section">');
 };
 // [AUNEA-FE-TOBE-SEGMENTED-197] START — true progress by confirmed activity.
-async function generateTobeBySteps(e,key,snap,availability){
+async function generateTobeBySteps(e,key,snap,availability,fresh=false){
   const draft=latestTobe(e);
   const stepIds=draft.items.map(x=>String(x.sourceStepId));
   if(!stepIds.length||stepIds.some(x=>!x)||new Set(stepIds).size!==stepIds.length)
     throw Error('El borrador no tiene actividades de origen únicas y válidas.');
-  const previous=__auneaAiCompletedSteps.get(key)||internalAiPendingSteps(currentEng(),key);
+  const previous=fresh?null:(__auneaAiCompletedSteps.get(key)||internalAiPendingSteps(currentEng(),key));
   const completed=previous?.stepSignature===stepIds.join('|')?previous:
     {stepSignature:stepIds.join('|'),items:new Map(),traces:new Map(),inputHash:null};
   __auneaAiCompletedSteps.set(key,completed);
@@ -648,7 +648,7 @@ async function generateTobeAiPilot(e,fresh=false){
         // Keep the last successful preview until a replacement completes.
         __auneaAiCompletedSteps.delete(key);
       }
-      await generateTobeBySteps(e,key,snap,availability);
+      await generateTobeBySteps(currentEng(),key,confirmedSnapshot(currentEng()),availability,fresh);
       return;
     }
     if(!AiAgentService.available()){
