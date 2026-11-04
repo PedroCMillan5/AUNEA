@@ -2743,3 +2743,37 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
   .tobe-removed-list{padding:11px 12px}
 }
 /* [AUNEA-FE-PG11-FLOW-STYLE-232] END */
+
+/* [AUNEA-FE-PG12-GRAPH-STYLE-236] START — read-only aligned current/future canvases.
+   SOURCE: Simulator CANONICAL PG12, DEC-050/056. No derived metrics. */
+.pg12-view-selector{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 17px}
+.pg12-view-selector .btn{min-width:100px}
+.pg12-process-comparison{display:grid;gap:16px;min-width:0;width:100%;margin:0 0 18px}
+.pg12-process-comparison.pg12-side-by-side{grid-template-columns:repeat(2,minmax(0,1fr))}
+.pg12-map{display:grid;align-content:start;gap:12px;min-width:0;max-width:100%;
+  border:1px solid var(--system-line);background:#fff;
+  border-radius:var(--radius-md);padding:16px}
+.pg12-map>h3{font-size:15px;line-height:1.4;color:var(--system);margin:0}
+.pg12-map-viewport{min-width:0;width:100%;max-width:100%;overflow-x:auto;
+  border:1px solid var(--line);border-radius:var(--radius-sm)}
+.pg12-map-viewport .flow-canvas{min-width:100%;max-width:none}
+.pg12-map .tobe-canvas-viewport{max-width:100%;overflow-x:auto}
+.pg12-map .tobe-map-note{font-size:12px}
+.pg12-map [data-pg12-source]{cursor:pointer}
+.pg12-map .process-graph-cell[data-pg12-source]:focus-visible{outline:3px solid var(--system);outline-offset:4px}
+.pg12-map [data-pg12-source].pg12-node-selected{outline:3px solid var(--system);
+  outline-offset:4px;border-radius:var(--radius-sm)}
+.pg12-selected-detail{border:1px solid var(--system-line);border-radius:var(--radius-sm);
+  background:var(--system-soft);padding:16px 18px;min-width:0}
+.pg12-difference-detail{display:grid;gap:9px}
+.pg12-difference-detail h3{font-size:17px;color:var(--system);margin:0}
+.pg12-difference-detail p{font-size:12px;line-height:1.6;margin:0;overflow-wrap:anywhere}
+@media(max-width:1024px){
+  .pg12-process-comparison.pg12-side-by-side{grid-template-columns:1fr}
+}
+@media(max-width:580px){
+  .pg12-map{padding:12px}
+  .pg12-selected-detail{padding:13px}
+  .pg12-view-selector .btn{flex:1 1 110px;min-width:0}
+}
+/* [AUNEA-FE-PG12-GRAPH-STYLE-236] END */
