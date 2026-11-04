@@ -1405,11 +1405,6 @@ function tobePage(){
       '<section class="tobe-context"><div><strong>Origen del diseño</strong><p>AS-IS confirmado v'+esc(snap.version)+
       ' · Diagnóstico '+esc(diagnosticOutputFreshness(e).label)+
       ' · '+p.items.length+' actividades de origen</p></div><div class="tobe-context-status">'+esc(statusLabel)+'</div></section>'+
-      (editable?'<section class="tobe-ai-stage" id="tobeAiWorkspace" aria-label="Asistente IA TO-BE">'+
-        '<header class="tobe-workspace-head"><div><span class="tobe-eyebrow">01 · PREPARAR LA PROPUESTA</span>'+
-        '<h2>Asistente IA y propuestas recuperables</h2></div>'+
-        '<p>Consulta primero las propuestas generadas. La IA propone; las decisiones y el diseño del proceso los valida el consultor.</p></header>'+
-        '<div id="tobeAiMount"></div></section>':'')+
       '<section class="tobe-map-area"><header class="tobe-workspace-head"><div><span class="tobe-eyebrow">02 · CONSTRUIR EL DISEÑO</span>'+
       '<h2>Mapa del proceso propuesto</h2></div><p>Selecciona una actividad para revisar su transformación y editar el TO-BE.</p></header>'+
       (editable?'<div class="tobe-flow-actions"><button type="button" class="btn btn-outline" id="addTobeStep">Añadir actividad vinculada al AS-IS</button>'+
@@ -1422,6 +1417,10 @@ function tobePage(){
       '</div>'+
       '<p class="tobe-map-note"><b>Rutas del TO-BE:</b> comienzan como copia del AS-IS confirmado, pero pueden rediseñarse en el inspector. Los pasos incorporados o eliminados sólo pertenecen a la versión TO-BE. Una ruta pendiente, desconectada o sin final bloquea la revisión.</p></section>'+
       '<section id="tobeInspector" class="tobe-inspector" aria-label="Decisión TO-BE por actividad">'+tobeInspectorHtml(e,p)+'</section>'+
+      (editable?'<details class="tobe-ai-stage" id="tobeAiWorkspace">'+
+        '<summary><strong>Revisión global IA, propuestas y auditoría técnica</strong>'+
+        '<span class="tobe-muted">Opcional: consulta el detalle completo. Revisa cada propuesta desde el inspector de su actividad.</span></summary>'+
+        '<div id="tobeAiMount"></div></details>':'')+
       '<section class="tobe-completion"><div><h2>Validación global</h2><p>Rutas, coherencia del diseño, cobertura de propuestas y limitaciones. Las recomendaciones IA requieren aprobación humana.</p></div>'+
         '<button type="button" class="btn btn-outline" id="checkTobeReadiness">Comprobar requisitos</button>'+
         '<div id="tobeReadinessStatus" role="status" aria-live="polite"></div>'+
