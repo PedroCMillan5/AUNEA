@@ -164,3 +164,13 @@ Corrección: `internalAiPilotRefreshPanel` se ejecuta al finalizar, después de 
 La clasificación de tres bloqueos es el resultado conservador del detector de nuevas medidas: una actividad que propone clarificar criterios puede aparecer como pendiente y no bloqueada si la regla no puede demostrar un cambio. No convertir automáticamente ese pendiente en bloqueo sin validación semántica. Las cifras y la viabilidad continúan como hipótesis por revisar.
 
 **QA:** validación estática de sintaxis y marcadores de bloque superada; GitHub Actions en cola a la hora del registro. Queda pendiente la comprobación visual tras actualizar el frontend. El punto B está operativo pero no se declara cerrado hasta revisar las observaciones y confirmar la nueva pantalla.
+
+## Punto C — revisión humana implementada (2026-11-04)
+
+Se han añadido elecciones por actividad (Aceptar, Modificar y Descartar), una justificación y persistencia en el owner versionado TO-BE. El registro de decisión queda vinculado a estudio, fuente AS-IS, diagnóstico, versión y contenido de las propuestas. No copia automáticamente los valores IA a los campos humanos.
+
+El gate REVIEWED exige, cuando existe una propuesta IA, decisiones y fundamentos por cada actividad, transformaciones válidas, datos operativos y controles. No acepta un marcador heredado «NO» como diseño completo y bloquea eliminar nodos sin futura topología confirmada. La revisión por reglas no habilita aplicación automática. C implementado y pendiente de UAT del operador.
+
+**QA confirmado:** [GitHub Run 41869093011](https://github.com/PedroCMillan5/AUNEA/actions/runs/41869093011): 405 backend PASS, 758 frontend PASS, Chromium PASS, incluido clic de decisión con persistencia sin sobrescribir campos.
+
+Estado: A cerrado; B revisión básica operativa, sin revisión semántica Ollama; C implementado y probado sintéticamente; D diseño por consultor y topología futura pendientes; E gate reforzado, transferencia PG12 pendiente. No marcar PG11 completo ni regenerar P1–P4.
