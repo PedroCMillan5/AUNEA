@@ -685,6 +685,25 @@ async function main(){
       find(x=>x.version===p.version)?.aiDraft?.checkpoint?.items?.length||0;
   });
   assert.equal(diskPartial,tobeSteps,'checkpoint must be durable before refresh');
+  // [AUNEA-UAT-PG11-INSPECTOR-CHECKPOINT-215] START — inspect the actual source-linked
+  // step suggestion, both before and after reload; no new Ollama calls or TO-BE edits.
+  const inspectorBusinessBefore=await page.evaluate(()=>
+    JSON.stringify(latestTobe(currentEng()).items));
+  for(let i=0;i<sourceIds.length;i++){
+    await page.locator('[data-tobe-select="'+sourceIds[i]+'"]').click();
+    const advice=await page.locator('#tobeAiRecommendation').innerText();
+    assert.match(advice,new RegExp('Problema sintético vinculado '+(i+1)),
+      'inspector must match the selected source step');
+    assert.match(advice,/Pendiente de revisión global/);
+    assert.match(advice,/Intervención propuesta/);
+    assert.match(advice,/Resultado esperado/);
+    for(let j=0;j<sourceIds.length;j++){
+      if(i!==j)assert.doesNotMatch(advice,new RegExp('Problema sintético vinculado '+(j+1)),
+        'another activity must never leak into the current inspector');
+    }
+  }
+  assert.equal(await page.evaluate(()=>JSON.stringify(latestTobe(currentEng()).items)),
+    inspectorBusinessBefore,'reading IA checkpoint must not modify consultant TO-BE fields');
   await page.reload({waitUntil:'domcontentloaded'});
   await page.evaluate(id=>{state.activeEngagementId=id;state.activePage='tobe';render()},partialStudyId);
   assert.equal(await page.locator('#tobeAiPilotStatus .pg11-ai-step').count(),tobeSteps,
@@ -692,6 +711,16 @@ async function main(){
   assert.match(await page.locator('#tobeAiPilotStatus').innerText(),/guardadas en el estudio/);
   assert.equal(await page.locator('#retryTobeAiReview').count(),1,
     'review may be retried without regenerating any verified activities');
+  for(let i=sourceIds.length-1;i>=0;i--){
+    await page.locator('[data-tobe-select="'+sourceIds[i]+'"]').click();
+    const advice=await page.locator('#tobeAiRecommendation').innerText();
+    assert.match(advice,new RegExp('Problema sintético vinculado '+(i+1)),
+      'checkpoint must remain linked to each original source ID after page reload');
+    assert.match(advice,/Pendiente de revisión global/);
+  }
+  assert.equal(await page.locator('#applyTobeAiPilot').count(),0,
+    'review-incomplete checkpoint must remain non-applicable');
+  // [AUNEA-UAT-PG11-INSPECTOR-CHECKPOINT-215] END
   // [AUNEA-UAT-PG11-CHECKPOINT-BROWSER-213] END
 
   // [AUNEA-UAT-PG11-BROWSER-204] START — real browser save/reload and AUNEA layout without Ollama.
