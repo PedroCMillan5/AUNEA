@@ -20,6 +20,8 @@ function harness(){
     Set,String,Array,
     confirmedSnapshot:()=>({version:2}),
     tobeSourceSteps:()=>[{id:'S1'}],
+    // Isolated field-readiness harness; future-route integrity is independently tested.
+    tobeFlowIntegrity:()=>null,
     latestTobe:()=>current,
     nextTobeStatus:p=>p.status==='DRAFT'?'REVIEWED':null,
     toast:message=>warnings.push(message),markDirty:message=>dirty.push(message),
