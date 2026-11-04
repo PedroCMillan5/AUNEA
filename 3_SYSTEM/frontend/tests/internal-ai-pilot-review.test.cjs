@@ -78,6 +78,15 @@ function aiPilotHarness({fail=false,steps=['S1'],failReview=false,blockingSteps=
     fetch:async(url,opts)=>{
       requests.push({url,opts});
       if(url.endsWith('/status'))return {ok:true,json:async()=>({status:'AVAILABLE',provider:'ollama',model:'aunea-qwen3-4b:latest',pg11_review_protocol:protocol})};
+      if(url.endsWith('/tobe-review-basic')&&shouldFailReview)return {ok:false,status:503,json:async()=>({detail:'Fallo de prueba de reglas.'})};
+      if(url.endsWith('/tobe-review-basic'))return {ok:true,json:async()=>({
+        status:'CHECKED_WITH_NOTES',summary:'Comprobación básica por reglas, sin Ollama.',
+        review_mode:'RULES_ONLY',issues:[{step_id:'S1',category:'BLOCKING',
+          issue:'Transformación incoherente',evidence:'Intervención modificada',
+          action:'Revisión humana'}],
+        protocol_revision:protocol,blocking_step_ids:['S1'],
+        requires_human_review:true
+      })};
       if(url.endsWith('/tobe-review')&&shouldFailReview)return {ok:false,status:503,json:async()=>({detail:'Sin respuesta de Ollama.'})};
       if(url.endsWith('/tobe-review'))return {ok:true,json:async()=>({
         status:blockingSteps.length?'CHECKED_WITH_NOTES':'CHECKED',
@@ -176,16 +185,18 @@ test('retry-only click reports progress, invokes reviewer only, saves completed 
   app.setReviewFailure(false);
   const before=app.requests.length;
   delegate({target:{closest:s=>s==='#retryTobeAiReview'?retry:null},preventDefault(){}});
-  assert.match(app.notice.textContent,/Comprobando disponibilidad del revisor global/,
+  assert.match(app.notice.textContent,/Comprobando 4 propuestas con reglas de AUNEA/,
     'click must immediately acknowledge work to the consultant');
   await app.settle();
-  assert.equal(app.requests.length,before+2,'only status and reviewer are allowed');
-  assert.equal(app.requests.at(-1).url,'http://localhost:8010/v1/internal-ai/tobe-review');
+  assert.equal(app.requests.length,before+1,'basic reviewer uses one request and no model status');
+  assert.equal(app.requests.at(-1).url,'http://localhost:8010/v1/internal-ai/tobe-review-basic');
   assert.equal(app.requests.filter(x=>x.url.endsWith('/tobe-step')).length,4,
     'review click must not repeat any verified activity');
   assert.match(app.notice.outerHTML,/Propuesta IA guardada en el borrador/);
+  assert.match(app.notice.outerHTML,/Comprobación básica por reglas completada/);
   const disk=JSON.parse(app.sandbox.localStorage.getItem('aunea_internal_v1'));
   assert.equal(disk.engagements[0].tobeProposals[0].aiDraft.proposal.items.length,4);
+  assert.equal(disk.engagements[0].tobeProposals[0].aiDraft.proposal.review.review_mode,'RULES_ONLY');
   assert.equal(app.tobe.status,'DRAFT','reviewer cannot approve consultant design');
 });
 test('retry-only click displays reviewer 503 without losing verified steps',async()=>{
@@ -195,11 +206,11 @@ test('retry-only click displays reviewer 503 without losing verified steps',asyn
   const delegate=app.sandbox.document.__auneaAiPilotClickHandler;
   delegate({target:{closest:s=>s==='#retryTobeAiReview'?{disabled:false}:null},preventDefault(){}});
   await app.settle();
-  assert.equal(app.requests.length,before+2);
-  assert.equal(app.requests.at(-1).url,'http://localhost:8010/v1/internal-ai/tobe-review');
-  assert.match(app.notice.outerHTML,/revisión global no se completó/i);
+  assert.equal(app.requests.length,before+1);
+  assert.equal(app.requests.at(-1).url,'http://localhost:8010/v1/internal-ai/tobe-review-basic');
+  assert.match(app.notice.outerHTML,/comprobación básica no se completó/i);
   assert.match(app.notice.outerHTML,/4 actividades verificadas permanecen guardadas/i);
-  assert.match(app.notice.outerHTML,/Reintentar sólo la revisión global/);
+  assert.match(app.notice.outerHTML,/Comprobar coherencia básica \(sin Ollama\)/);
   const disk=JSON.parse(app.sandbox.localStorage.getItem('aunea_internal_v1'));
   assert.equal(disk.engagements[0].tobeProposals[0].aiDraft.checkpoint.items.length,4);
   assert.equal(app.tobe.status,'DRAFT');
