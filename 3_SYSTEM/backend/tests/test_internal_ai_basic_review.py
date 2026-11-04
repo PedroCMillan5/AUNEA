@@ -21,6 +21,29 @@ def data():
     return PilotAIConsolidationRequest(request=req,items=[first,second])
 
 
+def api_payload():
+    """The API accepts a full DiagnosticOutput; model_construct() is test-only."""
+    payload=data().model_dump(mode="json")
+    payload["request"]["diagnostic"].update({
+        "pain_results":[],
+        "economic_result":{},
+        "risk_result":{"inherent_level":"UNKNOWN","residual_level":"UNKNOWN",
+                       "status":"NOT_EVALUATED","rationale":"Fixture sin datos reales"},
+        "recommendation":{"action_id":"NONE"},
+        "quote":{},
+        "optimal_scenario":{
+            "scenario_id":"FIXTURE","scenario_name":"Fixture",
+            "scenario_type":"TEST","action_id":"NONE",
+            "functional_level_id":None,"ai_level_id":None,
+            "coverage_by_pain":{},"capability_delta":{},
+            "economics":{},"risk":{"inherent_level":"UNKNOWN",
+              "residual_level":"UNKNOWN","status":"NOT_EVALUATED","rationale":"Fixture"},
+            "quote":{}
+        }
+    })
+    return payload
+
+
 def test_rules_flag_explicit_conflicts_and_uncertain_claims_without_inference(monkeypatch):
     def blocked(*args,**kwargs):
         raise AssertionError("The basic reviewer must never request Ollama")
@@ -44,7 +67,7 @@ def test_local_api_is_immediate_even_when_ai_flags_off(monkeypatch):
     monkeypatch.setattr(local._LOCAL_HTTP,"open",blocked)
     monkeypatch.setenv("AUNEA_INTERNAL_AI_ENABLED","0")
     monkeypatch.setenv("AUNEA_INTERNAL_AI_PROVIDER","")
-    payload=data().model_dump(mode="json")
+    payload=api_payload()
     response=TestClient(app).post("/v1/internal-ai/tobe-review-basic",json=payload)
     assert response.status_code==200,response.text
     body=response.json()
@@ -56,7 +79,9 @@ def test_local_api_is_immediate_even_when_ai_flags_off(monkeypatch):
 def test_stale_source_or_fabricated_reference_is_rejected():
     payload=data()
     payload.items[1].source_refs=["S2","MADE_UP"]
-    response=TestClient(app).post("/v1/internal-ai/tobe-review-basic",json=payload.model_dump(mode="json"))
+    body=api_payload()
+    body["items"][1]["source_refs"]=["S2","MADE_UP"]
+    response=TestClient(app).post("/v1/internal-ai/tobe-review-basic",json=body)
     assert response.status_code==409
     assert "referencias" in str(response.json()).lower()
 
