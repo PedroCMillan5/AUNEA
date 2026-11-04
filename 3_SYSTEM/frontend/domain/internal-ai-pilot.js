@@ -191,7 +191,9 @@ function persistTobeAiDraft(e){
     review:internalAiBoundedReview(proposal.review),
     applied:proposal.applied===true
   };
-  p.aiDraft={
+  // Keep consultant decisions and verified step checkpoint when saving the
+  // read-only AI proposal. Never replace another field owned by this TO-BE version.
+  p.aiDraft={...(p.aiDraft||{}),
     sourceSnapshotVersion:p.sourceSnapshotVersion,
     diagnosticInputHash:currentDiagnosticOutput(e).input_snapshot_hash,
     savedAt:now(),
