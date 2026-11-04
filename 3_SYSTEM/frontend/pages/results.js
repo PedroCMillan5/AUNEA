@@ -738,7 +738,7 @@ function tobeHistory(e){return e.tobeProposals||(e.tobeProposals=[])}
 function latestTobe(e){const h=e?.tobeProposals||[];return h[h.length-1]||null}
 function tobeEditable(p){return !!p&&p.status==='DRAFT'}
 function tobeSourceSteps(e){const snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;return (snap?.processSteps||[]).filter(x=>x.status!=='SUPERSEDED')}
-function createTobeDraft(e){const snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;if(!e||!snap)return null;const h=tobeHistory(e),p={version:h.length+1,status:'DRAFT',sourceSnapshotVersion:snap.version,createdAt:now(),updatedAt:now(),items:tobeSourceSteps(e).map((s,i)=>({id:`TOBE-${h.length+1}-${i+1}`,sourceStepId:s.id||'',sourceStepName:s.name||s.step_name||`Paso ${i+1}`,transformation:'',problemResolved:'',futureActor:labelFrom('OS_ACTOR_ROLE',s.actor)||'',tool:labelFrom('OS_TOOL_CATEGORY',s.tool)||'',inputs:Array.isArray(s.inputs)?s.inputs.join(', '):(s.inputs||''),outputs:Array.isArray(s.outputs)?s.outputs.join(', '):(s.outputs||''),automationAi:'',humanSupervision:'',controlsRisk:'',futureTime:'',futureTimeAssumption:''}))};h.push(p);markDirty(`TO-BE v${p.version} creado como DRAFT desde snapshot confirmado v${snap.version}`);return p}
+function createTobeDraft(e){const snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;if(!e||!snap)return null;const h=tobeHistory(e),p={version:h.length+1,status:'DRAFT',sourceSnapshotVersion:snap.version,createdAt:now(),updatedAt:now(),items:tobeSourceSteps(e).map((s,i)=>({id:`TOBE-${h.length+1}-${i+1}`,sourceStepId:s.id||'',sourceStepName:s.name||s.step_name||`Paso ${i+1}`,transformation:'',problemResolved:'',futureActor:labelFrom('OS_ACTOR_ROLE',s.actor)||'',tool:labelFrom('OS_TOOL_CATEGORY',s.tool)||'',inputs:Array.isArray(s.inputs)?s.inputs.join(', '):(s.inputs||''),outputs:Array.isArray(s.outputs)?s.outputs.join(', '):(s.outputs||''),automationAi:'',humanSupervision:'',controlsRisk:'',futureTime:'',futureTimeAssumption:''}))};p.flow=tobeFlowOwner(e,p);h.push(p);markDirty(`TO-BE v${p.version} creado como DRAFT desde snapshot confirmado v${snap.version}`);return p}
 function nextTobeStatus(p){const i=TOBE_PUBLICATION_STATES.indexOf(p?.status);return i>=0&&i<TOBE_PUBLICATION_STATES.length-1?TOBE_PUBLICATION_STATES[i+1]:null}
 // [AUNEA-FE-PG11-REVIEW-GATE-199] START — only canonical source/field readiness, not engine approval.
 // SOURCE: Simulator CANONICAL PG11; DEC-034/050/052/055.
@@ -871,6 +871,7 @@ function tobeSnapshotIssueCards(e,item){
 // SOURCE: PG11 CANONICAL; DEC-050/052/055; no new business field or data owner.
 // SIDE_EFFECTS: display-only. Never transfers an unreviewed item into TO-BE.
 function tobeAiAdviceHtml(e,item){
+  if(item?.isAddition)return '<div class="tobe-ai-empty"><p class="tobe-muted">Actividad incorporada por el consultor, vinculada a '+esc(item.sourceStepName)+'. La IA generada sobre el AS-IS no propone pasos nuevos automáticamente. Justifica la incorporación, su responsable y sus rutas antes de revisión.</p></div>';
   const key=typeof internalAiPilotKey==='function'?internalAiPilotKey(e):null;
   const cached=key&&typeof __auneaAiPreview!=='undefined'?__auneaAiPreview.get(key):null;
   const current=typeof internalAiSavedDraft==='function'?internalAiSavedDraft(e):null;
@@ -1096,14 +1097,13 @@ function tobeFlowInspector(e,p,item){
 }
 // [AUNEA-FE-PG11-FUTURE-FLOW-228] END
 function tobeCanvasHtml(e,p){
-  const steps=tobeSourceSteps(e);
-  if(typeof processGraphData!=='function')return '<div class="notice warn">El componente de mapa AS-IS no está disponible; no se han modificado los datos.</div>';
+  const steps=tobeFutureSteps(e,p);
+  if(typeof processGraphData!=='function')return '<div class="notice warn">El componente del mapa no está disponible; no se han modificado los datos.</div>';
   const graph=processGraphData(e,steps),selected=tobeSelectedItem(e,p);
-  const byStep=new Map(p.items.map(x=>[String(x.sourceStepId),x]));
   const cells=graph.nodes.map(n=>{
     const pos=graph.positions.get(n.id);if(!pos)return '';
     const step=n.kind==='step'?steps.find(s=>String(s.id)===String(n.id)):null;
-    const item=step?byStep.get(String(step.id)):null;
+    const item=step?tobeFlowItem(e,p,String(step.id)):null;
     let content='';
     if(n.kind==='start'||n.kind==='end'){
       const label=n.kind==='start'?'Inicio del proceso':'Fin del proceso';
@@ -1112,14 +1112,14 @@ function tobeCanvasHtml(e,p){
       content='<div class="graph-route-pending"><b>'+esc(n.route||'Ruta')+'</b><span>Destino pendiente en el AS-IS</span></div>';
     }else if(item){
       const status=item.transformation||'Pendiente de diseño';
-      const isSelected=String(selected?.sourceStepId)===String(step.id);
+      const isSelected=tobeFlowItemId(selected)===String(step.id);
       content='<button type="button" class="graph-flow-step tobe-graph-node'+
         (isSelected?' is-selected':'')+(item.transformation==='Se elimina'?' is-eliminated':'')+
         '" data-tobe-select="'+attr(step.id)+'" aria-pressed="'+(isSelected?'true':'false')+
-        '" aria-label="Abrir diseño de '+attr(item.sourceStepName)+'">'+
+        '" aria-label="Abrir diseño de '+attr(tobeFlowItemName(item))+'">'+
         '<span class="tobe-node-count">Actividad '+(steps.indexOf(step)+1)+'</span>'+
         '<span class="tobe-node-icon">'+processNodeIconSvg(processNodeIconName(step))+'</span>'+
-        '<strong>'+esc(item.sourceStepName||step.step_name||'Actividad')+'</strong>'+
+        '<strong>'+esc(tobeFlowItemName(item))+'</strong>'+
         '<span class="tobe-node-status">'+esc(status)+'</span>'+
         '<small>'+esc(item.futureActor||'Responsable futuro pendiente')+'</small></button>';
     }
@@ -1134,7 +1134,12 @@ function tobeCanvasHtml(e,p){
       ';--graph-card-height:190px" data-graph-edges="'+attr(JSON.stringify(graph.edges))+
       '" data-graph-branches="'+attr(JSON.stringify(graph.branchLayouts))+'">'+
     '<svg class="process-graph-lines" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>'+
-    cells+'</div></div></div>';
+    cells+'</div></div></div>'+
+    ((p.items||[]).some(it=>it.transformation==='Se elimina')?
+      '<div class="tobe-removed-list"><b>Actividades del AS-IS propuestas para eliminar (se conservan en el origen)</b>'+
+      p.items.filter(it=>it.transformation==='Se elimina').map(it=>
+        '<button type="button" class="btn btn-outline" data-tobe-select="'+attr(it.sourceStepId)+'">'+
+        esc(tobeFlowItemName(it))+'</button>').join('')+'</div>':'');
 }
 // [AUNEA-FE-PG11-READABLE-CODES-209] START — display-only translation for inherited source codes.
 function tobeSourceDataExplanation(raw){
@@ -1154,15 +1159,21 @@ function tobeInspectorHtml(e,p){
     (editable?auneaSelectControl('tobe_'+item.id+'_transformation',TOBE_TRANSFORMATIONS.map(v=>({value:v,label:v})),
       item.transformation||'',{extra:'data-tobe-item="'+attr(item.id)+'" data-tobe-field="transformation"',placeholder:'Selecciona una transformación'}):
       '<input value="'+attr(item.transformation||'Sin definir')+'" disabled>')+'</div>';
-  return '<header class="tobe-inspector-head"><div><span class="tobe-eyebrow">ACTIVIDAD SELECCIONADA · ORIGEN AS-IS</span>'+
-      '<h2>'+esc(item.sourceStepName)+'</h2></div><span class="tobe-selected-status">'+esc(item.transformation||'Sin definir')+'</span></header>'+
+  return '<header class="tobe-inspector-head"><div><span class="tobe-eyebrow">'+
+      (item.isAddition?'ACTIVIDAD NUEVA · VINCULADA A AS-IS':'ACTIVIDAD SELECCIONADA · ORIGEN AS-IS')+
+      '</span><h2>'+esc(tobeFlowItemName(item))+'</h2>'+
+      (item.isAddition?'<p class="tobe-muted">Origen confirmado: '+esc(item.sourceStepName)+
+        ' · Esta actividad existe sólo en el borrador TO-BE.</p>':'')+
+      '</div><span class="tobe-selected-status">'+esc(item.transformation||'Sin definir')+'</span></header>'+
     '<section class="tobe-origin"><h3>03 · Situación AS-IS y hallazgos vinculados</h3>'+
       tobeSnapshotIssueCards(e,item)+'</section>'+
     '<section class="tobe-edit"><h3>Decisión operativa del consultor · TO-BE</h3>'+
       '<p class="tobe-muted">Estos campos describen el funcionamiento futuro. Los valores heredados se muestran para revisar, no son mejoras confirmadas ni decisiones de la IA.</p>'+
       (item.transformation==='Se mantiene'&&/^(no|n\/a|ninguno)$/i.test(String(item.problemResolved||'').trim())?
         '<p class="notice warn"><b>Justificación pendiente:</b> «Se mantiene» conserva esta actividad sin rediseño. El valor «NO» no explica por qué se mantienen los hallazgos ni cómo se controlan; revisa la decisión antes de validar.</p>':'')+
-      '<div class="form-grid">'+statusField+
+      '<div class="form-grid">'+
+      (item.isAddition?tobeField(item,'stepName','Nombre de actividad futura',item.stepName,'text',!editable):'')+
+      statusField+
       tobeField(item,'problemResolved','Qué problema resuelve',item.problemResolved,'textarea',!editable)+
       tobeField(item,'futureActor','Responsable futuro',item.futureActor,'text',!editable)+
       tobeField(item,'tool','Herramienta / arquitectura',item.tool,'text',!editable)+
@@ -1180,7 +1191,8 @@ function tobeInspectorHtml(e,p){
       '<details class="tobe-subdetails"><summary>Tiempo futuro y supuesto trazable (si existe)</summary>'+
       '<div class="form-grid">'+tobeField(item,'futureTime','Tiempo futuro',item.futureTime,'text',!editable)+
       tobeField(item,'futureTimeAssumption','Supuesto trazable',item.futureTimeAssumption,'textarea',!editable)+
-      '</div></details></section>'+
+      '</div></details></section>'+tobeFlowInspector(e,p,item)+
+    (item.isAddition&&editable?'<button type="button" class="btn btn-outline" data-tobe-discard-added="'+attr(item.id)+'">Descartar actividad añadida</button>':'')+
     '<section class="tobe-advice" aria-label="Sugerencia IA para actividad"><h3>Recomendación asistida por IA</h3>'+
       '<div id="tobeAiRecommendation">'+tobeAiAdviceHtml(e,item)+'</div></section>';
 }
@@ -1190,7 +1202,7 @@ function createNextTobeVersion(e){
   const h=tobeHistory(e),version=h.length+1;
   const items=previous.items.map((it,i)=>({...it,id:'TOBE-'+version+'-'+(i+1)}));
   h.push({version,status:'DRAFT',sourceSnapshotVersion:snap.version,createdAt:now(),
-    updatedAt:now(),items});
+    updatedAt:now(),items,flow:JSON.parse(JSON.stringify(tobeFlowOwner(e,previous)))});
   __auneaTobeSelection={engagementId:'',version:0,stepId:''};
   markDirty('Nueva versión TO-BE '+version+' desde versión revisada '+previous.version);
   return true;
@@ -1235,8 +1247,15 @@ function tobePage(){
         '<div id="tobeAiMount"></div></section>':'')+
       '<section class="tobe-map-area"><header class="tobe-workspace-head"><div><span class="tobe-eyebrow">02 · CONSTRUIR EL DISEÑO</span>'+
       '<h2>Mapa del proceso propuesto</h2></div><p>Selecciona una actividad para revisar su transformación y editar el TO-BE.</p></header>'+
+      (editable?'<div class="tobe-flow-actions"><button type="button" class="btn btn-outline" id="addTobeStep">Añadir actividad vinculada al AS-IS</button>'+
+        '<span class="tobe-muted">Selecciona primero la actividad de origen para conservar trazabilidad.</span></div>':'')+
       tobeCanvasHtml(e,p)+
-      '<p class="tobe-map-note"><b>Rutas de referencia:</b> las conexiones están heredadas del AS-IS confirmado. Los estados en los nodos son decisiones registradas en el borrador TO-BE, no mejoras verificadas. Cambiar una etiqueta no crea, elimina ni modifica automáticamente rutas.</p></section>'+
+      '<div class="tobe-flow-start field"><label>Inicio del proceso futuro</label>'+
+        (editable?auneaSelectControl('tobeFlowStart',tobeFutureSteps(e,p).map(x=>({value:String(x.id),label:x.step_name})),
+          tobeFlowOwner(e,p).startStepId,{extra:'data-tobe-flow-start="1"',placeholder:'Selecciona actividad inicial'}):
+          '<input disabled value="'+attr(tobeFutureSteps(e,p).find(x=>String(x.id)===tobeFlowOwner(e,p).startStepId)?.step_name||'Pendiente')+'">')+
+      '</div>'+
+      '<p class="tobe-map-note"><b>Rutas del TO-BE:</b> comienzan como copia del AS-IS confirmado, pero pueden rediseñarse en el inspector. Los pasos incorporados o eliminados sólo pertenecen a la versión TO-BE. Una ruta pendiente, desconectada o sin final bloquea la revisión.</p></section>'+
       '<section id="tobeInspector" class="tobe-inspector" aria-label="Decisión TO-BE por actividad">'+tobeInspectorHtml(e,p)+'</section>'+
       '<section class="tobe-completion"><div><h2>Validación global</h2><p>Comprobación de versión, cobertura y requisitos del TO-BE. La calidad semántica requiere revisión humana.</p></div>'+
         '<button type="button" class="btn btn-outline" id="checkTobeReadiness">Comprobar requisitos</button>'+
