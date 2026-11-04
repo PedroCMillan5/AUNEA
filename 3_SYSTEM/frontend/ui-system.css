@@ -2707,3 +2707,39 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
   .tobe-human-review-actions>.btn{width:100%}
 }
 /* [AUNEA-FE-PG11-HUMAN-UX-228] END */
+
+/* [AUNEA-FE-PG11-FLOW-STYLE-232] START — versioned TO-BE routes and added-step control.
+   Scoped exclusively to PG11; reuse validated AUNEA Select and PG04 graph sizing. */
+.tobe-flow-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  margin:0 0 16px;padding:11px 14px;background:var(--system-soft);
+  border:1px solid var(--system-line);border-radius:var(--radius-sm)}
+.tobe-flow-actions .btn{white-space:normal}
+.tobe-flow-start{margin:15px 0 8px;max-width:420px}
+.tobe-flow-start label{font-size:12px;font-weight:700;color:var(--system)}
+.tobe-route-editor{display:grid;gap:10px;min-width:0;
+  padding:16px 18px;border:1px solid var(--system-line);border-radius:var(--radius-sm);
+  background:#fbfdfc}
+.tobe-route-editor h3{margin:0;font-size:15px;color:var(--system)}
+.tobe-route-editor .form-grid{align-items:start;gap:12px}
+.tobe-route-editor .field{min-width:0;margin:0}
+.tobe-route-editor .field label{display:block;font-size:12px;line-height:1.5}
+.tobe-removed-list{display:flex;gap:8px;align-items:center;flex-wrap:wrap;
+  padding:13px 15px;background:#fffaf1;border:1px solid #ead4ab;
+  border-radius:var(--radius-sm);margin-top:12px}
+.tobe-removed-list>b{font-size:12px;font-weight:700;flex:1 1 100%;color:#725321}
+.tobe-removed-list .btn{white-space:normal;overflow-wrap:anywhere}
+.tobe-ai-apply-step{display:flex;align-items:flex-start;flex-wrap:wrap;
+  flex-direction:column;gap:7px;padding:12px 14px;
+  border-radius:var(--radius-sm);border:1px solid var(--system-line);
+  background:var(--system-soft)}
+.tobe-ai-apply-step .btn{white-space:normal}
+.tobe-advice-content .tobe-ai-apply-step p{margin:0}
+.tobe-process-canvas .tobe-graph-node.is-selected{border-width:2px}
+.tobe-process-canvas .tobe-graph-node .tobe-node-status{max-width:100%}
+@media(max-width:600px){
+  .tobe-flow-actions{display:grid;padding:12px}
+  .tobe-flow-actions .btn{width:100%;justify-content:center}
+  .tobe-route-editor{padding:13px 12px}
+  .tobe-removed-list{padding:11px 12px}
+}
+/* [AUNEA-FE-PG11-FLOW-STYLE-232] END */
