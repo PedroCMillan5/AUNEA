@@ -900,7 +900,8 @@ function processGraphHtml(e,steps,fr,start,finish,tab='cliente',readonly=false){
 }
 function drawProcessGraph(boardOverride=null){
   if(typeof document==='undefined'||typeof document.querySelector!=='function')return;
-  const board=boardOverride||document.querySelector('.process-graph-board');if(!board)return;
+  // requestAnimationFrame supplies a numeric timestamp: treat only an actual DOM board as an override.
+  const board=boardOverride?.nodeType===1?boardOverride:document.querySelector('.process-graph-board');if(!board)return;
   const svg=board.querySelector('.process-graph-lines');if(!svg)return;
   const ns='http://www.w3.org/2000/svg',rect=board.getBoundingClientRect(),els=new Map();
   board.querySelectorAll('[data-graph-node]').forEach(el=>els.set(el.dataset.graphNode,el));
