@@ -813,24 +813,37 @@ function tobeSnapshotIssueCards(e,item){
   return frHtml||riskHtml?'<ul class="tobe-source-list">'+frHtml+riskHtml+'</ul>':
     '<p class="tobe-muted">No hay fricciones o riesgos vinculados directamente a este paso en el snapshot. Consulta el diagnóstico global antes de justificar una transformación.</p>';
 }
+// [AUNEA-FE-PG11-INSPECTOR-CHECKPOINT-214] START — show the existing verified
+// per-step suggestion only when it matches the current DRAFT's versioned IA checkpoint.
+// SOURCE: PG11 CANONICAL; DEC-050/052/055; no new business field or data owner.
+// SIDE_EFFECTS: display-only. Never transfers an unreviewed item into TO-BE.
 function tobeAiAdviceHtml(e,item){
   const key=typeof internalAiPilotKey==='function'?internalAiPilotKey(e):null;
   const cached=key&&typeof __auneaAiPreview!=='undefined'?__auneaAiPreview.get(key):null;
   const current=typeof internalAiSavedDraft==='function'?internalAiSavedDraft(e):null;
-  const archived=!cached&&!current&&typeof internalAiHistoricalDraft==='function'?
-    internalAiHistoricalDraft(e):null;
-  const draft=cached||current||archived?.proposal||
-    (!tobeEditable(latestTobe(e))?latestTobe(e)?.aiDraft?.proposal:null);
-  const suggestion=draft?.items?.find(x=>String(x.source_step_id)===String(item.sourceStepId));
-  if(!suggestion)return '<div class="tobe-ai-empty"><p class="tobe-muted">Todavía no hay una sugerencia de IA para esta actividad. Puedes diseñarla manualmente o preparar propuestas con el motor local.</p></div>';
+  // Reuse the same version/hash/coverage gate as the IA panel, not a raw checkpoint
+  // read: an older snapshot or a different Engagement must never be shown as current.
+  const pending=key&&!cached&&!current&&typeof internalAiPendingSteps==='function'?
+    internalAiPendingSteps(e,key):null;
+  const approvedReadOnly=!tobeEditable(latestTobe(e))?latestTobe(e)?.aiDraft?.proposal:null;
+  const archived=!cached&&!current&&!approvedReadOnly&&!pending?.items?.size&&
+    typeof internalAiHistoricalDraft==='function'?internalAiHistoricalDraft(e):null;
+  const draft=cached||current||approvedReadOnly||archived?.proposal;
+  const stepId=String(item.sourceStepId);
+  const fromCheckpoint=!draft&&!!pending?.items?.has(stepId);
+  const suggestion=draft?.items?.find(x=>String(x.source_step_id)===stepId)||
+    (fromCheckpoint?pending.items.get(stepId):null);
+  if(!suggestion)return '<div class="tobe-ai-empty"><p class="tobe-muted">Todavía no hay una sugerencia de IA vigente para esta actividad. Si existen actividades verificadas pendientes de revisión, se mostrarán únicamente en sus pasos correspondientes.</p></div>';
   const narrative=typeof internalAiPilotNarrative==='function'?internalAiPilotNarrative(suggestion.rationale):{action:'',expected:'',reason:String(suggestion.rationale||'')};
-  const issues=(draft.review?.issues||[]).filter(x=>x.step_id===item.sourceStepId||x.step_id==='GLOBAL');
-  const blocking=issues.some(x=>x.category==='BLOCKING')||(draft.review?.blocking_step_ids||[]).includes(item.sourceStepId);
+  const issues=(draft?.review?.issues||[]).filter(x=>x.step_id===stepId||x.step_id==='GLOBAL');
+  const blocking=issues.some(x=>x.category==='BLOCKING')||(draft?.review?.blocking_step_ids||[]).includes(stepId);
   return '<div class="tobe-advice-content">'+
+    (fromCheckpoint?'<p class="notice warn"><b>Propuesta IA verificada por actividad · Pendiente de revisión global.</b> Sólo consulta. No se ha aplicado ni aprobado ningún cambio en el TO-BE.</p>':'')+
     (archived?'<p class="notice warn"><b>Propuesta histórica, sólo lectura.</b> Corresponde al TO-BE v'+
       esc(archived.version)+'. No se aplica al proceso vigente sin una revisión del consultor.</p>':'')+
     '<div class="tobe-advice-label">'+esc(suggestion.transformation||'Sin clasificar')+
-      (blocking?' · Requiere corrección':' · Propuesta sin aprobar')+'</div>'+
+      (fromCheckpoint?' · Pendiente de revisión global':
+        blocking?' · Requiere corrección':' · Propuesta sin aprobar')+'</div>'+
     '<dl class="tobe-advice-pairs">'+
     '<div><dt>Problema identificado</dt><dd>'+esc(suggestion.problem_resolved||'No concretado')+'</dd></div>'+
     '<div><dt>Intervención recomendada</dt><dd>'+esc(narrative.action||'No concretada')+'</dd></div>'+
@@ -840,11 +853,14 @@ function tobeAiAdviceHtml(e,item){
       '<p><b>Justificación:</b> '+esc(narrative.reason||'No declarada')+'</p>'+
       '<p><b>Fuentes:</b> '+esc((suggestion.source_refs||[]).join(', ')||'No identificadas')+'</p>'+
       '<p><b>Condiciones pendientes:</b> '+esc(suggestion.limitations||'Ninguna declarada')+'</p>'+
-      (issues.length?'<ul>'+issues.map(x=>'<li>'+esc(x.issue||x.action||'Revisión pendiente')+'</li>').join('')+'</ul>':'<p>Sin observaciones específicas del revisor automático.</p>')+
+      (fromCheckpoint?'<p>Revisión global pendiente. Este resultado no está autorizado para aplicar ni aprobar.</p>':
+        issues.length?'<ul>'+issues.map(x=>'<li>'+esc(x.issue||x.action||'Revisión pendiente')+'</li>').join('')+'</ul>':
+        '<p>Sin observaciones específicas del revisor automático.</p>')+
     '</details>'+
-    '<p class="tobe-muted">Esta narrativa forma parte de la sugerencia IA conservada en el borrador; la propuesta operativa sólo cambia mediante revisión humana.</p>'+
+    '<p class="tobe-muted">Esta narrativa forma parte de una sugerencia IA en el estudio; el diseño TO-BE sólo cambia mediante revisión humana.</p>'+
     '</div>';
 }
+// [AUNEA-FE-PG11-INSPECTOR-CHECKPOINT-214] END
 function tobeCanvasHtml(e,p){
   const steps=tobeSourceSteps(e);
   if(typeof processGraphData!=='function')return '<div class="notice warn">El componente de mapa AS-IS no está disponible; no se han modificado los datos.</div>';
