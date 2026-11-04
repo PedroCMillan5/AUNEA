@@ -436,3 +436,5 @@
 | AUNEA-FE-PG12-GRAPH-STYLE-236 | 3_SYSTEM/frontend/ui-system.css | Disposición adaptable de mapas y selección por borde en estilo AUNEA System | Simulator CANONICAL PG12; DEC-056 | PG12 DOM | Comparación desktop/móvil | CSS scoped | LOW | uat-browser-smoke.cjs | REVIEW |
 
 | AUNEA-UAT-PG11-AI-STEP-237 | 3_SYSTEM/frontend/tests/pg11-ai-step-apply.test.cjs | Comprobaciones de autorización humana y revisor, referencias, conflicto Se mantiene, copia selectiva sin sobrescribir | Simulator CANONICAL PG11; DEC-050/052/055 | Synthetic AI draft and human decision | Node harness per selected activity | No Ollama/network | HIGH | node --test tests/pg11-ai-step-apply.test.cjs | REVIEW |
+
+| AUNEA-UAT-PG11-PG12-BROWSER-238 | 3_SYSTEM/frontend/tests/uat-browser-smoke.cjs | Chromium real: añadir actividad trazada, editar conexiones, guardar, preservar AS-IS, alternar vistas PG12 y capturar pantallas | Simulator CANONICAL PG11/PG12; DEC-050/055 | UAT synthetic confirmed snapshot | Browser assertions and screenshot | No Ollama or economic calculation | HIGH | uat-browser-smoke.cjs | REVIEW |
