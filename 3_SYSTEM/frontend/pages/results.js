@@ -857,10 +857,50 @@ function tobeAiAdviceHtml(e,item){
         issues.length?'<ul>'+issues.map(x=>'<li>'+esc(x.issue||x.action||'Revisión pendiente')+'</li>').join('')+'</ul>':
         '<p>Sin observaciones específicas del revisor automático.</p>')+
     '</details>'+
-    '<p class="tobe-muted">Esta narrativa forma parte de una sugerencia IA en el estudio; el diseño TO-BE sólo cambia mediante revisión humana.</p>'+
+    '<p class="tobe-muted">Esta sugerencia no modifica el TO-BE. La decisión y el diseño futuro son responsabilidad del consultor.</p>'+
+    tobeHumanReviewHtml(e,item,!!archived)+
     '</div>';
 }
 // [AUNEA-FE-PG11-INSPECTOR-CHECKPOINT-214] END
+// [AUNEA-FE-PG11-HUMAN-DECISIONS-223] START — one deliberate review decision
+// per source activity, stored only in the existing versioned TO-BE aiDraft owner.
+// SOURCE: PG11 CANONICAL (consultant decision); DEC-050/052/055; PG11 plan C.
+// No new client capture; no AI-to-TOBE field copy; decision is not approval.
+const TOBE_HUMAN_DECISIONS=Object.freeze(['ACCEPT','MODIFY','DISCARD']);
+const TOBE_HUMAN_LABELS=Object.freeze({
+  ACCEPT:'Aceptar recomendación',MODIFY:'Modificar antes de usar',
+  DISCARD:'Descartar recomendación'
+});
+function tobeHumanReviewRecord(e,p){
+  const h=p?.aiDraft?.humanReview,diag=currentDiagnosticOutput(e),
+    input=p?.aiDraft?.proposal?.input_hash||p?.aiDraft?.checkpoint?.inputHash;
+  return h&&diag&&input&&h.tobeVersion===p.version&&
+    h.sourceSnapshotVersion===p.sourceSnapshotVersion&&
+    h.diagnosticInputHash===diag.input_snapshot_hash&&
+    h.proposalInputHash===input?h:null;
+}
+function tobeHumanReviewHtml(e,item,historical){
+  const p=latestTobe(e);
+  if(historical||!tobeEditable(p))return '';
+  const record=tobeHumanReviewRecord(e,p)?.decisions?.[String(item.sourceStepId)]||null;
+  const label=TOBE_HUMAN_LABELS[record?.status]||'Sin decisión';
+  const id=String(item.sourceStepId);
+  return '<section class="tobe-human-review" aria-label="Decisión humana sobre la propuesta">'+
+    '<h4>Decisión del consultor sobre la propuesta</h4>'+
+    '<p class="tobe-muted">Aceptar, modificar o descartar sólo registra tu decisión. No rellena campos ni confirma cifras, capacidades o rutas.</p>'+
+    '<p class="tobe-human-review-status"><b>Estado:</b> '+esc(label)+'</p>'+
+    '<div class="field"><label for="tobeHumanReviewNote">Justificación de la decisión</label>'+
+    '<textarea id="tobeHumanReviewNote" rows="3" placeholder="Explica qué evidencia y condiciones sustentan tu decisión. No inventes datos.">'+
+    esc(record?.note||'')+'</textarea></div>'+
+    '<div class="tobe-human-review-actions">'+
+      TOBE_HUMAN_DECISIONS.map(status=>'<button type="button" class="btn '+
+        (record?.status===status?'btn-primary':'btn-outline')+
+        '" data-tobe-human-decision="'+status+'" data-tobe-human-source="'+attr(id)+'">'+
+        esc(TOBE_HUMAN_LABELS[status])+'</button>').join('')+
+    '</div><p class="tobe-muted">El diseño operativo se completa en los campos TO-BE de esta actividad; ninguna recomendación se aplica automáticamente.</p>'+
+  '</section>';
+}
+// [AUNEA-FE-PG11-HUMAN-DECISIONS-223] END
 function tobeCanvasHtml(e,p){
   const steps=tobeSourceSteps(e);
   if(typeof processGraphData!=='function')return '<div class="notice warn">El componente de mapa AS-IS no está disponible; no se han modificado los datos.</div>';
