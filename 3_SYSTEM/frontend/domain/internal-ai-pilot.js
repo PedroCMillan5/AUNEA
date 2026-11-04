@@ -484,7 +484,8 @@ function internalAiPilotPanel(e){
       '<p>La IA no aprueba ni publica resultados. Los registros HTTP y prompts técnicos son temporales.</p>'+
       '<div class="pg11-ai-actions">'+
         (historical?'':'<button type="button" class="btn btn-primary" id="saveTobeAiPilot">Guardar propuesta y borrador</button>')+
-        (historical||draft.applied||blocked||review?.review_mode==='RULES_ONLY'?'':'<button class="btn btn-outline" id="applyTobeAiPilot">Aplicar a campos vacíos</button>')+
+        // No global application: each step requires an explicit consultant decision in its inspector.
+        ''+
         '<button type="button" class="btn btn-outline" id="regenerateTobeAiPilot">'+
           (historical?'Generar para el borrador actual':'Generar propuestas nuevas')+'</button>'+
       '</div>'+
@@ -790,31 +791,11 @@ async function generateTobeAiPilot(e,fresh=false){
   }
 }
 function applyTobeAiPilot(e){
-  if(typeof isClientDisplay==='function'&&isClientDisplay())return;
-  const key=internalAiPilotKey(e),data=key?(__auneaAiPreview.get(key)||internalAiSavedDraft(e)):null,p=latestTobe(e);
-  if(!data||!tobeEditable(p))return toast('La propuesta ya no está disponible.');
-  if(data.review?.review_mode==='RULES_ONLY')
-    return toast('La comprobación por reglas no autoriza aplicar propuestas. Revisa cada actividad en el inspector TO-BE.');
-  if((Array.isArray(data.review?.blocking_step_ids)&&data.review.blocking_step_ids.length)||
-     (Array.isArray(data.review?.issues)&&data.review.issues.some(i=>i.category==='BLOCKING')))
-    return toast('Esta propuesta contiene bloqueos de revisión. Corrige el diseño antes de aplicar.');
-  if(data.items.length!==p.items.length||data.items.some(x=>!p.items.some(it=>String(it.sourceStepId)===String(x.source_step_id))))
-    return toast('La estructura del proceso ha cambiado; no se aplica la propuesta.');
-  if(!saveTobeFromDom(e))return;
-  const fields={transformation:'transformation',problem_resolved:'problemResolved',
-    future_actor:'futureActor',tool:'tool',inputs:'inputs',outputs:'outputs',
-    automation_ai:'automationAi',human_supervision:'humanSupervision',controls_risk:'controlsRisk'};
-  for(const proposal of data.items){
-    const target=p.items.find(x=>String(x.sourceStepId)===String(proposal.source_step_id));
-    for(const [src,dst] of Object.entries(fields)){
-      if(!String(target[dst]||'').trim()&&String(proposal[src]||'').trim())target[dst]=proposal[src];
-    }
-  }
-  p.updatedAt=now();markDirty('Propuesta IA aceptada sólo en campos vacíos de TO-BE DRAFT');
-  data.applied=true; // Retain expected outcomes in the read-only review panel.
-  if(p.aiDraft?.proposal?.input_hash===data.input_hash)p.aiDraft.proposal.applied=true;
-  render();
-  toast('Aplicado a campos vacíos. Revisa y guarda antes de enviar a revisión.');
+  // Backward-compatible entrypoint; it can never apply all steps in bulk.
+  const item=typeof tobeSelectedItem==='function'?tobeSelectedItem(e,latestTobe(e)):null;
+  if(!item||item.isAddition)
+    return toast('Selecciona una actividad del AS-IS para revisar su recomendación.');
+  return tobeApplyAiOnlyStep(e,String(item.sourceStepId));
 }
 // Bind once through event delegation, as in PG11 draft creation. A postBind wrapper
 // can be replaced by other modules and must not be the only way the button works.
