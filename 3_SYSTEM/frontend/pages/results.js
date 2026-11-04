@@ -787,8 +787,6 @@ function tobeReviewReadiness(e,p){
       if(['Se automatiza','Se asiste con IA'].includes(item.transformation)&&
          (!meaningful(item.automationAi)||!meaningful(item.humanSupervision)))
         return 'Describe automatización y supervisión humana de '+name+' antes de revisar.';
-      if(item.transformation==='Se elimina')
-        return 'No es posible revisar una eliminación: el mapa aún conserva la ruta AS-IS; define primero la topología futura.';
       const originalIssues=(p.aiDraft?.proposal?.review?.issues||[]).filter(x=>
         String(x.step_id)===sid&&x.category==='BLOCKING');
       if(originalIssues.length&&decision.status==='ACCEPT'&&item.transformation==='Se mantiene')
@@ -796,6 +794,8 @@ function tobeReviewReadiness(e,p){
     }
   }
   // [AUNEA-FE-PG11-HUMAN-GATE-225] END
+  const flowIssue=tobeFlowIntegrity(e,p);
+  if(flowIssue)return flowIssue;
   return null;
 }
 function advanceTobeStatus(e){
@@ -819,7 +819,28 @@ function advanceTobeStatus(e){
   return true;
 }
 // [AUNEA-FE-PG11-REVIEW-GATE-199] END
-function saveTobeFromDom(e){const p=latestTobe(e);if(!tobeEditable(p))return false;document.querySelectorAll('[data-tobe-item]').forEach(el=>{const item=p.items.find(x=>x.id===el.dataset.tobeItem);if(item)item[el.dataset.tobeField]=el.value});if(typeof persistTobeAiDraft==='function'&&!persistTobeAiDraft(e))return false;p.updatedAt=now();markDirty(`TO-BE v${p.version} actualizado`);return true}
+function saveTobeFromDom(e){
+  const p=latestTobe(e);if(!tobeEditable(p))return false;
+  document.querySelectorAll('[data-tobe-item]').forEach(el=>{
+    const item=[...p.items,...tobeAddedSteps(p)].find(x=>x.id===el.dataset.tobeItem);
+    if(item)item[el.dataset.tobeField]=el.value;
+  });
+  const start=document.querySelector('[data-tobe-flow-start]');
+  const routes=[...document.querySelectorAll('[data-tobe-route-step]')];
+  if(start||routes.length){
+    const flow=tobeMutableFlow(e,p);
+    if(start)flow.startStepId=String(start.value);
+    for(const el of routes){
+      const id=String(el.dataset.tobeRouteStep),field=el.dataset.tobeRoute;
+      if(field!=='normal'&&field!=='exception')continue;
+      if(!flow.routes[id])flow.routes[id]={normal:'__PENDING__',exception:''};
+      flow.routes[id][field]=String(el.value);
+    }
+  }
+  if(typeof persistTobeAiDraft==='function'&&!persistTobeAiDraft(e))return false;
+  p.updatedAt=now();markDirty('TO-BE v'+p.version+' actualizado');
+  return true;
+}
 function tobeField(item,key,label,value,type='text',disabled=false){return `<div class="field"><label>${esc(label)}</label>${type==='textarea'?`<textarea data-tobe-item="${attr(item.id)}" data-tobe-field="${attr(key)}" ${disabled?'disabled':''}>${esc(value||'')}</textarea>`:`<input data-tobe-item="${attr(item.id)}" data-tobe-field="${attr(key)}" value="${attr(value||'')}" ${disabled?'disabled':''}>`}</div>`}
 // [AUNEA-FE-PG11-WORKSPACE-205] START — single versioned TO-BE canvas and contextual inspector.
 // SOURCE: Simulator CANONICAL v1.14 PG11; DEC-050/052/055; PG04 graph source.
@@ -831,8 +852,8 @@ function tobeSelectedItem(e,p){
   if(__auneaTobeSelection.engagementId!==e.id||__auneaTobeSelection.version!==p.version){
     __auneaTobeSelection={engagementId:e.id,version:p.version,stepId:String(p.items[0].sourceStepId)};
   }
-  const selected=p.items.find(x=>String(x.sourceStepId)===__auneaTobeSelection.stepId);
-  if(!selected)__auneaTobeSelection.stepId=String(p.items[0].sourceStepId);
+  const selected=tobeFlowItem(e,p,__auneaTobeSelection.stepId);
+  if(!selected)__auneaTobeSelection.stepId=tobeFlowItemId(p.items[0]);
   return selected||p.items[0];
 }
 function tobeSnapshotIssueCards(e,item){
@@ -940,6 +961,140 @@ function tobeHumanReviewHtml(e,item,historical){
   '</section>';
 }
 // [AUNEA-FE-PG11-HUMAN-DECISIONS-223] END
+// [AUNEA-FE-PG11-FUTURE-FLOW-228] START — version-owned future routing overlay.
+// SOURCE: Simulator CANONICAL PG11/PG12; DEC-050/052/055.
+// The AS-IS snapshot remains immutable. Added steps are linked to an existing AS-IS
+// step, stored only within this TO-BE version, and cannot be auto-approved.
+// No new DF question, pricing assumption, or deterministic engine calculation.
+function tobeFlowOwner(e,p){
+  const original=tobeSourceSteps(e),branching=original.some(s=>processDecisionStep(s));
+  const routes={};
+  original.forEach((s,i)=>{
+    const id=String(s.id);
+    routes[id]={
+      normal:String(s.normal_next_step||(!branching?(original[i+1]?.id||'__END__'):'__PENDING__')),
+      exception:processDecisionStep(s)?String(s.exception_path?.destination_step||'__PENDING__'):''
+    };
+  });
+  const stored=p?.flow;
+  return {
+    startStepId:String(stored?.startStepId||original[0]?.id||''),
+    routes:{...routes,...(stored?.routes||{})},
+    addedSteps:Array.isArray(stored?.addedSteps)?stored.addedSteps:[]
+  };
+}
+function tobeMutableFlow(e,p){
+  if(!p.flow)p.flow=tobeFlowOwner(e,p);
+  return p.flow;
+}
+function tobeAddedSteps(p,includeSuperseded=false){
+  return Array.isArray(p?.flow?.addedSteps)?
+    p.flow.addedSteps.filter(x=>includeSuperseded||x.status!=='SUPERSEDED'):[];
+}
+function tobeFlowItemId(item){return String(item?.isAddition?item.id:item?.sourceStepId||'')}
+function tobeFlowItem(e,p,stepId){
+  return [...(p?.items||[]),...tobeAddedSteps(p)].find(x=>tobeFlowItemId(x)===String(stepId))||null;
+}
+function tobeFlowItemName(item){
+  return String((item?.isAddition?item.stepName:item?.sourceStepName)||'Actividad sin nombre');
+}
+function tobeFutureSteps(e,p){
+  const original=tobeSourceSteps(e),byId=new Map(original.map(x=>[String(x.id),x]));
+  const f=tobeFlowOwner(e,p);
+  const existing=(p?.items||[]).filter(x=>x.transformation!=='Se elimina').map(item=>{
+    const source=byId.get(String(item.sourceStepId));
+    if(!source)return null;
+    const route=f.routes[String(source.id)]||{};
+    const decision=processDecisionStep(source);
+    return {...source,id:String(source.id),step_name:tobeFlowItemName(item),
+      normal_next_step:String(route.normal??'__PENDING__'),
+      exception_path:decision?{...(source.exception_path||{}),
+        destination_step:String(route.exception??'__PENDING__')}:undefined};
+  }).filter(Boolean);
+  const additions=tobeAddedSteps(p).map(item=>{
+    const route=f.routes[String(item.id)]||{};
+    return {id:String(item.id),step_name:tobeFlowItemName(item),step_type:'ST02',
+      normal_next_step:String(route.normal??'__PENDING__'),actor:'',
+      exception_path:undefined};
+  });
+  const steps=[...existing,...additions];
+  const first=steps.findIndex(x=>String(x.id)===f.startStepId);
+  if(first>0)steps.unshift(steps.splice(first,1)[0]);
+  return steps;
+}
+function tobeFlowIntegrity(e,p){
+  const f=tobeFlowOwner(e,p),steps=tobeFutureSteps(e,p),ids=new Set(steps.map(x=>String(x.id))),
+    originals=new Map(tobeSourceSteps(e).map(x=>[String(x.id),x]));
+  if(!ids.size)return 'El TO-BE debe tener al menos una actividad futura.';
+  if(!ids.has(String(f.startStepId)))return 'El inicio del TO-BE apunta a una actividad eliminada o inexistente. Selecciona un inicio válido.';
+  for(const added of tobeAddedSteps(p)){
+    if(!originals.has(String(added.sourceStepId)))
+      return 'La actividad añadida '+tobeFlowItemName(added)+' no tiene origen AS-IS confirmado.';
+    if(!String(added.stepName||'').trim())
+      return 'Asigna un nombre a la actividad añadida vinculada a '+added.sourceStepName+'.';
+    if(!TOBE_TRANSFORMATIONS.includes(added.transformation))
+      return 'Selecciona una transformación válida para '+tobeFlowItemName(added)+'.';
+    if(!String(added.problemResolved||'').trim())
+      return 'Describe el problema u oportunidad diagnosticada que justifica la actividad '+tobeFlowItemName(added)+'.';
+    if(!String(added.futureActor||'').trim())
+      return 'Indica responsable futuro de '+tobeFlowItemName(added)+'.';
+    if(String(added.futureTime||'').trim()&&!String(added.futureTimeAssumption||'').trim())
+      return 'El tiempo futuro de '+tobeFlowItemName(added)+' requiere un supuesto explícito.';
+  }
+  const outgoing=new Map();
+  for(const s of steps){
+    const route=f.routes[String(s.id)]||{},original=originals.get(String(s.id));
+    const next=String(route.normal??s.normal_next_step??'__PENDING__');
+    const exception=original&&processDecisionStep(original)?
+      String(route.exception??s.exception_path?.destination_step??'__PENDING__'):'';
+    const targets=[next,...(exception?[exception]:[])];
+    for(const dest of targets)if(dest!=='__END__'&&!ids.has(dest))
+      return 'La ruta de '+s.step_name+' apunta a una actividad eliminada o pendiente de conectar. Revisa sus destinos.';
+    outgoing.set(String(s.id),targets);
+  }
+  const reachable=new Set(),queue=[String(f.startStepId)];
+  while(queue.length){
+    const id=queue.shift();if(reachable.has(id))continue;reachable.add(id);
+    for(const next of outgoing.get(id)||[])if(next!=='__END__'&&!reachable.has(next))queue.push(next);
+  }
+  if(steps.some(s=>!reachable.has(String(s.id))))
+    return 'Hay actividades futuras desconectadas del inicio. Revisa las rutas y los pasos añadidos.';
+  const canEnd=new Set(['__END__']);let changed=true;
+  while(changed){changed=false;
+    for(const [id,links] of outgoing)if(!canEnd.has(id)&&links.some(dest=>canEnd.has(dest))){
+      canEnd.add(id);changed=true;
+    }
+  }
+  if(steps.some(s=>!canEnd.has(String(s.id))))
+    return 'Existe una ruta futura sin camino hasta el final del proceso.';
+  return null;
+}
+function tobeFlowOptions(e,p,item){
+  return [{value:'__PENDING__',label:'Pendiente de conectar'},
+    ...tobeFutureSteps(e,p).filter(s=>String(s.id)!==tobeFlowItemId(item))
+      .map(s=>({value:String(s.id),label:s.step_name})),
+    {value:'__END__',label:'Fin del proceso'}];
+}
+function tobeFlowInspector(e,p,item){
+  if(item.transformation==='Se elimina'){
+    return '<p class="notice warn">Actividad marcada para eliminar. Reconecta las rutas entrantes desde otras actividades y, si procede, cambia el inicio del proceso. El original se conserva en el AS-IS.</p>';
+  }
+  const flow=tobeFlowOwner(e,p),stepId=tobeFlowItemId(item),routes=flow.routes[stepId]||{},
+    origin=tobeSourceSteps(e).find(x=>String(x.id)===String(item.sourceStepId)),editable=tobeEditable(p);
+  const opts=tobeFlowOptions(e,p,item);
+  const field=(kind,label,value)=>
+    '<div class="field"><label>'+label+'</label>'+
+    (editable?auneaSelectControl('tobeRoute_'+kind+'_'+stepId,opts,String(value||'__PENDING__'),{
+      extra:'data-tobe-route="'+kind+'" data-tobe-route-step="'+attr(stepId)+'"',
+      placeholder:'Selecciona destino'}):'<input disabled value="'+attr(opts.find(x=>x.value===value)?.label||value||'Pendiente')+'">')+
+    '</div>';
+  return '<section class="tobe-route-editor"><h3>Conexiones del proceso futuro</h3>'+
+    '<p class="tobe-muted">Edita aquí las rutas del TO-BE. No se modificarán las conexiones del AS-IS confirmado.</p>'+
+    '<div class="form-grid">'+field('normal','Siguiente actividad'+(origin&&processDecisionStep(origin)?' · ruta SÍ':''),routes.normal)+
+    (origin&&processDecisionStep(origin)?field('exception','Ruta NO / excepción',routes.exception):'')+
+    '</div></section>';
+}
+// [AUNEA-FE-PG11-FUTURE-FLOW-228] END
 function tobeCanvasHtml(e,p){
   const steps=tobeSourceSteps(e);
   if(typeof processGraphData!=='function')return '<div class="notice warn">El componente de mapa AS-IS no está disponible; no se han modificado los datos.</div>';
