@@ -559,6 +559,8 @@ async function generateTobeBySteps(e,key,snap,availability,fresh=false){
   if(completed.items.size!==stepIds.length)throw Error('Faltan actividades; propuesta incompleta.');
   return internalAiConsolidateVerified(e,key,snap,availability,completed,request);
 }
+// [AUNEA-FE-TOBE-SEGMENTED-197] END
+// [AUNEA-FE-PG11-REVIEW-ONLY-216] START — dedicated review handler and shared consolidation.
 async function internalAiConsolidateVerified(e,key,snap,availability,completed,request){
   const stepIds=(latestTobe(e)?.items||[]).map(it=>String(it.sourceStepId));
   if(!stepIds.length||completed?.stepSignature!==stepIds.join('|')||
@@ -613,11 +615,10 @@ async function internalAiConsolidateVerified(e,key,snap,availability,completed,r
     internalAiPilotRefreshPanel(live||e);
   }
 }
-// [AUNEA-FE-PG11-REVIEW-ONLY-216] START — explicit, observable retry of
-// the existing four verified activities. No generation step endpoint in this handler.
+// The explicit retry invokes this shared reviewer without ever touching /tobe-step.
 // SOURCE: PG11 CANONICAL; DEC-050/052/055; PG11 REVIEW plan point B.
-// INPUT: current TO-BE versioned checkpoint, confirmed snapshot, official diagnostic.
-// SIDE EFFECTS: one optional backend status GET and one reviewer POST; DRAFT-only save.
+// INPUT: versioned checkpoint, confirmed snapshot, official diagnostic.
+// SIDE EFFECTS: one provider status GET and one global reviewer POST; DRAFT-only save.
 async function retryTobeAiReviewOnly(){
   const e=currentEng(),key=e?internalAiPilotKey(e):null,p=e?latestTobe(e):null;
   if(!e||!key||!tobeEditable(p)){
