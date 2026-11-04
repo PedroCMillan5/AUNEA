@@ -100,6 +100,75 @@ function internalAiHistoricalDraft(e){
   return null;
 }
 // [AUNEA-FE-PG11-AI-RECOVERY-208] END
+
+// [AUNEA-FE-PG11-SEGMENT-CHECKPOINT-211] START — bounded recovery for confirmed per-step proposals.
+// SOURCE: DEC-050/052/055; PilotAIItem contract; existing versioned TO-BE aiDraft owner.
+// CHECKPOINT IS NOT A REVIEWED PROPOSAL. No prompts, HTTP traces or client-facing publication.
+const __auneaStepCheckpointFormat='PG11_STEP_CHECKPOINT_1';
+function internalAiCheckpointValid(e,entry){
+  const p=latestTobe(e),snap=confirmedSnapshot(e),diagnostic=currentDiagnosticOutput(e);
+  if(!p||p.status!=='DRAFT'||!snap||!diagnostic||!entry||entry.format!==__auneaStepCheckpointFormat
+     ||entry.tobeVersion!==p.version||entry.snapshotVersion!==snap.version
+     ||entry.diagnosticInputHash!==diagnostic.input_snapshot_hash
+     ||p.sourceSnapshotVersion!==snap.version||!Array.isArray(entry.items)
+     ||!entry.items.length||typeof entry.inputHash!=='string'||!entry.inputHash.trim())return false;
+  const ids=p.items.map(x=>String(x.sourceStepId));
+  const storedIds=entry.items.map(x=>String(x?.source_step_id||''));
+  return entry.stepSignature===ids.join('|')&&storedIds.length<=ids.length&&
+    new Set(storedIds).size===storedIds.length&&
+    storedIds.every(id=>ids.includes(id));
+}
+function internalAiPendingSteps(e,key){
+  if(!key||!e)return null;
+  const ids=(latestTobe(e)?.items||[]).map(x=>String(x.sourceStepId));
+  const inMemory=__auneaAiCompletedSteps.get(key);
+  if(inMemory?.stepSignature===ids.join('|'))return inMemory;
+  const entry=latestTobe(e)?.aiDraft?.checkpoint;
+  if(!internalAiCheckpointValid(e,entry))return null;
+  const restored={stepSignature:entry.stepSignature,
+    items:new Map(entry.items.map(item=>[String(item.source_step_id),item])),
+    traces:new Map(),inputHash:entry.inputHash,model:entry.model||''};
+  __auneaAiCompletedSteps.set(key,restored);
+  return restored;
+}
+function internalAiCheckpointSaved(e,key,pending){
+  const entry=latestTobe(e)?.aiDraft?.checkpoint;
+  if(!internalAiCheckpointValid(e,entry)||!pending||typeof localStorage==='undefined')return false;
+  try{
+    const disk=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');
+    const persisted=disk?.engagements?.find(x=>x.id===e.id)?.tobeProposals?.
+      find(x=>x.version===latestTobe(e)?.version)?.aiDraft?.checkpoint;
+    return !!persisted&&persisted.format===entry.format&&
+      persisted.inputHash===entry.inputHash&&
+      JSON.stringify(persisted.items)===JSON.stringify(entry.items)&&
+      persisted.items.length===pending.items.size;
+  }catch(_){return false}
+}
+function internalAiSaveCheckpoint(e,key,pending,model){
+  const live=currentEng();
+  if(!live||!e||live.id!==e.id||!key||internalAiPilotKey(live)!==key||
+     !tobeEditable(latestTobe(live))||!pending?.items?.size||!pending.inputHash)return false;
+  const p=latestTobe(live),ids=p.items.map(x=>String(x.sourceStepId));
+  if(pending.stepSignature!==ids.join('|')||pending.items.size>ids.length||
+      [...pending.items.keys()].some(id=>!ids.includes(id)))return false;
+  const proposed=ids.filter(id=>pending.items.has(id))
+    .map(id=>internalAiBoundedDraftItem(pending.items.get(id)));
+  if(!saveTobeFromDom(live))return false;
+  const checkpoint={format:__auneaStepCheckpointFormat,tobeVersion:p.version,
+    snapshotVersion:p.sourceSnapshotVersion,
+    diagnosticInputHash:currentDiagnosticOutput(live).input_snapshot_hash,
+    stepSignature:pending.stepSignature,inputHash:pending.inputHash,
+    model:String(model||pending.model||''),items:proposed,savedAt:now()};
+  p.aiDraft={...(p.aiDraft||{}),
+    sourceSnapshotVersion:p.sourceSnapshotVersion,
+    diagnosticInputHash:currentDiagnosticOutput(live).input_snapshot_hash,
+    checkpoint};
+  markDirty('PG11: '+proposed.length+' actividades IA verificadas, revisión global pendiente');
+  if(!saveState('Guardar actividades IA verificadas sin aprobar'))return false;
+  return internalAiCheckpointSaved(currentEng(),key,pending);
+}
+// [AUNEA-FE-PG11-SEGMENT-CHECKPOINT-211] END
+
 function persistTobeAiDraft(e){
   const key=internalAiPilotKey(e),p=latestTobe(e);
   if(!tobeEditable(p))return false;
@@ -248,14 +317,70 @@ function internalAiReviewPanel(review){
       '<p class="field-help">El registro técnico detallado de la revisión no se conserva tras recargar.</p>')+
     '</details>';
 }
+// [AUNEA-FE-PG11-PENDING-UI-212] START — consultant-facing verified steps before global review.
+function internalAiPendingPanel(e,key,pending,feedback){
+  const source=latestTobe(e),ids=source.items.map(x=>String(x.sourceStepId));
+  const saved=internalAiCheckpointSaved(e,key,pending);
+  const cards=ids.filter(id=>pending.items.has(id)).map((id,index)=>{
+    const item=pending.items.get(id),sourceItem=source.items.find(x=>String(x.sourceStepId)===id);
+    const narrative=internalAiPilotNarrative(item.rationale);
+    return '<article class="pg11-ai-step" aria-label="Actividad IA verificada '+esc(id)+'">'+
+      '<header class="pg11-ai-step-head"><div class="pg11-ai-step-identity">'+
+        '<span class="pg11-ai-step-number">'+(index+1)+'</span>'+
+        '<div class="pg11-ai-step-heading"><span class="pg11-ai-step-code">AS-IS · '+esc(id)+'</span>'+
+        '<h4>'+esc(sourceItem?.sourceStepName||id)+'</h4></div></div>'+
+        '<span class="pg11-ai-transformation">'+esc(item.transformation||'Pendiente')+'</span></header>'+
+      '<div class="pg11-ai-step-main"><div class="pg11-ai-problem"><span>Problema identificado</span>'+
+        '<p>'+esc(item.problem_resolved||'Sin concretar')+'</p></div>'+
+        '<div class="pg11-ai-proposal-grid">'+
+          '<div><span>Intervención propuesta</span><p>'+esc(narrative.action||'Por revisar')+'</p></div>'+
+          '<div><span>Resultado esperado</span><p>'+esc(narrative.expected||'Por revisar')+'</p></div>'+
+        '</div><details class="pg11-ai-details"><summary>Justificación, fuentes y límites</summary>'+
+          '<div class="pg11-ai-detail-content">'+
+            '<p><b>Justificación:</b> '+esc(narrative.reason||'Sin declarar')+'</p>'+
+            '<p><b>Fuentes:</b> '+esc((item.source_refs||[]).join(', ')||'Sin declarar')+'</p>'+
+            '<p><b>Condiciones por validar:</b> '+esc(item.limitations||'Sin declarar')+'</p>'+
+          '</div></details></div></article>';
+  }).join('');
+  const complete=pending.items.size===ids.length;
+  return '<section id="tobeAiPilotStatus" class="pg11-ai-panel pg11-ai-pending card card-pad section">'+
+    '<header class="pg11-ai-header"><div><p class="pg11-ai-eyebrow">TRABAJO INTERNO · PG11</p>'+
+      '<h2>Propuestas IA verificadas por actividad</h2>'+
+      '<p class="pg11-ai-subtitle">Generación individual completada o parcialmente completada; la revisión global todavía NO ha finalizado.</p></div>'+
+      '<span class="pg11-ai-top-status">Pendiente de consolidación</span></header>'+
+    '<div class="pg11-ai-save-state'+(saved?' pg11-ai-save-state-saved':' pg11-ai-save-state-pending')+'">'+
+      '<span class="pg11-ai-save-indicator" aria-hidden="true"></span><div><b>'+
+        (saved?'Actividades verificadas y guardadas en el estudio.':'Actividades verificadas, pendientes de guardado confirmado.')+
+      '</b><p>Estas sugerencias no pueden aplicarse ni aprobarse hasta completar la revisión de coherencia.</p></div></div>'+
+    '<div class="pg11-ai-metrics" aria-label="Estado real de la generación">'+
+      '<div><strong>'+pending.items.size+'/'+ids.length+'</strong><span>Actividades verificadas</span></div>'+
+      '<div><strong>'+Math.max(0,ids.length-pending.items.size)+'</strong><span>Actividades por generar</span></div>'+
+      '<div><strong>Pendiente</strong><span>Revisión global</span></div></div>'+
+    '<p id="tobeAiProgress" role="status" aria-live="polite" class="pg11-ai-message'+
+      (feedback?.type==='warn'?' pg11-ai-message-warn':'')+'">'+
+      esc(feedback?.message||'Las propuestas verificadas siguen disponibles. Falta completar la revisión global.')+'</p>'+
+    '<div class="pg11-ai-section-title"><div><p class="pg11-ai-eyebrow">PROPUESTAS NO APROBADAS</p>'+
+      '<h3>Intervenciones y resultados esperados</h3></div><span>'+pending.items.size+' actividades</span></div>'+
+    '<div class="pg11-ai-step-list">'+cards+'</div>'+
+    '<div class="pg11-ai-actions">'+
+      '<button type="button" class="btn btn-primary" id="retryTobeAiReview">'+
+        (complete?'Reintentar sólo la revisión global':'Continuar las actividades pendientes')+'</button>'+
+      '<button type="button" class="btn btn-outline" id="saveTobeAiPending">'+
+        'Guardar actividades verificadas</button></div>'+
+    internalAiPilotTracePanel(Object.fromEntries(pending.traces||new Map()))+
+    '<p class="pg11-ai-muted">No es un TO-BE aprobado. Las fuentes originales y las decisiones humanas no se modifican.</p>'+
+  '</section>';
+}
+// [AUNEA-FE-PG11-PENDING-UI-212] END
 function internalAiPilotPanel(e){
   if(typeof isClientDisplay==='function'&&isClientDisplay())return '';
   const key=internalAiPilotKey(e),cached=key?__auneaAiPreview.get(key):null;
   const persisted=key?internalAiSavedDraft(e):null;
-  const historical=!cached&&!persisted?internalAiHistoricalDraft(e):null;
+  const partial=key?internalAiPendingSteps(e,key):null;
+  const historical=!cached&&!persisted&&!partial?.items?.size?internalAiHistoricalDraft(e):null;
   const draft=cached||persisted||historical?.proposal;
   const feedback=key?__auneaAiFeedback.get(key):null;
-  const partial=key?__auneaAiCompletedSteps.get(key):null;
+  if(!draft&&partial?.items?.size)return internalAiPendingPanel(e,key,partial,feedback);
   if(!draft)return '<section id="tobeAiPilotStatus" class="pg11-ai-panel pg11-ai-empty card card-pad section">'+
     '<header class="pg11-ai-header"><div><p class="pg11-ai-eyebrow">TRABAJO INTERNO · PG11</p>'+
     '<h2>Estado de las propuestas IA</h2>'+
@@ -370,7 +495,7 @@ async function generateTobeBySteps(e,key,snap,availability){
   const stepIds=draft.items.map(x=>String(x.sourceStepId));
   if(!stepIds.length||stepIds.some(x=>!x)||new Set(stepIds).size!==stepIds.length)
     throw Error('El borrador no tiene actividades de origen únicas y válidas.');
-  const previous=__auneaAiCompletedSteps.get(key);
+  const previous=__auneaAiCompletedSteps.get(key)||internalAiPendingSteps(currentEng(),key);
   const completed=previous?.stepSignature===stepIds.join('|')?previous:
     {stepSignature:stepIds.join('|'),items:new Map(),traces:new Map(),inputHash:null};
   __auneaAiCompletedSteps.set(key,completed);
@@ -422,7 +547,11 @@ async function generateTobeBySteps(e,key,snap,availability){
     }
     completed.inputHash=result.input_hash;
     completed.items.set(stepId,result.item);
-    internalAiPilotRefreshPanel(e);
+    // Checkpoint every validated activity before attempting the next costly request.
+    // A failed save is a hard stop: never tell the consultant data was preserved.
+    if(!internalAiSaveCheckpoint(e,key,completed,availability.model))
+      throw Error('La actividad '+stepId+' se verificó, pero su guardado local falló. No se continuará hasta conservarla.');
+    internalAiPilotRefreshPanel(currentEng());
     internalAiPilotFeedback(e,'Actividad '+completed.items.size+' de '+stepIds.length+
       ' completadas y verificadas. Preparando siguiente actividad…');
   }
@@ -463,10 +592,19 @@ async function generateTobeBySteps(e,key,snap,availability){
     context_traces:Object.fromEntries(completed.traces||new Map())};
   delete review.corrected_items;delete review.correction_traces;
   __auneaAiPreview.set(key,data);
-  __auneaAiCompletedSteps.delete(key);
-  __auneaAiFeedback.delete(key);
-  internalAiPilotRefreshPanel(e);
-  toast('Propuesta IA completa, pendiente de revisión del consultor.');
+  // The full proposal remains a DRAFT; persist it without applying a single
+  // recommendation. Its verified checkpoint stays on disk if this save fails.
+  const live=currentEng();
+  const saved=!!live&&saveTobeFromDom(live)&&saveState('Guardar propuesta IA revisada sin aprobar');
+  if(saved&&internalAiSavedInBrowser(currentEng(),data)){
+    __auneaAiCompletedSteps.delete(key);
+    __auneaAiFeedback.delete(key);
+    internalAiPilotRefreshPanel(currentEng());
+    toast('Propuesta IA revisada y guardada como borrador. Requiere decisión humana.');
+  }else{
+    internalAiPilotFeedback(live||e,'La revisión finalizó pero la propuesta no se pudo guardar. Conserva esta pestaña y pulsa Guardar propuesta y borrador.','warn');
+    internalAiPilotRefreshPanel(live||e);
+  }
 }
 // [AUNEA-FE-TOBE-SEGMENTED-197] END
 
@@ -548,7 +686,9 @@ async function generateTobeAiPilot(e,fresh=false){
   }catch(error){
     if(AiAgentService.available())AiAgentService.clear();
     const message=String(error?.message||error||'Error desconocido al generar la propuesta.');
-    internalAiPilotFeedback(e,'No se ha generado la propuesta: '+message,'warn');
+    internalAiPilotFeedback(currentEng()||e,'La propuesta no está completa: '+message,'warn');
+    // Refresh the actual consultant-visible cards as well as the technical audit.
+    if(currentEng()?.id===e.id)internalAiPilotRefreshPanel(currentEng());
     console.error('PG11: solicitud IA no completada',error);
   }finally{
     __auneaAiWorking.delete(key);
@@ -633,6 +773,22 @@ registerInternalWorkPages=function(){
       return;
     }
 
+    const savePending=event.target?.closest?.('#saveTobeAiPending');
+    if(savePending){
+      event.preventDefault();
+      const e=currentEng(),key=internalAiPilotKey(e),partial=internalAiPendingSteps(e,key);
+      if(e&&partial&&internalAiSaveCheckpoint(e,key,partial,partial.model)){
+        internalAiPilotRefreshPanel(currentEng());
+        toast('Actividades IA verificadas guardadas; revisión global pendiente.');
+      }else toast('No se ha podido verificar el guardado del progreso IA. Conserva esta pestaña.');
+      return;
+    }
+    const retryReview=event.target?.closest?.('#retryTobeAiReview');
+    if(retryReview){
+      event.preventDefault();
+      if(!retryReview.disabled)void generateTobeAiPilot(currentEng());
+      return;
+    }
     const generate=event.target?.closest?.('#generateTobeAiPilot');
     if(generate){
       event.preventDefault();
