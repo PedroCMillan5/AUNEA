@@ -96,7 +96,7 @@
 5. No pasar a otro punto ni declarar PG11 cerrada hasta que la prueba del punto actual sea positiva; registrar defectos residuales.
 6. Si una corrección altera el contrato de negocio, seguir gobierno y actualizar activos canónicos según corresponda. Esta nota REVIEW se actualiza como bitácora de la revisión, no sustituye decisiones.
 
-**Primer punto activo:** A · mostrar en el inspector la sugerencia provisional recuperada desde `aiDraft.checkpoint` para la actividad seleccionada, con estado no aprobado.
+**Punto activo:** B · revisión global IA y tratamiento de bloqueos. **Punto A:** cerrado funcionalmente tras UAT visual de P1–P4 el 04/11/2026; siguen pendientes los demás bloques de PG11.
 
 
 ## Avance del punto A — 2026-11-04 (implementado; UAT visual local pendiente)
@@ -110,3 +110,19 @@
 **QA automatizado exitoso:** `AUNEA Internal V2 REVIEW Acceptance Gate` [41855315325](https://github.com/PedroCMillan5/AUNEA/actions/runs/41855315325), SHA `ff64de4f55601e7a8c3dff38cf97fee2ba0b4ca9`; 401 tests backend, 752 frontend, Chromium real PASS. Chromium recorre las actividades sintéticas, comprueba correspondencia exclusiva por step ID, estado pendiente, ausencia de mutación de los campos TO-BE, persistencia, recarga y recuperación. Sin Ollama real ni inferencia nueva.
 
 **Aceptación pendiente del operador:** actualizar rama sin perder cambios locales, recargar el estudio Levante, seleccionar P1, P2, P3 y P4, verificar que cada inspector presenta su propia recomendación, estado provisional y fuentes, sin alterar los campos de diseño ni volver a generar. Hasta esa comprobación, el punto A permanece **QA automático PASS / UAT visual pendiente**, no cerrado comercialmente. No se avanza a B sin la comprobación del usuario.
+
+
+## Cierre del punto A — UAT visual del operador (2026-11-04)
+
+**Resultado: ACEPTADO para su alcance limitado (vinculación visual IA → inspector).** Se revisaron cuatro capturas del estudio Levante Instalaciones Técnicas: P1 en la conversación anterior y P2, P3, P4 en el turno de comprobación posterior, tras ejecutar la versión corregida.
+
+- **P1 · Recibir factura:** en inspector aparece la sugerencia de registro automático del estado de recepción/etiquetado, junto al problema de visibilidad y resultado esperado.
+- **P2 · Determinar si procede aprobación:** aparece la propuesta de indicador visible de estado de aprobación, ligada al problema de espera/seguimiento.
+- **P3 · Aprobar factura:** aparece la propuesta de revisar excepciones/criterios de aprobación, ligada a la espera en aprobación.
+- **P4 · Registrar en ERP y archivar expediente:** aparece la propuesta de integración/entrada automatizada, ligada a reintroducción manual.
+- En las cuatro, la etiqueta visible indica «Propuesta IA verificada por actividad · Pendiente de revisión global», y el inspector conserva los datos DRAFT anteriores; las sugerencias no se aplican ni aprueban. La navegación resalta el nodo seleccionado. Las fuentes detalladas siguen bajo «Justificación, fuentes y aspectos por revisar», plegado en las capturas; su suficiencia semántica se analizará en B.
+- QA automatizado ya registrado: 401 backend PASS, 752 frontend PASS y Chromium PASS; lectura/switch/reload comprobados con datos sintéticos.
+
+**Alcance del cierre:** sólo se cierra el defecto de correspondencia entre checkpoint por actividad e inspector. **No se declara PG11 terminada**. La revisión global IA sigue pendiente; las cuatro transformaciones «Se mantiene» contradicen cambios propuestos; los campos «NO» no describen todavía un diseño futuro válido. Pueden existir cifras no respaldadas (umbral de 1.500 €, porcentajes y tiempos) y se mantienen como elementos por revisar, no como decisiones aprobadas.
+
+**Siguiente punto a comprobar (B):** reintento **exclusivo** de revisión global `/v1/internal-ai/tobe-review`, conservación del checkpoint P1–P4 y recepción de informe de coherencia/bloqueos, sin lanzar cuatro nuevas generaciones ni aceptar intervenciones. Si devuelve 503, conservar íntegro el borrador y diagnosticar el revisor; no pasar a C hasta resolver el tratamiento de bloqueos y la revisión humana.
