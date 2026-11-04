@@ -898,9 +898,9 @@ function processGraphHtml(e,steps,fr,start,finish,tab='cliente',readonly=false){
     +'<svg class="process-graph-lines" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>'
     +model.nodes.map(cell).join('')+'</div></div>';
 }
-function drawProcessGraph(){
+function drawProcessGraph(boardOverride=null){
   if(typeof document==='undefined'||typeof document.querySelector!=='function')return;
-  const board=document.querySelector('.process-graph-board');if(!board)return;
+  const board=boardOverride||document.querySelector('.process-graph-board');if(!board)return;
   const svg=board.querySelector('.process-graph-lines');if(!svg)return;
   const ns='http://www.w3.org/2000/svg',rect=board.getBoundingClientRect(),els=new Map();
   board.querySelectorAll('[data-graph-node]').forEach(el=>els.set(el.dataset.graphNode,el));
@@ -1032,7 +1032,11 @@ function drawProcessGraph(){
   });
 }
 if(typeof window!=='undefined'&&!window.__auneaProcessGraphResize){
-  window.__auneaProcessGraphResize=true;window.addEventListener('resize',()=>drawProcessGraph());
+  window.__auneaProcessGraphResize=true;window.addEventListener('resize',()=>{
+    const pair=document.querySelectorAll('.pg12-map .process-graph-board');
+    if(pair.length)pair.forEach(board=>drawProcessGraph(board));
+    else drawProcessGraph();
+  });
 }
 
 /* [AUNEA-FE-PROC-GRAPH-035] END */
