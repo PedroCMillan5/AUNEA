@@ -443,3 +443,5 @@
 | AUNEA-FE-PG11-COHERENCE-STYLE-240 | 3_SYSTEM/frontend/ui-system.css | Resumen de coherencia responsive en panel global sin crear métricas de negocio | Simulator CANONICAL PG11; DEC-056 | PG11 DOM | Lista de inconsistencias contextual | CSS scoped | LOW | uat-browser-smoke.cjs | REVIEW |
 
 | AUNEA-UAT-PG11-COHERENCE-241 | 3_SYSTEM/frontend/tests/pg11-coherence.test.cjs | Pruebas deterministas de coherencia: intervención humana, control, contradicción Se mantiene y supuesto futuro | Simulator CANONICAL PG11; DEC-034/052/055 | TO-BE versioned draft | Node semantic guardrails | No Ollama/no economic calculation | HIGH | node --test tests/pg11-coherence.test.cjs | REVIEW |
+
+| AUNEA-FE-PG11-MAP-PRIMARY-STYLE-242 | 3_SYSTEM/frontend/ui-system.css | PG11 mapa del proceso heredado como superficie protagonista e IA global consultable plegada | Simulator CANONICAL PG11/PG04; DEC-050/052/056 | Mapa TO-BE+inspector IA | Jerarquía mapa, inspector, revisión global | CSS scoped; sin cambios de negocio | MEDIUM | uat-browser-smoke.cjs | REVIEW |
