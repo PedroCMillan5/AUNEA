@@ -861,7 +861,7 @@ function tobeSelectedItem(e,p){
   return selected||p.items[0];
 }
 function tobeSnapshotIssueCards(e,item){
-  const snap=confirmedSnapshot(e),id=String(item.sourceStepId),fr=(snap?.frictions||[]).filter(x=>x.status!=='SUPERSEDED'&&
+  const snap=tobeProposalSnapshot(e,latestTobe(e)),id=String(item.sourceStepId),fr=(snap?.frictions||[]).filter(x=>x.status!=='SUPERSEDED'&&
     (Array.isArray(x.affected_steps)?x.affected_steps:[]).map(String).includes(id));
   const risks=(snap?.risks||[]).filter(x=>(Array.isArray(x.step_ids)?x.step_ids:[]).map(String).includes(id));
   const frHtml=fr.map(x=>'<li><b>Fricción:</b> '+esc(x.client_label||labelFrom('OS_FRICTION_TYPE',x.friction_type)||'Sin etiqueta')+
@@ -1125,8 +1125,15 @@ function tobeCoherencePanel(e,p){
 // The AS-IS snapshot remains immutable. Added steps are linked to an existing AS-IS
 // step, stored only within this TO-BE version, and cannot be auto-approved.
 // No new DF question, pricing assumption, or deterministic engine calculation.
+function tobeProposalSnapshot(e,p){
+  const stored=(e?.confirmedSnapshots||[]).find(x=>x.version===p?.sourceSnapshotVersion);
+  return stored||(typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null);
+}
+function tobeProposalSourceSteps(e,p){
+  return (tobeProposalSnapshot(e,p)?.processSteps||[]).filter(x=>x.status!=='SUPERSEDED');
+}
 function tobeFlowOwner(e,p){
-  const original=tobeSourceSteps(e),branching=original.some(s=>processDecisionStep(s));
+  const original=tobeProposalSourceSteps(e,p),branching=original.some(s=>processDecisionStep(s));
   const routes={};
   original.forEach((s,i)=>{
     const id=String(s.id);
@@ -1158,7 +1165,7 @@ function tobeFlowItemName(item){
   return String((item?.isAddition?item.stepName:item?.sourceStepName)||'Actividad sin nombre');
 }
 function tobeFutureSteps(e,p){
-  const original=tobeSourceSteps(e),byId=new Map(original.map(x=>[String(x.id),x]));
+  const original=tobeProposalSourceSteps(e,p),byId=new Map(original.map(x=>[String(x.id),x]));
   const f=tobeFlowOwner(e,p);
   const existing=(p?.items||[]).filter(x=>x.transformation!=='Se elimina').map(item=>{
     const source=byId.get(String(item.sourceStepId));
@@ -1183,7 +1190,7 @@ function tobeFutureSteps(e,p){
 }
 function tobeFlowIntegrity(e,p){
   const f=tobeFlowOwner(e,p),steps=tobeFutureSteps(e,p),ids=new Set(steps.map(x=>String(x.id))),
-    originals=new Map(tobeSourceSteps(e).map(x=>[String(x.id),x]));
+    originals=new Map(tobeProposalSourceSteps(e,p).map(x=>[String(x.id),x]));
   if(!ids.size)return 'El TO-BE debe tener al menos una actividad futura.';
   if(!ids.has(String(f.startStepId)))return 'El inicio del TO-BE apunta a una actividad eliminada o inexistente. Selecciona un inicio válido.';
   for(const added of tobeAddedSteps(p)){
@@ -1239,7 +1246,7 @@ function tobeFlowInspector(e,p,item){
     return '<p class="notice warn">Actividad marcada para eliminar. Reconecta las rutas entrantes desde otras actividades y, si procede, cambia el inicio del proceso. El original se conserva en el AS-IS.</p>';
   }
   const flow=tobeFlowOwner(e,p),stepId=tobeFlowItemId(item),routes=flow.routes[stepId]||{},
-    origin=tobeSourceSteps(e).find(x=>String(x.id)===String(item.sourceStepId)),editable=tobeEditable(p);
+    origin=tobeProposalSourceSteps(e,p).find(x=>String(x.id)===String(item.sourceStepId)),editable=tobeEditable(p);
   const opts=tobeFlowOptions(e,p,item);
   const field=(kind,label,value)=>
     '<div class="field"><label>'+label+'</label>'+
@@ -1430,7 +1437,7 @@ function stepMetric(step,key){return step?.[key]??step?.[key.replace(/[A-Z]/g,m=
 let __auneaPg12View='comparison';
 let __auneaPg12SelectedSource='';
 function tobeComparisonDetail(e,p,sourceId){
-  const source=tobeSourceSteps(e),item=tobeFlowItem(e,p,sourceId),
+  const source=tobeProposalSourceSteps(e,p),item=tobeFlowItem(e,p,sourceId),
     original=source.find(x=>String(x.id)===String(item?.sourceStepId));
   if(!item)return '<p class="tobe-muted">Selecciona una actividad en los mapas para comprobar qué cambia y por qué.</p>';
   const removed=item.transformation==='Se elimina',added=!!item.isAddition;
