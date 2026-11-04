@@ -258,7 +258,7 @@ function internalAiPilotPanel(e){
   const partial=key?__auneaAiCompletedSteps.get(key):null;
   if(!draft)return '<section id="tobeAiPilotStatus" class="pg11-ai-panel pg11-ai-empty card card-pad section">'+
     '<header class="pg11-ai-header"><div><p class="pg11-ai-eyebrow">TRABAJO INTERNO · PG11</p>'+
-    '<h2>Diseño TO-BE asistido por IA</h2>'+
+    '<h2>Estado de las propuestas IA</h2>'+
     '<p class="pg11-ai-subtitle">La IA prepara sugerencias, pero el consultor revisa y decide.</p></div></header>'+
     '<p class="pg11-ai-message">No se ha localizado una propuesta IA guardada para este estudio en su historial de versiones. Los datos generados en una sesión anterior sin guardar no pueden recuperarse automáticamente.</p>'+
     '<p id="tobeAiProgress" role="status" aria-live="polite" class="pg11-ai-message'+(feedback?.type==='warn'?' pg11-ai-message-warn':'')+'">'+
@@ -313,7 +313,7 @@ function internalAiPilotPanel(e){
       '). No es una propuesta vigente y no se puede aplicar automáticamente. El modelo local no es necesario para consultar este archivo.</p></div>':'')+
     '<header class="pg11-ai-header">'+
       '<div><p class="pg11-ai-eyebrow">TRABAJO INTERNO · PG11</p>'+
-      '<h2>Diseño TO-BE asistido por IA</h2>'+
+      '<h2>Estado de las propuestas IA</h2>'+
       '<p class="pg11-ai-subtitle">Borrador de propuestas para revisión del consultor · '+esc(draft.model||'Modelo no indicado')+'</p></div>'+
       '<span class="pg11-ai-top-status">'+(blocked?'Revisión con bloqueos':'Revisión pendiente')+'</span>'+
     '</header>'+
@@ -326,7 +326,8 @@ function internalAiPilotPanel(e){
           'Pulsa «Guardar propuesta y borrador» para conservar la generación y la revisión.')+'</p></div>'+
     '</div>'+
     '<p id="tobeAiProgress" role="status" aria-live="polite" class="pg11-ai-message">'+
-      esc(__auneaAiWorking.has(key)?feedback?.message||'Generación en curso…':
+      esc(historical?'Propuesta anterior disponible para consulta. No se ha generado ni aprobado una nueva propuesta.':
+        __auneaAiWorking.has(key)?feedback?.message||'Generación en curso…':
         'Generación completada · Revisión automática '+(review?'recibida':'pendiente')+'.')+'</p>'+
     (feedback?.type==='warn'?'<p class="pg11-ai-message pg11-ai-message-warn">'+esc(feedback.message)+'</p>':'')+
     '<div class="pg11-ai-metrics" aria-label="Resumen de revisión">'+
