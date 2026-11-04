@@ -122,6 +122,18 @@ def internal_ai_tobe_review(payload: PilotAIConsolidationRequest, request: FastA
     except ValueError as exc:
         raise HTTPException(409, str(exc)) from exc
 
+# [AUNEA-BE-PG11-BASIC-REVIEW-API-221] START — local deterministic
+# review of the original proposals, no inference or automatic approval.
+@app.post("/v1/internal-ai/tobe-review-basic")
+def internal_ai_tobe_review_basic(payload: PilotAIConsolidationRequest, request: FastAPIRequest):
+    if request.client is None or request.client.host not in ("127.0.0.1", "::1", "testclient"):
+        raise HTTPException(403, "La comprobación PG11 sólo admite conexiones locales.")
+    from .internal_ai_review_basic import basic_review
+    try:
+        return basic_review(payload)
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+# [AUNEA-BE-PG11-BASIC-REVIEW-API-221] END
 # [AUNEA-BE-INTERNAL-AI-STEP-API-196] END
 
 
