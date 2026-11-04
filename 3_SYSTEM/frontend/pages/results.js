@@ -1265,6 +1265,48 @@ function registerInternalWorkPages(){
     });
   },true);
   // [AUNEA-FE-PG11-SELECT-206] END
+  // [AUNEA-FE-PG11-HUMAN-DECISION-SAVE-224] START — explicit consultant
+  // decision with durable version/source/diagnostic binding; no proposal is applied.
+  document.addEventListener('click',event=>{
+    const control=event.target?.closest?.('[data-tobe-human-decision]');
+    if(!control||state.activePage!=='tobe')return;
+    event.preventDefault();
+    const choice=control.getAttribute('data-tobe-human-decision'),
+      sourceId=control.getAttribute('data-tobe-human-source');
+    const e=currentEng(),p=latestTobe(e),item=p?.items?.find(x=>String(x.sourceStepId)===sourceId);
+    if(!e||!tobeEditable(p)||!item||!TOBE_HUMAN_DECISIONS.includes(choice))
+      return toast('La actividad ya no corresponde al borrador vigente.');
+    const reason=String(document.getElementById('tobeHumanReviewNote')?.value||'').trim();
+    if(reason.length<20)
+      return toast('Explica tu decisión con al menos 20 caracteres; identifica fuentes y condiciones sin inventar datos.');
+    if(!saveTobeFromDom(e))return toast('No se pudo conservar el diseño editado. La decisión no se ha registrado.');
+    const source=p.aiDraft?.proposal||p.aiDraft?.checkpoint;
+    const inputHash=source?.input_hash||source?.inputHash;
+    const diagnostic=currentDiagnosticOutput(e),snapshot=confirmedSnapshot(e);
+    if(!inputHash||!diagnostic||!snapshot||p.sourceSnapshotVersion!==snapshot.version||
+       !(p.aiDraft?.proposal&&typeof internalAiSavedDraft==='function'&&internalAiSavedDraft(e))&&
+       !(typeof internalAiCheckpointValid==='function'&&internalAiCheckpointValid(e,p.aiDraft?.checkpoint)))
+      return toast('La propuesta ha cambiado de versión o diagnóstico. No se registró la decisión.');
+    const previous=p.aiDraft.humanReview?JSON.parse(JSON.stringify(p.aiDraft.humanReview)):null;
+    const record=tobeHumanReviewRecord(e,p)||{tobeVersion:p.version,
+      sourceSnapshotVersion:snapshot.version,diagnosticInputHash:diagnostic.input_snapshot_hash,
+      proposalInputHash:inputHash,decisions:{}};
+    record.decisions={...(record.decisions||{}),
+      [sourceId]:{status:choice,note:reason,decidedAt:now()}};
+    p.aiDraft.humanReview=record;
+    markDirty('PG11: decisión del consultor sobre actividad '+sourceId);
+    if(!saveState('Registrar decisión humana PG11 '+sourceId)){
+      if(previous)p.aiDraft.humanReview=previous;
+      else delete p.aiDraft.humanReview;
+      return toast('No se pudo guardar la decisión. Conserva la página abierta; no se ha aprobado el diseño.');
+    }
+    const live=currentEng(),stored=tobeHumanReviewRecord(live,latestTobe(live))?.decisions?.[sourceId];
+    if(!stored||stored.status!==choice||stored.note!==reason)
+      return toast('No se pudo verificar la persistencia de la decisión. No se ha aprobado ningún cambio.');
+    render();
+    toast('Decisión guardada: '+TOBE_HUMAN_LABELS[choice]+'. El diseño TO-BE sigue en borrador.');
+  },true);
+  // [AUNEA-FE-PG11-HUMAN-DECISION-SAVE-224] END
   const originalPostBind=postBind;
   postBind=function(){
     originalPostBind();
