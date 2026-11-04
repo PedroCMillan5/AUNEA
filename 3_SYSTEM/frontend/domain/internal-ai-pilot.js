@@ -420,7 +420,9 @@ function internalAiPilotPanel(e){
         '</div>'+
         (hasBlock?'<p class="pg11-ai-issue-flag">Requiere corrección antes de aplicar.</p>':'')+
         (related.length?'<details class="pg11-ai-details pg11-ai-review-details"><summary>Aspectos por revisar · '+
-          related.length+'</summary><ul class="pg11-ai-review-list">'+related.map(internalAiReviewIssue).join('')+'</ul></details>':
+          related.length+' ('+related.filter(x=>x.category==='BLOCKING').length+' bloqueos, '+
+          related.filter(x=>x.category!=='BLOCKING').length+' pendientes/observaciones)'+
+          '</summary><ul class="pg11-ai-review-list">'+related.map(internalAiReviewIssue).join('')+'</ul></details>':
           '<p class="pg11-ai-muted">Sin observaciones individuales; pendiente de revisión humana.</p>')+
         '<details class="pg11-ai-details"><summary>Justificación, fuentes y condiciones</summary>'+
           '<div class="pg11-ai-detail-content">'+
@@ -442,7 +444,9 @@ function internalAiPilotPanel(e){
       '<div><p class="pg11-ai-eyebrow">TRABAJO INTERNO · PG11</p>'+
       '<h2>Estado de las propuestas IA</h2>'+
       '<p class="pg11-ai-subtitle">Borrador de propuestas para revisión del consultor · '+esc(draft.model||'Modelo no indicado')+'</p></div>'+
-      '<span class="pg11-ai-top-status">'+(blocked?'Revisión con bloqueos':'Revisión pendiente')+'</span>'+
+      '<span class="pg11-ai-top-status">'+(review?.review_mode==='RULES_ONLY'?
+        (blocked?'Comprobación con bloqueos':'Comprobación finalizada'):
+        (blocked?'Revisión con bloqueos':'Revisión pendiente'))+'</span>'+
     '</header>'+
     '<div class="pg11-ai-save-state'+(saved?' pg11-ai-save-state-saved':' pg11-ai-save-state-pending')+'">'+
       '<span class="pg11-ai-save-indicator" aria-hidden="true"></span>'+
@@ -455,7 +459,9 @@ function internalAiPilotPanel(e){
     '<p id="tobeAiProgress" role="status" aria-live="polite" class="pg11-ai-message">'+
       esc(historical?'Propuesta anterior disponible para consulta. No se ha generado ni aprobado una nueva propuesta.':
         __auneaAiWorking.has(key)?feedback?.message||'Generación en curso…':
-        'Generación completada · Revisión automática '+(review?'recibida':'pendiente')+'.')+'</p>'+
+        (review?.review_mode==='RULES_ONLY'?
+          'Comprobación por reglas completada · Revisión humana pendiente.':
+          'Generación completada · Revisión automática '+(review?'recibida':'pendiente')+'.'))+'</p>'+
     (feedback?.type==='warn'?'<p class="pg11-ai-message pg11-ai-message-warn">'+esc(feedback.message)+'</p>':'')+
     '<div class="pg11-ai-metrics" aria-label="Resumen de revisión">'+
       '<div><strong>'+items.length+'</strong><span>Actividades generadas</span></div>'+
@@ -464,7 +470,9 @@ function internalAiPilotPanel(e){
     '</div>'+
     (review?.review_mode==='RULES_ONLY'?'<p class="notice info"><b>Comprobación básica por reglas completada.</b> No se utilizó Ollama. Estos controles detectan inconsistencias explícitas, pero no certifican la viabilidad ni sustituyen la revisión humana.</p>':'')+
     (blocked?'<div class="pg11-ai-blocked"><b>No apta para aplicar.</b><p>La revisión encontró incoherencias. Puedes guardar y consultar la propuesta sin aprobarla.</p></div>':'')+
-    (review?.summary?'<div class="pg11-ai-summary"><b>Resultado de la revisión</b><p>'+esc(review.summary)+'</p></div>':'')+
+    (review?.summary?'<div class="pg11-ai-summary"><b>'+
+      (review?.review_mode==='RULES_ONLY'?'Resultado de la comprobación':'Resultado de la revisión')+
+      '</b><p>'+esc(review.summary)+'</p></div>':'')+
     '<div class="pg11-ai-section-title"><div><p class="pg11-ai-eyebrow">PROPUESTA DE DISEÑO</p>'+
       '<h3>Propuestas por actividad</h3></div><span>'+items.length+' actividades</span></div>'+
     '<div class="pg11-ai-step-list">'+cards+'</div>'+
@@ -677,6 +685,10 @@ async function retryTobeAiReviewOnly(){
     __auneaAiWorking.delete(key);
     const currentButton=document.getElementById('retryTobeAiReview');
     if(currentButton){currentButton.disabled=false;currentButton.textContent='Comprobar coherencia básica (sin Ollama)'}
+    // The result panel was rendered before removing the working flag; redraw
+    // only this read-only panel, otherwise it falsely says "Generación en curso".
+    if(currentEng()?.id===e.id&&internalAiPilotKey(currentEng())===key)
+      internalAiPilotRefreshPanel(currentEng());
   }
 }
 // [AUNEA-FE-PG11-REVIEW-ONLY-216] END
@@ -771,6 +783,8 @@ async function generateTobeAiPilot(e,fresh=false){
     __auneaAiWorking.delete(key);
     const currentButton=document.getElementById('generateTobeAiPilot');
     if(currentButton){currentButton.disabled=false;currentButton.textContent='Preparar propuesta con IA'}
+    if(currentEng()?.id===e.id&&internalAiPilotKey(currentEng())===key)
+      internalAiPilotRefreshPanel(currentEng());
   }
 }
 function applyTobeAiPilot(e){
