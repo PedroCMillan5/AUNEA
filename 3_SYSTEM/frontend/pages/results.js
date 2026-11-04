@@ -1410,7 +1410,8 @@ function tobeComparisonPage(){
     processBoundaryValue(e,'DF015','Fin del proceso','DF013'):'Fin del proceso';
   const currentMap=typeof processGraphHtml==='function'?
     processGraphHtml(baseline,asis,fr,start,end,'cliente',true).replace(
-      /data-graph-node="([^"]+)"/g,(match,id)=>match+' data-pg12-source="'+attr(id)+'"'):
+      /data-graph-node="([^"]+)"/g,(match,id)=>String(id).startsWith('__')?match:
+        match+' data-pg12-source="'+attr(id)+'" tabindex="0" role="button"'):
     '<p class="notice warn">El componente AS-IS no está disponible.</p>';
   const futureMap=tobeCanvasHtml(e,p).replace(/data-tobe-select="/g,'data-pg12-source="');
   const maps='<div class="pg12-process-comparison '+(__auneaPg12View==='comparison'?'pg12-side-by-side':'')+'">'+
@@ -1430,7 +1431,7 @@ function tobeComparisonPage(){
     '<div class="notice"><b>Ahorro de caja</b><br>No disponible con evidencia suficiente</div>'+
     '<div class="notice"><b>Riesgo residual futuro</b><br>No disponible con evidencia suficiente</div></div>';
   return pageTop('AS-IS vs TO-BE','Versión AS-IS '+esc(source.version)+' · TO-BE v'+esc(p.version)+
-    '. Comparación derivada de fuentes revisadas, sin cálculos futuros ficticios.',
+    '. Comparación derivada de fuentes revisadas; ninguna métrica económica se calcula en el navegador.',
     '<button class="btn" data-page="tobe">Volver a TO-BE</button>')+
     section('Visualización del cambio','Actual | Propuesto | Comparación, manteniendo la correspondencia entre actividades.',
       selector+maps+
@@ -1788,6 +1789,11 @@ function registerInternalWorkPages(){
       el.classList.toggle('pg12-node-selected',selected);
       el.setAttribute('aria-selected',String(selected));
     });
+  },true);
+  document.addEventListener('keydown',event=>{
+    if(state.activePage!=='comparacion'||!['Enter',' '].includes(event.key))return;
+    const node=event.target?.closest?.('[data-pg12-source][role="button"]');
+    if(node){event.preventDefault();node.click();}
   },true);
   // [AUNEA-FE-PG12-MAP-SELECT-235] END
 
