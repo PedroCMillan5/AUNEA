@@ -48,6 +48,8 @@ function setup(){
     state:{activePage:'tobe'},currentEng:()=>e,latestTobe:()=>p,
     tobeEditable:x=>x?.status==='DRAFT',confirmedSnapshot:()=>snap,
     currentDiagnosticOutput:()=>diag,tobeSourceSteps:()=>ids.map(id=>({id})),
+    // Future-route integrity is covered by the dedicated graph regression suite.
+    tobeFlowIntegrity:()=>null,
     internalAiSavedDraft:()=>p.aiDraft.proposal,
     internalAiCheckpointValid:()=>false,
     saveTobeFromDom:()=>true,
