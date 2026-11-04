@@ -484,7 +484,7 @@ function internalAiPilotPanel(e){
       '<p>La IA no aprueba ni publica resultados. Los registros HTTP y prompts técnicos son temporales.</p>'+
       '<div class="pg11-ai-actions">'+
         (historical?'':'<button type="button" class="btn btn-primary" id="saveTobeAiPilot">Guardar propuesta y borrador</button>')+
-        (historical||draft.applied||blocked?'':'<button class="btn btn-outline" id="applyTobeAiPilot">Aplicar a campos vacíos</button>')+
+        (historical||draft.applied||blocked||review?.review_mode==='RULES_ONLY'?'':'<button class="btn btn-outline" id="applyTobeAiPilot">Aplicar a campos vacíos</button>')+
         '<button type="button" class="btn btn-outline" id="regenerateTobeAiPilot">'+
           (historical?'Generar para el borrador actual':'Generar propuestas nuevas')+'</button>'+
       '</div>'+
@@ -793,6 +793,8 @@ function applyTobeAiPilot(e){
   if(typeof isClientDisplay==='function'&&isClientDisplay())return;
   const key=internalAiPilotKey(e),data=key?(__auneaAiPreview.get(key)||internalAiSavedDraft(e)):null,p=latestTobe(e);
   if(!data||!tobeEditable(p))return toast('La propuesta ya no está disponible.');
+  if(data.review?.review_mode==='RULES_ONLY')
+    return toast('La comprobación por reglas no autoriza aplicar propuestas. Revisa cada actividad en el inspector TO-BE.');
   if((Array.isArray(data.review?.blocking_step_ids)&&data.review.blocking_step_ids.length)||
      (Array.isArray(data.review?.issues)&&data.review.issues.some(i=>i.category==='BLOCKING')))
     return toast('Esta propuesta contiene bloqueos de revisión. Corrige el diseño antes de aplicar.');
