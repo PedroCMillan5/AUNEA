@@ -163,6 +163,48 @@ test('consolidation retry reuses already generated activities',async()=>{
 });
 
 
+// [AUNEA-UAT-PG11-REVIEW-ONLY-217] START — retry button must have a real, visible,
+// review-only click path with 503 protection and zero repeated step requests.
+test('retry-only click reports progress, invokes reviewer only, saves completed draft',async()=>{
+  const app=aiPilotHarness({steps:['S1','S2','S3','S4'],failReview:true});
+  app.click();await app.settle();
+  assert.equal(app.requests.length,6);
+  const saved=JSON.parse(app.sandbox.localStorage.getItem('aunea_internal_v1'));
+  assert.equal(saved.engagements[0].tobeProposals[0].aiDraft.checkpoint.items.length,4);
+  const delegate=app.sandbox.document.__auneaAiPilotClickHandler;
+  const retry={disabled:false};
+  app.setReviewFailure(false);
+  const before=app.requests.length;
+  delegate({target:{closest:s=>s==='#retryTobeAiReview'?retry:null},preventDefault(){}});
+  assert.match(app.notice.textContent,/Comprobando disponibilidad del revisor global/,
+    'click must immediately acknowledge work to the consultant');
+  await app.settle();
+  assert.equal(app.requests.length,before+2,'only status and reviewer are allowed');
+  assert.equal(app.requests.at(-1).url,'http://localhost:8010/v1/internal-ai/tobe-review');
+  assert.equal(app.requests.filter(x=>x.url.endsWith('/tobe-step')).length,4,
+    'review click must not repeat any verified activity');
+  assert.match(app.notice.outerHTML,/Propuesta IA guardada en el borrador/);
+  const disk=JSON.parse(app.sandbox.localStorage.getItem('aunea_internal_v1'));
+  assert.equal(disk.engagements[0].tobeProposals[0].aiDraft.proposal.items.length,4);
+  assert.equal(app.tobe.status,'DRAFT','reviewer cannot approve consultant design');
+});
+test('retry-only click displays reviewer 503 without losing verified steps',async()=>{
+  const app=aiPilotHarness({steps:['S1','S2','S3','S4'],failReview:true});
+  app.click();await app.settle();
+  const before=app.requests.length;
+  const delegate=app.sandbox.document.__auneaAiPilotClickHandler;
+  delegate({target:{closest:s=>s==='#retryTobeAiReview'?{disabled:false}:null},preventDefault(){}});
+  await app.settle();
+  assert.equal(app.requests.length,before+2);
+  assert.equal(app.requests.at(-1).url,'http://localhost:8010/v1/internal-ai/tobe-review');
+  assert.match(app.notice.outerHTML,/revisión global no se completó/i);
+  assert.match(app.notice.outerHTML,/4 actividades verificadas permanecen guardadas/i);
+  assert.match(app.notice.outerHTML,/Reintentar sólo la revisión global/);
+  const disk=JSON.parse(app.sandbox.localStorage.getItem('aunea_internal_v1'));
+  assert.equal(disk.engagements[0].tobeProposals[0].aiDraft.checkpoint.items.length,4);
+  assert.equal(app.tobe.status,'DRAFT');
+});
+// [AUNEA-UAT-PG11-REVIEW-ONLY-217] END
 test('PG11 review timeout shows four real verified proposals, stores checkpoint and resumes review after reload',async()=>{
   const app=aiPilotHarness({steps:['S1','S2','S3','S4'],failReview:true});
   app.click();await app.settle();
