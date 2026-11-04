@@ -860,6 +860,35 @@ function tobeSelectedItem(e,p){
   if(!selected)__auneaTobeSelection.stepId=tobeFlowItemId(p.items[0]);
   return selected||p.items[0];
 }
+// [AUNEA-FE-PG11-ORIGINAL-FACTS-243] START — source-only ProcessStep facts
+// alongside the future proposal, without a second edit owner or invented measurement.
+// SOURCE: Simulator CANONICAL PG11; DEC-050; confirmed snapshot for this TO-BE version.
+function tobeOriginalStepFacts(e,item){
+  const p=latestTobe(e),
+    source=tobeProposalSourceSteps(e,p).find(x=>String(x.id)===String(item?.sourceStepId));
+  if(!source)return '<p class="notice warn">El paso de origen no está disponible en el AS-IS confirmado de esta versión.</p>';
+  const label=(table,v)=>{
+    if(v===null||v===undefined||v==='')return '';
+    const named=typeof labelFrom==='function'?labelFrom(table,v):'';
+    return named||String(v);
+  };
+  const data=v=>Array.isArray(v)?v.filter(x=>x!==null&&x!==undefined&&x!=='').map(String).join(' · '):
+    (v===null||v===undefined?'':String(v));
+  const fields=[
+    ['Responsable original',label('OS_ACTOR_ROLE',source.actor)],
+    ['Tipo de actividad',label('OS_STEP_TYPE',source.step_type)],
+    ['Herramienta original',label('OS_TOOL_CATEGORY',source.tool)],
+    ['Entradas AS-IS',data(source.inputs)],
+    ['Salidas AS-IS',data(source.outputs)],
+    ['Trabajo activo declarado',source.active_time===null||source.active_time===undefined||source.active_time===''?'':String(source.active_time)+' min'],
+    ['Espera declarada',source.wait_time===null||source.wait_time===undefined||source.wait_time===''?'':String(source.wait_time)+' min'],
+    ['Retrabajo declarado',source.rework_time===null||source.rework_time===undefined||source.rework_time===''?'':String(source.rework_time)+' min']
+  ];
+  return '<div class="tobe-original-facts"><dl>'+fields.map(([name,val])=>
+    '<div><dt>'+esc(name)+'</dt><dd>'+esc(val||'No registrado')+'</dd></div>').join('')+
+    '</dl><p class="tobe-muted">Sólo lectura: valores capturados del AS-IS confirmado. No son ahorros ni tiempos futuros.</p></div>';
+}
+// [AUNEA-FE-PG11-ORIGINAL-FACTS-243] END
 function tobeSnapshotIssueCards(e,item){
   const snap=tobeProposalSnapshot(e,latestTobe(e)),id=String(item.sourceStepId),fr=(snap?.frictions||[]).filter(x=>x.status!=='SUPERSEDED'&&
     (Array.isArray(x.affected_steps)?x.affected_steps:[]).map(String).includes(id));
@@ -1331,6 +1360,7 @@ function tobeInspectorHtml(e,p){
         ' · Esta actividad existe sólo en el borrador TO-BE.</p>':'')+
       '</div><span class="tobe-selected-status">'+esc(item.transformation||'Sin definir')+'</span></header>'+
     '<section class="tobe-origin"><h3>03 · Situación AS-IS y hallazgos vinculados</h3>'+
+      tobeOriginalStepFacts(e,item)+
       tobeSnapshotIssueCards(e,item)+'</section>'+
     '<section class="tobe-edit"><h3>Decisión operativa del consultor · TO-BE</h3>'+
       '<p class="tobe-muted">Estos campos describen el funcionamiento futuro. Los valores heredados se muestran para revisar, no son mejoras confirmadas ni decisiones de la IA.</p>'+
