@@ -734,7 +734,7 @@ async function main(){
   const pg11ReviewRoute=async route=>{
     pg11RetryReviewHits++;
     await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({
-      status:'CHECKED_WITH_NOTES',summary:'Revisión de coherencia simulada para UAT',
+      status:'CHECKED_WITH_NOTES',summary:'Comprobación básica simulada para UAT',review_mode:'RULES_ONLY',
       protocol_revision:'PG11_REVIEW_20261103_3',requires_human_review:true,
       blocking_step_ids:[sourceIds[0]],issues:[{
         step_id:sourceIds[0],category:'BLOCKING',
@@ -749,15 +749,15 @@ async function main(){
       body:JSON.stringify({detail:'No deben regenerarse actividades en reintento global'})});
   };
   await page.route('**/v1/internal-ai/status',pg11StatusRoute);
-  await page.route('**/v1/internal-ai/tobe-review',pg11ReviewRoute);
+  await page.route('**/v1/internal-ai/tobe-review-basic',pg11ReviewRoute);
   await page.route('**/v1/internal-ai/tobe-step',pg11StepRoute);
   await page.evaluate(()=>{state.backendOnline=true});
   const businessBeforeRetry=await page.evaluate(()=>JSON.stringify(latestTobe(currentEng()).items));
   await page.locator('#retryTobeAiReview').click();
   await page.waitForFunction(()=>document.querySelector('#tobeAiPilotStatus')?.textContent
     .includes('Propuesta IA guardada en el borrador.'),null,{timeout:10000});
-  assert.equal(pg11RetryStatusHits,1,'review-only retry checks provider status exactly once');
-  assert.equal(pg11RetryReviewHits,1,'review-only retry calls global reviewer exactly once');
+  assert.equal(pg11RetryStatusHits,0,'basic check does not call the Ollama status endpoint');
+  assert.equal(pg11RetryReviewHits,1,'basic review makes exactly one request');
   assert.equal(pg11RetryStepHits,0,'review-only retry must never call per-step generation');
   assert.equal(await page.evaluate(()=>JSON.stringify(latestTobe(currentEng()).items)),
     businessBeforeRetry,'review-only retry never alters consultant TO-BE fields');
@@ -773,7 +773,7 @@ async function main(){
   assert.equal(await page.evaluate(()=>latestTobe(currentEng()).status),'DRAFT',
     'global IA review does not advance human approval status');
   await page.unroute('**/v1/internal-ai/status',pg11StatusRoute);
-  await page.unroute('**/v1/internal-ai/tobe-review',pg11ReviewRoute);
+  await page.unroute('**/v1/internal-ai/tobe-review-basic',pg11ReviewRoute);
   await page.unroute('**/v1/internal-ai/tobe-step',pg11StepRoute);
   console.log('PG11_REVIEW_ONLY_CLICK_PASS: '+JSON.stringify({
     status:pg11RetryStatusHits,review:pg11RetryReviewHits,steps:pg11RetryStepHits}));
