@@ -695,7 +695,7 @@ async function main(){
     assert.match(advice,new RegExp('Problema sintético vinculado '+(i+1)),
       'inspector must match the selected source step');
     assert.match(advice,/Pendiente de revisión global/);
-    assert.match(advice,/Intervención propuesta/);
+    assert.match(advice,/Intervención recomendada/);
     assert.match(advice,/Resultado esperado/);
     for(let j=0;j<sourceIds.length;j++){
       if(i!==j)assert.doesNotMatch(advice,new RegExp('Problema sintético vinculado '+(j+1)),
