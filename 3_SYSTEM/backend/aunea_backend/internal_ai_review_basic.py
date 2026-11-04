@@ -9,7 +9,7 @@ import re
 from .internal_ai import PilotAIConsolidationRequest, validate_pilot_result
 from .internal_ai_review import PG11_REVIEW_PROTOCOL, _clear_transformation_conflicts
 
-_NUMBER_CLAIM = re.compile(r"\b\d+(?:[.,]\d+)?\s*(?:%|€|euros?|minutos?|horas?|d[ií]as?)\b", re.I)
+_NUMBER_CLAIM = re.compile(r"\b\d+(?:[.,]\d+)?\s*(?:%|€|euros?|minutos?|horas?|d[ií]as?)(?!\w)", re.I)
 
 
 def basic_review(request: PilotAIConsolidationRequest) -> dict:
@@ -29,6 +29,14 @@ def basic_review(request: PilotAIConsolidationRequest) -> dict:
                 "La actividad figura como «Se mantiene», pero su intervención propone introducir cambios.",
                 item.rationale[:200],
                 "Revisar la transformación propuesta; no aplicar la intervención automáticamente.")
+        if item.transformation=="Se mantiene" and sid not in conflicts:
+            action=item.rationale.split("Resultado esperado:",1)[0]
+            action=action.split("Acción propuesta:",1)[-1].strip().casefold()
+            if action and not action.startswith(("mantener ", "conservar ", "continuar ", "sin cambios")):
+                add(sid, "PENDING",
+                    "La actividad aparece «Se mantiene», pero describe una intervención; comprobar si cambia el diseño.",
+                    item.rationale[:200],
+                    "Confirmar si la medida mantiene realmente el paso o exige otra transformación.")
         if not item.problem_resolved.strip():
             add(sid, "BLOCKING", "No se concreta qué problema resuelve la intervención.",
                 "Campo de problema vacío", "Concretar el problema a partir del AS-IS.")
