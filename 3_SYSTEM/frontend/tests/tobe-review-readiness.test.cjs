@@ -60,6 +60,15 @@ test('PG11 requires a valid transformation, future actor and problem for a chang
   assert.equal(h.check(),null,'Conservar una actividad sin inventar un problema debe permitirse');
 });
 
+test('PG11 elimination retains the source and diagnosis but never demands a fictional future actor',()=>{
+  const h=harness(),item=h.current.items[0];
+  item.transformation='Se elimina';
+  item.problemResolved='Se retira el registro duplicado y su ruta debe reconectarse.';
+  item.futureActor='';
+  item.tool='';
+  assert.equal(h.check(),null,'routing is separately validated by future-flow integrity');
+});
+
 test('PG11 rejects future time without traced assumption, then allows human review only',()=>{
   const h=harness(),item=h.current.items[0];
   item.futureTime='30 min';
