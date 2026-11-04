@@ -764,6 +764,38 @@ function tobeReviewReadiness(e,p){
     if(String(item.futureTime||'').trim()&&!String(item.futureTimeAssumption||'').trim())
       return 'El tiempo futuro de '+name+' requiere un supuesto trazable.';
   }
+  // [AUNEA-FE-PG11-HUMAN-GATE-225] START — a rules-only check is never
+  // equivalent to acceptance. A source-linked consultant must decide each
+  // AI suggestion AND complete the operational design before REVIEWED.
+  const proposed=p?.aiDraft?.proposal||p?.aiDraft?.checkpoint;
+  if(proposed){
+    const human=typeof tobeHumanReviewRecord==='function'?tobeHumanReviewRecord(e,p):null;
+    if(!human)return 'Falta la revisión humana de las propuestas IA de esta versión TO-BE.';
+    const meaningful=v=>!!String(v||'').trim()&&
+      !/^(?:no|n\/a|ninguno|sin definir|pendiente|—)$/i.test(String(v).trim());
+    for(const item of p.items){
+      const sid=String(item.sourceStepId),name=item.sourceStepName||sid;
+      const decision=human.decisions?.[sid];
+      if(!decision||!['ACCEPT','MODIFY','DISCARD'].includes(decision.status)||
+         String(decision.note||'').trim().length<20)
+        return 'Falta aceptar, modificar o descartar con justificación la propuesta de '+name+'.';
+      if(!meaningful(item.problemResolved))
+        return 'Justifica qué problema o situación aborda el diseño futuro de '+name+' (no basta «NO»).';
+      if(item.transformation!=='Se mantiene'&&
+         ['tool','inputs','outputs','controlsRisk'].some(k=>!meaningful(item[k])))
+        return 'Completa herramienta, datos y controles del diseño futuro de '+name+'.';
+      if(['Se automatiza','Se asiste con IA'].includes(item.transformation)&&
+         (!meaningful(item.automationAi)||!meaningful(item.humanSupervision)))
+        return 'Describe automatización y supervisión humana de '+name+' antes de revisar.';
+      if(item.transformation==='Se elimina')
+        return 'No es posible revisar una eliminación: el mapa aún conserva la ruta AS-IS; define primero la topología futura.';
+      const originalIssues=(p.aiDraft?.proposal?.review?.issues||[]).filter(x=>
+        String(x.step_id)===sid&&x.category==='BLOCKING');
+      if(originalIssues.length&&decision.status==='ACCEPT'&&item.transformation==='Se mantiene')
+        return 'La recomendación de '+name+' contiene bloqueos; no puede aceptarse sin rediseñar su transformación.';
+    }
+  }
+  // [AUNEA-FE-PG11-HUMAN-GATE-225] END
   return null;
 }
 function advanceTobeStatus(e){
