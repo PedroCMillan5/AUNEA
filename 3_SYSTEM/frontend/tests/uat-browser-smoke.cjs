@@ -762,6 +762,7 @@ async function main(){
   assert.equal(pg11RetryReviewHits,1,'basic review makes exactly one request');
   assert.equal(pg11RetryStepHits,0,'review-only retry must never call per-step generation');
   await page.waitForFunction(()=>!__auneaAiWorking.has(internalAiPilotKey(currentEng())));
+  await page.evaluate(()=>{document.querySelector('#tobeAiWorkspace').open=true;});
   const reviewedScreen=await page.locator('#tobeAiPilotStatus').innerText();
   assert.doesNotMatch(reviewedScreen,/Generación en curso/i,
     'completed rule review must not show a stale working state');
@@ -886,6 +887,7 @@ async function main(){
   assert.equal(savedAi.proposal.items.length,tobeSteps);
   assert.deepEqual(savedAi.proposal.review.blocking_step_ids.length,1);
   assert.equal(Object.hasOwn(savedAi.proposal,'context_traces'),false,'HTTP audit stays ephemeral');
+  await page.evaluate(()=>{document.querySelector('#tobeAiWorkspace').open=true;});
   assert.match(await page.locator('#tobeAiPilotStatus').innerText(),/guardada en el borrador/);
   // [AUNEA-UAT-PG11-BROWSER-204] END
   await page.reload({waitUntil:'domcontentloaded'});
