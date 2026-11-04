@@ -2653,3 +2653,36 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
   .tobe-ai-workspace .pg11-ai-panel.card{padding:14px}
 }
 /* [AUNEA-FE-PG11-WORKSPACE-LAYOUT-207] END */
+
+
+/* [AUNEA-FE-PG11-RECOVERY-UX-210] START — AI-first PG11, readable inherited labels and preserved evidence.
+   SOURCE: Simulator CANONICAL v1.14 PG11; DEC-050/052/055/056. Presentation-only. */
+.tobe-ai-stage{
+  border:1px solid var(--system-line);border-radius:var(--radius-md);background:#fff;
+  box-shadow:var(--shadow-system);padding:clamp(16px,2vw,24px);
+  width:100%;max-width:100%;min-width:0;display:grid;gap:18px;
+}
+.tobe-ai-stage>header.tobe-workspace-head{margin:0;padding-bottom:16px;border-bottom:1px solid var(--system-line)}
+.tobe-ai-stage>#tobeAiPilotStatus.pg11-ai-panel.card{
+  width:100%;max-width:100%;min-width:0;margin:0;padding:0;box-shadow:none;border:0;
+  background:transparent;gap:18px;
+}
+.tobe-ai-stage .pg11-ai-header{padding:0 0 14px}
+.tobe-ai-stage .pg11-ai-step-list{min-width:0;max-width:100%}
+.tobe-ai-stage .pg11-ai-historical-notice{padding:15px 17px;border-radius:var(--radius-sm);
+  background:#fffaf0;border:1px solid #ecd5a5;color:#725321}
+.tobe-ai-stage .pg11-ai-historical-notice p{margin:7px 0 0;font-size:12px;line-height:1.6}
+.tobe-ai-stage .pg11-ai-message-warn{padding:12px 14px;border:1px solid #ecd5a5;background:#fffaf0;
+  border-radius:var(--radius-sm);white-space:pre-wrap}
+.tobe-workspace .tobe-data-pair{display:grid;gap:5px;min-width:0;align-content:start}
+.tobe-workspace .tobe-data-pair .field{margin:0}
+.tobe-data-explanation{font-size:11px;line-height:1.6;color:var(--muted);margin:0;padding:0 2px}
+.tobe-workspace .tobe-edit>.notice{padding:12px 14px;font-size:12px;line-height:1.65}
+.tobe-workspace .tobe-workspace-head h2{font-size:clamp(18px,2vw,22px)}
+.tobe-ai-stage #tobeAiMount{min-width:0}
+@media(max-width:600px){
+  .tobe-ai-stage{padding:14px;gap:14px}
+  .tobe-ai-stage .pg11-ai-panel.card{padding:0}
+  .tobe-ai-stage .pg11-ai-header{gap:12px}
+}
+/* [AUNEA-FE-PG11-RECOVERY-UX-210] END */
