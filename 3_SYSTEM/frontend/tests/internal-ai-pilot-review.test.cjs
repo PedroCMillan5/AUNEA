@@ -263,6 +263,41 @@ test('PG11 technical audit remains on-demand even with a large original HTTP req
 });
 
 
+test('PG11 retrieves saved but stale historical AI proposal as read-only instead of hiding it',()=>{
+  const app=aiPilotHarness({steps:['S1']});
+  app.tobe.aiDraft={
+    sourceSnapshotVersion:2,diagnosticInputHash:'previous-diagnostic',savedAt:'2026-11-03T18:00:00Z',
+    proposal:{status:'DRAFT',engagement_id:'SYNTHETIC',snapshot_version:2,input_hash:'PREVIOUS_HASH',
+      model:'aunea-qwen3-4b:latest',items:[{source_step_id:'S1',
+        transformation:'Se modifica',problem_resolved:'Fricción con trazabilidad',
+        rationale:'Acción propuesta: validar antes del registro. Resultado esperado: menos errores. Justificación: evidencia previa.',
+        source_refs:['S1'],limitations:'Revisión humana'}],
+      review:{status:'CHECKED',summary:'Versión anterior',blocking_step_ids:[],issues:[]}}
+  };
+  assert.equal(vm.runInContext('internalAiSavedDraft(currentEng())',app.sandbox),null,
+    'out-of-date snapshot must not be treated as applicable');
+  const recovered=vm.runInContext('internalAiHistoricalDraft(currentEng())',app.sandbox);
+  assert.equal(recovered.version,1);
+  const html=vm.runInContext('internalAiPilotPanel(currentEng())',app.sandbox);
+  assert.match(html,/Propuesta IA anterior recuperada/);
+  assert.match(html,/validar antes del registro/);
+  assert.doesNotMatch(html,/id="applyTobeAiPilot"/);
+  assert.doesNotMatch(html,/id="saveTobeAiPilot"/);
+});
+
+test('PG11 describes missing local Ollama without wiping an existing saved proposal',async()=>{
+  const app=aiPilotHarness();
+  const oldDraft={sourceSnapshotVersion:2,diagnosticInputHash:'old',
+    proposal:{items:[{source_step_id:'S1',rationale:'Resultado histórico'}]}};
+  app.tobe.aiDraft=oldDraft;
+  app.sandbox.fetch=async url=>({ok:true,json:async()=>({
+    status:'UNAVAILABLE',provider:'ollama',reason:'No se encuentra Ollama activo en este equipo (127.0.0.1:11434).' })});
+  app.click();await app.settle();
+  assert.match(app.notice.textContent,/ollama list/);
+  assert.match(app.notice.textContent,/127.0.0.1:11434/);
+  assert.equal(app.tobe.aiDraft,oldDraft,'provider status must never erase archived draft');
+});
+
 test('Guardar borrador retains unapproved AI narrative and reviewer findings without HTTP trace',async()=>{
   const app=aiPilotHarness({blockingSteps:['S1'],steps:['S1','S2']});
   app.click();await app.settle();
