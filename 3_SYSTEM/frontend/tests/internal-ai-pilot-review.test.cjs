@@ -64,6 +64,7 @@ function aiPilotHarness({fail=false,steps=['S1'],failReview=false,blockingSteps=
     document,console,Map,Set,Error,String,JSON,Promise,
     state:{backendOnline:true,backendUrl:'http://localhost:8010',engagements:[engagement]},
     STORAGE_KEY:'aunea_internal_v1',localStorage,
+    markDirty:()=>{},
     saveState:()=>{localStorage.setItem('aunea_internal_v1',JSON.stringify({engagements:[engagement]}));return true},
     confirmedSnapshot:()=>snapshot,currentDiagnosticOutput:()=>diagnostic,
     currentEng:()=>engagement,latestTobe:()=>engagement.tobeProposals.at(-1),
