@@ -122,7 +122,7 @@ test('AI button click reaches backend once and preserves draft inputs on success
   assert.match(app.notice.outerHTML,/Auditoría técnica IA/);
   assert.ok(app.notice.outerHTML.includes('data-ai-audit-step'));
   assert.match(app.notice.outerHTML,/sólo se representa al solicitarlo/);
-  assert.match(app.notice.outerHTML,/Diseño TO-BE asistido por IA/);
+  assert.match(app.notice.outerHTML,/Estado de las propuestas IA/);
   assert.equal(app.renderCount,0,'No re-render that could erase unsaved TO-BE edits');
   assert.equal(app.button.disabled,false);
 });
@@ -144,7 +144,7 @@ test('one Ollama request per source activity',async()=>{
   assert.equal(app.requests.length,5);
   assert.deepEqual(app.requests.slice(1,4).map(x=>JSON.parse(x.opts.body).source_step_id),['S1','S2','S3']);
   assert.equal(JSON.parse(app.requests[4].opts.body).items.length,3);
-  assert.match(app.notice.outerHTML,/Diseño TO-BE asistido por IA/);
+  assert.match(app.notice.outerHTML,/Estado de las propuestas IA/);
   assert.equal(app.renderCount,0);
 });
 
