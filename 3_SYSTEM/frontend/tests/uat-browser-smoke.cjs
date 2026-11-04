@@ -686,7 +686,16 @@ async function main(){
     });
     internalAiPilotRefreshPanel(e);
   });
-  await page.locator('#tobeAiWorkspace > summary').click();
+  const uiOrder=await page.evaluate(()=>{
+    const content=document.querySelector('.tobe-workspace');
+    const ai=content?.querySelector('#tobeAiWorkspace'),map=content?.querySelector('.tobe-map-area'),
+      inspector=content?.querySelector('#tobeInspector');
+    return {aiBeforeMap:!!ai&&!!map&&ai.compareDocumentPosition(map)===Node.DOCUMENT_POSITION_FOLLOWING,
+      mapBeforeInspector:!!map&&!!inspector&&map.compareDocumentPosition(inspector)===Node.DOCUMENT_POSITION_FOLLOWING,
+      aiVisible:!!ai&&getComputedStyle(ai).display!=='none'};
+  });
+  assert.deepEqual(uiOrder,{aiBeforeMap:true,mapBeforeInspector:true,aiVisible:true},
+    'PG11 AI workspace must be first and visible; canvas remains the main design surface');
   assert.equal(await page.locator('#tobeAiPilotStatus .pg11-ai-step').count(),tobeSteps);
   assert.match(await page.locator('#tobeAiPilotStatus').innerText(),/pendiente de guardar/);
   assert.equal(await page.locator('#applyTobeAiPilot').count(),0,'blocked suggestions never apply');
@@ -731,7 +740,8 @@ async function main(){
     state.activePage='tobe';
     render();
   });
-  await page.locator('#tobeAiWorkspace > summary').click();
+  assert.equal(await page.locator('#tobeAiWorkspace').isVisible(),true,
+    'saved AI suggestions must be visible above the map after reloading');
   assert.equal(await page.locator('#tobeAiPilotStatus .pg11-ai-step').count(),tobeSteps,
     'saved AI proposals must be visible after native Chromium reload');
   assert.match(await page.locator('#tobeAiPilotStatus').innerText(),/recuperada del borrador guardado/);
