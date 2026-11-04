@@ -2777,3 +2777,19 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
   .pg12-view-selector .btn{flex:1 1 110px;min-width:0}
 }
 /* [AUNEA-FE-PG12-GRAPH-STYLE-236] END */
+
+/* [AUNEA-FE-PG11-COHERENCE-STYLE-240] START — coherent, source-linked review before PG12.
+   SOURCE: Simulator CANONICAL PG11; existing AUNEA System visual tokens. */
+.tobe-completion .tobe-coherence{flex:1 1 100%;width:100%;min-width:0;
+  display:grid;gap:12px;border-top:1px solid var(--system-line);padding-top:16px}
+.tobe-coherence .tobe-muted{margin:0}
+.tobe-coherence-list{padding:0;list-style:none;margin:0;display:grid;gap:8px}
+.tobe-coherence-list li{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  border:1px solid var(--line);border-radius:var(--radius-sm);
+  background:#fff;padding:10px 12px;min-width:0}
+.tobe-coherence-list li>span:nth-child(2){flex:1 1 250px;min-width:0;
+  font-size:12px;line-height:1.65;overflow-wrap:anywhere}
+.tobe-coherence-severity{font-size:10px;font-weight:750;border-radius:var(--radius-pill);
+  background:var(--system-soft);border:1px solid var(--system-line);color:var(--system);padding:4px 8px}
+.tobe-coherence-list li:has(.tobe-coherence-severity:first-child) .btn{white-space:normal}
+/* [AUNEA-FE-PG11-COHERENCE-STYLE-240] END */
