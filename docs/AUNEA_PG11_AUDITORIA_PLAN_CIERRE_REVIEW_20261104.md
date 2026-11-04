@@ -97,3 +97,16 @@
 6. Si una corrección altera el contrato de negocio, seguir gobierno y actualizar activos canónicos según corresponda. Esta nota REVIEW se actualiza como bitácora de la revisión, no sustituye decisiones.
 
 **Primer punto activo:** A · mostrar en el inspector la sugerencia provisional recuperada desde `aiDraft.checkpoint` para la actividad seleccionada, con estado no aprobado.
+
+
+## Avance del punto A — 2026-11-04 (implementado; UAT visual local pendiente)
+
+**Cambio mínimo:** `tobeAiAdviceHtml` consulta `internalAiPendingSteps(e,key)` del piloto IA, que valida el checkpoint vigente según origen AS-IS, versión TO-BE DRAFT, huella de diagnóstico y cobertura de IDs. Sólo si no existe propuesta completa del mismo estudio se representa la sugerencia individual `source_step_id` correspondiente al nodo seleccionado, con la etiqueta visible **«Propuesta IA verificada por actividad · Pendiente de revisión global»** y contenido sólo lectura: problema, intervención, resultado, justificación, fuentes y condiciones.
+
+**No cambia:** AS-IS confirmado, campos del consultor, TO-BE versionado, engine, servidor/backend, revisor, botón «Aplicar a campos vacíos» (sigue bloqueado para un checkpoint), ni genera nuevas llamadas a Ollama. Una sugerencia de otra actividad no aparece en el inspector actual. La vista nunca representa una propuesta parcial como revisada/aprobada. Las propuestas históricas siguen en sólo lectura.
+
+**Cambios de código:** `AUNEA-FE-PG11-INSPECTOR-CHECKPOINT-214` en `3_SYSTEM/frontend/pages/results.js`; `AUNEA-UAT-PG11-INSPECTOR-CHECKPOINT-215` en `3_SYSTEM/frontend/tests/uat-browser-smoke.cjs`. Registrados en `CODE_BLOCK_INDEX.md`.
+
+**QA automatizado exitoso:** `AUNEA Internal V2 REVIEW Acceptance Gate` [41855315325](https://github.com/PedroCMillan5/AUNEA/actions/runs/41855315325), SHA `ff64de4f55601e7a8c3dff38cf97fee2ba0b4ca9`; 401 tests backend, 752 frontend, Chromium real PASS. Chromium recorre las actividades sintéticas, comprueba correspondencia exclusiva por step ID, estado pendiente, ausencia de mutación de los campos TO-BE, persistencia, recarga y recuperación. Sin Ollama real ni inferencia nueva.
+
+**Aceptación pendiente del operador:** actualizar rama sin perder cambios locales, recargar el estudio Levante, seleccionar P1, P2, P3 y P4, verificar que cada inspector presenta su propia recomendación, estado provisional y fuentes, sin alterar los campos de diseño ni volver a generar. Hasta esa comprobación, el punto A permanece **QA automático PASS / UAT visual pendiente**, no cerrado comercialmente. No se avanza a B sin la comprobación del usuario.
