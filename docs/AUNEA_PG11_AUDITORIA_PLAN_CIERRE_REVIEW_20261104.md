@@ -126,3 +126,22 @@
 **Alcance del cierre:** sólo se cierra el defecto de correspondencia entre checkpoint por actividad e inspector. **No se declara PG11 terminada**. La revisión global IA sigue pendiente; las cuatro transformaciones «Se mantiene» contradicen cambios propuestos; los campos «NO» no describen todavía un diseño futuro válido. Pueden existir cifras no respaldadas (umbral de 1.500 €, porcentajes y tiempos) y se mantienen como elementos por revisar, no como decisiones aprobadas.
 
 **Siguiente punto a comprobar (B):** reintento **exclusivo** de revisión global `/v1/internal-ai/tobe-review`, conservación del checkpoint P1–P4 y recepción de informe de coherencia/bloqueos, sin lanzar cuatro nuevas generaciones ni aceptar intervenciones. Si devuelve 503, conservar íntegro el borrador y diagnosticar el revisor; no pasar a C hasta resolver el tratamiento de bloqueos y la revisión humana.
+
+
+## Punto B — Corrección del botón «Reintentar sólo la revisión global» (2026-11-04)
+
+**Incidencia visual del operador:** al hacer clic en «Reintentar sólo la revisión global» la pantalla aparentemente no reaccionaba. En el código anterior el botón reutilizaba `generateTobeAiPilot(currentEng())`, que es una operación general, no un revisor aislado. La protección contra operaciones IA simultáneas devolvía en silencio sin mostrar un estado; la UI no tenía trazabilidad propia del clic de reintento.
+
+**Corrección acotada:**
+- `retryTobeAiReviewOnly()` constituye una acción específica: confirma identidad del estudio, vigencia de TO-BE/snapshot/diagnóstico, cobertura N/N de propuestas verificadas y guardado local del checkpoint.
+- Desde el clic presenta inmediatamente «Comprobando disponibilidad del revisor global…», inhabilita temporalmente el botón para evitar doble ejecución y muestra explicación si hay una operación IA activa.
+- Si el proveedor está disponible y el protocolo coincide, llama una vez al endpoint de revisión `/v1/internal-ai/tobe-review` usando las N actividades **ya guardadas**. La ruta de reintento no invoca `/v1/internal-ai/tobe-step`.
+- El revisor utiliza el mismo procedimiento de validación y persistencia que la consolidación ordinaria (`internalAiConsolidateVerified`), no una segunda copia de reglas.
+- Si el backend devuelve 503 o el servicio Ollama no está disponible, aparece el error en el panel IA, las N actividades siguen guardadas, el botón vuelve a estar disponible y la edición manual del TO-BE permanece intacta.
+- Ningún resultado automático cambia el TO-BE a REVIEWED ni aplica las sugerencias.
+
+**Trazabilidad del cambio:** `AUNEA-FE-PG11-REVIEW-ONLY-216` en `domain/internal-ai-pilot.js`; regresión sintética `AUNEA-UAT-PG11-REVIEW-ONLY-217`; Chromium `AUNEA-UAT-PG11-REVIEW-ONLY-BROWSER-218`. Índice de Block_ID actualizado, sin alterar fuentes canónicas.
+
+**QA automatizado:** [AUNEA Internal V2 REVIEW Acceptance Gate 41857816696](https://github.com/PedroCMillan5/AUNEA/actions/runs/41857816696) **SUCCESS**, 401 backend PASS, 754 frontend PASS, Chromium nativo PASS; evidencia explícita `PG11_REVIEW_ONLY_CLICK_PASS: {"status":1,"review":1,"steps":0}`. El test sintético también verifica 503 sin pérdida de cuatro propuestas.
+
+**Pendiente:** confirmar el clic en el navegador Windows del operador, verificar que se muestra progreso o error y, si responde el modelo real, examinar las observaciones del revisor. El punto B continúa en **REVIEW**; no pasar a C ni tratar los 1.500 € / 8 % u otras hipótesis como datos confirmados.
