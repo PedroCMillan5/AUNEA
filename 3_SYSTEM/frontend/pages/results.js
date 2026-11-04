@@ -796,6 +796,10 @@ function tobeReviewReadiness(e,p){
   // [AUNEA-FE-PG11-HUMAN-GATE-225] END
   const flowIssue=tobeFlowIntegrity(e,p);
   if(flowIssue)return flowIssue;
+  // Semantic design constraints complement source and route readiness.
+  const blocking=typeof tobeCoherenceFindings==='function'?
+    tobeCoherenceFindings(e,p).find(x=>x.severity==='BLOCKING'):null;
+  if(blocking)return 'Coherencia de '+blocking.name+': '+blocking.message;
   return null;
 }
 function advanceTobeStatus(e){
@@ -1049,6 +1053,73 @@ function tobeHumanReviewHtml(e,item,historical){
   '</section>';
 }
 // [AUNEA-FE-PG11-HUMAN-DECISIONS-223] END
+// [AUNEA-FE-PG11-COHERENCE-239] START — deterministic constraints over
+// consultant-owned TO-BE design. Complements (never replaces) the Ollama reviewer.
+// SOURCE: Simulator CANONICAL PG11; DEC-034/050/052/055.
+// No invented future economics, actors, time metrics, or automatic authorization.
+function tobeCoherenceFindings(e,p){
+  const findings=[],items=[...(p?.items||[]),...tobeAddedSteps(p)];
+  const add=(item,severity,message)=>findings.push({
+    stepId:tobeFlowItemId(item),severity,message,
+    name:tobeFlowItemName(item)
+  });
+  for(const item of items){
+    const t=String(item.transformation||''),name=tobeFlowItemName(item),
+      auto=String(item.automationAi||'').trim(),
+      supervisor=String(item.humanSupervision||'').trim(),
+      control=String(item.controlsRisk||'').trim();
+    if(['Se automatiza','Se asiste con IA'].includes(t)){
+      if(!auto||/^(no|n\/a|ninguno|sin definir|pendiente)$/i.test(auto))
+        add(item,'BLOCKING','Describe qué ejecutará el sistema y qué parte corresponde a automatización por reglas o IA.');
+      if(!supervisor||/^(no|n\/a|ninguno|sin definir|pendiente)$/i.test(supervisor))
+        add(item,'BLOCKING','Indica la supervisión humana y qué sucede ante errores o excepciones.');
+    }
+    if(t==='Requiere decisión humana'&&!supervisor)
+      add(item,'BLOCKING','El responsable o punto de decisión humana debe estar explícito.');
+    if(t==='Se incorpora control'&&(!control||/^(no|n\/a|ninguno|sin definir|pendiente)$/i.test(control)))
+      add(item,'BLOCKING','Describe el control que se incorpora y el riesgo que atiende.');
+    if(t==='Se mantiene'&&/^(automatizar|modificar|eliminar|implementar|integrar|rediseñar)\b/i.test(auto))
+      add(item,'BLOCKING','«Se mantiene» contradice la intervención indicada en automatización/IA.');
+    if(item.isAddition&&['Se mantiene','Se elimina'].includes(t))
+      add(item,'BLOCKING','Una actividad nueva debe justificar su incorporación o descartarse; no se clasifica como existente o eliminada.');
+    if(t==='Se elimina'&&item.futureTime)
+      add(item,'WARNING','Se propone eliminar la actividad pero conserva un tiempo futuro; confirma si pertenece a otro paso.');
+    if(['Se automatiza','Se asiste con IA'].includes(t)&&
+       /\b(sin supervisi[oó]n|aprueba autom[aá]ticamente|sin intervenci[oó]n humana)\b/i.test(auto))
+      add(item,'BLOCKING','La intervención describe autonomía sin un control humano explícito.');
+    if(t==='Se mantiene'&&String(item.problemResolved||'').trim()==='NO')
+      add(item,'WARNING','«NO» no justifica por qué se conserva una actividad sin cambios.');
+    if(item.futureTime&&item.futureTimeAssumption)
+      add(item,'WARNING','El tiempo futuro es un supuesto; no equivale a medición ni autoriza un ahorro.');
+  }
+  return findings;
+}
+function tobeCoherencePanel(e,p){
+  const findings=tobeCoherenceFindings(e,p),
+    human=typeof tobeHumanReviewRecord==='function'?tobeHumanReviewRecord(e,p):null,
+    decisions=human?.decisions||{},steps=p?.items||[],reviewed=steps.filter(x=>
+      ['ACCEPT','MODIFY','DISCARD'].includes(decisions[String(x.sourceStepId)]?.status)).length,
+    flow=tobeFlowIntegrity(e,p),blocked=findings.filter(x=>x.severity==='BLOCKING'),
+    notes=findings.filter(x=>x.severity!=='BLOCKING');
+  const summary='<p class="tobe-muted">Revisión humana de propuestas: '+reviewed+' de '+steps.length+
+    ' actividades originales. Actividades nuevas: '+tobeAddedSteps(p).length+
+    '. Coherencia determinista: '+blocked.length+' bloqueos, '+notes.length+' observaciones.'+
+    (flow?' Hay incidencias de conexión.':' Rutas con integridad estructural.')+'</p>';
+  const messages=[
+    ...(flow?[{stepId:'',severity:'BLOCKING',message:flow,name:'Mapa futuro'}]:[]),
+    ...findings
+  ];
+  return '<div class="tobe-coherence">'+summary+
+    (messages.length?'<ul class="tobe-coherence-list">'+messages.map(x=>
+      '<li><span class="tobe-coherence-severity">'+
+       (x.severity==='BLOCKING'?'Bloqueo':'Observación')+'</span>'+
+      '<span>'+esc(x.name)+': '+esc(x.message)+'</span>'+
+      (x.stepId?'<button type="button" class="btn btn-outline btn-small" data-tobe-select="'+
+        attr(x.stepId)+'">Revisar actividad</button>':'')+'</li>').join('')+'</ul>':
+      '<p class="tobe-muted">Sin contradicciones detectadas por las reglas disponibles. Se requiere revisión humana y, si se utiliza IA, comprobación de sus fuentes.</p>')+
+    '<p class="tobe-muted">El análisis automático no certifica viabilidad técnica ni tiempos. Las cifras futuras se mantienen como hipótesis trazables.</p></div>';
+}
+// [AUNEA-FE-PG11-COHERENCE-239] END
 // [AUNEA-FE-PG11-FUTURE-FLOW-228] START — version-owned future routing overlay.
 // SOURCE: Simulator CANONICAL PG11/PG12; DEC-050/052/055.
 // The AS-IS snapshot remains immutable. Added steps are linked to an existing AS-IS
@@ -1344,9 +1415,10 @@ function tobePage(){
       '</div>'+
       '<p class="tobe-map-note"><b>Rutas del TO-BE:</b> comienzan como copia del AS-IS confirmado, pero pueden rediseñarse en el inspector. Los pasos incorporados o eliminados sólo pertenecen a la versión TO-BE. Una ruta pendiente, desconectada o sin final bloquea la revisión.</p></section>'+
       '<section id="tobeInspector" class="tobe-inspector" aria-label="Decisión TO-BE por actividad">'+tobeInspectorHtml(e,p)+'</section>'+
-      '<section class="tobe-completion"><div><h2>Validación global</h2><p>Comprobación de versión, cobertura y requisitos del TO-BE. La calidad semántica requiere revisión humana.</p></div>'+
+      '<section class="tobe-completion"><div><h2>Validación global</h2><p>Rutas, coherencia del diseño, cobertura de propuestas y limitaciones. Las recomendaciones IA requieren aprobación humana.</p></div>'+
         '<button type="button" class="btn btn-outline" id="checkTobeReadiness">Comprobar requisitos</button>'+
-        '<div id="tobeReadinessStatus" role="status" aria-live="polite"></div></section>'+
+        '<div id="tobeReadinessStatus" role="status" aria-live="polite"></div>'+
+        tobeCoherencePanel(e,p)+'</section>'+
       '</main>';
 }
 // [AUNEA-FE-PG11-WORKSPACE-205] END
