@@ -163,6 +163,31 @@ test('consolidation retry reuses already generated activities',async()=>{
 });
 
 
+test('PG11 review timeout shows four real verified proposals, stores checkpoint and resumes review after reload',async()=>{
+  const app=aiPilotHarness({steps:['S1','S2','S3','S4'],failReview:true});
+  app.click();await app.settle();
+  assert.equal(app.requests.length,6,'status + four individual calls + one failed global review');
+  assert.match(app.notice.outerHTML,/Propuestas IA verificadas por actividad/);
+  assert.match(app.notice.outerHTML,/Intervención propuesta/);
+  assert.match(app.notice.outerHTML,/Resultado esperado/);
+  assert.match(app.notice.outerHTML,/4\/4/);
+  assert.match(app.notice.outerHTML,/Reintentar sólo la revisión global/);
+  assert.doesNotMatch(app.notice.outerHTML,/id="applyTobeAiPilot"/,
+    'partial suggestions must never be transferred to an approved TO-BE');
+  const saved=JSON.parse(app.sandbox.localStorage.getItem('aunea_internal_v1'));
+  const checkpoint=saved.engagements[0].tobeProposals[0].aiDraft.checkpoint;
+  assert.equal(checkpoint.items.length,4,'every step saved under the same version');
+  assert.equal(checkpoint.stepSignature,'S1|S2|S3|S4');
+  assert.doesNotMatch(JSON.stringify(checkpoint),/context_trace|original_response|prompt_eval_count|request/);
+  vm.runInContext('__auneaAiCompletedSteps.clear()',app.sandbox);
+  assert.equal(vm.runInContext('internalAiPendingSteps(currentEng(),internalAiPilotKey(currentEng())).items.size',
+    app.sandbox),4,'recover persisted steps after reloading transient Map');
+  app.setReviewFailure(false);
+  app.click();await app.settle();
+  assert.equal(app.requests.length,8,'retry only status and global review, never four old calls');
+  assert.equal(app.requests.at(-1).url,'http://localhost:8010/v1/internal-ai/tobe-review');
+  assert.match(app.notice.outerHTML,/Propuesta IA guardada en el borrador/);
+});
 test('fresh regeneration never reuses prior activities after a review failure',async()=>{
   const app=aiPilotHarness({steps:['S1','S2'],failReview:true});
   app.click();await app.settle();
@@ -309,7 +334,8 @@ test('Guardar borrador retains unapproved AI narrative and reviewer findings wit
   assert.equal(app.tobe.aiDraft.proposal.input_hash,'ENGAGEMENT_HASH_DIFFERENT_FROM_DIAGNOSTIC');
   assert.equal(app.tobe.aiDraft.proposal.items.length,2);
   const beforeSave=vm.runInContext('internalAiPilotPanel(currentEng())',app.sandbox);
-  assert.match(beforeSave,/Propuesta IA pendiente de guardar/);
+  assert.match(beforeSave,/Propuesta IA guardada en el borrador/,
+    'a completed AI proposal must be durable even before the redundant manual-save click');
   assert.equal(vm.runInContext("saveState('Guardar borrador TO-BE')",app.sandbox),true);
   const inSession=vm.runInContext('internalAiPilotPanel(currentEng())',app.sandbox);
   assert.match(inSession,/Propuesta IA guardada en el borrador/);
