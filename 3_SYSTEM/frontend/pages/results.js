@@ -892,9 +892,9 @@ function tobeSourceDataExplanation(raw){
     DOC:'Documento',RECORD:'Registro'};
   const codes=String(raw||'').split(',').map(x=>x.trim()).filter(Boolean);
   if(!codes.length||!codes.every(x=>Object.prototype.hasOwnProperty.call(dictionary,x)))return '';
-  return '<p class="tobe-data-explanation">Lectura del código existente: '+
+  return '<p class="tobe-data-explanation">Significado de los códigos: '+
     esc(codes.map(x=>dictionary[x]).join(' · '))+
-    '. Se mantiene el valor original; no se ha cambiado la fuente.</p>';
+    '. Esta explicación no modifica los datos.</p>';
 }
 // [AUNEA-FE-PG11-READABLE-CODES-209] END
 function tobeInspectorHtml(e,p){
@@ -923,7 +923,11 @@ function tobeInspectorHtml(e,p){
       tobeField(item,'automationAi','Automatización e IA',item.automationAi,'textarea',!editable)+
       tobeField(item,'humanSupervision','Supervisión humana',item.humanSupervision,'textarea',!editable)+
       tobeField(item,'controlsRisk','Control / riesgo',item.controlsRisk,'textarea',!editable)+
-      '</div><details class="tobe-subdetails"><summary>Tiempo futuro y supuesto trazable (si existe)</summary>'+
+      '</div>'+
+      (['automationAi','humanSupervision','controlsRisk'].some(key=>
+        /^(no|n\/a|ninguno)$/i.test(String(item[key]||'').trim()))?
+        '<p class="tobe-muted"><b>Campos sin definición operativa:</b> el valor «NO» procede del borrador; no equivale a demostrar que no hagan falta automatización, supervisión o controles. Revisa su significado antes de confirmar el diseño.</p>':'')+
+      '<details class="tobe-subdetails"><summary>Tiempo futuro y supuesto trazable (si existe)</summary>'+
       '<div class="form-grid">'+tobeField(item,'futureTime','Tiempo futuro',item.futureTime,'text',!editable)+
       tobeField(item,'futureTimeAssumption','Supuesto trazable',item.futureTimeAssumption,'textarea',!editable)+
       '</div></details></section>'+
