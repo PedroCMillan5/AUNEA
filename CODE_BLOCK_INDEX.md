@@ -449,3 +449,5 @@
 | AUNEA-FE-PG11-ORIGINAL-FACTS-243 | 3_SYSTEM/frontend/pages/results.js | Contexto AS-IS confirmado de cada actividad: actor, tipo, herramienta, entradas y salidas y tiempos declarados | Simulator CANONICAL PG11; DEC-050 | Snapshot AS-IS histórico | Panel solo lectura junto al inspector TO-BE | No copia editada ni economía calculada | MEDIUM | uat-browser-smoke.cjs | REVIEW |
 
 | AUNEA-FE-PG11-ORIGINAL-FACTS-STYLE-244 | 3_SYSTEM/frontend/ui-system.css | Panel de origen del inspector con responsive y tokens AUNEA System | Simulator CANONICAL PG11; DEC-056 | PG11 source facts | Presentación AS-IS en tarjetas | CSS scoped | LOW | uat-browser-smoke.cjs | REVIEW |
+
+| AUNEA-FE-PG11-DECISION-TYPE-245 | 3_SYSTEM/frontend/pages/results.js | Elección de tipo de actividad TO-BE añadido reutilizando ST02/ST04 del ProcessStep canónico, y configuración de rutas SÍ/NO | Simulator CANONICAL PG04/PG11; Diagnostic Master ProcessStep; DEC-050 | TO-BE DRAFT stepType | Edición de decisión y rutas futuras | Sin mutación de AS-IS | HIGH | pg11-future-flow.test.cjs | REVIEW |
