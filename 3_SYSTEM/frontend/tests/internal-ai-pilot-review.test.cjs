@@ -127,7 +127,7 @@ test('AI button click reaches backend once and preserves draft inputs on success
   await app.settle();
   assert.equal(app.requests.length,3);
   assert.equal(app.requests[1].url,'http://localhost:8010/v1/internal-ai/tobe-step');
-  assert.equal(app.requests[2].url,'http://localhost:8010/v1/internal-ai/tobe-review');
+  assert.equal(app.requests[2].url,'http://localhost:8010/v1/internal-ai/tobe-review-basic');
   assert.match(app.notice.outerHTML,/Resultado esperado/);
   assert.match(app.notice.outerHTML,/Auditoría técnica IA/);
   assert.ok(app.notice.outerHTML.includes('data-ai-audit-step'));
@@ -166,7 +166,7 @@ test('consolidation retry reuses already generated activities',async()=>{
   app.setReviewFailure(false);
   app.click();await app.settle();
   assert.equal(app.requests.length,6); // next status + review; no step repeats
-  assert.equal(app.requests[5].url,'http://localhost:8010/v1/internal-ai/tobe-review');
+  assert.equal(app.requests[5].url,'http://localhost:8010/v1/internal-ai/tobe-review-basic');
   assert.match(app.notice.outerHTML,/Resultado esperado/);
   assert.equal(app.renderCount,0);
 });
@@ -224,7 +224,7 @@ test('PG11 review timeout shows four real verified proposals, stores checkpoint 
   assert.match(app.notice.outerHTML,/Intervención propuesta/);
   assert.match(app.notice.outerHTML,/Resultado esperado/);
   assert.match(app.notice.outerHTML,/4\/4/);
-  assert.match(app.notice.outerHTML,/Reintentar sólo la revisión global/);
+  assert.match(app.notice.outerHTML,/Comprobar coherencia básica \(sin Ollama\)/);
   assert.doesNotMatch(app.notice.outerHTML,/id="applyTobeAiPilot"/,
     'partial suggestions must never be transferred to an approved TO-BE');
   const saved=JSON.parse(app.sandbox.localStorage.getItem('aunea_internal_v1'));
@@ -238,7 +238,7 @@ test('PG11 review timeout shows four real verified proposals, stores checkpoint 
   app.setReviewFailure(false);
   app.click();await app.settle();
   assert.equal(app.requests.length,8,'retry only status and global review, never four old calls');
-  assert.equal(app.requests.at(-1).url,'http://localhost:8010/v1/internal-ai/tobe-review');
+  assert.equal(app.requests.at(-1).url,'http://localhost:8010/v1/internal-ai/tobe-review-basic');
   assert.match(app.notice.outerHTML,/Propuesta IA guardada en el borrador/);
 });
 test('fresh regeneration never reuses prior activities after a review failure',async()=>{
