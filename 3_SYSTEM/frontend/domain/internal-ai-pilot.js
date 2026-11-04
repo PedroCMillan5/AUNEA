@@ -368,6 +368,7 @@ function internalAiPendingPanel(e,key,pending,feedback){
         (complete?'Comprobar coherencia básica (sin Ollama)':'Continuar las actividades pendientes')+'</button>'+
       '<button type="button" class="btn btn-outline" id="saveTobeAiPending">'+
         'Guardar actividades verificadas</button></div>'+
+    (feedback?.type==='warn'?'<p class="notice warn" role="alert"><b>Comprobación no completada.</b> '+esc(feedback.message)+'</p>':'')+
     internalAiPilotTracePanel(Object.fromEntries(pending.traces||new Map()))+
     '<p class="pg11-ai-muted">No es un TO-BE aprobado. Las fuentes originales y las decisiones humanas no se modifican.</p>'+
   '</section>';
