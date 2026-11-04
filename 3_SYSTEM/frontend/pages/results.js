@@ -1462,7 +1462,7 @@ function registerInternalWorkPages(){
     const selected=event.target?.closest?.('[data-tobe-select]');
     if(!selected||state.activePage!=='tobe')return;
     const e=currentEng(),p=latestTobe(e),sourceId=selected.getAttribute('data-tobe-select');
-    if(!e||!p||!p.items.some(x=>String(x.sourceStepId)===String(sourceId)))return;
+    if(!e||!p||!tobeFlowItem(e,p,sourceId))return;
     event.preventDefault();
     if(tobeEditable(p)&&(!saveTobeFromDom(e)||!saveState('Guardar edición TO-BE antes de cambiar actividad'))){
       toast('No se ha guardado la edición. Mantén la actividad actual abierta.');
@@ -1472,12 +1472,70 @@ function registerInternalWorkPages(){
     const inspector=document.getElementById('tobeInspector');
     const savedEngagement=currentEng(),savedProposal=latestTobe(savedEngagement);
     if(inspector&&savedEngagement&&savedProposal)inspector.innerHTML=tobeInspectorHtml(savedEngagement,savedProposal);
+    const viewport=document.querySelector('.tobe-canvas-viewport'),
+      left=viewport?.scrollLeft||0,top=viewport?.scrollTop||0;
+    if(viewport&&savedEngagement&&savedProposal){
+      viewport.outerHTML=tobeCanvasHtml(savedEngagement,savedProposal);
+      const next=document.querySelector('.tobe-canvas-viewport');
+      if(next){next.scrollLeft=left;next.scrollTop=top;}
+      if(typeof drawProcessGraph==='function'&&typeof requestAnimationFrame==='function')
+        requestAnimationFrame(drawProcessGraph);
+    }
     document.querySelectorAll('[data-tobe-select]').forEach(node=>{
       const active=node.getAttribute('data-tobe-select')===String(sourceId);
       node.classList.toggle('is-selected',active);node.setAttribute('aria-pressed',String(active));
     });
   },true);
   // [AUNEA-FE-PG11-SELECT-206] END
+  // [AUNEA-FE-PG11-FLOW-ACTIONS-229] START — explicit future-only additions and supersession.
+  // SOURCE: Simulator CANONICAL PG11, DEC-050/055. Every new activity links to an AS-IS step.
+  document.addEventListener('click',event=>{
+    const add=event.target?.closest?.('#addTobeStep');
+    const discard=event.target?.closest?.('[data-tobe-discard-added]');
+    if((!add&&!discard)||state.activePage!=='tobe')return;
+    event.preventDefault();
+    const e=currentEng(),p=latestTobe(e);
+    if(!e||!tobeEditable(p))return;
+    if(!saveTobeFromDom(e)||!saveState('Conservar borrador antes de editar flujo TO-BE'))
+      return toast('No se guardó el borrador. No se ha modificado el flujo.');
+    const live=currentEng(),draft=latestTobe(live),flow=tobeMutableFlow(live,draft);
+    if(add){
+      const selected=tobeSelectedItem(live,draft),
+        source=tobeSourceSteps(live).find(x=>String(x.id)===String(selected?.sourceStepId));
+      if(!source)return toast('Selecciona primero una actividad AS-IS como origen de la nueva actividad.');
+      const seq=flow.addedSteps.length+1,id='TOBE-ADD-'+draft.version+'-'+seq;
+      if(flow.addedSteps.some(x=>x.id===id))return toast('Identificador duplicado; revisa la versión.');
+      flow.addedSteps.push({
+        id,isAddition:true,sourceStepId:String(source.id),
+        sourceStepName:String(source.step_name||source.name||source.id),
+        stepName:'',status:'DRAFT',transformation:'',problemResolved:'',
+        futureActor:'',tool:'',inputs:'',outputs:'',automationAi:'',
+        humanSupervision:'',controlsRisk:'',futureTime:'',futureTimeAssumption:''
+      });
+      flow.routes[id]={normal:'__PENDING__',exception:''};
+      markDirty('Actividad TO-BE incorporada como borrador con origen AS-IS '+source.id);
+      if(!saveState('Guardar actividad TO-BE incorporada'))
+        return toast('La actividad no se ha guardado. Conserva el estudio abierto.');
+      __auneaTobeSelection={engagementId:live.id,version:draft.version,stepId:id};
+      render();
+      toast('Actividad vinculada al AS-IS. Define nombre, intervención, responsable y rutas.');
+      return;
+    }
+    const id=discard?.getAttribute('data-tobe-discard-added'),
+      item=flow.addedSteps.find(x=>x.id===id&&x.status!=='SUPERSEDED');
+    if(!item)return toast('La actividad ya no se encuentra en el TO-BE.');
+    item.status='SUPERSEDED';item.updatedAt=now();
+    markDirty('Actividad TO-BE incorporada descartada sin borrar el historial');
+    if(!saveState('Descartar actividad TO-BE'))
+      return toast('No se ha guardado el descarte. Conserva el estudio abierto.');
+    const latest=currentEng(),next=latestTobe(latest);
+    __auneaTobeSelection={engagementId:latest.id,version:next.version,
+      stepId:String(next.items[0]?.sourceStepId||'')};
+    render();
+    toast('Actividad retirada del flujo futuro. Comprueba sus conexiones entrantes.');
+  },true);
+  // [AUNEA-FE-PG11-FLOW-ACTIONS-229] END
+
   // [AUNEA-FE-PG11-HUMAN-DECISION-SAVE-224] START — explicit consultant
   // decision with durable version/source/diagnostic binding; no proposal is applied.
   document.addEventListener('click',event=>{
@@ -1548,12 +1606,16 @@ function registerInternalWorkPages(){
       render();
     };
     if(by('newTobeVersion'))by('newTobeVersion').onclick=()=>{
-      if(!createNextTobeVersion(e))return toast('No es posible crear una nueva versión con las fuentes actuales.');
+      const live=currentEng();
+      if(!createNextTobeVersion(live))return toast('No es posible crear una nueva versión con las fuentes actuales.');
       if(saveState('Nueva versión TO-BE'))render();
     };
     if(by('checkTobeReadiness'))by('checkTobeReadiness').onclick=()=>{
-      if(tobeEditable(latestTobe(e))&&!saveTobeFromDom(e))return;
-      const issue=tobeReviewReadiness(e,latestTobe(e));
+      const live=currentEng(),current=latestTobe(live);
+      if(tobeEditable(current)&&(!saveTobeFromDom(live)||
+        !saveState('Guardar TO-BE antes de comprobar coherencia')))
+        return toast('No se pudo guardar el diseño antes de validarlo.');
+      const actual=currentEng(),issue=tobeReviewReadiness(actual,latestTobe(actual));
       const feedback=by('tobeReadinessStatus');
       if(feedback)feedback.innerHTML='<div class="notice '+(issue?'warn':'info')+'">'+
         esc(issue||'Los requisitos estructurales están completos. Revisa la coherencia y las fuentes antes de marcar como revisado.')+'</div>';
