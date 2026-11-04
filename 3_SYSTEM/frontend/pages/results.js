@@ -757,7 +757,7 @@ function tobeReviewReadiness(e,p){
     const name=item.sourceStepName||item.sourceStepId||'actividad sin identificar';
     if(!TOBE_TRANSFORMATIONS.includes(item.transformation))
       return 'Selecciona una transformación válida para '+name+'.';
-    if(!String(item.futureActor||'').trim())
+    if(item.transformation!=='Se elimina'&&!String(item.futureActor||'').trim())
       return 'Indica el responsable futuro de '+name+' antes de enviar a revisión.';
     if(item.transformation!=='Se mantiene'&&!String(item.problemResolved||'').trim())
       return 'Explica qué problema resuelve la transformación de '+name+'.';
@@ -781,7 +781,7 @@ function tobeReviewReadiness(e,p){
         return 'Falta aceptar, modificar o descartar con justificación la propuesta de '+name+'.';
       if(!meaningful(item.problemResolved))
         return 'Justifica qué problema o situación aborda el diseño futuro de '+name+' (no basta «NO»).';
-      if(item.transformation!=='Se mantiene'&&
+      if(!['Se mantiene','Se elimina'].includes(item.transformation)&&
          ['tool','inputs','outputs','controlsRisk'].some(k=>!meaningful(item[k])))
         return 'Completa herramienta, datos y controles del diseño futuro de '+name+'.';
       if(['Se automatiza','Se asiste con IA'].includes(item.transformation)&&
@@ -1369,7 +1369,10 @@ function tobeInspectorHtml(e,p){
       '<div class="form-grid">'+
       (item.isAddition?tobeField(item,'stepName','Nombre de actividad futura',item.stepName,'text',!editable):'')+
       statusField+
-      tobeField(item,'problemResolved','Qué problema resuelve',item.problemResolved,'textarea',!editable)+
+      tobeField(item,'problemResolved',
+        item.transformation==='Se mantiene'?'Motivo para conservar la actividad':
+        item.transformation==='Se elimina'?'Por qué se elimina y qué necesidad resuelve':
+        'Qué problema resuelve',item.problemResolved,'textarea',!editable)+
       tobeField(item,'futureActor','Responsable futuro',item.futureActor,'text',!editable)+
       tobeField(item,'tool','Herramienta / arquitectura',item.tool,'text',!editable)+
       '<div class="tobe-data-pair">'+tobeField(item,'inputs','Datos de entrada',item.inputs,'textarea',!editable)+
