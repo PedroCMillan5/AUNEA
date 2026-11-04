@@ -918,6 +918,78 @@ async function main(){
   await page.setViewportSize({width:1365,height:900});
   console.log('PG11_AI_DRAFT_BROWSER_PASS: saved, restored, blocked, responsive without Ollama');
 
+  // [AUNEA-UAT-PG11-PG12-BROWSER-238] START — new source-linked activity,
+  // guarded route rewiring, durable TO-BE version and read-only PG12 dual map.
+  if(sourceIds.length<2)throw Error('Future-flow browser fixture requires two source activities');
+  await page.locator('[data-tobe-select="'+sourceIds[0]+'"]').first().click();
+  await page.locator('#addTobeStep').click();
+  const addition=await page.evaluate(()=>{
+    const e=currentEng(),p=latestTobe(e);
+    return p.flow?.addedSteps?.at(-1)||null;
+  });
+  assert.equal(addition?.sourceStepId,sourceIds[0],
+    'new future activity must retain a confirmed AS-IS source');
+  assert.ok(addition?.id,'new activity needs a stable TO-BE-only ID');
+  await page.locator('#tobeInspector [data-tobe-field="stepName"]').fill('Control adicional UAT');
+  await page.locator('#tobeInspector [data-tobe-field="problemResolved"]').fill(
+    'Validar entradas faltantes antes de continuar al siguiente paso');
+  await page.locator('#tobeInspector [data-tobe-field="futureActor"]').fill('Supervisor');
+  const newRoute=await page.evaluate(({nextId,addedId})=>{
+    const t=document.querySelector('#tobeInspector [data-tobe-field="transformation"]');
+    const r=document.querySelector('[data-tobe-route="normal"][data-tobe-route-step="'+addedId+'"]');
+    if(!t||!r)throw Error('Future-step controls missing');
+    t.value='Se incorpora control';r.value=nextId;
+    t.dispatchEvent(new Event('change',{bubbles:true}));
+    r.dispatchEvent(new Event('change',{bubbles:true}));
+    return {transformation:t.value,normal:r.value};
+  },{nextId:sourceIds[1],addedId:addition.id});
+  assert.equal(newRoute.transformation,'Se incorpora control');
+  await page.locator('[data-tobe-select="'+sourceIds[0]+'"]').first().click();
+  await page.evaluate(({addedId,firstId})=>{
+    const r=document.querySelector('[data-tobe-route="normal"][data-tobe-route-step="'+firstId+'"]');
+    if(!r)throw Error('Original step routing selector missing');
+    r.value=addedId;r.dispatchEvent(new Event('change',{bubbles:true}));
+  },{addedId:addition.id,firstId:sourceIds[0]});
+  await page.locator('#saveTobe').click();
+  const routed=await page.evaluate(({addedId,firstId,nextId})=>{
+    const e=currentEng(),p=latestTobe(e),disk=JSON.parse(localStorage.getItem(STORAGE_KEY));
+    const saved=disk.engagements.find(x=>x.id===e.id)?.tobeProposals?.find(x=>x.version===p.version);
+    const next=saved?.flow?.addedSteps?.find(x=>x.id===addedId);
+    return {name:next?.stepName,source:next?.sourceStepId,
+      from:saved?.flow?.routes?.[firstId]?.normal,
+      to:saved?.flow?.routes?.[addedId]?.normal,
+      integrity:tobeFlowIntegrity(e,p),
+      sourceUntouched:confirmedSnapshot(e).processSteps.some(x=>x.id===firstId&&
+        x.normal_next_step!==addedId)};
+  },{addedId:addition.id,firstId:sourceIds[0],nextId:sourceIds[1]});
+  assert.equal(routed.name,'Control adicional UAT');
+  assert.equal(routed.source,sourceIds[0]);
+  assert.equal(routed.from,addition.id);
+  assert.equal(routed.to,sourceIds[1]);
+  assert.equal(routed.integrity,null,'explicit future route must be connected');
+  assert.equal(routed.sourceUntouched,true,'future routing must not overwrite confirmed AS-IS');
+  await page.screenshot({path:path.join(outDir,'pg11-future-flow-source-linked.png'),fullPage:true});
+  // Visualization fixture only: explicit REVIEWED status bypasses real gates here;
+  // behavioral lifecycle approval remains covered separately by runtime/readiness tests.
+  await page.evaluate(()=>{
+    const e=currentEng();latestTobe(e).status='REVIEWED';
+    state.activePage='comparacion';render();
+  });
+  assert.equal(await page.locator('.pg12-map').count(),2);
+  assert.equal(await page.locator('.pg12-map .tobe-graph-node').count(),
+    tobeSteps+1,'PG12 must include the newly linked future step');
+  await page.locator('[data-pg12-view="actual"]').click();
+  assert.equal(await page.locator('.pg12-map').count(),1);
+  await page.locator('[data-pg12-view="proposed"]').click();
+  assert.equal(await page.locator('.pg12-map').count(),1);
+  await page.locator('[data-pg12-view="comparison"]').click();
+  assert.equal(await page.locator('.pg12-map').count(),2);
+  await page.locator('[data-pg12-source="'+addition.id+'"]').first().click();
+  assert.match(await page.locator('#pg12SelectedDetail').innerText(),/Control adicional UAT/);
+  await page.screenshot({path:path.join(outDir,'pg12-actual-proposed-comparison.png'),fullPage:true});
+  console.log('PG11_PG12_SOURCE_LINKED_BROWSER_PASS: routes and versioned comparison');
+  // [AUNEA-UAT-PG11-PG12-BROWSER-238] END
+
   assert.deepEqual(failures,[],'Unhandled browser JS errors: '+failures.join(' / '));
   process.stdout.write('CHROMIUM_UAT_PASS: 1 study generated, navigated and recovered after reload.\n');
  }finally{if(browser)await browser.close();await new Promise(resolve=>server.close(resolve))}
