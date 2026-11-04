@@ -778,6 +778,31 @@ async function main(){
     'review flags must be stored and not silently auto-applied');
   assert.equal(await page.evaluate(()=>latestTobe(currentEng()).status),'DRAFT',
     'global IA review does not advance human approval status');
+  // [AUNEA-UAT-PG11-HUMAN-BROWSER-227] START — consultant reviews one
+  // source-linked recommendation. Clicking cannot overwrite TO-BE fields.
+  const originalTobeData=await page.evaluate(()=>JSON.stringify(latestTobe(currentEng()).items));
+  await page.locator('[data-tobe-select="'+sourceIds[0]+'"]').click();
+  await page.locator('#tobeHumanReviewNote').fill(
+    'Revisión humana de la primera actividad: ajustar propuesta, validar las fuentes y los riesgos antes de cambiar el proceso.');
+  await page.locator('[data-tobe-human-decision="MODIFY"]').click();
+  const consultantReview=await page.evaluate(()=>{
+    const eng=currentEng(),p=latestTobe(eng);
+    const disk=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');
+    const review=disk?.engagements?.find(x=>x.id===eng.id)?.tobeProposals?.
+      find(x=>x.version===p.version)?.aiDraft?.humanReview;
+    return {saved:review?.decisions?.[String(p.items[0].sourceStepId)]?.status,
+      proposalIntact:JSON.stringify(p.aiDraft.proposal.items)===
+        JSON.stringify(disk?.engagements?.find(x=>x.id===eng.id)?.tobeProposals?.
+          find(x=>x.version===p.version)?.aiDraft?.proposal?.items),
+      status:p.status};
+  });
+  assert.equal(consultantReview.saved,'MODIFY','consultant decision must persist by source ID');
+  assert.equal(consultantReview.proposalIntact,true,'review cannot alter candidate text');
+  assert.equal(consultantReview.status,'DRAFT','human decision is not TO-BE approval');
+  assert.equal(await page.evaluate(()=>JSON.stringify(latestTobe(currentEng()).items)),
+    originalTobeData,'consultant choice must never apply proposed values');
+  console.log('PG11_HUMAN_DECISION_BROWSER_PASS: '+sourceIds[0]);
+  // [AUNEA-UAT-PG11-HUMAN-BROWSER-227] END
   await page.unroute('**/v1/internal-ai/status',pg11StatusRoute);
   await page.unroute('**/v1/internal-ai/tobe-review-basic',pg11ReviewRoute);
   await page.unroute('**/v1/internal-ai/tobe-step',pg11StepRoute);
