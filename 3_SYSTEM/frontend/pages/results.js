@@ -866,6 +866,87 @@ function tobeSnapshotIssueCards(e,item){
   return frHtml||riskHtml?'<ul class="tobe-source-list">'+frHtml+riskHtml+'</ul>':
     '<p class="tobe-muted">No hay fricciones o riesgos vinculados directamente a este paso en el snapshot. Consulta el diagnóstico global antes de justificar una transformación.</p>';
 }
+// [AUNEA-FE-PG11-AI-STEP-APPLY-230] START — human-authorized, source-linked
+// per-activity application. No bulk field copy, no overwrite and no client approval.
+// SOURCE: DEC-050/052/055; PG11 CANONICAL; existing reviewer and human decisions.
+function tobeAiStepApplicability(e,p,sourceId){
+  if(!e||!tobeEditable(p))return 'La versión TO-BE no permite edición.';
+  const current=typeof internalAiSavedDraft==='function'?internalAiSavedDraft(e):null;
+  const cached=typeof internalAiPilotKey==='function'&&typeof __auneaAiPreview!=='undefined'?
+    __auneaAiPreview.get(internalAiPilotKey(e)):null;
+  const data=cached||current;
+  if(!data?.review||!Array.isArray(data.items))
+    return 'Esta actividad no tiene una propuesta IA consolidada vigente.';
+  if(data.review.review_mode==='RULES_ONLY')
+    return 'Una comprobación por reglas no autoriza la aplicación automática.';
+  if(!['CHECKED','CHECKED_WITH_NOTES'].includes(data.review.status))
+    return 'La revisión automática no ha terminado.';
+  if(data.review.issues?.some(x=>x.category==='BLOCKING'&&
+     (String(x.step_id||'GLOBAL')==='GLOBAL'||String(x.step_id)===String(sourceId)))||
+     data.review.blocking_step_ids?.includes(String(sourceId)))
+    return 'Esta recomendación tiene incoherencias bloqueantes. Corrígela manualmente.';
+  const proposal=data.items.find(x=>String(x.source_step_id)===String(sourceId)),
+    item=p.items.find(x=>String(x.sourceStepId)===String(sourceId));
+  if(!proposal||!item||!Array.isArray(proposal.source_refs)||
+    !proposal.source_refs.map(String).includes(String(sourceId)))
+    return 'La recomendación carece de una fuente de actividad válida.';
+  if(!TOBE_TRANSFORMATIONS.includes(proposal.transformation))
+    return 'La transformación propuesta no pertenece al catálogo canónico.';
+  const human=tobeHumanReviewRecord(e,p)?.decisions?.[String(sourceId)];
+  if(!human||human.status!=='ACCEPT'||String(human.note||'').trim().length<20)
+    return 'Acepta expresamente esta recomendación y justifica tu decisión antes de aplicar.';
+  const text=String(proposal.rationale||'');
+  if(proposal.transformation==='Se mantiene'&&
+    (String(proposal.automation_ai||'').trim()||
+     /\b(automatizar|modificar|eliminar|sustituir|implementar|rediseñar)\b/i.test(text)))
+    return 'La IA propone «Se mantiene» pero describe una modificación. Corrige la contradicción manualmente.';
+  return '';
+}
+function tobeApplyAiOnlyStep(e,sourceId){
+  if(!e||state.activePage!=='tobe')return false;
+  const p=latestTobe(e),issue=tobeAiStepApplicability(e,p,sourceId);
+  if(issue){toast(issue);return false;}
+  if(!saveTobeFromDom(e)||!saveState('Guardar edición previa a aplicación de IA'))
+    return toast('No se pudieron guardar los campos del consultor; la IA no se ha aplicado.'),false;
+  const live=currentEng(),draft=latestTobe(live),failure=tobeAiStepApplicability(live,draft,sourceId);
+  if(failure){toast(failure);return false;}
+  const key=internalAiPilotKey(live),proposal=(__auneaAiPreview.get(key)||
+    internalAiSavedDraft(live)).items.find(x=>String(x.source_step_id)===String(sourceId));
+  const target=draft.items.find(x=>String(x.sourceStepId)===String(sourceId));
+  const fields={
+    transformation:'transformation',problem_resolved:'problemResolved',
+    future_actor:'futureActor',tool:'tool',inputs:'inputs',outputs:'outputs',
+    automation_ai:'automationAi',human_supervision:'humanSupervision',
+    controls_risk:'controlsRisk'
+  };
+  const previous=JSON.parse(JSON.stringify(target)),changes=[];
+  for(const [source,destination] of Object.entries(fields)){
+    if(!String(target[destination]||'').trim()&&String(proposal[source]||'').trim()){
+      target[destination]=String(proposal[source]);changes.push(destination);
+    }
+  }
+  if(!changes.length){
+    toast('No hay campos vacíos que completar. El diseño manual se mantiene intacto.');
+    return false;
+  }
+  draft.updatedAt=now();
+  markDirty('PG11: campos vacíos de actividad '+sourceId+' completados tras aceptación humana');
+  if(!saveState('Aplicar sugerencia IA a actividad '+sourceId)){
+    Object.assign(target,previous);
+    markDirty('PG11: aplicación IA pendiente por fallo de guardado');
+    toast('No se pudo guardar la aplicación. No se ha aprobado el TO-BE.');
+    return false;
+  }
+  const verified=latestTobe(currentEng())?.items.find(x=>String(x.sourceStepId)===String(sourceId));
+  if(!verified||changes.some(k=>verified[k]!==target[k])){
+    toast('No se verificó la persistencia. Revisa el borrador antes de continuar.');
+    return false;
+  }
+  render();
+  toast('Aplicados '+changes.length+' campos vacíos sólo en esta actividad. Revisa el diseño antes de aprobar.');
+  return true;
+}
+// [AUNEA-FE-PG11-AI-STEP-APPLY-230] END
 // [AUNEA-FE-PG11-INSPECTOR-CHECKPOINT-214] START — show the existing verified
 // per-step suggestion only when it matches the current DRAFT's versioned IA checkpoint.
 // SOURCE: PG11 CANONICAL; DEC-050/052/055; no new business field or data owner.
@@ -913,6 +994,12 @@ function tobeAiAdviceHtml(e,item){
     '</details>'+
     '<p class="tobe-muted">Esta sugerencia no modifica el TO-BE. La decisión y el diseño futuro son responsabilidad del consultor.</p>'+
     tobeHumanReviewHtml(e,item,!!archived)+
+    (!archived&&tobeHumanReviewRecord(e,latestTobe(e))?.decisions?.[String(item.sourceStepId)]?.status==='ACCEPT'?
+      '<div class="tobe-ai-apply-step"><button type="button" class="btn btn-outline" data-tobe-ai-apply-step="'+
+      attr(item.sourceStepId)+'" '+(tobeAiStepApplicability(e,latestTobe(e),item.sourceStepId)?'disabled':'')+
+      '>Aplicar recomendación sólo a esta actividad</button>'+
+      '<p class="tobe-muted">'+esc(tobeAiStepApplicability(e,latestTobe(e),item.sourceStepId)||
+        'Se completarán sólo campos vacíos; tus modificaciones existentes no se reemplazan.')+'</p></div>':'')+
     '</div>';
 }
 // [AUNEA-FE-PG11-INSPECTOR-CHECKPOINT-214] END
@@ -1578,6 +1665,16 @@ function registerInternalWorkPages(){
     toast('Decisión guardada: '+TOBE_HUMAN_LABELS[choice]+'. El diseño TO-BE sigue en borrador.');
   },true);
   // [AUNEA-FE-PG11-HUMAN-DECISION-SAVE-224] END
+  // [AUNEA-FE-PG11-AI-STEP-APPLY-231] START — one selected activity per human click.
+  document.addEventListener('click',event=>{
+    const control=event.target?.closest?.('[data-tobe-ai-apply-step]');
+    if(!control||state.activePage!=='tobe')return;
+    event.preventDefault();
+    if(control.disabled)return;
+    tobeApplyAiOnlyStep(currentEng(),control.getAttribute('data-tobe-ai-apply-step'));
+  },true);
+  // [AUNEA-FE-PG11-AI-STEP-APPLY-231] END
+
   const originalPostBind=postBind;
   postBind=function(){
     originalPostBind();
