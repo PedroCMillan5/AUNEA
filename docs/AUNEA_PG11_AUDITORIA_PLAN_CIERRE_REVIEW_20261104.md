@@ -145,3 +145,11 @@
 **QA automatizado:** [AUNEA Internal V2 REVIEW Acceptance Gate 41857816696](https://github.com/PedroCMillan5/AUNEA/actions/runs/41857816696) **SUCCESS**, 401 backend PASS, 754 frontend PASS, Chromium nativo PASS; evidencia explícita `PG11_REVIEW_ONLY_CLICK_PASS: {"status":1,"review":1,"steps":0}`. El test sintético también verifica 503 sin pérdida de cuatro propuestas.
 
 **Pendiente:** confirmar el clic en el navegador Windows del operador, verificar que se muestra progreso o error y, si responde el modelo real, examinar las observaciones del revisor. El punto B continúa en **REVIEW**; no pasar a C ni tratar los 1.500 € / 8 % u otras hipótesis como datos confirmados.
+
+## Punto B — Comprobación básica sin Ollama (2026-11-04)
+
+**Diagnóstico real:** el revisor agotó su tiempo (HTTP 503). Las cuatro actividades siguen guardadas; no existe revisión aprobada. La comprobación básica nueva utiliza reglas, no una segunda inferencia de Ollama.
+
+**Implementación REVIEW:** motor `internal_ai_review_basic.py` (220), endpoint local `tobe-review-basic` (221), test backend (222), y frontal con botón «Comprobar coherencia básica (sin Ollama)». El chequeo valida el origen y muestra conflictos explícitos, información pendiente y cifras por verificar. El resultado indica `review_mode=RULES_ONLY`, siempre requiere revisión humana y permanece DRAFT. Se conserva el checkpoint P1–P4 sin regeneración. Se usa también después de generar propuestas nuevas.
+
+**Aceptación pendiente:** QA automatizado y verificación en el navegador del operador; no se considera análisis semántico IA terminado ni PG11 listo para PG12. El motor LLM largo permanece aislado, no se emplea en este botón.
