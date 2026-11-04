@@ -2686,3 +2686,24 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
   .tobe-ai-stage .pg11-ai-header{gap:12px}
 }
 /* [AUNEA-FE-PG11-RECOVERY-UX-210] END */
+
+/* [AUNEA-FE-PG11-HUMAN-UX-228] START — canonical PG11 review in the
+   existing activity inspector; AUNEA System tokens, responsive controls. */
+.tobe-human-review{display:grid;gap:13px;min-width:0;padding:18px;
+  border:1px solid var(--system-line);border-radius:var(--radius-sm);
+  background:var(--system-soft)}
+.tobe-human-review h4{font-size:14px;font-weight:750;color:var(--system);line-height:1.4}
+.tobe-human-review .tobe-human-review-status{margin:0;font-size:12px;line-height:1.6;color:var(--ink)}
+.tobe-human-review .field{min-width:0;margin:0}
+.tobe-human-review .field textarea{width:100%;min-width:0;min-height:100px;
+  max-width:100%;box-sizing:border-box;resize:vertical;line-height:1.6;
+  font-size:13px;background:#fff}
+.tobe-human-review-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:stretch}
+.tobe-human-review-actions .btn{min-height:40px;white-space:normal;max-width:100%;
+  line-height:1.35;flex:0 1 auto}
+@media(max-width:600px){
+  .tobe-human-review{padding:14px}
+  .tobe-human-review-actions{flex-direction:column}
+  .tobe-human-review-actions>.btn{width:100%}
+}
+/* [AUNEA-FE-PG11-HUMAN-UX-228] END */
