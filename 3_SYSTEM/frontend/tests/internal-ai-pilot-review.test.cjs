@@ -129,9 +129,9 @@ test('AI button click reaches backend once and preserves draft inputs on success
   assert.equal(app.requests[1].url,'http://localhost:8010/v1/internal-ai/tobe-step');
   assert.equal(app.requests[2].url,'http://localhost:8010/v1/internal-ai/tobe-review-basic');
   assert.match(app.notice.outerHTML,/Resultado esperado/);
-  assert.match(app.notice.outerHTML,/Auditoría técnica IA/);
-  assert.ok(app.notice.outerHTML.includes('data-ai-audit-step'));
-  assert.match(app.notice.outerHTML,/sólo se representa al solicitarlo/);
+  assert.match(app.notice.outerHTML,/Comprobación básica por reglas completada/);
+  assert.doesNotMatch(app.notice.outerHTML,/data-ai-review-audit/,
+    'rules-only check never presents a nonexistent model reviewer audit');
   assert.match(app.notice.outerHTML,/Estado de las propuestas IA/);
   assert.equal(app.renderCount,0,'No re-render that could erase unsaved TO-BE edits');
   assert.equal(app.button.disabled,false);
@@ -304,7 +304,8 @@ test('audit displays transmitted values and blocks rendering or generation in cl
     original_response:{items:[{source_step_id:'S1'}]},validation_status:'CONTRATO_VALIDO_PENDIENTE_REVISION'}]}};
   const html=vm.runInContext('internalAiPilotTracePanel(trace)',app.sandbox);
   assert.match(html,/Auditoría técnica IA/);
-  assert.match(html,/data-ai-audit-step/);
+  assert.doesNotMatch(html,/data-ai-review-audit/,
+    'a rules check has no Ollama reviewer trace');
   assert.doesNotMatch(html,/Entrada duplicada|Instrucciones reales/,'raw payload must be rendered on demand');
   const details=vm.runInContext('internalAiAuditContext(trace.S1,0)',app.sandbox);
   assert.match(details,/Entrada duplicada/);assert.match(details,/INDICATED/);assert.match(details,/1234/);
@@ -319,7 +320,8 @@ test('PG11 presents proposals first and review findings by activity without expo
   const app=aiPilotHarness({blockingSteps:['S1'],steps:['S1','S2']});
   app.click();await app.settle();
   const html=app.notice.outerHTML;
-  assert.ok(html.indexOf('Propuestas por actividad') < html.indexOf('Auditoría técnica IA'));
+  assert.ok(html.indexOf('Propuestas por actividad') < html.indexOf('Revisión y trazabilidad'));
+  assert.match(html,/Comprobación básica por reglas completada/);
   assert.match(html,/Intervención propuesta/);
   assert.match(html,/Resultado esperado/);
   assert.match(html,/Observaciones generales/);
