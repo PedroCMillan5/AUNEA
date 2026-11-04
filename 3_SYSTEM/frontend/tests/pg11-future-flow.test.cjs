@@ -35,7 +35,7 @@ const linear=[
 test('new flow starts with a faithful immutable AS-IS route projection',()=>{
  const h=harness(linear),before=JSON.stringify(h.snapshot);
  assert.equal(h.run('tobeFlowIntegrity'),null);
- assert.deepEqual(h.run('tobeFutureSteps').map(x=>[x.id,x.normal_next_step]),
+ assert.deepEqual(JSON.parse(JSON.stringify(h.run('tobeFutureSteps').map(x=>[x.id,x.normal_next_step]))),
   [['S1','S2'],['S2','__END__']]);
  assert.equal(JSON.stringify(h.snapshot),before);
 });
@@ -62,7 +62,7 @@ test('eliminating a step cannot silently invent a replacement route',()=>{
  assert.match(h.run('tobeFlowIntegrity'),/eliminada o pendiente/);
  h.p.flow=h.run('tobeFlowOwner');h.p.flow.routes.S1.normal='__END__';
  assert.equal(h.run('tobeFlowIntegrity'),null);
- assert.deepEqual(h.run('tobeFutureSteps').map(x=>x.id),['S1']);
+ assert.deepEqual(JSON.parse(JSON.stringify(h.run('tobeFutureSteps').map(x=>x.id))),['S1']);
  assert.equal(h.snapshot.processSteps[1].normal_next_step,'__END__');
 });
 test('decisions preserve explicit YES and NO routes, and verify reconvergence',()=>{
