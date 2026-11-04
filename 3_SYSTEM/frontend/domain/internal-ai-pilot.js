@@ -557,6 +557,13 @@ async function generateTobeBySteps(e,key,snap,availability,fresh=false){
   }
   if(failures.length)throw Error(failures.join(' · ')+' · '+completed.items.size+' de '+stepIds.length+' completadas. Puedes reintentar.');
   if(completed.items.size!==stepIds.length)throw Error('Faltan actividades; propuesta incompleta.');
+  return internalAiConsolidateVerified(e,key,snap,availability,completed,request);
+}
+async function internalAiConsolidateVerified(e,key,snap,availability,completed,request){
+  const stepIds=(latestTobe(e)?.items||[]).map(it=>String(it.sourceStepId));
+  if(!stepIds.length||completed?.stepSignature!==stepIds.join('|')||
+     completed.items.size!==stepIds.length||stepIds.some(id=>!completed.items.has(id)))
+    throw Error('No están completas las actividades verificadas del borrador vigente. No se ha lanzado una revisión.');
   // Review cross-step coherence only after every source step is validated.
   // If review fails, retain every completed step; retry only the review call.
   let items=stepIds.map(id=>completed.items.get(id));
@@ -606,12 +613,81 @@ async function generateTobeBySteps(e,key,snap,availability,fresh=false){
     internalAiPilotRefreshPanel(live||e);
   }
 }
-// [AUNEA-FE-TOBE-SEGMENTED-197] END
+// [AUNEA-FE-PG11-REVIEW-ONLY-216] START — explicit, observable retry of
+// the existing four verified activities. No generation step endpoint in this handler.
+// SOURCE: PG11 CANONICAL; DEC-050/052/055; PG11 REVIEW plan point B.
+// INPUT: current TO-BE versioned checkpoint, confirmed snapshot, official diagnostic.
+// SIDE EFFECTS: one optional backend status GET and one reviewer POST; DRAFT-only save.
+async function retryTobeAiReviewOnly(){
+  const e=currentEng(),key=e?internalAiPilotKey(e):null,p=e?latestTobe(e):null;
+  if(!e||!key||!tobeEditable(p)){
+    toast('No hay un borrador TO-BE vigente para revisar.');
+    return;
+  }
+  const completed=internalAiPendingSteps(e,key);
+  const ids=p.items.map(it=>String(it.sourceStepId));
+  if(!completed||completed.stepSignature!==ids.join('|')||
+     completed.items.size!==ids.length||!ids.every(id=>completed.items.has(id))){
+    internalAiPilotFeedback(e,'No están verificadas todas las actividades. No se ha iniciado la revisión global.','warn');
+    return;
+  }
+  if(!internalAiCheckpointSaved(e,key,completed)){
+    internalAiPilotFeedback(e,'Las actividades no tienen un guardado confirmado en este estudio. Guarda las actividades verificadas antes de reintentar.','warn');
+    return;
+  }
+  if(__auneaAiWorking.has(key)){
+    internalAiPilotFeedback(e,'Ya hay una operación de IA en curso. No se ha iniciado otra revisión; las actividades siguen guardadas.','info');
+    return;
+  }
+  __auneaAiWorking.add(key);
+  const button=document.getElementById('retryTobeAiReview');
+  if(button){button.disabled=true;button.textContent='Comprobando revisor…'}
+  internalAiPilotFeedback(e,'Comprobando disponibilidad del revisor global. Las '+ids.length+' propuestas permanecen guardadas…');
+  try{
+    if(!state.backendOnline&&!(await checkBackend()))throw Error('Backend no conectado; las propuestas siguen guardadas.');
+    const statusResponse=await fetch(state.backendUrl+'/v1/internal-ai/status',{cache:'no-store'});
+    if(!statusResponse.ok)throw Error('No se ha podido consultar el estado del proveedor (HTTP '+statusResponse.status+').');
+    const availability=await statusResponse.json();
+    if(availability.status!=='AVAILABLE')
+      throw Error(String(availability.reason||'Proveedor IA no disponible.')+' Las actividades guardadas no han cambiado.');
+    if(availability.provider!=='ollama')
+      throw Error('El reintento segmentado requiere el revisor local autorizado. No se ha cambiado el proveedor.');
+    if(availability.pg11_review_protocol!==__auneaPg11ReviewProtocol)
+      throw Error('El protocolo del revisor no coincide con el backend. Actualiza y reinicia Uvicorn antes de reintentar.');
+    const live=currentEng();
+    if(!live||internalAiPilotKey(live)!==key||!tobeEditable(latestTobe(live)))
+      throw Error('El estudio o su versión cambiaron antes de la revisión.');
+    const request={
+      engagement:buildBackendPayload(live),diagnostic:currentDiagnosticOutput(live),
+      confirmed_as_is:live.confirmedAsIs===true,
+      snapshot_version:confirmedSnapshot(live).version
+    };
+    // Strictly call the global reviewer. The per-activity /tobe-step endpoint
+    // is intentionally absent from this function.
+    await internalAiConsolidateVerified(live,key,confirmedSnapshot(live),
+      availability,completed,request);
+  }catch(error){
+    const message=String(error?.message||error||'Fallo desconocido del revisor global.');
+    internalAiPilotFeedback(currentEng()||e,'La revisión global no se completó: '+message+
+      ' Las '+ids.length+' actividades verificadas permanecen guardadas.','warn');
+    if(currentEng()?.id===e.id)internalAiPilotRefreshPanel(currentEng());
+    console.error('PG11: reintento de revisión global no completado',error);
+  }finally{
+    __auneaAiWorking.delete(key);
+    const currentButton=document.getElementById('retryTobeAiReview');
+    if(currentButton){currentButton.disabled=false;currentButton.textContent='Reintentar sólo la revisión global'}
+  }
+}
+// [AUNEA-FE-PG11-REVIEW-ONLY-216] END
+
 
 async function generateTobeAiPilot(e,fresh=false){
   const key=internalAiPilotKey(e);
   if((typeof isClientDisplay==='function'&&isClientDisplay())||!key||!tobeEditable(latestTobe(e)))return toast('El estudio no tiene un borrador vigente.');
-  if(__auneaAiWorking.has(key))return;
+  if(__auneaAiWorking.has(key)){
+    internalAiPilotFeedback(e,'Ya hay una operación de IA en curso. No se iniciará una segunda hasta que termine.','info');
+    return;
+  }
   for(const cache of [__auneaAiPreview,__auneaAiFeedback,__auneaAiCompletedSteps])
     for(const oldKey of cache.keys())if(oldKey!==key)cache.delete(oldKey);
   __auneaAiWorking.add(key);
@@ -786,7 +862,7 @@ registerInternalWorkPages=function(){
     const retryReview=event.target?.closest?.('#retryTobeAiReview');
     if(retryReview){
       event.preventDefault();
-      if(!retryReview.disabled)void generateTobeAiPilot(currentEng());
+      if(!retryReview.disabled)void retryTobeAiReviewOnly();
       return;
     }
     const generate=event.target?.closest?.('#generateTobeAiPilot');
