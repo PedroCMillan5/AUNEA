@@ -884,7 +884,7 @@ function tobeHumanReviewRecord(e,p){
   return h&&diag&&input&&h.tobeVersion===p.version&&
     h.sourceSnapshotVersion===p.sourceSnapshotVersion&&
     h.diagnosticInputHash===diag.input_snapshot_hash&&
-    h.proposalInputHash===input?h:null;
+    h.proposalInputHash===input&&h.proposalFingerprint===tobeCandidateFingerprint(p)?h:null;
 }
 function tobeHumanReviewHtml(e,item,historical){
   const p=latestTobe(e);
@@ -1297,7 +1297,7 @@ function registerInternalWorkPages(){
     const previous=p.aiDraft.humanReview?JSON.parse(JSON.stringify(p.aiDraft.humanReview)):null;
     const record=tobeHumanReviewRecord(e,p)||{tobeVersion:p.version,
       sourceSnapshotVersion:snapshot.version,diagnosticInputHash:diagnostic.input_snapshot_hash,
-      proposalInputHash:inputHash,decisions:{}};
+      proposalInputHash:inputHash,proposalFingerprint:tobeCandidateFingerprint(p),decisions:{}};
     record.decisions={...(record.decisions||{}),
       [sourceId]:{status:choice,note:reason,decidedAt:now()}};
     p.aiDraft.humanReview=record;
