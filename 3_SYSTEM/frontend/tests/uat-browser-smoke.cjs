@@ -759,6 +759,12 @@ async function main(){
   assert.equal(pg11RetryStatusHits,0,'basic check does not call the Ollama status endpoint');
   assert.equal(pg11RetryReviewHits,1,'basic review makes exactly one request');
   assert.equal(pg11RetryStepHits,0,'review-only retry must never call per-step generation');
+  await page.waitForFunction(()=>!__auneaAiWorking.has(internalAiPilotKey(currentEng())));
+  const reviewedScreen=await page.locator('#tobeAiPilotStatus').innerText();
+  assert.doesNotMatch(reviewedScreen,/Generación en curso/i,
+    'completed rule review must not show a stale working state');
+  assert.match(reviewedScreen,/Comprobación por reglas completada/,
+    'finished rules result must show its precise method and completion status');
   assert.equal(await page.evaluate(()=>JSON.stringify(latestTobe(currentEng()).items)),
     businessBeforeRetry,'review-only retry never alters consultant TO-BE fields');
   const reviewedDisk=await page.evaluate(()=>{
