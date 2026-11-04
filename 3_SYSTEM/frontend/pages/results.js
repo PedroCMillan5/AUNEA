@@ -816,7 +816,10 @@ function tobeSnapshotIssueCards(e,item){
 function tobeAiAdviceHtml(e,item){
   const key=typeof internalAiPilotKey==='function'?internalAiPilotKey(e):null;
   const cached=key&&typeof __auneaAiPreview!=='undefined'?__auneaAiPreview.get(key):null;
-  const draft=cached||(typeof internalAiSavedDraft==='function'?internalAiSavedDraft(e):null)||
+  const current=typeof internalAiSavedDraft==='function'?internalAiSavedDraft(e):null;
+  const archived=!cached&&!current&&typeof internalAiHistoricalDraft==='function'?
+    internalAiHistoricalDraft(e):null;
+  const draft=cached||current||archived?.proposal||
     (!tobeEditable(latestTobe(e))?latestTobe(e)?.aiDraft?.proposal:null);
   const suggestion=draft?.items?.find(x=>String(x.source_step_id)===String(item.sourceStepId));
   if(!suggestion)return '<div class="tobe-ai-empty"><p class="tobe-muted">Todavía no hay una sugerencia de IA para esta actividad. Puedes diseñarla manualmente o preparar propuestas con el motor local.</p></div>';
@@ -824,6 +827,8 @@ function tobeAiAdviceHtml(e,item){
   const issues=(draft.review?.issues||[]).filter(x=>x.step_id===item.sourceStepId||x.step_id==='GLOBAL');
   const blocking=issues.some(x=>x.category==='BLOCKING')||(draft.review?.blocking_step_ids||[]).includes(item.sourceStepId);
   return '<div class="tobe-advice-content">'+
+    (archived?'<p class="notice warn"><b>Propuesta histórica, sólo lectura.</b> Corresponde al TO-BE v'+
+      esc(archived.version)+'. No se aplica al proceso vigente sin una revisión del consultor.</p>':'')+
     '<div class="tobe-advice-label">'+esc(suggestion.transformation||'Sin clasificar')+
       (blocking?' · Requiere corrección':' · Propuesta sin aprobar')+'</div>'+
     '<dl class="tobe-advice-pairs">'+
@@ -881,6 +886,17 @@ function tobeCanvasHtml(e,p){
     '<svg class="process-graph-lines" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>'+
     cells+'</div></div></div>';
 }
+// [AUNEA-FE-PG11-READABLE-CODES-209] START — display-only translation for inherited source codes.
+function tobeSourceDataExplanation(raw){
+  const dictionary={EMAIL:'Correo electrónico',PDF:'Documento PDF',
+    DOC:'Documento',RECORD:'Registro'};
+  const codes=String(raw||'').split(',').map(x=>x.trim()).filter(Boolean);
+  if(!codes.length||!codes.every(x=>Object.prototype.hasOwnProperty.call(dictionary,x)))return '';
+  return '<p class="tobe-data-explanation">Lectura del código existente: '+
+    esc(codes.map(x=>dictionary[x]).join(' · '))+
+    '. Se mantiene el valor original; no se ha cambiado la fuente.</p>';
+}
+// [AUNEA-FE-PG11-READABLE-CODES-209] END
 function tobeInspectorHtml(e,p){
   const item=tobeSelectedItem(e,p),editable=tobeEditable(p);
   if(!item)return '<div class="notice warn">No hay actividades TO-BE vinculadas al AS-IS.</div>';
@@ -890,14 +906,20 @@ function tobeInspectorHtml(e,p){
       '<input value="'+attr(item.transformation||'Sin definir')+'" disabled>')+'</div>';
   return '<header class="tobe-inspector-head"><div><span class="tobe-eyebrow">ACTIVIDAD SELECCIONADA · ORIGEN AS-IS</span>'+
       '<h2>'+esc(item.sourceStepName)+'</h2></div><span class="tobe-selected-status">'+esc(item.transformation||'Sin definir')+'</span></header>'+
-    '<section class="tobe-origin"><h3>Situación de partida y hallazgos</h3>'+
+    '<section class="tobe-origin"><h3>03 · Situación AS-IS y hallazgos vinculados</h3>'+
       tobeSnapshotIssueCards(e,item)+'</section>'+
-    '<section class="tobe-edit"><h3>Diseño operativo propuesto</h3><div class="form-grid">'+statusField+
+    '<section class="tobe-edit"><h3>Decisión operativa del consultor · TO-BE</h3>'+
+      '<p class="tobe-muted">Estos campos describen el funcionamiento futuro. Los valores heredados se muestran para revisar, no son mejoras confirmadas ni decisiones de la IA.</p>'+
+      (item.transformation==='Se mantiene'&&/^(no|n\/a|ninguno)$/i.test(String(item.problemResolved||'').trim())?
+        '<p class="notice warn"><b>Justificación pendiente:</b> «Se mantiene» conserva esta actividad sin rediseño. El valor «NO» no explica por qué se mantienen los hallazgos ni cómo se controlan; revisa la decisión antes de validar.</p>':'')+
+      '<div class="form-grid">'+statusField+
       tobeField(item,'problemResolved','Qué problema resuelve',item.problemResolved,'textarea',!editable)+
       tobeField(item,'futureActor','Responsable futuro',item.futureActor,'text',!editable)+
       tobeField(item,'tool','Herramienta / arquitectura',item.tool,'text',!editable)+
-      tobeField(item,'inputs','Datos de entrada',item.inputs,'textarea',!editable)+
-      tobeField(item,'outputs','Datos de salida',item.outputs,'textarea',!editable)+
+      '<div class="tobe-data-pair">'+tobeField(item,'inputs','Datos de entrada',item.inputs,'textarea',!editable)+
+      tobeSourceDataExplanation(item.inputs)+'</div>'+
+      '<div class="tobe-data-pair">'+tobeField(item,'outputs','Datos de salida',item.outputs,'textarea',!editable)+
+      tobeSourceDataExplanation(item.outputs)+'</div>'+
       tobeField(item,'automationAi','Automatización e IA',item.automationAi,'textarea',!editable)+
       tobeField(item,'humanSupervision','Supervisión humana',item.humanSupervision,'textarea',!editable)+
       tobeField(item,'controlsRisk','Control / riesgo',item.controlsRisk,'textarea',!editable)+
@@ -940,7 +962,7 @@ function tobePage(){
       '<div class="notice info">AS-IS confirmado v'+esc(snap.version)+
       '. El diagnóstico oficial se reutiliza; no se vuelve a capturar.</div>');
   const editable=tobeEditable(p),statusLabel={DRAFT:'Borrador',REVIEWED:'Revisado',APPROVED_FOR_CLIENT:'Aprobado para cliente',PUBLISHED:'Publicado'}[p.status]||p.status;
-  const actions='<button class="btn" data-page="resultados">Diagnóstico PG10</button>'+
+  const actions='<button class="btn" data-page="resultados">Volver al diagnóstico</button>'+
     (['REVIEWED','APPROVED_FOR_CLIENT','PUBLISHED'].includes(p.status)?'<button class="btn" data-page="comparacion">Ir a comparación PG12</button>':'')+
     (editable?'<button class="btn" id="saveTobe">Guardar borrador</button>':'')+
     (editable?'<button class="btn btn-primary" id="advanceTobe">Marcar como revisado</button>':
@@ -952,13 +974,16 @@ function tobePage(){
       '<section class="tobe-context"><div><strong>Origen del diseño</strong><p>AS-IS confirmado v'+esc(snap.version)+
       ' · Diagnóstico '+esc(diagnosticOutputFreshness(e).label)+
       ' · '+p.items.length+' actividades de origen</p></div><div class="tobe-context-status">'+esc(statusLabel)+'</div></section>'+
-      '<section class="tobe-map-area"><header class="tobe-workspace-head"><div><span class="tobe-eyebrow">PROCESO FUTURO · MAPA</span>'+
-      '<h2>Diseño TO-BE por actividad</h2></div><p>Selecciona un nodo para consultar y editar su propuesta.</p></header>'+
+      (editable?'<section class="tobe-ai-stage" id="tobeAiWorkspace" aria-label="Asistente IA TO-BE">'+
+        '<header class="tobe-workspace-head"><div><span class="tobe-eyebrow">01 · PREPARAR LA PROPUESTA</span>'+
+        '<h2>Asistente IA y propuestas recuperables</h2></div>'+
+        '<p>Consulta primero las propuestas generadas. La IA propone; las decisiones y el diseño del proceso los valida el consultor.</p></header>'+
+        '<div id="tobeAiMount"></div></section>':'')+
+      '<section class="tobe-map-area"><header class="tobe-workspace-head"><div><span class="tobe-eyebrow">02 · CONSTRUIR EL DISEÑO</span>'+
+      '<h2>Mapa del proceso propuesto</h2></div><p>Selecciona una actividad para revisar su transformación y editar el TO-BE.</p></header>'+
       tobeCanvasHtml(e,p)+
-      '<p class="tobe-map-note">Las conexiones reproducen el AS-IS confirmado como estructura de referencia. Una transformación propuesta no modifica por sí sola rutas ni datos de origen.</p></section>'+
-      '<section id="tobeInspector" class="tobe-inspector">'+tobeInspectorHtml(e,p)+'</section>'+
-      (editable?'<details class="tobe-ai-workspace" id="tobeAiWorkspace"><summary>Propuestas IA, revisión automática y auditoría técnica</summary>'+
-        '<div id="tobeAiMount"></div></details>':'')+
+      '<p class="tobe-map-note"><b>Rutas de referencia:</b> las conexiones están heredadas del AS-IS confirmado. Los estados en los nodos son decisiones registradas en el borrador TO-BE, no mejoras verificadas. Cambiar una etiqueta no crea, elimina ni modifica automáticamente rutas.</p></section>'+
+      '<section id="tobeInspector" class="tobe-inspector" aria-label="Decisión TO-BE por actividad">'+tobeInspectorHtml(e,p)+'</section>'+
       '<section class="tobe-completion"><div><h2>Validación global</h2><p>Comprobación de versión, cobertura y requisitos del TO-BE. La calidad semántica requiere revisión humana.</p></div>'+
         '<button type="button" class="btn btn-outline" id="checkTobeReadiness">Comprobar requisitos</button>'+
         '<div id="tobeReadinessStatus" role="status" aria-live="polite"></div></section>'+
