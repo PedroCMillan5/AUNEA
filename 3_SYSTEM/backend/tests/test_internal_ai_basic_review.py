@@ -41,6 +41,10 @@ def api_payload():
             "quote":{}
         }
     })
+    from aunea_backend.models import EngagementInput
+    from aunea_backend.utils import stable_hash
+    engagement=EngagementInput.model_validate(payload["request"]["engagement"])
+    payload["request"]["diagnostic"]["input_snapshot_hash"]=stable_hash(engagement.model_dump())
     return payload
 
 
