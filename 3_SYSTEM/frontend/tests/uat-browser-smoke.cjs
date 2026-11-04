@@ -700,7 +700,7 @@ async function main(){
   assert.match(await page.locator('#tobeAiPilotStatus').innerText(),/pendiente de guardar/);
   assert.equal(await page.locator('#applyTobeAiPilot').count(),0,'blocked suggestions never apply');
   const pg11Layout=await page.evaluate(()=>{
-    const panel=document.querySelector('#tobeAiPilotStatus');
+    const panel=document.querySelector('#tobeAiWorkspace');
     const card=panel.querySelector('.pg11-ai-step');
     const panelRect=panel.getBoundingClientRect(),cardRect=card.getBoundingClientRect();
     const padding=parseFloat(getComputedStyle(panel).paddingLeft);
@@ -749,7 +749,7 @@ async function main(){
     'reloaded blocked proposal must remain unapplicable');
   await page.setViewportSize({width:550,height:820});
   const mobile=await page.evaluate(()=>{
-    const panel=document.querySelector('#tobeAiPilotStatus');
+    const panel=document.querySelector('#tobeAiWorkspace');
     const card=panel.querySelector('.pg11-ai-step');
     const p=panel.getBoundingClientRect(),c=card.getBoundingClientRect();
     return {padding:parseFloat(getComputedStyle(panel).paddingLeft),
