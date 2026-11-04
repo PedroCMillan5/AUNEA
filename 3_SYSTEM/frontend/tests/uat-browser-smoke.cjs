@@ -721,6 +721,63 @@ async function main(){
   assert.equal(await page.locator('#applyTobeAiPilot').count(),0,
     'review-incomplete checkpoint must remain non-applicable');
   // [AUNEA-UAT-PG11-INSPECTOR-CHECKPOINT-215] END
+  // [AUNEA-UAT-PG11-REVIEW-ONLY-BROWSER-218] START — actual button click
+  // must call only the global reviewer, preserve verified activities, and show result.
+  let pg11RetryStatusHits=0,pg11RetryReviewHits=0,pg11RetryStepHits=0;
+  const pg11StatusRoute=async route=>{
+    pg11RetryStatusHits++;
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({
+      status:'AVAILABLE',provider:'ollama',model:'fixture-local-no-ollama',
+      pg11_review_protocol:'PG11_REVIEW_20261103_3'
+    })});
+  };
+  const pg11ReviewRoute=async route=>{
+    pg11RetryReviewHits++;
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({
+      status:'CHECKED_WITH_NOTES',summary:'Revisión de coherencia simulada para UAT',
+      protocol_revision:'PG11_REVIEW_20261103_3',requires_human_review:true,
+      blocking_step_ids:[sourceIds[0]],issues:[{
+        step_id:sourceIds[0],category:'BLOCKING',
+        issue:'La transformación debe revisarse',evidence:'Propuesta sintética sin validar',
+        action:'Solicitar revisión humana'
+      }]
+    })});
+  };
+  const pg11StepRoute=async route=>{
+    pg11RetryStepHits++;
+    await route.fulfill({status:409,contentType:'application/json',
+      body:JSON.stringify({detail:'No deben regenerarse actividades en reintento global'})});
+  };
+  await page.route('**/v1/internal-ai/status',pg11StatusRoute);
+  await page.route('**/v1/internal-ai/tobe-review',pg11ReviewRoute);
+  await page.route('**/v1/internal-ai/tobe-step',pg11StepRoute);
+  await page.evaluate(()=>{state.backendOnline=true});
+  const businessBeforeRetry=await page.evaluate(()=>JSON.stringify(latestTobe(currentEng()).items));
+  await page.locator('#retryTobeAiReview').click();
+  await page.waitForFunction(()=>document.querySelector('#tobeAiPilotStatus')?.textContent
+    .includes('Propuesta IA guardada en el borrador.'),null,{timeout:10000});
+  assert.equal(pg11RetryStatusHits,1,'review-only retry checks provider status exactly once');
+  assert.equal(pg11RetryReviewHits,1,'review-only retry calls global reviewer exactly once');
+  assert.equal(pg11RetryStepHits,0,'review-only retry must never call per-step generation');
+  assert.equal(await page.evaluate(()=>JSON.stringify(latestTobe(currentEng()).items)),
+    businessBeforeRetry,'review-only retry never alters consultant TO-BE fields');
+  const reviewedDisk=await page.evaluate(()=>{
+    const e=currentEng(),p=latestTobe(e);
+    const disk=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');
+    return disk?.engagements?.find(x=>x.id===e.id)?.tobeProposals?.
+      find(x=>x.version===p.version)?.aiDraft?.proposal;
+  });
+  assert.equal(reviewedDisk?.items?.length,tobeSteps,'global reviewer draft must be saved in current engagement');
+  assert.equal(reviewedDisk?.review?.blocking_step_ids?.length,1,
+    'review flags must be stored and not silently auto-applied');
+  assert.equal(await page.evaluate(()=>latestTobe(currentEng()).status),'DRAFT',
+    'global IA review does not advance human approval status');
+  await page.unroute('**/v1/internal-ai/status',pg11StatusRoute);
+  await page.unroute('**/v1/internal-ai/tobe-review',pg11ReviewRoute);
+  await page.unroute('**/v1/internal-ai/tobe-step',pg11StepRoute);
+  console.log('PG11_REVIEW_ONLY_CLICK_PASS: '+JSON.stringify({
+    status:pg11RetryStatusHits,review:pg11RetryReviewHits,steps:pg11RetryStepHits}));
+  // [AUNEA-UAT-PG11-REVIEW-ONLY-BROWSER-218] END
   // [AUNEA-UAT-PG11-CHECKPOINT-BROWSER-213] END
 
   // [AUNEA-UAT-PG11-BROWSER-204] START — real browser save/reload and AUNEA layout without Ollama.
