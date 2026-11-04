@@ -19,7 +19,12 @@ test('AI PG11 runs only with explicit button action and confirmed official snaps
   assert.match(src,/requiresHumanReview|requires_human_review|status!=='DRAFT'/);
 });
 test('AI cannot silently overwrite user edits or publish',()=>{
-  assert.match(src,/!String\(target\[dst\]\|\|''\)\.trim\(\)/);
+  const results=fs.readFileSync(path.join(root,'pages/results.js'),'utf8');
+  assert.match(results,/!String\(target\[destination\]\|\|''\)\.trim\(\)/,
+    'the selected source-linked item must retain existing consultant values');
+  assert.match(results,/tobeAiStepApplicability/);
+  assert.doesNotMatch(src,/for\(const proposal of data\.items\)/,
+    'bulk AI application was replaced by source-bound per-step review');
   assert.doesNotMatch(src,/advanceTobeStatus\(/);
   assert.doesNotMatch(src,/approvedOutputReview\(/);
 });
