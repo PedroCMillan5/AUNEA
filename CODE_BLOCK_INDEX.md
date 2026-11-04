@@ -441,3 +441,5 @@
 
 | AUNEA-FE-PG11-COHERENCE-239 | 3_SYSTEM/frontend/pages/results.js | Comprobación de inconsistencias semánticas deterministas por paso, controles humanos y supuestos | Simulator CANONICAL PG11; DEC-034/050/052/055 | TO-BE draft, fuentes y transformaciones | Bloqueos/observaciones visibles antes de REVIEWED | No reemplaza IA ni autoriza cifras | HIGH | pg11-coherence.test.cjs; uat-browser-smoke.cjs | REVIEW |
 | AUNEA-FE-PG11-COHERENCE-STYLE-240 | 3_SYSTEM/frontend/ui-system.css | Resumen de coherencia responsive en panel global sin crear métricas de negocio | Simulator CANONICAL PG11; DEC-056 | PG11 DOM | Lista de inconsistencias contextual | CSS scoped | LOW | uat-browser-smoke.cjs | REVIEW |
+
+| AUNEA-UAT-PG11-COHERENCE-241 | 3_SYSTEM/frontend/tests/pg11-coherence.test.cjs | Pruebas deterministas de coherencia: intervención humana, control, contradicción Se mantiene y supuesto futuro | Simulator CANONICAL PG11; DEC-034/052/055 | TO-BE versioned draft | Node semantic guardrails | No Ollama/no economic calculation | HIGH | node --test tests/pg11-coherence.test.cjs | REVIEW |
