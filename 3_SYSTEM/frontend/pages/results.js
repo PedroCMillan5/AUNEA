@@ -1206,7 +1206,8 @@ function tobeFlowOwner(e,p){
   return {
     startStepId:String(stored?.startStepId||original[0]?.id||''),
     routes:{...routes,...(stored?.routes||{})},
-    addedSteps:Array.isArray(stored?.addedSteps)?stored.addedSteps:[]
+    addedSteps:Array.isArray(stored?.addedSteps)?stored.addedSteps:[],
+    positions:stored?.positions&&typeof stored.positions==='object'?{...stored.positions}:{}
   };
 }
 function tobeMutableFlow(e,p){
@@ -1327,51 +1328,74 @@ function tobeFlowInspector(e,p,item){
     '</div></section>';
 }
 // [AUNEA-FE-PG11-FUTURE-FLOW-228] END
+// [AUNEA-FE-PG11-FREE-CANVAS-248] START — persisted visual positions
+// are separate from flow.routes. The confirmed AS-IS is never mutated.
 function tobeCanvasHtml(e,p){
   const steps=tobeFutureSteps(e,p);
-  if(typeof processGraphData!=='function')return '<div class="notice warn">El componente del mapa no está disponible; no se han modificado los datos.</div>';
-  const graph=processGraphData(e,steps),selected=tobeSelectedItem(e,p);
-  const cells=graph.nodes.map(n=>{
-    const pos=graph.positions.get(n.id);if(!pos)return '';
+  if(typeof processGraphData!=='function')
+    return '<div class="notice warn">No está disponible el mapa; no se modificaron datos.</div>';
+  const graph=processGraphData(e,steps),selected=tobeSelectedItem(e,p),
+    flow=tobeFlowOwner(e,p),editable=tobeEditable(p);
+  const placements=graph.nodes.map(n=>{
+    const pos=graph.positions.get(n.id);
+    if(!pos)return null;
+    const saved=flow.positions?.[String(n.id)];
+    const x=saved&&Number.isFinite(Number(saved.x))?Number(saved.x):24+Math.max(0,pos.col-1)*260;
+    const y=saved&&Number.isFinite(Number(saved.y))?Number(saved.y):76+Math.max(0,pos.row-1)*252;
+    return {node:n,x:Math.max(0,Math.min(10000,Math.round(x))),
+      y:Math.max(0,Math.min(10000,Math.round(y)))};
+  }).filter(Boolean);
+  const boardWidth=Math.max(850,...placements.map(p=>p.x+235));
+  const boardHeight=Math.max(360,...placements.map(p=>p.y+270));
+  const cells=placements.map(({node:n,x,y})=>{
     const step=n.kind==='step'?steps.find(s=>String(s.id)===String(n.id)):null;
     const item=step?tobeFlowItem(e,p,String(step.id)):null;
     let content='';
     if(n.kind==='start'||n.kind==='end'){
-      const label=n.kind==='start'?'Inicio del proceso':'Fin del proceso';
-      content='<div class="tobe-boundary flow-boundary"><b>'+label+'</b><small>Referencia AS-IS</small></div>';
+      content='<div class="tobe-boundary flow-boundary"><b>'+
+        (n.kind==='start'?'Inicio del proceso':'Fin del proceso')+
+        '</b><small>TO-BE</small></div>';
     }else if(n.kind==='pending'){
-      content='<div class="graph-route-pending"><b>'+esc(n.route||'Ruta')+'</b><span>Destino pendiente en el AS-IS</span></div>';
+      content='<div class="graph-route-pending"><b>'+esc(n.route||'Ruta')+
+        '</b><span>Conexión pendiente</span></div>';
     }else if(item){
-      const status=item.transformation||'Pendiente de diseño';
-      const isSelected=tobeFlowItemId(selected)===String(step.id);
+      const id=attr(step.id),isSelected=tobeFlowItemId(selected)===String(step.id),
+        decision=String(step.step_type)==='ST04';
       content='<button type="button" class="graph-flow-step tobe-graph-node'+
-        (isSelected?' is-selected':'')+(item.transformation==='Se elimina'?' is-eliminated':'')+
-        '" data-tobe-select="'+attr(step.id)+'" aria-pressed="'+(isSelected?'true':'false')+
-        '" draggable="'+(tobeEditable(p)?'true':'false')+'" title="Arrastra esta actividad sobre otra para establecer la ruta principal" aria-label="Abrir diseño de '+attr(tobeFlowItemName(item))+'">'+
+        (isSelected?' is-selected':'')+
+        '" data-tobe-select="'+id+'" draggable="false" aria-pressed="'+String(isSelected)+
+        '" aria-label="Seleccionar y mover actividad '+attr(tobeFlowItemName(item))+'">'+
         '<span class="tobe-node-count">Actividad '+(steps.indexOf(step)+1)+'</span>'+
         '<span class="tobe-node-icon">'+processNodeIconSvg(processNodeIconName(step))+'</span>'+
         '<strong>'+esc(tobeFlowItemName(item))+'</strong>'+
-        '<span class="tobe-node-status">'+esc(status)+'</span>'+
-        '<small>'+esc(item.futureActor||'Responsable futuro pendiente')+'</small></button>';
+        '<span class="tobe-node-status">'+esc(item.transformation||'Pendiente de diseño')+'</span>'+
+        '<small>'+esc(item.futureActor||'Responsable pendiente')+'</small></button>'+
+        (editable?'<div class="tobe-node-tools" aria-label="Acciones de actividad">'+
+          '<button type="button" data-tobe-move="'+id+'" title="Mover tarjeta por el mapa">Mover</button>'+
+          '<button type="button" data-tobe-connect="'+id+'" data-tobe-kind="normal" title="Selecciona después la actividad de destino">Conectar</button>'+
+          (decision?'<button type="button" data-tobe-connect="'+id+'" data-tobe-kind="exception" title="Conectar ruta NO">Ruta NO</button>':'')+
+          (item.isAddition?'<button type="button" data-tobe-discard-added="'+id+'" title="Descartar sólo esta actividad nueva">Eliminar</button>':'')+
+          '</div>':'');
     }
-    return '<div class="process-graph-cell" style="grid-row:'+pos.row+';grid-column:'+pos.col+
-      '" data-graph-node="'+attr(n.id)+'">'+content+'</div>';
+    return '<div class="process-graph-cell" style="left:'+x+'px;top:'+y+
+      'px" data-graph-node="'+attr(n.id)+'">'+content+'</div>';
   }).join('');
   const routes=graph.edges.some(x=>x.label==='NO')?
     '<div class="process-graph-legend"><span class="legend-main"><i></i>Ruta SÍ / principal</span><span class="legend-alt"><i></i>Ruta NO / alternativa</span></div>':'';
-  return '<div class="tobe-canvas-viewport" aria-label="Mapa del proceso futuro proyectado desde el flujo AS-IS">'+
+  return '<div class="tobe-canvas-viewport" aria-label="Editor de posiciones y rutas del proceso futuro">'+
     '<div class="flow-canvas process-graph-canvas tobe-process-canvas">'+routes+
-    '<div class="process-graph-board" style="--graph-cols:'+graph.cols+';--graph-rows:'+graph.rows+
-      ';--graph-card-height:190px" data-graph-edges="'+attr(JSON.stringify(graph.edges))+
+    '<div class="process-graph-board tobe-free-board" style="width:'+boardWidth+
+      'px;height:'+boardHeight+'px" data-graph-edges="'+attr(JSON.stringify(graph.edges))+
       '" data-graph-branches="'+attr(JSON.stringify(graph.branchLayouts))+'">'+
     '<svg class="process-graph-lines" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>'+
     cells+'</div></div></div>'+
     ((p.items||[]).some(it=>it.transformation==='Se elimina')?
-      '<div class="tobe-removed-list"><b>Actividades del AS-IS propuestas para eliminar (se conservan en el origen)</b>'+
+      '<div class="tobe-removed-list"><b>Actividades originales propuestas para eliminar (AS-IS conservado)</b>'+
       p.items.filter(it=>it.transformation==='Se elimina').map(it=>
         '<button type="button" class="btn btn-outline" data-tobe-select="'+attr(it.sourceStepId)+'">'+
         esc(tobeFlowItemName(it))+'</button>').join('')+'</div>':'');
 }
+// [AUNEA-FE-PG11-FREE-CANVAS-248] END
 // [AUNEA-FE-PG11-READABLE-CODES-209] START — display-only translation for inherited source codes.
 function tobeSourceDataExplanation(raw){
   const dictionary={EMAIL:'Correo electrónico',PDF:'Documento PDF',
@@ -1487,7 +1511,7 @@ function tobePage(){
       '<h2>Mapa del proceso propuesto</h2></div><p>Selecciona una actividad para revisar su transformación y editar el TO-BE.</p></header>'+
       (editable?'<div class="tobe-flow-actions"><button type="button" class="btn btn-outline" id="addTobeStep">Añadir actividad vinculada al AS-IS</button>'+
         (tobeSelectedItem(e,p)?.isAddition?'<button type="button" class="btn btn-outline" data-tobe-discard-added="'+attr(tobeSelectedItem(e,p).id)+'">Eliminar actividad añadida del TO-BE</button>':'')+
-        '<span class="tobe-muted">Selecciona origen AS-IS para añadir. Arrastra una actividad sobre otra para conectar la ruta principal; la ruta NO se configura en el inspector.</span></div>':'')+
+        '<span class="tobe-muted">Selecciona una tarjeta y arrástrala para moverla; también puedes utilizar «Mover». Para cambiar las rutas, pulsa «Conectar» o «Ruta NO» y selecciona el destino. Los pasos nuevos tienen «Eliminar».</span></div>':'')+
       tobeCanvasHtml(e,p)+
       '<div class="tobe-flow-start field"><label>Inicio del proceso futuro</label>'+
         (editable?auneaSelectControl('tobeFlowStart',tobeFutureSteps(e,p).map(x=>({value:String(x.id),label:x.step_name})),
