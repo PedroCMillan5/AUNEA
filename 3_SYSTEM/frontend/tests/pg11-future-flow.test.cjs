@@ -98,6 +98,15 @@ test('a newly added decision needs explicit YES and NO routes and keeps the orig
  assert.equal(JSON.stringify(h.snapshot.processSteps),snapshot);
 });
 
+test('future layout coordinates are version-owned and do not rewrite original AS-IS',()=>{
+ const h=harness(linear),before=JSON.stringify(h.snapshot),flow=h.run('tobeFlowOwner');
+ flow.positions={S1:{x:451,y:188},S2:{x:720,y:188}};
+ h.p.flow=flow;
+ const recovered=h.run('tobeFlowOwner');
+ assert.deepEqual(JSON.parse(JSON.stringify(recovered.positions.S1)),{x:451,y:188});
+ assert.equal(h.run('tobeFlowIntegrity'),null);
+ assert.equal(JSON.stringify(h.snapshot),before);
+});
 test('a closed loop with no route to END blocks review',()=>{
  const h=harness(linear);h.p.flow=h.run('tobeFlowOwner');
  h.p.flow.routes.S2.normal='S1';
@@ -120,11 +129,17 @@ test('PG11 field help describes every text field and treats NO as invalid ration
   assert.match(src,/const shown=suspect&&key==='problemResolved'\?'':'raw/);
   assert.match(src,/placeholder="'\+attr\(help\)/);
 });
-test('PG11 drag connects only future main routes and keeps NO route in inspector',()=>{
-  assert.match(src,/AUNEA-FE-PG11-FLOW-DRAG-247/);
-  assert.match(src,/flow\.routes\[from\]\.normal=to/);
-  assert.match(src,/saveState\('Guardar conexión TO-BE'\)/);
+test('PG11 free canvas has separately persisted positions and explicit YES/NO connections',()=>{
+  assert.match(src,/AUNEA-FE-PG11-FREE-CANVAS-248/);
+  assert.match(src,/positions:stored\?\.positions/);
+  assert.match(src,/flow\.positions\[d\.id\]=point/);
+  assert.match(src,/document\.addEventListener\('pointermove'/);
+  assert.match(src,/flow\.routes\[from\]\[kind\]=String\(sourceId\)/);
+  assert.match(src,/saveState\('Guardar conexión editada TO-BE'\)/);
   assert.match(src,/field\('exception','Ruta NO/);
+  assert.match(src,/data-tobe-move/);
+  assert.match(src,/data-tobe-connect/);
+  assert.match(src,/data-tobe-discard-added/);
 });
 test('discarding added steps preserves history while clearing invalid incoming edges',()=>{
   assert.match(src,/item\.status='SUPERSEDED'/);
