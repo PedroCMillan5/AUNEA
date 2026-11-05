@@ -1683,7 +1683,9 @@ function tobeInspectorHtml(e,p){
       '<details class="tobe-subdetails"'+(adviceOpen?' open':'')+'><summary>02 · Revisar recomendación IA y decidir</summary>'+
       '<div id="tobeAiRecommendation">'+tobeAiAdviceHtml(e,item,false)+'</div></details></section>'+
     '<section class="tobe-edit" id="tobeStepDesign"><h3>03 · Configurar la actividad futura</h3>'+
-      (!item.isAddition?tobeHumanReviewHtml(e,item,false):'')+
+      (!item.isAddition&&typeof internalAiSavedDraft==='function'&&
+      internalAiSavedDraft(e)?.items?.some(x=>String(x.source_step_id)===String(item.sourceStepId))?
+      tobeHumanReviewHtml(e,item,false):'')+
       '<p class="tobe-muted" data-tobe-transformation-message="1" role="status" aria-live="polite">Elige «Qué cambia» y completa la justificación del diseño futuro. La recomendación IA no cambia tu decisión automáticamente.</p>'+
       '<p class="tobe-muted">Estos campos describen el funcionamiento futuro. Los valores heredados se muestran para revisar, no son mejoras confirmadas ni decisiones de la IA.</p>'+
       (item.transformation==='Se mantiene'&&/^(no|n\/a|ninguno)$/i.test(String(item.problemResolved||'').trim())?
