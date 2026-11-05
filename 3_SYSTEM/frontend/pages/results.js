@@ -1171,13 +1171,20 @@ function tobeAiAdviceHtml(e,item){
   const narrative=typeof internalAiPilotNarrative==='function'?internalAiPilotNarrative(suggestion.rationale):{action:'',expected:'',reason:String(suggestion.rationale||'')};
   const issues=(draft?.review?.issues||[]).filter(x=>x.step_id===stepId||x.step_id==='GLOBAL');
   const blocking=issues.some(x=>x.category==='BLOCKING')||(draft?.review?.blocking_step_ids||[]).includes(stepId);
-  return '<div class="tobe-advice-content">'+
+  return '<div class="tobe-advice-content" data-tobe-ai-transform="'+
+    attr(suggestion.transformation||'')+'">'+
     (fromCheckpoint?'<p class="notice warn"><b>Propuesta IA verificada por actividad · Pendiente de revisión global.</b> Sólo consulta. No se ha aplicado ni aprobado ningún cambio en el TO-BE.</p>':'')+
     (archived?'<p class="notice warn"><b>Propuesta histórica, sólo lectura.</b> Corresponde al TO-BE v'+
       esc(archived.version)+'. No se aplica al proceso vigente sin una revisión del consultor.</p>':'')+
     '<div class="tobe-advice-label">'+esc(suggestion.transformation||'Sin clasificar')+
       (fromCheckpoint?' · Pendiente de revisión global':
         blocking?' · Requiere corrección':' · Propuesta sin aprobar')+'</div>'+
+    '<p class="notice info" data-tobe-ai-difference="1"'+
+      (item.transformation&&item.transformation!==suggestion.transformation?'':' hidden')+'>'+
+      'La IA propone «'+esc(suggestion.transformation||'Sin clasificar')+
+      '» y tu diseño indica «'+esc(item.transformation||'Sin definir')+
+      '». Revisa la diferencia: aceptar la propuesta no modifica automáticamente el proceso.'+
+    '</p>'+
     '<dl class="tobe-advice-pairs">'+
     '<div><dt>Problema identificado</dt><dd>'+esc(suggestion.problem_resolved||'No concretado')+'</dd></div>'+
     '<div><dt>Intervención recomendada</dt><dd>'+esc(narrative.action||'No concretada')+'</dd></div>'+
@@ -2044,9 +2051,15 @@ function registerInternalWorkPages(){
       value?
       'Has seleccionado «'+value+'». Completa el motivo del cambio y los datos operativos futuros. La recomendación IA sigue pendiente de tu decisión explícita.':
       'Selecciona «Qué cambia» y justifica la decisión antes de revisar.';
-    const existing=row?.querySelector('.field-help');
-    if(existing&&/Valor heredado sin explicación/.test(existing.textContent||'')){
-      // The historical warning stays visible; legacy content is never removed.
+    const advice=root.querySelector('[data-tobe-ai-transform]');
+    const aiTransform=advice?.dataset?.tobeAiTransform||'';
+    const difference=advice?.querySelector('[data-tobe-ai-difference]');
+    if(difference){
+      const mismatch=!!value&&!!aiTransform&&value!==aiTransform;
+      difference.hidden=!mismatch;
+      if(mismatch)difference.textContent='La IA propone «'+aiTransform+
+        '» y tu diseño indica «'+value+
+        '». Decide si aceptar, modificar o descartar; cambiar el selector no aplica la propuesta.';
     }
   },true);
   // [AUNEA-FE-PG11-TRANSFORMATION-LIVE-259] END
