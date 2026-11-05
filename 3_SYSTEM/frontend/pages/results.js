@@ -1315,6 +1315,9 @@ function tobeWithAiHint(e,p,item,key,html){
   // ownership; the suggestion is a read-only sibling, not another control.
   if(item.isAddition)return html;
   const advice=tobeAiInlineHint(e,p,item,key);
+  const original=tobeProposalSourceSteps(e,p).find(x=>String(x.id)===String(item.sourceStepId));
+  const sourceKey=({futureActor:'actor',tool:'tool',inputs:'inputs',outputs:'outputs'})[key];
+  const sourceValue=original&&sourceKey?original[sourceKey]:null;
   const fallback='<div class="tobe-ai-inline tobe-ai-inline-empty" data-tobe-ai-field-key="'+
     attr(key)+'"><p class="field-help"><b>IA:</b> Sin propuesta vigente para esta actividad.'+
     ' Conserva el valor TO-BE o complétalo con evidencia.</p></div>';
