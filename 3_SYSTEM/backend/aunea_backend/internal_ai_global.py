@@ -116,7 +116,7 @@ def global_context(payload: PilotAIRequest) -> tuple[dict, set[str]]:
                 _compact_context_value({
                     "pain_id": p.pain_id if hasattr(p, "pain_id") else p.get("pain_id"),
                     "confidence": p.confidence if hasattr(p, "confidence") else p.get("confidence"),
-                }) for p in payload.diagnostic.pain_results
+                }) for p in (getattr(payload.diagnostic, "pain_results", []) or [])
             ],
             "note": "Los Pain son resultados oficiales, no diagnósticos nuevos del modelo. "
                     "No deducir beneficios cuantificados de ellos.",
