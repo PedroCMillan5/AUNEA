@@ -8,7 +8,7 @@ const __auneaAiPreview=new Map();
 const __auneaAiFeedback=new Map();
 const __auneaAiCompletedSteps=new Map(); // Transient, keyed by confirmed snapshot; no partial approval.
 const __auneaAiWorking=new Set();
-// [AUNEA-FE-PG11-AI-PROGRESS-281] Keep per-step Ollama errors/progress visible outside full audit.
+// [AUNEA-FE-PG11-AI-PROGRESS-281] START — Keep per-step Ollama errors/progress visible outside full audit.
 function internalAiPilotFeedback(e,message,type='info'){
   const key=internalAiPilotKey(e);
   if(key)__auneaAiFeedback.set(key,{message,type});
@@ -19,6 +19,7 @@ function internalAiPilotFeedback(e,message,type='info'){
   if(live)live.textContent=String(message||'');
   if(node){if(!String(node.className||'').includes('pg11-ai-panel'))node.className='notice '+(type==='warn'?'warn':'info');const label=document.getElementById('tobeAiProgress');if(label)label.textContent=message;else node.textContent=message}
 }
+// [AUNEA-FE-PG11-AI-PROGRESS-281] END
 function internalAiPilotRefreshPanel(e){
   const headline=document.querySelector('.tobe-ia-guide-summary');
   if(headline&&typeof internalAiSavedDraft==='function'){
