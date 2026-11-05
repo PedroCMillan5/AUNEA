@@ -8,6 +8,7 @@ const src=fs.readFileSync(path.join(__dirname,'../pages/results.js'),'utf8');
 const ai=fs.readFileSync(path.join(__dirname,'../domain/internal-ai-pilot.js'),'utf8');
 const css=fs.readFileSync(path.join(__dirname,'../ui-system.css'),'utf8');
 const block=src.match(/\/\/ \[AUNEA-FE-PG11-GLOBAL-OVERVIEW-284\] START[\s\S]*?\/\/ \[AUNEA-FE-PG11-GLOBAL-OVERVIEW-284\] END/)?.[0];
+const contextBlock=src.match(/\/\/ \[AUNEA-FE-PG11-CONTEXT-289\] START[\s\S]*?\/\/ \[AUNEA-FE-PG11-CONTEXT-289\] END/)?.[0];
 
 function harness(result){
   if(!block)throw Error('Falta sección global IA en PG11');
@@ -32,7 +33,56 @@ function harness(result){
 test('PG11 shows current context before global analysis, then the activity review',()=>{
   assert.ok(src.indexOf('<section class="tobe-context"')<src.indexOf('tobeGlobalOverviewHtml(e,p)+'));
   assert.ok(src.indexOf('tobeGlobalOverviewHtml(e,p)+')<src.indexOf('tobeGuidedNavHtml(e,p)+'));
-  assert.match(src,/01 · Información general/);
+  assert.match(src,/01 · INFORMACIÓN GENERAL/);
+});
+
+test('section 01 shows only confirmed source facts and not later live edits',()=>{
+  assert.ok(contextBlock,'Missing source-only PG11 context block');
+  const snapshot={
+    version:3,processName:'Registro de facturas',
+    company:{name:'Empresa confirmada'},
+    processSteps:[{id:'S1'},{id:'S2'}],
+    answers:{DF011:'Registro de facturas',DF012:'Recibir PDF',DF013:'Registrar en ERP',
+      DF008:'Reducir trabajo manual',DF086:['Trazabilidad'],
+      DF087:['Conservar autorización'],DF088:['No delegar aprobaciones'],
+      DF090:['Sin acceso externo']},
+  };
+  const sandbox={
+    schema:{fields:[]},
+    tobeProposalSnapshot:()=>snapshot,
+    diagnosticOutputFreshness:()=>({label:'Resultado vigente'}),
+    formatContextValue:(_,v)=>Array.isArray(v)?v.join(' · '):String(v),
+    esc:x=>String(x??'').replaceAll('&','&amp;').replaceAll('<','&lt;'),
+  };
+  vm.createContext(sandbox);vm.runInContext(contextBlock,sandbox);
+  const html=sandbox.tobeContextOverviewHtml({answers:{DF008:'Dato vivo modificado'},id:'E1'},
+    {status:'DRAFT',sourceSnapshotVersion:3});
+  assert.match(html,/Registro de facturas/);
+  assert.match(html,/Empresa confirmada/);
+  assert.match(html,/Recibir PDF/);
+  assert.match(html,/Registrar en ERP/);
+  assert.match(html,/Reducir trabajo manual/);
+  assert.match(html,/Conservar autorización/);
+  assert.match(html,/No delegar aprobaciones/);
+  assert.match(html,/Resultado vigente/);
+  assert.match(html,/2 actividades/);
+  assert.doesNotMatch(html,/Dato vivo modificado/);
+  assert.match(html,/<details class="tobe-context-details">/);
+  assert.doesNotMatch(html,/<input|<textarea|<select/i);
+});
+
+test('section 01 renders missing client constraints as missing, never as fabricated declarations',()=>{
+  const sandbox={schema:{fields:[]},
+    tobeProposalSnapshot:()=>({version:2,processName:'Proceso',
+      processSteps:[],answers:{DF012:'Inicio',DF013:'Fin'}}),
+    diagnosticOutputFreshness:()=>({label:'Diagnóstico vigente'}),
+    formatContextValue:(_,v)=>String(v),
+    esc:x=>String(x??''),
+  };
+  vm.createContext(sandbox);vm.runInContext(contextBlock,sandbox);
+  const html=sandbox.tobeContextOverviewHtml({id:'E1'}, {status:'DRAFT',sourceSnapshotVersion:2});
+  assert.match(html,/No consta/);
+  assert.doesNotMatch(html,/Cliente autorizó|Sin restricciones declaradas/);
 });
 
 test('section 01 remains visible in guided mode with System-native styling',()=>{
