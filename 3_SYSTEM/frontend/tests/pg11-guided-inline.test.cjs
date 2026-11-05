@@ -101,6 +101,7 @@ test('review navigation derives active step, neighbors and current UI-only mode'
  assert.match(html,/Siguiente actividad/);
  assert.doesNotMatch(html,/Actividad anterior/);
  index=2;context.__auneaTobeMode='map';
+ vm.runInContext(navBlock,context);
  html=context.tobeGuidedNavHtml({}, {items:steps});
  assert.match(html,/Actividad 3 de 4/);
  assert.match(html,/Actividad anterior/);
