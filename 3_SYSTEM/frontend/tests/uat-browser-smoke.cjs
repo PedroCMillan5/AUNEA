@@ -882,6 +882,9 @@ async function main(){
     });
     internalAiPilotRefreshPanel(e);
   });
+  assert.equal(await page.evaluate(()=>document.querySelector('#tobeAiWorkspace')?.open),true,
+    'PG11 must preserve the consultant-opened IA audit across same-version rerenders');
+  await page.evaluate(()=>{document.querySelector('#tobeAiWorkspace').open=false;});
   const uiOrder=await page.evaluate(()=>{
     const content=document.querySelector('.tobe-workspace');
     const ai=content?.querySelector('#tobeAiWorkspace'),map=content?.querySelector('.tobe-map-area'),
