@@ -1875,11 +1875,6 @@ function tobeInspectorHtml(e,p){
       '<button type="button" class="btn btn-outline btn-small" style="margin:0 12px 10px 0" data-tobe-mode-switch="map">4 · Conectar</button>'+
     '</nav>'+supportingInformation+
     '<section class="tobe-edit" id="tobeStepDesign"><h3>03 · Configurar la actividad futura</h3>'+
-      (!item.isAddition&&hasCurrentAi?
-        '<details class="tobe-human-review-shell"'+(choice?.status?'':' open')+'>'+
-        '<summary>Decisión sobre la propuesta IA · '+
-          esc(TOBE_HUMAN_LABELS[choice?.status]||'Pendiente de decisión')+'</summary>'+
-        tobeHumanReviewHtml(e,item,false)+'</details>':'')+
       '<p class="tobe-muted" data-tobe-transformation-message="1" role="status" aria-live="polite">Elige «Qué cambia» y completa la justificación del diseño futuro. La recomendación IA no cambia tu decisión automáticamente.</p>'+
       '<p class="tobe-muted">Estos campos describen el funcionamiento futuro. Los valores heredados se muestran para revisar, no son mejoras confirmadas ni decisiones de la IA.</p>'+
       tobeAiOperationalContextHtml(e,item)+
