@@ -2001,6 +2001,38 @@ function registerInternalWorkPages(){
     toast('Conexión cancelada.');
   },true);
   // [AUNEA-FE-PG11-GUIDED-INSPECTOR-253] END
+  // [AUNEA-FE-PG11-TRANSFORMATION-LIVE-259] START
+  // The canonical select emits change on its hidden owner input. Update only
+  // the visible label/help; values remain untouched until explicit save.
+  document.addEventListener('change',event=>{
+    const target=event.target;
+    if(state.activePage!=='tobe'||target?.dataset?.tobeField!=='transformation')return;
+    const root=target.closest('.tobe-inspector')||document.getElementById('tobeInspector');
+    if(!root)return;
+    const value=String(target.value||''),row=root.querySelector('[data-tobe-rationale-wrapper]'),
+      label=row?.querySelector('[data-tobe-rationale-label]'),
+      textarea=row?.querySelector('[data-tobe-field="problemResolved"]');
+    if(label)label.textContent=tobeTransformationRationaleLabel(value);
+    if(textarea){
+      textarea.placeholder=tobeFieldHelp('problemResolved',{transformation:value});
+      // Never rewrite text already typed under the previous transformation.
+    }
+    const status=root.querySelector('.tobe-selected-status');
+    if(status)status.textContent=value||'Sin definir';
+    const hint=root.querySelector('[data-tobe-transformation-message]');
+    if(hint)hint.textContent=value==='Se mantiene'?
+      'Has seleccionado «Se mantiene». Explica por qué no cambias esta actividad y cómo se atienden sus hallazgos. La recomendación IA no se aplica automáticamente.':
+      value==='Se elimina'?
+      'Has seleccionado «Se elimina». Justifica la retirada y revisa las conexiones afectadas en el mapa TO-BE.':
+      value?
+      'Has seleccionado «'+value+'». Completa el motivo del cambio y los datos operativos futuros. La recomendación IA sigue pendiente de tu decisión explícita.':
+      'Selecciona «Qué cambia» y justifica la decisión antes de revisar.';
+    const existing=row?.querySelector('.field-help');
+    if(existing&&/Valor heredado sin explicación/.test(existing.textContent||'')){
+      // The historical warning stays visible; legacy content is never removed.
+    }
+  },true);
+  // [AUNEA-FE-PG11-TRANSFORMATION-LIVE-259] END
   // [AUNEA-FE-PG11-SELECT-206] START — retain unsaved consultant data before switching inspector.
   document.addEventListener('click',event=>{
     const selected=event.target?.closest?.('[data-tobe-select]');
