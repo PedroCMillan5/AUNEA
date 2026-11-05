@@ -1848,7 +1848,7 @@ function tobeInspectorHtml(e,p){
       item.transformation||'',{extra:'data-tobe-item="'+attr(item.id)+'" data-tobe-field="transformation"',placeholder:'Selecciona una transformación'}):
       '<input value="'+attr(item.transformation||'Sin definir')+'" disabled>')+'</div>';
   const supportingInformation=
-    '<section class="tobe-origin" id="tobeStepOrigin"><details class="tobe-subdetails"><summary>01 · Datos y hallazgos del AS-IS confirmado</summary>'+
+    '<section class="tobe-origin" id="tobeStepOrigin"><details class="tobe-subdetails" open><summary>01 · Datos y hallazgos del AS-IS confirmado</summary>'+
       tobeOriginalStepFacts(e,item)+tobeSnapshotIssueCards(e,item)+'</details></section>'+
     '<section class="tobe-advice" id="tobeStepAdvice" aria-label="Sugerencia IA para actividad">'+
       '<details class="tobe-subdetails"'+(adviceOpen?' open':'')+'><summary>02 · Revisar recomendación IA y decidir</summary>'+
