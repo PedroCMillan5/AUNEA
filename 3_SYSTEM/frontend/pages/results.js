@@ -1486,6 +1486,7 @@ function tobePage(){
       '<section class="tobe-map-area"><header class="tobe-workspace-head"><div><span class="tobe-eyebrow">02 · CONSTRUIR EL DISEÑO</span>'+
       '<h2>Mapa del proceso propuesto</h2></div><p>Selecciona una actividad para revisar su transformación y editar el TO-BE.</p></header>'+
       (editable?'<div class="tobe-flow-actions"><button type="button" class="btn btn-outline" id="addTobeStep">Añadir actividad vinculada al AS-IS</button>'+
+        (tobeSelectedItem(e,p)?.isAddition?'<button type="button" class="btn btn-outline" data-tobe-discard-added="'+attr(tobeSelectedItem(e,p).id)+'">Eliminar actividad añadida del TO-BE</button>':'')+
         '<span class="tobe-muted">Selecciona origen AS-IS para añadir. Arrastra una actividad sobre otra para conectar la ruta principal; la ruta NO se configura en el inspector.</span></div>':'')+
       tobeCanvasHtml(e,p)+
       '<div class="tobe-flow-start field"><label>Inicio del proceso futuro</label>'+
