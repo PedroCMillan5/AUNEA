@@ -1855,7 +1855,12 @@ function tobeInspectorHtml(e,p){
       (editable&&!item.isAddition?'<div class="tobe-ai-per-step-action"><button type="button" class="btn btn-primary" data-tobe-generate-selected="'+attr(item.sourceStepId)+'">'+
         (hasCurrentAi?'Volver a analizar este paso':'Analizar este paso con IA')+'</button>'+
         '<span class="tobe-muted">Análisis independiente de esta actividad; no aplica cambios automáticamente.</span></div>':'')+
-      '<div id="tobeAiRecommendation">'+tobeAiAdviceHtml(e,item,false)+'</div></details></section>';
+      '<div id="tobeAiRecommendation">'+tobeAiAdviceHtml(e,item,false)+'</div>'+
+      (!item.isAddition&&hasCurrentAi?
+        '<details class="tobe-human-review-shell"'+(choice?.status?'':' open')+'>'+
+          '<summary>Decisión del consultor · '+esc(TOBE_HUMAN_LABELS[choice?.status]||'Pendiente')+'</summary>'+
+          tobeHumanReviewHtml(e,item,false)+'</details>':'')+
+      '</details></section>';
   return '<header class="tobe-inspector-head"><div><span class="tobe-eyebrow">'+
       (item.isAddition?'ACTIVIDAD NUEVA · VINCULADA A AS-IS':'ACTIVIDAD SELECCIONADA · ORIGEN AS-IS')+
       '</span><h2>'+(itemIndex>=0?'P'+(itemIndex+1)+' · ':'')+esc(tobeFlowItemName(item))+'</h2>'+
