@@ -25,7 +25,8 @@ test('AI cannot silently overwrite user edits or publish',()=>{
     'the current consultant draft must be saved before selecting IA changes');
   assert.match(results,/for\(const field of chosen\)item\[field\.key\]=/,
     'only selected IA fields may change the consultant-owned TO-BE');
-  assert.match(results,/tobeAiStepApplicability/);
+  assert.match(results,/tobeAiReviewDiff/,'source-linked IA compatibility is checked before selection');
+  assert.match(results,/if\(first\.issue\)/,'blocking issues prevent field application');
   assert.doesNotMatch(src,/for\(const proposal of data\.items\)/,
     'bulk AI application was replaced by source-bound per-step review');
   assert.doesNotMatch(src,/advanceTobeStatus\(/);
