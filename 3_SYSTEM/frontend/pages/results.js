@@ -1201,6 +1201,8 @@ function tobeAiInlineHint(e,p,item,key){
     (skipped?'<p class="field-help">'+esc(skipped.reason)+'</p>':'')+
     (diff.warnings.length?'<p class="field-help"><b>Condición de revisión:</b> '+
       esc(diff.warnings.join(' · '))+'</p>':'')+
+    (matched||skipped?'<p class="field-help tobe-ai-field-why"><b>Fundamento general:</b> '+
+      esc(explain||'No existe una justificación específica para este campo.')+'</p>':'')+
     '<details class="tobe-subdetails"><summary>Justificación, fuentes y límites de la propuesta IA</summary>'+
       '<p><b>Justificación global de la actividad (no específica de este campo):</b> '+esc(explain||'El motor no aportó una justificación diferenciada.')+'</p>'+
       (action?'<p><b>Intervención propuesta:</b> '+esc(action)+'</p>':'')+
@@ -1216,6 +1218,29 @@ function tobeAiInlineHint(e,p,item,key){
         skipped?'Selecciona un valor válido en el control original.':
         diff.issue||'Se mantiene el valor actual del TO-BE.')+'</p>')+
     '</div>';
+}
+// [AUNEA-FE-PG11-CLIENT-CONTEXT-269] Read-only evidence and conditions.
+// The IA limitations are proposals to verify, NEVER confirmed client claims.
+function tobeAiOperationalContextHtml(e,item){
+  if(item.isAddition)return '';
+  const saved=typeof internalAiSavedDraft==='function'?internalAiSavedDraft(e):null;
+  const history=!saved&&typeof internalAiHistoricalDraft==='function'?internalAiHistoricalDraft(e):null;
+  const proposal=saved||history?.proposal;
+  const ai=proposal?.items?.find(x=>String(x.source_step_id)===String(item.sourceStepId));
+  if(!ai)return '<p class="tobe-ai-operational-context tobe-muted">Sin propuesta IA vigente para esta actividad. El diseño debe basarse en el AS-IS y las evidencias confirmadas.</p>';
+  const limitations=String(ai.limitations||'').trim();
+  const refs=typeof internalAiReadableRefs==='function'?
+    internalAiReadableRefs(e,ai.source_refs):(ai.source_refs||[]).join(' · ');
+  const historical=!!history;
+  return '<div class="tobe-ai-operational-context" role="note">'+
+    '<strong>Condiciones de diseño y restricciones a contrastar'+
+    (historical?' · Propuesta histórica v'+esc(history.version):'')+'</strong>'+
+    '<p>'+esc(limitations||'La IA no ha detallado restricciones para esta actividad.')+'</p>'+
+    '<details class="tobe-subdetails"><summary>Fuentes y criterio de aplicación</summary>'+
+      '<p><b>Referencias:</b> '+esc(refs||'Sin fuentes especificadas')+'</p>'+
+      '<p>Las limitaciones inferidas por IA no equivalen a restricciones declaradas por el cliente. Revisa el diagnóstico y confirma viabilidad, impacto diario y controles antes de aprobar.</p>'+
+      (historical?'<p>Propuesta anterior: sólo lectura. No se puede aplicar a la versión actual sin una propuesta vigente.</p>':'')+
+    '</details></div>';
 }
 function tobeWithAiHint(e,p,item,key,html){
   // [AUNEA-FE-PG11-GUIDED-FIELD-267] The existing field keeps sole edit
@@ -1722,6 +1747,7 @@ function tobeInspectorHtml(e,p){
       tobeHumanReviewHtml(e,item,false):'')+
       '<p class="tobe-muted" data-tobe-transformation-message="1" role="status" aria-live="polite">Elige «Qué cambia» y completa la justificación del diseño futuro. La recomendación IA no cambia tu decisión automáticamente.</p>'+
       '<p class="tobe-muted">Estos campos describen el funcionamiento futuro. Los valores heredados se muestran para revisar, no son mejoras confirmadas ni decisiones de la IA.</p>'+
+      tobeAiOperationalContextHtml(e,item)+
       (item.transformation==='Se mantiene'&&/^(no|n\/a|ninguno)$/i.test(String(item.problemResolved||'').trim())?
         '<p class="notice warn"><b>Justificación pendiente:</b> «Se mantiene» conserva esta actividad sin rediseño. El valor «NO» no explica por qué se mantienen los hallazgos ni cómo se controlan; revisa la decisión antes de validar.</p>':'')+
       '<div class="form-grid">'+
