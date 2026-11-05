@@ -1762,7 +1762,10 @@ function tobeInspectorHtml(e,p){
     itemIndex=allItems.findIndex(x=>tobeFlowItemId(x)===tobeFlowItemId(item)),
     nextItem=itemIndex>=0?allItems[itemIndex+1]:null;
   const choice=tobeHumanReviewRecord(e,p)?.decisions?.[String(item.sourceStepId)];
-  const adviceOpen=editable&&!item.isAddition&&!['ACCEPT','MODIFY','DISCARD'].includes(choice?.status);
+  const hasCurrentAi=typeof internalAiSavedDraft==='function'&&
+    internalAiSavedDraft(e)?.items?.some(x=>String(x.source_step_id)===String(item.sourceStepId));
+  const adviceOpen=editable&&!item.isAddition&&hasCurrentAi&&
+    !['ACCEPT','MODIFY','DISCARD'].includes(choice?.status);
   const withAi=(key,html)=>tobeWithAiHint(e,p,item,key,html);
   const statusField='<div class="field"><label for="tobe_'+attr(item.id)+'_transformation">Qué cambia</label>'+
     (editable?auneaSelectControl('tobe_'+item.id+'_transformation',TOBE_TRANSFORMATIONS.map(v=>({value:v,label:v})),
@@ -1786,9 +1789,11 @@ function tobeInspectorHtml(e,p){
       '<details class="tobe-subdetails"'+(adviceOpen?' open':'')+'><summary>02 · Revisar recomendación IA y decidir</summary>'+
       '<div id="tobeAiRecommendation">'+tobeAiAdviceHtml(e,item,false)+'</div></details></section>'+
     '<section class="tobe-edit" id="tobeStepDesign"><h3>03 · Configurar la actividad futura</h3>'+
-      (!item.isAddition&&typeof internalAiSavedDraft==='function'&&
-      internalAiSavedDraft(e)?.items?.some(x=>String(x.source_step_id)===String(item.sourceStepId))?
-      tobeHumanReviewHtml(e,item,false):'')+
+      (!item.isAddition&&hasCurrentAi?
+        '<details class="tobe-human-review-shell"'+(choice?.status?'':' open')+'>'+
+        '<summary>Decisión sobre la propuesta IA · '+
+          esc(TOBE_HUMAN_LABELS[choice?.status]||'Pendiente de decisión')+'</summary>'+
+        tobeHumanReviewHtml(e,item,false)+'</details>':'')+
       '<p class="tobe-muted" data-tobe-transformation-message="1" role="status" aria-live="polite">Elige «Qué cambia» y completa la justificación del diseño futuro. La recomendación IA no cambia tu decisión automáticamente.</p>'+
       '<p class="tobe-muted">Estos campos describen el funcionamiento futuro. Los valores heredados se muestran para revisar, no son mejoras confirmadas ni decisiones de la IA.</p>'+
       tobeAiOperationalContextHtml(e,item)+
