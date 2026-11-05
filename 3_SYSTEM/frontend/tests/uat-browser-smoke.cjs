@@ -856,7 +856,7 @@ async function main(){
       persisted:saved?.items?.[0]?.transformation,
       action:saved?.aiDraft?.applyHistory?.at(-1)?.action,
       source:saved?.aiDraft?.applyHistory?.at(-1)?.sourceStepId,
-      status:p.status,originUnchanged:JSON.stringify(tobeSourceSteps(e))===confirmedStepBefore};
+      status:p.status};
   });
   // The confirmed source is checked independently below; the field must remain version-owned.
   assert.equal(applied.value,'Se modifica');
