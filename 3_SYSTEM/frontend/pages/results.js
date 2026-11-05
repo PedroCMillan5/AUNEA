@@ -738,7 +738,8 @@ function tobeHistory(e){return e.tobeProposals||(e.tobeProposals=[])}
 function latestTobe(e){const h=e?.tobeProposals||[];return h[h.length-1]||null}
 function tobeEditable(p){return !!p&&p.status==='DRAFT'}
 function tobeSourceSteps(e){const snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;return (snap?.processSteps||[]).filter(x=>x.status!=='SUPERSEDED')}
-function createTobeDraft(e){const snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;if(!e||!snap)return null;const h=tobeHistory(e),p={version:h.length+1,status:'DRAFT',sourceSnapshotVersion:snap.version,createdAt:now(),updatedAt:now(),items:tobeSourceSteps(e).map((s,i)=>({id:`TOBE-${h.length+1}-${i+1}`,sourceStepId:s.id||'',sourceStepName:s.name||s.step_name||`Paso ${i+1}`,transformation:'',problemResolved:'',futureActor:labelFrom('OS_ACTOR_ROLE',s.actor)||'',tool:labelFrom('OS_TOOL_CATEGORY',s.tool)||'',inputs:Array.isArray(s.inputs)?s.inputs.join(', '):(s.inputs||''),outputs:Array.isArray(s.outputs)?s.outputs.join(', '):(s.outputs||''),automationAi:'',humanSupervision:'',controlsRisk:'',futureTime:'',futureTimeAssumption:''}))};p.flow=tobeFlowOwner(e,p);h.push(p);markDirty(`TO-BE v${p.version} creado como DRAFT desde snapshot confirmado v${snap.version}`);return p}
+function createTobeDraft(e){const snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;if(!e||!snap)return null;const h=tobeHistory(e),p={version:h.length+1,status:'DRAFT',sourceSnapshotVersion:snap.version,createdAt:now(),updatedAt:now(),items:tobeSourceSteps(e).map((s,i)=>({id:`TOBE-${h.length+1}-${i+1}`,sourceStepId:s.id||'',sourceStepName:s.name||s.step_name||`Paso ${i+1}`,transformation:'',problemResolved:'',futureActor:labelFrom('OS_ACTOR_ROLE',s.actor)||'',tool:labelFrom('OS_TOOL_CATEGORY',s.tool)||'',inputs:Array.isArray(s.inputs)?[...s.inputs]:(s.inputs||[]),outputs:Array.isArray(s.outputs)?[...s.outputs]:(s.outputs||[]),
+  _details:{inputs:String(s._details?.inputs||''),outputs:String(s._details?.outputs||'')},automationAi:'',humanSupervision:'',controlsRisk:'',futureTime:'',futureTimeAssumption:''}))};p.flow=tobeFlowOwner(e,p);h.push(p);markDirty(`TO-BE v${p.version} creado como DRAFT desde snapshot confirmado v${snap.version}`);return p}
 function nextTobeStatus(p){const i=TOBE_PUBLICATION_STATES.indexOf(p?.status);return i>=0&&i<TOBE_PUBLICATION_STATES.length-1?TOBE_PUBLICATION_STATES[i+1]:null}
 // [AUNEA-FE-PG11-REVIEW-GATE-199] START — only canonical source/field readiness, not engine approval.
 // SOURCE: Simulator CANONICAL PG11; DEC-034/050/052/055.
@@ -782,7 +783,8 @@ function tobeReviewReadiness(e,p){
       if(!meaningful(item.problemResolved))
         return 'Justifica qué problema o situación aborda el diseño futuro de '+name+' (no basta «NO»).';
       if(!['Se mantiene','Se elimina'].includes(item.transformation)&&
-         ['tool','inputs','outputs','controlsRisk'].some(k=>!meaningful(item[k])))
+         ['tool','controlsRisk'].some(k=>!meaningful(item[k]))||
+         ['inputs','outputs'].some(k=>!tobeArtifactValues(item[k]).resolved.length))
         return 'Completa herramienta, datos y controles del diseño futuro de '+name+'.';
       if(['Se automatiza','Se asiste con IA'].includes(item.transformation)&&
          (!meaningful(item.automationAi)||!meaningful(item.humanSupervision)))
@@ -829,6 +831,22 @@ function saveTobeFromDom(e){
     const item=[...p.items,...tobeAddedSteps(p)].find(x=>x.id===el.dataset.tobeItem);
     if(item)item[el.dataset.tobeField]=el.value;
   });
+  document.querySelectorAll('[data-tobe-multi-item]').forEach(box=>{
+    if(box.dataset.tobeMultiReadonly==='1')return;
+    const item=[...p.items,...tobeAddedSteps(p)].find(x=>String(x.id)===box.dataset.tobeMultiItem);
+    if(!item)return;
+    const key=box.dataset.tobeMultiKey,id=box.dataset.tobeMultiId;
+    if(key!=='inputs'&&key!=='outputs')return;
+    const chosen=[...box.querySelectorAll('[data-v1-multi]')].filter(x=>x.checked).map(x=>String(x.value));
+    const current=tobeArtifactValues(item[key]);
+    if(current.unknown.length){
+      // Existing unsupported codes are never discarded by unrelated saves.
+      item[key]=[...chosen,...current.unknown];
+    }else item[key]=chosen;
+    const detail=box.querySelector('[id="'+id+'_detail"]');
+    if(!item._details||typeof item._details!=='object')item._details={};
+    item._details[key]=detail?.value||'';
+  });
   const start=document.querySelector('[data-tobe-flow-start]');
   const routes=[...document.querySelectorAll('[data-tobe-route-step]')];
   if(start||routes.length){
@@ -845,6 +863,40 @@ function saveTobeFromDom(e){
   p.updatedAt=now();markDirty('TO-BE v'+p.version+' actualizado');
   return true;
 }
+// [AUNEA-FE-PG11-CANONICAL-CONTROLS-251] START
+// Reuse AS-IS process editor selections and catalogs; legacy drafts may contain
+// CSV labels/codes. Never replace an unrecognized legacy value silently.
+function tobeArtifactValues(value){
+  const opts=typeof fieldOptions==='function'?fieldOptions('OS_ARTIFACT_TYPE'):[];
+  const candidates=Array.isArray(value)?value:String(value||'').split(',').map(x=>x.trim()).filter(Boolean);
+  const resolved=[],unknown=[];
+  for(const raw of candidates){
+    const v=String(raw).trim(),option=opts.find(x=>
+      String(x.value)===v||String(x.label||'').trim().toLowerCase()===v.toLowerCase());
+    if(option){if(!resolved.includes(String(option.value)))resolved.push(String(option.value));}
+    else if(v)unknown.push(v);
+  }
+  return {resolved,unknown};
+}
+function tobeArtifactField(item,key,label,disabled=false){
+  const opts=typeof fieldOptions==='function'?fieldOptions('OS_ARTIFACT_TYPE'):[];
+  const {resolved,unknown}=tobeArtifactValues(item[key]);
+  const htmlId='tobe_artifact_'+key+'_'+String(item.id).replace(/[^a-zA-Z0-9_-]/g,'_');
+  const details=String(item._details?.[key]||'');
+  const controls=typeof selectedHtml==='function'?
+    selectedHtml(htmlId,opts,resolved,{wrapped:true,detailId:htmlId+'_detail',
+      detailValue:details,detailPlaceholder:'Especifica '+(key==='inputs'?'el dato de entrada':'el resultado')+' al seleccionar Otro'}):
+    '<p class="notice warn">No se ha cargado el componente canónico de multiselección.</p>';
+  return '<div class="field full tobe-artifact-field" data-tobe-multi-item="'+attr(item.id)+
+    '" data-tobe-multi-key="'+attr(key)+'" data-tobe-multi-id="'+attr(htmlId)+'"'+
+    (disabled?' data-tobe-multi-readonly="1"':'')+'><label>'+esc(label)+'</label>'+
+    '<div'+(disabled?' class="tobe-readonly-options"':'')+'>'+controls+'</div>'+
+    (unknown.length?'<p class="notice warn">Valor anterior no reconocido por el catálogo vigente: '+
+      esc(unknown.join(' · '))+'. Se conserva en el borrador hasta que selecciones las opciones válidas.</p>':'')+
+    '<p class="field-help">Selecciona las opciones del catálogo utilizado en el AS-IS. '+
+    '«Otro» permite concretar un valor. No escribas códigos separados por comas.</p></div>';
+}
+// [AUNEA-FE-PG11-CANONICAL-CONTROLS-251] END
 // [AUNEA-FE-PG11-FIELD-GUIDANCE-246] START — field help never persists as data.
 const TOBE_FIELD_HELP={
  stepName:'Nombra la actividad futura con una acción y un resultado claros.',
@@ -909,8 +961,8 @@ function tobeOriginalStepFacts(e,item){
     ['Responsable original',label('OS_ACTOR_ROLE',source.actor)],
     ['Tipo de actividad',label('OS_STEP_TYPE',source.step_type)],
     ['Herramienta original',label('OS_TOOL_CATEGORY',source.tool)],
-    ['Entradas AS-IS',data(source.inputs)],
-    ['Salidas AS-IS',data(source.outputs)],
+    ['Entradas AS-IS',Array.isArray(source.inputs)?source.inputs.map(x=>label('OS_ARTIFACT_TYPE',x)).join(' · '):data(source.inputs)],
+    ['Salidas AS-IS',Array.isArray(source.outputs)?source.outputs.map(x=>label('OS_ARTIFACT_TYPE',x)).join(' · '):data(source.outputs)],
     ['Trabajo activo declarado',source.active_time===null||source.active_time===undefined||source.active_time===''?'':String(source.active_time)+' min'],
     ['Espera declarada',source.wait_time===null||source.wait_time===undefined||source.wait_time===''?'':String(source.wait_time)+' min'],
     ['Retrabajo declarado',source.rework_time===null||source.rework_time===undefined||source.rework_time===''?'':String(source.rework_time)+' min']
@@ -1446,10 +1498,8 @@ function tobeInspectorHtml(e,p){
         'Qué problema resuelve',item.problemResolved,'textarea',!editable)+
       tobeField(item,'futureActor','Responsable futuro',item.futureActor,'text',!editable)+
       tobeField(item,'tool','Herramienta / arquitectura',item.tool,'text',!editable)+
-      '<div class="tobe-data-pair">'+tobeField(item,'inputs','Datos de entrada',item.inputs,'textarea',!editable)+
-      tobeSourceDataExplanation(item.inputs)+'</div>'+
-      '<div class="tobe-data-pair">'+tobeField(item,'outputs','Datos de salida',item.outputs,'textarea',!editable)+
-      tobeSourceDataExplanation(item.outputs)+'</div>'+
+      '<div class="tobe-data-pair">'+tobeArtifactField(item,'inputs','Datos de entrada',!editable)+'</div>'+
+      '<div class="tobe-data-pair">'+tobeArtifactField(item,'outputs','Datos de salida',!editable)+'</div>'+
       tobeField(item,'automationAi','Automatización e IA',item.automationAi,'textarea',!editable)+
       tobeField(item,'humanSupervision','Supervisión humana',item.humanSupervision,'textarea',!editable)+
       tobeField(item,'controlsRisk','Control / riesgo',item.controlsRisk,'textarea',!editable)+
