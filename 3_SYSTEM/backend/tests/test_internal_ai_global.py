@@ -49,7 +49,7 @@ def test_global_context_includes_governed_constraints_but_not_unrelated_forms():
     assert ids=={"S1","S2","F1"}
     assert context["client_constraints"]["DF090"].startswith("No se permite")
     assert "sensitive_noise" not in json.dumps(context)
-    assert context["explicit_routes"]==[]
+    assert context.get("explicit_routes", [])==[]  # Compact projection omits empty values
     assert context["unresolved_routes"]
 
 def test_global_ollama_is_independent_and_draft_only(monkeypatch):
