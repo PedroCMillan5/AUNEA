@@ -3038,3 +3038,38 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
  .tobe-ai-field-row .tobe-ai-inline-actions .btn{flex:1 1 125px}
 }
 /* [AUNEA-FE-PG11-CANONICAL-ROWS-268] END */
+
+/* [AUNEA-FE-PG11-OPERATIONAL-UX-271] Context is sourced from
+   versioned IA proposal; not evidence of client confirmation. */
+.tobe-ai-operational-context{
+  margin:12px 0 14px;padding:12px 14px;
+  border:1px solid var(--system-line);border-radius:var(--radius-sm);
+  background:var(--system-soft);color:var(--ink);
+  display:grid;gap:8px;min-width:0;
+}
+.tobe-ai-operational-context strong{font-size:12px;color:var(--system)}
+.tobe-ai-operational-context p{
+  margin:0;font-size:12px;line-height:1.55;overflow-wrap:anywhere;
+}
+.tobe-ai-operational-context details{padding:8px 10px;background:#fff}
+.tobe-ai-operational-context details p{margin:7px 0 0!important}
+.tobe-ai-field-row .tobe-ai-field-why{
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
+  overflow:hidden;overflow-wrap:anywhere;
+}
+.tobe-human-review-shell{
+  border:1px solid var(--system-line);border-radius:var(--radius-sm);
+  padding:10px 12px;margin:12px 0;background:#fff;
+}
+.tobe-human-review-shell>summary{
+  cursor:pointer;font-weight:700;color:var(--system);
+  font-size:12px;line-height:1.5;overflow-wrap:anywhere;
+}
+.tobe-human-review-shell[open]>summary{margin-bottom:12px}
+.tobe-human-review-shell .tobe-human-review{margin:0}
+.tobe-ai-field-row .tobe-ai-inline .tobe-subdetails{background:#fff}
+@media(max-width:700px){
+ .tobe-human-review-shell{padding:10px}
+ .tobe-ai-operational-context{padding:10px 12px}
+}
+/* [AUNEA-FE-PG11-OPERATIONAL-UX-271] END */
