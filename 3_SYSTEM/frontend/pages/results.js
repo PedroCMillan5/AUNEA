@@ -1653,6 +1653,9 @@ function tobeSourceDataExplanation(raw){
 function tobeInspectorHtml(e,p){
   const item=tobeSelectedItem(e,p),editable=tobeEditable(p);
   if(!item)return '<div class="notice warn">No hay actividades TO-BE vinculadas al AS-IS.</div>';
+  const allItems=[...(p.items||[]),...tobeAddedSteps(p)],
+    itemIndex=allItems.findIndex(x=>tobeFlowItemId(x)===tobeFlowItemId(item)),
+    nextItem=itemIndex>=0?allItems[itemIndex+1]:null;
   const choice=tobeHumanReviewRecord(e,p)?.decisions?.[String(item.sourceStepId)];
   const adviceOpen=editable&&!item.isAddition&&!['ACCEPT','MODIFY','DISCARD'].includes(choice?.status);
   const withAi=(key,html)=>tobeWithAiHint(e,p,item,key,html);
@@ -1707,7 +1710,13 @@ function tobeInspectorHtml(e,p){
       '<details class="tobe-subdetails"><summary>Tiempo futuro y supuesto trazable (si existe)</summary>'+
       '<div class="form-grid">'+tobeField(item,'futureTime','Tiempo futuro',item.futureTime,'text',!editable)+
       tobeField(item,'futureTimeAssumption','Supuesto trazable',item.futureTimeAssumption,'textarea',!editable)+
-      '</div></details></section>'+tobeFlowInspector(e,p,item)+
+      '</div></details>'+
+      '<div class="tobe-guided-field-actions">'+
+        (editable?'<button type="button" class="btn btn-outline" data-tobe-guided-save="1">Guardar borrador</button>':'')+
+        '<button type="button" class="btn btn-outline" data-tobe-guided-check="1">Comprobar requisitos</button>'+
+        (nextItem?'<button type="button" class="btn btn-primary" data-tobe-select="'+
+          attr(tobeFlowItemId(nextItem))+'">Siguiente actividad</button>':'')+
+      '</div></section>'+tobeFlowInspector(e,p,item)+
     (item.isAddition&&editable?'<button type="button" class="btn btn-outline" data-tobe-discard-added="'+attr(item.id)+'">Descartar actividad añadida</button>':'');
 }
 function createNextTobeVersion(e){
