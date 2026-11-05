@@ -1855,6 +1855,7 @@ function tobeInspectorHtml(e,p){
       (editable&&!item.isAddition?'<div class="tobe-ai-per-step-action"><button type="button" class="btn btn-primary" data-tobe-generate-selected="'+attr(item.sourceStepId)+'">'+
         (hasCurrentAi?'Volver a analizar este paso':'Analizar este paso con IA')+'</button>'+
         '<span class="tobe-muted">Análisis independiente de esta actividad; no aplica cambios automáticamente.</span></div>':'')+
+      '<p id="tobeStepAiProgress" role="status" aria-live="polite" class="tobe-muted">Propuesta individual: sin aprobar.</p>'+ 
       '<div id="tobeAiRecommendation">'+tobeAiAdviceHtml(e,item,false)+'</div>'+
       (!item.isAddition&&hasCurrentAi?
         '<details class="tobe-human-review-shell"'+(choice?.status?'':' open')+'>'+
