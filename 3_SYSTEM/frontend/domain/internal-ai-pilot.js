@@ -52,11 +52,8 @@ function internalAiPilotRefreshPanel(e){
       if((currentForStep||partialForStep)&&
          !(typeof tobeHumanReviewRecord==='function'&&
            tobeHumanReviewRecord(e,p)?.decisions?.[sid]?.status)){
-        const parent=document.querySelector('.tobe-review-support');
-        if(parent){parent.open=true;
-          const detail=parent.querySelector('#tobeStepAdvice > details');
-          if(detail)detail.open=true;
-        }
+        const detail=document.querySelector('#tobeStepAdvice > details');
+        if(detail)detail.open=true;
       }
       // Update only read-only suggestions; never replace consultant controls
       // while Ollama is working and the user may be editing a textarea.
@@ -81,8 +78,8 @@ function internalAiPilotRefreshPanel(e){
         if(current?.items?.some(x=>String(x.source_step_id)===String(selected.sourceStepId))&&
            !inspector.querySelector('.tobe-human-review-shell')&&
            typeof tobeHumanReviewHtml==='function'){
-          const edit=inspector.querySelector('#tobeStepDesign h3');
-          if(edit)edit.insertAdjacentHTML('afterend',
+          const advice=inspector.querySelector('#tobeStepAdvice > details');
+          if(advice)advice.insertAdjacentHTML('beforeend',
             '<details class="tobe-human-review-shell" open>'+
             '<summary>Decisión sobre la propuesta IA · Pendiente de decisión</summary>'+
             tobeHumanReviewHtml(e,selected,false)+'</details>');
