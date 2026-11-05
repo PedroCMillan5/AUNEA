@@ -1917,6 +1917,49 @@ function createNextTobeVersion(e){
   markDirty('Nueva versión TO-BE '+version+' desde versión revisada '+previous.version);
   return true;
 }
+// [AUNEA-FE-PG11-GLOBAL-OVERVIEW-284] START — read-only, version-bound global IA.
+function tobeGlobalOverviewHtml(e,p){
+  const entry=p?.aiGlobal,diag=currentDiagnosticOutput(e);
+  const valid=entry&&entry.tobeVersion===p.version&&entry.sourceSnapshotVersion===p.sourceSnapshotVersion&&
+    entry.diagnosticInputHash===diag?.input_snapshot_hash&&entry.result?.status==='DRAFT'&&
+    entry.result.engagement_id===e.id&&entry.result.snapshot_version===p.sourceSnapshotVersion;
+  const result=valid?entry.result:null,opportunities=Array.isArray(result?.opportunities)?result.opportunities:[],
+    working=typeof internalAiGlobalWorking==='function'&&internalAiGlobalWorking(e),
+    feedback=typeof internalAiGlobalMessage==='function'?internalAiGlobalMessage(e):null;
+  const source=tobeProposalSourceSteps(e,p),record=typeof engagementOfRecord==='function'?engagementOfRecord(e):e;
+  const refs=ids=>(ids||[]).map(id=>{
+    const step=source.find(s=>String(s.id)===String(id)),
+      friction=(record?.frictions||[]).find(f=>String(f.id)===String(id)),
+      risk=(record?.risks||[]).find(r=>String(r.id||r.risk_id)===String(id));
+    return step?'Paso: '+(step.step_name||step.name||id):
+      friction?'Fricción: '+(friction.client_label||id):
+      risk?'Riesgo: '+(risk.description||id):String(id);
+  });
+  return '<section class="tobe-global-analysis" id="tobeGlobalAnalysis" aria-label="Análisis global IA del proceso">'+
+    '<header class="tobe-global-analysis-head"><div><span class="tobe-eyebrow">02 · ANÁLISIS IA GLOBAL</span>'+
+      '<h2>Objetivos y recomendaciones del proceso</h2>'+
+      '<p>Mejoras transversales del AS-IS confirmado. Las modificaciones de cada actividad se revisan aparte.</p></div>'+
+    (tobeEditable(p)?'<button type="button" class="btn btn-primary" id="analyzeTobeGlobal"'+
+      (working?' disabled':'')+'>'+
+      (working?'Analizando proceso…':result?'Volver a analizar':'Analizar proceso con IA')+'</button>':'')+'</header>'+
+    '<div class="tobe-global-summary"><strong>'+(result?'Propuesta IA · Sin aprobar':'Análisis pendiente')+'</strong>'+
+    '<p>'+esc(result?.summary||'La IA propondrá objetivos, cómo conseguirlos y justificaciones sin inventar ahorros ni modificar el TO-BE.')+'</p></div>'+
+    (feedback?'<p class="tobe-global-feedback'+(feedback.type==='warn'?' is-warning':'')+
+      '" role="status">'+esc(feedback.message)+'</p>':'')+
+    (opportunities.length?'<div class="tobe-global-opportunities">'+opportunities.map((item,i)=>
+      '<article class="tobe-global-opportunity"><span class="tobe-global-number">'+(i+1)+'</span>'+
+      '<div class="tobe-global-opportunity-body"><strong>'+esc(item.objective)+'</strong>'+
+      '<p><b>Cómo conseguirlo:</b> '+esc(item.how)+'</p>'+
+      '<details><summary>Ver justificación y restricciones</summary><div class="tobe-global-detail">'+
+      '<p><b>Justificación:</b> '+esc(item.why)+'</p>'+
+      '<p><b>Límites del cliente:</b> '+esc(item.constraints||'No identificado; comprobar viabilidad.')+'</p>'+
+      '<p><b>Fuentes:</b> '+esc(refs(item.source_refs).join(' · '))+'</p></div></details></div></article>').join('')+
+      '</div>':result?'<p class="tobe-muted">Sin mejoras globales suficientemente respaldadas. Consulta la síntesis.</p>':'')+
+    '<p class="tobe-global-caution">Sugerencias IA sin aprobar. No sustituyen los motores oficiales ni alteran el proceso.</p>'+
+    '</section>';
+}
+// [AUNEA-FE-PG11-GLOBAL-OVERVIEW-284] END
+
 // [AUNEA-FE-PG11-GUIDED-NAV-266] START — navigation derives from selected owner.
 function tobeGuidedNavHtml(e,p){
   const guidedItems=[...(p.items||[]),...tobeAddedSteps(p)],
@@ -2005,9 +2048,10 @@ function tobePage(){
           '<span><b>4. Conectar</b> y comprobar el flujo</span></div>'+
         '<p class="tobe-task-guide-result"><b>Resultado esperado:</b> un mapa TO-BE con actividades, responsables, datos y rutas definidos. Guarda el borrador, pulsa «Comprobar requisitos» y, cuando no existan bloqueos, «Marcar como revisado». Después podrás comparar AS-IS y TO-BE en PG12.</p>'+
       '</section>'+
-      '<section class="tobe-context"><div><strong>Origen del diseño</strong><p>AS-IS confirmado v'+esc(snap.version)+
+      '<section class="tobe-context" aria-label="Información general del proceso"><div><strong>01 · Información general · Origen del diseño</strong><p>AS-IS confirmado v'+esc(snap.version)+
       ' · Diagnóstico '+esc(diagnosticOutputFreshness(e).label)+
       ' · '+p.items.length+' actividades de origen</p></div><div class="tobe-context-status">'+esc(statusLabel)+'</div></section>'+
+      tobeGlobalOverviewHtml(e,p)+
       tobeGuidedNavHtml(e,p)+
       '<section class="tobe-map-area"><header class="tobe-workspace-head"><div><span class="tobe-eyebrow">CONSTRUIR EL PROCESO FUTURO</span>'+
       '<h2>Mapa del proceso propuesto</h2></div><p>Selecciona una actividad para revisar su transformación y editar el TO-BE.</p></header>'+
@@ -2024,7 +2068,7 @@ function tobePage(){
       '<p class="tobe-map-note"><b>Rutas del TO-BE:</b> comienzan como copia del AS-IS confirmado, pero pueden rediseñarse en el inspector. Los pasos incorporados o eliminados sólo pertenecen a la versión TO-BE. Una ruta pendiente, desconectada o sin final bloquea la revisión.</p></section>'+
       '<section id="tobeInspector" class="tobe-inspector" aria-label="Decisión TO-BE por actividad">'+tobeInspectorHtml(e,p)+'</section>'+
       (editable?'<details class="tobe-ai-stage" id="tobeAiWorkspace">'+
-        '<summary><strong>Revisión global IA, propuestas y auditoría técnica</strong>'+
+        '<summary><strong>Auditoría de propuestas IA por actividad</strong>'+
         '<span class="tobe-muted">Opcional: consulta el detalle completo. Revisa cada propuesta desde el inspector de su actividad.</span></summary>'+
         '<div id="tobeAiMount"></div></details>':'')+
       '<section class="tobe-completion"><div><h2>Validación global</h2><p>Vista rápida del estado y acciones pendientes. El detalle técnico sigue disponible.</p></div>'+
