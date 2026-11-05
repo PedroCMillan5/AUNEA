@@ -1515,10 +1515,10 @@ function tobeInspectorHtml(e,p){
         ' · Esta actividad existe sólo en el borrador TO-BE.</p>':'')+
       '</div><span class="tobe-selected-status">'+esc(item.transformation||'Sin definir')+'</span></header>'+
     '<nav class="tobe-review-steps" aria-label="Orden de revisión">'+
-      '<button type="button" class="btn btn-outline btn-small" data-tobe-jump="tobeStepOrigin">1 · Entender</button>'+
-      '<button type="button" class="btn btn-outline btn-small" data-tobe-jump="tobeStepAdvice">2 · Revisar IA</button>'+
-      '<button type="button" class="btn btn-outline btn-small" data-tobe-jump="tobeStepDesign">3 · Configurar</button>'+
-      '<button type="button" class="btn btn-outline btn-small" data-tobe-jump="tobeStepRoutes">4 · Conectar</button>'+
+      '<button type="button" class="btn btn-outline btn-small" style="margin:0 12px 10px 0" data-tobe-jump="tobeStepOrigin">1 · Entender</button>'+
+      '<button type="button" class="btn btn-outline btn-small" style="margin:0 12px 10px 0" data-tobe-jump="tobeStepAdvice">2 · Revisar IA</button>'+
+      '<button type="button" class="btn btn-outline btn-small" style="margin:0 12px 10px 0" data-tobe-jump="tobeStepDesign">3 · Configurar</button>'+
+      '<button type="button" class="btn btn-outline btn-small" style="margin:0 12px 10px 0" data-tobe-jump="tobeStepRoutes">4 · Conectar</button>'+
     '</nav>'+
     '<section class="tobe-origin" id="tobeStepOrigin"><h3>01 · Entender el AS-IS y sus hallazgos</h3>'+
       tobeOriginalStepFacts(e,item)+
