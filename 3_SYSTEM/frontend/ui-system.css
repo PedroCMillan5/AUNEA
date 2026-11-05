@@ -2824,3 +2824,38 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 @media(max-width:1000px){.tobe-original-facts dl{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.tobe-original-facts dl{grid-template-columns:1fr}}
 /* [AUNEA-FE-PG11-ORIGINAL-FACTS-STYLE-244] END */
+
+// [AUNEA-FE-PG11-FREE-CANVAS-STYLE-249] START — version-owned movable TO-BE nodes.
+.tobe-process-canvas .process-graph-board.tobe-free-board{
+  position:relative;display:block!important;padding:0!important;box-sizing:border-box;
+  min-width:850px!important;max-width:none;grid-template-columns:none!important;
+  grid-template-rows:none!important;isolation:isolate
+}
+.tobe-process-canvas .tobe-free-board .process-graph-cell{
+  position:absolute!important;display:flex;flex-direction:column;align-items:stretch;
+  justify-content:flex-start;width:195px;min-width:195px;height:232px;min-height:232px;
+  z-index:1;touch-action:none
+}
+.tobe-process-canvas .tobe-free-board .tobe-graph-node{
+  flex:0 0 190px;width:100%;cursor:grab;touch-action:none;user-select:none
+}
+.tobe-process-canvas .tobe-free-board .tobe-graph-node:active{cursor:grabbing}
+.tobe-node-tools{display:flex;flex-wrap:wrap;align-items:center;gap:3px;
+  min-height:38px;margin-top:5px;position:relative;z-index:2}
+.tobe-node-tools button{background:#fff;border:1px solid var(--system-line);
+  border-radius:5px;color:var(--system);cursor:pointer;padding:4px 6px;
+  font:inherit;font-size:10px;font-weight:650;line-height:1.2}
+.tobe-node-tools button:hover,.tobe-node-tools button:focus-visible{
+  background:var(--system-soft);border-color:var(--system)}
+.tobe-node-tools [data-tobe-move]{cursor:grab;touch-action:none}
+.tobe-node-tools [data-tobe-discard-added]{color:var(--red)}
+.tobe-free-board .process-graph-lines{position:absolute;inset:0;
+  width:100%;height:100%;pointer-events:none}
+.tobe-connect-active .tobe-graph-node{outline:2px dashed var(--system);outline-offset:2px}
+.tobe-move-active{z-index:5!important}
+.tobe-move-active .tobe-graph-node{box-shadow:0 9px 24px rgba(20,40,29,.18)!important}
+@media(max-width:760px){
+  .tobe-process-canvas .tobe-free-board .process-graph-cell{width:195px}
+  .tobe-node-tools{gap:2px}
+}
+// [AUNEA-FE-PG11-FREE-CANVAS-STYLE-249] END
