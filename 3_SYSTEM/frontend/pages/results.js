@@ -1318,6 +1318,10 @@ function tobeWithAiHint(e,p,item,key,html){
   const original=typeof tobeProposalSourceSteps==='function'?tobeProposalSourceSteps(e,p).find(x=>String(x.id)===String(item.sourceStepId)):null;
   const sourceKey=({futureActor:'actor',tool:'tool',inputs:'inputs',outputs:'outputs'})[key];
   const sourceValue=original&&sourceKey?original[sourceKey]:null;
+  const category=key==='futureActor'?'OS_ACTOR_ROLE':key==='tool'?'OS_TOOL_CATEGORY':'OS_ARTIFACT_TYPE';
+  const readable=x=>String((typeof labelFrom==='function'&&labelFrom(category,x))||x);
+  const sourceLabel=sourceValue===null||sourceValue===undefined||sourceValue===''?'':(
+    Array.isArray(sourceValue)?sourceValue.map(readable).join(' · '):readable(sourceValue));
   const fallback='<div class="tobe-ai-inline tobe-ai-inline-empty" data-tobe-ai-field-key="'+
     attr(key)+'"><p class="field-help"><b>IA:</b> Sin propuesta vigente para esta actividad.'+
     ' Conserva el valor TO-BE o complétalo con evidencia.</p></div>';
