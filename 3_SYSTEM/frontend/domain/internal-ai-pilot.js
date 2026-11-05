@@ -313,6 +313,13 @@ function internalAiActivityLabel(e,sourceId){
   const name=String(item?.sourceStepName||source?.step_name||'Actividad de origen sin nombre');
   return name+' ('+id+')';
 }
+function internalAiReadableRefs(e,refs){
+  return (Array.isArray(refs)?refs:[]).map(ref=>{
+    const id=String(ref);
+    return (latestTobe(e)?.items||[]).some(item=>String(item.sourceStepId)===id)?
+      internalAiActivityLabel(e,id):id;
+  }).join(', ');
+}
 // [AUNEA-FE-PG11-AI-LABELS-255] END
 function internalAiReviewIssue(issue){
   return '<li><b>'+esc(issue.category==='BLOCKING'?'Bloqueo':issue.category==='PENDING'?'Pendiente':'Observación')+
