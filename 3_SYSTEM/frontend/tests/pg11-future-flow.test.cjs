@@ -313,4 +313,67 @@ test('PG11 dynamic field help never overwrites existing consultant text',()=>{
   assert.equal(textarea.value,'Texto del consultor');
   assert.equal(badge.textContent,'Se modifica');
 });
+test('PG11 AI diff allows supervised MODIFY with blocking issues but never auto-applies contradictory keep',()=>{
+  const a=src.indexOf('const TOBE_AI_REVIEW_FIELDS='),b=src.indexOf('// [AUNEA-FE-PG11-AI-REVIEW-DIFF-260] END',a);
+  assert.ok(a>=0&&b>a);
+  const source=src.slice(a,b);
+  const opts={OS_ACTOR_ROLE:[{value:'ADMIN',label:'Administración'}],
+    OS_TOOL_CATEGORY:[{value:'ERP',label:'ERP'}],
+    OS_ARTIFACT_TYPE:[{value:'PDF',label:'PDF'},{value:'RECORD',label:'Registro estructurado'}]};
+  const item={sourceStepId:'P1',transformation:'Se mantiene',futureActor:'ADMIN',
+    tool:'ERP',inputs:['PDF'],outputs:['PDF'],problemResolved:'',automationAi:'',
+    humanSupervision:'',controlsRisk:''};
+  const ai={source_step_id:'P1',source_refs:['P1'],transformation:'Se mantiene',
+    rationale:'Acción propuesta: Implementar registro automático. Resultado esperado: Visibilidad.',
+    problem_resolved:'Visibilidad del estado',outputs:'Registro estructurado',
+    future_actor:'Administración',automation_ai:'Registrar entrada de factura'};
+  const proposal={items:[ai],review:{review_mode:'RULES_ONLY',blocking_step_ids:['P1'],issues:[]}};
+  const p={status:'DRAFT',items:[item]};
+  let status='MODIFY';
+  const context={String,Array,JSON,
+    tobeEditable:x=>x.status==='DRAFT',
+    tobeHumanReviewRecord:()=>({decisions:{P1:{status,note:'Justificación manual de la propuesta IA.'}}}),
+    internalAiSavedDraft:()=>proposal,internalAiPilotNarrative:()=>({action:'Implementar registro automático'}),
+    fieldOptions:key=>opts[key]||[],labelFrom:(k,v)=>opts[k]?.find(x=>x.value===v)?.label||'',
+    tobeArtifactValues:x=>({resolved:x,unknown:[]}),tobeArtifactDisplay:x=>x.join(' · '),
+    TOBE_TRANSFORMATIONS:['Se mantiene','Se modifica','Se elimina','Se automatiza',
+      'Se asiste con IA','Requiere decisión humana','Se incorpora control']};
+  vm.createContext(context);vm.runInContext(source,context);
+  const diff=context.tobeAiReviewDiff({},p,'P1');
+  assert.equal(diff.issue,'');
+  assert.ok(diff.warnings.length);
+  assert.ok(!diff.fields.some(x=>x.key==='transformation'));
+  assert.deepEqual(JSON.parse(JSON.stringify(diff.fields.find(x=>x.key==='outputs').value)),['RECORD']);
+  status='ACCEPT';
+  assert.match(context.tobeAiReviewDiff({},p,'P1').issue,/bloqueos/);
+});
+test('PG11 AI application is explicitly checked, audited and protects unrelated edits',()=>{
+  const source=src.slice(src.indexOf('function tobeApplyAiReviewedFields('),
+    src.indexOf('\n}\n',src.indexOf('function tobeApplyAiReviewedFields('))+2);
+  const original={sourceStepId:'P1',outputs:['PDF'],automationAi:'Revisión humana',controlsRisk:'NO'};
+  const p={items:[original],status:'DRAFT',version:1,aiDraft:{applyHistory:[]}},e={tobeProposals:[p]};
+  const picked=[{key:'outputs',value:['RECORD']},{key:'controlsRisk',value:'Control de duplicados'}];
+  let saves=0,renders=0;const ctx={String,Array,Set,JSON,
+    state:{activePage:'tobe'},latestTobe:x=>x.tobeProposals[0],
+    tobeAiReviewDiff:()=>({issue:'',fields:picked,decision:'MODIFY'}),
+    saveTobeFromDom:()=>true,saveState:()=>{saves++;return true},
+    currentEng:()=>e,tobeCandidateFingerprint:()=> 'fingerprint',
+    now:()=> '2026-11-05',markDirty:()=>{},toast:()=>{},render:()=>{renders++}};
+  vm.createContext(ctx);vm.runInContext(source,ctx);
+  assert.equal(ctx.tobeApplyAiReviewedFields(e,'P1',['outputs','controlsRisk']),true);
+  assert.deepEqual(JSON.parse(JSON.stringify(original.outputs)),['RECORD']);
+  assert.equal(original.controlsRisk,'Control de duplicados');
+  assert.equal(original.automationAi,'Revisión humana');
+  assert.equal(p.aiDraft.applyHistory[0].decision,'MODIFY');
+  assert.equal(p.aiDraft.applyHistory[0].fields.length,2);
+  assert.equal(saves,2);assert.equal(renders,1);
+});
+test('PG11 renders the AI comparison within the existing inspector, without a silent apply',()=>{
+  assert.match(src,/function tobeAiReviewChangesHtml/);
+  assert.match(src,/tobeAiReviewChangesHtml\(e,item\)/);
+  assert.match(src,/data-tobe-ai-pick/);
+  assert.match(src,/data-tobe-ai-apply-reviewed/);
+  assert.match(src,/Aplicar los campos marcados al borrador/);
+  assert.doesNotMatch(src,/function tobeAiStepApplicability/);
+});
 // [AUNEA-UAT-PG11-FUTURE-FLOW-233] END
