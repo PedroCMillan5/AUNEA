@@ -1167,48 +1167,45 @@ function tobeAiStepApplicability(e,p,sourceId){
     return 'La IA propone «Se mantiene» pero describe una modificación. Corrige la contradicción manualmente.';
   return '';
 }
-function tobeApplyAiOnlyStep(e,sourceId){
+function tobeApplyAiReviewedFields(e,sourceId,keys){
   if(!e||state.activePage!=='tobe')return false;
-  const p=latestTobe(e),issue=tobeAiStepApplicability(e,p,sourceId);
-  if(issue){toast(issue);return false;}
-  if(!saveTobeFromDom(e)||!saveState('Guardar edición previa a aplicación de IA'))
-    return toast('No se pudieron guardar los campos del consultor; la IA no se ha aplicado.'),false;
-  const live=currentEng(),draft=latestTobe(live),failure=tobeAiStepApplicability(live,draft,sourceId);
-  if(failure){toast(failure);return false;}
-  const key=internalAiPilotKey(live),proposal=(__auneaAiPreview.get(key)||
-    internalAiSavedDraft(live)).items.find(x=>String(x.source_step_id)===String(sourceId));
-  const target=draft.items.find(x=>String(x.sourceStepId)===String(sourceId));
-  const fields={
-    transformation:'transformation',problem_resolved:'problemResolved',
-    future_actor:'futureActor',tool:'tool',inputs:'inputs',outputs:'outputs',
-    automation_ai:'automationAi',human_supervision:'humanSupervision',
-    controls_risk:'controlsRisk'
-  };
-  const previous=JSON.parse(JSON.stringify(target)),changes=[];
-  for(const [source,destination] of Object.entries(fields)){
-    if(!String(target[destination]||'').trim()&&String(proposal[source]||'').trim()){
-      target[destination]=String(proposal[source]);changes.push(destination);
-    }
+  const draft=latestTobe(e),first=tobeAiReviewDiff(e,draft,sourceId),
+    wanted=new Set((keys||[]).map(String));
+  if(first.issue)return toast(first.issue),false;
+  if(!wanted.size)return toast('Selecciona primero los campos que quieres trasladar.'),false;
+  if([...wanted].some(k=>!first.fields.some(x=>x.key===k)))
+    return toast('La selección ya no coincide con la propuesta IA vigente.'),false;
+  // Save all the consultant's pending edits before applying anything from the IA.
+  if(!saveTobeFromDom(e)||!saveState('Guardar diseño antes de aplicar selección IA'))
+    return toast('No se guardó el diseño manual; no se aplicó ningún cambio IA.'),false;
+  const live=currentEng(),p=latestTobe(live),fresh=tobeAiReviewDiff(live,p,sourceId);
+  if(fresh.issue||[...wanted].some(k=>!fresh.fields.some(x=>x.key===k)))
+    return toast(fresh.issue||'El contenido ha cambiado. Revisa nuevamente los campos.'),false;
+  const item=p.items.find(x=>String(x.sourceStepId)===String(sourceId)),
+    previous=JSON.parse(JSON.stringify(item)),
+    oldHistory=JSON.parse(JSON.stringify(p.aiDraft?.applyHistory||[])),
+    chosen=fresh.fields.filter(x=>wanted.has(x.key));
+  for(const field of chosen)item[field.key]=Array.isArray(field.value)?
+    [...field.value]:field.value;
+  // Audit metadata belongs to this versioned proposal, not to a second business owner.
+  p.aiDraft.applyHistory=[...oldHistory,{
+    sourceStepId:String(sourceId),fields:chosen.map(x=>x.key),
+    decision:fresh.decision,proposalFingerprint:tobeCandidateFingerprint(p),
+    appliedAt:now()
+  }].slice(-100);
+  p.updatedAt=now();markDirty('PG11: campos IA seleccionados por el consultor');
+  if(!saveState('Guardar cambios IA autorizados en '+sourceId)){
+    Object.assign(item,previous);p.aiDraft.applyHistory=oldHistory;
+    markDirty('PG11: cambios IA pendientes de persistencia');
+    return toast('No se guardaron los cambios. El diseño anterior se conserva en memoria.'),false;
   }
-  if(!changes.length){
-    toast('No hay campos vacíos que completar. El diseño manual se mantiene intacto.');
-    return false;
-  }
-  draft.updatedAt=now();
-  markDirty('PG11: campos vacíos de actividad '+sourceId+' completados tras aceptación humana');
-  if(!saveState('Aplicar sugerencia IA a actividad '+sourceId)){
-    Object.assign(target,previous);
-    markDirty('PG11: aplicación IA pendiente por fallo de guardado');
-    toast('No se pudo guardar la aplicación. No se ha aprobado el TO-BE.');
-    return false;
-  }
-  const verified=latestTobe(currentEng())?.items.find(x=>String(x.sourceStepId)===String(sourceId));
-  if(!verified||changes.some(k=>verified[k]!==target[k])){
-    toast('No se verificó la persistencia. Revisa el borrador antes de continuar.');
+  const stored=latestTobe(currentEng())?.items.find(x=>String(x.sourceStepId)===String(sourceId));
+  if(!stored||chosen.some(x=>JSON.stringify(stored[x.key])!==JSON.stringify(x.value))){
+    toast('No se verificó la persistencia; no marques esta versión como revisada.');
     return false;
   }
   render();
-  toast('Aplicados '+changes.length+' campos vacíos sólo en esta actividad. Revisa el diseño antes de aprobar.');
+  toast('Aplicados '+chosen.length+' campos autorizados. Revisa el diseño y las rutas; el TO-BE no queda aprobado.');
   return true;
 }
 // [AUNEA-FE-PG11-AI-STEP-APPLY-230] END
@@ -2429,13 +2426,15 @@ function registerInternalWorkPages(){
     toast('Decisión guardada: '+TOBE_HUMAN_LABELS[choice]+'. El diseño TO-BE sigue en borrador.');
   },true);
   // [AUNEA-FE-PG11-HUMAN-DECISION-SAVE-224] END
-  // [AUNEA-FE-PG11-AI-STEP-APPLY-231] START — one selected activity per human click.
+  // [AUNEA-FE-PG11-AI-STEP-APPLY-231] START — apply only explicitly checked fields.
   document.addEventListener('click',event=>{
-    const control=event.target?.closest?.('[data-tobe-ai-apply-step]');
+    const control=event.target?.closest?.('[data-tobe-ai-apply-reviewed]');
     if(!control||state.activePage!=='tobe')return;
     event.preventDefault();
-    if(control.disabled)return;
-    tobeApplyAiOnlyStep(currentEng(),control.getAttribute('data-tobe-ai-apply-step'));
+    const panel=control.closest('.tobe-ai-change-review');
+    const selected=[...(panel?.querySelectorAll('[data-tobe-ai-pick]:checked')||[])]
+      .map(input=>input.dataset.tobeAiPick);
+    tobeApplyAiReviewedFields(currentEng(),control.getAttribute('data-tobe-ai-apply-reviewed'),selected);
   },true);
   // [AUNEA-FE-PG11-AI-STEP-APPLY-231] END
   // [AUNEA-FE-PG12-MAP-SELECT-235] START — view and corresponding node selection.
