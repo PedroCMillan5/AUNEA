@@ -1431,12 +1431,12 @@ function tobeCanvasHtml(e,p){
     if(!pos)return null;
     const saved=flow.positions?.[String(n.id)];
     const x=saved&&Number.isFinite(Number(saved.x))?Number(saved.x):24+Math.max(0,pos.col-1)*260;
-    const y=saved&&Number.isFinite(Number(saved.y))?Number(saved.y):76+Math.max(0,pos.row-1)*290;
+    const y=saved&&Number.isFinite(Number(saved.y))?Number(saved.y):40+Math.max(0,pos.row-1)*290;
     return {node:n,x:Math.max(0,Math.min(10000,Math.round(x))),
       y:Math.max(0,Math.min(10000,Math.round(y)))};
   }).filter(Boolean);
   const boardWidth=Math.max(850,...placements.map(p=>p.x+235));
-  const boardHeight=Math.max(390,...placements.map(p=>p.y+300));
+  const boardHeight=Math.max(348,...placements.map(p=>p.y+292));
   const cells=placements.map(({node:n,x,y})=>{
     const step=n.kind==='step'?steps.find(s=>String(s.id)===String(n.id)):null;
     const item=step?tobeFlowItem(e,p,String(step.id)):null;
@@ -2124,7 +2124,7 @@ function registerInternalWorkPages(){
     d.cell.style.left=x+'px';d.cell.style.top=y+'px';
     d.cell.classList.add('tobe-move-active');
     d.board.style.width=Math.max(d.board.offsetWidth,x+245)+'px';
-    d.board.style.height=Math.max(d.board.offsetHeight,y+300)+'px';
+    d.board.style.height=Math.max(d.board.offsetHeight,y+292)+'px';
     tobeRedraw(d.board);
   },true);
   document.addEventListener('pointerup',event=>{
