@@ -775,6 +775,13 @@ async function generateTobeAiPilot(e,fresh=false,selectedStepId=null){
     internalAiPilotFeedback(e,'Ya hay una operación de IA en curso. No se iniciará una segunda hasta que termine.','info');
     return;
   }
+  if(selectedStepId){
+    const current=latestTobe(e);
+    if(!current?.items?.some(it=>String(it.sourceStepId)===String(selectedStepId)))
+      return toast('La actividad no pertenece al borrador TO-BE vigente.');
+    if(!saveTobeFromDom(e)||!saveState('Guardar actividad antes de regenerar IA'))
+      return toast('No se han guardado las ediciones; no se inició la generación.');
+  }
   for(const cache of [__auneaAiPreview,__auneaAiFeedback,__auneaAiCompletedSteps])
     for(const oldKey of cache.keys())if(oldKey!==key)cache.delete(oldKey);
   __auneaAiWorking.add(key);
