@@ -20,8 +20,34 @@ function internalAiPilotRefreshPanel(e){
   if(panel)panel.outerHTML=internalAiPilotPanel(e);
   const recommendation=document.getElementById('tobeAiRecommendation');
   if(recommendation&&typeof tobeSelectedItem==='function'&&typeof tobeAiAdviceHtml==='function'){
-    const selected=tobeSelectedItem(e,latestTobe(e));
-    if(selected)recommendation.innerHTML=tobeAiAdviceHtml(e,selected);
+    const selected=tobeSelectedItem(e,latestTobe(e)),p=latestTobe(e);
+    if(selected){
+      recommendation.innerHTML=tobeAiAdviceHtml(e,selected,false);
+      // Update only read-only suggestions; never replace consultant controls
+      // while Ollama is working and the user may be editing a textarea.
+      const inspector=document.getElementById('tobeInspector');
+      if(inspector&&!selected.isAddition&&typeof tobeAiInlineHint==='function'){
+        inspector.querySelectorAll('[data-tobe-row-key]').forEach(row=>{
+          const key=row.getAttribute('data-tobe-row-key'),
+            slot=row.querySelector('.tobe-ai-inline'),
+            hint=tobeAiInlineHint(e,p,selected,key);
+          if(slot&&hint)slot.outerHTML=hint;
+        });
+        const conditions=inspector.querySelector('.tobe-ai-operational-context');
+        if(conditions&&typeof tobeAiOperationalContextHtml==='function')
+          conditions.outerHTML=tobeAiOperationalContextHtml(e,selected);
+        const current=internalAiSavedDraft(e);
+        if(current?.items?.some(x=>String(x.source_step_id)===String(selected.sourceStepId))&&
+           !inspector.querySelector('.tobe-human-review-shell')&&
+           typeof tobeHumanReviewHtml==='function'){
+          const edit=inspector.querySelector('#tobeStepDesign h3');
+          if(edit)edit.insertAdjacentHTML('afterend',
+            '<details class="tobe-human-review-shell" open>'+
+            '<summary>Decisión sobre la propuesta IA · Pendiente de decisión</summary>'+
+            tobeHumanReviewHtml(e,selected,false)+'</details>');
+        }
+      }
+    }
   }
 }
 function internalAiPilotKey(e){
