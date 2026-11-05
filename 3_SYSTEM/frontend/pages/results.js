@@ -1240,9 +1240,14 @@ function tobeAiInlineHint(e,p,item,key){
 function tobeAiOperationalContextHtml(e,item){
   if(item.isAddition)return '';
   const saved=typeof internalAiSavedDraft==='function'?internalAiSavedDraft(e):null;
-  const history=!saved&&typeof internalAiHistoricalDraft==='function'?internalAiHistoricalDraft(e):null;
+  const id=String(item.sourceStepId),
+    keyForAi=typeof internalAiPilotKey==='function'?internalAiPilotKey(e):null,
+    partial=!saved&&keyForAi&&typeof internalAiPendingSteps==='function'?
+      internalAiPendingSteps(e,keyForAi)?.items?.get(id):null,
+    history=!saved&&!partial&&typeof internalAiHistoricalDraft==='function'?
+      internalAiHistoricalDraft(e):null;
   const proposal=saved||history?.proposal;
-  const ai=proposal?.items?.find(x=>String(x.source_step_id)===String(item.sourceStepId));
+  const ai=partial||proposal?.items?.find(x=>String(x.source_step_id)===id);
   if(!ai)return '<p class="tobe-ai-operational-context tobe-muted">Sin propuesta IA vigente para esta actividad. El diseño debe basarse en el AS-IS y las evidencias confirmadas.</p>';
   const limitations=String(ai.limitations||'').trim();
   const refs=typeof internalAiReadableRefs==='function'?
@@ -1250,12 +1255,14 @@ function tobeAiOperationalContextHtml(e,item){
   const historical=!!history;
   return '<div class="tobe-ai-operational-context" role="note">'+
     '<strong>Condiciones de diseño y restricciones a contrastar'+
-    (historical?' · Propuesta histórica v'+esc(history.version):'')+'</strong>'+
+    (historical?' · Propuesta histórica v'+esc(history.version):
+      partial?' · Propuesta individual pendiente de revisión global':'')+'</strong>'+
     '<p>'+esc(limitations||'La IA no ha detallado restricciones para esta actividad.')+'</p>'+
     '<details class="tobe-subdetails"><summary>Fuentes y criterio de aplicación</summary>'+
       '<p><b>Referencias:</b> '+esc(refs||'Sin fuentes especificadas')+'</p>'+
       '<p>Las limitaciones inferidas por IA no equivalen a restricciones declaradas por el cliente. Revisa el diagnóstico y confirma viabilidad, impacto diario y controles antes de aprobar.</p>'+
-      (historical?'<p>Propuesta anterior: sólo lectura. No se puede aplicar a la versión actual sin una propuesta vigente.</p>':'')+
+      (historical?'<p>Propuesta anterior: sólo lectura. No se puede aplicar a la versión actual sin una propuesta vigente.</p>':
+        partial?'<p>Checkpoint individual: no se puede aplicar hasta completar la revisión global y registrar la decisión humana.</p>':'')+
     '</details></div>';
 }
 function tobeWithAiHint(e,p,item,key,html){
