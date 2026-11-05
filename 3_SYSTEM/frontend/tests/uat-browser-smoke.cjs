@@ -700,7 +700,12 @@ async function main(){
         return {selectedId:tobeSelectedItem(e,p)?.sourceStepId,
           hasCheckpoint:!!pending,pendingIds:pending?[...pending.items.keys()]:[],
           detailsOpen:el?.closest('details')?.open,html:el?.innerHTML?.slice(0,550),
-          adviceText:el?.textContent?.slice(0,400),keyKnown:!!key};
+          adviceText:el?.textContent?.slice(0,400),readableText:el?.innerText?.slice(0,450),
+          display:el?getComputedStyle(el).display:null,
+          ancestorDisplays:el?[el,el.parentElement,el.parentElement?.parentElement,
+            el.parentElement?.parentElement?.parentElement].filter(Boolean).map(x=>({
+              tag:x.tagName,id:x.id,open:x.open,display:getComputedStyle(x).display,
+              visibility:getComputedStyle(x).visibility})):[],keyKnown:!!key};
       });
       console.log('PG11_CHECKPOINT_DIAGNOSTIC: '+JSON.stringify({expected:i,debug}));
     }
