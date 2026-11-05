@@ -148,4 +148,23 @@ test('discarding added steps preserves history while clearing invalid incoming e
   assert.match(src,/route\?\.exception===id/);
   assert.match(src,/draft\.flow=previousFlow/);
 });
+test('PG11 canvas renders direct move, connect, remove and retirement controls',()=>{
+  assert.match(src,/data-tobe-move/);
+  assert.match(src,/data-tobe-connect/);
+  assert.match(src,/data-tobe-discard-added/);
+  assert.match(src,/data-tobe-remove-original/);
+  assert.match(src,/flow\.positions\?\.\[id\]/);
+  assert.match(src,/original\.transformation='Se elimina'/);
+  assert.match(src,/flow\.routes\[from\]\[kind\]=String\(sourceId\)/);
+});
+test('PG11 canvas uses actual pixel positions, not grid row and column placement',()=>{
+  const start=src.indexOf('function tobeCanvasHtml(e,p)');
+  const end=src.indexOf('AUNEA-FE-PG11-FREE-CANVAS-248] END',start);
+  const canvas=src.slice(start,end);
+  assert.match(canvas,/flow\.positions\?\.\[String\(n\.id\)\]/);
+  assert.match(canvas,/style="left:/);
+  assert.doesNotMatch(canvas,/style="grid-row:/);
+  assert.match(src,/saveState\('Guardar posición visual TO-BE'\)/);
+  assert.match(src,/draft\.flow=previous/);
+});
 // [AUNEA-UAT-PG11-FUTURE-FLOW-233] END
