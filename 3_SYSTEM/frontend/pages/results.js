@@ -1268,26 +1268,33 @@ function tobeAiOperationalContextHtml(e,item){
 // version's reviewed IA can be applied. All values remain consultant-owned.
 function tobeAiRowActions(e,p,item,key){
   if(item.isAddition||!tobeEditable(p))return '';
-  const id=String(item.sourceStepId);
-  const isCurrent=typeof internalAiSavedDraft==='function'&&
-    internalAiSavedDraft(e)?.items?.some(x=>String(x.source_step_id)===id);
-  const diff=isCurrent?tobeAiReviewDiff(e,p,id):null;
-  const candidate=diff?.allFields?.find(x=>x.key===key);
-  const canApply=!!candidate?.changed&&!diff.issue;
-  const canKeep=!!candidate&&!diff.issue;
-  const history=(p.aiDraft?.applyHistory||[]).filter(x=>String(x.sourceStepId)===id&&
-    Array.isArray(x.fields)&&x.fields.includes(key)).slice(-1)[0];
-  const isApplied=history?.action==='APPLY',isKept=history?.action==='KEEP';
-  const button=(label,attrName,enabled,active=false)=>
+  const id=String(item.sourceStepId),
+    isCurrent=typeof internalAiSavedDraft==='function'&&
+      internalAiSavedDraft(e)?.items?.some(x=>String(x.source_step_id)===id),
+    diff=isCurrent?tobeAiReviewDiff(e,p,id):null,
+    candidate=diff?.allFields?.find(x=>x.key===key),
+    canApply=!!candidate?.changed&&!diff.issue,
+    history=(p.aiDraft?.applyHistory||[]).filter(x=>String(x.sourceStepId)===id&&
+      Array.isArray(x.fields)&&x.fields.includes(key)).slice(-1)[0],
+    blockedReason=!isCurrent?
+      'La propuesta no está vigente o su revisión global está pendiente. Genera y revisa una propuesta actual.':
+      diff?.issue||(!candidate?
+        'No hay valor IA fundamentado y compatible para este campo.':
+        'La propuesta coincide con el valor actual.');
+  const action=(label,attribute,active=false,title='')=>
     '<button type="button" class="btn btn-outline btn-small'+(active?' is-selected':'')+
-    '"'+(enabled?' '+attrName+'="'+attr(key)+'" data-tobe-ai-action-source="'+attr(id)+'"':' disabled')+
-    '>'+esc(label)+'</button>';
-  return '<div class="tobe-ai-row-actions" aria-label="Decisión sobre '+esc(
-    TOBE_AI_REVIEW_FIELDS.find(x=>x[1]===key)?.[2]||'el campo')+'">'+
-    button('Aplicar','data-tobe-ai-use-field',canApply,isApplied)+
-    button('Mantener','data-tobe-ai-keep-field',canKeep,isKept)+
-    button('Editar','data-tobe-ai-edit-field',true)+
-    '</div>';
+    '" '+attribute+' title="'+attr(title||label)+'">'+esc(label)+'</button>';
+  return '<div class="tobe-ai-row-actions" aria-label="Acciones de '+esc(
+    TOBE_AI_REVIEW_FIELDS.find(x=>x[1]===key)?.[2]||'este campo')+'">'+
+    action('Aplicar',canApply?
+      'data-tobe-ai-use-field="'+attr(key)+'" data-tobe-ai-action-source="'+attr(id)+'"':
+      'data-tobe-ai-apply-unavailable="'+attr(key)+'" data-tobe-ai-reason="'+attr(blockedReason)+'"',
+      canApply&&history?.action==='APPLY',canApply?'Aplicar sugerencia IA autorizada':blockedReason)+
+    action('Mantener','data-tobe-ai-keep-field="'+attr(key)+
+      '" data-tobe-ai-action-source="'+attr(id)+'"',history?.action==='KEEP',
+      'Conservar valor TO-BE sin aplicar IA')+
+    action('Editar','data-tobe-ai-edit-field="'+attr(key)+'"',false,
+      'Abrir el editor original de este campo')+'</div>';
 }
 function tobeWithAiHint(e,p,item,key,html){
   // [AUNEA-FE-PG11-GUIDED-FIELD-267] The existing field keeps sole edit
@@ -1311,37 +1318,32 @@ function tobeWithAiHint(e,p,item,key,html){
 // It records intent without changing the canonical editable value.
 function tobeKeepAiReviewedField(e,sourceId,key){
   if(!e||state.activePage!=='tobe')return false;
-  const p=latestTobe(e),preview=tobeAiReviewDiff(e,p,sourceId),
-    candidate=preview.allFields.find(x=>x.key===key);
-  if(preview.issue||!candidate){
-    toast(preview.issue||'No existe una propuesta IA vigente para este campo.');
-    return false;
-  }
-  if(!saveTobeFromDom(e)||!saveState('Guardar campos TO-BE antes de mantener valor'))
-    return toast('No se pudo guardar el borrador. No se registró la decisión.'),false;
-  const live=currentEng(),draft=latestTobe(live),fresh=tobeAiReviewDiff(live,draft,sourceId);
-  if(fresh.issue||!fresh.allFields.some(x=>x.key===key))
-    return toast('La propuesta ha cambiado. Revisa el campo de nuevo.'),false;
-  const before=JSON.parse(JSON.stringify(draft.aiDraft?.applyHistory||[]));
+  const p=latestTobe(e),item=p?.items?.find(x=>String(x.sourceStepId)===String(sourceId)),
+    valid=TOBE_AI_REVIEW_FIELDS.some(x=>x[1]===key);
+  if(!tobeEditable(p)||!item||!valid)
+    return toast('No se puede conservar este campo en el borrador actual.'),false;
+  // KEEP is a consultant-owned choice even if IA is historical or incomplete.
+  // This never approves or imports a historical AI proposal.
+  if(!saveTobeFromDom(e)||!saveState('Guardar valor manual antes de mantener'))
+    return toast('El valor actual no pudo guardarse.'),false;
+  const live=currentEng(),draft=latestTobe(live),
+    prior=JSON.parse(JSON.stringify(draft.aiDraft?.applyHistory||[]));
   if(!draft.aiDraft)draft.aiDraft={};
-  draft.aiDraft.applyHistory=[...before,{
+  draft.aiDraft.applyHistory=[...prior,{
     sourceStepId:String(sourceId),fields:[key],action:'KEEP',
-    decision:fresh.decision,proposalFingerprint:tobeCandidateFingerprint(draft),
+    decision:'KEEP_VALUE',proposalFingerprint:tobeCandidateFingerprint(draft),
     appliedAt:now()
   }].slice(-100);
-  markDirty('PG11: conservar valor del campo '+key);
-  if(!saveState('Guardar elección de mantener valor TO-BE')){
-    draft.aiDraft.applyHistory=before;
-    return toast('No se pudo guardar la decisión de mantener el valor.'),false;
+  markDirty('PG11: mantener valor '+key);
+  if(!saveState('Guardar elección de mantener valor')){
+    draft.aiDraft.applyHistory=prior;
+    return toast('No se guardó la elección. El valor anterior se conserva.'),false;
   }
   const last=(latestTobe(currentEng())?.aiDraft?.applyHistory||[]).slice(-1)[0];
   if(last?.action!=='KEEP'||last.sourceStepId!==String(sourceId)||last.fields?.[0]!==key)
-    return toast('No se pudo verificar la decisión guardada.'),false;
+    return toast('No se ha podido verificar la decisión guardada.'),false;
   render();
-  if(typeof requestAnimationFrame==='function')
-    requestAnimationFrame(()=>document.querySelector('[data-tobe-row-key="'+key+'"]')?.
-      scrollIntoView({behavior:'smooth',block:'center'}));
-  toast('Se conserva el valor del consultor. La propuesta IA no se ha aplicado.');
+  toast('Se mantiene tu valor TO-BE. No se ha aplicado la IA.');
   return true;
 }
 function tobeApplyAiReviewedFields(e,sourceId,keys){
@@ -2702,10 +2704,18 @@ function registerInternalWorkPages(){
   // Per-field IA recommendation actions; the original input remains editable.
   document.addEventListener('click',event=>{
     const apply=event.target?.closest?.('[data-tobe-ai-use-field]');
+    const blocked=event.target?.closest?.('[data-tobe-ai-apply-unavailable]');
     const keep=event.target?.closest?.('[data-tobe-ai-keep-field]');
     const edit=event.target?.closest?.('[data-tobe-ai-edit-field]');
-    if((!apply&&!keep&&!edit)||state.activePage!=='tobe')return;
+    if((!apply&&!blocked&&!keep&&!edit)||state.activePage!=='tobe')return;
     event.preventDefault();
+    if(blocked){
+      toast(blocked.dataset.tobeAiReason||'La propuesta IA todavía no puede aplicarse.');
+      const destination=document.querySelector('.tobe-human-review-shell')||
+        document.querySelector('[data-tobe-generate-selected]');
+      destination?.scrollIntoView?.({behavior:'smooth',block:'center'});
+      return;
+    }
     if(apply){
       tobeApplyAiReviewedFields(currentEng(),apply.dataset.tobeAiActionSource,
         [apply.dataset.tobeAiUseField]);
@@ -2717,11 +2727,16 @@ function registerInternalWorkPages(){
       return;
     }
     const root=edit.closest('.tobe-ai-field-row')?.querySelector('.tobe-ai-field-control .field')||edit.closest('.field');
-    const control=root?.querySelector('details.aunea-select>summary')||
+    const control=root?.querySelector('.tobe-artifact-compact>summary')||
+      root?.querySelector('details.aunea-select>summary')||
       root?.querySelector('[data-model-set]')||
       root?.querySelector('textarea:not([disabled])')||
       root?.querySelector('input:not([type="hidden"]):not([disabled])');
-    if(control){control.focus();if(control.matches('details.aunea-select>summary'))control.click();}
+    if(!control)return toast('No se ha encontrado el editor de este campo.');
+    control.scrollIntoView?.({behavior:'smooth',block:'center'});
+    control.focus();
+    if(control.matches('.tobe-artifact-compact>summary, details.aunea-select>summary'))
+      control.click();
   },true);
   // [AUNEA-FE-PG11-AI-STEP-APPLY-231] END
   // [AUNEA-FE-PG11-ARTIFACT-CHIPS-276] START — refresh chip labels
