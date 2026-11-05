@@ -2697,6 +2697,21 @@ function registerInternalWorkPages(){
     if(control){control.focus();if(control.matches('details.aunea-select>summary'))control.click();}
   },true);
   // [AUNEA-FE-PG11-AI-STEP-APPLY-231] END
+  // [AUNEA-FE-PG11-ARTIFACT-CHIPS-276] START — refresh chip labels
+  // without unmounting the canonical multiselect or erasing unsaved edits.
+  document.addEventListener('change',event=>{
+    const input=event.target?.closest?.('.tobe-artifact-compact [data-v1-multi]');
+    if(!input||state.activePage!=='tobe')return;
+    const root=input.closest('.tobe-artifact-compact'),slot=root?.querySelector('.tobe-artifact-chips');
+    if(!slot)return;
+    const chosen=[...root.querySelectorAll('[data-v1-multi]:checked')];
+    slot.innerHTML=chosen.length?chosen.map(control=>{
+      const label=control.closest('label')?.textContent?.trim()||control.value;
+      return '<span class="tobe-selected-data-chip">'+esc(label)+'</span>';
+    }).join(''):'<span class="tobe-muted">Selecciona formatos</span>';
+  },true);
+  // [AUNEA-FE-PG11-ARTIFACT-CHIPS-276] END
+
   // [AUNEA-FE-PG12-MAP-SELECT-235] START — view and corresponding node selection.
   document.addEventListener('click',event=>{
     const view=event.target?.closest?.('[data-pg12-view]');
