@@ -13,6 +13,9 @@ function internalAiPilotFeedback(e,message,type='info'){
   if(key)__auneaAiFeedback.set(key,{message,type});
   const node=document.getElementById('tobeAiPilotStatus');
   if(currentEng()?.id!==e?.id||internalAiPilotKey(e)!==key)return;
+  // Keep real per-step progress/errors visible even when the long IA audit is closed.
+  const live=document.querySelector('.tobe-ia-guide-summary p');
+  if(live)live.textContent=String(message||'');
   if(node){if(!String(node.className||'').includes('pg11-ai-panel'))node.className='notice '+(type==='warn'?'warn':'info');const label=document.getElementById('tobeAiProgress');if(label)label.textContent=message;else node.textContent=message}
 }
 function internalAiPilotRefreshPanel(e){
