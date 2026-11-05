@@ -249,4 +249,68 @@ test('PG11 rejects empty and inherited NO rationale without modifying source',()
   assert.match(src,/decision\.status==='ACCEPT'&&suggested\?\.transformation/);
   assert.match(src,/«Modificar antes de usar»/);
 });
+test('PG11 review rejects P4 NO rationale and accepted IA transformation mismatch',()=>{
+  const functionNames=['tobeMeaningfulRationale','tobeTransformationRationaleLabel','tobeReviewReadiness'];
+  const code=functionNames.map(name=>{
+    const first=src.indexOf('function '+name+'('),end=src.indexOf('\n}\n',first);
+    assert.ok(first>=0&&end>first,name);
+    return src.slice(first,end+2);
+  }).join('\n');
+  const source={id:'P4',step_name:'Registrar en ERP y archivar expediente'};
+  const snapshot={version:1,processSteps:[source]},e={snapshot};
+  const item={sourceStepId:'P4',sourceStepName:source.step_name,transformation:'Se mantiene',
+    problemResolved:'NO',futureActor:'Administración',tool:'ERP',inputs:['PDF'],
+    outputs:['RECORD'],controlsRisk:'Control de duplicados',automationAi:'',
+    humanSupervision:''};
+  const p={sourceSnapshotVersion:1,items:[item],aiDraft:{
+    proposal:{items:[{source_step_id:'P4',transformation:'Se automatiza'}],review:{issues:[]}}
+  },review:{decisions:{P4:{status:'ACCEPT',note:'Justificación suficiente de la propuesta.'}}}};
+  const sandbox={String,Array,Set,
+    TOBE_TRANSFORMATIONS:['Se mantiene','Se modifica','Se elimina','Se automatiza',
+      'Se asiste con IA','Requiere decisión humana','Se incorpora control'],
+    confirmedSnapshot:x=>x.snapshot,tobeSourceSteps:x=>x.snapshot.processSteps,
+    fieldOptions:()=>[],selectedOtherMissingDetail:()=>false,
+    tobeArtifactValues:value=>({resolved:value,unknown:[]}),
+    tobeHumanReviewRecord:(x,proposal)=>proposal.review,
+    tobeFlowIntegrity:()=>null,tobeCoherenceFindings:()=>[],
+    tobeAddedSteps:proposal=>proposal.addedSteps||[],
+    tobeFlowItemName:step=>step.stepName||step.sourceStepName};
+  vm.createContext(sandbox);vm.runInContext(code,sandbox);
+  assert.match(sandbox.tobeReviewReadiness(e,p),/Motivo para conservar la actividad/);
+  item.problemResolved='Se conserva el registro humano y se documentan sus riesgos.';
+  assert.match(sandbox.tobeReviewReadiness(e,p),/La propuesta IA.*Se automatiza/);
+  p.review.decisions.P4.status='MODIFY';
+  assert.equal(sandbox.tobeReviewReadiness(e,p),null);
+  p.addedSteps=[{stepName:'Validar datos',futureActor:'Administración',
+    transformation:'Se incorpora control',problemResolved:'NO'}];
+  assert.match(sandbox.tobeReviewReadiness(e,p),/motivo de la actividad nueva/);
+});
+test('PG11 dynamic field help never overwrites existing consultant text',()=>{
+  const start=src.indexOf('// [AUNEA-FE-PG11-TRANSFORMATION-LIVE-259] START'),
+    end=src.indexOf('// [AUNEA-FE-PG11-TRANSFORMATION-LIVE-259] END',start);
+  const handler=src.slice(start,end);
+  assert.ok(start>=0&&end>start);
+  const label={textContent:''},textarea={value:'Texto del consultor',placeholder:''},
+    badge={textContent:''},message={textContent:''};
+  const field={querySelector:query=>query==='[data-tobe-rationale-label]'?label:
+    query==='[data-tobe-field="problemResolved"]'?textarea:null};
+  const root={querySelector:query=>({
+    '[data-tobe-rationale-wrapper]':field,'.tobe-selected-status':badge,
+    '[data-tobe-transformation-message]':message
+  })[query]||null};
+  let onChange=null;
+  const sandbox={document:{addEventListener:(type,fn)=>{
+    if(type==='change')onChange=fn;
+  },getElementById:()=>root},state:{activePage:'tobe'},
+    tobeTransformationRationaleLabel:()=> 'Motivo de la modificación y problema que resuelve',
+    tobeFieldHelp:()=> 'Explica el cambio con evidencia'};
+  vm.createContext(sandbox);vm.runInContext(handler,sandbox);
+  assert.ok(onChange);
+  onChange({target:{dataset:{tobeField:'transformation'},value:'Se modifica',
+    closest:()=>root}});
+  assert.equal(label.textContent,'Motivo de la modificación y problema que resuelve');
+  assert.equal(textarea.placeholder,'Explica el cambio con evidencia');
+  assert.equal(textarea.value,'Texto del consultor');
+  assert.equal(badge.textContent,'Se modifica');
+});
 // [AUNEA-UAT-PG11-FUTURE-FLOW-233] END
