@@ -845,7 +845,37 @@ function saveTobeFromDom(e){
   p.updatedAt=now();markDirty('TO-BE v'+p.version+' actualizado');
   return true;
 }
-function tobeField(item,key,label,value,type='text',disabled=false){return `<div class="field"><label>${esc(label)}</label>${type==='textarea'?`<textarea data-tobe-item="${attr(item.id)}" data-tobe-field="${attr(key)}" ${disabled?'disabled':''}>${esc(value||'')}</textarea>`:`<input data-tobe-item="${attr(item.id)}" data-tobe-field="${attr(key)}" value="${attr(value||'')}" ${disabled?'disabled':''}>`}</div>`}
+// [AUNEA-FE-PG11-FIELD-GUIDANCE-246] START — field help never persists as data.
+const TOBE_FIELD_HELP={
+ stepName:'Nombra la actividad futura con una acción y un resultado claros.',
+ problemResolved:'Explica qué problema diagnosticado resuelve esta decisión, por qué y con qué evidencia.',
+ futureActor:'Indica el rol responsable en el proceso futuro; no inventes nombres ni responsables.',
+ tool:'Indica la herramienta o sistema sólo si existe decisión o evidencia que lo respalde.',
+ inputs:'Describe qué datos o documentos entran en este paso y de dónde proceden.',
+ outputs:'Describe qué resultado, documento o registro produce este paso y su destinatario.',
+ automationAi:'Distingue qué se automatiza con reglas y qué requiere IA, si corresponde.',
+ humanSupervision:'Indica quién valida, autoriza o atiende excepciones y en qué momento.',
+ controlsRisk:'Describe los riesgos aplicables, controles previstos y pruebas de cumplimiento.',
+ futureTime:'Introduce un tiempo futuro con unidad únicamente si está sustentado por un supuesto.',
+ futureTimeAssumption:'Explica la fuente, condiciones y límites del tiempo futuro propuesto.'
+};
+function tobeFieldHelp(key,item){
+ if(key==='problemResolved'&&item?.transformation==='Se mantiene')
+   return 'Explica por qué debe mantenerse la actividad sin rediseño, con qué evidencia y cómo se controlan sus hallazgos.';
+ if(key==='problemResolved'&&item?.transformation==='Se elimina')
+   return 'Justifica por qué se elimina la actividad y cómo se mantienen sus controles, datos y obligaciones.';
+ return TOBE_FIELD_HELP[key]||'Describe la información solicitada y su justificación.';
+}
+function tobeField(item,key,label,value,type='text',disabled=false){
+ const help=tobeFieldHelp(key,item),raw=String(value??'');
+ const suspect=/^(no|n\/a|ninguno)$/i.test(raw.trim())&&['problemResolved','automationAi','humanSupervision','controlsRisk'].includes(key);
+ const warning=suspect?'<p class="field-help">Valor heredado sin explicación («'+esc(raw)+'»). Revísalo: no equivale a una justificación.</p>':'';
+ return '<div class="field"><label>'+esc(label)+'</label>'+
+ (type==='textarea'?'<textarea data-tobe-item="'+attr(item.id)+'" data-tobe-field="'+attr(key)+'" placeholder="'+attr(help)+'" '+(disabled?'disabled':'')+'>'+esc(raw)+'</textarea>':
+ '<input data-tobe-item="'+attr(item.id)+'" data-tobe-field="'+attr(key)+'" value="'+attr(raw)+'" placeholder="'+attr(help)+'" '+(disabled?'disabled':'')+'>')+
+ '<p class="field-help">'+esc(help)+'</p>'+warning+'</div>';
+}
+// [AUNEA-FE-PG11-FIELD-GUIDANCE-246] END
 // [AUNEA-FE-PG11-WORKSPACE-205] START — single versioned TO-BE canvas and contextual inspector.
 // SOURCE: Simulator CANONICAL v1.14 PG11; DEC-050/052/055; PG04 graph source.
 // INPUTS: confirmed AS-IS snapshot, official diagnostic, TO-BE DRAFT and bounded AI suggestions.
@@ -1316,7 +1346,7 @@ function tobeCanvasHtml(e,p){
       content='<button type="button" class="graph-flow-step tobe-graph-node'+
         (isSelected?' is-selected':'')+(item.transformation==='Se elimina'?' is-eliminated':'')+
         '" data-tobe-select="'+attr(step.id)+'" aria-pressed="'+(isSelected?'true':'false')+
-        '" aria-label="Abrir diseño de '+attr(tobeFlowItemName(item))+'">'+
+        '" draggable="'+(tobeEditable(p)?'true':'false')+'" title="Arrastra esta actividad sobre otra para establecer la ruta principal" aria-label="Abrir diseño de '+attr(tobeFlowItemName(item))+'">'+
         '<span class="tobe-node-count">Actividad '+(steps.indexOf(step)+1)+'</span>'+
         '<span class="tobe-node-icon">'+processNodeIconSvg(processNodeIconName(step))+'</span>'+
         '<strong>'+esc(tobeFlowItemName(item))+'</strong>'+
@@ -1382,6 +1412,7 @@ function tobeInspectorHtml(e,p){
           '<input disabled value="'+attr(item.stepType==='ST04'?'Decisión · rutas SÍ / NO':'Actividad operativa')+'">')+
         '</div>':'')+
       statusField+
+      '<p class="field-help">«Qué cambia» define la transformación futura respecto al AS-IS; no significa que una mejora esté aprobada.</p>'+
       tobeField(item,'problemResolved',
         item.transformation==='Se mantiene'?'Motivo para conservar la actividad':
         item.transformation==='Se elimina'?'Por qué se elimina y qué necesidad resuelve':
@@ -1454,7 +1485,7 @@ function tobePage(){
       '<section class="tobe-map-area"><header class="tobe-workspace-head"><div><span class="tobe-eyebrow">02 · CONSTRUIR EL DISEÑO</span>'+
       '<h2>Mapa del proceso propuesto</h2></div><p>Selecciona una actividad para revisar su transformación y editar el TO-BE.</p></header>'+
       (editable?'<div class="tobe-flow-actions"><button type="button" class="btn btn-outline" id="addTobeStep">Añadir actividad vinculada al AS-IS</button>'+
-        '<span class="tobe-muted">Selecciona primero la actividad de origen para conservar trazabilidad.</span></div>':'')+
+        '<span class="tobe-muted">Selecciona origen AS-IS para añadir. Arrastra una actividad sobre otra para conectar la ruta principal; la ruta NO se configura en el inspector.</span></div>':'')+
       tobeCanvasHtml(e,p)+
       '<div class="tobe-flow-start field"><label>Inicio del proceso futuro</label>'+
         (editable?auneaSelectControl('tobeFlowStart',tobeFutureSteps(e,p).map(x=>({value:String(x.id),label:x.step_name})),
@@ -1828,10 +1859,19 @@ function registerInternalWorkPages(){
     const id=discard?.getAttribute('data-tobe-discard-added'),
       item=flow.addedSteps.find(x=>x.id===id&&x.status!=='SUPERSEDED');
     if(!item)return toast('La actividad ya no se encuentra en el TO-BE.');
+    const previousFlow=JSON.parse(JSON.stringify(flow));
     item.status='SUPERSEDED';item.updatedAt=now();
+    delete flow.routes[id];
+    for(const route of Object.values(flow.routes)){
+      if(route?.normal===id)route.normal='__PENDING__';
+      if(route?.exception===id)route.exception='__PENDING__';
+    }
+    if(flow.startStepId===id)flow.startStepId=String(draft.items.find(x=>x.transformation!=='Se elimina')?.sourceStepId||'');
     markDirty('Actividad TO-BE incorporada descartada sin borrar el historial');
-    if(!saveState('Descartar actividad TO-BE'))
-      return toast('No se ha guardado el descarte. Conserva el estudio abierto.');
+    if(!saveState('Descartar actividad TO-BE')){
+      draft.flow=previousFlow;
+      return toast('No se guardó el descarte; se restauró el flujo anterior.');
+    }
     const latest=currentEng(),next=latestTobe(latest);
     __auneaTobeSelection={engagementId:latest.id,version:next.version,
       stepId:String(next.items[0]?.sourceStepId||'')};
@@ -1839,6 +1879,44 @@ function registerInternalWorkPages(){
     toast('Actividad retirada del flujo futuro. Comprueba sus conexiones entrantes.');
   },true);
   // [AUNEA-FE-PG11-FLOW-ACTIONS-229] END
+  // [AUNEA-FE-PG11-FLOW-DRAG-247] START — drag to connect main/YES route.
+  let tobeDragFrom='';
+  document.addEventListener('dragstart',event=>{
+    const node=event.target?.closest?.('.tobe-process-canvas [data-tobe-select]');
+    if(!node||state.activePage!=='tobe')return;
+    if(!tobeEditable(latestTobe(currentEng()))){event.preventDefault();return;}
+    tobeDragFrom=String(node.getAttribute('data-tobe-select')||'');
+    if(event.dataTransfer){event.dataTransfer.effectAllowed='link';event.dataTransfer.setData('text/plain',tobeDragFrom);}
+  });
+  document.addEventListener('dragover',event=>{
+    const node=event.target?.closest?.('.tobe-process-canvas [data-tobe-select]');
+    if(node&&tobeDragFrom&&node.getAttribute('data-tobe-select')!==tobeDragFrom){
+      event.preventDefault();if(event.dataTransfer)event.dataTransfer.dropEffect='link';
+    }
+  });
+  document.addEventListener('drop',event=>{
+    const node=event.target?.closest?.('.tobe-process-canvas [data-tobe-select]');
+    if(!node||!tobeDragFrom||state.activePage!=='tobe')return;
+    event.preventDefault();
+    const from=tobeDragFrom,to=String(node.getAttribute('data-tobe-select')||'');
+    tobeDragFrom='';
+    const e=currentEng(),p=latestTobe(e);
+    if(!e||!tobeEditable(p)||from===to||!tobeFlowItem(e,p,from)||!tobeFlowItem(e,p,to))return;
+    if(!saveTobeFromDom(e)||!saveState('Guardar campos antes de conectar actividad'))
+      return toast('No se han guardado los campos. Conexión sin cambios.');
+    const live=currentEng(),draft=latestTobe(live),flow=tobeMutableFlow(live,draft);
+    const previous=JSON.parse(JSON.stringify(flow));
+    if(!flow.routes[from])flow.routes[from]={normal:'__PENDING__',exception:''};
+    flow.routes[from].normal=to;
+    markDirty('Ruta principal TO-BE '+from+' a '+to);
+    if(!saveState('Guardar conexión TO-BE')){
+      draft.flow=previous;return toast('No se guardó la conexión; se restauró el flujo anterior.');
+    }
+    render();toast('Ruta principal conectada. Comprueba las demás conexiones y la coherencia global.');
+  },true);
+  document.addEventListener('dragend',()=>{tobeDragFrom='';});
+  // [AUNEA-FE-PG11-FLOW-DRAG-247] END
+
   // [AUNEA-FE-PG11-DECISION-TYPE-245] START — reuse canonical ProcessStep
   // decision type for a new future step, without altering AS-IS.
   document.addEventListener('change',event=>{
