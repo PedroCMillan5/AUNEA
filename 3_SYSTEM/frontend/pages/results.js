@@ -1210,6 +1210,32 @@ function tobeApplyAiOnlyStep(e,sourceId){
 // per-step suggestion only when it matches the current DRAFT's versioned IA checkpoint.
 // SOURCE: PG11 CANONICAL; DEC-050/052/055; no new business field or data owner.
 // SIDE_EFFECTS: display-only. Never transfers an unreviewed item into TO-BE.
+// [AUNEA-FE-PG11-AI-REVIEW-UI-261] START — only existing AUNEA form/button primitives.
+function tobeAiReviewChangesHtml(e,item){
+  const p=latestTobe(e),decision=tobeHumanReviewRecord(e,p)?.decisions?.[String(item.sourceStepId)];
+  if(!tobeEditable(p)||item.isAddition||!['ACCEPT','MODIFY'].includes(decision?.status))return '';
+  const diff=tobeAiReviewDiff(e,p,item.sourceStepId);
+  const last=(p.aiDraft?.applyHistory||[]).filter(x=>
+    String(x.sourceStepId)===String(item.sourceStepId)).slice(-1)[0];
+  return '<section class="tobe-ai-change-review"><h4>Preparar cambios de esta recomendación</h4>'+
+    '<p class="tobe-muted">Compara actual y propuesto. Marca únicamente lo que quieras incorporar al TO-BE. No se modifica el AS-IS ni se crean rutas automáticamente.</p>'+
+    (diff.issue?'<p class="notice warn">'+esc(diff.issue)+'</p>':'')+
+    (diff.warnings.length?'<ul class="tobe-ai-review-warnings">'+diff.warnings.map(x=>
+      '<li>'+esc(x)+'</li>').join('')+'</ul>':'')+
+    (diff.fields.length?'<div class="tobe-ai-review-fields">'+diff.fields.map(field=>
+      '<label class="tobe-ai-review-field"><span><input type="checkbox" data-tobe-ai-pick="'+
+      attr(field.key)+'" '+(diff.issue?'disabled':'')+'> <b>'+esc(field.label)+'</b></span>'+
+      '<small><b>Actual:</b> '+esc(field.before)+'</small>'+
+      '<small><b>Propuesto:</b> '+esc(field.display)+'</small></label>').join('')+'</div>':
+      '<p class="tobe-muted">No hay cambios de la IA compatibles con los catálogos que sean distintos del diseño actual. Puedes editar los campos del paso 03.</p>')+
+    (!diff.issue&&diff.fields.length?
+      '<button type="button" class="btn btn-outline" data-tobe-ai-apply-reviewed="'+attr(item.sourceStepId)+
+      '">Aplicar los campos marcados al borrador</button>':'')+
+    (last?'<p class="tobe-muted">Cambios aplicados previamente: '+esc(last.fields.join(' · '))+
+      '. Debes revisar el resultado; no es una aprobación técnica.</p>':'')+
+    '</section>';
+}
+// [AUNEA-FE-PG11-AI-REVIEW-UI-261] END
 function tobeAiAdviceHtml(e,item){
   if(item?.isAddition)return '<div class="tobe-ai-empty"><p class="tobe-muted">Actividad incorporada por el consultor, vinculada a '+esc(item.sourceStepName)+'. La IA generada sobre el AS-IS no propone pasos nuevos automáticamente. Justifica la incorporación, su responsable y sus rutas antes de revisión.</p></div>';
   const key=typeof internalAiPilotKey==='function'?internalAiPilotKey(e):null;
@@ -1262,12 +1288,7 @@ function tobeAiAdviceHtml(e,item){
     '</details>'+
     ''+
     tobeHumanReviewHtml(e,item,!!archived)+
-    (!archived&&tobeHumanReviewRecord(e,latestTobe(e))?.decisions?.[String(item.sourceStepId)]?.status==='ACCEPT'?
-      '<div class="tobe-ai-apply-step"><button type="button" class="btn btn-outline" data-tobe-ai-apply-step="'+
-      attr(item.sourceStepId)+'" '+(tobeAiStepApplicability(e,latestTobe(e),item.sourceStepId)?'disabled':'')+
-      '>Aplicar recomendación sólo a esta actividad</button>'+
-      '<p class="tobe-muted">'+esc(tobeAiStepApplicability(e,latestTobe(e),item.sourceStepId)||
-        'Se completarán sólo campos vacíos; tus modificaciones existentes no se reemplazan.')+'</p></div>':'')+
+    (!archived?tobeAiReviewChangesHtml(e,item):'')+
     '</div>';
 }
 // [AUNEA-FE-PG11-INSPECTOR-CHECKPOINT-214] END
