@@ -1234,7 +1234,7 @@ function tobeAiInlineHint(e,p,item,key){
       skipped?'<p class="field-help">Valor no aplicable: revísalo en el control original.</p>':'')+
     '</div>';
 }
-// [AUNEA-FE-PG11-CLIENT-CONTEXT-269] Read-only evidence and conditions.
+// [AUNEA-FE-PG11-CLIENT-CONTEXT-269] START — Read-only evidence and conditions.
 // The IA limitations are proposals to verify, NEVER confirmed client claims.
 function tobeAiOperationalContextHtml(e,item){
   if(item.isAddition)return '';
@@ -1264,9 +1264,10 @@ function tobeAiOperationalContextHtml(e,item){
         partial?'<p>Checkpoint individual: no se puede aplicar hasta completar la revisión global y registrar la decisión humana.</p>':'')+
     '</details></div>';
 }
-// [AUNEA-FE-PG11-APPROVED-ROW-ACTIONS-273] Only the current
+// [AUNEA-FE-PG11-CLIENT-CONTEXT-269] END
+// [AUNEA-FE-PG11-APPROVED-ROW-ACTIONS-273] START — Only the current
 // version's reviewed IA can be applied. All values remain consultant-owned.
-// [AUNEA-FE-PG11-ROW-DECISION-278] Consultant-owned actions; historical IA is never imported automatically.
+// [AUNEA-FE-PG11-ROW-DECISION-278] START — Consultant-owned actions; historical IA is never imported automatically.
 function tobeAiRowActions(e,p,item,key){
   if(item.isAddition||!tobeEditable(p))return '';
   const id=String(item.sourceStepId),
@@ -1298,8 +1299,10 @@ function tobeAiRowActions(e,p,item,key){
     action('Editar','data-tobe-ai-edit-field="'+attr(key)+'"',false,
       'Abrir el editor original de este campo')+'</div>';
 }
+// [AUNEA-FE-PG11-ROW-DECISION-278] END
+// [AUNEA-FE-PG11-APPROVED-ROW-ACTIONS-273] END
 function tobeWithAiHint(e,p,item,key,html){
-  // [AUNEA-FE-PG11-GUIDED-FIELD-267] The existing field keeps sole edit
+  // [AUNEA-FE-PG11-GUIDED-FIELD-267] START — The existing field keeps sole edit
   // ownership; the suggestion is a read-only sibling, not another control.
   if(item.isAddition)return html;
   const advice=tobeAiInlineHint(e,p,item,key);
@@ -1310,13 +1313,14 @@ function tobeWithAiHint(e,p,item,key,html){
     '<div class="tobe-ai-field-control">'+html+'</div>'+
     (advice||fallback)+tobeAiRowActions(e,p,item,key)+'</div>';
 }
+// [AUNEA-FE-PG11-GUIDED-FIELD-267] END
 // [AUNEA-FE-PG11-FIELD-INLINE-263] END
 
 // [AUNEA-FE-PG11-AI-STEP-APPLY-230] START — source-linked,
  // field-selected manual application with explicit review and persistent audit.
  // No new route or automatic technical/client approval.
 // SOURCE: DEC-050/052/055; PG11 CANONICAL; existing reviewer and human decisions.
-// [AUNEA-FE-PG11-KEEP-FIELD-270] Explicit, versioned KEEP decision.
+// [AUNEA-FE-PG11-KEEP-FIELD-270] START — Explicit, versioned KEEP decision.
 // It records intent without changing the canonical editable value.
 function tobeKeepAiReviewedField(e,sourceId,key){
   if(!e||state.activePage!=='tobe')return false;
@@ -1348,6 +1352,7 @@ function tobeKeepAiReviewedField(e,sourceId,key){
   toast('Se mantiene tu valor TO-BE. No se ha aplicado la IA.');
   return true;
 }
+// [AUNEA-FE-PG11-KEEP-FIELD-270] END
 function tobeApplyAiReviewedFields(e,sourceId,keys){
   if(!e||state.activePage!=='tobe')return false;
   const draft=latestTobe(e),first=tobeAiReviewDiff(e,draft,sourceId),
@@ -1541,7 +1546,7 @@ function tobeCoherenceFindings(e,p){
   }
   return findings;
 }
-// [AUNEA-FE-PG11-GLOBAL-SCAN-280] One-pass QA summary; complete issues remain expandable.
+// [AUNEA-FE-PG11-GLOBAL-SCAN-280] START — One-pass QA summary; complete issues remain expandable.
 function tobeCoherencePanel(e,p){
   const findings=tobeCoherenceFindings(e,p),
     human=typeof tobeHumanReviewRecord==='function'?tobeHumanReviewRecord(e,p):null,
@@ -1578,6 +1583,7 @@ function tobeCoherencePanel(e,p){
       '<p class="tobe-muted">Las comprobaciones estructurales no certifican viabilidad técnica ni ahorros. Valida las fuentes y los supuestos con el cliente.</p>'+
     '</details></div>';
 }
+// [AUNEA-FE-PG11-GLOBAL-SCAN-280] END
 // [AUNEA-FE-PG11-COHERENCE-239] END
 // [AUNEA-FE-PG11-FUTURE-FLOW-228] START — version-owned future routing overlay.
 // SOURCE: Simulator CANONICAL PG11/PG12; DEC-050/052/055.
