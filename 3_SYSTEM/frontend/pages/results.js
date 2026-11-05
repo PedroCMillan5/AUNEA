@@ -1870,7 +1870,7 @@ function tobeInspectorHtml(e,p){
       '<button type="button" class="btn btn-outline btn-small" style="margin:0 12px 10px 0" data-tobe-jump="tobeStepAdvice">2 · Revisar IA</button>'+
       '<button type="button" class="btn btn-outline btn-small" style="margin:0 12px 10px 0" data-tobe-jump="tobeStepDesign">3 · Configurar</button>'+
       '<button type="button" class="btn btn-outline btn-small" style="margin:0 12px 10px 0" data-tobe-mode-switch="map">4 · Conectar</button>'+
-    '</nav>'+
+    '</nav>'+supportingInformation+
     '<section class="tobe-edit" id="tobeStepDesign"><h3>03 · Configurar la actividad futura</h3>'+
       (!item.isAddition&&hasCurrentAi?
         '<details class="tobe-human-review-shell"'+(choice?.status?'':' open')+'>'+
@@ -1921,8 +1921,7 @@ function tobeInspectorHtml(e,p){
         (nextItem?'<button type="button" class="btn btn-primary" data-tobe-select="'+
           attr(tobeFlowItemId(nextItem))+'">Siguiente actividad</button>':'')+
       '</div></section>'+
-      '<details class="tobe-review-support"'+(adviceOpen?' open':'')+'><summary>Consultar AS-IS, hallazgos, recomendaciones y fuentes</summary>'+
-        supportingInformation+'</details>'+tobeFlowInspector(e,p,item)+
+      tobeFlowInspector(e,p,item)+
     (item.isAddition&&editable?'<button type="button" class="btn btn-outline" data-tobe-discard-added="'+attr(item.id)+'">Descartar actividad añadida</button>':'');
 }
 function createNextTobeVersion(e){
