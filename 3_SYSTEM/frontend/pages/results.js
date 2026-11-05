@@ -890,9 +890,12 @@ function tobeArtifactValues(value){
   }
   return {resolved,unknown};
 }
-function tobeArtifactDisplay(value){
-  const v=tobeArtifactValues(value);
-  return [...v.resolved.map(x=>labelFrom('OS_ARTIFACT_TYPE',x)||x),...v.unknown].join(' · ')||'No documentado';
+function tobeArtifactDisplay(value,otherDetail=''){
+  const v=tobeArtifactValues(value),other=catalogOtherOption(fieldOptions('OS_ARTIFACT_TYPE'));
+  const labels=v.resolved.map(x=>x===String(other?.value)&&String(otherDetail||'').trim()?
+    (labelFrom('OS_ARTIFACT_TYPE',x)||'Otro')+': '+String(otherDetail).trim():
+    labelFrom('OS_ARTIFACT_TYPE',x)||x);
+  return [...labels,...v.unknown].join(' · ')||'No documentado';
 }
 function tobeCatalogField(item,key,label,setId,disabled=false){
   const raw=String(item[key]||''),opts=fieldOptions(setId),
@@ -1639,8 +1642,8 @@ function tobeComparisonDetail(e,p,sourceId){
     '<p><b>Qué cambia y por qué:</b> '+esc(item.problemResolved||'No documentado')+'</p>'+
     '<p><b>Responsable futuro:</b> '+esc(removed?'Actividad eliminada':(labelFrom('OS_ACTOR_ROLE',item.futureActor)||comparable(item.futureActor)))+'</p>'+
     '<p><b>Herramienta futura:</b> '+esc(removed?'Actividad eliminada':(labelFrom('OS_TOOL_CATEGORY',item.tool)||comparable(item.tool)))+'</p>'+
-    '<p><b>Entradas futuras:</b> '+esc(removed?'Actividad eliminada':tobeArtifactDisplay(item.inputs))+'</p>'+
-    '<p><b>Salidas futuras:</b> '+esc(removed?'Actividad eliminada':tobeArtifactDisplay(item.outputs))+'</p>'+
+    '<p><b>Entradas futuras:</b> '+esc(removed?'Actividad eliminada':tobeArtifactDisplay(item.inputs,item._details?.inputs))+'</p>'+
+    '<p><b>Salidas futuras:</b> '+esc(removed?'Actividad eliminada':tobeArtifactDisplay(item.outputs,item._details?.outputs))+'</p>'+
     '<p><b>Automatización e IA:</b> '+esc(comparable(item.automationAi))+'</p>'+
     '<p><b>Supervisión humana:</b> '+esc(comparable(item.humanSupervision))+'</p>'+
     '<p><b>Control / riesgo:</b> '+esc(comparable(item.controlsRisk))+'</p>'+
