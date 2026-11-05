@@ -1131,42 +1131,10 @@ function tobeAiReviewDiff(e,p,id){
   return out;
 }
 // [AUNEA-FE-PG11-AI-REVIEW-DIFF-260] END
-// [AUNEA-FE-PG11-AI-STEP-APPLY-230] START — human-authorized, source-linked
-// per-activity application. No bulk field copy, no overwrite and no client approval.
+// [AUNEA-FE-PG11-AI-STEP-APPLY-230] START — source-linked,
+ // field-selected manual application with explicit review and persistent audit.
+ // No new route or automatic technical/client approval.
 // SOURCE: DEC-050/052/055; PG11 CANONICAL; existing reviewer and human decisions.
-function tobeAiStepApplicability(e,p,sourceId){
-  if(!e||!tobeEditable(p))return 'La versión TO-BE no permite edición.';
-  const current=typeof internalAiSavedDraft==='function'?internalAiSavedDraft(e):null;
-  const cached=typeof internalAiPilotKey==='function'&&typeof __auneaAiPreview!=='undefined'?
-    __auneaAiPreview.get(internalAiPilotKey(e)):null;
-  const data=cached||current;
-  if(!data?.review||!Array.isArray(data.items))
-    return 'Esta actividad no tiene una propuesta IA consolidada vigente.';
-  if(data.review.review_mode==='RULES_ONLY')
-    return 'Una comprobación por reglas no autoriza la aplicación automática.';
-  if(!['CHECKED','CHECKED_WITH_NOTES'].includes(data.review.status))
-    return 'La revisión automática no ha terminado.';
-  if(data.review.issues?.some(x=>x.category==='BLOCKING'&&
-     (String(x.step_id||'GLOBAL')==='GLOBAL'||String(x.step_id)===String(sourceId)))||
-     data.review.blocking_step_ids?.includes(String(sourceId)))
-    return 'Esta recomendación tiene incoherencias bloqueantes. Corrígela manualmente.';
-  const proposal=data.items.find(x=>String(x.source_step_id)===String(sourceId)),
-    item=p.items.find(x=>String(x.sourceStepId)===String(sourceId));
-  if(!proposal||!item||!Array.isArray(proposal.source_refs)||
-    !proposal.source_refs.map(String).includes(String(sourceId)))
-    return 'La recomendación carece de una fuente de actividad válida.';
-  if(!TOBE_TRANSFORMATIONS.includes(proposal.transformation))
-    return 'La transformación propuesta no pertenece al catálogo canónico.';
-  const human=tobeHumanReviewRecord(e,p)?.decisions?.[String(sourceId)];
-  if(!human||human.status!=='ACCEPT'||String(human.note||'').trim().length<20)
-    return 'Acepta expresamente esta recomendación y justifica tu decisión antes de aplicar.';
-  const text=String(proposal.rationale||'');
-  if(proposal.transformation==='Se mantiene'&&
-    (String(proposal.automation_ai||'').trim()||
-     /\b(automatizar|modificar|eliminar|sustituir|implementar|rediseñar)\b/i.test(text)))
-    return 'La IA propone «Se mantiene» pero describe una modificación. Corrige la contradicción manualmente.';
-  return '';
-}
 function tobeApplyAiReviewedFields(e,sourceId,keys){
   if(!e||state.activePage!=='tobe')return false;
   const draft=latestTobe(e),first=tobeAiReviewDiff(e,draft,sourceId),
