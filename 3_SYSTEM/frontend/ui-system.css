@@ -2941,12 +2941,12 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 }
 /* [AUNEA-FE-PG11-INSPECTOR-BUTTON-SPACING-257] END */
 
-/* [AUNEA-FE-PG11-TRANSFORMATION-UX-258] START — only scoped feedback; existing AUNEA components remain unchanged. */
+/* [AUNEA-FE-PG11-TRANSFORMATION-STYLE-289] START — only scoped feedback; existing AUNEA components remain unchanged. */
 .tobe-inspector [data-tobe-ai-difference][hidden]{display:none!important}
 .tobe-inspector [data-tobe-ai-difference]:not([hidden]){margin:8px 0 12px}
 .tobe-inspector [data-tobe-transformation-message]{line-height:1.5}
 .tobe-inspector [data-tobe-rationale-wrapper] .field-help{line-height:1.5}
-/* [AUNEA-FE-PG11-TRANSFORMATION-UX-258] END */
+/* [AUNEA-FE-PG11-TRANSFORMATION-STYLE-289] END */
 
 
 
@@ -3039,7 +3039,7 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 }
 /* [AUNEA-FE-PG11-CANONICAL-ROWS-268] END */
 
-/* [AUNEA-FE-PG11-OPERATIONAL-UX-271] Context is sourced from
+/* [AUNEA-FE-PG11-OPERATIONAL-UX-271] START — Context is sourced from
    versioned IA proposal; not evidence of client confirmation. */
 .tobe-ai-operational-context{
   margin:12px 0 14px;padding:12px 14px;
