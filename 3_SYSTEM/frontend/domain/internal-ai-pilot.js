@@ -42,6 +42,22 @@ function internalAiPilotRefreshPanel(e){
     const selected=tobeSelectedItem(e,latestTobe(e)),p=latestTobe(e);
     if(selected){
       recommendation.innerHTML=tobeAiAdviceHtml(e,selected,false);
+      // A verified checkpoint must be readable immediately, even before global
+      // review. Both disclosure layers belong to existing inspector components.
+      const sid=String(selected.sourceStepId||''),
+        currentForStep=typeof internalAiSavedDraft==='function'&&
+          internalAiSavedDraft(e)?.items?.some(x=>String(x.source_step_id)===sid),
+        partialForStep=typeof internalAiPendingSteps==='function'&&
+          internalAiPendingSteps(e,internalAiPilotKey(e))?.items?.has(sid);
+      if((currentForStep||partialForStep)&&
+         !(typeof tobeHumanReviewRecord==='function'&&
+           tobeHumanReviewRecord(e,p)?.decisions?.[sid]?.status)){
+        const parent=document.querySelector('.tobe-review-support');
+        if(parent){parent.open=true;
+          const detail=parent.querySelector('#tobeStepAdvice > details');
+          if(detail)detail.open=true;
+        }
+      }
       // Update only read-only suggestions; never replace consultant controls
       // while Ollama is working and the user may be editing a textarea.
       const inspector=document.getElementById('tobeInspector');
