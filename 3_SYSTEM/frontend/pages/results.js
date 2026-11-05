@@ -1918,44 +1918,53 @@ function createNextTobeVersion(e){
   return true;
 }
 // [AUNEA-FE-PG11-GLOBAL-OVERVIEW-284] START — read-only, version-bound global IA.
+// SOURCE: Simulator CANONICAL v1.14 PG11; DEC-050/052/055; existing AUNEA System controls.
 function tobeGlobalOverviewHtml(e,p){
   const entry=p?.aiGlobal,diag=currentDiagnosticOutput(e);
   const valid=entry&&entry.tobeVersion===p.version&&entry.sourceSnapshotVersion===p.sourceSnapshotVersion&&
     entry.diagnosticInputHash===diag?.input_snapshot_hash&&entry.result?.status==='DRAFT'&&
     entry.result.engagement_id===e.id&&entry.result.snapshot_version===p.sourceSnapshotVersion;
-  const result=valid?entry.result:null,opportunities=Array.isArray(result?.opportunities)?result.opportunities:[],
+  const result=valid?entry.result:null,
+    opportunities=Array.isArray(result?.opportunities)?result.opportunities:[],
     working=typeof internalAiGlobalWorking==='function'&&internalAiGlobalWorking(e),
     feedback=typeof internalAiGlobalMessage==='function'?internalAiGlobalMessage(e):null;
-  const source=tobeProposalSourceSteps(e,p),record=typeof engagementOfRecord==='function'?engagementOfRecord(e):e;
+  const source=tobeProposalSourceSteps(e,p),
+    record=typeof engagementOfRecord==='function'?engagementOfRecord(e):e;
   const refs=ids=>(ids||[]).map(id=>{
     const step=source.find(s=>String(s.id)===String(id)),
       friction=(record?.frictions||[]).find(f=>String(f.id)===String(id)),
       risk=(record?.risks||[]).find(r=>String(r.id||r.risk_id)===String(id));
     return step?'Paso: '+(step.step_name||step.name||id):
       friction?'Fricción: '+(friction.client_label||id):
-      risk?'Riesgo: '+(risk.description||id):String(id);
+      risk?'Riesgo: '+(risk.description||id):'Referencia: '+String(id);
   });
+  const state=working?'Analizando…':result?'Propuesta guardada · Sin aprobar':'Pendiente de análisis';
   return '<section class="tobe-global-analysis" id="tobeGlobalAnalysis" aria-label="Análisis global IA del proceso">'+
-    '<header class="tobe-global-analysis-head"><div><span class="tobe-eyebrow">02 · ANÁLISIS IA GLOBAL</span>'+
-      '<h2>Objetivos y recomendaciones del proceso</h2>'+
-      '<p>Mejoras transversales del AS-IS confirmado. Las modificaciones de cada actividad se revisan aparte.</p></div>'+
-    (tobeEditable(p)?'<button type="button" class="btn btn-primary" id="analyzeTobeGlobal"'+
-      (working?' disabled':'')+'>'+
-      (working?'Analizando proceso…':result?'Volver a analizar':'Analizar proceso con IA')+'</button>':'')+'</header>'+
-    '<div class="tobe-global-summary"><strong>'+(result?'Propuesta IA · Sin aprobar':'Análisis pendiente')+'</strong>'+
-    '<p>'+esc(result?.summary||'La IA propondrá objetivos, cómo conseguirlos y justificaciones sin inventar ahorros ni modificar el TO-BE.')+'</p></div>'+
+    '<header class="tobe-global-analysis-head"><div><span class="tobe-eyebrow">02 · ANÁLISIS IA GLOBAL DEL PROCESO</span>'+
+      '<h2>Objetivos y recomendaciones de mejora</h2>'+
+      '<p>Primero, qué mejorar en el conjunto del proceso y cómo conseguirlo. Las decisiones sobre cada actividad se realizan después.</p></div>'+
+      (tobeEditable(p)?'<button type="button" class="btn btn-primary" id="analyzeTobeGlobal"'+
+        (working?' disabled aria-busy="true"':'')+'>'+
+        (working?'Analizando proceso…':result?'Volver a analizar':'Analizar proceso con IA')+'</button>':'')+'</header>'+
+    '<div class="tobe-global-summary"><div class="tobe-global-summary-top">'+
+      '<strong>'+(result?'Síntesis del proceso':'Análisis global pendiente')+'</strong>'+
+      '<span class="tobe-global-state" aria-live="polite">'+esc(state)+'</span></div>'+
+      '<p>'+esc(result?.summary||'La IA analizará el AS-IS confirmado para proponer objetivos generales y acciones concretas, respetando los límites declarados por el cliente. No alterará campos del TO-BE.')+'</p></div>'+
     (feedback?'<p class="tobe-global-feedback'+(feedback.type==='warn'?' is-warning':'')+
-      '" role="status">'+esc(feedback.message)+'</p>':'')+
-    (opportunities.length?'<div class="tobe-global-opportunities">'+opportunities.map((item,i)=>
-      '<article class="tobe-global-opportunity"><span class="tobe-global-number">'+(i+1)+'</span>'+
-      '<div class="tobe-global-opportunity-body"><strong>'+esc(item.objective)+'</strong>'+
-      '<p><b>Cómo conseguirlo:</b> '+esc(item.how)+'</p>'+
+      '" role="status" aria-live="polite">'+esc(feedback.message)+'</p>':'')+
+    (opportunities.length?'<div class="tobe-global-opportunities" aria-label="Objetivos y recomendaciones">'+
+      opportunities.map((item,i)=>
+      '<article class="tobe-global-opportunity"><span class="tobe-global-number" aria-hidden="true">'+(i+1)+'</span>'+
+      '<div class="tobe-global-opportunity-body">'+
+      '<span class="tobe-global-item-label">Objetivo de mejora</span><strong>'+esc(item.objective)+'</strong>'+
+      '<p class="tobe-global-action"><b>Cómo conseguirlo:</b> '+esc(item.how)+'</p>'+
       '<details><summary>Ver justificación y restricciones</summary><div class="tobe-global-detail">'+
-      '<p><b>Justificación:</b> '+esc(item.why)+'</p>'+
-      '<p><b>Límites del cliente:</b> '+esc(item.constraints||'No identificado; comprobar viabilidad.')+'</p>'+
-      '<p><b>Fuentes:</b> '+esc(refs(item.source_refs).join(' · '))+'</p></div></details></div></article>').join('')+
-      '</div>':result?'<p class="tobe-muted">Sin mejoras globales suficientemente respaldadas. Consulta la síntesis.</p>':'')+
-    '<p class="tobe-global-caution">Sugerencias IA sin aprobar. No sustituyen los motores oficiales ni alteran el proceso.</p>'+
+      '<p><b>Por qué se recomienda:</b> '+esc(item.why)+'</p>'+
+      '<p><b>Condiciones del cliente:</b> '+esc(item.constraints||'Sin restricciones adicionales identificadas para esta recomendación; comprobar viabilidad.')+'</p>'+
+      '<p><b>Evidencias vinculadas:</b> '+esc(refs(item.source_refs).join(' · ')||'Sin referencias identificadas')+'</p>'+
+      '</div></details></div></article>').join('')+'</div>':
+      result?'<p class="tobe-global-empty">La IA no ha identificado mejoras transversales con evidencia suficiente. Consulta la síntesis y revisa los pasos individualmente.</p>':'')+
+    '<p class="tobe-global-caution">Análisis orientativo, sin aprobar. Sin porcentajes ni tiempos futuros estimados. No sustituye la revisión humana ni el motor oficial.</p>'+
     '</section>';
 }
 // [AUNEA-FE-PG11-GLOBAL-OVERVIEW-284] END
