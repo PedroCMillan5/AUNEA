@@ -1137,7 +1137,9 @@ function tobeAiAdviceHtml(e,item){
     '</dl>'+
     '<details class="tobe-subdetails"><summary>Justificación, fuentes y aspectos por revisar</summary>'+
       '<p><b>Justificación:</b> '+esc(narrative.reason||'No declarada')+'</p>'+
-      '<p><b>Fuentes:</b> '+esc((suggestion.source_refs||[]).join(', ')||'No identificadas')+'</p>'+
+      '<p><b>Fuentes:</b> '+esc((typeof internalAiReadableRefs==='function'?
+        internalAiReadableRefs(e,suggestion.source_refs):
+        (suggestion.source_refs||[]).join(', '))||'No identificadas')+'</p>'+
       '<p><b>Condiciones pendientes:</b> '+esc(suggestion.limitations||'Ninguna declarada')+'</p>'+
       (fromCheckpoint?'<p>Revisión global pendiente. Este resultado no está autorizado para aplicar ni aprobar.</p>':
         issues.length?'<ul>'+issues.map(x=>'<li>'+esc(x.issue||x.action||'Revisión pendiente')+'</li>').join('')+'</ul>':
