@@ -1698,7 +1698,7 @@ function tobeInspectorHtml(e,p){
       '<button type="button" class="btn btn-outline btn-small" style="margin:0 12px 10px 0" data-tobe-jump="tobeStepOrigin">1 · Entender</button>'+
       '<button type="button" class="btn btn-outline btn-small" style="margin:0 12px 10px 0" data-tobe-jump="tobeStepAdvice">2 · Revisar IA</button>'+
       '<button type="button" class="btn btn-outline btn-small" style="margin:0 12px 10px 0" data-tobe-jump="tobeStepDesign">3 · Configurar</button>'+
-      '<button type="button" class="btn btn-outline btn-small" style="margin:0 12px 10px 0" data-tobe-jump="tobeStepRoutes">4 · Conectar</button>'+
+      '<button type="button" class="btn btn-outline btn-small" style="margin:0 12px 10px 0" data-tobe-mode-switch="map">4 · Conectar</button>'+
     '</nav>'+
     '<section class="tobe-origin" id="tobeStepOrigin"><details class="tobe-subdetails"><summary>01 · Entender el AS-IS y sus hallazgos</summary>'+
       tobeOriginalStepFacts(e,item)+tobeSnapshotIssueCards(e,item)+'</details></section>'+
@@ -2200,7 +2200,10 @@ function registerInternalWorkPages(){
     const button=event.target?.closest?.('[data-tobe-jump]');
     if(!button||state.activePage!=='tobe')return;
     event.preventDefault();
-    document.getElementById(button.dataset.tobeJump)?.scrollIntoView({behavior:'smooth',block:'start'});
+    const section=document.getElementById(button.dataset.tobeJump);
+    const details=section?.querySelector('details.tobe-subdetails');
+    if(details)details.open=true;
+    section?.scrollIntoView({behavior:'smooth',block:'start'});
   },true);
   document.addEventListener('keydown',event=>{
     if(event.key!=='Escape'||!__auneaTobeLink||state.activePage!=='tobe')return;
@@ -2525,8 +2528,8 @@ function registerInternalWorkPages(){
     if(!stored||stored.status!==choice||stored.note!==reason)
       return toast('No se pudo verificar la persistencia de la decisión. No se ha aprobado ningún cambio.');
     render();
-    if(typeof requestAnimationFrame==='function')
-      requestAnimationFrame(()=>document.querySelector('.tobe-ai-change-review')?.
+    if(typeof requestAnimationFrame==='function'&&__auneaTobeMode==='guided')
+      requestAnimationFrame(()=>document.getElementById('tobeStepDesign')?.
         scrollIntoView({behavior:'smooth',block:'start'}));
     toast('Decisión guardada: '+TOBE_HUMAN_LABELS[choice]+'. Revisa los campos propuestos; el diseño sigue en borrador.');
   },true);
