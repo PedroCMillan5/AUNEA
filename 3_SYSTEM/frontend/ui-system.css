@@ -3074,6 +3074,48 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 }
 /* [AUNEA-FE-PG11-OPERATIONAL-UX-271] END */
 
+/* [AUNEA-FE-PG11-GLOBAL-STYLE-286] START — AUNEA System tokens, PG11 only */
+.tobe-global-analysis{
+  display:grid;gap:14px;min-width:0;margin:16px 0 20px;padding:20px 22px;
+  border:1px solid var(--system-line);border-radius:var(--radius-sm);
+  background:#fff;color:var(--ink);
+}
+.tobe-global-analysis-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;flex-wrap:wrap}
+.tobe-global-analysis-head>div{flex:1 1 380px;min-width:0}
+.tobe-global-analysis-head .tobe-eyebrow{display:block;color:var(--system);margin-bottom:5px}
+.tobe-global-analysis-head h2{margin:0 0 5px;color:var(--ink);font-weight:750;line-height:1.25}
+.tobe-global-analysis-head p{margin:0;color:var(--muted);font-size:var(--font-small);line-height:1.5}
+.tobe-global-analysis-head .btn{flex:0 0 auto;min-height:40px;white-space:normal}
+.tobe-global-summary{
+  border-left:3px solid var(--system);border-radius:var(--radius-sm);
+  background:var(--system-soft);padding:12px 15px;
+}
+.tobe-global-summary strong{display:block;color:var(--system);font-size:var(--font-small);margin-bottom:4px}
+.tobe-global-summary p{margin:0;line-height:1.55;font-size:var(--font-small)}
+.tobe-global-opportunities{display:grid;gap:10px}
+.tobe-global-opportunity{display:flex;align-items:flex-start;gap:13px;padding:12px 14px;
+  border:1px solid var(--system-line);border-radius:var(--radius-sm);background:#fff;min-width:0}
+.tobe-global-number{display:grid;place-items:center;flex:0 0 27px;height:27px;border-radius:50%;
+  background:var(--system-soft);color:var(--system);font-size:12px;font-weight:800}
+.tobe-global-opportunity-body{flex:1;min-width:0}
+.tobe-global-opportunity-body>strong{display:block;font-size:14px;color:var(--ink);margin:2px 0 6px;line-height:1.35}
+.tobe-global-opportunity-body>p{margin:0 0 7px;line-height:1.5;font-size:var(--font-small)}
+.tobe-global-opportunity-body details{border-top:1px solid var(--system-line);padding-top:7px}
+.tobe-global-opportunity-body details summary{cursor:pointer;color:var(--system);font-weight:700;font-size:12px}
+.tobe-global-detail{margin-top:9px;padding:10px 12px;border-radius:var(--radius-sm);background:var(--system-soft)}
+.tobe-global-detail p{margin:0 0 7px;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+.tobe-global-detail p:last-child{margin-bottom:0}
+.tobe-global-feedback{margin:0;padding:9px 12px;border:1px solid var(--system-line);
+  border-radius:var(--radius-sm);font-size:var(--font-small);line-height:1.5}
+.tobe-global-feedback.is-warning{background:var(--amber-soft);border-color:#e4cda4}
+.tobe-global-caution{margin:0;font-size:11px;color:var(--muted);line-height:1.5}
+@media(max-width:720px){
+  .tobe-global-analysis{padding:14px;gap:12px}
+  .tobe-global-analysis-head .btn{width:100%}
+  .tobe-global-opportunity{padding:11px}
+}
+/* [AUNEA-FE-PG11-GLOBAL-STYLE-286] END */
+
 /* [AUNEA-FE-PG11-STEP-AI-272] START */
 .tobe-ai-per-step-action{display:flex;align-items:center;gap:12px;flex-wrap:wrap;
   min-width:0;margin:12px 0}
