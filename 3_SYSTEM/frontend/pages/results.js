@@ -1411,7 +1411,7 @@ function tobeFlowInspector(e,p,item){
       extra:'data-tobe-route="'+kind+'" data-tobe-route-step="'+attr(stepId)+'"',
       placeholder:'Selecciona destino'}):'<input disabled value="'+attr(opts.find(x=>x.value===value)?.label||value||'Pendiente')+'">')+
     '<p class="field-help">Selecciona el destino de esta ruta en el proceso futuro. Una ruta pendiente bloquea la revisión.</p></div>';
-  return '<section class="tobe-route-editor"><h3>Conexiones del proceso futuro</h3>'+
+  return '<section class="tobe-route-editor" id="tobeStepRoutes"><h3>04 · Conectar el proceso futuro</h3>'+
     '<p class="tobe-muted">Edita aquí las rutas del TO-BE. No se modificarán las conexiones del AS-IS confirmado.</p>'+
     '<div class="form-grid">'+field('normal','Siguiente actividad'+(decision?' · ruta SÍ':''),routes.normal)+
     (decision?field('exception','Ruta NO / excepción',routes.exception):'')+
@@ -1512,10 +1512,18 @@ function tobeInspectorHtml(e,p){
       (item.isAddition?'<p class="tobe-muted">Origen confirmado: '+esc(item.sourceStepName)+
         ' · Esta actividad existe sólo en el borrador TO-BE.</p>':'')+
       '</div><span class="tobe-selected-status">'+esc(item.transformation||'Sin definir')+'</span></header>'+
-    '<section class="tobe-origin"><h3>03 · Situación AS-IS y hallazgos vinculados</h3>'+
+    '<nav class="tobe-review-steps" aria-label="Orden de revisión">'+
+      '<button type="button" class="btn btn-outline btn-small" data-tobe-jump="tobeStepOrigin">1 · Entender</button>'+
+      '<button type="button" class="btn btn-outline btn-small" data-tobe-jump="tobeStepAdvice">2 · Revisar IA</button>'+
+      '<button type="button" class="btn btn-outline btn-small" data-tobe-jump="tobeStepDesign">3 · Configurar</button>'+
+      '<button type="button" class="btn btn-outline btn-small" data-tobe-jump="tobeStepRoutes">4 · Conectar</button>'+
+    '</nav>'+
+    '<section class="tobe-origin" id="tobeStepOrigin"><h3>01 · Entender el AS-IS y sus hallazgos</h3>'+
       tobeOriginalStepFacts(e,item)+
       tobeSnapshotIssueCards(e,item)+'</section>'+
-    '<section class="tobe-edit"><h3>Decisión operativa del consultor · TO-BE</h3>'+
+    '<section class="tobe-advice" id="tobeStepAdvice" aria-label="Sugerencia IA para actividad"><h3>02 · Revisar la recomendación IA y decidir</h3>'+
+      '<div id="tobeAiRecommendation">'+tobeAiAdviceHtml(e,item)+'</div></section>'+
+    '<section class="tobe-edit" id="tobeStepDesign"><h3>03 · Configurar la actividad futura</h3>'+
       '<p class="tobe-muted">Estos campos describen el funcionamiento futuro. Los valores heredados se muestran para revisar, no son mejoras confirmadas ni decisiones de la IA.</p>'+
       (item.transformation==='Se mantiene'&&/^(no|n\/a|ninguno)$/i.test(String(item.problemResolved||'').trim())?
         '<p class="notice warn"><b>Justificación pendiente:</b> «Se mantiene» conserva esta actividad sin rediseño. El valor «NO» no explica por qué se mantienen los hallazgos ni cómo se controlan; revisa la decisión antes de validar.</p>':'')+
@@ -1549,9 +1557,7 @@ function tobeInspectorHtml(e,p){
       '<div class="form-grid">'+tobeField(item,'futureTime','Tiempo futuro',item.futureTime,'text',!editable)+
       tobeField(item,'futureTimeAssumption','Supuesto trazable',item.futureTimeAssumption,'textarea',!editable)+
       '</div></details></section>'+tobeFlowInspector(e,p,item)+
-    (item.isAddition&&editable?'<button type="button" class="btn btn-outline" data-tobe-discard-added="'+attr(item.id)+'">Descartar actividad añadida</button>':'')+
-    '<section class="tobe-advice" aria-label="Sugerencia IA para actividad"><h3>Recomendación asistida por IA</h3>'+
-      '<div id="tobeAiRecommendation">'+tobeAiAdviceHtml(e,item)+'</div></section>';
+    (item.isAddition&&editable?'<button type="button" class="btn btn-outline" data-tobe-discard-added="'+attr(item.id)+'">Descartar actividad añadida</button>':'');
 }
 function createNextTobeVersion(e){
   const previous=latestTobe(e),snap=confirmedSnapshot(e);
@@ -1597,11 +1603,12 @@ function tobePage(){
       '<section class="tobe-context"><div><strong>Origen del diseño</strong><p>AS-IS confirmado v'+esc(snap.version)+
       ' · Diagnóstico '+esc(diagnosticOutputFreshness(e).label)+
       ' · '+p.items.length+' actividades de origen</p></div><div class="tobe-context-status">'+esc(statusLabel)+'</div></section>'+
-      '<section class="tobe-map-area"><header class="tobe-workspace-head"><div><span class="tobe-eyebrow">02 · CONSTRUIR EL DISEÑO</span>'+
+      '<section class="tobe-map-area"><header class="tobe-workspace-head"><div><span class="tobe-eyebrow">CONSTRUIR EL PROCESO FUTURO</span>'+
       '<h2>Mapa del proceso propuesto</h2></div><p>Selecciona una actividad para revisar su transformación y editar el TO-BE.</p></header>'+
       (editable?'<div class="tobe-flow-actions"><button type="button" class="btn btn-outline" id="addTobeStep">Añadir actividad vinculada al AS-IS</button>'+
-        (tobeSelectedItem(e,p)?.isAddition?'<button type="button" class="btn btn-outline" data-tobe-discard-added="'+attr(tobeSelectedItem(e,p).id)+'">Eliminar actividad añadida del TO-BE</button>':'')+
-        '<span class="tobe-muted">Selecciona una tarjeta y arrástrala para moverla; también puedes utilizar «Mover». Para cambiar las rutas, pulsa «Conectar» o «Ruta NO» y selecciona el destino. Los pasos nuevos tienen «Eliminar».</span></div>':'')+
+        
+        '<span class="tobe-muted">Selecciona una tarjeta para revisarla y arrástrala para moverla. Para conectar, pulsa «Conectar» o «Ruta NO» y selecciona el destino. «Retirar» sólo cambia el TO-BE.</span>'+
+        '<span id="tobeFlowModeStatus" role="status" aria-live="polite"></span></div>':'')+
       tobeCanvasHtml(e,p)+
       '<div class="tobe-flow-start field"><label>Inicio del proceso futuro</label>'+
         (editable?auneaSelectControl('tobeFlowStart',tobeFutureSteps(e,p).map(x=>({value:String(x.id),label:x.step_name})),
@@ -1934,6 +1941,22 @@ function registerInternalWorkPages(){
     }
   },true);
   // [AUNEA-FE-PG11-ARTIFACT-OTHER-252] END
+  // [AUNEA-FE-PG11-GUIDED-INSPECTOR-253] START
+  document.addEventListener('click',event=>{
+    const button=event.target?.closest?.('[data-tobe-jump]');
+    if(!button||state.activePage!=='tobe')return;
+    event.preventDefault();
+    document.getElementById(button.dataset.tobeJump)?.scrollIntoView({behavior:'smooth',block:'start'});
+  },true);
+  document.addEventListener('keydown',event=>{
+    if(event.key!=='Escape'||!__auneaTobeLink||state.activePage!=='tobe')return;
+    __auneaTobeLink=null;
+    document.querySelector('.tobe-free-board')?.classList.remove('tobe-connect-active');
+    const status=document.getElementById('tobeFlowModeStatus');
+    if(status)status.textContent='Conexión cancelada; el proceso no se ha modificado.';
+    toast('Conexión cancelada.');
+  },true);
+  // [AUNEA-FE-PG11-GUIDED-INSPECTOR-253] END
   // [AUNEA-FE-PG11-SELECT-206] START — retain unsaved consultant data before switching inspector.
   document.addEventListener('click',event=>{
     const selected=event.target?.closest?.('[data-tobe-select]');
@@ -2141,6 +2164,10 @@ function registerInternalWorkPages(){
     if(kind==='exception'&&!isDecision)return;
     __auneaTobeLink={from,kind};
     document.querySelector('.tobe-free-board')?.classList.add('tobe-connect-active');
+    const status=document.getElementById('tobeFlowModeStatus');
+    if(status)status.textContent='Conectando '+tobeFlowItemName(item)+
+      ' · Ruta '+(kind==='exception'?'NO':'principal / SÍ')+
+      ': selecciona la tarjeta de destino o pulsa Esc para cancelar.';
     toast('Selecciona ahora la tarjeta de destino para la ruta '+(kind==='exception'?'NO':'principal / SÍ')+'.');
   },true);
   // [AUNEA-FE-PG11-FLOW-DRAG-247] END
