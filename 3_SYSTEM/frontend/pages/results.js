@@ -1861,7 +1861,9 @@ function tobeInspectorHtml(e,p){
         '<button type="button" class="btn btn-outline" data-tobe-generate-selected="'+
           attr(item.sourceStepId)+'">'+
           (hasCurrentAi?'Regenerar IA de esta actividad':'Analizar solo esta actividad con IA')+
-        '</button><span class="tobe-muted">Se analiza únicamente esta actividad y su contexto necesario. Las demás propuestas verificadas se conservan; la coherencia global se revisa antes de aplicar.</span></div>':'')+
+        '</button>'+
+        (!hasCurrentAi?'<button type="button" class="btn btn-outline" data-tobe-generate-all-remaining="1">Completar propuesta del proceso</button>':'')+
+        '<span class="tobe-muted">La IA analiza el paso seleccionado. Para habilitar «Aplicar», completa las propuestas restantes y registra tu revisión humana. Se conservan los resultados verificados.</span></div>':'')+
       tobeAiOperationalContextHtml(e,item)+
       (item.transformation==='Se mantiene'&&/^(no|n\/a|ninguno)$/i.test(String(item.problemResolved||'').trim())?
         '<p class="notice warn"><b>Justificación pendiente:</b> «Se mantiene» conserva esta actividad sin rediseño. El valor «NO» no explica por qué se mantienen los hallazgos ni cómo se controlan; revisa la decisión antes de validar.</p>':'')+
