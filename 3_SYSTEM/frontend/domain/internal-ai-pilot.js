@@ -306,6 +306,7 @@ function internalAiPilotTracePanel(traces){
 // [AUNEA-FE-PG11-AI-LABELS-255] START
 function internalAiActivityLabel(e,sourceId){
   const id=String(sourceId||'');
+  if(!e)return 'Actividad de origen sin nombre ('+id+')';
   const item=(latestTobe(e)?.items||[]).find(x=>String(x.sourceStepId)===id);
   const source=typeof confirmedSnapshot==='function'?
     (confirmedSnapshot(e)?.processSteps||[]).find(x=>String(x.id)===id):null;
@@ -541,8 +542,8 @@ async function generateTobeBySteps(e,key,snap,availability,fresh=false){
        !tobeEditable(latestTobe(e)))throw Error('El estudio cambió; no se continuará esta ejecución.');
     const done=completed.items.size;
     internalAiPilotFeedback(e,'Actividad '+(done+1)+' de '+stepIds.length+
-      ' · '+done+' completadas y verificadas. Analizando '+stepId+
-      ' con Ollama local…');
+      ' · '+done+' completadas y verificadas. Analizando '+
+      internalAiActivityLabel(e,stepId)+' con Ollama local…');
     const response=await fetch(state.backendUrl+'/v1/internal-ai/tobe-step',{
       method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({request,source_step_id:stepId})
@@ -551,7 +552,8 @@ async function generateTobeBySteps(e,key,snap,availability,fresh=false){
       const error=await response.json().catch(()=>null);
       const detail=typeof error?.detail==='string'?error.detail:(error?.detail?.message||'Comprueba el registro del backend.');
       if(error?.detail?.context_trace?.source_step_id===stepId)completed.traces.set(stepId,error.detail.context_trace);
-      failures.push('Actividad '+stepId+' (HTTP '+response.status+'): '+detail);
+      failures.push('Actividad '+internalAiActivityLabel(e,stepId)+
+        ' (HTTP '+response.status+'): '+detail);
       internalAiPilotRefreshPanel(e);
       continue;
     }
