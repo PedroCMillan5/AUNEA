@@ -2899,6 +2899,7 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
   .tobe-review-steps .btn{flex:1 1 calc(50% - 8px)}
   .tobe-inspector #tobeStepAdvice,.tobe-inspector #tobeStepDesign{padding:12px}
 }
+.tobe-inspector #tobeStepOrigin>.tobe-subdetails,.tobe-inspector #tobeStepAdvice>.tobe-subdetails{background:transparent;border:0;padding:0}
 /* [AUNEA-FE-PG11-GUIDED-INSPECTOR-STYLE-254] END */
 
 /* [AUNEA-FE-PG11-UX-CLARITY-256] START — original AUNEA tokens, readable controls and less duplicated guidance. */
