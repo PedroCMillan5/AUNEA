@@ -523,14 +523,31 @@ tobePage=function(){
     :withAction.replace('<div class="card card-pad section">',internalAiPilotPanel(e)+'<div class="card card-pad section">');
 };
 // [AUNEA-FE-TOBE-SEGMENTED-197] START — true progress by confirmed activity.
-async function generateTobeBySteps(e,key,snap,availability,fresh=false){
+async function generateTobeBySteps(e,key,snap,availability,fresh=false,selectedStepId=null){
   const draft=latestTobe(e);
   const stepIds=draft.items.map(x=>String(x.sourceStepId));
   if(!stepIds.length||stepIds.some(x=>!x)||new Set(stepIds).size!==stepIds.length)
     throw Error('El borrador no tiene actividades de origen únicas y válidas.');
+  const selected=selectedStepId===null?null:String(selectedStepId);
+  if(selected&&!stepIds.includes(selected))
+    throw Error('La actividad seleccionada no pertenece al AS-IS confirmado vigente.');
   const previous=fresh?null:(__auneaAiCompletedSteps.get(key)||internalAiPendingSteps(currentEng(),key));
   const completed=previous?.stepSignature===stepIds.join('|')?previous:
     {stepSignature:stepIds.join('|'),items:new Map(),traces:new Map(),inputHash:null};
+  // Reuse verified current-version suggestions for all unrelated steps.
+  // A selected regeneration never silently changes another activity.
+  if(selected){
+    const existing=typeof internalAiSavedDraft==='function'?internalAiSavedDraft(e):null;
+    if(existing?.items?.length===stepIds.length&&
+       (!completed.inputHash||completed.inputHash===existing.input_hash)){
+      completed.inputHash=existing.input_hash;
+      for(const it of existing.items){
+        const sid=String(it.source_step_id);
+        if(sid!==selected&&!completed.items.has(sid))completed.items.set(sid,it);
+      }
+    }
+    completed.items.delete(selected);
+  }
   __auneaAiCompletedSteps.set(key,completed);
   if(completed.items.size){
     internalAiPilotFeedback(e,'Reutilizando '+completed.items.size+' actividades verificadas de esta sesión. '+
@@ -543,7 +560,7 @@ async function generateTobeBySteps(e,key,snap,availability,fresh=false){
     snapshot_version:snap.version
   };
   const failures=[];
-  for(const stepId of stepIds){
+  for(const stepId of (selected?[selected]:stepIds)){
     if(completed.items.has(stepId))continue;
     if(internalAiPilotKey(e)!==key||currentEng()?.id!==e.id||
        !tobeEditable(latestTobe(e)))throw Error('El estudio cambió; no se continuará esta ejecución.');
@@ -590,6 +607,14 @@ async function generateTobeBySteps(e,key,snap,availability,fresh=false){
       ' completadas y verificadas. Preparando siguiente actividad…');
   }
   if(failures.length)throw Error(failures.join(' · ')+' · '+completed.items.size+' de '+stepIds.length+' completadas. Puedes reintentar.');
+  if(selected&&completed.items.size<stepIds.length){
+    internalAiPilotFeedback(e,'Propuesta de '+internalAiActivityLabel(e,selected)+
+      ' verificada y guardada como checkpoint. Hay '+completed.items.size+' de '+stepIds.length+
+      ' actividades; se necesita la revisión global antes de ofrecer aplicaciones.','info');
+    internalAiPilotRefreshPanel(currentEng());
+    toast('Propuesta IA de esta actividad guardada. Queda pendiente la coherencia global.');
+    return {status:'PARTIAL',completed:completed.items.size,total:stepIds.length};
+  }
   if(completed.items.size!==stepIds.length)throw Error('Faltan actividades; propuesta incompleta.');
   // The first global check is deterministic too: never trigger a long Ollama
   // consolidation after generating otherwise valid individual proposals.
