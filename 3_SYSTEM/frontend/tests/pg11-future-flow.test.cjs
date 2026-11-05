@@ -185,8 +185,9 @@ test('PG11 existing inspector guides AS-IS, AI advice, future design and connect
   const offsets=stages.map(x=>inspector.indexOf('id="'+x+'"'));
   assert.ok(offsets.every(x=>x>=0));
   assert.ok(offsets[0]<offsets[1]&&offsets[1]<offsets[2]);
-  for(const stage of [...stages,'tobeStepRoutes'])
+  for(const stage of stages)
     assert.match(inspector,new RegExp('data-tobe-jump="'+stage+'"'));
+  assert.match(inspector,/data-tobe-mode-switch="map"/);
   assert.match(inspector,/tobeAiAdviceHtml\(e,item\)/);
   assert.match(inspector,/tobeArtifactField\(item,'inputs'/);
   assert.match(inspector,/tobeArtifactField\(item,'outputs'/);
@@ -368,12 +369,16 @@ test('PG11 AI application is explicitly checked, audited and protects unrelated 
   assert.equal(p.aiDraft.applyHistory[0].fields.length,2);
   assert.equal(saves,2);assert.equal(renders,1);
 });
-test('PG11 renders the AI comparison within the existing inspector, without a silent apply',()=>{
-  assert.match(src,/function tobeAiReviewChangesHtml/);
-  assert.match(src,/tobeAiReviewChangesHtml\(e,item\)/);
-  assert.match(src,/data-tobe-ai-pick/);
-  assert.match(src,/data-tobe-ai-apply-reviewed/);
-  assert.match(src,/Aplicar los campos marcados al borrador/);
+test('PG11 displays IA advice alongside each original field, without a duplicate editing surface',()=>{
+  assert.match(src,/function tobeAiInlineHint/);
+  assert.match(src,/function tobeWithAiHint/);
+  assert.match(src,/withAi\('transformation',statusField\)/);
+  for(const field of ['problemResolved','futureActor','tool','inputs','outputs',
+    'automationAi','humanSupervision','controlsRisk'])
+    assert.ok(src.includes("withAi('"+field+"'"),field);
+  assert.match(src,/data-tobe-ai-use-field/);
+  assert.doesNotMatch(src,/\(!archived\?tobeAiReviewChangesHtml\(e,item\)/);
+  assert.match(src,/data-tobe-mode-switch="map"/);
   assert.doesNotMatch(src,/function tobeAiStepApplicability/);
 });
 // [AUNEA-UAT-PG11-FUTURE-FLOW-233] END
