@@ -2880,3 +2880,46 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
   .tobe-inspector #tobeStepAdvice,.tobe-inspector #tobeStepDesign{padding:12px}
 }
 /* [AUNEA-FE-PG11-GUIDED-INSPECTOR-STYLE-254] END */
+
+/* [AUNEA-FE-PG11-UX-CLARITY-256] START — original AUNEA tokens, readable controls and less duplicated guidance. */
+.tobe-task-guide{display:grid;gap:12px;padding:16px 20px;
+  background:var(--system-soft);border:1px solid var(--system-line);
+  border-radius:var(--radius-md)}
+.tobe-task-guide-intro{display:flex;justify-content:space-between;
+  align-items:flex-start;flex-wrap:wrap;gap:12px 24px}
+.tobe-task-guide h2{font-size:17px;color:var(--system);line-height:1.4;margin:0}
+.tobe-task-guide p{font-size:13px;line-height:1.55;color:var(--ink);margin:0}
+.tobe-task-guide-progress{border-radius:var(--radius-pill);border:1px solid var(--system-line);
+  background:#fff;color:var(--system);font-weight:700;font-size:12px;padding:7px 12px}
+.tobe-task-guide-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.tobe-task-guide-steps>span{padding:10px 12px;border:1px solid var(--system-line);
+  border-radius:var(--radius-sm);background:#fff;font-size:12px;line-height:1.5;color:var(--ink)}
+.tobe-task-guide-result{padding-top:9px;border-top:1px solid var(--system-line)}
+/* The map reuses existing AUNEA .btn styling; use a consistent minimum
+   spacing and hit area instead of a dense, single-line cluster. */
+.tobe-process-canvas .tobe-free-board .process-graph-cell{
+  width:224px;min-width:224px;height:300px;min-height:300px}
+.tobe-process-canvas .tobe-free-board .tobe-graph-node{
+  flex:0 0 190px;min-height:190px}
+.tobe-node-tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  align-items:stretch;gap:8px;margin-top:8px;min-height:0}
+.tobe-node-tools .btn{font-size:12px;line-height:1.3;
+  min-height:34px;padding:7px 9px;white-space:normal;
+  justify-content:center;text-align:center}
+.tobe-review-steps{gap:10px}
+.tobe-review-steps .btn{min-height:34px;padding:7px 10px}
+.tobe-human-review-actions{gap:10px;row-gap:10px}
+.tobe-human-review-actions .btn{min-height:36px}
+.tobe-inspector .field textarea::placeholder,.tobe-inspector .field input::placeholder{
+  color:var(--muted);opacity:1}
+.tobe-inspector .field textarea{line-height:1.55}
+.pg11-ai-step-heading .pg11-ai-step-code{font-weight:500;font-size:11px;
+  margin-top:4px;margin-bottom:0}
+@media(max-width:950px){.tobe-task-guide-steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){
+  .tobe-task-guide{padding:13px}
+  .tobe-task-guide-steps{grid-template-columns:1fr}
+  .tobe-process-canvas .tobe-free-board .process-graph-cell{width:224px;min-width:224px}
+  .tobe-node-tools{gap:8px}
+}
+/* [AUNEA-FE-PG11-UX-CLARITY-256] END */
