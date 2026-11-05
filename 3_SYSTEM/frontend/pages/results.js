@@ -1629,7 +1629,7 @@ function tobeComparisonDetail(e,p,sourceId){
     '<p><b>Origen AS-IS:</b> '+esc(original?.step_name||item.sourceStepName||'Sin correspondencia')+'</p>'+
     '<p><b>Decisión TO-BE:</b> '+esc(item.transformation||'Pendiente')+'</p>'+
     '<p><b>Qué cambia y por qué:</b> '+esc(item.problemResolved||'No documentado')+'</p>'+
-    '<p><b>Responsable futuro:</b> '+esc(removed?'Actividad eliminada':comparable(item.futureActor))+'</p>'+
+    '<p><b>Responsable futuro:</b> '+esc(removed?'Actividad eliminada':(labelFrom('OS_ACTOR_ROLE',item.futureActor)||comparable(item.futureActor)))+'</p>'+
     '<p><b>Automatización e IA:</b> '+esc(comparable(item.automationAi))+'</p>'+
     '<p><b>Supervisión humana:</b> '+esc(comparable(item.humanSupervision))+'</p>'+
     '<p><b>Control / riesgo:</b> '+esc(comparable(item.controlsRisk))+'</p>'+
