@@ -2107,7 +2107,7 @@ function registerInternalWorkPages(){
   document.addEventListener('pointerdown',event=>{
     const target=event.target?.closest?.('.tobe-free-board .tobe-graph-node,.tobe-free-board [data-tobe-move]');
     if(!target||state.activePage!=='tobe'||event.button!==0)return;
-    if(!tobeEditable(latestTobe(currentEng())))return;
+    if(!tobeEditable(latestTobe(currentEng()))||__auneaTobeLink)return;
     const cell=target.closest('.process-graph-cell'),board=target.closest('.tobe-free-board');
     if(!cell||!board)return;
     const id=String(cell.dataset.graphNode||'');
@@ -2150,7 +2150,14 @@ function registerInternalWorkPages(){
       draft.flow=previous;render();
       return toast('No se guardó la nueva posición; se restauró la anterior.');
     }
-    render();toast('Posición guardada en el borrador TO-BE.');
+    const viewport=document.querySelector('.tobe-canvas-viewport');
+    const left=viewport?.scrollLeft||0,top=viewport?.scrollTop||0;
+    render();
+    const restored=document.querySelector('.tobe-canvas-viewport');
+    if(restored){restored.scrollLeft=left;restored.scrollTop=top;}
+    if(typeof drawProcessGraph==='function'&&typeof requestAnimationFrame==='function')
+      requestAnimationFrame(drawProcessGraph);
+    toast('Posición guardada en el borrador TO-BE.');
   },true);
   document.addEventListener('pointercancel',()=>{if(tobePointer){tobePointer=null;render();}},true);
   document.addEventListener('click',event=>{
