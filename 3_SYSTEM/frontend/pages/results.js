@@ -1827,7 +1827,11 @@ function tobeInspectorHtml(e,p){
   const choice=tobeHumanReviewRecord(e,p)?.decisions?.[String(item.sourceStepId)];
   const hasCurrentAi=typeof internalAiSavedDraft==='function'&&
     internalAiSavedDraft(e)?.items?.some(x=>String(x.source_step_id)===String(item.sourceStepId));
-  const adviceOpen=editable&&!item.isAddition&&hasCurrentAi&&
+  const pendingKey=editable&&!item.isAddition&&typeof internalAiPilotKey==='function'?
+    internalAiPilotKey(e):null;
+  const hasPendingAi=!!pendingKey&&typeof internalAiPendingSteps==='function'&&
+    !!internalAiPendingSteps(e,pendingKey)?.items?.has(String(item.sourceStepId));
+  const adviceOpen=editable&&!item.isAddition&&(hasCurrentAi||hasPendingAi)&&
     !['ACCEPT','MODIFY','DISCARD'].includes(choice?.status);
   const withAi=(key,html)=>tobeWithAiHint(e,p,item,key,html);
   const statusField='<div class="field"><label for="tobe_'+attr(item.id)+'_transformation">Qué cambia</label>'+
