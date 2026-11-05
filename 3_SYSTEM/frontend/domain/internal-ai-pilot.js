@@ -742,7 +742,7 @@ async function retryTobeAiReviewOnly(){
 // [AUNEA-FE-PG11-REVIEW-ONLY-216] END
 
 
-async function generateTobeAiPilot(e,fresh=false){
+async function generateTobeAiPilot(e,fresh=false,selectedStepId=null){
   const key=internalAiPilotKey(e);
   if((typeof isClientDisplay==='function'&&isClientDisplay())||!key||!tobeEditable(latestTobe(e)))return toast('El estudio no tiene un borrador vigente.');
   if(__auneaAiWorking.has(key)){
@@ -755,7 +755,7 @@ async function generateTobeAiPilot(e,fresh=false){
   const button=document.getElementById('generateTobeAiPilot');
   if(button){button.disabled=true;button.textContent='Comprobando IA…'}
   const workspace=document.getElementById('tobeAiWorkspace');
-  if(workspace)workspace.open=true;
+  if(workspace&&!selectedStepId)workspace.open=true;
   internalAiPilotFeedback(e,'Comprobando disponibilidad del proveedor IA…');
   try{
     if(!state.backendOnline&&!(await checkBackend()))throw Error('Backend no conectado.');
@@ -785,9 +785,10 @@ async function generateTobeAiPilot(e,fresh=false){
         // Keep the last successful preview until a replacement completes.
         __auneaAiCompletedSteps.delete(key);
       }
-      await generateTobeBySteps(currentEng(),key,confirmedSnapshot(currentEng()),availability,fresh);
+      await generateTobeBySteps(currentEng(),key,confirmedSnapshot(currentEng()),availability,fresh,selectedStepId);
       return;
     }
+    if(selectedStepId)throw Error('La generación individual requiere el proveedor local Ollama habilitado. No se han modificado las propuestas guardadas.');
     if(!AiAgentService.available()){
       AiAgentService.register({name:'AUNEA Backend — proveedor gobernado',
         async propose({kind,engagement}){
@@ -908,6 +909,13 @@ registerInternalWorkPages=function(){
     if(retryReview){
       event.preventDefault();
       if(!retryReview.disabled)void retryTobeAiReviewOnly();
+      return;
+    }
+    const selected=event.target?.closest?.('[data-tobe-generate-selected]');
+    if(selected){
+      event.preventDefault();
+      if(!selected.disabled)void generateTobeAiPilot(currentEng(),false,
+        selected.getAttribute('data-tobe-generate-selected'));
       return;
     }
     const generate=event.target?.closest?.('#generateTobeAiPilot');
