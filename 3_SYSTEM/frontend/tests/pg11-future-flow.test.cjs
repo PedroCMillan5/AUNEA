@@ -220,4 +220,33 @@ test('PG11 keeps map controls connected while increasing room for readable actio
   assert.match(src,/data-tobe-discard-added/);
   assert.match(src,/data-tobe-remove-original/);
 });
+test('PG11 maps all canonical transformations to a specific rationale label',()=>{
+  const a=src.indexOf('// [AUNEA-FE-PG11-TRANSFORMATION-UX-258] START');
+  const b=src.indexOf('// [AUNEA-FE-PG11-TRANSFORMATION-UX-258] END',a);
+  assert.ok(a>=0&&b>a);
+  const content=src.slice(a,b),names=['Se mantiene','Se modifica','Se elimina',
+    'Se automatiza','Se asiste con IA','Requiere decisión humana','Se incorpora control'];
+  for(const name of names)assert.ok(content.includes("case '"+name+"'"),name);
+  assert.match(content,/function tobeMeaningfulRationale/);
+  assert.match(src,/data-tobe-rationale-label/);
+  assert.match(src,/tobeTransformationRationaleLabel\(item\.transformation\)/);
+});
+test('PG11 transformation selection updates only visible guidance and keeps user values',()=>{
+  const a=src.indexOf('// [AUNEA-FE-PG11-TRANSFORMATION-LIVE-259] START');
+  const b=src.indexOf('// [AUNEA-FE-PG11-TRANSFORMATION-LIVE-259] END',a);
+  const block=src.slice(a,b);
+  assert.ok(a>=0&&b>a);
+  assert.match(block,/addEventListener\('change'/);
+  assert.match(block,/tobeTransformationRationaleLabel\(value\)/);
+  assert.match(block,/textarea\.placeholder=tobeFieldHelp/);
+  assert.doesNotMatch(block,/textarea\.value\s*=/);
+  assert.match(block,/data-tobe-ai-difference/);
+});
+test('PG11 rejects empty and inherited NO rationale without modifying source',()=>{
+  assert.match(src,/if\(!tobeMeaningfulRationale\(item\.problemResolved\)\)/);
+  assert.match(src,/if\(TOBE_TRANSFORMATIONS\.includes\(t\)&&!tobeMeaningfulRationale/);
+  assert.match(src,/Completa nombre, responsable y motivo/);
+  assert.match(src,/decision\.status==='ACCEPT'&&suggested\?\.transformation/);
+  assert.match(src,/«Modificar antes de usar»/);
+});
 // [AUNEA-UAT-PG11-FUTURE-FLOW-233] END
