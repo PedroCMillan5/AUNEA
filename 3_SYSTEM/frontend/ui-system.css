@@ -3254,3 +3254,32 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 .tobe-readonly-options .tobe-artifact-compact>summary{cursor:default}
 @media(max-width:580px){.tobe-artifact-options{max-height:220px}}
 /* [AUNEA-FE-PG11-ARTIFACT-SELECT-275] END */
+
+/* [AUNEA-FE-PG11-APPROVED-HEADER-277] START */
+.tobe-workspace[data-tobe-mode="guided"] .tobe-task-guide{
+  padding:0;border:0;background:transparent;box-shadow:none;
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;
+}
+.tobe-workspace[data-tobe-mode="guided"] .tobe-task-guide-intro,
+.tobe-workspace[data-tobe-mode="guided"] .tobe-ia-guide-summary{
+  display:flex;flex-direction:column;align-items:flex-start;
+  justify-content:center;min-width:0;gap:4px;padding:13px 17px;
+  border:1px solid var(--system-line);border-radius:var(--radius-md);
+  background:var(--system-soft);
+}
+.tobe-workspace[data-tobe-mode="guided"] .tobe-task-guide-intro>div{min-width:0}
+.tobe-workspace[data-tobe-mode="guided"] .tobe-task-guide-progress{font-size:11px}
+.tobe-ia-guide-summary strong{font-size:13px;color:var(--system)}
+.tobe-ia-guide-summary p{margin:0;font-size:12px;line-height:1.4}
+.tobe-inspector .tobe-inspector-head{
+  display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;
+}
+.tobe-inspector-navigation{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.tobe-inspector-navigation .btn{min-height:38px;padding:8px 12px}
+.tobe-inspector-navigation .tobe-selected-status{margin-right:8px}
+.tobe-workspace[data-tobe-mode="guided"] .tobe-support-block{margin-top:12px}
+@media(max-width:900px){
+ .tobe-workspace[data-tobe-mode="guided"] .tobe-task-guide{grid-template-columns:1fr}
+ .tobe-inspector-navigation{justify-content:flex-start}
+}
+/* [AUNEA-FE-PG11-APPROVED-HEADER-277] END */
