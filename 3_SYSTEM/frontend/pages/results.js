@@ -1223,16 +1223,8 @@ function tobeAiInlineHint(e,p,item,key){
       '<p><b>Condiciones pendientes:</b> '+esc(pending||'No declaradas')+'</p>'+
     '</details>'+
     (kept?'<p class="field-help"><b>Decisión de este campo:</b> mantener el valor TO-BE guardado.</p>':'')+
-    (permitted?'<div class="tobe-ai-inline-actions">'+
-      '<button type="button" class="btn btn-outline btn-small" data-tobe-ai-use-field="'+
-      attr(key)+'" data-tobe-ai-use-source="'+attr(item.sourceStepId)+'">Usar propuesta IA</button>'+
-      '<button type="button" class="btn btn-outline btn-small" data-tobe-ai-keep-field="'+attr(key)+
-      '" data-tobe-ai-keep-source="'+attr(item.sourceStepId)+'">Mantener valor</button>'+
-      '<button type="button" class="btn btn-outline btn-small" data-tobe-ai-edit-field="'+attr(key)+
-      '">Editar valor</button></div>':
-      '<p class="field-help">'+esc(dismissed?'Recomendación descartada; se conserva el valor del consultor.':
-        skipped?'Selecciona un valor válido en el control original.':
-        diff.issue||'Se mantiene el valor actual del TO-BE.')+'</p>')+
+    (dismissed?'<p class="field-help">Recomendación descartada. Se conserva tu valor.</p>':
+      skipped?'<p class="field-help">Valor no aplicable: revísalo en el control original.</p>':'')+
     '</div>';
 }
 // [AUNEA-FE-PG11-CLIENT-CONTEXT-269] Read-only evidence and conditions.
@@ -1265,6 +1257,31 @@ function tobeAiOperationalContextHtml(e,item){
         partial?'<p>Checkpoint individual: no se puede aplicar hasta completar la revisión global y registrar la decisión humana.</p>':'')+
     '</details></div>';
 }
+// [AUNEA-FE-PG11-APPROVED-ROW-ACTIONS-273] Only the current
+// version's reviewed IA can be applied. All values remain consultant-owned.
+function tobeAiRowActions(e,p,item,key){
+  if(item.isAddition||!tobeEditable(p))return '';
+  const id=String(item.sourceStepId);
+  const isCurrent=typeof internalAiSavedDraft==='function'&&
+    internalAiSavedDraft(e)?.items?.some(x=>String(x.source_step_id)===id);
+  const diff=isCurrent?tobeAiReviewDiff(e,p,id):null;
+  const candidate=diff?.allFields?.find(x=>x.key===key);
+  const canApply=!!candidate?.changed&&!diff.issue;
+  const canKeep=!!candidate&&!diff.issue;
+  const history=(p.aiDraft?.applyHistory||[]).filter(x=>String(x.sourceStepId)===id&&
+    Array.isArray(x.fields)&&x.fields.includes(key)).slice(-1)[0];
+  const isApplied=history?.action==='APPLY',isKept=history?.action==='KEEP';
+  const button=(label,attrName,enabled,active=false)=>
+    '<button type="button" class="btn btn-outline btn-small'+(active?' is-selected':'')+
+    '"'+(enabled?' '+attrName+'="'+attr(key)+'" data-tobe-ai-action-source="'+attr(id)+'"':' disabled')+
+    '>'+esc(label)+'</button>';
+  return '<div class="tobe-ai-row-actions" aria-label="Decisión sobre '+esc(
+    TOBE_AI_REVIEW_FIELDS.find(x=>x[1]===key)?.[2]||'el campo')+'">'+
+    button('Aplicar','data-tobe-ai-use-field',canApply,isApplied)+
+    button('Mantener','data-tobe-ai-keep-field',canKeep,isKept)+
+    button('Editar','data-tobe-ai-edit-field',true)+
+    '</div>';
+}
 function tobeWithAiHint(e,p,item,key,html){
   // [AUNEA-FE-PG11-GUIDED-FIELD-267] The existing field keeps sole edit
   // ownership; the suggestion is a read-only sibling, not another control.
@@ -1275,7 +1292,7 @@ function tobeWithAiHint(e,p,item,key,html){
     ' Conserva el valor TO-BE o complétalo con evidencia.</p></div>';
   return '<div class="tobe-ai-field-row" data-tobe-row-key="'+attr(key)+'">'+
     '<div class="tobe-ai-field-control">'+html+'</div>'+
-    (advice||fallback)+'</div>';
+    (advice||fallback)+tobeAiRowActions(e,p,item,key)+'</div>';
 }
 // [AUNEA-FE-PG11-FIELD-INLINE-263] END
 
@@ -2656,12 +2673,12 @@ function registerInternalWorkPages(){
     if((!apply&&!keep&&!edit)||state.activePage!=='tobe')return;
     event.preventDefault();
     if(apply){
-      tobeApplyAiReviewedFields(currentEng(),apply.dataset.tobeAiUseSource,
+      tobeApplyAiReviewedFields(currentEng(),apply.dataset.tobeAiActionSource,
         [apply.dataset.tobeAiUseField]);
       return;
     }
     if(keep){
-      tobeKeepAiReviewedField(currentEng(),keep.dataset.tobeAiKeepSource,
+      tobeKeepAiReviewedField(currentEng(),keep.dataset.tobeAiActionSource,
         keep.dataset.tobeAiKeepField);
       return;
     }
