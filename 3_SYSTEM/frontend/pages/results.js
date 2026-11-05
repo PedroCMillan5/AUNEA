@@ -1749,6 +1749,30 @@ function createNextTobeVersion(e){
   markDirty('Nueva versión TO-BE '+version+' desde versión revisada '+previous.version);
   return true;
 }
+// [AUNEA-FE-PG11-GUIDED-NAV-266] START — navigation derives from selected owner.
+function tobeGuidedNavHtml(e,p){
+  const guidedItems=[...(p.items||[]),...tobeAddedSteps(p)],
+    focused=tobeSelectedItem(e,p),selectedId=tobeFlowItemId(focused),
+    focusedIndex=Math.max(0,guidedItems.findIndex(x=>tobeFlowItemId(x)===selectedId));
+  const modeButton=(mode,label)=>'<button type="button" class="btn '+
+    (__auneaTobeMode===mode?'btn-primary':'btn-outline')+
+    '" data-tobe-mode-switch="'+mode+'" aria-pressed="'+String(__auneaTobeMode===mode)+'">'+label+'</button>';
+  return '<nav class="tobe-guided-nav" aria-label="Navegación del diseño TO-BE">'+
+    '<div class="tobe-guided-modes">'+modeButton('guided','Revisión por actividad')+
+    modeButton('map','Mapa TO-BE')+'</div>'+
+    '<div class="tobe-guided-tabs" aria-label="Actividades del proceso">'+
+    guidedItems.map((step,i)=>'<button type="button" class="btn btn-outline btn-small '+
+      (tobeFlowItemId(step)===selectedId?'is-selected':'')+'" data-tobe-select="'+
+      attr(tobeFlowItemId(step))+'" aria-pressed="'+String(tobeFlowItemId(step)===selectedId)+'">'+
+      esc(tobeFlowItemName(step))+'</button>').join('')+'</div>'+
+    '<div class="tobe-guided-switch"><span class="tobe-muted">Actividad '+
+      (focusedIndex+1)+' de '+guidedItems.length+'</span>'+
+      (focusedIndex?'<button type="button" class="btn btn-outline btn-small" data-tobe-select="'+
+        attr(tobeFlowItemId(guidedItems[focusedIndex-1]))+'">Actividad anterior</button>':'')+
+      (focusedIndex<guidedItems.length-1?'<button type="button" class="btn btn-outline btn-small" data-tobe-select="'+
+        attr(tobeFlowItemId(guidedItems[focusedIndex+1]))+'">Siguiente actividad</button>':'')+
+    '</div></nav>';}
+// [AUNEA-FE-PG11-GUIDED-NAV-266] END
 function tobePage(){
   const e=currentEng(),snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;
   if(!snap)return pageTop('Diseño TO-BE','Necesita un AS-IS confirmado.',
@@ -1778,27 +1802,6 @@ function tobePage(){
     (!editable&&p.status!=='PUBLISHED'?'<button class="btn" id="newTobeVersion">Crear nueva versión</button>':'');
   const review=tobeHumanReviewRecord(e,p),reviewed=p.items.filter(it=>
     ['ACCEPT','MODIFY','DISCARD'].includes(review?.decisions?.[String(it.sourceStepId)]?.status)).length;
-  const guidedItems=[...(p.items||[]),...tobeAddedSteps(p)],
-    focused=tobeSelectedItem(e,p),selectedId=tobeFlowItemId(focused),
-    focusedIndex=Math.max(0,guidedItems.findIndex(x=>tobeFlowItemId(x)===selectedId));
-  const modeButton=(mode,label)=>'<button type="button" class="btn '+
-    (__auneaTobeMode===mode?'btn-primary':'btn-outline')+
-    '" data-tobe-mode-switch="'+mode+'" aria-pressed="'+String(__auneaTobeMode===mode)+'">'+label+'</button>';
-  const guidedNav='<nav class="tobe-guided-nav" aria-label="Navegación del diseño TO-BE">'+
-    '<div class="tobe-guided-modes">'+modeButton('guided','Revisión por actividad')+
-    modeButton('map','Mapa TO-BE')+'</div>'+
-    '<div class="tobe-guided-tabs" aria-label="Actividades del proceso">'+
-    guidedItems.map((step,i)=>'<button type="button" class="btn btn-outline btn-small '+
-      (tobeFlowItemId(step)===selectedId?'is-selected':'')+'" data-tobe-select="'+
-      attr(tobeFlowItemId(step))+'" aria-pressed="'+String(tobeFlowItemId(step)===selectedId)+'">'+
-      esc(tobeFlowItemName(step))+'</button>').join('')+'</div>'+
-    '<div class="tobe-guided-switch"><span class="tobe-muted">Actividad '+
-      (focusedIndex+1)+' de '+guidedItems.length+'</span>'+
-      (focusedIndex?'<button type="button" class="btn btn-outline btn-small" data-tobe-select="'+
-        attr(tobeFlowItemId(guidedItems[focusedIndex-1]))+'">Actividad anterior</button>':'')+
-      (focusedIndex<guidedItems.length-1?'<button type="button" class="btn btn-outline btn-small" data-tobe-select="'+
-        attr(tobeFlowItemId(guidedItems[focusedIndex+1]))+'">Siguiente actividad</button>':'')+
-    '</div></nav>';
   return pageTop('Diseño TO-BE','Versión '+p.version+' · '+statusLabel+
     ' · Origen AS-IS v'+esc(p.sourceSnapshotVersion)+'. Las decisiones pertenecen al consultor.',actions)+
     '<main class="tobe-workspace" data-tobe-version="'+p.version+
@@ -1817,7 +1820,7 @@ function tobePage(){
       '<section class="tobe-context"><div><strong>Origen del diseño</strong><p>AS-IS confirmado v'+esc(snap.version)+
       ' · Diagnóstico '+esc(diagnosticOutputFreshness(e).label)+
       ' · '+p.items.length+' actividades de origen</p></div><div class="tobe-context-status">'+esc(statusLabel)+'</div></section>'+
-      guidedNav+
+      tobeGuidedNavHtml(e,p)+
       '<section class="tobe-map-area"><header class="tobe-workspace-head"><div><span class="tobe-eyebrow">CONSTRUIR EL PROCESO FUTURO</span>'+
       '<h2>Mapa del proceso propuesto</h2></div><p>Selecciona una actividad para revisar su transformación y editar el TO-BE.</p></header>'+
       (editable?'<div class="tobe-flow-actions"><button type="button" class="btn btn-outline" id="addTobeStep">Añadir actividad vinculada al AS-IS</button>'+
@@ -2291,6 +2294,9 @@ function registerInternalWorkPages(){
     const inspector=document.getElementById('tobeInspector');
     const savedEngagement=currentEng(),savedProposal=latestTobe(savedEngagement);
     if(inspector&&savedEngagement&&savedProposal)inspector.innerHTML=tobeInspectorHtml(savedEngagement,savedProposal);
+    const navigation=document.querySelector('.tobe-guided-nav');
+    if(navigation&&savedEngagement&&savedProposal)
+      navigation.outerHTML=tobeGuidedNavHtml(savedEngagement,savedProposal);
     const viewport=document.querySelector('.tobe-canvas-viewport'),
       left=viewport?.scrollLeft||0,top=viewport?.scrollTop||0;
     if(viewport&&savedEngagement&&savedProposal){
