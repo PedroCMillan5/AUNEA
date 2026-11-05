@@ -330,8 +330,8 @@ function internalAiPendingPanel(e,key,pending,feedback){
     return '<article class="pg11-ai-step" aria-label="Actividad IA verificada '+esc(id)+'">'+
       '<header class="pg11-ai-step-head"><div class="pg11-ai-step-identity">'+
         '<span class="pg11-ai-step-number">'+(index+1)+'</span>'+
-        '<div class="pg11-ai-step-heading"><span class="pg11-ai-step-code">AS-IS · '+esc(id)+'</span>'+
-        '<h4>'+esc(sourceItem?.sourceStepName||id)+'</h4></div></div>'+
+        '<div class="pg11-ai-step-heading"><h4>'+esc(sourceItem?.sourceStepName||'Actividad de origen sin nombre')+'</h4>'+
+        '<span class="pg11-ai-step-code">Referencia AS-IS ('+esc(id)+')</span></div></div>'+
         '<span class="pg11-ai-transformation">'+esc(item.transformation||'Pendiente')+'</span></header>'+
       '<div class="pg11-ai-step-main"><div class="pg11-ai-problem"><span>Problema identificado</span>'+
         '<p>'+esc(item.problem_resolved||'Sin concretar')+'</p></div>'+
