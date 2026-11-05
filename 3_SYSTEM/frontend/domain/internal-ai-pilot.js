@@ -302,6 +302,16 @@ function internalAiPilotTracePanel(traces){
       '</details>';
     }).join('')+'</details>';
 }
+// [AUNEA-FE-PG11-AI-LABELS-255] START
+function internalAiActivityLabel(e,sourceId){
+  const id=String(sourceId||'');
+  const item=(latestTobe(e)?.items||[]).find(x=>String(x.sourceStepId)===id);
+  const source=typeof confirmedSnapshot==='function'?
+    (confirmedSnapshot(e)?.processSteps||[]).find(x=>String(x.id)===id):null;
+  const name=String(item?.sourceStepName||source?.step_name||'Actividad de origen sin nombre');
+  return name+' ('+id+')';
+}
+// [AUNEA-FE-PG11-AI-LABELS-255] END
 function internalAiReviewIssue(issue){
   return '<li><b>'+esc(issue.category==='BLOCKING'?'Bloqueo':issue.category==='PENDING'?'Pendiente':'Observación')+
     ':</b> '+esc(issue.issue||'Sin descripción')+
