@@ -171,4 +171,51 @@ test('PG11 action buttons distinguish historical read-only from authorized curre
  assert.match(authorized,/data-tobe-ai-use-field="tool"/);
  assert.match(authorized,/data-tobe-ai-keep-field="tool"/);
 });
+test('PG11 historic KEEP without IA approval preserves the current field',()=>{
+ const fn=src.match(/function tobeKeepAiReviewedField\(e,sourceId,key\)\{[\s\S]*?\n\}/)?.[0];
+ assert.ok(fn);
+ const item={sourceStepId:'S1',tool:'Email'},p={status:'DRAFT',items:[item],aiDraft:{applyHistory:[]}},
+   e={tobeProposals:[p],snapshot:{original:'ASIS'}};
+ let saved=0;
+ const ctx={String,Array,JSON,state:{activePage:'tobe'},
+   latestTobe:()=>p,TOBE_AI_REVIEW_FIELDS:[['tool','tool','Herramienta','OS_TOOL_CATEGORY']],
+   tobeEditable:x=>x.status==='DRAFT',saveTobeFromDom:()=>true,
+   saveState:()=>{saved++;return true},currentEng:()=>e,
+   tobeCandidateFingerprint:()=> 'F',now:()=> '2026-11-05',
+   markDirty:()=>{},toast:()=>{},render:()=>{}};
+ vm.createContext(ctx);vm.runInContext(fn,ctx);
+ assert.equal(ctx.tobeKeepAiReviewedField(e,'S1','tool'),true);
+ assert.equal(item.tool,'Email');
+ assert.equal(e.snapshot.original,'ASIS');
+ assert.equal(p.aiDraft.applyHistory[0].decision,'KEEP_VALUE');
+ assert.equal(saved,2);
+});
+test('PG11 cannot apply historical proposals and explains the gate',()=>{
+ const fn=src.match(/function tobeAiRowActions\(e,p,item,key\)\{[\s\S]*?\n\}/)?.[0];
+ assert.ok(fn);
+ const ctx={String,Array,TOBE_AI_REVIEW_FIELDS:[['tool','tool','Herramienta','OS_TOOL_CATEGORY']],
+   tobeEditable:()=>true,internalAiSavedDraft:()=>null,attr:String,esc:String};
+ vm.createContext(ctx);vm.runInContext(fn,ctx);
+ const html=ctx.tobeAiRowActions({},{aiDraft:{applyHistory:[]}},
+   {sourceStepId:'S1',isAddition:false},'tool');
+ assert.match(html,/data-tobe-ai-apply-unavailable="tool"/);
+ assert.match(html,/data-tobe-ai-reason="/);
+ assert.match(html,/data-tobe-ai-keep-field="tool"/);
+ assert.doesNotMatch(html,/data-tobe-ai-use-field="tool"/);
+});
+test('PG11 editor supports the original canonical artifact disclosure',()=>{
+ assert.match(src,/querySelector\('\.tobe-artifact-compact>summary'\)/);
+ assert.match(src,/control\.matches\('\.tobe-artifact-compact>summary/);
+ assert.match(src,/data-tobe-ai-apply-unavailable/);
+});
+test('PG11 global coherence is short with an expandable complete inspection',()=>{
+ const a=src.indexOf('function tobeCoherencePanel(');
+ const b=src.indexOf('\n}\n',a)+2;
+ assert.ok(a>=0&&b>a);
+ const block=src.slice(a,b);
+ assert.match(block,/tobe-global-indicators/);
+ assert.match(block,/tobe-global-evidence/);
+ assert.match(block,/Ver comprobaciones y acciones pendientes/);
+ assert.match(block,/tobe-coherence-list/);
+});
 // [AUNEA-UAT-PG11-AI-STEP-237] END
