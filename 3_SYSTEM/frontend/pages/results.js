@@ -886,6 +886,10 @@ function tobeArtifactValues(value){
   }
   return {resolved,unknown};
 }
+function tobeArtifactDisplay(value){
+  const v=tobeArtifactValues(value);
+  return [...v.resolved.map(x=>labelFrom('OS_ARTIFACT_TYPE',x)||x),...v.unknown].join(' · ')||'No documentado';
+}
 function tobeCatalogField(item,key,label,setId,disabled=false){
   const raw=String(item[key]||''),opts=fieldOptions(setId),
     match=opts.find(o=>String(o.value)===raw||
@@ -1630,6 +1634,9 @@ function tobeComparisonDetail(e,p,sourceId){
     '<p><b>Decisión TO-BE:</b> '+esc(item.transformation||'Pendiente')+'</p>'+
     '<p><b>Qué cambia y por qué:</b> '+esc(item.problemResolved||'No documentado')+'</p>'+
     '<p><b>Responsable futuro:</b> '+esc(removed?'Actividad eliminada':(labelFrom('OS_ACTOR_ROLE',item.futureActor)||comparable(item.futureActor)))+'</p>'+
+    '<p><b>Herramienta futura:</b> '+esc(removed?'Actividad eliminada':(labelFrom('OS_TOOL_CATEGORY',item.tool)||comparable(item.tool)))+'</p>'+
+    '<p><b>Entradas futuras:</b> '+esc(removed?'Actividad eliminada':tobeArtifactDisplay(item.inputs))+'</p>'+
+    '<p><b>Salidas futuras:</b> '+esc(removed?'Actividad eliminada':tobeArtifactDisplay(item.outputs))+'</p>'+
     '<p><b>Automatización e IA:</b> '+esc(comparable(item.automationAi))+'</p>'+
     '<p><b>Supervisión humana:</b> '+esc(comparable(item.humanSupervision))+'</p>'+
     '<p><b>Control / riesgo:</b> '+esc(comparable(item.controlsRisk))+'</p>'+
