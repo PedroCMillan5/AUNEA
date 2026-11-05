@@ -2984,3 +2984,57 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
  .tobe-guided-switch .btn{flex:1 1 auto}
 }
 /* [AUNEA-FE-PG11-GUIDED-STYLE-265] END */
+
+/* [AUNEA-FE-PG11-CANONICAL-ROWS-268] START
+   DEC-050/056: presentation only; one canonical control and one read-only IA
+   suggestion per row. Reuse existing AUNEA field, select, multi-select and buttons. */
+.tobe-workspace[data-tobe-mode="guided"] .tobe-edit>.form-grid{
+  display:grid;grid-template-columns:minmax(0,1fr);
+  gap:0;align-items:start;
+  border:1px solid var(--system-line);border-radius:var(--radius-sm);
+  overflow:visible;background:#fff;
+}
+.tobe-workspace[data-tobe-mode="guided"] .tobe-edit>.form-grid>.tobe-ai-field-row,
+.tobe-workspace[data-tobe-mode="guided"] .tobe-edit>.form-grid>.tobe-data-pair{
+  grid-column:1/-1;min-width:0;
+}
+.tobe-workspace[data-tobe-mode="guided"] .tobe-edit>.form-grid>.tobe-data-pair{display:block}
+.tobe-ai-field-row{
+  display:grid;grid-template-columns:minmax(255px,42%) minmax(0,1fr);
+  align-items:stretch;gap:14px;min-width:0;
+  padding:12px 14px;border-bottom:1px solid var(--system-line);
+}
+.tobe-edit>.form-grid>.tobe-ai-field-row:last-child,
+.tobe-edit>.form-grid>.tobe-data-pair:last-child>.tobe-ai-field-row{
+  border-bottom:0;
+}
+.tobe-ai-field-control{min-width:0;display:flex;align-items:stretch}
+.tobe-ai-field-control>.field{width:100%;min-width:0;margin:0;align-self:stretch}
+.tobe-ai-field-control>.field label{display:block;margin-bottom:7px}
+.tobe-ai-field-control .tobe-artifact-field{width:100%}
+.tobe-ai-field-row .tobe-ai-inline{
+  margin:0;min-width:0;align-content:start;gap:7px;
+  padding:11px 13px;border-radius:var(--radius-sm);box-sizing:border-box;
+}
+.tobe-ai-field-row .tobe-ai-inline .field-help{
+  font-size:12px;line-height:1.55;overflow-wrap:anywhere;
+}
+.tobe-ai-field-row .tobe-ai-inline-actions{gap:10px;row-gap:9px}
+.tobe-ai-field-row .tobe-ai-inline-actions .btn{
+  min-height:38px;padding:9px 12px;white-space:normal;
+}
+.tobe-ai-field-row .tobe-ai-inline details summary{
+  line-height:1.5;white-space:normal;
+}
+.tobe-ai-field-row .tobe-ai-inline details p{overflow-wrap:anywhere}
+.tobe-ai-inline-empty{background:#fbfcfb!important}
+.tobe-inspector .tobe-edit>h3{margin-bottom:8px}
+.tobe-inspector .tobe-edit>.tobe-muted{line-height:1.55}
+@media(max-width:1000px){
+ .tobe-ai-field-row{grid-template-columns:minmax(0,1fr);gap:9px;padding:12px}
+ .tobe-ai-field-row .tobe-ai-inline{padding:10px 12px}
+}
+@media(max-width:600px){
+ .tobe-ai-field-row .tobe-ai-inline-actions .btn{flex:1 1 125px}
+}
+/* [AUNEA-FE-PG11-CANONICAL-ROWS-268] END */
