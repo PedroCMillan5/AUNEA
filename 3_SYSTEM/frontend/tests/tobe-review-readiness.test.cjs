@@ -22,13 +22,16 @@ function harness(){
     tobeSourceSteps:()=>[{id:'S1'}],
     // Isolated field-readiness harness; future-route integrity is independently tested.
     tobeFlowIntegrity:()=>null,
+    tobeAddedSteps:()=>[],selectedOtherMissingDetail:()=>false,
+    fieldOptions:()=>[],tobeArtifactValues:v=>({resolved:Array.isArray(v)?v:(v?[v]:[])}),
     latestTobe:()=>current,
     nextTobeStatus:p=>p.status==='DRAFT'?'REVIEWED':null,
     toast:message=>warnings.push(message),markDirty:message=>dirty.push(message),
     now:()=> '2026-11-03T11:00:00Z'
   };
   vm.createContext(sandbox);
-  vm.runInContext('const TOBE_TRANSFORMATIONS=["Se mantiene","Se modifica","Se elimina","Se automatiza","Se asiste con IA","Requiere decisión humana","Se incorpora control"];\n'+block,sandbox);
+  const rationale=src.match(/\/\/ \[AUNEA-FE-PG11-TRANSFORMATION-UX-258\] START[\s\S]*?\/\/ \[AUNEA-FE-PG11-TRANSFORMATION-UX-258\] END/)?.[0];
+  vm.runInContext('const TOBE_TRANSFORMATIONS=["Se mantiene","Se modifica","Se elimina","Se automatiza","Se asiste con IA","Requiere decisión humana","Se incorpora control"];\n'+rationale+'\n'+block,sandbox);
   return {current,warnings,dirty,
     check:()=>vm.runInContext('tobeReviewReadiness(null,latestTobe())',sandbox),
     advance:()=>vm.runInContext('advanceTobeStatus(null)',sandbox)};
@@ -55,9 +58,11 @@ test('PG11 requires a valid transformation, future actor and problem for a chang
   assert.match(h.check(),/responsable futuro/);
   item.futureActor='Administración';
   item.problemResolved='';
-  assert.match(h.check(),/qué problema resuelve/);
+  assert.match(h.check(),/justificación concreta/);
   item.transformation='Se mantiene';
-  assert.equal(h.check(),null,'Conservar una actividad sin inventar un problema debe permitirse');
+  assert.match(h.check(),/Motivo para conservar la actividad/,'Mantener también exige justificación');
+  item.problemResolved='Se mantiene el control existente porque responde a la obligación declarada.';
+  assert.equal(h.check(),null,'Se mantiene con motivo trazable, sin inventar cambios');
 });
 
 test('PG11 elimination retains the source and diagnosis but never demands a fictional future actor',()=>{
