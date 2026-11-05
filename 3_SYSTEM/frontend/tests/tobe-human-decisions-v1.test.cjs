@@ -26,7 +26,7 @@ function setup(){
     controlsRisk:'Registro de errores y trazabilidad de responsables',
     futureTime:'',futureTimeAssumption:''
   }));
-  const proposals=ids.map(source_step_id=>({source_step_id,transformation:'Se mantiene',
+  const proposals=ids.map(source_step_id=>({source_step_id,transformation:'Se modifica',
     rationale:'Acción propuesta: implementar un control. Resultado esperado: más trazabilidad.',
     problem_resolved:'Sin visibilidad',source_refs:[source_step_id]}));
   const p={version:1,sourceSnapshotVersion:2,status:'DRAFT',items,
@@ -50,6 +50,9 @@ function setup(){
     currentDiagnosticOutput:()=>diag,tobeSourceSteps:()=>ids.map(id=>({id})),
     // Future-route integrity is covered by the dedicated graph regression suite.
     tobeFlowIntegrity:()=>null,
+    tobeAddedSteps:()=>[],
+    selectedOtherMissingDetail:()=>false,fieldOptions:()=>[],
+    tobeArtifactValues:v=>({resolved:Array.isArray(v)?v:(v?[v]:[])}),
     internalAiSavedDraft:()=>p.aiDraft.proposal,
     internalAiCheckpointValid:()=>false,
     saveTobeFromDom:()=>true,
@@ -58,7 +61,8 @@ function setup(){
     toast:m=>notices.push(m),render:()=>{},esc:x=>String(x),attr:x=>String(x)
   };
   vm.createContext(sandbox);
-  vm.runInContext(block('AUNEA-FE-PG11-HUMAN-DECISIONS-223')+'\n'+
+  vm.runInContext(block('AUNEA-FE-PG11-TRANSFORMATION-UX-258')+'\n'+
+    block('AUNEA-FE-PG11-HUMAN-DECISIONS-223')+'\n'+
     block('AUNEA-FE-PG11-REVIEW-GATE-199')+'\n'+
     block('AUNEA-FE-PG11-HUMAN-DECISION-SAVE-224'),sandbox);
   const click=(sid,status,text=note.value)=>{
