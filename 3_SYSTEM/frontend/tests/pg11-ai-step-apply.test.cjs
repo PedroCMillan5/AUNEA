@@ -136,4 +136,17 @@ test('PG11 records KEEP without altering values or AS-IS',()=>{
  assert.equal(p.aiDraft.applyHistory[0].fields[0],'outputs');
  assert.equal(saves,2);
 });
+test('PG11 IA constraints remain unconfirmed client information',()=>{
+ const fn=src.match(/function tobeAiOperationalContextHtml\(e,item\)\{[\s\S]*?\n\}/)?.[0];
+ assert.ok(fn);
+ const ctx={String,Array,internalAiSavedDraft:()=>({items:[{
+  source_step_id:'S1',limitations:'Integración pendiente de comprobar',
+  source_refs:['S1']}]}),internalAiReadableRefs:()=> 'Recibir factura',
+  esc:String,attr:String};
+ vm.createContext(ctx);vm.runInContext(fn,ctx);
+ const html=ctx.tobeAiOperationalContextHtml({},{sourceStepId:'S1',isAddition:false});
+ assert.match(html,/Integración pendiente de comprobar/);
+ assert.match(html,/no equivalen a restricciones declaradas por el cliente/);
+ assert.match(html,/Recibir factura/);
+});
 // [AUNEA-UAT-PG11-AI-STEP-237] END
