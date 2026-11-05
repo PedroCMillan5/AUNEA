@@ -20,8 +20,11 @@ test('AI PG11 runs only with explicit button action and confirmed official snaps
 });
 test('AI cannot silently overwrite user edits or publish',()=>{
   const results=fs.readFileSync(path.join(root,'pages/results.js'),'utf8');
-  assert.match(results,/!String\(target\[destination\]\|\|''\)\.trim\(\)/,
-    'the selected source-linked item must retain existing consultant values');
+  assert.match(results,/if\(!wanted\.size\)/,'IA only applies explicitly selected fields');
+  assert.match(results,/if\(!saveTobeFromDom\(e\)\|\|!saveState\('Guardar diseño antes de aplicar selección IA'\)\)/,
+    'the current consultant draft must be saved before selecting IA changes');
+  assert.match(results,/for\(const field of chosen\)item\[field\.key\]=/,
+    'only selected IA fields may change the consultant-owned TO-BE');
   assert.match(results,/tobeAiStepApplicability/);
   assert.doesNotMatch(src,/for\(const proposal of data\.items\)/,
     'bulk AI application was replaced by source-bound per-step review');
@@ -58,7 +61,8 @@ function aiPilotHarness({fail=false,steps=['S1'],failReview=false,blockingSteps=
   nodes.set('generateTobeAiPilot',button);nodes.set('tobeAiPilotStatus',notice);
   const document={
     addEventListener:(type,fn)=>listeners.set(type,fn),
-    getElementById:id=>nodes.get(id)||null
+    getElementById:id=>nodes.get(id)||null,
+    querySelector:()=>null,querySelectorAll:()=>[]
   };
   const ai={
     available:()=>!!provider, register:p=>{provider=p},
