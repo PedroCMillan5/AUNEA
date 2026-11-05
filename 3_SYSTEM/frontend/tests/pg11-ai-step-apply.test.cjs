@@ -150,4 +150,22 @@ test('PG11 IA constraints remain unconfirmed client information',()=>{
  assert.match(html,/no equivalen a restricciones declaradas por el cliente/);
  assert.match(html,/Recibir factura/);
 });
+test('PG11 action buttons distinguish historical read-only from authorized current IA',()=>{
+ const fn=src.match(/function tobeAiRowActions\(e,p,item,key\)\{[\s\S]*?\n\}/)?.[0];
+ assert.ok(fn);
+ const draft={aiDraft:{applyHistory:[]}},step={sourceStepId:'S1'};
+ let current=false;
+ const ctx={String,Array,TOBE_AI_REVIEW_FIELDS:[['tool','tool','Herramienta','OS_TOOL_CATEGORY']],
+   tobeEditable:()=>true,internalAiSavedDraft:()=>current?{items:[{source_step_id:'S1'}]}:null,
+   tobeAiReviewDiff:()=>({issue:'',allFields:[{key:'tool',changed:true}]}),
+   attr:String,esc:String};
+ vm.createContext(ctx);vm.runInContext(fn,ctx);
+ const historical=ctx.tobeAiRowActions({},draft,step,'tool');
+ assert.equal((historical.match(/ disabled/g)||[]).length,2);
+ assert.match(historical,/data-tobe-ai-edit-field="tool"/);
+ current=true;
+ const authorized=ctx.tobeAiRowActions({},draft,step,'tool');
+ assert.match(authorized,/data-tobe-ai-use-field="tool"/);
+ assert.match(authorized,/data-tobe-ai-keep-field="tool"/);
+});
 // [AUNEA-UAT-PG11-AI-STEP-237] END
