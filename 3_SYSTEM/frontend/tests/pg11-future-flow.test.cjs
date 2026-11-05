@@ -194,4 +194,30 @@ test('PG11 existing inspector guides AS-IS, AI advice, future design and connect
   assert.match(src,/id="tobeStepRoutes"/);
   assert.match(src,/AUNEA-FE-PG11-GUIDED-INSPECTOR-253/);
 });
+test('PG11 introduces its purpose and four explicit consultant actions',()=>{
+  assert.match(src,/tobe-task-guide/);
+  assert.match(src,/Qué tienes que hacer aquí/);
+  assert.match(src,/1\. Entender/);
+  assert.match(src,/2\. Decidir/);
+  assert.match(src,/3\. Configurar/);
+  assert.match(src,/4\. Conectar/);
+  assert.match(src,/Resultado esperado:/);
+});
+test('PG11 text instructions appear as placeholders rather than duplicate help below fields',()=>{
+  const start=src.indexOf('function tobeField(item,key,label,value');
+  const end=src.indexOf('\n}\n',start)+2;
+  const field=src.slice(start,end);
+  assert.ok(start>=0&&end>start);
+  assert.match(field,/placeholder=/);
+  assert.doesNotMatch(field,/esc\(help\)<\/p>/);
+  assert.match(field,/warning\+'<\/div>'/);
+});
+test('PG11 keeps map controls connected while increasing room for readable actions',()=>{
+  assert.match(src,/pos\.col-1\)\*272/);
+  assert.match(src,/pos\.row-1\)\*325/);
+  assert.match(src,/data-tobe-move/);
+  assert.match(src,/data-tobe-connect/);
+  assert.match(src,/data-tobe-discard-added/);
+  assert.match(src,/data-tobe-remove-original/);
+});
 // [AUNEA-UAT-PG11-FUTURE-FLOW-233] END
