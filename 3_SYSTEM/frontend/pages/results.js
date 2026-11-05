@@ -1276,6 +1276,7 @@ function tobeAiRowActions(e,p,item,key){
     canApply=!!candidate?.changed&&!diff.issue,
     history=(p.aiDraft?.applyHistory||[]).filter(x=>String(x.sourceStepId)===id&&
       Array.isArray(x.fields)&&x.fields.includes(key)).slice(-1)[0],
+    applied=history?.action==='APPLY'&&!!candidate&&!candidate.changed,
     blockedReason=!isCurrent?
       'La propuesta no está vigente o su revisión global está pendiente. Genera y revisa una propuesta actual.':
       diff?.issue||(!candidate?
@@ -1289,7 +1290,7 @@ function tobeAiRowActions(e,p,item,key){
     action('Aplicar',canApply?
       'data-tobe-ai-use-field="'+attr(key)+'" data-tobe-ai-action-source="'+attr(id)+'"':
       'data-tobe-ai-apply-unavailable="'+attr(key)+'" data-tobe-ai-reason="'+attr(blockedReason)+'"',
-      canApply&&history?.action==='APPLY',canApply?'Aplicar sugerencia IA autorizada':blockedReason)+
+      applied,canApply?'Aplicar sugerencia IA autorizada':blockedReason)+
     action('Mantener','data-tobe-ai-keep-field="'+attr(key)+
       '" data-tobe-ai-action-source="'+attr(id)+'"',history?.action==='KEEP',
       'Conservar valor TO-BE sin aplicar IA')+
