@@ -1171,6 +1171,8 @@ function tobeAiInlineHint(e,p,item,key){
     (skipped?' · <b>Revisión manual necesaria</b>':
       matched&&!matched.changed?' · Coincide con el TO-BE':'')+'</p>'+
     (skipped?'<p class="field-help">'+esc(skipped.reason)+'</p>':'')+
+    (diff.warnings.length?'<p class="field-help"><b>Condición de revisión:</b> '+
+      esc(diff.warnings.join(' · '))+'</p>':'')+
     '<details class="tobe-subdetails"><summary>Justificación, fuentes y límites de la propuesta IA</summary>'+
       '<p><b>Fundamento de la actividad:</b> '+esc(explain||'No se aportó justificación separada para este campo.')+'</p>'+
       (action?'<p><b>Intervención propuesta:</b> '+esc(action)+'</p>':'')+
