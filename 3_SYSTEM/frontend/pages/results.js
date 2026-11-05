@@ -1177,14 +1177,12 @@ function tobeAiInlineHint(e,p,item,key){
     const narrative=typeof internalAiPilotNarrative==='function'?
       internalAiPilotNarrative(ai.rationale):{reason:''};
     return '<div class="tobe-ai-inline" data-tobe-ai-field-key="'+attr(key)+'">'+
-      '<p class="field-help"><b>'+(partial?
-        'Propuesta individual verificada · Pendiente de revisión global':
-        'Propuesta IA anterior · TO-BE v'+esc(history.version))+
-      ' (solo lectura):</b> '+esc(display||'Sin valor propuesto para este campo')+'</p>'+
-      '<p class="field-help">'+(partial?
-        'Aún faltan otras actividades o la comprobación de coherencia; no se aplica hasta completar la revisión.':
-        'No pertenece al borrador vigente v'+esc(p.version)+'. No se aplicará automáticamente.')+
-      ' Conserva tus valores actuales.</p>'+
+      '<p class="field-help"><b>'+(partial?'IA · Propuesta individual pendiente':
+        'IA histórica · v'+esc(history.version))+
+      ':</b> '+esc(display||'Sin valor propuesto')+'</p>'+
+      '<p class="field-help tobe-ia-provenance">'+(partial?
+        'Pendiente de coherencia global · solo consulta.':
+        'Solo lectura · borrador actual v'+esc(p.version)+'.')+'</p>'+
       (raw?'<details class="tobe-subdetails"><summary>Fundamento y fuentes de la propuesta IA</summary>'+
         '<p><b>Justificación general de la actividad:</b> '+esc(narrative.reason||'Sin justificación adicional')+'</p>'+
         '<p><b>Referencias:</b> '+esc(typeof internalAiReadableRefs==='function'?
@@ -1215,13 +1213,15 @@ function tobeAiInlineHint(e,p,item,key){
     Array.isArray(x.fields)&&x.fields.includes(key)).slice(-1)[0];
   const kept=lastChoice?.action==='KEEP';
   return '<div class="tobe-ai-inline" data-tobe-ai-field-key="'+attr(key)+'">'+
-    '<p class="field-help"><b>'+(!matched&&!skipped?'IA: sin propuesta fundamentada en este campo':'Valor propuesto por IA:')+'</b> '+esc(value)+
+    '<p class="field-help"><b>'+(!matched&&!skipped?'IA: sin sugerencia fundamentada':'IA propone:')+'</b> '+esc(value)+
     (skipped?' · <b>Revisión manual necesaria</b>':
       matched&&!matched.changed?' · Coincide con el TO-BE':'')+'</p>'+
     (skipped?'<p class="field-help">'+esc(skipped.reason)+'</p>':'')+
-    (diff.warnings.length?'<p class="field-help"><b>Condición de revisión:</b> '+
+    (diff.warnings.length&&(key==='transformation'||!!skipped)?
+      '<p class="field-help"><b>Condición de revisión:</b> '+
       esc(diff.warnings.join(' · '))+'</p>':'')+
-    (matched||skipped?'<p class="field-help tobe-ai-field-why"><b>Fundamento general:</b> '+
+    ((matched||skipped)&&['problemResolved','automationAi','transformation'].includes(key)?
+      '<p class="field-help tobe-ai-field-why"><b>Fundamento general:</b> '+
       esc(explain||'No existe una justificación específica para este campo.')+'</p>':'')+
     '<details class="tobe-subdetails"><summary>Justificación, fuentes y límites de la propuesta IA</summary>'+
       '<p><b>Justificación global de la actividad (no específica de este campo):</b> '+esc(explain||'El motor no aportó una justificación diferenciada.')+'</p>'+
