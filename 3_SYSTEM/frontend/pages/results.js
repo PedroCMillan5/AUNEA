@@ -1219,7 +1219,8 @@ function tobeAiInlineHint(e,p,item,key){
   const permitted=!!matched?.changed&&!diff.issue&&!dismissed&&tobeEditable(p);
   const lastChoice=(p.aiDraft?.applyHistory||[]).filter(x=>
     String(x.sourceStepId)===String(item.sourceStepId)&&
-    Array.isArray(x.fields)&&x.fields.includes(key)).slice(-1)[0];
+    Array.isArray(x.fields)&&x.fields.includes(key)&&
+    x.proposalFingerprint===tobeCandidateFingerprint(p)).slice(-1)[0];
   const kept=lastChoice?.action==='KEEP';
   const applied=lastChoice?.action==='APPLY';
   return '<div class="tobe-ai-inline" data-tobe-ai-field-key="'+attr(key)+'">'+
@@ -1288,7 +1289,8 @@ function tobeAiRowActions(e,p,item,key){
     candidate=diff?.allFields?.find(x=>x.key===key),
     canApply=!!candidate?.changed&&!diff.issue,
     history=(p.aiDraft?.applyHistory||[]).filter(x=>String(x.sourceStepId)===id&&
-      Array.isArray(x.fields)&&x.fields.includes(key)).slice(-1)[0],
+      Array.isArray(x.fields)&&x.fields.includes(key)&&
+      x.proposalFingerprint===tobeCandidateFingerprint(p)).slice(-1)[0],
     applied=history?.action==='APPLY'&&!!candidate&&!candidate.changed,
     blockedReason=!isCurrent?
       'La propuesta no está vigente o su revisión global está pendiente. Genera y revisa una propuesta actual.':
