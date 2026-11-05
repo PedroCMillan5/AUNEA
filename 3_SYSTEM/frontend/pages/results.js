@@ -764,6 +764,10 @@ function tobeReviewReadiness(e,p){
       return 'Explica qué problema resuelve la transformación de '+name+'.';
     if(String(item.futureTime||'').trim()&&!String(item.futureTimeAssumption||'').trim())
       return 'El tiempo futuro de '+name+' requiere un supuesto trazable.';
+    if(item.transformation!=='Se elimina'&&['inputs','outputs'].some(k=>
+      selectedOtherMissingDetail(fieldOptions('OS_ARTIFACT_TYPE'),
+        tobeArtifactValues(item[k]).resolved,item._details?.[k])))
+      return 'Completa la descripción de «Otro» en las entradas o salidas de '+name+'.';
   }
   // [AUNEA-FE-PG11-HUMAN-GATE-225] START — a rules-only check is never
   // equivalent to acceptance. A source-linked consultant must decide each
