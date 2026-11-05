@@ -75,10 +75,11 @@ test('MODIFY authorizes only safe options, never contradictory transformation',(
  assert.match(src,/function tobeAiRowActions/);
  assert.match(src,/data-tobe-ai-use-field/);
  assert.match(src,/data-tobe-ai-action-source/);
- assert.match(html,/Condición de revisión:/);
+ assert.doesNotMatch(html,/Condición de revisión:/);
  assert.match(src,/data-tobe-ai-edit-field/);
  const bad=f.context.tobeAiInlineHint(f.e,f.p,f.p.items[0],'transformation');
  assert.match(bad,/Revisión manual necesaria/);
+ assert.match(bad,/Condición de revisión:/);
  assert.doesNotMatch(bad,/data-tobe-ai-use-field/);
 });
 test('discard keeps native field controls and never offers application',()=>{
