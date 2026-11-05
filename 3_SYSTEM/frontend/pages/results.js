@@ -948,7 +948,7 @@ function tobeField(item,key,label,value,type='text',disabled=false){
  const help=tobeFieldHelp(key,item),raw=String(value??'');
  const suspect=/^(no|n\/a|ninguno)$/i.test(raw.trim())&&['problemResolved','automationAi','humanSupervision','controlsRisk'].includes(key);
  const warning=suspect?'<p class="field-help">Valor heredado sin explicación («'+esc(raw)+'»). Revísalo: no equivale a una justificación.</p>':'';
- const shown=suspect&&key==='problemResolved'?'':raw;
+ const shown=raw; // Never silently discard legacy consultant/AI text while editing.
  return '<div class="field"><label>'+esc(label)+'</label>'+
  (type==='textarea'?'<textarea data-tobe-item="'+attr(item.id)+'" data-tobe-field="'+attr(key)+'" placeholder="'+attr(help)+'" '+(disabled?'disabled':'')+'>'+esc(shown)+'</textarea>':
  '<input data-tobe-item="'+attr(item.id)+'" data-tobe-field="'+attr(key)+'" value="'+attr(shown)+'" placeholder="'+attr(help)+'" '+(disabled?'disabled':'')+'>')+
