@@ -2948,33 +2948,7 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 .tobe-inspector [data-tobe-rationale-wrapper] .field-help{line-height:1.5}
 /* [AUNEA-FE-PG11-TRANSFORMATION-UX-258] END */
 
-/* [AUNEA-FE-PG11-AI-REVIEW-STYLE-262] START */
-.tobe-ai-change-review{display:grid;gap:12px;margin-top:16px;padding:16px;
-  border:1px solid var(--system-line);border-radius:var(--radius-sm);
-  background:var(--system-soft)}
-.tobe-ai-change-review h4,.tobe-ai-change-review p{margin:0}
-.tobe-ai-change-review>p{line-height:1.55}
-.tobe-ai-review-warnings{margin:0;padding:10px 12px 10px 30px;
-  background:var(--surface,#fff);border:1px solid var(--system-line);
-  border-radius:var(--radius-sm);line-height:1.55}
-.tobe-ai-review-fields{display:grid;gap:10px}
-.tobe-ai-review-field{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
-  gap:10px 14px;padding:13px;background:#fff;border:1px solid var(--line);
-  border-radius:var(--radius-sm);cursor:pointer}
-.tobe-ai-review-field>span:first-child{grid-column:1/-1;display:flex;
-  align-items:center;gap:10px;color:var(--system)}
-.tobe-ai-review-field input[type="checkbox"]{width:18px;height:18px;
-  flex:0 0 18px;accent-color:var(--system)}
-.tobe-ai-review-field small{display:block;line-height:1.5;font-size:12px;
-  overflow-wrap:anywhere}
-.tobe-ai-review-field small b{display:block;margin-bottom:3px;color:var(--system)}
-.tobe-ai-review-field:has(input:checked){border-color:var(--system)}
-.tobe-ai-change-review>.btn{justify-self:start;min-height:38px}
-@media(max-width:750px){
- .tobe-ai-review-field{grid-template-columns:1fr}
- .tobe-ai-change-review{padding:12px}
-}
-/* [AUNEA-FE-PG11-AI-REVIEW-STYLE-262] END */
+
 
 /* [AUNEA-FE-PG11-GUIDED-STYLE-265] START — scoped spacing with existing AUNEA tokens. */
 .tobe-guided-nav{display:grid;gap:10px;padding:14px 18px;
