@@ -1912,7 +1912,7 @@ function tobeInspectorHtml(e,p){
         (nextItem?'<button type="button" class="btn btn-primary" data-tobe-select="'+
           attr(tobeFlowItemId(nextItem))+'">Siguiente actividad</button>':'')+
       '</div></section>'+
-      '<details class="tobe-review-support"><summary>Consultar AS-IS, hallazgos, recomendaciones y fuentes</summary>'+
+      '<details class="tobe-review-support"'+(adviceOpen?' open':'')+'><summary>Consultar AS-IS, hallazgos, recomendaciones y fuentes</summary>'+
         supportingInformation+'</details>'+tobeFlowInspector(e,p,item)+
     (item.isAddition&&editable?'<button type="button" class="btn btn-outline" data-tobe-discard-added="'+attr(item.id)+'">Descartar actividad añadida</button>':'');
 }
