@@ -119,4 +119,27 @@ test('PG11 uses one canonical form and two views on one versioned TO-BE',()=>{
  assert.match(src,/tobeApplyAiReviewedFields\(currentEng\(\),apply.dataset.tobeAiUseSource/);
  assert.doesNotMatch(src,/function tobeAiStepApplicability/);
 });
+test('guided footer delegates to original Save and Check rather than duplicating business handlers',()=>{
+ assert.match(src,/data-tobe-guided-save="1"/);
+ assert.match(src,/data-tobe-guided-check="1"/);
+ assert.match(src,/document\.getElementById\(save\?'saveTobe':'checkTobeReadiness'\)/);
+ const code=slice('// [AUNEA-FE-PG11-GUIDED-ACTIONS-264] START',
+  '// [AUNEA-FE-PG11-GUIDED-ACTIONS-264] END');
+ const listeners=[],called=[];
+ const actions={saveTobe:{click:()=>called.push('save')},
+  checkTobeReadiness:{click:()=>called.push('check')}};
+ const sandbox={state:{activePage:'tobe'},
+  document:{addEventListener:(name,fn)=>listeners.push({name,fn}),
+   getElementById:id=>actions[id],querySelector:()=>null,querySelectorAll:()=>[]},
+  toast:()=>{},__auneaTobeMode:'guided',drawProcessGraph:()=>{},
+  requestAnimationFrame:()=>{}};
+ vm.createContext(sandbox);vm.runInContext(code,sandbox);
+ const handler=listeners.find(x=>x.name==='click'&&
+  x.fn.toString().includes('data-tobe-guided-save'))?.fn;
+ assert.ok(handler,'Guided footer delegate not registered');
+ const trigger=kind=>handler({target:{closest:selector=>
+  selector==='[data-tobe-guided-'+kind+']'?{}:null},preventDefault:()=>{}});
+ trigger('save');trigger('check');
+ assert.deepEqual(called,['save','check']);
+});
 // [AUNEA-UAT-PG11-GUIDED-267] END
