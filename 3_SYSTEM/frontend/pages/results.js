@@ -1153,7 +1153,7 @@ function tobeAiInlineHint(e,p,item,key){
     matched=diff.allFields.find(x=>x.key===key),
     skipped=diff.skipped.find(x=>x.key===key),
     field=TOBE_AI_REVIEW_FIELDS.find(x=>x[1]===key);
-  if(!field||(!matched&&!skipped))return '';
+  if(!field)return '';
   const decision=tobeHumanReviewRecord(e,p)?.decisions?.[String(item.sourceStepId)],
     dismissed=decision?.status==='DISCARD',
     narrative=typeof internalAiPilotNarrative==='function'?
@@ -1167,14 +1167,14 @@ function tobeAiInlineHint(e,p,item,key){
     value=matched?.display||skipped?.raw||'';
   const permitted=!!matched?.changed&&!diff.issue&&!dismissed&&tobeEditable(p);
   return '<div class="tobe-ai-inline" data-tobe-ai-field-key="'+attr(key)+'">'+
-    '<p class="field-help"><b>IA propone:</b> '+esc(value)+
+    '<p class="field-help"><b>'+(!matched&&!skipped?'IA: sin propuesta fundamentada en este campo':'Valor propuesto por IA:')+'</b> '+esc(value)+
     (skipped?' · <b>Revisión manual necesaria</b>':
       matched&&!matched.changed?' · Coincide con el TO-BE':'')+'</p>'+
     (skipped?'<p class="field-help">'+esc(skipped.reason)+'</p>':'')+
     (diff.warnings.length?'<p class="field-help"><b>Condición de revisión:</b> '+
       esc(diff.warnings.join(' · '))+'</p>':'')+
     '<details class="tobe-subdetails"><summary>Justificación, fuentes y límites de la propuesta IA</summary>'+
-      '<p><b>Fundamento de la actividad:</b> '+esc(explain||'No se aportó justificación separada para este campo.')+'</p>'+
+      '<p><b>Justificación global de la actividad (no específica de este campo):</b> '+esc(explain||'El motor no aportó una justificación diferenciada.')+'</p>'+
       (action?'<p><b>Intervención propuesta:</b> '+esc(action)+'</p>':'')+
       '<p><b>Fuentes vinculadas:</b> '+esc(refs||'No identificadas')+'</p>'+
       '<p><b>Condiciones pendientes:</b> '+esc(pending||'No declaradas')+'</p>'+
