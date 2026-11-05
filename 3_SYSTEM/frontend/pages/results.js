@@ -794,11 +794,27 @@ function tobeReviewReadiness(e,p){
       if(['Se automatiza','Se asiste con IA'].includes(item.transformation)&&
          (!meaningful(item.automationAi)||!meaningful(item.humanSupervision)))
         return 'Describe automatización y supervisión humana de '+name+' antes de revisar.';
+      const suggested=(Array.isArray(proposed.items)?proposed.items:[]).find(x=>
+        String(x.source_step_id)===sid);
+      if(decision.status==='ACCEPT'&&suggested?.transformation&&
+         item.transformation!==suggested.transformation)
+        return 'La propuesta IA de '+name+' indica «'+suggested.transformation+
+          '», pero el diseño está en «'+item.transformation+
+          '». Para cambiarla, selecciona «Modificar antes de usar» y justifica.';
       const originalIssues=(p.aiDraft?.proposal?.review?.issues||[]).filter(x=>
         String(x.step_id)===sid&&x.category==='BLOCKING');
       if(originalIssues.length&&decision.status==='ACCEPT'&&item.transformation==='Se mantiene')
         return 'La recomendación de '+name+' contiene bloqueos; no puede aceptarse sin rediseñar su transformación.';
     }
+  }
+  for(const added of tobeAddedSteps(p)){
+    if(!TOBE_TRANSFORMATIONS.includes(added.transformation)||
+       ['Se mantiene','Se elimina'].includes(added.transformation))
+      return 'Selecciona una transformación aplicable a la actividad nueva '+tobeFlowItemName(added)+'.';
+    if(!String(added.stepName||'').trim()||
+       !String(added.futureActor||'').trim()||
+       !tobeMeaningfulRationale(added.problemResolved))
+      return 'Completa nombre, responsable y motivo de la actividad nueva '+tobeFlowItemName(added)+'.';
   }
   // [AUNEA-FE-PG11-HUMAN-GATE-225] END
   const flowIssue=tobeFlowIntegrity(e,p);
@@ -1268,8 +1284,9 @@ function tobeCoherenceFindings(e,p){
     if(['Se automatiza','Se asiste con IA'].includes(t)&&
        /\b(sin supervisi[oó]n|aprueba autom[aá]ticamente|sin intervenci[oó]n humana)\b/i.test(auto))
       add(item,'BLOCKING','La intervención describe autonomía sin un control humano explícito.');
-    if(t==='Se mantiene'&&String(item.problemResolved||'').trim()==='NO')
-      add(item,'WARNING','«NO» no justifica por qué se conserva una actividad sin cambios.');
+    if(TOBE_TRANSFORMATIONS.includes(t)&&!tobeMeaningfulRationale(item.problemResolved))
+      add(item,'BLOCKING','Completa «'+tobeTransformationRationaleLabel(t)+
+        '»; un campo vacío o «NO» no justifica esta decisión.');
     if(item.futureTime&&item.futureTimeAssumption)
       add(item,'WARNING','El tiempo futuro es un supuesto; no equivale a medición ni autoriza un ahorro.');
   }
