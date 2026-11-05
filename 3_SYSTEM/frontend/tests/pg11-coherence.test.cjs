@@ -20,7 +20,10 @@ function harness(item){
    tobeFlowIntegrity:()=>null,
    tobeHumanReviewRecord:()=>null,attr:x=>String(x),esc:x=>String(x)
  };
- vm.createContext(sandbox);vm.runInContext(block,sandbox);
+ vm.createContext(sandbox);
+ vm.runInContext(src.match(/\/\/ \[AUNEA-FE-PG11-TRANSFORMATION-UX-258\] START[\s\S]*?\/\/ \[AUNEA-FE-PG11-TRANSFORMATION-UX-258\] END/)?.[0]||'',sandbox);
+ vm.runInContext(src.match(/const TOBE_TRANSFORMATIONS=Object\.freeze\([^\n]+/)?.[0]||'',sandbox);
+ vm.runInContext(block,sandbox);
  return {p,issues:()=>JSON.parse(JSON.stringify(
    vm.runInContext('tobeCoherenceFindings(null,p)',Object.assign(sandbox,{p}))))};
 }
