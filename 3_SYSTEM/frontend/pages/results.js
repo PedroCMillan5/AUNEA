@@ -2030,6 +2030,10 @@ function tobePage(){
       '<div class="notice info">AS-IS confirmado v'+esc(snap.version)+
       '. El diagnóstico oficial se reutiliza; no se vuelve a capturar.</div>');
   const editable=tobeEditable(p),statusLabel={DRAFT:'Borrador',REVIEWED:'Revisado',APPROVED_FOR_CLIENT:'Aprobado para cliente',PUBLISHED:'Publicado'}[p.status]||p.status;
+  const previousAudit=typeof document!=='undefined'?document.getElementById('tobeAiWorkspace'):null,
+    keepAuditOpen=!!previousAudit?.open&&
+      previousAudit.dataset?.engagementId===String(e.id)&&
+      previousAudit.dataset?.tobeVersion===String(p.version);
   const actions='<button class="btn" data-page="resultados">Volver al diagnóstico</button>'+
     (['REVIEWED','APPROVED_FOR_CLIENT','PUBLISHED'].includes(p.status)?'<button class="btn" data-page="comparacion">Ir a comparación PG12</button>':'')+
     (editable?'<button class="btn" id="saveTobe">Guardar borrador</button>':'')+
@@ -2095,7 +2099,8 @@ function tobePage(){
       '<p class="field-help">Indica la actividad de inicio del TO-BE. El AS-IS no se modifica.</p></div>'+
       '<p class="tobe-map-note"><b>Rutas del TO-BE:</b> comienzan como copia del AS-IS confirmado, pero pueden rediseñarse en el inspector. Los pasos incorporados o eliminados sólo pertenecen a la versión TO-BE. Una ruta pendiente, desconectada o sin final bloquea la revisión.</p></section>'+
       '<section id="tobeInspector" class="tobe-inspector" aria-label="Decisión TO-BE por actividad">'+tobeInspectorHtml(e,p)+'</section>'+
-      (editable?'<details class="tobe-ai-stage" id="tobeAiWorkspace">'+
+      (editable?'<details class="tobe-ai-stage" id="tobeAiWorkspace" data-engagement-id="'+attr(e.id)+
+        '" data-tobe-version="'+attr(p.version)+'"'+(keepAuditOpen?' open':'')+'>'+
         '<summary><strong>Auditoría de propuestas IA por actividad</strong>'+
         '<span class="tobe-muted">Opcional: consulta el detalle completo. Revisa cada propuesta desde el inspector de su actividad.</span></summary>'+
         '<div id="tobeAiMount"></div></details>':'')+
