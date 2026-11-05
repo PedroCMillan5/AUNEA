@@ -973,7 +973,9 @@ async function main(){
   // guarded route rewiring, durable TO-BE version and read-only PG12 dual map.
   if(sourceIds.length<2)throw Error('Future-flow browser fixture requires two source activities');
   await page.locator('.tobe-guided-tabs [data-tobe-select="'+sourceIds[0]+'"]').first().click();
+  await page.locator('[data-tobe-mode-switch="map"]').click();
   await page.locator('#addTobeStep').click();
+  await page.locator('[data-tobe-mode-switch="guided"]').click();
   const addition=await page.evaluate(()=>{
     const e=currentEng(),p=latestTobe(e);
     return p.flow?.addedSteps?.at(-1)||null;
