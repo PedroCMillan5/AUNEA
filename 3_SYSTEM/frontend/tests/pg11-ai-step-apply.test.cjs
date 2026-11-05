@@ -125,7 +125,8 @@ test('PG11 records KEEP without altering values or AS-IS',()=>{
    e={tobeProposals:[p],snapshot:{original:true}};
  let saves=0;
  const ctx={String,Array,JSON,state:{activePage:'tobe'},latestTobe:x=>x.tobeProposals[0],
-  tobeAiReviewDiff:()=>({issue:'',allFields:[{key:'outputs'}],decision:'MODIFY'}),
+  TOBE_AI_REVIEW_FIELDS:[['outputs','outputs','Datos de salida','OS_ARTIFACT_TYPE']],
+  tobeEditable:()=>true,
   saveTobeFromDom:()=>true,saveState:()=>{saves++;return true},currentEng:()=>e,
   tobeCandidateFingerprint:()=> 'F',now:()=> '2026-11-05',markDirty:()=>{},
   toast:()=>{},render:()=>{}};
@@ -161,8 +162,10 @@ test('PG11 action buttons distinguish historical read-only from authorized curre
    attr:String,esc:String};
  vm.createContext(ctx);vm.runInContext(fn,ctx);
  const historical=ctx.tobeAiRowActions({},draft,step,'tool');
- assert.equal((historical.match(/ disabled/g)||[]).length,2);
+ assert.match(historical,/data-tobe-ai-apply-unavailable="tool"/);
+ assert.match(historical,/data-tobe-ai-keep-field="tool"/);
  assert.match(historical,/data-tobe-ai-edit-field="tool"/);
+ assert.doesNotMatch(historical,/data-tobe-ai-use-field="tool"/);
  current=true;
  const authorized=ctx.tobeAiRowActions({},draft,step,'tool');
  assert.match(authorized,/data-tobe-ai-use-field="tool"/);
