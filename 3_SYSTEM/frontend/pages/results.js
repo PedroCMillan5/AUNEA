@@ -1811,6 +1811,12 @@ function tobeInspectorHtml(e,p){
     (editable?auneaSelectControl('tobe_'+item.id+'_transformation',TOBE_TRANSFORMATIONS.map(v=>({value:v,label:v})),
       item.transformation||'',{extra:'data-tobe-item="'+attr(item.id)+'" data-tobe-field="transformation"',placeholder:'Selecciona una transformación'}):
       '<input value="'+attr(item.transformation||'Sin definir')+'" disabled>')+'</div>';
+  const supportingInformation=
+    '<section class="tobe-origin" id="tobeStepOrigin"><details class="tobe-subdetails"><summary>01 · Entender el AS-IS y sus hallazgos</summary>'+
+      tobeOriginalStepFacts(e,item)+tobeSnapshotIssueCards(e,item)+'</details></section>'+
+    '<section class="tobe-advice" id="tobeStepAdvice" aria-label="Sugerencia IA para actividad">'+
+      '<details class="tobe-subdetails"'+(adviceOpen?' open':'')+'><summary>02 · Revisar recomendación IA y decidir</summary>'+
+      '<div id="tobeAiRecommendation">'+tobeAiAdviceHtml(e,item,false)+'</div></details></section>';
   return '<header class="tobe-inspector-head"><div><span class="tobe-eyebrow">'+
       (item.isAddition?'ACTIVIDAD NUEVA · VINCULADA A AS-IS':'ACTIVIDAD SELECCIONADA · ORIGEN AS-IS')+
       '</span><h2>'+esc(tobeFlowItemName(item))+'</h2>'+
@@ -1823,11 +1829,6 @@ function tobeInspectorHtml(e,p){
       '<button type="button" class="btn btn-outline btn-small" style="margin:0 12px 10px 0" data-tobe-jump="tobeStepDesign">3 · Configurar</button>'+
       '<button type="button" class="btn btn-outline btn-small" style="margin:0 12px 10px 0" data-tobe-mode-switch="map">4 · Conectar</button>'+
     '</nav>'+
-    '<section class="tobe-origin" id="tobeStepOrigin"><details class="tobe-subdetails"><summary>01 · Entender el AS-IS y sus hallazgos</summary>'+
-      tobeOriginalStepFacts(e,item)+tobeSnapshotIssueCards(e,item)+'</details></section>'+
-    '<section class="tobe-advice" id="tobeStepAdvice" aria-label="Sugerencia IA para actividad">'+
-      '<details class="tobe-subdetails"'+(adviceOpen?' open':'')+'><summary>02 · Revisar recomendación IA y decidir</summary>'+
-      '<div id="tobeAiRecommendation">'+tobeAiAdviceHtml(e,item,false)+'</div></details></section>'+
     '<section class="tobe-edit" id="tobeStepDesign"><h3>03 · Configurar la actividad futura</h3>'+
       (!item.isAddition&&hasCurrentAi?
         '<details class="tobe-human-review-shell"'+(choice?.status?'':' open')+'>'+
@@ -1875,7 +1876,9 @@ function tobeInspectorHtml(e,p){
         '<button type="button" class="btn btn-outline" data-tobe-guided-check="1">Comprobar requisitos</button>'+
         (nextItem?'<button type="button" class="btn btn-primary" data-tobe-select="'+
           attr(tobeFlowItemId(nextItem))+'">Siguiente actividad</button>':'')+
-      '</div></section>'+tobeFlowInspector(e,p,item)+
+      '</div></section>'+
+      '<details class="tobe-review-support"><summary>Consultar AS-IS, hallazgos, recomendaciones y fuentes</summary>'+
+        supportingInformation+'</details>'+tobeFlowInspector(e,p,item)+
     (item.isAddition&&editable?'<button type="button" class="btn btn-outline" data-tobe-discard-added="'+attr(item.id)+'">Descartar actividad añadida</button>':'');
 }
 function createNextTobeVersion(e){
