@@ -360,7 +360,7 @@ function internalAiPendingPanel(e,key,pending,feedback){
         '</div><details class="pg11-ai-details"><summary>Justificación, fuentes y límites</summary>'+
           '<div class="pg11-ai-detail-content">'+
             '<p><b>Justificación:</b> '+esc(narrative.reason||'Sin declarar')+'</p>'+
-            '<p><b>Fuentes:</b> '+esc((item.source_refs||[]).join(', ')||'Sin declarar')+'</p>'+
+            '<p><b>Fuentes:</b> '+esc(internalAiReadableRefs(e,item.source_refs)||'Sin declarar')+'</p>'+
             '<p><b>Condiciones por validar:</b> '+esc(item.limitations||'Sin declarar')+'</p>'+
           '</div></details></div></article>';
   }).join('');
@@ -448,7 +448,7 @@ function internalAiPilotPanel(e){
         '<details class="pg11-ai-details"><summary>Justificación, fuentes y condiciones</summary>'+
           '<div class="pg11-ai-detail-content">'+
           '<p><b>Justificación:</b> '+esc(narrative.reason||'No declarada')+'</p>'+
-          '<p><b>Fuentes:</b> '+esc((item.source_refs||[]).join(', ')||'Ninguna')+'</p>'+
+          '<p><b>Fuentes:</b> '+esc(internalAiReadableRefs(e,item.source_refs)||'Ninguna')+'</p>'+
           '<p><b>Condiciones por validar:</b> '+esc(item.limitations||'No declaradas')+'</p>'+
           '<p><b>Responsable futuro:</b> '+esc(item.future_actor||'No definido')+'</p>'+
           '<p><b>Supervisión humana:</b> '+esc(item.human_supervision||'No definida')+'</p>'+
