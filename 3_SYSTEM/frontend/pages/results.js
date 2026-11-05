@@ -907,8 +907,7 @@ function tobeCatalogField(item,key,label,setId,disabled=false){
     datalistControl(id,setId,selected,'Selecciona una opción del catálogo vigente');
   return '<div class="field" data-tobe-catalog-item="'+attr(item.id)+
     '" data-tobe-catalog-field="'+attr(key)+'"><label>'+esc(label)+'</label>'+
-    control+'<p class="field-help">Utiliza el mismo selector de AUNEA que en la captura del proceso. '+
-    'Si la opción no existe, especifica el valor mediante «Otro».</p></div>';
+    control+'</div>';
 }
 function tobeArtifactField(item,key,label,disabled=false){
   const opts=typeof fieldOptions==='function'?fieldOptions('OS_ARTIFACT_TYPE'):[];
@@ -930,8 +929,7 @@ function tobeArtifactField(item,key,label,disabled=false){
     (unknown.length?'<p class="notice warn">Valor anterior no reconocido por el catálogo vigente: '+
       esc(unknown.join(' · '))+'. Se conserva hasta que indiques expresamente que quieres retirarlo.</p>'+
       (disabled?'':'<label class="field-help"><input type="checkbox" data-tobe-drop-legacy="1"> Eliminar estos valores antiguos no reconocidos al guardar</label>'):'')+
-    '<p class="field-help">Selecciona las opciones del catálogo utilizado en el AS-IS. '+
-    '«Otro» permite concretar un valor. No escribas códigos separados por comas.</p></div>';
+    '</div>';
 }
 // [AUNEA-FE-PG11-CANONICAL-CONTROLS-251] END
 // [AUNEA-FE-PG11-FIELD-GUIDANCE-246] START — field help never persists as data.
@@ -963,7 +961,7 @@ function tobeField(item,key,label,value,type='text',disabled=false){
  return '<div class="field"><label>'+esc(label)+'</label>'+
  (type==='textarea'?'<textarea data-tobe-item="'+attr(item.id)+'" data-tobe-field="'+attr(key)+'" placeholder="'+attr(help)+'" '+(disabled?'disabled':'')+'>'+esc(shown)+'</textarea>':
  '<input data-tobe-item="'+attr(item.id)+'" data-tobe-field="'+attr(key)+'" value="'+attr(shown)+'" placeholder="'+attr(help)+'" '+(disabled?'disabled':'')+'>')+
- '<p class="field-help">'+esc(help)+'</p>'+warning+'</div>';
+ warning+'</div>';
 }
 // [AUNEA-FE-PG11-FIELD-GUIDANCE-246] END
 // [AUNEA-FE-PG11-WORKSPACE-205] START — single versioned TO-BE canvas and contextual inspector.
@@ -1145,7 +1143,7 @@ function tobeAiAdviceHtml(e,item){
         issues.length?'<ul>'+issues.map(x=>'<li>'+esc(x.issue||x.action||'Revisión pendiente')+'</li>').join('')+'</ul>':
         '<p>Sin observaciones específicas del revisor automático.</p>')+
     '</details>'+
-    '<p class="tobe-muted">Esta sugerencia no modifica el TO-BE. La decisión y el diseño futuro son responsabilidad del consultor.</p>'+
+    ''+
     tobeHumanReviewHtml(e,item,!!archived)+
     (!archived&&tobeHumanReviewRecord(e,latestTobe(e))?.decisions?.[String(item.sourceStepId)]?.status==='ACCEPT'?
       '<div class="tobe-ai-apply-step"><button type="button" class="btn btn-outline" data-tobe-ai-apply-step="'+
@@ -1539,7 +1537,6 @@ function tobeInspectorHtml(e,p){
           '<input disabled value="'+attr(item.stepType==='ST04'?'Decisión · rutas SÍ / NO':'Actividad operativa')+'">')+
         '<p class="field-help">Actividad operativa: ejecuta trabajo. Decisión: requiere rutas SÍ y NO.</p></div>':'')+
       statusField+
-      '<p class="field-help">«Qué cambia» define la transformación futura respecto al AS-IS; no significa que una mejora esté aprobada.</p>'+
       tobeField(item,'problemResolved',
         item.transformation==='Se mantiene'?'Motivo para conservar la actividad':
         item.transformation==='Se elimina'?'Por qué se elimina y qué necesidad resuelve':
@@ -1552,9 +1549,7 @@ function tobeInspectorHtml(e,p){
       tobeField(item,'humanSupervision','Supervisión humana',item.humanSupervision,'textarea',!editable)+
       tobeField(item,'controlsRisk','Control / riesgo',item.controlsRisk,'textarea',!editable)+
       '</div>'+
-      (['automationAi','humanSupervision','controlsRisk'].some(key=>
-        /^(no|n\/a|ninguno)$/i.test(String(item[key]||'').trim()))?
-        '<p class="tobe-muted"><b>Campos sin definición operativa:</b> el valor «NO» procede del borrador; no equivale a demostrar que no hagan falta automatización, supervisión o controles. Revisa su significado antes de confirmar el diseño.</p>':'')+
+      ''+
       '<details class="tobe-subdetails"><summary>Tiempo futuro y supuesto trazable (si existe)</summary>'+
       '<div class="form-grid">'+tobeField(item,'futureTime','Tiempo futuro',item.futureTime,'text',!editable)+
       tobeField(item,'futureTimeAssumption','Supuesto trazable',item.futureTimeAssumption,'textarea',!editable)+
@@ -1599,9 +1594,22 @@ function tobePage(){
     (editable?'<button class="btn btn-primary" id="advanceTobe">Marcar como revisado</button>':
       p.status==='REVIEWED'?'<button class="btn btn-primary" id="advanceTobe">Aprobar para cliente</button>':'')+
     (!editable&&p.status!=='PUBLISHED'?'<button class="btn" id="newTobeVersion">Crear nueva versión</button>':'');
+  const review=tobeHumanReviewRecord(e,p),reviewed=p.items.filter(it=>
+    ['ACCEPT','MODIFY','DISCARD'].includes(review?.decisions?.[String(it.sourceStepId)]?.status)).length;
   return pageTop('Diseño TO-BE','Versión '+p.version+' · '+statusLabel+
     ' · Origen AS-IS v'+esc(p.sourceSnapshotVersion)+'. Las decisiones pertenecen al consultor.',actions)+
     '<main class="tobe-workspace" data-tobe-version="'+p.version+'">'+
+      '<section class="tobe-task-guide" aria-label="Qué hacer en Diseño TO-BE">'+
+        '<div class="tobe-task-guide-intro"><div><h2>Qué tienes que hacer aquí</h2>'+
+          '<p>Diseña cómo funcionará el proceso en el futuro. Revisa una actividad cada vez; el AS-IS original no se modifica.</p></div>'+
+          '<span class="tobe-task-guide-progress">'+reviewed+' de '+p.items.length+' recomendaciones revisadas</span></div>'+
+        '<div class="tobe-task-guide-steps">'+
+          '<span><b>1. Entender</b> el problema original</span>'+
+          '<span><b>2. Decidir</b> sobre la recomendación IA</span>'+
+          '<span><b>3. Configurar</b> la actividad futura</span>'+
+          '<span><b>4. Conectar</b> y comprobar el flujo</span></div>'+
+        '<p class="tobe-task-guide-result"><b>Resultado esperado:</b> un mapa TO-BE con actividades, responsables, datos y rutas definidos. Guarda el borrador, pulsa «Comprobar requisitos» y, cuando no existan bloqueos, «Marcar como revisado». Después podrás comparar AS-IS y TO-BE en PG12.</p>'+
+      '</section>'+
       '<section class="tobe-context"><div><strong>Origen del diseño</strong><p>AS-IS confirmado v'+esc(snap.version)+
       ' · Diagnóstico '+esc(diagnosticOutputFreshness(e).label)+
       ' · '+p.items.length+' actividades de origen</p></div><div class="tobe-context-status">'+esc(statusLabel)+'</div></section>'+
