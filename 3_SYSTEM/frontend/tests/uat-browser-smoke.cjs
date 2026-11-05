@@ -693,6 +693,17 @@ async function main(){
   for(let i=0;i<sourceIds.length;i++){
     await page.locator('.tobe-guided-tabs [data-tobe-select="'+sourceIds[i]+'"]').click();
     const advice=await page.locator('#tobeAiRecommendation').innerText();
+    if(!new RegExp('Problema sintético vinculado '+(i+1)).test(advice)){
+      const debug=await page.evaluate(()=>{
+        const e=currentEng(),p=latestTobe(e),key=internalAiPilotKey(e),
+          pending=internalAiPendingSteps(e,key),el=document.getElementById('tobeAiRecommendation');
+        return {selectedId:tobeSelectedItem(e,p)?.sourceStepId,
+          hasCheckpoint:!!pending,pendingIds:pending?[...pending.items.keys()]:[],
+          detailsOpen:el?.closest('details')?.open,html:el?.innerHTML?.slice(0,550),
+          adviceText:el?.textContent?.slice(0,400),keyKnown:!!key};
+      });
+      console.log('PG11_CHECKPOINT_DIAGNOSTIC: '+JSON.stringify({expected:i,debug}));
+    }
     assert.match(advice,new RegExp('Problema sintético vinculado '+(i+1)),
       'inspector must match the selected source step');
     assert.match(advice,/Pendiente de revisión global/);
