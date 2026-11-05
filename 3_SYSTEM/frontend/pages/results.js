@@ -1017,6 +1017,7 @@ function tobeField(item,key,label,value,type='text',disabled=false){
 // INPUTS: confirmed AS-IS snapshot, official diagnostic, TO-BE DRAFT and bounded AI suggestions.
 // OUTPUTS: read-only source graph projection, human-editable TO-BE inspector; no new data owner.
 let __auneaTobeSelection={engagementId:'',version:0,stepId:''};
+let __auneaTobeMode='guided'; // UI-only display preference; not a business data field.
 function tobeSelectedItem(e,p){
   if(!p?.items?.length)return null;
   if(__auneaTobeSelection.engagementId!==e.id||__auneaTobeSelection.version!==p.version){
@@ -1777,9 +1778,31 @@ function tobePage(){
     (!editable&&p.status!=='PUBLISHED'?'<button class="btn" id="newTobeVersion">Crear nueva versión</button>':'');
   const review=tobeHumanReviewRecord(e,p),reviewed=p.items.filter(it=>
     ['ACCEPT','MODIFY','DISCARD'].includes(review?.decisions?.[String(it.sourceStepId)]?.status)).length;
+  const guidedItems=[...(p.items||[]),...tobeAddedSteps(p)],
+    focused=tobeSelectedItem(e,p),selectedId=tobeFlowItemId(focused),
+    focusedIndex=Math.max(0,guidedItems.findIndex(x=>tobeFlowItemId(x)===selectedId));
+  const modeButton=(mode,label)=>'<button type="button" class="btn '+
+    (__auneaTobeMode===mode?'btn-primary':'btn-outline')+
+    '" data-tobe-mode-switch="'+mode+'" aria-pressed="'+String(__auneaTobeMode===mode)+'">'+label+'</button>';
+  const guidedNav='<nav class="tobe-guided-nav" aria-label="Navegación del diseño TO-BE">'+
+    '<div class="tobe-guided-modes">'+modeButton('guided','Revisión por actividad')+
+    modeButton('map','Mapa TO-BE')+'</div>'+
+    '<div class="tobe-guided-tabs" aria-label="Actividades del proceso">'+
+    guidedItems.map((step,i)=>'<button type="button" class="btn btn-outline btn-small '+
+      (tobeFlowItemId(step)===selectedId?'is-selected':'')+'" data-tobe-select="'+
+      attr(tobeFlowItemId(step))+'" aria-pressed="'+String(tobeFlowItemId(step)===selectedId)+'">'+
+      esc(tobeFlowItemName(step))+'</button>').join('')+'</div>'+
+    '<div class="tobe-guided-switch"><span class="tobe-muted">Actividad '+
+      (focusedIndex+1)+' de '+guidedItems.length+'</span>'+
+      (focusedIndex?'<button type="button" class="btn btn-outline btn-small" data-tobe-select="'+
+        attr(tobeFlowItemId(guidedItems[focusedIndex-1]))+'">Actividad anterior</button>':'')+
+      (focusedIndex<guidedItems.length-1?'<button type="button" class="btn btn-outline btn-small" data-tobe-select="'+
+        attr(tobeFlowItemId(guidedItems[focusedIndex+1]))+'">Siguiente actividad</button>':'')+
+    '</div></nav>';
   return pageTop('Diseño TO-BE','Versión '+p.version+' · '+statusLabel+
     ' · Origen AS-IS v'+esc(p.sourceSnapshotVersion)+'. Las decisiones pertenecen al consultor.',actions)+
-    '<main class="tobe-workspace" data-tobe-version="'+p.version+'">'+
+    '<main class="tobe-workspace" data-tobe-version="'+p.version+
+    '" data-tobe-mode="'+attr(__auneaTobeMode)+'">'+
       '<section class="tobe-task-guide" aria-label="Qué hacer en Diseño TO-BE">'+
         '<div class="tobe-task-guide-intro"><div><h2>Qué tienes que hacer aquí</h2>'+
           '<p>Diseña cómo funcionará el proceso en el futuro. Revisa una actividad cada vez; el AS-IS original no se modifica.</p></div>'+
@@ -1794,6 +1817,7 @@ function tobePage(){
       '<section class="tobe-context"><div><strong>Origen del diseño</strong><p>AS-IS confirmado v'+esc(snap.version)+
       ' · Diagnóstico '+esc(diagnosticOutputFreshness(e).label)+
       ' · '+p.items.length+' actividades de origen</p></div><div class="tobe-context-status">'+esc(statusLabel)+'</div></section>'+
+      guidedNav+
       '<section class="tobe-map-area"><header class="tobe-workspace-head"><div><span class="tobe-eyebrow">CONSTRUIR EL PROCESO FUTURO</span>'+
       '<h2>Mapa del proceso propuesto</h2></div><p>Selecciona una actividad para revisar su transformación y editar el TO-BE.</p></header>'+
       (editable?'<div class="tobe-flow-actions"><button type="button" class="btn btn-outline" id="addTobeStep">Añadir actividad vinculada al AS-IS</button>'+
