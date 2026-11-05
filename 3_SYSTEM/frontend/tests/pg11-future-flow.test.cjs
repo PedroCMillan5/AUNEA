@@ -176,4 +176,22 @@ test('PG11 canonical controls retain catalog-based inputs, outputs, roles and to
   assert.match(src,/data-tobe-drop-legacy/);
   assert.match(src,/const shown=raw/);
 });
+test('PG11 existing inspector guides AS-IS, AI advice, future design and connections',()=>{
+  const start=src.indexOf('function tobeInspectorHtml(');
+  const end=src.indexOf('\n}\n',start)+2;
+  assert.ok(start>=0&&end>start);
+  const inspector=src.slice(start,end);
+  const stages=['tobeStepOrigin','tobeStepAdvice','tobeStepDesign'];
+  const offsets=stages.map(x=>inspector.indexOf('id="'+x+'"'));
+  assert.ok(offsets.every(x=>x>=0));
+  assert.ok(offsets[0]<offsets[1]&&offsets[1]<offsets[2]);
+  for(const stage of [...stages,'tobeStepRoutes'])
+    assert.match(inspector,new RegExp('data-tobe-jump="'+stage+'"'));
+  assert.match(inspector,/tobeAiAdviceHtml\(e,item\)/);
+  assert.match(inspector,/tobeArtifactField\(item,'inputs'/);
+  assert.match(inspector,/tobeArtifactField\(item,'outputs'/);
+  assert.match(inspector,/tobeFlowInspector\(e,p,item\)/);
+  assert.match(src,/id="tobeStepRoutes"/);
+  assert.match(src,/AUNEA-FE-PG11-GUIDED-INSPECTOR-253/);
+});
 // [AUNEA-UAT-PG11-FUTURE-FLOW-233] END
