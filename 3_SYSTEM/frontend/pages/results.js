@@ -1326,7 +1326,9 @@ function tobeWithAiHint(e,p,item,key,html){
     attr(key)+'"><p class="field-help"><b>IA:</b> Sin propuesta vigente para esta actividad.'+
     ' Conserva el valor TO-BE o complétalo con evidencia.</p></div>';
   return '<div class="tobe-ai-field-row" data-tobe-row-key="'+attr(key)+'">'+
-    '<div class="tobe-ai-field-control">'+html+'</div>'+
+    '<div class="tobe-ai-field-control">'+
+      (sourceLabel?'<p class="tobe-ai-source-value"><b>Valor AS-IS confirmado:</b> '+esc(sourceLabel)+'</p>':'')+
+      html+'</div>'+
     (advice||fallback)+tobeAiRowActions(e,p,item,key)+'</div>';
 }
 // [AUNEA-FE-PG11-GUIDED-FIELD-267] END
