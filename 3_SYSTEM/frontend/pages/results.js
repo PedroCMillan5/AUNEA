@@ -1065,6 +1065,66 @@ function tobeSnapshotIssueCards(e,item){
   return frHtml||riskHtml?'<ul class="tobe-source-list">'+frHtml+riskHtml+'</ul>':
     '<p class="tobe-muted">No hay fricciones o riesgos vinculados directamente a este paso en el snapshot. Consulta el diagnóstico global antes de justificar una transformación.</p>';
 }
+// [AUNEA-FE-PG11-AI-REVIEW-DIFF-260] START — display-only comparison.
+const TOBE_AI_REVIEW_FIELDS=[
+ ['transformation','transformation','Qué cambia','transformation'],
+ ['problem_resolved','problemResolved','Motivo del diseño futuro','text'],
+ ['future_actor','futureActor','Responsable futuro','OS_ACTOR_ROLE'],
+ ['tool','tool','Herramienta / arquitectura','OS_TOOL_CATEGORY'],
+ ['inputs','inputs','Datos de entrada','OS_ARTIFACT_TYPE'],
+ ['outputs','outputs','Datos de salida','OS_ARTIFACT_TYPE'],
+ ['automation_ai','automationAi','Automatización e IA','text'],
+ ['human_supervision','humanSupervision','Supervisión humana','text'],
+ ['controls_risk','controlsRisk','Control / riesgo','text']
+];
+function tobeAiReviewDiff(e,p,id){
+  const out={issue:'',warnings:[],fields:[],decision:null};
+  const d=tobeHumanReviewRecord(e,p)?.decisions?.[String(id)];
+  if(!tobeEditable(p)||!d||!['ACCEPT','MODIFY'].includes(d.status)){
+    out.issue='Primero registra tu decisión y justificación sobre la propuesta IA.';return out;
+  }
+  out.decision=d.status;
+  const source=typeof internalAiSavedDraft==='function'?internalAiSavedDraft(e):null;
+  const ai=source?.items?.find(x=>String(x.source_step_id)===String(id));
+  const item=p.items.find(x=>String(x.sourceStepId)===String(id));
+  if(!ai||!item||!Array.isArray(ai.source_refs)||!ai.source_refs.map(String).includes(String(id))){
+    out.issue='No existe una recomendación guardada y trazable a esta actividad.';return out;
+  }
+  const blocked=source.review?.blocking_step_ids?.includes(String(id))||
+    source.review?.issues?.some(x=>x.category==='BLOCKING'&&
+      (!x.step_id||x.step_id==='GLOBAL'||String(x.step_id)===String(id)));
+  if(blocked||source.review?.review_mode==='RULES_ONLY'){
+    if(d.status==='ACCEPT'){out.issue='Hay bloqueos en la propuesta IA: utiliza «Modificar antes de usar» para seleccionar cambios concretos.';return out;}
+    out.warnings.push('La propuesta tiene observaciones o sólo revisión por reglas. Cada campo seleccionado es una hipótesis que debes verificar.');
+  }
+  const narrative=typeof internalAiPilotNarrative==='function'?internalAiPilotNarrative(ai.rationale):{action:''};
+  const contradiction=ai.transformation==='Se mantiene'&&
+    /automatiz|implement|integr|modific|rediseñ|sustitu/i.test(
+      String(narrative.action||'')+' '+String(ai.automation_ai||''));
+  if(contradiction)out.warnings.push('La IA indica «Se mantiene» pero recomienda cambios: selecciona «Qué cambia» manualmente.');
+  for(const [sourceKey,key,label,type] of TOBE_AI_REVIEW_FIELDS){
+    const raw=String(ai[sourceKey]??'').trim();
+    if(!raw||/^(no|n\/a|ninguno|sin definir|pendiente|—)$/i.test(raw))continue;
+    if(type==='transformation'&&(!TOBE_TRANSFORMATIONS.includes(raw)||contradiction))continue;
+    let value=raw,display=raw;
+    if(type.startsWith('OS_')){
+      const opts=fieldOptions(type);
+      const parts=type==='OS_ARTIFACT_TYPE'?raw.split(/[,;|]/).map(x=>x.trim()).filter(Boolean):[raw];
+      const selected=parts.map(x=>opts.find(o=>String(o.value)===x||
+        String(o.label||'').toLowerCase()===x.toLowerCase()));
+      if(!parts.length||selected.some(x=>!x)){
+        out.warnings.push('«'+label+'» contiene opciones no confirmadas en el catálogo. Revísalas manualmente.');continue;
+      }
+      value=type==='OS_ARTIFACT_TYPE'?selected.map(x=>String(x.value)):String(selected[0].value);
+      display=selected.map(x=>x.label).join(' · ');
+    }
+    if(JSON.stringify(item[key])===JSON.stringify(value))continue;
+    out.fields.push({key,label,value,display,before:Array.isArray(item[key])?
+      item[key].join(' · '):String(item[key]||'Sin definir')});
+  }
+  return out;
+}
+// [AUNEA-FE-PG11-AI-REVIEW-DIFF-260] END
 // [AUNEA-FE-PG11-AI-STEP-APPLY-230] START — human-authorized, source-linked
 // per-activity application. No bulk field copy, no overwrite and no client approval.
 // SOURCE: DEC-050/052/055; PG11 CANONICAL; existing reviewer and human decisions.
