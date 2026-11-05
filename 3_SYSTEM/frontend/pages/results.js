@@ -1151,6 +1151,32 @@ function tobeAiInlineHint(e,p,item,key){
   const ai=data?.items?.find(x=>String(x.source_step_id)===String(item.sourceStepId));
   if(!ai||!Array.isArray(ai.source_refs)||
      !ai.source_refs.map(String).includes(String(item.sourceStepId)))return '';
+  if(history&&!currentData){
+    const info=TOBE_AI_REVIEW_FIELDS.find(x=>x[1]===key);
+    if(!info)return '';
+    const raw=String(ai[info[0]]??'').trim();
+    const options=info[3].startsWith('OS_')?fieldOptions(info[3]):[];
+    const parts=info[3]==='OS_ARTIFACT_TYPE'?raw.split(/[,;|]/):[raw];
+    const display=raw&&options.length?parts.filter(Boolean).map(v=>{
+      const value=v.trim(),found=options.find(x=>String(x.value)===value||
+        String(x.label||'').trim().toLowerCase()===value.toLowerCase());
+      return String(found?.label||value);
+    }).join(' · '):raw;
+    const narrative=typeof internalAiPilotNarrative==='function'?
+      internalAiPilotNarrative(ai.rationale):{reason:''};
+    return '<div class="tobe-ai-inline" data-tobe-ai-field-key="'+attr(key)+'">'+
+      '<p class="field-help"><b>Propuesta IA anterior · TO-BE v'+esc(history.version)+
+      ' (solo lectura):</b> '+esc(display||'Sin valor propuesto para este campo')+'</p>'+
+      '<p class="field-help">No pertenece al borrador vigente v'+esc(p.version)+
+      '. No se aplicará automáticamente; conserva tus valores actuales.</p>'+
+      (raw?'<details class="tobe-subdetails"><summary>Fundamento y fuentes de la propuesta anterior</summary>'+
+        '<p><b>Justificación general de la actividad:</b> '+esc(narrative.reason||'Sin justificación adicional')+'</p>'+
+        '<p><b>Referencias:</b> '+esc(typeof internalAiReadableRefs==='function'?
+          internalAiReadableRefs(e,ai.source_refs):ai.source_refs.join(' · '))+'</p>'+
+        '<p><b>Condiciones pendientes:</b> '+esc(ai.limitations||'No declaradas')+'</p>'+
+        '</details>':'')+
+      '</div>';
+  }
   const diff=tobeAiReviewDiff(e,p,item.sourceStepId),
     matched=diff.allFields.find(x=>x.key===key),
     skipped=diff.skipped.find(x=>x.key===key),
