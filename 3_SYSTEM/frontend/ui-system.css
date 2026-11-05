@@ -2973,6 +2973,9 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 .tobe-ai-inline .tobe-subdetails{margin:0}
 .tobe-ai-inline-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .tobe-ai-inline-actions .btn{min-height:34px;white-space:normal}
+.tobe-guided-field-actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:10px;
+  padding-top:12px;border-top:1px solid var(--system-line)}
+.tobe-workspace[data-tobe-mode="map"] .tobe-guided-field-actions{display:none}
 .tobe-ai-inline details p{line-height:1.5;font-size:12px}
 @media(max-width:650px){
  .tobe-guided-nav{padding:12px;position:static}
