@@ -831,6 +831,12 @@ function saveTobeFromDom(e){
     const item=[...p.items,...tobeAddedSteps(p)].find(x=>x.id===el.dataset.tobeItem);
     if(item)item[el.dataset.tobeField]=el.value;
   });
+  document.querySelectorAll('[data-tobe-catalog-item]').forEach(box=>{
+    const item=[...p.items,...tobeAddedSteps(p)].find(x=>String(x.id)===box.dataset.tobeCatalogItem);
+    const field=box.dataset.tobeCatalogField,select=box.querySelector('[data-model-set]');
+    if(item&&select&&['futureActor','tool'].includes(field))
+      item[field]=resolveCatalogInput(select);
+  });
   document.querySelectorAll('[data-tobe-multi-item]').forEach(box=>{
     if(box.dataset.tobeMultiReadonly==='1')return;
     const item=[...p.items,...tobeAddedSteps(p)].find(x=>String(x.id)===box.dataset.tobeMultiItem);
@@ -839,13 +845,15 @@ function saveTobeFromDom(e){
     if(key!=='inputs'&&key!=='outputs')return;
     const chosen=[...box.querySelectorAll('[data-v1-multi]')].filter(x=>x.checked).map(x=>String(x.value));
     const current=tobeArtifactValues(item[key]);
-    if(current.unknown.length){
-      // Existing unsupported codes are never discarded by unrelated saves.
-      item[key]=[...chosen,...current.unknown];
-    }else item[key]=chosen;
+    const removeLegacy=box.querySelector('[data-tobe-drop-legacy]')?.checked;
+    item[key]=removeLegacy?chosen:[...chosen,...current.unknown];
+    const other=typeof catalogOtherOption==='function'?
+      catalogOtherOption(fieldOptions('OS_ARTIFACT_TYPE')):null;
     const detail=box.querySelector('[id="'+id+'_detail"]');
     if(!item._details||typeof item._details!=='object')item._details={};
     item._details[key]=detail?.value||'';
+    if(other&&item._details[key]&&!item[key].includes(String(other.value)))
+      item[key].push(String(other.value));
   });
   const start=document.querySelector('[data-tobe-flow-start]');
   const routes=[...document.querySelectorAll('[data-tobe-route-step]')];
@@ -878,21 +886,39 @@ function tobeArtifactValues(value){
   }
   return {resolved,unknown};
 }
+function tobeCatalogField(item,key,label,setId,disabled=false){
+  const raw=String(item[key]||''),opts=fieldOptions(setId),
+    match=opts.find(o=>String(o.value)===raw||
+      String(o.label||'').trim().toLowerCase()===raw.trim().toLowerCase());
+  const selected=match?String(match.value):raw;
+  const id='tobe_catalog_'+key+'_'+String(item.id).replace(/[^a-zA-Z0-9_-]/g,'_');
+  const control=disabled?'<input disabled value="'+attr(match?.label||raw)+'">':
+    datalistControl(id,setId,selected,'Selecciona una opción del catálogo vigente');
+  return '<div class="field" data-tobe-catalog-item="'+attr(item.id)+
+    '" data-tobe-catalog-field="'+attr(key)+'"><label>'+esc(label)+'</label>'+
+    control+'<p class="field-help">Utiliza el mismo selector de AUNEA que en la captura del proceso. '+
+    'Si la opción no existe, especifica el valor mediante «Otro».</p></div>';
+}
 function tobeArtifactField(item,key,label,disabled=false){
   const opts=typeof fieldOptions==='function'?fieldOptions('OS_ARTIFACT_TYPE'):[];
   const {resolved,unknown}=tobeArtifactValues(item[key]);
   const htmlId='tobe_artifact_'+key+'_'+String(item.id).replace(/[^a-zA-Z0-9_-]/g,'_');
   const details=String(item._details?.[key]||'');
+  const other=catalogOtherOption(opts);
+  const current=details&&other&&!resolved.includes(String(other.value))?
+    [...resolved,String(other.value)]:resolved;
   const controls=typeof selectedHtml==='function'?
-    selectedHtml(htmlId,opts,resolved,{wrapped:true,detailId:htmlId+'_detail',
+    selectedHtml(htmlId,opts,current,{wrapped:true,detailId:htmlId+'_detail',
       detailValue:details,detailPlaceholder:'Especifica '+(key==='inputs'?'el dato de entrada':'el resultado')+' al seleccionar Otro'}):
     '<p class="notice warn">No se ha cargado el componente canónico de multiselección.</p>';
   return '<div class="field full tobe-artifact-field" data-tobe-multi-item="'+attr(item.id)+
     '" data-tobe-multi-key="'+attr(key)+'" data-tobe-multi-id="'+attr(htmlId)+'"'+
     (disabled?' data-tobe-multi-readonly="1"':'')+'><label>'+esc(label)+'</label>'+
-    '<div'+(disabled?' class="tobe-readonly-options"':'')+'>'+controls+'</div>'+
+    (disabled?'<fieldset disabled class="tobe-readonly-options">'+controls+'</fieldset>':
+      '<div>'+controls+'</div>')+
     (unknown.length?'<p class="notice warn">Valor anterior no reconocido por el catálogo vigente: '+
-      esc(unknown.join(' · '))+'. Se conserva en el borrador hasta que selecciones las opciones válidas.</p>':'')+
+      esc(unknown.join(' · '))+'. Se conserva hasta que indiques expresamente que quieres retirarlo.</p>'+
+      (disabled?'':'<label class="field-help"><input type="checkbox" data-tobe-drop-legacy="1"> Eliminar estos valores antiguos no reconocidos al guardar</label>'):'')+
     '<p class="field-help">Selecciona las opciones del catálogo utilizado en el AS-IS. '+
     '«Otro» permite concretar un valor. No escribas códigos separados por comas.</p></div>';
 }
@@ -1422,7 +1448,8 @@ function tobeCanvasHtml(e,p){
         '<span class="tobe-node-icon">'+processNodeIconSvg(processNodeIconName(step))+'</span>'+
         '<strong>'+esc(tobeFlowItemName(item))+'</strong>'+
         '<span class="tobe-node-status">'+esc(item.transformation||'Pendiente de diseño')+'</span>'+
-        '<small>'+esc(item.futureActor||'Responsable pendiente')+'</small></button>'+
+        '<small>'+esc((typeof labelFrom==='function'?labelFrom('OS_ACTOR_ROLE',item.futureActor):'')||
+          item.futureActor||'Responsable pendiente')+'</small></button>'+
         (editable?'<div class="tobe-node-tools" aria-label="Acciones de actividad">'+
           '<button type="button" data-tobe-move="'+id+'" title="Mover tarjeta por el mapa">Mover</button>'+
           '<button type="button" data-tobe-connect="'+id+'" data-tobe-kind="normal" title="Selecciona después la actividad de destino">Conectar</button>'+
@@ -1496,8 +1523,8 @@ function tobeInspectorHtml(e,p){
         item.transformation==='Se mantiene'?'Motivo para conservar la actividad':
         item.transformation==='Se elimina'?'Por qué se elimina y qué necesidad resuelve':
         'Qué problema resuelve',item.problemResolved,'textarea',!editable)+
-      tobeField(item,'futureActor','Responsable futuro',item.futureActor,'text',!editable)+
-      tobeField(item,'tool','Herramienta / arquitectura',item.tool,'text',!editable)+
+      tobeCatalogField(item,'futureActor','Responsable futuro','OS_ACTOR_ROLE',!editable)+
+      tobeCatalogField(item,'tool','Herramienta / arquitectura','OS_TOOL_CATEGORY',!editable)+
       '<div class="tobe-data-pair">'+tobeArtifactField(item,'inputs','Datos de entrada',!editable)+'</div>'+
       '<div class="tobe-data-pair">'+tobeArtifactField(item,'outputs','Datos de salida',!editable)+'</div>'+
       tobeField(item,'automationAi','Automatización e IA',item.automationAi,'textarea',!editable)+
