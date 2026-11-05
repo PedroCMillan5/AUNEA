@@ -639,7 +639,7 @@ async function main(){
   });
   await page.locator('#createTobeDraft').click();
   const pg11=await page.evaluate(()=>({count:currentEng().tobeProposals?.length||0,status:currentEng().tobeProposals?.at(-1)?.status,
-    nodes:document.querySelectorAll('[data-tobe-select]').length,
+    nodes:document.querySelectorAll('.tobe-guided-tabs [data-tobe-select]').length,
     inspectorFields:document.querySelectorAll('[data-tobe-field="transformation"]').length}));
   assert.deepEqual(pg11,{count:1,status:'DRAFT',nodes:tobeSteps,inspectorFields:1},
     'PG11 creates one DRAFT, a source-linked node per step, and one contextual inspector');
