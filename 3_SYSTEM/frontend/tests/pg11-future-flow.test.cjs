@@ -188,7 +188,7 @@ test('PG11 existing inspector guides AS-IS, AI advice, future design and connect
   for(const stage of stages)
     assert.match(inspector,new RegExp('data-tobe-jump="'+stage+'"'));
   assert.match(inspector,/data-tobe-mode-switch="map"/);
-  assert.match(inspector,/tobeAiAdviceHtml\(e,item\)/);
+  assert.match(inspector,/tobeAiAdviceHtml\(e,item,false\)/);
   assert.match(inspector,/tobeArtifactField\(item,'inputs'/);
   assert.match(inspector,/tobeArtifactField\(item,'outputs'/);
   assert.match(inspector,/tobeFlowInspector\(e,p,item\)/);
