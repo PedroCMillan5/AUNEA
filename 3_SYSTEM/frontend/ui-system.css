@@ -3211,7 +3211,8 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 }
 .tobe-inspector .tobe-edit>h3{margin:0 0 5px;font-size:17px}
 .tobe-inspector .tobe-edit>.tobe-muted{margin:4px 0 9px;font-size:12px}
-.tobe-workspace[data-tobe-mode="guided"] .tobe-context{display:none}
+/* PG11 sección 01: el contexto confirmado debe permanecer visible en revisión guiada. */
+.tobe-workspace[data-tobe-mode="guided"] .tobe-context{display:flex}
 .tobe-workspace[data-tobe-mode="guided"] .tobe-inspector{padding:16px}
 .tobe-workspace[data-tobe-mode="guided"] .tobe-ai-per-step-action{
   margin:7px 0 10px;
