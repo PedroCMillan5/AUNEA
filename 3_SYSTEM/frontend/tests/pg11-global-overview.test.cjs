@@ -6,6 +6,7 @@ const path=require('node:path');
 const vm=require('node:vm');
 const src=fs.readFileSync(path.join(__dirname,'../pages/results.js'),'utf8');
 const ai=fs.readFileSync(path.join(__dirname,'../domain/internal-ai-pilot.js'),'utf8');
+const css=fs.readFileSync(path.join(__dirname,'../ui-system.css'),'utf8');
 const block=src.match(/\/\/ \[AUNEA-FE-PG11-GLOBAL-OVERVIEW-284\] START[\s\S]*?\/\/ \[AUNEA-FE-PG11-GLOBAL-OVERVIEW-284\] END/)?.[0];
 
 function harness(result){
@@ -32,6 +33,12 @@ test('PG11 shows current context before global analysis, then the activity revie
   assert.ok(src.indexOf('<section class="tobe-context"')<src.indexOf('tobeGlobalOverviewHtml(e,p)+'));
   assert.ok(src.indexOf('tobeGlobalOverviewHtml(e,p)+')<src.indexOf('tobeGuidedNavHtml(e,p)+'));
   assert.match(src,/01 · Información general/);
+});
+
+test('section 01 remains visible in guided mode with System-native styling',()=>{
+  assert.match(css,/\.tobe-workspace\[data-tobe-mode="guided"\] \.tobe-context\{display:flex\}/);
+  assert.match(css,/\.tobe-global-analysis\{/);
+  assert.match(css,/var\(--system-line\)/);
 });
 
 test('global button is separate from per-step generation and displays no fabricated KPIs',()=>{
