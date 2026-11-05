@@ -1137,6 +1137,63 @@ function tobeAiReviewDiff(e,p,id){
   return out;
 }
 // [AUNEA-FE-PG11-AI-REVIEW-DIFF-260] END
+
+// [AUNEA-FE-PG11-FIELD-INLINE-263] START — existing input controls remain sole owners.
+// SOURCE: Simulator CANONICAL PG11; DEC-050, DEC-056; IA versioned proposal.
+// INPUT: existing TO-BE item and source-linked IA; OUTPUT: read-only, field-adjacent advice.
+// SIDE EFFECTS: none. An explicit existing human decision gates any apply action.
+function tobeAiInlineHint(e,p,item,key){
+  if(item.isAddition)return '';
+  const data=typeof internalAiSavedDraft==='function'?internalAiSavedDraft(e):null;
+  const ai=data?.items?.find(x=>String(x.source_step_id)===String(item.sourceStepId));
+  if(!ai||!Array.isArray(ai.source_refs)||
+     !ai.source_refs.map(String).includes(String(item.sourceStepId)))return '';
+  const diff=tobeAiReviewDiff(e,p,item.sourceStepId),
+    matched=diff.allFields.find(x=>x.key===key),
+    skipped=diff.skipped.find(x=>x.key===key),
+    field=TOBE_AI_REVIEW_FIELDS.find(x=>x[1]===key);
+  if(!field||(!matched&&!skipped))return '';
+  const decision=tobeHumanReviewRecord(e,p)?.decisions?.[String(item.sourceStepId)],
+    dismissed=decision?.status==='DISCARD',
+    narrative=typeof internalAiPilotNarrative==='function'?
+      internalAiPilotNarrative(ai.rationale):{reason:'',action:''};
+  const explain=String(narrative.reason||'').trim(),
+    action=String(narrative.action||'').trim(),
+    refs=typeof internalAiReadableRefs==='function'?
+      internalAiReadableRefs(e,ai.source_refs):
+      ai.source_refs.join(' · '),
+    pending=String(ai.limitations||'').trim(),
+    value=matched?.display||skipped?.raw||'';
+  const permitted=!!matched?.changed&&!diff.issue&&!dismissed&&tobeEditable(p);
+  return '<div class="tobe-ai-inline" data-tobe-ai-field-key="'+attr(key)+'">'+
+    '<p class="field-help"><b>IA propone:</b> '+esc(value)+
+    (skipped?' · <b>Revisión manual necesaria</b>':
+      matched&&!matched.changed?' · Coincide con el TO-BE':'')+'</p>'+
+    (skipped?'<p class="field-help">'+esc(skipped.reason)+'</p>':'')+
+    '<details class="tobe-subdetails"><summary>Justificación, fuentes y límites de la propuesta IA</summary>'+
+      '<p><b>Fundamento de la actividad:</b> '+esc(explain||'No se aportó justificación separada para este campo.')+'</p>'+
+      (action?'<p><b>Intervención propuesta:</b> '+esc(action)+'</p>':'')+
+      '<p><b>Fuentes vinculadas:</b> '+esc(refs||'No identificadas')+'</p>'+
+      '<p><b>Condiciones pendientes:</b> '+esc(pending||'No declaradas')+'</p>'+
+    '</details>'+
+    (permitted?'<div class="tobe-ai-inline-actions">'+
+      '<button type="button" class="btn btn-outline btn-small" data-tobe-ai-use-field="'+
+      attr(key)+'" data-tobe-ai-use-source="'+attr(item.sourceStepId)+'">Usar propuesta IA</button>'+
+      '<button type="button" class="btn btn-outline btn-small" data-tobe-ai-edit-field="'+attr(key)+
+      '">Editar valor</button></div>':
+      '<p class="field-help">'+esc(dismissed?'Recomendación descartada; se conserva el valor del consultor.':
+        skipped?'Selecciona un valor válido en el control original.':
+        diff.issue||'Se mantiene el valor actual del TO-BE.')+'</p>')+
+    '</div>';
+}
+function tobeWithAiHint(e,p,item,key,html){
+  const advice=tobeAiInlineHint(e,p,item,key);
+  if(!advice)return html;
+  const close=html.lastIndexOf('</div>');
+  return close<0?html:html.slice(0,close)+advice+html.slice(close);
+}
+// [AUNEA-FE-PG11-FIELD-INLINE-263] END
+
 // [AUNEA-FE-PG11-AI-STEP-APPLY-230] START — source-linked,
  // field-selected manual application with explicit review and persistent audit.
  // No new route or automatic technical/client approval.
