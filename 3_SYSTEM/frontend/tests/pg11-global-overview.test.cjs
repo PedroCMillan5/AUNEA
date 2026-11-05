@@ -123,4 +123,93 @@ test('stale global response cannot appear as current after AS-IS change',()=>{
   assert.doesNotMatch(h.html(),/Oportunidad antigua/);
   assert.match(h.html(),/Análisis pendiente/);
 });
+
+test('global IA uses the existing local endpoint and durably saves only DRAFT suggestions',async()=>{
+  const aiBlock=ai.match(/\/\/ \[AUNEA-FE-PG11-GLOBAL-AI-285\] START[\s\S]*?\/\/ \[AUNEA-FE-PG11-GLOBAL-AI-285\] END/)?.[0];
+  assert.ok(aiBlock,'Missing existing global IA engine');
+  const p={status:'DRAFT',version:2,sourceSnapshotVersion:3,items:[{sourceStepId:'S1',futureActor:'Consultor'}]};
+  const e={id:'E1',confirmedAsIs:true,tobeProposals:[p]};
+  const calls=[],saved=[],messages=[];
+  let persisted='';
+  const sandbox={
+    __auneaAiWorking:new Set(),
+    __auneaPg11ReviewProtocol:'PG11_REVIEW_20261103_3',
+    internalAiPilotKey:()=> 'E1|3|HASH|TOBE:2',
+    currentEng:()=>e,
+    latestTobe:()=>p,
+    confirmedSnapshot:()=>({version:3}),
+    currentDiagnosticOutput:()=>({input_snapshot_hash:'HASH'}),
+    tobeEditable:owner=>owner.status==='DRAFT',
+    isClientDisplay:()=>false,
+    saveTobeFromDom:()=>true,
+    saveState:label=>{saved.push(label);persisted=JSON.stringify({engagements:[e]});return true;},
+    markDirty:label=>messages.push(label),
+    toast:label=>messages.push(label),
+    now:()=> '2026-11-05T18:00:00Z',
+    STORAGE_KEY:'UAT_STORE',
+    localStorage:{getItem:key=>key==='UAT_STORE'?persisted:null},
+    document:{getElementById:()=>null},
+    state:{backendOnline:true,backendUrl:'http://127.0.0.1:8010'},
+    checkBackend:async()=>true,
+    buildBackendPayload:()=>({engagement_id:'E1'}),
+    console:{error:()=>{}},
+    fetch:async(url,options={})=>{
+      calls.push({url,options});
+      if(url.endsWith('/status'))return {ok:true,json:async()=>({
+        status:'AVAILABLE',provider:'ollama',pg11_review_protocol:'PG11_REVIEW_20261103_3'})};
+      if(url.endsWith('/tobe-global'))return {ok:true,json:async()=>({
+        status:'DRAFT',engagement_id:'E1',snapshot_version:3,input_hash:'HASH_BACKEND',
+        model:'local-pilot',summary:'Reducir duplicidades manteniendo los controles.',
+        opportunities:[{objective:'Evitar dobles entradas',how:'Reusar datos confirmados.',
+          why:'Existe una duplicidad documentada.',constraints:'Mantener aprobación humana.',
+          source_refs:['S1']}],
+      })};
+      throw Error('Unexpected endpoint: '+url);
+    },
+  };
+  vm.createContext(sandbox);vm.runInContext(aiBlock,sandbox);
+  await sandbox.generateTobeGlobal(e);
+  assert.equal(calls.filter(x=>x.url.endsWith('/tobe-global')).length,1);
+  const request=JSON.parse(calls.find(x=>x.url.endsWith('/tobe-global')).options.body);
+  assert.equal(request.snapshot_version,3);
+  assert.equal(request.confirmed_as_is,true);
+  assert.equal(request.diagnostic.input_snapshot_hash,'HASH');
+  assert.equal(p.aiGlobal.result.status,'DRAFT');
+  assert.equal(p.aiGlobal.result.opportunities[0].source_refs[0],'S1');
+  assert.equal(p.items[0].futureActor,'Consultor');
+  assert.equal(JSON.parse(persisted).engagements[0].tobeProposals[0].aiGlobal.result.summary,
+    'Reducir duplicidades manteniendo los controles.');
+  assert.equal(saved.length,2);
+  assert.equal(sandbox.internalAiGlobalMessage(e).working,false);
+  assert.match(sandbox.internalAiGlobalMessage(e).message,/guardado/);
+});
+
+test('global IA keeps the previous saved brief after an unsuccessful request',async()=>{
+  const aiBlock=ai.match(/\/\/ \[AUNEA-FE-PG11-GLOBAL-AI-285\] START[\s\S]*?\/\/ \[AUNEA-FE-PG11-GLOBAL-AI-285\] END/)?.[0];
+  const previous={result:{summary:'Análisis anterior validado como borrador'}};
+  const p={status:'DRAFT',version:2,sourceSnapshotVersion:3,items:[],aiGlobal:previous};
+  const e={id:'E1',confirmedAsIs:true,tobeProposals:[p]};
+  const sandbox={
+    __auneaAiWorking:new Set(),
+    __auneaPg11ReviewProtocol:'PG11_REVIEW_20261103_3',
+    internalAiPilotKey:()=> 'E1|3|HASH|TOBE:2',
+    currentEng:()=>e,latestTobe:()=>p,confirmedSnapshot:()=>({version:3}),
+    currentDiagnosticOutput:()=>({input_snapshot_hash:'HASH'}),
+    tobeEditable:()=>true,isClientDisplay:()=>false,
+    saveTobeFromDom:()=>true,saveState:()=>true,markDirty:()=>{},
+    toast:()=>{},document:{getElementById:()=>null},
+    state:{backendOnline:true,backendUrl:'http://127.0.0.1:8010'},
+    checkBackend:async()=>true,buildBackendPayload:()=>({engagement_id:'E1'}),
+    console:{error:()=>{}},
+    fetch:async(url)=>url.endsWith('/status')?{ok:true,json:async()=>({
+      status:'AVAILABLE',provider:'ollama',pg11_review_protocol:'PG11_REVIEW_20261103_3'})}:
+      {ok:false,status:409,json:async()=>({detail:'El contexto supera el presupuesto IA'})},
+  };
+  vm.createContext(sandbox);vm.runInContext(aiBlock,sandbox);
+  await sandbox.generateTobeGlobal(e);
+  assert.equal(p.aiGlobal,previous,'failed inference must preserve previous version-owned brief');
+  assert.equal(sandbox.internalAiGlobalWorking(e),false);
+  assert.match(sandbox.internalAiGlobalMessage(e).message,/contexto supera el presupuesto IA/);
+});
+
 // [AUNEA-UAT-PG11-GLOBAL-OVERVIEW-288] END
