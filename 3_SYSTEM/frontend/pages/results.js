@@ -1800,7 +1800,8 @@ function tobeInspectorHtml(e,p){
   if(!item)return '<div class="notice warn">No hay actividades TO-BE vinculadas al AS-IS.</div>';
   const allItems=[...(p.items||[]),...tobeAddedSteps(p)],
     itemIndex=allItems.findIndex(x=>tobeFlowItemId(x)===tobeFlowItemId(item)),
-    nextItem=itemIndex>=0?allItems[itemIndex+1]:null;
+    nextItem=itemIndex>=0?allItems[itemIndex+1]:null,
+    previousItem=itemIndex>0?allItems[itemIndex-1]:null;
   const choice=tobeHumanReviewRecord(e,p)?.decisions?.[String(item.sourceStepId)];
   const hasCurrentAi=typeof internalAiSavedDraft==='function'&&
     internalAiSavedDraft(e)?.items?.some(x=>String(x.source_step_id)===String(item.sourceStepId));
@@ -1819,10 +1820,16 @@ function tobeInspectorHtml(e,p){
       '<div id="tobeAiRecommendation">'+tobeAiAdviceHtml(e,item,false)+'</div></details></section>';
   return '<header class="tobe-inspector-head"><div><span class="tobe-eyebrow">'+
       (item.isAddition?'ACTIVIDAD NUEVA · VINCULADA A AS-IS':'ACTIVIDAD SELECCIONADA · ORIGEN AS-IS')+
-      '</span><h2>'+esc(tobeFlowItemName(item))+'</h2>'+
+      '</span><h2>'+(itemIndex>=0?'P'+(itemIndex+1)+' · ':'')+esc(tobeFlowItemName(item))+'</h2>'+
       (item.isAddition?'<p class="tobe-muted">Origen confirmado: '+esc(item.sourceStepName)+
         ' · Esta actividad existe sólo en el borrador TO-BE.</p>':'')+
-      '</div><span class="tobe-selected-status">'+esc(item.transformation||'Sin definir')+'</span></header>'+
+      '</div><div class="tobe-inspector-navigation"><span class="tobe-selected-status">'+
+        esc(item.transformation||'Sin definir')+'</span>'+
+        (previousItem?'<button type="button" class="btn btn-outline btn-small" data-tobe-select="'+
+          attr(tobeFlowItemId(previousItem))+'">Anterior</button>':'')+
+        (nextItem?'<button type="button" class="btn btn-outline btn-small" data-tobe-select="'+
+          attr(tobeFlowItemId(nextItem))+'">Siguiente actividad</button>':'')+
+      '</div></header>'+
     '<nav class="tobe-review-steps" aria-label="Orden de revisión">'+
       '<button type="button" class="btn btn-outline btn-small" style="margin:0 12px 10px 0" data-tobe-jump="tobeStepOrigin">1 · Entender</button>'+
       '<button type="button" class="btn btn-outline btn-small" style="margin:0 12px 10px 0" data-tobe-jump="tobeStepAdvice">2 · Revisar IA</button>'+
@@ -1907,13 +1914,10 @@ function tobeGuidedNavHtml(e,p){
     guidedItems.map((step,i)=>'<button type="button" class="btn btn-outline btn-small '+
       (tobeFlowItemId(step)===selectedId?'is-selected':'')+'" data-tobe-select="'+
       attr(tobeFlowItemId(step))+'" aria-pressed="'+String(tobeFlowItemId(step)===selectedId)+'">'+
-      esc(tobeFlowItemName(step))+'</button>').join('')+'</div>'+
+      '<b>P'+(i+1)+'</b> '+esc(tobeFlowItemName(step).split(/\s+/).slice(0,3).join(' '))+
+      '</button>').join('')+'</div>'+
     '<div class="tobe-guided-switch"><span class="tobe-muted">Actividad '+
-      (focusedIndex+1)+' de '+guidedItems.length+'</span>'+
-      (focusedIndex?'<button type="button" class="btn btn-outline btn-small" data-tobe-select="'+
-        attr(tobeFlowItemId(guidedItems[focusedIndex-1]))+'">Actividad anterior</button>':'')+
-      (focusedIndex<guidedItems.length-1?'<button type="button" class="btn btn-outline btn-small" data-tobe-select="'+
-        attr(tobeFlowItemId(guidedItems[focusedIndex+1]))+'">Siguiente actividad</button>':'')+
+      (focusedIndex+1)+' de '+guidedItems.length+'</span>'+ 
     '</div></nav>';}
 // [AUNEA-FE-PG11-GUIDED-NAV-266] END
 function tobePage(){
