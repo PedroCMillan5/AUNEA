@@ -1145,7 +1145,9 @@ function tobeAiReviewDiff(e,p,id){
 // SIDE EFFECTS: none. An explicit existing human decision gates any apply action.
 function tobeAiInlineHint(e,p,item,key){
   if(item.isAddition)return '';
-  const data=typeof internalAiSavedDraft==='function'?internalAiSavedDraft(e):null;
+  const currentData=typeof internalAiSavedDraft==='function'?internalAiSavedDraft(e):null;
+  const history=!currentData&&typeof internalAiHistoricalDraft==='function'?internalAiHistoricalDraft(e):null;
+  const data=currentData||history?.proposal;
   const ai=data?.items?.find(x=>String(x.source_step_id)===String(item.sourceStepId));
   if(!ai||!Array.isArray(ai.source_refs)||
      !ai.source_refs.map(String).includes(String(item.sourceStepId)))return '';
