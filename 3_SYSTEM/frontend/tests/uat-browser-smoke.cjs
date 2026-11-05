@@ -734,7 +734,20 @@ async function main(){
   await page.evaluate(()=>{document.querySelector('#tobeAiWorkspace').open=true;});
   assert.equal(await page.locator('#tobeAiPilotStatus .pg11-ai-step').count(),tobeSteps,
     'checkpoint cards must recover after real browser reload');
-  assert.match(await page.locator('#tobeAiPilotStatus').innerText(),/guardadas en el estudio/);
+  const pg11ReloadText=await page.locator('#tobeAiPilotStatus').innerText();
+  if(!/guardadas en el estudio/.test(pg11ReloadText)){
+    const visibility=await page.evaluate(()=>{
+      const el=document.getElementById('tobeAiPilotStatus'),nodes=[];
+      for(let n=el;n&&nodes.length<7;n=n.parentElement){
+        const r=n.getBoundingClientRect();
+        nodes.push({tag:n.tagName,id:n.id,open:n.open,display:getComputedStyle(n).display,
+          visibility:getComputedStyle(n).visibility,width:r.width,height:r.height});
+      }
+      return {text:el?.textContent?.slice(0,450),readable:el?.innerText?.slice(0,450),nodes};
+    });
+    console.log('PG11_RELOADED_PANEL_DIAGNOSTIC: '+JSON.stringify(visibility));
+  }
+  assert.match(pg11ReloadText,/guardadas en el estudio/);
   assert.equal(await page.locator('#retryTobeAiReview').count(),1,
     'review may be retried without regenerating any verified activities');
   for(let i=sourceIds.length-1;i>=0;i--){
