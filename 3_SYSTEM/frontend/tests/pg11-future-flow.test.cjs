@@ -126,7 +126,7 @@ test('PG11 field help describes every text field and treats NO as invalid ration
   for(const field of ['stepName','problemResolved','futureActor','tool','inputs','outputs',
     'automationAi','humanSupervision','controlsRisk','futureTime','futureTimeAssumption'])
     assert.match(src,new RegExp(' '+field+':'),field+' must have contextual guidance');
-  assert.match(src,/const shown=suspect&&key==='problemResolved'\?'':'raw/);
+  assert.match(src,/const shown=raw/);
   assert.match(src,/placeholder="'\+attr\(help\)/);
 });
 test('PG11 free canvas has separately persisted positions and explicit YES/NO connections',()=>{
@@ -166,5 +166,14 @@ test('PG11 canvas uses actual pixel positions, not grid row and column placement
   assert.doesNotMatch(canvas,/style="grid-row:/);
   assert.match(src,/saveState\('Guardar posición visual TO-BE'\)/);
   assert.match(src,/draft\.flow=previous/);
+});
+test('PG11 canonical controls retain catalog-based inputs, outputs, roles and tools',()=>{
+  assert.match(src,/AUNEA-FE-PG11-CANONICAL-CONTROLS-251/);
+  assert.match(src,/selectedHtml\(htmlId,opts,current/);
+  assert.match(src,/tobeArtifactField\(item,'inputs','Datos de entrada'/);
+  assert.match(src,/tobeArtifactField\(item,'outputs','Datos de salida'/);
+  assert.match(src,/tobeCatalogField\(item,'futureActor','Responsable futuro','OS_ACTOR_ROLE'/);
+  assert.match(src,/data-tobe-drop-legacy/);
+  assert.match(src,/const shown=raw/);
 });
 // [AUNEA-UAT-PG11-FUTURE-FLOW-233] END
