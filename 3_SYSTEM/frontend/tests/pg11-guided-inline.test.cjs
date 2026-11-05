@@ -71,10 +71,12 @@ test('MODIFY authorizes only safe options, never contradictory transformation',(
  assert.ok(!diff.fields.some(x=>x.key==='transformation'));
  assert.ok(diff.skipped.some(x=>x.key==='transformation'));
  const html=f.context.tobeAiInlineHint(f.e,f.p,f.p.items[0],'outputs');
- assert.match(html,/data-tobe-ai-use-field="outputs"/);
- assert.match(html,/data-tobe-ai-use-source="P1"/);
+ assert.doesNotMatch(html,/data-tobe-ai-use-field="outputs"/);
+ assert.match(src,/function tobeAiRowActions/);
+ assert.match(src,/data-tobe-ai-use-field/);
+ assert.match(src,/data-tobe-ai-action-source/);
  assert.match(html,/Condición de revisión:/);
- assert.match(html,/Editar valor/);
+ assert.match(src,/data-tobe-ai-edit-field/);
  const bad=f.context.tobeAiInlineHint(f.e,f.p,f.p.items[0],'transformation');
  assert.match(bad,/Revisión manual necesaria/);
  assert.doesNotMatch(bad,/data-tobe-ai-use-field/);
@@ -99,13 +101,13 @@ test('review navigation derives active step, neighbors and current UI-only mode'
  vm.createContext(context);vm.runInContext(navBlock,context);
  let html=context.tobeGuidedNavHtml({}, {items:steps});
  assert.match(html,/Actividad 1 de 4/);
- assert.match(html,/Siguiente actividad/);
+ assert.match(html,/P2/);
  assert.doesNotMatch(html,/Actividad anterior/);
  index=2;context.__auneaTobeMode='map';
  vm.runInContext(navBlock,context);
  html=context.tobeGuidedNavHtml({}, {items:steps});
  assert.match(html,/Actividad 3 de 4/);
- assert.match(html,/Actividad anterior/);
+ assert.match(html,/P3/);
  assert.match(html,/aria-pressed="true">Mapa TO-BE/);
  assert.match(html,/data-tobe-select="P4"/);
 });
@@ -117,7 +119,7 @@ test('PG11 uses one canonical form and two views on one versioned TO-BE',()=>{
  assert.match(src,/function tobeGuidedNavHtml/);
  assert.match(src,/data-tobe-mode=".*__auneaTobeMode/);
  assert.match(src,/navigation.outerHTML=tobeGuidedNavHtml/);
- assert.match(src,/tobeApplyAiReviewedFields\(currentEng\(\),apply.dataset.tobeAiUseSource/);
+ assert.match(src,/tobeApplyAiReviewedFields\(currentEng\(\),apply.dataset.tobeAiActionSource/);
  assert.doesNotMatch(src,/function tobeAiStepApplicability/);
 });
 test('guided footer delegates to original Save and Check rather than duplicating business handlers',()=>{
