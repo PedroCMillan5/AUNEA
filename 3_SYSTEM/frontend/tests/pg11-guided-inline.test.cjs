@@ -171,4 +171,22 @@ test('PG11 displays confirmed AS-IS values beside the sole editable TO-BE field'
  assert.match(html,/PDF/);
  assert.equal((html.match(/data-tobe-field="outputs"/g)||[]).length,1);
 });
+test('PG11 step evidence never presents superseded risks as current',()=>{
+ const fn=src.match(/function tobeSnapshotIssueCards\(e,item\)\{[\s\S]*?\n\}/)?.[0];
+ assert.ok(fn,'The current step evidence projection must exist');
+ const snapshot={frictions:[
+   {status:'SUPERSEDED',affected_steps:['P1'],client_label:'Fricción archivada'},
+   {status:'ACTIVE',affected_steps:['P1'],client_label:'Fricción vigente'}],
+   risks:[
+     {status:'SUPERSEDED',step_ids:['P1'],description:'Riesgo descartado'},
+     {status:'ACTIVE',step_ids:['P1'],description:'Riesgo vigente'}]};
+ const sandbox={
+   tobeProposalSnapshot:()=>snapshot,latestTobe:()=>({}),
+   esc:String,labelFrom:()=>''};
+ vm.createContext(sandbox);vm.runInContext(fn,sandbox);
+ const html=sandbox.tobeSnapshotIssueCards({},{sourceStepId:'P1'});
+ assert.match(html,/Fricción vigente/);
+ assert.match(html,/Riesgo vigente/);
+ assert.doesNotMatch(html,/Fricción archivada|Riesgo descartado/);
+});
 // [AUNEA-UAT-PG11-GUIDED-267] END
