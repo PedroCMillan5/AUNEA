@@ -16,6 +16,20 @@ function internalAiPilotFeedback(e,message,type='info'){
   if(node){if(!String(node.className||'').includes('pg11-ai-panel'))node.className='notice '+(type==='warn'?'warn':'info');const label=document.getElementById('tobeAiProgress');if(label)label.textContent=message;else node.textContent=message}
 }
 function internalAiPilotRefreshPanel(e){
+  const headline=document.querySelector('.tobe-ia-guide-summary');
+  if(headline&&typeof internalAiSavedDraft==='function'){
+    const current=internalAiSavedDraft(e),
+      partial=!current&&typeof internalAiPendingSteps==='function'?
+        internalAiPendingSteps(e,internalAiPilotKey(e)):null,
+      total=latestTobe(e)?.items?.length||0,
+      existing=partial?.items?.size||0;
+    const title=headline.querySelector('strong'),body=headline.querySelector('p');
+    if(title)title.textContent=current?'Propuesta IA vigente':
+      existing?'Generación IA parcial · '+existing+'/'+total:'Propuesta IA pendiente';
+    if(body)body.textContent=current?'Ya puedes revisar y decidir por campo, comprobando bloqueos y condiciones.':
+      existing?'Las recomendaciones completadas están guardadas. Continúa con el resto antes de aplicar propuestas.':
+      'Genera una propuesta actual para obtener valores IA aplicables.';
+  }
   const panel=document.getElementById('tobeAiPilotStatus');
   if(panel)panel.outerHTML=internalAiPilotPanel(e);
   const recommendation=document.getElementById('tobeAiRecommendation');
@@ -32,7 +46,13 @@ function internalAiPilotRefreshPanel(e){
             slot=row.querySelector('.tobe-ai-inline'),
             hint=tobeAiInlineHint(e,p,selected,key);
           if(slot&&hint)slot.outerHTML=hint;
+          const controls=row.querySelector('.tobe-ai-row-actions');
+          if(controls&&typeof tobeAiRowActions==='function')
+            controls.outerHTML=tobeAiRowActions(e,p,selected,key);
         });
+        const trigger=inspector.querySelector('[data-tobe-generate-selected]');
+        if(trigger)trigger.textContent=internalAiSavedDraft(e)?
+          'Regenerar IA de esta actividad':'Analizar solo esta actividad con IA';
         const conditions=inspector.querySelector('.tobe-ai-operational-context');
         if(conditions&&typeof tobeAiOperationalContextHtml==='function')
           conditions.outerHTML=tobeAiOperationalContextHtml(e,selected);
@@ -787,8 +807,9 @@ async function generateTobeAiPilot(e,fresh=false,selectedStepId=null){
   __auneaAiWorking.add(key);
   const button=document.getElementById('generateTobeAiPilot');
   if(button){button.disabled=true;button.textContent='Comprobando IA…'}
+  // Keep the global audit closed by default; progress is reported above
+  // the editor and no consultant edits are lost by expanding it.
   const workspace=document.getElementById('tobeAiWorkspace');
-  if(workspace&&!selectedStepId)workspace.open=true;
   internalAiPilotFeedback(e,'Comprobando disponibilidad del proveedor IA…');
   try{
     if(!state.backendOnline&&!(await checkBackend()))throw Error('Backend no conectado.');
@@ -942,6 +963,12 @@ registerInternalWorkPages=function(){
     if(retryReview){
       event.preventDefault();
       if(!retryReview.disabled)void retryTobeAiReviewOnly();
+      return;
+    }
+    const complete=event.target?.closest?.('[data-tobe-generate-all-remaining]');
+    if(complete){
+      event.preventDefault();
+      if(!complete.disabled)void generateTobeAiPilot(currentEng());
       return;
     }
     const selected=event.target?.closest?.('[data-tobe-generate-selected]');
