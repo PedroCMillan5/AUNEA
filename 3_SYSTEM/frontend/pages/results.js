@@ -1173,6 +1173,9 @@ function tobeApplyAiReviewedFields(e,sourceId,keys){
     return false;
   }
   render();
+  if(typeof requestAnimationFrame==='function')
+    requestAnimationFrame(()=>document.getElementById('tobeStepDesign')?.
+      scrollIntoView({behavior:'smooth',block:'start'}));
   toast('Aplicados '+chosen.length+' campos autorizados. Revisa el diseño y las rutas; el TO-BE no queda aprobado.');
   return true;
 }
@@ -1307,7 +1310,7 @@ function tobeHumanReviewHtml(e,item,historical){
         (record?.status===status?'btn-primary':'btn-outline')+
         '" data-tobe-human-decision="'+status+'" data-tobe-human-source="'+attr(id)+'">'+
         esc(TOBE_HUMAN_LABELS[status])+'</button>').join('')+
-    '</div><p class="tobe-muted">El diseño operativo se completa en los campos TO-BE de esta actividad; ninguna recomendación se aplica automáticamente.</p>'+
+    '</div><p class="tobe-muted">La decisión no modifica el proceso. Después de guardarla, revisa la comparación «Actual / Propuesto», marca los campos que autorices y comprueba el resultado en «03 · Configurar».</p>'+
   '</section>';
 }
 // [AUNEA-FE-PG11-HUMAN-DECISIONS-223] END
@@ -2393,7 +2396,10 @@ function registerInternalWorkPages(){
     if(!stored||stored.status!==choice||stored.note!==reason)
       return toast('No se pudo verificar la persistencia de la decisión. No se ha aprobado ningún cambio.');
     render();
-    toast('Decisión guardada: '+TOBE_HUMAN_LABELS[choice]+'. El diseño TO-BE sigue en borrador.');
+    if(typeof requestAnimationFrame==='function')
+      requestAnimationFrame(()=>document.querySelector('.tobe-ai-change-review')?.
+        scrollIntoView({behavior:'smooth',block:'start'}));
+    toast('Decisión guardada: '+TOBE_HUMAN_LABELS[choice]+'. Revisa los campos propuestos; el diseño sigue en borrador.');
   },true);
   // [AUNEA-FE-PG11-HUMAN-DECISION-SAVE-224] END
   // [AUNEA-FE-PG11-AI-STEP-APPLY-231] START — apply only explicitly checked fields.
