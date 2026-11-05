@@ -1250,7 +1250,7 @@ function tobeApplyAiReviewedFields(e,sourceId,keys){
 // per-step suggestion only when it matches the current DRAFT's versioned IA checkpoint.
 // SOURCE: PG11 CANONICAL; DEC-050/052/055; no new business field or data owner.
 // SIDE_EFFECTS: display-only. Never transfers an unreviewed item into TO-BE.
-function tobeAiAdviceHtml(e,item){
+function tobeAiAdviceHtml(e,item,includeDecision=true){
   if(item?.isAddition)return '<div class="tobe-ai-empty"><p class="tobe-muted">Actividad incorporada por el consultor, vinculada a '+esc(item.sourceStepName)+'. La IA generada sobre el AS-IS no propone pasos nuevos automáticamente. Justifica la incorporación, su responsable y sus rutas antes de revisión.</p></div>';
   const key=typeof internalAiPilotKey==='function'?internalAiPilotKey(e):null;
   const cached=key&&typeof __auneaAiPreview!=='undefined'?__auneaAiPreview.get(key):null;
@@ -1301,7 +1301,7 @@ function tobeAiAdviceHtml(e,item){
         '<p>Sin observaciones específicas del revisor automático.</p>')+
     '</details>'+
     ''+
-    tobeHumanReviewHtml(e,item,!!archived)+
+    (includeDecision?tobeHumanReviewHtml(e,item,!!archived):'')+
     '<p class="tobe-muted">Los valores IA y sus fuentes aparecen junto a los campos de «03 · Configurar». La propuesta no modifica el borrador sin una decisión humana.</p>'+
     '</div>';
 }
@@ -1348,7 +1348,7 @@ function tobeHumanReviewHtml(e,item,historical){
         (record?.status===status?'btn-primary':'btn-outline')+
         '" data-tobe-human-decision="'+status+'" data-tobe-human-source="'+attr(id)+'">'+
         esc(TOBE_HUMAN_LABELS[status])+'</button>').join('')+
-    '</div><p class="tobe-muted">La decisión no modifica el proceso. Después de guardarla, revisa la comparación «Actual / Propuesto», marca los campos que autorices y comprueba el resultado en «03 · Configurar».</p>'+
+    '</div><p class="tobe-muted">La decisión no modifica el proceso. Después de guardarla, revisa cada propuesta junto a su campo TO-BE; utiliza únicamente los valores que autorices.</p>'+
   '</section>';
 }
 // [AUNEA-FE-PG11-HUMAN-DECISIONS-223] END
@@ -1681,8 +1681,9 @@ function tobeInspectorHtml(e,p){
       tobeOriginalStepFacts(e,item)+tobeSnapshotIssueCards(e,item)+'</details></section>'+
     '<section class="tobe-advice" id="tobeStepAdvice" aria-label="Sugerencia IA para actividad">'+
       '<details class="tobe-subdetails"'+(adviceOpen?' open':'')+'><summary>02 · Revisar recomendación IA y decidir</summary>'+
-      '<div id="tobeAiRecommendation">'+tobeAiAdviceHtml(e,item)+'</div></details></section>'+
+      '<div id="tobeAiRecommendation">'+tobeAiAdviceHtml(e,item,false)+'</div></details></section>'+
     '<section class="tobe-edit" id="tobeStepDesign"><h3>03 · Configurar la actividad futura</h3>'+
+      (!item.isAddition?tobeHumanReviewHtml(e,item,false):'')+
       '<p class="tobe-muted" data-tobe-transformation-message="1" role="status" aria-live="polite">Elige «Qué cambia» y completa la justificación del diseño futuro. La recomendación IA no cambia tu decisión automáticamente.</p>'+
       '<p class="tobe-muted">Estos campos describen el funcionamiento futuro. Los valores heredados se muestran para revisar, no son mejoras confirmadas ni decisiones de la IA.</p>'+
       (item.transformation==='Se mantiene'&&/^(no|n\/a|ninguno)$/i.test(String(item.problemResolved||'').trim())?
