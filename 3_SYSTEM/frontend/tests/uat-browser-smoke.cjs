@@ -643,6 +643,24 @@ async function main(){
     inspectorFields:document.querySelectorAll('[data-tobe-field="transformation"]').length}));
   assert.deepEqual(pg11,{count:1,status:'DRAFT',nodes:tobeSteps,inspectorFields:1},
     'PG11 creates one DRAFT, a source-linked node per step, and one contextual inspector');
+  const stepGuide=await page.evaluate(()=>{
+    const inspector=document.querySelector('#tobeInspector');
+    const origin=inspector?.querySelector('#tobeStepOrigin');
+    const advice=inspector?.querySelector('#tobeStepAdvice');
+    const design=inspector?.querySelector('#tobeStepDesign');
+    return {originBeforeAdvice:!!origin&&!!advice&&
+        !!(origin.compareDocumentPosition(advice)&Node.DOCUMENT_POSITION_FOLLOWING),
+      adviceBeforeDesign:!!advice&&!!design&&
+        !!(advice.compareDocumentPosition(design)&Node.DOCUMENT_POSITION_FOLLOWING),
+      sourceExpanded:!!origin?.querySelector('details[open]'),
+      adviceExpanded:!!advice?.querySelector('details[open]'),
+      stepButton:inspector?.querySelectorAll('[data-tobe-generate-selected]').length||0,
+      canonicalTransformation:inspector?.querySelectorAll('[data-tobe-field="transformation"]').length||0};
+  });
+  assert.deepEqual(stepGuide,{originBeforeAdvice:true,adviceBeforeDesign:true,
+    sourceExpanded:true,adviceExpanded:true,stepButton:1,canonicalTransformation:1},
+    'PG11 presents source, individual IA and canonical editing in the approved order');
+  console.log('PG11_GUIDED_STEP_REVIEW_PASS: '+JSON.stringify(stepGuide));
   // One click changes the inspector, without destroying any draft edits.
   const sourceIds=await page.evaluate(()=>latestTobe(currentEng()).items.map(x=>String(x.sourceStepId)));
   if(sourceIds.length>1){
