@@ -1375,7 +1375,8 @@ function tobeCanvasHtml(e,p){
           '<button type="button" data-tobe-move="'+id+'" title="Mover tarjeta por el mapa">Mover</button>'+
           '<button type="button" data-tobe-connect="'+id+'" data-tobe-kind="normal" title="Selecciona después la actividad de destino">Conectar</button>'+
           (decision?'<button type="button" data-tobe-connect="'+id+'" data-tobe-kind="exception" title="Conectar ruta NO">Ruta NO</button>':'')+
-          (item.isAddition?'<button type="button" data-tobe-discard-added="'+id+'" title="Descartar sólo esta actividad nueva">Eliminar</button>':'')+
+          (item.isAddition?'<button type="button" data-tobe-discard-added="'+id+'" title="Descartar sólo esta actividad nueva">Eliminar</button>':
+           '<button type="button" data-tobe-remove-original="'+id+'" title="Retirar sólo del proceso futuro, sin alterar el AS-IS">Retirar</button>')+
           '</div>':'');
     }
     return '<div class="process-graph-cell" style="left:'+x+'px;top:'+y+
@@ -1881,7 +1882,8 @@ function registerInternalWorkPages(){
   document.addEventListener('click',event=>{
     const add=event.target?.closest?.('#addTobeStep');
     const discard=event.target?.closest?.('[data-tobe-discard-added]');
-    if((!add&&!discard)||state.activePage!=='tobe')return;
+    const removeOriginal=event.target?.closest?.('[data-tobe-remove-original]');
+    if((!add&&!discard&&!removeOriginal)||state.activePage!=='tobe')return;
     event.preventDefault();
     const e=currentEng(),p=latestTobe(e);
     if(!e||!tobeEditable(p))return;
@@ -1908,6 +1910,30 @@ function registerInternalWorkPages(){
       __auneaTobeSelection={engagementId:live.id,version:draft.version,stepId:id};
       render();
       toast('Actividad vinculada al AS-IS. Define nombre, intervención, responsable y rutas.');
+      return;
+    }
+    if(removeOriginal){
+      const id=String(removeOriginal.getAttribute('data-tobe-remove-original')||''),
+        original=draft.items.find(x=>String(x.sourceStepId)===id);
+      if(!original||original.transformation==='Se elimina')
+        return toast('La actividad ya está retirada del TO-BE.');
+      const previousFlow=JSON.parse(JSON.stringify(flow)),previousTransformation=original.transformation;
+      original.transformation='Se elimina';
+      // Never invent replacement routes when a confirmed source activity is removed.
+      for(const route of Object.values(flow.routes)){
+        if(route?.normal===id)route.normal='__PENDING__';
+        if(route?.exception===id)route.exception='__PENDING__';
+      }
+      if(flow.startStepId===id)flow.startStepId=String(draft.items.find(x=>
+        x.transformation!=='Se elimina')?.sourceStepId||'');
+      markDirty('Retirada de actividad original únicamente del TO-BE '+id);
+      if(!saveState('Retirar actividad heredada del proceso futuro')){
+        draft.flow=previousFlow;original.transformation=previousTransformation;
+        return toast('No se pudo guardar la retirada; se ha recuperado la actividad.');
+      }
+      __auneaTobeSelection={engagementId:live.id,version:draft.version,stepId:id};
+      render();
+      toast('Actividad retirada del TO-BE. Permanece en el AS-IS; revisa las conexiones pendientes.');
       return;
     }
     const id=discard?.getAttribute('data-tobe-discard-added'),
