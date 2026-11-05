@@ -719,7 +719,15 @@ async function main(){
         'another activity must never leak into the current inspector');
     }
   }
-  assert.equal(await page.evaluate(()=>JSON.stringify(latestTobe(currentEng()).items)),
+  const inspectorBusinessAfter=await page.evaluate(()=>JSON.stringify(latestTobe(currentEng()).items));
+  if(inspectorBusinessBefore!==inspectorBusinessAfter){
+    const before=JSON.parse(inspectorBusinessBefore),after=JSON.parse(inspectorBusinessAfter);
+    const differences=before.flatMap((item,i)=>[...new Set([...Object.keys(item),...Object.keys(after[i]||{})])]
+      .filter(k=>JSON.stringify(item[k])!==JSON.stringify(after[i]?.[k]))
+      .map(k=>({step:item.sourceStepId,field:k,before:item[k],after:after[i]?.[k]})));
+    console.log('PG11_CHECKPOINT_FIELD_DIFF: '+JSON.stringify(differences).slice(0,5500));
+  }
+  assert.equal(inspectorBusinessAfter,
     inspectorBusinessBefore,'reading IA checkpoint must not modify consultant TO-BE fields');
   await page.reload({waitUntil:'domcontentloaded'});
   await page.evaluate(id=>{state.activeEngagementId=id;state.activePage='tobe';render()},partialStudyId);
