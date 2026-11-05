@@ -2160,6 +2160,15 @@ function registerInternalWorkPages(){
       requestAnimationFrame(drawProcessGraph);
   },true);
 
+  document.addEventListener('click',event=>{
+    const save=event.target?.closest?.('[data-tobe-guided-save]');
+    const check=event.target?.closest?.('[data-tobe-guided-check]');
+    if((!save&&!check)||state.activePage!=='tobe')return;
+    event.preventDefault();
+    const target=document.getElementById(save?'saveTobe':'checkTobeReadiness');
+    if(target)target.click();
+    else toast('No está disponible la acción de esta versión TO-BE.');
+  },true);
   // [AUNEA-FE-PG11-GUIDED-ACTIONS-264] END
   // [AUNEA-FE-PG11-GUIDED-INSPECTOR-253] START
   document.addEventListener('click',event=>{
