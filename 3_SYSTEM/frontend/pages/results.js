@@ -1936,6 +1936,62 @@ function createNextTobeVersion(e){
   markDirty('Nueva versión TO-BE '+version+' desde versión revisada '+previous.version);
   return true;
 }
+// [AUNEA-FE-PG11-CONTEXT-289] START — compact PG11 read-only source projection.
+// SOURCE: confirmed AS-IS snapshot / Simulator CANONICAL v1.14 PG11; DEC-050/052/055.
+// Only existing DF fields are projected; no second owner, derived target or client re-ask.
+function tobeContextOverviewHtml(e,p){
+  const snap=tobeProposalSnapshot(e,p),answers=snap?.answers||{};
+  const fieldById=id=>(schema?.fields||[]).find(f=>f.Field_ID===id)||{Field_ID:id,Option_Set_ID:null};
+  const display=id=>{
+    const raw=answers[id];
+    if(raw===null||raw===undefined||raw===''||(Array.isArray(raw)&&!raw.length))return 'No consta';
+    const field=fieldById(id);
+    const readable=typeof formatContextValue==='function'?formatContextValue(field,raw):
+      (Array.isArray(raw)?raw.map(x=>String(x)).join(' · '):String(raw));
+    return String(readable||'No consta');
+  };
+  const line=(label,value)=>'<div class="tobe-context-fact"><dt>'+esc(label)+
+    '</dt><dd>'+esc(value||'No consta')+'</dd></div>';
+  const primary=[
+    ['Inicio del proceso',display(answers.DF014?'DF014':'DF012')],
+    ['Fin del proceso',display(answers.DF015?'DF015':'DF013')],
+    ['Objetivo declarado',display('DF008')],
+    ['Resultado deseado',display('DF086')]
+  ];
+  const secondary=[
+    ['Criterios de éxito','DF009'],
+    ['Responsable del proceso','DF016'],
+    ['Restricciones iniciales','DF010'],
+    ['Elementos que deben mantenerse','DF087'],
+    ['Qué no debe automatizarse','DF088'],
+    ['Aprobaciones humanas obligatorias','DF075'],
+    ['Preferencias o límites de plataforma','DF089'],
+    ['Seguridad y acceso','DF090'],
+    ['Adopción y cambio','DF091'],
+    ['Contexto de presupuesto (si se declaró)','DF092']
+  ];
+  const process=String(snap?.processName||answers.DF011||'Proceso sin nombre confirmado');
+  const company=String(snap?.company?.name||'Empresa no consignada en el snapshot');
+  const diagnostic=diagnosticOutputFreshness(e).label;
+  const status={DRAFT:'Borrador',REVIEWED:'Revisado',APPROVED_FOR_CLIENT:'Aprobado para cliente',
+    PUBLISHED:'Publicado'}[p?.status]||'Pendiente';
+  return '<section class="tobe-context" aria-label="Información general del proceso">'+
+    '<div class="tobe-context-head"><div><span class="tobe-eyebrow">01 · INFORMACIÓN GENERAL</span>'+
+    '<h2>'+esc(process)+'</h2><p>'+esc(company)+
+    ' · Origen AS-IS confirmado v'+esc(snap?.version||p?.sourceSnapshotVersion||'—')+
+    ' · '+esc((snap?.processSteps||[]).filter(x=>x.status!=='SUPERSEDED').length)+' actividades</p></div>'+
+    '<span class="tobe-context-status">'+esc(status)+'</span></div>'+
+    '<div class="tobe-context-diagnostic">Diagnóstico oficial: <strong>'+esc(diagnostic)+
+    '</strong> · Información histórica confirmada, sólo lectura.</div>'+
+    '<dl class="tobe-context-facts">'+primary.map(([label,value])=>line(label,value)).join('')+'</dl>'+
+    '<details class="tobe-context-details"><summary>Consultar criterios y restricciones del cliente</summary>'+
+    '<dl class="tobe-context-facts tobe-context-facts-secondary">'+
+    secondary.map(([label,id])=>line(label,display(id))).join('')+'</dl>'+
+    '<p>Los valores proceden de la captura confirmada. Se revisan en sus páginas de origen, no se modifican aquí.</p>'+
+    '</details></section>';
+}
+// [AUNEA-FE-PG11-CONTEXT-289] END
+
 // [AUNEA-FE-PG11-GLOBAL-OVERVIEW-284] START — read-only, version-bound global IA.
 // SOURCE: Simulator CANONICAL v1.14 PG11; DEC-050/052/055; existing AUNEA System controls.
 function tobeGlobalOverviewHtml(e,p){
@@ -2080,9 +2136,7 @@ function tobePage(){
           '<span><b>4. Conectar</b> y comprobar el flujo</span></div>'+
         '<p class="tobe-task-guide-result"><b>Resultado esperado:</b> un mapa TO-BE con actividades, responsables, datos y rutas definidos. Guarda el borrador, pulsa «Comprobar requisitos» y, cuando no existan bloqueos, «Marcar como revisado». Después podrás comparar AS-IS y TO-BE en PG12.</p>'+
       '</section>'+
-      '<section class="tobe-context" aria-label="Información general del proceso"><div><strong>01 · Información general · Origen del diseño</strong><p>AS-IS confirmado v'+esc(snap.version)+
-      ' · Diagnóstico '+esc(diagnosticOutputFreshness(e).label)+
-      ' · '+p.items.length+' actividades de origen</p></div><div class="tobe-context-status">'+esc(statusLabel)+'</div></section>'+
+      tobeContextOverviewHtml(e,p)+
       tobeGlobalOverviewHtml(e,p)+
       tobeGuidedNavHtml(e,p)+
       '<section class="tobe-map-area"><header class="tobe-workspace-head"><div><span class="tobe-eyebrow">CONSTRUIR EL PROCESO FUTURO</span>'+
