@@ -8,6 +8,7 @@ const __auneaAiPreview=new Map();
 const __auneaAiFeedback=new Map();
 const __auneaAiCompletedSteps=new Map(); // Transient, keyed by confirmed snapshot; no partial approval.
 const __auneaAiWorking=new Set();
+// [AUNEA-FE-PG11-AI-PROGRESS-281] Keep per-step Ollama errors/progress visible outside full audit.
 function internalAiPilotFeedback(e,message,type='info'){
   const key=internalAiPilotKey(e);
   if(key)__auneaAiFeedback.set(key,{message,type});
