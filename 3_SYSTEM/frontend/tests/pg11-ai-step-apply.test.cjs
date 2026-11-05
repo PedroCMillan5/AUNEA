@@ -109,7 +109,8 @@ test('failed second save restores previous item and IA audit metadata in memory'
 test('PG11 retains one canonical editor beside IA context',()=>{
  const fn=src.match(/function tobeWithAiHint\(e,p,item,key,html\)\{[\s\S]*?\n\}/)?.[0];
  assert.ok(fn);
- const ctx={attr:String,tobeAiInlineHint:()=>'<aside class="tobe-ai-inline">IA</aside>'};
+ const ctx={attr:String,tobeAiInlineHint:()=>'<aside class="tobe-ai-inline">IA</aside>',
+  tobeAiRowActions:()=>'<div class="tobe-ai-row-actions">Acciones</div>'};
  vm.createContext(ctx);vm.runInContext(fn,ctx);
  const html=ctx.tobeWithAiHint({},null,{isAddition:false},'outputs',
    '<div class="field"><input data-tobe-field="outputs"></div>');
