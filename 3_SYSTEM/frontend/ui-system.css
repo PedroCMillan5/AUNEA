@@ -3073,3 +3073,11 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
  .tobe-ai-operational-context{padding:10px 12px}
 }
 /* [AUNEA-FE-PG11-OPERATIONAL-UX-271] END */
+
+/* [AUNEA-FE-PG11-STEP-AI-272] START */
+.tobe-ai-per-step-action{display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  min-width:0;margin:12px 0}
+.tobe-ai-per-step-action>.btn{min-height:38px;white-space:normal;flex:0 0 auto}
+.tobe-ai-per-step-action>.tobe-muted{flex:1 1 240px;line-height:1.5;font-size:12px}
+@media(max-width:600px){.tobe-ai-per-step-action>.btn{flex:1 1 100%}}
+/* [AUNEA-FE-PG11-STEP-AI-272] END */
