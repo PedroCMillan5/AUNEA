@@ -134,6 +134,29 @@ def internal_ai_tobe_review_basic(payload: PilotAIConsolidationRequest, request:
     except ValueError as exc:
         raise HTTPException(409, str(exc)) from exc
 # [AUNEA-BE-PG11-BASIC-REVIEW-API-221] END
+# [AUNEA-BE-PG11-GLOBAL-AI-API-283] START — explicit, isolated process-level IA
+# SOURCE: Simulator CANONICAL PG11; confirmed source/diagnostic; Ollama local only.
+# No automatic decisions, edits to TO-BE fields, or publishing.
+@app.post("/v1/internal-ai/tobe-global")
+def internal_ai_tobe_global(payload: PilotAIRequest, request: FastAPIRequest):
+    if request.client is None or request.client.host not in ("127.0.0.1", "::1", "testclient"):
+        raise HTTPException(403, "El análisis global IA sólo admite conexiones locales.")
+    if os.getenv("AUNEA_INTERNAL_AI_PROVIDER", "").strip().lower() != "ollama":
+        raise HTTPException(503, "El análisis global requiere Ollama local autorizado.")
+    if os.getenv("AUNEA_INTERNAL_AI_ENABLED") != "1":
+        raise HTTPException(503, "La función de IA está desactivada.")
+    if os.getenv("AUNEA_INTERNAL_AI_DATA_AUTHORIZED") != "1":
+        raise HTTPException(503, "Falta autorización para tratar datos con IA.")
+    from .internal_ai_global import analyze_global
+    from .internal_ai_ollama import OllamaUnavailable
+    try:
+        return analyze_global(payload)
+    except OllamaUnavailable as exc:
+        raise HTTPException(503, str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+# [AUNEA-BE-PG11-GLOBAL-AI-API-283] END
+
 # [AUNEA-BE-INTERNAL-AI-STEP-API-196] END
 
 
