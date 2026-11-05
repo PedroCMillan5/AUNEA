@@ -1075,7 +1075,8 @@ function tobeOriginalStepFacts(e,item){
 function tobeSnapshotIssueCards(e,item){
   const snap=tobeProposalSnapshot(e,latestTobe(e)),id=String(item.sourceStepId),fr=(snap?.frictions||[]).filter(x=>x.status!=='SUPERSEDED'&&
     (Array.isArray(x.affected_steps)?x.affected_steps:[]).map(String).includes(id));
-  const risks=(snap?.risks||[]).filter(x=>(Array.isArray(x.step_ids)?x.step_ids:[]).map(String).includes(id));
+  const risks=(snap?.risks||[]).filter(x=>x.status!=='SUPERSEDED'&&
+    (Array.isArray(x.step_ids)?x.step_ids:[]).map(String).includes(id));
   const frHtml=fr.map(x=>'<li><b>Fricción:</b> '+esc(x.client_label||labelFrom('OS_FRICTION_TYPE',x.friction_type)||'Sin etiqueta')+
     (x.observable_signal?' · '+esc(x.observable_signal):'')+'</li>').join('');
   const riskHtml=risks.map(x=>'<li><b>Riesgo:</b> '+esc(x.description||x.category||'Sin descripción')+'</li>').join('');
