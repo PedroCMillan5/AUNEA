@@ -1267,6 +1267,43 @@ function tobeWithAiHint(e,p,item,key,html){
  // field-selected manual application with explicit review and persistent audit.
  // No new route or automatic technical/client approval.
 // SOURCE: DEC-050/052/055; PG11 CANONICAL; existing reviewer and human decisions.
+// [AUNEA-FE-PG11-KEEP-FIELD-270] Explicit, versioned KEEP decision.
+// It records intent without changing the canonical editable value.
+function tobeKeepAiReviewedField(e,sourceId,key){
+  if(!e||state.activePage!=='tobe')return false;
+  const p=latestTobe(e),preview=tobeAiReviewDiff(e,p,sourceId),
+    candidate=preview.allFields.find(x=>x.key===key);
+  if(preview.issue||!candidate){
+    toast(preview.issue||'No existe una propuesta IA vigente para este campo.');
+    return false;
+  }
+  if(!saveTobeFromDom(e)||!saveState('Guardar campos TO-BE antes de mantener valor'))
+    return toast('No se pudo guardar el borrador. No se registró la decisión.'),false;
+  const live=currentEng(),draft=latestTobe(live),fresh=tobeAiReviewDiff(live,draft,sourceId);
+  if(fresh.issue||!fresh.allFields.some(x=>x.key===key))
+    return toast('La propuesta ha cambiado. Revisa el campo de nuevo.'),false;
+  const before=JSON.parse(JSON.stringify(draft.aiDraft?.applyHistory||[]));
+  if(!draft.aiDraft)draft.aiDraft={};
+  draft.aiDraft.applyHistory=[...before,{
+    sourceStepId:String(sourceId),fields:[key],action:'KEEP',
+    decision:fresh.decision,proposalFingerprint:tobeCandidateFingerprint(draft),
+    appliedAt:now()
+  }].slice(-100);
+  markDirty('PG11: conservar valor del campo '+key);
+  if(!saveState('Guardar elección de mantener valor TO-BE')){
+    draft.aiDraft.applyHistory=before;
+    return toast('No se pudo guardar la decisión de mantener el valor.'),false;
+  }
+  const last=(latestTobe(currentEng())?.aiDraft?.applyHistory||[]).slice(-1)[0];
+  if(last?.action!=='KEEP'||last.sourceStepId!==String(sourceId)||last.fields?.[0]!==key)
+    return toast('No se pudo verificar la decisión guardada.'),false;
+  render();
+  if(typeof requestAnimationFrame==='function')
+    requestAnimationFrame(()=>document.querySelector('[data-tobe-row-key="'+key+'"]')?.
+      scrollIntoView({behavior:'smooth',block:'center'}));
+  toast('Se conserva el valor del consultor. La propuesta IA no se ha aplicado.');
+  return true;
+}
 function tobeApplyAiReviewedFields(e,sourceId,keys){
   if(!e||state.activePage!=='tobe')return false;
   const draft=latestTobe(e),first=tobeAiReviewDiff(e,draft,sourceId),
@@ -1289,7 +1326,7 @@ function tobeApplyAiReviewedFields(e,sourceId,keys){
     [...field.value]:field.value;
   // Audit metadata belongs to this versioned proposal, not to a second business owner.
   p.aiDraft.applyHistory=[...oldHistory,{
-    sourceStepId:String(sourceId),fields:chosen.map(x=>x.key),
+    sourceStepId:String(sourceId),fields:chosen.map(x=>x.key),action:'APPLY',
     decision:fresh.decision,proposalFingerprint:tobeCandidateFingerprint(p),
     appliedAt:now()
   }].slice(-100);
@@ -2588,12 +2625,18 @@ function registerInternalWorkPages(){
   // Per-field IA recommendation actions; the original input remains editable.
   document.addEventListener('click',event=>{
     const apply=event.target?.closest?.('[data-tobe-ai-use-field]');
+    const keep=event.target?.closest?.('[data-tobe-ai-keep-field]');
     const edit=event.target?.closest?.('[data-tobe-ai-edit-field]');
-    if((!apply&&!edit)||state.activePage!=='tobe')return;
+    if((!apply&&!keep&&!edit)||state.activePage!=='tobe')return;
     event.preventDefault();
     if(apply){
       tobeApplyAiReviewedFields(currentEng(),apply.dataset.tobeAiUseSource,
         [apply.dataset.tobeAiUseField]);
+      return;
+    }
+    if(keep){
+      tobeKeepAiReviewedField(currentEng(),keep.dataset.tobeAiKeepSource,
+        keep.dataset.tobeAiKeepField);
       return;
     }
     const root=edit.closest('.tobe-ai-field-row')?.querySelector('.tobe-ai-field-control .field')||edit.closest('.field');
