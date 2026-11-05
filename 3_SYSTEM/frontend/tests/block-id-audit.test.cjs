@@ -16,7 +16,8 @@ const backendPkgDir = path.join(repoRoot, '3_SYSTEM', 'backend', 'aunea_backend'
 const backendDir = path.join(repoRoot, '3_SYSTEM', 'backend');
 const indexPath = path.join(repoRoot, 'CODE_BLOCK_INDEX.md');
 
-const MARKER_RE = /\[(AUNEA-[A-Z0-9-]+)\]\s*(START|END)/g;
+// Match actual comment declarations, not quoted marker strings in test fixtures.
+const MARKER_RE = /^\s*(?:\/\/|\/\*+|#|<!--)\s*\[(AUNEA-[A-Z0-9-]+)\]\s*(START|END)\b/gm;
 
 // The runtime is organised in layers (core/services/domain/ui/pages/uat), so this walks the
 // frontend tree instead of a flat directory. Block_IDs survive the move; their file column does not.
@@ -111,6 +112,7 @@ function parseIndex() {
       cells[0].split('/').map(s => s.trim()).forEach(id => { if (/^AUNEA-/.test(id)) retiredIds.add(id); });
       continue;
     }
+    if (cells.some(cell => /^ARCHIVED$/i.test(cell))) continue;
     const ids = cells[0].split('/').map(s => s.trim());
     const file = cells[1] || '';
     for (const id of ids) {
