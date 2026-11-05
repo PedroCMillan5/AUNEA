@@ -410,8 +410,8 @@ function internalAiPilotPanel(e){
     return '<article class="pg11-ai-step" aria-label="Propuesta '+esc(sid)+'">'+
       '<header class="pg11-ai-step-head">'+
         '<div class="pg11-ai-step-identity"><span class="pg11-ai-step-number">'+(index+1)+'</span>'+
-        '<div class="pg11-ai-step-heading"><span class="pg11-ai-step-code">AS-IS · '+esc(sid)+'</span>'+
-        '<h4>'+esc(sourceNames.get(sid)||sid)+'</h4></div></div>'+
+        '<div class="pg11-ai-step-heading"><h4>'+esc(sourceNames.get(sid)||'Actividad de origen sin nombre')+'</h4>'+
+        '<span class="pg11-ai-step-code">Referencia AS-IS ('+esc(sid)+')</span></div></div>'+
         '<span class="pg11-ai-transformation">'+esc(item.transformation||'Sin clasificar')+'</span>'+
       '</header>'+
       '<div class="pg11-ai-step-main">'+
