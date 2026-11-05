@@ -825,6 +825,48 @@ async function main(){
   assert.equal(await page.evaluate(()=>JSON.stringify(latestTobe(currentEng()).items)),
     originalTobeData,'consultant choice must never apply proposed values');
   console.log('PG11_HUMAN_DECISION_BROWSER_PASS: '+sourceIds[0]);
+  // The three canonical per-field actions must work through real browser clicks.
+  const confirmedStepBefore=await page.evaluate(()=>
+    JSON.stringify(tobeSourceSteps(currentEng())));
+  await page.locator('#tobeInspector [data-tobe-row-key="outputs"] [data-tobe-ai-keep-field="outputs"]').click();
+  const kept=await page.evaluate(()=>{
+    const e=currentEng(),p=latestTobe(e),disk=JSON.parse(localStorage.getItem(STORAGE_KEY));
+    const saved=disk.engagements.find(x=>x.id===e.id)?.tobeProposals?.
+      find(x=>x.version===p.version);
+    const action=saved?.aiDraft?.applyHistory?.at(-1);
+    return {action:action?.action,key:action?.fields?.[0],
+      source:action?.sourceStepId,stillDraft:p.status==='DRAFT'};
+  });
+  assert.deepEqual(kept,{action:'KEEP',key:'outputs',source:sourceIds[0],stillDraft:true},
+    'Mantener must persist a source-linked field decision without copying AI data');
+  await page.locator('#tobeInspector [data-tobe-row-key="controlsRisk"] [data-tobe-ai-edit-field="controlsRisk"]').click();
+  assert.equal(await page.evaluate(()=>
+    document.activeElement===document.querySelector(
+      '#tobeInspector [data-tobe-row-key="controlsRisk"] textarea')),true,
+    'Editar must focus the one canonical field, not create a second editor');
+  const applyOne=page.locator(
+    '#tobeInspector [data-tobe-row-key="transformation"] [data-tobe-ai-use-field="transformation"]');
+  assert.equal(await applyOne.count(),1,'a human-reviewed source-linked field can be applied');
+  await applyOne.click();
+  const applied=await page.evaluate(()=>{
+    const e=currentEng(),p=latestTobe(e),disk=JSON.parse(localStorage.getItem(STORAGE_KEY));
+    const saved=disk.engagements.find(x=>x.id===e.id)?.tobeProposals?.
+      find(x=>x.version===p.version),sourceId=String(p.items[0].sourceStepId);
+    return {value:p.items[0].transformation,
+      persisted:saved?.items?.[0]?.transformation,
+      action:saved?.aiDraft?.applyHistory?.at(-1)?.action,
+      source:saved?.aiDraft?.applyHistory?.at(-1)?.sourceStepId,
+      status:p.status,originUnchanged:JSON.stringify(tobeSourceSteps(e))===confirmedStepBefore};
+  });
+  // The confirmed source is checked independently below; the field must remain version-owned.
+  assert.equal(applied.value,'Se modifica');
+  assert.equal(applied.persisted,'Se modifica');
+  assert.equal(applied.action,'APPLY');
+  assert.equal(applied.source,sourceIds[0]);
+  assert.equal(applied.status,'DRAFT');
+  assert.equal(await page.evaluate(source=>JSON.stringify(tobeSourceSteps(currentEng()))===source,
+    confirmedStepBefore),true,'applying a TO-BE field cannot change AS-IS');
+  console.log('PG11_FIELD_ACTIONS_BROWSER_PASS: '+JSON.stringify(kept)+' · '+JSON.stringify(applied));
   // [AUNEA-UAT-PG11-HUMAN-BROWSER-227] END
   await page.unroute('**/v1/internal-ai/status',pg11StatusRoute);
   await page.unroute('**/v1/internal-ai/tobe-review-basic',pg11ReviewRoute);
