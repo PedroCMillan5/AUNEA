@@ -870,9 +870,10 @@ function tobeField(item,key,label,value,type='text',disabled=false){
  const help=tobeFieldHelp(key,item),raw=String(value??'');
  const suspect=/^(no|n\/a|ninguno)$/i.test(raw.trim())&&['problemResolved','automationAi','humanSupervision','controlsRisk'].includes(key);
  const warning=suspect?'<p class="field-help">Valor heredado sin explicación («'+esc(raw)+'»). Revísalo: no equivale a una justificación.</p>':'';
+ const shown=suspect&&key==='problemResolved'?'':raw;
  return '<div class="field"><label>'+esc(label)+'</label>'+
- (type==='textarea'?'<textarea data-tobe-item="'+attr(item.id)+'" data-tobe-field="'+attr(key)+'" placeholder="'+attr(help)+'" '+(disabled?'disabled':'')+'>'+esc(raw)+'</textarea>':
- '<input data-tobe-item="'+attr(item.id)+'" data-tobe-field="'+attr(key)+'" value="'+attr(raw)+'" placeholder="'+attr(help)+'" '+(disabled?'disabled':'')+'>')+
+ (type==='textarea'?'<textarea data-tobe-item="'+attr(item.id)+'" data-tobe-field="'+attr(key)+'" placeholder="'+attr(help)+'" '+(disabled?'disabled':'')+'>'+esc(shown)+'</textarea>':
+ '<input data-tobe-item="'+attr(item.id)+'" data-tobe-field="'+attr(key)+'" value="'+attr(shown)+'" placeholder="'+attr(help)+'" '+(disabled?'disabled':'')+'>')+
  '<p class="field-help">'+esc(help)+'</p>'+warning+'</div>';
 }
 // [AUNEA-FE-PG11-FIELD-GUIDANCE-246] END
@@ -1318,7 +1319,7 @@ function tobeFlowInspector(e,p,item){
     (editable?auneaSelectControl('tobeRoute_'+kind+'_'+stepId,opts,String(value||'__PENDING__'),{
       extra:'data-tobe-route="'+kind+'" data-tobe-route-step="'+attr(stepId)+'"',
       placeholder:'Selecciona destino'}):'<input disabled value="'+attr(opts.find(x=>x.value===value)?.label||value||'Pendiente')+'">')+
-    '</div>';
+    '<p class="field-help">Selecciona el destino de esta ruta en el proceso futuro. Una ruta pendiente bloquea la revisión.</p></div>';
   return '<section class="tobe-route-editor"><h3>Conexiones del proceso futuro</h3>'+
     '<p class="tobe-muted">Edita aquí las rutas del TO-BE. No se modificarán las conexiones del AS-IS confirmado.</p>'+
     '<div class="form-grid">'+field('normal','Siguiente actividad'+(decision?' · ruta SÍ':''),routes.normal)+
@@ -1410,7 +1411,7 @@ function tobeInspectorHtml(e,p){
           item.stepType||'ST02',{extra:'data-tobe-item="'+attr(item.id)+'" data-tobe-field="stepType"',
             placeholder:'Selecciona tipo'}):
           '<input disabled value="'+attr(item.stepType==='ST04'?'Decisión · rutas SÍ / NO':'Actividad operativa')+'">')+
-        '</div>':'')+
+        '<p class="field-help">Actividad operativa: ejecuta trabajo. Decisión: requiere rutas SÍ y NO.</p></div>':'')+
       statusField+
       '<p class="field-help">«Qué cambia» define la transformación futura respecto al AS-IS; no significa que una mejora esté aprobada.</p>'+
       tobeField(item,'problemResolved',
@@ -1491,7 +1492,7 @@ function tobePage(){
         (editable?auneaSelectControl('tobeFlowStart',tobeFutureSteps(e,p).map(x=>({value:String(x.id),label:x.step_name})),
           tobeFlowOwner(e,p).startStepId,{extra:'data-tobe-flow-start="1"',placeholder:'Selecciona actividad inicial'}):
           '<input disabled value="'+attr(tobeFutureSteps(e,p).find(x=>String(x.id)===tobeFlowOwner(e,p).startStepId)?.step_name||'Pendiente')+'">')+
-      '</div>'+
+      '<p class="field-help">Indica la actividad de inicio del TO-BE. El AS-IS no se modifica.</p></div>'+
       '<p class="tobe-map-note"><b>Rutas del TO-BE:</b> comienzan como copia del AS-IS confirmado, pero pueden rediseñarse en el inspector. Los pasos incorporados o eliminados sólo pertenecen a la versión TO-BE. Una ruta pendiente, desconectada o sin final bloquea la revisión.</p></section>'+
       '<section id="tobeInspector" class="tobe-inspector" aria-label="Decisión TO-BE por actividad">'+tobeInspectorHtml(e,p)+'</section>'+
       (editable?'<details class="tobe-ai-stage" id="tobeAiWorkspace">'+
