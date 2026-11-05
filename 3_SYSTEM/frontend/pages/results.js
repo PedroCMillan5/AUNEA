@@ -1146,12 +1146,17 @@ function tobeAiReviewDiff(e,p,id){
 function tobeAiInlineHint(e,p,item,key){
   if(item.isAddition)return '';
   const currentData=typeof internalAiSavedDraft==='function'?internalAiSavedDraft(e):null;
-  const history=!currentData&&typeof internalAiHistoricalDraft==='function'?internalAiHistoricalDraft(e):null;
+  const id=String(item.sourceStepId),
+    keyForAi=typeof internalAiPilotKey==='function'?internalAiPilotKey(e):null,
+    partial=!currentData&&keyForAi&&typeof internalAiPendingSteps==='function'?
+      internalAiPendingSteps(e,keyForAi)?.items?.get(id):null,
+    history=!currentData&&!partial&&typeof internalAiHistoricalDraft==='function'?
+      internalAiHistoricalDraft(e):null;
   const data=currentData||history?.proposal;
-  const ai=data?.items?.find(x=>String(x.source_step_id)===String(item.sourceStepId));
+  const ai=partial||data?.items?.find(x=>String(x.source_step_id)===id);
   if(!ai||!Array.isArray(ai.source_refs)||
-     !ai.source_refs.map(String).includes(String(item.sourceStepId)))return '';
-  if(history&&!currentData){
+     !ai.source_refs.map(String).includes(id))return '';
+  if((history&&!currentData)||partial){
     const info=TOBE_AI_REVIEW_FIELDS.find(x=>x[1]===key);
     if(!info)return '';
     const raw=String(ai[info[0]]??'').trim();
@@ -1165,11 +1170,15 @@ function tobeAiInlineHint(e,p,item,key){
     const narrative=typeof internalAiPilotNarrative==='function'?
       internalAiPilotNarrative(ai.rationale):{reason:''};
     return '<div class="tobe-ai-inline" data-tobe-ai-field-key="'+attr(key)+'">'+
-      '<p class="field-help"><b>Propuesta IA anterior · TO-BE v'+esc(history.version)+
+      '<p class="field-help"><b>'+(partial?
+        'Propuesta individual verificada · Pendiente de revisión global':
+        'Propuesta IA anterior · TO-BE v'+esc(history.version))+
       ' (solo lectura):</b> '+esc(display||'Sin valor propuesto para este campo')+'</p>'+
-      '<p class="field-help">No pertenece al borrador vigente v'+esc(p.version)+
-      '. No se aplicará automáticamente; conserva tus valores actuales.</p>'+
-      (raw?'<details class="tobe-subdetails"><summary>Fundamento y fuentes de la propuesta anterior</summary>'+
+      '<p class="field-help">'+(partial?
+        'Aún faltan otras actividades o la comprobación de coherencia; no se aplica hasta completar la revisión.':
+        'No pertenece al borrador vigente v'+esc(p.version)+'. No se aplicará automáticamente.')+
+      ' Conserva tus valores actuales.</p>'+
+      (raw?'<details class="tobe-subdetails"><summary>Fundamento y fuentes de la propuesta IA</summary>'+
         '<p><b>Justificación general de la actividad:</b> '+esc(narrative.reason||'Sin justificación adicional')+'</p>'+
         '<p><b>Referencias:</b> '+esc(typeof internalAiReadableRefs==='function'?
           internalAiReadableRefs(e,ai.source_refs):ai.source_refs.join(' · '))+'</p>'+
