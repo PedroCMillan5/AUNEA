@@ -74,6 +74,112 @@ function internalAiPilotRefreshPanel(e){
     }
   }
 }
+// [AUNEA-FE-PG11-GLOBAL-AI-285] START — independent process-wide inference.
+// Uses the same verified local provider and versioned TO-BE owner as activity IA;
+// never runs automatically, edits fields or overwrites earlier output on failure.
+const __auneaGlobalAiFeedback=new Map();
+function internalAiGlobalWorking(e){
+  const key=internalAiPilotKey(e);return !!key&&__auneaAiWorking.has(key)&&__auneaGlobalAiFeedback.get(key)?.working===true;
+}
+function internalAiGlobalMessage(e){
+  const key=internalAiPilotKey(e);return key?__auneaGlobalAiFeedback.get(key)||null:null;
+}
+function internalAiGlobalRefresh(e){
+  if(!e||currentEng()?.id!==e.id)return;
+  const target=document.getElementById('tobeGlobalAnalysis');
+  if(target&&typeof tobeGlobalOverviewHtml==='function')
+    target.outerHTML=tobeGlobalOverviewHtml(currentEng(),latestTobe(currentEng()));
+}
+async function generateTobeGlobal(e){
+  const key=internalAiPilotKey(e),p=latestTobe(e);
+  if(!key||!tobeEditable(p)||(typeof isClientDisplay==='function'&&isClientDisplay()))
+    return toast('Se necesita un TO-BE en borrador, con AS-IS y diagnóstico vigentes.');
+  if(__auneaAiWorking.has(key))
+    return toast('Hay otro análisis IA en curso. Termina antes de iniciar el global.');
+  // Preserve all the consultant's current edits before starting a long local inference.
+  if(!saveTobeFromDom(e)||!saveState('Conservar borrador antes de IA global'))
+    return toast('No se pudo guardar el trabajo actual. La IA global no se ejecutó.');
+  __auneaAiWorking.add(key);
+  __auneaGlobalAiFeedback.set(key,{working:true,type:'info',message:'Comprobando Ollama local y autorización…'});
+  internalAiGlobalRefresh(e);
+  try{
+    if(!state.backendOnline&&!(await checkBackend()))throw Error('El backend no está conectado.');
+    const statusResponse=await fetch(state.backendUrl+'/v1/internal-ai/status',{cache:'no-store'});
+    if(!statusResponse.ok)throw Error('No se pudo consultar la disponibilidad de IA.');
+    const status=await statusResponse.json();
+    if(status.status!=='AVAILABLE'||status.provider!=='ollama')
+      throw Error(String(status.reason||'El motor global requiere Ollama local habilitado y autorizado.'));
+    if(status.pg11_review_protocol!==__auneaPg11ReviewProtocol)
+      throw Error('La versión del backend de PG11 no coincide. Reinicia el backend y actualiza la página.');
+    __auneaGlobalAiFeedback.set(key,{working:true,type:'info',message:'Analizando objetivos y recomendaciones globales…'});
+    internalAiGlobalRefresh(e);
+    const source=currentEng(),sourceSnap=confirmedSnapshot(source);
+    const response=await fetch(state.backendUrl+'/v1/internal-ai/tobe-global',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        engagement:buildBackendPayload(source),
+        diagnostic:currentDiagnosticOutput(source),
+        confirmed_as_is:source.confirmedAsIs===true,
+        snapshot_version:sourceSnap.version,
+      }),
+    });
+    if(!response.ok){
+      const payload=await response.json().catch(()=>null);
+      const detail=typeof payload?.detail==='string'?payload.detail:
+        typeof payload?.detail?.message==='string'?payload.detail.message:'No se generó un análisis válido.';
+      throw Error('Análisis global (HTTP '+response.status+'): '+detail);
+    }
+    const data=await response.json();
+    const live=currentEng(),owner=latestTobe(live),snap=confirmedSnapshot(live),
+      diagnostic=currentDiagnosticOutput(live);
+    if(!live||live.id!==e.id||internalAiPilotKey(live)!==key||!tobeEditable(owner)||
+       owner.version!==p.version||owner.sourceSnapshotVersion!==snap?.version||
+       data?.status!=='DRAFT'||data.engagement_id!==live.id||
+       data.snapshot_version!==snap.version||!data.input_hash||
+       !Array.isArray(data.opportunities)||data.opportunities.length>3||
+       data.opportunities.some(x=>!x.objective||!x.how||!x.why||!Array.isArray(x.source_refs)))
+      throw Error('El análisis no coincide con el estudio confirmado o no cumple el contrato global.');
+    const previous=owner.aiGlobal;
+    owner.aiGlobal={tobeVersion:owner.version,sourceSnapshotVersion:owner.sourceSnapshotVersion,
+      diagnosticInputHash:diagnostic.input_snapshot_hash,savedAt:now(),
+      result:{
+        status:'DRAFT',engagement_id:data.engagement_id,
+        snapshot_version:data.snapshot_version,input_hash:data.input_hash,
+        model:String(data.model||''),summary:String(data.summary||''),
+        opportunities:data.opportunities.map(x=>({
+          objective:String(x.objective),how:String(x.how),why:String(x.why),
+          constraints:String(x.constraints||''),source_refs:x.source_refs.map(String),
+        })),
+      }};
+    markDirty('PG11: análisis IA global pendiente de revisión humana');
+    if(!saveState('Guardar análisis IA global en TO-BE v'+owner.version)){
+      __auneaGlobalAiFeedback.set(key,{working:false,type:'warn',message:
+        'La IA terminó, pero el guardado no se ha confirmado. Conserva esta página y pulsa Guardar borrador.'});
+    }else{
+      let verified=false;
+      try{
+        const disk=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');
+        const stored=disk?.engagements?.find(x=>x.id===live.id)?.tobeProposals?.
+          find(x=>x.version===owner.version)?.aiGlobal;
+        verified=stored?.result?.input_hash===data.input_hash&&
+          JSON.stringify(stored.result.opportunities)===JSON.stringify(owner.aiGlobal.result.opportunities);
+      }catch(_ignore){}
+      __auneaGlobalAiFeedback.set(key,{working:false,type:verified?'info':'warn',
+        message:verified?'Análisis global guardado como propuesta sin aprobar.':
+          'El resultado está en el borrador, pero no se verificó su guardado. No cierres la página.'});
+    }
+  }catch(error){
+    // The previous version-owned global proposal is kept untouched on any failure.
+    __auneaGlobalAiFeedback.set(key,{working:false,type:'warn',
+      message:'No se ha sustituido el análisis anterior. '+String(error?.message||error)});
+    console.error('PG11: fallo al analizar el proceso globalmente',error);
+  }finally{
+    __auneaAiWorking.delete(key);
+    internalAiGlobalRefresh(currentEng());
+  }
+}
+// [AUNEA-FE-PG11-GLOBAL-AI-285] END
+
 function internalAiPilotKey(e){
   const snap=confirmedSnapshot(e),diagnostic=currentDiagnosticOutput(e),p=latestTobe(e);
   return e?.confirmedAsIs===true&&snap&&diagnostic&&p
@@ -909,6 +1015,12 @@ registerInternalWorkPages=function(){
   if(document.__auneaAiPilotDelegatedBound)return;
   document.__auneaAiPilotDelegatedBound=true;
   document.addEventListener('click',event=>{
+    const global=event.target?.closest?.('#analyzeTobeGlobal');
+    if(global){
+      event.preventDefault();
+      if(!global.disabled)void generateTobeGlobal(currentEng());
+      return;
+    }
     const audit=event.target?.closest?.('[data-ai-audit-step]');
     if(audit){
       event.preventDefault();
