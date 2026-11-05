@@ -1398,7 +1398,9 @@ function tobeFlowOptions(e,p,item){
 }
 function tobeFlowInspector(e,p,item){
   if(item.transformation==='Se elimina'){
-    return '<p class="notice warn">Actividad marcada para eliminar. Reconecta las rutas entrantes desde otras actividades y, si procede, cambia el inicio del proceso. El original se conserva en el AS-IS.</p>';
+    return '<section class="tobe-route-editor" id="tobeStepRoutes">'+
+      '<h3>04 · Conectar el proceso futuro</h3>'+
+      '<p class="notice warn">Esta actividad se retira únicamente del TO-BE. Reconecta las rutas entrantes y, si corresponde, selecciona un inicio válido. El AS-IS se conserva intacto.</p></section>';
   }
   const flow=tobeFlowOwner(e,p),stepId=tobeFlowItemId(item),routes=flow.routes[stepId]||{},
     origin=tobeProposalSourceSteps(e,p).find(x=>String(x.id)===String(item.sourceStepId)),
