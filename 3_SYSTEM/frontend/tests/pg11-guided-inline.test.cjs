@@ -73,6 +73,7 @@ test('MODIFY authorizes only safe options, never contradictory transformation',(
  const html=f.context.tobeAiInlineHint(f.e,f.p,f.p.items[0],'outputs');
  assert.match(html,/data-tobe-ai-use-field="outputs"/);
  assert.match(html,/data-tobe-ai-use-source="P1"/);
+ assert.match(html,/Condición de revisión:/);
  assert.match(html,/Editar valor/);
  const bad=f.context.tobeAiInlineHint(f.e,f.p,f.p.items[0],'transformation');
  assert.match(bad,/Revisión manual necesaria/);
