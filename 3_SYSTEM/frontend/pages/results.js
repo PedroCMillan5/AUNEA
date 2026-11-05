@@ -1202,7 +1202,9 @@ function tobeAiReviewChangesHtml(e,item){
     (!diff.issue&&diff.fields.length?
       '<button type="button" class="btn btn-outline" data-tobe-ai-apply-reviewed="'+attr(item.sourceStepId)+
       '">Aplicar los campos marcados al borrador</button>':'')+
-    (last?'<p class="tobe-muted">Cambios aplicados previamente: '+esc(last.fields.join(' · '))+
+    (last?'<p class="tobe-muted">Cambios aplicados previamente: '+esc(
+      (last.fields||[]).map(key=>TOBE_AI_REVIEW_FIELDS.find(x=>x[1]===key)?.[2]||
+        'Campo de diseño futuro').join(' · '))+
       '. Debes revisar el resultado; no es una aprobación técnica.</p>':'')+
     '</section>';
 }
