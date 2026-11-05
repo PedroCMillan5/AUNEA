@@ -1078,16 +1078,15 @@ const TOBE_AI_REVIEW_FIELDS=[
  ['controls_risk','controlsRisk','Control / riesgo','text']
 ];
 function tobeAiReviewDiff(e,p,id){
-  const out={issue:'',warnings:[],fields:[],decision:null};
+  const out={issue:'',warnings:[],fields:[],allFields:[],skipped:[],decision:null};
   const d=tobeHumanReviewRecord(e,p)?.decisions?.[String(id)];
   if(!tobeEditable(p)||!d||!['ACCEPT','MODIFY'].includes(d.status)){
-    out.issue='Primero registra tu decisión y justificación sobre la propuesta IA.';return out;
-  }
-  out.decision=d.status;
+    out.issue='Primero registra tu decisión y justificación sobre la propuesta IA.';
+  }else out.decision=d.status;
   const source=typeof internalAiSavedDraft==='function'?internalAiSavedDraft(e):null;
   const ai=source?.items?.find(x=>String(x.source_step_id)===String(id));
   const item=p.items.find(x=>String(x.sourceStepId)===String(id));
-  if(!source.review||!ai||!item||!Array.isArray(ai.source_refs)||
+  if(!source?.review||!ai||!item||!Array.isArray(ai.source_refs)||
      !ai.source_refs.map(String).includes(String(id))){
     out.issue='No existe una recomendación guardada y trazable a esta actividad.';return out;
   }
@@ -1095,7 +1094,7 @@ function tobeAiReviewDiff(e,p,id){
     source.review?.issues?.some(x=>x.category==='BLOCKING'&&
       (!x.step_id||x.step_id==='GLOBAL'||String(x.step_id)===String(id)));
   if(blocked||source.review?.review_mode==='RULES_ONLY'){
-    if(d.status==='ACCEPT'){out.issue='Hay bloqueos en la propuesta IA: utiliza «Modificar antes de usar» para seleccionar cambios concretos.';return out;}
+    if(d?.status==='ACCEPT'){out.issue='Hay bloqueos en la propuesta IA: utiliza «Modificar antes de usar» para seleccionar cambios concretos.';}
     out.warnings.push('La propuesta tiene observaciones o sólo revisión por reglas. Cada campo seleccionado es una hipótesis que debes verificar.');
   }
   const narrative=typeof internalAiPilotNarrative==='function'?internalAiPilotNarrative(ai.rationale):{action:''};
@@ -1106,7 +1105,10 @@ function tobeAiReviewDiff(e,p,id){
   for(const [sourceKey,key,label,type] of TOBE_AI_REVIEW_FIELDS){
     const raw=String(ai[sourceKey]??'').trim();
     if(!raw||/^(no|n\/a|ninguno|sin definir|pendiente|—)$/i.test(raw))continue;
-    if(type==='transformation'&&(!TOBE_TRANSFORMATIONS.includes(raw)||contradiction))continue;
+    if(type==='transformation'&&(!TOBE_TRANSFORMATIONS.includes(raw)||contradiction)){
+      out.skipped.push({key,label,raw,reason:'La transformación IA contiene una contradicción o no es válida; revísala en el selector existente.'});
+      continue;
+    }
     let value=raw,display=raw;
     if(type.startsWith('OS_')){
       const opts=fieldOptions(type);
@@ -1115,18 +1117,22 @@ function tobeAiReviewDiff(e,p,id){
         String(o.label||'').toLowerCase()===x.toLowerCase()));
       if(!parts.length||selected.some(x=>!x)||(
         type==='OS_ARTIFACT_TYPE'&&selected.some(x=>String(x.value).toUpperCase()==='OTHER'))){
-        out.warnings.push('«'+label+'» contiene opciones no confirmadas en el catálogo. Revísalas manualmente.');continue;
+        out.warnings.push('«'+label+'» contiene opciones no confirmadas en el catálogo. Revísalas manualmente.');
+        out.skipped.push({key,label,raw,reason:'El valor no corresponde a una opción de catálogo aplicable sin revisión.'});
+        continue;
       }
       value=type==='OS_ARTIFACT_TYPE'?selected.map(x=>String(x.value)):String(selected[0].value);
       display=selected.map(x=>x.label).join(' · ');
     }
-    if(JSON.stringify(item[key])===JSON.stringify(value))continue;
+    const same=JSON.stringify(item[key])===JSON.stringify(value);
     const before=type==='OS_ARTIFACT_TYPE'?
       tobeArtifactDisplay(item[key],item._details?.[key]):
       type.startsWith('OS_')?
         labelFrom(type,item[key])||String(item[key]||'Sin definir'):
         String(item[key]||'Sin definir');
-    out.fields.push({key,label,value,display,before});
+    const entry={key,label,value,display,before,changed:!same};
+    out.allFields.push(entry);
+    if(!same)out.fields.push(entry);
   }
   return out;
 }
