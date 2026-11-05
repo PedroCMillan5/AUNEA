@@ -760,8 +760,9 @@ function tobeReviewReadiness(e,p){
       return 'Selecciona una transformación válida para '+name+'.';
     if(item.transformation!=='Se elimina'&&!String(item.futureActor||'').trim())
       return 'Indica el responsable futuro de '+name+' antes de enviar a revisión.';
-    if(item.transformation!=='Se mantiene'&&!String(item.problemResolved||'').trim())
-      return 'Explica qué problema resuelve la transformación de '+name+'.';
+    if(!tobeMeaningfulRationale(item.problemResolved))
+      return 'Completa «'+tobeTransformationRationaleLabel(item.transformation)+
+        '» en '+name+' con una justificación concreta; «NO» no es suficiente.';
     if(String(item.futureTime||'').trim()&&!String(item.futureTimeAssumption||'').trim())
       return 'El tiempo futuro de '+name+' requiere un supuesto trazable.';
     if(item.transformation!=='Se elimina'&&['inputs','outputs'].some(k=>
@@ -784,11 +785,11 @@ function tobeReviewReadiness(e,p){
       if(!decision||!['ACCEPT','MODIFY','DISCARD'].includes(decision.status)||
          String(decision.note||'').trim().length<20)
         return 'Falta aceptar, modificar o descartar con justificación la propuesta de '+name+'.';
-      if(!meaningful(item.problemResolved))
-        return 'Justifica qué problema o situación aborda el diseño futuro de '+name+' (no basta «NO»).';
+      if(!tobeMeaningfulRationale(item.problemResolved))
+        return 'Completa la justificación del diseño futuro de '+name+' (no basta «NO»).';
       if(!['Se mantiene','Se elimina'].includes(item.transformation)&&
-         ['tool','controlsRisk'].some(k=>!meaningful(item[k]))||
-         ['inputs','outputs'].some(k=>!tobeArtifactValues(item[k]).resolved.length))
+         (['tool','controlsRisk'].some(k=>!meaningful(item[k]))||
+          ['inputs','outputs'].some(k=>!tobeArtifactValues(item[k]).resolved.length)))
         return 'Completa herramienta, datos y controles del diseño futuro de '+name+'.';
       if(['Se automatiza','Se asiste con IA'].includes(item.transformation)&&
          (!meaningful(item.automationAi)||!meaningful(item.humanSupervision)))
@@ -946,11 +947,41 @@ const TOBE_FIELD_HELP={
  futureTime:'Introduce un tiempo futuro con unidad únicamente si está sustentado por un supuesto.',
  futureTimeAssumption:'Explica la fuente, condiciones y límites del tiempo futuro propuesto.'
 };
+// [AUNEA-FE-PG11-TRANSFORMATION-UX-258] START
+// Same persisted field in every state; only its visible label, guidance and
+// validation vary. Switching transformation must never clear a draft value.
+function tobeTransformationRationaleLabel(transformation){
+  switch(String(transformation||'')){
+    case 'Se mantiene':return 'Motivo para conservar la actividad';
+    case 'Se elimina':return 'Motivo para retirar la actividad del TO-BE';
+    case 'Se modifica':return 'Motivo de la modificación y problema que resuelve';
+    case 'Se automatiza':return 'Problema que resuelve la automatización';
+    case 'Se asiste con IA':return 'Problema que resuelve la asistencia con IA';
+    case 'Requiere decisión humana':return 'Motivo de la decisión humana';
+    case 'Se incorpora control':return 'Riesgo o problema que resuelve el control';
+    default:return 'Motivo del diseño futuro';
+  }
+}
+function tobeMeaningfulRationale(value){
+  return !!String(value??'').trim()&&
+    !/^(?:no|n\/a|ninguno|sin definir|pendiente|—)$/i.test(String(value).trim());
+}
+// [AUNEA-FE-PG11-TRANSFORMATION-UX-258] END
 function tobeFieldHelp(key,item){
  if(key==='problemResolved'&&item?.transformation==='Se mantiene')
    return 'Explica por qué debe mantenerse la actividad sin rediseño, con qué evidencia y cómo se controlan sus hallazgos.';
  if(key==='problemResolved'&&item?.transformation==='Se elimina')
    return 'Justifica por qué se elimina la actividad y cómo se mantienen sus controles, datos y obligaciones.';
+ if(key==='problemResolved'&&item?.transformation==='Se modifica')
+   return 'Describe qué cambia respecto al AS-IS, qué problema documentado atiende y cuál es la justificación.';
+ if(key==='problemResolved'&&item?.transformation==='Se automatiza')
+   return 'Indica qué tarea manual se automatizaría, la necesidad diagnosticada y la evidencia disponible.';
+ if(key==='problemResolved'&&item?.transformation==='Se asiste con IA')
+   return 'Indica qué tarea necesita asistencia de IA y qué problema documentado atiende.';
+ if(key==='problemResolved'&&item?.transformation==='Requiere decisión humana')
+   return 'Explica por qué se necesita una decisión humana y qué riesgo o excepción debe atender.';
+ if(key==='problemResolved'&&item?.transformation==='Se incorpora control')
+   return 'Indica el riesgo detectado y el control que se propone incorporar.';
  return TOBE_FIELD_HELP[key]||'Describe la información solicitada y su justificación.';
 }
 function tobeField(item,key,label,value,type='text',disabled=false){
@@ -958,7 +989,8 @@ function tobeField(item,key,label,value,type='text',disabled=false){
  const suspect=/^(no|n\/a|ninguno)$/i.test(raw.trim())&&['problemResolved','automationAi','humanSupervision','controlsRisk'].includes(key);
  const warning=suspect?'<p class="field-help">Valor heredado sin explicación («'+esc(raw)+'»). Revísalo: no equivale a una justificación.</p>':'';
  const shown=raw; // Never silently discard legacy consultant/AI text while editing.
- return '<div class="field"><label>'+esc(label)+'</label>'+
+ return '<div class="field"'+(key==='problemResolved'?' data-tobe-rationale-wrapper="1"':'')+
+   '><label'+(key==='problemResolved'?' data-tobe-rationale-label="1"':'')+'>'+esc(label)+'</label>'+
  (type==='textarea'?'<textarea data-tobe-item="'+attr(item.id)+'" data-tobe-field="'+attr(key)+'" placeholder="'+attr(help)+'" '+(disabled?'disabled':'')+'>'+esc(shown)+'</textarea>':
  '<input data-tobe-item="'+attr(item.id)+'" data-tobe-field="'+attr(key)+'" value="'+attr(shown)+'" placeholder="'+attr(help)+'" '+(disabled?'disabled':'')+'>')+
  warning+'</div>';
@@ -1526,6 +1558,7 @@ function tobeInspectorHtml(e,p){
     '<section class="tobe-advice" id="tobeStepAdvice" aria-label="Sugerencia IA para actividad"><h3>02 · Revisar la recomendación IA y decidir</h3>'+
       '<div id="tobeAiRecommendation">'+tobeAiAdviceHtml(e,item)+'</div></section>'+
     '<section class="tobe-edit" id="tobeStepDesign"><h3>03 · Configurar la actividad futura</h3>'+
+      '<p class="tobe-muted" data-tobe-transformation-message="1" role="status" aria-live="polite">Elige «Qué cambia» y completa la justificación del diseño futuro. La recomendación IA no cambia tu decisión automáticamente.</p>'+
       '<p class="tobe-muted">Estos campos describen el funcionamiento futuro. Los valores heredados se muestran para revisar, no son mejoras confirmadas ni decisiones de la IA.</p>'+
       (item.transformation==='Se mantiene'&&/^(no|n\/a|ninguno)$/i.test(String(item.problemResolved||'').trim())?
         '<p class="notice warn"><b>Justificación pendiente:</b> «Se mantiene» conserva esta actividad sin rediseño. El valor «NO» no explica por qué se mantienen los hallazgos ni cómo se controlan; revisa la decisión antes de validar.</p>':'')+
@@ -1540,9 +1573,8 @@ function tobeInspectorHtml(e,p){
         '<p class="field-help">Actividad operativa: ejecuta trabajo. Decisión: requiere rutas SÍ y NO.</p></div>':'')+
       statusField+
       tobeField(item,'problemResolved',
-        item.transformation==='Se mantiene'?'Motivo para conservar la actividad':
-        item.transformation==='Se elimina'?'Por qué se elimina y qué necesidad resuelve':
-        'Qué problema resuelve',item.problemResolved,'textarea',!editable)+
+        tobeTransformationRationaleLabel(item.transformation),
+        item.problemResolved,'textarea',!editable)+
       tobeCatalogField(item,'futureActor','Responsable futuro','OS_ACTOR_ROLE',!editable)+
       tobeCatalogField(item,'tool','Herramienta / arquitectura','OS_TOOL_CATEGORY',!editable)+
       '<div class="tobe-data-pair">'+tobeArtifactField(item,'inputs','Datos de entrada',!editable)+'</div>'+
