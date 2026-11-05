@@ -986,7 +986,10 @@ async function main(){
   await page.locator('#tobeInspector [data-tobe-field="stepName"]').fill('Control adicional UAT');
   await page.locator('#tobeInspector [data-tobe-field="problemResolved"]').fill(
     'Validar entradas faltantes antes de continuar al siguiente paso');
-  await page.locator('#tobeInspector [data-tobe-field="futureActor"]').fill('Supervisor');
+  // Future actor uses the AUNEA canonical catalogue dropdown, never a text field.
+  await page.locator('#tobeInspector [data-tobe-catalog-field="futureActor"] .aunea-select > summary').click();
+  await page.locator('#tobeInspector [data-tobe-catalog-field="futureActor"] [data-aunea-select-option][data-value="MANAGER"]').click();
+  assert.equal(await page.locator('#tobeInspector [data-tobe-catalog-field="futureActor"] [data-model-set]').inputValue(),'MANAGER');
   const newRoute=await page.evaluate(({nextId,addedId})=>{
     const t=document.querySelector('#tobeInspector [data-tobe-field="transformation"]');
     const r=document.querySelector('[data-tobe-route="normal"][data-tobe-route-step="'+addedId+'"]');
