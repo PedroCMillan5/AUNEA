@@ -117,4 +117,23 @@ test('PG11 retains one canonical editor beside IA context',()=>{
  assert.match(html,/tobe-ai-field-row/);
  assert.match(html,/tobe-ai-field-control/);
 });
+test('PG11 records KEEP without altering values or AS-IS',()=>{
+ const fn=src.match(/function tobeKeepAiReviewedField\(e,sourceId,key\)\{[\s\S]*?\n\}/)?.[0];
+ assert.ok(fn);
+ const item={sourceStepId:'S1',outputs:['PDF']},p={items:[item],aiDraft:{applyHistory:[]}},
+   e={tobeProposals:[p],snapshot:{original:true}};
+ let saves=0;
+ const ctx={String,Array,JSON,state:{activePage:'tobe'},latestTobe:x=>x.tobeProposals[0],
+  tobeAiReviewDiff:()=>({issue:'',allFields:[{key:'outputs'}],decision:'MODIFY'}),
+  saveTobeFromDom:()=>true,saveState:()=>{saves++;return true},currentEng:()=>e,
+  tobeCandidateFingerprint:()=> 'F',now:()=> '2026-11-05',markDirty:()=>{},
+  toast:()=>{},render:()=>{}};
+ vm.createContext(ctx);vm.runInContext(fn,ctx);
+ assert.equal(ctx.tobeKeepAiReviewedField(e,'S1','outputs'),true);
+ assert.deepEqual(item.outputs,['PDF']);
+ assert.equal(e.snapshot.original,true);
+ assert.equal(p.aiDraft.applyHistory[0].action,'KEEP');
+ assert.equal(p.aiDraft.applyHistory[0].fields[0],'outputs');
+ assert.equal(saves,2);
+});
 // [AUNEA-UAT-PG11-AI-STEP-237] END
