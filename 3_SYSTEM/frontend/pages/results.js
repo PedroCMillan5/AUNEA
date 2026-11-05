@@ -1315,7 +1315,7 @@ function tobeWithAiHint(e,p,item,key,html){
   // ownership; the suggestion is a read-only sibling, not another control.
   if(item.isAddition)return html;
   const advice=tobeAiInlineHint(e,p,item,key);
-  const original=tobeProposalSourceSteps(e,p).find(x=>String(x.id)===String(item.sourceStepId));
+  const original=typeof tobeProposalSourceSteps==='function'?tobeProposalSourceSteps(e,p).find(x=>String(x.id)===String(item.sourceStepId)):null;
   const sourceKey=({futureActor:'actor',tool:'tool',inputs:'inputs',outputs:'outputs'})[key];
   const sourceValue=original&&sourceKey?original[sourceKey]:null;
   const fallback='<div class="tobe-ai-inline tobe-ai-inline-empty" data-tobe-ai-field-key="'+
