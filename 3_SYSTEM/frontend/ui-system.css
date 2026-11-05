@@ -2923,3 +2923,20 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
   .tobe-node-tools{gap:8px}
 }
 /* [AUNEA-FE-PG11-UX-CLARITY-256] END */
+
+/* [AUNEA-FE-PG11-INSPECTOR-BUTTON-SPACING-257] START */
+.tobe-inspector nav.tobe-review-steps{
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-start;
+  column-gap:12px!important;row-gap:10px!important
+}
+.tobe-inspector nav.tobe-review-steps > button.btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  flex:0 0 auto;margin:0 12px 10px 0!important;
+  min-height:36px;padding:8px 12px
+}
+@media(max-width:760px){
+  .tobe-inspector nav.tobe-review-steps > button.btn{
+    flex:0 1 auto;min-width:125px
+  }
+}
+/* [AUNEA-FE-PG11-INSPECTOR-BUTTON-SPACING-257] END */
