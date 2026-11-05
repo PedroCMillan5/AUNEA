@@ -1945,6 +1945,24 @@ function tobePage(){
     (!editable&&p.status!=='PUBLISHED'?'<button class="btn" id="newTobeVersion">Crear nueva versión</button>':'');
   const review=tobeHumanReviewRecord(e,p),reviewed=p.items.filter(it=>
     ['ACCEPT','MODIFY','DISCARD'].includes(review?.decisions?.[String(it.sourceStepId)]?.status)).length;
+  const savedAi=typeof internalAiSavedDraft==='function'?internalAiSavedDraft(e):null,
+    pastAi=!savedAi&&typeof internalAiHistoricalDraft==='function'?internalAiHistoricalDraft(e):null,
+    pendingAi=!savedAi&&!pastAi&&typeof internalAiPendingSteps==='function'&&
+      typeof internalAiPilotKey==='function'?internalAiPendingSteps(e,internalAiPilotKey(e)):null,
+    activeItem=tobeSelectedItem(e,p),
+    itemAi=savedAi?.items?.find(x=>String(x.source_step_id)===String(activeItem?.sourceStepId)),
+    proposedCount=itemAi?TOBE_AI_REVIEW_FIELDS.filter(([source])=>{
+      const v=String(itemAi[source]??'').trim();
+      return !!v&&!['no','n/a','ninguno','sin definir','pendiente','—'].includes(v.toLowerCase());
+    }).length:0,
+    aiSummaryTitle=savedAi?'Propuesta IA vigente':
+      pastAi?'Propuesta IA histórica · v'+pastAi.version:
+      pendingAi?.items?.size?'Propuestas individuales en curso':'Sin propuesta IA vigente',
+    aiSummaryDescription=savedAi?
+      'Campos sugeridos para esta actividad: '+proposedCount+' de 9. Aplica solo los cambios autorizados.':
+      pastAi?'Las propuestas de la versión anterior son solo de consulta. Genera una propuesta para la versión actual.':
+      pendingAi?.items?.size?'Hay '+pendingAi.items.size+' actividades guardadas. La revisión global sigue pendiente.':
+      'Puedes analizar la actividad seleccionada sin modificar el AS-IS.';
   return pageTop('Diseño TO-BE','Versión '+p.version+' · '+statusLabel+
     ' · Origen AS-IS v'+esc(p.sourceSnapshotVersion)+'. Las decisiones pertenecen al consultor.',actions)+
     '<main class="tobe-workspace" data-tobe-version="'+p.version+
@@ -1953,6 +1971,8 @@ function tobePage(){
         '<div class="tobe-task-guide-intro"><div><h2>Qué tienes que hacer aquí</h2>'+
           '<p>Diseña cómo funcionará el proceso en el futuro. Revisa una actividad cada vez; el AS-IS original no se modifica.</p></div>'+
           '<span class="tobe-task-guide-progress">'+reviewed+' de '+p.items.length+' recomendaciones revisadas</span></div>'+
+        '<div class="tobe-ia-guide-summary" role="status"><strong>'+esc(aiSummaryTitle)+'</strong>'+
+          '<p>'+esc(aiSummaryDescription)+'</p></div>'+
         '<div class="tobe-task-guide-steps">'+
           '<span><b>1. Entender</b> el problema original</span>'+
           '<span><b>2. Decidir</b> sobre la recomendación IA</span>'+
