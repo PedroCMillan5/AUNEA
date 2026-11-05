@@ -1239,7 +1239,8 @@ function tobeAiInlineHint(e,p,item,key){
       '<p><b>Fuentes vinculadas:</b> '+esc(refs||'No identificadas')+'</p>'+
       '<p><b>Condiciones pendientes:</b> '+esc(pending||'No declaradas')+'</p>'+
     '</details>'+
-    (kept?'<p class="field-help"><b>Decisión de este campo:</b> mantener el valor TO-BE guardado.</p>':'')+
+    (kept?'<p class="field-help"><b>Estado del campo:</b> mantener el valor TO-BE guardado.</p>':
+      applied?'<p class="field-help"><b>Estado del campo:</b> sugerencia IA aplicada y guardada.</p>':'')+
     (dismissed?'<p class="field-help">Recomendación descartada. Se conserva tu valor.</p>':
       skipped?'<p class="field-help">Valor no aplicable: revísalo en el control original.</p>':'')+
     '</div>';
