@@ -855,8 +855,17 @@ function saveTobeFromDom(e){
   document.querySelectorAll('[data-tobe-catalog-item]').forEach(box=>{
     const item=[...p.items,...tobeAddedSteps(p)].find(x=>String(x.id)===box.dataset.tobeCatalogItem);
     const field=box.dataset.tobeCatalogField,select=box.querySelector('[data-model-set]');
-    if(item&&select&&['futureActor','tool'].includes(field))
-      item[field]=resolveCatalogInput(select);
+    if(item&&select&&['futureActor','tool'].includes(field)){
+      const next=String(resolveCatalogInput(select)||''),
+        previous=String(item[field]||''),
+        setId=field==='futureActor'?'OS_ACTOR_ROLE':'OS_TOOL_CATEGORY',
+        option=fieldOptions(setId).find(o=>String(o.value)===previous||
+          String(o.label||'').trim().toLowerCase()===previous.trim().toLowerCase());
+      // A read-only navigation must not rewrite a client/consultant value from
+      // its Spanish label to an internal code merely because the picker rendered.
+      // A real change to another option is still recorded using its canonical ID.
+      if(next!==previous&&(!option||String(option.value)!==next))item[field]=next;
+    }
   });
   document.querySelectorAll('[data-tobe-multi-item]').forEach(box=>{
     if(box.dataset.tobeMultiReadonly==='1')return;
