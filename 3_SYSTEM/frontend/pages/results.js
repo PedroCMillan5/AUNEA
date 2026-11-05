@@ -1851,7 +1851,7 @@ function tobeInspectorHtml(e,p){
     '<section class="tobe-origin" id="tobeStepOrigin"><details class="tobe-subdetails" open><summary>01 · Datos y hallazgos del AS-IS confirmado</summary>'+
       tobeOriginalStepFacts(e,item)+tobeSnapshotIssueCards(e,item)+'</details></section>'+
     '<section class="tobe-advice" id="tobeStepAdvice" aria-label="Sugerencia IA para actividad">'+
-      '<details class="tobe-subdetails"'+(adviceOpen?' open':'')+'><summary>02 · Revisar recomendación IA y decidir</summary>'+
+      '<details class="tobe-subdetails" open><summary>02 · Analizar este paso y revisar la propuesta IA</summary>'+
       '<div id="tobeAiRecommendation">'+tobeAiAdviceHtml(e,item,false)+'</div></details></section>';
   return '<header class="tobe-inspector-head"><div><span class="tobe-eyebrow">'+
       (item.isAddition?'ACTIVIDAD NUEVA · VINCULADA A AS-IS':'ACTIVIDAD SELECCIONADA · ORIGEN AS-IS')+
