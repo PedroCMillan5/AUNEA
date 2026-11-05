@@ -1221,6 +1221,7 @@ function tobeAiInlineHint(e,p,item,key){
     String(x.sourceStepId)===String(item.sourceStepId)&&
     Array.isArray(x.fields)&&x.fields.includes(key)).slice(-1)[0];
   const kept=lastChoice?.action==='KEEP';
+  const applied=lastChoice?.action==='APPLY';
   return '<div class="tobe-ai-inline" data-tobe-ai-field-key="'+attr(key)+'">'+
     '<p class="field-help"><b>'+(!matched&&!skipped?'IA: sin sugerencia fundamentada':'IA propone:')+'</b> '+esc(value)+
     (skipped?' · <b>Revisión manual necesaria</b>':
