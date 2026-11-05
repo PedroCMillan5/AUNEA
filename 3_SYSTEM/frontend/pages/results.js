@@ -1087,7 +1087,8 @@ function tobeAiReviewDiff(e,p,id){
   const source=typeof internalAiSavedDraft==='function'?internalAiSavedDraft(e):null;
   const ai=source?.items?.find(x=>String(x.source_step_id)===String(id));
   const item=p.items.find(x=>String(x.sourceStepId)===String(id));
-  if(!ai||!item||!Array.isArray(ai.source_refs)||!ai.source_refs.map(String).includes(String(id))){
+  if(!source.review||!ai||!item||!Array.isArray(ai.source_refs)||
+     !ai.source_refs.map(String).includes(String(id))){
     out.issue='No existe una recomendación guardada y trazable a esta actividad.';return out;
   }
   const blocked=source.review?.blocking_step_ids?.includes(String(id))||
@@ -1112,15 +1113,20 @@ function tobeAiReviewDiff(e,p,id){
       const parts=type==='OS_ARTIFACT_TYPE'?raw.split(/[,;|]/).map(x=>x.trim()).filter(Boolean):[raw];
       const selected=parts.map(x=>opts.find(o=>String(o.value)===x||
         String(o.label||'').toLowerCase()===x.toLowerCase()));
-      if(!parts.length||selected.some(x=>!x)){
+      if(!parts.length||selected.some(x=>!x)||(
+        type==='OS_ARTIFACT_TYPE'&&selected.some(x=>String(x.value).toUpperCase()==='OTHER'))){
         out.warnings.push('«'+label+'» contiene opciones no confirmadas en el catálogo. Revísalas manualmente.');continue;
       }
       value=type==='OS_ARTIFACT_TYPE'?selected.map(x=>String(x.value)):String(selected[0].value);
       display=selected.map(x=>x.label).join(' · ');
     }
     if(JSON.stringify(item[key])===JSON.stringify(value))continue;
-    out.fields.push({key,label,value,display,before:Array.isArray(item[key])?
-      item[key].join(' · '):String(item[key]||'Sin definir')});
+    const before=type==='OS_ARTIFACT_TYPE'?
+      tobeArtifactDisplay(item[key],item._details?.[key]):
+      type.startsWith('OS_')?
+        labelFrom(type,item[key])||String(item[key]||'Sin definir'):
+        String(item[key]||'Sin definir');
+    out.fields.push({key,label,value,display,before});
   }
   return out;
 }
