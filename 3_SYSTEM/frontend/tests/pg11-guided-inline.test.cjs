@@ -146,4 +146,29 @@ test('guided footer delegates to original Save and Check rather than duplicating
  trigger('save');trigger('check');
  assert.deepEqual(called,['save','check']);
 });
+
+test('PG11 exposes source and individual IA before configuring the future step',()=>{
+ const start=src.indexOf('function tobeInspectorHtml(e,p){');
+ const end=src.indexOf('function createNextTobeVersion',start);
+ assert.ok(start>=0&&end>start);
+ const page=src.slice(start,end);
+ assert.match(page,/01 · Datos y hallazgos del AS-IS confirmado/);
+ assert.match(page,/02 · Analizar este paso y revisar la propuesta IA/);
+ assert.match(page,/data-tobe-generate-selected/);
+ assert.match(page,/tobeAiAdviceHtml\(e,item,false\)/);
+ assert.match(page,/tobeHumanReviewHtml\(e,item,false\)/);
+ assert.ok(page.indexOf("'</nav>'+supportingInformation+")<
+   page.indexOf("'<section class=\"tobe-edit\" id=\"tobeStepDesign\""));
+ assert.equal((page.match(/data-tobe-generate-selected/g)||[]).length,1);
+ assert.doesNotMatch(page,/tobe-review-support/);
+});
+test('PG11 displays confirmed AS-IS values beside the sole editable TO-BE field',()=>{
+ const f=fixture();
+ f.context.tobeProposalSourceSteps=()=>[{id:'P1',actor:'ADMIN',tool:'ERP',inputs:['PDF'],outputs:['PDF']}];
+ const html=f.context.tobeWithAiHint(f.e,f.p,f.p.items[0],'outputs',
+   '<div class="field"><input data-tobe-field="outputs"></div>');
+ assert.match(html,/Valor AS-IS confirmado:/);
+ assert.match(html,/PDF/);
+ assert.equal((html.match(/data-tobe-field="outputs"/g)||[]).length,1);
+});
 // [AUNEA-UAT-PG11-GUIDED-267] END
