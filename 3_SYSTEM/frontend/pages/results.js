@@ -1327,7 +1327,7 @@ function tobeAiAdviceHtml(e,item){
     '</details>'+
     ''+
     tobeHumanReviewHtml(e,item,!!archived)+
-    (!archived?tobeAiReviewChangesHtml(e,item):'')+
+    '<p class="tobe-muted">Los valores IA y sus fuentes aparecen junto a los campos de «03 · Configurar». La propuesta no modifica el borrador sin una decisión humana.</p>'+
     '</div>';
 }
 // [AUNEA-FE-PG11-INSPECTOR-CHECKPOINT-214] END
@@ -1680,6 +1680,9 @@ function tobeSourceDataExplanation(raw){
 function tobeInspectorHtml(e,p){
   const item=tobeSelectedItem(e,p),editable=tobeEditable(p);
   if(!item)return '<div class="notice warn">No hay actividades TO-BE vinculadas al AS-IS.</div>';
+  const choice=tobeHumanReviewRecord(e,p)?.decisions?.[String(item.sourceStepId)];
+  const adviceOpen=editable&&!item.isAddition&&!['ACCEPT','MODIFY','DISCARD'].includes(choice?.status);
+  const withAi=(key,html)=>tobeWithAiHint(e,p,item,key,html);
   const statusField='<div class="field"><label for="tobe_'+attr(item.id)+'_transformation">Qué cambia</label>'+
     (editable?auneaSelectControl('tobe_'+item.id+'_transformation',TOBE_TRANSFORMATIONS.map(v=>({value:v,label:v})),
       item.transformation||'',{extra:'data-tobe-item="'+attr(item.id)+'" data-tobe-field="transformation"',placeholder:'Selecciona una transformación'}):
@@ -1696,11 +1699,11 @@ function tobeInspectorHtml(e,p){
       '<button type="button" class="btn btn-outline btn-small" style="margin:0 12px 10px 0" data-tobe-jump="tobeStepDesign">3 · Configurar</button>'+
       '<button type="button" class="btn btn-outline btn-small" style="margin:0 12px 10px 0" data-tobe-jump="tobeStepRoutes">4 · Conectar</button>'+
     '</nav>'+
-    '<section class="tobe-origin" id="tobeStepOrigin"><h3>01 · Entender el AS-IS y sus hallazgos</h3>'+
-      tobeOriginalStepFacts(e,item)+
-      tobeSnapshotIssueCards(e,item)+'</section>'+
-    '<section class="tobe-advice" id="tobeStepAdvice" aria-label="Sugerencia IA para actividad"><h3>02 · Revisar la recomendación IA y decidir</h3>'+
-      '<div id="tobeAiRecommendation">'+tobeAiAdviceHtml(e,item)+'</div></section>'+
+    '<section class="tobe-origin" id="tobeStepOrigin"><details class="tobe-subdetails"><summary>01 · Entender el AS-IS y sus hallazgos</summary>'+
+      tobeOriginalStepFacts(e,item)+tobeSnapshotIssueCards(e,item)+'</details></section>'+
+    '<section class="tobe-advice" id="tobeStepAdvice" aria-label="Sugerencia IA para actividad">'+
+      '<details class="tobe-subdetails"'+(adviceOpen?' open':'')+'><summary>02 · Revisar recomendación IA y decidir</summary>'+
+      '<div id="tobeAiRecommendation">'+tobeAiAdviceHtml(e,item)+'</div></details></section>'+
     '<section class="tobe-edit" id="tobeStepDesign"><h3>03 · Configurar la actividad futura</h3>'+
       '<p class="tobe-muted" data-tobe-transformation-message="1" role="status" aria-live="polite">Elige «Qué cambia» y completa la justificación del diseño futuro. La recomendación IA no cambia tu decisión automáticamente.</p>'+
       '<p class="tobe-muted">Estos campos describen el funcionamiento futuro. Los valores heredados se muestran para revisar, no son mejoras confirmadas ni decisiones de la IA.</p>'+
@@ -1715,17 +1718,17 @@ function tobeInspectorHtml(e,p){
             placeholder:'Selecciona tipo'}):
           '<input disabled value="'+attr(item.stepType==='ST04'?'Decisión · rutas SÍ / NO':'Actividad operativa')+'">')+
         '<p class="field-help">Actividad operativa: ejecuta trabajo. Decisión: requiere rutas SÍ y NO.</p></div>':'')+
-      statusField+
-      tobeField(item,'problemResolved',
+      withAi('transformation',statusField)+
+      withAi('problemResolved',tobeField(item,'problemResolved',
         tobeTransformationRationaleLabel(item.transformation),
-        item.problemResolved,'textarea',!editable)+
-      tobeCatalogField(item,'futureActor','Responsable futuro','OS_ACTOR_ROLE',!editable)+
-      tobeCatalogField(item,'tool','Herramienta / arquitectura','OS_TOOL_CATEGORY',!editable)+
-      '<div class="tobe-data-pair">'+tobeArtifactField(item,'inputs','Datos de entrada',!editable)+'</div>'+
-      '<div class="tobe-data-pair">'+tobeArtifactField(item,'outputs','Datos de salida',!editable)+'</div>'+
-      tobeField(item,'automationAi','Automatización e IA',item.automationAi,'textarea',!editable)+
-      tobeField(item,'humanSupervision','Supervisión humana',item.humanSupervision,'textarea',!editable)+
-      tobeField(item,'controlsRisk','Control / riesgo',item.controlsRisk,'textarea',!editable)+
+        item.problemResolved,'textarea',!editable))+
+      withAi('futureActor',tobeCatalogField(item,'futureActor','Responsable futuro','OS_ACTOR_ROLE',!editable))+
+      withAi('tool',tobeCatalogField(item,'tool','Herramienta / arquitectura','OS_TOOL_CATEGORY',!editable))+
+      '<div class="tobe-data-pair">'+withAi('inputs',tobeArtifactField(item,'inputs','Datos de entrada',!editable))+'</div>'+
+      '<div class="tobe-data-pair">'+withAi('outputs',tobeArtifactField(item,'outputs','Datos de salida',!editable))+'</div>'+
+      withAi('automationAi',tobeField(item,'automationAi','Automatización e IA',item.automationAi,'textarea',!editable))+
+      withAi('humanSupervision',tobeField(item,'humanSupervision','Supervisión humana',item.humanSupervision,'textarea',!editable))+
+      withAi('controlsRisk',tobeField(item,'controlsRisk','Control / riesgo',item.controlsRisk,'textarea',!editable))+
       '</div>'+
       ''+
       '<details class="tobe-subdetails"><summary>Tiempo futuro y supuesto trazable (si existe)</summary>'+
