@@ -646,11 +646,11 @@ async function main(){
   // One click changes the inspector, without destroying any draft edits.
   const sourceIds=await page.evaluate(()=>latestTobe(currentEng()).items.map(x=>String(x.sourceStepId)));
   if(sourceIds.length>1){
-    await page.locator('[data-tobe-select="'+sourceIds[1]+'"]').click();
-    assert.equal(await page.locator('[data-tobe-select="'+sourceIds[1]+'"]').getAttribute('aria-pressed'),'true');
+    await page.locator('.tobe-guided-tabs [data-tobe-select="'+sourceIds[1]+'"]').click();
+    assert.equal(await page.locator('.tobe-guided-tabs [data-tobe-select="'+sourceIds[1]+'"]').getAttribute('aria-pressed'),'true');
     await page.locator('#tobeInspector [data-tobe-field="problemResolved"]').fill('Mejora revisada en UAT');
-    await page.locator('[data-tobe-select="'+sourceIds[0]+'"]').click();
-    await page.locator('[data-tobe-select="'+sourceIds[1]+'"]').click();
+    await page.locator('.tobe-guided-tabs [data-tobe-select="'+sourceIds[0]+'"]').click();
+    await page.locator('.tobe-guided-tabs [data-tobe-select="'+sourceIds[1]+'"]').click();
     assert.equal(await page.locator('#tobeInspector [data-tobe-field="problemResolved"]').inputValue(),
       'Mejora revisada en UAT','inspector edits survive navigation and real saves');
   }
@@ -691,7 +691,7 @@ async function main(){
   const inspectorBusinessBefore=await page.evaluate(()=>
     JSON.stringify(latestTobe(currentEng()).items));
   for(let i=0;i<sourceIds.length;i++){
-    await page.locator('[data-tobe-select="'+sourceIds[i]+'"]').click();
+    await page.locator('.tobe-guided-tabs [data-tobe-select="'+sourceIds[i]+'"]').click();
     const advice=await page.locator('#tobeAiRecommendation').innerText();
     assert.match(advice,new RegExp('Problema sintético vinculado '+(i+1)),
       'inspector must match the selected source step');
@@ -714,7 +714,7 @@ async function main(){
   assert.equal(await page.locator('#retryTobeAiReview').count(),1,
     'review may be retried without regenerating any verified activities');
   for(let i=sourceIds.length-1;i>=0;i--){
-    await page.locator('[data-tobe-select="'+sourceIds[i]+'"]').click();
+    await page.locator('.tobe-guided-tabs [data-tobe-select="'+sourceIds[i]+'"]').click();
     const advice=await page.locator('#tobeAiRecommendation').innerText();
     assert.match(advice,new RegExp('Problema sintético vinculado '+(i+1)),
       'checkpoint must remain linked to each original source ID after page reload');
@@ -784,7 +784,7 @@ async function main(){
   // [AUNEA-UAT-PG11-HUMAN-BROWSER-227] START — consultant reviews one
   // source-linked recommendation. Clicking cannot overwrite TO-BE fields.
   const originalTobeData=await page.evaluate(()=>JSON.stringify(latestTobe(currentEng()).items));
-  await page.locator('[data-tobe-select="'+sourceIds[0]+'"]').click();
+  await page.locator('.tobe-guided-tabs [data-tobe-select="'+sourceIds[0]+'"]').click();
   await page.locator('#tobeHumanReviewNote').fill(
     'Revisión humana de la primera actividad: ajustar propuesta, validar las fuentes y los riesgos antes de cambiar el proceso.');
   await page.locator('[data-tobe-human-decision="MODIFY"]').click();
@@ -929,7 +929,7 @@ async function main(){
   // [AUNEA-UAT-PG11-PG12-BROWSER-238] START — new source-linked activity,
   // guarded route rewiring, durable TO-BE version and read-only PG12 dual map.
   if(sourceIds.length<2)throw Error('Future-flow browser fixture requires two source activities');
-  await page.locator('[data-tobe-select="'+sourceIds[0]+'"]').first().click();
+  await page.locator('.tobe-guided-tabs [data-tobe-select="'+sourceIds[0]+'"]').first().click();
   await page.locator('#addTobeStep').click();
   const addition=await page.evaluate(()=>{
     const e=currentEng(),p=latestTobe(e);
@@ -952,7 +952,7 @@ async function main(){
     return {transformation:t.value,normal:r.value};
   },{nextId:sourceIds[1],addedId:addition.id});
   assert.equal(newRoute.transformation,'Se incorpora control');
-  await page.locator('[data-tobe-select="'+sourceIds[0]+'"]').first().click();
+  await page.locator('.tobe-guided-tabs [data-tobe-select="'+sourceIds[0]+'"]').first().click();
   await page.evaluate(({addedId,firstId})=>{
     const r=document.querySelector('[data-tobe-route="normal"][data-tobe-route-step="'+firstId+'"]');
     if(!r)throw Error('Original step routing selector missing');
