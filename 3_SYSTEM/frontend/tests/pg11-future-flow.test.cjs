@@ -113,4 +113,24 @@ test('no disconnected steps and no addition without a confirmed source',()=>{
  flow.addedSteps[0].sourceStepId='S1';
  assert.match(h.run('tobeFlowIntegrity'),/desconectadas/);
 });
+test('PG11 field help describes every text field and treats NO as invalid rationale',()=>{
+  for(const field of ['stepName','problemResolved','futureActor','tool','inputs','outputs',
+    'automationAi','humanSupervision','controlsRisk','futureTime','futureTimeAssumption'])
+    assert.match(src,new RegExp(' '+field+':'),field+' must have contextual guidance');
+  assert.match(src,/const shown=suspect&&key==='problemResolved'\?'':'raw/);
+  assert.match(src,/placeholder="'\+attr\(help\)/);
+});
+test('PG11 drag connects only future main routes and keeps NO route in inspector',()=>{
+  assert.match(src,/AUNEA-FE-PG11-FLOW-DRAG-247/);
+  assert.match(src,/flow\.routes\[from\]\.normal=to/);
+  assert.match(src,/saveState\('Guardar conexión TO-BE'\)/);
+  assert.match(src,/field\('exception','Ruta NO/);
+});
+test('discarding added steps preserves history while clearing invalid incoming edges',()=>{
+  assert.match(src,/item\.status='SUPERSEDED'/);
+  assert.match(src,/delete flow\.routes\[id\]/);
+  assert.match(src,/route\?\.normal===id/);
+  assert.match(src,/route\?\.exception===id/);
+  assert.match(src,/draft\.flow=previousFlow/);
+});
 // [AUNEA-UAT-PG11-FUTURE-FLOW-233] END
