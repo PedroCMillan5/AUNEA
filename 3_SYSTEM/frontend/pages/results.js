@@ -938,11 +938,18 @@ function tobeArtifactField(item,key,label,disabled=false){
     selectedHtml(htmlId,opts,current,{wrapped:true,detailId:htmlId+'_detail',
       detailValue:details,detailPlaceholder:'Especifica '+(key==='inputs'?'el dato de entrada':'el resultado')+' al seleccionar Otro'}):
     '<p class="notice warn">No se ha cargado el componente canónico de multiselección.</p>';
+  const chips=current.map(value=>{
+    const option=opts.find(x=>String(x.value)===String(value));
+    return '<span class="tobe-selected-data-chip">'+esc(option?.label||value)+'</span>';
+  }).join('');
+  const compact='<details class="tobe-artifact-compact"><summary aria-label="Editar '+esc(label)+'">'+
+    '<span class="tobe-artifact-chips">'+(chips||'<span class="tobe-muted">Selecciona formatos</span>')+
+    '</span><span class="tobe-artifact-chevron" aria-hidden="true">⌄</span></summary>'+
+    '<div class="tobe-artifact-options">'+controls+'</div></details>';
   return '<div class="field full tobe-artifact-field" data-tobe-multi-item="'+attr(item.id)+
     '" data-tobe-multi-key="'+attr(key)+'" data-tobe-multi-id="'+attr(htmlId)+'"'+
     (disabled?' data-tobe-multi-readonly="1"':'')+'><label>'+esc(label)+'</label>'+
-    (disabled?'<fieldset disabled class="tobe-readonly-options">'+controls+'</fieldset>':
-      '<div>'+controls+'</div>')+
+    (disabled?'<fieldset disabled class="tobe-readonly-options">'+compact+'</fieldset>':compact)+
     (unknown.length?'<p class="notice warn">Valor anterior no reconocido por el catálogo vigente: '+
       esc(unknown.join(' · '))+'. Se conserva hasta que indiques expresamente que quieres retirarlo.</p>'+
       (disabled?'':'<label class="field-help"><input type="checkbox" data-tobe-drop-legacy="1"> Eliminar estos valores antiguos no reconocidos al guardar</label>'):'')+
