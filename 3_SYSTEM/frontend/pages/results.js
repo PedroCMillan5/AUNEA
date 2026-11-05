@@ -1542,27 +1542,38 @@ function tobeCoherenceFindings(e,p){
 function tobeCoherencePanel(e,p){
   const findings=tobeCoherenceFindings(e,p),
     human=typeof tobeHumanReviewRecord==='function'?tobeHumanReviewRecord(e,p):null,
-    decisions=human?.decisions||{},steps=p?.items||[],reviewed=steps.filter(x=>
-      ['ACCEPT','MODIFY','DISCARD'].includes(decisions[String(x.sourceStepId)]?.status)).length,
-    flow=tobeFlowIntegrity(e,p),blocked=findings.filter(x=>x.severity==='BLOCKING'),
-    notes=findings.filter(x=>x.severity!=='BLOCKING');
-  const summary='<p class="tobe-muted">Revisión humana de propuestas: '+reviewed+' de '+steps.length+
-    ' actividades originales. Actividades nuevas: '+tobeAddedSteps(p).length+
-    '. Coherencia determinista: '+blocked.length+' bloqueos, '+notes.length+' observaciones.'+
-    (flow?' Hay incidencias de conexión.':' Rutas con integridad estructural.')+'</p>';
-  const messages=[
-    ...(flow?[{stepId:'',severity:'BLOCKING',message:flow,name:'Mapa futuro'}]:[]),
-    ...findings
-  ];
-  return '<div class="tobe-coherence">'+summary+
-    (messages.length?'<ul class="tobe-coherence-list">'+messages.map(x=>
-      '<li><span class="tobe-coherence-severity">'+
-       (x.severity==='BLOCKING'?'Bloqueo':'Observación')+'</span>'+
-      '<span>'+esc(x.name)+': '+esc(x.message)+'</span>'+
-      (x.stepId?'<button type="button" class="btn btn-outline btn-small" data-tobe-select="'+
-        attr(x.stepId)+'">Revisar actividad</button>':'')+'</li>').join('')+'</ul>':
-      '<p class="tobe-muted">Sin contradicciones detectadas por las reglas disponibles. Se requiere revisión humana y, si se utiliza IA, comprobación de sus fuentes.</p>')+
-    '<p class="tobe-muted">El análisis automático no certifica viabilidad técnica ni tiempos. Las cifras futuras se mantienen como hipótesis trazables.</p></div>';
+    decisions=human?.decisions||{},steps=p?.items||[],
+    reviewed=steps.filter(x=>['ACCEPT','MODIFY','DISCARD'].includes(
+      decisions[String(x.sourceStepId)]?.status)).length,
+    added=tobeAddedSteps(p).length,
+    integrity=tobeFlowIntegrity(e,p),
+    blocked=findings.filter(x=>x.severity==='BLOCKING'),
+    notes=findings.filter(x=>x.severity!=='BLOCKING'),
+    errors=blocked.length+(integrity?1:0),
+    items=[...(integrity?[{stepId:'',severity:'BLOCKING',message:integrity,name:'Mapa futuro'}]:[]),...findings],
+    ready=errors===0&&reviewed===steps.length,
+    headline=ready?'Estructura sin bloqueos detectados; pendiente validación humana de fuentes':
+      errors?'Se han detectado '+errors+' bloqueos que deben resolverse':
+      'Quedan '+(steps.length-reviewed)+' actividades por revisar';
+  return '<div class="tobe-coherence">'+
+    '<div class="tobe-global-indicators" role="status">'+
+      '<div><strong>'+reviewed+' / '+steps.length+'</strong><span>Actividades revisadas</span></div>'+
+      '<div><strong>'+errors+'</strong><span>Bloqueos</span></div>'+
+      '<div><strong>'+notes.length+'</strong><span>Observaciones</span></div>'+
+      '<div><strong>'+added+'</strong><span>Actividades nuevas</span></div>'+
+    '</div>'+
+    '<p class="tobe-global-headline">'+esc(headline)+'</p>'+
+    '<details class="tobe-global-evidence"><summary>Ver comprobaciones y acciones pendientes'+
+      (items.length?' ('+items.length+')':'')+'</summary>'+
+      (items.length?'<ul class="tobe-coherence-list">'+items.map(x=>
+        '<li><span class="tobe-coherence-severity">'+
+        (x.severity==='BLOCKING'?'Bloqueo':'Observación')+'</span>'+
+        '<span>'+esc(x.name)+': '+esc(x.message)+'</span>'+
+        (x.stepId?'<button type="button" class="btn btn-outline btn-small" data-tobe-select="'+
+          attr(x.stepId)+'">Revisar actividad</button>':'')+'</li>').join('')+'</ul>':
+        '<p>Sin contradicciones detectadas por las reglas disponibles.</p>')+
+      '<p class="tobe-muted">Las comprobaciones estructurales no certifican viabilidad técnica ni ahorros. Valida las fuentes y los supuestos con el cliente.</p>'+
+    '</details></div>';
 }
 // [AUNEA-FE-PG11-COHERENCE-239] END
 // [AUNEA-FE-PG11-FUTURE-FLOW-228] START — version-owned future routing overlay.
@@ -2008,7 +2019,7 @@ function tobePage(){
         '<summary><strong>Revisión global IA, propuestas y auditoría técnica</strong>'+
         '<span class="tobe-muted">Opcional: consulta el detalle completo. Revisa cada propuesta desde el inspector de su actividad.</span></summary>'+
         '<div id="tobeAiMount"></div></details>':'')+
-      '<section class="tobe-completion"><div><h2>Validación global</h2><p>Rutas, coherencia del diseño, cobertura de propuestas y limitaciones. Las recomendaciones IA requieren aprobación humana.</p></div>'+
+      '<section class="tobe-completion"><div><h2>Validación global</h2><p>Vista rápida del estado y acciones pendientes. El detalle técnico sigue disponible.</p></div>'+
         '<button type="button" class="btn btn-outline" id="checkTobeReadiness">Comprobar requisitos</button>'+
         '<div id="tobeReadinessStatus" role="status" aria-live="polite"></div>'+
         tobeCoherencePanel(e,p)+'</section>'+
