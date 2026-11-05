@@ -1420,12 +1420,12 @@ function tobeCanvasHtml(e,p){
     if(!pos)return null;
     const saved=flow.positions?.[String(n.id)];
     const x=saved&&Number.isFinite(Number(saved.x))?Number(saved.x):24+Math.max(0,pos.col-1)*260;
-    const y=saved&&Number.isFinite(Number(saved.y))?Number(saved.y):76+Math.max(0,pos.row-1)*252;
+    const y=saved&&Number.isFinite(Number(saved.y))?Number(saved.y):76+Math.max(0,pos.row-1)*290;
     return {node:n,x:Math.max(0,Math.min(10000,Math.round(x))),
       y:Math.max(0,Math.min(10000,Math.round(y)))};
   }).filter(Boolean);
   const boardWidth=Math.max(850,...placements.map(p=>p.x+235));
-  const boardHeight=Math.max(360,...placements.map(p=>p.y+270));
+  const boardHeight=Math.max(390,...placements.map(p=>p.y+300));
   const cells=placements.map(({node:n,x,y})=>{
     const step=n.kind==='step'?steps.find(s=>String(s.id)===String(n.id)):null;
     const item=step?tobeFlowItem(e,p,String(step.id)):null;
@@ -1451,11 +1451,11 @@ function tobeCanvasHtml(e,p){
         '<small>'+esc((typeof labelFrom==='function'?labelFrom('OS_ACTOR_ROLE',item.futureActor):'')||
           item.futureActor||'Responsable pendiente')+'</small></button>'+
         (editable?'<div class="tobe-node-tools" aria-label="Acciones de actividad">'+
-          '<button type="button" data-tobe-move="'+id+'" title="Mover tarjeta por el mapa">Mover</button>'+
-          '<button type="button" data-tobe-connect="'+id+'" data-tobe-kind="normal" title="Selecciona después la actividad de destino">Conectar</button>'+
-          (decision?'<button type="button" data-tobe-connect="'+id+'" data-tobe-kind="exception" title="Conectar ruta NO">Ruta NO</button>':'')+
-          (item.isAddition?'<button type="button" data-tobe-discard-added="'+id+'" title="Descartar sólo esta actividad nueva">Eliminar</button>':
-           '<button type="button" data-tobe-remove-original="'+id+'" title="Retirar sólo del proceso futuro, sin alterar el AS-IS">Retirar</button>')+
+          '<button type="button" class="btn btn-outline btn-small" data-tobe-move="'+id+'" title="Mover tarjeta por el mapa">Mover</button>'+
+          '<button type="button" class="btn btn-outline btn-small" data-tobe-connect="'+id+'" data-tobe-kind="normal" title="Selecciona después la actividad de destino">Conectar</button>'+
+          (decision?'<button type="button" class="btn btn-outline btn-small" data-tobe-connect="'+id+'" data-tobe-kind="exception" title="Conectar ruta NO">Ruta NO</button>':'')+
+          (item.isAddition?'<button type="button" class="btn btn-outline btn-small" data-tobe-discard-added="'+id+'" title="Descartar sólo esta actividad nueva">Eliminar</button>':
+           '<button type="button" class="btn btn-outline btn-small" data-tobe-remove-original="'+id+'" title="Retirar sólo del proceso futuro, sin alterar el AS-IS">Retirar</button>')+
           '</div>':'');
     }
     return '<div class="process-graph-cell" style="left:'+x+'px;top:'+y+
@@ -1900,6 +1900,26 @@ function registerInternalWorkPages(){
   // [AUNEA-FE-PG11-CANVAS-MODE-250] START — separate move from route editing.
   let __auneaTobeLink=null,__auneaTobeMovedClick=false;
   // [AUNEA-FE-PG11-CANVAS-MODE-250] END
+  // [AUNEA-FE-PG11-ARTIFACT-OTHER-252] START — match AS-IS Other behavior.
+  document.addEventListener('change',event=>{
+    const toggle=event.target?.closest?.('.tobe-artifact-field [data-v1-other-toggle]');
+    if(!toggle||state.activePage!=='tobe')return;
+    const wrap=toggle.closest('.tobe-artifact-field')?.querySelector(
+      '[data-v1-other-wrap="'+toggle.dataset.v1OtherToggle+'"]');
+    if(!wrap)return;
+    wrap.style.display=toggle.checked?'':'none';
+    if(!toggle.checked){const detail=wrap.querySelector('input');if(detail)detail.value='';}
+  },true);
+  document.addEventListener('input',event=>{
+    const detail=event.target?.closest?.('.tobe-artifact-field [id$="_detail"]');
+    if(!detail||state.activePage!=='tobe')return;
+    const toggle=detail.closest('.tobe-artifact-field')?.querySelector('[data-v1-other-toggle]');
+    if(toggle){
+      toggle.checked=!!detail.value.trim()||toggle.checked;
+      toggle.disabled=!!detail.value.trim();
+    }
+  },true);
+  // [AUNEA-FE-PG11-ARTIFACT-OTHER-252] END
   // [AUNEA-FE-PG11-SELECT-206] START — retain unsaved consultant data before switching inspector.
   document.addEventListener('click',event=>{
     const selected=event.target?.closest?.('[data-tobe-select]');
@@ -2067,7 +2087,7 @@ function registerInternalWorkPages(){
     d.cell.style.left=x+'px';d.cell.style.top=y+'px';
     d.cell.classList.add('tobe-move-active');
     d.board.style.width=Math.max(d.board.offsetWidth,x+245)+'px';
-    d.board.style.height=Math.max(d.board.offsetHeight,y+270)+'px';
+    d.board.style.height=Math.max(d.board.offsetHeight,y+300)+'px';
     tobeRedraw(d.board);
   },true);
   document.addEventListener('pointerup',event=>{
