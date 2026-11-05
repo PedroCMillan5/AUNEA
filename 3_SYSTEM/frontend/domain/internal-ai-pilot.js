@@ -153,8 +153,10 @@ async function generateTobeGlobal(e){
       }};
     markDirty('PG11: análisis IA global pendiente de revisión humana');
     if(!saveState('Guardar análisis IA global en TO-BE v'+owner.version)){
+      // Failed persistence must never discard the previous verified analysis.
+      owner.aiGlobal=previous;
       __auneaGlobalAiFeedback.set(key,{working:false,type:'warn',message:
-        'La IA terminó, pero el guardado no se ha confirmado. Conserva esta página y pulsa Guardar borrador.'});
+        'El análisis nuevo no pudo guardarse. Se conserva la última propuesta registrada.'});
     }else{
       let verified=false;
       try{
