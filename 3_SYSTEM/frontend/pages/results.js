@@ -1212,6 +1212,7 @@ function tobeFlowOwner(e,p){
 }
 function tobeMutableFlow(e,p){
   if(!p.flow)p.flow=tobeFlowOwner(e,p);
+  if(!p.flow.positions)p.flow.positions={};
   return p.flow;
 }
 function tobeAddedSteps(p,includeSuperseded=false){
@@ -1818,12 +1819,39 @@ function registerInternalWorkPages(){
     }
   },true);
   // [AUNEA-FE-PG11-DRAFT-CLICK-181] END
+  // [AUNEA-FE-PG11-CANVAS-MODE-250] START — separate move from route editing.
+  let __auneaTobeLink=null,__auneaTobeMovedClick=false;
+  // [AUNEA-FE-PG11-CANVAS-MODE-250] END
   // [AUNEA-FE-PG11-SELECT-206] START — retain unsaved consultant data before switching inspector.
   document.addEventListener('click',event=>{
     const selected=event.target?.closest?.('[data-tobe-select]');
     if(!selected||state.activePage!=='tobe')return;
     const e=currentEng(),p=latestTobe(e),sourceId=selected.getAttribute('data-tobe-select');
     if(!e||!p||!tobeFlowItem(e,p,sourceId))return;
+    if(__auneaTobeMovedClick){
+      event.preventDefault();event.stopImmediatePropagation();
+      __auneaTobeMovedClick=false;return;
+    }
+    if(__auneaTobeLink){
+      event.preventDefault();
+      const {from,kind}=__auneaTobeLink;
+      __auneaTobeLink=null;
+      document.querySelector('.tobe-free-board')?.classList.remove('tobe-connect-active');
+      if(!tobeEditable(p)||!tobeFlowItem(e,p,from)||from===String(sourceId))
+        return toast('Selecciona otra actividad futura válida para conectar.');
+      if(!saveTobeFromDom(e)||!saveState('Guardar campos antes de conectar el proceso'))
+        return toast('No se guardaron los campos actuales; la ruta no ha cambiado.');
+      const live=currentEng(),draft=latestTobe(live),flow=tobeMutableFlow(live,draft),
+        previous=JSON.parse(JSON.stringify(flow));
+      if(!flow.routes[from])flow.routes[from]={normal:'__PENDING__',exception:''};
+      flow.routes[from][kind]=String(sourceId);
+      markDirty('Ruta '+kind+' del TO-BE '+from+' hacia '+sourceId);
+      if(!saveState('Guardar conexión editada TO-BE')){
+        draft.flow=previous;return toast('No se guardó la conexión; se restauró el flujo.');
+      }
+      render();toast('Conexión guardada. Comprueba las rutas y la coherencia antes de revisar.');
+      return;
+    }
     event.preventDefault();
     if(tobeEditable(p)&&(!saveTobeFromDom(e)||!saveState('Guardar edición TO-BE antes de cambiar actividad'))){
       toast('No se ha guardado la edición. Mantén la actividad actual abierta.');
@@ -1888,6 +1916,7 @@ function registerInternalWorkPages(){
     const previousFlow=JSON.parse(JSON.stringify(flow));
     item.status='SUPERSEDED';item.updatedAt=now();
     delete flow.routes[id];
+    delete flow.positions?.[id];
     for(const route of Object.values(flow.routes)){
       if(route?.normal===id)route.normal='__PENDING__';
       if(route?.exception===id)route.exception='__PENDING__';
@@ -1905,42 +1934,78 @@ function registerInternalWorkPages(){
     toast('Actividad retirada del flujo futuro. Comprueba sus conexiones entrantes.');
   },true);
   // [AUNEA-FE-PG11-FLOW-ACTIONS-229] END
-  // [AUNEA-FE-PG11-FLOW-DRAG-247] START — drag to connect main/YES route.
-  let tobeDragFrom='';
-  document.addEventListener('dragstart',event=>{
-    const node=event.target?.closest?.('.tobe-process-canvas [data-tobe-select]');
-    if(!node||state.activePage!=='tobe')return;
-    if(!tobeEditable(latestTobe(currentEng()))){event.preventDefault();return;}
-    tobeDragFrom=String(node.getAttribute('data-tobe-select')||'');
-    if(event.dataTransfer){event.dataTransfer.effectAllowed='link';event.dataTransfer.setData('text/plain',tobeDragFrom);}
-  });
-  document.addEventListener('dragover',event=>{
-    const node=event.target?.closest?.('.tobe-process-canvas [data-tobe-select]');
-    if(node&&tobeDragFrom&&node.getAttribute('data-tobe-select')!==tobeDragFrom){
-      event.preventDefault();if(event.dataTransfer)event.dataTransfer.dropEffect='link';
-    }
-  });
-  document.addEventListener('drop',event=>{
-    const node=event.target?.closest?.('.tobe-process-canvas [data-tobe-select]');
-    if(!node||!tobeDragFrom||state.activePage!=='tobe')return;
-    event.preventDefault();
-    const from=tobeDragFrom,to=String(node.getAttribute('data-tobe-select')||'');
-    tobeDragFrom='';
-    const e=currentEng(),p=latestTobe(e);
-    if(!e||!tobeEditable(p)||from===to||!tobeFlowItem(e,p,from)||!tobeFlowItem(e,p,to))return;
-    if(!saveTobeFromDom(e)||!saveState('Guardar campos antes de conectar actividad'))
-      return toast('No se han guardado los campos. Conexión sin cambios.');
-    const live=currentEng(),draft=latestTobe(live),flow=tobeMutableFlow(live,draft);
-    const previous=JSON.parse(JSON.stringify(flow));
-    if(!flow.routes[from])flow.routes[from]={normal:'__PENDING__',exception:''};
-    flow.routes[from].normal=to;
-    markDirty('Ruta principal TO-BE '+from+' a '+to);
-    if(!saveState('Guardar conexión TO-BE')){
-      draft.flow=previous;return toast('No se guardó la conexión; se restauró el flujo anterior.');
-    }
-    render();toast('Ruta principal conectada. Comprueba las demás conexiones y la coherencia global.');
+  // [AUNEA-FE-PG11-FLOW-DRAG-247] START — move free-layout nodes by pointer.
+  // Movement changes only flow.positions. Connection changes only flow.routes.
+  let tobePointer=null, redrawQueued=false;
+  const tobeRedraw=board=>{
+    if(redrawQueued||typeof requestAnimationFrame!=='function')return;
+    redrawQueued=true;
+    requestAnimationFrame(()=>{redrawQueued=false;if(board.isConnected&&typeof drawProcessGraph==='function')drawProcessGraph(board);});
+  };
+  document.addEventListener('pointerdown',event=>{
+    const target=event.target?.closest?.('.tobe-free-board .tobe-graph-node,.tobe-free-board [data-tobe-move]');
+    if(!target||state.activePage!=='tobe'||event.button!==0)return;
+    if(!tobeEditable(latestTobe(currentEng())))return;
+    const cell=target.closest('.process-graph-cell'),board=target.closest('.tobe-free-board');
+    if(!cell||!board)return;
+    const id=String(cell.dataset.graphNode||'');
+    if(!tobeFlowItem(currentEng(),latestTobe(currentEng()),id))return;
+    tobePointer={id,cell,board,pointerId:event.pointerId,startX:event.clientX,
+      startY:event.clientY,x:parseFloat(cell.style.left)||0,y:parseFloat(cell.style.top)||0,moved:false};
   },true);
-  document.addEventListener('dragend',()=>{tobeDragFrom='';});
+  document.addEventListener('pointermove',event=>{
+    const d=tobePointer;
+    if(!d||event.pointerId!==d.pointerId||state.activePage!=='tobe')return;
+    const dx=event.clientX-d.startX,dy=event.clientY-d.startY;
+    if(!d.moved&&Math.hypot(dx,dy)<5)return;
+    d.moved=true;event.preventDefault();
+    const x=Math.max(0,Math.min(10000,Math.round(d.x+dx))),
+      y=Math.max(0,Math.min(10000,Math.round(d.y+dy)));
+    d.cell.style.left=x+'px';d.cell.style.top=y+'px';
+    d.cell.classList.add('tobe-move-active');
+    d.board.style.width=Math.max(d.board.offsetWidth,x+245)+'px';
+    d.board.style.height=Math.max(d.board.offsetHeight,y+270)+'px';
+    tobeRedraw(d.board);
+  },true);
+  document.addEventListener('pointerup',event=>{
+    const d=tobePointer;
+    if(!d||event.pointerId!==d.pointerId)return;
+    tobePointer=null;d.cell.classList.remove('tobe-move-active');
+    if(!d.moved)return;
+    __auneaTobeMovedClick=true;
+    if(typeof setTimeout==='function')setTimeout(()=>{__auneaTobeMovedClick=false;},0);
+    const e=currentEng(),p=latestTobe(e);
+    if(!e||!tobeEditable(p))return;
+    const point={x:parseInt(d.cell.style.left,10),y:parseInt(d.cell.style.top,10)};
+    if(!saveTobeFromDom(e)||!saveState('Guardar campos antes de mover actividad')){
+      render();return toast('No se guardaron los campos; el movimiento no se ha confirmado.');
+    }
+    const live=currentEng(),draft=latestTobe(live),flow=tobeMutableFlow(live,draft),
+      previous=JSON.parse(JSON.stringify(flow));
+    flow.positions[d.id]=point;
+    markDirty('Posición de actividad TO-BE '+d.id);
+    if(!saveState('Guardar posición visual TO-BE')){
+      draft.flow=previous;render();
+      return toast('No se guardó la nueva posición; se restauró la anterior.');
+    }
+    render();toast('Posición guardada en el borrador TO-BE.');
+  },true);
+  document.addEventListener('pointercancel',()=>{if(tobePointer){tobePointer=null;render();}},true);
+  document.addEventListener('click',event=>{
+    const connect=event.target?.closest?.('[data-tobe-connect]');
+    if(!connect||state.activePage!=='tobe')return;
+    event.preventDefault();
+    const e=currentEng(),p=latestTobe(e);
+    const from=String(connect.dataset.tobeConnect||''),kind=String(connect.dataset.tobeKind||'normal');
+    if(!e||!tobeEditable(p)||!tobeFlowItem(e,p,from)||!['normal','exception'].includes(kind))return;
+    const item=tobeFlowItem(e,p,from);
+    const isDecision=item.isAddition?item.stepType==='ST04':
+      processDecisionStep(tobeProposalSourceSteps(e,p).find(x=>String(x.id)===from));
+    if(kind==='exception'&&!isDecision)return;
+    __auneaTobeLink={from,kind};
+    document.querySelector('.tobe-free-board')?.classList.add('tobe-connect-active');
+    toast('Selecciona ahora la tarjeta de destino para la ruta '+(kind==='exception'?'NO':'principal / SÍ')+'.');
+  },true);
   // [AUNEA-FE-PG11-FLOW-DRAG-247] END
 
   // [AUNEA-FE-PG11-DECISION-TYPE-245] START — reuse canonical ProcessStep
