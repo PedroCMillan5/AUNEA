@@ -693,22 +693,6 @@ async function main(){
   for(let i=0;i<sourceIds.length;i++){
     await page.locator('.tobe-guided-tabs [data-tobe-select="'+sourceIds[i]+'"]').click();
     const advice=await page.locator('#tobeAiRecommendation').innerText();
-    if(!new RegExp('Problema sintético vinculado '+(i+1)).test(advice)){
-      const debug=await page.evaluate(()=>{
-        const e=currentEng(),p=latestTobe(e),key=internalAiPilotKey(e),
-          pending=internalAiPendingSteps(e,key),el=document.getElementById('tobeAiRecommendation');
-        return {selectedId:tobeSelectedItem(e,p)?.sourceStepId,
-          hasCheckpoint:!!pending,pendingIds:pending?[...pending.items.keys()]:[],
-          detailsOpen:el?.closest('details')?.open,html:el?.innerHTML?.slice(0,550),
-          adviceText:el?.textContent?.slice(0,400),readableText:el?.innerText?.slice(0,450),
-          display:el?getComputedStyle(el).display:null,
-          ancestorDisplays:el?[el,el.parentElement,el.parentElement?.parentElement,
-            el.parentElement?.parentElement?.parentElement].filter(Boolean).map(x=>({
-              tag:x.tagName,id:x.id,open:x.open,display:getComputedStyle(x).display,
-              visibility:getComputedStyle(x).visibility})):[],keyKnown:!!key};
-      });
-      console.log('PG11_CHECKPOINT_DIAGNOSTIC: '+JSON.stringify({expected:i,debug}));
-    }
     assert.match(advice,new RegExp('Problema sintético vinculado '+(i+1)),
       'inspector must match the selected source step');
     assert.match(advice,/Pendiente de revisión global/);
@@ -720,13 +704,6 @@ async function main(){
     }
   }
   const inspectorBusinessAfter=await page.evaluate(()=>JSON.stringify(latestTobe(currentEng()).items));
-  if(inspectorBusinessBefore!==inspectorBusinessAfter){
-    const before=JSON.parse(inspectorBusinessBefore),after=JSON.parse(inspectorBusinessAfter);
-    const differences=before.flatMap((item,i)=>[...new Set([...Object.keys(item),...Object.keys(after[i]||{})])]
-      .filter(k=>JSON.stringify(item[k])!==JSON.stringify(after[i]?.[k]))
-      .map(k=>({step:item.sourceStepId,field:k,before:item[k],after:after[i]?.[k]})));
-    console.log('PG11_CHECKPOINT_FIELD_DIFF: '+JSON.stringify(differences).slice(0,5500));
-  }
   assert.equal(inspectorBusinessAfter,
     inspectorBusinessBefore,'reading IA checkpoint must not modify consultant TO-BE fields');
   await page.reload({waitUntil:'domcontentloaded'});
@@ -735,18 +712,6 @@ async function main(){
   assert.equal(await page.locator('#tobeAiPilotStatus .pg11-ai-step').count(),tobeSteps,
     'checkpoint cards must recover after real browser reload');
   const pg11ReloadText=await page.locator('#tobeAiPilotStatus').innerText();
-  if(!/guardadas en el estudio/.test(pg11ReloadText)){
-    const visibility=await page.evaluate(()=>{
-      const el=document.getElementById('tobeAiPilotStatus'),nodes=[];
-      for(let n=el;n&&nodes.length<7;n=n.parentElement){
-        const r=n.getBoundingClientRect();
-        nodes.push({tag:n.tagName,id:n.id,open:n.open,display:getComputedStyle(n).display,
-          visibility:getComputedStyle(n).visibility,width:r.width,height:r.height});
-      }
-      return {text:el?.textContent?.slice(0,450),readable:el?.innerText?.slice(0,450),nodes};
-    });
-    console.log('PG11_RELOADED_PANEL_DIAGNOSTIC: '+JSON.stringify(visibility));
-  }
   assert.match(pg11ReloadText,/guardadas en el estudio/);
   assert.equal(await page.locator('#retryTobeAiReview').count(),1,
     'review may be retried without regenerating any verified activities');
