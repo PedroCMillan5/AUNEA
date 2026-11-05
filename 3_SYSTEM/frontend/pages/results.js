@@ -2175,6 +2175,25 @@ function registerInternalWorkPages(){
     if(mode==='map'&&typeof drawProcessGraph==='function'&&typeof requestAnimationFrame==='function')
       requestAnimationFrame(drawProcessGraph);
   },true);
+
+  // Per-field IA recommendation actions; the original input remains editable.
+  document.addEventListener('click',event=>{
+    const apply=event.target?.closest?.('[data-tobe-ai-use-field]');
+    const edit=event.target?.closest?.('[data-tobe-ai-edit-field]');
+    if((!apply&&!edit)||state.activePage!=='tobe')return;
+    event.preventDefault();
+    if(apply){
+      tobeApplyAiReviewedFields(currentEng(),apply.dataset.tobeAiUseSource,
+        [apply.dataset.tobeAiUseField]);
+      return;
+    }
+    const root=edit.closest('.field');
+    const control=root?.querySelector('details.aunea-select>summary')||
+      root?.querySelector('[data-model-set]')||
+      root?.querySelector('textarea:not([disabled])')||
+      root?.querySelector('input:not([type="hidden"]):not([disabled])');
+    if(control){control.focus();if(control.matches('details.aunea-select>summary'))control.click();}
+  },true);
   // [AUNEA-FE-PG11-GUIDED-ACTIONS-264] END
   // [AUNEA-FE-PG11-GUIDED-INSPECTOR-253] START
   document.addEventListener('click',event=>{
