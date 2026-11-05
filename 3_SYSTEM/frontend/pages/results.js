@@ -2156,6 +2156,26 @@ function registerInternalWorkPages(){
     }
   },true);
   // [AUNEA-FE-PG11-ARTIFACT-OTHER-252] END
+  // [AUNEA-FE-PG11-GUIDED-ACTIONS-264] START — UI-only review/map mode
+  document.addEventListener('click',event=>{
+    const btn=event.target?.closest?.('[data-tobe-mode-switch]');
+    if(!btn||state.activePage!=='tobe')return;
+    event.preventDefault();
+    const mode=btn.dataset.tobeModeSwitch;
+    if(!['guided','map'].includes(mode))return;
+    __auneaTobeMode=mode;
+    const root=document.querySelector('.tobe-workspace');
+    if(root)root.dataset.tobeMode=mode;
+    document.querySelectorAll('[data-tobe-mode-switch]').forEach(el=>{
+      const active=el.dataset.tobeModeSwitch===mode;
+      el.classList.toggle('btn-primary',active);
+      el.classList.toggle('btn-outline',!active);
+      el.setAttribute('aria-pressed',String(active));
+    });
+    if(mode==='map'&&typeof drawProcessGraph==='function'&&typeof requestAnimationFrame==='function')
+      requestAnimationFrame(drawProcessGraph);
+  },true);
+  // [AUNEA-FE-PG11-GUIDED-ACTIONS-264] END
   // [AUNEA-FE-PG11-GUIDED-INSPECTOR-253] START
   document.addEventListener('click',event=>{
     const button=event.target?.closest?.('[data-tobe-jump]');
