@@ -1965,23 +1965,26 @@ function tobePage(){
   const review=tobeHumanReviewRecord(e,p),reviewed=p.items.filter(it=>
     ['ACCEPT','MODIFY','DISCARD'].includes(review?.decisions?.[String(it.sourceStepId)]?.status)).length;
   const savedAi=typeof internalAiSavedDraft==='function'?internalAiSavedDraft(e):null,
-    pastAi=!savedAi&&typeof internalAiHistoricalDraft==='function'?internalAiHistoricalDraft(e):null,
-    pendingAi=!savedAi&&!pastAi&&typeof internalAiPendingSteps==='function'&&
+    pendingAi=!savedAi&&typeof internalAiPendingSteps==='function'&&
       typeof internalAiPilotKey==='function'?internalAiPendingSteps(e,internalAiPilotKey(e)):null,
+    pastAi=!savedAi&&!pendingAi?.items?.size&&typeof internalAiHistoricalDraft==='function'?
+      internalAiHistoricalDraft(e):null,
     activeItem=tobeSelectedItem(e,p),
-    itemAi=savedAi?.items?.find(x=>String(x.source_step_id)===String(activeItem?.sourceStepId)),
+    itemId=String(activeItem?.sourceStepId||''),
+    itemAi=savedAi?.items?.find(x=>String(x.source_step_id)===itemId)||
+      pendingAi?.items?.get(itemId)||pastAi?.proposal?.items?.find(x=>String(x.source_step_id)===itemId),
     proposedCount=itemAi?TOBE_AI_REVIEW_FIELDS.filter(([source])=>{
       const v=String(itemAi[source]??'').trim();
       return !!v&&!['no','n/a','ninguno','sin definir','pendiente','—'].includes(v.toLowerCase());
     }).length:0,
     aiSummaryTitle=savedAi?'Propuesta IA vigente':
-      pastAi?'Propuesta IA histórica · v'+pastAi.version:
-      pendingAi?.items?.size?'Propuestas individuales en curso':'Sin propuesta IA vigente',
+      pendingAi?.items?.size?'Propuestas de esta versión · '+pendingAi.items.size+'/'+p.items.length:
+      pastAi?'Propuesta IA histórica · v'+pastAi.version:'Sin propuesta IA vigente',
     aiSummaryDescription=savedAi?
-      'Campos sugeridos para esta actividad: '+proposedCount+' de 9. Aplica solo los cambios autorizados.':
-      pastAi?'Las propuestas de la versión anterior son solo de consulta. Genera una propuesta para la versión actual.':
-      pendingAi?.items?.size?'Hay '+pendingAi.items.size+' actividades guardadas. La revisión global sigue pendiente.':
-      'Puedes analizar la actividad seleccionada sin modificar el AS-IS.';
+      'Esta actividad contiene '+proposedCount+' campos sugeridos de 9. Revisa la IA antes de aplicar.':
+      pendingAi?.items?.size?'En esta actividad: '+proposedCount+' de 9 campos con valor propuesto. Completa las restantes actividades para validar y aplicar.':
+      pastAi?'La IA anterior propone '+proposedCount+' de 9 campos para esta actividad; son de consulta, no aplicables en v'+p.version+'.':
+      'Analiza la actividad para obtener valores IA concretos sin modificar el AS-IS.';
   return pageTop('Diseño TO-BE','Versión '+p.version+' · '+statusLabel+
     ' · Origen AS-IS v'+esc(p.sourceSnapshotVersion)+'. Las decisiones pertenecen al consultor.',actions)+
     '<main class="tobe-workspace" data-tobe-version="'+p.version+
