@@ -289,7 +289,8 @@ function internalAiPilotTracePanel(traces){
     values.map(([sid,trace])=>{
       const attempts=trace?.attempts||[];
       const count=attempts.length||1;
-      return '<details><summary>'+esc(sid)+' · '+count+' intento'+(count===1?'':'s')+'</summary>'+
+      return '<details><summary>'+esc(internalAiActivityLabel(currentEng(),sid))+
+        ' · '+count+' intento'+(count===1?'':'s')+'</summary>'+
         (attempts.length?attempts.map((attempt,index)=>
           '<div class="card card-pad"><p><b>Intento '+(index+1)+'</b> · '+
           esc(attempt.validation_status||(attempt.error?'Error':'Pendiente'))+
