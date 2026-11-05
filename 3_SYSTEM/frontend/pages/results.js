@@ -1218,10 +1218,16 @@ function tobeAiInlineHint(e,p,item,key){
     '</div>';
 }
 function tobeWithAiHint(e,p,item,key,html){
+  // [AUNEA-FE-PG11-GUIDED-FIELD-267] The existing field keeps sole edit
+  // ownership; the suggestion is a read-only sibling, not another control.
+  if(item.isAddition)return html;
   const advice=tobeAiInlineHint(e,p,item,key);
-  if(!advice)return html;
-  const close=html.lastIndexOf('</div>');
-  return close<0?html:html.slice(0,close)+advice+html.slice(close);
+  const fallback='<div class="tobe-ai-inline tobe-ai-inline-empty" data-tobe-ai-field-key="'+
+    attr(key)+'"><p class="field-help"><b>IA:</b> Sin propuesta vigente para esta actividad.'+
+    ' Conserva el valor TO-BE o complétalo con evidencia.</p></div>';
+  return '<div class="tobe-ai-field-row" data-tobe-row-key="'+attr(key)+'">'+
+    '<div class="tobe-ai-field-control">'+html+'</div>'+
+    (advice||fallback)+'</div>';
 }
 // [AUNEA-FE-PG11-FIELD-INLINE-263] END
 
@@ -2557,7 +2563,7 @@ function registerInternalWorkPages(){
         [apply.dataset.tobeAiUseField]);
       return;
     }
-    const root=edit.closest('.field');
+    const root=edit.closest('.tobe-ai-field-row')?.querySelector('.tobe-ai-field-control .field')||edit.closest('.field');
     const control=root?.querySelector('details.aunea-select>summary')||
       root?.querySelector('[data-model-set]')||
       root?.querySelector('textarea:not([disabled])')||
