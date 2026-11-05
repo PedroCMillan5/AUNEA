@@ -1194,6 +1194,10 @@ function tobeAiInlineHint(e,p,item,key){
     pending=String(ai.limitations||'').trim(),
     value=matched?.display||skipped?.raw||'';
   const permitted=!!matched?.changed&&!diff.issue&&!dismissed&&tobeEditable(p);
+  const lastChoice=(p.aiDraft?.applyHistory||[]).filter(x=>
+    String(x.sourceStepId)===String(item.sourceStepId)&&
+    Array.isArray(x.fields)&&x.fields.includes(key)).slice(-1)[0];
+  const kept=lastChoice?.action==='KEEP';
   return '<div class="tobe-ai-inline" data-tobe-ai-field-key="'+attr(key)+'">'+
     '<p class="field-help"><b>'+(!matched&&!skipped?'IA: sin propuesta fundamentada en este campo':'Valor propuesto por IA:')+'</b> '+esc(value)+
     (skipped?' · <b>Revisión manual necesaria</b>':
@@ -1209,9 +1213,12 @@ function tobeAiInlineHint(e,p,item,key){
       '<p><b>Fuentes vinculadas:</b> '+esc(refs||'No identificadas')+'</p>'+
       '<p><b>Condiciones pendientes:</b> '+esc(pending||'No declaradas')+'</p>'+
     '</details>'+
+    (kept?'<p class="field-help"><b>Decisión de este campo:</b> mantener el valor TO-BE guardado.</p>':'')+
     (permitted?'<div class="tobe-ai-inline-actions">'+
       '<button type="button" class="btn btn-outline btn-small" data-tobe-ai-use-field="'+
       attr(key)+'" data-tobe-ai-use-source="'+attr(item.sourceStepId)+'">Usar propuesta IA</button>'+
+      '<button type="button" class="btn btn-outline btn-small" data-tobe-ai-keep-field="'+attr(key)+
+      '" data-tobe-ai-keep-source="'+attr(item.sourceStepId)+'">Mantener valor</button>'+
       '<button type="button" class="btn btn-outline btn-small" data-tobe-ai-edit-field="'+attr(key)+
       '">Editar valor</button></div>':
       '<p class="field-help">'+esc(dismissed?'Recomendación descartada; se conserva el valor del consultor.':
