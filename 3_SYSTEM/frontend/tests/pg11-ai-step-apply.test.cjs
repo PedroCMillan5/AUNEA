@@ -171,6 +171,32 @@ test('PG11 action buttons distinguish historical read-only from authorized curre
  assert.match(authorized,/data-tobe-ai-use-field="tool"/);
  assert.match(authorized,/data-tobe-ai-keep-field="tool"/);
 });
+test('PG11 keeps applied and maintained indicators scoped to the current IA proposal',()=>{
+ const fn=src.match(/function tobeAiRowActions\(e,p,item,key\)\{[\s\S]*?\n\}/)?.[0];
+ assert.ok(fn);
+ const item={sourceStepId:'S1'},draft={status:'DRAFT',aiDraft:{
+   applyHistory:[{sourceStepId:'S1',fields:['tool'],action:'APPLY',
+     proposalFingerprint:'old-proposal'}]}};
+ let fingerprint='old-proposal';
+ const ctx={String,Array,TOBE_AI_REVIEW_FIELDS:[['tool','tool','Herramienta','OS_TOOL_CATEGORY']],
+  tobeEditable:()=>true,internalAiSavedDraft:()=>({items:[{source_step_id:'S1'}]}),
+  tobeAiReviewDiff:()=>({issue:'',allFields:[{key:'tool',changed:false}]}),
+  tobeCandidateFingerprint:()=>fingerprint,attr:String,esc:String};
+ vm.createContext(ctx);vm.runInContext(fn,ctx);
+ const old=ctx.tobeAiRowActions({},draft,item,'tool');
+ assert.match(old,/Aplicar IA/);
+ assert.match(old,/is-selected/);
+ fingerprint='regenerated-proposal';
+ const fresh=ctx.tobeAiRowActions({},draft,item,'tool');
+ assert.doesNotMatch(fresh,/is-selected/);
+ assert.match(fresh,/data-tobe-ai-apply-unavailable="tool"/);
+ draft.aiDraft.applyHistory.push({sourceStepId:'S1',fields:['tool'],
+   action:'KEEP',proposalFingerprint:'regenerated-proposal'});
+ const kept=ctx.tobeAiRowActions({},draft,item,'tool');
+ assert.match(kept,/is-selected/);
+ assert.ok(kept.indexOf('is-selected')>kept.indexOf('data-tobe-ai-apply-unavailable'),
+   'the current Keep, not the historical Apply, must be selected');
+});
 test('PG11 historic KEEP without IA approval preserves the current field',()=>{
  const fn=src.match(/function tobeKeepAiReviewedField\(e,sourceId,key\)\{[\s\S]*?\n\}/)?.[0];
  assert.ok(fn);
