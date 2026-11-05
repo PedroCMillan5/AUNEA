@@ -1266,6 +1266,7 @@ function tobeAiOperationalContextHtml(e,item){
 }
 // [AUNEA-FE-PG11-APPROVED-ROW-ACTIONS-273] Only the current
 // version's reviewed IA can be applied. All values remain consultant-owned.
+// [AUNEA-FE-PG11-ROW-DECISION-278] Consultant-owned actions; historical IA is never imported automatically.
 function tobeAiRowActions(e,p,item,key){
   if(item.isAddition||!tobeEditable(p))return '';
   const id=String(item.sourceStepId),
@@ -1540,6 +1541,7 @@ function tobeCoherenceFindings(e,p){
   }
   return findings;
 }
+// [AUNEA-FE-PG11-GLOBAL-SCAN-280] One-pass QA summary; complete issues remain expandable.
 function tobeCoherencePanel(e,p){
   const findings=tobeCoherenceFindings(e,p),
     human=typeof tobeHumanReviewRecord==='function'?tobeHumanReviewRecord(e,p):null,
