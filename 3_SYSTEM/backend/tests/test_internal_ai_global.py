@@ -20,7 +20,11 @@ def sample():
             "_frictions":[
                 {"id":"F1","step_ids":["S1"],"client_label":"Datos duplicados",
                  "observable_signal":"Entrada manual repetida"}],
+            "DF008":"Identificar retrasos en la recepción",
+            "DF009":["Explicar cuellos de botella"],
+            "DF086":["Reducir reprocesos sin perder controles"],
             "DF090":"No se permite acceso externo a los datos",
+            "DF092":"Presupuesto declarado: limitado",
             "_answer_details":{"sensitive_noise":"NO ENVIAR DATOS DE OTROS FORMULARIOS"},
         })
     diagnostic=DiagnosticOutput.model_construct(
@@ -48,6 +52,11 @@ def test_global_context_includes_governed_constraints_but_not_unrelated_forms():
     context,ids=global_ai.global_context(request)
     assert ids=={"S1","S2","F1"}
     assert context["client_constraints"]["DF090"].startswith("No se permite")
+    assert context["client_constraints"]["DF092"].startswith("Presupuesto declarado")
+    assert context["client_goals"]["DF008"].startswith("Identificar")
+    assert "DF086" in context["client_goals"]
+    assert "DF086" not in context["client_constraints"]
+    assert "DF008" not in context["client_constraints"]
     assert "sensitive_noise" not in json.dumps(context)
     assert context.get("explicit_routes", [])==[]  # Compact projection omits empty values
     assert context["unresolved_routes"]
