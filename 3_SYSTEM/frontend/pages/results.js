@@ -2015,7 +2015,7 @@ function tobeGlobalOverviewHtml(e,p){
       [stored.summary,...stored.opportunities.flatMap(item=>[item.how,item.why])]
         .every(value=>typeof value==='string'&&/[.!?…]$/.test(value.trim())),
     legacy=!!stored&&!complete,
-    result=!working&&complete?stored:null,
+    result=!working?stored:null,
     opportunities=Array.isArray(result?.opportunities)?result.opportunities:[],
     feedback=typeof internalAiGlobalMessage==='function'?internalAiGlobalMessage(e):null;
   const source=tobeProposalSourceSteps(e,p),
@@ -2067,7 +2067,7 @@ function tobeGlobalOverviewHtml(e,p){
     '<div class="tobe-global-summary"><div class="tobe-global-summary-top">'+
       '<strong>'+(working?'Analizando proceso…':legacy?'Análisis anterior incompleto':result?'Síntesis del proceso':'Análisis pendiente')+'</strong>'+
       '<span class="tobe-global-state" aria-live="polite">'+esc(state)+'</span></div>'+
-      '<p>'+esc(working?'Se ha retirado el análisis anterior. Preparando una propuesta nueva con el AS-IS confirmado…':legacy?'La propuesta guardada contiene frases cortadas y no es apta para revisión. Pulsa Volver a analizar para generar un texto completo.':result?.summary||'No hay una propuesta global vigente. Analiza el AS-IS confirmado para generar nuevos objetivos y recomendaciones; no se alterarán campos del TO-BE.')+'</p></div>'+
+      '<p>'+esc(working?'Se ha retirado el análisis anterior. Preparando una propuesta nueva con el AS-IS confirmado…':result?.summary||'No hay una propuesta global vigente. Analiza el AS-IS confirmado para generar nuevos objetivos y recomendaciones; no se alterarán campos del TO-BE.')+'</p></div>'+
     (feedback?'<p class="tobe-global-feedback'+(feedback.type==='warn'?' is-warning':'')+
       '" role="status" aria-live="polite">'+esc(feedback.message)+'</p>':'')+
     (opportunities.length?'<div class="tobe-global-opportunities" aria-label="Objetivos y recomendaciones">'+
@@ -2082,6 +2082,7 @@ function tobeGlobalOverviewHtml(e,p){
       '<p><b>Evidencias vinculadas:</b> '+esc(refs(item.source_refs).join(' · ')||'Sin referencias identificadas')+'</p>'+
       '</div></details></div></article>').join('')+'</div>':
       result?'<p class="tobe-global-empty">La IA no ha identificado mejoras transversales con evidencia suficiente. Consulta la síntesis y revisa los pasos individualmente.</p>':'')+
+    (legacy?'<p class="tobe-global-feedback is-warning" role="status">La salida anterior contiene una frase que puede estar incompleta. Se muestra íntegra tal como la devolvió Ollama. Regenera antes de aprobar.</p>':'')+
     '<p class="tobe-global-caution">Propuesta sin aprobar. Contrasta las cifras con las referencias del AS-IS confirmado; no son promesas de ahorro ni tiempos futuros. La revisión humana sigue siendo obligatoria.</p>'+
     '</section>';
 }
