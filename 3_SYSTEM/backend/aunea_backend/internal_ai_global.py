@@ -421,12 +421,48 @@ def analyze_global(payload: PilotAIRequest) -> dict:
             with _LOCAL_HTTP.open(request, timeout=min(request_timeout_seconds(), 480)) as response:
                 result = json.loads(response.read(100_000).decode("utf-8"))
         except HTTPError as exc:
-            raise OllamaUnavailable("Ollama rechazó el análisis global (HTTP " +
-                                    str(exc.code) + "). Revisa memoria y contexto.") from exc
+            # Diagnostic only. Provider bodies can echo local paths or inputs:
+            # never send raw Ollama errors or study data back to the browser.
+            try:
+                error_payload = json.loads(exc.read(4000).decode("utf-8"))
+                reason = str(error_payload.get("error") or "").lower()
+            except (ValueError, UnicodeError, TypeError, AttributeError):
+                reason = ""
+            if any(term in reason for term in
+                   ("out of memory", "out-of-memory", "failed to allocate",
+                    "insufficient memory", "not enough memory", "cuda out of memory")):
+                detail = ("Ollama se quedó sin memoria al cargar o ejecutar el modelo. "
+                          "Comprueba 'ollama ps' y los registros de Ollama. "
+                          "Revisa el valor AUNEA_OLLAMA_NUM_CTX antes de repetir.")
+            elif any(term in reason for term in
+                     ("context length", "context window", "prompt too long",
+                      "exceeds context", "too many tokens")):
+                detail = ("El contexto solicitado supera la capacidad del modelo local. "
+                          "Hace falta ajustar o segmentar la entrada conservando las fuentes.")
+            else:
+                detail = ("Ollama rechazó la generación (HTTP " + str(exc.code) +
+                          "). Comprueba el estado del servicio y sus registros.")
+            raise OllamaUnavailable(detail) from exc
         except (socket.timeout, TimeoutError) as exc:
-            raise OllamaUnavailable("El análisis global excedió el límite de ejecución.") from exc
+            raise OllamaUnavailable(
+                "Ollama no completó el análisis global dentro del tiempo configurado."
+            ) from exc
         except (URLError, OSError) as exc:
-            raise OllamaUnavailable("No se pudo conectar con Ollama local.") from exc
+            cause = exc.reason if isinstance(exc, URLError) else exc
+            if isinstance(cause, (socket.timeout, TimeoutError)):
+                detail = "Ollama agotó el tiempo de respuesta durante el análisis global."
+            elif isinstance(cause, ConnectionRefusedError) or getattr(cause, "winerror", None) == 10061:
+                detail = ("Ollama no está aceptando conexiones en 127.0.0.1:11434. "
+                          "Comprueba que el servicio esté iniciado y responda /api/tags.")
+            elif isinstance(cause, (ConnectionResetError, BrokenPipeError)) or (
+                getattr(cause, "winerror", None) in (10053, 10054)):
+                detail = ("Se perdió la conexión durante la generación. "
+                          "Ollama pudo reiniciarse o el modelo pudo cerrarse por falta "
+                          "de recursos; comprueba los registros y 'ollama ps'.")
+            else:
+                detail = ("No se pudo comunicar con Ollama en 127.0.0.1:11434. "
+                          "Comprueba /api/tags y los registros locales del servicio.")
+            raise OllamaUnavailable(detail) from exc
         except (UnicodeError, ValueError, TypeError) as exc:
             raise ValueError("El motor IA devolvió datos no interpretables.") from exc
         if result.get("done") is not True or result.get("done_reason") == "length":
