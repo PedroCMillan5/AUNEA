@@ -265,7 +265,10 @@ async function generateTobeGlobal(e,options={}){
     if(!resume){
       delete preflightDraft.aiGlobal;
       markDirty('PG11: iniciar nuevo análisis global por fuentes confirmadas');
-      if(!saveState('Guardar reinicio del análisis global v'+preflightDraft.version)){
+      let resetSaved=false;
+      try{resetSaved=saveState('Guardar reinicio del análisis global v'+preflightDraft.version);}
+      catch(_error){resetSaved=false;}
+      if(!resetSaved){
         if(previousGlobal===undefined)delete preflightDraft.aiGlobal;
         else preflightDraft.aiGlobal=previousGlobal;
         throw Error('No se pudo guardar el reinicio del análisis global. Se ha restaurado el borrador previo.');
@@ -301,7 +304,10 @@ async function generateTobeGlobal(e,options={}){
             focus_done:[...doneSources],source_batches:JSON.parse(JSON.stringify(sourceBatches)),
             failures:failures.map(x=>({...x}))}}};
       markDirty('PG11: guardar avance del análisis global por bloques');
-      if(!saveState('Guardar progreso IA global '+doneSources.length+'/'+total)){
+      let saved=false;
+      try{saved=saveState('Guardar progreso IA global '+doneSources.length+'/'+total);}
+      catch(_error){saved=false;}
+      if(!saved){
         if(previous===undefined)delete owner.aiGlobal;
         else owner.aiGlobal=previous;
         throw Error('No se pudo guardar el progreso del análisis IA. '+
@@ -401,6 +407,8 @@ async function generateTobeGlobal(e,options={}){
         }
         doneSources.push(unit.source_id);
       }catch(error){
+        if(/No se pudo guardar el progreso del análisis IA/.test(String(error.message||'')))
+          throw error;
         failures.push({source_id:unit.source_id,
           reason:String(error.message||error).slice(0,240)});
         if(error.status===503||/conexi[oó]n|backend|no pudo guardar/i.test(String(error.message||''))){
