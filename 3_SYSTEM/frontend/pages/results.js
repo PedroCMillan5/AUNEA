@@ -2088,7 +2088,11 @@ function tobeGlobalOverviewHtml(e,p){
     incompatible=opportunities.filter(x=>x.review?.status==='INCOMPATIBLE').length,
     alternatives=opportunities.filter(x=>!!x.alternative).length,
     pending=opportunities.filter(x=>x.review?.status!=='INCOMPATIBLE').length,
-    variants=opportunities.reduce((n,x)=>n+(x.related||[]).length,0);
+    variants=opportunities.reduce((n,x)=>n+(x.related||[]).length,0),
+    thematicGroups=typeof tobeGlobalQualityGroups==='function'?
+      tobeGlobalQualityGroups(opportunities).groups:
+      opportunities.map((item,index)=>({title:item.objective,
+        entries:[{item,index,issues:[]}]}));
   const source=tobeProposalSourceSteps(e,p),
     confirmed=typeof tobeProposalSnapshot==='function'?tobeProposalSnapshot(e,p):null,
     record=confirmed||{frictions:[],risks:[]};
@@ -2181,10 +2185,19 @@ function tobeGlobalOverviewHtml(e,p){
     (feedback?'<p class="tobe-global-feedback'+(feedback.type==='warn'?' is-warning':'')+
       '" role="status" aria-live="polite">'+esc(feedback.message)+'</p>':'')+
     (opportunities.length?'<div class="tobe-global-opportunities" aria-label="Objetivos y recomendaciones">'+
-      opportunities.map((item,i)=>
+      thematicGroups.map((group,i)=>
       '<article class="tobe-global-opportunity"><span class="tobe-global-number" aria-hidden="true">'+(i+1)+'</span>'+
       '<div class="tobe-global-opportunity-body">'+
-      '<span class="tobe-global-item-label">Objetivo de mejora</span><strong>'+esc(item.objective)+'</strong>'+
+      '<span class="tobe-global-item-label">'+(group.entries.length>1?'Línea de mejora relacionada':'Objetivo de mejora')+
+      '</span><strong>'+esc(group.title)+'</strong>'+
+      (group.entries.length>1?'<p>'+group.entries.length+
+        ' intervenciones relacionadas; conservar todas para validación.</p>':'')+
+      group.entries.map(({item,issues},j)=>
+      '<section class="tobe-global-intervention">'+
+      (group.entries.length>1?'<h3 class="tobe-global-subtitle">Intervención '+(j+1)+
+        ' de '+group.entries.length+'</h3>':'')+
+      (issues?.length?'<p class="tobe-global-quality-note"><b>Coherencia por revisar:</b> '+
+        esc(issues.join(' · '))+'</p>':'')+
       '<p class="tobe-global-action"><b>Intervención IA inicial:</b> '+esc(item.how)+'</p>'+
       (item.review?'<p class="tobe-global-assessment"><b>Comprobación de restricciones:</b> '+
         esc(item.review.status==='INCOMPATIBLE'?'Descartada por incompatibilidad explícita':
@@ -2194,6 +2207,7 @@ function tobeGlobalOverviewHtml(e,p){
         item.alternative_note?'<p class="tobe-global-assessment">'+
           esc(item.alternative_note)+'</p>':'')+
       '<details><summary>Ver justificación y restricciones</summary><div class="tobe-global-detail">'+
+      '<p><b>Objetivo original:</b> '+esc(item.objective)+'</p>'+
       '<p><b>Por qué se recomienda:</b> '+esc(item.why)+'</p>'+
       (item.review?'<p><b>Motivo de la evaluación:</b> '+
         esc(item.review.reason||'Revisión humana pendiente.')+'</p>':'')+
@@ -2220,7 +2234,7 @@ function tobeGlobalOverviewHtml(e,p){
           'data-tobe-select="'+attr(String(step.sourceStepId))+'" data-tobe-global-link="1">'+
           esc(step.sourceStepName||step.stepName||String(step.sourceStepId))+'</button>').join(' ')+
         '</p>':'')+
-      '</div></details></div></article>').join('')+'</div>':
+      '</div></details></section>').join('')+'</div></article>').join('')+'</div>':
       result?'<p class="tobe-global-empty">La IA no ha identificado mejoras transversales con evidencia suficiente. Consulta la síntesis y revisa los pasos individualmente.</p>':'')+
     (legacy?'<p class="tobe-global-feedback is-warning" role="status">La salida anterior contiene una frase que puede estar incompleta. Se muestra íntegra tal como la devolvió Ollama. Regenera antes de aprobar.</p>':'')+
     '<p class="tobe-global-caution">Propuesta sin aprobar. Contrasta las cifras con las referencias del AS-IS confirmado; no son promesas de ahorro ni tiempos futuros. La revisión humana sigue siendo obligatoria.</p>'+
