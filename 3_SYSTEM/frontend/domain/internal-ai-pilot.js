@@ -134,7 +134,7 @@ function tobeGlobalMerge(items,candidate){
     const sameAction=norm(x.how)===norm(candidate.how);
     const commonRef=(x.source_refs||[]).some(ref=>(candidate.source_refs||[]).includes(ref));
     const match=similarity(x.how,candidate.how);
-    return sameAction||(match>=0.78&&commonRef)||(match>=0.90);
+    return sameAction||(match>=0.78&&commonRef);
   });
   if(at<0){items.push(candidate);return true;}
   const main=items[at],sameAction=norm(main.how)===norm(candidate.how);
