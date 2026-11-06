@@ -464,4 +464,44 @@ def test_incomplete_retry_mode_asks_for_short_full_sentences_without_relaxing_va
     assert captured[0]["format"]["properties"]["summary"]["maxLength"] == 480
     assert result["requires_human_review"] is True
 
+
+def test_pg11_alignment_flags_objective_action_and_focused_source_without_approval():
+    from aunea_backend.internal_ai_global_review import assess_alignment
+    ctx = {"focus_source_id":"F1",
+           "frictions":[{"id":"F1","label":"Captura repetida",
+                         "observable_signal":"Se vuelven a teclear datos"}]}
+    mismatched = assess_alignment(
+        "Evitar volver a teclear datos en recepción.",
+        "Enviar avisos automáticos sobre el estado de la factura.", ctx)
+    assert mismatched["status"]=="REVIEW"
+    assert {x["code"] for x in mismatched["issues"]}=={"OBJECTIVE_ACTION","ACTION_SOURCE"}
+    coherent=assess_alignment("Evitar volver a teclear datos.",
+                              "Reutilizar datos validados en recepción.",ctx)
+    assert coherent["status"]=="NOT_FLAGGED"
+    assert coherent["basis"]=="HEURISTIC_NOT_CERTIFICATION"
+
+
+def test_pg11_global_api_retains_mismatched_draft_and_source_for_consultant(monkeypatch):
+    configure(monkeypatch)
+    def response(request,timeout=0):
+        proposal=candidate(refs=("S1","F1"))
+        proposal["opportunities"][0]["objective"]="Evitar volver a teclear datos en recepción."
+        proposal["opportunities"][0]["how"]="Enviar avisos automáticos de estado de factura al responsable."
+        return io.BytesIO(json.dumps({
+            "done":True,"done_reason":"stop","prompt_eval_count":1200,
+            "message":{"content":json.dumps(proposal)}
+        }).encode())
+    monkeypatch.setattr(global_ai._LOCAL_HTTP,"open",response)
+    request=sample()
+    batch=global_ai.GlobalBatchRequest(
+        engagement=request.engagement,diagnostic=request.diagnostic,
+        confirmed_as_is=True,snapshot_version=request.snapshot_version,
+        focus_source_id="F1")
+    result=global_ai.analyze_global(batch)
+    assert result["status"]=="DRAFT"
+    assert result["requires_human_review"] is True
+    assert result["opportunities"][0]["source_refs"]==["S1","F1"]
+    assert result["opportunities"][0]["quality"]["status"]=="REVIEW"
+    assert result["opportunities"][0]["review"]["capability_status"]=="UNVERIFIED"
+
 # [AUNEA-UAT-PG11-GLOBAL-AI-287] END
