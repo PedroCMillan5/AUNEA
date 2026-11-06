@@ -85,7 +85,10 @@ def query_with_local_retry(payload, issues):
     """Match PG11 frontend: only one retry for cut text or coded objectives."""
     for attempt in range(2):
         try:
-            return global_ai.analyze_global(payload)
+            if attempt == 0:
+                return global_ai.analyze_global(payload)
+            return global_ai.analyze_global(payload.model_copy(
+                update={"retry_incomplete": True}))
         except ValueError as exc:
             reason = str(exc)
             if attempt == 0 and (
