@@ -58,6 +58,9 @@ GLOBAL_PROMPT = (
     "otros bloques del AS-IS se analizan por separado. No inventes intervenciones " 
     "para alcanzar una cantidad; devuelve cero si ninguna está justificada. "
     "Cita el focus_source_id y los pasos realmente relacionados. "
+    "Las preferencias por funciones nativas y herramientas actuales NO son prohibiciones. "
+    "Una alerta o recordatorio automatizado NO equivale a aprobar sin intervención humana. "
+    "No atribuyas capacidades de software ni permisos sin comprobarlos. "
     "La salida es una sugerencia DRAFT que requiere revisión humana."
 )
 
@@ -250,10 +253,16 @@ def analyze_global(payload: PilotAIRequest) -> dict:
     brief = validate_global_brief(raw, source_ids)
     if focus_id and any(focus_id not in item.source_refs for item in brief.opportunities):
         raise ValueError("La IA omitió la fuente central del bloque analizado.")
+    if blocked_action and any(
+        " ".join(item.how.casefold().split()) ==
+        " ".join(blocked_action.casefold().split())
+        for item in brief.opportunities
+    ):
+        raise ValueError("La alternativa reproduce literalmente la intervención descartada.")
     recommendations = []
     for item in brief.opportunities:
         value = item.model_dump(mode="json")
-        value["review"] = assess_recommendation(item.how, context)
+        value["review"] = assess_recommendation(item.how, context, item.constraints)
         recommendations.append(value)
     return {
         "status": "DRAFT", "requires_human_review": True,
