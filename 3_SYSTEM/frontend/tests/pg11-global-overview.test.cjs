@@ -674,4 +674,106 @@ test('linking global analysis never changes source activities or TO-BE fields',(
   assert.doesNotMatch(block,/saveState\(|markDirty\(|data-tobe-ai-use-field/);
 });
 
+
+test('PG11 resumes only the missing part of one source after an Ollama 503, preserving all prior batches',async()=>{
+  const aiBlock=ai.match(/\/\/ \[AUNEA-FE-PG11-GLOBAL-AI-285\] START[\s\S]*?\/\/ \[AUNEA-FE-PG11-GLOBAL-AI-285\] END/)?.[0];
+  const p={status:'DRAFT',version:2,sourceSnapshotVersion:3,items:[]},
+    e={id:'E1',confirmedAsIs:true,tobeProposals:[p]};
+  const actions=['Registrar los datos recibidos con validación humana.',
+    'Avisar a responsables de documentos pendientes.'];
+  let failSecond=true,disk='',calls=[];
+  const env={
+    __auneaAiWorking:new Set(),__auneaPg11ReviewProtocol:'PG11_REVIEW_20261103_3',
+    internalAiPilotKey:()=> 'E1|3|HASH|TOBE:2',currentEng:()=>e,latestTobe:()=>p,
+    confirmedSnapshot:()=>({version:3}),
+    currentDiagnosticOutput:()=>({input_snapshot_hash:'HASH'}),
+    tobeEditable:()=>true,isClientDisplay:()=>false,saveTobeFromDom:()=>true,
+    saveState:()=>{disk=JSON.stringify({engagements:[e]});return true},
+    markDirty:()=>{},toast:()=>{},now:()=> '2026-11-06T14:00:00Z',
+    document:{getElementById:()=>null},
+    state:{backendOnline:true,backendUrl:'http://127.0.0.1:8010'},
+    checkBackend:async()=>true,buildBackendPayload:()=>({engagement_id:'E1'}),
+    console:{error:()=>{}},
+    fetch:async(url,opts={})=>{
+      if(url.endsWith('/status'))return {ok:true,json:async()=>({
+        status:'AVAILABLE',provider:'ollama',pg11_review_protocol:'PG11_REVIEW_20261103_3',
+        pg11_global_strategy:'SCOPED_V2'})};
+      if(url.endsWith('/tobe-global-plan'))return {ok:true,json:async()=>({
+        engagement_id:'E1',snapshot_version:3,input_hash:'BACKEND_HASH',
+        focus:[{source_id:'F1',label:'Recepción'}]})};
+      if(url.endsWith('/tobe-global')){
+        const body=JSON.parse(opts.body);
+        calls.push(body);
+        const count=body.seen_interventions.length;
+        if(count===1&&failSecond)return {ok:false,status:503,
+          json:async()=>({detail:'Ollama agotó memoria durante el segundo lote'})};
+        return {ok:true,json:async()=>({
+          status:'DRAFT',engagement_id:'E1',snapshot_version:3,input_hash:'BACKEND_HASH',
+          focus_source_id:'F1',has_more:count===0,
+          opportunities:[{objective:'Reducir tareas manuales '+count,
+            how:actions[count],why:'Fricción confirmada de entrada manual.',
+            constraints:'Mantener aprobaciones humanas.',source_refs:['F1'],
+            review:{status:'CONDITIONED',reason:'Comprobar viabilidad.',conflicts:[]}}]
+        })};
+      }
+      throw Error('Unexpected endpoint');
+    }
+  };
+  vm.createContext(env);vm.runInContext(aiBlock,env);
+  await env.generateTobeGlobal(e);
+  assert.equal(p.aiGlobal.result.complete,false);
+  assert.equal(p.aiGlobal.result.opportunities.length,1);
+  assert.equal(p.aiGlobal.result.progress.completed,0);
+  assert.equal(p.aiGlobal.result.progress.failed,1);
+  assert.equal(p.aiGlobal.result.progress.source_batches.F1.length,1);
+  const saved=JSON.parse(disk).engagements[0].tobeProposals[0].aiGlobal;
+  assert.equal(saved.result.opportunities.length,1);
+  failSecond=false;
+  await env.generateTobeGlobal(e,{resume:true});
+  assert.equal(calls.length,3,'only one additional batch must run after resume');
+  assert.deepEqual(calls.map(x=>x.seen_interventions.length),[0,1,1]);
+  assert.equal(p.aiGlobal.result.complete,true);
+  assert.equal(p.aiGlobal.result.progress.completed,1);
+  assert.equal(p.aiGlobal.result.progress.failed,0);
+  assert.equal(p.aiGlobal.result.opportunities.length,2);
+  assert.deepEqual(p.aiGlobal.result.progress.focus_done,['F1']);
+  assert.equal(JSON.parse(disk).engagements[0].tobeProposals[0].aiGlobal.result.opportunities.length,2);
+});
+
+test('PG11 failed full reset restores the prior saved global brief before calling Ollama',async()=>{
+ const aiBlock=ai.match(/\/\/ \[AUNEA-FE-PG11-GLOBAL-AI-285\] START[\s\S]*?\/\/ \[AUNEA-FE-PG11-GLOBAL-AI-285\] END/)?.[0];
+ const old={tobeVersion:2,sourceSnapshotVersion:3,diagnosticInputHash:'HASH',
+   result:{status:'DRAFT',engagement_id:'E1',snapshot_version:3,
+     summary:'Síntesis anterior guardada.',opportunities:[]}};
+ const p={status:'DRAFT',version:2,sourceSnapshotVersion:3,items:[],aiGlobal:old},
+   e={id:'E1',confirmedAsIs:true,tobeProposals:[p]};
+ let calls=0;
+ const env={
+   __auneaAiWorking:new Set(),__auneaPg11ReviewProtocol:'PG11_REVIEW_20261103_3',
+   internalAiPilotKey:()=> 'E1|3|HASH|TOBE:2',
+   currentEng:()=>e,latestTobe:()=>p,confirmedSnapshot:()=>({version:3}),
+   currentDiagnosticOutput:()=>({input_snapshot_hash:'HASH'}),
+   tobeEditable:()=>true,isClientDisplay:()=>false,saveTobeFromDom:()=>true,
+   saveState:label=>!label.includes('Guardar reinicio'),
+   markDirty:()=>{},toast:()=>{},now:()=> '2026-11-06',
+   document:{getElementById:()=>null},
+   state:{backendOnline:true,backendUrl:'http://127.0.0.1:8010'},
+   checkBackend:async()=>true,buildBackendPayload:()=>({engagement_id:'E1'}),
+   console:{error:()=>{}},
+   fetch:async(url)=>{
+     if(url.endsWith('/status'))return {ok:true,json:async()=>({
+       status:'AVAILABLE',provider:'ollama',pg11_review_protocol:'PG11_REVIEW_20261103_3',
+       pg11_global_strategy:'SCOPED_V2'})};
+     if(url.endsWith('/tobe-global-plan'))return {ok:true,json:async()=>({
+       engagement_id:'E1',snapshot_version:3,input_hash:'BACKEND_HASH',
+       focus:[{source_id:'S1',label:'Recepción'}]})};
+     calls++;throw Error('Ollama should not run when saving the reset fails');
+   }
+ };
+ vm.createContext(env);vm.runInContext(aiBlock,env);
+ await env.generateTobeGlobal(e);
+ assert.equal(calls,0);
+ assert.equal(p.aiGlobal,old);
+ assert.match(env.internalAiGlobalMessage(e).message,/restaurado el borrador previo/);
+});
 // [AUNEA-UAT-PG11-GLOBAL-OVERVIEW-288] END
