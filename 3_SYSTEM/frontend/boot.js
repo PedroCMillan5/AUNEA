@@ -8,26 +8,6 @@
 // SIDE_EFFECTS: carga de schema canónico efectivo y comprobación HTTP sólo en Console.
 // CHANGE_RISK: HIGH.
 // Shared windows deliberately do not boot the Console.
-// Reuse the PG11 overview, without adding a second business data owner.
-const __pg11BaseOverview=tobeGlobalOverviewHtml;
-tobeGlobalOverviewHtml=(e,p)=>{
- let h=__pg11BaseOverview(e,p),r=tobeGlobalStored(e,p),g=r?.progress;
- if(!g)return h;
- const done=g.focus_done?.length??g.completed??0,total=g.total||0,
-   cards=r.opportunities||[],
-   intact=cards.filter(x=>[x.how,x.why,...(x.related||[]).flatMap(y=>[y.how,y.why])]
-     .every(v=>/[.!?…]$/.test(v||''))).length,
-   reviewed=Object.keys(tobeHumanReviewRecord(e,p)?.decisions||{}).length;
- const status='<div role="status" class="tobe-global-feedback">'+
-   '<p><b>Fuentes:</b> '+done+'/'+total+'</p>'+
-   '<p><b>Integridad:</b> '+intact+'/'+cards.length+'</p>'+
-   '<p><b>Revisión humana:</b> '+reviewed+' decisiones registradas; sin aprobar.</p></div>';
- h=h.replace(/<p class="tobe-global-feedback" role="status">Fuentes revisadas:[\s\S]*?<\/p>/,status);
- if(p?.status==='DRAFT'&&!r.complete&&done<total&&Array.isArray(g.focus_done))
-   h=h.replace('</button></header>','</button><button type="button" id="retryTobeGlobal" class="btn btn-outline btn-small"'+
-     (internalAiGlobalWorking(e)?' disabled':'')+'>Reintentar fuentes pendientes</button></header>');
- return h;
-};
 if((location.hash==='#session'||location.hash==='#results')&&CLIENT_DISPLAY_PAUSED){bootPausedClientDisplay();}
 else if(location.hash==='#session'){bootSessionDisplay();}
 else if(location.hash==='#results'){bootResultsMode();}
