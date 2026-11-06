@@ -2186,6 +2186,8 @@ function tobeGlobalOverviewHtml(e,p){
         ' decisiones sobre actividades registradas; propuestas globales sin aprobar.</p>'+
       '</div>':'')+
     (opportunities.length?'<p class="tobe-global-caution">Priorización pendiente: contrastar impacto, evidencias y dependencias con el consultor. El orden visual no es una prioridad aprobada.</p>':'')+
+    (!progress&&qualityPlan?'<p class="tobe-global-feedback"><b>Coherencia (revisión pendiente):</b> '+
+      qualityPlan.reviewCount+' alertas de reglas. Ninguna recomendación está aprobada.</p>':'')+
     (progress?.failures?.length?'<details class="tobe-global-detail"><summary>Fuentes pendientes e incidencias</summary>'+
       '<p>'+esc(progress.failures.map(x=>x.source_id+': '+x.reason).join(' · '))+
       '</p></details>':'')+
