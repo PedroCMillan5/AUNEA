@@ -23,7 +23,8 @@ tobeGlobalOverviewHtml=(e,p)=>{
    '<p><b>Revisión humana:</b> '+reviewed+' decisiones registradas; sin aprobar.</p></div>';
  h=h.replace(/<p class="tobe-global-feedback" role="status">Fuentes revisadas:[\s\S]*?<\/p>/,status);
  if(p?.status==='DRAFT'&&!r.complete&&done<total&&Array.isArray(g.focus_done))
-   h=h.replace('</button></header>','</button><button type="button" id="retryTobeGlobal" class="btn btn-outline btn-small">Reintentar fuentes pendientes</button></header>');
+   h=h.replace('</button></header>','</button><button type="button" id="retryTobeGlobal" class="btn btn-outline btn-small"'+
+     (internalAiGlobalWorking(e)?' disabled':'')+'>Reintentar fuentes pendientes</button></header>');
  return h;
 };
 if((location.hash==='#session'||location.hash==='#results')&&CLIENT_DISPLAY_PAUSED){bootPausedClientDisplay();}
