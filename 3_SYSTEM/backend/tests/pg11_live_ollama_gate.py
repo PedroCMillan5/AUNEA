@@ -114,7 +114,7 @@ def check_synthetic_objective_origin(request, source, item):
         step_name = unicodedata.normalize("NFKD", step.get("step_name", "").lower())
         step_name = "".join(x for x in step_name if not unicodedata.combining(x))
         primary = step_name.split(" ")[0]
-        if len(primary) >= 6 and re.search(r"\\b" + re.escape(primary) + r"\\b", title):
+        if len(primary) >= 6 and re.search(r"\b" + re.escape(primary) + r"\b", title):
             raise AssertionError(
                 "El objetivo de " + source + " se refiere a " + step.get("id", "")
                 + " sin ninguna evidencia de relación: " + item["objective"]
@@ -135,6 +135,7 @@ def checked_result(result, request, source):
                 "Continuation flag missing")
     for item in result["opportunities"]:
         requirement(source in item["source_refs"], "Untraceable recommendation")
+        check_synthetic_objective_origin(request, source, item)
         requirement(item["review"]["status"] in {"CONDITIONED", "INCOMPATIBLE"},
                     "Unsupported feasibility state")
         requirement(item["review"]["capability_status"] == "UNVERIFIED",
