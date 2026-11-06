@@ -2179,6 +2179,9 @@ function tobeGlobalOverviewHtml(e,p){
         ' recomendaciones con texto completo'+
         (legacy?' · Existen frases incompletas: conservar y reanalizar.':
           ' · Sin cortes detectados.')+'</p>'+
+      '<p><b>Coherencia (revisión pendiente):</b> '+
+        (qualityPlan?qualityPlan.reviewCount+' alertas de reglas en '+opportunities.length+' intervenciones.':
+          'Sin comprobar.')+'</p>'+
       '<p><b>Revisión humana:</b> '+decisions+
         ' decisiones sobre actividades registradas; propuestas globales sin aprobar.</p>'+
       '</div>':'')+
