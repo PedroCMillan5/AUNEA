@@ -130,9 +130,9 @@ test('global explanation uses confirmed friction metrics and does not read later
  assert.match(output,/Fricción: Captura duplicada/);
  assert.match(output,/Frecuencia 100 %/);
  assert.match(output,/Trabajo 5 min \(ya incluido en el paso\)/);
- assert.match(output,/Evidencia: EV02/);
+ assert.match(output,/Origen: Declarado por el cliente/);
  assert.doesNotMatch(output,/Datos vivos no confirmados/);
- assert.match(output,/Los porcentajes y tiempos citados proceden del AS-IS/);
+ assert.match(output,/Contrasta las cifras con las referencias del AS-IS confirmado/);
 });
 
 test('stale global response cannot appear as current after AS-IS change',()=>{
