@@ -182,6 +182,30 @@ def test_global_constraint_assessment_rejects_auto_approval_not_native_tools():
     assert not any("prohib" in x["reason"] for x in allowed["conflicts"])
 
 
+def test_global_constraints_do_not_turn_native_preferences_into_bans():
+    from aunea_backend.internal_ai_global_review import assess_recommendation
+    ctx={"client_constraints":{
+        "DF089":["KEEP_EXISTING","CRM_NATIVE"],"DF090":["RBAC","AUDIT_LOG"],
+        "DF091":["NO_DOWNTIME"]}}
+    compatible=assess_recommendation(
+        "Crear un registro de seguimiento con función nativa del CRM.",
+        ctx,"El cliente prefiere aprovechar las funciones nativas.")
+    assert compatible["status"]=="CONDITIONED"
+    wrongly_forbidden=assess_recommendation(
+        "Crear un registro de seguimiento.",ctx,
+        "Está prohibido utilizar funcionalidades nativas del CRM.")
+    assert wrongly_forbidden["status"]=="INCOMPATIBLE"
+    assert wrongly_forbidden["conflicts"][0]["source"]=="DF089"
+    new_tool=assess_recommendation("Implantar una nueva plataforma para informes.",ctx)
+    assert new_tool["status"]=="CONDITIONED"
+    assert "prefiere mantener" in new_tool["reason"]
+    safe=assess_recommendation(
+        "Enviar avisos sin interrumpir la operación y mantener auditoría.",ctx)
+    assert safe["status"]=="CONDITIONED"
+    disabled=assess_recommendation("Desactivar la auditoría del proceso.",ctx)
+    assert disabled["status"]=="INCOMPATIBLE"
+
+
 def test_global_scoped_ollama_can_accumulate_five_distinct_recommendations(monkeypatch):
     configure(monkeypatch)
     request=sample()
