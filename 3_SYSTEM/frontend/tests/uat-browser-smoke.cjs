@@ -940,7 +940,7 @@ async function main(){
   let retryRequest;
   const retryPlan=async route=>{
     const body=route.request().postDataJSON(),
-      id=String(currentEng().tobeProposals.at(-1).items[0].sourceStepId);
+      id=String(sourceIds[0]);
     await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({
       engagement_id:body.engagement.engagement_id,
       snapshot_version:body.snapshot_version,input_hash:'UAT-RETRY-HASH',
