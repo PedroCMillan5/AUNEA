@@ -2015,7 +2015,8 @@ function tobeGlobalOverviewHtml(e,p){
     stored=valid?entry.result:null,
     result=preflight?null:stored,
     complete=!!result&&Array.isArray(result.opportunities)&&
-      [result.summary,...result.opportunities.flatMap(item=>[item.how,item.why])]
+      [result.summary,...result.opportunities.flatMap(item=>[
+        item.how,item.why,...(item.related||[]).flatMap(x=>[x.how,x.why])])]
         .every(value=>typeof value==='string'&&/[.!?…]$/.test(value.trim())),
     legacy=!!result&&!complete,
     opportunities=Array.isArray(result?.opportunities)?result.opportunities:[],
@@ -2099,6 +2100,12 @@ function tobeGlobalOverviewHtml(e,p){
           esc(item.alternative_note)+'</p>':'')+
       '<details><summary>Ver justificación y restricciones</summary><div class="tobe-global-detail">'+
       '<p><b>Por qué se recomienda:</b> '+esc(item.why)+'</p>'+
+      ((item.related||[]).length?'<p><b>Enfoques relacionados (sin descartar):</b></p>'+
+        '<ul class="tobe-source-list">'+item.related.map(other=>
+          '<li><b>'+esc(other.objective)+':</b> '+esc(other.how)+
+          ' <small>Motivo: '+esc(other.why)+' · Fuentes: '+
+          esc(refs(other.source_refs).join(' · '))+'</small></li>').join('')+
+        '</ul>':'')+
       '<p><b>Condiciones del cliente:</b> '+esc(item.constraints||'No constan condiciones adicionales en esta respuesta; requiere comprobación.')+'</p>'+
       (item.review?.conflicts?.length?'<p><b>Conflictos identificados:</b> '+
         esc(item.review.conflicts.map(x=>x.source+': '+x.reason).join(' · '))+'</p>':'')+
