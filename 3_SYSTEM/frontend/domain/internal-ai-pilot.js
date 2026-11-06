@@ -110,7 +110,7 @@ function internalAiGlobalRefresh(e){
 // Source inventory and recommendations belong to one versioned TO-BE DRAFT;
 // small Ollama requests are deliberately serial to avoid CPU/RAM saturation.
 function tobeGlobalMerge(items,candidate){
-  const norm=x=>String(x||'').toLocaleLowerCase('es').replace(/[\\s.,;:]+/g,' ').trim(),
+  const norm=x=>String(x||'').toLocaleLowerCase('es').replace(/[\s.,;:]+/g,' ').trim(),
     at=items.findIndex(x=>norm(x.objective)===norm(candidate.objective)&&
       norm(x.how)===norm(candidate.how));
   if(at<0){items.push(candidate);return;}
@@ -277,7 +277,7 @@ async function generateTobeGlobal(e){
         ' Pendiente de revisión humana.':
         'Análisis parcial: '+doneSources.length+' de '+total+
         ' fuentes procesadas. '+failures.length+
-        ' incidencias; consulta el detalle antes de revisar.'});
+        ' incidencias. '+(failures[0]?.reason||'Consulta el detalle antes de revisar.')});
   }catch(error){
     __auneaGlobalAiFeedback.set(key,{working:false,type:'warn',
       message:'No se completó el análisis global. '+String(error.message||error)});
