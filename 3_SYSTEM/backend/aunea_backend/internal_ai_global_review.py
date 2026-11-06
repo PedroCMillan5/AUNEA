@@ -183,6 +183,17 @@ def assess_alignment(objective: str, how: str, context: dict) -> dict:
     if capture and notice and not reuse:
         issues.append({"code":"OBJECTIVE_ACTION",
           "message":"El objetivo aborda la doble captura y la intervención sólo propone seguimiento; revisar."})
+    focus = str(context.get("focus_source_id") or "")
+    problems = [*context.get("frictions", []), *context.get("risks", [])]
+    original = next((x for x in problems if str(x.get("id")) == focus), None)
+    if original:
+        declared = _normalized(" ".join(str(original.get(field) or "") for field in
+            ("label", "description", "observable_signal", "cause")))
+        duplicate_capture = bool(re.search(
+            r"reintroduc|tecle|captura repetida|datos duplicados", declared))
+        if duplicate_capture and notice and not reuse:
+            issues.append({"code":"ACTION_SOURCE",
+              "message":"La fuente documenta captura repetida; los avisos no la resuelven directamente."})
     return {"status":"REVIEW" if issues else "NOT_FLAGGED",
             "basis":"HEURISTIC_NOT_CERTIFICATION","issues":issues}
 
