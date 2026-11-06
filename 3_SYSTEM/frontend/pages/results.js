@@ -2137,9 +2137,13 @@ function tobeGlobalOverviewHtml(e,p){
     '<header class="tobe-global-analysis-head"><div><span class="tobe-eyebrow">02 · ANÁLISIS IA GLOBAL DEL PROCESO</span>'+
       '<h2>Objetivos y recomendaciones de mejora</h2>'+
       '<p>Primero, qué mejorar en el conjunto del proceso y cómo conseguirlo. Las decisiones sobre cada actividad se realizan después.</p></div>'+
-      (tobeEditable(p)?'<button type="button" class="btn btn-primary" id="analyzeTobeGlobal"'+
+      (tobeEditable(p)?'<div class="tobe-global-head-actions">'+
+        (retryable?'<button type="button" class="btn btn-outline" id="retryTobeGlobal"'+
+          (working?' disabled aria-busy="true"':'')+'>Reintentar fuentes pendientes</button>':'')+
+        '<button type="button" class="btn btn-primary" id="analyzeTobeGlobal"'+
         (working?' disabled aria-busy="true"':'')+'>'+
-        (working?'Analizando proceso…':result||legacy?'Volver a analizar':'Analizar proceso con IA')+'</button>':'')+'</header>'+
+        (working?'Analizando proceso…':result||legacy?'Volver a analizar':'Analizar proceso con IA')+
+        '</button></div>':'')+'</header>'+
     '<div class="tobe-global-summary"><div class="tobe-global-summary-top">'+
       '<strong>'+(working?'Analizando proceso…':legacy?'Análisis anterior incompleto':result?'Síntesis del proceso':'Análisis pendiente')+'</strong>'+
       '<span class="tobe-global-state" aria-live="polite">'+esc(state)+'</span></div>'+
