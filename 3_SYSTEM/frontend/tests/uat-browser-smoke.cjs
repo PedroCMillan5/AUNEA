@@ -933,7 +933,7 @@ async function main(){
     render();
   });
   const originalPartial=await page.locator('#tobeGlobalAnalysis').innerText();
-  assert.match(originalPartial,/Fuentes:/);
+  assert.match(originalPartial,/Fuentes revisadas:/);
   assert.match(originalPartial,/Integridad:/);
   assert.match(originalPartial,/Revisión humana:/);
   assert.equal(await page.locator('#retryTobeGlobal').count(),1);
