@@ -56,6 +56,11 @@ def synthetic_case(kind: str):
              "observable_signal": "Se recrea una lista de tareas por cada proyecto"},
         ]
         q["DF087"] = ["HUMAN_DECISION", "APPROVAL"]
+        q["_frictions"][0]["cause"] = "El formulario no comprueba datos mínimos al registrar."
+        q["_frictions"][0]["evidence"] = "Declaración sintética confirmada sobre seguimiento."
+        q["_frictions"][1]["cause"] = "No existe checklist inicial reutilizable."
+        q["_frictions"][1]["evidence"] = "Declaración sintética confirmada por operaciones."
+        q["DF008"] = "Evitar solicitudes incompletas y tareas de preparación repetidas."
         q["DF089"] = ["KEEP_EXISTING"]
         q["DF090"] = ["RBAC", "AUDIT_LOG"]
         q["DF091"] = ["NO_DOWNTIME"]
