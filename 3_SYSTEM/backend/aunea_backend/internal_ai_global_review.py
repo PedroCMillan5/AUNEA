@@ -140,7 +140,8 @@ def assess_recommendation(how: str, context: dict) -> dict:
     removes_human = bool(re.search(
         r"(?:sin (?:intervenci[oó]n|decisi[oó]n|aprobaci[oó]n|validaci[oó]n) humana"
         r"|aprobaci[oó]n autom[aá]tica|aprobar autom[aá]ticamente"
-        r"|eliminar (?:la |las )?aprobaci[oó]n|sustituir (?:la |las )?decisi[oó]n humana)",
+        r"|(?<!sin )(?<!no )eliminar (?:la |las )?aprobaci[oó]n"
+        r"|(?<!sin )(?<!no )sustituir (?:la |las )?decisi[oó]n humana)",
         text))
     if human and removes_human:
         conflicts.append({
