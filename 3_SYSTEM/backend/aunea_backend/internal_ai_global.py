@@ -20,19 +20,19 @@ from .internal_ai_ollama import (
 from .utils import stable_hash
 
 MAX_GLOBAL_INPUT_TOKENS = 4000
-MAX_GLOBAL_OUTPUT_TOKENS = 1100
+MAX_GLOBAL_OUTPUT_TOKENS = 2200
 
 class GlobalOpportunity(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    objective: str = Field(min_length=8, max_length=180)
-    how: str = Field(min_length=8, max_length=240)
-    why: str = Field(min_length=8, max_length=300)
-    constraints: str = Field(max_length=220)
+    objective: str = Field(min_length=8, max_length=220)
+    how: str = Field(min_length=8, max_length=620)
+    why: str = Field(min_length=8, max_length=520)
+    constraints: str = Field(max_length=420)
     source_refs: list[str] = Field(min_length=1, max_length=5)
 
 class GlobalBrief(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    summary: str = Field(min_length=8, max_length=240)
+    summary: str = Field(min_length=8, max_length=500)
     opportunities: list[GlobalOpportunity] = Field(max_length=3)
 
 GLOBAL_PROMPT = (
@@ -66,11 +66,14 @@ GLOBAL_PROMPT = (
     "con el cliente herramientas, controles, autorizaciones y factibilidad. "
     "Traduce las restricciones a español legible: no copies códigos DF, RBAC, "
     "AUDIT_LOG, KEEP_EXISTING o HUMAN_DECISION. "
-    "summary: una frase completa de máximo 140 caracteres. "
-    "how: una frase completa de máximo 160 caracteres. "
-    "why: una frase completa de máximo 190 caracteres; puede citar cantidades del AS-IS "
-    "con procedencia, pero nunca inventar otra medición. "
-    "Termina summary, how y why con punto. No cortes frases a mitad por longitud. "
+    "summary: una o dos frases completas, máximo 360 caracteres. "
+    "how: describe en dos o tres frases completas la intervención y su viabilidad, "
+    "máximo 480 caracteres; no cortes una recomendación a mitad para cumplir longitud. "
+    "why: una o dos frases completas, máximo 380 caracteres; puede citar cantidades "
+    "del AS-IS con procedencia, nunca inventar otra medición. "
+    "constraints: explica las limitaciones en lenguaje natural, máximo 300 caracteres. "
+    "Es más importante cerrar la frase que alcanzar el límite de caracteres. "
+    "Termina summary, how y why con punto. Nunca devuelvas frases a medias. "
     "Máximo tres oportunidades; cada texto debe ser breve y legible. "
     "La salida es una sugerencia DRAFT que requiere revisión humana."
 )
@@ -168,10 +171,10 @@ def global_schema() -> dict:
     opportunity = {
         "type": "object", "additionalProperties": False,
         "properties": {
-            "objective": {"type": "string", "minLength": 8, "maxLength": 180},
-            "how": {"type": "string", "minLength": 8, "maxLength": 240},
-            "why": {"type": "string", "minLength": 8, "maxLength": 300},
-            "constraints": {"type": "string", "maxLength": 220},
+            "objective": {"type": "string", "minLength": 8, "maxLength": 220},
+            "how": {"type": "string", "minLength": 8, "maxLength": 620},
+            "why": {"type": "string", "minLength": 8, "maxLength": 520},
+            "constraints": {"type": "string", "maxLength": 420},
             "source_refs": {"type": "array", "minItems": 1, "maxItems": 5,
                             "items": {"type": "string"}},
         },
@@ -179,7 +182,7 @@ def global_schema() -> dict:
     }
     return {"type": "object", "additionalProperties": False,
             "properties": {
-                "summary": {"type": "string", "minLength": 8, "maxLength": 240},
+                "summary": {"type": "string", "minLength": 8, "maxLength": 500},
                 "opportunities": {"type": "array", "maxItems": 3, "items": opportunity},
             }, "required": ["summary", "opportunities"]}
 
