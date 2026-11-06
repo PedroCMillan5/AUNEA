@@ -897,7 +897,12 @@ async function main(){
   };
   await page.route('**/v1/internal-ai/tobe-global',globalFailureRoute);
   await page.locator('#analyzeTobeGlobal').click();
-  await globalRequested;
+  const reachedGlobal=await Promise.race([
+    globalRequested.then(()=>true),
+    new Promise(resolve=>setTimeout(()=>resolve(false),12000))
+  ]);
+  if(!reachedGlobal)throw Error('Global IA endpoint not reached: '+
+    await page.locator('#tobeGlobalAnalysis').innerText());
   const duringGlobal=await page.locator('#tobeGlobalAnalysis').innerText();
   assert.doesNotMatch(duringGlobal,/ANTERIOR GLOBAL|Antiguo objetivo|Antigua acción/,
     'the previous global recommendations must disappear while a new request runs');
