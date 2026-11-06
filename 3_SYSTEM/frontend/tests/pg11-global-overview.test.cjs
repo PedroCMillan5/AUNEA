@@ -736,7 +736,7 @@ test('PG11 resumes only the missing part of one source after an Ollama 503, pres
   assert.equal(p.aiGlobal.result.progress.completed,1);
   assert.equal(p.aiGlobal.result.progress.failed,0);
   assert.equal(p.aiGlobal.result.opportunities.length,2);
-  assert.deepEqual(p.aiGlobal.result.progress.focus_done,['F1']);
+  assert.equal(p.aiGlobal.result.progress.focus_done.join(','),'F1');
   assert.equal(JSON.parse(disk).engagements[0].tobeProposals[0].aiGlobal.result.opportunities.length,2);
 });
 
