@@ -169,6 +169,17 @@ def global_schema() -> dict:
             }, "required": ["summary", "opportunities", "has_more"]}
 
 def validate_global_brief(raw: dict, source_ids: set[str]) -> GlobalBrief:
+    # Check broken sentences before Pydantic rejects short fragments as generic
+    # format errors. The UI can then retry only this one incomplete batch.
+    if isinstance(raw, dict):
+        texts = [("síntesis", raw.get("summary"))]
+        for row in raw.get("opportunities", []) if isinstance(raw.get("opportunities"), list) else []:
+            if isinstance(row, dict):
+                texts.extend((name, row.get(name)) for name in ("how", "why"))
+        for name, value in texts:
+            if isinstance(value, str) and value.strip() and not re.search(r"[.!?…]$", value.strip()):
+                raise ValueError("La respuesta IA global contiene texto incompleto en " + name +
+                                 "; reintentar solamente este bloque.")
     try:
         brief = GlobalBrief.model_validate(raw)
     except ValidationError as exc:
