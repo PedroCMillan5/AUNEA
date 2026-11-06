@@ -26,13 +26,6 @@ else{
     if(typeof startProcessEditorLease==='function')startProcessEditorLease();
   }else if(typeof startProcessEditorLeaseMonitor==='function')startProcessEditorLeaseMonitor();
   initCanonicalV12();
-  // Read-only PG11 status enhancer; a failed auxiliary load never blocks boot.
-  const pg11Status=document.createElement('script');
-  pg11Status.src='pages/pg11-global-state.js';
-  pg11Status.defer=true;
-  pg11Status.addEventListener('load',()=>{
-    if(state.activePage==='tobe'&&typeof render==='function')render();
-  });
-  document.head.appendChild(pg11Status);
+
 }
 // [AUNEA-FE-BOOT-INIT-010] END
