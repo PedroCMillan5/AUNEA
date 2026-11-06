@@ -2193,6 +2193,8 @@ function tobeGlobalOverviewHtml(e,p){
       '<div class="tobe-global-opportunity-body">'+
       '<span class="tobe-global-item-label">'+(group.entries.length>1?'Línea de mejora relacionada':'Objetivo de mejora')+
       '</span><strong>'+esc(group.title)+'</strong>'+
+      (group.expectedOutcome?'<p class="tobe-global-outcome"><b>Resultado esperado (hipótesis):</b> '+
+        esc(group.expectedOutcome)+'</p>':'')+
       (group.entries.length>1?'<p>'+group.entries.length+
         ' intervenciones relacionadas; conservar todas para validación.</p>':'')+
       group.entries.map(({item,issues},j)=>
