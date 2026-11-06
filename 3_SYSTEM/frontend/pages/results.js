@@ -2015,8 +2015,10 @@ function tobeGlobalOverviewHtml(e,p){
       [stored.summary,...stored.opportunities.flatMap(item=>[item.how,item.why])]
         .every(value=>typeof value==='string'&&/[.!?…]$/.test(value.trim())),
     legacy=!!stored&&!complete,
-    result=!working?stored:null,
+    result=stored,
     opportunities=Array.isArray(result?.opportunities)?result.opportunities:[],
+    progress=result?.progress||null,
+    analysisFinished=result?.complete!==false,
     feedback=typeof internalAiGlobalMessage==='function'?internalAiGlobalMessage(e):null;
   const source=tobeProposalSourceSteps(e,p),
     confirmed=typeof tobeProposalSnapshot==='function'?tobeProposalSnapshot(e,p):null,
@@ -2056,7 +2058,7 @@ function tobeGlobalOverviewHtml(e,p){
     return step?'Paso: '+(step.step_name||step.name||id):
       risk?'Riesgo: '+(risk.description||id):'Referencia: '+String(id);
   });
-  const state=working?'Analizando…':legacy?'Propuesta incompleta · Reanalizar':result?'Propuesta guardada · Sin aprobar':'Pendiente de análisis';
+  const state=working?'Analizando por fuentes…':result&&!analysisFinished?'Análisis parcial · Revisar':legacy?'Propuesta incompleta · Reanalizar':result?'Propuesta guardada · Sin aprobar':'Pendiente de análisis';
   return '<section class="tobe-global-analysis" id="tobeGlobalAnalysis" aria-label="Análisis global IA del proceso">'+
     '<header class="tobe-global-analysis-head"><div><span class="tobe-eyebrow">02 · ANÁLISIS IA GLOBAL DEL PROCESO</span>'+
       '<h2>Objetivos y recomendaciones de mejora</h2>'+
@@ -2067,7 +2069,11 @@ function tobeGlobalOverviewHtml(e,p){
     '<div class="tobe-global-summary"><div class="tobe-global-summary-top">'+
       '<strong>'+(working?'Analizando proceso…':legacy?'Análisis anterior incompleto':result?'Síntesis del proceso':'Análisis pendiente')+'</strong>'+
       '<span class="tobe-global-state" aria-live="polite">'+esc(state)+'</span></div>'+
-      '<p>'+esc(working?'Se ha retirado el análisis anterior. Preparando una propuesta nueva con el AS-IS confirmado…':result?.summary||'No hay una propuesta global vigente. Analiza el AS-IS confirmado para generar nuevos objetivos y recomendaciones; no se alterarán campos del TO-BE.')+'</p></div>'+
+      '<p>'+esc(working&&!result?'Se ha retirado el análisis anterior. Preparando una propuesta nueva con el AS-IS confirmado…':result?.summary||'No hay una propuesta global vigente. Analiza el AS-IS confirmado para generar nuevos objetivos y recomendaciones; no se alterarán campos del TO-BE.')+'</p></div>'+
+    (progress?'<p class="tobe-global-feedback" role="status">Fuentes revisadas: '+progress.completed+
+      ' de '+progress.total+(progress.failed?' · Incidencias: '+progress.failed:'')+
+      (analysisFinished?' · Análisis de fuentes completado':' · Resultado parcial; no aprobar todavía')+
+      '</p>':'')+
     (feedback?'<p class="tobe-global-feedback'+(feedback.type==='warn'?' is-warning':'')+
       '" role="status" aria-live="polite">'+esc(feedback.message)+'</p>':'')+
     (opportunities.length?'<div class="tobe-global-opportunities" aria-label="Objetivos y recomendaciones">'+
@@ -2075,10 +2081,23 @@ function tobeGlobalOverviewHtml(e,p){
       '<article class="tobe-global-opportunity"><span class="tobe-global-number" aria-hidden="true">'+(i+1)+'</span>'+
       '<div class="tobe-global-opportunity-body">'+
       '<span class="tobe-global-item-label">Objetivo de mejora</span><strong>'+esc(item.objective)+'</strong>'+
-      '<p class="tobe-global-action"><b>Cómo conseguirlo:</b> '+esc(item.how)+'</p>'+
+      '<p class="tobe-global-action"><b>Intervención IA inicial:</b> '+esc(item.how)+'</p>'+
+      (item.review?'<p class="tobe-global-assessment"><b>Comprobación de restricciones:</b> '+
+        esc(item.review.status==='INCOMPATIBLE'?'Descartada por incompatibilidad explícita':
+          'Condicionada a validar la viabilidad')+
+        '. '+esc(item.review.reason||'Revisión humana pendiente.')+'</p>':'')+
+      (item.alternative?'<p class="tobe-global-action"><b>Alternativa propuesta:</b> '+
+        esc(item.alternative.how)+'</p>'+
+        '<p class="tobe-global-assessment"><b>Evaluación de la alternativa:</b> '+
+        esc(item.alternative.review?.reason||
+          'Pendiente de comprobar restricciones y viabilidad.')+'</p>':
+        item.alternative_note?'<p class="tobe-global-assessment">'+
+          esc(item.alternative_note)+'</p>':'')+
       '<details><summary>Ver justificación y restricciones</summary><div class="tobe-global-detail">'+
       '<p><b>Por qué se recomienda:</b> '+esc(item.why)+'</p>'+
-      '<p><b>Condiciones del cliente:</b> '+esc(item.constraints||'Sin restricciones adicionales identificadas para esta recomendación; comprobar viabilidad.')+'</p>'+
+      '<p><b>Condiciones del cliente:</b> '+esc(item.constraints||'No constan condiciones adicionales en esta respuesta; requiere comprobación.')+'</p>'+
+      (item.review?.conflicts?.length?'<p><b>Conflictos identificados:</b> '+
+        esc(item.review.conflicts.map(x=>x.source+': '+x.reason).join(' · '))+'</p>':'')+
       '<p><b>Evidencias vinculadas:</b> '+esc(refs(item.source_refs).join(' · ')||'Sin referencias identificadas')+'</p>'+
       '</div></details></div></article>').join('')+'</div>':
       result?'<p class="tobe-global-empty">La IA no ha identificado mejoras transversales con evidencia suficiente. Consulta la síntesis y revisa los pasos individualmente.</p>':'')+
