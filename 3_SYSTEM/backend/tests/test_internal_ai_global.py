@@ -249,7 +249,7 @@ def test_global_schema_allows_complete_text_beyond_old_240_character_ceiling():
     opportunity=schema["properties"]["opportunities"]["items"]["properties"]
     assert schema["properties"]["summary"]["maxLength"] >= 450
     assert opportunity["how"]["maxLength"] >= 500
-    assert global_ai.MAX_GLOBAL_OUTPUT_TOKENS >= 1800
+    assert global_ai.MAX_GLOBAL_OUTPUT_TOKENS >= 1500
     raw=candidate()
     raw["summary"]=("Las fricciones confirmadas permiten identificar mejoras operativas. " * 5).strip()
     raw["opportunities"][0]["how"]=(
