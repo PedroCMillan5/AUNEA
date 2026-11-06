@@ -106,6 +106,14 @@ function internalAiGlobalRefresh(e){
   const target=document.getElementById('tobeGlobalAnalysis');
   if(target&&typeof tobeGlobalOverviewHtml==='function')
     target.outerHTML=tobeGlobalOverviewHtml(currentEng(),latestTobe(currentEng()));
+  // Refresh ONLY the read-only global context for the selected activity.
+  // Never replace the inspector or its unsaved consultant-owned form controls.
+  const linked=document.getElementById('tobeGlobalLinkedStep');
+  if(linked&&typeof tobeGlobalLinkedStepHtml==='function'&&
+     typeof tobeSelectedItem==='function'){
+    const live=currentEng(),draft=latestTobe(live);
+    linked.innerHTML=tobeGlobalLinkedStepHtml(live,draft,tobeSelectedItem(live,draft));
+  }
 }
 // Source inventory and recommendations belong to one versioned TO-BE DRAFT;
 // small Ollama requests are deliberately serial to avoid CPU/RAM saturation.
@@ -140,7 +148,18 @@ function tobeGlobalMerge(items,candidate){
   const main=items[at],sameAction=norm(main.how)===norm(candidate.how);
   main.source_refs=[...new Set([...(main.source_refs||[]),
     ...(candidate.source_refs||[])])];
-  if(sameAction)return false;
+  if(sameAction){
+    // Same action, but different source-backed reason/constraint: keep its
+    // explanation without introducing a second visible recommendation.
+    if(norm(main.why)!==norm(candidate.why)||
+       norm(main.constraints)!==norm(candidate.constraints)){
+      if(!(main.related||[]).some(x=>norm(x.how)===norm(candidate.how)&&
+         norm(x.why)===norm(candidate.why)&&
+         norm(x.constraints)===norm(candidate.constraints)))
+        main.related=[...(main.related||[]),candidate];
+    }
+    return false;
+  }
   if((main.related||[]).some(x=>norm(x.how)===norm(candidate.how)))return false;
   main.related=[...(main.related||[]),candidate];
   return true;
@@ -309,8 +328,11 @@ async function generateTobeGlobal(e){
                   x.review?.status!=='INCOMPATIBLE'&&
                   x.source_refs?.includes(unit.source_id));
                 if(valid){
-                  proposed.alternative={how:String(valid.how),
-                    why:String(valid.why),constraints:String(valid.constraints||''),
+                  proposed.alternative={
+                    objective:String(valid.objective||''),
+                    how:String(valid.how),why:String(valid.why),
+                    constraints:String(valid.constraints||''),
+                    source_refs:(valid.source_refs||[]).map(String),
                     review:valid.review};
                 }else proposed.alternative_note=
                   'No se identificó una alternativa verificable; requiere revisión.';
