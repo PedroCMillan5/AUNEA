@@ -2195,6 +2195,8 @@ function tobeGlobalOverviewHtml(e,p){
       '</span><strong>'+esc(group.title)+'</strong>'+
       (group.expectedOutcome?'<p class="tobe-global-outcome"><b>Resultado esperado (hipótesis):</b> '+
         esc(group.expectedOutcome)+'</p>':'')+
+      (group.technicalChecks?.length?'<p class="tobe-global-dependency"><b>Antes de implantar:</b> '+
+        esc(group.technicalChecks[0])+'</p>':'')+
       (group.entries.length>1?'<p>'+group.entries.length+
         ' intervenciones relacionadas; conservar todas para validación.</p>':'')+
       group.entries.map(({item,issues},j)=>
