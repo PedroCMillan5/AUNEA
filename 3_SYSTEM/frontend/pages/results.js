@@ -1870,6 +1870,7 @@ function tobeInspectorHtml(e,p){
         (hasCurrentAi?'Volver a analizar este paso':'Analizar este paso con IA')+'</button>'+
         '<span class="tobe-muted">Análisis independiente de esta actividad; no aplica cambios automáticamente.</span></div>':'')+
       '<p id="tobeStepAiProgress" role="status" aria-live="polite" class="tobe-muted">Propuesta individual: sin aprobar.</p>'+ 
+      '<div id="tobeGlobalLinkedStep">'+tobeGlobalLinkedStepHtml(e,p,item)+'</div>'+
       '<div id="tobeAiRecommendation">'+tobeAiAdviceHtml(e,item,false)+'</div>'+
       (!item.isAddition&&hasCurrentAi?
         '<details class="tobe-human-review-shell"'+(choice?.status?'':' open')+'>'+
@@ -2004,16 +2005,74 @@ function tobeContextOverviewHtml(e,p){
 
 // [AUNEA-FE-PG11-GLOBAL-OVERVIEW-284] START — read-only, version-bound global IA.
 // SOURCE: Simulator CANONICAL v1.14 PG11; DEC-050/052/055; existing AUNEA System controls.
+// The global source and per-step view share ONE version/snapshot/diagnosis gate.
+// All links below are derived from the confirmed AS-IS, not from live edits.
+function tobeGlobalStored(e,p){
+  const entry=p?.aiGlobal,diag=typeof currentDiagnosticOutput==='function'?
+    currentDiagnosticOutput(e):null;
+  if(!e||!p||!entry||entry.tobeVersion!==p.version||
+     entry.sourceSnapshotVersion!==p.sourceSnapshotVersion||
+     entry.diagnosticInputHash!==diag?.input_snapshot_hash||
+     entry.result?.status!=='DRAFT'||entry.result.engagement_id!==e.id||
+     entry.result.snapshot_version!==p.sourceSnapshotVersion)return null;
+  const preflight=typeof internalAiGlobalWorking==='function'&&
+    internalAiGlobalWorking(e)&&
+    typeof internalAiGlobalMessage==='function'&&
+    internalAiGlobalMessage(e)?.phase==='PREFLIGHT';
+  return preflight?null:entry.result;
+}
+function tobeGlobalSourceIdsForStep(e,p,sourceId){
+  const id=String(sourceId||''),ids=new Set(id?[id]:[]),
+    snapshot=typeof tobeProposalSnapshot==='function'?tobeProposalSnapshot(e,p):null;
+  // Friction and risk relations come from the confirmed snapshot only.
+  for(const friction of snapshot?.frictions||[]){
+    if(friction?.status==='SUPERSEDED')continue;
+    const affected=friction.affected_steps||friction.step_ids||[];
+    if(Array.isArray(affected)&&affected.map(String).includes(id)&&friction.id)
+      ids.add(String(friction.id));
+  }
+  for(const risk of snapshot?.risks||[]){
+    if(risk?.status==='SUPERSEDED')continue;
+    const affected=risk.step_ids||[];
+    if(Array.isArray(affected)&&affected.map(String).includes(id)&&(risk.id||risk.risk_id))
+      ids.add(String(risk.id||risk.risk_id));
+  }
+  return ids;
+}
+function tobeGlobalLinksForStep(e,p,item){
+  if(!item||item.isAddition)return [];
+  const result=tobeGlobalStored(e,p),sources=tobeGlobalSourceIdsForStep(e,p,item.sourceStepId);
+  return (result?.opportunities||[]).flatMap((recommendation,index)=>{
+    const refs=[...(recommendation.source_refs||[]),
+      ...(recommendation.related||[]).flatMap(x=>x.source_refs||[])];
+    return refs.some(id=>sources.has(String(id)))?[{recommendation,index:index+1}]:[];
+  });
+}
+function tobeGlobalLinkedStepHtml(e,p,item){
+  const linked=tobeGlobalLinksForStep(e,p,item),result=tobeGlobalStored(e,p);
+  if(!result||!linked.length)return '';
+  const complete=result.complete!==false;
+  return '<details class="tobe-subdetails tobe-global-step-context">'+
+    '<summary>Recomendaciones del análisis global vinculadas · '+linked.length+'</summary>'+
+    (!complete?'<p class="notice warn">El análisis global es parcial; algunas fuentes siguen pendientes.</p>':'')+
+    '<ul class="tobe-source-list">'+linked.map(({recommendation:r,index})=>
+      '<li><b>'+index+' · '+esc(r.objective)+'</b>'+
+      '<p>'+esc(r.how)+'</p>'+
+      (r.review?.status==='INCOMPATIBLE'?
+        '<p><b>Incompatibilidad detectada:</b> '+esc(r.review.reason||'Pendiente de revisión.')+'</p>':
+        '<p><b>Viabilidad pendiente:</b> '+esc(r.review?.reason||'Requiere comprobación.')+'</p>')+
+      (r.alternative?'<p><b>Alternativa propuesta:</b> '+esc(r.alternative.how)+'</p>':'')+
+      '<p><b>Referencias de origen:</b> '+
+        esc([...(r.source_refs||[]),...(r.related||[]).flatMap(x=>x.source_refs||[])]
+          .filter((x,i,a)=>a.indexOf(x)===i).join(' · '))+'</p></li>').join('')+
+    '</ul><p class="tobe-muted">Contexto de solo lectura. Estas propuestas no sustituyen '+
+    'el análisis individual, ni aplican cambios o decisiones al TO-BE.</p></details>';
+}
 function tobeGlobalOverviewHtml(e,p){
-  const entry=p?.aiGlobal,diag=currentDiagnosticOutput(e);
-  const valid=entry&&entry.tobeVersion===p.version&&entry.sourceSnapshotVersion===p.sourceSnapshotVersion&&
-    entry.diagnosticInputHash===diag?.input_snapshot_hash&&entry.result?.status==='DRAFT'&&
-    entry.result.engagement_id===e.id&&entry.result.snapshot_version===p.sourceSnapshotVersion;
   const working=typeof internalAiGlobalWorking==='function'&&internalAiGlobalWorking(e),
     feedback=typeof internalAiGlobalMessage==='function'?internalAiGlobalMessage(e):null,
     preflight=working&&feedback?.phase==='PREFLIGHT',
-    stored=valid?entry.result:null,
-    result=preflight?null:stored,
+    result=tobeGlobalStored(e,p),
     complete=!!result&&Array.isArray(result.opportunities)&&
       [result.summary,...result.opportunities.flatMap(item=>[
         item.how,item.why,...(item.related||[]).flatMap(x=>[x.how,x.why])])]
@@ -2021,7 +2080,11 @@ function tobeGlobalOverviewHtml(e,p){
     legacy=!!result&&!complete,
     opportunities=Array.isArray(result?.opportunities)?result.opportunities:[],
     progress=result?.progress||null,
-    analysisFinished=result?.complete!==false;
+    analysisFinished=result?.complete!==false,
+    incompatible=opportunities.filter(x=>x.review?.status==='INCOMPATIBLE').length,
+    alternatives=opportunities.filter(x=>!!x.alternative).length,
+    pending=opportunities.filter(x=>x.review?.status!=='INCOMPATIBLE').length,
+    variants=opportunities.reduce((n,x)=>n+(x.related||[]).length,0);
   const source=tobeProposalSourceSteps(e,p),
     confirmed=typeof tobeProposalSnapshot==='function'?tobeProposalSnapshot(e,p):null,
     record=confirmed||{frictions:[],risks:[]};
@@ -2060,6 +2123,12 @@ function tobeGlobalOverviewHtml(e,p){
     return step?'Paso: '+(step.step_name||step.name||id):
       risk?'Riesgo: '+(risk.description||id):'Referencia: '+String(id);
   });
+  const linkedSteps=rec=>{
+    const refs=new Set([...(rec.source_refs||[]),
+      ...(rec.related||[]).flatMap(x=>x.source_refs||[])].map(String));
+    return (p?.items||[]).filter(item=>
+      [...tobeGlobalSourceIdsForStep(e,p,item.sourceStepId)].some(id=>refs.has(id)));
+  };
   const state=working?'Analizando por fuentes…':result&&!analysisFinished?'Análisis parcial · Revisar':legacy?'Propuesta incompleta · Reanalizar':result?'Propuesta guardada · Sin aprobar':'Pendiente de análisis';
   return '<section class="tobe-global-analysis" id="tobeGlobalAnalysis" aria-label="Análisis global IA del proceso">'+
     '<header class="tobe-global-analysis-head"><div><span class="tobe-eyebrow">02 · ANÁLISIS IA GLOBAL DEL PROCESO</span>'+
@@ -2072,6 +2141,12 @@ function tobeGlobalOverviewHtml(e,p){
       '<strong>'+(working?'Analizando proceso…':legacy?'Análisis anterior incompleto':result?'Síntesis del proceso':'Análisis pendiente')+'</strong>'+
       '<span class="tobe-global-state" aria-live="polite">'+esc(state)+'</span></div>'+
       '<p>'+esc(preflight?'Comprobando que el backend admite el análisis por bloques. No se ha borrado ninguna propuesta.':working&&!result?'Se ha retirado el análisis anterior. Preparando una propuesta nueva con el AS-IS confirmado…':result?.summary||'No hay una propuesta global vigente. Analiza el AS-IS confirmado para generar nuevos objetivos y recomendaciones; no se alterarán campos del TO-BE.')+'</p></div>'+
+    (opportunities.length?'<p class="tobe-global-feedback">Consolidación de propuestas: '+
+      opportunities.length+' intervenciones distintas · '+incompatible+
+      ' incompatibilidades detectadas · '+alternatives+' alternativas sugeridas · '+
+      pending+' intervenciones por verificar'+
+      (variants?' · '+variants+' variantes relacionadas conservadas':'')+
+      '. Ninguna equivale a aprobación del consultor.</p>':'')+
     (progress?'<p class="tobe-global-feedback" role="status">Fuentes revisadas: '+progress.completed+
       ' de '+progress.total+(progress.failed?' · Incidencias: '+progress.failed:'')+
       (analysisFinished?' · Análisis de fuentes completado':' · Resultado parcial; no aprobar todavía')+
@@ -2110,6 +2185,17 @@ function tobeGlobalOverviewHtml(e,p){
       (item.review?.conflicts?.length?'<p><b>Conflictos identificados:</b> '+
         esc(item.review.conflicts.map(x=>x.source+': '+x.reason).join(' · '))+'</p>':'')+
       '<p><b>Evidencias vinculadas:</b> '+esc(refs(item.source_refs).join(' · ')||'Sin referencias identificadas')+'</p>'+
+      (item.alternative?.source_refs?.length?'<p><b>Fuentes de la alternativa:</b> '+
+        esc(refs(item.alternative.source_refs).join(' · '))+'</p>':'')+
+      (item.review?.checks?.length?'<p><b>Restricciones cotejadas:</b> '+
+        esc(item.review.checks.map(x=>x.source+': '+x.reason).join(' · '))+'</p>':'')+
+      (item.review?.verifications?.length?'<p><b>Validaciones pendientes:</b> '+
+        esc(item.review.verifications.map(x=>x.source+': '+x.question).join(' · '))+'</p>':'')+
+      (linkedSteps(item).length?'<p><b>Revisar en actividades:</b> '+
+        linkedSteps(item).map(step=>'<button type="button" class="btn btn-outline btn-small" '+
+          'data-tobe-select="'+attr(String(step.sourceStepId))+'">'+
+          esc(step.sourceStepName||step.stepName||String(step.sourceStepId))+'</button>').join(' ')+
+        '</p>':'')+
       '</div></details></div></article>').join('')+'</div>':
       result?'<p class="tobe-global-empty">La IA no ha identificado mejoras transversales con evidencia suficiente. Consulta la síntesis y revisa los pasos individualmente.</p>':'')+
     (legacy?'<p class="tobe-global-feedback is-warning" role="status">La salida anterior contiene una frase que puede estar incompleta. Se muestra íntegra tal como la devolvió Ollama. Regenera antes de aprobar.</p>':'')+
