@@ -868,6 +868,58 @@ async function main(){
     confirmedStepBefore),true,'applying a TO-BE field cannot change AS-IS');
   console.log('PG11_FIELD_ACTIONS_BROWSER_PASS: '+JSON.stringify(kept)+' · '+JSON.stringify(applied));
   // [AUNEA-UAT-PG11-HUMAN-BROWSER-227] END
+  // [AUNEA-UAT-PG11-GLOBAL-RESET-291] START — reanalysis button clears
+  // historical global text synchronously; failed Ollama must not restore it.
+  await page.evaluate(()=>{
+    const e=currentEng(),p=latestTobe(e),diagnostic=currentDiagnosticOutput(e);
+    if(!diagnostic||!p||p.status!=='DRAFT')throw Error('Global PG11 UAT prerequisite missing');
+    p.aiGlobal={tobeVersion:p.version,sourceSnapshotVersion:p.sourceSnapshotVersion,
+      diagnosticInputHash:diagnostic.input_snapshot_hash,savedAt:now(),
+      result:{status:'DRAFT',engagement_id:e.id,snapshot_version:p.sourceSnapshotVersion,
+        input_hash:'UAT-OLD-GLOBAL',model:'fixture-no-ollama',
+        summary:'ANTERIOR GLOBAL: no debe reaparecer.',
+        opportunities:[{objective:'Antiguo objetivo',how:'Antigua acción.',
+          why:'Justificación del análisis previo.',constraints:'',
+          source_refs:[String(p.items[0].sourceStepId)]}]}};
+    markDirty('QA: propuesta global obsoleta para regeneración');
+    if(!saveState('Guardar fixture de regeneración global'))throw Error('Cannot persist global UAT fixture');
+    render();
+  });
+  assert.match(await page.locator('#tobeGlobalAnalysis').innerText(),/ANTERIOR GLOBAL/);
+  let unblockGlobal,notifyGlobal;
+  const waitingGlobal=new Promise(resolve=>{unblockGlobal=resolve});
+  const globalRequested=new Promise(resolve=>{notifyGlobal=resolve});
+  const globalFailureRoute=async route=>{
+    notifyGlobal();
+    await waitingGlobal;
+    await route.fulfill({status:409,contentType:'application/json',
+      body:JSON.stringify({detail:'Generación de prueba no disponible'})});
+  };
+  await page.route('**/v1/internal-ai/tobe-global',globalFailureRoute);
+  await page.locator('#analyzeTobeGlobal').click();
+  await globalRequested;
+  const duringGlobal=await page.locator('#tobeGlobalAnalysis').innerText();
+  assert.doesNotMatch(duringGlobal,/ANTERIOR GLOBAL|Antiguo objetivo|Antigua acción/,
+    'the previous global recommendations must disappear while a new request runs');
+  assert.match(duringGlobal,/Se ha retirado el análisis anterior/);
+  const storedReset=await page.evaluate(()=>{
+    const e=currentEng(),p=latestTobe(e),
+      stateOnDisk=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null'),
+      saved=stateOnDisk?.engagements?.find(x=>x.id===e.id)?.tobeProposals?.
+        find(x=>x.version===p.version);
+    return {inMemory:!!p.aiGlobal,onDisk:!!saved?.aiGlobal};
+  });
+  assert.deepEqual(storedReset,{inMemory:false,onDisk:false},
+    'clear the global brief durably before Ollama replies');
+  unblockGlobal();
+  await page.waitForFunction(()=>document.querySelector('#tobeGlobalAnalysis')?.textContent
+    ?.includes('Generación de prueba no disponible'));
+  const afterGlobal=await page.locator('#tobeGlobalAnalysis').innerText();
+  assert.doesNotMatch(afterGlobal,/ANTERIOR GLOBAL|Antiguo objetivo|Antigua acción/,
+    'a failed attempt must not restore outdated global cards');
+  await page.unroute('**/v1/internal-ai/tobe-global',globalFailureRoute);
+  console.log('PG11_GLOBAL_REANALYSIS_CLEAR_BROWSER_PASS');
+  // [AUNEA-UAT-PG11-GLOBAL-RESET-291] END
   await page.unroute('**/v1/internal-ai/status',pg11StatusRoute);
   await page.unroute('**/v1/internal-ai/tobe-review-basic',pg11ReviewRoute);
   await page.unroute('**/v1/internal-ai/tobe-step',pg11StepRoute);
