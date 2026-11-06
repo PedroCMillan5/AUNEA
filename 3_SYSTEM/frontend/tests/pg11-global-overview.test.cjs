@@ -135,7 +135,7 @@ test('global explanation uses confirmed friction metrics and does not read later
  assert.match(output,/Contrasta las cifras con las referencias del AS-IS confirmado/);
 });
 
-test('saved legacy analysis ending mid-sentence is not shown as a valid global brief',()=>{
+test('saved text is shown verbatim even when Ollama ended a sentence abruptly',()=>{
  const h=harness([{objective:'Reducir tiempos de reintroducción manual',
    how:'Implementar una mejora directa en el ERP, este paso debe a',
    why:'El 100 % de los casos presenta reintroducción documentada.',
@@ -145,10 +145,11 @@ test('saved legacy analysis ending mid-sentence is not shown as a valid global b
  const html=h.html();
  assert.match(html,/Propuesta incompleta · Reanalizar/);
  assert.match(html,/Análisis anterior incompleto/);
- assert.match(html,/contiene frases cortadas/);
+ assert.match(html,/Se muestra íntegra tal como la devolvió Ollama/);
  assert.match(html,/Volver a analizar/);
- assert.doesNotMatch(html,/Las intervenciones prop|este paso debe a/);
- assert.doesNotMatch(html,/tobe-global-opportunity-body/);
+ assert.match(html,/Las intervenciones prop/);
+ assert.match(html,/este paso debe a/);
+ assert.match(html,/tobe-global-opportunity-body/);
  assert.ok(h.env.p.aiGlobal.result.summary.includes('intervenciones prop'),
    'the historical record remains intact until an explicit new generation');
 });
