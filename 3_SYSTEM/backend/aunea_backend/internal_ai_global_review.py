@@ -310,9 +310,11 @@ def assess_recommendation(how: str, context: dict, stated_constraints: str = "")
     if "CRM_NATIVE" in codes and re.search(
         r"(?:prohibid[ao]|no se permite|no est[aá] permitido).{0,95}"
         r"(?:crm|funcionalidad(?:es)? nativa|funciones? nativa)", stated):
-        add_conflict("DF089", "La justificación presenta la preferencia por funciones "
-                     "nativas como una prohibición que el cliente no declaró.")
-        track("DF089", "MISSTATED", "La preferencia por funciones nativas no es un veto.")
+        track("DF089", "MISSTATED", "La propuesta interpreta erróneamente una preferencia "
+              "como prohibición; corregir la justificación antes de aprobar.")
+        verifications.append({"source": "DF089",
+                              "question": "Corregir la falsa prohibición: el cliente "
+                              "prioriza funciones nativas, sin impedir otras opciones."})
 
     if "KEEP_EXISTING" in codes:
         if re.search(r"nueva plataforma|nueva herramienta|migrar|sustituir "
