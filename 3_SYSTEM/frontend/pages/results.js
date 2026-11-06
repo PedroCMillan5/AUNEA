@@ -2009,9 +2009,14 @@ function tobeGlobalOverviewHtml(e,p){
   const valid=entry&&entry.tobeVersion===p.version&&entry.sourceSnapshotVersion===p.sourceSnapshotVersion&&
     entry.diagnosticInputHash===diag?.input_snapshot_hash&&entry.result?.status==='DRAFT'&&
     entry.result.engagement_id===e.id&&entry.result.snapshot_version===p.sourceSnapshotVersion;
-  const result=valid?entry.result:null,
+  const working=typeof internalAiGlobalWorking==='function'&&internalAiGlobalWorking(e),
+    stored=valid?entry.result:null,
+    complete=!!stored&&Array.isArray(stored.opportunities)&&
+      [stored.summary,...stored.opportunities.flatMap(item=>[item.how,item.why])]
+        .every(value=>typeof value==='string'&&/[.!?…]$/.test(value.trim())),
+    legacy=!!stored&&!complete,
+    result=!working&&complete?stored:null,
     opportunities=Array.isArray(result?.opportunities)?result.opportunities:[],
-    working=typeof internalAiGlobalWorking==='function'&&internalAiGlobalWorking(e),
     feedback=typeof internalAiGlobalMessage==='function'?internalAiGlobalMessage(e):null;
   const source=tobeProposalSourceSteps(e,p),
     confirmed=typeof tobeProposalSnapshot==='function'?tobeProposalSnapshot(e,p):null,
@@ -2051,18 +2056,18 @@ function tobeGlobalOverviewHtml(e,p){
     return step?'Paso: '+(step.step_name||step.name||id):
       risk?'Riesgo: '+(risk.description||id):'Referencia: '+String(id);
   });
-  const state=working?'Analizando…':result?'Propuesta guardada · Sin aprobar':'Pendiente de análisis';
+  const state=working?'Analizando…':legacy?'Propuesta incompleta · Reanalizar':result?'Propuesta guardada · Sin aprobar':'Pendiente de análisis';
   return '<section class="tobe-global-analysis" id="tobeGlobalAnalysis" aria-label="Análisis global IA del proceso">'+
     '<header class="tobe-global-analysis-head"><div><span class="tobe-eyebrow">02 · ANÁLISIS IA GLOBAL DEL PROCESO</span>'+
       '<h2>Objetivos y recomendaciones de mejora</h2>'+
       '<p>Primero, qué mejorar en el conjunto del proceso y cómo conseguirlo. Las decisiones sobre cada actividad se realizan después.</p></div>'+
       (tobeEditable(p)?'<button type="button" class="btn btn-primary" id="analyzeTobeGlobal"'+
         (working?' disabled aria-busy="true"':'')+'>'+
-        (working?'Analizando proceso…':result?'Volver a analizar':'Analizar proceso con IA')+'</button>':'')+'</header>'+
+        (working?'Analizando proceso…':result||legacy?'Volver a analizar':'Analizar proceso con IA')+'</button>':'')+'</header>'+
     '<div class="tobe-global-summary"><div class="tobe-global-summary-top">'+
-      '<strong>'+(working?'Analizando proceso…':result?'Síntesis del proceso':'Análisis pendiente')+'</strong>'+
+      '<strong>'+(working?'Analizando proceso…':legacy?'Análisis anterior incompleto':result?'Síntesis del proceso':'Análisis pendiente')+'</strong>'+
       '<span class="tobe-global-state" aria-live="polite">'+esc(state)+'</span></div>'+
-      '<p>'+esc(working?'Se ha retirado el análisis anterior. Preparando una propuesta nueva con el AS-IS confirmado…':result?.summary||'No hay una propuesta global vigente. Analiza el AS-IS confirmado para generar nuevos objetivos y recomendaciones; no se alterarán campos del TO-BE.')+'</p></div>'+
+      '<p>'+esc(working?'Se ha retirado el análisis anterior. Preparando una propuesta nueva con el AS-IS confirmado…':legacy?'La propuesta guardada contiene frases cortadas y no es apta para revisión. Pulsa Volver a analizar para generar un texto completo.':result?.summary||'No hay una propuesta global vigente. Analiza el AS-IS confirmado para generar nuevos objetivos y recomendaciones; no se alterarán campos del TO-BE.')+'</p></div>'+
     (feedback?'<p class="tobe-global-feedback'+(feedback.type==='warn'?' is-warning':'')+
       '" role="status" aria-live="polite">'+esc(feedback.message)+'</p>':'')+
     (opportunities.length?'<div class="tobe-global-opportunities" aria-label="Objetivos y recomendaciones">'+
