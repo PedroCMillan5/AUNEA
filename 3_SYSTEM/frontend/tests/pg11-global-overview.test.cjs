@@ -776,4 +776,39 @@ test('PG11 failed full reset restores the prior saved global brief before callin
  assert.equal(p.aiGlobal,old);
  assert.match(env.internalAiGlobalMessage(e).message,/restaurado el borrador previo/);
 });
+test('block 4 shows three separate review statuses and selective retry only for pending sources',()=>{
+  const boot=fs.readFileSync(path.join(__dirname,'../boot.js'),'utf8');
+  const start=boot.indexOf('const __pg11BaseOverview=');
+  const end=boot.indexOf('if((location.hash',start);
+  assert.ok(start>0&&end>start,'boot decorator is present before startup');
+  const saved={complete:false,opportunities:[
+    {how:'Reutilizar datos confirmados.',why:'La fricción está documentada.'},
+    {how:'Registrar datos con aprobación',why:'Debe conservar la revisión humana.'}
+  ],progress:{total:3,completed:1,focus_done:['F1'],failed:1}};
+  const e={id:'E1'},p={status:'DRAFT'};
+  const ctx={
+    tobeGlobalOverviewHtml:()=>'<section><header><button id="analyzeTobeGlobal">Analizar</button></header>'+
+      '<p class="tobe-global-feedback" role="status">Fuentes revisadas: 1 de 3</p></section>',
+    tobeGlobalStored:()=>saved,
+    tobeHumanReviewRecord:()=>({decisions:{S1:{status:'ACCEPT'}}}),
+    internalAiGlobalWorking:()=>false,
+  };
+  vm.createContext(ctx);vm.runInContext(boot.slice(start,end),ctx);
+  let h=ctx.tobeGlobalOverviewHtml(e,p);
+  assert.match(h,/Fuentes:<\/b> 1\/3/);
+  assert.match(h,/Integridad:<\/b> 1\/2/);
+  assert.match(h,/Revisión humana:<\/b> 1 decisiones/);
+  assert.match(h,/id="retryTobeGlobal"/);
+  assert.doesNotMatch(h,/Fuentes revisadas: 1 de 3/);
+  ctx.internalAiGlobalWorking=()=>true;
+  h=ctx.tobeGlobalOverviewHtml(e,p);
+  assert.match(h,/id="retryTobeGlobal"[^>]* disabled/);
+  p.status='REVIEWED';
+  assert.doesNotMatch(ctx.tobeGlobalOverviewHtml(e,p),/retryTobeGlobal/);
+  p.status='DRAFT';saved.complete=true;
+  assert.doesNotMatch(ctx.tobeGlobalOverviewHtml(e,p),/retryTobeGlobal/);
+  saved.complete=false;saved.progress.focus_done=['F1','F2','F3'];
+  assert.doesNotMatch(ctx.tobeGlobalOverviewHtml(e,p),/retryTobeGlobal/);
+});
+
 // [AUNEA-UAT-PG11-GLOBAL-OVERVIEW-288] END
