@@ -98,6 +98,32 @@ def test_global_rejects_fabricated_references_and_partial_json(monkeypatch):
     with pytest.raises(ValueError,match="no terminó"):
         global_ai.analyze_global(sample())
 
+@pytest.mark.parametrize(("field", "value", "error"), [
+    ("why", "F1: 100 % de los casos requieren 5 minutos adicionales.", "cifras"),
+    ("how", "Configurar un máximo de 24 horas para la aprobación.", "cifras"),
+    ("why", "La espera dura dos días sin intervención.", "cifras"),
+    ("constraints", "DF089: KEEP_EXISTING; DF090: RBAC, AUDIT_LOG.", "códigos"),
+    ("how", "Este paso debe a", "incompleta"),
+    ("summary", "Las intervenciones prop", "incompleta"),
+])
+def test_global_language_quality_rejects_unsupported_claims_and_cut_sentences(field, value, error):
+    raw=candidate()
+    target=raw if field=="summary" else raw["opportunities"][0]
+    target[field]=value
+    with pytest.raises(ValueError, match=error):
+        global_ai.validate_global_brief(raw, {"S1", "F1"})
+
+
+def test_global_quality_accepts_compact_conditional_advice_without_metrics():
+    raw=candidate()
+    raw["opportunities"][0]["how"]=(
+        "Evaluar la reutilización de datos existentes, "
+        "confirmando permisos y aprobaciones antes de cambiar el proceso."
+    )
+    result=global_ai.validate_global_brief(raw, {"S1", "F1"})
+    assert result.opportunities[0].source_refs==["S1", "F1"]
+
+
 def test_global_refuses_stale_source_before_request(monkeypatch):
     configure(monkeypatch)
     def fail_open(*args,**kwargs):
