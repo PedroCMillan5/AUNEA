@@ -43,6 +43,16 @@ def candidate(refs=("S1","F1")):
                               "constraints":"No exponer datos fuera del entorno autorizado.",
                               "source_refs":list(refs)}]}
 
+def test_pg11_scoped_global_routes_are_registered_in_live_api():
+    from aunea_backend.api import app
+    routes={(route.path, method)
+            for route in app.routes
+            for method in getattr(route, "methods", set())}
+    assert ("/v1/internal-ai/status", "GET") in routes
+    assert ("/v1/internal-ai/tobe-global-plan", "POST") in routes
+    assert ("/v1/internal-ai/tobe-global", "POST") in routes
+
+
 def test_global_context_includes_governed_constraints_but_not_unrelated_forms():
     request=sample()
     context,ids=global_ai.global_context(request)
