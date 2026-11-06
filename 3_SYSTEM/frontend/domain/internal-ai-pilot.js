@@ -92,7 +92,8 @@ function internalAiPilotRefreshPanel(e){
 }
 // [AUNEA-FE-PG11-GLOBAL-AI-285] START — independent process-wide inference.
 // Uses the same verified local provider and versioned TO-BE owner as activity IA;
-// never runs automatically, edits fields or overwrites earlier output on failure.
+// Explicit restart clears the current global brief before inference, even if Ollama fails.
+// Never runs automatically, edits fields or approves any AI recommendation.
 const __auneaGlobalAiFeedback=new Map();
 function internalAiGlobalWorking(e){
   const key=internalAiPilotKey(e);return !!key&&__auneaAiWorking.has(key)&&__auneaGlobalAiFeedback.get(key)?.working===true;
@@ -112,9 +113,23 @@ async function generateTobeGlobal(e){
     return toast('Se necesita un TO-BE en borrador, con AS-IS y diagnóstico vigentes.');
   if(__auneaAiWorking.has(key))
     return toast('Hay otro análisis IA en curso. Termina antes de iniciar el global.');
-  // Preserve all the consultant's current edits before starting a long local inference.
+  // Save consultant-owned changes first. A deliberate reanalysis invalidates the
+  // previous global result immediately: it must not be reused during inference
+  // or revived after a failed run or a reload. No other PG11 data is touched.
   if(!saveTobeFromDom(e)||!saveState('Conservar borrador antes de IA global'))
     return toast('No se pudo guardar el trabajo actual. La IA global no se ejecutó.');
+  const liveBefore=currentEng(),draftBefore=latestTobe(liveBefore);
+  if(!liveBefore||liveBefore.id!==e.id||!tobeEditable(draftBefore)||
+     draftBefore.version!==p.version||internalAiPilotKey(liveBefore)!==key)
+    return toast('El borrador o el diagnóstico cambiaron antes de analizar. Revisa el estudio.');
+  delete draftBefore.aiGlobal;
+  markDirty('PG11: retirar propuesta global anterior para generar una nueva');
+  if(!saveState('Guardar reinicio del análisis IA global v'+draftBefore.version)){
+    __auneaGlobalAiFeedback.set(key,{working:false,type:'warn',
+      message:'No se pudo guardar el reinicio del análisis global. No se inició Ollama; evita recargar hasta resolver el guardado.'});
+    internalAiGlobalRefresh(currentEng());
+    return;
+  }
   __auneaAiWorking.add(key);
   __auneaGlobalAiFeedback.set(key,{working:true,type:'info',message:'Comprobando Ollama local y autorización…'});
   internalAiGlobalRefresh(e);
@@ -155,7 +170,6 @@ async function generateTobeGlobal(e){
        !Array.isArray(data.opportunities)||data.opportunities.length>3||
        data.opportunities.some(x=>!x.objective||!x.how||!x.why||!Array.isArray(x.source_refs)))
       throw Error('El análisis no coincide con el estudio confirmado o no cumple el contrato global.');
-    const previous=owner.aiGlobal;
     owner.aiGlobal={tobeVersion:owner.version,sourceSnapshotVersion:owner.sourceSnapshotVersion,
       diagnosticInputHash:diagnostic.input_snapshot_hash,savedAt:now(),
       result:{
@@ -169,10 +183,10 @@ async function generateTobeGlobal(e){
       }};
     markDirty('PG11: análisis IA global pendiente de revisión humana');
     if(!saveState('Guardar análisis IA global en TO-BE v'+owner.version)){
-      // Failed persistence must never discard the previous verified analysis.
-      owner.aiGlobal=previous;
+      // The reset is already durable: a failed save cannot revive stale cards.
+      delete owner.aiGlobal;
       __auneaGlobalAiFeedback.set(key,{working:false,type:'warn',message:
-        'El análisis nuevo no pudo guardarse. Se conserva la última propuesta registrada.'});
+        'El nuevo análisis no pudo guardarse. No hay propuesta global vigente. Corrige el almacenamiento antes de reintentar.'});
     }else{
       let verified=false;
       try{
@@ -187,9 +201,9 @@ async function generateTobeGlobal(e){
           'El resultado está en el borrador, pero no se verificó su guardado. No cierres la página.'});
     }
   }catch(error){
-    // The previous version-owned global proposal is kept untouched on any failure.
+    // The previous global proposal was already cleared and saved before calling Ollama.
     __auneaGlobalAiFeedback.set(key,{working:false,type:'warn',
-      message:'No se ha sustituido el análisis anterior. '+String(error?.message||error)});
+      message:'No se generó una propuesta global nueva. '+String(error?.message||error)});
     console.error('PG11: fallo al analizar el proceso globalmente',error);
   }finally{
     __auneaAiWorking.delete(key);
