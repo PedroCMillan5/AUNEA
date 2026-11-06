@@ -428,9 +428,13 @@ test('global reanalysis clears and persists the previous brief even if the new r
   };
   vm.createContext(sandbox);vm.runInContext(aiBlock,sandbox);
   await sandbox.generateTobeGlobal(e);
-  assert.equal(p.aiGlobal,undefined,'an unsuccessful reanalysis must not revive an obsolete proposal');
-  assert.equal(JSON.parse(persisted).engagements[0].tobeProposals[0].aiGlobal,undefined,
-    'the old proposal must also be absent after a browser reload');
+  assert.equal(p.aiGlobal.result.complete,false,'an unsuccessful analysis remains a partial draft');
+  assert.equal(p.aiGlobal.result.progress.failed,1);
+  assert.equal(p.aiGlobal.result.opportunities.length,0);
+  assert.ok(!JSON.stringify(p.aiGlobal).includes('Análisis anterior validado'),
+    'a started new analysis cannot revive the old recommendations');
+  assert.equal(JSON.parse(persisted).engagements[0].tobeProposals[0].aiGlobal.result.complete,false,
+    'the partial failure record remains persisted on reload');
   assert.equal(sandbox.internalAiGlobalWorking(e),false);
   assert.match(sandbox.internalAiGlobalMessage(e).message,/contexto supera el presupuesto IA/);
 });
