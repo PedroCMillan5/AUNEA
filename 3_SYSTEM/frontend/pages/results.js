@@ -2014,13 +2014,31 @@ function tobeGlobalOverviewHtml(e,p){
     working=typeof internalAiGlobalWorking==='function'&&internalAiGlobalWorking(e),
     feedback=typeof internalAiGlobalMessage==='function'?internalAiGlobalMessage(e):null;
   const source=tobeProposalSourceSteps(e,p),
-    record=typeof engagementOfRecord==='function'?engagementOfRecord(e):e;
+    confirmed=typeof tobeProposalSnapshot==='function'?tobeProposalSnapshot(e,p):null,
+    record=confirmed||(typeof engagementOfRecord==='function'?engagementOfRecord(e):e);
   const refs=ids=>(ids||[]).map(id=>{
     const step=source.find(s=>String(s.id)===String(id)),
-      friction=(record?.frictions||[]).find(f=>String(f.id)===String(id)),
-      risk=(record?.risks||[]).find(r=>String(r.id||r.risk_id)===String(id));
+      friction=(record?.frictions||[]).find(f=>String(f.id)===String(id)&&f.status!=='SUPERSEDED'),
+      risk=(record?.risks||[]).find(r=>String(r.id||r.risk_id)===String(id)&&r.status!=='SUPERSEDED');
+    if(friction){
+      const measures=[],freq=friction.frequency,
+        effort=friction.active_time_loss,wait=friction.wait_time_loss,
+        attribution=friction.time_attribution?.mode,
+        timing=attribution==='INCLUDED'?'ya incluido en el paso':
+          attribution==='BREAKDOWN'?'desglose del retrabajo':
+          attribution==='ADDITIONAL'?'adicional atribuido':'atribución por comprobar';
+      if(freq?.value!==undefined&&freq?.value!==null&&
+         String(freq.mode||'').toLowerCase()==='percent')
+        measures.push('Frecuencia '+freq.value+' %');
+      if(effort?.value!==undefined&&effort?.value!==null&&Number(effort.value)>0)
+        measures.push('Trabajo '+effort.value+' '+(effort.unit||'unidad sin especificar')+' ('+timing+')');
+      if(wait?.value!==undefined&&wait?.value!==null&&Number(wait.value)>0)
+        measures.push('Espera '+wait.value+' '+(wait.unit||'unidad sin especificar'));
+      return 'Fricción: '+(friction.client_label||id)+
+        (measures.length?' · '+measures.join(' · '):'')+
+        (friction.evidence_type?' · Evidencia: '+friction.evidence_type:'');
+    }
     return step?'Paso: '+(step.step_name||step.name||id):
-      friction?'Fricción: '+(friction.client_label||id):
       risk?'Riesgo: '+(risk.description||id):'Referencia: '+String(id);
   });
   const state=working?'Analizando…':result?'Propuesta guardada · Sin aprobar':'Pendiente de análisis';
@@ -2049,7 +2067,7 @@ function tobeGlobalOverviewHtml(e,p){
       '<p><b>Evidencias vinculadas:</b> '+esc(refs(item.source_refs).join(' · ')||'Sin referencias identificadas')+'</p>'+
       '</div></details></div></article>').join('')+'</div>':
       result?'<p class="tobe-global-empty">La IA no ha identificado mejoras transversales con evidencia suficiente. Consulta la síntesis y revisa los pasos individualmente.</p>':'')+
-    '<p class="tobe-global-caution">Análisis orientativo, sin aprobar. Sin porcentajes ni tiempos futuros estimados. No sustituye la revisión humana ni el motor oficial.</p>'+
+    '<p class="tobe-global-caution">Análisis orientativo, sin aprobar. Los porcentajes y tiempos citados proceden del AS-IS y no son compromisos futuros ni ahorros estimados. Requiere revisión humana.</p>'+
     '</section>';
 }
 // [AUNEA-FE-PG11-GLOBAL-OVERVIEW-284] END
