@@ -2167,6 +2167,7 @@ function tobeGlobalOverviewHtml(e,p){
       ' incompatibilidades detectadas · '+alternatives+' alternativas sugeridas · '+
       pending+' intervenciones por verificar'+
       (variants?' · '+variants+' variantes relacionadas conservadas':'')+
+      (qualityPlan?' · '+thematicGroups.length+' líneas relacionadas para revisión':'')+
       '. Ninguna equivale a aprobación del consultor.</p>':'')+
     (progress?'<div class="tobe-global-progress" role="status" aria-live="polite">'+
       '<p><b>Generación:</b> Fuentes revisadas: '+successful+' de '+progress.total+
