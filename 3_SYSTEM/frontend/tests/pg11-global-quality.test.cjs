@@ -67,6 +67,9 @@ test('no quota or merge of different review statuses',()=>{
  assert.equal((html.match(/class="tobe-global-opportunity"/g)||[]).length,4);
  assert.equal((html.match(/class="tobe-global-intervention"/g)||[]).length,5);
  assert.match(html,/Coherencia por revisar/);
+ assert.match(html,/Coherencia \(revisión pendiente\):/);
+ assert.match(html,/Resultado esperado \(hipótesis\):/);
+ assert.match(html,/Priorización pendiente:/);
  assert.match(html,/Objetivo original/);
  assert.match(html,/F1/);
  assert.equal(JSON.stringify(p.aiGlobal.result.opportunities),before);
