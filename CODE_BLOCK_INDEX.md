@@ -4,6 +4,7 @@
 
 | Block_ID | Archivo | Responsabilidad | Fuente | Inputs | Outputs | Efectos | Riesgo | Regresión | Estado |
 |---|---|---|---|---|---|---|---|---|
+| AUNEA-BE-PG11-GLOBAL-REVIEW-292 | 3_SYSTEM/backend/aunea_backend/internal_ai_global_review.py | Construye inventario dinámico por fuentes confirmadas, proyecta contexto acotado y evalúa restricciones explícitas sin afirmar viabilidad técnica | Simulator CANONICAL PG11; DEC-034/050/052/055 | AS-IS confirmado y propuestas IA | Unidades de análisis, evidencia y evaluación condicionada o incompatible | Sin escritura de negocio | HIGH | test_internal_ai_global.py | REVIEW |
 | AUNEA-BE-PG11-GLOBAL-AI-282 | 3_SYSTEM/backend/aunea_backend/internal_ai_global.py | Motor global Ollama con fuente y restricciones acotadas | PG11 CANONICAL; DEC-050/052 | PilotAIRequest | Propuesta DRAFT trazable | HTTP local consentido | HIGH | test_internal_ai_global.py | REVIEW |
 | AUNEA-BE-PG11-GLOBAL-AI-API-283 | 3_SYSTEM/backend/aunea_backend/api.py | Endpoint protegido global | PG11 CANONICAL; DEC-055 | Snapshot y autorización | Respuesta DRAFT | Sin escritura backend | HIGH | test_internal_ai_global.py | REVIEW |
 | AUNEA-FE-PG11-CONTEXT-289 | 3_SYSTEM/frontend/pages/results.js | Información general de PG11 obtenida únicamente del snapshot AS-IS confirmado | Simulator CANONICAL PG11; DEC-050/052 | Snapshot AS-IS versionado | Ficha de origen de solo lectura | Sin captura ni edición | MEDIUM | pg11-global-overview.test.cjs | REVIEW |
