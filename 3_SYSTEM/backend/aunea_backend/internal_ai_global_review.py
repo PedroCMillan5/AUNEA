@@ -183,6 +183,9 @@ def assess_recommendation(how: str, context: dict, stated_constraints: str = "")
     stated = _normalized(stated_constraints)
     declared = explain_limits(context)
     codes = {item["value"] for item in declared}
+    def source_for(*values: str) -> str:
+        return "/".join(dict.fromkeys(
+            item["source"] for item in declared if item["value"] in values))
     conflicts: list[dict] = []
     applicable: list[dict] = []
     verifications = _action_dependency(action)
