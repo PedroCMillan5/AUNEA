@@ -385,4 +385,58 @@ def test_global_alternative_rejects_paraphrases_of_rejected_action(monkeypatch):
     with pytest.raises(ValueError,match="reproduce"):
         global_ai.analyze_global(payload)
 
+
+@pytest.mark.parametrize("declared,action,expected_source", [
+    ({"DF087":["HUMAN_DECISION"]},
+     "Implementar la aprobación automática sin intervención humana.", "DF087"),
+    ({"DF088":["FINANCIAL_ACTION"]},
+     "Ejecutar automáticamente pagos sin revisión humana.", "DF088"),
+    ({"DF091":["NO_DOWNTIME"]},
+     "Interrumpir la operación durante el despliegue.", "DF091"),
+    ({"DF090":["AUDIT_LOG"]},
+     "Desactivar la auditoría del proceso.", "DF090"),
+    ({"DF090":["RBAC"]},
+     "Permitir acceso libre a todos al registro.", "DF090"),
+    ({"DF090":"No se permite acceso externo a los datos"},
+     "Enviar facturas a una nube externa para procesarlas.", "DF090"),
+])
+def test_pg11_block2_explicit_limits_are_source_backed(declared,action,expected_source):
+    from aunea_backend.internal_ai_global_review import assess_recommendation
+    result=assess_recommendation(action, {"client_constraints":declared})
+    assert result["status"]=="INCOMPATIBLE"
+    assert result["conflicts"]
+    assert any(expected_source in issue["source"] for issue in result["conflicts"])
+    assert result["capability_status"]=="UNVERIFIED"
+
+
+def test_pg11_block2_preferences_are_not_bans_and_erp_features_are_not_certified():
+    from aunea_backend.internal_ai_global_review import assess_recommendation
+    context={"client_constraints":{
+        "DF089":["CRM_NATIVE","KEEP_EXISTING"],
+        "DF090":["RBAC","AUDIT_LOG"]}}
+    assessed=assess_recommendation(
+        "Integrar el CRM existente con una API para registrar solicitudes.",context)
+    assert assessed["status"]=="CONDITIONED"
+    assert not assessed["conflicts"]
+    assert assessed["capability_status"]=="UNVERIFIED"
+    assert any(x["source"]=="CAPACIDAD_TECNICA" for x in assessed["verifications"])
+    assert any(x["effect"]=="PREFERENCE" for x in assessed["checks"])
+    assert "Viabilidad sin acreditar" in assessed["reason"] or "funciones nativas" in assessed["reason"]
+
+
+def test_pg11_block2_rejected_action_keeps_concrete_conflict_for_alternative():
+    from aunea_backend.internal_ai_global_alternative import (
+        confirmed_conflict, alternative_instructions, repeats_rejected_action)
+    ctx={"client_constraints":{"DF087":["HUMAN_DECISION"]}}
+    initial="Implementar aprobación automática sin intervención humana."
+    review=confirmed_conflict(initial,"",ctx)
+    instructions=alternative_instructions(review,initial)
+    assert review["status"]=="INCOMPATIBLE"
+    assert "DF087" in instructions["user"]
+    assert "preferencias" in instructions["system"]
+    assert repeats_rejected_action(
+        "Implementar una aprobación automática sin intervención humana.", initial)
+    assert not repeats_rejected_action(
+        "Enviar alertas de pendientes al aprobador conservando la decisión humana.", initial)
+
 # [AUNEA-UAT-PG11-GLOBAL-AI-287] END
