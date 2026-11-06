@@ -229,7 +229,7 @@ def test_global_constraint_assessment_rejects_auto_approval_not_native_tools():
     blocked=assess_recommendation(
         "Implementar la aprobación automática sin intervención humana.",context)
     assert blocked["status"]=="INCOMPATIBLE"
-    assert blocked["conflicts"][0]["source"]=="DF087"
+    assert set(blocked["conflicts"][0]["source"].split("/"))=={"DF087","DF088"}
     allowed=assess_recommendation(
         "Enviar recordatorios con herramientas existentes manteniendo la aprobación humana.",
         context)
