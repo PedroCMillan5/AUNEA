@@ -890,6 +890,7 @@ async function main(){
     if(!saveState('Guardar fixture de enlace global'))throw Error('Global link not persisted');
     render();
   });
+  await page.locator('#tobeGlobalAnalysis .tobe-global-opportunity details summary').first().click();
   const linkedButton=page.locator('#tobeGlobalAnalysis [data-tobe-global-link="1"]').first();
   assert.equal(await linkedButton.count(),1,'global card has a linked source-step button');
   const beforeLink=await page.evaluate(()=>{
