@@ -439,4 +439,29 @@ def test_pg11_block2_rejected_action_keeps_concrete_conflict_for_alternative():
     assert not repeats_rejected_action(
         "Enviar alertas de pendientes al aprobador conservando la decisión humana.", initial)
 
+
+def test_incomplete_retry_mode_asks_for_short_full_sentences_without_relaxing_validation(monkeypatch):
+    configure(monkeypatch)
+    captured = []
+    def fake_open(req, timeout=0):
+        captured.append(json.loads(req.data))
+        return io.BytesIO(json.dumps({
+            "done": True, "done_reason": "stop", "prompt_eval_count": 1450,
+            "message": {"content": json.dumps(candidate())}
+        }).encode())
+    monkeypatch.setattr(global_ai._LOCAL_HTTP, "open", fake_open)
+    request = sample()
+    retry = global_ai.GlobalBatchRequest(
+        engagement=request.engagement, diagnostic=request.diagnostic,
+        confirmed_as_is=True, snapshot_version=request.snapshot_version,
+        focus_source_id="F1", retry_incomplete=True,
+    )
+    result = global_ai.analyze_global(retry)
+    assert result["status"] == "DRAFT"
+    prompt = captured[0]["messages"][0]["content"]
+    assert "REPARACIÓN DE LOTE INCOMPLETO" in prompt
+    assert "menos de 120 caracteres" in prompt
+    assert captured[0]["format"]["properties"]["summary"]["maxLength"] == 480
+    assert result["requires_human_review"] is True
+
 # [AUNEA-UAT-PG11-GLOBAL-AI-287] END
