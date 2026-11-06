@@ -2193,7 +2193,7 @@ function tobeGlobalOverviewHtml(e,p){
         esc(item.review.verifications.map(x=>x.source+': '+x.question).join(' · '))+'</p>':'')+
       (linkedSteps(item).length?'<p><b>Revisar en actividades:</b> '+
         linkedSteps(item).map(step=>'<button type="button" class="btn btn-outline btn-small" '+
-          'data-tobe-select="'+attr(String(step.sourceStepId))+'">'+
+          'data-tobe-select="'+attr(String(step.sourceStepId))+'" data-tobe-global-link="1">'+
           esc(step.sourceStepName||step.stepName||String(step.sourceStepId))+'</button>').join(' ')+
         '</p>':'')+
       '</div></details></div></article>').join('')+'</div>':
@@ -2760,6 +2760,7 @@ function registerInternalWorkPages(){
       toast('No se ha guardado la edición. Mantén la actividad actual abierta.');
       return;
     }
+    const fromGlobal=selected.hasAttribute('data-tobe-global-link');
     __auneaTobeSelection={engagementId:e.id,version:p.version,stepId:String(sourceId)};
     const inspector=document.getElementById('tobeInspector');
     const savedEngagement=currentEng(),savedProposal=latestTobe(savedEngagement);
@@ -2780,6 +2781,10 @@ function registerInternalWorkPages(){
       const active=node.getAttribute('data-tobe-select')===String(sourceId);
       node.classList.toggle('is-selected',active);node.setAttribute('aria-pressed',String(active));
     });
+    // A global card is above the activity inspector. Navigate to the actual
+    // review only when this selection originated from a global recommendation.
+    if(fromGlobal)document.getElementById('tobeInspector')?.
+      scrollIntoView?.({behavior:'smooth',block:'start'});
   },true);
   // [AUNEA-FE-PG11-SELECT-206] END
   // [AUNEA-FE-PG11-FLOW-ACTIONS-229] START — explicit future-only additions and supersession.
