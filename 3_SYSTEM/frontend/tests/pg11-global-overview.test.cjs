@@ -383,7 +383,8 @@ test('a second source failure preserves the first new recommendation as an expli
  assert.equal(p.aiGlobal.result.complete,false);
  assert.equal(p.aiGlobal.result.progress.failed,1);
  assert.equal(p.aiGlobal.result.opportunities.length,1);
- assert.equal(p.aiGlobal.result.progress.completed,2);
+ assert.equal(p.aiGlobal.result.progress.completed,1);
+ assert.equal(p.aiGlobal.result.progress.attempted,2);
  assert.ok(!JSON.stringify(p.aiGlobal).includes('TEXTO ANTIGUO'));
  assert.equal(JSON.parse(persisted).engagements[0].tobeProposals[0].aiGlobal.result.opportunities.length,1);
  assert.match(env.internalAiGlobalMessage(e).message,/Ollama local no responde para F2/);
