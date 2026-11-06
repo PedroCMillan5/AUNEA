@@ -912,6 +912,61 @@ async function main(){
   }),beforeLink,'navigating from global analysis must not change TO-BE fields');
   console.log('PG11_GLOBAL_LINK_BROWSER_PASS: '+selectedGlobal.source);
   // [AUNEA-UAT-PG11-GLOBAL-LINK-BROWSER-293] END
+  // PG11 block 4 — validate real selective retry without erasing stored source data.
+  await page.evaluate(()=>{
+    const e=currentEng(),p=latestTobe(e),diagnostic=currentDiagnosticOutput(e),
+      source=String(p.items[0].sourceStepId);
+    p.aiGlobal={tobeVersion:p.version,sourceSnapshotVersion:p.sourceSnapshotVersion,
+      diagnosticInputHash:diagnostic.input_snapshot_hash,savedAt:now(),
+      result:{status:'DRAFT',engagement_id:e.id,snapshot_version:p.sourceSnapshotVersion,
+        input_hash:'UAT-RETRY-HASH',model:'fixture-no-ollama',complete:false,
+        summary:'El registro de origen presenta duplicidades.',
+        opportunities:[{objective:'Evitar duplicidad',
+          how:'Conservar y reutilizar los datos confirmados.',
+          why:'El origen confirmado evidencia capturas repetidas.',
+          source_refs:[source],constraints:'Mantener autorización humana.',
+          review:{status:'CONDITIONED',reason:'Comprobar viabilidad.',conflicts:[]}}],
+        progress:{completed:0,total:1,failed:1,focus_done:[],
+          source_batches:{[source]:['Conservar y reutilizar los datos confirmados.']},
+          failures:[{source_id:source,reason:'HTTP 503: prueba de reintento'}]}}};
+    markDirty('QA: avance parcial de PG11');saveState('UAT reintento selectivo');
+    render();
+  });
+  const originalPartial=await page.locator('#tobeGlobalAnalysis').innerText();
+  assert.match(originalPartial,/Fuentes:/);
+  assert.match(originalPartial,/Integridad:/);
+  assert.match(originalPartial,/Revisión humana:/);
+  assert.equal(await page.locator('#retryTobeGlobal').count(),1);
+  let retryRequest;
+  const retryPlan=async route=>{
+    const body=route.request().postDataJSON(),
+      id=String(currentEng().tobeProposals.at(-1).items[0].sourceStepId);
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({
+      engagement_id:body.engagement.engagement_id,
+      snapshot_version:body.snapshot_version,input_hash:'UAT-RETRY-HASH',
+      focus:[{source_id:id,type:'STEP',label:'Recepción'}]})});
+  };
+  const retrySource=async route=>{
+    retryRequest=route.request().postDataJSON();
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({
+      status:'DRAFT',engagement_id:retryRequest.engagement.engagement_id,
+      snapshot_version:retryRequest.snapshot_version,input_hash:'UAT-RETRY-HASH',
+      focus_source_id:retryRequest.focus_source_id,has_more:false,
+      opportunities:[]})});
+  };
+  await page.route('**/v1/internal-ai/tobe-global-plan',retryPlan);
+  await page.route('**/v1/internal-ai/tobe-global',retrySource);
+  await page.evaluate(()=>{state.backendOnline=true});
+  await page.locator('#retryTobeGlobal').click();
+  await page.waitForFunction(()=>latestTobe(currentEng())?.aiGlobal?.result?.complete===true);
+  assert.deepEqual(retryRequest.seen_interventions,
+    ['Conservar y reutilizar los datos confirmados.']);
+  assert.match(await page.locator('#tobeGlobalAnalysis').innerText(),
+    /Conservar y reutilizar los datos confirmados/);
+  assert.equal(await page.locator('#retryTobeGlobal').count(),0);
+  await page.unroute('**/v1/internal-ai/tobe-global',retrySource);
+  await page.unroute('**/v1/internal-ai/tobe-global-plan',retryPlan);
+  console.log('PG11_SELECTIVE_GLOBAL_RETRY_BROWSER_PASS');
   // [AUNEA-UAT-PG11-GLOBAL-RESET-291] START — reanalysis button clears
   // historical global text synchronously; failed Ollama must not restore it.
   await page.evaluate(()=>{
