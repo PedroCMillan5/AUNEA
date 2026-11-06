@@ -29,6 +29,7 @@ function harness(result){
     tobeProposalSourceSteps:()=>[{id:'S1',step_name:'Recepción'}],
     tobeProposalSnapshot:e=>e.confirmedSnapshots[0],
     engagementOfRecord:e=>e,esc:x=>String(x??'').replaceAll('&','&amp;').replaceAll('<','&lt;'),
+    attr:x=>String(x??'').replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;'),
     internalAiGlobalWorking:()=>false,internalAiGlobalMessage:()=>null,
   };
   vm.createContext(sandbox);vm.runInContext(block,sandbox);
