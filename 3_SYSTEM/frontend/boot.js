@@ -15,7 +15,8 @@ tobeGlobalOverviewHtml=(e,p)=>{
  if(!g)return h;
  const done=g.focus_done?.length??g.completed??0,total=g.total||0,
    cards=r.opportunities||[],
-   intact=cards.filter(x=>[x.how,x.why].every(v=>/[.!?…]$/.test(v||''))).length,
+   intact=cards.filter(x=>[x.how,x.why,...(x.related||[]).flatMap(y=>[y.how,y.why])]
+     .every(v=>/[.!?…]$/.test(v||''))).length,
    reviewed=Object.keys(tobeHumanReviewRecord(e,p)?.decisions||{}).length;
  const status='<div role="status" class="tobe-global-feedback">'+
    '<p><b>Fuentes:</b> '+done+'/'+total+'</p>'+
