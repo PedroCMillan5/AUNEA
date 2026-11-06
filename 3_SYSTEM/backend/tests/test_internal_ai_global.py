@@ -244,6 +244,27 @@ def test_global_rejects_fabricated_metric_through_full_ollama_flow(monkeypatch):
         global_ai.analyze_global(request)
 
 
+def test_global_schema_allows_complete_text_beyond_old_240_character_ceiling():
+    schema=global_ai.global_schema()
+    opportunity=schema["properties"]["opportunities"]["items"]["properties"]
+    assert schema["properties"]["summary"]["maxLength"] >= 450
+    assert opportunity["how"]["maxLength"] >= 500
+    assert global_ai.MAX_GLOBAL_OUTPUT_TOKENS >= 1800
+    raw=candidate()
+    raw["summary"]=("Las fricciones confirmadas permiten identificar mejoras operativas. " * 5).strip()
+    raw["opportunities"][0]["how"]=(
+        "Se propone revisar la reutilización de los datos ya capturados, "
+        "sin cambiar los permisos actuales ni eliminar la aprobación humana. "
+        "Después debe validarse la compatibilidad de las herramientas existentes "
+        "y definir una implantación gradual para evitar interrupciones."
+    )
+    assert len(raw["summary"]) > 240
+    assert len(raw["opportunities"][0]["how"]) > 240
+    result=global_ai.validate_global_brief(raw, {"S1", "F1"})
+    assert result.summary == raw["summary"]
+    assert result.opportunities[0].how == raw["opportunities"][0]["how"]
+
+
 def test_global_refuses_stale_source_before_request(monkeypatch):
     configure(monkeypatch)
     def fail_open(*args,**kwargs):
