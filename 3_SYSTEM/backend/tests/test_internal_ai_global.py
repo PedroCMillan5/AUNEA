@@ -99,9 +99,9 @@ def test_global_rejects_fabricated_references_and_partial_json(monkeypatch):
         global_ai.analyze_global(sample())
 
 @pytest.mark.parametrize(("field", "value", "error"), [
-    ("why", "F1: 100 % de los casos requieren 5 minutos adicionales.", "cifras"),
-    ("how", "Configurar un máximo de 24 horas para la aprobación.", "cifras"),
-    ("why", "La espera dura dos días sin intervención.", "cifras"),
+    ("why", "F1: 100 % de los casos requieren 5 minutos adicionales.", "fuentes vinculadas"),
+    ("how", "Configurar un máximo de 24 horas para la aprobación.", "fuentes vinculadas"),
+    ("why", "La espera dura dos días sin intervención.", "fuentes vinculadas"),
     ("constraints", "DF089: KEEP_EXISTING; DF090: RBAC, AUDIT_LOG.", "códigos"),
     ("how", "Este paso debe a", "incompleta"),
     ("summary", "Las intervenciones prop", "incompleta"),
@@ -122,6 +122,103 @@ def test_global_quality_accepts_compact_conditional_advice_without_metrics():
     )
     result=global_ai.validate_global_brief(raw, {"S1", "F1"})
     assert result.opportunities[0].source_refs==["S1", "F1"]
+
+
+def test_global_includes_actual_friction_metrics_and_time_attribution():
+    request=sample()
+    record=request.engagement.questionnaire_answers["_frictions"][0]
+    record.update({
+        "frequency":{"value":100,"mode":"percent","period":"case"},
+        "active_time_loss":{"value":5,"unit":"min","source_unit":"min"},
+        "time_attribution":{"mode":"INCLUDED","step_id":"S1"},
+        "evidence_type":"EV02",
+    })
+    request.diagnostic.input_snapshot_hash=stable_hash(request.engagement.model_dump())
+    context,ids=global_ai.global_context(request)
+    assert ids=={"S1","S2","F1"}
+    source=context["frictions"][0]
+    assert source["frequency"]["value"]==100
+    assert source["active_time_loss"]["value"]==5
+    assert source["active_time_loss"]["unit"]=="min"
+    assert source["time_attribution"]["mode"]=="INCLUDED"
+    assert source["evidence_type"]=="EV02"
+
+
+def test_global_accepts_exact_quantities_from_linked_friction_not_other_steps():
+    request=sample()
+    friction=request.engagement.questionnaire_answers["_frictions"][0]
+    friction.update({
+        "frequency":{"value":100,"mode":"percent","period":"case"},
+        "active_time_loss":{"value":5,"unit":"min"},
+        "time_attribution":{"mode":"INCLUDED","step_id":"S1"},
+        "evidence_type":"EV02",
+    })
+    request.engagement.questionnaire_answers["_frictions"].append({
+        "id":"F2","step_ids":["S2"],"client_label":"Aprobaciones retrasadas",
+        "frequency":{"value":25,"mode":"percent","period":"case"},
+        "wait_time_loss":{"value":720,"unit":"min"},
+        "time_attribution":{"mode":"INCLUDED","step_id":"S2"},
+        "evidence_type":"EV02",
+    })
+    request.diagnostic.input_snapshot_hash=stable_hash(request.engagement.model_dump())
+    context,ids=global_ai.global_context(request)
+    raw=candidate(refs=["F1","S1"])
+    raw["opportunities"][0]["why"]=(
+        "F1 afecta al 100 % de los casos, con 5 minutos de reintroducción "
+        "ya incluidos en el paso."
+    )
+    raw["summary"]="F1 presenta un problema declarado de 100 % de casos afectados."
+    result=global_ai.validate_global_brief(raw,ids,context)
+    assert "100 %" in result.opportunities[0].why
+    assert "5 minutos" in result.opportunities[0].why
+    assert "INCLUDED" not in result.opportunities[0].why
+    raw["opportunities"][0]["why"]=(
+        "F1 afecta al 25 % de los casos, con 5 minutos de reintroducción."
+    )
+    with pytest.raises(ValueError,match="fuentes vinculadas"):
+        global_ai.validate_global_brief(raw,ids,context)
+    raw["opportunities"][0]["why"]=(
+        "F1 afecta al 100 % de los casos, con 24 horas de espera."
+    )
+    with pytest.raises(ValueError,match="fuentes vinculadas"):
+        global_ai.validate_global_brief(raw,ids,context)
+
+
+def test_global_accepts_confirmed_signal_quantities_and_equivalent_units():
+    request=sample()
+    record=request.engagement.questionnaire_answers["_frictions"][0]
+    record["observable_signal"]="En el 8 % de los casos se retrabaja durante 10 minutos."
+    request.diagnostic.input_snapshot_hash=stable_hash(request.engagement.model_dump())
+    context,ids=global_ai.global_context(request)
+    raw=candidate(refs=["F1"])
+    raw["opportunities"][0]["why"]=(
+        "La fricción F1 afecta al 8 % de los casos y añade 10 minutos."
+    )
+    assert global_ai.validate_global_brief(raw,ids,context).opportunities
+    record["wait_time_loss"]={"value":720,"unit":"min"}
+    request.diagnostic.input_snapshot_hash=stable_hash(request.engagement.model_dump())
+    context,ids=global_ai.global_context(request)
+    raw["opportunities"][0]["why"]="La espera documentada es de 12 horas."
+    assert global_ai.validate_global_brief(raw,ids,context).opportunities
+
+
+def test_global_rejects_fabricated_metric_through_full_ollama_flow(monkeypatch):
+    configure(monkeypatch)
+    request=sample()
+    f=request.engagement.questionnaire_answers["_frictions"][0]
+    f["frequency"]={"value":100,"mode":"percent","period":"case"}
+    f["active_time_loss"]={"value":5,"unit":"min"}
+    request.diagnostic.input_snapshot_hash=stable_hash(request.engagement.model_dump())
+    model=candidate(refs=["F1"])
+    model["opportunities"][0]["why"]="La fricción implica 30 % de casos."
+    def fake_open(_request,timeout=0):
+        return io.BytesIO(json.dumps({
+            "done":True,"done_reason":"stop","prompt_eval_count":1600,
+            "message":{"content":json.dumps(model)}
+        }).encode())
+    monkeypatch.setattr(global_ai._LOCAL_HTTP,"open",fake_open)
+    with pytest.raises(ValueError,match="fuentes vinculadas"):
+        global_ai.analyze_global(request)
 
 
 def test_global_refuses_stale_source_before_request(monkeypatch):
