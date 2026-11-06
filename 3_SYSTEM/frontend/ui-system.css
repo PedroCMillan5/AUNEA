@@ -3109,6 +3109,13 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 .tobe-global-analysis-head h2{margin:0 0 5px;color:var(--ink);font-weight:750;line-height:1.25}
 .tobe-global-analysis-head p{margin:0;color:var(--muted);font-size:var(--font-small);line-height:1.5}
 .tobe-global-analysis-head .btn{flex:0 0 auto;min-height:40px;white-space:normal}
+.tobe-global-head-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.tobe-global-progress{display:grid;gap:3px;padding:9px 12px;border:1px solid var(--system-line);
+  border-radius:var(--radius-sm);background:#fff;font-size:var(--font-small);line-height:1.45}
+.tobe-global-progress p{margin:0;overflow-wrap:anywhere}
+.tobe-global-progress b{color:var(--system)}
+@media(max-width:720px){.tobe-global-head-actions{width:100%;align-items:stretch}
+  .tobe-global-head-actions .btn{flex:1 1 220px}}
 .tobe-global-summary{
   border-left:3px solid var(--system);border-radius:var(--radius-sm);
   background:var(--system-soft);padding:12px 15px;
