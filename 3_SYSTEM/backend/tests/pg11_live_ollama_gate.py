@@ -8,6 +8,8 @@ All generated responses remain DRAFT and the runner never writes business record
 from __future__ import annotations
 
 import json
+import re
+import unicodedata
 import os
 from pathlib import Path
 from time import perf_counter
@@ -94,6 +96,29 @@ def query_with_local_retry(payload, issues):
                 continue
             raise
     raise AssertionError("Unable to recover validated source text")
+
+
+def check_synthetic_objective_origin(request, source, item):
+    """Test-only oracle: title cannot refer to an unlinked step as its subject."""
+    q = request.engagement.questionnaire_answers
+    friction = next((x for x in q.get("_frictions", [])
+                     if x.get("id") == source), None)
+    if not friction:
+        return
+    linked = set(friction.get("step_ids", [])) | set(item["source_refs"])
+    title = unicodedata.normalize("NFKD", item["objective"].lower())
+    title = "".join(x for x in title if not unicodedata.combining(x))
+    for step in q.get("_process_steps", []):
+        if step.get("id") in linked:
+            continue
+        step_name = unicodedata.normalize("NFKD", step.get("step_name", "").lower())
+        step_name = "".join(x for x in step_name if not unicodedata.combining(x))
+        primary = step_name.split(" ")[0]
+        if len(primary) >= 6 and re.search(r"\\b" + re.escape(primary) + r"\\b", title):
+            raise AssertionError(
+                "El objetivo de " + source + " se refiere a " + step.get("id", "")
+                + " sin ninguna evidencia de relación: " + item["objective"]
+            )
 
 
 def checked_result(result, request, source):
