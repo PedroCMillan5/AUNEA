@@ -202,6 +202,29 @@ def test_global_accepts_confirmed_signal_quantities_and_equivalent_units():
     assert global_ai.validate_global_brief(raw,ids,context).opportunities
 
 
+def test_global_preserves_existing_approval_threshold_from_confirmed_map():
+    request=sample()
+    step=request.engagement.questionnaire_answers["_process_steps"][1]
+    step["decision_criteria"]="La dirección aprueba si el importe supera 1.500 €."
+    step["exception_path"]={
+        "type":"OTHER","condition":"Importe superior a 1.500 euros",
+        "destination_step":"S1"
+    }
+    request.diagnostic.input_snapshot_hash=stable_hash(request.engagement.model_dump())
+    context,ids=global_ai.global_context(request)
+    assert "1.500" in context["steps"][1]["decision_criteria"]
+    raw=candidate(refs=["S2"])
+    raw["opportunities"][0]["why"]=(
+        "La aprobación superior a 1.500 euros requiere supervisión humana."
+    )
+    assert global_ai.validate_global_brief(raw,ids,context).opportunities
+    raw["opportunities"][0]["why"]=(
+        "La aprobación superior a 2.500 euros requiere supervisión humana."
+    )
+    with pytest.raises(ValueError, match="fuentes vinculadas"):
+        global_ai.validate_global_brief(raw,ids,context)
+
+
 def test_global_rejects_fabricated_metric_through_full_ollama_flow(monkeypatch):
     configure(monkeypatch)
     request=sample()
