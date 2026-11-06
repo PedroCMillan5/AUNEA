@@ -896,6 +896,9 @@ async function main(){
       body:JSON.stringify({detail:'Generación de prueba no disponible'})});
   };
   await page.route('**/v1/internal-ai/tobe-global',globalFailureRoute);
+  // The browser smoke runs without the real 8010 backend: the existing local
+  // /status fixture is authoritative for this isolated global-IA button test.
+  await page.evaluate(()=>{state.backendOnline=true});
   await page.locator('#analyzeTobeGlobal').click();
   const reachedGlobal=await Promise.race([
     globalRequested.then(()=>true),
