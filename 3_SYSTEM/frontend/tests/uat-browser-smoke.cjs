@@ -868,6 +868,49 @@ async function main(){
     confirmedStepBefore),true,'applying a TO-BE field cannot change AS-IS');
   console.log('PG11_FIELD_ACTIONS_BROWSER_PASS: '+JSON.stringify(kept)+' · '+JSON.stringify(applied));
   // [AUNEA-UAT-PG11-HUMAN-BROWSER-227] END
+  // [AUNEA-UAT-PG11-GLOBAL-LINK-BROWSER-293] START — recommendation-to-step
+  // navigation reads only the confirmed AS-IS source and never writes TO-BE fields.
+  await page.evaluate(()=>{
+    const e=currentEng(),p=latestTobe(e),diagnostic=currentDiagnosticOutput(e);
+    if(!e||!p||!diagnostic||!p.items?.length)throw Error('PG11 global link fixture missing');
+    const step=String(p.items[0].sourceStepId);
+    p.aiGlobal={tobeVersion:p.version,sourceSnapshotVersion:p.sourceSnapshotVersion,
+      diagnosticInputHash:diagnostic.input_snapshot_hash,savedAt:now(),
+      result:{status:'DRAFT',engagement_id:e.id,snapshot_version:p.sourceSnapshotVersion,
+        input_hash:'UAT-LINKED-GLOBAL',model:'fixture-no-ollama',
+        summary:'La recepción presenta un problema confirmado.',
+        complete:true,opportunities:[{
+          objective:'Evitar duplicar los datos de recepción',
+          how:'Reutilizar campos confirmados sin sustituir la revisión humana.',
+          why:'El origen registra repetición de captura.',constraints:'',
+          source_refs:[step],review:{status:'CONDITIONED',
+            reason:'Es necesario verificar capacidades reales.',conflicts:[]}
+        }]}};
+    markDirty('QA: contexto global vinculado a actividad');
+    if(!saveState('Guardar fixture de enlace global'))throw Error('Global link not persisted');
+    render();
+  });
+  const linkedButton=page.locator('#tobeGlobalAnalysis [data-tobe-global-link="1"]').first();
+  assert.equal(await linkedButton.count(),1,'global card has a linked source-step button');
+  const beforeLink=await page.evaluate(()=>{
+    const e=currentEng(),p=latestTobe(e);
+    return JSON.stringify(p.items);
+  });
+  await linkedButton.click();
+  const selectedGlobal=await page.evaluate(()=>({
+    source:__auneaTobeSelection.stepId,
+    expected:String(latestTobe(currentEng()).items[0].sourceStepId),
+    inspector:document.querySelector('#tobeGlobalLinkedStep')?.textContent||''
+  }));
+  assert.equal(selectedGlobal.source,selectedGlobal.expected);
+  assert.match(selectedGlobal.inspector,/Evitar duplicar los datos de recepción/);
+  assert.match(selectedGlobal.inspector,/solo lectura/i);
+  assert.equal(await page.evaluate(()=>{
+    const e=currentEng(),p=latestTobe(e);
+    return JSON.stringify(p.items);
+  }),beforeLink,'navigating from global analysis must not change TO-BE fields');
+  console.log('PG11_GLOBAL_LINK_BROWSER_PASS: '+selectedGlobal.source);
+  // [AUNEA-UAT-PG11-GLOBAL-LINK-BROWSER-293] END
   // [AUNEA-UAT-PG11-GLOBAL-RESET-291] START — reanalysis button clears
   // historical global text synchronously; failed Ollama must not restore it.
   await page.evaluate(()=>{
