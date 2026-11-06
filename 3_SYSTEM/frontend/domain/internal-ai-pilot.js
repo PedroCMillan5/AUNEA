@@ -110,12 +110,40 @@ function internalAiGlobalRefresh(e){
 // Source inventory and recommendations belong to one versioned TO-BE DRAFT;
 // small Ollama requests are deliberately serial to avoid CPU/RAM saturation.
 function tobeGlobalMerge(items,candidate){
-  const norm=x=>String(x||'').toLocaleLowerCase('es').replace(/[\s.,;:]+/g,' ').trim(),
-    at=items.findIndex(x=>norm(x.objective)===norm(candidate.objective)&&
-      norm(x.how)===norm(candidate.how));
-  if(at<0){items.push(candidate);return;}
-  items[at].source_refs=[...new Set([...(items[at].source_refs||[]),
+  // Group clear repetitions without discarding distinct implementations. Any
+  // related approach retains its own rationale, constraints and source refs.
+  const norm=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .toLocaleLowerCase('es').replace(/[^a-z0-9]+/g,' ').trim();
+  const stop=new Set(('de del la las los el en un una para por con que se al y o e lo su '+
+    'sus este esta estas estos como mediante usando utilizar uso sobre desde dentro '+
+    'implementar implantar definir crear realizar establecer proceso flujo sistema '+
+    'permitir facilitar mejorar propuesta').split(' '));
+  const aliases={facturas:'factura',datos:'dato',campos:'campo',correos:'correo',
+    emails:'correo',email:'correo',avisos:'aviso',notificaciones:'aviso',
+    automaticos:'automatico',automatica:'automatico',automaticas:'automatico',
+    automatizado:'automatico',automatizada:'automatico',registros:'registro'};
+  const tokens=x=>new Set(norm(x).split(' ').filter(t=>t.length>3&&!stop.has(t))
+    .map(t=>aliases[t]||t));
+  const similarity=(x,y)=>{
+    const a=tokens(x),b=tokens(y);
+    if(!a.size||!b.size)return 0;
+    let shared=0;for(const t of a)if(b.has(t))shared++;
+    return 2*shared/(a.size+b.size);
+  };
+  const at=items.findIndex(x=>{
+    const sameAction=norm(x.how)===norm(candidate.how);
+    const commonRef=(x.source_refs||[]).some(ref=>(candidate.source_refs||[]).includes(ref));
+    const match=similarity(x.how,candidate.how);
+    return sameAction||(match>=0.78&&commonRef)||(match>=0.90);
+  });
+  if(at<0){items.push(candidate);return true;}
+  const main=items[at],sameAction=norm(main.how)===norm(candidate.how);
+  main.source_refs=[...new Set([...(main.source_refs||[]),
     ...(candidate.source_refs||[])])];
+  if(sameAction)return false;
+  if((main.related||[]).some(x=>norm(x.how)===norm(candidate.how)))return false;
+  main.related=[...(main.related||[]),candidate];
+  return true;
 }
 function tobeGlobalSummary(items){
   const count=items.length;
@@ -153,7 +181,7 @@ async function generateTobeGlobal(e){
       throw Error(String(status.reason||'Ollama local no está disponible o autorizado.'));
     if(status.pg11_review_protocol!==__auneaPg11ReviewProtocol)
       throw Error('El backend de PG11 no coincide. Reinicia el backend y actualiza la página.');
-    if(status.pg11_global_strategy!=='SCOPED_V1')
+    if(status.pg11_global_strategy!=='SCOPED_V2')
       throw Error('El backend 8010 utiliza una versión anterior de la IA global. '+
         'Reinicia el backend actualizado: falta la estrategia por bloques. '+
         'La propuesta anterior no se ha borrado.');
@@ -174,6 +202,18 @@ async function generateTobeGlobal(e){
         failure.status=response.status;throw failure;
       }
       return response.json();
+    };
+    const callScoped=async body=>{
+      // A valid JSON object can still contain a sentence truncated by Ollama.
+      // Retry only that same block, keeping all previously saved results.
+      for(let attempt=0;attempt<2;attempt++){
+        try{return await call('tobe-global',body);}
+        catch(error){
+          if(attempt||error.status!==409||
+             !/texto incompleto|objetivo en c[oó]digo/i.test(String(error.message||'')))
+            throw error;
+        }
+      }
     };
     const plan=await call('tobe-global-plan',payload);
     if(plan.engagement_id!==e.id||plan.snapshot_version!==snap.version||
@@ -220,52 +260,75 @@ async function generateTobeGlobal(e){
     persist(total===0);
     for(const unit of plan.focus){
       verifiedOwner();
-      __auneaGlobalAiFeedback.set(key,{working:true,type:'info',
-        message:'Analizando fuente '+(processed+1)+' de '+total+
-          ': '+String(unit.label||unit.source_id).slice(0,95)});
-      internalAiGlobalRefresh(currentEng());
+      const seenForSource=[];
+      let hasMore=true,batch=0;
       try{
-        const data=await call('tobe-global',{
-          ...payload,focus_source_id:unit.source_id});
-        verifiedOwner();
-        if(data?.status!=='DRAFT'||data.engagement_id!==e.id||
-           data.snapshot_version!==snap.version||
-           data.input_hash!==plan.input_hash||
-           data.focus_source_id!==unit.source_id||
-           !Array.isArray(data.opportunities)||
-           data.opportunities.some(x=>!x.objective||!x.how||!x.why||
-             !Array.isArray(x.source_refs)||!x.source_refs.includes(unit.source_id)))
-          throw Error('La respuesta del bloque no corresponde a la fuente confirmada.');
-        for(const item of data.opportunities){
-          const proposed={objective:String(item.objective),how:String(item.how),
-            why:String(item.why),constraints:String(item.constraints||''),
-            source_refs:item.source_refs.map(String),
-            review:item.review||{status:'CONDITIONED',
-              reason:'Requiere revisión de viabilidad.',conflicts:[]}};
-          if(proposed.review.status==='INCOMPATIBLE'){
-            __auneaGlobalAiFeedback.set(key,{working:true,type:'info',
-              message:'Buscando alternativa compatible para '+unit.source_id+'…'});
-            internalAiGlobalRefresh(currentEng());
-            try{
-              const alternative=await call('tobe-global',{
-                ...payload,focus_source_id:unit.source_id,
-                blocked_action:proposed.how});
-              verifiedOwner();
-              const valid=(alternative.opportunities||[]).find(x=>
-                x.review?.status!=='INCOMPATIBLE'&&
-                x.source_refs?.includes(unit.source_id));
-              if(valid){
-                proposed.alternative={how:String(valid.how),
-                  why:String(valid.why),constraints:String(valid.constraints||''),
-                  review:valid.review};
-              }else proposed.alternative_note=
-                'No se identificó una alternativa verificable; requiere revisión.';
-            }catch(error){
-              proposed.alternative_note='La alternativa no pudo evaluarse: '+
-                String(error.message||error).slice(0,180);
+        while(hasMore){
+          verifiedOwner();
+          __auneaGlobalAiFeedback.set(key,{working:true,type:'info',
+            message:'Analizando fuente '+(processed+1)+' de '+total+
+              ' · Lote '+(batch+1)+': '+String(unit.label||unit.source_id).slice(0,80)});
+          internalAiGlobalRefresh(currentEng());
+          const data=await callScoped({
+            ...payload,focus_source_id:unit.source_id,
+            seen_interventions:[...seenForSource]});
+          verifiedOwner();
+          if(data?.status!=='DRAFT'||data.engagement_id!==e.id||
+             data.snapshot_version!==snap.version||
+             data.input_hash!==plan.input_hash||
+             data.focus_source_id!==unit.source_id||
+             typeof data.has_more!=='boolean'||
+             !Array.isArray(data.opportunities)||
+             data.opportunities.some(x=>!x.objective||!x.how||!x.why||
+               !Array.isArray(x.source_refs)||!x.source_refs.includes(unit.source_id)))
+            throw Error('La respuesta del lote no corresponde a la fuente confirmada.');
+          let novel=0;
+          for(const item of data.opportunities){
+            const proposed={objective:String(item.objective),how:String(item.how),
+              why:String(item.why),constraints:String(item.constraints||''),
+              source_refs:item.source_refs.map(String),
+              review:item.review||{status:'CONDITIONED',
+                reason:'Requiere revisión de viabilidad.',conflicts:[]}};
+            // Keep the actual action for continuation even when it is grouped
+            // with another recommendation in the visible consolidation.
+            const duplicate=seenForSource.some(h=>
+              h.normalize('NFD').toLocaleLowerCase('es')===
+              proposed.how.normalize('NFD').toLocaleLowerCase('es'));
+            if(duplicate)continue;
+            seenForSource.push(proposed.how);
+            if(proposed.review.status==='INCOMPATIBLE'){
+              __auneaGlobalAiFeedback.set(key,{working:true,type:'info',
+                message:'Buscando alternativa compatible para '+unit.source_id+'…'});
+              internalAiGlobalRefresh(currentEng());
+              try{
+                const alternative=await callScoped({
+                  ...payload,focus_source_id:unit.source_id,
+                  blocked_action:proposed.how});
+                verifiedOwner();
+                const valid=(alternative.opportunities||[]).find(x=>
+                  x.review?.status!=='INCOMPATIBLE'&&
+                  x.source_refs?.includes(unit.source_id));
+                if(valid){
+                  proposed.alternative={how:String(valid.how),
+                    why:String(valid.why),constraints:String(valid.constraints||''),
+                    review:valid.review};
+                }else proposed.alternative_note=
+                  'No se identificó una alternativa verificable; requiere revisión.';
+              }catch(error){
+                proposed.alternative_note='La alternativa no pudo evaluarse: '+
+                  String(error.message||error).slice(0,180);
+              }
             }
+            if(tobeGlobalMerge(items,proposed))novel++;
           }
-          tobeGlobalMerge(items,proposed);
+          batch++;
+          hasMore=data.has_more;
+          // A model claiming more work without supplying any distinct
+          // intervention must not loop indefinitely or mark the source complete.
+          if(hasMore&&novel===0)
+            throw Error('Ollama repitió intervenciones sin aportar otra mejora distinta. '+
+              'Se ha conservado el análisis parcial para revisar la fuente.');
+          persist(false);
         }
         doneSources.push(unit.source_id);
       }catch(error){
