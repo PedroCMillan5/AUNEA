@@ -9,7 +9,7 @@ function tobeGlobalQualityGroups(opportunities){
   const words=value=>clean(value).replace(/[^a-z0-9]+/g,' ').trim();
   const kindOf=how=>{
     const t=clean(how);
-    const actionApproval=/(?:recordatori|avis|notific|alert|seguimiento).{0,90}(?:aprobaci|aprobador|autorizar|autorice|aprobar|apruebe|manager realice la accion|responsable decida)|(?:aprobaci|aprobador).{0,90}(?:recordatori|avis|notific|alert|seguimiento)|pendient.{0,35}(?:aproba|autoriza)/.test(t);
+    const actionApproval=/(?:recordatori|avis|notific|alert|seguimiento).{0,90}(?:aprobaci|aprobador|autorizar|autorice|aprobar|apruebe|manager realice la accion|responsable decida)|(?:aprobaci|aprobador).{0,90}(?:recordatori|avis|notific|alert|seguimiento)/.test(t);
     if(actionApproval)return 'APPROVAL_FOLLOWUP';
     const receiptTrace=/(?:confirm|acuse).{0,65}(?:recepci|entrada|numero de factura)|(?:correo|recepcion|entrada).{0,60}confirmaci.{0,35}factura|(?:correo|recepcion).{0,95}(?:relacion|vincul|correspond).{0,40}(?:registro|erp)|(?:trazabil|auditori|historico de acciones|registro de eventos)/.test(t);
     if(receiptTrace)return 'TRACEABILITY';
