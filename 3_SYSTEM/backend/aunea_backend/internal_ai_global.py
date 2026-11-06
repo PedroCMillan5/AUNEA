@@ -241,7 +241,7 @@ def global_plan(payload: PilotAIRequest) -> dict:
 def analyze_global(payload: PilotAIRequest) -> dict:
     # Each request is one bounded unit of a variable-length source inventory.
     from .internal_ai_global_review import (
-        scoped_context, assess_recommendation,
+        scoped_context, assess_recommendation, assess_alignment,
     )
     context, source_ids = global_context(payload)  # validates confirmed source
     focus_id = getattr(payload, "focus_source_id", None)
