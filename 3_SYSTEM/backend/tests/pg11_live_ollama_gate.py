@@ -79,6 +79,23 @@ def batch(request, focus, seen=None, blocked=None, blocked_constraints=""):
     )
 
 
+def query_with_local_retry(payload, issues):
+    """Match PG11 frontend: only one retry for cut text or coded objectives."""
+    for attempt in range(2):
+        try:
+            return global_ai.analyze_global(payload)
+        except ValueError as exc:
+            reason = str(exc)
+            if attempt == 0 and (
+                "texto incompleto" in reason or "objetivo en código" in reason
+            ):
+                issues.append(reason)
+                print("PG11_LIVE_RETRY_INCOMPLETE", reason, flush=True)
+                continue
+            raise
+    raise AssertionError("Unable to recover validated source text")
+
+
 def checked_result(result, request, source):
     requirement(result["status"] == "DRAFT", "IA must not approve proposals")
     requirement(result["requires_human_review"] is True,
