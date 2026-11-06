@@ -171,8 +171,8 @@ function tobeGlobalSummary(items){
       ' intervenciones para revisión del consultor.'):
     'No se han identificado intervenciones justificadas en las fuentes revisadas.';
 }
-async function generateTobeGlobal(e){
-  const key=internalAiPilotKey(e),p=latestTobe(e);
+async function generateTobeGlobal(e,options={}){
+  const resume=options.resume===true,key=internalAiPilotKey(e),p=latestTobe(e);
   if(!key||!tobeEditable(p)||(typeof isClientDisplay==='function'&&isClientDisplay()))
     return toast('Se necesita un TO-BE en borrador, con AS-IS y diagnóstico vigentes.');
   if(__auneaAiWorking.has(key))
@@ -186,8 +186,10 @@ async function generateTobeGlobal(e){
   // Check the backend strategy BEFORE invalidating any saved global proposal.
   // An out-of-date local Uvicorn process must never erase valid draft content.
   __auneaAiWorking.add(key);
-  __auneaGlobalAiFeedback.set(key,{working:true,type:'info',phase:'PREFLIGHT',
-    message:'Comprobando versión del backend antes de preparar el inventario…'});
+  __auneaGlobalAiFeedback.set(key,{working:true,type:'info',
+    phase:resume?'RESUME_PREFLIGHT':'PREFLIGHT',
+    message:resume?'Comprobando el borrador antes de reintentar fuentes pendientes…':
+      'Comprobando versión del backend antes de preparar el inventario…'});
   internalAiGlobalRefresh(e);
   let processed=0,total=0,failures=[];
   try{
@@ -247,12 +249,35 @@ async function generateTobeGlobal(e){
        confirmedSnapshot(preflightLive)?.version!==snap.version||
        currentDiagnosticOutput(preflightLive)?.input_snapshot_hash!==diagnostic.input_snapshot_hash)
       throw Error('El estudio cambió durante la verificación del backend.');
-    delete preflightDraft.aiGlobal;
-    markDirty('PG11: iniciar nuevo análisis global por fuentes confirmadas');
-    if(!saveState('Guardar reinicio del análisis global v'+preflightDraft.version))
-      throw Error('No se pudo guardar el reinicio del análisis global. No se inició Ollama.');
+    const previousGlobal=preflightDraft.aiGlobal,previousResult=previousGlobal?.result;
+    const canResume=resume&&previousGlobal?.tobeVersion===preflightDraft.version&&
+      previousGlobal.sourceSnapshotVersion===snap.version&&
+      previousGlobal.diagnosticInputHash===diagnostic.input_snapshot_hash&&
+      previousResult?.status==='DRAFT'&&previousResult.engagement_id===e.id&&
+      previousResult.snapshot_version===snap.version&&
+      previousResult.input_hash===plan.input_hash&&previousResult.complete===false&&
+      Array.isArray(previousResult.opportunities)&&
+      Array.isArray(previousResult.progress?.focus_done)&&
+      plan.focus.some(unit=>!previousResult.progress.focus_done.includes(unit.source_id));
+    if(resume&&!canResume)
+      throw Error('No hay fuentes pendientes recuperables para este AS-IS y borrador. '+
+        'El análisis anterior permanece intacto; revisa su versión o vuelve a analizar.');
+    if(!resume){
+      delete preflightDraft.aiGlobal;
+      markDirty('PG11: iniciar nuevo análisis global por fuentes confirmadas');
+      if(!saveState('Guardar reinicio del análisis global v'+preflightDraft.version)){
+        if(previousGlobal===undefined)delete preflightDraft.aiGlobal;
+        else preflightDraft.aiGlobal=previousGlobal;
+        throw Error('No se pudo guardar el reinicio del análisis global. Se ha restaurado el borrador previo.');
+      }
+    }
     total=plan.focus.length;
-    const items=[],doneSources=[];
+    const items=resume?JSON.parse(JSON.stringify(previousResult.opportunities)):[],
+      validIds=new Set(plan.focus.map(x=>x.source_id)),
+      doneSources=resume?[...new Set(previousResult.progress.focus_done)]
+        .filter(id=>validIds.has(id)):[],
+      sourceBatches=resume?JSON.parse(JSON.stringify(previousResult.progress.source_batches||{})):{};
+    processed=resume?doneSources.length:0;
     const verifiedOwner=()=>{
       const live=currentEng(),draft=latestTobe(live),currentSnap=confirmedSnapshot(live);
       if(!live||live.id!==e.id||internalAiPilotKey(live)!==key||
@@ -263,23 +288,34 @@ async function generateTobeGlobal(e){
       return draft;
     };
     const persist=(complete)=>{
-      const owner=verifiedOwner();
+      const owner=verifiedOwner(),previous=owner.aiGlobal;
       owner.aiGlobal={tobeVersion:owner.version,
         sourceSnapshotVersion:owner.sourceSnapshotVersion,
         diagnosticInputHash:diagnostic.input_snapshot_hash,savedAt:now(),
         result:{status:'DRAFT',engagement_id:e.id,snapshot_version:snap.version,
-          input_hash:plan.input_hash,model:status.model||'',summary:tobeGlobalSummary(items),
-          opportunities:items.map(x=>({...x})),complete,
-          progress:{completed:processed,total,failed:failures.length,
-            focus_done:[...doneSources],failures:failures.map(x=>({...x}))}}};
+          input_hash:plan.input_hash,model:status.model||previousResult?.model||'',
+          summary:tobeGlobalSummary(items),
+          opportunities:items.map(x=>JSON.parse(JSON.stringify(x))),complete,
+          progress:{completed:doneSources.length,attempted:processed,total,
+            pending:total-doneSources.length,failed:failures.length,
+            focus_done:[...doneSources],source_batches:JSON.parse(JSON.stringify(sourceBatches)),
+            failures:failures.map(x=>({...x}))}}};
       markDirty('PG11: guardar avance del análisis global por bloques');
-      if(!saveState('Guardar progreso IA global '+processed+'/'+total))
-        throw Error('No se pudo guardar el progreso del análisis IA. No cierres esta página.');
+      if(!saveState('Guardar progreso IA global '+doneSources.length+'/'+total)){
+        if(previous===undefined)delete owner.aiGlobal;
+        else owner.aiGlobal=previous;
+        throw Error('No se pudo guardar el progreso del análisis IA. '+
+          'El último estado persistido se conserva; no cierres esta página.');
+      }
     };
-    persist(total===0);
+    if(!resume)persist(total===0);
     for(const unit of plan.focus){
       verifiedOwner();
-      const seenForSource=[];
+      if(doneSources.includes(unit.source_id))continue;
+      const seenForSource=Array.isArray(sourceBatches[unit.source_id])?
+        [...sourceBatches[unit.source_id]]:
+        items.flatMap(x=>[x,...(x.related||[])])
+          .filter(x=>(x.source_refs||[]).includes(unit.source_id)).map(x=>String(x.how));
       let hasMore=true,batch=0;
       try{
         while(hasMore){
@@ -350,6 +386,7 @@ async function generateTobeGlobal(e){
           if(hasMore&&novel===0)
             throw Error('Ollama repitió intervenciones sin aportar otra mejora distinta. '+
               'Se ha conservado el análisis parcial para revisar la fuente.');
+          sourceBatches[unit.source_id]=[...seenForSource];
           persist(false);
         }
         doneSources.push(unit.source_id);
@@ -366,7 +403,7 @@ async function generateTobeGlobal(e){
       persist(false);
       internalAiGlobalRefresh(currentEng());
     }
-    const complete=processed===total&&failures.length===0;
+    const complete=doneSources.length===total&&failures.length===0;
     persist(complete);
     __auneaGlobalAiFeedback.set(key,{working:false,
       type:complete?'info':'warn',
@@ -1223,9 +1260,11 @@ registerInternalWorkPages=function(){
   document.__auneaAiPilotDelegatedBound=true;
   document.addEventListener('click',event=>{
     const global=event.target?.closest?.('#analyzeTobeGlobal');
-    if(global){
+    const retryGlobal=event.target?.closest?.('#retryTobeGlobal');
+    if(global||retryGlobal){
       event.preventDefault();
-      if(!global.disabled)void generateTobeGlobal(currentEng());
+      if(!(global||retryGlobal).disabled)
+        void generateTobeGlobal(currentEng(),{resume:!!retryGlobal});
       return;
     }
     const audit=event.target?.closest?.('[data-ai-audit-step]');
