@@ -133,14 +133,15 @@ def analyze_case(name, request):
     # per source keep the live CPU UAT bounded, not the product recommendation count.
     record = {"case": name, "source_count": len(plan["focus"]),
               "tested_sources": [], "batches": 0, "opportunities": [],
-              "source_summaries": [],
+              "source_summaries": [], "recoveries": [],
               "residual_has_more": False}
     started = perf_counter()
     for unit in plan["focus"][:2]:
         source = unit["source_id"]
         seen = []
         for index in range(MAX_BATCHES_PER_CASE):
-            response = global_ai.analyze_global(batch(request, source, seen))
+            response = query_with_local_retry(
+                batch(request, source, seen), record["recoveries"])
             opportunities = checked_result(response, request, source)
             record["source_summaries"].append({
                 "source": source, "batch": index + 1,
@@ -186,8 +187,9 @@ def alternative_case():
     requirement(review["status"] == "INCOMPATIBLE",
                 "Synthetic mandatory approval was not detected")
     started = perf_counter()
-    result = global_ai.analyze_global(
-        batch(request, source, blocked=rejected))
+    recoveries = []
+    result = query_with_local_retry(
+        batch(request, source, blocked=rejected), recoveries)
     candidates = checked_result(result, request, source)
     requirement(result["has_more"] is False, "Alternatives cannot paginate")
     requirement(all(x["review"]["status"] == "CONDITIONED" for x in candidates),
@@ -198,6 +200,7 @@ def alternative_case():
         "alternatives": candidates,
         "outcome": "ALTERNATIVE" if candidates else "NO_SUPPORTED_ALTERNATIVE",
         "elapsed_seconds": round(perf_counter() - started, 1),
+        "recoveries": recoveries,
     }
 
 
