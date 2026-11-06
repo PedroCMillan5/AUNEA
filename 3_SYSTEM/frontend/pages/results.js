@@ -2015,7 +2015,7 @@ function tobeGlobalOverviewHtml(e,p){
     feedback=typeof internalAiGlobalMessage==='function'?internalAiGlobalMessage(e):null;
   const source=tobeProposalSourceSteps(e,p),
     confirmed=typeof tobeProposalSnapshot==='function'?tobeProposalSnapshot(e,p):null,
-    record=confirmed||(typeof engagementOfRecord==='function'?engagementOfRecord(e):e);
+    record=confirmed||{frictions:[],risks:[]};
   const refs=ids=>(ids||[]).map(id=>{
     const step=source.find(s=>String(s.id)===String(id)),
       friction=(record?.frictions||[]).find(f=>String(f.id)===String(id)&&f.status!=='SUPERSEDED'),
@@ -2034,9 +2034,19 @@ function tobeGlobalOverviewHtml(e,p){
         measures.push('Trabajo '+effort.value+' '+(effort.unit||'unidad sin especificar')+' ('+timing+')');
       if(wait?.value!==undefined&&wait?.value!==null&&Number(wait.value)>0)
         measures.push('Espera '+wait.value+' '+(wait.unit||'unidad sin especificar'));
+      const provenance=typeof evidenceTypeBackend==='function'?
+        evidenceTypeBackend(friction.evidence_type):({
+          EV01:'MEASURED',EV02:'CLIENT_DECLARED',
+          EV03:'AUNEA_ESTIMATE',EV04:'HYPOTHESIS',EV05:'SPECIFIC_BENCHMARK'
+        })[friction.evidence_type]||friction.evidence_type;
+      const provenanceLabel=({
+        MEASURED:'Dato medido',CLIENT_DECLARED:'Declarado por el cliente',
+        AUNEA_ESTIMATE:'Estimación de AUNEA',HYPOTHESIS:'Hipótesis',
+        SPECIFIC_BENCHMARK:'Referencia comparable'
+      })[provenance]||'Procedencia pendiente de confirmar';
       return 'Fricción: '+(friction.client_label||id)+
         (measures.length?' · '+measures.join(' · '):'')+
-        (friction.evidence_type?' · Evidencia: '+friction.evidence_type:'');
+        (friction.evidence_type?' · Origen: '+provenanceLabel:' · Origen: no especificado');
     }
     return step?'Paso: '+(step.step_name||step.name||id):
       risk?'Riesgo: '+(risk.description||id):'Referencia: '+String(id);
@@ -2067,7 +2077,7 @@ function tobeGlobalOverviewHtml(e,p){
       '<p><b>Evidencias vinculadas:</b> '+esc(refs(item.source_refs).join(' · ')||'Sin referencias identificadas')+'</p>'+
       '</div></details></div></article>').join('')+'</div>':
       result?'<p class="tobe-global-empty">La IA no ha identificado mejoras transversales con evidencia suficiente. Consulta la síntesis y revisa los pasos individualmente.</p>':'')+
-    '<p class="tobe-global-caution">Análisis orientativo, sin aprobar. Los porcentajes y tiempos citados proceden del AS-IS y no son compromisos futuros ni ahorros estimados. Requiere revisión humana.</p>'+
+    '<p class="tobe-global-caution">Propuesta sin aprobar. Contrasta las cifras con las referencias del AS-IS confirmado; no son promesas de ahorro ni tiempos futuros. La revisión humana sigue siendo obligatoria.</p>'+
     '</section>';
 }
 // [AUNEA-FE-PG11-GLOBAL-OVERVIEW-284] END
