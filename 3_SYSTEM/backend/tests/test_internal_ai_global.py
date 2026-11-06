@@ -37,6 +37,7 @@ def configure(monkeypatch):
 
 def candidate(refs=("S1","F1")):
     return {"summary":"El proceso presenta oportunidades para reducir duplicidades de captura.",
+            "has_more":False,
             "opportunities":[{"objective":"Evitar la reintroducción manual de datos",
                               "how":"Reutilizar información validada entre recepción y clasificación.",
                               "why":"La fricción F1 declara una captura repetida al inicio.",
@@ -114,6 +115,51 @@ def test_global_uses_original_ollama_budget_and_complete_text_schema():
     result=global_ai.validate_global_brief(raw, {"S1", "F1"})
     assert len(result.summary) > 240
     assert len(result.opportunities[0].how) > 240
+
+
+
+def test_global_batch_continuation_preserves_source_and_has_no_fixed_source_quota(monkeypatch):
+    configure(monkeypatch)
+    calls=[]
+    def fake_open(request,timeout=0):
+        body=json.loads(request.data)
+        calls.append(body)
+        reply=candidate()
+        reply["has_more"]=len(calls)<4
+        reply["opportunities"][0]["how"]="Intervención independiente lote "+str(len(calls))+"."
+        return io.BytesIO(json.dumps({"done":True,"done_reason":"stop",
+            "prompt_eval_count":1600,
+            "message":{"content":json.dumps(reply)}}).encode())
+    monkeypatch.setattr(global_ai._LOCAL_HTTP,"open",fake_open)
+    request=sample()
+    seen=[]
+    for _ in range(4):
+        payload=global_ai.GlobalBatchRequest(
+            engagement=request.engagement,diagnostic=request.diagnostic,
+            confirmed_as_is=True,snapshot_version=3,focus_source_id="F1",
+            seen_interventions=seen)
+        result=global_ai.analyze_global(payload)
+        assert result["has_more"] is (len(seen)<3)
+        seen.append(result["opportunities"][0]["how"])
+    assert len(seen)==4
+    assert "INTERVENCIONES YA PROPUESTAS" in calls[-1]["messages"][1]["content"]
+    assert all(c["format"]["properties"]["opportunities"]["maxItems"]==2
+               for c in calls)
+
+
+def test_global_detects_cut_sentences_and_unhelpful_objective_codes():
+    raw=candidate()
+    raw["opportunities"][0]["how"]="Implementar un flujo automatizado para que no c"
+    with pytest.raises(ValueError,match="texto incompleto"):
+        global_ai.validate_global_brief(raw,{"S1","F1"})
+    raw=candidate()
+    raw["opportunities"][0]["objective"]="REDUCE_TIME"
+    with pytest.raises(ValueError,match="objetivo en código"):
+        global_ai.validate_global_brief(raw,{"S1","F1"})
+    raw=candidate()
+    raw["opportunities"][0]["why"]="La fr"
+    with pytest.raises(ValueError,match="texto incompleto"):
+        global_ai.validate_global_brief(raw,{"S1","F1"})
 
 
 def test_global_refuses_stale_source_before_request(monkeypatch):
