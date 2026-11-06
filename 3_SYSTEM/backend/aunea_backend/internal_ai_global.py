@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import json
+import re
 import socket
 from urllib.error import HTTPError, URLError
 from urllib.request import Request
@@ -53,6 +54,16 @@ GLOBAL_PROMPT = (
     "Un estudio sintético es una hipótesis de prueba, no un caso real. "
     "Si no hay evidencia para proponer mejoras, opportunities=[] y explica el motivo en summary. "
     "Cada justificación debe diferenciar lo confirmado de lo pendiente de validar. "
+    "No utilices cifras de porcentajes, duraciones ni umbrales siquiera como ejemplos; "
+    "los hechos del AS-IS no son compromisos futuros. "
+    "En vez de fijar plazos o recomendar integraciones ya viables, plantea comprobar "
+    "con el cliente herramientas, controles, autorizaciones y factibilidad. "
+    "Traduce las restricciones a español legible: no copies códigos DF, RBAC, "
+    "AUDIT_LOG, KEEP_EXISTING o HUMAN_DECISION. "
+    "summary: una frase completa de máximo 140 caracteres. "
+    "how: una frase completa de máximo 160 caracteres. "
+    "why: una frase completa de máximo 190 caracteres, sin atribuir cifras no verificadas. "
+    "Termina summary, how y why con punto. No cortes frases a mitad por longitud. "
     "Máximo tres oportunidades; cada texto debe ser breve y legible. "
     "La salida es una sugerencia DRAFT que requiere revisión humana."
 )
@@ -150,11 +161,55 @@ def global_schema() -> dict:
                 "opportunities": {"type": "array", "maxItems": 3, "items": opportunity},
             }, "required": ["summary", "opportunities"]}
 
+# [AUNEA-BE-PG11-GLOBAL-QUALITY-290] START — fail closed on unsupported
+# quantitative claims, raw catalogue codes and incomplete generated sentences.
+# SOURCE: Simulator CANONICAL PG11; DEC-034/050/052/055. Does not infer facts
+# from a valid source ID, edit AS-IS, or silently alter the model's statements.
+_QUANTIFIED_CLAIM = re.compile(
+    r"\b\d+(?:[.,]\d+)?\s*(?:%|minutos?|mins?|horas?|hrs?|d[ií]as?|"
+    r"semanas?|meses?|a[nñ]os?|euros?|€)(?!\w)|"
+    r"\b(?:un|uno|una|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|"
+    r"diez|veinte|treinta)\s+(?:minutos?|horas?|d[ií]as?|semanas?|"
+    r"meses?|a[nñ]os?)\b", re.IGNORECASE
+)
+_INTERNAL_CODES = re.compile(
+    r"\b(?:DF\d{3}|RBAC|KEEP_EXISTING|AUDIT_LOG|HUMAN_DECISION|"
+    r"FINAL_DECISION|FINANCIAL_ACTION)\b|\b[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\b"
+)
+
+def validate_global_language(brief: GlobalBrief) -> None:
+    for index, item in enumerate(brief.opportunities, 1):
+        for field, value in (("objective", item.objective), ("how", item.how),
+                             ("why", item.why), ("constraints", item.constraints)):
+            if _QUANTIFIED_CLAIM.search(value):
+                raise ValueError(
+                    "La IA global propuso cifras o plazos sin verificación. "
+                    "No se ha guardado esta generación; vuelve a analizar."
+                )
+            if _INTERNAL_CODES.search(value):
+                raise ValueError(
+                    "La IA global devolvió códigos técnicos sin explicación. "
+                    "No se ha guardado esta generación; vuelve a analizar."
+                )
+        if not item.how.rstrip().endswith((".", "!", "?")) or \
+           not item.why.rstrip().endswith((".", "!", "?")):
+            raise ValueError(
+                "La IA global dejó una recomendación o justificación incompleta "
+                "(oportunidad " + str(index) + "). No se ha guardado."
+            )
+    if _QUANTIFIED_CLAIM.search(brief.summary) or _INTERNAL_CODES.search(brief.summary):
+        raise ValueError("La síntesis IA global contiene cifras sin verificación o códigos técnicos.")
+    if not brief.summary.rstrip().endswith((".", "!", "?")):
+        raise ValueError("La síntesis IA global quedó incompleta. No se ha guardado.")
+
+# [AUNEA-BE-PG11-GLOBAL-QUALITY-290] END
+
 def validate_global_brief(raw: dict, source_ids: set[str]) -> GlobalBrief:
     try:
         brief = GlobalBrief.model_validate(raw)
     except ValidationError as exc:
         raise ValueError("La respuesta IA global no cumple el formato de objetivos y recomendaciones.") from exc
+    validate_global_language(brief)
     for item in brief.opportunities:
         if any(ref not in source_ids for ref in item.source_refs):
             raise ValueError("La IA global cita una referencia ajena al AS-IS confirmado.")
