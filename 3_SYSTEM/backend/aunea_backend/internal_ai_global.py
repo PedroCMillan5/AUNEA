@@ -321,6 +321,7 @@ def analyze_global(payload: PilotAIRequest) -> dict:
     for item in brief.opportunities:
         value = item.model_dump(mode="json")
         value["review"] = assess_recommendation(item.how, context, item.constraints)
+        value["quality"] = assess_alignment(item.objective, item.how, context)
         recommendations.append(value)
     return {
         "status": "DRAFT", "requires_human_review": True,
