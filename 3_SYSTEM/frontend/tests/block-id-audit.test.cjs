@@ -51,6 +51,13 @@ function listScanFiles() {
   for (const f of fs.readdirSync(backendTestsDir)) {
     if (f.endsWith('.py')) files.push(path.join(backendTestsDir, f));
   }
+  // PowerShell operator QA scripts also own governed Block_ID responsibilities.
+  const operatorScripts = path.join(backendDir, 'scripts');
+  if (fs.existsSync(operatorScripts)) {
+    for (const f of fs.readdirSync(operatorScripts)) {
+      if (f.endsWith('.ps1')) files.push(path.join(operatorScripts, f));
+    }
+  }
   files.push(path.join(backendDir, 'Dockerfile'));
   files.push(path.join(backendDir, 'pyproject.toml'));
   const workflowsDir = path.join(repoRoot, '.github', 'workflows');
