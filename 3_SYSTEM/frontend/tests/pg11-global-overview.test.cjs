@@ -30,6 +30,7 @@ function harness(result){
     tobeProposalSnapshot:e=>e.confirmedSnapshots[0],
     engagementOfRecord:e=>e,esc:x=>String(x??'').replaceAll('&','&amp;').replaceAll('<','&lt;'),
     attr:x=>String(x??'').replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;'),
+    tobeHumanReviewRecord:(_,p)=>p.aiDraft?.humanReview||null,
     internalAiGlobalWorking:()=>false,internalAiGlobalMessage:()=>null,
   };
   vm.createContext(sandbox);vm.runInContext(block,sandbox);
@@ -776,39 +777,53 @@ test('PG11 failed full reset restores the prior saved global brief before callin
  assert.equal(p.aiGlobal,old);
  assert.match(env.internalAiGlobalMessage(e).message,/restaurado el borrador previo/);
 });
-test('block 4 shows three separate review statuses and selective retry only for pending sources',()=>{
-  const boot=fs.readFileSync(path.join(__dirname,'../boot.js'),'utf8');
-  const start=boot.indexOf('const __pg11BaseOverview=');
-  const end=boot.indexOf('if((location.hash',start);
-  assert.ok(start>0&&end>start,'boot decorator is present before startup');
-  const saved={complete:false,opportunities:[
-    {how:'Reutilizar datos confirmados.',why:'La fricción está documentada.'},
-    {how:'Registrar datos con aprobación',why:'Debe conservar la revisión humana.'}
-  ],progress:{total:3,completed:1,focus_done:['F1'],failed:1}};
-  const e={id:'E1'},p={status:'DRAFT'};
-  const ctx={
-    tobeGlobalOverviewHtml:()=>'<section><header><button id="analyzeTobeGlobal">Analizar</button></header>'+
-      '<p class="tobe-global-feedback" role="status">Fuentes revisadas: 1 de 3</p></section>',
-    tobeGlobalStored:()=>saved,
-    tobeHumanReviewRecord:()=>({decisions:{S1:{status:'ACCEPT'}}}),
-    internalAiGlobalWorking:()=>false,
-  };
-  vm.createContext(ctx);vm.runInContext(boot.slice(start,end),ctx);
-  let h=ctx.tobeGlobalOverviewHtml(e,p);
-  assert.match(h,/Fuentes:<\/b> 1\/3/);
-  assert.match(h,/Integridad:<\/b> 1\/2/);
-  assert.match(h,/Revisión humana:<\/b> 1 decisiones/);
-  assert.match(h,/id="retryTobeGlobal"/);
-  assert.doesNotMatch(h,/Fuentes revisadas: 1 de 3/);
-  ctx.internalAiGlobalWorking=()=>true;
-  h=ctx.tobeGlobalOverviewHtml(e,p);
-  assert.match(h,/id="retryTobeGlobal"[^>]* disabled/);
-  p.status='REVIEWED';
-  assert.doesNotMatch(ctx.tobeGlobalOverviewHtml(e,p),/retryTobeGlobal/);
-  p.status='DRAFT';saved.complete=true;
-  assert.doesNotMatch(ctx.tobeGlobalOverviewHtml(e,p),/retryTobeGlobal/);
-  saved.complete=false;saved.progress.focus_done=['F1','F2','F3'];
-  assert.doesNotMatch(ctx.tobeGlobalOverviewHtml(e,p),/retryTobeGlobal/);
+test('block 4 status separates completed sources, full texts and human decisions',()=>{
+  const h=harness([
+    {objective:'Reducir reentrada de datos',how:'Reutilizar datos confirmados.',
+      why:'La fricción está documentada.',source_refs:['F1']},
+    {objective:'Conservar aprobación',how:'Registrar datos con aprobación',
+      why:'Debe conservar la revisión humana.',source_refs:['S1']}
+  ]);
+  h.env.p.items=[{sourceStepId:'S1',sourceStepName:'Recepción'}];
+  h.env.p.aiDraft={humanReview:{decisions:{S1:{status:'ACCEPT'}}}};
+  h.env.p.aiGlobal.result.complete=false;
+  h.env.p.aiGlobal.result.progress={total:3,completed:1,focus_done:['F1'],failed:1};
+  let markup=h.html();
+  assert.match(markup,/Generación:<\/b> Fuentes revisadas: 1 de 3/);
+  assert.match(markup,/Integridad:<\/b> 1 de 2/);
+  assert.match(markup,/Revisión humana:<\/b> 1 decisiones/);
+  assert.match(markup,/id="retryTobeGlobal"/);
+  assert.match(markup,/Propuesta incompleta|Análisis parcial/);
+  h.env.p.status='REVIEWED';
+  markup=h.html();
+  assert.doesNotMatch(markup,/id="retryTobeGlobal"/);
+  h.env.p.status='DRAFT';
+  h.env.p.aiGlobal.result.complete=true;
+  markup=h.html();
+  assert.doesNotMatch(markup,/id="retryTobeGlobal"/);
+  h.env.p.aiGlobal.result.complete=false;
+  h.env.p.aiGlobal.result.progress.focus_done=['F1','F2','F3'];
+  markup=h.html();
+  assert.doesNotMatch(markup,/id="retryTobeGlobal"/);
+  h.env.p.aiGlobal.result.progress.focus_done=undefined;
+  markup=h.html();
+  assert.doesNotMatch(markup,/id="retryTobeGlobal"/);
+});
+
+test('PG11 retains the entire reason and technical validation in the existing card disclosure',()=>{
+  const h=harness([{objective:'Comprobar alternativa',
+    how:'Revisar el posible registro del ERP.',
+    why:'Existe un problema confirmado de duplicidad.',
+    source_refs:['F1'],constraints:'Mantener el control humano.',
+    review:{status:'CONDITIONED',reason:'Verificar capacidad y licencias del ERP.',
+      conflicts:[],verifications:[{source:'CAPACIDAD_TECNICA',
+      question:'No suponer integraciones automáticas.'}]}}]);
+  const markup=h.html();
+  assert.match(markup,/Condicionada a validar la viabilidad/);
+  assert.match(markup,/Motivo de la evaluación:<\/b> Verificar capacidad y licencias/);
+  assert.match(markup,/Validaciones pendientes:<\/b> CAPACIDAD_TECNICA/);
+  assert.match(markup,/No suponer integraciones automáticas/);
+  assert.doesNotMatch(markup,/id="retryTobeGlobal"/);
 });
 
 // [AUNEA-UAT-PG11-GLOBAL-OVERVIEW-288] END
