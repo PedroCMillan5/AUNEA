@@ -203,7 +203,8 @@ def test_global_scoped_ollama_can_accumulate_five_distinct_recommendations(monke
     monkeypatch.setattr(global_ai._LOCAL_HTTP,"open",fake_open)
     items=[]
     for unit in global_ai.global_plan(request)["focus"][:5]:
-        payload=global_ai.GlobalBatchRequest(**request.model_dump(),
+        payload=global_ai.GlobalBatchRequest(engagement=request.engagement,
+            diagnostic=request.diagnostic,confirmed_as_is=True,snapshot_version=3,
             focus_source_id=unit["source_id"])
         result=global_ai.analyze_global(payload)
         items.extend(result["opportunities"])
@@ -231,10 +232,12 @@ def test_global_alternative_stays_draft_and_preserves_initial_conflict(monkeypat
             "message":{"content":json.dumps(candidate_result)}}).encode())
     monkeypatch.setattr(global_ai._LOCAL_HTTP,"open",fake_open)
     first=global_ai.analyze_global(
-        global_ai.GlobalBatchRequest(**request.model_dump(),focus_source_id="F1"))
+        global_ai.GlobalBatchRequest(engagement=request.engagement,
+            diagnostic=request.diagnostic,confirmed_as_is=True,snapshot_version=3,focus_source_id="F1"))
     assert first["opportunities"][0]["review"]["status"]=="INCOMPATIBLE"
     alt=global_ai.analyze_global(
-        global_ai.GlobalBatchRequest(**request.model_dump(),focus_source_id="F1",
+        global_ai.GlobalBatchRequest(engagement=request.engagement,
+            diagnostic=request.diagnostic,confirmed_as_is=True,snapshot_version=3,focus_source_id="F1",
             blocked_action=first["opportunities"][0]["how"]))
     assert alt["opportunities"][0]["review"]["status"]=="CONDITIONED"
     assert "seguimiento" in alt["opportunities"][0]["how"]
