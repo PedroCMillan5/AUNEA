@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import json
+from decimal import Decimal, InvalidOperation
 import re
 import socket
 from urllib.error import HTTPError, URLError
@@ -179,35 +180,163 @@ def global_schema() -> dict:
                 "opportunities": {"type": "array", "maxItems": 3, "items": opportunity},
             }, "required": ["summary", "opportunities"]}
 
-# [AUNEA-BE-PG11-GLOBAL-QUALITY-290] START — fail closed on unsupported
-# quantitative claims, raw catalogue codes and incomplete generated sentences.
-# SOURCE: Simulator CANONICAL PG11; DEC-034/050/052/055. Does not infer facts
-# from a valid source ID, edit AS-IS, or silently alter the model's statements.
-_QUANTIFIED_CLAIM = re.compile(
-    r"\b\d+(?:[.,]\d+)?\s*(?:%|minutos?|mins?|horas?|hrs?|d[ií]as?|"
-    r"semanas?|meses?|a[nñ]os?|euros?|€)(?!\w)|"
-    r"\b(?:un|uno|una|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|"
-    r"diez|veinte|treinta)\s+(?:minutos?|horas?|d[ií]as?|semanas?|"
-    r"meses?|a[nñ]os?)\b", re.IGNORECASE
-)
+# [AUNEA-BE-PG11-GLOBAL-QUALITY-290] START — distinguish sourced
+# AS-IS quantities from unsupported numeric interventions. No generic ban on
+# confirmed figures. SOURCE: Simulator CANONICAL PG11; DEC-034/050/052/055.
+# INPUTS: model text and source-only context; OUTPUTS: validated DRAFT or error.
+# SIDE EFFECTS: none. Human approval and deterministic engines remain separate.
 _INTERNAL_CODES = re.compile(
     r"\b(?:DF\d{3}|RBAC|KEEP_EXISTING|AUDIT_LOG|HUMAN_DECISION|"
     r"FINAL_DECISION|FINANCIAL_ACTION)\b|\b[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\b"
 )
+_NUMBER_TEXT = (
+    r"(?:\d{1,3}(?:[.\s]\d{3})+(?:,\d+)?|\d+(?:[.,]\d+)?)"
+)
+_UNIT_TEXT = (
+    r"(?:por\s+ciento|%|minutos?|mins?|min|horas?|hrs?|h|"
+    r"d[ií]as?|semanas?|meses?|a[nñ]os?|euros?|€)"
+)
+_QUANTITY_TEXT = re.compile(
+    r"(?<![\w])(?P<number>" + _NUMBER_TEXT + r")\s*(?P<unit>" +
+    _UNIT_TEXT + r")(?![\w])", re.IGNORECASE
+)
+_WORD_NUMBER = {
+    "un": 1, "uno": 1, "una": 1, "dos": 2, "tres": 3, "cuatro": 4,
+    "cinco": 5, "seis": 6, "siete": 7, "ocho": 8, "nueve": 9,
+    "diez": 10, "veinte": 20, "treinta": 30,
+}
+_WORD_QUANTITY = re.compile(
+    r"(?<!\w)(?P<number>" + "|".join(_WORD_NUMBER) + r")\s+"
+    r"(?P<unit>" + _UNIT_TEXT + r")(?!\w)", re.IGNORECASE
+)
 
-def validate_global_language(brief: GlobalBrief) -> None:
+def _numeric_value(raw: object) -> Decimal | None:
+    if isinstance(raw, bool) or raw is None:
+        return None
+    try:
+        text = str(raw).strip().replace(" ", "")
+        if not text:
+            return None
+        if "," in text:
+            text = text.replace(".", "").replace(",", ".")
+        elif re.fullmatch(r"\d{1,3}(?:\.\d{3})+", text):
+            text = text.replace(".", "")
+        value = Decimal(text)
+        return value if value.is_finite() else None
+    except (InvalidOperation, ValueError):
+        return None
+
+def _metric(value: object, unit: object) -> tuple[str, Decimal] | None:
+    number = _numeric_value(value)
+    if number is None:
+        return None
+    normalized = str(unit or "").strip().lower()
+    if normalized in ("%", "percent", "percentage", "por ciento"):
+        return ("percent", number)
+    if normalized in ("min", "mins", "minuto", "minutos", "minute", "minutes"):
+        return ("duration_min", number)
+    if normalized in ("h", "hr", "hrs", "hora", "horas", "hour", "hours"):
+        return ("duration_min", number * 60)
+    if normalized in ("día", "días", "dia", "dias", "day", "days"):
+        return ("duration_min", number * 1440)
+    if normalized in ("semana", "semanas", "week", "weeks"):
+        return ("duration_min", number * 10080)
+    if normalized in ("mes", "meses", "month", "months"):
+        return ("months", number)
+    if normalized in ("año", "años", "ano", "anos", "year", "years"):
+        return ("years", number)
+    if normalized in ("€", "eur", "euro", "euros"):
+        return ("eur", number)
+    return None
+
+def _quantities(text: object) -> set[tuple[str, Decimal]]:
+    if not isinstance(text, str):
+        return set()
+    out: set[tuple[str, Decimal]] = set()
+    for match in _QUANTITY_TEXT.finditer(text):
+        metric = _metric(match.group("number"), match.group("unit"))
+        if metric is not None:
+            out.add(metric)
+    for match in _WORD_QUANTITY.finditer(text):
+        word = match.group("number").lower()
+        metric = _metric(_WORD_NUMBER[word], match.group("unit"))
+        if metric is not None:
+            out.add(metric)
+    return out
+
+def _quantities_in_value(value: object) -> set[tuple[str, Decimal]]:
+    if isinstance(value, str):
+        return _quantities(value)
+    if isinstance(value, (list, tuple)):
+        return set().union(*(_quantities_in_value(x) for x in value)) if value else set()
+    if isinstance(value, dict):
+        return set().union(*(_quantities_in_value(x) for x in value.values())) if value else set()
+    return set()
+
+def _source_quantities(context: dict) -> tuple[dict[str, set], set, set]:
+    """Only project metric values from governed, confirmed source fields."""
+    source: dict[str, set] = {}
+    for step in context.get("steps", []):
+        values = set()
+        time_units = step.get("time_units") or {}
+        for key, unit in (("active_time", "active"), ("wait_time", "wait"),
+                          ("rework_time", "rework")):
+            metric = _metric(step.get(key), time_units.get(unit))
+            if metric is not None:
+                values.add(metric)
+        for key in ("error_rate", "applies_to"):
+            item = step.get(key)
+            if isinstance(item, dict) and str(item.get("mode", "")).upper() in ("PERCENT", "PERCENTAGE"):
+                metric = _metric(item.get("value"), "%")
+                if metric is not None:
+                    values.add(metric)
+        source[str(step["id"])] = values
+    for friction in context.get("frictions", []):
+        values = set()
+        frequency = friction.get("frequency")
+        if isinstance(frequency, dict) and str(frequency.get("mode", "")).upper() in ("PERCENT", "PERCENTAGE"):
+            metric = _metric(frequency.get("value"), "%")
+            if metric is not None:
+                values.add(metric)
+        for field in ("active_time_loss", "wait_time_loss"):
+            loss = friction.get(field)
+            if isinstance(loss, dict):
+                metric = _metric(loss.get("value"), loss.get("unit"))
+                if metric is not None:
+                    values.add(metric)
+        # A source statement can contain a client-declared quantity even when
+        # the structured field is pending; the statement remains non-measured.
+        values |= _quantities(friction.get("signal")) | _quantities(friction.get("label"))
+        source[str(friction["id"])] = values
+    for risk in context.get("risks", []):
+        source[str(risk["id"])] = _quantities(risk.get("description"))
+    goals = _quantities_in_value(context.get("client_goals") or {})
+    restrictions = _quantities_in_value(context.get("client_constraints") or {})
+    return source, goals, restrictions
+
+def validate_global_language(brief: GlobalBrief, context: dict | None = None) -> None:
+    by_source, goals, restrictions = _source_quantities(context or {})
+    all_as_is = set().union(*by_source.values()) if by_source else set()
     for index, item in enumerate(brief.opportunities, 1):
+        refs = set(item.source_refs)
+        linked = set().union(*(by_source.get(ref, set()) for ref in refs)) if refs else set()
         for field, value in (("objective", item.objective), ("how", item.how),
                              ("why", item.why), ("constraints", item.constraints)):
-            if _QUANTIFIED_CLAIM.search(value):
-                raise ValueError(
-                    "La IA global propuso cifras o plazos sin verificación. "
-                    "No se ha guardado esta generación; vuelve a analizar."
-                )
             if _INTERNAL_CODES.search(value):
                 raise ValueError(
-                    "La IA global devolvió códigos técnicos sin explicación. "
-                    "No se ha guardado esta generación; vuelve a analizar."
+                    "La IA global devolvió códigos técnicos sin traducir. "
+                    "No se ha guardado la generación."
+                )
+            allowed = linked
+            if field == "constraints":
+                allowed = linked | restrictions
+            elif field in ("objective", "how"):
+                allowed = linked | goals
+            if _quantities(value) - allowed:
+                raise ValueError(
+                    "La IA global citó porcentajes o tiempos que no coinciden "
+                    "con las fuentes vinculadas (oportunidad " + str(index) +
+                    "). No se ha guardado; comprueba los datos del AS-IS."
                 )
         if not item.how.rstrip().endswith((".", "!", "?")) or \
            not item.why.rstrip().endswith((".", "!", "?")):
@@ -215,24 +344,26 @@ def validate_global_language(brief: GlobalBrief) -> None:
                 "La IA global dejó una recomendación o justificación incompleta "
                 "(oportunidad " + str(index) + "). No se ha guardado."
             )
-    if _QUANTIFIED_CLAIM.search(brief.summary) or _INTERNAL_CODES.search(brief.summary):
-        raise ValueError("La síntesis IA global contiene cifras sin verificación o códigos técnicos.")
+    if _INTERNAL_CODES.search(brief.summary):
+        raise ValueError("La síntesis IA global contiene códigos técnicos sin traducir.")
+    if _quantities(brief.summary) - (all_as_is | goals | restrictions):
+        raise ValueError("La síntesis IA global contiene cifras que no constan en el AS-IS.")
     if not brief.summary.rstrip().endswith((".", "!", "?")):
         raise ValueError("La síntesis IA global quedó incompleta. No se ha guardado.")
 
 # [AUNEA-BE-PG11-GLOBAL-QUALITY-290] END
 
-def validate_global_brief(raw: dict, source_ids: set[str]) -> GlobalBrief:
+def validate_global_brief(raw: dict, source_ids: set[str], context: dict | None = None) -> GlobalBrief:
     try:
         brief = GlobalBrief.model_validate(raw)
     except ValidationError as exc:
         raise ValueError("La respuesta IA global no cumple el formato de objetivos y recomendaciones.") from exc
-    validate_global_language(brief)
     for item in brief.opportunities:
         if any(ref not in source_ids for ref in item.source_refs):
             raise ValueError("La IA global cita una referencia ajena al AS-IS confirmado.")
         if len(set(item.source_refs)) != len(item.source_refs):
             raise ValueError("La IA global ha repetido referencias de origen.")
+    validate_global_language(brief, context)
     return brief
 
 def analyze_global(payload: PilotAIRequest) -> dict:
@@ -279,7 +410,7 @@ def analyze_global(payload: PilotAIRequest) -> dict:
         raw = json.loads(message["content"])
     except (KeyError, TypeError, ValueError) as exc:
         raise ValueError("El análisis global no devolvió un JSON completo.") from exc
-    brief = validate_global_brief(raw, source_ids)
+    brief = validate_global_brief(raw, source_ids, context)
     return {
         "status": "DRAFT", "requires_human_review": True,
         "engagement_id": payload.engagement.engagement_id,
