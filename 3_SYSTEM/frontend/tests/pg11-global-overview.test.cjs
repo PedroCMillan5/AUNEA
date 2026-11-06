@@ -602,4 +602,74 @@ test('semantic repetition retains traceability and related alternatives',()=>{
   assert.ok(actions[0].source_refs.includes('S2'));
 });
 
+test('PG11 consolidates unique recommendations, incompatibilities and alternatives without approving them',()=>{
+  const proposed=[
+    {objective:'Evitar que se duplique la recepción',how:'Reusar datos validados.',
+     why:'F1 confirma captura duplicada.',constraints:'',source_refs:['F1','S1'],
+     related:[{objective:'Conservar seguimiento',how:'Reutilizar la recepción validada.',
+       why:'La fricción es transversal.',source_refs:['F1']}],
+     review:{status:'INCOMPATIBLE',reason:'Propuesta incompatible.',conflicts:[{source:'DF087',reason:'Decisión humana obligatoria.'}]},
+     alternative:{how:'Enviar avisos para revisión humana.',why:'Mantener control.',source_refs:['F1','S1'],
+       review:{status:'CONDITIONED',reason:'Requiere verificación.',conflicts:[]}}},
+    {objective:'Visibilidad del proceso',how:'Registrar estados pendientes.',
+     why:'La evidencia indica falta de visibilidad.',constraints:'',source_refs:['S1'],
+     review:{status:'CONDITIONED',reason:'Comprobar permisos.',conflicts:[]}}
+  ];
+  const h=harness(proposed);
+  h.env.p.items=[{sourceStepId:'S1',sourceStepName:'Recepción'}];
+  const html=h.html();
+  assert.match(html,/Consolidación de propuestas: 2 intervenciones distintas/);
+  assert.match(html,/1 incompatibilidades detectadas/);
+  assert.match(html,/1 alternativas sugeridas/);
+  assert.match(html,/1 variantes relacionadas conservadas/);
+  assert.match(html,/data-tobe-select="S1"/);
+  assert.match(html,/Fuentes de la alternativa/);
+  assert.match(html,/Fricción: Captura duplicada/);
+  assert.doesNotMatch(html,/data-tobe-ai-use-field|data-tobe-human-decision/);
+});
+
+test('confirmed AS-IS friction and risk links become read-only context only in their affected activity',()=>{
+  const h=harness([
+    {objective:'Reducir doble captura',how:'Reutilizar información confirmada.',
+     why:'Duplicidad trazada.',constraints:'',source_refs:['F1'],
+     review:{status:'CONDITIONED',reason:'Validar factibilidad.',conflicts:[]}},
+    {objective:'Reforzar control de riesgo',how:'Conservar registro auditable.',
+     why:'Riesgo registrado.',constraints:'',source_refs:['R1'],
+     review:{status:'INCOMPATIBLE',reason:'No debe sustituir decisión humana.',conflicts:[]}}
+  ]);
+  h.env.p.items=[{sourceStepId:'S1',sourceStepName:'Recepción'},
+    {sourceStepId:'S2',sourceStepName:'Validación'}];
+  const snapshot=h.env.e.confirmedSnapshots[0];
+  snapshot.frictions[0].affected_steps=['S1'];
+  snapshot.risks=[{id:'R1',step_ids:['S2'],description:'Riesgo de aprobación'}];
+  const block1=h.env.p.items[0],block2=h.env.p.items[1];
+  const global1=block&&h.env;
+  const sandbox={
+    currentDiagnosticOutput:()=>({input_snapshot_hash:'HASH'}),
+    internalAiGlobalWorking:()=>false,
+    internalAiGlobalMessage:()=>null,
+    tobeProposalSnapshot:()=>snapshot,
+    tobeProposalSourceSteps:()=>snapshot.processSteps||[],
+    esc:x=>String(x??'').replaceAll('&','&amp;').replaceAll('<','&lt;'),
+  };
+  vm.createContext(sandbox);vm.runInContext(block,sandbox);
+  const one=sandbox.tobeGlobalLinkedStepHtml(h.env.e,h.env.p,block1);
+  const two=sandbox.tobeGlobalLinkedStepHtml(h.env.e,h.env.p,block2);
+  assert.match(one,/Reducir doble captura/);
+  assert.doesNotMatch(one,/Reforzar control de riesgo/);
+  assert.match(two,/Reforzar control de riesgo/);
+  assert.doesNotMatch(two,/Reducir doble captura/);
+  assert.match(one,/Contexto de solo lectura/);
+  assert.doesNotMatch(one,/data-tobe-ai-use-field|data-tobe-human-decision/);
+  h.env.p.aiGlobal.diagnosticInputHash='OLD';
+  assert.equal(sandbox.tobeGlobalLinkedStepHtml(h.env.e,h.env.p,block1),'');
+});
+
+test('linking global analysis never changes source activities or TO-BE fields',()=>{
+  assert.match(src,/id="tobeGlobalLinkedStep"/);
+  assert.match(src,/tobeGlobalLinkedStepHtml\(e,p,item\)/);
+  assert.match(ai,/linked.innerHTML=tobeGlobalLinkedStepHtml/);
+  assert.doesNotMatch(block,/saveState\(|markDirty\(|data-tobe-ai-use-field/);
+});
+
 // [AUNEA-UAT-PG11-GLOBAL-OVERVIEW-288] END
