@@ -228,7 +228,8 @@ async function generateTobeGlobal(e,options={}){
       // A valid JSON object can still contain a sentence truncated by Ollama.
       // Retry only that same block, keeping all previously saved results.
       for(let attempt=0;attempt<2;attempt++){
-        try{return await call('tobe-global',body);}
+        try{return await call('tobe-global',
+          attempt===0?body:{...body,retry_incomplete:true});}
         catch(error){
           if(attempt||error.status!==409||
              !/texto incompleto|objetivo en c[oó]digo/i.test(String(error.message||'')))
