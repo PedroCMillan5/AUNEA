@@ -139,8 +139,8 @@ async function generateTobeGlobal(e){
   // Check the backend strategy BEFORE invalidating any saved global proposal.
   // An out-of-date local Uvicorn process must never erase valid draft content.
   __auneaAiWorking.add(key);
-  __auneaGlobalAiFeedback.set(key,{working:true,type:'info',
-    message:'Preparando inventario de oportunidades desde el AS-IS confirmado…'});
+  __auneaGlobalAiFeedback.set(key,{working:true,type:'info',phase:'PREFLIGHT',
+    message:'Comprobando versión del backend antes de preparar el inventario…'});
   internalAiGlobalRefresh(e);
   let processed=0,total=0,failures=[];
   try{
