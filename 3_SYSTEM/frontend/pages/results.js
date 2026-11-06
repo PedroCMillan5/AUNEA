@@ -2154,10 +2154,16 @@ function tobeGlobalOverviewHtml(e,p){
       pending+' intervenciones por verificar'+
       (variants?' · '+variants+' variantes relacionadas conservadas':'')+
       '. Ninguna equivale a aprobación del consultor.</p>':'')+
-    (progress?'<p class="tobe-global-feedback" role="status">Fuentes revisadas: '+progress.completed+
-      ' de '+progress.total+(progress.failed?' · Incidencias: '+progress.failed:'')+
-      (analysisFinished?' · Análisis de fuentes completado':' · Resultado parcial; no aprobar todavía')+
-      '</p>':'')+
+    (progress?'<div class="tobe-global-progress" role="status" aria-live="polite">'+
+      '<p><b>Generación:</b> Fuentes revisadas: '+successful+' de '+progress.total+
+        (outstanding?' · Pendientes: '+outstanding:'')+
+        (progress.failed?' · Incidencias: '+progress.failed:'')+
+        (analysisFinished&&!outstanding?' · Análisis de fuentes completado':
+          ' · Resultado parcial; no aprobar todavía')+'</p>'+
+      '<p><b>Integridad:</b> '+(legacy?'Texto incompleto; conservar y reanalizar.':
+        'Sin frases cortadas detectadas en la propuesta guardada.')+'</p>'+
+      '<p><b>Revisión humana:</b> pendiente; ninguna intervención se aplica automáticamente.</p>'+
+      '</div>':'')+
     (progress?.failures?.length?'<details class="tobe-global-detail"><summary>Fuentes pendientes e incidencias</summary>'+
       '<p>'+esc(progress.failures.map(x=>x.source_id+': '+x.reason).join(' · '))+
       '</p></details>':'')+
