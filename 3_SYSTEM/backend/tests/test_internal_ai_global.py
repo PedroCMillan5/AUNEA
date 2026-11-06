@@ -1,6 +1,7 @@
 """PG11 global IA: bounded source projection, strict JSON, no unapproved writes."""
 # [AUNEA-UAT-PG11-GLOBAL-AI-287] START
 import io
+from urllib.error import HTTPError, URLError
 import json
 import pytest
 from aunea_backend import internal_ai_global as global_ai
@@ -263,6 +264,38 @@ def test_global_schema_allows_complete_text_beyond_old_240_character_ceiling():
     result=global_ai.validate_global_brief(raw, {"S1", "F1"})
     assert result.summary == raw["summary"]
     assert result.opportunities[0].how == raw["opportunities"][0]["how"]
+
+
+@pytest.mark.parametrize(("failure", "expected"), [
+    (URLError(ConnectionRefusedError(10061, "connection refused")),
+     "no está aceptando conexiones"),
+    (URLError(ConnectionResetError(10054, "connection reset")),
+     "Se perdió la conexión durante la generación"),
+    (URLError(TimeoutError("timed out")),
+     "agotó el tiempo de respuesta"),
+])
+def test_global_transport_503_identifies_operational_cause(monkeypatch, failure, expected):
+    configure(monkeypatch)
+    calls=[]
+    def bad_open(*args, **kwargs):
+        calls.append(True)
+        raise failure
+    monkeypatch.setattr(global_ai._LOCAL_HTTP, "open", bad_open)
+    with pytest.raises(global_ai.OllamaUnavailable, match=expected):
+        global_ai.analyze_global(sample())
+    assert len(calls)==1, "Do not retry indefinitely when local service is unreachable"
+
+
+def test_global_ollama_oom_response_does_not_expose_raw_provider_message(monkeypatch):
+    configure(monkeypatch)
+    message=json.dumps({"error":"failed to allocate buffer at C:\\private\\customer-files"})
+    def oom(*args, **kwargs):
+        raise HTTPError("http://127.0.0.1:11434/api/chat", 500, "Server Error",
+                        {}, io.BytesIO(message.encode()))
+    monkeypatch.setattr(global_ai._LOCAL_HTTP, "open", oom)
+    with pytest.raises(global_ai.OllamaUnavailable, match="se quedó sin memoria") as exc:
+        global_ai.analyze_global(sample())
+    assert "private" not in str(exc.value)
 
 
 def test_global_refuses_stale_source_before_request(monkeypatch):
