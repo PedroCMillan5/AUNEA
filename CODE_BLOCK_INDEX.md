@@ -4,7 +4,6 @@
 
 | Block_ID | Archivo | Responsabilidad | Fuente | Inputs | Outputs | Efectos | Riesgo | Regresión | Estado |
 |---|---|---|---|---|---|---|---|---|
-| AUNEA-BE-PG11-GLOBAL-QUALITY-290 | 3_SYSTEM/backend/aunea_backend/internal_ai_global.py | Rechaza cifras y umbrales no contrastados, códigos técnicos y frases IA incompletas antes de ofrecer propuesta global | Simulator CANONICAL PG11; DEC-034/050/052/055 | GlobalBrief propuesto | Validación fail-closed; no propuestas parciales | Sin escritura | HIGH | test_internal_ai_global.py | REVIEW |
 | AUNEA-BE-PG11-GLOBAL-AI-282 | 3_SYSTEM/backend/aunea_backend/internal_ai_global.py | Motor global Ollama con fuente y restricciones acotadas | PG11 CANONICAL; DEC-050/052 | PilotAIRequest | Propuesta DRAFT trazable | HTTP local consentido | HIGH | test_internal_ai_global.py | REVIEW |
 | AUNEA-BE-PG11-GLOBAL-AI-API-283 | 3_SYSTEM/backend/aunea_backend/api.py | Endpoint protegido global | PG11 CANONICAL; DEC-055 | Snapshot y autorización | Respuesta DRAFT | Sin escritura backend | HIGH | test_internal_ai_global.py | REVIEW |
 | AUNEA-FE-PG11-CONTEXT-289 | 3_SYSTEM/frontend/pages/results.js | Información general de PG11 obtenida únicamente del snapshot AS-IS confirmado | Simulator CANONICAL PG11; DEC-050/052 | Snapshot AS-IS versionado | Ficha de origen de solo lectura | Sin captura ni edición | MEDIUM | pg11-global-overview.test.cjs | REVIEW |
