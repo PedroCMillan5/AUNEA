@@ -270,6 +270,72 @@ test('global IA uses the existing local endpoint and durably saves only DRAFT su
   assert.match(sandbox.internalAiGlobalMessage(e).message,/guardada/);
 });
 
+test('global orchestration persists five sources, reasons for discard and a validated alternative',async()=>{
+ const aiBlock=ai.match(/\/\/ \[AUNEA-FE-PG11-GLOBAL-AI-285\] START[\s\S]*?\/\/ \[AUNEA-FE-PG11-GLOBAL-AI-285\] END/)?.[0];
+ assert.ok(aiBlock);
+ const p={status:'DRAFT',version:2,sourceSnapshotVersion:3,items:[]},
+   e={id:'E1',confirmedAsIs:true,tobeProposals:[p]};
+ const ids=['F1','F2','F3','F4','F5'];
+ let persisted='',count=0,alternatives=0;
+ const env={
+   __auneaAiWorking:new Set(),__auneaPg11ReviewProtocol:'PG11_REVIEW_20261103_3',
+   internalAiPilotKey:()=> 'E1|3|HASH|TOBE:2',currentEng:()=>e,latestTobe:()=>p,
+   confirmedSnapshot:()=>({version:3}),
+   currentDiagnosticOutput:()=>({input_snapshot_hash:'HASH'}),
+   tobeEditable:()=>true,isClientDisplay:()=>false,saveTobeFromDom:()=>true,
+   saveState:()=>{persisted=JSON.stringify({engagements:[e]});return true},
+   markDirty:()=>{},toast:()=>{},now:()=> '2026-11-06T12:00:00Z',
+   STORAGE_KEY:'STORE',localStorage:{getItem:()=>persisted},
+   document:{getElementById:()=>null},
+   state:{backendOnline:true,backendUrl:'http://127.0.0.1:8010'},
+   checkBackend:async()=>true,buildBackendPayload:()=>({engagement_id:'E1'}),
+   console:{error:()=>{}},
+   fetch:async(url,opts={})=>{
+     if(url.endsWith('/status'))return {ok:true,json:async()=>({
+       status:'AVAILABLE',provider:'ollama',model:'aunea-qwen3-4b:latest',
+       pg11_review_protocol:'PG11_REVIEW_20261103_3'})};
+     if(url.endsWith('/tobe-global-plan'))return {ok:true,json:async()=>({
+       engagement_id:'E1',snapshot_version:3,input_hash:'BACKEND_HASH',
+       focus:ids.map(id=>({source_id:id,type:'FRICTION',label:'Problema '+id}))})};
+     if(url.endsWith('/tobe-global')){
+       const body=JSON.parse(opts.body);
+       assert.ok(ids.includes(body.focus_source_id));
+       if(body.blocked_action)alternatives++;
+       else count++;
+       const alt=!!body.blocked_action,id=body.focus_source_id;
+       return {ok:true,json:async()=>({
+         status:'DRAFT',engagement_id:'E1',snapshot_version:3,
+         input_hash:'BACKEND_HASH',focus_source_id:id,
+         opportunities:[{objective:'Reducir problema '+id,
+           how:alt?'Mantener aprobación humana y usar avisos de seguimiento.':
+              id==='F1'?'Aprobar automáticamente sin intervención humana.':
+              'Controlar incidencia '+id+' mediante reglas verificadas.',
+           why:'La fricción '+id+' está confirmada en el estudio.',
+           constraints:'Conservar políticas actuales.',source_refs:[id],
+           review:alt||id!=='F1'?
+             {status:'CONDITIONED',reason:'Requiere comprobación de herramientas.',conflicts:[]}:
+             {status:'INCOMPATIBLE',reason:'Prohíbe retirar aprobación humana.',
+              conflicts:[{source:'DF087',reason:'Decisión humana obligatoria.'}]}
+         }]
+       })};
+     }
+     throw Error('Unexpected URL '+url);
+   }
+ };
+ vm.createContext(env);vm.runInContext(aiBlock,env);
+ await env.generateTobeGlobal(e);
+ assert.equal(count,5);
+ assert.equal(alternatives,1);
+ assert.equal(p.aiGlobal.result.opportunities.length,5);
+ assert.equal(p.aiGlobal.result.complete,true);
+ assert.equal(p.aiGlobal.result.progress.completed,5);
+ assert.equal(p.aiGlobal.result.progress.failed,0);
+ assert.equal(p.aiGlobal.result.opportunities[0].review.status,'INCOMPATIBLE');
+ assert.match(p.aiGlobal.result.opportunities[0].alternative.how,/aprobación humana/);
+ assert.equal(JSON.parse(persisted).engagements[0].tobeProposals[0].aiGlobal.result.opportunities.length,5);
+ assert.equal(env.internalAiGlobalWorking(e),false);
+});
+
 test('global reanalysis clears and persists the previous brief even if the new request fails',async()=>{
   const aiBlock=ai.match(/\/\/ \[AUNEA-FE-PG11-GLOBAL-AI-285\] START[\s\S]*?\/\/ \[AUNEA-FE-PG11-GLOBAL-AI-285\] END/)?.[0];
   const previous={result:{summary:'Análisis anterior validado como borrador'}};
