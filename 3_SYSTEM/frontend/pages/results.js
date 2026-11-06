@@ -2177,17 +2177,17 @@ function tobeGlobalOverviewHtml(e,p){
       '<p class="tobe-global-action"><b>Intervención IA inicial:</b> '+esc(item.how)+'</p>'+
       (item.review?'<p class="tobe-global-assessment"><b>Comprobación de restricciones:</b> '+
         esc(item.review.status==='INCOMPATIBLE'?'Descartada por incompatibilidad explícita':
-          'Condicionada a validar la viabilidad')+
-        '. '+esc(item.review.reason||'Revisión humana pendiente.')+'</p>':'')+
+          'Condicionada a validar la viabilidad')+'</p>':'')+
       (item.alternative?'<p class="tobe-global-action"><b>Alternativa propuesta:</b> '+
-        esc(item.alternative.how)+'</p>'+
-        '<p class="tobe-global-assessment"><b>Evaluación de la alternativa:</b> '+
-        esc(item.alternative.review?.reason||
-          'Pendiente de comprobar restricciones y viabilidad.')+'</p>':
+        esc(item.alternative.how)+'</p>':
         item.alternative_note?'<p class="tobe-global-assessment">'+
           esc(item.alternative_note)+'</p>':'')+
       '<details><summary>Ver justificación y restricciones</summary><div class="tobe-global-detail">'+
       '<p><b>Por qué se recomienda:</b> '+esc(item.why)+'</p>'+
+      (item.review?'<p><b>Motivo de la evaluación:</b> '+
+        esc(item.review.reason||'Revisión humana pendiente.')+'</p>':'')+
+      (item.alternative?'<p><b>Evaluación de la alternativa:</b> '+
+        esc(item.alternative.review?.reason||'Comprobar restricciones y viabilidad.')+'</p>':'')+
       ((item.related||[]).length?'<p><b>Enfoques relacionados (sin descartar):</b></p>'+
         '<ul class="tobe-source-list">'+item.related.map(other=>
           '<li><b>'+esc(other.objective)+':</b> '+esc(other.how)+
