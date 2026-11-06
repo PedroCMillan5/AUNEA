@@ -2074,6 +2074,9 @@ function tobeGlobalOverviewHtml(e,p){
       ' de '+progress.total+(progress.failed?' · Incidencias: '+progress.failed:'')+
       (analysisFinished?' · Análisis de fuentes completado':' · Resultado parcial; no aprobar todavía')+
       '</p>':'')+
+    (progress?.failures?.length?'<details class="tobe-global-detail"><summary>Fuentes pendientes e incidencias</summary>'+
+      '<p>'+esc(progress.failures.map(x=>x.source_id+': '+x.reason).join(' · '))+
+      '</p></details>':'')+
     (feedback?'<p class="tobe-global-feedback'+(feedback.type==='warn'?' is-warning':'')+
       '" role="status" aria-live="polite">'+esc(feedback.message)+'</p>':'')+
     (opportunities.length?'<div class="tobe-global-opportunities" aria-label="Objetivos y recomendaciones">'+
