@@ -146,4 +146,21 @@ def test_invented_and_duplicated_source_refs_are_never_accepted():
     with pytest.raises(ValueError, match="referencia ajena"):
         global_ai.validate_global_brief(raw, {"S1", "F1"})
 
+
+def test_no_recommendations_is_valid_when_no_evidence_supports_a_change():
+    empty = {
+        "summary": "No existen mejoras justificadas con la evidencia disponible.",
+        "opportunities": [], "has_more": False
+    }
+    result = global_ai.validate_global_brief(empty, {"S1"})
+    assert len(result.opportunities) == 0
+    assert result.has_more is False
+
+
+def test_recommendation_count_is_determined_by_evidence_not_a_configured_quota():
+    schema = global_ai.global_schema()
+    assert schema["properties"]["opportunities"]["maxItems"] == 2
+    # This limit applies to a single Ollama response, NOT the process or source.
+    assert "No existe un máximo por fuente ni global" in global_ai.GLOBAL_PROMPT
+
 # [AUNEA-UAT-PG11-MATRIX-299] END
