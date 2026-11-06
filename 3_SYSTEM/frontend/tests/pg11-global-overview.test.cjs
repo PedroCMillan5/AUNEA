@@ -236,14 +236,14 @@ test('global IA uses the existing local endpoint and durably saves only DRAFT su
     fetch:async(url,options={})=>{
       calls.push({url,options});
       if(url.endsWith('/status'))return {ok:true,json:async()=>({
-        status:'AVAILABLE',provider:'ollama',pg11_review_protocol:'PG11_REVIEW_20261103_3',pg11_global_strategy:'SCOPED_V1'})};
+        status:'AVAILABLE',provider:'ollama',pg11_review_protocol:'PG11_REVIEW_20261103_3',pg11_global_strategy:'SCOPED_V2'})};
       if(url.endsWith('/tobe-global-plan'))return {ok:true,json:async()=>({
         engagement_id:'E1',snapshot_version:3,input_hash:'HASH_BACKEND',
         focus:[{source_id:'S1',label:'Recepción',type:'STEP'}]})};
       if(url.endsWith('/tobe-global'))return {ok:true,json:async()=>({
         status:'DRAFT',engagement_id:'E1',snapshot_version:3,input_hash:'HASH_BACKEND',
         model:'local-pilot',summary:'Reducir duplicidades manteniendo los controles.',
-        focus_source_id:'S1',
+        focus_source_id:'S1',has_more:false,
         opportunities:[{objective:'Evitar dobles entradas',how:'Reusar datos confirmados.',
           why:'Existe una duplicidad documentada.',constraints:'Mantener aprobación humana.',
           source_refs:['S1'],review:{status:'CONDITIONED',reason:'Comprobar viabilidad.',conflicts:[]}}],
@@ -293,7 +293,7 @@ test('global orchestration persists five sources, reasons for discard and a vali
    fetch:async(url,opts={})=>{
      if(url.endsWith('/status'))return {ok:true,json:async()=>({
        status:'AVAILABLE',provider:'ollama',model:'aunea-qwen3-4b:latest',
-       pg11_review_protocol:'PG11_REVIEW_20261103_3',pg11_global_strategy:'SCOPED_V1'})};
+       pg11_review_protocol:'PG11_REVIEW_20261103_3',pg11_global_strategy:'SCOPED_V2'})};
      if(url.endsWith('/tobe-global-plan'))return {ok:true,json:async()=>({
        engagement_id:'E1',snapshot_version:3,input_hash:'BACKEND_HASH',
        focus:ids.map(id=>({source_id:id,type:'FRICTION',label:'Problema '+id}))})};
@@ -305,7 +305,7 @@ test('global orchestration persists five sources, reasons for discard and a vali
        const alt=!!body.blocked_action,id=body.focus_source_id;
        return {ok:true,json:async()=>({
          status:'DRAFT',engagement_id:'E1',snapshot_version:3,
-         input_hash:'BACKEND_HASH',focus_source_id:id,
+         input_hash:'BACKEND_HASH',focus_source_id:id,has_more:false,
          opportunities:[{objective:'Reducir problema '+id,
            how:alt?'Mantener aprobación humana y usar avisos de seguimiento.':
               id==='F1'?'Aprobar automáticamente sin intervención humana.':
@@ -357,7 +357,7 @@ test('a second source failure preserves the first new recommendation as an expli
    fetch:async(url,options={})=>{
      if(url.endsWith('/status'))return {ok:true,json:async()=>({
        status:'AVAILABLE',provider:'ollama',
-       pg11_review_protocol:'PG11_REVIEW_20261103_3',pg11_global_strategy:'SCOPED_V1'})};
+       pg11_review_protocol:'PG11_REVIEW_20261103_3',pg11_global_strategy:'SCOPED_V2'})};
      if(url.endsWith('/tobe-global-plan'))return {ok:true,json:async()=>({
        engagement_id:'E1',snapshot_version:3,input_hash:'HASH-NEW',
        focus:[{source_id:'F1',label:'Duplicidad'},{source_id:'F2',label:'Esperas'}]})};
@@ -367,7 +367,7 @@ test('a second source failure preserves the first new recommendation as an expli
          json:async()=>({detail:'Ollama local no responde para F2'})};
        return {ok:true,json:async()=>({
          status:'DRAFT',engagement_id:'E1',snapshot_version:3,
-         input_hash:'HASH-NEW',focus_source_id:'F1',
+         input_hash:'HASH-NEW',focus_source_id:'F1',has_more:false,
          opportunities:[{objective:'Reducir duplicidad de captura',
            how:'Reutilizar los datos de la fuente confirmada.',
            why:'F1 declara un problema de captura duplicada.',
@@ -420,7 +420,7 @@ test('global reanalysis clears and persists the previous brief even if the new r
     checkBackend:async()=>true,buildBackendPayload:()=>({engagement_id:'E1'}),
     console:{error:()=>{}},
     fetch:async(url)=>url.endsWith('/status')?{ok:true,json:async()=>({
-      status:'AVAILABLE',provider:'ollama',pg11_review_protocol:'PG11_REVIEW_20261103_3',pg11_global_strategy:'SCOPED_V1'})}:
+      status:'AVAILABLE',provider:'ollama',pg11_review_protocol:'PG11_REVIEW_20261103_3',pg11_global_strategy:'SCOPED_V2'})}:
       url.endsWith('/tobe-global-plan')?{ok:true,json:async()=>({
         engagement_id:'E1',snapshot_version:3,input_hash:'BACKEND_HASH',
         focus:[{source_id:'S1',label:'Recepción'}]})}:
@@ -485,7 +485,7 @@ test('API preflight hides old cards without deleting saved work when the backend
  assert.match(during,/Comprobando que el backend admite el análisis por bloques/);
  assert.doesNotMatch(during,/TEXTO ANTIGUO|Antigua recomendación|Antigua acción/);
  finishStatus({ok:true,json:async()=>({
-   status:'AVAILABLE',provider:'ollama',pg11_review_protocol:'PG11_REVIEW_20261103_3',pg11_global_strategy:'SCOPED_V1'})});
+   status:'AVAILABLE',provider:'ollama',pg11_review_protocol:'PG11_REVIEW_20261103_3',pg11_global_strategy:'SCOPED_V2'})});
  await pending;
  const after=view.tobeGlobalOverviewHtml(e,p);
  assert.match(after,/TEXTO ANTIGUO/);
@@ -526,6 +526,80 @@ test('outdated backend without scoped-global capability explains HTTP 404 before
    /Propuesta válida/);
  assert.match(ctx.internalAiGlobalMessage(e).message,/Reinicia el backend actualizado/);
  assert.equal(ctx.internalAiGlobalWorking(e),false);
+});
+
+
+test('one source yields more than two outcomes over consecutive small batches',async()=>{
+  const aiBlock=ai.match(/\/\/ \[AUNEA-FE-PG11-GLOBAL-AI-285\] START[\s\S]*?\/\/ \[AUNEA-FE-PG11-GLOBAL-AI-285\] END/)?.[0];
+  const p={status:'DRAFT',version:2,sourceSnapshotVersion:3,items:[]},
+    e={id:'E1',confirmedAsIs:true,tobeProposals:[p]},bodies=[];
+  const actions=[
+    'Validar documentos adjuntos en recepción.',
+    'Registrar las autorizaciones de cada responsable.',
+    'Centralizar el calendario de incidencias.',
+    'Comprobar el estado de tareas pendientes.',
+    'Enviar avisos sobre bloqueos al coordinador.'
+  ];
+  const env={
+    __auneaAiWorking:new Set(),__auneaPg11ReviewProtocol:'PG11_REVIEW_20261103_3',
+    internalAiPilotKey:()=> 'E1|3|HASH|TOBE:2',currentEng:()=>e,latestTobe:()=>p,
+    confirmedSnapshot:()=>({version:3}),
+    currentDiagnosticOutput:()=>({input_snapshot_hash:'HASH'}),
+    tobeEditable:()=>true,isClientDisplay:()=>false,saveTobeFromDom:()=>true,
+    saveState:()=>true,markDirty:()=>{},toast:()=>{},now:()=> '2026-11-06T13:00:00Z',
+    document:{getElementById:()=>null},state:{backendOnline:true,backendUrl:'http://127.0.0.1:8010'},
+    checkBackend:async()=>true,buildBackendPayload:()=>({engagement_id:'E1'}),
+    console:{error:()=>{}},
+    fetch:async(url,opts={})=>{
+      if(url.endsWith('/status'))return {ok:true,json:async()=>({
+        status:'AVAILABLE',provider:'ollama',pg11_review_protocol:'PG11_REVIEW_20261103_3',
+        pg11_global_strategy:'SCOPED_V2'})};
+      if(url.endsWith('/tobe-global-plan'))return {ok:true,json:async()=>({
+        engagement_id:'E1',snapshot_version:3,input_hash:'HASH_BACKEND',
+        focus:[{source_id:'F1',label:'Duplicidades'}]})};
+      if(url.endsWith('/tobe-global')){
+        const body=JSON.parse(opts.body),index=bodies.length,start=index*2,end=Math.min(start+2,5);
+        bodies.push(body);
+        return {ok:true,json:async()=>({
+          status:'DRAFT',engagement_id:'E1',snapshot_version:3,input_hash:'HASH_BACKEND',
+          focus_source_id:'F1',has_more:end<5,
+          opportunities:actions.slice(start,end).map((how,i)=>({
+            objective:'Resolver necesidad de proceso '+(start+i+1),how,
+            why:'Existe una fricción confirmada que requiere control.',
+            constraints:'Mantener la supervisión humana.',source_refs:['F1'],
+            review:{status:'CONDITIONED',reason:'Validar viabilidad.',conflicts:[]}
+          }))
+        })};
+      }
+      throw Error('Unexpected endpoint');
+    }
+  };
+  vm.createContext(env);vm.runInContext(aiBlock,env);
+  await env.generateTobeGlobal(e);
+  assert.equal(bodies.length,3);
+  assert.deepEqual(bodies.map(x=>x.seen_interventions.length),[0,2,4]);
+  assert.equal(p.aiGlobal.result.opportunities.length,5);
+  assert.equal(p.aiGlobal.result.progress.completed,1);
+  assert.equal(p.aiGlobal.result.complete,true);
+});
+
+test('semantic repetition retains traceability and related alternatives',()=>{
+  const aiBlock=ai.match(/\/\/ \[AUNEA-FE-PG11-GLOBAL-AI-285\] START[\s\S]*?\/\/ \[AUNEA-FE-PG11-GLOBAL-AI-285\] END/)?.[0];
+  const env={__auneaAiWorking:new Set()};vm.createContext(env);vm.runInContext(aiBlock,env);
+  const actions=[],one={objective:'Evitar capturas duplicadas',
+    how:'Reutilizar automáticamente los datos validados de recepción en el registro ERP.',
+    why:'Hay doble entrada de datos.',constraints:'',source_refs:['F1']};
+  assert.equal(env.tobeGlobalMerge(actions,one),true);
+  assert.equal(env.tobeGlobalMerge(actions,{...one,source_refs:['F2']}),false);
+  assert.equal(actions.length,1);
+  assert.ok(actions[0].source_refs.includes('F2'));
+  const other={...one,source_refs:['F1','S2'],
+    how:'Reutilizar los datos validados de recepción automáticamente en el registro ERP.'};
+  assert.equal(env.tobeGlobalMerge(actions,other),true);
+  assert.equal(actions.length,1);
+  assert.equal(actions[0].related.length,1);
+  assert.equal(actions[0].related[0].how,other.how);
+  assert.ok(actions[0].source_refs.includes('S2'));
 });
 
 // [AUNEA-UAT-PG11-GLOBAL-OVERVIEW-288] END
