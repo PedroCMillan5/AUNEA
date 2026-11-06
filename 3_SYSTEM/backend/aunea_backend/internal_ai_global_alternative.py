@@ -1,4 +1,4 @@
-# [AUNEA-BE-PG11-GLOBAL-ALTERNATIVE-294] START
+# PG11 alternative safeguards — helper for the existing AUNEA-BE-PG11-GLOBAL-AI-282 owner.
 # SOURCE: Simulator CANONICAL PG11; DEC-034/050/052/055.
 # INPUT: confirmed scoped context, rejected action, stated constraints.
 # OUTPUT: review evidence. No business writes or approvals.
@@ -50,4 +50,4 @@ def repeats_rejected_action(candidate, rejected):
         common / min(len(a), len(b)) >= 0.9)
 
 
-# [AUNEA-BE-PG11-GLOBAL-ALTERNATIVE-294] END
+# No separate business owner or persisted state.
