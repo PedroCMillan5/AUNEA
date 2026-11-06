@@ -3132,6 +3132,7 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 .tobe-global-number{display:grid;place-items:center;flex:0 0 27px;height:27px;border-radius:50%;
   background:var(--system-soft);color:var(--system);font-size:12px;font-weight:800}
 .tobe-global-opportunity-body{flex:1;min-width:0}
+.tobe-global-intervention+.tobe-global-intervention{margin-top:12px;padding-top:12px;border-top:1px solid var(--system-line)}
 .tobe-global-opportunity-body>strong{display:block;font-size:14px;color:var(--ink);margin:2px 0 6px;line-height:1.35}
 .tobe-global-item-label{display:block;font-size:10px;font-weight:750;letter-spacing:.04em;text-transform:uppercase;color:var(--system);margin:1px 0 5px}
 .tobe-global-action b{color:var(--system)}
