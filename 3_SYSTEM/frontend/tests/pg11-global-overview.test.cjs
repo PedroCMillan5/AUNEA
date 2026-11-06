@@ -236,7 +236,7 @@ test('global IA uses the existing local endpoint and durably saves only DRAFT su
     fetch:async(url,options={})=>{
       calls.push({url,options});
       if(url.endsWith('/status'))return {ok:true,json:async()=>({
-        status:'AVAILABLE',provider:'ollama',pg11_review_protocol:'PG11_REVIEW_20261103_3'})};
+        status:'AVAILABLE',provider:'ollama',pg11_review_protocol:'PG11_REVIEW_20261103_3',pg11_global_strategy:'SCOPED_V1'})};
       if(url.endsWith('/tobe-global-plan'))return {ok:true,json:async()=>({
         engagement_id:'E1',snapshot_version:3,input_hash:'HASH_BACKEND',
         focus:[{source_id:'S1',label:'Recepción',type:'STEP'}]})};
@@ -293,7 +293,7 @@ test('global orchestration persists five sources, reasons for discard and a vali
    fetch:async(url,opts={})=>{
      if(url.endsWith('/status'))return {ok:true,json:async()=>({
        status:'AVAILABLE',provider:'ollama',model:'aunea-qwen3-4b:latest',
-       pg11_review_protocol:'PG11_REVIEW_20261103_3'})};
+       pg11_review_protocol:'PG11_REVIEW_20261103_3',pg11_global_strategy:'SCOPED_V1'})};
      if(url.endsWith('/tobe-global-plan'))return {ok:true,json:async()=>({
        engagement_id:'E1',snapshot_version:3,input_hash:'BACKEND_HASH',
        focus:ids.map(id=>({source_id:id,type:'FRICTION',label:'Problema '+id}))})};
@@ -357,7 +357,7 @@ test('a second source failure preserves the first new recommendation as an expli
    fetch:async(url,options={})=>{
      if(url.endsWith('/status'))return {ok:true,json:async()=>({
        status:'AVAILABLE',provider:'ollama',
-       pg11_review_protocol:'PG11_REVIEW_20261103_3'})};
+       pg11_review_protocol:'PG11_REVIEW_20261103_3',pg11_global_strategy:'SCOPED_V1'})};
      if(url.endsWith('/tobe-global-plan'))return {ok:true,json:async()=>({
        engagement_id:'E1',snapshot_version:3,input_hash:'HASH-NEW',
        focus:[{source_id:'F1',label:'Duplicidad'},{source_id:'F2',label:'Esperas'}]})};
@@ -419,7 +419,7 @@ test('global reanalysis clears and persists the previous brief even if the new r
     checkBackend:async()=>true,buildBackendPayload:()=>({engagement_id:'E1'}),
     console:{error:()=>{}},
     fetch:async(url)=>url.endsWith('/status')?{ok:true,json:async()=>({
-      status:'AVAILABLE',provider:'ollama',pg11_review_protocol:'PG11_REVIEW_20261103_3'})}:
+      status:'AVAILABLE',provider:'ollama',pg11_review_protocol:'PG11_REVIEW_20261103_3',pg11_global_strategy:'SCOPED_V1'})}:
       {ok:false,status:409,json:async()=>({detail:'El contexto supera el presupuesto IA'})},
   };
   vm.createContext(sandbox);vm.runInContext(aiBlock,sandbox);
@@ -476,7 +476,7 @@ test('clicking reanalyse clears displayed cards before Ollama returns, including
  assert.match(during,/Se ha retirado el análisis anterior/);
  assert.doesNotMatch(during,/TEXTO ANTIGUO|Antigua recomendación|Antigua acción/);
  finishStatus({ok:true,json:async()=>({
-   status:'AVAILABLE',provider:'ollama',pg11_review_protocol:'PG11_REVIEW_20261103_3'})});
+   status:'AVAILABLE',provider:'ollama',pg11_review_protocol:'PG11_REVIEW_20261103_3',pg11_global_strategy:'SCOPED_V1'})});
  await pending;
  const after=view.tobeGlobalOverviewHtml(e,p);
  assert.doesNotMatch(after,/TEXTO ANTIGUO|Antigua recomendación|Antigua acción/);
