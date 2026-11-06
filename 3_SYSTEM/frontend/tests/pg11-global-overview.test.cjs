@@ -420,6 +420,9 @@ test('global reanalysis clears and persists the previous brief even if the new r
     console:{error:()=>{}},
     fetch:async(url)=>url.endsWith('/status')?{ok:true,json:async()=>({
       status:'AVAILABLE',provider:'ollama',pg11_review_protocol:'PG11_REVIEW_20261103_3',pg11_global_strategy:'SCOPED_V1'})}:
+      url.endsWith('/tobe-global-plan')?{ok:true,json:async()=>({
+        engagement_id:'E1',snapshot_version:3,input_hash:'BACKEND_HASH',
+        focus:[{source_id:'S1',label:'Recepción'}]})}:
       {ok:false,status:409,json:async()=>({detail:'El contexto supera el presupuesto IA'})},
   };
   vm.createContext(sandbox);vm.runInContext(aiBlock,sandbox);
@@ -432,7 +435,7 @@ test('global reanalysis clears and persists the previous brief even if the new r
 });
 
 
-test('clicking reanalyse clears displayed cards before Ollama returns, including after reload',async()=>{
+test('API preflight hides old cards without deleting saved work when the backend rejects the plan',async()=>{
  const aiBlock=ai.match(/\/\/ \[AUNEA-FE-PG11-GLOBAL-AI-285\] START[\s\S]*?\/\/ \[AUNEA-FE-PG11-GLOBAL-AI-285\] END/)?.[0];
  assert.ok(aiBlock);
  const oldBrief={tobeVersion:2,sourceSnapshotVersion:3,diagnosticInputHash:'HASH',
@@ -462,9 +465,10 @@ test('clicking reanalyse clears displayed cards before Ollama returns, including
  };
  vm.createContext(ctx);vm.runInContext(aiBlock,ctx);
  const pending=ctx.generateTobeGlobal(e);
- assert.equal(p.aiGlobal,undefined,'the old result must disappear synchronously on click');
- assert.equal(JSON.parse(disk).engagements[0].tobeProposals[0].aiGlobal,undefined,
-   'the empty state must be durable before the external request');
+ assert.equal(p.aiGlobal,oldBrief,
+   'preflight has not changed or discarded the saved result yet');
+ assert.match(JSON.parse(disk).engagements[0].tobeProposals[0].aiGlobal.result.summary,
+   /TEXTO ANTIGUO/,'backend compatibility check cannot destroy saved work');
  assert.equal(ctx.internalAiGlobalWorking(e),true);
  // Render with the normal page component while Ollama is unresolved.
  const view={currentDiagnosticOutput:()=>({input_snapshot_hash:'HASH'}),
@@ -473,15 +477,50 @@ test('clicking reanalyse clears displayed cards before Ollama returns, including
    internalAiGlobalMessage:()=>ctx.internalAiGlobalMessage(e),esc:String};
  vm.createContext(view);vm.runInContext(block,view);
  const during=view.tobeGlobalOverviewHtml(e,p);
- assert.match(during,/Se ha retirado el análisis anterior/);
+ assert.match(during,/Comprobando que el backend admite el análisis por bloques/);
  assert.doesNotMatch(during,/TEXTO ANTIGUO|Antigua recomendación|Antigua acción/);
  finishStatus({ok:true,json:async()=>({
    status:'AVAILABLE',provider:'ollama',pg11_review_protocol:'PG11_REVIEW_20261103_3',pg11_global_strategy:'SCOPED_V1'})});
  await pending;
  const after=view.tobeGlobalOverviewHtml(e,p);
- assert.doesNotMatch(after,/TEXTO ANTIGUO|Antigua recomendación|Antigua acción/);
+ assert.match(after,/TEXTO ANTIGUO/);
  assert.match(after,/No se completó el análisis global/);
- assert.equal(JSON.parse(disk).engagements[0].tobeProposals[0].aiGlobal,undefined);
+ assert.match(JSON.parse(disk).engagements[0].tobeProposals[0].aiGlobal.result.summary,
+   /TEXTO ANTIGUO/,'no destructive reset occurs on preflight HTTP 409');
+});
+
+test('outdated backend without scoped-global capability explains HTTP 404 before any reset',async()=>{
+ const aiBlock=ai.match(/\/\/ \[AUNEA-FE-PG11-GLOBAL-AI-285\] START[\s\S]*?\/\/ \[AUNEA-FE-PG11-GLOBAL-AI-285\] END/)?.[0];
+ const previous={result:{summary:'Propuesta válida guardada del análisis anterior.'}},
+   p={status:'DRAFT',version:2,sourceSnapshotVersion:3,items:[],aiGlobal:previous},
+   e={id:'E1',confirmedAsIs:true,tobeProposals:[p]};
+ let disk='',calls=0;
+ const ctx={
+   __auneaAiWorking:new Set(),__auneaPg11ReviewProtocol:'PG11_REVIEW_20261103_3',
+   internalAiPilotKey:()=> 'E1|3|HASH|TOBE:2',
+   currentEng:()=>e,latestTobe:()=>p,confirmedSnapshot:()=>({version:3}),
+   currentDiagnosticOutput:()=>({input_snapshot_hash:'HASH'}),
+   tobeEditable:()=>true,isClientDisplay:()=>false,saveTobeFromDom:()=>true,
+   saveState:()=>{disk=JSON.stringify({engagements:[e]});return true},
+   markDirty:()=>{},toast:()=>{},now:()=> '2026-11-06',
+   document:{getElementById:()=>null},
+   state:{backendOnline:true,backendUrl:'http://127.0.0.1:8010'},
+   checkBackend:async()=>true,console:{error:()=>{}},
+   fetch:async(url)=>{
+     if(!url.endsWith('/status')){calls++;throw Error('The request must never start.')}
+     return {ok:true,json:async()=>({
+       status:'AVAILABLE',provider:'ollama',
+       pg11_review_protocol:'PG11_REVIEW_20261103_3'})}
+   }
+ };
+ vm.createContext(ctx);vm.runInContext(aiBlock,ctx);
+ await ctx.generateTobeGlobal(e);
+ assert.equal(calls,0);
+ assert.equal(p.aiGlobal,previous);
+ assert.match(JSON.parse(disk).engagements[0].tobeProposals[0].aiGlobal.result.summary,
+   /Propuesta válida/);
+ assert.match(ctx.internalAiGlobalMessage(e).message,/Reinicia el backend actualizado/);
+ assert.equal(ctx.internalAiGlobalWorking(e),false);
 });
 
 // [AUNEA-UAT-PG11-GLOBAL-OVERVIEW-288] END
