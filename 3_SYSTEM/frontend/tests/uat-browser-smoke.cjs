@@ -912,7 +912,7 @@ async function main(){
   }),beforeLink,'navigating from global analysis must not change TO-BE fields');
   console.log('PG11_GLOBAL_LINK_BROWSER_PASS: '+selectedGlobal.source);
   // [AUNEA-UAT-PG11-GLOBAL-LINK-BROWSER-293] END
-  // PG11 block 4 — validate real selective retry without erasing stored source data.
+  // [AUNEA-UAT-PG11-GLOBAL-RETRY-295] START — resume saved source without overwriting accepted evidence.
   await page.evaluate(()=>{
     const e=currentEng(),p=latestTobe(e),diagnostic=currentDiagnosticOutput(e),
       source=String(p.items[0].sourceStepId);
@@ -967,6 +967,7 @@ async function main(){
   await page.unroute('**/v1/internal-ai/tobe-global',retrySource);
   await page.unroute('**/v1/internal-ai/tobe-global-plan',retryPlan);
   console.log('PG11_SELECTIVE_GLOBAL_RETRY_BROWSER_PASS');
+  // [AUNEA-UAT-PG11-GLOBAL-RETRY-295] END
   // [AUNEA-UAT-PG11-GLOBAL-RESET-291] START — reanalysis button clears
   // historical global text synchronously; failed Ollama must not restore it.
   await page.evaluate(()=>{
