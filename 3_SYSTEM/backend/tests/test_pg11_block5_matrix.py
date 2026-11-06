@@ -9,7 +9,8 @@ import json
 import re
 
 import pytest
-from fastapi.testclient import TestClient
+from types import SimpleNamespace
+from fastapi import HTTPException
 from aunea_backend import internal_ai_global as global_ai
 from aunea_backend.api import app
 from aunea_backend.utils import stable_hash
@@ -102,22 +103,25 @@ def test_semantic_review_must_not_promote_preferences_or_unknown_capabilities(
 
 
 def test_api_refuses_unapproved_inference_and_allows_only_authorized_local_plan(monkeypatch):
-    client = TestClient(app)
+    from aunea_backend.api import internal_ai_tobe_global_plan, internal_ai_tobe_global
     request = sample()
-    req = request.model_dump(mode="json")
+    local = SimpleNamespace(client=SimpleNamespace(host="testclient"))
     monkeypatch.delenv("AUNEA_INTERNAL_AI_ENABLED", raising=False)
     monkeypatch.delenv("AUNEA_INTERNAL_AI_DATA_AUTHORIZED", raising=False)
     monkeypatch.setenv("AUNEA_INTERNAL_AI_PROVIDER", "ollama")
-    assert client.post("/v1/internal-ai/tobe-global-plan", json=req).status_code == 503
-    assert client.post("/v1/internal-ai/tobe-global", json=req).status_code == 503
+    with pytest.raises(HTTPException) as denied_plan:
+        internal_ai_tobe_global_plan(request, local)
+    assert denied_plan.value.status_code == 503
+    with pytest.raises(HTTPException) as denied_inference:
+        internal_ai_tobe_global(request, local)
+    assert denied_inference.value.status_code == 503
     monkeypatch.setenv("AUNEA_INTERNAL_AI_ENABLED", "1")
     monkeypatch.setenv("AUNEA_INTERNAL_AI_DATA_AUTHORIZED", "1")
-    plan = client.post("/v1/internal-ai/tobe-global-plan", json=req)
-    assert plan.status_code == 200, plan.text
-    assert plan.json()["snapshot_version"] == request.snapshot_version
-    assert plan.json()["focus"]
-    # Plan is deterministic and MUST NOT perform a live Ollama inference.
-    assert "_answer_details" not in str(plan.json())
+    plan = internal_ai_tobe_global_plan(request, local)
+    assert plan["snapshot_version"] == request.snapshot_version
+    assert plan["focus"]
+    assert "_answer_details" not in str(plan)
+    # This deterministic plan must not call Ollama, even with authorization.
 
 
 @pytest.mark.parametrize("fragment", [
