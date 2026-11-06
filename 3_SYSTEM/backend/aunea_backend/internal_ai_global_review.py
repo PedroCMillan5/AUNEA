@@ -207,10 +207,10 @@ def assess_recommendation(how: str, context: dict, stated_constraints: str = "")
         r"decidir autom[aá]ticamente (?:la )?aprobaci[oó]n)", action)
     requires_human = bool(codes & {"HUMAN_DECISION", "APPROVAL", "FINAL_DECISION"})
     if requires_human and approval_action:
-        add_conflict("DF075/DF087/DF088",
+        add_conflict(source_for("HUMAN_DECISION","APPROVAL","FINAL_DECISION"),
                      "La intervención sustituye o automatiza una aprobación/decisión humana "
                      "que el cliente ha declarado obligatoria.")
-        track("DF075/DF087/DF088", "BLOCKS",
+        track(source_for("HUMAN_DECISION","APPROVAL","FINAL_DECISION"), "BLOCKS",
               "La aprobación o decisión final debe permanecer en una persona autorizada.")
     elif requires_human:
         track("DF075/DF087/DF088", "KEEP",
@@ -224,25 +224,25 @@ def assess_recommendation(how: str, context: dict, stated_constraints: str = "")
         r"(?:autom[aá]ticamente )?(?:los |las )?(?:pagos?|transferencias?|"
         r"acciones? financieras?)|(?:pagos?|transferencias?) autom[aá]ticos?)", action)
     if "FINANCIAL_ACTION" in codes and financial_action:
-        add_conflict("DF075/DF088", "El cliente excluye la ejecución automática de "
+        add_conflict(source_for("FINANCIAL_ACTION"), "El cliente excluye la ejecución automática de "
                      "acciones financieras o pagos.")
-        track("DF075/DF088", "BLOCKS", "Los pagos y decisiones financieras quedan fuera del alcance.")
+        track(source_for("FINANCIAL_ACTION"), "BLOCKS", "Los pagos y decisiones financieras quedan fuera del alcance.")
 
     irreversible = _positive_action(
         r"(?:(?:eliminar|borrar|suprimir) autom[aá]ticamente "
         r"(?:los |las )?(?:registros?|datos|documentos?)|"
         r"(?:eliminaci[oó]n|borrado) autom[aá]tic[oa] irreversible)", action)
     if "DELETE" in codes and irreversible:
-        add_conflict("DF088", "El cliente prohíbe automatizar eliminaciones irreversibles.")
-        track("DF088", "BLOCKS", "Conservar intervención humana en las eliminaciones.")
+        add_conflict(source_for("DELETE"), "El cliente prohíbe automatizar eliminaciones irreversibles.")
+        track(source_for("DELETE"), "BLOCKS", "Conservar intervención humana en las eliminaciones.")
 
     downtime = _positive_action(
         r"(?:paralizar|detener|interrumpir|suspender) (?:la |las |el )?"
         r"(?:operaci[oó]n|actividad|producci[oó]n|servicio)|"
         r"parada (?:de la )?(?:operaci[oó]n|actividad|producci[oó]n)", action)
     if "NO_DOWNTIME" in codes and downtime:
-        add_conflict("DF091", "La intervención exige detener la operación, prohibido por el cliente.")
-        track("DF091", "BLOCKS", "No interrumpir la operación diaria.")
+        add_conflict(source_for("NO_DOWNTIME"), "La intervención exige detener la operación, prohibido por el cliente.")
+        track(source_for("NO_DOWNTIME"), "BLOCKS", "No interrumpir la operación diaria.")
     elif "NO_DOWNTIME" in codes:
         track("DF091", "KEEP", "El cambio debe implantarse sin interrumpir la actividad.")
         verifications.append({"source": "DF091",
