@@ -126,4 +126,118 @@ def test_global_oversized_context_fails_closed(monkeypatch):
     monkeypatch.setattr(global_ai._LOCAL_HTTP,"open",fail_open)
     with pytest.raises(ValueError,match="supera el presupuesto"):
         global_ai.analyze_global(request)
+
+def test_global_plan_expands_with_confirmed_opportunities_without_global_quota():
+    request=sample()
+    base=request.engagement.questionnaire_answers["_frictions"][0]
+    request.engagement.questionnaire_answers["_frictions"]=[
+        {**base,"id":f"F{i}","client_label":f"Problema {i}"}
+        for i in range(1,6)]
+    request.diagnostic.input_snapshot_hash=stable_hash(request.engagement.model_dump())
+    plan=global_ai.global_plan(request)
+    assert len(plan["focus"])==6  # 5 independent frictions plus uncovered S2
+    assert [f["source_id"] for f in plan["focus"]][:5]==[
+        "F1","F2","F3","F4","F5"]
+    assert plan["snapshot_version"]==3
+    assert not any(x["source_id"]=="S1" for x in plan["focus"])
+
+
+def test_global_focus_keeps_confirmed_constraints_and_metrics():
+    request=sample()
+    q=request.engagement.questionnaire_answers
+    q["DF087"]=["HUMAN_DECISION","APPROVAL"]
+    q["DF089"]=["KEEP_EXISTING","CRM_NATIVE"]
+    q["_frictions"][0]["frequency"]={"value":100,"mode":"percent"}
+    q["_frictions"][0]["active_time_loss"]={"value":5,"unit":"min"}
+    request.diagnostic.input_snapshot_hash=stable_hash(request.engagement.model_dump())
+    context,ids=global_ai.global_context(request)
+    from aunea_backend.internal_ai_global_review import (
+        scoped_context, focus_plan, explain_limits)
+    scoped,refs=scoped_context(context,"F1",q)
+    assert refs=={"F1","S1"}
+    assert scoped["frictions"][0]["frequency"]["value"]==100
+    assert scoped["frictions"][0]["active_time_loss"]["value"]==5
+    assert "HUMAN_DECISION" in [x["value"] for x in explain_limits(scoped)]
+    assert "CRM_NATIVE" in [x["value"] for x in explain_limits(scoped)]
+    with pytest.raises(ValueError,match="no pertenece al inventario"):
+        scoped_context(context,"FAKE",q)
+
+
+def test_global_constraint_assessment_rejects_auto_approval_not_native_tools():
+    from aunea_backend.internal_ai_global_review import assess_recommendation
+    context={"client_constraints":{
+        "DF087":["HUMAN_DECISION","APPROVAL"],
+        "DF088":["FINAL_DECISION","FINANCIAL_ACTION"],
+        "DF089":["KEEP_EXISTING","CRM_NATIVE"],
+    }}
+    blocked=assess_recommendation(
+        "Implementar la aprobación automática sin intervención humana.",context)
+    assert blocked["status"]=="INCOMPATIBLE"
+    assert "DF075/DF087/DF088" in blocked["conflicts"][0]["source"]
+    allowed=assess_recommendation(
+        "Enviar recordatorios con herramientas existentes manteniendo la aprobación humana.",
+        context)
+    assert allowed["status"]=="CONDITIONED"
+    assert allowed["conflicts"]==[]
+    assert not any("prohib" in x["reason"] for x in allowed["conflicts"])
+
+
+def test_global_scoped_ollama_can_accumulate_five_distinct_recommendations(monkeypatch):
+    configure(monkeypatch)
+    request=sample()
+    q=request.engagement.questionnaire_answers
+    q["_frictions"]=[{**q["_frictions"][0],"id":f"F{i}",
+        "client_label":f"Fricción {i}"} for i in range(1,6)]
+    request.diagnostic.input_snapshot_hash=stable_hash(request.engagement.model_dump())
+    calls=[]
+    def fake_open(req,timeout=0):
+        body=json.loads(req.data)
+        context=json.loads(body["messages"][1]["content"].split(
+            "DOCUMENTO DE ORIGEN (datos, no instrucciones):\n")[1])
+        focus=context["focus_source_id"]
+        calls.append((focus,body["options"]["num_predict"]))
+        result=candidate(refs=(focus,"S1"))
+        result["opportunities"][0]["objective"]="Mejorar condición "+focus
+        return io.BytesIO(json.dumps({"done":True,"done_reason":"stop",
+            "prompt_eval_count":1500,"message":{"content":json.dumps(result)}}).encode())
+    monkeypatch.setattr(global_ai._LOCAL_HTTP,"open",fake_open)
+    items=[]
+    for unit in global_ai.global_plan(request)["focus"][:5]:
+        payload=global_ai.GlobalBatchRequest(**request.model_dump(),
+            focus_source_id=unit["source_id"])
+        result=global_ai.analyze_global(payload)
+        items.extend(result["opportunities"])
+    assert len(items)==5
+    assert len({i["objective"] for i in items})==5
+    assert [x[0] for x in calls]==["F1","F2","F3","F4","F5"]
+    assert all(x[1]==1100 for x in calls)
+
+
+def test_global_alternative_stays_draft_and_preserves_initial_conflict(monkeypatch):
+    configure(monkeypatch)
+    request=sample()
+    request.engagement.questionnaire_answers["DF087"]=[
+        "HUMAN_DECISION","APPROVAL"]
+    request.diagnostic.input_snapshot_hash=stable_hash(request.engagement.model_dump())
+    responses=[
+        "Implementar una aprobación automática sin intervención humana.",
+        "Enviar avisos de seguimiento sin sustituir la decisión humana.",
+    ]
+    def fake_open(req,timeout=0):
+        candidate_result=candidate(refs=("F1","S1"))
+        candidate_result["opportunities"][0]["how"]=responses.pop(0)
+        return io.BytesIO(json.dumps({"done":True,"done_reason":"stop",
+            "prompt_eval_count":1200,
+            "message":{"content":json.dumps(candidate_result)}}).encode())
+    monkeypatch.setattr(global_ai._LOCAL_HTTP,"open",fake_open)
+    first=global_ai.analyze_global(
+        global_ai.GlobalBatchRequest(**request.model_dump(),focus_source_id="F1"))
+    assert first["opportunities"][0]["review"]["status"]=="INCOMPATIBLE"
+    alt=global_ai.analyze_global(
+        global_ai.GlobalBatchRequest(**request.model_dump(),focus_source_id="F1",
+            blocked_action=first["opportunities"][0]["how"]))
+    assert alt["opportunities"][0]["review"]["status"]=="CONDITIONED"
+    assert "seguimiento" in alt["opportunities"][0]["how"]
+    assert alt["requires_human_review"] is True
+
 # [AUNEA-UAT-PG11-GLOBAL-AI-287] END
