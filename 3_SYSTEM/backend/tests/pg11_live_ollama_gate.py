@@ -32,6 +32,9 @@ def synthetic_case(kind: str):
     q = request.engagement.questionnaire_answers
     if kind == "invoice":
         request.engagement.process_name = "Recepción y registro de facturas (sintético)"
+        q["_frictions"][0]["cause"] = "Los datos recibidos se vuelven a escribir al registrar la misma factura."
+        q["_frictions"][0]["evidence"] = "Declaración sintética confirmada: repetición de captura."
+        q["DF008"] = "Reducir la reintroducción manual sin perder aprobaciones."
         q["DF087"] = ["HUMAN_DECISION", "APPROVAL"]
         q["DF089"] = ["KEEP_EXISTING", "CRM_NATIVE"]
         q["DF090"] = ["RBAC", "AUDIT_LOG"]
