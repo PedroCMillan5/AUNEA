@@ -2075,7 +2075,8 @@ function tobeGlobalOverviewHtml(e,p){
     result=tobeGlobalStored(e,p),
     complete=!!result&&Array.isArray(result.opportunities)&&
       [result.summary,...result.opportunities.flatMap(item=>[
-        item.how,item.why,...(item.related||[]).flatMap(x=>[x.how,x.why])])]
+        item.how,item.why,...(item.related||[]).flatMap(x=>[x.how,x.why]),
+        ...(item.alternative?[item.alternative.how,item.alternative.why]:[])])]
         .every(value=>typeof value==='string'&&/[.!?…]$/.test(value.trim())),
     legacy=!!result&&!complete,
     opportunities=Array.isArray(result?.opportunities)?result.opportunities:[],
@@ -2083,7 +2084,7 @@ function tobeGlobalOverviewHtml(e,p){
     analysisFinished=result?.complete!==false,
     successful=progress?.focus_done?.length??progress?.completed??0,
     outstanding=Math.max(0,(progress?.total||0)-successful),
-    retryable=!!result&&result.complete===false&&outstanding>0,
+    retryable=!!result&&result.complete===false&&outstanding>0&&Array.isArray(progress?.focus_done),
     incompatible=opportunities.filter(x=>x.review?.status==='INCOMPATIBLE').length,
     alternatives=opportunities.filter(x=>!!x.alternative).length,
     pending=opportunities.filter(x=>x.review?.status!=='INCOMPATIBLE').length,
@@ -2126,6 +2127,13 @@ function tobeGlobalOverviewHtml(e,p){
     return step?'Paso: '+(step.step_name||step.name||id):
       risk?'Riesgo: '+(risk.description||id):'Referencia: '+String(id);
   });
+  const completeCards=opportunities.filter(item=>
+    [item.how,item.why,...(item.related||[]).flatMap(x=>[x.how,x.why]),
+      ...(item.alternative?[item.alternative.how,item.alternative.why]:[])]
+      .every(value=>typeof value==='string'&&/[.!?…]$/.test(value.trim()))).length,
+    decisions=typeof tobeHumanReviewRecord==='function'?
+      Object.values(tobeHumanReviewRecord(e,p)?.decisions||{})
+        .filter(x=>['ACCEPT','MODIFY','DISCARD'].includes(x?.status)).length:0;
   const linkedSteps=rec=>{
     const refs=new Set([...(rec.source_refs||[]),
       ...(rec.related||[]).flatMap(x=>x.source_refs||[])].map(String));
@@ -2160,9 +2168,12 @@ function tobeGlobalOverviewHtml(e,p){
         (progress.failed?' · Incidencias: '+progress.failed:'')+
         (analysisFinished&&!outstanding?' · Análisis de fuentes completado':
           ' · Resultado parcial; no aprobar todavía')+'</p>'+
-      '<p><b>Integridad:</b> '+(legacy?'Texto incompleto; conservar y reanalizar.':
-        'Sin frases cortadas detectadas en la propuesta guardada.')+'</p>'+
-      '<p><b>Revisión humana:</b> pendiente; ninguna intervención se aplica automáticamente.</p>'+
+      '<p><b>Integridad:</b> '+completeCards+' de '+opportunities.length+
+        ' recomendaciones con texto completo'+
+        (legacy?' · Existen frases incompletas: conservar y reanalizar.':
+          ' · Sin cortes detectados.')+'</p>'+
+      '<p><b>Revisión humana:</b> '+decisions+
+        ' decisiones sobre actividades registradas; propuestas globales sin aprobar.</p>'+
       '</div>':'')+
     (progress?.failures?.length?'<details class="tobe-global-detail"><summary>Fuentes pendientes e incidencias</summary>'+
       '<p>'+esc(progress.failures.map(x=>x.source_id+': '+x.reason).join(' · '))+
