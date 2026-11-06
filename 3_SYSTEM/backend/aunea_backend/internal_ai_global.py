@@ -49,20 +49,26 @@ GLOBAL_PROMPT = (
     "No conviertas el orden visual en una ruta, ni asumas facultades técnicas, licencias o integraciones. "
     "No suprimas aprobaciones o supervisión obligatorias. Prioriza menos retrabajo, "
     "menos esperas, controles proporcionados y cambios con mínima interrupción operativa. "
-    "No propongas IA por defecto. No calcules ahorros, porcentajes, tiempo futuro o retorno; "
-    "no inventes mediciones ni hechos, ni atribuyas riesgos globales a un paso concreto. "
+    "No propongas IA por defecto. Utiliza los porcentajes y tiempos del AS-IS "
+    "cuando estén confirmados en el contexto y cita su fricción o actividad origen. "
+    "No transformes los datos declarados o estimados en mediciones; identifica su procedencia. "
+    "No calcules ahorros, tiempo futuro ni retorno; no inventes métricas ni umbrales. "
+    "No atribuyas riesgos globales a un paso concreto sin referencia. "
     "Un estudio sintético es una hipótesis de prueba, no un caso real. "
     "Si no hay evidencia para proponer mejoras, opportunities=[] y explica el motivo en summary. "
     "Cada justificación debe diferenciar lo confirmado de lo pendiente de validar. "
-    "No utilices cifras de porcentajes, duraciones ni umbrales siquiera como ejemplos; "
-    "los hechos del AS-IS no son compromisos futuros. "
+    "Las cifras del AS-IS son hechos capturados, no promesas del TO-BE. "
+    "Cuando uses una cifra, incluye su unidad y vincúlala a una fuente real en source_refs. "
+    "frequency y active_time_loss de la fricción son datos diferentes: distingue incidencia "
+    "de esfuerzo por caso; no sumes tiempo INCLUDED ni BREAKDOWN al trabajo del paso. "
     "En vez de fijar plazos o recomendar integraciones ya viables, plantea comprobar "
     "con el cliente herramientas, controles, autorizaciones y factibilidad. "
     "Traduce las restricciones a español legible: no copies códigos DF, RBAC, "
     "AUDIT_LOG, KEEP_EXISTING o HUMAN_DECISION. "
     "summary: una frase completa de máximo 140 caracteres. "
     "how: una frase completa de máximo 160 caracteres. "
-    "why: una frase completa de máximo 190 caracteres, sin atribuir cifras no verificadas. "
+    "why: una frase completa de máximo 190 caracteres; puede citar cantidades del AS-IS "
+    "con procedencia, pero nunca inventar otra medición. "
     "Termina summary, how y why con punto. No cortes frases a mitad por longitud. "
     "Máximo tres oportunidades; cada texto debe ser breve y legible. "
     "La salida es una sugerencia DRAFT que requiere revisión humana."
@@ -87,6 +93,13 @@ def global_context(payload: PilotAIRequest) -> tuple[dict, set[str]]:
             "active_time": step.get("active_time"),
             "wait_time": step.get("wait_time"),
             "rework_time": step.get("rework_time"),
+            "time_units": {
+                "active": (step.get("_ui") or {}).get("active_unit"),
+                "wait": (step.get("_ui") or {}).get("wait_unit"),
+                "rework": (step.get("_ui") or {}).get("rework_unit"),
+            },
+            "error_rate": step.get("error_rate"),
+            "applies_to": step.get("applies_to"),
         }))
     compact_frictions = []
     for f in frictions:
@@ -97,6 +110,11 @@ def global_context(payload: PilotAIRequest) -> tuple[dict, set[str]]:
             "id": str(f["id"]), "step_ids": sorted(related_step_ids(f)),
             "label": f.get("client_label"), "signal": f.get("observable_signal"),
             "cause": f.get("cause"), "evidence": f.get("evidence"),
+            "frequency": f.get("frequency"),
+            "active_time_loss": f.get("active_time_loss"),
+            "wait_time_loss": f.get("wait_time_loss"),
+            "time_attribution": f.get("time_attribution"),
+            "evidence_type": f.get("evidence_type"),
         }))
     compact_risks = []
     for risk in risks:
