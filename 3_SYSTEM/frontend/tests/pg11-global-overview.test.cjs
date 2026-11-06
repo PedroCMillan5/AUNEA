@@ -101,7 +101,8 @@ test('global button is separate from per-step generation and displays no fabrica
   assert.match(output,/id="analyzeTobeGlobal"/);
   assert.match(output,/Analizar proceso con IA/);
   assert.doesNotMatch(output,/\-\d+%|\+\d+%/);
-  assert.match(ai,/\/v1\/internal-ai\/tobe-global/);
+  assert.match(ai,/tobe-global-plan/);
+  assert.match(ai,/call\('tobe-global'/);
   assert.match(ai,/\/v1\/internal-ai\/tobe-step/);
   assert.match(ai,/__auneaAiWorking\.has\(key\)/);
 });
@@ -210,12 +211,16 @@ test('global IA uses the existing local endpoint and durably saves only DRAFT su
       calls.push({url,options});
       if(url.endsWith('/status'))return {ok:true,json:async()=>({
         status:'AVAILABLE',provider:'ollama',pg11_review_protocol:'PG11_REVIEW_20261103_3'})};
+      if(url.endsWith('/tobe-global-plan'))return {ok:true,json:async()=>({
+        engagement_id:'E1',snapshot_version:3,input_hash:'HASH_BACKEND',
+        focus:[{source_id:'S1',label:'Recepción',type:'STEP'}]})};
       if(url.endsWith('/tobe-global'))return {ok:true,json:async()=>({
         status:'DRAFT',engagement_id:'E1',snapshot_version:3,input_hash:'HASH_BACKEND',
         model:'local-pilot',summary:'Reducir duplicidades manteniendo los controles.',
+        focus_source_id:'S1',
         opportunities:[{objective:'Evitar dobles entradas',how:'Reusar datos confirmados.',
           why:'Existe una duplicidad documentada.',constraints:'Mantener aprobación humana.',
-          source_refs:['S1']}],
+          source_refs:['S1'],review:{status:'CONDITIONED',reason:'Comprobar viabilidad.',conflicts:[]}}],
       })};
       throw Error('Unexpected endpoint: '+url);
     },
@@ -229,10 +234,12 @@ test('global IA uses the existing local endpoint and durably saves only DRAFT su
   assert.equal(request.diagnostic.input_snapshot_hash,'HASH');
   assert.equal(p.aiGlobal.result.status,'DRAFT');
   assert.equal(p.aiGlobal.result.opportunities[0].source_refs[0],'S1');
+  assert.equal(p.aiGlobal.result.complete,true);
+  assert.equal(p.aiGlobal.result.progress.total,1);
   assert.equal(p.items[0].futureActor,'Consultor');
   assert.equal(JSON.parse(persisted).engagements[0].tobeProposals[0].aiGlobal.result.summary,
-    'Reducir duplicidades manteniendo los controles.');
-  assert.equal(saved.length,3,'edits, cleared analysis and new result are each saved');
+    'El análisis de las fuentes confirmadas identifica 1 intervención para revisión del consultor.');
+  assert.ok(saved.length>=5,'the reset, initial progress, each unit and consolidated result must be saved');
   assert.equal(sandbox.internalAiGlobalMessage(e).working,false);
   assert.match(sandbox.internalAiGlobalMessage(e).message,/guardado/);
 });
@@ -317,7 +324,7 @@ test('clicking reanalyse clears displayed cards before Ollama returns, including
  await pending;
  const after=view.tobeGlobalOverviewHtml(e,p);
  assert.doesNotMatch(after,/TEXTO ANTIGUO|Antigua recomendación|Antigua acción/);
- assert.match(after,/No se generó una propuesta global nueva/);
+ assert.match(after,/No se completó el análisis global/);
  assert.equal(JSON.parse(disk).engagements[0].tobeProposals[0].aiGlobal,undefined);
 });
 
