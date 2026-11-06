@@ -18,11 +18,16 @@ function harness(result){
       result:{status:'DRAFT',engagement_id:'E1',snapshot_version:3,summary:'Mejorar la captura sin aumentar carga.',
       opportunities:result}}:undefined,
   };
-  const env={e:{id:'E1',frictions:[{id:'F1',client_label:'Captura duplicada'}]},p:model};
+  const env={e:{id:'E1',frictions:[{id:'F1',client_label:'Datos vivos no confirmados'}],
+    confirmedSnapshots:[{version:3,frictions:[{id:'F1',status:'ACTIVE',
+      client_label:'Captura duplicada',frequency:{value:100,mode:'percent',period:'case'},
+      active_time_loss:{value:5,unit:'min'},time_attribution:{mode:'INCLUDED',step_id:'S1'},
+      evidence_type:'EV02'}],risks:[]}]},p:model};
   const sandbox={
     currentDiagnosticOutput:()=>({input_snapshot_hash:'HASH'}),
     tobeEditable:p=>p.status==='DRAFT',
     tobeProposalSourceSteps:()=>[{id:'S1',step_name:'Recepción'}],
+    tobeProposalSnapshot:e=>e.confirmedSnapshots[0],
     engagementOfRecord:e=>e,esc:x=>String(x??'').replaceAll('&','&amp;').replaceAll('<','&lt;'),
     internalAiGlobalWorking:()=>false,internalAiGlobalMessage:()=>null,
   };
@@ -114,6 +119,20 @@ test('global objectives reveal a grounded explanation and restrictions on demand
   assert.match(output,/Paso: Recepción/);
   assert.match(output,/Fricción: Captura duplicada/);
   assert.match(output,/Sin aprobar/);
+});
+
+test('global explanation uses confirmed friction metrics and does not read later live changes',()=>{
+ const output=harness([{objective:'Reducir trabajo repetido de captura',
+   how:'Reutilizar la información sin duplicar registros.',
+   why:'El 100 % de los casos registra 5 minutos de captura repetida.',
+   constraints:'Mantener controles y autorizaciones.',
+   source_refs:['F1']}]).html();
+ assert.match(output,/Fricción: Captura duplicada/);
+ assert.match(output,/Frecuencia 100 %/);
+ assert.match(output,/Trabajo 5 min \(ya incluido en el paso\)/);
+ assert.match(output,/Evidencia: EV02/);
+ assert.doesNotMatch(output,/Datos vivos no confirmados/);
+ assert.match(output,/Los porcentajes y tiempos citados proceden del AS-IS/);
 });
 
 test('stale global response cannot appear as current after AS-IS change',()=>{
