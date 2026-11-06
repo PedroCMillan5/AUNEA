@@ -750,7 +750,7 @@ async function main(){
     pg11RetryStatusHits++;
     await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({
       status:'AVAILABLE',provider:'ollama',model:'fixture-local-no-ollama',
-      pg11_review_protocol:'PG11_REVIEW_20261103_3'
+      pg11_review_protocol:'PG11_REVIEW_20261103_3',pg11_global_strategy:'SCOPED_V1'
     })});
   };
   const pg11ReviewRoute=async route=>{
