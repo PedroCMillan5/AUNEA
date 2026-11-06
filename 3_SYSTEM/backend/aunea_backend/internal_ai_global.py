@@ -101,6 +101,9 @@ def global_context(payload: PilotAIRequest) -> tuple[dict, set[str]]:
             },
             "error_rate": step.get("error_rate"),
             "applies_to": step.get("applies_to"),
+            "decision_criteria": step.get("decision_criteria"),
+            "exception_condition": (step.get("exception_path") or {}).get("condition")
+                if isinstance(step.get("exception_path"), dict) else None,
         }))
     compact_frictions = []
     for f in frictions:
@@ -290,6 +293,8 @@ def _source_quantities(context: dict) -> tuple[dict[str, set], set, set]:
                 metric = _metric(item.get("value"), "%")
                 if metric is not None:
                     values.add(metric)
+        values |= _quantities_in_value(step.get("decision_criteria"))
+        values |= _quantities(step.get("exception_condition"))
         source[str(step["id"])] = values
     for friction in context.get("frictions", []):
         values = set()
