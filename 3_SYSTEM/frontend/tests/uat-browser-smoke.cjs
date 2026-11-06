@@ -895,6 +895,14 @@ async function main(){
     await route.fulfill({status:409,contentType:'application/json',
       body:JSON.stringify({detail:'Generación de prueba no disponible'})});
   };
+  const globalPlanRoute=async route=>{
+    const payload=route.request().postDataJSON();
+    await route.fulfill({status:200,contentType:'application/json',
+      body:JSON.stringify({engagement_id:payload.engagement.engagement_id,
+        snapshot_version:payload.snapshot_version,input_hash:'UAT-SOURCE-HASH',
+        focus:[{source_id:sourceIds[0],type:'STEP',label:'Actividad confirmada'}]})});
+  };
+  await page.route('**/v1/internal-ai/tobe-global-plan',globalPlanRoute);
   await page.route('**/v1/internal-ai/tobe-global',globalFailureRoute);
   // The browser smoke runs without the real 8010 backend: the existing local
   // /status fixture is authoritative for this isolated global-IA button test.
@@ -915,10 +923,13 @@ async function main(){
       stateOnDisk=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null'),
       saved=stateOnDisk?.engagements?.find(x=>x.id===e.id)?.tobeProposals?.
         find(x=>x.version===p.version);
-    return {inMemory:!!p.aiGlobal,onDisk:!!saved?.aiGlobal};
+    return {oldInMemory:JSON.stringify(p.aiGlobal||{}).includes('ANTERIOR GLOBAL'),
+      oldOnDisk:JSON.stringify(saved?.aiGlobal||{}).includes('ANTERIOR GLOBAL'),
+      hasNewProgress:!!p.aiGlobal?.result?.progress};
   });
-  assert.deepEqual(storedReset,{inMemory:false,onDisk:false},
-    'clear the global brief durably before Ollama replies');
+  assert.deepEqual(storedReset,{oldInMemory:false,oldOnDisk:false,
+    hasNewProgress:true},
+    'the previous global text is durably cleared and replaced by new run progress');
   unblockGlobal();
   await page.waitForFunction(()=>document.querySelector('#tobeGlobalAnalysis')?.textContent
     ?.includes('Generación de prueba no disponible'));
@@ -926,6 +937,7 @@ async function main(){
   assert.doesNotMatch(afterGlobal,/ANTERIOR GLOBAL|Antiguo objetivo|Antigua acción/,
     'a failed attempt must not restore outdated global cards');
   await page.unroute('**/v1/internal-ai/tobe-global',globalFailureRoute);
+  await page.unroute('**/v1/internal-ai/tobe-global-plan',globalPlanRoute);
   console.log('PG11_GLOBAL_REANALYSIS_CLEAR_BROWSER_PASS');
   // [AUNEA-UAT-PG11-GLOBAL-RESET-291] END
   await page.unroute('**/v1/internal-ai/status',pg11StatusRoute);
