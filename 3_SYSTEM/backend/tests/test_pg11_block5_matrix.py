@@ -163,4 +163,16 @@ def test_recommendation_count_is_determined_by_evidence_not_a_configured_quota()
     # This limit applies to a single Ollama response, NOT the process or source.
     assert "No existe un máximo por fuente ni global" in global_ai.GLOBAL_PROMPT
 
+
+def test_live_quality_oracle_rejects_an_objective_from_the_wrong_stage():
+    from pg11_live_ollama_gate import synthetic_case, check_synthetic_objective_origin
+    request = synthetic_case("client_intake")
+    wrong = {"objective": "Evitar volver a teclear datos en recepción.",
+             "how": "Crear lista de tareas para proyectos.",
+             "source_refs": ["F2"]}
+    with pytest.raises(AssertionError, match="se refiere a S1"):
+        check_synthetic_objective_origin(request, "F2", wrong)
+    related = {**wrong, "objective": "Reducir el trabajo manual de preparación de proyecto."}
+    check_synthetic_objective_origin(request, "F2", related)
+
 # [AUNEA-UAT-PG11-MATRIX-299] END
