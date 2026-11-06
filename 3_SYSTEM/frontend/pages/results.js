@@ -2060,9 +2060,9 @@ function tobeGlobalOverviewHtml(e,p){
         (working?' disabled aria-busy="true"':'')+'>'+
         (working?'Analizando proceso…':result?'Volver a analizar':'Analizar proceso con IA')+'</button>':'')+'</header>'+
     '<div class="tobe-global-summary"><div class="tobe-global-summary-top">'+
-      '<strong>'+(result?'Síntesis del proceso':'Análisis pendiente')+'</strong>'+
+      '<strong>'+(working?'Analizando proceso…':result?'Síntesis del proceso':'Análisis pendiente')+'</strong>'+
       '<span class="tobe-global-state" aria-live="polite">'+esc(state)+'</span></div>'+
-      '<p>'+esc(result?.summary||'La IA analizará el AS-IS confirmado para proponer objetivos generales y acciones concretas, respetando los límites declarados por el cliente. No alterará campos del TO-BE.')+'</p></div>'+
+      '<p>'+esc(working?'Se ha retirado el análisis anterior. Preparando una propuesta nueva con el AS-IS confirmado…':result?.summary||'No hay una propuesta global vigente. Analiza el AS-IS confirmado para generar nuevos objetivos y recomendaciones; no se alterarán campos del TO-BE.')+'</p></div>'+
     (feedback?'<p class="tobe-global-feedback'+(feedback.type==='warn'?' is-warning':'')+
       '" role="status" aria-live="polite">'+esc(feedback.message)+'</p>':'')+
     (opportunities.length?'<div class="tobe-global-opportunities" aria-label="Objetivos y recomendaciones">'+
