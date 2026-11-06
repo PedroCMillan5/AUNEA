@@ -129,63 +129,233 @@ def scoped_context(context: dict, focus_id: str, original_answers: dict) -> tupl
 def _normalized(text: str) -> str:
     return re.sub(r"\s+", " ", text.casefold()).strip()
 
+def _positive_action(pattern: str, action: str) -> bool:
+    """Detect asserted changes, not clauses saying the change must NOT occur."""
+    for found in re.finditer(pattern, action, flags=re.IGNORECASE):
+        left = action[max(0, found.start() - 44):found.start()]
+        if re.search(r"\b(?:sin|no|evitar|impedir|prohibir)\s+(?:\w+\s+){0,3}$", left):
+            continue
+        if re.search(r"\bno\s+se\s+(?:debe|puede|va\s+a)\s+(?:\w+\s+){0,2}$", left):
+            continue
+        return True
+    return False
+
+
+def _action_dependency(action: str) -> list[dict]:
+    """Requested functions are hypotheses: existing tool presence proves no feature."""
+    details = []
+    def add(source: str, message: str) -> None:
+        if not any(row["question"] == message for row in details):
+            details.append({"source": source, "question": message})
+    if re.search(r"\b(?:erp|crm|plataforma|sistema)\b", action) and re.search(
+        r"automat|integr|api|conect|webhook|campo|registr|sincron|carga", action):
+        add("CAPACIDAD_TECNICA", "Comprobar con el responsable del ERP/CRM si la función propuesta existe, "
+            "qué permisos y licencias requiere y cómo probarla sin cambiar la operación.")
+    if re.search(r"integr|api|webhook|sincron|intercambi|conect|enviar datos|extraer datos", action):
+        add("CAPACIDAD_TECNICA", "Verificar disponibilidad de integración y controles de acceso, "
+            "tratamiento de datos y auditoría entre los sistemas mencionados.")
+    if re.search(r"avisos?|notific|recordatori|alertas?|correos?|emails?", action):
+        add("CAPACIDAD_TECNICA", "Verificar que el canal actual admite los avisos y sus disparadores, "
+            "manteniendo responsable, permisos y seguimiento.")
+    if re.search(r"firma(?:s)? digital|firma(?:s)? electr[oó]nic", action):
+        add("CAPACIDAD_TECNICA", "Verificar validez de la firma, identidad del firmante y soporte "
+            "real de la herramienta antes de diseñar el control.")
+    if re.search(r"formulario|plantilla|importar|captur|carga de datos", action):
+        add("CAPACIDAD_TECNICA", "Verificar formato de entrada y campos disponibles; "
+            "no suponer que el sistema admite importación o captura automatizada.")
+    if re.search(r"nueva herramienta|nueva plataforma|migrar|sustituir (?:el |la )?(?:erp|crm|sistema)", action):
+        add("DF089", "Revisar la preferencia por las herramientas actuales, el coste "
+            "operativo de cambio y la autorización requerida.")
+    if not details:
+        add("VIABILIDAD_PENDIENTE", "Confirmar con el responsable del proceso que el cambio "
+            "se puede ejecutar con los controles y recursos disponibles.")
+    return details
+
+
 def assess_recommendation(how: str, context: dict, stated_constraints: str = "") -> dict:
-    """Conservative checks: only explicit conflicts become INCOMPATIBLE.
-    Non-conflict is NOT proof that a platform feature is technically feasible.
+    """Source-backed incompatibilities + action-specific checks, never a green feasibility claim.
+
+    The client's answer IDs are the only source for actual limits. Ollama's
+    'constraints' text may be checked for invented bans, never adopted as truth.
+    All outputs are read-only advisory metadata in the existing PG11 DRAFT.
     """
-    text = _normalized(how)
+    action = _normalized(how)
     stated = _normalized(stated_constraints)
-    codes = {x["value"] for x in explain_limits(context)}
-    conflicts = []
-    human = bool(codes & {"HUMAN_DECISION", "APPROVAL", "FINAL_DECISION"})
-    removes_human = bool(re.search(
-        r"(?:sin (?:intervenci[oó]n|decisi[oó]n|aprobaci[oó]n|validaci[oó]n) humana"
-        r"|aprobaci[oó]n autom[aá]tica|aprobar autom[aá]ticamente"
-        r"|(?<!sin )(?<!no )eliminar (?:la |las )?aprobaci[oó]n"
-        r"|(?<!sin )(?<!no )sustituir (?:la |las )?decisi[oó]n humana)",
-        text))
-    if human and removes_human:
-        conflicts.append({
-            "source": "DF075/DF087/DF088",
-            "reason": "La intervención sustituye una aprobación o decisión humana obligatoria.",
-        })
-    financial = "FINANCIAL_ACTION" in codes
-    if financial and re.search(
-        r"(?:(?:ejecutar|realizar|ordenar|autorizar) autom[aá]ticamente "
-        r"(?:pagos?|transferencias?|acciones? financieras?)"
-        r"|(?:pagos?|transferencias?) autom[aá]ticos?)", text):
-        conflicts.append({"source": "DF075/DF088",
-                          "reason": "La intervención automatiza una acción financiera protegida."})
-    if "NO_DOWNTIME" in codes and re.search(
-        r"(?<!sin )(?<!no )(?:paralizar|detener|interrumpir|suspender) "
-        r"(?:la )?(?:operaci[oó]n|actividad|producci[oó]n|servicio)", text):
-        conflicts.append({"source": "DF091",
-                          "reason": "La intervención plantea interrumpir la operación."})
+    declared = explain_limits(context)
+    codes = {item["value"] for item in declared}
+    conflicts: list[dict] = []
+    applicable: list[dict] = []
+    verifications = _action_dependency(action)
+
+    def add_conflict(source: str, reason: str) -> None:
+        if not any(item["source"] == source and item["reason"] == reason
+                   for item in conflicts):
+            conflicts.append({"source": source, "reason": reason})
+
+    def track(source: str, effect: str, reason: str) -> None:
+        if not any(item["source"] == source and item["reason"] == reason
+                   for item in applicable):
+            applicable.append({"source": source, "effect": effect, "reason": reason})
+
+    approval_action = _positive_action(
+        r"(?:aprobaci[oó]n autom[aá]tica|aprobar autom[aá]ticamente|"
+        r"automatizar (?:la |las )?aprobaci[oó]n|"
+        r"(?:eliminar|suprimir|sustituir) (?:la |las )?(?:aprobaciones?|decisi[oó]n humana)|"
+        r"decidir autom[aá]ticamente (?:la )?aprobaci[oó]n)", action)
+    requires_human = bool(codes & {"HUMAN_DECISION", "APPROVAL", "FINAL_DECISION"})
+    if requires_human and approval_action:
+        add_conflict("DF075/DF087/DF088",
+                     "La intervención sustituye o automatiza una aprobación/decisión humana "
+                     "que el cliente ha declarado obligatoria.")
+        track("DF075/DF087/DF088", "BLOCKS",
+              "La aprobación o decisión final debe permanecer en una persona autorizada.")
+    elif requires_human:
+        track("DF075/DF087/DF088", "KEEP",
+              "Mantener la aprobación y las decisiones humanas declaradas.")
+        if re.search(r"aprob|valid|decisi[oó]n|autoriza", action):
+            verifications.append({"source": "DF087/DF088",
+                "question": "Confirmar quién aprueba y cómo queda acreditada su decisión."})
+
+    financial_action = _positive_action(
+        r"(?:(?:ejecutar|realizar|ordenar|autorizar|automatizar) "
+        r"(?:autom[aá]ticamente )?(?:los |las )?(?:pagos?|transferencias?|"
+        r"acciones? financieras?)|(?:pagos?|transferencias?) autom[aá]ticos?)", action)
+    if "FINANCIAL_ACTION" in codes and financial_action:
+        add_conflict("DF075/DF088", "El cliente excluye la ejecución automática de "
+                     "acciones financieras o pagos.")
+        track("DF075/DF088", "BLOCKS", "Los pagos y decisiones financieras quedan fuera del alcance.")
+
+    irreversible = _positive_action(
+        r"(?:(?:eliminar|borrar|suprimir) autom[aá]ticamente "
+        r"(?:los |las )?(?:registros?|datos|documentos?)|"
+        r"(?:eliminaci[oó]n|borrado) autom[aá]tic[oa] irreversible)", action)
+    if "DELETE" in codes and irreversible:
+        add_conflict("DF088", "El cliente prohíbe automatizar eliminaciones irreversibles.")
+        track("DF088", "BLOCKS", "Conservar intervención humana en las eliminaciones.")
+
+    downtime = _positive_action(
+        r"(?:paralizar|detener|interrumpir|suspender) (?:la |las |el )?"
+        r"(?:operaci[oó]n|actividad|producci[oó]n|servicio)|"
+        r"parada (?:de la )?(?:operaci[oó]n|actividad|producci[oó]n)", action)
+    if "NO_DOWNTIME" in codes and downtime:
+        add_conflict("DF091", "La intervención exige detener la operación, prohibido por el cliente.")
+        track("DF091", "BLOCKS", "No interrumpir la operación diaria.")
+    elif "NO_DOWNTIME" in codes:
+        track("DF091", "KEEP", "El cambio debe implantarse sin interrumpir la actividad.")
+        verifications.append({"source": "DF091",
+                              "question": "Comprobar el plan de implantación y reversión "
+                              "sin interrumpir la operación."})
+
+    audit_removal = _positive_action(
+        r"(?:desactivar|eliminar|suprimir|omitir) (?:el |la |los )?"
+        r"(?:registro(?:s)? de )?(?:auditor[ií]a|trazabilidad)", action)
+    if "AUDIT_LOG" in codes and audit_removal:
+        add_conflict("DF090", "La intervención elimina trazabilidad o auditoría exigida por el cliente.")
+        track("DF090", "BLOCKS", "El registro de auditoría debe mantenerse.")
+    elif "AUDIT_LOG" in codes:
+        track("DF090", "KEEP", "Debe mantenerse la trazabilidad de las acciones.")
+        verifications.append({"source": "DF090",
+                              "question": "Verificar que la alternativa conserva evidencias y "
+                              "registro auditable de cada cambio."})
+
+    unrestricted_access = _positive_action(
+        r"(?:sin permisos|sin control de acceso|acceso libre a todos|"
+        r"sin (?:restricciones?|validaci[oó]n) de acceso)", action)
+    if "RBAC" in codes and unrestricted_access:
+        add_conflict("DF090", "La intervención elimina los permisos por rol exigidos por el cliente.")
+        track("DF090", "BLOCKS", "Los permisos deben mantenerse por rol.")
+    elif "RBAC" in codes:
+        track("DF090", "KEEP", "Mantener los permisos por rol existentes.")
+        verifications.append({"source": "DF090",
+                              "question": "Comprobar permisos reales del rol encargado de ejecutar "
+                              "o configurar la mejora."})
+
+    if "MFA" in codes and _positive_action(
+        r"(?:desactivar|eliminar|omitir|suprimir) "
+        r"(?:el |la )?(?:mfa|doble factor|segundo factor|autenticaci[oó]n reforzada)", action):
+        add_conflict("DF090", "La intervención desactiva autenticación reforzada que debe conservarse.")
+        track("DF090", "BLOCKS", "No retirar la autenticación reforzada.")
+
+    # Explicit free-text prohibitions are meaningful, unlike preference codes.
+    for entry in declared:
+        value = _normalized(entry["value"])
+        source = entry["source"]
+        external_prohibited = bool(re.search(
+            r"(?:no se permite|prohibid[oa]|no autoriza|sin acceso)\s+"
+            r"(?:el |la |los )?(?:acceso|env[ií]o|transferencia|salida) "
+            r"(?:de |a |al )?(?:datos? )?(?:extern[oa]s?|fuera)", value)
+            or re.search(r"(?:no se permite|prohibid[oa]) .{0,35}"
+                         r"(?:datos? (?:fuera|extern[oa])|acceso extern)", value))
+        external_action = _positive_action(
+            r"(?:enviar|transferir|publicar|compartir|subir|almacenar) "
+            r"(?:los |las |el |la )?(?:datos?|facturas?|documentos?|informaci[oó]n) "
+            r".{0,65}(?:servicio extern|plataforma externa|nube externa|"
+            r"servidor extern|fuera de (?:la |el )?(?:empresa|entorno))", action)
+        if external_prohibited and external_action:
+            add_conflict(source, "La propuesta envía datos fuera del entorno pese a "
+                         "una prohibición explícita del cliente.")
+            track(source, "BLOCKS", "Los datos no pueden salir del entorno autorizado.")
+        new_tools_prohibited = bool(re.search(
+            r"(?:no (?:se permite|autoriza|quiere|puede) |prohibid[oa] |sin )"
+            r"(?:incorporar |instalar |implantar |introducir )?"
+            r"(?:nuevas? (?:herramientas?|plataformas?|sistemas?)|software nuevo)", value))
+        new_tool_action = _positive_action(
+            r"(?:incorporar|instalar|implantar|introducir|migrar a|usar) "
+            r"(?:una? |el )?(?:nueva? (?:herramienta|plataforma|sistema)|software nuevo)", action)
+        if new_tools_prohibited and new_tool_action:
+            add_conflict(source, "La intervención incorpora una herramienta nueva pese "
+                         "a una prohibición explícita registrada por el cliente.")
+            track(source, "BLOCKS", "No introducir nuevas herramientas sin cambiar el alcance.")
+
     if "CRM_NATIVE" in codes and re.search(
         r"(?:prohibid[ao]|no se permite|no est[aá] permitido).{0,95}"
         r"(?:crm|funcionalidad(?:es)? nativa|funciones? nativa)", stated):
-        conflicts.append({"source": "DF089",
-                          "reason": "La IA presenta como prohibida una preferencia por las funciones nativas."})
-    if "AUDIT_LOG" in codes and re.search(
-        r"(?:desactivar|eliminar|suprimir) (?:el |la |los )?"
-        r"(?:auditor[ií]a|registro de auditor[ií]a|trazabilidad)", text):
-        conflicts.append({"source": "DF090",
-                          "reason": "La propuesta elimina registros de auditoría obligatorios."})
-    if "RBAC" in codes and re.search(
-        r"(?:sin permisos|sin control de acceso|acceso libre a todos)", text):
-        conflicts.append({"source": "DF090",
-                          "reason": "La propuesta omite los permisos por rol."})
+        add_conflict("DF089", "La justificación presenta la preferencia por funciones "
+                     "nativas como una prohibición que el cliente no declaró.")
+        track("DF089", "MISSTATED", "La preferencia por funciones nativas no es un veto.")
+
+    if "KEEP_EXISTING" in codes:
+        if re.search(r"nueva plataforma|nueva herramienta|migrar|sustituir "
+                     r"(?:el |la )?(?:erp|crm|sistema)", action):
+            track("DF089", "PREFERENCE",
+                  "El cliente prefiere mantener sus herramientas; el cambio requiere "
+                  "justificación y autorización, pero no está prohibido.")
+        else:
+            track("DF089", "PREFERENCE", "Se prioriza aprovechar las herramientas actuales.")
+    if "CRM_NATIVE" in codes:
+        track("DF089", "PREFERENCE",
+              "Las funciones nativas se prefieren, sin dar por probada su disponibilidad.")
+    if "TRAINING" in codes:
+        track("DF091", "REVIEW", "La implantación debe contemplar la formación necesaria.")
+        verifications.append({"source": "DF091",
+                              "question": "Validar esfuerzo de formación y responsable de adopción."})
+
+    # Additional declared restrictions still need human review even if there is
+    # no rule-specific detector. Do NOT automatically classify them as satisfied.
+    handled_sources = set()
+    for row in applicable:
+        handled_sources.update(row["source"].split("/"))
+    for entry in declared:
+        if entry["source"] not in handled_sources and entry["source"] in {
+                "DF010", "DF073", "DF075", "DF087", "DF088", "DF089", "DF090", "DF091", "DF092"}:
+            track(entry["source"], "REVIEW",
+                  "Contrastar el cambio con la condición declarada: " + entry["meaning"] + ".")
+
     if conflicts:
-        return {"status": "INCOMPATIBLE", "conflicts": conflicts,
-                "reason": " ".join(x["reason"] for x in conflicts)}
-    # A client preference is not an unconditional ban on changing tools.
-    preference = ("El cliente prefiere mantener las herramientas actuales; "
-                  "es necesario justificar y autorizar cualquier sustitución. "
-                  if "KEEP_EXISTING" in codes and re.search(
-                      r"nueva plataforma|sustituir (?:el |la )?(?:erp|crm|sistema)"
-                      r"|migrar a otro sistema", text) else "")
-    return {"status": "CONDITIONED", "conflicts": [],
-            "reason": preference + "No se ha detectado una incompatibilidad explícita. "
-                      "Debe validarse la viabilidad técnica, los permisos y la adopción."}
+        reason = "Incompatibilidad con " + ", ".join(
+            dict.fromkeys(x["source"] for x in conflicts)) + ": " + conflicts[0]["reason"]
+    else:
+        relevant = next((row for row in applicable if row["effect"] == "PREFERENCE"), None)
+        reason = (relevant["reason"] + " " if relevant else "") + (
+            "Viabilidad sin acreditar: " + verifications[0]["question"])
+    return {
+        "status": "INCOMPATIBLE" if conflicts else "CONDITIONED",
+        "conflicts": conflicts,
+        "checks": applicable,
+        "verifications": verifications,
+        "capability_status": "UNVERIFIED",
+        "reason": reason,
+    }
+
 
 # [AUNEA-BE-PG11-GLOBAL-REVIEW-292] END
