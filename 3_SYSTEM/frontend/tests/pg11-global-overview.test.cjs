@@ -135,6 +135,39 @@ test('global explanation uses confirmed friction metrics and does not read later
  assert.match(output,/Contrasta las cifras con las referencias del AS-IS confirmado/);
 });
 
+test('saved legacy analysis ending mid-sentence is not shown as a valid global brief',()=>{
+ const h=harness([{objective:'Reducir tiempos de reintroducción manual',
+   how:'Implementar una mejora directa en el ERP, este paso debe a',
+   why:'El 100 % de los casos presenta reintroducción documentada.',
+   constraints:'Mantener las autorizaciones.',source_refs:['S1','F1']}]);
+ h.env.p.aiGlobal.result.summary=
+   'Se identifican tres oportunidades operativas. Las intervenciones prop';
+ const html=h.html();
+ assert.match(html,/Propuesta incompleta · Reanalizar/);
+ assert.match(html,/Análisis anterior incompleto/);
+ assert.match(html,/contiene frases cortadas/);
+ assert.match(html,/Volver a analizar/);
+ assert.doesNotMatch(html,/Las intervenciones prop|este paso debe a/);
+ assert.doesNotMatch(html,/tobe-global-opportunity-body/);
+ assert.ok(h.env.p.aiGlobal.result.summary.includes('intervenciones prop'),
+   'the historical record remains intact until an explicit new generation');
+});
+
+test('complete global summaries and recommendations are shown in full beyond 240 characters',()=>{
+ const longSummary=('Se identifican mejoras en la coordinación del proceso. ').repeat(7).trim();
+ const how=('Reutilizar registros existentes con validación del responsable, '+
+   'sin interrumpir los trabajos ni suprimir la aprobación humana. ').repeat(5).trim();
+ const h=harness([{objective:'Mejorar visibilidad y trazabilidad',
+   how,why:'El proceso presenta reintroducción de datos documentada.',
+   constraints:'Mantener autorización humana.',source_refs:['S1']}]);
+ h.env.p.aiGlobal.result.summary=longSummary;
+ assert.ok(how.length>240&&longSummary.length>240);
+ const html=h.html();
+ assert.ok(html.includes(longSummary));
+ assert.ok(html.includes(how));
+ assert.doesNotMatch(html,/Análisis anterior incompleto/);
+});
+
 test('stale global response cannot appear as current after AS-IS change',()=>{
   const h=harness([{objective:'Oportunidad antigua',how:'Intervención antigua',why:'Referencia anterior',
     constraints:'',source_refs:['S1']}]);
