@@ -137,8 +137,26 @@ def internal_ai_tobe_review_basic(payload: PilotAIConsolidationRequest, request:
 # [AUNEA-BE-PG11-GLOBAL-AI-API-283] START — explicit, isolated process-level IA
 # SOURCE: Simulator CANONICAL PG11; confirmed source/diagnostic; Ollama local only.
 # No automatic decisions, edits to TO-BE fields, or publishing.
+from .internal_ai_global import GlobalBatchRequest
+
+@app.post("/v1/internal-ai/tobe-global-plan")
+def internal_ai_tobe_global_plan(payload: PilotAIRequest, request: FastAPIRequest):
+    # No Ollama inference; inventory is based only on the confirmed AS-IS.
+    if request.client is None or request.client.host not in ("127.0.0.1", "::1", "testclient"):
+        raise HTTPException(403, "El inventario global IA sólo admite conexiones locales.")
+    if os.getenv("AUNEA_INTERNAL_AI_PROVIDER", "").strip().lower() != "ollama" or (
+        os.getenv("AUNEA_INTERNAL_AI_ENABLED") != "1" or
+        os.getenv("AUNEA_INTERNAL_AI_DATA_AUTHORIZED") != "1"
+    ):
+        raise HTTPException(503, "El inventario IA necesita Ollama local y autorización.")
+    from .internal_ai_global import global_plan
+    try:
+        return global_plan(payload)
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+
 @app.post("/v1/internal-ai/tobe-global")
-def internal_ai_tobe_global(payload: PilotAIRequest, request: FastAPIRequest):
+def internal_ai_tobe_global(payload: GlobalBatchRequest, request: FastAPIRequest):
     if request.client is None or request.client.host not in ("127.0.0.1", "::1", "testclient"):
         raise HTTPException(403, "El análisis global IA sólo admite conexiones locales.")
     if os.getenv("AUNEA_INTERNAL_AI_PROVIDER", "").strip().lower() != "ollama":
