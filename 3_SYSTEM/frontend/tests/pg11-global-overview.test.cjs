@@ -278,7 +278,7 @@ test('global orchestration persists five sources, reasons for discard and a vali
  const p={status:'DRAFT',version:2,sourceSnapshotVersion:3,items:[]},
    e={id:'E1',confirmedAsIs:true,tobeProposals:[p]};
  const ids=['F1','F2','F3','F4','F5'];
- let persisted='',count=0,alternatives=0;
+ let persisted='',count=0,alternatives=0,blockedConstraints=[];
  const env={
    __auneaAiWorking:new Set(),__auneaPg11ReviewProtocol:'PG11_REVIEW_20261103_3',
    internalAiPilotKey:()=> 'E1|3|HASH|TOBE:2',currentEng:()=>e,latestTobe:()=>p,
@@ -302,7 +302,7 @@ test('global orchestration persists five sources, reasons for discard and a vali
      if(url.endsWith('/tobe-global')){
        const body=JSON.parse(opts.body);
        assert.ok(ids.includes(body.focus_source_id));
-       if(body.blocked_action)alternatives++;
+       if(body.blocked_action){alternatives++;blockedConstraints.push(body.blocked_constraints);}
        else count++;
        const alt=!!body.blocked_action,id=body.focus_source_id;
        return {ok:true,json:async()=>({
@@ -328,6 +328,7 @@ test('global orchestration persists five sources, reasons for discard and a vali
  await env.generateTobeGlobal(e);
  assert.equal(count,5);
  assert.equal(alternatives,1);
+ assert.equal(blockedConstraints[0],'Conservar políticas actuales.');
  assert.equal(p.aiGlobal.result.opportunities.length,5);
  assert.equal(p.aiGlobal.result.complete,true);
  assert.equal(p.aiGlobal.result.progress.completed,5);
