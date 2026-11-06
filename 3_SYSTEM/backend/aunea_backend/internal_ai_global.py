@@ -19,8 +19,8 @@ from .internal_ai_ollama import (
 )
 from .utils import stable_hash
 
-MAX_GLOBAL_INPUT_TOKENS = 4000
-MAX_GLOBAL_OUTPUT_TOKENS = 2200
+MAX_GLOBAL_INPUT_TOKENS = 5000
+MAX_GLOBAL_OUTPUT_TOKENS = 1700
 
 class GlobalOpportunity(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -66,12 +66,11 @@ GLOBAL_PROMPT = (
     "con el cliente herramientas, controles, autorizaciones y factibilidad. "
     "Traduce las restricciones a español legible: no copies códigos DF, RBAC, "
     "AUDIT_LOG, KEEP_EXISTING o HUMAN_DECISION. "
-    "summary: una o dos frases completas, máximo 360 caracteres. "
-    "how: describe en dos o tres frases completas la intervención y su viabilidad, "
-    "máximo 480 caracteres; no cortes una recomendación a mitad para cumplir longitud. "
-    "why: una o dos frases completas, máximo 380 caracteres; puede citar cantidades "
-    "del AS-IS con procedencia, nunca inventar otra medición. "
-    "constraints: explica las limitaciones en lenguaje natural, máximo 300 caracteres. "
+    "summary: una o dos frases completas, máximo 240 caracteres. "
+    "how: una o dos frases completas, máximo 320 caracteres. "
+    "why: una o dos frases completas, máximo 260 caracteres, "
+    "con cantidades del AS-IS solo cuando estén vinculadas a fuentes. "
+    "constraints: condiciones del cliente en lenguaje natural, máximo 200 caracteres. "
     "Es más importante cerrar la frase que alcanzar el límite de caracteres. "
     "Termina summary, how y why con punto. Nunca devuelvas frases a medias. "
     "Máximo tres oportunidades; cada texto debe ser breve y legible. "
@@ -389,36 +388,69 @@ def analyze_global(payload: PilotAIRequest) -> dict:
         "options": {"temperature": 0, "num_ctx": num_ctx,
                     "num_predict": MAX_GLOBAL_OUTPUT_TOKENS},
     }, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
-    byte_limit = 12000 if num_ctx >= 8192 else 6800
+    byte_limit = 21000 if num_ctx >= 8192 else 10000
     if len(body) > byte_limit:
         raise ValueError("El contexto global supera el presupuesto IA acotado (" +
                          str(len(body)) + "/" + str(byte_limit) +
                          " bytes). Reducir o segmentar evidencia conservando las fuentes.")
-    request = Request(LOCAL_URL + "/api/chat", data=body, method="POST",
-                      headers={"Content-Type": "application/json"})
-    try:
-        with _LOCAL_HTTP.open(request, timeout=min(request_timeout_seconds(), 480)) as response:
-            result = json.loads(response.read(100_000).decode("utf-8"))
-    except HTTPError as exc:
-        raise OllamaUnavailable("Ollama rechazó el análisis global (HTTP " + str(exc.code) +
-                                "). Revisa su memoria y la ventana de contexto.") from exc
-    except (socket.timeout, TimeoutError) as exc:
-        raise OllamaUnavailable("El análisis global no terminó en el límite de ejecución.") from exc
-    except (URLError, OSError) as exc:
-        raise OllamaUnavailable("No se pudo conectar con Ollama local para el análisis global.") from exc
-    except (UnicodeError, ValueError, TypeError) as exc:
-        raise ValueError("El motor IA global devolvió datos no interpretables.") from exc
-    if result.get("done") is not True or result.get("done_reason") == "length":
-        raise ValueError("El motor no terminó el análisis global; no se ha guardado una propuesta parcial.")
-    tokens = result.get("prompt_eval_count")
-    if isinstance(tokens, int) and tokens > MAX_GLOBAL_INPUT_TOKENS:
-        raise ValueError("La entrada global superó el presupuesto medido del piloto IA.")
-    message = result.get("message")
-    try:
-        raw = json.loads(message["content"])
-    except (KeyError, TypeError, ValueError) as exc:
-        raise ValueError("El análisis global no devolvió un JSON completo.") from exc
-    brief = validate_global_brief(raw, source_ids, context)
+    # Fail closed on unverified content, but allow one bounded repair pass.
+    # Small local models sometimes omit a final period or copy a technical
+    # catalogue label. Do not discard the whole output before a chance to
+    # correct it using the SAME confirmed source and source_refs contract.
+    brief = None
+    last_issue = ""
+    for attempt in range(2):
+        wire = body
+        if attempt:
+            repair = (
+                "La salida anterior no superó las comprobaciones: " + last_issue[:320] +
+                ". Regenera desde el AS-IS entregado. Máximo tres recomendaciones. "
+                "Completa todas las frases con punto, usa referencias reales y no "
+                "inventes cantidades ni plazos. Convierte códigos técnicos a "
+                "español corriente. Respuesta JSON completa y concisa."
+            )
+            retry_body = json.loads(body)
+            retry_body["messages"][0]["content"] += " " + repair
+            wire = json.dumps(retry_body, ensure_ascii=False,
+                              separators=(",", ":")).encode("utf-8")
+            if len(wire) > byte_limit:
+                raise ValueError("La corrección de la propuesta excede el presupuesto IA global.") 
+        request = Request(LOCAL_URL + "/api/chat", data=wire, method="POST",
+                          headers={"Content-Type": "application/json"})
+        try:
+            with _LOCAL_HTTP.open(request, timeout=min(request_timeout_seconds(), 480)) as response:
+                result = json.loads(response.read(100_000).decode("utf-8"))
+        except HTTPError as exc:
+            raise OllamaUnavailable("Ollama rechazó el análisis global (HTTP " +
+                                    str(exc.code) + "). Revisa memoria y contexto.") from exc
+        except (socket.timeout, TimeoutError) as exc:
+            raise OllamaUnavailable("El análisis global excedió el límite de ejecución.") from exc
+        except (URLError, OSError) as exc:
+            raise OllamaUnavailable("No se pudo conectar con Ollama local.") from exc
+        except (UnicodeError, ValueError, TypeError) as exc:
+            raise ValueError("El motor IA devolvió datos no interpretables.") from exc
+        if result.get("done") is not True or result.get("done_reason") == "length":
+            last_issue = "El motor no terminó el análisis global."
+            continue
+        tokens = result.get("prompt_eval_count")
+        if isinstance(tokens, int) and tokens > MAX_GLOBAL_INPUT_TOKENS:
+            raise ValueError("La entrada global superó el presupuesto medido del piloto IA.")
+        message = result.get("message")
+        try:
+            raw = json.loads(message["content"])
+        except (KeyError, TypeError, ValueError):
+            last_issue = "El modelo no devolvió un JSON completo."
+            continue
+        try:
+            brief = validate_global_brief(raw, source_ids, context)
+        except ValueError as exc:
+            last_issue = str(exc)
+            continue
+        break
+    if brief is None:
+        raise ValueError(
+            "Ollama no produjo una propuesta global verificable en dos intentos. " +
+            last_issue + " Se ha conservado el AS-IS y no se aprobaron cambios.")
     return {
         "status": "DRAFT", "requires_human_review": True,
         "engagement_id": payload.engagement.engagement_id,
