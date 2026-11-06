@@ -2089,10 +2089,12 @@ function tobeGlobalOverviewHtml(e,p){
     alternatives=opportunities.filter(x=>!!x.alternative).length,
     pending=opportunities.filter(x=>x.review?.status!=='INCOMPATIBLE').length,
     variants=opportunities.reduce((n,x)=>n+(x.related||[]).length,0),
-    thematicGroups=typeof tobeGlobalQualityGroups==='function'?
-      tobeGlobalQualityGroups(opportunities).groups:
+    qualityPlan=typeof tobeGlobalQualityGroups==='function'?
+      tobeGlobalQualityGroups(opportunities):null,
+    thematicGroups=qualityPlan?.groups||
       opportunities.map((item,index)=>({title:item.objective,
-        entries:[{item,index,issues:[]}]}));
+        entries:[{item,index,issues:[]}],expectedOutcome:'Por verificar.',
+        technicalChecks:[],evidenceRefs:item.source_refs||[]}));
   const source=tobeProposalSourceSteps(e,p),
     confirmed=typeof tobeProposalSnapshot==='function'?tobeProposalSnapshot(e,p):null,
     record=confirmed||{frictions:[],risks:[]};
