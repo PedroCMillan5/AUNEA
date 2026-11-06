@@ -114,7 +114,7 @@ test('global objectives reveal a grounded explanation and restrictions on demand
     constraints:'No modificar el sistema principal sin autorización.',
     source_refs:['S1','F1']}]).html();
   assert.match(output,/Evitar duplicar/);
-  assert.match(output,/Cómo conseguirlo:/);
+  assert.match(output,/Intervención IA inicial:/);
   assert.match(output,/<details><summary>Ver justificación y restricciones/);
   assert.match(output,/No modificar el sistema principal/);
   assert.match(output,/Paso: Recepción/);
@@ -168,6 +168,32 @@ test('complete global summaries and recommendations are shown in full beyond 240
  assert.ok(html.includes(longSummary));
  assert.ok(html.includes(how));
  assert.doesNotMatch(html,/Análisis anterior incompleto/);
+});
+
+test('PG11 can display five independent recommendations and an incompatible alternative',()=>{
+ const recs=Array.from({length:5},(_,i)=>({
+   objective:'Intervención '+(i+1)+' sobre fricción independiente',
+   how:'Mejorar el registro y control del problema '+(i+1)+'.',
+   why:'Existe una fricción diferente confirmada por el estudio.',
+   constraints:'Conservar permisos existentes.',source_refs:['F1'],
+   review:{status:'CONDITIONED',reason:'Revisar compatibilidad técnica.',conflicts:[]}
+ }));
+ recs[0].review={status:'INCOMPATIBLE',
+   reason:'Sustituye una decisión humana obligatoria.',
+   conflicts:[{source:'DF087',reason:'Conservar aprobación humana.'}]};
+ recs[0].alternative={how:'Emitir avisos sin sustituir la aprobación humana.',
+   why:'Seguimiento de pendientes.',review:{
+     status:'CONDITIONED',reason:'Comprobar herramientas existentes.',conflicts:[]}};
+ const h=harness(recs);
+ h.env.p.aiGlobal.result.complete=true;
+ h.env.p.aiGlobal.result.progress={completed:5,total:5,failed:0};
+ const html=h.html();
+ assert.equal((html.match(/class="tobe-global-opportunity"/g)||[]).length,5);
+ assert.match(html,/Fuentes revisadas: 5 de 5/);
+ assert.match(html,/Descartada por incompatibilidad explícita/);
+ assert.match(html,/Alternativa propuesta/);
+ assert.match(html,/Emitir avisos sin sustituir la aprobación humana/);
+ assert.match(html,/DF087: Conservar aprobación humana/);
 });
 
 test('stale global response cannot appear as current after AS-IS change',()=>{
@@ -241,7 +267,7 @@ test('global IA uses the existing local endpoint and durably saves only DRAFT su
     'El análisis de las fuentes confirmadas identifica 1 intervención para revisión del consultor.');
   assert.ok(saved.length>=5,'the reset, initial progress, each unit and consolidated result must be saved');
   assert.equal(sandbox.internalAiGlobalMessage(e).working,false);
-  assert.match(sandbox.internalAiGlobalMessage(e).message,/guardado/);
+  assert.match(sandbox.internalAiGlobalMessage(e).message,/guardada/);
 });
 
 test('global reanalysis clears and persists the previous brief even if the new request fails',async()=>{
