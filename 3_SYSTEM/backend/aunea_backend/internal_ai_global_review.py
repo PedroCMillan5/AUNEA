@@ -129,11 +129,12 @@ def scoped_context(context: dict, focus_id: str, original_answers: dict) -> tupl
 def _normalized(text: str) -> str:
     return re.sub(r"\s+", " ", text.casefold()).strip()
 
-def assess_recommendation(how: str, context: dict) -> dict:
+def assess_recommendation(how: str, context: dict, stated_constraints: str = "") -> dict:
     """Conservative checks: only explicit conflicts become INCOMPATIBLE.
     Non-conflict is NOT proof that a platform feature is technically feasible.
     """
     text = _normalized(how)
+    stated = _normalized(stated_constraints)
     codes = {x["value"] for x in explain_limits(context)}
     conflicts = []
     human = bool(codes & {"HUMAN_DECISION", "APPROVAL", "FINAL_DECISION"})
@@ -150,21 +151,41 @@ def assess_recommendation(how: str, context: dict) -> dict:
         })
     financial = "FINANCIAL_ACTION" in codes
     if financial and re.search(
-        r"(?:ejecutar|realizar|ordenar|autorizar) (?:autom[aá]ticamente )?"
-        r"(?:pagos?|transferencias?|acciones? financieras?)", text):
+        r"(?:(?:ejecutar|realizar|ordenar|autorizar) autom[aá]ticamente "
+        r"(?:pagos?|transferencias?|acciones? financieras?)"
+        r"|(?:pagos?|transferencias?) autom[aá]ticos?)", text):
         conflicts.append({"source": "DF075/DF088",
                           "reason": "La intervención automatiza una acción financiera protegida."})
     if "NO_DOWNTIME" in codes and re.search(
-        r"(?:paralizar|detener|interrumpir|suspender) "
+        r"(?<!sin )(?<!no )(?:paralizar|detener|interrumpir|suspender) "
         r"(?:la )?(?:operaci[oó]n|actividad|producci[oó]n|servicio)", text):
         conflicts.append({"source": "DF091",
                           "reason": "La intervención plantea interrumpir la operación."})
+    if "CRM_NATIVE" in codes and re.search(
+        r"(?:prohibid[ao]|no se permite|no est[aá] permitido).{0,95}"
+        r"(?:crm|funcionalidad(?:es)? nativa|funciones? nativa)", stated):
+        conflicts.append({"source": "DF089",
+                          "reason": "La IA presenta como prohibida una preferencia por las funciones nativas."})
+    if "AUDIT_LOG" in codes and re.search(
+        r"(?:desactivar|eliminar|suprimir) (?:el |la |los )?"
+        r"(?:auditor[ií]a|registro de auditor[ií]a|trazabilidad)", text):
+        conflicts.append({"source": "DF090",
+                          "reason": "La propuesta elimina registros de auditoría obligatorios."})
+    if "RBAC" in codes and re.search(
+        r"(?:sin permisos|sin control de acceso|acceso libre a todos)", text):
+        conflicts.append({"source": "DF090",
+                          "reason": "La propuesta omite los permisos por rol."})
     if conflicts:
         return {"status": "INCOMPATIBLE", "conflicts": conflicts,
                 "reason": " ".join(x["reason"] for x in conflicts)}
-    # Conditions are not prohibitions; preserve client preferences.
+    # A client preference is not an unconditional ban on changing tools.
+    preference = ("El cliente prefiere mantener las herramientas actuales; "
+                  "es necesario justificar y autorizar cualquier sustitución. "
+                  if "KEEP_EXISTING" in codes and re.search(
+                      r"nueva plataforma|sustituir (?:el |la )?(?:erp|crm|sistema)"
+                      r"|migrar a otro sistema", text) else "")
     return {"status": "CONDITIONED", "conflicts": [],
-            "reason": "No se ha detectado una incompatibilidad explícita. "
+            "reason": preference + "No se ha detectado una incompatibilidad explícita. "
                       "Debe validarse la viabilidad técnica, los permisos y la adopción."}
 
 # [AUNEA-BE-PG11-GLOBAL-REVIEW-292] END
