@@ -358,11 +358,21 @@ async function generateTobeGlobal(e,options={}){
               try{
                 const alternative=await callScoped({
                   ...payload,focus_source_id:unit.source_id,
-                  blocked_action:proposed.how});
+                  blocked_action:proposed.how,
+                  blocked_constraints:proposed.constraints});
                 verifiedOwner();
-                const valid=(alternative.opportunities||[]).find(x=>
-                  x.review?.status!=='INCOMPATIBLE'&&
-                  x.source_refs?.includes(unit.source_id));
+                if(alternative?.status!=='DRAFT'||alternative.engagement_id!==e.id||
+                   alternative.snapshot_version!==snap.version||
+                   alternative.input_hash!==plan.input_hash||
+                   alternative.focus_source_id!==unit.source_id||
+                   !Array.isArray(alternative.opportunities))
+                  throw Error('La alternativa no corresponde a la fuente ni al diagnóstico vigentes.');
+                const valid=alternative.opportunities.find(x=>
+                  x.review?.status==='CONDITIONED'&&
+                  Array.isArray(x.review.conflicts)&&x.review.conflicts.length===0&&
+                  x.source_refs?.includes(unit.source_id)&&
+                  typeof x.how==='string'&&x.how.trim()&&
+                  typeof x.why==='string'&&x.why.trim());
                 if(valid){
                   proposed.alternative={
                     objective:String(valid.objective||''),
