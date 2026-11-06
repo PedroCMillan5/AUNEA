@@ -198,16 +198,17 @@ test('global IA uses the existing local endpoint and durably saves only DRAFT su
   assert.equal(p.items[0].futureActor,'Consultor');
   assert.equal(JSON.parse(persisted).engagements[0].tobeProposals[0].aiGlobal.result.summary,
     'Reducir duplicidades manteniendo los controles.');
-  assert.equal(saved.length,2);
+  assert.equal(saved.length,3,'edits, cleared analysis and new result are each saved');
   assert.equal(sandbox.internalAiGlobalMessage(e).working,false);
   assert.match(sandbox.internalAiGlobalMessage(e).message,/guardado/);
 });
 
-test('global IA keeps the previous saved brief after an unsuccessful request',async()=>{
+test('global reanalysis clears and persists the previous brief even if the new request fails',async()=>{
   const aiBlock=ai.match(/\/\/ \[AUNEA-FE-PG11-GLOBAL-AI-285\] START[\s\S]*?\/\/ \[AUNEA-FE-PG11-GLOBAL-AI-285\] END/)?.[0];
   const previous={result:{summary:'Análisis anterior validado como borrador'}};
   const p={status:'DRAFT',version:2,sourceSnapshotVersion:3,items:[],aiGlobal:previous};
   const e={id:'E1',confirmedAsIs:true,tobeProposals:[p]};
+  let persisted='';
   const sandbox={
     __auneaAiWorking:new Set(),
     __auneaPg11ReviewProtocol:'PG11_REVIEW_20261103_3',
@@ -215,7 +216,7 @@ test('global IA keeps the previous saved brief after an unsuccessful request',as
     currentEng:()=>e,latestTobe:()=>p,confirmedSnapshot:()=>({version:3}),
     currentDiagnosticOutput:()=>({input_snapshot_hash:'HASH'}),
     tobeEditable:()=>true,isClientDisplay:()=>false,
-    saveTobeFromDom:()=>true,saveState:()=>true,markDirty:()=>{},
+    saveTobeFromDom:()=>true,saveState:()=>{persisted=JSON.stringify({engagements:[e]});return true;},markDirty:()=>{},
     toast:()=>{},document:{getElementById:()=>null},
     state:{backendOnline:true,backendUrl:'http://127.0.0.1:8010'},
     checkBackend:async()=>true,buildBackendPayload:()=>({engagement_id:'E1'}),
@@ -226,9 +227,64 @@ test('global IA keeps the previous saved brief after an unsuccessful request',as
   };
   vm.createContext(sandbox);vm.runInContext(aiBlock,sandbox);
   await sandbox.generateTobeGlobal(e);
-  assert.equal(p.aiGlobal,previous,'failed inference must preserve previous version-owned brief');
+  assert.equal(p.aiGlobal,undefined,'an unsuccessful reanalysis must not revive an obsolete proposal');
+  assert.equal(JSON.parse(persisted).engagements[0].tobeProposals[0].aiGlobal,undefined,
+    'the old proposal must also be absent after a browser reload');
   assert.equal(sandbox.internalAiGlobalWorking(e),false);
   assert.match(sandbox.internalAiGlobalMessage(e).message,/contexto supera el presupuesto IA/);
+});
+
+
+test('clicking reanalyse clears displayed cards before Ollama returns, including after reload',async()=>{
+ const aiBlock=ai.match(/\/\/ \[AUNEA-FE-PG11-GLOBAL-AI-285\] START[\s\S]*?\/\/ \[AUNEA-FE-PG11-GLOBAL-AI-285\] END/)?.[0];
+ assert.ok(aiBlock);
+ const oldBrief={tobeVersion:2,sourceSnapshotVersion:3,diagnosticInputHash:'HASH',
+   result:{status:'DRAFT',engagement_id:'E1',snapshot_version:3,
+     summary:'TEXTO ANTIGUO QUE NO DEBE MOSTRARSE',
+     opportunities:[{objective:'Antigua recomendación',how:'Antigua acción.',
+       why:'Antigua justificación.',constraints:'',source_refs:['S1']}]}};
+ const p={status:'DRAFT',version:2,sourceSnapshotVersion:3,items:[],aiGlobal:oldBrief},
+   e={id:'E1',confirmedAsIs:true,tobeProposals:[p]};
+ let disk='',finishStatus;
+ const statusPending=new Promise(resolve=>{finishStatus=resolve});
+ const ctx={
+   __auneaAiWorking:new Set(),
+   __auneaPg11ReviewProtocol:'PG11_REVIEW_20261103_3',
+   internalAiPilotKey:()=> 'E1|3|HASH|TOBE:2',
+   currentEng:()=>e,latestTobe:()=>p,confirmedSnapshot:()=>({version:3}),
+   currentDiagnosticOutput:()=>({input_snapshot_hash:'HASH'}),
+   tobeEditable:()=>true,isClientDisplay:()=>false,saveTobeFromDom:()=>true,
+   saveState:()=>{disk=JSON.stringify({engagements:[e]});return true},
+   markDirty:()=>{},toast:()=>{},now:()=> '2026-11-06T09:00:00Z',
+   STORAGE_KEY:'STORE',localStorage:{getItem:()=>disk},
+   document:{getElementById:()=>null},state:{backendOnline:true,backendUrl:'http://127.0.0.1:8010'},
+   checkBackend:async()=>true,buildBackendPayload:()=>({engagement_id:'E1'}),
+   console:{error:()=>{}},
+   fetch:async(url)=>url.endsWith('/status')?statusPending:
+     {ok:false,status:409,json:async()=>({detail:'El motor local no terminó'})}
+ };
+ vm.createContext(ctx);vm.runInContext(aiBlock,ctx);
+ const pending=ctx.generateTobeGlobal(e);
+ assert.equal(p.aiGlobal,undefined,'the old result must disappear synchronously on click');
+ assert.equal(JSON.parse(disk).engagements[0].tobeProposals[0].aiGlobal,undefined,
+   'the empty state must be durable before the external request');
+ assert.equal(ctx.internalAiGlobalWorking(e),true);
+ // Render with the normal page component while Ollama is unresolved.
+ const view={currentDiagnosticOutput:()=>({input_snapshot_hash:'HASH'}),
+   tobeProposalSourceSteps:()=>[],tobeProposalSnapshot:()=>({frictions:[],risks:[]}),
+   tobeEditable:()=>true,internalAiGlobalWorking:()=>ctx.internalAiGlobalWorking(e),
+   internalAiGlobalMessage:()=>ctx.internalAiGlobalMessage(e),esc:String};
+ vm.createContext(view);vm.runInContext(block,view);
+ const during=view.tobeGlobalOverviewHtml(e,p);
+ assert.match(during,/Se ha retirado el análisis anterior/);
+ assert.doesNotMatch(during,/TEXTO ANTIGUO|Antigua recomendación|Antigua acción/);
+ finishStatus({ok:true,json:async()=>({
+   status:'AVAILABLE',provider:'ollama',pg11_review_protocol:'PG11_REVIEW_20261103_3'})});
+ await pending;
+ const after=view.tobeGlobalOverviewHtml(e,p);
+ assert.doesNotMatch(after,/TEXTO ANTIGUO|Antigua recomendación|Antigua acción/);
+ assert.match(after,/No se generó una propuesta global nueva/);
+ assert.equal(JSON.parse(disk).engagements[0].tobeProposals[0].aiGlobal,undefined);
 });
 
 // [AUNEA-UAT-PG11-GLOBAL-OVERVIEW-288] END
