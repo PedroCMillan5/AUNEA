@@ -136,14 +136,8 @@ async function generateTobeGlobal(e){
   if(!liveBefore||liveBefore.id!==e.id||!tobeEditable(draftBefore)||
      draftBefore.version!==p.version||internalAiPilotKey(liveBefore)!==key)
     return toast('El borrador o el diagnóstico cambiaron. Revisa el estudio.');
-  delete draftBefore.aiGlobal;
-  markDirty('PG11: iniciar nuevo análisis global por fuentes confirmadas');
-  if(!saveState('Guardar reinicio del análisis global v'+draftBefore.version)){
-    __auneaGlobalAiFeedback.set(key,{working:false,type:'warn',
-      message:'No se pudo guardar el reinicio del análisis global. No se inició Ollama.'});
-    internalAiGlobalRefresh(currentEng());
-    return;
-  }
+  // Check the backend strategy BEFORE invalidating any saved global proposal.
+  // An out-of-date local Uvicorn process must never erase valid draft content.
   __auneaAiWorking.add(key);
   __auneaGlobalAiFeedback.set(key,{working:true,type:'info',
     message:'Preparando inventario de oportunidades desde el AS-IS confirmado…'});
@@ -159,6 +153,10 @@ async function generateTobeGlobal(e){
       throw Error(String(status.reason||'Ollama local no está disponible o autorizado.'));
     if(status.pg11_review_protocol!==__auneaPg11ReviewProtocol)
       throw Error('El backend de PG11 no coincide. Reinicia el backend y actualiza la página.');
+    if(status.pg11_global_strategy!=='SCOPED_V1')
+      throw Error('El backend 8010 utiliza una versión anterior de la IA global. '+
+        'Reinicia el backend actualizado: falta la estrategia por bloques. '+
+        'La propuesta anterior no se ha borrado.');
     const source=currentEng(),snap=confirmedSnapshot(source),diagnostic=currentDiagnosticOutput(source),
       payload={engagement:buildBackendPayload(source),diagnostic,
         confirmed_as_is:source.confirmedAsIs===true,snapshot_version:snap.version};
@@ -167,7 +165,10 @@ async function generateTobeGlobal(e){
         method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
       if(!response.ok){
         const error=await response.json().catch(()=>null);
-        const message=typeof error?.detail==='string'?error.detail:
+        const message=response.status===404?
+          'El backend 8010 no tiene la ruta de análisis por bloques. Reinicia el backend '+
+          'con el código de la rama actual y recarga la página.':
+          typeof error?.detail==='string'?error.detail:
           typeof error?.detail?.message==='string'?error.detail.message:'Respuesta IA no válida.';
         const failure=Error('HTTP '+response.status+': '+message);
         failure.status=response.status;throw failure;
@@ -179,6 +180,18 @@ async function generateTobeGlobal(e){
        !plan.input_hash||!Array.isArray(plan.focus)||
        plan.focus.some(x=>!x.source_id||typeof x.source_id!=='string'))
       throw Error('Inventario de oportunidades no corresponde al AS-IS vigente.');
+    // Plan exists and is compatible. Only now make the explicit reanalysis
+    // durable: all old cards disappear before any call to Ollama.
+    const preflightLive=currentEng(),preflightDraft=latestTobe(preflightLive);
+    if(!preflightLive||preflightLive.id!==e.id||!tobeEditable(preflightDraft)||
+       preflightDraft.version!==p.version||internalAiPilotKey(preflightLive)!==key||
+       confirmedSnapshot(preflightLive)?.version!==snap.version||
+       currentDiagnosticOutput(preflightLive)?.input_snapshot_hash!==diagnostic.input_snapshot_hash)
+      throw Error('El estudio cambió durante la verificación del backend.');
+    delete preflightDraft.aiGlobal;
+    markDirty('PG11: iniciar nuevo análisis global por fuentes confirmadas');
+    if(!saveState('Guardar reinicio del análisis global v'+preflightDraft.version))
+      throw Error('No se pudo guardar el reinicio del análisis global. No se inició Ollama.');
     total=plan.focus.length;
     const items=[],doneSources=[];
     const verifiedOwner=()=>{
