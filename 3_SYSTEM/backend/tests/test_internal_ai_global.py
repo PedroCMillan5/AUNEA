@@ -250,8 +250,9 @@ def test_global_constraints_do_not_turn_native_preferences_into_bans():
     wrongly_forbidden=assess_recommendation(
         "Crear un registro de seguimiento.",ctx,
         "Está prohibido utilizar funcionalidades nativas del CRM.")
-    assert wrongly_forbidden["status"]=="INCOMPATIBLE"
-    assert wrongly_forbidden["conflicts"][0]["source"]=="DF089"
+    assert wrongly_forbidden["status"]=="CONDITIONED"
+    assert not wrongly_forbidden["conflicts"]
+    assert any(x["effect"]=="MISSTATED" for x in wrongly_forbidden["checks"])
     new_tool=assess_recommendation("Implantar una nueva plataforma para informes.",ctx)
     assert new_tool["status"]=="CONDITIONED"
     assert "prefiere mantener" in new_tool["reason"]
@@ -322,5 +323,66 @@ def test_global_alternative_stays_draft_and_preserves_initial_conflict(monkeypat
     assert alt["opportunities"][0]["review"]["status"]=="CONDITIONED"
     assert "seguimiento" in alt["opportunities"][0]["how"]
     assert alt["requires_human_review"] is True
+
+
+def test_global_alternative_requires_confirmed_conflict_before_ollama(monkeypatch):
+    configure(monkeypatch)
+    request=sample()
+    request.engagement.questionnaire_answers["DF089"]=["CRM_NATIVE"]
+    request.diagnostic.input_snapshot_hash=stable_hash(request.engagement.model_dump())
+    calls=[]
+    monkeypatch.setattr(global_ai._LOCAL_HTTP,"open",
+                        lambda *a,**kw: calls.append(1))
+    payload=global_ai.GlobalBatchRequest(
+        engagement=request.engagement,diagnostic=request.diagnostic,
+        confirmed_as_is=True,snapshot_version=3,focus_source_id="F1",
+        blocked_action="Crear un registro nativo de seguimiento en CRM.")
+    with pytest.raises(ValueError,match="restricción confirmada"):
+        global_ai.analyze_global(payload)
+    assert calls==[]
+
+
+def test_global_alternative_context_cites_actual_client_limit(monkeypatch):
+    configure(monkeypatch)
+    request=sample()
+    request.engagement.questionnaire_answers["DF087"]=["HUMAN_DECISION","APPROVAL"]
+    request.diagnostic.input_snapshot_hash=stable_hash(request.engagement.model_dump())
+    captured=[]
+    def fake_open(req,timeout=0):
+        body=json.loads(req.data);captured.append(body)
+        answer=candidate(refs=("F1","S1"))
+        answer["opportunities"][0]["how"]="Enviar avisos de pendientes conservando aprobación humana."
+        return io.BytesIO(json.dumps({"done":True,"done_reason":"stop",
+            "prompt_eval_count":1300,
+            "message":{"content":json.dumps(answer)}}).encode())
+    monkeypatch.setattr(global_ai._LOCAL_HTTP,"open",fake_open)
+    payload=global_ai.GlobalBatchRequest(
+        engagement=request.engagement,diagnostic=request.diagnostic,
+        confirmed_as_is=True,snapshot_version=3,focus_source_id="F1",
+        blocked_action="Implementar aprobación automática sin intervención humana.")
+    result=global_ai.analyze_global(payload)
+    assert result["opportunities"][0]["review"]["status"]=="CONDITIONED"
+    assert '"source": "DF075/DF087/DF088"' in captured[0]["messages"][1]["content"]
+    assert "no supongas funciones" in captured[0]["messages"][0]["content"]
+
+
+def test_global_alternative_rejects_paraphrases_of_rejected_action(monkeypatch):
+    configure(monkeypatch)
+    request=sample()
+    request.engagement.questionnaire_answers["DF087"]=["HUMAN_DECISION"]
+    request.diagnostic.input_snapshot_hash=stable_hash(request.engagement.model_dump())
+    def fake_open(req,timeout=0):
+        answer=candidate(refs=("F1","S1"))
+        answer["opportunities"][0]["how"]="Implementar la aprobación automática sin intervención humana."
+        return io.BytesIO(json.dumps({"done":True,"done_reason":"stop",
+            "prompt_eval_count":1200,
+            "message":{"content":json.dumps(answer)}}).encode())
+    monkeypatch.setattr(global_ai._LOCAL_HTTP,"open",fake_open)
+    payload=global_ai.GlobalBatchRequest(
+        engagement=request.engagement,diagnostic=request.diagnostic,
+        confirmed_as_is=True,snapshot_version=3,focus_source_id="F1",
+        blocked_action="Implementar una aprobación automática sin intervención humana.")
+    with pytest.raises(ValueError,match="reproduce"):
+        global_ai.analyze_global(payload)
 
 # [AUNEA-UAT-PG11-GLOBAL-AI-287] END
