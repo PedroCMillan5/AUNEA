@@ -229,7 +229,7 @@ def test_global_constraint_assessment_rejects_auto_approval_not_native_tools():
     blocked=assess_recommendation(
         "Implementar la aprobación automática sin intervención humana.",context)
     assert blocked["status"]=="INCOMPATIBLE"
-    assert "DF075/DF087/DF088" in blocked["conflicts"][0]["source"]
+    assert blocked["conflicts"][0]["source"]=="DF087"
     allowed=assess_recommendation(
         "Enviar recordatorios con herramientas existentes manteniendo la aprobación humana.",
         context)
@@ -362,7 +362,7 @@ def test_global_alternative_context_cites_actual_client_limit(monkeypatch):
         blocked_action="Implementar aprobación automática sin intervención humana.")
     result=global_ai.analyze_global(payload)
     assert result["opportunities"][0]["review"]["status"]=="CONDITIONED"
-    assert '"source": "DF075/DF087/DF088"' in captured[0]["messages"][1]["content"]
+    assert '"source": "DF087"' in captured[0]["messages"][1]["content"]
     assert "no supongas funciones" in captured[0]["messages"][0]["content"]
 
 
