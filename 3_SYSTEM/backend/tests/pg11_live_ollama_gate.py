@@ -108,6 +108,7 @@ def analyze_case(name, request):
     # per source keep the live CPU UAT bounded, not the product recommendation count.
     record = {"case": name, "source_count": len(plan["focus"]),
               "tested_sources": [], "batches": 0, "opportunities": [],
+              "source_summaries": [],
               "residual_has_more": False}
     started = perf_counter()
     for unit in plan["focus"][:2]:
@@ -116,6 +117,15 @@ def analyze_case(name, request):
         for index in range(MAX_BATCHES_PER_CASE):
             response = global_ai.analyze_global(batch(request, source, seen))
             opportunities = checked_result(response, request, source)
+            record["source_summaries"].append({
+                "source": source, "batch": index + 1,
+                "summary": response["summary"],
+                "has_more": response["has_more"],
+                "opportunity_count": len(opportunities),
+            })
+            print("PG11_LIVE_SOURCE", name, source,
+                  "batch", index + 1, "opportunities", len(opportunities),
+                  "summary:", response["summary"], flush=True)
             novel = 0
             for suggestion in opportunities:
                 if suggestion["how"] not in seen:
@@ -138,8 +148,8 @@ def analyze_case(name, request):
     record["elapsed_seconds"] = round(perf_counter() - started, 1)
     # Empty interventions are legitimate only with no supported improvement.
     # For these cases the validated frictions provide positive signal.
-    requirement(bool(record["opportunities"]),
-                "No grounded opportunity across the confirmed friction inventory")
+    if not record["opportunities"]:
+        record["warning"] = "No se obtuvo ninguna mejora apoyada en fricciones documentadas."
     return record
 
 
@@ -177,6 +187,9 @@ def main():
         for name in ("invoice", "client_intake"):
             result = analyze_case(name, synthetic_case(name))
             report["cases"].append(result)
+            requirement(bool(result["opportunities"]),
+                        "No grounded opportunity across confirmed frictions in " + name +
+                        ". Check source_summaries in the JSON report.")
             print("PG11_LIVE_CASE_PASS", name, "batches", result["batches"],
                   "opportunities", len(result["opportunities"]), flush=True)
         alternative = alternative_case()
