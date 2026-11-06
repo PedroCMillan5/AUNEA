@@ -917,7 +917,7 @@ async function main(){
   const duringGlobal=await page.locator('#tobeGlobalAnalysis').innerText();
   assert.doesNotMatch(duringGlobal,/ANTERIOR GLOBAL|Antiguo objetivo|Antigua acción/,
     'the previous global recommendations must disappear while a new request runs');
-  assert.match(duringGlobal,/Se ha retirado el análisis anterior/);
+  assert.match(duringGlobal,/Analizando por fuentes|Fuentes revisadas/);
   const storedReset=await page.evaluate(()=>{
     const e=currentEng(),p=latestTobe(e),
       stateOnDisk=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null'),
