@@ -336,6 +336,70 @@ test('global orchestration persists five sources, reasons for discard and a vali
  assert.equal(env.internalAiGlobalWorking(e),false);
 });
 
+test('a second source failure preserves the first new recommendation as an explicitly partial draft',async()=>{
+ const aiBlock=ai.match(/\/\/ \[AUNEA-FE-PG11-GLOBAL-AI-285\] START[\s\S]*?\/\/ \[AUNEA-FE-PG11-GLOBAL-AI-285\] END/)?.[0];
+ const previous={result:{summary:'TEXTO ANTIGUO NO VIGENTE'}};
+ const p={status:'DRAFT',version:2,sourceSnapshotVersion:3,items:[],aiGlobal:previous},
+   e={id:'E1',confirmedAsIs:true,tobeProposals:[p]};
+ let persisted='';
+ const env={
+   __auneaAiWorking:new Set(),__auneaPg11ReviewProtocol:'PG11_REVIEW_20261103_3',
+   internalAiPilotKey:()=> 'E1|3|HASH|TOBE:2',
+   currentEng:()=>e,latestTobe:()=>p,confirmedSnapshot:()=>({version:3}),
+   currentDiagnosticOutput:()=>({input_snapshot_hash:'HASH'}),
+   tobeEditable:()=>true,isClientDisplay:()=>false,saveTobeFromDom:()=>true,
+   saveState:()=>{persisted=JSON.stringify({engagements:[e]});return true},
+   markDirty:()=>{},toast:()=>{},now:()=> '2026-11-06T12:15:00Z',
+   STORAGE_KEY:'STORE',localStorage:{getItem:()=>persisted},
+   document:{getElementById:()=>null},state:{backendOnline:true,backendUrl:'http://127.0.0.1:8010'},
+   checkBackend:async()=>true,buildBackendPayload:()=>({engagement_id:'E1'}),
+   console:{error:()=>{}},
+   fetch:async(url,options={})=>{
+     if(url.endsWith('/status'))return {ok:true,json:async()=>({
+       status:'AVAILABLE',provider:'ollama',
+       pg11_review_protocol:'PG11_REVIEW_20261103_3'})};
+     if(url.endsWith('/tobe-global-plan'))return {ok:true,json:async()=>({
+       engagement_id:'E1',snapshot_version:3,input_hash:'HASH-NEW',
+       focus:[{source_id:'F1',label:'Duplicidad'},{source_id:'F2',label:'Esperas'}]})};
+     if(url.endsWith('/tobe-global')){
+       const request=JSON.parse(options.body);
+       if(request.focus_source_id==='F2')return {ok:false,status:503,
+         json:async()=>({detail:'Ollama local no responde para F2'})};
+       return {ok:true,json:async()=>({
+         status:'DRAFT',engagement_id:'E1',snapshot_version:3,
+         input_hash:'HASH-NEW',focus_source_id:'F1',
+         opportunities:[{objective:'Reducir duplicidad de captura',
+           how:'Reutilizar los datos de la fuente confirmada.',
+           why:'F1 declara un problema de captura duplicada.',
+           source_refs:['F1'],review:{status:'CONDITIONED',
+             reason:'Revisar herramientas.',conflicts:[]}}]})};
+     }
+     throw Error('Unexpected endpoint '+url);
+   }
+ };
+ vm.createContext(env);vm.runInContext(aiBlock,env);
+ await env.generateTobeGlobal(e);
+ assert.equal(p.aiGlobal.result.complete,false);
+ assert.equal(p.aiGlobal.result.progress.failed,1);
+ assert.equal(p.aiGlobal.result.opportunities.length,1);
+ assert.equal(p.aiGlobal.result.progress.completed,2);
+ assert.ok(!JSON.stringify(p.aiGlobal).includes('TEXTO ANTIGUO'));
+ assert.equal(JSON.parse(persisted).engagements[0].tobeProposals[0].aiGlobal.result.opportunities.length,1);
+ assert.match(env.internalAiGlobalMessage(e).message,/Ollama local no responde para F2/);
+ const view={currentDiagnosticOutput:()=>({input_snapshot_hash:'HASH'}),
+   tobeEditable:()=>true,tobeProposalSourceSteps:()=>[],
+   tobeProposalSnapshot:()=>({frictions:[],risks:[]}),
+   internalAiGlobalWorking:()=>false,
+   internalAiGlobalMessage:()=>env.internalAiGlobalMessage(e),
+   esc:String};
+ vm.createContext(view);vm.runInContext(block,view);
+ const html=view.tobeGlobalOverviewHtml(e,p);
+ assert.match(html,/Reducir duplicidad de captura/);
+ assert.match(html,/Análisis parcial/);
+ assert.match(html,/F2: HTTP 503/);
+ assert.doesNotMatch(html,/TEXTO ANTIGUO/);
+});
+
 test('global reanalysis clears and persists the previous brief even if the new request fails',async()=>{
   const aiBlock=ai.match(/\/\/ \[AUNEA-FE-PG11-GLOBAL-AI-285\] START[\s\S]*?\/\/ \[AUNEA-FE-PG11-GLOBAL-AI-285\] END/)?.[0];
   const previous={result:{summary:'Análisis anterior validado como borrador'}};
