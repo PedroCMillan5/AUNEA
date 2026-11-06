@@ -2010,16 +2010,17 @@ function tobeGlobalOverviewHtml(e,p){
     entry.diagnosticInputHash===diag?.input_snapshot_hash&&entry.result?.status==='DRAFT'&&
     entry.result.engagement_id===e.id&&entry.result.snapshot_version===p.sourceSnapshotVersion;
   const working=typeof internalAiGlobalWorking==='function'&&internalAiGlobalWorking(e),
+    feedback=typeof internalAiGlobalMessage==='function'?internalAiGlobalMessage(e):null,
+    preflight=working&&feedback?.phase==='PREFLIGHT',
     stored=valid?entry.result:null,
-    complete=!!stored&&Array.isArray(stored.opportunities)&&
-      [stored.summary,...stored.opportunities.flatMap(item=>[item.how,item.why])]
+    result=preflight?null:stored,
+    complete=!!result&&Array.isArray(result.opportunities)&&
+      [result.summary,...result.opportunities.flatMap(item=>[item.how,item.why])]
         .every(value=>typeof value==='string'&&/[.!?…]$/.test(value.trim())),
-    legacy=!!stored&&!complete,
-    result=stored,
+    legacy=!!result&&!complete,
     opportunities=Array.isArray(result?.opportunities)?result.opportunities:[],
     progress=result?.progress||null,
-    analysisFinished=result?.complete!==false,
-    feedback=typeof internalAiGlobalMessage==='function'?internalAiGlobalMessage(e):null;
+    analysisFinished=result?.complete!==false;
   const source=tobeProposalSourceSteps(e,p),
     confirmed=typeof tobeProposalSnapshot==='function'?tobeProposalSnapshot(e,p):null,
     record=confirmed||{frictions:[],risks:[]};
@@ -2069,7 +2070,7 @@ function tobeGlobalOverviewHtml(e,p){
     '<div class="tobe-global-summary"><div class="tobe-global-summary-top">'+
       '<strong>'+(working?'Analizando proceso…':legacy?'Análisis anterior incompleto':result?'Síntesis del proceso':'Análisis pendiente')+'</strong>'+
       '<span class="tobe-global-state" aria-live="polite">'+esc(state)+'</span></div>'+
-      '<p>'+esc(working&&!result?'Se ha retirado el análisis anterior. Preparando una propuesta nueva con el AS-IS confirmado…':result?.summary||'No hay una propuesta global vigente. Analiza el AS-IS confirmado para generar nuevos objetivos y recomendaciones; no se alterarán campos del TO-BE.')+'</p></div>'+
+      '<p>'+esc(preflight?'Comprobando que el backend admite el análisis por bloques. No se ha borrado ninguna propuesta.':working&&!result?'Se ha retirado el análisis anterior. Preparando una propuesta nueva con el AS-IS confirmado…':result?.summary||'No hay una propuesta global vigente. Analiza el AS-IS confirmado para generar nuevos objetivos y recomendaciones; no se alterarán campos del TO-BE.')+'</p></div>'+
     (progress?'<p class="tobe-global-feedback" role="status">Fuentes revisadas: '+progress.completed+
       ' de '+progress.total+(progress.failed?' · Incidencias: '+progress.failed:'')+
       (analysisFinished?' · Análisis de fuentes completado':' · Resultado parcial; no aprobar todavía')+
