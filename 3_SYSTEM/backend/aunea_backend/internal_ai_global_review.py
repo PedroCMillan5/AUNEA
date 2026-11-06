@@ -172,6 +172,21 @@ def _action_dependency(action: str) -> list[dict]:
     return details
 
 
+def assess_alignment(objective: str, how: str, context: dict) -> dict:
+    """Warnings only: never rewrite or approve an AI proposal."""
+    goal = _normalized(objective)
+    action = _normalized(how)
+    capture = bool(re.search(r"reintroduc|volver a teclear|doble captura|captura duplicada", goal))
+    notice = bool(re.search(r"recordatori|avisos?|alertas?|notificaci|seguimiento", action))
+    reuse = bool(re.search(r"reutiliz|reintroduc|tecle|captur|validar (?:los |las )?datos", action))
+    issues = []
+    if capture and notice and not reuse:
+        issues.append({"code":"OBJECTIVE_ACTION",
+          "message":"El objetivo aborda la doble captura y la intervención sólo propone seguimiento; revisar."})
+    return {"status":"REVIEW" if issues else "NOT_FLAGGED",
+            "basis":"HEURISTIC_NOT_CERTIFICATION","issues":issues}
+
+
 def assess_recommendation(how: str, context: dict, stated_constraints: str = "") -> dict:
     """Source-backed incompatibilities + action-specific checks, never a green feasibility claim.
 
