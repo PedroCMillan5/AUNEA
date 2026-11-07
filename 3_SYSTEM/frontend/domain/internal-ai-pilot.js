@@ -10,8 +10,56 @@ const __auneaAiCompletedSteps=new Map(); // Transient, keyed by confirmed snapsh
 const __auneaAiWorking=new Set();
 // [AUNEA-FE-PG11-AI-CANCEL-287] START — cancellable serial IA tasks.
 const __auneaAiRuns=new Map();
+// [AUNEA-FE-PG11-REAL-PROGRESS-291] START — coverage, never estimated time left.
+function internalAiProgressHtml(e,mode){
+  const key=e&&internalAiPilotKey(e),run=__auneaAiRuns.get(key);
+  const active=run?.mode===mode;
+  const stored=mode==='global'?latestTobe(e)?.aiGlobal?.result?.progress:null;
+  const stepIds=mode==='steps'?(latestTobe(e)?.items||[]).map(x=>String(x.sourceStepId)):[];
+  const pending=mode==='steps'&&key?internalAiPendingSteps(e,key):null;
+  const done=mode==='global'?Math.max(0,stored?.focus_done?.length??stored?.completed??0):
+    (pending?.items?.size||0);
+  const total=mode==='global'?Math.max(0,stored?.total||run?.total||0):stepIds.length;
+  if(!active&&!stored&&mode==='global')return '';
+  if(!active&&!pending?.items?.size&&mode==='steps')return '';
+  const percent=total?Math.min(100,Math.round(done*100/total)):0;
+  const detail=active?(run.detail||'Preparando solicitud al proveedor IA…'):
+    (mode==='global'&&stored?.failed?'Hay fuentes pendientes de reintento.':
+      'Resultados verificados y guardados.');
+  return '<div class="pg11-ai-progress" data-pg11-progress="'+mode+'" role="status" aria-live="polite">'+
+    '<div class="pg11-ai-progress-top"><strong>'+done+' de '+(total||'—')+
+    (mode==='global'?' fuentes':' actividades')+' completadas</strong>'+
+    '<span>'+percent+' % de cobertura</span></div>'+
+    '<div class="pg11-ai-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+percent+
+    '" aria-label="Cobertura de análisis IA"><span style="width:'+percent+'%"></span></div>'+
+    '<p>'+(active?'<span class="pg11-ai-working-dot" aria-hidden="true"></span>':'')+
+    esc(detail)+'</p>'+
+    (active?'<small>Tiempo transcurrido: <span data-pg11-elapsed>'+Math.floor((Date.now()-run.startedAt)/1000)+
+       ' s</span> · La barra indica cobertura, no tiempo restante.</small>':
+       '<small>La barra indica cobertura, no tiempo restante.</small>')+
+    '</div>';
+}
+function internalAiUpdateProgress(e){
+  if(!e||currentEng()?.id!==e.id)return;
+  for(const mode of ['global','steps']){
+    const node=document.querySelector('[data-pg11-progress="'+mode+'"]');
+    if(!node)continue;
+    const host=document.createElement('div');
+    host.innerHTML=internalAiProgressHtml(e,mode);
+    if(host.firstElementChild)node.replaceWith(host.firstElementChild);
+  }
+}
+// [AUNEA-FE-PG11-REAL-PROGRESS-291] END
 function internalAiStart(key,mode){
-  __auneaAiRuns.set(key,{controller:new AbortController(),mode,cancelled:false});
+  const run={controller:new AbortController(),mode,cancelled:false,
+    startedAt:Date.now(),detail:'Comprobando servicio IA…',total:0};
+  run.timer=setInterval(()=>{
+    const current=__auneaAiRuns.get(key);
+    if(current!==run){clearInterval(run.timer);return;}
+    document.querySelectorAll('[data-pg11-progress="'+mode+'"] [data-pg11-elapsed]')
+      .forEach(el=>{el.textContent=Math.floor((Date.now()-run.startedAt)/1000)+' s';});
+  },1000);
+  __auneaAiRuns.set(key,run);
   __auneaAiWorking.add(key);
   internalAiSyncButtons(currentEng());
 }
@@ -27,6 +75,8 @@ function internalAiFetch(key,url,options={}){
   return fetch(url,{...options,...(run?{signal:run.controller.signal}:{})});
 }
 function internalAiStop(key){
+  const run=__auneaAiRuns.get(key);
+  if(run?.timer)clearInterval(run.timer);
   __auneaAiRuns.delete(key);
   __auneaAiWorking.delete(key);
   internalAiSyncButtons(currentEng());
@@ -97,6 +147,7 @@ function internalAiPilotFeedback(e,message,type='info'){
   const step=document.getElementById('tobeStepAiProgress');
   if(step)step.textContent=String(message||'');
   if(node){if(!String(node.className||'').includes('pg11-ai-panel'))node.className='notice '+(type==='warn'?'warn':'info');const label=document.getElementById('tobeAiProgress');if(label)label.textContent=message;else node.textContent=message}
+  internalAiUpdateProgress(e);
   internalAiSyncButtons(e);
 }
 // [AUNEA-FE-PG11-AI-PROGRESS-281] END
@@ -193,6 +244,7 @@ function internalAiGlobalRefresh(e){
     const live=currentEng(),draft=latestTobe(live);
     linked.innerHTML=tobeGlobalLinkedStepHtml(live,draft,tobeSelectedItem(live,draft));
   }
+  internalAiUpdateProgress(e);
   internalAiSyncButtons(e);
 }
 // Source inventory and recommendations belong to one versioned TO-BE DRAFT;
@@ -307,11 +359,17 @@ async function generateTobeGlobal(e,options={}){
     const callScoped=async body=>{
       // A valid JSON object can still contain a sentence truncated by Ollama.
       // Retry only that same block, keeping all previously saved results.
-      for(let attempt=0;attempt<2;attempt++){
-        try{return await call('tobe-global',
-          attempt===0?body:{...body,retry_incomplete:true});}
+      for(let attempt=0;attempt<3;attempt++){
+        internalAiAssertActive(key);
+        if(attempt){
+          const run=__auneaAiRuns.get(key);
+          if(run)run.detail='Reintentando solo el bloque incompleto · intento '+(attempt+1)+' de 3';
+          internalAiGlobalRefresh(currentEng());
+        }
+        try{return await call('tobe-global',attempt===0?body:
+          {...body,retry_incomplete:true,...(attempt===2?{retry_compact:true}:{})});}
         catch(error){
-          if(attempt||error.status!==409||
+          if(attempt===2||error.status!==409||
              !/texto incompleto|objetivo en c[oó]digo/i.test(String(error.message||'')))
             throw error;
         }
@@ -356,6 +414,7 @@ async function generateTobeGlobal(e,options={}){
       }
     }
     total=plan.focus.length;
+    if(__auneaAiRuns.get(key))__auneaAiRuns.get(key).total=total;
     const items=resume?JSON.parse(JSON.stringify(previousResult.opportunities)):[],
       validIds=new Set(plan.focus.map(x=>x.source_id)),
       doneSources=resume?[...new Set(previousResult.progress.focus_done)]
@@ -409,6 +468,8 @@ async function generateTobeGlobal(e,options={}){
         while(hasMore){
           internalAiAssertActive(key);
           verifiedOwner();
+          if(__auneaAiRuns.get(key))__auneaAiRuns.get(key).detail=
+            'Fuente '+(processed+1)+' de '+total+' · Lote '+(batch+1)+': '+String(unit.label||unit.source_id).slice(0,80);
           __auneaGlobalAiFeedback.set(key,{working:true,type:'info',
             message:'Analizando fuente '+(processed+1)+' de '+total+
               ' · Lote '+(batch+1)+': '+String(unit.label||unit.source_id).slice(0,80)});
@@ -1074,6 +1135,9 @@ async function generateTobeBySteps(e,key,snap,availability,fresh=false,selectedS
     if(internalAiPilotKey(e)!==key||currentEng()?.id!==e.id||
        !tobeEditable(latestTobe(e)))throw Error('El estudio cambió; no se continuará esta ejecución.');
     const done=completed.items.size;
+    if(__auneaAiRuns.get(key))__auneaAiRuns.get(key).detail=
+      'Actividad '+(done+1)+' de '+stepIds.length+' · '+internalAiActivityLabel(e,stepId);
+    internalAiUpdateProgress(e);
     internalAiPilotFeedback(e,'Actividad '+(done+1)+' de '+stepIds.length+
       ' · '+done+' completadas y verificadas. Analizando '+
       internalAiActivityLabel(e,stepId)+' con Ollama local…');
@@ -1113,6 +1177,7 @@ async function generateTobeBySteps(e,key,snap,availability,fresh=false,selectedS
     if(!internalAiSaveCheckpoint(e,key,completed,availability.model))
       throw Error('La actividad '+stepId+' se verificó, pero su guardado local falló. No se continuará hasta conservarla.');
     internalAiPilotRefreshPanel(currentEng());
+    internalAiUpdateProgress(currentEng());
     internalAiPilotFeedback(e,'Actividad '+completed.items.size+' de '+stepIds.length+
       ' completadas y verificadas. Preparando siguiente actividad…');
   }
