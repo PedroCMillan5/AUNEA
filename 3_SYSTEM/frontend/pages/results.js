@@ -1477,7 +1477,7 @@ function tobeAiAdviceHtml(e,item,includeDecision=true){
     '</details>'+
     ''+
     (includeDecision?tobeHumanReviewHtml(e,item,!!archived):'')+
-    '<p class="tobe-muted">Los valores IA y sus fuentes aparecen junto a los campos de «03 · Configurar». La propuesta no modifica el borrador sin una decisión humana.</p>'+
+    '<p class="tobe-muted">Los valores IA y sus fuentes aparecen junto a los campos de «03.3 · Configurar». La propuesta no modifica el borrador sin una decisión humana.</p>'+
     '</div>';
 }
 // [AUNEA-FE-PG11-INSPECTOR-CHECKPOINT-214] END
@@ -1738,7 +1738,7 @@ function tobeFlowOptions(e,p,item){
 function tobeFlowInspector(e,p,item){
   if(item.transformation==='Se elimina'){
     return '<section class="tobe-route-editor" id="tobeStepRoutes">'+
-      '<h3>04 · Conectar el proceso futuro</h3>'+
+      '<h3>03.4 · Conectar el proceso futuro</h3>'+
       '<p class="notice warn">Esta actividad se retira únicamente del TO-BE. Reconecta las rutas entrantes y, si corresponde, selecciona un inicio válido. El AS-IS se conserva intacto.</p></section>';
   }
   const flow=tobeFlowOwner(e,p),stepId=tobeFlowItemId(item),routes=flow.routes[stepId]||{},
@@ -1752,7 +1752,7 @@ function tobeFlowInspector(e,p,item){
       extra:'data-tobe-route="'+kind+'" data-tobe-route-step="'+attr(stepId)+'"',
       placeholder:'Selecciona destino'}):'<input disabled value="'+attr(opts.find(x=>x.value===value)?.label||value||'Pendiente')+'">')+
     '<p class="field-help">Selecciona el destino de esta ruta en el proceso futuro. Una ruta pendiente bloquea la revisión.</p></div>';
-  return '<section class="tobe-route-editor" id="tobeStepRoutes"><h3>04 · Conectar el proceso futuro</h3>'+
+  return '<section class="tobe-route-editor" id="tobeStepRoutes"><h3>03.4 · Conectar el proceso futuro</h3>'+
     '<p class="tobe-muted">Edita aquí las rutas del TO-BE. No se modificarán las conexiones del AS-IS confirmado.</p>'+
     '<div class="form-grid">'+field('normal','Siguiente actividad'+(decision?' · ruta SÍ':''),routes.normal)+
     (decision?field('exception','Ruta NO / excepción',routes.exception):'')+
@@ -1862,10 +1862,10 @@ function tobeInspectorHtml(e,p){
       item.transformation||'',{extra:'data-tobe-item="'+attr(item.id)+'" data-tobe-field="transformation"',placeholder:'Selecciona una transformación'}):
       '<input value="'+attr(item.transformation||'Sin definir')+'" disabled>')+'</div>';
   const supportingInformation=
-    '<section class="tobe-origin" id="tobeStepOrigin"><details class="tobe-subdetails" open><summary>01 · Datos y hallazgos del AS-IS confirmado</summary>'+
+    '<section class="tobe-origin" id="tobeStepOrigin"><details class="tobe-subdetails" open><summary>03.1 · Datos y hallazgos del AS-IS confirmado</summary>'+
       tobeOriginalStepFacts(e,item)+tobeSnapshotIssueCards(e,item)+'</details></section>'+
     '<section class="tobe-advice" id="tobeStepAdvice" aria-label="Sugerencia IA para actividad">'+
-      '<details class="tobe-subdetails" open><summary>02 · Analizar este paso y revisar la propuesta IA</summary>'+
+      '<details class="tobe-subdetails" open><summary>03.2 · Analizar este paso y revisar la propuesta IA</summary>'+
       (editable&&!item.isAddition?'<div class="tobe-ai-per-step-action"><button type="button" class="btn btn-primary" data-tobe-generate-selected="'+attr(item.sourceStepId)+'">'+
         (hasCurrentAi?'Volver a analizar este paso':'Analizar este paso con IA')+'</button>'+
         '<span class="tobe-muted">Análisis independiente de esta actividad; no aplica cambios automáticamente.</span></div>':'')+
@@ -1890,12 +1890,12 @@ function tobeInspectorHtml(e,p){
           attr(tobeFlowItemId(nextItem))+'">Siguiente actividad</button>':'')+
       '</div></header>'+
     '<nav class="tobe-review-steps" aria-label="Orden de revisión">'+
-      '<button type="button" class="btn btn-outline btn-small" style="margin:0 12px 10px 0" data-tobe-jump="tobeStepOrigin">1 · Entender</button>'+
-      '<button type="button" class="btn btn-outline btn-small" style="margin:0 12px 10px 0" data-tobe-jump="tobeStepAdvice">2 · Revisar IA</button>'+
-      '<button type="button" class="btn btn-outline btn-small" style="margin:0 12px 10px 0" data-tobe-jump="tobeStepDesign">3 · Configurar</button>'+
-      '<button type="button" class="btn btn-outline btn-small" style="margin:0 12px 10px 0" data-tobe-mode-switch="map">4 · Conectar</button>'+
+      '<button type="button" class="btn btn-outline btn-small" style="margin:0 12px 10px 0" data-tobe-jump="tobeStepOrigin">03.1 · Entender</button>'+
+      '<button type="button" class="btn btn-outline btn-small" style="margin:0 12px 10px 0" data-tobe-jump="tobeStepAdvice">03.2 · Revisar IA</button>'+
+      '<button type="button" class="btn btn-outline btn-small" style="margin:0 12px 10px 0" data-tobe-jump="tobeStepDesign">03.3 · Configurar</button>'+
+      '<button type="button" class="btn btn-outline btn-small" style="margin:0 12px 10px 0" data-tobe-mode-switch="map">03.4 · Conectar</button>'+
     '</nav>'+supportingInformation+
-    '<section class="tobe-edit" id="tobeStepDesign"><h3>03 · Configurar la actividad futura</h3>'+
+    '<section class="tobe-edit" id="tobeStepDesign"><h3>03.3 · Configurar la actividad futura</h3>'+
       '<p class="tobe-muted" data-tobe-transformation-message="1" role="status" aria-live="polite">Elige «Qué cambia» y completa la justificación del diseño futuro. La recomendación IA no cambia tu decisión automáticamente.</p>'+
       '<p class="tobe-muted">Estos campos describen el funcionamiento futuro. Los valores heredados se muestran para revisar, no son mejoras confirmadas ni decisiones de la IA.</p>'+
       tobeAiOperationalContextHtml(e,item)+
@@ -2351,6 +2351,8 @@ function tobePage(){
       '</section>'+
       tobeContextOverviewHtml(e,p)+
       tobeGlobalOverviewHtml(e,p)+
+      '<div class="tobe-review-section-head"><span class="tobe-eyebrow">03 · REVISIÓN POR ACTIVIDAD Y DISEÑO TO-BE</span>'+ 
+        '<p>Revisa el origen, la recomendación IA, los campos y las conexiones del proceso futuro.</p></div>'+
       tobeGuidedNavHtml(e,p)+
       '<section class="tobe-map-area"><header class="tobe-workspace-head"><div><span class="tobe-eyebrow">CONSTRUIR EL PROCESO FUTURO</span>'+
       '<h2>Mapa del proceso propuesto</h2></div><p>Selecciona una actividad para revisar su transformación y editar el TO-BE.</p></header>'+
@@ -2368,10 +2370,10 @@ function tobePage(){
       '<section id="tobeInspector" class="tobe-inspector" aria-label="Decisión TO-BE por actividad">'+tobeInspectorHtml(e,p)+'</section>'+
       (editable?'<details class="tobe-ai-stage" id="tobeAiWorkspace" data-engagement-id="'+attr(e.id)+
         '" data-tobe-version="'+attr(p.version)+'"'+(keepAuditOpen?' open':'')+'>'+
-        '<summary><strong>Auditoría de propuestas IA por actividad</strong>'+
+        '<summary><strong>04 · Auditoría de propuestas IA por actividad</strong>'+
         '<span class="tobe-muted">Opcional: consulta el detalle completo. Revisa cada propuesta desde el inspector de su actividad.</span></summary>'+
         '<div id="tobeAiMount"></div></details>':'')+
-      '<section class="tobe-completion"><div><h2>Validación global</h2><p>Vista rápida del estado y acciones pendientes. El detalle técnico sigue disponible.</p></div>'+
+      '<section class="tobe-completion"><div><h2>05 · Validación global</h2><p>Vista rápida del estado y acciones pendientes. El detalle técnico sigue disponible.</p></div>'+
         '<button type="button" class="btn btn-outline" id="checkTobeReadiness">Comprobar requisitos</button>'+
         '<div id="tobeReadinessStatus" role="status" aria-live="polite"></div>'+
         tobeCoherencePanel(e,p)+'</section>'+
