@@ -1330,6 +1330,7 @@ async function generateTobeAiPilot(e,fresh=false,selectedStepId=null){
         }});
     }
     const result=await AiAgentService.propose('TOBE_DRAFT',e);
+    internalAiAssertActive(key);
     const data=result.proposal;
     if(internalAiPilotKey(e)!==key||currentEng()?.id!==e.id||!tobeEditable(latestTobe(e)))
       throw Error('El estudio cambió durante la generación: propuesta descartada.');
