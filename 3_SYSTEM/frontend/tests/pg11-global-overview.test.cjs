@@ -827,4 +827,23 @@ test('PG11 retains the entire reason and technical validation in the existing ca
   assert.doesNotMatch(markup,/id="retryTobeGlobal"/);
 });
 
+test('PG11 exposes cancellation and aborts AI calls without clearing checkpoints',()=>{
+  assert.match(ai,/function internalAiCancel\(e\)/);
+  assert.match(ai,/run\.controller\.abort\(\)/);
+  assert.match(ai,/data-aunea-cancel-ai/);
+  assert.match(ai,/function internalAiFetch\(key,url,options=/);
+  assert.match(ai,/internalAiAssertActive\(key\)/);
+  assert.match(ai,/internalAiStop\(key\)/);
+  assert.match(ai,/internalAiSaveCheckpoint\(e,key,completed,availability\.model\)/);
+  assert.match(ai,/function internalAiSyncButtons\(e\)/);
+  assert.doesNotMatch(ai,/id="generateTobeAiPilot">Analizar actividades con IA/);
+});
+
+test('PG11 continues missing steps rather than launching a coherence review',()=>{
+  assert.match(ai,/data-tobe-generate-all-remaining>Analizar pasos pendientes/);
+  assert.match(ai,/complete\?'<button type="button" class="btn btn-primary" id="retryTobeAiReview"/);
+  assert.match(ai,/const complete=event\.target\?\.closest\?\.\('\[data-tobe-generate-all-remaining\]'\)/);
+  assert.match(ai,/void generateTobeAiPilot\(currentEng\(\)\)/);
+});
+
 // [AUNEA-UAT-PG11-GLOBAL-OVERVIEW-288] END
