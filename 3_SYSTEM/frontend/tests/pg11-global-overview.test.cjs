@@ -863,7 +863,7 @@ test('PG11 uses one consistent page and activity numbering hierarchy',()=>{
     '03.1 · Datos y hallazgos','03.2 · Analizar este paso',
     '03.3 · Configurar la actividad futura','03.4 · Conectar el proceso futuro',
     '04 · Auditoría de propuestas IA por actividad','05 · Validación global'
-  ])assert.match(src,new RegExp(label.replace(/[.*+?^$\{\}()|[\]\\]/g,'\\// [AUNEA-UAT-PG11-GLOBAL-OVERVIEW-288] END')));
+  ])assert.ok(src.includes(label), 'Falta encabezado: '+label);
   assert.doesNotMatch(src,/>1 · Entender<\/button>/);
   assert.doesNotMatch(src,/>3 · Configurar<\/button>/);
 });
