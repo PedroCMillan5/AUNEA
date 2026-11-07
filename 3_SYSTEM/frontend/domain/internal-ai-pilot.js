@@ -829,7 +829,7 @@ function internalAiPilotPanel(e){
     '<p class="pg11-ai-subtitle">La IA prepara sugerencias, pero el consultor revisa y decide.</p></div></header>'+
     '<p class="pg11-ai-message">No se ha localizado una propuesta IA guardada para este estudio en su historial de versiones. Los datos generados en una sesión anterior sin guardar no pueden recuperarse automáticamente.</p>'+
     '<p id="tobeAiProgress" role="status" aria-live="polite" class="pg11-ai-message'+(feedback?.type==='warn'?' pg11-ai-message-warn':'')+'">'+
-    esc(feedback?.message||'Pulsa «Preparar propuesta con IA» cuando el proveedor esté disponible. La generación es opcional y no modifica el diseño automáticamente.')+'</p>'+
+    esc(feedback?.message||'Pulsa «Analizar actividades con IA» cuando el proveedor esté disponible. La generación es opcional y no modifica el diseño automáticamente.')+'</p>'+
     internalAiPilotTracePanel(Object.fromEntries(partial?.traces||new Map()))+'</section>';
   const review=draft.review||null;
   const items=Array.isArray(draft.items)?draft.items:[];
@@ -935,7 +935,7 @@ const __originalTobePagePilot=tobePage;
 tobePage=function(){
   const html=__originalTobePagePilot(),e=currentEng();
   if((typeof isClientDisplay==='function'&&isClientDisplay())||!e||!tobeEditable(latestTobe(e)))return html;
-  const button='<button class="btn btn-outline" id="generateTobeAiPilot">Preparar propuesta con IA</button>';
+  const button='<button class="btn btn-outline" id="generateTobeAiPilot">Analizar actividades con IA</button>';
   const withAction=html.replace('<button class="btn" id="saveTobe">',button+'<button class="btn" id="saveTobe">');
   return withAction.includes('<div id="tobeAiMount"></div>')
     ?withAction.replace('<div id="tobeAiMount"></div>',internalAiPilotPanel(e))
@@ -1258,7 +1258,7 @@ async function generateTobeAiPilot(e,fresh=false,selectedStepId=null){
   }finally{
     __auneaAiWorking.delete(key);
     const currentButton=document.getElementById('generateTobeAiPilot');
-    if(currentButton){currentButton.disabled=false;currentButton.textContent='Preparar propuesta con IA'}
+    if(currentButton){currentButton.disabled=false;currentButton.textContent='Analizar actividades con IA'}
     if(currentEng()?.id===e.id&&internalAiPilotKey(currentEng())===key)
       internalAiPilotRefreshPanel(currentEng());
   }
