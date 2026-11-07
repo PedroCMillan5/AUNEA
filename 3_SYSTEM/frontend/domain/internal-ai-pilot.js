@@ -8,6 +8,30 @@ const __auneaAiPreview=new Map();
 const __auneaAiFeedback=new Map();
 const __auneaAiCompletedSteps=new Map(); // Transient, keyed by confirmed snapshot; no partial approval.
 const __auneaAiWorking=new Set();
+// [AUNEA-FE-PG11-AI-LOCK-286] START — one active PG11 IA operation per draft.
+// PURPOSE: Reflect the existing shared execution guard in every IA trigger;
+// keep consultant-owned editors and saved proposals intact during generation.
+function internalAiSyncButtons(e){
+  if(!e||currentEng()?.id!==e.id)return;
+  const busy=__auneaAiWorking.has(internalAiPilotKey(e));
+  document.querySelectorAll(
+    '#analyzeTobeGlobal, #retryTobeGlobal, #generateTobeAiPilot, '+
+    '#regenerateTobeAiPilot, #retryTobeAiReview, '+
+    '[data-tobe-generate-selected], [data-tobe-generate-all-remaining]'
+  ).forEach(button=>{
+    if(busy){
+      if(button.dataset.auneaAiWasDisabled===undefined)
+        button.dataset.auneaAiWasDisabled=button.disabled?'1':'0';
+      button.disabled=true;
+      button.title='Hay un análisis en curso. Finaliza antes de iniciar otro.';
+    }else if(button.dataset.auneaAiWasDisabled!==undefined){
+      button.disabled=button.dataset.auneaAiWasDisabled==='1';
+      delete button.dataset.auneaAiWasDisabled;
+      button.removeAttribute('title');
+    }
+  });
+}
+// [AUNEA-FE-PG11-AI-LOCK-286] END
 // [AUNEA-FE-PG11-AI-PROGRESS-281] START — Keep per-step Ollama errors/progress visible outside full audit.
 function internalAiPilotFeedback(e,message,type='info'){
   const key=internalAiPilotKey(e);
@@ -114,6 +138,7 @@ function internalAiGlobalRefresh(e){
     const live=currentEng(),draft=latestTobe(live);
     linked.innerHTML=tobeGlobalLinkedStepHtml(live,draft,tobeSelectedItem(live,draft));
   }
+  internalAiSyncButtons(e);
 }
 // Source inventory and recommendations belong to one versioned TO-BE DRAFT;
 // small Ollama requests are deliberately serial to avoid CPU/RAM saturation.
@@ -186,6 +211,7 @@ async function generateTobeGlobal(e,options={}){
   // Check the backend strategy BEFORE invalidating any saved global proposal.
   // An out-of-date local Uvicorn process must never erase valid draft content.
   __auneaAiWorking.add(key);
+  internalAiSyncButtons(e);
   __auneaGlobalAiFeedback.set(key,{working:true,type:'info',
     phase:resume?'RESUME_PREFLIGHT':'PREFLIGHT',
     message:resume?'Comprobando el borrador antes de reintentar fuentes pendientes…':
@@ -439,6 +465,7 @@ async function generateTobeGlobal(e,options={}){
   }finally{
     __auneaAiWorking.delete(key);
     internalAiGlobalRefresh(currentEng());
+    internalAiSyncButtons(currentEng());
   }
 }
 // [AUNEA-FE-PG11-GLOBAL-AI-285] END
@@ -935,8 +962,8 @@ const __originalTobePagePilot=tobePage;
 tobePage=function(){
   const html=__originalTobePagePilot(),e=currentEng();
   if((typeof isClientDisplay==='function'&&isClientDisplay())||!e||!tobeEditable(latestTobe(e)))return html;
-  const button='<button class="btn btn-outline" id="generateTobeAiPilot">Analizar actividades con IA</button>';
-  const withAction=html.replace('<button class="btn" id="saveTobe">',button+'<button class="btn" id="saveTobe">');
+  // Bulk activity analysis remains available in the contextual step-review section.
+  const withAction=html;
   return withAction.includes('<div id="tobeAiMount"></div>')
     ?withAction.replace('<div id="tobeAiMount"></div>',internalAiPilotPanel(e))
     :withAction.replace('<div class="card card-pad section">',internalAiPilotPanel(e)+'<div class="card card-pad section">');
@@ -1178,6 +1205,7 @@ async function generateTobeAiPilot(e,fresh=false,selectedStepId=null){
   for(const cache of [__auneaAiPreview,__auneaAiFeedback,__auneaAiCompletedSteps])
     for(const oldKey of cache.keys())if(oldKey!==key)cache.delete(oldKey);
   __auneaAiWorking.add(key);
+  internalAiSyncButtons(e);
   const button=document.getElementById('generateTobeAiPilot');
   if(button){button.disabled=true;button.textContent='Comprobando IA…'}
   // Keep the global audit closed by default; progress is reported above
@@ -1261,6 +1289,7 @@ async function generateTobeAiPilot(e,fresh=false,selectedStepId=null){
     if(currentButton){currentButton.disabled=false;currentButton.textContent='Analizar actividades con IA'}
     if(currentEng()?.id===e.id&&internalAiPilotKey(currentEng())===key)
       internalAiPilotRefreshPanel(currentEng());
+    internalAiSyncButtons(currentEng());
   }
 }
 function applyTobeAiPilot(e){
