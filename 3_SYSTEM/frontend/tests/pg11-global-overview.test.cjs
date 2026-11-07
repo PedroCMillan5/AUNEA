@@ -856,4 +856,22 @@ test('PG11 keeps cancellation in global action group and review buttons on their
   assert.match(css,/\.tobe-global-detail p\{[^}]*font-size:var\(--font-small\)/);
 });
 
+test('PG11 uses one consistent page and activity numbering hierarchy',()=>{
+  for(const label of [
+    '01 · INFORMACIÓN GENERAL','02 · ANÁLISIS IA GLOBAL DEL PROCESO',
+    '03 · REVISIÓN POR ACTIVIDAD Y DISEÑO TO-BE',
+    '03.1 · Datos y hallazgos','03.2 · Analizar este paso',
+    '03.3 · Configurar la actividad futura','03.4 · Conectar el proceso futuro',
+    '04 · Auditoría de propuestas IA por actividad','05 · Validación global'
+  ])assert.match(src,new RegExp(label.replace(/[.*+?^$\{\}()|[\]\\]/g,'\\// [AUNEA-UAT-PG11-GLOBAL-OVERVIEW-288] END')));
+  assert.doesNotMatch(src,/>1 · Entender<\/button>/);
+  assert.doesNotMatch(src,/>3 · Configurar<\/button>/);
+});
+
+test('PG11 field action buttons stay on one horizontal line with centered text',()=>{
+  assert.match(css,/\.tobe-workspace\[data-tobe-mode="guided"\] \.tobe-ai-row-actions>\.btn\{[\s\S]*?display:inline-flex;align-items:center;justify-content:center;text-align:center;/);
+  assert.match(css,/white-space:nowrap;overflow-wrap:normal;word-break:normal/);
+  assert.match(css,/grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+});
+
 // [AUNEA-UAT-PG11-GLOBAL-OVERVIEW-288] END
