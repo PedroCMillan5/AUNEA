@@ -7,6 +7,19 @@ const vm=require('node:vm');
 const src=fs.readFileSync(path.join(__dirname,'../pages/results.js'),'utf8');
 const ai=fs.readFileSync(path.join(__dirname,'../domain/internal-ai-pilot.js'),'utf8');
 const css=fs.readFileSync(path.join(__dirname,'../ui-system.css'),'utf8');
+// Test-only stubs for the shared PG11 IA execution controller.
+// The production controller is exercised separately; this harness isolates global orchestration.
+const aiHarnessPrelude=[
+  'const __auneaAiRuns=new Map();',
+  'function internalAiStart(key,mode){__auneaAiWorking.add(key);__auneaAiRuns.set(key,{mode,cancelled:false,total:0,detail:""});}',
+  'function internalAiStop(key){__auneaAiWorking.delete(key);__auneaAiRuns.delete(key);}',
+  'function internalAiAssertActive(key){}',
+  'function internalAiCancelled(key,error){return false;}',
+  'function internalAiFetch(key,url,options){return fetch(url,options);}',
+  'function internalAiUpdateProgress(e){}',
+  'function internalAiSyncButtons(e){}'
+].join('\n')+'\n';
+
 const block=src.match(/\/\/ \[AUNEA-FE-PG11-GLOBAL-OVERVIEW-284\] START[\s\S]*?\/\/ \[AUNEA-FE-PG11-GLOBAL-OVERVIEW-284\] END/)?.[0];
 const contextBlock=src.match(/\/\/ \[AUNEA-FE-PG11-CONTEXT-289\] START[\s\S]*?\/\/ \[AUNEA-FE-PG11-CONTEXT-289\] END/)?.[0];
 
@@ -253,7 +266,7 @@ test('global IA uses the existing local endpoint and durably saves only DRAFT su
       throw Error('Unexpected endpoint: '+url);
     },
   };
-  vm.createContext(sandbox);vm.runInContext(aiBlock,sandbox);
+  vm.createContext(sandbox);vm.runInContext(aiHarnessPrelude+aiBlock,sandbox);
   await sandbox.generateTobeGlobal(e);
   assert.equal(calls.filter(x=>x.url.endsWith('/tobe-global')).length,1);
   const request=JSON.parse(calls.find(x=>x.url.endsWith('/tobe-global')).options.body);
@@ -324,7 +337,7 @@ test('global orchestration persists five sources, reasons for discard and a vali
      throw Error('Unexpected URL '+url);
    }
  };
- vm.createContext(env);vm.runInContext(aiBlock,env);
+ vm.createContext(env);vm.runInContext(aiHarnessPrelude+aiBlock,env);
  await env.generateTobeGlobal(e);
  assert.equal(count,5);
  assert.equal(alternatives,1);
@@ -380,7 +393,7 @@ test('a second source failure preserves the first new recommendation as an expli
      throw Error('Unexpected endpoint '+url);
    }
  };
- vm.createContext(env);vm.runInContext(aiBlock,env);
+ vm.createContext(env);vm.runInContext(aiHarnessPrelude+aiBlock,env);
  await env.generateTobeGlobal(e);
  assert.equal(p.aiGlobal.result.complete,false);
  assert.equal(p.aiGlobal.result.progress.failed,1);
@@ -430,7 +443,7 @@ test('global reanalysis clears and persists the previous brief even if the new r
         focus:[{source_id:'S1',label:'Recepción'}]})}:
       {ok:false,status:409,json:async()=>({detail:'El contexto supera el presupuesto IA'})},
   };
-  vm.createContext(sandbox);vm.runInContext(aiBlock,sandbox);
+  vm.createContext(sandbox);vm.runInContext(aiHarnessPrelude+aiBlock,sandbox);
   await sandbox.generateTobeGlobal(e);
   assert.equal(p.aiGlobal.result.complete,false,'an unsuccessful analysis remains a partial draft');
   assert.equal(p.aiGlobal.result.progress.failed,1);
@@ -472,7 +485,7 @@ test('API preflight hides old cards without deleting saved work when the backend
    fetch:async(url)=>url.endsWith('/status')?statusPending:
      {ok:false,status:409,json:async()=>({detail:'El motor local no terminó'})}
  };
- vm.createContext(ctx);vm.runInContext(aiBlock,ctx);
+ vm.createContext(ctx);vm.runInContext(aiHarnessPrelude+aiBlock,ctx);
  const pending=ctx.generateTobeGlobal(e);
  assert.equal(p.aiGlobal,oldBrief,
    'preflight has not changed or discarded the saved result yet');
@@ -522,7 +535,7 @@ test('outdated backend without scoped-global capability explains HTTP 404 before
        pg11_review_protocol:'PG11_REVIEW_20261103_3'})}
    }
  };
- vm.createContext(ctx);vm.runInContext(aiBlock,ctx);
+ vm.createContext(ctx);vm.runInContext(aiHarnessPrelude+aiBlock,ctx);
  await ctx.generateTobeGlobal(e);
  assert.equal(calls,0);
  assert.equal(p.aiGlobal,previous);
@@ -578,7 +591,7 @@ test('one source yields more than two outcomes over consecutive small batches',a
       throw Error('Unexpected endpoint');
     }
   };
-  vm.createContext(env);vm.runInContext(aiBlock,env);
+  vm.createContext(env);vm.runInContext(aiHarnessPrelude+aiBlock,env);
   await env.generateTobeGlobal(e);
   assert.equal(bodies.length,3);
   assert.deepEqual(bodies.map(x=>x.seen_interventions.length),[0,2,4]);
@@ -589,7 +602,7 @@ test('one source yields more than two outcomes over consecutive small batches',a
 
 test('semantic repetition retains traceability and related alternatives',()=>{
   const aiBlock=ai.match(/\/\/ \[AUNEA-FE-PG11-GLOBAL-AI-285\] START[\s\S]*?\/\/ \[AUNEA-FE-PG11-GLOBAL-AI-285\] END/)?.[0];
-  const env={__auneaAiWorking:new Set()};vm.createContext(env);vm.runInContext(aiBlock,env);
+  const env={__auneaAiWorking:new Set()};vm.createContext(env);vm.runInContext(aiHarnessPrelude+aiBlock,env);
   const actions=[],one={objective:'Evitar capturas duplicadas',
     how:'Reutilizar automáticamente los datos validados de recepción en el registro ERP.',
     why:'Hay doble entrada de datos.',constraints:'',source_refs:['F1']};
@@ -721,7 +734,7 @@ test('PG11 resumes only the missing part of one source after an Ollama 503, pres
       throw Error('Unexpected endpoint');
     }
   };
-  vm.createContext(env);vm.runInContext(aiBlock,env);
+  vm.createContext(env);vm.runInContext(aiHarnessPrelude+aiBlock,env);
   await env.generateTobeGlobal(e);
   assert.equal(p.aiGlobal.result.complete,false);
   assert.equal(p.aiGlobal.result.opportunities.length,1);
@@ -772,7 +785,7 @@ test('PG11 failed full reset restores the prior saved global brief before callin
      calls++;throw Error('Ollama should not run when saving the reset fails');
    }
  };
- vm.createContext(env);vm.runInContext(aiBlock,env);
+ vm.createContext(env);vm.runInContext(aiHarnessPrelude+aiBlock,env);
  await env.generateTobeGlobal(e);
  assert.equal(calls,0);
  assert.equal(p.aiGlobal,old);
