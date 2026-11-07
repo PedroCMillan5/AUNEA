@@ -230,3 +230,48 @@ body.session-display .flow-step p{font-size:var(--font-small)}
 @media(max-width:760px){.action-bar{left:0;padding-left:14px;padding-right:14px}.app-shell{display:block}.sidebar{transform:translateX(-100%);transition:.2s;width:250px}.sidebar.open{transform:none}.main{grid-column:auto}.topbar{padding:0 14px}.mobile-only{display:block}.content{padding:22px 14px 60px}.topbar-right .save-state{display:none}.backend-badge{display:none}.page-head{display:block}.head-actions{justify-content:flex-start;margin-top:12px}.g2,.g3,.g4,.hero-actions,.form-grid{grid-template-columns:1fr}.stage-layout{grid-template-columns:1fr}.stage-nav{display:flex;overflow:auto;gap:6px}.stage-btn{min-width:190px;margin:0}.process-layout{grid-template-columns:1fr}.topline{display:none}}
 @media print{.sidebar,.topbar,.head-actions,.section-actions,.stage-nav,.btn,.subtabs{display:none!important}.app-shell{display:block}.main{display:block}.content{padding:0;max-width:none}.card{box-shadow:none}.page-head{margin-top:0}.flow-canvas{overflow:visible}}
 /* [AUNEA-FE-STYLE-RESPONSIVE-010] END */
+
+/* [AUNEA-FE-SHARED-COMPONENTS-311] START — shared UI composition primitives.
+   SOURCE: TOKENS_AUNEA; DESIGN_SYSTEM_AUNEA; CATALOGO_COMPONENTES DS-002/003/017.
+   SCOPE: Opt-in only. Existing FROZEN pages retain their visual baseline.
+   RULE: Type, color, typography and interaction variants belong to shared components;
+   page CSS may define placement, NOT per-instance font, padding or border. */
+.aunea-ui-section-title{
+  margin:0;
+  font-family:Sora,"Segoe UI",Arial,sans-serif;
+  font-size:clamp(17px,1.6vw,21px);
+  font-weight:700;
+  line-height:1.35;
+  color:var(--ink);
+}
+.aunea-ui-section-caption{
+  margin:4px 0 0;
+  font-family:Inter,"Segoe UI",Arial,sans-serif;
+  font-size:var(--font-small);
+  font-weight:400;
+  line-height:1.5;
+  color:var(--muted);
+}
+.aunea-ui-aux-heading{
+  font-family:Sora,"Segoe UI",Arial,sans-serif;
+  font-size:var(--font-small);
+  font-weight:600;
+  line-height:1.4;
+  color:var(--system);
+}
+.aunea-ui-button-row{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  align-items:stretch;
+  gap:var(--space-2);
+}
+.aunea-ui-button-row>.btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  white-space:nowrap;
+  width:100%;
+  min-width:0;
+}
+/* [AUNEA-FE-SHARED-COMPONENTS-311] END */
