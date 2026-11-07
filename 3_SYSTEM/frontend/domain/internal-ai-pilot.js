@@ -258,51 +258,24 @@ function internalAiGlobalRefresh(e){
 // Source inventory and recommendations belong to one versioned TO-BE DRAFT;
 // small Ollama requests are deliberately serial to avoid CPU/RAM saturation.
 function tobeGlobalMerge(items,candidate){
-  // Group clear repetitions without discarding distinct implementations. Any
-  // related approach retains its own rationale, constraints and source refs.
+  // Only exact normalized actions are duplicates. Semantic overlap can still
+  // represent a distinct intervention: retain it for consultant review.
   const norm=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
     .toLocaleLowerCase('es').replace(/[^a-z0-9]+/g,' ').trim();
-  const stop=new Set(('de del la las los el en un una para por con que se al y o e lo su '+
-    'sus este esta estas estos como mediante usando utilizar uso sobre desde dentro '+
-    'implementar implantar definir crear realizar establecer proceso flujo sistema '+
-    'permitir facilitar mejorar propuesta').split(' '));
-  const aliases={facturas:'factura',datos:'dato',campos:'campo',correos:'correo',
-    emails:'correo',email:'correo',avisos:'aviso',notificaciones:'aviso',
-    automaticos:'automatico',automatica:'automatico',automaticas:'automatico',
-    automatizado:'automatico',automatizada:'automatico',registros:'registro'};
-  const tokens=x=>new Set(norm(x).split(' ').filter(t=>t.length>3&&!stop.has(t))
-    .map(t=>aliases[t]||t));
-  const similarity=(x,y)=>{
-    const a=tokens(x),b=tokens(y);
-    if(!a.size||!b.size)return 0;
-    let shared=0;for(const t of a)if(b.has(t))shared++;
-    return 2*shared/(a.size+b.size);
-  };
-  const at=items.findIndex(x=>{
-    const sameAction=norm(x.how)===norm(candidate.how);
-    const commonRef=(x.source_refs||[]).some(ref=>(candidate.source_refs||[]).includes(ref));
-    const match=similarity(x.how,candidate.how);
-    return sameAction||(match>=0.78&&commonRef);
-  });
+  const at=items.findIndex(x=>norm(x.how)===norm(candidate.how));
   if(at<0){items.push(candidate);return true;}
-  const main=items[at],sameAction=norm(main.how)===norm(candidate.how);
+  const main=items[at];
   main.source_refs=[...new Set([...(main.source_refs||[]),
     ...(candidate.source_refs||[])])];
-  if(sameAction){
-    // Same action, but different source-backed reason/constraint: keep its
-    // explanation without introducing a second visible recommendation.
-    if(norm(main.why)!==norm(candidate.why)||
-       norm(main.constraints)!==norm(candidate.constraints)){
-      if(!(main.related||[]).some(x=>norm(x.how)===norm(candidate.how)&&
-         norm(x.why)===norm(candidate.why)&&
-         norm(x.constraints)===norm(candidate.constraints)))
-        main.related=[...(main.related||[]),candidate];
-    }
-    return false;
+  // Distinct supporting explanations are preserved without duplicating actions.
+  if(norm(main.why)!==norm(candidate.why)||
+     norm(main.constraints)!==norm(candidate.constraints)){
+    if(!(main.related||[]).some(x=>norm(x.how)===norm(candidate.how)&&
+       norm(x.why)===norm(candidate.why)&&
+       norm(x.constraints)===norm(candidate.constraints)))
+      main.related=[...(main.related||[]),candidate];
   }
-  if((main.related||[]).some(x=>norm(x.how)===norm(candidate.how)))return false;
-  main.related=[...(main.related||[]),candidate];
-  return true;
+  return false;
 }
 function tobeGlobalSummary(items){
   const count=items.length;
