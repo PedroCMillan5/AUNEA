@@ -2242,11 +2242,13 @@ function tobeGlobalOverviewHtml(e,p){
         esc(item.review.checks.map(x=>x.source+': '+x.reason).join(' · '))+'</p>':'')+
       (item.review?.verifications?.length?'<p><b>Validaciones pendientes:</b> '+
         esc(item.review.verifications.map(x=>x.source+': '+x.question).join(' · '))+'</p>':'')+
-      (linkedSteps(item).length?'<p><b>Revisar en actividades:</b> '+
+      (linkedSteps(item).length?'<div class="tobe-global-review-links">'+
+        '<span class="tobe-global-review-label">Revisar en actividades:</span>'+
+        '<div class="tobe-global-review-actions">'+
         linkedSteps(item).map(step=>'<button type="button" class="btn btn-outline btn-small" '+
           'data-tobe-select="'+attr(String(step.sourceStepId))+'" data-tobe-global-link="1">'+
-          esc(step.sourceStepName||step.stepName||String(step.sourceStepId))+'</button>').join(' ')+
-        '</p>':'')+
+          esc(step.sourceStepName||step.stepName||String(step.sourceStepId))+'</button>').join('')+
+        '</div></div>':'')+
       '</div></details></section>').join('')+'</div></article>').join('')+'</div>':
       result?'<p class="tobe-global-empty">La IA no ha identificado mejoras transversales con evidencia suficiente. Consulta la síntesis y revisa los pasos individualmente.</p>':'')+
     (legacy?'<p class="tobe-global-feedback is-warning" role="status">La salida anterior contiene una frase que puede estar incompleta. Se muestra íntegra tal como la devolvió Ollama. Regenera antes de aprobar.</p>':'')+
