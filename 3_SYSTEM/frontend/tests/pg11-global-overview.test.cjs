@@ -7,6 +7,7 @@ const vm=require('node:vm');
 const src=fs.readFileSync(path.join(__dirname,'../pages/results.js'),'utf8');
 const ai=fs.readFileSync(path.join(__dirname,'../domain/internal-ai-pilot.js'),'utf8');
 const css=fs.readFileSync(path.join(__dirname,'../ui-system.css'),'utf8');
+const baseCss=fs.readFileSync(path.join(__dirname,'../styles.css'),'utf8');
 // Test-only stubs for the shared PG11 IA execution controller.
 // The production controller is exercised separately; this harness isolates global orchestration.
 const aiHarnessPrelude=[
@@ -875,16 +876,21 @@ test('PG11 uses one consistent page and activity numbering hierarchy',()=>{
     '03 · REVISIÓN POR ACTIVIDAD Y DISEÑO TO-BE',
     '03.1 · Datos y hallazgos','03.2 · Analizar este paso',
     '03.3 · Configurar la actividad futura','03.4 · Conectar el proceso futuro',
-    '04 · Auditoría de propuestas IA por actividad','05 · Validación global'
+    '04 · Validación global'
   ])assert.ok(src.includes(label), 'Falta encabezado: '+label);
   assert.doesNotMatch(src,/>1 · Entender<\/button>/);
   assert.doesNotMatch(src,/>3 · Configurar<\/button>/);
+  assert.ok(src.includes('Auditoría IA · Detalle técnico (opcional)'));
+  assert.doesNotMatch(src,/05 · Validación global/);
 });
 
-test('PG11 field action buttons stay on one horizontal line with centered text',()=>{
-  assert.match(css,/\.tobe-workspace\[data-tobe-mode="guided"\] \.tobe-ai-row-actions>\.btn\{[\s\S]*?display:inline-flex;align-items:center;justify-content:center;text-align:center;/);
-  assert.match(css,/white-space:nowrap;overflow-wrap:normal;word-break:normal/);
-  assert.match(css,/grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+test('PG11 field actions reuse the shared compact button-group primitive',()=>{
+  assert.match(src,/class="tobe-ai-row-actions aunea-ui-button-row"/);
+  assert.match(src,/class="btn btn-outline btn-small/);
+  assert.match(baseCss,/\.aunea-ui-button-row>\.btn\{[^}]*justify-content:center;[^}]*text-align:center;[^}]*white-space:nowrap;/);
+  assert.doesNotMatch(css,/\.tobe-ai-row-actions>\.btn\{[^}]*font-size:/);
+  assert.doesNotMatch(css,/\.tobe-ai-row-actions \.btn\{[^}]*font-size:/);
+  assert.doesNotMatch(src,/class="btn btn-outline btn-small" style="margin:0 12px 10px 0"/);
 });
 
 test('PG11 global IA retries only the failed batch, then uses compact fallback',()=>{
