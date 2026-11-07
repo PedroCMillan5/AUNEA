@@ -1116,7 +1116,7 @@ async function generateTobeBySteps(e,key,snap,availability,fresh=false,selectedS
       ' completadas y verificadas. Preparando siguiente actividad…');
   }
   internalAiAssertActive(key);
-  if(failures.length)throw Error(failures.join(' · '+' · '+completed.items.size+' de '+stepIds.length+' completadas. Puedes reintentar.');
+  if(failures.length)throw Error(failures.join(' · ')+' · '+completed.items.size+' de '+stepIds.length+' completadas. Puedes reintentar.');
   if(selected&&completed.items.size<stepIds.length){
     internalAiPilotFeedback(e,'Propuesta de '+internalAiActivityLabel(e,selected)+
       ' verificada y guardada como checkpoint. Hay '+completed.items.size+' de '+stepIds.length+
