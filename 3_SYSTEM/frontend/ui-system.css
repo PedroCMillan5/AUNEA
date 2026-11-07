@@ -3525,3 +3525,20 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
   }
 }
 /* [AUNEA-FE-PG11-NUMBERING-290] END */
+
+/* [AUNEA-FE-PG11-PROGRESS-292] START — bounded, source-backed progress. */
+.pg11-ai-progress{display:grid;gap:8px;padding:12px 14px;border:1px solid var(--system-line);
+  border-radius:var(--radius-sm);background:var(--system-soft);min-width:0}
+.pg11-ai-progress-top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 12px;
+  color:var(--system);font-size:var(--font-small)}
+.pg11-ai-progress-top strong{font-weight:750}
+.pg11-ai-progress-track{height:9px;background:var(--system-line);border-radius:var(--radius-pill);overflow:hidden}
+.pg11-ai-progress-track>span{height:100%;display:block;border-radius:inherit;background:var(--system);
+  transition:width .25s ease}
+.pg11-ai-progress p{margin:0;font-size:var(--font-small);line-height:1.5;overflow-wrap:anywhere}
+.pg11-ai-progress small{color:var(--muted);font-size:11px;line-height:1.45}
+.pg11-ai-working-dot{display:inline-block;width:7px;height:7px;margin-right:8px;
+  background:var(--system);border-radius:50%;animation:pg11-ai-pulse 1.4s ease-in-out infinite}
+@keyframes pg11-ai-pulse{0%,100%{opacity:.35}50%{opacity:1}}
+@media(prefers-reduced-motion:reduce){.pg11-ai-working-dot{animation:none}}
+/* [AUNEA-FE-PG11-PROGRESS-292] END */
