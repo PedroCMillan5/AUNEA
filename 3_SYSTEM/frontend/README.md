@@ -14,6 +14,16 @@ Drive ID: `1qKjbJviEvUQnHOGCHy4VkIx0dbdkoJj1`
 
 El runtime efectivo conserva la proyección aceptada y aplica únicamente el delta gobernado de Master v1.1 mediante `services/schema.js`. El resultado validado contiene 100 campos, 25 dominios, 249 países y 20 atributos de Process Step, incluido `communication_channels`.
 
+## Contrato CSS compartido y gobernanza visual
+
+- `styles.css`: fuente común para tokens y apariencia de componentes (`.btn`, `.btn-primary`, `.btn-outline`, `.btn-small`, `.aunea-ui-section-title`, `.aunea-ui-button-row`). Orden de carga: siempre antes de `ui-system.css`.
+- `ui-system.css`: composición de páginas, geometría y responsive; no volver a definir tipografías, colores, padding o borde de un botón genérico a nivel de página.
+- `FROZEN_PAGES.json`: las páginas aprobadas deben conservar sus baselines. No se realizan actualizaciones visuales globales sobre ellas sin reapertura explícita y QA.
+- Ver el inventario y excepciones en [STYLE_SYSTEM_AUDIT.md](STYLE_SYSTEM_AUDIT.md).
+- Verificación: `npm test` (incluye `tests/style-tokens.test.cjs`, `tests/design-system-common.test.cjs` y gates FROZEN).
+
+**Regla:** primero reutilizar un componente existente, después resolver el layout. No introducir un style específico por botón o título.
+
 ## Arquitectura de módulos
 
 El runtime es una sola aplicación de scripts clásicos con `defer` sobre un ámbito global compartido.
