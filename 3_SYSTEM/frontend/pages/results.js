@@ -1301,7 +1301,7 @@ function tobeAiRowActions(e,p,item,key){
   const action=(label,attribute,active=false,title='')=>
     '<button type="button" class="btn btn-outline btn-small'+(active?' is-selected':'')+
     '" '+attribute+' title="'+attr(title||label)+'">'+esc(label)+'</button>';
-  return '<div class="tobe-ai-row-actions" aria-label="Acciones de '+esc(
+  return '<div class="tobe-ai-row-actions aunea-ui-button-row" aria-label="Acciones de '+esc(
     TOBE_AI_REVIEW_FIELDS.find(x=>x[1]===key)?.[2]||'este campo')+'">'+
     action('Aplicar IA',canApply?
       'data-tobe-ai-use-field="'+attr(key)+'" data-tobe-ai-action-source="'+attr(id)+'"':
@@ -1891,10 +1891,10 @@ function tobeInspectorHtml(e,p){
           attr(tobeFlowItemId(nextItem))+'">Siguiente actividad</button>':'')+
       '</div></header>'+
     '<nav class="tobe-review-steps" aria-label="Orden de revisión">'+
-      '<button type="button" class="btn btn-outline btn-small" style="margin:0 12px 10px 0" data-tobe-jump="tobeStepOrigin">03.1 · Entender</button>'+
-      '<button type="button" class="btn btn-outline btn-small" style="margin:0 12px 10px 0" data-tobe-jump="tobeStepAdvice">03.2 · Revisar IA</button>'+
-      '<button type="button" class="btn btn-outline btn-small" style="margin:0 12px 10px 0" data-tobe-jump="tobeStepDesign">03.3 · Configurar</button>'+
-      '<button type="button" class="btn btn-outline btn-small" style="margin:0 12px 10px 0" data-tobe-mode-switch="map">03.4 · Conectar</button>'+
+      '<button type="button" class="btn btn-outline btn-small" data-tobe-jump="tobeStepOrigin">03.1 · Entender</button>'+
+      '<button type="button" class="btn btn-outline btn-small" data-tobe-jump="tobeStepAdvice">03.2 · Revisar IA</button>'+
+      '<button type="button" class="btn btn-outline btn-small" data-tobe-jump="tobeStepDesign">03.3 · Configurar</button>'+
+      '<button type="button" class="btn btn-outline btn-small" data-tobe-mode-switch="map">03.4 · Conectar</button>'+
     '</nav>'+supportingInformation+
     '<section class="tobe-edit" id="tobeStepDesign"><h3>03.3 · Configurar la actividad futura</h3>'+
       '<p class="tobe-muted" data-tobe-transformation-message="1" role="status" aria-live="polite">Elige «Qué cambia» y completa la justificación del diseño futuro. La recomendación IA no cambia tu decisión automáticamente.</p>'+
@@ -1989,7 +1989,7 @@ function tobeContextOverviewHtml(e,p){
     PUBLISHED:'Publicado'}[p?.status]||'Pendiente';
   return '<section class="tobe-context" aria-label="Información general del proceso">'+
     '<div class="tobe-context-head"><div><span class="tobe-eyebrow">01 · INFORMACIÓN GENERAL</span>'+
-    '<h2>'+esc(process)+'</h2><p>'+esc(company)+
+    '<h2 class="aunea-ui-section-title">'+esc(process)+'</h2><p class="aunea-ui-section-caption">'+esc(company)+
     ' · Origen AS-IS confirmado v'+esc(snap?.version||p?.sourceSnapshotVersion||'—')+
     ' · '+esc((snap?.processSteps||[]).filter(x=>x.status!=='SUPERSEDED').length)+' actividades</p></div>'+
     '<span class="tobe-context-status">'+esc(status)+'</span></div>'+
@@ -2150,7 +2150,7 @@ function tobeGlobalOverviewHtml(e,p){
   const state=working?'Analizando por fuentes…':result&&!analysisFinished?'Análisis parcial · Revisar':legacy?'Propuesta incompleta · Reanalizar':result?'Propuesta guardada · Sin aprobar':'Pendiente de análisis';
   return '<section class="tobe-global-analysis" id="tobeGlobalAnalysis" aria-label="Análisis global IA del proceso">'+
     '<header class="tobe-global-analysis-head"><div><span class="tobe-eyebrow">02 · ANÁLISIS IA GLOBAL DEL PROCESO</span>'+
-      '<h2>Objetivos y recomendaciones de mejora</h2>'+
+      '<h2 class="aunea-ui-section-title">Objetivos y recomendaciones de mejora</h2>'+
       '<p>Primero, qué mejorar en el conjunto del proceso y cómo conseguirlo. Las decisiones sobre cada actividad se realizan después.</p></div>'+
       (tobeEditable(p)?'<div class="tobe-global-head-actions">'+
         (retryable?'<button type="button" class="btn btn-outline" id="retryTobeGlobal"'+
@@ -2376,10 +2376,10 @@ function tobePage(){
       '<section id="tobeInspector" class="tobe-inspector" aria-label="Decisión TO-BE por actividad">'+tobeInspectorHtml(e,p)+'</section>'+
       (editable?'<details class="tobe-ai-stage" id="tobeAiWorkspace" data-engagement-id="'+attr(e.id)+
         '" data-tobe-version="'+attr(p.version)+'"'+(keepAuditOpen?' open':'')+'>'+
-        '<summary><strong>04 · Auditoría de propuestas IA por actividad</strong>'+
+        '<summary><strong class="aunea-ui-aux-heading">Auditoría IA · Detalle técnico (opcional)</strong>'+
         '<span class="tobe-muted">Opcional: consulta el detalle completo. Revisa cada propuesta desde el inspector de su actividad.</span></summary>'+
         '<div id="tobeAiMount"></div></details>':'')+
-      '<section class="tobe-completion"><div><h2>05 · Validación global</h2><p>Vista rápida del estado y acciones pendientes. El detalle técnico sigue disponible.</p></div>'+
+      '<section class="tobe-completion"><div><h2 class="aunea-ui-section-title">04 · Validación global</h2><p class="aunea-ui-section-caption">Vista rápida del estado y acciones pendientes. El detalle técnico sigue disponible.</p></div>'+
         '<button type="button" class="btn btn-outline" id="checkTobeReadiness">Comprobar requisitos</button>'+
         '<div id="tobeReadinessStatus" role="status" aria-live="polite"></div>'+
         tobeCoherencePanel(e,p)+'</section>'+
