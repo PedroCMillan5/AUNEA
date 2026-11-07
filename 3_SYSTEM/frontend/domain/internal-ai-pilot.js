@@ -321,7 +321,7 @@ async function generateTobeGlobal(e,options={}){
       throw Error('El backend 8010 utiliza una versión anterior de la IA global. '+
         'Reinicia el backend actualizado: falta la estrategia por bloques. '+
         'La propuesta anterior no se ha borrado.');
-    if(status.pg11_global_recovery!=='COMPACT_3_ATTEMPTS_20261107')
+    if(status.pg11_global_recovery!=='COMPACT_2_ATTEMPTS_20261107')
       throw Error('El backend 8010 sigue ejecutando una versión anterior del motor IA. '+
         'Reinícialo después de actualizar Git para activar la recuperación actual. '+
         'Las fuentes y propuestas guardadas se conservan.');
