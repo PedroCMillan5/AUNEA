@@ -238,7 +238,7 @@ test('global IA uses the existing local endpoint and durably saves only DRAFT su
     fetch:async(url,options={})=>{
       calls.push({url,options});
       if(url.endsWith('/status'))return {ok:true,json:async()=>({
-        status:'AVAILABLE',provider:'ollama',pg11_review_protocol:'PG11_REVIEW_20261103_3',pg11_global_strategy:'SCOPED_V2'})};
+        status:'AVAILABLE',provider:'ollama',pg11_review_protocol:'PG11_REVIEW_20261103_3',pg11_global_strategy:'SCOPED_V2',pg11_global_recovery:'COMPACT_2_ATTEMPTS_20261107'})};
       if(url.endsWith('/tobe-global-plan'))return {ok:true,json:async()=>({
         engagement_id:'E1',snapshot_version:3,input_hash:'HASH_BACKEND',
         focus:[{source_id:'S1',label:'Recepción',type:'STEP'}]})};
@@ -295,7 +295,7 @@ test('global orchestration persists five sources, reasons for discard and a vali
    fetch:async(url,opts={})=>{
      if(url.endsWith('/status'))return {ok:true,json:async()=>({
        status:'AVAILABLE',provider:'ollama',model:'aunea-qwen3-4b:latest',
-       pg11_review_protocol:'PG11_REVIEW_20261103_3',pg11_global_strategy:'SCOPED_V2'})};
+       pg11_review_protocol:'PG11_REVIEW_20261103_3',pg11_global_strategy:'SCOPED_V2',pg11_global_recovery:'COMPACT_2_ATTEMPTS_20261107'})};
      if(url.endsWith('/tobe-global-plan'))return {ok:true,json:async()=>({
        engagement_id:'E1',snapshot_version:3,input_hash:'BACKEND_HASH',
        focus:ids.map(id=>({source_id:id,type:'FRICTION',label:'Problema '+id}))})};
@@ -360,7 +360,7 @@ test('a second source failure preserves the first new recommendation as an expli
    fetch:async(url,options={})=>{
      if(url.endsWith('/status'))return {ok:true,json:async()=>({
        status:'AVAILABLE',provider:'ollama',
-       pg11_review_protocol:'PG11_REVIEW_20261103_3',pg11_global_strategy:'SCOPED_V2'})};
+       pg11_review_protocol:'PG11_REVIEW_20261103_3',pg11_global_strategy:'SCOPED_V2',pg11_global_recovery:'COMPACT_2_ATTEMPTS_20261107'})};
      if(url.endsWith('/tobe-global-plan'))return {ok:true,json:async()=>({
        engagement_id:'E1',snapshot_version:3,input_hash:'HASH-NEW',
        focus:[{source_id:'F1',label:'Duplicidad'},{source_id:'F2',label:'Esperas'}]})};
@@ -424,7 +424,7 @@ test('global reanalysis clears and persists the previous brief even if the new r
     checkBackend:async()=>true,buildBackendPayload:()=>({engagement_id:'E1'}),
     console:{error:()=>{}},
     fetch:async(url)=>url.endsWith('/status')?{ok:true,json:async()=>({
-      status:'AVAILABLE',provider:'ollama',pg11_review_protocol:'PG11_REVIEW_20261103_3',pg11_global_strategy:'SCOPED_V2'})}:
+      status:'AVAILABLE',provider:'ollama',pg11_review_protocol:'PG11_REVIEW_20261103_3',pg11_global_strategy:'SCOPED_V2',pg11_global_recovery:'COMPACT_2_ATTEMPTS_20261107'})}:
       url.endsWith('/tobe-global-plan')?{ok:true,json:async()=>({
         engagement_id:'E1',snapshot_version:3,input_hash:'BACKEND_HASH',
         focus:[{source_id:'S1',label:'Recepción'}]})}:
@@ -489,7 +489,7 @@ test('API preflight hides old cards without deleting saved work when the backend
  assert.match(during,/Comprobando que el backend admite el análisis por bloques/);
  assert.doesNotMatch(during,/TEXTO ANTIGUO|Antigua recomendación|Antigua acción/);
  finishStatus({ok:true,json:async()=>({
-   status:'AVAILABLE',provider:'ollama',pg11_review_protocol:'PG11_REVIEW_20261103_3',pg11_global_strategy:'SCOPED_V2'})});
+   status:'AVAILABLE',provider:'ollama',pg11_review_protocol:'PG11_REVIEW_20261103_3',pg11_global_strategy:'SCOPED_V2',pg11_global_recovery:'COMPACT_2_ATTEMPTS_20261107'})});
  await pending;
  const after=view.tobeGlobalOverviewHtml(e,p);
  assert.match(after,/TEXTO ANTIGUO/);
@@ -557,7 +557,7 @@ test('one source yields more than two outcomes over consecutive small batches',a
     fetch:async(url,opts={})=>{
       if(url.endsWith('/status'))return {ok:true,json:async()=>({
         status:'AVAILABLE',provider:'ollama',pg11_review_protocol:'PG11_REVIEW_20261103_3',
-        pg11_global_strategy:'SCOPED_V2'})};
+        pg11_global_strategy:'SCOPED_V2',pg11_global_recovery:'COMPACT_2_ATTEMPTS_20261107'})};
       if(url.endsWith('/tobe-global-plan'))return {ok:true,json:async()=>({
         engagement_id:'E1',snapshot_version:3,input_hash:'HASH_BACKEND',
         focus:[{source_id:'F1',label:'Duplicidades'}]})};
@@ -699,7 +699,7 @@ test('PG11 resumes only the missing part of one source after an Ollama 503, pres
     fetch:async(url,opts={})=>{
       if(url.endsWith('/status'))return {ok:true,json:async()=>({
         status:'AVAILABLE',provider:'ollama',pg11_review_protocol:'PG11_REVIEW_20261103_3',
-        pg11_global_strategy:'SCOPED_V2'})};
+        pg11_global_strategy:'SCOPED_V2',pg11_global_recovery:'COMPACT_2_ATTEMPTS_20261107'})};
       if(url.endsWith('/tobe-global-plan'))return {ok:true,json:async()=>({
         engagement_id:'E1',snapshot_version:3,input_hash:'BACKEND_HASH',
         focus:[{source_id:'F1',label:'Recepción'}]})};
@@ -765,7 +765,7 @@ test('PG11 failed full reset restores the prior saved global brief before callin
    fetch:async(url)=>{
      if(url.endsWith('/status'))return {ok:true,json:async()=>({
        status:'AVAILABLE',provider:'ollama',pg11_review_protocol:'PG11_REVIEW_20261103_3',
-       pg11_global_strategy:'SCOPED_V2'})};
+       pg11_global_strategy:'SCOPED_V2',pg11_global_recovery:'COMPACT_2_ATTEMPTS_20261107'})};
      if(url.endsWith('/tobe-global-plan'))return {ok:true,json:async()=>({
        engagement_id:'E1',snapshot_version:3,input_hash:'BACKEND_HASH',
        focus:[{source_id:'S1',label:'Recepción'}]})};
@@ -875,7 +875,7 @@ test('PG11 field action buttons stay on one horizontal line with centered text',
 });
 
 test('PG11 global IA retries only the failed batch, then uses compact fallback',()=>{
-  assert.match(ai,/for\(let attempt=0;attempt<3;attempt\+\+\)/);
+  assert.match(ai,/for\(let attempt=0;attempt<2;attempt\+\+\)/);
   assert.match(ai,/retry_incomplete:true/);
   assert.match(ai,/retry_compact:true/);
   assert.match(ai,/doneSources\.includes\(unit\.source_id\)/);
@@ -903,6 +903,26 @@ test('PG11 retains distinct recommendation actions instead of fuzzy merging',()=
   assert.match(merge,/norm\(x\.how\)===norm\(candidate\.how\)/);
   assert.doesNotMatch(merge,/similarity\(/);
   assert.match(merge,/items\.push\(candidate\)/);
+});
+
+test('PG11 valid punctuation never triggers a legacy incomplete warning',()=>{
+  const match=src.match(/\.every\(value=>typeof value==='string'&&([^ \n]+)\.test\(value\.trim\(\)\)\)/);
+  assert.ok(match,'Global sentence integrity validator missing');
+  const regex=vm.runInNewContext(match[1]);
+  assert.equal(regex.test('Respuesta íntegra.'),true);
+  assert.equal(regex.test('Respuesta íntegra.”'),true);
+  assert.equal(regex.test('Respuesta cortada'),false);
+  const cardMatch=src.match(/const completeCards=[\s\S]*?\.every\(value=>typeof value==='string'&&([^\n]+)\.test\(value\.trim\(\)\)\)/);
+  assert.ok(cardMatch,'Card integrity validator missing');
+  const cardRegex=vm.runInNewContext(cardMatch[1]);
+  assert.equal(cardRegex.test('Recomendación válida.'),true);
+});
+
+test('PG11 refuses stale backend recovery contract before changing stored global analysis',()=>{
+  assert.match(ai,/status\.pg11_global_recovery!=='COMPACT_2_ATTEMPTS_20261107'/);
+  assert.match(ai,/Las fuentes y propuestas guardadas se conservan/);
+  assert.match(ai,/Se interrumpió la conexión con el backend 8010/);
+  assert.match(ai,/failed\.network=true/);
 });
 
 // [AUNEA-UAT-PG11-GLOBAL-OVERVIEW-288] END
