@@ -8,12 +8,48 @@ const __auneaAiPreview=new Map();
 const __auneaAiFeedback=new Map();
 const __auneaAiCompletedSteps=new Map(); // Transient, keyed by confirmed snapshot; no partial approval.
 const __auneaAiWorking=new Set();
+// [AUNEA-FE-PG11-AI-CANCEL-287] START — cancellable serial IA tasks.
+const __auneaAiRuns=new Map();
+function internalAiStart(key,mode){
+  __auneaAiRuns.set(key,{controller:new AbortController(),mode,cancelled:false});
+  __auneaAiWorking.add(key);
+  internalAiSyncButtons(currentEng());
+}
+function internalAiCancelled(key,error){
+  return __auneaAiRuns.get(key)?.cancelled||error?.name==='AbortError'||error?.message==='PG11_AI_CANCELLED';
+}
+function internalAiAssertActive(key){
+  if(__auneaAiRuns.get(key)?.cancelled)throw Error('PG11_AI_CANCELLED');
+}
+function internalAiFetch(key,url,options={}){
+  internalAiAssertActive(key);
+  const run=__auneaAiRuns.get(key);
+  return fetch(url,{...options,...(run?{signal:run.controller.signal}:{})});
+}
+function internalAiStop(key){
+  __auneaAiRuns.delete(key);
+  __auneaAiWorking.delete(key);
+  internalAiSyncButtons(currentEng());
+}
+function internalAiCancel(e){
+  const key=e&&internalAiPilotKey(e),run=__auneaAiRuns.get(key);
+  if(!run||run.cancelled)return;
+  run.cancelled=true;
+  run.controller.abort();
+  if(run.mode==='global'){
+    __auneaGlobalAiFeedback.set(key,{working:true,type:'info',message:'Cancelando análisis. Los avances guardados se conservan…'});
+    internalAiGlobalRefresh(e);
+  }else internalAiPilotFeedback(e,'Cancelando análisis. Se conservan las actividades verificadas…');
+  internalAiSyncButtons(e);
+}
+// [AUNEA-FE-PG11-AI-CANCEL-287] END
 // [AUNEA-FE-PG11-AI-LOCK-286] START — one active PG11 IA operation per draft.
 // PURPOSE: Reflect the existing shared execution guard in every IA trigger;
 // keep consultant-owned editors and saved proposals intact during generation.
 function internalAiSyncButtons(e){
   if(!e||currentEng()?.id!==e.id)return;
   const busy=__auneaAiWorking.has(internalAiPilotKey(e));
+  const run=__auneaAiRuns.get(internalAiPilotKey(e));
   document.querySelectorAll(
     '#analyzeTobeGlobal, #retryTobeGlobal, #generateTobeAiPilot, '+
     '#regenerateTobeAiPilot, #retryTobeAiReview, '+
@@ -30,6 +66,23 @@ function internalAiSyncButtons(e){
       button.removeAttribute('title');
     }
   });
+  document.querySelectorAll('[data-aunea-cancel-ai]').forEach(el=>el.remove());
+  if(busy&&run){
+    const anchor=run.mode==='global'?document.getElementById('tobeGlobalAnalysis'):
+      (document.querySelector('[data-tobe-generate-selected]')||
+       document.getElementById('tobeAiPilotStatus'));
+    if(anchor){
+      const button=document.createElement('button');
+      button.type='button';
+      button.className='btn btn-outline';
+      button.setAttribute('data-aunea-cancel-ai','');
+      button.textContent=run.cancelled?'Cancelando…':'Cancelar análisis';
+      button.disabled=run.cancelled;
+      button.style.margin='8px 0';
+      if(run.mode==='global')anchor.prepend(button);
+      else anchor.insertAdjacentElement('afterend',button);
+    }
+  }
 }
 // [AUNEA-FE-PG11-AI-LOCK-286] END
 // [AUNEA-FE-PG11-AI-PROGRESS-281] START — Keep per-step Ollama errors/progress visible outside full audit.
@@ -44,6 +97,7 @@ function internalAiPilotFeedback(e,message,type='info'){
   const step=document.getElementById('tobeStepAiProgress');
   if(step)step.textContent=String(message||'');
   if(node){if(!String(node.className||'').includes('pg11-ai-panel'))node.className='notice '+(type==='warn'?'warn':'info');const label=document.getElementById('tobeAiProgress');if(label)label.textContent=message;else node.textContent=message}
+  internalAiSyncButtons(e);
 }
 // [AUNEA-FE-PG11-AI-PROGRESS-281] END
 function internalAiPilotRefreshPanel(e){
@@ -63,6 +117,7 @@ function internalAiPilotRefreshPanel(e){
   }
   const panel=document.getElementById('tobeAiPilotStatus');
   if(panel)panel.outerHTML=internalAiPilotPanel(e);
+  internalAiSyncButtons(e);
   const recommendation=document.getElementById('tobeAiRecommendation');
   if(recommendation&&typeof tobeSelectedItem==='function'&&typeof tobeAiAdviceHtml==='function'){
     const selected=tobeSelectedItem(e,latestTobe(e)),p=latestTobe(e);
@@ -1307,6 +1362,8 @@ registerInternalWorkPages=function(){
   if(document.__auneaAiPilotDelegatedBound)return;
   document.__auneaAiPilotDelegatedBound=true;
   document.addEventListener('click',event=>{
+    const cancel=event.target?.closest?.('[data-aunea-cancel-ai]');
+    if(cancel){event.preventDefault();internalAiCancel(currentEng());return;}
     const global=event.target?.closest?.('#analyzeTobeGlobal');
     const retryGlobal=event.target?.closest?.('#retryTobeGlobal');
     if(global||retryGlobal){
