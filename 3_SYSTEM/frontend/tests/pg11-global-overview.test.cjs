@@ -600,7 +600,7 @@ test('one source yields more than two outcomes over consecutive small batches',a
   assert.equal(p.aiGlobal.result.complete,true);
 });
 
-test('semantic repetition retains traceability and related alternatives',()=>{
+test('same action merges source references; distinct interventions remain separate',()=>{
   const aiBlock=ai.match(/\/\/ \[AUNEA-FE-PG11-GLOBAL-AI-285\] START[\s\S]*?\/\/ \[AUNEA-FE-PG11-GLOBAL-AI-285\] END/)?.[0];
   const env={__auneaAiWorking:new Set()};vm.createContext(env);vm.runInContext(aiHarnessPrelude+aiBlock,env);
   const actions=[],one={objective:'Evitar capturas duplicadas',
@@ -613,10 +613,10 @@ test('semantic repetition retains traceability and related alternatives',()=>{
   const other={...one,source_refs:['F1','S2'],
     how:'Reutilizar los datos validados de recepción automáticamente en el registro ERP.'};
   assert.equal(env.tobeGlobalMerge(actions,other),true);
-  assert.equal(actions.length,1);
-  assert.equal(actions[0].related.length,1);
-  assert.equal(actions[0].related[0].how,other.how);
-  assert.ok(actions[0].source_refs.includes('S2'));
+  assert.equal(actions.length,2,
+    'Different intervention text must remain visible even when similar.');
+  assert.equal(actions[1].how,other.how);
+  assert.ok(actions[1].source_refs.includes('S2'));
 });
 
 test('PG11 consolidates unique recommendations, incompatibilities and alternatives without approving them',()=>{
