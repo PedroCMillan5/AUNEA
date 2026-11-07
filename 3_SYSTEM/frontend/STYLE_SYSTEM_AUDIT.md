@@ -74,8 +74,9 @@ Verifica orden y unicidad de CSS, tokens/variantes, opt-in de componentes nuevos
 | Primitivas comunes definidas y conectadas en PG11 | Implementado |
 | Eliminación de reglas de apariencia duplicadas **identificadas en PG11** | Implementado |
 | Proteger interfaces FROZEN sin cambio implícito | Por diseño; requiere ejecutar suites FROZEN |
-| Ejecutar `npm test` completo en CI/Windows | **Pendiente de confirmación** |
-| UAT visual página a página en navegador, desktop/tablet/móvil | **Pendiente** |
+| Ejecutar `npm test` completo en CI Linux | **PASS** — AUNEA Frontend Tests, run 42409158408 |
+| Acceptance Gate automatizado (frontend, backend y Chromium) | **PASS** — run 42409158446 |
+| UAT visual manual Windows/Chrome/Edge, desktop/tablet/móvil | **Pendiente** |
 | Reducir globalmente el resto de excepciones históricas `ui-system.css` | **Pendiente de clasificación y pruebas** |
 | Validación usuario del sistema visual consolidado | Pendiente |
 
@@ -92,4 +93,4 @@ Verifica orden y unicidad de CSS, tokens/variantes, opt-in de componentes nuevos
 7. Ejecutar pruebas CSS y funcionales antes de cerrar una pantalla. Código actualizado ≠ pantalla validada.
 8. Mantener excepciones justificadas en este registro y retirar reglas antiguas **solo** con evidencia de que ya no se consumen.
 
-**Estado final:** consolidación estructural parcial aplicada con trazabilidad. No marcar sistema visual completo como `PRODUCTION` hasta pasar las UAT y revisión de excepciones.
+**Estado final:** consolidación estructural parcial aplicada con trazabilidad. CI frontend y Acceptance Gate automatizado pasan en el commit `f4a395c473`; queda la UAT visual manual y la limpieza dirigida de excepciones. No marcar sistema visual completo como `PRODUCTION` hasta cerrar ambas.
