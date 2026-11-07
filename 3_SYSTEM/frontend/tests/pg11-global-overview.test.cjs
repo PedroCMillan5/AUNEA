@@ -874,4 +874,35 @@ test('PG11 field action buttons stay on one horizontal line with centered text',
   assert.match(css,/grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
 });
 
+test('PG11 global IA retries only the failed batch, then uses compact fallback',()=>{
+  assert.match(ai,/for\(let attempt=0;attempt<3;attempt\+\+\)/);
+  assert.match(ai,/retry_incomplete:true/);
+  assert.match(ai,/retry_compact:true/);
+  assert.match(ai,/doneSources\.includes\(unit\.source_id\)/);
+  assert.match(ai,/focus_done:\[\.\.\.doneSources\]/);
+  assert.match(ai,/source_batches:JSON\.parse\(JSON\.stringify\(sourceBatches\)\)/);
+});
+
+test('PG11 progress reports coverage of persisted sources and activities, not remaining time',()=>{
+  assert.match(ai,/function internalAiProgressHtml\(e,mode\)/);
+  assert.match(ai,/const percent=total\?Math\.min\(100,Math\.round\(done\*100\/total\)\):0/);
+  assert.match(ai,/data-pg11-elapsed/);
+  assert.match(ai,/La barra indica cobertura, no tiempo restante/);
+  assert.match(ai,/internalAiPendingSteps\(e,key\)/);
+  assert.match(ai,/internalAiSavedDraft\(e\)/);
+  assert.match(src,/internalAiProgressHtml\(e,'global'\)/);
+  assert.match(src,/internalAiProgressHtml\(e,'steps'\)/);
+  assert.match(css,/\.pg11-ai-progress-track\{height:9px/);
+  assert.match(ai,/function internalAiStop\(key\)/);
+  assert.match(ai,/clearInterval\(run\.timer\)/);
+});
+
+test('PG11 retains distinct recommendation actions instead of fuzzy merging',()=>{
+  const merge=ai.match(/function tobeGlobalMerge\(items,candidate\)\{[\s\S]*?\n\}\nfunction tobeGlobalSummary/)?.[0]||'';
+  assert.ok(merge);
+  assert.match(merge,/norm\(x\.how\)===norm\(candidate\.how\)/);
+  assert.doesNotMatch(merge,/similarity\(/);
+  assert.match(merge,/items\.push\(candidate\)/);
+});
+
 // [AUNEA-UAT-PG11-GLOBAL-OVERVIEW-288] END
