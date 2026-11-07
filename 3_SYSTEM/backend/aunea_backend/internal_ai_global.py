@@ -191,8 +191,8 @@ def validate_global_brief(raw: dict, source_ids: set[str]) -> GlobalBrief:
             if isinstance(row, dict):
                 texts.extend((name, row.get(name)) for name in ("how", "why"))
         for name, value in texts:
-            if isinstance(value, str) and value.strip() and not re.search(r"[.!?…]$", value.strip()):
-                raise ValueError("La respuesta IA global contiene texto incompleto en " + name +
+            if isinstance(value, str) and value.strip() and not re.search(r'''[.!?…]["'”’\)\]]*$''', value.strip()):
+                raise ValueError("La respuesta IA global contiene texto incompleto o sin cierre de frase en " + name +
                                  "; reintentar solamente este bloque.")
     try:
         brief = GlobalBrief.model_validate(raw)
@@ -202,8 +202,8 @@ def validate_global_brief(raw: dict, source_ids: set[str]) -> GlobalBrief:
         (name, getattr(item, name)) for item in brief.opportunities
         for name in ("how", "why")
     ]:
-        if not re.search(r"[.!?…]$", value.strip()):
-            raise ValueError("La respuesta IA global contiene texto incompleto en " + name +
+        if not re.search(r'''[.!?…]["'”’\)\]]*$''', value.strip()):
+            raise ValueError("La respuesta IA global contiene texto incompleto o sin cierre de frase en " + name +
                              "; reintentar solamente este bloque.")
     for item in brief.opportunities:
         if re.fullmatch(r"[A-Z][A-Z0-9_ -]{5,}", item.objective.strip()):
