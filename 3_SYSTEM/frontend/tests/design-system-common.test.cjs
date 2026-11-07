@@ -72,4 +72,15 @@ test('shared visual contract does not change business or IA execution state',()=
   const frozen=JSON.parse(load('FROZEN_PAGES.json'));
   assert.ok(frozen.frozen_pages.some(p=>p.status==='FROZEN'));
 });
+test('PG01 shares headings and form surfaces without local appearance overrides',()=>{
+  const pg01=load('pages/diagnostic-stages.js');
+  assert.match(pg01,/pg01-disclosure-head section-title/);
+  assert.match(pg01,/<h2 id="pg01-session-heading">/);
+  assert.match(pg01,/aria-labelledby="pg01-session-heading"/);
+  assert.match(pg01,/pg01-disclosure-open aunea-ui-form-section/);
+  assert.equal((local.match(/\.pg01-disclosure-open\s*\{/g)||[]).length,1);
+  for(const rule of local.matchAll(/\.pg01-[^{]+\{([^}]+)\}/g))
+    assert.doesNotMatch(rule[1],/font(?:-size|-family|-weight)?\s*:|background\s*:|border(?:-radius)?\s*:|color\s*:/);
+  assert.doesNotMatch(pg01,/class="btn[^"\n]*" style=/);
+});
 // [AUNEA-UAT-DESIGN-COMMON-312] END

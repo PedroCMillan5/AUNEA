@@ -134,7 +134,7 @@ test('B02 owner bindings are single-owner and keep canonical S01 semantics intac
 
 test('B03 VR-01B keeps DF004 and DF007-DF010 in an always-open governed block', () => {
   assert.match(diagJs, /PG01_DISCLOSURE_IDS=Object\.freeze\(\['DF004','DF007','DF008','DF009','DF010'\]\)/);
-  assert.match(diagJs, /<section class="pg01-disclosure pg01-disclosure-open">/,'the canonical remainder is always visible and does not inherit the boxed step-group primitive');
+  assert.match(diagJs, /<section class="pg01-disclosure pg01-disclosure-open aunea-ui-form-section" aria-labelledby="pg01-session-heading">/,'the canonical remainder stays always visible using the shared surface and semantic heading');
   assert.match(diagJs, /stage\.Stage_ID==='S01'[\s\S]*?<div class="card stage-card">[\s\S]*?<\/div>[\s\S]*?\$\{pg01Disclosure\}/,'PG01 renders the second block outside the primary card');
   assert.match(diagJs, /renderStageFields\(folded,e\)/,'secondary questions still use the canonical renderer, never duplicate controls');
   assert.doesNotMatch(diagJs, /<section class="step-group pg01-disclosure/,'PG01 secondary block must be separated by a line, not rendered inside a box');

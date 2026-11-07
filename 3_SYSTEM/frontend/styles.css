@@ -236,6 +236,13 @@ body.session-display .flow-step p{font-size:var(--font-small)}
    SCOPE: Opt-in only. Existing FROZEN pages retain their visual baseline.
    RULE: Type, color, typography and interaction variants belong to shared components;
    page CSS may define placement, NOT per-instance font, padding or border. */
+.aunea-ui-form-section{
+  background:#fff;
+  border:0;
+  border-top:1px solid var(--line);
+  border-radius:0;
+  box-shadow:none;
+}
 .aunea-ui-section-title{
   margin:0;
   font-family:Sora,"Segoe UI",Arial,sans-serif;

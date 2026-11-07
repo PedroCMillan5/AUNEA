@@ -1,5 +1,5 @@
 {
-  "version": 9,
+  "version": 10,
   "frozen_pages": [
     {
       "page_id": "inicio",
@@ -82,7 +82,13 @@
       "reopened_on": "2026-10-20",
       "reapproved_on": "2026-10-20",
       "qa_reference": "tests/pg01-dependencies-v1.test.cjs",
-      "qa_note": "10 pruebas Node añadidas/actualizadas; ejecución dirigida del código: 5 escenarios de Continuar, 5 de rail y verificación render de bloqueo, todos PASS; CI integral pendiente"
+      "qa_note": "862 pruebas frontend PASS. Chromium: estilos calculados 1440/1024/390, menú móvil, borrador/recarga y gates DF008/DF009. Ver STYLE_SYSTEM_AUDIT.md y tests/uat-browser-smoke.cjs. Contrato de captura protegido; revisión visual del propietario pendiente.",
+      "visual_review": {
+        "requested_on": "2026-11-07",
+        "scope": "Estilos compartidos PG01 y distribución responsive; sin cambios de captura ni reglas.",
+        "status": "REVIEW",
+        "baseline_note": "Snapshot de markup actualizado por petición del propietario. La aceptación visual manual no se presume."
+      }
     },
     {
       "page_id": "alcance-proceso",

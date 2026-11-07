@@ -46,6 +46,48 @@ async function main(){
     assert.deepEqual(found,[],'Technical identifiers are not user-visible on '+where+': '+found.join(', '));
   };
   await assertBusinessOnlyUi('context and objectives');
+  // PG01: actual computed styles, readable capture widths, mobile navigation and draft recovery.
+  const pg01VisualState=await page.evaluate(()=>JSON.stringify(currentEng().answers));
+  for(const width of [1440,1024,390]){
+    await page.setViewportSize({width,height:900});
+    await page.locator('.sidebar').evaluate(async el=>{await Promise.all(el.getAnimations().map(a=>a.finished.catch(()=>{})))});
+    const visual=await page.evaluate(()=>{
+      const q=s=>document.querySelector(s),r=s=>q(s).getBoundingClientRect();
+      const heading=getComputedStyle(q('#pg01-session-heading')),button=getComputedStyle(q('#nextStage'));
+      return {headingSize:heading.fontSize,headingFont:heading.fontFamily,headingWeight:heading.fontWeight,
+        commonHeadingSize:getComputedStyle(document.documentElement).getPropertyValue('--font-h3').trim(),
+        buttonSize:button.fontSize,buttonRadius:button.borderRadius,
+        fieldWidth:r('[data-pg01-company="name"]').width,sectionBottom:r('.pg01-disclosure').bottom,
+        inspectorTop:r('.inspector').top,sidebarRight:r('.sidebar').right,scroll:document.documentElement.scrollWidth};
+    });
+    assert.equal(visual.headingSize,visual.commonHeadingSize,'PG01 uses the shared heading scale');
+    assert.match(visual.headingFont,/Sora/);assert.equal(visual.headingWeight,'700');
+    assert.equal(visual.buttonSize,'14px');assert.equal(visual.buttonRadius,'8px');
+    assert.ok(visual.fieldWidth>=250,'PG01 capture must remain readable at '+width);
+    assert.ok(visual.scroll<=width+1,'PG01 has no horizontal overflow at '+width);
+    if(width<=1180)assert.ok(visual.inspectorTop>=visual.sectionBottom,'inspector follows capture at '+width);
+    if(width<=760){
+      assert.ok(visual.sidebarRight<=1,'closed mobile menu does not cover capture');
+      await page.locator('#mobileMenu').click();
+      assert.ok(await page.locator('.sidebar').evaluate(el=>el.classList.contains('open')),'mobile menu opens');
+      await page.locator('.sidebar').evaluate(async el=>{await Promise.all(el.getAnimations().map(a=>a.finished.catch(()=>{})))});
+      await page.locator('#mobileMenu').click();
+      assert.equal(await page.locator('.sidebar').evaluate(el=>el.classList.contains('open')),false,'mobile menu closes');
+      await page.locator('.sidebar').evaluate(async el=>{await Promise.all(el.getAnimations().map(a=>a.finished.catch(()=>{})))});
+    }
+    await page.screenshot({path:path.join(outDir,'pg01-shared-styles-'+width+'.png'),fullPage:false});
+  }
+  assert.equal(await page.evaluate(()=>JSON.stringify(currentEng().answers)),pg01VisualState,'responsive layout preserves answers');
+  await page.setViewportSize({width:1365,height:900});
+  const originalContext=await page.locator('[data-pg01-engagement="contextSummary"]').inputValue();
+  await page.locator('[data-pg01-engagement="contextSummary"]').fill('Prueba de borrador PG01: contexto conservado.');
+  await page.locator('#saveDraft').click();
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.locator('[data-pg01-engagement="contextSummary"]').waitFor();
+  assert.equal(await page.locator('[data-pg01-engagement="contextSummary"]').inputValue(),'Prueba de borrador PG01: contexto conservado.','PG01 draft survives reload');
+  await page.locator('[data-pg01-engagement="contextSummary"]').fill(originalContext);
+  await page.locator('#saveDraft').click();
+  console.log('PG01_SHARED_STYLES_AND_DRAFT_PASS: desktop, tablet, mobile menu, reload; canonical capture preserved');
   const pg01State=()=>page.evaluate(()=>({
     stage:currentEng()?.stageId,
     objectives:currentEng()?.answers?.DF008?.length,

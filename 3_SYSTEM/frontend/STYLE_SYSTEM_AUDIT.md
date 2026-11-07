@@ -94,3 +94,28 @@ Verifica orden y unicidad de CSS, tokens/variantes, opt-in de componentes nuevos
 8. Mantener excepciones justificadas en este registro y retirar reglas antiguas **solo** con evidencia de que ya no se consumen.
 
 **Estado final:** consolidación estructural parcial aplicada con trazabilidad. CI frontend y Acceptance Gate automatizado pasan en el commit `f4a395c473`; queda la UAT visual manual y la limpieza dirigida de excepciones. No marcar sistema visual completo como `PRODUCTION` hasta cerrar ambas.
+
+
+## 7. PG01 — revisión dirigida, 07/11/2026
+
+Petición del propietario: «Asegura la primera pg01». Alcance autorizado: estilos de Contexto y objetivo y corrección de su distribución; sin rediseñar el flujo ni los datos.
+
+- El encabezado del bloque de objetivos reutiliza `.section-title` y un `h2` asociado a la sección. Se elimina su tipografía local; conserva 22 px mediante `--font-h3`.
+- La superficie plana pasa al componente opt-in `.aunea-ui-form-section` en `styles.css`. Se elimina una declaración PG01 anterior sobrescrita; `ui-system.css` conserva únicamente su geometría.
+- Botones, campos, ayudas, segmentos y selectores siguen usando sus componentes existentes. No se crea CSS por botón ni se modifican los handlers.
+- A 1180 px o menos, el inspector pasa debajo de la captura para no comprimir campos. En móvil, acciones y menú permanecen accesibles. Todos los ajustes están limitados al marcador S01.
+- El snapshot PG01 cambia únicamente en la línea de markup del encabezado y la clase compartida. El resto de snapshots FROZEN permanece intacto; no se presume una nueva aceptación visual del propietario.
+
+| Comprobación | Evidencia |
+|---|---|
+| Frontend completo | 862/862 PASS; baseline anterior 861/861 PASS |
+| Estilos efectivos | Chromium: título 22 px, botón 14 px/radio 8 px; tamaños 1440, 1024 y 390 px |
+| Captura usable | Campos de empresa ≥250 px; sin desbordamiento horizontal; inspector posterior en tablet/móvil |
+| Menú móvil | Apertura y cierre reales tras completar transición |
+| Persistencia PG01 | Editar contexto → Guardar borrador → recargar → recuperar valor |
+| Reglas de avance | DF008/DF009 inválidos bloquean Continuar/rail; criterios opcionales vacíos permiten avance |
+| Integración | Suite Chromium completa existente, con PG01 añadido; sin Ollama real |
+
+Limitación tipográfica heredada: el CSS declara Sora/Inter y sus fallbacks; este cambio no añade ni distribuye fuentes. Las mediciones de font-family prueban la declaración CSS, no que la fuente esté instalada en Windows. La inspección visual local se ha realizado con Chromium 133; CI usa la versión fijada por el repositorio. UAT visual del propietario en Windows pendiente. Esta revisión no certifica el resto del sistema visual ni el motor IA.
+
+No cambia ninguna regla de negocio, roadmap o versión de producto. El hito se registra en BITACORA y el Master Index enlaza esta revisión. Las versiones anteriores de código y snapshot quedan preservadas en Git.

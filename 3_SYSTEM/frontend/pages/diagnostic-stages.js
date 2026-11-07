@@ -182,7 +182,7 @@ function pg01DisclosureValidation(fields,e){
 function pg01CanonicalDisclosure(fields,e){
   const folded=pg01DisclosureFields(fields);if(!folded.length)return '';
   const validation=pg01DisclosureValidation(fields,e);
-  return `<section class="pg01-disclosure pg01-disclosure-open"><div class="pg01-disclosure-head"><span>${esc(PG01_DISCLOSURE_TITLE)}</span><span class="conditional-tag">${esc(validation.status)}</span></div><div class="form-grid">${renderStageFields(folded,e)}</div><div class="pg01-validation-issues notice warn" ${validation.warnings?'':'hidden'}>${validation.warnings}</div></section>`;
+  return `<section class="pg01-disclosure pg01-disclosure-open aunea-ui-form-section" aria-labelledby="pg01-session-heading"><div class="pg01-disclosure-head section-title"><h2 id="pg01-session-heading">${esc(PG01_DISCLOSURE_TITLE)}</h2><span class="conditional-tag">${esc(validation.status)}</span></div><div class="form-grid">${renderStageFields(folded,e)}</div><div class="pg01-validation-issues notice warn" ${validation.warnings?'':'hidden'}>${validation.warnings}</div></section>`;
 }
 function refreshPg01DisclosureValidation(){
   const e=currentEng();if(!e||e.stageId!=='S01')return;
