@@ -355,17 +355,19 @@ async function generateTobeGlobal(e,options={}){
     const callScoped=async body=>{
       // A valid JSON object can still contain a sentence truncated by Ollama.
       // Retry only that same block, keeping all previously saved results.
-      for(let attempt=0;attempt<3;attempt++){
+      // Exactly one repair request: a smaller JSON payload is less likely
+      // to saturate local Ollama while preserving unlimited source batches.
+      for(let attempt=0;attempt<2;attempt++){
         internalAiAssertActive(key);
         if(attempt){
           const run=__auneaAiRuns.get(key);
-          if(run)run.detail='Reintentando solo el bloque incompleto · intento '+(attempt+1)+' de 3';
+          if(run)run.detail='Reintentando solo este lote con una propuesta breve · intento 2 de 2';
           internalAiGlobalRefresh(currentEng());
         }
         try{return await call('tobe-global',attempt===0?body:
-          {...body,retry_incomplete:true,...(attempt===2?{retry_compact:true}:{})});}
+          {...body,retry_incomplete:true,retry_compact:true});}
         catch(error){
-          if(attempt===2||error.status!==409||
+          if(attempt===1||error.status!==409||
              !/texto incompleto|objetivo en c[oó]digo/i.test(String(error.message||'')))
             throw error;
         }
