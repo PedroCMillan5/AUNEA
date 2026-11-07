@@ -43,10 +43,15 @@ function internalAiUpdateProgress(e){
   if(!e||currentEng()?.id!==e.id)return;
   for(const mode of ['global','steps']){
     const node=document.querySelector('[data-pg11-progress="'+mode+'"]');
-    if(!node)continue;
-    const host=document.createElement('div');
-    host.innerHTML=internalAiProgressHtml(e,mode);
-    if(host.firstElementChild)node.replaceWith(host.firstElementChild);
+    const html=internalAiProgressHtml(e,mode);
+    if(node){
+      if(html){const host=document.createElement('div');host.innerHTML=html;
+        if(host.firstElementChild)node.replaceWith(host.firstElementChild);}
+      else node.remove();
+    }else if(html&&mode==='steps'){
+      // Insert without rerendering the editable inspector or losing manual field edits.
+      document.getElementById('tobeStepAiProgress')?.insertAdjacentHTML('afterend',html);
+    }
   }
 }
 // [AUNEA-FE-PG11-REAL-PROGRESS-291] END
@@ -61,6 +66,7 @@ function internalAiStart(key,mode){
   },1000);
   __auneaAiRuns.set(key,run);
   __auneaAiWorking.add(key);
+  internalAiUpdateProgress(currentEng());
   internalAiSyncButtons(currentEng());
 }
 function internalAiCancelled(key,error){
@@ -79,6 +85,7 @@ function internalAiStop(key){
   if(run?.timer)clearInterval(run.timer);
   __auneaAiRuns.delete(key);
   __auneaAiWorking.delete(key);
+  internalAiUpdateProgress(currentEng());
   internalAiSyncButtons(currentEng());
 }
 function internalAiCancel(e){
