@@ -57,7 +57,7 @@ function internalAiSyncButtons(e){
   ).forEach(button=>{
     if(busy){
       if(button.dataset.auneaAiWasDisabled===undefined)
-        button.dataset.auneaAiWasDisabled=button.disabled?'1':'0';
+        button.dataset.auneaAiWasDisabled=(button.disabled&&button.getAttribute('aria-busy')!=='true')?'1':'0';
       button.disabled=true;
       button.title='Hay un análisis en curso. Finaliza antes de iniciar otro.';
     }else if(button.dataset.auneaAiWasDisabled!==undefined){
@@ -892,8 +892,8 @@ function internalAiPendingPanel(e,key,pending,feedback){
       '<h3>Intervenciones y resultados esperados</h3></div><span>'+pending.items.size+' actividades</span></div>'+
     '<div class="pg11-ai-step-list">'+cards+'</div>'+
     '<div class="pg11-ai-actions">'+
-      '<button type="button" class="btn btn-primary" id="retryTobeAiReview">'+
-        (complete?'Comprobar coherencia básica (sin Ollama)':'Continuar las actividades pendientes')+'</button>'+
+      (complete?'<button type="button" class="btn btn-primary" id="retryTobeAiReview">Comprobar coherencia básica (sin Ollama)</button>':
+        '<button type="button" class="btn btn-primary" data-tobe-generate-all-remaining>Analizar pasos pendientes</button>')+
       '<button type="button" class="btn btn-outline" id="saveTobeAiPending">'+
         'Guardar actividades verificadas</button></div>'+
     (feedback?.type==='warn'?'<p class="notice warn" role="alert"><b>Comprobación no completada.</b> '+esc(feedback.message)+'</p>':'')+
@@ -917,7 +917,8 @@ function internalAiPilotPanel(e){
     '<p class="pg11-ai-subtitle">La IA prepara sugerencias, pero el consultor revisa y decide.</p></div></header>'+
     '<p class="pg11-ai-message">No se ha localizado una propuesta IA guardada para este estudio en su historial de versiones. Los datos generados en una sesión anterior sin guardar no pueden recuperarse automáticamente.</p>'+
     '<p id="tobeAiProgress" role="status" aria-live="polite" class="pg11-ai-message'+(feedback?.type==='warn'?' pg11-ai-message-warn':'')+'">'+
-    esc(feedback?.message||'Pulsa «Analizar actividades con IA» cuando el proveedor esté disponible. La generación es opcional y no modifica el diseño automáticamente.')+'</p>'+
+    esc(feedback?.message||'Puedes analizar las actividades pendientes con IA desde aquí o una actividad concreta desde su inspector. La IA nunca aplica cambios automáticamente.')+'</p>'+ 
+    '<button type="button" class="btn btn-outline" data-tobe-generate-all-remaining>Analizar pasos pendientes con IA</button>'+
     internalAiPilotTracePanel(Object.fromEntries(partial?.traces||new Map()))+'</section>';
   const review=draft.review||null;
   const items=Array.isArray(draft.items)?draft.items:[];
