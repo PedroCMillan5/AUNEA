@@ -504,4 +504,13 @@ def test_pg11_global_api_retains_mismatched_draft_and_source_for_consultant(monk
     assert result["opportunities"][0]["quality"]["status"]=="REVIEW"
     assert result["opportunities"][0]["review"]["capability_status"]=="UNVERIFIED"
 
+def test_pg11_accepts_sentence_closure_before_quote_but_rejects_unfinished_how():
+    raw=candidate()
+    raw["opportunities"][0]["how"]="Reutilizar datos validados entre las dos actividades.\u201d"
+    result=global_ai.validate_global_brief(raw, {"S1","F1"})
+    assert result.opportunities[0].how.endswith(".\u201d")
+    raw["opportunities"][0]["how"]="Reutilizar datos validados entre las dos actividades"
+    with pytest.raises(ValueError,match="texto incompleto o sin cierre de frase en how"):
+        global_ai.validate_global_brief(raw, {"S1","F1"})
+
 # [AUNEA-UAT-PG11-GLOBAL-AI-287] END
