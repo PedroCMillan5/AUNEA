@@ -2078,7 +2078,7 @@ function tobeGlobalOverviewHtml(e,p){
       [result.summary,...result.opportunities.flatMap(item=>[
         item.how,item.why,...(item.related||[]).flatMap(x=>[x.how,x.why]),
         ...(item.alternative?[item.alternative.how,item.alternative.why]:[])])]
-        .every(value=>typeof value==='string'&&/[.!?…]$/.test(value.trim())),
+        .every(value=>typeof value==='string'&&/[.!?…]["'”’\\)\\]]*$/.test(value.trim())),
     legacy=!!result&&!complete,
     opportunities=Array.isArray(result?.opportunities)?result.opportunities:[],
     progress=result?.progress||null,
