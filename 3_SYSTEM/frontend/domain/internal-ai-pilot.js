@@ -265,8 +265,7 @@ async function generateTobeGlobal(e,options={}){
     return toast('El borrador o el diagnóstico cambiaron. Revisa el estudio.');
   // Check the backend strategy BEFORE invalidating any saved global proposal.
   // An out-of-date local Uvicorn process must never erase valid draft content.
-  __auneaAiWorking.add(key);
-  internalAiSyncButtons(e);
+  internalAiStart(key,'global');
   __auneaGlobalAiFeedback.set(key,{working:true,type:'info',
     phase:resume?'RESUME_PREFLIGHT':'PREFLIGHT',
     message:resume?'Comprobando el borrador antes de reintentar fuentes pendientes…':
@@ -276,7 +275,7 @@ async function generateTobeGlobal(e,options={}){
   try{
     if(!state.backendOnline&&!(await checkBackend()))
       throw Error('El backend no está conectado.');
-    const statusResponse=await fetch(state.backendUrl+'/v1/internal-ai/status',{cache:'no-store'});
+    const statusResponse=await internalAiFetch(key,state.backendUrl+'/v1/internal-ai/status',{cache:'no-store'});
     if(!statusResponse.ok)throw Error('No se pudo consultar la disponibilidad de IA.');
     const status=await statusResponse.json();
     if(status.status!=='AVAILABLE'||status.provider!=='ollama')
@@ -291,7 +290,7 @@ async function generateTobeGlobal(e,options={}){
       payload={engagement:buildBackendPayload(source),diagnostic,
         confirmed_as_is:source.confirmedAsIs===true,snapshot_version:snap.version};
     const call=async(url,body)=>{
-      const response=await fetch(state.backendUrl+'/v1/internal-ai/'+url,{
+      const response=await internalAiFetch(key,state.backendUrl+'/v1/internal-ai/'+url,{
         method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
       if(!response.ok){
         const error=await response.json().catch(()=>null);
@@ -398,6 +397,7 @@ async function generateTobeGlobal(e,options={}){
     };
     if(!resume)persist(total===0);
     for(const unit of plan.focus){
+      internalAiAssertActive(key);
       verifiedOwner();
       if(doneSources.includes(unit.source_id))continue;
       const seenForSource=Array.isArray(sourceBatches[unit.source_id])?
@@ -407,6 +407,7 @@ async function generateTobeGlobal(e,options={}){
       let hasMore=true,batch=0;
       try{
         while(hasMore){
+          internalAiAssertActive(key);
           verifiedOwner();
           __auneaGlobalAiFeedback.set(key,{working:true,type:'info',
             message:'Analizando fuente '+(processed+1)+' de '+total+
@@ -415,6 +416,7 @@ async function generateTobeGlobal(e,options={}){
           const data=await callScoped({
             ...payload,focus_source_id:unit.source_id,
             seen_interventions:[...seenForSource]});
+          internalAiAssertActive(key);
           verifiedOwner();
           if(data?.status!=='DRAFT'||data.engagement_id!==e.id||
              data.snapshot_version!==snap.version||
@@ -471,6 +473,7 @@ async function generateTobeGlobal(e,options={}){
                 }else proposed.alternative_note=
                   'No se identificó una alternativa verificable; requiere revisión.';
               }catch(error){
+                if(internalAiCancelled(key,error))throw error;
                 proposed.alternative_note='La alternativa no pudo evaluarse: '+
                   String(error.message||error).slice(0,180);
               }
@@ -489,6 +492,7 @@ async function generateTobeGlobal(e,options={}){
         }
         doneSources.push(unit.source_id);
       }catch(error){
+        if(internalAiCancelled(key,error))throw error;
         if(/No se pudo guardar el progreso del análisis IA/.test(String(error.message||'')))
           throw error;
         failures.push({source_id:unit.source_id,
@@ -503,6 +507,7 @@ async function generateTobeGlobal(e,options={}){
       persist(false);
       internalAiGlobalRefresh(currentEng());
     }
+    internalAiAssertActive(key);
     const complete=doneSources.length===total&&failures.length===0;
     persist(complete);
     __auneaGlobalAiFeedback.set(key,{working:false,
@@ -515,12 +520,13 @@ async function generateTobeGlobal(e,options={}){
         ' incidencias. '+(failures[0]?.reason||'Consulta el detalle antes de revisar.')});
   }catch(error){
     __auneaGlobalAiFeedback.set(key,{working:false,type:'warn',
-      message:'No se completó el análisis global. '+String(error.message||error)});
+      message:internalAiCancelled(key,error)?
+        'Análisis cancelado. Los bloques guardados se conservan.':
+        'No se completó el análisis global. '+String(error.message||error)});
     console.error('PG11: fallo al analizar proceso por bloques',error);
   }finally{
-    __auneaAiWorking.delete(key);
+    internalAiStop(key);
     internalAiGlobalRefresh(currentEng());
-    internalAiSyncButtons(currentEng());
   }
 }
 // [AUNEA-FE-PG11-GLOBAL-AI-285] END
@@ -1062,6 +1068,7 @@ async function generateTobeBySteps(e,key,snap,availability,fresh=false,selectedS
   };
   const failures=[];
   for(const stepId of (selected?[selected]:stepIds)){
+    internalAiAssertActive(key);
     if(completed.items.has(stepId))continue;
     if(internalAiPilotKey(e)!==key||currentEng()?.id!==e.id||
        !tobeEditable(latestTobe(e)))throw Error('El estudio cambió; no se continuará esta ejecución.');
@@ -1069,7 +1076,7 @@ async function generateTobeBySteps(e,key,snap,availability,fresh=false,selectedS
     internalAiPilotFeedback(e,'Actividad '+(done+1)+' de '+stepIds.length+
       ' · '+done+' completadas y verificadas. Analizando '+
       internalAiActivityLabel(e,stepId)+' con Ollama local…');
-    const response=await fetch(state.backendUrl+'/v1/internal-ai/tobe-step',{
+    const response=await internalAiFetch(key,state.backendUrl+'/v1/internal-ai/tobe-step',{
       method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({request,source_step_id:stepId})
     });
@@ -1083,6 +1090,7 @@ async function generateTobeBySteps(e,key,snap,availability,fresh=false,selectedS
       continue;
     }
     const result=await response.json();
+    internalAiAssertActive(key);
     if(internalAiPilotKey(e)!==key||currentEng()?.id!==e.id||
        !tobeEditable(latestTobe(e)))throw Error('El estudio cambió durante la generación.');
     if(result?.status!=='DRAFT'||result.engagement_id!==e.id||
@@ -1107,7 +1115,8 @@ async function generateTobeBySteps(e,key,snap,availability,fresh=false,selectedS
     internalAiPilotFeedback(e,'Actividad '+completed.items.size+' de '+stepIds.length+
       ' completadas y verificadas. Preparando siguiente actividad…');
   }
-  if(failures.length)throw Error(failures.join(' · ')+' · '+completed.items.size+' de '+stepIds.length+' completadas. Puedes reintentar.');
+  internalAiAssertActive(key);
+  if(failures.length)throw Error(failures.join(' · '+' · '+completed.items.size+' de '+stepIds.length+' completadas. Puedes reintentar.');
   if(selected&&completed.items.size<stepIds.length){
     internalAiPilotFeedback(e,'Propuesta de '+internalAiActivityLabel(e,selected)+
       ' verificada y guardada como checkpoint. Hay '+completed.items.size+' de '+stepIds.length+
@@ -1135,7 +1144,7 @@ async function internalAiConsolidateVerified(e,key,snap,availability,completed,r
     'Comprobando por reglas las '+stepIds.length+' propuestas guardadas, sin usar Ollama…':
     'Generación individual completada: '+stepIds.length+
     ' de '+stepIds.length+' actividades verificadas. Consolidando coherencia global…');
-  const reviewed=await fetch(state.backendUrl+(mode==='basic'?'/v1/internal-ai/tobe-review-basic':'/v1/internal-ai/tobe-review'),{
+  const reviewed=await internalAiFetch(key,state.backendUrl+(mode==='basic'?'/v1/internal-ai/tobe-review-basic':'/v1/internal-ai/tobe-review'),{
     method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({request,items,correction_attempted_ids:[...completed.traces].filter(([,t])=>t.correction_attempted).map(([id])=>id)})
   });
@@ -1146,6 +1155,7 @@ async function internalAiConsolidateVerified(e,key,snap,availability,completed,r
       ' · '+completed.items.size+' actividades conservadas.');
   }
   const review=await reviewed.json();
+  internalAiAssertActive(key);
   if(!review||review.protocol_revision!==__auneaPg11ReviewProtocol||
      !['CHECKED','CHECKED_WITH_NOTES'].includes(review.status)||
      review.requires_human_review!==true||!Array.isArray(review.issues)||
@@ -1204,7 +1214,7 @@ async function retryTobeAiReviewOnly(){
     internalAiPilotFeedback(e,'Ya hay una operación de IA en curso. No se ha iniciado otra revisión; las actividades siguen guardadas.','info');
     return;
   }
-  __auneaAiWorking.add(key);
+  internalAiStart(key,'steps');
   const button=document.getElementById('retryTobeAiReview');
   if(button){button.disabled=true;button.textContent='Comprobando coherencia básica…'}
   internalAiPilotFeedback(e,'Comprobando '+ids.length+' propuestas con reglas de AUNEA. No se utiliza Ollama ni se modifican los borradores.');
@@ -1226,12 +1236,14 @@ async function retryTobeAiReviewOnly(){
       availability,completed,request,'basic');
   }catch(error){
     const message=String(error?.message||error||'Fallo desconocido de la comprobación básica.');
-    internalAiPilotFeedback(currentEng()||e,'La comprobación básica no se completó: '+message+
+    internalAiPilotFeedback(currentEng()||e,internalAiCancelled(key,error)?
+      'Comprobación cancelada. Se conservan los resultados guardados.':
+      'La comprobación básica no se completó: '+message+
       ' Las '+ids.length+' actividades verificadas permanecen guardadas.','warn');
     if(currentEng()?.id===e.id)internalAiPilotRefreshPanel(currentEng());
     console.error('PG11: reintento de revisión global no completado',error);
   }finally{
-    __auneaAiWorking.delete(key);
+    internalAiStop(key);
     const currentButton=document.getElementById('retryTobeAiReview');
     if(currentButton){currentButton.disabled=false;currentButton.textContent='Comprobar coherencia básica (sin Ollama)'}
     // The result panel was rendered before removing the working flag; redraw
@@ -1259,8 +1271,7 @@ async function generateTobeAiPilot(e,fresh=false,selectedStepId=null){
   }
   for(const cache of [__auneaAiPreview,__auneaAiFeedback,__auneaAiCompletedSteps])
     for(const oldKey of cache.keys())if(oldKey!==key)cache.delete(oldKey);
-  __auneaAiWorking.add(key);
-  internalAiSyncButtons(e);
+  internalAiStart(key,'steps');
   const button=document.getElementById('generateTobeAiPilot');
   if(button){button.disabled=true;button.textContent='Comprobando IA…'}
   // Keep the global audit closed by default; progress is reported above
@@ -1269,7 +1280,7 @@ async function generateTobeAiPilot(e,fresh=false,selectedStepId=null){
   internalAiPilotFeedback(e,'Comprobando disponibilidad del proveedor IA…');
   try{
     if(!state.backendOnline&&!(await checkBackend()))throw Error('Backend no conectado.');
-    const check=await fetch(state.backendUrl+'/v1/internal-ai/status',{cache:'no-store'});
+    const check=await internalAiFetch(key,state.backendUrl+'/v1/internal-ai/status',{cache:'no-store'});
     if(!check.ok)throw Error('No se pudo consultar el proveedor IA.');
     const availability=await check.json();
     if(availability.status!=='AVAILABLE'){
@@ -1303,7 +1314,7 @@ async function generateTobeAiPilot(e,fresh=false,selectedStepId=null){
       AiAgentService.register({name:'AUNEA Backend — proveedor gobernado',
         async propose({kind,engagement}){
           if(kind!=='TOBE_DRAFT')throw Error('Capacidad IA no habilitada.');
-          const response=await fetch(state.backendUrl+'/v1/internal-ai/tobe-draft',{
+          const response=await internalAiFetch(key,state.backendUrl+'/v1/internal-ai/tobe-draft',{
             method:'POST',headers:{'Content-Type':'application/json'},
             body:JSON.stringify({engagement:buildBackendPayload(engagement),
               diagnostic:currentDiagnosticOutput(engagement),
@@ -1334,12 +1345,14 @@ async function generateTobeAiPilot(e,fresh=false,selectedStepId=null){
   }catch(error){
     if(AiAgentService.available())AiAgentService.clear();
     const message=String(error?.message||error||'Error desconocido al generar la propuesta.');
-    internalAiPilotFeedback(currentEng()||e,'La propuesta no está completa: '+message,'warn');
+    internalAiPilotFeedback(currentEng()||e,internalAiCancelled(key,error)?
+      'Análisis cancelado. Se conservan las actividades verificadas.':
+      'La propuesta no está completa: '+message,'warn');
     // Refresh the actual consultant-visible cards as well as the technical audit.
     if(currentEng()?.id===e.id)internalAiPilotRefreshPanel(currentEng());
     console.error('PG11: solicitud IA no completada',error);
   }finally{
-    __auneaAiWorking.delete(key);
+    internalAiStop(key);
     const currentButton=document.getElementById('generateTobeAiPilot');
     if(currentButton){currentButton.disabled=false;currentButton.textContent='Analizar actividades con IA'}
     if(currentEng()?.id===e.id&&internalAiPilotKey(currentEng())===key)
