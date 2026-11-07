@@ -14,12 +14,14 @@ const __auneaAiRuns=new Map();
 function internalAiProgressHtml(e,mode){
   const key=e&&internalAiPilotKey(e),run=__auneaAiRuns.get(key);
   const active=run?.mode===mode;
-  const stored=mode==='global'?latestTobe(e)?.aiGlobal?.result?.progress:null;
+  const stored=mode==='global'&&typeof tobeGlobalStored==='function'?
+    tobeGlobalStored(e,latestTobe(e))?.progress:null;
   const stepIds=mode==='steps'?(latestTobe(e)?.items||[]).map(x=>String(x.sourceStepId)):[];
   const pending=mode==='steps'&&key?internalAiPendingSteps(e,key):null;
   const saved=mode==='steps'?internalAiSavedDraft(e):null;
   const done=mode==='global'?Math.max(0,stored?.focus_done?.length??stored?.completed??0):
-    Math.min(stepIds.length,Math.max(pending?.items?.size||0,saved?.items?.length||0));
+    Math.min(stepIds.length,active?(pending?.items?.size||0):
+      Math.max(pending?.items?.size||0,saved?.items?.length||0));
   const total=mode==='global'?Math.max(0,stored?.total||run?.total||0):stepIds.length;
   if(!active&&!stored&&mode==='global')return '';
   if(!active&&!done&&mode==='steps')return '';
