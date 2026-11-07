@@ -3110,6 +3110,7 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 .tobe-global-analysis-head p{margin:0;color:var(--muted);font-size:var(--font-small);line-height:1.5}
 .tobe-global-analysis-head .btn{flex:0 0 auto;min-height:40px;white-space:normal}
 .tobe-global-head-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.tobe-global-head-actions [data-aunea-cancel-ai]{min-height:40px;white-space:normal;flex:0 0 auto}
 .tobe-global-progress{display:grid;gap:3px;padding:9px 12px;border:1px solid var(--system-line);
   border-radius:var(--radius-sm);background:#fff;font-size:var(--font-small);line-height:1.45}
 .tobe-global-progress p{margin:0;overflow-wrap:anywhere}
@@ -3144,7 +3145,17 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 .tobe-global-opportunity-body details{border-top:1px solid var(--system-line);padding-top:7px}
 .tobe-global-opportunity-body details summary{cursor:pointer;color:var(--system);font-weight:700;font-size:12px}
 .tobe-global-detail{margin-top:9px;padding:10px 12px;border-radius:var(--radius-sm);background:var(--system-soft)}
-.tobe-global-detail p{margin:0 0 7px;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+.tobe-global-detail p{margin:0 0 7px;font-size:var(--font-small);line-height:1.5;overflow-wrap:anywhere}
+.tobe-global-opportunity-body p,.tobe-global-opportunity-body li{
+  font-size:var(--font-small);line-height:1.5;overflow-wrap:anywhere
+}
+.tobe-global-opportunity-body p b,.tobe-global-opportunity-body li b{
+  font-size:inherit;line-height:inherit
+}
+.tobe-global-review-links{display:grid;gap:7px;margin-top:10px}
+.tobe-global-review-label{display:block;font-size:var(--font-small);font-weight:700;line-height:1.5}
+.tobe-global-review-actions{display:flex;flex-wrap:wrap;gap:7px;align-items:flex-start}
+.tobe-global-review-actions .btn{white-space:normal;max-width:100%}
 .tobe-global-detail p:last-child{margin-bottom:0}
 .tobe-global-feedback{margin:0;padding:9px 12px;border:1px solid var(--system-line);
   border-radius:var(--radius-sm);font-size:var(--font-small);line-height:1.5}
