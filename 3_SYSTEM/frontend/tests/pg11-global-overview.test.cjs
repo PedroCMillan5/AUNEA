@@ -846,4 +846,14 @@ test('PG11 continues missing steps rather than launching a coherence review',()=
   assert.match(ai,/void generateTobeAiPilot\(currentEng\(\)\)/);
 });
 
+test('PG11 keeps cancellation in global action group and review buttons on their own row',()=>{
+  assert.match(ai,/document\.querySelector\('#tobeGlobalAnalysis \.tobe-global-head-actions'\)/);
+  assert.match(ai,/button\.className='btn btn-outline'/);
+  assert.doesNotMatch(ai,/button\.style\.margin='8px 0'/);
+  assert.match(block,/class="tobe-global-review-links"/);
+  assert.match(block,/class="tobe-global-review-actions"/);
+  assert.match(css,/\.tobe-global-review-actions\{display:flex;flex-wrap:wrap/);
+  assert.match(css,/\.tobe-global-detail p\{[^}]*font-size:var\(--font-small\)/);
+});
+
 // [AUNEA-UAT-PG11-GLOBAL-OVERVIEW-288] END
