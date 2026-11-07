@@ -513,4 +513,28 @@ def test_pg11_accepts_sentence_closure_before_quote_but_rejects_unfinished_how()
     with pytest.raises(ValueError,match="texto incompleto o sin cierre de frase en how"):
         global_ai.validate_global_brief(raw, {"S1","F1"})
 
+def test_compact_retry_uses_single_candidate_schema_without_total_quota(monkeypatch):
+    configure(monkeypatch)
+    captured=[]
+    def fake_open(req, timeout=0):
+        captured.append(json.loads(req.data))
+        return io.BytesIO(json.dumps({
+            "done":True,"done_reason":"stop","prompt_eval_count":1200,
+            "message":{"content":json.dumps(candidate())}
+        }).encode())
+    monkeypatch.setattr(global_ai._LOCAL_HTTP,"open",fake_open)
+    request=sample()
+    recovery=global_ai.GlobalBatchRequest(
+        engagement=request.engagement,diagnostic=request.diagnostic,
+        confirmed_as_is=True,snapshot_version=request.snapshot_version,
+        focus_source_id="F1",retry_incomplete=True,retry_compact=True)
+    result=global_ai.analyze_global(recovery)
+    assert result["status"]=="DRAFT"
+    assert result["requires_human_review"] is True
+    assert captured[0]["format"]["properties"]["opportunities"]["maxItems"]==1
+    assert "MODO RECUPERACION" in captured[0]["messages"][0]["content"]
+    assert "has_more=true" in captured[0]["messages"][0]["content"]
+    assert global_ai.global_schema()["properties"]["opportunities"]["maxItems"]==2
+    assert captured[0]["options"]["num_predict"]==global_ai.MAX_GLOBAL_OUTPUT_TOKENS
+
 # [AUNEA-UAT-PG11-GLOBAL-AI-287] END
