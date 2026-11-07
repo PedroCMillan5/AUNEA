@@ -68,7 +68,8 @@ function internalAiSyncButtons(e){
   });
   document.querySelectorAll('[data-aunea-cancel-ai]').forEach(el=>el.remove());
   if(busy&&run){
-    const anchor=run.mode==='global'?document.getElementById('tobeGlobalAnalysis'):
+    const anchor=run.mode==='global'?
+      document.querySelector('#tobeGlobalAnalysis .tobe-global-head-actions'):
       (document.querySelector('[data-tobe-generate-selected]')||
        document.getElementById('tobeAiPilotStatus'));
     if(anchor){
@@ -78,8 +79,7 @@ function internalAiSyncButtons(e){
       button.setAttribute('data-aunea-cancel-ai','');
       button.textContent=run.cancelled?'Cancelando…':'Cancelar análisis';
       button.disabled=run.cancelled;
-      button.style.margin='8px 0';
-      if(run.mode==='global')anchor.prepend(button);
+      if(run.mode==='global')anchor.append(button);
       else anchor.insertAdjacentElement('afterend',button);
     }
   }
