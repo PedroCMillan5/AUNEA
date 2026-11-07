@@ -279,12 +279,14 @@ function tobeGlobalMerge(items,candidate){
   }
   return false;
 }
-function tobeGlobalSummary(items){
+function tobeGlobalSummary(items,completed=0,total=0){
   const count=items.length;
-  return count?'El análisis de las fuentes confirmadas identifica '+count+
+  if(count)return 'El análisis de las fuentes confirmadas identifica '+count+
     (count===1?' intervención para revisión del consultor.':
-      ' intervenciones para revisión del consultor.'):
-    'No se han identificado intervenciones justificadas en las fuentes revisadas.';
+      ' intervenciones para revisión del consultor.');
+  if(total>completed)return 'Análisis parcial: aún no hay intervenciones guardadas. '+
+    'Quedan '+(total-completed)+' fuentes por completar.';
+  return 'No se han identificado intervenciones justificadas en las fuentes revisadas.';
 }
 async function generateTobeGlobal(e,options={}){
   const resume=options.resume===true,key=internalAiPilotKey(e),p=latestTobe(e);
@@ -435,7 +437,7 @@ async function generateTobeGlobal(e,options={}){
         diagnosticInputHash:diagnostic.input_snapshot_hash,savedAt:now(),
         result:{status:'DRAFT',engagement_id:e.id,snapshot_version:snap.version,
           input_hash:plan.input_hash,model:status.model||previousResult?.model||'',
-          summary:tobeGlobalSummary(items),
+          summary:tobeGlobalSummary(items,doneSources.length,total),
           opportunities:items.map(x=>JSON.parse(JSON.stringify(x))),complete,
           progress:{completed:doneSources.length,attempted:processed,total,
             pending:total-doneSources.length,failed:failures.length,
