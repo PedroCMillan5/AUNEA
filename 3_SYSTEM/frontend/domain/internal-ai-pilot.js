@@ -321,12 +321,25 @@ async function generateTobeGlobal(e,options={}){
       throw Error('El backend 8010 utiliza una versión anterior de la IA global. '+
         'Reinicia el backend actualizado: falta la estrategia por bloques. '+
         'La propuesta anterior no se ha borrado.');
+    if(status.pg11_global_recovery!=='COMPACT_3_ATTEMPTS_20261107')
+      throw Error('El backend 8010 sigue ejecutando una versión anterior del motor IA. '+
+        'Reinícialo después de actualizar Git para activar la recuperación actual. '+
+        'Las fuentes y propuestas guardadas se conservan.');
     const source=currentEng(),snap=confirmedSnapshot(source),diagnostic=currentDiagnosticOutput(source),
       payload={engagement:buildBackendPayload(source),diagnostic,
         confirmed_as_is:source.confirmedAsIs===true,snapshot_version:snap.version};
     const call=async(url,body)=>{
-      const response=await internalAiFetch(key,state.backendUrl+'/v1/internal-ai/'+url,{
-        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      let response;
+      try{
+        response=await internalAiFetch(key,state.backendUrl+'/v1/internal-ai/'+url,{
+          method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      }catch(error){
+        if(internalAiCancelled(key,error))throw error;
+        const failed=Error('Se interrumpió la conexión con el backend 8010. '+
+          'Comprueba que siga ejecutándose y revisa sus errores y los de Ollama 11434. '+
+          'Las fuentes completadas se mantienen guardadas.');
+        failed.status=0;failed.network=true;throw failed;
+      }
       if(!response.ok){
         const error=await response.json().catch(()=>null);
         const message=response.status===404?
