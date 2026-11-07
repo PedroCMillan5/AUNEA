@@ -2078,7 +2078,7 @@ function tobeGlobalOverviewHtml(e,p){
       [result.summary,...result.opportunities.flatMap(item=>[
         item.how,item.why,...(item.related||[]).flatMap(x=>[x.how,x.why]),
         ...(item.alternative?[item.alternative.how,item.alternative.why]:[])])]
-        .every(value=>typeof value==='string'&&/[.!?…]["'”’\\)\\]]*$/.test(value.trim())),
+        .every(value=>typeof value==='string'&&/[.!?…]["'”’)\]]*$/.test(value.trim())),
     legacy=!!result&&!complete,
     opportunities=Array.isArray(result?.opportunities)?result.opportunities:[],
     progress=result?.progress||null,
@@ -2137,7 +2137,7 @@ function tobeGlobalOverviewHtml(e,p){
   const completeCards=opportunities.filter(item=>
     [item.how,item.why,...(item.related||[]).flatMap(x=>[x.how,x.why]),
       ...(item.alternative?[item.alternative.how,item.alternative.why]:[])]
-      .every(value=>typeof value==='string'&&/[.!?…]$/.test(value.trim()))).length,
+      .every(value=>typeof value==='string'&&/[.!?…]["'”’)\]]*$/.test(value.trim()))).length,
     decisions=typeof tobeHumanReviewRecord==='function'?
       Object.values(tobeHumanReviewRecord(e,p)?.decisions||{})
         .filter(x=>['ACCEPT','MODIFY','DISCARD'].includes(x?.status)).length:0;
