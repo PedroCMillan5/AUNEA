@@ -17,11 +17,12 @@ function internalAiProgressHtml(e,mode){
   const stored=mode==='global'?latestTobe(e)?.aiGlobal?.result?.progress:null;
   const stepIds=mode==='steps'?(latestTobe(e)?.items||[]).map(x=>String(x.sourceStepId)):[];
   const pending=mode==='steps'&&key?internalAiPendingSteps(e,key):null;
+  const saved=mode==='steps'?internalAiSavedDraft(e):null;
   const done=mode==='global'?Math.max(0,stored?.focus_done?.length??stored?.completed??0):
-    (pending?.items?.size||0);
+    Math.min(stepIds.length,Math.max(pending?.items?.size||0,saved?.items?.length||0));
   const total=mode==='global'?Math.max(0,stored?.total||run?.total||0):stepIds.length;
   if(!active&&!stored&&mode==='global')return '';
-  if(!active&&!pending?.items?.size&&mode==='steps')return '';
+  if(!active&&!done&&mode==='steps')return '';
   const percent=total?Math.min(100,Math.round(done*100/total)):0;
   const detail=active?(run.detail||'Preparando solicitud al proveedor IA…'):
     (mode==='global'&&stored?.failed?'Hay fuentes pendientes de reintento.':
