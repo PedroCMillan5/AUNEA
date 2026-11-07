@@ -1869,7 +1869,8 @@ function tobeInspectorHtml(e,p){
       (editable&&!item.isAddition?'<div class="tobe-ai-per-step-action"><button type="button" class="btn btn-primary" data-tobe-generate-selected="'+attr(item.sourceStepId)+'">'+
         (hasCurrentAi?'Volver a analizar este paso':'Analizar este paso con IA')+'</button>'+
         '<span class="tobe-muted">Análisis independiente de esta actividad; no aplica cambios automáticamente.</span></div>':'')+
-      '<p id="tobeStepAiProgress" role="status" aria-live="polite" class="tobe-muted">Propuesta individual: sin aprobar.</p>'+ 
+      '<p id="tobeStepAiProgress" role="status" aria-live="polite" class="tobe-muted">Propuesta individual: sin aprobar.</p>'+
+      (typeof internalAiProgressHtml==='function'?internalAiProgressHtml(e,'steps'):'')+
       '<div id="tobeGlobalLinkedStep">'+tobeGlobalLinkedStepHtml(e,p,item)+'</div>'+
       '<div id="tobeAiRecommendation">'+tobeAiAdviceHtml(e,item,false)+'</div>'+
       (!item.isAddition&&hasCurrentAi?
@@ -2169,6 +2170,7 @@ function tobeGlobalOverviewHtml(e,p){
       (variants?' · '+variants+' variantes relacionadas conservadas':'')+
       (qualityPlan?' · '+thematicGroups.length+' líneas relacionadas para revisión':'')+
       '. Ninguna equivale a aprobación del consultor.</p>':'')+
+    (typeof internalAiProgressHtml==='function'?internalAiProgressHtml(e,'global'):'')+
     (progress?'<div class="tobe-global-progress" role="status" aria-live="polite">'+
       '<p><b>Generación:</b> Fuentes revisadas: '+successful+' de '+progress.total+
         (outstanding?' · Pendientes: '+outstanding:'')+
@@ -2250,7 +2252,11 @@ function tobeGlobalOverviewHtml(e,p){
           esc(step.sourceStepName||step.stepName||String(step.sourceStepId))+'</button>').join('')+
         '</div></div>':'')+
       '</div></details></section>').join('')+'</div></article>').join('')+'</div>':
-      result?'<p class="tobe-global-empty">La IA no ha identificado mejoras transversales con evidencia suficiente. Consulta la síntesis y revisa los pasos individualmente.</p>':'')+
+      result?'<p class="tobe-global-empty">'+
+        (analysisFinished&&outstanding===0?
+          'No se han identificado mejoras justificadas en las fuentes completadas. Revisa la evidencia antes de cerrar.':
+          'Análisis parcial: quedan fuentes por revisar. Aún no se puede concluir que no existan otras mejoras.')+
+        '</p>':'')+
     (legacy?'<p class="tobe-global-feedback is-warning" role="status">La salida anterior contiene una frase que puede estar incompleta. Se muestra íntegra tal como la devolvió Ollama. Regenera antes de aprobar.</p>':'')+
     '<p class="tobe-global-caution">Propuesta sin aprobar. Contrasta las cifras con las referencias del AS-IS confirmado; no son promesas de ahorro ni tiempos futuros. La revisión humana sigue siendo obligatoria.</p>'+
     '</section>';
