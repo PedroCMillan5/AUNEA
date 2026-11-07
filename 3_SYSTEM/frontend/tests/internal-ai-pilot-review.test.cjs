@@ -55,7 +55,7 @@ function aiPilotHarness({fail=false,steps=['S1'],failReview=false,blockingSteps=
   const proposal={status:'DRAFT',engagement_id:'SYNTHETIC',snapshot_version:2,
     item:{source_step_id:'S1',transformation:'Se modifica',problem_resolved:'Registro disperso',rationale:'Acción propuesta: registrar entradas. Resultado esperado: mayor trazabilidad. Justificación: el paso registra solicitudes',
       source_refs:['S1'],limitations:'Pendiente de revisión'},input_hash:'ENGAGEMENT_HASH_DIFFERENT_FROM_DIAGNOSTIC',model:'aunea-qwen3-4b:latest'};
-  const button={disabled:false,dataset:{},textContent:'Analizar pasos pendientes con IA'};
+  const button={disabled:false,dataset:{},textContent:'Analizar pasos pendientes con IA',removeAttribute:()=>{}};
   const disk=new Map();
   const localStorage={getItem:key=>disk.get(key)||null,setItem:(key,value)=>disk.set(key,String(value))};
   notice={textContent:'',className:'notice info',outerHTML:'',insertAdjacentElement:()=>{}};
