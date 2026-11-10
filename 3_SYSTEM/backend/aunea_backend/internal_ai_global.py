@@ -182,6 +182,48 @@ def global_schema(compact: bool = False) -> dict:
                 "has_more": {"type": "boolean"},
             }, "required": ["summary", "opportunities", "has_more"]}
 
+_SENTENCE_CLOSURE = re.compile(r"""[.!?…]["'”’)\]]*$""")
+_DANGLING_LAST_WORDS = frozenset((
+    "a al ante bajo con contra de del desde durante en entre hacia hasta"
+    " mediante para por segun sin sobre tras y e o u que quien quienes cuyo"
+    " cuya cuyos cuyas el la los las un una unos unas lo le les se su sus"
+    " mi mis tu tus este esta estos estas ese esa esos esas otro otra otros"
+    " otras cada como cuando donde mientras aunque porque si no"
+).split())
+
+
+def global_text_is_complete(value: str) -> bool:
+    """Conservative completion check for generated Spanish text.
+
+    A completed Ollama JSON can contain grammatical sentences with no final
+    full stop. Punctuation alone cannot establish whether text was truncated.
+    Keep the original text and fail on dangling words, fragments and unclosed
+    delimiters without assuming missing final punctuation proves a cut.
+    """
+    if not isinstance(value, str):
+        return False
+    value = value.strip()
+    if not value:
+        return False
+    if _SENTENCE_CLOSURE.search(value):
+        return True
+    if len(value.split()) < 4 or value.endswith((",", ":", ";", "-", "/", "\\")):
+        return False
+    for opening, closing in (("(", ")"), ("[", "]"), ("«", "»")):
+        if value.count(opening) != value.count(closing):
+            return False
+    words = re.findall(r"[^\W_]+", value, flags=re.UNICODE)
+    if not words:
+        return False
+    last = words[-1]
+    if last.casefold() in _DANGLING_LAST_WORDS or len(last) == 1:
+        return False
+    # Domain acronyms, e.g. IA, ERP and CRM, are legitimate sentence endings.
+    if len(last) == 2 and not last.isupper():
+        return False
+    return True
+
+
 def validate_global_brief(raw: dict, source_ids: set[str]) -> GlobalBrief:
     # Check broken sentences before Pydantic rejects short fragments as generic
     # format errors. The UI can then retry only this one incomplete batch.
@@ -191,7 +233,7 @@ def validate_global_brief(raw: dict, source_ids: set[str]) -> GlobalBrief:
             if isinstance(row, dict):
                 texts.extend((name, row.get(name)) for name in ("how", "why"))
         for name, value in texts:
-            if isinstance(value, str) and value.strip() and not re.search(r'''[.!?…]["'”’\)\]]*$''', value.strip()):
+            if isinstance(value, str) and value.strip() and not global_text_is_complete(value):
                 raise ValueError("La respuesta IA global contiene texto incompleto o sin cierre de frase en " + name +
                                  "; reintentar solamente este bloque.")
     try:
@@ -202,7 +244,7 @@ def validate_global_brief(raw: dict, source_ids: set[str]) -> GlobalBrief:
         (name, getattr(item, name)) for item in brief.opportunities
         for name in ("how", "why")
     ]:
-        if not re.search(r'''[.!?…]["'”’\)\]]*$''', value.strip()):
+        if not global_text_is_complete(value):
             raise ValueError("La respuesta IA global contiene texto incompleto o sin cierre de frase en " + name +
                              "; reintentar solamente este bloque.")
     for item in brief.opportunities:
