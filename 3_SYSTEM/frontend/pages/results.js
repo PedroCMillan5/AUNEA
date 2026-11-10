@@ -1303,7 +1303,7 @@ function tobeAiRowActions(e,p,item,key){
     '" '+attribute+' title="'+attr(title||label)+'">'+esc(label)+'</button>';
   return '<div class="tobe-ai-row-actions aunea-ui-button-row" aria-label="Acciones de '+esc(
     TOBE_AI_REVIEW_FIELDS.find(x=>x[1]===key)?.[2]||'este campo')+'">'+
-    (candidate||isCurrent?
+    (candidate?
       action('Aplicar IA',canApply?
         'data-tobe-ai-use-field="'+attr(key)+'" data-tobe-ai-action-source="'+attr(id)+'"':
         'data-tobe-ai-apply-unavailable="'+attr(key)+'" data-tobe-ai-reason="'+attr(blockedReason)+'"',
