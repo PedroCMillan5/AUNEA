@@ -1191,7 +1191,7 @@ function tobeAiInlineHint(e,p,item,key){
         'IA histórica · v'+esc(history.version))+
       ':</b> '+esc(display||'Sin valor propuesto')+'</p>'+
       '<p class="field-help tobe-ia-provenance">'+(partial?
-        'Pendiente de coherencia global · solo consulta.':
+        'Pendiente de comprobación de coherencia entre actividades · solo consulta.':
         'Solo lectura · borrador actual v'+esc(p.version)+'.')+'</p>'+
       (raw?'<details class="tobe-subdetails"><summary>Fundamento y fuentes de la propuesta IA</summary>'+
         '<p><b>Justificación general de la actividad:</b> '+esc(narrative.reason||'Sin justificación adicional')+'</p>'+
@@ -1294,7 +1294,7 @@ function tobeAiRowActions(e,p,item,key){
       x.proposalFingerprint===tobeCandidateFingerprint(p)).slice(-1)[0],
     applied=history?.action==='APPLY'&&!!candidate&&!candidate.changed,
     blockedReason=!isCurrent?
-      'La propuesta no está vigente o su revisión global está pendiente. Genera y revisa una propuesta actual.':
+      'La propuesta por actividad no está vigente o aún no ha superado la comprobación de coherencia entre actividades. El análisis global de la sección 02 no sustituye esta comprobación.':
       diff?.issue||(!candidate?
         'No hay valor IA fundamentado y compatible para este campo.':
         'La propuesta coincide con el valor actual.');
