@@ -2195,7 +2195,7 @@ function tobeGlobalOverviewHtml(e,p){
       '<span class="tobe-global-state" aria-live="polite">'+esc(state)+'</span></div>'+
       '<p>'+esc(preflight?'Comprobando que el backend admite el análisis por bloques. No se ha borrado ninguna propuesta.':working&&!result?'Se ha retirado el análisis anterior. Preparando una propuesta nueva con el AS-IS confirmado…':result?.summary||'No hay una propuesta global vigente. Analiza el AS-IS confirmado para generar nuevos objetivos y recomendaciones; no se alterarán campos del TO-BE.')+'</p></div>'+
     (opportunities.length?'<p class="tobe-global-feedback">Consolidación de propuestas: '+
-      opportunities.length+' intervenciones distintas · '+incompatible+
+      opportunities.length+' intervenciones registradas (candidatas a consolidación) · '+incompatible+
       ' incompatibilidades detectadas · '+alternatives+' alternativas sugeridas · '+
       pending+' intervenciones por verificar'+
       (variants?' · '+variants+' variantes relacionadas conservadas':'')+
