@@ -277,7 +277,8 @@ test('PG11 can display five independent recommendations and an incompatible alte
  assert.match(html,/Descartada por incompatibilidad explícita/);
  assert.match(html,/Alternativa propuesta/);
  assert.match(html,/Emitir avisos sin sustituir la aprobación humana/);
- assert.match(html,/DF087: Conservar aprobación humana/);
+ assert.match(html,/Conservar aprobación humana/);
+ assert.doesNotMatch(html,/DF087: Conservar aprobación humana/);
 });
 
 test('stale global response cannot appear as current after AS-IS change',()=>{
@@ -710,15 +711,15 @@ test('PG11 displays canonical client conditions without internal value codes',()
  vm.createContext(ctx);vm.runInContext(block,ctx);
  const original=JSON.stringify(recommendation);
  const html=ctx.tobeGlobalOverviewHtml(e,p);
- const conditions=html.match(/<summary>Condiciones declaradas por el cliente[^]*?<\/details>/)?.[0]||'';
+ const conditions=html.match(/<summary>Condiciones del cliente confirmadas en el AS-IS[^]*?<\/details>/)?.[0]||'';
  assert.match(conditions,/Decisión humana/);
  assert.match(conditions,/Mantener herramientas actuales/);
- assert.match(conditions,/Roles \/ permisos/);
- assert.match(conditions,/Audit log/);
+ assert.match(conditions,/Acceso según permisos de cada usuario/);
+ assert.match(conditions,/Registro de auditoría de las acciones/);
  assert.doesNotMatch(conditions,/DF087|DF089|DF090|HUMAN_DECISION|KEEP_EXISTING|RBAC|AUDIT_LOG/);
- assert.match(html,/Ver comprobaciones de implantación/);
- assert.match(html,/Ver texto y referencias técnicas originales/);
- assert.match(html,/DF087: HUMAN_DECISION/,'technical source stays accessible in opt-in audit');
+ assert.match(html,/Qué debe comprobarse para esta intervención/);
+ assert.doesNotMatch(html,/Ver texto y referencias técnicas originales|CAPACIDAD_TECNICA|DF087: HUMAN_DECISION/);
+ assert.equal(recommendation.constraints,'DF087: HUMAN_DECISION, DF089: KEEP_EXISTING, DF090: RBAC');
  assert.equal(JSON.stringify(recommendation),original,'no mutation of original AI recommendation');
 });
 
@@ -757,8 +758,9 @@ test('PG11 compact cards retain all original details and direct activity navigat
  assert.match(html,/data-tobe-select="S1"/);
  assert.ok(html.indexOf('Revisar en actividades:')<
    html.indexOf('class="tobe-global-card-details"'));
- assert.match(html,/Validaciones pendientes/);
- assert.match(html,/Impacto operativo por comprobar/);
+ assert.match(html,/Qué debe comprobarse para esta intervención/);
+ assert.match(html,/Comprobar si aumenta el trabajo manual/);
+ assert.doesNotMatch(html,/CAPACIDAD_TECNICA|IMPACTO_OPERATIVO_PENDIENTE|Ver texto y referencias técnicas originales/);
  assert.equal(JSON.stringify(p.aiGlobal),before);
 });
 
@@ -978,7 +980,7 @@ test('block 4 status separates completed sources, full texts and human decisions
   assert.doesNotMatch(markup,/id="retryTobeGlobal"/);
 });
 
-test('PG11 retains the entire reason and technical validation in the existing card disclosure',()=>{
+test('PG11 retains internal review reason while showing actionable checks',()=>{
   const h=harness([{objective:'Comprobar alternativa',
     how:'Revisar el posible registro del ERP.',
     why:'Existe un problema confirmado de duplicidad.',
@@ -988,10 +990,10 @@ test('PG11 retains the entire reason and technical validation in the existing ca
       question:'No suponer integraciones automáticas.'}]}}]);
   const markup=h.html();
   assert.match(markup,/Condicionada a validar la viabilidad/);
-  assert.match(markup,/Evaluación original:<\/b> Verificar capacidad y licencias/);
-  assert.match(markup,/Validaciones pendientes:<\/b>/);
-  assert.match(markup,/Referencias de comprobación técnica:<\/b> CAPACIDAD_TECNICA/);
+  assert.match(markup,/Qué debe comprobarse para esta intervención/);
   assert.match(markup,/No suponer integraciones automáticas/);
+  assert.doesNotMatch(markup,/CAPACIDAD_TECNICA|Ver texto y referencias técnicas originales/);
+  assert.equal(h.env.p.aiGlobal.result.opportunities[0].review.reason,'Verificar capacidad y licencias del ERP.');
   assert.doesNotMatch(markup,/id="retryTobeGlobal"/);
 });
 
