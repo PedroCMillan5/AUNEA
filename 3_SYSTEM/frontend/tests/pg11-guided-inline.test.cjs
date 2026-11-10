@@ -205,4 +205,13 @@ test('PG11 section 03 uses the shared semantic title hierarchy rather than an ey
  assert.match(src,/<p class="aunea-ui-section-caption">Revisa el origen/);
  assert.doesNotMatch(src,/tobe-eyebrow">03 · REVISIÓN POR ACTIVIDAD Y DISEÑO TO-BE/);
 });
+test('PG11 checkpoint points to missing activity without discarding validated source results',()=>{
+ assert.match(src,/remainingStepIds=fromCheckpoint/);
+ assert.match(src,/!pending\.items\.has\(String\(x\.sourceStepId\)\)/);
+ assert.match(src,/data-tobe-generate-all-remaining>Analizar actividades pendientes/);
+ assert.match(src,/Consolidación entre actividades pendiente/);
+ assert.match(src,/\(candidate\?\s*action\('Aplicar IA'/);
+ assert.match(src,/data-tobe-ai-keep-field/);
+ assert.match(src,/data-tobe-ai-edit-field/);
+});
 // [AUNEA-UAT-PG11-GUIDED-267] END
