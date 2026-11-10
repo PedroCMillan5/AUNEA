@@ -121,7 +121,11 @@ def scoped_context(context: dict, focus_id: str, original_answers: dict) -> tupl
         "allowed_source_refs": sorted(ids),
         "existing_tool_can_cover": context.get("existing_tool_can_cover"),
         "process_design_preconditions_ok": context.get("process_design_preconditions_ok"),
-        "note": "Analiza solo la oportunidad vinculada al focus_source_id. "
+        "note": "Analiza solo la oportunidad vinculada al focus_source_id y a sus pasos enlazados. "
+                "client_goals son metas generales del estudio, no evidencia adicional de la fuente: "
+                "si incluyen problemas de otras fricciones o actividades, NO los incorpores en "
+                "objective, how o why de este bloque. No mezcles la recepción de datos incompletos "
+                "con preparación repetida de tareas salvo relación explícita en la fuente filtrada. "
                 "Los códigos son datos; los valores de viabilidad no se suponen.",
     }
     return selected, ids
