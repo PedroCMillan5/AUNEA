@@ -191,16 +191,18 @@ test('global button is separate from per-step generation and displays no fabrica
   assert.match(ai,/__auneaAiWorking\.has\(key\)/);
 });
 
-test('global objectives reveal a grounded explanation and restrictions on demand',()=>{
-  const output=harness([{objective:'Evitar duplicar la recepción de información',
+test('global objectives show grounded sources but not an unverified AI restriction as a client fact',()=>{
+  const draft={objective:'Evitar duplicar la recepción de información',
     how:'Reutilizar la captura existente y aclarar el traspaso.',
     why:'Existe una fricción F1 relacionada con entrada repetida.',
     constraints:'No modificar el sistema principal sin autorización.',
-    source_refs:['S1','F1']}]).html();
+    source_refs:['S1','F1']};
+  const output=harness([draft]).html();
   assert.match(output,/Evitar duplicar/);
   assert.match(output,/Intervención IA inicial:/);
   assert.match(output,/<details><summary>Ver justificación y restricciones/);
-  assert.match(output,/No modificar el sistema principal/);
+  assert.doesNotMatch(output,/No modificar el sistema principal/);
+  assert.equal(draft.constraints,'No modificar el sistema principal sin autorización.');
   assert.match(output,/Paso: Recepción/);
   assert.match(output,/Fricción: Captura duplicada/);
   assert.match(output,/Sin aprobar/);
@@ -796,7 +798,7 @@ test('PG11 consolidates unique recommendations, incompatibilities and alternativ
   assert.match(html,/1 alternativas sugeridas/);
   assert.match(html,/1 variantes relacionadas conservadas/);
   assert.match(html,/data-tobe-select="S1"/);
-  assert.match(html,/Fuentes de la alternativa/);
+  assert.match(html,/Evidencia de la alternativa/);
   assert.match(html,/Fricción: Captura duplicada/);
   assert.doesNotMatch(html,/data-tobe-ai-use-field|data-tobe-human-decision/);
 });
