@@ -106,6 +106,70 @@ test('section 01 renders missing client constraints as missing, never as fabrica
   assert.doesNotMatch(html,/Cliente autorizó|Sin restricciones declaradas/);
 });
 
+
+test('section 01 resolves DF016 from the sealed Contact snapshot without exposing its id',()=>{
+  const snap={version:1,company:{id:'COMP-1',name:'Empresa UAT'},
+    processName:'Recepción de facturas',processSteps:[],
+    contacts:[{id:'UAT-LEVANTE-QA-CONT-002',name:'Laura Martínez',role:'Responsable de Operaciones'}],
+    answers:{DF016:'UAT-LEVANTE-QA-CONT-002'}};
+  const sandbox={schema:{fields:[]},tobeProposalSnapshot:()=>snap,
+    diagnosticOutputFreshness:()=>({label:'Vigente'}),
+    formatContextValue:(_,v)=>String(v),
+    contactById:()=>({id:'UAT-LEVANTE-QA-CONT-002',companyId:'COMP-1',
+      firstName:'Nombre modificado',lastName:'Después del cierre'}),
+    contactFullName:ct=>[ct.firstName,ct.lastName].filter(Boolean).join(' ')||ct.name||'',
+    esc:x=>String(x??'')};
+  vm.createContext(sandbox);vm.runInContext(contextBlock,sandbox);
+  const original=JSON.stringify(snap);
+  const html=sandbox.tobeContextOverviewHtml({companyId:'COMP-1'}, {status:'DRAFT',sourceSnapshotVersion:1});
+  assert.match(html,/Laura Martínez · Responsable de Operaciones/);
+  assert.doesNotMatch(html,/UAT-LEVANTE-QA-CONT-002|Nombre modificado/);
+  assert.equal(JSON.stringify(snap),original,'PG11 must not mutate the sealed AS-IS');
+});
+
+test('section 01 resolves a valid company Contact not included in the sealed contact subset',()=>{
+  const snap={version:1,company:{id:'COMP-1',name:'Empresa UAT'},
+    processSteps:[],contacts:[],answers:{DF016:'CON-22'}};
+  let calls=0;
+  const sandbox={schema:{fields:[]},tobeProposalSnapshot:()=>snap,
+    diagnosticOutputFreshness:()=>({label:'Vigente'}),
+    formatContextValue:(_,v)=>String(v),
+    contactById:id=>{calls++;return id==='CON-22'?
+      {id,companyId:'COMP-1',firstName:'Mario',lastName:'Rojas',role:'Dirección Técnica'}:null},
+    contactFullName:ct=>[ct.firstName,ct.lastName].filter(Boolean).join(' '),
+    esc:x=>String(x??'')};
+  vm.createContext(sandbox);vm.runInContext(contextBlock,sandbox);
+  const html=sandbox.tobeContextOverviewHtml({companyId:'COMP-1'},{status:'DRAFT',sourceSnapshotVersion:1});
+  assert.match(html,/Mario Rojas · Dirección Técnica/);
+  assert.doesNotMatch(html,/CON-22/);
+  assert.equal(calls,1);
+});
+
+test('section 01 preserves OTHER role and rejects missing or cross-company Contact references',()=>{
+  const snap={version:1,company:{id:'COMP-1'},
+    processSteps:[],contacts:[],answerDetails:{DF016:'Responsable de Administración'},
+    answers:{DF016:'OTHER'}};
+  const sandbox={schema:{fields:[]},tobeProposalSnapshot:()=>snap,
+    diagnosticOutputFreshness:()=>({label:'Vigente'}),
+    formatContextValue:(_,v)=>String(v),
+    contactById:()=>({id:'CON-99',companyId:'COMP-2',firstName:'Persona',lastName:'Ajena'}),
+    contactFullName:ct=>[ct.firstName,ct.lastName].filter(Boolean).join(' '),
+    esc:x=>String(x??'')};
+  vm.createContext(sandbox);vm.runInContext(contextBlock,sandbox);
+  const render=()=>sandbox.tobeContextOverviewHtml({companyId:'COMP-1'},{status:'DRAFT',sourceSnapshotVersion:1});
+  assert.match(render(),/Responsable de Administración/);
+  assert.doesNotMatch(render(),/OTHER/);
+  snap.answers.DF016='CON-99';
+  assert.match(render(),/Referencia de contacto no resuelta/);
+  assert.doesNotMatch(render(),/CON-99|Persona Ajena/);
+  snap.answers.DF016='Directora de Operaciones';
+  assert.match(render(),/Directora de Operaciones/);
+  snap.answers.DF016='UNKNOWN';
+  assert.match(render(),/Responsable pendiente de confirmar/);
+  snap.answers.DF016='';
+  assert.match(render(),/No consta/);
+});
+
 test('section 01 remains visible in guided mode with System-native styling',()=>{
   assert.match(css,/\.tobe-workspace\[data-tobe-mode="guided"\] \.tobe-context\{display:flex\}/);
   assert.match(css,/\.tobe-global-analysis\{/);
