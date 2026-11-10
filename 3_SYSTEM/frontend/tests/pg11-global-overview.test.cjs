@@ -875,7 +875,7 @@ test('UAT-02-09/10 generation and recovery: preserve progress, do not assert com
   assert.match(ai,/const complete=doneSources.length===total&&failures.length===0/);
   assert.match(ai,/if\(hasMore&&novel===0\)/);
   assert.match(ai,/if\(data\?\.status!=='DRAFT'/);
-  assert.match(ai,/No se pudo \(?:guardar\|verificar el guardado\) del progreso del análisis IA/);
+  assert.match(ai,/No se pudo verificar el guardado del progreso del análisis IA/);
   assert.match(ai,/status===503/);
   assert.match(ai,/type:complete\?'info':'warn'/);
   assert.match(ai,/Se sustituirá el análisis global guardado por uno nuevo/);
