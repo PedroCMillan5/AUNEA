@@ -162,7 +162,7 @@ test('PG11 action buttons distinguish historical read-only from authorized curre
    attr:String,esc:String};
  vm.createContext(ctx);vm.runInContext(fn,ctx);
  const historical=ctx.tobeAiRowActions({},draft,step,'tool');
- assert.match(historical,/data-tobe-ai-apply-unavailable="tool"/);
+ assert.doesNotMatch(historical,/data-tobe-ai-apply-unavailable="tool"/);
  assert.match(historical,/data-tobe-ai-keep-field="tool"/);
  assert.match(historical,/data-tobe-ai-edit-field="tool"/);
  assert.doesNotMatch(historical,/data-tobe-ai-use-field="tool"/);
@@ -216,7 +216,7 @@ test('PG11 historic KEEP without IA approval preserves the current field',()=>{
  assert.equal(p.aiDraft.applyHistory[0].decision,'KEEP_VALUE');
  assert.equal(saved,2);
 });
-test('PG11 cannot apply historical proposals and explains the gate',()=>{
+test('PG11 does not offer Apply IA for historical proposals without a current candidate',()=>{
  const fn=src.match(/function tobeAiRowActions\(e,p,item,key\)\{[\s\S]*?\n\}/)?.[0];
  assert.ok(fn);
  const ctx={String,Array,TOBE_AI_REVIEW_FIELDS:[['tool','tool','Herramienta','OS_TOOL_CATEGORY']],
@@ -224,8 +224,8 @@ test('PG11 cannot apply historical proposals and explains the gate',()=>{
  vm.createContext(ctx);vm.runInContext(fn,ctx);
  const html=ctx.tobeAiRowActions({},{aiDraft:{applyHistory:[]}},
    {sourceStepId:'S1',isAddition:false},'tool');
- assert.match(html,/data-tobe-ai-apply-unavailable="tool"/);
- assert.match(html,/data-tobe-ai-reason="/);
+ assert.doesNotMatch(html,/data-tobe-ai-apply-unavailable="tool"/);
+ assert.doesNotMatch(html,/data-tobe-ai-reason="/);
  assert.match(html,/data-tobe-ai-keep-field="tool"/);
  assert.doesNotMatch(html,/data-tobe-ai-use-field="tool"/);
 });
