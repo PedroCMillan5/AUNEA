@@ -1971,7 +1971,7 @@ function tobeContextProcessOwnerLabel(snap,raw,e){
     return readable+(role?' · '+role:'');
   }
   // Historical free-text roles remain readable; ID-shaped references do not.
-  return /^[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ\s/,.()\\-]{1,119}$/.test(ref)?
+  return /^[A-Za-zÀ-ÿ][-A-Za-zÀ-ÿ\s/,.()]{1,119}$/.test(ref)?
     ref:'Referencia de contacto no resuelta';
 }
 
