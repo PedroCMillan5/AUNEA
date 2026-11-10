@@ -870,7 +870,7 @@ test('UAT-02-02 hierarchy: universal checks appear once, not under each proposal
 });
 
 test('UAT-02-09/10 generation and recovery: preserve progress, do not assert completion for failed source',()=>{
-  assert.match(ai,/function generateTobeGlobal\(e,\{resume=false\}=\{\}\)/);
+  assert.match(ai,/async function generateTobeGlobal\(e,options=\{\}\)/);
   assert.match(ai,/function internalAiGlobalRefresh/);
   assert.match(ai,/const complete=doneSources.length===total&&failures.length===0/);
   assert.match(ai,/if\(hasMore&&novel===0\)/);
