@@ -82,23 +82,28 @@ def batch(request, focus, seen=None, blocked=None, blocked_constraints=""):
 
 
 def query_with_local_retry(payload, issues):
-    """Match PG11 frontend: only one retry for cut text or coded objectives."""
+    """Use the exact two-attempt PG11 UI recovery for one source batch.
+
+    Preserve the original source, seen actions and client constraints.
+    A retry requests one shorter *complete* suggestion (not a fixed total
+    recommendation limit). Never repair punctuation or accept a partial answer.
+    """
     for attempt in range(2):
+        query = payload if attempt == 0 else payload.model_copy(
+            update={"retry_incomplete": True, "retry_compact": True})
         try:
-            if attempt == 0:
-                return global_ai.analyze_global(payload)
-            return global_ai.analyze_global(payload.model_copy(
-                update={"retry_incomplete": True}))
+            return global_ai.analyze_global(query)
         except ValueError as exc:
             reason = str(exc)
             if attempt == 0 and (
                 "texto incompleto" in reason or "objetivo en código" in reason
             ):
-                issues.append(reason)
-                print("PG11_LIVE_RETRY_INCOMPLETE", reason, flush=True)
+                issues.append({"attempt": attempt + 1, "reason": reason,
+                               "recovery": "ONE_COMPACT_CANDIDATE"})
+                print("PG11_LIVE_RETRY_COMPACT", reason, flush=True)
                 continue
             raise
-    raise AssertionError("Unable to recover validated source text")
+    raise AssertionError("No se obtuvo una respuesta completa tras el reintento acotado.")
 
 
 def check_synthetic_objective_origin(request, source, item):
@@ -153,7 +158,7 @@ def checked_result(result, request, source):
     return result["opportunities"]
 
 
-def analyze_case(name, request):
+def analyze_case(name, request, report=None):
     plan = global_ai.global_plan(request)
     requirement(plan["snapshot_version"] == request.snapshot_version,
                 "Plan version mismatch")
@@ -163,7 +168,11 @@ def analyze_case(name, request):
     record = {"case": name, "source_count": len(plan["focus"]),
               "tested_sources": [], "batches": 0, "opportunities": [],
               "source_summaries": [], "recoveries": [],
-              "residual_has_more": False}
+              "residual_has_more": False, "status": "RUNNING"}
+    # Preserve already validated batches in the UAT JSON even if a later
+    # batch fails. This is test evidence, not customer/TO-BE persistence.
+    if report is not None:
+        report["cases"].append(record)
     started = perf_counter()
     for unit in plan["focus"][:2]:
         source = unit["source_id"]
@@ -205,6 +214,7 @@ def analyze_case(name, request):
     # For these cases the validated frictions provide positive signal.
     if not record["opportunities"]:
         record["warning"] = "No se obtuvo ninguna mejora apoyada en fricciones documentadas."
+    record["status"] = "PASS"
     return record
 
 
@@ -242,8 +252,7 @@ def main():
         report["model"] = settings["model"]
         report["num_ctx"] = settings["num_ctx"]
         for name in ("invoice", "client_intake"):
-            result = analyze_case(name, synthetic_case(name))
-            report["cases"].append(result)
+            result = analyze_case(name, synthetic_case(name), report)
             requirement(bool(result["opportunities"]),
                         "No grounded opportunity across confirmed frictions in " + name +
                         ". Check source_summaries in the JSON report.")
@@ -256,6 +265,9 @@ def main():
         return 0
     except Exception as exc:
         report["failure"] = type(exc).__name__ + ": " + str(exc)
+        if report["cases"] and report["cases"][-1].get("status") == "RUNNING":
+            report["cases"][-1]["status"] = "FAILED"
+            report["cases"][-1]["failure"] = report["failure"]
         print("PG11_LIVE_UAT_FAIL", report["failure"], flush=True)
         return 1
     finally:
