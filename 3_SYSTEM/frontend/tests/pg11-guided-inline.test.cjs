@@ -189,4 +189,14 @@ test('PG11 step evidence never presents superseded risks as current',()=>{
  assert.match(html,/Riesgo vigente/);
  assert.doesNotMatch(html,/Fricción archivada|Riesgo descartado/);
 });
+test('PG11 identifies individual coherence separately from section 02 global analysis',()=>{
+ const pilot=fs.readFileSync(path.resolve(__dirname,'../domain/internal-ai-pilot.js'),'utf8');
+ assert.match(pilot,/actividades analizadas por IA/);
+ assert.match(pilot,/Propuestas IA verificadas y guardadas; no son decisiones del consultor/);
+ assert.match(src,/Pendiente de comprobación de coherencia entre actividades/);
+ assert.match(src,/El análisis global de la sección 02 no sustituye esta comprobación/);
+ assert.match(src,/data-tobe-ai-apply-unavailable/);
+ assert.match(src,/data-tobe-ai-keep-field/);
+ assert.match(src,/data-tobe-ai-edit-field/);
+});
 // [AUNEA-UAT-PG11-GUIDED-267] END
