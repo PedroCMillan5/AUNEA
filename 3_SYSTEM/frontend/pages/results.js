@@ -2368,7 +2368,9 @@ function tobeGlobalOverviewHtml(e,p){
           tobeGlobalReadableChecks(item.review.operational_checks,'question')
             .map(value=>'<li>'+esc(value)+'</li>').join('')+'</ul>':'')+
         '</details>':'')+
-      (item.constraints||item.review?.reason||item.review?.checks?.length?
+      (item.constraints||item.review?.reason||item.review?.checks?.length||
+         item.review?.conflicts?.length||item.review?.verifications?.length||
+         item.review?.operational_checks?.length||item.alternative?.review?.reason?
         '<details class="tobe-global-evidence-detail tobe-global-technical-audit">'+
           '<summary>Ver texto y referencias técnicas originales</summary>'+
           (item.constraints?'<p><b>Texto original de condiciones generado por IA:</b> '+
@@ -2376,6 +2378,14 @@ function tobeGlobalOverviewHtml(e,p){
           (item.review?.reason?'<p><b>Evaluación original:</b> '+esc(item.review.reason)+'</p>':'')+
           (item.review?.checks?.length?'<p><b>Referencias internas de controles:</b> '+
             esc(item.review.checks.map(x=>x.source+': '+x.reason).join(' · '))+'</p>':'')+
+          (item.review?.conflicts?.length?'<p><b>Referencias internas de incompatibilidades:</b> '+
+            esc(item.review.conflicts.map(x=>x.source+': '+x.reason).join(' · '))+'</p>':'')+
+          (item.review?.verifications?.length?'<p><b>Referencias de comprobación técnica:</b> '+
+            esc(item.review.verifications.map(x=>x.source+': '+x.question).join(' · '))+'</p>':'')+
+          (item.review?.operational_checks?.length?'<p><b>Referencias de impacto operativo:</b> '+
+            esc(item.review.operational_checks.map(x=>x.source+': '+x.question).join(' · '))+'</p>':'')+
+          (item.alternative?.review?.reason?'<p><b>Evaluación técnica de la alternativa:</b> '+
+            esc(item.alternative.review.reason)+'</p>':'')+
         '</details>':'')+
       '</div></details></section>').join('')+'</div></details></div></article>').join('')+'</div>':
       result?'<p class="tobe-global-empty">'+
