@@ -766,6 +766,20 @@ test('PG11 compact cards retain all original details and direct activity navigat
  assert.equal(JSON.stringify(p.aiGlobal),before);
 });
 
+test('PG11 shared checks are displayed only once for related interventions',()=>{
+ const ctx={};vm.createContext(ctx);vm.runInContext(block,ctx);
+ const common='Comprobar que se mantienen los permisos declarados.';
+ const distinct='Validar si el paso añade tiempo manual adicional.';
+ const group={entries:[
+   {item:{review:{verifications:[{question:common},{question:distinct}]}}},
+   {item:{review:{verifications:[{question:common}]}}}
+ ]};
+ assert.deepEqual([...ctx.tobeGlobalSharedQuestions(group)],[common]);
+ assert.deepEqual([...ctx.tobeGlobalSpecificQuestions(group,group.entries[0].item)],[distinct]);
+ assert.deepEqual([...ctx.tobeGlobalSpecificQuestions(group,group.entries[1].item)],[]);
+ assert.equal(ctx.tobeGlobalImplementationQuestions(group.entries[0].item).length,2);
+});
+
 test('PG11 marks saved legacy results without operational evaluation as not checked',()=>{
  const quality=fs.readFileSync(path.join(__dirname,'../domain/internal-ai-global-quality.js'),'utf8');
  const obj=[{objective:'Reducir consultas.',how:'Consultar el estado de cada tarea.',
