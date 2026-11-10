@@ -1069,7 +1069,7 @@ test('block 4 status separates completed sources, full texts and human decisions
   const h=harness([
     {objective:'Reducir reentrada de datos',how:'Reutilizar datos confirmados.',
       why:'La fricción está documentada.',source_refs:['F1']},
-    {objective:'Conservar aprobación',how:'Registrar datos con aprobación',
+    {objective:'Conservar aprobación',how:'Registrar datos con aprobación para',
       why:'Debe conservar la revisión humana.',source_refs:['S1']}
   ]);
   h.env.p.items=[{sourceStepId:'S1',sourceStepName:'Recepción'}];
