@@ -3576,7 +3576,7 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 /* [AUNEA-FE-PG11-NUMBERING-290] START — section hierarchy and single-line field actions.
    Use the existing System tokens and button primitives; no new component library. */
 .tobe-review-section-head{gap:4px}
-.tobe-review-section-head .tobe-eyebrow{font-size:11px;letter-spacing:.06em}
+.tobe-review-section-head .tobe-eyebrow{margin-bottom:5px}
 .tobe-review-section-head p{margin:0;color:var(--muted);font-size:var(--font-small);line-height:1.5}
 .tobe-workspace[data-tobe-mode="guided"] .tobe-ai-field-row{
   grid-template-columns:minmax(0,40%) minmax(0,1fr) 294px;
