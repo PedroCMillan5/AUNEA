@@ -263,6 +263,24 @@ def test_global_constraints_do_not_turn_native_preferences_into_bans():
     assert disabled["status"]=="INCOMPATIBLE"
 
 
+
+def test_global_review_exposes_existing_readable_conditions_without_new_client_values():
+    from aunea_backend.internal_ai_global_review import assess_recommendation
+    ctx={"client_constraints":{
+        "DF087":["HUMAN_DECISION"],"DF089":["KEEP_EXISTING"],
+        "DF090":["RBAC","AUDIT_LOG"]}}
+    review=assess_recommendation("Consultar estados usando herramientas existentes.",ctx)
+    assert review["status"]=="CONDITIONED"
+    assert [(x["source"],x["value"],x["meaning"])
+            for x in review["declared_conditions"]]==[
+      ("DF087","HUMAN_DECISION","Mantener las decisiones humanas"),
+      ("DF089","KEEP_EXISTING","Priorizar las herramientas existentes"),
+      ("DF090","RBAC","Mantener los permisos por rol"),
+      ("DF090","AUDIT_LOG","Mantener la trazabilidad y auditoría")]
+    assert not any(x["source"]=="FAKE" for x in review["declared_conditions"])
+
+
+
 def test_global_scoped_ollama_can_accumulate_five_distinct_recommendations(monkeypatch):
     configure(monkeypatch)
     request=sample()
