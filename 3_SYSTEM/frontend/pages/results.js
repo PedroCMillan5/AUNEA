@@ -2213,14 +2213,18 @@ function tobeGlobalOverviewHtml(e,p){
         (legacy?' · Existen frases incompletas: conservar y reanalizar.':
           ' · Sin cortes detectados.')+'</p>'+
       '<p><b>Coherencia (revisión pendiente):</b> '+
-        (qualityPlan?qualityPlan.reviewCount+' alertas de reglas en '+opportunities.length+' intervenciones.':
+        (qualityPlan?qualityPlan.reviewCount+' alertas de reglas y '+
+          (qualityPlan.operationalReviewCount||0)+' intervenciones con comprobación operativa pendiente, de '+
+          opportunities.length+' intervenciones.':
           'Sin comprobar.')+'</p>'+
       '<p><b>Revisión humana:</b> '+decisions+
         ' decisiones sobre actividades registradas; propuestas globales sin aprobar.</p>'+
       '</div>':'')+
     (opportunities.length?'<p class="tobe-global-caution">Priorización pendiente: contrastar impacto, evidencias y dependencias con el consultor. El orden visual no es una prioridad aprobada.</p>':'')+
     (!progress&&qualityPlan?'<p class="tobe-global-feedback"><b>Coherencia (revisión pendiente):</b> '+
-      qualityPlan.reviewCount+' alertas de reglas. Ninguna recomendación está aprobada.</p>':'')+
+      qualityPlan.reviewCount+' alertas de reglas y '+
+        (qualityPlan.operationalReviewCount||0)+' intervenciones con comprobación operativa pendiente. '+
+        'Ninguna recomendación está aprobada.</p>':'')+
     (progress?.failures?.length?'<details class="tobe-global-detail"><summary>Fuentes pendientes e incidencias</summary>'+
       '<p>'+esc(progress.failures.map(x=>x.source_id+': '+x.reason).join(' · '))+
       '</p></details>':'')+
@@ -2293,6 +2297,8 @@ function tobeGlobalOverviewHtml(e,p){
         esc(item.review.checks.map(x=>x.source+': '+x.reason).join(' · '))+'</p>':'')+
       (item.review?.verifications?.length?'<p><b>Validaciones pendientes:</b> '+
         esc(item.review.verifications.map(x=>x.source+': '+x.question).join(' · '))+'</p>':'')+
+      (item.review?.operational_checks?.length?'<p><b>Impacto operativo por comprobar:</b> '+
+        esc(item.review.operational_checks.map(x=>x.question).join(' · '))+'</p>':'')+
       '</div></details></section>').join('')+'</div></details></div></article>').join('')+'</div>':
       result?'<p class="tobe-global-empty">'+
         (analysisFinished&&outstanding===0?
