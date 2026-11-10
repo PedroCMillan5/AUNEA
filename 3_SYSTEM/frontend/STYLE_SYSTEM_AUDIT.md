@@ -119,3 +119,15 @@ Petición del propietario: «Asegura la primera pg01». Alcance autorizado: esti
 Limitación tipográfica heredada: el CSS declara Sora/Inter y sus fallbacks; este cambio no añade ni distribuye fuentes. Las mediciones de font-family prueban la declaración CSS, no que la fuente esté instalada en Windows. La inspección visual local se ha realizado con Chromium 133; CI usa la versión fijada por el repositorio. UAT visual del propietario en Windows pendiente. Esta revisión no certifica el resto del sistema visual ni el motor IA.
 
 No cambia ninguna regla de negocio, roadmap o versión de producto. El hito se registra en BITACORA y el Master Index enlaza esta revisión. Las versiones anteriores de código y snapshot quedan preservadas en Git.
+
+
+## 8. PG11 — homogeneización visual de Información general y Análisis IA, 10/11/2026
+
+Alcance de la corrección: exclusivamente sección 01 de PG11 y la definición compartida de superficie con sección 02, sin cambios funcionales ni reescritura de datos.
+
+- El fondo completo verde de Información general se sustituye por la misma tarjeta blanca, borde, radio, padding y espaciado que utiliza Análisis IA global. Una sola regla CSS `.tobe-context,.tobe-global-analysis` es propietaria del contenedor común.
+- Cabecera 01 usa la misma jerarquía de encabezado y descripción que 02, con primitivas `.tobe-eyebrow`, `.aunea-ui-section-title` y `.aunea-ui-section-caption`; estado del TO-BE visible sin afectar su ciclo de vida.
+- La franja de «Diagnóstico oficial» reutiliza la composición visual de síntesis verde de la sección 02. Las fichas mantienen datos confirmados en lectura y la misma escala tipográfica de tokens.
+- El modo de revisión guiada usa grid coherente; tablet y móvil comparten densidad, padding y tarjetas responsive. Se conserva el desplegable de restricciones y el resolvedor DF016 del snapshot.
+- No se modifican CSS base de botones, tokens globales, otros módulos, motores IA, snapshot AS-IS, DF001–DF100 ni páginas FROZEN.
+- QA estático de contrato aplicado al código actualizado: 9/9 comprobaciones de estructura, jerarquía y reglas CSS PASS; se actualizó `pg11-global-overview.test.cjs` para impedir regresiones visuales entre 01/02. La suite Node/CI completa y aceptación visual real Windows (1440/1024/390 px, abierto/cerrado y recarga) siguen **PENDIENTES**, por lo que no se promueve PG11 a FROZEN/PRODUCTION.
