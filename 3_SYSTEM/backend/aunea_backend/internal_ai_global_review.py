@@ -172,6 +172,36 @@ def _action_dependency(action: str) -> list[dict]:
     return details
 
 
+
+def assess_operational_burden(how: str) -> list[dict]:
+    """Flag *possible* added work, never assert a saving or prohibit a solution.
+
+    These are advisory review questions for any process or industry, not
+    business rules and not a substitute for measured AS-IS/TO-BE evidence.
+    """
+    action = _normalized(how)
+    checks: list[dict] = []
+    def warn(pattern: str, question: str) -> None:
+        if _positive_action(pattern, action):
+            checks.append({"source": "IMPACTO_OPERATIVO_PENDIENTE",
+                           "question": question})
+    warn(r"\\b(?:crear|introducir|a[nñ]adir|incorporar|establecer|implantar|abrir|generar) "
+         r"(?:un |una |otro |otra |nuevo |nueva |adicional )?"
+         r"(?:formularios?|registros?|plantillas?|hojas? de c[aá]lculo|"
+         r"tablas? de seguimiento|listas? de control)\\b",
+         "Comprobar si el nuevo registro o formulario sustituye trabajo existente "
+         "o introduce una segunda captura, responsable o mantenimiento.")
+    warn(r"\\b(?:copiar|teclear|transcribir|duplicar|reintroducir|"
+         r"traspasar manualmente|registrar de nuevo)\\b",
+         "Verificar que la transferencia de información evita trabajo duplicado "
+         "en lugar de desplazar la carga manual a otro paso o persona.")
+    warn(r"\\b(?:nueva|otra|adicional) (?:aprobaci[oó]n|validaci[oó]n|"
+         r"revisi[oó]n|firma|entrega|derivaci[oó]n|transferencia)\\b",
+         "Contrastar si el control o traspaso adicional es proporcional al riesgo "
+         "y qué espera, dependencia o intervención humana añade.")
+    return checks
+
+
 def assess_alignment(objective: str, how: str, context: dict) -> dict:
     """Warnings only: never rewrite or approve an AI proposal."""
     goal = _normalized(objective)
@@ -215,6 +245,7 @@ def assess_recommendation(how: str, context: dict, stated_constraints: str = "")
     conflicts: list[dict] = []
     applicable: list[dict] = []
     verifications = _action_dependency(action)
+    operational_checks = assess_operational_burden(how)
 
     def add_conflict(source: str, reason: str) -> None:
         if not any(item["source"] == source and item["reason"] == reason
@@ -385,6 +416,7 @@ def assess_recommendation(how: str, context: dict, stated_constraints: str = "")
         "checks": applicable,
         "verifications": verifications,
         "capability_status": "UNVERIFIED",
+        "operational_checks": operational_checks,
         "reason": reason,
     }
 
