@@ -61,7 +61,7 @@ function tobeGlobalQualityGroups(opportunities){
        !/(reutiliz|captur|valid|tecle|reintroduc)/.test(act))
       issues.push('El objetivo es evitar una captura repetida, pero la acción sólo ofrece seguimiento.');
     // Warnings are domain-neutral hypotheses, not automatic rejection rules.
-    if(/\\bformularios?\\b/.test(act)&&
+    if(/\bformularios?\b/.test(act)&&
       /(reutiliz|captur|valid|reintroduc|duplicad|teclear)/.test(goal+' '+act))
       issues.push('Comprobar que este formulario sustituye una captura existente y no obliga a introducir los mismos datos dos veces.');
     if(/(?:recordatori|avis|notific|alert)/.test(act)&&
