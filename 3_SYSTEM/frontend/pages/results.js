@@ -2174,6 +2174,10 @@ function tobeGlobalOverviewHtml(e,p){
     return (p?.items||[]).filter(item=>
       [...tobeGlobalSourceIdsForStep(e,p,item.sourceStepId)].some(id=>refs.has(id)));
   };
+  const groupSteps=group=>{
+    const targets=group.entries.flatMap(({item})=>linkedSteps(item));
+    return [...new Map(targets.map(step=>[String(step.sourceStepId),step])).values()];
+  };
   const state=working?'Analizando por fuentes…':result&&!analysisFinished?'Análisis parcial · Revisar':legacy?'Propuesta incompleta · Reanalizar':result?'Propuesta guardada · Sin aprobar':'Pendiente de análisis';
   return '<section class="tobe-global-analysis" id="tobeGlobalAnalysis" aria-label="Análisis global IA del proceso">'+
     '<header class="tobe-global-analysis-head"><div><span class="tobe-eyebrow">02 · ANÁLISIS IA GLOBAL DEL PROCESO</span>'+
@@ -2234,6 +2238,24 @@ function tobeGlobalOverviewHtml(e,p){
         esc(group.technicalChecks[0])+'</p>':'')+
       (group.entries.length>1?'<p>'+group.entries.length+
         ' intervenciones relacionadas; conservar todas para validación.</p>':'')+
+      (group.entries[0]?.item?.how?
+        '<p class="tobe-global-action tobe-global-primary-action"><b>Intervención propuesta:</b> '+
+        esc(group.entries[0].item.how)+'</p>':'')+
+      (group.operationalChecks?.length?'<p class="tobe-global-operational-note"><b>Impacto operativo pendiente:</b> '+
+        esc(group.operationalChecks[0])+'</p>':'')+
+      (group.qualityFlagged?'<p class="tobe-global-assessment"><b>Comprobaciones abiertas:</b> '+
+        esc(group.entries.flatMap(e=>e.issues).length)+' avisos de coherencia'+
+        (group.operationalChecks?.length?' · '+group.operationalChecks.length+
+          ' comprobaciones operativas':'')+'</p>':'')+
+      (groupSteps(group).length?'<div class="tobe-global-review-links">'+
+        '<span class="tobe-global-review-label">Revisar en actividades:</span>'+
+        '<div class="tobe-global-review-actions">'+groupSteps(group).map(step=>
+          '<button type="button" class="btn btn-outline btn-small" '+
+          'data-tobe-select="'+attr(String(step.sourceStepId))+'" data-tobe-global-link="1">'+
+          esc(step.sourceStepName||step.stepName||String(step.sourceStepId))+
+          '</button>').join('')+'</div></div>':'')+
+      '<details class="tobe-global-card-details"><summary>Ver intervenciones, evidencias y restricciones'+
+        ' ('+group.entries.length+')</summary><div class="tobe-global-card-detail-body">'+
       group.entries.map(({item,issues},j)=>
       '<section class="tobe-global-intervention">'+
       (group.entries.length>1?'<h3 class="tobe-global-subtitle">Intervención '+(j+1)+
@@ -2271,14 +2293,7 @@ function tobeGlobalOverviewHtml(e,p){
         esc(item.review.checks.map(x=>x.source+': '+x.reason).join(' · '))+'</p>':'')+
       (item.review?.verifications?.length?'<p><b>Validaciones pendientes:</b> '+
         esc(item.review.verifications.map(x=>x.source+': '+x.question).join(' · '))+'</p>':'')+
-      (linkedSteps(item).length?'<div class="tobe-global-review-links">'+
-        '<span class="tobe-global-review-label">Revisar en actividades:</span>'+
-        '<div class="tobe-global-review-actions">'+
-        linkedSteps(item).map(step=>'<button type="button" class="btn btn-outline btn-small" '+
-          'data-tobe-select="'+attr(String(step.sourceStepId))+'" data-tobe-global-link="1">'+
-          esc(step.sourceStepName||step.stepName||String(step.sourceStepId))+'</button>').join('')+
-        '</div></div>':'')+
-      '</div></details></section>').join('')+'</div></article>').join('')+'</div>':
+      '</div></details></section>').join('')+'</div></details></div></article>').join('')+'</div>':
       result?'<p class="tobe-global-empty">'+
         (analysisFinished&&outstanding===0?
           'No se han identificado mejoras justificadas en las fuentes completadas. Revisa la evidencia antes de cerrar.':
