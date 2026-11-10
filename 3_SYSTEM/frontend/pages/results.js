@@ -2285,6 +2285,8 @@ function tobeGlobalOverviewHtml(e,p){
         esc(group.technicalChecks[0])+'</p>':'')+
       (group.entries.length>1?'<p>'+group.entries.length+
         ' intervenciones relacionadas; conservar todas para validación.</p>':'')+
+      (group.reviewHint?'<p class="tobe-global-quality-note"><b>Posible solapamiento:</b> '+
+        esc(group.reviewHint)+'</p>':'')+
       '<p class="tobe-global-assessment"><b>Estado de viabilidad:</b> '+
         esc(group.incompatible?'Incompatible con una restricción confirmada; no aplicar.':
           group.entries.some(x=>x.item?.review?.status==='CONDITIONED')?
@@ -2325,28 +2327,56 @@ function tobeGlobalOverviewHtml(e,p){
       '<details><summary>Ver justificación y restricciones</summary><div class="tobe-global-detail">'+
       '<p><b>Objetivo original:</b> '+esc(item.objective)+'</p>'+
       '<p><b>Por qué se recomienda:</b> '+esc(item.why)+'</p>'+
-      (item.review?'<p><b>Motivo de la evaluación:</b> '+
-        esc(item.review.reason||'Revisión humana pendiente.')+'</p>':'')+
-      (item.alternative?'<p><b>Evaluación de la alternativa:</b> '+
-        esc(item.alternative.review?.reason||'Comprobar restricciones y viabilidad.')+'</p>':'')+
+      (item.review?'<p><b>Evaluación:</b> '+
+        esc(item.review.status==='INCOMPATIBLE'?
+          'La propuesta contradice una condición confirmada; debe descartarse o reformularse.':
+          'La propuesta es una hipótesis y necesita validar capacidades, permisos e impacto operativo.')+'</p>':'')+
+      (item.alternative?'<p><b>Alternativa:</b> Mantenerla como posibilidad pendiente de evaluación; no se aplica automáticamente.</p>':'')+
       ((item.related||[]).length?'<p><b>Enfoques relacionados (sin descartar):</b></p>'+
         '<ul class="tobe-source-list">'+item.related.map(other=>
           '<li><b>'+esc(other.objective)+':</b> '+esc(other.how)+
           ' <small>Motivo: '+esc(other.why)+' · Fuentes: '+
           esc(refs(other.source_refs).join(' · '))+'</small></li>').join('')+
         '</ul>':'')+
-      '<p><b>Condiciones del cliente:</b> '+esc(item.constraints||'No constan condiciones adicionales en esta respuesta; requiere comprobación.')+'</p>'+
-      (item.review?.conflicts?.length?'<p><b>Conflictos identificados:</b> '+
-        esc(item.review.conflicts.map(x=>x.source+': '+x.reason).join(' · '))+'</p>':'')+
+      (tobeGlobalHumanConditions(record,item.review).length?
+        '<details class="tobe-global-evidence-detail"><summary>Condiciones declaradas por el cliente ('+
+          tobeGlobalHumanConditions(record,item.review).length+')</summary>'+
+          '<ul class="tobe-source-list">'+
+            tobeGlobalHumanConditions(record,item.review).map(c=>
+              '<li><b>'+esc(c.label)+':</b> '+esc(c.values.join(' · '))+'</li>'
+            ).join('')+'</ul></details>':
+        '<p><b>Condiciones del cliente:</b> No hay valores estructurados disponibles en esta vista; comprobar el AS-IS confirmado.</p>')+
+      (item.review?.conflicts?.length?'<p><b>Conflicto confirmado:</b> '+
+        esc(tobeGlobalReadableChecks(item.review.conflicts,'reason').join(' · '))+'</p>':'')+
       '<p><b>Evidencias vinculadas:</b> '+esc(refs(item.source_refs).join(' · ')||'Sin referencias identificadas')+'</p>'+
       (item.alternative?.source_refs?.length?'<p><b>Fuentes de la alternativa:</b> '+
         esc(refs(item.alternative.source_refs).join(' · '))+'</p>':'')+
-      (item.review?.checks?.length?'<p><b>Restricciones cotejadas:</b> '+
-        esc(item.review.checks.map(x=>x.source+': '+x.reason).join(' · '))+'</p>':'')+
-      (item.review?.verifications?.length?'<p><b>Validaciones pendientes:</b> '+
-        esc(item.review.verifications.map(x=>x.source+': '+x.question).join(' · '))+'</p>':'')+
-      (item.review?.operational_checks?.length?'<p><b>Impacto operativo por comprobar:</b> '+
-        esc(item.review.operational_checks.map(x=>x.question).join(' · '))+'</p>':'')+
+      ((item.review?.checks?.length||item.review?.verifications?.length||
+         item.review?.operational_checks?.length)?
+        '<details class="tobe-global-evidence-detail"><summary>Ver comprobaciones de implantación ('+
+         (tobeGlobalReadableChecks(item.review?.checks,'reason').length+
+          tobeGlobalReadableChecks(item.review?.verifications,'question').length+
+          tobeGlobalReadableChecks(item.review?.operational_checks,'question').length)+
+        ')</summary>'+
+        (item.review?.checks?.length?'<p><b>Restricciones cotejadas:</b></p><ul class="tobe-source-list">'+
+          tobeGlobalReadableChecks(item.review.checks,'reason')
+            .map(value=>'<li>'+esc(value)+'</li>').join('')+'</ul>':'')+
+        (item.review?.verifications?.length?'<p><b>Validaciones pendientes:</b></p><ul class="tobe-source-list">'+
+          tobeGlobalReadableChecks(item.review.verifications,'question')
+            .map(value=>'<li>'+esc(value)+'</li>').join('')+'</ul>':'')+
+        (item.review?.operational_checks?.length?'<p><b>Impacto operativo por comprobar:</b></p><ul class="tobe-source-list">'+
+          tobeGlobalReadableChecks(item.review.operational_checks,'question')
+            .map(value=>'<li>'+esc(value)+'</li>').join('')+'</ul>':'')+
+        '</details>':'')+
+      (item.constraints||item.review?.reason||item.review?.checks?.length?
+        '<details class="tobe-global-evidence-detail tobe-global-technical-audit">'+
+          '<summary>Ver texto y referencias técnicas originales</summary>'+
+          (item.constraints?'<p><b>Texto original de condiciones generado por IA:</b> '+
+            esc(item.constraints)+'</p>':'')+
+          (item.review?.reason?'<p><b>Evaluación original:</b> '+esc(item.review.reason)+'</p>':'')+
+          (item.review?.checks?.length?'<p><b>Referencias internas de controles:</b> '+
+            esc(item.review.checks.map(x=>x.source+': '+x.reason).join(' · '))+'</p>':'')+
+        '</details>':'')+
       '</div></details></section>').join('')+'</div></details></div></article>').join('')+'</div>':
       result?'<p class="tobe-global-empty">'+
         (analysisFinished&&outstanding===0?
