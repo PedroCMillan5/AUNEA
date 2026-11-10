@@ -170,11 +170,11 @@ test('section 01 preserves OTHER role and rejects missing or cross-company Conta
   assert.match(render(),/No consta/);
 });
 
-test('sections 01 and 02 share PG11 card surfaces and readable hierarchy',()=>{
-  assert.match(css,/\.tobe-context,\.tobe-global-analysis\{\s*display:grid;gap:14px;min-width:0;padding:20px 22px;/);
+test('sections 01, 02 and 03 share PG11 card surfaces and readable hierarchy',()=>{
+  assert.match(css,/\.tobe-context,\.tobe-global-analysis,\.tobe-review-section-head\{\s*display:grid;gap:14px;min-width:0;padding:20px 22px;/);
   assert.match(css,/\.tobe-workspace\[data-tobe-mode="guided"\] \.tobe-context\{display:grid\}/);
   assert.match(css,/\.tobe-context-diagnostic\{[^}]*border-left:3px solid var\(--system\);[^}]*background:var\(--system-soft\)/);
-  assert.match(css,/\.tobe-context,\.tobe-global-analysis\{padding:14px;gap:12px\}/);
+  assert.match(css,/\.tobe-context,\.tobe-global-analysis,\.tobe-review-section-head\{padding:14px;gap:12px\}/);
   assert.doesNotMatch(css,/\.tobe-context\{[^}]*background:var\(--system-soft\)/);
   assert.match(src,/<div class="tobe-context-diagnostic"><strong>Diagnóstico oficial<\/strong>/);
   assert.match(css,/\.tobe-context-fact dd\{[^}]*font-size:var\(--font-small\)/);
