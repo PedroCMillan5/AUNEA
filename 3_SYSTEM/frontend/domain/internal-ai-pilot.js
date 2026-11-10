@@ -28,10 +28,10 @@ function internalAiProgressHtml(e,mode){
   const percent=total?Math.min(100,Math.round(done*100/total)):0;
   const detail=active?(run.detail||'Preparando solicitud al proveedor IA…'):
     (mode==='global'&&stored?.failed?'Hay fuentes pendientes de reintento.':
-      'Resultados verificados y guardados.');
+      'Propuestas IA verificadas y guardadas; no son decisiones del consultor.');
   return '<div class="pg11-ai-progress" data-pg11-progress="'+mode+'" role="status" aria-live="polite">'+
     '<div class="pg11-ai-progress-top"><strong>'+done+' de '+(total||'—')+
-    (mode==='global'?' fuentes':' actividades')+' completadas</strong>'+
+    (mode==='global'?' fuentes analizadas':' actividades analizadas por IA')+'</strong>'+
     '<span>'+percent+' % de cobertura</span></div>'+
     '<div class="pg11-ai-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+percent+
     '" aria-label="Cobertura de análisis IA"><span style="width:'+percent+'%"></span></div>'+
