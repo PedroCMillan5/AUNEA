@@ -22,7 +22,7 @@ function tobeGlobalQualityGroups(opportunities){
     const t=clean(how);
     const actionApproval=/(?:recordatori|avis|notific|alert|seguimiento).{0,90}(?:aprobaci|aprobador|autorizar|autorice|aprobar|apruebe|responsable decida)|(?:aprobaci|aprobador).{0,90}(?:recordatori|avis|notific|alert|seguimiento)/.test(t);
     if(actionApproval)return 'APPROVAL_FOLLOWUP';
-    if(/(?:confirm|acuse).{0,65}(?:recepci|entrada|identificador)|(?:trazabil|auditori|historico de acciones|registro de eventos|vincul.{0,40}registro)/.test(t))return 'TRACEABILITY';
+    if(/(?:confirm|acuse).{0,65}(?:recepci|entrada|identificador)|(?:recepci|entrada|correo).{0,80}(?:confirmaci|referencia de registro)|(?:trazabil|auditori|historico de acciones|registro de eventos|vincul.{0,40}registro)/.test(t))return 'TRACEABILITY';
     if(/reutiliz|reintroduc|tecle|captur|carga de datos|campo.{0,25}validac|validar (?:los |las )?(?:datos|campos)|datos ya (?:cargados|registrados)/.test(t))return 'DATA_REUSE';
     if(/recordatori|avis|notific|alert|seguimiento|consulta|estado actual|historial|visibilid/.test(t))return 'VISIBILITY';
     if(/checklist|tareas repetid|plantilla de tareas|lista de tareas/.test(t))return 'TASK_SETUP';
