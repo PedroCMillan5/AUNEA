@@ -2383,36 +2383,37 @@ function tobeGlobalOverviewHtml(e,p){
           'data-tobe-select="'+attr(String(step.sourceStepId))+'" data-tobe-global-link="1">'+
           esc(step.sourceStepName||step.stepName||String(step.sourceStepId))+
           '</button>').join('')+'</div></div>':'')+
-      '<details class="tobe-global-card-details"><summary>Ver intervenciones, evidencias y restricciones'+
+      '<details class="tobe-global-card-details"><summary>Comparar propuestas y consultar evidencias'+
         ' ('+group.entries.length+')</summary><div class="tobe-global-card-detail-body">'+
-      (tobeGlobalSharedQuestions(group).length?
-        '<details class="tobe-global-evidence-detail">'+
-          '<summary>Comprobaciones comunes a estas intervenciones ('+
-            tobeGlobalSharedQuestions(group).length+')</summary>'+
-          '<ul class="tobe-source-list">'+tobeGlobalSharedQuestions(group)
-            .map(q=>'<li>'+esc(q)+'</li>').join('')+'</ul>'+
-        '</details>':'')+
       group.entries.map(({item,issues},j)=>
       '<section class="tobe-global-intervention">'+
-      (group.entries.length>1?'<h3 class="tobe-global-subtitle">Intervención '+(j+1)+
-        ' de '+group.entries.length+'</h3>':'')+
-      (issues?.length?'<p class="tobe-global-quality-note"><b>Coherencia por revisar:</b> '+
-        esc(issues.join(' · '))+'</p>':'')+
-      '<p class="tobe-global-action"><b>Intervención IA inicial:</b> '+esc(item.how)+'</p>'+
-      (item.review?'<p class="tobe-global-assessment"><b>Comprobación de restricciones:</b> '+
-        esc(item.review.status==='INCOMPATIBLE'?'Descartada por incompatibilidad explícita':
-          'Condicionada a validar la viabilidad')+'</p>':'')+
+      '<div class="tobe-global-option-head">'+
+        '<h4 class="tobe-global-option-title">Propuesta '+(j+1)+' de '+group.entries.length+'</h4>'+
+        '<span class="tobe-global-option-state">'+
+          esc(item.review?.status==='INCOMPATIBLE'?'Incompatible · revisar alternativa':
+            'Pendiente de validar')+'</span>'+
+      '</div>'+
+      '<p class="tobe-global-option-action">'+
+        esc(tobeGlobalReadableProposal(item,linkedSteps(item)))+'</p>'+
+      (tobeGlobalOptionWarnings(group,{issues}).length?
+        '<div class="tobe-global-option-caveat"><b>Qué hay que cuestionar</b><ul>'+
+          tobeGlobalOptionWarnings(group,{issues}).map(q=>'<li>'+esc(q)+'</li>').join('')+
+        '</ul></div>':'')+
       (item.alternative?'<p class="tobe-global-action"><b>Alternativa propuesta:</b> '+
         esc(item.alternative.how)+'</p>':
         item.alternative_note?'<p class="tobe-global-assessment">'+
           esc(item.alternative_note)+'</p>':'')+
-      '<details><summary>Ver justificación y restricciones</summary><div class="tobe-global-detail">'+
+      '<div class="tobe-global-option-evidence">'+
+        '<div><span class="tobe-global-kicker">POR QUÉ SE PROPONE</span>'+
+          '<p>'+esc(item.why)+'</p></div>'+
+        '<div><span class="tobe-global-kicker">EVIDENCIA DEL AS-IS</span>'+
+          '<p>'+esc(refs(item.source_refs).join(' · ')||'No consta una fuente legible')+'</p></div>'+
+      '</div>'+
+      '<details class="tobe-global-option-more"><summary>Consultar objetivo, incompatibilidades y comprobaciones</summary>'+
+        '<div class="tobe-global-detail">'+
       '<p><b>Objetivo original:</b> '+esc(item.objective)+'</p>'+
-      '<p><b>Por qué se recomienda:</b> '+esc(item.why)+'</p>'+
-      (item.review?'<p><b>Evaluación:</b> '+
-        esc(item.review.status==='INCOMPATIBLE'?
-          'La propuesta contradice una condición confirmada; debe descartarse o reformularse.':
-          'La propuesta es una hipótesis y necesita validar capacidades, permisos e impacto operativo.')+'</p>':'')+
+      (item.review?.status==='INCOMPATIBLE'?
+        '<p><b>Evaluación:</b> Incompatibilidad confirmada: no aplicar sin corregir la propuesta.</p>':'')+
       (item.alternative?'<p><b>Alternativa:</b> Mantenerla como posibilidad pendiente de evaluación; no se aplica automáticamente.</p>':'')+
       ((item.related||[]).length?'<p><b>Enfoques relacionados (sin descartar):</b></p>'+
         '<ul class="tobe-source-list">'+item.related.map(other=>
@@ -2423,19 +2424,23 @@ function tobeGlobalOverviewHtml(e,p){
       (item.review?.conflicts?.length?
         '<p><b>Incompatibilidad detectada:</b> '+
           esc(tobeGlobalReadableChecks(item.review.conflicts,'reason').join(' · '))+'</p>':'')+
-      '<p><b>Datos del AS-IS que justifican la propuesta:</b> '+
-        esc(refs(item.source_refs).join(' · ')||'No consta una fuente legible')+'</p>'+
       (item.alternative?.source_refs?.length?
         '<p><b>Evidencia de la alternativa:</b> '+
           esc(refs(item.alternative.source_refs).join(' · '))+'</p>':'')+
-      (tobeGlobalSpecificQuestions(group,item).length?
+      (tobeGlobalSpecificQuestions(group,item,globallyShared).length?
         '<details class="tobe-global-evidence-detail">'+
           '<summary>Qué debe comprobarse para esta intervención ('+
-            tobeGlobalSpecificQuestions(group,item).length+')</summary>'+
-          '<ul class="tobe-source-list">'+tobeGlobalSpecificQuestions(group,item)
+            tobeGlobalSpecificQuestions(group,item,globallyShared).length+')</summary>'+
+          '<ul class="tobe-source-list">'+tobeGlobalSpecificQuestions(group,item,globallyShared)
             .map(q=>'<li>'+esc(q)+'</li>').join('')+'</ul>'+
         '</details>':'')+
-      '</div></details></section>').join('')+'</div></details></div></article>').join('')+'</div>':
+      '</div></details></section>').join('')+
+      (tobeGlobalSharedQuestions(group,globallyShared).length?
+        '<details class="tobe-global-shared-checks"><summary>Comprobaciones compartidas por estas propuestas ('+
+          tobeGlobalSharedQuestions(group,globallyShared).length+')</summary>'+
+          '<ul class="tobe-source-list">'+tobeGlobalSharedQuestions(group,globallyShared)
+            .map(q=>'<li>'+esc(q)+'</li>').join('')+'</ul></details>':'')+
+      '</div></details></div></article>').join('')+'</div>':
       result?'<p class="tobe-global-empty">'+
         (analysisFinished&&outstanding===0?
           'No se han identificado mejoras justificadas en las fuentes completadas. Revisa la evidencia antes de cerrar.':
