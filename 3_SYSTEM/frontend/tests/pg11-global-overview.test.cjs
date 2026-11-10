@@ -780,6 +780,108 @@ test('PG11 shared checks are displayed only once for related interventions',()=>
  assert.equal(ctx.tobeGlobalImplementationQuestions(group.entries[0].item).length,2);
 });
 
+test('UAT-02-07 navigation: global links select a source activity, save edits and scroll to inspector',()=>{
+  assert.match(src,/data-tobe-global-link="1"/);
+  const nav=src.match(/\/\/ \[AUNEA-FE-PG11-SELECT-206\] START[\s\S]*?\/\/ \[AUNEA-FE-PG11-SELECT-206\] END/)?.[0];
+  assert.ok(nav,'missing PG11 canonical activity selection handler');
+  assert.match(nav,/saveTobeFromDom\(e\)\|\|!saveState\('Guardar edición TO-BE antes de cambiar actividad'\)/);
+  assert.match(nav,/if\(fromGlobal\)document.getElementById\('tobeInspector'\)/);
+  assert.match(nav,/scrollIntoView/);
+  assert.match(nav,/__auneaTobeSelection=\{engagementId:e.id,version:p.version,stepId:String\(sourceId\)\}/);
+  assert.match(nav,/return toast\('Selecciona otra actividad futura válida para conectar\.'/);
+});
+
+test('UAT-02-08 persistence: hydrated saved review renders exactly as before a reload',()=>{
+  const proposal={objective:'Reducir capturas repetidas.',how:'Reutilizar información confirmada.',
+    why:'La fricción fue registrada.',source_refs:['F1'],
+    review:{status:'CONDITIONED',reason:'Verificar herramientas.',conflicts:[]}};
+  const h=harness([proposal]);
+  const original=h.html();
+  const persisted=JSON.stringify(h.env);
+  const afterReload=harness([]);
+  const hydrated=JSON.parse(persisted);
+  afterReload.env.e=hydrated.e;afterReload.env.p=hydrated.p;
+  assert.equal(afterReload.html(),original);
+  assert.deepEqual(JSON.parse(persisted).p.aiGlobal.result.opportunities,[proposal]);
+  assert.doesNotMatch(original,/data-tobe-ai-use-field|data-tobe-human-decision/);
+});
+
+test('UAT-02-02 hierarchy: two options are never presented as one already chosen',()=>{
+  const quality=fs.readFileSync(path.join(__dirname,'../domain/internal-ai-global-quality.js'),'utf8');
+  const records=[
+    {objective:'Reducir doble captura.',how:'Reutilizar los datos registrados en sistema.',
+      why:'Se realiza doble introducción.',source_refs:['F1'],
+      review:{status:'CONDITIONED',verifications:[{question:'Verificar permisos declarados.'}]}},
+    {objective:'Evitar entradas repetidas.',how:'Validar los datos del sistema ya registrados.',
+      why:'El sistema requiere validación.',source_refs:['F1'],
+      review:{status:'CONDITIONED',verifications:[{question:'Verificar permisos declarados.'}]}}
+  ];
+  const h=harness(records);
+  const ctx={
+    currentDiagnosticOutput:()=>({input_snapshot_hash:'HASH'}),
+    tobeEditable:()=>true,
+    tobeProposalSnapshot:()=>h.env.e.confirmedSnapshots[0],
+    tobeProposalSourceSteps:()=>[{id:'S1',step_name:'Recepción'}],
+    esc:x=>String(x??''),attr:x=>String(x??''),
+    tobeHumanReviewRecord:()=>null
+  };
+  vm.createContext(ctx);vm.runInContext(quality+block,ctx);
+  const before=JSON.stringify(records),html=ctx.tobeGlobalOverviewHtml(h.env.e,h.env.p);
+  assert.equal((html.match(/class="tobe-global-intervention"/g)||[]).length,2);
+  assert.equal((html.match(/class="tobe-global-opportunity"/g)||[]).length,1);
+  assert.match(html,/2 propuestas IA por comparar, sin seleccionar/);
+  assert.doesNotMatch(html,/class="tobe-global-single-proposal"/);
+  assert.match(html,/RESULTADO QUE SE BUSCA/);
+  assert.match(html,/VIABILIDAD/);
+  assert.match(html,/Propuesta 1 de 2/);
+  assert.match(html,/Propuesta 2 de 2/);
+  assert.match(html,/POR QUÉ SE PROPONE/);
+  assert.match(html,/EVIDENCIA DEL AS-IS/);
+  assert.ok(html.indexOf('Comparar propuestas y consultar evidencias')<
+    html.indexOf('Propuesta 1 de 2'));
+  assert.equal(JSON.stringify(records),before);
+});
+
+test('UAT-02-02 hierarchy: universal checks appear once, not under each proposal',()=>{
+  const quality=fs.readFileSync(path.join(__dirname,'../domain/internal-ai-global-quality.js'),'utf8');
+  const records=[
+    {objective:'Reducir espera de revisión.',how:'Enviar avisos para revisión.',
+      why:'Se detectan esperas.',source_refs:['F1'],
+      review:{status:'CONDITIONED',verifications:[
+        {question:'Comprobar permisos reales del responsable.'},
+        {question:'Verificar capacidad de notificación.'}]}},
+    {objective:'Evitar recapturar datos.',how:'Reutilizar información existente.',
+      why:'Se detecta captura repetida.',source_refs:['F2'],
+      review:{status:'CONDITIONED',verifications:[
+        {question:'Comprobar permisos reales del responsable.'},
+        {question:'Verificar campos de entrada.'}]}}
+  ];
+  const h=harness(records),ctx={
+    currentDiagnosticOutput:()=>({input_snapshot_hash:'HASH'}),tobeEditable:()=>true,
+    tobeProposalSnapshot:()=>h.env.e.confirmedSnapshots[0],
+    tobeProposalSourceSteps:()=>[{id:'S1',step_name:'Recepción'}],
+    esc:x=>String(x??''),attr:x=>String(x??'')};
+  vm.createContext(ctx);vm.runInContext(quality+block,ctx);
+  const html=ctx.tobeGlobalOverviewHtml(h.env.e,h.env.p);
+  assert.match(html,/Requisitos de implantación compartidos por todas las propuestas \(1\)/);
+  assert.equal((html.match(/Comprobar permisos reales del responsable\./g)||[]).length,1);
+  assert.equal((html.match(/Verificar capacidad de notificación\./g)||[]).length,1);
+  assert.equal((html.match(/Verificar campos de entrada\./g)||[]).length,1);
+});
+
+test('UAT-02-09/10 generation and recovery: preserve progress, do not assert completion for failed source',()=>{
+  assert.match(ai,/function generateTobeGlobal\(e,\{resume=false\}=\{\}\)/);
+  assert.match(ai,/function internalAiGlobalRefresh/);
+  assert.match(ai,/const complete=doneSources.length===total&&failures.length===0/);
+  assert.match(ai,/if\(hasMore&&novel===0\)/);
+  assert.match(ai,/if\(data\?\.status!=='DRAFT'/);
+  assert.match(ai,/No se pudo \(?:guardar\|verificar el guardado\) del progreso del análisis IA/);
+  assert.match(ai,/status===503/);
+  assert.match(ai,/type:complete\?'info':'warn'/);
+  assert.match(ai,/Se sustituirá el análisis global guardado por uno nuevo/);
+  assert.match(ai,/Análisis cancelado\. Los bloques guardados se conservan/);
+});
+
 test('PG11 marks saved legacy results without operational evaluation as not checked',()=>{
  const quality=fs.readFileSync(path.join(__dirname,'../domain/internal-ai-global-quality.js'),'utf8');
  const obj=[{objective:'Reducir consultas.',how:'Consultar el estado de cada tarea.',
