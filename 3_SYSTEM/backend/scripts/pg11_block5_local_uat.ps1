@@ -29,10 +29,19 @@ try {
   $env:AUNEA_PG11_UAT_REPORT = "tests/pg11_live_ollama_report.json"
   Write-Host ("Motor: " + $env:AUNEA_OLLAMA_MODEL +
     " | Contexto: " + $env:AUNEA_OLLAMA_NUM_CTX)
-  Write-Host "1/2 Pruebas deterministas y regresion PG11..."
+  Write-Host "1/3 Pruebas frontend de la seccion 02 (jerarquia, navegacion, persistencia y errores)..."
+  $frontend = Join-Path (Split-Path -Parent $backend) "frontend"
+  $null = Get-Command node -ErrorAction Stop
+  Push-Location $frontend
+  try {
+    node --test tests/pg11-global-overview.test.cjs tests/pg11-global-quality.test.cjs tests/internal-ai-pilot-review.test.cjs
+    if ($LASTEXITCODE -ne 0) { throw "QA frontend PG11 FAIL" }
+  }
+  finally { Pop-Location }
+  Write-Host "2/3 Pruebas deterministas backend PG11 y errores de protocolo..."
   python -m pytest -q tests/test_internal_ai_global.py
   if ($LASTEXITCODE -ne 0) { throw "QA determinista PG11 FAIL" }
-  Write-Host "2/2 Inferencia Ollama real sobre facturas, intake y restriccion de aprobacion..."
+  Write-Host "3/3 Inferencia Ollama real sobre facturas, intake y restriccion de aprobacion..."
   python tests/pg11_live_ollama_gate.py
   if ($LASTEXITCODE -ne 0) {
     throw "UAT de Ollama real FAIL. Revisa tests/pg11_live_ollama_report.json."
