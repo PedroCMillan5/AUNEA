@@ -2214,8 +2214,10 @@ function tobeGlobalOverviewHtml(e,p){
           ' · Sin cortes detectados.')+'</p>'+
       '<p><b>Coherencia (revisión pendiente):</b> '+
         (qualityPlan?qualityPlan.reviewCount+' alertas de reglas y '+
-          (qualityPlan.operationalReviewCount||0)+' intervenciones con comprobación operativa pendiente, de '+
-          opportunities.length+' intervenciones.':
+          (qualityPlan.operationalReviewCount||0)+' intervenciones con comprobación operativa pendiente'+
+          (qualityPlan.operationalNotEvaluated?' · '+qualityPlan.operationalNotEvaluated+
+            ' sin evaluación operativa registrada (análisis anterior)':'')+
+          ', de '+opportunities.length+' intervenciones.':
           'Sin comprobar.')+'</p>'+
       '<p><b>Revisión humana:</b> '+decisions+
         ' decisiones sobre actividades registradas; propuestas globales sin aprobar.</p>'+
@@ -2224,6 +2226,8 @@ function tobeGlobalOverviewHtml(e,p){
     (!progress&&qualityPlan?'<p class="tobe-global-feedback"><b>Coherencia (revisión pendiente):</b> '+
       qualityPlan.reviewCount+' alertas de reglas y '+
         (qualityPlan.operationalReviewCount||0)+' intervenciones con comprobación operativa pendiente. '+
+        (qualityPlan.operationalNotEvaluated?qualityPlan.operationalNotEvaluated+
+          ' sin evaluación operativa registrada; vuelve a analizar para obtenerla. ':'')+
         'Ninguna recomendación está aprobada.</p>':'')+
     (progress?.failures?.length?'<details class="tobe-global-detail"><summary>Fuentes pendientes e incidencias</summary>'+
       '<p>'+esc(progress.failures.map(x=>x.source_id+': '+x.reason).join(' · '))+
