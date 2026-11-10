@@ -1949,6 +1949,32 @@ function createNextTobeVersion(e){
   return true;
 }
 // [AUNEA-FE-PG11-CONTEXT-289] START — compact PG11 read-only source projection.
+// Read the sealed Contact snapshot first. DF016 is a Contact reference or OTHER,
+// not a printable label: never expose a CRM id as the person's name.
+// This remains display-only (no writes, new owners, or AS-IS mutations).
+function tobeContextProcessOwnerLabel(snap,raw,e){
+  const ref=String(raw??'').trim();
+  if(!ref)return 'No consta';
+  if(ref==='OTHER')return String(snap?.answerDetails?.DF016||'').trim()||
+    'Rol del responsable no especificado';
+  if(ref==='UNKNOWN')return 'Responsable pendiente de confirmar';
+  const historical=(snap?.contacts||[]).find(ct=>String(ct.id)===ref);
+  const live=typeof contactById==='function'?contactById(ref):null;
+  const companyId=String(snap?.company?.id||e?.companyId||'');
+  const owner=historical||(live&&companyId&&String(live.companyId)===companyId?live:null);
+  if(owner){
+    const name=typeof contactFullName==='function'?contactFullName(owner):
+      ([owner.firstName,owner.lastName].filter(Boolean).join(' ').trim()||owner.name||'');
+    const readable=String(name||'').trim();
+    if(!readable||readable===ref)return 'Contacto sin nombre disponible';
+    const role=String(owner.role||'').trim();
+    return readable+(role?' · '+role:'');
+  }
+  // Historical free-text roles remain readable; ID-shaped references do not.
+  return /^[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ\s/,.()\\-]{1,119}$/.test(ref)?
+    ref:'Referencia de contacto no resuelta';
+}
+
 // SOURCE: confirmed AS-IS snapshot / Simulator CANONICAL v1.14 PG11; DEC-050/052/055.
 // Only existing DF fields are projected; no second owner, derived target or client re-ask.
 function tobeContextOverviewHtml(e,p){
@@ -1957,6 +1983,7 @@ function tobeContextOverviewHtml(e,p){
   const display=id=>{
     const raw=answers[id];
     if(raw===null||raw===undefined||raw===''||(Array.isArray(raw)&&!raw.length))return 'No consta';
+    if(id==='DF016')return tobeContextProcessOwnerLabel(snap,raw,e);
     const field=fieldById(id);
     const readable=typeof formatContextValue==='function'?formatContextValue(field,raw):
       (Array.isArray(raw)?raw.map(x=>String(x)).join(' · '):String(raw));
