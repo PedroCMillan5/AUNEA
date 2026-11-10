@@ -47,11 +47,23 @@ test('PG11 uses common heading primitives and has four numbered main sections',(
   assert.match(pg11,/class="aunea-ui-section-title"/);
   assert.match(pg11,/01 · INFORMACIÓN GENERAL/);
   assert.match(pg11,/02 · ANÁLISIS IA GLOBAL DEL PROCESO/);
-  assert.match(pg11,/03 · REVISIÓN POR ACTIVIDAD Y DISEÑO TO-BE/);
+  assert.match(pg11,/03 · DISEÑO TO-BE/);
+  assert.match(pg11,/<h2 class="aunea-ui-section-title">Revisión por actividad<\/h2>/);
   assert.match(pg11,/04 · Validación global/);
   assert.doesNotMatch(pg11,/05 · Validación global/);
   assert.match(pg11,/Auditoría IA · Detalle técnico \(opcional\)/);
   assert.doesNotMatch(pg11,/04 · Auditoría de propuestas IA por actividad/);
+});
+
+test('PG11 section 03 reuses section 01/02 surface and canonical typography tokens',()=>{
+  assert.match(local,/\.tobe-context,\.tobe-global-analysis,\.tobe-review-section-head\{/);
+  assert.match(local,/\.tobe-original-facts dt\{font-size:var\(--font-caption\)/);
+  assert.match(local,/\.tobe-original-facts dd\{[^}]*font-size:var\(--font-small\)/);
+  assert.match(local,/\.tobe-advice-pairs dd\{font-size:var\(--font-small\)/);
+  assert.match(local,/\.tobe-inspector #tobeStepOrigin>\.tobe-subdetails>summary,/);
+  assert.match(local,/\.tobe-inspector #tobeStepAdvice>\.tobe-subdetails>summary\{/);
+  assert.match(local,/\.tobe-workspace\[data-tobe-mode="guided"\] \.tobe-ai-field-control :is\(input,textarea,select\)\{[^}]*font-size:var\(--font-small\)/);
+  assert.doesNotMatch(local,/\.tobe-workspace\[data-tobe-mode="guided"\] \.tobe-guided-nav \.btn\{[^}]*font-size:/);
 });
 
 test('PG11 consultant action buttons use the shared compact-button group',()=>{
