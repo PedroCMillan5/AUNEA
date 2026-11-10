@@ -1268,13 +1268,13 @@ function tobeAiOperationalContextHtml(e,item){
   return '<div class="tobe-ai-operational-context" role="note">'+
     '<strong>Condiciones de diseño y restricciones a contrastar'+
     (historical?' · Propuesta histórica v'+esc(history.version):
-      partial?' · Propuesta individual pendiente de revisión global':'')+'</strong>'+
+      partial?' · Propuesta individual pendiente de coherencia entre actividades':'')+'</strong>'+
     '<p>'+esc(limitations||'La IA no ha detallado restricciones para esta actividad.')+'</p>'+
     '<details class="tobe-subdetails"><summary>Fuentes y criterio de aplicación</summary>'+
       '<p><b>Referencias:</b> '+esc(refs||'Sin fuentes especificadas')+'</p>'+
       '<p>Las limitaciones inferidas por IA no equivalen a restricciones declaradas por el cliente. Revisa el diagnóstico y confirma viabilidad, impacto diario y controles antes de aprobar.</p>'+
       (historical?'<p>Propuesta anterior: sólo lectura. No se puede aplicar a la versión actual sin una propuesta vigente.</p>':
-        partial?'<p>Checkpoint individual: no se puede aplicar hasta completar la revisión global y registrar la decisión humana.</p>':'')+
+        partial?'<p>Propuesta individual guardada: no puede aplicarse hasta comprobar la coherencia entre actividades y registrar la decisión humana.</p>':'')+
     '</details></div>';
 }
 // [AUNEA-FE-PG11-CLIENT-CONTEXT-269] END
@@ -1448,11 +1448,11 @@ function tobeAiAdviceHtml(e,item,includeDecision=true){
   const blocking=issues.some(x=>x.category==='BLOCKING')||(draft?.review?.blocking_step_ids||[]).includes(stepId);
   return '<div class="tobe-advice-content" data-tobe-ai-transform="'+
     attr(suggestion.transformation||'')+'">'+
-    (fromCheckpoint?'<p class="notice warn"><b>Propuesta IA verificada por actividad · Pendiente de revisión global.</b> Sólo consulta. No se ha aplicado ni aprobado ningún cambio en el TO-BE.</p>':'')+
+    (fromCheckpoint?'<p class="notice warn"><b>Propuesta IA verificada por actividad · Pendiente de coherencia entre actividades.</b> Sólo consulta. No se ha aplicado ni aprobado ningún cambio en el TO-BE.</p>':'')+
     (archived?'<p class="notice warn"><b>Propuesta histórica, sólo lectura.</b> Corresponde al TO-BE v'+
       esc(archived.version)+'. No se aplica al proceso vigente sin una revisión del consultor.</p>':'')+
     '<div class="tobe-advice-label">'+esc(suggestion.transformation||'Sin clasificar')+
-      (fromCheckpoint?' · Pendiente de revisión global':
+      (fromCheckpoint?' · Pendiente de coherencia entre actividades':
         blocking?' · Requiere corrección':' · Propuesta sin aprobar')+'</div>'+
     '<p class="notice info" data-tobe-ai-difference="1"'+
       (item.transformation&&item.transformation!==suggestion.transformation?'':' hidden')+'>'+
