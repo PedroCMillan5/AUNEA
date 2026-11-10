@@ -60,6 +60,15 @@ function tobeGlobalQualityGroups(opportunities){
        /(recordatori|avis|alert|notific|seguimiento)/.test(act)&&
        !/(reutiliz|captur|valid|tecle|reintroduc)/.test(act))
       issues.push('El objetivo es evitar una captura repetida, pero la acción sólo ofrece seguimiento.');
+    // Warnings are domain-neutral hypotheses, not automatic rejection rules.
+    if(/\\bformularios?\\b/.test(act)&&
+      /(reutiliz|captur|valid|reintroduc|duplicad|teclear)/.test(goal+' '+act))
+      issues.push('Comprobar que este formulario sustituye una captura existente y no obliga a introducir los mismos datos dos veces.');
+    if(/(?:recordatori|avis|notific|alert)/.test(act)&&
+       /(?:estado|situacion|pendiente)/.test(act))
+      issues.push('Comprobar de dónde procede el estado comunicado y quién mantiene esa información actualizada.');
+    if(/(?:registro|base de datos|hoja de calculo).{0,28}(?:intermedio|adicional|nuevo)|(?:intermedio|adicional).{0,28}registro/.test(act))
+      issues.push('Comprobar si el registro adicional duplica el sistema de origen o exige mantenimiento manual.');
     if(!kind)issues.push('No hay criterios suficientes para clasificar automáticamente esta intervención.');
     return {item,index,kind,domain:kind?'PROCESS':null,
       issues:[...new Set(issues)],operationalChecks:(item?.review?.operational_checks||[])
@@ -115,6 +124,7 @@ function tobeGlobalQualityGroups(opportunities){
     if(group.entries.length>1){
       group.relationship='RELATED_TO_REVIEW';
       group.title=titles[group.kind]||group.title;
+      group.reviewHint='Estas intervenciones persiguen un objetivo relacionado. Antes de implantarlas, comprobar si son alternativas o actuaciones complementarias, evitando duplicar tareas.';
       // A grouping is for reading only: it does not merge two interventions.
     }
     group.evidenceRefs=[...new Set(group.entries.flatMap(entry=>
