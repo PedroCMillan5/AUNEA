@@ -214,7 +214,7 @@ def analyze_case(name, request, report=None):
     # For these cases the validated frictions provide positive signal.
     if not record["opportunities"]:
         record["warning"] = "No se obtuvo ninguna mejora apoyada en fricciones documentadas."
-    record["status"] = "PASS"
+    record["status"] = "GENERATED_PENDING_GATE"
     return record
 
 
@@ -256,6 +256,7 @@ def main():
             requirement(bool(result["opportunities"]),
                         "No grounded opportunity across confirmed frictions in " + name +
                         ". Check source_summaries in the JSON report.")
+            result["status"] = "PASS"
             print("PG11_LIVE_CASE_PASS", name, "batches", result["batches"],
                   "opportunities", len(result["opportunities"]), flush=True)
         alternative = alternative_case()
@@ -265,7 +266,9 @@ def main():
         return 0
     except Exception as exc:
         report["failure"] = type(exc).__name__ + ": " + str(exc)
-        if report["cases"] and report["cases"][-1].get("status") == "RUNNING":
+        if report["cases"] and report["cases"][-1].get("status") in (
+            "RUNNING", "GENERATED_PENDING_GATE"
+        ):
             report["cases"][-1]["status"] = "FAILED"
             report["cases"][-1]["failure"] = report["failure"]
         print("PG11_LIVE_UAT_FAIL", report["failure"], flush=True)
