@@ -1191,8 +1191,11 @@ test('PG11 progress reports coverage of persisted sources and activities, not re
 });
 
 test('PG11 retains distinct recommendation actions instead of fuzzy merging',()=>{
-  const merge=ai.match(/function tobeGlobalMerge\(items,candidate\)\{[\s\S]*?\r?\n\}\r?\nfunction tobeGlobalSummary/)?.[0]||'';
-  assert.ok(merge);
+  const mergePattern=/function tobeGlobalMerge\(items,candidate\)\{[\s\S]*?\r?\n\}\r?\nfunction tobeGlobalSummary/;
+  const merge=ai.match(mergePattern)?.[0]||'';
+  assert.ok(merge,'Exact-action merge must exist in the global engine');
+  assert.ok(mergePattern.test(ai.replace(/\r?\n/g,'\r\n')),
+    'The regression must work with Windows CRLF source files');
   assert.match(merge,/norm\(x\.how\)===norm\(candidate\.how\)/);
   assert.doesNotMatch(merge,/similarity\(/);
   assert.match(merge,/items\.push\(candidate\)/);
