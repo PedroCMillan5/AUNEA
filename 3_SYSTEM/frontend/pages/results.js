@@ -2330,12 +2330,17 @@ function tobePage(){
       const v=String(itemAi[source]??'').trim();
       return !!v&&!['no','n/a','ninguno','sin definir','pendiente','—'].includes(v.toLowerCase());
     }).length:0,
+    pendingSteps=pendingAi?.items?.size?p.items.filter(step=>
+      !pendingAi.items.has(String(step.sourceStepId))):[],
+    pendingStepNames=pendingSteps.map(step=>step.sourceStepName||step.stepName||String(step.sourceStepId)),
     aiSummaryTitle=savedAi?'Propuesta IA vigente':
-      pendingAi?.items?.size?'Propuestas de esta versión · '+pendingAi.items.size+'/'+p.items.length:
+      pendingAi?.items?.size?'IA generada en '+(p.items.length-pendingSteps.length)+' de '+p.items.length+' pasos'+
+      (pendingSteps.length?' · '+pendingSteps.length+(pendingSteps.length===1?' pendiente':' pendientes'):''):
       pastAi?'Propuesta IA histórica · v'+pastAi.version:'Sin propuesta IA vigente',
     aiSummaryDescription=savedAi?
       'Esta actividad contiene '+proposedCount+' campos sugeridos de 9. Revisa la IA antes de aplicar.':
-      pendingAi?.items?.size?'En esta actividad: '+proposedCount+' de 9 campos con valor propuesto. Completa las restantes actividades para validar y aplicar.':
+      pendingAi?.items?.size?'En esta actividad: '+proposedCount+' de 9 campos con valor propuesto.'+
+      (pendingStepNames.length?' '+(pendingStepNames.length===1?'Paso pendiente de analizar: ':'Pasos pendientes de analizar: ')+pendingStepNames.join(' · ')+'.':''):
       pastAi?'La IA anterior propone '+proposedCount+' de 9 campos para esta actividad; son de consulta, no aplicables en v'+p.version+'.':
       'Analiza la actividad para obtener valores IA concretos sin modificar el AS-IS.';
   return pageTop('Diseño TO-BE','Versión '+p.version+' · '+statusLabel+
@@ -2345,7 +2350,7 @@ function tobePage(){
       '<section class="tobe-task-guide" aria-label="Qué hacer en Diseño TO-BE">'+
         '<div class="tobe-task-guide-intro"><div><h2>Qué tienes que hacer aquí</h2>'+
           '<p>Diseña cómo funcionará el proceso en el futuro. Revisa una actividad cada vez; el AS-IS original no se modifica.</p></div>'+
-          '<span class="tobe-task-guide-progress">'+reviewed+' de '+p.items.length+' recomendaciones revisadas</span></div>'+
+          '<span class="tobe-task-guide-progress">'+reviewed+' de '+p.items.length+' pasos revisados por el consultor</span></div>'+
         '<div class="tobe-ia-guide-summary" role="status"><strong>'+esc(aiSummaryTitle)+'</strong>'+
           '<p>'+esc(aiSummaryDescription)+'</p></div>'+
         '<div class="tobe-task-guide-steps">'+
