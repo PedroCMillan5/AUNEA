@@ -2020,8 +2020,8 @@ function tobeContextOverviewHtml(e,p){
     ' · Origen AS-IS confirmado v'+esc(snap?.version||p?.sourceSnapshotVersion||'—')+
     ' · '+esc((snap?.processSteps||[]).filter(x=>x.status!=='SUPERSEDED').length)+' actividades</p></div>'+
     '<span class="tobe-context-status">'+esc(status)+'</span></div>'+
-    '<div class="tobe-context-diagnostic">Diagnóstico oficial: <strong>'+esc(diagnostic)+
-    '</strong> · Información histórica confirmada, sólo lectura.</div>'+
+    '<div class="tobe-context-diagnostic"><strong>Diagnóstico oficial</strong>'+
+    '<p>'+esc(diagnostic)+' · Información histórica confirmada, sólo lectura.</p></div>'+
     '<dl class="tobe-context-facts">'+primary.map(([label,value])=>line(label,value)).join('')+'</dl>'+
     '<details class="tobe-context-details"><summary>Consultar criterios y restricciones del cliente</summary>'+
     '<dl class="tobe-context-facts tobe-context-facts-secondary">'+
