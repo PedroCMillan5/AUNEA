@@ -97,10 +97,50 @@ test('technical checks, conflicts and unknown classifications are not silently c
  const out=run([notKnown,blocked,checked]);
  assert.equal(out.recommendations,3);
  assert.equal(out.groups.length,3);
- assert.equal(out.unclassified,2);
+ assert.equal(out.unclassified,1,'technical mechanism can be classified without guessing an industry');
  assert.ok(out.reviewCount>=2);
  assert.equal(out.groups.filter(g=>g.incompatible).length,1);
  assert.deepEqual(out.groups[2].technicalChecks,['Verificar campos disponibles.']);
  assert.equal(out.priority,'NOT_ESTABLISHED_WITHOUT_EVIDENCE');
 });
+
+test('general grouping works across sectors without requiring domain names',()=>{
+ const cases=[
+  item('Evitar repetir la captura en atención.','Reutilizar datos ya capturados en sistema de atención.','S1'),
+  item('Reducir la captura duplicada.','Validar campos y reutilizar datos en sistema de atención.','S2'),
+  item('Evitar repetir inventario.','Reutilizar campos del sistema de logística.','S3'),
+  item('Evitar duplicación en reservas.','Reutilizar campos del sistema de reservas de hotel.','S4')
+ ];
+ const input=JSON.stringify(cases),out=run(cases);
+ assert.equal(out.recommendations,4);
+ assert.equal(out.groups.length,3,'unrelated business contexts must not be collapsed');
+ assert.equal(out.groups[0].entries.length,2,'related process functions may group without sector catalogue');
+ assert.equal(JSON.stringify(cases),input,'grouping must be projection-only');
+ assert.ok(out.groups.every(g=>g.priority==='SIN_PRIORIZAR'));
+});
+
+test('semantic overlaps are flagged but source interventions and statuses are preserved',()=>{
+ const a=item('Evitar duplicación.','Reutilizar campos del sistema de reservas existentes.','S1'),
+   b=item('Reducir repetición.','Reutilizar los campos existentes del sistema de reservas.','S1'),
+   c=item('Conservar aprobaciones.','Eliminar auditoría y mantener decisiones.','S1');
+ c.review.status='INCOMPATIBLE';
+ const out=run([a,b,c]);
+ assert.equal(out.recommendations,3);
+ assert.equal(out.groups.flatMap(g=>g.entries).length,3);
+ assert.ok(out.groups.flatMap(g=>g.entries).some(e=>e.issues.some(s=>/redundancia semántica/.test(s))));
+ assert.equal(out.groups.filter(g=>g.incompatible).length,1);
+ assert.equal(out.status,'DRAFT_UNAPPROVED');
+});
+
+test('operational effort advisories are visible, do not become client restrictions',()=>{
+ const proposal=item('Reducir reprocesos.','Introducir un nuevo formulario de seguimiento.','S1');
+ proposal.review.operational_checks=[{source:'IMPACTO_OPERATIVO_PENDIENTE',
+  question:'Verificar si este formulario sustituye tareas actuales.'}];
+ const out=run([proposal]);
+ assert.equal(out.operationalReviewCount,1);
+ assert.equal(out.groups[0].operationalChecks.length,1);
+ assert.equal(out.groups[0].incompatible,false);
+ assert.equal(out.groups[0].qualityFlagged,true);
+});
+
 // [AUNEA-UAT-PG11-GLOBAL-QUALITY-302] END
