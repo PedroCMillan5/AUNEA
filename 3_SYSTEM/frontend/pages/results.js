@@ -2096,6 +2096,45 @@ function tobeGlobalLinkedStepHtml(e,p,item){
     '</ul><p class="tobe-muted">Contexto de solo lectura. Estas propuestas no sustituyen '+
     'el análisis individual, ni aplican cambios o decisiones al TO-BE.</p></details>';
 }
+// Read-only PG11 presentation of client conditions: labels come from the
+// CANONICAL diagnostic option sets (or from source-backed backend metadata).
+// Business codes/DF ids stay in stored evidence, never become screen labels.
+function tobeGlobalHumanConditions(snapshot,review){
+  const canonical=typeof schema!=='undefined'?schema:null;
+  const answers=snapshot?.answers||{};
+  const conditions=Array.isArray(review?.declared_conditions)?
+    review.declared_conditions:[];
+  const ids=['DF010','DF073','DF075','DF087','DF088','DF089','DF090','DF091','DF092'];
+  const visible=[];
+  for(const id of ids){
+    const field=(canonical?.fields||[]).find(x=>x.Field_ID===id);
+    const set=canonical?.option_sets?.[field?.Option_Set_ID];
+    const allowed=Array.isArray(set?.options)?set.options:[];
+    const raw=answers[id];
+    const vals=Array.isArray(raw)?raw:
+      (raw===undefined||raw===null||raw===''?[]:[raw]);
+    const declarations=conditions.filter(x=>x?.source===id);
+    const values=vals.length?vals.map(value=>{
+      const code=String(value??'').trim();
+      if(!code)return '';
+      const option=allowed.find(x=>String(x.value)===code);
+      const fromBackend=declarations.find(x=>String(x.value)===code)?.meaning;
+      // Technical option codes without a source-backed label must not leak.
+      return String(option?.label||fromBackend||
+        (/^[A-Z][A-Z0-9_]{2,}$/.test(code)?
+          'Valor declarado sin etiqueta disponible':code));
+    }).filter(Boolean):
+      declarations.map(x=>String(x.meaning||'').trim()).filter(Boolean);
+    if(!values.length)continue;
+    visible.push({label:String(field?.Pregunta_o_etiqueta_ES||'Condición declarada'),
+      values:[...new Set(values)]});
+  }
+  return visible;
+}
+function tobeGlobalReadableChecks(rows,property){
+  return [...new Set((Array.isArray(rows)?rows:[])
+    .map(x=>String(x?.[property]||'').trim()).filter(Boolean))];
+}
 function tobeGlobalOverviewHtml(e,p){
   const working=typeof internalAiGlobalWorking==='function'&&internalAiGlobalWorking(e),
     feedback=typeof internalAiGlobalMessage==='function'?internalAiGlobalMessage(e):null,
