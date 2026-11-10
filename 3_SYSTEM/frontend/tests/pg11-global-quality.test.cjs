@@ -66,9 +66,9 @@ test('no quota or merge of different review statuses',()=>{
  const html=ctx.tobeGlobalOverviewHtml(e,p);
  assert.equal((html.match(/class="tobe-global-opportunity"/g)||[]).length,4);
  assert.equal((html.match(/class="tobe-global-intervention"/g)||[]).length,5);
- assert.match(html,/Coherencia por revisar/);
+ assert.match(html,/Comparar propuestas y consultar evidencias/);
  assert.match(html,/Coherencia \(revisión pendiente\):/);
- assert.match(html,/Resultado esperado \(hipótesis\):/);
+ assert.match(html,/RESULTADO QUE SE BUSCA/);
  assert.match(html,/Priorización pendiente:/);
  assert.match(html,/Objetivo original/);
  assert.match(html,/Referencia de origen sin descripción disponible en el AS-IS/);
