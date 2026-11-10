@@ -81,6 +81,39 @@ def batch(request, focus, seen=None, blocked=None, blocked_constraints=""):
     )
 
 
+def _analyze_with_synthetic_text_diagnostics(payload):
+    """Log only rejected text from this synthetic-only runner, never production.
+
+    The normal backend validator retains final authority; this wrapper cannot
+    transform, accept, or write a rejected recommendation.
+    """
+    original = global_ai.validate_global_brief
+
+    def inspect(raw, source_ids):
+        try:
+            return original(raw, source_ids)
+        except ValueError:
+            if isinstance(raw, dict):
+                candidates = [("summary", raw.get("summary"))]
+                for entry in raw.get("opportunities", []) if isinstance(raw.get("opportunities"), list) else []:
+                    if isinstance(entry, dict):
+                        candidates.extend((key, entry.get(key)) for key in ("how", "why"))
+                for field, value in candidates:
+                    if isinstance(value, str) and not global_ai.global_text_is_complete(value):
+                        print("PG11_LIVE_INVALID_TEXT_TAIL",
+                              json.dumps({"field": field,
+                                          "length": len(value),
+                                          "last_120_chars": value[-120:]},
+                                         ensure_ascii=False), flush=True)
+            raise
+
+    global_ai.validate_global_brief = inspect
+    try:
+        return global_ai.analyze_global(payload)
+    finally:
+        global_ai.validate_global_brief = original
+
+
 def query_with_local_retry(payload, issues):
     """Use the exact two-attempt PG11 UI recovery for one source batch.
 
@@ -92,7 +125,7 @@ def query_with_local_retry(payload, issues):
         query = payload if attempt == 0 else payload.model_copy(
             update={"retry_incomplete": True, "retry_compact": True})
         try:
-            return global_ai.analyze_global(query)
+            return _analyze_with_synthetic_text_diagnostics(query)
         except ValueError as exc:
             reason = str(exc)
             if attempt == 0 and (
