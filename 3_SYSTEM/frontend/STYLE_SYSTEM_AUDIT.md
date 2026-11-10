@@ -160,3 +160,15 @@ Alcance de la corrección: exclusivamente sección 01 de PG11 y la definición c
 - En cada grupo, las comprobaciones verificables compartidas aparecen una sola vez; cada intervención muestra únicamente las comprobaciones adicionales pertinentes. Los controles generales tipo «Contrastar la condición declarada: unknown/compliance/etc.» dejan de aparecer como 19 tareas presuntamente específicas, aunque siguen disponibles internamente en el resultado IA.
 - Se conservan las incompatibilidades realmente detectadas, los objetivos, razones, fuentes legibles y las alternativas. Ante una referencia sin descripción en el snapshot, no se filtra el identificador técnico al HTML; la referencia se conserva en el modelo.
 - No se modifica CSS ni el diseño compacto de tarjetas aprobado. QA aislado de `pg11-global-overview.test.cjs` y `pg11-global-quality.test.cjs` sobre las fuentes de esta rama: **54/54 PASS**; no implica aceptación visual local, suite de CI integrada ni UAT real Ollama. PG11 sigue **REVIEW**.
+
+
+## 12. PG11 — jerarquía de datos y UAT 07–10, 10/11/2026 (REVIEW)
+
+- En la sección 02 se establece una jerarquía visual explícita: objetivo de mejora y número de propuestas; resultado buscado (hipótesis) y viabilidad; intervenciones comparadas sin selección automática; explicación y evidencia del snapshot AS-IS; comprobaciones de implantación desplegables y sin repetir requisitos generales por propuesta.
+- Se conserva el CSS compartido System y el estilo de tarjetas aceptado. Nuevas clases locales `tobe-global-goal-*`, `tobe-global-option-*` y `tobe-global-brief-*` sólo para composición, con responsive.
+- `UAT-02-07`: enlaces globales seleccionan la actividad del inspector existente, guardan campos antes de cambiar y navegan a sección 03; no aprueban ni aplican propuestas.
+- `UAT-02-08`: comprobación aislada de serialización/hidratación del DRAFT del análisis, sin borrar las intervenciones. Queda pendiente recarga visual real en Windows.
+- `UAT-02-09`: los tests de contrato y orquestación abarcan regeneración con confirmación, eliminación de texto obsoleto, reintento selectivo y estado parcial; falta inferencia real local.
+- `UAT-02-10`: ante imposibilidad de verificar un checkpoint, el generador aborta inmediatamente en lugar de interpretar el fallo de guardado como una fuente de IA fallida. Se verifican rutas de cancelación/503 y que no se declara completo un resultado parcial. Las pruebas reales 409, OOM, vacío y pérdida de almacenamiento siguen pendientes de acreditación.
+- El runner `3_SYSTEM/backend/scripts/pg11_block5_local_uat.ps1` ejecuta primero los tests frontend de PG11, después `pytest tests/test_internal_ai_global.py` y por último el gate sintético de inferencia Ollama en Windows.
+- **QA aislado** ejecutado desde los ficheros de la rama actual en harness JS: `pg11-global-overview.test.cjs` y `pg11-global-quality.test.cjs`, **59/59 PASS**. No hay ejecución certificada de la suite Node integrada, CI, pytest, UAT real Windows ni Ollama desde el entorno GitHub; sección 02 y PG11 permanecen REVIEW. No se modifica el CANONICAL, las decisiones humanas ni el AS-IS.
