@@ -133,7 +133,7 @@ def _positive_action(pattern: str, action: str) -> bool:
     """Detect asserted changes, not clauses saying the change must NOT occur."""
     for found in re.finditer(pattern, action, flags=re.IGNORECASE):
         left = action[max(0, found.start() - 44):found.start()]
-        if re.search(r"\b(?:sin|no|evitar|impedir|prohibir)\s+(?:\w+\s+){0,3}$", left):
+        if re.search(r"\b(?:sin|no|ni|evitar|impedir|prohibir)\s+(?:\w+\s+){0,3}$", left):
             continue
         if re.search(r"\bno\s+se\s+(?:debe|puede|va\s+a)\s+(?:\w+\s+){0,2}$", left):
             continue
