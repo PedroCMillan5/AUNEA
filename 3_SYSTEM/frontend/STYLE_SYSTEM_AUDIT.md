@@ -172,3 +172,12 @@ Alcance de la corrección: exclusivamente sección 01 de PG11 y la definición c
 - `UAT-02-10`: ante imposibilidad de verificar un checkpoint, el generador aborta inmediatamente en lugar de interpretar el fallo de guardado como una fuente de IA fallida. Se verifican rutas de cancelación/503 y que no se declara completo un resultado parcial. Las pruebas reales 409, OOM, vacío y pérdida de almacenamiento siguen pendientes de acreditación.
 - El runner `3_SYSTEM/backend/scripts/pg11_block5_local_uat.ps1` ejecuta primero los tests frontend de PG11, después `pytest tests/test_internal_ai_global.py` y por último el gate sintético de inferencia Ollama en Windows.
 - **QA aislado** ejecutado desde los ficheros de la rama actual en harness JS: `pg11-global-overview.test.cjs` y `pg11-global-quality.test.cjs`, **59/59 PASS**. No hay ejecución certificada de la suite Node integrada, CI, pytest, UAT real Windows ni Ollama desde el entorno GitHub; sección 02 y PG11 permanecen REVIEW. No se modifica el CANONICAL, las decisiones humanas ni el AS-IS.
+
+
+## 13. PG11 — UAT Windows: tolerancia a CRLF en comprobación de consolidación, 10/11/2026 (REVIEW)
+
+La UAT local sintética del 10/11/2026, sobre Windows, ejecutó 85 pruebas frontend: 84 PASS, 1 FAIL. El único fallo fue `PG11 retains distinct recommendation actions instead of fuzzy merging` por `assert.ok(merge)`, ya que el test exigía LF exactos entre `tobeGlobalMerge` y `tobeGlobalSummary`. La función de negocio existe y conserva acciones diferentes: no se modifica el algoritmo de consolidación.
+
+Corrección aislada en `frontend/tests/pg11-global-overview.test.cjs`: el reconocimiento del bloque acepta LF y CRLF y comprueba explícitamente la variante CRLF. Se ejecutó el test específico contra el código de `internal-ai-pilot.js`, con LF y con CRLF simulados: **2/2 PASS**. No se han ejecutado de nuevo las 85 pruebas en Windows, ni se ha superado aún la fase 2 backend y la fase 3 Ollama del runner, que sigue en REVIEW. No son errores de producción los mensajes 409/503 generados intencionadamente por las pruebas PASS.
+
+Documentado en el repositorio; sincronización con BITACORA Drive pendiente por límite temporal HTTP 429 (ReadRequestsPerMinutePerProject), sin inventar un registro.
