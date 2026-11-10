@@ -2119,10 +2119,21 @@ function tobeGlobalHumanConditions(snapshot,review){
       if(!code)return '';
       const option=allowed.find(x=>String(x.value)===code);
       const fromBackend=declarations.find(x=>String(x.value)===code)?.meaning;
-      // Technical option codes without a source-backed label must not leak.
-      return String(option?.label||fromBackend||
+      const readable={
+        COMPLIANCE:'Cumplimiento legal y normativo',
+        OWNERSHIP:'Propiedad y responsabilidad de los datos',
+        PLATFORM:'Herramientas y plataformas',
+        RBAC:'Acceso según permisos de cada usuario',
+        AUDIT_LOG:'Registro de auditoría de las acciones',
+        CRM_NATIVE:'Funciones existentes del CRM o ERP',
+        FINANCIAL:'Información financiera',
+        CONFIDENTIAL:'Información comercial confidencial',
+        UNKNOWN:'No especificado',
+      };
+      // Presentation only: canonical values, meanings and provenance remain intact.
+      return String(readable[code]||option?.label||fromBackend||
         (/^[A-Z][A-Z0-9_]{2,}$/.test(code)?
-          'Valor declarado sin etiqueta disponible':code));
+          'Condición registrada pendiente de aclaración':code));
     }).filter(Boolean):
       declarations.map(x=>String(x.meaning||'').trim()).filter(Boolean);
     if(!values.length)continue;
@@ -2134,6 +2145,24 @@ function tobeGlobalHumanConditions(snapshot,review){
 function tobeGlobalReadableChecks(rows,property){
   return [...new Set((Array.isArray(rows)?rows:[])
     .map(x=>String(x?.[property]||'').trim()).filter(Boolean))];
+}
+// Section 02 renders implementation questions per recommendation; repeated
+// checks are shown only once for the thematic group. All original evidence,
+// option codes, rule traces and IA text remain saved on aiGlobal.result.
+function tobeGlobalImplementationQuestions(item){
+  return [...new Set([
+    ...(item?.review?.verifications||[]).map(x=>String(x?.question||'').trim()),
+    ...(item?.review?.operational_checks||[]).map(x=>String(x?.question||'').trim())
+  ].filter(Boolean))];
+}
+function tobeGlobalSharedQuestions(group){
+  const sets=(group?.entries||[]).map(({item})=>tobeGlobalImplementationQuestions(item));
+  return sets.length>1?
+    sets[0].filter(q=>sets.slice(1).every(values=>values.includes(q))):[];
+}
+function tobeGlobalSpecificQuestions(group,item){
+  const shared=new Set(tobeGlobalSharedQuestions(group));
+  return tobeGlobalImplementationQuestions(item).filter(q=>!shared.has(q));
 }
 function tobeGlobalOverviewHtml(e,p){
   const working=typeof internalAiGlobalWorking==='function'&&internalAiGlobalWorking(e),
@@ -2240,6 +2269,16 @@ function tobeGlobalOverviewHtml(e,p){
       (variants?' · '+variants+' variantes relacionadas conservadas':'')+
       (qualityPlan?' · '+thematicGroups.length+' líneas relacionadas para revisión':'')+
       '. Ninguna equivale a aprobación del consultor.</p>':'')+
+    (opportunities.length&&tobeGlobalHumanConditions(record,opportunities[0]?.review).length?
+      '<details class="tobe-global-detail tobe-global-client-conditions">'+
+        '<summary>Condiciones del cliente confirmadas en el AS-IS ('+
+        tobeGlobalHumanConditions(record,opportunities[0]?.review).length+')</summary>'+
+        '<ul class="tobe-source-list">'+tobeGlobalHumanConditions(record,opportunities[0]?.review)
+          .map(c=>'<li><b>'+esc(c.label)+':</b> '+esc(c.values.join(' · '))+'</li>')
+          .join('')+'</ul>'+
+        '<p class="tobe-muted">Estas condiciones afectan al conjunto del análisis. '+
+        'Las incompatibilidades de cada intervención se muestran en su propia tarjeta.</p>'+
+      '</details>':'')+
     (typeof internalAiProgressHtml==='function'?internalAiProgressHtml(e,'global'):'')+
     (progress?'<div class="tobe-global-progress" role="status" aria-live="polite">'+
       '<p><b>Generación:</b> Fuentes revisadas: '+successful+' de '+progress.total+
@@ -2310,6 +2349,13 @@ function tobeGlobalOverviewHtml(e,p){
           '</button>').join('')+'</div></div>':'')+
       '<details class="tobe-global-card-details"><summary>Ver intervenciones, evidencias y restricciones'+
         ' ('+group.entries.length+')</summary><div class="tobe-global-card-detail-body">'+
+      (tobeGlobalSharedQuestions(group).length?
+        '<details class="tobe-global-evidence-detail">'+
+          '<summary>Comprobaciones comunes a estas intervenciones ('+
+            tobeGlobalSharedQuestions(group).length+')</summary>'+
+          '<ul class="tobe-source-list">'+tobeGlobalSharedQuestions(group)
+            .map(q=>'<li>'+esc(q)+'</li>').join('')+'</ul>'+
+        '</details>':'')+
       group.entries.map(({item,issues},j)=>
       '<section class="tobe-global-intervention">'+
       (group.entries.length>1?'<h3 class="tobe-global-subtitle">Intervención '+(j+1)+
@@ -2338,54 +2384,20 @@ function tobeGlobalOverviewHtml(e,p){
           ' <small>Motivo: '+esc(other.why)+' · Fuentes: '+
           esc(refs(other.source_refs).join(' · '))+'</small></li>').join('')+
         '</ul>':'')+
-      (tobeGlobalHumanConditions(record,item.review).length?
-        '<details class="tobe-global-evidence-detail"><summary>Condiciones declaradas por el cliente ('+
-          tobeGlobalHumanConditions(record,item.review).length+')</summary>'+
-          '<ul class="tobe-source-list">'+
-            tobeGlobalHumanConditions(record,item.review).map(c=>
-              '<li><b>'+esc(c.label)+':</b> '+esc(c.values.join(' · '))+'</li>'
-            ).join('')+'</ul></details>':
-        '<p><b>Condiciones del cliente:</b> No hay valores estructurados disponibles en esta vista; comprobar el AS-IS confirmado.</p>')+
-      (item.review?.conflicts?.length?'<p><b>Conflicto confirmado:</b> '+
-        esc(tobeGlobalReadableChecks(item.review.conflicts,'reason').join(' · '))+'</p>':'')+
-      '<p><b>Evidencias vinculadas:</b> '+esc(refs(item.source_refs).join(' · ')||'Sin referencias identificadas')+'</p>'+
-      (item.alternative?.source_refs?.length?'<p><b>Fuentes de la alternativa:</b> '+
-        esc(refs(item.alternative.source_refs).join(' · '))+'</p>':'')+
-      ((item.review?.checks?.length||item.review?.verifications?.length||
-         item.review?.operational_checks?.length)?
-        '<details class="tobe-global-evidence-detail"><summary>Ver comprobaciones de implantación ('+
-         (tobeGlobalReadableChecks(item.review?.checks,'reason').length+
-          tobeGlobalReadableChecks(item.review?.verifications,'question').length+
-          tobeGlobalReadableChecks(item.review?.operational_checks,'question').length)+
-        ')</summary>'+
-        (item.review?.checks?.length?'<p><b>Restricciones cotejadas:</b></p><ul class="tobe-source-list">'+
-          tobeGlobalReadableChecks(item.review.checks,'reason')
-            .map(value=>'<li>'+esc(value)+'</li>').join('')+'</ul>':'')+
-        (item.review?.verifications?.length?'<p><b>Validaciones pendientes:</b></p><ul class="tobe-source-list">'+
-          tobeGlobalReadableChecks(item.review.verifications,'question')
-            .map(value=>'<li>'+esc(value)+'</li>').join('')+'</ul>':'')+
-        (item.review?.operational_checks?.length?'<p><b>Impacto operativo por comprobar:</b></p><ul class="tobe-source-list">'+
-          tobeGlobalReadableChecks(item.review.operational_checks,'question')
-            .map(value=>'<li>'+esc(value)+'</li>').join('')+'</ul>':'')+
-        '</details>':'')+
-      (item.constraints||item.review?.reason||item.review?.checks?.length||
-         item.review?.conflicts?.length||item.review?.verifications?.length||
-         item.review?.operational_checks?.length||item.alternative?.review?.reason?
-        '<details class="tobe-global-evidence-detail tobe-global-technical-audit">'+
-          '<summary>Ver texto y referencias técnicas originales</summary>'+
-          (item.constraints?'<p><b>Texto original de condiciones generado por IA:</b> '+
-            esc(item.constraints)+'</p>':'')+
-          (item.review?.reason?'<p><b>Evaluación original:</b> '+esc(item.review.reason)+'</p>':'')+
-          (item.review?.checks?.length?'<p><b>Referencias internas de controles:</b> '+
-            esc(item.review.checks.map(x=>x.source+': '+x.reason).join(' · '))+'</p>':'')+
-          (item.review?.conflicts?.length?'<p><b>Referencias internas de incompatibilidades:</b> '+
-            esc(item.review.conflicts.map(x=>x.source+': '+x.reason).join(' · '))+'</p>':'')+
-          (item.review?.verifications?.length?'<p><b>Referencias de comprobación técnica:</b> '+
-            esc(item.review.verifications.map(x=>x.source+': '+x.question).join(' · '))+'</p>':'')+
-          (item.review?.operational_checks?.length?'<p><b>Referencias de impacto operativo:</b> '+
-            esc(item.review.operational_checks.map(x=>x.source+': '+x.question).join(' · '))+'</p>':'')+
-          (item.alternative?.review?.reason?'<p><b>Evaluación técnica de la alternativa:</b> '+
-            esc(item.alternative.review.reason)+'</p>':'')+
+      (item.review?.conflicts?.length?
+        '<p><b>Incompatibilidad detectada:</b> '+
+          esc(tobeGlobalReadableChecks(item.review.conflicts,'reason').join(' · '))+'</p>':'')+
+      '<p><b>Datos del AS-IS que justifican la propuesta:</b> '+
+        esc(refs(item.source_refs).join(' · ')||'No consta una fuente legible')+'</p>'+
+      (item.alternative?.source_refs?.length?
+        '<p><b>Evidencia de la alternativa:</b> '+
+          esc(refs(item.alternative.source_refs).join(' · '))+'</p>':'')+
+      (tobeGlobalSpecificQuestions(group,item).length?
+        '<details class="tobe-global-evidence-detail">'+
+          '<summary>Qué debe comprobarse para esta intervención ('+
+            tobeGlobalSpecificQuestions(group,item).length+')</summary>'+
+          '<ul class="tobe-source-list">'+tobeGlobalSpecificQuestions(group,item)
+            .map(q=>'<li>'+esc(q)+'</li>').join('')+'</ul>'+
         '</details>':'')+
       '</div></details></section>').join('')+'</div></details></div></article>').join('')+'</div>':
       result?'<p class="tobe-global-empty">'+
