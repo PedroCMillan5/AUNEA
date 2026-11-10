@@ -1147,7 +1147,7 @@ test('PG11 keeps cancellation in global action group and review buttons on their
 test('PG11 uses one consistent page and activity numbering hierarchy',()=>{
   for(const label of [
     '01 · INFORMACIÓN GENERAL','02 · ANÁLISIS IA GLOBAL DEL PROCESO',
-    '03 · REVISIÓN POR ACTIVIDAD Y DISEÑO TO-BE',
+    '03 · DISEÑO TO-BE','Revisión por actividad',
     '03.1 · Datos y hallazgos','03.2 · Analizar este paso',
     '03.3 · Configurar la actividad futura','03.4 · Conectar el proceso futuro',
     '04 · Validación global'
