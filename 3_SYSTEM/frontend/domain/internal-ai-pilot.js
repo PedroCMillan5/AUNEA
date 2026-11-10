@@ -1533,12 +1533,6 @@ registerInternalWorkPages=function(){
       if(!retryReview.disabled)void retryTobeAiReviewOnly();
       return;
     }
-    const complete=event.target?.closest?.('[data-tobe-generate-all-remaining]');
-    if(complete){
-      event.preventDefault();
-      if(!complete.disabled)void generateTobeAiPilot(currentEng());
-      return;
-    }
     const selected=event.target?.closest?.('[data-tobe-generate-selected]');
     if(selected){
       event.preventDefault();
