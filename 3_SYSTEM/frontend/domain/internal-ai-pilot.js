@@ -450,8 +450,8 @@ async function generateTobeGlobal(e,options={}){
       if(saved&&typeof localStorage!=='undefined'&&typeof STORAGE_KEY!=='undefined'){
         try{
           const disk=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');
-          const stored=(disk?.engagements||[]).find(x=>x.id===e.id)?
-            .tobeProposals?.find(x=>x.version===owner.version)?.aiGlobal;
+          const stored=(disk?.engagements||[]).find(x=>x.id===e.id)
+            ?.tobeProposals?.find(x=>x.version===owner.version)?.aiGlobal;
           const expected=owner.aiGlobal;
           saved=!!stored&&stored.tobeVersion===expected.tobeVersion&&
             stored.sourceSnapshotVersion===expected.sourceSnapshotVersion&&
