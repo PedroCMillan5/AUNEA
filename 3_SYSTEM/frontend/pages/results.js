@@ -2368,9 +2368,6 @@ function tobeGlobalOverviewHtml(e,p){
         '<p>'+esc(tobeGlobalReadableProposal(group.entries[0].item,groupSteps(group)))+'</p></div>':'')+
       (group.entries.length>1?
         '<p class="tobe-global-variants-lead">Las propuestas persiguen una misma mejora. Abrir la comparación para comprobar si son alternativas o pueden combinarse.</p>':'')+
-      (group.technicalChecks?.find(q=>!globallyShared.includes(q))?
-        '<p class="tobe-global-one-check"><b>Antes de implantar:</b> '+
-          esc(group.technicalChecks.find(q=>!globallyShared.includes(q)))+'</p>':'')+
       (tobeGlobalGroupWarnings(group).length?
         '<details class="tobe-global-group-warnings"><summary>Observaciones de calidad ('+
           tobeGlobalGroupWarnings(group).length+')</summary>'+
