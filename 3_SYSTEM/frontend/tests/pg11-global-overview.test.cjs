@@ -1130,8 +1130,9 @@ test('PG11 exposes cancellation and aborts AI calls without clearing checkpoints
 test('PG11 continues missing steps rather than launching a coherence review',()=>{
   assert.match(ai,/data-tobe-generate-all-remaining>Analizar pasos pendientes/);
   assert.match(ai,/complete\?'<button type="button" class="btn btn-primary" id="retryTobeAiReview"/);
-  assert.match(ai,/const complete=event\.target\?\.closest\?\.\('\[data-tobe-generate-all-remaining\]'\)/);
-  assert.match(ai,/void generateTobeAiPilot\(currentEng\(\)\)/);
+  assert.match(block,/const button=event\.target\?\.closest\?\.\('\[data-tobe-generate-all-remaining\]'\)/);
+  assert.match(block,/void generateTobeAiPilot\(e\)\.catch/);
+  assert.doesNotMatch(ai,/const complete=event\.target\?\.closest\?\.\('\[data-tobe-generate-all-remaining\]'\)/);
 });
 
 test('PG11 keeps cancellation in global action group and review buttons on their own row',()=>{
