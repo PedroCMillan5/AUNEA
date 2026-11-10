@@ -1191,7 +1191,7 @@ function tobeAiInlineHint(e,p,item,key){
         'IA histórica · v'+esc(history.version))+
       ':</b> '+esc(display||'Sin valor propuesto')+'</p>'+
       '<p class="field-help tobe-ia-provenance">'+(partial?
-        'Pendiente de comprobación de coherencia entre actividades · solo consulta.':
+        'Sólo consulta hasta completar las actividades y comprobar coherencia.':
         'Solo lectura · borrador actual v'+esc(p.version)+'.')+'</p>'+
       (raw?'<details class="tobe-subdetails"><summary>Fundamento y fuentes de la propuesta IA</summary>'+
         '<p><b>Justificación general de la actividad:</b> '+esc(narrative.reason||'Sin justificación adicional')+'</p>'+
@@ -1303,10 +1303,11 @@ function tobeAiRowActions(e,p,item,key){
     '" '+attribute+' title="'+attr(title||label)+'">'+esc(label)+'</button>';
   return '<div class="tobe-ai-row-actions aunea-ui-button-row" aria-label="Acciones de '+esc(
     TOBE_AI_REVIEW_FIELDS.find(x=>x[1]===key)?.[2]||'este campo')+'">'+
-    action('Aplicar IA',canApply?
-      'data-tobe-ai-use-field="'+attr(key)+'" data-tobe-ai-action-source="'+attr(id)+'"':
-      'data-tobe-ai-apply-unavailable="'+attr(key)+'" data-tobe-ai-reason="'+attr(blockedReason)+'"',
-      applied,canApply?'Aplicar sugerencia IA autorizada':blockedReason)+
+    (candidate||isCurrent?
+      action('Aplicar IA',canApply?
+        'data-tobe-ai-use-field="'+attr(key)+'" data-tobe-ai-action-source="'+attr(id)+'"':
+        'data-tobe-ai-apply-unavailable="'+attr(key)+'" data-tobe-ai-reason="'+attr(blockedReason)+'"',
+        applied,canApply?'Aplicar sugerencia IA autorizada':blockedReason):'')+
     action('Mantener','data-tobe-ai-keep-field="'+attr(key)+
       '" data-tobe-ai-action-source="'+attr(id)+'"',history?.action==='KEEP',
       'Conservar valor TO-BE sin aplicar IA')+
@@ -1440,6 +1441,8 @@ function tobeAiAdviceHtml(e,item,includeDecision=true){
   const draft=cached||current||approvedReadOnly||archived?.proposal;
   const stepId=String(item.sourceStepId);
   const fromCheckpoint=!draft&&!!pending?.items?.has(stepId);
+  const remainingStepIds=fromCheckpoint?(latestTobe(e)?.items||[]).filter(x=>
+    !pending.items.has(String(x.sourceStepId))).map(x=>String(x.sourceStepName||x.sourceStepId)):[];
   const suggestion=draft?.items?.find(x=>String(x.source_step_id)===stepId)||
     (fromCheckpoint?pending.items.get(stepId):null);
   if(!suggestion)return '<div class="tobe-ai-empty"><p class="tobe-muted">Todavía no hay una sugerencia de IA vigente para esta actividad. Si existen actividades verificadas pendientes de revisión, se mostrarán únicamente en sus pasos correspondientes.</p></div>';
@@ -1448,11 +1451,17 @@ function tobeAiAdviceHtml(e,item,includeDecision=true){
   const blocking=issues.some(x=>x.category==='BLOCKING')||(draft?.review?.blocking_step_ids||[]).includes(stepId);
   return '<div class="tobe-advice-content" data-tobe-ai-transform="'+
     attr(suggestion.transformation||'')+'">'+
-    (fromCheckpoint?'<p class="notice warn"><b>Propuesta IA verificada por actividad · Pendiente de coherencia entre actividades.</b> Sólo consulta. No se ha aplicado ni aprobado ningún cambio en el TO-BE.</p>':'')+
+    (fromCheckpoint?'<div class="notice warn"><b>Propuesta individual guardada; pendiente de consolidación.</b> '+
+      (remainingStepIds.length?'Falta analizar '+remainingStepIds.length+
+        (remainingStepIds.length===1?' actividad: ':' actividades: ')+esc(remainingStepIds.join(' · '))+'. '+
+        'Al terminar se comprobará la coherencia entre actividades. ':'')+
+      'No se ha aplicado ni aprobado ningún cambio.'+
+      (remainingStepIds.length?'<div><button type="button" class="btn btn-outline btn-small" data-tobe-generate-all-remaining>Analizar actividades pendientes</button></div>':'')+
+      '</div>':'')+
     (archived?'<p class="notice warn"><b>Propuesta histórica, sólo lectura.</b> Corresponde al TO-BE v'+
       esc(archived.version)+'. No se aplica al proceso vigente sin una revisión del consultor.</p>':'')+
     '<div class="tobe-advice-label">'+esc(suggestion.transformation||'Sin clasificar')+
-      (fromCheckpoint?' · Pendiente de coherencia entre actividades':
+      (fromCheckpoint?' · Sin consolidar':
         blocking?' · Requiere corrección':' · Propuesta sin aprobar')+'</div>'+
     '<p class="notice info" data-tobe-ai-difference="1"'+
       (item.transformation&&item.transformation!==suggestion.transformation?'':' hidden')+'>'+
@@ -1471,7 +1480,7 @@ function tobeAiAdviceHtml(e,item,includeDecision=true){
         internalAiReadableRefs(e,suggestion.source_refs):
         (suggestion.source_refs||[]).join(', '))||'No identificadas')+'</p>'+
       '<p><b>Condiciones pendientes:</b> '+esc(suggestion.limitations||'Ninguna declarada')+'</p>'+
-      (fromCheckpoint?'<p>Revisión global pendiente. Este resultado no está autorizado para aplicar ni aprobar.</p>':
+      (fromCheckpoint?'<p>Consolidación entre actividades pendiente. No se puede aplicar ni aprobar esta propuesta.</p>':
         issues.length?'<ul>'+issues.map(x=>'<li>'+esc(x.issue||x.action||'Revisión pendiente')+'</li>').join('')+'</ul>':
         '<p>Sin observaciones específicas del revisor automático.</p>')+
     '</details>'+
