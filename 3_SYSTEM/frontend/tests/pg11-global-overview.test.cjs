@@ -688,6 +688,52 @@ test('same action merges source references; distinct interventions remain separa
   assert.ok(actions[1].source_refs.includes('S2'));
 });
 
+test('PG11 compact cards retain all original details and direct activity navigation',()=>{
+ const quality=fs.readFileSync(path.join(__dirname,'../domain/internal-ai-global-quality.js'),'utf8');
+ const item={objective:'Evitar trabajo duplicado.',how:'Reutilizar información existente.',
+   why:'Fricción registrada de origen.',source_refs:['F1'],
+   quality:{status:'REVIEW',issues:[{message:'Comprobar impacto de la intervención.'}]},
+   review:{status:'CONDITIONED',reason:'Viabilidad por comprobar.',conflicts:[],
+     verifications:[{source:'CAPACIDAD_TECNICA',question:'Validar permisos.'}],
+     operational_checks:[{source:'IMPACTO_OPERATIVO_PENDIENTE',
+       question:'Comprobar si aumenta el trabajo manual.'}]}};
+ const snapshot={version:3,frictions:[{id:'F1',client_label:'Duplicación',
+   status:'ACTIVE',affected_steps:['S1']}],risks:[]};
+ const e={id:'E1'},p={status:'DRAFT',version:2,sourceSnapshotVersion:3,
+   items:[{sourceStepId:'S1',sourceStepName:'Actividad de origen'}],
+   aiGlobal:{tobeVersion:2,sourceSnapshotVersion:3,diagnosticInputHash:'HASH',
+     result:{status:'DRAFT',engagement_id:'E1',snapshot_version:3,
+       summary:'Hay una mejora condicionada.',complete:true,
+       opportunities:[item],progress:{completed:1,total:1,focus_done:['F1']}}}};
+ const ctx={currentDiagnosticOutput:()=>({input_snapshot_hash:'HASH'}),
+   tobeEditable:()=>true,tobeProposalSourceSteps:()=>[{id:'S1',step_name:'Actividad de origen'}],
+   tobeProposalSnapshot:()=>snapshot,
+   esc:x=>String(x??''),attr:x=>String(x??''),
+   internalAiGlobalWorking:()=>false,internalAiGlobalMessage:()=>null};
+ vm.createContext(ctx);vm.runInContext(quality+block,ctx);
+ const before=JSON.stringify(p.aiGlobal),html=ctx.tobeGlobalOverviewHtml(e,p);
+ assert.match(html,/Intervención propuesta:/);
+ assert.match(html,/Impacto operativo pendiente:/);
+ assert.match(html,/class="tobe-global-card-details"/);
+ assert.match(html,/data-tobe-select="S1"/);
+ assert.ok(html.indexOf('Revisar en actividades:')<
+   html.indexOf('class="tobe-global-card-details"'));
+ assert.match(html,/Validaciones pendientes/);
+ assert.match(html,/Impacto operativo por comprobar/);
+ assert.equal(JSON.stringify(p.aiGlobal),before);
+});
+
+test('PG11 marks saved legacy results without operational evaluation as not checked',()=>{
+ const quality=fs.readFileSync(path.join(__dirname,'../domain/internal-ai-global-quality.js'),'utf8');
+ const obj=[{objective:'Reducir consultas.',how:'Consultar el estado de cada tarea.',
+    why:'Ausencia de información consolidada.',source_refs:['S1'],
+    review:{status:'CONDITIONED',reason:'Comprobar capacidad.',conflicts:[]}}];
+ const ctx={};vm.createContext(ctx);vm.runInContext(quality,ctx);
+ const result=ctx.tobeGlobalQualityGroups(obj);
+ assert.equal(result.operationalNotEvaluated,1);
+ assert.equal(result.operationalReviewCount,0);
+});
+
 test('PG11 consolidates unique recommendations, incompatibilities and alternatives without approving them',()=>{
   const proposed=[
     {objective:'Evitar que se duplique la recepción',how:'Reusar datos validados.',
@@ -704,7 +750,7 @@ test('PG11 consolidates unique recommendations, incompatibilities and alternativ
   const h=harness(proposed);
   h.env.p.items=[{sourceStepId:'S1',sourceStepName:'Recepción'}];
   const html=h.html();
-  assert.match(html,/Consolidación de propuestas: 2 intervenciones distintas/);
+  assert.match(html,/Consolidación de propuestas: 2 intervenciones registradas \\(candidatas a consolidación\\)/);
   assert.match(html,/1 incompatibilidades detectadas/);
   assert.match(html,/1 alternativas sugeridas/);
   assert.match(html,/1 variantes relacionadas conservadas/);
