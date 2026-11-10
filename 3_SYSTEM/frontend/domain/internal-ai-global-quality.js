@@ -131,6 +131,8 @@ function tobeGlobalQualityGroups(opportunities){
     groups,recommendations:list.length,
     reviewCount:indexed.filter(x=>x.issues.length>0).length,
     operationalReviewCount:indexed.filter(x=>x.operationalChecks.length>0).length,
+    operationalNotEvaluated:indexed.filter(x=>
+      !Array.isArray(x.item?.review?.operational_checks)).length,
     relatedGroups:groups.filter(x=>x.entries.length>1).length,
     unclassified:indexed.filter(x=>!x.kind).length,
     status:'DRAFT_UNAPPROVED',priority:'NOT_ESTABLISHED_WITHOUT_EVIDENCE'
