@@ -2189,6 +2189,31 @@ function tobeGlobalReadableProposal(item,steps){
     return name?'la actividad «'+name+'»':'una actividad vinculada del proceso';
   });
 }
+// Mirror the PG11 backend's conservative, punctuation-neutral completeness
+// heuristic. A full sentence may legitimately be returned without a full stop.
+function tobeGlobalTextIsComplete(value){
+  if(typeof value!=='string')return false;
+  const text=value.trim();
+  if(!text)return false;
+  if(/[.!?…]["'”’)\]]*$/.test(text))return true;
+  if(text.split(/\s+/).length<4||/[,;:/\\-]$/.test(text))return false;
+  for(const [opening,closing] of [['(',')'],['[',']'],['«','»']]){
+    if(text.split(opening).length!==text.split(closing).length)return false;
+  }
+  const words=text.match(/[\p{L}\p{N}]+/gu)||[];
+  if(!words.length)return false;
+  const last=words[words.length-1];
+  const normalized=last.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  const dangling=new Set(
+    ('a al ante bajo con contra de del desde durante en entre hacia hasta '+
+     'mediante para por segun sin sobre tras y e o u que quien quienes cuyo '+
+     'cuya cuyos cuyas el la los las un una unos unas lo le les se su sus '+
+     'mi mis tu tus este esta estos estas ese esa esos esas otro otra otros '+
+     'otras cada como cuando donde mientras aunque porque si no').split(' '));
+  if(dangling.has(normalized)||last.length===1)return false;
+  if(last.length===2&&last!==last.toUpperCase())return false;
+  return true;
+}
 function tobeGlobalOverviewHtml(e,p){
   const working=typeof internalAiGlobalWorking==='function'&&internalAiGlobalWorking(e),
     feedback=typeof internalAiGlobalMessage==='function'?internalAiGlobalMessage(e):null,
@@ -2198,7 +2223,7 @@ function tobeGlobalOverviewHtml(e,p){
       [result.summary,...result.opportunities.flatMap(item=>[
         item.how,item.why,...(item.related||[]).flatMap(x=>[x.how,x.why]),
         ...(item.alternative?[item.alternative.how,item.alternative.why]:[])])]
-        .every(value=>typeof value==='string'&&/[.!?…]["'”’)\]]*$/.test(value.trim())),
+        .every(value=>tobeGlobalTextIsComplete(value)),
     legacy=!!result&&!complete,
     opportunities=Array.isArray(result?.opportunities)?result.opportunities:[],
     progress=result?.progress||null,
@@ -2258,7 +2283,7 @@ function tobeGlobalOverviewHtml(e,p){
   const completeCards=opportunities.filter(item=>
     [item.how,item.why,...(item.related||[]).flatMap(x=>[x.how,x.why]),
       ...(item.alternative?[item.alternative.how,item.alternative.why]:[])]
-      .every(value=>typeof value==='string'&&/[.!?…]["'”’)\]]*$/.test(value.trim()))).length,
+      .every(value=>tobeGlobalTextIsComplete(value))).length,
     decisions=typeof tobeHumanReviewRecord==='function'?
       Object.values(tobeHumanReviewRecord(e,p)?.decisions||{})
         .filter(x=>['ACCEPT','MODIFY','DISCARD'].includes(x?.status)).length:0;
