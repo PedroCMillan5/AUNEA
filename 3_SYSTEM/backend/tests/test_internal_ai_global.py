@@ -667,6 +667,25 @@ def test_live_gate_fails_closed_after_two_invalid_batches(monkeypatch):
     assert query.retry_compact is False  # No mutation of the original batch
 
 
+def test_live_gate_traces_invalid_synthetic_text_without_swallowing_failure(monkeypatch, capsys):
+    from pg11_live_ollama_gate import _analyze_with_synthetic_text_diagnostics
+    original = global_ai.validate_global_brief
+
+    def malformed(_payload):
+        raw = candidate()
+        raw["opportunities"][0]["how"] = "Reutilizar información validada para"
+        return global_ai.validate_global_brief(raw, {"S1", "F1"})
+
+    monkeypatch.setattr(global_ai, "analyze_global", malformed)
+    with pytest.raises(ValueError, match="texto incompleto"):
+        _analyze_with_synthetic_text_diagnostics(sample())
+    captured = capsys.readouterr().out
+    assert "PG11_LIVE_INVALID_TEXT_TAIL" in captured
+    assert '"field": "how"' in captured
+    assert "Reutilizar información validada para" in captured
+    assert global_ai.validate_global_brief is original
+
+
 def test_live_gate_preserves_validated_synthetic_batches_in_failed_report(monkeypatch):
     from pg11_live_ollama_gate import analyze_case
     from pg11_live_ollama_gate import global_ai as gate_global
