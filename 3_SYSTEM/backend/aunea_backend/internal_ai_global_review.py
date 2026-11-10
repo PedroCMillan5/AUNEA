@@ -185,18 +185,18 @@ def assess_operational_burden(how: str) -> list[dict]:
         if _positive_action(pattern, action):
             checks.append({"source": "IMPACTO_OPERATIVO_PENDIENTE",
                            "question": question})
-    warn(r"\\b(?:crear|introducir|a[nñ]adir|incorporar|establecer|implantar|abrir|generar) "
+    warn(r"\b(?:crear|introducir|a[nñ]adir|incorporar|establecer|implantar|abrir|generar) "
          r"(?:un |una |otro |otra |nuevo |nueva |adicional )?"
          r"(?:formularios?|registros?|plantillas?|hojas? de c[aá]lculo|"
-         r"tablas? de seguimiento|listas? de control)\\b",
+         r"tablas? de seguimiento|listas? de control)\b",
          "Comprobar si el nuevo registro o formulario sustituye trabajo existente "
          "o introduce una segunda captura, responsable o mantenimiento.")
-    warn(r"\\b(?:copiar|teclear|transcribir|duplicar|reintroducir|"
-         r"traspasar manualmente|registrar de nuevo)\\b",
+    warn(r"\b(?:copiar|teclear|transcribir|duplicar|reintroducir|"
+         r"traspasar manualmente|registrar de nuevo)\b",
          "Verificar que la transferencia de información evita trabajo duplicado "
          "en lugar de desplazar la carga manual a otro paso o persona.")
-    warn(r"\\b(?:nueva|otra|adicional) (?:aprobaci[oó]n|validaci[oó]n|"
-         r"revisi[oó]n|firma|entrega|derivaci[oó]n|transferencia)\\b",
+    warn(r"\b(?:nueva|otra|adicional) (?:aprobaci[oó]n|validaci[oó]n|"
+         r"revisi[oó]n|firma|entrega|derivaci[oó]n|transferencia)\b",
          "Contrastar si el control o traspaso adicional es proporcional al riesgo "
          "y qué espera, dependencia o intervención humana añade.")
     return checks
