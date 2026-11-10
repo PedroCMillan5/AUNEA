@@ -2573,8 +2573,9 @@ function tobePage(){
       '</section>'+
       tobeContextOverviewHtml(e,p)+
       tobeGlobalOverviewHtml(e,p)+
-      '<div class="tobe-review-section-head"><span class="tobe-eyebrow">03 · REVISIÓN POR ACTIVIDAD Y DISEÑO TO-BE</span>'+ 
-        '<p>Revisa el origen, la recomendación IA, los campos y las conexiones del proceso futuro.</p></div>'+
+      '<header class="tobe-review-section-head"><span class="tobe-eyebrow">03 · DISEÑO TO-BE</span>'+ 
+        '<h2 class="aunea-ui-section-title">Revisión por actividad</h2>'+ 
+        '<p class="aunea-ui-section-caption">Revisa el origen, la recomendación IA, los campos y las conexiones del proceso futuro.</p></header>'+
       tobeGuidedNavHtml(e,p)+
       '<section class="tobe-map-area"><header class="tobe-workspace-head"><div><span class="tobe-eyebrow">CONSTRUIR EL PROCESO FUTURO</span>'+
       '<h2>Mapa del proceso propuesto</h2></div><p>Selecciona una actividad para revisar su transformación y editar el TO-BE.</p></header>'+
