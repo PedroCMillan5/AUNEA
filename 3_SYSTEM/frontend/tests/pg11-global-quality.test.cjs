@@ -71,7 +71,9 @@ test('no quota or merge of different review statuses',()=>{
  assert.match(html,/Resultado esperado \(hipótesis\):/);
  assert.match(html,/Priorización pendiente:/);
  assert.match(html,/Objetivo original/);
- assert.match(html,/F1/);
+ assert.match(html,/Referencia de origen sin descripción disponible en el AS-IS/);
+ assert.doesNotMatch(html,/>F1</);
+ assert.equal(p.aiGlobal.result.opportunities[0].source_refs[0],'F1');
  assert.equal(JSON.stringify(p.aiGlobal.result.opportunities),before);
 });
 test('status values such as Aprobada/Rechazada do not mean an approval reminder',()=>{
