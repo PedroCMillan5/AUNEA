@@ -98,7 +98,7 @@ test('technical checks, conflicts and unknown classifications are not silently c
  assert.equal(out.recommendations,3);
  assert.equal(out.groups.length,3);
  assert.equal(out.unclassified,1,'technical mechanism can be classified without guessing an industry');
- assert.ok(out.reviewCount>=2);
+ assert.ok(out.reviewCount>=1,'classification alerts and confirmed incompatibilities are separate');
  assert.equal(out.groups.filter(g=>g.incompatible).length,1);
  assert.deepEqual(out.groups[2].technicalChecks,['Verificar campos disponibles.']);
  assert.equal(out.priority,'NOT_ESTABLISHED_WITHOUT_EVIDENCE');
