@@ -2856,6 +2856,29 @@ function registerInternalWorkPages(){
   pages.revision=outputReviewPage;
   pages.tobe=tobePage;
   pages.comparacion=tobeComparisonPage;
+  // [AUNEA-FE-PG11-REMAINING-CTA-295] START — local button must work in guided inspector.
+  document.addEventListener('click',event=>{
+    const button=event.target?.closest?.('[data-tobe-generate-all-remaining]');
+    if(!button||state.activePage!=='tobe')return;
+    event.preventDefault();
+    event.stopImmediatePropagation(); // exactly one PG11 generator dispatch
+    if(button.disabled)return;
+    const e=currentEng(),p=e?latestTobe(e):null;
+    if(!e||!p||!tobeEditable(p))return toast('No hay un borrador TO-BE vigente.');
+    if(typeof generateTobeAiPilot!=='function')return toast('El motor IA no está disponible. Recarga PG11.');
+    button.textContent='Iniciando análisis pendiente…';
+    button.disabled=true;
+    const progress=document.getElementById('tobeStepAiProgress');
+    if(progress)progress.textContent='Iniciando análisis de las actividades pendientes; se conservarán las ya verificadas…';
+    void generateTobeAiPilot(e).catch(error=>{
+      console.error('PG11: fallo al iniciar actividades pendientes',error);
+      if(progress)progress.textContent='No se pudo iniciar el análisis: '+String(error?.message||error);
+      toast('No se pudo iniciar el análisis pendiente. Revisa el estado de Ollama y del backend.');
+    }).finally(()=>{
+      if(button.isConnected){button.disabled=false;button.textContent='Analizar actividades pendientes';}
+    });
+  },true);
+  // [AUNEA-FE-PG11-REMAINING-CTA-295] END
   // [AUNEA-FE-PG11-DRAFT-CLICK-181] START — Single durable action for creating a read-only-AS-IS-derived DRAFT.
   // SOURCE: Simulator CANONICAL PG11; DEC-034/050/052/055. No second data owner, no automatic proposal approval.
   // A delegated click survives UI refreshes and never relies on successful binding of unrelated page controls.
