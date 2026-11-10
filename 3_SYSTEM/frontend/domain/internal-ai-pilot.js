@@ -568,7 +568,7 @@ async function generateTobeGlobal(e,options={}){
         doneSources.push(unit.source_id);
       }catch(error){
         if(internalAiCancelled(key,error))throw error;
-        if(/No se pudo guardar el progreso del análisis IA/.test(String(error.message||'')))
+        if(/No se pudo (?:guardar|verificar el guardado) del progreso del análisis IA/.test(String(error.message||'')))
           throw error;
         failures.push({source_id:unit.source_id,
           reason:String(error.message||error).slice(0,240)});
