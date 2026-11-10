@@ -417,6 +417,7 @@ def assess_recommendation(how: str, context: dict, stated_constraints: str = "")
         "verifications": verifications,
         "capability_status": "UNVERIFIED",
         "operational_checks": operational_checks,
+        "declared_conditions": declared,
         "reason": reason,
     }
 
