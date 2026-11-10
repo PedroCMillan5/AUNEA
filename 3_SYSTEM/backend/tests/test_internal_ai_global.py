@@ -580,3 +580,91 @@ def test_global_operational_review_does_not_penalize_reusing_existing_data():
     assert assess_operational_burden(
         "Consultar el estado existente, sin introducir registros adicionales.") == []
 
+
+
+def test_live_gate_recovers_with_compact_single_item_after_incomplete_text(monkeypatch):
+    from pg11_live_ollama_gate import query_with_local_retry
+    request = sample()
+    original = global_ai.GlobalBatchRequest(
+        engagement=request.engagement, diagnostic=request.diagnostic,
+        confirmed_as_is=True, snapshot_version=request.snapshot_version,
+        focus_source_id="F1",
+        seen_interventions=["Reutilizar datos ya verificados en recepción."])
+    calls = []
+
+    def fake_analyze(payload):
+        calls.append(payload)
+        if len(calls) == 1:
+            raise ValueError("La respuesta IA global contiene texto incompleto o sin cierre de frase en síntesis; reintentar solamente este bloque.")
+        return {"status": "DRAFT", "opportunities": candidate()["opportunities"]}
+
+    monkeypatch.setattr(global_ai, "analyze_global", fake_analyze)
+    issues = []
+    result = query_with_local_retry(original, issues)
+    assert result["status"] == "DRAFT"
+    assert len(calls) == 2
+    assert calls[0].retry_incomplete is False
+    assert calls[0].retry_compact is False
+    assert calls[1].retry_incomplete is True
+    assert calls[1].retry_compact is True
+    assert calls[1].focus_source_id == original.focus_source_id
+    assert calls[1].seen_interventions == original.seen_interventions
+    assert calls[1].snapshot_version == original.snapshot_version
+    assert calls[1].blocked_action == original.blocked_action
+    assert len(issues) == 1
+    assert issues[0]["recovery"] == "ONE_COMPACT_CANDIDATE"
+
+
+def test_live_gate_fails_closed_after_two_invalid_batches(monkeypatch):
+    from pg11_live_ollama_gate import query_with_local_retry
+    request = sample()
+    query = global_ai.GlobalBatchRequest(
+        engagement=request.engagement, diagnostic=request.diagnostic,
+        confirmed_as_is=True, snapshot_version=request.snapshot_version,
+        focus_source_id="F1")
+    seen = []
+
+    def fake_analyze(payload):
+        seen.append(payload)
+        raise ValueError("La respuesta IA global contiene texto incompleto o sin cierre de frase en how; reintentar solamente este bloque.")
+
+    monkeypatch.setattr(global_ai, "analyze_global", fake_analyze)
+    issues = []
+    with pytest.raises(ValueError, match="texto incompleto"):
+        query_with_local_retry(query, issues)
+    assert len(seen) == 2
+    assert seen[1].retry_compact is True
+    assert len(issues) == 1  # Only the recoverable first failure is logged
+    assert query.retry_compact is False  # No mutation of the original batch
+
+
+def test_live_gate_preserves_validated_synthetic_batches_in_failed_report(monkeypatch):
+    from pg11_live_ollama_gate import analyze_case
+    from pg11_live_ollama_gate import global_ai as gate_global
+    import pg11_live_ollama_gate as gate
+
+    monkeypatch.setattr(gate_global, "global_plan", lambda _request:
+        {"snapshot_version": 3, "focus": [{"source_id": "F1"}]})
+    calls = []
+
+    def fake_query(_payload, _issues):
+        calls.append(True)
+        if len(calls) == 2:
+            raise ValueError("Respuesta incompleta en un lote posterior.")
+        return {"summary": "Lote uno completo.", "has_more": True,
+                "opportunities": [{
+                    "objective": "Evitar la doble captura.",
+                    "how": "Reutilizar los datos existentes.",
+                    "why": "La fricción observada registra dos capturas.",
+                    "source_refs": ["F1"], "review": {"status": "CONDITIONED"}}]}
+
+    monkeypatch.setattr(gate, "query_with_local_retry", fake_query)
+    monkeypatch.setattr(gate, "checked_result",
+                        lambda response, _request, _source: response["opportunities"])
+    report = {"cases": []}
+    with pytest.raises(ValueError, match="lote posterior"):
+        analyze_case("invoice", sample(), report)
+    assert len(report["cases"]) == 1
+    assert report["cases"][0]["batches"] == 1
+    assert len(report["cases"][0]["opportunities"]) == 1
+    assert report["cases"][0]["opportunities"][0]["how"] == "Reutilizar los datos existentes."
