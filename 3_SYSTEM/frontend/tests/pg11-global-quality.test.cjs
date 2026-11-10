@@ -24,7 +24,7 @@ test('5 proposals remain intact across 4 coherent action-focused groups',()=>{
  assert.equal(out.recommendations,5);
  assert.equal(out.groups.length,4);
  assert.equal(out.relatedGroups,1);
- assert.ok(out.reviewCount>=2);
+ assert.ok(out.reviewCount>=1,'unclassified suggestions remain review warnings; incompatibility is counted separately');
  assert.equal(out.groups.flatMap(g=>g.entries).length,5);
  assert.equal(JSON.stringify(items),before);
 });
