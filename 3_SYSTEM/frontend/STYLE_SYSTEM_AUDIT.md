@@ -181,3 +181,12 @@ La UAT local sintética del 10/11/2026, sobre Windows, ejecutó 85 pruebas front
 Corrección aislada en `frontend/tests/pg11-global-overview.test.cjs`: el reconocimiento del bloque acepta LF y CRLF y comprueba explícitamente la variante CRLF. Se ejecutó el test específico contra el código de `internal-ai-pilot.js`, con LF y con CRLF simulados: **2/2 PASS**. No se han ejecutado de nuevo las 85 pruebas en Windows, ni se ha superado aún la fase 2 backend y la fase 3 Ollama del runner, que sigue en REVIEW. No son errores de producción los mensajes 409/503 generados intencionadamente por las pruebas PASS.
 
 Documentado en el repositorio; sincronización con BITACORA Drive pendiente por límite temporal HTTP 429 (ReadRequestsPerMinutePerProject), sin inventar un registro.
+
+
+## 14. PG11 — integridad de texto sin falsas alarmas por puntuación, 10/11/2026 (REVIEW)
+
+- Nuevo diagnóstico UAT Windows: Ollama respondió con JSON estructuralmente completo, pero backend rechazó `summary` y después `how` por el requisito formal de punto final, incluso tras reintento compacto. Sin el texto exacto no puede certificarse si se trató de un truncamiento real o una frase completa sin punto. Se elimina el supuesto «sin puntuación = cortado».
+- Backend `internal_ai_global.global_text_is_complete` diferencia cierre puntuado, texto completo sin puntuación y fragmentos colgantes (preposición/conjunción final, token partido, delimitadores sin cerrar). La regla es heurística y no altera el texto ni certifica su semántica. Siguen siendo obligatorios el JSON completo, `done`, revisión de fuente, modelo Pydantic, restricciones y revisión humana.
+- Frontend sección 02 utiliza comprobación equivalente en `tobeGlobalTextIsComplete`. El panel de integridad ya no declara truncada una frase completa únicamente por no tener punto. No se cambia ningún campo de negocio, mapa, dueño, aprobación o composición visual.
+- `tests/pg11_live_ollama_gate.py` verifica con el mismo criterio; ante fallo de validación imprime únicamente en este test sintético el final de los campos rechazados (`PG11_LIVE_INVALID_TEXT_TAIL`), re-lanzando la excepción sin reparar o aprobar el texto. No se modifica el comportamiento de producción ni se registran datos de clientes.
+- Actualizadas pruebas de regresión backend `test_internal_ai_global.py` y frontend `pg11-global-overview.test.cjs`. QA aislado frontend tras cambio: 59/59 PASS; nuevas pruebas Python y UAT local con Ollama pendientes de acreditación. El gate no está cerrado y PG11 sigue REVIEW.
