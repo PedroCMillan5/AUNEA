@@ -1201,17 +1201,19 @@ test('PG11 retains distinct recommendation actions instead of fuzzy merging',()=
   assert.match(merge,/items\.push\(candidate\)/);
 });
 
-test('PG11 valid punctuation never triggers a legacy incomplete warning',()=>{
-  const match=src.match(/\.every\(value=>typeof value==='string'&&([^ \n]+)\.test\(value\.trim\(\)\)\)/);
-  assert.ok(match,'Global sentence integrity validator missing');
-  const regex=vm.runInNewContext(match[1]);
-  assert.equal(regex.test('Respuesta íntegra.'),true);
-  assert.equal(regex.test('Respuesta íntegra.”'),true);
-  assert.equal(regex.test('Respuesta cortada'),false);
-  const cardMatch=src.match(/const completeCards=[\s\S]*?\.every\(value=>typeof value==='string'&&([^\n]+)\.test\(value\.trim\(\)\)\)/);
-  assert.ok(cardMatch,'Card integrity validator missing');
-  const cardRegex=vm.runInNewContext(cardMatch[1]);
-  assert.equal(cardRegex.test('Recomendación válida.'),true);
+test('PG11 accepts complete punctuation-free sentences but still flags dangling fragments',()=>{
+  const helper=src.match(/function tobeGlobalTextIsComplete\(value\)\{[\s\S]*?\n\}/)?.[0];
+  assert.ok(helper,'Missing coherent-sentence frontend validator');
+  const sandbox={};vm.createContext(sandbox);
+  vm.runInContext(helper,sandbox);
+  const valid=sandbox.tobeGlobalTextIsComplete;
+  assert.equal(valid('La intervención completa requiere revisión.'),true);
+  assert.equal(valid('La intervención completa requiere revisión.”'),true);
+  assert.equal(valid('Reutilizar datos confirmados sin una segunda captura'),true);
+  assert.equal(valid('Implementar un flujo automatizado para que no c'),false);
+  assert.equal(valid('La intervención requiere una revisión para'),false);
+  assert.match(src,/\.every\(value=>tobeGlobalTextIsComplete\(value\)\)/);
+  assert.match(src,/const completeCards=[\s\S]*?\.every\(value=>tobeGlobalTextIsComplete\(value\)\)/);
 });
 
 test('PG11 refuses stale backend recovery contract before changing stored global analysis',()=>{
