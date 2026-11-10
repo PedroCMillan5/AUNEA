@@ -522,14 +522,43 @@ def test_pg11_global_api_retains_mismatched_draft_and_source_for_consultant(monk
     assert result["opportunities"][0]["quality"]["status"]=="REVIEW"
     assert result["opportunities"][0]["review"]["capability_status"]=="UNVERIFIED"
 
-def test_pg11_accepts_sentence_closure_before_quote_but_rejects_unfinished_how():
+def test_pg11_accepts_unpunctuated_full_sentence_but_rejects_unfinished_how():
     raw=candidate()
     raw["opportunities"][0]["how"]="Reutilizar datos validados entre las dos actividades.\u201d"
     result=global_ai.validate_global_brief(raw, {"S1","F1"})
     assert result.opportunities[0].how.endswith(".\u201d")
     raw["opportunities"][0]["how"]="Reutilizar datos validados entre las dos actividades"
+    result=global_ai.validate_global_brief(raw, {"S1","F1"})
+    assert result.opportunities[0].how=="Reutilizar datos validados entre las dos actividades"
+    raw["opportunities"][0]["how"]="Reutilizar datos validados entre las dos actividades para"
     with pytest.raises(ValueError,match="texto incompleto o sin cierre de frase en how"):
         global_ai.validate_global_brief(raw, {"S1","F1"})
+    raw["opportunities"][0]["how"]="Implementar un flujo de reintroducción para que no c"
+    with pytest.raises(ValueError,match="texto incompleto"):
+        global_ai.validate_global_brief(raw, {"S1","F1"})
+
+
+def test_pg11_validates_semantically_complete_unpunctuated_global_text():
+    raw=candidate()
+    raw["summary"]="La duplicación de captura genera trabajo adicional y requiere una mejora"
+    raw["opportunities"][0]["how"]="Reutilizar la información confirmada sin repetir la captura manual"
+    raw["opportunities"][0]["why"]="La fuente registra introducción manual repetida de datos ya disponibles"
+    result=global_ai.validate_global_brief(raw, {"S1","F1"})
+    assert result.summary==raw["summary"]
+    assert result.opportunities[0].how==raw["opportunities"][0]["how"]
+    assert result.opportunities[0].why==raw["opportunities"][0]["why"]
+
+
+@pytest.mark.parametrize("fragment", [
+    "La propuesta requiere comprobación para",
+    "Aplicar una automatización sin que no c",
+    "Revisar las aprobaciones durante la",
+    "Reutilizar los datos en (el proceso",
+    "La intervención debe completarse con",
+])
+def test_pg11_rejects_unfinished_unpunctuated_global_fragments(fragment):
+    assert not global_ai.global_text_is_complete(fragment)
+
 
 def test_compact_retry_uses_single_candidate_schema_without_total_quota(monkeypatch):
     configure(monkeypatch)
