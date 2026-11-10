@@ -2339,34 +2339,43 @@ function tobeGlobalOverviewHtml(e,p){
       '</p></details>':'')+
     (feedback?'<p class="tobe-global-feedback'+(feedback.type==='warn'?' is-warning':'')+
       '" role="status" aria-live="polite">'+esc(feedback.message)+'</p>':'')+
+    (opportunities.length&&globallyShared.length?
+      '<details class="tobe-global-universal-checks"><summary>Requisitos de implantación compartidos por todas las propuestas ('+
+      globallyShared.length+')</summary><ul class="tobe-source-list">'+globallyShared
+        .map(q=>'<li>'+esc(q)+'</li>').join('')+'</ul></details>':'')+
     (opportunities.length?'<div class="tobe-global-opportunities" aria-label="Objetivos y recomendaciones">'+
       thematicGroups.map((group,i)=>
       '<article class="tobe-global-opportunity"><span class="tobe-global-number" aria-hidden="true">'+(i+1)+'</span>'+
       '<div class="tobe-global-opportunity-body">'+
-      '<span class="tobe-global-item-label">'+(group.entries.length>1?'Línea de mejora relacionada':'Objetivo de mejora')+
-      '</span><strong>'+esc(group.title)+'</strong>'+
-      (group.expectedOutcome?'<p class="tobe-global-outcome"><b>Resultado esperado (hipótesis):</b> '+
-        esc(group.expectedOutcome)+'</p>':'')+
-      (group.technicalChecks?.length?'<p class="tobe-global-dependency"><b>Antes de implantar:</b> '+
-        esc(group.technicalChecks[0])+'</p>':'')+
-      (group.entries.length>1?'<p>'+group.entries.length+
-        ' intervenciones relacionadas; conservar todas para validación.</p>':'')+
-      (group.reviewHint?'<p class="tobe-global-quality-note"><b>Posible solapamiento:</b> '+
-        esc(group.reviewHint)+'</p>':'')+
-      '<p class="tobe-global-assessment"><b>Estado de viabilidad:</b> '+
-        esc(group.incompatible?'Incompatible con una restricción confirmada; no aplicar.':
-          group.entries.some(x=>x.item?.review?.status==='CONDITIONED')?
-          'Condicionada: comprobar la viabilidad antes de implantar.':
-          'Evaluación pendiente; no aprobar automáticamente.')+'</p>'+
-      (group.entries[0]?.item?.how?
-        '<p class="tobe-global-action tobe-global-primary-action"><b>Intervención propuesta:</b> '+
-        esc(group.entries[0].item.how)+'</p>':'')+
-      (group.operationalChecks?.length?'<p class="tobe-global-operational-note"><b>Impacto operativo pendiente:</b> '+
-        esc(group.operationalChecks[0])+'</p>':'')+
-      (group.qualityFlagged?'<p class="tobe-global-assessment"><b>Comprobaciones abiertas:</b> '+
-        esc(group.entries.flatMap(e=>e.issues).length)+' avisos de coherencia'+
-        (group.operationalChecks?.length?' · '+group.operationalChecks.length+
-          ' comprobaciones operativas':'')+'</p>':'')+
+      '<div class="tobe-global-goal-block">'+
+        '<span class="tobe-global-item-label">'+(group.entries.length>1?'Línea de mejora':'Objetivo de mejora')+'</span>'+
+        '<h3 class="tobe-global-goal">'+esc(group.title)+'</h3>'+
+        '<p class="tobe-global-goal-meta">'+group.entries.length+
+          (group.entries.length===1?' propuesta IA pendiente de revisión':' propuestas IA por comparar, sin seleccionar')+'</p>'+
+      '</div>'+
+      '<div class="tobe-global-brief-grid">'+
+        '<div class="tobe-global-brief-result"><span class="tobe-global-kicker">RESULTADO QUE SE BUSCA</span>'+
+          '<p>'+esc(group.expectedOutcome||'Resultado por definir a partir de la evidencia.')+'</p></div>'+
+        '<div class="tobe-global-brief-status"><span class="tobe-global-kicker">VIABILIDAD</span>'+
+          '<p>'+esc(group.incompatible?
+            'Existe una incompatibilidad confirmada: no aplicar la propuesta afectada.':
+            group.entries.some(x=>x.item?.review?.status==='CONDITIONED')?
+              'Condicionada: hace falta comprobar sus capacidades y restricciones.':
+              'Pendiente de evaluación. No aprobada.')+'</p></div>'+
+      '</div>'+
+      (group.entries.length===1&&group.entries[0]?.item?.how?
+        '<div class="tobe-global-single-proposal"><span class="tobe-global-kicker">PROPUESTA DE LA IA</span>'+
+        '<p>'+esc(tobeGlobalReadableProposal(group.entries[0].item,groupSteps(group)))+'</p></div>':'')+
+      (group.entries.length>1?
+        '<p class="tobe-global-variants-lead">Las propuestas persiguen una misma mejora. Abrir la comparación para comprobar si son alternativas o pueden combinarse.</p>':'')+
+      (group.technicalChecks?.find(q=>!globallyShared.includes(q))?
+        '<p class="tobe-global-one-check"><b>Antes de implantar:</b> '+
+          esc(group.technicalChecks.find(q=>!globallyShared.includes(q)))+'</p>':'')+
+      (tobeGlobalGroupWarnings(group).length?
+        '<details class="tobe-global-group-warnings"><summary>Observaciones de calidad ('+
+          tobeGlobalGroupWarnings(group).length+')</summary>'+
+          '<ul class="tobe-source-list">'+tobeGlobalGroupWarnings(group).map(q=>
+            '<li>'+esc(q)+'</li>').join('')+'</ul></details>':'')+
       (groupSteps(group).length?'<div class="tobe-global-review-links">'+
         '<span class="tobe-global-review-label">Revisar en actividades:</span>'+
         '<div class="tobe-global-review-actions">'+groupSteps(group).map(step=>
