@@ -447,11 +447,23 @@ async function generateTobeGlobal(e,options={}){
       let saved=false;
       try{saved=saveState('Guardar progreso IA global '+doneSources.length+'/'+total);}
       catch(_error){saved=false;}
+      if(saved&&typeof localStorage!=='undefined'&&typeof STORAGE_KEY!=='undefined'){
+        try{
+          const disk=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');
+          const stored=(disk?.engagements||[]).find(x=>x.id===e.id)?
+            .tobeProposals?.find(x=>x.version===owner.version)?.aiGlobal;
+          const expected=owner.aiGlobal;
+          saved=!!stored&&stored.tobeVersion===expected.tobeVersion&&
+            stored.sourceSnapshotVersion===expected.sourceSnapshotVersion&&
+            stored.diagnosticInputHash===expected.diagnosticInputHash&&
+            JSON.stringify(stored.result)===JSON.stringify(expected.result);
+        }catch(_error){saved=false;}
+      }
       if(!saved){
         if(previous===undefined)delete owner.aiGlobal;
         else owner.aiGlobal=previous;
-        throw Error('No se pudo guardar el progreso del análisis IA. '+
-          'El último estado persistido se conserva; no cierres esta página.');
+        throw Error('No se pudo verificar el guardado del progreso del análisis IA. '+
+          'Conserva esta pestaña y comprueba el almacenamiento antes de continuar.');
       }
     };
     if(!resume)persist(total===0);
@@ -494,7 +506,9 @@ async function generateTobeGlobal(e,options={}){
               why:String(item.why),constraints:String(item.constraints||''),
               source_refs:item.source_refs.map(String),
               review:item.review||{status:'CONDITIONED',
-                reason:'Requiere revisión de viabilidad.',conflicts:[]}};
+                reason:'Requiere revisión de viabilidad.',conflicts:[]},
+              quality:item.quality||{status:'REVIEW',basis:'NOT_EVALUATED',
+                issues:[{message:'No consta evaluación de coherencia de la intervención.'}]}};
             // Keep the actual action for continuation even when it is grouped
             // with another recommendation in the visible consolidation.
             const duplicate=seenForSource.some(h=>
@@ -1448,8 +1462,15 @@ registerInternalWorkPages=function(){
     const retryGlobal=event.target?.closest?.('#retryTobeGlobal');
     if(global||retryGlobal){
       event.preventDefault();
-      if(!(global||retryGlobal).disabled)
+      if(!(global||retryGlobal).disabled){
+        const draft=latestTobe(currentEng());
+        const saved=draft?.aiGlobal?.result;
+        if(global&&saved&&typeof window!=='undefined'&&
+           typeof window.confirm==='function'&&
+           !window.confirm('Se sustituirá el análisis global guardado por uno nuevo. '+
+             'Las decisiones humanas y los campos TO-BE no se modificarán. ¿Continuar?'))return;
         void generateTobeGlobal(currentEng(),{resume:!!retryGlobal});
+      }
       return;
     }
     const audit=event.target?.closest?.('[data-ai-audit-step]');
