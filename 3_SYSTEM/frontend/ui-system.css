@@ -3187,6 +3187,63 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
   margin:0;border-top:1px solid var(--system-line);padding-top:12px}
 .tobe-global-card-details:focus-visible,.tobe-global-card-details>summary:focus-visible{
   outline:2px solid var(--system);outline-offset:3px}
+/* PG11 02 — explicit information hierarchy; uses existing AUNEA System tokens. */
+.tobe-global-goal-block{display:grid;gap:5px;margin-bottom:13px}
+.tobe-global-opportunity-body .tobe-global-goal{margin:0;font-size:17px;
+  line-height:1.35;font-weight:750;letter-spacing:-.015em;color:var(--ink)}
+.tobe-global-opportunity-body .tobe-global-goal-meta{margin:0;color:var(--muted);
+  font-size:var(--font-caption);line-height:1.5}
+.tobe-global-kicker{display:block;color:var(--system);font-weight:750;
+  font-size:10px;line-height:1.45;letter-spacing:.045em}
+.tobe-global-brief-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);
+  gap:12px;margin:0 0 13px}
+.tobe-global-brief-grid>div{min-width:0;padding:12px 14px;border:1px solid var(--system-line);
+  border-radius:var(--radius-sm);background:#fff}
+.tobe-global-brief-grid .tobe-global-brief-result{border-left:3px solid var(--system)}
+.tobe-global-brief-grid .tobe-global-brief-status{background:var(--canvas)}
+.tobe-global-brief-grid p{margin:5px 0 0;line-height:1.5;color:var(--ink)}
+.tobe-global-single-proposal{margin:0 0 12px;padding:12px 14px;
+  border-radius:var(--radius-sm);background:var(--system-soft)}
+.tobe-global-single-proposal p{margin:5px 0 0;line-height:1.5;font-weight:600}
+.tobe-global-opportunity-body .tobe-global-variants-lead{margin:0 0 12px;
+  line-height:1.55;color:var(--muted)}
+.tobe-global-opportunity-body .tobe-global-one-check{margin:0 0 12px;
+  color:var(--muted);font-size:var(--font-small)}
+.tobe-global-universal-checks{margin:11px 0 14px;padding:12px 15px;
+  border:1px solid var(--system-line);border-radius:var(--radius-sm);
+  background:#fff}
+.tobe-global-universal-checks summary,.tobe-global-group-warnings>summary,
+.tobe-global-shared-checks>summary{cursor:pointer;color:var(--system);
+  font-size:var(--font-small);line-height:1.5;font-weight:700}
+.tobe-global-group-warnings{margin-bottom:13px}
+.tobe-global-group-warnings .tobe-source-list,.tobe-global-universal-checks .tobe-source-list,
+.tobe-global-shared-checks .tobe-source-list{margin:10px 0 0}
+.tobe-global-card-detail-body .tobe-global-intervention{background:#fff;
+  border:1px solid var(--system-line);padding:16px 18px}
+.tobe-global-option-head{display:flex;align-items:center;gap:8px 16px;
+  justify-content:space-between;flex-wrap:wrap;margin-bottom:9px}
+.tobe-global-opportunity-body .tobe-global-option-title{margin:0;font-size:14px;
+  font-weight:750;color:var(--system);line-height:1.4}
+.tobe-global-option-state{font-size:11px;font-weight:650;color:var(--muted);
+  border:1px solid var(--system-line);border-radius:var(--radius-pill);padding:3px 8px}
+.tobe-global-opportunity-body .tobe-global-option-action{font-size:15px;font-weight:650;
+  line-height:1.55;color:var(--ink);margin:0 0 13px}
+.tobe-global-option-evidence{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:14px;padding:12px 0;border-top:1px solid var(--system-line)}
+.tobe-global-option-evidence>div{min-width:0}
+.tobe-global-option-evidence p{margin:4px 0 0;line-height:1.55}
+.tobe-global-option-caveat{margin:0 0 12px;border-left:3px solid var(--system);
+  padding:9px 12px;background:var(--system-soft);border-radius:var(--radius-sm)}
+.tobe-global-option-caveat b{display:block;font-size:var(--font-small);margin-bottom:4px}
+.tobe-global-option-caveat ul{margin:0;padding-left:18px}
+.tobe-global-option-more{margin-top:5px}
+.tobe-global-shared-checks{margin-top:6px;padding:10px 12px;
+  border:1px solid var(--system-line);border-radius:var(--radius-sm)}
+@media(max-width:760px){
+ .tobe-global-brief-grid,.tobe-global-option-evidence{grid-template-columns:minmax(0,1fr)}
+ .tobe-global-card-detail-body .tobe-global-intervention{padding:12px}
+ .tobe-global-opportunity-body .tobe-global-goal{font-size:15px}
+}
 .tobe-global-review-links{display:grid;gap:7px;margin-top:10px}
 .tobe-global-review-label{display:block;font-size:var(--font-small);font-weight:700;line-height:1.5}
 .tobe-global-review-actions{display:flex;flex-wrap:wrap;gap:7px;align-items:flex-start}
