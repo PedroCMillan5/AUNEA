@@ -1191,7 +1191,7 @@ test('PG11 progress reports coverage of persisted sources and activities, not re
 });
 
 test('PG11 retains distinct recommendation actions instead of fuzzy merging',()=>{
-  const merge=ai.match(/function tobeGlobalMerge\(items,candidate\)\{[\s\S]*?\n\}\nfunction tobeGlobalSummary/)?.[0]||'';
+  const merge=ai.match(/function tobeGlobalMerge\(items,candidate\)\{[\s\S]*?\r?\n\}\r?\nfunction tobeGlobalSummary/)?.[0]||'';
   assert.ok(merge);
   assert.match(merge,/norm\(x\.how\)===norm\(candidate\.how\)/);
   assert.doesNotMatch(merge,/similarity\(/);
