@@ -3145,15 +3145,15 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 .tobe-global-summary-top strong{margin-bottom:0}
 .tobe-global-state{font-size:11px;font-weight:700;color:var(--system);border:1px solid var(--system-line);border-radius:var(--radius-pill);background:#fff;padding:4px 9px}
 
-.tobe-global-opportunities{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:start}
-.tobe-global-opportunity{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;
+.tobe-global-opportunities{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;align-items:start}
+.tobe-global-opportunity{display:flex;align-items:flex-start;gap:16px;padding:16px 18px;
   border:1px solid var(--system-line);border-radius:var(--radius-sm);background:#fff;min-width:0}
 .tobe-global-number{display:grid;place-items:center;flex:0 0 27px;height:27px;border-radius:50%;
   background:var(--system-soft);color:var(--system);font-size:12px;font-weight:800}
 .tobe-global-opportunity-body{flex:1;min-width:0}
 .tobe-global-intervention+.tobe-global-intervention{margin-top:12px;padding-top:12px;border-top:1px solid var(--system-line)}
-.tobe-global-opportunity-body>strong{display:block;font-size:14px;color:var(--ink);margin:2px 0 6px;line-height:1.35}
-.tobe-global-item-label{display:block;font-size:10px;font-weight:750;letter-spacing:.04em;text-transform:uppercase;color:var(--system);margin:1px 0 5px}
+.tobe-global-opportunity-body>strong{display:block;font-size:var(--font-body);color:var(--ink);margin:2px 0 9px;line-height:1.4}
+.tobe-global-item-label{display:block;font-size:var(--font-caption);font-weight:700;letter-spacing:.035em;text-transform:uppercase;color:var(--system);margin:1px 0 5px}
 .tobe-global-action b{color:var(--system)}
 .tobe-global-subtitle{font-size:var(--font-small);line-height:1.35;margin:6px 0 4px;color:var(--system)}
 .tobe-global-quality-note,.tobe-global-outcome,.tobe-global-dependency{font-size:var(--font-small);line-height:1.45;margin:4px 0;overflow-wrap:anywhere}
@@ -3170,6 +3170,23 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 .tobe-global-opportunity-body p b,.tobe-global-opportunity-body li b{
   font-size:inherit;line-height:inherit
 }
+/* Section 02: progressive disclosure; all original interventions remain in the DOM. */
+.tobe-global-primary-action{margin:8px 0 10px!important;line-height:1.6!important}
+.tobe-global-operational-note{margin:9px 0!important;padding:9px 12px;
+  border-left:3px solid var(--system);background:var(--system-soft);
+  border-radius:var(--radius-sm);line-height:1.5}
+.tobe-global-card-details{margin-top:14px;border-top:1px solid var(--system-line);
+  padding-top:12px}
+.tobe-global-card-details>summary{cursor:pointer;color:var(--system);
+  font-weight:700;font-size:var(--font-small);line-height:1.5}
+.tobe-global-card-detail-body{display:grid;gap:12px;margin-top:12px}
+.tobe-global-card-detail-body .tobe-global-intervention{
+  border:1px solid var(--system-line);border-radius:var(--radius-sm);
+  background:var(--canvas);padding:12px 14px}
+.tobe-global-card-detail-body .tobe-global-intervention+.tobe-global-intervention{
+  margin:0;border-top:1px solid var(--system-line);padding-top:12px}
+.tobe-global-card-details:focus-visible,.tobe-global-card-details>summary:focus-visible{
+  outline:2px solid var(--system);outline-offset:3px}
 .tobe-global-review-links{display:grid;gap:7px;margin-top:10px}
 .tobe-global-review-label{display:block;font-size:var(--font-small);font-weight:700;line-height:1.5}
 .tobe-global-review-actions{display:flex;flex-wrap:wrap;gap:7px;align-items:flex-start}
@@ -3179,7 +3196,7 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
   border-radius:var(--radius-sm);font-size:var(--font-small);line-height:1.5}
 .tobe-global-feedback.is-warning{background:var(--amber-soft);border-color:#e4cda4}
 .tobe-global-caution{margin:0;font-size:11px;color:var(--muted);line-height:1.5}
-@media(max-width:1180px){.tobe-global-opportunities{grid-template-columns:1fr}}
+@media(max-width:1180px){.tobe-global-opportunities{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:720px){
   .tobe-context,.tobe-global-analysis{padding:14px;gap:12px}
   .tobe-global-analysis-head .btn{width:100%}
