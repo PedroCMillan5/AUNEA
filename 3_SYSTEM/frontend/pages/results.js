@@ -2155,14 +2155,39 @@ function tobeGlobalImplementationQuestions(item){
     ...(item?.review?.operational_checks||[]).map(x=>String(x?.question||'').trim())
   ].filter(Boolean))];
 }
-function tobeGlobalSharedQuestions(group){
+function tobeGlobalSharedQuestions(group,globallyShared=[]){
   const sets=(group?.entries||[]).map(({item})=>tobeGlobalImplementationQuestions(item));
+  const global=new Set(globallyShared);
   return sets.length>1?
-    sets[0].filter(q=>sets.slice(1).every(values=>values.includes(q))):[];
+    sets[0].filter(q=>!global.has(q)&&sets.slice(1).every(values=>values.includes(q))):[];
 }
-function tobeGlobalSpecificQuestions(group,item){
-  const shared=new Set(tobeGlobalSharedQuestions(group));
+function tobeGlobalSpecificQuestions(group,item,globallyShared=[]){
+  const shared=new Set([...tobeGlobalSharedQuestions(group,globallyShared),...globallyShared]);
   return tobeGlobalImplementationQuestions(item).filter(q=>!shared.has(q));
+}
+// PG11 section 02: separate business objective, option, evidence and conditions.
+// Identical questions/alerts shared by all sources are rendered only once.
+// These helpers are projections: they never edit the confirmed snapshot or IA output.
+function tobeGlobalUniversalQuestions(opportunities){
+  const sets=(opportunities||[]).map(tobeGlobalImplementationQuestions);
+  return sets.length>1?sets[0].filter(q=>sets.slice(1).every(other=>other.includes(q))):[];
+}
+function tobeGlobalGroupWarnings(group){
+  return [...new Set((group?.entries||[]).flatMap(entry=>entry.issues||[])
+    .map(x=>String(x||'').trim()).filter(Boolean))];
+}
+function tobeGlobalOptionWarnings(group,entry){
+  const repeated=new Set((group?.entries||[]).length>1?
+    tobeGlobalGroupWarnings(group).filter(q=>group.entries.every(e=>(e.issues||[]).includes(q))):[]);
+  return (entry?.issues||[]).filter(q=>!repeated.has(q));
+}
+function tobeGlobalReadableProposal(item,steps){
+  const original=String(item?.how||'');
+  const linked=Array.isArray(steps)?steps:[];
+  return original.replace(/\bP\d+\b/g,()=>{
+    const name=linked.length===1?String(linked[0]?.sourceStepName||'').trim():'';
+    return name?'la actividad «'+name+'»':'una actividad vinculada del proceso';
+  });
 }
 function tobeGlobalOverviewHtml(e,p){
   const working=typeof internalAiGlobalWorking==='function'&&internalAiGlobalWorking(e),
@@ -2247,6 +2272,7 @@ function tobeGlobalOverviewHtml(e,p){
     const targets=group.entries.flatMap(({item})=>linkedSteps(item));
     return [...new Map(targets.map(step=>[String(step.sourceStepId),step])).values()];
   };
+  const globallyShared=tobeGlobalUniversalQuestions(opportunities);
   const state=working?'Analizando por fuentes…':result&&!analysisFinished?'Análisis parcial · Revisar':legacy?'Propuesta incompleta · Reanalizar':result?'Propuesta guardada · Sin aprobar':'Pendiente de análisis';
   return '<section class="tobe-global-analysis" id="tobeGlobalAnalysis" aria-label="Análisis global IA del proceso">'+
     '<header class="tobe-global-analysis-head"><div><span class="tobe-eyebrow">02 · ANÁLISIS IA GLOBAL DEL PROCESO</span>'+
