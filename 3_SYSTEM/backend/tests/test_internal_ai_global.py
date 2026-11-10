@@ -538,3 +538,27 @@ def test_compact_retry_uses_single_candidate_schema_without_total_quota(monkeypa
     assert captured[0]["options"]["num_predict"]==global_ai.MAX_GLOBAL_OUTPUT_TOKENS
 
 # [AUNEA-UAT-PG11-GLOBAL-AI-287] END
+
+
+def test_global_operational_review_flags_possible_extra_work_not_a_prohibition():
+    from aunea_backend.internal_ai_global_review import (
+        assess_operational_burden, assess_recommendation)
+    context={"client_constraints":{}}
+    proposal="Crear un nuevo registro y copiar datos manualmente antes de realizar otra validación."
+    checks=assess_operational_burden(proposal)
+    assert len(checks) >= 2
+    assert all(row["source"]=="IMPACTO_OPERATIVO_PENDIENTE" for row in checks)
+    result=assess_recommendation(proposal,context)
+    assert result["status"]=="CONDITIONED"
+    assert result["capability_status"]=="UNVERIFIED"
+    assert len(result["operational_checks"]) >= 2
+    assert not result["conflicts"]  # Caution cannot invent a client prohibition.
+
+
+def test_global_operational_review_does_not_penalize_reusing_existing_data():
+    from aunea_backend.internal_ai_global_review import assess_operational_burden
+    assert assess_operational_burden(
+        "Reutilizar los datos existentes sin crear otro formulario ni copiar datos.") == []
+    assert assess_operational_burden(
+        "Consultar el estado existente, sin introducir registros adicionales.") == []
+
