@@ -988,8 +988,9 @@ test('PG11 retains the entire reason and technical validation in the existing ca
       question:'No suponer integraciones automáticas.'}]}}]);
   const markup=h.html();
   assert.match(markup,/Condicionada a validar la viabilidad/);
-  assert.match(markup,/Motivo de la evaluación:<\/b> Verificar capacidad y licencias/);
-  assert.match(markup,/Validaciones pendientes:<\/b> CAPACIDAD_TECNICA/);
+  assert.match(markup,/Evaluación original:<\/b> Verificar capacidad y licencias/);
+  assert.match(markup,/Validaciones pendientes:<\/b>/);
+  assert.match(markup,/Referencias de comprobación técnica:<\/b> CAPACIDAD_TECNICA/);
   assert.match(markup,/No suponer integraciones automáticas/);
   assert.doesNotMatch(markup,/id="retryTobeGlobal"/);
 });
