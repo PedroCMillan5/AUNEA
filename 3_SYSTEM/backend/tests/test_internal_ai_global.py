@@ -219,6 +219,35 @@ def test_global_focus_keeps_confirmed_constraints_and_metrics():
         scoped_context(context,"FAKE",q)
 
 
+
+def test_pg11_focus_marks_general_goals_as_context_not_local_evidence():
+    request = sample()
+    q = request.engagement.questionnaire_answers
+    q["DF008"] = "Evitar solicitudes incompletas y tareas de preparación repetidas."
+    q["_process_steps"] = [
+        {"id": "S1", "step_name": "Recepción de solicitud"},
+        {"id": "S3", "step_name": "Preparación de proyecto"},
+    ]
+    q["_frictions"] = [
+        {"id": "F1", "step_ids": ["S1"],
+         "client_label": "Datos incompletos",
+         "observable_signal": "Faltan campos en la solicitud"},
+        {"id": "F2", "step_ids": ["S3"],
+         "client_label": "Preparación repetida",
+         "observable_signal": "Se recrean tareas para cada proyecto"},
+    ]
+    request.diagnostic.input_snapshot_hash = stable_hash(request.engagement.model_dump())
+    from aunea_backend.internal_ai_global_review import scoped_context
+    context, _ = global_ai.global_context(request)
+    selected, ids = scoped_context(context, "F1", q)
+    assert ids == {"F1", "S1"}
+    assert [f["id"] for f in selected["frictions"]] == ["F1"]
+    assert [s["id"] for s in selected["steps"]] == ["S1"]
+    assert selected["client_goals"]["DF008"] == q["DF008"]
+    assert "metas generales del estudio, no evidencia adicional" in selected["note"]
+    assert "NO los incorpores" in selected["note"]
+
+
 def test_global_constraint_assessment_rejects_auto_approval_not_native_tools():
     from aunea_backend.internal_ai_global_review import assess_recommendation
     context={"client_constraints":{
