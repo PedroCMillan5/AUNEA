@@ -7,6 +7,7 @@ from __future__ import annotations
 import json
 import re
 import socket
+import unicodedata
 from urllib.error import HTTPError, URLError
 from urllib.request import Request
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
@@ -216,7 +217,11 @@ def global_text_is_complete(value: str) -> bool:
     if not words:
         return False
     last = words[-1]
-    if last.casefold() in _DANGLING_LAST_WORDS or len(last) == 1:
+    normalized = "".join(
+        ch for ch in unicodedata.normalize("NFD", last.casefold())
+        if not unicodedata.combining(ch)
+    )
+    if normalized in _DANGLING_LAST_WORDS or len(last) == 1:
         return False
     # Domain acronyms, e.g. IA, ERP and CRM, are legitimate sentence endings.
     if len(last) == 2 and not last.isupper():
