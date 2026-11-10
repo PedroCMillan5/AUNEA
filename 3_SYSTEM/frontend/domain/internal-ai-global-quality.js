@@ -18,6 +18,14 @@ function tobeGlobalQualityGroups(opportunities){
     const left=new Set(tokens(a)),right=new Set(tokens(b));
     return [...left].filter(w=>right.has(w)).length;
   };
+  // Common mechanism words alone are not evidence of a shared operational need.
+  const mechanismWords=new Set(('reutilizar validar verificacion verificar campos sistema '+
+    'herramienta registro gestionar implementar establecer datos informacion '+
+    'captura capturar seguimiento notificar notificacion controlar actividades').split(' '));
+  const topicalOverlap=(a,b)=>{
+    const left=new Set(tokens(a).filter(w=>!mechanismWords.has(w)));
+    return tokens(b).filter(w=>left.has(w)).length;
+  };
   const kindOf=how=>{
     const t=clean(how);
     const actionApproval=/(?:recordatori|avis|notific|alert|seguimiento).{0,90}(?:aprobaci|aprobador|autorizar|autorice|aprobar|apruebe|responsable decida)|(?:aprobaci|aprobador).{0,90}(?:recordatori|avis|notific|alert|seguimiento)/.test(t);
@@ -88,8 +96,8 @@ function tobeGlobalQualityGroups(opportunities){
     const shared=overlap(a,b);
     const sources=new Set((entry.item?.source_refs||[]).map(String));
     const sameSource=(other.item?.source_refs||[]).some(id=>sources.has(String(id)));
-    return shared>=3||(sameSource&&shared>=2&&
-      overlap(entry.item?.objective,other.item?.objective)>=1);
+    return (sameSource&&shared>=2)||
+      (shared>=3&&topicalOverlap(a,b)>=1);
   };
   const groups=[];
   for(const entry of indexed){
