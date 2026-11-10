@@ -2246,6 +2246,11 @@ function tobeGlobalOverviewHtml(e,p){
         esc(group.technicalChecks[0])+'</p>':'')+
       (group.entries.length>1?'<p>'+group.entries.length+
         ' intervenciones relacionadas; conservar todas para validación.</p>':'')+
+      '<p class="tobe-global-assessment"><b>Estado de viabilidad:</b> '+
+        esc(group.incompatible?'Incompatible con una restricción confirmada; no aplicar.':
+          group.entries.some(x=>x.item?.review?.status==='CONDITIONED')?
+          'Condicionada: comprobar la viabilidad antes de implantar.':
+          'Evaluación pendiente; no aprobar automáticamente.')+'</p>'+
       (group.entries[0]?.item?.how?
         '<p class="tobe-global-action tobe-global-primary-action"><b>Intervención propuesta:</b> '+
         esc(group.entries[0].item.how)+'</p>':'')+
