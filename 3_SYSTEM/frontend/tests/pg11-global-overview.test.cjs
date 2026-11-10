@@ -199,8 +199,8 @@ test('global objectives show grounded sources but not an unverified AI restricti
     source_refs:['S1','F1']};
   const output=harness([draft]).html();
   assert.match(output,/Evitar duplicar/);
-  assert.match(output,/Intervención IA inicial:/);
-  assert.match(output,/<details><summary>Ver justificación y restricciones/);
+  assert.match(output,/PROPUESTA DE LA IA|tobe-global-option-action/);
+  assert.match(output,/tobe-global-option-more/);
   assert.doesNotMatch(output,/No modificar el sistema principal/);
   assert.equal(draft.constraints,'No modificar el sistema principal sin autorización.');
   assert.match(output,/Paso: Recepción/);
@@ -276,7 +276,7 @@ test('PG11 can display five independent recommendations and an incompatible alte
  const html=h.html();
  assert.equal((html.match(/class="tobe-global-opportunity"/g)||[]).length,5);
  assert.match(html,/Fuentes revisadas: 5 de 5/);
- assert.match(html,/Descartada por incompatibilidad explícita/);
+ assert.match(html,/Incompatible · revisar alternativa/);
  assert.match(html,/Alternativa propuesta/);
  assert.match(html,/Emitir avisos sin sustituir la aprobación humana/);
  assert.match(html,/Conservar aprobación humana/);
@@ -754,8 +754,8 @@ test('PG11 compact cards retain all original details and direct activity navigat
    internalAiGlobalWorking:()=>false,internalAiGlobalMessage:()=>null};
  vm.createContext(ctx);vm.runInContext(quality+block,ctx);
  const before=JSON.stringify(p.aiGlobal),html=ctx.tobeGlobalOverviewHtml(e,p);
- assert.match(html,/Intervención propuesta:/);
- assert.match(html,/Impacto operativo pendiente:/);
+ assert.match(html,/PROPUESTA DE LA IA/);
+ assert.match(html,/Qué debe comprobarse para esta intervención/);
  assert.match(html,/class="tobe-global-card-details"/);
  assert.match(html,/data-tobe-select="S1"/);
  assert.ok(html.indexOf('Revisar en actividades:')<
@@ -1005,7 +1005,7 @@ test('PG11 retains internal review reason while showing actionable checks',()=>{
       conflicts:[],verifications:[{source:'CAPACIDAD_TECNICA',
       question:'No suponer integraciones automáticas.'}]}}]);
   const markup=h.html();
-  assert.match(markup,/Condicionada a validar la viabilidad/);
+  assert.match(markup,/Condicionada: hace falta comprobar sus capacidades y restricciones/);
   assert.match(markup,/Qué debe comprobarse para esta intervención/);
   assert.match(markup,/No suponer integraciones automáticas/);
   assert.doesNotMatch(markup,/CAPACIDAD_TECNICA|Ver texto y referencias técnicas originales/);
