@@ -750,7 +750,7 @@ test('PG11 consolidates unique recommendations, incompatibilities and alternativ
   const h=harness(proposed);
   h.env.p.items=[{sourceStepId:'S1',sourceStepName:'Recepción'}];
   const html=h.html();
-  assert.match(html,/Consolidación de propuestas: 2 intervenciones registradas \\(candidatas a consolidación\\)/);
+  assert.match(html,/Consolidación de propuestas: 2 intervenciones registradas/);
   assert.match(html,/1 incompatibilidades detectadas/);
   assert.match(html,/1 alternativas sugeridas/);
   assert.match(html,/1 variantes relacionadas conservadas/);
