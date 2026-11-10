@@ -2648,27 +2648,27 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 .tobe-origin{background:var(--system-soft);border:1px solid var(--system-line);border-radius:var(--radius-sm);
   padding:16px 18px}
 .tobe-origin h3,.tobe-edit h3,.tobe-advice h3{font-size:15px;color:var(--system)}
-.tobe-source-list{display:grid;gap:7px;padding-left:22px;margin:0;font-size:12px;line-height:1.6}
+.tobe-source-list{display:grid;gap:7px;padding-left:22px;margin:0;font-size:var(--font-small);line-height:1.6}
 .tobe-inspector .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px;align-items:start}
 .tobe-inspector .field{min-width:0;margin:0}
-.tobe-inspector .field label{font-size:12px;line-height:1.4}
-.tobe-inspector .field :is(input,textarea){width:100%;min-width:0;max-width:100%;font:inherit;font-size:13px;
+.tobe-inspector .field label{font-size:var(--font-small);line-height:1.4}
+.tobe-inspector .field :is(input,textarea){width:100%;min-width:0;max-width:100%;font:inherit;font-size:var(--font-small);
   line-height:1.5;box-sizing:border-box}
 .tobe-inspector .field textarea{min-height:70px;resize:vertical}
 .tobe-subdetails{border:1px solid var(--line);border-radius:var(--radius-sm);padding:12px 14px;
   background:#fbfcfb;min-width:0}
-.tobe-subdetails summary{cursor:pointer;color:var(--system);font-size:12px;font-weight:700}
+.tobe-subdetails summary{cursor:pointer;color:var(--system);font-size:var(--font-small);font-weight:700}
 .tobe-subdetails .form-grid{margin-top:14px}
-.tobe-subdetails p,.tobe-subdetails li{font-size:12px;line-height:1.65;margin-top:10px!important;overflow-wrap:anywhere}
+.tobe-subdetails p,.tobe-subdetails li{font-size:var(--font-small);line-height:1.65;margin-top:10px!important;overflow-wrap:anywhere}
 .tobe-advice{border-top:1px solid var(--line);padding-top:18px}
 .tobe-ai-empty{border:1px dashed var(--system-line);border-radius:var(--radius-sm);padding:13px 16px}
 .tobe-advice-content{display:grid;gap:12px}
-.tobe-advice-label{font-size:11px;font-weight:700;color:var(--system)}
+.tobe-advice-label{font-size:var(--font-small);font-weight:700;color:var(--system)}
 .tobe-advice-pairs{margin:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 .tobe-advice-pairs>div{border:1px solid var(--line);background:#fbfcfb;border-radius:var(--radius-sm);
   padding:14px;min-width:0;overflow-wrap:anywhere}
-.tobe-advice-pairs dt{font-size:11px;font-weight:750;color:var(--system);margin-bottom:7px}
-.tobe-advice-pairs dd{font-size:12px;line-height:1.6;color:var(--ink);margin:0;white-space:pre-wrap}
+.tobe-advice-pairs dt{font-size:var(--font-caption);font-weight:750;color:var(--system);margin-bottom:7px}
+.tobe-advice-pairs dd{font-size:var(--font-small);line-height:1.6;color:var(--ink);margin:0;white-space:pre-wrap}
 .tobe-ai-workspace>summary{font-size:14px;font-weight:750;color:var(--system);cursor:pointer}
 .tobe-ai-workspace .pg11-ai-panel.card{margin:20px 0 0;box-shadow:none}
 .tobe-completion{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:15px}
@@ -2852,8 +2852,8 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 .tobe-original-facts dl{margin:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 .tobe-original-facts dl>div{min-width:0;border:1px solid var(--system-line);
   border-radius:var(--radius-sm);background:#fff;padding:11px 12px}
-.tobe-original-facts dt{font-size:10px;font-weight:750;line-height:1.5;color:var(--system)}
-.tobe-original-facts dd{margin:5px 0 0;font-size:12px;line-height:1.55;
+.tobe-original-facts dt{font-size:var(--font-caption);font-weight:750;line-height:1.5;color:var(--system)}
+.tobe-original-facts dd{margin:5px 0 0;font-size:var(--font-small);line-height:1.55;
   color:var(--ink);overflow-wrap:anywhere}
 .tobe-original-facts .tobe-muted{margin:0}
 @media(max-width:1000px){.tobe-original-facts dl{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -2915,8 +2915,13 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
   .tobe-inspector #tobeStepAdvice,.tobe-inspector #tobeStepDesign{padding:12px}
 }
 .tobe-inspector #tobeStepOrigin>.tobe-subdetails,.tobe-inspector #tobeStepAdvice>.tobe-subdetails{background:transparent;border:0;padding:0}
-.tobe-inspector #tobeStepAiProgress{margin:5px 0 10px;font-size:12px;color:var(--muted);line-height:1.5}
-.tobe-inspector .tobe-ai-source-value{font-size:11px;color:var(--system);line-height:1.5;margin:0 0 8px}
+.tobe-inspector #tobeStepOrigin>.tobe-subdetails>summary,
+.tobe-inspector #tobeStepAdvice>.tobe-subdetails>summary{
+  font-family:Sora,"Segoe UI",Arial,sans-serif;font-size:var(--font-body);
+  font-weight:700;line-height:1.4;color:var(--system);
+}
+.tobe-inspector #tobeStepAiProgress{margin:5px 0 10px;font-size:var(--font-small);color:var(--muted);line-height:1.5}
+.tobe-inspector .tobe-ai-source-value{font-size:var(--font-caption);color:var(--system);line-height:1.5;margin:0 0 8px}
 /* [AUNEA-FE-PG11-GUIDED-INSPECTOR-STYLE-254] END */
 
 /* [AUNEA-FE-PG11-UX-CLARITY-256] START — original AUNEA tokens, readable controls and less duplicated guidance. */
@@ -3085,9 +3090,9 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
   background:var(--system-soft);color:var(--ink);
   display:grid;gap:8px;min-width:0;
 }
-.tobe-ai-operational-context strong{font-size:12px;color:var(--system)}
+.tobe-ai-operational-context strong{font-size:var(--font-small);color:var(--system)}
 .tobe-ai-operational-context p{
-  margin:0;font-size:12px;line-height:1.55;overflow-wrap:anywhere;
+  margin:0;font-size:var(--font-small);line-height:1.55;overflow-wrap:anywhere;
 }
 .tobe-ai-operational-context details{padding:8px 10px;background:#fff}
 .tobe-ai-operational-context details p{margin:7px 0 0!important}
@@ -3115,7 +3120,7 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 
 /* [AUNEA-FE-PG11-GLOBAL-STYLE-286] START — AUNEA System tokens, PG11 only */
 /* Shared PG11 section surface: information and IA analysis use one card geometry. */
-.tobe-context,.tobe-global-analysis{
+.tobe-context,.tobe-global-analysis,.tobe-review-section-head{
   display:grid;gap:14px;min-width:0;padding:20px 22px;
   border:1px solid var(--system-line);border-radius:var(--radius-sm);
   background:#fff;color:var(--ink);
@@ -3255,7 +3260,7 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 .tobe-global-caution{margin:0;font-size:11px;color:var(--muted);line-height:1.5}
 @media(max-width:1180px){.tobe-global-opportunities{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:720px){
-  .tobe-context,.tobe-global-analysis{padding:14px;gap:12px}
+  .tobe-context,.tobe-global-analysis,.tobe-review-section-head{padding:14px;gap:12px}
   .tobe-global-analysis-head .btn{width:100%}
   .tobe-global-opportunity{padding:11px}
 }
@@ -3293,7 +3298,7 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 }
 .tobe-ai-field-control>.field>label:first-child{
   grid-column:1;align-self:center;min-width:0;
-  font-weight:700;font-size:12px;line-height:1.4;
+  font-weight:700;font-size:var(--font-small);line-height:1.4;
   margin:0;overflow-wrap:anywhere;
 }
 .tobe-ai-field-control>.field> :not(label){
@@ -3313,7 +3318,7 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
   align-content:center;
 }
 .tobe-ai-field-row .tobe-ai-inline>p{
-  margin:0!important;font-size:11px;line-height:1.45;
+  margin:0!important;font-size:var(--font-small);line-height:1.45;
 }
 .tobe-ai-field-row .tobe-ai-inline>p:first-child{
   color:var(--system);font-weight:600;overflow-wrap:anywhere;
@@ -3327,7 +3332,7 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
   padding:0;min-width:0;
 }
 .tobe-ai-field-row .tobe-ai-inline>details>summary{
-  font-size:11px;font-weight:600;color:var(--system);
+  font-size:var(--font-caption);font-weight:600;color:var(--system);
 }
 .tobe-ai-field-row .tobe-ai-inline>details[open]{
   padding:8px;background:#fff;border:1px solid var(--system-line);
@@ -3469,13 +3474,13 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
    No business fields or new CSS framework. */
 .tobe-workspace[data-tobe-mode="guided"]{gap:12px}
 .tobe-workspace[data-tobe-mode="guided"] .tobe-inspector{
-  padding:18px 20px;border-radius:var(--radius-md);gap:12px;
+  padding:20px 22px;border-radius:var(--radius-md);gap:14px;
 }
 .tobe-workspace[data-tobe-mode="guided"] .tobe-inspector-head{
   padding-bottom:12px;gap:12px 18px;
 }
 .tobe-workspace[data-tobe-mode="guided"] .tobe-inspector-head h2{
-  font-size:19px;line-height:1.35;margin:4px 0 0;
+  font-size:var(--font-h3);line-height:1.35;margin:4px 0 0;
 }
 .tobe-workspace[data-tobe-mode="guided"] .tobe-edit{gap:9px}
 .tobe-workspace[data-tobe-mode="guided"] .tobe-edit>h3{font-size:16px}
@@ -3489,23 +3494,23 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 }
 .tobe-workspace[data-tobe-mode="guided"] .tobe-guided-nav{padding:10px 14px}
 .tobe-workspace[data-tobe-mode="guided"] .tobe-guided-nav .btn{
-  font-size:12px;line-height:1.35;min-height:37px;
+  line-height:1.35;min-height:37px;
 }
 .tobe-workspace[data-tobe-mode="guided"] .tobe-ai-field-row{
-  column-gap:14px;row-gap:8px;padding:9px 2px;min-height:65px;
+  column-gap:14px;row-gap:10px;padding:12px 2px;min-height:70px;
 }
 .tobe-workspace[data-tobe-mode="guided"] .tobe-ai-field-control>.field>label:first-child{
-  font-size:12.5px;line-height:1.5;
+  font-size:var(--font-small);line-height:1.5;
 }
 .tobe-workspace[data-tobe-mode="guided"] .tobe-ai-field-control :is(input,textarea,select){
-  font-size:13px;line-height:1.5;
+  font-size:var(--font-small);line-height:1.5;
 }
 .tobe-workspace[data-tobe-mode="guided"] .tobe-ai-field-row .tobe-ai-inline{
   padding:9px 11px;gap:5px;border:1px solid var(--system-line);
   background:var(--system-soft);
 }
 .tobe-workspace[data-tobe-mode="guided"] .tobe-ai-field-row .tobe-ai-inline>p{
-  font-size:12px;line-height:1.45;
+  font-size:var(--font-small);line-height:1.45;
 }
 .tobe-workspace[data-tobe-mode="guided"] .tobe-ai-row-actions>.btn.is-selected{
   background:var(--system);border-color:var(--system);color:white;
@@ -3570,7 +3575,7 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 
 /* [AUNEA-FE-PG11-NUMBERING-290] START — section hierarchy and single-line field actions.
    Use the existing System tokens and button primitives; no new component library. */
-.tobe-review-section-head{display:grid;gap:4px;padding:2px 0 0}
+.tobe-review-section-head{gap:4px}
 .tobe-review-section-head .tobe-eyebrow{font-size:11px;letter-spacing:.06em}
 .tobe-review-section-head p{margin:0;color:var(--muted);font-size:var(--font-small);line-height:1.5}
 .tobe-workspace[data-tobe-mode="guided"] .tobe-ai-field-row{
