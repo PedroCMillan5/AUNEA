@@ -186,7 +186,7 @@ def assess_operational_burden(how: str) -> list[dict]:
             checks.append({"source": "IMPACTO_OPERATIVO_PENDIENTE",
                            "question": question})
     warn(r"\b(?:crear|introducir|a[nñ]adir|incorporar|establecer|implantar|abrir|generar) "
-         r"(?:un |una |otro |otra |nuevo |nueva |adicional )?"
+         r"(?:un |una |otro |otra |nuevo |nueva |adicional ){0,3}"
          r"(?:formularios?|registros?|plantillas?|hojas? de c[aá]lculo|"
          r"tablas? de seguimiento|listas? de control)\b",
          "Comprobar si el nuevo registro o formulario sustituye trabajo existente "
