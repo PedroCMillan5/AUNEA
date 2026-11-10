@@ -214,4 +214,26 @@ test('PG11 checkpoint points to missing activity without discarding validated so
  assert.match(src,/data-tobe-ai-keep-field/);
  assert.match(src,/data-tobe-ai-edit-field/);
 });
+test('PG11 pending-step button launches generation and reports progress immediately',async()=>{
+ const block=slice('// [AUNEA-FE-PG11-REMAINING-CTA-295] START',
+   '// [AUNEA-FE-PG11-REMAINING-CTA-295] END');
+ let listener,launches=0,prevented=false,stopped=false;
+ const progress={textContent:''};
+ const button={disabled:false,textContent:'Analizar actividades pendientes',isConnected:true};
+ const sandbox={
+   document:{addEventListener:(name,fn,capture)=>{assert.equal(name,'click');assert.equal(capture,true);listener=fn;},
+     getElementById:id=>id==='tobeStepAiProgress'?progress:null},
+   state:{activePage:'tobe'},currentEng:()=>({id:'case'}),latestTobe:()=>({status:'DRAFT'}),
+   tobeEditable:()=>true,toast:()=>{throw Error('Unexpected toast');},
+   generateTobeAiPilot:async()=>{launches++;},console
+ };
+ vm.createContext(sandbox);vm.runInContext(block,sandbox);
+ listener({target:{closest:selector=>selector==='[data-tobe-generate-all-remaining]'?button:null},
+   preventDefault:()=>{prevented=true;},stopImmediatePropagation:()=>{stopped=true;}});
+ assert.equal(launches,1);assert.equal(prevented,true);assert.equal(stopped,true);
+ assert.match(progress.textContent,/Iniciando análisis de las actividades pendientes/);
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(button.disabled,false);
+ assert.equal(button.textContent,'Analizar actividades pendientes');
+});
 // [AUNEA-UAT-PG11-GUIDED-267] END
