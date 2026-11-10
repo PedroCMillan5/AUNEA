@@ -688,6 +688,45 @@ test('same action merges source references; distinct interventions remain separa
   assert.ok(actions[1].source_refs.includes('S2'));
 });
 
+test('PG11 displays canonical client conditions without internal value codes',()=>{
+ const diagnostic=JSON.parse(fs.readFileSync(path.join(__dirname,'../data/diagnostic-master.min.json'),'utf8'));
+ const snapshot={version:3,answers:{DF087:['HUMAN_DECISION'],DF089:['KEEP_EXISTING','CRM_NATIVE'],
+   DF090:['RBAC','AUDIT_LOG']},frictions:[],risks:[]};
+ const recommendation={objective:'Mejorar gestión de pendientes.',how:'Consultar tareas existentes.',
+   why:'Se requiere seguimiento fiable.',source_refs:['S1'],
+   constraints:'DF087: HUMAN_DECISION, DF089: KEEP_EXISTING, DF090: RBAC',
+   review:{status:'CONDITIONED',reason:'Revisar DF089 y DF090.',
+     checks:[{source:'DF087/DF090',reason:'Conservar las decisiones y los permisos.'}],
+     verifications:[{source:'CAPACIDAD_TECNICA',question:'Verificar los permisos disponibles.'}],
+     conflicts:[]}};
+ const e={id:'E1'},p={version:2,status:'DRAFT',sourceSnapshotVersion:3,items:[],
+   aiGlobal:{tobeVersion:2,sourceSnapshotVersion:3,diagnosticInputHash:'HASH',
+     result:{status:'DRAFT',engagement_id:'E1',snapshot_version:3,
+       opportunities:[recommendation],summary:'Análisis pendiente de aprobación.'}}};
+ const ctx={schema:diagnostic,currentDiagnosticOutput:()=>({input_snapshot_hash:'HASH'}),
+   tobeProposalSnapshot:()=>snapshot,tobeProposalSourceSteps:()=>[],
+   tobeEditable:()=>true,internalAiGlobalWorking:()=>false,
+   internalAiGlobalMessage:()=>null,esc:x=>String(x??''),attr:x=>String(x??'')};
+ vm.createContext(ctx);vm.runInContext(block,ctx);
+ const original=JSON.stringify(recommendation);
+ const html=ctx.tobeGlobalOverviewHtml(e,p);
+ const conditions=html.match(/<summary>Condiciones declaradas por el cliente[^]*?<\/details>/)?.[0]||'';
+ assert.match(conditions,/Decisión humana/);
+ assert.match(conditions,/Mantener herramientas actuales/);
+ assert.match(conditions,/Roles \/ permisos/);
+ assert.match(conditions,/Audit log/);
+ assert.doesNotMatch(conditions,/DF087|DF089|DF090|HUMAN_DECISION|KEEP_EXISTING|RBAC|AUDIT_LOG/);
+ assert.match(html,/Ver comprobaciones de implantación/);
+ assert.match(html,/Ver texto y referencias técnicas originales/);
+ assert.match(html,/DF087: HUMAN_DECISION/,'technical source stays accessible in opt-in audit');
+ assert.equal(JSON.stringify(recommendation),original,'no mutation of original AI recommendation');
+});
+
+test('PG11 does not invent confirmed client conditions for an absent snapshot',()=>{
+ const ctx={};vm.createContext(ctx);vm.runInContext(block,ctx);
+ const value=ctx.tobeGlobalHumanConditions({answers:{}},{declared_conditions:[]});
+ assert.equal(value.length,0);
+});
 test('PG11 compact cards retain all original details and direct activity navigation',()=>{
  const quality=fs.readFileSync(path.join(__dirname,'../domain/internal-ai-global-quality.js'),'utf8');
  const item={objective:'Evitar trabajo duplicado.',how:'Reutilizar información existente.',
