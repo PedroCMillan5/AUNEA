@@ -755,7 +755,7 @@ async function main(){
     const advice=await page.locator('#tobeAiRecommendation').innerText();
     assert.match(advice,new RegExp('Problema sintético vinculado '+(i+1)),
       'inspector must match the selected source step');
-    assert.match(advice,/Pendiente de revisión global/);
+    assert.match(advice,/pendiente de consolidación/i);
     assert.match(advice,/Intervención recomendada/);
     assert.match(advice,/Resultado esperado/);
     for(let j=0;j<sourceIds.length;j++){
@@ -780,7 +780,7 @@ async function main(){
     const advice=await page.locator('#tobeAiRecommendation').innerText();
     assert.match(advice,new RegExp('Problema sintético vinculado '+(i+1)),
       'checkpoint must remain linked to each original source ID after page reload');
-    assert.match(advice,/Pendiente de revisión global/);
+    assert.match(advice,/pendiente de consolidación/i);
   }
   assert.equal(await page.locator('#applyTobeAiPilot').count(),0,
     'review-incomplete checkpoint must remain non-applicable');
