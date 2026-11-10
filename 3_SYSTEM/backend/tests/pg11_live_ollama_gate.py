@@ -137,6 +137,8 @@ def checked_result(result, request, source):
                 "The confirmed AS-IS version changed")
     requirement(result["input_hash"] == stable_hash(request.engagement.model_dump()),
                 "The diagnostic/source hash changed")
+    requirement(global_ai.global_text_is_complete(result["summary"]),
+                "The summary appears incomplete")
     requirement(result["focus_source_id"] == source,
                 "Recommendation escaped its source")
     requirement(isinstance(result["has_more"], bool),
@@ -148,10 +150,10 @@ def checked_result(result, request, source):
                     "Unsupported feasibility state")
         requirement(item["review"]["capability_status"] == "UNVERIFIED",
                     "Unverified technology was reported as proven")
-        requirement(item["how"].strip().endswith((".", "!", "?", "…")),
-                    "The intervention was cut")
-        requirement(item["why"].strip().endswith((".", "!", "?", "…")),
-                    "The justification was cut")
+        requirement(global_ai.global_text_is_complete(item["how"]),
+                    "The intervention appears incomplete")
+        requirement(global_ai.global_text_is_complete(item["why"]),
+                    "The justification appears incomplete")
         if item["review"]["status"] == "INCOMPATIBLE":
             requirement(bool(item["review"]["conflicts"]),
                         "An incompatibility lacks source-backed evidence")
