@@ -2222,12 +2222,13 @@ function tobeGlobalOverviewHtml(e,p){
         AUNEA_ESTIMATE:'Estimación de AUNEA',HYPOTHESIS:'Hipótesis',
         SPECIFIC_BENCHMARK:'Referencia comparable'
       })[provenance]||'Procedencia pendiente de confirmar';
-      return 'Fricción: '+(friction.client_label||id)+
+      return 'Fricción: '+(friction.client_label||'Fricción confirmada sin descripción')+
         (measures.length?' · '+measures.join(' · '):'')+
         (friction.evidence_type?' · Origen: '+provenanceLabel:' · Origen: no especificado');
     }
-    return step?'Paso: '+(step.step_name||step.name||id):
-      risk?'Riesgo: '+(risk.description||id):'Referencia: '+String(id);
+    return step?'Paso: '+(step.step_name||step.name||'Actividad confirmada sin nombre'):
+      risk?'Riesgo: '+(risk.description||'Riesgo confirmado sin descripción'):
+        'Referencia de origen sin descripción disponible en el AS-IS';
   });
   const completeCards=opportunities.filter(item=>
     [item.how,item.why,...(item.related||[]).flatMap(x=>[x.how,x.why]),
