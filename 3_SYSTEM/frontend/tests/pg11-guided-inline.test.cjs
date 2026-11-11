@@ -60,9 +60,18 @@ test('IA suggestions are visible before decision but cannot be applied',()=>{
  assert.ok(draft.allFields.some(x=>x.key==='outputs'));
  assert.match(html,/IA propone:/);
  assert.match(html,/Registro estructurado/);
- assert.match(html,/Justificación, fuentes y límites/);
+ assert.match(html,/Justificación y fuentes de la propuesta IA/);
  assert.match(html,/Fricción identificada/);
  assert.doesNotMatch(html,/data-tobe-ai-use-field/);
+});
+test('PG11 fields without an IA candidate never repeat a full evidence card',()=>{
+ const f=fixture();f.proposal.items[0].controls_risk='';
+ const empty=f.context.tobeAiInlineHint(f.e,f.p,f.p.items[0],'controlsRisk');
+ assert.match(empty,/sin sugerencia fundamentada/);
+ assert.doesNotMatch(empty,/<details/);
+ const proposed=f.context.tobeAiInlineHint(f.e,f.p,f.p.items[0],'outputs');
+ assert.match(proposed,/Justificación y fuentes de la propuesta IA/);
+ assert.match(proposed,/Fuentes vinculadas/);
 });
 test('MODIFY authorizes only safe options, never contradictory transformation',()=>{
  const f=fixture();f.setDecision('MODIFY');
