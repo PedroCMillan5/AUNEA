@@ -95,7 +95,13 @@ test('P2 decision logic displays confirmed conditions and routes without inventi
  assert.match(html,/Si no se cumple · NO/);
  assert.match(html,/AS-IS: Ejecutar aprobación · TO-BE: Ejecutar aprobación/);
  assert.match(html,/AS-IS: Registrar · TO-BE: Registrar/);
- const flow=h.run('tobeFlowOwner');flow.routes.P2.normal='P4';h.p.flow=flow;
+ const flow=h.run('tobeFlowOwner');
+ flow.routes.P2.normal='P4';
+ flow.decisionCriteria.P2='Cuando el responsable confirma una excepción bajo política.';
+ h.p.flow=flow;
+ const changed=h.run('tobeDecisionReadoutHtml',h.p.items[0]);
+ assert.match(changed,/Criterio TO-BE:/);
+ assert.match(changed,/Cuando el responsable confirma una excepción bajo política/);
  assert.match(h.run('tobeDecisionReadoutHtml',h.p.items[0]),
   /AS-IS: Ejecutar aprobación · TO-BE: Registrar/);
  assert.equal(JSON.stringify(h.snapshot),before);
@@ -111,6 +117,8 @@ test('a newly added decision needs explicit YES and NO routes and keeps the orig
  flow.routes[id]={normal:'S2',exception:'__PENDING__'};
  flow.routes.S1.normal=id;
  h.p.flow=flow;
+ assert.match(h.run('tobeFlowIntegrity'),/necesita una condición futura explícita/);
+ flow.decisionCriteria[id]='Si el expediente necesita revisión humana, ruta SÍ; de lo contrario, NO.';
  assert.match(h.run('tobeFlowIntegrity'),/pendiente de conectar/);
  flow.routes[id].exception='__END__';
  assert.equal(h.run('tobeFlowIntegrity'),null);
@@ -120,7 +128,9 @@ test('a newly added decision needs explicit YES and NO routes and keeps the orig
  const readout=h.run('tobeDecisionReadoutHtml',flow.addedSteps[0]);
  assert.match(readout,/No existía en el AS-IS/);
  assert.match(readout,/TO-BE: Registro/);
+ assert.match(readout,/Si el expediente necesita revisión humana/);
  assert.doesNotMatch(readout,/AS-IS: Registro/);
+ assert.equal(h.run('tobeFlowOwner').decisionCriteria[id],flow.decisionCriteria[id]);
  assert.equal(JSON.stringify(h.snapshot.processSteps),snapshot);
 });
 
