@@ -117,6 +117,10 @@ test('a newly added decision needs explicit YES and NO routes and keeps the orig
  const added=h.run('tobeFutureSteps').find(x=>x.id===id);
  assert.equal(added.step_type,'ST04');
  assert.equal(added.exception_path.destination_step,'__END__');
+ const readout=h.run('tobeDecisionReadoutHtml',flow.addedSteps[0]);
+ assert.match(readout,/No existía en el AS-IS/);
+ assert.match(readout,/TO-BE: Registro/);
+ assert.doesNotMatch(readout,/AS-IS: Registro/);
  assert.equal(JSON.stringify(h.snapshot.processSteps),snapshot);
 });
 
