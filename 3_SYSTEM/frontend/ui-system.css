@@ -3657,3 +3657,19 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
   .tobe-decision-readout dl{grid-template-columns:minmax(0,1fr)}
 }
 /* [AUNEA-FE-PG11-DECISION-REVIEW-298] END */
+
+/* [AUNEA-FE-PG11-STRUCTURED-STATUS-305] START — derived presentation only. */
+.tobe-ai-field-summary{
+  margin:10px 0 14px;padding:10px 12px;
+  border:1px solid var(--system-line);border-radius:var(--radius-sm);
+  line-height:1.5;font-size:var(--font-small);background:var(--system-soft);
+}
+.tobe-ai-no-candidate{
+  padding:3px 0;margin:0;background:transparent;border:0;border-radius:0;gap:3px;
+}
+.tobe-ai-no-candidate .field-help{font-size:var(--font-small);line-height:1.5}
+.tobe-ai-no-candidate .tobe-ai-candidate-gap{
+  padding:6px 8px;border-left:2px solid var(--system-line);margin:3px 0;
+}
+@media(max-width:700px){.tobe-ai-field-summary{padding:9px 10px}}
+/* [AUNEA-FE-PG11-STRUCTURED-STATUS-305] END */
