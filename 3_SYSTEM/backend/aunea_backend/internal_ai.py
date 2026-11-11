@@ -33,6 +33,21 @@ class PilotAIItem(BaseModel):
     source_refs: list[str]
     limitations: str
 
+# [AUNEA-BE-PG11-FIELD-CONTRACT-306] START — derived quality metadata only.
+# Existing nine commercial-design fields, NOT nine mandatory modifications.
+# Unspecified proposals are unknown; they do not mean KEEP, approval, or absent evidence.
+PILOT_AI_FIELDS = (
+    "transformation", "problem_resolved", "future_actor", "tool",
+    "inputs", "outputs", "automation_ai", "human_supervision", "controls_risk",
+)
+_PILOT_EMPTY_MARKERS = frozenset(("", "n/a", "no", "ninguno", "sin definir", "pendiente", "—"))
+
+def pilot_field_presence(item: PilotAIItem) -> dict[str, bool]:
+    """Return existing candidate presence without inventing the reason for omissions."""
+    return {key: str(getattr(item, key, "") or "").strip().casefold()
+            not in _PILOT_EMPTY_MARKERS for key in PILOT_AI_FIELDS}
+# [AUNEA-BE-PG11-FIELD-CONTRACT-306] END
+
 class PilotAIResult(BaseModel):
     status: Literal["DRAFT"] = "DRAFT"
     requires_human_review: bool = True
