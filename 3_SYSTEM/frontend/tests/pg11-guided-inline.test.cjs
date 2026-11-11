@@ -182,9 +182,7 @@ test('PG11 displays confirmed AS-IS values beside the sole editable TO-BE field'
  assert.equal((html.match(/data-tobe-field="outputs"/g)||[]).length,1);
 });
 test('PG11 step evidence never presents superseded risks as current',()=>{
- const fnStart=src.indexOf('function tobeGlobalLinkedStepHtml('),
-   fnEnd=src.indexOf('// Read-only PG11 presentation',fnStart),
-   fn=fnStart>=0&&fnEnd>fnStart?src.slice(fnStart,fnEnd):null;
+ const fn=src.match(/function tobeSnapshotIssueCards\(e,item\)\{[\s\S]*?\n\}/)?.[0];
  assert.ok(fn,'The current step evidence projection must exist');
  const snapshot={frictions:[
    {status:'SUPERSEDED',affected_steps:['P1'],client_label:'Fricción archivada'},
@@ -249,7 +247,9 @@ test('PG11 pending-step button launches generation and reports progress immediat
  assert.equal(button.textContent,'Analizar actividades pendientes');
 });
 test('PG11 distinguishes completed step coverage from incomplete global source review',()=>{
- const fn=src.match(/function tobeGlobalLinkedStepHtml\\(e,p,item\\)\\{[\\s\\S]*?\\n\\}/)?.[0];
+ const fnStart=src.indexOf('function tobeGlobalLinkedStepHtml('),
+   fnEnd=src.indexOf('// Read-only PG11 presentation',fnStart),
+   fn=fnStart>=0&&fnEnd>fnStart?src.slice(fnStart,fnEnd):null;
  assert.ok(fn,'global linked step function must exist');
  const result={complete:false,progress:{completed:2,total:5}};
  const context={tobeGlobalStored:()=>result,
