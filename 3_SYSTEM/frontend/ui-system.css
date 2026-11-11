@@ -3738,3 +3738,39 @@ details.tobe-ai-operational-context:not([open])>.tobe-ai-operational-body{
   }
 }
 /* [AUNEA-FE-PG11-REVIEW-DENSITY-308] END */
+
+/* [AUNEA-FE-PG11-EXECUTION-GROUP-309] START — progressive disclosure in 03.3.
+   Editable field owners are unchanged; only secondary information is folded. */
+.tobe-workspace[data-tobe-mode="guided"] .tobe-execution-fields{
+  border:1px solid var(--system-line);
+  border-radius:var(--radius-sm);
+  margin:6px 0 10px;background:#fff;min-width:0;
+}
+.tobe-workspace[data-tobe-mode="guided"] .tobe-execution-fields>summary{
+  padding:12px 14px;cursor:pointer;
+  font-size:var(--font-small);font-weight:700;color:var(--system);
+  line-height:1.45;outline-offset:2px;
+}
+.tobe-execution-fields>summary .tobe-muted{font-weight:400;font-size:var(--font-small)}
+.tobe-workspace[data-tobe-mode="guided"] .tobe-execution-fields[open]>summary{
+  border-bottom:1px solid var(--system-line);background:var(--system-soft);
+}
+.tobe-workspace[data-tobe-mode="guided"] .tobe-execution-fields>.form-grid{
+  display:grid;grid-template-columns:minmax(0,1fr);
+  gap:0;align-items:start;min-width:0;
+}
+.tobe-execution-fields>.form-grid>.tobe-ai-field-row,
+.tobe-execution-fields>.form-grid>.tobe-data-pair{
+  min-width:0;grid-column:1/-1;
+}
+.tobe-execution-fields>.form-grid>.tobe-data-pair{display:block}
+.tobe-execution-fields>.form-grid>.tobe-ai-field-row:last-child,
+.tobe-execution-fields>.form-grid>.tobe-data-pair:last-child>.tobe-ai-field-row{
+  border-bottom:0;
+}
+@media(max-width:800px){
+  .tobe-workspace[data-tobe-mode="guided"] .tobe-execution-fields>summary{
+    padding:10px 12px;
+  }
+}
+/* [AUNEA-FE-PG11-EXECUTION-GROUP-309] END */
