@@ -966,35 +966,51 @@ function tobeCatalogField(item,key,label,setId,disabled=false){
     '" data-tobe-catalog-field="'+attr(key)+'"><label>'+esc(label)+'</label>'+
     control+'</div>';
 }
-function tobeArtifactField(item,key,label,disabled=false){
-  const opts=typeof fieldOptions==='function'?fieldOptions('OS_ARTIFACT_TYPE'):[];
-  const {resolved,unknown}=tobeArtifactValues(item[key]);
-  const htmlId='tobe_artifact_'+key+'_'+String(item.id).replace(/[^a-zA-Z0-9_-]/g,'_');
-  const details=String(item._details?.[key]||'');
-  const other=catalogOtherOption(opts);
-  const current=details&&other&&!resolved.includes(String(other.value))?
-    [...resolved,String(other.value)]:resolved;
-  const controls=typeof selectedHtml==='function'?
-    selectedHtml(htmlId,opts,current,{wrapped:true,detailId:htmlId+'_detail',
-      detailValue:details,detailPlaceholder:'Especifica '+(key==='inputs'?'el dato de entrada':'el resultado')+' al seleccionar Otro'}):
-    '<p class="notice warn">No se ha cargado el componente canónico de multiselección.</p>';
-  const chips=current.map(value=>{
-    const option=opts.find(x=>String(x.value)===String(value));
-    return '<span class="tobe-selected-data-chip">'+esc(option?.label||value)+'</span>';
-  }).join('');
-  const compact='<details class="tobe-artifact-compact"><summary aria-label="Editar '+esc(label)+'">'+
-    '<span class="tobe-artifact-chips">'+(chips||'<span class="tobe-muted">Selecciona formatos</span>')+
-    '</span><span class="tobe-artifact-chevron" aria-hidden="true">⌄</span></summary>'+
-    '<div class="tobe-artifact-options">'+controls+'</div></details>';
-  return '<div class="field full tobe-artifact-field" data-tobe-multi-item="'+attr(item.id)+
-    '" data-tobe-multi-key="'+attr(key)+'" data-tobe-multi-id="'+attr(htmlId)+'"'+
+// [AUNEA-FE-PG11-ARTIFACT-PROVENANCE-312] START
+// SOURCE: PG04/ProcessStep DF035/036, Simulator CANONICAL PG11,
+// DEC-050, DEC-055/056 and AUNEA System palette.
+// INPUTS: source confirmed AS-IS and versioned, consultant-owned TO-BE item.
+// OUTPUTS: single canonical selectedHtml multi-select; color is computed, not stored.
+// SIDE EFFECTS: none. The AS-IS baseline is read-only. Change risk: MEDIUM.
+function tobeArtifactField(item,key,label,disabled=false,sourceStep=null){
+  const opts=typeof fieldOptions==='function'?fieldOptions('OS_ARTIFACT_TYPE'):[],
+    selected=tobeArtifactValues(item[key]),
+    source=tobeArtifactValues(sourceStep?.[key]||[]),
+    sourceSet=new Set(source.resolved.map(String)),
+    htmlId='tobe_artifact_'+key+'_'+String(item.id).replace(/[^a-zA-Z0-9_-]/g,'_'),
+    details=String(item._details?.[key]||''),
+    sourceDetails=String(sourceStep?._details?.[key]||''),
+    other=catalogOtherOption(opts),
+    otherId=String(other?.value||''),
+    current=details&&other&&!selected.resolved.includes(otherId)?
+      [...selected.resolved,otherId]:selected.resolved,
+    visible=[...new Set([...source.resolved,...current])],
+    origin=value=>sourceSet.has(String(value))&&
+      (String(value)!==otherId||details.trim()===sourceDetails.trim())?
+      'asis':'improvement',
+    controls=typeof selectedHtml==='function'?
+      selectedHtml(htmlId,opts,current,{
+        wrapped:true,detailId:htmlId+'_detail',detailValue:details,
+        detailPlaceholder:'Especifica '+(key==='inputs'?'el dato de entrada':'el resultado')+
+          ' al seleccionar Otro',
+        preferredValues:visible,choiceOrigin:origin
+      }):
+      '<p class="notice warn">No se ha cargado el componente canónico de multiselección.</p>';
+  return '<div class="field full tobe-artifact-field process-modal-form"'+
+    ' data-tobe-multi-item="'+attr(item.id)+'" data-tobe-multi-key="'+attr(key)+
+    '" data-tobe-multi-id="'+attr(htmlId)+'"'+
     (disabled?' data-tobe-multi-readonly="1"':'')+'><label>'+esc(label)+'</label>'+
-    (disabled?'<fieldset disabled class="tobe-readonly-options">'+compact+'</fieldset>':compact)+
-    (unknown.length?'<p class="notice warn">Valor anterior no reconocido por el catálogo vigente: '+
-      esc(unknown.join(' · '))+'. Se conserva hasta que indiques expresamente que quieres retirarlo.</p>'+
-      (disabled?'':'<label class="field-help"><input type="checkbox" data-tobe-drop-legacy="1"> Eliminar estos valores antiguos no reconocidos al guardar</label>'):'')+
+    '<p class="tobe-artifact-provenance-help">Selecciona las categorías que utilizará esta actividad. '+
+      'La selección se guarda en el TO-BE; el origen AS-IS permanece intacto.</p>'+
+    (disabled?'<fieldset disabled class="tobe-readonly-options">'+controls+'</fieldset>':controls)+
+    (selected.unknown.length?'<p class="notice warn">Valor anterior no reconocido por el catálogo vigente: '+
+      esc(selected.unknown.join(' · '))+
+      '. Se conserva hasta que indiques expresamente que quieres retirarlo.</p>'+
+      (disabled?'':'<label class="field-help"><input type="checkbox" data-tobe-drop-legacy="1"> '+
+        'Eliminar estos valores antiguos no reconocidos al guardar</label>'):'')+
     '</div>';
 }
+// [AUNEA-FE-PG11-ARTIFACT-PROVENANCE-312] END
 // [AUNEA-FE-PG11-CANONICAL-CONTROLS-251] END
 // [AUNEA-FE-PG11-FIELD-GUIDANCE-246] START — field help never persists as data.
 const TOBE_FIELD_HELP={
@@ -2016,6 +2032,8 @@ function tobeInspectorHtml(e,p){
   const savedReview=hasCurrentAi?internalAiSavedDraft(e)?.review:null;
   const fieldBlockers=(savedReview?.issues||[]).filter(issue=>
     issue.category==='BLOCKING'&&String(issue.step_id)===String(item.sourceStepId)).length;
+  const sourceStep=item.isAddition?null:
+    tobeProposalSourceSteps(e,p).find(x=>String(x.id)===String(item.sourceStepId))||null;
   const withAi=(key,html)=>tobeWithAiHint(e,p,item,key,html);
   const statusField='<div class="field"><label for="tobe_'+attr(item.id)+'_transformation">Qué cambia</label>'+
     (editable?auneaSelectControl('tobe_'+item.id+'_transformation',TOBE_TRANSFORMATIONS.map(v=>({value:v,label:v})),
@@ -2117,11 +2135,16 @@ function tobeInspectorHtml(e,p){
         '<summary><span class="tobe-design-group-number">03</span><span>'+
           '<b>Recursos y datos de ejecución</b><small>Responsable, herramientas, entradas y salidas · 4 campos</small>'+
         '</span></summary>'+
+        '<div class="tobe-artifact-origin-legend" aria-label="Origen de los datos de entrada y salida">'+
+          '<span class="tobe-artifact-origin-sample is-asis">Del estudio AS-IS</span>'+
+          '<span class="tobe-artifact-origin-sample is-improvement">Incorporado como mejora TO-BE</span>'+
+          '<span class="tobe-artifact-origin-note">Los colores identifican procedencia, no aprobación.</span>'+
+        '</div>'+
         '<div class="form-grid tobe-design-fields">'+
           withAi('futureActor',tobeCatalogField(item,'futureActor','Responsable futuro','OS_ACTOR_ROLE',!editable))+
           withAi('tool',tobeCatalogField(item,'tool','Herramienta / arquitectura','OS_TOOL_CATEGORY',!editable))+
-          '<div class="tobe-data-pair">'+withAi('inputs',tobeArtifactField(item,'inputs','Datos de entrada',!editable))+'</div>'+
-          '<div class="tobe-data-pair">'+withAi('outputs',tobeArtifactField(item,'outputs','Datos de salida',!editable))+'</div>'+
+          '<div class="tobe-data-pair">'+withAi('inputs',tobeArtifactField(item,'inputs','Datos de entrada',!editable,sourceStep))+'</div>'+
+          '<div class="tobe-data-pair">'+withAi('outputs',tobeArtifactField(item,'outputs','Datos de salida',!editable,sourceStep))+'</div>'+
         '</div>'+
       '</details>'+
       tobeDecisionReadoutHtml(e,p,item)+
