@@ -196,3 +196,18 @@ Estado: A cerrado; B revisión básica operativa, sin revisión semántica Ollam
 **Límite de aceptación restante:** comprobar en Windows, tras `git pull --ff-only` y recarga, que los datos AS-IS y las recomendaciones coinciden con el **snapshot confirmado vigente de cuatro actividades** (no sustituir por el oráculo sintético histórico de seis), que las acciones y decisiones persisten con Ollama y backend 8010 conectados y que el propietario acepta visualmente la sección 03 completa. Para P1 en la captura del propietario: Administración/Email; correo y PDF; 3 min activos, 0 de espera y 0 de retrabajo; fricción de visibilidad (30 % y 10 min por caso afectado); riesgo de pérdida de trazabilidad entre correo y ERP. Estas últimas observaciones exigen verificar origen/versiones antes de certificar datos.
 
 **Criterio de cierre:** 03.1–03.4 sin defectos críticos en sesión real, trazabilidad correcta del mismo snapshot, guardado/reapertura, aprobación humana y aceptación visual del propietario. Hasta entonces conservar REVIEW; no declarar ahorro, viabilidad tecnológica ni aprobación automática. No cambian Master Index, DECISIONES, ESTADO ni ROADMAP: no hay modificación de versión canónica, regla o secuencia de producto. Registrar el hito de QA en BITACORA.
+
+
+## 11/11/2026 — Ajuste final de densidad y estados PG11.03 tras captura del propietario — REVIEW
+
+**Evidencia recibida:** la pantalla real de P1 mostraba 4/4 actividades con IA analizada, aviso de análisis global por fuentes incompleto, «Se mantiene» de IA frente a «Se modifica» del consultor y varias tarjetas de justificación global repetidas dentro de 03.3. Las decisiones humanas permanecían pendientes. Este contraste no convierte el 4/4 en aprobación ni valida las capacidades de Email/ERP.
+
+**Corrección:**
+- `results.js`: en 03.2, el aviso parcial refiere expresamente al análisis global por fuentes de la sección 02 e indica el número de fuentes completadas cuando existe metadata; diferencia explícitamente ese contador de la cobertura de actividades por IA de 03.3. No altera resultados ni decisiones.
+- `results.js`: en 03.3, la propuesta específica por campo conserva el candidato y su trazabilidad, pero no reitera la justificación y acción generales ya consultables en 03.2; cada detalle muestra solo referencias y condiciones verificables. En campos sin valor IA estructurado dice «sin propuesta específica para este campo», no declara que el análisis global carezca de recomendaciones. Continúan los nueve controles propietarios y las acciones humanas sin aplicación automática.
+- `ui-system.css`: columna de acciones dimensionada por contenido con los botones comunes; el espacio recuperado se destina a leer la propuesta y no a una columna vacía fija.
+- Regresión `pg11-guided-inline.test.cjs` sobre relación de scopes y fuentes; `uat-browser-smoke.cjs` introduce temporalmente un campo IA vacío exclusivamente durante la prueba visual, lo verifica y restaura el candidato original antes de continuar.
+
+**Evidencias:** código hasta `b57746ca`; `AUNEA Frontend Tests` 895 PASS / 0 FAIL; backend 467 PASS / 1 warning; `AUNEA Internal V2 REVIEW Acceptance Gate` con Chromium PASS. URL: https://github.com/PedroCMillan5/AUNEA/actions/runs/43015078534. Indice de Block_ID actualizado sin introducir fuentes nuevas.
+
+**Estado:** revisión técnica automatizada PASS, **PG11 sección 03 sigue REVIEW** hasta contrastar la versión actual contra el snapshot AS-IS confirmado de cuatro actividades y aceptación visual/funcional en el equipo Windows del propietario. No tocar Master Index, DECISIONES, ESTADO ni ROADMAP por esta corrección UX sin cambio de regla/contrato/orden; reflejar el hito en BITACORA.
