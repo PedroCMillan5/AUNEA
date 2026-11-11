@@ -411,6 +411,24 @@ test('PG11 review rejects P4 NO rationale and accepted IA transformation mismatc
   assert.match(sandbox.tobeReviewReadiness(e,p),/La propuesta IA.*Se automatiza/);
   p.review.decisions.P4.status='MODIFY';
   assert.equal(sandbox.tobeReviewReadiness(e,p),null);
+  // A blocked IA candidate must never become approved merely because the
+  // consultant's TO-BE says "Se modifica" rather than "Se mantiene".
+  item.transformation='Se modifica';
+  p.aiDraft.proposal.items[0].transformation='Se modifica';
+  p.aiDraft.proposal.review.issues=[{step_id:'P4',category:'BLOCKING',
+    evidence:'automation_ai',issue:'La propuesta no tiene detalle estructurado.'}];
+  p.review.decisions.P4.status='ACCEPT';
+  assert.match(sandbox.tobeReviewReadiness(e,p),/bloqueos pendientes/);
+  p.review.decisions.P4.status='MODIFY';
+  assert.equal(sandbox.tobeReviewReadiness(e,p),null,
+    'a source-linked and justified human override remains valid');
+  p.aiDraft.proposal.review.issues=[];
+  p.aiDraft.proposal.review.blocking_step_ids=['P4'];
+  p.review.decisions.P4.status='ACCEPT';
+  assert.match(sandbox.tobeReviewReadiness(e,p),/bloqueos pendientes/,
+    'blocking_step_ids must protect even when review issues are not expanded');
+  p.review.decisions.P4.status='MODIFY';
+  assert.equal(sandbox.tobeReviewReadiness(e,p),null);
   p.addedSteps=[{stepName:'Validar datos',futureActor:'Administración',
     transformation:'Se incorpora control',problemResolved:'NO'}];
   assert.match(sandbox.tobeReviewReadiness(e,p),/motivo de la actividad nueva/);
