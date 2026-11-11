@@ -35,6 +35,49 @@ def mock_model(monkeypatch, issues=None, prompt_tokens=2600):
     monkeypatch.setattr(local._LOCAL_HTTP,"open",respond)
     return received
 
+def test_nine_fields_have_explicit_presence_without_invented_omission_reason():
+    from aunea_backend.internal_ai import PILOT_AI_FIELDS, pilot_field_presence
+    candidate = proposal("S1")
+    candidate.automation_ai = "N/A"
+    candidate.outputs = ""
+    status = pilot_field_presence(candidate)
+    assert len(PILOT_AI_FIELDS) == 9
+    assert set(status) == set(PILOT_AI_FIELDS)
+    assert status["automation_ai"] is False
+    assert status["outputs"] is False
+    assert status["future_actor"] is True
+    assert status["transformation"] is True
+
+
+@pytest.mark.parametrize("transformation,missing_field", [
+    ("Se automatiza", "automation_ai"),
+    ("Se automatiza", "human_supervision"),
+    ("Se asiste con IA", "automation_ai"),
+    ("Se asiste con IA", "human_supervision"),
+    ("Se incorpora control", "controls_risk"),
+    ("Requiere decisión humana", "human_supervision"),
+])
+def test_cross_field_contract_blocks_only_requirements_of_selected_transformation(transformation,missing_field):
+    candidate=proposal("S1")
+    candidate.transformation=transformation
+    candidate.automation_ai="Registro por reglas; sujeto a comprobación de viabilidad"
+    candidate.human_supervision="Finanzas revisa excepciones y rechaza operaciones inválidas"
+    candidate.controls_risk="Registrar cada excepción y decisión auditable"
+    setattr(candidate,missing_field,"")
+    gaps=review._transformation_field_gaps([candidate])
+    assert len(gaps)==1
+    assert gaps[0]["step_id"]=="S1"
+    assert gaps[0]["category"]=="BLOCKING"
+    assert missing_field in gaps[0]["evidence"]
+
+
+def test_no_demand_for_nine_filled_fields_when_transformation_is_maintained():
+    item=proposal("S1")
+    item.transformation="Se mantiene"
+    item.inputs=item.outputs=item.automation_ai=item.controls_risk=""
+    assert review._transformation_field_gaps([item])==[]
+
+
 def test_review_reports_real_coherence_without_approving(monkeypatch):
     calls=mock_model(monkeypatch)
     payload=PilotAIConsolidationRequest(request=sample(),
