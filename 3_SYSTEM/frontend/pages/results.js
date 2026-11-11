@@ -1188,6 +1188,23 @@ function tobeAiReviewDiff(e,p,id){
   }
   return out;
 }
+// A DRAFT with 4/4 analyzed activities may still have incomplete fields;
+// report those counts separately without implying missing AS-IS evidence.
+function tobeAiFieldCoverageHtml(e,p,item){
+  if(item?.isAddition||typeof internalAiSavedDraft!=='function')return '';
+  const saved=internalAiSavedDraft(e);
+  if(!saved?.items?.some(x=>String(x.source_step_id)===String(item.sourceStepId)))return '';
+  const diff=tobeAiReviewDiff(e,p,item.sourceStepId),
+    candidate=diff.allFields.length,
+    invalid=diff.skipped.length,
+    absent=TOBE_AI_REVIEW_FIELDS.length-candidate-invalid;
+  return '<p class="tobe-ai-field-summary" role="status">'+
+    '<b>Propuestas estructuradas de esta actividad:</b> '+candidate+
+    ' de '+TOBE_AI_REVIEW_FIELDS.length+' campos con candidato, '+invalid+
+    ' pendientes de corregir y '+absent+' sin candidato. '+
+    'La IA no indica por qué ha omitido cada campo; no presupongas falta de datos ni aprobación.'+
+    '</p>';
+}
 // [AUNEA-FE-PG11-AI-REVIEW-DIFF-260] END
 
 // [AUNEA-FE-PG11-FIELD-INLINE-263] START — existing input controls remain sole owners.
@@ -1259,7 +1276,8 @@ function tobeAiInlineHint(e,p,item,key){
     internalAiPilotNarrative(ai.rationale):{action:''};
   const missingAutomationCandidate=key==='automationAi'&&!matched&&!skipped&&
     /automatiz|autom[aá]tic/i.test(String(narrative.action||''));
-  return '<div class="tobe-ai-inline" data-tobe-ai-field-key="'+attr(key)+'">'+
+  return '<div class="tobe-ai-inline'+(!matched&&!skipped?' tobe-ai-no-candidate':'')+
+    '" data-tobe-ai-field-key="'+attr(key)+'">'+
     '<p class="field-help"><b>'+(!matched&&!skipped?'IA: sin propuesta específica para este campo':'IA propone:')+'</b> '+esc(value)+
     (skipped?' · <b>Revisión manual necesaria</b>':
       matched&&!matched.changed?' · Coincide con el TO-BE':'')+'</p>'+
@@ -2015,6 +2033,7 @@ function tobeInspectorHtml(e,p){
       '<p class="tobe-muted" data-tobe-transformation-message="1" role="status" aria-live="polite">Elige «Qué cambia» y completa la justificación del diseño futuro. La recomendación IA no cambia tu decisión automáticamente.</p>'+
       '<p class="tobe-muted">Configura aquí el TO-BE; los valores heredados no son mejoras aprobadas. La justificación completa y las evidencias de cada actividad se consultan en 03.2.</p>'+
       tobeAiOperationalContextHtml(e,item)+
+      tobeAiFieldCoverageHtml(e,p,item)+
       (item.transformation==='Se mantiene'&&/^(no|n\/a|ninguno)$/i.test(String(item.problemResolved||'').trim())?
         '<p class="notice warn"><b>Justificación pendiente:</b> «Se mantiene» conserva esta actividad sin rediseño. El valor «NO» no explica por qué se mantienen los hallazgos ni cómo se controlan; revisa la decisión antes de validar.</p>':'')+
       '<div class="form-grid">'+
