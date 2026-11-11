@@ -1288,6 +1288,10 @@ function tobeAiInlineHint(e,p,item,key){
   const structuredIssue=(!matched&&!skipped)?(data?.review?.issues||[]).find(issue=>
     issue.category==='BLOCKING'&&String(issue.step_id)===id&&
     String(issue.evidence||'').split(/[^a-z_]/i).includes(field[0])):null;
+  // Do not fill the design with nine repetitions of "no candidate".
+  // The count remains in the traceability drawer; only actionable evidence
+  // and known deficiencies appear next to the unique consultant-owned editor.
+  if(!matched&&!skipped&&!structuredIssue&&!missingAutomationCandidate&&!lastChoice)return '';
   return '<div class="tobe-ai-inline'+(!matched&&!skipped?' tobe-ai-no-candidate':'')+
     '" data-tobe-ai-field-key="'+attr(key)+'">'+
     '<p class="field-help"><b>'+(!matched&&!skipped?'IA: sin candidato estructurado para este campo':'IA propone:')+'</b> '+esc(value)+
@@ -1356,27 +1360,21 @@ function tobeAiRowActions(e,p,item,key){
     history=(p.aiDraft?.applyHistory||[]).filter(x=>String(x.sourceStepId)===id&&
       Array.isArray(x.fields)&&x.fields.includes(key)&&
       x.proposalFingerprint===tobeCandidateFingerprint(p)).slice(-1)[0],
-    applied=history?.action==='APPLY'&&!!candidate&&!candidate.changed,
-    blockedReason=!isCurrent?
-      'La propuesta por actividad no está vigente o aún no ha superado la comprobación de coherencia entre actividades. El análisis global de la sección 02 no sustituye esta comprobación.':
-      diff?.issue||(!candidate?
-        'No hay valor IA fundamentado y compatible para este campo.':
-        'La propuesta coincide con el valor actual.');
+    applied=history?.action==='APPLY'&&!!candidate&&!candidate.changed;
   const action=(label,attribute,active=false,title='')=>
     '<button type="button" class="btn btn-outline btn-small'+(active?' is-selected':'')+
     '" '+attribute+' title="'+attr(title||label)+'">'+esc(label)+'</button>';
-  return '<div class="tobe-ai-row-actions aunea-ui-button-row" aria-label="Acciones de '+esc(
+  if(!candidate)return '';
+  return '<div class="tobe-ai-row-actions aunea-ui-button-row" aria-label="Decisión sobre la propuesta IA de '+esc(
     TOBE_AI_REVIEW_FIELDS.find(x=>x[1]===key)?.[2]||'este campo')+'">'+
     (canApply?
       action('Aplicar IA',
         'data-tobe-ai-use-field="'+attr(key)+'" data-tobe-ai-action-source="'+attr(id)+'"',
         false,'Aplicar sugerencia IA autorizada'):
       applied?'<span class="field-help" role="status">IA aplicada</span>':'')+
-    (candidate?action('Mantener','data-tobe-ai-keep-field="'+attr(key)+
+    action('Mantener','data-tobe-ai-keep-field="'+attr(key)+
       '" data-tobe-ai-action-source="'+attr(id)+'"',history?.action==='KEEP',
-      'Conservar valor TO-BE sin aplicar IA'):'')+
-    action('Editar','data-tobe-ai-edit-field="'+attr(key)+'"',false,
-      'Abrir el editor original de este campo')+'</div>';
+      'Conservar mi valor TO-BE; no aplicar la alternativa IA')+'</div>';
 }
 // [AUNEA-FE-PG11-ROW-DECISION-278] END
 // [AUNEA-FE-PG11-APPROVED-ROW-ACTIONS-273] END
@@ -1392,14 +1390,13 @@ function tobeWithAiHint(e,p,item,key,html){
   const readable=x=>String((typeof labelFrom==='function'&&labelFrom(category,x))||x);
   const sourceLabel=sourceValue===null||sourceValue===undefined||sourceValue===''?'':(
     Array.isArray(sourceValue)?sourceValue.map(readable).join(' · '):readable(sourceValue));
-  const fallback='<div class="tobe-ai-inline tobe-ai-inline-empty" data-tobe-ai-field-key="'+
-    attr(key)+'"><p class="field-help"><b>IA:</b> Sin propuesta vigente para esta actividad.'+
-    ' Conserva el valor TO-BE o complétalo con evidencia.</p></div>';
-  return '<div class="tobe-ai-field-row" data-tobe-row-key="'+attr(key)+'">'+
+  return '<div class="tobe-ai-field-row'+(advice?' has-ai-review':' is-without-proposal')+
+    '" data-tobe-row-key="'+attr(key)+'">'+
     '<div class="tobe-ai-field-control">'+
-      (sourceLabel?'<p class="tobe-ai-source-value"><b>Valor AS-IS confirmado:</b> '+esc(sourceLabel)+'</p>':'')+
+      (sourceLabel?'<p class="tobe-ai-source-value"><b>Origen AS-IS:</b> '+esc(sourceLabel)+'</p>':'')+
       html+'</div>'+
-    (advice||fallback)+tobeAiRowActions(e,p,item,key)+'</div>';
+    (advice?'<div class="tobe-ai-field-review">'+
+      advice+tobeAiRowActions(e,p,item,key)+'</div>':'')+'</div>';
 }
 // [AUNEA-FE-PG11-GUIDED-FIELD-267] END
 // [AUNEA-FE-PG11-FIELD-INLINE-263] END
