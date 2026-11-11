@@ -165,8 +165,7 @@ test('PG11 action buttons distinguish historical read-only from authorized curre
  vm.createContext(ctx);vm.runInContext(fn,ctx);
  const historical=ctx.tobeAiRowActions({},draft,step,'tool');
  assert.doesNotMatch(historical,/data-tobe-ai-apply-unavailable="tool"/);
- assert.doesNotMatch(historical,/data-tobe-ai-keep-field="tool"/);
- assert.match(historical,/data-tobe-ai-edit-field="tool"/);
+ assert.equal(historical,'','historical or absent IA has no redundant action strip');
  assert.doesNotMatch(historical,/data-tobe-ai-use-field="tool"/);
  current=true;
  const authorized=ctx.tobeAiRowActions({},draft,step,'tool');
@@ -229,9 +228,7 @@ test('PG11 does not offer Apply IA for historical proposals without a current ca
    {sourceStepId:'S1',isAddition:false},'tool');
  assert.doesNotMatch(html,/data-tobe-ai-apply-unavailable="tool"/);
  assert.doesNotMatch(html,/data-tobe-ai-reason="/);
- assert.doesNotMatch(html,/data-tobe-ai-keep-field="tool"/);
- assert.match(html,/data-tobe-ai-edit-field="tool"/);
- assert.doesNotMatch(html,/data-tobe-ai-use-field="tool"/);
+ assert.equal(html,'','without current IA the original editor remains directly available');
 });
 test('PG11 editor supports the original canonical artifact disclosure',()=>{
  assert.match(src,/querySelector\('\.tobe-artifact-compact>summary'\)/);
@@ -273,7 +270,8 @@ test('PG11 blocked and identical proposals expose Keep/Edit but no Apply action'
  delete h.decisions.S1;
  let html=h.sandbox.tobeAiRowActions(h.e,h.p,h.p.items[0],'tool');
  assert.doesNotMatch(html,/>Aplicar IA</);
- assert.match(html,/data-tobe-ai-keep-field/);assert.match(html,/data-tobe-ai-edit-field/);
+ assert.match(html,/data-tobe-ai-keep-field/);
+ assert.doesNotMatch(html,/data-tobe-ai-edit-field/);
  h.decisions.S1={status:'MODIFY'};h.p.items[0].tool='ERP';
  html=h.sandbox.tobeAiRowActions(h.e,h.p,h.p.items[0],'tool');
  assert.doesNotMatch(html,/>Aplicar IA</);
