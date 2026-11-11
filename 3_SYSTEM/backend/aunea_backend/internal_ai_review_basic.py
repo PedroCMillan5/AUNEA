@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import re
 from .internal_ai import PilotAIConsolidationRequest, validate_pilot_result
-from .internal_ai_review import PG11_REVIEW_PROTOCOL, _clear_transformation_conflicts
+from .internal_ai_review import PG11_REVIEW_PROTOCOL, _clear_transformation_conflicts, _missing_structured_actions
 
 _NUMBER_CLAIM = re.compile(r"\b\d+(?:[.,]\d+)*\s*(?:%|€|euros?|minutos?|horas?|d[ií]as?)(?!\w)", re.I)
 
@@ -37,6 +37,11 @@ def basic_review(request: PilotAIConsolidationRequest) -> dict:
                     "La actividad aparece «Se mantiene», pero describe una intervención; comprobar si cambia el diseño.",
                     item.rationale[:200],
                     "Confirmar si la medida mantiene realmente el paso o exige otra transformación.")
+        if sid in _missing_structured_actions([item]):
+            add(sid, "BLOCKING",
+                "La acción menciona una automatización que falta en el campo estructurado.",
+                "rationale / automation_ai",
+                "Corregir el candidato IA sin inferir herramientas ni aprobar cambios.")
         if not item.problem_resolved.strip():
             add(sid, "BLOCKING", "No se concreta qué problema resuelve la intervención.",
                 "Campo de problema vacío", "Concretar el problema a partir del AS-IS.")
