@@ -714,6 +714,42 @@ async function main(){
     assert.equal(await page.locator('#tobeInspector [data-tobe-field="problemResolved"]').inputValue(),
       'Mejora revisada en UAT','inspector edits survive navigation and real saves');
   }
+  // [AUNEA-UAT-PG11-DECISION-PERSIST-304] START — actual map editor,
+  // source-safe save and localStorage readback; synthetic inputs only.
+  const decisionId=await page.evaluate(()=>{
+    const e=currentEng(),p=latestTobe(e);
+    return String(tobeProposalSourceSteps(e,p).find(x=>processDecisionStep(x))?.id||'');
+  });
+  if(decisionId){
+    await page.locator('.tobe-guided-tabs [data-tobe-select="'+decisionId+'"]').click();
+    await page.locator('.tobe-guided-modes [data-tobe-mode-switch="map"]').click();
+    const criterionField=page.locator('#tobeStepRoutes [data-tobe-decision-criterion]');
+    assert.equal(await criterionField.count(),1,
+      'every decision in map mode needs one editable version-owned future condition');
+    const before=await page.evaluate(id=>JSON.stringify(
+      tobeProposalSourceSteps(currentEng(),latestTobe(currentEng()))
+        .find(x=>String(x.id)===id)),decisionId);
+    const condition='UAT: si requiere autorización de responsable, ruta SÍ; en caso contrario, ruta NO.';
+    await criterionField.fill(condition);
+    await page.locator('#saveTobe').click();
+    const verified=await page.evaluate(id=>{
+      const e=currentEng(),p=latestTobe(e),disk=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}'),
+        stored=disk.engagements?.find(x=>x.id===e.id)?.tobeProposals?.
+          find(x=>x.version===p.version);
+      return {inMemory:p.flow?.decisionCriteria?.[id],
+        persisted:stored?.flow?.decisionCriteria?.[id],
+        source:JSON.stringify(tobeProposalSourceSteps(e,p).find(x=>String(x.id)===id)),
+        view:document.querySelector('.tobe-decision-readout')?.textContent||''};
+    },decisionId);
+    assert.equal(verified.inMemory,condition);
+    assert.equal(verified.persisted,condition);
+    assert.equal(verified.source,before,'a new TO-BE criterion never mutates AS-IS source');
+    assert.ok(verified.view.includes(condition),'P2 readout must reflect the edited criterion');
+    await page.locator('.tobe-guided-modes [data-tobe-mode-switch="guided"]').click();
+    await page.locator('.tobe-guided-tabs [data-tobe-select="'+sourceIds[0]+'"]').click();
+    console.log('PG11_DECISION_CRITERION_BROWSER_PASS: '+decisionId);
+  }
+  // [AUNEA-UAT-PG11-DECISION-PERSIST-304] END
   console.log('PG11_CREATE_DRAFT_CLICK_PASS: '+JSON.stringify(pg11));
 
   // [AUNEA-UAT-PG11-CHECKPOINT-BROWSER-213] START — real browser readback and reload for 4 verified steps.
