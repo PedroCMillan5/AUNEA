@@ -1908,10 +1908,10 @@ function tobeInspectorHtml(e,p){
       item.transformation||'',{extra:'data-tobe-item="'+attr(item.id)+'" data-tobe-field="transformation"',placeholder:'Selecciona una transformación'}):
       '<input value="'+attr(item.transformation||'Sin definir')+'" disabled>')+'</div>';
   const supportingInformation=
-    '<section class="tobe-origin" id="tobeStepOrigin"><details class="tobe-subdetails" open><summary class="aunea-ui-section-title">03.1 · Datos y hallazgos del AS-IS confirmado</summary>'+
+    '<section class="tobe-origin" id="tobeStepOrigin"><details class="tobe-subdetails" open><summary class="aunea-ui-section-title">03.1 · Entender el AS-IS</summary>'+
       tobeOriginalStepFacts(e,item)+tobeSnapshotIssueCards(e,item)+'</details></section>'+
     '<section class="tobe-advice" id="tobeStepAdvice" aria-label="Sugerencia IA para actividad">'+
-      '<details class="tobe-subdetails" open><summary class="aunea-ui-section-title">03.2 · Analizar este paso y revisar la propuesta IA</summary>'+
+      '<details class="tobe-subdetails" open><summary class="aunea-ui-section-title">03.2 · Revisar propuestas IA</summary>'+
       (editable&&!item.isAddition?'<div class="tobe-ai-per-step-action"><button type="button" class="btn btn-primary" data-tobe-generate-selected="'+attr(item.sourceStepId)+'">'+
         (hasCurrentAi?'Volver a analizar este paso':'Analizar este paso con IA')+'</button>'+
         '<span class="tobe-muted">Análisis independiente de esta actividad; no aplica cambios automáticamente.</span></div>':'')+
@@ -1937,10 +1937,10 @@ function tobeInspectorHtml(e,p){
           attr(tobeFlowItemId(nextItem))+'">Siguiente actividad</button>':'')+
       '</div></header>'+
     '<nav class="tobe-review-steps" aria-label="Orden de revisión">'+
-      '<button type="button" class="btn btn-outline btn-small" data-tobe-jump="tobeStepOrigin">03.1 · Entender</button>'+
-      '<button type="button" class="btn btn-outline btn-small" data-tobe-jump="tobeStepAdvice">03.2 · Revisar IA</button>'+
-      '<button type="button" class="btn btn-outline btn-small" data-tobe-jump="tobeStepDesign">03.3 · Configurar</button>'+
-      '<button type="button" class="btn btn-outline btn-small" data-tobe-mode-switch="map">03.4 · Conectar</button>'+
+      '<button type="button" class="btn btn-outline btn-small" data-tobe-jump="tobeStepOrigin">03.1 · Entender el AS-IS</button>'+
+      '<button type="button" class="btn btn-outline btn-small" data-tobe-jump="tobeStepAdvice">03.2 · Revisar propuestas IA</button>'+
+      '<button type="button" class="btn btn-outline btn-small" data-tobe-jump="tobeStepDesign">03.3 · Configurar la actividad futura</button>'+
+
     '</nav>'+supportingInformation+
     '<section class="tobe-edit" id="tobeStepDesign"><h3 class="aunea-ui-section-title">03.3 · Configurar la actividad futura</h3>'+
       '<p class="tobe-muted" data-tobe-transformation-message="1" role="status" aria-live="polite">Elige «Qué cambia» y completa la justificación del diseño futuro. La recomendación IA no cambia tu decisión automáticamente.</p>'+
@@ -2618,10 +2618,10 @@ function tobePage(){
         '<div class="tobe-ia-guide-summary" role="status"><strong>'+esc(aiSummaryTitle)+'</strong>'+
           '<p>'+esc(aiSummaryDescription)+'</p></div>'+
         '<div class="tobe-task-guide-steps">'+
-          '<span><b>1. Entender</b> el problema original</span>'+
-          '<span><b>2. Decidir</b> sobre la recomendación IA</span>'+
-          '<span><b>3. Configurar</b> la actividad futura</span>'+
-          '<span><b>4. Conectar</b> y comprobar el flujo</span></div>'+
+          '<span><b>03.1 · Entender el AS-IS</b></span>'+ 
+          '<span><b>03.2 · Revisar propuestas IA</b></span>'+ 
+          '<span><b>03.3 · Configurar la actividad futura</b></span>'+ 
+          '<span><b>03.4 · Conectar el proceso futuro</b> (sólo en Mapa TO-BE)</span></div>'+ 
         '<p class="tobe-task-guide-result"><b>Resultado esperado:</b> un mapa TO-BE con actividades, responsables, datos y rutas definidos. Guarda el borrador, pulsa «Comprobar requisitos» y, cuando no existan bloqueos, «Marcar como revisado». Después podrás comparar AS-IS y TO-BE en PG12.</p>'+
       '</section>'+
       tobeContextOverviewHtml(e,p)+
