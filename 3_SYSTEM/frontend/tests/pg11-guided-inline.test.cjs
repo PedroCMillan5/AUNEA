@@ -80,7 +80,7 @@ test('PG11 gives truthful field coverage without inferring reasons for empty can
  f.proposal.items[0].human_supervision='';
  const html=f.context.tobeAiFieldCoverageHtml(f.e,f.p,f.p.items[0]);
  assert.match(html,/Propuestas IA por campo/);
- assert.match(html,/sin candidato/);
+ assert.match(html,/sin propuesta/);
  assert.match(html,/Un campo vacío no prueba falta de datos, conformidad, ni aprobación/);
  const empty=f.context.tobeAiInlineHint(f.e,f.p,f.p.items[0],'controlsRisk');
  assert.match(empty,/tobe-ai-no-candidate/);
