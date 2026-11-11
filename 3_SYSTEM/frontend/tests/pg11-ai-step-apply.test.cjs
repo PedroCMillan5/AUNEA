@@ -184,18 +184,19 @@ test('PG11 keeps applied and maintained indicators scoped to the current IA prop
   tobeCandidateFingerprint:()=>fingerprint,attr:String,esc:String};
  vm.createContext(ctx);vm.runInContext(fn,ctx);
  const old=ctx.tobeAiRowActions({},draft,item,'tool');
- assert.match(old,/Aplicar IA/);
- assert.match(old,/is-selected/);
+ assert.match(old,/IA aplicada/);
+ assert.doesNotMatch(old,/>Aplicar IA</);
  fingerprint='regenerated-proposal';
  const fresh=ctx.tobeAiRowActions({},draft,item,'tool');
  assert.doesNotMatch(fresh,/is-selected/);
- assert.match(fresh,/data-tobe-ai-apply-unavailable="tool"/);
+ assert.doesNotMatch(fresh,/>Aplicar IA</);
+ assert.doesNotMatch(fresh,/IA aplicada/);
  draft.aiDraft.applyHistory.push({sourceStepId:'S1',fields:['tool'],
    action:'KEEP',proposalFingerprint:'regenerated-proposal'});
  const kept=ctx.tobeAiRowActions({},draft,item,'tool');
  assert.match(kept,/is-selected/);
- assert.ok(kept.indexOf('is-selected')>kept.indexOf('data-tobe-ai-apply-unavailable'),
-   'the current Keep, not the historical Apply, must be selected');
+ assert.match(kept,/is-selected[^>]+data-tobe-ai-keep-field/);
+ assert.doesNotMatch(kept,/>Aplicar IA</);
 });
 test('PG11 historic KEEP without IA approval preserves the current field',()=>{
  const fn=src.match(/function tobeKeepAiReviewedField\(e,sourceId,key\)\{[\s\S]*?\n\}/)?.[0];
@@ -245,3 +246,52 @@ test('PG11 global coherence is short with an expandable complete inspection',()=
  assert.match(block,/tobe-coherence-list/);
 });
 // [AUNEA-UAT-PG11-AI-STEP-237] END
+
+test('PG11 application persists previous values and proposal provenance after reload',()=>{
+ const h=harness();
+ assert.equal(h.apply('S1',['outputs','tool']),true);
+ const saved=JSON.parse(JSON.stringify(h.p));
+ assert.deepEqual(saved.aiDraft.applyHistory[0].previousValues,{tool:'',outputs:['PDF']});
+ assert.deepEqual(saved.aiDraft.applyHistory[0].appliedValues,{tool:'ERP',outputs:['RECORD']});
+ assert.deepEqual(saved.aiDraft.applyHistory[0].sourceRefs,['S1']);
+ assert.equal(saved.status,'DRAFT');
+});
+test('PG11 multiselect equality ignores ordering without changing the consultant values',()=>{
+ const h=harness();h.ai.inputs='Registro estructurado, PDF';
+ h.p.items[0].inputs=['PDF','RECORD'];
+ const before=JSON.stringify(h.p.items[0]);
+ assert.equal(h.preview('S1').allFields.find(x=>x.key==='inputs').changed,false);
+ assert.equal(JSON.stringify(h.p.items[0]),before);
+});
+test('PG11 blocked and identical proposals expose Keep/Edit but no Apply action',()=>{
+ const fn=src.match(/function tobeAiRowActions\(e,p,item,key\)\{[\s\S]*?\n\}/)[0];
+ const h=harness();h.sandbox.attr=String;h.sandbox.esc=String;
+ vm.runInContext(fn,h.sandbox);
+ delete h.decisions.S1;
+ let html=h.sandbox.tobeAiRowActions(h.e,h.p,h.p.items[0],'tool');
+ assert.doesNotMatch(html,/>Aplicar IA</);
+ assert.match(html,/data-tobe-ai-keep-field/);assert.match(html,/data-tobe-ai-edit-field/);
+ h.decisions.S1={status:'MODIFY'};h.p.items[0].tool='ERP';
+ html=h.sandbox.tobeAiRowActions(h.e,h.p,h.p.items[0],'tool');
+ assert.doesNotMatch(html,/>Aplicar IA</);
+ h.p.items[0].tool='';
+ assert.match(h.sandbox.tobeAiRowActions(h.e,h.p,h.p.items[0],'tool'),/>Aplicar IA</);
+});
+
+test('PG11 manual edit records the canonical field only and no-op saves do not duplicate it',()=>{
+ const start=src.indexOf('function saveTobeFromDom(e){'),end=src.indexOf('\n}\n',start)+2;
+ const h=harness(),node={dataset:{tobeItem:'I1',tobeField:'controlsRisk'},value:'Control manual alternativo'};
+ h.p.aiDraft.proposal=h.data;
+ h.sandbox.document={querySelectorAll:s=>s==='[data-tobe-item]'?[node]:[],querySelector:()=>null};
+ h.sandbox.tobeAddedSteps=()=>[];
+ vm.runInContext(src.slice(start,end),h.sandbox);
+ const original=JSON.stringify(h.data);
+ assert.equal(h.sandbox.saveTobeFromDom(h.e),true);
+ const history=h.p.aiDraft.applyHistory;
+ assert.equal(history.length,1);assert.equal(history[0].action,'EDIT');
+ assert.deepEqual(Array.from(history[0].fields),['controlsRisk']);
+ assert.equal(history[0].appliedValues.controlsRisk,'Control manual alternativo');
+ assert.equal(JSON.stringify(h.data),original,'Original AI proposal is retained');
+ assert.equal(h.sandbox.saveTobeFromDom(h.e),true);
+ assert.equal(h.p.aiDraft.applyHistory.length,1);
+});

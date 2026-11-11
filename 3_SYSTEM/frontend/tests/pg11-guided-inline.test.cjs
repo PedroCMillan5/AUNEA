@@ -210,7 +210,7 @@ test('PG11 checkpoint points to missing activity without discarding validated so
  assert.match(src,/!pending\.items\.has\(String\(x\.sourceStepId\)\)/);
  assert.match(src,/data-tobe-generate-all-remaining>Analizar actividades pendientes/);
  assert.match(src,/Consolidación entre actividades pendiente/);
- assert.match(src,/\(candidate\?\s*action\('Aplicar IA'/);
+ assert.match(src,/\(canApply\?\s*action\('Aplicar IA'/);
  assert.match(src,/data-tobe-ai-keep-field/);
  assert.match(src,/data-tobe-ai-edit-field/);
 });

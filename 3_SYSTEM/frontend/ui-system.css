@@ -3351,7 +3351,7 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 .tobe-workspace[data-tobe-mode="guided"] .tobe-artifact-field .tobe-artifact-compact{
   min-width:0;
 }
-.tobe-inspector .tobe-edit>h3{margin:0 0 5px;font-size:17px}
+.tobe-inspector .tobe-edit>h3{margin:0 0 var(--space-2)}
 .tobe-inspector .tobe-edit>.tobe-muted{margin:4px 0 9px;font-size:12px}
 /* PG11 sección 01: el contexto confirmado debe permanecer visible en revisión guiada. */
 .tobe-workspace[data-tobe-mode="guided"] .tobe-context{display:grid}
@@ -3483,7 +3483,7 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
   font-size:var(--font-h3);line-height:1.35;margin:4px 0 0;
 }
 .tobe-workspace[data-tobe-mode="guided"] .tobe-edit{gap:9px}
-.tobe-workspace[data-tobe-mode="guided"] .tobe-edit>h3{font-size:16px}
+/* Subsection titles consume the shared aunea-ui-section-title component. */
 .tobe-workspace[data-tobe-mode="guided"] .tobe-task-guide-intro,
 .tobe-workspace[data-tobe-mode="guided"] .tobe-ia-guide-summary{
   padding:13px 16px;background:var(--system-soft);

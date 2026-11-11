@@ -848,6 +848,7 @@ function advanceTobeStatus(e){
 // [AUNEA-FE-PG11-REVIEW-GATE-199] END
 function saveTobeFromDom(e){
   const p=latestTobe(e);if(!tobeEditable(p))return false;
+  const beforeFields=p.aiDraft?.proposal?JSON.parse(JSON.stringify(p.items)):null;
   document.querySelectorAll('[data-tobe-item]').forEach(el=>{
     const item=[...p.items,...tobeAddedSteps(p)].find(x=>x.id===el.dataset.tobeItem);
     if(item)item[el.dataset.tobeField]=el.value;
@@ -898,6 +899,28 @@ function saveTobeFromDom(e){
     }
   }
   if(typeof persistTobeAiDraft==='function'&&!persistTobeAiDraft(e))return false;
+  // [AUNEA-FE-PG11-EDIT-AUDIT-298] START
+  // PURPOSE: Audit actual consultant changes from the sole canonical controls.
+  // SOURCE: DEC-050/052/055; PG11 field decisions. INPUTS: before/after DRAFT fields.
+  // OUTPUTS: version-owned EDIT history. SIDE_EFFECTS: pending draft metadata only.
+  // CHANGE_RISK: HIGH. Persistence remains the caller's existing saveState gate.
+  if(beforeFields){
+    for(const item of p.items){
+      const before=beforeFields.find(x=>x.id===item.id);
+      if(!before)continue;
+      const fields=TOBE_AI_REVIEW_FIELDS.map(x=>x[1]).filter(key=>
+        JSON.stringify(before[key])!==JSON.stringify(item[key]));
+      if(!fields.length)continue;
+      p.aiDraft.applyHistory=[...(p.aiDraft.applyHistory||[]),{
+        sourceStepId:String(item.sourceStepId),fields,action:'EDIT',decision:'MANUAL_EDIT',
+        proposalFingerprint:tobeCandidateFingerprint(p),
+        previousValues:Object.fromEntries(fields.map(key=>[key,before[key]??null])),
+        appliedValues:Object.fromEntries(fields.map(key=>[key,JSON.parse(JSON.stringify(item[key]??null))])),
+        appliedAt:now()
+      }].slice(-100);
+    }
+  }
+  // [AUNEA-FE-PG11-EDIT-AUDIT-298] END
   p.updatedAt=now();markDirty('TO-BE v'+p.version+' actualizado');
   return true;
 }
@@ -1142,7 +1165,10 @@ function tobeAiReviewDiff(e,p,id){
       value=type==='OS_ARTIFACT_TYPE'?selected.map(x=>String(x.value)):String(selected[0].value);
       display=selected.map(x=>x.label).join(' · ');
     }
-    const same=JSON.stringify(item[key])===JSON.stringify(value);
+    // Multiselect order and duplicates do not change the selected set.
+    const comparable=v=>type==='OS_ARTIFACT_TYPE'&&Array.isArray(v)?
+      [...new Set(v.map(String))].sort():v;
+    const same=JSON.stringify(comparable(item[key]))===JSON.stringify(comparable(value));
     const before=type==='OS_ARTIFACT_TYPE'?
       tobeArtifactDisplay(item[key],item._details?.[key]):
       type.startsWith('OS_')?
@@ -1223,13 +1249,13 @@ function tobeAiInlineHint(e,p,item,key){
     Array.isArray(x.fields)&&x.fields.includes(key)&&
     x.proposalFingerprint===tobeCandidateFingerprint(p)).slice(-1)[0];
   const kept=lastChoice?.action==='KEEP';
-  const applied=lastChoice?.action==='APPLY';
+  const applied=lastChoice?.action==='APPLY'&&!!matched&&!matched.changed;
   return '<div class="tobe-ai-inline" data-tobe-ai-field-key="'+attr(key)+'">'+
     '<p class="field-help"><b>'+(!matched&&!skipped?'IA: sin sugerencia fundamentada':'IA propone:')+'</b> '+esc(value)+
     (skipped?' · <b>Revisión manual necesaria</b>':
       matched&&!matched.changed?' · Coincide con el TO-BE':'')+'</p>'+
     (skipped?'<p class="field-help">'+esc(skipped.reason)+'</p>':'')+
-    (diff.warnings.length&&(key==='transformation'||!!skipped)?
+    (diff.warnings.length&&key==='transformation'?
       '<p class="field-help"><b>Condición de revisión:</b> '+
       esc(diff.warnings.join(' · '))+'</p>':'')+
     ((matched||skipped)&&['problemResolved','automationAi','transformation'].includes(key)?
@@ -1242,7 +1268,8 @@ function tobeAiInlineHint(e,p,item,key){
       '<p><b>Condiciones pendientes:</b> '+esc(pending||'No declaradas')+'</p>'+
     '</details>'+
     (kept?'<p class="field-help"><b>Estado del campo:</b> mantener el valor TO-BE guardado.</p>':
-      applied?'<p class="field-help"><b>Estado del campo:</b> sugerencia IA aplicada y guardada.</p>':'')+
+      applied?'<p class="field-help"><b>Estado del campo:</b> sugerencia IA aplicada y guardada.</p>':
+      lastChoice?.action==='EDIT'?'<p class="field-help"><b>Estado del campo:</b> alternativa editada por el consultor.</p>':'')+
     (dismissed?'<p class="field-help">Recomendación descartada. Se conserva tu valor.</p>':
       skipped?'<p class="field-help">Valor no aplicable: revísalo en el control original.</p>':'')+
     '</div>';
@@ -1303,11 +1330,11 @@ function tobeAiRowActions(e,p,item,key){
     '" '+attribute+' title="'+attr(title||label)+'">'+esc(label)+'</button>';
   return '<div class="tobe-ai-row-actions aunea-ui-button-row" aria-label="Acciones de '+esc(
     TOBE_AI_REVIEW_FIELDS.find(x=>x[1]===key)?.[2]||'este campo')+'">'+
-    (candidate?
-      action('Aplicar IA',canApply?
-        'data-tobe-ai-use-field="'+attr(key)+'" data-tobe-ai-action-source="'+attr(id)+'"':
-        'data-tobe-ai-apply-unavailable="'+attr(key)+'" data-tobe-ai-reason="'+attr(blockedReason)+'"',
-        applied,canApply?'Aplicar sugerencia IA autorizada':blockedReason):'')+
+    (canApply?
+      action('Aplicar IA',
+        'data-tobe-ai-use-field="'+attr(key)+'" data-tobe-ai-action-source="'+attr(id)+'"',
+        false,'Aplicar sugerencia IA autorizada'):
+      applied?'<span class="field-help" role="status">IA aplicada</span>':'')+
     action('Mantener','data-tobe-ai-keep-field="'+attr(key)+
       '" data-tobe-ai-action-source="'+attr(id)+'"',history?.action==='KEEP',
       'Conservar valor TO-BE sin aplicar IA')+
@@ -1401,6 +1428,9 @@ function tobeApplyAiReviewedFields(e,sourceId,keys){
   p.aiDraft.applyHistory=[...oldHistory,{
     sourceStepId:String(sourceId),fields:chosen.map(x=>x.key),action:'APPLY',
     decision:fresh.decision,proposalFingerprint:tobeCandidateFingerprint(p),
+    previousValues:Object.fromEntries(chosen.map(field=>[field.key,previous[field.key]??null])),
+    appliedValues:Object.fromEntries(chosen.map(field=>[field.key,JSON.parse(JSON.stringify(field.value))])),
+    sourceRefs:[...(internalAiSavedDraft(live)?.items?.find(x=>String(x.source_step_id)===String(sourceId))?.source_refs||[])],
     appliedAt:now()
   }].slice(-100);
   p.updatedAt=now();markDirty('PG11: campos IA seleccionados por el consultor');
@@ -1499,9 +1529,18 @@ const TOBE_HUMAN_LABELS=Object.freeze({
   ACCEPT:'Aceptar recomendación',MODIFY:'Modificar antes de usar',
   DISCARD:'Descartar recomendación'
 });
-function tobeCandidateFingerprint(p){
+function tobeCandidateFingerprint(p,sourceId=null){
   const items=p?.aiDraft?.proposal?.items||p?.aiDraft?.checkpoint?.items||[];
-  const raw=JSON.stringify(items);
+  // A decision depends on its own evidence and on relevant consolidation findings.
+  // Legacy whole-proposal fingerprints remain valid only for that exact proposal.
+  const review=p?.aiDraft?.proposal?.review;
+  const candidate=sourceId===null?items:{
+    item:items.find(x=>String(x.source_step_id)===String(sourceId))||null,
+    reviewMode:review?.review_mode||null,
+    blocked:(review?.blocking_step_ids||[]).map(String).includes(String(sourceId)),
+    issues:(review?.issues||[]).filter(x=>!x.step_id||x.step_id==='GLOBAL'||String(x.step_id)===String(sourceId))
+  };
+  const raw=JSON.stringify(candidate);
   let hash=2166136261;
   for(let i=0;i<raw.length;i++)hash=Math.imul(hash^raw.charCodeAt(i),16777619)>>>0;
   return hash.toString(16)+':'+raw.length;
@@ -1509,10 +1548,13 @@ function tobeCandidateFingerprint(p){
 function tobeHumanReviewRecord(e,p){
   const h=p?.aiDraft?.humanReview,diag=currentDiagnosticOutput(e),
     input=p?.aiDraft?.proposal?.input_hash||p?.aiDraft?.checkpoint?.inputHash;
-  return h&&diag&&input&&h.tobeVersion===p.version&&
-    h.sourceSnapshotVersion===p.sourceSnapshotVersion&&
-    h.diagnosticInputHash===diag.input_snapshot_hash&&
-    h.proposalInputHash===input&&h.proposalFingerprint===tobeCandidateFingerprint(p)?h:null;
+  if(!h||!diag||!input||h.tobeVersion!==p.version||
+    h.sourceSnapshotVersion!==p.sourceSnapshotVersion||
+    h.diagnosticInputHash!==diag.input_snapshot_hash||h.proposalInputHash!==input)return null;
+  if(h.proposalFingerprint===tobeCandidateFingerprint(p))return h;
+  const decisions=Object.fromEntries(Object.entries(h.decisions||{}).filter(([id,decision])=>
+    decision.proposalStepFingerprint===tobeCandidateFingerprint(p,id)));
+  return Object.keys(decisions).length?{...h,proposalFingerprint:tobeCandidateFingerprint(p),decisions}:null;
 }
 function tobeHumanReviewHtml(e,item,historical){
   const p=latestTobe(e);
@@ -1871,10 +1913,10 @@ function tobeInspectorHtml(e,p){
       item.transformation||'',{extra:'data-tobe-item="'+attr(item.id)+'" data-tobe-field="transformation"',placeholder:'Selecciona una transformación'}):
       '<input value="'+attr(item.transformation||'Sin definir')+'" disabled>')+'</div>';
   const supportingInformation=
-    '<section class="tobe-origin" id="tobeStepOrigin"><details class="tobe-subdetails" open><summary>03.1 · Datos y hallazgos del AS-IS confirmado</summary>'+
+    '<section class="tobe-origin" id="tobeStepOrigin"><details class="tobe-subdetails" open><summary class="aunea-ui-section-title">03.1 · Datos y hallazgos del AS-IS confirmado</summary>'+
       tobeOriginalStepFacts(e,item)+tobeSnapshotIssueCards(e,item)+'</details></section>'+
     '<section class="tobe-advice" id="tobeStepAdvice" aria-label="Sugerencia IA para actividad">'+
-      '<details class="tobe-subdetails" open><summary>03.2 · Analizar este paso y revisar la propuesta IA</summary>'+
+      '<details class="tobe-subdetails" open><summary class="aunea-ui-section-title">03.2 · Analizar este paso y revisar la propuesta IA</summary>'+
       (editable&&!item.isAddition?'<div class="tobe-ai-per-step-action"><button type="button" class="btn btn-primary" data-tobe-generate-selected="'+attr(item.sourceStepId)+'">'+
         (hasCurrentAi?'Volver a analizar este paso':'Analizar este paso con IA')+'</button>'+
         '<span class="tobe-muted">Análisis independiente de esta actividad; no aplica cambios automáticamente.</span></div>':'')+
@@ -1905,7 +1947,7 @@ function tobeInspectorHtml(e,p){
       '<button type="button" class="btn btn-outline btn-small" data-tobe-jump="tobeStepDesign">03.3 · Configurar</button>'+
       '<button type="button" class="btn btn-outline btn-small" data-tobe-mode-switch="map">03.4 · Conectar</button>'+
     '</nav>'+supportingInformation+
-    '<section class="tobe-edit" id="tobeStepDesign"><h3>03.3 · Configurar la actividad futura</h3>'+
+    '<section class="tobe-edit" id="tobeStepDesign"><h3 class="aunea-ui-section-title">03.3 · Configurar la actividad futura</h3>'+
       '<p class="tobe-muted" data-tobe-transformation-message="1" role="status" aria-live="polite">Elige «Qué cambia» y completa la justificación del diseño futuro. La recomendación IA no cambia tu decisión automáticamente.</p>'+
       '<p class="tobe-muted">Estos campos describen el funcionamiento futuro. Los valores heredados se muestran para revisar, no son mejoras confirmadas ni decisiones de la IA.</p>'+
       tobeAiOperationalContextHtml(e,item)+
@@ -2219,6 +2261,8 @@ function tobeGlobalTextIsComplete(value){
      'cuya cuyos cuyas el la los las un una unos unas lo le les se su sus '+
      'mi mis tu tus este esta estos estas ese esa esos esas otro otra otros '+
      'otras cada como cuando donde mientras aunque porque si no').split(' '));
+  // Same bounded fragment check as the backend; not semantic certification.
+  if(last===last.toLowerCase()&&['term','clie'].includes(normalized))return false;
   if(dangling.has(normalized)||last.length===1)return false;
   if(last.length===2&&last!==last.toUpperCase())return false;
   return true;
@@ -3307,7 +3351,8 @@ function registerInternalWorkPages(){
       sourceSnapshotVersion:snapshot.version,diagnosticInputHash:diagnostic.input_snapshot_hash,
       proposalInputHash:inputHash,proposalFingerprint:tobeCandidateFingerprint(p),decisions:{}};
     record.decisions={...(record.decisions||{}),
-      [sourceId]:{status:choice,note:reason,decidedAt:now()}};
+      [sourceId]:{status:choice,note:reason,decidedAt:now(),
+        proposalStepFingerprint:tobeCandidateFingerprint(p,sourceId)}};
     p.aiDraft.humanReview=record;
     markDirty('PG11: decisión del consultor sobre actividad '+sourceId);
     if(!saveState('Registrar decisión humana PG11 '+sourceId)){

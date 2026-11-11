@@ -359,6 +359,7 @@ test('PG11 AI application is explicitly checked, audited and protects unrelated 
     tobeAiReviewDiff:()=>({issue:'',fields:picked,decision:'MODIFY'}),
     saveTobeFromDom:()=>true,saveState:()=>{saves++;return true},
     currentEng:()=>e,tobeCandidateFingerprint:()=> 'fingerprint',
+    internalAiSavedDraft:()=>({items:[{source_step_id:'P1',source_refs:['P1']}]}),
     now:()=> '2026-11-05',markDirty:()=>{},toast:()=>{},render:()=>{renders++}};
   vm.createContext(ctx);vm.runInContext(source,ctx);
   assert.equal(ctx.tobeApplyAiReviewedFields(e,'P1',['outputs','controlsRisk']),true);

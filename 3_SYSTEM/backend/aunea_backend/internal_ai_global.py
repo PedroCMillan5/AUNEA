@@ -221,6 +221,10 @@ def global_text_is_complete(value: str) -> bool:
         ch for ch in unicodedata.normalize("NFD", last.casefold())
         if not unicodedata.combining(ch)
     )
+    # Bounded lexical tails from negative QA; not a semantic language validator.
+    # Uppercase technical identifiers remain valid sentence endings.
+    if last.islower() and normalized in {"term", "clie"}:
+        return False
     if normalized in _DANGLING_LAST_WORDS or len(last) == 1:
         return False
     # Domain acronyms, e.g. IA, ERP and CRM, are legitimate sentence endings.

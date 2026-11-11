@@ -122,3 +122,22 @@ test('explicit decisions remain bound to the same TO-BE version and diagnostic',
   assert.match(h.readiness(),/AS-IS confirmado vigente/);
 });
 // [AUNEA-UAT-PG11-HUMAN-DECISIONS-226] END
+
+test('reanalysis keeps only unchanged activity decisions and invalidates global conflicts',()=>{
+ const source=fs.readFileSync(path.resolve(__dirname,'../pages/results.js'),'utf8');
+ const block=source.slice(source.indexOf('function tobeCandidateFingerprint('),source.indexOf('function tobeHumanReviewHtml('));
+ const ctx={currentDiagnosticOutput:()=>({input_snapshot_hash:'D'})};
+ vm.createContext(ctx);vm.runInContext(block,ctx);
+ const p={version:1,sourceSnapshotVersion:2,aiDraft:{proposal:{input_hash:'I',items:[
+  {source_step_id:'A',outputs:'PDF'},{source_step_id:'B',outputs:'RECORD'}],
+  review:{review_mode:'OLLAMA',issues:[],blocking_step_ids:[]}}}};
+ p.aiDraft.humanReview={tobeVersion:1,sourceSnapshotVersion:2,diagnosticInputHash:'D',
+  proposalInputHash:'I',proposalFingerprint:ctx.tobeCandidateFingerprint(p),decisions:{}};
+ for(const id of ['A','B'])p.aiDraft.humanReview.decisions[id]={status:'MODIFY',
+  proposalStepFingerprint:ctx.tobeCandidateFingerprint(p,id)};
+ p.aiDraft.proposal.items[0].outputs='RECORD';
+ const kept=ctx.tobeHumanReviewRecord({},p);
+ assert.deepEqual(Object.keys(kept.decisions),['B']);
+ p.aiDraft.proposal.review.issues.push({step_id:'GLOBAL',category:'BLOCKING',issue:'Conflicto entre actividades'});
+ assert.equal(ctx.tobeHumanReviewRecord({},p),null);
+});
