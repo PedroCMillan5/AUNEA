@@ -232,7 +232,7 @@ def test_missing_automation_candidate_repairs_only_affected_source(monkeypatch):
         body=json.loads(req.data)
         calls.append(body)
         if 'current_activity' in body['messages'][1]['content']:
-            current=json.loads(body['messages'][1]['content'].split('\\n',1)[1])
+            current=json.loads(body['messages'][1]['content'].splitlines()[1])
             assert current['current_activity']['id']=='S1'
             assert 'targeted_correction' in current
             repaired=proposal("S1")
