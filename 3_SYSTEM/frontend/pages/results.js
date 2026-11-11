@@ -2005,6 +2005,11 @@ function tobeInspectorHtml(e,p){
     !!internalAiPendingSteps(e,pendingKey)?.items?.has(String(item.sourceStepId));
   const adviceOpen=editable&&!item.isAddition&&(hasCurrentAi||hasPendingAi)&&
     !['ACCEPT','MODIFY','DISCARD'].includes(choice?.status);
+  // Keep an expanded execution-data group open across rerenders for this step.
+  const previousExecution=typeof document!=='undefined'?
+    document.getElementById?.('tobeExecutionFields'):null;
+  const executionOpen=!hasCurrentAi||!!(previousExecution?.open&&
+    previousExecution.dataset?.sourceStepId===String(item.sourceStepId));
   const withAi=(key,html)=>tobeWithAiHint(e,p,item,key,html);
   const statusField='<div class="field"><label for="tobe_'+attr(item.id)+'_transformation">Qué cambia</label>'+
     (editable?auneaSelectControl('tobe_'+item.id+'_transformation',TOBE_TRANSFORMATIONS.map(v=>({value:v,label:v})),
@@ -2066,14 +2071,20 @@ function tobeInspectorHtml(e,p){
       withAi('problemResolved',tobeField(item,'problemResolved',
         tobeTransformationRationaleLabel(item.transformation),
         item.problemResolved,'textarea',!editable))+
-      withAi('futureActor',tobeCatalogField(item,'futureActor','Responsable futuro','OS_ACTOR_ROLE',!editable))+
-      withAi('tool',tobeCatalogField(item,'tool','Herramienta / arquitectura','OS_TOOL_CATEGORY',!editable))+
-      '<div class="tobe-data-pair">'+withAi('inputs',tobeArtifactField(item,'inputs','Datos de entrada',!editable))+'</div>'+
-      '<div class="tobe-data-pair">'+withAi('outputs',tobeArtifactField(item,'outputs','Datos de salida',!editable))+'</div>'+
       withAi('automationAi',tobeField(item,'automationAi','Automatización e IA',item.automationAi,'textarea',!editable))+
       withAi('humanSupervision',tobeField(item,'humanSupervision','Supervisión humana',item.humanSupervision,'textarea',!editable))+
       withAi('controlsRisk',tobeField(item,'controlsRisk','Control / riesgo',item.controlsRisk,'textarea',!editable))+
       '</div>'+
+      '<details class="tobe-execution-fields" id="tobeExecutionFields"'+
+        ' data-source-step-id="'+attr(item.sourceStepId)+'"'+(executionOpen?' open':'')+'>'+
+        '<summary>Recursos y datos de ejecución <span class="tobe-muted">· Responsable, herramientas, entradas y salidas (4 campos)</span></summary>'+
+        '<div class="form-grid">'+
+          withAi('futureActor',tobeCatalogField(item,'futureActor','Responsable futuro','OS_ACTOR_ROLE',!editable))+
+          withAi('tool',tobeCatalogField(item,'tool','Herramienta / arquitectura','OS_TOOL_CATEGORY',!editable))+
+          '<div class="tobe-data-pair">'+withAi('inputs',tobeArtifactField(item,'inputs','Datos de entrada',!editable))+'</div>'+
+          '<div class="tobe-data-pair">'+withAi('outputs',tobeArtifactField(item,'outputs','Datos de salida',!editable))+'</div>'+
+        '</div>'+
+      '</details>'+
       tobeDecisionReadoutHtml(e,p,item)+
       ''+
       '<details class="tobe-subdetails"><summary>Tiempo futuro y supuesto trazable (si existe)</summary>'+
