@@ -48,6 +48,22 @@ def api_payload():
     return payload
 
 
+def test_basic_review_enforces_only_fields_required_by_the_chosen_transformation():
+    payload=data()
+    payload.items[0].transformation="Se automatiza"
+    payload.items[0].automation_ai=""
+    payload.items[0].human_supervision=""
+    payload.items[1].transformation="Se mantiene"
+    result=basic_review(payload)
+    targeted=[x for x in result["issues"] if x["step_id"]=="S1"
+              and "exige describir" in x["issue"]]
+    assert {x["evidence"] for x in targeted}=={
+        "transformation / automation_ai","transformation / human_supervision"}
+    assert "S1" in result["blocking_step_ids"]
+    assert not any("exige describir" in x["issue"] and x["step_id"]=="S2"
+                   for x in result["issues"])
+
+
 def test_rules_flag_explicit_conflicts_and_uncertain_claims_without_inference(monkeypatch):
     def blocked(*args,**kwargs):
         raise AssertionError("The basic reviewer must never request Ollama")
