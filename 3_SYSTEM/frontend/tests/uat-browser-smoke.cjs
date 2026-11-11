@@ -939,6 +939,20 @@ async function main(){
     render();
   },{sourceId:sourceIds[0],original:emptyCandidateOriginal});
 
+  // Compact guided layout: the five intervention fields remain visible and
+  // the four execution fields stay editable in one expandable canonical group.
+  const execution=page.locator('#tobeExecutionFields');
+  assert.equal(await execution.count(),1);
+  assert.equal(await page.locator('#tobeInspector [data-tobe-row-key]').count(),9);
+  const futureRole=page.locator('#tobeExecutionFields [data-tobe-catalog-field="futureActor"]');
+  assert.equal(await futureRole.isVisible(),false,
+    'secondary execution fields must start collapsed after AI review');
+  await execution.locator('summary').click();
+  assert.equal(await futureRole.isVisible(),true);
+  await page.evaluate(()=>render());
+  assert.equal(await page.locator('#tobeExecutionFields').evaluate(x=>x.open),true,
+    'expanding the canonical execution group must survive a rerender of the same step');
+  console.log('PG11_EXECUTION_FIELDS_BROWSER_PASS: primary intervention and secondary data');
   console.log('PG11_HUMAN_DECISION_BROWSER_PASS: '+sourceIds[0]);
   // The three canonical per-field actions must work through real browser clicks.
   const confirmedStepBefore=await page.evaluate(()=>
