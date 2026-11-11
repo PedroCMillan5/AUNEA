@@ -869,6 +869,16 @@ async function main(){
     originalTobeData,'consultant choice must never apply proposed values');
   // An activity-wide justification is available in 03.2; empty field suggestions
   // must not replicate that four-paragraph block throughout the 03.3 inspector.
+  // The QA fixture may have a value for every field. Create one temporary,
+  // unsaved empty candidate to exercise the no-candidate UI without changing the oracle.
+  const emptyCandidateOriginal=await page.evaluate(sourceId=>{
+    const p=latestTobe(currentEng()),candidate=p?.aiDraft?.proposal?.items?.find(x=>
+      String(x.source_step_id)===String(sourceId));
+    if(!candidate)throw Error('QA fixture lacks a source-linked IA candidate');
+    const original={exists:Object.hasOwn(candidate,'controls_risk'),value:candidate.controls_risk};
+    candidate.controls_risk='';render();
+    return original;
+  },sourceIds[0]);
   const fieldDensity=await page.evaluate(()=>[...document.querySelectorAll(
     '#tobeInspector [data-tobe-row-key]')].map(row=>{
       const suggestion=row.querySelector('.tobe-ai-inline');
@@ -881,6 +891,15 @@ async function main(){
   assert.deepEqual(fieldDensity.filter(x=>x.noCandidate&&x.evidencePanels!==0),[],
     '03.3 may not repeat activity-wide evidence for fields with no IA candidate');
   await page.screenshot({path:path.join(outDir,'pg11-section03-reviewed-fields-desktop.png'),fullPage:true});
+  await page.evaluate(({sourceId,original})=>{
+    const p=latestTobe(currentEng()),candidate=p?.aiDraft?.proposal?.items?.find(x=>
+      String(x.source_step_id)===String(sourceId));
+    if(!candidate)throw Error('QA source was lost before restoring the candidate');
+    if(original.exists)candidate.controls_risk=original.value;
+    else delete candidate.controls_risk;
+    render();
+  },{sourceId:sourceIds[0],original:emptyCandidateOriginal});
+
   console.log('PG11_HUMAN_DECISION_BROWSER_PASS: '+sourceIds[0]);
   // The three canonical per-field actions must work through real browser clicks.
   const confirmedStepBefore=await page.evaluate(()=>
