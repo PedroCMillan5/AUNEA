@@ -2031,7 +2031,7 @@ function tobeInspectorHtml(e,p){
     '</nav>'+supportingInformation+
     '<section class="tobe-edit" id="tobeStepDesign"><h3 class="aunea-ui-section-title">03.3 · Configurar la actividad futura</h3>'+
       '<p class="tobe-muted" data-tobe-transformation-message="1" role="status" aria-live="polite">Elige «Qué cambia» y completa la justificación del diseño futuro. La recomendación IA no cambia tu decisión automáticamente.</p>'+
-      '<p class="tobe-muted">Configura aquí el TO-BE; los valores heredados no son mejoras aprobadas. La justificación completa y las evidencias de cada actividad se consultan en 03.2.</p>'+
+      '<p class="tobe-muted">Mantener conserva tu valor TO-BE; Editar lo modifica. Aplicar IA sólo aparece para un candidato válido después de tu revisión humana. Las fuentes y el fundamento están en 03.2.</p>'+
       tobeAiOperationalContextHtml(e,item)+
       tobeAiFieldCoverageHtml(e,p,item)+
       (item.transformation==='Se mantiene'&&/^(no|n\/a|ninguno)$/i.test(String(item.problemResolved||'').trim())?
