@@ -236,3 +236,28 @@ Estado: A cerrado; B revisión básica operativa, sin revisión semántica Ollam
 **Pruebas:** `pg11-future-flow.test.cjs` comprueba con caso sintético que P2 usa criterio y rutas declaradas, que modificar destinos TO-BE no altera AS-IS y que una nueva decisión no hereda rutas inexistentes. Chromium comprueba que los tres botones están visibles en revisión guiada, que Conectar no aparece allí y que el editor de rutas aparece al entrar en Mapa TO-BE. **QA del commit `23eaefb0`: 897 frontend PASS, 467 backend PASS (1 warning), Chromium integral PASS.** https://github.com/PedroCMillan5/AUNEA/actions/runs/43025824916. La UAT en Windows con el snapshot real de cuatro actividades continúa pendiente de acreditación. **No se promueve PG11.03 a CLOSED.**
 
 **Rama:** `work/as-is-ux-simplification-20260930`. Commits de implementación hasta `9ec66ad0`. Estado de QA se registra con el último Acceptance Gate satisfactorio. No cambian reglas canónicas, Master Index, DECISIONES, ESTADO ni ROADMAP por estos ajustes de presentación y proyección de datos ya existentes.
+
+
+## 11/11/2026 — Cierre técnico de defectos funcionales en PG11.03 — REVIEW
+
+**Motivo:** la sección presentaba 4/4 actividades con análisis individual, pero campos IA vacíos pese a recomendar automatizaciones, y P2 sólo permitía visualizar las bifurcaciones sin definir el criterio futuro de enrutamiento. La navegación 03.1–03.3 y el mapa ya se habían separado; este cambio aborda los defectos funcionales sin reconstruir el producto.
+
+**Datos y reglas (orden de cambio):**
+- Se reutiliza el campo **DF041 del modelo ProcessStep** como base de la condición de decisión; el criterio TO-BE opcional se almacena exclusivamente en `tobeProposal.flow.decisionCriteria[stepId]` del DRAFT versionado. No hay nueva pregunta DF, no se escribe en AS-IS ni se modifica el Diagnóstico. El mapa sigue siendo propietario de rutas SÍ/NO.
+- En una decisión original el campo vacío significa **conservar la condición AS-IS**, y se muestra el valor de origen. Una **nueva decisión** ST04 requiere condición explícita y ambas rutas conectadas antes de revisión; no hereda falsos destinos o condiciones de la actividad de origen.
+- La validación de flujo comprueba accesibilidad y salida a Fin. Una modificación de ruta que deja aislada la actividad de aprobación se bloquea por desconexión, no se reconecta silenciosamente.
+
+**Motor IA:**
+- El prompt orienta a llenar `automation_ai` cuando su acción narrativa propone implantar/crear automatización; los demás campos pueden quedarse vacíos si no existe evidencia específica, sin inventar software ni permisos.
+- El revisor deterministicamente identifica una acción inequívoca de automatización cuyo `automation_ai` esté vacío o sea no aplicable. Esta **incoherencia interna de la propuesta**, distinta de una discrepancia legítima IA–consultor, se clasifica como defecto de aplicación; `consolidate` reutiliza el reintento **selectivo y acotado a esa actividad**, seguido de verificación. Si no hay candidato válido, bloquea aplicar IA y conserva la propuesta original y la evidencia; no fabrica campos.
+- El revisor básico RULES_ONLY advierte sobre la misma incoherencia sin iniciar Ollama. Protocolo de compatibilidad actualizado a `PG11_REVIEW_20261111_4`; es obligatorio **reiniciar el backend local** después del pull.
+- La propuesta IA almacenada con protocolo previo se conserva; no se reescribe por refrescar el navegador. Para comprobar nuevas correcciones se debe ejecutar el análisis de la actividad afectada.
+
+**Interfaz y UX:**
+- 03.3 muestra **cobertura estructurada por actividad** sobre nueve campos, con categorías `con candidato` / `requiere corrección` / `sin candidato`; se especifica que la IA no informa la causa de cada omisión. Es distinta del contador 4/4 de actividades y del inventario global 4/5 fuentes.
+- Las filas sin candidato dejan de mostrar tarjetas de evidencia grandes. «Mantener» conserva el valor del DRAFT, «Editar» lo modifica y «Aplicar IA» sólo aparece tras decisión humana y candidato compatible.
+- El mapa permite editar la condición futura de un paso de decisión y sus rutas SÍ/NO; la revisión guiada sigue con tres apartados y sólo muestra la lectura comparativa de criterios y rutas.
+
+**QA y evidencia:** regresiones nuevas en `test_internal_ai_review_consolidation.py` (bloqueo y reparación selectiva), `pg11-future-flow.test.cjs` (decisión nueva sin criterio, vista y preservación de datos, prueba de cuatro pasos y ruta de aprobación), `pg11-guided-inline.test.cjs` (cobertura de campos) y `uat-browser-smoke.cjs` (prueba de guardado del criterio en localStorage y fuente AS-IS inmutable). Resultado comprobado por GitHub Actions: **469 backend PASS, 899 frontend PASS** a la fecha de esta actualización; Chromium integral del código actual todavía requiere la ejecución de su paso final en el runner.
+
+**Estado:** PG11.03 en **REVIEW técnico de aceptación real**, sin declaración de CLOSED. Los únicos gates no acreditados desde GitHub son la inferencia en el **Ollama instalado en Windows con la sesión actual de cuatro actividades** y la aceptación visual final. El JSON de octubre localizado en la Library contiene seis actividades y no es el snapshot vigente de la captura; no puede sustituirlo ni utilizarse para declarar ese caso PASS. No cambian Master Index, decisiones comerciales, catálogo, pricing, ESTADO ni ROADMAP. Bloques y responsabilidades actualizados en `CODE_BLOCK_INDEX.md`.
