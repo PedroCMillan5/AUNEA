@@ -1234,16 +1234,11 @@ function tobeAiInlineHint(e,p,item,key){
   if(!field)return '';
   const decision=tobeHumanReviewRecord(e,p)?.decisions?.[String(item.sourceStepId)],
     dismissed=decision?.status==='DISCARD',
-    narrative=typeof internalAiPilotNarrative==='function'?
-      internalAiPilotNarrative(ai.rationale):{reason:'',action:''};
-  const explain=String(narrative.reason||'').trim(),
-    action=String(narrative.action||'').trim(),
     refs=typeof internalAiReadableRefs==='function'?
       internalAiReadableRefs(e,ai.source_refs):
       ai.source_refs.join(' · '),
     pending=String(ai.limitations||'').trim(),
     value=matched?.display||skipped?.raw||'';
-  const permitted=!!matched?.changed&&!diff.issue&&!dismissed&&tobeEditable(p);
   const lastChoice=(p.aiDraft?.applyHistory||[]).filter(x=>
     String(x.sourceStepId)===String(item.sourceStepId)&&
     Array.isArray(x.fields)&&x.fields.includes(key)&&
