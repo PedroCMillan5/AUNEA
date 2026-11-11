@@ -222,7 +222,7 @@ def _clear_transformation_conflicts(items: list) -> list[str]:
 import re
 
 _AUTOMATION_VERBS = re.compile(
-    r"^(?:crear|establecer|implantar|implementar|introducir|incorporar|configurar|desplegar|automatizar)\\b",
+    r"^(?:crear|establecer|implantar|implementar|introducir|incorporar|configurar|desplegar|automatizar)\b",
     re.I,
 )
 _AUTOMATION_DESIGN = re.compile(r"automatiz|autom[aá]tic", re.I)
@@ -233,12 +233,12 @@ def _missing_structured_actions(items: list) -> list[str]:
     missing = []
     for item in items:
         rationale = item.rationale
-        action = re.split(r"resultado esperado\\s*:", rationale, 1, flags=re.I)[0]
-        action = re.split(r"acci[oó]n propuesta\\s*:", action, 1, flags=re.I)[-1].strip()
+        action = re.split(r"resultado esperado\s*:", rationale, 1, flags=re.I)[0]
+        action = re.split(r"acci[oó]n propuesta\s*:", action, 1, flags=re.I)[-1].strip()
         if (item.automation_ai.strip().casefold() in _EMPTY_CANDIDATES
                 and _AUTOMATION_VERBS.search(action)
                 and _AUTOMATION_DESIGN.search(action)
-                and not re.search(r"\\b(?:sin|no|evitar)\\s+automatiz", action, re.I)):
+                and not re.search(r"\b(?:sin|no|evitar)\s+automatiz", action, re.I)):
             missing.append(item.source_step_id)
     return missing
 # [AUNEA-BE-PG11-STRUCTURED-CANDIDATE-303] END
