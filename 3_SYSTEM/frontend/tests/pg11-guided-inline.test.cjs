@@ -175,8 +175,8 @@ test('PG11 exposes source and individual IA before configuring the future step',
  const end=src.indexOf('function createNextTobeVersion',start);
  assert.ok(start>=0&&end>start);
  const page=src.slice(start,end);
- assert.match(page,/03\.1 · Datos y hallazgos del AS-IS confirmado/);
- assert.match(page,/03\.2 · Analizar este paso y revisar la propuesta IA/);
+ assert.match(page,/03\.1 · Entender el AS-IS/);
+ assert.match(page,/03\.2 · Revisar propuestas IA/);
  assert.match(page,/data-tobe-generate-selected/);
  assert.match(page,/tobeAiAdviceHtml\(e,item,false\)/);
  assert.match(page,/tobeHumanReviewHtml\(e,item,false\)/);
