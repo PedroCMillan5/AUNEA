@@ -8,7 +8,8 @@ import json
 import socket
 from urllib.error import HTTPError, URLError
 from urllib.request import Request
-from .internal_ai import PilotAIConsolidationRequest, validate_pilot_result, related_step_ids, explicit_pilot_process_flow
+from .internal_ai import (PilotAIConsolidationRequest, validate_pilot_result,
+    related_step_ids, explicit_pilot_process_flow, pilot_field_presence)
 from .internal_ai_ollama import (
     LOCAL_URL, _LOCAL_HTTP, OllamaUnavailable, model_name, context_window,
     request_timeout_seconds,
@@ -243,12 +244,41 @@ def _missing_structured_actions(items: list) -> list[str]:
     return missing
 # [AUNEA-BE-PG11-STRUCTURED-CANDIDATE-303] END
 
+# [AUNEA-BE-PG11-CROSS-FIELD-307] START — deterministic completeness
+# Only transformations with explicit requirements are blocked. A blank field
+# on an otherwise valid proposal stays undecided, not silently approved.
+def _transformation_field_gaps(items: list) -> list[dict]:
+    expected = {
+        "Se automatiza": ("automation_ai", "human_supervision"),
+        "Se asiste con IA": ("automation_ai", "human_supervision"),
+        "Se incorpora control": ("controls_risk",),
+        "Requiere decisión humana": ("human_supervision",),
+    }
+    label = {"automation_ai": "Automatización e IA",
+             "human_supervision": "Supervisión humana",
+             "controls_risk": "Control y riesgo"}
+    issues = []
+    for item in items:
+        candidates = pilot_field_presence(item)
+        for field in expected.get(item.transformation, ()):
+            if not candidates[field]:
+                issues.append({
+                    "step_id": item.source_step_id,
+                    "issue": f"«{item.transformation}» exige describir «{label[field]}» en la propuesta estructurada.",
+                    "evidence": f"transformation / {field}",
+                    "action": "Completar el campo con evidencia; si no es viable, revisar la transformación.",
+                    "category": "BLOCKING",
+                    "origin": "CONTRATO_CAMPOS_IA",
+                })
+    return issues
+# [AUNEA-BE-PG11-CROSS-FIELD-307] END
+
 def consolidate(request: PilotAIConsolidationRequest, *, repair: bool = True) -> dict:
     """Cross-step quality review, always subordinate to canonical validations."""
     validate_pilot_result(request.request,model_name(),request.items)
     context=_context(request)
     batches=_batches(context)
-    issues=[]
+    issues=_transformation_field_gaps(request.items)
     conflicts=_clear_transformation_conflicts(request.items)
     missing_structured = _missing_structured_actions(request.items)
     for sid in missing_structured:
@@ -323,8 +353,9 @@ def consolidate(request: PilotAIConsolidationRequest, *, repair: bool = True) ->
         seen.add(key)
         sid = issue["step_id"]
         conflict = sid in conflicts and "Clasificada" in issue["issue"]
-        missing = issue["issue"].startswith(("Falta concretar", "Falta estructurar",
-                                                "No se identifica una accion", "No se explica el resultado"))
+        missing = issue.get("origin")=="CONTRATO_CAMPOS_IA" or issue["issue"].startswith(
+            ("Falta concretar", "Falta estructurar",
+             "No se identifica una accion", "No se explica el resultado"))
         classified.append({**issue,
             "category": "BLOCKING" if conflict or missing else issue.get("category", "WARNING"),
             "origin": "CONTROL_TEXTUAL" if conflict else "REVISION_SEMANTICA_O_COMPLETITUD",
