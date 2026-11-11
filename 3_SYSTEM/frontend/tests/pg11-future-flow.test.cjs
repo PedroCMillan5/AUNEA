@@ -107,6 +107,33 @@ test('P2 decision logic displays confirmed conditions and routes without inventi
  assert.equal(JSON.stringify(h.snapshot),before);
  assert.equal(h.run('tobeDecisionReadoutHtml',h.p.items[1]),'');
 });
+test('four-activity source preserves conditional approval and catches disconnected TO-BE routes',()=>{
+ const source=[
+  {id:'P1',step_name:'Recibir solicitud',step_type:'ST02',normal_next_step:'P2'},
+  {id:'P2',step_name:'Determinar si procede aprobación',step_type:'ST04',
+   decision_criteria:['APPROVAL'],_details:{decision_criteria:'Criterio humano declarado'},
+   normal_next_step:'P3',exception_path:{destination_step:'P4'}},
+  {id:'P3',step_name:'Aprobar solicitud',step_type:'ST05',normal_next_step:'P4'},
+  {id:'P4',step_name:'Registrar resultado',step_type:'ST02',normal_next_step:'__END__'}
+ ];
+ const h=harness(source),immutable=JSON.stringify(h.snapshot);
+ assert.equal(h.run('tobeFlowIntegrity'),null);
+ const future=h.run('tobeFutureSteps');
+ const p2=future.find(x=>x.id==='P2');
+ assert.equal(p2.normal_next_step,'P3');
+ assert.equal(p2.exception_path.destination_step,'P4');
+ assert.equal(future.find(x=>x.id==='P3').normal_next_step,'P4');
+ assert.equal(future.find(x=>x.id==='P4').normal_next_step,'__END__');
+ const f=h.run('tobeFlowOwner');
+ f.decisionCriteria.P2='Criterio TO-BE explícito y pendiente de validación';
+ f.routes.P2.normal='P4';h.p.flow=f;
+ assert.match(h.run('tobeDecisionReadoutHtml',h.p.items[1]),/Criterio TO-BE explícito/);
+ assert.match(h.run('tobeFlowIntegrity'),/desconectadas/,
+  'a changed approval route must not silently orphan the human approval activity');
+ f.routes.P2.normal='P3';
+ assert.equal(h.run('tobeFlowIntegrity'),null);
+ assert.equal(JSON.stringify(h.snapshot),immutable);
+});
 test('a newly added decision needs explicit YES and NO routes and keeps the original source unchanged',()=>{
  const h=harness(linear),snapshot=JSON.stringify(h.snapshot.processSteps),flow=h.run('tobeFlowOwner');
  const id='TOBE-ADD-1-1';
