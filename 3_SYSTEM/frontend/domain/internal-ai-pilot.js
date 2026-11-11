@@ -3,7 +3,7 @@
 // INPUTS: current confirmed snapshot and official diagnostic; OUTPUTS: DRAFT suggestions.
 // SIDE_EFFECTS: external provider only after click, local DRAFT updates only after acceptance.
 // CHANGE_RISK: HIGH. Never auto-approve, invent numerical benefits, or alter engine results.
-const __auneaPg11ReviewProtocol='PG11_REVIEW_20261111_4'; // Technical backend/UI compatibility; no business owner.
+const __auneaPg11ReviewProtocol='PG11_REVIEW_20261111_5'; // Technical backend/UI compatibility; no business owner.
 const __auneaAiPreview=new Map();
 const __auneaAiFeedback=new Map();
 const __auneaAiCompletedSteps=new Map(); // Transient, keyed by confirmed snapshot; no partial approval.
