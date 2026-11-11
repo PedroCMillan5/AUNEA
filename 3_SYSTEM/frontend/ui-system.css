@@ -3949,3 +3949,126 @@ details.tobe-ai-operational-context:not([open])>.tobe-ai-operational-body{
   }
 }
 /* [AUNEA-FE-PG11-DESIGN-LAYOUT-311] END */
+
+/* [AUNEA-FE-PG11-ORIGIN-OPTIMIZATION-316] START
+   SOURCE: original PG04 ProcessStep selectedHtml choice-grid; PG11 TO-BE DRAFT;
+   AUNEA System --system/--system-soft and corporate --gold tokens.
+   INPUTS: data-artifact-provenance only, no persistence. RISK: scoped UI only.
+*/
+#tobeStepDesign .tobe-artifact-origin-legend{
+  display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;
+  padding:10px 16px;background:var(--canvas);
+  border-bottom:1px solid var(--system-line);
+  font-size:var(--font-small);line-height:1.5;
+}
+#tobeStepDesign .tobe-artifact-origin-sample{
+  display:inline-flex;align-items:center;min-height:26px;
+  padding:3px 10px;border-radius:var(--radius-xs);
+  font-size:var(--font-caption);font-weight:750;
+}
+#tobeStepDesign .tobe-artifact-origin-sample.is-asis{
+  background:var(--system-soft);border:1px solid var(--system-line);
+  color:var(--system);
+}
+#tobeStepDesign .tobe-artifact-origin-sample.is-improvement{
+  background:var(--gold-soft);border:1px solid var(--gold);
+  color:var(--gold-2);
+}
+#tobeStepDesign .tobe-artifact-origin-note{
+  color:var(--muted);font-size:var(--font-caption);
+}
+#tobeStepDesign .tobe-artifact-field .choice-grid{
+  display:flex;flex-wrap:wrap;gap:8px;
+  padding:5px 0 0;min-width:0;
+}
+#tobeStepDesign .tobe-artifact-field .choice{
+  display:inline-flex;flex:0 0 auto;max-width:100%;min-width:0;
+}
+#tobeStepDesign .tobe-artifact-field .choice input{
+  position:absolute;opacity:0;width:1px;height:1px;
+}
+#tobeStepDesign .tobe-artifact-field .choice label{
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:8px 11px;min-height:37px;max-width:100%;
+  border-radius:var(--radius-sm);
+  border:1px solid var(--system-line);
+  background:#fff;color:var(--ink);
+  line-height:1.4;font-size:var(--font-small);
+  white-space:normal;cursor:pointer;
+}
+#tobeStepDesign .tobe-artifact-field .choice input:focus-visible+label{
+  outline:2px solid var(--system);outline-offset:2px;
+}
+#tobeStepDesign .tobe-artifact-field .choice[data-artifact-provenance="asis"] input:checked+label{
+  background:var(--system-soft);border-color:var(--system);
+  color:var(--system);font-weight:750;
+}
+#tobeStepDesign .tobe-artifact-field .choice[data-artifact-provenance="improvement"] input:checked+label{
+  background:var(--gold-soft);border-color:var(--gold);
+  color:var(--gold-2);font-weight:750;
+}
+#tobeStepDesign .tobe-artifact-field .choice input:disabled+label{cursor:not-allowed;opacity:.85}
+#tobeStepDesign .tobe-artifact-field .tobe-artifact-provenance-help{
+  color:var(--muted);font-size:var(--font-caption);
+  line-height:1.45;margin:3px 0 5px;
+}
+#tobeStepDesign .tobe-artifact-field .contextual-show-all{
+  margin-top:8px;white-space:normal;
+}
+#tobeStepDesign .tobe-artifact-field .detail-wrap{
+  margin-top:9px;
+}
+#tobeStepDesign .tobe-optimization-body{
+  display:grid;gap:12px;padding:14px 16px;min-width:0;
+}
+#tobeStepDesign .tobe-optimization-connections{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;min-width:0;
+}
+#tobeStepDesign .tobe-optimization-connections>div{
+  display:grid;gap:5px;padding:11px 12px;min-width:0;
+  border:1px solid var(--system-line);background:var(--canvas);
+  border-radius:var(--radius-sm);
+}
+#tobeStepDesign .tobe-optimization-connections b{
+  color:var(--system);font-size:var(--font-caption);
+}
+#tobeStepDesign .tobe-optimization-connections span{
+  overflow-wrap:anywhere;font-size:var(--font-small);line-height:1.5;
+}
+#tobeStepDesign .tobe-optimization-summary{
+  color:var(--system);font-size:var(--font-small);
+}
+#tobeStepDesign .tobe-optimization-findings{
+  display:grid;gap:8px;padding:0;margin:0;list-style:none;
+}
+#tobeStepDesign .tobe-optimization-finding{
+  display:grid;gap:4px;padding:10px 12px;
+  border:1px solid var(--system-line);border-left:3px solid var(--gold);
+  border-radius:var(--radius-sm);background:#fff;
+}
+#tobeStepDesign .tobe-optimization-finding p,
+#tobeStepDesign .tobe-optimization-finding small{
+  font-size:var(--font-small);line-height:1.5;margin:0;
+  overflow-wrap:anywhere;
+}
+#tobeStepDesign .tobe-optimization-finding small{
+  font-size:var(--font-caption);color:var(--muted);
+}
+#tobeStepDesign .tobe-optimization-severity{
+  color:var(--gold-2);font-size:var(--font-caption);font-weight:750;
+}
+#tobeStepDesign .tobe-optimization-empty{
+  color:var(--muted);font-size:var(--font-small);line-height:1.5;margin:0;
+}
+#tobeStepDesign .tobe-optimization-body>.field-help{
+  margin:0;color:var(--muted);font-size:var(--font-caption);
+  line-height:1.5;
+}
+#tobeStepDesign .tobe-optimization-body>.btn{justify-self:start}
+@media(max-width:780px){
+  #tobeStepDesign .tobe-optimization-connections{grid-template-columns:minmax(0,1fr)}
+  #tobeStepDesign .tobe-optimization-body{padding:12px}
+  #tobeStepDesign .tobe-artifact-origin-legend{padding:10px 12px}
+}
+/* [AUNEA-FE-PG11-ORIGIN-OPTIMIZATION-316] END */
