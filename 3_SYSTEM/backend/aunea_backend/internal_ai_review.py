@@ -216,6 +216,33 @@ def _clear_transformation_conflicts(items: list) -> list[str]:
     return flagged
 
 
+# [AUNEA-BE-PG11-STRUCTURED-CANDIDATE-303] START
+# Source-linked quality gate: narrative actions must agree with structured fields.
+# This never fills fields, invents evidence or approves a future system.
+import re
+
+_AUTOMATION_VERBS = re.compile(
+    r"^(?:crear|establecer|implantar|implementar|introducir|incorporar|configurar|desplegar|automatizar)\\b",
+    re.I,
+)
+_AUTOMATION_DESIGN = re.compile(r"automatiz|autom[aá]tic", re.I)
+_EMPTY_CANDIDATES = frozenset(("", "no", "n/a", "ninguno", "sin definir", "pendiente", "—"))
+
+def _missing_structured_actions(items: list) -> list[str]:
+    """Only explicit implementation of automation, never mere mention or viability check."""
+    missing = []
+    for item in items:
+        rationale = item.rationale
+        action = re.split(r"resultado esperado\\s*:", rationale, 1, flags=re.I)[0]
+        action = re.split(r"acci[oó]n propuesta\\s*:", action, 1, flags=re.I)[-1].strip()
+        if (item.automation_ai.strip().casefold() in _EMPTY_CANDIDATES
+                and _AUTOMATION_VERBS.search(action)
+                and _AUTOMATION_DESIGN.search(action)
+                and not re.search(r"\\b(?:sin|no|evitar)\\s+automatiz", action, re.I)):
+            missing.append(item.source_step_id)
+    return missing
+# [AUNEA-BE-PG11-STRUCTURED-CANDIDATE-303] END
+
 def consolidate(request: PilotAIConsolidationRequest, *, repair: bool = True) -> dict:
     """Cross-step quality review, always subordinate to canonical validations."""
     validate_pilot_result(request.request,model_name(),request.items)
@@ -223,6 +250,12 @@ def consolidate(request: PilotAIConsolidationRequest, *, repair: bool = True) ->
     batches=_batches(context)
     issues=[]
     conflicts=_clear_transformation_conflicts(request.items)
+    missing_structured = _missing_structured_actions(request.items)
+    for sid in missing_structured:
+        issues.append({"step_id": sid,
+                       "issue": "Falta estructurar la automatización descrita en la acción propuesta.",
+                       "evidence": "rationale / automation_ai",
+                       "action": "Completar automation_ai de forma coherente con la acción y las limitaciones, sin inventar capacidades."})
     for sid in conflicts:
         issues.append({"step_id":sid,
             "issue":"Clasificada «Se mantiene», pero propone implantar una medida nueva. "
@@ -290,7 +323,8 @@ def consolidate(request: PilotAIConsolidationRequest, *, repair: bool = True) ->
         seen.add(key)
         sid = issue["step_id"]
         conflict = sid in conflicts and "Clasificada" in issue["issue"]
-        missing = issue["issue"].startswith(("Falta concretar", "No se identifica una accion", "No se explica el resultado"))
+        missing = issue["issue"].startswith(("Falta concretar", "Falta estructurar",
+                                                "No se identifica una accion", "No se explica el resultado"))
         classified.append({**issue,
             "category": "BLOCKING" if conflict or missing else issue.get("category", "WARNING"),
             "origin": "CONTROL_TEXTUAL" if conflict else "REVISION_SEMANTICA_O_COMPLETITUD",
