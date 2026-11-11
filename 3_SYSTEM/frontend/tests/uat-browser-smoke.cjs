@@ -873,7 +873,7 @@ async function main(){
     '#tobeInspector [data-tobe-row-key]')].map(row=>{
       const suggestion=row.querySelector('.tobe-ai-inline');
       return {key:row.getAttribute('data-tobe-row-key'),
-        noCandidate:!!suggestion&&/sin sugerencia fundamentada/i.test(suggestion.textContent||''),
+        noCandidate:!!suggestion&&/sin propuesta específica para este campo/i.test(suggestion.textContent||''),
         evidencePanels:suggestion?.querySelectorAll('details').length||0};
     }));
   assert.ok(fieldDensity.some(x=>x.noCandidate),
