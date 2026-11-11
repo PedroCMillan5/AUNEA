@@ -98,6 +98,23 @@ test('PG11 shows Maintain only for a real IA candidate, not for an omitted field
  assert.doesNotMatch(html,/data-tobe-ai-keep-field="outputs"/);
  assert.match(html,/data-tobe-ai-edit-field="outputs"/);
 });
+test('PG11 shows a specific reviewer defect rather than blaming missing client data',()=>{
+ const f=fixture();
+ f.proposal.items[0].automation_ai='';
+ f.proposal.review.issues=[{
+   step_id:'P1',category:'BLOCKING',
+   evidence:'transformation / automation_ai',
+   issue:'«Se automatiza» exige describir Automatización e IA.'}];
+ const hint=f.context.tobeAiInlineHint(f.e,f.p,f.p.items[0],'automationAi');
+ assert.match(hint,/Incoherencia de propuesta/);
+ assert.match(hint,/exige describir Automatización e IA/);
+ assert.doesNotMatch(hint,/03\.2 describe automatización/);
+ const overview=f.context.tobeAiFieldCoverageHtml(f.e,f.p,f.p.items[0]);
+ assert.match(overview,/incompletos según revisor/);
+ assert.match(overview,/sin propuesta/);
+ const unaffected=f.context.tobeAiInlineHint(f.e,f.p,f.p.items[0],'inputs');
+ assert.doesNotMatch(unaffected,/Incoherencia de propuesta/);
+});
 test('PG11 flags narrative automation without inventing a structured field suggestion',()=>{
  const f=fixture();f.proposal.items[0].automation_ai='';
  const html=f.context.tobeAiInlineHint(f.e,f.p,f.p.items[0],'automationAi');
