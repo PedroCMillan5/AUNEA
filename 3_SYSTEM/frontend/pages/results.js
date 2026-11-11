@@ -801,10 +801,22 @@ function tobeReviewReadiness(e,p){
         return 'La propuesta IA de '+name+' indica «'+suggested.transformation+
           '», pero el diseño está en «'+item.transformation+
           '». Para cambiarla, selecciona «Modificar antes de usar» y justifica.';
-      const originalIssues=(p.aiDraft?.proposal?.review?.issues||[]).filter(x=>
+      // [AUNEA-FE-PG11-ACCEPTANCE-GATE-319] START
+      // Source: sealed AS-IS, consultant decisions, IA review protocol;
+      // CANONICAL PG11 / DEC-050/052/055. Input: version-bound proposal.
+      // Output: a review-readiness reason. No automatic TO-BE mutation.
+      // A human-modified design is legitimate; an uncorrected BLOCKING IA
+      // candidate cannot be accepted, irrespective of transformation label.
+      const iaReview=p.aiDraft?.proposal?.review||
+        p.aiDraft?.checkpoint?.review||{};
+      const originalIssues=(iaReview.issues||[]).filter(x=>
         String(x.step_id)===sid&&x.category==='BLOCKING');
-      if(originalIssues.length&&decision.status==='ACCEPT'&&item.transformation==='Se mantiene')
-        return 'La recomendación de '+name+' contiene bloqueos; no puede aceptarse sin rediseñar su transformación.';
+      const reviewerBlocked=(iaReview.blocking_step_ids||[]).map(String).includes(sid);
+      if(decision.status==='ACCEPT'&&(originalIssues.length||reviewerBlocked))
+        return 'La recomendación IA de '+name+
+          ' presenta bloqueos pendientes. No se puede aceptar como válida; '+
+          'revisa la propuesta o elige «Modificar antes de usar» y justifica tu diseño.';
+      // [AUNEA-FE-PG11-ACCEPTANCE-GATE-319] END
     }
   }
   for(const added of tobeAddedSteps(p)){
