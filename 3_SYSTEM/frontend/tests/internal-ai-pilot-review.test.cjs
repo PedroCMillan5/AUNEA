@@ -44,7 +44,7 @@ test('module is installed after engine-adapter and before boot',()=>{
 // Behavioral regression: the button must respond to a real delegated click,
 // show backend failures permanently, and keep the active consultant inputs intact.
 const vm=require('node:vm');
-function aiPilotHarness({fail=false,steps=['S1'],failReview=false,blockingSteps=[],protocol='PG11_REVIEW_20261103_3'}={}){
+function aiPilotHarness({fail=false,steps=['S1'],failReview=false,blockingSteps=[],protocol='PG11_REVIEW_20261111_4'}={}){
   const listeners=new Map(), nodes=new Map(), requests=[];
   let provider=null,renderCount=0,registrationCount=0,notice=null;
   let shouldFailReview=failReview;
@@ -287,7 +287,7 @@ test('PG11 rejects stale backend before expensive local Ollama calls',async()=>{
 test('PG11 shows reviewer protocol revision on new successful draft',async()=>{
   const app=aiPilotHarness();
   app.click();await app.settle();
-  assert.equal(vm.runInContext('__auneaAiPreview.values().next().value.review.protocol_revision',app.sandbox),'PG11_REVIEW_20261103_3');
+  assert.equal(vm.runInContext('__auneaAiPreview.values().next().value.review.protocol_revision',app.sandbox),'PG11_REVIEW_20261111_4');
   assert.equal(app.requests.length,3);
 });
 
