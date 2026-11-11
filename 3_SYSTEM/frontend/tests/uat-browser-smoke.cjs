@@ -1050,6 +1050,10 @@ async function main(){
   // The browser smoke runs without the real 8010 backend: the existing local
   // /status fixture is authoritative for this isolated global-IA button test.
   await page.evaluate(()=>{state.backendOnline=true});
+  // The real UI requests confirmation before replacing an existing global brief.
+  // Playwright auto-dismisses unattended confirm dialogs, silently cancelling this UAT.
+  // Accept this one explicit test dialog; production must keep its human confirmation gate.
+  page.once('dialog',dialog=>dialog.accept());
   await page.locator('#analyzeTobeGlobal').click();
   const reachedGlobal=await Promise.race([
     globalRequested.then(()=>true),
