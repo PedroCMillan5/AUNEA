@@ -74,6 +74,19 @@ test('PG11 fields without an IA candidate never repeat a full evidence card',()=
  assert.match(proposed,/Referencias:/);
  assert.doesNotMatch(proposed,/Justificación global de la actividad|Intervención propuesta:/);
 });
+test('PG11 flags narrative automation without inventing a structured field suggestion',()=>{
+ const f=fixture();f.proposal.items[0].automation_ai='';
+ const html=f.context.tobeAiInlineHint(f.e,f.p,f.p.items[0],'automationAi');
+ assert.match(html,/sin propuesta específica para este campo/);
+ assert.match(html,/03\.2 describe automatización/);
+ assert.doesNotMatch(html,/data-tobe-ai-use-field/);
+ assert.doesNotMatch(html,/<details/);
+ const unrelated=f.context.tobeAiInlineHint(f.e,f.p,f.p.items[0],'inputs');
+ assert.doesNotMatch(unrelated,/no ha generado un valor estructurado/);
+ f.context.internalAiPilotNarrative=()=>({reason:'Sin cambio justificado',action:'Se mantiene la supervisión humana'});
+ assert.doesNotMatch(f.context.tobeAiInlineHint(f.e,f.p,f.p.items[0],'automationAi'),
+   /03\.2 describe automatización/);
+});
 test('MODIFY authorizes only safe options, never contradictory transformation',()=>{
  const f=fixture();f.setDecision('MODIFY');
  const diff=f.context.tobeAiReviewDiff(f.e,f.p,'P1');
