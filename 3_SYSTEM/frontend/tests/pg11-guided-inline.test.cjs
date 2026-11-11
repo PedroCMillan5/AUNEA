@@ -128,6 +128,19 @@ test('PG11 flags narrative automation without inventing a structured field sugge
  assert.doesNotMatch(f.context.tobeAiInlineHint(f.e,f.p,f.p.items[0],'automationAi'),
    /03\.2 describe automatización/);
 });
+test('a different consultant transformation is not itself an IA coherence defect',()=>{
+ const f=fixture();f.setDecision('MODIFY');
+ const proposal=f.proposal.items[0];
+ proposal.rationale='Acción propuesta: mantener la recepción humana. Resultado esperado: continuidad. Justificación: mantener controles.';
+ proposal.automation_ai='';
+ f.context.internalAiPilotNarrative=()=>({action:'Mantener la recepción humana',reason:'El AS-IS confirma recepción'});
+ const diff=f.context.tobeAiReviewDiff(f.e,f.p,'P1');
+ assert.equal(diff.issue,'');
+ assert.equal(diff.skipped.some(x=>x.key==='transformation'),false);
+ assert.equal(diff.allFields.find(x=>x.key==='transformation').value,'Se mantiene');
+ assert.equal(f.p.items[0].transformation,'Se modifica',
+  'a proposal never overwrites the consultant without an explicit apply action');
+});
 test('MODIFY authorizes only safe options, never contradictory transformation',()=>{
  const f=fixture();f.setDecision('MODIFY');
  const diff=f.context.tobeAiReviewDiff(f.e,f.p,'P1');
