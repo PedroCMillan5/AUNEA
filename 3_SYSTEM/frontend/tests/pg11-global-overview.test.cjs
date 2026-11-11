@@ -1149,7 +1149,7 @@ test('PG11 uses one consistent page and activity numbering hierarchy',()=>{
   for(const label of [
     '01 · INFORMACIÓN GENERAL','02 · ANÁLISIS IA GLOBAL DEL PROCESO',
     '03 · DISEÑO TO-BE','Revisión por actividad',
-    '03.1 · Datos y hallazgos','03.2 · Analizar este paso',
+    '03.1 · Entender el AS-IS','03.2 · Revisar propuestas IA',
     '03.3 · Configurar la actividad futura','03.4 · Conectar el proceso futuro',
     '04 · Validación global'
   ])assert.ok(src.includes(label), 'Falta encabezado: '+label);
