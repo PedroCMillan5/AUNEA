@@ -1198,12 +1198,14 @@ function tobeAiFieldCoverageHtml(e,p,item){
     candidate=diff.allFields.length,
     invalid=diff.skipped.length,
     absent=TOBE_AI_REVIEW_FIELDS.length-candidate-invalid;
-  return '<p class="tobe-ai-field-summary" role="status">'+
-    '<b>Propuestas estructuradas de esta actividad:</b> '+candidate+
-    ' de '+TOBE_AI_REVIEW_FIELDS.length+' campos con candidato, '+invalid+
-    ' pendientes de corregir y '+absent+' sin candidato. '+
-    'La IA no indica por qué ha omitido cada campo; no presupongas falta de datos ni aprobación.'+
-    '</p>';
+  return '<div class="tobe-ai-field-summary" role="status">'+
+    '<b>Propuestas IA por campo</b> '+
+    '<span class="tobe-ai-field-count"><strong>'+candidate+'</strong> con candidato</span>'+
+    '<span class="tobe-ai-field-count"><strong>'+invalid+'</strong> no aplicables</span>'+
+    '<span class="tobe-ai-field-count"><strong>'+absent+'</strong> sin propuesta</span>'+
+    '<details class="tobe-subdetails"><summary>Cómo interpretar los estados</summary>'+
+    '<p>La cobertura de estos nueve campos es distinta de las actividades analizadas. Un campo vacío no prueba falta de datos, conformidad, ni aprobación. La IA no indica la razón de cada omisión.</p></details>'+
+    '</div>';
 }
 // [AUNEA-FE-PG11-AI-REVIEW-DIFF-260] END
 
@@ -1278,7 +1280,7 @@ function tobeAiInlineHint(e,p,item,key){
     /automatiz|autom[aá]tic/i.test(String(narrative.action||''));
   return '<div class="tobe-ai-inline'+(!matched&&!skipped?' tobe-ai-no-candidate':'')+
     '" data-tobe-ai-field-key="'+attr(key)+'">'+
-    '<p class="field-help"><b>'+(!matched&&!skipped?'IA: sin propuesta específica para este campo':'IA propone:')+'</b> '+esc(value)+
+    '<p class="field-help"><b>'+(!matched&&!skipped?'IA: sin candidato estructurado para este campo':'IA propone:')+'</b> '+esc(value)+
     (skipped?' · <b>Revisión manual necesaria</b>':
       matched&&!matched.changed?' · Coincide con el TO-BE':'')+'</p>'+
     (skipped?'<p class="field-help">'+esc(skipped.reason)+'</p>':'')+
@@ -1313,17 +1315,17 @@ function tobeAiOperationalContextHtml(e,item){
   const refs=typeof internalAiReadableRefs==='function'?
     internalAiReadableRefs(e,ai.source_refs):(ai.source_refs||[]).join(' · ');
   const historical=!!history;
-  return '<div class="tobe-ai-operational-context" role="note">'+
-    '<strong>Condiciones de diseño y restricciones a contrastar'+
-    (historical?' · Propuesta histórica v'+esc(history.version):
-      partial?' · Propuesta individual pendiente de coherencia entre actividades':'')+'</strong>'+
-    '<p>'+esc(limitations||'La IA no ha detallado restricciones para esta actividad.')+'</p>'+
-    '<details class="tobe-subdetails"><summary>Fuentes y criterio de aplicación</summary>'+
-      '<p><b>Referencias:</b> '+esc(refs||'Sin fuentes especificadas')+'</p>'+
-      '<p>Las limitaciones inferidas por IA no equivalen a restricciones declaradas por el cliente. Revisa el diagnóstico y confirma viabilidad, impacto diario y controles antes de aprobar.</p>'+
-      (historical?'<p>Propuesta anterior: sólo lectura. No se puede aplicar a la versión actual sin una propuesta vigente.</p>':
-        partial?'<p>Propuesta individual guardada: no puede aplicarse hasta comprobar la coherencia entre actividades y registrar la decisión humana.</p>':'')+
-    '</details></div>';
+  return '<details class="tobe-ai-operational-context" role="note">'+
+    '<summary>Condiciones y viabilidad · '+(limitations?'Revisión necesaria':'Sin detalle específico')+
+      (historical?' · Histórica v'+esc(history.version):
+        partial?' · Sin consolidar':'')+'</summary>'+
+    '<div class="tobe-ai-operational-body">'+
+      '<p>'+esc(limitations||'La IA no ha detallado restricciones para esta actividad.')+'</p>'+
+      '<p><b>Fuentes:</b> '+esc(refs||'Sin fuentes especificadas')+'</p>'+
+      '<p>Una limitación propuesta por IA no es una restricción confirmada. Contrasta capacidades, permisos, interrupciones y controles antes de implantar.</p>'+
+      (historical?'<p>Propuesta anterior: sólo lectura, no aplicable a esta versión.</p>':
+        partial?'<p>Propuesta guardada sin consolidar: no se puede aplicar todavía.</p>':'')+
+    '</div></details>';
 }
 // [AUNEA-FE-PG11-CLIENT-CONTEXT-269] END
 // [AUNEA-FE-PG11-APPROVED-ROW-ACTIONS-273] START — Only the current
@@ -1356,9 +1358,9 @@ function tobeAiRowActions(e,p,item,key){
         'data-tobe-ai-use-field="'+attr(key)+'" data-tobe-ai-action-source="'+attr(id)+'"',
         false,'Aplicar sugerencia IA autorizada'):
       applied?'<span class="field-help" role="status">IA aplicada</span>':'')+
-    action('Mantener','data-tobe-ai-keep-field="'+attr(key)+
+    (candidate?action('Mantener','data-tobe-ai-keep-field="'+attr(key)+
       '" data-tobe-ai-action-source="'+attr(id)+'"',history?.action==='KEEP',
-      'Conservar valor TO-BE sin aplicar IA')+
+      'Conservar valor TO-BE sin aplicar IA'):'')+
     action('Editar','data-tobe-ai-edit-field="'+attr(key)+'"',false,
       'Abrir el editor original de este campo')+'</div>';
 }
@@ -2031,7 +2033,7 @@ function tobeInspectorHtml(e,p){
     '</nav>'+supportingInformation+
     '<section class="tobe-edit" id="tobeStepDesign"><h3 class="aunea-ui-section-title">03.3 · Configurar la actividad futura</h3>'+
       '<p class="tobe-muted" data-tobe-transformation-message="1" role="status" aria-live="polite">Elige «Qué cambia» y completa la justificación del diseño futuro. La recomendación IA no cambia tu decisión automáticamente.</p>'+
-      '<p class="tobe-muted">Mantener conserva tu valor TO-BE; Editar lo modifica. Aplicar IA sólo aparece para un candidato válido después de tu revisión humana. Las fuentes y el fundamento están en 03.2.</p>'+
+      '<p class="tobe-muted">Revisa primero la propuesta en 03.2. En cada campo, «Aplicar IA» copia un candidato autorizado, «Mantener» rechaza ese cambio y «Editar» modifica directamente tu TO-BE. Sin candidato IA sólo se ofrece Editar.</p>'+
       tobeAiOperationalContextHtml(e,item)+
       tobeAiFieldCoverageHtml(e,p,item)+
       (item.transformation==='Se mantiene'&&/^(no|n\/a|ninguno)$/i.test(String(item.problemResolved||'').trim())?
