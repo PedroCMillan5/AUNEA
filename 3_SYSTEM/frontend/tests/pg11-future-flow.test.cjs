@@ -18,6 +18,7 @@ function harness(source){
    automationAi:'',humanSupervision:'Control humano',controlsRisk:'Control'
  }))};
  const sandbox={String,Array,Object,Set,Map,JSON,console,
+   esc:x=>String(x),attr:x=>String(x),labelFrom:()=>'',
    tobeSourceSteps:()=>snapshot.processSteps,
    confirmedSnapshot:()=>snapshot,
    processDecisionStep:s=>s.step_type==='ST04',
@@ -78,6 +79,27 @@ test('decisions preserve explicit YES and NO routes, and verify reconvergence',(
  h.p.flow=h.run('tobeFlowOwner');h.p.flow.routes.G.exception='__END__';
  assert.equal(h.run('tobeFlowIntegrity'),null);
  assert.equal(h.run('tobeFutureSteps')[0].exception_path.destination_step,'__END__');
+});
+test('P2 decision logic displays confirmed conditions and routes without inventing data',()=>{
+ const graph=[
+  {id:'P2',step_name:'Decidir aprobación',step_type:'ST04',
+   decision_criteria:['THRESHOLD'],_details:{decision_criteria:'Condición declarada en AS-IS'},
+   normal_next_step:'P3',exception_path:{destination_step:'P4'}},
+  {id:'P3',step_name:'Ejecutar aprobación',step_type:'ST02',normal_next_step:'P4'},
+  {id:'P4',step_name:'Registrar',step_type:'ST02',normal_next_step:'__END__'}
+ ];
+ const h=harness(graph),before=JSON.stringify(h.snapshot);
+ const html=h.run('tobeDecisionReadoutHtml',h.p.items[0]);
+ assert.match(html,/Condición declarada en AS-IS/);
+ assert.match(html,/Si se cumple · SÍ/);
+ assert.match(html,/Si no se cumple · NO/);
+ assert.match(html,/AS-IS: Ejecutar aprobación · TO-BE: Ejecutar aprobación/);
+ assert.match(html,/AS-IS: Registrar · TO-BE: Registrar/);
+ const flow=h.run('tobeFlowOwner');flow.routes.P2.normal='P4';h.p.flow=flow;
+ assert.match(h.run('tobeDecisionReadoutHtml',h.p.items[0]),
+  /AS-IS: Ejecutar aprobación · TO-BE: Registrar/);
+ assert.equal(JSON.stringify(h.snapshot),before);
+ assert.equal(h.run('tobeDecisionReadoutHtml',h.p.items[1]),'');
 });
 test('a newly added decision needs explicit YES and NO routes and keeps the original source unchanged',()=>{
  const h=harness(linear),snapshot=JSON.stringify(h.snapshot.processSteps),flow=h.run('tobeFlowOwner');
@@ -187,21 +209,23 @@ test('PG11 existing inspector guides AS-IS, AI advice, future design and connect
   assert.ok(offsets[0]<offsets[1]&&offsets[1]<offsets[2]);
   for(const stage of stages)
     assert.match(inspector,new RegExp('data-tobe-jump="'+stage+'"'));
-  assert.match(inspector,/data-tobe-mode-switch="map"/);
+  assert.doesNotMatch(inspector,/data-tobe-mode-switch="map"/);
+  assert.match(src,/tobeGuidedNavHtml\(e,p\)/);
   assert.match(inspector,/tobeAiAdviceHtml\(e,item,false\)/);
   assert.match(inspector,/tobeArtifactField\(item,'inputs'/);
   assert.match(inspector,/tobeArtifactField\(item,'outputs'/);
   assert.match(inspector,/tobeFlowInspector\(e,p,item\)/);
+  assert.match(inspector,/tobeDecisionReadoutHtml\(e,p,item\)/);
   assert.match(src,/id="tobeStepRoutes"/);
   assert.match(src,/AUNEA-FE-PG11-GUIDED-INSPECTOR-253/);
 });
 test('PG11 introduces its purpose and four explicit consultant actions',()=>{
   assert.match(src,/tobe-task-guide/);
   assert.match(src,/Qué tienes que hacer aquí/);
-  assert.match(src,/1\. Entender/);
-  assert.match(src,/2\. Decidir/);
-  assert.match(src,/3\. Configurar/);
-  assert.match(src,/4\. Conectar/);
+  assert.match(src,/03\.1 · Entender el AS-IS/);
+  assert.match(src,/03\.2 · Revisar propuestas IA/);
+  assert.match(src,/03\.3 · Configurar la actividad futura/);
+  assert.match(src,/03\.4 · Conectar el proceso futuro/);
   assert.match(src,/Resultado esperado:/);
 });
 test('PG11 text instructions appear as placeholders rather than duplicate help below fields',()=>{
