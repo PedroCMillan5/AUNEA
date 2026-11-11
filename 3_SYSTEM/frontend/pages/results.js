@@ -2008,7 +2008,9 @@ function tobeInspectorHtml(e,p){
   // Keep an expanded execution-data group open across rerenders for this step.
   const previousExecution=typeof document!=='undefined'?
     document.getElementById?.('tobeExecutionFields'):null;
-  const executionOpen=!hasCurrentAi||!!(previousExecution?.open&&
+  // A newly added TO-BE-only activity has no own IA proposal and must expose
+  // its required execution data immediately, even if it links to an analyzed AS-IS step.
+  const executionOpen=item.isAddition||!hasCurrentAi||!!(previousExecution?.open&&
     previousExecution.dataset?.sourceStepId===String(item.sourceStepId));
   const withAi=(key,html)=>tobeWithAiHint(e,p,item,key,html);
   const statusField='<div class="field"><label for="tobe_'+attr(item.id)+'_transformation">Qué cambia</label>'+
