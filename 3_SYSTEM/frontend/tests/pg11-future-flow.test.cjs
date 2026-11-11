@@ -19,6 +19,7 @@ function harness(source){
  }))};
  const sandbox={String,Array,Object,Set,Map,JSON,console,
    esc:x=>String(x),attr:x=>String(x),labelFrom:()=>'',
+   tobeEditable:p=>p.status==='DRAFT',
    tobeSourceSteps:()=>snapshot.processSteps,
    confirmedSnapshot:()=>snapshot,
    processDecisionStep:s=>s.step_type==='ST04',
