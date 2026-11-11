@@ -1197,11 +1197,18 @@ function tobeAiFieldCoverageHtml(e,p,item){
   const diff=tobeAiReviewDiff(e,p,item.sourceStepId),
     candidate=diff.allFields.length,
     invalid=diff.skipped.length,
-    absent=TOBE_AI_REVIEW_FIELDS.length-candidate-invalid;
+    blank=TOBE_AI_REVIEW_FIELDS.filter(([sourceKey,key])=>
+      !diff.allFields.some(x=>x.key===key)&&!diff.skipped.some(x=>x.key===key)),
+    incomplete=blank.filter(([sourceKey])=>
+      (saved.review?.issues||[]).some(x=>
+        x.category==='BLOCKING'&&String(x.step_id)===String(item.sourceStepId)&&
+        String(x.evidence||'').split(/[^a-z_]/i).includes(sourceKey))).length,
+    absent=blank.length-incomplete;
   return '<div class="tobe-ai-field-summary" role="status">'+
     '<b>Propuestas IA por campo</b> '+
     '<span class="tobe-ai-field-count"><strong>'+candidate+'</strong> con candidato</span>'+
     '<span class="tobe-ai-field-count"><strong>'+invalid+'</strong> no aplicables</span>'+
+    (incomplete?'<span class="tobe-ai-field-count"><strong>'+incomplete+'</strong> incompletos según revisor</span>':'')+
     '<span class="tobe-ai-field-count"><strong>'+absent+'</strong> sin propuesta</span>'+
     '<details class="tobe-subdetails"><summary>Cómo interpretar los estados</summary>'+
     '<p>La cobertura de estos nueve campos es distinta de las actividades analizadas. Un campo vacío no prueba falta de datos, conformidad, ni aprobación. La IA no indica la razón de cada omisión.</p></details>'+
@@ -1278,13 +1285,20 @@ function tobeAiInlineHint(e,p,item,key){
     internalAiPilotNarrative(ai.rationale):{action:''};
   const missingAutomationCandidate=key==='automationAi'&&!matched&&!skipped&&
     /automatiz|autom[aá]tic/i.test(String(narrative.action||''));
+  const structuredIssue=(!matched&&!skipped)?(data?.review?.issues||[]).find(issue=>
+    issue.category==='BLOCKING'&&String(issue.step_id)===id&&
+    String(issue.evidence||'').split(/[^a-z_]/i).includes(field[0])):null;
   return '<div class="tobe-ai-inline'+(!matched&&!skipped?' tobe-ai-no-candidate':'')+
     '" data-tobe-ai-field-key="'+attr(key)+'">'+
     '<p class="field-help"><b>'+(!matched&&!skipped?'IA: sin candidato estructurado para este campo':'IA propone:')+'</b> '+esc(value)+
     (skipped?' · <b>Revisión manual necesaria</b>':
       matched&&!matched.changed?' · Coincide con el TO-BE':'')+'</p>'+
     (skipped?'<p class="field-help">'+esc(skipped.reason)+'</p>':'')+
-    (missingAutomationCandidate?
+    (structuredIssue?
+      '<p class="field-help tobe-ai-candidate-gap" role="alert"><b>Incoherencia de propuesta:</b> '+
+        esc(structuredIssue.issue||'Falta contenido estructurado.')+
+        ' Consulta la revisión en 03.2. No se puede aplicar este campo.</p>':
+      missingAutomationCandidate?
       '<p class="field-help tobe-ai-candidate-gap">03.2 describe automatización, pero la IA no ha generado un valor estructurado para este campo. No puede aplicarse; revisa el borrador manualmente.</p>':'')+
     ((matched||skipped)?'<details class="tobe-subdetails"><summary>Fuentes y condiciones del campo</summary>'+
       '<p><b>Referencias:</b> '+esc(refs||'No identificadas')+'</p>'+
