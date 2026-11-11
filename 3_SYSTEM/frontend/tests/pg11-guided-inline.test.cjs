@@ -286,7 +286,7 @@ test('PG11 identifies individual coherence separately from section 02 global ana
  assert.match(pilot,/actividades analizadas por IA/);
  assert.match(pilot,/Propuestas IA verificadas y guardadas; no son decisiones del consultor/);
  assert.match(src,/Sólo consulta hasta completar las actividades y comprobar coherencia/);
- assert.match(src,/El análisis global de la sección 02 no sustituye esta comprobación/);
+ assert.match(src,/La propuesta tiene observaciones o sólo revisión por reglas/);
  assert.match(src,/data-tobe-ai-apply-unavailable/);
  assert.match(src,/data-tobe-ai-keep-field/);
  assert.match(src,/data-tobe-ai-edit-field/);
