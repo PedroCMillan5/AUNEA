@@ -3673,3 +3673,68 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 }
 @media(max-width:700px){.tobe-ai-field-summary{padding:9px 10px}}
 /* [AUNEA-FE-PG11-STRUCTURED-STATUS-305] END */
+
+/* [AUNEA-FE-PG11-REVIEW-DENSITY-308] START — page-level UX hierarchy, using shared tokens. */
+.tobe-workspace[data-tobe-mode="guided"] .tobe-inspector{
+  gap:12px;
+}
+.tobe-workspace[data-tobe-mode="guided"] .tobe-ai-field-summary{
+  display:flex;align-items:center;flex-wrap:wrap;gap:7px 12px;
+  padding:9px 12px;margin:10px 0;
+  color:var(--ink);background:var(--system-soft);
+  font-size:var(--font-small);line-height:1.4;
+}
+.tobe-workspace[data-tobe-mode="guided"] .tobe-ai-field-summary>b{
+  flex:1 1 195px;color:var(--system);
+}
+.tobe-ai-field-count{
+  display:inline-flex;align-items:center;gap:5px;
+  background:#fff;border:1px solid var(--system-line);
+  border-radius:var(--radius-pill);padding:4px 9px;
+}
+.tobe-ai-field-count strong{font-size:14px;color:var(--system)}
+.tobe-ai-field-summary>details{flex-basis:100%;margin:0;font-size:var(--font-small)}
+.tobe-ai-field-summary>details>summary{cursor:pointer;font-weight:600}
+.tobe-ai-field-summary>details p{margin:6px 0 0;line-height:1.5}
+details.tobe-ai-operational-context{
+  display:block;padding:9px 12px;margin:8px 0;
+  background:#fff;border:1px solid var(--system-line);
+}
+details.tobe-ai-operational-context>summary{
+  cursor:pointer;font-weight:650;color:var(--system);
+  font-size:var(--font-small);
+}
+details.tobe-ai-operational-context:not([open])>.tobe-ai-operational-body{
+  display:none;
+}
+.tobe-ai-operational-body{display:grid;gap:8px;margin-top:9px}
+.tobe-ai-operational-body p{margin:0;font-size:var(--font-small);line-height:1.5}
+.tobe-workspace[data-tobe-mode="guided"] .tobe-ai-field-row:has(.tobe-ai-no-candidate){
+  padding-top:8px;padding-bottom:8px;min-height:0;
+}
+.tobe-workspace[data-tobe-mode="guided"] .tobe-ai-field-row .tobe-ai-no-candidate{
+  border:0;background:transparent;padding:3px 0;
+  align-content:center;box-shadow:none;
+}
+.tobe-workspace[data-tobe-mode="guided"] .tobe-ai-no-candidate .field-help{
+  color:var(--muted);font-size:var(--font-small);line-height:1.4;
+}
+.tobe-workspace[data-tobe-mode="guided"] .tobe-ai-row-actions{
+  align-items:center;align-self:center;
+}
+.tobe-workspace[data-tobe-mode="guided"] .tobe-ai-row-actions .btn{
+  min-height:35px;line-height:1.35;
+}
+.tobe-inspector #tobeStepOrigin .tobe-subdetails>summary,
+.tobe-inspector #tobeStepAdvice .tobe-subdetails>summary{
+  font-size:var(--font-h4);line-height:1.4;
+}
+@media(max-width:800px){
+  .tobe-workspace[data-tobe-mode="guided"] .tobe-ai-field-summary{
+    padding:9px 10px;gap:7px;
+  }
+  .tobe-workspace[data-tobe-mode="guided"] .tobe-ai-row-actions{
+    justify-content:flex-start;width:100%;max-width:none;
+  }
+}
+/* [AUNEA-FE-PG11-REVIEW-DENSITY-308] END */
