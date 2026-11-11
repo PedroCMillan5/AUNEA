@@ -2009,6 +2009,13 @@ function tobeInspectorHtml(e,p){
   // its required execution data immediately, even if it links to an analyzed AS-IS step.
   const executionOpen=item.isAddition||!hasCurrentAi||!!(previousExecution?.open&&
     previousExecution.dataset?.sourceStepId===String(item.sourceStepId));
+  const prevEvidence=typeof document!=='undefined'?
+    document.getElementById?.('tobeDesignEvidence'):null;
+  const evidenceOpen=!!prevEvidence?.open&&
+    prevEvidence.dataset?.sourceStepId===String(item.sourceStepId);
+  const savedReview=hasCurrentAi?internalAiSavedDraft(e)?.review:null;
+  const fieldBlockers=(savedReview?.issues||[]).filter(issue=>
+    issue.category==='BLOCKING'&&String(issue.step_id)===String(item.sourceStepId)).length;
   const withAi=(key,html)=>tobeWithAiHint(e,p,item,key,html);
   const statusField='<div class="field"><label for="tobe_'+attr(item.id)+'_transformation">Qué cambia</label>'+
     (editable?auneaSelectControl('tobe_'+item.id+'_transformation',TOBE_TRANSFORMATIONS.map(v=>({value:v,label:v})),
@@ -2050,34 +2057,67 @@ function tobeInspectorHtml(e,p){
       '<button type="button" class="btn btn-outline btn-small" data-tobe-jump="tobeStepDesign">03.3 · Configurar la actividad futura</button>'+
 
     '</nav>'+supportingInformation+
-    '<section class="tobe-edit" id="tobeStepDesign"><h3 class="aunea-ui-section-title">03.3 · Configurar la actividad futura</h3>'+
-      '<p class="tobe-muted" data-tobe-transformation-message="1" role="status" aria-live="polite">Elige «Qué cambia» y completa la justificación del diseño futuro. La recomendación IA no cambia tu decisión automáticamente.</p>'+
-      '<p class="tobe-muted">Revisa primero la propuesta en 03.2. En cada campo, «Aplicar IA» copia un candidato autorizado, «Mantener» rechaza ese cambio y «Editar» modifica directamente tu TO-BE. Sin candidato IA sólo se ofrece Editar.</p>'+
-      tobeAiOperationalContextHtml(e,item)+
-      tobeAiFieldCoverageHtml(e,p,item)+
-      (item.transformation==='Se mantiene'&&/^(no|n\/a|ninguno)$/i.test(String(item.problemResolved||'').trim())?
-        '<p class="notice warn"><b>Justificación pendiente:</b> «Se mantiene» conserva esta actividad sin rediseño. El valor «NO» no explica por qué se mantienen los hallazgos ni cómo se controlan; revisa la decisión antes de validar.</p>':'')+
-      '<div class="form-grid">'+
-      (item.isAddition?tobeField(item,'stepName','Nombre de actividad futura',item.stepName,'text',!editable):'')+
-      (item.isAddition?'<div class="field"><label>Tipo de actividad futura</label>'+
-        (editable?auneaSelectControl('tobeStepType_'+item.id,
-          [{value:'ST02',label:'Actividad operativa'},{value:'ST04',label:'Decisión · rutas SÍ / NO'}],
-          item.stepType||'ST02',{extra:'data-tobe-item="'+attr(item.id)+'" data-tobe-field="stepType"',
-            placeholder:'Selecciona tipo'}):
-          '<input disabled value="'+attr(item.stepType==='ST04'?'Decisión · rutas SÍ / NO':'Actividad operativa')+'">')+
-        '<p class="field-help">Actividad operativa: ejecuta trabajo. Decisión: requiere rutas SÍ y NO.</p></div>':'')+
-      withAi('transformation',statusField)+
-      withAi('problemResolved',tobeField(item,'problemResolved',
-        tobeTransformationRationaleLabel(item.transformation),
-        item.problemResolved,'textarea',!editable))+
-      withAi('automationAi',tobeField(item,'automationAi','Automatización e IA',item.automationAi,'textarea',!editable))+
-      withAi('humanSupervision',tobeField(item,'humanSupervision','Supervisión humana',item.humanSupervision,'textarea',!editable))+
-      withAi('controlsRisk',tobeField(item,'controlsRisk','Control / riesgo',item.controlsRisk,'textarea',!editable))+
-      '</div>'+
-      '<details class="tobe-execution-fields" id="tobeExecutionFields"'+
+    // [AUNEA-FE-PG11-DESIGN-COMPOSITION-310] START — PG11.03, UI only.
+    // Existing version-owned TO-BE inputs remain sole edit owners; IA remains
+    // advisory. Snapshot AS-IS remains immutable. No new business fields.
+    '<section class="tobe-edit tobe-design-workspace" id="tobeStepDesign">'+
+      '<header class="tobe-design-header"><div>'+
+        '<h3 class="aunea-ui-section-title">03.3 · Configurar la actividad futura</h3>'+
+        '<p class="tobe-design-lede" data-tobe-transformation-message="1" role="status" aria-live="polite">'+
+          'Define tu TO-BE en los campos editables. La propuesta IA no modifica tu diseño hasta que decidas aplicarla.</p>'+
+        '</div><span class="tobe-design-status">'+(editable?'Borrador editable':'Solo lectura')+'</span></header>'+
+      '<details class="tobe-design-evidence" id="tobeDesignEvidence" data-source-step-id="'+
+        attr(item.sourceStepId)+'"'+(evidenceOpen?' open':'')+'>'+
+        '<summary>Propuestas IA y condiciones de viabilidad'+
+          (fieldBlockers?'<span class="tobe-design-warning-count">'+fieldBlockers+' '+(fieldBlockers===1?'bloqueo IA':'bloqueos IA')+'</span>':'')+
+        '</summary>'+
+        '<div class="tobe-design-evidence-content">'+
+          tobeAiFieldCoverageHtml(e,p,item)+
+          tobeAiOperationalContextHtml(e,item)+
+        '</div>'+
+      '</details>'+
+      (item.isAddition?
+        '<section class="tobe-design-group tobe-design-new-activity" aria-label="Datos de la nueva actividad">'+
+          '<div class="tobe-design-group-head"><span class="tobe-design-group-number">00</span>'+
+          '<div><h4>Identificar la nueva actividad</h4>'+
+          '<p>Esta actividad sólo existe en TO-BE y mantiene su vínculo con el AS-IS.</p></div></div>'+
+          '<div class="form-grid tobe-design-fields">'+
+            tobeField(item,'stepName','Nombre de actividad futura',item.stepName,'text',!editable)+
+            '<div class="field"><label>Tipo de actividad futura</label>'+
+              (editable?auneaSelectControl('tobeStepType_'+item.id,
+                [{value:'ST02',label:'Actividad operativa'},{value:'ST04',label:'Decisión · rutas SÍ / NO'}],
+                item.stepType||'ST02',{extra:'data-tobe-item="'+attr(item.id)+'" data-tobe-field="stepType"',
+                  placeholder:'Selecciona tipo'}):
+                '<input disabled value="'+attr(item.stepType==='ST04'?'Decisión · rutas SÍ / NO':'Actividad operativa')+'">')+
+              '<p class="field-help">Actividad operativa: ejecuta trabajo. Decisión: requiere rutas SÍ y NO.</p></div>'+
+          '</div></section>':'')+
+      '<section class="tobe-design-group tobe-design-transformation" aria-label="Transformación y propósito">'+
+        '<div class="tobe-design-group-head"><span class="tobe-design-group-number">01</span>'+
+          '<div><h4>Transformación y propósito</h4>'+
+            '<p>Qué cambia y qué problema del AS-IS resuelve tu diseño.</p></div></div>'+
+        (item.transformation==='Se mantiene'&&/^(no|n\/a|ninguno)$/i.test(String(item.problemResolved||'').trim())?
+          '<p class="notice warn"><b>Justificación pendiente:</b> «Se mantiene» conserva esta actividad sin rediseño. El valor «NO» no explica cómo se controlan sus hallazgos; revisa la decisión antes de validar.</p>':'')+
+        '<div class="form-grid tobe-design-fields">'+
+          withAi('transformation',statusField)+
+          withAi('problemResolved',tobeField(item,'problemResolved',
+            tobeTransformationRationaleLabel(item.transformation),
+            item.problemResolved,'textarea',!editable))+
+        '</div></section>'+
+      '<section class="tobe-design-group tobe-design-operation" aria-label="Funcionamiento operativo futuro">'+
+        '<div class="tobe-design-group-head"><span class="tobe-design-group-number">02</span>'+
+          '<div><h4>Funcionamiento futuro</h4>'+
+            '<p>Cómo se ejecuta, qué supervisión exige y cómo se controlan sus riesgos.</p></div></div>'+
+        '<div class="form-grid tobe-design-fields">'+
+          withAi('automationAi',tobeField(item,'automationAi','Automatización e IA',item.automationAi,'textarea',!editable))+
+          withAi('humanSupervision',tobeField(item,'humanSupervision','Supervisión humana',item.humanSupervision,'textarea',!editable))+
+          withAi('controlsRisk',tobeField(item,'controlsRisk','Control / riesgo',item.controlsRisk,'textarea',!editable))+
+        '</div></section>'+
+      '<details class="tobe-execution-fields tobe-design-group" id="tobeExecutionFields"'+
         ' data-source-step-id="'+attr(item.sourceStepId)+'"'+(executionOpen?' open':'')+'>'+
-        '<summary>Recursos y datos de ejecución <span class="tobe-muted">· Responsable, herramientas, entradas y salidas (4 campos)</span></summary>'+
-        '<div class="form-grid">'+
+        '<summary><span class="tobe-design-group-number">03</span><span>'+
+          '<b>Recursos y datos de ejecución</b><small>Responsable, herramientas, entradas y salidas · 4 campos</small>'+
+        '</span></summary>'+
+        '<div class="form-grid tobe-design-fields">'+
           withAi('futureActor',tobeCatalogField(item,'futureActor','Responsable futuro','OS_ACTOR_ROLE',!editable))+
           withAi('tool',tobeCatalogField(item,'tool','Herramienta / arquitectura','OS_TOOL_CATEGORY',!editable))+
           '<div class="tobe-data-pair">'+withAi('inputs',tobeArtifactField(item,'inputs','Datos de entrada',!editable))+'</div>'+
@@ -2085,17 +2125,22 @@ function tobeInspectorHtml(e,p){
         '</div>'+
       '</details>'+
       tobeDecisionReadoutHtml(e,p,item)+
-      ''+
-      '<details class="tobe-subdetails"><summary>Tiempo futuro y supuesto trazable (si existe)</summary>'+
-      '<div class="form-grid">'+tobeField(item,'futureTime','Tiempo futuro',item.futureTime,'text',!editable)+
-      tobeField(item,'futureTimeAssumption','Supuesto trazable',item.futureTimeAssumption,'textarea',!editable)+
-      '</div></details>'+
+      '<details class="tobe-design-time tobe-design-group">'+
+        '<summary><span class="tobe-design-group-number">04</span><span>'+
+          '<b>Tiempo futuro y supuesto trazable</b><small>Opcional · sólo con evidencia suficiente</small>'+
+        '</span></summary>'+
+        '<div class="form-grid tobe-design-fields">'+
+          tobeField(item,'futureTime','Tiempo futuro',item.futureTime,'text',!editable)+
+          tobeField(item,'futureTimeAssumption','Supuesto trazable',item.futureTimeAssumption,'textarea',!editable)+
+        '</div>'+
+      '</details>'+
       '<div class="tobe-guided-field-actions">'+
         (editable?'<button type="button" class="btn btn-outline" data-tobe-guided-save="1">Guardar borrador</button>':'')+
         '<button type="button" class="btn btn-outline" data-tobe-guided-check="1">Comprobar requisitos</button>'+
         (nextItem?'<button type="button" class="btn btn-primary" data-tobe-select="'+
           attr(tobeFlowItemId(nextItem))+'">Siguiente actividad</button>':'')+
       '</div></section>'+
+      // [AUNEA-FE-PG11-DESIGN-COMPOSITION-310] END
       tobeFlowInspector(e,p,item)+
     (item.isAddition&&editable?'<button type="button" class="btn btn-outline" data-tobe-discard-added="'+attr(item.id)+'">Descartar actividad añadida</button>':'');
 }
