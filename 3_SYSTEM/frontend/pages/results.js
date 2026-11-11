@@ -1781,6 +1781,43 @@ function tobeFlowOptions(e,p,item){
       .map(s=>({value:String(s.id),label:s.step_name})),
     {value:'__END__',label:'Fin del proceso'}];
 }
+// [AUNEA-FE-PG11-DECISION-READOUT-297] START — source-backed decision logic.
+// AS-IS criteria remain immutable. TO-BE destinations are edited only in Map.
+function tobeDecisionReadoutHtml(e,p,item){
+  const original=tobeProposalSourceSteps(e,p),
+    source=original.find(x=>String(x.id)===String(item.sourceStepId));
+  const decision=item.isAddition?String(item.stepType)==='ST04':
+    !!source&&processDecisionStep(source);
+  if(!decision||item.transformation==='Se elimina')return '';
+  const future=tobeFutureSteps(e,p),
+    routes=tobeFlowOwner(e,p).routes[tobeFlowItemId(item)]||{},
+    name=(id,steps)=>{
+      const key=String(id||'__PENDING__');
+      if(key==='__END__')return 'Fin del proceso';
+      if(key==='__PENDING__')return 'Pendiente de conectar';
+      return steps.find(x=>String(x.id)===key)?.step_name||'Destino no disponible';
+    },
+    raw=source?._details?.decision_criteria||source?.decision_criteria||'',
+    values=Array.isArray(raw)?raw:raw?[raw]:[],
+    setId=typeof schema!=='undefined'?
+      schema.fields?.find(x=>x.Field_ID==='DF041')?.Option_Set_ID:'',
+    readable=v=>String((typeof labelFrom==='function'&&setId?
+      labelFrom(setId,v):'')||v),
+    criteria=values.map(readable).filter(Boolean).join(' · '),
+    asYes=source?name(source.normal_next_step,original):'Nueva decisión TO-BE',
+    asNo=source?name(source.exception_path?.destination_step,original):'Nueva decisión TO-BE';
+  return '<section class="tobe-decision-readout" aria-label="Lógica de decisión y rutas">'+
+    '<h4>Decisión y rutas de la actividad</h4>'+
+    '<p class="field-help"><b>Criterio AS-IS confirmado:</b> '+
+      esc(criteria||'No consta un criterio detallado en el snapshot.')+'</p>'+
+    '<dl><div><dt>Si se cumple · SÍ</dt><dd>AS-IS: '+esc(asYes)+
+      ' · TO-BE: '+esc(name(routes.normal,future))+'</dd></div>'+
+      '<div><dt>Si no se cumple · NO</dt><dd>AS-IS: '+esc(asNo)+
+      ' · TO-BE: '+esc(name(routes.exception,future))+'</dd></div></dl>'+
+    '<p class="field-help">Modifica las rutas en «Mapa TO-BE». Esta vista no altera el AS-IS ni confirma nuevas condiciones.</p>'+
+  '</section>';
+}
+// [AUNEA-FE-PG11-DECISION-READOUT-297] END
 function tobeFlowInspector(e,p,item){
   if(item.transformation==='Se elimina'){
     return '<section class="tobe-route-editor" id="tobeStepRoutes">'+
@@ -1969,6 +2006,7 @@ function tobeInspectorHtml(e,p){
       withAi('humanSupervision',tobeField(item,'humanSupervision','Supervisión humana',item.humanSupervision,'textarea',!editable))+
       withAi('controlsRisk',tobeField(item,'controlsRisk','Control / riesgo',item.controlsRisk,'textarea',!editable))+
       '</div>'+
+      tobeDecisionReadoutHtml(e,p,item)+
       ''+
       '<details class="tobe-subdetails"><summary>Tiempo futuro y supuesto trazable (si existe)</summary>'+
       '<div class="form-grid">'+tobeField(item,'futureTime','Tiempo futuro',item.futureTime,'text',!editable)+
