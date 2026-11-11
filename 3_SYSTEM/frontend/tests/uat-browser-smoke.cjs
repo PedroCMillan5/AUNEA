@@ -973,6 +973,44 @@ async function main(){
   await page.evaluate(()=>render());
   assert.equal(await page.locator('#tobeExecutionFields').evaluate(x=>x.open),true,
     'expanding the canonical execution group must survive a rerender of the same step');
+  // [AUNEA-UAT-PG11-ARTIFACT-OPTIMIZATION-318] START — provenance from
+  // canonical source vs extra artifact chosen in the consultant TO-BE DRAFT.
+  assert.equal(await page.locator('#tobeStepOptimization').count(),1);
+  assert.match(await page.locator('#tobeStepOptimization').innerText(),/Impacto del cambio sobre el flujo/);
+  assert.equal(await page.locator('[data-tobe-recheck-optimization]').count(),1);
+  const artifactColors=await page.evaluate(()=>{
+    const e=currentEng(),p=latestTobe(e),source=JSON.stringify(tobeProposalSourceSteps(e,p)),
+      box=document.querySelector('#tobeStepDesign [data-tobe-multi-key="inputs"]');
+    if(!box)throw Error('Missing canonical input multiselect in PG11');
+    const existing=box.querySelector('.choice[data-artifact-provenance="asis"] input:checked');
+    if(!existing)throw Error('Fixture needs at least one confirmed AS-IS input');
+    const green=getComputedStyle(existing.nextElementSibling).backgroundColor;
+    const extra=[...box.querySelectorAll('.choice[data-artifact-provenance="improvement"] input')]
+      .find(x=>!x.checked&&x.value!=='OTHER');
+    if(!extra)throw Error('Fixture needs a new canonical artifact choice');
+    extra.closest('.choice').hidden=false;
+    extra.checked=true;extra.dispatchEvent(new Event('change',{bubbles:true}));
+    const yellow=getComputedStyle(extra.nextElementSibling).backgroundColor;
+    const saved=saveTobeFromDom(e)&&saveState('UAT: guardar dato nuevo TO-BE');
+    const included=tobeArtifactValues(p.items[0].inputs).resolved.includes(extra.value);
+    const sourceUnchanged=JSON.stringify(tobeProposalSourceSteps(e,p))===source;
+    extra.checked=false;extra.dispatchEvent(new Event('change',{bubbles:true}));
+    const restored=saveTobeFromDom(e)&&saveState('UAT: restaurar dato original TO-BE');
+    return {green,yellow,saved,included,sourceUnchanged,restored};
+  });
+  assert.notEqual(artifactColors.green,artifactColors.yellow,
+    'confirmed AS-IS inputs and newly added TO-BE inputs must have different colors');
+  assert.equal(artifactColors.green,'rgb(234, 242, 237)',
+    'AS-IS values use canonical System green-soft');
+  assert.equal(artifactColors.yellow,'rgb(246, 239, 217)',
+    'TO-BE improvement values use corporate gold-soft');
+  assert.ok(artifactColors.saved&&artifactColors.included&&artifactColors.restored);
+  assert.ok(artifactColors.sourceUnchanged);
+  await page.locator('[data-tobe-recheck-optimization]').click();
+  assert.equal(await page.locator('#tobeStepOptimization').count(),1,
+    'the optimization check must rerender after saving');
+  console.log('PG11_ARTIFACT_PROVENANCE_OPTIMIZATION_BROWSER_PASS: green AS-IS, gold TO-BE, preserved source');
+  // [AUNEA-UAT-PG11-ARTIFACT-OPTIMIZATION-318] END
   console.log('PG11_EXECUTION_FIELDS_BROWSER_PASS: primary intervention and secondary data');
   console.log('PG11_HUMAN_DECISION_BROWSER_PASS: '+sourceIds[0]);
   // The three canonical per-field actions must work through real browser clicks.
