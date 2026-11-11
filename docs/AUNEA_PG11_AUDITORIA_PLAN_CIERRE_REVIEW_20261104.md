@@ -174,3 +174,25 @@ El gate REVIEWED exige, cuando existe una propuesta IA, decisiones y fundamentos
 **QA confirmado:** [GitHub Run 41869093011](https://github.com/PedroCMillan5/AUNEA/actions/runs/41869093011): 405 backend PASS, 758 frontend PASS, Chromium PASS, incluido clic de decisión con persistencia sin sobrescribir campos.
 
 Estado: A cerrado; B revisión básica operativa, sin revisión semántica Ollama; C implementado y probado sintéticamente; D diseño por consultor y topología futura pendientes; E gate reforzado, transferencia PG12 pendiente. No marcar PG11 completo ni regenerar P1–P4.
+
+
+## Actualización verificable — 11/11/2026 — Sección 03 PG11
+
+**Estado técnico:** QA automatizado PASS; **estado de producto: REVIEW** hasta UAT visual y funcional del estudio local del propietario. La presente actualización **no** modifica los contratos CANONICAL, ni promociona PG11 a CLOSED o PRODUCTION.
+
+**Rama:** `work/as-is-ux-simplification-20260930`. Implementación inicial de Astra: `8af8562`; corrección del test de confirmación de reemplazo global: `746eae35`; reducción de repetición de tarjetas IA sin candidato: `752948e0`; regresión de campos sin candidato: `fe0781b8`; aserción y captura de densidad real en navegador: `27a5c4e8`.
+
+**Evidencias automáticas ejecutadas:**
+- Frontend: **894 PASS, 0 FAIL**. `https://github.com/PedroCMillan5/AUNEA/actions/runs/43012366884`.
+- Backend: **467 PASS, 1 warning**, sin fallos. `https://github.com/PedroCMillan5/AUNEA/actions/runs/43012367147`.
+- Chromium: **PASS**, incluye selección, revisión humana, Mantener/Editar/Aplicar, persistencia/reload, reanálisis global, rutas nuevas y fuente AS-IS inmutable, comparación PG11/PG12, responsive y comprobación de que campos sin candidato no repiten nueve bloques de fuentes. `https://github.com/PedroCMillan5/AUNEA/actions/runs/43012367147`.
+- UAT sintética con modelo Ollama real: **PASS** en el commit `8af8562`. `https://github.com/PedroCMillan5/AUNEA/actions/runs/43010345831`. Los cambios posteriores son solo de frontend/test y no cambian el motor IA.
+- Oráculos de prueba: `invoices.json`, `unified-requests.json`, `email-orders.json` de `3_SYSTEM/frontend/uat/cases/`. No equivalen al JSON del estudio local del propietario.
+
+**Diagnóstico de fallo Chromium previo:** el test intentaba sustituir una propuesta global guardada sin aceptar el diálogo de confirmación; Playwright descarta diálogos no atendidos. Se acepta ese diálogo únicamente en la prueba; producción mantiene la confirmación humana.
+
+**Cierre visual de 03.3:** se preservan las fuentes detalladas en 03.2 y las justificaciones por campo cuando hay candidato. En campos sin recomendación válida ya no se repite una tarjeta completa con las mismas justificaciones, fuentes y límites. La UI continúa utilizando los controles canónicos de diseño y edición.
+
+**Límite de aceptación restante:** comprobar en Windows, tras `git pull --ff-only` y recarga, que los datos AS-IS y las recomendaciones coinciden con el **snapshot confirmado vigente de cuatro actividades** (no sustituir por el oráculo sintético histórico de seis), que las acciones y decisiones persisten con Ollama y backend 8010 conectados y que el propietario acepta visualmente la sección 03 completa. Para P1 en la captura del propietario: Administración/Email; correo y PDF; 3 min activos, 0 de espera y 0 de retrabajo; fricción de visibilidad (30 % y 10 min por caso afectado); riesgo de pérdida de trazabilidad entre correo y ERP. Estas últimas observaciones exigen verificar origen/versiones antes de certificar datos.
+
+**Criterio de cierre:** 03.1–03.4 sin defectos críticos en sesión real, trazabilidad correcta del mismo snapshot, guardado/reapertura, aprobación humana y aceptación visual del propietario. Hasta entonces conservar REVIEW; no declarar ahorro, viabilidad tecnológica ni aprobación automática. No cambian Master Index, DECISIONES, ESTADO ni ROADMAP: no hay modificación de versión canónica, regla o secuencia de producto. Registrar el hito de QA en BITACORA.
