@@ -74,6 +74,18 @@ test('PG11 fields without an IA candidate never repeat a full evidence card',()=
  assert.match(proposed,/Referencias:/);
  assert.doesNotMatch(proposed,/Justificación global de la actividad|Intervención propuesta:/);
 });
+test('PG11 gives truthful field coverage without inferring reasons for empty candidates',()=>{
+ const f=fixture();
+ f.proposal.items[0].controls_risk='';
+ f.proposal.items[0].human_supervision='';
+ const html=f.context.tobeAiFieldCoverageHtml(f.e,f.p,f.p.items[0]);
+ assert.match(html,/Propuestas estructuradas de esta actividad/);
+ assert.match(html,/sin candidato/);
+ assert.match(html,/La IA no indica por qué ha omitido cada campo/);
+ const empty=f.context.tobeAiInlineHint(f.e,f.p,f.p.items[0],'controlsRisk');
+ assert.match(empty,/tobe-ai-no-candidate/);
+ assert.doesNotMatch(empty,/Fuentes y condiciones del campo/);
+});
 test('PG11 flags narrative automation without inventing a structured field suggestion',()=>{
  const f=fixture();f.proposal.items[0].automation_ai='';
  const html=f.context.tobeAiInlineHint(f.e,f.p,f.p.items[0],'automationAi');
