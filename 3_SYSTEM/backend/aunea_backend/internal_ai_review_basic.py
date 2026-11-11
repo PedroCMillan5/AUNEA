@@ -7,7 +7,8 @@ from __future__ import annotations
 
 import re
 from .internal_ai import PilotAIConsolidationRequest, validate_pilot_result
-from .internal_ai_review import PG11_REVIEW_PROTOCOL, _clear_transformation_conflicts, _missing_structured_actions
+from .internal_ai_review import (PG11_REVIEW_PROTOCOL, _clear_transformation_conflicts,
+    _missing_structured_actions, _transformation_field_gaps)
 
 _NUMBER_CLAIM = re.compile(r"\b\d+(?:[.,]\d+)*\s*(?:%|€|euros?|minutos?|horas?|d[ií]as?)(?!\w)", re.I)
 
@@ -21,6 +22,9 @@ def basic_review(request: PilotAIConsolidationRequest) -> dict:
     def add(sid: str, category: str, detail: str, evidence: str, action: str):
         issues.append({"step_id": sid, "category": category, "issue": detail,
                        "evidence": evidence[:200], "action": action})
+
+    for gap in _transformation_field_gaps(request.items):
+        add(gap['step_id'], gap['category'], gap['issue'], gap['evidence'], gap['action'])
 
     for item in request.items:
         sid = item.source_step_id
