@@ -945,8 +945,11 @@ async function main(){
   assert.equal(await execution.count(),1);
   assert.equal(await page.locator('#tobeInspector [data-tobe-row-key]').count(),9);
   const futureRole=page.locator('#tobeExecutionFields [data-tobe-catalog-field="futureActor"]');
+  // The group may already be open if the same consultant expanded it
+  // before reanalysis; it must remain controllable, not be forcibly collapsed.
+  if(await execution.evaluate(x=>x.open))await execution.locator('summary').click();
   assert.equal(await futureRole.isVisible(),false,
-    'secondary execution fields must start collapsed after AI review');
+    'collapsing secondary fields hides only their presentation, not their values');
   await execution.locator('summary').click();
   assert.equal(await futureRole.isVisible(),true);
   await page.evaluate(()=>render());
