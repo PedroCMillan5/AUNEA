@@ -17,7 +17,7 @@ from .internal_ai_ollama import (
 
 # Technical protocol version only, not a business schema or canonical data field.
 # Frontend refuses a stale reviewer before requesting costly local inference.
-PG11_REVIEW_PROTOCOL = "PG11_REVIEW_20261111_4"
+PG11_REVIEW_PROTOCOL = "PG11_REVIEW_20261111_5"
 
 MAX_REVIEW_BYTES = 11000
 MAX_REVIEW_INPUT_TOKENS = 4000
