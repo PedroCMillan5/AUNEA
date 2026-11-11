@@ -1997,7 +1997,8 @@ function tobeInspectorHtml(e,p){
       item.transformation||'',{extra:'data-tobe-item="'+attr(item.id)+'" data-tobe-field="transformation"',placeholder:'Selecciona una transformación'}):
       '<input value="'+attr(item.transformation||'Sin definir')+'" disabled>')+'</div>';
   const supportingInformation=
-    '<section class="tobe-origin" id="tobeStepOrigin"><details class="tobe-subdetails" open><summary class="aunea-ui-section-title">03.1 · Entender el AS-IS</summary>'+
+    '<section class="tobe-origin" id="tobeStepOrigin"><details class="tobe-subdetails"'+
+      (hasCurrentAi?'':' open')+'><summary class="aunea-ui-section-title">03.1 · Entender el AS-IS</summary>'+
       tobeOriginalStepFacts(e,item)+tobeSnapshotIssueCards(e,item)+'</details></section>'+
     '<section class="tobe-advice" id="tobeStepAdvice" aria-label="Sugerencia IA para actividad">'+
       '<details class="tobe-subdetails" open><summary class="aunea-ui-section-title">03.2 · Revisar propuestas IA</summary>'+
