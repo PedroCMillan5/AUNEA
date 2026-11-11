@@ -169,6 +169,20 @@ test('process multiselect details use one generic conditional Otro contract',()=
   assert.match(code,/step_channels_other'\)\?\.value/);
 });
 
+test('PG11 may color canonical multiselect choices by confirmed AS-IS or TO-BE origin without changing capture behavior',()=>{
+  const opts=[{value:'DOC',label:'Documento'},{value:'RECORD',label:'Registro'}, {value:'PDF',label:'PDF'}],
+    html=ctx.selectedHtml('tobe_inputs',opts,['DOC','RECORD'],{
+      wrapped:true,preferredValues:['DOC','RECORD'],
+      choiceOrigin:value=>value==='DOC'?'asis':'improvement'
+    });
+  assert.match(html,/data-artifact-provenance="asis"[^>]*><input[^>]*value="DOC"/);
+  assert.match(html,/data-artifact-provenance="improvement"[^>]*><input[^>]*value="RECORD"/);
+  assert.match(html,/data-context-choice-extra="tobe_inputs" hidden/);
+  assert.match(html,/id="tobe_inputs_DOC"[^>]*checked/);
+  assert.match(html,/id="tobe_inputs_RECORD"[^>]*checked/);
+  const original=ctx.selectedHtml('step_inputs',opts,['DOC'],{wrapped:true});
+  assert.doesNotMatch(original,/data-artifact-provenance/);
+});
 test('selectable controls share the Acciones manuales visual contract and modal dropdowns are width-constrained',()=>{
   const styles=fs.readFileSync(path.join(__dirname,'..','styles.css'),'utf8');
   const ui=fs.readFileSync(path.join(__dirname,'..','ui-system.css'),'utf8');
