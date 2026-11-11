@@ -67,7 +67,7 @@ test('IA suggestions are visible before decision but cannot be applied',()=>{
 test('PG11 fields without an IA candidate never repeat a full evidence card',()=>{
  const f=fixture();f.proposal.items[0].controls_risk='';
  const empty=f.context.tobeAiInlineHint(f.e,f.p,f.p.items[0],'controlsRisk');
- assert.match(empty,/sin propuesta específica para este campo/);
+ assert.match(empty,/sin candidato estructurado para este campo/);
  assert.doesNotMatch(empty,/<details/);
  const proposed=f.context.tobeAiInlineHint(f.e,f.p,f.p.items[0],'outputs');
  assert.match(proposed,/Fuentes y condiciones del campo/);
@@ -79,17 +79,29 @@ test('PG11 gives truthful field coverage without inferring reasons for empty can
  f.proposal.items[0].controls_risk='';
  f.proposal.items[0].human_supervision='';
  const html=f.context.tobeAiFieldCoverageHtml(f.e,f.p,f.p.items[0]);
- assert.match(html,/Propuestas estructuradas de esta actividad/);
+ assert.match(html,/Propuestas IA por campo/);
  assert.match(html,/sin candidato/);
- assert.match(html,/La IA no indica por qué ha omitido cada campo/);
+ assert.match(html,/Un campo vacío no prueba falta de datos, conformidad, ni aprobación/);
  const empty=f.context.tobeAiInlineHint(f.e,f.p,f.p.items[0],'controlsRisk');
  assert.match(empty,/tobe-ai-no-candidate/);
  assert.doesNotMatch(empty,/Fuentes y condiciones del campo/);
 });
+test('PG11 shows Maintain only for a real IA candidate, not for an omitted field',()=>{
+ const f=fixture();f.setDecision('MODIFY');
+ let html=f.context.tobeAiRowActions(f.e,f.p,f.p.items[0],'outputs');
+ assert.match(html,/data-tobe-ai-use-field="outputs"/);
+ assert.match(html,/data-tobe-ai-keep-field="outputs"/);
+ assert.match(html,/data-tobe-ai-edit-field="outputs"/);
+ f.proposal.items[0].outputs='';
+ html=f.context.tobeAiRowActions(f.e,f.p,f.p.items[0],'outputs');
+ assert.doesNotMatch(html,/data-tobe-ai-use-field="outputs"/);
+ assert.doesNotMatch(html,/data-tobe-ai-keep-field="outputs"/);
+ assert.match(html,/data-tobe-ai-edit-field="outputs"/);
+});
 test('PG11 flags narrative automation without inventing a structured field suggestion',()=>{
  const f=fixture();f.proposal.items[0].automation_ai='';
  const html=f.context.tobeAiInlineHint(f.e,f.p,f.p.items[0],'automationAi');
- assert.match(html,/sin propuesta específica para este campo/);
+ assert.match(html,/sin candidato estructurado para este campo/);
  assert.match(html,/03\.2 describe automatización/);
  assert.doesNotMatch(html,/data-tobe-ai-use-field/);
  assert.doesNotMatch(html,/<details/);
