@@ -1250,7 +1250,18 @@ async function main(){
   // guarded route rewiring, durable TO-BE version and read-only PG12 dual map.
   if(sourceIds.length<2)throw Error('Future-flow browser fixture requires two source activities');
   await page.locator('.tobe-guided-tabs [data-tobe-select="'+sourceIds[0]+'"]').first().click();
+  await page.locator('.tobe-guided-modes [data-tobe-mode-switch="guided"]').click();
+  assert.equal(await page.locator('.tobe-review-steps').isVisible(),true,
+    'guided review must expose only its three named sections');
+  assert.equal(await page.locator('#tobeStepRoutes').isVisible(),false,
+    'route editor may not appear in activity review');
+  assert.equal(await page.locator('.tobe-review-steps [data-tobe-mode-switch="map"]').count(),0,
+    '03.4 Connect may not masquerade as an activity-review step');
   await page.locator('.tobe-guided-modes [data-tobe-mode-switch="map"]').click();
+  assert.equal(await page.locator('#tobeStepRoutes').isVisible(),true,
+    'route editor must be available in Mapa TO-BE');
+  assert.equal(await page.locator('.tobe-review-steps').isVisible(),false,
+    'activity stage shortcuts must not duplicate map controls');
   await page.locator('#addTobeStep').click();
   await page.locator('.tobe-guided-modes [data-tobe-mode-switch="guided"]').click();
   const addition=await page.evaluate(()=>{
