@@ -199,6 +199,65 @@ def test_new_action_classified_as_kept_is_flagged_for_correction(monkeypatch):
                for x in result["issues"])
 
 
+
+def test_narrative_automation_requires_field_candidate_and_selective_repair(monkeypatch):
+    mock_model(monkeypatch, issues=[])
+    a=proposal("S1")
+    a.rationale=("Acción propuesta: Implementar un registro automático del estado. "
+                 "Resultado esperado: más visibilidad. Justificación: seguimiento manual.")
+    a.automation_ai=""
+    b=proposal("S2")
+    assert review._missing_structured_actions([a,b])==["S1"]
+    result=review.consolidate(PilotAIConsolidationRequest(
+        request=sample(),items=[a,b]),repair=False)
+    assert result["blocking_step_ids"]==["S1"]
+    assert any(i["step_id"]=="S1" and i["category"]=="BLOCKING"
+               and "Falta estructurar" in i["issue"] for i in result["issues"])
+    a.automation_ai="Registro automático de estados sujeto a permisos y controles"
+    assert review._missing_structured_actions([a,b])==[]
+    a.automation_ai="n/a"
+    assert review._missing_structured_actions([a,b])==["S1"]
+    a.rationale=("Acción propuesta: Mantener las comprobaciones manuales. "
+                 "Resultado esperado: estabilidad. Justificación: controles obligatorios.")
+    assert review._missing_structured_actions([a,b])==[]
+    a.rationale=("Acción propuesta: Verificar si automatizar es viable. "
+                 "Resultado esperado: aclarar opciones. Justificación: restricciones.")
+    assert review._missing_structured_actions([a,b])==[]
+
+
+def test_missing_automation_candidate_repairs_only_affected_source(monkeypatch):
+    wire(monkeypatch)
+    calls=[]
+    def respond(req,timeout=0):
+        body=json.loads(req.data)
+        calls.append(body)
+        if 'current_activity' in body['messages'][1]['content']:
+            current=json.loads(body['messages'][1]['content'].split('\\n',1)[1])
+            assert current['current_activity']['id']=='S1'
+            assert 'targeted_correction' in current
+            repaired=proposal("S1")
+            repaired.rationale=("Acción propuesta: Implementar registro automático. "
+                                "Resultado esperado: trazabilidad. Justificación: seguimiento.")
+            repaired.automation_ai="Crear registro automático condicionado a permisos"
+            payload={"items":[repaired.model_dump(mode="json")]}
+        else:
+            payload={"summary":"Revisión trazable", "issues":[]}
+        return io.BytesIO(json.dumps({"done":True,"prompt_eval_count":2000,
+                                      "message":{"content":json.dumps(payload)}}).encode())
+    monkeypatch.setattr(local._LOCAL_HTTP,"open",respond)
+    first=proposal("S1")
+    first.rationale=("Acción propuesta: Implantar un registro automatizado. "
+                     "Resultado esperado: seguimiento. Justificación: estado invisible.")
+    initial=[first,proposal("S2")]
+    result=review.consolidate(PilotAIConsolidationRequest(
+        request=sample(),items=initial))
+    assert len(calls)==3
+    assert result["blocking_step_ids"]==[]
+    assert result["corrected_items"][0]["automation_ai"]=="Crear registro automático condicionado a permisos"
+    assert result["corrected_items"][1]==proposal("S2").model_dump(mode="json")
+    assert result["initial_review"]["blocking_step_ids"]==["S1"]
+    assert initial[0].automation_ai==""  # source proposal remains unchanged
+
 def test_keep_step_without_new_action_does_not_trigger_quality_gate(monkeypatch):
     mock_model(monkeypatch, issues=[])
     a=proposal("S1")
