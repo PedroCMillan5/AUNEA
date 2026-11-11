@@ -1102,7 +1102,21 @@ async function main(){
   await page.route('**/v1/internal-ai/tobe-global',retrySource);
   await page.evaluate(()=>{state.backendOnline=true});
   await page.locator('#retryTobeGlobal').click();
-  await page.waitForFunction(()=>latestTobe(currentEng())?.aiGlobal?.result?.complete===true);
+  try{
+    await page.waitForFunction(()=>latestTobe(currentEng())?.aiGlobal?.result?.complete===true,
+      {timeout:12000});
+  }catch(error){
+    const debug=await page.evaluate(()=>({
+      working:typeof __auneaAiWorking!=='undefined'?[...__auneaAiWorking]:[],
+      feedback:document.querySelector('#tobeGlobalAnalysis')?.innerText?.slice(0,1800)||'',
+      current:latestTobe(currentEng())?.aiGlobal?.result,
+      latestPage:state.activePage,
+      backend:state.backendOnline
+    }));
+    throw new Error('Global retry did not persist: '+JSON.stringify({
+      error:String(error),debug,retryRequest:retryRequest||null,pageErrors:failures.slice(-8)
+    }).slice(0,5500));
+  }
   assert.deepEqual(retryRequest.seen_interventions,
     ['Conservar y reutilizar los datos confirmados.']);
   assert.match(await page.locator('#tobeGlobalAnalysis').innerText(),
