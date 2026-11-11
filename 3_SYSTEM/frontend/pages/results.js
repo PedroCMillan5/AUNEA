@@ -1245,12 +1245,19 @@ function tobeAiInlineHint(e,p,item,key){
     x.proposalFingerprint===tobeCandidateFingerprint(p)).slice(-1)[0];
   const kept=lastChoice?.action==='KEEP';
   const applied=lastChoice?.action==='APPLY'&&!!matched&&!matched.changed;
+  // A narrative can describe automation without producing a field candidate.
+  // Explain the gap but never populate the consultant-owned field implicitly.
+  const narrative=typeof internalAiPilotNarrative==='function'?
+    internalAiPilotNarrative(ai.rationale):{action:''};
+  const missingAutomationCandidate=key==='automationAi'&&!matched&&!skipped&&
+    /automatiz|autom[aá]tic/i.test(String(narrative.action||''));
   return '<div class="tobe-ai-inline" data-tobe-ai-field-key="'+attr(key)+'">'+
     '<p class="field-help"><b>'+(!matched&&!skipped?'IA: sin propuesta específica para este campo':'IA propone:')+'</b> '+esc(value)+
     (skipped?' · <b>Revisión manual necesaria</b>':
       matched&&!matched.changed?' · Coincide con el TO-BE':'')+'</p>'+
     (skipped?'<p class="field-help">'+esc(skipped.reason)+'</p>':'')+
-
+    (missingAutomationCandidate?
+      '<p class="field-help tobe-ai-candidate-gap">03.2 describe automatización, pero la IA no ha generado un valor estructurado para este campo. No puede aplicarse; revisa el borrador manualmente.</p>':'')+
     ((matched||skipped)?'<details class="tobe-subdetails"><summary>Fuentes y condiciones del campo</summary>'+
       '<p><b>Referencias:</b> '+esc(refs||'No identificadas')+'</p>'+
       (pending?'<p><b>Por verificar:</b> '+esc(pending)+'</p>':'')+
