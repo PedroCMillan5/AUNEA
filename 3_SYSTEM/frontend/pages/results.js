@@ -1797,15 +1797,15 @@ function tobeDecisionReadoutHtml(e,p,item){
       if(key==='__PENDING__')return 'Pendiente de conectar';
       return steps.find(x=>String(x.id)===key)?.step_name||'Destino no disponible';
     },
-    raw=source?._details?.decision_criteria||source?.decision_criteria||'',
+    raw=item.isAddition?'':source?._details?.decision_criteria||source?.decision_criteria||'',
     values=Array.isArray(raw)?raw:raw?[raw]:[],
     setId=typeof schema!=='undefined'?
       schema.fields?.find(x=>x.Field_ID==='DF041')?.Option_Set_ID:'',
     readable=v=>String((typeof labelFrom==='function'&&setId?
       labelFrom(setId,v):'')||v),
     criteria=values.map(readable).filter(Boolean).join(' · '),
-    asYes=source?name(source.normal_next_step,original):'Nueva decisión TO-BE',
-    asNo=source?name(source.exception_path?.destination_step,original):'Nueva decisión TO-BE';
+    asYes=!item.isAddition&&source?name(source.normal_next_step,original):'No existía en el AS-IS',
+    asNo=!item.isAddition&&source?name(source.exception_path?.destination_step,original):'No existía en el AS-IS';
   return '<section class="tobe-decision-readout" aria-label="Lógica de decisión y rutas">'+
     '<h4>Decisión y rutas de la actividad</h4>'+
     '<p class="field-help"><b>Criterio AS-IS confirmado:</b> '+
