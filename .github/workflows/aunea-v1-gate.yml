@@ -64,8 +64,11 @@ jobs:
           cache-dependency-path: 3_SYSTEM/frontend/package-lock.json
       - name: Install locked browser test runtime
         run: npm ci
-      - name: Install native Chromium and dependencies
-        run: npx playwright install --with-deps chromium
+      - name: Install pinned Chromium browser
+        # The GitHub Ubuntu 24.04 image has the native browser libraries.
+        # Do not apt-install optional fonts: external Ubuntu mirrors are currently
+        # failing DNS, blocking browser UAT before any test can execute.
+        run: npx playwright install chromium
       - name: Single end-to-end Chromium workflow and Impact canvas acceptance
         run: node tests/uat-browser-smoke.cjs
       - name: Preserve browser screenshots for review
