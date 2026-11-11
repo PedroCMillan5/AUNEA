@@ -246,4 +246,21 @@ test('PG11 pending-step button launches generation and reports progress immediat
  assert.equal(button.disabled,false);
  assert.equal(button.textContent,'Analizar actividades pendientes');
 });
+test('PG11 distinguishes completed step coverage from incomplete global source review',()=>{
+ const fn=src.match(/function tobeGlobalLinkedStepHtml\\(e,p,item\\)\\{[\\s\\S]*?\\n\\}/)?.[0];
+ assert.ok(fn,'global linked step function must exist');
+ const result={complete:false,progress:{completed:2,total:5}};
+ const context={tobeGlobalStored:()=>result,
+   tobeGlobalLinksForStep:()=>[{index:1,recommendation:{
+     objective:'Objetivo verificado',how:'Recomendación sin aplicar',
+     source_refs:['F1'],review:{status:'CONDITIONED',reason:'Capacidad por verificar'}}}],
+   esc:value=>String(value)};
+ vm.createContext(context);vm.runInContext(fn,context);
+ const partial=context.tobeGlobalLinkedStepHtml({}, {}, {sourceStepId:'P1'});
+ assert.match(partial,/2 de 5 fuentes verificadas/);
+ assert.match(partial,/cobertura de actividades analizadas por IA en la sección 03 es independiente/);
+ assert.match(partial,/Recomendación sin aplicar/);
+ result.complete=true;
+ assert.doesNotMatch(context.tobeGlobalLinkedStepHtml({}, {}, {}),/está incompleto/);
+});
 // [AUNEA-UAT-PG11-GUIDED-267] END
