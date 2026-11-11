@@ -926,6 +926,9 @@ async function main(){
     'the synthetic source contains fields without grounded IA suggestions');
   assert.deepEqual(fieldDensity.filter(x=>x.noCandidate&&x.evidencePanels!==0),[],
     '03.3 may not repeat activity-wide evidence for fields with no IA candidate');
+  assert.equal(await page.locator(
+    '#tobeInspector [data-tobe-row-key="controlsRisk"] [data-tobe-ai-keep-field]').count(),0,
+    'no Keep decision is offered when IA has no actionable candidate');
   await page.screenshot({path:path.join(outDir,'pg11-section03-reviewed-fields-desktop.png'),fullPage:true});
   await page.evaluate(({sourceId,original})=>{
     const p=latestTobe(currentEng()),candidate=p?.aiDraft?.proposal?.items?.find(x=>
@@ -940,7 +943,13 @@ async function main(){
   // The three canonical per-field actions must work through real browser clicks.
   const confirmedStepBefore=await page.evaluate(()=>
     JSON.stringify(tobeSourceSteps(currentEng())));
-  await page.locator('#tobeInspector [data-tobe-row-key="outputs"] [data-tobe-ai-keep-field="outputs"]').click();
+  const keepTarget=await page.evaluate(()=>{
+    const button=document.querySelector('#tobeInspector [data-tobe-ai-keep-field]');
+    return button?{field:button.dataset.tobeAiKeepField,
+      source:button.dataset.tobeAiActionSource}:null;
+  });
+  assert.ok(keepTarget,'at least one grounded current IA candidate is required for the Keep UAT');
+  await page.locator('#tobeInspector [data-tobe-ai-keep-field]').first().click();
   const kept=await page.evaluate(()=>{
     const e=currentEng(),p=latestTobe(e),disk=JSON.parse(localStorage.getItem(STORAGE_KEY));
     const saved=disk.engagements.find(x=>x.id===e.id)?.tobeProposals?.
@@ -949,8 +958,8 @@ async function main(){
     return {action:action?.action,key:action?.fields?.[0],
       source:action?.sourceStepId,stillDraft:p.status==='DRAFT'};
   });
-  assert.deepEqual(kept,{action:'KEEP',key:'outputs',source:sourceIds[0],stillDraft:true},
-    'Mantener must persist a source-linked field decision without copying AI data');
+  assert.deepEqual(kept,{action:'KEEP',key:keepTarget.field,source:keepTarget.source,stillDraft:true},
+    'Mantener must persist a decision on an actually proposed field without copying IA data');
   await page.locator('#tobeInspector [data-tobe-row-key="controlsRisk"] [data-tobe-ai-edit-field="controlsRisk"]').click();
   assert.equal(await page.evaluate(()=>
     document.activeElement===document.querySelector(
