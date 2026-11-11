@@ -1251,21 +1251,14 @@ function tobeAiInlineHint(e,p,item,key){
   const kept=lastChoice?.action==='KEEP';
   const applied=lastChoice?.action==='APPLY'&&!!matched&&!matched.changed;
   return '<div class="tobe-ai-inline" data-tobe-ai-field-key="'+attr(key)+'">'+
-    '<p class="field-help"><b>'+(!matched&&!skipped?'IA: sin sugerencia fundamentada':'IA propone:')+'</b> '+esc(value)+
+    '<p class="field-help"><b>'+(!matched&&!skipped?'IA: sin propuesta específica para este campo':'IA propone:')+'</b> '+esc(value)+
     (skipped?' · <b>Revisión manual necesaria</b>':
       matched&&!matched.changed?' · Coincide con el TO-BE':'')+'</p>'+
     (skipped?'<p class="field-help">'+esc(skipped.reason)+'</p>':'')+
-    (diff.warnings.length&&key==='transformation'?
-      '<p class="field-help"><b>Condición de revisión:</b> '+
-      esc(diff.warnings.join(' · '))+'</p>':'')+
-    ((matched||skipped)&&['problemResolved','automationAi','transformation'].includes(key)?
-      '<p class="field-help tobe-ai-field-why"><b>Fundamento general:</b> '+
-      esc(explain||'No existe una justificación específica para este campo.')+'</p>':'')+
-    ((matched||skipped)?'<details class="tobe-subdetails"><summary>Justificación y fuentes de la propuesta IA</summary>'+
-      '<p><b>Justificación global de la actividad (no específica de este campo):</b> '+esc(explain||'El motor no aportó una justificación diferenciada.')+'</p>'+
-      (action?'<p><b>Intervención propuesta:</b> '+esc(action)+'</p>':'')+
-      '<p><b>Fuentes vinculadas:</b> '+esc(refs||'No identificadas')+'</p>'+
-      '<p><b>Condiciones pendientes:</b> '+esc(pending||'No declaradas')+'</p>'+
+
+    ((matched||skipped)?'<details class="tobe-subdetails"><summary>Fuentes y condiciones del campo</summary>'+
+      '<p><b>Referencias:</b> '+esc(refs||'No identificadas')+'</p>'+
+      (pending?'<p><b>Por verificar:</b> '+esc(pending)+'</p>':'')+
     '</details>':'')+
     (kept?'<p class="field-help"><b>Estado del campo:</b> mantener el valor TO-BE guardado.</p>':
       applied?'<p class="field-help"><b>Estado del campo:</b> sugerencia IA aplicada y guardada.</p>':
@@ -1949,7 +1942,7 @@ function tobeInspectorHtml(e,p){
     '</nav>'+supportingInformation+
     '<section class="tobe-edit" id="tobeStepDesign"><h3 class="aunea-ui-section-title">03.3 · Configurar la actividad futura</h3>'+
       '<p class="tobe-muted" data-tobe-transformation-message="1" role="status" aria-live="polite">Elige «Qué cambia» y completa la justificación del diseño futuro. La recomendación IA no cambia tu decisión automáticamente.</p>'+
-      '<p class="tobe-muted">Estos campos describen el funcionamiento futuro. Los valores heredados se muestran para revisar, no son mejoras confirmadas ni decisiones de la IA.</p>'+
+      '<p class="tobe-muted">Configura aquí el TO-BE; los valores heredados no son mejoras aprobadas. La justificación completa y las evidencias de cada actividad se consultan en 03.2.</p>'+
       tobeAiOperationalContextHtml(e,item)+
       (item.transformation==='Se mantiene'&&/^(no|n\/a|ninguno)$/i.test(String(item.problemResolved||'').trim())?
         '<p class="notice warn"><b>Justificación pendiente:</b> «Se mantiene» conserva esta actividad sin rediseño. El valor «NO» no explica por qué se mantienen los hallazgos ni cómo se controlan; revisa la decisión antes de validar.</p>':'')+
@@ -2131,9 +2124,14 @@ function tobeGlobalLinkedStepHtml(e,p,item){
   const linked=tobeGlobalLinksForStep(e,p,item),result=tobeGlobalStored(e,p);
   if(!result||!linked.length)return '';
   const complete=result.complete!==false;
+  const progress=result.progress||{},
+    done=Number.isInteger(progress.completed)?progress.completed:
+      Array.isArray(progress.focus_done)?progress.focus_done.length:null,
+    total=Number.isInteger(progress.total)?progress.total:null,
+    scope=done!==null&&total!==null?' ('+done+' de '+total+' fuentes verificadas)':'';
   return '<details class="tobe-subdetails tobe-global-step-context">'+
     '<summary>Recomendaciones del análisis global vinculadas · '+linked.length+'</summary>'+
-    (!complete?'<p class="notice warn">El análisis global es parcial; algunas fuentes siguen pendientes.</p>':'')+
+    (!complete?'<p class="notice warn">El análisis global por fuentes de la sección 02 está incompleto'+scope+'. La cobertura de actividades analizadas por IA en la sección 03 es independiente.</p>':'')+
     '<ul class="tobe-source-list">'+linked.map(({recommendation:r,index})=>
       '<li><b>'+index+' · '+esc(r.objective)+'</b>'+
       '<p>'+esc(r.how)+'</p>'+
