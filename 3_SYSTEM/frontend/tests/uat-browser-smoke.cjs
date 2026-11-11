@@ -828,7 +828,7 @@ async function main(){
     pg11RetryStatusHits++;
     await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({
       status:'AVAILABLE',provider:'ollama',model:'fixture-local-no-ollama',
-      pg11_review_protocol:'PG11_REVIEW_20261111_4',pg11_global_strategy:'SCOPED_V2',
+      pg11_review_protocol:'PG11_REVIEW_20261111_5',pg11_global_strategy:'SCOPED_V2',
       pg11_global_recovery:'COMPACT_2_ATTEMPTS_20261107'
     })});
   };
@@ -836,7 +836,7 @@ async function main(){
     pg11RetryReviewHits++;
     await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({
       status:'CHECKED_WITH_NOTES',summary:'Comprobación básica simulada para UAT',review_mode:'RULES_ONLY',
-      protocol_revision:'PG11_REVIEW_20261111_4',requires_human_review:true,
+      protocol_revision:'PG11_REVIEW_20261111_5',requires_human_review:true,
       blocking_step_ids:[sourceIds[0]],issues:[{
         step_id:sourceIds[0],category:'BLOCKING',
         issue:'La transformación debe revisarse',evidence:'Propuesta sintética sin validar',
