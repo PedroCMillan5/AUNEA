@@ -867,6 +867,20 @@ async function main(){
   assert.equal(consultantReview.status,'DRAFT','human decision is not TO-BE approval');
   assert.equal(await page.evaluate(()=>JSON.stringify(latestTobe(currentEng()).items)),
     originalTobeData,'consultant choice must never apply proposed values');
+  // An activity-wide justification is available in 03.2; empty field suggestions
+  // must not replicate that four-paragraph block throughout the 03.3 inspector.
+  const fieldDensity=await page.evaluate(()=>[...document.querySelectorAll(
+    '#tobeInspector [data-tobe-row-key]')].map(row=>{
+      const suggestion=row.querySelector('.tobe-ai-inline');
+      return {key:row.getAttribute('data-tobe-row-key'),
+        noCandidate:!!suggestion&&/sin sugerencia fundamentada/i.test(suggestion.textContent||''),
+        evidencePanels:suggestion?.querySelectorAll('details').length||0};
+    }));
+  assert.ok(fieldDensity.some(x=>x.noCandidate),
+    'the synthetic source contains fields without grounded IA suggestions');
+  assert.deepEqual(fieldDensity.filter(x=>x.noCandidate&&x.evidencePanels!==0),[],
+    '03.3 may not repeat activity-wide evidence for fields with no IA candidate');
+  await page.screenshot({path:path.join(outDir,'pg11-section03-reviewed-fields-desktop.png'),fullPage:true});
   console.log('PG11_HUMAN_DECISION_BROWSER_PASS: '+sourceIds[0]);
   // The three canonical per-field actions must work through real browser clicks.
   const confirmedStepBefore=await page.evaluate(()=>
