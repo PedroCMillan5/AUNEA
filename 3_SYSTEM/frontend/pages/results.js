@@ -888,7 +888,8 @@ function saveTobeFromDom(e){
   });
   const start=document.querySelector('[data-tobe-flow-start]');
   const routes=[...document.querySelectorAll('[data-tobe-route-step]')];
-  if(start||routes.length){
+  const decisionFields=[...document.querySelectorAll('[data-tobe-decision-criterion]')];
+  if(start||routes.length||decisionFields.length){
     const flow=tobeMutableFlow(e,p);
     if(start)flow.startStepId=String(start.value);
     for(const el of routes){
@@ -896,6 +897,13 @@ function saveTobeFromDom(e){
       if(field!=='normal'&&field!=='exception')continue;
       if(!flow.routes[id])flow.routes[id]={normal:'__PENDING__',exception:''};
       flow.routes[id][field]=String(el.value);
+    }
+    for(const el of decisionFields){
+      const id=String(el.dataset.tobeDecisionCriterion||'');
+      if(!id||!tobeFlowItem(e,p,id))continue;
+      const value=String(el.value||'').trim();
+      if(value)flow.decisionCriteria[id]=value;
+      else delete flow.decisionCriteria[id]; // empty means inherit AS-IS (or unconfigured for new steps)
     }
   }
   if(typeof persistTobeAiDraft==='function'&&!persistTobeAiDraft(e))return false;
@@ -1681,12 +1689,15 @@ function tobeFlowOwner(e,p){
     startStepId:String(stored?.startStepId||original[0]?.id||''),
     routes:{...routes,...(stored?.routes||{})},
     addedSteps:Array.isArray(stored?.addedSteps)?stored.addedSteps:[],
+    decisionCriteria:stored?.decisionCriteria&&typeof stored.decisionCriteria==='object'?
+      {...stored.decisionCriteria}:{},
     positions:stored?.positions&&typeof stored.positions==='object'?{...stored.positions}:{}
   };
 }
 function tobeMutableFlow(e,p){
   if(!p.flow)p.flow=tobeFlowOwner(e,p);
   if(!p.flow.positions)p.flow.positions={};
+  if(!p.flow.decisionCriteria)p.flow.decisionCriteria={};
   return p.flow;
 }
 function tobeAddedSteps(p,includeSuperseded=false){
@@ -1732,6 +1743,10 @@ function tobeFlowIntegrity(e,p){
   if(!ids.size)return 'El TO-BE debe tener al menos una actividad futura.';
   if(!ids.has(String(f.startStepId)))return 'El inicio del TO-BE apunta a una actividad eliminada o inexistente. Selecciona un inicio válido.';
   for(const added of tobeAddedSteps(p)){
+    if(String(added.stepType||'ST02')==='ST04'&&
+       !String(f.decisionCriteria?.[String(added.id)]||'').trim())
+      return 'La nueva decisión '+tobeFlowItemName(added)+
+        ' necesita una condición futura explícita antes de conectar las rutas SÍ/NO.';
     if(!originals.has(String(added.sourceStepId)))
       return 'La actividad añadida '+tobeFlowItemName(added)+' no tiene origen AS-IS confirmado.';
     if(!['ST02','ST04'].includes(String(added.stepType||'ST02')))
@@ -1804,12 +1819,17 @@ function tobeDecisionReadoutHtml(e,p,item){
     readable=v=>String((typeof labelFrom==='function'&&setId?
       labelFrom(setId,v):'')||v),
     criteria=values.map(readable).filter(Boolean).join(' · '),
+    draftCriterion=String(tobeFlowOwner(e,p).decisionCriteria?.[tobeFlowItemId(item)]||'').trim(),
     asYes=!item.isAddition&&source?name(source.normal_next_step,original):'No existía en el AS-IS',
     asNo=!item.isAddition&&source?name(source.exception_path?.destination_step,original):'No existía en el AS-IS';
   return '<section class="tobe-decision-readout" aria-label="Lógica de decisión y rutas">'+
     '<h4>Decisión y rutas de la actividad</h4>'+
     '<p class="field-help"><b>Criterio AS-IS confirmado:</b> '+
       esc(criteria||'No consta un criterio detallado en el snapshot.')+'</p>'+
+    '<p class="field-help"><b>Criterio TO-BE:</b> '+
+      esc(draftCriterion||(!item.isAddition&&criteria?
+        'Se conserva el criterio del AS-IS; sin cambio registrado.':
+        'Pendiente de definir en Mapa TO-BE.'))+'</p>'+
     '<dl><div><dt>Si se cumple · SÍ</dt><dd>AS-IS: '+esc(asYes)+
       ' · TO-BE: '+esc(name(routes.normal,future))+'</dd></div>'+
       '<div><dt>Si no se cumple · NO</dt><dd>AS-IS: '+esc(asNo)+
@@ -1838,6 +1858,17 @@ function tobeFlowInspector(e,p,item){
   return '<section class="tobe-route-editor" id="tobeStepRoutes"><h3>03.4 · Conectar el proceso futuro</h3>'+
     '<p class="tobe-muted">Edita aquí las rutas del TO-BE. No se modificarán las conexiones del AS-IS confirmado.</p>'+
     (decision?tobeDecisionReadoutHtml(e,p,item):'')+
+    (decision?'<div class="field tobe-decision-criterion-edit">'+
+      '<label for="tobeDecisionCriterion_'+attr(stepId)+'">Condición futura que determina SÍ y NO</label>'+
+      (editable?'<textarea id="tobeDecisionCriterion_'+attr(stepId)+
+        '" data-tobe-decision-criterion="'+attr(stepId)+
+        '" rows="3" maxlength="1200" placeholder="'+
+        attr(item.isAddition?'Describe la condición de esta nueva decisión':
+          'Dejar vacío conserva el criterio original; escribe aquí solo si debe cambiar')+'">'+
+        esc(String(flow.decisionCriteria?.[stepId]||''))+'</textarea>':
+        '<p>'+esc(String(flow.decisionCriteria?.[stepId]||'Se conserva el criterio AS-IS'))+'</p>')+
+      '<p class="field-help">Define la condición para cada resultado. Los destinos se editan debajo; ningún cambio modifica el AS-IS confirmado ni autoriza una aprobación automática.</p>'+
+      '</div>':'')+
     '<div class="form-grid">'+field('normal','Siguiente actividad'+(decision?' · ruta SÍ':''),routes.normal)+
     (decision?field('exception','Ruta NO / excepción',routes.exception):'')+
     '</div></section>';
