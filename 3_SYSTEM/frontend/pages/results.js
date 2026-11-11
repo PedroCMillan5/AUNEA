@@ -1758,6 +1758,27 @@ function tobeFlowItem(e,p,stepId){
 function tobeFlowItemName(item){
   return String((item?.isAddition?item.stepName:item?.sourceStepName)||'Actividad sin nombre');
 }
+// [AUNEA-FE-PG11-FUTURE-PROJECTION-314] START
+// Source: confirmed ProcessStep and TO-BE DRAFT (DEC-050/055).
+// No second owner: derives the graph's operative attributes from p.items.
+function tobeFutureCatalogValue(setId,raw){
+  const value=String(raw||''),opts=typeof fieldOptions==='function'?fieldOptions(setId):[];
+  const found=opts.find(x=>String(x.value)===value||
+    String(x.label||'').trim().toLowerCase()===value.trim().toLowerCase());
+  return String(found?.value??value);
+}
+function tobeFutureArtifacts(raw){
+  if(typeof tobeArtifactValues==='function'){
+    const v=tobeArtifactValues(raw);
+    return [...v.resolved,...v.unknown];
+  }
+  return Array.isArray(raw)?[...raw]:String(raw||'').split(',').map(x=>x.trim()).filter(Boolean);
+}
+function tobeFutureStepDetails(source,item){
+  return {...(source?._details||{}),inputs:String(item._details?.inputs||''),
+    outputs:String(item._details?.outputs||'')};
+}
+// [AUNEA-FE-PG11-FUTURE-PROJECTION-314] END
 function tobeFutureSteps(e,p){
   const original=tobeProposalSourceSteps(e,p),byId=new Map(original.map(x=>[String(x.id),x]));
   const f=tobeFlowOwner(e,p);
@@ -1767,6 +1788,15 @@ function tobeFutureSteps(e,p){
     const route=f.routes[String(source.id)]||{};
     const decision=processDecisionStep(source);
     return {...source,id:String(source.id),step_name:tobeFlowItemName(item),
+      actor:tobeFutureCatalogValue('OS_ACTOR_ROLE',item.futureActor),
+      tool:tobeFutureCatalogValue('OS_TOOL_CATEGORY',item.tool),
+      inputs:tobeFutureArtifacts(item.inputs),outputs:tobeFutureArtifacts(item.outputs),
+      _details:tobeFutureStepDetails(source,item),
+      tobe_transformation:item.transformation,
+      tobe_automation_ai:item.automationAi||'',
+      tobe_human_supervision:item.humanSupervision||'',
+      tobe_controls_risk:item.controlsRisk||'',
+      tobe_decision_criterion:String(f.decisionCriteria?.[String(source.id)]||''),
       normal_next_step:String(route.normal??'__PENDING__'),
       exception_path:decision?{...(source.exception_path||{}),
         destination_step:String(route.exception??'__PENDING__')}:undefined};
@@ -1776,7 +1806,16 @@ function tobeFutureSteps(e,p){
       isDecision=String(item.stepType||'ST02')==='ST04';
     return {id:String(item.id),step_name:tobeFlowItemName(item),
       step_type:isDecision?'ST04':'ST02',
-      normal_next_step:String(route.normal??'__PENDING__'),actor:'',
+      actor:tobeFutureCatalogValue('OS_ACTOR_ROLE',item.futureActor),
+      tool:tobeFutureCatalogValue('OS_TOOL_CATEGORY',item.tool),
+      inputs:tobeFutureArtifacts(item.inputs),outputs:tobeFutureArtifacts(item.outputs),
+      _details:tobeFutureStepDetails(null,item),
+      tobe_transformation:item.transformation,
+      tobe_automation_ai:item.automationAi||'',
+      tobe_human_supervision:item.humanSupervision||'',
+      tobe_controls_risk:item.controlsRisk||'',
+      tobe_decision_criterion:String(f.decisionCriteria?.[String(item.id)]||''),
+      normal_next_step:String(route.normal??'__PENDING__'),
       exception_path:isDecision?{destination_step:String(route.exception||'__PENDING__')}:undefined};
   });
   const steps=[...existing,...additions];
