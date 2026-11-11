@@ -1837,6 +1837,7 @@ function tobeFlowInspector(e,p,item){
     '<p class="field-help">Selecciona el destino de esta ruta en el proceso futuro. Una ruta pendiente bloquea la revisión.</p></div>';
   return '<section class="tobe-route-editor" id="tobeStepRoutes"><h3>03.4 · Conectar el proceso futuro</h3>'+
     '<p class="tobe-muted">Edita aquí las rutas del TO-BE. No se modificarán las conexiones del AS-IS confirmado.</p>'+
+    (decision?tobeDecisionReadoutHtml(e,p,item):'')+
     '<div class="form-grid">'+field('normal','Siguiente actividad'+(decision?' · ruta SÍ':''),routes.normal)+
     (decision?field('exception','Ruta NO / excepción',routes.exception):'')+
     '</div></section>';
