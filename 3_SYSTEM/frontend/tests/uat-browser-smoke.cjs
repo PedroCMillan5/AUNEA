@@ -935,6 +935,18 @@ async function main(){
   assert.equal(await page.locator(
     '#tobeInspector [data-tobe-row-key="controlsRisk"] [data-tobe-ai-keep-field]').count(),0,
     'no Keep decision is offered when IA has no actionable candidate');
+  const sideBySideActions=await page.locator(
+    '#tobeStepDesign .tobe-design-transformation .tobe-ai-field-review .tobe-ai-row-actions').first().evaluate(box=>{
+      const buttons=[...box.querySelectorAll('button')];
+      return {display:getComputedStyle(box).display,
+        buttonCount:buttons.length,
+        sameRow:buttons.length===2&&Math.abs(
+          buttons[0].getBoundingClientRect().top-buttons[1].getBoundingClientRect().top)<2};
+    });
+  assert.equal(sideBySideActions.display,'grid','IA actions must reuse the common button-grid layout');
+  assert.equal(sideBySideActions.buttonCount,2);
+  assert.equal(sideBySideActions.sameRow,true,
+    'Apply IA and Keep must appear side by side in 03.3, not stacked');
   await page.screenshot({path:path.join(outDir,'pg11-section03-reviewed-fields-desktop.png'),fullPage:true});
   await page.evaluate(({sourceId,original})=>{
     const p=latestTobe(currentEng()),candidate=p?.aiDraft?.proposal?.items?.find(x=>
