@@ -182,7 +182,9 @@ test('PG11 displays confirmed AS-IS values beside the sole editable TO-BE field'
  assert.equal((html.match(/data-tobe-field="outputs"/g)||[]).length,1);
 });
 test('PG11 step evidence never presents superseded risks as current',()=>{
- const fn=src.match(/function tobeSnapshotIssueCards\(e,item\)\{[\s\S]*?\n\}/)?.[0];
+ const fnStart=src.indexOf('function tobeGlobalLinkedStepHtml('),
+   fnEnd=src.indexOf('// Read-only PG11 presentation',fnStart),
+   fn=fnStart>=0&&fnEnd>fnStart?src.slice(fnStart,fnEnd):null;
  assert.ok(fn,'The current step evidence projection must exist');
  const snapshot={frictions:[
    {status:'SUPERSEDED',affected_steps:['P1'],client_label:'Fricción archivada'},
