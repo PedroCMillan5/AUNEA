@@ -40,6 +40,69 @@ test('new flow starts with a faithful immutable AS-IS route projection',()=>{
   [['S1','S2'],['S2','__END__']]);
  assert.equal(JSON.stringify(h.snapshot),before);
 });
+test('future graph uses actual TO-BE actors, tools, inputs and outputs without mutating AS-IS',()=>{
+ const graph=[
+  {id:'S1',step_name:'Recibir mercancía',step_type:'ST02',
+   actor:'RECEPCION',tool:'EMAIL',inputs:['DOC'],outputs:['DOC'],normal_next_step:'S2'},
+  {id:'S2',step_name:'Preparar expedición',step_type:'ST02',
+   actor:'ALMACEN',inputs:['DOC'],outputs:['RECORD'],normal_next_step:'__END__'}
+ ];
+ const h=harness(graph),original=JSON.stringify(h.snapshot);
+ h.p.items[0].futureActor='Supervisor';
+ h.p.items[0].tool='ERP';
+ h.p.items[0].inputs=['DOC','RECORD'];
+ h.p.items[0].outputs=['RECORD'];
+ h.p.items[0]._details={inputs:'Referencia de entrega',outputs:''};
+ const projected=h.run('tobeFutureSteps')[0];
+ assert.equal(projected.actor,'Supervisor');
+ assert.equal(projected.tool,'ERP');
+ assert.deepEqual(Array.from(projected.inputs),['DOC','RECORD']);
+ assert.deepEqual(Array.from(projected.outputs),['RECORD']);
+ assert.equal(projected._details.inputs,'Referencia de entrega');
+ assert.equal(projected.normal_next_step,'S2');
+ assert.equal(JSON.stringify(h.snapshot),original);
+});
+test('generic optimization flags a removed output still consumed downstream, without rewriting routes',()=>{
+ const graph=[
+  {id:'L1',step_name:'Recepción',step_type:'ST02',tool:'EMAIL',inputs:['PDF'],
+   outputs:['DOC','RECORD'],normal_next_step:'L2'},
+  {id:'L2',step_name:'Validar entrega',step_type:'ST02',inputs:['DOC'],
+   outputs:['RECORD'],normal_next_step:'__END__'}
+ ];
+ const h=harness(graph),before=JSON.stringify(h.snapshot),flow=JSON.stringify(h.p.flow);
+ h.p.items[0].inputs=['PDF','MASTER_DATA'];
+ h.p.items[0].outputs=['RECORD'];
+ h.p.items[0].automationAi='Registrar automáticamente la recepción';
+ h.p.items[0].tool='EMAIL';
+ h.p.items[0].humanSupervision='Supervisor revisa excepciones';
+ h.p.items[1].inputs=['DOC'];
+ const findings=h.run('tobeOptimizationFindings',h.p.items[0]);
+ const codes=Array.from(findings,x=>x.code);
+ assert.ok(codes.includes('INPUT_SOURCE'));
+ assert.ok(codes.includes('OUTPUT_CONSUMER'));
+ assert.ok(codes.includes('AUTOMATION_CAPABILITY'));
+ assert.equal(h.run('tobeFlowIntegrity'),null,
+   'topology is valid even when documented data contracts need a human review');
+ assert.equal(JSON.stringify(h.snapshot),before);
+ assert.equal(JSON.stringify(h.p.flow),flow);
+});
+test('optimization works for arbitrary activities and respects confirmed constraints',()=>{
+ const graph=[
+  {id:'A',step_name:'Registrar solicitud',step_type:'ST02',tool:'EMAIL',
+    inputs:['EMAIL'],outputs:['RECORD'],normal_next_step:'B'},
+  {id:'B',step_name:'Revisar solicitud',step_type:'ST02',
+    inputs:['RECORD'],outputs:['DOC'],normal_next_step:'__END__'}
+ ];
+ const h=harness(graph);
+ h.snapshot.answers={DF075:'La autorización final es humana',DF088:'No delegar decisiones'};
+ h.p.items[0].automationAi='Automatizar registro';
+ h.p.items[0].tool='EMAIL';
+ const findings=h.run('tobeOptimizationFindings',h.p.items[0]);
+ assert.ok(findings.some(x=>x.code==='CONFIRMED_CONSTRAINTS'));
+ assert.ok(!findings.some(x=>x.code==='OUTPUT_CONSUMER'));
+ assert.match(h.run('tobeOptimizationPanelHtml',h.p.items[0]),/Pasos anteriores/);
+ assert.match(h.run('tobeOptimizationPanelHtml',h.p.items[0]),/Revisar solicitud/);
+});
 test('new linked activity remains a DRAFT until explicitly connected',()=>{
  const h=harness(linear),flow=h.run('tobeFlowOwner');
  flow.addedSteps.push({
