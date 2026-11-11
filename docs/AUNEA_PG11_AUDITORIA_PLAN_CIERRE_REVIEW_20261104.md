@@ -315,3 +315,14 @@ Estado: A cerrado; B revisión básica operativa, sin revisión semántica Ollam
 **QA integral de `49b49823` PASS:** Frontend **907/907**, Backend **479/479** (1 warning), Chromium **PASS**; evidencias específicas `PG11_ARTIFACT_PROVENANCE_OPTIMIZATION_BROWSER_PASS`, `PG11_SELECTIVE_GLOBAL_RETRY_BROWSER_PASS`, `PG11_GLOBAL_REANALYSIS_CLEAR_BROWSER_PASS`, `PG11_PG12_SOURCE_LINKED_BROWSER_PASS`, `CHROMIUM_UAT_PASS`. Ejecución: https://github.com/PedroCMillan5/AUNEA/actions/runs/43081163207
 
 **Estado:** QA automático de esta revisión RESTABLECIDO. PG11 sigue **REVIEW** hasta contraste de inferencia y aceptación visual sobre el snapshot vigente de cuatro actividades; las UAT CI son sintéticas. No corresponde actualizar Master Index, DECISIONES, ESTADO ni ROADMAP, ya que no se modifican contratos ni se declara CLOSED.
+
+
+## 11/11/2026 — PG11: impedir promoción de IA bloqueada independientemente de la transformación — REVIEW
+
+**Incidencia funcional:** `tobeReviewReadiness` impedía aceptar como válida una recomendación IA con incidencias `BLOCKING` sólo cuando la transformación final del consultor era `Se mantiene`. Bajo `Se modifica` u otra categoría se podía intentar enviar la versión a `REVIEWED` aun con una propuesta IA no corregida. Esta incidencia no es un desacuerdo legítimo IA–consultor, sino una aceptación de una salida IA previamente marcada como defectuosa.
+
+**Corrección:** el gate `[AUNEA-FE-PG11-ACCEPTANCE-GATE-319]` en `3_SYSTEM/frontend/pages/results.js` comprueba las incidencias `BLOCKING` y `blocking_step_ids` de la revisión versionada para cualquier actividad cuya decisión humana sea `ACCEPT`, sin depender de la etiqueta de transformación. Permite `MODIFY` explícito con justificación del consultor, conservando el AS-IS y sin aplicar IA automáticamente. `CODE_BLOCK_INDEX.md` sincronizado.
+
+**Evidencia:** regresiones en `pg11-future-flow.test.cjs` y `tobe-human-decisions-v1.test.cjs` comprueban bloqueo de `ACCEPT` bajo `Se modifica`, revisión abreviada con `blocking_step_ids`, decisión `MODIFY` válida y persistencia. Acceptance Gate https://github.com/PedroCMillan5/AUNEA/actions/runs/43083378284: frontend 907 PASS; backend 479 PASS (1 warning); Chromium integral PASS, incluyendo persistencia, dependencias y rutas TO-BE/PG12. Código: `f7168a4a`; pruebas `ed2036f1`, `35b98ecc`; índice `01b73ad3`.
+
+**Estado:** reparación validada automáticamente. El cierre funcional y visual de PG11 con inferencia Ollama sobre el snapshot local vigente de cuatro actividades continúa sin acreditarse; mantener `REVIEW`, no `CLOSED`. No altera contratos CANONICAL, reglas comerciales, ESTADO ni ROADMAP.
