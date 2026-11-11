@@ -1148,13 +1148,26 @@ async function main(){
       focus_source_id:retryRequest.focus_source_id,has_more:false,
       opportunities:[]})});
   };
+  // AUNEA's 5s backend monitor probes /health, not /internal-ai/status.
+  // This is an isolated fixture test: both the service health and IA endpoints
+  // must be mocked, or the monitor correctly marks a nonexistent CI backend
+  // offline and blocks retry before any source call. Production health remains real.
+  let retryHealthHits=0;
+  const retryHealth=async route=>{
+    retryHealthHits++;
+    await route.fulfill({status:200,contentType:'application/json',
+      headers:{'access-control-allow-origin':'*'},
+      body:JSON.stringify({status:'ok',backend_version:'1.1.1'})});
+  };
+  await page.route('**/health',retryHealth);
   await page.route('**/v1/internal-ai/tobe-global-plan',retryPlan);
   await page.route('**/v1/internal-ai/tobe-global',retrySource);
-  await page.evaluate(()=>{state.backendOnline=true});
+  assert.equal(await page.evaluate(async()=>checkBackend()),true,
+    'simulated service must pass the real AUNEA health probe before retry');
   await page.locator('#retryTobeGlobal').click();
   try{
     await page.waitForFunction(()=>latestTobe(currentEng())?.aiGlobal?.result?.complete===true,
-      {timeout:12000});
+      null,{timeout:12000});
   }catch(error){
     const debug=await page.evaluate(()=>({
       working:typeof __auneaAiWorking!=='undefined'?[...__auneaAiWorking]:[],
@@ -1167,6 +1180,8 @@ async function main(){
       error:String(error),debug,retryRequest:retryRequest||null,pageErrors:failures.slice(-8)
     }).slice(0,5500));
   }
+  assert.ok(retryHealthHits>0,
+    'the real backend monitor health probe must be mocked for this isolated UAT');
   assert.deepEqual(retryRequest.seen_interventions,
     ['Conservar y reutilizar los datos confirmados.']);
   assert.match(await page.locator('#tobeGlobalAnalysis').innerText(),
@@ -1253,6 +1268,7 @@ async function main(){
   console.log('PG11_GLOBAL_REANALYSIS_CLEAR_BROWSER_PASS');
   // [AUNEA-UAT-PG11-GLOBAL-RESET-291] END
   await page.unroute('**/v1/internal-ai/status',pg11StatusRoute);
+  await page.unroute('**/health',retryHealth);
   await page.unroute('**/v1/internal-ai/tobe-review-basic',pg11ReviewRoute);
   await page.unroute('**/v1/internal-ai/tobe-step',pg11StepRoute);
   console.log('PG11_REVIEW_ONLY_CLICK_PASS: '+JSON.stringify({
