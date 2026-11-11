@@ -148,7 +148,9 @@ test('PG11 IA constraints remain unconfirmed client information',()=>{
  vm.createContext(ctx);vm.runInContext(fn,ctx);
  const html=ctx.tobeAiOperationalContextHtml({},{sourceStepId:'S1',isAddition:false});
  assert.match(html,/Integración pendiente de comprobar/);
- assert.match(html,/no equivalen a restricciones declaradas por el cliente/);
+ assert.match(html,/no es una restricción confirmada/);
+ assert.match(html,/<details class="tobe-ai-operational-context"/);
+ assert.doesNotMatch(html,/<details class="tobe-ai-operational-context" open/);
  assert.match(html,/Recibir factura/);
 });
 test('PG11 action buttons distinguish historical read-only from authorized current IA',()=>{
@@ -163,7 +165,7 @@ test('PG11 action buttons distinguish historical read-only from authorized curre
  vm.createContext(ctx);vm.runInContext(fn,ctx);
  const historical=ctx.tobeAiRowActions({},draft,step,'tool');
  assert.doesNotMatch(historical,/data-tobe-ai-apply-unavailable="tool"/);
- assert.match(historical,/data-tobe-ai-keep-field="tool"/);
+ assert.doesNotMatch(historical,/data-tobe-ai-keep-field="tool"/);
  assert.match(historical,/data-tobe-ai-edit-field="tool"/);
  assert.doesNotMatch(historical,/data-tobe-ai-use-field="tool"/);
  current=true;
@@ -227,7 +229,8 @@ test('PG11 does not offer Apply IA for historical proposals without a current ca
    {sourceStepId:'S1',isAddition:false},'tool');
  assert.doesNotMatch(html,/data-tobe-ai-apply-unavailable="tool"/);
  assert.doesNotMatch(html,/data-tobe-ai-reason="/);
- assert.match(html,/data-tobe-ai-keep-field="tool"/);
+ assert.doesNotMatch(html,/data-tobe-ai-keep-field="tool"/);
+ assert.match(html,/data-tobe-ai-edit-field="tool"/);
  assert.doesNotMatch(html,/data-tobe-ai-use-field="tool"/);
 });
 test('PG11 editor supports the original canonical artifact disclosure',()=>{
