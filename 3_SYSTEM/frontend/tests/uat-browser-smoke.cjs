@@ -947,10 +947,10 @@ async function main(){
   const futureRole=page.locator('#tobeExecutionFields [data-tobe-catalog-field="futureActor"]');
   // The group may already be open if the same consultant expanded it
   // before reanalysis; it must remain controllable, not be forcibly collapsed.
-  if(await execution.evaluate(x=>x.open))await execution.locator('summary').click();
+  if(await execution.evaluate(x=>x.open))await execution.locator(':scope > summary').click();
   assert.equal(await futureRole.isVisible(),false,
     'collapsing secondary fields hides only their presentation, not their values');
-  await execution.locator('summary').click();
+  await execution.locator(':scope > summary').click();
   assert.equal(await futureRole.isVisible(),true);
   await page.evaluate(()=>render());
   assert.equal(await page.locator('#tobeExecutionFields').evaluate(x=>x.open),true,
