@@ -71,6 +71,23 @@ def test_cross_field_contract_blocks_only_requirements_of_selected_transformatio
     assert missing_field in gaps[0]["evidence"]
 
 
+def test_consolidation_marks_required_missing_field_as_blocking_without_autoapproval(monkeypatch):
+    calls=mock_model(monkeypatch)
+    first=proposal("S1")
+    first.transformation="Se automatiza"
+    first.automation_ai="Registro automático de solicitudes cuando exista capacidad técnica"
+    first.human_supervision=""
+    data=review.consolidate(PilotAIConsolidationRequest(
+        request=sample(),items=[first,proposal("S2")]),repair=False)
+    assert data["blocking_step_ids"]==["S1"]
+    issue=next(i for i in data["issues"] if i["origin"]=="CONTRATO_CAMPOS_IA")
+    assert issue["category"]=="BLOCKING"
+    assert issue["step_id"]=="S1"
+    assert issue["evidence"]=="transformation / human_supervision"
+    assert data["requires_human_review"] is True
+    assert len(calls)==1
+
+
 def test_no_demand_for_nine_filled_fields_when_transformation_is_maintained():
     item=proposal("S1")
     item.transformation="Se mantiene"
