@@ -403,7 +403,7 @@ test('PG11 displays IA advice alongside each original field, without a duplicate
     assert.ok(src.includes("withAi('"+field+"'"),field);
   assert.match(src,/data-tobe-ai-use-field/);
   assert.doesNotMatch(src,/\(!archived\?tobeAiReviewChangesHtml\(e,item\)/);
-  assert.match(src,/data-tobe-mode-switch="map"/);
+  assert.match(src,/modeButton\('map','Mapa TO-BE'\)/);
   assert.doesNotMatch(src,/function tobeAiStepApplicability/);
 });
 // [AUNEA-UAT-PG11-FUTURE-FLOW-233] END
