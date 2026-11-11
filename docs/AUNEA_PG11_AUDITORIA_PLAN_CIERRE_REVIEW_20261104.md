@@ -221,3 +221,18 @@ Estado: A cerrado; B revisión básica operativa, sin revisión semántica Ollam
 **Commits:** `390adef4` (render de diferencia), `d1837a04` (test funcional). **QA**: 896/896 frontend PASS, 467/467 backend PASS con 1 advertencia, Acceptance Gate Chromium PASS. https://github.com/PedroCMillan5/AUNEA/actions/runs/43017207760
 
 **Estado:** PG11.03 REVIEW. Cobertura 4/4 de actividades IA y 4/5 de fuentes del análisis global son contadores independientes. La contradicción «Se mantiene» frente a «Se modifica» requiere decisión del consultor; no automatizar esa decisión. La UAT del estudio local y aceptación visual siguen pendientes. No se cambian decisiones canónicas, reglas ni versión del modelo.
+
+
+## 11/11/2026 — Navegación guiada 03.1–03.3 y lógica de decisiones P2 — REVIEW
+
+**Origen:** revisión de la sección 03 con el propietario. La navegación duplicada mostraba «Entender / Revisar IA / Configurar / Conectar» con nombres diferentes de los encabezados, aunque la conexión de rutas pertenece al modo Mapa TO-BE. Además, P2 es una actividad condicional con reglas SÍ/NO y la revisión por actividad no presentaba sus criterios ni sus rutas.
+
+**Corrección genérica de interfaz:** los botones de revisión coinciden literalmente con «03.1 · Entender el AS-IS», «03.2 · Revisar propuestas IA» y «03.3 · Configurar la actividad futura». Se retira 03.4 de la navegación guiada. «03.4 · Conectar el proceso futuro» permanece exclusivamente en el modo Mapa TO-BE, donde ya existe el editor versionado de destinos SÍ/NO. Reutiliza el mismo flow owner y los estilos AUNEA System; no se ha creado una navegación o modelo de rutas paralelo.
+
+**Lógica por actividad de decisión:** la nueva lectura `tobeDecisionReadoutHtml` identifica actividades ST04, recupera `DF041/decision_criteria` desde el snapshot AS-IS confirmado, proyecta destinos originales SÍ/NO y destinos de la versión TO-BE, y presenta el contraste sin convertirlo en regla ni decisión aprobada. Las rutas TO-BE se cambian sólo en Mapa, con los controles existentes y validación de destinos, alcance y conexión a Fin. Los pasos no decisionales no presentan una bifurcación ficticia; las decisiones incorporadas nuevas no heredan rutas de decisión del AS-IS.
+
+**IA y datos insuficientes:** el contrato de salida IA requiere campos estructurados como `automation_ai`, pero sus cadenas pueden ser vacías. La ausencia de candidato no acredita por sí sola carencia de información del cliente; también puede ser una salida IA incompleta. Valores no incluidos en catálogos se muestran como candidatos no aplicables, nunca se autocorrigen silenciosamente. No se han inventado reglas de umbral ni enlaces específicos de facturas.
+
+**Pruebas:** `pg11-future-flow.test.cjs` comprueba en caso sintético que P2 usa el criterio declarado y las rutas originales y propuestas; que modificar el destino TO-BE no modifica AS-IS; y que una decisión nueva no hereda rutas inexistentes. También se comprueban nombres de navegación y visibilidad del modo mapa. La UAT en Windows con el snapshot real de cuatro actividades continúa pendiente de acreditación. **No se promueve PG11.03 a CLOSED.**
+
+**Rama:** `work/as-is-ux-simplification-20260930`. Commits de implementación hasta `9ec66ad0`. Estado de QA se registra con el último Acceptance Gate satisfactorio. No cambian reglas canónicas, Master Index, DECISIONES, ESTADO ni ROADMAP por estos ajustes de presentación y proyección de datos ya existentes.
