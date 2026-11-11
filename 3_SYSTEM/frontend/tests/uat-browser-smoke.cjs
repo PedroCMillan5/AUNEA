@@ -919,13 +919,19 @@ async function main(){
     '#tobeInspector [data-tobe-row-key]')].map(row=>{
       const suggestion=row.querySelector('.tobe-ai-inline');
       return {key:row.getAttribute('data-tobe-row-key'),
-        noCandidate:!!suggestion&&/sin candidato estructurado para este campo/i.test(suggestion.textContent||''),
+        noCandidate:row.classList.contains('is-without-proposal'),
         evidencePanels:suggestion?.querySelectorAll('details').length||0};
     }));
   assert.ok(fieldDensity.some(x=>x.noCandidate),
     'the synthetic source contains fields without grounded IA suggestions');
   assert.deepEqual(fieldDensity.filter(x=>x.noCandidate&&x.evidencePanels!==0),[],
-    '03.3 may not repeat activity-wide evidence for fields with no IA candidate');
+    '03.3 must omit IA advice and activity-wide evidence when there is no candidate');
+  assert.equal(await page.locator('#tobeStepDesign .tobe-design-transformation .tobe-ai-field-row').count(),2);
+  assert.equal(await page.locator('#tobeStepDesign .tobe-design-operation .tobe-ai-field-row').count(),3);
+  assert.equal(await page.locator('#tobeStepDesign .tobe-design-evidence').count(),1);
+  assert.equal(await page.locator('#tobeStepDesign .tobe-design-time').count(),1);
+  assert.equal(await page.locator('#tobeStepDesign [data-tobe-ai-edit-field]').count(),0,
+    'the consultant edits the original control directly, without a duplicate Edit button');
   assert.equal(await page.locator(
     '#tobeInspector [data-tobe-row-key="controlsRisk"] [data-tobe-ai-keep-field]').count(),0,
     'no Keep decision is offered when IA has no actionable candidate');
@@ -977,11 +983,11 @@ async function main(){
   });
   assert.deepEqual(kept,{action:'KEEP',key:keepTarget.field,source:keepTarget.source,stillDraft:true},
     'Mantener must persist a decision on an actually proposed field without copying IA data');
-  await page.locator('#tobeInspector [data-tobe-row-key="controlsRisk"] [data-tobe-ai-edit-field="controlsRisk"]').click();
+  await page.locator('#tobeInspector [data-tobe-row-key="controlsRisk"] textarea').click();
   assert.equal(await page.evaluate(()=>
     document.activeElement===document.querySelector(
       '#tobeInspector [data-tobe-row-key="controlsRisk"] textarea')),true,
-    'Editar must focus the one canonical field, not create a second editor');
+    'direct field editing must focus the sole canonical editor');
   const applyOne=page.locator(
     '#tobeInspector [data-tobe-row-key="transformation"] [data-tobe-ai-use-field="transformation"]');
   assert.equal(await applyOne.count(),1,'a human-reviewed source-linked field can be applied');
