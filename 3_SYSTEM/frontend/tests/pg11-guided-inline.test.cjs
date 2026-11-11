@@ -67,8 +67,7 @@ test('IA suggestions are visible before decision but cannot be applied',()=>{
 test('PG11 fields without an IA candidate never repeat a full evidence card',()=>{
  const f=fixture();f.proposal.items[0].controls_risk='';
  const empty=f.context.tobeAiInlineHint(f.e,f.p,f.p.items[0],'controlsRisk');
- assert.match(empty,/sin candidato estructurado para este campo/);
- assert.doesNotMatch(empty,/<details/);
+ assert.equal(empty,'','a field without IA candidate should not repeat a card');
  const proposed=f.context.tobeAiInlineHint(f.e,f.p,f.p.items[0],'outputs');
  assert.match(proposed,/Fuentes y condiciones del campo/);
  assert.match(proposed,/Referencias:/);
@@ -83,20 +82,22 @@ test('PG11 gives truthful field coverage without inferring reasons for empty can
  assert.match(html,/sin propuesta/);
  assert.match(html,/Un campo vacío no prueba falta de datos, conformidad, ni aprobación/);
  const empty=f.context.tobeAiInlineHint(f.e,f.p,f.p.items[0],'controlsRisk');
- assert.match(empty,/tobe-ai-no-candidate/);
- assert.doesNotMatch(empty,/Fuentes y condiciones del campo/);
+ assert.equal(empty,'');
+ const original=f.context.tobeWithAiHint(f.e,f.p,f.p.items[0],'controlsRisk',
+  '<div class="field"><textarea data-tobe-field="controlsRisk"></textarea></div>');
+ assert.match(original,/is-without-proposal/);
+ assert.equal((original.match(/data-tobe-field="controlsRisk"/g)||[]).length,1);
 });
 test('PG11 shows Maintain only for a real IA candidate, not for an omitted field',()=>{
  const f=fixture();f.setDecision('MODIFY');
  let html=f.context.tobeAiRowActions(f.e,f.p,f.p.items[0],'outputs');
  assert.match(html,/data-tobe-ai-use-field="outputs"/);
  assert.match(html,/data-tobe-ai-keep-field="outputs"/);
- assert.match(html,/data-tobe-ai-edit-field="outputs"/);
+ assert.doesNotMatch(html,/data-tobe-ai-edit-field="outputs"/);
  f.proposal.items[0].outputs='';
  html=f.context.tobeAiRowActions(f.e,f.p,f.p.items[0],'outputs');
  assert.doesNotMatch(html,/data-tobe-ai-use-field="outputs"/);
- assert.doesNotMatch(html,/data-tobe-ai-keep-field="outputs"/);
- assert.match(html,/data-tobe-ai-edit-field="outputs"/);
+ assert.equal(html,'','no candidate means direct editing, not another action strip');
 });
 test('PG11 shows a specific reviewer defect rather than blaming missing client data',()=>{
  const f=fixture();
@@ -235,7 +236,7 @@ test('PG11 exposes source and individual IA before configuring the future step',
  assert.match(page,/tobeAiAdviceHtml\(e,item,false\)/);
  assert.match(page,/tobeHumanReviewHtml\(e,item,false\)/);
  assert.ok(page.indexOf("'</nav>'+supportingInformation+")<
-   page.indexOf("'<section class=\"tobe-edit\" id=\"tobeStepDesign\""));
+   page.indexOf("'<section class=\"tobe-edit tobe-design-workspace\" id=\"tobeStepDesign\""));
  assert.equal((page.match(/data-tobe-generate-selected/g)||[]).length,1);
  assert.doesNotMatch(page,/tobe-review-support/);
 });
@@ -244,9 +245,23 @@ test('PG11 displays confirmed AS-IS values beside the sole editable TO-BE field'
  f.context.tobeProposalSourceSteps=()=>[{id:'P1',actor:'ADMIN',tool:'ERP',inputs:['PDF'],outputs:['PDF']}];
  const html=f.context.tobeWithAiHint(f.e,f.p,f.p.items[0],'outputs',
    '<div class="field"><input data-tobe-field="outputs"></div>');
- assert.match(html,/Valor AS-IS confirmado:/);
+ assert.match(html,/Origen AS-IS:/);
  assert.match(html,/PDF/);
  assert.equal((html.match(/data-tobe-field="outputs"/g)||[]).length,1);
+});
+test('PG11 03.3 keeps all nine fields inside four operational design sections',()=>{
+ const start=src.indexOf('function tobeInspectorHtml(e,p){');
+ const end=src.indexOf('function createNextTobeVersion',start);
+ const content=src.slice(start,end);
+ for(const label of ['Transformación y propósito','Funcionamiento futuro',
+   'Recursos y datos de ejecución','Tiempo futuro y supuesto trazable'])
+   assert.ok(content.includes(label),label);
+ for(const key of ['transformation','problemResolved','automationAi','humanSupervision',
+   'controlsRisk','futureActor','tool','inputs','outputs'])
+   assert.ok(content.includes("withAi('"+key+"'"),'canonical editor for '+key);
+ assert.match(content,/tobeDesignEvidence/);
+ assert.match(content,/tobe-design-fields/);
+ assert.doesNotMatch(content,/tobe-ai-inline-empty/);
 });
 test('PG11 step evidence never presents superseded risks as current',()=>{
  const fn=src.match(/function tobeSnapshotIssueCards\(e,item\)\{[\s\S]*?\n\}/)?.[0];
