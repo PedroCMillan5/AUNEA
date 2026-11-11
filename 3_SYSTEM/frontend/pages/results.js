@@ -1959,6 +1959,142 @@ function tobeFlowInspector(e,p,item){
     (decision?field('exception','Ruta NO / excepción',routes.exception):'')+
     '</div></section>';
 }
+// [AUNEA-FE-PG11-OPTIMIZATION-CHECK-313] START
+// SOURCE: CANONICAL PG11, ProcessStep DF035/036/041–043, friction and
+// restriction snapshot; DEC-050/052/055. INPUTS: immutable AS-IS and
+// consultant-owned TO-BE DRAFT. OUTPUTS: deterministic, source-linked checks.
+// SIDE EFFECTS: none. Never alters routes, approves IA, or invents savings.
+// CHANGE RISK: MEDIUM. Works on any service process, without sector heuristics.
+function tobeOptimizationFindings(e,p,item){
+  if(!e||!p||!item)return [];
+  const future=tobeFutureSteps(e,p),flow=tobeFlowOwner(e,p),
+    source=tobeProposalSourceSteps(e,p),
+    sourceStep=source.find(x=>String(x.id)===String(item.sourceStepId)),
+    id=tobeFlowItemId(item),
+    owner=future.find(x=>String(x.id)===id),
+    futureMap=new Map(future.map(x=>[String(x.id),x])),
+    predecessors=future.filter(step=>String(step.normal_next_step)===id||
+      String(step.exception_path?.destination_step)===id),
+    successors=owner?[owner.normal_next_step,owner.exception_path?.destination_step]
+      .map(x=>futureMap.get(String(x||''))).filter(Boolean):[],
+    set=value=>new Set(tobeFutureArtifacts(value).map(x=>String(x).trim().toUpperCase())),
+    diff=(a,b)=>[...a].filter(x=>!b.has(x)),
+    beforeInput=set(sourceStep?.inputs||[]),afterInput=set(item.inputs||[]),
+    beforeOutput=set(sourceStep?.outputs||[]),afterOutput=set(item.outputs||[]),
+    newInputs=diff(afterInput,beforeInput),
+    newOutputs=diff(afterOutput,beforeOutput),
+    droppedOutputs=diff(beforeOutput,afterOutput),
+    results=[],
+    add=(severity,code,message,related=[])=>results.push({
+      severity,code,message,related:related.map(x=>String(x.step_name||x.stepName||x.id||x))
+    }),
+    names=steps=>steps.map(x=>x.step_name||x.stepName||String(x.id)).join(', ');
+  if(item.transformation==='Se elimina'){
+    add('REVIEW','REMOVED_ACTIVITY','La actividad se propone eliminar. Revisa quién asume su trabajo, entradas y salidas y redirige las conexiones en Mapa TO-BE.',successors);
+    return results;
+  }
+  if(!owner){
+    add('REVIEW','MISSING_NODE','La actividad no está conectada en el grafo futuro. Comprueba su inclusión y rutas en Mapa TO-BE.');
+    return results;
+  }
+  if(newInputs.length){
+    const supplied=new Set(predecessors.flatMap(s=>[...set(s.outputs)]));
+    const notLinked=newInputs.filter(x=>!supplied.has(x));
+    if(notLinked.length)add('REVIEW','INPUT_SOURCE',
+      'Entradas incorporadas ('+notLinked.join(', ')+
+      '): confirma el paso proveedor o la fuente externa. No consta su suministro en las salidas de los pasos anteriores conectados.',
+      predecessors);
+  }
+  if(droppedOutputs.length){
+    const consumers=successors.filter(x=>droppedOutputs.some(code=>set(x.inputs).has(code)));
+    if(consumers.length)add('REVIEW','OUTPUT_CONSUMER',
+      'Una salida retirada del TO-BE continúa declarada como entrada en actividades posteriores. Revisa el contrato de datos o documenta una fuente alternativa.',
+      consumers);
+  }
+  if(newOutputs.length&&!successors.some(x=>newOutputs.some(code=>set(x.inputs).has(code)))){
+    add('CHECK','OUTPUT_DESTINATION',
+      'Salidas nuevas ('+newOutputs.join(', ')+
+      '): confirma si alimentan otra actividad, se entregan fuera del proceso o constituyen el resultado final.',
+      successors);
+  }
+  const automation=String(item.automationAi||'').trim();
+  if(automation&&!/^(no|n\/a|ninguno|sin definir|pendiente|—)$/i.test(automation)){
+    const oldTool=tobeFutureCatalogValue('OS_TOOL_CATEGORY',sourceStep?.tool),
+      currentTool=tobeFutureCatalogValue('OS_TOOL_CATEGORY',item.tool);
+    if(!currentTool||sourceStep&&oldTool===currentTool)
+      add('REVIEW','AUTOMATION_CAPABILITY',
+        'La intervención incorpora automatización o asistencia. Verifica capacidades, permisos e integración de la herramienta prevista; mantener la herramienta actual no acredita viabilidad.');
+    if(!String(item.humanSupervision||'').trim())
+      add('REVIEW','HUMAN_SUPERVISION',
+        'La propuesta operativa incorpora automatización, pero no documenta quién revisa las excepciones.');
+    const answers=tobeProposalSnapshot(e,p)?.answers||{},
+      flagged=[['DF075','aprobaciones humanas'],['DF088','límites de automatización'],
+        ['DF089','plataformas'],['DF090','seguridad y accesos']].filter(([key])=>{
+        const v=answers[key];return v!=null&&String(v).trim()!==''&&
+          !(Array.isArray(v)&&!v.length);
+      }).map(x=>x[1]);
+    if(flagged.length)add('REVIEW','CONFIRMED_CONSTRAINTS',
+      'Contrasta la intervención con los requisitos confirmados de '+flagged.join(', ')+
+      '. La IA no puede sustituir ni relajar una obligación del cliente.');
+  }
+  if(sourceStep&&processDecisionStep(sourceStep)){
+    const route=flow.routes[id]||{},
+      changed=String(route.normal||'')!==String(sourceStep.normal_next_step||'')||
+        String(route.exception||'')!==String(sourceStep.exception_path?.destination_step||'')||
+        !!String(flow.decisionCriteria?.[id]||'').trim();
+    if(changed)add('REVIEW','DECISION_BRANCH',
+      'Se ha cambiado la condición o alguna ruta de esta decisión. Comprueba ambos destinos, el responsable de autorizar y las condiciones obligatorias.',
+      successors);
+  }
+  const originalFrictions=(tobeProposalSnapshot(e,p)?.frictions||[]).filter(f=>
+    f.status!=='SUPERSEDED'&&
+    (f.affected_steps||f.step_ids||[]).map(String).includes(String(item.sourceStepId)));
+  const relatedRisks=(tobeProposalSnapshot(e,p)?.risks||[]).filter(f=>
+    f.status!=='SUPERSEDED'&&(f.step_ids||[]).map(String).includes(String(item.sourceStepId)));
+  if((originalFrictions.length||relatedRisks.length)&&!String(item.problemResolved||'').trim())
+    add('REVIEW','UNJUSTIFIED_CHANGE',
+      'Hay hallazgos vinculados al paso, pero falta justificar qué problema resuelve el diseño futuro.');
+  return results;
+}
+function tobeOptimizationPanelHtml(e,p,item){
+  const results=tobeOptimizationFindings(e,p,item),
+    id=tobeFlowItemId(item),future=tobeFutureSteps(e,p),
+    owner=future.find(s=>String(s.id)===id),
+    predecessors=future.filter(s=>String(s.normal_next_step)===id||
+      String(s.exception_path?.destination_step)===id),
+    successorIds=owner?[owner.normal_next_step,owner.exception_path?.destination_step]:[],
+    successors=successorIds.map(id=>future.find(s=>String(s.id)===String(id))).filter(Boolean),
+    names=steps=>steps.map(x=>x.step_name).join(' · ')||'Ninguna conectada',
+    review=results.filter(x=>x.severity==='REVIEW').length,
+    block=tobeFlowIntegrity(e,p),
+    rows=results.map(x=>'<li class="tobe-optimization-finding" data-optimization-code="'+attr(x.code)+'">'+
+      '<span class="tobe-optimization-severity">'+
+        (x.severity==='REVIEW'?'Revisar':'Comprobar')+'</span>'+
+      '<p>'+esc(x.message)+'</p>'+
+      (x.related.length?'<small>Actividades relacionadas: '+esc(x.related.join(' · '))+'</small>':'')+
+    '</li>').join('');
+  return '<section class="tobe-design-group tobe-optimization-panel"'+
+    ' id="tobeStepOptimization" aria-label="Comprobación de dependencias del flujo">'+
+    '<div class="tobe-design-group-head"><span class="tobe-design-group-number">04</span>'+
+    '<div><h4>Impacto del cambio sobre el flujo</h4>'+
+    '<p>Compara entradas, salidas, herramientas, decisiones y conexiones con el resto del TO-BE.</p></div></div>'+
+    '<div class="tobe-optimization-body">'+
+      '<div class="tobe-optimization-connections">'+
+        '<div><b>Pasos anteriores</b><span>'+esc(names(predecessors))+'</span></div>'+
+        '<div><b>Actividad revisada</b><span>'+esc(tobeFlowItemName(item))+'</span></div>'+
+        '<div><b>Pasos siguientes</b><span>'+esc(names(successors))+'</span></div>'+
+      '</div>'+
+      (block?'<p class="notice warn"><b>Integridad del flujo:</b> '+esc(block)+'</p>':'')+
+      (results.length?'<div class="tobe-optimization-summary"><b>'+results.length+
+        ' comprobaciones del cambio</b> · '+review+' requieren revisión</div>'+
+        '<ul class="tobe-optimization-findings">'+rows+'</ul>':
+        '<p class="tobe-optimization-empty">No se han identificado incompatibilidades evidentes entre los datos declarados de este paso y sus conexiones. Esto no acredita por sí solo que el proceso esté optimizado.</p>')+
+      '<p class="field-help">Revisión derivada del AS-IS confirmado y del borrador TO-BE, no es una propuesta autónoma de IA ni una estimación de ahorros. Los tipos de artefacto no prueban por sí solos que dos actividades compartan el mismo documento.</p>'+
+      (tobeEditable(p)?'<button type="button" class="btn btn-outline" data-tobe-recheck-optimization="1">'+
+        'Guardar cambios y comprobar dependencias</button>':'')+
+    '</div></section>';
+}
+// [AUNEA-FE-PG11-OPTIMIZATION-CHECK-313] END
 // [AUNEA-FE-PG11-FUTURE-FLOW-228] END
 // [AUNEA-FE-PG11-FREE-CANVAS-248] START — persisted visual positions
 // are separate from flow.routes. The confirmed AS-IS is never mutated.
@@ -2187,8 +2323,9 @@ function tobeInspectorHtml(e,p){
         '</div>'+
       '</details>'+
       tobeDecisionReadoutHtml(e,p,item)+
+      tobeOptimizationPanelHtml(e,p,item)+
       '<details class="tobe-design-time tobe-design-group">'+
-        '<summary><span class="tobe-design-group-number">04</span><span>'+
+        '<summary><span class="tobe-design-group-number">05</span><span>'+
           '<b>Tiempo futuro y supuesto trazable</b><small>Opcional · sólo con evidencia suficiente</small>'+
         '</span></summary>'+
         '<div class="form-grid tobe-design-fields">'+
@@ -3245,6 +3382,27 @@ function registerInternalWorkPages(){
     else toast('No está disponible la acción de esta versión TO-BE.');
   },true);
   // [AUNEA-FE-PG11-GUIDED-ACTIONS-264] END
+  // [AUNEA-FE-PG11-OPTIMIZATION-RECHECK-315] START — user-requested
+  // recheck only. Save a version-owned draft, never approve or reconnect.
+  document.addEventListener('click',event=>{
+    const button=event.target?.closest?.('[data-tobe-recheck-optimization]');
+    if(!button||state.activePage!=='tobe')return;
+    event.preventDefault();
+    const e=currentEng(),p=latestTobe(e);
+    if(!e||!tobeEditable(p))return toast('Esta versión TO-BE no es editable.');
+    if(!saveTobeFromDom(e)||!saveState('Guardar diseño TO-BE y verificar dependencias'))
+      return toast('No se guardó el cambio; la comprobación sigue usando el borrador anterior.');
+    const live=currentEng(),draft=latestTobe(live),
+      item=tobeSelectedItem(live,draft),
+      results=tobeOptimizationFindings(live,draft,item);
+    const panel=document.getElementById('tobeStepOptimization');
+    if(panel)panel.outerHTML=tobeOptimizationPanelHtml(live,draft,item);
+    toast(results.length?
+      'Dependencias actualizadas: '+results.length+' puntos por comprobar.':
+      'Dependencias actualizadas. No se han detectado incompatibilidades evidentes.');
+  },true);
+  // [AUNEA-FE-PG11-OPTIMIZATION-RECHECK-315] END
+
   // [AUNEA-FE-PG11-GUIDED-INSPECTOR-253] START
   document.addEventListener('click',event=>{
     const button=event.target?.closest?.('[data-tobe-jump]');
