@@ -3627,3 +3627,33 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
   body:has(.diagnostic-stage-s01) #mobileMenu{color:inherit}
 }
 /* [AUNEA-FE-PG01-MOBILE-NAV-314] END */
+
+/* [AUNEA-FE-PG11-DECISION-REVIEW-298] START — only map edits routes.
+   Reuse existing System tokens. Guided navigation mirrors section names. */
+.tobe-workspace[data-tobe-mode="guided"] .tobe-review-steps{
+  display:flex;align-items:center;flex-wrap:wrap;gap:var(--space-2);
+}
+.tobe-workspace[data-tobe-mode="map"] .tobe-review-steps{display:none}
+.tobe-decision-readout{
+  display:grid;gap:var(--space-2);
+  padding:var(--space-3);margin:var(--space-3) 0;
+  border:1px solid var(--system-line);border-radius:var(--radius-sm);
+  background:var(--system-soft);min-width:0;
+}
+.tobe-decision-readout h4{margin:0;font-size:var(--font-small);color:var(--system)}
+.tobe-decision-readout p{margin:0;line-height:1.5;overflow-wrap:anywhere}
+.tobe-decision-readout dl{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:var(--space-2);margin:0;
+}
+.tobe-decision-readout dl>div{
+  background:#fff;border:1px solid var(--system-line);
+  border-radius:var(--radius-sm);padding:var(--space-2);min-width:0;
+}
+.tobe-decision-readout dt{font-size:var(--font-caption);font-weight:700;color:var(--system)}
+.tobe-decision-readout dd{margin:3px 0 0;font-size:var(--font-small);
+  line-height:1.5;overflow-wrap:anywhere}
+@media(max-width:700px){
+  .tobe-decision-readout dl{grid-template-columns:minmax(0,1fr)}
+}
+/* [AUNEA-FE-PG11-DECISION-REVIEW-298] END */
