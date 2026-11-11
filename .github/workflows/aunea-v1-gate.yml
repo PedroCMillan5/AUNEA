@@ -49,7 +49,9 @@ jobs:
       - name: Frontend modular runtime and UX regression
         run: npm test
   browser_uat:
-    runs-on: ubuntu-latest
+    # Pin Playwright's native dependencies: ubuntu-latest advanced to an
+    # unsupported rolling image and apt mirrors intermittently fail DNS.
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: 3_SYSTEM/frontend
