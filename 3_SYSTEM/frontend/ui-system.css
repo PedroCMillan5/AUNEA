@@ -4072,3 +4072,13 @@ details.tobe-ai-operational-context:not([open])>.tobe-ai-operational-body{
   #tobeStepDesign .tobe-artifact-origin-legend{padding:10px 12px}
 }
 /* [AUNEA-FE-PG11-ORIGIN-OPTIMIZATION-316] END */
+
+/* [AUNEA-FE-PG11-PREVIEW-STYLE-334] START — reuse existing controls and graph; LOW risk. */
+.tobe-alternatives {padding:18px; margin:16px 0;}
+.tobe-alternative {padding:14px 0; border-top:1px solid var(--border,#dedbd4); margin-top:14px;}
+.tobe-alternative p {font-size:13px; line-height:1.5;}
+.tobe-alternative-dialog {width:min(1200px,94vw);max-height:90vh;overflow:auto;border:1px solid #d6d1c8;border-radius:12px;padding:24px;color:inherit;background:#fff;}
+.tobe-alternative-dialog::backdrop {background:rgba(0,0,0,.45);}
+.tobe-alternative-dialog .tobe-canvas-viewport {max-height:55vh;overflow:auto;}
+.tobe-preview-changed .tobe-graph-node {outline:3px solid var(--gold,#b69a54);outline-offset:3px;}
+/* [AUNEA-FE-PG11-PREVIEW-STYLE-334] END */

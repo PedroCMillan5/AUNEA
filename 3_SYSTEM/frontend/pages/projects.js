@@ -20,7 +20,7 @@ async function generateProjectSpecification(e,targetPlatform=''){
   const review=approvedOutputReview(e);if(!review)return toast('Aprueba primero los resultados de esta versión.');
   const sourceId=review.id,tobe=approvedTobeForClient(e);
   try{
-    const request={selected_scenario:review.sources.scenario,target_platform:targetPlatform||null,notes:[`Propuesta TO-BE aprobada v${tobe.version}; AS-IS v${tobe.sourceSnapshotVersion}`,...tobe.items.map(i=>`${i.sourceStepName}: ${i.transformation}. ${i.problemResolved||''}`)]};
+    const request={selected_scenario:review.sources.scenario,target_platform:targetPlatform||null,notes:[`Propuesta TO-BE aprobada v${tobe.version}; AS-IS v${tobe.sourceSnapshotVersion}`,...tobeIntegrationProjection(e,tobe).items.map(i=>`${i.step}: ${i.transformation}. ${[i.problemResolved,i.futureActor,i.tool,i.automationAi,i.humanSupervision,i.controlsRisk].filter(Boolean).join(' · ')}`)]};
     const response=await fetch(`${state.backendUrl}/v1/solution-specifications/generate`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({engagement:buildBackendPayload(e),diagnostic:review.sources.output,request})});
     if(!response.ok)throw new Error(await response.text());const data=await response.json();
     if(approvedOutputReview(e)?.id!==sourceId)throw new Error('Los resultados cambiaron durante la generación; vuelve a generar la especificación.');

@@ -15,6 +15,7 @@ class PilotAIRequest(BaseModel):
     diagnostic: DiagnosticOutput
     confirmed_as_is: bool
     snapshot_version: int = Field(ge=1)
+    consultant_design: dict[str, Any] = Field(default_factory=dict)  # transient advisory context; never an AS-IS owner
 
 class PilotAIItem(BaseModel):
     model_config = ConfigDict(extra="forbid")

@@ -1410,7 +1410,13 @@ function tobeWithAiHint(e,p,item,key,html){
   // [AUNEA-FE-PG11-GUIDED-FIELD-267] START — The existing field keeps sole edit
   // ownership; the suggestion is a read-only sibling, not another control.
   if(item.isAddition)return html;
-  const advice=tobeAiInlineHint(e,p,item,key);
+  const applied=(p?.aiDraft?.applyHistory||[]).findLast(x=>x.transaction&&!x.undoneAt&&x.sourceStepId===String(item.sourceStepId)&&x.fields?.includes(key));
+  const patch=applied?.transaction?.changes?.find(x=>x.path[0]==='items'&&x.path.at(-1)===key);
+  const ruleHint=applied?.provenance==='RULES'?'<p class="field-help"><b>Procedencia:</b> '+
+    (patch&&JSON.stringify(item[key])===JSON.stringify(patch.after)?
+      (applied.consultantModified?'Reglas ajustadas y confirmadas por el consultor.':'Reglas confirmadas por el consultor.'):
+      'Edición del consultor posterior a la propuesta por reglas.')+'</p>':'';
+  const advice=tobeAiInlineHint(e,p,item,key)+ruleHint;
   const original=typeof tobeProposalSourceSteps==='function'?tobeProposalSourceSteps(e,p).find(x=>String(x.id)===String(item.sourceStepId)):null;
   const sourceKey=({futureActor:'actor',tool:'tool',inputs:'inputs',outputs:'outputs'})[key];
   const sourceValue=original&&sourceKey?original[sourceKey]:null;
@@ -1680,15 +1686,35 @@ function tobeCoherenceFindings(e,p){
     if(item.futureTime&&item.futureTimeAssumption)
       add(item,'WARNING','El tiempo futuro es un supuesto; no equivale a medición ni autoriza un ahorro.');
   }
+  // [AUNEA-FE-PG11-SOURCE-CONSTRAINTS-336] START — only explicit step references block.
+  if(!e)return findings;
+  const constraints=tobeProposalSnapshot(e,p)?.answers||{};
+  const linked=(value,id)=>Array.isArray(value)?value.some(x=>typeof x==='string'?x===id:
+    x&&typeof x==='object'&&(String(x.step_id||x.stepId||'')===id||x.step_ids?.map(String).includes(id))):value===id;
+  for(const item of items){
+    const id=String(item.sourceStepId);
+    if(linked(constraints.DF075,id)&&item.transformation==='Se elimina')
+      add(item,'BLOCKING','El AS-IS exige aprobación humana en esta actividad. Conserva la aprobación y su ruta antes de aprobar el TO-BE.');
+    if(linked(constraints.DF088,id)&&['Se automatiza','Se asiste con IA'].includes(item.transformation))
+      add(item,'BLOCKING','La actividad está referenciada expresamente en las restricciones de automatización/IA. Mantén su ejecución permitida.');
+    for(const finding of tobeOptimizationFindings(e,p,item))
+      add(item,'WARNING',finding.message+(finding.related.length?' Actividades: '+finding.related.join(' · '):''));
+  }
+  // [AUNEA-FE-PG11-SOURCE-CONSTRAINTS-336] END
   return findings;
 }
 // [AUNEA-FE-PG11-GLOBAL-SCAN-280] START — One-pass QA summary; complete issues remain expandable.
+function tobeActivityDecisionRecorded(e,p,item){
+  const id=String(item.sourceStepId),human=tobeHumanReviewRecord(e,p)?.decisions?.[id];
+  if(['ACCEPT','MODIFY','DISCARD'].includes(human?.status))return true;
+  // A rule-based decision is valid without inventing a corresponding IA review.
+  return (p.aiDraft?.applyHistory||[]).some(x=>String(x.sourceStepId)===id&&x.provenance==='RULES'&&x.action==='APPLY'&&!x.undoneAt);
+}
 function tobeCoherencePanel(e,p){
   const findings=tobeCoherenceFindings(e,p),
     human=typeof tobeHumanReviewRecord==='function'?tobeHumanReviewRecord(e,p):null,
     decisions=human?.decisions||{},steps=p?.items||[],
-    reviewed=steps.filter(x=>['ACCEPT','MODIFY','DISCARD'].includes(
-      decisions[String(x.sourceStepId)]?.status)).length,
+    reviewed=steps.filter(x=>tobeActivityDecisionRecorded(e,p,x)).length,
     added=tobeAddedSteps(p).length,
     integrity=tobeFlowIntegrity(e,p),
     blocked=findings.filter(x=>x.severity==='BLOCKING'),
@@ -2020,7 +2046,7 @@ function tobeOptimizationFindings(e,p,item){
   if(droppedOutputs.length){
     const consumers=successors.filter(x=>droppedOutputs.some(code=>set(x.inputs).has(code)));
     if(consumers.length)add('REVIEW','OUTPUT_CONSUMER',
-      'Una salida retirada del TO-BE continúa declarada como entrada en actividades posteriores. Revisa el contrato de datos o documenta una fuente alternativa.',
+      'Una categoría de salida retirada coincide con una categoría de entrada posterior. Comprueba si es el mismo documento o dato antes de concluir que falta suministro; documenta su fuente.',
       consumers);
   }
   if(newOutputs.length&&!successors.some(x=>newOutputs.some(code=>set(x.inputs).has(code)))){
@@ -2189,6 +2215,215 @@ function tobeSourceDataExplanation(raw){
     '. Esta explicación no modifica los datos.</p>';
 }
 // [AUNEA-FE-PG11-READABLE-CODES-209] END
+// [AUNEA-FE-PG11-TRANSACTION-332] START
+// PURPOSE: Preview/confirm/undo source-linked alternatives on the existing version owner.
+// SOURCE: PG11 instruction 11/11/2026; DEC-050/052/055. INPUTS: transient candidate.
+// OUTPUTS: canonical items/flow plus existing applyHistory audit. SIDE_EFFECTS: explicit saveState only.
+// CHANGE_RISK: HIGH. No scenario, economic calculation or second graph owner.
+let __auneaTobePreview=null;
+const __auneaTobeAlternatives=new Map();
+const tobeClone=value=>JSON.parse(JSON.stringify(value));
+function tobeDesignState(p){return {items:tobeClone(p.items),flow:tobeClone(p.flow||null)};}
+function tobeAlternativeKey(e,p,id){return String(e.id)+'|'+p.version+'|'+p.sourceSnapshotVersion+'|'+String(id);}
+function tobeProjectAlternative(e,p,candidate){
+  const projected=tobeClone(p),id=String(candidate.sourceId),item=tobeFlowItem(e,projected,id);
+  if(!tobeEditable(p)||!item)throw Error('La actividad ya no pertenece al borrador editable.');
+  const allowed=new Set(['transformation','problemResolved','futureActor','tool','inputs','outputs',
+    'automationAi','humanSupervision','controlsRisk','futureTime','futureTimeAssumption']);
+  for(const [key,value] of Object.entries(candidate.fields||{})){
+    if(!allowed.has(key))throw Error('La propuesta contiene un campo fuera del contrato: '+key);
+    item[key]=tobeClone(value);
+  }
+  const flow=tobeMutableFlow(e,projected),pending=[];
+  for(const operation of candidate.operations||[]){
+    if(operation.type!=='insertAfter')throw Error('Operación estructural no soportada: requiere edición explícita del mapa.');
+    const anchor=tobeFlowItem(e,projected,String(operation.sourceId)),route=flow.routes[String(operation.sourceId)];
+    if(!anchor||!route?.normal||route.normal==='__PENDING__'){
+      pending.push('Indica el destino de la ruta normal antes de insertar el control.');continue;
+    }
+    const source=tobeProposalSourceSteps(e,p).find(s=>String(s.id)===String(anchor.sourceStepId));
+    if(!source||processDecisionStep(source)){
+      pending.push('Selecciona explícitamente la rama en la que debe insertarse el control.');continue;
+    }
+    const nodeId='TOBE-ADD-'+p.version+'-'+String(candidate.id).replace(/[^a-zA-Z0-9_-]/g,'_');
+    if(tobeFlowItem(e,projected,nodeId))throw Error('Este control ya está incorporado; revisa la actividad existente.');
+    const supplied=operation.item||{};
+    if(!String(supplied.stepName||'').trim())throw Error('La nueva actividad necesita una función y un nombre explícitos.');
+    const added={id:nodeId,isAddition:true,status:'DRAFT',sourceStepId:source.id,
+      sourceStepName:source.step_name||source.name,stepName:supplied.stepName,stepType:'ST02',
+      transformation:'Se incorpora control',problemResolved:supplied.problemResolved||'',
+      futureActor:anchor.futureActor||'',tool:anchor.tool||'',inputs:tobeClone(anchor.outputs||[]),
+      outputs:tobeClone(anchor.outputs||[]),automationAi:'',humanSupervision:anchor.futureActor||'',
+      controlsRisk:supplied.controlsRisk||'',futureTime:'',futureTimeAssumption:''};
+    flow.addedSteps.push(added);flow.routes[nodeId]={normal:route.normal,exception:''};
+    flow.routes[String(operation.sourceId)]={...route,normal:nodeId};
+    // New node placement is computed by the existing layout from its explicit routes.
+  }
+  const structural=tobeFlowIntegrity(e,projected);
+  if(structural)pending.push(structural);
+  return {projected,pending};
+}
+function tobeTransactionChanges(before,after,path=[]){
+  if(JSON.stringify(before)===JSON.stringify(after))return [];
+  if(before&&after&&typeof before==='object'&&typeof after==='object'&&
+     !Array.isArray(before)&&!Array.isArray(after))
+    return [...new Set([...Object.keys(before),...Object.keys(after)])].flatMap(key=>
+      tobeTransactionChanges(before[key],after[key],[...path,key]));
+  if(path.length===1&&path[0]==='items'&&Array.isArray(before)&&Array.isArray(after)&&
+     before.length===after.length&&before.every((v,i)=>v.id===after[i].id))
+    return before.flatMap((v,i)=>tobeTransactionChanges(v,after[i],[...path,String(i)]));
+  return [{path,before:before===undefined?null:tobeClone(before),after:after===undefined?null:tobeClone(after),
+    beforeMissing:before===undefined,afterMissing:after===undefined}];
+}
+function tobeTransactionRead(root,path){return path.reduce((value,key)=>value?.[key],root);}
+function tobeTransactionWrite(root,change,reverse=false){
+  let owner=root;for(const key of change.path.slice(0,-1)){if(!owner[key])owner[key]={};owner=owner[key];}
+  const key=change.path.at(-1),missing=reverse?change.beforeMissing:change.afterMissing;
+  if(missing)delete owner[key];else owner[key]=tobeClone(reverse?change.before:change.after);
+}
+function tobeCommitAlternative(e,preview){
+  const p=latestTobe(e);
+  if(!preview||preview.engagementId!==e.id||p?.version!==preview.version||!tobeEditable(p)||
+    confirmedSnapshot(e)?.version!==p.sourceSnapshotVersion||
+    JSON.stringify(tobeDesignState(p))!==JSON.stringify(preview.before))
+    throw Error('El borrador o el AS-IS cambió. Genera de nuevo la vista previa.');
+  if(preview.pending.length)throw Error('Resuelve las conexiones pendientes antes de confirmar esta propuesta.');
+  if(preview.candidate.provenance==='AI'){
+    const fresh=tobeAiReviewDiff(e,p,preview.candidate.sourceId);
+    if(fresh.issue||(preview.candidate.consultantModified?fresh.decision!=='MODIFY':
+      Object.entries(preview.candidate.fields).some(([key,value])=>
+      !fresh.allFields.some(x=>x.key===key&&JSON.stringify(x.value)===JSON.stringify(value)))))
+      throw Error(fresh.issue||'La recomendación IA cambió; vuelve a revisarla.');
+  }
+  const prior=tobeClone(p),after=tobeDesignState(preview.projected),changes=tobeTransactionChanges(preview.before,after);
+  if(!changes.length)return false;
+  p.items=after.items;p.flow=after.flow;if(!p.aiDraft)p.aiDraft={};
+  p.aiDraft.applyHistory=[...(p.aiDraft.applyHistory||[]),{
+    action:'APPLY',decision:'CONSULTANT_CONFIRMED',sourceStepId:preview.candidate.sourceId,
+    fields:Object.keys(preview.candidate.fields||{}),provenance:preview.candidate.provenance,consultantModified:preview.candidate.consultantModified===true,
+    candidateId:preview.candidate.id,sourceRefs:preview.candidate.sourceRefs||[],
+    proposalFingerprint:typeof tobeCandidateFingerprint==='function'?tobeCandidateFingerprint(p):'',
+    transaction:{changes,itemIds:p.items.map(x=>x.id)},appliedAt:now()
+  }].slice(-100);p.updatedAt=now();markDirty('PG11: confirmar intervención previsualizada');
+  if(!saveState('Guardar intervención y grafo TO-BE')){
+    Object.keys(p).forEach(k=>delete p[k]);Object.assign(p,prior);
+    throw Error('No se guardó la intervención. Se ha restaurado el borrador anterior.');
+  }
+  return true;
+}
+function tobeUndoAlternative(e){
+  const p=latestTobe(e);if(!tobeEditable(p))throw Error('Sólo puede deshacerse un borrador editable.');
+  const entry=(p.aiDraft?.applyHistory||[]).findLast(x=>x.transaction&&!x.undoneAt);
+  if(!entry)throw Error('No hay una intervención recuperable.');
+  if(JSON.stringify(p.items.map(x=>x.id))!==JSON.stringify(entry.transaction.itemIds))
+    throw Error('Cambió la identidad de las actividades; no es seguro restaurar esta intervención.');
+  const current=tobeDesignState(p);
+  for(const c of entry.transaction.changes){
+    const value=tobeTransactionRead(current,c.path);
+    if(c.afterMissing?value!==undefined:JSON.stringify(value)!==JSON.stringify(c.after))
+      throw Error('Un elemento de esta intervención fue modificado después. No se sobrescriben esas decisiones.');
+  }
+  for(const c of entry.transaction.changes)tobeTransactionWrite(current,c,true);
+  const proposed={...p,...current},issue=tobeFlowIntegrity(e,proposed);
+  if(issue)throw Error('Deshacer dejaría una dependencia sin resolver: '+issue);
+  const prior=tobeClone(p);p.items=current.items;p.flow=current.flow;entry.undoneAt=now();p.updatedAt=now();
+  markDirty('PG11: deshacer exclusivamente la última intervención');
+  if(!saveState('Deshacer intervención TO-BE')){
+    Object.keys(p).forEach(k=>delete p[k]);Object.assign(p,prior);throw Error('No se guardó la restauración.');
+  }
+  return true;
+}
+function tobeAlternativesHtml(e,p,item){
+  if(!tobeEditable(p)||item.isAddition)return '';
+  const key=tobeAlternativeKey(e,p,item.sourceStepId),data=__auneaTobeAlternatives.get(key);
+  const rows=(data?.candidates||[]).map((c,index)=>{
+    const decision=(p.aiDraft?.applyHistory||[]).findLast(x=>x.candidateId===c.id&&!x.undoneAt);
+    return '<div class="tobe-alternative"><b>'+esc(c.title)+'</b><p>Reglas · '+esc((c.conditions||[]).join(' '))+'</p>'+
+      '<p>Fuentes: '+esc(c.sourceRefs.join(' · '))+'</p>'+
+      (Object.keys(c.constraints||{}).length?'<p>Restricciones que revisar: '+esc(Object.values(c.constraints).map(String).join(' · '))+'</p>':'')+
+      (decision?'<p>Decisión guardada: '+(decision.action==='DISCARD'?'Descartada':decision.action==='KEEP'?'Mantener diseño actual':'Aplicada')+'</p>':'')+
+      '<button type="button" class="btn btn-outline btn-small" data-tobe-alternative="'+index+'" data-tobe-alternative-source="'+attr(item.sourceStepId)+'">Ver propuesta en el mapa</button> '+
+      '<button type="button" class="btn btn-outline btn-small" data-tobe-alternative-discard="'+index+'" data-tobe-alternative-source="'+attr(item.sourceStepId)+'">Descartar</button></div>';
+  }).join('');
+  return '<section class="tobe-design-group tobe-alternatives"><h4>Alternativas por reglas</h4>'+
+    '<p>Recomendaciones pendientes de tu decisión. Funcionan sin Ollama.</p>'+
+    '<button type="button" class="btn btn-outline" data-tobe-load-alternatives="'+attr(item.sourceStepId)+'">Analizar actividad con reglas</button> '+
+    '<button type="button" class="btn btn-outline" data-tobe-undo-alternative="1">Deshacer última intervención</button>'+rows+'</section>';
+}
+function tobeOpenAlternative(e,candidate){
+  if(!saveTobeFromDom(e)||!saveState('Conservar edición antes de previsualizar'))throw Error('No se pudo conservar tu edición.');
+  const live=currentEng(),p=latestTobe(live),result=tobeProjectAlternative(live,p,candidate);
+  __auneaTobePreview={engagementId:live.id,version:p.version,before:tobeDesignState(p),candidate:tobeClone(candidate),...result};
+  document.getElementById('tobeAlternativeDialog')?.remove();
+  const dialog=document.createElement('dialog');dialog.id='tobeAlternativeDialog';dialog.className='tobe-alternative-dialog';
+  const readonly={...result.projected,status:'REVIEWED'};
+  dialog.innerHTML='<h2>Vista previa · '+esc(candidate.title)+'</h2>'+
+    '<p>El borrador guardado conserva su estado hasta confirmar. Los nodos afectados aparecen resaltados.</p>'+
+    '<p>'+esc((candidate.conditions||[]).join(' '))+'</p>'+
+    '<details class="tobe-subdetails"><summary>Modificar propuesta antes de confirmar</summary><div class="form-grid">'+
+      Object.entries(candidate.fields||{}).filter(([key])=>['problemResolved','automationAi','humanSupervision','controlsRisk'].includes(key)).map(([key,value])=>
+        tobeField({id:'PREVIEW',transformation:candidate.fields.transformation},key,
+          TOBE_AI_REVIEW_FIELDS.find(x=>x[1]===key)?.[2]||key,value,'textarea')
+          .replaceAll('data-tobe-item="PREVIEW"','data-tobe-preview-edit="1"')).join('')+
+      (candidate.operations||[]).map((operation,index)=>['stepName','problemResolved','controlsRisk'].filter(key=>operation.item?.[key]).map(key=>
+        '<div class="field"><label>'+esc(({stepName:'Nombre de la actividad añadida',problemResolved:'Motivo del control',controlsRisk:'Funcionamiento del control'})[key])+
+        '</label><textarea data-tobe-preview-operation="'+index+'" data-tobe-preview-key="'+key+'">'+esc(operation.item[key])+'</textarea></div>').join('')).join('')+
+    '</div><p class="field-help">Los cambios sólo se incorporan al borrador al confirmar. Los catálogos se ajustan en 03.3.</p></details>'+
+    '<div id="tobeAlternativeMap">'+tobeCanvasHtml(live,readonly).replaceAll('data-tobe-select=','data-tobe-preview-node=')+'</div>'+
+    '<ul>'+result.pending.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>'+
+    '<div class="tobe-preview-findings">'+tobeCoherencePanel(live,result.projected).replaceAll('data-tobe-select=','data-tobe-preview-node=')+'</div>'+
+    '<button type="button" class="btn btn-primary" data-tobe-confirm-alternative="1"'+(result.pending.length?' disabled':'')+'>Confirmar propuesta</button> '+
+    '<button type="button" class="btn btn-outline" data-tobe-cancel-alternative="1">Cancelar</button>';
+  document.body.appendChild(dialog);dialog.showModal();
+  dialog.addEventListener('input',event=>{
+    const input=event.target,preview=__auneaTobePreview;
+    if(!preview)return;
+    if(input.hasAttribute('data-tobe-preview-edit'))preview.candidate.fields[input.dataset.tobeField]=input.value;
+    else if(input.hasAttribute('data-tobe-preview-operation'))preview.candidate.operations[Number(input.dataset.tobePreviewOperation)].item[input.dataset.tobePreviewKey]=input.value;
+    else return;
+    // Editing a traceable suggestion remains an explicit consultant choice.
+    preview.candidate.consultantModified=true;
+    try{
+      const next=tobeProjectAlternative(currentEng(),latestTobe(currentEng()),preview.candidate);
+      preview.projected=next.projected;preview.pending=next.pending;
+      dialog.querySelector('#tobeAlternativeMap').innerHTML=tobeCanvasHtml(currentEng(),{...next.projected,status:'REVIEWED'}).replaceAll('data-tobe-select=','data-tobe-preview-node=');
+      dialog.querySelector('[data-tobe-confirm-alternative]').disabled=!!next.pending.length;
+      requestAnimationFrame(()=>drawProcessGraph(dialog.querySelector('.process-graph-board')));
+    }catch(error){dialog.querySelector('[data-tobe-confirm-alternative]').disabled=true;toast(error.message);}
+  });
+  const changed=new Set([String(candidate.sourceId),...tobeAddedSteps(result.projected).filter(x=>!tobeAddedSteps(p).some(y=>x.id===y.id)).map(x=>x.id)]);
+  dialog.querySelectorAll('[data-graph-node]').forEach(node=>{if(changed.has(node.dataset.graphNode))node.classList.add('tobe-preview-changed');});
+  dialog.addEventListener('close',()=>{__auneaTobePreview=null;dialog.remove();},{once:true});
+  requestAnimationFrame(()=>drawProcessGraph(dialog.querySelector('.process-graph-board')));
+}
+// [AUNEA-FE-PG11-TRANSACTION-332] END
+// [AUNEA-FE-PG11-INTEGRATION-PROJECTION-341] START
+// PURPOSE: Single read-only projection for downstream consumers, including new nodes and routes.
+// SOURCE: PG11→PG12–PG15 contract; DEC-050/055. No persistence or scenario calculations.
+// INPUTS: versioned TO-BE. OUTPUTS: client-safe operational design. CHANGE_RISK: HIGH.
+function tobeIntegrationProjection(e,p){
+  const source=tobeProposalSourceSteps(e,p),flow=tobeFlowOwner(e,p);
+  return {version:p.version,sourceSnapshotVersion:p.sourceSnapshotVersion,
+    items:[...(p.items||[]),...tobeAddedSteps(p)].map(x=>({
+      step:tobeFlowItemName(x),
+      currentActor:x.isAddition?'':source.find(s=>String(s.id)===String(x.sourceStepId))?.actor||'',
+      currentTool:x.isAddition?'':source.find(s=>String(s.id)===String(x.sourceStepId))?.tool||'',
+      transformation:x.transformation||'',problemResolved:x.problemResolved||'',
+      futureActor:x.futureActor||'',tool:x.tool||'',inputs:tobeFutureArtifacts(x.inputs),outputs:tobeFutureArtifacts(x.outputs),
+      automationAi:x.automationAi||'',humanSupervision:x.humanSupervision||'',controlsRisk:x.controlsRisk||'',
+      futureTime:x.futureTime||'',futureTimeAssumption:x.futureTimeAssumption||'',isAddition:x.isAddition===true
+    })),
+    flow:{startStepId:flow.startStepId,positions:tobeClone(flow.positions),
+      activities:tobeFutureSteps(e,p).map(s=>({id:s.id,name:s.step_name,type:s.step_type,
+        normal:s.normal_next_step,exception:s.exception_path?.destination_step||'',
+        criterion:s.tobe_decision_criterion||s._details?.decision_criteria||'',
+        transformation:s.tobe_transformation,automationAi:s.tobe_automation_ai,
+        humanSupervision:s.tobe_human_supervision,controlsRisk:s.tobe_controls_risk}))}
+  };
+}
+// [AUNEA-FE-PG11-INTEGRATION-PROJECTION-341] END
+
+
 function tobeInspectorHtml(e,p){
   const item=tobeSelectedItem(e,p),editable=tobeEditable(p);
   if(!item)return '<div class="notice warn">No hay actividades TO-BE vinculadas al AS-IS.</div>';
@@ -2271,6 +2506,7 @@ function tobeInspectorHtml(e,p){
         '<p class="tobe-design-lede" data-tobe-transformation-message="1" role="status" aria-live="polite">'+
           'Define tu TO-BE en los campos editables. La propuesta IA no modifica tu diseño hasta que decidas aplicarla.</p>'+
         '</div><span class="tobe-design-status">'+(editable?'Borrador editable':'Solo lectura')+'</span></header>'+
+      tobeAlternativesHtml(e,p,item)+
       '<details class="tobe-design-evidence" id="tobeDesignEvidence" data-source-step-id="'+
         attr(item.sourceStepId)+'"'+(evidenceOpen?' open':'')+'>'+
         '<summary>Propuestas IA y condiciones de viabilidad'+
@@ -2951,8 +3187,7 @@ function tobePage(){
     (editable?'<button class="btn btn-primary" id="advanceTobe">Marcar como revisado</button>':
       p.status==='REVIEWED'?'<button class="btn btn-primary" id="advanceTobe">Aprobar para cliente</button>':'')+
     (!editable&&p.status!=='PUBLISHED'?'<button class="btn" id="newTobeVersion">Crear nueva versión</button>':'');
-  const review=tobeHumanReviewRecord(e,p),reviewed=p.items.filter(it=>
-    ['ACCEPT','MODIFY','DISCARD'].includes(review?.decisions?.[String(it.sourceStepId)]?.status)).length;
+  const review=tobeHumanReviewRecord(e,p),reviewed=p.items.filter(it=>tobeActivityDecisionRecorded(e,p,it)).length;
   const savedAi=typeof internalAiSavedDraft==='function'?internalAiSavedDraft(e):null,
     pendingAi=!savedAi&&typeof internalAiPendingSteps==='function'&&
       typeof internalAiPilotKey==='function'?internalAiPendingSteps(e,internalAiPilotKey(e)):null,
@@ -3763,6 +3998,64 @@ function registerInternalWorkPages(){
     toast('Decisión guardada: '+TOBE_HUMAN_LABELS[choice]+'. Revisa los campos propuestos; el diseño sigue en borrador.');
   },true);
   // [AUNEA-FE-PG11-HUMAN-DECISION-SAVE-224] END
+  // [AUNEA-FE-PG11-TRANSACTION-EVENTS-333] START — explicit, version-bound actions.
+  document.addEventListener('click',async event=>{
+    const button=event.target?.closest?.('[data-tobe-load-alternatives], [data-tobe-alternative], [data-tobe-alternative-discard], [data-tobe-confirm-alternative], [data-tobe-cancel-alternative], [data-tobe-undo-alternative]');
+    if(!button||state.activePage!=='tobe')return;
+    event.preventDefault();
+    try{
+      const e=currentEng(),p=latestTobe(e);
+      if(button.hasAttribute('data-tobe-cancel-alternative')){
+        document.getElementById('tobeAlternativeDialog')?.close();return;
+      }
+      if(button.hasAttribute('data-tobe-confirm-alternative')){
+        const preview=__auneaTobePreview;tobeCommitAlternative(e,preview);
+        document.getElementById('tobeAlternativeDialog')?.close();render();
+        toast('Intervención guardada. El mapa y la validación global reflejan el mismo borrador.');return;
+      }
+      if(button.hasAttribute('data-tobe-undo-alternative')){
+        if(!saveTobeFromDom(e)||!saveState('Conservar edición antes de deshacer'))throw Error('No se guardó tu edición.');
+        tobeUndoAlternative(currentEng());render();toast('Intervención deshecha; se conservan las demás decisiones.');return;
+      }
+      if(button.hasAttribute('data-tobe-load-alternatives')){
+        const id=button.dataset.tobeLoadAlternatives;
+        if(!saveTobeFromDom(e)||!saveState('Conservar diseño antes del análisis por reglas'))throw Error('No se guardó tu edición.');
+        const live=currentEng(),draft=latestTobe(live),key=tobeAlternativeKey(live,draft,id),
+          diagnostic=currentDiagnosticOutput(live),snapshot=confirmedSnapshot(live);
+        button.disabled=true;button.textContent='Analizando actividad…';
+        const response=await fetch(state.backendUrl+'/v1/tobe/activity-alternatives',{
+          method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+            request:{engagement:buildBackendPayload(live),diagnostic,confirmed_as_is:live.confirmedAsIs===true,snapshot_version:snapshot.version},
+            source_step_id:id})});
+        const data=await response.json();if(!response.ok)throw Error(typeof data.detail==='string'?data.detail:'No se completó el análisis por reglas.');
+        const current=currentEng(),currentDraft=latestTobe(current);
+        if(!current||!currentDraft||tobeAlternativeKey(current,currentDraft,id)!==key||
+          currentDiagnosticOutput(current)?.input_snapshot_hash!==data.input_hash)throw Error('El estudio cambió durante el análisis. Vuelve a analizar la actividad.');
+        __auneaTobeAlternatives.set(key,data);render();return;
+      }
+      const id=button.dataset.tobeAlternativeSource,key=tobeAlternativeKey(e,p,id),data=__auneaTobeAlternatives.get(key);
+      if(!data||currentDiagnosticOutput(e)?.input_snapshot_hash!==data.input_hash)throw Error('El análisis ya no corresponde al diagnóstico vigente.');
+      const discard=button.hasAttribute('data-tobe-alternative-discard'),index=Number(discard?button.dataset.tobeAlternativeDiscard:button.dataset.tobeAlternative);
+      const candidate=data.candidates[index];if(!candidate)throw Error('La alternativa ya no está disponible.');
+      if(discard){
+        if(!saveTobeFromDom(e)||!saveState('Guardar edición antes de descartar'))throw Error('No se guardó tu edición.');
+        const draft=latestTobe(currentEng()),before=tobeClone(draft);
+        if(!draft.aiDraft)draft.aiDraft={};
+        draft.aiDraft.applyHistory=[...(draft.aiDraft.applyHistory||[]),{
+          action:'DISCARD',candidateId:candidate.id,sourceStepId:id,fields:[],
+          provenance:'RULES',sourceRefs:candidate.sourceRefs,appliedAt:now()}].slice(-100);
+        markDirty('PG11: descartar alternativa por reglas');
+        if(!saveState('Guardar descarte de alternativa')){
+          Object.keys(draft).forEach(k=>delete draft[k]);Object.assign(draft,before);throw Error('No se guardó el descarte.');
+        }
+        render();return;
+      }
+      tobeOpenAlternative(e,candidate);
+    }catch(error){toast(error.message||'No se pudo completar la intervención.');}
+    finally{if(button.isConnected){button.disabled=false;if(button.hasAttribute('data-tobe-load-alternatives'))button.textContent='Analizar actividad con reglas';}}
+  },true);
+  // [AUNEA-FE-PG11-TRANSACTION-EVENTS-333] END
+
   // [AUNEA-FE-PG11-AI-STEP-APPLY-231] START — human-authorized per-field actions.
   // Per-field IA recommendation actions; the original input remains editable.
   document.addEventListener('click',event=>{
@@ -3780,8 +4073,14 @@ function registerInternalWorkPages(){
       return;
     }
     if(apply){
-      tobeApplyAiReviewedFields(currentEng(),apply.dataset.tobeAiActionSource,
-        [apply.dataset.tobeAiUseField]);
+      try{
+        const e=currentEng(),p=latestTobe(e),id=apply.dataset.tobeAiActionSource,
+          diff=tobeAiReviewDiff(e,p,id),field=diff.fields.find(x=>x.key===apply.dataset.tobeAiUseField);
+        if(diff.issue||!field)throw Error(diff.issue||'El valor IA ya no está disponible.');
+        tobeOpenAlternative(e,{id:'AI:'+id+':'+field.key,sourceId:id,provenance:'AI',
+          title:'IA · '+field.label,fields:{[field.key]:field.value},operations:[],sourceRefs:[id],
+          conditions:diff.warnings});
+      }catch(error){toast(error.message);}
       return;
     }
     if(keep){

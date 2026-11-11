@@ -1140,7 +1140,12 @@ async function generateTobeBySteps(e,key,snap,availability,fresh=false,selectedS
     engagement:buildBackendPayload(e),
     diagnostic:currentDiagnosticOutput(e),
     confirmed_as_is:e.confirmedAsIs===true,
-    snapshot_version:snap.version
+    snapshot_version:snap.version,
+    consultant_design:Object.fromEntries(draft.items.map(item=>[String(item.sourceStepId),{
+      transformation:item.transformation,problemResolved:item.problemResolved,
+      automationAi:item.automationAi,humanSupervision:item.humanSupervision,
+      decision:tobeHumanReviewRecord(e,draft)?.decisions?.[String(item.sourceStepId)]||null
+    }]))
   };
   const failures=[];
   for(const stepId of (selected?[selected]:stepIds)){

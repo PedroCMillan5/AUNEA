@@ -71,6 +71,18 @@ def internal_ai_tobe_draft(payload: PilotAIRequest, request: FastAPIRequest):
 # [AUNEA-BE-INTERNAL-AI-STEP-API-196] START — one request per source activity.
 # SOURCE: same confirmed snapshot and official diagnostic as PG11 pilot, REVIEW.
 # SECURITY: local-only, explicit provider and consent; no persistence or approval.
+# [AUNEA-BE-PG11-ALTERNATIVES-API-331] START — same source validation, no provider call.
+@app.post("/v1/tobe/activity-alternatives")
+def tobe_activity_alternatives(payload: PilotAIStepRequest, request: FastAPIRequest):
+    if request.client is None or request.client.host not in ("127.0.0.1", "::1", "testclient"):
+        raise HTTPException(403, "Análisis de actividades limitado a acceso local.")
+    from .tobe_optimization import activity_alternatives
+    try:
+        return activity_alternatives(payload.request, payload.source_step_id)
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+# [AUNEA-BE-PG11-ALTERNATIVES-API-331] END
+
 @app.post("/v1/internal-ai/tobe-step")
 def internal_ai_tobe_step(payload: PilotAIStepRequest, request: FastAPIRequest):
     if request.client is None or request.client.host not in ("127.0.0.1", "::1", "testclient"):

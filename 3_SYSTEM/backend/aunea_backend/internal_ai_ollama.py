@@ -195,6 +195,7 @@ def _step_context(request: PilotAIRequest, steps: list[dict], step_id: str) -> d
     source = next((s for s in steps if str(s.get("id")) == step_id), None)
     if source is None:
         raise ValueError("Actividad no encontrada en el AS-IS confirmado.")
+    from .tobe_optimization import activity_alternatives
     engagement = request.engagement
     frictions = engagement.questionnaire_answers.get("_frictions") or []
     if not isinstance(frictions, list):
@@ -234,6 +235,11 @@ def _step_context(request: PilotAIRequest, steps: list[dict], step_id: str) -> d
         "process_risk_index": [
             {"id": str(r.risk_id), "step_ids": list(r.step_ids), "category": r.category}
             for r in engagement.risks if r.risk_id],
+        # [AUNEA-BE-PG11-ALTERNATIVE-CONTEXT-335] START — advisory, never overwrite human choices.
+        "rule_alternatives": [{"id": c["id"], "fields": c["fields"], "source_refs": c["sourceRefs"]}
+                              for c in activity_alternatives(request, step_id)["candidates"]],
+        "consultant_current_design": _compact_context_value(request.consultant_design.get(step_id, {})),
+        # [AUNEA-BE-PG11-ALTERNATIVE-CONTEXT-335] END
         "current_activity": _compact_pilot_step(source),
         "explicit_linked_frictions": [_compact_context_value(f) for f in linked_frictions],
         "explicit_linked_risks": [_compact_context_value(r) for r in linked_risks],

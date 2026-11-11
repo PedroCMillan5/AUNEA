@@ -198,7 +198,8 @@ test('PG11 uses one canonical form and two views on one versioned TO-BE',()=>{
  assert.match(src,/function tobeGuidedNavHtml/);
  assert.match(src,/data-tobe-mode=".*__auneaTobeMode/);
  assert.match(src,/navigation.outerHTML=tobeGuidedNavHtml/);
- assert.match(src,/tobeApplyAiReviewedFields\(currentEng\(\),apply.dataset.tobeAiActionSource/);
+ assert.match(src,/tobeOpenAlternative\(e,\{id:'AI:'/);
+ assert.match(src,/tobeCommitAlternative\(e,preview\)/);
  assert.doesNotMatch(src,/function tobeAiStepApplicability/);
 });
 test('guided footer delegates to original Save and Check rather than duplicating business handlers',()=>{
