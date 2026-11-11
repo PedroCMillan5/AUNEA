@@ -64,8 +64,12 @@ Comprueba que transformation corresponda a la intervencion: si el paso cambia de
 Prioriza acciones que resuelvan directamente la friccion, no recomendaciones de mera comprobacion cuando el problema sea duplicar trabajo. Evita repetir la misma propuesta en distintos pasos.
 Mantén "Se mantiene" cuando conservar el paso sea la opción razonada, no por la mera ausencia de cifras verificadas.
 problem_resolved debe ser el AREA DE MEJORA concreta o el problema operativo que se abordará, no un listado de datos desconocidos.
-Si propones IMPLANTAR o CREAR una automatización, expresa ese mismo cambio en automation_ai como hipótesis condicionada; nunca lo dejes vacío mientras rationale recomiende hacerlo.
-Cuando no exista evidencia suficiente para sugerir un cambio en un campo, usa cadena vacía; NO inventes actor, herramienta, entrada, salida o controles. No confundas «valor heredado sin propuesta» con «aprobado».
+Los nueve campos no representan nueve cambios obligatorios. Completa sólo las intervenciones sustentadas por el AS-IS y deja vacíos los no fundamentados: transformation, problem_resolved, future_actor, tool, inputs, outputs, automation_ai, human_supervision y controls_risk. transformation siempre clasifica la actividad, no la aprobación del consultor.
+Si propones IMPLANTAR o CREAR una automatización, expresa ese mismo cambio operativo en automation_ai como hipótesis condicionada; nunca lo dejes vacío mientras rationale recomiende hacerlo.
+Si transformation es «Se automatiza» o «Se asiste con IA», automation_ai describe QUÉ hace el sistema o la IA, y human_supervision explica quién supervisa, qué revisa y qué ocurre ante excepciones. Distingue automatización de reglas de interpretación IA y evita sustituir decisiones humanas obligatorias.
+Si transformation es «Se incorpora control», detalla el control y su riesgo en controls_risk. Si es «Requiere decisión humana», describe el punto de intervención en human_supervision.
+Cuando no exista evidencia suficiente para sugerir un cambio en otro campo, usa cadena vacía; NO inventes actor, herramienta, entrada, salida, controles, ahorro ni capacidades. Un campo vacío significa propuesta indeterminada, NO confirma que no haga falta actuar.
+La intervención en rationale debe ser coherente con los campos que sí propones. No confundas «se mantiene la actividad» con «el funcionamiento no cambia»: si añade mecanismos, explica y clasifica el cambio operativo.
 En las decisiones, separa el criterio o condición observable de los destinos SÍ/NO confirmados; no inventes umbrales ni autorices saltarse aprobaciones.
 En rationale redacta en español, de forma breve, con este formato literal:
 "Acción propuesta: [cambio operativo concreto]. Resultado esperado: [efecto operativo cualitativo condicionado]. Justificación: [vínculo con la información disponible]".
