@@ -211,3 +211,13 @@ Estado: A cerrado; B revisión básica operativa, sin revisión semántica Ollam
 **Evidencias:** código hasta `b57746ca`; `AUNEA Frontend Tests` 895 PASS / 0 FAIL; backend 467 PASS / 1 warning; `AUNEA Internal V2 REVIEW Acceptance Gate` con Chromium PASS. URL: https://github.com/PedroCMillan5/AUNEA/actions/runs/43015078534. Indice de Block_ID actualizado sin introducir fuentes nuevas.
 
 **Estado:** revisión técnica automatizada PASS, **PG11 sección 03 sigue REVIEW** hasta contrastar la versión actual contra el snapshot AS-IS confirmado de cuatro actividades y aceptación visual/funcional en el equipo Windows del propietario. No tocar Master Index, DECISIONES, ESTADO ni ROADMAP por esta corrección UX sin cambio de regla/contrato/orden; reflejar el hito en BITACORA.
+
+## 11/11/2026 — Aclaración de candidato IA no estructurado (captura P1) — REVIEW
+
+**Hallazgo:** la revisión individual P1 contiene en el texto narrativo de `rationale` una intervención automatizada, mientras que el campo estructurado `automation_ai` de esa propuesta puede estar vacío. La sección 03.3 lo mostraba como «sin propuesta específica» sin explicar que en 03.2 sí había una orientación narrativa. Esto no es necesariamente un bug de mapeo: el contrato `PilotAIItem` distingue ambas fuentes; un valor vacío no es aplicable.
+
+**Corrección:** `results.js` ahora muestra una advertencia no bloqueante **sólo en Automatización e IA**, cuando el campo estructurado no tiene candidato y la acción narrativa propone automatización. La advertencia remite a 03.2 y exige completar el borrador manualmente; no fabrica una propuesta, no ejecuta `Aplicar IA`, no altera datos AS-IS/TO-BE ni decisiones. Se prueba que el aviso no aparezca en campos ajenos o cuando la acción narrativa no mencione automatización.
+
+**Commits:** `390adef4` (render de diferencia), `d1837a04` (test funcional). **QA**: 896/896 frontend PASS, 467/467 backend PASS con 1 advertencia, Acceptance Gate Chromium PASS. https://github.com/PedroCMillan5/AUNEA/actions/runs/43017207760
+
+**Estado:** PG11.03 REVIEW. Cobertura 4/4 de actividades IA y 4/5 de fuentes del análisis global son contadores independientes. La contradicción «Se mantiene» frente a «Se modifica» requiere decisión del consultor; no automatizar esa decisión. La UAT del estudio local y aceptación visual siguen pendientes. No se cambian decisiones canónicas, reglas ni versión del modelo.
