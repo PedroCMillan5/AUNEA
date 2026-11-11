@@ -358,7 +358,8 @@ def consolidate(request: PilotAIConsolidationRequest, *, repair: bool = True) ->
              "No se identifica una accion", "No se explica el resultado"))
         classified.append({**issue,
             "category": "BLOCKING" if conflict or missing else issue.get("category", "WARNING"),
-            "origin": "CONTROL_TEXTUAL" if conflict else "REVISION_SEMANTICA_O_COMPLETITUD",
+            "origin": "CONTROL_TEXTUAL" if conflict else issue.get(
+                "origin", "REVISION_SEMANTICA_O_COMPLETITUD"),
             "evidence": issue.get("evidence") or (next((i.rationale for i in request.items if i.source_step_id == sid), "Revisión transversal del lote")),
             "action": issue.get("action") or ("Corregir transformación o intervención y volver a validar." if conflict else
                       "Contrastar la observación con las fuentes y resolverla en la revisión humana.")})
