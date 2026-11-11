@@ -60,18 +60,19 @@ test('IA suggestions are visible before decision but cannot be applied',()=>{
  assert.ok(draft.allFields.some(x=>x.key==='outputs'));
  assert.match(html,/IA propone:/);
  assert.match(html,/Registro estructurado/);
- assert.match(html,/Justificación y fuentes de la propuesta IA/);
+ assert.match(html,/Fuentes y condiciones del campo/);
  assert.match(html,/Fricción identificada/);
  assert.doesNotMatch(html,/data-tobe-ai-use-field/);
 });
 test('PG11 fields without an IA candidate never repeat a full evidence card',()=>{
  const f=fixture();f.proposal.items[0].controls_risk='';
  const empty=f.context.tobeAiInlineHint(f.e,f.p,f.p.items[0],'controlsRisk');
- assert.match(empty,/sin sugerencia fundamentada/);
+ assert.match(empty,/sin propuesta específica para este campo/);
  assert.doesNotMatch(empty,/<details/);
  const proposed=f.context.tobeAiInlineHint(f.e,f.p,f.p.items[0],'outputs');
- assert.match(proposed,/Justificación y fuentes de la propuesta IA/);
- assert.match(proposed,/Fuentes vinculadas/);
+ assert.match(proposed,/Fuentes y condiciones del campo/);
+ assert.match(proposed,/Referencias:/);
+ assert.doesNotMatch(proposed,/Justificación global de la actividad|Intervención propuesta:/);
 });
 test('MODIFY authorizes only safe options, never contradictory transformation',()=>{
  const f=fixture();f.setDecision('MODIFY');
@@ -88,7 +89,7 @@ test('MODIFY authorizes only safe options, never contradictory transformation',(
  assert.match(src,/data-tobe-ai-edit-field/);
  const bad=f.context.tobeAiInlineHint(f.e,f.p,f.p.items[0],'transformation');
  assert.match(bad,/Revisión manual necesaria/);
- assert.match(bad,/Condición de revisión:/);
+ assert.match(bad,/La transformación IA contiene una contradicción/);
  assert.doesNotMatch(bad,/data-tobe-ai-use-field/);
 });
 test('discard keeps native field controls and never offers application',()=>{
