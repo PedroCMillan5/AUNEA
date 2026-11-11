@@ -1261,12 +1261,12 @@ function tobeAiInlineHint(e,p,item,key){
     ((matched||skipped)&&['problemResolved','automationAi','transformation'].includes(key)?
       '<p class="field-help tobe-ai-field-why"><b>Fundamento general:</b> '+
       esc(explain||'No existe una justificación específica para este campo.')+'</p>':'')+
-    '<details class="tobe-subdetails"><summary>Justificación, fuentes y límites de la propuesta IA</summary>'+
+    ((matched||skipped)?'<details class="tobe-subdetails"><summary>Justificación y fuentes de la propuesta IA</summary>'+
       '<p><b>Justificación global de la actividad (no específica de este campo):</b> '+esc(explain||'El motor no aportó una justificación diferenciada.')+'</p>'+
       (action?'<p><b>Intervención propuesta:</b> '+esc(action)+'</p>':'')+
       '<p><b>Fuentes vinculadas:</b> '+esc(refs||'No identificadas')+'</p>'+
       '<p><b>Condiciones pendientes:</b> '+esc(pending||'No declaradas')+'</p>'+
-    '</details>'+
+    '</details>':'')+
     (kept?'<p class="field-help"><b>Estado del campo:</b> mantener el valor TO-BE guardado.</p>':
       applied?'<p class="field-help"><b>Estado del campo:</b> sugerencia IA aplicada y guardada.</p>':
       lastChoice?.action==='EDIT'?'<p class="field-help"><b>Estado del campo:</b> alternativa editada por el consultor.</p>':'')+
