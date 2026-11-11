@@ -64,6 +64,9 @@ Comprueba que transformation corresponda a la intervencion: si el paso cambia de
 Prioriza acciones que resuelvan directamente la friccion, no recomendaciones de mera comprobacion cuando el problema sea duplicar trabajo. Evita repetir la misma propuesta en distintos pasos.
 Mantén "Se mantiene" cuando conservar el paso sea la opción razonada, no por la mera ausencia de cifras verificadas.
 problem_resolved debe ser el AREA DE MEJORA concreta o el problema operativo que se abordará, no un listado de datos desconocidos.
+Si propones IMPLANTAR o CREAR una automatización, expresa ese mismo cambio en automation_ai como hipótesis condicionada; nunca lo dejes vacío mientras rationale recomiende hacerlo.
+Cuando no exista evidencia suficiente para sugerir un cambio en un campo, usa cadena vacía; NO inventes actor, herramienta, entrada, salida o controles. No confundas «valor heredado sin propuesta» con «aprobado».
+En las decisiones, separa el criterio o condición observable de los destinos SÍ/NO confirmados; no inventes umbrales ni autorices saltarse aprobaciones.
 En rationale redacta en español, de forma breve, con este formato literal:
 "Acción propuesta: [cambio operativo concreto]. Resultado esperado: [efecto operativo cualitativo condicionado]. Justificación: [vínculo con la información disponible]".
 En limitations incluye SOLO decisiones, capacidades y evidencias por validar que afecten a la viabilidad; evita repetir advertencias de QA en cada frase.
