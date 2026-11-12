@@ -24,6 +24,7 @@ def test_source_bound_alternatives_without_ollama(kind, monkeypatch):
     req=source(kind);before=req.model_dump()
     result=activity_alternatives(req, 'P1')
     assert result['requires_human_review'] is True
+    assert result['engine_contract']=='PG11_FINDING_SPECIFIC_V2'
     assert any(c['id'].startswith('RULED-TRANSFER') for c in result['candidates'])
     assert any(c['operations'] for c in result['candidates'])
     assert all(c['status']=='PENDING' for c in result['candidates'])
