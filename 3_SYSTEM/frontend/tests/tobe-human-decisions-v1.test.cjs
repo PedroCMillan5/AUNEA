@@ -116,7 +116,8 @@ test('blocking keep-state and legacy NO cannot be promoted to reviewed',()=>{
   h.click('S1','MODIFY');
   h.click('S2','MODIFY');
   h.p.items[0].transformation='Se mantiene';
-  assert.match(h.readiness(),/bloqueos|indica «Se modifica»/,'incompatible KEEP choice must be blocked');
+  assert.equal(h.readiness(),null,
+    'an explicit MODIFY override may maintain the existing step without importing a blocked IA change');
   h.p.items[0].transformation='Se modifica';
   h.p.items[0].controlsRisk='NO';
   assert.match(h.readiness(),/Completa herramienta, datos y controles/);
