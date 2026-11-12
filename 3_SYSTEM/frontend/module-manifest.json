@@ -261,6 +261,12 @@
     },
     {
       "order": 44,
+      "layer": "pages",
+      "path": "pages/internal-work-events.js",
+      "block_id": "AUNEA-FE-INTERNAL-WORK-EVENTS-381"
+    },
+    {
+      "order": 45,
       "layer": "boot",
       "path": "boot.js",
       "block_id": "AUNEA-FE-BOOT-INIT-010"
