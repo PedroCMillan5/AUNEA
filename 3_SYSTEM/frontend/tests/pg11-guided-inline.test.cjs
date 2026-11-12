@@ -466,4 +466,24 @@ test('PG11 source summary starts every bold lead-in on a separate paragraph',()=
  assert.match(html,/2 oportunidades relacionadas/);
  assert.match(html,/1 campos aplicados, 1 conservados/);
 });
+test('PG11 rejects stale backend alternatives even when the frontend layout is current',()=>{
+ const start=src.indexOf("const TOBE_ALTERNATIVES_CONTRACT='PG11_FINDING_SPECIFIC_V2';");
+ const end=src.indexOf('// [AUNEA-FE-PG11-ALTERNATIVES-CONTRACT-360] END',start);
+ assert.ok(start>0&&end>start);
+ const sandbox={};vm.createContext(sandbox);
+ vm.runInContext(src.slice(start,end),sandbox);
+ const check=sandbox.tobeRulesResultIssue;
+ assert.match(check({candidates:[{id:'KEEP:P1',title:'Mantener la actividad'}]}),/motor de alternativas antiguo/);
+ const modern={engine_contract:'PG11_FINDING_SPECIFIC_V2',
+   candidates:[{id:'STATUS-F2:P1',title:'Hacer visible el estado',sourceRefs:['P1','F2'],
+      targetFinding:'Falta de visibilidad del estado',changeSummary:'Registrar seguimiento',
+      expectedOutcome:'Estado consultable',combination:'COMBINABLE'}]};
+ assert.equal(check(modern),'');
+ assert.match(check({...modern,candidates:[{id:'KEEP:P1'}]}),/no cumple el contrato/);
+ assert.match(src,/__auneaTobeAlternatives\.delete\(key\);\s*button\.disabled=true/,
+   'previous responses must be cleared when recalculating');
+ assert.match(src,/if\(incompatible\)throw Error\(incompatible\)/);
+ assert.match(src,/const rows=\(!staleIssue&&data\?\.candidates\|\|\[\]\)\.map/,
+   'stale recommendations must not remain visible after an incompatible response');
+});
 // [AUNEA-UAT-PG11-GUIDED-267] END
