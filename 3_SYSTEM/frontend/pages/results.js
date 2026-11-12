@@ -2424,9 +2424,11 @@ function tobeProjectAlternative(e,p,candidate){
     if(!allowed.has(key))throw Error('La propuesta contiene un campo fuera del contrato: '+key);
     item[key]=tobeClone(value);
   }
-  const flow=tobeMutableFlow(e,projected),pending=[];
+  let flow=null;
+  const pending=[];
   for(const operation of candidate.operations||[]){
     if(operation.type!=='insertAfter')throw Error('Operación estructural no soportada: requiere edición explícita del mapa.');
+    if(!flow)flow=tobeMutableFlow(e,projected);
     const anchor=tobeFlowItem(e,projected,String(operation.sourceId)),route=flow.routes[String(operation.sourceId)];
     if(!anchor||!route?.normal||route.normal==='__PENDING__'){
       pending.push('Indica el destino de la ruta normal antes de insertar el control.');continue;
