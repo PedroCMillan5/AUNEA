@@ -11,7 +11,8 @@ module.exports=function pg11LegacySourceOracle(){
   let source=read('pages/results.js');
   for(const [token,body] of [
     ['// __AUNEA_PG11_MODEL_MODULE__\n',read('domain/tobe-model.js')],
-    ['// __AUNEA_PG11_WORKSPACE_MODULE__',workspace]
+    ['// __AUNEA_PG11_WORKSPACE_MODULE__',workspace],
+    ['// __AUNEA_INTERNAL_WORK_EVENTS_MODULE__',read('pages/internal-work-events.js')]
   ]){
     if(source.split(token).length!==2)throw Error('PG11 source boundary is missing or duplicated: '+token);
     source=source.replace(token,body);
