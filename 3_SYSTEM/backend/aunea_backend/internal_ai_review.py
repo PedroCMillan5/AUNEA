@@ -148,14 +148,21 @@ def source_integrity_issues(request: PilotAIConsolidationRequest) -> list[dict]:
         # Only classify evidence for the claim's actual units; a same-number
         # match of a different type or another activity cannot make it verified.
         claims=list(_QUANTITY.finditer(rationale))
-        action=rationale.lower().split("resultado esperado:",1)[0]
+        lower_rationale=rationale.lower()
+        action=lower_rationale.split("resultado esperado:",1)[0]
+        expected_start=lower_rationale.find("resultado esperado:")
+        expected_end=lower_rationale.find("justificación:",max(0,expected_start))
+        if expected_end<0:
+            expected_end=lower_rationale.find("justificacion:",max(0,expected_start))
+        if expected_end<0:
+            expected_end=len(lower_rationale)
         for match in claims:
             raw,unit=match.group(1),match.group(2).lower()
             category="%" if unit=="%" else ("min" if unit.startswith("min") else
                 "h" if unit in ("h","hora","horas") else
                 "money" if unit in ("€","euro","euros") else "day")
             value=float(raw.replace(",","."))
-            is_forecast=match.start() >= rationale.lower().find("resultado esperado:") >= 0
+            is_forecast=expected_start>=0 and expected_start<=match.start()<expected_end
             known=[(prov,ref) for u,v,prov,ref in numbers
                    if u==category and abs(v-value)<0.0001]
             if is_forecast or not known:
@@ -171,12 +178,14 @@ def source_integrity_issues(request: PilotAIConsolidationRequest) -> list[dict]:
                       refs or match.group(0),
                       "Conservar la cifra con su clase de evidencia, sin elevarla a dato medido.")
         if _HYPOTHETICAL_CLAIM.search(limitations):
-            known_evidence=[p for _,_,p,_ in numbers if p in ("EV01","EV02","SOURCE_STEP")]
-            if known_evidence:
+            confirmed=[(p,ref) for _,_,p,ref in numbers
+                       if p in ("EV01","EV02") and ref in
+                       {str(f.get("id")) for f in frictions}]
+            if confirmed:
                 issue(sid,"BLOCKING",
-                      "La IA califica como hipotéticos tiempos o frecuencias que sí constan como datos de origen declarados o medidos.",
-                      ", ".join(sorted({ref for _,_,p,ref in numbers if p in ("EV01","EV02","SOURCE_STEP")})),
-                      "Corregir la limitación: conservar el valor y su procedencia; verificar únicamente su precisión o aplicabilidad.")
+                      "La IA califica como hipotéticos tiempos o frecuencias que figuran en una fricción declarada o medida del AS-IS.",
+                      ", ".join(sorted({ref for _,ref in confirmed if ref})),
+                      "Conservar el valor y la clase de evidencia original; rectificar la limitación sin inventar mediciones.")
         if _UNSUPPORTED_CAPABILITY.search(limitations):
             issue(sid,"PENDING",
                   "La IA afirma una incapacidad de la herramienta que no queda acreditada por los datos AS-IS.",
