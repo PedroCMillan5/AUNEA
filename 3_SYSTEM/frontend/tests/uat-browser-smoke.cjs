@@ -1042,6 +1042,12 @@ async function main(){
   assert.equal(await applyOne.count(),1,'a human-reviewed source-linked field can be applied');
   await applyOne.click();
   await page.locator('#tobeAlternativeDialog').waitFor();
+  const interventionAcknowledgement=page.locator('#tobeAlternativeDialog [data-tobe-preview-ack]');
+  if(await interventionAcknowledgement.count()){
+    assert.equal(await page.locator('#tobeAlternativeDialog [data-tobe-confirm-alternative]').isDisabled(),true,
+      'preview cannot confirm until the consultant acknowledges applicable conditions');
+    await interventionAcknowledgement.check();
+  }
   await page.locator('#tobeAlternativeDialog [data-tobe-confirm-alternative]').click();
   await page.waitForFunction(()=>latestTobe(currentEng()).items[0]?.transformation==='Se modifica');
   const applied=await page.evaluate(()=>{
