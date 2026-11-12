@@ -4884,4 +4884,27 @@ details.tobe-ai-operational-context:not([open])>.tobe-ai-operational-body{
     text-align:left;
   }
 }
+
+.tobe-workspace[data-tobe-mode="guided"] #tobeStepAdvice .tobe-opportunity-global-list{
+  display:grid;gap:8px;margin:0 14px 12px;
+  border-top:1px solid var(--system-line);padding-top:10px;
+}
+.tobe-workspace[data-tobe-mode="guided"] #tobeStepAdvice .tobe-opportunity-global{
+  border:1px solid var(--system-line);border-radius:var(--radius-sm);
+  background:var(--canvas,#f8faf9);overflow:hidden;
+}
+.tobe-workspace[data-tobe-mode="guided"] #tobeStepAdvice .tobe-opportunity-global>summary{
+  cursor:pointer;padding:9px 12px;
+  color:var(--system);font:700 var(--font-small)/1.45 Inter,"Segoe UI",Arial,sans-serif;
+}
+.tobe-workspace[data-tobe-mode="guided"] #tobeStepAdvice .tobe-opportunity-global-body{
+  padding:10px 12px;display:grid;gap:9px;
+  border-top:1px solid var(--system-line);
+}
+.tobe-workspace[data-tobe-mode="guided"] #tobeStepAdvice .tobe-opportunity-global-body p{
+  margin:0;font:400 var(--font-small)/1.5 Inter,"Segoe UI",Arial,sans-serif;
+}
+.tobe-workspace[data-tobe-mode="guided"] #tobeStepAdvice .tobe-opportunity-global-body p>b{
+  font-weight:700;
+}
 /* [AUNEA-FE-PG11-OPPORTUNITY-VIEW-366] END */
