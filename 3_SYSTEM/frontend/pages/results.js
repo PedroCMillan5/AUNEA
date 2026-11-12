@@ -3569,7 +3569,9 @@ function tobeGlobalOverviewHtml(e,p){
     feedback=typeof internalAiGlobalMessage==='function'?internalAiGlobalMessage(e):null,
     preflight=working&&feedback?.phase==='PREFLIGHT',
     result=tobeGlobalStored(e,p),
-    previous=p?.aiGlobal,
+    historical=(Array.isArray(e?.tobeProposals)?[...e.tobeProposals].reverse():[])
+      .find(draft=>draft!==p&&draft?.aiGlobal?.result)?.aiGlobal,
+    previous=p?.aiGlobal||historical,
     notCurrent=!working&&!result&&!!previous,
     notCurrentReason=previous?.tobeVersion!==p?.version?
       'El análisis corresponde a otra versión del borrador TO-BE.':
