@@ -1684,14 +1684,14 @@ function tobeInspectorHtml(e,p){
       item.transformation||'',{extra:'data-tobe-item="'+attr(item.id)+'" data-tobe-field="transformation"',placeholder:'Selecciona una transformación'}):
       '<input value="'+attr(item.transformation||'Sin definir')+'" disabled>')+'</div>';
   const supportingInformation=
-    '<section class="tobe-origin" id="tobeStepOrigin"><details class="tobe-subdetails"'+
+    '<section class="tobe-origin aunea-ui-work-stage" id="tobeStepOrigin"><details class="tobe-subdetails"'+
       (originWasExpanded?' open':'')+'><summary class="aunea-ui-section-title tobe-stage-heading">'+
         '<span>03.1 · Entender el AS-IS</span>'+
         '<span class="tobe-origin-header-status">AS-IS confirmado · Solo lectura</span></summary>'+
       tobeOriginalStepFacts(e,item)+tobeSnapshotIssueCards(e,item)+'</details></section>'+
     // [AUNEA-FE-PG11-ONE-WORKBENCH-365] START
     // View-only sources and one action path: no duplicate AI approval.
-    '<section class="tobe-advice" id="tobeStepAdvice" aria-label="Oportunidades y fuentes">'+
+    '<section class="tobe-advice aunea-ui-work-stage" id="tobeStepAdvice" aria-label="Oportunidades y fuentes">'+
       '<details class="tobe-subdetails"'+(opportunitiesWereExpanded?' open':'')+'><summary class="aunea-ui-section-title tobe-stage-heading">03.2 · Revisar oportunidades de mejora</summary>'+
       '<div class="tobe-stage-body">'+
         '<p class="tobe-stage-intro">Estudia las oportunidades vinculadas al AS-IS y selecciona una intervención para comparar sus efectos. '+
@@ -1746,7 +1746,7 @@ function tobeInspectorHtml(e,p){
     // [AUNEA-FE-PG11-DESIGN-COMPOSITION-310] START — PG11.03, UI only.
     // Existing version-owned TO-BE inputs remain sole edit owners; IA remains
     // advisory. Snapshot AS-IS remains immutable. No new business fields.
-    '<section class="tobe-edit tobe-design-workspace" id="tobeStepDesign">'+
+    '<section class="tobe-edit tobe-design-workspace aunea-ui-work-stage" id="tobeStepDesign">'+
       '<header class="tobe-design-header"><div>'+
         '<h3 class="aunea-ui-section-title tobe-stage-heading">03.3 · Configurar la actividad futura</h3>'+
         '<p class="tobe-design-lede" data-tobe-transformation-message="1" role="status" aria-live="polite">'+
