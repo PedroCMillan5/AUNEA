@@ -79,7 +79,7 @@ test('createScenario posts the exact DiagnosticOutput shown in the UI as the com
   let save=null;ctx.openModal=(title,body,onSave)=>{save=onSave};const controls={scName:{value:'Alt'},scAction:{value:'A1'},scN:{value:'N2'},scI:{value:'I1'}};ctx.document.getElementById=id=>controls[id]||null;let sent=null;ctx.fetch=async(url,opts)=>{sent=JSON.parse(opts.body);return {ok:true,status:200,json:async()=>({compared:{scenario_id:'S2'},input_snapshot_hash:'HASH-1',rule_bundle_version:'v0.8'})}};
   ctx.createScenario();await save();assert.deepEqual(sent.diagnostic,diag);assert.deepEqual(sent.engagement,{engagement_id:'E1'});assert.equal(sent.scenario.scenario_name,'Alt');assert.equal(ctx.__eng.scenarioResults.length,1);
 });
-// [AUNEA-UAT-RESULTS-010] END
+
 
 test('PG10 readiness exposes an explicit backend execution action instead of a dead readiness screen',()=>{
   const ctx=makeCtx();ctx.__eng.diagnosticOutput=null;ctx.__eng.lastEngineSnapshotVersion=null;
@@ -130,3 +130,4 @@ test('shared disclosure remains available to the legacy result VM',()=>{
   assert.equal(markup,
     '<details class="pg10-stage-nav aunea-ui-work-disclosure"><summary>Etapas</summary><p>Contenido</p></details>');
 });
+// [AUNEA-UAT-RESULTS-010] END
