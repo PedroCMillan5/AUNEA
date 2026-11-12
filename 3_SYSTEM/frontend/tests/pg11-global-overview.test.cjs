@@ -57,6 +57,31 @@ test('PG11 shows current context before global analysis, then the activity revie
   assert.match(src,/01 · INFORMACIÓN GENERAL/);
 });
 
+test('global IA without a current result never reports zero verified coherence alerts',()=>{
+ const none=harness(null);
+ const html=none.html();
+ assert.match(html,/Análisis pendiente/);
+ assert.match(html,/Coherencia sin evaluar/);
+ assert.doesNotMatch(html,/0 alertas de reglas/);
+ assert.doesNotMatch(html,/Ninguna recomendación está aprobada/);
+ assert.equal(none.env.p.aiGlobal,undefined,'reading the section must not create a new analysis');
+});
+test('global IA distinguishes saved non-current results and does not erase them',()=>{
+ const h=harness([{
+   objective:'Mejora vigente antigua.',how:'Conservar la referencia documental.',
+   why:'Existe una fricción registrada.',source_refs:['F1'],
+   review:{status:'CONDITIONED',reason:'Verificar permisos.'}
+ }]);
+ h.env.p.aiGlobal.diagnosticInputHash='PREVIOUS_DIAGNOSIS';
+ const untouched=JSON.stringify(h.env.p.aiGlobal);
+ const html=h.html();
+ assert.match(html,/Análisis guardado no vigente/);
+ assert.match(html,/El diagnóstico vigente no coincide/);
+ assert.match(html,/Coherencia sin evaluar/);
+ assert.doesNotMatch(html,/0 alertas de reglas|Mejora vigente antigua/);
+ assert.equal(JSON.stringify(h.env.p.aiGlobal),untouched,
+   'a stale proposal must remain preserved, without being presented as current');
+});
 test('section 01 shows only confirmed source facts and not later live edits',()=>{
   assert.ok(contextBlock,'Missing source-only PG11 context block');
   const snapshot={
