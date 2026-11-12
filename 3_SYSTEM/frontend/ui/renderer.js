@@ -771,3 +771,13 @@ function bindCanonicalRenderer(){
 const __auneaBaseBindForms=bindForms;
 bindForms=function(){__auneaBaseBindForms();bindCanonicalRenderer();};
 // [AUNEA-FE-DIAG-RENDER-040] END
+// [AUNEA-FE-UI-WORK-DISCLOSURE-380] START — Shared internal-work disclosure markup.
+// PURPOSE: Keep one semantic details/summary structure for equivalent work panels.
+// INPUTS: scoped block class, visible label, already-rendered body HTML.
+// OUTPUT: accessible HTML; state, events and data remain owned by callers.
+// CHANGE_RISK: LOW. Opt-in; existing FROZEN pages are unchanged.
+function auneaWorkDisclosure(kind,title,body){
+  return '<details class="'+attr(kind)+' aunea-ui-work-disclosure"><summary>'+esc(title)+'</summary>'+(body||'')+'</details>';
+}
+// [AUNEA-FE-UI-WORK-DISCLOSURE-380] END
+
