@@ -14,13 +14,13 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,'.'+new 
   await page.locator('[data-tobe-load-alternatives="P1"]').click();
   await page.getByText('Separar el control tras esta actividad',{exact:true}).waitFor();
   const control=page.locator('.tobe-alternative').filter({hasText:'Separar el control tras esta actividad'});
-  await control.getByRole('button',{name:'Ver propuesta en el mapa'}).click();
+  await control.getByRole('button',{name:'Revisar y previsualizar'}).click();
   await page.locator('#tobeAlternativeDialog').waitFor();
   assert.equal(await page.evaluate(()=>tobeFutureSteps(currentEng(),latestTobe(currentEng())).length),4);
   assert.equal(await page.locator('#tobeAlternativeDialog .tobe-graph-node').count(),5);
   await page.locator('[data-tobe-cancel-alternative]').click();
   assert.equal(await page.evaluate(()=>tobeFutureSteps(currentEng(),latestTobe(currentEng())).length),4);
-  await control.getByRole('button',{name:'Ver propuesta en el mapa'}).click();
+  await control.getByRole('button',{name:'Revisar y previsualizar'}).click();
   await page.locator('[data-tobe-confirm-alternative]').click();
   await page.waitForFunction(()=>tobeFutureSteps(currentEng(),latestTobe(currentEng())).length===5);
   assert.equal(await page.evaluate(()=>tobeFlowIntegrity(currentEng(),latestTobe(currentEng()))),null);
