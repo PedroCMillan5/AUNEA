@@ -4,6 +4,8 @@ from fastapi.testclient import TestClient
 from aunea_backend.api import app
 from aunea_backend.internal_ai import PilotAIConsolidationRequest
 from aunea_backend.internal_ai_review_basic import basic_review
+from aunea_backend.internal_ai_review import source_integrity_issues, _context
+from aunea_backend.utils import stable_hash
 from aunea_backend import internal_ai_ollama as local
 from test_internal_ai_segmented_review import sample
 from test_internal_ai_review_consolidation import proposal
@@ -118,4 +120,94 @@ def test_clean_suggestions_are_checked_but_not_approved():
     assert result["issues"]==[]
     assert result["blocking_step_ids"]==[]
     assert result["requires_human_review"]
+
+def source_case(evidence_type="EV02"):
+    req=data()
+    q=req.request.engagement.questionnaire_answers
+    q["_process_steps"][0]["outputs"]=["DOCUMENT","RECORD"]
+    q["_frictions"]=[{
+        "id":"F2","step_ids":["S1"],"client_label":"Falta de visibilidad",
+        "frequency":{"mode":"percent","value":30},
+        "active_time_loss":{"mode":"VALUE","value":10,"unit":"min"},
+        "evidence_type":evidence_type
+    }]
+    req.items[0].source_refs=["S1","F2"]
+    req.items[0].transformation="Se modifica"
+    req.items[0].future_actor="Administración"
+    req.items[0].limitations=""
+    req.items[0].rationale=(
+        "Acción propuesta: actualizar el registro existente y revisar la recepción. "
+        "Resultado esperado: trazabilidad operativa. "
+        "Justificación: 30 % de casos, 10 min de seguimiento por caso afectado."
+    )
+    req.request.diagnostic.input_snapshot_hash=stable_hash(req.request.engagement.model_dump())
+    return req
+
+
+def test_declared_historical_30_percent_and_10_minutes_are_not_unsourced_forecasts():
+    req=source_case()
+    assert not source_integrity_issues(req)
+    review=basic_review(req)
+    assert not any(x["origin"]=="CONTROL_FUENTE_ASIS" for x in review["issues"])
+
+
+def test_forecast_number_is_distinct_from_identical_historical_fraction():
+    req=source_case()
+    req.items[0].rationale=(
+        "Acción propuesta: actualizar registro existente. "
+        "Resultado esperado: reducir un 30 % los tiempos futuros. "
+        "Justificación: el 30 % de casos del AS-IS requiere 10 min."
+    )
+    rows=source_integrity_issues(req)
+    assert any("cifras de resultado futuro" in x["issue"] for x in rows)
+    assert not any(x["category"]=="BLOCKING" for x in rows)
+
+
+def test_friction_evidence_provenance_is_retained_instead_of_downgraded_or_upgraded():
+    req=source_case("EV04")
+    rows=source_integrity_issues(req)
+    assert any("hipótesis" in x["issue"] and x["evidence"]=="F2" for x in rows)
+    assert not any(x["category"]=="BLOCKING" for x in rows)
+    req.items[0].limitations="La frecuencia y la duración del impacto son hipotéticas."
+    assert not any(x["category"]=="BLOCKING" for x in source_integrity_issues(req))
+    # The same unsupported statement is contradictory when evidence says declared.
+    req.request.engagement.questionnaire_answers["_frictions"][0]["evidence_type"]="EV02"
+    assert any(x["category"]=="BLOCKING" and "hipotéticos" in x["issue"]
+               for x in source_integrity_issues(req))
+
+
+def test_unverified_email_capability_and_existing_structured_record_are_not_invented():
+    req=source_case()
+    req.items[0].rationale=(
+        "Acción propuesta: implementar registro automático con los datos recibidos. "
+        "Resultado esperado: consulta más sencilla. Justificación: fricción F2."
+    )
+    req.items[0].limitations="La herramienta EMAIL no permite seguimiento automático."
+    rows=source_integrity_issues(req)
+    assert any("incapacidad de la herramienta" in x["issue"] and
+               x["category"]=="PENDING" for x in rows)
+    assert any("ya registra una salida estructurada" in x["issue"] for x in rows)
+    assert not any(x["category"]=="BLOCKING" for x in rows)
+
+
+def test_unlinked_step_numbers_and_unrecorded_numbers_do_not_validate_a_claim():
+    req=source_case()
+    req.items[0].rationale=(
+        "Acción propuesta: adaptar la recepción. Resultado esperado: trazabilidad. "
+        "Justificación: afecta al 45 % de casos y requiere 27 min."
+    )
+    rows=source_integrity_issues(req)
+    assert len([x for x in rows if "cifras" in x["issue"]])==2
+    assert all(x["category"]=="PENDING" for x in rows)
+
+
+def test_semantic_reviewer_receives_canonical_measure_and_evidence_type():
+    req=source_case()
+    review_context=_context(req)
+    friction=review_context["frictions"][0]
+    assert friction["frequency"]["value"]==30
+    assert friction["active_time_loss"]["value"]==10
+    assert friction["evidence_type"]=="EV02"
+    assert "RECORD" in review_context["activity_order"][0]["outputs"]
+
 # [AUNEA-UAT-PG11-BASIC-REVIEW-222] END
