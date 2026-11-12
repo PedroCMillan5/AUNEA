@@ -51,8 +51,14 @@ for(const kind of ['invoice','logistics']){
     /Control revisado por el consultor con criterio explícito de integridad/,
     'editing refreshes preview without writing the live TO-BE');
   assert.equal(run('tobeFutureSteps(currentEng(),latestTobe(currentEng())).length'),4);
-  assert.equal(w.document.querySelector('[data-tobe-confirm-alternative]').disabled,false);
-  w.document.querySelector('[data-tobe-confirm-alternative]').click();
+  const confirm=w.document.querySelector('[data-tobe-confirm-alternative]');
+  assert.equal(confirm.disabled,true,'consultant must acknowledge pending conditions');
+  const acknowledgement=w.document.querySelector('[data-tobe-preview-ack]');
+  assert.ok(acknowledgement,'the preview must explain pending conditions');
+  acknowledgement.checked=true;
+  acknowledgement.dispatchEvent(new w.Event('change',{bubbles:true}));
+  assert.equal(confirm.disabled,false,'confirmation unlocks after explicit acknowledgement');
+  confirm.click();
   await until(()=>run('tobeFutureSteps(currentEng(),latestTobe(currentEng())).length')===5);
   assert.equal(run('tobeFlowIntegrity(currentEng(),latestTobe(currentEng()))'),null);
   assert.equal(run('tobeAddedSteps(latestTobe(currentEng()))[0].controlsRisk'),'Control revisado por el consultor con criterio explícito de integridad.');
