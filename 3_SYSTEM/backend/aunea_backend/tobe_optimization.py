@@ -156,6 +156,7 @@ def activity_alternatives(request, step_id):
             target=label,
             change='Añadir una comprobación dentro de esta actividad, sin crear otro paso.',
             outcome=outcome,
+            combination='ALTERNATIVE_TO_CONTROL-' + rid,
             constraint_keys=('DF075', 'DF090', 'DF091'))
         # A separate control is an *alternative placement* to the in-step control.
         # It must never be inserted blindly after a decision or a terminal step.
