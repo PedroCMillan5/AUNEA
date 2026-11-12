@@ -4504,3 +4504,235 @@ details.tobe-ai-operational-context:not([open])>.tobe-ai-operational-body{
 }
 /* [AUNEA-FE-PG11-UNIFIED-DECISIONS-357] STYLE END */
 /* [AUNEA-FE-PG11-UX-STATES-353] END */
+
+/* [AUNEA-FE-PG11-VISUAL-CONTRACT-363] START
+   PURPOSE: One typographic and spatial hierarchy across PG11 03.1/03.2/03.3
+   and the rules preview. Overrides historical per-block differences.
+   SOURCE: AUNEA Design System, DEC-056, PG11 CANONICAL.
+   SIDE_EFFECTS: presentation only; scoped to guided PG11 and its dialog.
+   CHANGE_RISK: MEDIUM. Never touches state, inputs, routes or persisted data. */
+.tobe-workspace[data-tobe-mode="guided"] .tobe-inspector,
+.tobe-alternative-dialog{
+  --pg11-visual-stage:var(--font-h4,16px);
+  --pg11-visual-subsection:var(--font-small,13px);
+  --pg11-visual-body:var(--font-small,13px);
+  --pg11-visual-title:var(--font-h3,21px);
+  --pg11-visual-weight:700;
+  --pg11-visual-line:1.5;
+}
+.tobe-workspace[data-tobe-mode="guided"] .tobe-inspector :is(#tobeStepOrigin,#tobeStepAdvice,#tobeStepDesign){
+  border:1px solid var(--system-line);
+  border-radius:var(--radius-md);
+  background:#fff;
+  box-shadow:none;
+  min-width:0;
+}
+.tobe-workspace[data-tobe-mode="guided"] .tobe-inspector #tobeStepAdvice{
+  display:block;
+  padding:0;
+  margin:0;
+  overflow:hidden;
+}
+.tobe-workspace[data-tobe-mode="guided"] .tobe-inspector #tobeStepAdvice>.tobe-subdetails{
+  display:block;
+  border:0;
+  padding:0;
+  margin:0;
+  background:transparent;
+}
+.tobe-workspace[data-tobe-mode="guided"] #tobeStepAdvice .tobe-stage-body{
+  display:grid;
+  gap:12px;
+  padding:16px;
+  min-width:0;
+}
+.tobe-workspace[data-tobe-mode="guided"] #tobeStepAdvice .tobe-stage-body>p{
+  margin:0!important;
+  line-height:var(--pg11-visual-line);
+}
+.tobe-workspace[data-tobe-mode="guided"] #tobeStepAdvice .tobe-stage-body .tobe-review-guidance{
+  margin:0;
+}
+.tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign.tobe-design-workspace{
+  padding:0;
+  display:grid;
+  gap:14px;
+  overflow:hidden;
+}
+.tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign.tobe-design-workspace>:not(.tobe-design-header){
+  margin-left:16px;
+  margin-right:16px;
+  min-width:0;
+}
+.tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign.tobe-design-workspace>:last-child{
+  margin-bottom:16px;
+}
+.tobe-workspace[data-tobe-mode="guided"] .tobe-inspector #tobeStepOrigin>.tobe-subdetails>summary,
+.tobe-workspace[data-tobe-mode="guided"] .tobe-inspector #tobeStepAdvice>.tobe-subdetails>summary,
+.tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign>.tobe-design-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:10px 14px;
+  padding:14px 16px;
+  margin:0;
+  min-height:53px;
+  background:var(--system-soft);
+  border-bottom:1px solid var(--system-line);
+  box-sizing:border-box;
+}
+.tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign>.tobe-design-header{
+  padding-left:35px;
+}
+.tobe-workspace[data-tobe-mode="guided"] .tobe-inspector #tobeStepOrigin>.tobe-subdetails>summary,
+.tobe-workspace[data-tobe-mode="guided"] .tobe-inspector #tobeStepAdvice>.tobe-subdetails>summary{
+  list-style:none;
+  justify-content:flex-start;
+}
+.tobe-workspace[data-tobe-mode="guided"] .tobe-inspector :is(#tobeStepOrigin,#tobeStepAdvice)>.tobe-subdetails>summary::-webkit-details-marker{display:none}
+.tobe-workspace[data-tobe-mode="guided"] .tobe-inspector :is(#tobeStepOrigin,#tobeStepAdvice)>.tobe-subdetails>summary::before{
+  content:"▸";
+  font-family:Inter,"Segoe UI",Arial,sans-serif;
+  font-size:var(--pg11-visual-subsection);
+  font-weight:var(--pg11-visual-weight);
+  color:var(--system);
+  width:10px;
+  flex:0 0 10px;
+}
+.tobe-workspace[data-tobe-mode="guided"] .tobe-inspector :is(#tobeStepOrigin,#tobeStepAdvice)>.tobe-subdetails[open]>summary::before{content:"▾"}
+.tobe-workspace[data-tobe-mode="guided"] .tobe-inspector .tobe-stage-heading,
+.tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign .tobe-design-header .tobe-stage-heading{
+  font-family:Sora,"Segoe UI",Arial,sans-serif;
+  font-size:var(--pg11-visual-stage);
+  font-weight:var(--pg11-visual-weight);
+  line-height:1.35;
+  letter-spacing:0;
+  color:var(--system);
+  margin:0;
+}
+.tobe-workspace[data-tobe-mode="guided"] #tobeStepOrigin .tobe-origin-header-status,
+.tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign .tobe-design-status{
+  font-family:Inter,"Segoe UI",Arial,sans-serif;
+  font-size:var(--font-caption,12px);
+  font-weight:600;
+  line-height:1.4;
+}
+.tobe-workspace[data-tobe-mode="guided"] .tobe-inspector :is(
+  #tobeStepOrigin .tobe-origin-fact-group h4,
+  #tobeStepOrigin .tobe-origin-issues h4,
+  #tobeStepAdvice h4,
+  #tobeStepDesign .tobe-design-group-head h4,
+  #tobeStepDesign .tobe-decision-context h4
+){
+  font-family:Sora,"Segoe UI",Arial,sans-serif;
+  font-size:var(--pg11-visual-subsection);
+  font-weight:var(--pg11-visual-weight);
+  line-height:1.4;
+  color:var(--system);
+}
+.tobe-workspace[data-tobe-mode="guided"] .tobe-inspector :is(
+  #tobeStepOrigin .tobe-original-facts,
+  #tobeStepAdvice .tobe-stage-body,
+  #tobeStepDesign .tobe-design-lede,
+  #tobeStepDesign .tobe-alternatives,
+  #tobeStepDesign .tobe-design-fields
+){
+  font-family:Inter,"Segoe UI",Arial,sans-serif;
+  font-size:var(--pg11-visual-body);
+  line-height:var(--pg11-visual-line);
+}
+.tobe-alternative-dialog{
+  font-family:Inter,"Segoe UI",Arial,sans-serif;
+  font-size:var(--pg11-visual-body);
+  line-height:var(--pg11-visual-line);
+}
+.tobe-alternative-dialog>h2{
+  font-family:Sora,"Segoe UI",Arial,sans-serif;
+  font-size:var(--pg11-visual-title);
+  font-weight:var(--pg11-visual-weight);
+  line-height:1.35;
+  color:var(--system);
+  margin:0 0 12px;
+}
+.tobe-alternative-dialog :is(
+  .tobe-preview-comparison,
+  .tobe-preview-validation,
+  .tobe-preview-route-editor,
+  .tobe-preview-scoped-checks,
+  .tobe-preview-consultant
+)>h3,
+.tobe-alternative-dialog>details.tobe-preview-map>summary,
+.tobe-alternative-dialog>details.tobe-preview-conditions>summary,
+.tobe-alternative-dialog>details.tobe-subdetails>summary{
+  font-family:Sora,"Segoe UI",Arial,sans-serif;
+  font-size:var(--pg11-visual-stage);
+  font-weight:var(--pg11-visual-weight);
+  line-height:1.4;
+  color:var(--system);
+  margin:0 0 10px;
+}
+.tobe-alternative-dialog>details.tobe-preview-map>summary,
+.tobe-alternative-dialog>details.tobe-preview-conditions>summary,
+.tobe-alternative-dialog>details.tobe-subdetails>summary{
+  margin:0;
+}
+.tobe-alternative-dialog :is(
+  .tobe-preview-other-checks>summary,
+  .tobe-preview-consultant>label,
+  .tobe-preview-scoped-checks li b,
+  .tobe-preview-comparison thead th,
+  .tobe-preview-comparison tbody th
+){
+  font-family:Inter,"Segoe UI",Arial,sans-serif;
+  font-size:var(--pg11-visual-subsection);
+  font-weight:var(--pg11-visual-weight);
+  line-height:var(--pg11-visual-line);
+}
+.tobe-alternative-dialog :is(
+  .tobe-preview-comparison,
+  .tobe-preview-validation,
+  .tobe-preview-route-editor,
+  .tobe-preview-scoped-checks,
+  .tobe-preview-consultant,
+  .tobe-preview-conditions,
+  .tobe-preview-map
+){
+  border:1px solid var(--system-line);
+  border-radius:var(--radius-sm);
+  background:#fff;
+}
+.tobe-alternative-dialog :is(
+  .tobe-preview-intro,
+  .tobe-preview-comparison p,
+  .tobe-preview-validation p,
+  .tobe-preview-scoped-checks p,
+  .tobe-preview-consultant p,
+  .tobe-preview-consultant label,
+  .tobe-preview-scoped-checks li,
+  .tobe-preview-conditions li,
+  .tobe-preview-comparison td,
+  .tobe-preview-map p
+){
+  font-family:Inter,"Segoe UI",Arial,sans-serif;
+  font-size:var(--pg11-visual-body);
+  line-height:var(--pg11-visual-line);
+  font-weight:400;
+}
+.tobe-alternative-dialog .tobe-preview-consultant label>b,
+.tobe-alternative-dialog .tobe-preview-scoped-checks li>b,
+.tobe-alternative-dialog .tobe-preview-comparison tbody th{
+  font-weight:var(--pg11-visual-weight);
+}
+@media(max-width:760px){
+  .tobe-workspace[data-tobe-mode="guided"] #tobeStepAdvice .tobe-stage-body{padding:12px}
+  .tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign.tobe-design-workspace>:not(.tobe-design-header){
+    margin-left:12px;margin-right:12px;
+  }
+  .tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign.tobe-design-workspace>:last-child{margin-bottom:12px}
+  .tobe-workspace[data-tobe-mode="guided"] .tobe-inspector #tobeStepOrigin>.tobe-subdetails>summary,
+  .tobe-workspace[data-tobe-mode="guided"] .tobe-inspector #tobeStepAdvice>.tobe-subdetails>summary,
+  .tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign>.tobe-design-header{padding:12px;min-height:48px}
+  .tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign>.tobe-design-header{padding-left:31px}
+}
+/* [AUNEA-FE-PG11-VISUAL-CONTRACT-363] END */
