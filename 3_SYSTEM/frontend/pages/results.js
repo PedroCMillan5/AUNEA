@@ -2532,23 +2532,37 @@ function tobeAlternativesHtml(e,p,item){
     canUndo=history.some(x=>x.transaction&&!x.undoneAt);
   const rows=(data?.candidates||[]).map((candidate,index)=>{
     const decision=history.findLast(x=>x.candidateId===candidate.id&&!x.undoneAt);
-    const discarded=decision?.action==='DISCARD';
-    return '<article class="tobe-alternative"><b>'+esc(candidate.title)+'</b>'+
-      '<p><b>Qué propone:</b> '+esc(Object.entries(candidate.fields||{}).map(([name,value])=>
+    const discarded=decision?.action==='DISCARD',
+      fields=candidate.fields||{},
+      summary=candidate.changeSummary||Object.entries(fields).map(([name,value])=>
         (TOBE_AI_REVIEW_FIELDS.find(x=>x[1]===name)?.[2]||name)+': '+
         (Array.isArray(value)?value.join(', '):String(value))).join(' · ')||
-        'Incorporar una actividad de control separada en el flujo.')+'</p>'+
-      '<p><b>Condiciones antes de aplicar:</b> '+
-        esc((candidate.conditions||[]).join(' ')||'Revisión humana necesaria.')+'</p>'+
+        'Incorporar la intervención indicada al proceso.',
+      conditionRows=(candidate.conditions||[]).filter(Boolean),
+      compatible=candidate.combination==='EXCLUSIVE'?
+        'Alternativa de conservación: incompatible con transformar esta misma actividad.':
+        String(candidate.combination||'').startsWith('ALTERNATIVE_TO_CONTROL-')?
+        'Ubicación alternativa al control dentro del paso: elige una ubicación, no ambas.':
+        'Puede combinarse con intervenciones distintas si los campos, controles y rutas no entran en conflicto.';
+    return '<article class="tobe-alternative"><b>'+esc(candidate.title)+'</b>'+
+      (candidate.targetFinding?'<p><b>Hallazgo que atiende:</b> '+esc(candidate.targetFinding)+'</p>':'')+
+      '<p><b>Qué propone:</b> '+esc(summary)+'</p>'+
+      (candidate.expectedOutcome?'<p><b>Resultado operativo esperado:</b> '+
+        esc(candidate.expectedOutcome)+'</p>':'')+
+      '<p><b>Compatibilidad:</b> '+esc(compatible)+'</p>'+
+      '<div class="tobe-alternative-conditions"><b>Condiciones antes de aplicar:</b>'+
+        '<ul>'+conditionRows.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul></div>'+
       '<p><b>Fuentes del AS-IS:</b> '+esc(tobeHumanReadableRefs(e,candidate.sourceRefs))+'</p>'+
-      (Object.keys(candidate.constraints||{}).length?'<p><b>Condiciones capturadas en el estudio:</b> '+
-        esc(Object.entries(candidate.constraints).map(([code,raw])=>{
+      (Object.keys(candidate.constraints||{}).length?
+        '<details class="tobe-alternative-constraints"><summary>Restricciones del estudio aplicables a esta alternativa ('+
+        Object.keys(candidate.constraints).length+')</summary><ul>'+
+        Object.entries(candidate.constraints).map(([code,raw])=>{
           const field=typeof schema!=='undefined'?(schema?.fields||[]).find(f=>String(f.Field_ID)===code):null;
           const label=field?.Pregunta_o_etiqueta_ES||'Condición del cuestionario';
           const rawValue=field&&typeof formatContextValue==='function'?formatContextValue(field,raw):
             (Array.isArray(raw)?raw.join(', '):String(raw??''));
-          return label+' ('+code+'): '+String(rawValue||'No consta');
-        }).join(' · '))+'</p>':'')+
+          return '<li><b>'+esc(label)+' ('+esc(code)+'):</b> '+esc(String(rawValue||'No consta'))+'</li>';
+        }).join('')+'</ul></details>':'')+
       (decision?'<p class="tobe-alternative-state"><b>Decisión guardada:</b> '+
         (discarded?'Alternativa descartada; diseño conservado.':
         decision.action==='APPLY'?'Aplicada al borrador TO-BE.':'Conservar el diseño actual.')+'</p>':'')+
