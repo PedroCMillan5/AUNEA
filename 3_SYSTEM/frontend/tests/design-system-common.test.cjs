@@ -121,12 +121,15 @@ test('internal work result layouts reuse shared opt-in structure instead of inli
 test('diagnostic work disclosures share the same structural owner',()=>{
   const results=load('pages/results.js');
   const common=['pg10-stage-nav','pg10-critical-points','pg10-decision-trace'];
+  const renderer=load('ui/renderer.js');
+  assert.match(renderer,/function auneaWorkDisclosure\(kind,title,body\)/);
+  assert.match(renderer,/aunea-ui-work-disclosure/);
   assert.match(shared,/\.aunea-ui-work-disclosure\{margin-top:16px;padding:13px 16px;/);
   assert.match(shared,/\.aunea-ui-work-disclosure>summary\{font-size:13px;/);
   assert.match(shared,/\.aunea-ui-work-disclosure\[open\]>summary\{/);
   for(const kind of common){
-    assert.ok(results.includes('<details class="'+kind+' aunea-ui-work-disclosure"'),
-      'The '+kind+' disclosure must reuse its shared work structure');
+    assert.ok(results.includes("auneaWorkDisclosure('"+kind+"'"),
+      'The '+kind+' disclosure must reuse the shared component renderer');
     for(const suffix of ['{',',','>summary','[open]'])
       assert.ok(!local.includes('.'+kind+suffix),
         'Visual geometry for '+kind+' must not be duplicated in page CSS');
