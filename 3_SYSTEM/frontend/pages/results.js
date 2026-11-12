@@ -2613,7 +2613,10 @@ function tobeAlternativesHtml(e,p,item){
       (decision?'<p class="tobe-alternative-state"><b>Decisión guardada:</b> '+
         (discarded?'Alternativa descartada; diseño conservado.':
         decision.action==='APPLY'?'Aplicada al borrador TO-BE.':'Conservar el diseño actual.')+'</p>':'')+
-      (!decision?'<div class="tobe-alternative-actions">'+
+      (discarded?'<div class="tobe-alternative-actions">'+
+        '<button type="button" class="btn btn-outline btn-small" data-tobe-alternative-restore="'+index+
+          '" data-tobe-alternative-source="'+attr(item.sourceStepId)+'">Recuperar alternativa</button>'+
+      '</div>':!decision?'<div class="tobe-alternative-actions">'+
         '<button type="button" class="btn btn-outline btn-small" data-tobe-alternative="'+index+
           '" data-tobe-alternative-source="'+attr(item.sourceStepId)+'">Revisar y previsualizar</button>'+
         '<button type="button" class="btn btn-outline btn-small" data-tobe-alternative-discard="'+index+
@@ -4593,7 +4596,7 @@ function registerInternalWorkPages(){
   // [AUNEA-FE-PG11-HUMAN-DECISION-SAVE-224] END
   // [AUNEA-FE-PG11-TRANSACTION-EVENTS-333] START — explicit, version-bound actions.
   document.addEventListener('click',async event=>{
-    const button=event.target?.closest?.('[data-tobe-load-alternatives], [data-tobe-alternative], [data-tobe-alternative-discard], [data-tobe-confirm-alternative], [data-tobe-cancel-alternative], [data-tobe-undo-alternative]');
+    const button=event.target?.closest?.('[data-tobe-load-alternatives], [data-tobe-alternative], [data-tobe-alternative-discard], [data-tobe-alternative-restore], [data-tobe-confirm-alternative], [data-tobe-cancel-alternative], [data-tobe-undo-alternative]');
     if(!button||state.activePage!=='tobe')return;
     event.preventDefault();
     try{
@@ -4640,8 +4643,24 @@ function registerInternalWorkPages(){
       }
       const id=button.dataset.tobeAlternativeSource,key=tobeAlternativeKey(e,p,id),data=__auneaTobeAlternatives.get(key);
       if(!data||currentDiagnosticOutput(e)?.input_snapshot_hash!==data.input_hash)throw Error('El análisis ya no corresponde al diagnóstico vigente.');
-      const discard=button.hasAttribute('data-tobe-alternative-discard'),index=Number(discard?button.dataset.tobeAlternativeDiscard:button.dataset.tobeAlternative);
+      const discard=button.hasAttribute('data-tobe-alternative-discard'),
+        restore=button.hasAttribute('data-tobe-alternative-restore'),
+        index=Number(discard?button.dataset.tobeAlternativeDiscard:
+          restore?button.dataset.tobeAlternativeRestore:button.dataset.tobeAlternative);
       const candidate=data.candidates[index];if(!candidate)throw Error('La alternativa ya no está disponible.');
+      if(restore){
+        const draft=latestTobe(e),before=tobeClone(draft),
+          entry=(draft.aiDraft?.applyHistory||[]).findLast(x=>
+            String(x.candidateId)===String(candidate.id)&&x.action==='DISCARD'&&!x.undoneAt);
+        if(!entry)throw Error('No existe un descarte vigente que recuperar.');
+        entry.undoneAt=now();draft.updatedAt=now();
+        markDirty('PG11: recuperar alternativa descartada');
+        if(!saveState('Recuperar alternativa por reglas')){
+          Object.keys(draft).forEach(k=>delete draft[k]);Object.assign(draft,before);
+          throw Error('No se guardó la recuperación del descarte.');
+        }
+        render();return;
+      }
       if(discard){
         if(!saveTobeFromDom(e)||!saveState('Guardar edición antes de descartar'))throw Error('No se guardó tu edición.');
         const draft=latestTobe(currentEng()),before=tobeClone(draft);
