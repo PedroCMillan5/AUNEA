@@ -2686,14 +2686,13 @@ function tobeAlternativeRouteChoicesHtml(e,p,candidate){
       normal=flow?.routes?.[sourceId]?.normal;
     if(normal&&normal!=='__PENDING__')return '';
     const selected=String(operation.normalDestination||'');
+    const opts=[...options.filter(x=>x.id!==sourceId).map(x=>({value:x.id,label:x.label})),
+      {value:'__END__',label:'Fin del proceso'}];
     return '<div class="tobe-preview-route-choice">'+
       '<label for="tobePreviewRoute'+index+'">Destino de la ruta normal después del control</label>'+
-      '<select id="tobePreviewRoute'+index+'" data-tobe-preview-route="'+index+'">'+
-        '<option value="">Seleccionar actividad de destino</option>'+
-        options.filter(x=>x.id!==sourceId).map(x=>'<option value="'+attr(x.id)+'"'+
-          (x.id===selected?' selected':'')+'>'+esc(x.label)+'</option>').join('')+
-        '<option value="__END__"'+(selected==='__END__'?' selected':'')+'>Fin del proceso</option>'+
-      '</select>'+
+      auneaSelectControl('tobePreviewRoute'+index,opts,selected,{
+        extra:'data-tobe-preview-route="'+index+'"',
+        placeholder:'Selecciona una actividad de destino'})+
       '<p class="tobe-muted">Sólo se establece una ruta normal explícita que estaba pendiente. '+
         'No se modifica una bifurcación SÍ/NO ni se inventan rutas.</p>'+
       '</div>';
@@ -2739,7 +2738,7 @@ function tobeOpenAlternative(e,candidate){
       (result.pending.length?' disabled':'')+'>Confirmar intervención</button> '+
     '<button type="button" class="btn btn-outline" data-tobe-cancel-alternative="1">Cancelar sin cambios</button></div>';
   document.body.appendChild(dialog);dialog.showModal();
-  dialog.addEventListener('input',event=>{
+  const refreshAlternativePreview=event=>{
     const input=event.target,preview=__auneaTobePreview;
     if(!preview)return;
     if(input.hasAttribute('data-tobe-preview-edit'))preview.candidate.fields[input.dataset.tobeField]=input.value;
@@ -2767,6 +2766,13 @@ function tobeOpenAlternative(e,candidate){
       dialog.querySelector('[data-tobe-confirm-alternative]').disabled=!!next.pending.length;
       requestAnimationFrame(()=>drawProcessGraph(dialog.querySelector('#tobeAlternativeMap .process-graph-board')));
     }catch(error){dialog.querySelector('[data-tobe-confirm-alternative]').disabled=true;toast(error.message);}
+  };
+  dialog.addEventListener('input',event=>{
+    if(event.target?.hasAttribute?.('data-tobe-preview-route'))return;
+    refreshAlternativePreview(event);
+  });
+  dialog.addEventListener('change',event=>{
+    if(event.target?.hasAttribute?.('data-tobe-preview-route'))refreshAlternativePreview(event);
   });
   const changed=new Set([String(candidate.sourceId),...tobeAddedSteps(result.projected).filter(x=>!tobeAddedSteps(p).some(y=>x.id===y.id)).map(x=>x.id)]);
   dialog.querySelectorAll('[data-graph-node]').forEach(node=>{if(changed.has(node.dataset.graphNode))node.classList.add('tobe-preview-changed');});
