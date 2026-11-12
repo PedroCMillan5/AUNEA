@@ -14,7 +14,8 @@ function harness(){
     status:'DRAFT',version:1,sourceSnapshotVersion:2,
     items:[{sourceStepId:'S1',sourceStepName:'Registrar',transformation:'Se modifica',
       problemResolved:'Entrada duplicada',futureActor:'Administración',
-      futureTime:'',futureTimeAssumption:''}]
+      tool:'ERP',inputs:['PDF'],outputs:['RECORD'],controlsRisk:'Validar duplicados y registrar excepciones.',
+      automationAi:'',humanSupervision:'',futureTime:'',futureTimeAssumption:''}]
   };
   const sandbox={
     Set,String,Array,
@@ -74,7 +75,7 @@ test('PG11 elimination retains the source and diagnosis but never demands a fict
   assert.equal(h.check(),null,'routing is separately validated by future-flow integrity');
 });
 
-test('PG11 rejects future time without traced assumption, then allows human review only',()=>{
+test('PG11 rejects future time without traced assumption, then allows one final TO-BE review',()=>{
   const h=harness(),item=h.current.items[0];
   item.futureTime='30 min';
   assert.match(h.check(),/supuesto trazable/);
