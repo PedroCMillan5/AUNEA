@@ -1207,8 +1207,9 @@ async function main(){
     'the real backend monitor health probe must be mocked for this isolated UAT');
   assert.deepEqual(retryRequest.seen_interventions,
     ['Conservar y reutilizar los datos confirmados.']);
-  assert.match(await page.locator('#tobeGlobalAnalysis').innerText(),
-    /Conservar y reutilizar los datos confirmados/);
+  assert.match(await page.locator('#tobeGlobalAnalysis').textContent(),
+    /Conservar y reutilizar los datos confirmados/,
+    'full recommendation remains in the DOM even though the compact card is collapsed');
   assert.equal(await page.locator('#retryTobeGlobal').count(),0);
   await page.unroute('**/v1/internal-ai/tobe-global',retrySource);
   await page.unroute('**/v1/internal-ai/tobe-global-plan',retryPlan);
