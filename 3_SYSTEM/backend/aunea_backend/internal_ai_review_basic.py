@@ -5,19 +5,16 @@
 # OUTPUTS: review notes only; never changes the TO-BE DRAFT or approved data.
 from __future__ import annotations
 
-import re
 from .internal_ai import PilotAIConsolidationRequest, validate_pilot_result
 from .internal_ai_review import (PG11_REVIEW_PROTOCOL, _clear_transformation_conflicts,
-    _missing_structured_actions, _transformation_field_gaps)
-
-_NUMBER_CLAIM = re.compile(r"\b\d+(?:[.,]\d+)*\s*(?:%|€|euros?|minutos?|horas?|d[ií]as?)(?!\w)", re.I)
+    _missing_structured_actions, _transformation_field_gaps, source_integrity_issues)
 
 
 def basic_review(request: PilotAIConsolidationRequest) -> dict:
     """Review visible structure conservatively. Never claim semantic or factual validation."""
     validate_pilot_result(request.request, "Reglas AUNEA", request.items)
     conflicts = set(_clear_transformation_conflicts(request.items))
-    issues = []
+    issues = list(source_integrity_issues(request))
 
     def add(sid: str, category: str, detail: str, evidence: str, action: str):
         issues.append({"step_id": sid, "category": category, "issue": detail,
@@ -65,11 +62,6 @@ def basic_review(request: PilotAIConsolidationRequest) -> dict:
         if item.limitations.strip():
             add(sid, "PENDING", "Existen condiciones de la propuesta pendientes de confirmar.",
                 item.limitations[:200], "Resolver estas condiciones antes de aprobar el diseño.")
-        claims = _NUMBER_CLAIM.findall(item.rationale)
-        if claims:
-            add(sid, "PENDING", "La propuesta contiene cifras que requieren validación de evidencia.",
-                ", ".join(claims)[:200],
-                "Contrastar cifras, unidades y naturaleza de la evidencia con el AS-IS confirmado.")
 
     return {
         "status": "CHECKED_WITH_NOTES" if issues else "CHECKED",
