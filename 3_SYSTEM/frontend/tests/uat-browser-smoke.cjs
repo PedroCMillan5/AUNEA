@@ -790,6 +790,7 @@ async function main(){
   // step suggestion, both before and after reload; no new Ollama calls or TO-BE edits.
   const inspectorBusinessBefore=await page.evaluate(()=>
     JSON.stringify(latestTobe(currentEng()).items));
+  await page.locator('#tobeAiTechnicalDetails > summary').click();
   for(let i=0;i<sourceIds.length;i++){
     await page.locator('.tobe-guided-tabs [data-tobe-select="'+sourceIds[i]+'"]').click();
     const advice=await page.locator('#tobeAiRecommendation').innerText();
@@ -815,6 +816,7 @@ async function main(){
   assert.match(pg11ReloadText,/guardadas en el estudio/);
   assert.equal(await page.locator('#retryTobeAiReview').count(),1,
     'review may be retried without regenerating any verified activities');
+  await page.locator('#tobeAiTechnicalDetails > summary').click();
   for(let i=sourceIds.length-1;i>=0;i--){
     await page.locator('.tobe-guided-tabs [data-tobe-select="'+sourceIds[i]+'"]').click();
     const advice=await page.locator('#tobeAiRecommendation').innerText();
