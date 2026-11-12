@@ -2376,8 +2376,14 @@ function tobeAlternativesHtml(e,p,item){
       '<p><b>Condiciones antes de aplicar:</b> '+
         esc((candidate.conditions||[]).join(' ')||'Revisión humana necesaria.')+'</p>'+
       '<p><b>Fuentes del AS-IS:</b> '+esc(tobeHumanReadableRefs(e,candidate.sourceRefs))+'</p>'+
-      (Object.keys(candidate.constraints||{}).length?'<p><b>Restricciones declaradas (consultar respuestas originales):</b> '+
-        esc(Object.keys(candidate.constraints).join(' · '))+'</p>':'')+
+      (Object.keys(candidate.constraints||{}).length?'<p><b>Condiciones capturadas en el estudio:</b> '+
+        esc(Object.entries(candidate.constraints).map(([code,raw])=>{
+          const field=typeof schema!=='undefined'?(schema?.fields||[]).find(f=>String(f.Field_ID)===code):null;
+          const label=field?.Pregunta_o_etiqueta_ES||'Condición del cuestionario';
+          const rawValue=field&&typeof formatContextValue==='function'?formatContextValue(field,raw):
+            (Array.isArray(raw)?raw.join(', '):String(raw??''));
+          return label+' ('+code+'): '+String(rawValue||'No consta');
+        }).join(' · '))+'</p>':'')+
       (decision?'<p class="tobe-alternative-state"><b>Decisión guardada:</b> '+
         (discarded?'Alternativa descartada; diseño conservado.':
         decision.action==='APPLY'?'Aplicada al borrador TO-BE.':'Conservar el diseño actual.')+'</p>':'')+
