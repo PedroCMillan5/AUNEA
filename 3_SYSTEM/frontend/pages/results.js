@@ -2575,6 +2575,26 @@ function tobeUndoAlternative(e){
   }
   return true;
 }
+// [AUNEA-FE-PG11-OPPORTUNITY-WORKBENCH-364] START
+// Single read-only presentation of source-linked alternatives in PG11.03.2.
+// SOURCE: sealed AS-IS snapshot, server-owned rules, global/individual IA.
+// OUTPUT: grouped cards only; all actions still use the existing preview owner.
+// NO new persisted fields, invented links, or client confirmations.
+function tobeOpportunitySources(e,p,item){
+  if(item?.isAddition)return [];
+  const id=String(item.sourceStepId),snap=tobeProposalSnapshot(e,p),
+    linked=(x,attr)=>Array.isArray(x?.[attr])&&x[attr].map(String).includes(id);
+  return [
+    ...(snap?.frictions||[]).filter(x=>x.status!=='SUPERSEDED'&&linked(x,'affected_steps')).map(x=>({
+      id:String(x.id||''),kind:'Fricción',
+      label:String(x.client_label||x.observable_signal||x.id||'Fricción del AS-IS')
+    })),
+    ...(snap?.risks||[]).filter(x=>x.status!=='SUPERSEDED'&&linked(x,'step_ids')).map(x=>({
+      id:String(x.risk_id||x.id||''),kind:'Riesgo',
+      label:String(x.description||x.category||x.risk_id||'Riesgo del AS-IS')
+    }))
+  ].filter(x=>x.id);
+}
 function tobeAlternativesHtml(e,p,item){
   if(!tobeEditable(p)||item.isAddition)return '';
   const key=tobeAlternativeKey(e,p,item.sourceStepId),
@@ -2582,43 +2602,42 @@ function tobeAlternativesHtml(e,p,item){
     staleIssue=data?tobeRulesResultIssue(data):'',
     error=staleIssue||__auneaTobeAlternativeErrors.get(key),
     history=p.aiDraft?.applyHistory||[],
-    canUndo=history.some(x=>x.transaction&&!x.undoneAt);
-  const rows=(!staleIssue&&data?.candidates||[]).map((candidate,index)=>{
-    const decision=history.findLast(x=>x.candidateId===candidate.id&&!x.undoneAt);
-    const discarded=decision?.action==='DISCARD',
-      fields=candidate.fields||{},
-      summary=candidate.changeSummary||Object.entries(fields).map(([name,value])=>
-        (TOBE_AI_REVIEW_FIELDS.find(x=>x[1]===name)?.[2]||name)+': '+
-        (Array.isArray(value)?value.join(', '):String(value))).join(' · ')||
-        'Incorporar la intervención indicada al proceso.',
-      conditionRows=(candidate.conditions||[]).filter(Boolean),
-      compatible=candidate.combination==='EXCLUSIVE'?
-        'Alternativa de conservación: incompatible con transformar esta misma actividad.':
+    canUndo=history.some(x=>x.transaction&&!x.undoneAt),
+    sources=tobeOpportunitySources(e,p,item),
+    linked=typeof tobeGlobalLinksForStep==='function'?
+      tobeGlobalLinksForStep(e,p,item):[],
+    sourceMap=new Map(sources.map(x=>[x.id,x])),
+    groups=new Map(sources.map(x=>[x.id,{source:x,items:[]}])),
+    other={source:{kind:'Contexto',label:'Otras intervenciones para esta actividad',id:''},items:[]},
+    keep={source:{kind:'Decisión',label:'Conservar el funcionamiento original',id:''},items:[]};
+  (staleIssue?[]:data?.candidates||[]).forEach((candidate,index)=>{
+    const refs=(candidate.sourceRefs||[]).map(String).filter(x=>x!==String(item.sourceStepId)),
+      group=String(candidate.id||'').startsWith('KEEP:')?keep:
+        (groups.get(refs.find(x=>sourceMap.has(x)))||other);
+    group.items.push({candidate,index});
+  });
+  const sourceGlobalCount=src=>linked.filter(({recommendation:r})=>{
+    const refs=[...(r.source_refs||[]),...(r.related||[]).flatMap(x=>x.source_refs||[])].map(String);
+    return refs.includes(src.id);
+  }).length;
+  const card=({candidate,index})=>{
+    const decision=history.findLast(x=>x.candidateId===candidate.id&&!x.undoneAt),
+      discarded=decision?.action==='DISCARD',
+      summary=candidate.changeSummary||candidate.title,
+      conditions=(candidate.conditions||[]).filter(Boolean),
+      group=candidate.combination==='EXCLUSIVE'?'Conservar el AS-IS es incompatible con transformarlo.':
         String(candidate.combination||'').startsWith('ALTERNATIVE_TO_CONTROL-')?
-        'Control dentro del paso o en actividad independiente: elige una ubicación para este riesgo, no ambas.':
-        'Puede combinarse con intervenciones distintas si los campos, controles y rutas no entran en conflicto.';
-    return '<article class="tobe-alternative"><b>'+esc(candidate.title)+'</b>'+
-      (candidate.targetFinding?'<p><b>Hallazgo que atiende:</b> '+esc(candidate.targetFinding)+'</p>':'')+
-      '<p><b>Qué propone:</b> '+esc(summary)+'</p>'+
-      (candidate.expectedOutcome?'<p><b>Resultado operativo esperado:</b> '+
+        'Para el mismo control se debe elegir una ubicación, no ambas.':
+        'Combinable únicamente si no se contradicen campos, rutas y controles.';
+    return '<article class="tobe-alternative" data-opportunity-index="'+index+'">'+
+      '<div class="tobe-opportunity-option-title"><strong>'+esc(candidate.title)+'</strong>'+
+        (decision?'<span class="tobe-opportunity-decision">'+
+          esc(discarded?'Descartada':decision.action==='APPLY'?'Aplicada':'Conservada')+'</span>':'')+
+      '</div>'+
+      '<p class="tobe-opportunity-action">'+esc(summary)+'</p>'+
+      (candidate.expectedOutcome?'<p class="tobe-opportunity-outcome"><b>Resultado esperado:</b> '+
         esc(candidate.expectedOutcome)+'</p>':'')+
-      '<p><b>Compatibilidad:</b> '+esc(compatible)+'</p>'+
-      '<div class="tobe-alternative-conditions"><b>Condiciones antes de aplicar:</b>'+
-        '<ul>'+conditionRows.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul></div>'+
-      '<p><b>Fuentes del AS-IS:</b> '+esc(tobeHumanReadableRefs(e,candidate.sourceRefs))+'</p>'+
-      (Object.keys(candidate.constraints||{}).length?
-        '<details class="tobe-alternative-constraints"><summary>Restricciones del estudio aplicables a esta alternativa ('+
-        Object.keys(candidate.constraints).length+')</summary><ul>'+
-        Object.entries(candidate.constraints).map(([code,raw])=>{
-          const field=typeof schema!=='undefined'?(schema?.fields||[]).find(f=>String(f.Field_ID)===code):null;
-          const label=field?.Pregunta_o_etiqueta_ES||'Condición del cuestionario';
-          const rawValue=field&&typeof formatContextValue==='function'?formatContextValue(field,raw):
-            (Array.isArray(raw)?raw.join(', '):String(raw??''));
-          return '<li><b>'+esc(label)+' ('+esc(code)+'):</b> '+esc(String(rawValue||'No consta'))+'</li>';
-        }).join('')+'</ul></details>':'')+
-      (decision?'<p class="tobe-alternative-state"><b>Decisión guardada:</b> '+
-        (discarded?'Alternativa descartada; diseño conservado.':
-        decision.action==='APPLY'?'Aplicada al borrador TO-BE.':'Conservar el diseño actual.')+'</p>':'')+
+      (decision?'<p class="tobe-alternative-state">Decisión guardada; consulta el historial del diseño futuro.</p>':'')+
       (discarded?'<div class="tobe-alternative-actions">'+
         '<button type="button" class="btn btn-outline btn-small" data-tobe-alternative-restore="'+index+
           '" data-tobe-alternative-source="'+attr(item.sourceStepId)+'">Recuperar alternativa</button>'+
@@ -2626,26 +2645,63 @@ function tobeAlternativesHtml(e,p,item){
         '<button type="button" class="btn btn-outline btn-small" data-tobe-alternative="'+index+
           '" data-tobe-alternative-source="'+attr(item.sourceStepId)+'">Revisar y previsualizar</button>'+
         '<button type="button" class="btn btn-outline btn-small" data-tobe-alternative-discard="'+index+
-          '" data-tobe-alternative-source="'+attr(item.sourceStepId)+'">Descartar alternativa</button>'+
-      '</div>':'')+'</article>';
-  }).join('');
-  return '<div class="tobe-alternatives" aria-label="Alternativas deterministas de la actividad">'+
-    '<h4>Alternativas calculadas mediante reglas</h4>'+
-    '<p class="tobe-alternatives-help">Parten del AS-IS, las fricciones, los riesgos y las restricciones registrados. '+
-      'No requieren Ollama y no se aplican sin tu confirmación.</p>'+
+          '" data-tobe-alternative-source="'+attr(item.sourceStepId)+'">Descartar</button>'+
+      '</div>':'')+
+      '<details class="tobe-opportunity-evidence"><summary>Condiciones, compatibilidad y fuentes</summary>'+
+        '<p><b>Compatibilidad:</b> '+esc(group)+'</p>'+
+        (conditions.length?'<ul>'+conditions.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':
+          '<p>Sin condiciones adicionales de esta alternativa.</p>')+
+        '<p><b>Referencias del AS-IS:</b> '+esc(tobeHumanReadableRefs(e,candidate.sourceRefs))+'</p>'+
+        (Object.keys(candidate.constraints||{}).length?
+          '<details class="tobe-alternative-constraints"><summary>Restricciones aplicables ('+
+          Object.keys(candidate.constraints).length+')</summary><ul>'+
+          Object.entries(candidate.constraints).map(([code,raw])=>{
+            const field=typeof schema!=='undefined'?(schema?.fields||[]).find(f=>String(f.Field_ID)===code):null,
+              label=field?.Pregunta_o_etiqueta_ES||'Condición del cuestionario',
+              val=field&&typeof formatContextValue==='function'?formatContextValue(field,raw):
+                (Array.isArray(raw)?raw.join(', '):String(raw??''));
+            return '<li><b>'+esc(label)+' ('+esc(code)+'):</b> '+esc(String(val||'No consta'))+'</li>';
+          }).join('')+'</ul></details>':'')+
+      '</details></article>';
+  };
+  const opportunity=g=>{
+    const count=g.items.length,globalCount=g.source.id?sourceGlobalCount(g.source):0,
+      description=[count?count+' '+(count===1?'alternativa por reglas':'alternativas por reglas'):'',
+        globalCount?globalCount+' '+(globalCount===1?'referencia del análisis global':'referencias del análisis global'):''
+      ].filter(Boolean).join(' · ');
+    return '<section class="tobe-opportunity" data-tobe-opportunity-source="'+attr(g.source.id)+'">'+
+      '<div class="tobe-opportunity-heading"><div><span class="tobe-opportunity-kind">'+esc(g.source.kind)+
+      (g.source.id?' ('+esc(g.source.id)+')':'')+'</span><h5>'+esc(g.source.label)+'</h5></div>'+
+      (description?'<small>'+esc(description)+'</small>':'')+'</div>'+
+      (count?'<div class="tobe-opportunity-options">'+g.items.map(card).join('')+'</div>':
+        '<p class="tobe-opportunity-empty">No hay alternativa específica calculada para este hallazgo. '+
+        'El consultor puede diseñarla directamente en 03.3; las propuestas IA permanecen disponibles abajo.</p>')+
+      '</section>';
+  };
+  return '<div class="tobe-alternatives" aria-label="Oportunidades y alternativas de esta actividad">'+
+    '<div class="tobe-alternatives-intro"><h4>Oportunidades vinculadas al AS-IS</h4>'+
+      '<p>Las alternativas por reglas se agrupan por fricción o riesgo confirmado. '+
+      'Las fuentes IA se consultan sin duplicar la decisión del consultor.</p></div>'+
     '<div class="tobe-alternatives-actions">'+
       '<button type="button" class="btn btn-outline" data-tobe-load-alternatives="'+attr(item.sourceStepId)+
-        '">Generar alternativas con reglas</button>'+
+      '">'+(data?'Actualizar alternativas por reglas':'Generar alternativas con reglas')+'</button>'+
       (canUndo?'<button type="button" class="btn btn-outline" data-tobe-undo-alternative="1">'+
-        'Deshacer última intervención aplicada</button>':'')+'</div>'+
+      'Deshacer última intervención aplicada</button>':'')+'</div>'+
     (error?'<p class="notice warn" role="alert"><b>Análisis no completado:</b> '+esc(error)+
       ' Se conserva el diseño.</p>':'')+
-    (!data&&!error?'<p class="field-help">Todavía no se han calculado alternativas para esta actividad. '+
-      'Ejecuta el análisis por reglas para ver las opciones y qué información requiere cada una.</p>':'')+
-    (data&&!rows&&!error?'<p class="field-help">No se han obtenido alternativas utilizables. '+
-      'Puedes conservar el diseño o revisarlo manualmente.</p>':'')+
-    rows+'</div>';
+    (!data&&!error?'<p class="field-help">El motor de reglas aún no se ha ejecutado para esta actividad. '+
+      'Las fricciones y riesgos confirmados se muestran mientras tanto.</p>':'')+
+    (!staleIssue&&data&&!data.candidates?.length?'<p class="field-help">El motor no ha generado '+
+      'alternativas aplicables. Puedes configurar el TO-BE manualmente.</p>':'')+
+    '<div class="tobe-opportunity-groups">'+[...groups.values()].map(opportunity).join('')+
+      (other.items.length?opportunity(other):'')+
+      (keep.items.length?'<details class="tobe-opportunity-keep"><summary>Alternativa de conservación del AS-IS</summary>'+
+        opportunity(keep)+'</details>':'')+
+      (!sources.length&&!other.items.length&&!keep.items.length?
+        '<p class="field-help">No constan fricciones o riesgos directamente vinculados a esta actividad.</p>':'')+
+    '</div></div>';
 }
+// [AUNEA-FE-PG11-OPPORTUNITY-WORKBENCH-364] END
 // [AUNEA-FE-PG11-PREVIEW-COMPARISON-358] START
 // PURPOSE: Read-only comparison from one TO-BE owner and projected state.
 // SOURCE: Simulator CANONICAL PG11; DEC-050/055/056.
