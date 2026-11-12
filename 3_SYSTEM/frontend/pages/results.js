@@ -3062,6 +3062,7 @@ function tobeDecisionSourceSummaryHtml(e,p,item){
     '<p>El TO-BE tiene un único editor. Las decisiones confirmadas se registran en el historial reversible; '+
     'las sugerencias no cambian el proceso automáticamente.</p></div></details>';
 }
+// [AUNEA-FE-PG11-UNIFIED-DECISIONS-357] END
 function tobeInspectorHtml(e,p){
   const item=tobeSelectedItem(e,p),editable=tobeEditable(p);
   if(!item)return '<div class="notice warn">No hay actividades TO-BE vinculadas al AS-IS.</div>';
