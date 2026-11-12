@@ -2672,8 +2672,14 @@ function tobeOpenAlternative(e,candidate){
   const dialog=document.createElement('dialog');dialog.id='tobeAlternativeDialog';dialog.className='tobe-alternative-dialog';
   const readonly={...result.projected,status:'REVIEWED'};
   dialog.innerHTML='<h2>Vista previa · '+esc(candidate.title)+'</h2>'+
-    '<p>El borrador guardado conserva su estado hasta confirmar. Los nodos afectados aparecen resaltados.</p>'+
-    '<p>'+esc((candidate.conditions||[]).join(' '))+'</p>'+
+    '<p class="tobe-preview-intro">Estás comparando el TO-BE guardado con una propuesta temporal. '+
+      'Nada de lo que ves aquí modifica el borrador hasta que confirmes.</p>'+
+    (candidate.targetFinding?'<p><b>Hallazgo relacionado:</b> '+esc(candidate.targetFinding)+'</p>':'')+
+    (candidate.changeSummary?'<p><b>Intervención:</b> '+esc(candidate.changeSummary)+'</p>':'')+
+    (candidate.expectedOutcome?'<p><b>Resultado operativo esperado:</b> '+esc(candidate.expectedOutcome)+'</p>':'')+
+    '<div id="tobeAlternativeChanges">'+tobeAlternativeChangesHtml(live,__auneaTobePreview)+'</div>'+
+    '<details class="tobe-preview-conditions"><summary>Condiciones que deben verificarse</summary><ul>'+
+      (candidate.conditions||[]).map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul></details>'+
     '<details class="tobe-subdetails"><summary>Modificar propuesta antes de confirmar</summary><div class="form-grid">'+
       Object.entries(candidate.fields||{}).filter(([key])=>['problemResolved','automationAi','humanSupervision','controlsRisk'].includes(key)).map(([key,value])=>
         tobeField({id:'PREVIEW',transformation:candidate.fields.transformation},key,
@@ -2682,12 +2688,17 @@ function tobeOpenAlternative(e,candidate){
       (candidate.operations||[]).map((operation,index)=>['stepName','problemResolved','controlsRisk'].filter(key=>operation.item?.[key]).map(key=>
         '<div class="field"><label>'+esc(({stepName:'Nombre de la actividad añadida',problemResolved:'Motivo del control',controlsRisk:'Funcionamiento del control'})[key])+
         '</label><textarea data-tobe-preview-operation="'+index+'" data-tobe-preview-key="'+key+'">'+esc(operation.item[key])+'</textarea></div>').join('')).join('')+
-    '</div><p class="field-help">Los cambios sólo se incorporan al borrador al confirmar. Los catálogos se ajustan en 03.3.</p></details>'+
-    '<div id="tobeAlternativeMap">'+tobeCanvasHtml(live,readonly).replaceAll('data-tobe-select=','data-tobe-preview-node=')+'</div>'+
-    '<ul>'+result.pending.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>'+
-    '<div class="tobe-preview-findings">'+tobeCoherencePanel(live,result.projected).replaceAll('data-tobe-select=','data-tobe-preview-node=')+'</div>'+
-    '<button type="button" class="btn btn-primary" data-tobe-confirm-alternative="1"'+(result.pending.length?' disabled':'')+'>Confirmar propuesta</button> '+
-    '<button type="button" class="btn btn-outline" data-tobe-cancel-alternative="1">Cancelar</button>';
+    '</div><p class="field-help">Edita únicamente los valores propuestos: el borrador sigue intacto. '+
+      'Al editar, se recalculan diferencias, rutas y comprobaciones. Los catálogos se configuran en 03.3.</p></details>'+
+    '<section class="tobe-preview-map"><h3>Mapa TO-BE proyectado</h3>'+
+      '<p class="tobe-muted">Las actividades modificadas se resaltan. Las conexiones anteriores y nuevas aparecen en la comparación.</p>'+
+      '<div id="tobeAlternativeMap">'+tobeCanvasHtml(live,readonly).replaceAll('data-tobe-select=','data-tobe-preview-node=')+'</div></section>'+
+    '<div id="tobeAlternativePending">'+tobeAlternativePendingHtml(__auneaTobePreview)+'</div>'+
+    '<div id="tobeAlternativeFindings" class="tobe-preview-findings">'+
+      tobeCoherencePanel(live,result.projected).replaceAll('data-tobe-select=','data-tobe-preview-node=')+'</div>'+
+    '<div class="tobe-preview-actions"><button type="button" class="btn btn-primary" data-tobe-confirm-alternative="1"'+
+      (result.pending.length?' disabled':'')+'>Confirmar intervención</button> '+
+    '<button type="button" class="btn btn-outline" data-tobe-cancel-alternative="1">Cancelar sin cambios</button></div>';
   document.body.appendChild(dialog);dialog.showModal();
   dialog.addEventListener('input',event=>{
     const input=event.target,preview=__auneaTobePreview;
@@ -2700,9 +2711,20 @@ function tobeOpenAlternative(e,candidate){
     try{
       const next=tobeProjectAlternative(currentEng(),latestTobe(currentEng()),preview.candidate);
       preview.projected=next.projected;preview.pending=next.pending;
-      dialog.querySelector('#tobeAlternativeMap').innerHTML=tobeCanvasHtml(currentEng(),{...next.projected,status:'REVIEWED'}).replaceAll('data-tobe-select=','data-tobe-preview-node=');
+      dialog.querySelector('#tobeAlternativeChanges').innerHTML=
+        tobeAlternativeChangesHtml(currentEng(),preview);
+      dialog.querySelector('#tobeAlternativePending').innerHTML=tobeAlternativePendingHtml(preview);
+      dialog.querySelector('#tobeAlternativeFindings').innerHTML=
+        tobeCoherencePanel(currentEng(),next.projected).replaceAll('data-tobe-select=','data-tobe-preview-node=');
+      dialog.querySelector('#tobeAlternativeMap').innerHTML=
+        tobeCanvasHtml(currentEng(),{...next.projected,status:'REVIEWED'}).replaceAll('data-tobe-select=','data-tobe-preview-node=');
+      const changedNodes=new Set([String(preview.candidate.sourceId),
+        ...tobeAddedSteps(next.projected).filter(x=>!tobeAddedSteps(latestTobe(currentEng())).some(y=>y.id===x.id)).map(x=>x.id)]);
+      dialog.querySelectorAll('#tobeAlternativeMap [data-graph-node]').forEach(node=>{
+        node.classList.toggle('tobe-preview-changed',changedNodes.has(node.dataset.graphNode));
+      });
       dialog.querySelector('[data-tobe-confirm-alternative]').disabled=!!next.pending.length;
-      requestAnimationFrame(()=>drawProcessGraph(dialog.querySelector('.process-graph-board')));
+      requestAnimationFrame(()=>drawProcessGraph(dialog.querySelector('#tobeAlternativeMap .process-graph-board')));
     }catch(error){dialog.querySelector('[data-tobe-confirm-alternative]').disabled=true;toast(error.message);}
   });
   const changed=new Set([String(candidate.sourceId),...tobeAddedSteps(result.projected).filter(x=>!tobeAddedSteps(p).some(y=>x.id===y.id)).map(x=>x.id)]);
