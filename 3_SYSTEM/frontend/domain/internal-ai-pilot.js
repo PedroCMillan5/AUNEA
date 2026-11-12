@@ -246,13 +246,15 @@ function internalAiGlobalRefresh(e){
   const target=document.getElementById('tobeGlobalAnalysis');
   if(target&&typeof tobeGlobalOverviewHtml==='function')
     target.outerHTML=tobeGlobalOverviewHtml(currentEng(),latestTobe(currentEng()));
-  // Refresh ONLY the read-only global context for the selected activity.
-  // Never replace the inspector or its unsaved consultant-owned form controls.
-  const linked=document.getElementById('tobeGlobalLinkedStep');
-  if(linked&&typeof tobeGlobalLinkedStepHtml==='function'&&
+  // Rebuild only the read-only opportunity workbench, not the consultant's
+  // input controls. Current global IA sources are grouped by confirmed links;
+  // unlinked narrative is never attached to a made-up friction or risk.
+  const opportunities=document.getElementById('tobeOpportunityWorkbench');
+  if(opportunities&&typeof tobeAlternativesHtml==='function'&&
      typeof tobeSelectedItem==='function'){
     const live=currentEng(),draft=latestTobe(live);
-    linked.innerHTML=tobeGlobalLinkedStepHtml(live,draft,tobeSelectedItem(live,draft));
+    const html=tobeAlternativesHtml(live,draft,tobeSelectedItem(live,draft));
+    if(html)opportunities.outerHTML=html;
   }
   internalAiUpdateProgress(e);
   internalAiSyncButtons(e);
