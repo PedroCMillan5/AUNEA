@@ -19,7 +19,34 @@ for(const name of ['invoice','logistics'])test('PG11 source → backend rules �
  let p=ctx.latestTobe(e);p.flow=ctx.tobeFlowOwner(e,p);const immutable=JSON.stringify(snapshot);
  const preview=candidate=>({engagementId:e.id,version:p.version,before:ctx.tobeDesignState(p),candidate,...ctx.tobeProjectAlternative(e,p,candidate)});
  const structural=result.candidates.find(c=>c.operations.length),before=JSON.stringify(p),temporary=preview(structural);
- assert.equal(JSON.stringify(p),before,'selection and cancellation leave live DRAFT intact');
+ ctx.esc=String;ctx.attr=String;
+ assert.match(ctx.tobeAlternativeChangesHtml(e,temporary),/Qué cambiaría si confirmas/);
+ assert.match(ctx.tobeAlternativeChangesHtml(e,temporary),/TO-BE guardado/);
+ assert.match(ctx.tobeAlternativeChangesHtml(e,temporary),/TO-BE propuesto/);
+ assert.match(ctx.tobeAlternativeChangesHtml(e,temporary),/Actividad incorporada al mapa/);
+ assert.match(ctx.tobeAlternativeChangesHtml(e,temporary),/Ruta normal/);
+ assert.match(ctx.tobeAlternativePendingHtml(temporary),/Sin bloqueos estructurales/);
+ const originalRoute=p.flow.routes.P1.normal;
+ p.flow.routes.P1.normal='__PENDING__';
+ const pendingCandidate=JSON.parse(JSON.stringify(structural));
+ const unresolved=preview(pendingCandidate);
+ assert.ok(unresolved.pending.some(x=>/destino de la ruta normal/.test(x)));
+ pendingCandidate.operations[0].normalDestination='P2';
+ const resolved=preview(pendingCandidate);
+ assert.equal(resolved.projected.flow.routes.P1.normal.startsWith('TOBE-ADD-'),true);
+ assert.equal(resolved.projected.flow.routes[resolved.projected.flow.routes.P1.normal].normal,'P2');
+ p.flow.routes.P1.normal=originalRoute;
+ const noChange=preview({id:'KEEP: P1',sourceId:'P1',provenance:'RULES',
+  fields:{},operations:[],sourceRefs:['P1'],title:'Mantener sin cambios'});
+ assert.match(ctx.tobeAlternativeChangesHtml(e,noChange),/No hay diferencias materiales/);
+ assert.equal(ctx.tobeCommitAlternative(e,noChange),true,'explicit unchanged decision is persisted');
+ assert.equal(p.aiDraft.applyHistory.at(-1).action,'KEEP');
+ ctx.tobeUndoAlternative(e);
+ assert.ok(p.aiDraft.applyHistory.at(-1).undoneAt,'unchanged decision is reversible');
+ const beforeChanges=JSON.stringify(ctx.tobeDesignState(p));
+ assert.equal(JSON.stringify(ctx.tobeDesignState(p)),beforeChanges);
+ assert.equal(JSON.stringify(ctx.tobeDesignState(p)),JSON.stringify(temporary.before),
+  'a kept option did not change items or routes');
  assert.equal(temporary.projected.flow.routes.P1.normal.startsWith('TOBE-ADD-'),true);
  assert.equal(temporary.projected.flow.routes.P2.normal,'P3');assert.equal(temporary.projected.flow.routes.P2.exception,'P4');
  fail=true;assert.throws(()=>ctx.tobeCommitAlternative(e,temporary),/No se guardó/);assert.equal(JSON.stringify(p),before);fail=false;
