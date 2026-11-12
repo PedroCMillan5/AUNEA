@@ -512,4 +512,43 @@ test('PG11 links opportunities by confirmed finding across different business do
  assert.doesNotMatch(fn,/factura|proveedor|logística|compra|reclutamiento/i,
   'finding grouping must not branch on a specific industry');
 });
+test('PG11 displays global IA once, by direct finding or transversal provenance',()=>{
+ const start=src.indexOf('function tobeOpportunitySources(e,p,item){');
+ const end=src.indexOf('// [AUNEA-FE-PG11-OPPORTUNITY-WORKBENCH-364] END',start);
+ assert.ok(start>=0&&end>start);
+ const snapshot={frictions:[{id:'F-HR',client_label:'Documentación incompleta',affected_steps:['P1']}],
+   risks:[{risk_id:'R-HR',description:'Control de permisos',step_ids:['P1']}]};
+ const linked=[
+   {index:1,recommendation:{objective:'Oportunidad documental',how:'Comprobar expediente',
+     source_refs:['P1','F-HR'],review:{reason:'Validar responsable'}}},
+   {index:2,recommendation:{objective:'Oportunidad transversal',how:'Revisar ambas señales',
+     source_refs:['F-HR','R-HR'],review:{reason:'Pendiente'}}},
+   {index:3,recommendation:{objective:'Oportunidad sin hallazgo específico',
+     how:'Mejorar operación',source_refs:['P1'],review:{reason:'Revisar'}}
+   }
+ ];
+ const candidates=[{id:'STATUS-F-HR:P1',title:'Verificar información',
+   sourceRefs:['P1','F-HR'],fields:{transformation:'Se modifica'},
+   changeSummary:'Comprobar información',expectedOutcome:'Entrega validada',
+   conditions:[],combination:'COMBINABLE'}];
+ const sandbox={tobeEditable:()=>true,tobeAlternativeKey:()=> 'test',
+   __auneaTobeAlternatives:new Map([['test',{candidates}]]),
+   __auneaTobeAlternativeErrors:new Map(),
+   tobeRulesResultIssue:()=>'',tobeProposalSnapshot:()=>snapshot,
+   tobeGlobalLinksForStep:()=>linked,
+   tobeHumanReadableRefs:(_,refs)=>refs.join(' · '),
+   esc:String,attr:String};
+ vm.createContext(sandbox);vm.runInContext(src.slice(start,end),sandbox);
+ const html=sandbox.tobeAlternativesHtml({}, {aiDraft:{applyHistory:[]}},
+   {sourceStepId:'P1',isAddition:false});
+ for(const label of linked.map(x=>x.recommendation.objective))
+   assert.equal(html.split(label).length-1,1,'each sourced global opportunity appears only once: '+label);
+ assert.match(html,/data-tobe-opportunity-source="F-HR"/);
+ assert.match(html,/data-tobe-opportunity-source="R-HR"/);
+ assert.match(html,/Oportunidades relacionadas con varios hallazgos/);
+ assert.match(html,/Otras intervenciones para esta actividad/);
+ assert.match(html,/data-tobe-alternative="0"/,'rule candidates retain the existing preview action');
+ assert.match(html,/Análisis global de solo lectura/,'global narrative is not independently approved');
+ assert.doesNotMatch(html,/factura|proveedor/i,'rendering stays industry independent');
+});
 // [AUNEA-UAT-PG11-GUIDED-267] END
