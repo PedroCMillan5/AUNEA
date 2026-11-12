@@ -51,7 +51,7 @@ for(const name of ['invoice','logistics'])test('PG11 source â†’ backend rules â†
  assert.match(ctx.tobeAlternativeDecisionIssue(unjustified),/Justifica/);
  assert.throws(()=>ctx.tobeCommitAlternative(e,unjustified),/Justifica/);
  const unrecognized={...noChange,keepFindingsAcknowledged:false};
- assert.throws(()=>ctx.tobeCommitAlternative(e,unrecognized),/hallazgos/);
+ assert.throws(()=>ctx.tobeCommitAlternative(e,unrecognized),/fricciones y riesgos asociados/);
  assert.equal(ctx.tobeCommitAlternative(e,noChange),true,'explicit unchanged decision is persisted');
  assert.equal(p.aiDraft.applyHistory.at(-1).action,'KEEP');
  assert.equal(p.aiDraft.applyHistory.at(-1).conditionsAcknowledged,true);
