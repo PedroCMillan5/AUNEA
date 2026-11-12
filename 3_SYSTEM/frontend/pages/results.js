@@ -4649,7 +4649,9 @@ function registerInternalWorkPages(){
           restore?button.dataset.tobeAlternativeRestore:button.dataset.tobeAlternative);
       const candidate=data.candidates[index];if(!candidate)throw Error('La alternativa ya no está disponible.');
       if(restore){
-        const draft=latestTobe(e),before=tobeClone(draft),
+        if(!saveTobeFromDom(e)||!saveState('Guardar edición antes de recuperar'))
+          throw Error('No se guardó tu edición. La alternativa sigue descartada.');
+        const draft=latestTobe(currentEng()),before=tobeClone(draft),
           entry=(draft.aiDraft?.applyHistory||[]).findLast(x=>
             String(x.candidateId)===String(candidate.id)&&x.action==='DISCARD'&&!x.undoneAt);
         if(!entry)throw Error('No existe un descarte vigente que recuperar.');
