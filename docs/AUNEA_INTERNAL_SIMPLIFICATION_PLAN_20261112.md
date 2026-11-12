@@ -88,3 +88,10 @@ No declarar simplificación terminada por bajar líneas, cambiar apariencia o pa
 
 ## 9. Registro de ejecución
 - **12/11/2026:** comprobadas fuentes de Drive (Master Index v1.59, Simulator v1.14), reglas de repositorio, rama existente y manifiesto de 44 scripts. Inspección inicial de 12 archivos de frontend y conteo de selectores CSS. Publicación de este plan = inicio documental F0; no se ha modificado runtime, no se ha ejecutado CI ni se ha cerrado F0.
+
+## 10. Ejecución posterior · 12/11/2026
+- `be45b42ce9b4`: se eliminan cinco bloques CSS **idénticos** que aparecían repetidos dentro del mismo contexto, preservando la última declaración vigente. Reducción mecánica: 7 líneas / 469 caracteres. Conteo de llaves equilibrado.
+- Se experimentó con fusionar seis pares de selectores contiguos (`4f434ef830f7`), pero una inspección posterior de los tests detectó aserciones que dependen de selectores literales. Se **revirtió íntegramente** esa fusión mediante `670d0f9e73b2`. El estado final conserva únicamente la reducción segura anterior.
+- QA realizado en este entorno: lectura comparativa y análisis estático de CSS, verificación de duplicación y estructura. **No** se ha ejecutado `npm test`, QA backend ni UAT visual: el repositorio privado no está clonable en el contenedor y no se dispone de un runner remoto con ejecución manual accesible aquí. Los cambios permanecen REVIEW y requieren gate automatizado antes de cierre.
+- F0: inventario inicial y dependencias canónicas contrastadas; inventario global exhaustivo y matriz de selectores usados aún pendientes. F1: iniciada reducción conservadora, NO cerrada. F2–F6: pendientes.
+- Riesgo técnico encontrado: tests como `tests/design-system-common.test.cjs` dependen de cadenas exactas de selectores CSS. Unificar selectores puede preservar el CSS computado y aun así romper estos tests. Antes de mayor refactorizar, migrar cuidadosamente esas aserciones a equivalencia de CSS si el contrato lo permite.
