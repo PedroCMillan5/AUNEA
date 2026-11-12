@@ -2609,6 +2609,8 @@ function tobeAlternativesHtml(e,p,item){
     history=p.aiDraft?.applyHistory||[],
     canUndo=history.some(x=>x.transaction&&!x.undoneAt),
     sources=tobeOpportunitySources(e,p,item),
+    keepWasExpanded=typeof document!=='undefined'?
+      !!document.querySelector('#tobeStepAdvice .tobe-opportunity-keep')?.open:false,
     linked=typeof tobeGlobalLinksForStep==='function'?
       tobeGlobalLinksForStep(e,p,item):[],
     sourceMap=new Map(sources.map(x=>[x.id,x])),
@@ -2700,7 +2702,7 @@ function tobeAlternativesHtml(e,p,item){
       'alternativas aplicables. Puedes configurar el TO-BE manualmente.</p>':'')+
     '<div class="tobe-opportunity-groups">'+[...groups.values()].map(opportunity).join('')+
       (other.items.length?opportunity(other):'')+
-      (keep.items.length?'<details class="tobe-opportunity-keep"><summary>Alternativa de conservación del AS-IS</summary>'+
+      (keep.items.length?'<details class="tobe-opportunity-keep"'+(keepWasExpanded?' open':'')+'><summary>Alternativa de conservación del AS-IS</summary>'+
         opportunity(keep)+'</details>':'')+
       (!sources.length&&!other.items.length&&!keep.items.length?
         '<p class="field-help">No constan fricciones o riesgos directamente vinculados a esta actividad.</p>':'')+
@@ -3075,6 +3077,9 @@ function tobeInspectorHtml(e,p){
     !!document.querySelector('#tobeStepOrigin > details')?.open:false;
   const aiDetailWasExpanded=typeof document!=='undefined'?
     !!document.getElementById('tobeAiTechnicalDetails')?.open:false;
+  const previousOpportunitySection=typeof document!=='undefined'?
+    document.querySelector('#tobeStepAdvice > .tobe-subdetails'):null;
+  const opportunitiesWereExpanded=!previousOpportunitySection||!!previousOpportunitySection.open;
   const hasCurrentAi=typeof internalAiSavedDraft==='function'&&
     internalAiSavedDraft(e)?.items?.some(x=>String(x.source_step_id)===String(item.sourceStepId));
   const pendingKey=editable&&!item.isAddition&&typeof internalAiPilotKey==='function'?
@@ -3111,7 +3116,7 @@ function tobeInspectorHtml(e,p){
     // [AUNEA-FE-PG11-ONE-WORKBENCH-365] START
     // View-only sources and one action path: no duplicate AI approval.
     '<section class="tobe-advice" id="tobeStepAdvice" aria-label="Oportunidades y fuentes">'+
-      '<details class="tobe-subdetails" open><summary class="aunea-ui-section-title tobe-stage-heading">03.2 · Revisar oportunidades de mejora</summary>'+
+      '<details class="tobe-subdetails"'+(opportunitiesWereExpanded?' open':'')+'><summary class="aunea-ui-section-title tobe-stage-heading">03.2 · Revisar oportunidades de mejora</summary>'+
       '<div class="tobe-stage-body">'+
         '<p class="tobe-stage-intro">Estudia las oportunidades vinculadas al AS-IS y selecciona una intervención para comparar sus efectos. '+
           'El diseño se modifica únicamente en 03.3 o al confirmar una vista previa.</p>'+
