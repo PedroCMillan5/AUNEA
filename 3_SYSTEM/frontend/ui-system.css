@@ -4351,6 +4351,59 @@ details.tobe-ai-operational-context:not([open])>.tobe-ai-operational-body{
   .tobe-alternative-dialog .tobe-preview-route-editor{padding:10px}
   .tobe-alternative-dialog .tobe-preview-comparison table{min-width:570px}
 }
+/* [AUNEA-FE-PG11-PREVIEW-DECISION-STYLE-362] START — scoped consultation controls */
+.tobe-alternative-dialog .tobe-preview-scoped-checks,
+.tobe-alternative-dialog .tobe-preview-consultant{
+  margin:14px 0 0;padding:14px 16px;background:#fff;
+  border:1px solid var(--system-line);border-radius:var(--radius-sm);
+  font-family:Inter,"Segoe UI",Arial,sans-serif;line-height:1.55;
+  font-size:var(--font-small);
+}
+.tobe-alternative-dialog .tobe-preview-scoped-checks>h3,
+.tobe-alternative-dialog .tobe-preview-consultant>h3{
+  font-family:Sora,"Segoe UI",Arial,sans-serif;color:var(--system);
+  font-size:var(--font-small);margin:0 0 10px;
+}
+.tobe-alternative-dialog .tobe-preview-scoped-checks ul{
+  margin:7px 0;padding-left:21px;display:grid;gap:8px;
+}
+.tobe-alternative-dialog .tobe-preview-other-checks{
+  margin-top:12px;border:1px solid var(--system-line);
+  padding:11px 13px;border-radius:var(--radius-sm);
+  background:var(--canvas,#f8faf9);
+}
+.tobe-alternative-dialog .tobe-preview-other-checks>summary{
+  cursor:pointer;color:var(--system);font-weight:700;
+}
+.tobe-alternative-dialog .tobe-preview-consultant{display:grid;gap:11px}
+.tobe-alternative-dialog .tobe-preview-consultant p{margin:0}
+.tobe-alternative-dialog .tobe-preview-confirmation{
+  display:flex;align-items:flex-start;gap:10px;line-height:1.5;
+  border:1px solid var(--system-line);background:var(--canvas,#f8faf9);
+  border-radius:var(--radius-sm);padding:11px 12px;cursor:pointer;
+}
+.tobe-alternative-dialog .tobe-preview-confirmation input[type="checkbox"]{
+  width:18px;height:18px;flex:0 0 18px;margin:1px 0 0;
+  accent-color:var(--system);
+}
+.tobe-alternative-dialog [data-tobe-preview-note]{
+  width:100%;min-height:86px;padding:10px 12px;
+  border:1px solid var(--system-line);border-radius:var(--radius-sm);
+  font:inherit;line-height:1.5;background:#fff;
+}
+.tobe-alternative-dialog .tobe-preview-decision-status{
+  color:var(--system);font-weight:650;
+}
+.tobe-alternative-dialog .tobe-preview-map>summary{
+  font-family:Sora,"Segoe UI",Arial,sans-serif;color:var(--system);
+  font-size:var(--font-small);font-weight:750;cursor:pointer;
+}
+.tobe-alternative-dialog .tobe-preview-map>summary+ p{margin-top:12px}
+@media(max-width:680px){
+  .tobe-alternative-dialog .tobe-preview-scoped-checks,
+  .tobe-alternative-dialog .tobe-preview-consultant{padding:11px}
+}
+/* [AUNEA-FE-PG11-PREVIEW-DECISION-STYLE-362] END */
 /* [AUNEA-FE-PG11-PREVIEW-COMPARISON-STYLE-359] END */
 /* [AUNEA-FE-PG11-PREVIEW-STYLE-334] END */
 
