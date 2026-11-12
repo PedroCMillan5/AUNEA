@@ -127,8 +127,9 @@ test('diagnostic work disclosures share the same structural owner',()=>{
   for(const kind of common){
     assert.ok(results.includes('<details class="'+kind+' aunea-ui-work-disclosure"'),
       'The '+kind+' disclosure must reuse its shared work structure');
-    assert.doesNotMatch(local,new RegExp('\\\\.'+kind+'(?=\\\\s*[,>{:]|\\\\[open\\\\])'),
-      'Visual dimensions for '+kind+' must not live in page CSS');
+    for(const suffix of ['{',',','>summary','[open]'])
+      assert.ok(!local.includes('.'+kind+suffix),
+        'Visual geometry for '+kind+' must not be duplicated in page CSS');
   }
   assert.match(local,/\.pg10-critical-points \.asis-opportunity-list\{margin-top:14px\}/,
     'Section-specific content positioning remains owned by PG10');
