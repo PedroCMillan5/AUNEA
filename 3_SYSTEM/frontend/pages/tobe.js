@@ -1908,7 +1908,7 @@ function tobeContextOverviewHtml(e,p){
   const diagnostic=diagnosticOutputFreshness(e).label;
   const status={DRAFT:'Borrador',REVIEWED:'Revisado',APPROVED_FOR_CLIENT:'Aprobado para cliente',
     PUBLISHED:'Publicado'}[p?.status]||'Pendiente';
-  return '<section class="tobe-context" aria-label="Información general del proceso">'+
+  return '<section class="tobe-context aunea-ui-work-surface" aria-label="Información general del proceso">'+
     '<div class="tobe-context-head"><div><span class="tobe-eyebrow">01 · INFORMACIÓN GENERAL</span>'+
     '<h2 class="aunea-ui-section-title">'+esc(process)+'</h2><p class="aunea-ui-section-caption">'+esc(company)+
     ' · Origen AS-IS confirmado v'+esc(snap?.version||p?.sourceSnapshotVersion||'—')+
@@ -2221,7 +2221,7 @@ function tobeGlobalOverviewHtml(e,p){
   };
   const globallyShared=tobeGlobalUniversalQuestions(opportunities);
   const state=working?'Analizando por fuentes…':result&&!analysisFinished?'Análisis parcial · Revisar':legacy?'Propuesta incompleta · Reanalizar':result?'Propuesta guardada · Sin aprobar':notCurrent?'Análisis anterior no vigente':'Pendiente de análisis';
-  return '<section class="tobe-global-analysis" id="tobeGlobalAnalysis" aria-label="Análisis global IA del proceso">'+
+  return '<section class="tobe-global-analysis aunea-ui-work-surface" id="tobeGlobalAnalysis" aria-label="Análisis global IA del proceso">'+
     '<header class="tobe-global-analysis-head"><div><span class="tobe-eyebrow">02 · ANÁLISIS IA GLOBAL DEL PROCESO</span>'+
       '<h2 class="aunea-ui-section-title">Objetivos y recomendaciones de mejora</h2>'+
       '<p>Primero, qué mejorar en el conjunto del proceso y cómo conseguirlo. Las decisiones sobre cada actividad se realizan después.</p></div>'+
@@ -2513,7 +2513,7 @@ function tobePage(){
       '</section>'+
       tobeContextOverviewHtml(e,p)+
       tobeGlobalOverviewHtml(e,p)+
-      '<header class="tobe-review-section-head"><span class="tobe-eyebrow">03 · DISEÑO TO-BE</span>'+ 
+      '<header class="tobe-review-section-head aunea-ui-work-surface"><span class="tobe-eyebrow">03 · DISEÑO TO-BE</span>'+ 
         '<h2 class="aunea-ui-section-title">Revisión por actividad</h2>'+ 
         '<p class="aunea-ui-section-caption">Revisa el origen, la recomendación IA, los campos y las conexiones del proceso futuro.</p></header>'+
       tobeGuidedNavHtml(e,p)+
