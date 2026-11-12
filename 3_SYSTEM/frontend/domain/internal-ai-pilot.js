@@ -1144,7 +1144,8 @@ async function generateTobeBySteps(e,key,snap,availability,fresh=false,selectedS
     consultant_design:Object.fromEntries(draft.items.map(item=>[String(item.sourceStepId),{
       transformation:item.transformation,problemResolved:item.problemResolved,
       automationAi:item.automationAi,humanSupervision:item.humanSupervision,
-      decision:tobeHumanReviewRecord(e,draft)?.decisions?.[String(item.sourceStepId)]||null
+      decision:(typeof tobeHumanReviewRecord==='function'?
+        tobeHumanReviewRecord(e,draft)?.decisions?.[String(item.sourceStepId)]:null)||null
     }]))
   };
   const failures=[];
