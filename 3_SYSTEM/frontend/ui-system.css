@@ -4908,3 +4908,133 @@ details.tobe-ai-operational-context:not([open])>.tobe-ai-operational-body{
   font-weight:700;
 }
 /* [AUNEA-FE-PG11-OPPORTUNITY-VIEW-366] END */
+
+/* [AUNEA-FE-PG11-GLOBAL-COMPACT-367] START
+   Compact PG11.02 presentation derived solely from existing server-owned
+   global IA outputs. All original recommendation details stay in the DOM.
+   Scoped styling, no new business fields or state persistence. */
+.tobe-global-analysis{
+  gap:10px;
+}
+.tobe-global-monitoring{
+  border:1px solid var(--system-line);
+  border-radius:var(--radius-sm);
+  background:#fff;
+  min-width:0;
+}
+.tobe-global-monitoring>summary{
+  cursor:pointer;
+  padding:11px 14px;
+  color:var(--system);
+  font:700 var(--font-small)/1.45 Inter,"Segoe UI",Arial,sans-serif;
+  background:var(--canvas,#f8faf9);
+}
+.tobe-global-monitoring[open]>summary{border-bottom:1px solid var(--system-line)}
+.tobe-global-monitoring-body{
+  padding:12px 14px;
+  display:grid;
+  gap:10px;
+}
+.tobe-global-monitoring-body>.tobe-global-universal-checks{
+  margin:0;
+}
+.tobe-global-opportunities{gap:8px}
+.tobe-global-opportunity{
+  display:block;
+  padding:0;
+  gap:0;
+  overflow:hidden;
+}
+.tobe-global-opportunity-detail{
+  display:block;
+  width:100%;
+  min-width:0;
+}
+.tobe-global-opportunity-detail>summary{
+  display:flex;
+  gap:12px;
+  align-items:center;
+  min-height:64px;
+  padding:11px 14px;
+  cursor:pointer;
+  list-style:none;
+}
+.tobe-global-opportunity-detail>summary::-webkit-details-marker{display:none}
+.tobe-global-opportunity-detail>summary::after{
+  content:"▸";
+  font:700 14px/1 Inter,"Segoe UI",Arial,sans-serif;
+  color:var(--system);
+  margin-left:2px;
+  flex:0 0 auto;
+}
+.tobe-global-opportunity-detail[open]>summary{
+  background:var(--system-soft);
+  border-bottom:1px solid var(--system-line);
+}
+.tobe-global-opportunity-detail[open]>summary::after{content:"▾"}
+.tobe-global-opportunity-detail>summary .tobe-global-number{
+  flex:0 0 27px;
+}
+.tobe-global-opportunity-summary .tobe-global-goal-block{
+  flex:1;
+  min-width:0;
+  display:grid;
+  gap:3px;
+  margin:0;
+}
+.tobe-global-opportunity-summary .tobe-global-item-label{
+  margin:0;
+  font-size:var(--font-caption,12px);
+}
+.tobe-global-opportunity-summary .tobe-global-goal{
+  font-family:Sora,"Segoe UI",Arial,sans-serif;
+  font-size:var(--font-small,13px);
+  font-weight:700;
+  line-height:1.45;
+  letter-spacing:normal;
+  margin:0;
+}
+.tobe-global-opportunity-summary .tobe-global-goal-meta{
+  font-size:var(--font-caption,12px);
+  color:var(--muted);
+  margin:0;
+}
+.tobe-global-brief-indicator{
+  flex:0 1 auto;
+  padding:4px 8px;
+  border:1px solid var(--system-line);
+  border-radius:var(--radius-pill);
+  color:var(--system);
+  background:var(--canvas,#f8faf9);
+  font:600 var(--font-caption,12px)/1.35 Inter,"Segoe UI",Arial,sans-serif;
+  white-space:normal;
+  text-align:right;
+}
+.tobe-global-opportunity-detail>.tobe-global-opportunity-body{
+  padding:13px 16px 15px;
+  min-width:0;
+}
+.tobe-global-opportunity-detail>summary:focus-visible,
+.tobe-global-monitoring>summary:focus-visible{
+  outline:2px solid var(--system);
+  outline-offset:-2px;
+}
+@media(max-width:720px){
+  .tobe-global-opportunity-detail>summary{
+    padding:10px 12px;
+    gap:9px;
+    align-items:flex-start;
+    flex-wrap:wrap;
+  }
+  .tobe-global-opportunity-summary .tobe-global-goal-block{
+    flex:1 1 calc(100% - 56px);
+  }
+  .tobe-global-brief-indicator{
+    margin-left:36px;
+    max-width:calc(100% - 68px);
+    text-align:left;
+  }
+  .tobe-global-opportunity-detail>.tobe-global-opportunity-body{padding:12px}
+  .tobe-global-monitoring-body{padding:10px 12px}
+}
+/* [AUNEA-FE-PG11-GLOBAL-COMPACT-367] END */
