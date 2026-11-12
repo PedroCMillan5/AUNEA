@@ -2298,6 +2298,8 @@ function tobeOptimizationPanelHtml(e,p,item){
     names=steps=>steps.map(x=>x.step_name).join(' · ')||'Sin actividad conectada en esta dirección',
     review=results.filter(x=>x.severity==='REVIEW').length,
     block=tobeFlowIntegrity(e,p),
+    prior=typeof document!=='undefined'?document.querySelector('#tobeStepOptimization .tobe-optimization-details'):null,
+    open=!!block||!!prior?.open,
     rows=results.map(x=>'<li class="tobe-optimization-finding" data-optimization-code="'+attr(x.code)+'">'+
       '<span class="tobe-optimization-severity">'+
         (x.severity==='REVIEW'?'Revisar':'Comprobar')+'</span>'+
@@ -2308,21 +2310,24 @@ function tobeOptimizationPanelHtml(e,p,item){
     ' id="tobeStepOptimization" aria-label="Comprobación de dependencias del flujo">'+
     '<div class="tobe-design-group-head"><span class="tobe-design-group-number">04</span>'+
     '<div><h4>Impacto del cambio sobre el flujo</h4>'+
-    '<p>Revisión determinista de la coherencia con el mapa futuro; no modifica conexiones y no usa IA.</p></div></div>'+
+    '<p>Revisión de rutas y dependencias; no modifica conexiones ni acepta propuestas.</p></div></div>'+
     '<div class="tobe-optimization-body">'+
       '<div class="tobe-optimization-connections">'+
         '<div><b>Pasos anteriores</b><span>'+esc(names(predecessors))+'</span></div>'+
         '<div><b>Actividad revisada</b><span>'+esc(tobeFlowItemName(item))+'</span></div>'+
         '<div><b>Pasos siguientes</b><span>'+esc(names(successors))+'</span></div>'+
       '</div>'+
-      (block?'<p class="notice warn"><b>Integridad del flujo:</b> '+esc(block)+'</p>':'')+
-      (results.length?'<div class="tobe-optimization-summary"><b>'+results.length+
-        ' observaciones detectadas</b> · '+review+' requieren contrastar un dato o decisión</div>'+
-        '<ul class="tobe-optimization-findings">'+rows+'</ul>':
-        '<p class="tobe-optimization-empty">No se han identificado incompatibilidades evidentes entre los datos declarados de este paso y sus conexiones. Esto no acredita por sí solo que el proceso esté optimizado.</p>')+
-      '<p class="field-help"><b>Cómo actuar:</b> «Revisar» no significa error confirmado; contrasta la observación con los datos y restricciones del estudio. '+
-      'Dos actividades con la misma categoría documental no tienen necesariamente el mismo archivo. '+
-      'El botón guarda tus modificaciones y recalcula estas observaciones. No acepta propuestas, no cambia rutas y no modifica el AS-IS.</p>'+
+      '<details class="tobe-optimization-details"'+(open?' open':'')+'>'+
+        '<summary>'+(block?'Bloqueo de integridad detectado':
+          results.length?results.length+' '+(results.length===1?'observación para revisar':'observaciones para revisar'):
+          'Sin incompatibilidades evidentes · Ver comprobaciones')+'</summary>'+
+        (block?'<p class="notice warn"><b>Integridad del flujo:</b> '+esc(block)+'</p>':'')+
+        (results.length?'<p class="tobe-optimization-summary">'+review+' observaciones requieren contrastar un dato o decisión.</p>'+
+          '<ul class="tobe-optimization-findings">'+rows+'</ul>':
+          '<p class="tobe-optimization-empty">No se han identificado incompatibilidades evidentes entre los datos declarados de este paso y sus conexiones.</p>')+
+        '<p class="field-help">Las comprobaciones no acreditan por sí solas viabilidad ni ahorro. '+
+          'Dos actividades con una categoría documental común no necesariamente comparten el mismo archivo.</p>'+
+      '</details>'+
       (tobeEditable(p)?'<button type="button" class="btn btn-outline" data-tobe-recheck-optimization="1">'+
         'Guardar y actualizar comprobaciones</button>':'')+
     '</div></section>';
