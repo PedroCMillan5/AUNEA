@@ -2614,19 +2614,26 @@ function tobeAlternativesHtml(e,p,item){
     linked=typeof tobeGlobalLinksForStep==='function'?
       tobeGlobalLinksForStep(e,p,item):[],
     sourceMap=new Map(sources.map(x=>[x.id,x])),
-    groups=new Map(sources.map(x=>[x.id,{source:x,items:[]}])),
-    other={source:{kind:'Contexto',label:'Otras intervenciones para esta actividad',id:''},items:[]},
-    keep={source:{kind:'Decisión',label:'Conservar el funcionamiento original',id:''},items:[]};
+    groups=new Map(sources.map(x=>[x.id,{source:x,items:[],global:[]}])),
+    other={source:{kind:'Contexto',label:'Otras intervenciones para esta actividad',id:''},items:[],global:[]},
+    cross={source:{kind:'Transversal',label:'Oportunidades relacionadas con varios hallazgos',id:''},items:[],global:[]},
+    keep={source:{kind:'Decisión',label:'Conservar el funcionamiento original',id:''},items:[],global:[]};
   (staleIssue?[]:data?.candidates||[]).forEach((candidate,index)=>{
     const refs=(candidate.sourceRefs||[]).map(String).filter(x=>x!==String(item.sourceStepId)),
       group=String(candidate.id||'').startsWith('KEEP:')?keep:
         (groups.get(refs.find(x=>sourceMap.has(x)))||other);
     group.items.push({candidate,index});
   });
-  const sourceGlobalCount=src=>linked.filter(({recommendation:r})=>{
-    const refs=[...(r.source_refs||[]),...(r.related||[]).flatMap(x=>x.source_refs||[])].map(String);
-    return refs.includes(src.id);
-  }).length;
+  // A global finding is shown once. If it cites several findings, it belongs
+  // in a cross-cutting group; step-only advice is not assigned to an invented issue.
+  linked.forEach(entry=>{
+    const r=entry.recommendation||{},
+      refs=[...(r.source_refs||[]),...(r.related||[]).flatMap(x=>x.source_refs||[])].map(String),
+      matches=sources.filter(x=>refs.includes(x.id));
+    const target=matches.length===1?groups.get(matches[0].id):
+      matches.length>1?cross:other;
+    target.global.push(entry);
+  });
   const card=({candidate,index})=>{
     const decision=history.findLast(x=>x.candidateId===candidate.id&&!x.undoneAt),
       discarded=decision?.action==='DISCARD',
@@ -2671,8 +2678,20 @@ function tobeAlternativesHtml(e,p,item){
           }).join('')+'</ul></details>':'')+
       '</details></article>';
   };
+  const globalCard=({recommendation:r,index})=>{
+    const ref=[...(r.source_refs||[]),...(r.related||[]).flatMap(x=>x.source_refs||[])];
+    return '<details class="tobe-opportunity-global"><summary>IA global · '+esc(r.objective||'Propuesta relacionada')+'</summary>'+
+      '<div class="tobe-opportunity-global-body">'+
+        '<p><b>Intervención planteada:</b> '+esc(r.how||'Sin propuesta operativa completa')+'</p>'+
+        (r.alternative?.how?'<p><b>Alternativa IA:</b> '+esc(r.alternative.how)+'</p>':'')+
+        '<p><b>Viabilidad:</b> '+esc(r.review?.reason||'Pendiente de contraste')+'</p>'+
+        '<p><b>Fuentes:</b> '+esc(tobeHumanReadableRefs(e,ref))+'</p>'+
+        '<p class="field-help">Análisis global de solo lectura. No aplica campos ni modifica el borrador; '+
+        'el diseño se configura en 03.3.</p>'+
+      '</div></details>';
+  };
   const opportunity=g=>{
-    const count=g.items.length,globalCount=g.source.id?sourceGlobalCount(g.source):0,
+    const count=g.items.length,globalCount=g.global.length,
       description=[count?count+' '+(count===1?'alternativa por reglas':'alternativas por reglas'):'',
         globalCount?globalCount+' '+(globalCount===1?'referencia del análisis global':'referencias del análisis global'):''
       ].filter(Boolean).join(' · ');
@@ -2681,8 +2700,9 @@ function tobeAlternativesHtml(e,p,item){
       (g.source.id?' ('+esc(g.source.id)+')':'')+'</span><h5>'+esc(g.source.label)+'</h5></div>'+
       (description?'<small>'+esc(description)+'</small>':'')+'</div>'+
       (count?'<div class="tobe-opportunity-options">'+g.items.map(card).join('')+'</div>':
-        '<p class="tobe-opportunity-empty">No hay alternativa específica calculada para este hallazgo. '+
-        'El consultor puede diseñarla directamente en 03.3; las propuestas IA permanecen disponibles abajo.</p>')+
+        '<p class="tobe-opportunity-empty">No hay alternativa específica calculada por reglas para este hallazgo. '+
+        'Puedes configurar el TO-BE manualmente.</p>')+
+      (globalCount?'<div class="tobe-opportunity-global-list">'+g.global.map(globalCard).join('')+'</div>':'')+
       '</section>';
   };
   return '<div class="tobe-alternatives" aria-label="Oportunidades y alternativas de esta actividad">'+
@@ -2701,10 +2721,11 @@ function tobeAlternativesHtml(e,p,item){
     (!staleIssue&&data&&!data.candidates?.length?'<p class="field-help">El motor no ha generado '+
       'alternativas aplicables. Puedes configurar el TO-BE manualmente.</p>':'')+
     '<div class="tobe-opportunity-groups">'+[...groups.values()].map(opportunity).join('')+
-      (other.items.length?opportunity(other):'')+
+      (cross.global.length?opportunity(cross):'')+
+      (other.items.length||other.global.length?opportunity(other):'')+
       (keep.items.length?'<details class="tobe-opportunity-keep"'+(keepWasExpanded?' open':'')+'><summary>Alternativa de conservación del AS-IS</summary>'+
         opportunity(keep)+'</details>':'')+
-      (!sources.length&&!other.items.length&&!keep.items.length?
+      (!sources.length&&!other.items.length&&!other.global.length&&!cross.global.length&&!keep.items.length?
         '<p class="field-help">No constan fricciones o riesgos directamente vinculados a esta actividad.</p>':'')+
     '</div></div>';
 }
@@ -3134,7 +3155,6 @@ function tobeInspectorHtml(e,p){
             '<span class="tobe-muted">Reanálisis independiente; no modifica el TO-BE automáticamente.</span></div>':'')+
           '<p id="tobeStepAiProgress" role="status" aria-live="polite" class="tobe-muted">Estado del análisis individual: '+(hasCurrentAi?'propuesta disponible':'sin propuesta consolidada')+'.</p>'+
           (typeof internalAiProgressHtml==='function'?internalAiProgressHtml(e,'steps'):'')+
-          '<div id="tobeGlobalLinkedStep">'+tobeGlobalLinkedStepHtml(e,p,item)+'</div>'+
           '<div id="tobeAiRecommendation">'+tobeAiAdviceHtml(e,item,false)+'</div>'+
           (!item.isAddition&&Array.isArray(sourceStep?.outputs)&&
             sourceStep.outputs.some(value=>String(value)==='RECORD')?
