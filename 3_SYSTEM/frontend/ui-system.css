@@ -2742,6 +2742,39 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
   .tobe-human-review-actions{flex-direction:column}
   .tobe-human-review-actions>.btn{width:100%}
 }
+/* 03.2 uses the same white review surface and shared typography as 03.1. */
+#tobeStepAdvice .tobe-human-review{
+  background:#fff;border:0;padding:3px 0 0;
+  font-family:Inter,"Segoe UI",Arial,sans-serif;
+}
+#tobeStepAdvice .tobe-human-review h4{
+  font-family:Sora,"Segoe UI",Arial,sans-serif;
+  font-size:var(--font-small);
+}
+#tobeStepAdvice .tobe-ai-review-method{
+  margin:0;color:var(--muted);font-size:var(--font-small);line-height:1.5;
+}
+#tobeStepAdvice .tobe-ai-confirmed-facts{
+  padding:10px 12px;border:1px solid var(--system-line);
+  border-left:3px solid var(--system);
+  border-radius:var(--radius-sm);
+  background:#fff;color:var(--ink);font-size:var(--font-small);line-height:1.55;
+}
+#tobeStepAdvice .tobe-ai-quality-issues{display:grid;gap:8px;font-size:var(--font-small)}
+#tobeStepAdvice .tobe-ai-quality-issues ul{
+  padding:0;margin:0;list-style:none;display:grid;gap:8px;
+}
+#tobeStepAdvice .tobe-ai-quality-issues li{
+  padding:10px 12px;border:1px solid var(--system-line);
+  border-radius:var(--radius-sm);background:#fff;line-height:1.5;
+  overflow-wrap:anywhere;
+}
+#tobeStepAdvice .tobe-ai-quality-issues li span{
+  display:block;margin:5px 0 0;color:var(--muted);
+}
+#tobeStepAdvice .tobe-ai-accept-explanation{
+  margin:0;font-size:var(--font-small);line-height:1.5;
+}
 /* [AUNEA-FE-PG11-HUMAN-UX-228] END */
 
 /* [AUNEA-FE-PG11-FLOW-STYLE-232] START — versioned TO-BE routes and added-step control.
