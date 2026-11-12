@@ -1109,7 +1109,7 @@ async function main(){
   const selectedGlobal=await page.evaluate(()=>({
     source:__auneaTobeSelection.stepId,
     expected:String(latestTobe(currentEng()).items[0].sourceStepId),
-    inspector:document.querySelector('#tobeGlobalLinkedStep')?.textContent||''
+    inspector:document.querySelector('#tobeOpportunityWorkbench')?.textContent||''
   }));
   assert.equal(selectedGlobal.source,selectedGlobal.expected);
   assert.match(selectedGlobal.inspector,/Evitar duplicar los datos de recepción/);
