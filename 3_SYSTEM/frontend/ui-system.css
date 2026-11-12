@@ -2847,17 +2847,117 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 }
 /* [AUNEA-FE-PG11-MAP-PRIMARY-STYLE-242] END */
 
-/* [AUNEA-FE-PG11-ORIGINAL-FACTS-STYLE-244] START — AS-IS source facts within existing inspector. */
-.tobe-original-facts{display:grid;gap:10px;min-width:0;width:100%}
-.tobe-original-facts dl{margin:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
-.tobe-original-facts dl>div{min-width:0;border:1px solid var(--system-line);
-  border-radius:var(--radius-sm);background:#fff;padding:11px 12px}
+/* [AUNEA-FE-PG11-ORIGINAL-FACTS-STYLE-244] START — unified PG11 read-only AS-IS.
+   SOURCE: Simulator CANONICAL PG11, DEC-050/056, existing AUNEA System tokens.
+   INPUTS: read-only original facts and linked confirmed frictions/risks.
+   OUTPUTS: a grouped responsive inspector; no state, calculations or persistence.
+   CHANGE RISK: LOW (scoped exclusively to PG11 step origin). */
+.tobe-workspace[data-tobe-mode="guided"] .tobe-inspector #tobeStepOrigin{
+  display:block;min-width:0;margin:0;padding:0;overflow:hidden;
+  border:1px solid var(--system-line);border-radius:var(--radius-md);
+  background:var(--surface,#fff);box-shadow:none;
+}
+.tobe-inspector #tobeStepOrigin>.tobe-subdetails{
+  display:block;min-width:0;margin:0;padding:0;
+  border:0;border-radius:inherit;background:transparent;
+}
+.tobe-inspector #tobeStepOrigin>.tobe-subdetails>summary{
+  display:flex;align-items:center;flex-wrap:wrap;gap:9px 13px;
+  padding:14px 16px;margin:0;
+  background:var(--system-soft);cursor:pointer;
+  font-family:inherit;font-weight:700;
+}
+.tobe-inspector #tobeStepOrigin>.tobe-subdetails>summary::before{
+  content:"▸";color:var(--system);font-size:var(--font-small);
+  flex:0 0 auto;
+}
+.tobe-inspector #tobeStepOrigin>.tobe-subdetails[open]>summary::before{
+  content:"▾";
+}
+.tobe-inspector #tobeStepOrigin>.tobe-subdetails[open]>summary{
+  border-bottom:1px solid var(--system-line);
+}
+.tobe-inspector #tobeStepOrigin .tobe-origin-header-status{
+  display:inline-flex;align-items:center;margin-left:auto;
+  border:1px solid var(--system-line);border-radius:var(--radius-pill);
+  background:var(--surface,#fff);padding:4px 10px;
+  color:var(--muted);font-size:var(--font-caption);
+  font-weight:600;line-height:1.45;
+}
+.tobe-original-facts{
+  display:grid;gap:15px;min-width:0;width:100%;
+  padding:15px 16px 16px;box-sizing:border-box;
+}
+#tobeStepOrigin .tobe-original-facts .tobe-origin-provenance{
+  margin:0!important;color:var(--muted);
+  font-size:var(--font-small);line-height:1.5;
+}
+.tobe-origin-fact-group{display:grid;gap:9px;min-width:0}
+#tobeStepOrigin .tobe-origin-fact-group h4,
+#tobeStepOrigin .tobe-origin-issues h4{
+  margin:0;color:var(--system);font-size:var(--font-small);
+  font-weight:700;line-height:1.45;
+}
+.tobe-original-facts dl{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;margin:0;min-width:0;
+}
+.tobe-original-facts dl>div{
+  min-width:0;padding:12px 13px;
+  border:1px solid var(--system-line);
+  border-radius:var(--radius-sm);background:var(--canvas,#f8faf9);
+}
 .tobe-original-facts dt{font-size:var(--font-caption);font-weight:750;line-height:1.5;color:var(--system)}
 .tobe-original-facts dd{margin:5px 0 0;font-size:var(--font-small);line-height:1.55;
   color:var(--ink);overflow-wrap:anywhere}
 .tobe-original-facts .tobe-muted{margin:0}
-@media(max-width:1000px){.tobe-original-facts dl{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:600px){.tobe-original-facts dl{grid-template-columns:1fr}}
+#tobeStepOrigin .tobe-origin-issues{
+  display:grid;gap:10px;min-width:0;
+  padding:14px 16px 16px;border-top:1px solid var(--system-line);
+  background:var(--surface,#fff);
+}
+#tobeStepOrigin .tobe-origin-issues>.tobe-muted{
+  margin:0!important;line-height:1.5;
+}
+#tobeStepOrigin .tobe-source-list{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;min-width:0;padding:0;margin:0;list-style:none;
+}
+#tobeStepOrigin .tobe-origin-issue{
+  display:grid;align-content:start;gap:7px;min-width:0;
+  padding:11px 13px;border:1px solid var(--system-line);
+  border-radius:var(--radius-sm);background:var(--canvas,#f8faf9);
+  font-size:var(--font-small);line-height:1.5;
+}
+#tobeStepOrigin .tobe-origin-issue-head{
+  display:flex;flex-wrap:wrap;gap:4px 7px;align-items:baseline;
+  overflow-wrap:anywhere;
+}
+#tobeStepOrigin .tobe-origin-issue-head b{
+  color:var(--system);font-weight:750;
+}
+#tobeStepOrigin .tobe-origin-issue p{
+  margin:0!important;color:var(--ink);
+  font-size:var(--font-small);line-height:1.5;overflow-wrap:anywhere;
+}
+@media(max-width:1050px){
+  .tobe-original-facts dl{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:700px){
+  .tobe-workspace[data-tobe-mode="guided"] .tobe-inspector #tobeStepOrigin{
+    border-radius:var(--radius-sm);
+  }
+  .tobe-inspector #tobeStepOrigin>.tobe-subdetails>summary{padding:12px}
+  .tobe-inspector #tobeStepOrigin .tobe-origin-header-status{
+    margin-left:0;
+  }
+  .tobe-original-facts{padding:12px;gap:12px}
+  #tobeStepOrigin .tobe-origin-issues{padding:12px}
+  #tobeStepOrigin .tobe-source-list{grid-template-columns:1fr}
+}
+@media(max-width:570px){
+  .tobe-original-facts dl{grid-template-columns:1fr}
+}
 /* [AUNEA-FE-PG11-ORIGINAL-FACTS-STYLE-244] END */
 
 // [AUNEA-FE-PG11-FREE-CANVAS-STYLE-249] START — version-owned movable TO-BE nodes.
