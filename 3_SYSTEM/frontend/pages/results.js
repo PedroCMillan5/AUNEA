@@ -625,7 +625,7 @@ function pg10ReviewHtml(e,official,analysis,miss,unresolved,freshness,recommenda
     '<p>'+esc(pending)+' No son errores de captura ni equivalen a hallazgos confirmados; condicionan la recomendación y la edición del TO-BE, no la consulta del diagnóstico.</p>'+
     '<p class="field-help">Para corregir un hallazgo, modifica únicamente su fuente en el AS-IS y vuelve a calcular. No hay una segunda aprobación ni publicación automática de resultados.</p>'+
     (!official?'<p class="field-help">La vista TO-BE preliminar solo permite explorar problemas y posibles vías de intervención. No crea ni aprueba el proceso futuro, y no calcula ahorros.</p>':'')+
-    (official?'<details class="pg10-decision-trace"><summary>Consultar decisiones utilizadas por el resultado oficial</summary>'+diagnosisEngineDecisionTraceHtml(e)+'</details>':'')+
+    (official?'<details class="pg10-decision-trace aunea-ui-work-disclosure"><summary>Consultar decisiones utilizadas por el resultado oficial</summary>'+diagnosisEngineDecisionTraceHtml(e)+'</details>':'')+
     '<div class="pg10-review-actions">'+main+next+'</div>'+readiness+audit+'</div>';
 }
 function resultsPage(){
@@ -654,13 +654,13 @@ function resultsPage(){
     '<div class="card metric"><small>Entradas económicas</small><strong>'+econ.length+'</strong><span>Registros, no ahorro estimado</span></div>'+
     '<div class="card metric"><small>'+(analyzed?'Hallazgos confirmados':'Estado del análisis')+'</small><strong>'+(analyzed?confirmedCount: 'Pendiente')+
       '</strong><span>'+(data?.status==='INPUT_GAPS'?'Revisar fuentes y relaciones':official?'Resultado oficial vigente':analyzed?'AS-IS analizado':'Análisis sin calcular')+'</span></div></div>'+
-    '<details class="pg10-stage-nav"><summary>Consultar las etapas del Trabajo Interno</summary>'+workbenchContinuityHtml(e)+'</details>';
+    '<details class="pg10-stage-nav aunea-ui-work-disclosure"><summary>Consultar las etapas del Trabajo Interno</summary>'+workbenchContinuityHtml(e)+'</details>';
   const reference='<div class="grid g3 diagnosis-reference-grid">'+
     '<div class="notice diagnosis-reference-card"><b>Duración end-to-end actual</b><div class="diagnosis-reference-value">'+esc(asisSourceBoundary(record,'DF026'))+'</div><p class="diagnosis-reference-note">Duración declarada; conciliación independiente.</p></div>'+
     '<div class="notice diagnosis-reference-card"><b>SLA del servicio</b><div class="diagnosis-reference-value">'+esc(asisSourceBoundary(record,'DF025'))+'</div><p class="diagnosis-reference-note">Compromiso de servicio, no objetivo de reducción.</p></div>'+
     '<div class="notice diagnosis-reference-card"><b>Objetivos del negocio</b><div class="diagnosis-reference-value">'+esc(normalizeArray(record.answers?.DF086).map(x=>labelFrom('OS_FUTURE_OUTCOME',x)||x).join(' · ')||'No declarados')+'</div><p class="diagnosis-reference-note">Sin tiempo futuro supuesto.</p></div></div>';
   const map=diagnosisReadonlyMap(e,record)+
-    '<details class="pg10-critical-points"><summary>Consultar fichas y evidencias de los puntos críticos</summary>'+asisPointCardsHtml(record)+'</details>';
+    '<details class="pg10-critical-points aunea-ui-work-disclosure"><summary>Consultar fichas y evidencias de los puntos críticos</summary>'+asisPointCardsHtml(record)+'</details>';
   const coverage=asisCoverageHtml(e,official?{status:'ANALYZED',input_coverage:official.input_coverage}:asis);
   const diagnostic=official
     ?'<div class="notice good">Resultados vinculados al snapshot confirmado. La solución técnica se evalúa en las páginas posteriores.</div>'+
