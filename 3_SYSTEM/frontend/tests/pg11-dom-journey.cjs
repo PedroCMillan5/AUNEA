@@ -80,8 +80,31 @@ for(const kind of ['invoice','logistics']){
   assert.equal(run('JSON.stringify(confirmedSnapshot(currentEng()))'),immutable);
   w.document.querySelector('[data-tobe-undo-alternative]').click();
   assert.equal(run('tobeFutureSteps(currentEng(),latestTobe(currentEng())).length'),4);
+  const keepCard=[...w.document.querySelectorAll('.tobe-alternative')]
+    .find(x=>x.textContent.includes('Mantener la actividad sin cambios'));
+  assert.ok(keepCard,'a preserve-AS-IS alternative remains traceable after undo');
+  keepCard.querySelector('[data-tobe-alternative]').click();
+  assert.equal(w.document.querySelector('[data-tobe-confirm-alternative]').disabled,true);
+  const note=w.document.querySelector('[data-tobe-preview-note]');
+  assert.ok(note,'a KEEP choice must require a reason');
+  const conditions=w.document.querySelector('[data-tobe-preview-ack]');
+  const findings=w.document.querySelector('[data-tobe-preview-keep-ack]');
+  assert.ok(conditions&&findings,'all KEEP consequences must be explicit');
+  conditions.checked=true;conditions.dispatchEvent(new w.Event('change',{bubbles:true}));
+  findings.checked=true;findings.dispatchEvent(new w.Event('change',{bubbles:true}));
+  assert.equal(w.document.querySelector('[data-tobe-confirm-alternative]').disabled,true,
+    'acknowledging the risk is not a substitute for a justification');
+  note.value='Conservar la recepción hasta comprobar con el cliente los hallazgos relacionados.';
+  note.dispatchEvent(new w.Event('input',{bubbles:true}));
+  assert.equal(w.document.querySelector('[data-tobe-confirm-alternative]').disabled,false);
+  w.document.querySelector('[data-tobe-confirm-alternative]').click();
+  const savedKeep=run('latestTobe(currentEng()).aiDraft.applyHistory.at(-1)');
+  assert.match(savedKeep.consultantNote,/Conservar la recepción/);
+  assert.equal(savedKeep.remainingFindingsAcknowledged,true);
+  assert.equal(savedKeep.conditionsAcknowledged,true);
+  assert.equal(run('JSON.stringify(confirmedSnapshot(currentEng()))'),immutable);
   assert.deepEqual(h.errors,[]);
-  console.log('PG11_DOM_'+kind.toUpperCase()+'_PASS — full runtime, HTTP, preview/cancel/confirm/reload/undo, branches and AS-IS preserved');
+  console.log('PG11_DOM_'+kind.toUpperCase()+'_PASS — full runtime, preview/edit, condition gate, documented KEEP, discard/recover, confirm/reload/undo, branches and AS-IS preserved');
  }finally{h.dom.window.close();}
 }})().catch(e=>{console.error(e);process.exitCode=1;});
 // [AUNEA-UAT-PG11-DOM-340] END
