@@ -3040,34 +3040,23 @@ function tobeFutureTimeReviewHtml(item,sourceStep){
 // Single decision surface: sources remain read-only and traceable;
 // only TO-BE owner, existing preview-confirm and KEEP journal mutate draft.
 function tobeDecisionSourceSummaryHtml(e,p,item){
-  if(item.isAddition)return '<p class="tobe-decision-context">Actividad añadida: define su funcionamiento, datos, controles y conexiones en este borrador.</p>';
-  const globalCount=typeof tobeGlobalLinksForStep==='function'?
-    tobeGlobalLinksForStep(e,p,item).length:0,
+  if(item.isAddition)return '<p class="tobe-decision-context">Actividad incorporada al TO-BE; configura sus datos y conexiones utilizando el editor único.</p>';
+  const globalCount=typeof tobeGlobalLinksForStep==='function'?tobeGlobalLinksForStep(e,p,item).length:0,
     ai=typeof internalAiSavedDraft==='function'?internalAiSavedDraft(e):null,
     hasAi=!!ai?.items?.some(x=>String(x.source_step_id)===String(item.sourceStepId)),
     actions=(p.aiDraft?.applyHistory||[]).filter(x=>
-      String(x.sourceStepId)===String(item.sourceStepId)&&!x.undoneAt);
-  const lastByField=new Map();
-  for(const entry of actions){
-    for(const field of entry.fields||[])lastByField.set(field,entry);
-  }
-  const applied=[...lastByField.values()].filter(x=>x.action==='APPLY').length,
-    maintained=[...lastByField.values()].filter(x=>x.action==='KEEP').length;
-  return '<section class="tobe-decision-context" aria-label="Fuentes y decisiones de esta actividad">'+
-    '<h4>Una única configuración TO-BE, con todas las fuentes disponibles</h4>'+
-    '<p><b>Análisis global:</b> '+globalCount+' '+(globalCount===1?'oportunidad relacionada':'oportunidades relacionadas')+
-      ' (consulta en 03.2).</p>'+
-    '<p><b>IA individual:</b> '+(hasAi?'propuesta vinculada':'sin propuesta consolidada')+'.</p>'+
-    '<p><b>Reglas:</b> alternativas deterministas disponibles debajo.</p>'+
-    '<p><b>Decisiones registradas para esta actividad:</b> '+applied+' campos aplicados, '+
-      maintained+' conservados. Las modificaciones manuales se guardan en el TO-BE; '+
-      'los cambios confirmados mediante vista previa quedan en el historial reversible.</p>'+
-    '<p><b>Cómo actuar:</b> utiliza «Revisar y previsualizar» para una alternativa por reglas, '+
-      '«Aplicar IA» junto a un campo compatible, «Mantener» para conservarlo o edita el campo directamente. '+
-      'Cada operación tiene una sola confirmación; la revisión final del TO-BE se hace después de configurar las actividades.</p>'+
-  '</section>';
+      String(x.sourceStepId)===String(item.sourceStepId)&&!x.undoneAt),
+    relevant=actions.filter(x=>x.action==='APPLY'||x.action==='KEEP'),
+    count=relevant.length;
+  return '<details class="tobe-decision-context tobe-decision-context-compact">'+
+    '<summary>Fuentes y decisiones registradas · '+count+' '+(count===1?'decisión':'decisiones')+
+    ' sobre esta actividad</summary><div class="tobe-decision-context-body">'+
+    '<p><b>Análisis global:</b> '+globalCount+' '+(globalCount===1?'oportunidad vinculada':'oportunidades vinculadas')+'.</p>'+
+    '<p><b>IA por actividad:</b> '+(hasAi?'Propuesta guardada y consultable en 03.2.':'Sin propuesta vigente consolidada.')+'</p>'+
+    '<p><b>Reglas:</b> alternativas disponibles en 03.2 tras generar.</p>'+
+    '<p>El TO-BE tiene un único editor. Las decisiones confirmadas se registran en el historial reversible; '+
+    'las sugerencias no cambian el proceso automáticamente.</p></div></details>';
 }
-// [AUNEA-FE-PG11-UNIFIED-DECISIONS-357] END
 function tobeInspectorHtml(e,p){
   const item=tobeSelectedItem(e,p),editable=tobeEditable(p);
   if(!item)return '<div class="notice warn">No hay actividades TO-BE vinculadas al AS-IS.</div>';
