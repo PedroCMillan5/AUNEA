@@ -106,6 +106,9 @@ test('PG11 work surfaces and stages reuse the same opt-in structural primitives'
     assert.ok(new RegExp('class="'+name+'[^"\\n]*aunea-ui-work-stage').test(pg11),'Missing shared stage: '+name);
   assert.doesNotMatch(local,/\.tobe-origin,\.tobe-edit,\.tobe-advice\{display:grid;gap:12px\}/);
   assert.doesNotMatch(local,/\.tobe-context,\.tobe-global-analysis,\.tobe-review-section-head\{[^}]*padding:20px 22px/);
+  // Both structures inherit min-width from their existing shared work primitives.
+  assert.doesNotMatch(local,/\.tobe-origin,\.tobe-edit,\.tobe-advice\{min-width:0\}/);
+  assert.doesNotMatch(local,/\.tobe-context,\.tobe-global-analysis,\.tobe-review-section-head\{min-width:0\}/);
 });
 // [AUNEA-UAT-DESIGN-COMMON-312] END
 
