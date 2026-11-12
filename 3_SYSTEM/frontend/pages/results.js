@@ -1181,7 +1181,7 @@ function tobeSnapshotIssueCards(e,item){
   };
   const frHtml=fr.map(x=>{
     const code=x.id||'',
-      alias=String(code).match(/(F\\d+)$/i)?.[1],
+      alias=String(code).match(/(F\d+)$/i)?.[1],
       signal=String(x.observable_signal||'').trim(),
       readableSignal=alias?signal.replace(new RegExp('^'+alias+'\\s*:\\s*','i'),''):signal;
     return '<li class="tobe-origin-issue">'+
