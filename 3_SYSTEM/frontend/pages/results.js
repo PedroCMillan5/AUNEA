@@ -745,6 +745,36 @@ function nextTobeStatus(p){const i=TOBE_PUBLICATION_STATES.indexOf(p?.status);re
 // SOURCE: Simulator CANONICAL PG11; DEC-034/050/052/055.
 // INPUTS: versioned TO-BE DRAFT and confirmed AS-IS; OUTPUT: missing-field reason.
 // SIDE_EFFECTS: none. Does not score AI quality or approve for client.
+// [AUNEA-FE-PG11-SINGLE-DECISION-356] START
+// The sole final decision is TO-BE DRAFT → REVIEWED. Before that,
+// a change is authorized only by the existing preview-and-confirm transaction
+// or by consultant editing the single owned form. Never copy IA automatically.
+// No new questionnaire field, parallel write owner, or changed AS-IS.
+function tobeActivityDesignIssue(item){
+  const name=String(item?.sourceStepName||item?.stepName||item?.sourceStepId||'actividad');
+  if(!TOBE_TRANSFORMATIONS.includes(item?.transformation))
+    return 'Selecciona la transformación futura de '+name+'.';
+  if(item.transformation!=='Se elimina'&&!String(item.futureActor||'').trim())
+    return 'Indica el responsable futuro de '+name+'.';
+  if(!tobeMeaningfulRationale(item.problemResolved))
+    return 'Explica el motivo del diseño futuro de '+name+'.';
+  const meaningful=v=>!!String(v||'').trim()&&
+    !/^(?:no|n\/a|ninguno|sin definir|pendiente|—)$/i.test(String(v).trim());
+  if(!['Se mantiene','Se elimina'].includes(item.transformation)){
+    if(!meaningful(item.tool)||!meaningful(item.controlsRisk)||
+       ['inputs','outputs'].some(k=>!tobeArtifactValues(item[k]).resolved.length))
+      return 'Completa herramienta, entradas, salidas y controles de '+name+'.';
+  }
+  if(['Se automatiza','Se asiste con IA'].includes(item.transformation)&&
+     (!meaningful(item.automationAi)||!meaningful(item.humanSupervision)))
+    return 'Describe la automatización y la supervisión humana de '+name+'.';
+  if(item.transformation==='Se incorpora control'&&!meaningful(item.controlsRisk))
+    return 'Describe el control y el riesgo que atiende en '+name+'.';
+  if(item.transformation==='Requiere decisión humana'&&!meaningful(item.humanSupervision))
+    return 'Define qué debe decidir la persona responsable en '+name+'.';
+  return null;
+}
+// [AUNEA-FE-PG11-SINGLE-DECISION-356] END
 function tobeReviewReadiness(e,p){
   const snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;
   if(!snap||p?.sourceSnapshotVersion!==snap.version)
@@ -770,55 +800,16 @@ function tobeReviewReadiness(e,p){
         tobeArtifactValues(item[k]).resolved,item._details?.[k])))
       return 'Completa la descripción de «Otro» en las entradas o salidas de '+name+'.';
   }
-  // [AUNEA-FE-PG11-HUMAN-GATE-225] START — a rules-only check is never
-  // equivalent to acceptance. A source-linked consultant must decide each
-  // AI suggestion AND complete the operational design before REVIEWED.
-  const proposed=p?.aiDraft?.proposal||p?.aiDraft?.checkpoint;
-  if(proposed){
-    const human=typeof tobeHumanReviewRecord==='function'?tobeHumanReviewRecord(e,p):null;
-    if(!human)return 'Falta la revisión humana de las propuestas IA de esta versión TO-BE.';
-    const meaningful=v=>!!String(v||'').trim()&&
-      !/^(?:no|n\/a|ninguno|sin definir|pendiente|—)$/i.test(String(v).trim());
-    for(const item of p.items){
-      const sid=String(item.sourceStepId),name=item.sourceStepName||sid;
-      const decision=human.decisions?.[sid];
-      if(!decision||!['ACCEPT','MODIFY','DISCARD'].includes(decision.status)||
-         String(decision.note||'').trim().length<20)
-        return 'Falta aceptar, modificar o descartar con justificación la propuesta de '+name+'.';
-      if(!tobeMeaningfulRationale(item.problemResolved))
-        return 'Completa la justificación del diseño futuro de '+name+' (no basta «NO»).';
-      if(!['Se mantiene','Se elimina'].includes(item.transformation)&&
-         (['tool','controlsRisk'].some(k=>!meaningful(item[k]))||
-          ['inputs','outputs'].some(k=>!tobeArtifactValues(item[k]).resolved.length)))
-        return 'Completa herramienta, datos y controles del diseño futuro de '+name+'.';
-      if(['Se automatiza','Se asiste con IA'].includes(item.transformation)&&
-         (!meaningful(item.automationAi)||!meaningful(item.humanSupervision)))
-        return 'Describe automatización y supervisión humana de '+name+' antes de revisar.';
-      const suggested=(Array.isArray(proposed.items)?proposed.items:[]).find(x=>
-        String(x.source_step_id)===sid);
-      if(decision.status==='ACCEPT'&&suggested?.transformation&&
-         item.transformation!==suggested.transformation)
-        return 'La propuesta IA de '+name+' indica «'+suggested.transformation+
-          '», pero el diseño está en «'+item.transformation+
-          '». Para cambiarla, selecciona «Modificar antes de usar» y justifica.';
-      // [AUNEA-FE-PG11-ACCEPTANCE-GATE-319] START
-      // Source: sealed AS-IS, consultant decisions, IA review protocol;
-      // CANONICAL PG11 / DEC-050/052/055. Input: version-bound proposal.
-      // Output: a review-readiness reason. No automatic TO-BE mutation.
-      // A human-modified design is legitimate; an uncorrected BLOCKING IA
-      // candidate cannot be accepted, irrespective of transformation label.
-      const iaReview=p.aiDraft?.proposal?.review||
-        p.aiDraft?.checkpoint?.review||{};
-      const originalIssues=(iaReview.issues||[]).filter(x=>
-        String(x.step_id)===sid&&x.category==='BLOCKING');
-      const reviewerBlocked=(iaReview.blocking_step_ids||[]).map(String).includes(sid);
-      if(decision.status==='ACCEPT'&&(originalIssues.length||reviewerBlocked))
-        return 'La recomendación IA de '+name+
-          ' presenta bloqueos pendientes. No se puede aceptar como válida; '+
-          'revisa la propuesta o elige «Modificar antes de usar» y justifica tu diseño.';
-      // [AUNEA-FE-PG11-ACCEPTANCE-GATE-319] END
-    }
+  // [AUNEA-FE-PG11-HUMAN-GATE-225] START — SINGLE DECISION OWNER.
+  // No mandatory vote on IA proposals: design is decided only through
+  // versioned TO-BE fields, preview/confirm operations and final REVIEWED gate.
+  // Historical aiDraft.humanReview is retained as evidence, never used as a
+  // prerequisite or as an override of current consultant-owned values.
+  for(const item of p.items){
+    const issue=tobeActivityDesignIssue(item);
+    if(issue)return issue;
   }
+  // [AUNEA-FE-PG11-HUMAN-GATE-225] END
   for(const added of tobeAddedSteps(p)){
     if(!TOBE_TRANSFORMATIONS.includes(added.transformation)||
        ['Se mantiene','Se elimina'].includes(added.transformation))
