@@ -8,6 +8,18 @@ def test_health_and_registry():
     r=c.get('/registry/status').json()
     assert r['version']=='v0.8' and r['tables']>=10 and r['rows']>=80
 
+def test_pg11_alternatives_status_is_current_and_read_only():
+    from aunea_backend.tobe_optimization import PG11_ALTERNATIVES_CONTRACT
+    c=TestClient(app)
+    r=c.get('/v1/tobe/alternatives-status')
+    assert r.status_code==200
+    body=r.json()
+    assert body['engine_contract']==PG11_ALTERNATIVES_CONTRACT
+    assert body['engine_module']=='aunea_backend.tobe_optimization'
+    assert body['engine_file'].endswith('tobe_optimization.py')
+    assert r.headers['cache-control']=='no-store'
+
+
 def test_cors_allows_local_and_codespaces_frontend_origins():
     c=TestClient(app)
     for origin in (
