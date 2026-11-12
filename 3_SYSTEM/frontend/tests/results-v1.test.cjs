@@ -120,3 +120,13 @@ test('PG11 is blocked until a diagnostic output exists for the current confirmed
   ctx.__eng.lastEngineSnapshotVersion=1;
   assert.match(ctx.tobePage(),/Crear borrador desde AS-IS confirmado/);
 });
+
+test('shared disclosure remains available to the legacy result VM',()=>{
+  const ctx=makeCtx();
+  assert.equal(vm.runInContext('typeof auneaWorkDisclosure',ctx),'function');
+  const markup=vm.runInContext(
+    "auneaWorkDisclosure('pg10-stage-nav','Etapas','<p>Contenido</p>')",ctx
+  );
+  assert.equal(markup,
+    '<details class="pg10-stage-nav aunea-ui-work-disclosure"><summary>Etapas</summary><p>Contenido</p></details>');
+});
