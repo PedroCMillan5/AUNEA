@@ -324,6 +324,23 @@ test('PG11 03.1 shows confirmed F2 frequency and DEC-068 time attribution withou
  assert.match(html,/Referencia \(UAT-LIT-R1\)/);
  assert.match(html,/Pérdida de trazabilidad/);
  assert.doesNotMatch(html,/\>F2: 30%/,'do not show repeated free-text friction ID as lead');
+ snapshot.processSteps=[
+  {id:'P1',step_name:'Recibir factura del proveedor',status:'ACTIVE'},
+  {id:'P4',step_name:'Registrar en ERP y archivar',status:'ACTIVE'}
+ ];
+ snapshot.frictions[0].time_attribution.step_id='P4';
+ const other=sandbox.tobeSnapshotIssueCards({},{sourceStepId:'P1'});
+ assert.match(other,/Registrar en ERP y archivar \(P4\)/,'other-step time owner must be named');
+ assert.match(other,/No sumar aquí/);
+ snapshot.frictions[0].time_attribution.step_id='P-REMOVED';
+ const unresolved=sandbox.tobeSnapshotIssueCards({},{sourceStepId:'P1'});
+ assert.match(unresolved,/No se puede identificar una actividad responsable vigente/);
+ assert.doesNotMatch(unresolved,/Se atribuye a otra actividad; no sumar aquí/);
+ snapshot.frictions[0].time_attribution.step_id='';
+ const noOwner=sandbox.tobeSnapshotIssueCards({},{sourceStepId:'P1'});
+ assert.match(noOwner,/sin identificador/);
+ snapshot.frictions[0].time_attribution.step_id='P1';
+ assert.match(sandbox.tobeSnapshotIssueCards({},{sourceStepId:'P1'}),/Responsable: esta actividad/);
  snapshot.frictions[0].time_attribution.mode='INCLUDED';
  const included=sandbox.tobeSnapshotIssueCards({},{sourceStepId:'P1'});
  assert.match(included,/Ya incluido en el tiempo del paso/);
