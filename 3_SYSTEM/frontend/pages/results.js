@@ -2555,7 +2555,7 @@ function tobeAlternativesHtml(e,p,item){
       compatible=candidate.combination==='EXCLUSIVE'?
         'Alternativa de conservación: incompatible con transformar esta misma actividad.':
         String(candidate.combination||'').startsWith('ALTERNATIVE_TO_CONTROL-')?
-        'Ubicación alternativa al control dentro del paso: elige una ubicación, no ambas.':
+        'Control dentro del paso o en actividad independiente: elige una ubicación para este riesgo, no ambas.':
         'Puede combinarse con intervenciones distintas si los campos, controles y rutas no entran en conflicto.';
     return '<article class="tobe-alternative"><b>'+esc(candidate.title)+'</b>'+
       (candidate.targetFinding?'<p><b>Hallazgo que atiende:</b> '+esc(candidate.targetFinding)+'</p>':'')+
