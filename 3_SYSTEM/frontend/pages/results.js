@@ -2430,8 +2430,16 @@ function tobeProjectAlternative(e,p,candidate){
     if(operation.type!=='insertAfter')throw Error('Operación estructural no soportada: requiere edición explícita del mapa.');
     if(!flow)flow=tobeMutableFlow(e,projected);
     const anchor=tobeFlowItem(e,projected,String(operation.sourceId)),route=flow.routes[String(operation.sourceId)];
-    if(!anchor||!route?.normal||route.normal==='__PENDING__'){
-      pending.push('Indica el destino de la ruta normal antes de insertar el control.');continue;
+    if(!anchor){pending.push('La actividad de origen no existe en el TO-BE.');continue;}
+    const routeNormal=route?.normal&&route.normal!=='__PENDING__'?String(route.normal):'',
+      selected=String(operation.normalDestination||''),
+      destination=routeNormal||selected;
+    if(!destination){
+      pending.push('Elige el destino de la ruta normal dentro de esta vista previa antes de insertar el control.');continue;
+    }
+    if(destination===String(operation.sourceId)||
+       (destination!=='__END__'&&!tobeFlowItem(e,projected,destination))){
+      pending.push('El destino seleccionado no pertenece al flujo vigente. Elige una actividad existente.');continue;
     }
     const source=tobeProposalSourceSteps(e,p).find(s=>String(s.id)===String(anchor.sourceStepId));
     if(!source||processDecisionStep(source)){
@@ -2447,7 +2455,7 @@ function tobeProjectAlternative(e,p,candidate){
       futureActor:anchor.futureActor||'',tool:anchor.tool||'',inputs:tobeClone(anchor.outputs||[]),
       outputs:tobeClone(anchor.outputs||[]),automationAi:'',humanSupervision:anchor.futureActor||'',
       controlsRisk:supplied.controlsRisk||'',futureTime:'',futureTimeAssumption:''};
-    flow.addedSteps.push(added);flow.routes[nodeId]={normal:route.normal,exception:''};
+    flow.addedSteps.push(added);flow.routes[nodeId]={normal:destination,exception:''};
     flow.routes[String(operation.sourceId)]={...route,normal:nodeId};
     // New node placement is computed by the existing layout from its explicit routes.
   }
