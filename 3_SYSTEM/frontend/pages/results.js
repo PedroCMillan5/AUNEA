@@ -1126,9 +1126,13 @@ function tobeOriginalStepFacts(e,item){
     ['Espera declarada',source.wait_time===null||source.wait_time===undefined||source.wait_time===''?'':String(source.wait_time)+' min'],
     ['Retrabajo declarado',source.rework_time===null||source.rework_time===undefined||source.rework_time===''?'':String(source.rework_time)+' min']
   ];
-  return '<div class="tobe-original-facts"><dl>'+fields.map(([name,val])=>
-    '<div><dt>'+esc(name)+'</dt><dd>'+esc(val||'No registrado')+'</dd></div>').join('')+
-    '</dl><p class="tobe-muted">Sólo lectura: valores capturados del AS-IS confirmado. No son ahorros ni tiempos futuros.</p></div>';
+  const cards=entries=>'<dl>'+entries.map(([name,val])=>
+    '<div><dt>'+esc(name)+'</dt><dd>'+esc(val||'No registrado')+'</dd></div>').join('')+'</dl>';
+  return '<div class="tobe-original-facts">'+
+    '<p class="tobe-origin-provenance">Sólo lectura: valores capturados del AS-IS confirmado. No son ahorros ni tiempos futuros.</p>'+
+    '<div class="tobe-origin-fact-group"><h4>Actividad actual</h4>'+cards(fields.slice(0,5))+'</div>'+
+    '<div class="tobe-origin-fact-group"><h4>Duraciones declaradas</h4>'+cards(fields.slice(5))+'</div>'+
+    '</div>';
 }
 // [AUNEA-FE-PG11-ORIGINAL-FACTS-243] END
 function tobeSnapshotIssueCards(e,item){
@@ -1136,11 +1140,19 @@ function tobeSnapshotIssueCards(e,item){
     (Array.isArray(x.affected_steps)?x.affected_steps:[]).map(String).includes(id));
   const risks=(snap?.risks||[]).filter(x=>x.status!=='SUPERSEDED'&&
     (Array.isArray(x.step_ids)?x.step_ids:[]).map(String).includes(id));
-  const frHtml=fr.map(x=>'<li><b>Fricción:</b> '+esc(x.client_label||labelFrom('OS_FRICTION_TYPE',x.friction_type)||'Sin etiqueta')+
-    (x.observable_signal?' · '+esc(x.observable_signal):'')+'</li>').join('');
-  const riskHtml=risks.map(x=>'<li><b>Riesgo:</b> '+esc(x.description||x.category||'Sin descripción')+'</li>').join('');
-  return frHtml||riskHtml?'<ul class="tobe-source-list">'+frHtml+riskHtml+'</ul>':
-    '<p class="tobe-muted">No hay fricciones o riesgos vinculados directamente a este paso en el snapshot. Consulta el diagnóstico global antes de justificar una transformación.</p>';
+  const frHtml=fr.map(x=>
+    '<li class="tobe-origin-issue"><div class="tobe-origin-issue-head">'+
+      '<b>Fricción</b><span>'+esc(x.client_label||labelFrom('OS_FRICTION_TYPE',x.friction_type)||'Sin descripción')+
+      (x.id?' ('+esc(x.id)+')':'')+'</span></div>'+
+      (x.observable_signal?'<p>'+esc(x.observable_signal)+'</p>':'')+'</li>').join('');
+  const riskHtml=risks.map(x=>
+    '<li class="tobe-origin-issue"><div class="tobe-origin-issue-head">'+
+      '<b>Riesgo</b><span>'+esc(x.description||x.category||'Sin descripción')+
+      (x.risk_id||x.id?' ('+esc(x.risk_id||x.id)+')':'')+'</span></div></li>').join('');
+  return '<div class="tobe-origin-issues"><h4>Fricciones y riesgos vinculados</h4>'+
+    (frHtml||riskHtml?'<ul class="tobe-source-list">'+frHtml+riskHtml+'</ul>':
+      '<p class="tobe-muted">No hay fricciones ni riesgos vinculados directamente a esta actividad en el AS-IS confirmado. Consulta el diagnóstico global antes de justificar una transformación.</p>')+
+    '</div>';
 }
 // [AUNEA-FE-PG11-AI-REVIEW-DIFF-260] START — display-only comparison.
 const TOBE_AI_REVIEW_FIELDS=[
@@ -2564,7 +2576,9 @@ function tobeInspectorHtml(e,p){
       '<input value="'+attr(item.transformation||'Sin definir')+'" disabled>')+'</div>';
   const supportingInformation=
     '<section class="tobe-origin" id="tobeStepOrigin"><details class="tobe-subdetails"'+
-      (hasCurrentAi?'':' open')+'><summary class="aunea-ui-section-title">03.1 · Entender el AS-IS</summary>'+
+      (hasCurrentAi?'':' open')+'><summary class="aunea-ui-section-title">'+
+        '<span>03.1 · Entender el AS-IS</span>'+
+        '<span class="tobe-origin-header-status">AS-IS confirmado · Solo lectura</span></summary>'+
       tobeOriginalStepFacts(e,item)+tobeSnapshotIssueCards(e,item)+'</details></section>'+
     '<section class="tobe-advice" id="tobeStepAdvice" aria-label="Sugerencia IA para actividad">'+
       '<details class="tobe-subdetails" open><summary class="aunea-ui-section-title">03.2 · Revisar propuestas IA</summary>'+
