@@ -125,3 +125,26 @@ Mayores módulos JS activos (líneas):
 - `7c5a8b350990`: test de regresión añadido a `tests/design-system-common.test.cjs` para comprobar ownership compartido y evitar reintroducir estilos inline en Resultados.
 - **Límite de alcance:** la unificación integral de todas las estructuras del software NO está terminada. Ya existían primitivas compartidas en `styles.css` y `tobe.js` las consumía; este cambio incorpora `results.js` a la misma capa visual, pero no reestructura los grandes módulos ni modifica los estilos históricos de pantallas FROZEN.
 - **QA:** inspección estática y comprobación de reemplazos realizada; test automatizado añadido pero **no ejecutado** en runner. No declarar PASS ni promover a PRODUCTION hasta ejecutar suite y UAT visual. F1/F2 en progreso.
+
+## 13. Consolidación de componentes de Trabajo Interno · 12/11/2026
+**Cambios de código publicados en la misma rama; todavía en REVIEW:**
+- `20bd7df07e30`: el componente visual `.aunea-ui-work-disclosure` pasa a ser propiedad de `styles.css`, con reglas equivalentes para panel, encabezado, expandido y responsive. Uso exclusivamente **opt-in**.
+- `e03f769b9922`, `3d3136c233d5`: Diagnóstico/PG10 reutiliza ese componente en tres bloques (etapas, puntos críticos y trazabilidad de decisiones), y elimina sus copias de apariencia de `ui-system.css`. La regla histórica `.pg10-source-data` se conserva por compatibilidad y se mantiene la colocación específica de contenidos de PG10.
+- `6ae623928995`, `19cf39366d98`: nueva función `auneaWorkDisclosure` en el renderizador transversal; los tres consumidores de PG10 dejan de construir por duplicado el elemento `details/summary`. La función sólo renderiza y escapa encabezados; no introduce eventos, estados ni datos de negocio.
+- `979910b241d5`: eliminadas dos reglas redundantes de `ui-system.css` para seis contenedores de TO-BE (03.1/03.2/03.3 y los tres paneles superiores), porque esas mismas propiedades ya pertenecen a `.aunea-ui-work-stage` y `.aunea-ui-work-surface`. Sus seis consumidores se verificaron en `pages/tobe.js`.
+- `832cce7105c0`, `6ded39880724`, `e4b3dee8c21d`, `19411504b823`, `a450b2003cce`: aserciones de regresión para ownership visual, uso común, marcado HTML/escape y ausencia de duplicación.
+- `8868618058ba`: incorporado Block_ID `AUNEA-FE-UI-WORK-DISCLOSURE-380` a `CODE_BLOCK_INDEX.md` para preservar la auditoría obligatoria.
+
+**Owners ratificados**
+| Responsabilidad | Owner técnico | Consumidores | Restricción |
+|---|---|---|---|
+| Tokens, tipografía y variantes de controles | `styles.css` | Todo frontend | Fuentes TOKENS / DS canónicas |
+| Panel desplegable de Trabajo Interno | `styles.css` / `ui/renderer.js` | PG10 (3) | Opt-in; no alterar FROZEN |
+| Superficie de Trabajo Interno | `styles.css` | TO-BE contexto, análisis y cabecera | Geometría compartida |
+| Etapas 03.1/03.2/03.3 | `styles.css` | `pages/tobe.js` | Estructura compartida; contenido propio |
+| Geometría singular de pantallas y responsive legado | `ui-system.css` | Según vista | No duplicar controles comunes |
+| Datos, recomendaciones y cálculos oficiales | Backend/owners de dominio | PG10/PG11 | Nunca inventar frontend |
+
+**QA acreditada:** lectura estática del código vigente; sintaxis JS compilable de `ui/renderer.js`, `pages/results.js` y tests modificados; llaves CSS equilibradas; tres consumidores conectados a renderer y CSS común; HTML de prueba producido por el helper coincidente con el contrato previo; seis contenedores TO-BE existentes con sus clases comunes; 0 estilos inline en `pages/results.js`. **No acreditado:** `node --test` sobre repositorio completo, pruebas de backend, comparación visual en Chrome/Edge y gates FROZEN. No promocionar ni dar por cerradas F1–F6 hasta esas evidencias.
+
+**Límite de alcance activo:** `FROZEN_PAGES.json` v10 bloquea cambios a nueve pantallas aprobadas: inicio, empresas, contactos, interacciones, oportunidades, estudios, contexto/objetivos, alcance y estado objetivo/restricciones. La simplificación de esas páginas necesita una reapertura explícita, no se hará automáticamente.
