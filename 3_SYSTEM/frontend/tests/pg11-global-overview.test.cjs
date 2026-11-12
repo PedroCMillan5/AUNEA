@@ -313,7 +313,9 @@ test('stale global response cannot appear as current after AS-IS change',()=>{
     constraints:'',source_refs:['S1']}]);
   h.env.p.aiGlobal.sourceSnapshotVersion=1;
   assert.doesNotMatch(h.html(),/Oportunidad antigua/);
-  assert.match(h.html(),/Análisis pendiente/);
+  assert.match(h.html(),/Análisis guardado no vigente/);
+  assert.match(h.html(),/otra versión del AS-IS confirmado/);
+  assert.match(h.html(),/Coherencia sin evaluar/);
 });
 
 test('global IA uses the existing local endpoint and durably saves only DRAFT suggestions',async()=>{
