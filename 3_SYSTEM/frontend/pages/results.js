@@ -2418,6 +2418,16 @@ function tobeAlternativeKey(e,p,id){return String(e.id)+'|'+p.version+'|'+p.sour
 function tobeProjectAlternative(e,p,candidate){
   const projected=tobeClone(p),id=String(candidate.sourceId),item=tobeFlowItem(e,projected,id);
   if(!tobeEditable(p)||!item)throw Error('La actividad ya no pertenece al borrador editable.');
+  // Two placements of one risk control are alternatives, not cumulative nodes.
+  // The preview is rejected when the other placement remains applied.
+  const group=String(candidate.combination||'');
+  if(candidate.provenance==='RULES'&&group.startsWith('ALTERNATIVE_TO_CONTROL-')){
+    const riskId=group.slice('ALTERNATIVE_TO_CONTROL-'.length),
+      peerIds=new Set(['CONTROL-'+riskId+':'+id,'CONTROL-STEP-'+riskId+':'+id]);
+    if((p.aiDraft?.applyHistory||[]).some(x=>x.action==='APPLY'&&!x.undoneAt&&
+       peerIds.has(String(x.candidateId))&&String(x.candidateId)!==String(candidate.id)))
+      throw Error('Ya existe otra ubicación aplicada para este control. Deshaz esa intervención antes de seleccionar la alternativa excluyente.');
+  }
   const allowed=new Set(['transformation','problemResolved','futureActor','tool','inputs','outputs',
     'automationAi','humanSupervision','controlsRisk','futureTime','futureTimeAssumption']);
   for(const [key,value] of Object.entries(candidate.fields||{})){
