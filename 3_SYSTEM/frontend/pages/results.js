@@ -1653,6 +1653,24 @@ function tobeAiAdviceHtml(e,item,includeDecision=true){
     'Propuesta sin revisión de coherencia disponible.';
   const issueName=x=>x.category==='BLOCKING'?'Bloqueo':
     x.category==='PENDING'?'Pendiente de contraste':'Advertencia';
+  const snapshot=typeof tobeProposalSnapshot==='function'&&typeof latestTobe==='function'?
+    tobeProposalSnapshot(e,latestTobe(e)):null;
+  const evidenceLabels={EV01:'Medición',EV02:'Declarado por el cliente',
+    EV03:'Estimación AUNEA',EV04:'Hipótesis registrada',EV05:'Referencia comparable'};
+  const facts=(snapshot?.frictions||[]).filter(x=>x.status!=='SUPERSEDED'&&
+    (Array.isArray(x.affected_steps)?x.affected_steps:Array.isArray(x.step_ids)?x.step_ids:[])
+      .map(String).includes(stepId)).map(x=>{
+      const parts=[],freq=x.frequency||{},effort=x.active_time_loss||{},
+        frequency=Number(freq.value),duration=Number(effort.value);
+      if(freq.mode==='percent'&&freq.value!==null&&freq.value!==undefined&&
+         Number.isFinite(frequency))parts.push(frequency+' % de casos');
+      if(effort.value!==null&&effort.value!==undefined&&Number.isFinite(duration)&&
+         duration>0)parts.push(duration+' '+(effort.unit||'min')+' por caso afectado');
+      if(!parts.length)return '';
+      return String(x.client_label||'Fricción')+' ('+String(x.id||'')+'): '+
+        parts.join(' · ')+'. Procedencia: '+
+        (evidenceLabels[String(x.evidence_type||'').toUpperCase()]||'No especificada')+'.';
+    }).filter(Boolean);
   return '<div class="tobe-advice-content" data-tobe-ai-transform="'+
     attr(suggestion.transformation||'')+'">'+
     (fromCheckpoint?'<div class="notice warn"><b>Propuesta individual guardada; pendiente de consolidación.</b> '+
@@ -1668,6 +1686,9 @@ function tobeAiAdviceHtml(e,item,includeDecision=true){
       (fromCheckpoint?' · Sin consolidar':
         blocking?' · Requiere corrección':' · Propuesta sin aprobar')+'</div>'+
     '<p class="tobe-ai-review-method" role="status">'+esc(reviewMode)+'</p>'+
+    (facts.length?'<div class="tobe-ai-confirmed-facts" role="note"><b>Datos ya registrados en el AS-IS:</b> '+
+      esc(facts.join(' '))+
+      ' Estas cifras conservan su procedencia; no son por sí solas mediciones ni ahorros futuros.</div>':'')+
     '<p class="notice info" data-tobe-ai-difference="1"'+
       (item.transformation&&item.transformation!==suggestion.transformation?'':' hidden')+'>'+
       'La IA propone «'+esc(suggestion.transformation||'Sin clasificar')+
