@@ -2242,8 +2242,14 @@ function tobeOptimizationFindings(e,p,item){
       '): confirma si alimentan otra actividad, se entregan fuera del proceso o constituyen el resultado final.',
       successors);
   }
-  const automation=String(item.automationAi||'').trim();
-  if(automation&&!/^(no|n\/a|ninguno|sin definir|pendiente|—)$/i.test(automation)){
+  const automation=String(item.automationAi||'').trim(),
+    hasAutomation=!!automation&&!/^(no|n\/a|ninguno|sin definir|pendiente|—)$/i.test(automation);
+  if(hasAutomation&&['Se mantiene','Se elimina'].includes(item.transformation)){
+    add('REVIEW','INACTIVE_AUTOMATION_DETAIL',
+      'La actividad figura como «'+item.transformation+'» pero conserva texto en Automatización/IA. '+
+      'Aclara si es información histórica o una intervención futura antes de validar el TO-BE.');
+  }
+  if(hasAutomation&&!['Se mantiene','Se elimina'].includes(item.transformation)){
     const oldTool=tobeFutureCatalogValue('OS_TOOL_CATEGORY',sourceStep?.tool),
       currentTool=tobeFutureCatalogValue('OS_TOOL_CATEGORY',item.tool);
     if(!currentTool||sourceStep&&oldTool===currentTool)
