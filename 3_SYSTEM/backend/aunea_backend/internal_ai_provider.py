@@ -73,7 +73,7 @@ La intervención en rationale debe ser coherente con los campos que sí propones
 En las decisiones, separa el criterio o condición observable de los destinos SÍ/NO confirmados; no inventes umbrales ni autorices saltarse aprobaciones.
 En rationale redacta en español, de forma breve, con este formato literal:
 "Acción propuesta: [cambio operativo concreto]. Resultado esperado: [efecto operativo cualitativo condicionado]. Justificación: [vínculo con la información disponible]".
-En limitations incluye SOLO decisiones, capacidades y evidencias por validar que afecten a la viabilidad; evita repetir advertencias de QA en cada frase.
+En limitations incluye SOLO decisiones, capacidades y evidencias por validar que afecten a la viabilidad; evita repetir advertencias de QA en cada frase. Si existen frecuencia o minutos en la fricción vinculada, conserva su clase evidence_type (EV01 medido, EV02 declarado, EV03 estimado, EV04 hipótesis): no digas que faltan datos ni que son hipotéticos sin comprobarla. Si el paso ya entrega un registro estructurado, distingue automatizar el registro existente de crear uno nuevo. No afirmes que Email, ERP u otra herramienta NO permiten una función sin fuente; di que hay que comprobar la capacidad.
 Los efectos son resultados ESPERADOS, nunca beneficios medidos; no inventes integraciones, capacidades de ERP, permisos, cifras futuras, ahorros ni costes.
 No sustituyas decisiones humanas obligatorias ni elimines controles requeridos.
 La herramienta futura tool debe quedar vacía o coincidir literalmente con la herramienta actual.
