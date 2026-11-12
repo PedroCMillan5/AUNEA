@@ -3299,11 +3299,7 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 
 /* [AUNEA-FE-PG11-GLOBAL-STYLE-286] START — AUNEA System tokens, PG11 only */
 /* Shared PG11 section surface: information and IA analysis use one card geometry. */
-.tobe-context,.tobe-global-analysis,.tobe-review-section-head{
-  display:grid;gap:14px;min-width:0;padding:20px 22px;
-  border:1px solid var(--system-line);border-radius:var(--radius-sm);
-  background:#fff;color:var(--ink);
-}
+.tobe-context,.tobe-global-analysis,.tobe-review-section-head{min-width:0}
 .tobe-global-analysis{margin:16px 0 20px}
 .tobe-global-analysis-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;flex-wrap:wrap}
 .tobe-global-analysis-head>div{flex:1 1 380px;min-width:0}
