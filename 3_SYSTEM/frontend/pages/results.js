@@ -3833,7 +3833,7 @@ function tobeGlobalOverviewHtml(e,p){
           'Análisis parcial: quedan fuentes por revisar. Aún no se puede concluir que no existan otras mejoras.')+
         '</p>':'')+
     (legacy?'<p class="tobe-global-feedback is-warning" role="status">La salida anterior contiene una frase que puede estar incompleta. Se muestra íntegra tal como la devolvió Ollama. Regenera antes de aprobar.</p>':'')+
-    '<p class="tobe-global-caution">Propuesta sin aprobar. Contrasta las cifras con las referencias del AS-IS confirmado; no son promesas de ahorro ni tiempos futuros. La revisión humana sigue siendo obligatoria.</p>'+
+    (result?'<p class="tobe-global-caution">Propuesta sin aprobar. Contrasta las cifras con las referencias del AS-IS confirmado; no son promesas de ahorro ni tiempos futuros. La revisión humana sigue siendo obligatoria.</p>':'')+
     '</section>';
 }
 // [AUNEA-FE-PG11-GLOBAL-OVERVIEW-284] END
