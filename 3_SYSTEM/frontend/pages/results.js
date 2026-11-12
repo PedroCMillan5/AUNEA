@@ -1184,11 +1184,15 @@ function tobeSnapshotIssueCards(e,item){
       alias=String(code).match(/(F\d+)$/i)?.[1],
       signal=String(x.observable_signal||'').trim(),
       readableSignal=alias?signal.replace(new RegExp('^'+alias+'\\s*:\\s*','i'),''):signal;
+    const structured=timeDetails(x);
     return '<li class="tobe-origin-issue">'+
       '<div class="tobe-origin-issue-head"><b>Fricción</b><span>'+
         esc(x.client_label||labelFrom('OS_FRICTION_TYPE',x.friction_type)||'Sin descripción')+'</span></div>'+
-      ref(code)+timeDetails(x)+
-      (readableSignal?'<p class="tobe-origin-issue-signal"><b>Señal registrada:</b> '+esc(readableSignal)+'</p>':'')+
+      ref(code)+structured+
+      (readableSignal?(structured?
+        '<details class="tobe-origin-issue-signal-details"><summary>Ver señal original</summary>'+
+          '<p class="tobe-origin-issue-signal"><b>Señal registrada:</b> '+esc(readableSignal)+'</p></details>':
+        '<p class="tobe-origin-issue-signal"><b>Señal registrada:</b> '+esc(readableSignal)+'</p>'):'')+
       '</li>';
   }).join('');
   const riskHtml=risks.map(x=>
