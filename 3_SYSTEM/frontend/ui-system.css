@@ -2192,9 +2192,9 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 
 /* [AUNEA-FE-PG10-WORKSPACE-STYLE-167] START — Six stable diagnosis blocks; source and scenario screens unchanged. */
 .pg10-overview-metrics{margin-bottom:14px}
-.pg10-stage-nav,.pg10-critical-points,.pg10-source-data,.pg10-decision-trace{margin-top:16px;padding:13px 16px;border:1px solid var(--line,#d8dedc);border-radius:9px;background:var(--card,#fff)}
-.pg10-stage-nav>summary,.pg10-critical-points>summary,.pg10-source-data>summary,.pg10-decision-trace>summary{font-size:13px;font-weight:700;line-height:1.55;cursor:pointer}
-.pg10-stage-nav[open]>summary,.pg10-critical-points[open]>summary,.pg10-source-data[open]>summary,.pg10-decision-trace[open]>summary{margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--line,#d8dedc)}
+.pg10-source-data{margin-top:16px;padding:13px 16px;border:1px solid var(--line,#d8dedc);border-radius:9px;background:var(--card,#fff)}
+.pg10-source-data>summary{font-size:13px;font-weight:700;line-height:1.55;cursor:pointer}
+.pg10-source-data[open]>summary{margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--line,#d8dedc)}
 .pg10-critical-points .asis-opportunity-list{margin-top:14px}
 .pg10-source-data .asis-confirmed-data{margin-top:12px}
 .pg10-diagnostic-parts{display:grid;gap:24px}
@@ -2212,7 +2212,7 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 .pg10-review-summary>.field-help{margin-top:12px}
 .pg10-review-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:17px}
 .pg10-review-actions>.btn{max-width:100%;white-space:normal;min-height:38px}
-@media(max-width:680px){.pg10-review-actions{flex-direction:column;align-items:stretch}.pg10-stage-nav,.pg10-critical-points,.pg10-source-data{padding:12px}}
+@media(max-width:680px){.pg10-review-actions{flex-direction:column;align-items:stretch}.pg10-source-data{padding:12px}}
 /* [AUNEA-FE-PG10-WORKSPACE-STYLE-167] END */
 
 /* [AUNEA-FE-PG10-DIAGNOSTIC-ACTION-168] START — Separate the AS-IS run action from its informational notice. */
