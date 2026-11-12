@@ -2472,6 +2472,42 @@ function tobeIntegrationProjection(e,p){
 // [AUNEA-FE-PG11-INTEGRATION-PROJECTION-341] END
 
 
+// [AUNEA-FE-PG11-TIME-REVIEW-352] START — read-only comparison with evidence.
+function tobeFutureTimeReviewHtml(item,sourceStep){
+  const value=sourceStep?.active_time;
+  const baseline=Number(value),hasBaseline=value!==null&&value!==undefined&&
+    value!==''&&Number.isFinite(baseline)&&baseline>=0;
+  const previous=String(item.futureTime||'').trim();
+  const match=previous.match(/^(\\d+(?:[.,]\\d+)?)\\s*(?:min|mins|minuto|minutos)$/i);
+  const future=match?Number(match[1].replace(',','.')):NaN;
+  const comparable=hasBaseline&&Number.isFinite(future)&&future>=0;
+  const round=n=>String(Math.round(n*100)/100);
+  let comparison='<p><b>Estimación futura:</b> aún no puede calcularse con evidencia suficiente. '+
+    'No tienes que inventar una duración: la reducción debe derivarse de una intervención concreta '+
+    'y de parámetros de ejecución verificables antes de estimar escenarios.</p>';
+  if(comparable){
+    const delta=baseline-future;
+    comparison='<p><b>Tiempo futuro ya registrado:</b> '+esc(round(future))+' min por ejecución. '+
+      '<b>Diferencia calculada:</b> '+esc(round(Math.abs(delta)))+' min '+
+      (delta>=0?'menos':'más')+' por ejecución. No constituye un ahorro validado.</p>'+
+      '<p><b>Supuesto guardado:</b> '+esc(item.futureTimeAssumption||
+      'Sin evidencia documentada para acreditar la estimación.')+'</p>';
+  }else if(previous){
+    comparison+='<p><b>Valor anterior preservado:</b> '+esc(previous)+
+      '. No es comparable hasta documentar la unidad y el supuesto.</p>';
+  }
+  return '<details class="tobe-design-time tobe-design-group">'+
+    '<summary><span class="tobe-design-group-number">05</span><span>'+
+      '<b>Tiempo futuro y estimación</b><small>Cálculo con datos comparables, no captura manual</small>'+
+    '</span></summary>'+
+    '<div class="tobe-time-readout">'+
+      '<p><b>Trabajo activo AS-IS:</b> '+(hasBaseline?esc(round(baseline))+' min por ejecución':
+        'Sin tiempo de referencia comparable.')+'</p>'+
+      comparison+
+      '<p class="field-help">La espera no se suma al trabajo activo y la capacidad liberada no equivale a ahorro de caja.</p>'+
+    '</div></details>';
+}
+// [AUNEA-FE-PG11-TIME-REVIEW-352] END
 function tobeInspectorHtml(e,p){
   const item=tobeSelectedItem(e,p),editable=tobeEditable(p);
   if(!item)return '<div class="notice warn">No hay actividades TO-BE vinculadas al AS-IS.</div>';
@@ -2621,15 +2657,7 @@ function tobeInspectorHtml(e,p){
       '</details>'+
       tobeDecisionReadoutHtml(e,p,item)+
       tobeOptimizationPanelHtml(e,p,item)+
-      '<details class="tobe-design-time tobe-design-group">'+
-        '<summary><span class="tobe-design-group-number">05</span><span>'+
-          '<b>Tiempo futuro y supuesto trazable</b><small>Opcional · sólo con evidencia suficiente</small>'+
-        '</span></summary>'+
-        '<div class="form-grid tobe-design-fields">'+
-          tobeField(item,'futureTime','Tiempo futuro',item.futureTime,'text',!editable)+
-          tobeField(item,'futureTimeAssumption','Supuesto trazable',item.futureTimeAssumption,'textarea',!editable)+
-        '</div>'+
-      '</details>'+
+      tobeFutureTimeReviewHtml(item,sourceStep)+
       '<div class="tobe-guided-field-actions">'+
         (editable?'<button type="button" class="btn btn-outline" data-tobe-guided-save="1">Guardar borrador</button>':'')+
         '<button type="button" class="btn btn-outline" data-tobe-guided-check="1">Comprobar requisitos</button>'+
