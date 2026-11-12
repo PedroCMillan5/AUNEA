@@ -3159,7 +3159,7 @@ function tobeInspectorHtml(e,p){
       '</div></header>'+
     '<nav class="tobe-review-steps" aria-label="Orden de revisión">'+
       '<button type="button" class="btn btn-outline btn-small" data-tobe-jump="tobeStepOrigin">03.1 · Entender el AS-IS</button>'+
-      '<button type="button" class="btn btn-outline btn-small" data-tobe-jump="tobeStepAdvice">03.2 · Revisar propuestas IA</button>'+
+      '<button type="button" class="btn btn-outline btn-small" data-tobe-jump="tobeStepAdvice">03.2 · Revisar oportunidades de mejora</button>'+
       '<button type="button" class="btn btn-outline btn-small" data-tobe-jump="tobeStepDesign">03.3 · Configurar la actividad futura</button>'+
 
     '</nav>'+supportingInformation+
