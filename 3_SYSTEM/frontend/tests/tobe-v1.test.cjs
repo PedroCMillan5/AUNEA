@@ -30,3 +30,24 @@ test('C04 PG12 is derived and refuses unsupported future metrics',()=>{
   assert.match(comparison,/Capacidad liberada/);
   assert.match(comparison,/Ahorro de caja/);
 });
+
+test('PG11 common implementation questions reuse one pure projection',()=>{
+  const vm=require('node:vm');
+  const from=src.indexOf('function tobeGlobalImplementationQuestions(');
+  const to=src.indexOf('function tobeGlobalGroupWarnings(',from);
+  assert.ok(from>=0&&to>from,'PG11 question helpers must be present');
+  const functions=vm.runInNewContext(
+    src.slice(from,to)+';({group:tobeGlobalSharedQuestions,all:tobeGlobalUniversalQuestions,specific:tobeGlobalSpecificQuestions})'
+  );
+  const itemA={review:{verifications:[{question:'¿Responsable?'},{question:'¿Plazo?'}]}};
+  const itemB={review:{operational_checks:[{question:'¿Plazo?'},{question:'¿Evidencia?'}]}};
+  const entries=[{item:itemA},{item:itemB}],group={entries};
+  const asArray=value=>Array.from(value);
+  assert.deepEqual(asArray(functions.all([itemA,itemB])),['¿Plazo?']);
+  assert.deepEqual(asArray(functions.group(group)),['¿Plazo?']);
+  assert.deepEqual(asArray(functions.group(group,['¿Plazo?'])),[]);
+  assert.deepEqual(asArray(functions.specific(group,itemA)),['¿Responsable?']);
+  assert.deepEqual(asArray(functions.specific(group,itemB)),['¿Evidencia?']);
+  assert.deepEqual(asArray(functions.all([itemA])),[],
+    'A single proposal cannot contain a repeated question across opportunities');
+});
