@@ -376,10 +376,11 @@ test('PG11 rejects empty and inherited NO rationale without modifying source',()
   assert.match(src,/if\(!tobeMeaningfulRationale\(item\.problemResolved\)\)/);
   assert.match(src,/if\(TOBE_TRANSFORMATIONS\.includes\(t\)&&!tobeMeaningfulRationale/);
   assert.match(src,/Completa nombre, responsable y motivo/);
-  assert.match(src,/decision\.status==='ACCEPT'&&suggested\?\.transformation/);
-  assert.match(src,/«Modificar antes de usar»/);
+  assert.match(src,/function tobeActivityDesignIssue/);
+  assert.match(src,/AUNEA-FE-PG11-SINGLE-DECISION-356/);
+  assert.doesNotMatch(src,/Falta la revisión humana de las propuestas IA de esta versión TO-BE/);
 });
-test('PG11 review rejects P4 NO rationale and accepted IA transformation mismatch',()=>{
+test('PG11 review rejects P4 NO rationale but never depends on whole-IA acceptance',()=>{
   const functionNames=['tobeMeaningfulRationale','tobeTransformationRationaleLabel','tobeReviewReadiness'];
   const code=functionNames.map(name=>{
     const first=src.indexOf('function '+name+'('),end=src.indexOf('\n}\n',first);
@@ -408,27 +409,17 @@ test('PG11 review rejects P4 NO rationale and accepted IA transformation mismatc
   vm.createContext(sandbox);vm.runInContext(code,sandbox);
   assert.match(sandbox.tobeReviewReadiness(e,p),/Motivo para conservar la actividad/);
   item.problemResolved='Se conserva el registro humano y se documentan sus riesgos.';
-  assert.match(sandbox.tobeReviewReadiness(e,p),/La propuesta IA.*Se automatiza/);
-  p.review.decisions.P4.status='MODIFY';
-  assert.equal(sandbox.tobeReviewReadiness(e,p),null);
-  // A blocked IA candidate must never become approved merely because the
-  // consultant's TO-BE says "Se modifica" rather than "Se mantiene".
-  item.transformation='Se modifica';
-  p.aiDraft.proposal.items[0].transformation='Se modifica';
-  p.aiDraft.proposal.review.issues=[{step_id:'P4',category:'BLOCKING',
-    evidence:'automation_ai',issue:'La propuesta no tiene detalle estructurado.'}];
-  p.review.decisions.P4.status='ACCEPT';
-  assert.match(sandbox.tobeReviewReadiness(e,p),/bloqueos pendientes/);
-  p.review.decisions.P4.status='MODIFY';
   assert.equal(sandbox.tobeReviewReadiness(e,p),null,
-    'a source-linked and justified human override remains valid');
-  p.aiDraft.proposal.review.issues=[];
+    'a consultant may keep a justified design without accepting IA transformation');
+  item.transformation='Se modifica';
+  p.aiDraft.proposal.items[0].transformation='Se automatiza';
+  p.aiDraft.proposal.review.issues=[{step_id:'P4',category:'BLOCKING',
+    evidence:'automation_ai',issue:'La IA no tiene detalle estructurado.'}];
+  assert.equal(sandbox.tobeReviewReadiness(e,p),null,
+    'a blocked AI candidate does not replace or invalidate an independently complete TO-BE');
   p.aiDraft.proposal.review.blocking_step_ids=['P4'];
-  p.review.decisions.P4.status='ACCEPT';
-  assert.match(sandbox.tobeReviewReadiness(e,p),/bloqueos pendientes/,
-    'blocking_step_ids must protect even when review issues are not expanded');
-  p.review.decisions.P4.status='MODIFY';
-  assert.equal(sandbox.tobeReviewReadiness(e,p),null);
+  assert.equal(sandbox.tobeReviewReadiness(e,p),null,
+    'no hidden second approval is required for a justified manual design');
   p.addedSteps=[{stepName:'Validar datos',futureActor:'Administración',
     transformation:'Se incorpora control',problemResolved:'NO'}];
   assert.match(sandbox.tobeReviewReadiness(e,p),/motivo de la actividad nueva/);
@@ -493,7 +484,8 @@ test('PG11 AI diff allows supervised MODIFY with blocking issues but never auto-
   assert.ok(!diff.fields.some(x=>x.key==='transformation'));
   assert.deepEqual(JSON.parse(JSON.stringify(diff.fields.find(x=>x.key==='outputs').value)),['RECORD']);
   status='ACCEPT';
-  assert.match(context.tobeAiReviewDiff({},p,'P1').issue,/bloqueos/);
+  assert.equal(context.tobeAiReviewDiff({},p,'P1').issue,'',
+    'legacy whole-proposal decision is not a permission gate for independent fields');
 });
 test('PG11 AI application is explicitly checked, audited and protects unrelated edits',()=>{
   const source=src.slice(src.indexOf('function tobeApplyAiReviewedFields('),
