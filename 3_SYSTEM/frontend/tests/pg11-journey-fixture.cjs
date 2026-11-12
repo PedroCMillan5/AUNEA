@@ -8,6 +8,8 @@ module.exports=async function setupPg11Journey({kind,backend}){
    e.risks=e.risks.slice(0,1).map(r=>({...r,step_ids:['P1']}));e.economicInputs=e.economicInputs.map(x=>({...x,step_ids:['P1']}));e.answers.DF093='YES';
    e.confirmedAsIs=true;e.confirmedSnapshots=[];e.tobeProposals=[];e.answers.DF075=['P3'];
    state.companies.push(row.company);state.contacts.push(...row.contacts);state.engagements.push(e);state.activeEngagementId=e.id;
+   // Normalize synthetic legacy fields before sealing; reload must not invalidate this UAT snapshot.
+   migrateLoadedState();e.confirmedAsIs=true;e.answers.DF093='YES';
    sealConfirmedSnapshot(e,'UAT sintética explícita — no cliente real');
    const snap=confirmedSnapshot(e);e.engineGates=Object.fromEntries(ENGINE_GATE_CONTRACT.map(c=>[c.key,c.key==='existing_tool_can_close'?'YES':'NO']));
    e.engineGateReview={snapshotVersion:snap.version,decisions:Object.fromEntries(ENGINE_GATE_CONTRACT.map(c=>[c.key,{answer:e.engineGates[c.key]}]))};
