@@ -10,6 +10,9 @@ import unicodedata
 from .internal_ai import validate_pilot_source, related_step_ids
 from .utils import stable_hash
 
+# Bumped only when the rules/response contract changes. The UI refuses older engines.
+PG11_ALTERNATIVES_CONTRACT = 'PG11_FINDING_SPECIFIC_V2'
+
 
 def _normal(value):
     value = str(value or '').casefold()
@@ -177,5 +180,6 @@ def activity_alternatives(request, step_id):
                     stepType='ST02', **fields)))
     return dict(status='DRAFT', requires_human_review=True, source_step_id=step_id,
                 input_hash=stable_hash(eng.model_dump()), snapshot_version=request.snapshot_version,
+                engine_contract=PG11_ALTERNATIVES_CONTRACT,
                 candidates=candidates)
 # [AUNEA-BE-PG11-ALTERNATIVES-330] END
