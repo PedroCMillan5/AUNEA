@@ -1042,6 +1042,9 @@ async function main(){
     '#tobeInspector [data-tobe-row-key="transformation"] [data-tobe-ai-use-field="transformation"]');
   assert.equal(await applyOne.count(),1,'a human-reviewed source-linked field can be applied');
   await applyOne.click();
+  await page.locator('#tobeAlternativeDialog').waitFor();
+  await page.locator('#tobeAlternativeDialog [data-tobe-confirm-alternative]').click();
+  await page.waitForFunction(()=>latestTobe(currentEng()).items[0]?.transformation==='Se modifica');
   const applied=await page.evaluate(()=>{
     const e=currentEng(),p=latestTobe(e),disk=JSON.parse(localStorage.getItem(STORAGE_KEY));
     const saved=disk.engagements.find(x=>x.id===e.id)?.tobeProposals?.
