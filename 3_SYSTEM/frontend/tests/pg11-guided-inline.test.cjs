@@ -488,4 +488,28 @@ test('PG11 rejects stale backend alternatives even when the frontend layout is c
  assert.match(src,/\(staleIssue\?\[\]:data\?\.candidates\|\|\[\]\)\.forEach/,
    'stale recommendations must not remain visible after an incompatible response');
 });
+test('PG11 links opportunities by confirmed finding across different business domains',()=>{
+ const fn=src.match(/function tobeOpportunitySources\(e,p,item\)\{[\s\S]*?\n\}/)?.[0];
+ assert.ok(fn,'A single source-linked opportunity projection must exist');
+ const snapshot={frictions:[
+   {id:'HR-F1',affected_steps:['H1'],client_label:'Falta documentación de incorporación'},
+   {id:'HR-F2',affected_steps:['H2'],client_label:'Otra actividad'},
+   {id:'HR-OLD',status:'SUPERSEDED',affected_steps:['H1'],client_label:'Fricción obsoleta'}
+  ],risks:[
+   {risk_id:'HR-R1',step_ids:['H1'],description:'Permisos de acceso incorrectos'},
+   {risk_id:'HR-R2',step_ids:['H2'],description:'Riesgo de otra actividad'}
+  ]};
+ const context={tobeProposalSnapshot:()=>snapshot};
+ vm.createContext(context);vm.runInContext(fn,context);
+ assert.deepEqual(JSON.parse(JSON.stringify(context.tobeOpportunitySources({}, {}, {sourceStepId:'H1'}))),[
+   {id:'HR-F1',kind:'Fricción',label:'Falta documentación de incorporación'},
+   {id:'HR-R1',kind:'Riesgo',label:'Permisos de acceso incorrectos'}
+ ]);
+ assert.deepEqual(JSON.parse(JSON.stringify(context.tobeOpportunitySources({}, {}, {sourceStepId:'H1',isAddition:true}))),[]);
+ snapshot.frictions=[];snapshot.risks=[];
+ assert.deepEqual(JSON.parse(JSON.stringify(context.tobeOpportunitySources({}, {}, {sourceStepId:'H1'}))),[],
+  'a step with no recorded finding must not invent an opportunity');
+ assert.doesNotMatch(fn,/factura|proveedor|logística|compra|reclutamiento/i,
+  'finding grouping must not branch on a specific industry');
+});
 // [AUNEA-UAT-PG11-GUIDED-267] END
