@@ -2674,6 +2674,33 @@ function tobeAlternativePendingHtml(preview){
       'La viabilidad operativa, las capacidades técnicas y las evidencias pendientes siguen requiriendo validación.</p>')+
     '</section>';
 }
+function tobeAlternativeRouteChoicesHtml(e,p,candidate){
+  const flow=tobeFlowOwner(e,p),
+    options=[...(p.items||[]),...tobeAddedSteps(p)].map(item=>({
+      id:String(item.isAddition?item.id:item.sourceStepId),
+      label:tobeFlowItemName(item)
+    }));
+  const controls=(candidate.operations||[]).map((operation,index)=>{
+    if(operation.type!=='insertAfter')return '';
+    const sourceId=String(operation.sourceId),
+      normal=flow?.routes?.[sourceId]?.normal;
+    if(normal&&normal!=='__PENDING__')return '';
+    const selected=String(operation.normalDestination||'');
+    return '<div class="tobe-preview-route-choice">'+
+      '<label for="tobePreviewRoute'+index+'">Destino de la ruta normal después del control</label>'+
+      '<select id="tobePreviewRoute'+index+'" data-tobe-preview-route="'+index+'">'+
+        '<option value="">Seleccionar actividad de destino</option>'+
+        options.filter(x=>x.id!==sourceId).map(x=>'<option value="'+attr(x.id)+'"'+
+          (x.id===selected?' selected':'')+'>'+esc(x.label)+'</option>').join('')+
+        '<option value="__END__"'+(selected==='__END__'?' selected':'')+'>Fin del proceso</option>'+
+      '</select>'+
+      '<p class="tobe-muted">Sólo se establece una ruta normal explícita que estaba pendiente. '+
+        'No se modifica una bifurcación SÍ/NO ni se inventan rutas.</p>'+
+      '</div>';
+  }).filter(Boolean);
+  return controls.length?'<section class="tobe-preview-route-editor" aria-label="Resolver conexiones">'+
+    '<h3>Conexión pendiente</h3>'+controls.join('')+'</section>':'';
+}
 // [AUNEA-FE-PG11-PREVIEW-COMPARISON-358] END
 function tobeOpenAlternative(e,candidate){
   if(!saveTobeFromDom(e)||!saveState('Conservar edición antes de previsualizar'))throw Error('No se pudo conservar tu edición.');
@@ -2701,6 +2728,7 @@ function tobeOpenAlternative(e,candidate){
         '</label><textarea data-tobe-preview-operation="'+index+'" data-tobe-preview-key="'+key+'">'+esc(operation.item[key])+'</textarea></div>').join('')).join('')+
     '</div><p class="field-help">Edita únicamente los valores propuestos: el borrador sigue intacto. '+
       'Al editar, se recalculan diferencias, rutas y comprobaciones. Los catálogos se configuran en 03.3.</p></details>'+
+    tobeAlternativeRouteChoicesHtml(live,p,candidate)+
     '<section class="tobe-preview-map"><h3>Mapa TO-BE proyectado</h3>'+
       '<p class="tobe-muted">Las actividades modificadas se resaltan. Las conexiones anteriores y nuevas aparecen en la comparación.</p>'+
       '<div id="tobeAlternativeMap">'+tobeCanvasHtml(live,readonly).replaceAll('data-tobe-select=','data-tobe-preview-node=')+'</div></section>'+
@@ -2716,6 +2744,8 @@ function tobeOpenAlternative(e,candidate){
     if(!preview)return;
     if(input.hasAttribute('data-tobe-preview-edit'))preview.candidate.fields[input.dataset.tobeField]=input.value;
     else if(input.hasAttribute('data-tobe-preview-operation'))preview.candidate.operations[Number(input.dataset.tobePreviewOperation)].item[input.dataset.tobePreviewKey]=input.value;
+    else if(input.hasAttribute('data-tobe-preview-route'))
+      preview.candidate.operations[Number(input.dataset.tobePreviewRoute)].normalDestination=input.value;
     else return;
     // Editing a traceable suggestion remains an explicit consultant choice.
     preview.candidate.consultantModified=true;
