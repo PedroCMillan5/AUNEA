@@ -8,6 +8,9 @@ module.exports=function pg11LegacySourceOracle(){
   const transaction='// __AUNEA_PG11_TRANSACTIONS_MODULE__';
   if(workspace.split(transaction).length!==2)throw Error('PG11 transaction boundary is missing or duplicated');
   workspace=workspace.replace(transaction,read('domain/tobe-transactions.js'));
+  const globalView='// __AUNEA_PG11_GLOBAL_VIEW_MODULE__';
+  if(workspace.split(globalView).length!==2)throw Error('PG11 global view boundary is missing or duplicated');
+  workspace=workspace.replace(globalView,read('pages/tobe-global.js').trimEnd());
   let source=read('pages/results.js');
   for(const [token,body] of [
     ['// __AUNEA_PG11_MODEL_MODULE__\n',read('domain/tobe-model.js')],
