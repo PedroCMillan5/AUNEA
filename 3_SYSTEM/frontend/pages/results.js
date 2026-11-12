@@ -806,8 +806,18 @@ function tobeReviewReadiness(e,p){
   // Historical aiDraft.humanReview is retained as evidence, never used as a
   // prerequisite or as an override of current consultant-owned values.
   for(const item of p.items){
-    const issue=tobeActivityDesignIssue(item);
-    if(issue)return issue;
+    const name=item.sourceStepName||item.sourceStepId||'actividad';
+    const meaningful=v=>!!String(v||'').trim()&&
+      !/^(?:no|n\/a|ninguno|sin definir|pendiente|—)$/i.test(String(v).trim());
+    if(!['Se mantiene','Se elimina'].includes(item.transformation)&&
+       (['tool','controlsRisk'].some(k=>!meaningful(item[k]))||
+        ['inputs','outputs'].some(k=>!tobeArtifactValues(item[k]).resolved.length)))
+      return 'Completa herramienta, entradas, salidas y controles de '+name+'.';
+    if(['Se automatiza','Se asiste con IA'].includes(item.transformation)&&
+       (!meaningful(item.automationAi)||!meaningful(item.humanSupervision)))
+      return 'Describe automatización y supervisión humana de '+name+'.';
+    if(item.transformation==='Requiere decisión humana'&&!meaningful(item.humanSupervision))
+      return 'Define qué debe decidir la persona responsable en '+name+'.';
   }
   // [AUNEA-FE-PG11-HUMAN-GATE-225] END
   for(const added of tobeAddedSteps(p)){
@@ -819,7 +829,6 @@ function tobeReviewReadiness(e,p){
        !tobeMeaningfulRationale(added.problemResolved))
       return 'Completa nombre, responsable y motivo de la actividad nueva '+tobeFlowItemName(added)+'.';
   }
-  // [AUNEA-FE-PG11-HUMAN-GATE-225] END
   const flowIssue=tobeFlowIntegrity(e,p);
   if(flowIssue)return flowIssue;
   // Semantic design constraints complement source and route readiness.
