@@ -110,7 +110,7 @@ test('PG11 work surfaces and stages reuse the same opt-in structural primitives'
   assert.doesNotMatch(local,/\.tobe-origin,\.tobe-edit,\.tobe-advice\{min-width:0\}/);
   assert.doesNotMatch(local,/\.tobe-context,\.tobe-global-analysis,\.tobe-review-section-head\{min-width:0\}/);
 });
-// [AUNEA-UAT-DESIGN-COMMON-312] END
+
 
 test('internal work result layouts reuse shared opt-in structure instead of inline presentation',()=>{
   const results=load('pages/results.js');
@@ -153,3 +153,4 @@ test('work disclosure builder preserves semantic markup and escapes its label',(
   assert.equal(build('pg10-stage-nav','<revisión>',''),
     '<details class="pg10-stage-nav aunea-ui-work-disclosure"><summary>&lt;revisión&gt;</summary></details>');
 });
+// [AUNEA-UAT-DESIGN-COMMON-312] END
