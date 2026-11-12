@@ -4611,6 +4611,9 @@ details.tobe-ai-operational-context:not([open])>.tobe-ai-operational-body{
   color:var(--system);
   margin:0;
 }
+.tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign .tobe-design-header h3.tobe-stage-heading{
+  line-height:1.4;
+}
 .tobe-workspace[data-tobe-mode="guided"] #tobeStepOrigin .tobe-origin-header-status,
 .tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign .tobe-design-status{
   font-family:Inter,"Segoe UI",Arial,sans-serif;
