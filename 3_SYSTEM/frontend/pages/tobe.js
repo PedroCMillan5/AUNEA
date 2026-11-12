@@ -2058,11 +2058,15 @@ function tobeGlobalImplementationQuestions(item){
     ...(item?.review?.operational_checks||[]).map(x=>String(x?.question||'').trim())
   ].filter(Boolean))];
 }
+// Shared read-only intersection: keep the original question order and only
+// display a question once when every reviewed opportunity contains it.
+function tobeGlobalCommonQuestions(items,omitted=[]){
+  const sets=items.map(tobeGlobalImplementationQuestions);
+  const skip=new Set(omitted);
+  return sets.length>1?sets[0].filter(q=>!skip.has(q)&&sets.slice(1).every(values=>values.includes(q))):[];
+}
 function tobeGlobalSharedQuestions(group,globallyShared=[]){
-  const sets=(group?.entries||[]).map(({item})=>tobeGlobalImplementationQuestions(item));
-  const global=new Set(globallyShared);
-  return sets.length>1?
-    sets[0].filter(q=>!global.has(q)&&sets.slice(1).every(values=>values.includes(q))):[];
+  return tobeGlobalCommonQuestions((group?.entries||[]).map(({item})=>item),globallyShared);
 }
 function tobeGlobalSpecificQuestions(group,item,globallyShared=[]){
   const shared=new Set([...tobeGlobalSharedQuestions(group,globallyShared),...globallyShared]);
@@ -2072,8 +2076,7 @@ function tobeGlobalSpecificQuestions(group,item,globallyShared=[]){
 // Identical questions/alerts shared by all sources are rendered only once.
 // These helpers are projections: they never edit the confirmed snapshot or IA output.
 function tobeGlobalUniversalQuestions(opportunities){
-  const sets=(opportunities||[]).map(tobeGlobalImplementationQuestions);
-  return sets.length>1?sets[0].filter(q=>sets.slice(1).every(other=>other.includes(q))):[];
+  return tobeGlobalCommonQuestions(opportunities||[]);
 }
 function tobeGlobalGroupWarnings(group){
   return [...new Set((group?.entries||[]).flatMap(entry=>entry.issues||[])
