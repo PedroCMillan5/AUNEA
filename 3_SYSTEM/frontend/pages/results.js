@@ -1165,13 +1165,21 @@ function tobeSnapshotIssueCards(e,item){
       details.push(fact('Trabajo activo asociado',number(active.value)+' min por caso afectado'));
       const modes={ADDITIONAL:'Adicional al tiempo del paso',INCLUDED:'Ya incluido en el tiempo del paso',
         BREAKDOWN:'Desglose del retrabajo del paso'};
-      const mode=String(attribution.mode||'');
-      const own=String(attribution.step_id||'')===id;
+      const mode=String(attribution.mode||''),
+        ownerId=String(attribution.step_id||''),
+        owner=(snap?.processSteps||[]).find(step=>step.status!=='SUPERSEDED'&&
+          String(step.id)===ownerId),
+        ownerLabel=owner?String(owner.step_name||owner.name||'Actividad sin nombre'):'';
+      const own=ownerId===id;
+      const location=own?'Responsable: esta actividad.':
+        ownerLabel?'Responsable: '+ownerLabel+' ('+ownerId+'). No sumar aquí.':
+        'No se puede identificar una actividad responsable vigente'+
+          (ownerId?' ('+ownerId+')':' (sin identificador)')+'. No sumar hasta aclarar la atribución.';
       details.push(fact('Atribución temporal',
-        modes[mode]?(own?modes[mode]+'; evita contar dos veces.':
-          'Se atribuye a otra actividad; no sumar aquí.')+
-          (mode==='ADDITIONAL'&&own?' Su incorporación al total requiere validar frecuencia y evidencia.':''):
-          'Pendiente de clasificar; no sumar al total.'));
+        (modes[mode]||'Relación temporal pendiente de clasificar')+'. '+location+
+        (mode==='ADDITIONAL'&&own?
+          ' Sólo se incorpora al cálculo tras validar frecuencia y evidencia.':'')+
+        (mode!=='ADDITIONAL'&&own?' No sumar de nuevo.':'')));
     }
     if(wait&&hasNumber(wait.value)&&Number(wait.value)>0&&
        !['UNKNOWN','ZERO'].includes(String(wait.mode||'').toUpperCase())){
