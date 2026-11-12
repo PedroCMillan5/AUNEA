@@ -6,6 +6,7 @@
 from __future__ import annotations
 import json
 import socket
+import re
 from urllib.error import HTTPError, URLError
 from urllib.request import Request
 from .internal_ai import (PilotAIConsolidationRequest, validate_pilot_result,
@@ -60,6 +61,11 @@ _REVIEW_INSTRUCTIONS = (
     "No declares ausencia de controles si existe contenido en controls_risk o human_supervision; "
     "si es insuficiente especifica exactamente la laguna. "
     "No trates la falta de medicion real por si sola como defecto de la propuesta sintetica. "
+    "Los campos frictions.frequency, active_time_loss y evidence_type son datos del AS-IS: "
+    "EV01 indica medido, EV02 declarado, EV03 estimación y EV04 hipótesis. "
+    "No llames hipotético a un dato declarado por el cliente; no lo conviertas tampoco en medido. "
+    "Si el AS-IS ya contiene outputs RECORD, distingue actualización del registro actual y creación de otro. "
+    "Las limitaciones escritas por IA NO acreditan que Email/ERP carezcan de funciones. "
     "Nunca obligues a transformar una actividad sin fundamento. "
     "Cada observacion debe describir un defecto especifico del diseño y citar "
     "un step_id EXACTO del lote; GLOBAL solo para problemas transversales. "
@@ -70,6 +76,122 @@ _REVIEW_INSTRUCTIONS = (
     "evidence cita el dato concreto que motiva el defecto; action indica cómo resolverlo. "
     "Sin repeticiones ni preambulos. La revision no es aprobacion para cliente."
 )
+
+# [AUNEA-BE-PG11-SOURCE-INTEGRITY-354] START — one source-owned evidence check.
+# SOURCE: confirmed ProcessStep/Friction, DEC-050/068/074, PG11 CANONICAL.
+# OUTPUT: deterministic advisory review issues; never mutates the AS-IS or TO-BE.
+# Missing evidence remains unresolved; a captured figure is not automatically measured.
+_QUANTITY = re.compile(r"(?<!\w)(\d+(?:[.,]\d+)?)\s*(%|min(?:uto)?s?|horas?|h|€|euros?|d[ií]as?)(?!\w)", re.I)
+_AUTOMATION_CHANGE = re.compile(r"\b(?:implant\w*|implement\w*|automatiz\w*|integr\w*|rediseñ\w*|sustitu\w*)\b", re.I)
+_UNSUPPORTED_CAPABILITY = re.compile(
+    r"\b(?:email|correo|herramienta|sistema|plataforma|erp|crm)\b.{0,105}\b(?:no permite|no admite|imposible|incapaz)\b", re.I)
+_HYPOTHETICAL_CLAIM = re.compile(
+    r"(?:\b(?:frecuencia|duraci[oó]n|impacto|tiempo|medici[oó]n)\b.{0,85}\bhipot[eé]tic\w*\b|"
+    r"\bhipot[eé]tic\w*\b.{0,85}\b(?:frecuencia|duraci[oó]n|impacto|tiempo|medici[oó]n)\b)", re.I)
+
+
+def _source_quantities(request: PilotAIConsolidationRequest, step_id: str):
+    """(unit, number, evidence provenance, ref) for linked AS-IS facts, not forecasts."""
+    answers=request.request.engagement.questionnaire_answers
+    source=next((x for x in answers.get("_process_steps", [])
+                 if isinstance(x,dict) and str(x.get("id"))==step_id
+                 and x.get("status")!="SUPERSEDED"), None)
+    linked=[f for f in (answers.get("_frictions") or [])
+            if isinstance(f,dict) and f.get("status")!="SUPERSEDED"
+            and step_id in related_step_ids(f)]
+    numbers=[]
+    def add(unit, value, provenance, source_ref):
+        try:
+            if value is not None and value!="" and not isinstance(value,bool):
+                v=float(str(value).replace(",","."))
+                if v>=0 and v!=float("inf") and v==v:
+                    numbers.append((unit,v,provenance,source_ref))
+        except (ValueError,TypeError):
+            return
+    if source:
+        for field in ("active_time","wait_time","rework_time"):
+            add("min",source.get(field),"SOURCE_STEP",str(source.get("id")))
+    for friction in linked:
+        ref=str(friction.get("id") or "")
+        evidence=str(friction.get("evidence_type") or "UNSPECIFIED").upper()
+        freq=friction.get("frequency")
+        if isinstance(freq,dict) and str(freq.get("mode","")).lower()=="percent":
+            add("%",freq.get("value"),evidence,ref)
+        for key in ("active_time_loss","wait_time_loss"):
+            effort=friction.get(key)
+            if isinstance(effort,dict):
+                unit=str(effort.get("unit") or "min").lower()
+                canonical="min" if unit in ("min","mins","minuto","minutos") else (
+                    "h" if unit in ("h","hora","horas") else "")
+                if canonical:
+                    add(canonical,effort.get("value"),evidence,ref)
+    return source,linked,numbers
+
+
+def source_integrity_issues(request: PilotAIConsolidationRequest) -> list[dict]:
+    """Distinguish captured historical measures, unsupported claims and IA limitations.
+
+    Decisions: do not downgrade client-declared data to hypothesis, never invent
+    availability of technical capabilities, and do not equate an AS-IS record to
+    confirmation of how that record is generated.
+    """
+    findings=[]
+    def issue(sid,category,detail,evidence,action):
+        findings.append({"step_id":sid,"category":category,"issue":detail,
+                         "evidence":str(evidence)[:200],"action":str(action)[:200],
+                         "origin":"CONTROL_FUENTE_ASIS"})
+    for item in request.items:
+        sid=str(item.source_step_id)
+        step,frictions,numbers=_source_quantities(request,sid)
+        rationale=str(item.rationale or "")
+        limitations=str(item.limitations or "")
+        # Only classify evidence for the claim's actual units; a same-number
+        # match of a different type or another activity cannot make it verified.
+        claims=list(_QUANTITY.finditer(rationale))
+        action=rationale.lower().split("resultado esperado:",1)[0]
+        for match in claims:
+            raw,unit=match.group(1),match.group(2).lower()
+            category="%" if unit=="%" else ("min" if unit.startswith("min") else
+                "h" if unit in ("h","hora","horas") else
+                "money" if unit in ("€","euro","euros") else "day")
+            value=float(raw.replace(",","."))
+            is_forecast=match.start() >= rationale.lower().find("resultado esperado:") >= 0
+            known=[(prov,ref) for u,v,prov,ref in numbers
+                   if u==category and abs(v-value)<0.0001]
+            if is_forecast or not known:
+                issue(sid,"PENDING",
+                      "La propuesta contiene cifras de resultado futuro o sin una fuente AS-IS comparable.",
+                      match.group(0),"No declarar ahorro ni medición; comprobar cifra, unidad y fuente antes de utilizarla.")
+            elif all(prov in ("EV04","EV03","UNSPECIFIED") for prov,_ in known):
+                # Recorded hypotheses/estimates still exist in the study; they are
+                # not measured or converted into facts by the reviewer.
+                refs=", ".join(sorted({ref for _,ref in known if ref}))
+                issue(sid,"PENDING",
+                      "La cifra figura en el AS-IS como estimación, hipótesis o con procedencia no especificada; no es una medición.",
+                      refs or match.group(0),
+                      "Conservar la cifra con su clase de evidencia, sin elevarla a dato medido.")
+        if _HYPOTHETICAL_CLAIM.search(limitations):
+            known_evidence=[p for _,_,p,_ in numbers if p in ("EV01","EV02","SOURCE_STEP")]
+            if known_evidence:
+                issue(sid,"BLOCKING",
+                      "La IA califica como hipotéticos tiempos o frecuencias que sí constan como datos de origen declarados o medidos.",
+                      ", ".join(sorted({ref for _,_,p,ref in numbers if p in ("EV01","EV02","SOURCE_STEP")})),
+                      "Corregir la limitación: conservar el valor y su procedencia; verificar únicamente su precisión o aplicabilidad.")
+        if _UNSUPPORTED_CAPABILITY.search(limitations):
+            issue(sid,"PENDING",
+                  "La IA afirma una incapacidad de la herramienta que no queda acreditada por los datos AS-IS.",
+                  limitations[:200],
+                  "Comprobar funciones, permisos e integraciones reales; expresar la capacidad como pendiente, no como restricción confirmada.")
+        if step and any(str(v).upper() in ("RECORD","REGISTRO ESTRUCTURADO")
+                        for v in (step.get("outputs") if isinstance(step.get("outputs"),list) else [step.get("outputs")])):
+            if re.search(r"\b(?:crear|creaci[oó]n|implant\w*|implement\w*|nuevo)\b.{0,65}\bregistro\b",action,re.I):
+                issue(sid,"PENDING",
+                      "El AS-IS ya registra una salida estructurada: no está acreditado que haya que crear otro registro.",
+                      str(step.get("id")),
+                      "Aclarar si se automatiza el registro existente o si se necesita otro; no suponer su mecanismo actual.")
+    return findings
+# [AUNEA-BE-PG11-SOURCE-INTEGRITY-354] END
+
 
 def _context(request: PilotAIConsolidationRequest) -> dict:
     steps=request.request.engagement.questionnaire_answers["_process_steps"]
@@ -82,10 +204,16 @@ def _context(request: PilotAIConsolidationRequest) -> dict:
         "process_name":request.request.engagement.process_name,
         "process_flow":explicit_pilot_process_flow(active),
         "activity_order":[{"id":str(s["id"]),"name":str(s.get("step_name") or s.get("name") or ""),
-                           "type":str(s.get("step_type") or "")} for s in active],
+                           "type":str(s.get("step_type") or ""),
+                           "actor":s.get("actor"),"tool":s.get("tool"),
+                           "outputs":s.get("outputs")} for s in active],
         "frictions":[{"id":str(f.get("id")),"step_ids":sorted(related_step_ids(f)),
                       "type":str(f.get("friction_type") or ""),
-                      "label":str(f.get("client_label") or "")}
+                      "label":str(f.get("client_label") or ""),
+                      "frequency":f.get("frequency"),"active_time_loss":f.get("active_time_loss"),
+                      "wait_time_loss":f.get("wait_time_loss"),
+                      "time_attribution":f.get("time_attribution"),
+                      "evidence_type":f.get("evidence_type")}
                      for f in request.request.engagement.questionnaire_answers.get("_frictions",[]) or []
                      if isinstance(f,dict) and f.get("id")],
         "proposals":[item.model_dump(mode="json") for item in request.items],
@@ -278,7 +406,7 @@ def consolidate(request: PilotAIConsolidationRequest, *, repair: bool = True) ->
     validate_pilot_result(request.request,model_name(),request.items)
     context=_context(request)
     batches=_batches(context)
-    issues=_transformation_field_gaps(request.items)
+    issues=[*_transformation_field_gaps(request.items),*source_integrity_issues(request)]
     conflicts=_clear_transformation_conflicts(request.items)
     missing_structured = _missing_structured_actions(request.items)
     for sid in missing_structured:
