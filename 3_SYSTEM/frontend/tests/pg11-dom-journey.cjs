@@ -33,6 +33,12 @@ for(const kind of ['invoice','logistics']){
   const candidate=()=>[...w.document.querySelectorAll('.tobe-alternative')].find(x=>x.textContent.includes('Separar el control tras esta actividad'));
   assert.ok(candidate(),'structural candidate exists');candidate().querySelector('[data-tobe-alternative]').click();
   await until(()=>w.document.getElementById('tobeAlternativeDialog'));
+  const modal=w.document.getElementById('tobeAlternativeDialog');
+  assert.match(modal.textContent,/Qué cambiaría si confirmas esta intervención/);
+  assert.match(modal.textContent,/TO-BE guardado/);
+  assert.match(modal.textContent,/TO-BE propuesto/);
+  assert.match(modal.textContent,/Actividad incorporada al mapa/);
+  assert.match(modal.textContent,/Comprobaciones antes de confirmar/);
   assert.equal(run('tobeFutureSteps(currentEng(),latestTobe(currentEng())).length'),4);
   assert.equal(w.document.querySelectorAll('#tobeAlternativeDialog .tobe-graph-node').length,5);
   w.document.querySelector('[data-tobe-cancel-alternative]').click();
@@ -41,6 +47,11 @@ for(const kind of ['invoice','logistics']){
   const edit=w.document.querySelector('[data-tobe-preview-key="controlsRisk"]');
   edit.value='Control revisado por el consultor con criterio explícito de integridad.';
   edit.dispatchEvent(new w.Event('input',{bubbles:true}));
+  assert.match(w.document.querySelector('#tobeAlternativeChanges').textContent,
+    /Control revisado por el consultor con criterio explícito de integridad/,
+    'editing refreshes preview without writing the live TO-BE');
+  assert.equal(run('tobeFutureSteps(currentEng(),latestTobe(currentEng())).length'),4);
+  assert.equal(w.document.querySelector('[data-tobe-confirm-alternative]').disabled,false);
   w.document.querySelector('[data-tobe-confirm-alternative]').click();
   await until(()=>run('tobeFutureSteps(currentEng(),latestTobe(currentEng())).length')===5);
   assert.equal(run('tobeFlowIntegrity(currentEng(),latestTobe(currentEng()))'),null);
