@@ -1399,7 +1399,7 @@ function tobeAiInlineHint(e,p,item,key){
     field=TOBE_AI_REVIEW_FIELDS.find(x=>x[1]===key);
   if(!field)return '';
   const decision=tobeHumanReviewRecord(e,p)?.decisions?.[String(item.sourceStepId)],
-    dismissed=decision?.status==='DISCARD',
+    legacyDiscard=decision?.status==='DISCARD',
     refs=tobeHumanReadableRefs(e,ai.source_refs),
     pending=String(ai.limitations||'').trim(),
     value=matched?.display||skipped?.raw||'';
@@ -1442,7 +1442,8 @@ function tobeAiInlineHint(e,p,item,key){
     (kept?'<p class="field-help"><b>Estado del campo:</b> mantener el valor TO-BE guardado.</p>':
       applied?'<p class="field-help"><b>Estado del campo:</b> sugerencia IA aplicada y guardada.</p>':
       lastChoice?.action==='EDIT'?'<p class="field-help"><b>Estado del campo:</b> alternativa editada por el consultor.</p>':'')+
-    (dismissed?'<p class="field-help">Recomendación descartada. Se conserva tu valor.</p>':
+    (legacyDiscard?'<p class="field-help">Consta un descarte de la propuesta completa en el historial anterior. '+
+      'Este registro no bloquea las decisiones individuales de 03.3.</p>':
       skipped?'<p class="field-help">Valor no aplicable: revísalo en el control original.</p>':'')+
     '</div>';
 }
@@ -1489,6 +1490,7 @@ function tobeAiRowActions(e,p,item,key){
       internalAiSavedDraft(e)?.items?.some(x=>String(x.source_step_id)===id),
     diff=isCurrent?tobeAiReviewDiff(e,p,id):null,
     candidate=diff?.allFields?.find(x=>x.key===key),
+    incompatible=diff?.skipped?.find(x=>x.key===key),
     canApply=!!candidate?.changed&&!diff.issue,
     history=(p.aiDraft?.applyHistory||[]).filter(x=>String(x.sourceStepId)===id&&
       Array.isArray(x.fields)&&x.fields.includes(key)&&
@@ -1497,7 +1499,7 @@ function tobeAiRowActions(e,p,item,key){
   const action=(label,attribute,active=false,title='')=>
     '<button type="button" class="btn btn-outline btn-small'+(active?' is-selected':'')+
     '" '+attribute+' title="'+attr(title||label)+'">'+esc(label)+'</button>';
-  if(!candidate)return '';
+  if(!candidate&&!incompatible)return '';
   return '<div class="tobe-ai-row-actions aunea-ui-button-row" aria-label="Decisión sobre la propuesta IA de '+esc(
     TOBE_AI_REVIEW_FIELDS.find(x=>x[1]===key)?.[2]||'este campo')+'">'+
     (canApply?
@@ -1507,7 +1509,10 @@ function tobeAiRowActions(e,p,item,key){
       applied?'<span class="field-help" role="status">IA aplicada</span>':'')+
     action('Mantener','data-tobe-ai-keep-field="'+attr(key)+
       '" data-tobe-ai-action-source="'+attr(id)+'"',history?.action==='KEEP',
-      'Conservar mi valor TO-BE; no aplicar la alternativa IA')+'</div>';
+      'Conservar mi valor TO-BE; no aplicar la alternativa IA')+
+    action('Editar','data-tobe-ai-edit-field="'+attr(key)+
+      '" data-tobe-ai-action-source="'+attr(id)+'"',false,
+      'Abrir el editor único del campo del borrador TO-BE')+'</div>';
 }
 // [AUNEA-FE-PG11-ROW-DECISION-278] END
 // [AUNEA-FE-PG11-APPROVED-ROW-ACTIONS-273] END
@@ -1726,7 +1731,9 @@ function tobeAiAdviceHtml(e,item,includeDecision=true){
     '</details>'+
     ''+
     (includeDecision?tobeHumanReviewHtml(e,item,!!archived):'')+
-    '<p class="tobe-muted">Los valores IA y sus fuentes aparecen junto a los campos de «03.3 · Configurar». La propuesta no modifica el borrador sin una decisión humana.</p>'+
+    '<p class="tobe-muted">Las oportunidades globales y la propuesta individual son información para contrastar. '+
+      'Decide únicamente en 03.3, campo por campo o mediante la vista previa de una alternativa estructural. '+
+      'El borrador no cambia por leer o volver a analizar estas propuestas.</p>'+
     '</div>';
 }
 // [AUNEA-FE-PG11-INSPECTOR-CHECKPOINT-214] END
