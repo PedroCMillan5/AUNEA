@@ -1178,7 +1178,7 @@ function tobeSnapshotIssueCards(e,item){
       details.push(fact('Atribución temporal',
         (modes[mode]||'Relación temporal pendiente de clasificar')+'. '+location+
         (mode==='ADDITIONAL'&&own?
-          ' Sólo se incorpora al cálculo tras validar frecuencia y evidencia.':'')+
+          ' Su incorporación al total requiere validar frecuencia y evidencia.':'')+
         (mode!=='ADDITIONAL'&&own?' No sumar de nuevo.':'')));
     }
     if(wait&&hasNumber(wait.value)&&Number(wait.value)>0&&
