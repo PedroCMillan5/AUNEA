@@ -13,7 +13,7 @@ test('03.2 presents both IA analyses but no longer asks for a whole-proposal vot
  const inspector=pick('tobeInspectorHtml');
  assert.match(inspector,/tobeGlobalLinkedStepHtml\(e,p,item\)/);
  assert.match(inspector,/tobeAiAdviceHtml\(e,item,false\)/);
- assert.match(inspector,/Aquí sólo se analizan opciones/);
+ assert.match(inspector,/Estas fuentes no constituyen decisiones/);
  assert.doesNotMatch(inspector,/tobeHumanReviewHtml\(e,item,false\)/);
  assert.doesNotMatch(inspector,/data-tobe-human-decision/);
 });
