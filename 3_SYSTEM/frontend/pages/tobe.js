@@ -2466,7 +2466,8 @@ function tobePage(){
     (editable?'<button class="btn btn-primary" id="advanceTobe">Marcar como revisado</button>':
       p.status==='REVIEWED'?'<button class="btn btn-primary" id="advanceTobe">Aprobar para cliente</button>':'')+
     (!editable&&p.status!=='PUBLISHED'?'<button class="btn" id="newTobeVersion">Crear nueva versión</button>':'');
-  const review=tobeHumanReviewRecord(e,p),reviewed=p.items.filter(it=>tobeActivityDecisionRecorded(e,p,it)).length;
+  const review=tobeHumanReviewRecord(e,p),activityItems=[...(p.items||[]),...tobeAddedSteps(p)],
+    reviewed=activityItems.filter(it=>tobeActivityDecisionRecorded(e,p,it)).length;
   const savedAi=typeof internalAiSavedDraft==='function'?internalAiSavedDraft(e):null,
     pendingAi=!savedAi&&typeof internalAiPendingSteps==='function'&&
       typeof internalAiPilotKey==='function'?internalAiPendingSteps(e,internalAiPilotKey(e)):null,
@@ -2498,18 +2499,17 @@ function tobePage(){
     '<main class="tobe-workspace" data-tobe-version="'+p.version+
     '" data-tobe-mode="'+attr(__auneaTobeMode)+'">'+
       '<section class="tobe-task-guide" aria-label="Qué hacer en Diseño TO-BE">'+
-        '<div class="tobe-task-guide-intro"><div><h2>Qué tienes que hacer aquí</h2>'+
-          '<p>Construye el TO-BE actividad por actividad. El análisis global, la IA por actividad y las reglas aportan opciones; '+
-          'tú decides una sola vez qué incorporas al borrador y después validas el diseño completo. El AS-IS nunca se modifica.</p></div>'+
-          '<span class="tobe-task-guide-progress">'+reviewed+' de '+p.items.length+' actividades configuradas</span></div>'+
+        '<div class="tobe-task-guide-intro"><div><h2>Diseñar el proceso futuro</h2>'+
+          '<p>Revisa las oportunidades y configura cada actividad. Las reglas y la IA proponen; '+
+          'el consultor decide qué entra en el TO-BE. El AS-IS no se modifica.</p></div>'+
+          '<span class="tobe-task-guide-progress">'+reviewed+' de '+activityItems.length+' actividades configuradas</span></div>'+
         '<div class="tobe-ia-guide-summary" role="status"><strong>'+esc(aiSummaryTitle)+'</strong>'+
           '<p>'+esc(aiSummaryDescription)+'</p></div>'+
         '<div class="tobe-task-guide-steps">'+
           '<span><b>03.1 · Entender el AS-IS</b></span>'+ 
-          '<span><b>03.2 · Revisar propuestas IA</b></span>'+ 
-          '<span><b>03.3 · Configurar la actividad futura</b></span>'+ 
-          '<span><b>03.4 · Conectar el proceso futuro</b> (sólo en Mapa TO-BE)</span></div>'+ 
-        '<p class="tobe-task-guide-result"><b>Resultado esperado:</b> un mapa TO-BE con actividades, responsables, datos y rutas definidos. Guarda el borrador, pulsa «Comprobar requisitos» y, cuando no existan bloqueos, «Marcar como revisado». Después podrás comparar AS-IS y TO-BE en PG12.</p>'+
+          '<span><b>03.2 · Revisar oportunidades de mejora</b></span>'+ 
+          '<span><b>03.3 · Configurar la actividad futura</b></span></div>'+ 
+        '<p class="tobe-task-guide-result">Revisa las rutas en «Mapa TO-BE». Después guarda, comprueba requisitos y marca el diseño como revisado para abrir PG12.</p>'+
       '</section>'+
       tobeContextOverviewHtml(e,p)+
       tobeGlobalOverviewHtml(e,p)+

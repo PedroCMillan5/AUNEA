@@ -40,4 +40,12 @@ test('legacy source-oracle is a test-only reconstruction; PG11 identity is prese
    assert.equal(source.split('function '+fn+'(').length-1,1,fn);
  assert.ok(!html.includes('pg11-source.cjs'),'test-only compatibility code must not load in the app');
 });
+test('PG11 section 03 uses one vocabulary and keeps map routing outside the guided steps',()=>{
+ assert.match(view,/03\.2 · Revisar oportunidades de mejora/);
+ assert.doesNotMatch(view,/03\.2 · Revisar propuestas IA/);
+ const guide=view.slice(view.indexOf('<section class="tobe-task-guide"'),view.indexOf('</section>'+String.fromCharCode(39)+'+',view.indexOf('<section class="tobe-task-guide"')));
+ assert.doesNotMatch(guide,/03\.4 · Conectar el proceso futuro/,'map instructions stay in map mode');
+ assert.match(read('ui-system.css'),/data-tobe-mode="guided"\] #tobeStepRoutes\{display:none\}/);
+ assert.match(view,/activityItems=\[\.\.\.\(p\.items\|\|\[\]\),\.\.\.tobeAddedSteps\(p\)\]/);
+});
 // [AUNEA-UAT-PG11-MODULE-373] END
