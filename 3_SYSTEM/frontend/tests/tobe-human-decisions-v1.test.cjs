@@ -22,7 +22,7 @@ test('legacy ACCEPT MODIFY DISCARD remains versioned evidence, never an active g
  const readiness=pick('tobeReviewReadiness');
  assert.match(inspector,/tobe-legacy-review/);
  assert.match(inspector,/historial anterior|Historial de revisión anterior/i);
- assert.doesNotMatch(readiness,/humanReview|ACCEPT|MODIFY|DISCARD|Primero registra tu decisión/);
+ assert.doesNotMatch(readiness,/if\(!human\)|decision\.status===|Falta la revisión humana de las propuestas IA/);
  assert.match(readiness,/tobeActivityDesignIssue|Completa herramienta, entradas, salidas y controles/);
 });
 test('a configured activity is counted from the actual TO-BE, not old IA approval',()=>{
