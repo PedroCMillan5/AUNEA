@@ -1681,7 +1681,10 @@ function tobeAiAdviceHtml(e,item,includeDecision=true){
     '</dl>'+
     '<details class="tobe-subdetails"><summary>Justificación, fuentes y aspectos por revisar</summary>'+
       '<p><b>Justificación:</b> '+esc(narrative.reason||'No declarada')+'</p>'+
-      '<p><b>Referencias del AS-IS:</b> '+esc(tobeHumanReadableRefs(e,suggestion.source_refs)||'No identificadas')+'</p>'+
+      '<p><b>Referencias del AS-IS:</b> '+esc((typeof tobeHumanReadableRefs==='function'?
+        tobeHumanReadableRefs(e,suggestion.source_refs):
+        (typeof internalAiReadableRefs==='function'?internalAiReadableRefs(e,suggestion.source_refs):
+          (suggestion.source_refs||[]).join(' · ')))||'No identificadas')+'</p>'+
       '<p><b>Limitaciones redactadas por IA (no confirmadas):</b> '+
         esc(suggestion.limitations||'La IA no ha propuesto limitaciones específicas.')+'</p>'+
       (fromCheckpoint?'<p>Consolidación entre actividades pendiente. No se puede aplicar ni aprobar esta propuesta.</p>':
@@ -2966,8 +2969,12 @@ function tobeGlobalLinkedStepHtml(e,p,item){
         '<p><b>Viabilidad pendiente:</b> '+esc(r.review?.reason||'Requiere comprobación.')+'</p>')+
       (r.alternative?'<p><b>Alternativa propuesta:</b> '+esc(r.alternative.how)+'</p>':'')+
       '<p><b>Referencias de origen:</b> '+
-        esc(tobeHumanReadableRefs(e,[...(r.source_refs||[]),...(r.related||[]).flatMap(x=>x.source_refs||[])]
-          .filter((x,i,a)=>a.indexOf(x)===i)))+'</p></li>').join('')+
+        esc((()=>{
+          const refs=[...(r.source_refs||[]),...(r.related||[]).flatMap(x=>x.source_refs||[])]
+            .filter((x,i,a)=>a.indexOf(x)===i);
+          return typeof tobeHumanReadableRefs==='function'?tobeHumanReadableRefs(e,refs):
+            (typeof internalAiReadableRefs==='function'?internalAiReadableRefs(e,refs):refs.join(' · '));
+        })())+'</p></li>').join('')+
     '</ul><p class="tobe-muted">Contexto de solo lectura. Estas propuestas no sustituyen '+
     'el análisis individual, ni aplican cambios o decisiones al TO-BE.</p></details>';
 }
