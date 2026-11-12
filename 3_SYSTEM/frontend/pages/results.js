@@ -3749,7 +3749,7 @@ function tobeGlobalOverviewHtml(e,p){
     (opportunities.length?'<div class="tobe-global-opportunities" aria-label="Objetivos y recomendaciones">'+
       thematicGroups.map((group,i)=>
       '<article class="tobe-global-opportunity">'+
-      '<details class="tobe-global-opportunity-detail" data-global-group-key="'+attr(group.title)+'"'+
+      '<details class="tobe-global-opportunity-detail" data-global-group-key="'+encodeURIComponent(String(group.title))+'"'+
         (expandedGlobalGroups.has(group.title)?' open':'')+'>'+
       '<summary class="tobe-global-opportunity-summary">'+
       '<span class="tobe-global-number" aria-hidden="true">'+(i+1)+'</span>'+
