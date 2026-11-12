@@ -480,8 +480,10 @@ test('PG11 rejects stale backend alternatives even when the frontend layout is c
       expectedOutcome:'Estado consultable',combination:'COMBINABLE'}]};
  assert.equal(check(modern),'');
  assert.match(check({...modern,candidates:[{id:'KEEP:P1'}]}),/no cumple el contrato/);
- assert.match(src,/__auneaTobeAlternatives\.delete\(key\);\s*button\.disabled=true/,
+ assert.match(src,/__auneaTobeAlternatives\.delete\(key\);/,
    'previous responses must be cleared when recalculating');
+ assert.match(src,/button\.closest\('\.tobe-alternatives'\)\?\.querySelectorAll\('\.tobe-alternative'\)/,
+   'old cards must be hidden while a new server response is pending');
  assert.match(src,/if\(incompatible\)throw Error\(incompatible\)/);
  assert.match(src,/const rows=\(!staleIssue&&data\?\.candidates\|\|\[\]\)\.map/,
    'stale recommendations must not remain visible after an incompatible response');
