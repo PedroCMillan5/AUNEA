@@ -1005,15 +1005,15 @@ function tobeArtifactField(item,key,label,disabled=false,sourceStep=null){
         wrapped:true,detailId:htmlId+'_detail',detailValue:details,
         detailPlaceholder:'Especifica '+(key==='inputs'?'el dato de entrada':'el resultado')+
           ' al seleccionar Otro',
-        preferredValues:visible,choiceOrigin:origin
+        preferredValues:[],choiceOrigin:origin
       }):
       '<p class="notice warn">No se ha cargado el componente canónico de multiselección.</p>';
   return '<div class="field full tobe-artifact-field process-modal-form"'+
     ' data-tobe-multi-item="'+attr(item.id)+'" data-tobe-multi-key="'+attr(key)+
     '" data-tobe-multi-id="'+attr(htmlId)+'"'+
     (disabled?' data-tobe-multi-readonly="1"':'')+'><label>'+esc(label)+'</label>'+
-    '<p class="tobe-artifact-provenance-help">Selecciona las categorías que utilizará esta actividad. '+
-      'La selección se guarda en el TO-BE; el origen AS-IS permanece intacto.</p>'+
+    '<p class="tobe-artifact-provenance-help">Verde: original conservado. Dorado: nuevo en TO-BE. '+
+      'Sombreado: original retirado. Sin marca: no seleccionado. Todas las opciones están visibles; el AS-IS no cambia.</p>'+
     (disabled?'<fieldset disabled class="tobe-readonly-options">'+controls+'</fieldset>':controls)+
     (selected.unknown.length?'<p class="notice warn">Valor anterior no reconocido por el catálogo vigente: '+
       esc(selected.unknown.join(' · '))+
@@ -2117,7 +2117,7 @@ function tobeOptimizationPanelHtml(e,p,item){
       String(s.exception_path?.destination_step)===id),
     successorIds=owner?[owner.normal_next_step,owner.exception_path?.destination_step]:[],
     successors=successorIds.map(id=>future.find(s=>String(s.id)===String(id))).filter(Boolean),
-    names=steps=>steps.map(x=>x.step_name).join(' · ')||'Ninguna conectada',
+    names=steps=>steps.map(x=>x.step_name).join(' · ')||'Sin actividad conectada en esta dirección',
     review=results.filter(x=>x.severity==='REVIEW').length,
     block=tobeFlowIntegrity(e,p),
     rows=results.map(x=>'<li class="tobe-optimization-finding" data-optimization-code="'+attr(x.code)+'">'+
@@ -2130,7 +2130,7 @@ function tobeOptimizationPanelHtml(e,p,item){
     ' id="tobeStepOptimization" aria-label="Comprobación de dependencias del flujo">'+
     '<div class="tobe-design-group-head"><span class="tobe-design-group-number">04</span>'+
     '<div><h4>Impacto del cambio sobre el flujo</h4>'+
-    '<p>Compara entradas, salidas, herramientas, decisiones y conexiones con el resto del TO-BE.</p></div></div>'+
+    '<p>Revisión determinista de la coherencia con el mapa futuro; no modifica conexiones y no usa IA.</p></div></div>'+
     '<div class="tobe-optimization-body">'+
       '<div class="tobe-optimization-connections">'+
         '<div><b>Pasos anteriores</b><span>'+esc(names(predecessors))+'</span></div>'+
@@ -2139,12 +2139,14 @@ function tobeOptimizationPanelHtml(e,p,item){
       '</div>'+
       (block?'<p class="notice warn"><b>Integridad del flujo:</b> '+esc(block)+'</p>':'')+
       (results.length?'<div class="tobe-optimization-summary"><b>'+results.length+
-        ' comprobaciones del cambio</b> · '+review+' requieren revisión</div>'+
+        ' observaciones detectadas</b> · '+review+' requieren contrastar un dato o decisión</div>'+
         '<ul class="tobe-optimization-findings">'+rows+'</ul>':
         '<p class="tobe-optimization-empty">No se han identificado incompatibilidades evidentes entre los datos declarados de este paso y sus conexiones. Esto no acredita por sí solo que el proceso esté optimizado.</p>')+
-      '<p class="field-help">Revisión derivada del AS-IS confirmado y del borrador TO-BE, no es una propuesta autónoma de IA ni una estimación de ahorros. Los tipos de artefacto no prueban por sí solos que dos actividades compartan el mismo documento.</p>'+
+      '<p class="field-help"><b>Cómo actuar:</b> «Revisar» no significa error confirmado; contrasta la observación con los datos y restricciones del estudio. '+
+      'Dos actividades con la misma categoría documental no tienen necesariamente el mismo archivo. '+
+      'El botón guarda tus modificaciones y recalcula estas observaciones. No acepta propuestas, no cambia rutas y no modifica el AS-IS.</p>'+
       (tobeEditable(p)?'<button type="button" class="btn btn-outline" data-tobe-recheck-optimization="1">'+
-        'Guardar cambios y comprobar dependencias</button>':'')+
+        'Guardar y actualizar comprobaciones</button>':'')+
     '</div></section>';
 }
 // [AUNEA-FE-PG11-OPTIMIZATION-CHECK-313] END
@@ -2606,7 +2608,8 @@ function tobeInspectorHtml(e,p){
         '</span></summary>'+
         '<div class="tobe-artifact-origin-legend" aria-label="Origen de los datos de entrada y salida">'+
           '<span class="tobe-artifact-origin-sample is-asis">Del estudio AS-IS</span>'+
-          '<span class="tobe-artifact-origin-sample is-improvement">Incorporado como mejora TO-BE</span>'+
+          '<span class="tobe-artifact-origin-sample is-improvement">Nuevo en TO-BE</span>'+
+          '<span class="tobe-artifact-origin-sample is-removed">Original retirado del TO-BE</span>'+
           '<span class="tobe-artifact-origin-note">Los colores identifican procedencia, no aprobación.</span>'+
         '</div>'+
         '<div class="form-grid tobe-design-fields">'+
