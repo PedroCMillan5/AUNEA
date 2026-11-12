@@ -17,7 +17,10 @@ for(const name of ['invoice','logistics'])test('PG11 source → backend rules �
    saveState:()=>{if(fail)return false;disk=JSON.stringify(e);return true;}};
  vm.createContext(ctx);vm.runInContext(block('AUNEA-FE-PG11-FUTURE-FLOW-228')+'\n'+block('AUNEA-FE-PG11-TRANSACTION-332')+'\n'+block('AUNEA-FE-PG11-INTEGRATION-PROJECTION-341'),ctx);
  let p=ctx.latestTobe(e);p.flow=ctx.tobeFlowOwner(e,p);const immutable=JSON.stringify(snapshot);
- const preview=candidate=>({engagementId:e.id,version:p.version,before:ctx.tobeDesignState(p),candidate,...ctx.tobeProjectAlternative(e,p,candidate)});
+ const preview=candidate=>({engagementId:e.id,version:p.version,before:ctx.tobeDesignState(p),
+   candidate,conditionsAcknowledged:true,keepFindingsAcknowledged:true,
+   consultantNote:'Se conserva temporalmente la recepción, pendiente de validar el riesgo.',
+   ...ctx.tobeProjectAlternative(e,p,candidate)});
  const structural=result.candidates.find(c=>c.operations.length),temporary=preview(structural);
  let before=JSON.stringify(p);
  ctx.esc=String;ctx.attr=String;
@@ -38,10 +41,22 @@ for(const name of ['invoice','logistics'])test('PG11 source → backend rules �
  assert.equal(resolved.projected.flow.routes[resolved.projected.flow.routes.P1.normal].normal,'P2');
  p.flow.routes.P1.normal=originalRoute;
  const noChange=preview({id:'KEEP: P1',sourceId:'P1',provenance:'RULES',
-  fields:{},operations:[],sourceRefs:['P1'],title:'Mantener sin cambios'});
+  fields:{},operations:[],sourceRefs:['P1'],title:'Mantener sin cambios',
+  conditions:['La situación actual sigue teniendo hallazgos pendientes.']});
  assert.match(ctx.tobeAlternativeChangesHtml(e,noChange),/No hay diferencias materiales/);
+ const unchecked={...noChange,conditionsAcknowledged:false};
+ assert.match(ctx.tobeAlternativeDecisionIssue(unchecked),/condiciones pendientes/);
+ assert.throws(()=>ctx.tobeCommitAlternative(e,unchecked),/condiciones pendientes/);
+ const unjustified={...noChange,consultantNote:''};
+ assert.match(ctx.tobeAlternativeDecisionIssue(unjustified),/Justifica/);
+ assert.throws(()=>ctx.tobeCommitAlternative(e,unjustified),/Justifica/);
+ const unrecognized={...noChange,keepFindingsAcknowledged:false};
+ assert.throws(()=>ctx.tobeCommitAlternative(e,unrecognized),/hallazgos/);
  assert.equal(ctx.tobeCommitAlternative(e,noChange),true,'explicit unchanged decision is persisted');
  assert.equal(p.aiDraft.applyHistory.at(-1).action,'KEEP');
+ assert.equal(p.aiDraft.applyHistory.at(-1).conditionsAcknowledged,true);
+ assert.equal(p.aiDraft.applyHistory.at(-1).remainingFindingsAcknowledged,true);
+ assert.match(p.aiDraft.applyHistory.at(-1).consultantNote,/Se conserva temporalmente/);
  ctx.tobeUndoAlternative(e);
  assert.ok(p.aiDraft.applyHistory.at(-1).undoneAt,'unchanged decision is reversible');
  const beforeChanges=JSON.stringify(ctx.tobeDesignState(p));
