@@ -78,12 +78,13 @@ test('decisions ACCEPT/MODIFY/DISCARD persist without overwriting consultant fie
   const h=setup(),before=JSON.stringify(h.p.items);
   assert.match(h.readiness(),/revisión humana/);
   h.click('S1','ACCEPT');
-  assert.equal(h.p.aiDraft.humanReview.decisions.S1.status,'ACCEPT');
+  assert.equal(h.p.aiDraft.humanReview,undefined,'blocked IA must never be accepted');
+  assert.match(h.notices.at(-1),/No se puede aceptar la propuesta/);
+  assert.equal(h.saved.length,0);
+  h.click('S1','MODIFY','Se ajusta la intervención y se justifican los controles del consultor.');
+  assert.equal(h.p.aiDraft.humanReview.decisions.S1.status,'MODIFY');
   assert.equal(h.saved.length,1);
   assert.equal(JSON.stringify(h.p.items),before,'choice cannot copy unreviewed fields into TO-BE');
-  assert.match(h.readiness(),/bloqueos pendientes/,
-    'an accepted blocked suggestion must never make this TO-BE reviewable');
-  h.click('S1','MODIFY','Se ajusta la intervención y se justifican los controles del consultor.');
   assert.match(h.readiness(),/Falta aceptar, modificar o descartar/);
   h.click('S2','DISCARD','No se acepta la sugerencia: se mantiene el control actual hasta validar su origen.');
   assert.equal(h.p.aiDraft.humanReview.decisions.S2.status,'DISCARD');
@@ -91,19 +92,28 @@ test('decisions ACCEPT/MODIFY/DISCARD persist without overwriting consultant fie
   h.click('S1','MODIFY','Se ajusta la propuesta tras revisar las fuentes y el control aplicable.');
   assert.equal(h.p.aiDraft.humanReview.decisions.S1.status,'MODIFY');
 });
+test('a clean, current IA proposal can be accepted without automatically changing the TO-BE',()=>{
+  const h=setup(),before=JSON.stringify(h.p.items);
+  h.p.aiDraft.proposal.review.issues=[];
+  h.p.aiDraft.proposal.review.blocking_step_ids=[];
+  h.click('S1','ACCEPT');
+  assert.equal(h.p.aiDraft.humanReview.decisions.S1.status,'ACCEPT');
+  assert.equal(h.saved.length,1);
+  assert.equal(JSON.stringify(h.p.items),before);
+});
 test('short justification and stale candidate cannot create valid decision',()=>{
   const h=setup();
-  h.click('S1','ACCEPT','sí');
+  h.click('S1','MODIFY','sí');
   assert.equal(h.p.aiDraft.humanReview,undefined);
   assert.match(h.notices.at(-1),/20 caracteres/);
-  h.click('S1','ACCEPT');
+  h.click('S1','MODIFY');
   h.p.aiDraft.proposal.items[0].rationale+=' NUEVA GENERACIÓN';
   assert.match(h.readiness(),/revisión humana/,
     'previous acceptance must be invalidated on candidate regeneration');
 });
 test('blocking keep-state and legacy NO cannot be promoted to reviewed',()=>{
   const h=setup();
-  h.click('S1','ACCEPT');
+  h.click('S1','MODIFY');
   h.click('S2','MODIFY');
   h.p.items[0].transformation='Se mantiene';
   assert.match(h.readiness(),/bloqueos|indica «Se modifica»/,'incompatible KEEP choice must be blocked');
@@ -111,16 +121,17 @@ test('blocking keep-state and legacy NO cannot be promoted to reviewed',()=>{
   h.p.items[0].controlsRisk='NO';
   assert.match(h.readiness(),/Completa herramienta, datos y controles/);
   h.p.items[0].controlsRisk='Trazabilidad de errores bajo responsable validado';
-  assert.match(h.readiness(),/bloqueos pendientes/,
-    'a better consultant field does not silently clear a blocked accepted IA proposal');
+  assert.equal(h.readiness(),null,
+    'manual rediseño justificado puede continuar, sin aceptar el candidato IA bloqueado');
   h.click('S1','MODIFY','Se rediseña el control tras contrastar los bloqueos de la propuesta IA.');
   assert.equal(h.readiness(),null);
 });
 test('explicit decisions remain bound to the same TO-BE version and diagnostic',()=>{
   const h=setup();
   h.click('S1','ACCEPT');
+  assert.match(h.notices.at(-1),/No se puede aceptar/);
   h.click('S2','MODIFY');
-  assert.match(h.readiness(),/bloqueos pendientes/);
+  assert.match(h.readiness(),/Falta aceptar, modificar o descartar/);
   h.click('S1','MODIFY','Se modifica la alternativa y se documenta el diseño humano.');
   assert.equal(h.readiness(),null);
   h.p.version=2;
