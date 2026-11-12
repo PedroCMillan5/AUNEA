@@ -2730,7 +2730,7 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 .tobe-human-review .field textarea{width:100%;min-width:0;min-height:100px;
   max-width:100%;box-sizing:border-box;resize:vertical;line-height:1.6;
   font-size:13px;background:#fff}
-.tobe-human-review-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:stretch}
+.tobe-human-review-actions{display:flex;flex-wrap:wrap;align-items:stretch}
 .tobe-human-review-actions .btn{min-height:40px;white-space:normal;max-width:100%;
   line-height:1.35;flex:0 1 auto}
 @media(max-width:600px){
@@ -3234,8 +3234,8 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 .tobe-ai-field-control>.field label{display:block;margin-bottom:7px}
 .tobe-ai-field-control .tobe-artifact-field{width:100%}
 .tobe-ai-field-row .tobe-ai-inline{
-  margin:0;min-width:0;align-content:start;gap:7px;
-  padding:11px 13px;border-radius:var(--radius-sm);box-sizing:border-box;
+  align-content:start;gap:7px;
+  padding:11px 13px;box-sizing:border-box;
 }
 .tobe-ai-field-row .tobe-ai-inline .field-help{
   font-size:12px;line-height:1.55;overflow-wrap:anywhere;
@@ -3359,7 +3359,7 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
   font-weight:700;font-size:var(--font-small);line-height:1.5}
 .tobe-global-card-detail-body{display:grid;gap:12px;margin-top:12px}
 .tobe-global-card-detail-body .tobe-global-intervention{
-  border:1px solid var(--system-line);border-radius:var(--radius-sm);
+  border-radius:var(--radius-sm);
   background:var(--canvas);padding:12px 14px}
 .tobe-global-card-detail-body .tobe-global-intervention+.tobe-global-intervention{
   margin:0;border-top:1px solid var(--system-line);padding-top:12px}
@@ -3537,7 +3537,7 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 }
 .tobe-workspace[data-tobe-mode="guided"] .tobe-guided-nav{
   display:flex;align-items:center;flex-wrap:wrap;gap:10px 22px;
-  padding:10px 14px;position:sticky;top:0;
+  position:sticky;top:0;
 }
 .tobe-workspace[data-tobe-mode="guided"] .tobe-guided-modes,
 .tobe-workspace[data-tobe-mode="guided"] .tobe-guided-tabs,
@@ -4272,10 +4272,10 @@ details.tobe-ai-operational-context:not([open])>.tobe-ai-operational-body{
   cursor:pointer;color:var(--system);font-weight:700;
 }
 .tobe-alternative-dialog{
-  font-family:Inter,"Segoe UI",Arial,sans-serif;
+  
   color:var(--ink);border-color:var(--system-line);padding:22px;
 }
-.tobe-alternative-dialog>h2{font-family:Sora,"Segoe UI",Arial,sans-serif;font-size:var(--font-h3);color:var(--system);margin:0 0 10px}
+.tobe-alternative-dialog>h2{font-size:var(--font-h3);margin:0 0 10px}
 .tobe-alternative-dialog .tobe-preview-intro{color:var(--muted);line-height:1.55}
 .tobe-alternative-dialog .tobe-preview-comparison,
 .tobe-alternative-dialog .tobe-preview-validation,
@@ -4528,7 +4528,7 @@ details.tobe-ai-operational-context:not([open])>.tobe-ai-operational-body{
   background:transparent;
 }
 .tobe-workspace[data-tobe-mode="guided"] #tobeStepAdvice .tobe-stage-body{
-  display:grid;
+  
   gap:12px;
   padding:16px;
   min-width:0;
