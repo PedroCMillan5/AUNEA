@@ -3076,6 +3076,10 @@ function tobeInspectorHtml(e,p){
     nextItem=itemIndex>=0?allItems[itemIndex+1]:null,
     previousItem=itemIndex>0?allItems[itemIndex-1]:null;
   const historicalChoice=tobeHumanReviewRecord(e,p)?.decisions?.[String(item.sourceStepId)];
+  const originWasExpanded=typeof document!=='undefined'?
+    !!document.querySelector('#tobeStepOrigin > details')?.open:false;
+  const aiDetailWasExpanded=typeof document!=='undefined'?
+    !!document.getElementById('tobeAiTechnicalDetails')?.open:false;
   const hasCurrentAi=typeof internalAiSavedDraft==='function'&&
     internalAiSavedDraft(e)?.items?.some(x=>String(x.source_step_id)===String(item.sourceStepId));
   const pendingKey=editable&&!item.isAddition&&typeof internalAiPilotKey==='function'?
@@ -3087,7 +3091,7 @@ function tobeInspectorHtml(e,p){
     document.getElementById?.('tobeExecutionFields'):null;
   // A newly added TO-BE-only activity has no own IA proposal and must expose
   // its required execution data immediately, even if it links to an analyzed AS-IS step.
-  const executionOpen=item.isAddition||!hasCurrentAi||!!(previousExecution?.open&&
+  const executionOpen=item.isAddition||!!(previousExecution?.open&&
     previousExecution.dataset?.sourceStepId===String(item.sourceStepId));
   const prevEvidence=typeof document!=='undefined'?
     document.getElementById?.('tobeDesignEvidence'):null;
@@ -3105,37 +3109,47 @@ function tobeInspectorHtml(e,p){
       '<input value="'+attr(item.transformation||'Sin definir')+'" disabled>')+'</div>';
   const supportingInformation=
     '<section class="tobe-origin" id="tobeStepOrigin"><details class="tobe-subdetails"'+
-      (hasCurrentAi?'':' open')+'><summary class="aunea-ui-section-title tobe-stage-heading">'+
+      (originWasExpanded?' open':'')+'><summary class="aunea-ui-section-title tobe-stage-heading">'+
         '<span>03.1 · Entender el AS-IS</span>'+
         '<span class="tobe-origin-header-status">AS-IS confirmado · Solo lectura</span></summary>'+
       tobeOriginalStepFacts(e,item)+tobeSnapshotIssueCards(e,item)+'</details></section>'+
-    '<section class="tobe-advice" id="tobeStepAdvice" aria-label="Sugerencia IA para actividad">'+
-      '<details class="tobe-subdetails" open><summary class="aunea-ui-section-title tobe-stage-heading">03.2 · Revisar propuestas IA</summary>'+
+    // [AUNEA-FE-PG11-ONE-WORKBENCH-365] START
+    // View-only sources and one action path: no duplicate AI approval.
+    '<section class="tobe-advice" id="tobeStepAdvice" aria-label="Oportunidades y fuentes">'+
+      '<details class="tobe-subdetails" open><summary class="aunea-ui-section-title tobe-stage-heading">03.2 · Revisar oportunidades de mejora</summary>'+
       '<div class="tobe-stage-body">'+
-      (editable&&!item.isAddition?'<div class="tobe-ai-per-step-action"><button type="button" class="btn btn-primary" data-tobe-generate-selected="'+attr(item.sourceStepId)+'">'+
-        (hasCurrentAi?'Volver a analizar este paso':'Analizar este paso con IA')+'</button>'+
-        '<span class="tobe-muted">Análisis independiente de esta actividad; no aplica cambios automáticamente.</span></div>':'')+
-      '<p class="tobe-review-guidance"><b>Aquí sólo se analizan opciones:</b> '+
-      'IA global = oportunidades del proceso; IA por actividad = propuestas concretas; '+
-      'reglas = comprobaciones de coherencia. Ninguna de estas capas aprueba el TO-BE. '+
-      'Las decisiones y la aplicación de cambios se realizan una sola vez en 03.3.</p>'+
-      '<p id="tobeStepAiProgress" role="status" aria-live="polite" class="tobe-muted">Propuesta individual: pendiente de contrastar con el diseño.</p>'+
-      (typeof internalAiProgressHtml==='function'?internalAiProgressHtml(e,'steps'):'')+
-      '<div id="tobeGlobalLinkedStep">'+tobeGlobalLinkedStepHtml(e,p,item)+'</div>'+
-      '<div id="tobeAiRecommendation">'+tobeAiAdviceHtml(e,item,false)+'</div>'+
-      (!item.isAddition&&Array.isArray(sourceStep?.outputs)&&
-        sourceStep.outputs.some(value=>String(value)==='RECORD')?
-        '<p class="tobe-ai-source-context"><b>Dato confirmado del AS-IS:</b> el registro estructurado ya figura entre las salidas de esta actividad. '+
-        'La propuesta debe distinguir entre actualizar o automatizar el registro existente y crear otro diferente. '+
-        'El tipo de salida no acredita cómo se genera actualmente.</p>':'')+
-      (historicalChoice?'<details class="tobe-legacy-review" role="note">'+
-        '<summary>Historial de revisión anterior (solo lectura)</summary>'+
-        '<p>Decisión registrada en la arquitectura anterior: '+
-          esc(TOBE_HUMAN_LABELS[historicalChoice.status]||historicalChoice.status)+'.</p>'+
-        '<p><b>Justificación histórica:</b> '+esc(historicalChoice.note||'No consta')+'</p>'+
-        '<p>Este historial se conserva como evidencia; ya no es una segunda aprobación obligatoria ni aplica cambios.</p>'+
-        '</details>':'')+
+        '<p class="tobe-stage-intro">Estudia las oportunidades vinculadas al AS-IS y selecciona una intervención para comparar sus efectos. '+
+          'El diseño se modifica únicamente en 03.3 o al confirmar una vista previa.</p>'+
+        (item.isAddition?'<p class="tobe-muted">Actividad creada sólo en TO-BE. Sus campos, controles y conexiones se configuran en 03.3.</p>':
+          tobeAlternativesHtml(e,p,item))+
+        '<details class="tobe-ai-context-disclosure" id="tobeAiTechnicalDetails"'+
+          (aiDetailWasExpanded?' open':'')+'>'+
+          '<summary>Consultar análisis IA y referencias de origen'+
+            (hasCurrentAi?' · Propuesta individual disponible':hasPendingAi?' · Análisis individual parcial':'')+
+          '</summary><div class="tobe-ai-context-body">'+
+          '<p class="tobe-muted">Estas fuentes no constituyen decisiones. El análisis global se relaciona por sus referencias; '+
+            'la IA por actividad se consulta sin atribuirle un hallazgo específico cuando su fuente no lo permite.</p>'+
+          (editable&&!item.isAddition?'<div class="tobe-ai-per-step-action"><button type="button" class="btn btn-primary" data-tobe-generate-selected="'+attr(item.sourceStepId)+'">'+
+            (hasCurrentAi?'Volver a analizar este paso':'Analizar este paso con IA')+'</button>'+
+            '<span class="tobe-muted">Reanálisis independiente; no modifica el TO-BE automáticamente.</span></div>':'')+
+          '<p id="tobeStepAiProgress" role="status" aria-live="polite" class="tobe-muted">Estado del análisis individual: '+(hasCurrentAi?'propuesta disponible':'sin propuesta consolidada')+'.</p>'+
+          (typeof internalAiProgressHtml==='function'?internalAiProgressHtml(e,'steps'):'')+
+          '<div id="tobeGlobalLinkedStep">'+tobeGlobalLinkedStepHtml(e,p,item)+'</div>'+
+          '<div id="tobeAiRecommendation">'+tobeAiAdviceHtml(e,item,false)+'</div>'+
+          (!item.isAddition&&Array.isArray(sourceStep?.outputs)&&
+            sourceStep.outputs.some(value=>String(value)==='RECORD')?
+            '<p class="tobe-ai-source-context"><b>Dato confirmado del AS-IS:</b> ya se ha declarado una salida de tipo registro estructurado. '+
+              'Antes de proponer otro registro, verifica qué se guarda y cómo se genera actualmente.</p>':'')+
+          (historicalChoice?'<details class="tobe-legacy-review" role="note">'+
+            '<summary>Historial de revisión anterior (solo lectura)</summary>'+
+            '<p>Decisión registrada en la arquitectura anterior: '+
+              esc(TOBE_HUMAN_LABELS[historicalChoice.status]||historicalChoice.status)+'.</p>'+
+            '<p><b>Justificación histórica:</b> '+esc(historicalChoice.note||'No consta')+'</p>'+
+            '<p>La revisión antigua se conserva como evidencia y no constituye una segunda aprobación.</p>'+
+            '</details>':'')+
+          '</div></details>'+
       '</div></details></section>';
+    // [AUNEA-FE-PG11-ONE-WORKBENCH-365] END
   return '<header class="tobe-inspector-head"><div><span class="tobe-eyebrow">'+
       (item.isAddition?'ACTIVIDAD NUEVA · VINCULADA A AS-IS':'ACTIVIDAD SELECCIONADA · ORIGEN AS-IS')+
       '</span><h2>'+(itemIndex>=0?'P'+(itemIndex+1)+' · ':'')+esc(tobeFlowItemName(item))+'</h2>'+
@@ -3165,7 +3179,6 @@ function tobeInspectorHtml(e,p){
           'No es necesario aceptar una recomendación completa antes. Nada se importa automáticamente.</p>'+
         '</div><span class="tobe-design-status">'+(editable?'Borrador editable':'Solo lectura')+'</span></header>'+
       tobeDecisionSourceSummaryHtml(e,p,item)+
-      tobeAlternativesHtml(e,p,item)+
       '<details class="tobe-design-evidence" id="tobeDesignEvidence" data-source-step-id="'+
         attr(item.sourceStepId)+'"'+(evidenceOpen?' open':'')+'>'+
         '<summary>Propuestas IA y condiciones de viabilidad'+
