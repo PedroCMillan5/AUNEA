@@ -98,13 +98,13 @@ test('PG01 shares headings and form surfaces without local appearance overrides'
   assert.doesNotMatch(pg01,/class="btn[^"\n]*" style=/);
 });
 test('PG11 work surfaces and stages reuse the same opt-in structural primitives',()=>{
-  assert.match(shared,/\\.aunea-ui-work-surface\\{[^}]*display:grid;[^}]*padding:20px 22px;/);
-  assert.match(shared,/\\.aunea-ui-work-stage\\{[^}]*display:grid;gap:12px;min-width:0/);
+  assert.match(shared,/\.aunea-ui-work-surface\{[^}]*display:grid;[^}]*padding:20px 22px;/);
+  assert.match(shared,/\.aunea-ui-work-stage\{[^}]*display:grid;gap:12px;min-width:0/);
   for(const name of ['tobe-context','tobe-global-analysis','tobe-review-section-head'])
     assert.ok(pg11.includes(name+' aunea-ui-work-surface'),'Missing shared work surface: '+name);
   for(const name of ['tobe-origin','tobe-advice','tobe-edit'])
     assert.ok(new RegExp('class="'+name+'[^"\\n]*aunea-ui-work-stage').test(pg11),'Missing shared stage: '+name);
-  assert.doesNotMatch(local,/\\.tobe-origin,\\.tobe-edit,\\.tobe-advice\\{display:grid;gap:12px\\}/);
-  assert.doesNotMatch(local,/\\.tobe-context,\\.tobe-global-analysis,\\.tobe-review-section-head\\{[^}]*padding:20px 22px/);
+  assert.doesNotMatch(local,/\.tobe-origin,\.tobe-edit,\.tobe-advice\{display:grid;gap:12px\}/);
+  assert.doesNotMatch(local,/\.tobe-context,\.tobe-global-analysis,\.tobe-review-section-head\{[^}]*padding:20px 22px/);
 });
 // [AUNEA-UAT-DESIGN-COMMON-312] END
