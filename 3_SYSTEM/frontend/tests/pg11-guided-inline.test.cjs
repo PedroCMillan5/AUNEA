@@ -379,7 +379,7 @@ test('PG11 step evidence never presents superseded risks as current',()=>{
 test('PG11 identifies individual coherence separately from section 02 global analysis',()=>{
  const pilot=fs.readFileSync(path.resolve(__dirname,'../domain/internal-ai-pilot.js'),'utf8');
  assert.match(pilot,/actividades analizadas por IA/);
- assert.match(pilot,/Propuestas IA verificadas y guardadas; no son decisiones del consultor/);
+ assert.match(pilot,/Propuestas IA analizadas y guardadas\. La cobertura no acredita viabilidad ni aprobación del consultor/);
  assert.match(src,/Sólo consulta hasta completar las actividades y comprobar coherencia/);
  assert.match(src,/La propuesta tiene observaciones o sólo revisión por reglas/);
  assert.match(src,/data-tobe-ai-apply-unavailable/);
