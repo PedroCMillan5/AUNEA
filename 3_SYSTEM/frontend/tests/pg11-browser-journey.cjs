@@ -17,7 +17,7 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,'.'+new 
   await control.getByRole('button',{name:'Ver propuesta en el mapa'}).click();
   await page.locator('#tobeAlternativeDialog').waitFor();
   assert.equal(await page.evaluate(()=>tobeFutureSteps(currentEng(),latestTobe(currentEng())).length),4);
-  assert.equal(await page.locator('#tobeAlternativeDialog [data-tobe-preview-node]').count(),5);
+  assert.equal(await page.locator('#tobeAlternativeDialog .tobe-graph-node').count(),5);
   await page.locator('[data-tobe-cancel-alternative]').click();
   assert.equal(await page.evaluate(()=>tobeFutureSteps(currentEng(),latestTobe(currentEng())).length),4);
   await control.getByRole('button',{name:'Ver propuesta en el mapa'}).click();
