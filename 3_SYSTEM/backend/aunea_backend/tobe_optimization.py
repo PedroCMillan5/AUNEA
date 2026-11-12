@@ -161,7 +161,7 @@ def activity_alternatives(request, step_id):
         # It must never be inserted blindly after a decision or a terminal step.
         next_step = str(step.get('normal_next_step') or '')
         if next_step and next_step not in ('__END__', '__PENDING__') and step.get('step_type') not in ('ST04', 'ST05'):
-            add('CONTROL-STEP-' + rid, 'Separar la comprobación en una actividad posterior',
+            add('CONTROL-STEP-' + rid, 'Separar el control tras esta actividad',
                 {}, [rid], conditions + [
                     'Utilizar esta ubicación sólo cuando el control deba ejecutarse por separado.',
                     'Conservar la salida normal explícita; comprobar el impacto en las demás actividades.'],
