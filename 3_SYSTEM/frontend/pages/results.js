@@ -2705,7 +2705,7 @@ function tobeAlternativesHtml(e,p,item){
       (globalCount?'<div class="tobe-opportunity-global-list">'+g.global.map(globalCard).join('')+'</div>':'')+
       '</section>';
   };
-  return '<div class="tobe-alternatives" aria-label="Oportunidades y alternativas de esta actividad">'+
+  return '<div class="tobe-alternatives" id="tobeOpportunityWorkbench" aria-label="Oportunidades y alternativas de esta actividad">'+
     '<div class="tobe-alternatives-intro"><h4>Oportunidades vinculadas al AS-IS</h4>'+
       '<p>Las alternativas por reglas se agrupan por fricción o riesgo confirmado. '+
       'Las fuentes IA se consultan sin duplicar la decisión del consultor.</p></div>'+
