@@ -79,6 +79,8 @@ for(const name of ['invoice','logistics'])test('PG11 source → backend rules �
    'previsualizar KEEP no altera la intervención anterior');
  assert.match(ctx.tobeAlternativeChangesHtml(e,keepPreview),/Automatización \/ IA/);
  assert.match(ctx.tobeAlternativeChangesHtml(e,keepPreview),/Crear automáticamente un registro/);
+ assert.match(ctx.tobeAlternativeChangesHtml(e,keepPreview),
+   /Sin automatización o IA futura propuesta/);
  p.items[0].transformation=originalTransformation;
  if(originalAutomation===undefined)delete p.items[0].automationAi;
  else p.items[0].automationAi=originalAutomation;
