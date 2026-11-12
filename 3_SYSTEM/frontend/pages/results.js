@@ -1134,7 +1134,6 @@ function tobeOriginalStepFacts(e,item){
     '<div class="tobe-origin-fact-group"><h4>Duraciones declaradas</h4>'+cards(fields.slice(5))+'</div>'+
     '</div>';
 }
-// [AUNEA-FE-PG11-ORIGINAL-FACTS-243] END
 function tobeSnapshotIssueCards(e,item){
   const snap=tobeProposalSnapshot(e,latestTobe(e)),id=String(item.sourceStepId),fr=(snap?.frictions||[]).filter(x=>x.status!=='SUPERSEDED'&&
     (Array.isArray(x.affected_steps)?x.affected_steps:[]).map(String).includes(id));
@@ -1154,6 +1153,7 @@ function tobeSnapshotIssueCards(e,item){
       '<p class="tobe-muted">No hay fricciones ni riesgos vinculados directamente a esta actividad en el AS-IS confirmado. Consulta el diagnóstico global antes de justificar una transformación.</p>')+
     '</div>';
 }
+// [AUNEA-FE-PG11-ORIGINAL-FACTS-243] END
 // [AUNEA-FE-PG11-AI-REVIEW-DIFF-260] START — display-only comparison.
 const TOBE_AI_REVIEW_FIELDS=[
  ['transformation','transformation','Qué cambia','transformation'],
