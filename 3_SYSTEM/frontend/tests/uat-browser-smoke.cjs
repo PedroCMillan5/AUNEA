@@ -700,8 +700,12 @@ async function main(){
       canonicalTransformation:inspector?.querySelectorAll('[data-tobe-field="transformation"]').length||0};
   });
   assert.deepEqual(stepGuide,{originBeforeAdvice:true,adviceBeforeDesign:true,
-    sourceExpanded:true,adviceExpanded:true,stepButton:1,canonicalTransformation:1},
-    'PG11 presents source, individual IA and canonical editing in the approved order');
+    sourceExpanded:false,adviceExpanded:true,stepButton:1,canonicalTransformation:1},
+    'PG11 presents compact AS-IS, available opportunity analysis and one canonical editor in order');
+  await page.locator('#tobeStepOrigin > details > summary').click();
+  assert.equal(await page.locator('#tobeStepOrigin > details').evaluate(el=>el.open),true,
+    'confirmed AS-IS remains expandable and fully available');
+  await page.locator('#tobeStepOrigin > details > summary').click();
   console.log('PG11_GUIDED_STEP_REVIEW_PASS: '+JSON.stringify(stepGuide));
   // One click changes the inspector, without destroying any draft edits.
   const sourceIds=await page.evaluate(()=>latestTobe(currentEng()).items.map(x=>String(x.sourceStepId)));
