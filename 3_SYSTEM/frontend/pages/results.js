@@ -1261,7 +1261,11 @@ function tobeAiFieldCoverageHtml(e,p,item){
     '<b>Incompatible:</b> la propuesta contradice la transformación o el catálogo, y necesita revisión. '+
     '<b>Debe corregir:</b> el revisor automático detectó un problema concreto. '+
     '<b>Sin sugerencia:</b> la IA omitió este campo; no significa que falte información del cliente. '+
-    'Las cantidades se refieren a los campos de esta actividad, no al número de actividades analizadas.</p></details>'+
+    'Las cantidades se refieren a los campos de esta actividad, no al número de actividades analizadas. '+
+    '<b>Acciones:</b> Aplicar IA sólo aparece cuando hay una sugerencia estructurada diferente del TO-BE y la decisión humana permite utilizarla, sin bloqueos. '+
+    'Mantener conserva el valor actual y registra que no se utiliza la sugerencia IA. '+
+    'Para editar una propuesta, cambia el campo TO-BE de la izquierda; ninguna opción de IA puede imponerse sobre tu edición. '+
+    'Sin candidato válido no aparecen botones de aplicación.</p></details>'+
     '</div>';
 }
 // [AUNEA-FE-PG11-AI-REVIEW-DIFF-260] END
