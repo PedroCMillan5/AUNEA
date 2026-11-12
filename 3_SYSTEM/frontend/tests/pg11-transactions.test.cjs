@@ -18,7 +18,8 @@ for(const name of ['invoice','logistics'])test('PG11 source → backend rules �
  vm.createContext(ctx);vm.runInContext(block('AUNEA-FE-PG11-FUTURE-FLOW-228')+'\n'+block('AUNEA-FE-PG11-TRANSACTION-332')+'\n'+block('AUNEA-FE-PG11-INTEGRATION-PROJECTION-341'),ctx);
  let p=ctx.latestTobe(e);p.flow=ctx.tobeFlowOwner(e,p);const immutable=JSON.stringify(snapshot);
  const preview=candidate=>({engagementId:e.id,version:p.version,before:ctx.tobeDesignState(p),candidate,...ctx.tobeProjectAlternative(e,p,candidate)});
- const structural=result.candidates.find(c=>c.operations.length),before=JSON.stringify(p),temporary=preview(structural);
+ const structural=result.candidates.find(c=>c.operations.length),temporary=preview(structural);
+ let before=JSON.stringify(p);
  ctx.esc=String;ctx.attr=String;
  assert.match(ctx.tobeAlternativeChangesHtml(e,temporary),/Qué cambiaría si confirmas/);
  assert.match(ctx.tobeAlternativeChangesHtml(e,temporary),/TO-BE guardado/);
@@ -47,6 +48,7 @@ for(const name of ['invoice','logistics'])test('PG11 source → backend rules �
  assert.equal(JSON.stringify(ctx.tobeDesignState(p)),beforeChanges);
  assert.equal(JSON.stringify(ctx.tobeDesignState(p)),JSON.stringify(temporary.before),
   'a kept option did not change items or routes');
+ before=JSON.stringify(p);
  assert.equal(temporary.projected.flow.routes.P1.normal.startsWith('TOBE-ADD-'),true);
  assert.equal(temporary.projected.flow.routes.P2.normal,'P3');assert.equal(temporary.projected.flow.routes.P2.exception,'P4');
  fail=true;assert.throws(()=>ctx.tobeCommitAlternative(e,temporary),/No se guardó/);assert.equal(JSON.stringify(p),before);fail=false;
