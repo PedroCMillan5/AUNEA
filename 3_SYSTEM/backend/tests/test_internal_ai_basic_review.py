@@ -148,7 +148,7 @@ def test_declared_historical_30_percent_and_10_minutes_are_not_unsourced_forecas
     req=source_case()
     assert not source_integrity_issues(req)
     review=basic_review(req)
-    assert not any(x["origin"]=="CONTROL_FUENTE_ASIS" for x in review["issues"])
+    assert not any(x.get("origin")=="CONTROL_FUENTE_ASIS" for x in review["issues"])
 
 
 def test_forecast_number_is_distinct_from_identical_historical_fraction():
