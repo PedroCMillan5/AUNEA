@@ -264,6 +264,34 @@ test('PG11 03.3 keeps all nine fields inside four operational design sections',(
  assert.match(content,/tobe-design-fields/);
  assert.doesNotMatch(content,/tobe-ai-inline-empty/);
 });
+test('PG11 03.1 uses the common read-only layout and preserves declared AS-IS values',()=>{
+ const definition=src.match(/function tobeOriginalStepFacts\\(e,item\\)\\{[\\s\\S]*?\\n\\}/)?.[0];
+ assert.ok(definition,'source fact projection is required');
+ const source={id:'P1',actor:'ADMIN',step_type:'ST02',tool:'EMAIL',
+  inputs:['EMAIL','PDF'],outputs:['DOCUMENT','RECORD'],
+  active_time:3,wait_time:0,rework_time:0};
+ const ctx={
+  latestTobe:()=>({}),tobeProposalSourceSteps:()=>[source],
+  labelFrom:(category,value)=>({ADMIN:'Administración',ST02:'Tarea humana',
+   EMAIL:'Email',PDF:'PDF',DOCUMENT:'Documento',RECORD:'Registro estructurado'})[value]||value,
+  esc:value=>String(value)
+ };
+ vm.createContext(ctx);vm.runInContext(definition,ctx);
+ const html=ctx.tobeOriginalStepFacts({}, {sourceStepId:'P1'});
+ assert.match(html,/Actividad actual/);
+ assert.match(html,/Duraciones declaradas/);
+ assert.match(html,/Administración/);
+ assert.match(html,/Email.*PDF/);
+ assert.match(html,/3 min/);
+ assert.equal((html.match(/0 min/g)||[]).length,2,'zero is a declared value, not missing evidence');
+ assert.equal((html.match(/<dt>/g)||[]).length,8,'original fact contract retains all eight values');
+ assert.doesNotMatch(html,/<input|<textarea|contenteditable/i,'AS-IS remains read-only');
+ const stylesheet=fs.readFileSync(path.resolve(__dirname,'../ui-system.css'),'utf8');
+ assert.match(stylesheet,/\.tobe-workspace\\[data-tobe-mode="guided"\\] \.tobe-inspector #tobeStepOrigin\\{/);
+ assert.match(stylesheet,/\.tobe-origin-fact-group\\{display:grid/);
+ assert.match(stylesheet,/#tobeStepOrigin \.tobe-source-list\\{/);
+ assert.match(src,/tobe-origin-header-status/);
+});
 test('PG11 step evidence never presents superseded risks as current',()=>{
  const fn=src.match(/function tobeSnapshotIssueCards\(e,item\)\{[\s\S]*?\n\}/)?.[0];
  assert.ok(fn,'The current step evidence projection must exist');
