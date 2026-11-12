@@ -4522,6 +4522,10 @@ function registerInternalWorkPages(){
         if(!diagnostic||!snapshot)throw Error('Falta un AS-IS confirmado o un diagnóstico vigente.');
         __auneaTobeAlternativeErrors.delete(key);
         __auneaTobeAlternatives.delete(key);
+        // The old DOM must not remain clickable or look current while loading.
+        button.closest('.tobe-alternatives')?.querySelectorAll('.tobe-alternative').forEach(card=>{
+          card.hidden=true;
+        });
         button.disabled=true;button.textContent='Analizando actividad…';
         const response=await fetch(state.backendUrl+'/v1/tobe/activity-alternatives',{
           method:'POST',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify({
