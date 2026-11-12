@@ -356,9 +356,9 @@ test('PG11 03.1 shows confirmed F2 frequency and DEC-068 time attribution withou
 test('PG11 03.2 warns that a structured output already exists instead of assuming a new register',()=>{
  const section=src.slice(src.indexOf("const supportingInformation="),src.indexOf("return '<header class=\"tobe-inspector-head\""));
  assert.match(section,/sourceStep\.outputs\.some\(value=>String\(value\)==='RECORD'\)/);
- assert.match(section,/registro estructurado ya figura entre las salidas/);
- assert.match(section,/actualizar o automatizar el registro existente/);
- assert.match(section,/no acredita cómo se genera actualmente/);
+ assert.match(section,/ya se ha declarado una salida de tipo registro estructurado/);
+ assert.match(section,/Antes de proponer otro registro/);
+ assert.match(section,/verifica qué se guarda y cómo se genera actualmente/);
 });
 test('PG11 step evidence never presents superseded risks as current',()=>{
  const fn=src.match(/function tobeSnapshotIssueCards\(e,item\)\{[\s\S]*?\n\}/)?.[0];
@@ -458,13 +458,13 @@ test('PG11 source summary starts every bold lead-in on a separate paragraph',()=
    aiDraft:{applyHistory:[{sourceStepId:'P1',action:'APPLY',fields:['tool']},
      {sourceStepId:'P1',action:'KEEP',fields:['inputs']}]}
  },{sourceStepId:'P1'});
- const labels=['Análisis global:','IA individual:','Reglas:',
-   'Decisiones registradas para esta actividad:','Cómo actuar:'];
+ const labels=['Análisis global:','IA por actividad:','Reglas:'];
  const leadIns=[...html.matchAll(/<p><b>([^<]+)<\/b>/g)].map(m=>m[1]);
  assert.deepEqual(leadIns,labels);
- assert.equal((html.match(/<p>/g)||[]).length,labels.length);
- assert.match(html,/2 oportunidades relacionadas/);
- assert.match(html,/1 campos aplicados, 1 conservados/);
+ assert.equal((html.match(/<p>/g)||[]).length,labels.length+1);
+ assert.match(html,/2 oportunidades vinculadas/);
+ assert.match(html,/2 decisiones sobre esta actividad/);
+ assert.match(html,/tobe-decision-context-compact/);
 });
 test('PG11 rejects stale backend alternatives even when the frontend layout is current',()=>{
  const start=src.indexOf("const TOBE_ALTERNATIVES_CONTRACT='PG11_FINDING_SPECIFIC_V2';");
@@ -485,7 +485,7 @@ test('PG11 rejects stale backend alternatives even when the frontend layout is c
  assert.match(src,/button\.closest\('\.tobe-alternatives'\)\?\.querySelectorAll\('\.tobe-alternative'\)/,
    'old cards must be hidden while a new server response is pending');
  assert.match(src,/if\(incompatible\)throw Error\(incompatible\)/);
- assert.match(src,/const rows=\(!staleIssue&&data\?\.candidates\|\|\[\]\)\.map/,
+ assert.match(src,/\(staleIssue\?\[\]:data\?\.candidates\|\|\[\]\)\.forEach/,
    'stale recommendations must not remain visible after an incompatible response');
 });
 // [AUNEA-UAT-PG11-GUIDED-267] END
