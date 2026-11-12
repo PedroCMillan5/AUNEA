@@ -2488,15 +2488,18 @@ function tobeCommitAlternative(e,preview){
       throw Error(fresh.issue||'La recomendación IA cambió; vuelve a revisarla.');
   }
   const prior=tobeClone(p),after=tobeDesignState(preview.projected),changes=tobeTransactionChanges(preview.before,after);
-  if(!changes.length)return false;
-  p.items=after.items;p.flow=after.flow;if(!p.aiDraft)p.aiDraft={};
+  if(changes.length){p.items=after.items;p.flow=after.flow;}
+  if(!p.aiDraft)p.aiDraft={};
   p.aiDraft.applyHistory=[...(p.aiDraft.applyHistory||[]),{
-    action:'APPLY',decision:'CONSULTANT_CONFIRMED',sourceStepId:preview.candidate.sourceId,
+    action:changes.length?'APPLY':'KEEP',decision:'CONSULTANT_CONFIRMED',
+    sourceStepId:preview.candidate.sourceId,
     fields:Object.keys(preview.candidate.fields||{}),provenance:preview.candidate.provenance,consultantModified:preview.candidate.consultantModified===true,
     candidateId:preview.candidate.id,sourceRefs:preview.candidate.sourceRefs||[],
     proposalFingerprint:typeof tobeCandidateFingerprint==='function'?tobeCandidateFingerprint(p):'',
     transaction:{changes,itemIds:p.items.map(x=>x.id)},appliedAt:now()
-  }].slice(-100);p.updatedAt=now();markDirty('PG11: confirmar intervención previsualizada');
+  }].slice(-100);p.updatedAt=now();
+  markDirty(changes.length?'PG11: confirmar intervención previsualizada':
+    'PG11: registrar conservación sin cambios materiales');
   if(!saveState('Guardar intervención y grafo TO-BE')){
     Object.keys(p).forEach(k=>delete p[k]);Object.assign(p,prior);
     throw Error('No se guardó la intervención. Se ha restaurado el borrador anterior.');
