@@ -223,6 +223,36 @@ test('sections 01, 02 and 03 share PG11 card surfaces and readable hierarchy',()
   assert.match(css,/\.tobe-context-fact dd\{[^}]*font-size:var\(--font-small\)/);
 });
 
+test('section 02 opens as a compact opportunity list while retaining every source detail',()=>{
+ const h=harness([
+   {objective:'Mejorar la trazabilidad documental',
+    how:'Vincular cada documento al identificador del expediente.',
+    why:'El AS-IS registra capturas duplicadas.',
+    source_refs:['S1','F1'],
+    review:{status:'CONDITIONED',reason:'Validar permisos.',conflicts:[]}},
+   {objective:'Controlar el seguimiento',
+    how:'Guardar el estado disponible y la persona responsable.',
+    why:'Existen consultas manuales del estado.',
+    source_refs:['S1']}
+ ]);
+ const html=h.html();
+ assert.match(html,/<details class="tobe-global-monitoring"[^>]*>/);
+ assert.match(html,/<summary>Ver seguimiento, fuentes y comprobaciones/);
+ assert.match(html,/<details class="tobe-global-opportunity-detail"[^>]*>/);
+ assert.match(html,/<summary class="tobe-global-opportunity-summary">/);
+ assert.doesNotMatch(html,/<details class="tobe-global-opportunity-detail"[^>]* open>/,
+   'proposals must not occupy full-page space until opened');
+ assert.doesNotMatch(html,/<details class="tobe-global-monitoring"[^>]* open>/,
+   'normal technical reports must be collapsed by default');
+ assert.match(html,/Vincular cada documento al identificador del expediente/);
+ assert.match(html,/Guardar el estado disponible y la persona responsable/);
+ assert.match(html,/Fricción: Captura duplicada/);
+ assert.match(html,/data-tobe-global-link="1"|tobe-global-card-details/,
+   'linked action and evidence must stay accessible after expansion');
+ assert.equal((html.match(/class="tobe-global-opportunity"/g)||[]).length,2);
+ assert.equal(h.env.p.aiGlobal.result.opportunities.length,2,
+   'compaction must not merge, discard or accept recommendations');
+});
 test('global button is separate from per-step generation and displays no fabricated KPIs',()=>{
   const output=harness(null).html();
   assert.match(output,/id="analyzeTobeGlobal"/);
