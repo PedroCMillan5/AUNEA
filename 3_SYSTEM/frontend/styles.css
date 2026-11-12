@@ -281,4 +281,10 @@ body.session-display .flow-step p{font-size:var(--font-small)}
   width:100%;
   min-width:0;
 }
+/* Shared workbench surface, opt-in. Same geometry for context, AI analysis and section headings. */
+.aunea-ui-work-surface{
+  display:grid;gap:14px;min-width:0;padding:20px 22px;
+  border:1px solid var(--system-line);border-radius:var(--radius-sm);
+  background:#fff;color:var(--ink);
+}
 /* [AUNEA-FE-SHARED-COMPONENTS-311] END */
