@@ -3049,12 +3049,13 @@ function tobeInspectorHtml(e,p){
       '<input value="'+attr(item.transformation||'Sin definir')+'" disabled>')+'</div>';
   const supportingInformation=
     '<section class="tobe-origin" id="tobeStepOrigin"><details class="tobe-subdetails"'+
-      (hasCurrentAi?'':' open')+'><summary class="aunea-ui-section-title">'+
+      (hasCurrentAi?'':' open')+'><summary class="aunea-ui-section-title tobe-stage-heading">'+
         '<span>03.1 · Entender el AS-IS</span>'+
         '<span class="tobe-origin-header-status">AS-IS confirmado · Solo lectura</span></summary>'+
       tobeOriginalStepFacts(e,item)+tobeSnapshotIssueCards(e,item)+'</details></section>'+
     '<section class="tobe-advice" id="tobeStepAdvice" aria-label="Sugerencia IA para actividad">'+
-      '<details class="tobe-subdetails" open><summary class="aunea-ui-section-title">03.2 · Revisar propuestas IA</summary>'+
+      '<details class="tobe-subdetails" open><summary class="aunea-ui-section-title tobe-stage-heading">03.2 · Revisar propuestas IA</summary>'+
+      '<div class="tobe-stage-body">'+
       (editable&&!item.isAddition?'<div class="tobe-ai-per-step-action"><button type="button" class="btn btn-primary" data-tobe-generate-selected="'+attr(item.sourceStepId)+'">'+
         (hasCurrentAi?'Volver a analizar este paso':'Analizar este paso con IA')+'</button>'+
         '<span class="tobe-muted">Análisis independiente de esta actividad; no aplica cambios automáticamente.</span></div>':'')+
@@ -3078,7 +3079,7 @@ function tobeInspectorHtml(e,p){
         '<p><b>Justificación histórica:</b> '+esc(historicalChoice.note||'No consta')+'</p>'+
         '<p>Este historial se conserva como evidencia; ya no es una segunda aprobación obligatoria ni aplica cambios.</p>'+
         '</details>':'')+
-      '</details></section>';
+      '</div></details></section>';
   return '<header class="tobe-inspector-head"><div><span class="tobe-eyebrow">'+
       (item.isAddition?'ACTIVIDAD NUEVA · VINCULADA A AS-IS':'ACTIVIDAD SELECCIONADA · ORIGEN AS-IS')+
       '</span><h2>'+(itemIndex>=0?'P'+(itemIndex+1)+' · ':'')+esc(tobeFlowItemName(item))+'</h2>'+
@@ -3102,7 +3103,7 @@ function tobeInspectorHtml(e,p){
     // advisory. Snapshot AS-IS remains immutable. No new business fields.
     '<section class="tobe-edit tobe-design-workspace" id="tobeStepDesign">'+
       '<header class="tobe-design-header"><div>'+
-        '<h3 class="aunea-ui-section-title">03.3 · Configurar la actividad futura</h3>'+
+        '<h3 class="aunea-ui-section-title tobe-stage-heading">03.3 · Configurar la actividad futura</h3>'+
         '<p class="tobe-design-lede" data-tobe-transformation-message="1" role="status" aria-live="polite">'+
           'Aquí decides el diseño: conserva, modifica o aplica valores mediante vista previa. '+
           'No es necesario aceptar una recomendación completa antes. Nada se importa automáticamente.</p>'+
