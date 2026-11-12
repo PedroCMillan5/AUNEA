@@ -2975,6 +2975,16 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
   overflow-wrap:anywhere;
 }
 #tobeStepOrigin .tobe-origin-issue-signal{line-height:1.5}
+#tobeStepOrigin .tobe-origin-issue-signal-details{
+  margin:2px 0 0;padding:0;background:transparent;border:0;
+}
+#tobeStepOrigin .tobe-origin-issue-signal-details>summary{
+  color:var(--system);font-family:Inter,"Segoe UI",Arial,sans-serif;
+  font-size:var(--font-caption);font-weight:700;line-height:1.5;cursor:pointer;
+}
+#tobeStepOrigin .tobe-origin-issue-signal-details[open]>.tobe-origin-issue-signal{
+  margin:6px 0 0!important;
+}
 #tobeStepAdvice .tobe-ai-source-context{
   margin:10px 0 0!important;padding:10px 12px;
   color:var(--muted);background:var(--canvas,#f8faf9);
