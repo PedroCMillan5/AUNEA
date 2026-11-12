@@ -57,9 +57,9 @@ test('PG11 uses common heading primitives and has four numbered main sections',(
 
 test('PG11 section 03 reuses section 01/02 surface and canonical typography tokens',()=>{
   assert.match(local,/\.tobe-context,\.tobe-global-analysis,\.tobe-review-section-head\{/);
-  const sourceLabelStyle=local.match(/\\.tobe-original-facts dt\\{[^}]*\\}/)?.[0]||'';
+  const sourceLabelStyle=local.match(/\.tobe-original-facts dt\{[^}]*\}/)?.[0]||'';
   assert.match(sourceLabelStyle,/font-family:Inter/);
-  assert.match(sourceLabelStyle,/font-size:var\\(--font-caption\\)/);
+  assert.match(sourceLabelStyle,/font-size:var\(--font-caption\)/);
   assert.match(local,/\.tobe-original-facts dd\{[^}]*font-size:var\(--font-small\)/);
   assert.match(local,/\.tobe-advice-pairs dd\{font-size:var\(--font-small\)/);
   assert.match(local,/\.tobe-inspector #tobeStepOrigin>\.tobe-subdetails>summary,/);
