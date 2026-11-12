@@ -324,14 +324,16 @@ test('PG11 existing inspector guides AS-IS, AI advice, future design and connect
   assert.match(src,/id="tobeStepRoutes"/);
   assert.match(src,/AUNEA-FE-PG11-GUIDED-INSPECTOR-253/);
 });
-test('PG11 introduces its purpose and four explicit consultant actions',()=>{
+test('PG11 has a compact guide consistent with its three stages and map-only route editing',()=>{
   assert.match(src,/tobe-task-guide/);
-  assert.match(src,/Qué tienes que hacer aquí/);
+  assert.match(src,/Diseñar el proceso futuro/);
   assert.match(src,/03\.1 · Entender el AS-IS/);
-  assert.match(src,/03\.2 · Revisar propuestas IA/);
+  assert.match(src,/03\.2 · Revisar oportunidades de mejora/);
   assert.match(src,/03\.3 · Configurar la actividad futura/);
-  assert.match(src,/03\.4 · Conectar el proceso futuro/);
-  assert.match(src,/Resultado esperado:/);
+  assert.match(src,/03\.4 · Conectar el proceso futuro/,'route editing remains in map mode');
+  assert.match(src,/Revisa las rutas en/);
+  const page=src.slice(src.indexOf('function tobePage()'),src.indexOf('tobeContextOverviewHtml(e,p)+',src.indexOf('function tobePage()')));
+  assert.doesNotMatch(page,/03\.4 · Conectar el proceso futuro/,'guide does not show map-only stage');
 });
 test('PG11 text instructions appear as placeholders rather than duplicate help below fields',()=>{
   const start=src.indexOf('function tobeField(item,key,label,value');
