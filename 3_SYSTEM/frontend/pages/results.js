@@ -2412,6 +2412,25 @@ function tobeSourceDataExplanation(raw){
 let __auneaTobePreview=null;
 const __auneaTobeAlternatives=new Map();
 const __auneaTobeAlternativeErrors=new Map();
+// [AUNEA-FE-PG11-ALTERNATIVES-CONTRACT-360] START
+// A stale local backend or a cached prior rules response must never render as
+// an up-to-date recommendation. The server owns this contract and the rules.
+const TOBE_ALTERNATIVES_CONTRACT='PG11_FINDING_SPECIFIC_V2';
+function tobeRulesResultIssue(data){
+  if(!data||data.engine_contract!==TOBE_ALTERNATIVES_CONTRACT)
+    return 'El backend conectado sigue utilizando un motor de alternativas antiguo o incompatible. '+
+      'No se mostrarán recomendaciones obsoletas. Comprueba el motor activo en '+
+      'http://127.0.0.1:8010/v1/tobe/alternatives-status, detén el proceso anterior '+
+      'y vuelve a iniciar el backend desde esta rama.';
+  if(!Array.isArray(data.candidates)||data.candidates.some(candidate=>
+    !candidate||!Array.isArray(candidate.sourceRefs)||
+    !['targetFinding','changeSummary','expectedOutcome','combination'].every(
+      key=>typeof candidate[key]==='string')))
+    return 'La respuesta del motor no cumple el contrato de alternativas de PG11. '+
+      'No se ha incorporado ni aceptado ningún cambio.';
+  return '';
+}
+// [AUNEA-FE-PG11-ALTERNATIVES-CONTRACT-360] END
 const tobeClone=value=>JSON.parse(JSON.stringify(value));
 function tobeDesignState(p){return {items:tobeClone(p.items),flow:tobeClone(p.flow||null)};}
 function tobeAlternativeKey(e,p,id){return String(e.id)+'|'+p.version+'|'+p.sourceSnapshotVersion+'|'+String(id);}
@@ -2550,10 +2569,11 @@ function tobeAlternativesHtml(e,p,item){
   if(!tobeEditable(p)||item.isAddition)return '';
   const key=tobeAlternativeKey(e,p,item.sourceStepId),
     data=__auneaTobeAlternatives.get(key),
-    error=__auneaTobeAlternativeErrors.get(key),
+    staleIssue=data?tobeRulesResultIssue(data):'',
+    error=staleIssue||__auneaTobeAlternativeErrors.get(key),
     history=p.aiDraft?.applyHistory||[],
     canUndo=history.some(x=>x.transaction&&!x.undoneAt);
-  const rows=(data?.candidates||[]).map((candidate,index)=>{
+  const rows=(!staleIssue&&data?.candidates||[]).map((candidate,index)=>{
     const decision=history.findLast(x=>x.candidateId===candidate.id&&!x.undoneAt);
     const discarded=decision?.action==='DISCARD',
       fields=candidate.fields||{},
@@ -4501,14 +4521,17 @@ function registerInternalWorkPages(){
           diagnostic=currentDiagnosticOutput(live),snapshot=confirmedSnapshot(live);
         if(!diagnostic||!snapshot)throw Error('Falta un AS-IS confirmado o un diagnóstico vigente.');
         __auneaTobeAlternativeErrors.delete(key);
+        __auneaTobeAlternatives.delete(key);
         button.disabled=true;button.textContent='Analizando actividad…';
         const response=await fetch(state.backendUrl+'/v1/tobe/activity-alternatives',{
-          method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+          method:'POST',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify({
             request:{engagement:buildBackendPayload(live),diagnostic,confirmed_as_is:live.confirmedAsIs===true,snapshot_version:snapshot.version},
             source_step_id:id})});
         const data=await response.json().catch(()=>({detail:'Respuesta del backend no interpretable.'}));
         if(!response.ok)throw Error(typeof data.detail==='string'?data.detail:
           'El backend rechazó el análisis con HTTP '+response.status+'.');
+        const incompatible=tobeRulesResultIssue(data);
+        if(incompatible)throw Error(incompatible);
         const current=currentEng(),currentDraft=latestTobe(current);
         if(!current||!currentDraft||tobeAlternativeKey(current,currentDraft,id)!==key||
           currentDiagnosticOutput(current)?.input_snapshot_hash!==data.input_hash)throw Error('El estudio cambió durante el análisis. Vuelve a analizar la actividad.');
@@ -4539,8 +4562,11 @@ function registerInternalWorkPages(){
         (error.message||'No se pudo completar la intervención.');
       if(button.hasAttribute('data-tobe-load-alternatives')){
         const live=currentEng(),draft=latestTobe(live);
-        if(live&&draft)__auneaTobeAlternativeErrors.set(
-          tobeAlternativeKey(live,draft,button.dataset.tobeLoadAlternatives),message);
+        if(live&&draft){
+          const key=tobeAlternativeKey(live,draft,button.dataset.tobeLoadAlternatives);
+          __auneaTobeAlternatives.delete(key);
+          __auneaTobeAlternativeErrors.set(key,message);
+        }
         render();
       }
       toast(message);
