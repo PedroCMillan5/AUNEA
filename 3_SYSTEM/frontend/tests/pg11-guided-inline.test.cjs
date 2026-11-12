@@ -265,7 +265,9 @@ test('PG11 03.3 keeps all nine fields inside four operational design sections',(
  assert.doesNotMatch(content,/tobe-ai-inline-empty/);
 });
 test('PG11 03.1 uses the common read-only layout and preserves declared AS-IS values',()=>{
- const definition=src.match(/function tobeOriginalStepFacts\\(e,item\\)\\{[\\s\\S]*?\\n\\}/)?.[0];
+ const sourceStart=src.indexOf('function tobeOriginalStepFacts(e,item){');
+ const sourceEnd=src.indexOf('function tobeSnapshotIssueCards(e,item){',sourceStart);
+ const definition=sourceStart>=0&&sourceEnd>sourceStart?src.slice(sourceStart,sourceEnd).trim():'';
  assert.ok(definition,'source fact projection is required');
  const source={id:'P1',actor:'ADMIN',step_type:'ST02',tool:'EMAIL',
   inputs:['EMAIL','PDF'],outputs:['DOCUMENT','RECORD'],
@@ -287,9 +289,9 @@ test('PG11 03.1 uses the common read-only layout and preserves declared AS-IS va
  assert.equal((html.match(/<dt>/g)||[]).length,8,'original fact contract retains all eight values');
  assert.doesNotMatch(html,/<input|<textarea|contenteditable/i,'AS-IS remains read-only');
  const stylesheet=fs.readFileSync(path.resolve(__dirname,'../ui-system.css'),'utf8');
- assert.match(stylesheet,/\.tobe-workspace\\[data-tobe-mode="guided"\\] \.tobe-inspector #tobeStepOrigin\\{/);
- assert.match(stylesheet,/\.tobe-origin-fact-group\\{display:grid/);
- assert.match(stylesheet,/#tobeStepOrigin \.tobe-source-list\\{/);
+ assert.ok(stylesheet.includes('.tobe-workspace[data-tobe-mode="guided"] .tobe-inspector #tobeStepOrigin{'));
+ assert.ok(stylesheet.includes('.tobe-origin-fact-group{display:grid'));
+ assert.ok(stylesheet.includes('#tobeStepOrigin .tobe-source-list{'));
  assert.match(src,/tobe-origin-header-status/);
 });
 test('PG11 step evidence never presents superseded risks as current',()=>{
