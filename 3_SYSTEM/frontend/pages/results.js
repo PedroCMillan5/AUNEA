@@ -3569,6 +3569,16 @@ function tobeGlobalOverviewHtml(e,p){
     feedback=typeof internalAiGlobalMessage==='function'?internalAiGlobalMessage(e):null,
     preflight=working&&feedback?.phase==='PREFLIGHT',
     result=tobeGlobalStored(e,p),
+    previous=p?.aiGlobal,
+    notCurrent=!working&&!result&&!!previous,
+    notCurrentReason=previous?.tobeVersion!==p?.version?
+      'El análisis corresponde a otra versión del borrador TO-BE.':
+      previous?.sourceSnapshotVersion!==p?.sourceSnapshotVersion?
+        'El análisis corresponde a otra versión del AS-IS confirmado.':
+      previous?.diagnosticInputHash!==(typeof currentDiagnosticOutput==='function'?
+        currentDiagnosticOutput(e)?.input_snapshot_hash:undefined)?
+        'El diagnóstico vigente no coincide con el utilizado para este análisis.':
+        'El resultado guardado no cumple el contrato de vigencia del estudio.',
     complete=!!result&&Array.isArray(result.opportunities)&&
       [result.summary,...result.opportunities.flatMap(item=>[
         item.how,item.why,...(item.related||[]).flatMap(x=>[x.how,x.why]),
@@ -3585,7 +3595,7 @@ function tobeGlobalOverviewHtml(e,p){
     alternatives=opportunities.filter(x=>!!x.alternative).length,
     pending=opportunities.filter(x=>x.review?.status!=='INCOMPATIBLE').length,
     variants=opportunities.reduce((n,x)=>n+(x.related||[]).length,0),
-    qualityPlan=typeof tobeGlobalQualityGroups==='function'?
+    qualityPlan=result&&typeof tobeGlobalQualityGroups==='function'?
       tobeGlobalQualityGroups(opportunities):null,
     thematicGroups=qualityPlan?.groups||
       opportunities.map((item,index)=>({title:item.objective,
@@ -3648,7 +3658,7 @@ function tobeGlobalOverviewHtml(e,p){
     return [...new Map(targets.map(step=>[String(step.sourceStepId),step])).values()];
   };
   const globallyShared=tobeGlobalUniversalQuestions(opportunities);
-  const state=working?'Analizando por fuentes…':result&&!analysisFinished?'Análisis parcial · Revisar':legacy?'Propuesta incompleta · Reanalizar':result?'Propuesta guardada · Sin aprobar':'Pendiente de análisis';
+  const state=working?'Analizando por fuentes…':result&&!analysisFinished?'Análisis parcial · Revisar':legacy?'Propuesta incompleta · Reanalizar':result?'Propuesta guardada · Sin aprobar':notCurrent?'Análisis anterior no vigente':'Pendiente de análisis';
   return '<section class="tobe-global-analysis" id="tobeGlobalAnalysis" aria-label="Análisis global IA del proceso">'+
     '<header class="tobe-global-analysis-head"><div><span class="tobe-eyebrow">02 · ANÁLISIS IA GLOBAL DEL PROCESO</span>'+
       '<h2 class="aunea-ui-section-title">Objetivos y recomendaciones de mejora</h2>'+
@@ -3661,9 +3671,12 @@ function tobeGlobalOverviewHtml(e,p){
         (working?'Analizando proceso…':result||legacy?'Volver a analizar':'Analizar proceso con IA')+
         '</button></div>':'')+'</header>'+
     '<div class="tobe-global-summary"><div class="tobe-global-summary-top">'+
-      '<strong>'+(working?'Analizando proceso…':legacy?'Análisis anterior incompleto':result?'Síntesis del proceso':'Análisis pendiente')+'</strong>'+
+      '<strong>'+(working?'Analizando proceso…':legacy?'Análisis anterior incompleto':result?'Síntesis del proceso':notCurrent?'Análisis guardado no vigente':'Análisis pendiente')+'</strong>'+
       '<span class="tobe-global-state" aria-live="polite">'+esc(state)+'</span></div>'+
-      '<p>'+esc(preflight?'Comprobando que el backend admite el análisis por bloques. No se ha borrado ninguna propuesta.':working&&!result?'Se ha retirado el análisis anterior. Preparando una propuesta nueva con el AS-IS confirmado…':result?.summary||'No hay una propuesta global vigente. Analiza el AS-IS confirmado para generar nuevos objetivos y recomendaciones; no se alterarán campos del TO-BE.')+'</p></div>'+
+      '<p>'+esc(preflight?'Comprobando que el backend admite el análisis por bloques. No se ha borrado ninguna propuesta.':working&&!result?'Se ha retirado el análisis anterior. Preparando una propuesta nueva con el AS-IS confirmado…':notCurrent?
+        'Existe un análisis anterior guardado, pero no se puede utilizar como propuesta vigente. '+notCurrentReason+
+        ' No se ha borrado al consultar esta pantalla; verifica la versión del estudio antes de volver a analizar.':
+        result?.summary||'No se ha registrado una propuesta global vigente en este borrador. El análisis no se ha ejecutado o no se ha guardado para esta versión; no se alterarán campos del TO-BE.')+'</p></div>'+
     (opportunities.length?'<p class="tobe-global-feedback">Consolidación de propuestas: '+
       opportunities.length+' intervenciones registradas (candidatas a consolidación) · '+incompatible+
       ' incompatibilidades detectadas · '+alternatives+' alternativas sugeridas · '+
@@ -3703,6 +3716,7 @@ function tobeGlobalOverviewHtml(e,p){
         ' decisiones sobre actividades registradas; propuestas globales sin aprobar.</p>'+
       '</div>':'')+
     (opportunities.length?'<p class="tobe-global-caution">Priorización pendiente: contrastar impacto, evidencias y dependencias con el consultor. El orden visual no es una prioridad aprobada.</p>':'')+
+    (!result&&!working?'<p class="tobe-global-feedback"><b>Coherencia sin evaluar:</b> no hay una propuesta global vigente sobre la que comprobar alertas o viabilidad.</p>':'')+
     (!progress&&qualityPlan?'<p class="tobe-global-feedback"><b>Coherencia (revisión pendiente):</b> '+
       qualityPlan.reviewCount+' alertas de reglas y '+
         (qualityPlan.operationalReviewCount||0)+' intervenciones con comprobación operativa pendiente. '+
