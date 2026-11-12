@@ -4,6 +4,7 @@ const fs=require('node:fs');
 const path=require('node:path');
 const root=path.resolve(__dirname,'..');
 const results=fs.readFileSync(path.join(root,'pages/results.js'),'utf8');
+const comparison=fs.readFileSync(path.join(root,'pages/comparison.js'),'utf8');
 const workbench=fs.readFileSync(path.join(root,'domain/analysis-workbench.js'),'utf8');
 const state=fs.readFileSync(path.join(root,'core/state.js'),'utf8');
 const boot=fs.readFileSync(path.join(root,'boot.js'),'utf8');
@@ -58,9 +59,10 @@ test('preliminary diagnosis recommendation does not expose price',()=>{
 });
 
 test('AS-IS/TO-BE comparison does not calculate economics from ProcessStep in frontend',()=>{
-  const start=results.indexOf('function tobeComparisonPage');
-  const end=results.indexOf('\nfunction scenariosPage',start);
-  const body=results.slice(start,end);
+  const start=comparison.indexOf('function tobeComparisonPage');
+  const end=comparison.indexOf('// [AUNEA-FE-PG12-TOBE-GRAPH-234] END',start);
+  assert.ok(start>=0&&end>start,'PG12 has its own view module');
+  const body=comparison.slice(start,end);
   assert.match(body,/currentDiagnosticOutput\(e\)/);
   assert.doesNotMatch(body,/asis\.reduce|annual_active_hours\s*=|annual_wait_hours\s*=/);
   assert.match(body,/ninguna métrica económica se calcula en el navegador/);
@@ -818,7 +820,7 @@ test('PG10 review distinguishes preliminary PG11 from official design and never 
 });
 test('PG11 preliminary view states its purpose, remains read-only and routes back to PG10',()=>{
   const start=results.indexOf("function tobePage()"),
-    end=results.indexOf("function tobeComparisonPage(",start);
+    end=results.indexOf("// [AUNEA-FE-PG11-WORKSPACE-205] END",start);
   assert.ok(start>0&&end>start);
   const source=results.slice(start,end);
   assert.match(source,/TO-BE preliminar/);

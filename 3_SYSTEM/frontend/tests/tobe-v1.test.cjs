@@ -4,6 +4,7 @@ const fs=require('node:fs');
 const path=require('node:path');
 const root=path.resolve(__dirname,'..');
 const src=fs.readFileSync(path.join(root,'pages/results.js'),'utf8');
+const comparison=fs.readFileSync(path.join(root,'pages/comparison.js'),'utf8');
 
 test('C04 PG11 TO-BE is a versioned DRAFT based on the confirmed snapshot',()=>{
   assert.match(src,/tobeProposals/);
@@ -23,9 +24,9 @@ test('C04 PG11 requires human review before client approval',()=>{
 });
 
 test('C04 PG12 is derived and refuses unsupported future metrics',()=>{
-  assert.match(src,/function tobeComparisonPage/);
-  assert.match(src,/\['REVIEWED','APPROVED_FOR_CLIENT','PUBLISHED'\]/);
-  assert.match(src,/No disponible con evidencia suficiente/);
-  assert.match(src,/Capacidad liberada/);
-  assert.match(src,/Ahorro de caja/);
+  assert.match(comparison,/function tobeComparisonPage/);
+  assert.match(comparison,/\['REVIEWED','APPROVED_FOR_CLIENT','PUBLISHED'\]/);
+  assert.match(comparison,/No disponible con evidencia suficiente/);
+  assert.match(comparison,/Capacidad liberada/);
+  assert.match(comparison,/Ahorro de caja/);
 });
