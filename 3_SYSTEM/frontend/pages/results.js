@@ -2801,13 +2801,16 @@ function tobeAlternativeDecisionHtml(preview){
 function tobeOpenAlternative(e,candidate){
   if(!saveTobeFromDom(e)||!saveState('Conservar edición antes de previsualizar'))throw Error('No se pudo conservar tu edición.');
   const live=currentEng(),p=latestTobe(live),result=tobeProjectAlternative(live,p,candidate);
-  __auneaTobePreview={engagementId:live.id,version:p.version,before:tobeDesignState(p),candidate:tobeClone(candidate),...result};
+  __auneaTobePreview={engagementId:live.id,version:p.version,before:tobeDesignState(p),
+    candidate:tobeClone(candidate),conditionsAcknowledged:false,keepFindingsAcknowledged:false,
+    consultantNote:'',...result};
   document.getElementById('tobeAlternativeDialog')?.remove();
   const dialog=document.createElement('dialog');dialog.id='tobeAlternativeDialog';dialog.className='tobe-alternative-dialog';
   const readonly={...result.projected,status:'REVIEWED'};
   dialog.innerHTML='<h2>Vista previa · '+esc(candidate.title)+'</h2>'+
     '<p class="tobe-preview-intro">Estás comparando el TO-BE guardado con una propuesta temporal. '+
-      'Nada de lo que ves aquí modifica el borrador hasta que confirmes.</p>'+
+      'La intervención no modifica el borrador hasta que confirmes. Las ediciones manuales previas de 03.3 '+
+      'se guardaron antes de abrir esta ventana; cerrar sólo descarta esta intervención temporal.</p>'+
     (candidate.targetFinding?'<p><b>Hallazgo relacionado:</b> '+esc(candidate.targetFinding)+'</p>':'')+
     (candidate.changeSummary?'<p><b>Intervención:</b> '+esc(candidate.changeSummary)+'</p>':'')+
     (candidate.expectedOutcome?'<p><b>Resultado operativo esperado:</b> '+esc(candidate.expectedOutcome)+'</p>':'')+
@@ -2825,16 +2828,34 @@ function tobeOpenAlternative(e,candidate){
     '</div><p class="field-help">Edita únicamente los valores propuestos: el borrador sigue intacto. '+
       'Al editar, se recalculan diferencias, rutas y comprobaciones. Los catálogos se configuran en 03.3.</p></details>'+
     tobeAlternativeRouteChoicesHtml(live,p,candidate)+
-    '<section class="tobe-preview-map"><h3>Mapa TO-BE proyectado</h3>'+
-      '<p class="tobe-muted">Las actividades modificadas se resaltan. Las conexiones anteriores y nuevas aparecen en la comparación.</p>'+
-      '<div id="tobeAlternativeMap">'+tobeCanvasHtml(live,readonly).replaceAll('data-tobe-select=','data-tobe-preview-node=')+'</div></section>'+
+    '<details class="tobe-preview-map"'+((candidate.operations||[]).length?' open':'')+'>'+
+      '<summary>Mapa TO-BE proyectado'+((candidate.operations||[]).length?' · cambio estructural':
+        ' · no cambia la estructura')+'</summary>'+
+      '<p class="tobe-muted">Las actividades afectadas se resaltan. Se conservan las rutas SÍ/NO salvo confirmación expresa de una intervención compatible.</p>'+
+      '<div id="tobeAlternativeMap">'+tobeCanvasHtml(live,readonly).replaceAll('data-tobe-select=','data-tobe-preview-node=')+'</div></details>'+
     '<div id="tobeAlternativePending">'+tobeAlternativePendingHtml(__auneaTobePreview)+'</div>'+
     '<div id="tobeAlternativeFindings" class="tobe-preview-findings">'+
-      tobeCoherencePanel(live,result.projected).replaceAll('data-tobe-select=','data-tobe-preview-node=')+'</div>'+
+      tobeAlternativeScopedFindingsHtml(live,__auneaTobePreview)+'</div>'+
+    '<div id="tobeAlternativeDecision">'+tobeAlternativeDecisionHtml(__auneaTobePreview)+'</div>'+
     '<div class="tobe-preview-actions"><button type="button" class="btn btn-primary" data-tobe-confirm-alternative="1"'+
-      (result.pending.length?' disabled':'')+'>Confirmar intervención</button> '+
-    '<button type="button" class="btn btn-outline" data-tobe-cancel-alternative="1">Cancelar sin cambios</button></div>';
+      (tobeAlternativeDecisionIssue(__auneaTobePreview)?' disabled':'')+'>Confirmar intervención</button> '+
+    '<button type="button" class="btn btn-outline" data-tobe-cancel-alternative="1">Cerrar vista previa sin aplicar</button></div>';
   document.body.appendChild(dialog);dialog.showModal();
+  const syncDecisionState=()=>{
+    const issue=tobeAlternativeDecisionIssue(__auneaTobePreview);
+    const status=dialog.querySelector('.tobe-preview-decision-status');
+    if(status)status.textContent=issue||'Lista para confirmar esta intervención en el borrador.';
+    dialog.querySelector('[data-tobe-confirm-alternative]').disabled=!!issue;
+  };
+  const updateDecision=event=>{
+    const input=event.target,preview=__auneaTobePreview;
+    if(!preview)return false;
+    if(input.hasAttribute('data-tobe-preview-note'))preview.consultantNote=input.value;
+    else if(input.hasAttribute('data-tobe-preview-ack'))preview.conditionsAcknowledged=input.checked;
+    else if(input.hasAttribute('data-tobe-preview-keep-ack'))preview.keepFindingsAcknowledged=input.checked;
+    else return false;
+    syncDecisionState();return true;
+  };
   const refreshAlternativePreview=event=>{
     const input=event.target,preview=__auneaTobePreview;
     if(!preview)return;
@@ -2852,7 +2873,7 @@ function tobeOpenAlternative(e,candidate){
         tobeAlternativeChangesHtml(currentEng(),preview);
       dialog.querySelector('#tobeAlternativePending').innerHTML=tobeAlternativePendingHtml(preview);
       dialog.querySelector('#tobeAlternativeFindings').innerHTML=
-        tobeCoherencePanel(currentEng(),next.projected).replaceAll('data-tobe-select=','data-tobe-preview-node=');
+        tobeAlternativeScopedFindingsHtml(currentEng(),preview);
       dialog.querySelector('#tobeAlternativeMap').innerHTML=
         tobeCanvasHtml(currentEng(),{...next.projected,status:'REVIEWED'}).replaceAll('data-tobe-select=','data-tobe-preview-node=');
       const changedNodes=new Set([String(preview.candidate.sourceId),
@@ -2860,21 +2881,29 @@ function tobeOpenAlternative(e,candidate){
       dialog.querySelectorAll('#tobeAlternativeMap [data-graph-node]').forEach(node=>{
         node.classList.toggle('tobe-preview-changed',changedNodes.has(node.dataset.graphNode));
       });
-      dialog.querySelector('[data-tobe-confirm-alternative]').disabled=!!next.pending.length;
-      requestAnimationFrame(()=>drawProcessGraph(dialog.querySelector('#tobeAlternativeMap .process-graph-board')));
+      syncDecisionState();
+      if(dialog.querySelector('.tobe-preview-map')?.open)
+        requestAnimationFrame(()=>drawProcessGraph(dialog.querySelector('#tobeAlternativeMap .process-graph-board')));
     }catch(error){dialog.querySelector('[data-tobe-confirm-alternative]').disabled=true;toast(error.message);}
   };
   dialog.addEventListener('input',event=>{
+    if(updateDecision(event))return;
     if(event.target?.hasAttribute?.('data-tobe-preview-route'))return;
     refreshAlternativePreview(event);
   });
   dialog.addEventListener('change',event=>{
+    if(updateDecision(event))return;
     if(event.target?.hasAttribute?.('data-tobe-preview-route'))refreshAlternativePreview(event);
+  });
+  dialog.querySelector('.tobe-preview-map')?.addEventListener('toggle',event=>{
+    if(event.target.open)
+      requestAnimationFrame(()=>drawProcessGraph(dialog.querySelector('#tobeAlternativeMap .process-graph-board')));
   });
   const changed=new Set([String(candidate.sourceId),...tobeAddedSteps(result.projected).filter(x=>!tobeAddedSteps(p).some(y=>x.id===y.id)).map(x=>x.id)]);
   dialog.querySelectorAll('[data-graph-node]').forEach(node=>{if(changed.has(node.dataset.graphNode))node.classList.add('tobe-preview-changed');});
   dialog.addEventListener('close',()=>{__auneaTobePreview=null;dialog.remove();},{once:true});
-  requestAnimationFrame(()=>drawProcessGraph(dialog.querySelector('.process-graph-board')));
+  if(dialog.querySelector('.tobe-preview-map')?.open)
+    requestAnimationFrame(()=>drawProcessGraph(dialog.querySelector('#tobeAlternativeMap .process-graph-board')));
 }
 // [AUNEA-FE-PG11-TRANSACTION-332] END
 // [AUNEA-FE-PG11-INTEGRATION-PROJECTION-341] START
