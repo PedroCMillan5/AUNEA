@@ -294,6 +294,53 @@ test('PG11 03.1 uses the common read-only layout and preserves declared AS-IS va
  assert.ok(stylesheet.includes('#tobeStepOrigin .tobe-source-list{'));
  assert.match(src,/tobe-origin-header-status/);
 });
+test('PG11 03.1 shows confirmed F2 frequency and DEC-068 time attribution without inventing savings',()=>{
+ const start=src.indexOf('function tobeSnapshotIssueCards(e,item){');
+ const end=src.indexOf('// [AUNEA-FE-PG11-ORIGINAL-FACTS-243] END',start);
+ assert.ok(start>=0&&end>start);
+ const source=src.slice(start,end).trim();
+ const snapshot={
+  frictions:[{
+   id:'UAT-LIT-F2',status:'ACTIVE',affected_steps:['P1'],
+   client_label:'Falta de visibilidad del estado',
+   observable_signal:'F2: 30% de casos, 10min de seguimiento por caso afectado, incremental.',
+   frequency:{value:30,mode:'percent',period:''},
+   active_time_loss:{value:10,unit:'min',mode:'VALUE'},
+   time_attribution:{mode:'ADDITIONAL',step_id:'P1'}
+  }],
+  risks:[{id:'UAT-LIT-R1',status:'ACTIVE',step_ids:['P1'],
+   description:'Pérdida de trazabilidad de una factura entre el correo de entrada y el registro ERP.'}]
+ };
+ const sandbox={latestTobe:()=>({}),tobeProposalSnapshot:()=>snapshot,
+  esc:String,labelFrom:()=>''};
+ vm.createContext(sandbox);vm.runInContext(source,sandbox);
+ const html=sandbox.tobeSnapshotIssueCards({},{sourceStepId:'P1'});
+ assert.match(html,/Falta de visibilidad del estado/);
+ assert.match(html,/30 % de los casos/);
+ assert.match(html,/10 min por caso afectado/);
+ assert.match(html,/Adicional al tiempo del paso/);
+ assert.match(html,/requiere validar frecuencia y evidencia/);
+ assert.match(html,/Referencia \(UAT-LIT-F2\)/);
+ assert.match(html,/Referencia \(UAT-LIT-R1\)/);
+ assert.match(html,/Pérdida de trazabilidad/);
+ assert.doesNotMatch(html,/\>F2: 30%/,'do not show repeated free-text friction ID as lead');
+ snapshot.frictions[0].time_attribution.mode='INCLUDED';
+ const included=sandbox.tobeSnapshotIssueCards({},{sourceStepId:'P1'});
+ assert.match(included,/Ya incluido en el tiempo del paso/);
+ assert.doesNotMatch(included,/Su incorporación al total/);
+ snapshot.frictions[0].frequency={value:null,mode:'UNKNOWN'};
+ snapshot.frictions[0].active_time_loss={value:0,mode:'UNKNOWN'};
+ const missing=sandbox.tobeSnapshotIssueCards({},{sourceStepId:'P1'});
+ assert.doesNotMatch(missing,/Frecuencia declarada|Trabajo activo asociado|Atribución temporal/);
+ assert.match(missing,/Señal registrada/,'original signal remains readable, not reinterpreted');
+});
+test('PG11 03.2 warns that a structured output already exists instead of assuming a new register',()=>{
+ const section=src.slice(src.indexOf("const supportingInformation="),src.indexOf("return '<header class=\"tobe-inspector-head\""));
+ assert.match(section,/sourceStep\.outputs\.some\(value=>String\(value\)==='RECORD'\)/);
+ assert.match(section,/registro estructurado ya figura entre las salidas/);
+ assert.match(section,/actualizar o automatizar el registro existente/);
+ assert.match(section,/no acredita cómo se genera actualmente/);
+});
 test('PG11 step evidence never presents superseded risks as current',()=>{
  const fn=src.match(/function tobeSnapshotIssueCards\(e,item\)\{[\s\S]*?\n\}/)?.[0];
  assert.ok(fn,'The current step evidence projection must exist');
