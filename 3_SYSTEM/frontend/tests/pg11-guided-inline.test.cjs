@@ -70,7 +70,7 @@ test('PG11 fields without an IA candidate never repeat a full evidence card',()=
  assert.equal(empty,'','a field without IA candidate should not repeat a card');
  const proposed=f.context.tobeAiInlineHint(f.e,f.p,f.p.items[0],'outputs');
  assert.match(proposed,/Fuentes y condiciones del campo/);
- assert.match(proposed,/Referencias:/);
+ assert.match(proposed,/Referencias de origen:/);
  assert.doesNotMatch(proposed,/Justificación global de la actividad|Intervención propuesta:/);
 });
 test('PG11 gives truthful field coverage without inferring reasons for empty candidates',()=>{
@@ -78,9 +78,9 @@ test('PG11 gives truthful field coverage without inferring reasons for empty can
  f.proposal.items[0].controls_risk='';
  f.proposal.items[0].human_supervision='';
  const html=f.context.tobeAiFieldCoverageHtml(f.e,f.p,f.p.items[0]);
- assert.match(html,/Propuestas IA por campo/);
- assert.match(html,/sin propuesta/);
- assert.match(html,/Un campo vacío no prueba falta de datos, conformidad, ni aprobación/);
+ assert.match(html,/Campos revisados por IA/);
+ assert.match(html,/sin sugerencia/);
+ assert.match(html,/no significa que falte información del cliente/);
  const empty=f.context.tobeAiInlineHint(f.e,f.p,f.p.items[0],'controlsRisk');
  assert.equal(empty,'');
  const original=f.context.tobeWithAiHint(f.e,f.p,f.p.items[0],'controlsRisk',
@@ -107,27 +107,27 @@ test('PG11 shows a specific reviewer defect rather than blaming missing client d
    evidence:'transformation / automation_ai',
    issue:'«Se automatiza» exige describir Automatización e IA.'}];
  const hint=f.context.tobeAiInlineHint(f.e,f.p,f.p.items[0],'automationAi');
- assert.match(hint,/Incoherencia de propuesta/);
+ assert.match(hint,/Por qué no se puede aplicar/);
  assert.match(hint,/exige describir Automatización e IA/);
- assert.doesNotMatch(hint,/03\.2 describe automatización/);
+ assert.doesNotMatch(hint,/en 03\.2 se menciona automatización/);
  const overview=f.context.tobeAiFieldCoverageHtml(f.e,f.p,f.p.items[0]);
- assert.match(overview,/incompletos según revisor/);
- assert.match(overview,/sin propuesta/);
+ assert.match(overview,/la IA debe corregir/);
+ assert.match(overview,/sin sugerencia/);
  const unaffected=f.context.tobeAiInlineHint(f.e,f.p,f.p.items[0],'inputs');
- assert.doesNotMatch(unaffected,/Incoherencia de propuesta/);
+ assert.doesNotMatch(unaffected,/Por qué no se puede aplicar/);
 });
 test('PG11 flags narrative automation without inventing a structured field suggestion',()=>{
  const f=fixture();f.proposal.items[0].automation_ai='';
  const html=f.context.tobeAiInlineHint(f.e,f.p,f.p.items[0],'automationAi');
  assert.match(html,/sin candidato estructurado para este campo/);
- assert.match(html,/03\.2 describe automatización/);
+ assert.match(html,/en 03\.2 se menciona automatización/);
  assert.doesNotMatch(html,/data-tobe-ai-use-field/);
  assert.doesNotMatch(html,/<details/);
  const unrelated=f.context.tobeAiInlineHint(f.e,f.p,f.p.items[0],'inputs');
  assert.doesNotMatch(unrelated,/no ha generado un valor estructurado/);
  f.context.internalAiPilotNarrative=()=>({reason:'Sin cambio justificado',action:'Se mantiene la supervisión humana'});
  assert.doesNotMatch(f.context.tobeAiInlineHint(f.e,f.p,f.p.items[0],'automationAi'),
-   /03\.2 describe automatización/);
+   /en 03\.2 se menciona automatización/);
 });
 test('a different consultant transformation is not itself an IA coherence defect',()=>{
  const f=fixture();f.setDecision('MODIFY');
@@ -255,7 +255,7 @@ test('PG11 03.3 keeps all nine fields inside four operational design sections',(
  const end=src.indexOf('function createNextTobeVersion',start);
  const content=src.slice(start,end);
  for(const label of ['Transformación y propósito','Funcionamiento futuro',
-   'Recursos y datos de ejecución','Tiempo futuro y supuesto trazable'])
+   'Recursos y datos de ejecución','tobeFutureTimeReviewHtml(item,sourceStep)'])
    assert.ok(content.includes(label),label);
  for(const key of ['transformation','problemResolved','automationAi','humanSupervision',
    'controlsRisk','futureActor','tool','inputs','outputs'])
