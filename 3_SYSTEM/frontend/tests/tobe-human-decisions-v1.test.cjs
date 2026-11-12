@@ -1,163 +1,69 @@
-// [AUNEA-UAT-PG11-HUMAN-DECISIONS-226] START
-// Consultant choices belong to the existing versioned TO-BE owner; no Ollama.
-const test=require('node:test');
-const assert=require('node:assert/strict');
-const fs=require('node:fs');
-const path=require('node:path');
-const vm=require('node:vm');
-const src=fs.readFileSync(path.resolve(__dirname,'../pages/results.js'),'utf8');
-function block(id){
-  const start='// ['+id+'] START',end='// ['+id+'] END';
-  const a=src.indexOf(start),b=src.indexOf(end,a);
-  if(a<0||b<0)throw Error('Missing contract block '+id);
-  return src.slice(a,b+end.length);
+// [AUNEA-UAT-PG11-HUMAN-DECISIONS-226] START — unified PG11 decision UAT.
+// SOURCE: CANONICAL PG11, DEC-050/052/055. No Ollama, synthetic data only.
+const test=require('node:test'),assert=require('node:assert/strict'),
+  fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
+const source=fs.readFileSync(path.resolve(__dirname,'../pages/results.js'),'utf8');
+function pick(name){
+ const start=source.indexOf('function '+name+'('),
+   end=source.indexOf('\n}\n',start);
+ assert.ok(start>=0&&end>start,'missing '+name);
+ return source.slice(start,end+2);
 }
-function setup(){
-  const saved=[],notices=[],listener=[],updates=[];
-  const diag={input_snapshot_hash:'DIAG-VALID'};
-  const snap={version:2};
-  const ids=['S1','S2'];
-  const items=ids.map((sid,i)=>({
-    id:'TOBE-1-'+(i+1),sourceStepId:sid,sourceStepName:'Paso '+sid,
-    transformation:'Se modifica',problemResolved:'Fricción documentada',
-    futureActor:'Administración',tool:'ERP existente',inputs:'PDF',outputs:'RECORD',
-    automationAi:'No aplica: actividad humana con revisión de registros',
-    humanSupervision:'La administración revisará las excepciones',
-    controlsRisk:'Registro de errores y trazabilidad de responsables',
-    futureTime:'',futureTimeAssumption:''
-  }));
-  const proposals=ids.map(source_step_id=>({source_step_id,transformation:'Se modifica',
-    rationale:'Acción propuesta: implementar un control. Resultado esperado: más trazabilidad.',
-    problem_resolved:'Sin visibilidad',source_refs:[source_step_id]}));
-  const p={version:1,sourceSnapshotVersion:2,status:'DRAFT',items,
-    aiDraft:{sourceSnapshotVersion:2,diagnosticInputHash:'DIAG-VALID',proposal:{
-      status:'DRAFT',input_hash:'ENG-VALID',items:proposals,
-      review:{review_mode:'RULES_ONLY',issues:[{
-        step_id:'S1',category:'BLOCKING',issue:'Cambio marcado Se mantiene'
-      }]}}}};
-  const e={id:'CASE',confirmedAsIs:true,tobeProposals:[p]};
-  const note={value:'Se revisa la propuesta frente al AS-IS y los controles existentes.'};
-  const sandbox={
-    String,Array,Object,JSON,Math,Set,Map,console,
-    TOBE_TRANSFORMATIONS:['Se mantiene','Se modifica','Se elimina','Se automatiza',
-      'Se asiste con IA','Requiere decisión humana','Se incorpora control'],
-    document:{
-      addEventListener:(type,fn)=>{if(type==='click')listener.push(fn)},
-      getElementById:id=>id==='tobeHumanReviewNote'?note:null
-    },
-    state:{activePage:'tobe'},currentEng:()=>e,latestTobe:()=>p,
-    tobeEditable:x=>x?.status==='DRAFT',confirmedSnapshot:()=>snap,
-    currentDiagnosticOutput:()=>diag,tobeSourceSteps:()=>ids.map(id=>({id})),
-    // Future-route integrity is covered by the dedicated graph regression suite.
-    tobeFlowIntegrity:()=>null,
-    tobeAddedSteps:()=>[],
-    selectedOtherMissingDetail:()=>false,fieldOptions:()=>[],
-    tobeArtifactValues:v=>({resolved:Array.isArray(v)?v:(v?[v]:[])}),
-    internalAiSavedDraft:()=>p.aiDraft.proposal,
-    internalAiCheckpointValid:()=>false,
-    saveTobeFromDom:()=>true,
-    markDirty:m=>updates.push(m),now:()=> '2026-11-04T16:00:00+01:00',
-    saveState:()=>{saved.push(JSON.stringify(e));return true},
-    toast:m=>notices.push(m),render:()=>{},esc:x=>String(x),attr:x=>String(x)
-  };
-  vm.createContext(sandbox);
-  vm.runInContext(block('AUNEA-FE-PG11-TRANSFORMATION-UX-258')+'\n'+
-    block('AUNEA-FE-PG11-HUMAN-DECISIONS-223')+'\n'+
-    block('AUNEA-FE-PG11-REVIEW-GATE-199')+'\n'+
-    block('AUNEA-FE-PG11-HUMAN-DECISION-SAVE-224'),sandbox);
-  const click=(sid,status,text=note.value)=>{
-    note.value=text;
-    const control={getAttribute:name=>name==='data-tobe-human-source'?sid:status};
-    listener.at(-1)({target:{closest:selector=>selector==='[data-tobe-human-decision]'?control:null},
-      preventDefault(){}});
-  };
-  const readiness=()=>vm.runInContext('tobeReviewReadiness(currentEng(),latestTobe(currentEng()))',sandbox);
-  return {e,p,saved,notices,click,readiness,sandbox};
-}
-test('decisions ACCEPT/MODIFY/DISCARD persist without overwriting consultant fields',()=>{
-  const h=setup(),before=JSON.stringify(h.p.items);
-  assert.match(h.readiness(),/revisión humana/);
-  h.click('S1','ACCEPT');
-  assert.equal(h.p.aiDraft.humanReview,undefined,'blocked IA must never be accepted');
-  assert.match(h.notices.at(-1),/No se puede aceptar la propuesta/);
-  assert.equal(h.saved.length,0);
-  h.click('S1','MODIFY','Se ajusta la intervención y se justifican los controles del consultor.');
-  assert.equal(h.p.aiDraft.humanReview.decisions.S1.status,'MODIFY');
-  assert.equal(h.saved.length,1);
-  assert.equal(JSON.stringify(h.p.items),before,'choice cannot copy unreviewed fields into TO-BE');
-  assert.match(h.readiness(),/Falta aceptar, modificar o descartar/);
-  h.click('S2','DISCARD','No se acepta la sugerencia: se mantiene el control actual hasta validar su origen.');
-  assert.equal(h.p.aiDraft.humanReview.decisions.S2.status,'DISCARD');
-  assert.equal(h.readiness(),null,'human-reviewed, complete changed-step design may be sent to REVIEWED');
-  h.click('S1','MODIFY','Se ajusta la propuesta tras revisar las fuentes y el control aplicable.');
-  assert.equal(h.p.aiDraft.humanReview.decisions.S1.status,'MODIFY');
+test('03.2 presents both IA analyses but no longer asks for a whole-proposal vote',()=>{
+ const inspector=pick('tobeInspectorHtml');
+ assert.match(inspector,/tobeGlobalLinkedStepHtml\(e,p,item\)/);
+ assert.match(inspector,/tobeAiAdviceHtml\(e,item,false\)/);
+ assert.match(inspector,/Aquí sólo se analizan opciones/);
+ assert.doesNotMatch(inspector,/tobeHumanReviewHtml\(e,item,false\)/);
+ assert.doesNotMatch(inspector,/data-tobe-human-decision/);
 });
-test('a clean, current IA proposal can be accepted without automatically changing the TO-BE',()=>{
-  const h=setup(),before=JSON.stringify(h.p.items);
-  h.p.aiDraft.proposal.review.issues=[];
-  h.p.aiDraft.proposal.review.blocking_step_ids=[];
-  h.click('S1','ACCEPT');
-  assert.equal(h.p.aiDraft.humanReview.decisions.S1.status,'ACCEPT');
-  assert.equal(h.saved.length,1);
-  assert.equal(JSON.stringify(h.p.items),before);
+test('legacy ACCEPT MODIFY DISCARD remains versioned evidence, never an active gate',()=>{
+ const inspector=pick('tobeInspectorHtml');
+ const readiness=pick('tobeReviewReadiness');
+ assert.match(inspector,/tobe-legacy-review/);
+ assert.match(inspector,/historial anterior|Historial de revisión anterior/i);
+ assert.doesNotMatch(readiness,/humanReview|ACCEPT|MODIFY|DISCARD|Primero registra tu decisión/);
+ assert.match(readiness,/tobeActivityDesignIssue|Completa herramienta, entradas, salidas y controles/);
 });
-test('short justification and stale candidate cannot create valid decision',()=>{
-  const h=setup();
-  h.click('S1','MODIFY','sí');
-  assert.equal(h.p.aiDraft.humanReview,undefined);
-  assert.match(h.notices.at(-1),/20 caracteres/);
-  h.click('S1','MODIFY');
-  h.p.aiDraft.proposal.items[0].rationale+=' NUEVA GENERACIÓN';
-  assert.match(h.readiness(),/revisión humana/,
-    'previous acceptance must be invalidated on candidate regeneration');
+test('a configured activity is counted from the actual TO-BE, not old IA approval',()=>{
+ const names=['Se mantiene','Se modifica','Se elimina','Se automatiza',
+   'Se asiste con IA','Requiere decisión humana','Se incorpora control'];
+ const context={TOBE_TRANSFORMATIONS:names,
+  tobeMeaningfulRationale:x=>!!String(x||'').trim()&&String(x)!=='NO',
+  tobeArtifactValues:x=>({resolved:x||[]})};
+ vm.createContext(context);
+ vm.runInContext(pick('tobeActivityDesignIssue')+'\n'+pick('tobeActivityDecisionRecorded'),context);
+ const item={sourceStepId:'S1',sourceStepName:'Recibir factura',
+  transformation:'Se modifica',problemResolved:'Trazabilidad de recepción',
+  futureActor:'Administración',tool:'Correo',inputs:['PDF'],outputs:['RECORD'],
+  controlsRisk:'Conservar la referencia y verificar duplicados'};
+ assert.equal(context.tobeActivityDecisionRecorded(null,{},item),true);
+ item.controlsRisk='';
+ assert.equal(context.tobeActivityDecisionRecorded(null,{},item),false);
+ item.controlsRisk='Conservar la referencia y verificar duplicados';
+ item.transformation='Se mantiene';
+ assert.equal(context.tobeActivityDecisionRecorded(null,{},item),true);
 });
-test('blocking keep-state and legacy NO cannot be promoted to reviewed',()=>{
-  const h=setup();
-  h.click('S1','MODIFY');
-  h.click('S2','MODIFY');
-  h.p.items[0].transformation='Se mantiene';
-  assert.equal(h.readiness(),null,
-    'an explicit MODIFY override may maintain the existing step without importing a blocked IA change');
-  h.p.items[0].transformation='Se modifica';
-  h.p.items[0].controlsRisk='NO';
-  assert.match(h.readiness(),/Completa herramienta, datos y controles/);
-  h.p.items[0].controlsRisk='Trazabilidad de errores bajo responsable validado';
-  assert.equal(h.readiness(),null,
-    'manual rediseño justificado puede continuar, sin aceptar el candidato IA bloqueado');
-  h.click('S1','MODIFY','Se rediseña el control tras contrastar los bloqueos de la propuesta IA.');
-  assert.equal(h.readiness(),null);
+test('03.3 has one editable field owner and three contextual actions',()=>{
+ const inspector=pick('tobeInspectorHtml');
+ const actions=pick('tobeAiRowActions');
+ const click=source.slice(source.indexOf("// [AUNEA-FE-PG11-AI-STEP-APPLY-231] START"),
+   source.indexOf("// [AUNEA-FE-PG11-AI-STEP-APPLY-231] END"));
+ assert.match(inspector,/tobeDecisionSourceSummaryHtml\(e,p,item\)/);
+ assert.match(actions,/data-tobe-ai-use-field/);
+ assert.match(actions,/data-tobe-ai-keep-field/);
+ assert.match(actions,/data-tobe-ai-edit-field/);
+ assert.match(click,/tobeOpenAlternative\(e,/,'AI apply opens preview, not direct write');
+ assert.match(click,/tobeKeepAiReviewedField/);
+ assert.doesNotMatch(inspector,/tobeHumanReviewHtml/);
 });
-test('explicit decisions remain bound to the same TO-BE version and diagnostic',()=>{
-  const h=setup();
-  h.click('S1','ACCEPT');
-  assert.match(h.notices.at(-1),/No se puede aceptar/);
-  h.click('S2','MODIFY');
-  assert.match(h.readiness(),/Falta aceptar, modificar o descartar/);
-  h.click('S1','MODIFY','Se modifica la alternativa y se documenta el diseño humano.');
-  assert.equal(h.readiness(),null);
-  h.p.version=2;
-  assert.match(h.readiness(),/revisión humana/);
-  h.p.version=1;
-  h.p.sourceSnapshotVersion=1;
-  assert.match(h.readiness(),/AS-IS confirmado vigente/);
+test('final review is explicit and only after operational completeness checks',()=>{
+ const readiness=pick('tobeReviewReadiness');
+ const advance=pick('advanceTobeStatus');
+ assert.match(readiness,/TOBE_TRANSFORMATIONS/);
+ assert.match(readiness,/tobeFlowIntegrity/);
+ assert.match(readiness,/tobeCoherenceFindings/);
+ assert.match(advance,/tobeReviewReadiness\(e,p\)/);
+ assert.doesNotMatch(readiness,/Falta la revisión humana de las propuestas IA/);
 });
 // [AUNEA-UAT-PG11-HUMAN-DECISIONS-226] END
-
-test('reanalysis keeps only unchanged activity decisions and invalidates global conflicts',()=>{
- const source=fs.readFileSync(path.resolve(__dirname,'../pages/results.js'),'utf8');
- const block=source.slice(source.indexOf('function tobeCandidateFingerprint('),source.indexOf('function tobeHumanReviewHtml('));
- const ctx={currentDiagnosticOutput:()=>({input_snapshot_hash:'D'})};
- vm.createContext(ctx);vm.runInContext(block,ctx);
- const p={version:1,sourceSnapshotVersion:2,aiDraft:{proposal:{input_hash:'I',items:[
-  {source_step_id:'A',outputs:'PDF'},{source_step_id:'B',outputs:'RECORD'}],
-  review:{review_mode:'OLLAMA',issues:[],blocking_step_ids:[]}}}};
- p.aiDraft.humanReview={tobeVersion:1,sourceSnapshotVersion:2,diagnosticInputHash:'D',
-  proposalInputHash:'I',proposalFingerprint:ctx.tobeCandidateFingerprint(p),decisions:{}};
- for(const id of ['A','B'])p.aiDraft.humanReview.decisions[id]={status:'MODIFY',
-  proposalStepFingerprint:ctx.tobeCandidateFingerprint(p,id)};
- p.aiDraft.proposal.items[0].outputs='RECORD';
- const kept=ctx.tobeHumanReviewRecord({},p);
- assert.deepEqual(Object.keys(kept.decisions),['B']);
- p.aiDraft.proposal.review.issues.push({step_id:'GLOBAL',category:'BLOCKING',issue:'Conflicto entre actividades'});
- assert.equal(ctx.tobeHumanReviewRecord({},p),null);
-});
