@@ -106,3 +106,15 @@ Mayores módulos JS activos (líneas):
 **Priorización revisada:** los grandes módulos de dominio (`process.js` y `internal-ai-pilot.js`) deben entrar en el inventario de dependencias, pero **no** se deben dividir sólo por su tamaño. `tobe.js` y `results.js` siguen candidatos por mezcla de vista/eventos. Lo relevante es reducción de acoplamiento y duplicación, no el tamaño bruto.
 
 **QA y cierre:** análisis estático realizado. No se ha confirmado que FROZEN, UAT Windows o backend sean equivalentes en ejecución. Fases 0–6 siguen abiertas, sin afirmación de finalización integral.
+
+## 12. Consolidación de superficies y estructuras compartidas · 12/11/2026
+**Cambios implementados en REVIEW, sin cambio de reglas de negocio:**
+- `styles.css` / Block_ID existente `AUNEA-FE-SHARED-COMPONENTS-311`: nuevo componente opt-in `.aunea-ui-work-surface` para geometría de tarjeta (display, gap, padding, border, radio, fondo y color). Un único propietario, sin aplicar reglas globales a FROZEN.
+- El mismo bloque define `.aunea-ui-work-stage` con grid/gap/min-width compartidos por las tres actividades 03.1, 03.2 y 03.3.
+- `ui-system.css`: retiradas las declaraciones duplicadas de geometría y display/gap de esos seis consumidores, manteniendo selectores específicos necesarios para el contrato de pruebas. Los layout/estados concretos siguen en la hoja de composición.
+- `pages/tobe.js`: 01 Información general, 02 Análisis IA global y 03 cabecera de diseño consumen `.aunea-ui-work-surface`; 03.1 Entender AS-IS, 03.2 Oportunidades y 03.3 Configuración consumen `.aunea-ui-work-stage`. No se modifica ninguna acción, evento, input ni transacción.
+- `tests/design-system-common.test.cjs` (Block_ID existente 312): añade gate estático explícito para impedir que estas superficies vuelvan a tener propietarios locales de geometría.
+
+**QA realizado:** comprobación de 12 invariantes estáticas (presencia de clases, consumidores, ausencia de reglas locales duplicadas y balance de llaves) PASS. No equivale a `npm test`, a la suite backend o a UAT visual; no se afirma identidad pixel a pixel porque las reglas ahora se cargan antes en la cascada CSS. Los tests completos y captura comparativa desktop/tablet/móvil siguen pendientes.
+
+**Cobertura real:** consolidación inicial de seis superficies/estructuras de Trabajo interno; NO se ha unificado aún toda la UI. CRM y diagnóstico FROZEN permanecen sin modificaciones de markup y no se modifica el sistema de datos/reglas. La reducción de líneas netas de este lote no es un objetivo cumplido por sí misma: se ha cambiado ownership de estilo para evitar duplicidades futuras.
