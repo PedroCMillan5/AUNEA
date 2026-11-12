@@ -1643,8 +1643,16 @@ function tobeAiAdviceHtml(e,item,includeDecision=true){
     (fromCheckpoint?pending.items.get(stepId):null);
   if(!suggestion)return '<div class="tobe-ai-empty"><p class="tobe-muted">Todavía no hay una sugerencia de IA vigente para esta actividad. Si existen actividades verificadas pendientes de revisión, se mostrarán únicamente en sus pasos correspondientes.</p></div>';
   const narrative=typeof internalAiPilotNarrative==='function'?internalAiPilotNarrative(suggestion.rationale):{action:'',expected:'',reason:String(suggestion.rationale||'')};
-  const issues=(draft?.review?.issues||[]).filter(x=>x.step_id===stepId||x.step_id==='GLOBAL');
-  const blocking=issues.some(x=>x.category==='BLOCKING')||(draft?.review?.blocking_step_ids||[]).includes(stepId);
+  const issues=(draft?.review?.issues||[]).filter(x=>String(x.step_id||'GLOBAL')===stepId||
+    String(x.step_id||'GLOBAL')==='GLOBAL');
+  const blocking=issues.some(x=>x.category==='BLOCKING')||
+    (draft?.review?.blocking_step_ids||[]).map(String).includes(stepId);
+  const reviewMode=draft?.review?.review_mode==='RULES_ONLY'?
+    'Revisión básica por reglas: no equivale a revisión semántica de IA.':
+    draft?.review?'Revisión de coherencia guardada; no supone validación del cliente.':
+    'Propuesta sin revisión de coherencia disponible.';
+  const issueName=x=>x.category==='BLOCKING'?'Bloqueo':
+    x.category==='PENDING'?'Pendiente de contraste':'Advertencia';
   return '<div class="tobe-advice-content" data-tobe-ai-transform="'+
     attr(suggestion.transformation||'')+'">'+
     (fromCheckpoint?'<div class="notice warn"><b>Propuesta individual guardada; pendiente de consolidación.</b> '+
@@ -1659,6 +1667,7 @@ function tobeAiAdviceHtml(e,item,includeDecision=true){
     '<div class="tobe-advice-label">'+esc(suggestion.transformation||'Sin clasificar')+
       (fromCheckpoint?' · Sin consolidar':
         blocking?' · Requiere corrección':' · Propuesta sin aprobar')+'</div>'+
+    '<p class="tobe-ai-review-method" role="status">'+esc(reviewMode)+'</p>'+
     '<p class="notice info" data-tobe-ai-difference="1"'+
       (item.transformation&&item.transformation!==suggestion.transformation?'':' hidden')+'>'+
       'La IA propone «'+esc(suggestion.transformation||'Sin clasificar')+
@@ -1672,13 +1681,17 @@ function tobeAiAdviceHtml(e,item,includeDecision=true){
     '</dl>'+
     '<details class="tobe-subdetails"><summary>Justificación, fuentes y aspectos por revisar</summary>'+
       '<p><b>Justificación:</b> '+esc(narrative.reason||'No declarada')+'</p>'+
-      '<p><b>Fuentes:</b> '+esc((typeof internalAiReadableRefs==='function'?
-        internalAiReadableRefs(e,suggestion.source_refs):
-        (suggestion.source_refs||[]).join(', '))||'No identificadas')+'</p>'+
-      '<p><b>Condiciones pendientes:</b> '+esc(suggestion.limitations||'Ninguna declarada')+'</p>'+
+      '<p><b>Referencias del AS-IS:</b> '+esc(tobeHumanReadableRefs(e,suggestion.source_refs)||'No identificadas')+'</p>'+
+      '<p><b>Limitaciones redactadas por IA (no confirmadas):</b> '+
+        esc(suggestion.limitations||'La IA no ha propuesto limitaciones específicas.')+'</p>'+
       (fromCheckpoint?'<p>Consolidación entre actividades pendiente. No se puede aplicar ni aprobar esta propuesta.</p>':
-        issues.length?'<ul>'+issues.map(x=>'<li>'+esc(x.issue||x.action||'Revisión pendiente')+'</li>').join('')+'</ul>':
-        '<p>Sin observaciones específicas del revisor automático.</p>')+
+        issues.length?'<div class="tobe-ai-quality-issues"><b>Qué debe resolverse antes de utilizar la propuesta:</b>'+
+          '<ul>'+issues.map(x=>'<li><strong>'+issueName(x)+':</strong> '+
+            esc(x.issue||'Observación sin descripción')+
+            (x.evidence?'<span><b>Fuente o dato:</b> '+esc(x.evidence)+'</span>':'')+
+            (x.action?'<span><b>Qué hacer:</b> '+esc(x.action)+'</span>':'')+
+          '</li>').join('')+'</ul></div>':
+        '<p>El revisor no registró observaciones específicas. La viabilidad técnica y las decisiones siguen pendientes de validación humana.</p>')+
     '</details>'+
     ''+
     (includeDecision?tobeHumanReviewHtml(e,item,!!archived):'')+
@@ -1722,15 +1735,44 @@ function tobeHumanReviewRecord(e,p){
     decision.proposalStepFingerprint===tobeCandidateFingerprint(p,id)));
   return Object.keys(decisions).length?{...h,proposalFingerprint:tobeCandidateFingerprint(p),decisions}:null;
 }
+// [AUNEA-FE-PG11-AI-ACCEPT-GATE-355] START — checked proposal only.
+function tobeAiAcceptanceIssue(e,p,sourceId){
+  const current=typeof internalAiSavedDraft==='function'?internalAiSavedDraft(e):null,
+    id=String(sourceId),
+    candidate=current?.items?.find(x=>String(x.source_step_id)===id),
+    review=current?.review;
+  if(!candidate||!review)return 'No hay una propuesta consolidada y revisada para esta actividad.';
+  const issues=(review.issues||[]).filter(x=>String(x.step_id||'GLOBAL')==='GLOBAL'||
+    String(x.step_id)===id);
+  if((review.blocking_step_ids||[]).map(String).some(x=>x===id||x==='GLOBAL')||
+     issues.some(x=>x.category==='BLOCKING'))
+    return 'La propuesta tiene bloqueos de calidad sin resolver. Corrígela o registra «Modificar antes de usar».';
+  if(candidate.transformation==='Se mantiene'){
+    const narrative=typeof internalAiPilotNarrative==='function'?
+      internalAiPilotNarrative(candidate.rationale):{action:String(candidate.rationale||'')};
+    if(/\b(?:implementar|implantar|automatizar|integrar|rediseñar|sustituir|crear)\b/i.test(
+      String(narrative.action||'')+' '+String(candidate.automation_ai||'')))
+      return '«Se mantiene» contradice la intervención nueva. Revisa la clasificación antes de aceptar.';
+  }
+  if(issues.some(x=>x.category==='PENDING'&&x.origin==='CONTROL_FUENTE_ASIS'))
+    return 'Hay afirmaciones IA sin contraste con el AS-IS. Modifica la propuesta o vuelve a analizar tras corregirlas.';
+  return '';
+}
+// [AUNEA-FE-PG11-AI-ACCEPT-GATE-355] END
 function tobeHumanReviewHtml(e,item,historical){
   const p=latestTobe(e);
   if(historical||!tobeEditable(p))return '';
   const record=tobeHumanReviewRecord(e,p)?.decisions?.[String(item.sourceStepId)]||null;
   const label=TOBE_HUMAN_LABELS[record?.status]||'Sin decisión';
-  const id=String(item.sourceStepId);
+  const id=String(item.sourceStepId),
+    acceptIssue=tobeAiAcceptanceIssue(e,p,id);
   return '<section class="tobe-human-review" aria-label="Decisión humana sobre la propuesta">'+
     '<h4>Decisión del consultor sobre la propuesta</h4>'+
-    '<p class="tobe-muted">Aceptar, modificar o descartar sólo registra tu decisión. No rellena campos ni confirma cifras, capacidades o rutas.</p>'+
+    '<p class="tobe-muted"><b>Aceptar:</b> registra tu conformidad sólo si la propuesta no tiene bloqueos. '+
+      '<b>Modificar:</b> conserva tu criterio para ajustar el TO-BE sin importar campos IA bloqueados. '+
+      '<b>Descartar:</b> conserva tu diseño y rechaza la propuesta. Ninguna acción modifica automáticamente el proceso.</p>'+ 
+    (acceptIssue?'<p class="notice warn tobe-ai-accept-explanation" role="status"><b>Aceptación no disponible:</b> '+
+      esc(acceptIssue)+' Puedes modificar o descartar, o volver a analizar tras resolver el problema.</p>':'')+
     '<p class="tobe-human-review-status"><b>Estado:</b> '+esc(label)+'</p>'+
     '<div class="field"><label for="tobeHumanReviewNote">Justificación de la decisión</label>'+
     '<textarea id="tobeHumanReviewNote" rows="3" placeholder="Explica qué evidencia y condiciones sustentan tu decisión. No inventes datos.">'+
@@ -1738,7 +1780,8 @@ function tobeHumanReviewHtml(e,item,historical){
     '<div class="tobe-human-review-actions">'+
       TOBE_HUMAN_DECISIONS.map(status=>'<button type="button" class="btn '+
         (record?.status===status?'btn-primary':'btn-outline')+
-        '" data-tobe-human-decision="'+status+'" data-tobe-human-source="'+attr(id)+'">'+
+        '" data-tobe-human-decision="'+status+'" data-tobe-human-source="'+attr(id)+'"'+
+        (status==='ACCEPT'&&acceptIssue?' disabled title="'+attr(acceptIssue)+'"':'')+'>'+
         esc(TOBE_HUMAN_LABELS[status])+'</button>').join('')+
     '</div><p class="tobe-muted">La decisión no modifica el proceso. Después de guardarla, revisa cada propuesta junto a su campo TO-BE; utiliza únicamente los valores que autorices.</p>'+
   '</section>';
@@ -2923,8 +2966,8 @@ function tobeGlobalLinkedStepHtml(e,p,item){
         '<p><b>Viabilidad pendiente:</b> '+esc(r.review?.reason||'Requiere comprobación.')+'</p>')+
       (r.alternative?'<p><b>Alternativa propuesta:</b> '+esc(r.alternative.how)+'</p>':'')+
       '<p><b>Referencias de origen:</b> '+
-        esc([...(r.source_refs||[]),...(r.related||[]).flatMap(x=>x.source_refs||[])]
-          .filter((x,i,a)=>a.indexOf(x)===i).join(' · '))+'</p></li>').join('')+
+        esc(tobeHumanReadableRefs(e,[...(r.source_refs||[]),...(r.related||[]).flatMap(x=>x.source_refs||[])]
+          .filter((x,i,a)=>a.indexOf(x)===i)))+'</p></li>').join('')+
     '</ul><p class="tobe-muted">Contexto de solo lectura. Estas propuestas no sustituyen '+
     'el análisis individual, ni aplican cambios o decisiones al TO-BE.</p></details>';
 }
@@ -4136,6 +4179,10 @@ function registerInternalWorkPages(){
     const e=currentEng(),p=latestTobe(e),item=p?.items?.find(x=>String(x.sourceStepId)===sourceId);
     if(!e||!tobeEditable(p)||!item||!TOBE_HUMAN_DECISIONS.includes(choice))
       return toast('La actividad ya no corresponde al borrador vigente.');
+    if(choice==='ACCEPT'){
+      const issue=tobeAiAcceptanceIssue(e,p,sourceId);
+      if(issue)return toast('No se puede aceptar la propuesta: '+issue);
+    }
     const reason=String(document.getElementById('tobeHumanReviewNote')?.value||'').trim();
     if(reason.length<20)
       return toast('Explica tu decisión con al menos 20 caracteres; identifica fuentes y condiciones sin inventar datos.');
