@@ -50,10 +50,13 @@ function harness(){
   preview:id=>sandbox.tobeAiReviewDiff(e,p,id),
   apply:(id,fields)=>sandbox.tobeApplyAiReviewedFields(e,id,fields)};
 }
-test('a proposal is not applied without a recorded human decision',()=>{
- const h=harness();delete h.decisions.S1;
- assert.match(h.preview('S1').issue,/decisión/);
- assert.equal(h.apply('S1',['tool']),false);
+test('a proposal is inspection-only until a selected change is confirmed',()=>{
+ const h=harness(),before=JSON.stringify(h.p.items);
+ delete h.decisions.S1;
+ const diff=h.preview('S1');
+ assert.equal(diff.issue,'','whole-activity approval is not required');
+ assert.ok(diff.fields.some(x=>x.key==='tool'));
+ assert.equal(JSON.stringify(h.p.items),before);
  assert.equal(h.saves.length,0);
 });
 test('MODIFY applies only selected fields and preserves existing manual data and AS-IS',()=>{
@@ -69,18 +72,21 @@ test('MODIFY applies only selected fields and preserves existing manual data and
  assert.equal(h.p.items[0].automationAi,'NO');
  assert.equal(JSON.stringify(h.p.items[1]),before);
  assert.equal(JSON.stringify(h.e.snapshot),asis);
- assert.equal(h.p.aiDraft.applyHistory[0].decision,'MODIFY');
+ assert.equal(h.p.aiDraft.applyHistory[0].decision,'CONFIRM_PER_CHANGE');
  assert.equal(h.p.aiDraft.applyHistory[0].fields.length,2);
  assert.equal(h.saves.length,2);
 });
-test('blocking reviewer findings forbid ACCEPT but allow explicitly reviewed MODIFY',()=>{
+test('blocking reviewer findings permit only independent fields with explicit preview',()=>{
  const h=harness();h.data.review.review_mode='RULES_ONLY';
  h.data.review.blocking_step_ids=['S1'];
- h.decisions.S1.status='ACCEPT';
- assert.match(h.preview('S1').issue,/bloqueos/);
- h.decisions.S1.status='MODIFY';
+ delete h.decisions.S1;
  assert.equal(h.preview('S1').issue,'');
- assert.ok(h.preview('S1').warnings.length>0);
+ assert.ok(h.preview('S1').warnings.some(x=>/bloqueo/i.test(x)));
+ h.data.review.issues=[{step_id:'S1',category:'BLOCKING',evidence:'tool',issue:'Herramienta no demostrada'}];
+ const after=h.preview('S1');
+ assert.ok(after.skipped.some(x=>x.key==='tool'));
+ assert.ok(!after.fields.some(x=>x.key==='tool'));
+ assert.ok(after.fields.some(x=>x.key==='outputs'));
 });
 test('contradictory Se mantiene from the IA is never copied automatically',()=>{
  const h=harness();
@@ -263,16 +269,22 @@ test('PG11 multiselect equality ignores ordering without changing the consultant
  assert.equal(h.preview('S1').allFields.find(x=>x.key==='inputs').changed,false);
  assert.equal(JSON.stringify(h.p.items[0]),before);
 });
-test('PG11 blocked and identical proposals expose Keep/Edit but no Apply action',()=>{
- const fn=src.match(/function tobeAiRowActions\(e,p,item,key\)\{[\s\S]*?\n\}/)[0];
+test('PG11 field controls offer Apply, Keep and Edit only when a candidate is compatible',()=>{
+ const start=src.indexOf('function tobeAiRowActions(e,p,item,key){'),
+   end=src.indexOf('\n}\n',start)+2;
  const h=harness();h.sandbox.attr=String;h.sandbox.esc=String;
- vm.runInContext(fn,h.sandbox);
+ vm.runInContext(src.slice(start,end),h.sandbox);
  delete h.decisions.S1;
  let html=h.sandbox.tobeAiRowActions(h.e,h.p,h.p.items[0],'tool');
- assert.doesNotMatch(html,/>Aplicar IA</);
+ assert.match(html,/>Aplicar IA</,'no whole-proposal decision required');
  assert.match(html,/data-tobe-ai-keep-field/);
- assert.doesNotMatch(html,/data-tobe-ai-edit-field/);
- h.decisions.S1={status:'MODIFY'};h.p.items[0].tool='ERP';
+ assert.match(html,/data-tobe-ai-edit-field/);
+ h.data.review.issues=[{step_id:'S1',category:'BLOCKING',evidence:'tool',issue:'Capacidad no acreditada'}];
+ html=h.sandbox.tobeAiRowActions(h.e,h.p,h.p.items[0],'tool');
+ assert.doesNotMatch(html,/>Aplicar IA</);
+ assert.match(html,/data-tobe-ai-edit-field/);
+ h.data.review.issues=[];
+ h.p.items[0].tool='ERP';
  html=h.sandbox.tobeAiRowActions(h.e,h.p,h.p.items[0],'tool');
  assert.doesNotMatch(html,/>Aplicar IA</);
  h.p.items[0].tool='';
