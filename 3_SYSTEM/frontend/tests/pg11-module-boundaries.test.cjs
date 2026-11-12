@@ -16,7 +16,7 @@ test('PG11 has one model owner, one preview/transaction owner and one page owner
     assert.equal([results,model,transactions,view].filter(s=>s.includes(signature)).length,1,fn);
     assert.ok(owner.includes(signature),'wrong owner: '+fn);
   }
-  assert.ok(results.includes('function saveTobeFromDom(e)'),'existing form still writes to the sole TO-BE owner');
+  assert.ok(view.includes('function saveTobeFromDom(e)'),'the PG11 form still writes to the sole TO-BE owner');
   assert.ok(!results.includes('function tobePage()'),'the old results view does not duplicate PG11');
 });
 
