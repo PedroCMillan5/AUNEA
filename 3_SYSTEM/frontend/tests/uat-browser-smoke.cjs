@@ -880,29 +880,29 @@ async function main(){
     'review flags must be stored and not silently auto-applied');
   assert.equal(await page.evaluate(()=>latestTobe(currentEng()).status),'DRAFT',
     'global IA review does not advance human approval status');
-  // [AUNEA-UAT-PG11-HUMAN-BROWSER-227] START — consultant reviews one
-  // source-linked recommendation. Clicking cannot overwrite TO-BE fields.
+  // [AUNEA-UAT-PG11-HUMAN-BROWSER-227] START — Single decision owner.
+  // 03.2 is read-only analysis; 03.3 owns the only versioned consultant changes.
   const originalTobeData=await page.evaluate(()=>JSON.stringify(latestTobe(currentEng()).items));
   await page.locator('.tobe-guided-tabs [data-tobe-select="'+sourceIds[0]+'"]').click();
-  await page.locator('#tobeHumanReviewNote').fill(
-    'Revisión humana de la primera actividad: ajustar propuesta, validar las fuentes y los riesgos antes de cambiar el proceso.');
-  await page.locator('[data-tobe-human-decision="MODIFY"]').click();
+  assert.equal(await page.locator('#tobeHumanReviewNote').count(),0,
+    '03.2 must never ask for a second whole-proposal approval');
+  assert.equal(await page.locator('[data-tobe-human-decision]').count(),0,
+    'no ACCEPT/MODIFY/DISCARD vote is exposed for the entire IA response');
+  assert.equal(await page.locator('#tobeStepDesign .tobe-decision-context').count(),1,
+    '03.3 integrates source context with one editable design');
   const consultantReview=await page.evaluate(()=>{
-    const eng=currentEng(),p=latestTobe(eng);
-    const disk=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');
-    const review=disk?.engagements?.find(x=>x.id===eng.id)?.tobeProposals?.
-      find(x=>x.version===p.version)?.aiDraft?.humanReview;
-    return {saved:review?.decisions?.[String(p.items[0].sourceStepId)]?.status,
-      proposalIntact:JSON.stringify(p.aiDraft.proposal.items)===
-        JSON.stringify(disk?.engagements?.find(x=>x.id===eng.id)?.tobeProposals?.
-          find(x=>x.version===p.version)?.aiDraft?.proposal?.items),
+    const e=currentEng(),p=latestTobe(e);
+    return {legacy:p.aiDraft?.humanReview?.decisions||null,
+      proposalIntact:!!p.aiDraft?.proposal?.items?.length,
       status:p.status};
   });
-  assert.equal(consultantReview.saved,'MODIFY','consultant decision must persist by source ID');
-  assert.equal(consultantReview.proposalIntact,true,'review cannot alter candidate text');
-  assert.equal(consultantReview.status,'DRAFT','human decision is not TO-BE approval');
+  assert.equal(consultantReview.legacy,null,
+    'no new global IA approval record is created when reviewing 03.2');
+  assert.equal(consultantReview.proposalIntact,true,
+    'read-only analysis never removes saved IA proposals');
+  assert.equal(consultantReview.status,'DRAFT');
   assert.equal(await page.evaluate(()=>JSON.stringify(latestTobe(currentEng()).items)),
-    originalTobeData,'consultant choice must never apply proposed values');
+    originalTobeData,'reading proposals cannot modify a consultant field');
   // An activity-wide justification is available in 03.2; empty field suggestions
   // must not replicate that four-paragraph block throughout the 03.3 inspector.
   // The QA fixture may have a value for every field. Create one temporary,
@@ -930,8 +930,8 @@ async function main(){
   assert.equal(await page.locator('#tobeStepDesign .tobe-design-operation .tobe-ai-field-row').count(),3);
   assert.equal(await page.locator('#tobeStepDesign .tobe-design-evidence').count(),1);
   assert.equal(await page.locator('#tobeStepDesign .tobe-design-time').count(),1);
-  assert.equal(await page.locator('#tobeStepDesign [data-tobe-ai-edit-field]').count(),0,
-    'the consultant edits the original control directly, without a duplicate Edit button');
+  assert.ok(await page.locator('#tobeStepDesign [data-tobe-ai-edit-field]').count()>0,
+    'Editar opens the sole existing TO-BE editor, without creating another field');
   assert.equal(await page.locator(
     '#tobeInspector [data-tobe-row-key="controlsRisk"] [data-tobe-ai-keep-field]').count(),0,
     'no Keep decision is offered when IA has no actionable candidate');
@@ -940,13 +940,12 @@ async function main(){
       const buttons=[...box.querySelectorAll('button')];
       return {display:getComputedStyle(box).display,
         buttonCount:buttons.length,
-        sameRow:buttons.length===2&&Math.abs(
-          buttons[0].getBoundingClientRect().top-buttons[1].getBoundingClientRect().top)<2};
+        labels:buttons.map(x=>x.textContent.trim())};
     });
-  assert.equal(sideBySideActions.display,'grid','IA actions must reuse the common button-grid layout');
-  assert.equal(sideBySideActions.buttonCount,2);
-  assert.equal(sideBySideActions.sameRow,true,
-    'Apply IA and Keep must appear side by side in 03.3, not stacked');
+  assert.equal(sideBySideActions.display,'flex','Use responsive common action layout');
+  assert.equal(sideBySideActions.buttonCount,3);
+  assert.deepEqual(sideBySideActions.labels,['Aplicar IA','Mantener','Editar'],
+    'one field offers exactly Apply, Keep and Edit without whole-proposal approval');
   await page.screenshot({path:path.join(outDir,'pg11-section03-reviewed-fields-desktop.png'),fullPage:true});
   await page.evaluate(({sourceId,original})=>{
     const p=latestTobe(currentEng()),candidate=p?.aiDraft?.proposal?.items?.find(x=>
@@ -1012,7 +1011,7 @@ async function main(){
   console.log('PG11_ARTIFACT_PROVENANCE_OPTIMIZATION_BROWSER_PASS: green AS-IS, gold TO-BE, preserved source');
   // [AUNEA-UAT-PG11-ARTIFACT-OPTIMIZATION-318] END
   console.log('PG11_EXECUTION_FIELDS_BROWSER_PASS: primary intervention and secondary data');
-  console.log('PG11_HUMAN_DECISION_BROWSER_PASS: '+sourceIds[0]);
+  console.log('PG11_SINGLE_DECISION_BROWSER_PASS: 03.2 read-only, 03.3 source-linked actions');
   // The three canonical per-field actions must work through real browser clicks.
   const confirmedStepBefore=await page.evaluate(()=>
     JSON.stringify(tobeSourceSteps(currentEng())));
