@@ -2668,6 +2668,8 @@ function tobeAlternativeChangesHtml(e,preview){
     return item?tobeFlowItemName(item):String(id);
   };
   const print=(value,path)=>{
+    if((value===null||value===undefined||value==='')&&path.at(-1)==='automationAi')
+      return 'Sin automatización o IA futura propuesta';
     if(value===null||value===undefined||value==='')return 'Sin definir';
     if(Array.isArray(value)){
       if(path[0]==='flow'&&path[1]==='addedSteps'){
