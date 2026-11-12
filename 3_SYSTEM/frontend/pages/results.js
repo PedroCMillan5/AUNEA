@@ -1877,15 +1877,14 @@ function tobeCoherenceFindings(e,p){
 }
 // [AUNEA-FE-PG11-GLOBAL-SCAN-280] START — One-pass QA summary; complete issues remain expandable.
 function tobeActivityDecisionRecorded(e,p,item){
-  const id=String(item.sourceStepId),human=tobeHumanReviewRecord(e,p)?.decisions?.[id];
-  if(['ACCEPT','MODIFY','DISCARD'].includes(human?.status))return true;
-  // A rule-based decision is valid without inventing a corresponding IA review.
-  return (p.aiDraft?.applyHistory||[]).some(x=>String(x.sourceStepId)===id&&x.provenance==='RULES'&&x.action==='APPLY'&&!x.undoneAt);
+  // Legacy function identifier retained for existing callers; the state is now
+  // derived solely from the actual single-owner TO-BE design, not a second
+  // ACCEPT/MODIFY/DISCARD approval of the entire IA response.
+  return !tobeActivityDesignIssue(item);
 }
 function tobeCoherencePanel(e,p){
   const findings=tobeCoherenceFindings(e,p),
-    human=typeof tobeHumanReviewRecord==='function'?tobeHumanReviewRecord(e,p):null,
-    decisions=human?.decisions||{},steps=p?.items||[],
+    steps=p?.items||[],
     reviewed=steps.filter(x=>tobeActivityDecisionRecorded(e,p,x)).length,
     added=tobeAddedSteps(p).length,
     integrity=tobeFlowIntegrity(e,p),
@@ -1894,12 +1893,12 @@ function tobeCoherencePanel(e,p){
     errors=blocked.length+(integrity?1:0),
     items=[...(integrity?[{stepId:'',severity:'BLOCKING',message:integrity,name:'Mapa futuro'}]:[]),...findings],
     ready=errors===0&&reviewed===steps.length,
-    headline=ready?'Estructura sin bloqueos detectados; pendiente validación humana de fuentes':
+    headline=ready?'Diseño configurado sin bloqueos detectados; listo para comprobar requisitos y marcar como revisado':
       errors?'Se han detectado '+errors+' bloqueos que deben resolverse':
-      'Quedan '+(steps.length-reviewed)+' actividades por revisar';
+      'Quedan '+(steps.length-reviewed)+' actividades por configurar';
   return '<div class="tobe-coherence">'+
     '<div class="tobe-global-indicators" role="status">'+
-      '<div><strong>'+reviewed+' / '+steps.length+'</strong><span>Actividades revisadas</span></div>'+
+      '<div><strong>'+reviewed+' / '+steps.length+'</strong><span>Actividades configuradas</span></div>'+
       '<div><strong>'+errors+'</strong><span>Bloqueos</span></div>'+
       '<div><strong>'+notes.length+'</strong><span>Observaciones</span></div>'+
       '<div><strong>'+added+'</strong><span>Actividades nuevas</span></div>'+
@@ -3498,7 +3497,7 @@ function tobePage(){
       (pendingSteps.length?' · '+pendingSteps.length+(pendingSteps.length===1?' pendiente':' pendientes'):''):
       pastAi?'Propuesta IA histórica · v'+pastAi.version:'Sin propuesta IA vigente',
     aiSummaryDescription=savedAi?
-      'Esta actividad contiene '+proposedCount+' campos sugeridos de 9. Revisa la IA antes de aplicar.':
+      'Esta actividad contiene '+proposedCount+' campos sugeridos de 9. Contrasta cada valor y confirma únicamente los cambios útiles en 03.3.':
       pendingAi?.items?.size?'En esta actividad: '+proposedCount+' de 9 campos con valor propuesto.'+
       (pendingStepNames.length?' '+(pendingStepNames.length===1?'Paso pendiente de analizar: ':'Pasos pendientes de analizar: ')+pendingStepNames.join(' · ')+'.':''):
       pastAi?'La IA anterior propone '+proposedCount+' de 9 campos para esta actividad; son de consulta, no aplicables en v'+p.version+'.':
@@ -3509,8 +3508,9 @@ function tobePage(){
     '" data-tobe-mode="'+attr(__auneaTobeMode)+'">'+
       '<section class="tobe-task-guide" aria-label="Qué hacer en Diseño TO-BE">'+
         '<div class="tobe-task-guide-intro"><div><h2>Qué tienes que hacer aquí</h2>'+
-          '<p>Diseña cómo funcionará el proceso en el futuro. Revisa una actividad cada vez; el AS-IS original no se modifica.</p></div>'+
-          '<span class="tobe-task-guide-progress">'+reviewed+' de '+p.items.length+' pasos revisados por el consultor</span></div>'+
+          '<p>Construye el TO-BE actividad por actividad. El análisis global, la IA por actividad y las reglas aportan opciones; '+
+          'tú decides una sola vez qué incorporas al borrador y después validas el diseño completo. El AS-IS nunca se modifica.</p></div>'+
+          '<span class="tobe-task-guide-progress">'+reviewed+' de '+p.items.length+' actividades configuradas</span></div>'+
         '<div class="tobe-ia-guide-summary" role="status"><strong>'+esc(aiSummaryTitle)+'</strong>'+
           '<p>'+esc(aiSummaryDescription)+'</p></div>'+
         '<div class="tobe-task-guide-steps">'+
