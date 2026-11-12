@@ -11,6 +11,7 @@ const context={
   esc:v=>String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
 };
 vm.createContext(context);
+vm.runInContext(fs.readFileSync(path.join(root,'domain/result-context.js'),'utf8'),context);
 vm.runInContext(source,context);
 const sample=()=>({confirmedAsIs:true,snapshot:{version:2},lastEngineSnapshotVersion:2,diagnosticOutput:null,tobeProposals:[],scenarioResults:[]});
 test('no confirmed PG09 snapshot means no internal readiness or client mode',()=>{

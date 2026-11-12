@@ -149,10 +149,10 @@ test('Gate edits invalidate only diagnostic outputs generated with an earlier de
  assert.equal(fn.engineGateOutputFresh(e),true);
  e.engineGates.management_visibility_need='YES';
  assert.equal(fn.engineGateOutputFresh(e),false);
- const results=fs.readFileSync(path.join(root,'pages/results.js'),'utf8');
+ const resultsContext=fs.readFileSync(path.join(root,'domain/result-context.js'),'utf8');
  const review=fs.readFileSync(path.join(root,'domain/output-review.js'),'utf8');
  const shell=fs.readFileSync(path.join(root,'ui/shell.js'),'utf8');
- assert.match(results,/engineGateOutputFresh\(e\)/);
+ assert.match(resultsContext,/engineGateOutputFresh\(e\)/);
  assert.match(review,/engineGateOutputFresh\(e\)/);
  assert.match(shell,/reviewEngineGates.*openEngineGateReview/);
  assert.match(adapter,/e\.lastEngineGateFingerprint=sourceGateFingerprint/);
@@ -270,7 +270,9 @@ test('A source-identical binary fingerprint never publishes a result without a v
 test('The entire snapshot-to-results boundary invalidates review, client output and stale asynchronous responses',()=>{
  const results=fs.readFileSync(path.join(root,'pages/results.js'),'utf8');
  const outputReview=fs.readFileSync(path.join(root,'domain/output-review.js'),'utf8');
- const view=results.slice(results.indexOf('function currentDiagnosticOutput(e)'),results.indexOf('function num(x)'));
+ const resultsContext=fs.readFileSync(path.join(root,'domain/result-context.js'),'utf8');
+ const diagnosis=results.slice(results.indexOf('function diagnosisEngineDecisionTraceHtml(e)'),results.indexOf('function num(x)'));
+ const view=resultsContext+'\n'+diagnosis;
  const review=outputReview.slice(outputReview.indexOf('function reviewSources(e)'),outputReview.indexOf('function createOutputReview(e)'));
  const extra={...stub,ENGINE_GATE_CONTRACT:fn.ENGINE_GATE_CONTRACT,ENGINE_GATE_GUIDE:vm.runInContext('ENGINE_GATE_GUIDE',context),engineGateOutputFresh:fn.engineGateOutputFresh,
    confirmedSnapshot:e=>e.snapshot,approvedTobeForClient:e=>e.approvedTobe,esc:stub.esc};

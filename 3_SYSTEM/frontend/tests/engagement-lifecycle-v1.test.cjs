@@ -231,12 +231,13 @@ test('C03 invalidation hides the historical snapshot from active internal work',
 
 test('C03 results and calculation cannot bypass an invalidated confirmation', () => {
   const results = read('pages/results.js');
+  const resultsContext = read('domain/result-context.js');
   const engine = read('services/engine-adapter.js');
   const lifecycle = read('domain/process-lifecycle.js');
   const state = read('core/state.js');
   assert.match(results, /if\(!hasConfirmedEngagementSnapshot\(e\)\) return pageTop\(/);
-  assert.match(results, /e\?\.lastEngineSnapshotVersion===snap\.version&&\(typeof engineGateOutputFresh/);
-  assert.match(results,/engineGateOutputFresh\(e\)/);
+  assert.match(resultsContext, /e\?\.lastEngineSnapshotVersion===snap\.version&&\(typeof engineGateOutputFresh/);
+  assert.match(resultsContext,/engineGateOutputFresh\(e\)/);
   assert.match(engine, /currentSnapshot\.version!==sourceSnapshot\.version/);
   assert.match(lifecycle, /invalidateDerivedState\(e,'cambio en capa AS-IS: '\+from\)/);
   assert.match(state, /e\.lastEngineSnapshotVersion=null/);
