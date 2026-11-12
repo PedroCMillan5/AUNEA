@@ -20,5 +20,11 @@ module.exports=function pg11LegacySourceOracle(){
     if(source.split(token).length!==2)throw Error('PG11 source boundary is missing or duplicated: '+token);
     source=source.replace(token,body);
   }
+  // Legacy VM tests load the assembled PG11 source without loading the full UI
+  // renderer. Include the production shared disclosure helper, not a test stub.
+  const renderer=read('ui/renderer.js');
+  const workDisclosure=renderer.match(/function auneaWorkDisclosure\(kind,title,body\)\{[\s\S]*?\n\}/)?.[0];
+  if(!workDisclosure)throw Error('Shared internal-work disclosure helper missing');
+  source+='\n'+workDisclosure+'\n';
   return source;
 };
