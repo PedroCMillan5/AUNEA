@@ -95,3 +95,14 @@ No declarar simplificación terminada por bajar líneas, cambiar apariencia o pa
 - QA realizado en este entorno: lectura comparativa y análisis estático de CSS, verificación de duplicación y estructura. **No** se ha ejecutado `npm test`, QA backend ni UAT visual: el repositorio privado no está clonable en el contenedor y no se dispone de un runner remoto con ejecución manual accesible aquí. Los cambios permanecen REVIEW y requieren gate automatizado antes de cierre.
 - F0: inventario inicial y dependencias canónicas contrastadas; inventario global exhaustivo y matriz de selectores usados aún pendientes. F1: iniciada reducción conservadora, NO cerrada. F2–F6: pendientes.
 - Riesgo técnico encontrado: tests como `tests/design-system-common.test.cjs` dependen de cadenas exactas de selectores CSS. Unificar selectores puede preservar el CSS computado y aun así romper estos tests. Antes de mayor refactorizar, migrar cuidadosamente esas aserciones a equivalencia de CSS si el contrato lo permite.
+
+## 11. Inventario completo del manifiesto (lectura estática) · 12/11/2026
+Se han leído los **44 archivos JavaScript del manifiesto activo** en tres lotes. Total: **17.503 líneas de JS**, contabilizadas como saltos de línea + 1 por archivo (incluye comentarios y espacios). CSS principal: 5.041 + 285 = **5.326 líneas**; JS + estos dos CSS = **22.829 líneas**. No incluye backend, HTML, pruebas, archivos auxiliares ni archivados; por tanto no representa todo el repositorio.
+
+Mayores módulos JS activos (líneas):
+- `pages/tobe.js` 2.545, `domain/process.js` 2.081, `pages/results.js` 1.592, `domain/internal-ai-pilot.js` 1.576.
+- `ui/renderer.js` 774, `core/state.js` 671, `domain/no-reask.js` 661, `domain/analysis-workbench.js` 661, `pages/diagnostic-stages.js` 643, `domain/process-lifecycle.js` 612.
+
+**Priorización revisada:** los grandes módulos de dominio (`process.js` y `internal-ai-pilot.js`) deben entrar en el inventario de dependencias, pero **no** se deben dividir sólo por su tamaño. `tobe.js` y `results.js` siguen candidatos por mezcla de vista/eventos. Lo relevante es reducción de acoplamiento y duplicación, no el tamaño bruto.
+
+**QA y cierre:** análisis estático realizado. No se ha confirmado que FROZEN, UAT Windows o backend sean equivalentes en ejecución. Fases 0–6 siguen abiertas, sin afirmación de finalización integral.
