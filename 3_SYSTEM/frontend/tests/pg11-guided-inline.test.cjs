@@ -444,4 +444,26 @@ test('PG11 distinguishes completed step coverage from incomplete global source r
  result.complete=true;
  assert.doesNotMatch(context.tobeGlobalLinkedStepHtml({}, {}, {}),/está incompleto/);
 });
+test('PG11 source summary starts every bold lead-in on a separate paragraph',()=>{
+ const start=src.indexOf('function tobeDecisionSourceSummaryHtml(e,p,item){');
+ const end=src.indexOf('// [AUNEA-FE-PG11-UNIFIED-DECISIONS-357] END',start);
+ assert.ok(start>=0&&end>start,'source summary function must exist');
+ const sandbox={
+   tobeGlobalLinksForStep:()=>[{},{}],
+   internalAiSavedDraft:()=>({items:[{source_step_id:'P1'}]})
+ };
+ vm.createContext(sandbox);
+ vm.runInContext(src.slice(start,end),sandbox);
+ const html=sandbox.tobeDecisionSourceSummaryHtml({},{
+   aiDraft:{applyHistory:[{sourceStepId:'P1',action:'APPLY',fields:['tool']},
+     {sourceStepId:'P1',action:'KEEP',fields:['inputs']}]}
+ },{sourceStepId:'P1'});
+ const labels=['Análisis global:','IA individual:','Reglas:',
+   'Decisiones registradas para esta actividad:','Cómo actuar:'];
+ const leadIns=[...html.matchAll(/<p><b>([^<]+)<\/b>/g)].map(m=>m[1]);
+ assert.deepEqual(leadIns,labels);
+ assert.equal((html.match(/<p>/g)||[]).length,labels.length);
+ assert.match(html,/2 oportunidades relacionadas/);
+ assert.match(html,/1 campos aplicados, 1 conservados/);
+});
 // [AUNEA-UAT-PG11-GUIDED-267] END
