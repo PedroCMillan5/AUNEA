@@ -63,6 +63,25 @@ for(const name of ['invoice','logistics'])test('PG11 source → backend rules �
  assert.equal(JSON.stringify(ctx.tobeDesignState(p)),beforeChanges);
  assert.equal(JSON.stringify(ctx.tobeDesignState(p)),JSON.stringify(temporary.before),
   'a kept option did not change items or routes');
+ // When a consultant switches a previously modified/automated TO-BE activity
+ // back to the AS-IS, the prior automation must be explicitly removed in
+ // the temporary projection and displayed as a change, not silently left
+ // as a misleading recommendation.
+ const originalAutomation=p.items[0].automationAi,originalTransformation=p.items[0].transformation;
+ p.items[0].transformation='Se modifica';
+ p.items[0].automationAi='Crear automáticamente un registro de entrada y notificar su estado.';
+ const beforeKeep=JSON.stringify(ctx.tobeDesignState(p)),
+   keepProposal=result.candidates.find(x=>x.id.startsWith('KEEP:')),
+   keepPreview=preview(keepProposal);
+ assert.equal(keepPreview.projected.items[0].transformation,'Se mantiene');
+ assert.equal(keepPreview.projected.items[0].automationAi,'');
+ assert.equal(JSON.stringify(ctx.tobeDesignState(p)),beforeKeep,
+   'previsualizar KEEP no altera la intervención anterior');
+ assert.match(ctx.tobeAlternativeChangesHtml(e,keepPreview),/Automatización \/ IA/);
+ assert.match(ctx.tobeAlternativeChangesHtml(e,keepPreview),/Crear automáticamente un registro/);
+ p.items[0].transformation=originalTransformation;
+ if(originalAutomation===undefined)delete p.items[0].automationAi;
+ else p.items[0].automationAi=originalAutomation;
  before=JSON.stringify(p);
  assert.equal(temporary.projected.flow.routes.P1.normal.startsWith('TOBE-ADD-'),true);
  assert.equal(temporary.projected.flow.routes.P2.normal,'P3');assert.equal(temporary.projected.flow.routes.P2.exception,'P4');
