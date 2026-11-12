@@ -4267,6 +4267,91 @@ details.tobe-ai-operational-context:not([open])>.tobe-ai-operational-body{
 .tobe-alternative-dialog::backdrop {background:rgba(0,0,0,.45);}
 .tobe-alternative-dialog .tobe-canvas-viewport {max-height:55vh;overflow:auto;}
 .tobe-preview-changed .tobe-graph-node {outline:3px solid var(--gold,#b69a54);outline-offset:3px;}
+/* [AUNEA-FE-PG11-PREVIEW-COMPARISON-STYLE-359] START
+   Shared AUNEA System presentation for existing, version-bound preview controls.
+   No page-wide tokens or frozen component changes. */
+#tobeStepDesign .tobe-alternative-conditions{margin:8px 0 0;font-size:var(--font-small);line-height:1.55}
+#tobeStepDesign .tobe-alternative-conditions>b{color:var(--system)}
+#tobeStepDesign .tobe-alternative-conditions ul,
+#tobeStepDesign .tobe-alternative-constraints ul{
+  margin:5px 0 0;padding-left:21px;display:grid;gap:4px;
+}
+#tobeStepDesign .tobe-alternative-constraints{
+  margin:9px 0 0;padding:9px 11px;border-radius:var(--radius-sm);
+  border:1px solid var(--system-line);background:var(--canvas,#f8faf9);
+  font-family:Inter,"Segoe UI",Arial,sans-serif;font-size:var(--font-small);
+}
+#tobeStepDesign .tobe-alternative-constraints>summary{
+  cursor:pointer;color:var(--system);font-weight:700;
+}
+.tobe-alternative-dialog{
+  font-family:Inter,"Segoe UI",Arial,sans-serif;
+  color:var(--ink);border-color:var(--system-line);padding:22px;
+}
+.tobe-alternative-dialog>h2{font-family:Sora,"Segoe UI",Arial,sans-serif;font-size:var(--font-h3);color:var(--system);margin:0 0 10px}
+.tobe-alternative-dialog .tobe-preview-intro{color:var(--muted);line-height:1.55}
+.tobe-alternative-dialog .tobe-preview-comparison,
+.tobe-alternative-dialog .tobe-preview-validation,
+.tobe-alternative-dialog .tobe-preview-map,
+.tobe-alternative-dialog .tobe-preview-route-editor{
+  margin:14px 0 0;padding:14px 16px;border:1px solid var(--system-line);
+  border-radius:var(--radius-sm);background:var(--surface,#fff);
+  overflow-wrap:anywhere;
+}
+.tobe-alternative-dialog .tobe-preview-comparison h3,
+.tobe-alternative-dialog .tobe-preview-validation h3,
+.tobe-alternative-dialog .tobe-preview-map h3,
+.tobe-alternative-dialog .tobe-preview-route-editor h3{
+  font-family:Sora,"Segoe UI",Arial,sans-serif;font-size:var(--font-small);
+  color:var(--system);margin:0 0 9px;
+}
+.tobe-alternative-dialog .tobe-preview-table-scroll{overflow-x:auto}
+.tobe-alternative-dialog .tobe-preview-comparison table{
+  width:100%;border-collapse:collapse;font-size:var(--font-small);
+  table-layout:fixed;
+}
+.tobe-alternative-dialog .tobe-preview-comparison th,
+.tobe-alternative-dialog .tobe-preview-comparison td{
+  text-align:left;vertical-align:top;padding:10px 12px;
+  border-bottom:1px solid var(--system-line);overflow-wrap:anywhere;
+}
+.tobe-alternative-dialog .tobe-preview-comparison thead th{
+  color:var(--system);font-weight:750;background:var(--system-soft);
+}
+.tobe-alternative-dialog .tobe-preview-comparison tbody th{
+  font-weight:700;width:29%;
+}
+.tobe-alternative-dialog .tobe-preview-comparison tbody td:last-child{
+  background:var(--system-soft);color:var(--ink);
+}
+.tobe-alternative-dialog .tobe-preview-validation ul,
+.tobe-alternative-dialog .tobe-preview-conditions ul{
+  margin:6px 0 0;padding-left:22px;line-height:1.6;
+}
+.tobe-alternative-dialog .tobe-preview-conditions{
+  padding:12px 14px;margin:12px 0 0;border:1px solid var(--system-line);
+  border-radius:var(--radius-sm);background:var(--canvas,#f8faf9);
+}
+.tobe-alternative-dialog .tobe-preview-conditions>summary{cursor:pointer;font-weight:700;color:var(--system)}
+.tobe-alternative-dialog .tobe-preview-route-choice{display:grid;gap:8px}
+.tobe-alternative-dialog .tobe-preview-route-choice label{font-weight:700;font-size:var(--font-small)}
+.tobe-alternative-dialog .tobe-preview-route-choice select{
+  max-width:100%;min-height:38px;padding:7px 10px;border:1px solid var(--system-line);
+  border-radius:var(--radius-sm);background:#fff;
+}
+.tobe-alternative-dialog .tobe-preview-actions{
+  display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;
+  margin:16px 0 0;
+}
+@media(max-width:680px){
+  .tobe-alternative-dialog{padding:14px;width:96vw}
+  .tobe-alternative-dialog .tobe-preview-comparison,
+  .tobe-alternative-dialog .tobe-preview-validation,
+  .tobe-alternative-dialog .tobe-preview-map,
+  .tobe-alternative-dialog .tobe-preview-route-editor{padding:10px}
+  .tobe-alternative-dialog .tobe-preview-comparison table{min-width:570px}
+}
+/* [AUNEA-FE-PG11-PREVIEW-COMPARISON-STYLE-359] END */
 /* [AUNEA-FE-PG11-PREVIEW-STYLE-334] END */
 
 /* [AUNEA-FE-PG11-UX-STATES-353] START — PG11 only, shared tokens; no frozen pages. */
