@@ -11,11 +11,47 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,'.'+new 
   page.on('pageerror',e=>errors.push(e.message));await page.goto(origin+'/index.html');await page.waitForFunction(()=>typeof uat3Seed==='function'&&typeof schema!=='undefined'&&schema?.fields?.length);
   await page.evaluate(require('./pg11-journey-fixture.cjs'),{kind,backend});
   const immutable=await page.evaluate(()=>JSON.stringify(confirmedSnapshot(currentEng())));
+  // PG11 visual contract: all three guided sections are one product hierarchy.
+  const stageVisual=await page.evaluate(()=>{
+    const names=['#tobeStepOrigin>details>summary','#tobeStepAdvice>details>summary',
+      '#tobeStepDesign>.tobe-design-header'],
+      selectors=['#tobeStepOrigin .tobe-stage-heading','#tobeStepAdvice .tobe-stage-heading',
+        '#tobeStepDesign .tobe-stage-heading'];
+    const look=el=>{
+      const c=getComputedStyle(el);
+      return {size:c.fontSize,weight:c.fontWeight,font:c.fontFamily,
+        line:c.lineHeight,bg:c.backgroundColor,padding:c.paddingTop};
+    };
+    return {heads:names.map(x=>look(document.querySelector(x))),
+      titles:selectors.map(x=>look(document.querySelector(x)))};
+  });
+  for(const property of ['bg','padding'])
+    assert.equal(new Set(stageVisual.heads.map(x=>x[property])).size,1,
+      '03.1/03.2/03.3 must share '+property+': '+JSON.stringify(stageVisual.heads));
+  for(const property of ['size','weight','font','line'])
+    assert.equal(new Set(stageVisual.titles.map(x=>x[property])).size,1,
+      '03.1/03.2/03.3 must share title '+property+': '+JSON.stringify(stageVisual.titles));
+  assert.match(stageVisual.titles[0].font,/Sora/);
   await page.locator('[data-tobe-load-alternatives="P1"]').click();
   await page.getByText('Separar el control tras esta actividad',{exact:true}).waitFor();
   const control=page.locator('.tobe-alternative').filter({hasText:'Separar el control tras esta actividad'});
   await control.getByRole('button',{name:'Revisar y previsualizar'}).click();
   await page.locator('#tobeAlternativeDialog').waitFor();
+  const previewVisual=await page.evaluate(()=>{
+    const selectors=['.tobe-preview-comparison>h3','.tobe-preview-validation>h3',
+      '.tobe-preview-scoped-checks>h3','.tobe-preview-consultant>h3',
+      '.tobe-preview-map>summary','.tobe-preview-conditions>summary',
+      '.tobe-subdetails>summary'];
+    return selectors.map(sel=>{
+      const el=document.querySelector('#tobeAlternativeDialog '+sel),
+        css=el?getComputedStyle(el):null;
+      return {sel,size:css?.fontSize,weight:css?.fontWeight,font:css?.fontFamily};
+    });
+  });
+  for(const property of ['size','weight','font'])
+    assert.equal(new Set(previewVisual.map(x=>x[property])).size,1,
+      'all preview section headings need the same '+property+': '+JSON.stringify(previewVisual));
+  assert.match(previewVisual[0].font,/Sora/);
   assert.equal(await page.evaluate(()=>tobeFutureSteps(currentEng(),latestTobe(currentEng())).length),4);
   assert.equal(await page.locator('#tobeAlternativeDialog .tobe-graph-node').count(),5);
   await page.locator('[data-tobe-cancel-alternative]').click();
