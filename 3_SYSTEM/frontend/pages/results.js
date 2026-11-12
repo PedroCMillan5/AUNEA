@@ -2629,7 +2629,7 @@ function tobeAlternativesHtml(e,p,item){
       ' Se conserva el diseño.</p>':'')+
     (!data&&!error?'<p class="field-help">Todavía no se han calculado alternativas para esta actividad. '+
       'Ejecuta el análisis por reglas para ver las opciones y qué información requiere cada una.</p>':'')+
-    (data&&!rows?'<p class="field-help">No se han obtenido alternativas utilizables. '+
+    (data&&!rows&&!error?'<p class="field-help">No se han obtenido alternativas utilizables. '+
       'Puedes conservar el diseño o revisarlo manualmente.</p>':'')+
     rows+'</div>';
 }
