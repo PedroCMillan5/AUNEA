@@ -1219,7 +1219,8 @@ function tobeAiReviewDiff(e,p,id){
 // A DRAFT with 4/4 analyzed activities may still have incomplete fields;
 // report those counts separately without implying missing AS-IS evidence.
 function tobeHumanReadableRefs(e,refs){
-  const snap=tobeProposalSnapshot(e,latestTobe(e));
+  const snap=typeof tobeProposalSnapshot==='function'&&typeof latestTobe==='function'?
+    tobeProposalSnapshot(e,latestTobe(e)):null;
   return (Array.isArray(refs)?refs:[]).map(ref=>{
     const code=String(ref);
     const step=(snap?.processSteps||[]).find(x=>String(x.id)===code);
@@ -1228,6 +1229,10 @@ function tobeHumanReadableRefs(e,refs){
     if(friction)return 'Fricción: '+String(friction.client_label||friction.observable_signal||'Sin descripción')+' ('+code+')';
     const risk=(snap?.risks||[]).find(x=>String(x.risk_id||x.id)===code);
     if(risk)return 'Riesgo: '+String(risk.description||risk.category||'Sin descripción')+' ('+code+')';
+    if(typeof internalAiReadableRefs==='function'){
+      const readable=internalAiReadableRefs(e,[code]);
+      if(readable&&readable!==code)return readable;
+    }
     return 'Referencia de origen no identificada ('+code+')';
   }).join(' · ');
 }
@@ -1373,7 +1378,9 @@ function tobeAiOperationalContextHtml(e,item){
   const ai=partial||proposal?.items?.find(x=>String(x.source_step_id)===id);
   if(!ai)return '<p class="tobe-ai-operational-context tobe-muted">Sin propuesta IA vigente para esta actividad. El diseño debe basarse en el AS-IS y las evidencias confirmadas.</p>';
   const limitations=String(ai.limitations||'').trim();
-  const refs=tobeHumanReadableRefs(e,ai.source_refs);
+  const refs=typeof tobeHumanReadableRefs==='function'?tobeHumanReadableRefs(e,ai.source_refs):
+    (typeof internalAiReadableRefs==='function'?internalAiReadableRefs(e,ai.source_refs):
+    (Array.isArray(ai.source_refs)?ai.source_refs:[]).join(' · '));
   const historical=!!history;
   return '<details class="tobe-ai-operational-context" role="note">'+
     '<summary>Limitaciones sugeridas por IA · '+(limitations?'Contrastar con datos declarados':'Sin detalle específico')+
