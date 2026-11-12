@@ -53,10 +53,10 @@ function fixture(){
  vm.runInContext(diffBlock+'\n'+inlineBlock,context);
  return {e,p,proposal,context,setDecision:v=>{decision=v}};
 }
-test('IA suggestions are visible before decision but cannot be applied',()=>{
+test('IA suggestions are visible for a single field decision in 03.3',()=>{
  const f=fixture(),draft=f.context.tobeAiReviewDiff(f.e,f.p,'P1'),
   html=f.context.tobeAiInlineHint(f.e,f.p,f.p.items[0],'outputs');
- assert.match(draft.issue,/decisión/);
+ assert.equal(draft.issue,'','there is no separate whole-suggestion vote');
  assert.ok(draft.allFields.some(x=>x.key==='outputs'));
  assert.match(html,/IA propone:/);
  assert.match(html,/Registro estructurado/);
@@ -78,7 +78,7 @@ test('PG11 gives truthful field coverage without inferring reasons for empty can
  f.proposal.items[0].controls_risk='';
  f.proposal.items[0].human_supervision='';
  const html=f.context.tobeAiFieldCoverageHtml(f.e,f.p,f.p.items[0]);
- assert.match(html,/Campos revisados por IA/);
+ assert.match(html,/Campos sugeridos por IA/);
  assert.match(html,/sin sugerencia/);
  assert.match(html,/no significa que falte información del cliente/);
  const empty=f.context.tobeAiInlineHint(f.e,f.p,f.p.items[0],'controlsRisk');
@@ -88,12 +88,12 @@ test('PG11 gives truthful field coverage without inferring reasons for empty can
  assert.match(original,/is-without-proposal/);
  assert.equal((original.match(/data-tobe-field="controlsRisk"/g)||[]).length,1);
 });
-test('PG11 shows Maintain only for a real IA candidate, not for an omitted field',()=>{
+test('PG11 shows Apply, Keep and Edit only for existing IA candidates',()=>{
  const f=fixture();f.setDecision('MODIFY');
  let html=f.context.tobeAiRowActions(f.e,f.p,f.p.items[0],'outputs');
  assert.match(html,/data-tobe-ai-use-field="outputs"/);
  assert.match(html,/data-tobe-ai-keep-field="outputs"/);
- assert.doesNotMatch(html,/data-tobe-ai-edit-field="outputs"/);
+ assert.match(html,/data-tobe-ai-edit-field="outputs"/);
  f.proposal.items[0].outputs='';
  html=f.context.tobeAiRowActions(f.e,f.p,f.p.items[0],'outputs');
  assert.doesNotMatch(html,/data-tobe-ai-use-field="outputs"/);
