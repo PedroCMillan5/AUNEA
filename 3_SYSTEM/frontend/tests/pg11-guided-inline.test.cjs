@@ -160,10 +160,10 @@ test('MODIFY authorizes only safe options, never contradictory transformation',(
  assert.match(bad,/La transformación IA contiene una contradicción/);
  assert.doesNotMatch(bad,/data-tobe-ai-use-field/);
 });
-test('discard keeps native field controls and never offers application',()=>{
+test('legacy whole-proposal discard is kept as read-only history and never locks 03.3 fields',()=>{
  const f=fixture();f.setDecision('DISCARD');
  const html=f.context.tobeAiInlineHint(f.e,f.p,f.p.items[0],'outputs');
- assert.match(html,/Recomendación descartada/);
+ assert.match(html,/historial anterior/);
  assert.doesNotMatch(html,/data-tobe-ai-use-field/);
  const existing='<div class="field"><label>Datos de salida</label><div id="original"></div></div>';
  const merged=f.context.tobeWithAiHint(f.e,f.p,f.p.items[0],'outputs',existing);
@@ -235,7 +235,9 @@ test('PG11 exposes source and individual IA before configuring the future step',
  assert.match(page,/03\.2 · Revisar propuestas IA/);
  assert.match(page,/data-tobe-generate-selected/);
  assert.match(page,/tobeAiAdviceHtml\(e,item,false\)/);
- assert.match(page,/tobeHumanReviewHtml\(e,item,false\)/);
+ assert.doesNotMatch(page,/tobeHumanReviewHtml\(e,item,false\)/);
+ assert.match(page,/tobeDecisionSourceSummaryHtml\(e,p,item\)/);
+ assert.match(page,/tobe-legacy-review/);
  assert.ok(page.indexOf("'</nav>'+supportingInformation+")<
    page.indexOf("'<section class=\"tobe-edit tobe-design-workspace\" id=\"tobeStepDesign\""));
  assert.equal((page.match(/data-tobe-generate-selected/g)||[]).length,1);
@@ -381,7 +383,7 @@ test('PG11 identifies individual coherence separately from section 02 global ana
  assert.match(pilot,/actividades analizadas por IA/);
  assert.match(pilot,/Propuestas IA analizadas y guardadas\. La cobertura no acredita viabilidad ni aprobación del consultor/);
  assert.match(src,/Sólo consulta hasta completar las actividades y comprobar coherencia/);
- assert.match(src,/La propuesta tiene observaciones o sólo revisión por reglas/);
+ assert.match(src,/La revisión detecta un bloqueo en esta actividad/);
  assert.match(src,/data-tobe-ai-apply-unavailable/);
  assert.match(src,/data-tobe-ai-keep-field/);
  assert.match(src,/data-tobe-ai-edit-field/);
