@@ -2222,6 +2222,7 @@ function tobeSourceDataExplanation(raw){
 // CHANGE_RISK: HIGH. No scenario, economic calculation or second graph owner.
 let __auneaTobePreview=null;
 const __auneaTobeAlternatives=new Map();
+const __auneaTobeAlternativeErrors=new Map();
 const tobeClone=value=>JSON.parse(JSON.stringify(value));
 function tobeDesignState(p){return {items:tobeClone(p.items),flow:tobeClone(p.flow||null)};}
 function tobeAlternativeKey(e,p,id){return String(e.id)+'|'+p.version+'|'+p.sourceSnapshotVersion+'|'+String(id);}
@@ -2335,20 +2336,50 @@ function tobeUndoAlternative(e){
 }
 function tobeAlternativesHtml(e,p,item){
   if(!tobeEditable(p)||item.isAddition)return '';
-  const key=tobeAlternativeKey(e,p,item.sourceStepId),data=__auneaTobeAlternatives.get(key);
-  const rows=(data?.candidates||[]).map((c,index)=>{
-    const decision=(p.aiDraft?.applyHistory||[]).findLast(x=>x.candidateId===c.id&&!x.undoneAt);
-    return '<div class="tobe-alternative"><b>'+esc(c.title)+'</b><p>Reglas · '+esc((c.conditions||[]).join(' '))+'</p>'+
-      '<p>Fuentes: '+esc(c.sourceRefs.join(' · '))+'</p>'+
-      (Object.keys(c.constraints||{}).length?'<p>Restricciones que revisar: '+esc(Object.values(c.constraints).map(String).join(' · '))+'</p>':'')+
-      (decision?'<p>Decisión guardada: '+(decision.action==='DISCARD'?'Descartada':decision.action==='KEEP'?'Mantener diseño actual':'Aplicada')+'</p>':'')+
-      '<button type="button" class="btn btn-outline btn-small" data-tobe-alternative="'+index+'" data-tobe-alternative-source="'+attr(item.sourceStepId)+'">Ver propuesta en el mapa</button> '+
-      '<button type="button" class="btn btn-outline btn-small" data-tobe-alternative-discard="'+index+'" data-tobe-alternative-source="'+attr(item.sourceStepId)+'">Descartar</button></div>';
+  const key=tobeAlternativeKey(e,p,item.sourceStepId),
+    data=__auneaTobeAlternatives.get(key),
+    error=__auneaTobeAlternativeErrors.get(key),
+    history=p.aiDraft?.applyHistory||[],
+    canUndo=history.some(x=>x.transaction&&!x.undoneAt);
+  const rows=(data?.candidates||[]).map((candidate,index)=>{
+    const decision=history.findLast(x=>x.candidateId===candidate.id&&!x.undoneAt);
+    const discarded=decision?.action==='DISCARD';
+    return '<article class="tobe-alternative"><b>'+esc(candidate.title)+'</b>'+
+      '<p><b>Qué propone:</b> '+esc(Object.entries(candidate.fields||{}).map(([name,value])=>
+        (TOBE_AI_REVIEW_FIELDS.find(x=>x[1]===name)?.[2]||name)+': '+
+        (Array.isArray(value)?value.join(', '):String(value))).join(' · ')||
+        'Incorporar una actividad de control separada en el flujo.')+'</p>'+
+      '<p><b>Condiciones antes de aplicar:</b> '+
+        esc((candidate.conditions||[]).join(' ')||'Revisión humana necesaria.')+'</p>'+
+      '<p><b>Fuentes del AS-IS:</b> '+esc(tobeHumanReadableRefs(e,candidate.sourceRefs))+'</p>'+
+      (Object.keys(candidate.constraints||{}).length?'<p><b>Restricciones declaradas (consultar respuestas originales):</b> '+
+        esc(Object.keys(candidate.constraints).join(' · '))+'</p>':'')+
+      (decision?'<p class="tobe-alternative-state"><b>Decisión guardada:</b> '+
+        (discarded?'Alternativa descartada; diseño conservado.':
+        decision.action==='APPLY'?'Aplicada al borrador TO-BE.':'Conservar el diseño actual.')+'</p>':'')+
+      (!decision?'<div class="tobe-alternative-actions">'+
+        '<button type="button" class="btn btn-outline btn-small" data-tobe-alternative="'+index+
+          '" data-tobe-alternative-source="'+attr(item.sourceStepId)+'">Revisar y previsualizar</button>'+
+        '<button type="button" class="btn btn-outline btn-small" data-tobe-alternative-discard="'+index+
+          '" data-tobe-alternative-source="'+attr(item.sourceStepId)+'">Descartar alternativa</button>'+
+      '</div>':'')+'</article>';
   }).join('');
-  return '<section class="tobe-design-group tobe-alternatives"><h4>Alternativas por reglas</h4>'+
-    '<p>Recomendaciones pendientes de tu decisión. Funcionan sin Ollama.</p>'+
-    '<button type="button" class="btn btn-outline" data-tobe-load-alternatives="'+attr(item.sourceStepId)+'">Analizar actividad con reglas</button> '+
-    '<button type="button" class="btn btn-outline" data-tobe-undo-alternative="1">Deshacer última intervención</button>'+rows+'</section>';
+  return '<div class="tobe-alternatives" aria-label="Alternativas deterministas de la actividad">'+
+    '<h4>Alternativas calculadas mediante reglas</h4>'+
+    '<p class="tobe-alternatives-help">Parten del AS-IS, las fricciones, los riesgos y las restricciones registrados. '+
+      'No requieren Ollama y no se aplican sin tu confirmación.</p>'+
+    '<div class="tobe-alternatives-actions">'+
+      '<button type="button" class="btn btn-outline" data-tobe-load-alternatives="'+attr(item.sourceStepId)+
+        '">Generar alternativas con reglas</button>'+
+      (canUndo?'<button type="button" class="btn btn-outline" data-tobe-undo-alternative="1">'+
+        'Deshacer última intervención aplicada</button>':'')+'</div>'+
+    (error?'<p class="notice warn" role="alert"><b>Análisis no completado:</b> '+esc(error)+
+      ' Se conserva el diseño.</p>':'')+
+    (!data&&!error?'<p class="field-help">Todavía no se han calculado alternativas para esta actividad. '+
+      'Ejecuta el análisis por reglas para ver las opciones y qué información requiere cada una.</p>':'')+
+    (data&&!rows?'<p class="field-help">No se han obtenido alternativas utilizables. '+
+      'Puedes conservar el diseño o revisarlo manualmente.</p>':'')+
+    rows+'</div>';
 }
 function tobeOpenAlternative(e,candidate){
   if(!saveTobeFromDom(e)||!saveState('Conservar edición antes de previsualizar'))throw Error('No se pudo conservar tu edición.');
@@ -4022,15 +4053,20 @@ function registerInternalWorkPages(){
         if(!saveTobeFromDom(e)||!saveState('Conservar diseño antes del análisis por reglas'))throw Error('No se guardó tu edición.');
         const live=currentEng(),draft=latestTobe(live),key=tobeAlternativeKey(live,draft,id),
           diagnostic=currentDiagnosticOutput(live),snapshot=confirmedSnapshot(live);
+        if(!diagnostic||!snapshot)throw Error('Falta un AS-IS confirmado o un diagnóstico vigente.');
+        __auneaTobeAlternativeErrors.delete(key);
         button.disabled=true;button.textContent='Analizando actividad…';
         const response=await fetch(state.backendUrl+'/v1/tobe/activity-alternatives',{
           method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
             request:{engagement:buildBackendPayload(live),diagnostic,confirmed_as_is:live.confirmedAsIs===true,snapshot_version:snapshot.version},
             source_step_id:id})});
-        const data=await response.json();if(!response.ok)throw Error(typeof data.detail==='string'?data.detail:'No se completó el análisis por reglas.');
+        const data=await response.json().catch(()=>({detail:'Respuesta del backend no interpretable.'}));
+        if(!response.ok)throw Error(typeof data.detail==='string'?data.detail:
+          'El backend rechazó el análisis con HTTP '+response.status+'.');
         const current=currentEng(),currentDraft=latestTobe(current);
         if(!current||!currentDraft||tobeAlternativeKey(current,currentDraft,id)!==key||
           currentDiagnosticOutput(current)?.input_snapshot_hash!==data.input_hash)throw Error('El estudio cambió durante el análisis. Vuelve a analizar la actividad.');
+        __auneaTobeAlternativeErrors.delete(key);
         __auneaTobeAlternatives.set(key,data);render();return;
       }
       const id=button.dataset.tobeAlternativeSource,key=tobeAlternativeKey(e,p,id),data=__auneaTobeAlternatives.get(key);
@@ -4051,8 +4087,23 @@ function registerInternalWorkPages(){
         render();return;
       }
       tobeOpenAlternative(e,candidate);
-    }catch(error){toast(error.message||'No se pudo completar la intervención.');}
-    finally{if(button.isConnected){button.disabled=false;if(button.hasAttribute('data-tobe-load-alternatives'))button.textContent='Analizar actividad con reglas';}}
+    }catch(error){
+      const message=error instanceof TypeError&&button.hasAttribute('data-tobe-load-alternatives')?
+        'No se puede contactar con el backend local. Comprueba el puerto 8010 y reinicia el backend si el endpoint es nuevo.':
+        (error.message||'No se pudo completar la intervención.');
+      if(button.hasAttribute('data-tobe-load-alternatives')){
+        const live=currentEng(),draft=latestTobe(live);
+        if(live&&draft)__auneaTobeAlternativeErrors.set(
+          tobeAlternativeKey(live,draft,button.dataset.tobeLoadAlternatives),message);
+        render();
+      }
+      toast(message);
+    }finally{
+      if(button.isConnected){
+        button.disabled=false;
+        if(button.hasAttribute('data-tobe-load-alternatives'))button.textContent='Generar alternativas con reglas';
+      }
+    }
   },true);
   // [AUNEA-FE-PG11-TRANSACTION-EVENTS-333] END
 
