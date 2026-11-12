@@ -287,4 +287,6 @@ body.session-display .flow-step p{font-size:var(--font-small)}
   border:1px solid var(--system-line);border-radius:var(--radius-sm);
   background:#fff;color:var(--ink);
 }
+/* Shared structural layout for equivalent work stages; content and actions remain specialized. */
+.aunea-ui-work-stage{display:grid;gap:12px;min-width:0}
 /* [AUNEA-FE-SHARED-COMPONENTS-311] END */
