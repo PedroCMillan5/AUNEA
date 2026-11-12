@@ -1219,10 +1219,9 @@ const TOBE_AI_REVIEW_FIELDS=[
 ];
 function tobeAiReviewDiff(e,p,id){
   const out={issue:'',warnings:[],fields:[],allFields:[],skipped:[],decision:null};
-  const d=tobeHumanReviewRecord(e,p)?.decisions?.[String(id)];
-  if(!tobeEditable(p)||!d||!['ACCEPT','MODIFY'].includes(d.status)){
-    out.issue='Primero registra tu decisión y justificación sobre la propuesta IA.';
-  }else out.decision=d.status;
+  if(!tobeEditable(p))
+    out.issue='El TO-BE ya no está en borrador editable.';
+  else out.decision='CONFIRM_PER_CHANGE';
   const source=typeof internalAiSavedDraft==='function'?internalAiSavedDraft(e):null;
   const ai=source?.items?.find(x=>String(x.source_step_id)===String(id));
   const item=p.items.find(x=>String(x.sourceStepId)===String(id));
@@ -1233,10 +1232,22 @@ function tobeAiReviewDiff(e,p,id){
   const blocked=source.review?.blocking_step_ids?.includes(String(id))||
     source.review?.issues?.some(x=>x.category==='BLOCKING'&&
       (!x.step_id||x.step_id==='GLOBAL'||String(x.step_id)===String(id)));
-  if(blocked||source.review?.review_mode==='RULES_ONLY'){
-    if(d?.status==='ACCEPT'){out.issue='Hay bloqueos en la propuesta IA: utiliza «Modificar antes de usar» para seleccionar cambios concretos.';}
-    out.warnings.push('La propuesta tiene observaciones o sólo revisión por reglas. Cada campo seleccionado es una hipótesis que debes verificar.');
-  }
+  const reviewerIssues=(source.review?.issues||[]).filter(issue=>
+    issue.category==='BLOCKING'&&
+    (!issue.step_id||issue.step_id==='GLOBAL'||String(issue.step_id)===String(id)));
+  const wholeProcessBlocked=reviewerIssues.some(issue=>
+    !issue.step_id||issue.step_id==='GLOBAL');
+  if(wholeProcessBlocked)
+    out.issue='El revisor ha bloqueado el uso de esta propuesta para todo el proceso. Corrige la fuente y vuelve a analizar.';
+  if(blocked)
+    out.warnings.push('La revisión detecta un bloqueo en esta actividad: sólo se pueden considerar campos independientes y sin incidencias propias.');
+  if(source.review?.review_mode==='RULES_ONLY')
+    out.warnings.push('Sólo se han ejecutado comprobaciones por reglas; la vista previa no demuestra viabilidad técnica.');
+  const fieldIssues=(key,sourceKey)=>reviewerIssues.filter(issue=>{
+    const evidence=String(issue.evidence||'').toLowerCase();
+    return evidence.split(/[^a-z_]/).includes(sourceKey)||
+      evidence.split(/[^a-z_]/).includes(key.toLowerCase());
+  });
   const narrative=typeof internalAiPilotNarrative==='function'?internalAiPilotNarrative(ai.rationale):{action:''};
   const contradiction=ai.transformation==='Se mantiene'&&
     /automatiz|implement|integr|modific|rediseñ|sustitu/i.test(
@@ -1245,6 +1256,11 @@ function tobeAiReviewDiff(e,p,id){
   for(const [sourceKey,key,label,type] of TOBE_AI_REVIEW_FIELDS){
     const raw=String(ai[sourceKey]??'').trim();
     if(!raw||/^(no|n\/a|ninguno|sin definir|pendiente|—)$/i.test(raw))continue;
+    const directBlockers=fieldIssues(key,sourceKey);
+    if(directBlockers.length){
+      out.skipped.push({key,label,raw,reason:directBlockers.map(x=>x.issue).join(' ')});
+      continue;
+    }
     if(type==='transformation'&&(!TOBE_TRANSFORMATIONS.includes(raw)||contradiction)){
       out.skipped.push({key,label,raw,reason:'La transformación IA contiene una contradicción o no es válida; revísala en el selector existente.'});
       continue;
@@ -1314,7 +1330,7 @@ function tobeAiFieldCoverageHtml(e,p,item){
         String(x.evidence||'').split(/[^a-z_]/i).includes(sourceKey))).length,
     absent=blank.length-incomplete;
   return '<div class="tobe-ai-field-summary" role="status">'+
-    '<b>Campos revisados por IA ('+TOBE_AI_REVIEW_FIELDS.length+')</b> '+
+    '<b>Campos sugeridos por IA ('+TOBE_AI_REVIEW_FIELDS.length+')</b> '+
     '<span class="tobe-ai-field-count"><strong>'+candidate+'</strong> con sugerencia</span>'+
     '<span class="tobe-ai-field-count"><strong>'+invalid+'</strong> sugerencias incompatibles</span>'+
     (incomplete?'<span class="tobe-ai-field-count"><strong>'+incomplete+'</strong> que la IA debe corregir</span>':'')+
@@ -1325,10 +1341,10 @@ function tobeAiFieldCoverageHtml(e,p,item){
     '<b>Debe corregir:</b> el revisor automático detectó un problema concreto. '+
     '<b>Sin sugerencia:</b> la IA omitió este campo; no significa que falte información del cliente. '+
     'Las cantidades se refieren a los campos de esta actividad, no al número de actividades analizadas. '+
-    '<b>Acciones:</b> Aplicar IA sólo aparece cuando hay una sugerencia estructurada diferente del TO-BE y la decisión humana permite utilizarla, sin bloqueos. '+
-    'Mantener conserva el valor actual y registra que no se utiliza la sugerencia IA. '+
-    'Para editar una propuesta, cambia el campo TO-BE de la izquierda; ninguna opción de IA puede imponerse sobre tu edición. '+
-    'Sin candidato válido no aparecen botones de aplicación.</p></details>'+
+    '<b>Acciones únicas en 03.3:</b> Aplicar abre una vista previa sin modificar todavía el TO-BE; '+
+    'confirmar registra el cambio y su origen. Mantener guarda la elección de conservar tu valor. '+
+    'Editar modifica el único campo del borrador. Los candidatos incompatibles no se importan. '+
+    'No necesitas aprobar primero la propuesta completa en 03.2.</p></details>'+
     '</div>';
 }
 // [AUNEA-FE-PG11-AI-REVIEW-DIFF-260] END
