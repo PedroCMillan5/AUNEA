@@ -72,4 +72,23 @@ test('module filenames carry no version suffix', () => {
 test('manifest order values are contiguous and start at 1', () => {
   assert.deepEqual(modules.map(m => m.order), modules.map((_, i) => i + 1));
 });
+
+test('internal-work event registration is separated from views and loaded before boot',()=>{
+  const eventsPath='pages/internal-work-events.js';
+  const eventsIndex=modules.findIndex(m=>m.path===eventsPath);
+  const bootIndex=modules.findIndex(m=>m.path==='boot.js');
+  const viewsIndex=modules.findIndex(m=>m.path==='pages/results.js');
+  const tobeIndex=modules.findIndex(m=>m.path==='pages/tobe.js');
+  const outputReviewIndex=modules.findIndex(m=>m.path==='domain/output-review.js');
+  assert.ok(eventsIndex>viewsIndex&&eventsIndex>tobeIndex&&eventsIndex>outputReviewIndex);
+  assert.equal(eventsIndex,bootIndex-1,'event module must load directly before boot');
+  const results=fs.readFileSync(path.join(root,'pages/results.js'),'utf8');
+  const events=fs.readFileSync(path.join(root,eventsPath),'utf8');
+  assert.doesNotMatch(results,/function registerInternalWorkPages\(/,
+    'Views cannot also own UI event registration');
+  assert.match(events,/function registerInternalWorkPages\(/);
+  assert.match(results,/__AUNEA_INTERNAL_WORK_EVENTS_MODULE__/,
+    'test-only source oracle must preserve event composition');
+  assert.equal((events.match(/function registerInternalWorkPages\(/g)||[]).length,1);
+});
 // [AUNEA-UAT-MODULE-MANIFEST-010] END
