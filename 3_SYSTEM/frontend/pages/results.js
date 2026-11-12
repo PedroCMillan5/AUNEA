@@ -2516,7 +2516,8 @@ function tobeCommitAlternative(e,preview){
     confirmedSnapshot(e)?.version!==p.sourceSnapshotVersion||
     JSON.stringify(tobeDesignState(p))!==JSON.stringify(preview.before))
     throw Error('El borrador o el AS-IS cambió. Genera de nuevo la vista previa.');
-  if(preview.pending.length)throw Error('Resuelve las conexiones pendientes antes de confirmar esta propuesta.');
+  const gate=tobeAlternativeDecisionIssue(preview);
+  if(gate)throw Error(gate);
   if(preview.candidate.provenance==='AI'){
     const fresh=tobeAiReviewDiff(e,p,preview.candidate.sourceId);
     if(fresh.issue||(preview.candidate.consultantModified?fresh.decision!=='MODIFY':
@@ -2532,6 +2533,9 @@ function tobeCommitAlternative(e,preview){
     sourceStepId:preview.candidate.sourceId,
     fields:Object.keys(preview.candidate.fields||{}),provenance:preview.candidate.provenance,consultantModified:preview.candidate.consultantModified===true,
     candidateId:preview.candidate.id,sourceRefs:preview.candidate.sourceRefs||[],
+    consultantNote:String(preview.consultantNote||'').trim(),
+    conditionsAcknowledged:preview.conditionsAcknowledged===true,
+    remainingFindingsAcknowledged:preview.keepFindingsAcknowledged===true,
     proposalFingerprint:typeof tobeCandidateFingerprint==='function'?tobeCandidateFingerprint(p):'',
     transaction:{changes,itemIds:p.items.map(x=>x.id)},appliedAt:now()
   }].slice(-100);p.updatedAt=now();
@@ -2731,6 +2735,69 @@ function tobeAlternativeRouteChoicesHtml(e,p,candidate){
     '<h3>Conexión pendiente</h3>'+controls.join('')+'</section>':'';
 }
 // [AUNEA-FE-PG11-PREVIEW-COMPARISON-358] END
+// [AUNEA-FE-PG11-PREVIEW-DECISION-361] START
+// Single preview/confirmation gate. User acknowledges pending conditions but
+// does not assert they are verified. KEEP of AS-IS requires an explicit
+// rationale and recognition of the linked unresolved findings.
+function tobeAlternativeIsKeep(candidate){
+  return candidate?.provenance==='RULES'&&String(candidate.id||'').startsWith('KEEP:');
+}
+function tobeAlternativeDecisionIssue(preview){
+  if(!preview)return 'No hay vista previa vigente.';
+  if(preview.pending?.length)return 'Resuelve los bloqueos estructurales antes de confirmar.';
+  if((preview.candidate?.conditions||[]).length&&!preview.conditionsAcknowledged)
+    return 'Revisa y reconoce las condiciones pendientes antes de confirmar.';
+  if(tobeAlternativeIsKeep(preview.candidate)){
+    if(!preview.keepFindingsAcknowledged)
+      return 'Confirma que conservar el AS-IS deja pendientes las fricciones y riesgos asociados.';
+    if(String(preview.consultantNote||'').trim().length<20)
+      return 'Justifica con al menos 20 caracteres por qué mantienes el funcionamiento del AS-IS.';
+  }
+  return '';
+}
+function tobeAlternativeScopedFindingsHtml(e,preview){
+  const id=String(preview.candidate?.sourceId||''),
+    known=new Set([id,...tobeAddedSteps(preview.projected).map(x=>String(x.id))]),
+    findings=tobeCoherenceFindings(e,preview.projected)||[],
+    scoped=findings.filter(x=>known.has(String(x.stepId||''))),
+    other=findings.filter(x=>!known.has(String(x.stepId||'')));
+  const line=x=>'<li><b>'+(x.severity==='BLOCKING'?'Bloqueo':'Observación')+':</b> '+
+    esc((x.name?x.name+': ':'')+String(x.message||''))+'</li>';
+  return '<section class="tobe-preview-scoped-checks" aria-label="Comprobaciones de esta intervención">'+
+    '<h3>Comprobaciones de esta intervención</h3>'+
+    (scoped.length?'<p>'+scoped.length+' observación'+(scoped.length===1?'':'es')+
+      ' vinculada'+(scoped.length===1?'':'s')+' a esta actividad o al control propuesto.</p>'+
+      '<ul>'+scoped.map(line).join('')+'</ul>':
+      '<p>No hay nuevas observaciones de coherencia vinculadas a la actividad seleccionada.</p>')+
+    (other.length?'<details class="tobe-preview-other-checks"><summary>'+
+      'Ver observaciones del resto del proceso ('+other.length+')</summary>'+
+      '<p>Estas observaciones no constituyen por sí mismas un bloqueo de esta alternativa.</p>'+
+      '<ul>'+other.map(line).join('')+'</ul></details>':'')+
+  '</section>';
+}
+function tobeAlternativeDecisionHtml(preview){
+  const candidate=preview.candidate||{},keep=tobeAlternativeIsKeep(candidate);
+  return '<section class="tobe-preview-consultant" aria-label="Confirmación del consultor">'+
+    '<h3>Decisión del consultor sobre esta intervención</h3>'+
+    (keep?'<p><b>Conservar el AS-IS no significa conservar el borrador TO-BE.</b> '+
+      'Revisa arriba los campos que se sustituirán. Los hallazgos relacionados permanecerán pendientes.</p>':'')+
+    ((candidate.conditions||[]).length?
+      '<label class="tobe-preview-confirmation"><input type="checkbox" data-tobe-preview-ack="1"'+
+      (preview.conditionsAcknowledged?' checked':'')+'>'+
+      '<span>He revisado las condiciones de esta propuesta. Comprendo que no quedan verificadas '+
+      'automáticamente y deberán validarse antes de aprobar el diseño definitivo.</span></label>':'')+
+    (keep?'<label class="tobe-preview-confirmation"><input type="checkbox" data-tobe-preview-keep-ack="1"'+
+      (preview.keepFindingsAcknowledged?' checked':'')+'>'+
+      '<span>Comprendo que mantener el funcionamiento del AS-IS no resuelve los hallazgos vinculados.</span></label>'+
+      '<label for="tobePreviewKeepNote"><b>Justificación de conservación</b></label>'+
+      '<textarea id="tobePreviewKeepNote" rows="3" data-tobe-preview-note="1" '+
+        'placeholder="Explica por qué se conserva esta actividad y cómo se tratarán los hallazgos pendientes.">'+
+        esc(preview.consultantNote||'')+'</textarea>':'')+
+    '<p class="tobe-preview-decision-status" role="status" aria-live="polite">'+
+      esc(tobeAlternativeDecisionIssue(preview)||'Lista para confirmar esta intervención en el borrador.')+'</p>'+
+  '</section>';
+}
+// [AUNEA-FE-PG11-PREVIEW-DECISION-361] END
 function tobeOpenAlternative(e,candidate){
   if(!saveTobeFromDom(e)||!saveState('Conservar edición antes de previsualizar'))throw Error('No se pudo conservar tu edición.');
   const live=currentEng(),p=latestTobe(live),result=tobeProjectAlternative(live,p,candidate);
