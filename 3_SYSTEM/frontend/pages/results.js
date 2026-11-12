@@ -1218,6 +1218,19 @@ function tobeAiReviewDiff(e,p,id){
 }
 // A DRAFT with 4/4 analyzed activities may still have incomplete fields;
 // report those counts separately without implying missing AS-IS evidence.
+function tobeHumanReadableRefs(e,refs){
+  const snap=tobeProposalSnapshot(e,latestTobe(e));
+  return (Array.isArray(refs)?refs:[]).map(ref=>{
+    const code=String(ref);
+    const step=(snap?.processSteps||[]).find(x=>String(x.id)===code);
+    if(step)return String(step.step_name||step.name||'Actividad')+' ('+code+')';
+    const friction=(snap?.frictions||[]).find(x=>String(x.id)===code);
+    if(friction)return 'Fricción: '+String(friction.client_label||friction.observable_signal||'Sin descripción')+' ('+code+')';
+    const risk=(snap?.risks||[]).find(x=>String(x.risk_id||x.id)===code);
+    if(risk)return 'Riesgo: '+String(risk.description||risk.category||'Sin descripción')+' ('+code+')';
+    return 'Referencia de origen no identificada ('+code+')';
+  }).join(' · ');
+}
 function tobeAiFieldCoverageHtml(e,p,item){
   if(item?.isAddition||typeof internalAiSavedDraft!=='function')return '';
   const saved=internalAiSavedDraft(e);
@@ -1233,13 +1246,17 @@ function tobeAiFieldCoverageHtml(e,p,item){
         String(x.evidence||'').split(/[^a-z_]/i).includes(sourceKey))).length,
     absent=blank.length-incomplete;
   return '<div class="tobe-ai-field-summary" role="status">'+
-    '<b>Propuestas IA por campo</b> '+
-    '<span class="tobe-ai-field-count"><strong>'+candidate+'</strong> con candidato</span>'+
-    '<span class="tobe-ai-field-count"><strong>'+invalid+'</strong> no aplicables</span>'+
-    (incomplete?'<span class="tobe-ai-field-count"><strong>'+incomplete+'</strong> incompletos según revisor</span>':'')+
-    '<span class="tobe-ai-field-count"><strong>'+absent+'</strong> sin propuesta</span>'+
-    '<details class="tobe-subdetails"><summary>Cómo interpretar los estados</summary>'+
-    '<p>La cobertura de estos nueve campos es distinta de las actividades analizadas. Un campo vacío no prueba falta de datos, conformidad, ni aprobación. La IA no indica la razón de cada omisión.</p></details>'+
+    '<b>Campos revisados por IA ('+TOBE_AI_REVIEW_FIELDS.length+')</b> '+
+    '<span class="tobe-ai-field-count"><strong>'+candidate+'</strong> con sugerencia</span>'+
+    '<span class="tobe-ai-field-count"><strong>'+invalid+'</strong> sugerencias incompatibles</span>'+
+    (incomplete?'<span class="tobe-ai-field-count"><strong>'+incomplete+'</strong> que la IA debe corregir</span>':'')+
+    '<span class="tobe-ai-field-count"><strong>'+absent+'</strong> sin sugerencia</span>'+
+    '<details class="tobe-subdetails"><summary>Qué significa cada estado y cómo actuar</summary>'+
+    '<p><b>Con sugerencia:</b> la IA propone un valor, pero no está aplicado. '+
+    '<b>Incompatible:</b> la propuesta contradice la transformación o el catálogo, y necesita revisión. '+
+    '<b>Debe corregir:</b> el revisor automático detectó un problema concreto. '+
+    '<b>Sin sugerencia:</b> la IA omitió este campo; no significa que falte información del cliente. '+
+    'Las cantidades se refieren a los campos de esta actividad, no al número de actividades analizadas.</p></details>'+
     '</div>';
 }
 // [AUNEA-FE-PG11-AI-REVIEW-DIFF-260] END
@@ -1283,8 +1300,7 @@ function tobeAiInlineHint(e,p,item,key){
         'Solo lectura · borrador actual v'+esc(p.version)+'.')+'</p>'+
       (raw?'<details class="tobe-subdetails"><summary>Fundamento y fuentes de la propuesta IA</summary>'+
         '<p><b>Justificación general de la actividad:</b> '+esc(narrative.reason||'Sin justificación adicional')+'</p>'+
-        '<p><b>Referencias:</b> '+esc(typeof internalAiReadableRefs==='function'?
-          internalAiReadableRefs(e,ai.source_refs):ai.source_refs.join(' · '))+'</p>'+
+        '<p><b>Referencias de origen:</b> '+esc(tobeHumanReadableRefs(e,ai.source_refs))+'</p>'+
         '<p><b>Condiciones pendientes:</b> '+esc(ai.limitations||'No declaradas')+'</p>'+
         '</details>':'')+
       '</div>';
@@ -1296,9 +1312,7 @@ function tobeAiInlineHint(e,p,item,key){
   if(!field)return '';
   const decision=tobeHumanReviewRecord(e,p)?.decisions?.[String(item.sourceStepId)],
     dismissed=decision?.status==='DISCARD',
-    refs=typeof internalAiReadableRefs==='function'?
-      internalAiReadableRefs(e,ai.source_refs):
-      ai.source_refs.join(' · '),
+    refs=tobeHumanReadableRefs(e,ai.source_refs),
     pending=String(ai.limitations||'').trim(),
     value=matched?.display||skipped?.raw||'';
   const lastChoice=(p.aiDraft?.applyHistory||[]).filter(x=>
@@ -1327,13 +1341,14 @@ function tobeAiInlineHint(e,p,item,key){
       matched&&!matched.changed?' · Coincide con el TO-BE':'')+'</p>'+
     (skipped?'<p class="field-help">'+esc(skipped.reason)+'</p>':'')+
     (structuredIssue?
-      '<p class="field-help tobe-ai-candidate-gap" role="alert"><b>Incoherencia de propuesta:</b> '+
-        esc(structuredIssue.issue||'Falta contenido estructurado.')+
-        ' Consulta la revisión en 03.2. No se puede aplicar este campo.</p>':
+      '<p class="field-help tobe-ai-candidate-gap" role="alert"><b>Por qué no se puede aplicar:</b> '+
+        esc(structuredIssue.issue||'La propuesta IA no contiene un valor estructurado válido.')+
+        ' <b>Siguiente paso:</b> corrige la propuesta en 03.2 o conserva el valor TO-BE. No vuelvas a preguntar al cliente un dato ya capturado.</p>':
       missingAutomationCandidate?
-      '<p class="field-help tobe-ai-candidate-gap">03.2 describe automatización, pero la IA no ha generado un valor estructurado para este campo. No puede aplicarse; revisa el borrador manualmente.</p>':'')+
+      '<p class="field-help tobe-ai-candidate-gap"><b>La propuesta está incompleta:</b> en 03.2 se menciona automatización, pero no se especifica una acción utilizable en este campo. '+
+      'Indica si se ejecutaría con reglas o con IA, con qué condiciones y quién revisaría excepciones. No se habilita aplicar hasta disponer de esa definición.</p>':'')+
     ((matched||skipped)?'<details class="tobe-subdetails"><summary>Fuentes y condiciones del campo</summary>'+
-      '<p><b>Referencias:</b> '+esc(refs||'No identificadas')+'</p>'+
+      '<p><b>Referencias de origen:</b> '+esc(refs||'No identificadas')+'</p>'+
       (pending?'<p><b>Por verificar:</b> '+esc(pending)+'</p>':'')+
     '</details>':'')+
     (kept?'<p class="field-help"><b>Estado del campo:</b> mantener el valor TO-BE guardado.</p>':
@@ -1358,17 +1373,17 @@ function tobeAiOperationalContextHtml(e,item){
   const ai=partial||proposal?.items?.find(x=>String(x.source_step_id)===id);
   if(!ai)return '<p class="tobe-ai-operational-context tobe-muted">Sin propuesta IA vigente para esta actividad. El diseño debe basarse en el AS-IS y las evidencias confirmadas.</p>';
   const limitations=String(ai.limitations||'').trim();
-  const refs=typeof internalAiReadableRefs==='function'?
-    internalAiReadableRefs(e,ai.source_refs):(ai.source_refs||[]).join(' · ');
+  const refs=tobeHumanReadableRefs(e,ai.source_refs);
   const historical=!!history;
   return '<details class="tobe-ai-operational-context" role="note">'+
-    '<summary>Condiciones y viabilidad · '+(limitations?'Revisión necesaria':'Sin detalle específico')+
+    '<summary>Limitaciones sugeridas por IA · '+(limitations?'Contrastar con datos declarados':'Sin detalle específico')+
       (historical?' · Histórica v'+esc(history.version):
         partial?' · Sin consolidar':'')+'</summary>'+
     '<div class="tobe-ai-operational-body">'+
-      '<p>'+esc(limitations||'La IA no ha detallado restricciones para esta actividad.')+'</p>'+
-      '<p><b>Fuentes:</b> '+esc(refs||'Sin fuentes especificadas')+'</p>'+
-      '<p>Una limitación propuesta por IA no es una restricción confirmada. Contrasta capacidades, permisos, interrupciones y controles antes de implantar.</p>'+
+      '<p><b>Texto generado por IA, pendiente de contrastar:</b> '+esc(limitations||'La IA no ha detallado restricciones para esta actividad.')+'</p>'+
+      '<p><b>Referencias de origen:</b> '+esc(refs||'Sin referencias identificadas')+'</p>'+
+      '<p><b>Criterio:</b> los tiempos, frecuencias y condiciones que consten en el AS-IS siguen siendo datos declarados por el cliente. '+
+      'La IA no puede considerarlos hipotéticos sólo porque no haya reconocido su fuente. Contrasta cualquier contradicción con el dato original antes de concluir que está pendiente.</p>'+
       (historical?'<p>Propuesta anterior: sólo lectura, no aplicable a esta versión.</p>':
         partial?'<p>Propuesta guardada sin consolidar: no se puede aplicar todavía.</p>':'')+
     '</div></details>';
