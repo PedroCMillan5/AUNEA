@@ -2671,6 +2671,37 @@ function tobeFutureTimeReviewHtml(item,sourceStep){
     '</div></details>';
 }
 // [AUNEA-FE-PG11-TIME-REVIEW-352] END
+// [AUNEA-FE-PG11-UNIFIED-DECISIONS-357] START
+// Single decision surface: sources remain read-only and traceable;
+// only TO-BE owner, existing preview-confirm and KEEP journal mutate draft.
+function tobeDecisionSourceSummaryHtml(e,p,item){
+  if(item.isAddition)return '<p class="tobe-decision-context">Actividad añadida: define su funcionamiento, datos, controles y conexiones en este borrador.</p>';
+  const globalCount=typeof tobeGlobalLinksForStep==='function'?
+    tobeGlobalLinksForStep(e,p,item).length:0,
+    ai=typeof internalAiSavedDraft==='function'?internalAiSavedDraft(e):null,
+    hasAi=!!ai?.items?.some(x=>String(x.source_step_id)===String(item.sourceStepId)),
+    actions=(p.aiDraft?.applyHistory||[]).filter(x=>
+      String(x.sourceStepId)===String(item.sourceStepId)&&!x.undoneAt);
+  const lastByField=new Map();
+  for(const entry of actions){
+    for(const field of entry.fields||[])lastByField.set(field,entry);
+  }
+  const applied=[...lastByField.values()].filter(x=>x.action==='APPLY').length,
+    maintained=[...lastByField.values()].filter(x=>x.action==='KEEP').length;
+  return '<section class="tobe-decision-context" aria-label="Fuentes y decisiones de esta actividad">'+
+    '<h4>Una única configuración TO-BE, con todas las fuentes disponibles</h4>'+
+    '<p><b>Análisis global:</b> '+globalCount+' '+(globalCount===1?'oportunidad relacionada':'oportunidades relacionadas')+
+      ' (consulta en 03.2). <b>IA individual:</b> '+(hasAi?'propuesta vinculada':'sin propuesta consolidada')+
+      '. <b>Reglas:</b> alternativas deterministas disponibles debajo.</p>'+
+    '<p><b>Decisiones registradas para esta actividad:</b> '+applied+' campos aplicados, '+
+      maintained+' conservados. Las modificaciones manuales se guardan en el TO-BE; '+
+      'los cambios confirmados mediante vista previa quedan en el historial reversible.</p>'+
+    '<p><b>Cómo actuar:</b> utiliza «Revisar y previsualizar» para una alternativa por reglas, '+
+      '«Aplicar IA» junto a un campo compatible, «Mantener» para conservarlo o edita el campo directamente. '+
+      'Cada operación tiene una sola confirmación; la revisión final del TO-BE se hace después de configurar las actividades.</p>'+
+  '</section>';
+}
+// [AUNEA-FE-PG11-UNIFIED-DECISIONS-357] END
 function tobeInspectorHtml(e,p){
   const item=tobeSelectedItem(e,p),editable=tobeEditable(p);
   if(!item)return '<div class="notice warn">No hay actividades TO-BE vinculadas al AS-IS.</div>';
@@ -2678,15 +2709,13 @@ function tobeInspectorHtml(e,p){
     itemIndex=allItems.findIndex(x=>tobeFlowItemId(x)===tobeFlowItemId(item)),
     nextItem=itemIndex>=0?allItems[itemIndex+1]:null,
     previousItem=itemIndex>0?allItems[itemIndex-1]:null;
-  const choice=tobeHumanReviewRecord(e,p)?.decisions?.[String(item.sourceStepId)];
+  const historicalChoice=tobeHumanReviewRecord(e,p)?.decisions?.[String(item.sourceStepId)];
   const hasCurrentAi=typeof internalAiSavedDraft==='function'&&
     internalAiSavedDraft(e)?.items?.some(x=>String(x.source_step_id)===String(item.sourceStepId));
   const pendingKey=editable&&!item.isAddition&&typeof internalAiPilotKey==='function'?
     internalAiPilotKey(e):null;
   const hasPendingAi=!!pendingKey&&typeof internalAiPendingSteps==='function'&&
     !!internalAiPendingSteps(e,pendingKey)?.items?.has(String(item.sourceStepId));
-  const adviceOpen=editable&&!item.isAddition&&(hasCurrentAi||hasPendingAi)&&
-    !['ACCEPT','MODIFY','DISCARD'].includes(choice?.status);
   // Keep an expanded execution-data group open across rerenders for this step.
   const previousExecution=typeof document!=='undefined'?
     document.getElementById?.('tobeExecutionFields'):null;
@@ -2719,7 +2748,11 @@ function tobeInspectorHtml(e,p){
       (editable&&!item.isAddition?'<div class="tobe-ai-per-step-action"><button type="button" class="btn btn-primary" data-tobe-generate-selected="'+attr(item.sourceStepId)+'">'+
         (hasCurrentAi?'Volver a analizar este paso':'Analizar este paso con IA')+'</button>'+
         '<span class="tobe-muted">Análisis independiente de esta actividad; no aplica cambios automáticamente.</span></div>':'')+
-      '<p id="tobeStepAiProgress" role="status" aria-live="polite" class="tobe-muted">Propuesta individual: sin aprobar.</p>'+
+      '<p class="tobe-review-guidance"><b>Aquí sólo se analizan opciones:</b> '+
+      'IA global = oportunidades del proceso; IA por actividad = propuestas concretas; '+
+      'reglas = comprobaciones de coherencia. Ninguna de estas capas aprueba el TO-BE. '+
+      'Las decisiones y la aplicación de cambios se realizan una sola vez en 03.3.</p>'+
+      '<p id="tobeStepAiProgress" role="status" aria-live="polite" class="tobe-muted">Propuesta individual: pendiente de contrastar con el diseño.</p>'+
       (typeof internalAiProgressHtml==='function'?internalAiProgressHtml(e,'steps'):'')+
       '<div id="tobeGlobalLinkedStep">'+tobeGlobalLinkedStepHtml(e,p,item)+'</div>'+
       '<div id="tobeAiRecommendation">'+tobeAiAdviceHtml(e,item,false)+'</div>'+
@@ -2728,10 +2761,13 @@ function tobeInspectorHtml(e,p){
         '<p class="tobe-ai-source-context"><b>Dato confirmado del AS-IS:</b> el registro estructurado ya figura entre las salidas de esta actividad. '+
         'La propuesta debe distinguir entre actualizar o automatizar el registro existente y crear otro diferente. '+
         'El tipo de salida no acredita cómo se genera actualmente.</p>':'')+
-      (!item.isAddition&&hasCurrentAi?
-        '<details class="tobe-human-review-shell"'+(choice?.status?'':' open')+'>'+
-          '<summary>Decisión del consultor · '+esc(TOBE_HUMAN_LABELS[choice?.status]||'Pendiente')+'</summary>'+
-          tobeHumanReviewHtml(e,item,false)+'</details>':'')+
+      (historicalChoice?'<details class="tobe-legacy-review" role="note">'+
+        '<summary>Historial de revisión anterior (solo lectura)</summary>'+
+        '<p>Decisión registrada en la arquitectura anterior: '+
+          esc(TOBE_HUMAN_LABELS[historicalChoice.status]||historicalChoice.status)+'.</p>'+
+        '<p><b>Justificación histórica:</b> '+esc(historicalChoice.note||'No consta')+'</p>'+
+        '<p>Este historial se conserva como evidencia; ya no es una segunda aprobación obligatoria ni aplica cambios.</p>'+
+        '</details>':'')+
       '</details></section>';
   return '<header class="tobe-inspector-head"><div><span class="tobe-eyebrow">'+
       (item.isAddition?'ACTIVIDAD NUEVA · VINCULADA A AS-IS':'ACTIVIDAD SELECCIONADA · ORIGEN AS-IS')+
@@ -2758,8 +2794,10 @@ function tobeInspectorHtml(e,p){
       '<header class="tobe-design-header"><div>'+
         '<h3 class="aunea-ui-section-title">03.3 · Configurar la actividad futura</h3>'+
         '<p class="tobe-design-lede" data-tobe-transformation-message="1" role="status" aria-live="polite">'+
-          'Define tu TO-BE en los campos editables. La propuesta IA no modifica tu diseño hasta que decidas aplicarla.</p>'+
+          'Aquí decides el diseño: conserva, modifica o aplica valores mediante vista previa. '+
+          'No es necesario aceptar una recomendación completa antes. Nada se importa automáticamente.</p>'+
         '</div><span class="tobe-design-status">'+(editable?'Borrador editable':'Solo lectura')+'</span></header>'+
+      tobeDecisionSourceSummaryHtml(e,p,item)+
       tobeAlternativesHtml(e,p,item)+
       '<details class="tobe-design-evidence" id="tobeDesignEvidence" data-source-step-id="'+
         attr(item.sourceStepId)+'"'+(evidenceOpen?' open':'')+'>'+
