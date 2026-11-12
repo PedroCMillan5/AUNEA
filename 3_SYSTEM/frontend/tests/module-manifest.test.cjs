@@ -91,4 +91,19 @@ test('internal-work event registration is separated from views and loaded before
     'test-only source oracle must preserve event composition');
   assert.equal((events.match(/function registerInternalWorkPages\(/g)||[]).length,1);
 });
+
+test('PG11 global overview is a single read-only module loaded before work handlers',()=>{
+  const global='pages/tobe-global.js',workspace='pages/tobe.js',
+    handlers='pages/internal-work-events.js';
+  const order=path=>modules.findIndex(entry=>entry.path===path);
+  assert.ok(order(global)>order(workspace));
+  assert.equal(order(global)+1,order(handlers));
+  const source=fs.readFileSync(path.join(root,workspace),'utf8');
+  const globalSource=fs.readFileSync(path.join(root,global),'utf8');
+  assert.match(source,/__AUNEA_PG11_GLOBAL_VIEW_MODULE__/);
+  assert.doesNotMatch(source,/function tobeGlobalOverviewHtml\(/);
+  assert.match(globalSource,/function tobeGlobalOverviewHtml\(/);
+  assert.match(globalSource,/\[AUNEA-FE-PG11-GLOBAL-OVERVIEW-284\] START/);
+  assert.match(globalSource,/\[AUNEA-FE-PG11-GLOBAL-OVERVIEW-284\] END/);
+});
 // [AUNEA-UAT-MODULE-MANIFEST-010] END
