@@ -28,7 +28,7 @@ function internalAiProgressHtml(e,mode){
   const percent=total?Math.min(100,Math.round(done*100/total)):0;
   const detail=active?(run.detail||'Preparando solicitud al proveedor IA…'):
     (mode==='global'&&stored?.failed?'Hay fuentes pendientes de reintento.':
-      'Propuestas IA verificadas y guardadas; no son decisiones del consultor.');
+      'Propuestas IA analizadas y guardadas. La cobertura no acredita viabilidad ni aprobación del consultor.');
   return '<div class="pg11-ai-progress" data-pg11-progress="'+mode+'" role="status" aria-live="polite">'+
     '<div class="pg11-ai-progress-top"><strong>'+done+' de '+(total||'—')+
     (mode==='global'?' fuentes analizadas':' actividades analizadas por IA')+'</strong>'+
