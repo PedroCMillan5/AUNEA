@@ -80,12 +80,20 @@ for(const kind of ['invoice','logistics']){
   assert.equal(run('JSON.stringify(confirmedSnapshot(currentEng()))'),immutable);
   w.document.querySelector('[data-tobe-undo-alternative]').click();
   assert.equal(run('tobeFutureSteps(currentEng(),latestTobe(currentEng())).length'),4);
+  run("latestTobe(currentEng()).items[0].transformation='Se modifica';"+
+    "latestTobe(currentEng()).items[0].automationAi='Crear automáticamente un registro de entrada de factura';render()");
   w.document.querySelector('[data-tobe-load-alternatives="P1"]').click();
   await until(()=>w.document.querySelectorAll('.tobe-alternative').length>0);
   const keepCard=[...w.document.querySelectorAll('.tobe-alternative')]
     .find(x=>x.textContent.includes('Mantener la actividad sin cambios'));
   assert.ok(keepCard,'a preserve-AS-IS alternative remains traceable after undo');
   keepCard.querySelector('[data-tobe-alternative]').click();
+  assert.match(w.document.querySelector('#tobeAlternativeChanges').textContent,
+    /Automatización \/ IA/,'the abandoned automation must appear explicitly in the comparison');
+  const scopedRows=[...w.document.querySelectorAll('.tobe-preview-scoped-checks > ul > li')]
+    .map(x=>x.textContent).join(' ');
+  assert.doesNotMatch(scopedRows,/La intervención incorpora automatización o asistencia/,
+    'preserving the AS-IS must not present abandoned automation as a new intervention');
   assert.equal(w.document.querySelector('[data-tobe-confirm-alternative]').disabled,true);
   const note=w.document.querySelector('[data-tobe-preview-note]');
   assert.ok(note,'a KEEP choice must require a reason');
@@ -104,6 +112,8 @@ for(const kind of ['invoice','logistics']){
   assert.match(savedKeep.consultantNote,/Conservar la recepción/);
   assert.equal(savedKeep.remainingFindingsAcknowledged,true);
   assert.equal(savedKeep.conditionsAcknowledged,true);
+  assert.equal(run('latestTobe(currentEng()).items[0].automationAi'),'',
+    'confirmed KEEP must remove the superseded future automation description');
   assert.equal(run('JSON.stringify(confirmedSnapshot(currentEng()))'),immutable);
   assert.deepEqual(h.errors,[]);
   console.log('PG11_DOM_'+kind.toUpperCase()+'_PASS — full runtime, preview/edit, condition gate, documented KEEP, discard/recover, confirm/reload/undo, branches and AS-IS preserved');
