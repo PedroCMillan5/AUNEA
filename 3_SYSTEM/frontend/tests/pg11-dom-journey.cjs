@@ -80,6 +80,8 @@ for(const kind of ['invoice','logistics']){
   assert.equal(run('JSON.stringify(confirmedSnapshot(currentEng()))'),immutable);
   w.document.querySelector('[data-tobe-undo-alternative]').click();
   assert.equal(run('tobeFutureSteps(currentEng(),latestTobe(currentEng())).length'),4);
+  w.document.querySelector('[data-tobe-load-alternatives="P1"]').click();
+  await until(()=>w.document.querySelectorAll('.tobe-alternative').length>0);
   const keepCard=[...w.document.querySelectorAll('.tobe-alternative')]
     .find(x=>x.textContent.includes('Mantener la actividad sin cambios'));
   assert.ok(keepCard,'a preserve-AS-IS alternative remains traceable after undo');
