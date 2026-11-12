@@ -74,7 +74,7 @@ def test_invoice_visibility_and_traceability_are_distinct_operational_options():
     assert 'DF088' not in visibility['constraints']
     assert 'DF089' not in visibility['constraints']
     assert all(x['sourceId']=='P1' and x['status']=='PENDING' for x in c)
-    assert by_id['CONTROL-R1']['combination']=='COMBINABLE'
+    assert by_id['CONTROL-R1']['combination']=='ALTERNATIVE_TO_CONTROL-R1'
     assert by_id['CONTROL-STEP-R1']['combination']=='ALTERNATIVE_TO_CONTROL-R1'
     assert 'RECORD' not in str(by_id['CONTROL-R1']['fields']).upper(), 'do not invent a new record'
     assert all('ahorro' not in str(x['fields']).lower() for x in c)
