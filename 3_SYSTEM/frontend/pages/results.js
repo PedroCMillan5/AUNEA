@@ -2592,6 +2592,78 @@ function tobeAlternativesHtml(e,p,item){
       'Puedes conservar el diseño o revisarlo manualmente.</p>':'')+
     rows+'</div>';
 }
+// [AUNEA-FE-PG11-PREVIEW-COMPARISON-358] START
+// PURPOSE: Read-only comparison from one TO-BE owner and projected state.
+// SOURCE: Simulator CANONICAL PG11; DEC-050/055/056.
+// INPUTS: transient preview.bef​ore/projected. OUTPUTS: HTML comparison, pending and status.
+// SIDE_EFFECTS: none. The preview is recomputed before any confirmation.
+// CHANGE_RISK: HIGH. No second map owner, estimated savings or invented fields.
+function tobeAlternativeChangesHtml(e,preview){
+  const changes=tobeTransactionChanges(preview.before,tobeDesignState(preview.projected));
+  const names={
+    transformation:'Transformación',problemResolved:'Motivo del diseño futuro',
+    futureActor:'Responsable futuro',tool:'Herramienta futura',
+    inputs:'Entradas',outputs:'Salidas',automationAi:'Automatización / IA',
+    humanSupervision:'Supervisión humana',controlsRisk:'Control / riesgo',
+    futureTime:'Tiempo futuro',futureTimeAssumption:'Supuesto del tiempo futuro',
+    normal:'Ruta normal',exception:'Ruta de excepción'
+  };
+  const label=id=>{
+    const item=tobeFlowItem(e,preview.projected,String(id))||
+      tobeFlowItem(e,{...preview.projected,items:preview.before.items},String(id));
+    return item?tobeFlowItemName(item):String(id);
+  };
+  const print=(value,path)=>{
+    if(value===null||value===undefined||value==='')return 'Sin definir';
+    if(Array.isArray(value)){
+      if(path[0]==='flow'&&path[1]==='addedSteps'){
+        return value.length+' '+(value.length===1?'actividad añadida':'actividades añadidas')+
+          (value.length?': '+value.map(x=>x.stepName||x.id).join(' · '):'');
+      }
+      return value.length?value.map(x=>typeof x==='object'?String(x.stepName||x.id||'Elemento'):String(x)).join(' · '):'Sin elementos';
+    }
+    if(path[0]==='flow'&&path[1]==='routes'&&typeof value==='string')
+      return value==='__END__'?'Fin del proceso':value==='__PENDING__'?'Pendiente de conexión':label(value);
+    if(typeof value==='object')return 'Configuración de rutas o estructura (ver mapa)';
+    return String(value);
+  };
+  const title=path=>{
+    if(path[0]==='items'){
+      const step=preview.before.items[Number(path[1])],
+        source=step?.sourceStepName||step?.stepName||step?.sourceStepId||'actividad';
+      return (names[path.at(-1)]||'Campo del TO-BE')+' · '+source;
+    }
+    if(path[0]==='flow'&&path[1]==='addedSteps')return 'Actividad incorporada al mapa';
+    if(path[0]==='flow'&&path[1]==='routes'){
+      return (names[path[3]]||'Conexión del mapa')+' · '+label(path[2]);
+    }
+    return 'Estructura del proceso';
+  };
+  return '<section class="tobe-preview-comparison" aria-label="Comparación antes y después">'+
+    '<h3>Qué cambiaría si confirmas esta intervención</h3>'+
+    (changes.length?
+      '<div class="tobe-preview-table-scroll"><table><thead><tr><th>Elemento</th>'+
+        '<th>TO-BE guardado</th><th>TO-BE propuesto</th></tr></thead><tbody>'+
+      changes.map(change=>'<tr><th scope="row">'+esc(title(change.path))+'</th>'+
+        '<td>'+esc(print(change.before,change.path))+'</td>'+
+        '<td>'+esc(print(change.after,change.path))+'</td></tr>').join('')+
+      '</tbody></table></div>':
+      '<p class="tobe-muted">No hay diferencias materiales con el TO-BE guardado. '+
+        'Confirmar únicamente registrará que se conserva esta configuración.</p>')+
+    '</section>';
+}
+function tobeAlternativePendingHtml(preview){
+  const issues=(preview.pending||[]);
+  return '<section class="tobe-preview-validation" role="status" aria-live="polite">'+
+    '<h3>Comprobaciones antes de confirmar</h3>'+
+    (issues.length?'<p><b>'+issues.length+' condición'+(issues.length===1?'':'es')+
+      ' bloqueante'+(issues.length===1?'':'s')+'</b></p><ul>'+
+      issues.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':
+      '<p>Sin bloqueos estructurales detectados. '+
+      'La viabilidad operativa, las capacidades técnicas y las evidencias pendientes siguen requiriendo validación.</p>')+
+    '</section>';
+}
+// [AUNEA-FE-PG11-PREVIEW-COMPARISON-358] END
 function tobeOpenAlternative(e,candidate){
   if(!saveTobeFromDom(e)||!saveState('Conservar edición antes de previsualizar'))throw Error('No se pudo conservar tu edición.');
   const live=currentEng(),p=latestTobe(live),result=tobeProjectAlternative(live,p,candidate);
