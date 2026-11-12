@@ -82,6 +82,24 @@ test('global IA distinguishes saved non-current results and does not erase them'
  assert.equal(JSON.stringify(h.env.p.aiGlobal),untouched,
    'a stale proposal must remain preserved, without being presented as current');
 });
+test('section 02 identifies an older-version global analysis without treating it as current',()=>{
+ const h=harness(null);
+ const earlier={version:1,sourceSnapshotVersion:3,
+   aiGlobal:{tobeVersion:1,sourceSnapshotVersion:3,diagnosticInputHash:'HASH',
+     result:{status:'DRAFT',engagement_id:'E1',snapshot_version:3,
+       summary:'Análisis de una versión anterior',opportunities:[{
+         objective:'Propuesta histórica',how:'Comprobar estado de expedientes.',
+         why:'Se registró una incidencia.',source_refs:['F1']}]}}};
+ h.env.e.tobeProposals=[earlier,h.env.p];
+ const preserved=JSON.stringify(h.env.e.tobeProposals);
+ const html=h.html();
+ assert.match(html,/Análisis guardado no vigente/);
+ assert.match(html,/otra versión del borrador TO-BE/);
+ assert.match(html,/Coherencia sin evaluar/);
+ assert.doesNotMatch(html,/Propuesta histórica|0 alertas de reglas/);
+ assert.equal(JSON.stringify(h.env.e.tobeProposals),preserved,
+   'the older-version source must remain untouched and cannot be promoted automatically');
+});
 test('section 01 shows only confirmed source facts and not later live edits',()=>{
   assert.ok(contextBlock,'Missing source-only PG11 context block');
   const snapshot={
