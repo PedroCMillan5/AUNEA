@@ -57,6 +57,10 @@ for(const name of ['invoice','logistics'])test('PG11 source → backend rules �
  assert.equal(ctx.tobeFutureSteps(e,p).length,5);assert.equal(ctx.tobeFlowIntegrity(e,p),null);
  const exported=ctx.tobeIntegrationProjection(e,p);assert.equal(exported.items.length,5);assert.equal(exported.flow.activities.length,5);assert.equal(exported.flow.activities.find(x=>x.id==='P2').exception,'P4');
  assert.ok(exported.items.some(x=>x.isAddition));
+ const insideControl=result.candidates.find(c=>c.id.startsWith('CONTROL-R1:'));
+ assert.ok(insideControl);
+ assert.throws(()=>preview(insideControl),/otra ubicación aplicada/,
+   'the same risk cannot have in-step and separate control placements simultaneously');
  p.items[3].problemResolved='Decisión posterior independiente';
  ctx.tobeUndoAlternative(e);assert.equal(ctx.tobeFutureSteps(e,p).length,4);
  assert.equal(p.items[3].problemResolved,'Decisión posterior independiente');
