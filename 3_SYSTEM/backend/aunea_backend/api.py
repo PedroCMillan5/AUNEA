@@ -72,6 +72,16 @@ def internal_ai_tobe_draft(payload: PilotAIRequest, request: FastAPIRequest):
 # SOURCE: same confirmed snapshot and official diagnostic as PG11 pilot, REVIEW.
 # SECURITY: local-only, explicit provider and consent; no persistence or approval.
 # [AUNEA-BE-PG11-ALTERNATIVES-API-331] START — same source validation, no provider call.
+@app.get("/v1/tobe/alternatives-status")
+def tobe_alternatives_status(request: FastAPIRequest, response: Response):
+    if request.client is None or request.client.host not in ("127.0.0.1", "::1", "testclient"):
+        raise HTTPException(403, "Diagnóstico de alternativas limitado a acceso local.")
+    from . import tobe_optimization
+    response.headers["Cache-Control"] = "no-store"
+    return {"status":"ok", "engine_contract":tobe_optimization.PG11_ALTERNATIVES_CONTRACT,
+            "engine_module":tobe_optimization.__name__,
+            "engine_file":str(tobe_optimization.__file__)}
+
 @app.post("/v1/tobe/activity-alternatives")
 def tobe_activity_alternatives(payload: PilotAIStepRequest, request: FastAPIRequest):
     if request.client is None or request.client.host not in ("127.0.0.1", "::1", "testclient"):
