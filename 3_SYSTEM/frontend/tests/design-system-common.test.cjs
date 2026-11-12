@@ -108,3 +108,12 @@ test('PG11 work surfaces and stages reuse the same opt-in structural primitives'
   assert.doesNotMatch(local,/\.tobe-context,\.tobe-global-analysis,\.tobe-review-section-head\{[^}]*padding:20px 22px/);
 });
 // [AUNEA-UAT-DESIGN-COMMON-312] END
+
+test('internal work result layouts reuse shared opt-in structure instead of inline presentation',()=>{
+  const results=load('pages/results.js');
+  for(const selector of ['.aunea-ui-mt-8{','.aunea-ui-mt-12{','.aunea-ui-mt-14{','.aunea-ui-block{','.aunea-ui-recap-input{','.aunea-ui-metric-status{'])
+    assert.ok(shared.includes(selector),'Missing shared component: '+selector);
+  for(const className of ['aunea-ui-mt-8','aunea-ui-mt-12','aunea-ui-mt-14','aunea-ui-recap-input','aunea-ui-metric-status'])
+    assert.ok(results.includes(className),'Results page must use '+className);
+  assert.doesNotMatch(results,/style="/,'Results must not reintroduce inline styles');
+});
