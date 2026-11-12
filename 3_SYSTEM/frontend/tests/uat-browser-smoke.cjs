@@ -1098,7 +1098,16 @@ async function main(){
     if(!saveState('Guardar fixture de enlace global'))throw Error('Global link not persisted');
     render();
   });
-  await page.locator('#tobeGlobalAnalysis .tobe-global-opportunity details summary').first().click();
+  const globalOpportunity=page.locator('#tobeGlobalAnalysis .tobe-global-opportunity-detail').first();
+  assert.equal(await globalOpportunity.evaluate(el=>el.open),false,
+    'the global analysis must show a concise row until explicitly expanded');
+  assert.equal(await page.locator('#tobeGlobalAnalysis .tobe-global-monitoring').evaluate(el=>el.open),false,
+    'technical counters and client conditions must be collapsed by default');
+  await globalOpportunity.locator('summary').first().click();
+  assert.equal(await globalOpportunity.evaluate(el=>el.open),true);
+  await page.evaluate(()=>render());
+  assert.equal(await page.locator('#tobeGlobalAnalysis .tobe-global-opportunity-detail').first()
+    .evaluate(el=>el.open),true,'opening a recommendation persists across live renders');
   const linkedButton=page.locator('#tobeGlobalAnalysis [data-tobe-global-link="1"]').first();
   assert.equal(await linkedButton.count(),1,'global card has a linked source-step button');
   const beforeLink=await page.evaluate(()=>{
