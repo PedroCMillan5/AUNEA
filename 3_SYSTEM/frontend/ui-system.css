@@ -2885,14 +2885,14 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
   font-weight:600;line-height:1.45;
 }
 .tobe-original-facts{
-  display:grid;gap:15px;min-width:0;width:100%;
-  padding:15px 16px 16px;box-sizing:border-box;
+  display:grid;gap:12px;min-width:0;width:100%;
+  padding:12px 15px 13px;box-sizing:border-box;
 }
 #tobeStepOrigin .tobe-original-facts .tobe-origin-provenance{
   margin:0!important;color:var(--muted);
   font-size:var(--font-small);line-height:1.5;
 }
-.tobe-origin-fact-group{display:grid;gap:9px;min-width:0}
+.tobe-origin-fact-group{display:grid;gap:8px;min-width:0}
 #tobeStepOrigin .tobe-origin-fact-group h4,
 #tobeStepOrigin .tobe-origin-issues h4{
   margin:0;color:var(--system);font-size:var(--font-small);
@@ -2900,20 +2900,26 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 }
 .tobe-original-facts dl{
   display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:10px;margin:0;min-width:0;
+  gap:8px;margin:0;min-width:0;
 }
 .tobe-original-facts dl>div{
-  min-width:0;padding:12px 13px;
+  min-width:0;padding:10px 12px;
   border:1px solid var(--system-line);
   border-radius:var(--radius-sm);background:var(--canvas,#f8faf9);
 }
-.tobe-original-facts dt{font-size:var(--font-caption);font-weight:750;line-height:1.5;color:var(--system)}
-.tobe-original-facts dd{margin:5px 0 0;font-size:var(--font-small);line-height:1.55;
-  color:var(--ink);overflow-wrap:anywhere}
+.tobe-original-facts dt{
+  font-family:Inter,"Segoe UI",Arial,sans-serif;
+  font-size:var(--font-caption);font-weight:700;line-height:1.5;color:var(--system)
+}
+.tobe-original-facts dd{
+  margin:4px 0 0;font-family:Inter,"Segoe UI",Arial,sans-serif;
+  font-size:var(--font-small);font-weight:400;line-height:1.5;
+  color:var(--ink);overflow-wrap:anywhere
+}
 .tobe-original-facts .tobe-muted{margin:0}
 #tobeStepOrigin .tobe-origin-issues{
   display:grid;gap:10px;min-width:0;
-  padding:14px 16px 16px;border-top:1px solid var(--system-line);
+  padding:12px 15px 13px;border-top:1px solid var(--system-line);
   background:var(--surface,#fff);
 }
 #tobeStepOrigin .tobe-origin-issues>.tobe-muted{
@@ -2921,11 +2927,11 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 }
 #tobeStepOrigin .tobe-source-list{
   display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:10px;min-width:0;padding:0;margin:0;list-style:none;
+  gap:8px;min-width:0;padding:0;margin:0;list-style:none;
 }
 #tobeStepOrigin .tobe-origin-issue{
-  display:grid;align-content:start;gap:7px;min-width:0;
-  padding:11px 13px;border:1px solid var(--system-line);
+  display:grid;align-content:start;gap:6px;min-width:0;
+  padding:10px 12px;border:1px solid var(--system-line);
   border-radius:var(--radius-sm);background:var(--canvas,#f8faf9);
   font-size:var(--font-small);line-height:1.5;
 }
@@ -2939,6 +2945,42 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 #tobeStepOrigin .tobe-origin-issue p{
   margin:0!important;color:var(--ink);
   font-size:var(--font-small);line-height:1.5;overflow-wrap:anywhere;
+}
+#tobeStepOrigin .tobe-origin-issue-head,
+#tobeStepOrigin .tobe-origin-issue-head b,
+#tobeStepOrigin .tobe-origin-issue-head span{
+  font-family:Inter,"Segoe UI",Arial,sans-serif;
+  font-size:var(--font-small);
+}
+#tobeStepOrigin .tobe-origin-reference{
+  display:block;color:var(--muted);
+  font-family:Inter,"Segoe UI",Arial,sans-serif;
+  font-size:var(--font-caption);line-height:1.45;
+}
+#tobeStepOrigin .tobe-origin-issue-data{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:7px;margin:2px 0 0;min-width:0;
+}
+#tobeStepOrigin .tobe-origin-issue-data>div{
+  min-width:0;padding:7px 9px;border:1px solid var(--system-line);
+  border-radius:var(--radius-sm);background:var(--surface,#fff);
+}
+#tobeStepOrigin .tobe-origin-issue-data dt{
+  font-family:Inter,"Segoe UI",Arial,sans-serif;
+  font-size:var(--font-caption);font-weight:700;color:var(--system);
+}
+#tobeStepOrigin .tobe-origin-issue-data dd{
+  margin:3px 0 0;font-family:Inter,"Segoe UI",Arial,sans-serif;
+  font-size:var(--font-small);line-height:1.5;color:var(--ink);
+  overflow-wrap:anywhere;
+}
+#tobeStepOrigin .tobe-origin-issue-signal{line-height:1.5}
+#tobeStepAdvice .tobe-ai-source-context{
+  margin:10px 0 0!important;padding:10px 12px;
+  color:var(--muted);background:var(--canvas,#f8faf9);
+  border:1px solid var(--system-line);border-radius:var(--radius-sm);
+  font-family:Inter,"Segoe UI",Arial,sans-serif;
+  font-size:var(--font-small);line-height:1.5;
 }
 @media(max-width:1050px){
   .tobe-original-facts dl{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -2954,6 +2996,7 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
   .tobe-original-facts{padding:12px;gap:12px}
   #tobeStepOrigin .tobe-origin-issues{padding:12px}
   #tobeStepOrigin .tobe-source-list{grid-template-columns:1fr}
+  #tobeStepOrigin .tobe-origin-issue-data{grid-template-columns:1fr}
 }
 @media(max-width:570px){
   .tobe-original-facts dl{grid-template-columns:1fr}
