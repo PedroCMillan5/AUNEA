@@ -2641,7 +2641,7 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 .tobe-inspector{display:grid;gap:18px}
 .tobe-inspector-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;
   padding-bottom:17px;border-bottom:1px solid var(--system-line)}
-.tobe-origin,.tobe-edit,.tobe-advice{display:grid;gap:12px}
+.tobe-origin,.tobe-edit,.tobe-advice{min-width:0}
 .tobe-origin{background:var(--system-soft);border:1px solid var(--system-line);border-radius:var(--radius-sm);
   padding:16px 18px}
 .tobe-origin h3,.tobe-edit h3,.tobe-advice h3{font-size:15px;color:var(--system)}
