@@ -1389,7 +1389,7 @@ function tobeAiOperationalContextHtml(e,item){
     '<div class="tobe-ai-operational-body">'+
       '<p><b>Texto generado por IA, pendiente de contrastar:</b> '+esc(limitations||'La IA no ha detallado restricciones para esta actividad.')+'</p>'+
       '<p><b>Referencias de origen:</b> '+esc(refs||'Sin referencias identificadas')+'</p>'+
-      '<p><b>Criterio:</b> los tiempos, frecuencias y condiciones que consten en el AS-IS siguen siendo datos declarados por el cliente. '+
+      '<p><b>Criterio:</b> una limitación propuesta por IA no es una restricción confirmada. Los tiempos, frecuencias y condiciones que consten en el AS-IS siguen siendo datos declarados por el cliente. '+
       'La IA no puede considerarlos hipotéticos sólo porque no haya reconocido su fuente. Contrasta cualquier contradicción con el dato original antes de concluir que está pendiente.</p>'+
       (historical?'<p>Propuesta anterior: sólo lectura, no aplicable a esta versión.</p>':
         partial?'<p>Propuesta guardada sin consolidar: no se puede aplicar todavía.</p>':'')+
