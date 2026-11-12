@@ -73,11 +73,13 @@ def activity_alternatives(request, step_id):
     unresolved = '; '.join(name for name, _ in findings)
     add('KEEP', 'Mantener la actividad sin cambios',
         dict(transformation='Se mantiene',
-             problemResolved='Conservar la función y las rutas existentes del AS-IS.'),
+             problemResolved='Conservar la función y las rutas existentes del AS-IS.',
+             automationAi=''),
         [], ['Esta alternativa no elimina los hallazgos vinculados. Mantener requiere justificar su aceptación.',
+             'Si el borrador TO-BE contiene una propuesta de automatización o IA, se retirará del diseño futuro; revísala en la tabla antes/después.',
              'No se presupone que el proceso actual sea eficiente.'],
         target='Situación actual' if not unresolved else unresolved,
-        change='No se modifica el funcionamiento ni el mapa.',
+        change='Restaurar «Se mantiene» y retirar cualquier automatización/IA proyectada; conservar la función y las rutas del AS-IS.',
         outcome='Se conserva la operación; los hallazgos relacionados siguen pendientes.' if unresolved
         else 'Se conserva el funcionamiento confirmado.',
         combination='EXCLUSIVE')
