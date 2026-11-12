@@ -5,7 +5,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
 const vm=require('node:vm');
-const src=fs.readFileSync(path.resolve(__dirname,'../pages/results.js'),'utf8');
+const src=require('./pg11-source.cjs')();
 const block=src.match(/\/\/ \[AUNEA-FE-PG11-FUTURE-FLOW-228\] START[\s\S]*?\/\/ \[AUNEA-FE-PG11-FUTURE-FLOW-228\] END/)?.[0];
 if(!block)throw Error('Missing future-flow owner contract');
 function harness(source){

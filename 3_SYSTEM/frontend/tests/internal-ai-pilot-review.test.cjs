@@ -19,7 +19,7 @@ test('AI PG11 runs only with explicit button action and confirmed official snaps
   assert.match(src,/requiresHumanReview|requires_human_review|status!=='DRAFT'/);
 });
 test('AI cannot silently overwrite user edits or publish',()=>{
-  const results=fs.readFileSync(path.join(root,'pages/results.js'),'utf8');
+  const results=require('./pg11-source.cjs')();
   assert.match(results,/if\(!wanted\.size\)/,'IA only applies explicitly selected fields');
   assert.match(results,/if\(!saveTobeFromDom\(e\)\|\|!saveState\('Guardar diseño antes de aplicar selección IA'\)\)/,
     'the current consultant draft must be saved before selecting IA changes');
@@ -447,7 +447,7 @@ test('a new TO-BE version never inherits the previous version AI suggestion',asy
 });
 
 test('Guardar borrador invokes local save after collecting current TO-BE fields',()=>{
-  const results=fs.readFileSync(path.join(root,'pages/results.js'),'utf8');
+  const results=require('./pg11-source.cjs')();
   assert.match(results,/saveTobeFromDom\(e\).*?persistTobeAiDraft\(e\)/s);
   assert.match(results,/if\(by\('saveTobe'\)\)by\('saveTobe'\)\.onclick=\(\)=>\{/);
   assert.match(results,/const live=currentEng\(\);\s*if\(live&&saveTobeFromDom\(live\)&&saveState\('Guardar borrador TO-BE'\)\)render\(\)/,

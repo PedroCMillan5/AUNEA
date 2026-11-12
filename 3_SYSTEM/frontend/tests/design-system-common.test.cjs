@@ -10,7 +10,7 @@ const path=require('node:path');
 const root=path.join(__dirname,'..');
 const load=name=>fs.readFileSync(path.join(root,name),'utf8');
 const base=load('styles.css'),local=load('ui-system.css'),
-  html=load('index.html'),pg11=load('pages/results.js');
+  html=load('index.html'),pg11=require('./pg11-source.cjs')();
 const shared=base.match(/\/\* \[AUNEA-FE-SHARED-COMPONENTS-311\] START[\s\S]*?\/\* \[AUNEA-FE-SHARED-COMPONENTS-311\] END \*\//)?.[0];
 
 test('the application loads ONE base CSS before the layout/skin CSS',()=>{

@@ -3,7 +3,7 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
-const src=fs.readFileSync(path.resolve(__dirname,'../pages/results.js'),'utf8');
+const src=require('./pg11-source.cjs')();
 const diff=src.match(/\/\/ \[AUNEA-FE-PG11-AI-REVIEW-DIFF-260\] START[\s\S]*?\/\/ \[AUNEA-FE-PG11-AI-REVIEW-DIFF-260\] END/)?.[0];
 const apply=src.match(/\/\/ \[AUNEA-FE-PG11-AI-STEP-APPLY-230\] START[\s\S]*?\/\/ \[AUNEA-FE-PG11-AI-STEP-APPLY-230\] END/)?.[0];
 if(!diff||!apply)throw Error('Missing PG11 IA selection contracts');

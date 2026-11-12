@@ -1,7 +1,7 @@
 // [AUNEA-UAT-PG11-TRANSACTION-338] START — two generic journeys and failure recovery.
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),{spawnSync}=require('node:child_process');
-const root=path.resolve(__dirname,'..'),src=fs.readFileSync(path.join(root,'pages/results.js'),'utf8');
+const root=path.resolve(__dirname,'..'),src=require('./pg11-source.cjs')();
 const block=id=>src.match(new RegExp('// \\['+id+'\\] START[\\s\\S]*?// \\['+id+'\\] END'))[0];
 for(const name of ['invoice','logistics'])test('PG11 source → backend rules → projection → confirm → reload → undo: '+name,()=>{
  const generated=spawnSync(process.env.PYTHON||'python',['-c',`import json\nfrom tests.test_tobe_optimization import source\nfrom aunea_backend.tobe_optimization import activity_alternatives\nr=source('${name}')\nprint(json.dumps(dict(steps=r.engagement.questionnaire_answers['_process_steps'],result=activity_alternatives(r,'P1'))))`],{

@@ -3,7 +3,7 @@
 // Synthetic fixtures only. No Ollama, network, real Engagement or AS-IS mutations.
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
-const src=fs.readFileSync(path.resolve(__dirname,'../pages/results.js'),'utf8');
+const src=require('./pg11-source.cjs')();
 const slice=(a,b)=>{
  const i=src.indexOf(a),j=src.indexOf(b,i);
  if(i<0||j<i)throw Error('Required PG11 block missing: '+a);

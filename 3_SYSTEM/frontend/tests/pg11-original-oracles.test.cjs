@@ -5,7 +5,7 @@
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const root=path.resolve(__dirname,'..'),read=p=>fs.readFileSync(path.join(root,p),'utf8');
-const src=read('pages/results.js'),schema=JSON.parse(read('data/diagnostic-master.min.json'));
+const src=require('./pg11-source.cjs')(),schema=JSON.parse(read('data/diagnostic-master.min.json'));
 const block=id=>src.match(new RegExp('// \\['+id+'\\] START[\\s\\S]*?// \\['+id+'\\] END'))[0];
 for(const name of ['invoices','unified-requests','email-orders'])test('PG11 original oracle: '+name,()=>{
  const fixture=JSON.parse(read('uat/cases/'+name+'.json'));

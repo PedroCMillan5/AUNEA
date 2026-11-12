@@ -2,7 +2,7 @@
 // SOURCE: CANONICAL PG11, DEC-050/052/055. No Ollama, synthetic data only.
 const test=require('node:test'),assert=require('node:assert/strict'),
   fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
-const source=fs.readFileSync(path.resolve(__dirname,'../pages/results.js'),'utf8');
+const source=require('./pg11-source.cjs')();
 function pick(name){
  const start=source.indexOf('function '+name+'('),
    end=source.indexOf('\n}\n',start);

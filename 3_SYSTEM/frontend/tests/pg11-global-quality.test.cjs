@@ -38,7 +38,7 @@ test('no quota or merge of different review statuses',()=>{
  }
 });
  test('canonical PG11 groups five saved cards into four lines preserving sources',()=>{
- const src=fs.readFileSync(path.join(__dirname,'../pages/results.js'),'utf8');
+ const src=require('./pg11-source.cjs')();
  const view=src.match(/\/\/ \[AUNEA-FE-PG11-GLOBAL-OVERVIEW-284\] START[\s\S]*?\/\/ \[AUNEA-FE-PG11-GLOBAL-OVERVIEW-284\] END/)?.[0];
  assert.ok(view,'missing canonical PG11 view');
  const items=[

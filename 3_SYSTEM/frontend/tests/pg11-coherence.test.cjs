@@ -5,7 +5,7 @@ const assert=require('node:assert/strict');
 const vm=require('node:vm');
 const fs=require('node:fs');
 const path=require('node:path');
-const src=fs.readFileSync(path.resolve(__dirname,'../pages/results.js'),'utf8');
+const src=require('./pg11-source.cjs')();
 const block=src.match(/\/\/ \[AUNEA-FE-PG11-COHERENCE-239\] START[\s\S]*?\/\/ \[AUNEA-FE-PG11-COHERENCE-239\] END/)?.[0];
 if(!block)throw Error('Missing deterministic coherence block');
 function harness(item){

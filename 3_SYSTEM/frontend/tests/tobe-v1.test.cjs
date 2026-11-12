@@ -3,7 +3,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
 const root=path.resolve(__dirname,'..');
-const src=fs.readFileSync(path.join(root,'pages/results.js'),'utf8');
+const src=require('./pg11-source.cjs')();
 const comparison=fs.readFileSync(path.join(root,'pages/comparison.js'),'utf8');
 
 test('C04 PG11 TO-BE is a versioned DRAFT based on the confirmed snapshot',()=>{
