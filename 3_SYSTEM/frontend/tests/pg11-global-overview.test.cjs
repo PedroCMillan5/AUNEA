@@ -957,9 +957,14 @@ test('confirmed AS-IS friction and risk links become read-only context only in t
 });
 
 test('linking global analysis never changes source activities or TO-BE fields',()=>{
-  assert.match(src,/id="tobeGlobalLinkedStep"/);
-  assert.match(src,/tobeGlobalLinkedStepHtml\(e,p,item\)/);
-  assert.match(ai,/linked.innerHTML=tobeGlobalLinkedStepHtml/);
+  assert.match(src,/id="tobeOpportunityWorkbench"/);
+  assert.match(src,/tobeAlternativesHtml\(e,p,item\)/);
+  assert.match(ai,/opportunities.outerHTML=html/);
+  assert.match(ai,/const opportunities=document.getElementById\('tobeOpportunityWorkbench'\)/);
+  const refresh=ai.slice(ai.indexOf('function internalAiGlobalRefresh(e){'),
+    ai.indexOf('function tobeGlobalMerge',ai.indexOf('function internalAiGlobalRefresh(e){')));
+  assert.doesNotMatch(refresh,/saveTobeFromDom|saveState\(|\.items\[|\.flow\.routes\[/,
+    'refreshing global recommendations must not overwrite consultant-owned TO-BE fields or routes');
   assert.doesNotMatch(block,/saveState\(|markDirty\(|data-tobe-ai-use-field/);
 });
 
