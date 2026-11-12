@@ -30,6 +30,20 @@ for(const kind of ['invoice','logistics']){
   assert.ok(w.document.querySelector('[data-tobe-load-alternatives="P1"]'),w.document.getElementById('content').textContent.slice(-5000));
   w.document.querySelector('[data-tobe-load-alternatives="P1"]').click();
   await until(()=>w.document.querySelectorAll('[data-tobe-alternative]').length>0);
+  // Rule options are organised by linked AS-IS finding, not by engine or industry.
+  const sources=run('tobeOpportunitySources(currentEng(),latestTobe(currentEng()),tobeSelectedItem(currentEng(),latestTobe(currentEng())))');
+  assert.ok(sources.length>=1,'at least one confirmed finding is available to the consultant');
+  assert.ok(sources.every(x=>x.id&&x.label&&(x.kind==='Fricción'||x.kind==='Riesgo')),
+    'finding groups are sourced from the sealed snapshot');
+  assert.equal(w.document.querySelectorAll('#tobeStepAdvice .tobe-alternative').length,
+    w.document.querySelectorAll('.tobe-alternative').length,
+    'all rule alternatives are presented once in 03.2');
+  assert.equal(w.document.querySelectorAll('#tobeStepDesign .tobe-alternative').length,0,
+    'the TO-BE editor cannot contain duplicated rule-choice cards');
+  assert.ok(w.document.querySelector('#tobeAiTechnicalDetails'),
+    'global and individual AI sources remain available on demand');
+  assert.ok(w.document.querySelector('#tobeStepDesign .tobe-decision-context-compact'),
+    'the single editor retains an audit trail summary');
   const candidate=()=>[...w.document.querySelectorAll('.tobe-alternative')].find(x=>x.textContent.includes('Separar el control tras esta actividad'));
   assert.ok(candidate(),'structural candidate exists');candidate().querySelector('[data-tobe-alternative]').click();
   await until(()=>w.document.getElementById('tobeAlternativeDialog'));
