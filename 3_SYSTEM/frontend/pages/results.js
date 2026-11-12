@@ -2706,8 +2706,9 @@ function tobeDecisionSourceSummaryHtml(e,p,item){
   return '<section class="tobe-decision-context" aria-label="Fuentes y decisiones de esta actividad">'+
     '<h4>Una única configuración TO-BE, con todas las fuentes disponibles</h4>'+
     '<p><b>Análisis global:</b> '+globalCount+' '+(globalCount===1?'oportunidad relacionada':'oportunidades relacionadas')+
-      ' (consulta en 03.2). <b>IA individual:</b> '+(hasAi?'propuesta vinculada':'sin propuesta consolidada')+
-      '. <b>Reglas:</b> alternativas deterministas disponibles debajo.</p>'+
+      ' (consulta en 03.2).</p>'+
+    '<p><b>IA individual:</b> '+(hasAi?'propuesta vinculada':'sin propuesta consolidada')+'.</p>'+
+    '<p><b>Reglas:</b> alternativas deterministas disponibles debajo.</p>'+
     '<p><b>Decisiones registradas para esta actividad:</b> '+applied+' campos aplicados, '+
       maintained+' conservados. Las modificaciones manuales se guardan en el TO-BE; '+
       'los cambios confirmados mediante vista previa quedan en el historial reversible.</p>'+
