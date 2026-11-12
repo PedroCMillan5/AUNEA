@@ -42,6 +42,24 @@ separen.
 | `uat/` | Sistema temporal de UAT, aislado del runtime operativo |
 | `boot.js` | Arranque |
 
+### Consolidación de Trabajo Interno (rama REVIEW, 12/11/2026)
+
+La presentación, los handlers y la vista global de IA tienen owners separados, sin convertir el frontend en fuente de reglas:
+
+| Owner | Qué hace | Qué no hace |
+|---|---|---|
+| `styles.css` | Tokens, controles y componentes visuales opt-in (`aunea-ui-*`) | No define reglas de negocio |
+| `ui-system.css` | Geometría específica por página, responsive heredado | No redefine controles globales |
+| `ui/renderer.js` | Primitivas de marcado, incluidos disclosures de Trabajo Interno | No decide ni persiste |
+| `pages/results.js` | Vistas de diagnóstico, alternativas y entregables | No registra listeners de Trabajo Interno |
+| `pages/tobe.js` | Editor/versiones y composición de actividades TO-BE | No contiene la proyección global IA |
+| `pages/tobe-global.js` | Vista global IA read-only asociada al snapshot | No calcula ni aprueba outputs oficiales |
+| `pages/internal-work-events.js` | Registro de handlers existentes de Trabajo Interno | No redefine UI ni reglas |
+
+El orden de carga sigue en `module-manifest.json`. Los dos módulos extraídos se cargan justo antes de `boot.js`, después de sus proveedores; `tests/pg11-source.cjs` recompone únicamente para tests el antiguo orden de fuente. Se preservan todos los Block_ID previos, y se registró el nuevo propietario de eventos en `CODE_BLOCK_INDEX.md`.
+
+**QA requerido:** `npm test` y el acceptance gate backend/frontend/browser; no considerar cerrados ni promover cambios basados sólo en comprobaciones estáticas. Las 9 páginas de `FROZEN_PAGES.json` no se modifican.
+
 Los nombres de fichero no llevan sufijo de versión. Por DEC-043 la versión vive en el Release
 Manifest, no en los identificadores, y un `-v1` en un nombre de fichero es el primer paso de la
 acumulación v1/v2/v3 que las reglas de release existen para evitar. Los Block_ID **no cambian al
