@@ -11,7 +11,8 @@ function pick(name){
 }
 test('03.2 presents both IA analyses but no longer asks for a whole-proposal vote',()=>{
  const inspector=pick('tobeInspectorHtml');
- assert.match(inspector,/tobeGlobalLinkedStepHtml\(e,p,item\)/);
+ assert.match(inspector,/tobeAlternativesHtml\(e,p,item\)/);
+ assert.match(pick('tobeAlternativesHtml'),/tobeGlobalLinksForStep\(e,p,item\)/);
  assert.match(inspector,/tobeAiAdviceHtml\(e,item,false\)/);
  assert.match(inspector,/Estas fuentes no constituyen decisiones/);
  assert.doesNotMatch(inspector,/tobeHumanReviewHtml\(e,item,false\)/);
