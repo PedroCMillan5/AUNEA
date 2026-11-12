@@ -4,6 +4,7 @@ const fs=require('node:fs');
 const path=require('node:path');
 const root=path.resolve(__dirname,'..');
 const results=fs.readFileSync(path.join(root,'pages/results.js'),'utf8');
+const resultsContext=fs.readFileSync(path.join(root,'domain/result-context.js'),'utf8');
 const comparison=fs.readFileSync(path.join(root,'pages/comparison.js'),'utf8');
 const workbench=fs.readFileSync(path.join(root,'domain/analysis-workbench.js'),'utf8');
 const state=fs.readFileSync(path.join(root,'core/state.js'),'utf8');
@@ -24,10 +25,10 @@ test('Trabajo interno rail follows the governed lifecycle using only existing pa
 });
 
 test('Diagnóstico exposes current/obsolete state without persisting a STALE enum',()=>{
-  assert.match(results,/function diagnosticOutputFreshness\(e\)/);
-  assert.match(results,/status:'OBSOLETE'/);
-  assert.match(results,/e\.lastEngineSnapshotVersion!==snap\.version/);
-  assert.doesNotMatch(results,/\.status\s*=\s*['"]STALE['"]/);
+  assert.match(resultsContext,/function diagnosticOutputFreshness\(e\)/);
+  assert.match(resultsContext,/status:'OBSOLETE'/);
+  assert.match(resultsContext,/e\.lastEngineSnapshotVersion!==snap\.version/);
+  assert.doesNotMatch(resultsContext,/\.status\s*=\s*['"]STALE['"]/);
 });
 
 test('all downstream diagnostic consumers use the current snapshot output',()=>{

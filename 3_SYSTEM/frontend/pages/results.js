@@ -12,18 +12,6 @@ function hasConfirmedEngagementSnapshot(e){
   return Array.isArray(e.confirmedSnapshots) && e.confirmedSnapshots.length > 0;
 }
 
-function currentDiagnosticOutput(e){
-  const snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;
-  return snap&&e?.lastEngineSnapshotVersion===snap.version&&(typeof engineGateOutputFresh!=='function'||engineGateOutputFresh(e))?e.diagnosticOutput:null;
-}
-function diagnosticOutputFreshness(e){
-  const snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;
-  if(!snap)return {status:'BLOCKED',label:'Sin snapshot confirmado',snapshotVersion:null};
-  if(!e?.diagnosticOutput)return {status:'PENDING',label:'Diagnóstico pendiente',snapshotVersion:snap.version};
-  if(e.lastEngineSnapshotVersion!==snap.version)return {status:'OBSOLETE',label:'Resultado obsoleto',snapshotVersion:snap.version,outputSnapshotVersion:e.lastEngineSnapshotVersion??null};
-  if(typeof engineGateOutputFresh==='function'&&!engineGateOutputFresh(e))return {status:'OBSOLETE',label:'Resultado obsoleto: decisiones internas modificadas',snapshotVersion:snap.version,outputSnapshotVersion:e.lastEngineSnapshotVersion};
-  return {status:'CURRENT',label:'Resultado vigente',snapshotVersion:snap.version,outputSnapshotVersion:e.lastEngineSnapshotVersion};
-}
 function diagnosisStepName(record,id){
   const step=(record?.processSteps||[]).find(s=>String(s.id)===String(id));
   return step?.step_name||step?.name||id||'Paso';
