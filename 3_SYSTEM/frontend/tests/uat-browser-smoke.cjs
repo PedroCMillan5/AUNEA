@@ -942,7 +942,7 @@ async function main(){
         buttonCount:buttons.length,
         labels:buttons.map(x=>x.textContent.trim())};
     });
-  assert.equal(sideBySideActions.display,'flex','Use responsive common action layout');
+  assert.equal(sideBySideActions.display,'grid','Use three-column shared field-decision grid');
   assert.equal(sideBySideActions.buttonCount,3);
   assert.deepEqual(sideBySideActions.labels,['Aplicar IA','Mantener','Editar'],
     'one field offers exactly Apply, Keep and Edit without whole-proposal approval');
