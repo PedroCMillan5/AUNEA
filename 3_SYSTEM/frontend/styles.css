@@ -296,4 +296,9 @@ body.session-display .flow-step p{font-size:var(--font-small)}
 .aunea-ui-block{display:block}
 .aunea-ui-recap-input{width:100%;min-height:150px;border:1px solid #d6d1c8;border-radius:var(--radius-sm);padding:12px}
 .aunea-ui-metric-status{font-size:19px}
+/* Shared disclosure surface for internal work, opt-in; keeps existing PG10 geometry. */
+.aunea-ui-work-disclosure{margin-top:16px;padding:13px 16px;border:1px solid var(--line,#d8dedc);border-radius:9px;background:var(--card,#fff)}
+.aunea-ui-work-disclosure>summary{font-size:13px;font-weight:700;line-height:1.55;cursor:pointer}
+.aunea-ui-work-disclosure[open]>summary{margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--line,#d8dedc)}
+@media(max-width:680px){.aunea-ui-work-disclosure{padding:12px}}
 /* [AUNEA-FE-SHARED-COMPONENTS-311] END */
