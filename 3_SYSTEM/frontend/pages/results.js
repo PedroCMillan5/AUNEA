@@ -1135,24 +1135,72 @@ function tobeOriginalStepFacts(e,item){
     '</div>';
 }
 function tobeSnapshotIssueCards(e,item){
-  const snap=tobeProposalSnapshot(e,latestTobe(e)),id=String(item.sourceStepId),fr=(snap?.frictions||[]).filter(x=>x.status!=='SUPERSEDED'&&
-    (Array.isArray(x.affected_steps)?x.affected_steps:[]).map(String).includes(id));
-  const risks=(snap?.risks||[]).filter(x=>x.status!=='SUPERSEDED'&&
-    (Array.isArray(x.step_ids)?x.step_ids:[]).map(String).includes(id));
-  const frHtml=fr.map(x=>
-    '<li class="tobe-origin-issue"><div class="tobe-origin-issue-head">'+
-      '<b>Fricción</b><span>'+esc(x.client_label||labelFrom('OS_FRICTION_TYPE',x.friction_type)||'Sin descripción')+
-      (x.id?' ('+esc(x.id)+')':'')+'</span></div>'+
-      (x.observable_signal?'<p>'+esc(x.observable_signal)+'</p>':'')+'</li>').join('');
+  const snap=tobeProposalSnapshot(e,latestTobe(e)),id=String(item.sourceStepId),
+    fr=(snap?.frictions||[]).filter(x=>x.status!=='SUPERSEDED'&&
+      (Array.isArray(x.affected_steps)?x.affected_steps:[]).map(String).includes(id)),
+    risks=(snap?.risks||[]).filter(x=>x.status!=='SUPERSEDED'&&
+      (Array.isArray(x.step_ids)?x.step_ids:[]).map(String).includes(id));
+  const number=v=>new Intl.NumberFormat('es-ES',{maximumFractionDigits:2}).format(Number(v));
+  const hasNumber=v=>v!==null&&v!==undefined&&String(v).trim()!==''&&Number.isFinite(Number(v))&&Number(v)>=0;
+  const ref=x=>x===null||x===undefined||String(x).trim()===''?'':'<small class="tobe-origin-reference">Referencia ('+esc(String(x))+')</small>';
+  const fact=(label,value)=>'<div><dt>'+esc(label)+'</dt><dd>'+esc(value)+'</dd></div>';
+  const frequency=x=>{
+    const q=x.frequency;
+    if(!q||!hasNumber(q.value))return '';
+    if(q.mode==='percent')return number(q.value)+' % de los casos';
+    if(q.mode==='count'){
+      const periods={day:'día',week:'semana',month:'mes',year:'año'};
+      return number(q.value)+' casos'+(periods[q.period]?' por '+periods[q.period]:' (periodo no indicado)');
+    }
+    return '';
+  };
+  const timeDetails=x=>{
+    const details=[],freq=frequency(x),
+      active=x.active_time_loss,
+      wait=x.wait_time_loss,
+      attribution=x.time_attribution||{};
+    if(freq)details.push(fact('Frecuencia declarada',freq));
+    if(active&&hasNumber(active.value)&&Number(active.value)>0&&
+       !['UNKNOWN','ZERO'].includes(String(active.mode||'').toUpperCase())){
+      details.push(fact('Trabajo activo asociado',number(active.value)+' min por caso afectado'));
+      const modes={ADDITIONAL:'Adicional al tiempo del paso',INCLUDED:'Ya incluido en el tiempo del paso',
+        BREAKDOWN:'Desglose del retrabajo del paso'};
+      const mode=String(attribution.mode||'');
+      const own=String(attribution.step_id||'')===id;
+      details.push(fact('Atribución temporal',
+        modes[mode]?(own?modes[mode]+'; evita contar dos veces.':
+          'Se atribuye a otra actividad; no sumar aquí.')+
+          (mode==='ADDITIONAL'&&own?' Su incorporación al total requiere validar frecuencia y evidencia.':''):
+          'Pendiente de clasificar; no sumar al total.'));
+    }
+    if(wait&&hasNumber(wait.value)&&Number(wait.value)>0&&
+       !['UNKNOWN','ZERO'].includes(String(wait.mode||'').toUpperCase())){
+      details.push(fact('Espera / retraso asociado',number(wait.value)+' min por caso afectado; no es trabajo activo'));
+    }
+    return details.length?'<dl class="tobe-origin-issue-data">'+details.join('')+'</dl>':'';
+  };
+  const frHtml=fr.map(x=>{
+    const code=x.id||'',
+      alias=String(code).match(/(F\\d+)$/i)?.[1],
+      signal=String(x.observable_signal||'').trim(),
+      readableSignal=alias?signal.replace(new RegExp('^'+alias+'\\s*:\\s*','i'),''):signal;
+    return '<li class="tobe-origin-issue">'+
+      '<div class="tobe-origin-issue-head"><b>Fricción</b><span>'+
+        esc(x.client_label||labelFrom('OS_FRICTION_TYPE',x.friction_type)||'Sin descripción')+'</span></div>'+
+      ref(code)+timeDetails(x)+
+      (readableSignal?'<p class="tobe-origin-issue-signal"><b>Señal registrada:</b> '+esc(readableSignal)+'</p>':'')+
+      '</li>';
+  }).join('');
   const riskHtml=risks.map(x=>
     '<li class="tobe-origin-issue"><div class="tobe-origin-issue-head">'+
-      '<b>Riesgo</b><span>'+esc(x.description||x.category||'Sin descripción')+
-      (x.risk_id||x.id?' ('+esc(x.risk_id||x.id)+')':'')+'</span></div></li>').join('');
+      '<b>Riesgo</b><span>'+esc(x.description||x.category||'Sin descripción')+'</span></div>'+
+      ref(x.risk_id||x.id)+'</li>').join('');
   return '<div class="tobe-origin-issues"><h4>Fricciones y riesgos vinculados</h4>'+
     (frHtml||riskHtml?'<ul class="tobe-source-list">'+frHtml+riskHtml+'</ul>':
       '<p class="tobe-muted">No hay fricciones ni riesgos vinculados directamente a esta actividad en el AS-IS confirmado. Consulta el diagnóstico global antes de justificar una transformación.</p>')+
     '</div>';
 }
+
 // [AUNEA-FE-PG11-ORIGINAL-FACTS-243] END
 // [AUNEA-FE-PG11-AI-REVIEW-DIFF-260] START — display-only comparison.
 const TOBE_AI_REVIEW_FIELDS=[
@@ -2589,6 +2637,11 @@ function tobeInspectorHtml(e,p){
       (typeof internalAiProgressHtml==='function'?internalAiProgressHtml(e,'steps'):'')+
       '<div id="tobeGlobalLinkedStep">'+tobeGlobalLinkedStepHtml(e,p,item)+'</div>'+
       '<div id="tobeAiRecommendation">'+tobeAiAdviceHtml(e,item,false)+'</div>'+
+      (!item.isAddition&&Array.isArray(sourceStep?.outputs)&&
+        sourceStep.outputs.some(value=>String(value)==='RECORD')?
+        '<p class="tobe-ai-source-context"><b>Dato confirmado del AS-IS:</b> el registro estructurado ya figura entre las salidas de esta actividad. '+
+        'La propuesta debe distinguir entre actualizar o automatizar el registro existente y crear otro diferente. '+
+        'El tipo de salida no acredita cómo se genera actualmente.</p>':'')+
       (!item.isAddition&&hasCurrentAi?
         '<details class="tobe-human-review-shell"'+(choice?.status?'':' open')+'>'+
           '<summary>Decisión del consultor · '+esc(TOBE_HUMAN_LABELS[choice?.status]||'Pendiente')+'</summary>'+
