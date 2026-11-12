@@ -21,7 +21,13 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,'.'+new 
   await page.locator('[data-tobe-cancel-alternative]').click();
   assert.equal(await page.evaluate(()=>tobeFutureSteps(currentEng(),latestTobe(currentEng())).length),4);
   await control.getByRole('button',{name:'Revisar y previsualizar'}).click();
-  await page.locator('[data-tobe-confirm-alternative]').click();
+  const approve=page.locator('#tobeAlternativeDialog [data-tobe-confirm-alternative]');
+  assert.equal(await approve.isDisabled(),true,
+    'the structural preview must require acknowledgement of pending conditions');
+  const acceptance=page.locator('#tobeAlternativeDialog [data-tobe-preview-ack]');
+  await acceptance.check();
+  assert.equal(await approve.isEnabled(),true);
+  await approve.click();
   await page.waitForFunction(()=>tobeFutureSteps(currentEng(),latestTobe(currentEng())).length===5);
   assert.equal(await page.evaluate(()=>tobeFlowIntegrity(currentEng(),latestTobe(currentEng()))),null);
   await page.reload();await page.waitForFunction(()=>typeof currentEng==='function'&&currentEng()?.tobeProposals?.length);
