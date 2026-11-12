@@ -252,9 +252,17 @@ function internalAiGlobalRefresh(e){
   const opportunities=document.getElementById('tobeOpportunityWorkbench');
   if(opportunities&&typeof tobeAlternativesHtml==='function'&&
      typeof tobeSelectedItem==='function'){
-    const live=currentEng(),draft=latestTobe(live);
-    const html=tobeAlternativesHtml(live,draft,tobeSelectedItem(live,draft));
+    const live=currentEng(),draft=latestTobe(live),
+      selected=tobeSelectedItem(live,draft),
+      html=tobeAlternativesHtml(live,draft,selected);
     if(html)opportunities.outerHTML=html;
+    const sourceSummary=document.querySelector('#tobeStepDesign .tobe-decision-context-compact');
+    if(sourceSummary&&typeof tobeDecisionSourceSummaryHtml==='function'){
+      const wasOpen=sourceSummary.open;
+      sourceSummary.outerHTML=tobeDecisionSourceSummaryHtml(live,draft,selected);
+      const updated=document.querySelector('#tobeStepDesign .tobe-decision-context-compact');
+      if(updated)updated.open=wasOpen;
+    }
   }
   internalAiUpdateProgress(e);
   internalAiSyncButtons(e);
