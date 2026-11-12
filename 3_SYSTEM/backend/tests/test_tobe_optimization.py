@@ -67,6 +67,8 @@ def test_invoice_visibility_and_traceability_are_distinct_operational_options():
     assert not any(x['id'].startswith('HANDOFF') for x in c)
     keep=by_id['KEEP']
     assert keep['combination']=='EXCLUSIVE'
+    assert keep['fields']['automationAi']=='', 'preserving AS-IS must retire a superseded future automation proposal'
+    assert 'automatización' in ' '.join(keep['conditions']).lower()
     assert 'siguen pendientes' in keep['expectedOutcome']
     visibility=by_id['STATUS-F2']
     assert visibility['sourceRefs']==['P1','F2']
