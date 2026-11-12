@@ -117,3 +117,19 @@ test('internal work result layouts reuse shared opt-in structure instead of inli
     assert.ok(results.includes(className),'Results page must use '+className);
   assert.doesNotMatch(results,/style="/,'Results must not reintroduce inline styles');
 });
+
+test('diagnostic work disclosures share the same structural owner',()=>{
+  const results=load('pages/results.js');
+  const common=['pg10-stage-nav','pg10-critical-points','pg10-decision-trace'];
+  assert.match(shared,/\.aunea-ui-work-disclosure\{margin-top:16px;padding:13px 16px;/);
+  assert.match(shared,/\.aunea-ui-work-disclosure>summary\{font-size:13px;/);
+  assert.match(shared,/\.aunea-ui-work-disclosure\[open\]>summary\{/);
+  for(const kind of common){
+    assert.ok(results.includes('<details class="'+kind+' aunea-ui-work-disclosure"'),
+      'The '+kind+' disclosure must reuse its shared work structure');
+    assert.doesNotMatch(local,new RegExp('\\\\.'+kind+'(?=\\\\s*[,>{:]|\\\\[open\\\\])'),
+      'Visual dimensions for '+kind+' must not live in page CSS');
+  }
+  assert.match(local,/\.pg10-critical-points \.asis-opportunity-list\{margin-top:14px\}/,
+    'Section-specific content positioning remains owned by PG10');
+});
