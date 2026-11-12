@@ -232,7 +232,7 @@ test('PG11 exposes source and individual IA before configuring the future step',
  assert.ok(start>=0&&end>start);
  const page=src.slice(start,end);
  assert.match(page,/03\.1 · Entender el AS-IS/);
- assert.match(page,/03\.2 · Revisar propuestas IA/);
+ assert.match(page,/03\.2 · Revisar oportunidades de mejora/);
  assert.match(page,/data-tobe-generate-selected/);
  assert.match(page,/tobeAiAdviceHtml\(e,item,false\)/);
  assert.doesNotMatch(page,/tobeHumanReviewHtml\(e,item,false\)/);
