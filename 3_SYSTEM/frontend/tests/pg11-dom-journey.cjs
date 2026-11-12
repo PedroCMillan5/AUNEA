@@ -43,6 +43,16 @@ for(const kind of ['invoice','logistics']){
   assert.equal(w.document.querySelectorAll('#tobeAlternativeDialog .tobe-graph-node').length,5);
   w.document.querySelector('[data-tobe-cancel-alternative]').click();
   assert.equal(run('tobeFutureSteps(currentEng(),latestTobe(currentEng())).length'),4);
+  candidate().querySelector('[data-tobe-alternative-discard]').click();
+  assert.equal(run('tobeFutureSteps(currentEng(),latestTobe(currentEng())).length'),4,
+    'discarding a suggestion must not change the TO-BE');
+  assert.ok(candidate().querySelector('[data-tobe-alternative-restore]'),
+    'discarded suggestion must expose a recovery action');
+  candidate().querySelector('[data-tobe-alternative-restore]').click();
+  assert.ok(candidate().querySelector('[data-tobe-alternative]'),
+    'restored suggestion is available for preview');
+  assert.ok(run('latestTobe(currentEng()).aiDraft.applyHistory.some(x=>x.action==="DISCARD"&&x.undoneAt)'),
+    'restoring a discard preserves a reversible audit entry');
   candidate().querySelector('[data-tobe-alternative]').click();
   const edit=w.document.querySelector('[data-tobe-preview-key="controlsRisk"]');
   edit.value='Control revisado por el consultor con criterio explícito de integridad.';
