@@ -7,7 +7,7 @@
     "No move backend calculations or data owners"
   ],
   "metrics": {
-    "modules": 49,
+    "modules": 50,
     "cssClasses": 1086,
     "classesCrossFile": 107,
     "repeatedSelectorContextGroups": 139,
@@ -88,6 +88,7 @@
     "Resultados / PG10": [
       "pages/results.js",
       "pages/results-analysis.js",
+      "pages/results-official.js",
       "domain/analysis-workbench.js",
       "domain/internal-ai-global-quality.js",
       "domain/result-context.js"
@@ -220,6 +221,7 @@
             "domain/analysis-workbench.js",
             "pages/results.js",
             "pages/results-analysis.js",
+            "pages/results-official.js",
             "domain/tobe-transactions.js",
             "pages/tobe.js",
             "pages/tobe-review.js",
@@ -269,6 +271,7 @@
             "domain/analysis-workbench.js",
             "pages/results.js",
             "pages/results-analysis.js",
+            "pages/results-official.js",
             "domain/tobe-transactions.js",
             "pages/tobe.js",
             "pages/tobe-review.js",
@@ -308,6 +311,7 @@
             "pages/diagnostic-stages.js",
             "ui/renderer.js",
             "pages/results.js",
+            "pages/results-official.js",
             "pages/session-display.js",
             "domain/process.js",
             "ui/shell.js",
@@ -327,6 +331,7 @@
             "domain/economics.js",
             "pages/results.js",
             "pages/results-analysis.js",
+            "pages/results-official.js",
             "pages/crm-companies.js",
             "pages/session-display.js",
             "domain/process.js"
@@ -360,6 +365,7 @@
           ],
           "consumers": [
             "pages/results.js",
+            "pages/results-official.js",
             "domain/completion.js",
             "ui/shell.js",
             "uat/visible.js"
@@ -370,7 +376,9 @@
           "owners": [
             "styles.css"
           ],
-          "consumers": []
+          "consumers": [
+            "pages/results-official.js"
+          ]
         }
       ],
       "note": "Componente documental, no implica implementación única de HTML o comportamiento"
@@ -397,6 +405,7 @@
             "domain/analysis-workbench.js",
             "pages/results.js",
             "pages/results-analysis.js",
+            "pages/results-official.js",
             "domain/tobe-transactions.js",
             "pages/tobe.js",
             "pages/tobe-review.js",
@@ -472,6 +481,7 @@
             "domain/analysis-workbench.js",
             "pages/results.js",
             "pages/results-analysis.js",
+            "pages/results-official.js",
             "domain/tobe-transactions.js",
             "pages/tobe.js",
             "pages/tobe-review.js",
@@ -705,6 +715,7 @@
             "domain/economics.js",
             "domain/analysis-workbench.js",
             "pages/results.js",
+            "pages/results-official.js",
             "domain/tobe-transactions.js",
             "pages/tobe.js",
             "pages/tobe-review.js",
@@ -738,6 +749,7 @@
             "domain/economics.js",
             "domain/analysis-workbench.js",
             "pages/results.js",
+            "pages/results-official.js",
             "domain/tobe-transactions.js",
             "pages/tobe.js",
             "pages/crm-companies.js",
@@ -766,6 +778,7 @@
             "domain/economics.js",
             "domain/analysis-workbench.js",
             "pages/results.js",
+            "pages/results-official.js",
             "domain/tobe-transactions.js",
             "pages/tobe.js",
             "pages/tobe-review.js",
@@ -916,6 +929,7 @@
             "domain/economics.js",
             "domain/process-lifecycle.js",
             "domain/analysis-workbench.js",
+            "pages/results-official.js",
             "domain/tobe-transactions.js",
             "pages/tobe.js",
             "pages/tobe-review.js",
@@ -943,6 +957,7 @@
             "domain/opportunity.js",
             "domain/risk.js",
             "domain/economics.js",
+            "pages/results-official.js",
             "domain/tobe-transactions.js",
             "pages/tobe.js",
             "pages/tobe-flow.js",
@@ -1757,7 +1772,7 @@
       "path": "pages/results.js",
       "layer": "pages",
       "blockId": "AUNEA-FE-RESULTS-VIEW-010",
-      "lines": 594,
+      "lines": 590,
       "family": [
         "Resultados / PG10"
       ],
@@ -1889,6 +1904,45 @@
         "pg10-step-hour-split",
         "pg10-step-source-row",
         "result-item"
+      ]
+    },
+    {
+      "path": "pages/results-official.js",
+      "layer": "pages",
+      "blockId": "AUNEA-FE-RESULTS-OFFICIAL-PAGES-410",
+      "lines": 94,
+      "family": [
+        "Resultados / PG10"
+      ],
+      "view": true,
+      "inlineStyleAttributes": 0,
+      "referencedCssClasses": [
+        "aunea-ui-metric-status",
+        "aunea-ui-mt-12",
+        "aunea-ui-mt-14",
+        "aunea-ui-recap-input",
+        "btn",
+        "btn-outline",
+        "btn-primary",
+        "card",
+        "card-pad",
+        "field",
+        "field-help",
+        "form-grid",
+        "g3",
+        "g4",
+        "grid",
+        "info",
+        "internal-tag",
+        "metric",
+        "notice",
+        "optimal",
+        "result-item",
+        "result-list",
+        "scenario-card",
+        "scenario-grid",
+        "scenario-kpi",
+        "scenario-kpis"
       ]
     },
     {
@@ -4111,9 +4165,11 @@
         "styles.css"
       ],
       "ruleOccurrences": 1,
-      "runtimeConsumers": [],
+      "runtimeConsumers": [
+        "pages/results-official.js"
+      ],
       "frozenRisk": false,
-      "classification": "REVIEW_DYNAMIC_OR_HTML"
+      "classification": "REFERENCED"
     },
     {
       "className": "aunea-ui-mt-12",
@@ -4123,6 +4179,7 @@
       "ruleOccurrences": 1,
       "runtimeConsumers": [
         "pages/results.js",
+        "pages/results-official.js",
         "pages/session-display.js",
         "uat/visible.js"
       ],
@@ -4135,9 +4192,11 @@
         "styles.css"
       ],
       "ruleOccurrences": 1,
-      "runtimeConsumers": [],
+      "runtimeConsumers": [
+        "pages/results-official.js"
+      ],
       "frozenRisk": false,
-      "classification": "REVIEW_DYNAMIC_OR_HTML"
+      "classification": "REFERENCED"
     },
     {
       "className": "aunea-ui-mt-16",
@@ -4169,9 +4228,11 @@
         "styles.css"
       ],
       "ruleOccurrences": 1,
-      "runtimeConsumers": [],
+      "runtimeConsumers": [
+        "pages/results-official.js"
+      ],
       "frozenRisk": false,
-      "classification": "REVIEW_DYNAMIC_OR_HTML"
+      "classification": "REFERENCED"
     },
     {
       "className": "aunea-ui-section-caption",
@@ -4386,6 +4447,7 @@
         "domain/economics.js",
         "domain/analysis-workbench.js",
         "pages/results.js",
+        "pages/results-official.js",
         "domain/tobe-transactions.js",
         "pages/tobe.js",
         "pages/tobe-review.js",
@@ -4448,6 +4510,7 @@
         "domain/economics.js",
         "domain/analysis-workbench.js",
         "pages/results.js",
+        "pages/results-official.js",
         "domain/tobe-transactions.js",
         "pages/tobe.js",
         "pages/tobe-review.js",
@@ -4476,6 +4539,7 @@
         "domain/economics.js",
         "domain/analysis-workbench.js",
         "pages/results.js",
+        "pages/results-official.js",
         "domain/tobe-transactions.js",
         "pages/tobe.js",
         "pages/crm-companies.js",
@@ -4625,6 +4689,7 @@
         "pages/diagnostic-stages.js",
         "ui/renderer.js",
         "pages/results.js",
+        "pages/results-official.js",
         "pages/session-display.js",
         "domain/process.js",
         "ui/shell.js",
@@ -4645,6 +4710,7 @@
       "runtimeConsumers": [
         "core/state.js",
         "services/schema.js",
+        "pages/results-official.js",
         "pages/session-display.js",
         "domain/internal-ai-pilot.js"
       ],
@@ -6736,6 +6802,7 @@
         "domain/economics.js",
         "domain/process-lifecycle.js",
         "domain/analysis-workbench.js",
+        "pages/results-official.js",
         "domain/tobe-transactions.js",
         "pages/tobe.js",
         "pages/tobe-review.js",
@@ -6771,6 +6838,7 @@
         "domain/analysis-workbench.js",
         "pages/results.js",
         "pages/results-analysis.js",
+        "pages/results-official.js",
         "domain/tobe-transactions.js",
         "pages/tobe.js",
         "pages/tobe-review.js",
@@ -7035,6 +7103,7 @@
         "domain/opportunity.js",
         "domain/risk.js",
         "domain/economics.js",
+        "pages/results-official.js",
         "domain/tobe-transactions.js",
         "pages/tobe.js",
         "pages/tobe-flow.js",
@@ -7125,6 +7194,7 @@
       "runtimeConsumers": [
         "pages/results.js",
         "pages/results-analysis.js",
+        "pages/results-official.js",
         "pages/comparison.js",
         "pages/session-display.js",
         "domain/process.js"
@@ -7140,6 +7210,7 @@
       "ruleOccurrences": 3,
       "runtimeConsumers": [
         "pages/results.js",
+        "pages/results-official.js",
         "ui/shell.js",
         "uat/visible.js"
       ],
@@ -7344,6 +7415,7 @@
       "runtimeConsumers": [
         "pages/results.js",
         "pages/results-analysis.js",
+        "pages/results-official.js",
         "pages/comparison.js",
         "pages/session-display.js",
         "domain/process.js",
@@ -7521,6 +7593,7 @@
         "domain/analysis-workbench.js",
         "pages/results.js",
         "pages/results-analysis.js",
+        "pages/results-official.js",
         "pages/tobe.js",
         "domain/process.js",
         "ui/process-help.js",
@@ -7722,6 +7795,7 @@
       ],
       "ruleOccurrences": 1,
       "runtimeConsumers": [
+        "pages/results-official.js",
         "domain/process.js"
       ],
       "frozenRisk": true,
@@ -8025,6 +8099,7 @@
       "ruleOccurrences": 4,
       "runtimeConsumers": [
         "pages/results.js",
+        "pages/results-official.js",
         "domain/completion.js",
         "ui/shell.js",
         "uat/visible.js"
@@ -8311,6 +8386,7 @@
         "domain/analysis-workbench.js",
         "pages/results.js",
         "pages/results-analysis.js",
+        "pages/results-official.js",
         "domain/tobe-transactions.js",
         "pages/tobe.js",
         "pages/tobe-review.js",
@@ -8518,9 +8594,11 @@
         "styles.css"
       ],
       "ruleOccurrences": 1,
-      "runtimeConsumers": [],
+      "runtimeConsumers": [
+        "pages/results-official.js"
+      ],
       "frozenRisk": false,
-      "classification": "REVIEW_DYNAMIC_OR_HTML"
+      "classification": "REFERENCED"
     },
     {
       "className": "page-companies",
@@ -11866,6 +11944,7 @@
         "domain/economics.js",
         "pages/results.js",
         "pages/results-analysis.js",
+        "pages/results-official.js",
         "pages/crm-companies.js",
         "pages/session-display.js",
         "domain/process.js"
@@ -11899,6 +11978,7 @@
         "domain/risk.js",
         "domain/economics.js",
         "pages/results.js",
+        "pages/results-official.js",
         "pages/crm-companies.js",
         "pages/session-display.js",
         "domain/process.js"
@@ -12305,9 +12385,11 @@
         "styles.css"
       ],
       "ruleOccurrences": 3,
-      "runtimeConsumers": [],
+      "runtimeConsumers": [
+        "pages/results-official.js"
+      ],
       "frozenRisk": false,
-      "classification": "REVIEW_DYNAMIC_OR_HTML"
+      "classification": "REFERENCED"
     },
     {
       "className": "scenario-grid",
@@ -12315,9 +12397,11 @@
         "styles.css"
       ],
       "ruleOccurrences": 1,
-      "runtimeConsumers": [],
+      "runtimeConsumers": [
+        "pages/results-official.js"
+      ],
       "frozenRisk": false,
-      "classification": "REVIEW_DYNAMIC_OR_HTML"
+      "classification": "REFERENCED"
     },
     {
       "className": "scenario-kpi",
@@ -12325,9 +12409,11 @@
         "styles.css"
       ],
       "ruleOccurrences": 3,
-      "runtimeConsumers": [],
+      "runtimeConsumers": [
+        "pages/results-official.js"
+      ],
       "frozenRisk": false,
-      "classification": "REVIEW_DYNAMIC_OR_HTML"
+      "classification": "REFERENCED"
     },
     {
       "className": "scenario-kpis",
@@ -12335,9 +12421,11 @@
         "styles.css"
       ],
       "ruleOccurrences": 1,
-      "runtimeConsumers": [],
+      "runtimeConsumers": [
+        "pages/results-official.js"
+      ],
       "frozenRisk": false,
-      "classification": "REVIEW_DYNAMIC_OR_HTML"
+      "classification": "REFERENCED"
     },
     {
       "className": "screen-id",
@@ -18420,6 +18508,7 @@
           "domain/economics.js",
           "domain/analysis-workbench.js",
           "pages/results.js",
+          "pages/results-official.js",
           "domain/tobe-transactions.js",
           "pages/tobe.js",
           "pages/tobe-review.js",
@@ -18457,6 +18546,7 @@
           "domain/economics.js",
           "domain/analysis-workbench.js",
           "pages/results.js",
+          "pages/results-official.js",
           "domain/tobe-transactions.js",
           "pages/tobe.js",
           "pages/tobe-review.js",
@@ -18488,6 +18578,7 @@
           "domain/economics.js",
           "domain/analysis-workbench.js",
           "pages/results.js",
+          "pages/results-official.js",
           "domain/tobe-transactions.js",
           "pages/tobe.js",
           "pages/crm-companies.js",
@@ -18551,6 +18642,7 @@
           "pages/diagnostic-stages.js",
           "ui/renderer.js",
           "pages/results.js",
+          "pages/results-official.js",
           "pages/session-display.js",
           "domain/process.js",
           "ui/shell.js",
@@ -18574,6 +18666,7 @@
         "consumers": [
           "core/state.js",
           "services/schema.js",
+          "pages/results-official.js",
           "pages/session-display.js",
           "domain/internal-ai-pilot.js"
         ],
@@ -18940,6 +19033,7 @@
           "domain/economics.js",
           "domain/process-lifecycle.js",
           "domain/analysis-workbench.js",
+          "pages/results-official.js",
           "domain/tobe-transactions.js",
           "pages/tobe.js",
           "pages/tobe-review.js",
@@ -18978,6 +19072,7 @@
           "domain/analysis-workbench.js",
           "pages/results.js",
           "pages/results-analysis.js",
+          "pages/results-official.js",
           "domain/tobe-transactions.js",
           "pages/tobe.js",
           "pages/tobe-review.js",
@@ -19145,6 +19240,7 @@
           "domain/opportunity.js",
           "domain/risk.js",
           "domain/economics.js",
+          "pages/results-official.js",
           "domain/tobe-transactions.js",
           "pages/tobe.js",
           "pages/tobe-flow.js",
@@ -19231,6 +19327,7 @@
         "consumers": [
           "pages/results.js",
           "pages/results-analysis.js",
+          "pages/results-official.js",
           "pages/comparison.js",
           "pages/session-display.js",
           "domain/process.js",
@@ -19291,6 +19388,7 @@
           "domain/analysis-workbench.js",
           "pages/results.js",
           "pages/results-analysis.js",
+          "pages/results-official.js",
           "pages/tobe.js",
           "domain/process.js",
           "ui/process-help.js",
@@ -19609,6 +19707,7 @@
           "domain/analysis-workbench.js",
           "pages/results.js",
           "pages/results-analysis.js",
+          "pages/results-official.js",
           "domain/tobe-transactions.js",
           "pages/tobe.js",
           "pages/tobe-review.js",
@@ -19803,6 +19902,7 @@
           "domain/economics.js",
           "pages/results.js",
           "pages/results-analysis.js",
+          "pages/results-official.js",
           "pages/crm-companies.js",
           "pages/session-display.js",
           "domain/process.js"
@@ -19824,6 +19924,7 @@
           "domain/risk.js",
           "domain/economics.js",
           "pages/results.js",
+          "pages/results-official.js",
           "pages/crm-companies.js",
           "pages/session-display.js",
           "domain/process.js"
