@@ -13,7 +13,7 @@
 
 | Cobertura | Recuento |
 |---|---:|
-| Archivos activos | **336** |
+| Archivos activos | **337** |
 | Archivos archivados | **13** |
 | Archivos bajo frontend / backend | **167 / 86** |
 | Workflows `.github/workflows` | **5** |
@@ -46,7 +46,7 @@
 | Block_ID registrados | **512** | 512 únicos |
 | Celdas Archivo compuestas/multirruta o descriptivas | **24** | requieren normalización documental antes de automatizar ownership |
 
-**Inventario del árbol completo ahora acreditado por ejecución CI:** **336 archivos activos y 13 archivados**, excluyendo `node_modules`, temporales y carpetas ignoradas. Se localizaron 167 archivos bajo frontend, 86 bajo backend y 5 workflows. El informe computa 82 pruebas frontend `.test.cjs` y 42 pruebas backend `test_*.py`. Esos recuentos son del checkout real, no del índice Block_ID. El script clasifica ARCHIVED en `3_SYSTEM/99_ARCHIVO_TECNICO` y carpetas archivadas.
+**Inventario del árbol completo ahora acreditado por ejecución CI:** **337 archivos activos y 13 archivados**, excluyendo `node_modules`, temporales y carpetas ignoradas. Se localizaron 167 archivos bajo frontend, 86 bajo backend y 5 workflows. El informe computa 82 pruebas frontend `.test.cjs` y 42 pruebas backend `test_*.py`. Esos recuentos son del checkout real, no del índice Block_ID. El script clasifica ARCHIVED en `3_SYSTEM/99_ARCHIVO_TECNICO` y carpetas archivadas.
 
 ### Módulos mayores y acoplamiento detectado
 | Archivo | Líneas | Indicadores observados | Destino de trabajo |
@@ -122,4 +122,6 @@ node tools/aunea-f0-audit.cjs > f0-inventory.json
 node -e "const r=require('./f0-inventory.json'); if(r.errors.length||r.counts.runtimeModules!==46||r.counts.frozenPages!==9) process.exit(1); console.log(r.counts)"
 ```
 
-**Gate F0 cumplido:** JSON publicado en `docs/audit/AUNEA_INTERNAL_F0_INVENTORY.json`, 336 activos/13 archivados, 46 scripts, 512 Block_ID, 9 FROZEN, cero errores y sin snapshots faltantes. El inventario muestra 924 referencias léxicas entre módulos, 2 nombres de funciones duplicados dentro de `ui/renderer.js` y 107 clases CSS presentes en ambos estilos; son **candidatos a inspección**, no defectos confirmados. Hay 197 clases sin consumidor detectado por el barrido heurístico, incluidas clases presentes en HTML: no eliminarlas sin verificar DOM y usos dinámicos. La ejecución de `npm test`, `pytest` y navegador sigue perteneciendo a estabilización/F6.
+**Gate F0 cumplido:** JSON publicado en `docs/audit/AUNEA_INTERNAL_F0_INVENTORY.json`, 337 activos/13 archivados, 46 scripts, 512 Block_ID, 9 FROZEN, cero errores y sin snapshots faltantes. El inventario muestra 924 referencias léxicas entre módulos, 2 nombres de funciones duplicados dentro de `ui/renderer.js` y 107 clases CSS presentes en ambos estilos; son **candidatos a inspección**, no defectos confirmados. Hay 197 clases sin consumidor detectado por el barrido heurístico, incluidas clases presentes en HTML: no eliminarlas sin verificar DOM y usos dinámicos. La ejecución de `npm test`, `pytest` y navegador sigue perteneciendo a estabilización/F6.
+
+**Nota de estabilización del inventario:** la primera ejecución registró 336 archivos activos antes de versionar el JSON de evidencia; la segunda ejecución sobre la rama ya instrumentada registra **337 activos, 13 archivados**, sin errores ni avisos. Se adopta la segunda como línea base final de F0.
