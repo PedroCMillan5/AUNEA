@@ -150,15 +150,16 @@ test('F5 audit: no duplicate same-file function declarations can silently shadow
   const violations=[];
   for(const module of modules){
     const code=fs.readFileSync(path.join(root,module.path),'utf8');
-    const matches=[...code.matchAll(/^function\\s+([A-Za-z_$][\\w$]*)\\s*\\(/gm)];
     const seen=new Map();
-    for(const match of matches){
-      const name=match[1],prior=seen.get(name);
-      if(prior!==undefined)violations.push(module.path+': '+name+' redeclared at offsets '+prior+' and '+match.index);
-      else seen.set(name,match.index);
+    for(const [index,line] of code.split(String.fromCharCode(10)).entries()){
+      if(!line.startsWith('function '))continue;
+      const name=line.slice('function '.length,line.indexOf('(')).trim();
+      if(!name)continue;
+      if(seen.has(name))violations.push(module.path+': '+name+' redeclared at lines '+seen.get(name)+' and '+(index+1));
+      else seen.set(name,index+1);
     }
   }
-  assert.deepEqual(violations,[],violations.join('\\n'));
+  assert.deepEqual(violations,[],violations.join(String.fromCharCode(10)));
 });
 
 // [AUNEA-UAT-MODULE-MANIFEST-010] END
