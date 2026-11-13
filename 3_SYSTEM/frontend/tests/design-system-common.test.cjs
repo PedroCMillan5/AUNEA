@@ -338,4 +338,22 @@ test('DS-006/007 notice is rendered once with canonical styles across PG10/PG11'
   assert.match(base,/\.notice\{/,'DS-006 appearance remains in shared base stylesheet');
 });
 
+
+test('nine FROZEN pages have immutable Chromium desktop/mobile hashes, not auto-approved images',()=>{
+  const manifest=JSON.parse(load('FROZEN_PAGES.json'));
+  const evidence=JSON.parse(load('tests/frozen/frozen-visual-reference-sha256.json'));
+  const smoke=load('tests/uat-browser-smoke.cjs');
+  assert.equal(evidence.status,'TECHNICAL_FROZEN_REFERENCE_NOT_MANUAL_VISUAL_APPROVAL');
+  assert.equal(Object.keys(evidence.sha256).length,18);
+  for(const page of manifest.frozen_pages)
+    for(const width of [1365,390]){
+      const key='frozen-'+page.page_id+'-'+width+'.png';
+      assert.match(evidence.sha256[key]||'',/^[a-f0-9]{64}$/,
+        'Frozen viewport without a fixed checksum: '+key);
+    }
+  assert.match(smoke,/FROZEN_TECHNICAL_PIXEL_EQUIVALENCE_PASS/);
+  assert.match(smoke,/createHash\('sha256'\)/);
+  assert.match(smoke,/frozen-visual-reference-sha256\.json/);
+});
+
 // [AUNEA-UAT-DESIGN-COMMON-312] END
