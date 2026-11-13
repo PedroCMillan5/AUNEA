@@ -2579,7 +2579,7 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 .tobe-context-head>div{flex:1 1 380px;min-width:0}
 .tobe-context-head .tobe-eyebrow{margin-bottom:5px}
 .tobe-context-head h2{margin:0 0 5px}
-.tobe-context-head .aunea-ui-section-caption{margin:0;color:var(--muted);font-size:var(--font-small);line-height:1.5}
+.tobe-context-head .aunea-ui-section-caption{margin:0}
 .tobe-context-diagnostic{width:100%;display:grid;gap:4px;padding:12px 15px;
   border-left:3px solid var(--system);border-radius:var(--radius-sm);background:var(--system-soft)}
 .tobe-context-diagnostic strong{display:block;font-size:var(--font-small);color:var(--system)}
@@ -3737,7 +3737,7 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
    Use the existing System tokens and button primitives; no new component library. */
 .tobe-review-section-head{gap:4px}
 .tobe-review-section-head .tobe-eyebrow{margin-bottom:5px}
-.tobe-review-section-head p{margin:0;color:var(--muted);font-size:var(--font-small);line-height:1.5}
+.tobe-review-section-head p{margin:0}
 .tobe-workspace[data-tobe-mode="guided"] .tobe-ai-field-row{
   grid-template-columns:minmax(0,40%) minmax(0,1fr) max-content;
 }
