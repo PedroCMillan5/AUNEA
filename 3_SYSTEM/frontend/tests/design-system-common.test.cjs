@@ -319,4 +319,23 @@ test('PG10 sealed ledger preserves only effective typography declarations',()=>{
   assert.match(local,/\.asis-data-group li\{font-size:13px;line-height:1.55\}/);
 });
 
+
+test('DS-006/007 notice is rendered once with canonical styles across PG10/PG11',()=>{
+  const vm=require('node:vm');
+  const renderer=load('ui/renderer.js'),pg10=load('pages/results.js'),pg11=load('pages/tobe.js');
+  const source=renderer.match(/function auneaNoticeMessage\(tone,message\)\{[\s\S]*?\n\}/)?.[0];
+  assert.ok(source,'Shared notice renderer must be available');
+  const esc=v=>String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const build=vm.runInNewContext('('+source+')',{esc});
+  assert.equal(build('warn','Confirma el AS-IS antes de comenzar el trabajo interno.'),
+    '<div class="notice warn">Confirma el AS-IS antes de comenzar el trabajo interno.</div>');
+  assert.equal(build('info','<origen> & resultados'),
+    '<div class="notice info">&lt;origen&gt; &amp; resultados</div>');
+  assert.equal(build('unknown','Mensaje'),'<div class="notice info">Mensaje</div>');
+  assert.match(pg10,/auneaNoticeMessage\('warn','Confirma el AS-IS antes de comenzar el trabajo interno\.'\)/);
+  assert.match(pg11,/auneaNoticeMessage\('warn','Confirma el cierre del AS-IS antes de diseñar el proceso futuro\.'\)/);
+  assert.match(base,/\.notice\{/,'DS-006 appearance remains in shared base stylesheet');
+});
+
 // [AUNEA-UAT-DESIGN-COMMON-312] END
