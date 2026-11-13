@@ -793,4 +793,10 @@ function auneaEmptyState(title,description){
 function auneaEmptyMessage(message){
   return '<div class="empty"><p>'+esc(message)+'</p></div>';
 }
+// Semantic notice with the existing shared DS-006/007 visual classes.
+// Tone is allowlisted to prevent callers from creating arbitrary CSS variants.
+function auneaNoticeMessage(tone,message){
+  const variant=['info','warn','good'].includes(tone)?tone:'info';
+  return '<div class="notice '+variant+'">'+esc(message)+'</div>';
+}
 // [AUNEA-FE-UI-EMPTY-STATE-393] END
