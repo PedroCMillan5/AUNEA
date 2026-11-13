@@ -38,7 +38,9 @@ jobs:
           node -e "const fs=require('fs');const x={head:process.env.GITHUB_SHA,generatedAt:new Date().toISOString(),testOutcome:process.env.TEST_OUTCOME,tests:['design-system-common.test.cjs','module-manifest.test.cjs'],scope:'Node contracts only; browser and backend acceptance remain independent'};fs.writeFileSync('docs/audit/AUNEA_INTERNAL_UI_SHARED_GATE.json',JSON.stringify(x,null,2)+'\n')"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if test -f aunea-ui-check.log; then cp aunea-ui-check.log docs/audit/AUNEA_INTERNAL_UI_SHARED_GATE_LOG.txt; fi
           git add docs/audit/AUNEA_INTERNAL_UI_SHARED_GATE.json
+          if test -f docs/audit/AUNEA_INTERNAL_UI_SHARED_GATE_LOG.txt; then git add docs/audit/AUNEA_INTERNAL_UI_SHARED_GATE_LOG.txt; fi
           if ! git diff --cached --quiet; then
             git commit -m "docs(audit): record shared UI contract test result [skip ci]"
             git push origin "HEAD:refs/heads/${GITHUB_REF_NAME}"
