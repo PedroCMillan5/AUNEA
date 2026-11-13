@@ -7,7 +7,7 @@
     "No move backend calculations or data owners"
   ],
   "metrics": {
-    "modules": 47,
+    "modules": 48,
     "cssClasses": 1086,
     "classesCrossFile": 107,
     "repeatedSelectorContextGroups": 139,
@@ -87,6 +87,7 @@
     ],
     "Resultados / PG10": [
       "pages/results.js",
+      "pages/results-analysis.js",
       "domain/analysis-workbench.js",
       "domain/internal-ai-global-quality.js",
       "domain/result-context.js"
@@ -217,6 +218,7 @@
             "domain/economics.js",
             "domain/analysis-workbench.js",
             "pages/results.js",
+            "pages/results-analysis.js",
             "domain/tobe-transactions.js",
             "pages/tobe.js",
             "pages/tobe-flow.js",
@@ -263,6 +265,7 @@
             "domain/process-lifecycle.js",
             "domain/analysis-workbench.js",
             "pages/results.js",
+            "pages/results-analysis.js",
             "domain/tobe-transactions.js",
             "pages/tobe.js",
             "pages/tobe-flow.js",
@@ -319,6 +322,7 @@
             "domain/risk.js",
             "domain/economics.js",
             "pages/results.js",
+            "pages/results-analysis.js",
             "pages/crm-companies.js",
             "pages/session-display.js",
             "domain/process.js"
@@ -390,6 +394,7 @@
             "domain/process-lifecycle.js",
             "domain/analysis-workbench.js",
             "pages/results.js",
+            "pages/results-analysis.js",
             "domain/tobe-transactions.js",
             "pages/tobe.js",
             "pages/tobe-flow.js",
@@ -462,6 +467,7 @@
             "domain/process-lifecycle.js",
             "domain/analysis-workbench.js",
             "pages/results.js",
+            "pages/results-analysis.js",
             "domain/tobe-transactions.js",
             "pages/tobe.js",
             "pages/tobe-flow.js",
@@ -1744,7 +1750,7 @@
       "path": "pages/results.js",
       "layer": "pages",
       "blockId": "AUNEA-FE-RESULTS-VIEW-010",
-      "lines": 871,
+      "lines": 685,
       "family": [
         "Resultados / PG10"
       ],
@@ -1765,8 +1771,6 @@
         "card",
         "card-pad",
         "confirmed",
-        "diagnosis-economic-detail",
-        "diagnosis-economic-input-list",
         "diagnosis-finding",
         "diagnosis-finding-head",
         "diagnosis-findings",
@@ -1779,7 +1783,6 @@
         "diagnosis-reference-grid",
         "diagnosis-reference-note",
         "diagnosis-reference-value",
-        "diagnosis-risk-summary",
         "diagnosis-source-review",
         "diagnosis-state",
         "diagnosis-trace-grid",
@@ -1803,19 +1806,7 @@
         "pg10-conclusion-source",
         "pg10-conclusion-source-unavailable",
         "pg10-conclusions",
-        "pg10-cost-conditional",
-        "pg10-cost-roles",
-        "pg10-cost-roles-missing",
-        "pg10-cost-roles-scroll",
-        "pg10-cost-steps",
         "pg10-diagnostic-parts",
-        "pg10-econ-detail-group",
-        "pg10-econ-hero",
-        "pg10-econ-other",
-        "pg10-econ-other-grid",
-        "pg10-econ-overview",
-        "pg10-econ-summary-note",
-        "pg10-econ-zero-fields",
         "pg10-numeric-comparison",
         "pg10-numeric-comparison-values",
         "pg10-overview-metrics",
@@ -1824,14 +1815,6 @@
         "pg10-review-summary",
         "pg10-review-support",
         "pg10-review-support-actions",
-        "pg10-risk-card",
-        "pg10-risk-context",
-        "pg10-risk-explain-list",
-        "pg10-risk-explanation",
-        "pg10-risk-item",
-        "pg10-risk-lead",
-        "pg10-step-hour-split",
-        "pg10-step-source-row",
         "pg10-technical-trace",
         "pg10-temporal-heading",
         "pg10-temporal-walkthrough",
@@ -1869,6 +1852,48 @@
         "scenario-kpi",
         "scenario-kpis",
         "warn"
+      ]
+    },
+    {
+      "path": "pages/results-analysis.js",
+      "layer": "pages",
+      "blockId": "AUNEA-FE-PG10-ANALYSIS-UX-166",
+      "lines": 188,
+      "family": [
+        "Resultados / PG10"
+      ],
+      "view": true,
+      "inlineStyleAttributes": 0,
+      "referencedCssClasses": [
+        "diagnosis-economic-detail",
+        "diagnosis-economic-input-list",
+        "diagnosis-risk-summary",
+        "field-help",
+        "g3",
+        "grid",
+        "info",
+        "notice",
+        "pg10-cost-conditional",
+        "pg10-cost-roles",
+        "pg10-cost-roles-missing",
+        "pg10-cost-roles-scroll",
+        "pg10-cost-steps",
+        "pg10-econ-detail-group",
+        "pg10-econ-hero",
+        "pg10-econ-other",
+        "pg10-econ-other-grid",
+        "pg10-econ-overview",
+        "pg10-econ-summary-note",
+        "pg10-econ-zero-fields",
+        "pg10-risk-card",
+        "pg10-risk-context",
+        "pg10-risk-explain-list",
+        "pg10-risk-explanation",
+        "pg10-risk-item",
+        "pg10-risk-lead",
+        "pg10-step-hour-split",
+        "pg10-step-source-row",
+        "result-item"
       ]
     },
     {
@@ -5749,7 +5774,7 @@
       ],
       "ruleOccurrences": 9,
       "runtimeConsumers": [
-        "pages/results.js"
+        "pages/results-analysis.js"
       ],
       "frozenRisk": false,
       "classification": "REFERENCED"
@@ -5761,7 +5786,7 @@
       ],
       "ruleOccurrences": 6,
       "runtimeConsumers": [
-        "pages/results.js"
+        "pages/results-analysis.js"
       ],
       "frozenRisk": false,
       "classification": "REFERENCED"
@@ -6007,7 +6032,7 @@
       ],
       "ruleOccurrences": 8,
       "runtimeConsumers": [
-        "pages/results.js"
+        "pages/results-analysis.js"
       ],
       "frozenRisk": false,
       "classification": "REFERENCED"
@@ -6728,6 +6753,7 @@
         "domain/economics.js",
         "domain/analysis-workbench.js",
         "pages/results.js",
+        "pages/results-analysis.js",
         "domain/tobe-transactions.js",
         "pages/tobe.js",
         "pages/tobe-flow.js",
@@ -7081,6 +7107,7 @@
       "ruleOccurrences": 2,
       "runtimeConsumers": [
         "pages/results.js",
+        "pages/results-analysis.js",
         "pages/comparison.js",
         "pages/session-display.js",
         "domain/process.js"
@@ -7299,6 +7326,7 @@
       "ruleOccurrences": 6,
       "runtimeConsumers": [
         "pages/results.js",
+        "pages/results-analysis.js",
         "pages/comparison.js",
         "pages/session-display.js",
         "domain/process.js",
@@ -7475,6 +7503,7 @@
         "domain/process-lifecycle.js",
         "domain/analysis-workbench.js",
         "pages/results.js",
+        "pages/results-analysis.js",
         "pages/tobe.js",
         "domain/process.js",
         "ui/process-help.js",
@@ -8265,6 +8294,7 @@
         "domain/process-lifecycle.js",
         "domain/analysis-workbench.js",
         "pages/results.js",
+        "pages/results-analysis.js",
         "domain/tobe-transactions.js",
         "pages/tobe.js",
         "pages/tobe-flow.js",
@@ -9747,7 +9777,7 @@
       ],
       "ruleOccurrences": 6,
       "runtimeConsumers": [
-        "pages/results.js"
+        "pages/results-analysis.js"
       ],
       "frozenRisk": false,
       "classification": "REFERENCED"
@@ -9769,7 +9799,7 @@
       ],
       "ruleOccurrences": 15,
       "runtimeConsumers": [
-        "pages/results.js"
+        "pages/results-analysis.js"
       ],
       "frozenRisk": false,
       "classification": "REFERENCED"
@@ -9781,7 +9811,7 @@
       ],
       "ruleOccurrences": 1,
       "runtimeConsumers": [
-        "pages/results.js"
+        "pages/results-analysis.js"
       ],
       "frozenRisk": false,
       "classification": "REFERENCED"
@@ -9793,7 +9823,7 @@
       ],
       "ruleOccurrences": 1,
       "runtimeConsumers": [
-        "pages/results.js"
+        "pages/results-analysis.js"
       ],
       "frozenRisk": false,
       "classification": "REFERENCED"
@@ -9805,7 +9835,7 @@
       ],
       "ruleOccurrences": 5,
       "runtimeConsumers": [
-        "pages/results.js"
+        "pages/results-analysis.js"
       ],
       "frozenRisk": false,
       "classification": "REFERENCED"
@@ -9839,7 +9869,7 @@
       ],
       "ruleOccurrences": 5,
       "runtimeConsumers": [
-        "pages/results.js"
+        "pages/results-analysis.js"
       ],
       "frozenRisk": false,
       "classification": "REFERENCED"
@@ -9851,7 +9881,7 @@
       ],
       "ruleOccurrences": 6,
       "runtimeConsumers": [
-        "pages/results.js"
+        "pages/results-analysis.js"
       ],
       "frozenRisk": false,
       "classification": "REFERENCED"
@@ -9863,7 +9893,7 @@
       ],
       "ruleOccurrences": 2,
       "runtimeConsumers": [
-        "pages/results.js"
+        "pages/results-analysis.js"
       ],
       "frozenRisk": false,
       "classification": "REFERENCED"
@@ -9875,7 +9905,7 @@
       ],
       "ruleOccurrences": 6,
       "runtimeConsumers": [
-        "pages/results.js"
+        "pages/results-analysis.js"
       ],
       "frozenRisk": false,
       "classification": "REFERENCED"
@@ -9887,7 +9917,7 @@
       ],
       "ruleOccurrences": 18,
       "runtimeConsumers": [
-        "pages/results.js"
+        "pages/results-analysis.js"
       ],
       "frozenRisk": false,
       "classification": "REFERENCED"
@@ -9899,7 +9929,7 @@
       ],
       "ruleOccurrences": 1,
       "runtimeConsumers": [
-        "pages/results.js"
+        "pages/results-analysis.js"
       ],
       "frozenRisk": false,
       "classification": "REFERENCED"
@@ -9911,7 +9941,7 @@
       ],
       "ruleOccurrences": 3,
       "runtimeConsumers": [
-        "pages/results.js"
+        "pages/results-analysis.js"
       ],
       "frozenRisk": false,
       "classification": "REFERENCED"
@@ -10029,7 +10059,7 @@
       ],
       "ruleOccurrences": 4,
       "runtimeConsumers": [
-        "pages/results.js"
+        "pages/results-analysis.js"
       ],
       "frozenRisk": false,
       "classification": "REFERENCED"
@@ -10041,7 +10071,7 @@
       ],
       "ruleOccurrences": 1,
       "runtimeConsumers": [
-        "pages/results.js"
+        "pages/results-analysis.js"
       ],
       "frozenRisk": false,
       "classification": "REFERENCED"
@@ -10053,7 +10083,7 @@
       ],
       "ruleOccurrences": 1,
       "runtimeConsumers": [
-        "pages/results.js"
+        "pages/results-analysis.js"
       ],
       "frozenRisk": false,
       "classification": "REFERENCED"
@@ -10065,7 +10095,7 @@
       ],
       "ruleOccurrences": 1,
       "runtimeConsumers": [
-        "pages/results.js"
+        "pages/results-analysis.js"
       ],
       "frozenRisk": false,
       "classification": "REFERENCED"
@@ -10077,7 +10107,7 @@
       ],
       "ruleOccurrences": 3,
       "runtimeConsumers": [
-        "pages/results.js"
+        "pages/results-analysis.js"
       ],
       "frozenRisk": false,
       "classification": "REFERENCED"
@@ -10089,7 +10119,7 @@
       ],
       "ruleOccurrences": 3,
       "runtimeConsumers": [
-        "pages/results.js"
+        "pages/results-analysis.js"
       ],
       "frozenRisk": false,
       "classification": "REFERENCED"
@@ -10113,7 +10143,7 @@
       ],
       "ruleOccurrences": 1,
       "runtimeConsumers": [
-        "pages/results.js"
+        "pages/results-analysis.js"
       ],
       "frozenRisk": false,
       "classification": "REFERENCED"
@@ -10125,7 +10155,7 @@
       ],
       "ruleOccurrences": 4,
       "runtimeConsumers": [
-        "pages/results.js"
+        "pages/results-analysis.js"
       ],
       "frozenRisk": false,
       "classification": "REFERENCED"
@@ -11820,6 +11850,7 @@
         "domain/risk.js",
         "domain/economics.js",
         "pages/results.js",
+        "pages/results-analysis.js",
         "pages/crm-companies.js",
         "pages/session-display.js",
         "domain/process.js"
@@ -18931,6 +18962,7 @@
           "domain/economics.js",
           "domain/analysis-workbench.js",
           "pages/results.js",
+          "pages/results-analysis.js",
           "domain/tobe-transactions.js",
           "pages/tobe.js",
           "pages/tobe-flow.js",
@@ -19183,6 +19215,7 @@
         ],
         "consumers": [
           "pages/results.js",
+          "pages/results-analysis.js",
           "pages/comparison.js",
           "pages/session-display.js",
           "domain/process.js",
@@ -19242,6 +19275,7 @@
           "domain/process-lifecycle.js",
           "domain/analysis-workbench.js",
           "pages/results.js",
+          "pages/results-analysis.js",
           "pages/tobe.js",
           "domain/process.js",
           "ui/process-help.js",
@@ -19559,6 +19593,7 @@
           "domain/process-lifecycle.js",
           "domain/analysis-workbench.js",
           "pages/results.js",
+          "pages/results-analysis.js",
           "domain/tobe-transactions.js",
           "pages/tobe.js",
           "pages/tobe-flow.js",
@@ -19751,6 +19786,7 @@
           "domain/risk.js",
           "domain/economics.js",
           "pages/results.js",
+          "pages/results-analysis.js",
           "pages/crm-companies.js",
           "pages/session-display.js",
           "domain/process.js"
