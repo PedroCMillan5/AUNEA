@@ -789,4 +789,8 @@ function auneaWorkDisclosure(kind,title,body){
 function auneaEmptyState(title,description){
   return '<div class="empty"><h2>'+esc(title)+'</h2><p>'+esc(description)+'</p></div>';
 }
+// Same DOM as legacy paragraph-only empty states. Do not invent a heading for source-only messages.
+function auneaEmptyMessage(message){
+  return '<div class="empty"><p>'+esc(message)+'</p></div>';
+}
 // [AUNEA-FE-UI-EMPTY-STATE-393] END
