@@ -356,4 +356,14 @@ test('nine FROZEN pages have immutable Chromium desktop/mobile hashes, not auto-
   assert.match(smoke,/frozen-visual-reference-sha256\.json/);
 });
 
+
+test('UAT controls reuse shared action spacing and avoid literal inline presentation',()=>{
+  const uat=load('uat/visible.js');
+  assert.match(shared,/\.aunea-ui-mt-16\{margin-top:16px\}/);
+  assert.match(shared,/\.aunea-ui-flex-actions\{display:flex;gap:8px;flex-wrap:wrap\}/);
+  assert.match(uat,/class="row aunea-ui-flex-actions"/);
+  assert.match(uat,/class="grid g4 aunea-ui-mt-12"/);
+  assert.doesNotMatch(uat,/style="/,'UAT visual presentation must use shared styles');
+});
+
 // [AUNEA-UAT-DESIGN-COMMON-312] END
