@@ -18150,5 +18150,4393 @@
         }
       ]
     }
-  ]
+  ],
+  "ownershipTriage": {
+    "method": "STATIC_FIRST_PASS_NOT_APPROVAL",
+    "permittedStatuses": [
+      "GLOBAL",
+      "SCOPED_EXCEPTION",
+      "FROZEN_PROTECTED",
+      "OBSOLETE_PROVEN",
+      "PENDING_BROWSER_QA"
+    ],
+    "crossFileClasses": [
+      {
+        "className": "ab-right",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "core/state.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "action-bar",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "core/state.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "active",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "domain/no-reask.js",
+          "domain/session-snapshot.js",
+          "domain/economics.js",
+          "domain/process-lifecycle.js",
+          "domain/process.js",
+          "domain/internal-ai-pilot.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "answered-inline",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "ui/renderer.js",
+          "domain/no-reask.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "app-shell",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [],
+        "status": "PENDING_BROWSER_QA",
+        "reason": "Computed styles and all dynamic consumers need browser validation",
+        "browserVerified": false
+      },
+      {
+        "className": "arrow",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "ui/shell.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "aunea-ui-section-caption",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "pages/tobe.js"
+        ],
+        "status": "PENDING_BROWSER_QA",
+        "reason": "Computed styles and all dynamic consumers need browser validation",
+        "browserVerified": false
+      },
+      {
+        "className": "avatar",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [],
+        "status": "PENDING_BROWSER_QA",
+        "reason": "Computed styles and all dynamic consumers need browser validation",
+        "browserVerified": false
+      },
+      {
+        "className": "backend-badge",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "core/state.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "badge",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "pages/crm-companies.js",
+          "pages/crm-contacts.js",
+          "pages/crm-interactions.js",
+          "pages/crm-opportunities.js",
+          "pages/session-display.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "blocker-list",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [],
+        "status": "PENDING_BROWSER_QA",
+        "reason": "Computed styles and all dynamic consumers need browser validation",
+        "browserVerified": false
+      },
+      {
+        "className": "brand",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "core/state.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "breadcrumb",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [],
+        "status": "PENDING_BROWSER_QA",
+        "reason": "Computed styles and all dynamic consumers need browser validation",
+        "browserVerified": false
+      },
+      {
+        "className": "btn",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "core/state.js",
+          "pages/diagnostic-stages.js",
+          "ui/renderer.js",
+          "domain/no-reask.js",
+          "domain/process-suggestions.js",
+          "domain/risk.js",
+          "domain/economics.js",
+          "domain/analysis-workbench.js",
+          "pages/results.js",
+          "domain/tobe-transactions.js",
+          "pages/tobe.js",
+          "pages/comparison.js",
+          "pages/crm-companies.js",
+          "pages/crm-contacts.js",
+          "pages/crm-interactions.js",
+          "pages/crm-opportunities.js",
+          "pages/session-display.js",
+          "domain/process.js",
+          "pages/projects.js",
+          "ui/shell.js",
+          "uat/visible.js",
+          "domain/internal-ai-pilot.js",
+          "pages/tobe-global.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "btn-outline",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "pages/diagnostic-stages.js",
+          "ui/renderer.js",
+          "domain/risk.js",
+          "domain/economics.js",
+          "domain/analysis-workbench.js",
+          "pages/results.js",
+          "domain/tobe-transactions.js",
+          "pages/tobe.js",
+          "domain/process.js",
+          "uat/visible.js",
+          "domain/internal-ai-pilot.js",
+          "pages/tobe-global.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "btn-primary",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "core/state.js",
+          "pages/diagnostic-stages.js",
+          "ui/renderer.js",
+          "domain/no-reask.js",
+          "domain/risk.js",
+          "domain/economics.js",
+          "domain/analysis-workbench.js",
+          "pages/results.js",
+          "domain/tobe-transactions.js",
+          "pages/tobe.js",
+          "pages/crm-companies.js",
+          "pages/crm-contacts.js",
+          "pages/crm-interactions.js",
+          "pages/crm-opportunities.js",
+          "pages/session-display.js",
+          "domain/process.js",
+          "pages/projects.js",
+          "ui/shell.js",
+          "uat/visible.js",
+          "domain/internal-ai-pilot.js",
+          "pages/tobe-global.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "btn-small",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "core/state.js",
+          "pages/diagnostic-stages.js",
+          "ui/renderer.js",
+          "domain/no-reask.js",
+          "domain/process-suggestions.js",
+          "domain/risk.js",
+          "domain/economics.js",
+          "domain/tobe-transactions.js",
+          "pages/tobe.js",
+          "pages/crm-companies.js",
+          "pages/crm-contacts.js",
+          "domain/process.js",
+          "uat/visible.js",
+          "pages/tobe-global.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "card",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "core/state.js",
+          "services/schema.js",
+          "pages/diagnostic-stages.js",
+          "ui/renderer.js",
+          "pages/results.js",
+          "pages/session-display.js",
+          "domain/process.js",
+          "ui/shell.js",
+          "uat/visible.js",
+          "pages/internal-work-events.js",
+          "domain/internal-ai-pilot.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "card-pad",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "core/state.js",
+          "services/schema.js",
+          "pages/results.js",
+          "pages/session-display.js",
+          "domain/internal-ai-pilot.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "choice",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "ui/renderer.js",
+          "domain/interaction.js",
+          "domain/opportunity.js",
+          "domain/risk.js",
+          "domain/economics.js",
+          "domain/tobe-transactions.js",
+          "pages/tobe.js",
+          "domain/process.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "choice-grid",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "ui/renderer.js",
+          "domain/interaction.js",
+          "domain/opportunity.js",
+          "domain/risk.js",
+          "domain/economics.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "compound-control",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "pages/diagnostic-stages.js",
+          "ui/renderer.js",
+          "domain/economics.js",
+          "domain/process.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "conditional-tag",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "pages/diagnostic-stages.js",
+          "domain/no-reask.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "confirmed",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "core/state.js",
+          "core/i18n.js",
+          "pages/diagnostic-stages.js",
+          "ui/renderer.js",
+          "domain/no-reask.js",
+          "domain/engagement.js",
+          "domain/session-snapshot.js",
+          "domain/process-lifecycle.js",
+          "domain/analysis-workbench.js",
+          "domain/result-context.js",
+          "domain/tobe-model.js",
+          "pages/results.js",
+          "pages/tobe.js",
+          "domain/output-review.js",
+          "pages/session-display.js",
+          "domain/process.js",
+          "pages/internal-work-events.js",
+          "domain/internal-ai-pilot.js",
+          "pages/tobe-global.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "console-chip",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [],
+        "status": "PENDING_BROWSER_QA",
+        "reason": "Computed styles and all dynamic consumers need browser validation",
+        "browserVerified": false
+      },
+      {
+        "className": "content",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "domain/process.js",
+          "domain/internal-ai-pilot.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "context-label",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [],
+        "status": "PENDING_BROWSER_QA",
+        "reason": "Computed styles and all dynamic consumers need browser validation",
+        "browserVerified": false
+      },
+      {
+        "className": "coverage-chips",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "pages/diagnostic-stages.js",
+          "domain/risk.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "detail-wrap",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "ui/renderer.js",
+          "domain/no-reask.js",
+          "domain/risk.js",
+          "domain/process.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "df017-final-review",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "pages/diagnostic-stages.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "duplicate-entry-control",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "ui/renderer.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "duplicate-entry-draft",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "ui/renderer.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "duplicate-entry-fields",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "ui/renderer.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "duplicate-entry-row",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "ui/renderer.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "duplicate-entry-suggestions",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "ui/renderer.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "empty",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "ui/renderer.js",
+          "domain/risk.js",
+          "domain/economics.js",
+          "pages/results.js",
+          "pages/tobe.js",
+          "pages/crm-companies.js",
+          "pages/crm-contacts.js",
+          "pages/crm-interactions.js",
+          "pages/crm-opportunities.js",
+          "pages/session-display.js",
+          "domain/process.js",
+          "ui/shell.js",
+          "uat/visible.js",
+          "uat/endtoend-cases.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "entity-picker",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "pages/crm-contacts.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "field",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "core/state.js",
+          "pages/diagnostic-stages.js",
+          "ui/renderer.js",
+          "domain/no-reask.js",
+          "domain/company.js",
+          "domain/contact.js",
+          "domain/interaction.js",
+          "domain/opportunity.js",
+          "domain/risk.js",
+          "domain/economics.js",
+          "domain/process-lifecycle.js",
+          "domain/analysis-workbench.js",
+          "pages/results.js",
+          "domain/tobe-transactions.js",
+          "pages/tobe.js",
+          "domain/process.js",
+          "ui/process-help.js",
+          "domain/completion.js",
+          "pages/projects.js",
+          "ui/shell.js",
+          "domain/internal-ai-pilot.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "field-help",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "core/state.js",
+          "pages/diagnostic-stages.js",
+          "ui/renderer.js",
+          "domain/no-reask.js",
+          "domain/company.js",
+          "domain/contact.js",
+          "domain/interaction.js",
+          "domain/opportunity.js",
+          "domain/risk.js",
+          "domain/economics.js",
+          "domain/analysis-workbench.js",
+          "pages/results.js",
+          "domain/tobe-transactions.js",
+          "pages/tobe.js",
+          "pages/session-display.js",
+          "domain/process.js",
+          "domain/internal-ai-pilot.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "field-pending",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [],
+        "status": "PENDING_BROWSER_QA",
+        "reason": "Computed styles and all dynamic consumers need browser validation",
+        "browserVerified": false
+      },
+      {
+        "className": "filter-group",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "pages/crm-companies.js",
+          "pages/crm-contacts.js",
+          "pages/crm-interactions.js",
+          "pages/crm-opportunities.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "filter-row",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "pages/crm-companies.js",
+          "pages/crm-contacts.js",
+          "pages/crm-interactions.js",
+          "pages/crm-opportunities.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "flow-canvas",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "pages/tobe.js",
+          "pages/session-display.js",
+          "domain/process.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "flow-confirm",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "domain/process.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "flow-connector",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "pages/session-display.js",
+          "domain/process.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "flow-step",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "pages/session-display.js",
+          "domain/process.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "flow-track",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "pages/session-display.js",
+          "domain/process.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "form-grid",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "core/state.js",
+          "pages/diagnostic-stages.js",
+          "domain/company.js",
+          "domain/contact.js",
+          "domain/interaction.js",
+          "domain/opportunity.js",
+          "domain/risk.js",
+          "domain/economics.js",
+          "pages/results.js",
+          "domain/tobe-transactions.js",
+          "pages/tobe.js",
+          "domain/process.js",
+          "pages/projects.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "friction-badge",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "domain/process.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "full",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "core/state.js",
+          "pages/diagnostic-stages.js",
+          "domain/no-reask.js",
+          "domain/company.js",
+          "domain/contact.js",
+          "domain/interaction.js",
+          "domain/opportunity.js",
+          "domain/risk.js",
+          "domain/economics.js",
+          "domain/analysis-workbench.js",
+          "pages/tobe.js",
+          "domain/process.js",
+          "pages/projects.js",
+          "domain/internal-ai-pilot.js",
+          "pages/tobe-global.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "good",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "domain/analysis-workbench.js",
+          "pages/results.js",
+          "pages/session-display.js",
+          "ui/shell.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "grid",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "pages/results.js",
+          "pages/comparison.js",
+          "pages/session-display.js",
+          "domain/process.js",
+          "ui/shell.js",
+          "uat/visible.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "hero-action",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "ui/shell.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "hero-actions",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "ui/shell.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "info",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "pages/diagnostic-stages.js",
+          "ui/renderer.js",
+          "domain/risk.js",
+          "domain/economics.js",
+          "domain/process-lifecycle.js",
+          "domain/analysis-workbench.js",
+          "pages/results.js",
+          "pages/tobe.js",
+          "domain/process.js",
+          "ui/process-help.js",
+          "uat/visible.js",
+          "domain/internal-ai-pilot.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "ins-card",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "pages/crm-companies.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "inspector",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "core/state.js",
+          "pages/diagnostic-stages.js",
+          "domain/no-reask.js",
+          "pages/tobe.js",
+          "pages/crm-companies.js",
+          "pages/crm-interactions.js",
+          "pages/crm-opportunities.js",
+          "ui/shell.js",
+          "pages/internal-work-events.js",
+          "domain/internal-ai-pilot.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "integration-candidates",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "ui/renderer.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "integration-guidance",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "ui/renderer.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "is-decision",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [],
+        "status": "PENDING_BROWSER_QA",
+        "reason": "Computed styles and all dynamic consumers need browser validation",
+        "browserVerified": false
+      },
+      {
+        "className": "kv",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "core/state.js",
+          "services/schema.js",
+          "pages/session-display.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "linked-step-group",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "ui/renderer.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "linked-step-label",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "ui/renderer.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "main",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "pages/diagnostic-stages.js",
+          "domain/no-reask.js",
+          "pages/crm-interactions.js",
+          "pages/crm-opportunities.js",
+          "domain/process.js",
+          "domain/internal-ai-pilot.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "modal",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "core/state.js",
+          "domain/economics.js",
+          "domain/process.js",
+          "ui/process-help.js",
+          "services/persistence.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "modal-body",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "core/state.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "modal-foot",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "core/state.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "modal-head",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "core/state.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "nav-group",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "core/state.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "nav-item",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "core/state.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "nav-num",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "core/state.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "nav-step",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "core/state.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "notice",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "pages/diagnostic-stages.js",
+          "ui/renderer.js",
+          "domain/risk.js",
+          "domain/economics.js",
+          "domain/process-lifecycle.js",
+          "domain/analysis-workbench.js",
+          "pages/results.js",
+          "domain/tobe-transactions.js",
+          "pages/tobe.js",
+          "pages/comparison.js",
+          "pages/session-display.js",
+          "domain/process.js",
+          "pages/projects.js",
+          "ui/shell.js",
+          "uat/visible.js",
+          "pages/internal-work-events.js",
+          "domain/internal-ai-pilot.js",
+          "pages/tobe-global.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "now",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "core/state.js",
+          "domain/no-reask.js",
+          "pages/tobe.js",
+          "domain/internal-ai-pilot.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "offline",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [],
+        "status": "PENDING_BROWSER_QA",
+        "reason": "Computed styles and all dynamic consumers need browser validation",
+        "browserVerified": false
+      },
+      {
+        "className": "on",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "core/state.js",
+          "services/backend-client.js",
+          "ui/renderer.js",
+          "domain/no-reask.js",
+          "domain/interaction.js",
+          "domain/opportunity.js",
+          "domain/engagement.js",
+          "domain/process-lifecycle.js",
+          "domain/analysis-workbench.js",
+          "domain/tobe-model.js",
+          "domain/tobe-transactions.js",
+          "pages/tobe.js",
+          "pages/session-display.js",
+          "domain/process.js",
+          "ui/shell.js",
+          "pages/internal-work-events.js",
+          "domain/internal-ai-pilot.js",
+          "pages/tobe-global.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "online",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [],
+        "status": "PENDING_BROWSER_QA",
+        "reason": "Computed styles and all dynamic consumers need browser validation",
+        "browserVerified": false
+      },
+      {
+        "className": "page-head",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "core/state.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "primary",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "domain/contact.js",
+          "pages/results.js",
+          "ui/shell.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "process-list",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "domain/risk.js",
+          "domain/process.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "rail-context-actions",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [],
+        "status": "PENDING_BROWSER_QA",
+        "reason": "Computed styles and all dynamic consumers need browser validation",
+        "browserVerified": false
+      },
+      {
+        "className": "required-mark",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "core/state.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "result-item",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "domain/risk.js",
+          "domain/economics.js",
+          "pages/results.js",
+          "pages/crm-companies.js",
+          "pages/session-display.js",
+          "domain/process.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "result-list",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "domain/risk.js",
+          "domain/economics.js",
+          "pages/results.js",
+          "pages/crm-companies.js",
+          "pages/session-display.js",
+          "domain/process.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "reuse-context",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "ui/renderer.js",
+          "domain/no-reask.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "row-actions",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "ui/renderer.js",
+          "domain/no-reask.js",
+          "domain/risk.js",
+          "domain/process.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "save-state",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [],
+        "status": "PENDING_BROWSER_QA",
+        "reason": "Computed styles and all dynamic consumers need browser validation",
+        "browserVerified": false
+      },
+      {
+        "className": "section",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "core/state.js",
+          "domain/no-reask.js",
+          "domain/company.js",
+          "ui/shell.js",
+          "domain/internal-ai-pilot.js",
+          "pages/tobe-global.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "section-title",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "core/state.js",
+          "pages/diagnostic-stages.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "segmented",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "pages/diagnostic-stages.js",
+          "ui/renderer.js",
+          "domain/process.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "session-sync",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "pages/session-display.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "sidebar",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "core/state.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "sidebar-foot",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [],
+        "status": "PENDING_BROWSER_QA",
+        "reason": "Computed styles and all dynamic consumers need browser validation",
+        "browserVerified": false
+      },
+      {
+        "className": "stage-card",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "pages/diagnostic-stages.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "stage-clock",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "core/state.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "step-dots",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "core/state.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "step-group",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "domain/risk.js",
+          "domain/economics.js",
+          "domain/process.js",
+          "domain/internal-ai-pilot.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "step-progress",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "core/state.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "tab",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "domain/economics.js",
+          "domain/process-lifecycle.js",
+          "pages/crm-companies.js",
+          "services/engine-adapter.js",
+          "services/persistence.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "table-wrap",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "pages/comparison.js",
+          "pages/crm-companies.js",
+          "pages/crm-contacts.js",
+          "pages/crm-interactions.js",
+          "pages/crm-opportunities.js",
+          "pages/session-display.js",
+          "pages/projects.js",
+          "ui/shell.js",
+          "uat/visible.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "topbar",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [],
+        "status": "PENDING_BROWSER_QA",
+        "reason": "Computed styles and all dynamic consumers need browser validation",
+        "browserVerified": false
+      },
+      {
+        "className": "topbar-left",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [],
+        "status": "PENDING_BROWSER_QA",
+        "reason": "Computed styles and all dynamic consumers need browser validation",
+        "browserVerified": false
+      },
+      {
+        "className": "topbar-right",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [],
+        "status": "PENDING_BROWSER_QA",
+        "reason": "Computed styles and all dynamic consumers need browser validation",
+        "browserVerified": false
+      },
+      {
+        "className": "unit-label",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "pages/diagnostic-stages.js",
+          "ui/renderer.js",
+          "domain/economics.js",
+          "domain/process.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "user-chip",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "ui/renderer.js",
+          "domain/company.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "warn",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "pages/diagnostic-stages.js",
+          "ui/renderer.js",
+          "domain/risk.js",
+          "domain/economics.js",
+          "domain/analysis-workbench.js",
+          "pages/results.js",
+          "domain/tobe-transactions.js",
+          "pages/tobe.js",
+          "pages/comparison.js",
+          "domain/process.js",
+          "domain/internal-ai-pilot.js",
+          "pages/tobe-global.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      },
+      {
+        "className": "workspace",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "core/state.js",
+          "services/backend-client.js"
+        ],
+        "status": "FROZEN_PROTECTED",
+        "reason": "References CRM/session source; protect FROZEN cascade",
+        "browserVerified": false
+      }
+    ],
+    "repeatedSelectorContexts": [
+      {
+        "selectorContext": " | .topbar",
+        "occurrences": 5,
+        "owners": [
+          {
+            "owner": "styles.css",
+            "line": 45
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 17
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 139
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1369
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1431
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .topbar-right",
+        "occurrences": 4,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 18
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 140
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1391
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1446
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .content:has(.diagnostic-stage-s09) .nextstep-inline",
+        "occurrences": 4,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 900
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 950
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 986
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1691
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .topbar-left",
+        "occurrences": 3,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 18
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1371
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1433
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .content:has(.diagnostic-stage-s09) .nextstep-cell-label",
+        "occurrences": 3,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 906
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 987
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1692
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .pg05-field-grid",
+        "occurrences": 3,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 1307
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1346
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1550
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .pg10-review-actions",
+        "occurrences": 3,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 2213
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 2418
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 2434
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .tobe-workspace[data-tobe-mode=\"guided\"] .tobe-inspector",
+        "occurrences": 3,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 3530
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 3648
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 3847
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .tobe-alternative-dialog",
+        "occurrences": 3,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 4249
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 4270
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 4631
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .sidebar",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "styles.css",
+            "line": 36
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1366
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .rail-context-actions .btn",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "styles.css",
+            "line": 39
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 15
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .sidebar nav",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "styles.css",
+            "line": 40
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1367
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .sidebar-foot",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "styles.css",
+            "line": 44
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 12
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .main",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "styles.css",
+            "line": 45
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 23
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .topbar-left,.topbar-right",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "styles.css",
+            "line": 45
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 18
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .breadcrumb",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "styles.css",
+            "line": 45
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 18
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .content",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "styles.css",
+            "line": 52
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 24
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .numbered-list",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "styles.css",
+            "line": 133
+          },
+          {
+            "owner": "styles.css",
+            "line": 133
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .flow-step.is-decision",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "styles.css",
+            "line": 150
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 182
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .required-mark",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "styles.css",
+            "line": 167
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 135
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .duplicate-entry-fields",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "styles.css",
+            "line": 175
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 41
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .duplicate-entry-fields label",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "styles.css",
+            "line": 175
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 42
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .duplicate-entry-fields label>span",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "styles.css",
+            "line": 175
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 43
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .integration-guidance",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "styles.css",
+            "line": 175
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 52
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .integration-candidates",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "styles.css",
+            "line": 175
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 53
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .linked-step-group",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "styles.css",
+            "line": 175
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 50
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .linked-step-label",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "styles.css",
+            "line": 175
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 51
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .flow-step",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "styles.css",
+            "line": 202
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 182
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .flow-connector",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "styles.css",
+            "line": 202
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 182
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .flow-confirm",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "styles.css",
+            "line": 202
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1129
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": "@media(max-width:900px) | .duplicate-entry-fields",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "styles.css",
+            "line": 229
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 58
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": "@media(max-width:760px) | .topbar",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "styles.css",
+            "line": 230
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1418
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .topbar-center",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 18
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 142
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .aunea-select summary",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 101
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 110
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .aunea-select summary i",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 103
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 112
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .aunea-select-menu",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 104
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 113
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .topbar-right #stepProgress",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 141
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1392
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .flow-boundary.start,.flow-boundary.end",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 171
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 479
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | body.mode-process-editor .client-process-main",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 228
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 500
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .process-modal-form .choice-grid",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 244
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 287
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .process-modal-form .choice",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 248
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 288
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .process-modal-form .choice label",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 249
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 289
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .process-graph-canvas",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 317
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 404
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .process-graph-board",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 318
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 409
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .process-graph-cell",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 319
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 410
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .process-graph-lines .graph-path",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 323
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 493
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .process-graph-lines .graph-path-alternative",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 324
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 494
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .process-graph-lines .graph-path-label",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 325
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 495
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .graph-route-controls",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 326
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 488
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .graph-route-controls button",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 328
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 489
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .graph-route-controls .route-no",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 331
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 492
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .graph-route-pending",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 333
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 499
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | body.mode-process-editor .client-process-canvas.process-graph-canvas",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 378
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 501
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | body.mode-process-editor .process-graph-board",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 379
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 502
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | body.mode-process-editor .process-graph-cell .flow-step",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 380
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 503
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | body.mode-process-editor .process-graph-cell .flow-step h4",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 381
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 504
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | body.mode-process-editor .process-graph-cell .flow-step p",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 382
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 508
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .process-node-meta",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 448
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 455
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .content:has(.diagnostic-stage-s03) .stage-card>.form-grid",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 663
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 675
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .session-map-canvas",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 774
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 817
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .content:has(.diagnostic-stage-s09) .stage-card>.form-grid",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 898
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 947
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .content:has(.diagnostic-stage-s09) .nextstep-owner input[readonly]",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 909
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 954
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .content:has(.diagnostic-stage-s09) .readonly-checklist-item",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 952
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 983
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .derived-structured-review",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 1077
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1535
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .derived-structured-facts",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 1092
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1537
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .pg05-step-list",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 1284
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1335
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .pg05-step-card",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 1285
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1336
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .pg05-step-top",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 1286
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1337
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .pg05-step-number",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 1287
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1338
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .pg05-step-heading",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 1288
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1339
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .pg05-step-metrics",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 1292
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1340
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .pg05-step-metrics>span",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 1293
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1341
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .pg05-step-metrics small",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 1294
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1342
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .pg05-step-io",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 1295
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1343
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .pg05-step-details",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 1297
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1344
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .pg05-step-facts",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 1300
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1345
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .pg05-field-list",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 1308
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1347
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .pg05-field",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 1309
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1348
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .pg05-field-action",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 1319
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1349
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .pg05-field-action .field",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 1322
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1350
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": "@media(max-width:760px) | .pg05-review",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 1328
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1360
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": "@media(max-width:760px) | .pg05-step-card,.pg05-field",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 1328
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1360
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": "@media(max-width:760px) | .pg05-step-metrics",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 1328
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1360
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": "@media(max-width:760px) | .pg05-step-metrics>span",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 1328
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1360
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .topbar-active-study",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 1374
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1435
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .topbar-study",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 1376
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1436
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .topbar-study-main",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 1377
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1438
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .topbar-study-main small",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 1378
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1439
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .topbar-study-main b",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 1379
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1440
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .topbar-study-main>span",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 1380
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1441
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .topbar-study-disclosure>summary",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 1382
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1442
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .topbar-right .user-chip",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 1393
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1449
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .modal .economic-review-intro",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 1590
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1601
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .modal .candidate-review-summary",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 1597
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1655
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .modal .candidate-review-summary>p",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 1599
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1657
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": "@media(max-width:580px) | .modal .pain-review-card .result-item-head>.result-actions,.modal .risk-candidate-card .result-item-head>.result-actions,.modal .economic-review-card .result-item-head>.result-actions",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 1611
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1629
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .content:has(.diagnostic-stage-s09) .pg09-pending-grid",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 1671
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1875
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .content:has(.diagnostic-stage-s09) .pg09-close-footer",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 1719
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1894
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .content:has(.diagnostic-stage-s09) .pg09-close-actions",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 1722
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1909
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": "@media(max-width:650px) | .content:has(.diagnostic-stage-s09) .pg09-close-footer",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 1737
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1915
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .content:has(.diagnostic-stage-s09) .pg09-process-viewport .process-graph-canvas",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 1826
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1882
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .content:has(.diagnostic-stage-s09) .pg09-process-viewport .process-graph-board",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 1830
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 1885
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .asis-confirmed-data-heading>b",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 2113
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 2137
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .asis-data-group",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 2117
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 2138
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .asis-data-group h4",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 2118
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 2139
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .asis-data-group li",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 2120
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 2141
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .asis-data-group li>small",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 2123
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 2142
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .asis-data-pairs>div",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 2126
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 2140
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .pg10-review-actions>.btn",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 2214
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 2435
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .pg10-recommendation-check",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 2427
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 2436
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .tobe-process-canvas .tobe-graph-node.is-selected",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 2623
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 2801
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .tobe-inspector .field textarea",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 2653
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 3139
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .tobe-completion",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 2670
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 3727
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .tobe-ai-stage",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 2692
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 2863
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": "@media(max-width:600px) | .tobe-ai-stage",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 2715
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 2872
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .tobe-human-review-actions",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 2732
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 3135
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .tobe-human-review-actions .btn",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 2733
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 3136
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .tobe-process-canvas .tobe-free-board .process-graph-cell",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 3050
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 3124
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .tobe-process-canvas .tobe-free-board .tobe-graph-node",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 3055
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 3126
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .tobe-node-tools",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 3059
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 3128
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .tobe-node-tools .btn",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 3061
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 3130
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": "@media(max-width:760px) | .tobe-process-canvas .tobe-free-board .process-graph-cell",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 3070
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 3146
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": "@media(max-width:760px) | .tobe-node-tools",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 3071
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 3147
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .tobe-review-steps .btn",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 3080
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 3134
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .tobe-workspace[data-tobe-mode=\"guided\"] .tobe-edit>.form-grid",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 3215
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 3452
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .tobe-ai-field-row",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 3222
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 3460
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .tobe-ai-field-control",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 3231
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 3466
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .tobe-ai-field-control>.field",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 3232
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 3467
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .tobe-ai-field-row .tobe-ai-inline",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 3235
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 3486
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .tobe-inspector .tobe-edit>h3",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 3251
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 3526
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .tobe-inspector .tobe-edit>.tobe-muted",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 3252
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 3527
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .tobe-global-analysis",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 3300
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 4899
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .tobe-global-opportunities",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 3325
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 4924
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .tobe-global-opportunity",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 3326
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 4925
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .tobe-global-card-detail-body .tobe-global-intervention",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 3360
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 3398
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .tobe-workspace[data-tobe-mode=\"guided\"] .tobe-ai-operational-context",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 3534
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 3699
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .tobe-workspace[data-tobe-mode=\"guided\"] .tobe-guided-nav",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 3537
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 3667
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .tobe-workspace[data-tobe-mode=\"guided\"] .tobe-task-guide-intro,\n.tobe-workspace[data-tobe-mode=\"guided\"] .tobe-ia-guide-summary",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 3621
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 3660
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .tobe-workspace[data-tobe-mode=\"guided\"] .tobe-ai-field-row",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 3671
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 3750
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": "@media(max-width:800px) | .tobe-workspace[data-tobe-mode=\"guided\"] .tobe-ai-field-row",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 3735
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 3765
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .tobe-workspace[data-tobe-mode=\"guided\"] .tobe-ai-row-actions",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 3753
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 3891
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": "@media(max-width:800px) | .tobe-workspace[data-tobe-mode=\"guided\"] .tobe-ai-row-actions",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 3766
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 3905
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .tobe-workspace[data-tobe-mode=\"guided\"] #tobeStepDesign.tobe-design-workspace",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 3951
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 4539
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .tobe-alternative-dialog>h2",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 4274
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 4636
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      },
+      {
+        "selectorContext": " | .tobe-workspace[data-tobe-mode=\"guided\"] #tobeStepAdvice .tobe-stage-body",
+        "occurrences": 2,
+        "owners": [
+          {
+            "owner": "ui-system.css",
+            "line": 4526
+          },
+          {
+            "owner": "ui-system.css",
+            "line": 4733
+          }
+        ],
+        "cssClasses": [],
+        "status": "FROZEN_PROTECTED",
+        "reason": "Global or potentially FROZEN selector; no automatic migration",
+        "browserVerified": false
+      }
+    ],
+    "counts": {
+      "crossFileClasses": 107,
+      "selectorContexts": 145,
+      "protectedClasses": 90,
+      "protectedSelectorContexts": 145,
+      "browserApproved": 0
+    }
+  }
 }
