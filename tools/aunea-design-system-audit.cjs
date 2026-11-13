@@ -99,11 +99,12 @@ const crossFileClasses=css.filter(item=>item.ownerFiles.length>1).map(item=>{
 const repeatedSelectorContexts=duplicatedSelectors.map(item=>{
   const classNames=[...new Set([...item.selectorContext.matchAll(/\.([A-Za-z_][\w-]*)/g)].map(m=>m[1]))];
   const rawSelector=item.selectorContext.split(' | ').at(-1).trim();
-  const scoped=workScope.test(rawSelector)&&
+  const scoped=(workScope.test(rawSelector)||/^\\s*\\.asis-(?:confirmed-data-heading|data-group|data-pairs)(?:\\b|>)/.test(rawSelector))&&
     !rawSelector.includes('body.page-')&&!rawSelector.includes(':has(.diagnostic-stage-');
   const isGlobal=!classNames.length;
-  const protectedByFrozen=!scoped&&(isGlobal||classNames.some(name=>
-    cssLookup.get(name)?.frozenRisk||frozenChrome.has(name)));
+  const protectedByFrozen=/^\\s*\\.topbar-(?:center|active-study)(?:\\b|[.:>#])/i.test(rawSelector)||
+    (!scoped&&(isGlobal||classNames.some(name=>
+    cssLookup.get(name)?.frozenRisk||frozenChrome.has(name))));
   const status=protectedByFrozen?'FROZEN_PROTECTED':scoped?'SCOPED_EXCEPTION':'PENDING_BROWSER_QA';
   return {selectorContext:item.selectorContext,occurrences:item.owners.length,
     owners:item.owners,cssClasses:classNames,status,
