@@ -145,4 +145,20 @@ test('F3 official results pages have one manifest owner after PG10 diagnosis and
  assert.doesNotMatch(reconstructed,/__AUNEA_RESULTS_OFFICIAL_PAGES_MODULE__/);
  assert.match(reconstructed,/function recommendationPage\(/);
 });
+
+test('F5 audit: no duplicate same-file function declarations can silently shadow an earlier owner',()=>{
+  const violations=[];
+  for(const module of modules){
+    const code=fs.readFileSync(path.join(root,module.path),'utf8');
+    const matches=[...code.matchAll(/^function\\s+([A-Za-z_$][\\w$]*)\\s*\\(/gm)];
+    const seen=new Map();
+    for(const match of matches){
+      const name=match[1],prior=seen.get(name);
+      if(prior!==undefined)violations.push(module.path+': '+name+' redeclared at offsets '+prior+' and '+match.index);
+      else seen.set(name,match.index);
+    }
+  }
+  assert.deepEqual(violations,[],violations.join('\\n'));
+});
+
 // [AUNEA-UAT-MODULE-MANIFEST-010] END
