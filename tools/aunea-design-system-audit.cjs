@@ -41,7 +41,7 @@ rules(rootCss,'styles.css');rules(layoutCss,'ui-system.css');
 const modules=[],foundBy=new Map(),screenFamilies={
   'CRM / PG00': ['core/state.js','ui/shell.js','domain/company.js','domain/contact.js','domain/interaction.js','domain/opportunity.js','pages/crm-companies.js','pages/crm-contacts.js','pages/crm-interactions.js','pages/crm-opportunities.js','domain/engagement.js'],
   'Sesión / PG01–PG09': ['pages/diagnostic-stages.js','domain/process.js','domain/risk.js','domain/economics.js','domain/process-lifecycle.js','domain/no-reask.js','ui/renderer.js','pages/session-display.js'],
-  'Resultados / PG10': ['pages/results.js','domain/analysis-workbench.js','domain/internal-ai-global-quality.js','domain/result-context.js'],
+  'Resultados / PG10': ['pages/results.js','pages/results-analysis.js','domain/analysis-workbench.js','domain/internal-ai-global-quality.js','domain/result-context.js'],
   'Trabajo interno / PG11': ['pages/tobe.js','pages/tobe-flow.js','pages/tobe-global.js','pages/internal-work-events.js','domain/tobe-model.js','domain/tobe-transactions.js','domain/internal-ai-pilot.js'],
   'Comparación / posterior': ['pages/comparison.js','pages/projects.js','domain/project.js','domain/completion.js','domain/output-review.js'],
   'Transversal / engine': ['services/backend-client.js','services/engine-adapter.js','services/persistence.js','services/schema.js','ui/renderer.js','ui/shell.js']
