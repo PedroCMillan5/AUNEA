@@ -25,7 +25,8 @@ module.exports=function pg11LegacySourceOracle(){
   const renderer=read('ui/renderer.js');
   for(const [name,pattern] of [
     ['auneaWorkDisclosure',/function auneaWorkDisclosure\(kind,title,body\)\{[\s\S]*?\n\}/],
-    ['auneaEmptyMessage',/function auneaEmptyMessage\(message\)\{[\s\S]*?\n\}/]
+    ['auneaEmptyMessage',/function auneaEmptyMessage\(message\)\{[\s\S]*?\n\}/],
+    ['auneaNoticeMessage',/function auneaNoticeMessage\(tone,message\)\{[\s\S]*?\n\}/]
   ]){
     const helper=renderer.match(pattern)?.[0];
     if(!helper)throw Error('Shared renderer helper missing: '+name);
