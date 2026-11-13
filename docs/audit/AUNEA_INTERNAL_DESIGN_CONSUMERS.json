@@ -1521,7 +1521,7 @@
       "path": "domain/risk.js",
       "layer": "domain",
       "blockId": "AUNEA-FE-RISK-CAPTURE-030",
-      "lines": 225,
+      "lines": 231,
       "family": [
         "Sesión / PG01–PG09"
       ],
@@ -1534,6 +1534,7 @@
         "btn-outline",
         "btn-primary",
         "btn-small",
+        "candidate",
         "candidate-key-question",
         "candidate-review-summary",
         "chip",
@@ -2526,7 +2527,7 @@
       "path": "domain/process.js",
       "layer": "domain",
       "blockId": "AUNEA-FE-PROC-EDITOR-020",
-      "lines": 2081,
+      "lines": 2078,
       "family": [
         "Sesión / PG01–PG09"
       ],
@@ -4593,6 +4594,7 @@
       "runtimeConsumers": [
         "services/backend-client.js",
         "ui/renderer.js",
+        "domain/risk.js",
         "domain/economics.js",
         "domain/internal-ai-global-quality.js",
         "domain/tobe-transactions.js",
