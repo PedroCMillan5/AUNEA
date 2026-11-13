@@ -12,6 +12,10 @@ const context={
 };
 vm.createContext(context);
 vm.runInContext(fs.readFileSync(path.join(root,'domain/result-context.js'),'utf8'),context);
+const noticeSource=fs.readFileSync(path.join(root,'ui/renderer.js'),'utf8')
+  .match(/function auneaNoticeMessage\(tone,message\)\{[\s\S]*?\n\}/)?.[0];
+assert.ok(noticeSource,'Continuity oracle must load production notice helper');
+vm.runInContext(noticeSource,context);
 vm.runInContext(source,context);
 const sample=()=>({confirmedAsIs:true,snapshot:{version:2},lastEngineSnapshotVersion:2,diagnosticOutput:null,tobeProposals:[],scenarioResults:[]});
 test('no confirmed PG09 snapshot means no internal readiness or client mode',()=>{
