@@ -72,33 +72,59 @@ const duplicatedSelectors=[...cssRuleGroups].filter(([,group])=>group.length>1).
 const ds=Object.fromEntries(Object.entries(catalogs).map(([id,meta])=>[id,{...meta,
   cssCandidates:meta.selector.filter(name=>styles.has(name)).map(name=>({name,owners:[...styles.get(name).cssFiles],consumers:[...styles.get(name).consumers]})),
   note:'Componente documental, no implica implementación única de HTML o comportamiento'}]));
-// First-pass triage, NOT an owner transfer or visual acceptance.
-// A static consumer absence never proves that a selector can be deleted.
+// F1 CSS ownership resolution, not an assertion that the user approved the visual design.
+// Two CSS files are intentional: shared base owns primitives, layout owns screen-specific overrides.
+// A class referenced in shell/static HTML may be FROZEN even without a JS literal consumer.
 const cssLookup=new Map(css.map(item=>[item.className,item]));
 const permittedStatuses=['GLOBAL','SCOPED_EXCEPTION','FROZEN_PROTECTED','OBSOLETE_PROVEN','PENDING_BROWSER_QA'];
-const crossFileClasses=css.filter(item=>item.ownerFiles.length>1).map(item=>({
-  className:item.className,ownerFiles:item.ownerFiles,consumers:item.runtimeConsumers,
-  status:item.frozenRisk?'FROZEN_PROTECTED':'PENDING_BROWSER_QA',
-  reason:item.frozenRisk?'References CRM/session source; protect FROZEN cascade':
-    'Computed styles and all dynamic consumers need browser validation',
-  browserVerified:false
-}));
-const repeatedSelectorContexts=duplicatedSelectors.map(item=>{
-  const classNames=[...new Set([...item.selectorContext.matchAll(/\\.([A-Za-z_][\\w-]*)/g)].map(m=>m[1]))];
-  const global=!classNames.length,protectedByFrozen=global||classNames.some(name=>cssLookup.get(name)?.frozenRisk);
-  return {selectorContext:item.selectorContext,occurrences:item.owners.length,
-    owners:item.owners,cssClasses:classNames,
-    status:protectedByFrozen?'FROZEN_PROTECTED':'PENDING_BROWSER_QA',
-    reason:protectedByFrozen?'Global or potentially FROZEN selector; no automatic migration':
-      'May be responsive/state/cascade overrides; computed browser QA required',
-    browserVerified:false};
+const frozenChrome=new Set([
+  'app-shell','avatar','blocker-list','breadcrumb','console-chip','context-label',
+  'field-pending','is-decision','offline','online','rail-context-actions',
+  'save-state','sidebar-foot','topbar','topbar-left','topbar-right'
+]);
+const workScope=/^\s*\.(?:tobe(?:-|[.#:\[]|$)|pg10(?:-|[.#:\[]|$)|pg11(?:-|[.#:\[]|$)|pg12(?:-|[.#:\[]|$))/;
+const crossFileClasses=css.filter(item=>item.ownerFiles.length>1).map(item=>{
+  const protectedByFrozen=item.frozenRisk||frozenChrome.has(item.className);
+  const scoped=item.className==='aunea-ui-section-caption';
+  return {
+    className:item.className,ownerFiles:item.ownerFiles,consumers:item.runtimeConsumers,
+    status:protectedByFrozen?'FROZEN_PROTECTED':scoped?'SCOPED_EXCEPTION':'PENDING_BROWSER_QA',
+    reason:protectedByFrozen?'Shared shell, CRM or diagnostic family; preserve FROZEN cascade':
+      scoped?'styles.css owns typography; PG11 owns only local caption placement':
+      'Additional runtime/browser inspection required; no speculative deletion',
+    baseOwner:'styles.css',exceptionOwner:'ui-system.css',
+    browserVerified:false,manualVisualReviewRequired:true
+  };
 });
-const ownershipTriage={method:'STATIC_FIRST_PASS_NOT_APPROVAL',permittedStatuses,
-  crossFileClasses,repeatedSelectorContexts,
-  counts:{crossFileClasses:crossFileClasses.length,selectorContexts:repeatedSelectorContexts.length,
-    protectedClasses:crossFileClasses.filter(x=>x.status==='FROZEN_PROTECTED').length,
-    protectedSelectorContexts:repeatedSelectorContexts.filter(x=>x.status==='FROZEN_PROTECTED').length,
-    browserApproved:0}};
+const repeatedSelectorContexts=duplicatedSelectors.map(item=>{
+  const classNames=[...new Set([...item.selectorContext.matchAll(/\.([A-Za-z_][\w-]*)/g)].map(m=>m[1]))];
+  const rawSelector=item.selectorContext.split(' | ').at(-1).trim();
+  const scoped=workScope.test(rawSelector)&&
+    !rawSelector.includes('body.page-')&&!rawSelector.includes(':has(.diagnostic-stage-');
+  const isGlobal=!classNames.length;
+  const protectedByFrozen=!scoped&&(isGlobal||classNames.some(name=>
+    cssLookup.get(name)?.frozenRisk||frozenChrome.has(name)));
+  const status=protectedByFrozen?'FROZEN_PROTECTED':scoped?'SCOPED_EXCEPTION':'PENDING_BROWSER_QA';
+  return {selectorContext:item.selectorContext,occurrences:item.owners.length,
+    owners:item.owners,cssClasses:classNames,status,
+    reason:protectedByFrozen?'Base or CRM/session cascade, protect approved FROZEN surfaces':
+      scoped?'Page-scoped PG10/PG11/PG12 cascade, including distinct layout/state rules; preserve justified variants':
+      'Shared or unscoped selector requires browser and source-owner inspection',
+    browserVerified:false,manualVisualReviewRequired:true};
+});
+const counts={
+  crossFileClasses:crossFileClasses.length,selectorContexts:repeatedSelectorContexts.length,
+  protectedClasses:crossFileClasses.filter(x=>x.status==='FROZEN_PROTECTED').length,
+  protectedSelectorContexts:repeatedSelectorContexts.filter(x=>x.status==='FROZEN_PROTECTED').length,
+  scopedClassExceptions:crossFileClasses.filter(x=>x.status==='SCOPED_EXCEPTION').length,
+  scopedSelectorExceptions:repeatedSelectorContexts.filter(x=>x.status==='SCOPED_EXCEPTION').length,
+  unresolvedClasses:crossFileClasses.filter(x=>x.status==='PENDING_BROWSER_QA').length,
+  unresolvedSelectorContexts:repeatedSelectorContexts.filter(x=>x.status==='PENDING_BROWSER_QA').length,
+  browserApproved:0
+};
+const ownershipTriage={method:'STATIC_OWNER_RESOLUTION_PENDING_MANUAL_VISUAL_APPROVAL',
+  permittedStatuses,crossFileClasses,repeatedSelectorContexts,counts};
+
 const result={
   status:'STATIC_DESIGN_INVENTORY',scope:'46 runtime JS files, 2 CSS, 9 FROZEN pages; read-only and heuristic',
   restrictions:['No modify FROZEN','No infer dead CSS from static absence','No move backend calculations or data owners'],
