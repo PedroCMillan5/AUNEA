@@ -24,7 +24,7 @@ jobs:
         run: node tools/aunea-design-system-audit.cjs > aunea-design-inventory.json
       - name: Validate completeness and governance boundaries
         run: |
-          node -e "const x=require('./aunea-design-inventory.json'); if(x.metrics.modules!==46||x.frozen.length!==9||x.metrics.documentedComponents!==20||!x.modules.some(m=>m.path==='pages/crm-companies.js')||!x.modules.some(m=>m.path==='pages/tobe.js')) process.exit(1); console.log(x.metrics)"
+          node -e "const x=require('./aunea-design-inventory.json'); if(x.metrics.modules!==require('./3_SYSTEM/frontend/module-manifest.json').modules.length||x.frozen.length!==9||x.metrics.documentedComponents!==20||!x.modules.some(m=>m.path==='pages/crm-companies.js')||!x.modules.some(m=>m.path==='pages/tobe.js')) process.exit(1); console.log(x.metrics)"
       - name: Preserve inventory in audit records
         if: success() && github.event_name == 'push'
         run: |
