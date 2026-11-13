@@ -111,7 +111,7 @@ test('PG10 provides an inspectable trace for each engine finding',()=>{
 
 
 test('client presentation helper note uses the shared block and 8px spacing',()=>{
-  const shared=read('styles.css');
+  const shared=fs.readFileSync(path.join(root,'styles.css'),'utf8');
   assert.match(results,/class="client-presentation-note aunea-ui-block aunea-ui-mt-8"/);
   assert.match(shared,/\.aunea-ui-block\{display:block\}/);
   assert.match(shared,/\.aunea-ui-mt-8\{margin-top:8px\}/);
@@ -780,7 +780,7 @@ test('PG10 synthesis reads the backend projection without inventing rankings, ca
 test('PG10 review distinguishes preliminary PG11 from official design and never double-approves',()=>{
   const a=results.indexOf('function pg10ReviewHtml('),b=results.indexOf('\nfunction resultsPage(',a);
   assert.ok(a>=0&&b>a);
-  const renderer=read('ui/renderer.js');
+  const renderer=fs.readFileSync(path.join(root,'ui/renderer.js'),'utf8');
   const sharedDisclosure=renderer.match(/function auneaWorkDisclosure\(kind,title,body\)\{[\s\S]*?\n\}/)?.[0];
   assert.ok(sharedDisclosure,'Actual shared disclosure builder is available');
   const fn=new Function('esc','attr','diagnosisEngineDecisionTraceHtml',
