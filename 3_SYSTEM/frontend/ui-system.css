@@ -3058,7 +3058,6 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 .tobe-process-canvas .tobe-free-board .tobe-graph-node:active{cursor:grabbing}
 .tobe-node-tools{display:flex;flex-wrap:wrap;align-items:center;gap:3px;
   min-height:38px;margin-top:5px;position:relative;z-index:2}
-.tobe-node-tools .btn{font-size:11px;line-height:1.2;min-height:28px;padding:5px 7px}
 .tobe-node-tools [data-tobe-move]{cursor:grab;touch-action:none}
 .tobe-node-tools [data-tobe-discard-added]{color:var(--red)}
 .tobe-free-board .process-graph-lines{position:absolute;inset:0;
@@ -3066,10 +3065,6 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 .tobe-connect-active .tobe-graph-node{outline:2px dashed var(--system);outline-offset:2px}
 .tobe-move-active{z-index:5!important}
 .tobe-move-active .tobe-graph-node{box-shadow:0 9px 24px rgba(20,40,29,.18)!important}
-@media(max-width:760px){
-  .tobe-process-canvas .tobe-free-board .process-graph-cell{width:195px}
-  .tobe-node-tools{gap:2px}
-}
 // [AUNEA-FE-PG11-FREE-CANVAS-STYLE-249] END
 
 /* [AUNEA-FE-PG11-GUIDED-INSPECTOR-STYLE-254] START
@@ -3527,7 +3522,6 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 .tobe-inspector .tobe-edit>.tobe-muted{margin:4px 0 9px;font-size:12px}
 /* PG11 sección 01: el contexto confirmado debe permanecer visible en revisión guiada. */
 .tobe-workspace[data-tobe-mode="guided"] .tobe-context{display:grid}
-.tobe-workspace[data-tobe-mode="guided"] .tobe-inspector{padding:16px}
 .tobe-workspace[data-tobe-mode="guided"] .tobe-ai-per-step-action{
   margin:7px 0 10px;
 }
@@ -3730,7 +3724,6 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 }
 @media(max-width:800px){
   .tobe-workspace[data-tobe-mode="guided"] .tobe-inspector{padding:14px}
-  .tobe-workspace[data-tobe-mode="guided"] .tobe-ai-field-row{grid-template-columns:1fr}
   .tobe-global-indicators{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media(max-width:420px){
@@ -4269,7 +4262,6 @@ details.tobe-ai-operational-context:not([open])>.tobe-ai-operational-body{
   
   color:var(--ink);border-color:var(--system-line);padding:22px;
 }
-.tobe-alternative-dialog>h2{font-size:var(--font-h3);margin:0 0 10px}
 .tobe-alternative-dialog .tobe-preview-intro{color:var(--muted);line-height:1.55}
 .tobe-alternative-dialog .tobe-preview-comparison,
 .tobe-alternative-dialog .tobe-preview-validation,
