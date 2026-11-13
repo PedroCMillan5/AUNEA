@@ -1,6 +1,6 @@
 # AUNEA Internal — Plan de reducción y simplificación técnica
 
-Estado: EN EJECUCIÓN — Fase 0 (inventario inicial; no equivale a cierre de auditoría)
+Estado: F0 AUDITORÍA ESTÁTICA COMPLETA — cierre pendiente de acreditar ejecución integral del inventario en CI
 Fecha: 2026-11-12
 Rama objetivo: `work/as-is-ux-simplification-20260930`
 Ámbito: reducción y simplificación del software existente. Sin nuevas funciones ni cambios de reglas.
@@ -173,3 +173,11 @@ Mayores módulos JS activos (líneas):
 **Medición correcta:** los archivos de vistas se han reducido físicamente, pero las líneas movidas siguen existiendo en dos módulos de responsabilidad delimitada. No presentar la reducción por archivo como disminución equivalente del volumen total de código. Se ha añadido un mínimo de marcadores y pruebas de control.
 
 **Pendiente para cierre integral:** ejecución y corrección de los gates Node/Python/Chromium y UAT visual Windows; auditoría de duplicaciones no triviales de `ui-system.css`, `domain/process.js` y `domain/internal-ai-pilot.js`; inspección de comportamiento UI de PG10/PG11 y del ciclo completo; consolidación adicional sólo donde la matriz de consumidores demuestre equivalencia. Permanecen sin tocar los nueve FROZEN; ningún cambio de canonical, fields ni engines.
+
+## 16. Auditoría F0 (13/11/2026) — gate de reproducción
+- Informe técnico verificable: `docs/AUNEA_INTERNAL_F0_BASELINE_20261113.md`. Incluye inventario 46 JS, 33 módulos Python backend, 5.333 líneas CSS, 512 Block_ID, mapa de propietarios/consumidores, 9 páginas FROZEN y 13 snapshots, 123 grupos de selectores repetidos, riesgo y gates por fase.
+- Script reproducible de árbol completo: `tools/aunea-f0-audit.cjs`; revisado en fuente, mide archivos activos/ARCHIVED y candidatos de dependencias y CSS. No borra ni modifica datos.
+- Workflow específico: `.github/workflows/aunea-f0-inventory.yml`; sobre un checkout real debe generar `f0-inventory.json`, validar 46 módulos/9 FROZEN y guardar evidencia en `docs/audit/AUNEA_INTERNAL_F0_INVENTORY.json` si el token tiene permisos y el gate es PASS.
+- **No se dispone todavía de una ejecución CI verificada ni de su JSON versionado.** Por coherencia con el criterio de cierre original, F0 sigue **GATE PENDIENTE**, sin crear un PASS ficticio. La investigación estática y la planificación de F1–F6 sí están completadas.
+- El conteo antiguo de 44 módulos es histórico: el manifiesto vigente contiene 46 después de la separación de eventos y de la proyección global IA. No confundir disminución de líneas por archivo con reducción neta del producto.
+- Los gates de comportamiento (Node, pytest, Chromium, UAT Windows) pertenecen a estabilización/F6 y siguen pendientes. No hacer merge ni tocar FROZEN por la publicación de un informe.
