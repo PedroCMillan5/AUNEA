@@ -99,7 +99,7 @@ for(const [p,source] of activeRuntimeSources){
 const dependencyEdges=[],ambiguousFunctions=[];
 for(const [name,owners] of declaredFunctions){
   if(owners.length>1){ambiguousFunctions.push({name,owners});continue;}
-  const word=new RegExp('\\b'+name.replace(/[$]/g,'\\const testPaths=active.filter(x=>/3_SYSTEM\/frontend\/tests\/.*\.test\.cjs$/.test(x.path)||/3_SYSTEM\/backend\/tests\/test_.*\.py$/.test(x.path));')+'\\s*\\(','g');
+  const word=new RegExp('\\b'+name.replace(/[$]/g,'\\$&')+'\\s*\\(','g');
   for(const [consumer,source] of activeRuntimeSources){
     if(consumer===owners[0])continue;
     if(word.test(source))dependencyEdges.push({owner:owners[0],consumer,reference:name});
