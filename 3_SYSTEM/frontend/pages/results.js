@@ -526,19 +526,19 @@ function eur(x){return Number(x||0).toLocaleString('es-ES',{style:'currency',cur
 // __AUNEA_RESULTS_OFFICIAL_PAGES_MODULE__
 // [AUNEA-FE-PG10-MAP-NAV-160] START — Read-only map nodes open source-bound diagnostic point details.
 // SOURCE: Simulator CANONICAL PG10; DEC-050/065. No mutations to the confirmed AS-IS.
-// Single interaction owner for both map nodes and source-linked evidence anchors.
-function focusDiagnosticEvidence(target){
-  document.querySelectorAll('.asis-opportunity-point.is-selected').forEach(x=>x.classList.remove('is-selected'));
-  document.querySelectorAll('.asis-opportunity-point .asis-point-review').forEach(x=>{x.open=false;});
-  const parent=target.closest?.('.pg10-critical-points');
-  if(parent)parent.open=true;
-  target.classList.add('is-selected');
-  const details=target.querySelector('.asis-point-review');
-  if(details)details.open=true;
-  target.scrollIntoView?.({block:'start',behavior:'smooth'});
-}
 function bindDiagnosticMapPointNavigation(){
   if(state.activePage!=='resultados'||typeof document==='undefined')return;
+  // Single interaction owner for both map nodes and source-linked evidence anchors.
+  function focusDiagnosticEvidence(target){
+    document.querySelectorAll('.asis-opportunity-point.is-selected').forEach(x=>x.classList.remove('is-selected'));
+    document.querySelectorAll('.asis-opportunity-point .asis-point-review').forEach(x=>{x.open=false;});
+    const parent=target.closest?.('.pg10-critical-points');
+    if(parent)parent.open=true;
+    target.classList.add('is-selected');
+    const details=target.querySelector('.asis-point-review');
+    if(details)details.open=true;
+    target.scrollIntoView?.({block:'start',behavior:'smooth'});
+  }
   document.querySelectorAll('.process-graph-readonly [data-graph-node]').forEach(node=>{
     const id=String(node.dataset.graphNode||'');
     const target=document.getElementById('asis-source-step-'+id);
