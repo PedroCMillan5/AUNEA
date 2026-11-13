@@ -201,7 +201,7 @@ test('all 46 runtime modules obey the F1 shared-style anti-regression baseline',
   const inventory=JSON.parse(cp.execFileSync(process.execPath,[script],{
     cwd:path.resolve(root,'../..'),encoding:'utf8',maxBuffer:8*1024*1024
   }));
-  const baseline=JSON.parse(load('../../docs/audit/AUNEA_INTERNAL_DESIGN_CONSUMERS.json'));
+  const baseline=JSON.parse(load('../../docs/audit/AUNEA_INTERNAL_DESIGN_BASELINE_20261113.json'));
   assert.equal(inventory.metrics.modules,46,'Cover the complete current manifest');
   assert.equal(inventory.frozen.length,9,'Approved frozen boundary remains intact');
   assert.equal(inventory.metrics.documentedComponents,20);
