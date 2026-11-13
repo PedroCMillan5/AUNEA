@@ -1479,7 +1479,7 @@ function tobeOptimizationPanelHtml(e,p,item){
 function tobeCanvasHtml(e,p){
   const steps=tobeFutureSteps(e,p);
   if(typeof processGraphData!=='function')
-    return '<div class="notice warn">No está disponible el mapa; no se modificaron datos.</div>';
+    return auneaNoticeMessage('warn','No está disponible el mapa; no se modificaron datos.');
   const graph=processGraphData(e,steps),selected=tobeSelectedItem(e,p),
     flow=tobeFlowOwner(e,p),editable=tobeEditable(p);
   const placements=graph.nodes.map(n=>{
@@ -1643,7 +1643,7 @@ function tobeDecisionSourceSummaryHtml(e,p,item){
 // [AUNEA-FE-PG11-UNIFIED-DECISIONS-357] END
 function tobeInspectorHtml(e,p){
   const item=tobeSelectedItem(e,p),editable=tobeEditable(p);
-  if(!item)return '<div class="notice warn">No hay actividades TO-BE vinculadas al AS-IS.</div>';
+  if(!item)return auneaNoticeMessage('warn','No hay actividades TO-BE vinculadas al AS-IS.');
   const allItems=[...(p.items||[]),...tobeAddedSteps(p)],
     itemIndex=allItems.findIndex(x=>tobeFlowItemId(x)===tobeFlowItemId(item)),
     nextItem=itemIndex>=0?allItems[itemIndex+1]:null,
@@ -1952,7 +1952,7 @@ function tobePage(){
   const e=currentEng(),snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;
   if(!snap)return pageTop('Diseño TO-BE','Necesita un AS-IS confirmado.',
     '<button class="btn" data-page="diagnostico">Volver al AS-IS</button>')+
-    '<div class="notice warn">Confirma el cierre del AS-IS antes de diseñar el proceso futuro.</div>';
+    auneaNoticeMessage('warn','Confirma el cierre del AS-IS antes de diseñar el proceso futuro.');
   if(!currentDiagnosticOutput(e))return pageTop('TO-BE preliminar',
     'Vista de orientación para preparar el diseño futuro; todavía no es un proceso propuesto ni una recomendación aprobada.',
     '<button class="btn btn-primary" data-page="resultados">Volver a revisión del AS-IS</button>')+
@@ -1962,7 +1962,7 @@ function tobePage(){
       '<p><b>Qué no sucede aquí:</b> no se modifican datos del AS-IS, no se crea ni aprueba un TO-BE y no se calculan ahorros o precios futuros.</p></div>')+
     section('Problemas de origen','Referencias AS-IS para orientar el diseño. No se editan aquí.',asisPointCardsHtml(asisAnalysisSource(e)))+
     section('Vías de intervención pendientes de validar','Opciones de análisis, no alternativas seleccionadas.',asisDirectionCardsHtml(e))+
-    '<div class="notice warn">La edición y aprobación de un TO-BE definitivo requiere la recomendación oficial vigente. Regresa a PG10 para revisar las decisiones técnicas y comprobar requisitos.</div>';const p=latestTobe(e);
+    auneaNoticeMessage('warn','La edición y aprobación de un TO-BE definitivo requiere la recomendación oficial vigente. Regresa a PG10 para revisar las decisiones técnicas y comprobar requisitos.');const p=latestTobe(e);
   if(!p)return pageTop('Diseño TO-BE','El proceso futuro parte del AS-IS confirmado.',
     '<button class="btn btn-primary" id="createTobeDraft">Crear borrador desde AS-IS confirmado</button>')+
     section('Fuente confirmada','El diseño comienza como propuesta sin aprobar.',
