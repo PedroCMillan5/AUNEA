@@ -214,7 +214,7 @@ test('section 01 preserves OTHER role and rejects missing or cross-company Conta
 });
 
 test('sections 01, 02 and 03 share PG11 card surfaces and readable hierarchy',()=>{
-  const shared=fs.readFileSync(path.join(root,'styles.css'),'utf8');
+  const shared=baseCss;
   assert.match(shared,/\.aunea-ui-work-surface\{\s*display:grid;gap:14px;min-width:0;padding:20px 22px;/);
   assert.match(src,/tobe-context aunea-ui-work-surface/);
   assert.match(src,/tobe-global-analysis aunea-ui-work-surface/);
