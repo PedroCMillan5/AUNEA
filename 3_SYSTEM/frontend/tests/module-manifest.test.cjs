@@ -81,7 +81,9 @@ test('internal-work event registration is separated from views and loaded before
   const tobeIndex=modules.findIndex(m=>m.path==='pages/tobe.js');
   const outputReviewIndex=modules.findIndex(m=>m.path==='domain/output-review.js');
   assert.ok(eventsIndex>viewsIndex&&eventsIndex>tobeIndex&&eventsIndex>outputReviewIndex);
-  assert.equal(eventsIndex,bootIndex-1,'event module must load directly before boot');
+  const aiIndex=modules.findIndex(m=>m.path==='domain/internal-ai-pilot.js');
+  assert.equal(eventsIndex+1,aiIndex,'event module must define handlers before IA decorator reads them');
+  assert.ok(bootIndex>aiIndex,'both modules must load before startup');
   const results=fs.readFileSync(path.join(root,'pages/results.js'),'utf8');
   const events=fs.readFileSync(path.join(root,eventsPath),'utf8');
   assert.doesNotMatch(results,/function registerInternalWorkPages\(/,
@@ -97,7 +99,9 @@ test('PG11 global overview is a single read-only module loaded before work handl
     handlers='pages/internal-work-events.js';
   const order=path=>modules.findIndex(entry=>entry.path===path);
   assert.ok(order(global)>order(workspace));
-  assert.equal(order(global)+1,order(handlers));
+  assert.ok(order(handlers)<order('domain/internal-ai-pilot.js'));
+  assert.ok(order(global)>order('domain/internal-ai-pilot.js'));
+  assert.ok(order(global)<order('boot.js'));
   const source=fs.readFileSync(path.join(root,workspace),'utf8');
   const globalSource=fs.readFileSync(path.join(root,global),'utf8');
   assert.match(source,/__AUNEA_PG11_GLOBAL_VIEW_MODULE__/);
