@@ -10,7 +10,7 @@
     "modules": 46,
     "cssClasses": 1084,
     "classesCrossFile": 107,
-    "repeatedSelectorContextGroups": 140,
+    "repeatedSelectorContextGroups": 139,
     "documentedComponents": 20,
     "inlineStyleAttributes": 33
   },
@@ -3134,7 +3134,7 @@
       "ownerFiles": [
         "ui-system.css"
       ],
-      "ruleOccurrences": 4,
+      "ruleOccurrences": 3,
       "runtimeConsumers": [
         "domain/analysis-workbench.js"
       ],
@@ -17558,19 +17558,6 @@
       ]
     },
     {
-      "selectorContext": " | .asis-confirmed-data-heading>b",
-      "owners": [
-        {
-          "owner": "ui-system.css",
-          "line": 2113
-        },
-        {
-          "owner": "ui-system.css",
-          "line": 2137
-        }
-      ]
-    },
-    {
       "selectorContext": " | .asis-data-group",
       "owners": [
         {
@@ -22322,27 +22309,6 @@
         "manualVisualReviewRequired": true
       },
       {
-        "selectorContext": " | .asis-confirmed-data-heading>b",
-        "occurrences": 2,
-        "owners": [
-          {
-            "owner": "ui-system.css",
-            "line": 2113
-          },
-          {
-            "owner": "ui-system.css",
-            "line": 2137
-          }
-        ],
-        "cssClasses": [
-          "asis-confirmed-data-heading"
-        ],
-        "status": "PENDING_BROWSER_QA",
-        "reason": "Shared or unscoped selector requires browser and source-owner inspection",
-        "browserVerified": false,
-        "manualVisualReviewRequired": true
-      },
-      {
         "selectorContext": " | .asis-data-group",
         "occurrences": 2,
         "owners": [
@@ -23192,13 +23158,13 @@
     ],
     "counts": {
       "crossFileClasses": 107,
-      "selectorContexts": 140,
+      "selectorContexts": 139,
       "protectedClasses": 106,
       "protectedSelectorContexts": 97,
       "scopedClassExceptions": 1,
       "scopedSelectorExceptions": 35,
       "unresolvedClasses": 0,
-      "unresolvedSelectorContexts": 8,
+      "unresolvedSelectorContexts": 7,
       "browserApproved": 0
     }
   }
