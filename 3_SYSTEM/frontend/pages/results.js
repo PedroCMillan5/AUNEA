@@ -523,7 +523,8 @@ function diagnosisEngineDecisionTraceHtml(e){
 
 function num(x){return Number(x||0).toLocaleString('es-ES',{maximumFractionDigits:1})}
 function eur(x){return Number(x||0).toLocaleString('es-ES',{style:'currency',currency:'EUR',maximumFractionDigits:0})}
-// __AUNEA_RESULTS_OFFICIAL_PAGES_MODULE__// [AUNEA-FE-PG10-MAP-NAV-160] START — Read-only map nodes open source-bound diagnostic point details.
+// __AUNEA_RESULTS_OFFICIAL_PAGES_MODULE__
+// [AUNEA-FE-PG10-MAP-NAV-160] START — Read-only map nodes open source-bound diagnostic point details.
 // SOURCE: Simulator CANONICAL PG10; DEC-050/065. No mutations to the confirmed AS-IS.
 function bindDiagnosticMapPointNavigation(){
   if(state.activePage!=='resultados'||typeof document==='undefined')return;
