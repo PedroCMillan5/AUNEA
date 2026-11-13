@@ -186,7 +186,7 @@ test('all approved screens remain under nine explicit frozen-page gates',()=>{
 test('design inventory covers every manifest source and all documented DS categories',()=>{
   const manifest=JSON.parse(load('module-manifest.json')).modules;
   const script=load('../../tools/aunea-design-system-audit.cjs');
-  const catalog=require('../../tools/aunea-ui-component-map.cjs');
+  const catalog=require(path.resolve(root,'../../tools/aunea-ui-component-map.cjs'));
   assert.match(script,/manifest\.map|for\(const m of manifest\)/);
   assert.match(script,/aunea-ui-component-map\.cjs/);
   assert.equal(Object.keys(catalog).length,20);
