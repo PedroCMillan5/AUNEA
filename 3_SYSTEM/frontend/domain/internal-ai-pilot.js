@@ -829,7 +829,7 @@ function internalAiPilotNarrative(value){
 function internalAiAuditJson(value,label='JSON técnico'){
   if(value==null)return '<p class="field-help">No disponible en esta ejecución.</p>';
   return '<details><summary>'+esc(label)+'</summary><button type="button" class="btn btn-outline" data-ai-copy>Copiar JSON</button>'+
-    '<pre style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:30rem;overflow:auto">'+esc(JSON.stringify(value,null,2))+'</pre></details>';
+    '<pre class="aunea-ui-code-pre">'+esc(JSON.stringify(value,null,2))+'</pre></details>';
 }
 function internalAiAuditValues(value){
   if(value==null)return 'No transmitido';
