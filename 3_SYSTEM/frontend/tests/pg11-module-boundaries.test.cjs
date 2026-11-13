@@ -81,4 +81,17 @@ test('F3 review facts/AI/human field presentation has only one owner',()=>{
  assert.doesNotMatch(source,/__AUNEA_PG11_REVIEW_MODULE__/);
  assert.match(source,/\[AUNEA-FE-PG11-AI-REVIEW-DIFF-260\] START/);
 });
+
+test('F3 separates official result pages from PG10 without another event owner',()=>{
+ const official=read('pages/results-official.js');
+ assert.match(results,/__AUNEA_RESULTS_OFFICIAL_PAGES_MODULE__/);
+ assert.match(official,/\[AUNEA-FE-RESULTS-OFFICIAL-PAGES-410\] START/);
+ for(const name of ['recommendationPage','scenariosPage','createScenario','downloadQuotePdf','quotePage']){
+  const signature='function '+name+'(';
+  assert.equal([results,official].filter(x=>x.includes(signature)).length,1,name);
+  assert.ok(official.includes(signature),'Expected official owner '+name);
+ }
+ assert.doesNotMatch(official,/document\.addEventListener\(/,
+  'Page views must not register global event handlers');
+});
 // [AUNEA-UAT-PG11-MODULE-373] END
