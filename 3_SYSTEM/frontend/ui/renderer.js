@@ -780,4 +780,13 @@ function auneaWorkDisclosure(kind,title,body){
   return '<details class="'+attr(kind)+' aunea-ui-work-disclosure"><summary>'+esc(title)+'</summary>'+(body||'')+'</details>';
 }
 // [AUNEA-FE-UI-WORK-DISCLOSURE-380] END
-
+// [AUNEA-FE-UI-EMPTY-STATE-393] START — Shared semantic no-data state
+// SOURCE: CATALOGO_COMPONENTES_AUNEA DS-003/004; DEC-056.
+// PURPOSE: Reuse a single accessible empty-state structure across unfrozen views.
+// INPUTS: public user-facing title and explanation; escaped before rendering.
+// OUTPUT: same "empty" DOM markup as existing project and PG12 views.
+// SIDE_EFFECTS: none. CHANGE_RISK: LOW.
+function auneaEmptyState(title,description){
+  return '<div class="empty"><h2>'+esc(title)+'</h2><p>'+esc(description)+'</p></div>';
+}
+// [AUNEA-FE-UI-EMPTY-STATE-393] END
