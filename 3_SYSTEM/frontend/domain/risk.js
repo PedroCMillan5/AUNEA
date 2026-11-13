@@ -1,6 +1,15 @@
 // [AUNEA-FE-RISK-CAPTURE-030] START — Riesgos del estudio, gestión privada y contexto desde pasos.
 // SOURCE: Diagnostic Master v1.2; DEC-050/055/065; RiskInput canónico.
 // The client display never receives scores or editing controls. Backend owns risk classification.
+// [AUNEA-FE-RISK-CANDIDATE-RECONCILE-115] Shared evidence merge, consumed by risk and friction candidate review.
+// Aggregation only: does not classify, confirm, create or overwrite registered risks/frictions.
+function mergeReviewCandidateEvidence(current,x){
+  current.step_ids=[...new Set([...normalizeArray(current.step_ids),...normalizeArray(x.step_ids)])];
+  current.review_questions=[...new Set([...normalizeArray(current.review_questions),...normalizeArray(x.review_questions)])];
+  current.source_signals=[...new Set([...normalizeArray(current.source_signals),...normalizeArray(x.source_signals)])];
+  current._candidate_ids=[...new Set([...normalizeArray(current._candidate_ids),x.candidate_id].filter(Boolean))];
+  return current;
+}
 function riskDropdown(id,opts,value='',placeholder='Selecciona…'){
   return auneaSelectControl(id,opts,value,{placeholder});
 }
@@ -79,10 +88,7 @@ async function reviewRiskCandidates(){
     normalizeArray(r?.candidates).forEach(x=>{
       const key=String(x.title||x.suggested_description||'Posible riesgo');
       const current=grouped.get(key)||{...x,step_ids:[],review_questions:[],source_signals:[],_candidate_ids:[]};
-      current.step_ids=[...new Set([...normalizeArray(current.step_ids),...normalizeArray(x.step_ids)])];
-      current.review_questions=[...new Set([...normalizeArray(current.review_questions),...normalizeArray(x.review_questions)])];
-      current.source_signals=[...new Set([...normalizeArray(current.source_signals),...normalizeArray(x.source_signals)])];
-      current._candidate_ids=[...new Set([...normalizeArray(current._candidate_ids),x.candidate_id].filter(Boolean))];
+      mergeReviewCandidateEvidence(current,x);
       if(!current.rationale)current.rationale=x.rationale||'';
       if(!current.suggested_description)current.suggested_description=x.suggested_description||'';
       grouped.set(key,current);
