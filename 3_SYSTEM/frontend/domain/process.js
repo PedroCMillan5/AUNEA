@@ -486,10 +486,7 @@ async function reviewPainCandidates(){
       const key=String(x.pain_id||'');
       if(!key)return;
       const current=grouped.get(key)||{...x,step_ids:[],review_questions:[],source_signals:[],_candidate_ids:[]};
-      current.step_ids=[...new Set([...normalizeArray(current.step_ids),...normalizeArray(x.step_ids)])];
-      current.review_questions=[...new Set([...normalizeArray(current.review_questions),...normalizeArray(x.review_questions)])];
-      current.source_signals=[...new Set([...normalizeArray(current.source_signals),...normalizeArray(x.source_signals)])];
-      current._candidate_ids=[...new Set([...normalizeArray(current._candidate_ids),x.candidate_id].filter(Boolean))];
+      mergeReviewCandidateEvidence(current,x);
       if(!current.rationale)current.rationale=x.rationale||'';
       grouped.set(key,current);
     });
