@@ -195,7 +195,7 @@ test('design inventory covers every manifest source and all documented DS catego
     assert.ok(catalog[id],'Missing governed design category '+id);
     assert.ok(Array.isArray(catalog[id].selector),'Missing CSS candidate list '+id);
   }
-  assert.equal(manifest.length,48);
+  assert.equal(manifest.length,49);
 });
 
 
@@ -226,7 +226,7 @@ test('all active runtime modules obey the F1 shared-style anti-regression baseli
     if(original.frozenRisk)assert.equal(item.status,'FROZEN_PROTECTED',
       'A FROZEN consumer may not be silently reclassified');
   }
-  assert.equal(inventory.metrics.modules,48,'Cover the complete current manifest');
+  assert.equal(inventory.metrics.modules,49,'Cover the complete current manifest');
   assert.equal(inventory.frozen.length,9,'Approved frozen boundary remains intact');
   assert.equal(inventory.metrics.documentedComponents,20);
   for(const key of ['classesCrossFile','repeatedSelectorContextGroups','inlineStyleAttributes'])
