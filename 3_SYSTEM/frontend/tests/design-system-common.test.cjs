@@ -186,10 +186,14 @@ test('all approved screens remain under nine explicit frozen-page gates',()=>{
 test('design inventory covers every manifest source and all documented DS categories',()=>{
   const manifest=JSON.parse(load('module-manifest.json')).modules;
   const script=load('../../tools/aunea-design-system-audit.cjs');
+  const catalog=require('../../tools/aunea-ui-component-map.cjs');
   assert.match(script,/manifest\.map|for\(const m of manifest\)/);
+  assert.match(script,/aunea-ui-component-map\.cjs/);
+  assert.equal(Object.keys(catalog).length,20);
   for(let i=1;i<=20;i++){
     const id='DS-'+String(i).padStart(3,'0');
-    assert.ok(script.includes("'"+id+"'"),'Missing governed design category '+id);
+    assert.ok(catalog[id],'Missing governed design category '+id);
+    assert.ok(Array.isArray(catalog[id].selector),'Missing CSS candidate list '+id);
   }
   assert.equal(manifest.length,46);
 });
