@@ -1,9 +1,9 @@
-// [AUNEA-FE-RESULTS-VIEW-010] START — Resultados, recomendación, escenarios y cotización
-// PURPOSE: Vistas de sólo lectura sobre DiagnosticOutput y escenarios ligados al snapshot exacto mostrado.
+// [AUNEA-FE-RESULTS-VIEW-010] START — PG10 diagnóstico de solo lectura, navegación a evidencias y revisión humana
+// PURPOSE: Mostrar PG10, trazabilidad y revisión. Recomendación/escenarios/cotización tienen owner separado results-official.js.
 // SOURCE: Diagnostic Master v1.1; DEC-034/040/041/052/053/055; Architecture Contract v1.3 PG10–PG15/S2.
 // INPUTS: schema canónico, Engagement, snapshot confirmado, TO-BE versionado y DiagnosticOutput calculado por backend.
-// OUTPUTS: diagnóstico, TO-BE, comparación AS-IS/TO-BE, recomendación, escenarios, cotización y Modo Resultados.
-// SIDE_EFFECTS: DOM/state; HTTP sólo para comparar escenarios y descargar PDF.
+// OUTPUTS: PG10, trazabilidad, resumen y revisión humana, sin duplicar datos ni lógica de motores.
+// SIDE_EFFECTS: selección DOM de evidencias PG10. No recalcula ni genera cotizaciones/PDF en este módulo.
 // CHANGE_RISK: HIGH.
 
 function hasConfirmedEngagementSnapshot(e){
