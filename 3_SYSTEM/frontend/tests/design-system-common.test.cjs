@@ -195,11 +195,11 @@ test('design inventory covers every manifest source and all documented DS catego
     assert.ok(catalog[id],'Missing governed design category '+id);
     assert.ok(Array.isArray(catalog[id].selector),'Missing CSS candidate list '+id);
   }
-  assert.equal(manifest.length,46);
+  assert.equal(manifest.length,47);
 });
 
 
-test('all 46 runtime modules obey the F1 shared-style anti-regression baseline',()=>{
+test('all active runtime modules obey the F1 shared-style anti-regression baseline',()=>{
   const cp=require('node:child_process');
   const script=path.resolve(root,'../../tools/aunea-design-system-audit.cjs');
   const inventory=JSON.parse(cp.execFileSync(process.execPath,[script],{
@@ -226,7 +226,7 @@ test('all 46 runtime modules obey the F1 shared-style anti-regression baseline',
     if(original.frozenRisk)assert.equal(item.status,'FROZEN_PROTECTED',
       'A FROZEN consumer may not be silently reclassified');
   }
-  assert.equal(inventory.metrics.modules,46,'Cover the complete current manifest');
+  assert.equal(inventory.metrics.modules,47,'Cover the complete current manifest');
   assert.equal(inventory.frozen.length,9,'Approved frozen boundary remains intact');
   assert.equal(inventory.metrics.documentedComponents,20);
   for(const key of ['classesCrossFile','repeatedSelectorContextGroups','inlineStyleAttributes'])
