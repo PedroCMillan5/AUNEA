@@ -110,4 +110,23 @@ test('PG11 global overview is a single read-only module loaded before work handl
   assert.match(globalSource,/\[AUNEA-FE-PG11-GLOBAL-OVERVIEW-284\] START/);
   assert.match(globalSource,/\[AUNEA-FE-PG11-GLOBAL-OVERVIEW-284\] END/);
 });
+
+test('F3 PG10 evidence analysis and PG11 flow are declared in correct dependency order',()=>{
+ const idx=path=>modules.findIndex(x=>x.path===path);
+ assert.equal(modules.filter(x=>x.path==='pages/results-analysis.js').length,1);
+ assert.equal(modules.filter(x=>x.path==='pages/tobe-flow.js').length,1);
+ assert.ok(idx('pages/results.js')<idx('pages/results-analysis.js'));
+ assert.ok(idx('pages/results-analysis.js')<idx('domain/tobe-transactions.js'));
+ assert.ok(idx('pages/tobe.js')<idx('pages/tobe-flow.js'));
+ assert.ok(idx('pages/tobe-flow.js')<idx('pages/comparison.js'));
+ const results=fs.readFileSync(path.join(root,'pages/results.js'),'utf8');
+ const analysis=fs.readFileSync(path.join(root,'pages/results-analysis.js'),'utf8');
+ assert.match(results,/__AUNEA_PG10_ANALYSIS_MODULE__/);
+ assert.doesNotMatch(results,/function diagnosisEconomicsHtml\(/);
+ assert.match(analysis,/function diagnosisEconomicsHtml\(/);
+ assert.match(analysis,/function diagnosisRisksHtml\(/);
+ const reconstructed=require('./pg11-source.cjs')();
+ assert.doesNotMatch(reconstructed,/__AUNEA_PG10_ANALYSIS_MODULE__/);
+ assert.match(reconstructed,/function diagnosisEconomicsHtml\(/);
+});
 // [AUNEA-UAT-MODULE-MANIFEST-010] END
