@@ -399,3 +399,13 @@ test('PG04 captures automation exclusions before the map without requesting step
     e.layerConfirmations=saved.layerConfirmations;
   }
 });
+
+test('F5: linked-step renderer single/multi have one owner and keep their original controls',()=>{
+  assert.equal((code.match(/function linkedStepSingle\\(/g)||[]).length,1);
+  assert.equal((code.match(/function linkedStepMulti\\(/g)||[]).length,1);
+  const single=ctx.linkedStepSingle('ref_step',e,'s1');
+  const multi=ctx.linkedStepMulti('ref_steps',e,['s1']);
+  assert.match(single,/data-linked-step-single="ref_step"/);
+  assert.match(multi,/data-linked-step-multi="ref_steps"/);
+  assert.match(multi,/checked/);
+});
