@@ -34,7 +34,7 @@ function tobeComparisonPage(){
   if(!snap||!p||!['REVIEWED','APPROVED_FOR_CLIENT','PUBLISHED'].includes(p.status))
     return pageTop('AS-IS vs TO-BE','La comparación reutiliza las fuentes versionadas; no captura datos nuevos.',
       '<button class="btn" data-page="tobe">Volver a TO-BE</button>')+
-      '<div class="empty"><h2>TO-BE revisado requerido</h2><p>La comparación se habilita cuando el TO-BE ha pasado revisión humana.</p></div>';
+      auneaEmptyState('TO-BE revisado requerido','La comparación se habilita cuando el TO-BE ha pasado revisión humana.');
   const source=(e.confirmedSnapshots||[]).find(s=>s.version===p.sourceSnapshotVersion)||snap,
     asis=(source.processSteps||[]).filter(x=>x.status!=='SUPERSEDED'),
     future=[...p.items,...tobeAddedSteps(p)],originalById=new Map(asis.map(x=>[String(x.id),x]));
