@@ -18,6 +18,14 @@ module.exports=function pg11LegacySourceOracle(){
   if(workspace.split(globalView).length!==2)throw Error('PG11 global view boundary is missing or duplicated');
   workspace=workspace.replace(globalView,read('pages/tobe-global.js').trimEnd());
   let source=read('pages/results.js');
+  const officialMarker='// __AUNEA_RESULTS_OFFICIAL_PAGES_MODULE__';
+  if(source.split(officialMarker).length!==2)throw Error('Official results boundary missing or duplicated');
+  const official=read('pages/results-official.js'),
+    open='// [AUNEA-FE-RESULTS-OFFICIAL-PAGES-410] START',
+    close='// [AUNEA-FE-RESULTS-OFFICIAL-PAGES-410] END';
+  if(official.indexOf(open)!==0||!official.includes(close))throw Error('Official results owner block missing');
+  const originalBody=official.slice(official.indexOf('\n')+1,official.indexOf(close));
+  source=source.replace(officialMarker,originalBody);
   const analysis='// __AUNEA_PG10_ANALYSIS_MODULE__';
   if(source.split(analysis).length!==2)throw Error('PG10 analysis boundary missing or duplicated');
   source=source.replace(analysis,read('pages/results-analysis.js').trimEnd());
