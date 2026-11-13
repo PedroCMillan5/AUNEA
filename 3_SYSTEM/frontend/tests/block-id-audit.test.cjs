@@ -66,6 +66,13 @@ function listScanFiles() {
       if (f.endsWith('.yml') || f.endsWith('.yaml')) files.push(path.join(workflowsDir, f));
     }
   }
+  // F1/F2 technical audits also contain governed Block_ID responsibilities.
+  const auditToolsDir = path.join(repoRoot, 'tools');
+  if (fs.existsSync(auditToolsDir)) {
+    for (const name of fs.readdirSync(auditToolsDir)) {
+      if (name.endsWith('.cjs')) files.push(path.join(auditToolsDir, name));
+    }
+  }
   return files.filter(f => fs.existsSync(f));
 }
 
