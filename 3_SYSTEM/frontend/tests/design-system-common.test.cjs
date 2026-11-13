@@ -153,4 +153,45 @@ test('work disclosure builder preserves semantic markup and escapes its label',(
   assert.equal(build('pg10-stage-nav','<revisión>',''),
     '<details class="pg10-stage-nav aunea-ui-work-disclosure"><summary>&lt;revisión&gt;</summary></details>');
 });
+
+test('cross-screen shared primitives are defined once and consumed from CRM through PG12+',()=>{
+  const core=load('core/state.js'),renderer=load('ui/renderer.js');
+  for(const fn of ['pageTop','section','statusBadge','openModal'])
+    assert.match(core,new RegExp('function '+fn+'\\('),'Missing common owner: '+fn);
+  assert.match(renderer,/function auneaSelectControl\(/);
+  for(const selector of ['.card{','.btn{','.data-table{','.field{','.notice{','.status{','.page-head{'])
+    assert.ok(base.includes(selector),'Base visual owner missing: '+selector);
+  const sourceFiles=[
+    'pages/crm-companies.js','pages/crm-contacts.js','pages/crm-interactions.js',
+    'pages/crm-opportunities.js','ui/shell.js','pages/diagnostic-stages.js',
+    'pages/results.js','pages/tobe.js','pages/tobe-global.js',
+    'pages/comparison.js','pages/projects.js','pages/session-display.js'
+  ];
+  for(const source of sourceFiles){
+    const contents=load(source);
+    assert.match(contents,/class=\"(?:[^"]*\b)?(?:btn|card|notice|field|data-table|empty|status|badge)\b/,
+      'Screen must consume the shared existing UI foundation: '+source);
+  }
+});
+
+test('all approved screens remain under nine explicit frozen-page gates',()=>{
+  const frozen=JSON.parse(load('FROZEN_PAGES.json'));
+  assert.equal(frozen.frozen_pages.length,9);
+  const names=frozen.frozen_pages.map(x=>x.page_id);
+  for(const name of ['inicio','empresas','contactos','interacciones','oportunidades',
+    'estudios','contexto-objetivos','alcance-proceso','estado-objetivo-restricciones'])
+    assert.ok(names.includes(name),'Missing frozen page: '+name);
+});
+
+test('design inventory covers every manifest source and all documented DS categories',()=>{
+  const manifest=JSON.parse(load('module-manifest.json')).modules;
+  const script=load('../../tools/aunea-design-system-audit.cjs');
+  assert.match(script,/manifest\.map|for\(const m of manifest\)/);
+  for(let i=1;i<=20;i++){
+    const id='DS-'+String(i).padStart(3,'0');
+    assert.ok(script.includes("'"+id+"'"),'Missing governed design category '+id);
+  }
+  assert.equal(manifest.length,46);
+});
+
 // [AUNEA-UAT-DESIGN-COMMON-312] END
