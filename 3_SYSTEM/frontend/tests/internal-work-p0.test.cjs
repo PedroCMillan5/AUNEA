@@ -4,6 +4,9 @@ const fs=require('node:fs');
 const path=require('node:path');
 const root=path.resolve(__dirname,'..');
 const results=require('./pg11-source.cjs')();
+const sharedNoticeSource=fs.readFileSync(path.join(root,'ui/renderer.js'),'utf8')
+  .match(/function auneaNoticeMessage\(tone,message\)\{[\s\S]*?\n\}/)?.[0];
+assert.ok(sharedNoticeSource,'PG10 test must load real common notice renderer');
 const resultsContext=fs.readFileSync(path.join(root,'domain/result-context.js'),'utf8');
 const comparison=fs.readFileSync(path.join(root,'pages/comparison.js'),'utf8');
 const workbench=fs.readFileSync(path.join(root,'domain/analysis-workbench.js'),'utf8');
@@ -723,7 +726,7 @@ test('PG10 synthesis reads the backend projection without inventing rankings, ca
   assert.ok(start>=0&&end>start);
   const fn=new Function('normalizeArray','diagnosisTrace','diagnosisStepName','diagnosisPainLabel',
     'engineLabel','esc','labelFrom','evidenceTypeBackend','num','attr',
-    results.slice(start,end)+'\nreturn pg10SynthesisHtml;')(
+    sharedNoticeSource+'\n'+results.slice(start,end)+'\nreturn pg10SynthesisHtml;')(
       v=>Array.isArray(v)?v:v==null?[]:[v],
       (_record,p)=>({
         frictions:[{id:p.frictionId,friction_type:'FT1',observable_signal:'Seguimiento manual',
@@ -784,7 +787,7 @@ test('PG10 review distinguishes preliminary PG11 from official design and never 
   const sharedDisclosure=renderer.match(/function auneaWorkDisclosure\(kind,title,body\)\{[\s\S]*?\n\}/)?.[0];
   assert.ok(sharedDisclosure,'Actual shared disclosure builder is available');
   const fn=new Function('esc','attr','diagnosisEngineDecisionTraceHtml',
-    sharedDisclosure+'\n'+results.slice(a,b)+'\nreturn pg10ReviewHtml;')(
+    sharedDisclosure+'\n'+sharedNoticeSource+'\n'+results.slice(a,b)+'\nreturn pg10ReviewHtml;')(
       v=>String(v),v=>String(v),()=>'<p>Decisión técnica registrada</p>');
   const pending=fn({},null,{status:'ANALYZED'},[],[{},{}],{status:'OBSOLETE'},false);
   assert.match(pending,/id="reviewEngineGates"/);
