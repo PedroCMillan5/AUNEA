@@ -277,4 +277,31 @@ test('PG12 and Projects share the semantic empty-state renderer with unchanged H
     '<div class="empty"><h2>&lt;riesgo&gt;</h2><p>Datos &amp; estados</p></div>');
 });
 
+
+test('PG11 uses shared caption typography without parallel page-local type declarations',()=>{
+  const pg11=load('pages/tobe.js');
+  assert.match(pg11,/tobe-context-head[\\s\\S]*?aunea-ui-section-caption/);
+  assert.match(pg11,/tobe-review-section-head aunea-ui-work-surface[\\s\\S]*?aunea-ui-section-caption/);
+  assert.match(base,/\\.aunea-ui-section-caption\\{[\\s\\S]*?font-size:var\\(--font-small\\);/);
+  assert.match(local,/\\.tobe-context-head \\.aunea-ui-section-caption\\{margin:0\\}/);
+  assert.match(local,/\\.tobe-review-section-head p\\{margin:0\\}/);
+});
+
+test('PG10 and recommendations reuse the semantic compact empty-message renderer',()=>{
+  const vm=require('node:vm');
+  const renderer=load('ui/renderer.js'),results=load('pages/results.js');
+  const source=renderer.match(/function auneaEmptyMessage\\(message\\)\\{[\\s\\S]*?\\n\\}/)?.[0];
+  assert.ok(source,'Paragraph-only empty message must use the existing component owner');
+  const esc=v=>String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const render=vm.runInNewContext('('+source+')',{esc});
+  assert.equal(render('Sin fricciones priorizadas.'),
+    '<div class="empty"><p>Sin fricciones priorizadas.</p></div>');
+  assert.equal(render('<dato> & problema'),
+    '<div class="empty"><p>&lt;dato&gt; &amp; problema</p></div>');
+  assert.match(results,/auneaEmptyMessage\\('Sin fricciones priorizadas\\.'\\)/);
+  assert.match(results,/auneaEmptyMessage\\('El backend no ha devuelto hallazgos para este snapshot\\.'\\)/);
+  assert.doesNotMatch(results,/<div class="empty"><p>Sin fricciones priorizadas\\.<\\/p><\\/div>/);
+});
+
 // [AUNEA-UAT-DESIGN-COMMON-312] END
