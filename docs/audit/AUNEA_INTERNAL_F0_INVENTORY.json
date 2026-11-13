@@ -1,10 +1,10 @@
 {
   "status": "STATIC_INVENTORY_GENERATED",
-  "generatedAt": "2026-11-13T08:03:32.550Z",
+  "generatedAt": "2026-11-13T08:05:50.292Z",
   "branch": "Confirm checked-out branch/HEAD with git rev-parse",
   "scope": "Non-archived repository tree; does not prove runtime or visual equivalence",
   "counts": {
-    "activeFiles": 336,
+    "activeFiles": 337,
     "archivedFiles": 13,
     "frontendFiles": 167,
     "backendFiles": 86,
