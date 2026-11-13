@@ -214,4 +214,16 @@ test('all 46 runtime modules obey the F1 shared-style anti-regression baseline',
     assert.ok(inventory.modules.some(m=>m.path.startsWith(prefix)),'Missing page family '+prefix);
 });
 
+
+test('structured IA evidence and session layout use shared visual owner',()=>{
+  const ai=load('domain/internal-ai-pilot.js'),session=load('pages/session-display.js');
+  assert.match(shared,/\.aunea-ui-code-pre\{white-space:pre-wrap;overflow-wrap:anywhere;max-height:30rem;overflow:auto\}/);
+  assert.match(ai,/<pre class="aunea-ui-code-pre">/);
+  assert.doesNotMatch(ai,/<pre style=/);
+  assert.match(session,/class="grid g3 aunea-ui-mt-12"/);
+  assert.doesNotMatch(session,/class="grid g3" style="margin-top:12px"/);
+  // Graph geometry is dynamic data-driven positioning; it must not be replaced with a fixed utility class.
+  assert.match(session,/--graph-cols:/);
+});
+
 // [AUNEA-UAT-DESIGN-COMMON-312] END
