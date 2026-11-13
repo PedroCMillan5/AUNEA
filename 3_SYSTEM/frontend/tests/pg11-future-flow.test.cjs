@@ -383,7 +383,7 @@ test('PG11 rejects empty and inherited NO rationale without modifying source',()
   assert.doesNotMatch(src,/Falta la revisión humana de las propuestas IA de esta versión TO-BE/);
 });
 test('PG11 review rejects P4 NO rationale but never depends on whole-IA acceptance',()=>{
-  const functionNames=['tobeMeaningfulRationale','tobeTransformationRationaleLabel','tobeReviewReadiness'];
+  const functionNames=['tobeMeaningfulRationale','tobeTransformationRationaleLabel','tobeMeaningfulDesignValue','tobeReviewReadiness'];
   const code=functionNames.map(name=>{
     const first=src.indexOf('function '+name+'('),end=src.indexOf('\n}\n',first);
     assert.ok(first>=0&&end>first,name);
