@@ -370,9 +370,7 @@
           "owners": [
             "styles.css"
           ],
-          "consumers": [
-            "pages/results.js"
-          ]
+          "consumers": []
         }
       ],
       "note": "Componente documental, no implica implementación única de HTML o comportamiento"
@@ -918,7 +916,6 @@
             "domain/economics.js",
             "domain/process-lifecycle.js",
             "domain/analysis-workbench.js",
-            "pages/results.js",
             "domain/tobe-transactions.js",
             "pages/tobe.js",
             "pages/tobe-review.js",
@@ -946,7 +943,6 @@
             "domain/opportunity.js",
             "domain/risk.js",
             "domain/economics.js",
-            "pages/results.js",
             "domain/tobe-transactions.js",
             "pages/tobe.js",
             "pages/tobe-flow.js",
@@ -1761,7 +1757,7 @@
       "path": "pages/results.js",
       "layer": "pages",
       "blockId": "AUNEA-FE-RESULTS-VIEW-010",
-      "lines": 685,
+      "lines": 594,
       "family": [
         "Resultados / PG10"
       ],
@@ -1771,16 +1767,12 @@
         "asis-opportunity-point",
         "asis-point-review",
         "aunea-ui-block",
-        "aunea-ui-metric-status",
         "aunea-ui-mt-12",
-        "aunea-ui-mt-14",
         "aunea-ui-mt-8",
-        "aunea-ui-recap-input",
         "btn",
         "btn-outline",
         "btn-primary",
         "card",
-        "card-pad",
         "confirmed",
         "diagnosis-finding",
         "diagnosis-finding-head",
@@ -1798,18 +1790,14 @@
         "diagnosis-state",
         "diagnosis-trace-grid",
         "empty",
-        "field",
         "field-help",
-        "form-grid",
         "g3",
         "g4",
         "grid",
         "info",
-        "internal-tag",
         "metric",
         "notice",
         "open",
-        "optimal",
         "pg10-conclusion-boundaries",
         "pg10-conclusion-item",
         "pg10-conclusion-list",
@@ -1858,10 +1846,6 @@
         "process-graph-readonly",
         "result-item",
         "result-list",
-        "scenario-card",
-        "scenario-grid",
-        "scenario-kpi",
-        "scenario-kpis",
         "warn"
       ]
     },
@@ -4127,11 +4111,9 @@
         "styles.css"
       ],
       "ruleOccurrences": 1,
-      "runtimeConsumers": [
-        "pages/results.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "aunea-ui-mt-12",
@@ -4153,11 +4135,9 @@
         "styles.css"
       ],
       "ruleOccurrences": 1,
-      "runtimeConsumers": [
-        "pages/results.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "aunea-ui-mt-16",
@@ -4189,11 +4169,9 @@
         "styles.css"
       ],
       "ruleOccurrences": 1,
-      "runtimeConsumers": [
-        "pages/results.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "aunea-ui-section-caption",
@@ -4667,7 +4645,6 @@
       "runtimeConsumers": [
         "core/state.js",
         "services/schema.js",
-        "pages/results.js",
         "pages/session-display.js",
         "domain/internal-ai-pilot.js"
       ],
@@ -6759,7 +6736,6 @@
         "domain/economics.js",
         "domain/process-lifecycle.js",
         "domain/analysis-workbench.js",
-        "pages/results.js",
         "domain/tobe-transactions.js",
         "pages/tobe.js",
         "pages/tobe-review.js",
@@ -7059,7 +7035,6 @@
         "domain/opportunity.js",
         "domain/risk.js",
         "domain/economics.js",
-        "pages/results.js",
         "domain/tobe-transactions.js",
         "pages/tobe.js",
         "pages/tobe-flow.js",
@@ -7747,7 +7722,6 @@
       ],
       "ruleOccurrences": 1,
       "runtimeConsumers": [
-        "pages/results.js",
         "domain/process.js"
       ],
       "frozenRisk": true,
@@ -8544,11 +8518,9 @@
         "styles.css"
       ],
       "ruleOccurrences": 1,
-      "runtimeConsumers": [
-        "pages/results.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "page-companies",
@@ -12333,11 +12305,9 @@
         "styles.css"
       ],
       "ruleOccurrences": 3,
-      "runtimeConsumers": [
-        "pages/results.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "scenario-grid",
@@ -12345,11 +12315,9 @@
         "styles.css"
       ],
       "ruleOccurrences": 1,
-      "runtimeConsumers": [
-        "pages/results.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "scenario-kpi",
@@ -12357,11 +12325,9 @@
         "styles.css"
       ],
       "ruleOccurrences": 3,
-      "runtimeConsumers": [
-        "pages/results.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "scenario-kpis",
@@ -12369,11 +12335,9 @@
         "styles.css"
       ],
       "ruleOccurrences": 1,
-      "runtimeConsumers": [
-        "pages/results.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "screen-id",
@@ -18610,7 +18574,6 @@
         "consumers": [
           "core/state.js",
           "services/schema.js",
-          "pages/results.js",
           "pages/session-display.js",
           "domain/internal-ai-pilot.js"
         ],
@@ -18977,7 +18940,6 @@
           "domain/economics.js",
           "domain/process-lifecycle.js",
           "domain/analysis-workbench.js",
-          "pages/results.js",
           "domain/tobe-transactions.js",
           "pages/tobe.js",
           "pages/tobe-review.js",
@@ -19183,7 +19145,6 @@
           "domain/opportunity.js",
           "domain/risk.js",
           "domain/economics.js",
-          "pages/results.js",
           "domain/tobe-transactions.js",
           "pages/tobe.js",
           "pages/tobe-flow.js",
