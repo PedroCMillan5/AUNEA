@@ -23,8 +23,13 @@ module.exports=function pg11LegacySourceOracle(){
   // Legacy VM tests load the assembled PG11 source without loading the full UI
   // renderer. Include the production shared disclosure helper, not a test stub.
   const renderer=read('ui/renderer.js');
-  const workDisclosure=renderer.match(/function auneaWorkDisclosure\(kind,title,body\)\{[\s\S]*?\n\}/)?.[0];
-  if(!workDisclosure)throw Error('Shared internal-work disclosure helper missing');
-  source+='\n'+workDisclosure+'\n';
+  for(const [name,pattern] of [
+    ['auneaWorkDisclosure',/function auneaWorkDisclosure\(kind,title,body\)\{[\s\S]*?\n\}/],
+    ['auneaEmptyMessage',/function auneaEmptyMessage\(message\)\{[\s\S]*?\n\}/]
+  ]){
+    const helper=renderer.match(pattern)?.[0];
+    if(!helper)throw Error('Shared renderer helper missing: '+name);
+    source+='\n'+helper+'\n';
+  }
   return source;
 };
