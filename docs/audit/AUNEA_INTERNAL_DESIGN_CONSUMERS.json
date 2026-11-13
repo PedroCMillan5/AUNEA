@@ -1928,7 +1928,7 @@
       "path": "pages/tobe.js",
       "layer": "pages",
       "blockId": "AUNEA-FE-PG11-GUIDED-NAV-266",
-      "lines": 2058,
+      "lines": 1659,
       "family": [
         "Trabajo interno / PG11"
       ],
@@ -2028,7 +2028,6 @@
         "tobe-decision-context",
         "tobe-decision-context-body",
         "tobe-decision-context-compact",
-        "tobe-decision-readout",
         "tobe-design-evidence",
         "tobe-design-evidence-content",
         "tobe-design-fields",
@@ -2073,14 +2072,6 @@
         "tobe-node-icon",
         "tobe-node-status",
         "tobe-node-tools",
-        "tobe-optimization-body",
-        "tobe-optimization-connections",
-        "tobe-optimization-details",
-        "tobe-optimization-empty",
-        "tobe-optimization-finding",
-        "tobe-optimization-findings",
-        "tobe-optimization-severity",
-        "tobe-optimization-summary",
         "tobe-origin",
         "tobe-origin-fact-group",
         "tobe-origin-header-status",
@@ -2098,7 +2089,6 @@
         "tobe-removed-list",
         "tobe-review-section-head",
         "tobe-review-steps",
-        "tobe-route-editor",
         "tobe-selected-status",
         "tobe-source-list",
         "tobe-stage-body",
@@ -13887,11 +13877,9 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 8,
-      "runtimeConsumers": [
-        "pages/tobe.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "tobe-design-evidence",
@@ -15271,11 +15259,9 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 4,
-      "runtimeConsumers": [
-        "pages/tobe.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "tobe-optimization-connections",
@@ -15283,11 +15269,9 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 5,
-      "runtimeConsumers": [
-        "pages/tobe.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "tobe-optimization-details",
@@ -15295,11 +15279,9 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 3,
-      "runtimeConsumers": [
-        "pages/tobe.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "tobe-optimization-empty",
@@ -15307,11 +15289,9 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 1,
-      "runtimeConsumers": [
-        "pages/tobe.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "tobe-optimization-finding",
@@ -15319,11 +15299,9 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 4,
-      "runtimeConsumers": [
-        "pages/tobe.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "tobe-optimization-findings",
@@ -15331,11 +15309,9 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 1,
-      "runtimeConsumers": [
-        "pages/tobe.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "tobe-optimization-severity",
@@ -15343,11 +15319,9 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 1,
-      "runtimeConsumers": [
-        "pages/tobe.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "tobe-optimization-summary",
@@ -15355,11 +15329,9 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 1,
-      "runtimeConsumers": [
-        "pages/tobe.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "tobe-origin",
@@ -15769,11 +15741,9 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 6,
-      "runtimeConsumers": [
-        "pages/tobe.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "tobe-selected-data-chip",
