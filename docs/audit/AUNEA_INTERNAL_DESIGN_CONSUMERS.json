@@ -22324,8 +22324,8 @@
         "cssClasses": [
           "asis-data-group"
         ],
-        "status": "PENDING_BROWSER_QA",
-        "reason": "Shared or unscoped selector requires browser and source-owner inspection",
+        "status": "SCOPED_EXCEPTION",
+        "reason": "Page-scoped PG10/PG11/PG12 cascade, including distinct layout/state rules; preserve justified variants",
         "browserVerified": false,
         "manualVisualReviewRequired": true
       },
@@ -22345,8 +22345,8 @@
         "cssClasses": [
           "asis-data-group"
         ],
-        "status": "PENDING_BROWSER_QA",
-        "reason": "Shared or unscoped selector requires browser and source-owner inspection",
+        "status": "SCOPED_EXCEPTION",
+        "reason": "Page-scoped PG10/PG11/PG12 cascade, including distinct layout/state rules; preserve justified variants",
         "browserVerified": false,
         "manualVisualReviewRequired": true
       },
@@ -22366,8 +22366,8 @@
         "cssClasses": [
           "asis-data-group"
         ],
-        "status": "PENDING_BROWSER_QA",
-        "reason": "Shared or unscoped selector requires browser and source-owner inspection",
+        "status": "SCOPED_EXCEPTION",
+        "reason": "Page-scoped PG10/PG11/PG12 cascade, including distinct layout/state rules; preserve justified variants",
         "browserVerified": false,
         "manualVisualReviewRequired": true
       },
@@ -22387,8 +22387,8 @@
         "cssClasses": [
           "asis-data-group"
         ],
-        "status": "PENDING_BROWSER_QA",
-        "reason": "Shared or unscoped selector requires browser and source-owner inspection",
+        "status": "SCOPED_EXCEPTION",
+        "reason": "Page-scoped PG10/PG11/PG12 cascade, including distinct layout/state rules; preserve justified variants",
         "browserVerified": false,
         "manualVisualReviewRequired": true
       },
@@ -22408,8 +22408,8 @@
         "cssClasses": [
           "asis-data-pairs"
         ],
-        "status": "PENDING_BROWSER_QA",
-        "reason": "Shared or unscoped selector requires browser and source-owner inspection",
+        "status": "SCOPED_EXCEPTION",
+        "reason": "Page-scoped PG10/PG11/PG12 cascade, including distinct layout/state rules; preserve justified variants",
         "browserVerified": false,
         "manualVisualReviewRequired": true
       },
@@ -23162,9 +23162,9 @@
       "protectedClasses": 106,
       "protectedSelectorContexts": 97,
       "scopedClassExceptions": 1,
-      "scopedSelectorExceptions": 35,
+      "scopedSelectorExceptions": 40,
       "unresolvedClasses": 0,
-      "unresolvedSelectorContexts": 7,
+      "unresolvedSelectorContexts": 2,
       "browserApproved": 0
     }
   }
