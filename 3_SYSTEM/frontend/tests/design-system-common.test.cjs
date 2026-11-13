@@ -206,6 +206,23 @@ test('all 46 runtime modules obey the F1 shared-style anti-regression baseline',
     cwd:path.resolve(root,'../..'),encoding:'utf8',maxBuffer:8*1024*1024
   }));
   const baseline=JSON.parse(load('../../docs/audit/AUNEA_INTERNAL_DESIGN_BASELINE_20261113.json'));
+  // Classify every outstanding cross-owner/selector conflict; status is not an approval.
+  const triage=inventory.ownershipTriage;
+  assert.equal(triage.method,'STATIC_FIRST_PASS_NOT_APPROVAL');
+  assert.equal(triage.crossFileClasses.length,inventory.metrics.classesCrossFile);
+  assert.equal(triage.repeatedSelectorContexts.length,inventory.metrics.repeatedSelectorContextGroups);
+  assert.equal(triage.counts.browserApproved,0,'No visual approval may be inferred from static checks');
+  for(const item of [...triage.crossFileClasses,...triage.repeatedSelectorContexts]){
+    assert.ok(triage.permittedStatuses.includes(item.status),
+      'Unclassified cross-file CSS triage: '+(item.className||item.selectorContext));
+    assert.ok(item.reason&&item.browserVerified===false,
+      'Unreviewed CSS needs an explicit cause and browser QA flag');
+  }
+  for(const item of triage.crossFileClasses){
+    const original=inventory.css.find(x=>x.className===item.className);
+    if(original.frozenRisk)assert.equal(item.status,'FROZEN_PROTECTED',
+      'A FROZEN consumer may not be silently reclassified');
+  }
   assert.equal(inventory.metrics.modules,46,'Cover the complete current manifest');
   assert.equal(inventory.frozen.length,9,'Approved frozen boundary remains intact');
   assert.equal(inventory.metrics.documentedComponents,20);
