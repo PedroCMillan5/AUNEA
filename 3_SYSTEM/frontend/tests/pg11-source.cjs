@@ -15,6 +15,9 @@ module.exports=function pg11LegacySourceOracle(){
   if(workspace.split(globalView).length!==2)throw Error('PG11 global view boundary is missing or duplicated');
   workspace=workspace.replace(globalView,read('pages/tobe-global.js').trimEnd());
   let source=read('pages/results.js');
+  const analysis='// __AUNEA_PG10_ANALYSIS_MODULE__';
+  if(source.split(analysis).length!==2)throw Error('PG10 analysis boundary missing or duplicated');
+  source=source.replace(analysis,read('pages/results-analysis.js').trimEnd());
   for(const [token,body] of [
     ['// __AUNEA_PG11_MODEL_MODULE__\n',read('domain/tobe-model.js')],
     ['// __AUNEA_PG11_WORKSPACE_MODULE__',workspace],
