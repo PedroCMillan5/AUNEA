@@ -1,0 +1,31 @@
+{
+  "status": "TECHNICAL_FROZEN_REFERENCE_NOT_MANUAL_VISUAL_APPROVAL",
+  "source": {
+    "acceptanceGateRun": 43409533847,
+    "sourceCommit": "630121a1544656a5ce46f4fb787932e18abc3a9e",
+    "crossCheckedRun": 43416198540,
+    "crossCheckedCommit": "9d4a356424c8adc3eda5a6fed113c2255c995fd0"
+  },
+  "scope": "18 Chromium PNGs: nine FROZEN pages at 1365px and 390px, synthetic UAT data, stabilized render",
+  "policy": "Do not regenerate/overwrite on failure; manual owner approval required for intentional visual changes.",
+  "sha256": {
+    "frozen-alcance-proceso-1365.png": "52a1f4a6ae80dcacfc75db0608f02a724df657aaca23993497b6657468cf8227",
+    "frozen-alcance-proceso-390.png": "25fb1885c892d5a45b4e40aa673d963e0de47565e5c8152948007370d47c01f8",
+    "frozen-contactos-1365.png": "5d4571369f920198dd7e9f3e7943d7e5521abe2d421b7b4135a18f41ed5e4234",
+    "frozen-contactos-390.png": "8cb51556e37b713d2746eb8a177a660af84975f7e54c35ffc92b153afefb8690",
+    "frozen-contexto-objetivos-1365.png": "6a6c18e15fdb95c8f7d9cc7360a711b47abd3c38abd83e05dccce3f16218d747",
+    "frozen-contexto-objetivos-390.png": "d1a0bd92b148258680fce9cfeeaf5e09d63c66bba3265b35aa07172db13cf189",
+    "frozen-empresas-1365.png": "c06a6c99040fbad0369f5364c2bafe91fbf0c61500f9c44828269c18cbe99942",
+    "frozen-empresas-390.png": "51c8b555f6a4b2f95f53d9c92778e9885634b97bfdfc3c5852634748d2bf1351",
+    "frozen-estado-objetivo-restricciones-1365.png": "0ece7a2e10ad6886a2e1d0d8ecdd8021161c03391e0e401f60526ad81aada30b",
+    "frozen-estado-objetivo-restricciones-390.png": "801715a39919994e95734d0ff950e2d52c808682beb76793600d21cf3207118d",
+    "frozen-estudios-1365.png": "9a115aca50074726a0ee62ab1d1da709bdb16e5ad1646058af4c042cbe010b7c",
+    "frozen-estudios-390.png": "57f4023bd37da958ba074f113e0a0fc9f6cb099a7f29dc172a0e4bc68835b3a4",
+    "frozen-inicio-1365.png": "20c21e2b401ae245cd48b962d934329366b7d10dd58154008ea34bbbfdc4d81d",
+    "frozen-inicio-390.png": "b2455007a5ad1902cd8677e0c1c913096bf191f9d31e1b761f9f792f8c2c4c8a",
+    "frozen-interacciones-1365.png": "382fc07ae68777609055b4c4e57695f550559a662b4f208cba9d87a5db4010df",
+    "frozen-interacciones-390.png": "d5606ddc14e388825d15d41b481c2afbebf9abf387efe40694e9367f67eb6104",
+    "frozen-oportunidades-1365.png": "a6a5c8e30978a177e7f34d600e93340e9ba57bcafafb2844ca48c9d3c28814a4",
+    "frozen-oportunidades-390.png": "ae155aa24316feb567b4e3e63ebb85ecc9c48c350b23eb8f9fab45899cde483c"
+  }
+}
