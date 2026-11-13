@@ -143,6 +143,6 @@ test('F3 official results pages have one manifest owner after PG10 diagnosis and
  }
  const reconstructed=require('./pg11-source.cjs')();
  assert.doesNotMatch(reconstructed,/__AUNEA_RESULTS_OFFICIAL_PAGES_MODULE__/);
- assert.match(reconstructed,/function recommendationPage\\(/);
+ assert.match(reconstructed,/function recommendationPage\(/);
 });
 // [AUNEA-UAT-MODULE-MANIFEST-010] END
