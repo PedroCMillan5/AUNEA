@@ -38,6 +38,65 @@ async function main(){
     state.activeEngagementId=row.engagement.id;
     row.engagement.stageId='S01';state.activePage='diagnostico';render();
   });
+  // [AUNEA-UAT-DESIGN-FROZEN-CAPTURE-395] START — Candidate screenshots, not visual approval.
+  // SOURCE: FROZEN_PAGES.json v10; DEC-056; AUNEA Internal shared UI contract.
+  // Captures actual computed browser rendering with an isolated synthetic UAT study.
+  // These files are evidence for manual review, never an automatic approval of FROZEN.
+  const frozenScenes=[
+    {name:'inicio',page:'inicio'},
+    {name:'empresas',page:'empresas'},
+    {name:'contactos',page:'contactos'},
+    {name:'interacciones',page:'interacciones'},
+    {name:'oportunidades',page:'oportunidades'},
+    {name:'estudios',page:'estudios'},
+    {name:'contexto-objetivos',page:'diagnostico',stage:'S01'},
+    {name:'alcance-proceso',page:'diagnostico',stage:'S02'},
+    {name:'estado-objetivo-restricciones',page:'diagnostico',stage:'S08'}
+  ];
+  const captureState=await page.evaluate(()=>({
+    activePage:state.activePage,activeEngagementId:state.activeEngagementId,
+    stageId:currentEng()?.stageId,answers:JSON.stringify(currentEng()?.answers)
+  }));
+  const visualEvidence=[];
+  try{
+    for(const scene of frozenScenes){
+      await page.evaluate(s=>{
+        state.activePage=s.page;
+        if(s.stage)currentEng().stageId=s.stage;
+        render();
+      },scene);
+      for(const width of [1365,390]){
+        const height=width===390?820:900;
+        await page.setViewportSize({width,height});
+        const view=await page.evaluate(()=>({
+          renderedPage:state.activePage,renderedStage:currentEng()?.stageId,
+          horizontalOverflow:document.documentElement.scrollWidth>window.innerWidth+2,
+          contentVisible:!!document.querySelector('#content')?.children.length
+        }));
+        assert.equal(view.renderedPage,scene.page,'Frozen visual capture routed incorrectly');
+        assert.ok(view.contentVisible,'Frozen visual capture must render actual content');
+        const file='frozen-'+scene.name+'-'+width+'.png';
+        await page.screenshot({path:path.join(outDir,file),fullPage:true,animations:'disabled'});
+        visualEvidence.push({page:scene.name,stage:scene.stage||null,width,height,file,...view});
+      }
+    }
+  }finally{
+    await page.setViewportSize({width:1365,height:900});
+    await page.evaluate(saved=>{
+      state.activePage=saved.activePage;state.activeEngagementId=saved.activeEngagementId;
+      if(currentEng()&&saved.stageId)currentEng().stageId=saved.stageId;
+      render();
+    },captureState);
+  }
+  assert.equal(await page.evaluate(()=>JSON.stringify(currentEng()?.answers)),captureState.answers,
+    'Visual-only inspection must not change canonical diagnostic answers');
+  fs.writeFileSync(path.join(outDir,'frozen-capture-manifest.json'),
+    JSON.stringify({status:'CANDIDATE_FOR_MANUAL_VISUAL_QA',date:'2026-11-13',
+      scope:'Nine FROZEN pages, Chromium desktop/mobile; NOT pixel equivalence approval',
+      screens:visualEvidence},null,2)+'\\n');
+  console.log('FROZEN_VISUAL_CAPTURED_FOR_REVIEW: '+visualEvidence.length+' screenshots; manual acceptance pending');
+  // [AUNEA-UAT-DESIGN-FROZEN-CAPTURE-395] END
+
   // User-visible diagnostic and page identifiers must not leak into the interface.
   // Data attributes, workflow internals, logs and identifiers in persisted state stay intact.
   const assertBusinessOnlyUi=async(where)=>{
