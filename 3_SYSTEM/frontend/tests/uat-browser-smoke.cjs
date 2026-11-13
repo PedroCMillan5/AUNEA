@@ -1,5 +1,5 @@
 // [AUNEA-UAT-BROWSER-130] START — Native Chromium single-UAT map and reload acceptance.
-const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),assert=require('node:assert/strict');
+const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),assert=require('node:assert/strict'),crypto=require('node:crypto');
 const {chromium}=require('playwright');
 const root=path.resolve(__dirname,'..'),outDir=path.join(root,'tests','browser-evidence');
 const mime={'.html':'text/html','.js':'text/javascript','.json':'application/json','.css':'text/css','.png':'image/png','.svg':'image/svg+xml','.woff2':'font/woff2'};
@@ -101,6 +101,23 @@ async function main(){
     JSON.stringify({status:'CANDIDATE_FOR_MANUAL_VISUAL_QA',generatedAt:new Date().toISOString(),
       scope:'Nine FROZEN pages, Chromium desktop/mobile; NOT pixel equivalence approval',
       screens:visualEvidence},null,2));
+  // Compare actual browser PNG bytes with the separately versioned technical
+  // reference; never bless a changed screenshot just because the run succeeded.
+  // This is an automated equivalence gate, not a human acceptance of the design.
+  const frozenReference=JSON.parse(fs.readFileSync(
+    path.join(root,'tests/frozen/frozen-visual-reference-sha256.json'),'utf8'));
+  assert.equal(frozenReference.status,'TECHNICAL_FROZEN_REFERENCE_NOT_MANUAL_VISUAL_APPROVAL');
+  const requiredNames=Object.keys(frozenReference.sha256).sort();
+  assert.equal(requiredNames.length,18,'FROZEN reference must contain nine desktop/mobile pairs');
+  assert.deepEqual(visualEvidence.map(x=>x.file).sort(),requiredNames,
+    'Every approved FROZEN page must have a verified desktop/mobile screenshot');
+  for(const name of requiredNames){
+    const sha=crypto.createHash('sha256')
+      .update(fs.readFileSync(path.join(outDir,name))).digest('hex');
+    assert.equal(sha,frozenReference.sha256[name],
+      'FROZEN pixel regression: '+name+'; inspect evidence before changing the governed reference');
+  }
+  console.log('FROZEN_TECHNICAL_PIXEL_EQUIVALENCE_PASS: 18/18 against fixed reference; manual approval separate');
   console.log('FROZEN_VISUAL_CAPTURED_FOR_REVIEW: '+visualEvidence.length+' screenshots; manual acceptance pending');
   // [AUNEA-UAT-DESIGN-FROZEN-CAPTURE-395] END
 
