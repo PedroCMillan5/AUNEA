@@ -45,7 +45,9 @@ test('PG11 section 03 uses one vocabulary and keeps map routing outside the guid
  assert.doesNotMatch(view,/03\.2 · Revisar propuestas IA/);
  const guide=view.slice(view.indexOf('<section class="tobe-task-guide"'),view.indexOf('</section>'+String.fromCharCode(39)+'+',view.indexOf('<section class="tobe-task-guide"')));
  assert.doesNotMatch(guide,/03\.4 · Conectar el proceso futuro/,'map instructions stay in map mode');
- assert.match(read('ui-system.css'),/data-tobe-mode="guided"\] #tobeStepRoutes\{display:none\}/);
+ const hiddenRules=[...read('ui-system.css').matchAll(/([^{}]+)\{display:none\}/g)];
+ assert.ok(hiddenRules.some(rule=>rule[1].includes('.tobe-workspace[data-tobe-mode="guided"] #tobeStepRoutes')),
+   'Map routes must remain hidden during guided review, including grouped equivalent CSS rules');
  assert.match(view,/activityItems=\[\.\.\.\(p\.items\|\|\[\]\),\.\.\.tobeAddedSteps\(p\)\]/);
 });
 // [AUNEA-UAT-PG11-MODULE-373] END
