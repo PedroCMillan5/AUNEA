@@ -2,189 +2,171 @@ TAP version 13
 # Subtest: the application loads ONE base CSS before the layout/skin CSS
 ok 1 - the application loads ONE base CSS before the layout/skin CSS
   ---
-  duration_ms: 0.859887
+  duration_ms: 1.240191
   type: 'test'
   ...
 # Subtest: canonical tokens and button variants live in the shared stylesheet only
 ok 2 - canonical tokens and button variants live in the shared stylesheet only
   ---
-  duration_ms: 0.919616
+  duration_ms: 1.091112
   type: 'test'
   ...
 # Subtest: new reusable primitives are opt-in and scoped; FROZEN baseline receives no implicit changes
 ok 3 - new reusable primitives are opt-in and scoped; FROZEN baseline receives no implicit changes
   ---
-  duration_ms: 0.24053
+  duration_ms: 0.308047
   type: 'test'
   ...
 # Subtest: PG11 uses common heading primitives and has four numbered main sections
 ok 4 - PG11 uses common heading primitives and has four numbered main sections
   ---
-  duration_ms: 1.041299
+  duration_ms: 1.189105
   type: 'test'
   ...
 # Subtest: PG11 section 03 reuses section 01/02 surface and canonical typography tokens
 ok 5 - PG11 section 03 reuses section 01/02 surface and canonical typography tokens
   ---
-  duration_ms: 0.894139
+  duration_ms: 1.071735
   type: 'test'
   ...
 # Subtest: PG11 consultant action buttons use the shared compact-button group
 ok 6 - PG11 consultant action buttons use the shared compact-button group
   ---
-  duration_ms: 0.651124
+  duration_ms: 0.76418
   type: 'test'
   ...
 # Subtest: shared visual contract does not change business or IA execution state
 ok 7 - shared visual contract does not change business or IA execution state
   ---
-  duration_ms: 0.524666
+  duration_ms: 0.679001
   type: 'test'
   ...
 # Subtest: PG01 shares headings and form surfaces without local appearance overrides
 ok 8 - PG01 shares headings and form surfaces without local appearance overrides
   ---
-  duration_ms: 0.77502
+  duration_ms: 0.965847
   type: 'test'
   ...
 # Subtest: PG11 work surfaces and stages reuse the same opt-in structural primitives
 ok 9 - PG11 work surfaces and stages reuse the same opt-in structural primitives
   ---
-  duration_ms: 1.179676
+  duration_ms: 1.44828
   type: 'test'
   ...
 # Subtest: internal work result layouts reuse shared opt-in structure instead of inline presentation
 ok 10 - internal work result layouts reuse shared opt-in structure instead of inline presentation
   ---
-  duration_ms: 0.753818
+  duration_ms: 0.987408
   type: 'test'
   ...
 # Subtest: diagnostic work disclosures share the same structural owner
 ok 11 - diagnostic work disclosures share the same structural owner
   ---
-  duration_ms: 2.152621
+  duration_ms: 2.616025
   type: 'test'
   ...
 # Subtest: work disclosure builder preserves semantic markup and escapes its label
 ok 12 - work disclosure builder preserves semantic markup and escapes its label
   ---
-  duration_ms: 1.466856
+  duration_ms: 1.521056
   type: 'test'
   ...
 # Subtest: cross-screen shared primitives are defined once and consumed from CRM through PG12+
 ok 13 - cross-screen shared primitives are defined once and consumed from CRM through PG12+
   ---
-  duration_ms: 2.202937
+  duration_ms: 2.498335
   type: 'test'
   ...
 # Subtest: all approved screens remain under nine explicit frozen-page gates
 ok 14 - all approved screens remain under nine explicit frozen-page gates
   ---
-  duration_ms: 0.231026
+  duration_ms: 0.324798
   type: 'test'
   ...
 # Subtest: design inventory covers every manifest source and all documented DS categories
-not ok 15 - design inventory covers every manifest source and all documented DS categories
+ok 15 - design inventory covers every manifest source and all documented DS categories
   ---
-  duration_ms: 0.546739
+  duration_ms: 1.002115
   type: 'test'
-  location: '/home/runner/work/AUNEA/AUNEA/3_SYSTEM/frontend/tests/design-system-common.test.cjs:186:1'
-  failureType: 'testCodeFailure'
-  error: |-
-    Cannot find module '../../tools/aunea-ui-component-map.cjs'
-    Require stack:
-    - /home/runner/work/AUNEA/AUNEA/3_SYSTEM/frontend/tests/design-system-common.test.cjs
-  code: 'MODULE_NOT_FOUND'
-  stack: |-
-    Function._resolveFilename (node:internal/modules/cjs/loader:1430:15)
-    defaultResolveImpl (node:internal/modules/cjs/loader:1040:19)
-    resolveForCJSWithHooks (node:internal/modules/cjs/loader:1045:22)
-    Function._load (node:internal/modules/cjs/loader:1216:25)
-    wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
-    Module.require (node:internal/modules/cjs/loader:1527:12)
-    require (node:internal/modules/helpers:147:16)
-    TestContext.<anonymous> (/home/runner/work/AUNEA/AUNEA/3_SYSTEM/frontend/tests/design-system-common.test.cjs:189:17)
-    Test.runInAsyncScope (node:async_hooks:214:14)
-    Test.run (node:internal/test_runner/test:1047:25)
   ...
 # Subtest: all 46 runtime modules obey the F1 shared-style anti-regression baseline
 ok 16 - all 46 runtime modules obey the F1 shared-style anti-regression baseline
   ---
-  duration_ms: 1169.352842
+  duration_ms: 1353.653138
   type: 'test'
   ...
 # Subtest: structured IA evidence and session layout use shared visual owner
 ok 17 - structured IA evidence and session layout use shared visual owner
   ---
-  duration_ms: 0.535291
+  duration_ms: 0.76948
   type: 'test'
   ...
 # Subtest: PG12 and Projects share the semantic empty-state renderer with unchanged HTML
 ok 18 - PG12 and Projects share the semantic empty-state renderer with unchanged HTML
   ---
-  duration_ms: 1.107458
+  duration_ms: 1.505527
   type: 'test'
   ...
 # Subtest: every module declared in the manifest exists on disk
 ok 19 - every module declared in the manifest exists on disk
   ---
-  duration_ms: 3.17758
+  duration_ms: 4.249926
   type: 'test'
   ...
 # Subtest: every runtime .js on disk is declared in the manifest
 ok 20 - every runtime .js on disk is declared in the manifest
   ---
-  duration_ms: 1.448779
+  duration_ms: 1.79754
   type: 'test'
   ...
 # Subtest: index.html loads exactly the manifest modules, in the declared order
 ok 21 - index.html loads exactly the manifest modules, in the declared order
   ---
-  duration_ms: 0.303704
+  duration_ms: 0.389739
   type: 'test'
   ...
 # Subtest: every module is deferred so the shared global scope is populated in order
 ok 22 - every module is deferred so the shared global scope is populated in order
   ---
-  duration_ms: 0.241352
+  duration_ms: 0.371164
   type: 'test'
   ...
 # Subtest: each module declares a known layer and carries its Block_ID marker
 ok 23 - each module declares a known layer and carries its Block_ID marker
   ---
-  duration_ms: 4.642668
+  duration_ms: 5.677814
   type: 'test'
   ...
 # Subtest: module filenames carry no version suffix
 ok 24 - module filenames carry no version suffix
   ---
-  duration_ms: 0.210605
+  duration_ms: 0.298168
   type: 'test'
   ...
 # Subtest: manifest order values are contiguous and start at 1
 ok 25 - manifest order values are contiguous and start at 1
   ---
-  duration_ms: 0.122864
+  duration_ms: 0.170459
   type: 'test'
   ...
 # Subtest: internal-work event registration is separated from views and loaded before boot
 ok 26 - internal-work event registration is separated from views and loaded before boot
   ---
-  duration_ms: 1.027018
+  duration_ms: 1.264105
   type: 'test'
   ...
 # Subtest: PG11 global overview is a single read-only module loaded before work handlers
 ok 27 - PG11 global overview is a single read-only module loaded before work handlers
   ---
-  duration_ms: 0.890593
+  duration_ms: 1.029106
   type: 'test'
   ...
 1..27
 # tests 27
 # suites 0
-# pass 26
-# fail 1
+# pass 27
+# fail 0
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 1248.28414
+# duration_ms 1453.460874
