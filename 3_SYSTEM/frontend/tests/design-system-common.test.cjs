@@ -263,6 +263,14 @@ test('PG12 and Projects share the semantic empty-state renderer with unchanged H
   assert.equal(build('TO-BE revisado requerido',
     'La comparación se habilita cuando el TO-BE ha pasado revisión humana.'),
     '<div class="empty"><h2>TO-BE revisado requerido</h2><p>La comparación se habilita cuando el TO-BE ha pasado revisión humana.</p></div>');
+  const results=load('pages/results.js');
+  assert.match(results,/auneaEmptyState\\('AS-IS confirmado requerido'/);
+  assert.match(results,/auneaEmptyState\\('Resultado oficial pendiente'/);
+  assert.equal(build('AS-IS confirmado requerido','Trabajo Interno consume el snapshot de PG09.'),
+    '<div class="empty"><h2>AS-IS confirmado requerido</h2><p>Trabajo Interno consume el snapshot de PG09.</p></div>');
+  assert.equal(build('Resultado oficial pendiente',
+    'Conecta AUNEA Backend y calcula el diagnóstico. La interfaz no reproduce reglas de negocio en JavaScript.'),
+    '<div class="empty"><h2>Resultado oficial pendiente</h2><p>Conecta AUNEA Backend y calcula el diagnóstico. La interfaz no reproduce reglas de negocio en JavaScript.</p></div>');
   assert.match(comparison,/auneaEmptyState\('TO-BE revisado requerido'/);
   assert.match(projects,/auneaEmptyState\('Aún no hay proyectos'/);
   assert.equal(build('<riesgo>','Datos & estados'),
