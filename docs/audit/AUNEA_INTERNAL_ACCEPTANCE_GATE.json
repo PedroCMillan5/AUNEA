@@ -1,11 +1,11 @@
 {
-  "source_head": "49531d094fd3d98fbba0cf2734d878ee8d761d72",
-  "generated_at": "2026-11-13T11:00:33.521014+00:00",
+  "source_head": "f25704219542db3f0bbe4f3ad9f6adf0c16838d0",
+  "generated_at": "2026-11-13T11:02:13.594992+00:00",
   "checks": {
     "backend_pytest": "success",
-    "frontend_node": "failure",
+    "frontend_node": "success",
     "chromium_ua": "success"
   },
-  "overall": "FAIL_OR_BLOCKED",
+  "overall": "PASS",
   "scope": "Automated GitHub Actions checks; does not replace manual Windows/browser visual acceptance."
 }
