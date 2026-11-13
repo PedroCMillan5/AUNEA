@@ -189,3 +189,18 @@ Mayores módulos JS activos (líneas):
 - **Entrada F1:** estabilizar gates existentes, catalogar clases compartidas, clasificar 123 grupos de selectores repetidos y 107 clases en ambos CSS; decidir cada extracción únicamente con matriz de consumidores y capturas de UI. 
 
 **Baseline final de F0:** 337 activos y 13 archivados. La primera ejecución indicó 336 antes de versionar el JSON de auditoría, que incorpora un archivo al árbol activo. La segunda ejecución verifica el recuento final, sin errores ni avisos.
+
+## 18. F1/F2 transversal: CRM + PG00–PG12 y posteriores (13/11/2026)
+
+**Estado: IMPLEMENTACIÓN PARCIAL, REVISIÓN ABIERTA; no declarar F1/F2 cerradas.**
+- Informe matriz owner↔DS↔pantalla: `docs/AUNEA_INTERNAL_SHARED_UI_CONTRACT_20261113.md` (CRM completo, PG00/PG01–PG09, PG10, PG11, PG12/Proyectos y vistas transversales).
+- Auditoría técnica automatizada: `tools/aunea-design-system-audit.cjs` (46 módulos), `tools/aunea-ui-component-map.cjs` (DS-001–DS-020), `docs/audit/AUNEA_INTERNAL_DESIGN_CONSUMERS.json` y baseline inmutable `docs/audit/AUNEA_INTERNAL_DESIGN_BASELINE_20261113.json`.
+- 1.084 clases CSS inventariadas; 107 cruzadas entre ambos estilos, 146 grupos selector+contexto duplicados en el conjunto; 33 atributos `style="` en módulos del runtime después de las migraciones estáticas; no interpretar como deuda eliminable automáticamente.
+- Reutilización efectiva: `auneaEmptyState()` consume PG12/Proyectos con HTML y texto equivalente; `aunea-ui-code-pre` consume auditoría de IA y `aunea-ui-mt-12` consume vista de sesión. Eliminadas 22 declaraciones CSS duplicadas de PG10/PG11 sin cambios en el mapa de declaraciones efectivo.
+- Las nueve FROZEN (Inicio, Empresas, Contactos, Interacciones, Oportunidades, Estudios, Contexto, Alcance, Estado objetivo) no han sido intencionalmente rediseñadas. Sus consumidores de estilo ya existen y se preservan; requerir capturas comparadas para cualquier modificación global.
+- **Integración recuperada:** el módulo separado `pages/internal-work-events.js` debía cargarse **antes** de `domain/internal-ai-pilot.js` porque IA decora `registerInternalWorkPages` al iniciar. Orden del manifiesto/HTML corregido y con tests, 46 scripts.
+- **QA automatizada integral PASS:** GitHub Actions run `43399133707`, commit `23fa4a2419bc7ca3ec5947c5f44e5c3354defa6c`: backend pytest SUCCESS, frontend Node SUCCESS, Chromium UAT SUCCESS. Estado persistido en `docs/audit/AUNEA_INTERNAL_ACCEPTANCE_GATE.json`. Test de estilos/manifest y auditoría UI también PASS.
+- Pendientes F1/F2: clasificar overrides restantes en `ui-system.css` según especificidad y consumidores, crear/migrar sólo variantes comunes equivalentes (sin reconstrucción paralela), comparar visualmente páginas y FROZEN en desktop/móvil, cerrar por lotes con UAT; no afirmar homogeneidad completa basándose en Node.
+- F3/F4/F5: siguen abiertos. F6: la suite automática de este lote acredita PASS, pero no el cierre definitivo de la aplicación.
+
+**No se fusiona con `main` ni se promueven pantallas FROZEN.**
