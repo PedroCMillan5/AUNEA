@@ -401,8 +401,8 @@ test('PG04 captures automation exclusions before the map without requesting step
 });
 
 test('F5: linked-step renderer single/multi have one owner and keep their original controls',()=>{
-  assert.equal((code.match(/function linkedStepSingle\\(/g)||[]).length,1);
-  assert.equal((code.match(/function linkedStepMulti\\(/g)||[]).length,1);
+  assert.equal(code.split('function linkedStepSingle(').length-1,1);
+  assert.equal(code.split('function linkedStepMulti(').length-1,1);
   const single=ctx.linkedStepSingle('ref_step',e,'s1');
   const multi=ctx.linkedStepMulti('ref_steps',e,['s1']);
   assert.match(single,/data-linked-step-single="ref_step"/);
