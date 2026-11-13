@@ -1,0 +1,10 @@
+{
+  "head": "bf707799d2bb95493463c9ad85ea44caab6428c1",
+  "generatedAt": "2026-11-13T08:46:31.850Z",
+  "testOutcome": "success",
+  "tests": [
+    "design-system-common.test.cjs",
+    "module-manifest.test.cjs"
+  ],
+  "scope": "Node contracts only; browser and backend acceptance remain independent"
+}
