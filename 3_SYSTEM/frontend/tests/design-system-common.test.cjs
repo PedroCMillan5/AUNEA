@@ -226,4 +226,26 @@ test('structured IA evidence and session layout use shared visual owner',()=>{
   assert.match(session,/--graph-cols:/);
 });
 
+
+test('PG12 and Projects share the semantic empty-state renderer with unchanged HTML',()=>{
+  const vm=require('node:vm');
+  const renderer=load('ui/renderer.js'),comparison=load('pages/comparison.js'),
+    projects=load('pages/projects.js');
+  const source=renderer.match(/function auneaEmptyState\(title,description\)\{[\s\S]*?\n\}/)?.[0];
+  assert.ok(source,'Component owner must exist');
+  const escapeHtml=v=>String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const build=vm.runInNewContext('('+source+')',{esc:escapeHtml});
+  assert.equal(build('Aún no hay proyectos',
+    'Registra la decisión de implementación desde Trabajo interno después de presentar los resultados.'),
+    '<div class="empty"><h2>Aún no hay proyectos</h2><p>Registra la decisión de implementación desde Trabajo interno después de presentar los resultados.</p></div>');
+  assert.equal(build('TO-BE revisado requerido',
+    'La comparación se habilita cuando el TO-BE ha pasado revisión humana.'),
+    '<div class="empty"><h2>TO-BE revisado requerido</h2><p>La comparación se habilita cuando el TO-BE ha pasado revisión humana.</p></div>');
+  assert.match(comparison,/auneaEmptyState\('TO-BE revisado requerido'/);
+  assert.match(projects,/auneaEmptyState\('Aún no hay proyectos'/);
+  assert.equal(build('<riesgo>','Datos & estados'),
+    '<div class="empty"><h2>&lt;riesgo&gt;</h2><p>Datos &amp; estados</p></div>');
+});
+
 // [AUNEA-UAT-DESIGN-COMMON-312] END
