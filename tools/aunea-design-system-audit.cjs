@@ -72,13 +72,40 @@ const duplicatedSelectors=[...cssRuleGroups].filter(([,group])=>group.length>1).
 const ds=Object.fromEntries(Object.entries(catalogs).map(([id,meta])=>[id,{...meta,
   cssCandidates:meta.selector.filter(name=>styles.has(name)).map(name=>({name,owners:[...styles.get(name).cssFiles],consumers:[...styles.get(name).consumers]})),
   note:'Componente documental, no implica implementación única de HTML o comportamiento'}]));
+// First-pass triage, NOT an owner transfer or visual acceptance.
+// A static consumer absence never proves that a selector can be deleted.
+const cssLookup=new Map(css.map(item=>[item.className,item]));
+const permittedStatuses=['GLOBAL','SCOPED_EXCEPTION','FROZEN_PROTECTED','OBSOLETE_PROVEN','PENDING_BROWSER_QA'];
+const crossFileClasses=css.filter(item=>item.ownerFiles.length>1).map(item=>({
+  className:item.className,ownerFiles:item.ownerFiles,consumers:item.runtimeConsumers,
+  status:item.frozenRisk?'FROZEN_PROTECTED':'PENDING_BROWSER_QA',
+  reason:item.frozenRisk?'References CRM/session source; protect FROZEN cascade':
+    'Computed styles and all dynamic consumers need browser validation',
+  browserVerified:false
+}));
+const repeatedSelectorContexts=duplicatedSelectors.map(item=>{
+  const classNames=[...new Set([...item.selectorContext.matchAll(/\\.([A-Za-z_][\\w-]*)/g)].map(m=>m[1]))];
+  const global=!classNames.length,protectedByFrozen=global||classNames.some(name=>cssLookup.get(name)?.frozenRisk);
+  return {selectorContext:item.selectorContext,occurrences:item.owners.length,
+    owners:item.owners,cssClasses:classNames,
+    status:protectedByFrozen?'FROZEN_PROTECTED':'PENDING_BROWSER_QA',
+    reason:protectedByFrozen?'Global or potentially FROZEN selector; no automatic migration':
+      'May be responsive/state/cascade overrides; computed browser QA required',
+    browserVerified:false};
+});
+const ownershipTriage={method:'STATIC_FIRST_PASS_NOT_APPROVAL',permittedStatuses,
+  crossFileClasses,repeatedSelectorContexts,
+  counts:{crossFileClasses:crossFileClasses.length,selectorContexts:repeatedSelectorContexts.length,
+    protectedClasses:crossFileClasses.filter(x=>x.status==='FROZEN_PROTECTED').length,
+    protectedSelectorContexts:repeatedSelectorContexts.filter(x=>x.status==='FROZEN_PROTECTED').length,
+    browserApproved:0}};
 const result={
   status:'STATIC_DESIGN_INVENTORY',scope:'46 runtime JS files, 2 CSS, 9 FROZEN pages; read-only and heuristic',
   restrictions:['No modify FROZEN','No infer dead CSS from static absence','No move backend calculations or data owners'],
   metrics:{modules:modules.length,cssClasses:css.length,classesCrossFile:css.filter(x=>x.ownerFiles.length>1).length,
     repeatedSelectorContextGroups:duplicatedSelectors.length,
     documentedComponents:Object.keys(ds).length,inlineStyleAttributes:modules.reduce((n,x)=>n+x.inlineStyleAttributes,0)},
-  frozen,screenFamilies,components:ds,modules,css,duplicatedSelectors
+  frozen,screenFamilies,components:ds,modules,css,duplicatedSelectors,ownershipTriage
 };
 process.stdout.write(JSON.stringify(result,null,2)+'\n');
 // [AUNEA-UI-COMPONENT-INVENTORY-390] END
