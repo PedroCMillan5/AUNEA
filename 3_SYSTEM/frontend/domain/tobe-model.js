@@ -17,6 +17,12 @@ function nextTobeStatus(p){const i=TOBE_PUBLICATION_STATES.indexOf(p?.status);re
 // a change is authorized only by the existing preview-and-confirm transaction
 // or by consultant editing the single owned form. Never copy IA automatically.
 // No new questionnaire field, parallel write owner, or changed AS-IS.
+// [AUNEA-FE-PG11-REVIEW-GATE-199] Shared semantic presence check for both
+// activity preview and publication readiness. No change to accepted values.
+function tobeMeaningfulDesignValue(v){
+  return !!String(v||'').trim()&&
+    !/^(?:no|n\\/a|ninguno|sin definir|pendiente|—)$/i.test(String(v).trim());
+}
 function tobeActivityDesignIssue(item){
   const name=String(item?.sourceStepName||item?.stepName||item?.sourceStepId||'actividad');
   if(!TOBE_TRANSFORMATIONS.includes(item?.transformation))
@@ -25,19 +31,17 @@ function tobeActivityDesignIssue(item){
     return 'Indica el responsable futuro de '+name+'.';
   if(!tobeMeaningfulRationale(item.problemResolved))
     return 'Explica el motivo del diseño futuro de '+name+'.';
-  const meaningful=v=>!!String(v||'').trim()&&
-    !/^(?:no|n\/a|ninguno|sin definir|pendiente|—)$/i.test(String(v).trim());
   if(!['Se mantiene','Se elimina'].includes(item.transformation)){
-    if(!meaningful(item.tool)||!meaningful(item.controlsRisk)||
+    if(!tobeMeaningfulDesignValue(item.tool)||!tobeMeaningfulDesignValue(item.controlsRisk)||
        ['inputs','outputs'].some(k=>!tobeArtifactValues(item[k]).resolved.length))
       return 'Completa herramienta, entradas, salidas y controles de '+name+'.';
   }
   if(['Se automatiza','Se asiste con IA'].includes(item.transformation)&&
-     (!meaningful(item.automationAi)||!meaningful(item.humanSupervision)))
+     (!tobeMeaningfulDesignValue(item.automationAi)||!tobeMeaningfulDesignValue(item.humanSupervision)))
     return 'Describe la automatización y la supervisión humana de '+name+'.';
-  if(item.transformation==='Se incorpora control'&&!meaningful(item.controlsRisk))
+  if(item.transformation==='Se incorpora control'&&!tobeMeaningfulDesignValue(item.controlsRisk))
     return 'Describe el control y el riesgo que atiende en '+name+'.';
-  if(item.transformation==='Requiere decisión humana'&&!meaningful(item.humanSupervision))
+  if(item.transformation==='Requiere decisión humana'&&!tobeMeaningfulDesignValue(item.humanSupervision))
     return 'Define qué debe decidir la persona responsable en '+name+'.';
   return null;
 }
@@ -74,16 +78,14 @@ function tobeReviewReadiness(e,p){
   // prerequisite or as an override of current consultant-owned values.
   for(const item of p.items){
     const name=item.sourceStepName||item.sourceStepId||'actividad';
-    const meaningful=v=>!!String(v||'').trim()&&
-      !/^(?:no|n\/a|ninguno|sin definir|pendiente|—)$/i.test(String(v).trim());
     if(!['Se mantiene','Se elimina'].includes(item.transformation)&&
-       (['tool','controlsRisk'].some(k=>!meaningful(item[k]))||
+       (['tool','controlsRisk'].some(k=>!tobeMeaningfulDesignValue(item[k]))||
         ['inputs','outputs'].some(k=>!tobeArtifactValues(item[k]).resolved.length)))
       return 'Completa herramienta, entradas, salidas y controles de '+name+'.';
     if(['Se automatiza','Se asiste con IA'].includes(item.transformation)&&
-       (!meaningful(item.automationAi)||!meaningful(item.humanSupervision)))
+       (!tobeMeaningfulDesignValue(item.automationAi)||!tobeMeaningfulDesignValue(item.humanSupervision)))
       return 'Describe automatización y supervisión humana de '+name+'.';
-    if(item.transformation==='Requiere decisión humana'&&!meaningful(item.humanSupervision))
+    if(item.transformation==='Requiere decisión humana'&&!tobeMeaningfulDesignValue(item.humanSupervision))
       return 'Define qué debe decidir la persona responsable en '+name+'.';
   }
   // [AUNEA-FE-PG11-HUMAN-GATE-225] END
