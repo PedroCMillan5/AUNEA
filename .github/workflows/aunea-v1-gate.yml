@@ -101,4 +101,45 @@ jobs:
           path: 3_SYSTEM/frontend/tests/browser-evidence/*.png
           if-no-files-found: ignore
 
+  publish_gate_status:
+    if: ${{ always() && github.event_name == 'push' && github.ref == 'refs/heads/work/as-is-ux-simplification-20260930' }}
+    needs: [backend, frontend, browser_uat]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Persist independent backend/frontend/browser gate outcomes
+        env:
+          BACKEND_STATUS: ${{ needs.backend.result }}
+          FRONTEND_STATUS: ${{ needs.frontend.result }}
+          BROWSER_STATUS: ${{ needs.browser_uat.result }}
+        run: |
+          mkdir -p docs/audit
+          python - <<'PY'
+          import datetime, json, os
+          from pathlib import Path
+          values = {k: os.environ[k] for k in ('BACKEND_STATUS', 'FRONTEND_STATUS', 'BROWSER_STATUS')}
+          data = {
+              'source_head': os.environ['GITHUB_SHA'],
+              'generated_at': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+              'checks': {
+                  'backend_pytest': values['BACKEND_STATUS'],
+                  'frontend_node': values['FRONTEND_STATUS'],
+                  'chromium_ua': values['BROWSER_STATUS'],
+              },
+              'overall': 'PASS' if all(x == 'success' for x in values.values()) else 'FAIL_OR_BLOCKED',
+              'scope': 'Automated GitHub Actions checks; does not replace manual Windows/browser visual acceptance.'
+          }
+          Path('docs/audit/AUNEA_INTERNAL_ACCEPTANCE_GATE.json').write_text(
+              json.dumps(data, indent=2) + '\n', encoding='utf-8')
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/audit/AUNEA_INTERNAL_ACCEPTANCE_GATE.json
+          if ! git diff --cached --quiet; then
+            git commit -m "docs(audit): persist AUNEA Internal acceptance gate [skip ci]"
+            git push origin "HEAD:refs/heads/${GITHUB_REF_NAME}"
+          fi
+
 # [AUNEA-UAT-GATE-010] END
