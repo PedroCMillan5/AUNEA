@@ -3,7 +3,8 @@ const {test}=require('node:test'),assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path');
 const root=path.resolve(__dirname,'..'),read=p=>fs.readFileSync(path.join(root,p),'utf8');
 const results=read('pages/results.js'),model=read('domain/tobe-model.js'),
-  transactions=read('domain/tobe-transactions.js'),view=read('pages/tobe.js'),futureFlow=read('pages/tobe-flow.js');
+  transactions=read('domain/tobe-transactions.js'),view=read('pages/tobe.js'),
+  futureFlow=read('pages/tobe-flow.js'),review=read('pages/tobe-review.js');
 const manifest=JSON.parse(read('module-manifest.json')),html=read('index.html');
 
 test('PG11 has one model owner, one preview/transaction owner and one page owner',()=>{
@@ -23,11 +24,13 @@ test('PG11 has one model owner, one preview/transaction owner and one page owner
 test('runtime uses the exact manifest order, with no duplicate new modules',()=>{
  const scripts=[...html.matchAll(/<script src="([^"]+)" defer><\/script>/g)].map(x=>x[1]);
  assert.deepEqual(scripts,manifest.modules.map(x=>x.path));
- for(const name of ['domain/tobe-model.js','domain/tobe-transactions.js','pages/tobe.js','pages/tobe-flow.js'])
+ for(const name of ['domain/tobe-model.js','domain/tobe-transactions.js','pages/tobe.js','pages/tobe-review.js','pages/tobe-flow.js'])
    assert.equal(scripts.filter(x=>x===name).length,1,'duplicate runtime module '+name);
  assert.ok(scripts.indexOf('domain/tobe-model.js')<scripts.indexOf('pages/results.js'));
  assert.ok(scripts.indexOf('pages/results.js')<scripts.indexOf('domain/tobe-transactions.js'));
  assert.ok(scripts.indexOf('domain/tobe-transactions.js')<scripts.indexOf('pages/tobe.js'));
+ assert.ok(scripts.indexOf('pages/tobe.js')<scripts.indexOf('pages/tobe-review.js'));
+ assert.ok(scripts.indexOf('pages/tobe-review.js')<scripts.indexOf('pages/tobe-flow.js'));
  assert.ok(scripts.indexOf('pages/tobe.js')<scripts.indexOf('pages/tobe-flow.js'));
  assert.ok(scripts.indexOf('pages/tobe-flow.js')<scripts.indexOf('boot.js'));
  assert.ok(scripts.indexOf('pages/tobe.js')<scripts.indexOf('boot.js'));
@@ -64,5 +67,18 @@ test('F3 graph/projection has one page-owner and unchanged source oracle',()=>{
  const source=require('./pg11-source.cjs')();
  assert.match(source,/\[AUNEA-FE-PG11-FUTURE-FLOW-228\] START/);
  assert.doesNotMatch(source,/__AUNEA_PG11_FUTURE_FLOW_MODULE__/);
+});
+
+test('F3 review facts/AI/human field presentation has only one owner',()=>{
+ assert.match(view,/__AUNEA_PG11_REVIEW_MODULE__/);
+ assert.doesNotMatch(view,/function tobeAiReviewDiff\(/);
+ for(const name of ['tobeOriginalStepFacts','tobeAiReviewDiff','tobeAiFieldCoverageHtml','tobeWithAiHint']){
+   const signature='function '+name+'(';
+   assert.ok(review.includes(signature),'Missing review function '+name);
+   assert.equal([view,futureFlow,review,model,transactions].filter(x=>x.includes(signature)).length,1,name);
+ }
+ const source=require('./pg11-source.cjs')();
+ assert.doesNotMatch(source,/__AUNEA_PG11_REVIEW_MODULE__/);
+ assert.match(source,/\[AUNEA-FE-PG11-AI-REVIEW-DIFF-260\] START/);
 });
 // [AUNEA-UAT-PG11-MODULE-373] END
