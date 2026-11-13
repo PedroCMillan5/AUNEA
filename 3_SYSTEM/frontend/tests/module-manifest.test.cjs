@@ -129,4 +129,20 @@ test('F3 PG10 evidence analysis and PG11 flow are declared in correct dependency
  assert.doesNotMatch(reconstructed,/__AUNEA_PG10_ANALYSIS_MODULE__/);
  assert.match(reconstructed,/function diagnosisEconomicsHtml\(/);
 });
+
+test('F3 official results pages have one manifest owner after PG10 diagnosis and before transactions',()=>{
+ const order=path=>modules.findIndex(x=>x.path===path);
+ assert.ok(order('pages/results-analysis.js')<order('pages/results-official.js'));
+ assert.ok(order('pages/results-official.js')<order('domain/tobe-transactions.js'));
+ const diagnosis=fs.readFileSync(path.join(root,'pages/results.js'),'utf8');
+ const official=fs.readFileSync(path.join(root,'pages/results-official.js'),'utf8');
+ assert.match(diagnosis,/__AUNEA_RESULTS_OFFICIAL_PAGES_MODULE__/);
+ for(const name of ['recommendationPage','scenariosPage','quotePage','downloadQuotePdf']){
+  assert.doesNotMatch(diagnosis,new RegExp('function '+name+'\\('));
+  assert.match(official,new RegExp('function '+name+'\\('));
+ }
+ const reconstructed=require('./pg11-source.cjs')();
+ assert.doesNotMatch(reconstructed,/__AUNEA_RESULTS_OFFICIAL_PAGES_MODULE__/);
+ assert.match(reconstructed,/function recommendationPage\\(/);
+});
 // [AUNEA-UAT-MODULE-MANIFEST-010] END
