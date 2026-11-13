@@ -21,7 +21,7 @@ function nextTobeStatus(p){const i=TOBE_PUBLICATION_STATES.indexOf(p?.status);re
 // activity preview and publication readiness. No change to accepted values.
 function tobeMeaningfulDesignValue(v){
   return !!String(v||'').trim()&&
-    !/^(?:no|n\\/a|ninguno|sin definir|pendiente|—)$/i.test(String(v).trim());
+    !/^(?:no|n\/a|ninguno|sin definir|pendiente|—)$/i.test(String(v).trim());
 }
 function tobeActivityDesignIssue(item){
   const name=String(item?.sourceStepName||item?.stepName||item?.sourceStepId||'actividad');
