@@ -45,6 +45,23 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,'.'+new 
     assert.equal(new Set(stageVisual.titles.map(x=>x[property])).size,1,
       '03.1/03.2/03.3 must share title '+property+': '+JSON.stringify(stageVisual.titles));
   assert.match(stageVisual.titles[0].font,/Sora/);
+  // F1: both PG11 captions use the common DS-003 typography, with local margin only.
+  const captionVisual=await page.evaluate(()=>[
+    '.tobe-context-head .aunea-ui-section-caption',
+    '.tobe-review-section-head .aunea-ui-section-caption'
+  ].map(sel=>{
+    const el=document.querySelector(sel);
+    if(!el)return null;
+    const c=getComputedStyle(el);
+    return {size:c.fontSize,font:c.fontFamily,weight:c.fontWeight,
+      lineHeight:c.lineHeight,color:c.color,margin:c.marginTop};
+  }));
+  assert.ok(captionVisual.every(Boolean),'Both shared PG11 captions must exist');
+  for(const property of ['size','font','weight','lineHeight','color','margin'])
+    assert.equal(new Set(captionVisual.map(x=>x[property])).size,1,
+      'PG11 captions must share computed '+property+': '+JSON.stringify(captionVisual));
+  assert.equal(captionVisual[0].margin,'0px','Page-local spacing only; typography stays shared');
+
   await page.locator('[data-tobe-load-alternatives="P1"]').click();
   await page.getByText('Separar el control tras esta actividad',{exact:true}).waitFor();
   const control=page.locator('.tobe-alternative').filter({hasText:'Separar el control tras esta actividad'});
