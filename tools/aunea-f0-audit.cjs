@@ -86,6 +86,55 @@ const missingReferences=knownPaths.filter(p=>!byPath.has(p));
 if(missingReferences.length)warnings.push('Some CODE_BLOCK_INDEX.md references do not resolve to files; inspect composite / retired rows.');
 const frozenRows=frozen.map(x=>({page:x.page_id,gate:x.gate,source:x.source_snapshot,style:x.style_snapshot,
   missingSnapshots:[x.source_snapshot,x.style_snapshot].filter(p=>p&&!byPath.has('3_SYSTEM/frontend/'+p))}));
+// Static dependency inventory: names and textual references are candidates, not proof.
+const activeRuntimeSources=new Map(moduleRows.filter(x=>!x.missing).map(x=>[x.path,read(x.path)]));
+const declaredFunctions=new Map();
+for(const [p,source] of activeRuntimeSources){
+  for(const match of source.matchAll(/(?:^|\n)\s*(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/g)){
+    const name=match[1];
+    if(!declaredFunctions.has(name))declaredFunctions.set(name,[]);
+    declaredFunctions.get(name).push(p);
+  }
+}
+const dependencyEdges=[],ambiguousFunctions=[];
+for(const [name,owners] of declaredFunctions){
+  if(owners.length>1){ambiguousFunctions.push({name,owners});continue;}
+  const word=new RegExp('\\b'+name.replace(/[$]/g,'\\const testPaths=active.filter(x=>/3_SYSTEM\/frontend\/tests\/.*\.test\.cjs$/.test(x.path)||/3_SYSTEM\/backend\/tests\/test_.*\.py$/.test(x.path));')+'\\s*\\(','g');
+  for(const [consumer,source] of activeRuntimeSources){
+    if(consumer===owners[0])continue;
+    if(word.test(source))dependencyEdges.push({owner:owners[0],consumer,reference:name});
+    word.lastIndex=0;
+  }
+}
+const staticClassConsumers=new Map();
+for(const [p,source] of activeRuntimeSources){
+  for(const match of source.matchAll(/(?:class(?:Name)?\s*=\s*["'\x60][^"'\x60]*|(?:querySelector(?:All)?|closest|matches|classList\.(?:add|remove|toggle|contains))\s*\([^)]*)/g)){
+    for(const cls of match[0].matchAll(/\.?([A-Za-z_][A-Za-z0-9_-]{2,})/g)){
+      const name=cls[1];
+      if(!staticClassConsumers.has(name))staticClassConsumers.set(name,new Set());
+      staticClassConsumers.get(name).add(p);
+    }
+  }
+}
+const cssClassCandidates=new Map();
+for(const p of ['3_SYSTEM/frontend/styles.css','3_SYSTEM/frontend/ui-system.css']){
+  for(const rule of cssRules(read(p))){
+    for(const found of rule.selector.matchAll(/\.([A-Za-z_][A-Za-z0-9_-]*)/g)){
+      const className=found[1];
+      const current=cssClassCandidates.get(className)||{styles:new Set(),occurrences:0};
+      current.styles.add(p);current.occurrences++;
+      cssClassCandidates.set(className,current);
+    }
+  }
+}
+const classOwnership=[...cssClassCandidates].map(([className,x])=>({
+  className,styles:[...x.styles],occurrences:x.occurrences,
+  staticConsumers:[...(staticClassConsumers.get(className)||[])],
+  verification:'Static text candidate only: dynamic classes and frozen views may be unobserved.'
+}));
+const crossCssClasses=classOwnership.filter(x=>x.styles.length>1);
+const noStaticConsumer=classOwnership.filter(x=>!x.staticConsumers.length);
+
 const testPaths=active.filter(x=>/3_SYSTEM\/frontend\/tests\/.*\.test\.cjs$/.test(x.path)||/3_SYSTEM\/backend\/tests\/test_.*\.py$/.test(x.path));
 const frontendFiles=active.filter(x=>x.path.startsWith('3_SYSTEM/frontend/'));
 const backendFiles=active.filter(x=>x.path.startsWith('3_SYSTEM/backend/'));
@@ -104,6 +153,11 @@ const report={
     backendTests:testPaths.filter(x=>x.path.includes('/backend/')).length,
     indexedBlockIds:owners.size,indexedPaths:indexPaths.size,frozenPages:frozen.length},
   modules:moduleRows,css,frozen:frozenRows,
+  dependencies:{staticCrossModuleReferences:dependencyEdges,ambiguousFunctionNames:ambiguousFunctions,
+    note:'Lexical function references only, not an evaluated runtime call graph.'},
+  styleConsumers:{classes:classOwnership.length,sharedBetweenCss:crossCssClasses,
+    noStaticConsumerCandidates:noStaticConsumer.slice(0,500),
+    note:'Do not delete classes based solely on static absence: dynamic, HTML and frozen consumers must be verified.'},
   codeHotspots:sizes.slice(0,40),indexedPaths:{missingReferences,unindexedActiveSource:
     active.filter(x=>/3_SYSTEM\/(?:frontend|backend)\/.*\.(?:js|py|css|cjs)$/.test(x.path)&&
       !indexPaths.has(x.path)).map(x=>x.path).slice(0,200)},
