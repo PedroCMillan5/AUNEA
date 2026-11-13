@@ -20800,8 +20800,8 @@
         "cssClasses": [
           "topbar-center"
         ],
-        "status": "PENDING_BROWSER_QA",
-        "reason": "Shared or unscoped selector requires browser and source-owner inspection",
+        "status": "FROZEN_PROTECTED",
+        "reason": "Base or CRM/session cascade, protect approved FROZEN surfaces",
         "browserVerified": false,
         "manualVisualReviewRequired": true
       },
@@ -21923,8 +21923,8 @@
         "cssClasses": [
           "topbar-active-study"
         ],
-        "status": "PENDING_BROWSER_QA",
-        "reason": "Shared or unscoped selector requires browser and source-owner inspection",
+        "status": "FROZEN_PROTECTED",
+        "reason": "Base or CRM/session cascade, protect approved FROZEN surfaces",
         "browserVerified": false,
         "manualVisualReviewRequired": true
       },
@@ -23160,11 +23160,11 @@
       "crossFileClasses": 107,
       "selectorContexts": 139,
       "protectedClasses": 106,
-      "protectedSelectorContexts": 97,
+      "protectedSelectorContexts": 99,
       "scopedClassExceptions": 1,
       "scopedSelectorExceptions": 40,
       "unresolvedClasses": 0,
-      "unresolvedSelectorContexts": 2,
+      "unresolvedSelectorContexts": 0,
       "browserApproved": 0
     }
   }
