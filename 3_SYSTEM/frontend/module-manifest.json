@@ -154,6 +154,12 @@
     {
       "order": 26,
       "layer": "pages",
+      "path": "pages/tobe-flow.js",
+      "block_id": "AUNEA-FE-PG11-FUTURE-FLOW-228"
+    },
+    {
+      "order": 27,
+      "layer": "pages",
       "path": "pages/comparison.js",
       "block_id": "AUNEA-FE-PG12-TOBE-GRAPH-234"
     },
@@ -161,58 +167,58 @@
       "layer": "domain",
       "path": "domain/output-review.js",
       "block_id": "AUNEA-FE-OUTPUT-REVIEW-010",
-      "order": 27
+      "order": 28
     },
     {
-      "order": 28,
+      "order": 29,
       "layer": "pages",
       "path": "pages/crm-companies.js",
       "block_id": "AUNEA-FE-PAGE-COMPANIES-010"
     },
     {
-      "order": 29,
+      "order": 30,
       "layer": "pages",
       "path": "pages/crm-contacts.js",
       "block_id": "AUNEA-FE-PAGE-CONTACTS-010"
     },
     {
-      "order": 30,
+      "order": 31,
       "layer": "pages",
       "path": "pages/crm-interactions.js",
       "block_id": "AUNEA-FE-PAGE-INTERACTIONS-010"
     },
     {
-      "order": 31,
+      "order": 32,
       "layer": "pages",
       "path": "pages/crm-opportunities.js",
       "block_id": "AUNEA-FE-PAGE-OPPORTUNITIES-010"
     },
     {
-      "order": 32,
+      "order": 33,
       "layer": "pages",
       "path": "pages/session-display.js",
       "block_id": "AUNEA-FE-PAGE-SESSION-DISPLAY-010"
     },
     {
-      "order": 33,
+      "order": 34,
       "layer": "domain",
       "path": "domain/process.js",
       "block_id": "AUNEA-FE-PROC-EDITOR-020"
     },
     {
-      "order": 34,
+      "order": 35,
       "layer": "ui",
       "path": "ui/process-help.js",
       "block_id": "AUNEA-FE-PROC-HELP-025"
     },
     {
-      "order": 35,
+      "order": 36,
       "layer": "services",
       "path": "services/engine-adapter.js",
       "block_id": "AUNEA-FE-ENGINE-ADAPTER-020"
     },
     {
-      "order": 36,
+      "order": 37,
       "layer": "domain",
       "path": "domain/completion.js",
       "block_id": "AUNEA-FE-DIAG-COMPLETION-070"
@@ -221,58 +227,58 @@
       "layer": "domain",
       "path": "domain/project.js",
       "block_id": "AUNEA-FE-PROJECT-LINK-010",
-      "order": 37
+      "order": 38
     },
     {
       "layer": "pages",
       "path": "pages/projects.js",
       "block_id": "AUNEA-FE-PAGE-PROJECTS-010",
-      "order": 38
+      "order": 39
     },
     {
-      "order": 39,
+      "order": 40,
       "layer": "ui",
       "path": "ui/shell.js",
       "block_id": "AUNEA-FE-SHELL-NAV-010"
     },
     {
-      "order": 40,
+      "order": 41,
       "layer": "services",
       "path": "services/persistence.js",
       "block_id": "AUNEA-FE-PERSIST-050"
     },
     {
-      "order": 41,
+      "order": 42,
       "layer": "uat",
       "path": "uat/visible.js",
       "block_id": "AUNEA-FE-UAT-VISIBLE-055"
     },
     {
-      "order": 42,
+      "order": 43,
       "layer": "uat",
       "path": "uat/endtoend-cases.js",
       "block_id": "AUNEA-UAT-ENDTOEND-110"
     },
     {
-      "order": 43,
+      "order": 44,
       "layer": "pages",
       "path": "pages/internal-work-events.js",
       "block_id": "AUNEA-FE-INTERNAL-WORK-EVENTS-381"
     },
     {
-      "order": 44,
+      "order": 45,
       "layer": "domain",
       "path": "domain/internal-ai-pilot.js",
       "block_id": "AUNEA-FE-INTERNAL-AI-PILOT-193"
     },
     {
-      "order": 45,
+      "order": 46,
       "layer": "pages",
       "path": "pages/tobe-global.js",
       "block_id": "AUNEA-FE-PG11-GLOBAL-OVERVIEW-284"
     },
     {
-      "order": 46,
+      "order": 47,
       "layer": "boot",
       "path": "boot.js",
       "block_id": "AUNEA-FE-BOOT-INIT-010"
