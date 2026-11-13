@@ -139,7 +139,16 @@ jobs:
           git add docs/audit/AUNEA_INTERNAL_ACCEPTANCE_GATE.json
           if ! git diff --cached --quiet; then
             git commit -m "docs(audit): persist AUNEA Internal acceptance gate [skip ci]"
-            git push origin "HEAD:refs/heads/${GITHUB_REF_NAME}"
+            # A later source commit or another audit may advance the branch during UAT.
+            # Retry only the generated documentation commit; never force-push or reset.
+            for attempt in 1 2 3 4 5; do
+              if git push origin "HEAD:refs/heads/${GITHUB_REF_NAME}"; then
+                exit 0
+              fi
+              git pull --rebase -X theirs origin "${GITHUB_REF_NAME}"
+            done
+            echo "Could not publish the audit record without force-push"
+            exit 1
           fi
 
 # [AUNEA-UAT-GATE-010] END
