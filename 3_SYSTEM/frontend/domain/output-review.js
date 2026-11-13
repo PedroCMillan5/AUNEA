@@ -6,9 +6,9 @@
 // SIDE_EFFECTS: Engagement history and audit; never runs an engine.
 // CHANGE_RISK: HIGH.
 function reviewSources(e) {
-  const snap=confirmedSnapshot(e),tobe=approvedTobeForClient(e),output=e?.diagnosticOutput;
+  const snap=confirmedSnapshot(e),tobe=approvedTobeForClient(e),output=currentDiagnosticOutput(e);
   const scenario=[output?.optimal_scenario,...(e?.scenarioResults||[])][e?.selectedScenarioIndex??0];
-  if(!snap||!tobe||tobe.sourceSnapshotVersion!==snap.version||e.lastEngineSnapshotVersion!==snap.version||!output||!scenario||(typeof engineGateOutputFresh==='function'&&!engineGateOutputFresh(e))) return null;
+  if(!snap||!tobe||tobe.sourceSnapshotVersion!==snap.version||!output||!scenario) return null;
   return {snapshotVersion:snap.version,tobeVersion:tobe.version,output,scenario};
 }
 function reviewFingerprint(sources){return JSON.stringify(sources)}
