@@ -48,7 +48,7 @@ function diagnosisTrace(record,p){
   return {frictions,stepIds,economics,risks};
 }
 function diagnosisReadonlyMap(e,record){
-  if(typeof processGraphHtml!=='function')return '<div class="notice info">Mapa AS-IS confirmado disponible en la captura.</div>';
+  if(typeof processGraphHtml!=='function')return auneaNoticeMessage('info','Mapa AS-IS confirmado disponible en la captura.');
   const steps=(record.processSteps||[]).filter(x=>x.status!=='SUPERSEDED'),fr=(record.frictions||[]).filter(x=>x.status!=='SUPERSEDED');
   const start=typeof processBoundaryValue==='function'?processBoundaryValue(record,'DF014','Límite inicial pendiente','DF012'):(record.answers?.DF014||'Inicio');
   const finish=typeof processBoundaryValue==='function'?processBoundaryValue(record,'DF015','Límite final pendiente','DF013'):(record.answers?.DF015||'Fin');
@@ -208,7 +208,7 @@ function diagnosisProcessStepTimelineHtml(p,record){
 // [AUNEA-FE-PG10-PROCESS-BASELINE-091] START — Server-owned AS-IS baseline, separate from EconomicInput.
 // SOURCE: DEC-034/041/068; Simulator CANONICAL PG10/PG12.
 function diagnosisProcessBaselineHtml(p,record){
-  if(!p)return '<div class="notice info">Proyección temporal del proceso no disponible; no se sustituye por inputs económicos parciales.</div>';
+  if(!p)return auneaNoticeMessage('info','Proyección temporal del proceso no disponible; no se sustituye por inputs económicos parciales.');
   const cell=k=>p[k]==null?'No calculado':num(p[k]);
   const declared=record&&typeof asisSourceBoundary==='function'?asisSourceBoundary(record,'DF026'):'No disponible';
   const gaps=Array.isArray(p.gaps)?p.gaps:[];
@@ -497,7 +497,7 @@ function workbenchContinuityModel(e){
 }
 function workbenchContinuityHtml(e){
   const stages=workbenchContinuityModel(e);
-  if(!stages.length)return '<div class="notice warn">Confirma el AS-IS antes de comenzar el trabajo interno.</div>';
+  if(!stages.length)return auneaNoticeMessage('warn','Confirma el AS-IS antes de comenzar el trabajo interno.');
   const approved=typeof approvedOutputReview==='function'?approvedOutputReview(e):null;
   return '<div class="grid g3">'+stages.map((s,i)=>
     '<div class="notice"><small>Etapa '+(i+1)+'</small><br><b>'+esc(s.title)+'</b><br><small>'+esc(s.status)+'</small><div class="aunea-ui-mt-8"><button class="btn btn-outline" data-page="'+s.page+'">Abrir etapa</button></div></div>'
@@ -516,7 +516,7 @@ function workbenchContinuityHtml(e){
 // CHANGE RISK: HIGH. Keep server-owned outputs and existing navigation/actions.
 function pg10SynthesisHtml(record,data){
   if(!data||data.status==='INPUT_GAPS')
-    return '<div class="notice info">Todavía no existe un análisis de problemas vigente. Ejecuta el análisis AS-IS para obtener conclusiones basadas en los datos confirmados.</div>';
+    return auneaNoticeMessage('info','Todavía no existe un análisis de problemas vigente. Ejecuta el análisis AS-IS para obtener conclusiones basadas en los datos confirmados.');
   // Server-owned findings and time contributions are read only. Step proximity is
   // contextual; it is never a proof of cause, a priority score, or a cash saving.
   const pains=Array.isArray(data.pain_results)?data.pain_results:[];
@@ -581,7 +581,7 @@ function pg10SynthesisHtml(record,data){
     :'El cliente no ha señalado prioridades de problemas en el AS-IS. Esto no impide revisar el diagnóstico.';
   return '<div class="pg10-conclusions"><p>'+esc(client)+'</p>'+
     (items.length?'<ul class="pg10-conclusion-list">'+items.join('')+'</ul>':
-      '<div class="notice info">No hay hallazgos confirmados o indicados en el análisis actual. Esto no equivale a demostrar que el proceso no tenga problemas.</div>')+
+      auneaNoticeMessage('info','No hay hallazgos confirmados o indicados en el análisis actual. Esto no equivale a demostrar que el proceso no tenga problemas.'))+
     (needingEvidence?'<p class="field-help">'+(needingEvidence===1?'Hay 1 señal sin evidencia suficiente para considerarla un hallazgo.':'Hay '+needingEvidence+' señales sin evidencia suficiente para considerarlas hallazgos.')+' Consulta el diagnóstico y sus fuentes antes de confirmar estos casos.</p>':'')+
     '<p class="field-help">Estos hallazgos no constituyen un ranking ni una prioridad analítica calculada. Pueden compartir pasos y magnitudes: las cifras mostradas proceden del diagnóstico existente y no deben sumarse entre tarjetas.</p>'+
     '<div class="pg10-conclusion-boundaries"><b>Alcance del diagnóstico actual</b>'+
@@ -621,7 +621,7 @@ function pg10ReviewHtml(e,official,analysis,miss,unresolved,freshness,recommenda
       (official?'<button class="btn btn-outline" id="runDiag">Recalcular resultado oficial</button>':'')+
     '</div></details>';
   return '<div class="pg10-review-summary"><p>'+esc(msg)+' '+esc(analyzed)+'</p>'+
-    (freshness?.status==='OBSOLETE'?'<div class="notice warn">Existe un resultado oficial anterior no vigente: recalcula antes de utilizarlo.</div>':'')+
+    (freshness?.status==='OBSOLETE'?auneaNoticeMessage('warn','Existe un resultado oficial anterior no vigente: recalcula antes de utilizarlo.'):'')+
     '<p>'+esc(pending)+' No son errores de captura ni equivalen a hallazgos confirmados; condicionan la recomendación y la edición del TO-BE, no la consulta del diagnóstico.</p>'+
     '<p class="field-help">Para corregir un hallazgo, modifica únicamente su fuente en el AS-IS y vuelve a calcular. No hay una segunda aprobación ni publicación automática de resultados.</p>'+
     (!official?'<p class="field-help">La vista TO-BE preliminar solo permite explorar problemas y posibles vías de intervención. No crea ni aprueba el proceso futuro, y no calcula ahorros.</p>':'')+
@@ -663,7 +663,7 @@ function resultsPage(){
     auneaWorkDisclosure('pg10-critical-points','Consultar fichas y evidencias de los puntos críticos',asisPointCardsHtml(record));
   const coverage=asisCoverageHtml(e,official?{status:'ANALYZED',input_coverage:official.input_coverage}:asis);
   const diagnostic=official
-    ?'<div class="notice good">Resultados vinculados al snapshot confirmado. La solución técnica se evalúa en las páginas posteriores.</div>'+
+    ?auneaNoticeMessage('good','Resultados vinculados al snapshot confirmado. La solución técnica se evalúa en las páginas posteriores.')+
       '<div class="pg10-diagnostic-parts">'+
       '<section><h3>Línea base temporal</h3>'+diagnosisProcessBaselineHtml(official.process_time_projection,record)+'</section>'+
       '<section><h3>Problemas y evidencias</h3>'+diagnosisFindingsHtml(record,official.pain_results||[])+'</section>'+
@@ -688,7 +688,7 @@ function diagnosisEngineDecisionTraceHtml(e){
   const snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;
   const review=e?.engineGateReview;
   const contracts=typeof ENGINE_GATE_CONTRACT!=='undefined'?ENGINE_GATE_CONTRACT:[];
-  if(!snap||!review||review.snapshotVersion!==snap.version)return '<div class="notice warn">Las decisiones técnicas de este diagnóstico requieren revisión para el AS-IS vigente.</div>';
+  if(!snap||!review||review.snapshotVersion!==snap.version)return auneaNoticeMessage('warn','Las decisiones técnicas de este diagnóstico requieren revisión para el AS-IS vigente.');
   const decisions=review.decisions||{};
   const rows=contracts.map(c=>{
     const v=decisions[c.key],actual=e?.engineGates?.[c.key];
@@ -703,7 +703,7 @@ function diagnosisEngineDecisionTraceHtml(e){
   }).filter(Boolean);
   return rows.length===contracts.length&&contracts.length===5
     ?'<p>Estas son las cinco respuestas técnicas utilizadas por el backend, vinculadas al AS-IS confirmado v'+esc(snap.version)+'. Son decisiones internas; no sustituyen las evidencias del cliente.</p><div class="result-list">'+rows.join('')+'</div>'
-    :'<div class="notice warn">Falta la trazabilidad completa de las decisiones técnicas. Revisa las cinco respuestas antes de continuar.</div>';
+    :auneaNoticeMessage('warn','Falta la trazabilidad completa de las decisiones técnicas. Revisa las cinco respuestas antes de continuar.');
 }
 // [AUNEA-FE-RESULT-GATE-TRACE-151] END
 
