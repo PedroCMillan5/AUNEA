@@ -1,0 +1,93 @@
+// [AUNEA-FE-RESULTS-OFFICIAL-PAGES-410] START — recommendation, compared scenarios and governed quotation views.
+function businessLabel(rows,idField,id){const hit=(rows||[]).find(x=>String(x[idField])===String(id));if(hit?.Name)return hit.Name;return state.uiMode==='INTERNAL'?(id||'—'):'No disponible'}
+function actionLabel(id){return businessLabel(schema.tables.REF_ACTION,'Action_ID',id)}
+function funcLevelLabel(id){return businessLabel(schema.tables.REF_LEVEL_FUNC,'Functional_Level_ID',id)}
+function aiLevelLabel(id){return businessLabel(schema.tables.REF_LEVEL_AI,'AI_Level_ID',id)}
+function codedField(label,rawId,resolved){return `<div class="notice"><b>${esc(label)}</b><br>${esc(resolved)}${rawId?`<span class="internal-tag">${esc(rawId)}</span>`:''}</div>`}
+
+function recommendationPage(){const e=currentEng();if(!e)return noOfficial('Recomendación','La recomendación oficial sólo se muestra después de ejecutar el backend.');const o=currentDiagnosticOutput(e);if(!o)return noOfficial('Recomendación','El diagnóstico no existe o ya no corresponde al snapshot confirmado actual. Recalcula antes de continuar.');const r=o.recommendation||{},q=o.quote||{},record=typeof engagementOfRecord==='function'?engagementOfRecord(e):e,hot=(record.frictions||[]).filter(x=>x.status!=='SUPERSEDED').sort((a,b)=>Number(b.impact||0)-Number(a.impact||0)).slice(0,5);return pageTop('Recomendación','Recap de la reunión + recomendación estructurada del backend.',`<button class="btn" data-page="resultados">Ver resultados</button>`)+section('Recomendación óptima','La acción óptima no se sobrescribe; las alternativas se crean como escenarios.',`<div class="grid g4">${codedField('Acción',r.action_id,actionLabel(r.action_id))}${codedField('Nivel funcional',r.functional_level_id,funcLevelLabel(r.functional_level_id))}${codedField('IA',r.ai_level_id,aiLevelLabel(r.ai_level_id))}<div class="notice"><b>Precio base</b><br>${eur(q.one_off_eur)}</div></div>${state.uiMode==='INTERNAL'?`<div class="notice info aunea-ui-mt-12"><strong>Racional interno:</strong> ${(r.rationale||[]).map(esc).join(' · ')||'Sin racional adicional.'}</div>`:''}`)+section('Puntos calientes','Se muestran desde las fricciones capturadas.',`<div class="result-list">${hot.map(x=>`<div class="result-item"><b>${esc(labelFrom('OS_FRICTION_TYPE',x.friction_type))}</b><p>${esc(x.observable_signal)} · Impacto ${esc(x.impact||'—')}/5</p></div>`).join('')||auneaEmptyMessage('Sin fricciones priorizadas.')}</div>`)+section('Resumen final de la reunión','Texto de devolución editable para cerrar la conversación sin perder el hilo.',`<textarea id="meetingRecap" class="aunea-ui-recap-input">${esc(e.meetingRecap||buildRecap(e,o))}</textarea>`,`<button class="btn btn-outline" id="saveRecap">Guardar resumen</button>`)}
+function buildRecap(e,o){const record=typeof engagementOfRecord==='function'?engagementOfRecord(e):e,c=companyById(e.companyId),fs=(record.frictions||[]).filter(x=>x.status!=='SUPERSEDED').slice(0,4).map(x=>labelFrom('OS_FRICTION_TYPE',x.friction_type)).join(', ');return `Hemos revisado con ${c?.name||'el cliente'} el proceso ${record.answers?.DF011||e.title}. El flujo actual se ha estructurado en ${(record.processSteps||[]).filter(x=>x.status!=='SUPERSEDED').length} pasos y las principales fricciones identificadas son: ${fs||'pendientes de priorizar'}. La recomendación del motor es ${actionLabel(o.recommendation?.action_id)}, con nivel ${funcLevelLabel(o.recommendation?.functional_level_id)} e inteligencia ${aiLevelLabel(o.recommendation?.ai_level_id)}. Antes de cerrar propuesta deben revisarse las evidencias y gaps indicados.`}
+function noOfficial(title,msg){return pageTop(title,msg,`<button class="btn" data-page="diagnostico">Volver al diagnóstico</button>`)+auneaEmptyState('Resultado oficial pendiente','Conecta AUNEA Backend y calcula el diagnóstico. La interfaz no reproduce reglas de negocio en JavaScript.')}
+
+// __AUNEA_PG11_MODEL_MODULE__
+// __AUNEA_PG11_WORKSPACE_MODULE__
+function scenariosPage(){const e=currentEng();if(!e) return noOfficial('Escenarios','Se necesita una recomendación óptima calculada antes de comparar alternativas.');const o=currentDiagnosticOutput(e);if(!o)return pageTop('Escenarios','Explora alternativas condicionadas; la cotización y los ahorros oficiales exigen diagnóstico vigente.',`<button class="btn" data-page="resultados">Consultar análisis AS-IS</button>`)
+  +section('Puntos críticos y oportunidades','Basado únicamente en el snapshot confirmado.',asisPointCardsHtml(asisAnalysisSource(e)))
+  +section('Tres alternativas a contrastar','Sin cálculos futuros ni precios mientras no existan supuestos y propuesta canónica.',asisDirectionCardsHtml(e));const optimal=o.optimal_scenario;return pageTop('Escenarios','Compara la recomendación óptima con alternativas gobernadas sobre el mismo snapshot.',`<button class="btn btn-primary" id="newScenario">Crear alternativa</button>`)+`<div class="scenario-grid"><div class="card scenario-card optimal"><h3>Óptimo</h3>${scenarioBody(optimal)}</div>${(e.scenarioResults||[]).map((s,i)=>`<div class="card scenario-card"><h3>Alternativa ${i+1}</h3>${scenarioBody(s)}</div>`).join('')}</div>`+section('Opciones que aún deben contrastarse','Estas tres vías no sustituyen los escenarios calculados por el motor, ni implican precios sin alcance.',asisDirectionCardsHtml(e))+`<div class="internal-only">${section('Biblioteca interna','Consulta de productos, niveles y acciones; la cotización final sigue el backend.',libraryHtml())}</div>`}
+function scenarioBody(s){
+  if(!s)return'<p>—</p>';
+  const econ=s.economics||{},assumptions=s.assumptions||[],econReady=econ.status&&econ.status!=='NOT_CALCULATED'&&assumptions.length>0;
+  const has=(...keys)=>assumptions.some(a=>keys.some(k=>a[k]!==null&&a[k]!==undefined));
+  const hrs=(field,...keys)=>has(...keys)&&econ[field]!=null?num(econ[field])+' h/año':'Sin hipótesis';
+  const money=(field,...keys)=>has(...keys)&&econ[field]!=null?eur(econ[field]):'Sin hipótesis';
+  const econHtml=econReady?`
+    <div class="scenario-kpi"><small>Horas activas recuperables estimadas</small><b>${hrs('annual_active_hours','future_active_hours','explicit_reduction_factor')}</b></div>
+    <div class="scenario-kpi"><small>Espera reducible estimada</small><b>${hrs('annual_wait_hours','future_wait_hours')}</b></div>
+    <div class="scenario-kpi"><small>Valor de capacidad</small><b>${econ.capacity_value_eur_annual==null?'No calculado':eur(econ.capacity_value_eur_annual)}</b><span>no es ahorro de caja</span></div>
+    <div class="scenario-kpi"><small>Pérdida directa evitable</small><b>${money('direct_loss_eur_annual','preventable_loss_fraction')}</b></div>
+    <div class="scenario-kpi"><small>Ahorro de caja declarado</small><b>${money('realized_cash_saving_eur_annual','realized_cash_saving_eur_annual')}</b></div>
+    <div class="scenario-kpi"><small>Payback</small><b>${s.payback_months==null?'No calculado':num(s.payback_months)+' meses'}</b></div>`
+    :`<div class="scenario-kpi"><small>Mejora económica del escenario</small><b>No calculada</b><span>Sin hipótesis futura cuantificada; ningún cero indica tiempo TO-BE.</span></div>`;
+  const price=s.quote?.status==='BLOCKED'?'Sin precio autorizado':s.quote?.one_off_eur==null?'No disponible':eur(s.quote.one_off_eur);
+  return `<div class="scenario-kpis"><div class="scenario-kpi"><small>Acción</small><b>${esc(actionLabel(s.action_id))}</b><span class="internal-tag">${esc(s.action_id||'—')}</span></div><div class="scenario-kpi"><small>Nivel</small><b>${esc(funcLevelLabel(s.functional_level_id))} / ${esc(aiLevelLabel(s.ai_level_id))}</b><span class="internal-tag">${esc(s.functional_level_id||'—')} / ${esc(s.ai_level_id||'—')}</span></div><div class="scenario-kpi"><small>Precio</small><b>${price}</b></div><div class="scenario-kpi"><small>Riesgo</small><b>${s.risk?.residual_level?esc(engineLabel('risk_level',s.risk.residual_level)):'—'}</b></div>${econHtml}</div>`;
+}
+function libraryHtml(){const products=schema.tables.REF_PRODUCT||[],levels=schema.tables.REF_LEVEL_FUNC||[],ais=schema.tables.REF_LEVEL_AI||[];return `<div class="internal-only"><div class="grid g3"><div><b>Productos</b><div class="field-help">${products.map(x=>esc(x.Product_Name)).join('<br>')}</div></div><div><b>Niveles funcionales</b><div class="field-help">${levels.map(x=>esc(x.Name)).join('<br>')}</div></div><div><b>Inteligencia</b><div class="field-help">${ais.map(x=>esc(x.Name)).join('<br>')}</div></div></div></div>`}
+async function createScenario(presetIndex=null){
+  // [AUNEA-FE-SCENARIO-PRESETS-152] START — Canonical options, never assumed savings or automatic approval
+  const preset=Number.isInteger(presetIndex)&&typeof ASIS_CONDITIONAL_DIRECTIONS!=='undefined'
+    ?ASIS_CONDITIONAL_DIRECTIONS[presetIndex]||null:null;
+  // [AUNEA-FE-SCENARIO-PRESETS-152] END
+  const e=currentEng(),o=currentDiagnosticOutput(e);
+  if(!o)return toast('Recalcula el diagnóstico vigente antes de comparar escenarios.');
+  if(!state.backendOnline)return toast('Conecta el backend para comparar escenarios.');
+  const econRows=typeof normalizeEconomicInputs==='function'?normalizeEconomicInputs(e):[];
+  const painIds=[...new Set(econRows.map(x=>x.pain_id).filter(Boolean))];
+  const assumptionCards=painIds.length?painIds.map((pid,i)=>`<div class="card card-pad aunea-ui-mt-12"><h3>Supuesto futuro · ${esc(pid)}</h3><p class="field-help">Introduce únicamente valores que puedas justificar. El backend calcula la recuperación; la interfaz no aplica porcentajes por defecto.</p><div class="form-grid">
+    <div class="field"><label>Horas activas futuras/año</label><input type="number" min="0" step="0.01" id="scFutureActive_${i}" placeholder="Opcional"></div>
+    <div class="field"><label>Horas de espera futuras/año</label><input type="number" min="0" step="0.01" id="scFutureWait_${i}" placeholder="Opcional"></div>
+    <div class="field"><label>Reducción explícita (0–1)</label><input type="number" min="0" max="1" step="0.01" id="scReduction_${i}" placeholder="Opcional"></div>
+    <div class="field"><label>Fracción de pérdida evitable (0–1)</label><input type="number" min="0" max="1" step="0.01" id="scLossFraction_${i}" placeholder="Opcional"></div>
+    <div class="field"><label>Ahorro de caja realizable €/año</label><input type="number" min="0" step="0.01" id="scCash_${i}" placeholder="Opcional"></div>
+    <div class="field"><label>Tipo de evidencia</label>${auneaSelectControl('scConfidence_'+i,[{value:'HYPOTHESIS',label:'Hipótesis'},{value:'AUNEA_ESTIMATE',label:'Estimación AUNEA'},{value:'CLIENT_DECLARED',label:'Declarado por cliente'},{value:'MEASURED',label:'Medido'}],'HYPOTHESIS',{placeholder:'Selecciona…'})}</div>
+    <div class="field span-2"><label>Fundamento / fuente del supuesto</label><textarea id="scRationale_${i}" placeholder="Por qué este valor es defendible; referencia a TO-BE, evidencia o validación."></textarea></div>
+  </div></div>`).join(''):`<div class="notice info aunea-ui-mt-12">No hay impactos económicos vinculados a un Pain. El escenario puede comparar solución, nivel y riesgo, pero no calcular recuperación económica hasta que exista una base económica trazable.</div>`;
+  openModal('Crear escenario alternativo',`<div class="form-grid"><div class="field"><label>Nombre</label><input id="scName" value="${attr(preset?.name||'Alternativa '+(e.scenarioResults.length+1))}"></div><div class="field"><label>Acción</label>${auneaSelectControl('scAction',[{value:'',label:'Mantener óptima'},...(schema.tables.REF_ACTION||[]).map(x=>({value:x.Action_ID,label:x.Name||x.Action_ID}))],preset?.actionId||'',{placeholder:'Mantener óptima'})}</div><div class="field"><label>Nivel funcional</label>${auneaSelectControl('scN',[{value:'',label:'Mantener'},...(schema.tables.REF_LEVEL_FUNC||[]).map(x=>({value:x.Functional_Level_ID,label:x.Name||x.Functional_Level_ID}))],'',{placeholder:'Mantener'})}</div><div class="field"><label>Nivel IA</label>${auneaSelectControl('scI',[{value:'',label:'Mantener'},...(schema.tables.REF_LEVEL_AI||[]).map(x=>({value:x.AI_Level_ID,label:x.Name||x.AI_Level_ID}))],preset?.aiId||'',{placeholder:'Mantener'})}</div></div><div class="notice aunea-ui-mt-14"><b>Economía futura</b><br>Los supuestos siguientes son internos y explícitos. No se derivan automáticamente del nivel N/I ni de la cobertura del Pain.</div>${assumptionCards}`,async()=>{
+    const optionalNumber=(id,min=0,max=null)=>{
+      const raw=document.getElementById(id)?.value;
+      if(raw===undefined||raw===null||raw==='')return null;
+      const n=Number(raw);
+      if(!Number.isFinite(n)||n<min||(max!==null&&n>max))throw new Error(`Valor no válido en ${id}.`);
+      return n;
+    };
+    const assumptions=[];
+    painIds.forEach((pid,i)=>{
+      const future_active_hours=optionalNumber('scFutureActive_'+i);
+      const future_wait_hours=optionalNumber('scFutureWait_'+i);
+      const explicit_reduction_factor=optionalNumber('scReduction_'+i,0,1);
+      const preventable_loss_fraction=optionalNumber('scLossFraction_'+i,0,1);
+      const realized_cash_saving_eur_annual=optionalNumber('scCash_'+i);
+      const hasValue=[future_active_hours,future_wait_hours,explicit_reduction_factor,preventable_loss_fraction,realized_cash_saving_eur_annual].some(v=>v!==null);
+      if(!hasValue)return;
+      const rationale=(document.getElementById('scRationale_'+i)?.value||'').trim();
+      if(!rationale)throw new Error(`Explica el fundamento del supuesto económico para ${pid}.`);
+      assumptions.push({
+        pain_id:pid,future_active_hours,future_wait_hours,explicit_reduction_factor,
+        preventable_loss_fraction,realized_cash_saving_eur_annual,
+        confidence_type:document.getElementById('scConfidence_'+i)?.value||'HYPOTHESIS',
+        rationale,source_or_rule_id:'RULE_SCENARIO_ECONOMICS'
+      });
+    });
+    const scenario={scenario_name:document.getElementById('scName').value,action_id:document.getElementById('scAction').value||null,functional_level_id:document.getElementById('scN').value||null,ai_level_id:document.getElementById('scI').value||null,assumptions,commercial_scope:null};
+    try{
+      const r=await fetch(`${state.backendUrl}/v1/scenarios/compare`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({engagement:buildBackendPayload(e),diagnostic:o,scenario})});
+      if(r.status===409)throw new Error('El diagnóstico ya no coincide con los inputs actuales. Recalcula antes de crear una alternativa.');
+      if(!r.ok)throw new Error(await r.text());
+      const j=await r.json();
+      if(j.input_snapshot_hash!==o.input_snapshot_hash||j.rule_bundle_version!==o.rule_bundle_version)throw new Error('El backend devolvió un escenario asociado a otro snapshot.');
+      e.scenarioResults.push(j.compared);markDirty('Escenario alternativo calculado sobre el snapshot vigente y supuestos futuros explícitos');closeModal();render()
+    }catch(err){toast(err.message)}
+  })
+}
+async function downloadQuotePdf(){const e=currentEng(),o=currentDiagnosticOutput(e);if(!o)return toast('Calcula un diagnóstico vigente antes de generar el PDF.');if(typeof approvedOutputReview==='function'&&!approvedOutputReview(e))return toast('Aprueba los resultados en Revisión humana antes de generar un entregable para cliente.');if(!state.backendOnline)return toast('Conecta el backend para generar el PDF.');const scenarios=[o.optimal_scenario,...(e.scenarioResults||[])],sel=e.selectedScenarioIndex??0,selectedScenario=scenarios[sel]||o.optimal_scenario,company=companyById(e.companyId),record=typeof engagementOfRecord==='function'?engagementOfRecord(e):e;const request={selected_scenario:selectedScenario,client_name:company?.name||'',process_name:record.answers?.DF011||e.title||'',next_step:record.answers?.DF098||'',include_internal_appendix:false};const btn=document.getElementById('printQuote');if(btn){btn.disabled=true;btn.textContent='Generando…'}try{const r=await fetch(`${state.backendUrl}/v1/deliverables/pdf`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({diagnostic:o,request})});if(!r.ok)throw new Error(await r.text());const blob=await r.blob(),url=URL.createObjectURL(blob),a=document.createElement('a');const raw=`${company?.name||'Cliente'}_${record.answers?.DF011||'Diagnostico'}`.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9_-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,80)||'Diagnostico';a.href=url;a.download=`AUNEA_${raw}.pdf`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),500);toast('PDF generado y descargado.')}catch(err){toast('No se pudo generar el PDF: '+err.message)}finally{if(btn){btn.disabled=false;btn.textContent='Descargar PDF'}}}
+function quotePage(){const e=currentEng();if(!e) return noOfficial('Cotización','La cotización consume el escenario seleccionado y Pricing Engine.');const o=currentDiagnosticOutput(e);if(!o)return noOfficial('Cotización','El diagnóstico no existe o ya no corresponde al snapshot confirmado actual. Recalcula antes de preparar cotización o entregables.');const scenarios=[{name:'Recomendación óptima',data:o.optimal_scenario},...(e.scenarioResults||[]).map((s,i)=>({name:`Alternativa ${i+1}`,data:s}))],sel=e.selectedScenarioIndex??0,q=scenarios[sel]?.data?.quote||o.quote||{};return pageTop('Cotización','Selecciona qué escenario cotizar. La recomendación óptima sigue siendo inmutable.',`<button class="btn" id="printQuote">Descargar PDF</button><button class="btn btn-primary" id="createProject">Crear proyecto</button>`)+section('Escenario a cotizar','Puedes usar la recomendación o una alternativa calculada.',`<div class="field">${auneaSelectControl('quoteScenario',scenarios.map((s,i)=>({value:String(i),label:s.name})),String(sel),{placeholder:'Selecciona escenario'})}</div><div class="grid g4 aunea-ui-mt-14"><div class="card metric"><small>One-off</small><strong>${q.status==='BLOCKED'?'Sin precio autorizado':eur(q.one_off_eur)}</strong></div><div class="card metric"><small>Recurrente</small><strong>${q.status==='BLOCKED'?'Sin precio autorizado':eur(q.recurring_monthly_eur)+'/m'}</strong></div><div class="card metric"><small>TCO 12m</small><strong>${q.status==='BLOCKED'?'Sin precio autorizado':eur(q.tco_12m_eur)}</strong></div><div class="card metric"><small>Estado</small><strong class="aunea-ui-metric-status">${q.status?esc(engineLabel('quote_status',q.status)):'—'}</strong></div></div>`)+`<div class="internal-only">${section('Biblioteca de productos y niveles','Consulta interna para preparar escenarios; no sustituye Pricing Engine.',libraryHtml())}</div>`}
+// [AUNEA-FE-RESULTS-OFFICIAL-PAGES-410] END
