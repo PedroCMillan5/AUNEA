@@ -25,7 +25,7 @@ module.exports=function pg11LegacySourceOracle(){
     close='// [AUNEA-FE-RESULTS-OFFICIAL-PAGES-410] END';
   if(official.indexOf(open)!==0||!official.includes(close))throw Error('Official results owner block missing');
   const originalBody=official.slice(official.indexOf('\n')+1,official.indexOf(close));
-  source=source.replace(officialMarker,originalBody);
+  source=source.replace(officialMarker+'\n',originalBody);
   const analysis='// __AUNEA_PG10_ANALYSIS_MODULE__';
   if(source.split(analysis).length!==2)throw Error('PG10 analysis boundary missing or duplicated');
   source=source.replace(analysis,read('pages/results-analysis.js').trimEnd());
