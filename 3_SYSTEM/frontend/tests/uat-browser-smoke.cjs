@@ -91,9 +91,9 @@ async function main(){
   assert.equal(await page.evaluate(()=>JSON.stringify(currentEng()?.answers)),captureState.answers,
     'Visual-only inspection must not change canonical diagnostic answers');
   fs.writeFileSync(path.join(outDir,'frozen-capture-manifest.json'),
-    JSON.stringify({status:'CANDIDATE_FOR_MANUAL_VISUAL_QA',date:'2026-11-13',
+    JSON.stringify({status:'CANDIDATE_FOR_MANUAL_VISUAL_QA',generatedAt:new Date().toISOString(),
       scope:'Nine FROZEN pages, Chromium desktop/mobile; NOT pixel equivalence approval',
-      screens:visualEvidence},null,2)+'\\n');
+      screens:visualEvidence},null,2));
   console.log('FROZEN_VISUAL_CAPTURED_FOR_REVIEW: '+visualEvidence.length+' screenshots; manual acceptance pending');
   // [AUNEA-UAT-DESIGN-FROZEN-CAPTURE-395] END
 
