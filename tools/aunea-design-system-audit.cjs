@@ -1,0 +1,105 @@
+// [AUNEA-UI-COMPONENT-INVENTORY-390] START — Read-only full-frontend component inventory.
+// SOURCE: DESIGN_SYSTEM_AUNEA; TOKENS_AUNEA; CATALOGO_COMPONENTES_AUNEA DS-001..020;
+// PROJECT_RULES v1.7; DEC-050/056; FROZEN_PAGES.json.
+// PURPOSE: Audit every runtime module, CSS owner and major screen family before F1/F2.
+// Run: node tools/aunea-design-system-audit.cjs > aunea-design-inventory.json
+'use strict';
+const fs=require('node:fs'),path=require('node:path');
+const root=path.resolve(__dirname,'..'),front=path.join(root,'3_SYSTEM/frontend');
+const read=p=>fs.readFileSync(path.join(front,p),'utf8');
+const manifest=JSON.parse(read('module-manifest.json')).modules;
+const frozen=JSON.parse(read('FROZEN_PAGES.json')).frozen_pages.map(x=>({page:x.page_id,screen:x.screen_id,gate:x.gate}));
+const catalogs={
+  'DS-001':{name:'Hero / portada',selector:['page-head','hero','hero-actions']},
+  'DS-002':{name:'Encabezado de sección',selector:['page-head','section-head','aunea-ui-section-title','tobe-stage-heading']},
+  'DS-003':{name:'Texto',selector:['field-help','aunea-ui-section-caption','tobe-muted','notice']},
+  'DS-004':{name:'Card estándar',selector:['card','result-item','aunea-ui-work-surface','tobe-global-card']},
+  'DS-005':{name:'KPI',selector:['metric','scenario-kpi','kpi']},
+  'DS-006':{name:'Callout',selector:['notice','tobe-alert']},
+  'DS-007':{name:'Riesgo / warning',selector:['warn','danger-text','notice']},
+  'DS-008':{name:'Tabla',selector:['data-table','table-wrap','table-foot']},
+  'DS-009':{name:'Gráfico',selector:['chart','bar-chart','graph']},
+  'DS-010':{name:'Comparativa',selector:['scenario','compare','comparison']},
+  'DS-011':{name:'Before / after',selector:['before-after','asis','tobe']},
+  'DS-012':{name:'Proceso',selector:['flow-canvas','flow-step','process-layout']},
+  'DS-013':{name:'Timeline / roadmap',selector:['timeline','stage-nav','stage-step']},
+  'DS-014':{name:'Diagrama',selector:['process-map','flow-canvas','tobe-graph']},
+  'DS-015':{name:'Testimonial',selector:['quote','testimonial']},
+  'DS-016':{name:'Pricing',selector:['pricing','quote','price']},
+  'DS-017':{name:'Acción / CTA',selector:['btn','btn-primary','btn-outline','aunea-ui-button-row']},
+  'DS-018':{name:'Metadata / footer',selector:['page-meta','sidebar-foot','table-foot']},
+  'DS-019':{name:'Estado / chip',selector:['badge','chip','status','tag']},
+  'DS-020':{name:'Formulario y controles',selector:['field','form-grid','aunea-select','input','compound-control']}
+};
+const rootCss=read('styles.css'),layoutCss=read('ui-system.css');
+const styles=new Map(),cssRuleGroups=new Map();
+function rules(source,owner){
+  let start=0,str='',comment=false,stack=[];
+  for(let i=0;i<source.length;i++){
+    const c=source[i],n=source[i+1];
+    if(comment){if(c==='*'&&n==='/'){comment=false;i++}continue}
+    if(str){if(c==='\\')i++;else if(c===str)str='';continue}
+    if(c==='/'&&n==='*'){comment=true;i++;continue}
+    if(c==="'"||c==='"'){str=c;continue}
+    if(c==='{'){
+      const selector=source.slice(start,i).replace(/\/\*[\s\S]*?\*\//g,'').trim();
+      stack.push({selector,start:i});start=i+1;
+    }else if(c==='}'){
+      const item=stack.pop();start=i+1;
+      if(!item||item.selector.startsWith('@'))continue;
+      const ctx=stack.filter(x=>x.selector.startsWith('@')).map(x=>x.selector).join(' > ');
+      const group=ctx+' | '+item.selector;
+      if(!cssRuleGroups.has(group))cssRuleGroups.set(group,[]);
+      cssRuleGroups.get(group).push({owner,line:source.slice(0,item.start).split('\n').length});
+      for(const m of item.selector.matchAll(/\.([A-Za-z_][\w-]*)/g)){
+        const name=m[1],s=styles.get(name)||{name,cssFiles:new Set(),cssRules:0,consumers:new Set(),frozenRisk:false};
+        s.cssFiles.add(owner);s.cssRules++;styles.set(name,s);
+      }
+    }
+  }
+}
+rules(rootCss,'styles.css');rules(layoutCss,'ui-system.css');
+const modules=[],foundBy=new Map(),screenFamilies={
+  'CRM / PG00': ['core/state.js','ui/shell.js','domain/company.js','domain/contact.js','domain/interaction.js','domain/opportunity.js','pages/crm-companies.js','pages/crm-contacts.js','pages/crm-interactions.js','pages/crm-opportunities.js','domain/engagement.js'],
+  'Sesión / PG01–PG09': ['pages/diagnostic-stages.js','domain/process.js','domain/risk.js','domain/economics.js','domain/process-lifecycle.js','domain/no-reask.js','ui/renderer.js','pages/session-display.js'],
+  'Resultados / PG10': ['pages/results.js','domain/analysis-workbench.js','domain/internal-ai-global-quality.js','domain/result-context.js'],
+  'Trabajo interno / PG11': ['pages/tobe.js','pages/tobe-global.js','pages/internal-work-events.js','domain/tobe-model.js','domain/tobe-transactions.js','domain/internal-ai-pilot.js'],
+  'Comparación / posterior': ['pages/comparison.js','pages/projects.js','domain/project.js','domain/completion.js','domain/output-review.js'],
+  'Transversal / engine': ['services/backend-client.js','services/engine-adapter.js','services/persistence.js','services/schema.js','ui/renderer.js','ui/shell.js']
+};
+function familyNames(modulePath){return Object.entries(screenFamilies).filter(([,paths])=>paths.includes(modulePath)).map(([name])=>name);}
+for(const m of manifest){
+  const text=read(m.path),used=new Set(),literalClassTokens=[...text.matchAll(/\bclass\s*=\s*["']([^"'<>]*)["']/g)];
+  for(const match of literalClassTokens){
+    for(const name of match[1].split(/\s+/)){
+      if(/^[A-Za-z_][\w-]+$/.test(name)&&styles.has(name))used.add(name);
+    }
+  }
+  // Broad textual references catch querySelector/classList and dynamic templates
+  // but are candidates; a static absence never proves unused CSS.
+  for(const name of styles.keys()){
+    const expression=new RegExp('(?:["\x60.\\s])'+name.replace(/[-/\\^$*+?.()|[\]{}]/g,'\\$&')+'(?:["\x60.\\s]|$)');
+    if(expression.test(text))used.add(name);
+  }
+  const f=familyNames(m.path),view=m.path.startsWith('pages/')||m.path==='ui/shell.js';
+  for(const cls of used){styles.get(cls).consumers.add(m.path);if(f.some(x=>x==='CRM / PG00'||x==='Sesión / PG01–PG09'))styles.get(cls).frozenRisk=true;}
+  modules.push({path:m.path,layer:m.layer,blockId:m.block_id,lines:text.split('\n').length,
+    family:f,view,inlineStyleAttributes:(text.match(/style="/g)||[]).length,referencedCssClasses:[...used].sort()});
+}
+const css=[...styles.values()].map(v=>({className:v.name,ownerFiles:[...v.cssFiles],ruleOccurrences:v.cssRules,
+  runtimeConsumers:[...v.consumers],frozenRisk:v.frozenRisk,
+  classification:v.cssFiles.size>1?'CROSS_FILE_OWNER_REVIEW':v.consumers.size?'REFERENCED':'REVIEW_DYNAMIC_OR_HTML'})).sort((a,b)=>a.className.localeCompare(b.className));
+const duplicatedSelectors=[...cssRuleGroups].filter(([,group])=>group.length>1).map(([selectorContext,owners])=>({selectorContext,owners})).sort((a,b)=>b.owners.length-a.owners.length);
+const ds=Object.fromEntries(Object.entries(catalogs).map(([id,meta])=>[id,{...meta,
+  cssCandidates:meta.selector.filter(name=>styles.has(name)).map(name=>({name,owners:[...styles.get(name).cssFiles],consumers:[...styles.get(name).consumers]})),
+  note:'Componente documental, no implica implementación única de HTML o comportamiento'}]));
+const result={
+  status:'STATIC_DESIGN_INVENTORY',scope:'46 runtime JS files, 2 CSS, 9 FROZEN pages; read-only and heuristic',
+  restrictions:['No modify FROZEN','No infer dead CSS from static absence','No move backend calculations or data owners'],
+  metrics:{modules:modules.length,cssClasses:css.length,classesCrossFile:css.filter(x=>x.ownerFiles.length>1).length,
+    repeatedSelectorContextGroups:duplicatedSelectors.length,
+    documentedComponents:Object.keys(ds).length,inlineStyleAttributes:modules.reduce((n,x)=>n+x.inlineStyleAttributes,0)},
+  frozen,screenFamilies,components:ds,modules,css,duplicatedSelectors
+};
+process.stdout.write(JSON.stringify(result,null,2)+'\n');
+// [AUNEA-UI-COMPONENT-INVENTORY-390] END
