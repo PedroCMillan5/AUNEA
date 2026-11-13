@@ -1,6 +1,6 @@
 # AUNEA Internal — Contrato de componentes compartidos para TODO el producto
 
-**Fecha:** 13/11/2026 · **Rama:** `work/as-is-ux-simplification-20260930` · **Estado:** IMPLEMENTACIÓN PARCIAL / REVIEW.  
+**Fecha:** 13/11/2026 · **Rama:** `work/as-is-ux-simplification-20260930` · **Estado:** F1/F2 IMPLEMENTACIÓN TÉCNICA CERRADA; QA AUTOMATIZADO PASS; ACEPTACIÓN VISUAL DEL PROPIETARIO PENDIENTE / REVIEW.  
 **Ámbito:** CRM + PG00 + sesión PG01–PG09 + Diagnóstico PG10 + TO-BE PG11 + Comparación PG12 + Implementación/Proyectos + vista de cliente y módulos transversales. No introduce reglas de negocio ni cambia fuente de datos.
 
 ## 1. Fuentes gobernantes y criterio
@@ -103,3 +103,26 @@ La extracción histórica de `registerInternalWorkPages()` dejó `pages/internal
 4. Ejecutar **nuevamente** todas las UAT Node/Python/Chromium después de cada lote, conservar referencias visuales y documentar la reducción real de estilos. No atribuir a F1/F2 el estado CLOSED por tener una única auditoría PASS.
 
 **Cierre de este lote:** Inventario y contrato global publicados; estabilización automatizada PASS; implementación visual transversal todavía **PARCIAL / REVIEW**.
+
+
+## 10. Consolidación F1/F2 — cierre técnico y QA verificable · 13/11/2026
+
+**Precedencia temporal:** este apartado actualiza el estado de implementación de los apartados 7–9, que permanecen como registro histórico de avances. Se cierra el trabajo técnico comprometido de F1/F2 en la rama REVIEW; **NO** equivale a aceptación visual manual ni autoriza merge a main.
+
+### F1: propietario y reducción CSS
+- Capa común única: `3_SYSTEM/frontend/styles.css` (tokens, cards, botones, formularios, avisos, tablas, tipografía, paneles y utilidades opt-in). Geometría responsive y excepciones por pantalla: `3_SYSTEM/frontend/ui-system.css`. No existe tercer CSS dueño de componentes comunes.
+- Auditoría completa de **46 módulos**, **20 categorías documentales DS** (sin declarar 20 renderizadores implementados), **107 clases presentes en ambos CSS** y **139 grupos selector+contexto repetidos**. Clasificación definitiva **técnica**: clases 106 `FROZEN_PROTECTED`, 1 `SCOPED_EXCEPTION`, **0 pendientes**; selectores 99 `FROZEN_PROTECTED`, 40 `SCOPED_EXCEPTION`, **0 pendientes**. Conservación intencional de cascadas, variantes y diseño histórico; no se borran reglas por coincidencia léxica.
+- `ui-system.css`: aprox. **5.041 → 5.009 líneas**. Los estilos redundantes demostrados de PG10/PG11 se han eliminado; las cabeceras y captions PG11 heredan la tipografía compartida.
+- Los atributos `style="` del runtime pasan de **35 a 29**. El UAT visible elimina sus cuatro estilos fijos; se conservan estilos dinámicos necesarios para posiciones de grafos, anchuras por datos y presentación condicional, además de consumidores históricos FROZEN sin reapertura. `styles.css` incluye `aunea-ui-mt-16` y `aunea-ui-flex-actions` para evitar nuevos atributos inline.
+
+### F2: un único renderer para patrones equivalentes
+- Propietarios existentes preservados: `core/state.js` para `pageTop`, `section`, `statusBadge`, `openModal`; `ui/renderer.js` para `auneaSelectControl`, `auneaWorkDisclosure`, `auneaEmptyState`, `auneaEmptyMessage` y `auneaNoticeMessage`.
+- PG10/PG11 reutilizan avisos semánticos con tonos permitidos y HTML equivalente; PG10/PG12/Proyectos comparten estados vacíos, PG10 comparte `details/summary` de trabajo interno, PG11 usa superficies y etapas `aunea-ui-work-*`; el resto de las familias siguen utilizando los controles base del producto. No se creó segunda biblioteca, no se trasladaron reglas ni resultados del backend al frontend.
+- El workflow `AUNEA Shared UI Contract Gate` conserva su evidencia por **artefacto inmutable asociado al SHA**, sin hacer push de un informe desde una ejecución paralela (evita colisiones con Acceptance Gate y el inventario).
+
+### Evidencia de QA y límites de aceptación
+- **Acceptance Gate SHA `185300b012472abfe17a712554f685a2837924c5`**: backend pytest, frontend npm y dos journeys Chromium **PASS**. Run: https://github.com/PedroCMillan5/AUNEA/actions/runs/43418293236.
+- `AUNEA Frontend Tests`: PASS https://github.com/PedroCMillan5/AUNEA/actions/runs/43418293301. `AUNEA Shared UI Contract Gate`: PASS https://github.com/PedroCMillan5/AUNEA/actions/runs/43418293411. `Design System Runtime Inventory`: PASS https://github.com/PedroCMillan5/AUNEA/actions/runs/43418293140.
+- FROZEN: las **18 capturas PNG** (nueve pantallas × 1365/390 px) comparadas con la referencia técnica versionada `tests/frozen/frozen-visual-reference-sha256.json` pasan con huellas SHA-256 exactas. La referencia no se actualiza al detectar diferencias. La comparación entre los runs 43409533847 y 43416198540 también mostró 18/18 igualdad píxel a píxel.
+- **No acreditado:** aceptación visual manual del propietario frente a las referencias aprobadas y revisión nativa final en Windows/Edge; tampoco equivalencia visual completa de cada estado posible en CRM/PG00–PG12. Permanecen como gate de aceptación de F6. Las nueve FROZEN siguen protegidas; no se reabren implícitamente.
+- **Estado formal:** F1 y F2 **IMPLEMENTACIÓN TÉCNICA COMPLETADA EN REVIEW**. No marcar el producto PRODUCTION ni cerrar F6/QA visual manual por este hito.
