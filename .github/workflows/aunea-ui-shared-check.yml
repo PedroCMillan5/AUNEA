@@ -1,0 +1,56 @@
+# [AUNEA-CI-SHARED-UI-GATE-392] START
+# Shared UI verification across CRM, PG00-09, PG10-11 and subsequent views.
+name: AUNEA Shared UI Contract Gate
+on:
+  push:
+    branches:
+      - work/as-is-ux-simplification-20260930
+    paths:
+      - '3_SYSTEM/frontend/tests/design-system-common.test.cjs'
+      - 'tools/aunea-design-system-audit.cjs'
+      - '.github/workflows/aunea-ui-shared-check.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  contracts:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: 3_SYSTEM/frontend/package-lock.json
+      - name: Install locked frontend runtime
+        working-directory: 3_SYSTEM/frontend
+        run: npm ci
+      - name: Run shared UI and frozen source contracts
+        id: shared
+        continue-on-error: true
+        working-directory: 3_SYSTEM/frontend
+        run: node --test tests/design-system-common.test.cjs tests/module-manifest.test.cjs > ../../aunea-ui-check.log 2>&1
+      - name: Save QA result for source trace
+        if: always()
+        env:
+          TEST_OUTCOME: ${{ steps.shared.outcome }}
+        run: |
+          node -e "const fs=require('fs');const x={head:process.env.GITHUB_SHA,generatedAt:new Date().toISOString(),testOutcome:process.env.TEST_OUTCOME,tests:['design-system-common.test.cjs','module-manifest.test.cjs'],scope:'Node contracts only; browser and backend acceptance remain independent'};fs.writeFileSync('docs/audit/AUNEA_INTERNAL_UI_SHARED_GATE.json',JSON.stringify(x,null,2)+'\n')"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/audit/AUNEA_INTERNAL_UI_SHARED_GATE.json
+          if ! git diff --cached --quiet; then
+            git commit -m "docs(audit): record shared UI contract test result [skip ci]"
+            git push origin "HEAD:refs/heads/${GITHUB_REF_NAME}"
+          fi
+      - name: Test failures remain blockers
+        if: steps.shared.outcome != 'success'
+        run: cat aunea-ui-check.log && exit 1
+      - name: Preserve output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aunea-ui-shared-test-log
+          path: aunea-ui-check.log
+          if-no-files-found: ignore
+# [AUNEA-CI-SHARED-UI-GATE-392] END
