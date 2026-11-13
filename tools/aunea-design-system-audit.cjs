@@ -102,7 +102,7 @@ const repeatedSelectorContexts=duplicatedSelectors.map(item=>{
   const scoped=(workScope.test(rawSelector)||/^\s*\.asis-(?:confirmed-data-heading|data-group|data-pairs)(?:\b|>)/.test(rawSelector))&&
     !rawSelector.includes('body.page-')&&!rawSelector.includes(':has(.diagnostic-stage-');
   const isGlobal=!classNames.length;
-  const protectedByFrozen=/^\s*\.topbar-(?:center|active-study)(?:\\b|[.:>#])/i.test(rawSelector)||
+  const protectedByFrozen=/^\s*\.topbar-(?:center|active-study)(?:\b|[.:>#])/i.test(rawSelector)||
     (!scoped&&(isGlobal||classNames.some(name=>
     cssLookup.get(name)?.frozenRisk||frozenChrome.has(name))));
   const status=protectedByFrozen?'FROZEN_PROTECTED':scoped?'SCOPED_EXCEPTION':'PENDING_BROWSER_QA';
