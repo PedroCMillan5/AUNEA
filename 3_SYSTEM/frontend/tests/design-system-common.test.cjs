@@ -307,4 +307,16 @@ test('PG10 and recommendations reuse the semantic compact empty-message renderer
   assert.doesNotMatch(results,/<div class="empty"><p>Sin fricciones priorizadas\.<\/p><\/div>/);
 });
 
+
+test('PG10 sealed ledger preserves only effective typography declarations',()=>{
+  const pg10=load('domain/analysis-workbench.js');
+  for(const cls of ['asis-confirmed-data-heading','asis-data-group','asis-data-pairs'])
+    assert.ok(pg10.includes(cls),'PG10 snapshot consumer missing: '+cls);
+  assert.doesNotMatch(local,/\.asis-confirmed-data-heading>b\{font-size:15px\}/);
+  assert.doesNotMatch(local,/\.asis-data-group h4\{font-size:13px/);
+  assert.doesNotMatch(local,/\.asis-data-group li\{font-size:12px/);
+  assert.match(local,/\.asis-data-group h4\{font-size:14px\}/);
+  assert.match(local,/\.asis-data-group li\{font-size:13px;line-height:1.55\}/);
+});
+
 // [AUNEA-UAT-DESIGN-COMMON-312] END
