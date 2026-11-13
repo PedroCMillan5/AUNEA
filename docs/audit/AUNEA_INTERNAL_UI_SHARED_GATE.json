@@ -1,6 +1,6 @@
 {
-  "head": "7c39a09245a8a181765e84b61c5576dc22044431",
-  "generatedAt": "2026-11-13T11:03:49.783Z",
+  "head": "6b44eca2fedfb9f11335612ad6d1e4e770243d27",
+  "generatedAt": "2026-11-13T11:07:41.557Z",
   "testOutcome": "failure",
   "tests": [
     "design-system-common.test.cjs",

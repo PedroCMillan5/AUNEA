@@ -2,114 +2,112 @@ TAP version 13
 # Subtest: the application loads ONE base CSS before the layout/skin CSS
 ok 1 - the application loads ONE base CSS before the layout/skin CSS
   ---
-  duration_ms: 1.351364
+  duration_ms: 1.582436
   type: 'test'
   ...
 # Subtest: canonical tokens and button variants live in the shared stylesheet only
 ok 2 - canonical tokens and button variants live in the shared stylesheet only
   ---
-  duration_ms: 1.384394
+  duration_ms: 1.106675
   type: 'test'
   ...
 # Subtest: new reusable primitives are opt-in and scoped; FROZEN baseline receives no implicit changes
 ok 3 - new reusable primitives are opt-in and scoped; FROZEN baseline receives no implicit changes
   ---
-  duration_ms: 0.412317
+  duration_ms: 0.329246
   type: 'test'
   ...
 # Subtest: PG11 uses common heading primitives and has four numbered main sections
 ok 4 - PG11 uses common heading primitives and has four numbered main sections
   ---
-  duration_ms: 1.53558
+  duration_ms: 1.19502
   type: 'test'
   ...
 # Subtest: PG11 section 03 reuses section 01/02 surface and canonical typography tokens
 ok 5 - PG11 section 03 reuses section 01/02 surface and canonical typography tokens
   ---
-  duration_ms: 1.243279
+  duration_ms: 1.06724
   type: 'test'
   ...
 # Subtest: PG11 consultant action buttons use the shared compact-button group
 ok 6 - PG11 consultant action buttons use the shared compact-button group
   ---
-  duration_ms: 0.944523
+  duration_ms: 0.827832
   type: 'test'
   ...
 # Subtest: shared visual contract does not change business or IA execution state
 ok 7 - shared visual contract does not change business or IA execution state
   ---
-  duration_ms: 0.713981
+  duration_ms: 0.691837
   type: 'test'
   ...
 # Subtest: PG01 shares headings and form surfaces without local appearance overrides
 ok 8 - PG01 shares headings and form surfaces without local appearance overrides
   ---
-  duration_ms: 1.071414
+  duration_ms: 0.963696
   type: 'test'
   ...
 # Subtest: PG11 work surfaces and stages reuse the same opt-in structural primitives
 ok 9 - PG11 work surfaces and stages reuse the same opt-in structural primitives
   ---
-  duration_ms: 1.590693
+  duration_ms: 1.492898
   type: 'test'
   ...
 # Subtest: internal work result layouts reuse shared opt-in structure instead of inline presentation
 ok 10 - internal work result layouts reuse shared opt-in structure instead of inline presentation
   ---
-  duration_ms: 0.90044
+  duration_ms: 0.947906
   type: 'test'
   ...
 # Subtest: diagnostic work disclosures share the same structural owner
 ok 11 - diagnostic work disclosures share the same structural owner
   ---
-  duration_ms: 2.820242
+  duration_ms: 2.606015
   type: 'test'
   ...
 # Subtest: work disclosure builder preserves semantic markup and escapes its label
 ok 12 - work disclosure builder preserves semantic markup and escapes its label
   ---
-  duration_ms: 1.443503
+  duration_ms: 1.492587
   type: 'test'
   ...
 # Subtest: cross-screen shared primitives are defined once and consumed from CRM through PG12+
 ok 13 - cross-screen shared primitives are defined once and consumed from CRM through PG12+
   ---
-  duration_ms: 2.954803
+  duration_ms: 2.547725
   type: 'test'
   ...
 # Subtest: all approved screens remain under nine explicit frozen-page gates
 ok 14 - all approved screens remain under nine explicit frozen-page gates
   ---
-  duration_ms: 0.269813
+  duration_ms: 0.317906
   type: 'test'
   ...
 # Subtest: design inventory covers every manifest source and all documented DS categories
 ok 15 - design inventory covers every manifest source and all documented DS categories
   ---
-  duration_ms: 0.725082
+  duration_ms: 1.025001
   type: 'test'
   ...
 # Subtest: all 46 runtime modules obey the F1 shared-style anti-regression baseline
 not ok 16 - all 46 runtime modules obey the F1 shared-style anti-regression baseline
   ---
-  duration_ms: 1411.936694
+  duration_ms: 1322.685601
   type: 'test'
   location: '/home/runner/work/AUNEA/AUNEA/3_SYSTEM/frontend/tests/design-system-common.test.cjs:202:1'
   failureType: 'testCodeFailure'
   error: |-
-    Expected values to be strictly equal:
-    + actual - expected
+    Every repeated context needs a documented owner
     
-    + 'STATIC_OWNER_RESOLUTION_PENDING_MANUAL_VISUAL_APPROVAL'
-    - 'STATIC_FIRST_PASS_NOT_APPROVAL'
+    7 !== 0
     
   code: 'ERR_ASSERTION'
   name: 'AssertionError'
-  expected: 'STATIC_FIRST_PASS_NOT_APPROVAL'
-  actual: 'STATIC_OWNER_RESOLUTION_PENDING_MANUAL_VISUAL_APPROVAL'
+  expected: 0
+  actual: 7
   operator: 'strictEqual'
   stack: |-
-    TestContext.<anonymous> (/home/runner/work/AUNEA/AUNEA/3_SYSTEM/frontend/tests/design-system-common.test.cjs:211:10)
+    TestContext.<anonymous> (/home/runner/work/AUNEA/AUNEA/3_SYSTEM/frontend/tests/design-system-common.test.cjs:213:10)
     Test.runInAsyncScope (node:async_hooks:214:14)
     Test.run (node:internal/test_runner/test:1047:25)
     Test.processPendingSubtests (node:internal/test_runner/test:744:18)
@@ -120,87 +118,93 @@ not ok 16 - all 46 runtime modules obey the F1 shared-style anti-regression base
 # Subtest: structured IA evidence and session layout use shared visual owner
 ok 17 - structured IA evidence and session layout use shared visual owner
   ---
-  duration_ms: 1.561808
+  duration_ms: 1.458108
   type: 'test'
   ...
 # Subtest: PG12 and Projects share the semantic empty-state renderer with unchanged HTML
 ok 18 - PG12 and Projects share the semantic empty-state renderer with unchanged HTML
   ---
-  duration_ms: 1.693119
+  duration_ms: 1.552771
   type: 'test'
   ...
 # Subtest: PG11 captions inherit common typography and retain only scoped margins
 ok 19 - PG11 captions inherit common typography and retain only scoped margins
   ---
-  duration_ms: 1.258859
+  duration_ms: 1.026393
   type: 'test'
   ...
 # Subtest: PG10 and recommendations reuse the semantic compact empty-message renderer
 ok 20 - PG10 and recommendations reuse the semantic compact empty-message renderer
   ---
-  duration_ms: 1.559051
+  duration_ms: 1.273016
+  type: 'test'
+  ...
+# Subtest: PG10 sealed ledger preserves only effective typography declarations
+ok 21 - PG10 sealed ledger preserves only effective typography declarations
+  ---
+  duration_ms: 0.653906
   type: 'test'
   ...
 # Subtest: every module declared in the manifest exists on disk
-ok 21 - every module declared in the manifest exists on disk
+ok 22 - every module declared in the manifest exists on disk
   ---
-  duration_ms: 2.106003
+  duration_ms: 2.585335
   type: 'test'
   ...
 # Subtest: every runtime .js on disk is declared in the manifest
-ok 22 - every runtime .js on disk is declared in the manifest
+ok 23 - every runtime .js on disk is declared in the manifest
   ---
-  duration_ms: 1.93131
+  duration_ms: 1.897376
   type: 'test'
   ...
 # Subtest: index.html loads exactly the manifest modules, in the declared order
-ok 23 - index.html loads exactly the manifest modules, in the declared order
+ok 24 - index.html loads exactly the manifest modules, in the declared order
   ---
-  duration_ms: 0.412737
+  duration_ms: 0.392857
   type: 'test'
   ...
 # Subtest: every module is deferred so the shared global scope is populated in order
-ok 24 - every module is deferred so the shared global scope is populated in order
+ok 25 - every module is deferred so the shared global scope is populated in order
   ---
-  duration_ms: 0.288686
+  duration_ms: 0.372027
   type: 'test'
   ...
 # Subtest: each module declares a known layer and carries its Block_ID marker
-ok 25 - each module declares a known layer and carries its Block_ID marker
+ok 26 - each module declares a known layer and carries its Block_ID marker
   ---
-  duration_ms: 6.410272
+  duration_ms: 5.769845
   type: 'test'
   ...
 # Subtest: module filenames carry no version suffix
-ok 26 - module filenames carry no version suffix
+ok 27 - module filenames carry no version suffix
   ---
-  duration_ms: 0.295164
+  duration_ms: 0.267632
   type: 'test'
   ...
 # Subtest: manifest order values are contiguous and start at 1
-ok 27 - manifest order values are contiguous and start at 1
+ok 28 - manifest order values are contiguous and start at 1
   ---
-  duration_ms: 0.135424
+  duration_ms: 0.159369
   type: 'test'
   ...
 # Subtest: internal-work event registration is separated from views and loaded before boot
-ok 28 - internal-work event registration is separated from views and loaded before boot
+ok 29 - internal-work event registration is separated from views and loaded before boot
   ---
-  duration_ms: 1.136004
+  duration_ms: 1.31214
   type: 'test'
   ...
 # Subtest: PG11 global overview is a single read-only module loaded before work handlers
-ok 29 - PG11 global overview is a single read-only module loaded before work handlers
+ok 30 - PG11 global overview is a single read-only module loaded before work handlers
   ---
-  duration_ms: 1.038125
+  duration_ms: 1.140337
   type: 'test'
   ...
-1..29
-# tests 29
+1..30
+# tests 30
 # suites 0
-# pass 28
+# pass 29
 # fail 1
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 1505.697316
+# duration_ms 1429.213174
