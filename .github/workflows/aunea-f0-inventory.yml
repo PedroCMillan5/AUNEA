@@ -1,0 +1,34 @@
+# [AUNEA-BUILD-F0-INVENTORY-382] START — F0 read-only architecture inventory
+# PURPOSE: Produce reproducible full-tree baseline for active and archived AUNEA Internal source.
+# No modifications to app sources, snapshots, data or release status.
+name: AUNEA F0 Inventory
+on:
+  push:
+    branches:
+      - work/as-is-ux-simplification-20260930
+    paths:
+      - 'tools/aunea-f0-audit.cjs'
+      - 'docs/AUNEA_INTERNAL_F0_*.md'
+      - '.github/workflows/aunea-f0-inventory.yml'
+  workflow_dispatch:
+jobs:
+  inventory:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Generate active/archive inventory and consumer map
+        run: node tools/aunea-f0-audit.cjs > f0-inventory.json
+      - name: Verify baseline and source integrity
+        run: |
+          node -e "const r=require('./f0-inventory.json');if(r.errors.length||r.counts.runtimeModules!==46||r.counts.frozenPages!==9||!r.css['3_SYSTEM/frontend/ui-system.css']||!r.dependencies||!r.styleConsumers){throw Error('F0 audit integrity gate failed')};console.log(JSON.stringify(r.counts,null,2))"
+      - name: Publish reproducible inventory evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aunea-f0-inventory
+          path: f0-inventory.json
+          if-no-files-found: warn
+# [AUNEA-BUILD-F0-INVENTORY-382] END
