@@ -55,7 +55,7 @@ pages/results, tobe, comparison y otras páginas (existentes)
 Los componentes compartidos sólo se extraerán cuando haya duplicación funcional demostrada. Conservar Block_ID de cada responsabilidad y el orden del manifiesto. No introducir `work-components.js` ni `work-pages.js` por anticipado.
 
 ## 5. Fases y gates
-- **F0 Inventario: CLOSED (13/11/2026).** Baseline y matriz de riesgos en `docs/AUNEA_INTERNAL_F0_BASELINE_20261113.md`; informe generado por CI en `docs/audit/AUNEA_INTERNAL_F0_INVENTORY.json`. 336 activos, 13 archivados, 46 módulos, 9 FROZEN, errores vacíos. Consumidores léxicos y CSS indicados como candidatos, no defectos. PASS sólo del inventario, no de UAT.
+- **F0 Inventario: CLOSED (13/11/2026).** Baseline y matriz de riesgos en `docs/AUNEA_INTERNAL_F0_BASELINE_20261113.md`; informe generado por CI en `docs/audit/AUNEA_INTERNAL_F0_INVENTORY.json`. 337 activos, 13 archivados, 46 módulos, 9 FROZEN, errores vacíos. Consumidores léxicos y CSS indicados como candidatos, no defectos. PASS sólo del inventario, no de UAT.
 - **F1 CSS transversal:** eliminar sólo reglas duplicadas o sobrescritas sin efecto, respetando especificidad, orden y responsive. **Gate:** comparación visual de todas las pantallas afectadas, FROZEN intactas.
 - **F2 UI compartida:** reutilizar controles/tarjetas/modales realmente equivalentes; preservar teclado, accesibilidad y estados. **Gate:** DOM/acciones equivalentes y regresión.
 - **F3 Páginas:** simplificar `tobe.js` y `results.js` por partes, manteniendo funciones existentes hasta demostrar equivalencia. **Gate:** journeys completos y snapshots estables.
@@ -178,12 +178,14 @@ Mayores módulos JS activos (líneas):
 - Informe técnico verificable: `docs/AUNEA_INTERNAL_F0_BASELINE_20261113.md`. Incluye inventario 46 JS, 33 módulos Python backend, 5.333 líneas CSS, 512 Block_ID, mapa de propietarios/consumidores, 9 páginas FROZEN y 13 snapshots, 123 grupos de selectores repetidos, riesgo y gates por fase.
 - Script reproducible de árbol completo: `tools/aunea-f0-audit.cjs`; revisado en fuente, mide archivos activos/ARCHIVED y candidatos de dependencias y CSS. No borra ni modifica datos.
 - Workflow específico: `.github/workflows/aunea-f0-inventory.yml`; sobre un checkout real debe generar `f0-inventory.json`, validar 46 módulos/9 FROZEN y guardar evidencia en `docs/audit/AUNEA_INTERNAL_F0_INVENTORY.json` si el token tiene permisos y el gate es PASS.
-- **Evidencia CI generada y contrastada:** `docs/audit/AUNEA_INTERNAL_F0_INVENTORY.json`, `status=STATIC_INVENTORY_GENERATED`, `errors=[]`, `warnings=[]`, `activeFiles=336`, `archivedFiles=13`, `runtimeModules=46`, `frozenPages=9` y 13 snapshots disponibles. El workflow comprueba el JSON antes de incorporarlo al repositorio. **Gate F0 PASS / CLOSED.**
+- **Evidencia CI generada y contrastada:** `docs/audit/AUNEA_INTERNAL_F0_INVENTORY.json`, `status=STATIC_INVENTORY_GENERATED`, `errors=[]`, `warnings=[]`, `activeFiles=337`, `archivedFiles=13`, `runtimeModules=46`, `frozenPages=9` y 13 snapshots disponibles. El workflow comprueba el JSON antes de incorporarlo al repositorio. **Gate F0 PASS / CLOSED.**
 - El conteo antiguo de 44 módulos es histórico: el manifiesto vigente contiene 46 después de la separación de eventos y de la proyección global IA. No confundir disminución de líneas por archivo con reducción neta del producto.
 - Los gates de comportamiento (Node, pytest, Chromium, UAT Windows) pertenecen a estabilización/F6 y siguen pendientes. No hacer merge ni tocar FROZEN por la publicación de un informe.
 
 ## 17. Acta de cierre F0 · 13/11/2026
-- **Resultado:** F0 CLOSED, exclusivamente como auditoría/inventario. Script y workflow versionados; inventario integral CI publicado, sin errores ni avisos. Árbol de 336 archivos activos + 13 archivados, fuentes canónicas y 512 Block_ID contrastados, matriz owner/consumer y riesgos, FROZEN 9/13 verificados.
+- **Resultado:** F0 CLOSED, exclusivamente como auditoría/inventario. Script y workflow versionados; inventario integral CI publicado, sin errores ni avisos. Árbol de 337 archivos activos + 13 archivados, fuentes canónicas y 512 Block_ID contrastados, matriz owner/consumer y riesgos, FROZEN 9/13 verificados.
 - **Evidencia:** `docs/AUNEA_INTERNAL_F0_BASELINE_20261113.md`, `docs/audit/AUNEA_INTERNAL_F0_INVENTORY.json`, `tools/aunea-f0-audit.cjs` y `.github/workflows/aunea-f0-inventory.yml`.
 - **No prueba:** homogeneidad visual, ausencia de regresiones ni tests funcionales (F6). Candidatos CSS sin consumidor textual no se deben borrar sin revisar HTML/dinamismo y FROZEN.
 - **Entrada F1:** estabilizar gates existentes, catalogar clases compartidas, clasificar 123 grupos de selectores repetidos y 107 clases en ambos CSS; decidir cada extracción únicamente con matriz de consumidores y capturas de UI. 
+
+**Baseline final de F0:** 337 activos y 13 archivados. La primera ejecución indicó 336 antes de versionar el JSON de auditoría, que incorpora un archivo al árbol activo. La segunda ejecución verifica el recuento final, sin errores ni avisos.
