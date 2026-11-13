@@ -1,7 +1,7 @@
 {
-  "head": "1749f31aa8c31e168de28d5eed02d5c3ed41eaab",
-  "generatedAt": "2026-11-13T10:11:27.297Z",
-  "testOutcome": "success",
+  "head": "db1cc85cc6b2629bff362e77175860f068c94ed4",
+  "generatedAt": "2026-11-13T10:26:42.986Z",
+  "testOutcome": "failure",
   "tests": [
     "design-system-common.test.cjs",
     "module-manifest.test.cjs"
