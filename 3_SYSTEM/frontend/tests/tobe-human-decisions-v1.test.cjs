@@ -33,7 +33,7 @@ test('a configured activity is counted from the actual TO-BE, not old IA approva
   tobeMeaningfulRationale:x=>!!String(x||'').trim()&&String(x)!=='NO',
   tobeArtifactValues:x=>({resolved:x||[]})};
  vm.createContext(context);
- vm.runInContext(pick('tobeActivityDesignIssue')+'\n'+pick('tobeActivityDecisionRecorded'),context);
+ vm.runInContext(pick('tobeMeaningfulDesignValue')+'\n'+pick('tobeActivityDesignIssue')+'\n'+pick('tobeActivityDecisionRecorded'),context);
  const item={sourceStepId:'S1',sourceStepName:'Recibir factura',
   transformation:'Se modifica',problemResolved:'Trazabilidad de recepción',
   futureActor:'Administración',tool:'Correo',inputs:['PDF'],outputs:['RECORD'],
