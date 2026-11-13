@@ -194,4 +194,24 @@ test('design inventory covers every manifest source and all documented DS catego
   assert.equal(manifest.length,46);
 });
 
+
+test('all 46 runtime modules obey the F1 shared-style anti-regression baseline',()=>{
+  const cp=require('node:child_process');
+  const script=path.resolve(root,'../../tools/aunea-design-system-audit.cjs');
+  const inventory=JSON.parse(cp.execFileSync(process.execPath,[script],{
+    cwd:path.resolve(root,'../..'),encoding:'utf8',maxBuffer:8*1024*1024
+  }));
+  const baseline=JSON.parse(load('../../docs/audit/AUNEA_INTERNAL_DESIGN_CONSUMERS.json'));
+  assert.equal(inventory.metrics.modules,46,'Cover the complete current manifest');
+  assert.equal(inventory.frozen.length,9,'Approved frozen boundary remains intact');
+  assert.equal(inventory.metrics.documentedComponents,20);
+  for(const key of ['classesCrossFile','repeatedSelectorContextGroups','inlineStyleAttributes'])
+    assert.ok(inventory.metrics[key]<=baseline.metrics[key],
+      'Do not add unowned visual duplication without updating the governed baseline: '+key+
+      ' (current '+inventory.metrics[key]+', baseline '+baseline.metrics[key]+')');
+  for(const prefix of ['pages/crm-','pages/diagnostic-stages.js','pages/results.js',
+    'pages/tobe.js','pages/comparison.js','pages/projects.js'])
+    assert.ok(inventory.modules.some(m=>m.path.startsWith(prefix)),'Missing page family '+prefix);
+});
+
 // [AUNEA-UAT-DESIGN-COMMON-312] END
