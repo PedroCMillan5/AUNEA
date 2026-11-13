@@ -5,7 +5,8 @@ const backend=process.env.AUNEA_UAT_BACKEND||'http://127.0.0.1:8017';
 const server=http.createServer((req,res)=>{const file=path.resolve(root,'.'+new URL(req.url,'http://localhost').pathname.replace(/\/$/,'/index.html'));
  if(!file.startsWith(root+path.sep))return res.writeHead(403).end();fs.readFile(file,(err,data)=>{if(err)return res.writeHead(404).end();res.setHeader('Content-Type',({'.js':'text/javascript','.html':'text/html','.css':'text/css','.json':'application/json'})[path.extname(file)]||'application/octet-stream');res.end(data);});});
 (async()=>{await new Promise(r=>server.listen(0,'127.0.0.1',r));const origin='http://127.0.0.1:'+server.address().port;
- const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_PATH||(fs.existsSync('/usr/bin/chromium')?'/usr/bin/chromium':undefined),args:['--no-sandbox']});
+ const browserChannel=process.env.AUNEA_BROWSER_CHANNEL||'';
+ const browser=await chromium.launch({headless:true,...(browserChannel?{channel:browserChannel}:{executablePath:process.env.CHROMIUM_PATH||(fs.existsSync('/usr/bin/chromium')?'/usr/bin/chromium':undefined)}),args:['--no-sandbox']});
  try{for(const kind of ['invoice','logistics']){
   const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage(),errors=[];
   page.on('pageerror',e=>errors.push(e.message));await page.goto(origin+'/index.html');await page.waitForFunction(()=>typeof uat3Seed==='function'&&typeof schema!=='undefined'&&schema?.fields?.length);
