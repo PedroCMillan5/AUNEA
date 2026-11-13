@@ -153,7 +153,7 @@ test('Gate edits invalidate only diagnostic outputs generated with an earlier de
  const review=fs.readFileSync(path.join(root,'domain/output-review.js'),'utf8');
  const shell=fs.readFileSync(path.join(root,'ui/shell.js'),'utf8');
  assert.match(resultsContext,/engineGateOutputFresh\(e\)/);
- assert.match(review,/engineGateOutputFresh\(e\)/);
+ assert.match(review,/currentDiagnosticOutput\(e\)/);
  assert.match(shell,/reviewEngineGates.*openEngineGateReview/);
  assert.match(adapter,/e\.lastEngineGateFingerprint=sourceGateFingerprint/);
 });
