@@ -8,11 +8,11 @@
   ],
   "metrics": {
     "modules": 46,
-    "cssClasses": 1084,
+    "cssClasses": 1086,
     "classesCrossFile": 107,
     "repeatedSelectorContextGroups": 139,
     "documentedComponents": 20,
-    "inlineStyleAttributes": 33
+    "inlineStyleAttributes": 29
   },
   "frozen": [
     {
@@ -2740,8 +2740,11 @@
       "lines": 128,
       "family": [],
       "view": false,
-      "inlineStyleAttributes": 4,
+      "inlineStyleAttributes": 0,
       "referencedCssClasses": [
+        "aunea-ui-flex-actions",
+        "aunea-ui-mt-12",
+        "aunea-ui-mt-16",
         "btn",
         "btn-danger",
         "btn-outline",
@@ -3997,6 +4000,18 @@
       "classification": "REFERENCED"
     },
     {
+      "className": "aunea-ui-flex-actions",
+      "ownerFiles": [
+        "styles.css"
+      ],
+      "ruleOccurrences": 1,
+      "runtimeConsumers": [
+        "uat/visible.js"
+      ],
+      "frozenRisk": false,
+      "classification": "REFERENCED"
+    },
+    {
       "className": "aunea-ui-form-section",
       "ownerFiles": [
         "styles.css"
@@ -4028,7 +4043,8 @@
       "ruleOccurrences": 1,
       "runtimeConsumers": [
         "pages/results.js",
-        "pages/session-display.js"
+        "pages/session-display.js",
+        "uat/visible.js"
       ],
       "frozenRisk": true,
       "classification": "REFERENCED"
@@ -4041,6 +4057,18 @@
       "ruleOccurrences": 1,
       "runtimeConsumers": [
         "pages/results.js"
+      ],
+      "frozenRisk": false,
+      "classification": "REFERENCED"
+    },
+    {
+      "className": "aunea-ui-mt-16",
+      "ownerFiles": [
+        "styles.css"
+      ],
+      "ruleOccurrences": 1,
+      "runtimeConsumers": [
+        "uat/visible.js"
       ],
       "frozenRisk": false,
       "classification": "REFERENCED"
