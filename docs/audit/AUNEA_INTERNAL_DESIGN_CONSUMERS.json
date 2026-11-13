@@ -242,8 +242,8 @@
             "domain/tobe-transactions.js",
             "pages/tobe.js",
             "pages/comparison.js",
-            "pages/tobe-global.js",
-            "pages/internal-work-events.js"
+            "pages/internal-work-events.js",
+            "pages/tobe-global.js"
           ]
         },
         {
@@ -268,9 +268,9 @@
             "pages/projects.js",
             "ui/shell.js",
             "uat/visible.js",
+            "pages/internal-work-events.js",
             "domain/internal-ai-pilot.js",
-            "pages/tobe-global.js",
-            "pages/internal-work-events.js"
+            "pages/tobe-global.js"
           ]
         }
       ],
@@ -301,8 +301,8 @@
             "domain/process.js",
             "ui/shell.js",
             "uat/visible.js",
-            "domain/internal-ai-pilot.js",
-            "pages/internal-work-events.js"
+            "pages/internal-work-events.js",
+            "domain/internal-ai-pilot.js"
           ]
         },
         {
@@ -394,9 +394,9 @@
             "pages/projects.js",
             "ui/shell.js",
             "uat/visible.js",
+            "pages/internal-work-events.js",
             "domain/internal-ai-pilot.js",
-            "pages/tobe-global.js",
-            "pages/internal-work-events.js"
+            "pages/tobe-global.js"
           ]
         }
       ],
@@ -464,9 +464,9 @@
             "pages/projects.js",
             "ui/shell.js",
             "uat/visible.js",
+            "pages/internal-work-events.js",
             "domain/internal-ai-pilot.js",
-            "pages/tobe-global.js",
-            "pages/internal-work-events.js"
+            "pages/tobe-global.js"
           ]
         }
       ],
@@ -2773,6 +2773,32 @@
       ]
     },
     {
+      "path": "pages/internal-work-events.js",
+      "layer": "pages",
+      "blockId": "AUNEA-FE-INTERNAL-WORK-EVENTS-381",
+      "lines": 730,
+      "family": [
+        "Trabajo interno / PG11"
+      ],
+      "view": true,
+      "inlineStyleAttributes": 0,
+      "referencedCssClasses": [
+        "card",
+        "chip",
+        "confirmed",
+        "hidden",
+        "inspector",
+        "notice",
+        "on",
+        "tobe-ai-field-control",
+        "tobe-artifact-compact",
+        "tobe-artifact-field",
+        "tobe-free-board",
+        "tobe-muted",
+        "tobe-selected-data-chip"
+      ]
+    },
+    {
       "path": "domain/internal-ai-pilot.js",
       "layer": "domain",
       "blockId": "AUNEA-FE-INTERNAL-AI-PILOT-193",
@@ -2926,32 +2952,6 @@
         "tobe-source-list",
         "tobe-subdetails",
         "warn"
-      ]
-    },
-    {
-      "path": "pages/internal-work-events.js",
-      "layer": "pages",
-      "blockId": "AUNEA-FE-INTERNAL-WORK-EVENTS-381",
-      "lines": 730,
-      "family": [
-        "Trabajo interno / PG11"
-      ],
-      "view": true,
-      "inlineStyleAttributes": 0,
-      "referencedCssClasses": [
-        "card",
-        "chip",
-        "confirmed",
-        "hidden",
-        "inspector",
-        "notice",
-        "on",
-        "tobe-ai-field-control",
-        "tobe-artifact-compact",
-        "tobe-artifact-field",
-        "tobe-free-board",
-        "tobe-muted",
-        "tobe-selected-data-chip"
       ]
     },
     {
@@ -4521,8 +4521,8 @@
         "domain/process.js",
         "ui/shell.js",
         "uat/visible.js",
-        "domain/internal-ai-pilot.js",
-        "pages/internal-work-events.js"
+        "pages/internal-work-events.js",
+        "domain/internal-ai-pilot.js"
       ],
       "frozenRisk": true,
       "classification": "CROSS_FILE_OWNER_REVIEW"
@@ -5185,9 +5185,9 @@
         "domain/output-review.js",
         "pages/session-display.js",
         "domain/process.js",
+        "pages/internal-work-events.js",
         "domain/internal-ai-pilot.js",
-        "pages/tobe-global.js",
-        "pages/internal-work-events.js"
+        "pages/tobe-global.js"
       ],
       "frozenRisk": true,
       "classification": "CROSS_FILE_OWNER_REVIEW"
@@ -7484,8 +7484,8 @@
         "pages/crm-interactions.js",
         "pages/crm-opportunities.js",
         "ui/shell.js",
-        "domain/internal-ai-pilot.js",
-        "pages/internal-work-events.js"
+        "pages/internal-work-events.js",
+        "domain/internal-ai-pilot.js"
       ],
       "frozenRisk": true,
       "classification": "CROSS_FILE_OWNER_REVIEW"
@@ -8204,9 +8204,9 @@
         "pages/projects.js",
         "ui/shell.js",
         "uat/visible.js",
+        "pages/internal-work-events.js",
         "domain/internal-ai-pilot.js",
-        "pages/tobe-global.js",
-        "pages/internal-work-events.js"
+        "pages/tobe-global.js"
       ],
       "frozenRisk": true,
       "classification": "CROSS_FILE_OWNER_REVIEW"
@@ -8310,9 +8310,9 @@
         "pages/session-display.js",
         "domain/process.js",
         "ui/shell.js",
+        "pages/internal-work-events.js",
         "domain/internal-ai-pilot.js",
-        "pages/tobe-global.js",
-        "pages/internal-work-events.js"
+        "pages/tobe-global.js"
       ],
       "frozenRisk": true,
       "classification": "CROSS_FILE_OWNER_REVIEW"
@@ -15005,8 +15005,8 @@
         "domain/tobe-transactions.js",
         "pages/tobe.js",
         "pages/comparison.js",
-        "pages/tobe-global.js",
-        "pages/internal-work-events.js"
+        "pages/internal-work-events.js",
+        "pages/tobe-global.js"
       ],
       "frozenRisk": false,
       "classification": "REFERENCED"
