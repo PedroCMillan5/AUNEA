@@ -11,6 +11,19 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,'.'+new 
   page.on('pageerror',e=>errors.push(e.message));await page.goto(origin+'/index.html');await page.waitForFunction(()=>typeof uat3Seed==='function'&&typeof schema!=='undefined'&&schema?.fields?.length);
   await page.evaluate(require('./pg11-journey-fixture.cjs'),{kind,backend});
   const immutable=await page.evaluate(()=>JSON.stringify(confirmedSnapshot(currentEng())));
+  // Wait for the real rendered stage, not only the async fixture/HTTP completion.
+  // The following style checks must fail explicitly if any section is missing.
+  const stageSelectors=[
+    '#tobeStepOrigin>details>summary','#tobeStepAdvice>details>summary',
+    '#tobeStepDesign>.tobe-design-header',
+    '#tobeStepOrigin .tobe-stage-heading','#tobeStepAdvice .tobe-stage-heading',
+    '#tobeStepDesign .tobe-stage-heading'
+  ];
+  await page.waitForFunction(selectors=>selectors.every(sel=>document.querySelector(sel)),
+    stageSelectors,{timeout:10000});
+  const missingStages=await page.evaluate(selectors=>
+    selectors.filter(sel=>!document.querySelector(sel)),stageSelectors);
+  assert.deepEqual(missingStages,[],'PG11 must finish rendering all three guided sections');
   // PG11 visual contract: all three guided sections are one product hierarchy.
   const stageVisual=await page.evaluate(()=>{
     const names=['#tobeStepOrigin>details>summary','#tobeStepAdvice>details>summary',
