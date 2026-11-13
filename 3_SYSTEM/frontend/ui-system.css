@@ -3168,7 +3168,7 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 /* [AUNEA-FE-PG11-TRANSFORMATION-STYLE-289] START — only scoped feedback; existing AUNEA components remain unchanged. */
 .tobe-inspector [data-tobe-ai-difference][hidden]{display:none!important}
 .tobe-inspector [data-tobe-ai-difference]:not([hidden]){margin:8px 0 12px}
-.tobe-inspector [data-tobe-transformation-message]{line-height:1.5}
+.tobe-inspector [data-tobe-transformation-message],
 .tobe-inspector [data-tobe-rationale-wrapper] .field-help{line-height:1.5}
 /* [AUNEA-FE-PG11-TRANSFORMATION-STYLE-289] END */
 
@@ -3183,12 +3183,12 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 .tobe-guided-tabs .btn.is-selected{border-color:var(--system);background:var(--system-soft)}
 .tobe-guided-switch{justify-content:flex-end}
 .tobe-workspace[data-tobe-mode="guided"] .tobe-map-area,
-.tobe-workspace[data-tobe-mode="guided"] #tobeStepRoutes{display:none}
+.tobe-workspace[data-tobe-mode="guided"] #tobeStepRoutes,
 .tobe-workspace[data-tobe-mode="map"] #tobeStepOrigin,
 .tobe-workspace[data-tobe-mode="map"] #tobeStepAdvice,
 .tobe-workspace[data-tobe-mode="map"] #tobeStepDesign,
-.tobe-workspace[data-tobe-mode="map"] .tobe-review-steps{display:none}
-.tobe-workspace .tobe-review-steps{display:none}
+.tobe-workspace[data-tobe-mode="map"] .tobe-review-steps,
+.tobe-workspace .tobe-review-steps,
 .tobe-workspace[data-tobe-mode="guided"] .tobe-task-guide-steps,
 .tobe-workspace[data-tobe-mode="guided"] .tobe-task-guide-result{display:none}
 .tobe-ai-inline{margin-top:9px;padding:9px 11px;background:var(--system-soft);
@@ -3671,9 +3671,7 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 .tobe-workspace[data-tobe-mode="guided"] .tobe-ai-field-row{
   column-gap:14px;row-gap:10px;padding:12px 2px;min-height:70px;
 }
-.tobe-workspace[data-tobe-mode="guided"] .tobe-ai-field-control>.field>label:first-child{
-  font-size:var(--font-small);line-height:1.5;
-}
+.tobe-workspace[data-tobe-mode="guided"] .tobe-ai-field-control>.field>label:first-child,
 .tobe-workspace[data-tobe-mode="guided"] .tobe-ai-field-control :is(input,textarea,select){
   font-size:var(--font-small);line-height:1.5;
 }
@@ -4623,12 +4621,7 @@ details.tobe-ai-operational-context:not([open])>.tobe-ai-operational-body{
   #tobeStepDesign .tobe-design-lede,
   #tobeStepDesign .tobe-alternatives,
   #tobeStepDesign .tobe-design-fields
-){
-  font-family:Inter,"Segoe UI",Arial,sans-serif;
-  font-size:var(--pg11-visual-body);
-  line-height:var(--pg11-visual-line);
-}
-.tobe-alternative-dialog{
+),.tobe-alternative-dialog{
   font-family:Inter,"Segoe UI",Arial,sans-serif;
   font-size:var(--pg11-visual-body);
   line-height:var(--pg11-visual-line);
