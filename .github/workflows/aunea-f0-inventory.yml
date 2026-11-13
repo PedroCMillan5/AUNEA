@@ -2,6 +2,8 @@
 # PURPOSE: Produce reproducible full-tree baseline for active and archived AUNEA Internal source.
 # No modifications to app sources, snapshots, data or release status.
 name: AUNEA F0 Inventory
+permissions:
+  contents: write
 on:
   push:
     branches:
@@ -31,4 +33,16 @@ jobs:
           name: aunea-f0-inventory
           path: f0-inventory.json
           if-no-files-found: warn
+      - name: Version approved F0 inventory evidence
+        if: success() && github.event_name == 'push'
+        run: |
+          mkdir -p docs/audit
+          cp f0-inventory.json docs/audit/AUNEA_INTERNAL_F0_INVENTORY.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/audit/AUNEA_INTERNAL_F0_INVENTORY.json
+          if ! git diff --cached --quiet; then
+            git commit -m "docs(audit): capture verified F0 repository inventory [skip ci]"
+            git push origin "HEAD:refs/heads/${GITHUB_REF_NAME}"
+          fi
 # [AUNEA-BUILD-F0-INVENTORY-382] END
