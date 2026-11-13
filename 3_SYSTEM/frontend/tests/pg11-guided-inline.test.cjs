@@ -239,7 +239,7 @@ test('PG11 exposes source and individual IA before configuring the future step',
  assert.match(page,/tobeDecisionSourceSummaryHtml\(e,p,item\)/);
  assert.match(page,/tobe-legacy-review/);
  assert.ok(page.indexOf("'</nav>'+supportingInformation+")<
-   page.indexOf("'<section class=\"tobe-edit tobe-design-workspace\" id=\"tobeStepDesign\""));
+   page.indexOf("'<section class=\"tobe-edit tobe-design-workspace aunea-ui-work-stage\" id=\"tobeStepDesign\""));
  assert.equal((page.match(/data-tobe-generate-selected/g)||[]).length,1);
  assert.doesNotMatch(page,/tobe-review-support/);
 });
@@ -389,7 +389,7 @@ test('PG11 identifies individual coherence separately from section 02 global ana
  assert.match(src,/data-tobe-ai-edit-field/);
 });
 test('PG11 section 03 uses the shared semantic title hierarchy rather than an eyebrow as title',()=>{
- assert.ok(src.includes('<header class="tobe-review-section-head"><span class="tobe-eyebrow">03 · DISEÑO TO-BE</span>'));
+ assert.ok(src.includes('<header class="tobe-review-section-head aunea-ui-work-surface"><span class="tobe-eyebrow">03 · DISEÑO TO-BE</span>'));
  assert.ok(src.includes('<h2 class="aunea-ui-section-title">Revisión por actividad</h2>'));
  assert.match(src,/<p class="aunea-ui-section-caption">Revisa el origen/);
  assert.doesNotMatch(src,/tobe-eyebrow">03 · REVISIÓN POR ACTIVIDAD Y DISEÑO TO-BE/);
