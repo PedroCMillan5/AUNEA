@@ -1193,7 +1193,7 @@
       "path": "ui/renderer.js",
       "layer": "ui",
       "blockId": "AUNEA-FE-DIAG-RENDER-040",
-      "lines": 797,
+      "lines": 803,
       "family": [
         "Sesión / PG01–PG09",
         "Transversal / engine"
@@ -1778,7 +1778,6 @@
         "form-grid",
         "g3",
         "g4",
-        "good",
         "grid",
         "info",
         "internal-tag",
@@ -7053,7 +7052,6 @@
       "ruleOccurrences": 2,
       "runtimeConsumers": [
         "domain/analysis-workbench.js",
-        "pages/results.js",
         "pages/session-display.js",
         "ui/shell.js"
       ],
@@ -19083,7 +19081,6 @@
         ],
         "consumers": [
           "domain/analysis-workbench.js",
-          "pages/results.js",
           "pages/session-display.js",
           "ui/shell.js"
         ],
