@@ -1,0 +1,63 @@
+# [AUNEA-UAT-F6-WINDOWS-EDGE-420] START — Windows Edge cross-browser gate
+# SOURCE: Plan F0–F6, Simulator CANONICAL PG11, DEC-050/052/055/056.
+# PURPOSE: Run the existing source-linked PG11 browser journey on Windows/Microsoft Edge.
+# INPUTS: local synthetic fixture and actual local backend.
+# OUTPUT: pass/fail on Windows Edge, independent of Chromium/Linux QA.
+# SIDE EFFECTS: CI only; never publishes or touches production records.
+# CHANGE RISK: MEDIUM. A pass is not manual visual approval.
+name: AUNEA F6 Windows Edge Browser UAT
+on:
+  push:
+    branches:
+      - work/as-is-ux-simplification-20260930
+    paths:
+      - '3_SYSTEM/**'
+      - '.github/workflows/aunea-f6-windows-edge.yml'
+  workflow_dispatch:
+
+jobs:
+  windows_edge_pg11:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: 3_SYSTEM/frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: 3_SYSTEM/frontend/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install runtime
+        run: |
+          npm ci
+          python -m pip install -e ../backend[test]
+      - name: Verify Edge is installed
+        shell: pwsh
+        run: |
+          $p1 = "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe"
+          $p2 = "$env:ProgramFiles\Microsoft\Edge\Application\msedge.exe"
+          if (!(Test-Path $p1) -and !(Test-Path $p2)) { throw 'Microsoft Edge is not installed on this Windows runner' }
+      - name: Start backend and wait for health
+        shell: pwsh
+        run: |
+          $backend = Start-Process python -ArgumentList @('-m','uvicorn','aunea_backend.main:app','--host','127.0.0.1','--port','8017') -WorkingDirectory (Resolve-Path '../backend').Path -PassThru -WindowStyle Hidden
+          $healthy = $false
+          for ($i=0; $i -lt 40; $i++) {
+            try {
+              $response = Invoke-WebRequest -Uri 'http://127.0.0.1:8017/health' -UseBasicParsing -TimeoutSec 3
+              if ($response.StatusCode -eq 200) { $healthy = $true; break }
+            } catch {}
+            Start-Sleep -Seconds 1
+          }
+          if (!$healthy) { throw 'Windows backend failed its health check' }
+      - name: PG11 Edge preview-confirm-undo-reload journey
+        env:
+          AUNEA_BROWSER_CHANNEL: msedge
+          AUNEA_UAT_BACKEND: http://127.0.0.1:8017
+        run: node tests/pg11-browser-journey.cjs
+# [AUNEA-UAT-F6-WINDOWS-EDGE-420] END
