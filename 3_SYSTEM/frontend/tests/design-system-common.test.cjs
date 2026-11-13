@@ -113,7 +113,7 @@ test('PG11 work surfaces and stages reuse the same opt-in structural primitives'
 
 
 test('internal work result layouts reuse shared opt-in structure instead of inline presentation',()=>{
-  const results=load('pages/results.js');
+  const results=load('pages/results.js')+load('pages/results-official.js');
   for(const selector of ['.aunea-ui-mt-8{','.aunea-ui-mt-12{','.aunea-ui-mt-14{','.aunea-ui-block{','.aunea-ui-recap-input{','.aunea-ui-metric-status{'])
     assert.ok(shared.includes(selector),'Missing shared component: '+selector);
   for(const className of ['aunea-ui-mt-8','aunea-ui-mt-12','aunea-ui-mt-14','aunea-ui-recap-input','aunea-ui-metric-status'])
@@ -266,9 +266,9 @@ test('PG12 and Projects share the semantic empty-state renderer with unchanged H
   assert.equal(build('TO-BE revisado requerido',
     'La comparación se habilita cuando el TO-BE ha pasado revisión humana.'),
     '<div class="empty"><h2>TO-BE revisado requerido</h2><p>La comparación se habilita cuando el TO-BE ha pasado revisión humana.</p></div>');
-  const results=load('pages/results.js');
+  const results=load('pages/results.js'),official=load('pages/results-official.js');
   assert.ok(results.includes("auneaEmptyState('AS-IS confirmado requerido'"));
-  assert.ok(results.includes("auneaEmptyState('Resultado oficial pendiente'"));
+  assert.ok(official.includes("auneaEmptyState('Resultado oficial pendiente'"));
   assert.equal(build('AS-IS confirmado requerido','Trabajo Interno consume el snapshot de PG09.'),
     '<div class="empty"><h2>AS-IS confirmado requerido</h2><p>Trabajo Interno consume el snapshot de PG09.</p></div>');
   assert.equal(build('Resultado oficial pendiente',
@@ -292,7 +292,8 @@ test('PG11 captions inherit common typography and retain only scoped margins',()
 
 test('PG10 and recommendations reuse the semantic compact empty-message renderer',()=>{
   const vm=require('node:vm');
-  const renderer=load('ui/renderer.js'),results=load('pages/results.js');
+  const renderer=load('ui/renderer.js'),results=load('pages/results.js'),
+    official=load('pages/results-official.js');
   const source=renderer.match(/function auneaEmptyMessage\(message\)\{[\s\S]*?\n\}/)?.[0];
   assert.ok(source,'Paragraph-only empty message must use the existing component owner');
   const esc=v=>String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;')
@@ -302,7 +303,7 @@ test('PG10 and recommendations reuse the semantic compact empty-message renderer
     '<div class="empty"><p>Sin fricciones priorizadas.</p></div>');
   assert.equal(render('<dato> & problema'),
     '<div class="empty"><p>&lt;dato&gt; &amp; problema</p></div>');
-  assert.match(results,/auneaEmptyMessage\('Sin fricciones priorizadas\.'\)/);
+  assert.match(official,/auneaEmptyMessage\('Sin fricciones priorizadas\.'\)/);
   assert.match(results,/auneaEmptyMessage\('El backend no ha devuelto hallazgos para este snapshot\.'\)/);
   assert.doesNotMatch(results,/<div class="empty"><p>Sin fricciones priorizadas\.<\/p><\/div>/);
 });
