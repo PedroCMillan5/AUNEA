@@ -1,0 +1,45 @@
+# [AUNEA-CI-UI-DESIGN-AUDIT-391] START
+# Read-only inventory of every runtime module, CSS selector and screen family.
+name: AUNEA Design System Runtime Inventory
+on:
+  push:
+    branches:
+      - work/as-is-ux-simplification-20260930
+    paths:
+      - 'tools/aunea-design-system-audit.cjs'
+      - '.github/workflows/aunea-ui-component-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build cross-page design inventory
+        run: node tools/aunea-design-system-audit.cjs > aunea-design-inventory.json
+      - name: Validate completeness and governance boundaries
+        run: |
+          node -e "const x=require('./aunea-design-inventory.json'); if(x.metrics.modules!==46||x.frozen.length!==9||x.metrics.documentedComponents!==20||!x.modules.some(m=>m.path==='pages/crm-companies.js')||!x.modules.some(m=>m.path==='pages/tobe.js')) process.exit(1); console.log(x.metrics)"
+      - name: Preserve inventory in audit records
+        if: success() && github.event_name == 'push'
+        run: |
+          mkdir -p docs/audit
+          cp aunea-design-inventory.json docs/audit/AUNEA_INTERNAL_DESIGN_CONSUMERS.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/audit/AUNEA_INTERNAL_DESIGN_CONSUMERS.json
+          if ! git diff --cached --quiet; then
+            git commit -m "docs(audit): persist full-screen design inventory [skip ci]"
+            git push origin "HEAD:refs/heads/${GITHUB_REF_NAME}"
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: aunea-design-consumers
+          path: aunea-design-inventory.json
+          if-no-files-found: warn
+# [AUNEA-CI-UI-DESIGN-AUDIT-391] END
