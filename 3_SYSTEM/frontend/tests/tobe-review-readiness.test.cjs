@@ -88,4 +88,17 @@ test('PG11 rejects future time without traced assumption, then allows one final 
   assert.equal(h.dirty.length,1);
   assert.ok(!h.warnings.at(-1)?.includes('Publicar'));
 });
+
+test('F4: same semantic placeholder validation governs reviewed TO-BE fields',()=>{
+  const h=harness(),item=h.current.items[0];
+  for(const placeholder of ['NO','N/A','ninguno','sin definir','pendiente','—','   ']){
+    item.tool=placeholder;
+    assert.match(h.check(),/herramienta, entradas, salidas y controles/,placeholder);
+  }
+  item.tool='ERP';
+  item.controlsRisk='Pendiente';
+  assert.match(h.check(),/herramienta, entradas, salidas y controles/);
+  item.controlsRisk='Verificación de duplicados';
+  assert.equal(h.check(),null);
+});
 // [AUNEA-UAT-PG11-REVIEW-GATE-199] END
