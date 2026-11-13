@@ -2711,7 +2711,6 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 .tobe-data-explanation{font-size:11px;line-height:1.6;color:var(--muted);margin:0;padding:0 2px}
 .tobe-workspace .tobe-edit>.notice{padding:12px 14px;font-size:12px;line-height:1.65}
 .tobe-workspace .tobe-workspace-head h2{font-size:clamp(18px,2vw,22px)}
-.tobe-ai-stage #tobeAiMount{min-width:0}
 @media(max-width:600px){
   .tobe-ai-stage{gap:14px}
   .tobe-ai-stage .pg11-ai-panel.card{padding:0}
@@ -3734,9 +3733,6 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 @media(max-width:800px){
   .tobe-workspace[data-tobe-mode="guided"] .tobe-inspector{padding:14px}
   .tobe-workspace[data-tobe-mode="guided"] .tobe-ai-field-row{grid-template-columns:1fr}
-  .tobe-workspace[data-tobe-mode="guided"] .tobe-ai-row-actions{
-    max-width:none
-  }
   .tobe-global-indicators{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media(max-width:420px){
@@ -3768,7 +3764,7 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 @media(max-width:800px){
   .tobe-workspace[data-tobe-mode="guided"] .tobe-ai-field-row{grid-template-columns:minmax(0,1fr)}
   .tobe-workspace[data-tobe-mode="guided"] .tobe-ai-row-actions{
-    grid-column:1;width:100%;max-width:100%;justify-self:stretch;
+    grid-column:1;max-width:100%;justify-self:stretch;
   }
 }
 /* [AUNEA-FE-PG11-NUMBERING-290] END */
