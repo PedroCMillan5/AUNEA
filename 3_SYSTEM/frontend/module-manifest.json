@@ -255,21 +255,21 @@
     },
     {
       "order": 43,
+      "layer": "pages",
+      "path": "pages/internal-work-events.js",
+      "block_id": "AUNEA-FE-INTERNAL-WORK-EVENTS-381"
+    },
+    {
+      "order": 44,
       "layer": "domain",
       "path": "domain/internal-ai-pilot.js",
       "block_id": "AUNEA-FE-INTERNAL-AI-PILOT-193"
     },
     {
-      "order": 44,
+      "order": 45,
       "layer": "pages",
       "path": "pages/tobe-global.js",
       "block_id": "AUNEA-FE-PG11-GLOBAL-OVERVIEW-284"
-    },
-    {
-      "order": 45,
-      "layer": "pages",
-      "path": "pages/internal-work-events.js",
-      "block_id": "AUNEA-FE-INTERNAL-WORK-EVENTS-381"
     },
     {
       "order": 46,
