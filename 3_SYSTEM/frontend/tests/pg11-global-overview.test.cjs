@@ -214,7 +214,11 @@ test('section 01 preserves OTHER role and rejects missing or cross-company Conta
 });
 
 test('sections 01, 02 and 03 share PG11 card surfaces and readable hierarchy',()=>{
-  assert.match(css,/\.tobe-context,\.tobe-global-analysis,\.tobe-review-section-head\{\s*display:grid;gap:14px;min-width:0;padding:20px 22px;/);
+  const shared=fs.readFileSync(path.join(root,'styles.css'),'utf8');
+  assert.match(shared,/\.aunea-ui-work-surface\{\s*display:grid;gap:14px;min-width:0;padding:20px 22px;/);
+  assert.match(src,/tobe-context aunea-ui-work-surface/);
+  assert.match(src,/tobe-global-analysis aunea-ui-work-surface/);
+  assert.match(src,/tobe-review-section-head aunea-ui-work-surface/);
   assert.match(css,/\.tobe-workspace\[data-tobe-mode="guided"\] \.tobe-context\{display:grid\}/);
   assert.match(css,/\.tobe-context-diagnostic\{[^}]*border-left:3px solid var\(--system\);[^}]*background:var\(--system-soft\)/);
   assert.match(css,/\.tobe-context,\.tobe-global-analysis,\.tobe-review-section-head\{padding:14px;gap:12px\}/);
