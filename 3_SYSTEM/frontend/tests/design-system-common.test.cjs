@@ -208,15 +208,18 @@ test('all 46 runtime modules obey the F1 shared-style anti-regression baseline',
   const baseline=JSON.parse(load('../../docs/audit/AUNEA_INTERNAL_DESIGN_BASELINE_20261113.json'));
   // Classify every outstanding cross-owner/selector conflict; status is not an approval.
   const triage=inventory.ownershipTriage;
-  assert.equal(triage.method,'STATIC_FIRST_PASS_NOT_APPROVAL');
+  assert.equal(triage.method,'STATIC_OWNER_RESOLUTION_PENDING_MANUAL_VISUAL_APPROVAL');
+  assert.equal(triage.counts.unresolvedClasses,0,'Every cross-CSS class needs a documented owner');
+  assert.equal(triage.counts.unresolvedSelectorContexts,0,'Every repeated context needs a documented owner');
+  assert.ok(triage.counts.scopedSelectorExceptions>0,'Keep intentional PG10/PG11 scoped contexts separate from FROZEN');
   assert.equal(triage.crossFileClasses.length,inventory.metrics.classesCrossFile);
   assert.equal(triage.repeatedSelectorContexts.length,inventory.metrics.repeatedSelectorContextGroups);
   assert.equal(triage.counts.browserApproved,0,'No visual approval may be inferred from static checks');
   for(const item of [...triage.crossFileClasses,...triage.repeatedSelectorContexts]){
     assert.ok(triage.permittedStatuses.includes(item.status),
       'Unclassified cross-file CSS triage: '+(item.className||item.selectorContext));
-    assert.ok(item.reason&&item.browserVerified===false,
-      'Unreviewed CSS needs an explicit cause and browser QA flag');
+    assert.ok(item.reason&&item.browserVerified===false&&item.manualVisualReviewRequired===true,
+      'Resolved owner does not equal approved visual UAT');
   }
   for(const item of triage.crossFileClasses){
     const original=inventory.css.find(x=>x.className===item.className);
