@@ -32,10 +32,20 @@ jobs:
           cp aunea-design-inventory.json docs/audit/AUNEA_INTERNAL_DESIGN_CONSUMERS.json
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/audit/AUNEA_INTERNAL_DESIGN_CONSUMERS.json
-          if ! git diff --cached --quiet; then
-            git commit -m "docs(audit): persist full-screen design inventory [skip ci]"
-            git push origin "HEAD:refs/heads/${GITHUB_REF_NAME}"
+          # The inventory always survives as an immutable artifact of this exact SHA.
+          # Never allow an older concurrent job to commit stale inventory onto a
+          # newer branch, and never turn a branch-push race into a false QA failure.
+          git fetch origin "${GITHUB_REF_NAME}"
+          if [ "$(git rev-parse FETCH_HEAD)" != "${GITHUB_SHA}" ]; then
+            echo "Newer branch head detected; skip repository snapshot, artifact retained."
+          else
+            git add docs/audit/AUNEA_INTERNAL_DESIGN_CONSUMERS.json
+            if ! git diff --cached --quiet; then
+              git commit -m "docs(audit): persist full-screen design inventory [skip ci]"
+              if ! git push origin "HEAD:refs/heads/${GITHUB_REF_NAME}"; then
+                echo "Concurrent commit won; artifact is the source-SHA-specific inventory."
+              fi
+            fi
           fi
       - uses: actions/upload-artifact@v4
         if: always()
