@@ -1,6 +1,6 @@
 # AUNEA Internal — Plan de reducción y simplificación técnica
 
-Estado: F0 AUDITORÍA ESTÁTICA COMPLETA — cierre pendiente de acreditar ejecución integral del inventario en CI
+Estado: F0 CLOSED — inventario estático reproducible PASS con evidencia CI; F1–F6 EN EJECUCIÓN/PENDIENTES
 Fecha: 2026-11-12
 Rama objetivo: `work/as-is-ux-simplification-20260930`
 Ámbito: reducción y simplificación del software existente. Sin nuevas funciones ni cambios de reglas.
@@ -55,7 +55,7 @@ pages/results, tobe, comparison y otras páginas (existentes)
 Los componentes compartidos sólo se extraerán cuando haya duplicación funcional demostrada. Conservar Block_ID de cada responsabilidad y el orden del manifiesto. No introducir `work-components.js` ni `work-pages.js` por anticipado.
 
 ## 5. Fases y gates
-- **F0 Inventario:** registrar archivos activos vs archivados, tamaño, dependencias/consumidores, selectores repetidos y páginas FROZEN; identificar candidatos con prueba de uso. **Gate:** baseline completa y matriz de riesgos. Estado: INICIADA.
+- **F0 Inventario: CLOSED (13/11/2026).** Baseline y matriz de riesgos en `docs/AUNEA_INTERNAL_F0_BASELINE_20261113.md`; informe generado por CI en `docs/audit/AUNEA_INTERNAL_F0_INVENTORY.json`. 336 activos, 13 archivados, 46 módulos, 9 FROZEN, errores vacíos. Consumidores léxicos y CSS indicados como candidatos, no defectos. PASS sólo del inventario, no de UAT.
 - **F1 CSS transversal:** eliminar sólo reglas duplicadas o sobrescritas sin efecto, respetando especificidad, orden y responsive. **Gate:** comparación visual de todas las pantallas afectadas, FROZEN intactas.
 - **F2 UI compartida:** reutilizar controles/tarjetas/modales realmente equivalentes; preservar teclado, accesibilidad y estados. **Gate:** DOM/acciones equivalentes y regresión.
 - **F3 Páginas:** simplificar `tobe.js` y `results.js` por partes, manteniendo funciones existentes hasta demostrar equivalencia. **Gate:** journeys completos y snapshots estables.
@@ -76,12 +76,12 @@ Los componentes compartidos sólo se extraerán cuando haya duplicación funcion
 ## 7. Primer backlog controlado
 | ID | Acción | Riesgo | Estado |
 |---|---|---|---|
-| SIM-00 | Identificar SHA base y árbol activo, contraste con archivos archivados | Bajo | PENDIENTE |
-| SIM-01 | Matriz de selectores repetidos en `ui-system.css`, uso y cascada | Alto (FROZEN) | DETECTADO, PENDIENTE CLASIFICAR |
-| SIM-02 | Inventario de responsabilidades/DOM/eventos de `tobe.js` | Alto | DETECTADO, PENDIENTE |
-| SIM-03 | Inventario de responsabilidades/DOM/eventos de `results.js` | Alto | DETECTADO, PENDIENTE |
-| SIM-04 | Mapa de dependencias de estado → transacciones → resultados | Crítico | PENDIENTE |
-| SIM-05 | Línea base de tests/QA nativa para cada cambio | Crítico | PENDIENTE |
+| SIM-00 | Identificar SHA base y árbol activo, contraste con archivos archivados | Bajo | F0 CLOSED — baseline + CI JSON verificado |
+| SIM-01 | Matriz de selectores repetidos en `ui-system.css`, uso y cascada | Alto (FROZEN) | F0 inventario de 123 grupos + 107 clases compartidas; clasificación semántica y eliminación corresponden a F1 |
+| SIM-02 | Inventario de responsabilidades/DOM/eventos de `tobe.js` | Alto | F0 inventariado; simplificación funcional pendiente F3 |
+| SIM-03 | Inventario de responsabilidades/DOM/eventos de `results.js` | Alto | F0 inventariado; simplificación funcional pendiente F3 |
+| SIM-04 | Mapa de dependencias de estado → transacciones → resultados | Crítico | F0 grafo léxico de 924 referencias y matriz de propietarios; evaluación funcional pendiente F4/F6 |
+| SIM-05 | Línea base de tests/QA nativa para cada cambio | Crítico | F0 inventariadas 82 pruebas frontend y 42 backend; ejecución y PASS de regresión pendientes F6 |
 
 ## 8. Criterios de cierre
 No declarar simplificación terminada por bajar líneas, cambiar apariencia o pasar tests aislados. Exigir: propietario único por dato/regla, comportamiento equivalente, cero regresiones conocidas, tests aplicables PASS, revisión FROZEN, inventario actualizado y evidencia de mejoras medibles. Los límites de líneas orientativos NO son reglas canónicas.
@@ -174,10 +174,16 @@ Mayores módulos JS activos (líneas):
 
 **Pendiente para cierre integral:** ejecución y corrección de los gates Node/Python/Chromium y UAT visual Windows; auditoría de duplicaciones no triviales de `ui-system.css`, `domain/process.js` y `domain/internal-ai-pilot.js`; inspección de comportamiento UI de PG10/PG11 y del ciclo completo; consolidación adicional sólo donde la matriz de consumidores demuestre equivalencia. Permanecen sin tocar los nueve FROZEN; ningún cambio de canonical, fields ni engines.
 
-## 16. Auditoría F0 (13/11/2026) — gate de reproducción
+## 16. Auditoría F0 (13/11/2026) — CERRADA tras ejecución en GitHub Actions
 - Informe técnico verificable: `docs/AUNEA_INTERNAL_F0_BASELINE_20261113.md`. Incluye inventario 46 JS, 33 módulos Python backend, 5.333 líneas CSS, 512 Block_ID, mapa de propietarios/consumidores, 9 páginas FROZEN y 13 snapshots, 123 grupos de selectores repetidos, riesgo y gates por fase.
 - Script reproducible de árbol completo: `tools/aunea-f0-audit.cjs`; revisado en fuente, mide archivos activos/ARCHIVED y candidatos de dependencias y CSS. No borra ni modifica datos.
 - Workflow específico: `.github/workflows/aunea-f0-inventory.yml`; sobre un checkout real debe generar `f0-inventory.json`, validar 46 módulos/9 FROZEN y guardar evidencia en `docs/audit/AUNEA_INTERNAL_F0_INVENTORY.json` si el token tiene permisos y el gate es PASS.
-- **No se dispone todavía de una ejecución CI verificada ni de su JSON versionado.** Por coherencia con el criterio de cierre original, F0 sigue **GATE PENDIENTE**, sin crear un PASS ficticio. La investigación estática y la planificación de F1–F6 sí están completadas.
+- **Evidencia CI generada y contrastada:** `docs/audit/AUNEA_INTERNAL_F0_INVENTORY.json`, `status=STATIC_INVENTORY_GENERATED`, `errors=[]`, `warnings=[]`, `activeFiles=336`, `archivedFiles=13`, `runtimeModules=46`, `frozenPages=9` y 13 snapshots disponibles. El workflow comprueba el JSON antes de incorporarlo al repositorio. **Gate F0 PASS / CLOSED.**
 - El conteo antiguo de 44 módulos es histórico: el manifiesto vigente contiene 46 después de la separación de eventos y de la proyección global IA. No confundir disminución de líneas por archivo con reducción neta del producto.
 - Los gates de comportamiento (Node, pytest, Chromium, UAT Windows) pertenecen a estabilización/F6 y siguen pendientes. No hacer merge ni tocar FROZEN por la publicación de un informe.
+
+## 17. Acta de cierre F0 · 13/11/2026
+- **Resultado:** F0 CLOSED, exclusivamente como auditoría/inventario. Script y workflow versionados; inventario integral CI publicado, sin errores ni avisos. Árbol de 336 archivos activos + 13 archivados, fuentes canónicas y 512 Block_ID contrastados, matriz owner/consumer y riesgos, FROZEN 9/13 verificados.
+- **Evidencia:** `docs/AUNEA_INTERNAL_F0_BASELINE_20261113.md`, `docs/audit/AUNEA_INTERNAL_F0_INVENTORY.json`, `tools/aunea-f0-audit.cjs` y `.github/workflows/aunea-f0-inventory.yml`.
+- **No prueba:** homogeneidad visual, ausencia de regresiones ni tests funcionales (F6). Candidatos CSS sin consumidor textual no se deben borrar sin revisar HTML/dinamismo y FROZEN.
+- **Entrada F1:** estabilizar gates existentes, catalogar clases compartidas, clasificar 123 grupos de selectores repetidos y 107 clases en ambos CSS; decidir cada extracción únicamente con matriz de consumidores y capturas de UI. 
