@@ -76,3 +76,30 @@
 - Contrato de gestión: no introducir componentes paralelos cuando ya existan, preservar las nueve FROZEN y no mover reglas o outputs de negocio al frontend.
 
 **Estado de F1/F2: PARCIAL, no CLOSED.** La migración de los 107 casos CSS y de todos los consumidores requiere lotes visualmente verificados. El inventario completo habilita la ejecución, pero no demuestra que el aspecto de toda la aplicación sea ya uniforme.
+
+## 8. Implementación y aceptación automatizada · 13/11/2026
+
+### Componentes y estilos implementados sin alterar las nueve pantallas FROZEN
+- `tools/aunea-ui-component-map.cjs`: correspondencia técnica única de DS-001–DS-020, consumida por el inventario; **no** supone 20 renderizadores completos.
+- `ui/renderer.js`: `auneaEmptyState()` como HTML semántico compartido. `pages/comparison.js` (PG12) y `pages/projects.js` lo reutilizan sin alterar su HTML ni los estados de negocio.
+- `styles.css`: `.aunea-ui-code-pre` para pruebas/auditoría de IA; `domain/internal-ai-pilot.js` deja de repetir estilos inline estáticos. `pages/session-display.js` reutiliza `aunea-ui-mt-12`.
+- `ui-system.css`: 22 declaraciones repetidas retiradas solo de selectores `.pg10-*` / `.tobe-*`, con mapa final de declaración por selector/contexto equivalente antes y después. Los posicionamientos calculados del mapa conservan atributos dinámicos.
+- Contratos globales de componentes ampliados en `tests/design-system-common.test.cjs`, incluidos consumidores CRM, PG00/PG01–PG09, PG10, PG11 y PG12+, catálogo DS20, FROZEN y prohibición de aumentar duplicaciones respecto al baseline.
+- `docs/audit/AUNEA_INTERNAL_DESIGN_BASELINE_20261113.json` retiene la primera fotografía inmutable; `docs/audit/AUNEA_INTERNAL_DESIGN_CONSUMERS.json` es la fotografía viva, refrescada por CI tras cambios.
+
+### Corrección de integración descubierta al ejecutar toda la suite
+La extracción histórica de `registerInternalWorkPages()` dejó `pages/internal-work-events.js` **después** de `domain/internal-ai-pilot.js` en el manifiesto; este último intenta envolver `registerInternalWorkPages` durante su carga y provocaba `ReferenceError`. Se ha movido la declaración de eventos inmediatamente **antes** del módulo IA, manteniendo el resto del runtime y todos los 46 módulos. `index.html` y `tests/module-manifest.test.cjs` gobiernan explícitamente ese orden. Tests antiguos que dependían de literales CSS/HTML anteriores ahora comprueban el componente compartido real; se reparó el alcance de dos fixtures (`read`/`root`) sin modificar código de negocio.
+
+### Gates acreditados
+- **GitHub Actions, run `43399133707`**, SHA `23fa4a2419bc7ca3ec5947c5f44e5c3354defa6c`: backend `pytest` = **success**, frontend `npm test` = **success**, `browser_uat` Chromium = **success**; publicación de estado = **success**. Registro versionado: `docs/audit/AUNEA_INTERNAL_ACCEPTANCE_GATE.json`, `overall: PASS`, fecha `2026-11-13T09:12:30Z`.
+- `AUNEA Shared UI Contract Gate`: 27 pruebas selectivas de estilos/manifest = **success**.
+- `AUNEA Design System Runtime Inventory`: ejecución de inventario completa = **success**.
+- **No acreditado:** comparación visual manual pixel/estados de todas las páginas, especialmente nueve FROZEN, ni migración física de todas las clases cruzadas. Estos controles mantienen F1/F2 abiertos y cualquier cambio visual global bloqueado si no existe su QA.
+
+### Continuación recomendada para cerrar F1/F2
+1. Capturar y comparar las nueve pantallas FROZEN en Chrome/Edge y distintas resoluciones; no cambiar su apariencia sin reapertura explícita.
+2. Clasificar las 107 clases compartidas por tipo de owner y los 146 grupos de selectores/contextos (ambos estilos) con consumidores, responsive y computed styles. Conservar excepciones necesarias.
+3. Migrar por lotes solo las pantallas no FROZEN; unificar variantes de modal, formulario y panel operativo que realmente compartan estados/DOM.
+4. Ejecutar **nuevamente** todas las UAT Node/Python/Chromium después de cada lote, conservar referencias visuales y documentar la reducción real de estilos. No atribuir a F1/F2 el estado CLOSED por tener una única auditoría PASS.
+
+**Cierre de este lote:** Inventario y contrato global publicados; estabilización automatizada PASS; implementación visual transversal todavía **PARCIAL / REVIEW**.
