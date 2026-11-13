@@ -68,6 +68,13 @@ async function main(){
       for(const width of [1365,390]){
         const height=width===390?820:900;
         await page.setViewportSize({width,height});
+        // Stabilize hover, scroll and rendering frames before screenshot comparison.
+        await page.mouse.move(0,0);
+        await page.evaluate(async()=>{
+          window.scrollTo(0,0);
+          await document.fonts.ready;
+          await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+        });
         const view=await page.evaluate(()=>({
           renderedPage:state.activePage,renderedStage:currentEng()?.stageId,
           horizontalOverflow:document.documentElement.scrollWidth>window.innerWidth+2,
