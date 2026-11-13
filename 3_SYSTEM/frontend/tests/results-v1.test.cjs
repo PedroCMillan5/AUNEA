@@ -130,4 +130,35 @@ test('shared disclosure remains available to the legacy result VM',()=>{
   assert.equal(markup,
     '<details class="pg10-stage-nav aunea-ui-work-disclosure"><summary>Etapas</summary><p>Contenido</p></details>');
 });
+
+test('F3 PG10 map navigation uses one evidence-opening owner for node clicks and source links',()=>{
+  const results=fs.readFileSync(path.join(root,'pages/results.js'),'utf8');
+  const start=results.indexOf('function bindDiagnosticMapPointNavigation(');
+  const stop=results.indexOf('// [AUNEA-FE-PG10-MAP-NAV-160] END',start);
+  assert.ok(start>=0&&stop>start);
+  const nav=results.slice(start,stop);
+  assert.equal(nav.split('function focusDiagnosticEvidence(').length-1,1);
+  assert.equal(nav.split("document.querySelectorAll('.asis-opportunity-point.is-selected')").length-1,1);
+  assert.equal(nav.split('target.scrollIntoView?.(').length-1,1);
+  assert.match(nav,/const open=\(\)=>focusDiagnosticEvidence\(target\)/);
+  assert.match(nav,/focusDiagnosticEvidence\(dest\)/);
+  assert.match(nav,/event\.key==='Enter'\|\|event\.key===' '/);
+  assert.match(nav,/parent\.open=true/);
+  assert.doesNotMatch(nav,/saveState|markDirty|createTobeDraft/,
+    'Evidence selection must never modify the AS-IS or create a draft');
+});
+
+test('F3 PG10 and PG11 pages delegate global work events to their existing owner',()=>{
+  const views=['pages/results.js','pages/results-analysis.js','pages/results-official.js',
+    'pages/tobe.js','pages/tobe-review.js','pages/tobe-flow.js'];
+  for(const file of views)
+    assert.doesNotMatch(fs.readFileSync(path.join(root,file),'utf8'),
+      /document\.addEventListener\(/,'Page view registers a global event: '+file);
+  const events=fs.readFileSync(path.join(root,'pages/internal-work-events.js'),'utf8');
+  assert.match(events,/function registerInternalWorkPages\(/);
+  assert.match(events,/pages\.tobe=tobePage/);
+  assert.match(events,/pages\.revision=outputReviewPage/);
+  assert.match(events,/bindDiagnosticMapPointNavigation\(\)/);
+});
+
 // [AUNEA-UAT-RESULTS-010] END
