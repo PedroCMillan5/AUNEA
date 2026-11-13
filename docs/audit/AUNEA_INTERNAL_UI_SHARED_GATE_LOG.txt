@@ -2,163 +2,163 @@ TAP version 13
 # Subtest: the application loads ONE base CSS before the layout/skin CSS
 ok 1 - the application loads ONE base CSS before the layout/skin CSS
   ---
-  duration_ms: 1.240191
+  duration_ms: 0.660022
   type: 'test'
   ...
 # Subtest: canonical tokens and button variants live in the shared stylesheet only
 ok 2 - canonical tokens and button variants live in the shared stylesheet only
   ---
-  duration_ms: 1.091112
+  duration_ms: 0.696738
   type: 'test'
   ...
 # Subtest: new reusable primitives are opt-in and scoped; FROZEN baseline receives no implicit changes
 ok 3 - new reusable primitives are opt-in and scoped; FROZEN baseline receives no implicit changes
   ---
-  duration_ms: 0.308047
+  duration_ms: 0.19104
   type: 'test'
   ...
 # Subtest: PG11 uses common heading primitives and has four numbered main sections
 ok 4 - PG11 uses common heading primitives and has four numbered main sections
   ---
-  duration_ms: 1.189105
+  duration_ms: 0.808618
   type: 'test'
   ...
 # Subtest: PG11 section 03 reuses section 01/02 surface and canonical typography tokens
 ok 5 - PG11 section 03 reuses section 01/02 surface and canonical typography tokens
   ---
-  duration_ms: 1.071735
+  duration_ms: 0.751211
   type: 'test'
   ...
 # Subtest: PG11 consultant action buttons use the shared compact-button group
 ok 6 - PG11 consultant action buttons use the shared compact-button group
   ---
-  duration_ms: 0.76418
+  duration_ms: 0.57976
   type: 'test'
   ...
 # Subtest: shared visual contract does not change business or IA execution state
 ok 7 - shared visual contract does not change business or IA execution state
   ---
-  duration_ms: 0.679001
+  duration_ms: 0.427989
   type: 'test'
   ...
 # Subtest: PG01 shares headings and form surfaces without local appearance overrides
 ok 8 - PG01 shares headings and form surfaces without local appearance overrides
   ---
-  duration_ms: 0.965847
+  duration_ms: 0.628394
   type: 'test'
   ...
 # Subtest: PG11 work surfaces and stages reuse the same opt-in structural primitives
 ok 9 - PG11 work surfaces and stages reuse the same opt-in structural primitives
   ---
-  duration_ms: 1.44828
+  duration_ms: 1.009733
   type: 'test'
   ...
 # Subtest: internal work result layouts reuse shared opt-in structure instead of inline presentation
 ok 10 - internal work result layouts reuse shared opt-in structure instead of inline presentation
   ---
-  duration_ms: 0.987408
+  duration_ms: 0.605068
   type: 'test'
   ...
 # Subtest: diagnostic work disclosures share the same structural owner
 ok 11 - diagnostic work disclosures share the same structural owner
   ---
-  duration_ms: 2.616025
+  duration_ms: 1.768745
   type: 'test'
   ...
 # Subtest: work disclosure builder preserves semantic markup and escapes its label
 ok 12 - work disclosure builder preserves semantic markup and escapes its label
   ---
-  duration_ms: 1.521056
+  duration_ms: 1.033309
   type: 'test'
   ...
 # Subtest: cross-screen shared primitives are defined once and consumed from CRM through PG12+
 ok 13 - cross-screen shared primitives are defined once and consumed from CRM through PG12+
   ---
-  duration_ms: 2.498335
+  duration_ms: 1.53531
   type: 'test'
   ...
 # Subtest: all approved screens remain under nine explicit frozen-page gates
 ok 14 - all approved screens remain under nine explicit frozen-page gates
   ---
-  duration_ms: 0.324798
+  duration_ms: 0.198782
   type: 'test'
   ...
 # Subtest: design inventory covers every manifest source and all documented DS categories
 ok 15 - design inventory covers every manifest source and all documented DS categories
   ---
-  duration_ms: 1.002115
+  duration_ms: 0.661625
   type: 'test'
   ...
 # Subtest: all 46 runtime modules obey the F1 shared-style anti-regression baseline
 ok 16 - all 46 runtime modules obey the F1 shared-style anti-regression baseline
   ---
-  duration_ms: 1353.653138
+  duration_ms: 984.25084
   type: 'test'
   ...
 # Subtest: structured IA evidence and session layout use shared visual owner
 ok 17 - structured IA evidence and session layout use shared visual owner
   ---
-  duration_ms: 0.76948
+  duration_ms: 1.076814
   type: 'test'
   ...
 # Subtest: PG12 and Projects share the semantic empty-state renderer with unchanged HTML
 ok 18 - PG12 and Projects share the semantic empty-state renderer with unchanged HTML
   ---
-  duration_ms: 1.505527
+  duration_ms: 0.891123
   type: 'test'
   ...
 # Subtest: every module declared in the manifest exists on disk
 ok 19 - every module declared in the manifest exists on disk
   ---
-  duration_ms: 4.249926
+  duration_ms: 3.440283
   type: 'test'
   ...
 # Subtest: every runtime .js on disk is declared in the manifest
 ok 20 - every runtime .js on disk is declared in the manifest
   ---
-  duration_ms: 1.79754
+  duration_ms: 1.261385
   type: 'test'
   ...
 # Subtest: index.html loads exactly the manifest modules, in the declared order
 ok 21 - index.html loads exactly the manifest modules, in the declared order
   ---
-  duration_ms: 0.389739
+  duration_ms: 0.248528
   type: 'test'
   ...
 # Subtest: every module is deferred so the shared global scope is populated in order
 ok 22 - every module is deferred so the shared global scope is populated in order
   ---
-  duration_ms: 0.371164
+  duration_ms: 0.189187
   type: 'test'
   ...
 # Subtest: each module declares a known layer and carries its Block_ID marker
 ok 23 - each module declares a known layer and carries its Block_ID marker
   ---
-  duration_ms: 5.677814
+  duration_ms: 3.671985
   type: 'test'
   ...
 # Subtest: module filenames carry no version suffix
 ok 24 - module filenames carry no version suffix
   ---
-  duration_ms: 0.298168
+  duration_ms: 0.18486
   type: 'test'
   ...
 # Subtest: manifest order values are contiguous and start at 1
 ok 25 - manifest order values are contiguous and start at 1
   ---
-  duration_ms: 0.170459
+  duration_ms: 0.079571
   type: 'test'
   ...
 # Subtest: internal-work event registration is separated from views and loaded before boot
 ok 26 - internal-work event registration is separated from views and loaded before boot
   ---
-  duration_ms: 1.264105
+  duration_ms: 0.815407
   type: 'test'
   ...
 # Subtest: PG11 global overview is a single read-only module loaded before work handlers
 ok 27 - PG11 global overview is a single read-only module loaded before work handlers
   ---
-  duration_ms: 1.029106
+  duration_ms: 0.715536
   type: 'test'
   ...
 1..27
@@ -169,4 +169,4 @@ ok 27 - PG11 global overview is a single read-only module loaded before work han
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 1453.460874
+# duration_ms 1045.14588
