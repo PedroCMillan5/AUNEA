@@ -7,7 +7,7 @@
     "No move backend calculations or data owners"
   ],
   "metrics": {
-    "modules": 46,
+    "modules": 47,
     "cssClasses": 1086,
     "classesCrossFile": 107,
     "repeatedSelectorContextGroups": 139,
@@ -93,6 +93,7 @@
     ],
     "Trabajo interno / PG11": [
       "pages/tobe.js",
+      "pages/tobe-flow.js",
       "pages/tobe-global.js",
       "pages/internal-work-events.js",
       "domain/tobe-model.js",
@@ -218,6 +219,7 @@
             "pages/results.js",
             "domain/tobe-transactions.js",
             "pages/tobe.js",
+            "pages/tobe-flow.js",
             "pages/session-display.js",
             "domain/process.js",
             "domain/internal-ai-pilot.js"
@@ -241,6 +243,7 @@
           "consumers": [
             "domain/tobe-transactions.js",
             "pages/tobe.js",
+            "pages/tobe-flow.js",
             "pages/comparison.js",
             "pages/internal-work-events.js",
             "pages/tobe-global.js"
@@ -262,6 +265,7 @@
             "pages/results.js",
             "domain/tobe-transactions.js",
             "pages/tobe.js",
+            "pages/tobe-flow.js",
             "pages/comparison.js",
             "pages/session-display.js",
             "domain/process.js",
@@ -388,6 +392,7 @@
             "pages/results.js",
             "domain/tobe-transactions.js",
             "pages/tobe.js",
+            "pages/tobe-flow.js",
             "pages/comparison.js",
             "pages/session-display.js",
             "domain/process.js",
@@ -425,6 +430,7 @@
             "pages/results.js",
             "domain/tobe-transactions.js",
             "pages/tobe.js",
+            "pages/tobe-flow.js",
             "pages/comparison.js",
             "domain/process.js",
             "domain/internal-ai-pilot.js",
@@ -458,6 +464,7 @@
             "pages/results.js",
             "domain/tobe-transactions.js",
             "pages/tobe.js",
+            "pages/tobe-flow.js",
             "pages/comparison.js",
             "pages/session-display.js",
             "domain/process.js",
@@ -689,6 +696,7 @@
             "pages/results.js",
             "domain/tobe-transactions.js",
             "pages/tobe.js",
+            "pages/tobe-flow.js",
             "pages/comparison.js",
             "pages/crm-companies.js",
             "pages/crm-contacts.js",
@@ -748,6 +756,7 @@
             "pages/results.js",
             "domain/tobe-transactions.js",
             "pages/tobe.js",
+            "pages/tobe-flow.js",
             "domain/process.js",
             "uat/visible.js",
             "domain/internal-ai-pilot.js",
@@ -896,6 +905,7 @@
             "pages/results.js",
             "domain/tobe-transactions.js",
             "pages/tobe.js",
+            "pages/tobe-flow.js",
             "domain/process.js",
             "ui/process-help.js",
             "domain/completion.js",
@@ -922,6 +932,7 @@
             "pages/results.js",
             "domain/tobe-transactions.js",
             "pages/tobe.js",
+            "pages/tobe-flow.js",
             "domain/process.js",
             "pages/projects.js"
           ]
@@ -2103,6 +2114,42 @@
         "tobe-time-readout",
         "tobe-workspace",
         "tobe-workspace-head",
+        "warn"
+      ]
+    },
+    {
+      "path": "pages/tobe-flow.js",
+      "layer": "pages",
+      "blockId": "AUNEA-FE-PG11-FUTURE-FLOW-228",
+      "lines": 401,
+      "family": [
+        "Trabajo interno / PG11"
+      ],
+      "view": true,
+      "inlineStyleAttributes": 0,
+      "referencedCssClasses": [
+        "btn",
+        "btn-outline",
+        "confirmed",
+        "field",
+        "field-help",
+        "form-grid",
+        "notice",
+        "on",
+        "tobe-decision-readout",
+        "tobe-design-group",
+        "tobe-design-group-head",
+        "tobe-design-group-number",
+        "tobe-muted",
+        "tobe-optimization-body",
+        "tobe-optimization-connections",
+        "tobe-optimization-details",
+        "tobe-optimization-empty",
+        "tobe-optimization-finding",
+        "tobe-optimization-findings",
+        "tobe-optimization-severity",
+        "tobe-optimization-summary",
+        "tobe-route-editor",
         "warn"
       ]
     },
@@ -4302,6 +4349,7 @@
         "pages/results.js",
         "domain/tobe-transactions.js",
         "pages/tobe.js",
+        "pages/tobe-flow.js",
         "pages/comparison.js",
         "pages/crm-companies.js",
         "pages/crm-contacts.js",
@@ -4362,6 +4410,7 @@
         "pages/results.js",
         "domain/tobe-transactions.js",
         "pages/tobe.js",
+        "pages/tobe-flow.js",
         "domain/process.js",
         "uat/visible.js",
         "domain/internal-ai-pilot.js",
@@ -5199,6 +5248,7 @@
         "domain/tobe-model.js",
         "pages/results.js",
         "pages/tobe.js",
+        "pages/tobe-flow.js",
         "domain/output-review.js",
         "pages/session-display.js",
         "domain/process.js",
@@ -6647,6 +6697,7 @@
         "pages/results.js",
         "domain/tobe-transactions.js",
         "pages/tobe.js",
+        "pages/tobe-flow.js",
         "domain/process.js",
         "ui/process-help.js",
         "domain/completion.js",
@@ -6679,6 +6730,7 @@
         "pages/results.js",
         "domain/tobe-transactions.js",
         "pages/tobe.js",
+        "pages/tobe-flow.js",
         "pages/session-display.js",
         "domain/process.js",
         "domain/internal-ai-pilot.js"
@@ -6942,6 +6994,7 @@
         "pages/results.js",
         "domain/tobe-transactions.js",
         "pages/tobe.js",
+        "pages/tobe-flow.js",
         "domain/process.js",
         "pages/projects.js"
       ],
@@ -8214,6 +8267,7 @@
         "pages/results.js",
         "domain/tobe-transactions.js",
         "pages/tobe.js",
+        "pages/tobe-flow.js",
         "pages/comparison.js",
         "pages/session-display.js",
         "domain/process.js",
@@ -8323,6 +8377,7 @@
         "domain/tobe-model.js",
         "domain/tobe-transactions.js",
         "pages/tobe.js",
+        "pages/tobe-flow.js",
         "pages/session-display.js",
         "domain/process.js",
         "ui/shell.js",
@@ -13877,9 +13932,11 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 8,
-      "runtimeConsumers": [],
+      "runtimeConsumers": [
+        "pages/tobe-flow.js"
+      ],
       "frozenRisk": false,
-      "classification": "REVIEW_DYNAMIC_OR_HTML"
+      "classification": "REFERENCED"
     },
     {
       "className": "tobe-design-evidence",
@@ -13924,7 +13981,8 @@
       ],
       "ruleOccurrences": 2,
       "runtimeConsumers": [
-        "pages/tobe.js"
+        "pages/tobe.js",
+        "pages/tobe-flow.js"
       ],
       "frozenRisk": false,
       "classification": "REFERENCED"
@@ -13936,7 +13994,8 @@
       ],
       "ruleOccurrences": 5,
       "runtimeConsumers": [
-        "pages/tobe.js"
+        "pages/tobe.js",
+        "pages/tobe-flow.js"
       ],
       "frozenRisk": false,
       "classification": "REFERENCED"
@@ -13948,7 +14007,8 @@
       ],
       "ruleOccurrences": 1,
       "runtimeConsumers": [
-        "pages/tobe.js"
+        "pages/tobe.js",
+        "pages/tobe-flow.js"
       ],
       "frozenRisk": false,
       "classification": "REFERENCED"
@@ -15018,6 +15078,7 @@
       "runtimeConsumers": [
         "domain/tobe-transactions.js",
         "pages/tobe.js",
+        "pages/tobe-flow.js",
         "pages/comparison.js",
         "pages/internal-work-events.js",
         "pages/tobe-global.js"
@@ -15259,9 +15320,11 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 4,
-      "runtimeConsumers": [],
+      "runtimeConsumers": [
+        "pages/tobe-flow.js"
+      ],
       "frozenRisk": false,
-      "classification": "REVIEW_DYNAMIC_OR_HTML"
+      "classification": "REFERENCED"
     },
     {
       "className": "tobe-optimization-connections",
@@ -15269,9 +15332,11 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 5,
-      "runtimeConsumers": [],
+      "runtimeConsumers": [
+        "pages/tobe-flow.js"
+      ],
       "frozenRisk": false,
-      "classification": "REVIEW_DYNAMIC_OR_HTML"
+      "classification": "REFERENCED"
     },
     {
       "className": "tobe-optimization-details",
@@ -15279,9 +15344,11 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 3,
-      "runtimeConsumers": [],
+      "runtimeConsumers": [
+        "pages/tobe-flow.js"
+      ],
       "frozenRisk": false,
-      "classification": "REVIEW_DYNAMIC_OR_HTML"
+      "classification": "REFERENCED"
     },
     {
       "className": "tobe-optimization-empty",
@@ -15289,9 +15356,11 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 1,
-      "runtimeConsumers": [],
+      "runtimeConsumers": [
+        "pages/tobe-flow.js"
+      ],
       "frozenRisk": false,
-      "classification": "REVIEW_DYNAMIC_OR_HTML"
+      "classification": "REFERENCED"
     },
     {
       "className": "tobe-optimization-finding",
@@ -15299,9 +15368,11 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 4,
-      "runtimeConsumers": [],
+      "runtimeConsumers": [
+        "pages/tobe-flow.js"
+      ],
       "frozenRisk": false,
-      "classification": "REVIEW_DYNAMIC_OR_HTML"
+      "classification": "REFERENCED"
     },
     {
       "className": "tobe-optimization-findings",
@@ -15309,9 +15380,11 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 1,
-      "runtimeConsumers": [],
+      "runtimeConsumers": [
+        "pages/tobe-flow.js"
+      ],
       "frozenRisk": false,
-      "classification": "REVIEW_DYNAMIC_OR_HTML"
+      "classification": "REFERENCED"
     },
     {
       "className": "tobe-optimization-severity",
@@ -15319,9 +15392,11 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 1,
-      "runtimeConsumers": [],
+      "runtimeConsumers": [
+        "pages/tobe-flow.js"
+      ],
       "frozenRisk": false,
-      "classification": "REVIEW_DYNAMIC_OR_HTML"
+      "classification": "REFERENCED"
     },
     {
       "className": "tobe-optimization-summary",
@@ -15329,9 +15404,11 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 1,
-      "runtimeConsumers": [],
+      "runtimeConsumers": [
+        "pages/tobe-flow.js"
+      ],
       "frozenRisk": false,
-      "classification": "REVIEW_DYNAMIC_OR_HTML"
+      "classification": "REFERENCED"
     },
     {
       "className": "tobe-origin",
@@ -15741,9 +15818,11 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 6,
-      "runtimeConsumers": [],
+      "runtimeConsumers": [
+        "pages/tobe-flow.js"
+      ],
       "frozenRisk": false,
-      "classification": "REVIEW_DYNAMIC_OR_HTML"
+      "classification": "REFERENCED"
     },
     {
       "className": "tobe-selected-data-chip",
@@ -16175,6 +16254,7 @@
         "pages/results.js",
         "domain/tobe-transactions.js",
         "pages/tobe.js",
+        "pages/tobe-flow.js",
         "pages/comparison.js",
         "domain/process.js",
         "domain/internal-ai-pilot.js",
@@ -18299,6 +18379,7 @@
           "pages/results.js",
           "domain/tobe-transactions.js",
           "pages/tobe.js",
+          "pages/tobe-flow.js",
           "pages/comparison.js",
           "pages/crm-companies.js",
           "pages/crm-contacts.js",
@@ -18334,6 +18415,7 @@
           "pages/results.js",
           "domain/tobe-transactions.js",
           "pages/tobe.js",
+          "pages/tobe-flow.js",
           "domain/process.js",
           "uat/visible.js",
           "domain/internal-ai-pilot.js",
@@ -18556,6 +18638,7 @@
           "domain/tobe-model.js",
           "pages/results.js",
           "pages/tobe.js",
+          "pages/tobe-flow.js",
           "domain/output-review.js",
           "pages/session-display.js",
           "domain/process.js",
@@ -18814,6 +18897,7 @@
           "pages/results.js",
           "domain/tobe-transactions.js",
           "pages/tobe.js",
+          "pages/tobe-flow.js",
           "domain/process.js",
           "ui/process-help.js",
           "domain/completion.js",
@@ -18849,6 +18933,7 @@
           "pages/results.js",
           "domain/tobe-transactions.js",
           "pages/tobe.js",
+          "pages/tobe-flow.js",
           "pages/session-display.js",
           "domain/process.js",
           "domain/internal-ai-pilot.js"
@@ -19015,6 +19100,7 @@
           "pages/results.js",
           "domain/tobe-transactions.js",
           "pages/tobe.js",
+          "pages/tobe-flow.js",
           "domain/process.js",
           "pages/projects.js"
         ],
@@ -19475,6 +19561,7 @@
           "pages/results.js",
           "domain/tobe-transactions.js",
           "pages/tobe.js",
+          "pages/tobe-flow.js",
           "pages/comparison.js",
           "pages/session-display.js",
           "domain/process.js",
@@ -19544,6 +19631,7 @@
           "domain/tobe-model.js",
           "domain/tobe-transactions.js",
           "pages/tobe.js",
+          "pages/tobe-flow.js",
           "pages/session-display.js",
           "domain/process.js",
           "ui/shell.js",
@@ -20067,6 +20155,7 @@
           "pages/results.js",
           "domain/tobe-transactions.js",
           "pages/tobe.js",
+          "pages/tobe-flow.js",
           "pages/comparison.js",
           "domain/process.js",
           "domain/internal-ai-pilot.js",
