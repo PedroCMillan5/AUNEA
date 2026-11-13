@@ -2210,8 +2210,8 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 .pg10-conclusions .notice p{margin:7px 0 0;line-height:1.6}
 .pg10-review-summary>p{font-size:13px;line-height:1.65;margin:0 0 12px}
 .pg10-review-summary>.field-help{margin-top:12px}
-.pg10-review-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:17px}
-.pg10-review-actions>.btn{max-width:100%;white-space:normal;min-height:38px}
+.pg10-review-actions{margin-top:17px}
+.pg10-review-actions>.btn{min-height:38px}
 @media(max-width:680px){.pg10-review-actions{flex-direction:column;align-items:stretch}.pg10-source-data{padding:12px}}
 /* [AUNEA-FE-PG10-WORKSPACE-STYLE-167] END */
 
@@ -2713,7 +2713,7 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 .tobe-workspace .tobe-workspace-head h2{font-size:clamp(18px,2vw,22px)}
 .tobe-ai-stage #tobeAiMount{min-width:0}
 @media(max-width:600px){
-  .tobe-ai-stage{padding:14px;gap:14px}
+  .tobe-ai-stage{gap:14px}
   .tobe-ai-stage .pg11-ai-panel.card{padding:0}
   .tobe-ai-stage .pg11-ai-header{gap:12px}
 }
@@ -3054,7 +3054,7 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
   z-index:1;touch-action:none
 }
 .tobe-process-canvas .tobe-free-board .tobe-graph-node{
-  flex:0 0 190px;width:100%;cursor:grab;touch-action:none;user-select:none
+  width:100%;cursor:grab;touch-action:none;user-select:none
 }
 .tobe-process-canvas .tobe-free-board .tobe-graph-node:active{cursor:grabbing}
 .tobe-node-tools{display:flex;flex-wrap:wrap;align-items:center;gap:3px;
@@ -3214,23 +3214,23 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
    DEC-050/056: presentation only; one canonical control and one read-only IA
    suggestion per row. Reuse existing AUNEA field, select, multi-select and buttons. */
 .tobe-workspace[data-tobe-mode="guided"] .tobe-edit>.form-grid{
-  display:grid;grid-template-columns:minmax(0,1fr);
-  gap:0;align-items:start;
+  
+  align-items:start;
   border:1px solid var(--system-line);border-radius:var(--radius-sm);
-  overflow:visible;background:#fff;
+  overflow:visible;
 }
 .tobe-workspace[data-tobe-mode="guided"] .tobe-edit>.form-grid>.tobe-data-pair{display:block}
 .tobe-ai-field-row{
-  display:grid;grid-template-columns:minmax(255px,42%) minmax(0,1fr);
+  grid-template-columns:minmax(255px,42%) minmax(0,1fr);
   align-items:stretch;gap:14px;min-width:0;
-  padding:12px 14px;border-bottom:1px solid var(--system-line);
+  padding:12px 14px;
 }
 .tobe-edit>.form-grid>.tobe-ai-field-row:last-child,
 .tobe-edit>.form-grid>.tobe-data-pair:last-child>.tobe-ai-field-row{
   border-bottom:0;
 }
-.tobe-ai-field-control{min-width:0;display:flex;align-items:stretch}
-.tobe-ai-field-control>.field{width:100%;min-width:0;margin:0;align-self:stretch}
+.tobe-ai-field-control{display:flex;align-items:stretch}
+.tobe-ai-field-control>.field{margin:0;align-self:stretch}
 .tobe-ai-field-control>.field label{display:block;margin-bottom:7px}
 .tobe-ai-field-control .tobe-artifact-field{width:100%}
 .tobe-ai-field-row .tobe-ai-inline{
@@ -3623,7 +3623,7 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
   display:flex;flex-direction:column;align-items:flex-start;
   justify-content:center;min-width:0;gap:4px;padding:13px 17px;
   border:1px solid var(--system-line);border-radius:var(--radius-md);
-  background:var(--system-soft);
+  
 }
 .tobe-workspace[data-tobe-mode="guided"] .tobe-task-guide-intro>div{min-width:0}
 .tobe-workspace[data-tobe-mode="guided"] .tobe-task-guide-progress{font-size:11px}
@@ -3735,7 +3735,7 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
   .tobe-workspace[data-tobe-mode="guided"] .tobe-inspector{padding:14px}
   .tobe-workspace[data-tobe-mode="guided"] .tobe-ai-field-row{grid-template-columns:1fr}
   .tobe-workspace[data-tobe-mode="guided"] .tobe-ai-row-actions{
-    grid-column:1;justify-self:stretch;max-width:none
+    max-width:none
   }
   .tobe-global-indicators{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
@@ -3953,7 +3953,7 @@ details.tobe-ai-operational-context:not([open])>.tobe-ai-operational-body{
    AS-IS and read-only IA advice. Presentation-only, low change risk.
    Reuses AUNEA System tokens and original single-owner field controls. */
 .tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign.tobe-design-workspace{
-  display:grid;gap:14px;
+  
   padding:16px 18px;
   border:1px solid var(--system-line);
   border-radius:var(--radius-md);
