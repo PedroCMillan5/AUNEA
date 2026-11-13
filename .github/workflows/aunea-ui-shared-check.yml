@@ -8,10 +8,18 @@ on:
     paths:
       - '3_SYSTEM/frontend/tests/design-system-common.test.cjs'
       - 'tools/aunea-design-system-audit.cjs'
+      - 'tools/aunea-ui-component-map.cjs'
+      - '3_SYSTEM/frontend/styles.css'
+      - '3_SYSTEM/frontend/ui-system.css'
+      - '3_SYSTEM/frontend/ui/renderer.js'
+      - '3_SYSTEM/frontend/pages/results.js'
+      - '3_SYSTEM/frontend/pages/tobe.js'
+      - '3_SYSTEM/frontend/pages/comparison.js'
+      - '3_SYSTEM/frontend/pages/projects.js'
       - '.github/workflows/aunea-ui-shared-check.yml'
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 jobs:
   contracts:
     runs-on: ubuntu-24.04
@@ -36,15 +44,10 @@ jobs:
           TEST_OUTCOME: ${{ steps.shared.outcome }}
         run: |
           node -e "const fs=require('fs');const x={head:process.env.GITHUB_SHA,generatedAt:new Date().toISOString(),testOutcome:process.env.TEST_OUTCOME,tests:['design-system-common.test.cjs','module-manifest.test.cjs'],scope:'Node contracts only; browser and backend acceptance remain independent'};fs.writeFileSync('docs/audit/AUNEA_INTERNAL_UI_SHARED_GATE.json',JSON.stringify(x,null,2)+'\n')"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if test -f aunea-ui-check.log; then cp aunea-ui-check.log docs/audit/AUNEA_INTERNAL_UI_SHARED_GATE_LOG.txt; fi
-          git add docs/audit/AUNEA_INTERNAL_UI_SHARED_GATE.json
-          if test -f docs/audit/AUNEA_INTERNAL_UI_SHARED_GATE_LOG.txt; then git add docs/audit/AUNEA_INTERNAL_UI_SHARED_GATE_LOG.txt; fi
-          if ! git diff --cached --quiet; then
-            git commit -m "docs(audit): record shared UI contract test result [skip ci]"
-            git push origin "HEAD:refs/heads/${GITHUB_REF_NAME}"
-          fi
+          # The repository branch is concurrently updated by the full acceptance
+          # gate and design inventory. Never push QA evidence from this job: the
+          # atomic artifact and immutable workflow run belong to the source SHA.
+          cat docs/audit/AUNEA_INTERNAL_UI_SHARED_GATE.json >> "${GITHUB_STEP_SUMMARY}"
       - name: Test failures remain blockers
         if: steps.shared.outcome != 'success'
         run: cat aunea-ui-check.log && exit 1
@@ -53,6 +56,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: aunea-ui-shared-test-log
-          path: aunea-ui-check.log
+          path: |
+            aunea-ui-check.log
+            docs/audit/AUNEA_INTERNAL_UI_SHARED_GATE.json
           if-no-files-found: ignore
 # [AUNEA-CI-SHARED-UI-GATE-392] END
