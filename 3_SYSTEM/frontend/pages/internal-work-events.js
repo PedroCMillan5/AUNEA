@@ -160,7 +160,8 @@ function registerInternalWorkPages(){
     if(!button||state.activePage!=='tobe')return;
     event.preventDefault();
     const section=document.getElementById(button.dataset.tobeJump);
-    const details=section?.querySelector('details.tobe-subdetails');
+    // All 03.1–03.3 share a direct native disclosure: navigating opens the target.
+    const details=section?.querySelector(':scope > details');
     if(details)details.open=true;
     section?.scrollIntoView({behavior:'smooth',block:'start'});
   },true);
