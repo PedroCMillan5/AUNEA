@@ -3933,15 +3933,6 @@ details.tobe-ai-operational-context:not([open])>.tobe-ai-operational-body{
   border-radius:var(--radius-md);
   background:#fff;
 }
-.tobe-design-header{
-  display:flex;align-items:flex-start;justify-content:space-between;
-  flex-wrap:wrap;gap:10px 18px;padding-bottom:12px;
-  border-bottom:1px solid var(--system-line);
-}
-.tobe-design-header h3{margin:0;font-size:var(--font-h4);line-height:1.4;color:var(--system)}
-.tobe-design-header .tobe-design-lede{
-  margin:5px 0 0;font-size:var(--font-small);line-height:1.55;color:var(--muted);
-}
 .tobe-design-status{
   flex-shrink:0;font-size:var(--font-small);font-weight:650;color:var(--system);
   border:1px solid var(--system-line);padding:5px 10px;border-radius:var(--radius-pill);
@@ -3966,18 +3957,6 @@ details.tobe-ai-operational-context:not([open])>.tobe-ai-operational-body{
   background:#fff;border:1px solid var(--system-line);
   border-radius:var(--radius-sm);
 }
-.tobe-design-group-head{
-  display:flex;align-items:flex-start;gap:12px;padding:13px 15px;
-  background:var(--system-soft);border-bottom:1px solid var(--system-line);
-}
-.tobe-design-group-number{
-  display:inline-flex;align-items:center;justify-content:center;
-  flex-shrink:0;min-width:31px;height:31px;
-  border:1px solid var(--system-line);border-radius:var(--radius-sm);
-  background:#fff;font-size:var(--font-small);font-weight:700;color:var(--system);
-}
-.tobe-design-group-head h4{margin:0;color:var(--system);font-size:var(--font-h4);line-height:1.35}
-.tobe-design-group-head p{margin:4px 0 0;color:var(--muted);font-size:var(--font-small);line-height:1.45}
 .tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign .form-grid.tobe-design-fields{
   display:grid;grid-template-columns:minmax(0,1fr);gap:0;
   min-width:0;padding:0;margin:0;align-items:stretch;
@@ -4075,8 +4054,6 @@ details.tobe-ai-operational-context:not([open])>.tobe-ai-operational-body{
   .tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign.tobe-design-workspace{
     padding:12px;gap:11px;
   }
-  .tobe-design-header{flex-direction:column;gap:9px}
-  .tobe-design-group-head{padding:11px 12px}
   .tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign .tobe-guided-field-actions{
     justify-content:stretch;
   }
@@ -4489,19 +4466,6 @@ details.tobe-ai-operational-context:not([open])>.tobe-ai-operational-body{
   margin:0;
   background:transparent;
 }
-.tobe-workspace[data-tobe-mode="guided"] #tobeStepAdvice .tobe-stage-body{
-  
-  gap:12px;
-  padding:0;
-  min-width:0;
-}
-.tobe-workspace[data-tobe-mode="guided"] #tobeStepAdvice .tobe-stage-body>p{
-  margin:0!important;
-  line-height:var(--pg11-visual-line);
-}
-.tobe-workspace[data-tobe-mode="guided"] #tobeStepAdvice .tobe-stage-body .tobe-review-guidance{
-  margin:0;
-}
 .tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign.tobe-design-workspace{
   padding:0;
   display:block;
@@ -4514,23 +4478,7 @@ details.tobe-ai-operational-context:not([open])>.tobe-ai-operational-body{
 }
 .tobe-workspace[data-tobe-mode="guided"] .tobe-inspector #tobeStepOrigin>.tobe-subdetails>summary,
 .tobe-workspace[data-tobe-mode="guided"] .tobe-inspector #tobeStepAdvice>.tobe-subdetails>summary,
-.tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign>.tobe-design-header{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  flex-wrap:wrap;
-  gap:10px 14px;
-  padding:14px 16px;
-  margin:0;
-  min-height:53px;
-  background:var(--system-soft);
-  border-bottom:1px solid var(--system-line);
-  box-sizing:border-box;
-}
-.tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign>.tobe-design-header{
-  padding-left:35px;
-}
-.tobe-workspace[data-tobe-mode="guided"] .tobe-inspector #tobeStepOrigin>.tobe-subdetails>summary,
+.tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign>.tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign>.tobe-workspace[data-tobe-mode="guided"] .tobe-inspector #tobeStepOrigin>.tobe-subdetails>summary,
 .tobe-workspace[data-tobe-mode="guided"] .tobe-inspector #tobeStepAdvice>.tobe-subdetails>summary{
   list-style:none;
   justify-content:flex-start;
@@ -4570,7 +4518,6 @@ details.tobe-ai-operational-context:not([open])>.tobe-ai-operational-body{
   #tobeStepOrigin .tobe-origin-fact-group h4,
   #tobeStepOrigin .tobe-origin-issues h4,
   #tobeStepAdvice h4,
-  #tobeStepDesign .tobe-design-group-head h4,
   #tobeStepDesign .tobe-decision-context h4
 ){
   font-family:Sora,"Segoe UI",Arial,sans-serif;
@@ -4581,7 +4528,6 @@ details.tobe-ai-operational-context:not([open])>.tobe-ai-operational-body{
 }
 .tobe-workspace[data-tobe-mode="guided"] .tobe-inspector :is(
   #tobeStepOrigin .tobe-original-facts,
-  #tobeStepAdvice .tobe-stage-body,
   #tobeStepDesign .tobe-design-lede,
   #tobeStepDesign .tobe-alternatives,
   #tobeStepDesign .tobe-design-fields
@@ -4668,16 +4614,9 @@ details.tobe-ai-operational-context:not([open])>.tobe-ai-operational-body{
   font-weight:var(--pg11-visual-weight);
 }
 @media(max-width:760px){
-  .tobe-workspace[data-tobe-mode="guided"] #tobeStepAdvice .tobe-stage-body{padding:0}
-  .tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign.tobe-design-workspace>:not(.tobe-design-header){
-    margin-left:12px;margin-right:12px;
-  }
-  .tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign.tobe-design-workspace>:last-child{margin-bottom:12px}
   .tobe-workspace[data-tobe-mode="guided"] .tobe-inspector #tobeStepOrigin>.tobe-subdetails>summary,
   .tobe-workspace[data-tobe-mode="guided"] .tobe-inspector #tobeStepAdvice>.tobe-subdetails>summary,
-  .tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign>.tobe-design-header{padding:12px;min-height:48px}
-  .tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign>.tobe-design-header{padding-left:31px}
-}
+  .tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign>.tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign>}
 /* [AUNEA-FE-PG11-VISUAL-CONTRACT-363] END */
 
 /* [AUNEA-FE-PG11-OPPORTUNITY-VIEW-366] START
@@ -4686,11 +4625,6 @@ details.tobe-ai-operational-context:not([open])>.tobe-ai-operational-body{
    No business persistence, hidden decision owners or duplicated inputs. */
 .tobe-workspace[data-tobe-mode="guided"] #tobeStepOrigin>.tobe-subdetails>summary .tobe-origin-header-status{
   margin-left:auto;
-}
-.tobe-workspace[data-tobe-mode="guided"] #tobeStepAdvice .tobe-stage-body{
-  display:grid;
-  grid-template-columns:minmax(0,1fr);
-  gap:14px;
 }
 .tobe-workspace[data-tobe-mode="guided"] #tobeStepAdvice .tobe-stage-intro,
 .tobe-workspace[data-tobe-mode="guided"] #tobeStepAdvice .tobe-alternatives-intro p{
