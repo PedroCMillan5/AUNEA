@@ -370,14 +370,32 @@ function tobeAlternativeChangesHtml(e,preview){
     }
     return 'Estructura del proceso';
   };
+  // A structural delta only reports the addedSteps collection. Expand actual
+  // new control attributes into readable rows so consultant-edited details
+  // are visible before the explicit versioned confirmation (DEC-075).
+  const rows=changes.flatMap(change=>{
+    const entries=[{label:title(change.path),before:change.before,after:change.after,path:change.path}];
+    if(change.path[0]==='flow'&&change.path[1]==='addedSteps'&&Array.isArray(change.after)){
+      const existing=new Set((Array.isArray(change.before)?change.before:[]).map(x=>String(x.id)));
+      for(const added of change.after.filter(x=>!existing.has(String(x.id)))){
+        for(const key of ['stepName','problemResolved','controlsRisk']){
+          const value=added[key];
+          if(value===undefined||value===null||!String(value).trim())continue;
+          entries.push({label:(names[key]||'Nombre de actividad futura')+' · '+String(added.stepName||added.id),
+            before:'',after:value,path:['flow','addedSteps',String(added.id),key]});
+        }
+      }
+    }
+    return entries;
+  });
   return '<section class="tobe-preview-comparison" aria-label="Comparación antes y después">'+
     '<h3>Qué cambiaría si confirmas esta intervención</h3>'+
     (changes.length?
       '<div class="tobe-preview-table-scroll"><table><thead><tr><th>Elemento</th>'+
         '<th>TO-BE guardado</th><th>TO-BE propuesto</th></tr></thead><tbody>'+
-      changes.map(change=>'<tr><th scope="row">'+esc(title(change.path))+'</th>'+
-        '<td>'+esc(print(change.before,change.path))+'</td>'+
-        '<td>'+esc(print(change.after,change.path))+'</td></tr>').join('')+
+      rows.map(row=>'<tr><th scope="row">'+esc(row.label)+'</th>'+
+        '<td>'+esc(print(row.before,row.path))+'</td>'+
+        '<td>'+esc(print(row.after,row.path))+'</td></tr>').join('')+
       '</tbody></table></div>':
       '<p class="tobe-muted">No hay diferencias materiales con el TO-BE guardado. '+
         'Confirmar únicamente registrará que se conserva esta configuración.</p>')+
