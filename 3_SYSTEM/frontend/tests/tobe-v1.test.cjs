@@ -52,3 +52,35 @@ test('PG11 common implementation questions reuse one pure projection',()=>{
   assert.deepEqual(asArray(functions.all([itemA])),[],
     'A single proposal cannot contain a repeated question across opportunities');
 });
+
+test('PG11 successor version cannot mutate nested data of the reviewed historical version',()=>{
+  const vm=require('node:vm');
+  const page=fs.readFileSync(path.join(root,'pages/tobe.js'),'utf8');
+  const start=page.indexOf('function createNextTobeVersion(e){');
+  const end=page.indexOf('// [AUNEA-FE-PG11-CONTEXT-289]',start);
+  assert.ok(start>=0&&end>start,'Successor function must be present');
+  const old={version:1,status:'REVIEWED',sourceSnapshotVersion:2,
+    items:[{id:'TOBE-1-1',sourceStepId:'S1',
+      inputs:['documento'],_details:{inputs:'original'},review:{checks:['a']}}]};
+  const engagement={tobeProposals:[old]};
+  const context={
+    latestTobe:e=>e.tobeProposals.at(-1),
+    confirmedSnapshot:()=>({version:2}),
+    tobeHistory:e=>e.tobeProposals,
+    tobeFlowOwner:()=>({routes:{S1:{normal:'__END__'}},positions:{S1:{x:10}}}),
+    now:()=> '2026-11-16',markDirty:()=>{},
+    __auneaTobeSelection:null
+  };
+  const create=vm.runInNewContext(
+    page.slice(start,end)+';createNextTobeVersion',context);
+  assert.equal(create(engagement),true);
+  const next=engagement.tobeProposals[1];
+  next.items[0].inputs.push('nuevo');
+  next.items[0]._details.inputs='actualizado';
+  next.items[0].review.checks.push('b');
+  next.flow.routes.S1.normal='S2';
+  assert.deepEqual(old.items[0].inputs,['documento']);
+  assert.equal(old.items[0]._details.inputs,'original');
+  assert.deepEqual(old.items[0].review.checks,['a']);
+  assert.equal(old.items[0].id,'TOBE-1-1');
+});
