@@ -107,6 +107,22 @@ for(const name of ['invoice','logistics'])test('PG11 source → backend rules �
  assert.equal(p.items[0].controlsRisk,'Cambio manual posterior');
  const stale=preview(result.candidates[0]);p.items[3].tool='Otro';
  assert.throws(()=>ctx.tobeCommitAlternative(e,stale),/borrador TO-BE cambió/);
+ p.sourceSnapshotVersion='1';
+ assert.equal(ctx.tobeProposalSnapshot(e,p),snapshot);
+ let sourceStatus=ctx.tobeAsisCompatibility(e,p);
+ assert.equal(sourceStatus.compatible,true,'numeric/string source version compatible');
+ const same={...JSON.parse(JSON.stringify(snapshot)),version:2,
+   sealedAt:'later seal',asIsConfirmedAt:'later closure'};
+ e.confirmedSnapshots.push(same);
+ ctx.confirmedSnapshot=()=>e.confirmedSnapshots.at(-1);
+ sourceStatus=ctx.tobeAsisCompatibility(e,p);
+ assert.equal(sourceStatus.compatible,true,'equivalent PG09 confirmation stays usable');
+ assert.equal(sourceStatus.equivalent,true);
+ e.confirmedSnapshots[e.confirmedSnapshots.length-1]={...same,
+   processSteps:same.processSteps.map((step,i)=>i?step:{...step,step_name:'Actividad AS-IS modificada'})};
+ sourceStatus=ctx.tobeAsisCompatibility(e,p);
+ assert.equal(sourceStatus.compatible,false,'real AS-IS change must block');
+ assert.match(sourceStatus.message,/v1.*v2.*cambios reales/);
  assert.equal(JSON.stringify(snapshot),immutable,'confirmed AS-IS is immutable throughout');
 });
 // [AUNEA-UAT-PG11-TRANSACTION-338] END
