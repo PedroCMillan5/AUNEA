@@ -905,7 +905,7 @@ function tobeInspectorHtml(e,p){
         status:editable?'Borrador editable':'Solo lectura',statusClass:'tobe-design-status',
         open:designOpen})+
       '<div class="aunea-ui-disclosure__content">'+
-      (p.sourceReconciliation?.reviewStepIds?.includes(tobeFlowItemId(item))?
+      (p.sourceReconciliation?.reviewStepIds?.includes(tobeFlowItemId(item))&&!item.transformation?
         '<p class="notice warn" role="status">AS-IS actualizado: revisa estos campos y vuelve a elegir «Qué cambia» para confirmar el diseño futuro.</p>':'')+
       '<p class="tobe-design-lede" data-tobe-transformation-message="1" role="status" aria-live="polite">'+
         'Aquí decides el diseño: conserva, modifica o aplica valores mediante vista previa. '+
@@ -1253,6 +1253,13 @@ function tobePage(){
     ' · Origen AS-IS v'+esc(p.sourceSnapshotVersion)+'. Las decisiones pertenecen al consultor.',actions)+
     '<main class="tobe-workspace" data-tobe-version="'+p.version+
     '" data-tobe-mode="'+attr(__auneaTobeMode)+'">'+
+      (p.sourceReconciliation?
+        '<p class="notice info" role="status">Borrador conciliado: AS-IS v'+esc(p.sourceReconciliation.fromAsis)+
+        ' → v'+esc(p.sourceReconciliation.toAsis)+
+        '. '+esc(p.sourceReconciliation.retainedStepIds.length)+' actividades reutilizadas, '+
+        esc(p.sourceReconciliation.reviewStepIds.filter(id=>{
+          const step=tobeFlowItem(e,p,id);return step&&!step.transformation;
+        }).length)+' decisiones pendientes de revisar. La versión anterior se conserva.</p>':'')+
       '<section class="tobe-task-guide" aria-label="Qué hacer en Diseño TO-BE">'+
         '<div class="tobe-task-guide-intro"><div><h2>Diseñar el proceso futuro</h2>'+
           '<p>Revisa las oportunidades y configura cada actividad. Las reglas y la IA proponen; '+
