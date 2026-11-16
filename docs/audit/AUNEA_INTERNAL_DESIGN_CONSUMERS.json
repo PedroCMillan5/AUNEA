@@ -8,7 +8,7 @@
   ],
   "metrics": {
     "modules": 50,
-    "cssClasses": 1096,
+    "cssClasses": 1097,
     "classesCrossFile": 107,
     "repeatedSelectorContextGroups": 138,
     "documentedComponents": 20,
@@ -1953,7 +1953,7 @@
       "path": "domain/tobe-transactions.js",
       "layer": "domain",
       "blockId": "AUNEA-FE-PG11-TRANSACTION-332",
-      "lines": 612,
+      "lines": 663,
       "family": [
         "Trabajo interno / PG11"
       ],
@@ -1995,6 +1995,7 @@
         "tobe-opportunity-option-title",
         "tobe-opportunity-options",
         "tobe-opportunity-outcome",
+        "tobe-preview-action-feedback",
         "tobe-preview-actions",
         "tobe-preview-comparison",
         "tobe-preview-conditions",
@@ -2905,7 +2906,7 @@
       "path": "pages/internal-work-events.js",
       "layer": "pages",
       "blockId": "AUNEA-FE-INTERNAL-WORK-EVENTS-381",
-      "lines": 737,
+      "lines": 744,
       "family": [
         "Trabajo interno / PG11"
       ],
@@ -13763,7 +13764,7 @@
       "ownerFiles": [
         "ui-system.css"
       ],
-      "ruleOccurrences": 67,
+      "ruleOccurrences": 71,
       "runtimeConsumers": [],
       "frozenRisk": false,
       "classification": "REVIEW_DYNAMIC_OR_HTML"
@@ -15747,6 +15748,18 @@
       "ruleOccurrences": 11,
       "runtimeConsumers": [
         "pages/tobe-review.js"
+      ],
+      "frozenRisk": false,
+      "classification": "REFERENCED"
+    },
+    {
+      "className": "tobe-preview-action-feedback",
+      "ownerFiles": [
+        "ui-system.css"
+      ],
+      "ruleOccurrences": 3,
+      "runtimeConsumers": [
+        "domain/tobe-transactions.js"
       ],
       "frozenRisk": false,
       "classification": "REFERENCED"
