@@ -394,7 +394,7 @@ function tobeOptimizationPanelHtml(e,p,item){
       '</details>'+
       (tobeEditable(p)?'<button type="button" class="btn btn-outline" data-tobe-recheck-optimization="1">'+
         'Guardar y actualizar comprobaciones</button>':'')+
-    '</div></section>';
+    '</div></details>';
 }
 // [AUNEA-FE-PG11-OPTIMIZATION-CHECK-313] END
 // [AUNEA-FE-PG11-FUTURE-FLOW-228] END
