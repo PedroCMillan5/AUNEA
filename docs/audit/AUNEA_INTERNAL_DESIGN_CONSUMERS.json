@@ -4189,7 +4189,7 @@
       "ownerFiles": [
         "styles.css"
       ],
-      "ruleOccurrences": 2,
+      "ruleOccurrences": 3,
       "runtimeConsumers": [
         "ui/renderer.js"
       ],
@@ -4201,7 +4201,7 @@
       "ownerFiles": [
         "styles.css"
       ],
-      "ruleOccurrences": 8,
+      "ruleOccurrences": 9,
       "runtimeConsumers": [
         "ui/renderer.js"
       ],
@@ -4235,7 +4235,7 @@
       "ownerFiles": [
         "styles.css"
       ],
-      "ruleOccurrences": 2,
+      "ruleOccurrences": 3,
       "runtimeConsumers": [],
       "frozenRisk": false,
       "classification": "REVIEW_DYNAMIC_OR_HTML"
