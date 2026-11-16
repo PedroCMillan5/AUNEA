@@ -58,3 +58,18 @@ El cierre no implica que cualquier fricción tenga una alternativa automática: 
 **CIERRE TÉCNICO del comportamiento DRAFT, lectura, generación por reglas, previsualización, edición, confirmación, persistencia y reversión de 03.2–03.3: ACREDITADO.**
 
 **NO ACREDITADO:** aceptación visual final del propietario, inferencia Ollama real en el último commit, completitud funcional global de PG11/PG12–PG15 o E2E total del producto. Mantener la rama en REVIEW y no declarar toda AUNEA Internal lista para producción por aprobar este lote. El trabajo realizado no cambia cuestionario, precios, engine de negocio ni nuevas reglas canónicas. DECISIONES y ROADMAP sólo se sincronizan si una decisión o fase de producto real cambia.
+
+## 6. Reapertura por fallo real del botón «Confirmar intervención» · 16/11/2026
+
+**Incidencia reportada:** el usuario ve la previsualización pero pulsa «Confirmar intervención» y no observa ningún efecto. La inspección del código demostró que el botón se renderizaba con el atributo HTML `disabled` mientras había condiciones o bloqueos pendientes, y que la causa se mostraba solamente en un bloque alejado del botón dentro de un diálogo largo. Un botón HTML disabled no emite el clic: no podía explicar nada al usuario.
+
+**Corrección aplicada sin relajar DEC-075:**
+- `domain/tobe-transactions.js` registra un único helper `tobeAlternativeConfirmFeedback` (Block_ID `AUNEA-FE-PG11-CONFIRM-FEEDBACK-461`), convierte el CTA en control siempre pulsable, añade estado visible contiguo con `role="status"` y `aria-describedby` y un `data-tobe-confirm-ready` únicamente presentacional (no decide autorizaciones).
+- `pages/internal-work-events.js` intercepta el clic, valida `tobeAlternativeDecisionIssue` antes de guardar y explica el bloqueo. Desplaza/focaliza el checkbox de condiciones, el de hallazgos KEEP, el campo de justificación o el destino de ruta pendiente. El mismo contrato se vuelve a validar en `tobeCommitAlternative`; nada se guarda hasta tener la confirmación válida.
+- Si falla una edición de previsualización, su error deja la intervención no confirmable hasta resolverlo; si falla el guardado o cambió el borrador, la causa queda visible en el propio diálogo, no solo en un toast transitorio.
+- `ui-system.css` (Block_ID `AUNEA-FE-PG11-CONFIRM-FEEDBACK-462`) aplica exclusivamente el tratamiento visual del feedback contextual del diálogo. Los dos Block_ID están registrados en el índice.
+- Pruebas DOM, Playwright Chromium y Edge: pulsar sin reconocer condiciones **debe responder y no modificar el TO-BE**, marcar las condiciones **debe permitir confirmar**, confirmar **debe persistir**, recargar y deshacer deben funcionar. También se verifica la variante con justificación y reconocimiento del AS-IS mantenido.
+
+**QA de cierre de este defecto:** [Acceptance Gate 43866288499](https://github.com/PedroCMillan5/AUNEA/actions/runs/43866288499) **SUCCESS**, 960/960 frontend, 493 backend, Chromium PG11 invoice/logistics + DOM invoice/logistics PASS, 18/18 FROZEN intactas. [Windows Edge 43866288350](https://github.com/PedroCMillan5/AUNEA/actions/runs/43866288350) **SUCCESS**; [Frontend Tests 43866288410](https://github.com/PedroCMillan5/AUNEA/actions/runs/43866288410) **SUCCESS**. Commit funcional `0d67fa52bb4fef7d57fa57ae42bd85ef23eb4ead`.
+
+**Límite:** incidencia de confirmación explicable y comprobada en casos sintéticos. No confirma aceptación visual manual del cliente ni inferencia Ollama real ni E2E total del producto. Rama REVIEW; no main/PRODUCTION.
