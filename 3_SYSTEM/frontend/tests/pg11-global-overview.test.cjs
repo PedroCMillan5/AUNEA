@@ -5,6 +5,8 @@ const fs=require('node:fs');
 const path=require('node:path');
 const vm=require('node:vm');
 const src=require('./pg11-source.cjs')();
+const sharedUi=src.match(/\/\/ \[AUNEA-FE-GLOBAL-DISCLOSURE-450\] START[\s\S]*?\/\/ \[AUNEA-FE-GLOBAL-DISCLOSURE-450\] END/)?.[0];
+if(!sharedUi)throw Error('Missing production shared disclosure renderer');
 const ai=fs.readFileSync(path.join(__dirname,'../domain/internal-ai-pilot.js'),'utf8');
 const css=fs.readFileSync(path.join(__dirname,'../ui-system.css'),'utf8');
 const baseCss=fs.readFileSync(path.join(__dirname,'../styles.css'),'utf8');
@@ -47,7 +49,7 @@ function harness(result){
     tobeHumanReviewRecord:(_,p)=>p.aiDraft?.humanReview||null,
     internalAiGlobalWorking:()=>false,internalAiGlobalMessage:()=>null,
   };
-  vm.createContext(sandbox);vm.runInContext(block,sandbox);
+  vm.createContext(sandbox);vm.runInContext(sharedUi+'\n'+block,sandbox);
   return {html:()=>sandbox.tobeGlobalOverviewHtml(env.e,env.p),env};
 }
 
@@ -118,7 +120,7 @@ test('section 01 shows only confirmed source facts and not later live edits',()=
     formatContextValue:(_,v)=>Array.isArray(v)?v.join(' · '):String(v),
     esc:x=>String(x??'').replaceAll('&','&amp;').replaceAll('<','&lt;'),
   };
-  vm.createContext(sandbox);vm.runInContext(contextBlock,sandbox);
+  vm.createContext(sandbox);vm.runInContext(sharedUi+'\n'+contextBlock,sandbox);
   const html=sandbox.tobeContextOverviewHtml({answers:{DF008:'Dato vivo modificado'},id:'E1'},
     {status:'DRAFT',sourceSnapshotVersion:3});
   assert.match(html,/Registro de facturas/);
@@ -143,7 +145,7 @@ test('section 01 renders missing client constraints as missing, never as fabrica
     formatContextValue:(_,v)=>String(v),
     esc:x=>String(x??''),
   };
-  vm.createContext(sandbox);vm.runInContext(contextBlock,sandbox);
+  vm.createContext(sandbox);vm.runInContext(sharedUi+'\n'+contextBlock,sandbox);
   const html=sandbox.tobeContextOverviewHtml({id:'E1'}, {status:'DRAFT',sourceSnapshotVersion:2});
   assert.match(html,/No consta/);
   assert.doesNotMatch(html,/Cliente autorizó|Sin restricciones declaradas/);
@@ -162,7 +164,7 @@ test('section 01 resolves DF016 from the sealed Contact snapshot without exposin
       firstName:'Nombre modificado',lastName:'Después del cierre'}),
     contactFullName:ct=>[ct.firstName,ct.lastName].filter(Boolean).join(' ')||ct.name||'',
     esc:x=>String(x??'')};
-  vm.createContext(sandbox);vm.runInContext(contextBlock,sandbox);
+  vm.createContext(sandbox);vm.runInContext(sharedUi+'\n'+contextBlock,sandbox);
   const original=JSON.stringify(snap);
   const html=sandbox.tobeContextOverviewHtml({companyId:'COMP-1'}, {status:'DRAFT',sourceSnapshotVersion:1});
   assert.match(html,/Laura Martínez · Responsable de Operaciones/);
@@ -181,7 +183,7 @@ test('section 01 resolves a valid company Contact not included in the sealed con
       {id,companyId:'COMP-1',firstName:'Mario',lastName:'Rojas',role:'Dirección Técnica'}:null},
     contactFullName:ct=>[ct.firstName,ct.lastName].filter(Boolean).join(' '),
     esc:x=>String(x??'')};
-  vm.createContext(sandbox);vm.runInContext(contextBlock,sandbox);
+  vm.createContext(sandbox);vm.runInContext(sharedUi+'\n'+contextBlock,sandbox);
   const html=sandbox.tobeContextOverviewHtml({companyId:'COMP-1'},{status:'DRAFT',sourceSnapshotVersion:1});
   assert.match(html,/Mario Rojas · Dirección Técnica/);
   assert.doesNotMatch(html,/CON-22/);
@@ -198,7 +200,7 @@ test('section 01 preserves OTHER role and rejects missing or cross-company Conta
     contactById:()=>({id:'CON-99',companyId:'COMP-2',firstName:'Persona',lastName:'Ajena'}),
     contactFullName:ct=>[ct.firstName,ct.lastName].filter(Boolean).join(' '),
     esc:x=>String(x??'')};
-  vm.createContext(sandbox);vm.runInContext(contextBlock,sandbox);
+  vm.createContext(sandbox);vm.runInContext(sharedUi+'\n'+contextBlock,sandbox);
   const render=()=>sandbox.tobeContextOverviewHtml({companyId:'COMP-1'},{status:'DRAFT',sourceSnapshotVersion:1});
   assert.match(render(),/Responsable de Administración/);
   assert.doesNotMatch(render(),/OTHER/);
@@ -560,7 +562,7 @@ test('a second source failure preserves the first new recommendation as an expli
    internalAiGlobalWorking:()=>false,
    internalAiGlobalMessage:()=>env.internalAiGlobalMessage(e),
    esc:String};
- vm.createContext(view);vm.runInContext(block,view);
+ vm.createContext(view);vm.runInContext(sharedUi+'\n'+block,view);
  const html=view.tobeGlobalOverviewHtml(e,p);
  assert.match(html,/Reducir duplicidad de captura/);
  assert.match(html,/Análisis parcial/);
@@ -648,7 +650,7 @@ test('API preflight hides old cards without deleting saved work when the backend
    tobeProposalSourceSteps:()=>[],tobeProposalSnapshot:()=>({frictions:[],risks:[]}),
    tobeEditable:()=>true,internalAiGlobalWorking:()=>ctx.internalAiGlobalWorking(e),
    internalAiGlobalMessage:()=>ctx.internalAiGlobalMessage(e),esc:String};
- vm.createContext(view);vm.runInContext(block,view);
+ vm.createContext(view);vm.runInContext(sharedUi+'\n'+block,view);
  const during=view.tobeGlobalOverviewHtml(e,p);
  assert.match(during,/Comprobando que el backend admite el análisis por bloques/);
  assert.doesNotMatch(during,/TEXTO ANTIGUO|Antigua recomendación|Antigua acción/);
@@ -789,7 +791,7 @@ test('PG11 displays canonical client conditions without internal value codes',()
    tobeProposalSnapshot:()=>snapshot,tobeProposalSourceSteps:()=>[],
    tobeEditable:()=>true,internalAiGlobalWorking:()=>false,
    internalAiGlobalMessage:()=>null,esc:x=>String(x??''),attr:x=>String(x??'')};
- vm.createContext(ctx);vm.runInContext(block,ctx);
+ vm.createContext(ctx);vm.runInContext(sharedUi+'\n'+block,ctx);
  const original=JSON.stringify(recommendation);
  const html=ctx.tobeGlobalOverviewHtml(e,p);
  const conditions=html.match(/<summary>Condiciones del cliente confirmadas en el AS-IS[^]*?<\/details>/)?.[0]||'';
@@ -805,7 +807,7 @@ test('PG11 displays canonical client conditions without internal value codes',()
 });
 
 test('PG11 does not invent confirmed client conditions for an absent snapshot',()=>{
- const ctx={};vm.createContext(ctx);vm.runInContext(block,ctx);
+ const ctx={};vm.createContext(ctx);vm.runInContext(sharedUi+'\n'+block,ctx);
  const value=ctx.tobeGlobalHumanConditions({answers:{}},{declared_conditions:[]});
  assert.equal(value.length,0);
 });
@@ -846,7 +848,7 @@ test('PG11 compact cards retain all original details and direct activity navigat
 });
 
 test('PG11 shared checks are displayed only once for related interventions',()=>{
- const ctx={};vm.createContext(ctx);vm.runInContext(block,ctx);
+ const ctx={};vm.createContext(ctx);vm.runInContext(sharedUi+'\n'+block,ctx);
  const common='Comprobar que se mantienen los permisos declarados.';
  const distinct='Validar si el paso añade tiempo manual adicional.';
  const group={entries:[
@@ -1022,7 +1024,7 @@ test('confirmed AS-IS friction and risk links become read-only context only in t
     tobeProposalSourceSteps:()=>snapshot.processSteps||[],
     esc:x=>String(x??'').replaceAll('&','&amp;').replaceAll('<','&lt;'),
   };
-  vm.createContext(sandbox);vm.runInContext(block,sandbox);
+  vm.createContext(sandbox);vm.runInContext(sharedUi+'\n'+block,sandbox);
   const one=sandbox.tobeGlobalLinkedStepHtml(h.env.e,h.env.p,block1);
   const two=sandbox.tobeGlobalLinkedStepHtml(h.env.e,h.env.p,block2);
   assert.match(one,/Reducir doble captura/);

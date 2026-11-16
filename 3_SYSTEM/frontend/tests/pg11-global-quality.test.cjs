@@ -39,6 +39,8 @@ test('no quota or merge of different review statuses',()=>{
 });
  test('canonical PG11 groups five saved cards into four lines preserving sources',()=>{
  const src=require('./pg11-source.cjs')();
+const sharedUi=src.match(/\/\/ \[AUNEA-FE-GLOBAL-DISCLOSURE-450\] START[\s\S]*?\/\/ \[AUNEA-FE-GLOBAL-DISCLOSURE-450\] END/)?.[0];
+if(!sharedUi)throw Error('Missing production shared disclosure renderer');
  const view=src.match(/\/\/ \[AUNEA-FE-PG11-GLOBAL-OVERVIEW-284\] START[\s\S]*?\/\/ \[AUNEA-FE-PG11-GLOBAL-OVERVIEW-284\] END/)?.[0];
  assert.ok(view,'missing canonical PG11 view');
  const items=[
@@ -61,7 +63,7 @@ test('no quota or merge of different review statuses',()=>{
    esc:x=>String(x||'').replaceAll('&','&amp;').replaceAll('<','&lt;'),
    attr:x=>String(x||'').replaceAll('"','&quot;'),
    tobeHumanReviewRecord:()=>null};
- vm.createContext(ctx);vm.runInContext(code,ctx);vm.runInContext(view,ctx);
+ vm.createContext(ctx);vm.runInContext(code,ctx);vm.runInContext(sharedUi+'\n'+view,ctx);
  const before=JSON.stringify(p.aiGlobal.result.opportunities);
  const html=ctx.tobeGlobalOverviewHtml(e,p);
  assert.equal((html.match(/class="tobe-global-opportunity"/g)||[]).length,4);

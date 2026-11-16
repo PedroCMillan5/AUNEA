@@ -100,7 +100,7 @@ test('PG01 shares headings and form surfaces without local appearance overrides'
 test('PG11 work surfaces and stages reuse the same opt-in structural primitives',()=>{
   assert.match(shared,/\.aunea-ui-work-surface\{[^}]*display:grid;[^}]*padding:20px 22px;/);
   assert.match(shared,/\.aunea-ui-work-stage\{[^}]*display:grid;gap:12px;min-width:0/);
-  for(const name of ['tobe-context','tobe-global-analysis','tobe-review-section-head'])
+  for(const name of ['tobe-context','tobe-global-analysis','tobe-review-workbench'])
     assert.ok(pg11.includes(name+' aunea-ui-work-surface'),'Missing shared work surface: '+name);
   for(const name of ['tobe-origin','tobe-advice','tobe-edit'])
     assert.ok(new RegExp('class="'+name+'[^"\\n]*aunea-ui-work-stage').test(pg11),'Missing shared stage: '+name);
@@ -284,7 +284,7 @@ test('PG12 and Projects share the semantic empty-state renderer with unchanged H
 test('PG11 captions inherit common typography and retain only scoped margins',()=>{
   const pg11=load('pages/tobe.js');
   assert.match(pg11,/tobe-context-head[\s\S]*?aunea-ui-section-caption/);
-  assert.match(pg11,/tobe-review-section-head aunea-ui-work-surface[\s\S]*?aunea-ui-section-caption/);
+  assert.match(pg11,/tobe-review-workbench aunea-ui-work-surface[\s\S]*?tobe-review-section-head[\s\S]*?aunea-ui-section-caption/);
   assert.match(base,/\.aunea-ui-section-caption\{[\s\S]*?font-size:var\(--font-small\);/);
   assert.match(local,/\.tobe-context-head \.aunea-ui-section-caption\{margin:0\}/);
   assert.match(local,/\.tobe-review-section-head p\{margin:0\}/);
