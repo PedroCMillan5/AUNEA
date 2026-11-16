@@ -905,6 +905,8 @@ function tobeInspectorHtml(e,p){
         status:editable?'Borrador editable':'Solo lectura',statusClass:'tobe-design-status',
         open:designOpen})+
       '<div class="aunea-ui-disclosure__content">'+
+      (p.sourceReconciliation?.reviewStepIds?.includes(tobeFlowItemId(item))?
+        '<p class="notice warn" role="status">AS-IS actualizado: revisa estos campos y vuelve a elegir «Qué cambia» para confirmar el diseño futuro.</p>':'')+
       '<p class="tobe-design-lede" data-tobe-transformation-message="1" role="status" aria-live="polite">'+
         'Aquí decides el diseño: conserva, modifica o aplica valores mediante vista previa. '+
         'No es necesario aceptar una recomendación completa antes. Nada se importa automáticamente.</p>'+
@@ -989,6 +991,76 @@ function tobeInspectorHtml(e,p){
       tobeFlowInspector(e,p,item)+
     (item.isAddition&&editable?'<button type="button" class="btn btn-outline" data-tobe-discard-added="'+attr(item.id)+'">Descartar actividad añadida</button>':'');
 }
+// [AUNEA-FE-PG11-SOURCE-RECONCILE-466] START
+// SOURCE: PG11 CANONICAL, DEC-050/055/075. Preserve AS-IS and prior DRAFT;
+// migrate matched activities only, require renewed human choice for changed steps.
+function tobeReconcileSource(e){
+  const old=latestTobe(e),from=old&&tobeProposalSnapshot(e,old),to=confirmedSnapshot(e);
+  if(!old||!from||!to)throw Error('El AS-IS anterior o el borrador no está disponible.');
+  if(tobeAsisCompatibility(e,old).compatible)throw Error('El origen ya es compatible.');
+  const oldSteps=new Map((from.processSteps||[]).filter(x=>x.status!=='SUPERSEDED')
+    .map(x=>[String(x.id),x]));
+  const current=(to.processSteps||[]).filter(x=>x.status!=='SUPERSEDED');
+  const ids=new Set(current.map(x=>String(x.id)));
+  const unchanged=new Set(current.filter(x=>oldSteps.has(String(x.id))&&
+    tobeSnapshotContentSignature({processSteps:[x]})===
+    tobeSnapshotContentSignature({processSteps:[oldSteps.get(String(x.id))]}))
+    .map(x=>String(x.id)));
+  const oldItems=new Map((old.items||[]).map(x=>[String(x.sourceStepId),x]));
+  const oldFlow=tobeFlowOwner(e,old),oldAdded=tobeAddedSteps(old);
+  const h=tobeHistory(e),count=h.length,draft=createTobeDraft(e);
+  if(!draft)throw Error('No se ha podido crear la nueva versión.');
+  try{
+    const review=new Set(),kept=[];
+    draft.items=draft.items.map(item=>{
+      const id=String(item.sourceStepId),prior=oldItems.get(id);
+      if(!prior){review.add(id);return item;}
+      kept.push(id);
+      const cloned={...JSON.parse(JSON.stringify(prior)),id:item.id,
+        sourceStepId:item.sourceStepId,sourceStepName:item.sourceStepName};
+      if(!unchanged.has(id)){cloned.transformation='';review.add(id);}
+      return cloned;
+    });
+    const aliases=new Map(),flow=draft.flow;
+    oldAdded.forEach((x,i)=>{
+      if(!ids.has(String(x.sourceStepId)))return;
+      const id='TOBE-ADD-'+draft.version+'-M'+(i+1);
+      aliases.set(String(x.id),id);
+      const added={...JSON.parse(JSON.stringify(x)),id};
+      if(!unchanged.has(String(x.sourceStepId))){added.transformation='';review.add(id);}
+      flow.addedSteps.push(added);
+    });
+    const allowed=new Set([...ids,...flow.addedSteps.map(x=>String(x.id))]);
+    const convert=x=>aliases.get(String(x))||String(x||'__PENDING__');
+    const dest=x=>{const id=convert(x);return allowed.has(id)||id==='__END__'?id:'__PENDING__';};
+    for(const [key,route] of Object.entries(oldFlow.routes||{})){
+      const added=oldAdded.find(x=>String(x.id)===key),sourceId=String(added?.sourceStepId||key),
+        mapped=convert(key);
+      if(!allowed.has(mapped)||!unchanged.has(sourceId))continue;
+      flow.routes[mapped]={normal:dest(route.normal),exception:route.exception?dest(route.exception):''};
+      if(Object.values(flow.routes[mapped]).includes('__PENDING__'))review.add(mapped);
+    }
+    if(allowed.has(convert(oldFlow.startStepId)))flow.startStepId=convert(oldFlow.startStepId);
+    for(const [key,value] of Object.entries(oldFlow.decisionCriteria||{})){
+      const added=oldAdded.find(x=>String(x.id)===key),id=convert(key);
+      if(allowed.has(id)&&unchanged.has(String(added?.sourceStepId||key)))
+        flow.decisionCriteria[id]=value;
+    }
+    for(const [key,value] of Object.entries(oldFlow.positions||{})){
+      const id=convert(key);if(allowed.has(id))flow.positions[id]=JSON.parse(JSON.stringify(value));
+    }
+    draft.sourceReconciliation={fromVersion:old.version,fromAsis:from.version,toAsis:to.version,
+      reviewStepIds:[...review],retainedStepIds:kept,
+      omittedOriginals:(old.items||[]).filter(x=>!ids.has(String(x.sourceStepId)))
+        .map(x=>String(x.sourceStepId)),
+      omittedAdditions:oldAdded.filter(x=>!ids.has(String(x.sourceStepId)))
+        .map(x=>String(x.id))};
+    markDirty('Conciliación AS-IS v'+from.version+' a v'+to.version+
+      ' con '+review.size+' revisiones pendientes');
+    return draft;
+  }catch(error){h.splice(count);throw error;}
+}
+// [AUNEA-FE-PG11-SOURCE-RECONCILE-466] END
 function createNextTobeVersion(e){
   const previous=latestTobe(e),snap=confirmedSnapshot(e);
   if(!previous||previous.status==='DRAFT'||!snap||previous.sourceSnapshotVersion!==snap.version)return false;
@@ -1128,6 +1200,16 @@ function tobePage(){
     section('Fuente confirmada','El diseño comienza como propuesta sin aprobar.',
       '<div class="notice info">AS-IS confirmado v'+esc(snap.version)+
       '. El diagnóstico oficial se reutiliza; no se vuelve a capturar.</div>');
+  const sourceStatus=tobeAsisCompatibility(e,p);
+  if(!sourceStatus.compatible)
+    return pageTop('Diseño TO-BE','AS-IS v'+esc(p.sourceSnapshotVersion)+' → v'+esc(snap.version),
+      '<button class="btn" data-page="resultados">Ver diagnóstico</button>')+
+      '<section class="aunea-ui-work-surface" aria-label="Conciliar AS-IS y TO-BE">'+
+      '<h2>Recuperar el diseño sin perder el borrador</h2>'+
+      '<p>El TO-BE v'+esc(p.version)+' se conserva. Las actividades compatibles se trasladarán a un nuevo borrador vinculado al AS-IS v'+esc(snap.version)+
+      '. Las que hayan cambiado requerirán que revises su transformación. No se aprueba nada automáticamente.</p>'+
+      '<button type="button" class="btn btn-primary" id="reconcileTobeSource">Conciliar AS-IS y continuar</button>'+
+      '<p class="field-help">El trabajo y las decisiones previas permanecerán en el historial.</p></section>';
   const editable=tobeEditable(p),statusLabel={DRAFT:'Borrador',REVIEWED:'Revisado',APPROVED_FOR_CLIENT:'Aprobado para cliente',PUBLISHED:'Publicado'}[p.status]||p.status;
   const previousAudit=typeof document!=='undefined'?document.getElementById('tobeAiWorkspace'):null,
     keepAuditOpen=!!previousAudit?.open&&
