@@ -70,6 +70,19 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,'.'+new 
     await detail.locator(':scope>summary').click();
     assert.equal(await detail.evaluate(el=>el.open),initial,'Inline disclosure must restore '+sel);
   }
+  // Both modes share one surface but never display their own separate work area at once.
+  assert.equal(await page.locator('.tobe-workspace').getAttribute('data-tobe-mode'),'guided');
+  assert.equal(await page.locator('.tobe-map-area').isVisible(),false,
+    'The map must not appear while reviewing activity in guided mode');
+  assert.equal(await page.locator('#tobeInspector').isVisible(),true);
+  await page.locator('.tobe-guided-modes [data-tobe-mode-switch="map"]').click();
+  assert.equal(await page.locator('.tobe-workspace').getAttribute('data-tobe-mode'),'map');
+  assert.equal(await page.locator('.tobe-map-area').isVisible(),true,
+    'Map mode must reveal the map inside the same shared section 03 surface');
+  await page.locator('.tobe-guided-modes [data-tobe-mode-switch="guided"]').click();
+  assert.equal(await page.locator('.tobe-workspace').getAttribute('data-tobe-mode'),'guided');
+  assert.equal(await page.locator('.tobe-map-area').isVisible(),false,
+    'Guided mode must hide map again after switching back');
   // PG11 visual contract: all three guided sections are one product hierarchy.
   const stageVisual=await page.evaluate(()=>{
     const names=['#tobeStepOrigin>details>summary','#tobeStepAdvice>details>summary',
