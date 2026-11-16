@@ -1018,20 +1018,7 @@ async function main(){
   assert.equal(await page.locator('#tobeStepDesign .tobe-design-transformation .tobe-ai-field-row').count(),2);
   assert.equal(await page.locator('#tobeStepDesign .tobe-design-operation .tobe-ai-field-row').count(),3);
   assert.equal(await page.locator('#tobeStepDesign .tobe-design-evidence').count(),1);
-  const timeCount=await page.locator('#tobeStepDesign .tobe-design-time').count();
-  if(timeCount!==1){
-    const structure=await page.evaluate(()=>{
-      const t=document.querySelector('.tobe-design-time'),root=document.getElementById('tobeStepDesign');
-      return {all:document.querySelectorAll('.tobe-design-time').length,
-        timeParent:t?.parentElement?.id,timeAncestor:t?.closest('#tobeStepDesign')?.id,
-        designCount:root?.querySelectorAll(':scope>.tobe-stage-disclosure').length,
-        siblings:[...document.querySelector('#tobeInspector')?.children||[]].slice(-10).map(x=>({tag:x.tagName,id:x.id,cls:String(x.className).slice(0,60)})),
-        rawTail:(()=>{const p=latestTobe(currentEng());return tobeInspectorHtml(currentEng(),p).slice(-3300)})(),
-        layout:root?.outerHTML?.slice(-1200)};
-    });
-    console.log('PG11_DISCOLSURE_STRUCTURE_DIAGNOSTIC '+JSON.stringify(structure));
-  }
-  assert.equal(timeCount,1);
+  assert.equal(await page.locator('#tobeStepDesign .tobe-design-time').count(),1);
   assert.ok(await page.locator('#tobeStepDesign [data-tobe-ai-edit-field]').count()>0,
     'Editar opens the sole existing TO-BE editor, without creating another field');
   assert.equal(await page.locator(
