@@ -41,6 +41,9 @@ module.exports=function pg11LegacySourceOracle(){
   // renderer. Include the production shared disclosure helper, not a test stub.
   const renderer=read('ui/renderer.js');
   for(const [name,pattern] of [
+    ['auneaUiDisclosureOpen',/function auneaUiDisclosureOpen\([\s\S]*?\n\}/],
+    ['auneaUiDisclosureStart',/function auneaUiDisclosureStart\([\s\S]*?\n\}/],
+    ['auneaUiDisclosureEnd',/function auneaUiDisclosureEnd\([\s\S]*?\n\}/],
     ['auneaWorkDisclosure',/function auneaWorkDisclosure\(kind,title,body\)\{[\s\S]*?\n\}/],
     ['auneaEmptyMessage',/function auneaEmptyMessage\(message\)\{[\s\S]*?\n\}/],
     ['auneaNoticeMessage',/function auneaNoticeMessage\(tone,message\)\{[\s\S]*?\n\}/]

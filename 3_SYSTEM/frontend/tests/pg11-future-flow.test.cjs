@@ -26,7 +26,11 @@ function harness(source){
    TOBE_TRANSFORMATIONS:['Se mantiene','Se modifica','Se elimina','Se automatiza',
      'Se asiste con IA','Requiere decisión humana','Se incorpora control']
  };
- vm.createContext(sandbox);vm.runInContext(block,sandbox);
+ vm.createContext(sandbox);
+ const renderer=fs.readFileSync(path.join(__dirname,'../ui/renderer.js'),'utf8');
+ const shared=renderer.match(/\/\/ \[AUNEA-FE-GLOBAL-DISCLOSURE-450\] START[\s\S]*?\/\/ \[AUNEA-FE-GLOBAL-DISCLOSURE-450\] END/)?.[0];
+ assert.ok(shared,'Shared disclosure owner must exist');
+ vm.runInContext(shared+'\n'+block,sandbox);
  const run=(name,...args)=>sandbox[name](e,p,...args);
  return {e,p,snapshot,run};
 }

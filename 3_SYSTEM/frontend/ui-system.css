@@ -4492,7 +4492,7 @@ details.tobe-ai-operational-context:not([open])>.tobe-ai-operational-body{
 .tobe-workspace[data-tobe-mode="guided"] #tobeStepAdvice .tobe-stage-body{
   
   gap:12px;
-  padding:16px;
+  padding:0;
   min-width:0;
 }
 .tobe-workspace[data-tobe-mode="guided"] #tobeStepAdvice .tobe-stage-body>p{
@@ -4668,7 +4668,7 @@ details.tobe-ai-operational-context:not([open])>.tobe-ai-operational-body{
   font-weight:var(--pg11-visual-weight);
 }
 @media(max-width:760px){
-  .tobe-workspace[data-tobe-mode="guided"] #tobeStepAdvice .tobe-stage-body{padding:12px}
+  .tobe-workspace[data-tobe-mode="guided"] #tobeStepAdvice .tobe-stage-body{padding:0}
   .tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign.tobe-design-workspace>:not(.tobe-design-header){
     margin-left:12px;margin-right:12px;
   }

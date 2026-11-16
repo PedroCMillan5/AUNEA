@@ -53,7 +53,7 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,'.'+new 
       return r?{left:r.left,right:r.right,top:r.top,height:r.height}:null;};
     const body=document.querySelector('#tobeStepAdvice .tobe-stage-body');
     return {advice:rect('#tobeStepAdvice'),design:rect('#tobeStepDesign'),
-      adviceHeader:rect('#tobeStepAdvice>.tobe-subdetails>summary'),
+      adviceHeader:rect('#tobeStepAdvice>.aunea-ui-disclosure>summary'),
       designHeader:rect('#tobeStepDesign>.tobe-stage-disclosure>summary'),
       designGroup:rect('#tobeDesignGroup01'),
       adviceContentLeft:body?body.getBoundingClientRect().left+

@@ -144,10 +144,10 @@ test('diagnostic work disclosures share the same structural owner',()=>{
 test('work disclosure builder preserves semantic markup and escapes its label',()=>{
   const vm=require('node:vm');
   const renderer=load('ui/renderer.js');
-  const source=renderer.match(/function auneaWorkDisclosure\(kind,title,body\)\{[\s\S]*?\n\}/)?.[0];
-  assert.ok(source,'Shared disclosure builder missing');
+  const shared=renderer.match(/\/\/ \[AUNEA-FE-GLOBAL-DISCLOSURE-450\] START[\s\S]*?\/\/ \[AUNEA-FE-GLOBAL-DISCLOSURE-450\] END/)?.[0];
+  assert.ok(shared,'Shared disclosure builder missing');
   const escapeHtml=v=>String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  const build=vm.runInNewContext('('+source+')',{attr:escapeHtml,esc:escapeHtml});
+  const build=vm.runInNewContext(shared+'\nauneaWorkDisclosure',{attr:escapeHtml,esc:escapeHtml});
   assert.equal(build('pg10-stage-nav','Etapas','<p>Contenido</p>'),
     '<details class="pg10-stage-nav aunea-ui-work-disclosure"><summary>Etapas</summary><p>Contenido</p></details>');
   assert.equal(build('pg10-stage-nav','<revisión>',''),
