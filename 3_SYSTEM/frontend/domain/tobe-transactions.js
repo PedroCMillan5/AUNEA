@@ -118,10 +118,11 @@ function tobeAlternativePreviewRevision(e,preview){
     throw Error('La vista previa pertenece a otro estudio. Cierra la ventana y abre la intervención en el estudio activo.');
   if(!p||p.version!==preview.version||!tobeEditable(p))
     throw Error('Se abrió otra versión del TO-BE o el borrador dejó de ser editable. No se aplicó la intervención.');
-  const snapshot=confirmedSnapshot(e);
-  if(!snapshot||snapshot.version!==p.sourceSnapshotVersion||
-     (preview.sourceSnapshotVersion!=null&&snapshot.version!==preview.sourceSnapshotVersion))
-    throw Error('Cambió la versión confirmada del AS-IS. Revisa el diagnóstico antes de volver a previsualizar.');
+  const source=tobeAsisCompatibility(e,p);
+  if(!source.compatible)throw Error(source.message);
+  if(preview.sourceSnapshotVersion!=null&&
+     !tobeSnapshotVersionSame(source.source.version,preview.sourceSnapshotVersion))
+    throw Error('La vista previa corresponde a otro AS-IS. No se ha aplicado nada.');
   const diagnosticHash=currentDiagnosticOutput(e)?.input_snapshot_hash||'';
   if(preview.diagnosticHash&&diagnosticHash!==preview.diagnosticHash)
     throw Error('El diagnóstico vigente cambió desde que abriste esta propuesta. Vuelve a consultar las alternativas antes de aplicar.');
@@ -167,10 +168,11 @@ function tobeCommitAlternative(e,preview){
   // layer can refresh a disjoint edit first; direct callers never auto-rebase.
   if(!preview||!e||String(preview.engagementId)!==String(e.id)||
     !p||p.version!==preview.version||!tobeEditable(p)||
-    confirmedSnapshot(e)?.version!==p.sourceSnapshotVersion||
+    !tobeAsisCompatibility(e,p).compatible||
     (preview.sourceSnapshotVersion!=null&&
-      confirmedSnapshot(e)?.version!==preview.sourceSnapshotVersion))
-    throw Error('La versión del estudio o del AS-IS ya no corresponde a la vista previa. No se ha aplicado nada.');
+      !tobeSnapshotVersionSame(p.sourceSnapshotVersion,preview.sourceSnapshotVersion)))
+    throw Error(tobeAsisCompatibility(e,p).message||
+      'La versión del estudio o del AS-IS ya no corresponde a la vista previa. No se ha aplicado nada.');
   if(preview.diagnosticHash&&typeof currentDiagnosticOutput==='function'&&
     currentDiagnosticOutput(e)?.input_snapshot_hash!==preview.diagnosticHash)
     throw Error('Cambió el diagnóstico vigente. No se ha aplicado nada.');
@@ -634,6 +636,8 @@ function tobePaintAlternativePreview(e,preview){
 }
 // [AUNEA-FE-PG11-PREVIEW-REPAINT-464] END
 function tobeOpenAlternative(e,candidate){
+  const source=tobeAsisCompatibility(e,latestTobe(e));
+  if(!source.compatible)throw Error(source.message);
   if(!saveTobeFromDom(e)||!saveState('Conservar edición antes de previsualizar'))throw Error('No se pudo conservar tu edición.');
   const live=currentEng(),p=latestTobe(live),result=tobeProjectAlternative(live,p,candidate);
   __auneaTobePreview={engagementId:live.id,version:p.version,

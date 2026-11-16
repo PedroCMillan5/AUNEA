@@ -48,8 +48,8 @@ function tobeActivityDesignIssue(item){
 // [AUNEA-FE-PG11-SINGLE-DECISION-356] END
 function tobeReviewReadiness(e,p){
   const snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;
-  if(!snap||p?.sourceSnapshotVersion!==snap.version)
-    return 'El TO-BE no corresponde al AS-IS confirmado vigente. Revisa el origen antes de continuar.';
+  const source=tobeAsisCompatibility(e,p);
+  if(!source.compatible)return source.message;
   const originals=tobeSourceSteps(e);
   if(!Array.isArray(p?.items)||p.items.length!==originals.length||
       new Set(p.items.map(x=>String(x.sourceStepId))).size!==p.items.length||
@@ -109,10 +109,8 @@ function tobeReviewReadiness(e,p){
 function advanceTobeStatus(e){
   const p=latestTobe(e),next=nextTobeStatus(p);
   if(!p||!next||next==='PUBLISHED')return false;
-  if(p.sourceSnapshotVersion!==confirmedSnapshot(e)?.version){
-    toast('El origen AS-IS cambió; no se puede aprobar esta versión TO-BE.');
-    return false;
-  }
+  const source=tobeAsisCompatibility(e,p);
+  if(!source.compatible){toast(source.message);return false;}
   if(typeof currentDiagnosticOutput==='function'&&!currentDiagnosticOutput(e)){
     toast('El diagnóstico ya no está vigente. Revisa PG10 antes de aprobar TO-BE.');
     return false;

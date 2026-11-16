@@ -3,10 +3,50 @@
 // The AS-IS snapshot remains immutable. Added steps are linked to an existing AS-IS
 // step, stored only within this TO-BE version, and cannot be auto-approved.
 // No new DF question, pricing assumption, or deterministic engine calculation.
-function tobeProposalSnapshot(e,p){
-  const stored=(e?.confirmedSnapshots||[]).find(x=>x.version===p?.sourceSnapshotVersion);
-  return stored||(typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null);
+// [AUNEA-FE-PG11-ASIS-VERSION-465] START
+// SOURCE: DEC-041/050/075, Simulator CANONICAL PG11.
+// PURPOSE: Resolve an immutable version-pinned source and distinguish an
+// equivalent PG09 re-seal from a genuinely changed confirmed AS-IS.
+// INPUT: Engagement snapshot history, TO-BE version. OUTPUT: compatibility.
+// SIDE EFFECTS: none. CHANGE RISK: HIGH; no automatic source reassignment.
+function tobeSnapshotVersionSame(a,b){
+  return a!=null&&b!=null&&String(a).trim()!==''&&
+    String(a).trim()===String(b).trim();
 }
+function tobeProposalSnapshot(e,p){
+  if(p?.sourceSnapshotVersion==null)return null;
+  return (e?.confirmedSnapshots||[]).find(s=>
+    tobeSnapshotVersionSame(s?.version,p.sourceSnapshotVersion))||null;
+}
+function tobeSnapshotContentSignature(snapshot){
+  const stable=value=>{
+    if(Array.isArray(value))return value.map(stable);
+    if(value&&typeof value==='object')return Object.fromEntries(
+      Object.keys(value).sort().map(k=>[k,stable(value[k])]));
+    return value;
+  };
+  const content=Object.fromEntries(Object.keys(snapshot||{}).filter(k=>
+    !['version','sealedAt','asIsConfirmedAt'].includes(k)).map(k=>[k,snapshot[k]]));
+  return JSON.stringify(stable(content));
+}
+function tobeAsisCompatibility(e,p){
+  if(!e||!p)return {compatible:false,message:'No existe un borrador TO-BE vigente.'};
+  const source=tobeProposalSnapshot(e,p);
+  if(!source)return {compatible:false,message:'No se encuentra el AS-IS v'+
+    String(p.sourceSnapshotVersion??'?')+' que originó este borrador. No se modifica el TO-BE.'};
+  const current=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;
+  if(!current)return {compatible:false,message:'El AS-IS ya no está confirmado en PG09. '+
+    'No se puede aplicar una intervención hasta recuperar una confirmación válida.'};
+  if(tobeSnapshotVersionSame(source.version,current.version))
+    return {compatible:true,source,current,equivalent:false};
+  if(tobeSnapshotContentSignature(source)===tobeSnapshotContentSignature(current))
+    return {compatible:true,source,current,equivalent:true};
+  return {compatible:false,source,current,message:'El borrador TO-BE utiliza el AS-IS v'+
+    String(source.version)+', pero la última confirmación es v'+String(current.version)+
+    ' y contiene cambios reales. No se ha aplicado nada. Revisa la nueva versión del AS-IS '+
+    'antes de crear un nuevo borrador TO-BE.'};
+}
+// [AUNEA-FE-PG11-ASIS-VERSION-465] END
 function tobeProposalSourceSteps(e,p){
   return (tobeProposalSnapshot(e,p)?.processSteps||[]).filter(x=>x.status!=='SUPERSEDED');
 }
