@@ -47,7 +47,6 @@ function tobeActivityDesignIssue(item){
 }
 // [AUNEA-FE-PG11-SINGLE-DECISION-356] END
 function tobeReviewReadiness(e,p){
-  const snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;
   const source=tobeAsisCompatibility(e,p);
   if(!source.compatible)return source.message;
   const originals=tobeSourceSteps(e);

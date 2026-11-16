@@ -19,7 +19,8 @@ test('C04 PG11 requires human review before client approval',()=>{
   assert.match(src,/\['DRAFT','REVIEWED','APPROVED_FOR_CLIENT','PUBLISHED'\]/);
   assert.match(src,/function tobeReviewReadiness/);
   assert.match(src,/Selecciona una transformación válida/);
-  assert.match(src,/El TO-BE no corresponde al AS-IS confirmado vigente/);
+  assert.match(src,/function tobeAsisCompatibility/);
+  assert.match(src,/El borrador TO-BE utiliza el AS-IS v/);
   assert.match(fs.readFileSync(path.join(root,'domain/output-review.js'),'utf8'),/Listo para resultados/);
 });
 

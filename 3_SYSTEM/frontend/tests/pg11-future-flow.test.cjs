@@ -394,7 +394,7 @@ test('PG11 review rejects P4 NO rationale but never depends on whole-IA acceptan
     return src.slice(first,end+2);
   }).join('\n');
   const source={id:'P4',step_name:'Registrar en ERP y archivar expediente'};
-  const snapshot={version:1,processSteps:[source]},e={snapshot};
+  const snapshot={version:1,processSteps:[source]},e={snapshot,confirmedSnapshots:[snapshot]};
   const item={sourceStepId:'P4',sourceStepName:source.step_name,transformation:'Se mantiene',
     problemResolved:'NO',futureActor:'Administración',tool:'ERP',inputs:['PDF'],
     outputs:['RECORD'],controlsRisk:'Control de duplicados',automationAi:'',
@@ -412,7 +412,10 @@ test('PG11 review rejects P4 NO rationale but never depends on whole-IA acceptan
     tobeFlowIntegrity:()=>null,tobeCoherenceFindings:()=>[],
     tobeAddedSteps:proposal=>proposal.addedSteps||[],
     tobeFlowItemName:step=>step.stepName||step.sourceStepName};
-  vm.createContext(sandbox);vm.runInContext(code,sandbox);
+  vm.createContext(sandbox);
+  const sourceOwner=src.match(/\/\/ \[AUNEA-FE-PG11-ASIS-VERSION-465\] START[\s\S]*?\/\/ \[AUNEA-FE-PG11-ASIS-VERSION-465\] END/)?.[0];
+  assert.ok(sourceOwner,'shared production source contract exists');
+  vm.runInContext(sourceOwner+'\n'+code,sandbox);
   assert.match(sandbox.tobeReviewReadiness(e,p),/Motivo para conservar la actividad/);
   item.problemResolved='Se conserva el registro humano y se documentan sus riesgos.';
   assert.equal(sandbox.tobeReviewReadiness(e,p),null,

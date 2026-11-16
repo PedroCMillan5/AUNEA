@@ -15,8 +15,15 @@ function tobeSnapshotVersionSame(a,b){
 }
 function tobeProposalSnapshot(e,p){
   if(p?.sourceSnapshotVersion==null)return null;
-  return (e?.confirmedSnapshots||[]).find(s=>
-    tobeSnapshotVersionSame(s?.version,p.sourceSnapshotVersion))||null;
+  const pinned=(e?.confirmedSnapshots||[]).find(s=>
+    tobeSnapshotVersionSame(s?.version,p.sourceSnapshotVersion));
+  if(pinned)return pinned;
+  // Legacy/test engagements without an array may expose the exact same
+  // sealed version through the authoritative closure accessor. Never
+  // substitute a newer snapshot for a pinned historical source.
+  const current=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null;
+  return current&&tobeSnapshotVersionSame(current.version,p.sourceSnapshotVersion)?
+    current:null;
 }
 function tobeSnapshotContentSignature(snapshot){
   const stable=value=>{
