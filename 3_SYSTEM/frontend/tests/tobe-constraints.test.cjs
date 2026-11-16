@@ -118,6 +118,7 @@ test('PG11: 03.3 shows compatible and pending statuses separately',()=>{
       tobeFlowItemName:()=> 'Aprobar factura',
       tobeFlowIntegrity:()=>null,
       auneaUiDisclosureStart:()=>'<section>',auneaUiDisclosureEnd:()=>'</section>',
+      auneaUiDisclosureOpen:()=>true,
       esc:x=>String(x),attr:x=>String(x),
       tobeEditable:()=>true
     });
