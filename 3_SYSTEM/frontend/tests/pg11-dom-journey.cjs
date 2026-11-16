@@ -183,6 +183,8 @@ for(const kind of ['invoice','logistics']){
     JSON.parse(previous).items[1].humanSupervision);
   assert.equal(run('diagnosticOutputFreshness(currentEng()).status'),'OBSOLETE',
     'the recovered DRAFT must not silently approve or reuse an obsolete PG10 result');
+  assert.match(w.document.getElementById('content').textContent,/Tu diseño sigue guardado/,
+    'the preliminary state must explain that the recovered DRAFT is safe until PG10 refresh');
   run("state.activePage='resultados';"+
       "currentEng().engineGateReview.snapshotVersion=confirmedSnapshot(currentEng()).version;render()");
   await run('runDiagnosis()');
