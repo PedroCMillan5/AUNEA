@@ -844,7 +844,11 @@ test('PG11 preliminary view states its purpose, remains read-only and routes bac
   assert.match(source,/data-page="resultados"/);
   assert.match(source,/cinco decisiones técnicas internas/);
   assert.match(source,/recomendación oficial vigente/);
-  const preliminary=source.slice(0,source.indexOf(";const p=latestTobe(e);"));
+  const startPreliminary=source.indexOf('if(!currentDiagnosticOutput(e))');
+  const endPreliminary=source.indexOf('if(!p)return pageTop',startPreliminary);
+  assert.ok(startPreliminary>0&&endPreliminary>startPreliminary,
+    'the optional version-recovery screen precedes the read-only PG10 gate');
+  const preliminary=source.slice(startPreliminary,endPreliminary);
   assert.doesNotMatch(preliminary,/id="createTobeDraft"|advanceTobeStatus\(/);
 });
 test('PG10 AS-IS source navigation returns to exactly the prior review position without mutating Engagement',()=>{
