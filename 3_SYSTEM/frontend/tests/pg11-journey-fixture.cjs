@@ -6,7 +6,7 @@ module.exports=async function setupPg11Journey({kind,backend}){
    e.processSteps=[original[0],original[3],original[4],original[5]].map((s,i)=>({...s,id:'P'+(i+1),step_name:names[i],step_type:i===1?'ST04':i===2&&kind==='invoice'?'ST05':'ST02',normal_next_step:i===3?'__END__':'P'+(i+2),exception_path:i===1?{destination_step:'P4',condition:'No procede intervención'}:undefined}));
    e.frictions=e.frictions.slice(0,1).map(f=>({...f,affected_steps:['P1'],client_label:'Reintroducción duplicada',frequency:f.frequency?.mode==='percent'?{...f.frequency,period:''}:f.frequency,time_attribution:{mode:'INCLUDED',step_id:'P1'}}));
    e.risks=e.risks.slice(0,1).map(r=>({...r,step_ids:['P1']}));e.economicInputs=e.economicInputs.map(x=>({...x,step_ids:['P1']}));e.answers.DF093='YES';
-   e.confirmedAsIs=true;e.confirmedSnapshots=[];e.tobeProposals=[];e.answers.DF051=[];e.answers.DF075=['FINAL_DECISION'];
+   e.confirmedAsIs=true;e.confirmedSnapshots=[];e.tobeProposals=[];e.answers.DF051=[];e.answers.DF075=['FINAL_DECISION'];e.answerDetails=e.answerDetails||{};e.answerDetails.DF075__steps=['P3'];
    state.companies.push(row.company);state.contacts.push(...row.contacts);state.engagements.push(e);state.activeEngagementId=e.id;
    // Normalize synthetic legacy fields before sealing; reload must not invalidate this UAT snapshot.
    migrateLoadedState();e.confirmedAsIs=true;e.answers.DF093='YES';
