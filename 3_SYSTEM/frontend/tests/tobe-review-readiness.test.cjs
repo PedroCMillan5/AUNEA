@@ -17,9 +17,11 @@ function harness(){
       tool:'ERP',inputs:['PDF'],outputs:['RECORD'],controlsRisk:'Validar duplicados y registrar excepciones.',
       automationAi:'',humanSupervision:'',futureTime:'',futureTimeAssumption:''}]
   };
+  const snapshot={version:2,processSteps:[{id:'S1'}]};
+  const engagement={confirmedSnapshots:[snapshot]};
   const sandbox={
-    Set,String,Array,
-    confirmedSnapshot:()=>({version:2}),
+    Set,String,Array,engagement,
+    confirmedSnapshot:()=>snapshot,
     tobeSourceSteps:()=>[{id:'S1'}],
     // Isolated field-readiness harness; future-route integrity is independently tested.
     tobeFlowIntegrity:()=>null,
@@ -32,16 +34,18 @@ function harness(){
   };
   vm.createContext(sandbox);
   const rationale=src.match(/\/\/ \[AUNEA-FE-PG11-TRANSFORMATION-UX-258\] START[\s\S]*?\/\/ \[AUNEA-FE-PG11-TRANSFORMATION-UX-258\] END/)?.[0];
-  vm.runInContext('const TOBE_TRANSFORMATIONS=["Se mantiene","Se modifica","Se elimina","Se automatiza","Se asiste con IA","Requiere decisión humana","Se incorpora control"];\n'+rationale+'\n'+block,sandbox);
+  const flow=src.match(/\/\/ \[AUNEA-FE-PG11-ASIS-VERSION-465\] START[\s\S]*?\/\/ \[AUNEA-FE-PG11-ASIS-VERSION-465\] END/)?.[0];
+  assert.ok(flow,'Single AS-IS source contract must be loaded into readiness QA');
+  vm.runInContext('const TOBE_TRANSFORMATIONS=["Se mantiene","Se modifica","Se elimina","Se automatiza","Se asiste con IA","Requiere decisión humana","Se incorpora control"];\n'+flow+'\n'+rationale+'\n'+block,sandbox);
   return {current,warnings,dirty,
-    check:()=>vm.runInContext('tobeReviewReadiness(null,latestTobe())',sandbox),
-    advance:()=>vm.runInContext('advanceTobeStatus(null)',sandbox)};
+    check:()=>vm.runInContext('tobeReviewReadiness(engagement,latestTobe(engagement))',sandbox),
+    advance:()=>vm.runInContext('advanceTobeStatus(engagement)',sandbox)};
 }
 
 test('PG11 refuses stale confirmed source and missing activity correspondence',()=>{
   const h=harness();
   h.current.sourceSnapshotVersion=1;
-  assert.match(h.check(),/no corresponde al AS-IS/);
+  assert.match(h.check(),/No se encuentra el AS-IS v1/);
   assert.equal(h.advance(),false);
   assert.equal(h.current.status,'DRAFT');
   h.current.sourceSnapshotVersion=2;
