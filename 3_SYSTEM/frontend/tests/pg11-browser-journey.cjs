@@ -25,6 +25,51 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,'.'+new 
   const missingStages=await page.evaluate(selectors=>
     selectors.filter(sel=>!document.querySelector(sel)),stageSelectors);
   assert.deepEqual(missingStages,[],'PG11 must finish rendering all three guided sections');
+  // Sections 01, 02 and 03 must be identical shared outer surfaces, with one
+  // subordinate compact disclosure owner for 01 and 02 and one 03 workspace.
+  const sectionGeometry=await page.evaluate(()=>{
+    const nodes=['.tobe-context','.tobe-global-analysis','.tobe-review-workbench']
+      .map(x=>document.querySelector(x));
+    const rect=el=>{const r=el.getBoundingClientRect();return {left:r.left,right:r.right};};
+    const inline=['.tobe-context-details','.tobe-global-monitoring']
+      .map(x=>document.querySelector(x));
+    return {surfaces:nodes.map(el=>el?{...rect(el),padding:getComputedStyle(el).paddingLeft,
+      border:getComputedStyle(el).borderTopWidth}:null),
+      inline:inline.map(el=>el?{className:el.className,tag:el.tagName,
+        summary:el.querySelector(':scope>summary')?.className,
+        bg:getComputedStyle(el.querySelector(':scope>summary')).backgroundColor}:null),
+      workspace:document.querySelector('.tobe-review-workbench'),
+      boundaries:['.tobe-review-workbench>.tobe-guided-nav',
+        '.tobe-review-workbench>#tobeInspector'].map(sel=>{
+          const el=document.querySelector(sel);
+          return el?{border:getComputedStyle(el).borderLeftWidth,
+            padding:getComputedStyle(el).paddingLeft}:null;
+        })};
+  });
+  assert.ok(sectionGeometry.surfaces.every(Boolean),'01/02/03 share a visible outer surface');
+  const aligned=(a,b)=>Math.abs(a-b)<1.5;
+  assert.ok(sectionGeometry.surfaces.every(x=>
+    aligned(x.left,sectionGeometry.surfaces[0].left)&&
+    aligned(x.right,sectionGeometry.surfaces[0].right)&&
+    x.border===sectionGeometry.surfaces[0].border&&
+    x.padding===sectionGeometry.surfaces[0].padding),
+    '01/02/03 must share one surface geometry: '+JSON.stringify(sectionGeometry.surfaces));
+  assert.ok(sectionGeometry.inline.every(x=>x?.tag==='DETAILS'&&
+    x.className.includes('aunea-ui-disclosure--inline')&&
+    x.summary.includes('aunea-ui-disclosure__summary')),
+    '01/02 supporting disclosures must use the same global renderer: '+JSON.stringify(sectionGeometry.inline));
+  assert.equal(sectionGeometry.inline[0].bg,sectionGeometry.inline[1].bg,
+    '01/02 disclosure headers must use the same shared background');
+  assert.ok(sectionGeometry.boundaries.every(Boolean),'03 must contain its nav and inspector');
+  assert.ok(sectionGeometry.boundaries.every(x=>x.border==='0px'&&x.padding==='0px'),
+    '03 nav and inspector must not create nested outer cards: '+JSON.stringify(sectionGeometry.boundaries));
+  for(const sel of ['.tobe-context-details','.tobe-global-monitoring']){
+    const detail=page.locator(sel),initial=await detail.evaluate(el=>el.open);
+    await detail.locator(':scope>summary').click();
+    assert.equal(await detail.evaluate(el=>el.open),!initial,'Inline disclosure must toggle '+sel);
+    await detail.locator(':scope>summary').click();
+    assert.equal(await detail.evaluate(el=>el.open),initial,'Inline disclosure must restore '+sel);
+  }
   // PG11 visual contract: all three guided sections are one product hierarchy.
   const stageVisual=await page.evaluate(()=>{
     const names=['#tobeStepOrigin>details>summary','#tobeStepAdvice>details>summary',

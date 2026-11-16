@@ -316,12 +316,13 @@ function tobeGlobalOverviewHtml(e,p){
         ' No se ha borrado al consultar esta pantalla; verifica la versión del estudio antes de volver a analizar.':
         result?.summary||'No se ha registrado una propuesta global vigente en este borrador. El análisis no se ha ejecutado o no se ha guardado para esta versión; no se alterarán campos del TO-BE.')+'</p></div>'+
     (typeof internalAiProgressHtml==='function'?internalAiProgressHtml(e,'global'):'')+
-    '<details class="tobe-global-monitoring"'+
-      ((monitoringWasOpen||feedback?.type==='warn'||!!progress?.failures?.length)?' open':'')+'>'+
-      '<summary>Ver seguimiento, fuentes y comprobaciones'+
-        (progress?.total?' · '+successful+' de '+progress.total+' fuentes':'')+
-        (opportunities.length?' · '+opportunities.length+' propuestas':'')+
-        '</summary><div class="tobe-global-monitoring-body">'+
+    auneaUiDisclosureStart({id:'tobeGlobalMonitoring',sourceId:p.version,
+       variant:'inline',className:'tobe-global-monitoring',
+       open:monitoringWasOpen||feedback?.type==='warn'||!!progress?.failures?.length,
+       title:'Ver seguimiento, fuentes y comprobaciones'+
+         (progress?.total?' · '+successful+' de '+progress.total+' fuentes':'')+
+         (opportunities.length?' · '+opportunities.length+' propuestas':'')})+
+       '<div class="tobe-global-monitoring-body">'+
     (opportunities.length?'<p class="tobe-global-feedback">Consolidación de propuestas: '+
       opportunities.length+' intervenciones registradas (candidatas a consolidación) · '+incompatible+
       ' incompatibilidades detectadas · '+alternatives+' alternativas sugeridas · '+
@@ -376,7 +377,7 @@ function tobeGlobalOverviewHtml(e,p){
       '<details class="tobe-global-universal-checks"><summary>Requisitos de implantación compartidos por todas las propuestas ('+
       globallyShared.length+')</summary><ul class="tobe-source-list">'+globallyShared
         .map(q=>'<li>'+esc(q)+'</li>').join('')+'</ul></details>':'')+
-    '</div></details>'+
+    '</div>'+auneaUiDisclosureEnd()+
     (opportunities.length?'<div class="tobe-global-opportunities" aria-label="Objetivos y recomendaciones">'+
       thematicGroups.map((group,i)=>
       '<article class="tobe-global-opportunity">'+

@@ -371,4 +371,18 @@ body.session-display .flow-step p{font-size:var(--font-small)}
   .aunea-ui-disclosure--stage>.aunea-ui-disclosure__content{padding:12px}
   .aunea-ui-disclosure__status{margin-left:26px}
 }
+
+/* DS-002 compact supporting disclosure, shared by sections 01 and 02. */
+.aunea-ui-disclosure--inline{
+  min-width:0;border:1px solid var(--system-line);
+  border-radius:var(--radius-sm);background:#fff;overflow:hidden;
+}
+.aunea-ui-disclosure--inline>summary.aunea-ui-disclosure__summary{
+  min-height:42px;padding:11px 14px;gap:9px;
+  background:var(--system-soft);
+}
+.aunea-ui-disclosure--inline:not([open])>summary.aunea-ui-disclosure__summary{border-bottom:0}
+.aunea-ui-disclosure--inline .aunea-ui-disclosure__title{
+  font:700 var(--font-small)/1.45 Inter,"Segoe UI",Arial,sans-serif;
+}
 /* [AUNEA-FE-GLOBAL-DISCLOSURE-451] END */

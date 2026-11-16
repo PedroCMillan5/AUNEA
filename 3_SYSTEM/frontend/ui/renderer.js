@@ -782,7 +782,7 @@ function auneaUiDisclosureStart({
   title='',description='',number='',status='',statusClass='',ariaLabel='',open=false
 }={}){
   if(variant==='legacy')return '<details class="'+attr(className)+'"><summary>'+esc(title)+'</summary>';
-  if(variant!=='stage'&&variant!=='group')throw Error('Unsupported AUNEA disclosure variant: '+variant);
+  if(!['stage','group','inline'].includes(variant))throw Error('Unsupported AUNEA disclosure variant: '+variant);
   const classes='aunea-ui-disclosure aunea-ui-disclosure--'+variant+(className?' '+className:'');
   const numberHtml=number?'<span class="aunea-ui-disclosure__number">'+esc(number)+'</span>':'';
   const headingTag=variant==='group'?'h4':'span';

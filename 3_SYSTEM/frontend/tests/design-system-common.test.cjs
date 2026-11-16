@@ -387,6 +387,9 @@ test('one production disclosure component renders stage and group across PG10 an
   assert.match(group,/class="aunea-ui-disclosure__number">03/);
   assert.match(group,/Recursos/);
   assert.equal(sandbox.auneaUiDisclosureEnd(),'</details>');
+  const inline=sandbox.auneaUiDisclosureStart({variant:'inline',id:'criteria',title:'Consultar criterios'});
+  assert.match(inline,/aunea-ui-disclosure--inline/);
+  assert.match(inline,/Consultar criterios/);
   const legacy=sandbox.auneaWorkDisclosure('pg10-stage-nav','Etapas','<p>Content</p>');
   assert.match(legacy,/<details class="pg10-stage-nav aunea-ui-work-disclosure">/);
   for(const source of ['pages/tobe.js','pages/tobe-flow.js'])

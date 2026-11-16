@@ -1075,11 +1075,13 @@ function tobeContextOverviewHtml(e,p){
     '<div class="tobe-context-diagnostic"><strong>Diagnóstico oficial</strong>'+
     '<p>'+esc(diagnostic)+' · Información histórica confirmada, sólo lectura.</p></div>'+
     '<dl class="tobe-context-facts">'+primary.map(([label,value])=>line(label,value)).join('')+'</dl>'+
-    '<details class="tobe-context-details"><summary>Consultar criterios y restricciones del cliente</summary>'+
+    auneaUiDisclosureStart({id:'tobeContextDetails',sourceId:p.version,variant:'inline',
+       className:'tobe-context-details',title:'Consultar criterios y restricciones del cliente',
+       open:auneaUiDisclosureOpen('tobeContextDetails',p.version,false)})+
     '<dl class="tobe-context-facts tobe-context-facts-secondary">'+
     secondary.map(([label,id])=>line(label,display(id))).join('')+'</dl>'+
     '<p>Los valores proceden de la captura confirmada. Se revisan en sus páginas de origen, no se modifican aquí.</p>'+
-    '</details></section>';
+    auneaUiDisclosureEnd()+'</section>';
 }
 // [AUNEA-FE-PG11-CONTEXT-289] END
 
@@ -1184,7 +1186,8 @@ function tobePage(){
       '</section>'+
       tobeContextOverviewHtml(e,p)+
       tobeGlobalOverviewHtml(e,p)+
-      '<header class="tobe-review-section-head aunea-ui-work-surface"><span class="tobe-eyebrow">03 · DISEÑO TO-BE</span>'+ 
+      '<section class="tobe-review-workbench aunea-ui-work-surface" aria-label="Diseño TO-BE por actividad">'+
+       '<header class="tobe-review-section-head"><span class="tobe-eyebrow">03 · DISEÑO TO-BE</span>'+ 
         '<h2 class="aunea-ui-section-title">Revisión por actividad</h2>'+ 
         '<p class="aunea-ui-section-caption">Revisa el origen, la recomendación IA, los campos y las conexiones del proceso futuro.</p></header>'+
       tobeGuidedNavHtml(e,p)+
@@ -1201,7 +1204,7 @@ function tobePage(){
           '<input disabled value="'+attr(tobeFutureSteps(e,p).find(x=>String(x.id)===tobeFlowOwner(e,p).startStepId)?.step_name||'Pendiente')+'">')+
       '<p class="field-help">Indica la actividad de inicio del TO-BE. El AS-IS no se modifica.</p></div>'+
       '<p class="tobe-map-note"><b>Rutas del TO-BE:</b> comienzan como copia del AS-IS confirmado, pero pueden rediseñarse en el inspector. Los pasos incorporados o eliminados sólo pertenecen a la versión TO-BE. Una ruta pendiente, desconectada o sin final bloquea la revisión.</p></section>'+
-      '<section id="tobeInspector" class="tobe-inspector" aria-label="Decisión TO-BE por actividad">'+tobeInspectorHtml(e,p)+'</section>'+
+      '<section id="tobeInspector" class="tobe-inspector" aria-label="Decisión TO-BE por actividad">'+tobeInspectorHtml(e,p)+'</section></section>'+
       (editable?'<details class="tobe-ai-stage" id="tobeAiWorkspace" data-engagement-id="'+attr(e.id)+
         '" data-tobe-version="'+attr(p.version)+'"'+(keepAuditOpen?' open':'')+'>'+
         '<summary><strong class="aunea-ui-aux-heading">Auditoría IA · Detalle técnico (opcional)</strong>'+
