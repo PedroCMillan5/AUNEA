@@ -5018,6 +5018,9 @@ details.tobe-ai-operational-context:not([open])>.tobe-ai-operational-body{
 .tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign>.tobe-stage-disclosure>summary .tobe-design-status{
   margin-left:auto;
 }
+.tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign>.tobe-stage-disclosure>summary .tobe-stage-heading{
+  line-height:1.4;
+}
 .tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign>.tobe-stage-disclosure>summary::-webkit-details-marker,
 .tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign .tobe-design-group>summary::-webkit-details-marker{display:none}
 .tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign>.tobe-stage-disclosure>summary::before,
