@@ -246,7 +246,7 @@ function tobeFlowInspector(e,p,item){
       '</div>':'')+
     '<div class="form-grid">'+field('normal','Siguiente actividad'+(decision?' · ruta SÍ':''),routes.normal)+
     (decision?field('exception','Ruta NO / excepción',routes.exception):'')+
-    '</div></section>';
+    '</div></details>';
 }
 // [AUNEA-FE-PG11-OPTIMIZATION-CHECK-313] START
 // SOURCE: CANONICAL PG11, ProcessStep DF035/036/041–043, friction and
@@ -370,11 +370,11 @@ function tobeOptimizationPanelHtml(e,p,item){
       '<p>'+esc(x.message)+'</p>'+
       (x.related.length?'<small>Actividades relacionadas: '+esc(x.related.join(' · '))+'</small>':'')+
     '</li>').join('');
-  return '<section class="tobe-design-group tobe-optimization-panel"'+
-    ' id="tobeStepOptimization" aria-label="Comprobación de dependencias del flujo">'+
-    '<div class="tobe-design-group-head"><span class="tobe-design-group-number">04</span>'+
+  return '<details class="tobe-design-group tobe-optimization-panel"'+
+    ' id="tobeStepOptimization" data-source-step-id="'+attr(item.sourceStepId)+'"'+(tobeDisclosureOpen('tobeStepOptimization',item.sourceStepId,false)?' open':'')+' aria-label="Comprobación de dependencias del flujo">'+
+    '<summary class="tobe-design-group-head"><span class="tobe-design-group-number">04</span>'+
     '<div><h4>Impacto del cambio sobre el flujo</h4>'+
-    '<p>Revisión de rutas y dependencias; no modifica conexiones ni acepta propuestas.</p></div></div>'+
+    '<p>Revisión de rutas y dependencias; no modifica conexiones ni acepta propuestas.</p></div></summary>'+
     '<div class="tobe-optimization-body">'+
       '<div class="tobe-optimization-connections">'+
         '<div><b>Pasos anteriores</b><span>'+esc(names(predecessors))+'</span></div>'+
