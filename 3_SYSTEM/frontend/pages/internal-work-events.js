@@ -135,22 +135,45 @@ function registerInternalWorkPages(){
   // [AUNEA-FE-PG11-GUIDED-ACTIONS-264] END
   // [AUNEA-FE-PG11-OPTIMIZATION-RECHECK-315] START — user-requested
   // recheck only. Save a version-owned draft, never approve or reconnect.
+  // Persist visible feedback beside the action so unchanged warnings do not appear as a no-op.
   document.addEventListener('click',event=>{
     const button=event.target?.closest?.('[data-tobe-recheck-optimization]');
     if(!button||state.activePage!=='tobe')return;
     event.preventDefault();
+    const feedback=message=>{
+      const action=document.querySelector('#tobeStepOptimization [data-tobe-recheck-optimization]');
+      if(!action)return;
+      let status=document.querySelector('#tobeStepOptimization [data-tobe-recheck-feedback]');
+      if(!status){
+        status=document.createElement('p');
+        status.className='field-help';
+        status.setAttribute('data-tobe-recheck-feedback','1');
+        status.setAttribute('role','status');
+        status.setAttribute('aria-live','polite');
+        action.insertAdjacentElement('afterend',status);
+      }
+      status.textContent=message;
+    };
     const e=currentEng(),p=latestTobe(e);
-    if(!e||!tobeEditable(p))return toast('Esta versión TO-BE no es editable.');
-    if(!saveTobeFromDom(e)||!saveState('Guardar diseño TO-BE y verificar dependencias'))
-      return toast('No se guardó el cambio; la comprobación sigue usando el borrador anterior.');
+    if(!e||!tobeEditable(p)){
+      const message='Esta versión TO-BE no es editable.';
+      feedback(message);return toast(message);
+    }
+    if(!saveTobeFromDom(e)||!saveState('Guardar diseño TO-BE y verificar dependencias')){
+      const message='No se guardó el cambio; las comprobaciones siguen utilizando el borrador anterior.';
+      feedback(message);return toast(message);
+    }
     const live=currentEng(),draft=latestTobe(live),
       item=tobeSelectedItem(live,draft),
       results=tobeOptimizationFindings(live,draft,item);
     const panel=document.getElementById('tobeStepOptimization');
     if(panel)panel.outerHTML=tobeOptimizationPanelHtml(live,draft,item);
-    toast(results.length?
-      'Dependencias actualizadas: '+results.length+' puntos por comprobar.':
-      'Dependencias actualizadas. No se han detectado incompatibilidades evidentes.');
+    const message=results.length?
+      'Borrador guardado y comprobaciones actualizadas. Siguen pendientes '+results.length+
+        ' observaciones que requieren contraste; guardar no las resuelve.':
+      'Borrador guardado y comprobaciones actualizadas. Sin incompatibilidades evidentes; la viabilidad técnica aún debe verificarse.';
+    feedback(message);
+    toast(message);
   },true);
   // [AUNEA-FE-PG11-OPTIMIZATION-RECHECK-315] END
 
