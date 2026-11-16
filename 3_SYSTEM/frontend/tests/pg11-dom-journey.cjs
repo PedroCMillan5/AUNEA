@@ -87,12 +87,17 @@ for(const kind of ['invoice','logistics']){
     'editing refreshes preview without writing the live TO-BE');
   assert.equal(run('tobeFutureSteps(currentEng(),latestTobe(currentEng())).length'),4);
   const confirm=w.document.querySelector('[data-tobe-confirm-alternative]');
-  assert.equal(confirm.disabled,true,'consultant must acknowledge pending conditions');
+  assert.equal(confirm.disabled,false,'The confirm action must stay clickable and explain missing requirements');
+  assert.equal(confirm.dataset.tobeConfirmReady,'0');
+  confirm.click();
+  assert.match(w.document.querySelector('#tobePreviewActionFeedback').textContent,/Antes de confirmar:/);
+  assert.equal(run('tobeFutureSteps(currentEng(),latestTobe(currentEng())).length'),4,
+    'Blocked confirmation must never write to the TO-BE');
   const acknowledgement=w.document.querySelector('[data-tobe-preview-ack]');
   assert.ok(acknowledgement,'the preview must explain pending conditions');
   acknowledgement.checked=true;
   acknowledgement.dispatchEvent(new w.Event('change',{bubbles:true}));
-  assert.equal(confirm.disabled,false,'confirmation unlocks after explicit acknowledgement');
+  assert.equal(confirm.dataset.tobeConfirmReady,'1','confirmation becomes ready after explicit acknowledgement');
   confirm.click();
   await until(()=>run('tobeFutureSteps(currentEng(),latestTobe(currentEng())).length')===5);
   assert.equal(run('tobeFlowIntegrity(currentEng(),latestTobe(currentEng()))'),null);
@@ -119,7 +124,7 @@ for(const kind of ['invoice','logistics']){
     .map(x=>x.textContent).join(' ');
   assert.doesNotMatch(scopedRows,/La intervención incorpora automatización o asistencia/,
     'preserving the AS-IS must not present abandoned automation as a new intervention');
-  assert.equal(w.document.querySelector('[data-tobe-confirm-alternative]').disabled,true);
+  assert.equal(w.document.querySelector('[data-tobe-confirm-alternative]').dataset.tobeConfirmReady,'0');
   const note=w.document.querySelector('[data-tobe-preview-note]');
   assert.ok(note,'a KEEP choice must require a reason');
   const conditions=w.document.querySelector('[data-tobe-preview-ack]');
@@ -127,11 +132,11 @@ for(const kind of ['invoice','logistics']){
   assert.ok(conditions&&findings,'all KEEP consequences must be explicit');
   conditions.checked=true;conditions.dispatchEvent(new w.Event('change',{bubbles:true}));
   findings.checked=true;findings.dispatchEvent(new w.Event('change',{bubbles:true}));
-  assert.equal(w.document.querySelector('[data-tobe-confirm-alternative]').disabled,true,
+  assert.equal(w.document.querySelector('[data-tobe-confirm-alternative]').dataset.tobeConfirmReady,'0',
     'acknowledging the risk is not a substitute for a justification');
   note.value='Conservar la recepción hasta comprobar con el cliente los hallazgos relacionados.';
   note.dispatchEvent(new w.Event('input',{bubbles:true}));
-  assert.equal(w.document.querySelector('[data-tobe-confirm-alternative]').disabled,false);
+  assert.equal(w.document.querySelector('[data-tobe-confirm-alternative]').dataset.tobeConfirmReady,'1');
   w.document.querySelector('[data-tobe-confirm-alternative]').click();
   const savedKeep=run('latestTobe(currentEng()).aiDraft.applyHistory.at(-1)');
   assert.match(savedKeep.consultantNote,/Conservar la recepción/);

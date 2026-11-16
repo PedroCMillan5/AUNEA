@@ -4951,3 +4951,20 @@ details.tobe-ai-operational-context:not([open])>.tobe-ai-operational-body{
   .tobe-workspace .tobe-review-workbench>.tobe-guided-nav{padding:10px 0}
 }
 /* [AUNEA-FE-PG11-SECTION-COMPOSITION-453] END */
+
+/* [AUNEA-FE-PG11-CONFIRM-FEEDBACK-462] START — status adjacent to the action */
+.tobe-alternative-dialog .tobe-preview-action-feedback{
+  margin:8px 0 0;padding:11px 14px;
+  border:1px solid var(--system-line);border-radius:var(--radius-sm);
+  color:var(--system);font:600 var(--font-small)/1.55 Inter,"Segoe UI",Arial,sans-serif;
+}
+.tobe-alternative-dialog .tobe-preview-action-feedback[data-state="blocked"]{
+  background:var(--canvas,#f8faf9);border-left:3px solid var(--gold);
+}
+.tobe-alternative-dialog [data-tobe-confirm-alternative][data-tobe-confirm-ready="0"]{
+  background:var(--system);opacity:1;cursor:pointer;
+}
+.tobe-alternative-dialog .tobe-preview-action-feedback:focus-visible{
+  outline:2px solid var(--system);outline-offset:2px;
+}
+/* [AUNEA-FE-PG11-CONFIRM-FEEDBACK-462] END */

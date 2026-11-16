@@ -448,6 +448,7 @@ function tobeAlternativeIsKeep(candidate){
 }
 function tobeAlternativeDecisionIssue(preview){
   if(!preview)return 'No hay vista previa vigente.';
+  if(preview.previewError)return String(preview.previewError);
   if(preview.pending?.length)return 'Resuelve los bloqueos estructurales antes de confirmar.';
   if((preview.candidate?.conditions||[]).length&&!preview.conditionsAcknowledged)
     return 'Revisa y reconoce las condiciones pendientes antes de confirmar.';
@@ -459,6 +460,45 @@ function tobeAlternativeDecisionIssue(preview){
   }
   return '';
 }
+// [AUNEA-FE-PG11-CONFIRM-FEEDBACK-461] START
+// Visible acknowledgement and actionable feedback for every attempted confirmation.
+// Only tobeCommitAlternative owns persistence; this helper never writes to a draft.
+function tobeAlternativeConfirmFeedback(issue,focusRequired=false){
+  const dialog=document.getElementById('tobeAlternativeDialog');
+  if(!dialog)return;
+  const feedback=dialog.querySelector('#tobePreviewActionFeedback');
+  if(feedback){
+    feedback.textContent=issue?'Antes de confirmar: '+issue:
+      'Se han cumplido las condiciones de esta intervención. Puedes confirmar el cambio.';
+    feedback.dataset.state=issue?'blocked':'ready';
+  }
+  const button=dialog.querySelector('[data-tobe-confirm-alternative]');
+  if(button){
+    button.dataset.tobeConfirmReady=issue?'0':'1';
+    button.setAttribute('aria-describedby','tobePreviewActionFeedback');
+  }
+  if(!issue||!focusRequired)return;
+  const preview=typeof __auneaTobePreview==='undefined'?null:__auneaTobePreview;
+  const checks=dialog.querySelector('.tobe-preview-consultant');
+  let target=null;
+  if(preview?.pending?.length){
+    target=dialog.querySelector('.tobe-preview-route-editor select')||
+      dialog.querySelector('#tobeAlternativePending');
+  }else if((preview?.candidate?.conditions||[]).length&&!preview.conditionsAcknowledged){
+    target=dialog.querySelector('[data-tobe-preview-ack]');
+  }else if(tobeAlternativeIsKeep(preview?.candidate)&&!preview?.keepFindingsAcknowledged){
+    target=dialog.querySelector('[data-tobe-preview-keep-ack]');
+  }else if(tobeAlternativeIsKeep(preview?.candidate)){
+    target=dialog.querySelector('[data-tobe-preview-note]');
+  }
+  const destination=target||checks||feedback;
+  destination?.scrollIntoView?.({block:'center',behavior:'smooth'});
+  if(target&&!target.hasAttribute('tabindex')&&target.tagName!=='INPUT'&&
+      target.tagName!=='SELECT'&&target.tagName!=='TEXTAREA')
+    target.setAttribute('tabindex','-1');
+  (target||feedback)?.focus?.({preventScroll:true});
+}
+// [AUNEA-FE-PG11-CONFIRM-FEEDBACK-461] END
 function tobeAlternativeScopedFindingsHtml(e,preview){
   const id=String(preview.candidate?.sourceId||''),
     known=new Set([id,...tobeAddedSteps(preview.projected).map(x=>String(x.id))]),
@@ -541,15 +581,22 @@ function tobeOpenAlternative(e,candidate){
     '<div id="tobeAlternativeFindings" class="tobe-preview-findings">'+
       tobeAlternativeScopedFindingsHtml(live,__auneaTobePreview)+'</div>'+
     '<div id="tobeAlternativeDecision">'+tobeAlternativeDecisionHtml(__auneaTobePreview)+'</div>'+
-    '<div class="tobe-preview-actions"><button type="button" class="btn btn-primary" data-tobe-confirm-alternative="1"'+
-      (tobeAlternativeDecisionIssue(__auneaTobePreview)?' disabled':'')+'>Confirmar intervención</button> '+
-    '<button type="button" class="btn btn-outline" data-tobe-cancel-alternative="1">Cerrar vista previa sin aplicar</button></div>';
+    '<div class="tobe-preview-actions"><button type="button" class="btn btn-primary" '+
+      'data-tobe-confirm-alternative="1" data-tobe-confirm-ready="'+
+      (tobeAlternativeDecisionIssue(__auneaTobePreview)?'0':'1')+
+      '" aria-describedby="tobePreviewActionFeedback">Confirmar intervención</button> '+
+    '<button type="button" class="btn btn-outline" data-tobe-cancel-alternative="1">Cerrar vista previa sin aplicar</button></div>'+
+    '<p id="tobePreviewActionFeedback" class="tobe-preview-action-feedback" role="status" tabindex="-1" '+
+      'aria-live="polite" data-state="'+(tobeAlternativeDecisionIssue(__auneaTobePreview)?'blocked':'ready')+'">'+
+       esc(tobeAlternativeDecisionIssue(__auneaTobePreview)?
+         'Antes de confirmar: '+tobeAlternativeDecisionIssue(__auneaTobePreview):
+         'Se han cumplido las condiciones de esta intervención. Puedes confirmar el cambio.')+'</p>';
   document.body.appendChild(dialog);dialog.showModal();
   const syncDecisionState=()=>{
     const issue=tobeAlternativeDecisionIssue(__auneaTobePreview);
     const status=dialog.querySelector('.tobe-preview-decision-status');
     if(status)status.textContent=issue||'Lista para confirmar esta intervención en el borrador.';
-    dialog.querySelector('[data-tobe-confirm-alternative]').disabled=!!issue;
+    tobeAlternativeConfirmFeedback(issue);
   };
   const updateDecision=event=>{
     const input=event.target,preview=__auneaTobePreview;
@@ -572,7 +619,7 @@ function tobeOpenAlternative(e,candidate){
     preview.candidate.consultantModified=true;
     try{
       const next=tobeProjectAlternative(currentEng(),latestTobe(currentEng()),preview.candidate);
-      preview.projected=next.projected;preview.pending=next.pending;
+      preview.projected=next.projected;preview.pending=next.pending;preview.previewError='';
       dialog.querySelector('#tobeAlternativeChanges').innerHTML=
         tobeAlternativeChangesHtml(currentEng(),preview);
       dialog.querySelector('#tobeAlternativePending').innerHTML=tobeAlternativePendingHtml(preview);
@@ -588,7 +635,11 @@ function tobeOpenAlternative(e,candidate){
       syncDecisionState();
       if(dialog.querySelector('.tobe-preview-map')?.open)
         requestAnimationFrame(()=>drawProcessGraph(dialog.querySelector('#tobeAlternativeMap .process-graph-board')));
-    }catch(error){dialog.querySelector('[data-tobe-confirm-alternative]').disabled=true;toast(error.message);}
+    }catch(error){
+      preview.previewError=String(error?.message||'No se pudo calcular la vista previa.');
+      syncDecisionState();
+      toast(preview.previewError);
+    }
   };
   dialog.addEventListener('input',event=>{
     if(updateDecision(event))return;

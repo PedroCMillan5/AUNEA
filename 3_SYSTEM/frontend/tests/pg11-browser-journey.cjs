@@ -198,11 +198,16 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,'.'+new 
   assert.equal(await page.evaluate(()=>tobeFutureSteps(currentEng(),latestTobe(currentEng())).length),4);
   await control.getByRole('button',{name:'Revisar y previsualizar'}).click();
   const approve=page.locator('#tobeAlternativeDialog [data-tobe-confirm-alternative]');
-  assert.equal(await approve.isDisabled(),true,
-    'the structural preview must require acknowledgement of pending conditions');
+  assert.equal(await approve.isDisabled(),false,
+    'confirmation stays operable so it can explain pending conditions');
+  assert.equal(await approve.getAttribute('data-tobe-confirm-ready'),'0');
+  await approve.click();
+  assert.match(await page.locator('#tobePreviewActionFeedback').innerText(),/Antes de confirmar:/);
+  assert.equal(await page.evaluate(()=>tobeFutureSteps(currentEng(),latestTobe(currentEng())).length),4,
+    'a click without acknowledgement must never mutate the TO-BE');
   const acceptance=page.locator('#tobeAlternativeDialog [data-tobe-preview-ack]');
   await acceptance.check();
-  assert.equal(await approve.isEnabled(),true);
+  assert.equal(await approve.getAttribute('data-tobe-confirm-ready'),'1');
   await approve.click();
   await page.waitForFunction(()=>tobeFutureSteps(currentEng(),latestTobe(currentEng())).length===5);
   assert.equal(await page.evaluate(()=>tobeFlowIntegrity(currentEng(),latestTobe(currentEng()))),null);

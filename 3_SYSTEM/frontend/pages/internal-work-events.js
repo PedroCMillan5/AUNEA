@@ -518,7 +518,12 @@ function registerInternalWorkPages(){
         document.getElementById('tobeAlternativeDialog')?.close();return;
       }
       if(button.hasAttribute('data-tobe-confirm-alternative')){
-        const preview=__auneaTobePreview;tobeCommitAlternative(e,preview);
+        const preview=__auneaTobePreview,issue=tobeAlternativeDecisionIssue(preview);
+        if(issue){
+          tobeAlternativeConfirmFeedback(issue,true);
+          return;
+        }
+        tobeCommitAlternative(e,preview);
         document.getElementById('tobeAlternativeDialog')?.close();render();
         if(__auneaTobeMode==='guided'){
           const section=document.getElementById('tobeStepDesign'),
@@ -609,6 +614,8 @@ function registerInternalWorkPages(){
         }
         render();
       }
+      if(button.hasAttribute('data-tobe-confirm-alternative'))
+        tobeAlternativeConfirmFeedback(message,true);
       toast(message);
     }finally{
       if(button.isConnected){
