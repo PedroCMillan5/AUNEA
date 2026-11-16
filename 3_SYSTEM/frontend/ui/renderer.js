@@ -769,9 +769,39 @@ bindForms=function(){__auneaBaseBindForms();bindCanonicalRenderer();};
 // INPUTS: scoped block class, visible label, already-rendered body HTML.
 // OUTPUT: accessible HTML; state, events and data remain owned by callers.
 // CHANGE_RISK: LOW. Opt-in; existing FROZEN pages are unchanged.
-function auneaWorkDisclosure(kind,title,body){
-  return '<details class="'+attr(kind)+' aunea-ui-work-disclosure"><summary>'+esc(title)+'</summary>'+(body||'')+'</details>';
+// [AUNEA-FE-GLOBAL-DISCLOSURE-450] START
+// Shared DS-002/003/004 composition; data, permissions and business states remain in consumers.
+// FROZEN pages are not opted in. Legacy work disclosures preserve their historical markup.
+function auneaUiDisclosureOpen(id,sourceId,defaultOpen=false){
+  if(typeof document==='undefined')return !!defaultOpen;
+  const el=document.getElementById(id);
+  return el&&el.dataset?.sourceStepId===String(sourceId)?!!el.open:!!defaultOpen;
 }
+function auneaUiDisclosureStart({
+  id='',sourceId='',variant='stage',className='',summaryClass='',titleClass='',
+  title='',description='',number='',status='',statusClass='',ariaLabel='',open=false
+}={}){
+  if(variant==='legacy')return '<details class="'+attr(className)+'"><summary>'+esc(title)+'</summary>';
+  if(variant!=='stage'&&variant!=='group')throw Error('Unsupported AUNEA disclosure variant: '+variant);
+  const classes='aunea-ui-disclosure aunea-ui-disclosure--'+variant+(className?' '+className:'');
+  const numberHtml=number?'<span class="aunea-ui-disclosure__number">'+esc(number)+'</span>':'';
+  const headingTag=variant==='group'?'h4':'span';
+  const heading='<span class="aunea-ui-disclosure__heading"><'+headingTag+
+    ' class="aunea-ui-disclosure__title'+(titleClass?' '+attr(titleClass):'')+'">'+esc(title)+'</'+headingTag+'>'+
+    (description?'<small class="aunea-ui-disclosure__description">'+esc(description)+'</small>':'')+'</span>';
+  const indicator=status?'<span class="aunea-ui-disclosure__status'+(statusClass?' '+attr(statusClass):'')+'">'+esc(status)+'</span>':'';
+  return '<details class="'+attr(classes)+'"'+(id?' id="'+attr(id)+'"':'')+
+    (sourceId!==''?' data-source-step-id="'+attr(sourceId)+'"':'')+
+    (ariaLabel?' aria-label="'+attr(ariaLabel)+'"':'')+(open?' open':'')+'>'+
+    '<summary class="aunea-ui-disclosure__summary'+(summaryClass?' '+attr(summaryClass):'')+'">'+
+      numberHtml+heading+indicator+'</summary>';
+}
+function auneaUiDisclosureEnd(){return '</details>';}
+function auneaWorkDisclosure(kind,title,body){
+  return auneaUiDisclosureStart({variant:'legacy',className:kind+' aunea-ui-work-disclosure',title})+
+    (body||'')+auneaUiDisclosureEnd();
+}
+// [AUNEA-FE-GLOBAL-DISCLOSURE-450] END
 // [AUNEA-FE-UI-WORK-DISCLOSURE-380] END
 // [AUNEA-FE-UI-EMPTY-STATE-393] START — Shared semantic no-data state
 // SOURCE: CATALOGO_COMPONENTES_AUNEA DS-003/004; DEC-056.
