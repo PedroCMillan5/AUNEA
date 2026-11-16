@@ -301,6 +301,64 @@ function tobeFlowInspector(e,p,item){
 // consultant-owned TO-BE DRAFT. OUTPUTS: deterministic, source-linked checks.
 // SIDE EFFECTS: none. Never alters routes, approves IA, or invents savings.
 // CHANGE RISK: MEDIUM. Works on any service process, without sector heuristics.
+// [AUNEA-FE-PG11-CONSTRAINT-ASSESSMENT-382] START
+// PURPOSE: Assess client-confirmed restrictions once for 03.3 and 04.
+// SOURCE: DF075/DF087/DF088/DF089/DF090; DEC-050/075; simulator canonical.
+// INPUTS: pinned AS-IS snapshot and consultant-owned activity; OUTPUT: findings.
+// SIDE_EFFECTS: none. Compatibility of text is not certification of an integration.
+// CHANGE_RISK: HIGH — shared check and global review gate.
+function tobeConstraintAssessments(e,p,item,sourceStep){
+  if(!e||!p||!item)return [];
+  const answers=tobeProposalSnapshot(e,p)?.answers||{},
+    selected=(field,code)=>Array.isArray(answers[field])&&answers[field].some(x=>x===code),
+    original=sourceStep||tobeProposalSourceSteps(e,p).find(x=>
+      String(x.id)===String(item.sourceStepId)),
+    transformation=String(item.transformation||''),
+    automation=String(item.automationAi||'').trim(),
+    supervision=String(item.humanSupervision||'').trim(),
+    hasAutomation=!!automation&&!/^(no|n\/a|ninguno|sin definir|pendiente|—)$/i.test(automation),
+    results=[],
+    add=(severity,code,message)=>results.push({severity,code,message,related:[]});
+  const humanRequired=['FINAL_DECISION','FINANCIAL_ACTION'].some(code=>
+    selected('DF075',code)||selected('DF088',code))||
+    ['HUMAN_DECISION','APPROVAL'].some(code=>selected('DF087',code));
+  if(humanRequired&&['ST04','ST05'].includes(String(original?.step_type||original?.stepType||''))){
+    const automatic=/(?:aprob\w*|autoriz\w*|decisi[oó]n financiera).{0,40}autom[aá]tic\w*/i.test(automation),
+      negated=/(?:\bno\b|\bnunca\b).{0,40}(?:aprob\w*|autoriz\w*|decisi[oó]n financiera).{0,40}autom[aá]tic\w*/i.test(automation),
+      bypass=/\bsin (?:supervisi[oó]n|intervenci[oó]n|aprobaci[oó]n) humana\b/i.test(automation),
+      humanDecision=/(?:aprob\w*|rechaz\w*|autoriz\w*|decid\w*|decisi[oó]n)/i.test(supervision)&&
+        /(?:human\w*|person\w*|responsable|direcci[oó]n|manager|finanzas|administraci[oó]n)/i.test(supervision);
+    if((automatic&&!negated)||bypass)
+      add('BLOCK','HUMAN_APPROVAL','Incompatible · DF075/DF087/DF088: la propuesta sustituye una decisión o autorización humana obligatoria.');
+    else if(transformation==='Se elimina'&&String(original?.step_type||original?.stepType)==='ST05')
+      add('BLOCK','HUMAN_APPROVAL','Incompatible · DF075/DF087/DF088: se elimina la actividad de aprobación humana sin acreditar una sustitución autorizada.');
+    else if(humanDecision&&String(item.futureActor||'').trim())
+      add('COMPATIBLE','HUMAN_APPROVAL','Compatible con el diseño declarado · DF075/DF087/DF088: la decisión se mantiene bajo responsabilidad humana. La ejecución no está certificada.');
+    else
+      add('REVIEW','HUMAN_APPROVAL','Pendiente · DF075/DF087/DF088: documenta quién autoriza y cómo se gestionan las decisiones y excepciones.');
+  }
+  if((selected('DF089','KEEP_EXISTING')||selected('DF089','CRM_NATIVE'))&&transformation!=='Se elimina'){
+    const normalize=v=>typeof tobeFutureCatalogValue==='function'?
+        String(tobeFutureCatalogValue('OS_TOOL_CATEGORY',v)||v||'').trim():String(v||'').trim(),
+      oldTool=normalize(original?.tool),newTool=normalize(item.tool);
+    if(oldTool&&newTool&&oldTool!==newTool)
+      add('REVIEW','PLATFORM_COMPATIBILITY','Pendiente · DF089: la herramienta futura cambia pese a la preferencia del cliente por conservar sistemas o utilizar funciones nativas. Justifica y valida el cambio.');
+    else if(hasAutomation)
+      add('REVIEW','PLATFORM_COMPATIBILITY','Pendiente · DF089: mantener la herramienta actual no demuestra que soporte el registro, los avisos o la integración propuestos.');
+    else if(oldTool&&newTool)
+      add('COMPATIBLE','PLATFORM_COMPATIBILITY','Compatible con el diseño declarado · DF089: se mantiene la herramienta existente sin automatización adicional.');
+    else
+      add('REVIEW','PLATFORM_COMPATIBILITY','Pendiente · DF089: no se ha identificado una herramienta futura verificable.');
+  }
+  const security=['RBAC','AUDIT_LOG','MFA'].filter(code=>selected('DF090',code));
+  if(security.length&&!['Se mantiene','Se elimina'].includes(transformation))
+    add('REVIEW','SECURITY_EVIDENCE','Pendiente · DF090: acreditar '+
+      security.map(code=>({RBAC:'roles y permisos',AUDIT_LOG:'auditoría',MFA:'autenticación multifactor'}[code])).join(', ')+
+      '. El texto del TO-BE no demuestra que la plataforma implemente esos controles.');
+  return results;
+}
+// [AUNEA-FE-PG11-CONSTRAINT-ASSESSMENT-382] END
+
 function tobeOptimizationFindings(e,p,item){
   if(!e||!p||!item)return [];
   const future=tobeFutureSteps(e,p),flow=tobeFlowOwner(e,p),
@@ -327,10 +385,12 @@ function tobeOptimizationFindings(e,p,item){
     names=steps=>steps.map(x=>x.step_name||x.stepName||String(x.id)).join(', ');
   if(item.transformation==='Se elimina'){
     add('REVIEW','REMOVED_ACTIVITY','La actividad se propone eliminar. Revisa quién asume su trabajo, entradas y salidas y redirige las conexiones en Mapa TO-BE.',successors);
+    results.push(...tobeConstraintAssessments(e,p,item,sourceStep));
     return results;
   }
   if(!owner){
     add('REVIEW','MISSING_NODE','La actividad no está conectada en el grafo futuro. Comprueba su inclusión y rutas en Mapa TO-BE.');
+    results.push(...tobeConstraintAssessments(e,p,item,sourceStep));
     return results;
   }
   if(newInputs.length){
@@ -360,25 +420,10 @@ function tobeOptimizationFindings(e,p,item){
       'La actividad figura como «'+item.transformation+'» pero conserva texto en Automatización/IA. '+
       'Aclara si es información histórica o una intervención futura antes de validar el TO-BE.');
   }
-  if(hasAutomation&&!['Se mantiene','Se elimina'].includes(item.transformation)){
-    const oldTool=tobeFutureCatalogValue('OS_TOOL_CATEGORY',sourceStep?.tool),
-      currentTool=tobeFutureCatalogValue('OS_TOOL_CATEGORY',item.tool);
-    if(!currentTool||sourceStep&&oldTool===currentTool)
-      add('REVIEW','AUTOMATION_CAPABILITY',
-        'La intervención incorpora automatización o asistencia. Verifica capacidades, permisos e integración de la herramienta prevista; mantener la herramienta actual no acredita viabilidad.');
-    if(!String(item.humanSupervision||'').trim())
-      add('REVIEW','HUMAN_SUPERVISION',
-        'La propuesta operativa incorpora automatización, pero no documenta quién revisa las excepciones.');
-    const answers=tobeProposalSnapshot(e,p)?.answers||{},
-      flagged=[['DF075','aprobaciones humanas'],['DF088','límites de automatización'],
-        ['DF089','plataformas'],['DF090','seguridad y accesos']].filter(([key])=>{
-        const v=answers[key];return v!=null&&String(v).trim()!==''&&
-          !(Array.isArray(v)&&!v.length);
-      }).map(x=>x[1]);
-    if(flagged.length)add('REVIEW','CONFIRMED_CONSTRAINTS',
-      'Contrasta la intervención con los requisitos confirmados de '+flagged.join(', ')+
-      '. La IA no puede sustituir ni relajar una obligación del cliente.');
-  }
+  if(hasAutomation&&!['Se mantiene','Se elimina'].includes(item.transformation)&&
+     !String(item.humanSupervision||'').trim())
+    add('REVIEW','HUMAN_SUPERVISION',
+      'La intervención incorpora automatización, pero falta registrar quién revisa las excepciones.');
   if(sourceStep&&processDecisionStep(sourceStep)){
     const route=flow.routes[id]||{},
       changed=String(route.normal||'')!==String(sourceStep.normal_next_step||'')||
@@ -396,6 +441,7 @@ function tobeOptimizationFindings(e,p,item){
   if((originalFrictions.length||relatedRisks.length)&&!String(item.problemResolved||'').trim())
     add('REVIEW','UNJUSTIFIED_CHANGE',
       'Hay hallazgos vinculados al paso, pero falta justificar qué problema resuelve el diseño futuro.');
+  results.push(...tobeConstraintAssessments(e,p,item,sourceStep));
   return results;
 }
 function tobeOptimizationPanelHtml(e,p,item){
@@ -407,13 +453,16 @@ function tobeOptimizationPanelHtml(e,p,item){
     successorIds=owner?[owner.normal_next_step,owner.exception_path?.destination_step]:[],
     successors=successorIds.map(id=>future.find(s=>String(s.id)===String(id))).filter(Boolean),
     names=steps=>steps.map(x=>x.step_name).join(' · ')||'Sin actividad conectada en esta dirección',
-    review=results.filter(x=>x.severity==='REVIEW').length,
+    pending=results.filter(x=>x.severity==='REVIEW').length,
+    incompatible=results.filter(x=>x.severity==='BLOCK').length,
+    compatible=results.filter(x=>x.severity==='COMPATIBLE').length,
+    issues=pending+incompatible,
     block=tobeFlowIntegrity(e,p),
     prior=typeof document!=='undefined'?document.querySelector('#tobeStepOptimization .tobe-optimization-details'):null,
     open=!!block||!!prior?.open,
     rows=results.map(x=>'<li class="tobe-optimization-finding" data-optimization-code="'+attr(x.code)+'">'+
       '<span class="tobe-optimization-severity">'+
-        (x.severity==='REVIEW'?'Revisar':'Comprobar')+'</span>'+
+        (x.severity==='BLOCK'?'Incompatible':x.severity==='COMPATIBLE'?'Compatible':x.severity==='REVIEW'?'Pendiente':'Comprobar')+'</span>'+
       '<p>'+esc(x.message)+'</p>'+
       (x.related.length?'<small>Actividades relacionadas: '+esc(x.related.join(' · '))+'</small>':'')+
     '</li>').join('');
@@ -431,10 +480,15 @@ function tobeOptimizationPanelHtml(e,p,item){
       '</div>'+
       '<details class="tobe-optimization-details"'+(open?' open':'')+'>'+
         '<summary>'+(block?'Bloqueo de integridad detectado':
-          results.length?results.length+' '+(results.length===1?'observación para revisar':'observaciones para revisar'):
+          issues?issues+' '+(issues===1?'observación pendiente':'observaciones pendientes')+
+            (compatible?' · '+compatible+' compatible'+(compatible===1?'':'s'):''):
+          compatible?compatible+' comprobación'+(compatible===1?'':'es')+' compatible'+(compatible===1?'':'s'):
           'Sin incompatibilidades evidentes · Ver comprobaciones')+'</summary>'+
         (block?'<p class="notice warn"><b>Integridad del flujo:</b> '+esc(block)+'</p>':'')+
-        (results.length?'<p class="tobe-optimization-summary">'+review+' observaciones requieren contrastar un dato o decisión.</p>'+
+        (results.length?'<p class="tobe-optimization-summary">'+
+          (incompatible?incompatible+' incompatibilidades; ':'')+
+          pending+' comprobaciones pendientes de acreditar'+
+          (compatible?'; '+compatible+' compatibles con el diseño declarado':'')+'.</p>'+
           '<ul class="tobe-optimization-findings">'+rows+'</ul>':
           '<p class="tobe-optimization-empty">No se han identificado incompatibilidades evidentes entre los datos declarados de este paso y sus conexiones.</p>')+
         '<p class="field-help">Las comprobaciones no acreditan por sí solas viabilidad ni ahorro. '+
