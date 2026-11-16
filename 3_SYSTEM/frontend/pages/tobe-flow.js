@@ -370,11 +370,12 @@ function tobeOptimizationPanelHtml(e,p,item){
       '<p>'+esc(x.message)+'</p>'+
       (x.related.length?'<small>Actividades relacionadas: '+esc(x.related.join(' · '))+'</small>':'')+
     '</li>').join('');
-  return '<details class="tobe-design-group tobe-optimization-panel"'+
-    ' id="tobeStepOptimization" data-source-step-id="'+attr(item.sourceStepId)+'"'+((typeof tobeDisclosureOpen==='function'?tobeDisclosureOpen('tobeStepOptimization',item.sourceStepId,true):true)?' open':'')+' aria-label="Comprobación de dependencias del flujo">'+
-    '<summary class="tobe-design-group-head"><span class="tobe-design-group-number">04</span>'+
-    '<div><h4>Impacto del cambio sobre el flujo</h4>'+
-    '<p>Revisión de rutas y dependencias; no modifica conexiones ni acepta propuestas.</p></div></summary>'+
+  return auneaUiDisclosureStart({id:'tobeStepOptimization',sourceId:item.sourceStepId,
+    variant:'group',className:'tobe-design-group tobe-optimization-panel',
+    number:'04',title:'Impacto del cambio sobre el flujo',
+    description:'Revisión de rutas y dependencias; no modifica conexiones ni acepta propuestas.',
+    open:auneaUiDisclosureOpen('tobeStepOptimization',item.sourceStepId,true),
+    ariaLabel:'Comprobación de dependencias del flujo'})+
     '<div class="tobe-optimization-body">'+
       '<div class="tobe-optimization-connections">'+
         '<div><b>Pasos anteriores</b><span>'+esc(names(predecessors))+'</span></div>'+
@@ -394,7 +395,7 @@ function tobeOptimizationPanelHtml(e,p,item){
       '</details>'+
       (tobeEditable(p)?'<button type="button" class="btn btn-outline" data-tobe-recheck-optimization="1">'+
         'Guardar y actualizar comprobaciones</button>':'')+
-    '</div></details>';
+    '</div>'+auneaUiDisclosureEnd();
 }
 // [AUNEA-FE-PG11-OPTIMIZATION-CHECK-313] END
 // [AUNEA-FE-PG11-FUTURE-FLOW-228] END
