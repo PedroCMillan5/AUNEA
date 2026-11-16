@@ -904,12 +904,11 @@ function tobeInspectorHtml(e,p){
     // advisory. Snapshot AS-IS remains immutable. No new business fields.
     '<section class="tobe-edit tobe-design-workspace aunea-ui-work-stage" id="tobeStepDesign">'+
       '<details id="tobeDesignDetails" class="tobe-stage-disclosure" data-source-step-id="'+attr(item.sourceStepId)+'"'+(designOpen?' open':'')+'>'+ 
-      '<summary class="tobe-design-header"><div>'+
-        '<h3 class="aunea-ui-section-title tobe-stage-heading">03.3 · Configurar la actividad futura</h3>'+
-        '<p class="tobe-design-lede" data-tobe-transformation-message="1" role="status" aria-live="polite">'+
-          'Aquí decides el diseño: conserva, modifica o aplica valores mediante vista previa. '+
-          'No es necesario aceptar una recomendación completa antes. Nada se importa automáticamente.</p>'+
-        '</div><span class="tobe-design-status">'+(editable?'Borrador editable':'Solo lectura')+'</span></summary>'+
+      '<summary class="tobe-design-header"><span class="aunea-ui-section-title tobe-stage-heading">03.3 · Configurar la actividad futura</span>'+
+        '<span class="tobe-design-status">'+(editable?'Borrador editable':'Solo lectura')+'</span></summary>'+
+      '<p class="tobe-design-lede" data-tobe-transformation-message="1" role="status" aria-live="polite">'+
+        'Aquí decides el diseño: conserva, modifica o aplica valores mediante vista previa. '+
+        'No es necesario aceptar una recomendación completa antes. Nada se importa automáticamente.</p>'+
       tobeDecisionSourceSummaryHtml(e,p,item)+
       '<details class="tobe-design-evidence" id="tobeDesignEvidence" data-source-step-id="'+
         attr(item.sourceStepId)+'"'+(evidenceOpen?' open':'')+'>'+
