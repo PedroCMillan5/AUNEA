@@ -93,6 +93,8 @@ jobs:
         run: node tests/uat-browser-smoke.cjs
       - name: PG11 live-browser rules, preview and recovery on synthetic processes
         run: node tests/pg11-browser-journey.cjs
+      - name: PG11 03.2–03.3 full DOM contract and read-only recovery
+        run: node tests/pg11-dom-journey.cjs
       - name: Preserve browser screenshots for review
         if: always()
         uses: actions/upload-artifact@v4
