@@ -46,6 +46,27 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,'.'+new 
     assert.equal(new Set(stageVisual.titles.map(x=>x[property])).size,1,
       '03.1/03.2/03.3 must share title '+property+': '+JSON.stringify(stageVisual.titles));
   assert.match(stageVisual.titles[0].font,/Sora/);
+  // UX contract: same native disclosure control, same initial state and same background
+  // for every operational group. Opening a group must not change the data owner.
+  const groupContract=await page.evaluate(()=>{
+    const ids=['tobeDesignGroup01','tobeDesignGroup02','tobeExecutionFields',
+      'tobeStepOptimization','tobeDesignGroup05'];
+    return ids.map(id=>{
+      const panel=document.getElementById(id),summary=panel?.querySelector(':scope>summary');
+      const style=summary?getComputedStyle(summary):null;
+      return {id,element:panel?.tagName,open:panel?.open,
+        summary:summary?.tagName,bg:style?.backgroundColor,weight:style?.fontWeight};
+    });
+  });
+  assert.ok(groupContract.every(x=>x.element==='DETAILS'&&x.summary==='SUMMARY'&&x.open===true),
+    'All five numbered design groups must be operational native disclosures with equal initial state: '+
+      JSON.stringify(groupContract));
+  assert.equal(new Set(groupContract.map(x=>x.bg)).size,1,
+    '01–05 must share the same header background regardless of semantics');
+  await page.locator('#tobeDesignGroup02>summary').click();
+  assert.equal(await page.locator('#tobeDesignGroup02').evaluate(el=>el.open),false);
+  await page.locator('#tobeDesignGroup02>summary').click();
+  assert.equal(await page.locator('#tobeDesignGroup02').evaluate(el=>el.open),true);
   // F1: both PG11 captions use the common DS-003 typography, with local margin only.
   const captionVisual=await page.evaluate(()=>[
     '.tobe-context-head .aunea-ui-section-caption',
