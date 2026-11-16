@@ -187,7 +187,7 @@ for(const kind of ['invoice','logistics']){
   assert.equal(run('latestTobe(currentEng()).items[1].humanSupervision'),
     JSON.parse(previous).items[1].humanSupervision);
   for(const id of ['tobeStepOrigin','tobeStepAdvice','tobeStepDesign'])
-    assert.ok(w.document.getElementById(id),'all PG11 stages must use the recovered DRAFT: '+id);
+    assert.ok(w.document.getElementById(id),'all PG11 stages must use the recovered DRAFT: '+id+' diagnostic='+JSON.stringify(run('diagnosticOutputFreshness(currentEng())'))+' page='+w.document.getElementById('content')?.textContent.slice(-750));
   assert.equal(run('tobeProposalSnapshot(currentEng(),latestTobe(currentEng())).version'),2);
   assert.equal(run('tobeFlowIntegrity(currentEng(),latestTobe(currentEng()))'),null);
   w.document.querySelector('[data-tobe-load-alternatives="P1"]').click();
