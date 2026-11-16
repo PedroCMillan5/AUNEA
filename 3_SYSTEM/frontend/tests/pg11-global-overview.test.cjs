@@ -136,7 +136,7 @@ test('section 01 shows only confirmed source facts and not later live edits',()=
   assert.match(html,/Resultado vigente/);
   assert.match(html,/2 actividades/);
   assert.doesNotMatch(html,/Dato vivo modificado/);
-  assert.match(html,/<details class="tobe-context-details">/);
+  assert.match(html,/<details class="aunea-ui-disclosure aunea-ui-disclosure--inline tobe-context-details"[^>]*>/);
   assert.doesNotMatch(html,/<input|<textarea|<select/i);
 });
 
@@ -837,7 +837,7 @@ test('PG11 compact cards retain all original details and direct activity navigat
    tobeProposalSnapshot:()=>snapshot,
    esc:x=>String(x??''),attr:x=>String(x??''),
    internalAiGlobalWorking:()=>false,internalAiGlobalMessage:()=>null};
- vm.createContext(ctx);vm.runInContext(quality+block,ctx);
+ vm.createContext(ctx);vm.runInContext(quality+'\n'+sharedUi+'\n'+block,ctx);
  const before=JSON.stringify(p.aiGlobal),html=ctx.tobeGlobalOverviewHtml(e,p);
  assert.match(html,/PROPUESTA DE LA IA/);
  assert.match(html,/Qué debe comprobarse para esta intervención/);
@@ -910,7 +910,7 @@ test('UAT-02-02 hierarchy: two options are never presented as one already chosen
     esc:x=>String(x??''),attr:x=>String(x??''),
     tobeHumanReviewRecord:()=>null
   };
-  vm.createContext(ctx);vm.runInContext(quality+block,ctx);
+  vm.createContext(ctx);vm.runInContext(quality+'\n'+sharedUi+'\n'+block,ctx);
   const before=JSON.stringify(records),html=ctx.tobeGlobalOverviewHtml(h.env.e,h.env.p);
   assert.equal((html.match(/class="tobe-global-intervention"/g)||[]).length,2);
   assert.equal((html.match(/class="tobe-global-opportunity"/g)||[]).length,1);
@@ -946,7 +946,7 @@ test('UAT-02-02 hierarchy: universal checks appear once, not under each proposal
     tobeProposalSnapshot:()=>h.env.e.confirmedSnapshots[0],
     tobeProposalSourceSteps:()=>[{id:'S1',step_name:'Recepción'}],
     esc:x=>String(x??''),attr:x=>String(x??'')};
-  vm.createContext(ctx);vm.runInContext(quality+block,ctx);
+  vm.createContext(ctx);vm.runInContext(quality+'\n'+sharedUi+'\n'+block,ctx);
   const html=ctx.tobeGlobalOverviewHtml(h.env.e,h.env.p);
   assert.match(html,/Requisitos de implantación compartidos por todas las propuestas \(1\)/);
   assert.equal((html.match(/Comprobar permisos reales del responsable\./g)||[]).length,1);
