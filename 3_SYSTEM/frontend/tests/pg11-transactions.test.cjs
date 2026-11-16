@@ -118,6 +118,12 @@ for(const name of ['invoice','logistics'])test('PG11 source â†’ backend rules â†
  sourceStatus=ctx.tobeAsisCompatibility(e,p);
  assert.equal(sourceStatus.compatible,true,'equivalent PG09 confirmation stays usable');
  assert.equal(sourceStatus.equivalent,true);
+ const equivalentKeep=preview({id:'KEEP: P1',sourceId:'P1',provenance:'RULES',
+   fields:{},operations:[],sourceRefs:['P1'],title:'Mantener sin cambios',
+   conditions:['Los hallazgos siguen pendientes.']});
+ assert.equal(ctx.tobeCommitAlternative(e,equivalentKeep),true,
+   'an equivalent AS-IS re-seal must permit the actual consultant confirmation');
+ assert.equal(p.aiDraft.applyHistory.at(-1).decision,'CONSULTANT_CONFIRMED');
  e.confirmedSnapshots[e.confirmedSnapshots.length-1]={...same,
    processSteps:same.processSteps.map((step,i)=>i?step:{...step,step_name:'Actividad AS-IS modificada'})};
  sourceStatus=ctx.tobeAsisCompatibility(e,p);
