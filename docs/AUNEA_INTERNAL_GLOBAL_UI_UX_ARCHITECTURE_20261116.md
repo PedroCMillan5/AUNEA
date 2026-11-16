@@ -63,3 +63,25 @@ El objetivo es eliminar **duplicados demostrados**, no maximizar líneas elimina
 Esta entrega **sí contiene una implementación común real y migración de PG11**, pero **no certifica la UI/UX definitiva de toda AUNEA Internal**, ni que PG11 tenga toda su funcionalidad desarrollada, ni que PG12–PG15 hayan terminado su E2E comercial. Se mantiene pendiente aceptación visual del propietario; no confundir los tests automáticos con dicha aceptación. La homogeneización de otros patrones todavía requiere migraciones justificadas por consumidor y, especialmente para FROZEN, respetar sus contratos sin modificar su apariencia. No se altera lógica IA, backend, fórmulas, estado de aprobación ni decisiones canónicas. No se fusiona a `main`.
 
 **Regla preventiva:** cuando aparezca una sección equivalente, primero reutilizar el componente 450/451; no se admite añadir otro `<summary>` con geometría definida localmente sin documentar una excepción funcional y sus consumidores.
+
+## 7. Corrección de composición completa PG11 · 16/11/2026 (captura del propietario)
+
+La captura de la página completa demostró que el lote anterior **no** había homogeneizado el nivel superior de PG11: 01 cerraba con un desplegable plano, 02 con otro diseño, y 03 estaba visualmente dividida en tres tarjetas independientes (cabecera, navegación, inspector). Esta incidencia se reconoce explícitamente: aprobar 03.1–03.3 no acreditaba que las secciones 01–03 fueran homogéneas.
+
+**Corrección estructural implementada:**
+- `ui/renderer.js` añade variante opt-in `inline` al mismo propietario global `auneaUiDisclosureStart/End/Open` (Block_ID 450), con tipografía, chevron, foco, fondo y bordes definidos en `styles.css` (Block_ID 451).
+- `pages/tobe.js`: 01 «Consultar criterios y restricciones del cliente» consume la variante `inline`, con estado de apertura conservado al repintar el mismo borrador.
+- `pages/tobe-global.js`: 02 «Ver seguimiento, fuentes y comprobaciones» consume exactamente la misma variante `inline`, conservando informes, fuentes, incidencias y lógica de apertura por aviso.
+- `pages/tobe.js`: 03 contiene ahora **una sola** superficie `tobe-review-workbench aunea-ui-work-surface`: cabecera, controles «Revisión por actividad» / «Mapa TO-BE», navegación, mapa e inspector están bajo un mismo marco; no existen tres tarjetas independientes.
+- `ui-system.css`: se eliminan los estilos individuales de los dos desplegables y se limita el layout de 03 al contexto de su nueva superficie (Block_ID `AUNEA-FE-PG11-SECTION-COMPOSITION-453`, indexado). Las dimensiones de cabecera y contenido siguen perteneciendo al componente compartido.
+- Se corrigió una regresión detectada mediante inspección de la primera captura: el nuevo contenedor no debe forzar `display:grid` en `.tobe-map-area` porque anula su ocultación en modo guiado. El CSS final respeta ambos modos.
+- No se altera el diagnóstico, las propuestas IA, la lógica de aprobación, la base de datos ni las rutas de negocio.
+
+**Regresiones y evidencia final (revisión `9b9b5a43032a43dd8f0ab688c509ff5e37598e40`):**
+- [Acceptance Gate 43847649180](https://github.com/PedroCMillan5/AUNEA/actions/runs/43847649180) **SUCCESS**: 960/960 pruebas frontend; 493 backend PASS; Chromium browser UAT PASS; 18/18 FROZEN SHA-256; PG11 invoice/logistics PASS; PG11→PG12 PASS.
+- [Edge Windows 43847649367](https://github.com/PedroCMillan5/AUNEA/actions/runs/43847649367) **SUCCESS**.
+- [Frontend Tests 43847649435](https://github.com/PedroCMillan5/AUNEA/actions/runs/43847649435) **SUCCESS**.
+- Artefacto con capturas reales: `aunea-single-uat-chromium-evidence`, dentro de Acceptance Gate 43847649180. Se revisaron `pg11-aunea-consultant-desktop.png` y `pg11-section03-reviewed-fields-desktop.png`. El primero muestra las tres secciones con card exterior equivalente y despliegues 01/02 coincidentes; el segundo muestra inspector 03 sin mapa en modo guiado.
+- Se añadieron aserciones de navegador para anchos, padding, borde, títulos de los controles finales 01/02, apertura/cierre, contenedor único 03, modo guiado sin mapa, modo mapa visible y vuelta a guiado sin mapa.
+
+**Alcance del cierre:** corregidas estructuralmente y probadas visualmente por captura automatizada las dos discrepancias mostradas por el propietario. **No implica aceptación humana final ni que se hayan migrado a un único renderer todos los patrones y pantallas del producto**. La rama permanece REVIEW y sin merge.

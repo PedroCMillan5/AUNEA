@@ -61,3 +61,11 @@ No se cambian diagnóstico, reglas IA, cifras, modelos, snapshots, estado del co
 - Versión funcional: `6de632d56e1957204793f2a455d2312640793c45`.
 
 **Dictamen:** corregida y probada técnicamente la diferencia concreta de cabecera y márgenes entre 03.2 y 03.3. **No se declara aceptación visual humana del propietario ni homogeneidad definitiva de toda AUNEA**, que son ámbitos distintos. La rama sigue en REVIEW y sin merge a main.
+
+## 6. Rectificación del nivel superior 01–03 · 16/11/2026
+
+La revisión del propietario evidenció otra divergencia que no cubría el test de 03.1–03.3: el desplegable final de 01 tenía un diseño diferente al de 02, y 03 arrancaba con cabecera, barra de navegación e inspector en tres tarjetas separadas. Se reabrió la composición completa de PG11.
+
+Se implementó el mismo componente `auneaUiDisclosureStart` variante `inline` para los finales de 01/02; `aunea-ui-work-surface` envuelve ahora conjuntamente cabecera, navegación y contenido de 03; se eliminaron reglas individuales desplazadas a los propietarios globales. Se comprobó en captura Chromium la desaparición de la triple tarjeta. También se corrigió la regresión del mapa visible en modo guiado causada por un `display:grid` indebido.
+
+Fuente e inventario de cambio: `docs/AUNEA_INTERNAL_GLOBAL_UI_UX_ARCHITECTURE_20261116.md`, apéndice 7. QA definitivo: Acceptance Gate 43847649180 SUCCESS, frontend 960 PASS, backend 493 PASS, Chromium 18 FROZEN PASS; Windows Edge 43847649367 SUCCESS. Estado REVIEW sin merge; pendiente aceptación visual del propietario y desarrollo funcional incompleto de AUNEA.
