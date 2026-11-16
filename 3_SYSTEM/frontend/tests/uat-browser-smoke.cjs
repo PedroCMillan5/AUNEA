@@ -1137,9 +1137,10 @@ async function main(){
     assert.equal(await confirm.isDisabled(),false,
       'confirmation must respond with a reason instead of silently being disabled');
     assert.equal(await confirm.getAttribute('data-tobe-confirm-ready'),'0');
+    const priorTransformation=await page.evaluate(()=>latestTobe(currentEng()).items[0]?.transformation);
     await confirm.click();
     assert.match(await page.locator('#tobePreviewActionFeedback').innerText(),/Antes de confirmar:/);
-    assert.equal(await page.evaluate(()=>latestTobe(currentEng()).items[0]?.transformation),'Se mantiene',
+    assert.equal(await page.evaluate(()=>latestTobe(currentEng()).items[0]?.transformation),priorTransformation,
       'blocked confirmation cannot apply an unacknowledged AI proposal');
     await interventionAcknowledgement.check();
     assert.equal(await confirm.getAttribute('data-tobe-confirm-ready'),'1');
