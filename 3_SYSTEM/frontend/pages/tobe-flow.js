@@ -371,7 +371,7 @@ function tobeOptimizationPanelHtml(e,p,item){
       (x.related.length?'<small>Actividades relacionadas: '+esc(x.related.join(' · '))+'</small>':'')+
     '</li>').join('');
   return '<details class="tobe-design-group tobe-optimization-panel"'+
-    ' id="tobeStepOptimization" data-source-step-id="'+attr(item.sourceStepId)+'"'+(tobeDisclosureOpen('tobeStepOptimization',item.sourceStepId,false)?' open':'')+' aria-label="Comprobación de dependencias del flujo">'+
+    ' id="tobeStepOptimization" data-source-step-id="'+attr(item.sourceStepId)+'"'+((typeof tobeDisclosureOpen==='function'?tobeDisclosureOpen('tobeStepOptimization',item.sourceStepId,true):true)?' open':'')+' aria-label="Comprobación de dependencias del flujo">'+
     '<summary class="tobe-design-group-head"><span class="tobe-design-group-number">04</span>'+
     '<div><h4>Impacto del cambio sobre el flujo</h4>'+
     '<p>Revisión de rutas y dependencias; no modifica conexiones ni acepta propuestas.</p></div></summary>'+
