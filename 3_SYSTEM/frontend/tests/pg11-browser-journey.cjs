@@ -16,7 +16,7 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,'.'+new 
   // The following style checks must fail explicitly if any section is missing.
   const stageSelectors=[
     '#tobeStepOrigin>details>summary','#tobeStepAdvice>details>summary',
-    '#tobeStepDesign>.tobe-design-header',
+    '#tobeStepDesign>.tobe-stage-disclosure>.tobe-design-header',
     '#tobeStepOrigin .tobe-stage-heading','#tobeStepAdvice .tobe-stage-heading',
     '#tobeStepDesign .tobe-stage-heading'
   ];
@@ -28,7 +28,7 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,'.'+new 
   // PG11 visual contract: all three guided sections are one product hierarchy.
   const stageVisual=await page.evaluate(()=>{
     const names=['#tobeStepOrigin>details>summary','#tobeStepAdvice>details>summary',
-      '#tobeStepDesign>.tobe-design-header'],
+      '#tobeStepDesign>.tobe-stage-disclosure>.tobe-design-header'],
       selectors=['#tobeStepOrigin .tobe-stage-heading','#tobeStepAdvice .tobe-stage-heading',
         '#tobeStepDesign .tobe-stage-heading'];
     const look=el=>{
