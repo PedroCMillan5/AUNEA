@@ -523,6 +523,7 @@ function registerInternalWorkPages(){
           tobeAlternativeConfirmFeedback(issue,true);
           return;
         }
+        if(tobeAlternativePreviewRevision(e,preview))return;
         tobeCommitAlternative(e,preview);
         document.getElementById('tobeAlternativeDialog')?.close();render();
         if(__auneaTobeMode==='guided'){

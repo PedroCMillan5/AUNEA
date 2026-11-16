@@ -208,6 +208,10 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,'.'+new 
   const acceptance=page.locator('#tobeAlternativeDialog [data-tobe-preview-ack]');
   await acceptance.check();
   assert.equal(await approve.getAttribute('data-tobe-confirm-ready'),'1');
+  await page.evaluate(()=>{latestTobe(currentEng()).items[1].humanSupervision='Revisión humana externa conservada';});
+  await approve.click();
+  assert.match(await page.locator('#tobePreviewActionFeedback').innerText(),/actualizado la comparación/);
+  assert.equal(await page.evaluate(()=>tobeFutureSteps(currentEng(),latestTobe(currentEng())).length),4);
   await approve.click();
   await page.waitForFunction(()=>tobeFutureSteps(currentEng(),latestTobe(currentEng())).length===5);
   assert.equal(await page.evaluate(()=>tobeFlowIntegrity(currentEng(),latestTobe(currentEng()))),null);

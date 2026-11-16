@@ -98,6 +98,13 @@ for(const kind of ['invoice','logistics']){
   acknowledgement.checked=true;
   acknowledgement.dispatchEvent(new w.Event('change',{bubbles:true}));
   assert.equal(confirm.dataset.tobeConfirmReady,'1','confirmation becomes ready after explicit acknowledgement');
+  // Live draft may receive a safe, unrelated change while the preview is open.
+  // First click must refresh the comparison without overwriting that change.
+  run('latestTobe(currentEng()).items[1].humanSupervision="Revisión humana externa conservada";');
+  confirm.click();
+  assert.equal(run('tobeFutureSteps(currentEng(),latestTobe(currentEng())).length'),4);
+  assert.match(w.document.querySelector('#tobePreviewActionFeedback').textContent,/actualizado la comparación/);
+  assert.equal(run('latestTobe(currentEng()).items[1].humanSupervision'),'Revisión humana externa conservada');
   confirm.click();
   await until(()=>run('tobeFutureSteps(currentEng(),latestTobe(currentEng())).length')===5);
   assert.equal(run('tobeFlowIntegrity(currentEng(),latestTobe(currentEng()))'),null);

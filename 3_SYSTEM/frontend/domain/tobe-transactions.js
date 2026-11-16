@@ -98,6 +98,63 @@ function tobeTransactionChanges(before,after,path=[]){
   return [{path,before:before===undefined?null:tobeClone(before),after:after===undefined?null:tobeClone(after),
     beforeMissing:before===undefined,afterMissing:after===undefined}];
 }
+// [AUNEA-FE-PG11-PREVIEW-REVISION-463] START
+// A preview may outlive cosmetic reserialization and independent edits.
+// Compare semantic state rather than JSON property insertion order. Recalculate
+// a disjoint change against the latest version, but require the consultant to
+// review the changed comparison before a second explicit confirmation.
+function tobeStableDesignValue(value){
+  if(Array.isArray(value))return value.map(tobeStableDesignValue);
+  if(value&&typeof value==='object')
+    return Object.fromEntries(Object.keys(value).sort().map(key=>[key,tobeStableDesignValue(value[key])]));
+  return value;
+}
+function tobeSameDesignState(a,b){
+  return JSON.stringify(tobeStableDesignValue(a))===JSON.stringify(tobeStableDesignValue(b));
+}
+function tobeAlternativePreviewRevision(e,preview){
+  const p=e?latestTobe(e):null;
+  if(!preview||!e||String(preview.engagementId)!==String(e.id))
+    throw Error('La vista previa pertenece a otro estudio. Cierra la ventana y abre la intervención en el estudio activo.');
+  if(!p||p.version!==preview.version||!tobeEditable(p))
+    throw Error('Se abrió otra versión del TO-BE o el borrador dejó de ser editable. No se aplicó la intervención.');
+  const snapshot=confirmedSnapshot(e);
+  if(!snapshot||snapshot.version!==p.sourceSnapshotVersion||
+     (preview.sourceSnapshotVersion!=null&&snapshot.version!==preview.sourceSnapshotVersion))
+    throw Error('Cambió la versión confirmada del AS-IS. Revisa el diagnóstico antes de volver a previsualizar.');
+  const diagnosticHash=currentDiagnosticOutput(e)?.input_snapshot_hash||'';
+  if(preview.diagnosticHash&&diagnosticHash!==preview.diagnosticHash)
+    throw Error('El diagnóstico vigente cambió desde que abriste esta propuesta. Vuelve a consultar las alternativas antes de aplicar.');
+  const current=tobeDesignState(p);
+  if(tobeSameDesignState(current,preview.before))return false;
+  const external=tobeTransactionChanges(preview.before,current);
+  const planned=tobeTransactionChanges(preview.before,tobeDesignState(preview.projected));
+  const intersects=(a,b)=>a.every((key,i)=>b[i]===key)||b.every((key,i)=>a[i]===key);
+  const conflicting=external.find(change=>planned.some(other=>intersects(change.path,other.path)));
+  if(conflicting)
+    throw Error('Cambió un campo o una conexión que esta propuesta también modificaría ('+
+      conflicting.path.join(' / ')+'). Para no sobrescribir tu trabajo, cierra esta vista previa y vuelve a abrir la intervención.');
+  // Rebase only on an unchanged AS-IS and non-overlapping draft edits. It is
+  // deliberately NOT a commit: the newly projected values must be seen first.
+  const next=tobeProjectAlternative(e,p,preview.candidate);
+  preview.before=current;
+  preview.projected=next.projected;
+  preview.pending=next.pending;
+  preview.previewError='';
+  tobePaintAlternativePreview(e,preview);
+  const feedback='El borrador tenía otros cambios. Hemos actualizado la comparación sin aplicar nada. Revisa el antes/después y pulsa «Confirmar intervención» de nuevo.';
+  tobeAlternativeConfirmFeedback(feedback);
+  const dialog=document.getElementById('tobeAlternativeDialog');
+  const message=dialog?.querySelector('#tobePreviewActionFeedback');
+  if(message){
+    message.textContent=feedback;
+    message.dataset.state='blocked';
+  }
+  const changes=dialog?.querySelector('#tobeAlternativeChanges');
+  changes?.scrollIntoView?.({block:'start',behavior:'smooth'});
+  return true;
+}
+// [AUNEA-FE-PG11-PREVIEW-REVISION-463] END
 function tobeTransactionRead(root,path){return path.reduce((value,key)=>value?.[key],root);}
 function tobeTransactionWrite(root,change,reverse=false){
   let owner=root;for(const key of change.path.slice(0,-1)){if(!owner[key])owner[key]={};owner=owner[key];}
@@ -106,10 +163,10 @@ function tobeTransactionWrite(root,change,reverse=false){
 }
 function tobeCommitAlternative(e,preview){
   const p=latestTobe(e);
-  if(!preview||preview.engagementId!==e.id||p?.version!==preview.version||!tobeEditable(p)||
-    confirmedSnapshot(e)?.version!==p.sourceSnapshotVersion||
-    JSON.stringify(tobeDesignState(p))!==JSON.stringify(preview.before))
-    throw Error('El borrador o el AS-IS cambió. Genera de nuevo la vista previa.');
+  if(tobeAlternativePreviewRevision(e,preview))
+    throw Error('La comparación se ha actualizado. Revísala y confirma de nuevo.');
+  if(!tobeSameDesignState(tobeDesignState(p),preview.before))
+    throw Error('El TO-BE cambió durante la confirmación. No se ha aplicado la intervención.');
   const gate=tobeAlternativeDecisionIssue(preview);
   if(gate)throw Error(gate);
   if(preview.candidate.provenance==='AI'){
@@ -542,10 +599,38 @@ function tobeAlternativeDecisionHtml(preview){
   '</section>';
 }
 // [AUNEA-FE-PG11-PREVIEW-DECISION-361] END
+// [AUNEA-FE-PG11-PREVIEW-REPAINT-464] START
+// One presentation owner for both edited and externally rebased projections.
+function tobePaintAlternativePreview(e,preview){
+  const dialog=document.getElementById('tobeAlternativeDialog');
+  if(!dialog)return;
+  dialog.querySelector('#tobeAlternativeChanges').innerHTML=tobeAlternativeChangesHtml(e,preview);
+  dialog.querySelector('#tobeAlternativePending').innerHTML=tobeAlternativePendingHtml(preview);
+  dialog.querySelector('#tobeAlternativeFindings').innerHTML=tobeAlternativeScopedFindingsHtml(e,preview);
+  dialog.querySelector('#tobeAlternativeMap').innerHTML=
+    tobeCanvasHtml(e,{...preview.projected,status:'REVIEWED'})
+      .replaceAll('data-tobe-select=','data-tobe-preview-node=');
+  const old=tobeAddedSteps(latestTobe(e)),newSteps=tobeAddedSteps(preview.projected);
+  const changedNodes=new Set([String(preview.candidate.sourceId),
+    ...newSteps.filter(x=>!old.some(y=>y.id===x.id)).map(x=>x.id)]);
+  dialog.querySelectorAll('#tobeAlternativeMap [data-graph-node]').forEach(node=>{
+    node.classList.toggle('tobe-preview-changed',changedNodes.has(node.dataset.graphNode));
+  });
+  const issue=tobeAlternativeDecisionIssue(preview);
+  const status=dialog.querySelector('.tobe-preview-decision-status');
+  if(status)status.textContent=issue||'Lista para confirmar esta intervención en el borrador.';
+  tobeAlternativeConfirmFeedback(issue);
+  if(dialog.querySelector('.tobe-preview-map')?.open&&typeof requestAnimationFrame==='function')
+    requestAnimationFrame(()=>drawProcessGraph(dialog.querySelector('#tobeAlternativeMap .process-graph-board')));
+}
+// [AUNEA-FE-PG11-PREVIEW-REPAINT-464] END
 function tobeOpenAlternative(e,candidate){
   if(!saveTobeFromDom(e)||!saveState('Conservar edición antes de previsualizar'))throw Error('No se pudo conservar tu edición.');
   const live=currentEng(),p=latestTobe(live),result=tobeProjectAlternative(live,p,candidate);
-  __auneaTobePreview={engagementId:live.id,version:p.version,before:tobeDesignState(p),
+  __auneaTobePreview={engagementId:live.id,version:p.version,
+    sourceSnapshotVersion:p.sourceSnapshotVersion,
+    diagnosticHash:currentDiagnosticOutput(live)?.input_snapshot_hash||'',
+    before:tobeDesignState(p),
     candidate:tobeClone(candidate),conditionsAcknowledged:false,keepFindingsAcknowledged:false,
     consultantNote:'',...result};
   document.getElementById('tobeAlternativeDialog')?.remove();
@@ -620,21 +705,7 @@ function tobeOpenAlternative(e,candidate){
     try{
       const next=tobeProjectAlternative(currentEng(),latestTobe(currentEng()),preview.candidate);
       preview.projected=next.projected;preview.pending=next.pending;preview.previewError='';
-      dialog.querySelector('#tobeAlternativeChanges').innerHTML=
-        tobeAlternativeChangesHtml(currentEng(),preview);
-      dialog.querySelector('#tobeAlternativePending').innerHTML=tobeAlternativePendingHtml(preview);
-      dialog.querySelector('#tobeAlternativeFindings').innerHTML=
-        tobeAlternativeScopedFindingsHtml(currentEng(),preview);
-      dialog.querySelector('#tobeAlternativeMap').innerHTML=
-        tobeCanvasHtml(currentEng(),{...next.projected,status:'REVIEWED'}).replaceAll('data-tobe-select=','data-tobe-preview-node=');
-      const changedNodes=new Set([String(preview.candidate.sourceId),
-        ...tobeAddedSteps(next.projected).filter(x=>!tobeAddedSteps(latestTobe(currentEng())).some(y=>y.id===x.id)).map(x=>x.id)]);
-      dialog.querySelectorAll('#tobeAlternativeMap [data-graph-node]').forEach(node=>{
-        node.classList.toggle('tobe-preview-changed',changedNodes.has(node.dataset.graphNode));
-      });
-      syncDecisionState();
-      if(dialog.querySelector('.tobe-preview-map')?.open)
-        requestAnimationFrame(()=>drawProcessGraph(dialog.querySelector('#tobeAlternativeMap .process-graph-board')));
+      tobePaintAlternativePreview(currentEng(),preview);
     }catch(error){
       preview.previewError=String(error?.message||'No se pudo calcular la vista previa.');
       syncDecisionState();
