@@ -575,8 +575,13 @@ function tobeCoherenceFindings(e,p){
       add(item,'BLOCKING','El AS-IS exige aprobación humana en esta actividad. Conserva la aprobación y su ruta antes de aprobar el TO-BE.');
     if(linked(constraints.DF088,id)&&['Se automatiza','Se asiste con IA'].includes(item.transformation))
       add(item,'BLOCKING','La actividad está referenciada expresamente en las restricciones de automatización/IA. Mantén su ejecución permitida.');
-    for(const finding of tobeOptimizationFindings(e,p,item))
-      add(item,'WARNING',finding.message+(finding.related.length?' Actividades: '+finding.related.join(' · '):''));
+    // Same assessment owner as 03.3: compatible claims are informational,
+    // pending evidence remains a warning, explicit contradictions block review.
+    for(const finding of tobeOptimizationFindings(e,p,item)){
+      if(finding.severity==='COMPATIBLE')continue;
+      add(item,finding.severity==='BLOCK'?'BLOCKING':'WARNING',
+        finding.message+(finding.related.length?' Actividades: '+finding.related.join(' · '):''));
+    }
   }
   // [AUNEA-FE-PG11-SOURCE-CONSTRAINTS-336] END
   return findings;
@@ -599,6 +604,8 @@ function tobeCoherencePanel(e,p){
     errors=blocked.length+(integrity?1:0),
     items=[...(integrity?[{stepId:'',severity:'BLOCKING',message:integrity,name:'Mapa futuro'}]:[]),...findings],
     ready=errors===0&&reviewed===steps.length,
+    compatibleChecks=[...(p?.items||[]),...tobeAddedSteps(p)].reduce((n,item)=>
+      n+tobeOptimizationFindings(e,p,item).filter(x=>x.severity==='COMPATIBLE').length,0),
     headline=ready?'Diseño configurado sin bloqueos detectados; listo para comprobar requisitos y marcar como revisado':
       errors?'Se han detectado '+errors+' bloqueos que deben resolverse':
       'Quedan '+(steps.length-reviewed)+' actividades por configurar';
@@ -610,6 +617,8 @@ function tobeCoherencePanel(e,p){
       '<div><strong>'+added+'</strong><span>Actividades nuevas</span></div>'+
     '</div>'+
     '<p class="tobe-global-headline">'+esc(headline)+'</p>'+
+    (compatibleChecks?'<p class="tobe-muted">'+compatibleChecks+
+      ' comprobaciones compatibles con el diseño declarado (no equivalen a verificación técnica).</p>':'')+
     '<details class="tobe-global-evidence"><summary>Ver comprobaciones y acciones pendientes'+
       (items.length?' ('+items.length+')':'')+'</summary>'+
       (items.length?'<ul class="tobe-coherence-list">'+items.map(x=>
