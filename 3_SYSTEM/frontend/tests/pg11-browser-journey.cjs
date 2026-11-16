@@ -46,6 +46,32 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,'.'+new 
     assert.equal(new Set(stageVisual.titles.map(x=>x[property])).size,1,
       '03.1/03.2/03.3 must share title '+property+': '+JSON.stringify(stageVisual.titles));
   assert.match(stageVisual.titles[0].font,/Sora/);
+  // Compare rendered geometry, not just token strings: 03.3 must occupy the
+  // same shell and horizontal content gutter as the approved 03.2 pattern.
+  const visualAlignment=await page.evaluate(()=>{
+    const rect=sel=>{const r=document.querySelector(sel)?.getBoundingClientRect();
+      return r?{left:r.left,right:r.right,top:r.top,height:r.height}:null;};
+    const body=document.querySelector('#tobeStepAdvice .tobe-stage-body');
+    return {advice:rect('#tobeStepAdvice'),design:rect('#tobeStepDesign'),
+      adviceHeader:rect('#tobeStepAdvice>.tobe-subdetails>summary'),
+      designHeader:rect('#tobeStepDesign>.tobe-stage-disclosure>summary'),
+      designGroup:rect('#tobeDesignGroup01'),
+      adviceContentLeft:body?body.getBoundingClientRect().left+
+        parseFloat(getComputedStyle(body).paddingLeft):null};
+  });
+  for(const part of ['advice','design','adviceHeader','designHeader','designGroup'])
+    assert.ok(visualAlignment[part],'Missing UX component '+part);
+  const px=(a,b)=>Math.abs(a-b)<=1.5;
+  assert.ok(px(visualAlignment.advice.left,visualAlignment.design.left)&&
+    px(visualAlignment.advice.right,visualAlignment.design.right),
+    '03.2/03.3 must use the same outer horizontal boundaries: '+JSON.stringify(visualAlignment));
+  assert.ok(px(visualAlignment.adviceHeader.left,visualAlignment.designHeader.left)&&
+    px(visualAlignment.adviceHeader.right,visualAlignment.designHeader.right),
+    '03.3 header must not have an additional inset: '+JSON.stringify(visualAlignment));
+  assert.ok(px(visualAlignment.adviceContentLeft,visualAlignment.designGroup.left),
+    '03.3 groups must align with the 03.2 content gutter: '+JSON.stringify(visualAlignment));
+  assert.ok(px(visualAlignment.adviceHeader.height,visualAlignment.designHeader.height),
+    '03.3 header must use compact single-line height like 03.2: '+JSON.stringify(visualAlignment));
   // UX contract: same native disclosure control, same initial state and same background
   // for every operational group. Opening a group must not change the data owner.
   const groupContract=await page.evaluate(()=>{
