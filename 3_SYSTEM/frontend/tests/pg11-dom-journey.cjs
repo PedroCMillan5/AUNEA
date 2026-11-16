@@ -167,14 +167,9 @@ for(const kind of ['invoice','logistics']){
   run("currentEng().processSteps[0].step_name+=' (revisada en v2)';"+
       "sealConfirmedSnapshot(currentEng(),'UAT: AS-IS revisado')");
   assert.equal(run('confirmedSnapshot(currentEng()).version'),2);
-  await run("(async()=>{const e=currentEng(),snap=confirmedSnapshot(e);"+
-    "e.engineGateReview.snapshotVersion=snap.version;"+
-    "const response=await fetch(state.backendUrl+'/v1/diagnose',{method:'POST',"+
-    "headers:{'Content-Type':'application/json'},body:JSON.stringify(buildBackendPayload(e))});"+
-    "if(!response.ok)throw Error('PG10 v2 HTTP '+response.status);"+
-    "e.diagnosticOutput=await response.json();e.lastEngineSnapshotVersion=snap.version;"+
-    "e.lastEngineGateFingerprint=engineGateFingerprint(e);"+
-    "if(!saveState('UAT PG10 v2'))throw Error('PG10 persistence failure');render();})()");
+  run("state.activePage='tobe';render()");
+  assert.equal(run('diagnosticOutputFreshness(currentEng()).status'),'OBSOLETE',
+    'a new AS-IS must invalidate the previous PG10 result');
   assert.ok(w.document.getElementById('reconcileTobeSource'),
     'changed AS-IS must offer a recovery path, not a dead-end: '+w.document.getElementById('content')?.textContent.slice(-1400));
   assert.equal(run('JSON.stringify(currentEng().tobeProposals[0])'),previous);
@@ -186,6 +181,14 @@ for(const kind of ['invoice','logistics']){
   assert.equal(run('latestTobe(currentEng()).items[0].transformation'),'');
   assert.equal(run('latestTobe(currentEng()).items[1].humanSupervision'),
     JSON.parse(previous).items[1].humanSupervision);
+  assert.equal(run('diagnosticOutputFreshness(currentEng()).status'),'OBSOLETE',
+    'the recovered DRAFT must not silently approve or reuse an obsolete PG10 result');
+  run("state.activePage='resultados';"+
+      "currentEng().engineGateReview.snapshotVersion=confirmedSnapshot(currentEng()).version;render()");
+  await run('runDiagnosis()');
+  assert.equal(run('diagnosticOutputFreshness(currentEng()).status'),'CURRENT',
+    'PG10 must generate a new source-bound diagnosis before any PG11 intervention');
+  run("state.activePage='tobe';render()");
   for(const id of ['tobeStepOrigin','tobeStepAdvice','tobeStepDesign'])
     assert.ok(w.document.getElementById(id),'all PG11 stages must use the recovered DRAFT: '+id+' diagnostic='+JSON.stringify(run('diagnosticOutputFreshness(currentEng())'))+' page='+w.document.getElementById('content')?.textContent.slice(-750));
   assert.equal(run('tobeProposalSnapshot(currentEng(),latestTobe(currentEng())).version'),2);
