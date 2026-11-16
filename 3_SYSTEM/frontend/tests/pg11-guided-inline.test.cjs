@@ -532,9 +532,10 @@ test('PG11 displays global IA once, by direct finding or transversal provenance'
    changeSummary:'Comprobar información',expectedOutcome:'Entrega validada',
    conditions:[],combination:'COMBINABLE'}];
  const sandbox={tobeEditable:()=>true,tobeAlternativeKey:()=> 'test',
-   __auneaTobeAlternatives:new Map([['test',{candidates}]]),
+   __auneaTobeAlternatives:new Map([['test',{candidates,input_hash:'HASH'}]]),
    __auneaTobeAlternativeErrors:new Map(),
    tobeRulesResultIssue:()=>'',tobeProposalSnapshot:()=>snapshot,
+    currentDiagnosticOutput:()=>({input_snapshot_hash:'HASH'}),
    tobeGlobalLinksForStep:()=>linked,
    tobeHumanReadableRefs:(_,refs)=>refs.join(' · '),
    esc:String,attr:String};
