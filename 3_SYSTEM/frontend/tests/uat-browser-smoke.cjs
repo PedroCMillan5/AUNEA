@@ -1025,7 +1025,9 @@ async function main(){
       return {all:document.querySelectorAll('.tobe-design-time').length,
         timeParent:t?.parentElement?.id,timeAncestor:t?.closest('#tobeStepDesign')?.id,
         designCount:root?.querySelectorAll(':scope>.tobe-stage-disclosure').length,
-        layout:root?.outerHTML?.slice(-1000)};
+        siblings:[...document.querySelector('#tobeInspector')?.children||[]].slice(-10).map(x=>({tag:x.tagName,id:x.id,cls:String(x.className).slice(0,60)})),
+        rawTail:(()=>{const p=latestTobe(currentEng());return tobeInspectorHtml(currentEng(),p).slice(-3300)})(),
+        layout:root?.outerHTML?.slice(-1200)};
     });
     console.log('PG11_DISCOLSURE_STRUCTURE_DIAGNOSTIC '+JSON.stringify(structure));
   }
