@@ -1065,7 +1065,7 @@ function createNextTobeVersion(e){
   const previous=latestTobe(e),snap=confirmedSnapshot(e);
   if(!previous||previous.status==='DRAFT'||!snap||previous.sourceSnapshotVersion!==snap.version)return false;
   const h=tobeHistory(e),version=h.length+1;
-  const items=previous.items.map((it,i)=>({...it,id:'TOBE-'+version+'-'+(i+1)}));
+  const items=previous.items.map((it,i)=>({...JSON.parse(JSON.stringify(it)),id:'TOBE-'+version+'-'+(i+1)}));
   h.push({version,status:'DRAFT',sourceSnapshotVersion:snap.version,createdAt:now(),
     updatedAt:now(),items,flow:JSON.parse(JSON.stringify(tobeFlowOwner(e,previous)))});
   __auneaTobeSelection={engagementId:'',version:0,stepId:''};
