@@ -1953,7 +1953,7 @@
       "path": "domain/tobe-transactions.js",
       "layer": "domain",
       "blockId": "AUNEA-FE-PG11-TRANSACTION-332",
-      "lines": 663,
+      "lines": 734,
       "family": [
         "Trabajo interno / PG11"
       ],
@@ -2906,7 +2906,7 @@
       "path": "pages/internal-work-events.js",
       "layer": "pages",
       "blockId": "AUNEA-FE-INTERNAL-WORK-EVENTS-381",
-      "lines": 744,
+      "lines": 745,
       "family": [
         "Trabajo interno / PG11"
       ],
