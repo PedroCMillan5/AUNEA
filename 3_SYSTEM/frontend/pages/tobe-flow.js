@@ -246,7 +246,7 @@ function tobeFlowInspector(e,p,item){
       '</div>':'')+
     '<div class="form-grid">'+field('normal','Siguiente actividad'+(decision?' · ruta SÍ':''),routes.normal)+
     (decision?field('exception','Ruta NO / excepción',routes.exception):'')+
-    '</div></details>';
+    '</div></section>';
 }
 // [AUNEA-FE-PG11-OPTIMIZATION-CHECK-313] START
 // SOURCE: CANONICAL PG11, ProcessStep DF035/036/041–043, friction and
