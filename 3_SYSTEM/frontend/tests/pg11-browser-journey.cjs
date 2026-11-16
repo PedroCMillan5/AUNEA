@@ -51,7 +51,7 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,'.'+new 
   const visualAlignment=await page.evaluate(()=>{
     const rect=sel=>{const r=document.querySelector(sel)?.getBoundingClientRect();
       return r?{left:r.left,right:r.right,top:r.top,height:r.height}:null;};
-    const body=document.querySelector('#tobeStepAdvice .tobe-stage-body');
+    const body=document.querySelector('#tobeAdviceDetails>.aunea-ui-disclosure__content');
     return {advice:rect('#tobeStepAdvice'),design:rect('#tobeStepDesign'),
       adviceHeader:rect('#tobeStepAdvice>.aunea-ui-disclosure>summary'),
       designHeader:rect('#tobeStepDesign>.tobe-stage-disclosure>summary'),

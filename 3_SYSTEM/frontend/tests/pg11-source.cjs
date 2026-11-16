@@ -40,11 +40,11 @@ module.exports=function pg11LegacySourceOracle(){
   // Legacy VM tests load the assembled PG11 source without loading the full UI
   // renderer. Include the production shared disclosure helper, not a test stub.
   const renderer=read('ui/renderer.js');
+  const sharedStart=renderer.indexOf('// [AUNEA-FE-GLOBAL-DISCLOSURE-450] START');
+  const sharedEnd=renderer.indexOf('// [AUNEA-FE-GLOBAL-DISCLOSURE-450] END',sharedStart);
+  if(sharedStart<0||sharedEnd<sharedStart)throw Error('Production disclosure block is missing');
+  source+='\n'+renderer.slice(sharedStart,sharedEnd)+'\n';
   for(const [name,pattern] of [
-    ['auneaUiDisclosureOpen',/function auneaUiDisclosureOpen\([\s\S]*?\n\}/],
-    ['auneaUiDisclosureStart',/function auneaUiDisclosureStart\([\s\S]*?\n\}/],
-    ['auneaUiDisclosureEnd',/function auneaUiDisclosureEnd\([\s\S]*?\n\}/],
-    ['auneaWorkDisclosure',/function auneaWorkDisclosure\(kind,title,body\)\{[\s\S]*?\n\}/],
     ['auneaEmptyMessage',/function auneaEmptyMessage\(message\)\{[\s\S]*?\n\}/],
     ['auneaNoticeMessage',/function auneaNoticeMessage\(tone,message\)\{[\s\S]*?\n\}/]
   ]){

@@ -784,7 +784,7 @@ test('PG10 review distinguishes preliminary PG11 from official design and never 
   const a=results.indexOf('function pg10ReviewHtml('),b=results.indexOf('\nfunction resultsPage(',a);
   assert.ok(a>=0&&b>a);
   const renderer=fs.readFileSync(path.join(root,'ui/renderer.js'),'utf8');
-  const sharedDisclosure=renderer.match(/function auneaWorkDisclosure\(kind,title,body\)\{[\s\S]*?\n\}/)?.[0];
+  const sharedDisclosure=renderer.match(/\/\/ \[AUNEA-FE-GLOBAL-DISCLOSURE-450\] START[\s\S]*?\/\/ \[AUNEA-FE-GLOBAL-DISCLOSURE-450\] END/)?.[0];
   assert.ok(sharedDisclosure,'Actual shared disclosure builder is available');
   const fn=new Function('esc','attr','diagnosisEngineDecisionTraceHtml',
     sharedDisclosure+'\n'+sharedNoticeSource+'\n'+results.slice(a,b)+'\nreturn pg10ReviewHtml;')(
