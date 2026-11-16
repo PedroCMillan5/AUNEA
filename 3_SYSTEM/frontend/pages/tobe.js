@@ -823,7 +823,7 @@ function tobeInspectorHtml(e,p){
     document.getElementById?.('tobeExecutionFields'):null;
   // A newly added TO-BE-only activity has no own IA proposal and must expose
   // its required execution data immediately, even if it links to an analyzed AS-IS step.
-  const executionOpen=tobeDisclosureOpen('tobeExecutionFields',item.sourceStepId,false);
+  const executionOpen=tobeDisclosureOpen('tobeExecutionFields',item.sourceStepId,true);
   const prevEvidence=typeof document!=='undefined'?
     document.getElementById?.('tobeDesignEvidence'):null;
   const evidenceOpen=tobeDisclosureOpen('tobeDesignEvidence',item.sourceStepId,false);
