@@ -891,6 +891,7 @@
             "pages/crm-contacts.js",
             "pages/session-display.js",
             "uat/visible.js",
+            "pages/internal-work-events.js",
             "domain/internal-ai-pilot.js",
             "pages/tobe-global.js"
           ]
@@ -2906,7 +2907,7 @@
       "path": "pages/internal-work-events.js",
       "layer": "pages",
       "blockId": "AUNEA-FE-INTERNAL-WORK-EVENTS-381",
-      "lines": 767,
+      "lines": 790,
       "family": [
         "Trabajo interno / PG11"
       ],
@@ -2920,6 +2921,7 @@
         "inspector",
         "notice",
         "on",
+        "status",
         "tobe-ai-field-control",
         "tobe-artifact-compact",
         "tobe-artifact-field",
@@ -13046,6 +13048,7 @@
         "pages/crm-contacts.js",
         "pages/session-display.js",
         "uat/visible.js",
+        "pages/internal-work-events.js",
         "domain/internal-ai-pilot.js",
         "pages/tobe-global.js"
       ],
