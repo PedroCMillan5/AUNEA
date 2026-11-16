@@ -308,7 +308,7 @@ function tobeGlobalOverviewHtml(e,p){
         (working?' disabled aria-busy="true"':'')+'>'+
         (working?'Analizando proceso…':result||legacy?'Volver a analizar':'Analizar proceso con IA')+
         '</button></div>':'')+'</header>'+
-    '<div class="tobe-global-summary"><div class="tobe-global-summary-top">'+
+    '<div class="tobe-global-summary"'+(notCurrent?' data-analysis-state="stale"':'')+'><div class="tobe-global-summary-top">'+
       '<strong>'+(working?'Analizando proceso…':legacy?'Análisis anterior incompleto':result?'Síntesis del proceso':notCurrent?'Análisis guardado no vigente':'Análisis pendiente')+'</strong>'+
       '<span class="tobe-global-state" aria-live="polite">'+esc(state)+'</span></div>'+
       '<p>'+esc(preflight?'Comprobando que el backend admite el análisis por bloques. No se ha borrado ninguna propuesta.':working&&!result?'Se ha retirado el análisis anterior. Preparando una propuesta nueva con el AS-IS confirmado…':notCurrent?
