@@ -1133,9 +1133,16 @@ async function main(){
   await page.locator('#tobeAlternativeDialog').waitFor();
   const interventionAcknowledgement=page.locator('#tobeAlternativeDialog [data-tobe-preview-ack]');
   if(await interventionAcknowledgement.count()){
-    assert.equal(await page.locator('#tobeAlternativeDialog [data-tobe-confirm-alternative]').isDisabled(),true,
-      'preview cannot confirm until the consultant acknowledges applicable conditions');
+    const confirm=page.locator('#tobeAlternativeDialog [data-tobe-confirm-alternative]');
+    assert.equal(await confirm.isDisabled(),false,
+      'confirmation must respond with a reason instead of silently being disabled');
+    assert.equal(await confirm.getAttribute('data-tobe-confirm-ready'),'0');
+    await confirm.click();
+    assert.match(await page.locator('#tobePreviewActionFeedback').innerText(),/Antes de confirmar:/);
+    assert.equal(await page.evaluate(()=>latestTobe(currentEng()).items[0]?.transformation),'Se mantiene',
+      'blocked confirmation cannot apply an unacknowledged AI proposal');
     await interventionAcknowledgement.check();
+    assert.equal(await confirm.getAttribute('data-tobe-confirm-ready'),'1');
   }
   await page.locator('#tobeAlternativeDialog [data-tobe-confirm-alternative]').click();
   await page.waitForFunction(()=>latestTobe(currentEng()).items[0]?.transformation==='Se modifica');
