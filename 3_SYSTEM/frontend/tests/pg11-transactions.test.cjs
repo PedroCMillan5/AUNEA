@@ -106,7 +106,7 @@ for(const name of ['invoice','logistics'])test('PG11 source → backend rules �
  assert.throws(()=>ctx.tobeUndoAlternative(e),/modificado después/);
  assert.equal(p.items[0].controlsRisk,'Cambio manual posterior');
  const stale=preview(result.candidates[0]);p.items[3].tool='Otro';
- assert.throws(()=>ctx.tobeCommitAlternative(e,stale),/borrador o el AS-IS cambió/);
+ assert.throws(()=>ctx.tobeCommitAlternative(e,stale),/borrador TO-BE cambió/);
  assert.equal(JSON.stringify(snapshot),immutable,'confirmed AS-IS is immutable throughout');
 });
 // [AUNEA-UAT-PG11-TRANSACTION-338] END

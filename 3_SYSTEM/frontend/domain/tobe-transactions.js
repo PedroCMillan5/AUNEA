@@ -162,11 +162,20 @@ function tobeTransactionWrite(root,change,reverse=false){
   if(missing)delete owner[key];else owner[key]=tobeClone(reverse?change.before:change.after);
 }
 function tobeCommitAlternative(e,preview){
-  const p=latestTobe(e);
-  if(tobeAlternativePreviewRevision(e,preview))
-    throw Error('La comparación se ha actualizado. Revísala y confirma de nuevo.');
+  const p=e?latestTobe(e):null;
+  // The transaction is deliberately independent of dialog UI. The event
+  // layer can refresh a disjoint edit first; direct callers never auto-rebase.
+  if(!preview||!e||String(preview.engagementId)!==String(e.id)||
+    !p||p.version!==preview.version||!tobeEditable(p)||
+    confirmedSnapshot(e)?.version!==p.sourceSnapshotVersion||
+    (preview.sourceSnapshotVersion!=null&&
+      confirmedSnapshot(e)?.version!==preview.sourceSnapshotVersion))
+    throw Error('La versión del estudio o del AS-IS ya no corresponde a la vista previa. No se ha aplicado nada.');
+  if(preview.diagnosticHash&&typeof currentDiagnosticOutput==='function'&&
+    currentDiagnosticOutput(e)?.input_snapshot_hash!==preview.diagnosticHash)
+    throw Error('Cambió el diagnóstico vigente. No se ha aplicado nada.');
   if(!tobeSameDesignState(tobeDesignState(p),preview.before))
-    throw Error('El TO-BE cambió durante la confirmación. No se ha aplicado la intervención.');
+    throw Error('El borrador TO-BE cambió desde la vista previa. Actualiza la comparación antes de confirmar.');
   const gate=tobeAlternativeDecisionIssue(preview);
   if(gate)throw Error(gate);
   if(preview.candidate.provenance==='AI'){
