@@ -187,7 +187,7 @@ for(const kind of ['invoice','logistics']){
       "currentEng().engineGateReview.snapshotVersion=confirmedSnapshot(currentEng()).version;render()");
   await run('runDiagnosis()');
   assert.equal(run('diagnosticOutputFreshness(currentEng()).status'),'CURRENT',
-    'PG10 must generate a new source-bound diagnosis before any PG11 intervention');
+    'PG10 must generate a new source-bound diagnosis before any PG11 intervention: '+JSON.stringify(run('({freshness:diagnosticOutputFreshness(currentEng()),gates:unresolvedEngineGates(currentEng()).map(x=>x.key),missing:canonicalMissingRequired(currentEng()),issues:typeof captureIntegrityIssues===\"function\"?captureIntegrityIssues(engagementOfRecord(currentEng())):[]})'))+' output='+w.document.body.textContent.slice(-1200));
   run("state.activePage='tobe';render()");
   for(const id of ['tobeStepOrigin','tobeStepAdvice','tobeStepDesign'])
     assert.ok(w.document.getElementById(id),'all PG11 stages must use the recovered DRAFT: '+id+' diagnostic='+JSON.stringify(run('diagnosticOutputFreshness(currentEng())'))+' page='+w.document.getElementById('content')?.textContent.slice(-750));
