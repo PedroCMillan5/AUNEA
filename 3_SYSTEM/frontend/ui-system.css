@@ -5006,3 +5006,52 @@ details.tobe-ai-operational-context:not([open])>.tobe-ai-operational-body{
   .tobe-global-monitoring-body{padding:10px 12px}
 }
 /* [AUNEA-FE-PG11-GLOBAL-COMPACT-367] END */
+
+/* [AUNEA-FE-PG11-DISCLOSURE-UI-422] START — One visual/interaction contract for PG11 review and design.
+   Color describes hierarchy only, not approval; open/closed is represented by chevron and aria-native details.
+   No changes to owners, risk rules, output calculations, FROZEN routes or persisted state. */
+.tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign>.tobe-stage-disclosure{
+  display:grid;gap:14px;min-width:0;margin:0;
+}
+.tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign>.tobe-stage-disclosure>summary{
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;
+  gap:10px 14px;padding:14px 16px;min-height:53px;
+  background:var(--system-soft);border-bottom:1px solid var(--system-line);
+  color:var(--system);cursor:pointer;list-style:none;
+}
+.tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign>.tobe-stage-disclosure>summary::-webkit-details-marker,
+.tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign .tobe-design-group>summary::-webkit-details-marker{display:none}
+.tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign>.tobe-stage-disclosure>summary::before,
+.tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign .tobe-design-group>summary::before{
+  content:"▸";font-family:Inter,"Segoe UI",Arial,sans-serif;
+  color:var(--system);font-weight:700;flex:0 0 12px;width:12px;
+}
+.tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign>.tobe-stage-disclosure[open]>summary::before,
+.tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign .tobe-design-group[open]>summary::before{content:"▾"}
+.tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign>.tobe-stage-disclosure>summary>div{flex:1 1 300px;min-width:0}
+.tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign>.tobe-stage-disclosure>:not(summary){
+  margin-left:16px;margin-right:16px;min-width:0;
+}
+.tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign>.tobe-stage-disclosure>:last-child{margin-bottom:16px}
+.tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign .tobe-design-group>summary{
+  display:flex;align-items:center;gap:12px;cursor:pointer;
+  padding:13px 15px;background:var(--system-soft);
+  border-bottom:0;list-style:none;min-width:0;
+}
+.tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign .tobe-design-group[open]>summary{
+  background:var(--system-soft);border-bottom:1px solid var(--system-line);
+}
+.tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign .tobe-design-group>summary>div{flex:1;min-width:0}
+.tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign .tobe-design-group>summary h4,
+.tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign .tobe-design-group>summary b{
+  font-family:Sora,"Segoe UI",Arial,sans-serif;
+  font-size:var(--font-h4);line-height:1.35;font-weight:700;color:var(--system);
+}
+.tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign :is(.tobe-design-group,.tobe-stage-disclosure)>summary:focus-visible{
+  outline:2px solid var(--system);outline-offset:-3px;
+}
+@media(max-width:720px){
+  .tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign>.tobe-stage-disclosure>summary{align-items:flex-start}
+  .tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign>.tobe-stage-disclosure>:not(summary){margin-left:12px;margin-right:12px}
+}
+/* [AUNEA-FE-PG11-DISCLOSURE-UI-422] END */
