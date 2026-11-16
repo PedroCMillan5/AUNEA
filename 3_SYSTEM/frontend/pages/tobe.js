@@ -758,7 +758,7 @@ function tobeFutureTimeReviewHtml(item,sourceStep){
     comparison+='<p><b>Valor anterior preservado:</b> '+esc(previous)+
       '. No es comparable hasta documentar la unidad y el supuesto.</p>';
   }
-  return '<details class="tobe-design-time tobe-design-group">'+
+  return '<details class="tobe-design-time tobe-design-group" id="tobeDesignGroup05" data-source-step-id="'+attr(item.sourceStepId)+'"'+(tobeDisclosureOpen('tobeDesignGroup05',item.sourceStepId,false)?' open':'')+'>'+
     '<summary><span class="tobe-design-group-number">05</span><span>'+
       '<b>Tiempo futuro y estimación</b><small>Cálculo con datos comparables, no captura manual</small>'+
     '</span></summary>'+
@@ -792,6 +792,14 @@ function tobeDecisionSourceSummaryHtml(e,p,item){
     'las sugerencias no cambian el proceso automáticamente.</p></div></details>';
 }
 // [AUNEA-FE-PG11-UNIFIED-DECISIONS-357] END
+// [AUNEA-FE-PG11-DISCLOSURE-CONTRACT-421] START — uniform, per-step UI disclosure only.
+// Preserve opened state after rerender on the same activity; never interpret open as approval.
+function tobeDisclosureOpen(id,sourceId,defaultOpen=false){
+  if(typeof document==='undefined')return defaultOpen;
+  const element=document.getElementById(id);
+  return element&&element.dataset?.sourceStepId===String(sourceId)?!!element.open:defaultOpen;
+}
+// [AUNEA-FE-PG11-DISCLOSURE-CONTRACT-421] END
 function tobeInspectorHtml(e,p){
   const item=tobeSelectedItem(e,p),editable=tobeEditable(p);
   if(!item)return auneaNoticeMessage('warn','No hay actividades TO-BE vinculadas al AS-IS.');
@@ -800,13 +808,10 @@ function tobeInspectorHtml(e,p){
     nextItem=itemIndex>=0?allItems[itemIndex+1]:null,
     previousItem=itemIndex>0?allItems[itemIndex-1]:null;
   const historicalChoice=tobeHumanReviewRecord(e,p)?.decisions?.[String(item.sourceStepId)];
-  const originWasExpanded=typeof document!=='undefined'?
-    !!document.querySelector('#tobeStepOrigin > details')?.open:false;
+  const originWasExpanded=tobeDisclosureOpen('tobeOriginDetails',item.sourceStepId,true);
   const aiDetailWasExpanded=typeof document!=='undefined'?
     !!document.getElementById('tobeAiTechnicalDetails')?.open:false;
-  const previousOpportunitySection=typeof document!=='undefined'?
-    document.querySelector('#tobeStepAdvice > .tobe-subdetails'):null;
-  const opportunitiesWereExpanded=!previousOpportunitySection||!!previousOpportunitySection.open;
+  const opportunitiesWereExpanded=tobeDisclosureOpen('tobeAdviceDetails',item.sourceStepId,true);
   const hasCurrentAi=typeof internalAiSavedDraft==='function'&&
     internalAiSavedDraft(e)?.items?.some(x=>String(x.source_step_id)===String(item.sourceStepId));
   const pendingKey=editable&&!item.isAddition&&typeof internalAiPilotKey==='function'?
@@ -818,12 +823,12 @@ function tobeInspectorHtml(e,p){
     document.getElementById?.('tobeExecutionFields'):null;
   // A newly added TO-BE-only activity has no own IA proposal and must expose
   // its required execution data immediately, even if it links to an analyzed AS-IS step.
-  const executionOpen=item.isAddition||!!(previousExecution?.open&&
-    previousExecution.dataset?.sourceStepId===String(item.sourceStepId));
+  const executionOpen=tobeDisclosureOpen('tobeExecutionFields',item.sourceStepId,false);
   const prevEvidence=typeof document!=='undefined'?
     document.getElementById?.('tobeDesignEvidence'):null;
-  const evidenceOpen=!!prevEvidence?.open&&
-    prevEvidence.dataset?.sourceStepId===String(item.sourceStepId);
+  const evidenceOpen=tobeDisclosureOpen('tobeDesignEvidence',item.sourceStepId,false);
+  const designOpen=tobeDisclosureOpen('tobeDesignDetails',item.sourceStepId,true);
+  const groupOpen=number=>tobeDisclosureOpen('tobeDesignGroup'+number,item.sourceStepId,false);
   const savedReview=hasCurrentAi?internalAiSavedDraft(e)?.review:null;
   const fieldBlockers=(savedReview?.issues||[]).filter(issue=>
     issue.category==='BLOCKING'&&String(issue.step_id)===String(item.sourceStepId)).length;
@@ -835,7 +840,7 @@ function tobeInspectorHtml(e,p){
       item.transformation||'',{extra:'data-tobe-item="'+attr(item.id)+'" data-tobe-field="transformation"',placeholder:'Selecciona una transformación'}):
       '<input value="'+attr(item.transformation||'Sin definir')+'" disabled>')+'</div>';
   const supportingInformation=
-    '<section class="tobe-origin aunea-ui-work-stage" id="tobeStepOrigin"><details class="tobe-subdetails"'+
+    '<section class="tobe-origin aunea-ui-work-stage" id="tobeStepOrigin"><details id="tobeOriginDetails" class="tobe-subdetails" data-source-step-id="'+attr(item.sourceStepId)+'"'+
       (originWasExpanded?' open':'')+'><summary class="aunea-ui-section-title tobe-stage-heading">'+
         '<span>03.1 · Entender el AS-IS</span>'+
         '<span class="tobe-origin-header-status">AS-IS confirmado · Solo lectura</span></summary>'+
@@ -843,7 +848,7 @@ function tobeInspectorHtml(e,p){
     // [AUNEA-FE-PG11-ONE-WORKBENCH-365] START
     // View-only sources and one action path: no duplicate AI approval.
     '<section class="tobe-advice aunea-ui-work-stage" id="tobeStepAdvice" aria-label="Oportunidades y fuentes">'+
-      '<details class="tobe-subdetails"'+(opportunitiesWereExpanded?' open':'')+'><summary class="aunea-ui-section-title tobe-stage-heading">03.2 · Revisar oportunidades de mejora</summary>'+
+      '<details id="tobeAdviceDetails" class="tobe-subdetails" data-source-step-id="'+attr(item.sourceStepId)+'"'+(opportunitiesWereExpanded?' open':'')+'><summary class="aunea-ui-section-title tobe-stage-heading">03.2 · Revisar oportunidades de mejora</summary>'+
       '<div class="tobe-stage-body">'+
         '<p class="tobe-stage-intro">Estudia las oportunidades vinculadas al AS-IS y selecciona una intervención para comparar sus efectos. '+
           'El diseño se modifica únicamente en 03.3 o al confirmar una vista previa.</p>'+
@@ -898,12 +903,13 @@ function tobeInspectorHtml(e,p){
     // Existing version-owned TO-BE inputs remain sole edit owners; IA remains
     // advisory. Snapshot AS-IS remains immutable. No new business fields.
     '<section class="tobe-edit tobe-design-workspace aunea-ui-work-stage" id="tobeStepDesign">'+
-      '<header class="tobe-design-header"><div>'+
+      '<details id="tobeDesignDetails" class="tobe-stage-disclosure" data-source-step-id="'+attr(item.sourceStepId)+'"'+(designOpen?' open':'')+'>'+ 
+      '<summary class="tobe-design-header"><div>'+
         '<h3 class="aunea-ui-section-title tobe-stage-heading">03.3 · Configurar la actividad futura</h3>'+
         '<p class="tobe-design-lede" data-tobe-transformation-message="1" role="status" aria-live="polite">'+
           'Aquí decides el diseño: conserva, modifica o aplica valores mediante vista previa. '+
           'No es necesario aceptar una recomendación completa antes. Nada se importa automáticamente.</p>'+
-        '</div><span class="tobe-design-status">'+(editable?'Borrador editable':'Solo lectura')+'</span></header>'+
+        '</div><span class="tobe-design-status">'+(editable?'Borrador editable':'Solo lectura')+'</span></summary>'+
       tobeDecisionSourceSummaryHtml(e,p,item)+
       '<details class="tobe-design-evidence" id="tobeDesignEvidence" data-source-step-id="'+
         attr(item.sourceStepId)+'"'+(evidenceOpen?' open':'')+'>'+
@@ -916,10 +922,10 @@ function tobeInspectorHtml(e,p){
         '</div>'+
       '</details>'+
       (item.isAddition?
-        '<section class="tobe-design-group tobe-design-new-activity" aria-label="Datos de la nueva actividad">'+
-          '<div class="tobe-design-group-head"><span class="tobe-design-group-number">00</span>'+
+        '<details class="tobe-design-group tobe-design-new-activity" id="tobeDesignGroup00" data-source-step-id="'+attr(item.sourceStepId)+'"'+(groupOpen('00')?' open':'')+' aria-label="Datos de la nueva actividad">'+
+          '<summary class="tobe-design-group-head"><span class="tobe-design-group-number">00</span>'+
           '<div><h4>Identificar la nueva actividad</h4>'+
-          '<p>Esta actividad sólo existe en TO-BE y mantiene su vínculo con el AS-IS.</p></div></div>'+
+          '<p>Esta actividad sólo existe en TO-BE y mantiene su vínculo con el AS-IS.</p></div></summary>'+
           '<div class="form-grid tobe-design-fields">'+
             tobeField(item,'stepName','Nombre de actividad futura',item.stepName,'text',!editable)+
             '<div class="field"><label>Tipo de actividad futura</label>'+
@@ -929,11 +935,11 @@ function tobeInspectorHtml(e,p){
                   placeholder:'Selecciona tipo'}):
                 '<input disabled value="'+attr(item.stepType==='ST04'?'Decisión · rutas SÍ / NO':'Actividad operativa')+'">')+
               '<p class="field-help">Actividad operativa: ejecuta trabajo. Decisión: requiere rutas SÍ y NO.</p></div>'+
-          '</div></section>':'')+
-      '<section class="tobe-design-group tobe-design-transformation" aria-label="Transformación y propósito">'+
-        '<div class="tobe-design-group-head"><span class="tobe-design-group-number">01</span>'+
+          '</div></details>':'')+
+      '<details class="tobe-design-group tobe-design-transformation" id="tobeDesignGroup01" data-source-step-id="'+attr(item.sourceStepId)+'"'+(groupOpen('01')?' open':'')+' aria-label="Transformación y propósito">'+
+        '<summary class="tobe-design-group-head"><span class="tobe-design-group-number">01</span>'+
           '<div><h4>Transformación y propósito</h4>'+
-            '<p>Qué cambia y qué problema del AS-IS resuelve tu diseño.</p></div></div>'+
+            '<p>Qué cambia y qué problema del AS-IS resuelve tu diseño.</p></div></summary>'+
         (item.transformation==='Se mantiene'&&/^(no|n\/a|ninguno)$/i.test(String(item.problemResolved||'').trim())?
           '<p class="notice warn"><b>Justificación pendiente:</b> «Se mantiene» conserva esta actividad sin rediseño. El valor «NO» no explica cómo se controlan sus hallazgos; revisa la decisión antes de validar.</p>':'')+
         '<div class="form-grid tobe-design-fields">'+
@@ -941,16 +947,16 @@ function tobeInspectorHtml(e,p){
           withAi('problemResolved',tobeField(item,'problemResolved',
             tobeTransformationRationaleLabel(item.transformation),
             item.problemResolved,'textarea',!editable))+
-        '</div></section>'+
-      '<section class="tobe-design-group tobe-design-operation" aria-label="Funcionamiento operativo futuro">'+
-        '<div class="tobe-design-group-head"><span class="tobe-design-group-number">02</span>'+
+        '</div></details>'+
+      '<details class="tobe-design-group tobe-design-operation" id="tobeDesignGroup02" data-source-step-id="'+attr(item.sourceStepId)+'"'+(groupOpen('02')?' open':'')+' aria-label="Funcionamiento operativo futuro">'+
+        '<summary class="tobe-design-group-head"><span class="tobe-design-group-number">02</span>'+
           '<div><h4>Funcionamiento futuro</h4>'+
-            '<p>Cómo se ejecuta, qué supervisión exige y cómo se controlan sus riesgos.</p></div></div>'+
+            '<p>Cómo se ejecuta, qué supervisión exige y cómo se controlan sus riesgos.</p></div></summary>'+
         '<div class="form-grid tobe-design-fields">'+
           withAi('automationAi',tobeField(item,'automationAi','Automatización e IA',item.automationAi,'textarea',!editable))+
           withAi('humanSupervision',tobeField(item,'humanSupervision','Supervisión humana',item.humanSupervision,'textarea',!editable))+
           withAi('controlsRisk',tobeField(item,'controlsRisk','Control / riesgo',item.controlsRisk,'textarea',!editable))+
-        '</div></section>'+
+        '</div></details>'+
       '<details class="tobe-execution-fields tobe-design-group" id="tobeExecutionFields"'+
         ' data-source-step-id="'+attr(item.sourceStepId)+'"'+(executionOpen?' open':'')+'>'+
         '<summary><span class="tobe-design-group-number">03</span><span>'+
@@ -977,7 +983,7 @@ function tobeInspectorHtml(e,p){
         '<button type="button" class="btn btn-outline" data-tobe-guided-check="1">Comprobar requisitos</button>'+
         (nextItem?'<button type="button" class="btn btn-primary" data-tobe-select="'+
           attr(tobeFlowItemId(nextItem))+'">Siguiente actividad</button>':'')+
-      '</div></section>'+
+      '</div></details></section>'+
       // [AUNEA-FE-PG11-DESIGN-COMPOSITION-310] END
       tobeFlowInspector(e,p,item)+
     (item.isAddition&&editable?'<button type="button" class="btn btn-outline" data-tobe-discard-added="'+attr(item.id)+'">Descartar actividad añadida</button>':'');
