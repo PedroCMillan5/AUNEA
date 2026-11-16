@@ -368,3 +368,30 @@ test('UAT controls reuse shared action spacing and avoid literal inline presenta
 });
 
 // [AUNEA-UAT-DESIGN-COMMON-312] END
+
+test('one production disclosure component renders stage and group across PG10 and PG11',()=>{
+  const vm=require('node:vm'),renderer=load('ui/renderer.js');
+  const shared=renderer.match(/\/\/ \[AUNEA-FE-GLOBAL-DISCLOSURE-450\] START[\s\S]*?\/\/ \[AUNEA-FE-GLOBAL-DISCLOSURE-450\] END/)?.[0];
+  assert.ok(shared,'Common renderer owner must exist');
+  const escapeHtml=x=>String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const sandbox={attr:escapeHtml,esc:escapeHtml};
+  vm.createContext(sandbox);vm.runInContext(shared,sandbox);
+  const stage=sandbox.auneaUiDisclosureStart({id:'auneaStage',sourceId:'S1',
+    variant:'stage',title:'Título & datos',open:true,status:'Solo lectura'});
+  const group=sandbox.auneaUiDisclosureStart({id:'auneaGroup',sourceId:'S1',
+    variant:'group',number:'03',title:'Recursos',description:'Datos de ejecución'});
+  assert.match(stage,/<details class="aunea-ui-disclosure aunea-ui-disclosure--stage"/);
+  assert.match(stage,/data-source-step-id="S1" open/);
+  assert.match(stage,/Título &amp; datos/);
+  assert.match(group,/aunea-ui-disclosure--group/);
+  assert.match(group,/class="aunea-ui-disclosure__number">03/);
+  assert.match(group,/Recursos/);
+  assert.equal(sandbox.auneaUiDisclosureEnd(),'</details>');
+  const legacy=sandbox.auneaWorkDisclosure('pg10-stage-nav','Etapas','<p>Content</p>');
+  assert.match(legacy,/<details class="pg10-stage-nav aunea-ui-work-disclosure">/);
+  for(const source of ['pages/tobe.js','pages/tobe-flow.js'])
+    assert.match(load(source),/auneaUiDisclosureStart\(/,'PG11 must consume the shared owner');
+  assert.match(load('pages/results.js'),/auneaWorkDisclosure\(/);
+  assert.match(base,/\[AUNEA-FE-GLOBAL-DISCLOSURE-451\] START/);
+  assert.doesNotMatch(local,/\[AUNEA-FE-PG11-DISCLOSURE-UI-422\] START/);
+});
