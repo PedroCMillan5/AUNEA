@@ -5,7 +5,9 @@ const fs=require('node:fs');
 const path=require('node:path');
 const vm=require('node:vm');
 const src=require('./pg11-source.cjs')();
-const sharedUi=fs.readFileSync(path.join(__dirname,'../ui/renderer.js'),'utf8')
+const productionAttr=fs.readFileSync(path.join(__dirname,'../core/state.js'),'utf8')
+  .split('\n').find(line=>line.startsWith('function attr(v)'));
+const sharedUi=productionAttr+'\n'+fs.readFileSync(path.join(__dirname,'../ui/renderer.js'),'utf8')
   .match(/\/\/ \[AUNEA-FE-GLOBAL-DISCLOSURE-450\] START[\s\S]*?\/\/ \[AUNEA-FE-GLOBAL-DISCLOSURE-450\] END/)?.[0];
 if(!sharedUi)throw Error('Missing production shared disclosure renderer');
 const ai=fs.readFileSync(path.join(__dirname,'../domain/internal-ai-pilot.js'),'utf8');
@@ -221,7 +223,8 @@ test('sections 01, 02 and 03 share PG11 card surfaces and readable hierarchy',()
   assert.match(shared,/\.aunea-ui-work-surface\{\s*display:grid;gap:14px;min-width:0;padding:20px 22px;/);
   assert.match(src,/tobe-context aunea-ui-work-surface/);
   assert.match(src,/tobe-global-analysis aunea-ui-work-surface/);
-  assert.match(src,/tobe-review-section-head aunea-ui-work-surface/);
+  assert.match(src,/tobe-review-workbench aunea-ui-work-surface/);
+   assert.match(src,/<header class="tobe-review-section-head">/);
   assert.match(css,/\.tobe-workspace\[data-tobe-mode="guided"\] \.tobe-context\{display:grid\}/);
   assert.match(css,/\.tobe-context-diagnostic\{[^}]*border-left:3px solid var\(--system\);[^}]*background:var\(--system-soft\)/);
   assert.match(css,/\.tobe-context,\.tobe-global-analysis,\.tobe-review-section-head\{padding:14px;gap:12px\}/);
@@ -243,13 +246,13 @@ test('section 02 opens as a compact opportunity list while retaining every sourc
     source_refs:['S1']}
  ]);
  const html=h.html();
- assert.match(html,/<details class="tobe-global-monitoring"[^>]*>/);
- assert.match(html,/<summary>Ver seguimiento, fuentes y comprobaciones/);
+ assert.match(html,/<details class="aunea-ui-disclosure aunea-ui-disclosure--inline tobe-global-monitoring"[^>]*>/);
+ assert.match(html,/<summary class="aunea-ui-disclosure__summary">[\s\S]*?Ver seguimiento, fuentes y comprobaciones/);
  assert.match(html,/<details class="tobe-global-opportunity-detail"[^>]*>/);
  assert.match(html,/<summary class="tobe-global-opportunity-summary">/);
  assert.doesNotMatch(html,/<details class="tobe-global-opportunity-detail"[^>]* open>/,
    'proposals must not occupy full-page space until opened');
- assert.doesNotMatch(html,/<details class="tobe-global-monitoring"[^>]* open>/,
+ assert.doesNotMatch(html,/<details class="aunea-ui-disclosure aunea-ui-disclosure--inline tobe-global-monitoring"[^>]* open>/,
    'normal technical reports must be collapsed by default');
  assert.match(html,/Vincular cada documento al identificador del expediente/);
  assert.match(html,/Guardar el estado disponible y la persona responsable/);
