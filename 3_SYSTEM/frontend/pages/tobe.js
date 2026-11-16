@@ -1185,6 +1185,20 @@ function tobePage(){
   if(!snap)return pageTop('Diseño TO-BE','Necesita un AS-IS confirmado.',
     '<button class="btn" data-page="diagnostico">Volver al AS-IS</button>')+
     auneaNoticeMessage('warn','Confirma el cierre del AS-IS antes de diseñar el proceso futuro.');
+  const p=latestTobe(e);
+  if(p){
+    const sourceStatus=tobeAsisCompatibility(e,p);
+    if(!sourceStatus.compatible
+    return pageTop('Diseño TO-BE','AS-IS v'+esc(p.sourceSnapshotVersion)+' → v'+esc(snap.version),
+      '<button class="btn" data-page="resultados">Ver diagnóstico</button>')+
+      '<section class="aunea-ui-work-surface" aria-label="Conciliar AS-IS y TO-BE">'+
+      '<h2>Recuperar el diseño sin perder el borrador</h2>'+
+      '<p>El TO-BE v'+esc(p.version)+' se conserva. Las actividades compatibles se trasladarán a un nuevo borrador vinculado al AS-IS v'+esc(snap.version)+
+      '. Las que hayan cambiado requerirán que revises su transformación. No se aprueba nada automáticamente.</p>'+
+      '<button type="button" class="btn btn-primary" id="reconcileTobeSource">Conciliar AS-IS y continuar</button>'+
+      '<p class="field-help">El trabajo y las decisiones previas permanecerán en el historial.</p></section>';
+
+  }
   if(!currentDiagnosticOutput(e))return pageTop('TO-BE preliminar',
     'Vista de orientación para preparar el diseño futuro; todavía no es un proceso propuesto ni una recomendación aprobada.',
     '<button class="btn btn-primary" data-page="resultados">Volver a revisión del AS-IS</button>')+
@@ -1194,22 +1208,12 @@ function tobePage(){
       '<p><b>Qué no sucede aquí:</b> no se modifican datos del AS-IS, no se crea ni aprueba un TO-BE y no se calculan ahorros o precios futuros.</p></div>')+
     section('Problemas de origen','Referencias AS-IS para orientar el diseño. No se editan aquí.',asisPointCardsHtml(asisAnalysisSource(e)))+
     section('Vías de intervención pendientes de validar','Opciones de análisis, no alternativas seleccionadas.',asisDirectionCardsHtml(e))+
-    auneaNoticeMessage('warn','La edición y aprobación de un TO-BE definitivo requiere la recomendación oficial vigente. Regresa a PG10 para revisar las decisiones técnicas y comprobar requisitos.');const p=latestTobe(e);
+    auneaNoticeMessage('warn','La edición y aprobación de un TO-BE definitivo requiere la recomendación oficial vigente. Regresa a PG10 para revisar las decisiones técnicas y comprobar requisitos.');
   if(!p)return pageTop('Diseño TO-BE','El proceso futuro parte del AS-IS confirmado.',
     '<button class="btn btn-primary" id="createTobeDraft">Crear borrador desde AS-IS confirmado</button>')+
     section('Fuente confirmada','El diseño comienza como propuesta sin aprobar.',
       '<div class="notice info">AS-IS confirmado v'+esc(snap.version)+
       '. El diagnóstico oficial se reutiliza; no se vuelve a capturar.</div>');
-  const sourceStatus=tobeAsisCompatibility(e,p);
-  if(!sourceStatus.compatible)
-    return pageTop('Diseño TO-BE','AS-IS v'+esc(p.sourceSnapshotVersion)+' → v'+esc(snap.version),
-      '<button class="btn" data-page="resultados">Ver diagnóstico</button>')+
-      '<section class="aunea-ui-work-surface" aria-label="Conciliar AS-IS y TO-BE">'+
-      '<h2>Recuperar el diseño sin perder el borrador</h2>'+
-      '<p>El TO-BE v'+esc(p.version)+' se conserva. Las actividades compatibles se trasladarán a un nuevo borrador vinculado al AS-IS v'+esc(snap.version)+
-      '. Las que hayan cambiado requerirán que revises su transformación. No se aprueba nada automáticamente.</p>'+
-      '<button type="button" class="btn btn-primary" id="reconcileTobeSource">Conciliar AS-IS y continuar</button>'+
-      '<p class="field-help">El trabajo y las decisiones previas permanecerán en el historial.</p></section>';
   const editable=tobeEditable(p),statusLabel={DRAFT:'Borrador',REVIEWED:'Revisado',APPROVED_FOR_CLIENT:'Aprobado para cliente',PUBLISHED:'Publicado'}[p.status]||p.status;
   const previousAudit=typeof document!=='undefined'?document.getElementById('tobeAiWorkspace'):null,
     keepAuditOpen=!!previousAudit?.open&&
