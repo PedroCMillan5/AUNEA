@@ -758,7 +758,7 @@ function tobeFutureTimeReviewHtml(item,sourceStep){
     comparison+='<p><b>Valor anterior preservado:</b> '+esc(previous)+
       '. No es comparable hasta documentar la unidad y el supuesto.</p>';
   }
-  return '<details class="tobe-design-time tobe-design-group" id="tobeDesignGroup05" data-source-step-id="'+attr(item.sourceStepId)+'"'+(tobeDisclosureOpen('tobeDesignGroup05',item.sourceStepId,false)?' open':'')+'>'+
+  return '<details class="tobe-design-time tobe-design-group" id="tobeDesignGroup05" data-source-step-id="'+attr(item.sourceStepId)+'"'+((typeof tobeDisclosureOpen==='function'?tobeDisclosureOpen('tobeDesignGroup05',item.sourceStepId,true):true)?' open':'')+'>'+
     '<summary><span class="tobe-design-group-number">05</span><span>'+
       '<b>Tiempo futuro y estimación</b><small>Cálculo con datos comparables, no captura manual</small>'+
     '</span></summary>'+
@@ -828,7 +828,7 @@ function tobeInspectorHtml(e,p){
     document.getElementById?.('tobeDesignEvidence'):null;
   const evidenceOpen=tobeDisclosureOpen('tobeDesignEvidence',item.sourceStepId,false);
   const designOpen=tobeDisclosureOpen('tobeDesignDetails',item.sourceStepId,true);
-  const groupOpen=number=>tobeDisclosureOpen('tobeDesignGroup'+number,item.sourceStepId,false);
+  const groupOpen=number=>tobeDisclosureOpen('tobeDesignGroup'+number,item.sourceStepId,true);
   const savedReview=hasCurrentAi?internalAiSavedDraft(e)?.review:null;
   const fieldBlockers=(savedReview?.issues||[]).filter(issue=>
     issue.category==='BLOCKING'&&String(issue.step_id)===String(item.sourceStepId)).length;
