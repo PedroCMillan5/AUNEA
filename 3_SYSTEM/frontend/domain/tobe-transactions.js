@@ -184,10 +184,12 @@ function tobeOpportunitySources(e,p,item){
   ].filter(x=>x.id);
 }
 function tobeAlternativesHtml(e,p,item){
-  if(!tobeEditable(p)||item.isAddition)return '';
-  const key=tobeAlternativeKey(e,p,item.sourceStepId),
+  if(item.isAddition)return '';
+  const editable=tobeEditable(p),key=tobeAlternativeKey(e,p,item.sourceStepId),
     data=__auneaTobeAlternatives.get(key),
-    staleIssue=data?tobeRulesResultIssue(data):'',
+    staleIssue=data?(tobeRulesResultIssue(data)||
+      (String(data.input_hash||'')!==String(currentDiagnosticOutput(e)?.input_snapshot_hash||'')?
+        'Las alternativas guardadas en esta vista ya no coinciden con el diagnóstico vigente. Regenera las alternativas antes de revisarlas.':'')):'',
     error=staleIssue||__auneaTobeAlternativeErrors.get(key),
     history=p.aiDraft?.applyHistory||[],
     canUndo=history.some(x=>x.transaction&&!x.undoneAt),
@@ -235,10 +237,10 @@ function tobeAlternativesHtml(e,p,item){
       (candidate.expectedOutcome?'<p class="tobe-opportunity-outcome"><b>Resultado esperado:</b> '+
         esc(candidate.expectedOutcome)+'</p>':'')+
       (decision?'<p class="tobe-alternative-state">Decisión guardada; consulta el historial del diseño futuro.</p>':'')+
-      (discarded?'<div class="tobe-alternative-actions">'+
+      (discarded&&editable?'<div class="tobe-alternative-actions">'+
         '<button type="button" class="btn btn-outline btn-small" data-tobe-alternative-restore="'+index+
           '" data-tobe-alternative-source="'+attr(item.sourceStepId)+'">Recuperar alternativa</button>'+
-      '</div>':!decision?'<div class="tobe-alternative-actions">'+
+      '</div>':!decision&&editable?'<div class="tobe-alternative-actions">'+
         '<button type="button" class="btn btn-outline btn-small" data-tobe-alternative="'+index+
           '" data-tobe-alternative-source="'+attr(item.sourceStepId)+'">Revisar y previsualizar</button>'+
         '<button type="button" class="btn btn-outline btn-small" data-tobe-alternative-discard="'+index+
@@ -283,8 +285,12 @@ function tobeAlternativesHtml(e,p,item){
       (g.source.id?' ('+esc(g.source.id)+')':'')+'</span><h5>'+esc(g.source.label)+'</h5></div>'+
       (description?'<small>'+esc(description)+'</small>':'')+'</div>'+
       (count?'<div class="tobe-opportunity-options">'+g.items.map(card).join('')+'</div>':
-        '<p class="tobe-opportunity-empty">No hay alternativa específica calculada por reglas para este hallazgo. '+
-        'Puedes configurar el TO-BE manualmente.</p>')+
+        '<p class="tobe-opportunity-empty">'+esc(
+          staleIssue?'Las alternativas calculadas anteriormente ya no son vigentes para este hallazgo.':
+          error?'No se dispone de una alternativa de reglas válida para este hallazgo.':
+          !data?'Pendiente de generar alternativas por reglas para este hallazgo.':
+          'No hay alternativa específica calculada por reglas para este hallazgo.')+
+          (editable?' Puedes configurar el TO-BE manualmente en 03.3.':'')+'</p>')+
       (globalCount?'<div class="tobe-opportunity-global-list">'+g.global.map(globalCard).join('')+'</div>':'')+
       '</section>';
   };
@@ -293,16 +299,18 @@ function tobeAlternativesHtml(e,p,item){
       '<p>Las alternativas por reglas se agrupan por fricción o riesgo confirmado. '+
       'Las fuentes IA se consultan sin duplicar la decisión del consultor.</p></div>'+
     '<div class="tobe-alternatives-actions">'+
-      '<button type="button" class="btn btn-outline" data-tobe-load-alternatives="'+attr(item.sourceStepId)+
-      '">'+(data?'Actualizar alternativas por reglas':'Generar alternativas con reglas')+'</button>'+
-      (canUndo?'<button type="button" class="btn btn-outline" data-tobe-undo-alternative="1">'+
+      (editable?'<button type="button" class="btn btn-outline" data-tobe-load-alternatives="'+attr(item.sourceStepId)+
+      '">'+(data?'Actualizar alternativas por reglas':'Generar alternativas con reglas')+'</button>':'')+
+      (editable?'<button type="button" class="btn btn-outline" data-tobe-jump="tobeStepDesign">Configurar en 03.3</button>':'')+
+      (editable&&canUndo?'<button type="button" class="btn btn-outline" data-tobe-undo-alternative="1">'+
       'Deshacer última intervención aplicada</button>':'')+'</div>'+
     (error?'<p class="notice warn" role="alert"><b>Análisis no completado:</b> '+esc(error)+
       ' Se conserva el diseño.</p>':'')+
-    (!data&&!error?'<p class="field-help">El motor de reglas aún no se ha ejecutado para esta actividad. '+
+    (!editable?'<p class="field-help">Esta versión está en solo lectura. Se conservan las decisiones confirmadas; para cambiar el diseño, crea una nueva versión TO-BE.</p>':'')+
+    (editable&&!data&&!error?'<p class="field-help">El motor de reglas aún no se ha ejecutado para esta actividad. '+
       'Las fricciones y riesgos confirmados se muestran mientras tanto.</p>':'')+
     (!staleIssue&&data&&!data.candidates?.length?'<p class="field-help">El motor no ha generado '+
-      'alternativas aplicables. Puedes configurar el TO-BE manualmente.</p>':'')+
+      'alternativas aplicables.'+(editable?' Puedes configurar el TO-BE manualmente.':'')+'</p>':'')+
     '<div class="tobe-opportunity-groups">'+[...groups.values()].map(opportunity).join('')+
       (cross.global.length?opportunity(cross):'')+
       (other.items.length||other.global.length?opportunity(other):'')+
