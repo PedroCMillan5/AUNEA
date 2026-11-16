@@ -160,6 +160,58 @@ for(const kind of ['invoice','logistics']){
   run("latestTobe(currentEng()).status='DRAFT';render()");
   assert.ok(w.document.querySelector('#tobeStepAdvice [data-tobe-load-alternatives]'));
   assert.deepEqual(h.errors,[]);
+  // [AUNEA-UAT-PG11-CROSS-STAGE-468] START
+  // One persistent Engagement: PG09 re-seal → PG10 diagnose → PG11 01/02/03.1/03.2/03.3/map.
+  const previous=run('JSON.stringify(latestTobe(currentEng()))'),count=run('currentEng().tobeProposals.length');
+  assert.equal(run('confirmedSnapshot(currentEng()).version'),1);
+  run("currentEng().processSteps[0].step_name+=' (revisada en v2)';"+
+      "sealConfirmedSnapshot(currentEng(),'UAT: AS-IS revisado')");
+  assert.equal(run('confirmedSnapshot(currentEng()).version'),2);
+  await run("(async()=>{const e=currentEng(),snap=confirmedSnapshot(e);"+
+    "e.engineGateReview.snapshotVersion=snap.version;"+
+    "const response=await fetch(state.backendUrl+'/v1/diagnose',{method:'POST',"+
+    "headers:{'Content-Type':'application/json'},body:JSON.stringify(buildBackendPayload(e))});"+
+    "if(!response.ok)throw Error('PG10 v2 HTTP '+response.status);"+
+    "e.diagnosticOutput=await response.json();e.lastEngineSnapshotVersion=snap.version;"+
+    "e.lastEngineGateFingerprint=engineGateFingerprint(e);"+
+    "if(!saveState('UAT PG10 v2'))throw Error('PG10 persistence failure');render();})()");
+  assert.ok(w.document.getElementById('reconcileTobeSource'),
+    'changed AS-IS must offer a recovery path, not a dead-end');
+  assert.equal(run('JSON.stringify(currentEng().tobeProposals[0])'),previous);
+  w.document.getElementById('reconcileTobeSource').click();
+  assert.equal(run('currentEng().tobeProposals.length'),count+1);
+  assert.equal(run('latestTobe(currentEng()).sourceSnapshotVersion'),2);
+  assert.equal(run('latestTobe(currentEng()).status'),'DRAFT');
+  assert.equal(run('JSON.stringify(currentEng().tobeProposals[0])'),previous);
+  assert.equal(run('latestTobe(currentEng()).items[0].transformation'),'');
+  assert.equal(run('latestTobe(currentEng()).items[1].humanSupervision'),
+    JSON.parse(previous).items[1].humanSupervision);
+  for(const id of ['tobeStepOrigin','tobeStepAdvice','tobeStepDesign'])
+    assert.ok(w.document.getElementById(id),'all PG11 stages must use the recovered DRAFT: '+id);
+  assert.equal(run('tobeProposalSnapshot(currentEng(),latestTobe(currentEng())).version'),2);
+  assert.equal(run('tobeFlowIntegrity(currentEng(),latestTobe(currentEng()))'),null);
+  w.document.querySelector('[data-tobe-load-alternatives="P1"]').click();
+  await until(()=>w.document.querySelectorAll('#tobeStepAdvice [data-tobe-alternative]').length>0);
+  w.document.querySelector('#tobeStepAdvice [data-tobe-alternative]').click();
+  assert.ok(w.document.getElementById('tobeAlternativeDialog'),
+    '03.2 must preview a source-linked candidate against v2');
+  w.document.querySelector('[data-tobe-cancel-alternative]').click();
+  const transformation=w.document.querySelector('#tobeStepDesign [data-tobe-field="transformation"]');
+  assert.ok(transformation);transformation.value='Se modifica';
+  transformation.dispatchEvent(new w.Event('change',{bubbles:true}));
+  w.document.getElementById('saveTobe').click();
+  assert.equal(run('latestTobe(currentEng()).items[0].transformation'),'Se modifica',
+    '03.3 must edit the same DRAFT as 03.2 and the map');
+  const stored=w.localStorage.getItem('aunea_internal_v1');h.dom.window.close();
+  h=runtime(stored);({run,w}=h);run("state.activePage='tobe';render()");
+  assert.equal(run('latestTobe(currentEng()).sourceSnapshotVersion'),2);
+  assert.equal(run('latestTobe(currentEng()).items[0].transformation'),'Se modifica');
+  assert.ok(w.document.getElementById('tobeStepOrigin')&&
+    w.document.getElementById('tobeStepAdvice')&&w.document.getElementById('tobeStepDesign'));
+  assert.equal(run('confirmedSnapshot(currentEng()).version'),2);
+  assert.deepEqual(h.errors,[]);
+  console.log('PG11_CROSS_STAGE_'+kind.toUpperCase()+'_PASS: PG09/10 to all PG11 stages, same owner, v1-v2 and persistence');
+  // [AUNEA-UAT-PG11-CROSS-STAGE-468] END
   console.log('PG11_DOM_'+kind.toUpperCase()+'_PASS — full runtime, preview/edit, condition gate, documented KEEP, discard/recover, confirm/reload/undo, branches and AS-IS preserved');
  }finally{h.dom.window.close();}
 }})().catch(e=>{console.error(e);process.exitCode=1;});
