@@ -176,7 +176,7 @@ for(const kind of ['invoice','logistics']){
     "e.lastEngineGateFingerprint=engineGateFingerprint(e);"+
     "if(!saveState('UAT PG10 v2'))throw Error('PG10 persistence failure');render();})()");
   assert.ok(w.document.getElementById('reconcileTobeSource'),
-    'changed AS-IS must offer a recovery path, not a dead-end');
+    'changed AS-IS must offer a recovery path, not a dead-end: '+w.document.getElementById('content')?.textContent.slice(-1400));
   assert.equal(run('JSON.stringify(currentEng().tobeProposals[0])'),previous);
   w.document.getElementById('reconcileTobeSource').click();
   assert.equal(run('currentEng().tobeProposals.length'),count+1);
