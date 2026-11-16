@@ -5054,4 +5054,12 @@ details.tobe-ai-operational-context:not([open])>.tobe-ai-operational-body{
   .tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign>.tobe-stage-disclosure>summary{align-items:flex-start}
   .tobe-workspace[data-tobe-mode="guided"] #tobeStepDesign>.tobe-stage-disclosure>:not(summary){margin-left:12px;margin-right:12px}
 }
+/* The warning about an obsolete global analysis is not a green success state. */
+#tobeGlobalAnalysis .tobe-global-summary[data-analysis-state="stale"]{
+  background:var(--canvas,#f8faf9);
+  border-left-color:var(--gold);
+}
+#tobeGlobalAnalysis .tobe-global-summary[data-analysis-state="stale"] strong{
+  color:var(--text);
+}
 /* [AUNEA-FE-PG11-DISCLOSURE-UI-422] END */
