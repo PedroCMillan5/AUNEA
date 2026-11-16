@@ -9,7 +9,7 @@
   "metrics": {
     "modules": 50,
     "cssClasses": 1097,
-    "classesCrossFile": 108,
+    "classesCrossFile": 107,
     "repeatedSelectorContextGroups": 139,
     "documentedComponents": 20,
     "inlineStyleAttributes": 29
@@ -185,9 +185,7 @@
           "owners": [
             "ui-system.css"
           ],
-          "consumers": [
-            "pages/tobe.js"
-          ]
+          "consumers": []
         }
       ],
       "note": "Componente documental, no implica implementación única de HTML o comportamiento"
@@ -2019,7 +2017,7 @@
       "path": "pages/tobe.js",
       "layer": "pages",
       "blockId": "AUNEA-FE-PG11-GUIDED-NAV-266",
-      "lines": 1214,
+      "lines": 1216,
       "family": [
         "Trabajo interno / PG11"
       ],
@@ -2027,6 +2025,7 @@
       "inlineStyleAttributes": 2,
       "referencedCssClasses": [
         "aunea-ui-aux-heading",
+        "aunea-ui-disclosure__content",
         "aunea-ui-section-caption",
         "aunea-ui-section-title",
         "aunea-ui-work-stage",
@@ -2109,18 +2108,10 @@
         "tobe-design-evidence",
         "tobe-design-evidence-content",
         "tobe-design-fields",
-        "tobe-design-group",
-        "tobe-design-group-head",
-        "tobe-design-group-number",
-        "tobe-design-header",
         "tobe-design-lede",
-        "tobe-design-new-activity",
-        "tobe-design-status",
-        "tobe-design-time",
         "tobe-design-warning-count",
         "tobe-design-workspace",
         "tobe-edit",
-        "tobe-execution-fields",
         "tobe-eyebrow",
         "tobe-flow-actions",
         "tobe-flow-start",
@@ -2150,16 +2141,12 @@
         "tobe-node-status",
         "tobe-node-tools",
         "tobe-origin",
-        "tobe-origin-header-status",
         "tobe-process-canvas",
         "tobe-readonly-options",
         "tobe-removed-list",
         "tobe-review-section-head",
         "tobe-review-steps",
         "tobe-selected-status",
-        "tobe-stage-body",
-        "tobe-stage-disclosure",
-        "tobe-stage-heading",
         "tobe-stage-intro",
         "tobe-subdetails",
         "tobe-task-guide",
@@ -2227,7 +2214,7 @@
       "path": "pages/tobe-flow.js",
       "layer": "pages",
       "blockId": "AUNEA-FE-PG11-FUTURE-FLOW-228",
-      "lines": 401,
+      "lines": 402,
       "family": [
         "Trabajo interno / PG11"
       ],
@@ -2243,9 +2230,6 @@
         "notice",
         "on",
         "tobe-decision-readout",
-        "tobe-design-group",
-        "tobe-design-group-head",
-        "tobe-design-group-number",
         "tobe-muted",
         "tobe-optimization-body",
         "tobe-optimization-connections",
@@ -4157,10 +4141,12 @@
       "ownerFiles": [
         "styles.css"
       ],
-      "ruleOccurrences": 3,
-      "runtimeConsumers": [],
+      "ruleOccurrences": 2,
+      "runtimeConsumers": [
+        "pages/tobe.js"
+      ],
       "frozenRisk": false,
-      "classification": "REVIEW_DYNAMIC_OR_HTML"
+      "classification": "REFERENCED"
     },
     {
       "className": "aunea-ui-disclosure__description",
@@ -4249,7 +4235,7 @@
       "ownerFiles": [
         "styles.css"
       ],
-      "ruleOccurrences": 3,
+      "ruleOccurrences": 2,
       "runtimeConsumers": [],
       "frozenRisk": false,
       "classification": "REVIEW_DYNAMIC_OR_HTML"
@@ -14225,13 +14211,10 @@
       "ownerFiles": [
         "ui-system.css"
       ],
-      "ruleOccurrences": 11,
-      "runtimeConsumers": [
-        "pages/tobe.js",
-        "pages/tobe-flow.js"
-      ],
+      "ruleOccurrences": 2,
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "tobe-design-group-head",
@@ -14239,12 +14222,9 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 5,
-      "runtimeConsumers": [
-        "pages/tobe.js",
-        "pages/tobe-flow.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "tobe-design-group-number",
@@ -14252,12 +14232,9 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 1,
-      "runtimeConsumers": [
-        "pages/tobe.js",
-        "pages/tobe-flow.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "tobe-design-header",
@@ -14265,18 +14242,16 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 11,
-      "runtimeConsumers": [
-        "pages/tobe.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "tobe-design-lede",
       "ownerFiles": [
         "ui-system.css"
       ],
-      "ruleOccurrences": 3,
+      "ruleOccurrences": 2,
       "runtimeConsumers": [
         "pages/tobe.js"
       ],
@@ -14289,35 +14264,29 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 2,
-      "runtimeConsumers": [
-        "pages/tobe.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "tobe-design-status",
       "ownerFiles": [
         "ui-system.css"
       ],
-      "ruleOccurrences": 3,
-      "runtimeConsumers": [
-        "pages/tobe.js"
-      ],
+      "ruleOccurrences": 2,
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "tobe-design-time",
       "ownerFiles": [
         "ui-system.css"
       ],
-      "ruleOccurrences": 6,
-      "runtimeConsumers": [
-        "pages/tobe.js"
-      ],
+      "ruleOccurrences": 3,
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "tobe-design-warning-count",
@@ -14360,12 +14329,10 @@
       "ownerFiles": [
         "ui-system.css"
       ],
-      "ruleOccurrences": 14,
-      "runtimeConsumers": [
-        "pages/tobe.js"
-      ],
+      "ruleOccurrences": 8,
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "tobe-eyebrow",
@@ -15687,11 +15654,9 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 4,
-      "runtimeConsumers": [
-        "pages/tobe.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "tobe-origin-issue",
@@ -16111,39 +16076,32 @@
     {
       "className": "tobe-stage-body",
       "ownerFiles": [
-        "styles.css",
         "ui-system.css"
       ],
-      "ruleOccurrences": 7,
-      "runtimeConsumers": [
-        "pages/tobe.js"
-      ],
+      "ruleOccurrences": 6,
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "CROSS_FILE_OWNER_REVIEW"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "tobe-stage-disclosure",
       "ownerFiles": [
         "ui-system.css"
       ],
-      "ruleOccurrences": 14,
-      "runtimeConsumers": [
-        "pages/tobe.js"
-      ],
+      "ruleOccurrences": 1,
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "tobe-stage-heading",
       "ownerFiles": [
         "ui-system.css"
       ],
-      "ruleOccurrences": 4,
-      "runtimeConsumers": [
-        "pages/tobe.js"
-      ],
+      "ruleOccurrences": 3,
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "tobe-stage-intro",
@@ -16259,7 +16217,7 @@
       "ownerFiles": [
         "ui-system.css"
       ],
-      "ruleOccurrences": 235,
+      "ruleOccurrences": 208,
       "runtimeConsumers": [
         "pages/tobe.js"
       ],
@@ -18229,7 +18187,7 @@
         },
         {
           "owner": "ui-system.css",
-          "line": 4880
+          "line": 4856
         }
       ]
     },
@@ -18242,7 +18200,7 @@
         },
         {
           "owner": "ui-system.css",
-          "line": 4905
+          "line": 4881
         }
       ]
     },
@@ -18255,7 +18213,7 @@
         },
         {
           "owner": "ui-system.css",
-          "line": 4906
+          "line": 4882
         }
       ]
     },
@@ -18368,11 +18326,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3942
+          "line": 3929
         },
         {
           "owner": "ui-system.css",
-          "line": 4529
+          "line": 4505
         }
       ]
     },
@@ -18381,11 +18339,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 4240
+          "line": 4216
         },
         {
           "owner": "ui-system.css",
-          "line": 4261
+          "line": 4237
         }
       ]
     },
@@ -18394,11 +18352,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 4516
+          "line": 4492
         },
         {
           "owner": "ui-system.css",
-          "line": 4714
+          "line": 4690
         }
       ]
     }
@@ -20341,22 +20299,6 @@
         ],
         "status": "FROZEN_PROTECTED",
         "reason": "Shared shell, CRM or diagnostic family; preserve FROZEN cascade",
-        "baseOwner": "styles.css",
-        "exceptionOwner": "ui-system.css",
-        "browserVerified": false,
-        "manualVisualReviewRequired": true
-      },
-      {
-        "className": "tobe-stage-body",
-        "ownerFiles": [
-          "styles.css",
-          "ui-system.css"
-        ],
-        "consumers": [
-          "pages/tobe.js"
-        ],
-        "status": "PENDING_BROWSER_QA",
-        "reason": "Additional runtime/browser inspection required; no speculative deletion",
         "baseOwner": "styles.css",
         "exceptionOwner": "ui-system.css",
         "browserVerified": false,
@@ -23245,7 +23187,7 @@
           },
           {
             "owner": "ui-system.css",
-            "line": 4880
+            "line": 4856
           }
         ],
         "cssClasses": [
@@ -23266,7 +23208,7 @@
           },
           {
             "owner": "ui-system.css",
-            "line": 4905
+            "line": 4881
           }
         ],
         "cssClasses": [
@@ -23287,7 +23229,7 @@
           },
           {
             "owner": "ui-system.css",
-            "line": 4906
+            "line": 4882
           }
         ],
         "cssClasses": [
@@ -23481,11 +23423,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3942
+            "line": 3929
           },
           {
             "owner": "ui-system.css",
-            "line": 4529
+            "line": 4505
           }
         ],
         "cssClasses": [
@@ -23503,11 +23445,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 4240
+            "line": 4216
           },
           {
             "owner": "ui-system.css",
-            "line": 4261
+            "line": 4237
           }
         ],
         "cssClasses": [
@@ -23524,11 +23466,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 4516
+            "line": 4492
           },
           {
             "owner": "ui-system.css",
-            "line": 4714
+            "line": 4690
           }
         ],
         "cssClasses": [
@@ -23542,13 +23484,13 @@
       }
     ],
     "counts": {
-      "crossFileClasses": 108,
+      "crossFileClasses": 107,
       "selectorContexts": 139,
       "protectedClasses": 106,
       "protectedSelectorContexts": 99,
       "scopedClassExceptions": 1,
       "scopedSelectorExceptions": 40,
-      "unresolvedClasses": 1,
+      "unresolvedClasses": 0,
       "unresolvedSelectorContexts": 0,
       "browserApproved": 0
     }
