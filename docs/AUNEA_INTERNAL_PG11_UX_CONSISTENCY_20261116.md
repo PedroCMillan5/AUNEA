@@ -43,3 +43,21 @@ Las diferencias procedían de estructuras HTML, reglas de apertura y CSS separad
 No se cambian diagnóstico, reglas IA, cifras, modelos, snapshots, estado del consultor, decisiones ni APIs. No se promueven las páginas a PRODUCCIÓN ni se modifica `main`. Las decisiones vigentes se aplican, sin nueva decisión comercial o de arquitectura.
 
 **Siguiente validación visual:** revisar manualmente la interfaz PG11 en Windows/Edge y su coherencia con las referencias aprobadas. El QA automatizado no sustituye esa aprobación.
+
+## 5. Corrección adicional de geometría 03.2 / 03.3 · 16/11/2026
+
+**Motivo:** la revisión del propietario mostró que, pese a pasar el gate anterior, 03.3 conservaba un margen lateral adicional, un segundo contenedor y una cabecera de dos líneas, frente al patrón visual existente de 03.2. Se reabre exclusivamente el alcance UX de PG11; no se cambia ninguna regla comercial.
+
+**Cambios acreditados:**
+- `pages/tobe.js`: cabecera 03.3 compacta, con título y estado. El texto de ayuda sale del `summary` y pasa al cuerpo, como en 03.2.
+- `ui-system.css`: se retiran las reglas que añadían 16 px de margen a todo el contenedor `tobe-stage-disclosure` en lugar de solamente a su contenido. Se elimina la cuadrícula innecesaria en el contenedor exterior, se mantiene un solo borde externo y se alinean los encabezados de 03.2/03.3, los contenidos y el primer grupo 01.
+- Igualación final del `line-height` (22,4 px en ambos títulos) y altura de cabecera (53 px), reduciendo exclusivamente el padding del estado `Borrador editable`. Los estados y propietarios de edición permanecen intactos.
+- `tests/pg11-browser-journey.cjs`: nuevas aserciones basadas en medidas reales del navegador, con tolerancia de 1,5 px, para bordes externos, límites del resumen, margen de inicio del primer grupo y altura del encabezado; se ejecutan en Chromium y Windows/Microsoft Edge con los expedientes invoice y logistics.
+
+**QA de la versión funcional corregida:**
+- [Acceptance Gate 43833434075](https://github.com/PedroCMillan5/AUNEA/actions/runs/43833434075) **SUCCESS**: frontend, backend, Chromium/browser UAT y publicación.
+- [Windows Edge 43833434185](https://github.com/PedroCMillan5/AUNEA/actions/runs/43833434185) **SUCCESS**.
+- [Shared UI Contract Gate 43833434023](https://github.com/PedroCMillan5/AUNEA/actions/runs/43833434023) **SUCCESS**.
+- Versión funcional: `6de632d56e1957204793f2a455d2312640793c45`.
+
+**Dictamen:** corregida y probada técnicamente la diferencia concreta de cabecera y márgenes entre 03.2 y 03.3. **No se declara aceptación visual humana del propietario ni homogeneidad definitiva de toda AUNEA**, que son ámbitos distintos. La rama sigue en REVIEW y sin merge a main.
