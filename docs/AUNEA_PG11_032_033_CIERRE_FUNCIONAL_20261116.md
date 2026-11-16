@@ -1,0 +1,60 @@
+# PG11 03.2 / 03.3 — Cierre funcional acotado de alternativas y diseño TO-BE
+
+**Fecha:** 16/11/2026  
+**Rama:** `work/as-is-ux-simplification-20260930`  
+**Estado:** REVIEW — CIERRE TÉCNICO del flujo determinista 03.2→03.3, sin promoción a `main` ni `PRODUCTION`.  
+**Fuentes rectoras:** `PROJECT_RULES.md`, `00_AUNEA_INTERNAL_MASTER_INDEX`, `AUNEA_SYSTEM_SIMULATOR_CANONICAL` v1.14 (PG11), `DECISIONES_AUNEA` DEC-050/052/055/056/075, `CODE_BLOCK_INDEX.md`, arquitectura UI/UX global [informe 16/11](AUNEA_INTERNAL_GLOBAL_UI_UX_ARCHITECTURE_20261116.md).
+
+## 1. Alcance y decisión operativa
+
+**03.2** presenta hallazgos del AS-IS confirmado, agrupación de alternativas por fricción/riesgo, fuentes IA global/por actividad separadas, previsualización de candidatos por reglas, descarte/recuperación y acceso al único editor 03.3.  
+**03.3** conserva el único propietario de los campos del TO-BE. La confirmación de una previsualización actualiza la versión editada y deja la intervención en el historial reversible. No importa automáticamente datos IA; no reescribe el AS-IS; no crea un segundo grafo ni reglas de negocio.
+
+El cierre no implica que cualquier fricción tenga una alternativa automática: cuando el motor no encuentra una intervención específica la página permite diseño manual y dice exactamente qué ha ocurrido.
+
+## 2. Cambios implementados
+
+| Propietario / contrato | Resultado |
+| --- | --- |
+| `domain/tobe-transactions.js` 03.2 | Diferencia «aún no generado», «sin candidato», error, backend incompatible y resultado obsoleto; antes de ejecutar no declara que el motor no encontró una alternativa |
+| `domain/tobe-transactions.js` 03.2 | Compara `input_hash` de la respuesta de reglas con `currentDiagnosticOutput(e).input_snapshot_hash` **antes de mostrar candidatos clicables**; los datos históricos obsoletos no se presentan como propuestas vigentes |
+| `domain/tobe-transactions.js` 03.2 | Conserva las fricciones/riesgos visibles en versiones REVIEWED/solo lectura; se ocultan acciones de generar, aplicar, descartar, recuperar y deshacer si la versión no es DRAFT |
+| `domain/tobe-transactions.js` + `internal-work-events.js` | Acción «Configurar en 03.3» abre el único editor; después de confirmar una intervención desde 03.2 vuelve a abrir y enfocar 03.3. No se crean campos ni decisiones duplicados |
+| `domain/tobe-transactions.js` 03.3 | Para cambios estructurales `flow.addedSteps`, la tabla de comparación no muestra sólo «1 actividad añadida», sino también los campos reales propuestos, especialmente nombre, motivo y control/riesgo **incluidas las modificaciones del consultor** |
+| `tests/pg11-dom-journey.cjs` | Verifica fuente vigente vs obsoleta, el estado antes de ejecutar, navegación 03.2→03.3 y una versión de solo lectura, además de previsualizar, editar, cancelar, descartar, recuperar, confirmar, recargar, deshacer y preservar AS-IS |
+| `tests/pg11-browser-journey.cjs` | Verifica navegación real a 03.3 desde la acción de 03.2, disclosure compartido y geometría renderizada, además de los controles previos |
+| `.github/workflows/aunea-v1-gate.yml` | Se incorpora al gate principal la ejecución real de `node tests/pg11-dom-journey.cjs`. Antes el archivo existía pero el gate sólo ejecutaba el recorrido Chromium; ya no se confunden los dos niveles de prueba |
+
+## 3. Matriz de aceptación ejecutada
+
+| Caso | Precondición y pasos | Esperado | Evidencia | Estado |
+| --- | --- | --- | --- | --- |
+| 03.2-01 | Borrador DRAFT, reglas sin ejecutar; abrir una actividad con hallazgos | «Pendiente de generar», nunca «No hay alternativa» prematuro | DOM invoice/logistics + Chromium | **CONFIRMADO** |
+| 03.2-02 | Generar alternativas con backend real; recorrer hallazgos | Propuestas agrupadas por fuente confirmada; IA diferenciada de reglas | DOM invoice/logistics | **CONFIRMADO** |
+| 03.2-03 | Inyectar hash de diagnóstico distinto sobre respuesta guardada; renderizar | No existe botón para previsualizar alternativas obsoletas; aviso explícito | DOM invoice/logistics | **CONFIRMADO** |
+| 03.2-04 | Descartar y recuperar; comprobar histórico | No cambia el TO-BE; reversibilidad conservada | DOM invoice/logistics | **CONFIRMADO** |
+| 03.2-05 | Abrir «Configurar en 03.3» tras haber cerrado 03.3 | El mismo panel nativo se reabre; no aparece otro formulario | Chromium + DOM | **CONFIRMADO** |
+| 03.3-01 | Editar control de un paso añadido en la vista previa | Tabla antes/después incluye el texto editado; el borrador aún no cambia | DOM invoice/logistics | **CONFIRMADO** |
+| 03.3-02 | Confirmar sin reconocer condiciones; después reconocer | Confirmación bloqueada hasta decisión humana expresa; no equivale a validar viabilidad | DOM invoice/logistics | **CONFIRMADO** |
+| 03.3-03 | Confirmar operación, recargar, deshacer | Intervención persistida, proyectada en mapa, recuperable sin sobrescribir cambios posteriores | Chromium, DOM y backend real | **CONFIRMADO** |
+| 03.3-04 | Seleccionar «Mantener AS-IS» sobre propuesta transformada | Elimina del TO-BE una automatización previa sólo tras justificarla y reconocer hallazgos | DOM invoice/logistics | **CONFIRMADO** |
+| 03.2/03.3-05 | Cambiar estado del borrador a REVIEWED en caso sintético | Consultas y campos visibles; sin acciones de escritura del módulo 03.2 | DOM invoice/logistics | **CONFIRMADO** |
+| CROSS-01 | Chromium, Edge, snapshots FROZEN de otras páginas | Sin regresión de navegación ni cambios visuales en FROZEN | Gates enlazados abajo | **CONFIRMADO** |
+| IA-LIVE-01 | Ejecutar con Ollama local real, fallos 409/503/OOM y recuperación | Calidad y robustez del motor IA individual/global sobre **esta** versión | No se ejecutó inferencia Ollama en este lote | **PENDIENTE / NO ACREDITADO** |
+| VISUAL-01 | Revisión manual del propietario en Windows con el estudio real | Aceptación de claridad, espaciados, legibilidad y acciones por actividad | Captura sintética QA disponible, no aceptación del propietario | **PENDIENTE** |
+
+## 4. Evidencia reproducible
+
+**Último commit funcional:** `ceb627038ecad8300f1f7a6b29440fe26e034b55`.  
+**Gate de aceptación con DOM incorporado:** [GitHub Actions #43851418986](https://github.com/PedroCMillan5/AUNEA/actions/runs/43851418986) — **SUCCESS**: backend **493 PASS** (1 warning), frontend **960/960 PASS**, Chromium **PASS** y 18/18 referencias técnicas FROZEN sin diferencias. El nuevo paso DOM imprime `PG11_DOM_INVOICE_PASS` y `PG11_DOM_LOGISTICS_PASS` tras ejecutar el ciclo completo.  
+**Windows / Edge:** [GitHub Actions #43851418925](https://github.com/PedroCMillan5/AUNEA/actions/runs/43851418925) — **SUCCESS**, dos procesos sintéticos.  
+**Frontend:** [GitHub Actions #43851418904](https://github.com/PedroCMillan5/AUNEA/actions/runs/43851418904) — **SUCCESS**.  
+**Capturas:** artefacto `aunea-single-uat-chromium-evidence` en el gate; imágenes `pg11-aunea-consultant-desktop.png`, `pg11-section03-reviewed-fields-desktop.png`. La imagen usa un estudio sintético y **no** constituye validación manual del caso real.
+
+**Reproducción local:** instalar el frontend (`npm ci`), iniciar backend v1 de la rama en `127.0.0.1:8017`, ejecutar `node tests/pg11-dom-journey.cjs` y `node tests/pg11-browser-journey.cjs` en `3_SYSTEM/frontend`. La prueba DOM usa jsdom y el backend real para alternativas; no llama a Ollama. Los tests `npm test` y `pytest` forman parte del gate.
+
+## 5. Criterio de cierre y límites
+
+**CIERRE TÉCNICO del comportamiento DRAFT, lectura, generación por reglas, previsualización, edición, confirmación, persistencia y reversión de 03.2–03.3: ACREDITADO.**
+
+**NO ACREDITADO:** aceptación visual final del propietario, inferencia Ollama real en el último commit, completitud funcional global de PG11/PG12–PG15 o E2E total del producto. Mantener la rama en REVIEW y no declarar toda AUNEA Internal lista para producción por aprobar este lote. El trabajo realizado no cambia cuestionario, precios, engine de negocio ni nuevas reglas canónicas. DECISIONES y ROADMAP sólo se sincronizan si una decisión o fase de producto real cambia.
