@@ -507,6 +507,28 @@ function registerInternalWorkPages(){
     toast('Decisión guardada: '+TOBE_HUMAN_LABELS[choice]+'. Revisa los campos propuestos; el diseño sigue en borrador.');
   },true);
   // [AUNEA-FE-PG11-HUMAN-DECISION-SAVE-224] END
+  // [AUNEA-FE-PG11-RECONCILE-EVENTS-467] START
+  // One source-version transition for the entire PG11. The old DRAFT is immutable
+  // after migration; the same new owner feeds 01, 02, 03.1, 03.2, 03.3 and map.
+  document.addEventListener('click',event=>{
+    const button=event.target?.closest?.('#reconcileTobeSource');
+    if(!button||state.activePage!=='tobe')return;
+    event.preventDefault();if(button.dataset.working==='1')return;
+    button.dataset.working='1';
+    try{
+      const e=currentEng(),prior=e?tobeHistory(e).length:0;
+      if(!e)throw Error('No se encuentra el estudio activo.');
+      const draft=tobeReconcileSource(e);
+      if(!saveState('Conciliar el AS-IS confirmado con nuevo TO-BE v'+draft.version)){
+        tobeHistory(e).splice(prior);
+        throw Error('No se pudo guardar la versión nueva. El borrador anterior sigue conservado.');
+      }
+      __auneaTobeAlternatives.clear();__auneaTobeAlternativeErrors.clear();
+      __auneaTobeSelection={engagementId:'',version:0,stepId:''};
+      render();toast('TO-BE v'+draft.version+' listo. Revisa las actividades afectadas; se conserva la versión anterior.');
+    }catch(error){toast(String(error?.message||error));button.dataset.working='0';}
+  },true);
+  // [AUNEA-FE-PG11-RECONCILE-EVENTS-467] END
   // [AUNEA-FE-PG11-TRANSACTION-EVENTS-333] START — explicit, version-bound actions.
   document.addEventListener('click',async event=>{
     const button=event.target?.closest?.('[data-tobe-load-alternatives], [data-tobe-alternative], [data-tobe-alternative-discard], [data-tobe-alternative-restore], [data-tobe-confirm-alternative], [data-tobe-cancel-alternative], [data-tobe-undo-alternative]');
