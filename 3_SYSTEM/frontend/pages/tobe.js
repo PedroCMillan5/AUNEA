@@ -1199,6 +1199,16 @@ function tobePage(){
       '<p class="field-help">El trabajo y las decisiones previas permanecerán en el historial.</p></section>';
 
   }
+  if(p&&!currentDiagnosticOutput(e))
+    return pageTop('Diseño TO-BE','Borrador v'+esc(p.version)+
+      ' conservado · AS-IS v'+esc(p.sourceSnapshotVersion),
+      '<button class="btn btn-primary" data-page="resultados">Actualizar diagnóstico en PG10</button>')+
+      '<section class="aunea-ui-work-surface" aria-label="Continuidad del diseño">'+
+      '<h2>Tu diseño sigue guardado</h2>'+
+      '<p>La versión TO-BE ya está vinculada al AS-IS confirmado vigente. '+
+      'Antes de generar alternativas o confirmarlas, PG10 debe producir un diagnóstico actualizado. '+
+      'No es necesario recrear el TO-BE ni volver a introducir sus campos.</p>'+
+      '<p class="notice info">Después de actualizar PG10, vuelve a esta página: 01, 02, 03.1, 03.2, 03.3 y el mapa utilizarán el mismo borrador.</p></section>';
   if(!currentDiagnosticOutput(e))return pageTop('TO-BE preliminar',
     'Vista de orientación para preparar el diseño futuro; todavía no es un proceso propuesto ni una recomendación aprobada.',
     '<button class="btn btn-primary" data-page="resultados">Volver a revisión del AS-IS</button>')+
