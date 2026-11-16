@@ -1188,8 +1188,8 @@ function tobePage(){
   const p=latestTobe(e);
   if(p){
     const sourceStatus=tobeAsisCompatibility(e,p);
-    if(!sourceStatus.compatible
-    return pageTop('Diseño TO-BE','AS-IS v'+esc(p.sourceSnapshotVersion)+' → v'+esc(snap.version),
+    if(!sourceStatus.compatible)
+      return pageTop('Diseño TO-BE','AS-IS v'+esc(p.sourceSnapshotVersion)+' → v'+esc(snap.version),
       '<button class="btn" data-page="resultados">Ver diagnóstico</button>')+
       '<section class="aunea-ui-work-surface" aria-label="Conciliar AS-IS y TO-BE">'+
       '<h2>Recuperar el diseño sin perder el borrador</h2>'+
