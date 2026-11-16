@@ -5060,6 +5060,6 @@ details.tobe-ai-operational-context:not([open])>.tobe-ai-operational-body{
   border-left-color:var(--gold);
 }
 #tobeGlobalAnalysis .tobe-global-summary[data-analysis-state="stale"] strong{
-  color:var(--text);
+  color:var(--ink);
 }
 /* [AUNEA-FE-PG11-DISCLOSURE-UI-422] END */
