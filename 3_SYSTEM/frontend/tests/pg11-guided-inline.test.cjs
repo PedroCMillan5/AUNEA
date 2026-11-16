@@ -389,7 +389,7 @@ test('PG11 identifies individual coherence separately from section 02 global ana
  assert.match(src,/data-tobe-ai-edit-field/);
 });
 test('PG11 section 03 uses the shared semantic title hierarchy rather than an eyebrow as title',()=>{
- assert.ok(src.includes('<header class="tobe-review-section-head aunea-ui-work-surface"><span class="tobe-eyebrow">03 · DISEÑO TO-BE</span>'));
+ assert.match(src,/tobe-review-workbench aunea-ui-work-surface[\s\S]*?<header class="tobe-review-section-head">[\s\S]*?03 · DISEÑO TO-BE/);;
  assert.ok(src.includes('<h2 class="aunea-ui-section-title">Revisión por actividad</h2>'));
  assert.match(src,/<p class="aunea-ui-section-caption">Revisa el origen/);
  assert.doesNotMatch(src,/tobe-eyebrow">03 · REVISIÓN POR ACTIVIDAD Y DISEÑO TO-BE/);
