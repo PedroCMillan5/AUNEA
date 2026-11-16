@@ -1761,7 +1761,7 @@
       "path": "domain/tobe-model.js",
       "layer": "domain",
       "blockId": "AUNEA-FE-PG11-REVIEW-GATE-199",
-      "lines": 130,
+      "lines": 128,
       "family": [
         "Trabajo interno / PG11"
       ],
@@ -1953,7 +1953,7 @@
       "path": "domain/tobe-transactions.js",
       "layer": "domain",
       "blockId": "AUNEA-FE-PG11-TRANSACTION-332",
-      "lines": 743,
+      "lines": 747,
       "family": [
         "Trabajo interno / PG11"
       ],
@@ -2215,7 +2215,7 @@
       "path": "pages/tobe-flow.js",
       "layer": "pages",
       "blockId": "AUNEA-FE-PG11-FUTURE-FLOW-228",
-      "lines": 402,
+      "lines": 442,
       "family": [
         "Trabajo interno / PG11"
       ],
