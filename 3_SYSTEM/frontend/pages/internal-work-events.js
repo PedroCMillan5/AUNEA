@@ -520,7 +520,13 @@ function registerInternalWorkPages(){
       if(button.hasAttribute('data-tobe-confirm-alternative')){
         const preview=__auneaTobePreview;tobeCommitAlternative(e,preview);
         document.getElementById('tobeAlternativeDialog')?.close();render();
-        toast('Intervención guardada. El mapa y la validación global reflejan el mismo borrador.');return;
+        if(__auneaTobeMode==='guided'){
+          const section=document.getElementById('tobeStepDesign'),
+            disclosure=section?.querySelector(':scope>details');
+          if(disclosure)disclosure.open=true;
+          section?.scrollIntoView?.({behavior:'smooth',block:'start'});
+        }
+        toast('Intervención guardada en 03.3. El mapa y la validación global reflejan el mismo borrador.');return;
       }
       if(button.hasAttribute('data-tobe-undo-alternative')){
         if(!saveTobeFromDom(e)||!saveState('Conservar edición antes de deshacer'))throw Error('No se guardó tu edición.');

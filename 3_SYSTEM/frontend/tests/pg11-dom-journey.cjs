@@ -28,8 +28,19 @@ for(const kind of ['invoice','logistics']){
   await run('('+require('./pg11-journey-fixture.cjs').toString()+')('+JSON.stringify({kind,backend})+')');
   const immutable=run('JSON.stringify(confirmedSnapshot(currentEng()))');
   assert.ok(w.document.querySelector('[data-tobe-load-alternatives="P1"]'),w.document.getElementById('content').textContent.slice(-5000));
+  const beforeRules=w.document.getElementById('tobeStepAdvice').textContent;
+  assert.match(beforeRules,/Pendiente de generar alternativas por reglas/);
+  assert.doesNotMatch(beforeRules,/No hay alternativa específica calculada por reglas/);
+  w.document.getElementById('tobeDesignDetails').open=false;
+  w.document.querySelector('#tobeStepAdvice [data-tobe-jump="tobeStepDesign"]').click();
+  assert.equal(w.document.getElementById('tobeDesignDetails').open,true);
   w.document.querySelector('[data-tobe-load-alternatives="P1"]').click();
   await until(()=>w.document.querySelectorAll('[data-tobe-alternative]').length>0);
+  const hash=run('__auneaTobeAlternatives.get(tobeAlternativeKey(currentEng(),latestTobe(currentEng()),"P1")).input_hash');
+  run('__auneaTobeAlternatives.get(tobeAlternativeKey(currentEng(),latestTobe(currentEng()),"P1")).input_hash="STALE-DIAGNOSTIC";render()');
+  assert.match(w.document.getElementById('tobeStepAdvice').textContent,/ya no coinciden con el diagnóstico vigente/);
+  assert.equal(w.document.querySelectorAll('#tobeStepAdvice [data-tobe-alternative]').length,0,'stale suggestions cannot be reviewed');
+  run('__auneaTobeAlternatives.get(tobeAlternativeKey(currentEng(),latestTobe(currentEng()),"P1")).input_hash='+JSON.stringify(hash)+';render()');
   // Rule options are organised by linked AS-IS finding, not by engine or industry.
   const sources=run('tobeOpportunitySources(currentEng(),latestTobe(currentEng()),tobeSelectedItem(currentEng(),latestTobe(currentEng())))');
   assert.ok(sources.length>=1,'at least one confirmed finding is available to the consultant');
@@ -129,6 +140,13 @@ for(const kind of ['invoice','logistics']){
   assert.equal(run('latestTobe(currentEng()).items[0].automationAi'),'',
     'confirmed KEEP must remove the superseded future automation description');
   assert.equal(run('JSON.stringify(confirmedSnapshot(currentEng()))'),immutable);
+  run("latestTobe(currentEng()).status='REVIEWED';render()");
+  assert.ok(w.document.querySelector('#tobeStepAdvice .tobe-opportunity'),'03.2 remains readable in REVIEWED');
+  assert.match(w.document.getElementById('tobeStepAdvice').textContent,/solo lectura/i);
+  assert.equal(w.document.querySelectorAll('#tobeStepAdvice [data-tobe-load-alternatives],#tobeStepAdvice [data-tobe-alternative],#tobeStepAdvice [data-tobe-alternative-discard],#tobeStepAdvice [data-tobe-alternative-restore],#tobeStepAdvice [data-tobe-undo-alternative]').length,0);
+  assert.ok(w.document.querySelector('#tobeStepDesign'),'03.3 remains in read-only review');
+  run("latestTobe(currentEng()).status='DRAFT';render()");
+  assert.ok(w.document.querySelector('#tobeStepAdvice [data-tobe-load-alternatives]'));
   assert.deepEqual(h.errors,[]);
   console.log('PG11_DOM_'+kind.toUpperCase()+'_PASS — full runtime, preview/edit, condition gate, documented KEEP, discard/recover, confirm/reload/undo, branches and AS-IS preserved');
  }finally{h.dom.window.close();}

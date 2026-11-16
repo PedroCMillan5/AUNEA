@@ -130,7 +130,11 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,'.'+new 
     '03.3 groups must align with the 03.2 content gutter: '+JSON.stringify(visualAlignment));
   assert.ok(px(visualAlignment.adviceHeader.height,visualAlignment.designHeader.height),
     '03.3 header must use compact single-line height like 03.2: '+JSON.stringify(visualAlignment));
-  // UX contract: same native disclosure control, same initial state and same background
+  await page.locator('#tobeDesignDetails').evaluate(el=>{el.open=false;});
+   await page.locator('#tobeStepAdvice [data-tobe-jump="tobeStepDesign"]').click();
+   assert.equal(await page.locator('#tobeDesignDetails').evaluate(el=>el.open),true,'03.2 opens the canonical 03.3 editor');
+   assert.ok((await page.locator('#tobeStepAdvice').innerText()).includes('Pendiente de generar alternativas por reglas'));
+   // UX contract: same native disclosure control, same initial state and same background
   // for every operational group. Opening a group must not change the data owner.
   const groupContract=await page.evaluate(()=>{
     const ids=['tobeDesignGroup01','tobeDesignGroup02','tobeExecutionFields',
