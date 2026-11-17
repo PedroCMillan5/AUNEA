@@ -1598,6 +1598,36 @@ async function main(){
   assert.match(await page.locator('#pg12SelectedDetail').innerText(),/Control adicional UAT/);
   await page.screenshot({path:path.join(outDir,'pg12-actual-proposed-comparison.png'),fullPage:true});
   console.log('PG11_PG12_SOURCE_LINKED_BROWSER_PASS: routes and versioned comparison');
+  // L2: exercise the opt-in modal on the live browser without creating a business record.
+  await page.evaluate(()=>{
+    const trigger=document.createElement('button');
+    trigger.id='auneaL2BrowserTrigger';trigger.textContent='Probar diálogo';
+    document.body.appendChild(trigger);trigger.focus();
+    auneaUiOpenModal('Comprobación de diálogo','<div class="field"><label for="auneaL2Probe">Dato de prueba</label><input id="auneaL2Probe"></div>',
+      ()=>auneaUiCloseModal());
+  });
+  assert.equal(await page.locator('#modalRoot [role="dialog"][aria-modal="true"]').count(),1);
+  assert.equal(await page.locator('#modalRoot [role="dialog"][aria-labelledby="auneaUiDialogTitle"]').count(),1);
+  assert.equal(await page.evaluate(()=>document.activeElement?.id),'auneaL2Probe');
+  await page.keyboard.press('Escape');
+  assert.equal(await page.locator('#modalRoot .modal').count(),0,'pristine Escape closes opt-in dialog');
+  assert.equal(await page.evaluate(()=>document.activeElement?.id),'auneaL2BrowserTrigger',
+    'focus returns to opener after closing opt-in dialog');
+  await page.evaluate(()=>{
+    document.getElementById('auneaL2BrowserTrigger').focus();
+    auneaUiOpenModal('Comprobación de edición','<div class="field"><label for="auneaL2Dirty">Dato de prueba</label><input id="auneaL2Dirty"></div>',
+      ()=>auneaUiCloseModal());
+    const input=document.getElementById('auneaL2Dirty');
+    input.value='dato no guardado';input.dispatchEvent(new Event('input',{bubbles:true}));
+  });
+  await page.keyboard.press('Escape');
+  assert.equal(await page.locator('#modalRoot [role="dialog"]').count(),1,
+    'Escape must not discard unsaved changes');
+  await page.locator('#modalCancel').click();
+  assert.equal(await page.locator('#modalRoot .modal').count(),0);
+  await page.evaluate(()=>document.getElementById('auneaL2BrowserTrigger')?.remove());
+  console.log('L2_ACCESSIBLE_DIALOG_BROWSER_PASS: focus, ARIA, Escape, dirty guard, cancel');
+
   // [AUNEA-UAT-PG11-PG12-BROWSER-238] END
 
   assert.deepEqual(failures,[],'Unhandled browser JS errors: '+failures.join(' / '));
