@@ -122,7 +122,7 @@ En **PG12 → «Comprobar contadores y procedencia»** se desglosan por paso el 
 
 ```bash
 cd /workspaces/AUNEA/3_SYSTEM/frontend
-npm test -- --test-name-pattern="PG12"
+npm test
 ```
 
 Para ejecutar la regresión de PG12 por separado:
