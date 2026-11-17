@@ -843,6 +843,64 @@ function auneaUiFieldDecisionButton(label,eventAttributes,selected=null,title=''
 }
 // [AUNEA-FE-UI-CHOICES-L2-478] END
 
+// [AUNEA-FE-UI-DATA-L3-481] START — Opt-in read-only data presentation.
+// PURPOSE: One table, row, metric and local table-search renderer across non-FROZEN views.
+// SOURCE: UI/UX master contract L3; DEC-050/055/056/075; DS-008/009/019.
+// INPUTS: existing page-owned labels/values, pre-rendered rows or explicit safe action cells.
+// OUTPUT: existing .data-table/.table-wrap/.metric DOM, without separate data ownership.
+// SIDE_EFFECTS: auneaUiFilterTable() changes DOM visibility ONLY; does not persist or sort source records.
+// CHANGE_RISK: MEDIUM; never re-derive backend metrics, business status or routes.
+function auneaUiTableRow(cells,htmlColumns=[]){
+  if(!Array.isArray(cells)||!Array.isArray(htmlColumns))throw Error('AUNEA table row requires arrays');
+  return '<tr>'+cells.map((value,index)=>
+    '<td>'+(htmlColumns.includes(index)?String(value??''):esc(value??''))+'</td>'
+  ).join('')+'</tr>';
+}
+function auneaUiDataTable(headers,rows,{id='',emptyHtml=''}={}){
+  if(!Array.isArray(headers)||headers.length===0)throw Error('AUNEA table requires headings');
+  return '<div class="table-wrap"><table class="data-table"'+(id?' id="'+attr(id)+'"':'')+'>'+
+    '<thead><tr>'+headers.map(title=>'<th>'+esc(title)+'</th>').join('')+'</tr></thead>'+
+    '<tbody>'+(rows||emptyHtml)+'</tbody></table></div>';
+}
+function auneaUiMetric(title,value,note,variant='pg12'){
+  if(!['pg12','overview'].includes(variant))throw Error('Unsupported metric presentation variant');
+  const label=esc(title??''),shown=esc(value??''),description=esc(note??'');
+  if(variant==='overview')
+    return '<div class="card metric"><small>'+label+'</small><strong>'+shown+
+      '</strong><span>'+description+'</span></div>';
+  return '<div class="pg12-metric"><b>'+label+'</b><strong>'+shown+
+    '</strong><small>'+description+'</small></div>';
+}
+// This is a UI-only view over rows that the owning page already rendered.
+// It never writes to Engagement/Project/ProcessStep or changes persisted order.
+function auneaUiTableSearch(tableId,label,value=''){
+  if(!/^[a-zA-Z][a-zA-Z0-9_-]*$/.test(String(tableId)))throw Error('Invalid AUNEA table identifier');
+  return '<div class="filter-row" data-aunea-ui-region="table-filter">'+
+    '<div class="field"><label for="'+attr(tableId)+'Search">'+esc(label)+'</label>'+
+    '<input type="search" id="'+attr(tableId)+'Search" data-aunea-table-filter="'+
+    attr(tableId)+'" autocomplete="off" value="'+attr(value??'')+'"></div></div>'+
+    '<p class="field-help" role="status" data-aunea-table-empty="'+attr(tableId)+
+    '" hidden>No hay actividades que coincidan con la búsqueda.</p>';
+}
+function auneaUiFilterTable(table,query){
+  if(!table||typeof table.querySelectorAll!=='function')return 0;
+  const normalize=value=>String(value??'').toLocaleLowerCase('es')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const needle=normalize(String(query??'').trim());
+  let visible=0;
+  table.querySelectorAll('tbody tr').forEach(row=>{
+    const found=!needle||normalize(row.textContent).includes(needle);
+    row.hidden=!found;
+    visible+=found?1:0;
+  });
+  if(typeof document!=='undefined'&&table.id){
+    const message=document.querySelector('[data-aunea-table-empty="'+table.id+'"]');
+    if(message)message.hidden=visible>0||!needle;
+  }
+  return visible;
+}
+// [AUNEA-FE-UI-DATA-L3-481] END
+
 // [AUNEA-FE-UI-EMPTY-STATE-393] START — Shared semantic no-data state
 // SOURCE: CATALOGO_COMPONENTES_AUNEA DS-003/004; DEC-056.
 // PURPOSE: Reuse a single accessible empty-state structure across unfrozen views.
