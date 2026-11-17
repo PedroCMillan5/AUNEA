@@ -558,6 +558,27 @@ function auneaUiLegacySection(title,subtitle,body,actions=''){
   return '<div class="card card-pad section" data-aunea-ui-level="section">'+
     html.slice(prefix.length);
 }
+// [AUNEA-FE-UI-REGION-L3-482] START — Shared read-only diagram / selected inspector region.
+// PURPOSE: Own consistent region semantics while legacy DOM classes and business events stay unchanged.
+// SOURCE: UI/UX master contract L3; DEC-050/055/056/075 and existing AS-IS / TO-BE graph owners.
+// INPUTS: region kind, current page-owned class, accessible name, optional ID.
+// OUTPUT: the same section/div node plus stable nonvisual data-aunea-ui-region marker.
+// SIDE_EFFECTS: none; no new map layout, steps, risk or time computation. CHANGE_RISK: LOW.
+function auneaUiRegionStart(kind,{id='',className='',ariaLabel='',ariaLive=''}={}){
+  const tags={inspector:'section',diagram:'div'};
+  if(!Object.prototype.hasOwnProperty.call(tags,kind))throw Error('Unsupported AUNEA data region');
+  if(!String(ariaLabel).trim())throw Error('AUNEA region requires an accessible label');
+  return '<'+tags[kind]+(id?' id="'+attr(id)+'"':'')+
+    ' class="'+attr(className)+'" aria-label="'+attr(ariaLabel)+'"'+
+    (ariaLive?' aria-live="'+attr(ariaLive)+'"':'')+
+    ' data-aunea-ui-region="'+kind+'">';
+}
+function auneaUiRegionEnd(kind){
+  if(kind==='inspector')return '</section>';
+  if(kind==='diagram')return '</div>';
+  throw Error('Unsupported AUNEA data region');
+}
+// [AUNEA-FE-UI-REGION-L3-482] END
 // [AUNEA-FE-UI-SEMANTIC-475] END
 
 function statusClass(s=''){const z=s.toLowerCase();if(z.includes('cerrado')||z.includes('confirm')||z.includes('listo')||z.includes('ganado'))return'green';if(z.includes('sesión')||z.includes('sesion')||z.includes('diagn')||z.includes('reun'))return'amber';if(z.includes('trabajo interno')||z.includes('propuesta')||z.includes('resultado'))return'blue';if(z.includes('perdido')||z.includes('bloq'))return'red';return''}
