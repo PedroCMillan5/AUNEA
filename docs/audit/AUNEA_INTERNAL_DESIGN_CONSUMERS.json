@@ -512,7 +512,6 @@
           ],
           "consumers": [
             "ui/renderer.js",
-            "pages/comparison.js",
             "pages/crm-companies.js",
             "pages/crm-contacts.js",
             "pages/crm-interactions.js",
@@ -531,7 +530,6 @@
           ],
           "consumers": [
             "ui/renderer.js",
-            "pages/comparison.js",
             "pages/crm-companies.js",
             "pages/crm-contacts.js",
             "pages/crm-interactions.js",
@@ -2251,7 +2249,7 @@
       "path": "pages/comparison.js",
       "layer": "pages",
       "blockId": "AUNEA-FE-PG12-OVERLAY-VIEW-470",
-      "lines": 371,
+      "lines": 369,
       "family": [
         "Comparación / posterior"
       ],
@@ -2264,7 +2262,6 @@
         "btn-outline",
         "btn-small",
         "confirmed",
-        "data-table",
         "on",
         "pg12-added-cell",
         "pg12-before-after",
@@ -2278,7 +2275,6 @@
         "pg12-key-original",
         "pg12-key-remove",
         "pg12-key-routing",
-        "pg12-metric",
         "pg12-metrics",
         "pg12-native-map",
         "pg12-overlay-legend",
@@ -2290,7 +2286,6 @@
         "process-graph-lines",
         "required",
         "selected",
-        "table-wrap",
         "tobe-eyebrow",
         "tobe-muted"
       ]
@@ -5730,7 +5725,6 @@
       "ruleOccurrences": 4,
       "runtimeConsumers": [
         "ui/renderer.js",
-        "pages/comparison.js",
         "pages/crm-companies.js",
         "pages/crm-contacts.js",
         "pages/crm-interactions.js",
@@ -11436,8 +11430,7 @@
       ],
       "ruleOccurrences": 4,
       "runtimeConsumers": [
-        "ui/renderer.js",
-        "pages/comparison.js"
+        "ui/renderer.js"
       ],
       "frozenRisk": true,
       "classification": "REFERENCED"
@@ -13625,7 +13618,6 @@
       "ruleOccurrences": 7,
       "runtimeConsumers": [
         "ui/renderer.js",
-        "pages/comparison.js",
         "pages/crm-companies.js",
         "pages/crm-contacts.js",
         "pages/crm-interactions.js",
@@ -20603,7 +20595,6 @@
         ],
         "consumers": [
           "ui/renderer.js",
-          "pages/comparison.js",
           "pages/crm-companies.js",
           "pages/crm-contacts.js",
           "pages/crm-interactions.js",
