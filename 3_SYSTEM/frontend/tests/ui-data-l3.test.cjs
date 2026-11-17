@@ -75,6 +75,7 @@ test('filter is UI-only, reversible, accent-insensitive, with honest no-match me
  const original=rows.map(x=>x.textContent);
  assert.match(a.auneaUiTableSearch('pg12ChangesTable','Buscar actividad',''),/type="search"/);
  assert.match(a.auneaUiTableSearch('pg12ChangesTable','Buscar actividad',''),/data-aunea-table-filter="pg12ChangesTable"/);
+ assert.match(a.auneaUiTableSearch('pg12ChangesTable','Buscar actividad',''),/aria-controls="pg12ChangesTable"/);
  assert.equal(a.auneaUiFilterTable(table,'APROBACION'),1);
  assert.deepEqual(rows.map(x=>x.hidden),[true,false]);
  assert.equal(message.hidden,true);
@@ -101,6 +102,7 @@ test('inspector/diagram share accessible region semantics without duplicating en
   {className:'pg12-native-map',ariaLabel:'Mapa original con cambios'})+
   '<svg></svg>'+a.auneaUiRegionEnd('diagram');
  assert.match(diagram,/data-aunea-ui-region="diagram"/);
+ assert.match(diagram,/role="group"/);
  assert.match(diagram,/<\/div>$/);
  assert.throws(()=>a.auneaUiRegionStart('unknown',{ariaLabel:'x'}),/Unsupported/);
  assert.throws(()=>a.auneaUiRegionStart('diagram',{}),/requires an accessible label/);
