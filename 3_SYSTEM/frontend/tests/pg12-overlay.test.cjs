@@ -6,6 +6,10 @@ const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const root=path.resolve(__dirname,'..');
 const code=fs.readFileSync(path.join(root,'pages/comparison.js'),'utf8');
 const process=fs.readFileSync(path.join(root,'domain/process.js'),'utf8');
+// Load the real shared semantic owner in the isolated PG12 runtime harness.
+const semanticCore=fs.readFileSync(path.join(root,'core/state.js'),'utf8');
+const semanticBlock=semanticCore.match(/\/\/ \[AUNEA-FE-UI-SEMANTIC-475\] START[\s\S]*?\/\/ \[AUNEA-FE-UI-SEMANTIC-475\] END/)?.[0];
+assert.ok(semanticBlock,'PG12 requires the canonical semantic structure owner');
 const decision=s=>!!(s&&String(s.step_type)==='ST04');
 const graphFrom=process.indexOf('function processGraphData(e,steps){'),
   graphTo=process.indexOf('function processNodeIconName(',graphFrom);
@@ -89,7 +93,7 @@ function harness(){
     auneaEmptyState:()=>'<p>Esperando revisión</p>',
     state:{activePage:'comparacion'}
   };
-  const api=vm.runInNewContext(code+
+  const api=vm.runInNewContext(semanticBlock+'\n'+code+
     ';({pg12OverlayModel,pg12OverlayHtml,pg12ComparisonCounters,pg12OriginalSignals,tobeComparisonPage})',context);
   return {api,proposal,engagement,nativeCalls};
 }
