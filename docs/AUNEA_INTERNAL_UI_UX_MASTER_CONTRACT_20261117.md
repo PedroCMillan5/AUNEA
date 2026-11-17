@@ -258,3 +258,37 @@ La primera ejecución del Acceptance Gate posterior al contrato no fue satisfact
 **Pruebas dirigidas V8 ejecutadas:** 15/15 comprobaciones del contrato cromático, 6/6 del contrato maestro, 6/6 de estructura semántica L1 y 7/7 del harness PG12; validación independiente de la renderización PG11 y de la paridad HTML PG12 respecto al baseline. Se mantiene pendiente el **nuevo** Acceptance Gate remoto completo y sus logs para declarar QA integral.
 
 Estas correcciones no modifican reglas de negocio, datos, esquemas, AS-IS/TO-BE ni la apariencia protegida FROZEN. L1 permanece **PARCIAL / REVIEW**, no `CANONICAL` ni `PRODUCTION`.
+
+## 12. L1 — CIERRE TÉCNICO VERIFICADO / REVIEW (17/11/2026)
+
+**Resultado técnico:** L1 **CLOSED_TECHNICAL_REVIEW**. Este apartado sustituye el estado "L1 parcial" de los §§8–11; aquellos apartados permanecen como historial de ejecución y correcciones. **No** representa aprobación visual del propietario, `main`, `CANONICAL` del sistema maestro ni `PRODUCTION`.
+
+### Alcance implementado
+- `core/state.js` `AUNEA-FE-UI-SEMANTIC-475`: estructura única opt-in para sección, subsección, bloque, grupo y campo; filas de dato solo lectura; variante `auneaUiLegacySection()` que reutiliza el HTML existente de `section()` y agrega una marca semántica en páginas no FROZEN, sin duplicar renderer. El `section()` histórico no se alteró.
+- `styles.css` `AUNEA-FE-UI-SEMANTIC-STYLE-476`: superficies y flujos opt-in; la presentación heredada permanece intacta salvo opt-in explícito. La clase global `.aunea-ui-work-surface` pertenece a `styles.css` y los overrides PG12 se limitan a `.pg12-primary/.pg12-secondary`.
+- **PG10 + revisión de resultados**: 8 secciones con el adaptador compartido.
+- **PG11**: 4 secciones auxiliares/fallback con el mismo adaptador; 2 grupos de hechos AS-IS en 03.1, con ocho datos originales y conservación explícita de valores cero. Las demás secciones nativas ya mantienen estructura semántica `<section>` y patrones globales `aunea-ui-work-stage/work-surface`, sin recableado innecesario.
+- **PG12**: 3 secciones, 1 subsección, 1 bloque y 6 filas de dato; comparación sobre un único mapa AS-IS versionado con capa TO-BE. No altera cálculos ni versiones históricas.
+- **Proyectos + implementación**: 2 secciones y 1 campo opt-in; acciones, validaciones y datos continúan bajo sus propietarios canónicos.
+- Los tests obsoletos que exigían dos mapas PG12 fueron alineados al mapa único vigente. El lector de tests PG11 incorpora el helper compartido real, no mocks de producción. Los IDs del antiguo PG12 dual-map 234/235 están ARCHIVED y los activos 469/470/471 figuran correctamente en manifest/index.
+- No se han creado nuevas preguntas, precios, variables económicas, reglas de negocio, engines, confirmaciones, ni campos de dominio.
+
+### Pruebas ejecutadas con resultados de GitHub Actions
+
+| Control | Resultado | Evidencia |
+|---|---|---|
+| Suite frontend Node | **PASS 1006/1006**, fallos 0 | [Frontend](https://github.com/PedroCMillan5/AUNEA/actions/runs/44066900901) |
+| Backend pytest | **PASS 493** | [Acceptance Gate](https://github.com/PedroCMillan5/AUNEA/actions/runs/44066900865) |
+| Chromium UAT E2E | **PASS**, incluye PG12 single-map, selección/rutas y persistencia | [Acceptance Gate](https://github.com/PedroCMillan5/AUNEA/actions/runs/44066900865) |
+| PG11 Chromium con backend, sintéticos factura/logística | **PASS**, PG09/PG10→PG11, validación, previsualización, confirmación, undo, reload, AS-IS inmutable | [Acceptance Gate](https://github.com/PedroCMillan5/AUNEA/actions/runs/44066900865) |
+| FROZEN técnica | **PASS 18/18** capturas contra referencia fija | [Acceptance Gate](https://github.com/PedroCMillan5/AUNEA/actions/runs/44066900865) |
+| Windows Edge | **PASS** | [Edge](https://github.com/PedroCMillan5/AUNEA/actions/runs/44066900902) |
+| Design System Inventory | **PASS**, 107 clases cross-CSS, 138 contextos repetidos, 30 inline, conflictos sin clasificar 0 | [Inventario](https://github.com/PedroCMillan5/AUNEA/actions/runs/44066900966) |
+
+El artefacto `docs/audit/AUNEA_INTERNAL_ACCEPTANCE_GATE.json` confirma `overall: PASS` para el head `14a40a2946ccacfc6b427478f6ddaa750ec6f7e7`. Los commits posteriores son documentales y deben conservar este alcance de pruebas sin presentarlos como una ejecución posterior de CI.
+
+### Límites del cierre
+**Sigue pendiente F6**, aceptación manual del propietario del diseño/experiencia en Windows y comprobación visual transversal final, además de L2–L5 (controles, interacciones, datos, accesibilidad de todos los estados y unificación cromática). La referencia oficial de identidad y las nueve pantallas FROZEN no se rediseñan desde este lote. No se hace merge a `main`.
+
+**Registro verificable:** `docs/audit/AUNEA_INTERNAL_UI_UX_MASTER_REGISTRY_20261117.json` (estado L1 `CLOSED_TECHNICAL_REVIEW`).  
+**Siguiente lote:** L2 según contrato, sin reabrir L1 salvo regresión acreditada.
