@@ -872,6 +872,13 @@ function auneaUiMetric(title,value,note,variant='pg12'){
   return '<div class="pg12-metric"><b>'+label+'</b><strong>'+shown+
     '</strong><small>'+description+'</small></div>';
 }
+// Read-only label: the owning page decides the meaning, version and wording.
+// This component never maps colors to business states or confirms a draft.
+function auneaUiStatusLabel(label,visualClass){
+  const allowed=['tobe-context-status','tobe-selected-status','tobe-node-status'];
+  if(!allowed.includes(visualClass))throw Error('Unsupported AUNEA display status variant');
+  return '<span class="'+visualClass+'">'+esc(label??'')+'</span>';
+}
 // This is a UI-only view over rows that the owning page already rendered.
 // It never writes to Engagement/Project/ProcessStep or changes persisted order.
 function auneaUiTableSearch(tableId,label,value=''){
