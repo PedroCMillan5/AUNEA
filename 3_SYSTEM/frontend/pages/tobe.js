@@ -1221,16 +1221,16 @@ function tobePage(){
   if(!currentDiagnosticOutput(e))return pageTop('TO-BE preliminar',
     'Vista de orientación para preparar el diseño futuro; todavía no es un proceso propuesto ni una recomendación aprobada.',
     '<button class="btn btn-primary" data-page="resultados">Volver a revisión del AS-IS</button>')+
-    section('Para qué sirve esta vista','Antes de diseñar, revisa el alcance de la transformación y las necesidades detectadas.',
+    auneaUiLegacySection('Para qué sirve esta vista','Antes de diseñar, revisa el alcance de la transformación y las necesidades detectadas.',
       '<div class="notice info"><b>Qué puedes hacer ahora</b><p>Consultar problemas vinculados al AS-IS y vías de intervención pendientes de validar; no son pasos futuros aprobados.</p>'+
       '<p><b>Qué falta para diseñar:</b> revisar y confirmar las cinco decisiones técnicas internas desde PG10 y obtener la recomendación oficial vigente del backend.</p>'+
       '<p><b>Qué no sucede aquí:</b> no se modifican datos del AS-IS, no se crea ni aprueba un TO-BE y no se calculan ahorros o precios futuros.</p></div>')+
-    section('Problemas de origen','Referencias AS-IS para orientar el diseño. No se editan aquí.',asisPointCardsHtml(asisAnalysisSource(e)))+
-    section('Vías de intervención pendientes de validar','Opciones de análisis, no alternativas seleccionadas.',asisDirectionCardsHtml(e))+
+    auneaUiLegacySection('Problemas de origen','Referencias AS-IS para orientar el diseño. No se editan aquí.',asisPointCardsHtml(asisAnalysisSource(e)))+
+    auneaUiLegacySection('Vías de intervención pendientes de validar','Opciones de análisis, no alternativas seleccionadas.',asisDirectionCardsHtml(e))+
     auneaNoticeMessage('warn','La edición y aprobación de un TO-BE definitivo requiere la recomendación oficial vigente. Regresa a PG10 para revisar las decisiones técnicas y comprobar requisitos.');
   if(!p)return pageTop('Diseño TO-BE','El proceso futuro parte del AS-IS confirmado.',
     '<button class="btn btn-primary" id="createTobeDraft">Crear borrador desde AS-IS confirmado</button>')+
-    section('Fuente confirmada','El diseño comienza como propuesta sin aprobar.',
+    auneaUiLegacySection('Fuente confirmada','El diseño comienza como propuesta sin aprobar.',
       '<div class="notice info">AS-IS confirmado v'+esc(snap.version)+
       '. El diagnóstico oficial se reutiliza; no se vuelve a capturar.</div>');
   const editable=tobeEditable(p),statusLabel={DRAFT:'Borrador',REVIEWED:'Revisado',APPROVED_FOR_CLIENT:'Aprobado para cliente',PUBLISHED:'Publicado'}[p.status]||p.status;
