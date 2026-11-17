@@ -48,7 +48,8 @@ function pg12ComparisonCounters(model){
     changed:model.items.filter(i=>!i.isAddition&&i.transformation!=='Se mantiene'&&i.transformation!=='Se elimina').length,
     added:model.items.filter(i=>i.isAddition).length,
     removed:model.items.filter(i=>!i.isAddition&&i.transformation==='Se elimina').length,
-    warnings:model.findings.filter(i=>i.severity!=='COMPATIBLE').length,
+    // WARNINGS and BLOCKING are separate statuses; a blocker is not a warning.
+    warnings:model.findings.filter(i=>i.severity==='WARNING').length,
     blocking:model.findings.filter(i=>i.severity==='BLOCKING').length,
     frictions:(model.source?.frictions||[]).filter(i=>i.status!=='SUPERSEDED').length,
     risks:(model.source?.risks||[]).filter(i=>i.status!=='SUPERSEDED').length
@@ -113,14 +114,14 @@ function pg12NativeMapHtml(e,p,source,model,selected){
 }
 function pg12CountAuditHtml(model,source,counts){
   const stepWarnings=model.asis.map(s=>{
-    const id=String(s.id),n=model.findings.filter(f=>String(f.stepId)===id&&f.severity!=='COMPATIBLE').length,
+    const id=String(s.id),n=model.findings.filter(f=>String(f.stepId)===id&&f.severity==='WARNING').length,
       signals=pg12OriginalSignals(source,id);
     return auneaUiTableRow([s.step_name||id,n,signals.frictions.length||0,signals.risks.length||0,
       signals.wait===null?'—':signals.wait+' min',
       signals.rework===null?'—':signals.rework+' min'],[],[1,2,3,4,5]);
   }).join('');
   return auneaUiDisclosureStart({variant:'legacy',className:'pg12-count-audit',title:'Comprobar contadores y procedencia'})+
-    '<p>Las cinco cifras superiores se calculan desde el TO-BE revisado y sus comprobaciones. Las fricciones, riesgos y tiempos proceden del AS-IS confirmado, sin sumarlos como ahorros.</p>'+
+    '<p>Los cuatro contadores de transformación proceden del TO-BE revisado. Las observaciones son advertencias (WARNING); los bloqueos (BLOCKING) se cuentan por separado. Fricciones, riesgos y tiempos proceden del AS-IS confirmado; no son ahorros.</p>'+
     '<p>Actividades: '+model.items.length+' · Hallazgos pendientes: '+counts.warnings+
       ' · Bloqueos: '+counts.blocking+' · Fricciones AS-IS: '+counts.frictions+
       ' · Riesgos AS-IS: '+counts.risks+'</p>'+
@@ -138,7 +139,8 @@ function pg12OverlayHtml(e,p,source,selected){
   const counts=pg12ComparisonCounters(model);
   const stats='<div class="pg12-diff-stats">'+[
     [counts.unchanged,'Se mantienen'],[counts.changed,'Modificadas / control'],
-    [counts.added,'Añadidas'],[counts.removed,'Eliminadas'],[counts.warnings,'Observaciones']
+    [counts.added,'Añadidas'],[counts.removed,'Eliminadas'],[counts.warnings,'Observaciones'],
+    ...(counts.blocking?[[counts.blocking,'Bloqueos']]:[])
   ].map(([value,label])=>'<div><strong>'+value+'</strong><span>'+label+'</span></div>').join('')+'</div>';
   const legend='<div class="pg12-overlay-legend" aria-label="Leyenda del mapa">'+
     '<span><i class="pg12-key-original"></i>Mapa AS-IS original</span>'+
