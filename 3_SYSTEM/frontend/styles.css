@@ -307,6 +307,21 @@ body.session-display .flow-step p{font-size:var(--font-small)}
 .aunea-ui-code-pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:30rem;overflow:auto}
 /* [AUNEA-FE-SHARED-COMPONENTS-311] END */
 
+/* [AUNEA-FE-UI-SEMANTIC-STYLE-476] START — L1 semantic levels, explicit opt-in variants.
+   PURPOSE: Shared appearance only where requested, never implicit on legacy/FROZEN markup.
+   SOURCE: AUNEA_INTERNAL_UI_UX_MASTER_CONTRACT_20261117.md (L1); TOKENS_AUNEA.
+   CHANGE_RISK: LOW. No selector targets section/div globally or data-aunea-ui-level.
+*/
+/* The inherit variant has NO declarations: migrated pages must keep computed appearance. */
+.aunea-ui-structure--flow{display:grid;gap:var(--space-3);min-width:0}
+.aunea-ui-structure--surface{
+  min-width:0;background:#fff;border:1px solid var(--line);
+  border-radius:var(--radius-md);padding:var(--space-4)
+}
+.aunea-ui-structure--group.aunea-ui-structure--surface{background:var(--bg)}
+.aunea-ui-structure--surface>.aunea-ui-structure--flow{margin:0}
+/* [AUNEA-FE-UI-SEMANTIC-STYLE-476] END */
+
 /* [AUNEA-FE-GLOBAL-DISCLOSURE-451] START
    DS-002/003/004 native disclosure: shared composition for process review and TO-BE.
    Opt-in only, no FROZEN selectors; page CSS owns content grids, not header geometry. */
