@@ -12,7 +12,7 @@
     "classesCrossFile": 108,
     "repeatedSelectorContextGroups": 138,
     "documentedComponents": 20,
-    "inlineStyleAttributes": 33
+    "inlineStyleAttributes": 30
   },
   "frozen": [
     {
@@ -2254,12 +2254,12 @@
       "path": "pages/comparison.js",
       "layer": "pages",
       "blockId": "AUNEA-FE-PG12-TOBE-GRAPH-234",
-      "lines": 346,
+      "lines": 362,
       "family": [
         "Comparación / posterior"
       ],
       "view": true,
-      "inlineStyleAttributes": 4,
+      "inlineStyleAttributes": 1,
       "referencedCssClasses": [
         "aunea-ui-section-caption",
         "aunea-ui-section-title",
@@ -2271,7 +2271,6 @@
         "data-table",
         "notice",
         "pg12-before-after",
-        "pg12-boundary-card",
         "pg12-changes-disclosure",
         "pg12-detail-alerts",
         "pg12-detail-text",
@@ -2285,26 +2284,15 @@
         "pg12-key-routing",
         "pg12-metric",
         "pg12-metrics",
-        "pg12-node-change",
-        "pg12-node-kicker",
-        "pg12-node-origin",
-        "pg12-node-previous",
-        "pg12-node-proposed",
-        "pg12-node-signals",
-        "pg12-overlay-board",
-        "pg12-overlay-cell",
         "pg12-overlay-legend",
-        "pg12-overlay-lines",
-        "pg12-overlay-node",
-        "pg12-overlay-viewport",
-        "pg12-pending",
         "pg12-secondary",
         "pg12-selected-detail",
-        "pg12-title-as-is",
-        "pg12-title-to-be",
         "pg12-view-selector",
         "pg12-work-head",
         "pg12-workspace",
+        "process-graph-board",
+        "process-graph-cell",
+        "process-graph-lines",
         "required",
         "selected",
         "table-wrap",
@@ -11263,11 +11251,9 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 1,
-      "runtimeConsumers": [
-        "pages/comparison.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "pg12-changes-disclosure",
@@ -11441,11 +11427,9 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 6,
-      "runtimeConsumers": [
-        "pages/comparison.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "pg12-node-changed",
@@ -11463,11 +11447,9 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 1,
-      "runtimeConsumers": [
-        "pages/comparison.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "pg12-node-origin",
@@ -11475,11 +11457,9 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 2,
-      "runtimeConsumers": [
-        "pages/comparison.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "pg12-node-previous",
@@ -11487,11 +11467,9 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 2,
-      "runtimeConsumers": [
-        "pages/comparison.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "pg12-node-proposed",
@@ -11499,11 +11477,9 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 2,
-      "runtimeConsumers": [
-        "pages/comparison.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "pg12-node-removed",
@@ -11531,11 +11507,9 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 2,
-      "runtimeConsumers": [
-        "pages/comparison.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "pg12-node-unchanged",
@@ -11553,11 +11527,9 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 12,
-      "runtimeConsumers": [
-        "pages/comparison.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "pg12-overlay-cell",
@@ -11565,11 +11537,9 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 1,
-      "runtimeConsumers": [
-        "pages/comparison.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "pg12-overlay-legend",
@@ -11589,11 +11559,9 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 1,
-      "runtimeConsumers": [
-        "pages/comparison.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "pg12-overlay-node",
@@ -11601,11 +11569,9 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 6,
-      "runtimeConsumers": [
-        "pages/comparison.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "pg12-overlay-viewport",
@@ -11613,11 +11579,9 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 1,
-      "runtimeConsumers": [
-        "pages/comparison.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "pg12-pending",
@@ -11625,11 +11589,9 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 2,
-      "runtimeConsumers": [
-        "pages/comparison.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "pg12-route",
@@ -11721,11 +11683,9 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 2,
-      "runtimeConsumers": [
-        "pages/comparison.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "pg12-title-to-be",
@@ -11733,11 +11693,9 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 1,
-      "runtimeConsumers": [
-        "pages/comparison.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "pg12-view-selector",
@@ -11944,6 +11902,7 @@
       "ruleOccurrences": 13,
       "runtimeConsumers": [
         "pages/tobe.js",
+        "pages/comparison.js",
         "pages/session-display.js",
         "domain/process.js"
       ],
@@ -11971,6 +11930,7 @@
       "ruleOccurrences": 22,
       "runtimeConsumers": [
         "pages/tobe.js",
+        "pages/comparison.js",
         "pages/session-display.js",
         "domain/process.js"
       ],
@@ -12008,6 +11968,7 @@
       "ruleOccurrences": 11,
       "runtimeConsumers": [
         "pages/tobe.js",
+        "pages/comparison.js",
         "pages/session-display.js",
         "domain/process.js"
       ],
