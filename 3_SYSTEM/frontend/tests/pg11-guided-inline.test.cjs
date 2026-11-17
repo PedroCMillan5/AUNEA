@@ -15,6 +15,9 @@ const inlineBlock=slice('// [AUNEA-FE-PG11-FIELD-INLINE-263] START',
  '// [AUNEA-FE-PG11-FIELD-INLINE-263] END');
 const navBlock=slice('// [AUNEA-FE-PG11-GUIDED-NAV-266] START',
  '// [AUNEA-FE-PG11-GUIDED-NAV-266] END');
+const uiRenderer=fs.readFileSync(path.resolve(__dirname,'../ui/renderer.js'),'utf8');
+const uiModes=uiRenderer.match(/\/\/ \[AUNEA-FE-UI-CHOICES-L2-478\] START[\s\S]*?\/\/ \[AUNEA-FE-UI-CHOICES-L2-478\] END/)?.[0];
+assert.ok(uiModes,'PG11 navigation requires shared view-button owner');
 function fixture(){
  let decision=null;
  const e={id:'CASE',tobeProposals:[]};
@@ -177,7 +180,7 @@ test('review navigation derives active step, neighbors and current UI-only mode'
   tobeAddedSteps:()=>[],tobeSelectedItem:()=>steps[index],
   tobeFlowItemId:x=>x.sourceStepId,tobeFlowItemName:x=>x.sourceStepName,
   esc:x=>String(x),attr:x=>String(x)};
- vm.createContext(context);vm.runInContext(navBlock,context);
+ vm.createContext(context);vm.runInContext(uiModes+'\n'+navBlock,context);
  let html=context.tobeGuidedNavHtml({}, {items:steps});
  assert.match(html,/Actividad 1 de 4/);
  assert.match(html,/P2/);
