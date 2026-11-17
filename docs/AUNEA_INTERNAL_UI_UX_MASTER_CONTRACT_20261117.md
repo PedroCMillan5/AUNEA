@@ -1,6 +1,6 @@
 # AUNEA Internal — Contrato maestro de UI/UX y matriz de unificación
 
-**Versión:** v0.3 · **Estado:** REVIEW · **Fecha:** 17/11/2026  
+**Versión:** v0.5 · **Estado:** REVIEW · **Fecha:** 17/11/2026  
 **Ámbito:** CRM, PG00–PG12+, Proyectos, navegación, formularios y componentes de Internal.  
 **Este documento:** especificación técnica de la interfaz; **no** redefine campos, datos, pricing, recomendaciones, resultados o decisiones empresariales. No autoriza cambiar referencias FROZEN.  
 **Registro estructurado:** `docs/audit/AUNEA_INTERNAL_UI_UX_MASTER_REGISTRY_20261117.json`.
@@ -372,3 +372,35 @@ Se corrigieron **oráculos aislados obsoletos** de PG10/PG11/PG12 para cargar lo
 **Registro estructurado:** `docs/audit/AUNEA_INTERNAL_UI_UX_MASTER_REGISTRY_20261117.json` v0.3.0, `l3.status=CLOSED_TECHNICAL_REVIEW`.
 
 **Criterio de continuidad:** L4 se inicia consumiendo las mismas capas; no reabre L1–L3 salvo regresión reproducible.
+
+## 15. L4 — ACCESIBILIDAD CROMÁTICA Y RESPONSIVE: CIERRE TÉCNICO ACOTADO · 17/11/2026
+
+**Estado: CLOSED_TECHNICAL_REVIEW**, sin certificación WCAG global ni aprobación de los porcentajes de marca. Este cierre sustituye solo el estado técnico anterior de L4 en la tabla histórica del §8; no cambia la identidad corporativa ni autoriza un nuevo reparto cromático.
+
+**Cambios reales:** `AUNEA-FE-UI-ACCESSIBILITY-L4-486` en `3_SYSTEM/frontend/ui-system.css`. Se añade foco visible de **3px** con el token oficial `--system` y separación de **2px**, exclusivamente a botones de modo PG11/PG12, mantener propuesta, detalles comparativos y controles de los diálogos opt-in no FROZEN. `prefers-reduced-motion` suprime animaciones/transiciones de estos controles. `styles.css`, los colores corporativos, el CSS genérico y los nueve FROZEN no se modifican. El propietario de estas excepciones es `ui-system.css` para evitar dobles definiciones.
+
+**QA del navegador:** `AUNEA-UAT-UI-ACCESSIBILITY-L4-487`, módulo `tests/ui-l4-l5-browser.cjs`, desde el runner Chromium existente. Se auditan por `getComputedStyle` las parejas de texto/fondo de los botones de modo PG11 y PG12, a **1365, 768 y 390px (6 conjuntos)**. Se exige contraste **≥4,5:1** en esos controles, objetivos de al menos 24px, una selección `aria-pressed`, `:focus-visible` con grosor medido ≥3px, preferencia de movimiento reducido y ausencia de desbordamiento horizontal a nivel de documento. Compara respuestas, datos TO-BE y Proyectos antes y después: sin mutación. Genera `tests/browser-evidence/l4-computed-accessibility.json` y capturas de PG11/PG12. `color-contrast-contract.test.cjs` conserva 15 pruebas matemáticas adicionales de roles de marca.
+
+**No aprobado por esta prueba:** proporciones 60/30/10, 70/20/10, 80/14/5,5/0,5 ni «colores óptimos universales». Siguen pendientes comparación subjetiva/funcional entre alternativas, pruebas humanas y contrastes computados de **todos** los estados/componentes, incluidas las excepciones FROZEN; esta prueba NO certifica conformidad WCAG de toda la aplicación. Referencia: contrato cromático REVIEW del 17/11/2026. Los FROZEN siguen sujetos a DEC-056.
+
+## 16. L5 — REGRESIÓN TRANSVERSAL Y RECORRIDO: CIERRE TÉCNICO ACOTADO · 17/11/2026
+
+**Estado: CLOSED_TECHNICAL_REVIEW** en casos sintéticos automatizados, no aceptación humana F6.
+
+- `AUNEA-UAT-UI-CROSS-PAGE-L5-488`: integra la matriz `tests/ui-l4-l5-browser.cjs` en `tests/uat-browser-smoke.cjs`, sin duplicar los motores ni sus estados. Rutas comprobadas con contenido real: **PG10, PG11, PG12, Proyectos e Implementación**. En PG10/Proyectos/Implementación también valida anchuras **1365/768/390** y capturas móviles; el documento no debe desbordar horizontalmente (tablas o mapas con scroll interno siguen permitidos).
+- La misma ejecución UAT ya cubre **nueve páginas FROZEN** (18 PNG con SHA-256 fijo), PG01–PG09 y sus reglas de confirmación, PG11 con aprobaciones/undo/recarga, PG12 con un **único mapa nativo AS-IS** y capa TO-BE. El snapshot de respuestas canónicas, actividades TO-BE y proyectos es inmutable durante las visitas de lectura.
+- Evidencia del último código probado `b677605f17a3205e800660f85536a3c48491e086`: Frontend **1.021/1.021 PASS**, backend **493 PASS**, Chromium E2E **PASS**, Windows Edge **PASS**, inventario CSS **PASS**, capturas FROZEN **18/18 equivalentes**. Gate `overall=PASS`; los commits documentales posteriores no representan una nueva ejecución de código.
+
+| Control | Evidencia GitHub |
+|---|---|
+| Acceptance Gate y Chromium | https://github.com/PedroCMillan5/AUNEA/actions/runs/44118610311 |
+| Frontend 1.021/1.021 | https://github.com/PedroCMillan5/AUNEA/actions/runs/44118610047 |
+| Windows Edge | https://github.com/PedroCMillan5/AUNEA/actions/runs/44118610404 |
+| Inventario y ownership | https://github.com/PedroCMillan5/AUNEA/actions/runs/44118610187 |
+
+**Archivos de evidencia** generados en la ejecución: `l4-computed-accessibility.json`, `l5-technical-journey-matrix.json` y PNG móviles/del mapa, disponibles en el artefacto Chromium de Actions. La infraestructura prueba un estudio sintético; no se ha ejecutado una sesión de cliente real de 90 minutos con Ollama.
+
+### 16.1 Puerta final que sigue abierta: F6
+La **aceptación visual y funcional humana** del propietario para CRM y PG00–PG12+, la validación de todas las tecnologías asistivas, los estados de error/foco por pantalla, la comparación cromática final y la promoción a `CANONICAL`/`main`/`PRODUCTION` **NO se realizan ni se afirman aquí**. Las nueve páginas FROZEN se preservan sin rediseño y el test automático no sustituye esa decisión. Se requiere evidencia reproducible de aceptación antes de cualquier promoción.
+
+**Registro máquina:** `docs/audit/AUNEA_INTERNAL_UI_UX_MASTER_REGISTRY_20261117.json` **v0.5.0**, `l4.status` y `l5.status` en `CLOSED_TECHNICAL_REVIEW`, con límites explicitados. La identidad y `DECISIONES_AUNEA` no cambian.
