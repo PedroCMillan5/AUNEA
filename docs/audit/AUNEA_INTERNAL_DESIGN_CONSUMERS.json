@@ -345,7 +345,6 @@
           ],
           "consumers": [
             "pages/tobe.js",
-            "pages/comparison.js",
             "pages/tobe-global.js"
           ]
         }
@@ -2263,7 +2262,6 @@
       "referencedCssClasses": [
         "aunea-ui-section-caption",
         "aunea-ui-section-title",
-        "aunea-ui-work-surface",
         "btn",
         "btn-outline",
         "btn-small",
@@ -2278,7 +2276,6 @@
         "pg12-detail-alerts",
         "pg12-detail-text",
         "pg12-diff-stats",
-        "pg12-difference-detail",
         "pg12-evidence-grid",
         "pg12-future-lines",
         "pg12-key-add",
@@ -2290,8 +2287,6 @@
         "pg12-metrics",
         "pg12-native-map",
         "pg12-overlay-legend",
-        "pg12-secondary",
-        "pg12-selected-detail",
         "pg12-view-selector",
         "pg12-work-head",
         "pg12-workspace",
@@ -4472,7 +4467,6 @@
       "ruleOccurrences": 3,
       "runtimeConsumers": [
         "pages/tobe.js",
-        "pages/comparison.js",
         "pages/tobe-global.js"
       ],
       "frozenRisk": false,
@@ -11359,11 +11353,9 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 3,
-      "runtimeConsumers": [
-        "pages/comparison.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "pg12-evidence-grid",
@@ -11563,11 +11555,9 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 1,
-      "runtimeConsumers": [
-        "pages/comparison.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "pg12-selected-detail",
@@ -11575,11 +11565,9 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 2,
-      "runtimeConsumers": [
-        "pages/comparison.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "pg12-view-selector",
@@ -18824,7 +18812,6 @@
         ],
         "consumers": [
           "pages/tobe.js",
-          "pages/comparison.js",
           "pages/tobe-global.js"
         ],
         "status": "PENDING_BROWSER_QA",
