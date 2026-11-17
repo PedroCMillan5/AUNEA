@@ -27,6 +27,9 @@ test('read-only table rows escape source values while preserving real zeros and 
  assert.match(row,/Fase &amp; datos/);
  assert.match(row,/<td>0<\/td>/);
  assert.throws(()=>a.auneaUiTableRow('no es array'),/requires arrays/);
+ const numeric=a.auneaUiTableRow(['Trabajo',0,'—'],[],[1]);
+ assert.match(numeric,/<td class="aunea-ui-numeric">0<\/td>/);
+ assert.doesNotMatch(numeric,/<td class="aunea-ui-numeric">Trabajo/);
 });
 test('tables use shared DOM and keep page-owned empty messages with no invented rows',()=>{
  const a=api();
@@ -38,6 +41,9 @@ test('tables use shared DOM and keep page-owned empty messages with no invented 
  const empty=a.auneaUiDataTable(headers,'',{emptyHtml:'<tr><td colspan="2">Sin registros reales todavía.</td></tr>'});
  assert.match(empty,/Sin registros reales todavía/);
  assert.throws(()=>a.auneaUiDataTable([],row),/requires headings/);
+ assert.match(a.auneaUiDataTable(headers,row,{numericColumns:[1]}),
+  /<th class="aunea-ui-numeric">Horas \(h\)<\/th>/);
+ assert.match(read('styles.css'),/\.data-table :is\(th,td\)\.aunea-ui-numeric\{text-align:right;font-variant-numeric:tabular-nums\}/);
  const project=read('pages/projects.js');
  assert.ok((project.match(/auneaUiDataTable\(/g)||[]).length>=2);
  assert.ok((project.match(/auneaUiTableRow\(/g)||[]).length>=2);
