@@ -289,6 +289,7 @@ test('PG11 03.1 uses the common read-only layout and preserves declared AS-IS va
  const html=ctx.tobeOriginalStepFacts({}, {sourceStepId:'P1'});
  assert.match(html,/Actividad actual/);
  assert.match(html,/Duraciones declaradas/);
+ assert.equal((html.match(/data-aunea-ui-level="group"/g)||[]).length,2);
  assert.match(html,/Administración/);
  assert.match(html,/Email.*PDF/);
  assert.match(html,/3 min/);
