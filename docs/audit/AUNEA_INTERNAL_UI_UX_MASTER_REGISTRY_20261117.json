@@ -1,0 +1,830 @@
+{
+  "title": "AUNEA Internal — UI/UX Master Registry",
+  "version": "0.1.0",
+  "status": "REVIEW",
+  "date": "2026-11-17",
+  "scope": "CRM, PG00–PG12+, proyectos; sin cambios runtime",
+  "governance": [
+    "DEC-027",
+    "DEC-050",
+    "DEC-055",
+    "DEC-056",
+    "PROJECT_RULES.md v1.7",
+    "AUNEA_SYSTEM_SIMULATOR_CANONICAL v1.14",
+    "DESIGN_SYSTEM_AUNEA v1.0",
+    "TOKENS_AUNEA v1.0"
+  ],
+  "policies": {
+    "colorQuota": "none-approved",
+    "gold": "branding-accent-not-functional-status",
+    "typography": "Sora headings / Inter text",
+    "spacingPx": [
+      4,
+      8,
+      12,
+      16,
+      24,
+      32,
+      48,
+      64,
+      96
+    ],
+    "radiusPx": [
+      4,
+      8,
+      12,
+      16
+    ],
+    "wcagTextMin": 4.5,
+    "wcagNonTextMin": 3,
+    "frozen": "preserve-approved-appearance",
+    "dataOwnership": "single-owner",
+    "hierarchy": [
+      "page",
+      "section",
+      "subsection",
+      "block",
+      "group",
+      "field",
+      "datum"
+    ],
+    "noNestedCardsWithoutFunction": true,
+    "noParallelRenderer": true
+  },
+  "hierarchy": [
+    {
+      "id": "page",
+      "definition": "Pantalla con objetivo único y contexto",
+      "children": [
+        "section",
+        "workspace",
+        "action-bar"
+      ],
+      "rules": [
+        "Un H1 visible por vista",
+        "Contexto y acciones generales en pageTop",
+        "No transformar navegación en fuente de reglas"
+      ]
+    },
+    {
+      "id": "section",
+      "definition": "Unidad funcional de trabajo",
+      "children": [
+        "subsection",
+        "block",
+        "group",
+        "field",
+        "datum"
+      ],
+      "rules": [
+        "H2 o etiqueta semántica equivalente",
+        "Acciones de sección en cabecera",
+        "No exige una card anidada"
+      ]
+    },
+    {
+      "id": "subsection",
+      "definition": "Parte o fase de una sección",
+      "children": [
+        "block",
+        "group",
+        "field",
+        "datum"
+      ],
+      "rules": [
+        "Título H3 según árbol real",
+        "No crear superficie visual automáticamente",
+        "Su plegado requiere affordance y estado"
+      ]
+    },
+    {
+      "id": "block",
+      "definition": "Entidad operable: paso/riesgo/alternativa/registro",
+      "children": [
+        "group",
+        "field",
+        "datum"
+      ],
+      "rules": [
+        "Una identidad y acciones contextualizadas",
+        "Card solo si aporta separación/selección",
+        "Sin propietario duplicado del dato"
+      ]
+    },
+    {
+      "id": "group",
+      "definition": "Conjunto lógico de campos o datos",
+      "children": [
+        "field",
+        "datum"
+      ],
+      "rules": [
+        "Agrupación por etiqueta y espacio",
+        "Evitar bordes/fondos redundantes",
+        "Visibilidad gobernada por condición canónica"
+      ]
+    },
+    {
+      "id": "field",
+      "definition": "Captura del dato propiedad de una única vista",
+      "children": [],
+      "rules": [
+        "Label y control asociados",
+        "Valor, validación y procedencia canónicos",
+        "No repetir captura en inspector"
+      ]
+    },
+    {
+      "id": "datum",
+      "definition": "Lectura de dato con fuente y unidad cuando aplica",
+      "children": [],
+      "rules": [
+        "Etiqueta, valor, unidad y estado por fuente",
+        "Ausente distinto de cero",
+        "Readonly fuera del owner"
+      ]
+    }
+  ],
+  "families": [
+    {
+      "id": "shell",
+      "name": "Carcasa de aplicación",
+      "ds": [
+        "DS-001",
+        "002"
+      ],
+      "owner": "ui/shell.js",
+      "implementation": "existing",
+      "states": [
+        "desktop",
+        "mobile",
+        "session"
+      ],
+      "contract": "specified",
+      "verification": "existing-base-not-end-to-end-certified"
+    },
+    {
+      "id": "page",
+      "name": "Página/cabecera",
+      "ds": [
+        "DS-002"
+      ],
+      "owner": "core/state.js",
+      "implementation": "existing",
+      "states": [
+        "default",
+        "loading",
+        "blocked"
+      ],
+      "contract": "specified",
+      "verification": "existing-base-not-end-to-end-certified"
+    },
+    {
+      "id": "workspace",
+      "name": "Área de trabajo",
+      "ds": [
+        "DS-004"
+      ],
+      "owner": "core/state.js",
+      "implementation": "existing",
+      "states": [
+        "default",
+        "inspector",
+        "stacked"
+      ],
+      "contract": "specified",
+      "verification": "existing-base-not-end-to-end-certified"
+    },
+    {
+      "id": "section",
+      "name": "Sección funcional",
+      "ds": [
+        "DS-002",
+        "004"
+      ],
+      "owner": "core/state.js",
+      "implementation": "existing",
+      "states": [
+        "default",
+        "actions",
+        "read-only"
+      ],
+      "contract": "specified",
+      "verification": "existing-base-not-end-to-end-certified"
+    },
+    {
+      "id": "subsection",
+      "name": "Subsección",
+      "ds": [
+        "DS-002",
+        "003"
+      ],
+      "owner": "styles.css",
+      "implementation": "review",
+      "states": [
+        "expanded",
+        "collapsed",
+        "read-only"
+      ],
+      "contract": "specified",
+      "verification": "requires-browser-and-consumer-validation"
+    },
+    {
+      "id": "block",
+      "name": "Bloque operativo",
+      "ds": [
+        "DS-004"
+      ],
+      "owner": "styles.css",
+      "implementation": "review",
+      "states": [
+        "default",
+        "selected",
+        "editable",
+        "read-only"
+      ],
+      "contract": "specified",
+      "verification": "requires-browser-and-consumer-validation"
+    },
+    {
+      "id": "group",
+      "name": "Grupo de campos/datos",
+      "ds": [
+        "DS-003",
+        "020"
+      ],
+      "owner": "ui/renderer.js",
+      "implementation": "review",
+      "states": [
+        "expanded",
+        "collapsed",
+        "conditional"
+      ],
+      "contract": "specified",
+      "verification": "requires-browser-and-consumer-validation"
+    },
+    {
+      "id": "card",
+      "name": "Tarjeta/superficie",
+      "ds": [
+        "DS-004"
+      ],
+      "owner": "styles.css",
+      "implementation": "existing",
+      "states": [
+        "default",
+        "contextual",
+        "selected"
+      ],
+      "contract": "specified",
+      "verification": "existing-base-not-end-to-end-certified"
+    },
+    {
+      "id": "field",
+      "name": "Campo editable",
+      "ds": [
+        "DS-020"
+      ],
+      "owner": "ui/renderer.js",
+      "implementation": "existing",
+      "states": [
+        "idle",
+        "focus",
+        "invalid",
+        "disabled",
+        "read-only"
+      ],
+      "contract": "specified",
+      "verification": "existing-base-not-end-to-end-certified"
+    },
+    {
+      "id": "datum",
+      "name": "Dato/valor",
+      "ds": [
+        "DS-003"
+      ],
+      "owner": "core/state.js",
+      "implementation": "existing",
+      "states": [
+        "known",
+        "missing",
+        "pending",
+        "confirmed"
+      ],
+      "contract": "specified",
+      "verification": "existing-base-not-end-to-end-certified"
+    },
+    {
+      "id": "button",
+      "name": "Botón/acción",
+      "ds": [
+        "DS-017"
+      ],
+      "owner": "styles.css",
+      "implementation": "existing",
+      "states": [
+        "idle",
+        "hover",
+        "focus",
+        "disabled",
+        "loading"
+      ],
+      "contract": "specified",
+      "verification": "existing-base-not-end-to-end-certified"
+    },
+    {
+      "id": "select",
+      "name": "Selector simple",
+      "ds": [
+        "DS-020"
+      ],
+      "owner": "ui/renderer.js",
+      "implementation": "existing",
+      "states": [
+        "closed",
+        "open",
+        "selected",
+        "disabled",
+        "invalid"
+      ],
+      "contract": "specified",
+      "verification": "existing-base-not-end-to-end-certified"
+    },
+    {
+      "id": "multiselect",
+      "name": "Selector múltiple",
+      "ds": [
+        "DS-020"
+      ],
+      "owner": "ui/renderer.js",
+      "implementation": "review",
+      "states": [
+        "empty",
+        "selected",
+        "max-exceeded",
+        "invalid"
+      ],
+      "contract": "specified",
+      "verification": "requires-browser-and-consumer-validation"
+    },
+    {
+      "id": "disclosure",
+      "name": "Desplegable/acordeón",
+      "ds": [
+        "DS-002",
+        "004"
+      ],
+      "owner": "ui/renderer.js",
+      "implementation": "existing",
+      "states": [
+        "open",
+        "closed",
+        "focus",
+        "disabled"
+      ],
+      "contract": "specified",
+      "verification": "existing-base-not-end-to-end-certified"
+    },
+    {
+      "id": "modal",
+      "name": "Modal/diálogo",
+      "ds": [
+        "DS-004",
+        "017"
+      ],
+      "owner": "core/state.js",
+      "implementation": "existing",
+      "states": [
+        "open",
+        "validate",
+        "save",
+        "error",
+        "close"
+      ],
+      "contract": "specified",
+      "verification": "existing-base-not-end-to-end-certified"
+    },
+    {
+      "id": "context-menu",
+      "name": "Menú contextual",
+      "ds": [
+        "DS-017"
+      ],
+      "owner": "styles.css",
+      "implementation": "review",
+      "states": [
+        "open",
+        "closed",
+        "focus",
+        "disabled"
+      ],
+      "contract": "specified",
+      "verification": "requires-browser-and-consumer-validation"
+    },
+    {
+      "id": "tabs",
+      "name": "Pestañas",
+      "ds": [
+        "DS-002"
+      ],
+      "owner": "styles.css",
+      "implementation": "existing",
+      "states": [
+        "selected",
+        "unselected",
+        "disabled",
+        "focus"
+      ],
+      "contract": "specified",
+      "verification": "existing-base-not-end-to-end-certified"
+    },
+    {
+      "id": "navigation",
+      "name": "Navegación/etapas",
+      "ds": [
+        "DS-012",
+        "013"
+      ],
+      "owner": "core/state.js",
+      "implementation": "existing",
+      "states": [
+        "current",
+        "complete",
+        "blocked",
+        "available"
+      ],
+      "contract": "specified",
+      "verification": "existing-base-not-end-to-end-certified"
+    },
+    {
+      "id": "search-filter",
+      "name": "Búsqueda/filtros",
+      "ds": [
+        "DS-008",
+        "020"
+      ],
+      "owner": "styles.css",
+      "implementation": "review",
+      "states": [
+        "empty",
+        "query",
+        "results",
+        "no-results"
+      ],
+      "contract": "specified",
+      "verification": "requires-browser-and-consumer-validation"
+    },
+    {
+      "id": "table",
+      "name": "Tabla de datos",
+      "ds": [
+        "DS-008"
+      ],
+      "owner": "styles.css",
+      "implementation": "existing",
+      "states": [
+        "loading",
+        "empty",
+        "sorted",
+        "selected"
+      ],
+      "contract": "specified",
+      "verification": "existing-base-not-end-to-end-certified"
+    },
+    {
+      "id": "pagination",
+      "name": "Paginación",
+      "ds": [
+        "DS-008"
+      ],
+      "owner": "styles.css",
+      "implementation": "review",
+      "states": [
+        "first",
+        "middle",
+        "last",
+        "disabled"
+      ],
+      "contract": "specified",
+      "verification": "requires-browser-and-consumer-validation"
+    },
+    {
+      "id": "status-chip",
+      "name": "Estado/etiqueta",
+      "ds": [
+        "DS-019"
+      ],
+      "owner": "core/state.js",
+      "implementation": "existing",
+      "states": [
+        "draft",
+        "pending",
+        "confirmed",
+        "error"
+      ],
+      "contract": "specified",
+      "verification": "existing-base-not-end-to-end-certified"
+    },
+    {
+      "id": "notice",
+      "name": "Aviso contextual",
+      "ds": [
+        "DS-006",
+        "007"
+      ],
+      "owner": "ui/renderer.js",
+      "implementation": "existing",
+      "states": [
+        "info",
+        "warning",
+        "success",
+        "error"
+      ],
+      "contract": "specified",
+      "verification": "existing-base-not-end-to-end-certified"
+    },
+    {
+      "id": "toast",
+      "name": "Notificación transitoria",
+      "ds": [
+        "DS-006"
+      ],
+      "owner": "core/state.js",
+      "implementation": "existing",
+      "states": [
+        "shown",
+        "hidden",
+        "error"
+      ],
+      "contract": "specified",
+      "verification": "existing-base-not-end-to-end-certified"
+    },
+    {
+      "id": "empty-state",
+      "name": "Estado sin datos",
+      "ds": [
+        "DS-003",
+        "004"
+      ],
+      "owner": "ui/renderer.js",
+      "implementation": "existing",
+      "states": [
+        "empty",
+        "filtered-empty",
+        "unavailable"
+      ],
+      "contract": "specified",
+      "verification": "existing-base-not-end-to-end-certified"
+    },
+    {
+      "id": "loading-state",
+      "name": "Carga/progreso",
+      "ds": [
+        "DS-019"
+      ],
+      "owner": "styles.css",
+      "implementation": "review",
+      "states": [
+        "loading",
+        "complete",
+        "failed",
+        "cancelled"
+      ],
+      "contract": "specified",
+      "verification": "requires-browser-and-consumer-validation"
+    },
+    {
+      "id": "inspector",
+      "name": "Inspector contextual",
+      "ds": [
+        "DS-004"
+      ],
+      "owner": "core/state.js",
+      "implementation": "existing",
+      "states": [
+        "selection",
+        "empty",
+        "read-only"
+      ],
+      "contract": "specified",
+      "verification": "existing-base-not-end-to-end-certified"
+    },
+    {
+      "id": "action-bar",
+      "name": "Barra de acciones",
+      "ds": [
+        "DS-017"
+      ],
+      "owner": "core/state.js",
+      "implementation": "existing",
+      "states": [
+        "idle",
+        "dirty",
+        "blocked",
+        "saving"
+      ],
+      "contract": "specified",
+      "verification": "existing-base-not-end-to-end-certified"
+    },
+    {
+      "id": "process-map",
+      "name": "Mapa de proceso",
+      "ds": [
+        "DS-012",
+        "014"
+      ],
+      "owner": "domain/process.js",
+      "implementation": "existing",
+      "states": [
+        "asis",
+        "selected",
+        "edit",
+        "confirmed"
+      ],
+      "contract": "specified",
+      "verification": "existing-base-not-end-to-end-certified"
+    },
+    {
+      "id": "risk-warning",
+      "name": "Riesgos y alertas",
+      "ds": [
+        "DS-007"
+      ],
+      "owner": "styles.css",
+      "implementation": "existing",
+      "states": [
+        "candidate",
+        "confirmed",
+        "unresolved"
+      ],
+      "contract": "specified",
+      "verification": "existing-base-not-end-to-end-certified"
+    },
+    {
+      "id": "kpi",
+      "name": "Indicador",
+      "ds": [
+        "DS-005"
+      ],
+      "owner": "styles.css",
+      "implementation": "existing",
+      "states": [
+        "available",
+        "pending",
+        "missing"
+      ],
+      "contract": "specified",
+      "verification": "existing-base-not-end-to-end-certified"
+    },
+    {
+      "id": "comparison",
+      "name": "Comparación de escenarios",
+      "ds": [
+        "DS-010",
+        "011"
+      ],
+      "owner": "pages/comparison.js",
+      "implementation": "review",
+      "states": [
+        "baseline",
+        "alternative",
+        "stale"
+      ],
+      "contract": "specified",
+      "verification": "requires-browser-and-consumer-validation"
+    },
+    {
+      "id": "roadmap",
+      "name": "Cronología/etapas",
+      "ds": [
+        "DS-013"
+      ],
+      "owner": "styles.css",
+      "implementation": "review",
+      "states": [
+        "future",
+        "pending",
+        "complete"
+      ],
+      "contract": "specified",
+      "verification": "requires-browser-and-consumer-validation"
+    },
+    {
+      "id": "diagram",
+      "name": "Diagrama",
+      "ds": [
+        "DS-014"
+      ],
+      "owner": "domain/process.js",
+      "implementation": "review",
+      "states": [
+        "read-only",
+        "selected",
+        "focus"
+      ],
+      "contract": "specified",
+      "verification": "requires-browser-and-consumer-validation"
+    },
+    {
+      "id": "provenance",
+      "name": "Fuente y trazabilidad",
+      "ds": [
+        "DS-018",
+        "019"
+      ],
+      "owner": "core/state.js",
+      "implementation": "existing",
+      "states": [
+        "reused",
+        "user-entered",
+        "derived"
+      ],
+      "contract": "specified",
+      "verification": "existing-base-not-end-to-end-certified"
+    },
+    {
+      "id": "tooltip-help",
+      "name": "Ayuda contextual",
+      "ds": [
+        "DS-003",
+        "020"
+      ],
+      "owner": "styles.css",
+      "implementation": "review",
+      "states": [
+        "closed",
+        "hover",
+        "focus"
+      ],
+      "contract": "specified",
+      "verification": "requires-browser-and-consumer-validation"
+    },
+    {
+      "id": "responsive",
+      "name": "Adaptación responsive",
+      "ds": [
+        "DS-020"
+      ],
+      "owner": "ui-system.css",
+      "implementation": "review",
+      "states": [
+        "desktop",
+        "tablet",
+        "mobile",
+        "zoom"
+      ],
+      "contract": "specified",
+      "verification": "requires-browser-and-consumer-validation"
+    },
+    {
+      "id": "keyboard-focus",
+      "name": "Foco y teclado",
+      "ds": [
+        "DS-020"
+      ],
+      "owner": "styles.css",
+      "implementation": "review",
+      "states": [
+        "tab",
+        "escape",
+        "enter",
+        "focus-visible"
+      ],
+      "contract": "specified",
+      "verification": "requires-browser-and-consumer-validation"
+    },
+    {
+      "id": "motion",
+      "name": "Movimiento/transiciones",
+      "ds": [
+        "DS-020"
+      ],
+      "owner": "styles.css",
+      "implementation": "review",
+      "states": [
+        "normal",
+        "reduced-motion"
+      ],
+      "contract": "specified",
+      "verification": "requires-browser-and-consumer-validation"
+    },
+    {
+      "id": "feedback-confirm",
+      "name": "Confirmación/errores de acción",
+      "ds": [
+        "DS-006",
+        "017"
+      ],
+      "owner": "core/state.js",
+      "implementation": "review",
+      "states": [
+        "pending",
+        "blocked",
+        "success",
+        "conflict"
+      ],
+      "contract": "specified",
+      "verification": "requires-browser-and-consumer-validation"
+    }
+  ]
+}
