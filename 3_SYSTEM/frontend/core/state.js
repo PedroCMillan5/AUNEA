@@ -713,4 +713,75 @@ function createProjectFromEngagement(){const e=currentEng();if(!e)return;const r
 
 function openModal(title,body,onSave,saveLabel='Guardar'){const legend=body.includes('required-mark')?REQUIRED_LEGEND_HTML:'';document.getElementById('modalRoot').innerHTML=`<div class="modal-backdrop"><div class="modal"><div class="modal-head"><h2>${esc(title)}</h2><button class="icon-btn" id="modalClose">×</button></div><div class="modal-body">${legend}${body}</div><div class="modal-foot"><button class="btn" id="modalCancel">Cancelar</button><button class="btn btn-primary" id="modalSave">${esc(saveLabel)}</button></div></div></div>`;document.getElementById('modalClose').onclick=closeModal;document.getElementById('modalCancel').onclick=closeModal;document.getElementById('modalSave').onclick=onSave}
 function closeModal(){document.getElementById('modalRoot').innerHTML=''}
+// [AUNEA-FE-UI-DIALOG-L2-479] START — Opt-in accessible internal-work dialog.
+// PURPOSE: Reuse the existing modal owner while providing focus, safe Escape, and double-submit control.
+// SOURCE: UI/UX master contract L2; DEC-050/056; never changes the old openModal()/closeModal().
+// INPUTS: title, page-owned body, page-owned validation/callback, existing positive label.
+// OUTPUT: same modal DOM with ARIA/focus behavior; no new persisted business state.
+// SIDE EFFECTS: DOM-only on explicitly opted-in non-FROZEN dialogs. RISK: MEDIUM.
+let __auneaUiDialogReturnFocus=null;
+function auneaUiCloseModal(){
+  const previous=__auneaUiDialogReturnFocus;
+  __auneaUiDialogReturnFocus=null;
+  closeModal();
+  if(previous?.isConnected&&typeof previous.focus==='function')previous.focus();
+}
+function auneaUiOpenModal(title,body,onSave,saveLabel='Guardar'){
+  if(typeof document==='undefined'||typeof document.getElementById!=='function')
+    return openModal(title,body,onSave,saveLabel);
+  const root=document.getElementById('modalRoot');
+  if(!root)return openModal(title,body,onSave,saveLabel);
+  const previous=document.activeElement;
+  openModal(title,body,onSave,saveLabel);
+  const dialog=root.querySelector('.modal');
+  if(!dialog)return;
+  __auneaUiDialogReturnFocus=previous;
+  dialog.setAttribute('role','dialog');
+  dialog.setAttribute('aria-modal','true');
+  const heading=dialog.querySelector('.modal-head h2');
+  if(heading){heading.id='auneaUiDialogTitle';dialog.setAttribute('aria-labelledby',heading.id);}
+  const close=dialog.querySelector('#modalClose'),cancel=dialog.querySelector('#modalCancel'),
+    save=dialog.querySelector('#modalSave');
+  if(close){close.setAttribute('aria-label','Cerrar '+title);close.onclick=auneaUiCloseModal;}
+  if(cancel)cancel.onclick=auneaUiCloseModal;
+  let dirty=false,saving=false;
+  dialog.addEventListener('input',()=>{dirty=true});
+  dialog.addEventListener('change',()=>{dirty=true});
+  dialog.addEventListener('keydown',event=>{
+    if(event.key==='Escape'){
+      if(dirty){event.preventDefault();event.stopPropagation();
+        toast('Hay cambios sin guardar. Usa Cancelar si quieres descartarlos.');
+      }else{event.preventDefault();event.stopPropagation();auneaUiCloseModal();}
+      return;
+    }
+    if(event.key!=='Tab')return;
+    const focusable=[...dialog.querySelectorAll('button:not([disabled]), input:not([disabled]):not([type="hidden"]), textarea:not([disabled]), select:not([disabled]), summary, a[href], [tabindex]:not([tabindex="-1"])')]
+      .filter(el=>el.getClientRects?.().length||el.offsetWidth||el.offsetHeight);
+    if(!focusable.length){event.preventDefault();dialog.focus();return;}
+    const first=focusable[0],last=focusable[focusable.length-1];
+    if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
+    else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
+  });
+  if(save){
+    save.onclick=()=>{
+      if(saving)return;
+      saving=true;save.disabled=true;
+      try{
+        const result=onSave();
+        if(result&&typeof result.then==='function'){
+          Promise.resolve(result).catch(err=>toast('No se pudo guardar: '+String(err?.message||err)))
+            .finally(()=>{if(save.isConnected){saving=false;save.disabled=false;}});
+        }else if(save.isConnected){saving=false;save.disabled=false;}
+      }catch(err){
+        if(save.isConnected){saving=false;save.disabled=false;}
+        toast('No se pudo guardar: '+String(err?.message||err));
+      }
+    };
+  }
+  const first=dialog.querySelector('input:not([type="hidden"]):not([disabled]),textarea:not([disabled]),select:not([disabled]),summary,button:not([disabled])');
+  if(first&&typeof first.focus==='function')first.focus();
+  else{dialog.setAttribute('tabindex','-1');dialog.focus();}
+}
+// [AUNEA-FE-UI-DIALOG-L2-479] END
+
 // [AUNEA-FE-CORE-STATE-020] END
