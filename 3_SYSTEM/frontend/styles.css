@@ -407,3 +407,27 @@ body.session-display .flow-step p{font-size:var(--font-small)}
   font:700 var(--font-small)/1.45 Inter,"Segoe UI",Arial,sans-serif;
 }
 /* [AUNEA-FE-GLOBAL-DISCLOSURE-451] END */
+
+/* [AUNEA-FE-UI-ACCESSIBILITY-L4-486] START — opt-in visible focus and reduced motion.
+   SOURCE: UI/UX Master Contract L4; WCAG 2.2 2.4.7/2.4.11; TOKENS_AUNEA v1.0.
+   Scope: PG11/PG12 and explicitly role=dialog project dialogs ONLY.
+   The 9 FROZEN pages, system tokens, brand colours and generic selectors are untouched.
+   CHANGE_RISK: LOW — visual focus only, no business ownership or data changes. */
+.tobe-workspace [data-tobe-mode-switch]:focus-visible,
+.tobe-workspace [data-tobe-ai-keep-field]:focus-visible,
+.pg12-workspace .pg12-view-selector .btn:focus-visible,
+.pg12-workspace .pg12-changes-disclosure>summary:focus-visible,
+#modalRoot .modal[role="dialog"] :is(button,input,select,textarea):focus-visible{
+  outline:3px solid var(--system);
+  outline-offset:2px;
+}
+@media(prefers-reduced-motion:reduce){
+  .tobe-workspace :is(button,summary,[data-aunea-ui-region]),
+  .pg12-workspace :is(button,summary,[data-aunea-ui-region]),
+  #modalRoot .modal[role="dialog"] :is(button,input,select,textarea){
+    animation-duration:0.01ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:0.01ms!important;
+  }
+}
+/* [AUNEA-FE-UI-ACCESSIBILITY-L4-486] END */
