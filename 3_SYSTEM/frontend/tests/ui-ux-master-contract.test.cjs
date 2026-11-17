@@ -23,7 +23,10 @@ const read=(p)=>fs.readFileSync(path.join(frontend,p),'utf8');
 test('master UI/UX registry covers all 40 explicitly inventoried families',()=>{
   assert.equal(registry.families.length,40);
   assert.equal(new Set(registry.families.map(x=>x.id)).size,40);
-  assert.equal(registry.version,'0.1.0');
+  assert.equal(registry.version,'0.2.0');
+  assert.equal(registry.l1.status,'CLOSED_TECHNICAL_REVIEW');
+  assert.equal(registry.l2.status,'CLOSED_TECHNICAL_REVIEW');
+  assert.match(contract,/\*\*Versión:\*\* v0\.2/);
   assert.equal(registry.status,'REVIEW');
   assert.match(contract,/NO|no.*PRODUCTION|no.*producción/i);
 });
