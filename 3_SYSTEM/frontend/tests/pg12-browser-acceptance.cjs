@@ -131,13 +131,38 @@ async function main(){
     assert.match(auditText,/Fricciones AS-IS/);
     assert.match(auditText,/Bloqueos/);
     assert.match(auditText,/Avisos PG11/);
+    const warningBalance=await json(page,()=>{
+      const summary=[...document.querySelectorAll('.pg12-diff-stats>div')].find(x=>
+        x.querySelector('span')?.textContent?.trim()==='Observaciones');
+      const rows=[...document.querySelectorAll('.pg12-count-audit tbody tr')];
+      return {total:Number(summary?.querySelector('strong')?.textContent),
+        perStep:rows.map(r=>Number(r.querySelectorAll('td')[1]?.textContent)||0)};
+    });
+    assert.equal(warningBalance.perStep.reduce((n,v)=>n+v,0),warningBalance.total,
+      'every summary warning must be traceable to an audit row');
     await page.locator('.pg12-native-map [data-pg12-source="P3"]').click();
     assert.match(await page.locator('#pg12SelectedDetail').innerText(),/Aprobar factura/);
     assert.equal(await page.locator('[data-pg12-source="P3"][data-pg12-selected="true"]').count(),1);
     await page.locator('.pg12-changes-disclosure summary').click();
     await page.locator('.pg12-changes-disclosure [data-pg12-source="P4"]').click();
     assert.match(await page.locator('#pg12SelectedDetail').innerText(),/Registrar en ERP/);
-    assert.match(await page.locator('.pg12-metrics').innerText(),/No disponible con evidencia suficiente/);
+    const search=page.locator('[data-aunea-table-filter="pg12ChangesTable"]');
+    assert.equal(await search.count(),1,'shared table search must be present');
+    await search.fill('Aprobar factura');
+    assert.equal(await page.locator('#pg12ChangesTable tbody tr:visible').count(),1);
+    await search.fill('');
+    assert.equal(await page.locator('#pg12ChangesTable tbody tr:visible').count(),4);
+    const diagnosticText=await json(page,()=>{
+      const projection=currentDiagnosticOutput(currentEng())?.process_time_projection;
+      return projection?[
+        num(projection.annual_active_hours),num(projection.annual_wait_exposure_hours),
+        num(projection.annual_rework_hours)
+      ]:null;
+    });
+    const metricsText=await page.locator('.pg12-metrics').innerText();
+    assert.match(metricsText,/No disponible con evidencia suficiente/);
+    if(diagnosticText)for(const v of diagnosticText)
+      assert.ok(metricsText.includes(String(v)),'backend metric must match '+v);
     const after=await json(page,()=>JSON.stringify(confirmedSnapshot(currentEng())));
     assert.equal(after,original,'PG12 must never change pinned AS-IS');
     const saved=await json(page,()=>JSON.stringify(latestTobe(currentEng())));
