@@ -2844,7 +2844,9 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 .pg12-native-map .process-graph-cell[data-pg12-source]:focus-visible{
   outline:3px solid var(--system);outline-offset:3px}
 .pg12-native-map .process-graph-cell.pg12-node-selected>.graph-flow-step,
-.pg12-native-map .process-graph-cell.pg12-node-selected .graph-decision-gateway{
+.pg12-native-map .process-graph-cell.pg12-node-selected .graph-decision-gateway,
+.pg12-native-map .process-graph-cell[data-pg12-selected="true"]>.graph-flow-step,
+.pg12-native-map .process-graph-cell[data-pg12-selected="true"] .graph-decision-gateway{
   outline:3px solid var(--system);outline-offset:4px}
 .pg12-native-map .process-graph-cell[data-pg12-state=changed]>.graph-flow-step,
 .pg12-native-map .process-graph-cell[data-pg12-state=changed] .graph-decision-gateway{
@@ -2864,8 +2866,8 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
   background:var(--blue-soft);border-color:#b5cbe3;color:var(--blue)}
 .pg12-native-map .process-graph-cell[data-pg12-state=removed]:after{
   background:#eceeeb;border:1px dashed #999;color:#555}
-.pg12-native-map .process-graph-cell[data-pg12-loss]:before{
-  content:attr(data-pg12-loss);position:absolute;z-index:4;top:-23px;left:3px;
+.pg12-native-map .process-graph-cell[data-pg12-signals]:before{
+  content:attr(data-pg12-signals);position:absolute;z-index:4;top:-23px;left:3px;
   color:var(--amber);background:var(--amber-soft);border:1px solid #efcfa9;
   border-radius:5px;padding:3px 6px;font-size:10px;font-weight:650}
 .pg12-native-map .process-graph-cell[data-pg12-warnings] .graph-flow-step{
