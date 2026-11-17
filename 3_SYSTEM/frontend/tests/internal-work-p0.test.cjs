@@ -64,12 +64,12 @@ test('preliminary diagnosis recommendation does not expose price',()=>{
 
 test('AS-IS/TO-BE comparison does not calculate economics from ProcessStep in frontend',()=>{
   const start=comparison.indexOf('function tobeComparisonPage');
-  const end=comparison.indexOf('// [AUNEA-FE-PG12-TOBE-GRAPH-234] END',start);
+  const end=comparison.indexOf('// [AUNEA-FE-PG12-OVERLAY-VIEW-470] END',start);
   assert.ok(start>=0&&end>start,'PG12 has its own view module');
   const body=comparison.slice(start,end);
   assert.match(body,/currentDiagnosticOutput\(e\)/);
   assert.doesNotMatch(body,/asis\.reduce|annual_active_hours\s*=|annual_wait_hours\s*=/);
-  assert.match(body,/ninguna métrica económica se calcula en el navegador/);
+  assert.match(body,/sin cálculos económicos en el navegador/);
 });
 
 test('Diagnóstico keeps the existing AS-IS renderer as its single map reference',()=>{
