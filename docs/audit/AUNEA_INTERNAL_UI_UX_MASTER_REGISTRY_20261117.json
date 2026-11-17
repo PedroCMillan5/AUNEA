@@ -828,24 +828,42 @@
     }
   ],
   "l1": {
-    "status": "IMPLEMENTED_PARTIAL_REVIEW",
+    "status": "CLOSED_TECHNICAL_REVIEW",
     "date": "2026-11-17",
-    "semanticMarkupOwner": "core/state.js [AUNEA-FE-UI-SEMANTIC-475]",
-    "visualVariantOwner": "styles.css [AUNEA-FE-UI-SEMANTIC-STYLE-476]",
+    "semanticMarkupOwner": "core/state.js [AUNEA-FE-UI-SEMANTIC-475], including auneaUiLegacySection() for existing unFROZEN markup",
+    "visualVariantOwner": "styles.css [AUNEA-FE-UI-SEMANTIC-STYLE-476], opt-in; ui-system.css PG12 overrides scoped to primary/secondary panels",
     "contractTest": "tests/ui-semantic-l1.test.cjs [AUNEA-UAT-UI-SEMANTIC-477]",
-    "legacy": "Existing section() and FROZEN markup are untouched; only non-FROZEN opt-in consumers.",
+    "legacy": "The legacy section() owner and the nine FROZEN consumer pages remain unchanged; 14 non-FROZEN legacy section calls use the shared semantic adapter. Native semantic sections already used in PG11 remain in place.",
     "migrated": [
       {
-        "page": "PG11",
+        "page": "PG10 + revisión de resultados",
+        "file": "pages/results.js",
+        "levels": [
+          "section"
+        ],
+        "instances": 8,
+        "parity": "legacy card markup and page-owned styles unchanged, only data-aunea-ui-level added"
+      },
+      {
+        "page": "PG11 - auxiliary/fallback",
+        "file": "pages/tobe.js",
+        "levels": [
+          "section"
+        ],
+        "instances": 4,
+        "parity": "legacy HTML and business gates unchanged; existing native PG11 sections retain their semantics"
+      },
+      {
+        "page": "PG11 - 03.1 original AS-IS",
         "file": "pages/tobe-review.js",
         "levels": [
           "group"
         ],
         "instances": 2,
-        "parity": "8 read-only AS-IS facts (including 2 zero-minute values) match baseline after removing semantic markers"
+        "parity": "8 source facts including 2 zero-minute values preserve exact original facts after excluding semantic tags"
       },
       {
-        "page": "PG12",
+        "page": "PG12 - comparison",
         "file": "pages/comparison.js",
         "levels": [
           "section",
@@ -859,7 +877,20 @@
           "block": 1,
           "datum": 6
         },
-        "parity": "Full rendered comparison HTML is byte-identical to pre-L1 output after removing added class/data attributes"
+        "parity": "native single-map output unchanged except added level markup; complete browser journey passed"
+      },
+      {
+        "page": "Proyectos + implementación",
+        "file": "pages/projects.js",
+        "levels": [
+          "section",
+          "field"
+        ],
+        "instances": {
+          "section": 2,
+          "field": 1
+        },
+        "parity": "project data/owners/actions unchanged; field wrapper opt-in"
       }
     ],
     "unmodified": [
@@ -869,15 +900,26 @@
       "colors and global selector behavior"
     ],
     "checks": [
-      "V8 syntax parsing for modified sources",
-      "rendered PG11/PG12 HTML parity checks (independent V8)",
-      "consumer markers and exact groups/data counts"
+      "Node 1006/1006 PASS: GitHub Actions run 44066900901 (head 14a40a2946ccacfc6b427478f6ddaa750ec6f7e7)",
+      "Backend pytest 493 PASS; Acceptance Gate run 44066900865 (frontend/backend/browser all success)",
+      "Chromium UAT PASS: single-map PG12; PG09/PG10-PG11 invoice/logistics cross-stage, preview/confirm/undo, reload and AS-IS preservation",
+      "FROZEN pixel-equivalence PASS 18/18 against fixed technical references (browser run 44066900865)",
+      "Windows Edge browser UAT PASS run 44066900902",
+      "Design System Runtime Inventory PASS run 44066900966; no unclassified CSS owners",
+      "PG11 and PG12 synthetic source parity; new shared semantic regression tests pass inside 1006",
+      "CODE_BLOCK_INDEX contains all active blocks; obsolete PG12 dual-map blocks 234/235 ARCHIVED"
     ],
     "pending": [
-      "Node full test suite and GitHub CI",
-      "Chromium/Edge screenshot regression",
-      "further non-FROZEN consumers",
-      "manual acceptance"
-    ]
+      "Manual F6 visual/UX approval on owner device and screen-specific accessibility UAT, independent of L1 technical close",
+      "Global color approval and L2-L5 full UI UX unification",
+      "No merge to main or PRODUCTION declaration"
+    ],
+    "evidence": {
+      "acceptanceGate": "https://github.com/PedroCMillan5/AUNEA/actions/runs/44066900865",
+      "frontend": "https://github.com/PedroCMillan5/AUNEA/actions/runs/44066900901",
+      "edge": "https://github.com/PedroCMillan5/AUNEA/actions/runs/44066900902",
+      "designInventory": "https://github.com/PedroCMillan5/AUNEA/actions/runs/44066900966"
+    },
+    "protection": "No changes to approved FROZEN page source markup; technical browser screenshots match 18/18; manual visual acceptance still pending."
   }
 }
