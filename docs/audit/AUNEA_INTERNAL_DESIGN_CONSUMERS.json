@@ -364,7 +364,6 @@
           ],
           "consumers": [
             "ui/renderer.js",
-            "pages/results.js",
             "pages/results-official.js",
             "domain/completion.js",
             "ui/shell.js",
@@ -517,7 +516,6 @@
             "pages/crm-interactions.js",
             "pages/crm-opportunities.js",
             "pages/session-display.js",
-            "pages/projects.js",
             "ui/shell.js",
             "uat/visible.js"
           ]
@@ -535,7 +533,6 @@
             "pages/crm-interactions.js",
             "pages/crm-opportunities.js",
             "pages/session-display.js",
-            "pages/projects.js",
             "ui/shell.js",
             "uat/visible.js"
           ]
@@ -1782,7 +1779,7 @@
       "path": "pages/results.js",
       "layer": "pages",
       "blockId": "AUNEA-FE-RESULTS-VIEW-010",
-      "lines": 590,
+      "lines": 592,
       "family": [
         "Resultados / PG10"
       ],
@@ -1820,7 +1817,6 @@
         "g4",
         "grid",
         "info",
-        "metric",
         "notice",
         "open",
         "pg10-conclusion-boundaries",
@@ -2024,7 +2020,7 @@
       "path": "pages/tobe.js",
       "layer": "pages",
       "blockId": "AUNEA-FE-PG11-GUIDED-NAV-266",
-      "lines": 1330,
+      "lines": 1333,
       "family": [
         "Trabajo interno / PG11"
       ],
@@ -2094,7 +2090,6 @@
         "tobe-artifact-origin-sample",
         "tobe-artifact-provenance-help",
         "tobe-boundary",
-        "tobe-canvas-viewport",
         "tobe-coherence",
         "tobe-coherence-list",
         "tobe-coherence-severity",
@@ -2135,7 +2130,6 @@
         "tobe-human-review-actions",
         "tobe-human-review-status",
         "tobe-ia-guide-summary",
-        "tobe-inspector",
         "tobe-inspector-head",
         "tobe-inspector-navigation",
         "tobe-legacy-review",
@@ -2808,12 +2802,10 @@
       "referencedCssClasses": [
         "btn",
         "btn-primary",
-        "data-table",
         "field",
         "form-grid",
         "full",
-        "notice",
-        "table-wrap"
+        "notice"
       ]
     },
     {
@@ -5732,7 +5724,6 @@
         "pages/crm-interactions.js",
         "pages/crm-opportunities.js",
         "pages/session-display.js",
-        "pages/projects.js",
         "ui/shell.js",
         "uat/visible.js"
       ],
@@ -8265,7 +8256,6 @@
       "ruleOccurrences": 4,
       "runtimeConsumers": [
         "ui/renderer.js",
-        "pages/results.js",
         "pages/results-official.js",
         "domain/completion.js",
         "ui/shell.js",
@@ -13626,7 +13616,6 @@
         "pages/crm-interactions.js",
         "pages/crm-opportunities.js",
         "pages/session-display.js",
-        "pages/projects.js",
         "ui/shell.js",
         "uat/visible.js"
       ],
@@ -14273,11 +14262,9 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 2,
-      "runtimeConsumers": [
-        "pages/tobe.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "tobe-coherence",
@@ -15517,11 +15504,9 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 72,
-      "runtimeConsumers": [
-        "pages/tobe.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "tobe-inspector-head",
@@ -20604,7 +20589,6 @@
           "pages/crm-interactions.js",
           "pages/crm-opportunities.js",
           "pages/session-display.js",
-          "pages/projects.js",
           "ui/shell.js",
           "uat/visible.js"
         ],
