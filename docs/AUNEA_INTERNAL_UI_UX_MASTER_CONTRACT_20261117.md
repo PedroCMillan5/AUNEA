@@ -1,6 +1,6 @@
 # AUNEA Internal — Contrato maestro de UI/UX y matriz de unificación
 
-**Versión:** v0.1 · **Estado:** REVIEW · **Fecha:** 17/11/2026  
+**Versión:** v0.2 · **Estado:** REVIEW · **Fecha:** 17/11/2026  
 **Ámbito:** CRM, PG00–PG12+, Proyectos, navegación, formularios y componentes de Internal.  
 **Este documento:** especificación técnica de la interfaz; **no** redefine campos, datos, pricing, recomendaciones, resultados o decisiones empresariales. No autoriza cambiar referencias FROZEN.  
 **Registro estructurado:** `docs/audit/AUNEA_INTERNAL_UI_UX_MASTER_REGISTRY_20261117.json`.
@@ -292,3 +292,41 @@ El artefacto `docs/audit/AUNEA_INTERNAL_ACCEPTANCE_GATE.json` confirma `overall:
 
 **Registro verificable:** `docs/audit/AUNEA_INTERNAL_UI_UX_MASTER_REGISTRY_20261117.json` (estado L1 `CLOSED_TECHNICAL_REVIEW`).  
 **Siguiente lote:** L2 según contrato, sin reabrir L1 salvo regresión acreditada.
+
+## 13. L2 — CIERRE TÉCNICO DE CONTROLES, ACCIONES Y ESTADOS (17/11/2026)
+
+**Estado vigente: CLOSED_TECHNICAL_REVIEW.** Los estados «L2 parcial» del contrato inicial son históricos, sustituidos por este cierre. No implica que todas las páginas de Internal hayan sido rediseñadas ni la aprobación visual manual F6.
+
+### 13.1 Componentes únicos y comportamiento aprobado
+
+| Familia L2 | Propietario actual | Contrato y consumidores migrados |
+|---|---|---|
+| Select | `ui/renderer.js` `auneaSelectControl()` + opt-in `auneaUiNamedSelect()` | Mismo input oculto y catálogo, sin segunda captura; ARIA name en summary. PG11 transformación, tipo de actividad nueva, inicio del flujo y rutas; Proyectos campo de medición real. |
+| Disclosure | `ui/renderer.js` `auneaUiDisclosureStart/End()` | Variantes `stage`, `group`, `inline` y `legacy`, preservando estructura/estado, sin accordion nuevo. PG11 ya utiliza las variantes principales; PG12 reutiliza el owner en dos detalles read-only (conteos y cambios). |
+| Mode buttons | `ui/renderer.js` `auneaUiModeButton()` | Una plantilla de botón y `aria-pressed` para modos `guided/map` (PG11) y `actual/proposed/comparison` (PG12). Atributos de eventos validados; cada página mantiene su estado de presentación. |
+| Acciones IA | `ui/renderer.js` `auneaUiFieldDecisionButton()` | PG11 03.3 mantiene los mismos handlers; `Mantener` activo utiliza `aria-pressed`; Aplicar y Editar son comandos, no falsos botones de alternancia. No se modifica la decisión humana, el AS-IS ni las transacciones. |
+| Diálogo | `core/state.js` `auneaUiOpenModal()/auneaUiCloseModal()` | Adaptador **opt-in** del `openModal()` vigente, sin reemplazar el modal FROZEN. Proyectos: Registrar ejecución real y Registrar resultado medido; `role=dialog`, `aria-modal`, título nombrado, foco inicial en campo, contención Tab, retorno del foco, Escape seguro, cambios sin guardar protegidos y prevención de envíos simultáneos. Los validadores son los originales del Project. |
+| Feedback | `ui/renderer.js` `auneaUiFeedbackMessage()` | Avisos PG12 de origen/mapa no disponible con `role=status` y `aria-live=polite`; tono restringido a `info/warn/good` existente, sin inventar color. `auneaNoticeMessage()` sigue gobernando los avisos generales. |
+
+**Block_ID:** `AUNEA-FE-UI-CHOICES-L2-478`, `AUNEA-FE-UI-DIALOG-L2-479`, `AUNEA-UAT-UI-CONTROLS-L2-480`. Registrados en `CODE_BLOCK_INDEX.md`. No hay nuevos archivos de CSS ni cambios de nombres de clase/variables de negocio. Se preservan los selectores de eventos preexistentes.
+
+### 13.2 Evidencia de prueba y regresión
+
+| Gate ejecutado | Resultado | GitHub Actions |
+|---|---|---|
+| Frontend Node, incluido nuevo test L2 | **PASS 1.014/1.014; 0 fallos** | https://github.com/PedroCMillan5/AUNEA/actions/runs/44070230759 |
+| Backend pytest | **PASS 493** | https://github.com/PedroCMillan5/AUNEA/actions/runs/44070230620 |
+| Chromium E2E completo | **PASS**: PG11/PG12 versiones, selección, rutas, confirmación/undo/reload; nuevo `L2_ACCESSIBLE_DIALOG_BROWSER_PASS` verifica ARIA, foco, Escape limpio, cambios sin guardar y Cancelar | https://github.com/PedroCMillan5/AUNEA/actions/runs/44070230620 |
+| FROZEN técnica | **PASS 18/18** capturas frente a referencia fija; no equivale a aprobación visual humana | https://github.com/PedroCMillan5/AUNEA/actions/runs/44070230620 |
+| Windows Edge | **PASS** | https://github.com/PedroCMillan5/AUNEA/actions/runs/44070230768 |
+| Inventario/ownership CSS | **PASS**: 107 clases cross-file, 138 contextos, 30 inline, cero conflictos sin clasificar | https://github.com/PedroCMillan5/AUNEA/actions/runs/44070230495 |
+
+**Acceptance Gate: `overall=PASS`**, `backend_pytest=success`, `frontend_node=success`, `chromium_ua=success` para el commit de runtime probado `ee610cc765225c7350ccf1a80fa537ab16ad8957`. El análisis de QA detectó y corrigió un defecto real de foco inicial del modal, más los lectores de test aislados que no cargaban el nuevo propietario; las correcciones preceden a este gate verde.
+
+### 13.3 Límites explícitos de L2
+- Las nueve pantallas **FROZEN** conservan `section()`, `openModal()/closeModal()`, renderer Diagnostic Master, selectores y estilos originales. Las excepciones de detalles nativos de evidencia en PG10/PG11 no se convierten forzosamente a tarjetas nuevas; se mantienen `<details>` cuando su semántica y owner ya son correctos.
+- No hay nuevas reglas, flujos, decisiones de IA, campos DF, precios ni persistencias paralelas; las pruebas usan casos sintéticos sin Ollama.
+- **F6 sigue pendiente:** aprobación manual del propietario de la experiencia visual y pruebas reales de todos los controles/estados de Windows. L3 (datos, filtros, tablas, inspectores y diagramas), L4 (color/accesibilidad transversal) y L5 (UAT total) siguen en ROADMAP.
+- No se modifica `main`, no se declara `PRODUCTION` ni se altera la identidad corporativa CANONICAL.
+
+**Registro estructurado vivo:** `docs/audit/AUNEA_INTERNAL_UI_UX_MASTER_REGISTRY_20261117.json` v0.2.0, `l2.status=CLOSED_TECHNICAL_REVIEW`. La ejecución integral para el código usado en este cierre quedó en PASS; los commits posteriores que solo actualizan documentación requieren validar que no alteran el runtime.
