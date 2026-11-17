@@ -78,7 +78,7 @@ function diagnosisFindingsHtml(record,pains){
         <div><small>Evidencia registrada</small><b>${esc(evidence.join(' · ')||'Sin descripción adicional')}</b></div>
         ${priorityKnown&&prioritySelected?'<div><small>Prioridad del cliente</small><b>Seleccionada</b></div>':''}
       </div>
-      ${firstStep?'<a class="btn btn-outline" href="#asis-source-step-'+attr(String(firstStep))+'">Ver punto de análisis en esta página</a>':''}
+      ${firstStep?'<a class="btn btn-outline aunea-ui-action-link aunea-ui-after-content" href="#asis-source-step-'+attr(String(firstStep))+'">Ver punto de análisis en esta página</a>':''}
       <details class="diagnosis-source-review">
         <summary>Ver trazabilidad del hallazgo</summary>
         <div class="notice info"><b>Origen del análisis</b><br>Hallazgo producido por el motor a partir del diagnóstico confirmado. La relación con los pasos se obtiene de los vínculos registrados, no demuestra por sí sola causalidad.</div>
