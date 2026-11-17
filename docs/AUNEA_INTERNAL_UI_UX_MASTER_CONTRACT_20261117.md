@@ -1,6 +1,6 @@
 # AUNEA Internal — Contrato maestro de UI/UX y matriz de unificación
 
-**Versión:** v0.2 · **Estado:** REVIEW · **Fecha:** 17/11/2026  
+**Versión:** v0.3 · **Estado:** REVIEW · **Fecha:** 17/11/2026  
 **Ámbito:** CRM, PG00–PG12+, Proyectos, navegación, formularios y componentes de Internal.  
 **Este documento:** especificación técnica de la interfaz; **no** redefine campos, datos, pricing, recomendaciones, resultados o decisiones empresariales. No autoriza cambiar referencias FROZEN.  
 **Registro estructurado:** `docs/audit/AUNEA_INTERNAL_UI_UX_MASTER_REGISTRY_20261117.json`.
@@ -330,3 +330,45 @@ El artefacto `docs/audit/AUNEA_INTERNAL_ACCEPTANCE_GATE.json` confirma `overall:
 - No se modifica `main`, no se declara `PRODUCTION` ni se altera la identidad corporativa CANONICAL.
 
 **Registro estructurado vivo:** `docs/audit/AUNEA_INTERNAL_UI_UX_MASTER_REGISTRY_20261117.json` v0.2.0, `l2.status=CLOSED_TECHNICAL_REVIEW`. La ejecución integral para el código usado en este cierre quedó en PASS; los commits posteriores que solo actualizan documentación requieren validar que no alteran el runtime.
+
+## 14. L3 — CIERRE TÉCNICO: DATOS, TABLAS, FILTROS, ESTADOS, INSPECTORES Y DIAGRAMAS (17/11/2026)
+
+**Estado:** `CLOSED_TECHNICAL_REVIEW`. Conserva la semántica de L1, la interacción de L2 y los propietarios de reglas del simulador. El contrato general v0.3 sigue **REVIEW**: ni este lote ni las pruebas sustituyen la aceptación visual humana F6.
+
+### 14.1 Decisiones de implementación
+
+| Familia | Propietario del renderizado | Consumo y reglas conservadas |
+|---|---|---|
+| Tabla y fila | `ui/renderer.js`: `auneaUiDataTable()` y `auneaUiTableRow()` | PG12 (listado de cambios y auditoría de origen) y Proyectos (ejecución/mediciones reales). Los headers, valores y referencias proceden del mismo owner de página. El renderizador escapa texto y solo admite HTML confiable para la celda de acción explícita. 0 no se convierte en ausencia. |
+| Alineación numérica | `styles.css`: `aunea-ui-numeric`, opt-in | En DS-008, columnas numéricas específicas usan alineación a la derecha y números tabulares. No se alteran estilos genéricos ni las tablas FROZEN. |
+| Filtro de vista | `ui/renderer.js`: `auneaUiTableSearch()/auneaUiFilterTable()`; enlace `pages/comparison.js` | PG12 incorpora búsqueda local por actividad en el listado secundario. Es reversible, sin reordenar filas ni modificar `ProcessStep`, `Engagement`, `TO-BE`, snapshots o resultados. La consulta es estado de pantalla no persistido. Mensaje de cero coincidencias no significa cero actividades de negocio. |
+| Métricas | `ui/renderer.js`: `auneaUiMetric()` | PG10: cuatro métricas read-only en variante `overview`. PG12: seis métricas read-only en variante `pg12`. Se preservan unidades, procedencia, desconocidos explícitos y cómputos backend. No se añaden KPIs ni supuestos económicos. |
+| Etiquetas de estado | `ui/renderer.js`: `auneaUiStatusLabel()` | PG11: estado del contexto, actividad seleccionada y nodo del mapa. El componente muestra exactamente el texto del TO-BE propietario; no infiere confirmación ni aprobación por color. `statusBadge()` y los estados canónicos de CRM no se tocan. |
+| Inspector contextual | `core/state.js`: `auneaUiRegionStart/End('inspector')` | PG11 conserva `tobeInspector`, selección vigente, editores y el circuito 03.1/03.2/03.3/03.4; solo comparte el contenedor etiquetado. Un dato se edita desde su owner, no en una copia visual. |
+| Diagrama | `core/state.js`: `auneaUiRegionStart/End('diagram')` | PG11: mismo editor TO-BE y sus rutas/posiciones. PG12: mismo mapa original AS-IS de `domain/process.js` con overlays TO-BE de lectura. Se comparten atributos del contenedor, no el motor de layout; no existen dos mapas duplicados. |
+
+**Block_IDs vigentes:** `AUNEA-FE-UI-DATA-L3-481`, `AUNEA-FE-UI-REGION-L3-482`, `AUNEA-UAT-UI-DATA-L3-483`, `AUNEA-FE-UI-DATA-STYLE-485`. `AUNEA-FE-PG12-OVERLAY-EVENTS-471` conserva la interacción de selección/teclado y aloja el enlace de filtro local. Todos indexados en `CODE_BLOCK_INDEX.md`.
+
+### 14.2 Evidencia de QA — HEAD de código `d1adc84ce6b2ef72c00711d5aba1d579f25ba198`
+
+| Verificación | Resultado | Evidencia |
+|---|---|---|
+| Frontend Node, L1/L2/L3 + regresión funcional | **1.021/1.021 PASS; cero fallos** | https://github.com/PedroCMillan5/AUNEA/actions/runs/44075266744 |
+| Backend pytest | **493 PASS** | https://github.com/PedroCMillan5/AUNEA/actions/runs/44075266546 |
+| Chromium E2E | **PASS**; `L3_DATA_PRESENTATION_BROWSER_PASS` confirma un solo mapa, búsqueda/restitución y ninguna mutación de AS-IS/TO-BE; PG11/PG12 y recarga siguen PASS | https://github.com/PedroCMillan5/AUNEA/actions/runs/44075266546 |
+| FROZEN | **18/18 capturas técnicas idénticas** a la referencia | Mismo Acceptance Gate |
+| Windows Edge | **PASS** | https://github.com/PedroCMillan5/AUNEA/actions/runs/44075266912 |
+| Design System Runtime Inventory | **PASS**, 107 clases cross-CSS, 138 grupos selector/contexto, 30 atributos inline, 0 conflictos sin owner | https://github.com/PedroCMillan5/AUNEA/actions/runs/44075266575 |
+
+Se corrigieron **oráculos aislados obsoletos** de PG10/PG11/PG12 para cargar los propietarios reales de L3, no sustitutos de las vistas. No se modificaron DF001–100, el mapa de procesos, versiones, importes ni reglas de economía.
+
+### 14.3 Límites y siguiente fase
+
+- Solo se conectaron consumidores **no FROZEN**. Las nueve pantallas protegidas no se rediseñan ni cambian su CSS o su persistencia. Las 18 capturas técnicas no equivalen a aceptación manual.
+- La búsqueda de PG12 es un filtro de lectura de filas ya renderizadas, no una capacidad de búsqueda global en datos ni un nuevo KPI.
+- La homogeneidad semántica y el contrato de consumidores están verificados técnicamente; la aprobación universal de color, estados de foco/error en todas las páginas y pruebas de UX reales corresponden a **L4/L5 y F6**.
+- `CLOSED_TECHNICAL_REVIEW` no significa `CANONICAL` global, `main` ni `PRODUCTION`.
+
+**Registro estructurado:** `docs/audit/AUNEA_INTERNAL_UI_UX_MASTER_REGISTRY_20261117.json` v0.3.0, `l3.status=CLOSED_TECHNICAL_REVIEW`.
+
+**Criterio de continuidad:** L4 se inicia consumiendo las mismas capas; no reabre L1–L3 salvo regresión reproducible.
