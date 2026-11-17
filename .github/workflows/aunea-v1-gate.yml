@@ -95,6 +95,8 @@ jobs:
         run: node tests/pg11-browser-journey.cjs
       - name: PG11 03.2–03.3 full DOM contract and read-only recovery
         run: node tests/pg11-dom-journey.cjs
+      - name: PG12 Chromium full acceptance: native map, SÍ/NO, layers, counts and persistence
+        run: node tests/pg12-browser-acceptance.cjs
       - name: Preserve browser screenshots for review
         if: always()
         uses: actions/upload-artifact@v4
