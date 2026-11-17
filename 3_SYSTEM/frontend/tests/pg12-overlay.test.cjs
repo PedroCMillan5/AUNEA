@@ -287,11 +287,12 @@ test('PG12 audit reconciles warnings from added and unlinked steps',()=>{
   assert.ok(cells.length>=24,'source+new+orphan warnings require all audit rows');
 });
 test('PG12 refuses to mix a reviewed TO-BE with a materially changed AS-IS',()=>{
-  const {api,context}=harness();
+  const {context}=harness();
   context.tobeAsisCompatibility=()=>({
     compatible:false,message:'AS-IS v3 contiene cambios reales frente a la fuente TO-BE v2.'
   });
-  const page=api.tobeComparisonPage();
+  context.auneaUiFeedbackMessage=(_level,message)=>'<p>'+message+'</p>';
+  const page=vm.runInNewContext(code+';tobeComparisonPage()',context);
   assert.match(page,/contiene cambios reales/);
   assert.match(page,/Volver a TO-BE/);
   assert.doesNotMatch(page,/class="process-graph-board"/);
