@@ -183,12 +183,12 @@ function tobeComparisonDetail(e,p,sourceId){
     sourceName=original?.step_name||item.sourceStepName||'Sin correspondencia',
     issues=(typeof tobeCoherenceFindings==='function'?tobeCoherenceFindings(e,p):[])
       .filter(x=>String(x.stepId)===String(tobeFlowItemId(item))),
-    initial=(label,value)=>'<div><dt>'+esc(label)+'</dt><dd>'+esc(value)+'</dd></div>',
+    initial=(label,value)=>auneaUiDatum(label,value),
     owner=labelFrom('OS_ACTOR_ROLE',item.futureActor)||comparable(item.futureActor),
     tool=labelFrom('OS_TOOL_CATEGORY',item.tool)||comparable(item.tool),
     originalOwner=original?(labelFrom('OS_ACTOR_ROLE',original.actor)||String(original.actor||'—')):'No existía',
     originalTool=original?(labelFrom('OS_TOOL_CATEGORY',original.tool)||String(original.tool||'—')):'No existía';
-  return '<div class="pg12-difference-detail">'+
+  return auneaUiStructureStart('block',{className:'pg12-difference-detail'})+
     '<span class="tobe-eyebrow">'+esc(label)+' · '+esc(item.transformation||'Pendiente')+'</span>'+
     '<h3>'+esc(name)+'</h3>'+
     '<p><b>Origen AS-IS:</b> '+esc(sourceName)+'</p>'+
@@ -206,7 +206,7 @@ function tobeComparisonDetail(e,p,sourceId){
     (issues.length?'<div class="pg12-detail-alerts"><strong>Comprobaciones de PG11</strong><ul>'+
       issues.map(x=>'<li class="'+(x.severity==='BLOCKING'?'pg12-alert-block':'')+'">'+esc(x.message)+'</li>').join('')+'</ul></div>':'')+
     '<p class="tobe-muted">Las modificaciones no implican ahorros, tiempos futuros ni viabilidad técnica demostrados.</p>'+
-    '</div>';
+    auneaUiStructureEnd('block');
 }
 function tobeComparisonPage(){
   const e=currentEng(),snap=typeof confirmedSnapshot==='function'?confirmedSnapshot(e):null,p=latestTobe(e);
@@ -248,24 +248,24 @@ function tobeComparisonPage(){
       ' · TO-BE v'+esc(p.version)+'. Comparación de fuentes revisadas; sin cálculos económicos en el navegador.',
       '<button class="btn" data-page="tobe">Volver a TO-BE</button>')+
     '<main class="pg12-workspace">'+
-      '<section class="aunea-ui-work-surface pg12-primary" aria-label="Mapa comparativo único">'+
+      auneaUiStructureStart('section',{className:'aunea-ui-work-surface pg12-primary',ariaLabel:'Mapa comparativo único'})+
         '<header class="pg12-work-head"><div><span class="tobe-eyebrow">01 · COMPARACIÓN DE PROCESO</span>'+
         '<h2 class="aunea-ui-section-title">Mapa AS-IS con cambios TO-BE</h2>'+
         '<p class="aunea-ui-section-caption">Circuito original en verde tenue. Intervenciones, nuevas actividades, rutas modificadas y hallazgos sobre el mismo mapa.</p></div>'+
         selector+'</header>'+pg12OverlayHtml(e,p,source,selected)+
-        '<section class="pg12-selected-detail" id="pg12SelectedDetail" aria-live="polite">'+
-          tobeComparisonDetail(e,p,selected)+'</section>'+
-      '</section>'+
-      '<section class="aunea-ui-work-surface pg12-secondary">'+
+        auneaUiStructureStart('subsection',{className:'pg12-selected-detail',id:'pg12SelectedDetail',ariaLive:'polite'})+
+          tobeComparisonDetail(e,p,selected)+auneaUiStructureEnd('subsection')+
+      auneaUiStructureEnd('section')+
+      auneaUiStructureStart('section',{className:'aunea-ui-work-surface pg12-secondary'})+
         '<details class="pg12-changes-disclosure"><summary>02 · Listado de cambios ('+items.length+' actividades)</summary>'+
         '<p class="aunea-ui-section-caption">Vista textual secundaria; las decisiones originales y futuras se consultan seleccionando una actividad.</p>'+
         '<div class="table-wrap"><table class="data-table"><thead><tr><th>Actividad</th><th>Origen</th><th>Transformación</th><th>Problema que resuelve</th></tr></thead>'+
         '<tbody>'+rows+'</tbody></table></div></details>'+
-      '</section>'+
-      '<section class="aunea-ui-work-surface pg12-secondary"><header><span class="tobe-eyebrow">03 · MÉTRICAS COMPARABLES</span>'+
+      auneaUiStructureEnd('section')+
+      auneaUiStructureStart('section',{className:'aunea-ui-work-surface pg12-secondary'})+'<header><span class="tobe-eyebrow">03 · MÉTRICAS COMPARABLES</span>'+
         '<h2 class="aunea-ui-section-title">Impactos documentados</h2>'+
         '<p class="aunea-ui-section-caption">Valores procedentes del backend. Sin atribuir beneficios futuros no validados.</p></header>'+
-        metrics+'</section></main>';
+        metrics+auneaUiStructureEnd('section')+'</main>';
 }
 // [AUNEA-FE-PG12-OVERLAY-VIEW-470] END
 
