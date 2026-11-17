@@ -219,7 +219,7 @@
         "DS-002",
         "003"
       ],
-      "owner": "styles.css",
+      "owner": "core/state.js",
       "implementation": "review",
       "states": [
         "expanded",
@@ -235,7 +235,7 @@
       "ds": [
         "DS-004"
       ],
-      "owner": "styles.css",
+      "owner": "core/state.js",
       "implementation": "review",
       "states": [
         "default",
@@ -253,7 +253,7 @@
         "DS-003",
         "020"
       ],
-      "owner": "ui/renderer.js",
+      "owner": "core/state.js",
       "implementation": "review",
       "states": [
         "expanded",
@@ -826,5 +826,58 @@
       "contract": "specified",
       "verification": "requires-browser-and-consumer-validation"
     }
-  ]
+  ],
+  "l1": {
+    "status": "IMPLEMENTED_PARTIAL_REVIEW",
+    "date": "2026-11-17",
+    "semanticMarkupOwner": "core/state.js [AUNEA-FE-UI-SEMANTIC-475]",
+    "visualVariantOwner": "styles.css [AUNEA-FE-UI-SEMANTIC-STYLE-476]",
+    "contractTest": "tests/ui-semantic-l1.test.cjs [AUNEA-UAT-UI-SEMANTIC-477]",
+    "legacy": "Existing section() and FROZEN markup are untouched; only non-FROZEN opt-in consumers.",
+    "migrated": [
+      {
+        "page": "PG11",
+        "file": "pages/tobe-review.js",
+        "levels": [
+          "group"
+        ],
+        "instances": 2,
+        "parity": "8 read-only AS-IS facts (including 2 zero-minute values) match baseline after removing semantic markers"
+      },
+      {
+        "page": "PG12",
+        "file": "pages/comparison.js",
+        "levels": [
+          "section",
+          "subsection",
+          "block",
+          "datum"
+        ],
+        "instances": {
+          "section": 3,
+          "subsection": 1,
+          "block": 1,
+          "datum": 6
+        },
+        "parity": "Full rendered comparison HTML is byte-identical to pre-L1 output after removing added class/data attributes"
+      }
+    ],
+    "unmodified": [
+      "nine FROZEN page sources",
+      "section() legacy markup",
+      "business owners, AS-IS, TO-BE, backend",
+      "colors and global selector behavior"
+    ],
+    "checks": [
+      "V8 syntax parsing for modified sources",
+      "rendered PG11/PG12 HTML parity checks (independent V8)",
+      "consumer markers and exact groups/data counts"
+    ],
+    "pending": [
+      "Node full test suite and GitHub CI",
+      "Chromium/Edge screenshot regression",
+      "further non-FROZEN consumers",
+      "manual acceptance"
+    ]
+  }
 }
