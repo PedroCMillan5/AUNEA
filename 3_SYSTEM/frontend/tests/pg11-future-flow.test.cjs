@@ -86,13 +86,13 @@ test('generic optimization flags a removed output still consumed downstream, wit
  const codes=Array.from(findings,x=>x.code);
  assert.ok(codes.includes('INPUT_SOURCE'));
  assert.ok(codes.includes('OUTPUT_CONSUMER'));
- assert.ok(codes.includes('AUTOMATION_CAPABILITY'));
+ assert.ok(codes.includes('PLATFORM_COMPATIBILITY'));
  assert.equal(h.run('tobeFlowIntegrity'),null,
    'topology is valid even when documented data contracts need a human review');
  assert.equal(JSON.stringify(h.snapshot),before);
  assert.equal(JSON.stringify(h.p.flow),flow);
 });
-test('optimization works for arbitrary activities and respects confirmed constraints',()=>{
+test('optimization uses governed platform constraints without classifying ordinary tasks as human approval',()=>{
  const graph=[
   {id:'A',step_name:'Registrar solicitud',step_type:'ST02',tool:'EMAIL',
     inputs:['EMAIL'],outputs:['RECORD'],normal_next_step:'B'},
@@ -100,11 +100,13 @@ test('optimization works for arbitrary activities and respects confirmed constra
     inputs:['RECORD'],outputs:['DOC'],normal_next_step:'__END__'}
  ];
  const h=harness(graph);
- h.snapshot.answers={DF075:'La autorización final es humana',DF088:'No delegar decisiones'};
+ h.snapshot.answers={DF089:['KEEP_EXISTING'],DF075:['FINAL_DECISION'],DF088:['FINANCIAL_ACTION']};
  h.p.items[0].automationAi='Automatizar registro';
  h.p.items[0].tool='EMAIL';
  const findings=h.run('tobeOptimizationFindings',h.p.items[0]);
- assert.ok(findings.some(x=>x.code==='CONFIRMED_CONSTRAINTS'));
+ assert.ok(findings.some(x=>x.code==='PLATFORM_COMPATIBILITY'));
+ assert.ok(!findings.some(x=>x.code==='HUMAN_APPROVAL'),
+   'Human-approval guard applies to explicit decision/approval activities, not every ordinary task');
  assert.ok(!findings.some(x=>x.code==='OUTPUT_CONSUMER'));
  assert.match(h.run('tobeOptimizationPanelHtml',h.p.items[0]),/Pasos anteriores/);
  assert.match(h.run('tobeOptimizationPanelHtml',h.p.items[0]),/Revisar solicitud/);
