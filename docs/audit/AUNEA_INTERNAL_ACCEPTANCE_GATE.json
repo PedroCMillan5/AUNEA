@@ -1,9 +1,9 @@
 {
-  "source_head": "6a1f917078ff6407cbbabd071293e1fae327fabb",
-  "generated_at": "2026-11-17T11:40:23.225748+00:00",
+  "source_head": "ae5a00972e6e26e91b48e5894971344f9f015f98",
+  "generated_at": "2026-11-17T11:40:36.162859+00:00",
   "checks": {
     "backend_pytest": "success",
-    "frontend_node": "failure",
+    "frontend_node": "success",
     "chromium_ua": "success"
   },
   "overall": "FAIL_OR_BLOCKED",
