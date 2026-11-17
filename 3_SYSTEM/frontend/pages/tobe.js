@@ -690,13 +690,14 @@ function tobeCanvasHtml(e,p){
   }).join('');
   const routes=graph.edges.some(x=>x.label==='NO')?
     '<div class="process-graph-legend"><span class="legend-main"><i></i>Ruta SÍ / principal</span><span class="legend-alt"><i></i>Ruta NO / alternativa</span></div>':'';
-  return '<div class="tobe-canvas-viewport" aria-label="Editor de posiciones y rutas del proceso futuro">'+
+  return auneaUiRegionStart('diagram',{className:'tobe-canvas-viewport',
+      ariaLabel:'Editor de posiciones y rutas del proceso futuro'})+
     '<div class="flow-canvas process-graph-canvas tobe-process-canvas">'+routes+
     '<div class="process-graph-board tobe-free-board" style="width:'+boardWidth+
       'px;height:'+boardHeight+'px" data-graph-edges="'+attr(JSON.stringify(graph.edges))+
       '" data-graph-branches="'+attr(JSON.stringify(graph.branchLayouts))+'">'+
     '<svg class="process-graph-lines" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>'+
-    cells+'</div></div></div>'+
+    cells+'</div></div>'+auneaUiRegionEnd('diagram')+
     ((p.items||[]).some(it=>it.transformation==='Se elimina')?
       '<div class="tobe-removed-list"><b>Actividades originales propuestas para eliminar (AS-IS conservado)</b>'+
       p.items.filter(it=>it.transformation==='Se elimina').map(it=>
@@ -1315,7 +1316,9 @@ function tobePage(){
           '<input disabled value="'+attr(tobeFutureSteps(e,p).find(x=>String(x.id)===tobeFlowOwner(e,p).startStepId)?.step_name||'Pendiente')+'">')+
       '<p class="field-help">Indica la actividad de inicio del TO-BE. El AS-IS no se modifica.</p></div>'+
       '<p class="tobe-map-note"><b>Rutas del TO-BE:</b> comienzan como copia del AS-IS confirmado, pero pueden rediseñarse en el inspector. Los pasos incorporados o eliminados sólo pertenecen a la versión TO-BE. Una ruta pendiente, desconectada o sin final bloquea la revisión.</p></section>'+
-      '<section id="tobeInspector" class="tobe-inspector" aria-label="Decisión TO-BE por actividad">'+tobeInspectorHtml(e,p)+'</section></section>'+
+      auneaUiRegionStart('inspector',{id:'tobeInspector',className:'tobe-inspector',
+        ariaLabel:'Decisión TO-BE por actividad'})+tobeInspectorHtml(e,p)+
+        auneaUiRegionEnd('inspector')+'</section>'+
       (editable?'<details class="tobe-ai-stage" id="tobeAiWorkspace" data-engagement-id="'+attr(e.id)+
         '" data-tobe-version="'+attr(p.version)+'"'+(keepAuditOpen?' open':'')+'>'+
         '<summary><strong class="aunea-ui-aux-heading">Auditoría IA · Detalle técnico (opcional)</strong>'+
