@@ -1655,6 +1655,7 @@ async function main(){
 
   // [AUNEA-UAT-PG11-PG12-BROWSER-238] END
 
+  await require('./ui-l4-l5-browser.cjs')({page,outDir});
   assert.deepEqual(failures,[],'Unhandled browser JS errors: '+failures.join(' / '));
   process.stdout.write('CHROMIUM_UAT_PASS: 1 study generated, navigated and recovered after reload.\n');
  }finally{if(browser)await browser.close();await new Promise(resolve=>server.close(resolve))}
