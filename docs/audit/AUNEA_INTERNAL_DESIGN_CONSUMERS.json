@@ -1002,7 +1002,7 @@
       "path": "core/state.js",
       "layer": "core",
       "blockId": "AUNEA-FE-CORE-STATE-020",
-      "lines": 791,
+      "lines": 812,
       "family": [
         "CRM / PG00"
       ],
@@ -1058,6 +1058,7 @@
         "section",
         "section-actions",
         "section-title",
+        "selected",
         "show",
         "sidebar",
         "stage-clock",
@@ -12971,6 +12972,7 @@
       ],
       "ruleOccurrences": 2,
       "runtimeConsumers": [
+        "core/state.js",
         "ui/renderer.js",
         "domain/economics.js",
         "pages/tobe.js",
