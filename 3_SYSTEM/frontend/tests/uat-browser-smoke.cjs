@@ -1585,7 +1585,7 @@ async function main(){
   // PG12 now layers AS-IS and TO-BE over one native read-only process map.
   assert.equal(await page.locator('.pg12-native-map').count(),1);
   assert.equal(await page.locator('.pg12-native-map .process-graph-board').count(),1);
-  assert.equal(await page.locator('.pg12-native-map .process-graph-cell').count(),
+  assert.equal(await page.locator('.pg12-native-map .process-graph-cell[data-pg12-source]').count(),
     tobeSteps+1,'PG12 must retain all original nodes plus the linked future activity');
   assert.equal(await page.locator('.pg12-native-map .pg12-added-cell[data-graph-node="'+addition.id+'"]').count(),1);
   for(const mode of ['actual','proposed','comparison']){
