@@ -126,46 +126,46 @@ Criterio: WCAG 2.2 texto AA `≥4.5:1`, texto grande y componentes visuales esen
 
 | ID | Familia | Referencia DS | Propietario técnico actual | Base |
 |---|---|---|---|---|
-| `shell` | Carcasa de aplicación | DS-001, 002 | `ui/shell.js` | EXISTING |
+| `shell` | Carcasa de aplicación | DS-001, DS-002 | `ui/shell.js` | EXISTING |
 | `page` | Página/cabecera | DS-002 | `core/state.js` | EXISTING |
 | `workspace` | Área de trabajo | DS-004 | `core/state.js` | EXISTING |
-| `section` | Sección funcional | DS-002, 004 | `core/state.js` | EXISTING |
-| `subsection` | Subsección | DS-002, 003 | `styles.css` | REVIEW |
-| `block` | Bloque operativo | DS-004 | `styles.css` | REVIEW |
-| `group` | Grupo de campos/datos | DS-003, 020 | `ui/renderer.js` | REVIEW |
+| `section` | Sección funcional | DS-002, DS-004 | `core/state.js` | EXISTING |
+| `subsection` | Subsección | DS-002, DS-003 | `core/state.js` | REVIEW |
+| `block` | Bloque operativo | DS-004 | `core/state.js` | REVIEW |
+| `group` | Grupo de campos/datos | DS-003, DS-020 | `core/state.js` | REVIEW |
 | `card` | Tarjeta/superficie | DS-004 | `styles.css` | EXISTING |
 | `field` | Campo editable | DS-020 | `ui/renderer.js` | EXISTING |
 | `datum` | Dato/valor | DS-003 | `core/state.js` | EXISTING |
 | `button` | Botón/acción | DS-017 | `styles.css` | EXISTING |
 | `select` | Selector simple | DS-020 | `ui/renderer.js` | EXISTING |
 | `multiselect` | Selector múltiple | DS-020 | `ui/renderer.js` | REVIEW |
-| `disclosure` | Desplegable/acordeón | DS-002, 004 | `ui/renderer.js` | EXISTING |
-| `modal` | Modal/diálogo | DS-004, 017 | `core/state.js` | EXISTING |
+| `disclosure` | Desplegable/acordeón | DS-002, DS-004 | `ui/renderer.js` | EXISTING |
+| `modal` | Modal/diálogo | DS-004, DS-017 | `core/state.js` | EXISTING |
 | `context-menu` | Menú contextual | DS-017 | `styles.css` | REVIEW |
 | `tabs` | Pestañas | DS-002 | `styles.css` | EXISTING |
-| `navigation` | Navegación/etapas | DS-012, 013 | `core/state.js` | EXISTING |
-| `search-filter` | Búsqueda/filtros | DS-008, 020 | `styles.css` | REVIEW |
+| `navigation` | Navegación/etapas | DS-012, DS-013 | `core/state.js` | EXISTING |
+| `search-filter` | Búsqueda/filtros | DS-008, DS-020 | `styles.css` | REVIEW |
 | `table` | Tabla de datos | DS-008 | `styles.css` | EXISTING |
 | `pagination` | Paginación | DS-008 | `styles.css` | REVIEW |
 | `status-chip` | Estado/etiqueta | DS-019 | `core/state.js` | EXISTING |
-| `notice` | Aviso contextual | DS-006, 007 | `ui/renderer.js` | EXISTING |
+| `notice` | Aviso contextual | DS-006, DS-007 | `ui/renderer.js` | EXISTING |
 | `toast` | Notificación transitoria | DS-006 | `core/state.js` | EXISTING |
-| `empty-state` | Estado sin datos | DS-003, 004 | `ui/renderer.js` | EXISTING |
+| `empty-state` | Estado sin datos | DS-003, DS-004 | `ui/renderer.js` | EXISTING |
 | `loading-state` | Carga/progreso | DS-019 | `styles.css` | REVIEW |
 | `inspector` | Inspector contextual | DS-004 | `core/state.js` | EXISTING |
 | `action-bar` | Barra de acciones | DS-017 | `core/state.js` | EXISTING |
-| `process-map` | Mapa de proceso | DS-012, 014 | `domain/process.js` | EXISTING |
+| `process-map` | Mapa de proceso | DS-012, DS-014 | `domain/process.js` | EXISTING |
 | `risk-warning` | Riesgos y alertas | DS-007 | `styles.css` | EXISTING |
 | `kpi` | Indicador | DS-005 | `styles.css` | EXISTING |
-| `comparison` | Comparación de escenarios | DS-010, 011 | `pages/comparison.js` | REVIEW |
+| `comparison` | Comparación de escenarios | DS-010, DS-011 | `pages/comparison.js` | REVIEW |
 | `roadmap` | Cronología/etapas | DS-013 | `styles.css` | REVIEW |
 | `diagram` | Diagrama | DS-014 | `domain/process.js` | REVIEW |
-| `provenance` | Fuente y trazabilidad | DS-018, 019 | `core/state.js` | EXISTING |
-| `tooltip-help` | Ayuda contextual | DS-003, 020 | `styles.css` | REVIEW |
+| `provenance` | Fuente y trazabilidad | DS-018, DS-019 | `core/state.js` | EXISTING |
+| `tooltip-help` | Ayuda contextual | DS-003, DS-020 | `styles.css` | REVIEW |
 | `responsive` | Adaptación responsive | DS-020 | `ui-system.css` | REVIEW |
 | `keyboard-focus` | Foco y teclado | DS-020 | `styles.css` | REVIEW |
 | `motion` | Movimiento/transiciones | DS-020 | `styles.css` | REVIEW |
-| `feedback-confirm` | Confirmación/errores de acción | DS-006, 017 | `core/state.js` | REVIEW |
+| `feedback-confirm` | Confirmación/errores de acción | DS-006, DS-017 | `core/state.js` | REVIEW |
 
 Se prohíbe crear un nuevo renderer cuando el propietario existente ya ofrece la misma semántica y estados. Para excepciones reales: documentar diferencia funcional, owner, consumidor, fuente, Block_ID y regresión. Las 20 categorías DS no equivalen a 20 renderizadores completos.
 
