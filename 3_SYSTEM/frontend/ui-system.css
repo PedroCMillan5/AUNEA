@@ -2877,13 +2877,6 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
   overflow:visible;pointer-events:none;z-index:1}
 .pg12-native-map .process-graph-lines{z-index:0}
 .pg12-native-map .process-graph-cell{z-index:2}
-.pg12-native-map .pg12-route{fill:none;stroke-width:3;stroke-linecap:round;
-  stroke-linejoin:round;stroke-dasharray:8 5}
-.pg12-native-map .pg12-route-future{stroke:#bd813e}
-.pg12-native-map .pg12-route-shared{stroke:#648e76;stroke-dasharray:none}
-.pg12-native-map .pg12-route-no{stroke-dasharray:5 4}
-.pg12-native-map .pg12-route-label{font-size:11px;font-weight:800;fill:var(--amber);
-  paint-order:stroke;stroke:var(--canvas);stroke-width:5px}
 .pg12-native-map [data-pg12-mode="actual"] .pg12-future-lines{display:none}
 .pg12-native-map [data-pg12-mode="actual"] .process-graph-cell[data-pg12-state]:after,
 .pg12-native-map [data-pg12-mode="actual"] .process-graph-cell[data-pg12-signals]:before{display:none}
