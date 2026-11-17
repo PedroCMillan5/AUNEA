@@ -23,13 +23,18 @@ const read=(p)=>fs.readFileSync(path.join(frontend,p),'utf8');
 test('master UI/UX registry covers all 40 explicitly inventoried families',()=>{
   assert.equal(registry.families.length,40);
   assert.equal(new Set(registry.families.map(x=>x.id)).size,40);
-  assert.equal(registry.version,'0.3.0');
+  assert.equal(registry.version,'0.5.0');
   assert.equal(registry.l1.status,'CLOSED_TECHNICAL_REVIEW');
   assert.equal(registry.l2.status,'CLOSED_TECHNICAL_REVIEW');
   assert.equal(registry.l3.status,'CLOSED_TECHNICAL_REVIEW');
+  assert.equal(registry.l4.status,'CLOSED_TECHNICAL_REVIEW');
+  assert.equal(registry.l5.status,'CLOSED_TECHNICAL_REVIEW');
+  assert.equal(registry.policies.colorQuota,'none-approved');
+  assert.ok(registry.l4.constraints.some(x=>x.includes('WCAG')));
+  assert.ok(registry.l5.limits.some(x=>x.includes('F6')));
   for(const id of ['table','search-filter','kpi'])
     assert.equal(registry.families.find(f=>f.id===id)?.owner,'ui/renderer.js');
-  assert.match(contract,/\*\*Versión:\*\* v0\.3/);
+  assert.match(contract,/\*\*Versión:\*\* v0\.5/);
   assert.equal(registry.status,'REVIEW');
   assert.match(contract,/NO|no.*PRODUCTION|no.*producción/i);
 });
@@ -90,5 +95,16 @@ test('contract explicitly distinguishes specification from implementation and ac
     assert.ok(contract.includes(key),'Missing contract chapter '+key);
   assert.ok(registry.families.some(f=>f.implementation==='review'),
     'REVIEW must not be claimed as fully migrated');
+});
+test('L4/L5 automated gates are scoped and do not replace F6',()=>{
+  const css=read('ui-system.css'),base=read('styles.css');
+  const browser=read('tests/ui-l4-l5-browser.cjs');
+  assert.match(css,/\[AUNEA-FE-UI-ACCESSIBILITY-L4-486\] START/);
+  assert.doesNotMatch(base,/AUNEA-FE-UI-ACCESSIBILITY-L4-486/);
+  assert.match(css,/prefers-reduced-motion:reduce/);
+  assert.match(browser,/L4_COMPUTED_COLOR_RESPONSIVE_BROWSER_PASS/);
+  assert.match(browser,/L5_CROSS_PAGE_TECHNICAL_BROWSER_PASS/);
+  assert.match(browser,/ownerSnapshotUnchanged:true/);
+  assert.match(contract,/F6.*(?:humana|pendiente)/i);
 });
 // [AUNEA-UAT-UI-UX-CONTRACT-474] END
