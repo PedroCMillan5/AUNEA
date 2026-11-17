@@ -2201,7 +2201,6 @@
         "tobe-ai-source-value",
         "tobe-ia-provenance",
         "tobe-muted",
-        "tobe-origin-fact-group",
         "tobe-origin-issue",
         "tobe-origin-issue-data",
         "tobe-origin-issue-head",
@@ -15957,11 +15956,9 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 3,
-      "runtimeConsumers": [
-        "pages/tobe-review.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "tobe-origin-header-status",
