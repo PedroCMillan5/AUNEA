@@ -120,7 +120,7 @@ jobs:
           BROWSER_STATUS: ${{ needs.browser_uat.result }}
         run: |
           mkdir -p docs/audit
-          python - <<'PY'
+          cat > "$RUNNER_TEMP/aunea_gate_writer.py" <<'PY'
           import datetime, json, os
           from pathlib import Path
           values = {k: os.environ[k] for k in ('BACKEND_STATUS', 'FRONTEND_STATUS', 'BROWSER_STATUS')}
@@ -138,6 +138,7 @@ jobs:
           Path('docs/audit/AUNEA_INTERNAL_ACCEPTANCE_GATE.json').write_text(
               json.dumps(data, indent=2) + '\n', encoding='utf-8')
           PY
+          python "$RUNNER_TEMP/aunea_gate_writer.py"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add docs/audit/AUNEA_INTERNAL_ACCEPTANCE_GATE.json
@@ -152,27 +153,11 @@ jobs:
               git pull --rebase -X theirs origin "${GITHUB_REF_NAME}"
               # A rebase can reconcile different audit runs field by field.
               # Rebuild the WHOLE document from this run's actual statuses after each rebase.
-              python - <<'PY'
-              import datetime, json, os
-              from pathlib import Path
-              p = Path('docs/audit/AUNEA_INTERNAL_ACCEPTANCE_GATE.json')
-              old = json.loads(p.read_text(encoding='utf-8'))
-              checks = {
-                  'backend_pytest': os.environ['BACKEND_STATUS'],
-                  'frontend_node': os.environ['FRONTEND_STATUS'],
-                  'chromium_ua': os.environ['BROWSER_STATUS'],
-              }
-              old.update({
-                  'source_head': os.environ['GITHUB_SHA'],
-                  'generated_at': datetime.datetime.now(datetime.timezone.utc).isoformat(),
-                  'checks': checks,
-                  'overall': 'PASS' if all(v == 'success' for v in checks.values()) else 'FAIL_OR_BLOCKED',
-              })
-              p.write_text(json.dumps(old, indent=2) + '\n', encoding='utf-8')
-              PY
+              # Same single source writer is re-run after a concurrent rebase.
+              python "$RUNNER_TEMP/aunea_gate_writer.py"
               git add docs/audit/AUNEA_INTERNAL_ACCEPTANCE_GATE.json
               if ! git diff --cached --quiet; then
-                git commit --amend --no-edit
+                git commit -m "docs(audit): refresh complete gate record after rebase [skip ci]"
               fi
             done
             echo "Could not publish the audit record without force-push"
