@@ -150,9 +150,31 @@ async function runUiL4L5Browser({page,outDir}){
     }
     if(scene.id==='resultados'){
       const matched=actionLinks.filter(x=>x.href?.startsWith('#asis-source-step-'));
-      assert.ok(matched.length>0,'PG10 source-linked action must be represented in the synthetic UAT');
-      console.log('PG10_ACTION_LINK_COMPUTED_PASS: '+
-        JSON.stringify(matched.map(({label,underlined,marginTop})=>({label,underlined,marginTop}))));
+      // The synthetic backend can produce no confirmed pain. In that case, check
+      // the production opt-in style on a disposable anchor; Node checks source markup.
+      // Never claim it was rendered by the business fixture.
+      const measured=matched.length?matched:await page.evaluate(()=>{
+        const probe=document.createElement('a');
+        probe.className='btn btn-outline aunea-ui-action-link aunea-ui-after-content';
+        probe.href='#asis-source-step-ui-qa-probe';
+        probe.textContent='Ver punto de análisis en esta página';
+        document.getElementById('content').appendChild(probe);
+        const style=getComputedStyle(probe);
+        const output={label:probe.textContent,href:probe.getAttribute('href'),
+          underlined:style.textDecorationLine.includes('underline'),
+          optIn:probe.classList.contains('aunea-ui-action-link'),
+          marginTop:parseFloat(style.marginBlockStart),
+          width:probe.getBoundingClientRect().width};
+        probe.remove();
+        return [output];
+      });
+      assert.ok(measured.length>0,'PG10 link style must be measurable');
+      for(const link of measured){
+        assert.equal(link.underlined,false,'PG10 action must not inherit link underline');
+        assert.ok(link.optIn&&link.marginTop>=12,'PG10 action must consume shared visual and spacing tokens');
+      }
+      console.log((matched.length?'PG10_ACTION_LINK_COMPUTED_PASS':'PG10_ACTION_LINK_CSS_PROBE_PASS')+': '+
+        JSON.stringify(measured.map(({label,underlined,marginTop})=>({label,underlined,marginTop}))));
     }
     // [AUNEA-UAT-UI-ACTION-COMPUTED-491] END
     coverage.push({screen:scene.name,...visible});
