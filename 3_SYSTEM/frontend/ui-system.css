@@ -2884,6 +2884,9 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 .pg12-native-map [data-pg12-mode="actual"] .process-graph-cell[data-pg12-state=changed] .graph-decision-gateway{
   box-shadow:none}
 .pg12-native-map [data-pg12-mode="actual"] .pg12-added-cell{display:none}
+.pg12-native-map [data-pg12-mode="actual"] .process-graph-cell[data-pg12-state=removed]>.graph-flow-step{
+  opacity:1;outline:none;text-decoration:none
+}
 /* Proposed mode draws native TO-BE routes into the one existing process SVG;
    comparison mode draws the same native renderer into a second route layer. */
 .pg12-native-map [data-pg12-mode="proposed"] .process-graph-lines .graph-path-main,
