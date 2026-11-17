@@ -79,7 +79,11 @@ function pg12OverlayNode(model,source,node,i,selected){
     warnings?'Avisos '+warnings:''
   ].filter(Boolean);
   const originalLabel=original?String(labelFrom('OS_ACTOR_ROLE',original.actor)||original.actor||'Sin responsable'):
-    'Sin actividad AS-IS propia';
+    'Sin actividad AS-IS propia',
+    futureLabel=item&&!item.isAddition&&item.transformation!=='Se elimina'?
+      String(labelFrom('OS_ACTOR_ROLE',item.futureActor)||item.futureActor||'Sin responsable'):
+      item?.isAddition?String(labelFrom('OS_ACTOR_ROLE',item.futureActor)||item.futureActor||'Sin responsable'):
+      'Actividad retirada';
   const status=item?.isAddition?'Nueva en TO-BE':item?.transformation||'Sin decisión';
   return '<div class="pg12-overlay-cell" data-pg12-node="'+attr(id)+'" style="grid-row:'+
     model.positions.get(id).row+';grid-column:'+model.positions.get(id).col+'">'+
@@ -87,8 +91,10 @@ function pg12OverlayNode(model,source,node,i,selected){
       (id===selected?' pg12-node-selected':'')+'" data-pg12-source="'+attr(id)+'" aria-pressed="'+
       (id===selected?'true':'false')+'">'+
       '<span class="pg12-node-kicker">'+(item?.isAddition?'TO-BE · NUEVA':'AS-IS · ACTIVIDAD '+(model.asis.findIndex(s=>String(s.id)===id)+1))+'</span>'+
-      '<strong>'+esc(name)+'</strong>'+
-      '<span class="pg12-node-origin">'+esc(originalLabel)+'</span>'+
+      '<strong class="pg12-title-to-be">'+esc(name)+'</strong>'+
+      (original?'<strong class="pg12-title-as-is">'+esc(sourceName)+'</strong>':'')+
+      '<span class="pg12-node-origin">AS-IS · '+esc(originalLabel)+'</span>'+
+      '<span class="pg12-node-proposed">TO-BE · '+esc(futureLabel)+'</span>'+
       '<span class="pg12-node-change">'+esc(status)+'</span>'+
       (original&&sourceName!==name?'<small class="pg12-node-previous">Antes: '+esc(sourceName)+'</small>':'')+
       (markers.length?'<span class="pg12-node-signals">'+markers.map(t=>
