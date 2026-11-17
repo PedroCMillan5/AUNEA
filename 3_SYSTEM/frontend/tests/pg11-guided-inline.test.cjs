@@ -53,7 +53,7 @@ function fixture(){
   internalAiReadableRefs:()=> 'Recepción de factura · Fricción identificada',
   latestTobe:()=>p,esc:x=>String(x),attr:x=>String(x)};
  vm.createContext(context);
- vm.runInContext(diffBlock+'\n'+inlineBlock,context);
+ vm.runInContext(uiModes+'\n'+diffBlock+'\n'+inlineBlock,context);
  return {e,p,proposal,context,setDecision:v=>{decision=v}};
 }
 test('IA suggestions are visible for a single field decision in 03.3',()=>{
