@@ -39,7 +39,24 @@ function harness(){
       S3:{normal:'S4'},S4:{normal:'__END__'}
     },addedSteps:[]}};
   const engagement={id:'E1',confirmedSnapshots:[source]};
+  const nativeCalls=[];
+  const nativeMap=(e,steps,fr,start,finish,tab,readonly)=>{
+    nativeCalls.push({steps:steps.map(x=>x.id),readonly,tab,start,finish,frictions:fr.length});
+    const layout=graph(e,steps),cells=layout.nodes.map(n=>{
+      const pos=layout.positions.get(n.id);
+      return '<div class="process-graph-cell" style="grid-row:'+pos.row+
+        ';grid-column:'+pos.col+'" data-graph-node="'+n.id+'">'+
+        '<div class="graph-flow-step">NATIVE '+n.id+'</div></div>';
+    }).join('');
+    return '<div class="flow-canvas client-process-canvas process-graph-canvas process-graph-readonly">'+
+      '<div class="process-graph-board" style="--graph-cols:'+layout.cols+
+      ';--graph-rows:'+layout.rows+';--graph-card-height:286px"'+
+      ' data-graph-edges="[]" data-graph-branches="[]">'+
+      '<svg class="process-graph-lines"></svg>'+cells+'</div></div>';
+  };
   const context={
+    processGraphHtml:nativeMap,graphNodeCard:(_e,step)=>'<div class="graph-flow-step">NATIVE '+step.id+'</div>',
+    drawProcessGraph:()=>{},
     processGraphData:graph,processRefIncludes:(vals,id)=>Array.isArray(vals)&&vals.map(String).includes(String(id)),
     currentEng:()=>engagement,confirmedSnapshot:()=>source,latestTobe:()=>proposal,
     tobeProposalSnapshot:()=>source,
@@ -73,13 +90,18 @@ function harness(){
     state:{activePage:'comparacion'}
   };
   const api=vm.runInNewContext(code+
-    ';({pg12OverlayModel,pg12OverlayHtml,pg12OriginalSignals,tobeComparisonPage})',context);
-  return {api,proposal,engagement};
+    ';({pg12OverlayModel,pg12OverlayHtml,pg12ComparisonCounters,pg12OriginalSignals,tobeComparisonPage})',context);
+  return {api,proposal,engagement,nativeCalls};
 }
 test('PG12 renders exactly one map with three layer modes and no split view',()=>{
-  const {api}=harness(),html=api.tobeComparisonPage();
-  assert.equal((html.match(/class="pg12-overlay-board"/g)||[]).length,1);
-  assert.equal((html.match(/<svg class="pg12-overlay-lines"/g)||[]).length,1);
+  const {api,nativeCalls}=harness(),html=api.tobeComparisonPage();
+  assert.equal((html.match(/class="process-graph-board"/g)||[]).length,1);
+  assert.equal((html.match(/<svg class="process-graph-lines"/g)||[]).length,1);
+  assert.equal((html.match(/<svg class="pg12-future-lines"/g)||[]).length,1);
+  assert.equal(nativeCalls.length,1,'the actual AS-IS renderer must be called exactly once');
+  assert.deepEqual(nativeCalls[0].steps,['S1','S2','S3','S4']);
+  assert.equal(nativeCalls[0].readonly,true);
+  assert.match(html,/NATIVE S1/);
   assert.doesNotMatch(html,/pg12-side-by-side|pg12-process-comparison/);
   assert.match(html,/data-pg12-view="actual"/);
   assert.match(html,/data-pg12-view="proposed"/);
@@ -100,7 +122,7 @@ test('PG12 keeps an eliminated original visible without treating it as a future 
   const model=api.pg12OverlayModel(engagement,proposal,source);
   assert.ok(model.nodes.some(n=>n.id==='S3'));
   assert.ok(!model.futureEdges.some(e=>e.to==='S3'));
-  assert.match(api.pg12OverlayHtml(engagement,proposal,source,'S3'),/pg12-node-removed/);
+  assert.match(api.pg12OverlayHtml(engagement,proposal,source,'S3'),/data-pg12-state="removed"/);
 });
 test('PG12 shows a new future activity in the same map without altering original edges',()=>{
   const {api,engagement,proposal}=harness();
@@ -112,24 +134,41 @@ test('PG12 shows a new future activity in the same map without altering original
   assert.ok(model.nodes.some(n=>n.id==='N1'));
   assert.ok(model.futureEdges.some(e=>e.to==='N1'));
   assert.ok(!model.originalEdges.some(e=>e.to==='N1'));
-  assert.match(api.pg12OverlayHtml(engagement,proposal,source,'N1'),/pg12-node-added/);
+  assert.match(api.pg12OverlayHtml(engagement,proposal,source,'N1'),/data-pg12-state="added"/);
 });
 test('PG12 locates declared wait, rework, friction and risk without forecasting savings',()=>{
   const {api,engagement,proposal}=harness(),
     html=api.pg12OverlayHtml(engagement,proposal,source,'S3'),
     page=api.tobeComparisonPage();
-  assert.match(html,/Espera AS-IS 720 min/);
-  assert.match(html,/Retrabajo AS-IS 5 min/);
-  assert.match(html,/Fricciones 1/);
-  assert.match(html,/Riesgos 1/);
-  assert.match(html,/Avisos 1/);
+  assert.match(html,/Espera 720 min/);
+  assert.match(html,/Retrabajo 5 min/);
+  assert.match(html,/1 avisos/);
+  assert.match(html,/Comprobar contadores y procedencia/);
+  assert.match(html,/Fricciones AS-IS: 1/);
+  assert.match(html,/Riesgos AS-IS: 1/);
   assert.match(page,/No disponible con evidencia suficiente/);
   assert.doesNotMatch(code,/saveState\(|markDirty\(/);
 });
 test('PG12 blocks comparison until human review',()=>{
   const {api,proposal}=harness();
   proposal.status='DRAFT';
-  assert.doesNotMatch(api.tobeComparisonPage(),/class="pg12-overlay-board"/);
+  assert.doesNotMatch(api.tobeComparisonPage(),/class="process-graph-board"/);
   assert.match(api.tobeComparisonPage(),/Esperando revisión/);
 });
+test('PG12 counters are exclusive and respond to real transformation/added-step changes',()=>{
+  const {api,proposal,engagement}=harness();
+  const counts=()=>api.pg12ComparisonCounters(api.pg12OverlayModel(engagement,proposal,source));
+  let c=counts();
+  assert.deepEqual([c.unchanged,c.changed,c.added,c.removed,c.warnings,c.blocking],
+    [0,4,0,0,1,0]);
+  proposal.items[0].transformation='Se mantiene';
+  proposal.items[1].transformation='Se elimina';
+  proposal.flow.addedSteps.push({id:'N1',isAddition:true,stepName:'Control',
+    sourceStepId:'S1',transformation:'Se incorpora control'});
+  c=counts();
+  assert.deepEqual([c.unchanged,c.changed,c.added,c.removed,c.warnings],
+    [1,2,1,1,1]);
+  assert.equal(c.unchanged+c.changed+c.added+c.removed,5);
+});
+
 // [AUNEA-UAT-PG12-OVERLAY-472] END
