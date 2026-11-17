@@ -26,8 +26,8 @@ function tobeOriginalStepFacts(e,item){
     '<div><dt>'+esc(name)+'</dt><dd>'+esc(val||'No registrado')+'</dd></div>').join('')+'</dl>';
   return '<div class="tobe-original-facts">'+
     '<p class="tobe-origin-provenance">Sólo lectura: valores capturados del AS-IS confirmado. No son ahorros ni tiempos futuros.</p>'+
-    '<div class="tobe-origin-fact-group"><h4>Actividad actual</h4>'+cards(fields.slice(0,5))+'</div>'+
-    '<div class="tobe-origin-fact-group"><h4>Duraciones declaradas</h4>'+cards(fields.slice(5))+'</div>'+
+    auneaUiStructureStart('group',{className:'tobe-origin-fact-group'})+'<h4>Actividad actual</h4>'+cards(fields.slice(0,5))+auneaUiStructureEnd('group')+
+    auneaUiStructureStart('group',{className:'tobe-origin-fact-group'})+'<h4>Duraciones declaradas</h4>'+cards(fields.slice(5))+auneaUiStructureEnd('group')+
     '</div>';
 }
 function tobeSnapshotIssueCards(e,item){
