@@ -111,6 +111,10 @@ test('PG12 renders exactly one map with three layer modes and no split view',()=
   assert.match(html,/data-pg12-view="proposed"/);
   assert.match(html,/data-pg12-view="comparison"/);
   assert.match(html,/aunea-ui-work-surface/);
+  assert.equal((html.match(/data-aunea-ui-level="section"/g)||[]).length,3);
+  assert.equal((html.match(/data-aunea-ui-level="subsection"/g)||[]).length,1);
+  assert.match(html,/data-aunea-ui-level="block"/);
+  assert.equal((html.match(/data-aunea-ui-level="datum"/g)||[]).length,6);
   assert.doesNotMatch(html,/data-tobe-select/);
 });
 test('PG12 retains original SÍ/NO routes and the read-only future route layer',()=>{
