@@ -2254,7 +2254,7 @@
       "path": "pages/comparison.js",
       "layer": "pages",
       "blockId": "AUNEA-FE-PG12-TOBE-GRAPH-234",
-      "lines": 362,
+      "lines": 370,
       "family": [
         "Comparación / posterior"
       ],
@@ -2270,6 +2270,7 @@
         "confirmed",
         "data-table",
         "notice",
+        "on",
         "pg12-before-after",
         "pg12-changes-disclosure",
         "pg12-detail-alerts",
@@ -8649,6 +8650,7 @@
         "domain/tobe-transactions.js",
         "pages/tobe.js",
         "pages/tobe-flow.js",
+        "pages/comparison.js",
         "pages/session-display.js",
         "domain/process.js",
         "ui/shell.js",
@@ -20336,6 +20338,7 @@
           "domain/tobe-transactions.js",
           "pages/tobe.js",
           "pages/tobe-flow.js",
+          "pages/comparison.js",
           "pages/session-display.js",
           "domain/process.js",
           "ui/shell.js",
