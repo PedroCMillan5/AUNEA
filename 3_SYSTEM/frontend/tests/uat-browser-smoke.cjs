@@ -1597,6 +1597,31 @@ async function main(){
   await page.locator('[data-pg12-source="'+addition.id+'"]').first().click();
   assert.match(await page.locator('#pg12SelectedDetail').innerText(),/Control adicional UAT/);
   await page.screenshot({path:path.join(outDir,'pg12-actual-proposed-comparison.png'),fullPage:true});
+
+  // L3 — read-only table search / diagram semantics: no new ProcessStep or TO-BE mutations.
+  assert.equal(await page.locator('.pg12-native-map[data-aunea-ui-region="diagram"]').count(),1);
+  assert.equal(await page.locator('#pg12ChangesTable').count(),1);
+  await page.locator('.pg12-changes-disclosure > summary').click();
+  assert.equal(await page.locator('#pg12ChangesTable tbody tr').count(),tobeSteps+1);
+  const beforeLocalSearch=await page.evaluate(()=>{
+    const e=currentEng(),p=latestTobe(e);
+    return JSON.stringify({asis:confirmedSnapshot(e).processSteps,items:p.items,added:p.flow?.addedSteps});
+  });
+  await page.locator('#pg12ChangesTableSearch').fill('Control adicional UAT');
+  assert.equal(await page.locator('#pg12ChangesTable tbody tr:visible').count(),1,
+    'Local search limits rendered rows only');
+  await page.locator('#pg12ChangesTableSearch').fill('no existe ninguna actividad con ese nombre');
+  assert.equal(await page.locator('#pg12ChangesTable tbody tr:visible').count(),0);
+  assert.equal(await page.locator('[data-aunea-table-empty="pg12ChangesTable"]:visible').count(),1);
+  await page.locator('#pg12ChangesTableSearch').fill('');
+  assert.equal(await page.locator('#pg12ChangesTable tbody tr:visible').count(),tobeSteps+1,
+    'Clearing local search restores the original source order');
+  assert.equal(await page.evaluate(()=>{
+    const e=currentEng(),p=latestTobe(e);
+    return JSON.stringify({asis:confirmedSnapshot(e).processSteps,items:p.items,added:p.flow?.addedSteps});
+  }),beforeLocalSearch,'Local table search must not rewrite AS-IS, TO-BE or ProcessStep');
+  console.log('L3_DATA_PRESENTATION_BROWSER_PASS: one source map, local reversible search, zero owner mutations');
+
   console.log('PG11_PG12_SOURCE_LINKED_BROWSER_PASS: routes and versioned comparison');
   // L2: exercise the opt-in modal on the live browser without creating a business record.
   await page.evaluate(()=>{
