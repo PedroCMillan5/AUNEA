@@ -9,12 +9,14 @@ const process=fs.readFileSync(path.join(root,'domain/process.js'),'utf8');
 // Load the real shared semantic owner in the isolated PG12 runtime harness.
 const semanticCore=fs.readFileSync(path.join(root,'core/state.js'),'utf8');
 const semanticBlock=semanticCore.match(/\/\/ \[AUNEA-FE-UI-SEMANTIC-475\] START[\s\S]*?\/\/ \[AUNEA-FE-UI-SEMANTIC-475\] END/)?.[0];
+const regionBlock=semanticCore.match(/\/\/ \[AUNEA-FE-UI-REGION-L3-482\] START[\s\S]*?\/\/ \[AUNEA-FE-UI-REGION-L3-482\] END/)?.[0];
 assert.ok(semanticBlock,'PG12 requires the canonical semantic structure owner');
 const uiRenderer=fs.readFileSync(path.join(root,'ui/renderer.js'),'utf8');
 const sharedBlock=id=>uiRenderer.match(new RegExp('// \\['+id+'\\] START[\\s\\S]*?// \\['+id+'\\] END'))?.[0];
 const modeBlock=sharedBlock('AUNEA-FE-UI-CHOICES-L2-478');
 const disclosureBlock=sharedBlock('AUNEA-FE-GLOBAL-DISCLOSURE-450');
-assert.ok(modeBlock&&disclosureBlock,'PG12 requires real shared button/disclosure owners');
+const dataBlock=sharedBlock('AUNEA-FE-UI-DATA-L3-481');
+assert.ok(modeBlock&&disclosureBlock&&dataBlock&&regionBlock,'PG12 requires actual shared UI owners');
 const decision=s=>!!(s&&String(s.step_type)==='ST04');
 const graphFrom=process.indexOf('function processGraphData(e,steps){'),
   graphTo=process.indexOf('function processNodeIconName(',graphFrom);
@@ -98,7 +100,7 @@ function harness(){
     auneaEmptyState:()=>'<p>Esperando revisión</p>',
     state:{activePage:'comparacion'}
   };
-  const api=vm.runInNewContext(semanticBlock+'\n'+disclosureBlock+'\n'+modeBlock+'\n'+code+
+  const api=vm.runInNewContext(semanticBlock+'\n'+regionBlock+'\n'+disclosureBlock+'\n'+modeBlock+'\n'+dataBlock+'\n'+code+
     ';({pg12OverlayModel,pg12OverlayHtml,pg12ComparisonCounters,pg12OriginalSignals,tobeComparisonPage})',context);
   return {api,proposal,engagement,nativeCalls};
 }
