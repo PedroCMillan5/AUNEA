@@ -8,8 +8,8 @@
   ],
   "metrics": {
     "modules": 50,
-    "cssClasses": 1097,
-    "classesCrossFile": 107,
+    "cssClasses": 1133,
+    "classesCrossFile": 108,
     "repeatedSelectorContextGroups": 138,
     "documentedComponents": 20,
     "inlineStyleAttributes": 33
@@ -340,7 +340,8 @@
         {
           "name": "aunea-ui-work-surface",
           "owners": [
-            "styles.css"
+            "styles.css",
+            "ui-system.css"
           ],
           "consumers": [
             "pages/tobe.js",
@@ -2269,9 +2270,38 @@
         "confirmed",
         "data-table",
         "notice",
+        "pg12-before-after",
+        "pg12-boundary-card",
+        "pg12-changes-disclosure",
+        "pg12-detail-alerts",
+        "pg12-detail-text",
+        "pg12-diff-stats",
         "pg12-difference-detail",
+        "pg12-evidence-grid",
+        "pg12-key-add",
+        "pg12-key-change",
+        "pg12-key-original",
+        "pg12-key-remove",
+        "pg12-key-routing",
+        "pg12-metric",
+        "pg12-metrics",
+        "pg12-node-change",
+        "pg12-node-kicker",
+        "pg12-node-origin",
+        "pg12-node-previous",
+        "pg12-node-signals",
+        "pg12-overlay-board",
+        "pg12-overlay-cell",
+        "pg12-overlay-legend",
+        "pg12-overlay-lines",
+        "pg12-overlay-node",
+        "pg12-overlay-viewport",
+        "pg12-pending",
+        "pg12-secondary",
         "pg12-selected-detail",
         "pg12-view-selector",
+        "pg12-work-head",
+        "pg12-workspace",
         "required",
         "selected",
         "table-wrap",
@@ -2669,7 +2699,6 @@
         "pg05-step-number",
         "pg05-step-tools",
         "pg05-step-top",
-        "pg12-map",
         "process-applies-control",
         "process-applies-detail",
         "process-graph-board",
@@ -4364,7 +4393,7 @@
         "styles.css",
         "ui-system.css"
       ],
-      "ruleOccurrences": 3,
+      "ruleOccurrences": 4,
       "runtimeConsumers": [
         "pages/tobe.js",
         "pages/comparison.js"
@@ -4411,16 +4440,17 @@
     {
       "className": "aunea-ui-work-surface",
       "ownerFiles": [
-        "styles.css"
+        "styles.css",
+        "ui-system.css"
       ],
-      "ruleOccurrences": 1,
+      "ruleOccurrences": 3,
       "runtimeConsumers": [
         "pages/tobe.js",
         "pages/comparison.js",
         "pages/tobe-global.js"
       ],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "CROSS_FILE_OWNER_REVIEW"
     },
     {
       "className": "avatar",
@@ -7106,7 +7136,7 @@
         "styles.css",
         "ui-system.css"
       ],
-      "ruleOccurrences": 4,
+      "ruleOccurrences": 3,
       "runtimeConsumers": [
         "pages/tobe.js",
         "pages/session-display.js",
@@ -11203,6 +11233,88 @@
       "classification": "REFERENCED"
     },
     {
+      "className": "pg12-alert-block",
+      "ownerFiles": [
+        "ui-system.css"
+      ],
+      "ruleOccurrences": 1,
+      "runtimeConsumers": [],
+      "frozenRisk": false,
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
+    },
+    {
+      "className": "pg12-before-after",
+      "ownerFiles": [
+        "ui-system.css"
+      ],
+      "ruleOccurrences": 5,
+      "runtimeConsumers": [
+        "pages/comparison.js"
+      ],
+      "frozenRisk": false,
+      "classification": "REFERENCED"
+    },
+    {
+      "className": "pg12-boundary-card",
+      "ownerFiles": [
+        "ui-system.css"
+      ],
+      "ruleOccurrences": 1,
+      "runtimeConsumers": [
+        "pages/comparison.js"
+      ],
+      "frozenRisk": false,
+      "classification": "REFERENCED"
+    },
+    {
+      "className": "pg12-changes-disclosure",
+      "ownerFiles": [
+        "ui-system.css"
+      ],
+      "ruleOccurrences": 4,
+      "runtimeConsumers": [
+        "pages/comparison.js"
+      ],
+      "frozenRisk": false,
+      "classification": "REFERENCED"
+    },
+    {
+      "className": "pg12-detail-alerts",
+      "ownerFiles": [
+        "ui-system.css"
+      ],
+      "ruleOccurrences": 4,
+      "runtimeConsumers": [
+        "pages/comparison.js"
+      ],
+      "frozenRisk": false,
+      "classification": "REFERENCED"
+    },
+    {
+      "className": "pg12-detail-text",
+      "ownerFiles": [
+        "ui-system.css"
+      ],
+      "ruleOccurrences": 1,
+      "runtimeConsumers": [
+        "pages/comparison.js"
+      ],
+      "frozenRisk": false,
+      "classification": "REFERENCED"
+    },
+    {
+      "className": "pg12-diff-stats",
+      "ownerFiles": [
+        "ui-system.css"
+      ],
+      "ruleOccurrences": 6,
+      "runtimeConsumers": [
+        "pages/comparison.js"
+      ],
+      "frozenRisk": false,
+      "classification": "REFERENCED"
+    },
+    {
       "className": "pg12-difference-detail",
       "ownerFiles": [
         "ui-system.css"
@@ -11215,23 +11327,175 @@
       "classification": "REFERENCED"
     },
     {
-      "className": "pg12-map",
+      "className": "pg12-evidence-grid",
       "ownerFiles": [
         "ui-system.css"
       ],
-      "ruleOccurrences": 8,
+      "ruleOccurrences": 9,
       "runtimeConsumers": [
-        "domain/process.js"
+        "pages/comparison.js"
       ],
-      "frozenRisk": true,
+      "frozenRisk": false,
       "classification": "REFERENCED"
     },
     {
-      "className": "pg12-map-viewport",
+      "className": "pg12-key-add",
+      "ownerFiles": [
+        "ui-system.css"
+      ],
+      "ruleOccurrences": 1,
+      "runtimeConsumers": [
+        "pages/comparison.js"
+      ],
+      "frozenRisk": false,
+      "classification": "REFERENCED"
+    },
+    {
+      "className": "pg12-key-change",
+      "ownerFiles": [
+        "ui-system.css"
+      ],
+      "ruleOccurrences": 1,
+      "runtimeConsumers": [
+        "pages/comparison.js"
+      ],
+      "frozenRisk": false,
+      "classification": "REFERENCED"
+    },
+    {
+      "className": "pg12-key-original",
+      "ownerFiles": [
+        "ui-system.css"
+      ],
+      "ruleOccurrences": 1,
+      "runtimeConsumers": [
+        "pages/comparison.js"
+      ],
+      "frozenRisk": false,
+      "classification": "REFERENCED"
+    },
+    {
+      "className": "pg12-key-remove",
+      "ownerFiles": [
+        "ui-system.css"
+      ],
+      "ruleOccurrences": 1,
+      "runtimeConsumers": [
+        "pages/comparison.js"
+      ],
+      "frozenRisk": false,
+      "classification": "REFERENCED"
+    },
+    {
+      "className": "pg12-key-routing",
+      "ownerFiles": [
+        "ui-system.css"
+      ],
+      "ruleOccurrences": 1,
+      "runtimeConsumers": [
+        "pages/comparison.js"
+      ],
+      "frozenRisk": false,
+      "classification": "REFERENCED"
+    },
+    {
+      "className": "pg12-metric",
+      "ownerFiles": [
+        "ui-system.css"
+      ],
+      "ruleOccurrences": 4,
+      "runtimeConsumers": [
+        "pages/comparison.js"
+      ],
+      "frozenRisk": false,
+      "classification": "REFERENCED"
+    },
+    {
+      "className": "pg12-metrics",
+      "ownerFiles": [
+        "ui-system.css"
+      ],
+      "ruleOccurrences": 3,
+      "runtimeConsumers": [
+        "pages/comparison.js"
+      ],
+      "frozenRisk": false,
+      "classification": "REFERENCED"
+    },
+    {
+      "className": "pg12-node-added",
+      "ownerFiles": [
+        "ui-system.css"
+      ],
+      "ruleOccurrences": 4,
+      "runtimeConsumers": [],
+      "frozenRisk": false,
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
+    },
+    {
+      "className": "pg12-node-change",
+      "ownerFiles": [
+        "ui-system.css"
+      ],
+      "ruleOccurrences": 5,
+      "runtimeConsumers": [
+        "pages/comparison.js"
+      ],
+      "frozenRisk": false,
+      "classification": "REFERENCED"
+    },
+    {
+      "className": "pg12-node-changed",
       "ownerFiles": [
         "ui-system.css"
       ],
       "ruleOccurrences": 2,
+      "runtimeConsumers": [],
+      "frozenRisk": false,
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
+    },
+    {
+      "className": "pg12-node-kicker",
+      "ownerFiles": [
+        "ui-system.css"
+      ],
+      "ruleOccurrences": 1,
+      "runtimeConsumers": [
+        "pages/comparison.js"
+      ],
+      "frozenRisk": false,
+      "classification": "REFERENCED"
+    },
+    {
+      "className": "pg12-node-origin",
+      "ownerFiles": [
+        "ui-system.css"
+      ],
+      "ruleOccurrences": 1,
+      "runtimeConsumers": [
+        "pages/comparison.js"
+      ],
+      "frozenRisk": false,
+      "classification": "REFERENCED"
+    },
+    {
+      "className": "pg12-node-previous",
+      "ownerFiles": [
+        "ui-system.css"
+      ],
+      "ruleOccurrences": 1,
+      "runtimeConsumers": [
+        "pages/comparison.js"
+      ],
+      "frozenRisk": false,
+      "classification": "REFERENCED"
+    },
+    {
+      "className": "pg12-node-removed",
+      "ownerFiles": [
+        "ui-system.css"
+      ],
+      "ruleOccurrences": 4,
       "runtimeConsumers": [],
       "frozenRisk": false,
       "classification": "REVIEW_DYNAMIC_OR_HTML"
@@ -11247,14 +11511,182 @@
       "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
-      "className": "pg12-process-comparison",
+      "className": "pg12-node-signals",
+      "ownerFiles": [
+        "ui-system.css"
+      ],
+      "ruleOccurrences": 2,
+      "runtimeConsumers": [
+        "pages/comparison.js"
+      ],
+      "frozenRisk": false,
+      "classification": "REFERENCED"
+    },
+    {
+      "className": "pg12-node-unchanged",
+      "ownerFiles": [
+        "ui-system.css"
+      ],
+      "ruleOccurrences": 1,
+      "runtimeConsumers": [],
+      "frozenRisk": false,
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
+    },
+    {
+      "className": "pg12-overlay-board",
+      "ownerFiles": [
+        "ui-system.css"
+      ],
+      "ruleOccurrences": 6,
+      "runtimeConsumers": [
+        "pages/comparison.js"
+      ],
+      "frozenRisk": false,
+      "classification": "REFERENCED"
+    },
+    {
+      "className": "pg12-overlay-cell",
+      "ownerFiles": [
+        "ui-system.css"
+      ],
+      "ruleOccurrences": 1,
+      "runtimeConsumers": [
+        "pages/comparison.js"
+      ],
+      "frozenRisk": false,
+      "classification": "REFERENCED"
+    },
+    {
+      "className": "pg12-overlay-legend",
       "ownerFiles": [
         "ui-system.css"
       ],
       "ruleOccurrences": 3,
+      "runtimeConsumers": [
+        "pages/comparison.js"
+      ],
+      "frozenRisk": false,
+      "classification": "REFERENCED"
+    },
+    {
+      "className": "pg12-overlay-lines",
+      "ownerFiles": [
+        "ui-system.css"
+      ],
+      "ruleOccurrences": 1,
+      "runtimeConsumers": [
+        "pages/comparison.js"
+      ],
+      "frozenRisk": false,
+      "classification": "REFERENCED"
+    },
+    {
+      "className": "pg12-overlay-node",
+      "ownerFiles": [
+        "ui-system.css"
+      ],
+      "ruleOccurrences": 6,
+      "runtimeConsumers": [
+        "pages/comparison.js"
+      ],
+      "frozenRisk": false,
+      "classification": "REFERENCED"
+    },
+    {
+      "className": "pg12-overlay-viewport",
+      "ownerFiles": [
+        "ui-system.css"
+      ],
+      "ruleOccurrences": 1,
+      "runtimeConsumers": [
+        "pages/comparison.js"
+      ],
+      "frozenRisk": false,
+      "classification": "REFERENCED"
+    },
+    {
+      "className": "pg12-pending",
+      "ownerFiles": [
+        "ui-system.css"
+      ],
+      "ruleOccurrences": 2,
+      "runtimeConsumers": [
+        "pages/comparison.js"
+      ],
+      "frozenRisk": false,
+      "classification": "REFERENCED"
+    },
+    {
+      "className": "pg12-route",
+      "ownerFiles": [
+        "ui-system.css"
+      ],
+      "ruleOccurrences": 1,
       "runtimeConsumers": [],
       "frozenRisk": false,
       "classification": "REVIEW_DYNAMIC_OR_HTML"
+    },
+    {
+      "className": "pg12-route-future",
+      "ownerFiles": [
+        "ui-system.css"
+      ],
+      "ruleOccurrences": 1,
+      "runtimeConsumers": [],
+      "frozenRisk": false,
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
+    },
+    {
+      "className": "pg12-route-label",
+      "ownerFiles": [
+        "ui-system.css"
+      ],
+      "ruleOccurrences": 1,
+      "runtimeConsumers": [],
+      "frozenRisk": false,
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
+    },
+    {
+      "className": "pg12-route-no",
+      "ownerFiles": [
+        "ui-system.css"
+      ],
+      "ruleOccurrences": 1,
+      "runtimeConsumers": [],
+      "frozenRisk": false,
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
+    },
+    {
+      "className": "pg12-route-original",
+      "ownerFiles": [
+        "ui-system.css"
+      ],
+      "ruleOccurrences": 1,
+      "runtimeConsumers": [],
+      "frozenRisk": false,
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
+    },
+    {
+      "className": "pg12-route-shared",
+      "ownerFiles": [
+        "ui-system.css"
+      ],
+      "ruleOccurrences": 1,
+      "runtimeConsumers": [],
+      "frozenRisk": false,
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
+    },
+    {
+      "className": "pg12-secondary",
+      "ownerFiles": [
+        "ui-system.css"
+      ],
+      "ruleOccurrences": 1,
+      "runtimeConsumers": [
+        "pages/comparison.js"
+      ],
+      "frozenRisk": false,
+      "classification": "REFERENCED"
     },
     {
       "className": "pg12-selected-detail",
@@ -11269,17 +11701,31 @@
       "classification": "REFERENCED"
     },
     {
-      "className": "pg12-side-by-side",
+      "className": "pg12-view-selector",
       "ownerFiles": [
         "ui-system.css"
       ],
-      "ruleOccurrences": 2,
-      "runtimeConsumers": [],
+      "ruleOccurrences": 3,
+      "runtimeConsumers": [
+        "pages/comparison.js"
+      ],
       "frozenRisk": false,
-      "classification": "REVIEW_DYNAMIC_OR_HTML"
+      "classification": "REFERENCED"
     },
     {
-      "className": "pg12-view-selector",
+      "className": "pg12-work-head",
+      "ownerFiles": [
+        "ui-system.css"
+      ],
+      "ruleOccurrences": 3,
+      "runtimeConsumers": [
+        "pages/comparison.js"
+      ],
+      "frozenRisk": false,
+      "classification": "REFERENCED"
+    },
+    {
+      "className": "pg12-workspace",
       "ownerFiles": [
         "ui-system.css"
       ],
@@ -11483,7 +11929,7 @@
       "ownerFiles": [
         "ui-system.css"
       ],
-      "ruleOccurrences": 23,
+      "ruleOccurrences": 22,
       "runtimeConsumers": [
         "pages/tobe.js",
         "pages/session-display.js",
@@ -13304,7 +13750,7 @@
         "styles.css",
         "ui-system.css"
       ],
-      "ruleOccurrences": 6,
+      "ruleOccurrences": 7,
       "runtimeConsumers": [
         "pages/comparison.js",
         "pages/crm-companies.js",
@@ -13958,7 +14404,7 @@
       "ownerFiles": [
         "ui-system.css"
       ],
-      "ruleOccurrences": 3,
+      "ruleOccurrences": 2,
       "runtimeConsumers": [
         "pages/tobe.js"
       ],
@@ -15262,7 +15708,7 @@
       "ownerFiles": [
         "ui-system.css"
       ],
-      "ruleOccurrences": 3,
+      "ruleOccurrences": 2,
       "runtimeConsumers": [
         "pages/tobe.js"
       ],
@@ -17977,7 +18423,7 @@
         },
         {
           "owner": "ui-system.css",
-          "line": 3131
+          "line": 3219
         }
       ]
     },
@@ -17990,7 +18436,7 @@
         },
         {
           "owner": "ui-system.css",
-          "line": 3716
+          "line": 3804
         }
       ]
     },
@@ -18003,7 +18449,7 @@
         },
         {
           "owner": "ui-system.css",
-          "line": 2860
+          "line": 2948
         }
       ]
     },
@@ -18016,7 +18462,7 @@
         },
         {
           "owner": "ui-system.css",
-          "line": 2869
+          "line": 2957
         }
       ]
     },
@@ -18029,7 +18475,7 @@
         },
         {
           "owner": "ui-system.css",
-          "line": 3127
+          "line": 3215
         }
       ]
     },
@@ -18042,7 +18488,7 @@
         },
         {
           "owner": "ui-system.css",
-          "line": 3128
+          "line": 3216
         }
       ]
     },
@@ -18051,11 +18497,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3047
+          "line": 3135
         },
         {
           "owner": "ui-system.css",
-          "line": 3116
+          "line": 3204
         }
       ]
     },
@@ -18064,11 +18510,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3052
+          "line": 3140
         },
         {
           "owner": "ui-system.css",
-          "line": 3118
+          "line": 3206
         }
       ]
     },
@@ -18077,11 +18523,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3056
+          "line": 3144
         },
         {
           "owner": "ui-system.css",
-          "line": 3120
+          "line": 3208
         }
       ]
     },
@@ -18090,11 +18536,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3072
+          "line": 3160
         },
         {
           "owner": "ui-system.css",
-          "line": 3126
+          "line": 3214
         }
       ]
     },
@@ -18103,11 +18549,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3207
+          "line": 3295
         },
         {
           "owner": "ui-system.css",
-          "line": 3444
+          "line": 3532
         }
       ]
     },
@@ -18116,11 +18562,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3214
+          "line": 3302
         },
         {
           "owner": "ui-system.css",
-          "line": 3452
+          "line": 3540
         }
       ]
     },
@@ -18129,11 +18575,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3223
+          "line": 3311
         },
         {
           "owner": "ui-system.css",
-          "line": 3458
+          "line": 3546
         }
       ]
     },
@@ -18142,11 +18588,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3224
+          "line": 3312
         },
         {
           "owner": "ui-system.css",
-          "line": 3459
+          "line": 3547
         }
       ]
     },
@@ -18155,11 +18601,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3227
+          "line": 3315
         },
         {
           "owner": "ui-system.css",
-          "line": 3478
+          "line": 3566
         }
       ]
     },
@@ -18168,11 +18614,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3243
+          "line": 3331
         },
         {
           "owner": "ui-system.css",
-          "line": 3518
+          "line": 3606
         }
       ]
     },
@@ -18181,11 +18627,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3244
+          "line": 3332
         },
         {
           "owner": "ui-system.css",
-          "line": 3519
+          "line": 3607
         }
       ]
     },
@@ -18194,11 +18640,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3292
+          "line": 3380
         },
         {
           "owner": "ui-system.css",
-          "line": 4805
+          "line": 4893
         }
       ]
     },
@@ -18207,11 +18653,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3317
+          "line": 3405
         },
         {
           "owner": "ui-system.css",
-          "line": 4816
+          "line": 4904
         }
       ]
     },
@@ -18220,11 +18666,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3318
+          "line": 3406
         },
         {
           "owner": "ui-system.css",
-          "line": 4817
+          "line": 4905
         }
       ]
     },
@@ -18233,11 +18679,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3352
+          "line": 3440
         },
         {
           "owner": "ui-system.css",
-          "line": 3390
+          "line": 3478
         }
       ]
     },
@@ -18246,11 +18692,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3525
+          "line": 3613
         },
         {
           "owner": "ui-system.css",
-          "line": 3688
+          "line": 3776
         }
       ]
     },
@@ -18259,11 +18705,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3528
+          "line": 3616
         },
         {
           "owner": "ui-system.css",
-          "line": 3658
+          "line": 3746
         }
       ]
     },
@@ -18272,11 +18718,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3612
+          "line": 3700
         },
         {
           "owner": "ui-system.css",
-          "line": 3651
+          "line": 3739
         }
       ]
     },
@@ -18285,11 +18731,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3639
+          "line": 3727
         },
         {
           "owner": "ui-system.css",
-          "line": 3835
+          "line": 3923
         }
       ]
     },
@@ -18298,11 +18744,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3662
+          "line": 3750
         },
         {
           "owner": "ui-system.css",
-          "line": 3738
+          "line": 3826
         }
       ]
     },
@@ -18311,11 +18757,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3741
+          "line": 3829
         },
         {
           "owner": "ui-system.css",
-          "line": 3879
+          "line": 3967
         }
       ]
     },
@@ -18324,11 +18770,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3754
+          "line": 3842
         },
         {
           "owner": "ui-system.css",
-          "line": 3893
+          "line": 3981
         }
       ]
     },
@@ -18337,11 +18783,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3926
+          "line": 4014
         },
         {
           "owner": "ui-system.css",
-          "line": 4466
+          "line": 4554
         }
       ]
     },
@@ -18350,11 +18796,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 4190
+          "line": 4278
         },
         {
           "owner": "ui-system.css",
-          "line": 4211
+          "line": 4299
         }
       ]
     }
@@ -18481,6 +18927,24 @@
         ],
         "status": "SCOPED_EXCEPTION",
         "reason": "styles.css owns typography; PG11 owns only local caption placement",
+        "baseOwner": "styles.css",
+        "exceptionOwner": "ui-system.css",
+        "browserVerified": false,
+        "manualVisualReviewRequired": true
+      },
+      {
+        "className": "aunea-ui-work-surface",
+        "ownerFiles": [
+          "styles.css",
+          "ui-system.css"
+        ],
+        "consumers": [
+          "pages/tobe.js",
+          "pages/comparison.js",
+          "pages/tobe-global.js"
+        ],
+        "status": "PENDING_BROWSER_QA",
+        "reason": "Additional runtime/browser inspection required; no speculative deletion",
         "baseOwner": "styles.css",
         "exceptionOwner": "ui-system.css",
         "browserVerified": false,
@@ -22817,7 +23281,7 @@
           },
           {
             "owner": "ui-system.css",
-            "line": 3131
+            "line": 3219
           }
         ],
         "cssClasses": [
@@ -22839,7 +23303,7 @@
           },
           {
             "owner": "ui-system.css",
-            "line": 3716
+            "line": 3804
           }
         ],
         "cssClasses": [
@@ -22860,7 +23324,7 @@
           },
           {
             "owner": "ui-system.css",
-            "line": 2860
+            "line": 2948
           }
         ],
         "cssClasses": [
@@ -22881,7 +23345,7 @@
           },
           {
             "owner": "ui-system.css",
-            "line": 2869
+            "line": 2957
           }
         ],
         "cssClasses": [
@@ -22902,7 +23366,7 @@
           },
           {
             "owner": "ui-system.css",
-            "line": 3127
+            "line": 3215
           }
         ],
         "cssClasses": [
@@ -22923,7 +23387,7 @@
           },
           {
             "owner": "ui-system.css",
-            "line": 3128
+            "line": 3216
           }
         ],
         "cssClasses": [
@@ -22941,11 +23405,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3047
+            "line": 3135
           },
           {
             "owner": "ui-system.css",
-            "line": 3116
+            "line": 3204
           }
         ],
         "cssClasses": [
@@ -22964,11 +23428,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3052
+            "line": 3140
           },
           {
             "owner": "ui-system.css",
-            "line": 3118
+            "line": 3206
           }
         ],
         "cssClasses": [
@@ -22987,11 +23451,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3056
+            "line": 3144
           },
           {
             "owner": "ui-system.css",
-            "line": 3120
+            "line": 3208
           }
         ],
         "cssClasses": [
@@ -23008,11 +23472,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3072
+            "line": 3160
           },
           {
             "owner": "ui-system.css",
-            "line": 3126
+            "line": 3214
           }
         ],
         "cssClasses": [
@@ -23030,11 +23494,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3207
+            "line": 3295
           },
           {
             "owner": "ui-system.css",
-            "line": 3444
+            "line": 3532
           }
         ],
         "cssClasses": [
@@ -23053,11 +23517,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3214
+            "line": 3302
           },
           {
             "owner": "ui-system.css",
-            "line": 3452
+            "line": 3540
           }
         ],
         "cssClasses": [
@@ -23074,11 +23538,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3223
+            "line": 3311
           },
           {
             "owner": "ui-system.css",
-            "line": 3458
+            "line": 3546
           }
         ],
         "cssClasses": [
@@ -23095,11 +23559,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3224
+            "line": 3312
           },
           {
             "owner": "ui-system.css",
-            "line": 3459
+            "line": 3547
           }
         ],
         "cssClasses": [
@@ -23117,11 +23581,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3227
+            "line": 3315
           },
           {
             "owner": "ui-system.css",
-            "line": 3478
+            "line": 3566
           }
         ],
         "cssClasses": [
@@ -23139,11 +23603,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3243
+            "line": 3331
           },
           {
             "owner": "ui-system.css",
-            "line": 3518
+            "line": 3606
           }
         ],
         "cssClasses": [
@@ -23161,11 +23625,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3244
+            "line": 3332
           },
           {
             "owner": "ui-system.css",
-            "line": 3519
+            "line": 3607
           }
         ],
         "cssClasses": [
@@ -23184,11 +23648,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3292
+            "line": 3380
           },
           {
             "owner": "ui-system.css",
-            "line": 4805
+            "line": 4893
           }
         ],
         "cssClasses": [
@@ -23205,11 +23669,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3317
+            "line": 3405
           },
           {
             "owner": "ui-system.css",
-            "line": 4816
+            "line": 4904
           }
         ],
         "cssClasses": [
@@ -23226,11 +23690,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3318
+            "line": 3406
           },
           {
             "owner": "ui-system.css",
-            "line": 4817
+            "line": 4905
           }
         ],
         "cssClasses": [
@@ -23247,11 +23711,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3352
+            "line": 3440
           },
           {
             "owner": "ui-system.css",
-            "line": 3390
+            "line": 3478
           }
         ],
         "cssClasses": [
@@ -23269,11 +23733,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3525
+            "line": 3613
           },
           {
             "owner": "ui-system.css",
-            "line": 3688
+            "line": 3776
           }
         ],
         "cssClasses": [
@@ -23291,11 +23755,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3528
+            "line": 3616
           },
           {
             "owner": "ui-system.css",
-            "line": 3658
+            "line": 3746
           }
         ],
         "cssClasses": [
@@ -23313,11 +23777,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3612
+            "line": 3700
           },
           {
             "owner": "ui-system.css",
-            "line": 3651
+            "line": 3739
           }
         ],
         "cssClasses": [
@@ -23336,11 +23800,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3639
+            "line": 3727
           },
           {
             "owner": "ui-system.css",
-            "line": 3835
+            "line": 3923
           }
         ],
         "cssClasses": [
@@ -23358,11 +23822,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3662
+            "line": 3750
           },
           {
             "owner": "ui-system.css",
-            "line": 3738
+            "line": 3826
           }
         ],
         "cssClasses": [
@@ -23380,11 +23844,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3741
+            "line": 3829
           },
           {
             "owner": "ui-system.css",
-            "line": 3879
+            "line": 3967
           }
         ],
         "cssClasses": [
@@ -23402,11 +23866,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3754
+            "line": 3842
           },
           {
             "owner": "ui-system.css",
-            "line": 3893
+            "line": 3981
           }
         ],
         "cssClasses": [
@@ -23424,11 +23888,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3926
+            "line": 4014
           },
           {
             "owner": "ui-system.css",
-            "line": 4466
+            "line": 4554
           }
         ],
         "cssClasses": [
@@ -23446,11 +23910,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 4190
+            "line": 4278
           },
           {
             "owner": "ui-system.css",
-            "line": 4211
+            "line": 4299
           }
         ],
         "cssClasses": [
@@ -23463,13 +23927,13 @@
       }
     ],
     "counts": {
-      "crossFileClasses": 107,
+      "crossFileClasses": 108,
       "selectorContexts": 138,
       "protectedClasses": 106,
       "protectedSelectorContexts": 99,
       "scopedClassExceptions": 1,
       "scopedSelectorExceptions": 39,
-      "unresolvedClasses": 0,
+      "unresolvedClasses": 1,
       "unresolvedSelectorContexts": 0,
       "browserApproved": 0
     }
