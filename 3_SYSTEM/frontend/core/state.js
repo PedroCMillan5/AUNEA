@@ -569,7 +569,8 @@ function auneaUiRegionStart(kind,{id='',className='',ariaLabel='',ariaLive=''}={
   if(!Object.prototype.hasOwnProperty.call(tags,kind))throw Error('Unsupported AUNEA data region');
   if(!String(ariaLabel).trim())throw Error('AUNEA region requires an accessible label');
   return '<'+tags[kind]+(id?' id="'+attr(id)+'"':'')+
-    ' class="'+attr(className)+'" aria-label="'+attr(ariaLabel)+'"'+
+    ' class="'+attr(className)+'"'+(kind==='diagram'?' role="group"':'')+
+    ' aria-label="'+attr(ariaLabel)+'"'+
     (ariaLive?' aria-live="'+attr(ariaLive)+'"':'')+
     ' data-aunea-ui-region="'+kind+'">';
 }
