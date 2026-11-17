@@ -107,6 +107,23 @@ async function runUiL4L5Browser({page,outDir}){
         await page.setViewportSize({width,height:width===390?844:900});
         const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-window.innerWidth);
         assert.ok(overflow<=2,scene.name+' document overflow '+overflow+'px at '+width);
+        if(scene.id==='resultados'){
+          const spacing=await page.evaluate(()=>{
+            const grid=document.querySelector('.diagnosis-reference-grid');
+            const next=grid?.nextElementSibling;
+            if(!grid||!next)return null;
+            return {marginBottom:parseFloat(getComputedStyle(grid).marginBottom),
+              visualGap:next.getBoundingClientRect().top-grid.getBoundingClientRect().bottom,
+              nextElement:next.className||next.tagName};
+          });
+          assert.ok(spacing,'PG10 reference cards and AS-IS map must both exist');
+          assert.ok(spacing.marginBottom>=16,
+            'PG10 reference grid must use shared 16px spacing before the map');
+          assert.ok(spacing.visualGap>=15.5,
+            'PG10 cards must not touch the following map at '+width+'px; measured '+spacing.visualGap);
+          if(width===1365)console.log('PG10_CARD_MAP_VERTICAL_GAP_PASS: '+
+            JSON.stringify(spacing));
+        }
         if(width===390)await page.screenshot({
           path:path.join(outDir,'l5-'+scene.id+'-390.png'),fullPage:false,animations:'disabled'
         });
