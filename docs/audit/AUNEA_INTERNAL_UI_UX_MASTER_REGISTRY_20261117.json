@@ -1,9 +1,9 @@
 {
   "title": "AUNEA Internal — UI/UX Master Registry",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "status": "REVIEW",
   "date": "2026-11-17",
-  "scope": "CRM, PG00–PG12+, proyectos; sin cambios runtime",
+  "scope": "CRM, PG00–PG12+, proyectos; L1/L2 opt-in REVIEW, FROZEN runtime unchanged",
   "governance": [
     "DEC-027",
     "DEC-050",
@@ -921,5 +921,85 @@
       "designInventory": "https://github.com/PedroCMillan5/AUNEA/actions/runs/44066900966"
     },
     "protection": "No changes to approved FROZEN page source markup; technical browser screenshots match 18/18; manual visual acceptance still pending."
+  },
+  "l2": {
+    "status": "CLOSED_TECHNICAL_REVIEW",
+    "date": "2026-11-17",
+    "contract": "AUNEA_INTERNAL_UI_UX_MASTER_CONTRACT_20261117.md (section 13)",
+    "owners": {
+      "select": "ui/renderer.js auneaSelectControl() + auneaUiNamedSelect() opt-in",
+      "disclosure": "ui/renderer.js auneaUiDisclosureStart/End; PG11 primary stages/groups and PG12 audit/change details",
+      "button": "ui/renderer.js auneaUiModeButton()/auneaUiFieldDecisionButton(), existing .btn styles",
+      "modal": "core/state.js auneaUiOpenModal()/auneaUiCloseModal() opt-in; openModal/closeModal legacy unchanged",
+      "feedback": "ui/renderer.js auneaUiFeedbackMessage(); page and business status remains source-owned"
+    },
+    "blocks": [
+      "AUNEA-FE-UI-CHOICES-L2-478",
+      "AUNEA-FE-UI-DIALOG-L2-479",
+      "AUNEA-UAT-UI-CONTROLS-L2-480"
+    ],
+    "consumers": [
+      {
+        "page": "PG11",
+        "file": "pages/tobe.js",
+        "controls": [
+          "2 mode buttons via shared pressed-state owner",
+          "3 named selects for transformation, new step type and flow start",
+          "canonical stage/group disclosure preserved"
+        ]
+      },
+      {
+        "page": "PG11",
+        "file": "pages/tobe-flow.js",
+        "controls": [
+          "route select uses existing canonical select owner with accessible label"
+        ]
+      },
+      {
+        "page": "PG11",
+        "file": "pages/tobe-review.js",
+        "controls": [
+          "Apply IA/Keep/Edit command buttons use shared renderer; Keep is aria-pressed when selected"
+        ]
+      },
+      {
+        "page": "PG12",
+        "file": "pages/comparison.js",
+        "controls": [
+          "3 map mode buttons shared with PG11",
+          "2 read-only disclosure panels via existing shared owner",
+          "3 warning feedback messages with role status"
+        ]
+      },
+      {
+        "page": "Proyectos",
+        "file": "pages/projects.js",
+        "controls": [
+          "2 modal forms opt in to accessible dialogue, focus trap, clean Escape, unsaved guard, Cancel restore",
+          "measured outcome select uses canonical owner and field label"
+        ]
+      }
+    ],
+    "exceptions": [
+      "Existing FROZEN pages, legacy openModal()/closeModal() and canonical Diagnostic Master renderer are not rewritten.",
+      "Page-specific read-only evidence details and historical disclosures may keep native HTML details semantics; shared owner handles structurally equivalent collapsible panels.",
+      "F6 human visual/keyboard acceptance, L3 data/inspectors, L4 color/accessibility complete audit, L5 global end-to-end human approval are separate gates."
+    ],
+    "qa": {
+      "head": "ee610cc765225c7350ccf1a80fa537ab16ad8957",
+      "frontend": "1014 / 1014 PASS (0 failures)",
+      "backend": "493 pytest PASS",
+      "chromium": "PASS; L2 accessible dialog focus/ARIA/Escape/dirty guard; PG11-PG12 and 18/18 FROZEN technical pixel equivalence",
+      "edge": "PASS",
+      "designInventory": "107 cross-file classes, 138 selector groups, 30 inline styles, 0 unresolved",
+      "acceptGate": "overall PASS (backend_pytest/frontend_node/chromium_ua success)",
+      "links": {
+        "acceptance": "https://github.com/PedroCMillan5/AUNEA/actions/runs/44070230620",
+        "frontend": "https://github.com/PedroCMillan5/AUNEA/actions/runs/44070230759",
+        "edge": "https://github.com/PedroCMillan5/AUNEA/actions/runs/44070230768",
+        "inventory": "https://github.com/PedroCMillan5/AUNEA/actions/runs/44070230495"
+      }
+    },
+    "next": "L3 data, tables, filters, inspector, status projection/diagrams; L2 technically CLOSED in REVIEW, F6 manual review pending, no main/production."
   }
 }
