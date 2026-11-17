@@ -23,7 +23,7 @@ const build=()=>vm.runInNewContext(block+'\n;({auneaUiStructureStart,auneaUiStru
 });
 test('all semantic levels use a single allowlisted structure owner',()=>{
   const api=build();
-  const expected={section:'section',subsection:'section',block:'div',group:'div'};
+  const expected={section:'section',subsection:'section',block:'div',group:'div',field:'div'};
   for(const [level,tag] of Object.entries(expected)){
     const html=api.auneaUiStructureStart(level,{className:'test-existing'});
     assert.match(html,new RegExp('^<'+tag+' class="aunea-ui-structure aunea-ui-structure--'+level));
@@ -80,5 +80,21 @@ test('PG11 and PG12 consume the actual hierarchy primitives',()=>{
   assert.equal((review.match(/auneaUiStructureStart\('group'/g)||[]).length,2);
   assert.ok((review.match(/auneaUiStructureEnd\('group'/g)||[]).length===2);
   assert.doesNotMatch(review,/<input[^>]*data-aunea-ui-level/);
+});
+test('legacy-compatible adapter preserves visual section markup on non-FROZEN pages',()=>{
+  const baseLine=core.split(/\r?\n/).find(line=>line.startsWith("function section(title,sub,body,actions='')"));
+  assert.ok(baseLine,'Legacy section baseline owner is required');
+  const api=vm.runInNewContext(baseLine+'\n'+block+
+    '\n;({section,auneaUiLegacySection})',{esc:escapeHtml,attr:escapeHtml});
+  const args=['Resumen','Contexto','<p>Contenido <b>verificado</b></p>','<button>Revisar</button>'];
+  const baseline=api.section(...args),annotated=api.auneaUiLegacySection(...args);
+  assert.equal(annotated.replace(' data-aunea-ui-level="section"',''),baseline);
+  assert.match(annotated,/class="card card-pad section" data-aunea-ui-level="section"/);
+  for(const [file,min] of [['pages/results.js',8],['pages/tobe.js',4],['pages/projects.js',2]]){
+    const consumer=read(file);
+    assert.ok((consumer.match(/auneaUiLegacySection\(/g)||[]).length>=min,
+      file+' must use the same shared owner');
+  }
+  assert.match(read('pages/projects.js'),/auneaUiStructureStart\('field'/);
 });
 // [AUNEA-UAT-UI-SEMANTIC-477] END
