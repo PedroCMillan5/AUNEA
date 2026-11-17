@@ -12,7 +12,7 @@
     "classesCrossFile": 107,
     "repeatedSelectorContextGroups": 138,
     "documentedComponents": 20,
-    "inlineStyleAttributes": 29
+    "inlineStyleAttributes": 33
   },
   "frozen": [
     {
@@ -177,6 +177,7 @@
           ],
           "consumers": [
             "pages/tobe.js",
+            "pages/comparison.js",
             "pages/tobe-global.js"
           ]
         },
@@ -236,7 +237,8 @@
             "ui-system.css"
           ],
           "consumers": [
-            "pages/tobe.js"
+            "pages/tobe.js",
+            "pages/comparison.js"
           ]
         },
         {
@@ -342,6 +344,7 @@
           ],
           "consumers": [
             "pages/tobe.js",
+            "pages/comparison.js",
             "pages/tobe-global.js"
           ]
         }
@@ -781,6 +784,7 @@
             "pages/tobe.js",
             "pages/tobe-review.js",
             "pages/tobe-flow.js",
+            "pages/comparison.js",
             "domain/process.js",
             "uat/visible.js",
             "domain/internal-ai-pilot.js",
@@ -2249,24 +2253,27 @@
       "path": "pages/comparison.js",
       "layer": "pages",
       "blockId": "AUNEA-FE-PG12-TOBE-GRAPH-234",
-      "lines": 148,
+      "lines": 340,
       "family": [
         "Comparación / posterior"
       ],
       "view": true,
-      "inlineStyleAttributes": 0,
+      "inlineStyleAttributes": 4,
       "referencedCssClasses": [
+        "aunea-ui-section-caption",
+        "aunea-ui-section-title",
+        "aunea-ui-work-surface",
         "btn",
+        "btn-outline",
+        "btn-small",
+        "confirmed",
         "data-table",
-        "g3",
-        "grid",
         "notice",
         "pg12-difference-detail",
-        "pg12-map",
-        "pg12-map-viewport",
-        "pg12-process-comparison",
         "pg12-selected-detail",
         "pg12-view-selector",
+        "required",
+        "selected",
         "table-wrap",
         "tobe-eyebrow",
         "tobe-muted",
@@ -4359,7 +4366,8 @@
       ],
       "ruleOccurrences": 3,
       "runtimeConsumers": [
-        "pages/tobe.js"
+        "pages/tobe.js",
+        "pages/comparison.js"
       ],
       "frozenRisk": false,
       "classification": "CROSS_FILE_OWNER_REVIEW"
@@ -4372,6 +4380,7 @@
       "ruleOccurrences": 1,
       "runtimeConsumers": [
         "pages/tobe.js",
+        "pages/comparison.js",
         "pages/tobe-global.js"
       ],
       "frozenRisk": false,
@@ -4407,6 +4416,7 @@
       "ruleOccurrences": 1,
       "runtimeConsumers": [
         "pages/tobe.js",
+        "pages/comparison.js",
         "pages/tobe-global.js"
       ],
       "frozenRisk": false,
@@ -4630,6 +4640,7 @@
         "pages/tobe.js",
         "pages/tobe-review.js",
         "pages/tobe-flow.js",
+        "pages/comparison.js",
         "domain/process.js",
         "uat/visible.js",
         "domain/internal-ai-pilot.js",
@@ -4690,6 +4701,7 @@
         "domain/tobe-transactions.js",
         "pages/tobe.js",
         "pages/tobe-review.js",
+        "pages/comparison.js",
         "pages/crm-companies.js",
         "pages/crm-contacts.js",
         "domain/process.js",
@@ -5473,6 +5485,7 @@
         "pages/tobe.js",
         "pages/tobe-review.js",
         "pages/tobe-flow.js",
+        "pages/comparison.js",
         "domain/output-review.js",
         "pages/session-display.js",
         "domain/process.js",
@@ -7311,7 +7324,6 @@
         "pages/results.js",
         "pages/results-analysis.js",
         "pages/results-official.js",
-        "pages/comparison.js",
         "pages/session-display.js",
         "domain/process.js"
       ],
@@ -7532,7 +7544,6 @@
         "pages/results.js",
         "pages/results-analysis.js",
         "pages/results-official.js",
-        "pages/comparison.js",
         "pages/session-display.js",
         "domain/process.js",
         "ui/shell.js",
@@ -11210,7 +11221,6 @@
       ],
       "ruleOccurrences": 8,
       "runtimeConsumers": [
-        "pages/comparison.js",
         "domain/process.js"
       ],
       "frozenRisk": true,
@@ -11222,11 +11232,9 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 2,
-      "runtimeConsumers": [
-        "pages/comparison.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "pg12-node-selected",
@@ -11244,11 +11252,9 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 3,
-      "runtimeConsumers": [
-        "pages/comparison.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "pg12-selected-detail",
@@ -11983,7 +11989,8 @@
         "core/state.js",
         "core/i18n.js",
         "domain/no-reask.js",
-        "pages/tobe.js"
+        "pages/tobe.js",
+        "pages/comparison.js"
       ],
       "frozenRisk": true,
       "classification": "REFERENCED"
@@ -12652,6 +12659,7 @@
         "domain/economics.js",
         "pages/tobe.js",
         "pages/tobe-review.js",
+        "pages/comparison.js",
         "domain/output-review.js",
         "domain/process.js",
         "ui/shell.js",
@@ -18468,7 +18476,8 @@
           "ui-system.css"
         ],
         "consumers": [
-          "pages/tobe.js"
+          "pages/tobe.js",
+          "pages/comparison.js"
         ],
         "status": "SCOPED_EXCEPTION",
         "reason": "styles.css owns typography; PG11 owns only local caption placement",
@@ -18630,6 +18639,7 @@
           "pages/tobe.js",
           "pages/tobe-review.js",
           "pages/tobe-flow.js",
+          "pages/comparison.js",
           "domain/process.js",
           "uat/visible.js",
           "domain/internal-ai-pilot.js",
@@ -18696,6 +18706,7 @@
           "domain/tobe-transactions.js",
           "pages/tobe.js",
           "pages/tobe-review.js",
+          "pages/comparison.js",
           "pages/crm-companies.js",
           "pages/crm-contacts.js",
           "domain/process.js",
@@ -18857,6 +18868,7 @@
           "pages/tobe.js",
           "pages/tobe-review.js",
           "pages/tobe-flow.js",
+          "pages/comparison.js",
           "domain/output-review.js",
           "pages/session-display.js",
           "domain/process.js",
@@ -19407,7 +19419,6 @@
           "pages/results.js",
           "pages/results-analysis.js",
           "pages/results-official.js",
-          "pages/comparison.js",
           "pages/session-display.js",
           "domain/process.js",
           "ui/shell.js",
