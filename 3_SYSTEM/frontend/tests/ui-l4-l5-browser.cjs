@@ -100,6 +100,18 @@ async function runUiL4L5Browser({page,outDir}){
     },scene.selector);
     assert.equal(visible.page,scene.id,'Wrong L5 route '+scene.name);
     assert.ok(visible.hasContent&&visible.targetVisible,'Empty L5 view '+scene.name);
+    // Extra responsive matrix on PG10 and delivery; maps/tables may scroll internally,
+    // but the document itself must not require horizontal scrolling.
+    if(['resultados','proyectos','implementacion'].includes(scene.id)){
+      for(const width of [1365,768,390]){
+        await page.setViewportSize({width,height:width===390?844:900});
+        const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-window.innerWidth);
+        assert.ok(overflow<=2,scene.name+' document overflow '+overflow+'px at '+width);
+        if(width===390)await page.screenshot({
+          path:path.join(outDir,'l5-'+scene.id+'-390.png'),fullPage:false,animations:'disabled'
+        });
+      }
+    }
     coverage.push({screen:scene.name,...visible});
   }
   assert.equal(await business(),before,'L5 read-only navigation must not change AS-IS, TO-BE or Projects');
