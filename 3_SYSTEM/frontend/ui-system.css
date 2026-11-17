@@ -2870,7 +2870,8 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
   content:attr(data-pg12-signals);position:absolute;z-index:4;top:-23px;left:3px;
   color:var(--amber);background:var(--amber-soft);border:1px solid #efcfa9;
   border-radius:5px;padding:3px 6px;font-size:10px;font-weight:650}
-.pg12-native-map .process-graph-cell[data-pg12-warnings] .graph-flow-step{
+.pg12-native-map [data-pg12-mode="comparison"] .process-graph-cell[data-pg12-warnings] .graph-flow-step,
+.pg12-native-map [data-pg12-mode="proposed"] .process-graph-cell[data-pg12-warnings] .graph-flow-step{
   border-color:#d09b52}
 .pg12-native-map .pg12-future-lines{position:absolute;inset:0;width:100%;height:100%;
   overflow:visible;pointer-events:none;z-index:1}
