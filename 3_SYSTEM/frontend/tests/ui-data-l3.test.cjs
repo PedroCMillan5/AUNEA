@@ -15,7 +15,7 @@ const regions=block(core,'AUNEA-FE-UI-REGION-L3-482');
 assert.ok(data&&regions,'L3 must execute the actual shared owners');
 const esc=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const api=(document)=>vm.runInNewContext(data+'\n'+regions+
-  '\n;({auneaUiTableRow,auneaUiDataTable,auneaUiMetric,auneaUiTableSearch,auneaUiFilterTable,auneaUiRegionStart,auneaUiRegionEnd})',
+  '\n;({auneaUiTableRow,auneaUiDataTable,auneaUiMetric,auneaUiTableSearch,auneaUiFilterTable,auneaUiStatusLabel,auneaUiRegionStart,auneaUiRegionEnd})',
   {esc,attr:esc,document});
 test('read-only table rows escape source values while preserving real zeros and owner-generated actions',()=>{
  const a=api();
@@ -57,6 +57,15 @@ test('PG10/PG12 metrics share two existing visual variants without treating zero
  assert.throws(()=>a.auneaUiMetric('x',0,'n','inventada'),/Unsupported metric/);
  assert.match(read('pages/results.js'),/auneaUiMetric\('Pasos activos'/);
  assert.match(read('pages/comparison.js'),/auneaUiMetric\(title,value,note,'pg12'\)/);
+});
+test('PG11 statuses keep page-owned meaning with one shared renderer and no inferred colors',()=>{
+ const a=api();
+ assert.equal(a.auneaUiStatusLabel('Pendiente <IA>','tobe-selected-status'),
+  '<span class="tobe-selected-status">Pendiente &lt;IA&gt;</span>');
+ assert.throws(()=>a.auneaUiStatusLabel('Aprobado','approved-by-color'),/Unsupported/);
+ const pg11=read('pages/tobe.js');
+ assert.ok((pg11.match(/auneaUiStatusLabel\(/g)||[]).length>=3);
+ assert.doesNotMatch(data,/function statusClass\(|setStatus\(|saveState\(/);
 });
 test('filter is UI-only, reversible, accent-insensitive, with honest no-match message',()=>{
  const rows=[{textContent:'Registrar la factura',hidden:false},
