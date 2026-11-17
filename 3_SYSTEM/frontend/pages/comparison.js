@@ -75,11 +75,12 @@ function pg12NativeMapHtml(e,p,source,model,selected){
     const signals=pg12OriginalSignals(source,id);
     const losses=[signals.wait!==null?'Espera '+signals.wait+' min':'',
       signals.rework!==null?'Retrabajo '+signals.rework+' min':''].filter(Boolean);
-    const issues=model.findings.filter(x=>String(x.stepId)===id&&x.severity!=='COMPATIBLE');
+    const issues=model.findings.filter(x=>String(x.stepId)===id&&x.severity!=='COMPATIBLE'),
+      signalsText=[...losses,issues.length?issues.length+' avisos PG11':''].filter(Boolean).join(' · ');
     return match+' data-pg12-source="'+attr(id)+'" role="button" tabindex="0"'+
       ' aria-label="'+attr('Comparar '+String(original.step_name||''))+'"'+
       ' data-pg12-state="'+attr(state)+'" data-pg12-change="'+attr(item?.transformation||'Sin decisión')+'"'+
-      (losses.length?' data-pg12-loss="'+attr(losses.join(' · '))+'"':'')+
+      (signalsText?' data-pg12-signals="'+attr(signalsText)+'"':'')+
       (issues.length?' data-pg12-warnings="'+attr(issues.length+' avisos')+'"':'')+
       (id===selected?' data-pg12-selected="true"':'');
   });
