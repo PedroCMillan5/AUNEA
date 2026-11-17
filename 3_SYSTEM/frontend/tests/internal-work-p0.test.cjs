@@ -530,9 +530,9 @@ test('PG10 compact hierarchy stays Spanish, responsive and does not duplicate th
   const start=results.indexOf('function resultsPage(');
   const end=results.indexOf('\nfunction ',start+10);
   const page=results.slice(start,end);
-  assert.equal(page.split("section('2. Estado actual y mapa AS-IS'").length-1,1);
-  assert.equal(page.split("section('5. Conclusiones y prioridades'").length-1,1);
-  assert.equal(page.split("section('6. Revisión y continuación'").length-1,1);
+  assert.equal(page.split("auneaUiLegacySection('2. Estado actual y mapa AS-IS'").length-1,1);
+  assert.equal(page.split("auneaUiLegacySection('5. Conclusiones y prioridades'").length-1,1);
+  assert.equal(page.split("auneaUiLegacySection('6. Revisión y continuación'").length-1,1);
   assert.doesNotMatch(page,/section\('Alternativas de intervención a contrastar'/);
 });
 // [AUNEA-UAT-PG10-COMPACT-158] END
@@ -685,8 +685,8 @@ test('PG10 uses exactly six sections in one stable rendering path with no recomm
   const page=results.slice(start,end);
   const sections=['Resumen del estudio','Estado actual y mapa AS-IS','Integridad de datos y gaps',
     'Diagnóstico calculado','Conclusiones y prioridades','Revisión y continuación'];
-  sections.forEach((name,i)=>assert.equal(page.split("section('"+(i+1)+'. '+name+"'").length-1,1,name));
-  assert.equal((page.match(/section\('/g)||[]).length,6);
+  sections.forEach((name,i)=>assert.equal(page.split("auneaUiLegacySection('"+(i+1)+'. '+name+"'").length-1,1,name));
+  assert.equal((page.match(/auneaUiLegacySection\('/g)||[]).length,6);
   assert.doesNotMatch(page,/section\('Recomendación preliminar'|section\('Alternativas de intervención a contrastar'/);
   assert.match(page,/const official=currentDiagnosticOutput\(e\)/);
   assert.match(page,/if\(!hasConfirmedEngagementSnapshot\(e\)\) return pageTop/);
