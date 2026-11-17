@@ -850,16 +850,17 @@ function auneaUiFieldDecisionButton(label,eventAttributes,selected=null,title=''
 // OUTPUT: existing .data-table/.table-wrap/.metric DOM, without separate data ownership.
 // SIDE_EFFECTS: auneaUiFilterTable() changes DOM visibility ONLY; does not persist or sort source records.
 // CHANGE_RISK: MEDIUM; never re-derive backend metrics, business status or routes.
-function auneaUiTableRow(cells,htmlColumns=[]){
-  if(!Array.isArray(cells)||!Array.isArray(htmlColumns))throw Error('AUNEA table row requires arrays');
+function auneaUiTableRow(cells,htmlColumns=[],numericColumns=[]){
+  if(!Array.isArray(cells)||!Array.isArray(htmlColumns)||!Array.isArray(numericColumns))throw Error('AUNEA table row requires arrays');
   return '<tr>'+cells.map((value,index)=>
-    '<td>'+(htmlColumns.includes(index)?String(value??''):esc(value??''))+'</td>'
+    '<td'+(numericColumns.includes(index)?' class="aunea-ui-numeric"':'')+'>'+
+    (htmlColumns.includes(index)?String(value??''):esc(value??''))+'</td>'
   ).join('')+'</tr>';
 }
-function auneaUiDataTable(headers,rows,{id='',emptyHtml=''}={}){
-  if(!Array.isArray(headers)||headers.length===0)throw Error('AUNEA table requires headings');
+function auneaUiDataTable(headers,rows,{id='',emptyHtml='',numericColumns=[]}={}){
+  if(!Array.isArray(headers)||headers.length===0||!Array.isArray(numericColumns))throw Error('AUNEA table requires headings');
   return '<div class="table-wrap"><table class="data-table"'+(id?' id="'+attr(id)+'"':'')+'>'+
-    '<thead><tr>'+headers.map(title=>'<th>'+esc(title)+'</th>').join('')+'</tr></thead>'+
+    '<thead><tr>'+headers.map((title,index)=>'<th'+(numericColumns.includes(index)?' class="aunea-ui-numeric"':'')+'>'+esc(title)+'</th>').join('')+'</tr></thead>'+
     '<tbody>'+(rows||emptyHtml)+'</tbody></table></div>';
 }
 function auneaUiMetric(title,value,note,variant='pg12'){
