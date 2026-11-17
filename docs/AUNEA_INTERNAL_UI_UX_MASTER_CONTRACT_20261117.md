@@ -404,3 +404,15 @@ Se corrigieron **oráculos aislados obsoletos** de PG10/PG11/PG12 para cargar lo
 La **aceptación visual y funcional humana** del propietario para CRM y PG00–PG12+, la validación de todas las tecnologías asistivas, los estados de error/foco por pantalla, la comparación cromática final y la promoción a `CANONICAL`/`main`/`PRODUCTION` **NO se realizan ni se afirman aquí**. Las nueve páginas FROZEN se preservan sin rediseño y el test automático no sustituye esa decisión. Se requiere evidencia reproducible de aceptación antes de cualquier promoción.
 
 **Registro máquina:** `docs/audit/AUNEA_INTERNAL_UI_UX_MASTER_REGISTRY_20261117.json` **v0.5.0**, `l4.status` y `l5.status` en `CLOSED_TECHNICAL_REVIEW`, con límites explicitados. La identidad y `DECISIONES_AUNEA` no cambian.
+
+## 17. PG10 — Incidencia de espaciado detectada tras L1–L5 (17/11/2026)
+
+**Origen:** captura visual del propietario en PG10, «2. Estado actual y mapa AS-IS»: las tres tarjetas «Duración end-to-end actual / SLA del servicio / Objetivos del negocio» estaban pegadas al mapa. Esto prueba que el cierre técnico automatizado de L1–L5 no equivalía a revisión vertical de todos los componentes y márgenes.
+
+**Causa verificada:** `pages/results.js` concatena `reference + map` sin wrapper de espaciado. La grid `.diagnosis-reference-grid` tenía `align-items:stretch` pero no margen inferior; `.pg10-overview-metrics` sí lo tenía. Las tarjetas tenían padding interno y separación entre columnas, no separación respecto al mapa. No es problema de datos ni del motor.
+
+**Corrección:** en el propietario existente `ui-system.css`, bloque `AUNEA-FE-PG10-REFERENCE-LAYOUT-159`, se usa `.diagnosis-reference-grid{align-items:stretch;margin-bottom:var(--space-4)}`. El token aprobado equivale a **16px**. No se cambia HTML, reglas, engine, mapa, CSS global ni FROZEN.
+
+**Regresión añadida:** `tests/ui-l4-l5-browser.cjs` ahora comprueba con `getComputedStyle` y `getBoundingClientRect` una separación visible de **al menos 15,5px** en 1365, 768 y 390px, sin mutar datos. La ejecución Chromium registró `PG10_CARD_MAP_VERTICAL_GAP_PASS: {"marginBottom":16,"visualGap":16,...}`, junto a `CHROMIUM_UAT_PASS`, `FROZEN_TECHNICAL_PIXEL_EQUIVALENCE_PASS: 18/18`; frontend **1.022/1.022 PASS** y Edge PASS. Evidencia: https://github.com/PedroCMillan5/AUNEA/actions/runs/44122502295; frontend https://github.com/PedroCMillan5/AUNEA/actions/runs/44122502406; Edge https://github.com/PedroCMillan5/AUNEA/actions/runs/44122502620.
+
+**Lección para F6:** revisar mediante mediciones de navegador el *ritmo vertical* entre todos los bloques equivalentes de CRM/PG00–PG12 y no aceptar solo capturas FROZEN o ausencia de overflow. La reparación de esta zona es localizada; no certifica que no existan otras faltas de márgenes. F6 humano y contrato visual global siguen en REVIEW; no producción.
