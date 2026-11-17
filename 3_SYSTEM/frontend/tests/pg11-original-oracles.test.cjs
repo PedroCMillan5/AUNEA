@@ -23,7 +23,7 @@ for(const name of ['invoices','unified-requests','email-orders'])test('PG11 orig
  Object.assign(ctx,{tobeSourceSteps:()=>snapshot.processSteps,confirmedSnapshot:()=>snapshot,
   latestTobe:()=>p,esc:String,labelFrom:(set,value)=>schema.option_sets[set]?.options.find(x=>x.value===value)?.label||value,
   processDecisionStep:s=>s.step_type==='ST04'});
- vm.runInContext(block('AUNEA-FE-PG11-FUTURE-FLOW-228')+'\n'+block('AUNEA-FE-PG11-ORIGINAL-FACTS-243'),ctx);
+ vm.runInContext(block('AUNEA-FE-UI-SEMANTIC-475')+'\n'+block('AUNEA-FE-PG11-FUTURE-FLOW-228')+'\n'+block('AUNEA-FE-PG11-ORIGINAL-FACTS-243'),ctx);
  const future=ctx.tobeFutureSteps(e,p);
  assert.equal(future.length,fixture.steps.length);
  for(let i=0;i<fixture.steps.length;i++){
