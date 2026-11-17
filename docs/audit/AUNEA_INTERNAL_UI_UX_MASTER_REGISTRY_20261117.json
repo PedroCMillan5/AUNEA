@@ -1,9 +1,9 @@
 {
   "title": "AUNEA Internal — UI/UX Master Registry",
-  "version": "0.3.0",
+  "version": "0.5.0",
   "status": "REVIEW",
   "date": "2026-11-17",
-  "scope": "CRM, PG00–PG12+, proyectos; L1/L2/L3 opt-in REVIEW, nine FROZEN protected",
+  "scope": "CRM, PG00–PG12+ y Proyectos: L1–L5 técnicos REVIEW; FROZEN protegidas; F6 humano pendiente",
   "governance": [
     "DEC-027",
     "DEC-050",
@@ -1076,5 +1076,68 @@
       }
     },
     "next": "L4 remaining color/accessibility system-wide, L5 final UAT, F6 owner visual signoff; technical L3 closed only."
+  },
+  "l4": {
+    "status": "CLOSED_TECHNICAL_REVIEW",
+    "date": "2026-11-17",
+    "scope": "Auditoría automatizada de contraste computado y comportamiento accesible en modos PG11/PG12; NO certificación WCAG de toda la aplicación",
+    "source": "UI/UX master contract L4; contraste digital REVIEW; TOKENS_AUNEA v1.0; WCAG 2.2",
+    "owner": "ui-system.css [AUNEA-FE-UI-ACCESSIBILITY-L4-486]: enfoque visible y movimiento reducido, exclusivamente no-FROZEN",
+    "test": "tests/ui-l4-l5-browser.cjs [AUNEA-UAT-UI-ACCESSIBILITY-L4-487]",
+    "checks": [
+      "PG11 y PG12, 1365/768/390: 6 auditorías de color computado, texto ≥4.5:1 para botones de modo",
+      "Un modo aria-pressed seleccionado, objetivos de botones >=24 CSS px, sin desbordamiento horizontal del documento",
+      "Foco teclado visible >=3px con color System; reduced-motion aplicado a transiciones opt-in",
+      "Snapshot de respuestas canónicas, propuesta TO-BE y proyectos sin mutación",
+      "Dieciocho capturas de nueve páginas FROZEN equivalentes a referencia técnica fija"
+    ],
+    "constraints": [
+      "Sin modificar los colores de marca ni inventar porcentajes 60/30/10, 70/20/10 o 80/14/5.5/0.5 como obligatoriedad",
+      "El test cubre botones de modo PG11/12; NO certifica todas las parejas de color, todos los estados ni WCAG integral",
+      "No realizar aprobación de proporción cromática por cuenta propia; requerir comparativa de uso y aceptación del propietario",
+      "Páginas FROZEN protegidas; sin cambios globales en styles.css"
+    ],
+    "qa": {
+      "head": "b677605f17a3205e800660f85536a3c48491e086",
+      "acceptance": "https://github.com/PedroCMillan5/AUNEA/actions/runs/44118610311",
+      "frontend": "https://github.com/PedroCMillan5/AUNEA/actions/runs/44118610047",
+      "edge": "https://github.com/PedroCMillan5/AUNEA/actions/runs/44118610404",
+      "inventory": "https://github.com/PedroCMillan5/AUNEA/actions/runs/44118610187"
+    },
+    "manual": "Aprobación cromática global, pruebas de usuarios, accesibilidad de todos los componentes/estados y F6 continúan pendientes"
+  },
+  "l5": {
+    "status": "CLOSED_TECHNICAL_REVIEW",
+    "date": "2026-11-17",
+    "scope": "Puerta automatizada de recorrido integral sintético y QA de consistencia técnica, no aceptación de usuario real",
+    "test": "tests/ui-l4-l5-browser.cjs [AUNEA-UAT-UI-CROSS-PAGE-L5-488] enlazado al Chromium uat-browser-smoke.cjs",
+    "paths": [
+      "CRM: nueve páginas FROZEN (18 snapshots desktop/mobile)",
+      "PG01–PG09: validación, reglas de captura y estados del caso sintético existente",
+      "PG10 Resultados: fuente confirmada, ruta y presentación",
+      "PG11 TO-BE: modos, pasos, IA fixture, validación, preview, confirmación, undo y recarga",
+      "PG12 Comparación: un solo mapa, overlay, selector, filtro reversible y procedencia",
+      "Proyectos e Implementación: render, navegación, responsive y conservación de owners"
+    ],
+    "checks": [
+      "Render con contenido visible de PG10, PG11, PG12, Proyectos e Implementación",
+      "Viewport 1365/768/390 en PG10/Proyectos/Implementación sin scroll horizontal de documento",
+      "Capturas móviles de PG10 y delivery generadas como evidencia",
+      "Estado canonical answers/items/projects byte-idéntico antes/después de la navegación de vista",
+      "Backend 493, Node frontend 1021, Chromium y Windows Edge PASS; FROZEN 18/18 iguales"
+    ],
+    "qa": {
+      "head": "b677605f17a3205e800660f85536a3c48491e086",
+      "acceptance": "https://github.com/PedroCMillan5/AUNEA/actions/runs/44118610311",
+      "frontend": "https://github.com/PedroCMillan5/AUNEA/actions/runs/44118610047",
+      "edge": "https://github.com/PedroCMillan5/AUNEA/actions/runs/44118610404",
+      "inventory": "https://github.com/PedroCMillan5/AUNEA/actions/runs/44118610187"
+    },
+    "limits": [
+      "Pruebas sobre casos sintéticos; no equivalente a entrevista real 90 minutos u Ollama integrado",
+      "F6 aceptación humana y revisión visual exhaustiva no ejecutadas ni sustituidas por snapshot",
+      "No se promocionan main, CANONICAL del sistema visual o PRODUCTION",
+      "Los flujos PG13–PG15 no se certifican más allá de rutas y funciones cubiertas por QA actual"
+    ]
   }
 }
