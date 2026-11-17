@@ -203,6 +203,30 @@ async function main(){
     assert.equal(removed.statuses[3].value,1);
     assert.equal(await page.locator('.pg12-native-map [data-pg12-state="removed"]').count(),1);
     await page.screenshot({path:path.join(evidence,'pg12-removed.png'),fullPage:true});
+    await page.locator('.pg12-view-selector [data-pg12-view="actual"]').click();
+    const originalRemovedStyle=await json(page,()=>{
+      const cell=document.querySelector('.pg12-native-map [data-pg12-state="removed"]'),
+        card=cell?.querySelector('.graph-flow-step');
+      if(!card)throw Error('original removed activity is missing');
+      const style=getComputedStyle(card);
+      return {opacity:style.opacity,decoration:style.textDecorationLine,
+        outline:style.outlineStyle};
+    });
+    assert.equal(originalRemovedStyle.opacity,'1',
+      'a removed future activity must look original in Actual');
+    assert.equal(originalRemovedStyle.decoration,'none');
+    await page.locator('.pg12-view-selector [data-pg12-view="comparison"]').click();
+    await json(page,()=>{
+      const e=currentEng(),p=latestTobe(e),
+        next=structuredClone(confirmedSnapshot(e));
+      next.version=Number(next.version)+1;
+      next.processSteps[0].step_name='Recepción revisada tras la confirmación';
+      e.confirmedSnapshots.push(next); // Synthetic mismatch, not a real client approval.
+      state.activePage='comparacion';render();
+    });
+    assert.equal(await page.locator('.pg12-native-map .process-graph-board').count(),0,
+      'stale PG12 must not compare revised source with an old reviewed TO-BE');
+    assert.match(await page.locator('#content').innerText(),/contiene cambios reales/);
     assert.deepEqual(errors,[],'no uncaught runtime errors');
     console.log('PG12_CHROMIUM_ACCEPTANCE_PASS: native maps, SÍ/NO, selection, audit, backend metrics, immutable source, persistence, added/removed states');
     await context.close();
