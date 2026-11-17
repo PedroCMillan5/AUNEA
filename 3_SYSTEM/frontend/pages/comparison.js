@@ -223,9 +223,8 @@ function tobeComparisonPage(){
       __auneaPg12SelectedSource:String(tobeFlowItemId(items[0])||''),
     options=[['actual','Actual'],['proposed','Propuesto'],['comparison','Comparación']],
     selector='<nav class="pg12-view-selector" aria-label="Capas del mapa">'+options.map(([value,label])=>
-      '<button type="button" data-pg12-view="'+value+'" class="btn '+
-      (__auneaPg12View===value?'btn-primary':'btn-outline')+'" aria-pressed="'+
-      String(__auneaPg12View===value)+'">'+label+'</button>').join('')+'</nav>';
+      auneaUiModeButton('data-pg12-view',value,label,__auneaPg12View===value)
+    ).join('')+'</nav>';
   const rows=items.map(item=>{
     const name=tobeFlowItemName(item);
     return '<tr><td><button type="button" class="btn btn-outline btn-small" data-pg12-source="'+
