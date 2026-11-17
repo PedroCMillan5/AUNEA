@@ -202,4 +202,66 @@ test('PG12 separates blocking constraints from ordinary observations',()=>{
   assert.match(html,/Bloqueos: 1/);
   assert.match(html,/Los cuatro contadores de transformación/);
 });
+
+test('PG12 native route renderer preserves the NO branch in Actual and Propuesto',()=>{
+  const source=code.slice(code.indexOf('function pg12DrawOverlay(){'),
+    code.indexOf('function registerPg12Interactions(){'));
+  assert.ok(source.includes('function pg12RouteSetsEqual('));
+  const initial=[{from:'__START__',to:'S1',label:''},{from:'S1',to:'S2',label:''},
+    {from:'S2',to:'S3',label:'SÍ'},{from:'S2',to:'S4',label:'NO'},
+    {from:'S3',to:'S4',label:''},{from:'S4',to:'__END__',label:''}];
+  const future=[...initial],futureChanged=future.map(x=>
+    x.from==='S2'&&x.label==='NO'?{...x,to:'__END__'}:x);
+  function run(mode,planned){
+    const makeSvg=(name)=>{
+      const classes=new Set([name]);
+      return {innerHTML:'',classList:{
+        add:v=>classes.add(v),remove:v=>classes.delete(v),contains:v=>classes.has(v)}};
+    };
+    const base=makeSvg('process-graph-lines'),overlay=makeSvg('pg12-future-lines');
+    const board={
+      dataset:{graphEdges:JSON.stringify(initial),
+        graphBranches:JSON.stringify([{decisionId:'S2',merge:'S4'}]),
+        pg12FutureEdges:JSON.stringify(planned),
+        pg12FutureBranches:JSON.stringify([{decisionId:'S2',merge:planned===future?'S4':'__END__'}]),
+        pg12Mode:mode},
+      querySelector:query=>query==='.pg12-future-lines'?overlay:
+        query==='.process-graph-lines'?[base,overlay].find(v=>v.classList.contains('process-graph-lines')):null
+    };
+    const calls=[];
+    const drawProcessGraph=current=>{
+      const edges=JSON.parse(current.dataset.graphEdges);
+      const branches=JSON.parse(current.dataset.graphBranches);
+      const svg=current.querySelector('.process-graph-lines');
+      calls.push({edges:edges.map(x=>x.label||''),branches,svg:svg===base?'base':'overlay'});
+      svg.innerHTML='<defs id="auneaGraphArrowMain"></defs>'+
+        edges.map(x=>'<path data-label="'+x.label+'"></path>').join('');
+    };
+    const doc={querySelector:()=>board};
+    const context={
+      document:doc,drawProcessGraph,pg12EdgeKey:e=>
+        [String(e.from),String(e.to),String(e.label||'')].join('|')
+    };
+    const fn=vm.runInNewContext(source+';pg12DrawOverlay',context);
+    fn();
+    assert.equal(board.dataset.graphEdges,JSON.stringify(initial));
+    assert.ok(calls[0].edges.includes('NO'));
+    if(mode==='proposed'){
+      assert.equal(calls.length,1,'Proposed must invoke only the native renderer');
+      assert.ok(base.innerHTML.includes('data-label="NO"'));
+    }
+    if(mode==='comparison'&&planned===futureChanged){
+      assert.equal(calls.length,2,'Comparison overlays the native future renderer');
+      assert.ok(overlay.innerHTML.includes('data-label="NO"'));
+      assert.ok(overlay.innerHTML.includes('pg12FutureArrowMain'));
+      assert.equal(base.classList.contains('process-graph-lines'),true);
+      assert.equal(overlay.classList.contains('process-graph-lines'),false);
+    }
+    return calls;
+  }
+  assert.equal(run('actual',future).length,1);
+  assert.equal(run('proposed',future).length,1);
+  assert.equal(run('comparison',future).length,1,'Identical routes need no duplicate stroke');
+  assert.equal(run('comparison',futureChanged).length,2);
+});
 // [AUNEA-UAT-PG12-OVERLAY-472] END
