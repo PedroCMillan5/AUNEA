@@ -56,8 +56,9 @@ module.exports=function pg11LegacySourceOracle(){
   // PG11 03.1 now uses the production semantic hierarchy (L1); no test-only renderer.
   const core=read('core/state.js');
   const semanticStart=core.indexOf('// [AUNEA-FE-UI-SEMANTIC-475] START');
-  const semanticEnd=core.indexOf('// [AUNEA-FE-UI-SEMANTIC-475] END',semanticStart);
+  const semanticClose='// [AUNEA-FE-UI-SEMANTIC-475] END';
+  const semanticEnd=core.indexOf(semanticClose,semanticStart);
   if(semanticStart<0||semanticEnd<semanticStart)throw Error('Production semantic owner missing');
-  source+='\n'+core.slice(semanticStart,semanticEnd)+'\n';
+  source+='\n'+core.slice(semanticStart,semanticEnd+semanticClose.length)+'\n';
   return source;
 };
