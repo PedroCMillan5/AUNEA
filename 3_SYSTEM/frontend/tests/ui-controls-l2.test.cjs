@@ -17,7 +17,7 @@ assert.ok(selectSource,'Missing approved select owner in renderer');
 const choiceSource=block(renderer,'AUNEA-FE-UI-CHOICES-L2-478');
 assert.ok(choiceSource,'Missing L2 UI choice owner');
 const choices=()=>vm.runInNewContext(selectSource+'\n'+choiceSource+
- '\n;({auneaUiModeButton,auneaUiNamedSelect,auneaUiFeedbackMessage})',{
+ '\n;({auneaUiModeButton,auneaUiNamedSelect,auneaUiFeedbackMessage,auneaUiFieldDecisionButton})',{
  attr:escapeHtml,esc:escapeHtml
 });
 test('PG11 and PG12 mode buttons share pressed-state markup without inventing a state owner',()=>{
@@ -62,6 +62,22 @@ test('PG12 disclosure uses one real existing owner without an extra accordion im
  })+disclosure.auneaUiDisclosureEnd();
  assert.equal(html,'<details class="pg12-count-audit"><summary>Comprobar contadores y procedencia</summary></details>');
  assert.ok((read('pages/comparison.js').match(/auneaUiDisclosureStart\(\{variant:'legacy'/g)||[]).length>=2);
+});
+test('consultant Apply/Keep/Edit buttons use one renderer and only Keep exposes pressed state',()=>{
+ const c=choices();
+ const keep=c.auneaUiFieldDecisionButton('Mantener',
+   'data-tobe-ai-keep-field="outputs" data-tobe-ai-action-source="S1"',true,
+   'Conservar valor del consultor');
+ const apply=c.auneaUiFieldDecisionButton('Aplicar IA',
+   'data-tobe-ai-use-field="outputs" data-tobe-ai-action-source="S1"',null,
+   'Aplicar propuesta revisada');
+ assert.match(keep,/class="btn btn-outline btn-small is-selected"/);
+ assert.match(keep,/aria-pressed="true"/);
+ assert.match(keep,/data-tobe-ai-keep-field="outputs"/);
+ assert.doesNotMatch(apply,/aria-pressed/);
+ assert.throws(()=>c.auneaUiFieldDecisionButton('Otro','data-delete-business="1"'),/Unsupported/);
+ const source=read('pages/tobe-review.js');
+ assert.match(source,/auneaUiFieldDecisionButton\(label,attribute,active,title\)/);
 });
 test('warnings expose state without mutating business status or CSS token ownership',()=>{
  const c=choices();
