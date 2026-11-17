@@ -28,16 +28,17 @@ function pg12OriginalSignals(source,sourceId){
 function pg12OverlayModel(e,p,source){
   const asis=(source.processSteps||[]).filter(s=>s.status!=='SUPERSEDED'),
     proposed=tobeFutureSteps(e,p),items=[...(p.items||[]),...tobeAddedSteps(p)],
-    originalEdges=processGraphData(e,asis).edges,
-    futureEdges=processGraphData(e,proposed).edges,
+    originalLayout=processGraphData(e,asis),
+    futureLayout=processGraphData(e,proposed),
+    originalEdges=originalLayout.edges,
+    futureEdges=futureLayout.edges,
     findings=typeof tobeCoherenceFindings==='function'?tobeCoherenceFindings(e,p):[],
     byId=new Map(items.map(item=>[String(tobeFlowItemId(item)),item])),
     originals=new Map(asis.map(step=>[String(step.id),step])),
-    added=proposed.filter(step=>!originals.has(String(step.id))),
-    originalLayout=processGraphData(e,asis);
+    added=proposed.filter(step=>!originals.has(String(step.id)));
   return {asis,proposed,added,items,byId,originals,originalEdges,futureEdges,findings,
     nodes:originalLayout.nodes.concat(added.map(step=>({id:String(step.id),kind:'step'}))),
-    layout:originalLayout};
+    layout:originalLayout,futureLayout};
 }
 function pg12EdgeKey(edge){
   return [String(edge.from),String(edge.to),String(edge.label||'')].join('|');
@@ -105,10 +106,12 @@ function pg12NativeMapHtml(e,p,source,model,selected){
   html=html.replace('<svg class="process-graph-lines"',
     '<svg class="pg12-future-lines" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>'+
     '<svg class="process-graph-lines"');
-  const futureEdges=attr(JSON.stringify(model.futureEdges));
+  const futureEdges=attr(JSON.stringify(model.futureEdges)),
+    futureBranches=attr(JSON.stringify(model.futureLayout.branchLayouts));
   html=html.replace('class="process-graph-board"',
     'class="process-graph-board" data-pg12-mode="'+attr(__auneaPg12View)+
-    '" data-pg12-future-edges="'+futureEdges+'"');
+    '" data-pg12-future-edges="'+futureEdges+
+    '" data-pg12-future-branches="'+futureBranches+'"');
   return auneaUiRegionStart('diagram',{className:'pg12-native-map',
     ariaLabel:'Mapa original del proceso con cambios TO-BE'})+html+auneaUiRegionEnd('diagram');
 }
@@ -279,55 +282,54 @@ function tobeComparisonPage(){
 function pg12DrawOverlay(){
   if(typeof document==='undefined')return;
   const board=document.querySelector('.pg12-native-map .process-graph-board');
-  if(!board)return;
-  // First run the unchanged process renderer on exactly the AS-IS graph.
-  if(typeof drawProcessGraph==='function')drawProcessGraph(board);
-  const svg=board.querySelector('.pg12-future-lines');
-  if(!svg)return;
-  const rect=board.getBoundingClientRect(),nodes=new Map();
-  board.querySelectorAll('[data-graph-node]').forEach(el=>
-    nodes.set(String(el.getAttribute('data-graph-node')),el));
-  let future=[];
-  try{future=JSON.parse(board.getAttribute('data-pg12-future-edges')||'[]')}catch(_){}
-  let original=[];
-  try{original=JSON.parse(board.getAttribute('data-graph-edges')||'[]')}catch(_){}
-  const known=new Set(original.map(pg12EdgeKey)),mode=board.getAttribute('data-pg12-mode')||'comparison',
-    ns='http://www.w3.org/2000/svg';
-  svg.setAttribute('viewBox','0 0 '+board.scrollWidth+' '+board.scrollHeight);
-  svg.innerHTML='<defs><marker id="pg12NativeFutureArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#bd813e"/></marker></defs>';
-  if(mode==='actual')return;
-  const nodeRect=id=>{
-    const cell=nodes.get(String(id));
-    return cell?.querySelector('.graph-decision-gateway,.graph-flow-step,.flow-boundary,.graph-route-pending')?.getBoundingClientRect()||
-      cell?.getBoundingClientRect()||null;
-  };
-  future.forEach(edge=>{
-    const same=known.has(pg12EdgeKey(edge));
-    // The original SVG already paints unchanged routes in comparison mode.
-    if(same&&mode==='comparison')return;
-    const ar=nodeRect(edge.from),br=nodeRect(edge.to);
-    if(!ar||!br)return;
-    const x1=ar.right-rect.left,y1=ar.top+ar.height/2-rect.top,
-      x2=br.left-rect.left,y2=br.top+br.height/2-rect.top,
-      backward=x2<x1+15,mid=backward?x1+30:x1+Math.max(24,(x2-x1)/2);
-    const lower=Math.max(ar.bottom,br.bottom)-rect.top+52;
-    const d=backward?
-      'M'+x1+' '+y1+'H'+mid+'V'+lower+'H'+(x2-25)+'V'+y2+'H'+(x2-6):
-      'M'+x1+' '+y1+'H'+mid+'V'+y2+'H'+(x2-6);
-    const path=document.createElementNS(ns,'path');
-    path.setAttribute('class','pg12-route '+(same?'pg12-route-shared':'pg12-route-future')+
-      (edge.label==='NO'?' pg12-route-no':''));
-    path.setAttribute('d',d);
-    path.setAttribute('marker-end','url(#pg12NativeFutureArrow)');
-    svg.appendChild(path);
-    if(edge.label&&!same){
-      const label=document.createElementNS(ns,'text');
-      label.setAttribute('x',String(mid+5));
-      label.setAttribute('y',String((y1+y2)/2-10));
-      label.setAttribute('class','pg12-route-label');
-      label.textContent=edge.label;svg.appendChild(label);
+  if(!board||typeof drawProcessGraph!=='function')return;
+  const base=board.querySelector('.process-graph-lines'),
+    future=board.querySelector('.pg12-future-lines');
+  if(!base||!future)return;
+  const sourceEdges=board.dataset.graphEdges||'[]',
+    sourceBranches=board.dataset.graphBranches||'[]',
+    mode=board.dataset.pg12Mode||'comparison';
+  let original=[],proposed=[];
+  try{
+    original=JSON.parse(sourceEdges);
+    proposed=JSON.parse(board.dataset.pg12FutureEdges||'[]');
+  }catch(_){return}
+  const changes=!pg12RouteSetsEqual(original,proposed);
+  // One geometry owner for ALL three modes. The board and original AS-IS cards
+  // never change; drawProcessGraph renders either route set into its normal SVG.
+  if(mode==='actual'||mode==='comparison'){
+    drawProcessGraph(board);
+  }else if(mode==='proposed'){
+    board.dataset.graphEdges=board.dataset.pg12FutureEdges||'[]';
+    board.dataset.graphBranches=board.dataset.pg12FutureBranches||'[]';
+    try{drawProcessGraph(board)}finally{
+      board.dataset.graphEdges=sourceEdges;
+      board.dataset.graphBranches=sourceBranches;
     }
-  });
+  }
+  future.innerHTML='';
+  if(mode!=='comparison'||!changes)return;
+  // Re-use the SAME shared graph renderer for the future layer. No hand-made
+  // connector projection: decision NO and reconvergence take their real shape.
+  // Native AS-IS HTML, dimensions, DOM node cells and original paths stay intact.
+  board.dataset.graphEdges=board.dataset.pg12FutureEdges||'[]';
+  board.dataset.graphBranches=board.dataset.pg12FutureBranches||'[]';
+  base.classList.remove('process-graph-lines');
+  future.classList.add('process-graph-lines');
+  try{drawProcessGraph(board)}finally{
+    future.classList.remove('process-graph-lines');
+    base.classList.add('process-graph-lines');
+    board.dataset.graphEdges=sourceEdges;
+    board.dataset.graphBranches=sourceBranches;
+  }
+  // Native drawProcessGraph uses SVG marker IDs. Keep them unique across layers.
+  if(future.innerHTML)
+    future.innerHTML=future.innerHTML.replaceAll('auneaGraphArrowMain','pg12FutureArrowMain')
+      .replaceAll('auneaGraphArrowAlt','pg12FutureArrowAlt');
+}
+function pg12RouteSetsEqual(original,proposed){
+  const normalize=edges=>edges.map(pg12EdgeKey).sort();
+  return JSON.stringify(normalize(original))===JSON.stringify(normalize(proposed));
 }
 function registerPg12Interactions(){
   document.addEventListener('input',event=>{
