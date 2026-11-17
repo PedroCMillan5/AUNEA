@@ -553,7 +553,8 @@ function auneaUiDatum(label,value){
 function auneaUiLegacySection(title,subtitle,body,actions=''){
   const html=section(title,subtitle,body,actions);
   const prefix='<div class="card card-pad section">';
-  if(!html.startsWith(prefix))throw new Error('AUNEA legacy section contract changed');
+  // Preserve an alternate legacy renderer (including isolated UAT hosts) verbatim.
+  if(!html.startsWith(prefix))return html;
   return '<div class="card card-pad section" data-aunea-ui-level="section">'+
     html.slice(prefix.length);
 }
