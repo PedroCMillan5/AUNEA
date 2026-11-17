@@ -4,6 +4,9 @@ const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const src=require('./pg11-source.cjs')();
+const uiRenderer=fs.readFileSync(path.resolve(__dirname,'../ui/renderer.js'),'utf8');
+const buttonOwner=uiRenderer.match(/\/\/ \[AUNEA-FE-UI-CHOICES-L2-478\] START[\s\S]*?\/\/ \[AUNEA-FE-UI-CHOICES-L2-478\] END/)?.[0];
+assert.ok(buttonOwner,'PG11 field action tests require the shared live L2 renderer');
 const diff=src.match(/\/\/ \[AUNEA-FE-PG11-AI-REVIEW-DIFF-260\] START[\s\S]*?\/\/ \[AUNEA-FE-PG11-AI-REVIEW-DIFF-260\] END/)?.[0];
 const apply=src.match(/\/\/ \[AUNEA-FE-PG11-AI-STEP-APPLY-230\] START[\s\S]*?\/\/ \[AUNEA-FE-PG11-AI-STEP-APPLY-230\] END/)?.[0];
 if(!diff||!apply)throw Error('Missing PG11 IA selection contracts');
@@ -168,7 +171,7 @@ test('PG11 action buttons distinguish historical read-only from authorized curre
    tobeEditable:()=>true,internalAiSavedDraft:()=>current?{items:[{source_step_id:'S1'}]}:null,
    tobeAiReviewDiff:()=>({issue:'',allFields:[{key:'tool',changed:true}]}),
    attr:String,esc:String};
- vm.createContext(ctx);vm.runInContext(fn,ctx);
+ vm.createContext(ctx);vm.runInContext(buttonOwner+'\n'+fn,ctx);
  const historical=ctx.tobeAiRowActions({},draft,step,'tool');
  assert.doesNotMatch(historical,/data-tobe-ai-apply-unavailable="tool"/);
  assert.equal(historical,'','historical or absent IA has no redundant action strip');
@@ -189,7 +192,7 @@ test('PG11 keeps applied and maintained indicators scoped to the current IA prop
   tobeEditable:()=>true,internalAiSavedDraft:()=>({items:[{source_step_id:'S1'}]}),
   tobeAiReviewDiff:()=>({issue:'',allFields:[{key:'tool',changed:false}]}),
   tobeCandidateFingerprint:()=>fingerprint,attr:String,esc:String};
- vm.createContext(ctx);vm.runInContext(fn,ctx);
+ vm.createContext(ctx);vm.runInContext(buttonOwner+'\n'+fn,ctx);
  const old=ctx.tobeAiRowActions({},draft,item,'tool');
  assert.match(old,/IA aplicada/);
  assert.doesNotMatch(old,/>Aplicar IA</);
@@ -273,7 +276,7 @@ test('PG11 field controls offer Apply, Keep and Edit only when a candidate is co
  const start=src.indexOf('function tobeAiRowActions(e,p,item,key){'),
    end=src.indexOf('\n}\n',start)+2;
  const h=harness();h.sandbox.attr=String;h.sandbox.esc=String;
- vm.runInContext(src.slice(start,end),h.sandbox);
+ vm.runInContext(buttonOwner+'\n'+src.slice(start,end),h.sandbox);
  delete h.decisions.S1;
  let html=h.sandbox.tobeAiRowActions(h.e,h.p,h.p.items[0],'tool');
  assert.match(html,/>Aplicar IA</,'no whole-proposal decision required');
