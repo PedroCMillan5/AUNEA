@@ -2810,7 +2810,7 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
    Only scoped comparison adornments; process cards, decision geometry and base routes
    remain owned by domain/process.js, never duplicated in PG12. */
 .pg12-workspace{display:grid;gap:var(--space-3);min-width:0;max-width:100%}
-.pg12-workspace .aunea-ui-work-surface{min-width:0}
+.pg12-workspace>.pg12-primary,.pg12-workspace>.pg12-secondary{min-width:0}
 .pg12-work-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
 .pg12-work-head h2{margin:4px 0}
 .pg12-work-head .aunea-ui-section-caption{margin:0;max-width:820px}
@@ -2939,7 +2939,7 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
   .pg12-evidence-grid,.pg12-before-after,.pg12-metrics{grid-template-columns:1fr}
   .pg12-view-selector .btn{min-width:0;flex:1}
   .pg12-selected-detail{padding:13px}
-  .pg12-workspace .aunea-ui-work-surface{padding:14px}
+  .pg12-workspace>.pg12-primary,.pg12-workspace>.pg12-secondary{padding:14px}
 }
 /* [AUNEA-FE-PG12-GRAPH-STYLE-236] END */
 
