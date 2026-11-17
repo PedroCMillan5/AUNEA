@@ -1173,9 +1173,8 @@ function tobeGuidedNavHtml(e,p){
   const guidedItems=[...(p.items||[]),...tobeAddedSteps(p)],
     focused=tobeSelectedItem(e,p),selectedId=tobeFlowItemId(focused),
     focusedIndex=Math.max(0,guidedItems.findIndex(x=>tobeFlowItemId(x)===selectedId));
-  const modeButton=(mode,label)=>'<button type="button" class="btn '+
-    (__auneaTobeMode===mode?'btn-primary':'btn-outline')+
-    '" data-tobe-mode-switch="'+mode+'" aria-pressed="'+String(__auneaTobeMode===mode)+'">'+label+'</button>';
+  const modeButton=(mode,label)=>auneaUiModeButton(
+    'data-tobe-mode-switch',mode,label,__auneaTobeMode===mode);
   return '<nav class="tobe-guided-nav" aria-label="Navegación del diseño TO-BE">'+
     '<div class="tobe-guided-modes">'+modeButton('guided','Revisión por actividad')+
     modeButton('map','Mapa TO-BE')+'</div>'+
