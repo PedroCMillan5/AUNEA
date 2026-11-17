@@ -778,7 +778,10 @@ function auneaUiOpenModal(title,body,onSave,saveLabel='Guardar'){
       }
     };
   }
-  const first=dialog.querySelector('input:not([type="hidden"]):not([disabled]),textarea:not([disabled]),select:not([disabled]),summary,button:not([disabled])');
+  // querySelector returns the first node in DOM order, NOT by selector preference:
+  // choose the first editable field ahead of the header close button.
+  const first=dialog.querySelector('input:not([type="hidden"]):not([disabled]),textarea:not([disabled]),select:not([disabled]),summary')||
+    dialog.querySelector('button:not([disabled])');
   if(first&&typeof first.focus==='function')first.focus();
   else{dialog.setAttribute('tabindex','-1');dialog.focus();}
 }
