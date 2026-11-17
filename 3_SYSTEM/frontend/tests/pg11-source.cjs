@@ -52,5 +52,12 @@ module.exports=function pg11LegacySourceOracle(){
     if(!helper)throw Error('Shared renderer helper missing: '+name);
     source+='\n'+helper+'\n';
   }
+  // Keep legacy VM regression contexts aligned with the actual preloaded core/state.js.
+  // PG11 03.1 now uses the production semantic hierarchy (L1); no test-only renderer.
+  const core=read('core/state.js');
+  const semanticStart=core.indexOf('// [AUNEA-FE-UI-SEMANTIC-475] START');
+  const semanticEnd=core.indexOf('// [AUNEA-FE-UI-SEMANTIC-475] END',semanticStart);
+  if(semanticStart<0||semanticEnd<semanticStart)throw Error('Production semantic owner missing');
+  source+='\n'+core.slice(semanticStart,semanticEnd)+'\n';
   return source;
 };
