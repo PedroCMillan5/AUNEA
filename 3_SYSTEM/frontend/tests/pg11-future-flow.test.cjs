@@ -74,8 +74,9 @@ test('generic optimization flags a removed output still consumed downstream, wit
   {id:'L2',step_name:'Validar entrega',step_type:'ST02',inputs:['DOC'],
    outputs:['RECORD'],normal_next_step:'__END__'}
  ];
- const h=harness(graph),before=JSON.stringify(h.snapshot),flow=JSON.stringify(h.p.flow);
+ const h=harness(graph),flow=JSON.stringify(h.p.flow);
  h.snapshot.answers={DF089:['KEEP_EXISTING']};
+ const before=JSON.stringify(h.snapshot);
  h.p.items[0].inputs=['PDF','MASTER_DATA'];
  h.p.items[0].outputs=['RECORD'];
  h.p.items[0].automationAi='Registrar automáticamente la recepción';
