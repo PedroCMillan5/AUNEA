@@ -129,6 +129,32 @@ async function runUiL4L5Browser({page,outDir}){
         });
       }
     }
+    // [AUNEA-UAT-UI-ACTION-COMPUTED-491] START — live visual-button ownership audit.
+    // A link that looks like a button must not retain the browser's default underline.
+    // Check every button-like link in non-FROZEN views, not only the screenshot example.
+    const actionLinks=await page.evaluate(()=>{
+      const links=[...document.querySelectorAll('#content a.btn')];
+      return links.map(node=>{
+        const style=getComputedStyle(node),r=node.getBoundingClientRect();
+        return {label:node.textContent.trim(),href:node.getAttribute('href'),
+          underlined:style.textDecorationLine.includes('underline'),
+          optIn:node.classList.contains('aunea-ui-action-link'),
+          marginTop:parseFloat(style.marginBlockStart),width:r.width,height:r.height};
+      });
+    });
+    for(const link of actionLinks){
+      assert.ok(link.optIn,scene.name+' has a button-like anchor without the common visual owner: '+link.label);
+      assert.equal(link.underlined,false,scene.name+' link pretending to be button is underlined: '+link.label);
+      assert.ok(link.marginTop>=12,
+        scene.name+' link-as-action missing shared margin token: '+link.label);
+    }
+    if(scene.id==='resultados'){
+      const matched=actionLinks.filter(x=>x.href?.startsWith('#asis-source-step-'));
+      assert.ok(matched.length>0,'PG10 source-linked action must be represented in the synthetic UAT');
+      console.log('PG10_ACTION_LINK_COMPUTED_PASS: '+
+        JSON.stringify(matched.map(({label,underlined,marginTop})=>({label,underlined,marginTop}))));
+    }
+    // [AUNEA-UAT-UI-ACTION-COMPUTED-491] END
     coverage.push({screen:scene.name,...visible});
   }
   assert.equal(await business(),before,'L5 read-only navigation must not change AS-IS, TO-BE or Projects');
