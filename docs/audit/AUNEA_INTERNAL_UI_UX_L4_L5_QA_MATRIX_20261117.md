@@ -26,3 +26,13 @@
 Tras la primera pasada L4–L5 se detectó en captura real la ausencia de margen entre las tres tarjetas DF026 / DF025 / DF086 y el mapa AS-IS de PG10. El HTML concatena `reference + map` y `.diagnosis-reference-grid` no tenía `margin-bottom`. Corregido en `ui-system.css` bajo Block_ID 159 mediante `var(--space-4)` (16px). La nueva prueba Chromium en `tests/ui-l4-l5-browser.cjs` mide **marginBottom=16px y visualGap=16px** y valida el umbral de gap en 1365/768/390. Backend, frontend 1.022/1.022, Chromium y Edge PASS, FROZEN 18/18 equivalentes.
 
 **Evidencia de regresión:** https://github.com/PedroCMillan5/AUNEA/actions/runs/44122502295. Esta prueba puntual no convierte L4/L5 en aceptación visual transversal. Es una entrada obligatoria del checklist F6: inspeccionar separaciones verticales entre tarjetas/bloques/mapas en todas las superficies y tamaños.
+
+## Anexo F6 — enlaces visualmente botón (17/11/2026)
+
+**Regresión aportada por el propietario:** en PG10 la acción «Ver punto de análisis en esta página» estaba subrayada. Fuente `pages/results.js`: elemento HTML `<a>` con `btn btn-outline`, pero ningún reset de `text-decoration` ni owner transversal de separación post-dato. Los separadores `border-top` de la cuadrícula son independientes y no se modifican.
+
+**Corrección compartida:** Block_ID `AUNEA-FE-UI-ACTION-LINK-489` en `styles.css`, clases opt-in `aunea-ui-action-link` (sin subrayado) y `aunea-ui-after-content` (margin-block-start token `--space-3=12px`); `results.js` consume esas dos clases sin cambiar el `href` ni la lógica. Ninguna página FROZEN alterada.
+
+**Prevención automática:** Block_ID `AUNEA-UAT-UI-ACTION-OWNERSHIP-490` audita 9 módulos no FROZEN, comprueba los enlaces `a.btn`, los owners y FROZEN; Block_ID `AUNEA-UAT-UI-ACTION-COMPUTED-491` mide `textDecorationLine` y `marginBlockStart` en la UAT Chromium de PG10–PG12 y delivery. El hallazgo concreto no se emitió en el caso sintético; el ensayo de estilo fue un elemento efímero declarado como tal. QA: Node **1026/1026 PASS**, backend/Chromium PASS, FROZEN **18/18**; `overall=PASS` para head `c5e860fce6329291f9377f976422a5506f91a236`. Referencia: https://github.com/PedroCMillan5/AUNEA/actions/runs/44124906258.
+
+**Deuda residual F6:** auditoría transversal de todas las familias, márgenes/gaps, tipos de control, sus estados y combinaciones de página; no equiparar «sin conflictos CSS sin clasificar» a «homogeneidad visual aprobada». No se modifica CANONICAL ni DECISIONES.
