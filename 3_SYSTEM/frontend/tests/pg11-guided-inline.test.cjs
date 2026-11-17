@@ -280,7 +280,12 @@ test('PG11 03.1 uses the common read-only layout and preserves declared AS-IS va
    EMAIL:'Email',PDF:'PDF',DOCUMENT:'Documento',RECORD:'Registro estructurado'})[value]||value,
   esc:value=>String(value)
  };
- vm.createContext(ctx);vm.runInContext(definition,ctx);
+ // Exercise the production shared group implementation, not a test-only mock.
+ ctx.attr=value=>String(value).replace(/\"/g,'&quot;');
+ const core=fs.readFileSync(path.resolve(__dirname,'../core/state.js'),'utf8');
+ const structure=core.match(/\/\/ \[AUNEA-FE-UI-SEMANTIC-475\] START[\s\S]*?\/\/ \[AUNEA-FE-UI-SEMANTIC-475\] END/)?.[0];
+ assert.ok(structure,'Missing shared hierarchy owner');
+ vm.createContext(ctx);vm.runInContext(structure+'\n'+definition,ctx);
  const html=ctx.tobeOriginalStepFacts({}, {sourceStepId:'P1'});
  assert.match(html,/Actividad actual/);
  assert.match(html,/Duraciones declaradas/);
