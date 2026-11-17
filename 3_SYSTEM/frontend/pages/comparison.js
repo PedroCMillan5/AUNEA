@@ -27,110 +27,126 @@ function pg12OriginalSignals(source,sourceId){
 function pg12OverlayModel(e,p,source){
   const asis=(source.processSteps||[]).filter(s=>s.status!=='SUPERSEDED'),
     proposed=tobeFutureSteps(e,p),items=[...(p.items||[]),...tobeAddedSteps(p)],
-    originalIds=new Set(asis.map(s=>String(s.id))),futureIds=new Set(proposed.map(s=>String(s.id))),
-    flow=tobeFlowOwner(e,p),start=String(flow.startStepId||proposed[0]?.id||''),
-    ordered=[...proposed.filter(s=>String(s.id)===start),...proposed.filter(s=>String(s.id)!==start)],
-    graphSteps=[...ordered,...asis.filter(s=>!futureIds.has(String(s.id)))],
-    layout=processGraphData(e,graphSteps),
     originalEdges=processGraphData(e,asis).edges,
-    futureEdges=processGraphData(e,ordered).edges,
-    positions=new Map([...layout.positions].map(([id,pos])=>[String(id),pos])),
-    nodes=[...layout.nodes],
-    edgeIds=new Set([...originalEdges,...futureEdges].flatMap(x=>[String(x.from),String(x.to)])),
-    existing=new Set(nodes.map(x=>String(x.id)));
-  let cols=layout.cols,rows=layout.rows;
-  for(const id of edgeIds){
-    if(existing.has(id))continue;
-    if(id==='__END__'||id==='__START__')continue;
-    cols+=1;rows=Math.max(rows,3);
-    nodes.push({id,kind:'pending',route:'Ruta pendiente'});
-    positions.set(id,{row:3,col:cols});existing.add(id);
-  }
-  const findings=typeof tobeCoherenceFindings==='function'?tobeCoherenceFindings(e,p):[];
-  const byId=new Map(items.map(item=>[String(tobeFlowItemId(item)),item]));
-  const originals=new Map(asis.map(s=>[String(s.id),s]));
-  return {nodes,positions,cols,rows,asis,items,originals,byId,originalIds,futureIds,
-    originalEdges,futureEdges,findings};
+    futureEdges=processGraphData(e,proposed).edges,
+    findings=typeof tobeCoherenceFindings==='function'?tobeCoherenceFindings(e,p):[],
+    byId=new Map(items.map(item=>[String(tobeFlowItemId(item)),item])),
+    originals=new Map(asis.map(step=>[String(step.id),step])),
+    added=proposed.filter(step=>!originals.has(String(step.id))),
+    originalLayout=processGraphData(e,asis);
+  return {asis,proposed,added,items,byId,originals,originalEdges,futureEdges,findings,
+    nodes:originalLayout.nodes.concat(added.map(step=>({id:String(step.id),kind:'step'}))),
+    layout:originalLayout};
 }
-function pg12EdgeKey(edge){return [String(edge.from),String(edge.to),String(edge.label||'')].join('|')}
-function pg12OverlayNode(model,source,node,i,selected){
-  const id=String(node.id),item=model.byId.get(id),
-    original=model.originals.get(id),
-    signals=original?pg12OriginalSignals(source,id):{frictions:[],risks:[],wait:null,rework:null,active:null},
-    state=item?.isAddition?'added':item?.transformation==='Se elimina'?'removed':
-      item?.transformation&&item.transformation!=='Se mantiene'?'changed':'unchanged',
-    issues=model.findings.filter(x=>String(x.stepId)===id),
-    warnings=issues.filter(x=>x.severity!=='COMPATIBLE').length,
-    sourceName=String(original?.step_name||item?.sourceStepName||''),
-    futureName=String(item?tobeFlowItemName(item):sourceName),
-    name=futureName||sourceName||'Actividad sin nombre';
-  if(node.kind==='start'||node.kind==='end')
-    return '<div class="pg12-overlay-cell pg12-boundary" style="grid-row:'+model.positions.get(id).row+
-      ';grid-column:'+model.positions.get(id).col+'" data-pg12-node="'+attr(id)+'"><div class="pg12-boundary-card">'+
-      (node.kind==='start'?'Inicio del proceso':'Fin del proceso')+'</div></div>';
-  if(node.kind==='pending')
-    return '<div class="pg12-overlay-cell" style="grid-row:'+model.positions.get(id).row+
-      ';grid-column:'+model.positions.get(id).col+'" data-pg12-node="'+attr(id)+'"><div class="pg12-pending">Destino pendiente de conectar</div></div>';
-  const markers=[
-    signals.frictions.length?'Fricciones '+signals.frictions.length:'',
-    signals.risks.length?'Riesgos '+signals.risks.length:'',
-    signals.wait!==null?'Espera AS-IS '+signals.wait+' min':'',
-    signals.rework!==null?'Retrabajo AS-IS '+signals.rework+' min':'',
-    warnings?'Avisos '+warnings:''
-  ].filter(Boolean);
-  const originalLabel=original?String(labelFrom('OS_ACTOR_ROLE',original.actor)||original.actor||'Sin responsable'):
-    'Sin actividad AS-IS propia',
-    futureLabel=item&&!item.isAddition&&item.transformation!=='Se elimina'?
-      String(labelFrom('OS_ACTOR_ROLE',item.futureActor)||item.futureActor||'Sin responsable'):
-      item?.isAddition?String(labelFrom('OS_ACTOR_ROLE',item.futureActor)||item.futureActor||'Sin responsable'):
-      'Actividad retirada';
-  const status=item?.isAddition?'Nueva en TO-BE':item?.transformation||'Sin decisión';
-  return '<div class="pg12-overlay-cell" data-pg12-node="'+attr(id)+'" style="grid-row:'+
-    model.positions.get(id).row+';grid-column:'+model.positions.get(id).col+'">'+
-    '<button type="button" class="pg12-overlay-node pg12-node-'+state+
-      (id===selected?' pg12-node-selected':'')+'" data-pg12-source="'+attr(id)+'" aria-pressed="'+
-      (id===selected?'true':'false')+'">'+
-      '<span class="pg12-node-kicker">'+(item?.isAddition?'TO-BE · NUEVA':'AS-IS · ACTIVIDAD '+(model.asis.findIndex(s=>String(s.id)===id)+1))+'</span>'+
-      '<strong class="pg12-title-to-be">'+esc(name)+'</strong>'+
-      (original?'<strong class="pg12-title-as-is">'+esc(sourceName)+'</strong>':'')+
-      '<span class="pg12-node-origin">AS-IS · '+esc(originalLabel)+'</span>'+
-      '<span class="pg12-node-proposed">TO-BE · '+esc(futureLabel)+'</span>'+
-      '<span class="pg12-node-change">'+esc(status)+'</span>'+
-      (original&&sourceName!==name?'<small class="pg12-node-previous">Antes: '+esc(sourceName)+'</small>':'')+
-      (markers.length?'<span class="pg12-node-signals">'+markers.map(t=>
-        '<span>'+esc(t)+'</span>').join('')+'</span>':'')+
-      '</button></div>';
+function pg12EdgeKey(edge){
+  return [String(edge.from),String(edge.to),String(edge.label||'')].join('|');
+}
+function pg12ComparisonCounters(model){
+  return {
+    unchanged:model.items.filter(i=>!i.isAddition&&i.transformation==='Se mantiene').length,
+    changed:model.items.filter(i=>!i.isAddition&&i.transformation!=='Se mantiene'&&i.transformation!=='Se elimina').length,
+    added:model.items.filter(i=>i.isAddition).length,
+    removed:model.items.filter(i=>!i.isAddition&&i.transformation==='Se elimina').length,
+    warnings:model.findings.filter(i=>i.severity!=='COMPATIBLE').length,
+    blocking:model.findings.filter(i=>i.severity==='BLOCKING').length,
+    frictions:(model.source?.frictions||[]).filter(i=>i.status!=='SUPERSEDED').length,
+    risks:(model.source?.risks||[]).filter(i=>i.status!=='SUPERSEDED').length
+  };
+}
+function pg12NativeMapHtml(e,p,source,model,selected){
+  // The AS-IS body is generated by the SAME renderer that owns the process in PG04.
+  // PG12 decorates that markup; it never substitutes custom process cards/layout.
+  if(typeof processGraphHtml!=='function'||typeof drawProcessGraph!=='function')
+    return '<p class="notice warn">No está disponible el mapa compartido del proceso.</p>';
+  const baseline={...e,answers:source.answers||{},processSteps:model.asis,
+      frictions:(source.frictions||[]).filter(f=>f.status!=='SUPERSEDED'),
+      risks:(source.risks||[]).filter(r=>r.status!=='SUPERSEDED'),
+      economicInputs:source.economicInputs||[]},
+    opening=source.answers?.DF014||'Inicio del proceso',
+    closing=source.answers?.DF015||'Fin del proceso';
+  let html=processGraphHtml(baseline,model.asis,baseline.frictions,
+    opening,closing,'cliente',true);
+  // Keep the original generated cells, gateways, original graph edges and geometry.
+  html=html.replace(/data-graph-node="([^"]+)"/g,(match,rawId)=>{
+    const id=String(rawId),item=model.byId.get(id),original=model.originals.get(id);
+    if(!original)return match;
+    const state=item?.transformation==='Se elimina'?'removed':
+      item?.transformation&&item.transformation!=='Se mantiene'?'changed':'unchanged';
+    const signals=pg12OriginalSignals(source,id);
+    const losses=[signals.wait!==null?'Espera '+signals.wait+' min':'',
+      signals.rework!==null?'Retrabajo '+signals.rework+' min':''].filter(Boolean);
+    const issues=model.findings.filter(x=>String(x.stepId)===id&&x.severity!=='COMPATIBLE');
+    return match+' data-pg12-source="'+attr(id)+'" role="button" tabindex="0"'+
+      ' aria-label="'+attr('Comparar '+String(original.step_name||''))+'"'+
+      ' data-pg12-state="'+attr(state)+'" data-pg12-change="'+attr(item?.transformation||'Sin decisión')+'"'+
+      (losses.length?' data-pg12-loss="'+attr(losses.join(' · '))+'"':'')+
+      (issues.length?' data-pg12-warnings="'+attr(issues.length+' avisos')+'"':'')+
+      (id===selected?' data-pg12-selected="true"':'');
+  });
+  const originalCols=model.layout.cols,added=model.added;
+  if(added.length){
+    // New TO-BE activities use the SAME graphNodeCard renderer; AS-IS cells remain intact.
+    // Position new nodes in a supplementary row instead of rewriting original routes.
+    const additions=added.map((step,i)=>{
+      const id=String(step.id),item=model.byId.get(id),index=model.asis.length+i,
+        card=graphNodeCard(baseline,step,index,baseline.frictions,'cliente',true);
+      return '<div class="process-graph-cell pg12-added-cell" data-graph-node="'+attr(id)+
+        '" data-pg12-source="'+attr(id)+'" data-pg12-state="added" role="button" tabindex="0"'+
+        ' data-pg12-change="'+attr(item?.transformation||'Nueva actividad')+'"'+
+        ' style="grid-column:'+(originalCols+i+1)+';grid-row:3">'+card+'</div>';
+    }).join('');
+    html=html.replace(/<\/div><\/div>$/,additions+'</div></div>');
+    html=html.replace(/--graph-cols:\d+;--graph-rows:\d+;/,
+      '--graph-cols:'+(originalCols+added.length)+';--graph-rows:3;');
+  }
+  html=html.replace('<svg class="process-graph-lines"',
+    '<svg class="pg12-future-lines" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>'+
+    '<svg class="process-graph-lines"');
+  const futureEdges=attr(JSON.stringify(model.futureEdges));
+  html=html.replace('class="process-graph-board"',
+    'class="process-graph-board" data-pg12-mode="'+attr(__auneaPg12View)+
+    '" data-pg12-future-edges="'+futureEdges+'"');
+  return '<div class="pg12-native-map" aria-label="Mapa original del proceso con cambios TO-BE">'+html+'</div>';
+}
+function pg12CountAuditHtml(model,source,counts){
+  const stepWarnings=model.asis.map(s=>{
+    const id=String(s.id),n=model.findings.filter(f=>String(f.stepId)===id&&f.severity!=='COMPATIBLE').length,
+      signals=pg12OriginalSignals(source,id);
+    return '<tr><td>'+esc(s.step_name||id)+'</td><td>'+n+'</td><td>'+
+      (signals.frictions.length||0)+'</td><td>'+(signals.risks.length||0)+'</td><td>'+
+      esc(signals.wait===null?'—':signals.wait+' min')+'</td><td>'+
+      esc(signals.rework===null?'—':signals.rework+' min')+'</td></tr>';
+  }).join('');
+  return '<details class="pg12-count-audit"><summary>Comprobar contadores y procedencia</summary>'+
+    '<p>Las cinco cifras superiores se calculan desde el TO-BE revisado y sus comprobaciones. Las fricciones, riesgos y tiempos proceden del AS-IS confirmado, sin sumarlos como ahorros.</p>'+
+    '<p>Actividades: '+model.items.length+' · Hallazgos pendientes: '+counts.warnings+
+      ' · Bloqueos: '+counts.blocking+' · Fricciones AS-IS: '+counts.frictions+
+      ' · Riesgos AS-IS: '+counts.risks+'</p>'+
+    '<div class="table-wrap"><table class="data-table"><thead><tr><th>Actividad AS-IS</th><th>Avisos PG11</th>'+
+    '<th>Fricciones vinculadas</th><th>Riesgos vinculados</th><th>Espera declarada</th>'+
+    '<th>Retrabajo declarado</th></tr></thead><tbody>'+stepWarnings+'</tbody></table></div>'+
+    '<small>Una fricción vinculada a dos actividades puede aparecer en las dos filas; el total global cuenta registros originales, no vinculaciones.</small>'+
+    '</details>';
 }
 function pg12OverlayHtml(e,p,source,selected){
-  if(typeof processGraphData!=='function')
-    return '<p class="notice warn">No está disponible el mapa de proceso. No se han modificado datos.</p>';
-  const model=pg12OverlayModel(e,p,source),
-    counts={
-      unchanged:model.items.filter(i=>i.transformation==='Se mantiene').length,
-      changed:model.items.filter(i=>!i.isAddition&&i.transformation!=='Se mantiene'&&i.transformation!=='Se elimina').length,
-      added:model.items.filter(i=>i.isAddition).length,
-      removed:model.items.filter(i=>i.transformation==='Se elimina').length,
-      warnings:model.findings.filter(i=>i.severity!=='COMPATIBLE').length
-    };
-  const legend='<div class="pg12-overlay-legend" aria-label="Leyenda del mapa">'+
-    '<span><i class="pg12-key-original"></i>AS-IS de origen</span>'+
-    '<span><i class="pg12-key-change"></i>Cambio TO-BE</span>'+
-    '<span><i class="pg12-key-add"></i>Nueva</span>'+
-    '<span><i class="pg12-key-remove"></i>Eliminada</span>'+
-    '<span><i class="pg12-key-routing"></i>Ruta TO-BE cambiada</span>'+
-    '<span>Fricciones, riesgos y tiempos: AS-IS declarado</span></div>';
+  if(typeof processGraphHtml!=='function'||typeof processGraphData!=='function')
+    return '<p class="notice warn">No está disponible el mapa original de proceso.</p>';
+  const model=pg12OverlayModel(e,p,source);
+  model.source=source;
+  const counts=pg12ComparisonCounters(model);
   const stats='<div class="pg12-diff-stats">'+[
     [counts.unchanged,'Se mantienen'],[counts.changed,'Modificadas / control'],
     [counts.added,'Añadidas'],[counts.removed,'Eliminadas'],[counts.warnings,'Observaciones']
-  ].map(x=>'<div><strong>'+x[0]+'</strong><span>'+x[1]+'</span></div>').join('')+'</div>';
-  const board='<div class="pg12-overlay-viewport"><div class="pg12-overlay-board" data-pg12-view="'+
-    attr(__auneaPg12View)+'" style="--pg12-cols:'+model.cols+';--pg12-rows:'+model.rows+'"'+
-    ' data-pg12-asis-edges="'+attr(JSON.stringify(model.originalEdges))+'"'+
-    ' data-pg12-tobe-edges="'+attr(JSON.stringify(model.futureEdges))+'">'+
-    '<svg class="pg12-overlay-lines" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"></svg>'+
-    model.nodes.map((node,i)=>pg12OverlayNode(model,source,node,i,selected)).join('')+
-    '</div></div>';
-  return stats+legend+board;
+  ].map(([value,label])=>'<div><strong>'+value+'</strong><span>'+label+'</span></div>').join('')+'</div>';
+  const legend='<div class="pg12-overlay-legend" aria-label="Leyenda del mapa">'+
+    '<span><i class="pg12-key-original"></i>Mapa AS-IS original</span>'+
+    '<span><i class="pg12-key-change"></i>Cambio TO-BE</span>'+
+    '<span><i class="pg12-key-add"></i>Actividad nueva</span>'+
+    '<span><i class="pg12-key-remove"></i>Actividad eliminada</span>'+
+    '<span><i class="pg12-key-routing"></i>Ruta TO-BE modificada</span>'+
+    '<span>Espera y retrabajo: valores AS-IS declarados</span></div>';
+  return stats+legend+pg12NativeMapHtml(e,p,source,model,selected)+
+    pg12CountAuditHtml(model,source,counts);
 }
 // [AUNEA-FE-PG12-OVERLAY-MODEL-469] END
 
