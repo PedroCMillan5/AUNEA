@@ -273,7 +273,7 @@ function tobeFlowInspector(e,p,item){
   const opts=tobeFlowOptions(e,p,item);
   const field=(kind,label,value)=>
     '<div class="field"><label>'+label+'</label>'+
-    (editable?auneaSelectControl('tobeRoute_'+kind+'_'+stepId,opts,String(value||'__PENDING__'),{
+    (editable?auneaUiNamedSelect(label,'tobeRoute_'+kind+'_'+stepId,opts,String(value||'__PENDING__'),{
       extra:'data-tobe-route="'+kind+'" data-tobe-route-step="'+attr(stepId)+'"',
       placeholder:'Selecciona destino'}):'<input disabled value="'+attr(opts.find(x=>x.value===value)?.label||value||'Pendiente')+'">')+
     '<p class="field-help">Selecciona el destino de esta ruta en el proceso futuro. Una ruta pendiente bloquea la revisión.</p></div>';
