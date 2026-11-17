@@ -133,6 +133,14 @@ node --test tests/pg12-overlay.test.cjs
 
 Para verificar toda la interfaz y los circuitos afectados deben ejecutarse además las UAT existentes de PG11 y la prueba manual del navegador (mapa, zoom/desplazamiento, rutas, botones centrados y legibilidad). **No confundir las pruebas unitarias con homologación visual**.
 
+### Regresión PG12 · Modos Actual / Propuesto / Comparación (17/11/2026)
+
+En el estudio de **cuatro actividades** el modo «Propuesto» omitía visualmente la ruta NO de P2. Se ha corregido en rama REVIEW para que `drawProcessGraph()` (el renderizador original) dibuje las rutas en los tres modos; la vista Comparación incorpora una segunda capa nativa sólo cuando hay diferencias de conexiones.
+
+**UAT visual pendiente:** comprobar en cada modo las rutas P2 SÍ → P3 y P2 NO → P4; la persistencia de nodos originales; la ausencia de avisos TO-BE en Actual; los colores en Propuesto; y que no aparezca un segundo mapa. En el estudio visualizado, el reparto esperado es **0 mantenidas, 4 modificadas, 0 añadidas, 0 eliminadas y 8 advertencias** (dos por actividad) siempre que no cambien las fuentes de PG11. La espera AS-IS de P3 indicada en este estudio es **768 min**, distinta del fixture genérico de seis pasos (720 min): no mezclar datasets.
+
+QA técnica: **9/9 pruebas dirigidas PASS** en harness V8. Faltan ejecución `node --test tests/pg12-overlay.test.cjs` en entorno de usuario y comprobación visual real antes del cierre.
+
 ## 6. Condición de cierre
 
 No cerrar como «funciona todo» mientras alguna factura rechazada pueda continuar a P4 como aprobada, existan rutas pendientes, se contradiga DF075/DF088, se invente integración ERP, o un contador no pueda reconciliarse con su fuente. PG12 es *solo lectura* y no debe modificar PG11 ni el AS-IS.
