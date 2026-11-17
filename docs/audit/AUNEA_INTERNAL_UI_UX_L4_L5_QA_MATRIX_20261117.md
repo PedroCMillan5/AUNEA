@@ -20,3 +20,9 @@
 **Límites:** No se certifican todos los estados, colores y componentes frente a WCAG, ni porcentajes cromáticos 60/30/10, 70/20/10 o 80/14/5,5/0,5. FROZEN 18/18 significa equivalencia técnica, no aceptación visual. El caso es sintético y no representa entrevista real con Ollama, todos los PG13–PG15 ni producción.
 
 **F6 pendiente:** propietario debe revisar visualmente referencias y estados, teclado/screen reader, usuario/cliente real, comparativa de color y funcionamiento global antes de autorizar CANONICAL/main/PRODUCTION. Ninguna decisión corporativa se modifica.
+
+## Anexo PG10 — gap entre datos y mapa AS-IS (17/11/2026)
+
+Tras la primera pasada L4–L5 se detectó en captura real la ausencia de margen entre las tres tarjetas DF026 / DF025 / DF086 y el mapa AS-IS de PG10. El HTML concatena `reference + map` y `.diagnosis-reference-grid` no tenía `margin-bottom`. Corregido en `ui-system.css` bajo Block_ID 159 mediante `var(--space-4)` (16px). La nueva prueba Chromium en `tests/ui-l4-l5-browser.cjs` mide **marginBottom=16px y visualGap=16px** y valida el umbral de gap en 1365/768/390. Backend, frontend 1.022/1.022, Chromium y Edge PASS, FROZEN 18/18 equivalentes.
+
+**Evidencia de regresión:** https://github.com/PedroCMillan5/AUNEA/actions/runs/44122502295. Esta prueba puntual no convierte L4/L5 en aceptación visual transversal. Es una entrada obligatoria del checklist F6: inspeccionar separaciones verticales entre tarjetas/bloques/mapas en todas las superficies y tamaños.
