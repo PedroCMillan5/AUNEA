@@ -8,7 +8,7 @@
   ],
   "metrics": {
     "modules": 50,
-    "cssClasses": 1127,
+    "cssClasses": 1128,
     "classesCrossFile": 107,
     "repeatedSelectorContextGroups": 138,
     "documentedComponents": 20,
@@ -2244,7 +2244,7 @@
       "path": "pages/comparison.js",
       "layer": "pages",
       "blockId": "AUNEA-FE-PG12-OVERLAY-VIEW-470",
-      "lines": 382,
+      "lines": 384,
       "family": [
         "Comparación / posterior"
       ],
@@ -2258,7 +2258,6 @@
         "btn-small",
         "confirmed",
         "field",
-        "on",
         "pg12-added-cell",
         "pg12-before-after",
         "pg12-detail-alerts",
@@ -7524,7 +7523,7 @@
       "ownerFiles": [
         "ui-system.css"
       ],
-      "ruleOccurrences": 2,
+      "ruleOccurrences": 4,
       "runtimeConsumers": [],
       "frozenRisk": false,
       "classification": "REVIEW_DYNAMIC_OR_HTML"
@@ -7554,7 +7553,17 @@
       "ownerFiles": [
         "ui-system.css"
       ],
-      "ruleOccurrences": 1,
+      "ruleOccurrences": 2,
+      "runtimeConsumers": [],
+      "frozenRisk": false,
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
+    },
+    {
+      "className": "graph-path-main",
+      "ownerFiles": [
+        "ui-system.css"
+      ],
+      "ruleOccurrences": 2,
       "runtimeConsumers": [],
       "frozenRisk": false,
       "classification": "REVIEW_DYNAMIC_OR_HTML"
@@ -8693,7 +8702,6 @@
         "domain/tobe-transactions.js",
         "pages/tobe.js",
         "pages/tobe-flow.js",
-        "pages/comparison.js",
         "pages/session-display.js",
         "domain/process.js",
         "ui/shell.js",
@@ -11385,7 +11393,7 @@
       "ownerFiles": [
         "ui-system.css"
       ],
-      "ruleOccurrences": 2,
+      "ruleOccurrences": 6,
       "runtimeConsumers": [
         "pages/comparison.js"
       ],
@@ -11481,7 +11489,7 @@
       "ownerFiles": [
         "ui-system.css"
       ],
-      "ruleOccurrences": 35,
+      "ruleOccurrences": 41,
       "runtimeConsumers": [
         "pages/comparison.js"
       ],
@@ -11858,7 +11866,7 @@
       "ownerFiles": [
         "ui-system.css"
       ],
-      "ruleOccurrences": 13,
+      "ruleOccurrences": 15,
       "runtimeConsumers": [
         "pages/tobe.js",
         "pages/comparison.js",
@@ -18303,7 +18311,7 @@
         },
         {
           "owner": "ui-system.css",
-          "line": 3235
+          "line": 3247
         }
       ]
     },
@@ -18316,7 +18324,7 @@
         },
         {
           "owner": "ui-system.css",
-          "line": 3820
+          "line": 3832
         }
       ]
     },
@@ -18329,7 +18337,7 @@
         },
         {
           "owner": "ui-system.css",
-          "line": 2964
+          "line": 2976
         }
       ]
     },
@@ -18342,7 +18350,7 @@
         },
         {
           "owner": "ui-system.css",
-          "line": 2973
+          "line": 2985
         }
       ]
     },
@@ -18355,7 +18363,7 @@
         },
         {
           "owner": "ui-system.css",
-          "line": 3231
+          "line": 3243
         }
       ]
     },
@@ -18368,7 +18376,7 @@
         },
         {
           "owner": "ui-system.css",
-          "line": 3232
+          "line": 3244
         }
       ]
     },
@@ -18377,11 +18385,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3151
+          "line": 3163
         },
         {
           "owner": "ui-system.css",
-          "line": 3220
+          "line": 3232
         }
       ]
     },
@@ -18390,11 +18398,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3156
+          "line": 3168
         },
         {
           "owner": "ui-system.css",
-          "line": 3222
+          "line": 3234
         }
       ]
     },
@@ -18403,11 +18411,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3160
+          "line": 3172
         },
         {
           "owner": "ui-system.css",
-          "line": 3224
+          "line": 3236
         }
       ]
     },
@@ -18416,11 +18424,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3176
+          "line": 3188
         },
         {
           "owner": "ui-system.css",
-          "line": 3230
+          "line": 3242
         }
       ]
     },
@@ -18429,11 +18437,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3311
+          "line": 3323
         },
         {
           "owner": "ui-system.css",
-          "line": 3548
+          "line": 3560
         }
       ]
     },
@@ -18442,11 +18450,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3318
+          "line": 3330
         },
         {
           "owner": "ui-system.css",
-          "line": 3556
+          "line": 3568
         }
       ]
     },
@@ -18455,11 +18463,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3327
+          "line": 3339
         },
         {
           "owner": "ui-system.css",
-          "line": 3562
+          "line": 3574
         }
       ]
     },
@@ -18468,11 +18476,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3328
+          "line": 3340
         },
         {
           "owner": "ui-system.css",
-          "line": 3563
+          "line": 3575
         }
       ]
     },
@@ -18481,11 +18489,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3331
+          "line": 3343
         },
         {
           "owner": "ui-system.css",
-          "line": 3582
+          "line": 3594
         }
       ]
     },
@@ -18494,11 +18502,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3347
+          "line": 3359
         },
         {
           "owner": "ui-system.css",
-          "line": 3622
+          "line": 3634
         }
       ]
     },
@@ -18507,11 +18515,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3348
+          "line": 3360
         },
         {
           "owner": "ui-system.css",
-          "line": 3623
+          "line": 3635
         }
       ]
     },
@@ -18520,33 +18528,7 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3396
-        },
-        {
-          "owner": "ui-system.css",
-          "line": 4909
-        }
-      ]
-    },
-    {
-      "selectorContext": " | .tobe-global-opportunities",
-      "owners": [
-        {
-          "owner": "ui-system.css",
-          "line": 3421
-        },
-        {
-          "owner": "ui-system.css",
-          "line": 4920
-        }
-      ]
-    },
-    {
-      "selectorContext": " | .tobe-global-opportunity",
-      "owners": [
-        {
-          "owner": "ui-system.css",
-          "line": 3422
+          "line": 3408
         },
         {
           "owner": "ui-system.css",
@@ -18555,15 +18537,41 @@
       ]
     },
     {
+      "selectorContext": " | .tobe-global-opportunities",
+      "owners": [
+        {
+          "owner": "ui-system.css",
+          "line": 3433
+        },
+        {
+          "owner": "ui-system.css",
+          "line": 4932
+        }
+      ]
+    },
+    {
+      "selectorContext": " | .tobe-global-opportunity",
+      "owners": [
+        {
+          "owner": "ui-system.css",
+          "line": 3434
+        },
+        {
+          "owner": "ui-system.css",
+          "line": 4933
+        }
+      ]
+    },
+    {
       "selectorContext": " | .tobe-global-card-detail-body .tobe-global-intervention",
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3456
+          "line": 3468
         },
         {
           "owner": "ui-system.css",
-          "line": 3494
+          "line": 3506
         }
       ]
     },
@@ -18572,11 +18580,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3629
+          "line": 3641
         },
         {
           "owner": "ui-system.css",
-          "line": 3792
+          "line": 3804
         }
       ]
     },
@@ -18585,11 +18593,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3632
+          "line": 3644
         },
         {
           "owner": "ui-system.css",
-          "line": 3762
+          "line": 3774
         }
       ]
     },
@@ -18598,11 +18606,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3716
+          "line": 3728
         },
         {
           "owner": "ui-system.css",
-          "line": 3755
+          "line": 3767
         }
       ]
     },
@@ -18611,11 +18619,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3743
+          "line": 3755
         },
         {
           "owner": "ui-system.css",
-          "line": 3939
+          "line": 3951
         }
       ]
     },
@@ -18624,11 +18632,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3766
+          "line": 3778
         },
         {
           "owner": "ui-system.css",
-          "line": 3842
+          "line": 3854
         }
       ]
     },
@@ -18637,11 +18645,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3845
+          "line": 3857
         },
         {
           "owner": "ui-system.css",
-          "line": 3983
+          "line": 3995
         }
       ]
     },
@@ -18650,11 +18658,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 3858
+          "line": 3870
         },
         {
           "owner": "ui-system.css",
-          "line": 3997
+          "line": 4009
         }
       ]
     },
@@ -18663,11 +18671,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 4030
+          "line": 4042
         },
         {
           "owner": "ui-system.css",
-          "line": 4570
+          "line": 4582
         }
       ]
     },
@@ -18676,11 +18684,11 @@
       "owners": [
         {
           "owner": "ui-system.css",
-          "line": 4294
+          "line": 4306
         },
         {
           "owner": "ui-system.css",
-          "line": 4315
+          "line": 4327
         }
       ]
     }
@@ -20196,7 +20204,6 @@
           "domain/tobe-transactions.js",
           "pages/tobe.js",
           "pages/tobe-flow.js",
-          "pages/comparison.js",
           "pages/session-display.js",
           "domain/process.js",
           "ui/shell.js",
@@ -23140,7 +23147,7 @@
           },
           {
             "owner": "ui-system.css",
-            "line": 3235
+            "line": 3247
           }
         ],
         "cssClasses": [
@@ -23162,7 +23169,7 @@
           },
           {
             "owner": "ui-system.css",
-            "line": 3820
+            "line": 3832
           }
         ],
         "cssClasses": [
@@ -23183,7 +23190,7 @@
           },
           {
             "owner": "ui-system.css",
-            "line": 2964
+            "line": 2976
           }
         ],
         "cssClasses": [
@@ -23204,7 +23211,7 @@
           },
           {
             "owner": "ui-system.css",
-            "line": 2973
+            "line": 2985
           }
         ],
         "cssClasses": [
@@ -23225,7 +23232,7 @@
           },
           {
             "owner": "ui-system.css",
-            "line": 3231
+            "line": 3243
           }
         ],
         "cssClasses": [
@@ -23246,7 +23253,7 @@
           },
           {
             "owner": "ui-system.css",
-            "line": 3232
+            "line": 3244
           }
         ],
         "cssClasses": [
@@ -23264,11 +23271,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3151
+            "line": 3163
           },
           {
             "owner": "ui-system.css",
-            "line": 3220
+            "line": 3232
           }
         ],
         "cssClasses": [
@@ -23287,11 +23294,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3156
+            "line": 3168
           },
           {
             "owner": "ui-system.css",
-            "line": 3222
+            "line": 3234
           }
         ],
         "cssClasses": [
@@ -23310,11 +23317,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3160
+            "line": 3172
           },
           {
             "owner": "ui-system.css",
-            "line": 3224
+            "line": 3236
           }
         ],
         "cssClasses": [
@@ -23331,11 +23338,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3176
+            "line": 3188
           },
           {
             "owner": "ui-system.css",
-            "line": 3230
+            "line": 3242
           }
         ],
         "cssClasses": [
@@ -23353,11 +23360,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3311
+            "line": 3323
           },
           {
             "owner": "ui-system.css",
-            "line": 3548
+            "line": 3560
           }
         ],
         "cssClasses": [
@@ -23376,11 +23383,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3318
+            "line": 3330
           },
           {
             "owner": "ui-system.css",
-            "line": 3556
+            "line": 3568
           }
         ],
         "cssClasses": [
@@ -23397,11 +23404,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3327
+            "line": 3339
           },
           {
             "owner": "ui-system.css",
-            "line": 3562
+            "line": 3574
           }
         ],
         "cssClasses": [
@@ -23418,11 +23425,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3328
+            "line": 3340
           },
           {
             "owner": "ui-system.css",
-            "line": 3563
+            "line": 3575
           }
         ],
         "cssClasses": [
@@ -23440,11 +23447,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3331
+            "line": 3343
           },
           {
             "owner": "ui-system.css",
-            "line": 3582
+            "line": 3594
           }
         ],
         "cssClasses": [
@@ -23462,11 +23469,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3347
+            "line": 3359
           },
           {
             "owner": "ui-system.css",
-            "line": 3622
+            "line": 3634
           }
         ],
         "cssClasses": [
@@ -23484,11 +23491,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3348
+            "line": 3360
           },
           {
             "owner": "ui-system.css",
-            "line": 3623
+            "line": 3635
           }
         ],
         "cssClasses": [
@@ -23507,11 +23514,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3396
+            "line": 3408
           },
           {
             "owner": "ui-system.css",
-            "line": 4909
+            "line": 4921
           }
         ],
         "cssClasses": [
@@ -23528,11 +23535,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3421
+            "line": 3433
           },
           {
             "owner": "ui-system.css",
-            "line": 4920
+            "line": 4932
           }
         ],
         "cssClasses": [
@@ -23549,11 +23556,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3422
+            "line": 3434
           },
           {
             "owner": "ui-system.css",
-            "line": 4921
+            "line": 4933
           }
         ],
         "cssClasses": [
@@ -23570,11 +23577,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3456
+            "line": 3468
           },
           {
             "owner": "ui-system.css",
-            "line": 3494
+            "line": 3506
           }
         ],
         "cssClasses": [
@@ -23592,11 +23599,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3629
+            "line": 3641
           },
           {
             "owner": "ui-system.css",
-            "line": 3792
+            "line": 3804
           }
         ],
         "cssClasses": [
@@ -23614,11 +23621,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3632
+            "line": 3644
           },
           {
             "owner": "ui-system.css",
-            "line": 3762
+            "line": 3774
           }
         ],
         "cssClasses": [
@@ -23636,11 +23643,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3716
+            "line": 3728
           },
           {
             "owner": "ui-system.css",
-            "line": 3755
+            "line": 3767
           }
         ],
         "cssClasses": [
@@ -23659,11 +23666,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3743
+            "line": 3755
           },
           {
             "owner": "ui-system.css",
-            "line": 3939
+            "line": 3951
           }
         ],
         "cssClasses": [
@@ -23681,11 +23688,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3766
+            "line": 3778
           },
           {
             "owner": "ui-system.css",
-            "line": 3842
+            "line": 3854
           }
         ],
         "cssClasses": [
@@ -23703,11 +23710,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3845
+            "line": 3857
           },
           {
             "owner": "ui-system.css",
-            "line": 3983
+            "line": 3995
           }
         ],
         "cssClasses": [
@@ -23725,11 +23732,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 3858
+            "line": 3870
           },
           {
             "owner": "ui-system.css",
-            "line": 3997
+            "line": 4009
           }
         ],
         "cssClasses": [
@@ -23747,11 +23754,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 4030
+            "line": 4042
           },
           {
             "owner": "ui-system.css",
-            "line": 4570
+            "line": 4582
           }
         ],
         "cssClasses": [
@@ -23769,11 +23776,11 @@
         "owners": [
           {
             "owner": "ui-system.css",
-            "line": 4294
+            "line": 4306
           },
           {
             "owner": "ui-system.css",
-            "line": 4315
+            "line": 4327
           }
         ],
         "cssClasses": [
