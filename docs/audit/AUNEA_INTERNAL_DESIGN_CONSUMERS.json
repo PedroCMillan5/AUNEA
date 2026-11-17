@@ -276,7 +276,6 @@
             "pages/tobe.js",
             "pages/tobe-review.js",
             "pages/tobe-flow.js",
-            "pages/comparison.js",
             "pages/session-display.js",
             "domain/process.js",
             "pages/projects.js",
@@ -410,7 +409,6 @@
             "pages/tobe.js",
             "pages/tobe-review.js",
             "pages/tobe-flow.js",
-            "pages/comparison.js",
             "pages/session-display.js",
             "domain/process.js",
             "pages/projects.js",
@@ -449,7 +447,6 @@
             "pages/tobe.js",
             "pages/tobe-review.js",
             "pages/tobe-flow.js",
-            "pages/comparison.js",
             "domain/process.js",
             "domain/internal-ai-pilot.js",
             "pages/tobe-global.js"
@@ -486,7 +483,6 @@
             "pages/tobe.js",
             "pages/tobe-review.js",
             "pages/tobe-flow.js",
-            "pages/comparison.js",
             "pages/session-display.js",
             "domain/process.js",
             "pages/projects.js",
@@ -1005,7 +1001,7 @@
       "path": "core/state.js",
       "layer": "core",
       "blockId": "AUNEA-FE-CORE-STATE-020",
-      "lines": 717,
+      "lines": 788,
       "family": [
         "CRM / PG00"
       ],
@@ -1234,7 +1230,7 @@
       "path": "ui/renderer.js",
       "layer": "ui",
       "blockId": "AUNEA-FE-DIAG-RENDER-040",
-      "lines": 840,
+      "lines": 855,
       "family": [
         "Sesión / PG01–PG09",
         "Transversal / engine"
@@ -2265,7 +2261,6 @@
         "btn-small",
         "confirmed",
         "data-table",
-        "notice",
         "on",
         "pg12-added-cell",
         "pg12-before-after",
@@ -2293,8 +2288,7 @@
         "selected",
         "table-wrap",
         "tobe-eyebrow",
-        "tobe-muted",
-        "warn"
+        "tobe-muted"
       ]
     },
     {
@@ -8563,7 +8557,6 @@
         "pages/tobe.js",
         "pages/tobe-review.js",
         "pages/tobe-flow.js",
-        "pages/comparison.js",
         "pages/session-display.js",
         "domain/process.js",
         "pages/projects.js",
@@ -16803,7 +16796,6 @@
         "pages/tobe.js",
         "pages/tobe-review.js",
         "pages/tobe-flow.js",
-        "pages/comparison.js",
         "domain/process.js",
         "domain/internal-ai-pilot.js",
         "pages/tobe-global.js"
@@ -20119,7 +20111,6 @@
           "pages/tobe.js",
           "pages/tobe-review.js",
           "pages/tobe-flow.js",
-          "pages/comparison.js",
           "pages/session-display.js",
           "domain/process.js",
           "pages/projects.js",
@@ -20718,7 +20709,6 @@
           "pages/tobe.js",
           "pages/tobe-review.js",
           "pages/tobe-flow.js",
-          "pages/comparison.js",
           "domain/process.js",
           "domain/internal-ai-pilot.js",
           "pages/tobe-global.js"
