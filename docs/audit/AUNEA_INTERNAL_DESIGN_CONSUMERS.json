@@ -998,7 +998,7 @@
       "path": "core/state.js",
       "layer": "core",
       "blockId": "AUNEA-FE-CORE-STATE-020",
-      "lines": 812,
+      "lines": 813,
       "family": [
         "CRM / PG00"
       ],
@@ -1228,7 +1228,7 @@
       "path": "ui/renderer.js",
       "layer": "ui",
       "blockId": "AUNEA-FE-DIAG-RENDER-040",
-      "lines": 932,
+      "lines": 933,
       "family": [
         "Sesión / PG01–PG09",
         "Transversal / engine"
