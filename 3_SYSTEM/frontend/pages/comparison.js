@@ -235,6 +235,15 @@ function tobeComparisonPage(){
   if(!source)return pageTop('AS-IS vs TO-BE','No se encuentra el AS-IS de origen.',
     '<button class="btn" data-page="tobe">Volver a TO-BE</button>')+
     auneaUiFeedbackMessage('warn','La versión histórica de AS-IS no está disponible. La comparación no puede reconstruirse.');
+  // The same single-owner compatibility gate used by PG11 protects PG12.
+  // Never pair an old reviewed TO-BE with a genuinely changed AS-IS/diagnosis.
+  const compatibility=typeof tobeAsisCompatibility==='function'?
+    tobeAsisCompatibility(e,p):{compatible:true};
+  if(!compatibility.compatible)
+    return pageTop('AS-IS vs TO-BE','La comparación requiere un origen AS-IS compatible.',
+      '<button class="btn" data-page="tobe">Volver a TO-BE</button>')+
+      auneaUiFeedbackMessage('warn',
+        String(compatibility.message||'El AS-IS ha cambiado desde el diseño TO-BE. Revisa y concilia la fuente en PG11 antes de comparar.'));
   const items=[...(p.items||[]),...tobeAddedSteps(p)],
     selected=items.some(i=>String(tobeFlowItemId(i))===__auneaPg12SelectedSource)?
       __auneaPg12SelectedSource:String(tobeFlowItemId(items[0])||''),
