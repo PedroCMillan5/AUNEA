@@ -514,6 +514,41 @@ function actionBar(left,right){return `<div class="action-bar">${left||''}<div c
 // Provenance chip for a value that was reused instead of re-asked (DEC-040/050).
 function prefillChip(source){return source?`<span class="prefill-chip">Prerrellenado desde ${esc(source)}</span>`:''}
 function section(title,sub,body,actions=''){return `<div class="card card-pad section"><div class="section-title"><div><h2>${esc(title)}</h2>${sub?`<p>${sub}</p>`:''}</div><div class="section-actions">${actions}</div></div>${body}</div>`}
+// [AUNEA-FE-UI-SEMANTIC-475] START — Opt-in semantic structure shared by non-FROZEN views.
+// PURPOSE: Distinguish section/subsection/block/group containers from their visual treatment.
+// SOURCE: AUNEA_INTERNAL_UI_UX_MASTER_CONTRACT_20261117.md (L1); DEC-050/056.
+// INPUTS: level, current page-owned classes and optional safe ARIA attributes.
+// OUTPUTS: semantic HTML with a stable data-aunea-ui-level marker; read-only datum rows.
+// SIDE_EFFECTS: none. Existing section() and all FROZEN markup remain unchanged.
+// CHANGE_RISK: MEDIUM. Do not add default styles to these data attributes.
+function auneaUiStructureStart(level,options={}){
+  const tags={section:'section',subsection:'section',block:'div',group:'div'};
+  if(!Object.prototype.hasOwnProperty.call(tags,level))
+    throw new Error('Unsupported AUNEA UI hierarchy level: '+level);
+  const visual=options.visual||'inherit';
+  if(!['inherit','flow','surface'].includes(visual))
+    throw new Error('Unsupported AUNEA UI visual variant: '+visual);
+  const extra=String(options.className||'').trim();
+  const classes=['aunea-ui-structure','aunea-ui-structure--'+level,
+    visual==='inherit'?'':'aunea-ui-structure--'+visual,extra].filter(Boolean).join(' ');
+  return '<'+tags[level]+' class="'+attr(classes)+'" data-aunea-ui-level="'+level+'"'+
+    (options.id?' id="'+attr(options.id)+'"':'')+
+    (options.ariaLabel?' aria-label="'+attr(options.ariaLabel)+'"':'')+
+    (options.ariaLive?' aria-live="'+attr(options.ariaLive)+'"':'')+'>';
+}
+function auneaUiStructureEnd(level){
+  const tags={section:'section',subsection:'section',block:'div',group:'div'};
+  if(!Object.prototype.hasOwnProperty.call(tags,level))
+    throw new Error('Unsupported AUNEA UI hierarchy level: '+level);
+  return '</'+tags[level]+'>';
+}
+// Intended only inside an existing <dl>: one read-only fact; never creates an input.
+function auneaUiDatum(label,value){
+  return '<div class="aunea-ui-datum" data-aunea-ui-level="datum"><dt>'+
+    esc(label)+'</dt><dd>'+esc(value)+'</dd></div>';
+}
+// [AUNEA-FE-UI-SEMANTIC-475] END
+
 function statusClass(s=''){const z=s.toLowerCase();if(z.includes('cerrado')||z.includes('confirm')||z.includes('listo')||z.includes('ganado'))return'green';if(z.includes('sesión')||z.includes('sesion')||z.includes('diagn')||z.includes('reun'))return'amber';if(z.includes('trabajo interno')||z.includes('propuesta')||z.includes('resultado'))return'blue';if(z.includes('perdido')||z.includes('bloq'))return'red';return''}
 function statusBadge(s){return `<span class="status ${statusClass(s)}">${esc(s||'Borrador')}</span>`}
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(window.__toast);window.__toast=setTimeout(()=>t.classList.remove('show'),2600)}
