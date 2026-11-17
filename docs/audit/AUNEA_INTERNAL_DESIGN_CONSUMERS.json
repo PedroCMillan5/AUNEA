@@ -2251,7 +2251,7 @@
       "path": "pages/comparison.js",
       "layer": "pages",
       "blockId": "AUNEA-FE-PG12-OVERLAY-VIEW-470",
-      "lines": 370,
+      "lines": 371,
       "family": [
         "Comparación / posterior"
       ],
@@ -2269,8 +2269,6 @@
         "on",
         "pg12-added-cell",
         "pg12-before-after",
-        "pg12-changes-disclosure",
-        "pg12-count-audit",
         "pg12-detail-alerts",
         "pg12-detail-text",
         "pg12-diff-stats",
@@ -11290,11 +11288,9 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 4,
-      "runtimeConsumers": [
-        "pages/comparison.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "pg12-count-audit",
@@ -11302,11 +11298,9 @@
         "ui-system.css"
       ],
       "ruleOccurrences": 5,
-      "runtimeConsumers": [
-        "pages/comparison.js"
-      ],
+      "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "REFERENCED"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "pg12-detail-alerts",
