@@ -151,7 +151,7 @@
       "name": "Carcasa de aplicación",
       "ds": [
         "DS-001",
-        "002"
+        "DS-002"
       ],
       "owner": "ui/shell.js",
       "implementation": "existing",
@@ -200,7 +200,7 @@
       "name": "Sección funcional",
       "ds": [
         "DS-002",
-        "004"
+        "DS-004"
       ],
       "owner": "core/state.js",
       "implementation": "existing",
@@ -217,7 +217,7 @@
       "name": "Subsección",
       "ds": [
         "DS-002",
-        "003"
+        "DS-003"
       ],
       "owner": "core/state.js",
       "implementation": "review",
@@ -251,7 +251,7 @@
       "name": "Grupo de campos/datos",
       "ds": [
         "DS-003",
-        "020"
+        "DS-020"
       ],
       "owner": "core/state.js",
       "implementation": "review",
@@ -372,7 +372,7 @@
       "name": "Desplegable/acordeón",
       "ds": [
         "DS-002",
-        "004"
+        "DS-004"
       ],
       "owner": "ui/renderer.js",
       "implementation": "existing",
@@ -390,7 +390,7 @@
       "name": "Modal/diálogo",
       "ds": [
         "DS-004",
-        "017"
+        "DS-017"
       ],
       "owner": "core/state.js",
       "implementation": "existing",
@@ -443,7 +443,7 @@
       "name": "Navegación/etapas",
       "ds": [
         "DS-012",
-        "013"
+        "DS-013"
       ],
       "owner": "core/state.js",
       "implementation": "existing",
@@ -461,7 +461,7 @@
       "name": "Búsqueda/filtros",
       "ds": [
         "DS-008",
-        "020"
+        "DS-020"
       ],
       "owner": "styles.css",
       "implementation": "review",
@@ -530,7 +530,7 @@
       "name": "Aviso contextual",
       "ds": [
         "DS-006",
-        "007"
+        "DS-007"
       ],
       "owner": "ui/renderer.js",
       "implementation": "existing",
@@ -564,7 +564,7 @@
       "name": "Estado sin datos",
       "ds": [
         "DS-003",
-        "004"
+        "DS-004"
       ],
       "owner": "ui/renderer.js",
       "implementation": "existing",
@@ -631,7 +631,7 @@
       "name": "Mapa de proceso",
       "ds": [
         "DS-012",
-        "014"
+        "DS-014"
       ],
       "owner": "domain/process.js",
       "implementation": "existing",
@@ -681,7 +681,7 @@
       "name": "Comparación de escenarios",
       "ds": [
         "DS-010",
-        "011"
+        "DS-011"
       ],
       "owner": "pages/comparison.js",
       "implementation": "review",
@@ -730,7 +730,7 @@
       "name": "Fuente y trazabilidad",
       "ds": [
         "DS-018",
-        "019"
+        "DS-019"
       ],
       "owner": "core/state.js",
       "implementation": "existing",
@@ -747,7 +747,7 @@
       "name": "Ayuda contextual",
       "ds": [
         "DS-003",
-        "020"
+        "DS-020"
       ],
       "owner": "styles.css",
       "implementation": "review",
@@ -813,7 +813,7 @@
       "name": "Confirmación/errores de acción",
       "ds": [
         "DS-006",
-        "017"
+        "DS-017"
       ],
       "owner": "core/state.js",
       "implementation": "review",
