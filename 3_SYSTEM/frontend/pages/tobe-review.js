@@ -401,22 +401,21 @@ function tobeAiRowActions(e,p,item,key){
       Array.isArray(x.fields)&&x.fields.includes(key)&&
       x.proposalFingerprint===tobeCandidateFingerprint(p)).slice(-1)[0],
     applied=history?.action==='APPLY'&&!!candidate&&!candidate.changed;
-  const action=(label,attribute,active=false,title='')=>
-    '<button type="button" class="btn btn-outline btn-small'+(active?' is-selected':'')+
-    '" '+attribute+' title="'+attr(title||label)+'">'+esc(label)+'</button>';
+  const action=(label,attribute,active=null,title='')=>
+    auneaUiFieldDecisionButton(label,attribute,active,title);
   if(!candidate&&!incompatible)return '';
   return '<div class="tobe-ai-row-actions aunea-ui-button-row" aria-label="Decisión sobre la propuesta IA de '+esc(
     TOBE_AI_REVIEW_FIELDS.find(x=>x[1]===key)?.[2]||'este campo')+'">'+
     (canApply?
       action('Aplicar IA',
         'data-tobe-ai-use-field="'+attr(key)+'" data-tobe-ai-action-source="'+attr(id)+'"',
-        false,'Aplicar sugerencia IA autorizada'):
+        null,'Aplicar sugerencia IA autorizada'):
       applied?'<span class="field-help" role="status">IA aplicada</span>':'')+
     action('Mantener','data-tobe-ai-keep-field="'+attr(key)+
       '" data-tobe-ai-action-source="'+attr(id)+'"',history?.action==='KEEP',
       'Conservar mi valor TO-BE; no aplicar la alternativa IA')+
     action('Editar','data-tobe-ai-edit-field="'+attr(key)+
-      '" data-tobe-ai-action-source="'+attr(id)+'"',false,
+      '" data-tobe-ai-action-source="'+attr(id)+'"',null,
       'Abrir el editor único del campo del borrador TO-BE')+'</div>';
 }
 // [AUNEA-FE-PG11-ROW-DECISION-278] END
