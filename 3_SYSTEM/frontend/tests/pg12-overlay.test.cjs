@@ -102,7 +102,7 @@ function harness(){
   };
   const api=vm.runInNewContext(semanticBlock+'\n'+regionBlock+'\n'+disclosureBlock+'\n'+modeBlock+'\n'+dataBlock+'\n'+code+
     ';({pg12OverlayModel,pg12OverlayHtml,pg12ComparisonCounters,pg12CountAuditHtml,pg12OriginalSignals,tobeComparisonPage})',context);
-  return {api,proposal,engagement,nativeCalls};
+  return {api,proposal,engagement,nativeCalls,context};
 }
 test('PG12 renders exactly one map with three layer modes and no split view',()=>{
   const {api,nativeCalls}=harness(),html=api.tobeComparisonPage();
@@ -285,5 +285,15 @@ test('PG12 audit reconciles warnings from added and unlinked steps',()=>{
   assert.match(html,/Bloqueos: 1/);
   const cells=html.match(/<td[^>]*>/g)||[];
   assert.ok(cells.length>=24,'source+new+orphan warnings require all audit rows');
+});
+test('PG12 refuses to mix a reviewed TO-BE with a materially changed AS-IS',()=>{
+  const {api,context}=harness();
+  context.tobeAsisCompatibility=()=>({
+    compatible:false,message:'AS-IS v3 contiene cambios reales frente a la fuente TO-BE v2.'
+  });
+  const page=api.tobeComparisonPage();
+  assert.match(page,/contiene cambios reales/);
+  assert.match(page,/Volver a TO-BE/);
+  assert.doesNotMatch(page,/class="process-graph-board"/);
 });
 // [AUNEA-UAT-PG12-OVERLAY-472] END
