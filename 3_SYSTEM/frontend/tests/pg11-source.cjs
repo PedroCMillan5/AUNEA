@@ -60,5 +60,15 @@ module.exports=function pg11LegacySourceOracle(){
   const semanticEnd=core.indexOf(semanticClose,semanticStart);
   if(semanticStart<0||semanticEnd<semanticStart)throw Error('Production semantic owner missing');
   source+='\n'+core.slice(semanticStart,semanticEnd+semanticClose.length)+'\n';
+  // L3 isolated source oracles use real shared data/inspector owners, never mocks.
+  for(const [owner,id] of [
+    [renderer,'AUNEA-FE-UI-DATA-L3-481'],
+    [core,'AUNEA-FE-UI-REGION-L3-482']
+  ]){
+    const open='// ['+id+'] START',close='// ['+id+'] END',
+      i=owner.indexOf(open),j=owner.indexOf(close,i);
+    if(i<0||j<i)throw Error('Production L3 UI owner missing: '+id);
+    source+='\n'+owner.slice(i,j+close.length)+'\n';
+  }
   return source;
 };
