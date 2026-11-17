@@ -8,8 +8,8 @@
   ],
   "metrics": {
     "modules": 50,
-    "cssClasses": 1123,
-    "classesCrossFile": 108,
+    "cssClasses": 1124,
+    "classesCrossFile": 107,
     "repeatedSelectorContextGroups": 138,
     "documentedComponents": 20,
     "inlineStyleAttributes": 30
@@ -340,8 +340,7 @@
         {
           "name": "aunea-ui-work-surface",
           "owners": [
-            "styles.css",
-            "ui-system.css"
+            "styles.css"
           ],
           "consumers": [
             "pages/tobe.js",
@@ -4460,16 +4459,15 @@
     {
       "className": "aunea-ui-work-surface",
       "ownerFiles": [
-        "styles.css",
-        "ui-system.css"
+        "styles.css"
       ],
-      "ruleOccurrences": 3,
+      "ruleOccurrences": 1,
       "runtimeConsumers": [
         "pages/tobe.js",
         "pages/tobe-global.js"
       ],
       "frozenRisk": false,
-      "classification": "CROSS_FILE_OWNER_REVIEW"
+      "classification": "REFERENCED"
     },
     {
       "className": "avatar",
@@ -11499,6 +11497,16 @@
       "classification": "REFERENCED"
     },
     {
+      "className": "pg12-primary",
+      "ownerFiles": [
+        "ui-system.css"
+      ],
+      "ruleOccurrences": 2,
+      "runtimeConsumers": [],
+      "frozenRisk": false,
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
+    },
+    {
       "className": "pg12-route",
       "ownerFiles": [
         "ui-system.css"
@@ -11553,7 +11561,7 @@
       "ownerFiles": [
         "ui-system.css"
       ],
-      "ruleOccurrences": 1,
+      "ruleOccurrences": 3,
       "runtimeConsumers": [],
       "frozenRisk": false,
       "classification": "REVIEW_DYNAMIC_OR_HTML"
@@ -11597,7 +11605,7 @@
       "ownerFiles": [
         "ui-system.css"
       ],
-      "ruleOccurrences": 3,
+      "ruleOccurrences": 5,
       "runtimeConsumers": [
         "pages/comparison.js"
       ],
@@ -18802,23 +18810,6 @@
         "manualVisualReviewRequired": true
       },
       {
-        "className": "aunea-ui-work-surface",
-        "ownerFiles": [
-          "styles.css",
-          "ui-system.css"
-        ],
-        "consumers": [
-          "pages/tobe.js",
-          "pages/tobe-global.js"
-        ],
-        "status": "PENDING_BROWSER_QA",
-        "reason": "Additional runtime/browser inspection required; no speculative deletion",
-        "baseOwner": "styles.css",
-        "exceptionOwner": "ui-system.css",
-        "browserVerified": false,
-        "manualVisualReviewRequired": true
-      },
-      {
         "className": "avatar",
         "ownerFiles": [
           "styles.css",
@@ -23796,13 +23787,13 @@
       }
     ],
     "counts": {
-      "crossFileClasses": 108,
+      "crossFileClasses": 107,
       "selectorContexts": 138,
       "protectedClasses": 106,
       "protectedSelectorContexts": 99,
       "scopedClassExceptions": 1,
       "scopedSelectorExceptions": 39,
-      "unresolvedClasses": 1,
+      "unresolvedClasses": 0,
       "unresolvedSelectorContexts": 0,
       "browserApproved": 0
     }
