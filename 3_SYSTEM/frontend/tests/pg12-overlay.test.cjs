@@ -264,4 +264,26 @@ test('PG12 native route renderer preserves the NO branch in Actual and Propuesto
   assert.equal(run('comparison',future).length,1,'Identical routes need no duplicate stroke');
   assert.equal(run('comparison',futureChanged).length,2);
 });
+test('PG12 audit reconciles warnings from added and unlinked steps',()=>{
+  const {api,proposal,engagement}=harness();
+  proposal.flow.addedSteps.push({id:'N1',isAddition:true,stepName:'Nuevo control',
+    sourceStepId:'S1',transformation:'Se incorpora control'});
+  const model=api.pg12OverlayModel(engagement,proposal,source);
+  model.findings=[
+    {stepId:'S1',severity:'WARNING',message:'Original issue'},
+    {stepId:'N1',severity:'WARNING',message:'New TO-BE issue'},
+    {stepId:'',severity:'WARNING',message:'General issue'},
+    {stepId:'S2',severity:'BLOCKING',message:'Separate blocker'}
+  ];
+  const counts=api.pg12ComparisonCounters(model);
+  assert.equal(counts.warnings,3);
+  assert.equal(counts.blocking,1);
+  const html=api.pg12CountAuditHtml(model,source,counts);
+  assert.match(html,/Nuevo control · nueva TO-BE/);
+  assert.match(html,/Observaciones sin actividad vinculada/);
+  assert.match(html,/Hallazgos pendientes: 3/);
+  assert.match(html,/Bloqueos: 1/);
+  const cells=html.match(/<td[^>]*>/g)||[];
+  assert.ok(cells.length>=24,'source+new+orphan warnings require all audit rows');
+});
 // [AUNEA-UAT-PG12-OVERLAY-472] END
