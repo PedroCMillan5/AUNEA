@@ -815,6 +815,21 @@ function auneaUiModeButton(eventAttribute,value,label,selected){
   return '<button type="button" class="btn '+(selected?'btn-primary':'btn-outline')+
     '" '+eventAttribute+'="'+attr(value)+'" aria-pressed="'+String(!!selected)+'">'+esc(label)+'</button>';
 }
+
+// Opt-in select: same canonical control with a stable accessible name.
+// Hidden input, option set, validation and change owner remain unchanged.
+function auneaUiNamedSelect(label,id,options,value,config={}){
+  if(!String(label||'').trim())throw new Error('AUNEA select requires a visible label');
+  const html=auneaSelectControl(id,options,value,config);
+  return html.replace('class="canonical-aunea-select"',
+    'class="canonical-aunea-select" data-aunea-ui-control="select"')
+    .replace('<summary>','<summary aria-label="'+attr(label)+'">');
+}
+// Feedback describes UI state only, never a second business-status owner.
+function auneaUiFeedbackMessage(tone,message){
+  if(!['info','warn','good'].includes(tone))throw new Error('Unsupported feedback tone: '+tone);
+  return '<p class="notice '+tone+'" role="status" aria-live="polite">'+esc(message)+'</p>';
+}
 // [AUNEA-FE-UI-CHOICES-L2-478] END
 
 // [AUNEA-FE-UI-EMPTY-STATE-393] START — Shared semantic no-data state
