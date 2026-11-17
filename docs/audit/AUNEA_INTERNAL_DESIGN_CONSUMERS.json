@@ -9,7 +9,7 @@
   "metrics": {
     "modules": 50,
     "cssClasses": 1125,
-    "classesCrossFile": 111,
+    "classesCrossFile": 107,
     "repeatedSelectorContextGroups": 138,
     "documentedComponents": 20,
     "inlineStyleAttributes": 30
@@ -11279,13 +11279,12 @@
     {
       "className": "pg12-changes-disclosure",
       "ownerFiles": [
-        "styles.css",
         "ui-system.css"
       ],
       "ruleOccurrences": 5,
       "runtimeConsumers": [],
       "frozenRisk": false,
-      "classification": "CROSS_FILE_OWNER_REVIEW"
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "pg12-count-audit",
@@ -11568,7 +11567,6 @@
     {
       "className": "pg12-view-selector",
       "ownerFiles": [
-        "styles.css",
         "ui-system.css"
       ],
       "ruleOccurrences": 4,
@@ -11576,7 +11574,7 @@
         "pages/comparison.js"
       ],
       "frozenRisk": false,
-      "classification": "CROSS_FILE_OWNER_REVIEW"
+      "classification": "REFERENCED"
     },
     {
       "className": "pg12-work-head",
@@ -11593,7 +11591,6 @@
     {
       "className": "pg12-workspace",
       "ownerFiles": [
-        "styles.css",
         "ui-system.css"
       ],
       "ruleOccurrences": 8,
@@ -11601,7 +11598,7 @@
         "pages/comparison.js"
       ],
       "frozenRisk": false,
-      "classification": "CROSS_FILE_OWNER_REVIEW"
+      "classification": "REFERENCED"
     },
     {
       "className": "phone-compound",
@@ -16530,7 +16527,6 @@
     {
       "className": "tobe-workspace",
       "ownerFiles": [
-        "styles.css",
         "ui-system.css"
       ],
       "ruleOccurrences": 213,
@@ -16538,7 +16534,7 @@
         "pages/tobe.js"
       ],
       "frozenRisk": false,
-      "classification": "CROSS_FILE_OWNER_REVIEW"
+      "classification": "REFERENCED"
     },
     {
       "className": "tobe-workspace-head",
@@ -20220,52 +20216,6 @@
         "manualVisualReviewRequired": true
       },
       {
-        "className": "pg12-changes-disclosure",
-        "ownerFiles": [
-          "styles.css",
-          "ui-system.css"
-        ],
-        "consumers": [],
-        "status": "PENDING_BROWSER_QA",
-        "reason": "Additional runtime/browser inspection required; no speculative deletion",
-        "baseOwner": "styles.css",
-        "exceptionOwner": "ui-system.css",
-        "browserVerified": false,
-        "manualVisualReviewRequired": true
-      },
-      {
-        "className": "pg12-view-selector",
-        "ownerFiles": [
-          "styles.css",
-          "ui-system.css"
-        ],
-        "consumers": [
-          "pages/comparison.js"
-        ],
-        "status": "PENDING_BROWSER_QA",
-        "reason": "Additional runtime/browser inspection required; no speculative deletion",
-        "baseOwner": "styles.css",
-        "exceptionOwner": "ui-system.css",
-        "browserVerified": false,
-        "manualVisualReviewRequired": true
-      },
-      {
-        "className": "pg12-workspace",
-        "ownerFiles": [
-          "styles.css",
-          "ui-system.css"
-        ],
-        "consumers": [
-          "pages/comparison.js"
-        ],
-        "status": "PENDING_BROWSER_QA",
-        "reason": "Additional runtime/browser inspection required; no speculative deletion",
-        "baseOwner": "styles.css",
-        "exceptionOwner": "ui-system.css",
-        "browserVerified": false,
-        "manualVisualReviewRequired": true
-      },
-      {
         "className": "primary",
         "ownerFiles": [
           "styles.css",
@@ -20648,22 +20598,6 @@
         ],
         "status": "FROZEN_PROTECTED",
         "reason": "Shared shell, CRM or diagnostic family; preserve FROZEN cascade",
-        "baseOwner": "styles.css",
-        "exceptionOwner": "ui-system.css",
-        "browserVerified": false,
-        "manualVisualReviewRequired": true
-      },
-      {
-        "className": "tobe-workspace",
-        "ownerFiles": [
-          "styles.css",
-          "ui-system.css"
-        ],
-        "consumers": [
-          "pages/tobe.js"
-        ],
-        "status": "PENDING_BROWSER_QA",
-        "reason": "Additional runtime/browser inspection required; no speculative deletion",
         "baseOwner": "styles.css",
         "exceptionOwner": "ui-system.css",
         "browserVerified": false,
@@ -23826,13 +23760,13 @@
       }
     ],
     "counts": {
-      "crossFileClasses": 111,
+      "crossFileClasses": 107,
       "selectorContexts": 138,
       "protectedClasses": 106,
       "protectedSelectorContexts": 99,
       "scopedClassExceptions": 1,
       "scopedSelectorExceptions": 39,
-      "unresolvedClasses": 4,
+      "unresolvedClasses": 0,
       "unresolvedSelectorContexts": 0,
       "browserApproved": 0
     }
