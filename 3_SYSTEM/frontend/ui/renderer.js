@@ -803,6 +803,20 @@ function auneaWorkDisclosure(kind,title,body){
 }
 // [AUNEA-FE-GLOBAL-DISCLOSURE-450] END
 // [AUNEA-FE-UI-WORK-DISCLOSURE-380] END
+// [AUNEA-FE-UI-CHOICES-L2-478] START — Opt-in pressed-state buttons.
+// PURPOSE: One reversible UI mode selection across non-FROZEN PG11 and PG12.
+// SOURCE: UI/UX master contract L2, DEC-050/056; .btn styles unchanged.
+// INPUTS: existing page event attribute, value, label and selected state.
+// OUTPUT: accessible pressed-state button. No business state, storage or event listeners.
+// SIDE_EFFECTS: none. CHANGE_RISK: LOW.
+function auneaUiModeButton(eventAttribute,value,label,selected){
+  if(!['data-tobe-mode-switch','data-pg12-view'].includes(eventAttribute))
+    throw new Error('Unsupported mode control owner: '+eventAttribute);
+  return '<button type="button" class="btn '+(selected?'btn-primary':'btn-outline')+
+    '" '+eventAttribute+'="'+attr(value)+'" aria-pressed="'+String(!!selected)+'">'+esc(label)+'</button>';
+}
+// [AUNEA-FE-UI-CHOICES-L2-478] END
+
 // [AUNEA-FE-UI-EMPTY-STATE-393] START — Shared semantic no-data state
 // SOURCE: CATALOGO_COMPONENTES_AUNEA DS-003/004; DEC-056.
 // PURPOSE: Reuse a single accessible empty-state structure across unfrozen views.
