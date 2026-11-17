@@ -96,7 +96,7 @@ function harness(){
     currentDiagnosticOutput:()=>({process_time_projection:{
       annual_active_hours:60,annual_wait_exposure_hours:720,annual_rework_hours:12
     }}),
-    pageTop:(_title,subtitle)=>'<header>'+subtitle+'</header>',
+    pageTop:(_title,subtitle,actions)=>'<header>'+subtitle+(actions||'')+'</header>',
     auneaEmptyState:()=>'<p>Esperando revisión</p>',
     state:{activePage:'comparacion'}
   };
