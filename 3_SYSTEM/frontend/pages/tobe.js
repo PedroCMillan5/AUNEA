@@ -838,7 +838,7 @@ function tobeInspectorHtml(e,p){
     tobeProposalSourceSteps(e,p).find(x=>String(x.id)===String(item.sourceStepId))||null;
   const withAi=(key,html)=>tobeWithAiHint(e,p,item,key,html);
   const statusField='<div class="field"><label for="tobe_'+attr(item.id)+'_transformation">Qué cambia</label>'+
-    (editable?auneaSelectControl('tobe_'+item.id+'_transformation',TOBE_TRANSFORMATIONS.map(v=>({value:v,label:v})),
+    (editable?auneaUiNamedSelect('Qué cambia','tobe_'+item.id+'_transformation',TOBE_TRANSFORMATIONS.map(v=>({value:v,label:v})),
       item.transformation||'',{extra:'data-tobe-item="'+attr(item.id)+'" data-tobe-field="transformation"',placeholder:'Selecciona una transformación'}):
       '<input value="'+attr(item.transformation||'Sin definir')+'" disabled>')+'</div>';
   const supportingInformation=
@@ -939,7 +939,7 @@ function tobeInspectorHtml(e,p){
           '<div class="form-grid tobe-design-fields">'+
             tobeField(item,'stepName','Nombre de actividad futura',item.stepName,'text',!editable)+
             '<div class="field"><label>Tipo de actividad futura</label>'+
-              (editable?auneaSelectControl('tobeStepType_'+item.id,
+              (editable?auneaUiNamedSelect('Tipo de actividad futura','tobeStepType_'+item.id,
                 [{value:'ST02',label:'Actividad operativa'},{value:'ST04',label:'Decisión · rutas SÍ / NO'}],
                 item.stepType||'ST02',{extra:'data-tobe-item="'+attr(item.id)+'" data-tobe-field="stepType"',
                   placeholder:'Selecciona tipo'}):
@@ -1310,7 +1310,7 @@ function tobePage(){
         '<span id="tobeFlowModeStatus" role="status" aria-live="polite"></span></div>':'')+
       tobeCanvasHtml(e,p)+
       '<div class="tobe-flow-start field"><label>Inicio del proceso futuro</label>'+
-        (editable?auneaSelectControl('tobeFlowStart',tobeFutureSteps(e,p).map(x=>({value:String(x.id),label:x.step_name})),
+        (editable?auneaUiNamedSelect('Inicio del proceso futuro','tobeFlowStart',tobeFutureSteps(e,p).map(x=>({value:String(x.id),label:x.step_name})),
           tobeFlowOwner(e,p).startStepId,{extra:'data-tobe-flow-start="1"',placeholder:'Selecciona actividad inicial'}):
           '<input disabled value="'+attr(tobeFutureSteps(e,p).find(x=>String(x.id)===tobeFlowOwner(e,p).startStepId)?.step_name||'Pendiente')+'">')+
       '<p class="field-help">Indica la actividad de inicio del TO-BE. El AS-IS no se modifica.</p></div>'+
