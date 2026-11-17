@@ -8,7 +8,7 @@
   ],
   "metrics": {
     "modules": 50,
-    "cssClasses": 1120,
+    "cssClasses": 1123,
     "classesCrossFile": 108,
     "repeatedSelectorContextGroups": 138,
     "documentedComponents": 20,
@@ -1007,7 +1007,7 @@
       "path": "core/state.js",
       "layer": "core",
       "blockId": "AUNEA-FE-CORE-STATE-020",
-      "lines": 671,
+      "lines": 706,
       "family": [
         "CRM / PG00"
       ],
@@ -4410,6 +4410,36 @@
       ],
       "frozenRisk": false,
       "classification": "REFERENCED"
+    },
+    {
+      "className": "aunea-ui-structure--flow",
+      "ownerFiles": [
+        "styles.css"
+      ],
+      "ruleOccurrences": 2,
+      "runtimeConsumers": [],
+      "frozenRisk": false,
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
+    },
+    {
+      "className": "aunea-ui-structure--group",
+      "ownerFiles": [
+        "styles.css"
+      ],
+      "ruleOccurrences": 1,
+      "runtimeConsumers": [],
+      "frozenRisk": false,
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
+    },
+    {
+      "className": "aunea-ui-structure--surface",
+      "ownerFiles": [
+        "styles.css"
+      ],
+      "ruleOccurrences": 3,
+      "runtimeConsumers": [],
+      "frozenRisk": false,
+      "classification": "REVIEW_DYNAMIC_OR_HTML"
     },
     {
       "className": "aunea-ui-work-disclosure",
