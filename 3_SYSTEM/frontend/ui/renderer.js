@@ -885,7 +885,8 @@ function auneaUiTableSearch(tableId,label,value=''){
   if(!/^[a-zA-Z][a-zA-Z0-9_-]*$/.test(String(tableId)))throw Error('Invalid AUNEA table identifier');
   return '<div class="filter-row" data-aunea-ui-region="table-filter">'+
     '<div class="field"><label for="'+attr(tableId)+'Search">'+esc(label)+'</label>'+
-    '<input type="search" id="'+attr(tableId)+'Search" data-aunea-table-filter="'+
+    '<input type="search" id="'+attr(tableId)+'Search" aria-controls="'+attr(tableId)+
+    '" data-aunea-table-filter="'+
     attr(tableId)+'" autocomplete="off" value="'+attr(value??'')+'"></div></div>'+
     '<p class="field-help" role="status" data-aunea-table-empty="'+attr(tableId)+
     '" hidden>No hay actividades que coincidan con la búsqueda.</p>';
