@@ -56,6 +56,19 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}a{color:inherit}
 .grid{display:grid;gap:14px}.g2{grid-template-columns:repeat(2,minmax(0,1fr))}.g3{grid-template-columns:repeat(3,minmax(0,1fr))}.g4{grid-template-columns:repeat(4,minmax(0,1fr))}.metric{padding:16px}.metric small{display:block;color:var(--muted);font-size:var(--font-caption);text-transform:uppercase;letter-spacing:1px}.metric strong{display:block;font-size:var(--font-h2);margin-top:6px}.metric span{font-size:var(--font-caption);color:var(--muted)}
 .hero-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.hero-action{padding:19px;border:1px solid var(--line);border-radius:10px;background:#fff;text-align:left;min-height:116px}.hero-action.primary{background:linear-gradient(125deg,var(--gold-2),var(--gold));color:#fff;border-color:var(--gold-2)}.hero-action b{display:block;font-size:var(--font-body)}.hero-action p{margin:6px 0 0;font-size:var(--font-caption);color:var(--muted);line-height:1.45}.hero-action.primary p{color:#fff5dd}.hero-action .arrow{display:block;margin-top:13px;font-size:18px;color:var(--gold-2)}.hero-action.primary .arrow{color:#fff}
 .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:10px}.data-table{width:100%;border-collapse:collapse;min-width:840px;background:#fff}.data-table th{font-size:var(--font-caption);text-transform:uppercase;letter-spacing:.7px;color:#727d84;background:#f7f6f2;text-align:left;padding:10px;border-bottom:1px solid var(--line)}.data-table td{padding:11px 10px;border-bottom:1px solid #eeeae3;font-size:var(--font-caption);vertical-align:top}.data-table tr:last-child td{border-bottom:0}.row-actions{display:flex;gap:6px;flex-wrap:wrap}
+
+/* [AUNEA-FE-UI-ACTION-LINK-489] START — Shared opt-in navigation rendered as a button.
+   SOURCE: UI/UX master contract (DS-017, DEC-050/056), spacing token --space-3.
+   SCOPE: Only non-FROZEN consumers explicitly marked .aunea-ui-action-link.
+   An HTML <a> preserves navigation, while the .btn visual has no native link underline.
+   The optional .aunea-ui-after-content owns the gap after a data/detail group.
+   No changes to global a, .btn or FROZEN appearance. */
+a.aunea-ui-action-link.btn{text-decoration:none}
+a.aunea-ui-action-link.btn:hover{text-decoration:none}
+.aunea-ui-after-content{margin-block-start:var(--space-3)}
+a.aunea-ui-action-link.btn:focus-visible{outline:3px solid var(--system);outline-offset:2px}
+/* [AUNEA-FE-UI-ACTION-LINK-489] END */
+
 /* [AUNEA-FE-UI-DATA-STYLE-485] START — DS-008 numeric alignment only on opt-in tables.
    SOURCE: CATALOGO_COMPONENTES_AUNEA DS-008, UI/UX master contract L3.
    CHANGE_RISK: LOW. All existing FROZEN table cells remain unchanged. */
