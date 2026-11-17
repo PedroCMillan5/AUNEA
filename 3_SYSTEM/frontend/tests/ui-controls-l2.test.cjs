@@ -100,7 +100,8 @@ function fakeModalEnvironment(){
  input=node('input');
  const nodes={'.modal-head h2':heading,'#modalClose':close,'#modalCancel':cancel,
   '#modalSave':save,
-  'input:not([type="hidden"]):not([disabled]),textarea:not([disabled]),select:not([disabled]),summary,button:not([disabled])':input};
+  'input:not([type="hidden"]):not([disabled]),textarea:not([disabled]),select:not([disabled]),summary':input,
+  'button:not([disabled])':close};
  const dialog={
  attrs,events,
  setAttribute(k,v){attrs[k]=v;},
