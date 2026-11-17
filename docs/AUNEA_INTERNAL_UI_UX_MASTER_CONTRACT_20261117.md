@@ -216,3 +216,31 @@ Cierre de esta entrega: **el contrato documental y la matriz estructurada existe
 - Contrato F1/F2 — https://docs.google.com/document/d/1KOXX5zH7EI7zvgNDTQdfqyEqpamHh5qxtKVrtchy6FM/edit
 - Auditoría de color — https://docs.google.com/document/d/18BE1EH7BX6Sx3RdOn1fjPXaUFFgkKzOwVSfnP-_EmZ4/edit
 - WCAG 2.2 — https://www.w3.org/TR/WCAG22/
+
+## 10. L1 — Primera migración técnica verificada (17/11/2026)
+
+**Estado:** IMPLEMENTACIÓN PARCIAL / REVIEW. No es certificación global ni promoción CANONICAL. Este apartado prevalece sobre la fila L1 original del plan del §8, que se escribió antes de iniciar la implementación.
+
+### 10.1 Arquitectura compartida, sin alterar la compatibilidad
+- `AUNEA-FE-UI-SEMANTIC-475`, `core/state.js`: `auneaUiStructureStart/End()` genera la estructura semántica allowlisted de `section/subsection/block/group`. El renderer `auneaUiDatum()` representa valores read-only dentro de un `dl`, escapando etiqueta y valor. Todas las nuevas superficies tienen `data-aunea-ui-level` y permiten mantener las clases y referencias de cada pantalla. Rechaza niveles/variantes no definidos.
+- `AUNEA-FE-UI-SEMANTIC-STYLE-476`, `styles.css`: `flow` y `surface` son variantes **explícitas**. `inherit` no tiene CSS: las pantallas migradas conservan geometría/computed style preexistente. No se han añadido reglas globales para `section`, `div`, `.card` ni selectores FROZEN.
+- `section()` histórico y `pageTop()` siguen intactos para las páginas FROZEN. Los campos de negocio y su owner siguen siendo los canónicos; no hay un segundo motor de formularios ni nuevos datos.
+
+### 10.2 Primeros consumidores reales
+- **PG12 (Comparación):** las tres secciones principales, el detalle seleccionado como subsección, el detalle de actividad como bloque y seis datos de comparación consumen las funciones semánticas comunes. Se mantienen los mismos IDs, clases de página, encabezados, fuentes, acciones y flujo AS-IS→TO-BE.
+- **PG11 (revisión AS-IS en 03.1):** dos grupos `Actividad actual` y `Duraciones declaradas` consumen `auneaUiStructureStart/End('group')`. Se conservan ocho datos y dos valores declarados de `0 min`. Se trata exclusivamente de presentación de un snapshot confirmado, sin editor duplicado.
+
+### 10.3 QA efectuada
+- Compilación V8 de los seis JS modificados y pruebas (sintaxis): PASS.
+- PG12: se ejecutó el **harness sintético real** con funciones/owner compartidos sobre las versiones anterior y actual. El HTML normalizado (descontando exclusivamente atributos/clases semánticas nuevas) fue **idéntico carácter a carácter**: 9381 caracteres. Conteos finales: tres secciones, una subsección, un bloque y seis datos.
+- PG11: renderización anterior y actual del fixture de AS-IS. HTML idéntico tras eliminar solamente la marca semántica nueva; dos grupos, ocho datos, dos valores `0 min`.
+- `core/state.js` y `styles.css` vigentes, retirando el nuevo bloque opt-in, son **idénticos byte a byte** al baseline previo de la rama; `ui-system.css` no se modificó.
+- Test `AUNEA-UAT-UI-SEMANTIC-477` creado y registrado; los harnesses de `pg11-guided-inline.test.cjs` y `pg12-overlay.test.cjs` cargan ahora el owner real. **No se acredita todavía ejecución completa del `npm test`, CI/Chromium ni snapshots FROZEN después de estos commits.**
+
+### 10.4 Próximo tramo necesario para cerrar L1
+- Extender el renderer a los consumidores estructuralmente equivalentes de PG10, PG11, PG12 y Proyectos tras inspeccionar sus tests; no reemplazar `section()` sobre FROZEN.
+- Evitar paneles anidados sin función, evaluar casos de inspector/contexto y concretar los grupos/formularios compatibles con `Control_UI` canónico.
+- Ejecutar todos los tests Node, backend, Chromium, Edge/Windows y snapshots FROZEN 18/18; revisar visualmente desktop/móvil. Solo entonces podría proponerse L1 técnicamente cerrado; aceptación humana F6 permanece separada.
+
+**Registro único de familias/consumidores:** `docs/audit/AUNEA_INTERNAL_UI_UX_MASTER_REGISTRY_20261117.json`.  
+**Trazabilidad de código:** `CODE_BLOCK_INDEX.md` con Block_ID 475/476/477.
