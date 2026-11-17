@@ -107,25 +107,24 @@ function pg12NativeMapHtml(e,p,source,model,selected){
   html=html.replace('class="process-graph-board"',
     'class="process-graph-board" data-pg12-mode="'+attr(__auneaPg12View)+
     '" data-pg12-future-edges="'+futureEdges+'"');
-  return '<div class="pg12-native-map" aria-label="Mapa original del proceso con cambios TO-BE">'+html+'</div>';
+  return auneaUiRegionStart('diagram',{className:'pg12-native-map',
+    ariaLabel:'Mapa original del proceso con cambios TO-BE'})+html+auneaUiRegionEnd('diagram');
 }
 function pg12CountAuditHtml(model,source,counts){
   const stepWarnings=model.asis.map(s=>{
     const id=String(s.id),n=model.findings.filter(f=>String(f.stepId)===id&&f.severity!=='COMPATIBLE').length,
       signals=pg12OriginalSignals(source,id);
-    return '<tr><td>'+esc(s.step_name||id)+'</td><td>'+n+'</td><td>'+
-      (signals.frictions.length||0)+'</td><td>'+(signals.risks.length||0)+'</td><td>'+
-      esc(signals.wait===null?'—':signals.wait+' min')+'</td><td>'+
-      esc(signals.rework===null?'—':signals.rework+' min')+'</td></tr>';
+    return auneaUiTableRow([s.step_name||id,n,signals.frictions.length||0,signals.risks.length||0,
+      signals.wait===null?'—':signals.wait+' min',
+      signals.rework===null?'—':signals.rework+' min']);
   }).join('');
   return auneaUiDisclosureStart({variant:'legacy',className:'pg12-count-audit',title:'Comprobar contadores y procedencia'})+
     '<p>Las cinco cifras superiores se calculan desde el TO-BE revisado y sus comprobaciones. Las fricciones, riesgos y tiempos proceden del AS-IS confirmado, sin sumarlos como ahorros.</p>'+
     '<p>Actividades: '+model.items.length+' · Hallazgos pendientes: '+counts.warnings+
       ' · Bloqueos: '+counts.blocking+' · Fricciones AS-IS: '+counts.frictions+
       ' · Riesgos AS-IS: '+counts.risks+'</p>'+
-    '<div class="table-wrap"><table class="data-table"><thead><tr><th>Actividad AS-IS</th><th>Avisos PG11</th>'+
-    '<th>Fricciones vinculadas</th><th>Riesgos vinculados</th><th>Espera declarada</th>'+
-    '<th>Retrabajo declarado</th></tr></thead><tbody>'+stepWarnings+'</tbody></table></div>'+
+    auneaUiDataTable(['Actividad AS-IS','Avisos PG11','Fricciones vinculadas',
+      'Riesgos vinculados','Espera declarada','Retrabajo declarado'],stepWarnings)+
     '<small>Una fricción vinculada a dos actividades puede aparecer en las dos filas; el total global cuenta registros originales, no vinculaciones.</small>'+
     auneaUiDisclosureEnd();
 }
@@ -227,15 +226,13 @@ function tobeComparisonPage(){
     ).join('')+'</nav>';
   const rows=items.map(item=>{
     const name=tobeFlowItemName(item);
-    return '<tr><td><button type="button" class="btn btn-outline btn-small" data-pg12-source="'+
-      attr(tobeFlowItemId(item))+'">'+esc(name)+'</button></td>'+
-      '<td>'+esc(item.isAddition?'No existía':item.sourceStepName||name)+'</td>'+
-      '<td>'+esc(item.transformation||'Pendiente')+'</td>'+
-      '<td>'+esc(comparable(item.problemResolved))+'</td></tr>';
+    const button='<button type="button" class="btn btn-outline btn-small" data-pg12-source="'+
+      attr(tobeFlowItemId(item))+'">'+esc(name)+'</button>';
+    return auneaUiTableRow([button,item.isAddition?'No existía':item.sourceStepName||name,
+      item.transformation||'Pendiente',comparable(item.problemResolved)],[0]);
   }).join('');
   const diagnostic=currentDiagnosticOutput(e),pt=diagnostic?.process_time_projection||null;
-  const metric=(title,value,note)=>'<div class="pg12-metric"><b>'+title+'</b><strong>'+value+'</strong>'+
-    '<small>'+note+'</small></div>';
+  const metric=(title,value,note)=>auneaUiMetric(title,value,note,'pg12');
   const metrics='<div class="pg12-metrics">'+
     metric('Trabajo activo AS-IS',pt?.annual_active_hours!=null?num(pt.annual_active_hours)+' h/año':'No disponible','Proyección del backend, sin hipótesis TO-BE')+
     metric('Espera anual AS-IS',pt?.annual_wait_exposure_hours!=null?num(pt.annual_wait_exposure_hours)+' caso-horas/año':'No disponible','Exposición a espera, no trabajo activo')+
@@ -259,8 +256,9 @@ function tobeComparisonPage(){
         auneaUiDisclosureStart({variant:'legacy',className:'pg12-changes-disclosure',
          title:'02 · Listado de cambios ('+items.length+' actividades)'})+
         '<p class="aunea-ui-section-caption">Vista textual secundaria; las decisiones originales y futuras se consultan seleccionando una actividad.</p>'+
-        '<div class="table-wrap"><table class="data-table"><thead><tr><th>Actividad</th><th>Origen</th><th>Transformación</th><th>Problema que resuelve</th></tr></thead>'+
-        '<tbody>'+rows+'</tbody></table></div>'+auneaUiDisclosureEnd()+
+        auneaUiTableSearch('pg12ChangesTable','Buscar actividad en el listado',__auneaPg12TableQuery)+
+        auneaUiDataTable(['Actividad','Origen','Transformación','Problema que resuelve'],rows,
+          {id:'pg12ChangesTable'})+auneaUiDisclosureEnd()+
       auneaUiStructureEnd('section')+
       auneaUiStructureStart('section',{className:'aunea-ui-work-surface pg12-secondary'})+'<header><span class="tobe-eyebrow">03 · MÉTRICAS COMPARABLES</span>'+
         '<h2 class="aunea-ui-section-title">Impactos documentados</h2>'+
