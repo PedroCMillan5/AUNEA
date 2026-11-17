@@ -1139,5 +1139,44 @@
       "No se promocionan main, CANONICAL del sistema visual o PRODUCTION",
       "Los flujos PG13–PG15 no se certifican más allá de rutas y funciones cubiertas por QA actual"
     ]
+  },
+  "visualUnification": {
+    "status": "F6_VISUAL_CONSISTENCY_NOT_CLOSED",
+    "scope": "40 UI/UX families inventoried; L1-L5 technical review passes do not certify all components/states/spacing combinations",
+    "incidents": [
+      {
+        "id": "PG10_REFERENCE_TO_MAP_GAP_20261117",
+        "page": "PG10 diagnosis",
+        "issue": "Missing visual gap between reference cards and AS-IS map",
+        "owner": "ui-system.css AUNEA-FE-PG10-REFERENCE-LAYOUT-159",
+        "fix": "margin-bottom var(--space-4) 16px",
+        "evidence": "https://github.com/PedroCMillan5/AUNEA/actions/runs/44122502295",
+        "state": "FIXED_TECHNICALLY"
+      },
+      {
+        "id": "PG10_ACTION_LINK_UNDERLINE_20261117",
+        "page": "PG10 diagnostic finding",
+        "issue": "Styled anchor inherited native underline and had no standardized gap after facts",
+        "owner": "styles.css AUNEA-FE-UI-ACTION-LINK-489",
+        "fix": "opt-in aunea-ui-action-link + aunea-ui-after-content, 12px, no underline",
+        "coverage": "9 non-FROZEN module source scans + Chromium computed CSS probe where synthetic fixture lacked the finding; no visual user approval",
+        "tests": [
+          "AUNEA-UAT-UI-ACTION-OWNERSHIP-490",
+          "AUNEA-UAT-UI-ACTION-COMPUTED-491"
+        ],
+        "evidence": "https://github.com/PedroCMillan5/AUNEA/actions/runs/44124906258",
+        "state": "FIXED_TECHNICALLY"
+      }
+    ],
+    "confirmedQa": {
+      "frontend": "1026/1026 PASS",
+      "backend": "PASS",
+      "chromium": "PASS",
+      "frozen": "18/18 equivalent",
+      "acceptance": "PASS",
+      "runtimeCommit": "c5e860fce6329291f9377f976422a5506f91a236"
+    },
+    "openRequirement": "F6 audit must map each rendered UI consumer to canonical family, owner, token, computed spacing/gap, visual action type and screenshot; exclude any unapproved FROZEN modifications",
+    "note": "A CSS class with no margin is not intrinsically defective when a parent grid/flex gap or adjacent padding controls spacing. Geometric browser measurements and semantic component contracts are required."
   }
 }
