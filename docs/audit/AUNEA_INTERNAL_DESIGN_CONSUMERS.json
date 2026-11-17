@@ -363,6 +363,7 @@
             "styles.css"
           ],
           "consumers": [
+            "ui/renderer.js",
             "pages/results.js",
             "pages/results-official.js",
             "domain/completion.js",
@@ -510,6 +511,7 @@
             "styles.css"
           ],
           "consumers": [
+            "ui/renderer.js",
             "pages/comparison.js",
             "pages/crm-companies.js",
             "pages/crm-contacts.js",
@@ -528,6 +530,7 @@
             "ui-system.css"
           ],
           "consumers": [
+            "ui/renderer.js",
             "pages/comparison.js",
             "pages/crm-companies.js",
             "pages/crm-contacts.js",
@@ -1228,7 +1231,7 @@
       "path": "ui/renderer.js",
       "layer": "ui",
       "blockId": "AUNEA-FE-DIAG-RENDER-040",
-      "lines": 866,
+      "lines": 924,
       "family": [
         "Sesión / PG01–PG09",
         "Transversal / engine"
@@ -1258,6 +1261,7 @@
         "complete",
         "compound-control",
         "confirmed",
+        "data-table",
         "date-with-preview",
         "demand-seasonality-pair",
         "detail-wrap",
@@ -1276,6 +1280,7 @@
         "empty",
         "field",
         "field-help",
+        "filter-row",
         "hidden",
         "info",
         "integration-candidates",
@@ -1284,6 +1289,7 @@
         "linked-field-block",
         "linked-step-group",
         "linked-step-label",
+        "metric",
         "nextstep-action",
         "nextstep-cell",
         "nextstep-cell-label",
@@ -1300,6 +1306,7 @@
         "pg09-calendar-trigger",
         "pg09-native-date",
         "pg09-spanish-date",
+        "pg12-metric",
         "priority-order",
         "priority-rank",
         "priority-row",
@@ -1319,6 +1326,7 @@
         "segmented",
         "selected",
         "status",
+        "table-wrap",
         "unit-label",
         "user-chip",
         "warn"
@@ -5720,6 +5728,7 @@
       ],
       "ruleOccurrences": 4,
       "runtimeConsumers": [
+        "ui/renderer.js",
         "pages/comparison.js",
         "pages/crm-companies.js",
         "pages/crm-contacts.js",
@@ -7110,6 +7119,7 @@
       ],
       "ruleOccurrences": 8,
       "runtimeConsumers": [
+        "ui/renderer.js",
         "pages/crm-companies.js",
         "pages/crm-contacts.js",
         "pages/crm-interactions.js",
@@ -8256,6 +8266,7 @@
       ],
       "ruleOccurrences": 4,
       "runtimeConsumers": [
+        "ui/renderer.js",
         "pages/results.js",
         "pages/results-official.js",
         "domain/completion.js",
@@ -11424,9 +11435,10 @@
       ],
       "ruleOccurrences": 4,
       "runtimeConsumers": [
+        "ui/renderer.js",
         "pages/comparison.js"
       ],
-      "frozenRisk": false,
+      "frozenRisk": true,
       "classification": "REFERENCED"
     },
     {
@@ -13610,6 +13622,7 @@
       ],
       "ruleOccurrences": 7,
       "runtimeConsumers": [
+        "ui/renderer.js",
         "pages/comparison.js",
         "pages/crm-companies.js",
         "pages/crm-contacts.js",
@@ -19517,6 +19530,7 @@
           "ui-system.css"
         ],
         "consumers": [
+          "ui/renderer.js",
           "pages/crm-companies.js",
           "pages/crm-contacts.js",
           "pages/crm-interactions.js",
@@ -20586,6 +20600,7 @@
           "ui-system.css"
         ],
         "consumers": [
+          "ui/renderer.js",
           "pages/comparison.js",
           "pages/crm-companies.js",
           "pages/crm-contacts.js",
