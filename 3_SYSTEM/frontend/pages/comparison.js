@@ -116,22 +116,33 @@ function pg12NativeMapHtml(e,p,source,model,selected){
     ariaLabel:'Mapa original del proceso con cambios TO-BE'})+html+auneaUiRegionEnd('diagram');
 }
 function pg12CountAuditHtml(model,source,counts){
-  const stepWarnings=model.asis.map(s=>{
-    const id=String(s.id),n=model.findings.filter(f=>String(f.stepId)===id&&f.severity==='WARNING').length,
-      signals=pg12OriginalSignals(source,id);
-    return auneaUiTableRow([s.step_name||id,n,signals.frictions.length||0,signals.risks.length||0,
-      signals.wait===null?'—':signals.wait+' min',
-      signals.rework===null?'—':signals.rework+' min'],[],[1,2,3,4,5]);
-  }).join('');
+  const linkedIds=new Set([...model.asis,...model.added].map(s=>String(s.id))),
+    warningsFor=id=>model.findings.filter(f=>String(f.stepId)===String(id)&&f.severity==='WARNING').length,
+    baselineRows=model.asis.map(s=>{
+      const id=String(s.id),signals=pg12OriginalSignals(source,id);
+      return auneaUiTableRow([s.step_name||id,warningsFor(id),
+        signals.frictions.length,signals.risks.length,
+        signals.wait===null?'—':signals.wait+' min',
+        signals.rework===null?'—':signals.rework+' min'],[],[1,2,3,4,5]);
+    }),
+    addedRows=model.added.map(s=>auneaUiTableRow([
+      String(s.step_name||s.id)+' · nueva TO-BE',warningsFor(s.id),0,0,'—','—'
+    ],[],[1,2,3,4,5])),
+    unlinked=model.findings.filter(f=>f.severity==='WARNING'&&
+      !linkedIds.has(String(f.stepId))).length,
+    unlinkedRows=unlinked?[auneaUiTableRow([
+      'Observaciones sin actividad vinculada',unlinked,0,0,'—','—'
+    ],[],[1,2,3,4,5])]:[],
+    rows=[...baselineRows,...addedRows,...unlinkedRows].join('');
   return auneaUiDisclosureStart({variant:'legacy',className:'pg12-count-audit',title:'Comprobar contadores y procedencia'})+
     '<p>Los cuatro contadores de transformación proceden del TO-BE revisado. Las observaciones son advertencias (WARNING); los bloqueos (BLOCKING) se cuentan por separado. Fricciones, riesgos y tiempos proceden del AS-IS confirmado; no son ahorros.</p>'+
     '<p>Actividades: '+model.items.length+' · Hallazgos pendientes: '+counts.warnings+
       ' · Bloqueos: '+counts.blocking+' · Fricciones AS-IS: '+counts.frictions+
       ' · Riesgos AS-IS: '+counts.risks+'</p>'+
     auneaUiDataTable(['Actividad AS-IS','Avisos PG11','Fricciones vinculadas',
-      'Riesgos vinculados','Espera declarada','Retrabajo declarado'],stepWarnings,
+      'Riesgos vinculados','Espera declarada','Retrabajo declarado'],rows,
       {numericColumns:[1,2,3,4,5]})+
-    '<small>Una fricción vinculada a dos actividades puede aparecer en las dos filas; el total global cuenta registros originales, no vinculaciones.</small>'+
+    '<small>El desglose incluye avisos de actividades añadidas y sin referencia de origen, si existen. Una fricción vinculada a varias actividades puede aparecer en varias filas; el total global cuenta registros, no vínculos.</small>'+
     auneaUiDisclosureEnd();
 }
 function pg12OverlayHtml(e,p,source,selected){
