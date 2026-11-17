@@ -277,7 +277,7 @@ function pg12DrawOverlay(){
     const backwards=x2<x1+12;
     const mid=backwards?x1+24:x1+Math.max(24,(x2-x1)/2);
     const d=backwards?
-      'M'+x1+' '+y1+'H'+mid+'V'+Math.max(a.bottom,b.bottom)-rect.top+36+
+      'M'+x1+' '+y1+'H'+mid+'V'+(Math.max(a.bottom,b.bottom)-rect.top+36)+
       'H'+(x2-24)+'V'+y2+'H'+x2:
       'M'+x1+' '+y1+'H'+mid+'V'+y2+'H'+(x2-6);
     const path=document.createElementNS(ns,'path');
