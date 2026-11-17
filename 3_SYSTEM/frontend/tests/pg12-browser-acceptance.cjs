@@ -67,7 +67,10 @@ async function main(){
           'Administración revisa excepciones y autorizaciones pendientes.';
         it.controlsRisk='Auditar responsables, decisiones, errores y permisos.';
       });
-      p.status='REVIEWED'; // Synthetic fixture: PG12 acceptance, not a consultant approval.
+      const issue=tobeReviewReadiness(e,p);
+      if(issue)throw Error('PG11 cannot hand off its completed TO-BE to PG12: '+issue);
+      if(!advanceTobeStatus(e)||p.status!=='REVIEWED')
+        throw Error('PG11 official DRAFT → REVIEWED gate did not succeed');
       state.activePage='comparacion';
       if(!saveState('UAT PG12 synthetic reviewed comparison'))throw Error('fixture did not persist');
       render();
