@@ -1,9 +1,9 @@
 {
   "title": "AUNEA Internal — UI/UX Master Registry",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "status": "REVIEW",
   "date": "2026-11-17",
-  "scope": "CRM, PG00–PG12+, proyectos; L1/L2 opt-in REVIEW, FROZEN runtime unchanged",
+  "scope": "CRM, PG00–PG12+, proyectos; L1/L2/L3 opt-in REVIEW, nine FROZEN protected",
   "governance": [
     "DEC-027",
     "DEC-050",
@@ -463,7 +463,7 @@
         "DS-008",
         "DS-020"
       ],
-      "owner": "styles.css",
+      "owner": "ui/renderer.js",
       "implementation": "review",
       "states": [
         "empty",
@@ -480,7 +480,7 @@
       "ds": [
         "DS-008"
       ],
-      "owner": "styles.css",
+      "owner": "ui/renderer.js",
       "implementation": "existing",
       "states": [
         "loading",
@@ -666,7 +666,7 @@
       "ds": [
         "DS-005"
       ],
-      "owner": "styles.css",
+      "owner": "ui/renderer.js",
       "implementation": "existing",
       "states": [
         "available",
@@ -1001,5 +1001,80 @@
       }
     },
     "next": "L3 data, tables, filters, inspector, status projection/diagrams; L2 technically CLOSED in REVIEW, F6 manual review pending, no main/production."
+  },
+  "l3": {
+    "status": "CLOSED_TECHNICAL_REVIEW",
+    "date": "2026-11-17",
+    "governance": [
+      "PROJECT_RULES.md v1.7",
+      "AUNEA_SYSTEM_SIMULATOR_CANONICAL v1.14",
+      "DEC-050",
+      "DEC-055",
+      "DEC-056",
+      "DEC-075",
+      "DS-008",
+      "DS-009",
+      "DS-014",
+      "DS-019"
+    ],
+    "owners": {
+      "table": "ui/renderer.js: auneaUiTableRow()/auneaUiDataTable(); opt-in typography styles.css aunea-ui-numeric",
+      "filters": "ui/renderer.js: auneaUiTableSearch()/auneaUiFilterTable(); existing pages/comparison.js event owner 471, UI-only no persistence",
+      "metrics": "ui/renderer.js: auneaUiMetric() variants overview and pg12; no business computations",
+      "status": "ui/renderer.js: auneaUiStatusLabel(); label from current version/source, no color-derived approval",
+      "inspector": "core/state.js: auneaUiRegionStart/End('inspector'); PG11 page keeps selected item data owner",
+      "diagrams": "core/state.js: auneaUiRegionStart/End('diagram'); processGraphHtml/processGraphData remain in domain/process.js and TO-BE graph owner in pages/tobe.js"
+    },
+    "blocks": [
+      "AUNEA-FE-UI-DATA-L3-481",
+      "AUNEA-FE-UI-REGION-L3-482",
+      "AUNEA-UAT-UI-DATA-L3-483",
+      "AUNEA-FE-UI-DATA-STYLE-485",
+      "AUNEA-FE-PG12-OVERLAY-EVENTS-471"
+    ],
+    "consumers": [
+      {
+        "page": "PG10",
+        "file": "pages/results.js",
+        "migration": "four existing readiness metric cards use overview variant; labels, values, provenance and business gates unchanged"
+      },
+      {
+        "page": "PG11",
+        "file": "pages/tobe.js",
+        "migration": "readonly statuses for current source/context/inspector use one presenter; selected inspector and future diagram share nonvisual region attributes, original layout/owner untouched"
+      },
+      {
+        "page": "PG12",
+        "file": "pages/comparison.js",
+        "migration": "audit and changes tables, six source-linked metrics, native AS-IS map wrapper, reversible local search over changes, selected activity remains version-bound and readonly"
+      },
+      {
+        "page": "Proyectos",
+        "file": "pages/projects.js",
+        "migration": "actuals and measured outcomes tables use escaped rows and governed numeric alignment, source and null/zero distinction preserved"
+      }
+    ],
+    "limitations": [
+      "No new business data fields, classifications, prices, KPIs or projections; numeric column alignment is an opt-in DS-008 view style.",
+      "PG12 local filter reads existing rendered rows and never writes Engagement, Project or ProcessStep; no new sorting or backend queries.",
+      "PG12 single-map overlay retains native domain/process.js graph renderer; TO-BE edit graph retains its page-specific positions, no second engine.",
+      "FROZEN nine pages untouched; browser captures 18/18 matching technical reference, human visual approval F6 pending.",
+      "L4/L5 and production validation remain pending; no merge to main."
+    ],
+    "qa": {
+      "checkedSourceHead": "d1adc84ce6b2ef72c00711d5aba1d579f25ba198",
+      "frontend": "1021/1021 PASS, 0 fail",
+      "backend": "493 pytest PASS",
+      "chromium": "PASS, L3_DATA_PRESENTATION_BROWSER_PASS (single map, reversible filter, zero source mutations), FROZEN 18/18",
+      "edge": "PASS",
+      "designAudit": "PASS; crossFileClasses 107, selectorContexts 138, inline 30, unresolved 0",
+      "evidence": {
+        "frontend": "https://github.com/PedroCMillan5/AUNEA/actions/runs/44075266744",
+        "acceptance": "https://github.com/PedroCMillan5/AUNEA/actions/runs/44075266546",
+        "edge": "https://github.com/PedroCMillan5/AUNEA/actions/runs/44075266912",
+        "designAudit": "https://github.com/PedroCMillan5/AUNEA/actions/runs/44075266575"
+      }
+    },
+    "next": "L4 remaining color/accessibility system-wide, L5 final UAT, F6 owner visual signoff; technical L3 closed only."
   }
 }
