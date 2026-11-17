@@ -522,7 +522,7 @@ function section(title,sub,body,actions=''){return `<div class="card card-pad se
 // SIDE_EFFECTS: none. Existing section() and all FROZEN markup remain unchanged.
 // CHANGE_RISK: MEDIUM. Do not add default styles to these data attributes.
 function auneaUiStructureStart(level,options={}){
-  const tags={section:'section',subsection:'section',block:'div',group:'div'};
+  const tags={section:'section',subsection:'section',block:'div',group:'div',field:'div'};
   if(!Object.prototype.hasOwnProperty.call(tags,level))
     throw new Error('Unsupported AUNEA UI hierarchy level: '+level);
   const visual=options.visual||'inherit';
@@ -537,7 +537,7 @@ function auneaUiStructureStart(level,options={}){
     (options.ariaLive?' aria-live="'+attr(options.ariaLive)+'"':'')+'>';
 }
 function auneaUiStructureEnd(level){
-  const tags={section:'section',subsection:'section',block:'div',group:'div'};
+  const tags={section:'section',subsection:'section',block:'div',group:'div',field:'div'};
   if(!Object.prototype.hasOwnProperty.call(tags,level))
     throw new Error('Unsupported AUNEA UI hierarchy level: '+level);
   return '</'+tags[level]+'>';
@@ -546,6 +546,16 @@ function auneaUiStructureEnd(level){
 function auneaUiDatum(label,value){
   return '<div class="aunea-ui-datum" data-aunea-ui-level="datum"><dt>'+
     esc(label)+'</dt><dd>'+esc(value)+'</dd></div>';
+}
+// Compatibility adapter for page-owned section() on UNFROZEN screens.
+// Preserves the exact legacy DOM, styles, headings and actions, adding only the level marker.
+// It must NOT replace section() itself because FROZEN screens still call that function.
+function auneaUiLegacySection(title,subtitle,body,actions=''){
+  const html=section(title,subtitle,body,actions);
+  const prefix='<div class="card card-pad section">';
+  if(!html.startsWith(prefix))throw new Error('AUNEA legacy section contract changed');
+  return '<div class="card card-pad section" data-aunea-ui-level="section">'+
+    html.slice(prefix.length);
 }
 // [AUNEA-FE-UI-SEMANTIC-475] END
 
