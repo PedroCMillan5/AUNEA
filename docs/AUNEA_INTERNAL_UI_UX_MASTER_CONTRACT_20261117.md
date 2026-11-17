@@ -244,3 +244,17 @@ Cierre de esta entrega: **el contrato documental y la matriz estructurada existe
 
 **Registro único de familias/consumidores:** `docs/audit/AUNEA_INTERNAL_UI_UX_MASTER_REGISTRY_20261117.json`.  
 **Trazabilidad de código:** `CODE_BLOCK_INDEX.md` con Block_ID 475/476/477.
+
+## 11. L1 — Corrección de QA de inventario y referencias DS (17/11/2026)
+
+La primera ejecución del Acceptance Gate posterior al contrato no fue satisfactoria: backend PASS, frontend FAIL y Chromium FAIL. No se declara el gate cerrado.
+
+**Defectos localizados y corregidos:**
+- Quince familias del registro UI/UX tenían una segunda referencia DS abreviada (`DS-001, 002` en lugar de `DS-001, DS-002`). Registro JSON, contrato técnico y documento humano normalizados. Las 40 familias conservan los mismos nombres, estados y fuentes; `subsection/block/group` ahora apuntan al propietario ejecutable `core/state.js`.
+- `AUNEA-FE-PG12-GRAPH-STYLE-236`, `ui-system.css`: dos reglas que usaban la clase global `.aunea-ui-work-surface` se acotaron a `.pg12-workspace > .pg12-primary` y `.pg12-workspace > .pg12-secondary`. La especificidad y los valores `min-width:0` y `padding:14px` en móvil se preservan en los tres paneles directos de PG12. El aspecto genérico `.aunea-ui-work-surface` pertenece únicamente a `styles.css`; no se modifica esa clase global.
+
+**Nueva comprobación de inventario generada:** 107 clases compartidas entre ambos CSS (límite 107), 138 grupos repetidos (límite 146), 30 atributos inline (límite 35), 0 clases sin owner, 0 grupos sin clasificar y 9 FROZEN protegidas. Este resultado estático PASS no acredita por sí solo las capturas ni la aceptación visual.
+
+**Pruebas dirigidas V8 ejecutadas:** 15/15 comprobaciones del contrato cromático, 6/6 del contrato maestro, 6/6 de estructura semántica L1 y 7/7 del harness PG12; validación independiente de la renderización PG11 y de la paridad HTML PG12 respecto al baseline. Se mantiene pendiente el **nuevo** Acceptance Gate remoto completo y sus logs para declarar QA integral.
+
+Estas correcciones no modifican reglas de negocio, datos, esquemas, AS-IS/TO-BE ni la apariencia protegida FROZEN. L1 permanece **PARCIAL / REVIEW**, no `CANONICAL` ni `PRODUCTION`.
