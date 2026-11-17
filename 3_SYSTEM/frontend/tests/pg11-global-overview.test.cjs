@@ -7,8 +7,10 @@ const vm=require('node:vm');
 const src=require('./pg11-source.cjs')();
 const productionAttr=fs.readFileSync(path.join(__dirname,'../core/state.js'),'utf8')
   .split('\n').find(line=>line.startsWith('function attr(v)'));
-const sharedUi=productionAttr+'\n'+fs.readFileSync(path.join(__dirname,'../ui/renderer.js'),'utf8')
-  .match(/\/\/ \[AUNEA-FE-GLOBAL-DISCLOSURE-450\] START[\s\S]*?\/\/ \[AUNEA-FE-GLOBAL-DISCLOSURE-450\] END/)?.[0];
+const rendererSource=fs.readFileSync(path.join(__dirname,'../ui/renderer.js'),'utf8');
+const productionBlock=id=>rendererSource.match(new RegExp('// \\['+id+'\\] START[\\s\\S]*?// \\['+id+'\\] END'))?.[0];
+const sharedUi=productionAttr+'\n'+productionBlock('AUNEA-FE-GLOBAL-DISCLOSURE-450')+
+  '\n'+productionBlock('AUNEA-FE-UI-DATA-L3-481');
 if(!sharedUi)throw Error('Missing production shared disclosure renderer');
 const ai=fs.readFileSync(path.join(__dirname,'../domain/internal-ai-pilot.js'),'utf8');
 const css=fs.readFileSync(path.join(__dirname,'../ui-system.css'),'utf8');
