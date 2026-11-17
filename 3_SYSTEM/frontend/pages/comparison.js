@@ -118,7 +118,7 @@ function pg12CountAuditHtml(model,source,counts){
       esc(signals.wait===null?'—':signals.wait+' min')+'</td><td>'+
       esc(signals.rework===null?'—':signals.rework+' min')+'</td></tr>';
   }).join('');
-  return '<details class="pg12-count-audit"><summary>Comprobar contadores y procedencia</summary>'+
+  return auneaUiDisclosureStart({variant:'legacy',className:'pg12-count-audit',title:'Comprobar contadores y procedencia'})+
     '<p>Las cinco cifras superiores se calculan desde el TO-BE revisado y sus comprobaciones. Las fricciones, riesgos y tiempos proceden del AS-IS confirmado, sin sumarlos como ahorros.</p>'+
     '<p>Actividades: '+model.items.length+' · Hallazgos pendientes: '+counts.warnings+
       ' · Bloqueos: '+counts.blocking+' · Fricciones AS-IS: '+counts.frictions+
@@ -127,7 +127,7 @@ function pg12CountAuditHtml(model,source,counts){
     '<th>Fricciones vinculadas</th><th>Riesgos vinculados</th><th>Espera declarada</th>'+
     '<th>Retrabajo declarado</th></tr></thead><tbody>'+stepWarnings+'</tbody></table></div>'+
     '<small>Una fricción vinculada a dos actividades puede aparecer en las dos filas; el total global cuenta registros originales, no vinculaciones.</small>'+
-    '</details>';
+    auneaUiDisclosureEnd();
 }
 function pg12OverlayHtml(e,p,source,selected){
   if(typeof processGraphHtml!=='function'||typeof processGraphData!=='function')
@@ -256,10 +256,11 @@ function tobeComparisonPage(){
           tobeComparisonDetail(e,p,selected)+auneaUiStructureEnd('subsection')+
       auneaUiStructureEnd('section')+
       auneaUiStructureStart('section',{className:'aunea-ui-work-surface pg12-secondary'})+
-        '<details class="pg12-changes-disclosure"><summary>02 · Listado de cambios ('+items.length+' actividades)</summary>'+
+        auneaUiDisclosureStart({variant:'legacy',className:'pg12-changes-disclosure',
+         title:'02 · Listado de cambios ('+items.length+' actividades)'})+
         '<p class="aunea-ui-section-caption">Vista textual secundaria; las decisiones originales y futuras se consultan seleccionando una actividad.</p>'+
         '<div class="table-wrap"><table class="data-table"><thead><tr><th>Actividad</th><th>Origen</th><th>Transformación</th><th>Problema que resuelve</th></tr></thead>'+
-        '<tbody>'+rows+'</tbody></table></div></details>'+
+        '<tbody>'+rows+'</tbody></table></div>'+auneaUiDisclosureEnd()+
       auneaUiStructureEnd('section')+
       auneaUiStructureStart('section',{className:'aunea-ui-work-surface pg12-secondary'})+'<header><span class="tobe-eyebrow">03 · MÉTRICAS COMPARABLES</span>'+
         '<h2 class="aunea-ui-section-title">Impactos documentados</h2>'+
