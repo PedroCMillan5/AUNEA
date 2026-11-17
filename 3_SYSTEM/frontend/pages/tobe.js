@@ -674,7 +674,7 @@ function tobeCanvasHtml(e,p){
         '<span class="tobe-node-count">Actividad '+(steps.indexOf(step)+1)+'</span>'+
         '<span class="tobe-node-icon">'+processNodeIconSvg(processNodeIconName(step))+'</span>'+
         '<strong>'+esc(tobeFlowItemName(item))+'</strong>'+
-        '<span class="tobe-node-status">'+esc(item.transformation||'Pendiente de diseño')+'</span>'+
+        auneaUiStatusLabel(item.transformation||'Pendiente de diseño','tobe-node-status')+
         '<small>'+esc((typeof labelFrom==='function'?labelFrom('OS_ACTOR_ROLE',item.futureActor):'')||
           item.futureActor||'Responsable pendiente')+'</small></button>'+
         (editable?'<div class="tobe-node-tools" aria-label="Acciones de actividad">'+
@@ -892,8 +892,8 @@ function tobeInspectorHtml(e,p){
       '</span><h2>'+(itemIndex>=0?'P'+(itemIndex+1)+' · ':'')+esc(tobeFlowItemName(item))+'</h2>'+
       (item.isAddition?'<p class="tobe-muted">Origen confirmado: '+esc(item.sourceStepName)+
         ' · Esta actividad existe sólo en el borrador TO-BE.</p>':'')+
-      '</div><div class="tobe-inspector-navigation"><span class="tobe-selected-status">'+
-        esc(item.transformation||'Sin definir')+'</span>'+
+      '</div><div class="tobe-inspector-navigation">'+
+        auneaUiStatusLabel(item.transformation||'Sin definir','tobe-selected-status')+
         (previousItem?'<button type="button" class="btn btn-outline btn-small" data-tobe-select="'+
           attr(tobeFlowItemId(previousItem))+'">Anterior</button>':'')+
         (nextItem?'<button type="button" class="btn btn-outline btn-small" data-tobe-select="'+
@@ -1153,7 +1153,7 @@ function tobeContextOverviewHtml(e,p){
     '<h2 class="aunea-ui-section-title">'+esc(process)+'</h2><p class="aunea-ui-section-caption">'+esc(company)+
     ' · Origen AS-IS confirmado v'+esc(snap?.version||p?.sourceSnapshotVersion||'—')+
     ' · '+esc((snap?.processSteps||[]).filter(x=>x.status!=='SUPERSEDED').length)+' actividades</p></div>'+
-    '<span class="tobe-context-status">'+esc(status)+'</span></div>'+
+    auneaUiStatusLabel(status,'tobe-context-status')+'</div>'+
     '<div class="tobe-context-diagnostic"><strong>Diagnóstico oficial</strong>'+
     '<p>'+esc(diagnostic)+' · Información histórica confirmada, sólo lectura.</p></div>'+
     '<dl class="tobe-context-facts">'+primary.map(([label,value])=>line(label,value)).join('')+'</dl>'+
