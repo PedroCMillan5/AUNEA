@@ -1,6 +1,6 @@
 {
-  "source_head": "0394af386fbd3bc67cf189587d9a6ba2354ddc62",
-  "generated_at": "2026-11-17T11:00:31.872343+00:00",
+  "source_head": "7f96519cabb80a1edba5cc6270cd1ccd3e26f838",
+  "generated_at": "2026-11-17T11:01:03.431634+00:00",
   "checks": {
     "backend_pytest": "success",
     "frontend_node": "failure",
