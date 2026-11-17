@@ -2885,7 +2885,7 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
   paint-order:stroke;stroke:var(--canvas);stroke-width:5px}
 .pg12-native-map [data-pg12-mode="actual"] .pg12-future-lines{display:none}
 .pg12-native-map [data-pg12-mode="actual"] .process-graph-cell[data-pg12-state]:after,
-.pg12-native-map [data-pg12-mode="actual"] .process-graph-cell[data-pg12-loss]:before{display:none}
+.pg12-native-map [data-pg12-mode="actual"] .process-graph-cell[data-pg12-signals]:before{display:none}
 .pg12-native-map [data-pg12-mode="actual"] .process-graph-cell[data-pg12-state=changed]>.graph-flow-step,
 .pg12-native-map [data-pg12-mode="actual"] .process-graph-cell[data-pg12-state=changed] .graph-decision-gateway{
   box-shadow:none}
