@@ -1582,15 +1582,18 @@ async function main(){
     const e=currentEng();latestTobe(e).status='REVIEWED';
     state.activePage='comparacion';render();
   });
-  assert.equal(await page.locator('.pg12-map').count(),2);
-  assert.equal(await page.locator('.pg12-map .tobe-graph-node').count(),
-    tobeSteps+1,'PG12 must include the newly linked future step');
-  await page.locator('[data-pg12-view="actual"]').click();
-  assert.equal(await page.locator('.pg12-map').count(),1);
-  await page.locator('[data-pg12-view="proposed"]').click();
-  assert.equal(await page.locator('.pg12-map').count(),1);
-  await page.locator('[data-pg12-view="comparison"]').click();
-  assert.equal(await page.locator('.pg12-map').count(),2);
+  // PG12 now layers AS-IS and TO-BE over one native read-only process map.
+  assert.equal(await page.locator('.pg12-native-map').count(),1);
+  assert.equal(await page.locator('.pg12-native-map .process-graph-board').count(),1);
+  assert.equal(await page.locator('.pg12-native-map .process-graph-cell').count(),
+    tobeSteps+1,'PG12 must retain all original nodes plus the linked future activity');
+  assert.equal(await page.locator('.pg12-native-map .pg12-added-cell[data-graph-node="'+addition.id+'"]').count(),1);
+  for(const mode of ['actual','proposed','comparison']){
+    await page.locator('[data-pg12-view="'+mode+'"]').click();
+    assert.equal(await page.locator('.pg12-native-map').count(),1,
+      'Switching layers must never duplicate the process map');
+    assert.equal(await page.locator('.pg12-native-map .process-graph-board').getAttribute('data-pg12-mode'),mode);
+  }
   await page.locator('[data-pg12-source="'+addition.id+'"]').first().click();
   assert.match(await page.locator('#pg12SelectedDetail').innerText(),/Control adicional UAT/);
   await page.screenshot({path:path.join(outDir,'pg12-actual-proposed-comparison.png'),fullPage:true});
