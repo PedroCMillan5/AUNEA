@@ -830,6 +830,17 @@ function auneaUiFeedbackMessage(tone,message){
   if(!['info','warn','good'].includes(tone))throw new Error('Unsupported feedback tone: '+tone);
   return '<p class="notice '+tone+'" role="status" aria-live="polite">'+esc(message)+'</p>';
 }
+
+// Consultant field decisions retain the page-owned handlers and one editable field.
+// aria-pressed is emitted only for the togglable KEEP action, never for Apply/Edit commands.
+function auneaUiFieldDecisionButton(label,eventAttributes,selected=null,title=''){
+  if(!/^data-tobe-ai-(?:use|keep|edit)-field="/.test(String(eventAttributes||'')))
+    throw new Error('Unsupported AUNEA field decision action');
+  const pressed=selected===null?'':' aria-pressed="'+String(!!selected)+'"';
+  return '<button type="button" class="btn btn-outline btn-small'+
+    (selected===true?' is-selected':'')+'" '+eventAttributes+
+    ' title="'+attr(title||label)+'"'+pressed+'>'+esc(label)+'</button>';
+}
 // [AUNEA-FE-UI-CHOICES-L2-478] END
 
 // [AUNEA-FE-UI-EMPTY-STATE-393] START — Shared semantic no-data state
