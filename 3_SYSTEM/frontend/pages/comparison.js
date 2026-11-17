@@ -13,6 +13,7 @@ function stepMetric(step,key){return step?.[key]??step?.[key.replace(/[A-Z]/g,m=
 // CHANGE_RISK: HIGH; tested with decisions, additions, removals and source-only routes.
 let __auneaPg12View='comparison';
 let __auneaPg12SelectedSource='';
+let __auneaPg12TableQuery=''; // UI-only search, never persisted as a process field.
 function pg12Related(values,id){
   return typeof processRefIncludes==='function'?processRefIncludes(values,id):
     (Array.isArray(values)?values:[values]).some(v=>String(v)===String(id));
@@ -326,6 +327,13 @@ function pg12DrawOverlay(){
   });
 }
 function registerPg12Interactions(){
+  document.addEventListener('input',event=>{
+    if(state.activePage!=='comparacion')return;
+    const filter=event.target?.closest?.('[data-aunea-table-filter]');
+    if(!filter||filter.dataset.auneaTableFilter!=='pg12ChangesTable')return;
+    __auneaPg12TableQuery=filter.value;
+    auneaUiFilterTable(document.getElementById('pg12ChangesTable'),__auneaPg12TableQuery);
+  },true);
   document.addEventListener('click',event=>{
     if(state.activePage!=='comparacion')return;
     const view=event.target?.closest?.('[data-pg12-view]'),
@@ -362,6 +370,8 @@ function registerPg12Interactions(){
     });
 }
 function pg12AfterBind(){
+  if(state.activePage==='comparacion'&&__auneaPg12TableQuery)
+    auneaUiFilterTable(document.getElementById('pg12ChangesTable'),__auneaPg12TableQuery);
   if(state.activePage==='comparacion'&&typeof requestAnimationFrame==='function')
     requestAnimationFrame(pg12DrawOverlay);
 }
