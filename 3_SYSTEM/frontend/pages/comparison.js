@@ -117,7 +117,7 @@ function pg12CountAuditHtml(model,source,counts){
       signals=pg12OriginalSignals(source,id);
     return auneaUiTableRow([s.step_name||id,n,signals.frictions.length||0,signals.risks.length||0,
       signals.wait===null?'—':signals.wait+' min',
-      signals.rework===null?'—':signals.rework+' min']);
+      signals.rework===null?'—':signals.rework+' min'],[],[1,2,3,4,5]);
   }).join('');
   return auneaUiDisclosureStart({variant:'legacy',className:'pg12-count-audit',title:'Comprobar contadores y procedencia'})+
     '<p>Las cinco cifras superiores se calculan desde el TO-BE revisado y sus comprobaciones. Las fricciones, riesgos y tiempos proceden del AS-IS confirmado, sin sumarlos como ahorros.</p>'+
@@ -125,7 +125,8 @@ function pg12CountAuditHtml(model,source,counts){
       ' · Bloqueos: '+counts.blocking+' · Fricciones AS-IS: '+counts.frictions+
       ' · Riesgos AS-IS: '+counts.risks+'</p>'+
     auneaUiDataTable(['Actividad AS-IS','Avisos PG11','Fricciones vinculadas',
-      'Riesgos vinculados','Espera declarada','Retrabajo declarado'],stepWarnings)+
+      'Riesgos vinculados','Espera declarada','Retrabajo declarado'],stepWarnings,
+      {numericColumns:[1,2,3,4,5]})+
     '<small>Una fricción vinculada a dos actividades puede aparecer en las dos filas; el total global cuenta registros originales, no vinculaciones.</small>'+
     auneaUiDisclosureEnd();
 }
