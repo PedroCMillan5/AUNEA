@@ -2890,7 +2890,19 @@ body.shell-session .topbar-study{gap:10px;padding-inline:11px}
 .pg12-native-map [data-pg12-mode="actual"] .process-graph-cell[data-pg12-state=changed] .graph-decision-gateway{
   box-shadow:none}
 .pg12-native-map [data-pg12-mode="actual"] .pg12-added-cell{display:none}
-.pg12-native-map [data-pg12-mode="proposed"] .process-graph-lines{visibility:hidden}
+/* Proposed mode draws native TO-BE routes into the one existing process SVG;
+   comparison mode draws the same native renderer into a second route layer. */
+.pg12-native-map [data-pg12-mode="proposed"] .process-graph-lines .graph-path-main,
+.pg12-native-map [data-pg12-mode="comparison"] .pg12-future-lines .graph-path-main{
+  stroke:#bd813e;stroke-width:3}
+.pg12-native-map [data-pg12-mode="proposed"] .process-graph-lines .graph-path-alternative,
+.pg12-native-map [data-pg12-mode="comparison"] .pg12-future-lines .graph-path-alternative{
+  stroke:#b9783c;stroke-width:3}
+.pg12-native-map [data-pg12-mode="proposed"] .process-graph-lines #auneaGraphArrowMain path,
+.pg12-native-map [data-pg12-mode="comparison"] .pg12-future-lines #pg12FutureArrowMain path{
+  fill:#bd813e}
+.pg12-native-map [data-pg12-mode="comparison"] .pg12-future-lines .graph-path-label-main{
+  fill:#bd813e}
 .pg12-native-map [data-pg12-mode="proposed"] .process-graph-cell[data-pg12-state=removed]{opacity:.35}
 .pg12-selected-detail{border:1px solid var(--system-line);border-radius:var(--radius-sm);
   background:var(--system-soft);padding:16px 18px;min-width:0}
