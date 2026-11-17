@@ -2022,7 +2022,7 @@
       "path": "pages/tobe.js",
       "layer": "pages",
       "blockId": "AUNEA-FE-PG11-GUIDED-NAV-266",
-      "lines": 1331,
+      "lines": 1330,
       "family": [
         "Trabajo interno / PG11"
       ],
@@ -2251,7 +2251,7 @@
       "path": "pages/comparison.js",
       "layer": "pages",
       "blockId": "AUNEA-FE-PG12-OVERLAY-VIEW-470",
-      "lines": 371,
+      "lines": 370,
       "family": [
         "Comparación / posterior"
       ],
