@@ -275,54 +275,56 @@ function tobeComparisonPage(){
 // SIDE_EFFECTS: DOM-only. CHANGE_RISK: HIGH; browser visual QA required.
 function pg12DrawOverlay(){
   if(typeof document==='undefined')return;
-  const board=document.querySelector('.pg12-overlay-board');if(!board)return;
-  const svg=board.querySelector('.pg12-overlay-lines');if(!svg)return;
-  const rect=board.getBoundingClientRect(),map=new Map();
-  board.querySelectorAll('[data-pg12-node]').forEach(el=>map.set(String(el.dataset.pg12Node),el));
-  const read=name=>{try{return JSON.parse(board.getAttribute(name)||'[]')}catch(_){return []}};
-  const original=read('data-pg12-asis-edges'),proposed=read('data-pg12-tobe-edges'),
-    okeys=new Set(original.map(pg12EdgeKey)),pkeys=new Set(proposed.map(pg12EdgeKey)),
-    view=board.dataset.pg12View||'comparison',
+  const board=document.querySelector('.pg12-native-map .process-graph-board');
+  if(!board)return;
+  // First run the unchanged process renderer on exactly the AS-IS graph.
+  if(typeof drawProcessGraph==='function')drawProcessGraph(board);
+  const svg=board.querySelector('.pg12-future-lines');
+  if(!svg)return;
+  const rect=board.getBoundingClientRect(),nodes=new Map();
+  board.querySelectorAll('[data-graph-node]').forEach(el=>
+    nodes.set(String(el.getAttribute('data-graph-node')),el));
+  let future=[];
+  try{future=JSON.parse(board.getAttribute('data-pg12-future-edges')||'[]')}catch(_){}
+  let original=[];
+  try{original=JSON.parse(board.getAttribute('data-graph-edges')||'[]')}catch(_){}
+  const known=new Set(original.map(pg12EdgeKey)),mode=board.getAttribute('data-pg12-mode')||'comparison',
     ns='http://www.w3.org/2000/svg';
   svg.setAttribute('viewBox','0 0 '+board.scrollWidth+' '+board.scrollHeight);
-  svg.innerHTML='<defs>'+
-    '<marker id="pg12ArrBase" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#7d9d8e"/></marker>'+
-    '<marker id="pg12ArrNew" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#bd813e"/></marker></defs>';
+  svg.innerHTML='<defs><marker id="pg12NativeFutureArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#bd813e"/></marker></defs>';
+  if(mode==='actual')return;
   const nodeRect=id=>{
-    const el=map.get(String(id));if(!el)return null;
-    return (el.querySelector('.pg12-overlay-node,.pg12-boundary-card,.pg12-pending')||el).getBoundingClientRect();
+    const cell=nodes.get(String(id));
+    return cell?.querySelector('.graph-decision-gateway,.graph-flow-step,.flow-boundary,.graph-route-pending')?.getBoundingClientRect()||
+      cell?.getBoundingClientRect()||null;
   };
-  const draw=(edge,kind)=>{
-    const a=nodeRect(edge.from),b=nodeRect(edge.to);if(!a||!b)return;
-    const x1=a.right-rect.left,y1=a.top+a.height/2-rect.top,
-      x2=b.left-rect.left,y2=b.top+b.height/2-rect.top;
-    const backwards=x2<x1+12;
-    const mid=backwards?x1+24:x1+Math.max(24,(x2-x1)/2);
-    const d=backwards?
-      'M'+x1+' '+y1+'H'+mid+'V'+(Math.max(a.bottom,b.bottom)-rect.top+36)+
-      'H'+(x2-24)+'V'+y2+'H'+x2:
+  future.forEach(edge=>{
+    const same=known.has(pg12EdgeKey(edge));
+    // The original SVG already paints unchanged routes in comparison mode.
+    if(same&&mode==='comparison')return;
+    const ar=nodeRect(edge.from),br=nodeRect(edge.to);
+    if(!ar||!br)return;
+    const x1=ar.right-rect.left,y1=ar.top+ar.height/2-rect.top,
+      x2=br.left-rect.left,y2=br.top+br.height/2-rect.top,
+      backward=x2<x1+15,mid=backward?x1+30:x1+Math.max(24,(x2-x1)/2);
+    const lower=Math.max(ar.bottom,br.bottom)-rect.top+52;
+    const d=backward?
+      'M'+x1+' '+y1+'H'+mid+'V'+lower+'H'+(x2-25)+'V'+y2+'H'+(x2-6):
       'M'+x1+' '+y1+'H'+mid+'V'+y2+'H'+(x2-6);
     const path=document.createElementNS(ns,'path');
-    path.setAttribute('d',d);
-    path.setAttribute('class','pg12-route pg12-route-'+kind+
+    path.setAttribute('class','pg12-route '+(same?'pg12-route-shared':'pg12-route-future')+
       (edge.label==='NO'?' pg12-route-no':''));
-    path.setAttribute('marker-end',kind==='future'?'url(#pg12ArrNew)':'url(#pg12ArrBase)');
+    path.setAttribute('d',d);
+    path.setAttribute('marker-end','url(#pg12NativeFutureArrow)');
     svg.appendChild(path);
-    if(edge.label){
+    if(edge.label&&!same){
       const label=document.createElementNS(ns,'text');
-      label.setAttribute('x',String(mid+3));label.setAttribute('y',String((y1+y2)/2-8));
+      label.setAttribute('x',String(mid+5));
+      label.setAttribute('y',String((y1+y2)/2-10));
       label.setAttribute('class','pg12-route-label');
       label.textContent=edge.label;svg.appendChild(label);
     }
-  };
-  if(view!=='proposed')
-    original.forEach(e=>draw(e,pkeys.has(pg12EdgeKey(e))?'shared':'original'));
-  if(view!=='actual')
-    proposed.forEach(e=>{
-      const same=okeys.has(pg12EdgeKey(e));
-      if(view==='comparison'&&same)return;
-      draw(e,same?'shared':'future');
-    });
+  });
 }
 function registerPg12Interactions(){
   document.addEventListener('click',event=>{
@@ -342,11 +344,17 @@ function registerPg12Interactions(){
     __auneaPg12SelectedSource=id;
     const detail=document.getElementById('pg12SelectedDetail');
     if(detail)detail.innerHTML=tobeComparisonDetail(e,p,id);
-    document.querySelectorAll('.pg12-overlay-node[data-pg12-source]').forEach(el=>{
+    document.querySelectorAll('.pg12-native-map [data-pg12-source]').forEach(el=>{
       const selected=el.getAttribute('data-pg12-source')===id;
       el.classList.toggle('pg12-node-selected',selected);
-      el.setAttribute('aria-pressed',String(selected));
+      if(selected)el.setAttribute('data-pg12-selected','true');
+      else el.removeAttribute('data-pg12-selected');
     });
+  },true);
+  document.addEventListener('keydown',event=>{
+    if(state.activePage!=='comparacion'||!['Enter',' '].includes(event.key))return;
+    const node=event.target?.closest?.('.pg12-native-map [data-pg12-source][role="button"]');
+    if(node){event.preventDefault();node.click();}
   },true);
   if(typeof window!=='undefined')
     window.addEventListener('resize',()=>{
