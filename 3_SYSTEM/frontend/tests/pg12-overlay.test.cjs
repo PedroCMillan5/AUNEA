@@ -101,7 +101,7 @@ function harness(){
     state:{activePage:'comparacion'}
   };
   const api=vm.runInNewContext(semanticBlock+'\n'+regionBlock+'\n'+disclosureBlock+'\n'+modeBlock+'\n'+dataBlock+'\n'+code+
-    ';({pg12OverlayModel,pg12OverlayHtml,pg12ComparisonCounters,pg12OriginalSignals,tobeComparisonPage})',context);
+    ';({pg12OverlayModel,pg12OverlayHtml,pg12ComparisonCounters,pg12CountAuditHtml,pg12OriginalSignals,tobeComparisonPage})',context);
   return {api,proposal,engagement,nativeCalls};
 }
 test('PG12 renders exactly one map with three layer modes and no split view',()=>{
@@ -186,4 +186,20 @@ test('PG12 counters are exclusive and respond to real transformation/added-step 
   assert.equal(c.unchanged+c.changed+c.added+c.removed,5);
 });
 
+test('PG12 separates blocking constraints from ordinary observations',()=>{
+  const {api,proposal,engagement}=harness();
+  proposal.items[0].transformation='Se mantiene';
+  const model=api.pg12OverlayModel(engagement,proposal,source);
+  model.findings=[
+    {stepId:'S1',severity:'WARNING',message:'Platform evidence pending'},
+    {stepId:'S2',severity:'BLOCKING',message:'Human approval contradicted'}
+  ];
+  const counts=api.pg12ComparisonCounters(model);
+  assert.equal(counts.warnings,1);
+  assert.equal(counts.blocking,1);
+  const html=api.pg12CountAuditHtml(model,source,counts);
+  assert.match(html,/Hallazgos pendientes: 1/);
+  assert.match(html,/Bloqueos: 1/);
+  assert.match(html,/Los cuatro contadores de transformación/);
+});
 // [AUNEA-UAT-PG12-OVERLAY-472] END
