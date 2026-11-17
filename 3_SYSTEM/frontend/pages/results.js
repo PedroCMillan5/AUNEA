@@ -463,11 +463,13 @@ function resultsPage(){
   const recommendationReady=!!snap&&missing.length===0&&unresolved.length===0;
   const confirmedCount=Array.isArray(data?.pain_results)?data.pain_results.filter(p=>p.state==='CONFIRMED').length:0;
   const heading='<div class="grid g4 diagnosis-readiness pg10-overview-metrics">'+
-    '<div class="card metric"><small>AS-IS confirmado</small><strong>v'+esc(snap?.version||'—')+'</strong><span>Fuente del diagnóstico</span></div>'+
-    '<div class="card metric"><small>Pasos activos</small><strong>'+steps.length+'</strong><span>'+fr.length+' fricciones · '+risks.length+' riesgos</span></div>'+
-    '<div class="card metric"><small>Entradas económicas</small><strong>'+econ.length+'</strong><span>Registros, no ahorro estimado</span></div>'+
-    '<div class="card metric"><small>'+(analyzed?'Hallazgos confirmados':'Estado del análisis')+'</small><strong>'+(analyzed?confirmedCount: 'Pendiente')+
-      '</strong><span>'+(data?.status==='INPUT_GAPS'?'Revisar fuentes y relaciones':official?'Resultado oficial vigente':analyzed?'AS-IS analizado':'Análisis sin calcular')+'</span></div></div>'+
+    auneaUiMetric('AS-IS confirmado','v'+(snap?.version||'—'),'Fuente del diagnóstico','overview')+
+    auneaUiMetric('Pasos activos',steps.length,fr.length+' fricciones · '+risks.length+' riesgos','overview')+
+    auneaUiMetric('Entradas económicas',econ.length,'Registros, no ahorro estimado','overview')+
+    auneaUiMetric(analyzed?'Hallazgos confirmados':'Estado del análisis',analyzed?confirmedCount:'Pendiente',
+      data?.status==='INPUT_GAPS'?'Revisar fuentes y relaciones':
+      official?'Resultado oficial vigente':analyzed?'AS-IS analizado':'Análisis sin calcular','overview')+
+    '</div>'+
     auneaWorkDisclosure('pg10-stage-nav','Consultar las etapas del Trabajo Interno',workbenchContinuityHtml(e));
   const reference='<div class="grid g3 diagnosis-reference-grid">'+
     '<div class="notice diagnosis-reference-card"><b>Duración end-to-end actual</b><div class="diagnosis-reference-value">'+esc(asisSourceBoundary(record,'DF026'))+'</div><p class="diagnosis-reference-note">Duración declarada; conciliación independiente.</p></div>'+
